@@ -10,6 +10,7 @@
  */
 import { judgeBotGame, parseReport } from '../../../shared/chess/botGame';
 import { judgeCheckersGame, parseCheckersReport } from '../../../shared/checkers/botGame';
+import { bearerToken, corsHeaders } from '../_shared/http';
 
 /** The two things this needs from Supabase, passed in so the tests can stand in for them. */
 export interface Services {
@@ -31,24 +32,6 @@ export interface GameRow {
   counts_for_points: boolean;
 }
 
-/** Websites allowed to call this from a browser. */
-const ALLOWED_ORIGINS = [
-  'https://bleedingrobot.github.io',
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'http://localhost:4173',
-  'http://127.0.0.1:4173',
-];
-
-function corsHeaders(origin: string | null): Record<string, string> {
-  return {
-    'Access-Control-Allow-Origin': origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info',
-    Vary: 'Origin',
-  };
-}
-
 export async function handleSaveBotGame(request: Request, services: Services): Promise<Response> {
   const cors = corsHeaders(request.headers.get('Origin'));
   const reply = (status: number, body: object) =>
@@ -57,7 +40,7 @@ export async function handleSaveBotGame(request: Request, services: Services): P
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (request.method !== 'POST') return reply(405, { error: 'Not allowed.' });
 
-  const token = request.headers.get('Authorization')?.match(/^Bearer (.+)$/)?.[1];
+  const token = bearerToken(request);
   const player = token ? await services.userIdFor(token) : null;
   if (!player) return reply(401, { error: 'Please sign in again.' });
 

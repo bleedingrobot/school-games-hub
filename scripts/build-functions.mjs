@@ -11,7 +11,7 @@ const versionOf = (name) => (pkg.dependencies[name] ?? '').replace(/^[\^~]/, '')
 // Libraries come from npm when the function runs, at the same versions the website uses.
 const LIBRARIES = ['chess.js', '@supabase/supabase-js'];
 
-export const FUNCTIONS = ['save-bot-game'];
+export const FUNCTIONS = ['save-bot-game', 'multiplayer'];
 
 export async function buildFunction(name) {
   const bundle = await rolldown({
