@@ -120,7 +120,7 @@ To add a new game later, you add a folder with its rules, bot and board, plus on
 
 1. ✅ Inspect and plan (this file)
 2. ✅ Foundation: website shell, look and feel, dashboard with clearly marked sample data, auto-deploy to GitHub Pages (done 15 Oct 2026, live at https://bleedingrobot.github.io/school-games-hub/)
-3. Sign-in and profiles: Google login, school-only checks, database rules, display names, avatar maker, teacher roles (built and live 15 Oct 2026; waiting on a test with a real school account)
+3. ✅ Sign-in and profiles: Google login, school-only checks, database rules, display names, avatar maker, teacher roles (done 15 Oct 2026: James and students tested sign-in with real school accounts; no extra Workspace admin approval was needed)
 4. Chess vs bots (results saved)
 5. Checkers vs bots (results saved), then **small student trial**
 6. Multiplayer: lobby, game codes, server-checked moves, reconnecting

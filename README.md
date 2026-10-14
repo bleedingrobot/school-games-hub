@@ -4,7 +4,7 @@ A chess and checkers website for Year 4–6 students. Students will sign in with
 
 **Live site:** https://bleedingrobot.github.io/school-games-hub/
 
-**Where it's up to:** Stage 3 of 8 (sign-in and profiles) is being finished. Students sign in with their Douglas Park Google account, pick a safe player name and build an avatar. The games and real scores aren't built yet; those pages say "Coming soon". The full plan is in [docs/PLAN.md](docs/PLAN.md).
+**Where it's up to:** Stages 1–3 of 8 are done. Students sign in with their Douglas Park Google account, pick a safe player name and build an avatar. The games and real scores aren't built yet; those pages say "Coming soon". The full plan is in [docs/PLAN.md](docs/PLAN.md).
 
 ## How sign-in stays school-only
 
