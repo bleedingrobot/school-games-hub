@@ -128,6 +128,46 @@ To add a new game later, you add a folder with its rules, bot and board, plus on
 7. Points, badges, ratings, leaderboards, teacher view
 8. Deploy and school testing
 
+## Stage 6 design: playing a friend
+
+**The short version:** one new table holds every game between two students. The website can read only the games its student is playing, and can't write to the table at all. Every change (create, join, move, resign, draw, claim, rematch) goes through one new server function, `multiplayer`, which checks it with the same rules code as the bot games. Supabase Realtime tells the other player's browser the moment the game changes.
+
+**The table: `mp_games`** (one row per game)
+
+- which game, the code, whether it's listed in the lobby
+- the two players: `first_player` moves first (White in chess, Red in checkers), `second_player` second; plus who created it
+- `status`: `waiting` → `playing` → `finished`, or `cancelled` / `expired` if nobody joined
+- every move so far, and `turn_started_at` (the server's time when the current turn began, for the 2-minute rule)
+- any draw offer, and how many each player has made
+- the result: who won (or a draw), why (`checkmate`, `resigned`, `abandoned`...), and `counts_for_points`. Stage 7 works out ratings from these rows.
+- `version`, a number that goes up by one with every change. It's how two requests at once are stopped (below).
+- rematch requests, and a link to the rematch game
+
+**The server function: `multiplayer`.** The browser sends an action (`create`, `join`, `cancel`, `move`, `resign`, `offer-draw`, `answer-draw`, `claim-win`, `rematch`). The function works out who's asking from their sign-in token, never from the request, then:
+
+- refuses everything if the student is hidden, and refuses new games, joins, moves and rematches while the teacher's multiplayer switch is off (resigning and claiming still work, so games can end)
+- for a move: checks it's that student's game and turn, that the game hasn't ended, and that the move is legal, by replaying the game with chess.js or our checkers rules. The server alone decides checkmate, stalemate, every chess draw rule and every checkers ending, including the 40-move draw.
+- saves the change only if `version` hasn't moved since it read the game ("save only if nothing changed"). If two requests arrive at once, the database lets one through and the other finds the version has moved, so it's refused. No double moves, no move sneaking in after a resign.
+
+The lobby list is a small read-only database function. It shows waiting lobby games with only the creator's player name, avatar, the game and the colour on offer. No codes, emails or IDs other than the game's own.
+
+**Live updates.** Each player's browser listens to its own game's row through Supabase Realtime. The database only sends a change to people allowed to read that row (the two players). The players also share a private Realtime "who's here" channel. If the opponent drops off it, the page says they seem to be away. If the live connection drops, the page checks the game every few seconds instead, and every 20 seconds anyway as a safety net. Reloading just reads the game again, so nothing is lost.
+
+**Fairness rules**
+
+- **Codes** are 5 characters from `CDFGHJKMNPQRTVWXY34679`: no vowels (so no rude words) and no lookalikes (O/0, I/1/L, S/5, Z/2, B/8). Typing is case-blind and ignores spaces.
+- One waiting game per student. Making a new one cancels the old one. A waiting game expires after 10 minutes. You can't join your own game or a full one.
+- **2-minute rule:** if it's your opponent's turn and they haven't moved for 2 minutes by the server's clock, you can claim the win. It's recorded as `abandoned`: a loss for them that earns nothing.
+- **Draw offers:** one at a time, at most 3 per player per game, and at least 5 of your own moves between offers. Making a move instead of answering turns the offer down.
+- **Games where both players walk away:** a scheduled database job (pg_cron, every 5 minutes) expires old waiting games and finishes games with no move for 30 minutes, as `abandoned`, a loss for the player whose turn it was.
+- **Counting:** a game counts for points only if each player made at least 10 moves and nobody abandoned it.
+- **Rematch:** both players press Rematch; the second press starts a new game with the colours swapped.
+- **Rate limits:** each student can create at most 20 games an hour (checked in the database) and try at most 10 codes a minute. The function also turns away anyone sending more than 60 requests a minute. That last check lives in the function's memory, so it's a soft limit.
+
+**What it costs against the free plan.** Each move is one server function call. A long game is about 80 moves plus a few calls for joining and ending, so 500,000 calls a month is roughly 5,000 long games. 30 students each playing 3 games a school day is about 90,000 calls a month, under a fifth of the limit. Realtime sends about two messages per move, far below 2 million a month. Each open browser tab is one live connection, so up to about 200 tabs can be live at once. More than that and the extra tabs quietly fall back to checking every few seconds. The scheduled job and the lobby's 3-second refresh are tiny database reads, which the free plan doesn't count.
+
+**What it can't promise:** the free plan has no uptime guarantee, so a Supabase hiccup could pause live games. Moves are saved, so players just carry on when it's back.
+
 ## Definition of done — additions to the brief
 
 - A teacher can rename, hide or remove a student, and delete that student's data.
