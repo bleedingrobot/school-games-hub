@@ -579,9 +579,12 @@ main:focus {
 .achievement-list__name {
   display: flex;
   justify-content: space-between;
+  gap: 8px;
   font-weight: 700;
 }
 .achievement-list__count {
+  flex-shrink: 0;
+  white-space: nowrap;
   color: var(--ink-soft);
   font-size: 0.9rem;
 }

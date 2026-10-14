@@ -521,7 +521,7 @@ as $$
     'rank', public.rank_name(public.rank_for(rating, rated_games)),
     'next', case public.rank_for(rating, rated_games) when 0 then 'silver' when 1 then 'gold' when 2 then 'champion' end,
     'progress', case public.rank_for(rating, rated_games)
-      when 0 then greatest(0, least(1, (rating - 950) / 80.0))
+      when 0 then greatest(0, least(1, (rating - public.start_rating()) / 30.0))
       when 1 then (rating - 1030) / 50.0
       when 2 then least(1, (rating - 1080) / 70.0)
     end,
