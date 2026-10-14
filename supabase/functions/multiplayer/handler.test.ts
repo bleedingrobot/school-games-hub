@@ -571,6 +571,7 @@ describe('the server function itself', () => {
   });
 
   it('has an up-to-date index.ts (run `npm run build:functions` if this fails)', async () => {
+    // @ts-expect-error: plain JavaScript build script
     const { buildFunction } = await import('../../../scripts/build-functions.mjs');
     const built: string = await buildFunction('multiplayer');
     expect(readFileSync(resolve('supabase/functions/multiplayer/index.ts'), 'utf8')).toBe(built);
