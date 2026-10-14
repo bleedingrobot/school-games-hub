@@ -2,7 +2,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(24);
+select plan(25);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -38,6 +38,8 @@ select lives_ok($$ select public.record_bot_game('00000000-0000-0000-0000-000000
 select lives_ok($$ select public.record_bot_game('00000000-0000-0000-0000-00000000000a', 'chess', 'very-easy', 'white',
     array['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1', 'f6g8'], 'drawn', 'threefold-repetition', 4, false) $$,
   'the server can save a draw');
+select lives_ok($$ select public.record_bot_game('00000000-0000-0000-0000-00000000000a', 'checkers', 'medium', 'red',
+    array['11-15', '22-18', '15x22'], 'won', 'no-pieces', 2, false) $$, 'the server can save a checkers game');
 select lives_ok($$ select public.record_bot_game('00000000-0000-0000-0000-00000000000b', 'chess', 'easy', 'white',
     array['e2e4'], 'lost', 'abandoned', 1, false) $$, 'the server can save a game for another student');
 select throws_ok($$ select public.record_bot_game('00000000-0000-0000-0000-0000000000ee', 'chess', 'easy', 'white',
@@ -56,7 +58,7 @@ select is((select count(*)::int from public.bot_games), 0, 'a non-school token s
 
 -- ---- Students ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
-select is((select count(*)::int from public.bot_games), 3, 'a student sees their own games');
+select is((select count(*)::int from public.bot_games), 4, 'a student sees their own games');
 select is((select count(*)::int from public.bot_games where player <> auth.uid()), 0, 'a student cannot see anyone else''s games');
 select throws_ok($$ insert into public.bot_games (player, game, bot_level, player_side, moves, result, reason, player_moves, counts_for_points)
   values (auth.uid(), 'chess', 'medium', 'white', '{}', 'won', 'checkmate', 30, true) $$,
@@ -66,9 +68,9 @@ select throws_ok($$ select public.record_bot_game(auth.uid(), 'chess', 'medium',
 select throws_ok($$ update public.bot_games set result = 'won' $$, '42501', null, 'a student cannot change a result');
 select throws_ok($$ delete from public.bot_games $$, '42501', null, 'a student cannot delete games');
 select results_eq(
-  'select game, played, won, lost, drawn from public.my_bot_game_stats()',
-  $$ values ('chess'::text, 3, 1, 1, 1) $$,
-  'a student gets their own stats');
+  'select game, played, won, lost, drawn from public.my_bot_game_stats() order by game',
+  $$ values ('checkers'::text, 1, 1, 0, 0), ('chess'::text, 3, 1, 1, 1) $$,
+  'a student gets their own stats, for each game');
 
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz');
 select results_eq(

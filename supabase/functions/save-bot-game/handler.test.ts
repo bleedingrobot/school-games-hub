@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
+import { seeded } from '../../../shared/seededRandom';
+import { applyMove, boardResult, legalMoves, startPosition } from '../../../shared/checkers/rules';
 import { handleSaveBotGame, type GameRow, type Services } from './handler';
 
 const FOOLS_MATE = ['f2f3', 'e7e5', 'g2g4', 'd8h4'];
@@ -107,6 +109,85 @@ describe('the save-bot-game server function', () => {
       s,
     );
     expect(other.headers.get('Access-Control-Allow-Origin')).toBe('https://bleedingrobot.github.io');
+  });
+});
+
+/** A whole checkers game of random legal moves that Red wins. */
+function checkersGameRedWins(): string[] {
+  for (let seed = 1; ; seed++) {
+    const random = seeded(seed);
+    let position = startPosition();
+    const moves: string[] = [];
+    let result = boardResult(position);
+    while (!result) {
+      const options = legalMoves(position);
+      const move = options[Math.floor(random() * options.length)];
+      moves.push(move.notation);
+      position = applyMove(position, move);
+      result = boardResult(position);
+    }
+    if (result.winner === 'red') return moves;
+  }
+}
+
+describe('saving checkers games', () => {
+  it('replays the moves with the checkers rules, decides the result itself and saves it', async () => {
+    const { s, saved } = services();
+    const moves = checkersGameRedWins();
+    const response = await handleSaveBotGame(
+      post({ game: 'checkers', level: 'medium', studentColour: 'white', moves, ending: 'resigned' }),
+      s,
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json()).result).toBe('lost');
+    expect(saved).toEqual([
+      expect.objectContaining({
+        player: 'student-1',
+        game: 'checkers',
+        bot_level: 'medium',
+        player_side: 'white',
+        moves,
+        result: 'lost',
+        player_moves: Math.floor(moves.length / 2),
+        counts_for_points: true,
+      }),
+    ]);
+    expect(['no-pieces', 'no-moves']).toContain(saved[0].reason);
+  });
+
+  it('saves resigned and abandoned checkers games as losses', async () => {
+    const { s, saved } = services();
+    for (const ending of ['resigned', 'abandoned']) {
+      const response = await handleSaveBotGame(
+        post({ game: 'checkers', level: 'easy', studentColour: 'red', moves: ['11-15', '22-18', '15x22'], ending }),
+        s,
+      );
+      expect(response.status).toBe(200);
+    }
+    expect(saved.map((row) => [row.result, row.reason, row.counts_for_points])).toEqual([
+      ['lost', 'resigned', false],
+      ['lost', 'abandoned', false],
+    ]);
+  });
+
+  it('refuses faked or muddled checkers games', async () => {
+    const { s, saved } = services();
+    const lies = [
+      { game: 'checkers', level: 'easy', studentColour: 'red', moves: ['11-15', '22-18', '12-16'], ending: 'resigned' }, // skipped a forced capture
+      { game: 'checkers', level: 'easy', studentColour: 'red', moves: ['11-15', '23-19'], ending: 'finished' }, // not over
+      { game: 'checkers', level: 'easy', studentColour: 'white', moves: ['e2e4'], ending: 'resigned' }, // chess moves
+      { game: 'chess', level: 'easy', studentColour: 'white', moves: ['11-15'], ending: 'resigned' }, // checkers moves
+      { game: 'checkers', level: 'easy', studentColour: 'black', moves: [], ending: 'resigned' }, // a chess colour
+      { game: 'draughts', level: 'easy', studentColour: 'red', moves: [], ending: 'resigned' },
+    ];
+    for (const body of lies) expect((await handleSaveBotGame(post(body), s)).status).toBe(400);
+    expect(saved).toEqual([]);
+  });
+
+  it('still treats a report with no game as chess (what older pages send)', async () => {
+    const { s, saved } = services();
+    await handleSaveBotGame(post({ level: 'easy', studentColour: 'white', moves: ['e2e4'], ending: 'resigned' }), s);
+    expect(saved[0].game).toBe('chess');
   });
 });
 
