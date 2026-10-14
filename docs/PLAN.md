@@ -168,6 +168,77 @@ The lobby list is a small read-only database function. It shows waiting lobby ga
 
 **What it can't promise:** the free plan has no uptime guarantee, so a Supabase hiccup could pause live games. Moves are saved, so players just carry on when it's back.
 
+## Stage 7 design: points, badges, ratings, leaderboards and the teacher view
+
+**The short version:** everything is worked out inside the database, the moment a game is saved. Saving a bot game, or a friend game finishing, sets off a database trigger that adds points, updates ratings and hands out achievements. The website can only *read* the results, through small read-only database functions. Nothing a browser sends can change a score. Only games that count (`counts_for_points = true`) earn anything.
+
+### Points
+
+| Against a bot | Lost | Draw | Won |
+|---|---|---|---|
+| Very Easy | 1 | 2 | 3 |
+| Easy | 2 | 3 | 5 |
+| Medium | 3 | 5 | 8 |
+
+- **Bot games earn at most 40 points a day** (chess and checkers together, New Zealand day). After that, games still count towards achievements but earn 0 points. The last game before the cap gets whatever is left.
+- **Against a friend:** lost 4, draw 6, won 8. Losing to a friend earns more than beating the easiest bot: playing people is what's rewarded.
+- **Playing the same friend:** only your first 5 games together each day earn points and change ratings. More games still show in your history.
+- **Achievements:** 10 points each.
+- **Levels:** level 2 at 50 points, and each level after needs 25 more than the one before (50, 75, 100...). So level 3 is at 125, level 4 at 225, level 5 at 350, level 10 at 1,350. Total for level *L* = 25 × (*L* − 1) × (*L* + 2) ÷ 2.
+
+Why these numbers: a keen student playing bots every day earns up to 40 a day, about level 6 after two weeks of daily play, and levels keep coming but slow down. Harder bots pay more even when you lose, so trying the Medium bot is always worth it.
+
+### Ratings and rank badges (for a 9-year-old)
+
+> Everyone starts with a hidden score of 1000 for chess and 1000 for checkers. When you play a friend, the winner takes some points from the loser. Beat someone better than you and you take a lot. Beat someone newer than you and you take only a little. Lose to someone better and you lose only a little. Your badge shows how high your score is.
+
+- Elo, worked out on the server. Expected score E = 1 ÷ (1 + 10^((their rating − yours) ÷ 400)). Change = round(20 × (result − E)), where a win is 1, a draw ½ and a loss 0. The other player's change is the exact opposite.
+- **K = 20, the same for everyone:** one game moves you by at most 20, and 10 for beating an equal. A few games can't swing much.
+- Only friend games that count change ratings. Bot games never do. Chess and checkers are separate.
+- **Badges:** Bronze to start; **Silver** at 1030 (about 3 more wins than losses against players at your level); **Gold** at 1080 (about 8 more); **Champion** at 1150 *and* at least 15 rated games. Because each win counts for less as you climb, Champion needs steady wins against good players. Badges can go back down, but the "reached Silver/Gold/Champion" achievements stay.
+- Raw numbers are never shown. The page shows the badge and how far you are towards the next one.
+- **Deleted opponents:** the remaining player keeps their game and rating change. When ratings are worked out again from scratch (only for the first fill-in and nothing else), a deleted opponent counts as 1000.
+
+### Achievements (12 per game, earned on the server)
+
+For chess and for checkers separately: First game · First win · 10 games · 50 games · Beat the Very Easy bot · Beat the Easy bot · Beat the Medium bot · Beat a friend · Reach Silver · Reach Gold · Reach Champion, plus **Checkmate!** (win a chess game by checkmate) or **Crown 5 kings** (checkers; the database counts each man the student crowns by following the moves). Only games that count, count.
+
+### Leaderboards
+
+For each game (chess, checkers), three boards. Students see the **top 10 plus their own place**:
+
+- **This week:** points earned in that game since Monday 12am NZ time. Needs 3 games that count this week.
+- **All time:** ordered by rating, shown as badges. Needs 5 rated friend games.
+- **Most improved this week:** the biggest rating rise this week. Needs 3 rated games this week, and a rise.
+
+Players with the same score share a place. Boards show only player name, avatar, badge and (for the week) points: no emails, IDs, real names or classes. Hidden students aren't on any board, and places are counted as if they weren't there. A deleted student's games stay in their opponents' totals.
+
+### Tables and database functions
+
+- `scored_games`: one row per player per game that counts: which game, bot or friend, the result, points earned, rating change, crowns. Filled by triggers on `bot_games` (when saved) and `mp_games` (when it becomes finished).
+- `ratings`: one row per player per game: rating, rated games, best badge reached.
+- `achievement_types` (the list, read by the website for names and emojis) and `achievements` (who earned what, when).
+- Read-only functions for students: `my_progress()`, `leaderboard(game, board)`, `progress_rules()` (the numbers above, so the "How points work" page never disagrees with the database).
+- Teacher-only functions: `teacher_students()`, `teacher_student_detail(student)`, `teacher_new_season(confirm)`, plus the Stage 3 ones.
+- `rebuild_progress()`: wipes and recomputes everything from saved games, oldest first. Only the database owner can run it. Used once, to fill in points for games saved before Stage 7.
+
+### Fairness: why it can't be farmed or faked
+
+- Students can't write to any of these tables, or call the functions that fill them. Points come only from games the server has already checked.
+- Short and abandoned games earn nothing (from Stages 4–6). Bot games are capped at 40 a day and never touch ratings.
+- Two friends throwing games to each other: only 5 games a day between the same two count, and Elo gives less and less for beating the same lower-rated player.
+- Weekly boards need 3 games and the all-time board 5 rated games, so one lucky game can't top a board.
+
+### Teacher view
+
+At `/#/teacher`, only for `role = 'teacher'` (checked by every function on the server; the page just hides itself for others). A list of everyone with name, avatar, games played and when they last played. Per person: see their stats and recent games, **New name**, **Hide/Show**, **Make teacher / Remove teacher** (not yourself), **Delete** (type the player's name to confirm). A switch for **games against friends**.
+
+**End-of-year cleanup ("New season")** deletes every finished game and every point, rating, achievement and board, so everyone starts fresh. It keeps accounts, player names, avatars, teachers and hidden settings, and leaves games still being played alone. The teacher has to type `NEW SEASON` to do it, and the server checks the words too. Students who have left should be deleted one by one first.
+
+### Cost against the free plan
+
+Everything runs inside the database: no new server functions, no new function calls and no new live connections. A score row is about 150 bytes, so even 100 students × 10 games a day for a whole school year is about 30 MB, against the 500 MB database. The end-of-year cleanup frees it again. Leaderboard and dashboard reads are ordinary database requests, which the free plan doesn't count.
+
 ## Definition of done — additions to the brief
 
 - A teacher can rename, hide or remove a student, and delete that student's data.
