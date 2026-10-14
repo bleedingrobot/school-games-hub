@@ -19,7 +19,7 @@ import { useSound } from '../../sound';
 import { BOT_LEVELS, type BotLevel } from '../types';
 import { Board, pieceImage } from './Board';
 import { BOT_DESCRIPTIONS, chooseBotMove, randomishMove, type ChessEngine } from './bot';
-import { playSound, type ChessSound } from './sounds';
+import { playSound, type GameSound } from '../sounds';
 import { startBrowserStockfish } from './stockfish';
 
 const BOT_EMOJI: Record<BotLevel, string> = { 'very-easy': '🐣', easy: '🤖', medium: '🧠' };
@@ -113,7 +113,8 @@ export function ChessPlay({ level }: { level: BotLevel }) {
   }, [game]);
 
   const report = useCallback(
-    (g: Game, ending: ClaimedEnding): BotGameReport => ({
+    (g: Game, ending: ClaimedEnding): BotGameReport & { game: 'chess' } => ({
+      game: 'chess',
       level: g.level,
       studentColour: g.studentColour,
       moves: g.moves,
@@ -122,7 +123,7 @@ export function ChessPlay({ level }: { level: BotLevel }) {
     [],
   );
 
-  const sound = useCallback((name: ChessSound) => {
+  const sound = useCallback((name: GameSound) => {
     if (soundOnRef.current) playSound(name);
   }, []);
 
@@ -184,7 +185,7 @@ export function ChessPlay({ level }: { level: BotLevel }) {
       if (!move) return;
       const next = { ...g, moves: [...g.moves, uci] };
       setGame(next);
-      sound(check.chess.inCheck() ? 'check' : move.captured ? 'capture' : 'move');
+      sound(check.chess.inCheck() ? 'alert' : move.captured ? 'capture' : 'move');
       if (boardResult(check.chess)) finish(next, 'finished');
     },
     [finish, sound],

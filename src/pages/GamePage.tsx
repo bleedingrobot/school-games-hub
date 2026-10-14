@@ -5,7 +5,6 @@ import type { GameDefinition } from '../games/types';
 import { BOT_LEVELS, isBotLevel } from '../games/types';
 
 const EMOJI: Record<string, string> = { chess: '♟️', checkers: '🔴' };
-const STAGE: Record<string, number> = { checkers: 5 };
 
 export function GamePage({ game }: { game: GameDefinition }) {
   const [params] = useSearchParams();
@@ -26,8 +25,7 @@ export function GamePage({ game }: { game: GameDefinition }) {
         You picked the <strong>{level.label}</strong> bot. Good choice!
       </p>
       <p>
-        The {game.name.toLowerCase()} board is still being built
-        {STAGE[game.id] ? ` (step ${STAGE[game.id]} of the plan)` : ''}. Check back soon.
+        The {game.name.toLowerCase()} board is still being built. Check back soon.
       </p>
     </ComingSoon>
   );

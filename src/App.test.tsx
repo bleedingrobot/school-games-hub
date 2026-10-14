@@ -17,8 +17,12 @@ vi.mock('./data/botGames', () => ({
   fetchRecentGames: vi.fn(async () => [
     { id: 'g1', game: 'chess', bot_level: 'medium', result: 'won', reason: 'checkmate', finished_at: new Date().toISOString() },
     { id: 'g2', game: 'chess', bot_level: 'easy', result: 'lost', reason: 'abandoned', finished_at: '2020-03-02T01:00:00Z' },
+    { id: 'g3', game: 'checkers', bot_level: 'very-easy', result: 'drawn', reason: 'forty-moves', finished_at: '2020-03-01T01:00:00Z' },
   ]),
-  fetchMyStats: vi.fn(async () => [{ game: 'chess', played: 2, won: 1, lost: 1, drawn: 0 }]),
+  fetchMyStats: vi.fn(async () => [
+    { game: 'chess', played: 2, won: 1, lost: 1, drawn: 0 },
+    { game: 'checkers', played: 1, won: 0, lost: 0, drawn: 1 },
+  ]),
   saveBotGame: vi.fn(async () => {}),
   saveAbandonedGame: vi.fn(),
   refreshSaveToken: vi.fn(async () => {}),
@@ -59,18 +63,21 @@ describe('dashboard', () => {
     expect(screen.getAllByText('Sample data').length).toBeGreaterThanOrEqual(3);
   });
 
-  it('shows real recent chess games and stats', async () => {
+  it('shows real recent chess and checkers games and stats', async () => {
     renderAt('/');
     const recent = screen.getByRole('region', { name: 'Recent games' });
     expect(await within(recent).findByText('Chess vs Medium bot')).toBeInTheDocument();
     expect(within(recent).getByText('Today')).toBeInTheDocument();
     expect(within(recent).getByText('(left early)')).toBeInTheDocument();
+    expect(within(recent).getByText('Checkers vs Very Easy bot')).toBeInTheDocument();
     expect(within(recent).queryByText('Sample data')).not.toBeInTheDocument();
 
     const chessRow = screen.getByRole('row', { name: /^Chess/ });
     expect(within(chessRow).getAllByRole('cell').map((c) => c.textContent)).toEqual(['2', '1', '1', '0']);
     expect(within(chessRow).queryByText('Sample data')).not.toBeInTheDocument();
-    expect(within(screen.getByRole('row', { name: /^Checkers/ })).getByText('Sample data')).toBeInTheDocument();
+    const checkersRow = screen.getByRole('row', { name: /^Checkers/ });
+    expect(within(checkersRow).getAllByRole('cell').map((c) => c.textContent)).toEqual(['1', '0', '0', '1']);
+    expect(within(checkersRow).queryByText('Sample data')).not.toBeInTheDocument();
   });
 
   it('links to the lobby and leaderboard', () => {
@@ -95,7 +102,6 @@ describe('dashboard', () => {
 
 describe('pages', () => {
   it.each([
-    ['/checkers', 'Checkers'],
     ['/lobby', 'Lobby'],
     ['/leaderboard', 'Leaderboard'],
   ])('%s shows a friendly coming-soon page', (path, title) => {
@@ -105,9 +111,11 @@ describe('pages', () => {
     expect(screen.getByRole('link', { name: 'Back to home' })).toHaveAttribute('href', '/');
   });
 
-  it('shows the bot level picked on the dashboard', () => {
+  it('opens checkers ready to play the bot picked on the dashboard', async () => {
     renderAt('/checkers?bot=very-easy');
-    expect(screen.getByText('Very Easy')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: /Checkers vs bot/ })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Very Easy' })).toBeChecked();
+    expect(screen.getByRole('button', { name: /Start game/ })).toBeInTheDocument();
   });
 
   it('opens chess ready to play the bot picked on the dashboard', async () => {
@@ -117,9 +125,9 @@ describe('pages', () => {
     expect(screen.getByRole('button', { name: /Start game/ })).toBeInTheDocument();
   });
 
-  it('falls back to Easy for a made-up bot level', () => {
+  it('falls back to Easy for a made-up bot level', async () => {
     renderAt('/checkers?bot=impossible');
-    expect(screen.getByText('Easy')).toBeInTheDocument();
+    expect(await screen.findByRole('radio', { name: 'Easy' })).toBeChecked();
   });
 
 

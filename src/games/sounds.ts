@@ -23,15 +23,16 @@ function tone(frequency: number, duration: number, volume: number, type: Oscilla
   }
 }
 
-export type ChessSound = 'move' | 'capture' | 'check' | 'win' | 'end';
+/** 'alert' is check in chess, and a new king in checkers. */
+export type GameSound = 'move' | 'capture' | 'alert' | 'win' | 'end';
 
-export function playSound(sound: ChessSound) {
+export function playSound(sound: GameSound) {
   switch (sound) {
     case 'move':
       return tone(520, 0.08, 0.15, 'triangle');
     case 'capture':
       return tone(240, 0.16, 0.25, 'square');
-    case 'check':
+    case 'alert':
       tone(700, 0.1, 0.15, 'triangle');
       return setTimeout(() => tone(900, 0.12, 0.15, 'triangle'), 110);
     case 'win':

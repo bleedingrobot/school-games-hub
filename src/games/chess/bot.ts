@@ -10,7 +10,7 @@
  * Whatever the engine says, the move is checked against the rules before it's played.
  * To make a bot stronger or weaker, change BOT_SETTINGS below.
  */
-import type { BotLevel } from '../../../shared/chess/botGame';
+import type { BotLevel } from '../../../shared/botGame';
 import { legalUciMoves, type Chess } from '../../../shared/chess/rules';
 
 export interface EngineSettings {

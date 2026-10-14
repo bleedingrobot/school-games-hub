@@ -65,7 +65,8 @@ Students are identified by a random internal ID, not by their name or email. Lea
 ## Bots
 
 - **Chess:** Stockfish compiled to run in the browser. *Very Easy* mostly plays random legal moves, with a light preference for captures. *Easy* is Stockfish at a low skill level and very shallow search, so it makes believable mistakes. *Medium* is Stockfish at a moderate skill level with deeper search.
-- **Checkers:** no well-tested library exists for English checkers, so I'll write the rules myself, with thorough tests (forced captures, multi-jumps, kings). The bot uses look-ahead search: *Very Easy* looks 1 move ahead with lots of randomness, *Easy* 3 moves, *Medium* 6+ moves.
+- **Checkers:** no well-tested library exists for English checkers, so I'll write the rules myself, with thorough tests (forced captures, multi-jumps, kings). The bot uses look-ahead search: *Very Easy* looks 1 move ahead with lots of randomness, *Easy* 3 moves, *Medium* 6+ moves (up to 8 when it has time). It runs in a Web Worker so the page never freezes.
+- **Checkers board (Stage 5 decision):** the pieces are **Red and White, and Red moves first** (the official rules call that side "Black"; most boards make those pieces red). Squares use the standard 1–32 numbering, with Red starting on 1–12. Each student sees the board from their own side.
 
 ## Privacy (New Zealand)
 
@@ -122,7 +123,7 @@ To add a new game later, you add a folder with its rules, bot and board, plus on
 2. ✅ Foundation: website shell, look and feel, dashboard with clearly marked sample data, auto-deploy to GitHub Pages (done 15 Oct 2026, live at https://bleedingrobot.github.io/school-games-hub/)
 3. ✅ Sign-in and profiles: Google login, school-only checks, database rules, display names, avatar maker, teacher roles (done 15 Oct 2026: James and students tested sign-in with real school accounts; no extra Workspace admin approval was needed)
 4. ✅ Chess vs bots, results saved (done 15 Oct 2026: chess.js rules, Stockfish 19 lite in a Web Worker, `bot_games` table, `save-bot-game` server function that replays every move; full games played against all three bots in a browser at Chromebook and tablet sizes)
-5. Checkers vs bots (results saved), then **small student trial**
+5. ✅ Checkers vs bots (done 15 Oct 2026: our own English checkers rules with thorough tests, three look-ahead bots in a Web Worker, results saved through `save-bot-game`; full games played against all three bots in a browser, as both colours, at Chromebook and tablet sizes), then **small student trial** using [STUDENT-TRIAL.md](STUDENT-TRIAL.md)
 6. Multiplayer: lobby, game codes, server-checked moves, reconnecting
 7. Points, badges, ratings, leaderboards, teacher view
 8. Deploy and school testing
@@ -136,6 +137,7 @@ To add a new game later, you add a folder with its rules, bot and board, plus on
 
 - **Google sign-in:** Google Cloud project "School Games Hub" inside the douglaspark.school.nz organisation, consent screen set to **Internal**. Client ID `1082331069721-afm5mligouf44drvkpdb1vlatgqd6tor.apps.googleusercontent.com`. The client secret lives only in Supabase.
 - **Supabase dashboard settings** (not stored in this repo): Google provider on, Email provider off, Site URL and redirect URL set to the GitHub Pages address, and the *Before User Created* hook pointing at `public.hook_before_user_created`.
+- **Stage 5 server function:** `save-bot-game` version 2 (chess and checkers) was deployed on 15 Oct 2026 the same way. Reports say `"game": "checkers"`; reports with no game are chess. Checkers needed no database change: `bot_games` already accepted it.
 - **Stage 4 server function:** `save-bot-game` was deployed on 15 Oct 2026 with `npx supabase functions deploy save-bot-game --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api`. **Verify JWT is off** because the function checks the sign-in token itself.
 - **Claude can edit Supabase:** a Supabase access token lives in `~/.supabase/access-token` on James's server (never in the repo). Live SQL runs with `npx supabase db query --linked --project-ref zqzhetlzvtptnkmeiumi -f <file>`.
 - **Bot results:** games with fewer than 10 student moves, and abandoned games, are saved with `counts_for_points = false`. A student can save at most 300 bot games a day (stops a script flooding the database).

@@ -3,21 +3,22 @@
  * straight away, and the server runs the very same code before saving, so a student
  * can't send in a pretend win.
  */
+import {
+  isBotLevelId,
+  isClaimedEnding,
+  isMoveList,
+  MAX_PLIES,
+  MIN_MOVES_TO_COUNT,
+  type BotLevel,
+  type ClaimedEnding,
+  type Outcome,
+} from '../botGame';
 import { replay, type Colour, type RuleEnding } from './rules';
 
-export type BotLevel = 'very-easy' | 'easy' | 'medium';
-export const BOT_LEVEL_IDS: readonly BotLevel[] = ['very-easy', 'easy', 'medium'];
+export { BOT_LEVEL_IDS, MAX_PLIES, MIN_MOVES_TO_COUNT } from '../botGame';
+export type { BotLevel, ClaimedEnding, Outcome } from '../botGame';
 
-/** What the student says happened. Only "resigned" and "abandoned" are taken on trust. */
-export type ClaimedEnding = 'finished' | 'resigned' | 'abandoned';
-
-export type Outcome = 'won' | 'lost' | 'drawn';
 export type Reason = RuleEnding | 'resigned' | 'abandoned';
-
-/** Games where the student made fewer moves than this earn nothing (Stage 7 points). */
-export const MIN_MOVES_TO_COUNT = 10;
-/** No real game is anywhere near this long; it stops junk being sent to the server. */
-export const MAX_PLIES = 1000;
 
 export interface BotGameReport {
   level: BotLevel;
@@ -41,13 +42,10 @@ export type Judgement = { ok: true; game: JudgedGame } | { ok: false; problem: s
 export function parseReport(input: unknown): BotGameReport | null {
   if (typeof input !== 'object' || input === null) return null;
   const r = input as Record<string, unknown>;
-  if (!BOT_LEVEL_IDS.includes(r.level as BotLevel)) return null;
+  if (!isBotLevelId(r.level)) return null;
   if (r.studentColour !== 'white' && r.studentColour !== 'black') return null;
-  if (r.ending !== 'finished' && r.ending !== 'resigned' && r.ending !== 'abandoned') return null;
-  if (!Array.isArray(r.moves) || r.moves.length > MAX_PLIES || !r.moves.every((m) => typeof m === 'string')) {
-    return null;
-  }
-  return { level: r.level as BotLevel, studentColour: r.studentColour, moves: r.moves as string[], ending: r.ending };
+  if (!isClaimedEnding(r.ending) || !isMoveList(r.moves)) return null;
+  return { level: r.level, studentColour: r.studentColour, moves: r.moves, ending: r.ending };
 }
 
 export function studentMoveCount(moves: readonly unknown[], studentColour: Colour): number {

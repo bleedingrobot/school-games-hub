@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { BotLevel } from '../../shared/chess/botGame';
+import type { BotLevel } from '../../shared/botGame';
 
 export type { BotLevel };
 
