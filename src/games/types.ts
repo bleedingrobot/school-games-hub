@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import type { BotLevel } from '../../shared/botGame';
+import type { FriendSession } from '../multiplayer/useFriendGame';
 
 export type { BotLevel };
 
@@ -23,4 +24,6 @@ export interface GameDefinition {
   Icon: ComponentType<{ size?: number }>;
   /** The game itself, played against a bot. Games without one show "Coming soon". */
   Play?: ComponentType<{ level: BotLevel }>;
+  /** The game against another student, refereed by the server. */
+  Live?: ComponentType<{ session: FriendSession }>;
 }
