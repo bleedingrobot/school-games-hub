@@ -64,6 +64,48 @@ When a chess or checkers game ends, the website sends the list of moves to a sma
 - Unfinished games, and games where the student made fewer than 10 moves, are saved but will **earn nothing** when points arrive in Stage 7.
 - One honest limit: the bot runs in the browser, so a very determined student could fake *the bot's* moves. The server still checks every move is legal. That's why bot games will only ever earn small, capped points and never count towards the competitive rankings.
 
+## Playing a friend
+
+Students tap **Play a friend** on the dashboard (or **Lobby** at the top) and either:
+
+- **Start a game:** pick chess or checkers and a colour (or "Surprise me"). They get a 5-character **game code**, like `KM4 TP`, to read out to a friend. Codes never use vowels or lookalike characters (no O/0, I/1/L, S/5, Z/2 or B/8), and typing them in lower case or with a space is fine. They can also choose **Anyone in the lobby**, which lists the game for everyone to see with just their player name and avatar.
+- **Join a game:** type a friend's code, or tap **Join** next to a game in the lobby.
+
+The game starts the moment someone joins. Then:
+
+- Each move appears on the other screen within about a second (it took 0.3 seconds in testing).
+- **Resign** asks "Are you sure?" first, and counts as a loss.
+- **Offer a draw:** the other player taps Yes or No. Making a move instead also says no. Each player can offer at most 3 draws a game, with at least 5 of their own moves between offers.
+- **The 2-minute rule:** if it's your opponent's turn and they haven't moved for 2 minutes, a **Claim the win** button appears. The server's clock decides, not the device's. Walking away counts as a loss for the one who left.
+- If the other player closes the page or loses Wi-Fi, their card says **away** after a few seconds.
+- At the end, both players see the result. **Rematch** starts a new game with the colours swapped, once both players have pressed it.
+- A waiting game is cancelled after 10 minutes if nobody joins (or straight away with **Cancel**). Each student can have one waiting game at a time.
+
+**Coming back to a game:** reloading the page, closing the Chromebook lid or losing Wi-Fi doesn't lose the game. Unfinished games are shown at the top of the dashboard and in the lobby, with a **Carry on** button. If nobody moves for 30 minutes, the game ends by itself as a loss for the player whose turn it was.
+
+### Why students can't cheat
+
+The website never changes a game itself. It only *asks* a server function called `multiplayer`, which checks the student's sign-in, that it's their game and their turn, that the move is legal (using the same rules code as the bot games), and that the game isn't over. The server alone decides checkmate, every draw rule and every checkers ending. If two requests arrive at the same moment (say, a double-tap), only one gets through. Students can only read the games they're playing in.
+
+Games that were abandoned, or where either player made fewer than 10 moves, are saved but will **earn nothing** when points arrive in Stage 7. Games against friends and bot games are kept apart in the stats, and bot games will never count towards rankings.
+
+### If games against friends misbehave in class
+
+You can switch them off for everyone straight away. The lobby then says "Your teacher has paused games against friends for now", and the server refuses new games and moves. Games already going can still be resigned. Bot games carry on as normal.
+
+1. Log in at supabase.com and open the project.
+2. Go to **SQL Editor**, paste this and click **Run**:
+   `update public.app_settings set multiplayer_enabled = false where id;`
+3. To switch them back on, run the same line with `true` instead of `false`.
+
+(A button for this comes with the teacher screens in Stage 7.)
+
+Other problems:
+
+- **Moves seem slow or stuck:** the page checks for moves every few seconds even if live updates drop, and reloading is always safe. If several students see it at once, Supabase may be having a hiccup; check status.supabase.com.
+- **"We couldn't find a game with that code":** the code may be mistyped, or the game may have already started, been cancelled or waited 10 minutes. Make a new one.
+- **A student keeps leaving games:** each one is recorded as a loss for them, and earns nothing.
+
 ## The pretend data
 
 Points, levels and badges don't exist yet, so the dashboard shows **made-up sample data** for those. Anything made up has a yellow **SAMPLE DATA** badge next to it. The name, avatar, recent games and the chess and checkers stats are real.
@@ -136,11 +178,12 @@ src/              the website
   auth/           sign-in and keeping pages private
   avatar/         avatar parts and drawing
   data/           talking to the database
+  multiplayer/    the shared screen for games against friends, and keeping them up to date
   games/chess/    the chess board, the bots, and the Stockfish connection
   games/checkers/ the checkers board and our own checkers bots
 public/stockfish/ the Stockfish chess engine files and their licence
-shared/           game rules shared with the server (chess and checkers rules, deciding results)
-supabase/         database setup (migrations), its tests, server functions, local settings
+shared/           game rules shared with the server (chess and checkers rules, deciding results, refereeing friend games)
+supabase/         database setup (migrations), its tests, server functions (save-bot-game, multiplayer), local settings
 scripts/          builds the server functions into single files
 docs/             the plan and the original brief
 .github/workflows the automatic test-and-publish steps
@@ -157,7 +200,7 @@ To update a function on the live site without the Supabase CLI:
 1. On GitHub, open `supabase/functions/<name>/index.ts` and click **Copy raw file**.
 2. In Supabase, go to **Edge Functions**, open the function, click **Code**, select everything, paste, then click **Deploy**.
 
-`save-bot-game` must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: the function checks the student's sign-in itself.
+There are two functions: `save-bot-game` (saves bot games) and `multiplayer` (referees games between students). Both must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
 
 ## After the school holidays
 
@@ -173,6 +216,7 @@ The free Supabase plan **pauses a project after a week with nobody using it**. I
 - No tracking, analytics, ads or outside fonts. Everything the site loads comes from this repo.
 - The browser saves the sign-in session and whether sound is on (sound starts off). Signing out clears the session.
 - Names come from word lists, avatars from a fixed set of parts. There's no free typing and no photo uploads.
-- Each saved bot game stores the student's random ID, the bot level, the moves, the result and the time. Nothing else. Deleting a student deletes their games.
+- Each saved bot game stores the student's random ID, the bot level, the moves, the result and the time. Nothing else. Deleting a student deletes their bot games.
+- Each game against a friend stores the two players' random IDs, the game code, the moves, the result and the times. Each player sees the other's player name and avatar, nothing more. There's no chat. If a student is deleted, their opponents keep the game in their history, but nothing in it points back to the deleted student.
 - The chess and checkers bots run on the student's own device. Nothing about their games goes anywhere except our Supabase database.
 - The code is public, so **no passwords or secret keys ever go in it**. Only Supabase's public "publishable" key goes in the website (in `src/config.ts`). It's safe to share because the database rules do the protecting.
