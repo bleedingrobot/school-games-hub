@@ -121,7 +121,7 @@ To add a new game later, you add a folder with its rules, bot and board, plus on
 1. ✅ Inspect and plan (this file)
 2. ✅ Foundation: website shell, look and feel, dashboard with clearly marked sample data, auto-deploy to GitHub Pages (done 15 Oct 2026, live at https://bleedingrobot.github.io/school-games-hub/)
 3. ✅ Sign-in and profiles: Google login, school-only checks, database rules, display names, avatar maker, teacher roles (done 15 Oct 2026: James and students tested sign-in with real school accounts; no extra Workspace admin approval was needed)
-4. Chess vs bots (results saved)
+4. ✅ Chess vs bots, results saved (done 15 Oct 2026: chess.js rules, Stockfish 19 lite in a Web Worker, `bot_games` table, `save-bot-game` server function that replays every move; full games played against all three bots in a browser at Chromebook and tablet sizes)
 5. Checkers vs bots (results saved), then **small student trial**
 6. Multiplayer: lobby, game codes, server-checked moves, reconnecting
 7. Points, badges, ratings, leaderboards, teacher view
@@ -136,4 +136,6 @@ To add a new game later, you add a folder with its rules, bot and board, plus on
 
 - **Google sign-in:** Google Cloud project "School Games Hub" inside the douglaspark.school.nz organisation, consent screen set to **Internal**. Client ID `1082331069721-afm5mligouf44drvkpdb1vlatgqd6tor.apps.googleusercontent.com`. The client secret lives only in Supabase.
 - **Supabase dashboard settings** (not stored in this repo): Google provider on, Email provider off, Site URL and redirect URL set to the GitHub Pages address, and the *Before User Created* hook pointing at `public.hook_before_user_created`.
-- **Database setup:** the first migration was pasted into the SQL Editor on 15 Oct 2026, not pushed with the CLI. Before the first `supabase db push`, run `npx supabase migration repair --status applied 20261015000100` so it isn't applied twice.
+- **Stage 4 server function:** `save-bot-game` is deployed from the dashboard's editor (paste of `supabase/functions/save-bot-game/index.ts`), with **Verify JWT off** because the function checks the sign-in token itself.
+- **Bot results:** games with fewer than 10 student moves, and abandoned games, are saved with `counts_for_points = false`. A student can save at most 300 bot games a day (stops a script flooding the database).
+- **Database setup:** the first migration was pasted into the SQL Editor on 15 Oct 2026, not pushed with the CLI. The Stage 4 migration (`20261015000200_bot_games.sql`) is pasted the same way. Before the first `supabase db push`, run `npx supabase migration repair --status applied 20261015000100 20261015000200` so they aren't applied twice.
