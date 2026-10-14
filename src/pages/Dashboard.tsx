@@ -137,7 +137,7 @@ export function Dashboard() {
 
       {inProgress.length > 0 && (
         <section className="in-progress" aria-label="Games still going">
-          {inProgress.map(({ game, opponent }) => (
+          {inProgress.slice(0, 2).map(({ game, opponent }) => (
             <div key={game.id} className="in-progress__item">
               <AvatarImage avatar={opponent?.avatar} size={48} />
               <p>
@@ -149,6 +149,13 @@ export function Dashboard() {
               </Link>
             </div>
           ))}
+          {inProgress.length > 2 && (
+            <p className="in-progress__more">
+              <Link to="/lobby">
+                {inProgress.length - 2} more game{inProgress.length === 3 ? '' : 's'} still going: see them in the lobby
+              </Link>
+            </p>
+          )}
         </section>
       )}
 

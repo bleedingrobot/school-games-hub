@@ -209,7 +209,7 @@ export function FriendGameScreen({ session, board, rows, alert, note, endings, l
           </p>
         )}
         {canClaim && (
-          <div className="friend-offer" role="group" aria-label="Claim the win">
+          <Prompt label="Claim the win">
             <p>
               {them} hasn’t moved for {clock(waited)}. You can claim the win, or keep waiting.
             </p>
@@ -221,11 +221,11 @@ export function FriendGameScreen({ session, board, rows, alert, note, endings, l
             >
               🏆 Claim the win
             </button>
-          </div>
+          </Prompt>
         )}
 
         {offerFromThem && (
-          <div className="friend-offer" role="group" aria-label="Draw offer">
+          <Prompt label="Draw offer">
             <p>🤝 {them} offers a draw. Do you agree?</p>
             <div className="chess-actions">
               <button
@@ -245,7 +245,7 @@ export function FriendGameScreen({ session, board, rows, alert, note, endings, l
                 No, keep playing
               </button>
             </div>
-          </div>
+          </Prompt>
         )}
         {offerFromMe && <p className="friend-note">You offered a draw. Waiting for {them} to answer…</p>}
 
@@ -343,6 +343,19 @@ function PlayerCard(props: {
         </span>
       </div>
       {props.captured}
+    </div>
+  );
+}
+
+/** Something the student needs to answer. It scrolls into view, so it isn't missed below the board. */
+function Prompt({ label, children }: { label: string; children: ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    box.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+  }, []);
+  return (
+    <div ref={box} className="friend-offer" role="group" aria-label={label}>
+      {children}
     </div>
   );
 }

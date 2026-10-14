@@ -906,15 +906,15 @@ main:focus {
   box-shadow: var(--shadow);
   animation: pop-in 0.3s ease-out both;
 }
-.chess-setup__card .level-picker legend {
+:is(.chess-setup__card, .lobby-grid) .level-picker legend {
   color: var(--ink);
 }
-.chess-setup__card .level-picker__option span {
+:is(.chess-setup__card, .lobby-grid) .level-picker__option span {
   background: #f3f0ff;
   color: var(--ink);
   border: 3px solid #d9d3f5;
 }
-.chess-setup__card .level-picker__option input:checked + span {
+:is(.chess-setup__card, .lobby-grid) .level-picker__option input:checked + span {
   background: var(--brand);
   border-color: var(--brand);
   color: #fff;
@@ -1434,9 +1434,6 @@ main:focus {
   display: grid;
   gap: 14px;
 }
-.lobby-grid .level-picker legend {
-  font-weight: 800;
-}
 .lobby-list {
   list-style: none;
   margin: 0;
@@ -1485,9 +1482,9 @@ main:focus {
   border: 3px solid #cfc6f5;
   border-radius: 16px;
   font: inherit;
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 6vw, 2rem);
   font-weight: 800;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.2em;
   text-align: center;
   text-transform: uppercase;
   font-variant-numeric: tabular-nums;
@@ -1610,6 +1607,10 @@ main:focus {
   border: 3px solid var(--play-dark);
   box-shadow: var(--shadow);
 }
+.in-progress__more {
+  margin: 0;
+  font-weight: 700;
+}
 .in-progress__item p {
   flex: 1;
   margin: 0;
@@ -1637,12 +1638,19 @@ main:focus {
   .chess-game__side > .friend-offer {
     grid-column: 1 / -1;
   }
+  /* On tablets the board fills the screen: put questions for the student right under it. */
+  .chess-game__side > .friend-offer {
+    order: -1;
+  }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .lobby-grid {
     grid-template-columns: 1fr;
   }
+}
+
+@media (max-width: 760px) {
   .in-progress__item {
     flex-wrap: wrap;
   }
