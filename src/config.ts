@@ -8,7 +8,7 @@
 export const SUPABASE_URL: string =
   import.meta.env.VITE_SUPABASE_URL ?? 'https://zqzhetlzvtptnkmeiumi.supabase.co';
 
-export const SUPABASE_PUBLISHABLE_KEY: string = 
+export const SUPABASE_PUBLISHABLE_KEY: string =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? 'sb_publishable_XF2d1vXZaULSdOExwlneAg_p1RCQqmu';
 
 /** Only used as a hint so Google shows school accounts first. The real checks are on the server. */
