@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router';
-import { sampleStudent } from '../dev/sampleData';
-import { Avatar } from './Avatar';
+import { useAuth } from '../auth/AuthContext';
+import { AvatarImage } from '../avatar/AvatarImage';
 import { MuteButton } from './MuteButton';
 
 const NAV = [
@@ -10,6 +10,7 @@ const NAV = [
 ];
 
 export function Layout() {
+  const { profile } = useAuth();
   return (
     <>
       <a className="skip-link" href="#main">
@@ -32,7 +33,7 @@ export function Layout() {
         <div className="topbar__right">
           <MuteButton />
           <NavLink to="/profile" className="topbar__profile" aria-label="My profile">
-            <Avatar colour={sampleStudent.avatarColour} size={44} />
+            <AvatarImage avatar={profile?.avatar} size={44} />
           </NavLink>
         </div>
       </header>

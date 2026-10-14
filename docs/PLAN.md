@@ -120,7 +120,7 @@ To add a new game later, you add a folder with its rules, bot and board, plus on
 
 1. ✅ Inspect and plan (this file)
 2. ✅ Foundation: website shell, look and feel, dashboard with clearly marked sample data, auto-deploy to GitHub Pages (done 15 Oct 2026, live at https://bleedingrobot.github.io/school-games-hub/)
-3. Sign-in and profiles: Google login, school-only checks, database rules, display names, avatar maker, teacher roles
+3. Sign-in and profiles: Google login, school-only checks, database rules, display names, avatar maker, teacher roles (built and live 15 Oct 2026; waiting on a test with a real school account)
 4. Chess vs bots (results saved)
 5. Checkers vs bots (results saved), then **small student trial**
 6. Multiplayer: lobby, game codes, server-checked moves, reconnecting
@@ -131,3 +131,9 @@ To add a new game later, you add a folder with its rules, bot and board, plus on
 
 - A teacher can rename, hide or remove a student, and delete that student's data.
 - The README explains how to wake the site after the holidays, when the free project pauses.
+
+## Setup notes
+
+- **Google sign-in:** Google Cloud project "School Games Hub" inside the douglaspark.school.nz organisation, consent screen set to **Internal**. Client ID `1082331069721-afm5mligouf44drvkpdb1vlatgqd6tor.apps.googleusercontent.com`. The client secret lives only in Supabase.
+- **Supabase dashboard settings** (not stored in this repo): Google provider on, Email provider off, Site URL and redirect URL set to the GitHub Pages address, and the *Before User Created* hook pointing at `public.hook_before_user_created`.
+- **Database setup:** the first migration was pasted into the SQL Editor on 15 Oct 2026, not pushed with the CLI. Before the first `supabase db push`, run `npx supabase migration repair --status applied 20261015000100` so it isn't applied twice.

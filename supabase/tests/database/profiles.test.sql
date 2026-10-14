@@ -2,7 +2,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(37);
+select plan(38);
 
 -- Test people. Inserting into auth.users runs the same sign-up trigger as real sign-in.
 insert into auth.users (id, email) values
@@ -56,6 +56,7 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.s
 select is((select count(*)::int from public.profiles), 3, 'a student sees the other visible profiles');
 select ok((select count(*) from public.name_words) > 50, 'a student can read the name words');
 select matches(public.choose_my_name('Brave', 'Otter'), '^Brave Otter [0-9]+$', 'a student can pick a name from the lists');
+select is(public.choose_my_name('Brave', 'Otter'), (select display_name from public.profiles where id = auth.uid()), 'picking the same words keeps the same number');
 select throws_ok($$ select public.choose_my_name('Poopy', 'Otter') $$, '22023', null, 'words not on the list are refused');
 select lives_ok($$ select public.save_my_avatar('{"face":"round","skin":"#f1c7a5"}') $$, 'a student can save an avatar');
 select throws_ok($$ select public.save_my_avatar('{"face":"I am Ana from Room 5"}') $$, '22023', null, 'free text in an avatar is refused');
