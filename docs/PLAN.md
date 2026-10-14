@@ -39,7 +39,7 @@ So there are three accounts to manage: GitHub (which you already have), Supabase
 
 ## What I need you or the school to do
 
-1. **Tell me the school's Google domain**, for example `myschool.school.nz`. I only need it at Stage 3.
+1. ✅ **The school's Google domain** is `douglaspark.school.nz` (confirmed by James, 15 Oct 2026).
 2. **Talk to your school's Google Workspace admin.** Google blocks students marked as under 18 from signing in to outside apps until an admin approves the app. Without approval they get `Error 400: access_not_configured`. The admin approves it under *Security → API controls → Manage third-party app access*, using the app's Client ID, which I'll give you. If the admin creates the Google sign-in project inside the school's own Google account, Google itself will only let school accounts in.
 3. **Create a free Supabase account.** I'll guide you click by click at Stage 3.
 4. **Get school sign-off on privacy before launch** (see below).
