@@ -1,22 +1,55 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { GameCard } from '../components/GameCard';
 import { SampleBadge } from '../components/SampleBadge';
-import {
-  sampleAchievements,
-  sampleRecentGames,
-  sampleStats,
-  sampleStudent,
-} from '../dev/sampleData';
+import { fetchMyStats, fetchRecentGames, type GameStats, type SavedGame } from '../data/botGames';
+import { sampleAchievements, sampleStats, sampleStudent } from '../dev/sampleData';
 import { findGame, GAMES } from '../games/registry';
 import { BOT_LEVELS, type BotLevel } from '../games/types';
 
 const RESULT_LABEL = { won: 'Won', lost: 'Lost', drawn: 'Draw' } as const;
 
+/** "Today", "Yesterday", "Monday", or a date, in the student's own time zone. */
+export function whenPlayed(iso: string, now = new Date()): string {
+  const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const then = new Date(iso);
+  const daysAgo = Math.round((day(now) - day(then)) / 86_400_000);
+  if (daysAgo <= 0) return 'Today';
+  if (daysAgo === 1) return 'Yesterday';
+  if (daysAgo < 7) return then.toLocaleDateString('en-NZ', { weekday: 'long' });
+  return then.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
+}
+
+function botName(level: string) {
+  return `${BOT_LEVELS.find((l) => l.id === level)?.label ?? ''} bot`;
+}
+
+/** The student's real saved games and stats. */
+function useMyGames() {
+  const [recent, setRecent] = useState<SavedGame[] | null>(null);
+  const [stats, setStats] = useState<GameStats[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let current = true;
+    Promise.all([fetchRecentGames(5), fetchMyStats()])
+      .then(([games, totals]) => {
+        if (!current) return;
+        setRecent(games);
+        setStats(totals);
+      })
+      .catch(() => current && setFailed(true));
+    return () => {
+      current = false;
+    };
+  }, []);
+  return { recent, stats, failed };
+}
+
 export function Dashboard() {
   const { profile } = useAuth();
+  const { recent, stats, failed } = useMyGames();
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
@@ -93,24 +126,33 @@ export function Dashboard() {
       <div className="panel-grid">
         <section className="panel" aria-labelledby="recent-title">
           <h2 id="recent-title" className="panel__title">
-            Recent games <SampleBadge />
+            Recent games
           </h2>
-          <ul className="recent-list">
-            {sampleRecentGames.map((g) => (
-              <li key={g.id}>
-                <span className={`result result--${g.result}`}>{RESULT_LABEL[g.result]}</span>
-                <span className="recent-list__what">
-                  {findGame(g.gameId)?.name} vs {g.opponent}
-                </span>
-                <span className="recent-list__when">{g.when}</span>
-              </li>
-            ))}
-          </ul>
+          {failed ? (
+            <p className="panel__empty">We couldn’t load your games just now.</p>
+          ) : !recent ? (
+            <p className="panel__empty">Loading…</p>
+          ) : recent.length === 0 ? (
+            <p className="panel__empty">No games yet. Press Play to start your first one!</p>
+          ) : (
+            <ul className="recent-list">
+              {recent.map((g) => (
+                <li key={g.id}>
+                  <span className={`result result--${g.result}`}>{RESULT_LABEL[g.result]}</span>
+                  <span className="recent-list__what">
+                    {findGame(g.game)?.name} vs {botName(g.bot_level)}
+                    {g.reason === 'abandoned' && <span className="recent-list__note"> (left early)</span>}
+                  </span>
+                  <span className="recent-list__when">{whenPlayed(g.finished_at)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section className="panel" aria-labelledby="stats-title">
           <h2 id="stats-title" className="panel__title">
-            My stats <SampleBadge />
+            My stats
           </h2>
           <table className="stats-table">
             <thead>
@@ -124,15 +166,22 @@ export function Dashboard() {
             </thead>
             <tbody>
               {GAMES.map((game) => {
-                const s = sampleStats[game.id as keyof typeof sampleStats];
+                // Games you can play use real numbers; the others still show sample ones.
+                const real = !!game.Play;
+                const s = real
+                  ? (stats?.find((row) => row.game === game.id) ?? { played: 0, won: 0, lost: 0, drawn: 0 })
+                  : sampleStats[game.id as keyof typeof sampleStats];
                 if (!s) return null;
+                const show = (n: number) => (real && !stats ? '–' : n);
                 return (
                   <tr key={game.id}>
-                    <th scope="row">{game.name}</th>
-                    <td>{s.played}</td>
-                    <td>{s.won}</td>
-                    <td>{s.lost}</td>
-                    <td>{s.drawn}</td>
+                    <th scope="row">
+                      {game.name} {!real && <SampleBadge />}
+                    </th>
+                    <td>{show(s.played)}</td>
+                    <td>{show(s.won)}</td>
+                    <td>{show(s.lost)}</td>
+                    <td>{show(s.drawn)}</td>
                   </tr>
                 );
               })}
@@ -140,7 +189,7 @@ export function Dashboard() {
           </table>
           <p className="level-line">
             Level {sampleStudent.level} — {sampleStudent.pointsToNextLevel} points to level{' '}
-            {sampleStudent.level + 1}
+            {sampleStudent.level + 1} <SampleBadge />
           </p>
         </section>
 
