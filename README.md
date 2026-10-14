@@ -4,7 +4,7 @@ A chess and checkers website for Year 4–6 students. Students will sign in with
 
 **Live site:** https://bleedingrobot.github.io/school-games-hub/
 
-**Where it's up to:** Stages 1–4 of 8 are done. Students sign in with their Douglas Park Google account, pick a safe player name, build an avatar, and play chess against three bots. Every finished chess game is checked by the server and saved. Checkers, playing each other, and points come in later stages; those pages say "Coming soon". The full plan is in [docs/PLAN.md](docs/PLAN.md).
+**Where it's up to:** Stages 1–5 of 8 are done. Students sign in with their Douglas Park Google account, pick a safe player name, build an avatar, and play chess or checkers against three bots. Every finished game is checked by the server and saved. Playing each other, and points, come in later stages; those pages say "Coming soon". The full plan is in [docs/PLAN.md](docs/PLAN.md). Before the first student trial, use [docs/STUDENT-TRIAL.md](docs/STUDENT-TRIAL.md).
 
 ## How sign-in stays school-only
 
@@ -32,9 +32,32 @@ Students pick a bot and a colour, then tap a piece and tap a dot to move. The bo
 
 **Stockfish** is a free, open-source chess engine. It runs inside the student's browser (so it costs nothing), and its files are part of this website, in `public/stockfish/`. To make a bot easier or harder, change `BOT_SETTINGS` in [src/games/chess/bot.ts](src/games/chess/bot.ts). The bot waits about a second before moving so it feels natural.
 
+## Checkers against the bots
+
+This is English checkers (also called American checkers or draughts) on an 8×8 board. It's **not** international draughts, which has a bigger board and "flying" kings.
+
+- Red goes first (the official rules call that side "Black"; on most boards those pieces are red). Each student plays from their own side, with their pieces at the bottom.
+- Pieces move one square diagonally forwards. Reaching the far side makes a **king** (it gets a crown), which can also move backwards.
+- **If you can jump, you must.** The pieces that can jump glow, and a note says why the others can't move. If a piece can keep jumping, it must, and the whole jump is one move. A piece crowned part-way through a jump stops there.
+- Multi-jumps: tap the piece, then each landing square. If there's only one way to go, one tap does the whole jump.
+- You win by capturing all the other side's pieces, or by blocking them so they can't move. After 40 moves each with no capture and no new king, it's a draw.
+- The little numbers on the dark squares are the standard checkers square numbers (1–32). The move list uses them, e.g. "11 – 15", or "15 × 24" for a jump.
+
+There's no well-tested library for English checkers, so we wrote the rules ourselves in [shared/checkers/rules.ts](shared/checkers/rules.ts), with thorough tests next to them.
+
+The checkers bots are our own too. They "look ahead": try each move, then each reply, and so on, and pick the move that leads to the best position. They run in a Web Worker inside the student's browser, so they cost nothing and the page never freezes.
+
+| Bot | What it does |
+|---|---|
+| **Very Easy** | Looks 1 move ahead, with lots of randomness. Often blunders. |
+| **Easy** | Looks 3 moves ahead, with a little randomness. Spots simple jumps. |
+| **Medium** | Looks 6 moves ahead (up to 8 when there's time) and always follows a jump to the end. |
+
+To make a bot easier or harder, change `BOT_SETTINGS` in [src/games/checkers/bot.ts](src/games/checkers/bot.ts). The tests check each level beats the one below it.
+
 ### How results are saved (and why they can't be faked)
 
-When a game ends, the website sends the list of moves to a small **server function** called `save-bot-game`. The server replays every move with the same chess rules, decides who won by itself, and only then saves the game. It ignores what the browser *says* the result was. Students can see only their own games.
+When a chess or checkers game ends, the website sends the list of moves to a small **server function** called `save-bot-game`. The server replays every move with the same rules (chess.js for chess, our checkers rules for checkers), decides who won by itself, and only then saves the game. It ignores what the browser *says* the result was. Students can see only their own games.
 
 - Resigning counts as a loss.
 - Leaving a game part-way through (closing the tab, going back home, or pressing New game) is saved as **unfinished**, and counts as a loss.
@@ -43,7 +66,7 @@ When a game ends, the website sends the list of moves to a small **server functi
 
 ## The pretend data
 
-Points, levels, badges and checkers results don't exist yet, so the dashboard shows **made-up sample data** for those. Anything made up has a yellow **SAMPLE DATA** badge next to it. The name, avatar, recent games and chess stats are real.
+Points, levels and badges don't exist yet, so the dashboard shows **made-up sample data** for those. Anything made up has a yellow **SAMPLE DATA** badge next to it. The name, avatar, recent games and the chess and checkers stats are real.
 
 All of it lives in one file: [src/dev/sampleData.ts](src/dev/sampleData.ts). It gets deleted once real data takes over.
 
@@ -114,8 +137,9 @@ src/              the website
   avatar/         avatar parts and drawing
   data/           talking to the database
   games/chess/    the chess board, the bots, and the Stockfish connection
+  games/checkers/ the checkers board and our own checkers bots
 public/stockfish/ the Stockfish chess engine files and their licence
-shared/           game rules shared with the server (chess.js rules, deciding results)
+shared/           game rules shared with the server (chess and checkers rules, deciding results)
 supabase/         database setup (migrations), its tests, server functions, local settings
 scripts/          builds the server functions into single files
 docs/             the plan and the original brief
@@ -126,7 +150,7 @@ docs/             the plan and the original brief
 
 ## Server functions (Supabase Edge Functions)
 
-Server functions live in `supabase/functions/`. Each one has a `handler.ts` (the logic, with tests) and an `index.ts`, which is **generated**: it's the single file that gets deployed. After changing a handler, or the chess rules in `shared/`, run `npm run build:functions`. A test fails if you forget.
+Server functions live in `supabase/functions/`. Each one has a `handler.ts` (the logic, with tests) and an `index.ts`, which is **generated**: it's the single file that gets deployed. After changing a handler, or the rules in `shared/`, run `npm run build:functions`. A test fails if you forget.
 
 To update a function on the live site without the Supabase CLI:
 
@@ -142,7 +166,7 @@ The free Supabase plan **pauses a project after a week with nobody using it**. I
 ## Licences
 
 - **Stockfish** (the chess engine) is GPL version 3. Its licence and a link to its source code sit next to it in [public/stockfish/](public/stockfish/NOTICE.md). Keep them there if Stockfish is updated.
-- **chess.js** is BSD-2-Clause. **Chess piece pictures** are Colin M.L. Burnett's "cburnett" set, GPL ([notice](src/games/chess/pieces/NOTICE.md)).
+- **chess.js** is BSD-2-Clause. The checkers rules and bots are our own code. **Chess piece pictures** are Colin M.L. Burnett's "cburnett" set, GPL ([notice](src/games/chess/pieces/NOTICE.md)).
 
 ## Privacy and safety so far
 
@@ -150,5 +174,5 @@ The free Supabase plan **pauses a project after a week with nobody using it**. I
 - The browser saves the sign-in session and whether sound is on (sound starts off). Signing out clears the session.
 - Names come from word lists, avatars from a fixed set of parts. There's no free typing and no photo uploads.
 - Each saved bot game stores the student's random ID, the bot level, the moves, the result and the time. Nothing else. Deleting a student deletes their games.
-- The chess engine runs on the student's own device. Nothing about their games goes anywhere except our Supabase database.
+- The chess and checkers bots run on the student's own device. Nothing about their games goes anywhere except our Supabase database.
 - The code is public, so **no passwords or secret keys ever go in it**. Only Supabase's public "publishable" key goes in the website (in `src/config.ts`). It's safe to share because the database rules do the protecting.
