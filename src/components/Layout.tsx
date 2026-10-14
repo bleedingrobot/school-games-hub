@@ -24,7 +24,7 @@ export function Layout() {
           <span>Games Hub</span>
         </NavLink>
         <nav aria-label="Main" className="topnav">
-          {NAV.map((item) => (
+          {[...NAV, ...(profile?.role === 'teacher' ? [{ to: '/teacher', label: 'Teacher', emoji: '🧑‍🏫' }] : [])].map((item) => (
             <NavLink key={item.to} to={item.to} end className="topnav__link">
               <span aria-hidden="true">{item.emoji}</span> {item.label}
             </NavLink>
