@@ -17,7 +17,8 @@ import { refreshSaveToken, saveAbandonedGame, saveBotGame } from '../../data/bot
 import { FriendlyError } from '../../data/profile';
 import { useSound } from '../../sound';
 import { BOT_LEVELS, type BotLevel } from '../types';
-import { Board, pieceImage } from './Board';
+import { Board } from './Board';
+import { Captured, figurine } from './moveText';
 import { BOT_DESCRIPTIONS, chooseBotMove, randomishMove, type ChessEngine } from './bot';
 import { playSound, type GameSound } from '../sounds';
 import { startBrowserStockfish } from './stockfish';
@@ -67,12 +68,6 @@ function lastMoveOf(chess: Chess) {
   const history = chess.history({ verbose: true });
   const last = history[history.length - 1];
   return last ? { from: last.from, to: last.to } : null;
-}
-
-/** "Nf3" becomes "♘f3", which is easier to read for children. */
-function figurine(san: string, colour: 'w' | 'b') {
-  const symbols = colour === 'w' ? { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘' } : { K: '♚', Q: '♛', R: '♜', B: '♝', N: '♞' };
-  return san.replace(/[KQRBN]/g, (letter) => symbols[letter as keyof typeof symbols]);
 }
 
 export function ChessPlay({ level }: { level: BotLevel }) {
@@ -443,16 +438,5 @@ export function ChessPlay({ level }: { level: BotLevel }) {
         </section>
       </aside>
     </div>
-  );
-}
-
-function Captured({ pieces, who }: { pieces: { type: string; colour: string }[]; who: string }) {
-  if (pieces.length === 0) return null;
-  return (
-    <span className="captured" aria-label={`${who} captured ${pieces.length} piece${pieces.length === 1 ? '' : 's'}`}>
-      {pieces.map((p, i) => (
-        <img key={i} src={pieceImage(p.colour as 'w' | 'b', p.type)} alt="" />
-      ))}
-    </span>
   );
 }
