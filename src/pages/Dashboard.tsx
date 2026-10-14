@@ -5,7 +5,7 @@ import { AvatarImage } from '../avatar/AvatarImage';
 import { GameCard } from '../components/GameCard';
 import { SampleBadge } from '../components/SampleBadge';
 import { fetchMyStats, fetchRecentGames, type GameStats, type SavedGame } from '../data/botGames';
-import { sampleAchievements, sampleStats, sampleStudent } from '../dev/sampleData';
+import { sampleAchievements, sampleStudent } from '../dev/sampleData';
 import { findGame, GAMES } from '../games/registry';
 import { BOT_LEVELS, type BotLevel } from '../games/types';
 
@@ -166,18 +166,11 @@ export function Dashboard() {
             </thead>
             <tbody>
               {GAMES.map((game) => {
-                // Games you can play use real numbers; the others still show sample ones.
-                const real = !!game.Play;
-                const s = real
-                  ? (stats?.find((row) => row.game === game.id) ?? { played: 0, won: 0, lost: 0, drawn: 0 })
-                  : sampleStats[game.id as keyof typeof sampleStats];
-                if (!s) return null;
-                const show = (n: number) => (real && !stats ? '–' : n);
+                const s = stats?.find((row) => row.game === game.id) ?? { played: 0, won: 0, lost: 0, drawn: 0 };
+                const show = (n: number) => (stats ? n : '–');
                 return (
                   <tr key={game.id}>
-                    <th scope="row">
-                      {game.name} {!real && <SampleBadge />}
-                    </th>
+                    <th scope="row">{game.name}</th>
                     <td>{show(s.played)}</td>
                     <td>{show(s.won)}</td>
                     <td>{show(s.lost)}</td>

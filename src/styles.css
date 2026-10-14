@@ -1065,6 +1065,104 @@ main:focus {
   color: #f6f4ff;
 }
 
+/* ---------- Checkers pieces and highlights ---------- */
+
+.board--checkers {
+  border-color: #3d5a2e;
+}
+.board--checkers .board__square.is-light {
+  background: #f4efe2;
+}
+.board--checkers .board__square.is-dark {
+  background: #6e8f5a;
+}
+.board__number {
+  position: absolute;
+  z-index: 2;
+  top: 3px;
+  left: 4px;
+  font-size: clamp(0.55rem, 1.2vw, 0.72rem);
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.8);
+  pointer-events: none;
+}
+.checker {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 78%;
+  height: 78%;
+  border-radius: 50%;
+  pointer-events: none;
+  transition: transform 0.1s ease;
+}
+.checker--red {
+  background: radial-gradient(circle at 35% 30%, #ff6b6b 0%, #d62839 55%, #9e1426 100%);
+  box-shadow: 0 4px 0 #6b0d1a, inset 0 0 0 4px rgba(255, 255, 255, 0.18);
+}
+.checker--white {
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #f1ead8 55%, #cfc4a6 100%);
+  box-shadow: 0 4px 0 #8f8466, inset 0 0 0 4px rgba(0, 0, 0, 0.06);
+}
+.checker__crown {
+  font-size: clamp(1rem, 4.2vw, 2.1rem);
+  line-height: 1;
+  color: #ffd23f;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+}
+.checker--white .checker__crown {
+  color: #d99a00;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.checker.is-taken {
+  opacity: 0.35;
+}
+.board__square.is-selected .checker {
+  transform: scale(1.1);
+}
+.board--checkers .board__square.is-selected::before {
+  background: rgba(255, 196, 0, 0.75);
+}
+.board__square.is-must-jump .checker {
+  outline: 5px solid #ffd23f;
+  outline-offset: 2px;
+  animation: must-jump 1.1s ease-in-out infinite;
+}
+@keyframes must-jump {
+  50% {
+    outline-color: #fff6c8;
+  }
+}
+.board__square.is-must-jump,
+.board__square.is-jump-target {
+  cursor: pointer;
+}
+.board__square.is-jump-target::after {
+  content: '';
+  position: absolute;
+  width: 42%;
+  height: 42%;
+  border-radius: 50%;
+  border: 5px solid #ffd23f;
+  background: rgba(255, 210, 63, 0.35);
+}
+.board--checkers .board__square.is-target::after {
+  width: 34%;
+  height: 34%;
+  background: rgba(255, 255, 255, 0.55);
+}
+.checker--small {
+  width: 18px;
+  height: 18px;
+  margin-right: -4px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+.chess-setup__help p {
+  margin: 0 0 6px;
+}
+
 .promotion,
 .chess-result {
   position: absolute;

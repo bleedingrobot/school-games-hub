@@ -1,4 +1,8 @@
+import { lazy } from 'react';
 import type { GameDefinition } from '../types';
+
+// Loaded only when someone opens the checkers page, so the dashboard stays quick.
+const CheckersPlay = lazy(() => import('./CheckersPlay').then((m) => ({ default: m.CheckersPlay })));
 
 function CheckersIcon({ size = 64 }: { size?: number }) {
   return (
@@ -18,4 +22,5 @@ export const checkers: GameDefinition = {
   tagline: 'Jump, capture, get crowned!',
   colours: ['#c2253a', '#b8401a'],
   Icon: CheckersIcon,
+  Play: CheckersPlay,
 };

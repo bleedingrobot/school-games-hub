@@ -1,7 +1,14 @@
-import type { BotGameReport, Outcome, Reason } from '../../shared/chess/botGame';
+import type { Outcome } from '../../shared/botGame';
+import type { BotGameReport, Reason as ChessReason } from '../../shared/chess/botGame';
+import type { CheckersGameReport, Reason as CheckersReason } from '../../shared/checkers/botGame';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
 import { FriendlyError } from './profile';
+
+/** A finished game to send to the server, saying which game it is. */
+export type SaveableReport = (BotGameReport & { game: 'chess' }) | (CheckersGameReport & { game: 'checkers' });
+
+export type Reason = ChessReason | CheckersReason;
 
 export interface SavedGame {
   id: string;
@@ -28,7 +35,7 @@ export async function refreshSaveToken(): Promise<void> {
   latestToken = data.session?.access_token ?? null;
 }
 
-function send(report: BotGameReport, token: string, keepalive: boolean) {
+function send(report: SaveableReport, token: string, keepalive: boolean) {
   return fetch(`${SUPABASE_URL}/functions/v1/save-bot-game`, {
     method: 'POST',
     keepalive,
@@ -42,7 +49,7 @@ function send(report: BotGameReport, token: string, keepalive: boolean) {
 }
 
 /** Sends a finished game to the server, which checks it and saves it. */
-export async function saveBotGame(report: BotGameReport): Promise<void> {
+export async function saveBotGame(report: SaveableReport): Promise<void> {
   await refreshSaveToken();
   if (!latestToken) throw new FriendlyError('Please sign in again to save your games.');
   let response: Response;
@@ -57,7 +64,7 @@ export async function saveBotGame(report: BotGameReport): Promise<void> {
 }
 
 /** Records a game the student walked away from. Works even while the page is closing. */
-export function saveAbandonedGame(report: BotGameReport): void {
+export function saveAbandonedGame(report: SaveableReport): void {
   if (!latestToken) return;
   send(report, latestToken, true).catch(() => {
     // Nothing more we can do while the page is going away.
