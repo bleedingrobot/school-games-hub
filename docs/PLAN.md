@@ -94,13 +94,39 @@ docs/           this plan and the README guides
 
 To add a new game later, you add a folder with its rules, bot and board, plus one line registering it. Nothing else needs rebuilding.
 
+## Decisions made (15 Oct 2026)
+
+- **Size:** under 100 students, one class at a time, so we stay well inside the free limits.
+- **Multiplayer:** students can share a **game code** with a friend, or join an **open lobby** that lists waiting games.
+- **Teachers:** there's a teacher view for James plus a few other teachers. James can give other staff accounts teacher access. Teachers can:
+  - rename or hide a student
+  - remove a student and delete their data
+  - do an end-of-year cleanup
+  - switch multiplayer off for everyone
+- **Leaderboards:** whole school, but students see only the top 10 plus their own position. Ranks show as badges (Bronze → Silver → Gold → Champion) rather than numbers. There's also a "most improved this week" list. Weeks run on New Zealand time.
+- **Safety rules:**
+  - Display names are picked from safe word lists (e.g. "Speedy Otter 27"), with no free typing.
+  - A mute button, with sound off by default.
+  - If a player doesn't move for 2 minutes, their opponent can claim the win.
+  - An "offer a draw" button.
+  - Checkers is a draw after 40 moves each with no capture and no new king.
+- **Google admin:** the school's admin has agreed in principle to approve the app. Once sign-in exists (Stage 3), they'll need the Client ID.
+- **Trial:** a small student trial of sign-in and bot games after Stage 5, before multiplayer is built.
+- **Bot results** are saved from Stage 4 onwards, so no games are lost when points arrive in Stage 7.
+- **Repo:** public GitHub repo `bleedingrobot/school-games-hub`, hosted on GitHub Pages.
+
 ## Stages
 
 1. ✅ Inspect and plan (this file)
 2. Foundation: website shell, look and feel, dashboard with clearly marked sample data, auto-deploy to GitHub Pages
-3. Sign-in and profiles: Google login, school-only checks, database rules, display names, avatar maker
-4. Chess vs bots
-5. Checkers vs bots
+3. Sign-in and profiles: Google login, school-only checks, database rules, display names, avatar maker, teacher roles
+4. Chess vs bots (results saved)
+5. Checkers vs bots (results saved), then **small student trial**
 6. Multiplayer: lobby, game codes, server-checked moves, reconnecting
-7. Points, badges, ratings, leaderboards
+7. Points, badges, ratings, leaderboards, teacher view
 8. Deploy and school testing
+
+## Definition of done — additions to the brief
+
+- A teacher can rename, hide or remove a student, and delete that student's data.
+- The README explains how to wake the site after the holidays, when the free project pauses.
