@@ -2,19 +2,17 @@
  * ⚠️  DEVELOPMENT-ONLY SAMPLE DATA  ⚠️
  *
  * Everything in this file is made up, so the dashboard has something to show
- * before sign-in and the database exist. The UI marks it with a "Sample data" badge.
+ * before results and points exist. The UI marks it with a "Sample data" badge.
  *
- * Delete this file once real data arrives (profile in Stage 3, results in
- * Stages 4-5, points and badges in Stage 7). The type checker will then point
- * at every place that still uses it.
+ * Delete this file once real data arrives (results in Stages 4-5, points and
+ * badges in Stage 7). The type checker will then point at every place that
+ * still uses it. The student's name and avatar are already real (Stage 3).
  */
 import type { BotLevel } from '../games/types';
 
 export const IS_SAMPLE_DATA = true;
 
 export const sampleStudent = {
-  displayName: 'Speedy Otter 27',
-  avatarColour: '#2bb3a3',
   rankBadge: 'Silver' as const,
   points: 340,
   level: 4,

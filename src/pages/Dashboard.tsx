@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Avatar } from '../components/Avatar';
+import { useAuth } from '../auth/AuthContext';
+import { AvatarImage } from '../avatar/AvatarImage';
 import { GameCard } from '../components/GameCard';
 import { SampleBadge } from '../components/SampleBadge';
 import {
@@ -15,6 +16,7 @@ import { BOT_LEVELS, type BotLevel } from '../games/types';
 const RESULT_LABEL = { won: 'Won', lost: 'Lost', drawn: 'Draw' } as const;
 
 export function Dashboard() {
+  const { profile } = useAuth();
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
@@ -25,16 +27,18 @@ export function Dashboard() {
   return (
     <div className="dashboard">
       <section className="hero" aria-labelledby="hero-title">
-        <Avatar colour={sampleStudent.avatarColour} size={120} />
+        <Link to="/profile" className="hero__avatar" aria-label="Change my avatar">
+          <AvatarImage avatar={profile?.avatar} size={120} />
+        </Link>
         <div className="hero__text">
           <p className="hero__hello">Kia ora,</p>
-          <h1 id="hero-title">{sampleStudent.displayName}</h1>
-          <p className="hero__meta">
+          <h1 id="hero-title">{profile?.display_name}</h1>
+          <div className="hero__meta">
             <span className="rank-badge">🥈 {sampleStudent.rankBadge}</span>
             <span>Level {sampleStudent.level}</span>
             <span>{sampleStudent.points} points</span>
             <SampleBadge />
-          </p>
+          </div>
         </div>
         <div className="hero__play">
           <Link className="button button--play" to={`/${featuredGame.id}?bot=${featuredLevel.id}`}>

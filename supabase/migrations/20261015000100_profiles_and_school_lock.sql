@@ -263,6 +263,12 @@ declare
   new_name text;
 begin
   perform public.require_school_user();
+  -- Same two words as now? Keep the current number.
+  select display_name into new_name from public.profiles
+  where id = auth.uid() and display_name like adjective || ' ' || animal || ' %';
+  if new_name is not null then
+    return new_name;
+  end if;
   new_name := public.pick_display_name(adjective, animal);
   update public.profiles set display_name = new_name where id = auth.uid();
   return new_name;
