@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
+import type { BotLevel } from '../../shared/chess/botGame';
 
-export type BotLevel = 'very-easy' | 'easy' | 'medium';
+export type { BotLevel };
 
 export const BOT_LEVELS: { id: BotLevel; label: string; hint: string }[] = [
   { id: 'very-easy', label: 'Very Easy', hint: 'Makes lots of mistakes' },
@@ -20,4 +21,6 @@ export interface GameDefinition {
   /** Card colours: a two-stop gradient that keeps white text readable. */
   colours: [string, string];
   Icon: ComponentType<{ size?: number }>;
+  /** The game itself, played against a bot. Games without one show "Coming soon". */
+  Play?: ComponentType<{ level: BotLevel }>;
 }

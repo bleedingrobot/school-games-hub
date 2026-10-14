@@ -13,6 +13,17 @@ vi.mock('./data/profile', async (importOriginal) => ({
   saveMyAvatar: vi.fn(async () => {}),
 }));
 
+vi.mock('./data/botGames', () => ({
+  fetchRecentGames: vi.fn(async () => [
+    { id: 'g1', game: 'chess', bot_level: 'medium', result: 'won', reason: 'checkmate', finished_at: new Date().toISOString() },
+    { id: 'g2', game: 'chess', bot_level: 'easy', result: 'lost', reason: 'abandoned', finished_at: '2020-03-02T01:00:00Z' },
+  ]),
+  fetchMyStats: vi.fn(async () => [{ game: 'chess', played: 2, won: 1, lost: 1, drawn: 0 }]),
+  saveBotGame: vi.fn(async () => {}),
+  saveAbandonedGame: vi.fn(),
+  refreshSaveToken: vi.fn(async () => {}),
+}));
+
 const signedIn: AuthState = {
   status: 'signed-in',
   profile: { id: 'u1', display_name: 'Speedy Otter 27', avatar: {}, role: 'student' },
@@ -48,6 +59,20 @@ describe('dashboard', () => {
     expect(screen.getAllByText('Sample data').length).toBeGreaterThanOrEqual(3);
   });
 
+  it('shows real recent chess games and stats', async () => {
+    renderAt('/');
+    const recent = screen.getByRole('region', { name: 'Recent games' });
+    expect(await within(recent).findByText('Chess vs Medium bot')).toBeInTheDocument();
+    expect(within(recent).getByText('Today')).toBeInTheDocument();
+    expect(within(recent).getByText('(left early)')).toBeInTheDocument();
+    expect(within(recent).queryByText('Sample data')).not.toBeInTheDocument();
+
+    const chessRow = screen.getByRole('row', { name: /^Chess/ });
+    expect(within(chessRow).getAllByRole('cell').map((c) => c.textContent)).toEqual(['2', '1', '1', '0']);
+    expect(within(chessRow).queryByText('Sample data')).not.toBeInTheDocument();
+    expect(within(screen.getByRole('row', { name: /^Checkers/ })).getByText('Sample data')).toBeInTheDocument();
+  });
+
   it('links to the lobby and leaderboard', () => {
     renderAt('/');
     expect(screen.getByRole('link', { name: /Play a friend/ })).toHaveAttribute('href', '/lobby');
@@ -70,7 +95,6 @@ describe('dashboard', () => {
 
 describe('pages', () => {
   it.each([
-    ['/chess?bot=very-easy', 'Chess'],
     ['/checkers', 'Checkers'],
     ['/lobby', 'Lobby'],
     ['/leaderboard', 'Leaderboard'],
@@ -82,12 +106,19 @@ describe('pages', () => {
   });
 
   it('shows the bot level picked on the dashboard', () => {
-    renderAt('/chess?bot=very-easy');
+    renderAt('/checkers?bot=very-easy');
     expect(screen.getByText('Very Easy')).toBeInTheDocument();
   });
 
+  it('opens chess ready to play the bot picked on the dashboard', async () => {
+    renderAt('/chess?bot=medium');
+    expect(await screen.findByRole('heading', { level: 1, name: /Chess vs bot/ })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Medium' })).toBeChecked();
+    expect(screen.getByRole('button', { name: /Start game/ })).toBeInTheDocument();
+  });
+
   it('falls back to Easy for a made-up bot level', () => {
-    renderAt('/chess?bot=impossible');
+    renderAt('/checkers?bot=impossible');
     expect(screen.getByText('Easy')).toBeInTheDocument();
   });
 

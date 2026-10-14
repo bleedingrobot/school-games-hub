@@ -14,5 +14,6 @@
     "noEmit": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "shared", "vite.config.ts"]
+  "include": ["src", "shared", "supabase/functions", "vite.config.ts"],
+  "exclude": ["supabase/functions/*/index.ts"]
 }
