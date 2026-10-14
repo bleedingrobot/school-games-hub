@@ -28,6 +28,28 @@ vi.mock('./data/botGames', () => ({
   refreshSaveToken: vi.fn(async () => {}),
 }));
 
+vi.mock('./data/multiplayer', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./data/multiplayer')>()),
+  fetchRecentFriendGames: vi.fn(async () => [
+    {
+      id: 'f1', game: 'checkers', first_player: 'u1', second_player: 'u2', status: 'finished', winner: 'first',
+      reason: 'no-pieces', finished_at: new Date(Date.now() - 1000).toISOString(), created_at: '2020-01-01T00:00:00Z',
+    },
+  ]),
+  fetchFriendStats: vi.fn(async () => [{ game: 'checkers', played: 4, won: 2, lost: 1, drawn: 1 }]),
+  fetchMyOpenGames: vi.fn(async () => [
+    { id: 'f2', game: 'chess', first_player: 'u3', second_player: 'u1', status: 'playing', created_at: '2020-01-01T00:00:00Z' },
+  ]),
+  fetchPlayerCards: vi.fn(async () =>
+    new Map([
+      ['u2', { id: 'u2', display_name: 'Brave Kiwi 7', avatar: {} }],
+      ['u3', { id: 'u3', display_name: 'Lucky Tui 12', avatar: {} }],
+    ]),
+  ),
+  fetchLobby: vi.fn(async () => []),
+  fetchMultiplayerEnabled: vi.fn(async () => true),
+}));
+
 const signedIn: AuthState = {
   status: 'signed-in',
   profile: { id: 'u1', display_name: 'Speedy Otter 27', avatar: {}, role: 'student' },
@@ -67,17 +89,38 @@ describe('dashboard', () => {
     renderAt('/');
     const recent = screen.getByRole('region', { name: 'Recent games' });
     expect(await within(recent).findByText('Chess vs Medium bot')).toBeInTheDocument();
-    expect(within(recent).getByText('Today')).toBeInTheDocument();
+    expect(within(recent).getAllByText('Today')).toHaveLength(2);
     expect(within(recent).getByText('(left early)')).toBeInTheDocument();
-    expect(within(recent).getByText('Checkers vs Very Easy bot')).toBeInTheDocument();
+    expect(within(recent).queryByText('Checkers vs Very Easy bot')).toBeInTheDocument();
     expect(within(recent).queryByText('Sample data')).not.toBeInTheDocument();
 
-    const chessRow = screen.getByRole('row', { name: /^Chess/ });
+    const bots = screen.getByRole('table', { name: 'Against bots' });
+    const chessRow = within(bots).getByRole('row', { name: /^Chess/ });
     expect(within(chessRow).getAllByRole('cell').map((c) => c.textContent)).toEqual(['2', '1', '1', '0']);
     expect(within(chessRow).queryByText('Sample data')).not.toBeInTheDocument();
-    const checkersRow = screen.getByRole('row', { name: /^Checkers/ });
+    const checkersRow = within(bots).getByRole('row', { name: /^Checkers/ });
     expect(within(checkersRow).getAllByRole('cell').map((c) => c.textContent)).toEqual(['1', '0', '0', '1']);
-    expect(within(checkersRow).queryByText('Sample data')).not.toBeInTheDocument();
+  });
+
+  it('shows games against friends, kept apart from bot games', async () => {
+    renderAt('/');
+    const recent = screen.getByRole('region', { name: 'Recent games' });
+    const friendGame = (await within(recent).findByText('Brave Kiwi 7', { exact: false })).closest('li')!;
+    expect(friendGame).toHaveTextContent('Won');
+    expect(friendGame).toHaveTextContent('Checkers vs');
+
+    const friends = screen.getByRole('table', { name: 'Against friends' });
+    const checkersRow = within(friends).getByRole('row', { name: /^Checkers/ });
+    expect(within(checkersRow).getAllByRole('cell').map((c) => c.textContent)).toEqual(['4', '2', '1', '1']);
+    const chessRow = within(friends).getByRole('row', { name: /^Chess/ });
+    expect(within(chessRow).getAllByRole('cell').map((c) => c.textContent)).toEqual(['0', '0', '0', '0']);
+  });
+
+  it('makes an unfinished game against a friend easy to get back to', async () => {
+    renderAt('/');
+    const banner = await screen.findByRole('region', { name: 'Games still going' });
+    expect(banner).toHaveTextContent('Your chess game with Lucky Tui 12 is still going!');
+    expect(within(banner).getByRole('link', { name: 'Carry on' })).toHaveAttribute('href', '/play/f2');
   });
 
   it('links to the lobby and leaderboard', () => {
@@ -101,12 +144,9 @@ describe('dashboard', () => {
 });
 
 describe('pages', () => {
-  it.each([
-    ['/lobby', 'Lobby'],
-    ['/leaderboard', 'Leaderboard'],
-  ])('%s shows a friendly coming-soon page', (path, title) => {
-    renderAt(path);
-    expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument();
+  it('/leaderboard shows a friendly coming-soon page', () => {
+    renderAt('/leaderboard');
+    expect(screen.getByRole('heading', { level: 1, name: 'Leaderboard' })).toBeInTheDocument();
     expect(screen.getByText('Coming soon!')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Back to home' })).toHaveAttribute('href', '/');
   });
