@@ -1,0 +1,106 @@
+# School Games Hub — plan
+
+Last checked: 15 October 2026. Free-tier numbers change, so check them again before launch.
+
+## The short version
+
+| Part | Service | What it does | Cost |
+|---|---|---|---|
+| The website | **GitHub Pages** | Hosts the pages students see | Free for public repos |
+| Sign-in | **Google sign-in through Supabase Auth** | Students tap "Sign in with Google" using their school account. No passwords. | Free |
+| Database | **Supabase** (Postgres, Sydney region) | Stores profiles, avatars, games, points, badges | Free tier |
+| Live games | **Supabase Realtime** | Sends each move to the other player straight away | Free tier |
+| Referee | **Supabase Edge Functions** | Checks every move and result on the server, so nobody can cheat | Free tier |
+| Bots | **Stockfish** (chess) and our own checkers bot | Run inside the student's browser, so they cost nothing | Free, open source |
+
+So there are three accounts to manage: GitHub (which you already have), Supabase, and a Google Cloud project for the sign-in button.
+
+## Why this setup
+
+- **Supabase over Firebase.** Firebase can't check chess moves in its database rules. Doing that needs Cloud Functions, and Firebase pushes those toward its pay-as-you-go plan, which needs a credit card. Supabase gives you a real database, sign-in, live updates and server functions on one free plan, with no card needed.
+- **Supabase over Cloudflare.** Cloudflare's free plan is good at live games, but it has no built-in sign-in. We would have to build the Google login and its security ourselves. That's more code and more risk, for someone who isn't a full-time developer.
+- **GitHub Pages for the website.** You already use it, it's free, and the website is just files. Everything secret lives in Supabase, not in the website.
+
+## Supabase free-tier limits (from supabase.com/pricing)
+
+- 2 active projects, a 500 MB database and 50,000 monthly users. A school will use a tiny fraction of each.
+- 500,000 server function calls a month. Each multiplayer move is one call, so that's roughly 10,000 two-player games a month.
+- 200 people connected live at once, and 2 million live messages a month.
+- 5 GB of data sent out a month.
+- **The big catch: a free project pauses after 1 week with no use.** Over school holidays the site will go to sleep. Waking it up is one click in the Supabase dashboard, and no data is lost. I'll put this in the README.
+- There's no uptime guarantee and no official support.
+
+## Could anything cost money?
+
+- **Supabase:** only if you upgrade to a paid plan yourself. On the free plan without a card, hitting a limit slows or stops the service instead of sending a bill.
+- **GitHub Pages:** free for public repositories. The code will be public, which is fine because no secrets go in it.
+- **Google Cloud:** sign-in needs a Google Cloud project, but no billing account. Don't add a card to it.
+- **Stockfish:** runs on the student's Chromebook, not on a server, so there's no cost.
+
+## What I need you or the school to do
+
+1. **Tell me the school's Google domain**, for example `myschool.school.nz`. I only need it at Stage 3.
+2. **Talk to your school's Google Workspace admin.** Google blocks students marked as under 18 from signing in to outside apps until an admin approves the app. Without approval they get `Error 400: access_not_configured`. The admin approves it under *Security → API controls → Manage third-party app access*, using the app's Client ID, which I'll give you. If the admin creates the Google sign-in project inside the school's own Google account, Google itself will only let school accounts in.
+3. **Create a free Supabase account.** I'll guide you click by click at Stage 3.
+4. **Get school sign-off on privacy before launch** (see below).
+
+## How sign-in stays school-only
+
+There are three locks, all enforced on the server:
+
+1. The Google sign-in screen only shows school accounts.
+2. A Supabase sign-up check rejects any email that isn't on the school domain, before the account is ever created.
+3. Database rules (Row Level Security) only let signed-in school users read anything, and only let students change their own profile.
+
+Students are identified by a random internal ID, not by their name or email. Leaderboards show only the display name they choose (from safe word lists, like "Brave Otter 42") and their avatar.
+
+**One known limit:** Supabase automatically keeps the student's Google name and email in its sign-in records. Only the server can see these, and our tables won't copy them. Still, they *are* stored, so the school's privacy check should know about it.
+
+## Cheating and fairness
+
+- **Multiplayer:** the browser only *asks* to make a move. A server function checks it's that student's turn and that the move is legal, then saves it. Wins, losses and ratings are decided on the server.
+- **Bot games:** the bot runs in the browser, so a very determined student could fake a bot game. To limit the damage, the server replays every move to check it was legal. Bot games also earn small points, capped per day, and never count toward the competitive rankings. Only multiplayer games affect ratings.
+- **Point farming:** abandoned or very short games earn nothing, and quitting counts as a loss.
+
+## Bots
+
+- **Chess:** Stockfish compiled to run in the browser. *Very Easy* mostly plays random legal moves, with a light preference for captures. *Easy* is Stockfish at a low skill level and very shallow search, so it makes believable mistakes. *Medium* is Stockfish at a moderate skill level with deeper search.
+- **Checkers:** no well-tested library exists for English checkers, so I'll write the rules myself, with thorough tests (forced captures, multi-jumps, kings). The bot uses look-ahead search: *Very Easy* looks 1 move ahead with lots of randomness, *Easy* 3 moves, *Medium* 6+ moves.
+
+## Privacy (New Zealand)
+
+- The database will be in Supabase's **Sydney** region. That's the closest option, but it's still overseas, so Privacy Principle 12 (sending personal information overseas) applies. The school should note this.
+- There will be no ads, no tracking and no analytics, no chat, and no photo uploads.
+- Before Stage 8 I'll write a one-page privacy summary for your principal or board: what's stored, where, who can see it, and how to delete a student. Under-18 accounts also need the Workspace admin approval in step 2 above.
+
+## Tech choices
+
+- **React + TypeScript + Vite** for the website, using hash-style links (`/#/chess`) so GitHub Pages works without extra setup.
+- **chess.js** for the chess rules. The same code runs in the browser and in the server functions.
+- **Our own checkers rules** in TypeScript, shared the same way, with tests.
+- **Vitest** for the tests.
+- **Supabase CLI**, so the database setup lives in the repo as migrations.
+- **GitHub Actions** builds and publishes the site whenever you push.
+
+Folder layout:
+
+```
+src/            website (pages, components)
+src/games/      one folder per game: rules, bot, board — new games plug in here
+shared/         rules code used by both the website and the server
+supabase/       database migrations and server functions
+docs/           this plan and the README guides
+```
+
+To add a new game later, you add a folder with its rules, bot and board, plus one line registering it. Nothing else needs rebuilding.
+
+## Stages
+
+1. ✅ Inspect and plan (this file)
+2. Foundation: website shell, look and feel, dashboard with clearly marked sample data, auto-deploy to GitHub Pages
+3. Sign-in and profiles: Google login, school-only checks, database rules, display names, avatar maker
+4. Chess vs bots
+5. Checkers vs bots
+6. Multiplayer: lobby, game codes, server-checked moves, reconnecting
+7. Points, badges, ratings, leaderboards
+8. Deploy and school testing
