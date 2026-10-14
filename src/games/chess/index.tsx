@@ -3,6 +3,7 @@ import type { GameDefinition } from '../types';
 
 // Loaded only when someone opens the chess page, so the dashboard stays quick.
 const ChessPlay = lazy(() => import('./ChessPlay').then((m) => ({ default: m.ChessPlay })));
+const ChessFriendGame = lazy(() => import('./ChessFriendGame').then((m) => ({ default: m.ChessFriendGame })));
 
 function ChessIcon({ size = 64 }: { size?: number }) {
   return (
@@ -22,4 +23,5 @@ export const chess: GameDefinition = {
   colours: ['#5b3cc4', '#2f55c8'],
   Icon: ChessIcon,
   Play: ChessPlay,
+  Live: ChessFriendGame,
 };

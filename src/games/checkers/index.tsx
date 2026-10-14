@@ -3,6 +3,7 @@ import type { GameDefinition } from '../types';
 
 // Loaded only when someone opens the checkers page, so the dashboard stays quick.
 const CheckersPlay = lazy(() => import('./CheckersPlay').then((m) => ({ default: m.CheckersPlay })));
+const CheckersFriendGame = lazy(() => import('./CheckersFriendGame').then((m) => ({ default: m.CheckersFriendGame })));
 
 function CheckersIcon({ size = 64 }: { size?: number }) {
   return (
@@ -23,4 +24,5 @@ export const checkers: GameDefinition = {
   colours: ['#c2253a', '#b8401a'],
   Icon: CheckersIcon,
   Play: CheckersPlay,
+  Live: CheckersFriendGame,
 };

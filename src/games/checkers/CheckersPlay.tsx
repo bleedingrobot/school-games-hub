@@ -25,6 +25,7 @@ import { BOT_LEVELS, type BotLevel } from '../types';
 import { BOT_DESCRIPTIONS } from './bot';
 import { startCheckersBot, type CheckersBot } from './botThread';
 import { Board } from './Board';
+import { Captured, pretty } from './moveText';
 
 const BOT_EMOJI: Record<BotLevel, string> = { 'very-easy': '🐣', easy: '🤖', medium: '🧠' };
 /** The bot always waits at least this long, so its moves don't appear instantly. */
@@ -66,11 +67,6 @@ const NAME: Record<Colour, string> = { red: 'Red', white: 'White' };
 function pickColour(choice: ColourChoice): Colour {
   if (choice !== 'random') return choice;
   return Math.random() < 0.5 ? 'red' : 'white';
-}
-
-/** "15x24" becomes "15 × 24", which is easier to read. */
-function pretty(notation: string) {
-  return notation.replace(/x/g, ' × ').replace('-', ' – ');
 }
 
 export function CheckersPlay({ level }: { level: BotLevel }) {
@@ -467,16 +463,5 @@ export function CheckersPlay({ level }: { level: BotLevel }) {
         </section>
       </aside>
     </div>
-  );
-}
-
-function Captured({ count, colour, who }: { count: number; colour: Colour; who: string }) {
-  if (count === 0) return null;
-  return (
-    <span className="captured" aria-label={`${who} captured ${count} piece${count === 1 ? '' : 's'}`}>
-      {Array.from({ length: count }, (_, i) => (
-        <span key={i} className={`checker checker--${colour} checker--small`} />
-      ))}
-    </span>
   );
 }

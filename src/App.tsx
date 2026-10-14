@@ -4,6 +4,7 @@ import { RequireAuth } from './auth/RequireAuth';
 import { Layout } from './components/Layout';
 import { GAMES } from './games/registry';
 import { Dashboard } from './pages/Dashboard';
+import { FriendGamePage } from './pages/FriendGamePage';
 import { GamePage } from './pages/GamePage';
 import { Leaderboard } from './pages/Leaderboard';
 import { Lobby } from './pages/Lobby';
@@ -24,6 +25,7 @@ export function AppRoutes() {
             <Route key={game.id} path={game.id} element={<GamePage game={game} />} />
           ))}
           <Route path="lobby" element={<Lobby />} />
+          <Route path="play/:id" element={<FriendGamePage />} />
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />

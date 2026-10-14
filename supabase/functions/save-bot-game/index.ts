@@ -387,18 +387,8 @@ function judgeCheckersGame(report) {
 	};
 }
 //#endregion
-//#region supabase/functions/save-bot-game/handler.ts
-/**
-* The save-bot-game server function: the browser sends the moves of a finished chess or
-* checkers game against a bot, and this decides the result and saves it.
-*
-* It never trusts the browser's word for the result. It replays every move with the same
-* rules code the website uses (chess.js for chess, shared/checkers for checkers), works
-* out who won, and only then saves it. The bot's moves are checked for legality too; a
-* determined student could still fake the bot's moves, which is why bot games will only
-* ever earn small, capped points.
-*/
-/** Websites allowed to call this from a browser. */
+//#region supabase/functions/_shared/http.ts
+/** Websites allowed to call the server functions from a browser. */
 const ALLOWED_ORIGINS = [
 	"https://bleedingrobot.github.io",
 	"http://localhost:5173",
@@ -414,6 +404,22 @@ function corsHeaders(origin) {
 		Vary: "Origin"
 	};
 }
+/** The sign-in token from the request, if there is one. */
+function bearerToken(request) {
+	return request.headers.get("Authorization")?.match(/^Bearer (.+)$/)?.[1] ?? null;
+}
+//#endregion
+//#region supabase/functions/save-bot-game/handler.ts
+/**
+* The save-bot-game server function: the browser sends the moves of a finished chess or
+* checkers game against a bot, and this decides the result and saves it.
+*
+* It never trusts the browser's word for the result. It replays every move with the same
+* rules code the website uses (chess.js for chess, shared/checkers for checkers), works
+* out who won, and only then saves it. The bot's moves are checked for legality too; a
+* determined student could still fake the bot's moves, which is why bot games will only
+* ever earn small, capped points.
+*/
 async function handleSaveBotGame(request, services) {
 	const cors = corsHeaders(request.headers.get("Origin"));
 	const reply = (status, body) => new Response(JSON.stringify(body), {
@@ -428,7 +434,7 @@ async function handleSaveBotGame(request, services) {
 		headers: cors
 	});
 	if (request.method !== "POST") return reply(405, { error: "Not allowed." });
-	const token = request.headers.get("Authorization")?.match(/^Bearer (.+)$/)?.[1];
+	const token = bearerToken(request);
 	const player = token ? await services.userIdFor(token) : null;
 	if (!player) return reply(401, { error: "Please sign in again." });
 	let body;

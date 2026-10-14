@@ -4,7 +4,16 @@ import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { GameCard } from '../components/GameCard';
 import { SampleBadge } from '../components/SampleBadge';
-import { fetchMyStats, fetchRecentGames, type GameStats, type SavedGame } from '../data/botGames';
+import { fetchMyStats, fetchRecentGames, type GameStats } from '../data/botGames';
+import {
+  fetchFriendStats,
+  fetchMyOpenGames,
+  fetchPlayerCards,
+  fetchRecentFriendGames,
+  type FriendGame,
+  type FriendStats,
+  type PlayerCard,
+} from '../data/multiplayer';
 import { sampleAchievements, sampleStudent } from '../dev/sampleData';
 import { findGame, GAMES } from '../games/registry';
 import { BOT_LEVELS, type BotLevel } from '../games/types';
@@ -26,30 +35,73 @@ function botName(level: string) {
   return `${BOT_LEVELS.find((l) => l.id === level)?.label ?? ''} bot`;
 }
 
-/** The student's real saved games and stats. */
-function useMyGames() {
-  const [recent, setRecent] = useState<SavedGame[] | null>(null);
+/** One line in Recent games: against a bot, or against another student. */
+export interface RecentGame {
+  id: string;
+  game: string;
+  result: 'won' | 'lost' | 'drawn';
+  reason: string;
+  finished_at: string;
+  bot_level?: string;
+  opponent?: PlayerCard | null;
+}
+
+/** Turns a finished friend game into a Recent games line, from this student's side. */
+export function friendRecentGame(g: FriendGame, me: string, cards: Map<string, PlayerCard>): RecentGame {
+  const mySide = g.second_player === me ? 'second' : 'first';
+  const opponentId = mySide === 'first' ? g.second_player : g.first_player;
+  return {
+    id: g.id,
+    game: g.game,
+    result: g.winner === null ? 'drawn' : g.winner === mySide ? 'won' : 'lost',
+    reason: g.reason ?? '',
+    finished_at: g.finished_at ?? g.created_at,
+    opponent: (opponentId && cards.get(opponentId)) || null,
+  };
+}
+
+/** The student's real saved games and stats, against bots and friends. */
+function useMyGames(me: string | undefined) {
+  const [recent, setRecent] = useState<RecentGame[] | null>(null);
   const [stats, setStats] = useState<GameStats[] | null>(null);
+  const [friendStats, setFriendStats] = useState<FriendStats[] | null>(null);
+  const [inProgress, setInProgress] = useState<{ game: FriendGame; opponent: PlayerCard | null }[]>([]);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
+    if (!me) return;
     let current = true;
-    Promise.all([fetchRecentGames(5), fetchMyStats()])
-      .then(([games, totals]) => {
+    Promise.all([fetchRecentGames(5), fetchMyStats(), fetchRecentFriendGames(5), fetchFriendStats(), fetchMyOpenGames()])
+      .then(async ([botGames, totals, friendGames, friendTotals, open]) => {
+        const playing = open.filter((g) => g.status === 'playing');
+        const ids = [...friendGames, ...playing].flatMap((g) => [g.first_player, g.second_player]);
+        const cards = await fetchPlayerCards(ids.filter((id): id is string => !!id && id !== me));
         if (!current) return;
-        setRecent(games);
+        const merged: RecentGame[] = [
+          ...botGames.map((g) => ({ ...g })),
+          ...friendGames.map((g) => friendRecentGame(g, me, cards)),
+        ];
+        merged.sort((a, b) => b.finished_at.localeCompare(a.finished_at));
+        setRecent(merged.slice(0, 5));
         setStats(totals);
+        setFriendStats(friendTotals);
+        setInProgress(
+          playing.map((g) => {
+            const opponentId = g.first_player === me ? g.second_player : g.first_player;
+            return { game: g, opponent: (opponentId && cards.get(opponentId)) || null };
+          }),
+        );
       })
       .catch(() => current && setFailed(true));
     return () => {
       current = false;
     };
-  }, []);
-  return { recent, stats, failed };
+  }, [me]);
+  return { recent, stats, friendStats, inProgress, failed };
 }
 
 export function Dashboard() {
   const { profile } = useAuth();
-  const { recent, stats, failed } = useMyGames();
+  const { recent, stats, friendStats, inProgress, failed } = useMyGames(profile?.id);
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
@@ -82,6 +134,30 @@ export function Dashboard() {
           </p>
         </div>
       </section>
+
+      {inProgress.length > 0 && (
+        <section className="in-progress" aria-label="Games still going">
+          {inProgress.slice(0, 2).map(({ game, opponent }) => (
+            <div key={game.id} className="in-progress__item">
+              <AvatarImage avatar={opponent?.avatar} size={48} />
+              <p>
+                <strong>Your {findGame(game.game)?.name.toLowerCase()} game</strong> with{' '}
+                {opponent?.display_name ?? 'a classmate'} is still going!
+              </p>
+              <Link to={`/play/${game.id}`} className="button button--play">
+                Carry on
+              </Link>
+            </div>
+          ))}
+          {inProgress.length > 2 && (
+            <p className="in-progress__more">
+              <Link to="/lobby">
+                {inProgress.length - 2} more game{inProgress.length === 3 ? '' : 's'} still going: see them in the lobby
+              </Link>
+            </p>
+          )}
+        </section>
+      )}
 
       <section aria-labelledby="games-title">
         <h2 id="games-title" className="section-title">
@@ -140,8 +216,19 @@ export function Dashboard() {
                 <li key={g.id}>
                   <span className={`result result--${g.result}`}>{RESULT_LABEL[g.result]}</span>
                   <span className="recent-list__what">
-                    {findGame(g.game)?.name} vs {botName(g.bot_level)}
-                    {g.reason === 'abandoned' && <span className="recent-list__note"> (left early)</span>}
+                    {g.bot_level ? (
+                      <>
+                        {findGame(g.game)?.name} vs {botName(g.bot_level)}
+                      </>
+                    ) : (
+                      <>
+                        {findGame(g.game)?.name} vs <AvatarImage avatar={g.opponent?.avatar} size={24} />{' '}
+                        {g.opponent?.display_name ?? 'a classmate'}
+                      </>
+                    )}
+                    {g.reason === 'abandoned' && (
+                      <span className="recent-list__note">{g.result === 'won' ? ' (they left)' : ' (left early)'}</span>
+                    )}
                   </span>
                   <span className="recent-list__when">{whenPlayed(g.finished_at)}</span>
                 </li>
@@ -154,32 +241,8 @@ export function Dashboard() {
           <h2 id="stats-title" className="panel__title">
             My stats
           </h2>
-          <table className="stats-table">
-            <thead>
-              <tr>
-                <th scope="col">Game</th>
-                <th scope="col">Played</th>
-                <th scope="col">Won</th>
-                <th scope="col">Lost</th>
-                <th scope="col">Draw</th>
-              </tr>
-            </thead>
-            <tbody>
-              {GAMES.map((game) => {
-                const s = stats?.find((row) => row.game === game.id) ?? { played: 0, won: 0, lost: 0, drawn: 0 };
-                const show = (n: number) => (stats ? n : '–');
-                return (
-                  <tr key={game.id}>
-                    <th scope="row">{game.name}</th>
-                    <td>{show(s.played)}</td>
-                    <td>{show(s.won)}</td>
-                    <td>{show(s.lost)}</td>
-                    <td>{show(s.drawn)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <StatsTable caption="Against bots" stats={stats} />
+          <StatsTable caption="Against friends" stats={friendStats} />
           <p className="level-line">
             Level {sampleStudent.level} — {sampleStudent.pointsToNextLevel} points to level{' '}
             {sampleStudent.level + 1} <SampleBadge />
@@ -214,5 +277,37 @@ export function Dashboard() {
         </section>
       </div>
     </div>
+  );
+}
+
+function StatsTable({ caption, stats }: { caption: string; stats: { game: string; played: number; won: number; lost: number; drawn: number }[] | null }) {
+  return (
+    <table className="stats-table">
+      <caption>{caption}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Game</th>
+          <th scope="col">Played</th>
+          <th scope="col">Won</th>
+          <th scope="col">Lost</th>
+          <th scope="col">Draw</th>
+        </tr>
+      </thead>
+      <tbody>
+        {GAMES.map((game) => {
+          const s = stats?.find((row) => row.game === game.id) ?? { played: 0, won: 0, lost: 0, drawn: 0 };
+          const show = (n: number) => (stats ? n : '–');
+          return (
+            <tr key={game.id}>
+              <th scope="row">{game.name}</th>
+              <td>{show(s.played)}</td>
+              <td>{show(s.won)}</td>
+              <td>{show(s.lost)}</td>
+              <td>{show(s.drawn)}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
