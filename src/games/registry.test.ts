@@ -1,0 +1,33 @@
+import { describe, expect, it } from 'vitest';
+import { GAMES, findGame } from './registry';
+import { BOT_LEVELS, isBotLevel } from './types';
+
+describe('game registry', () => {
+  it('has chess and checkers', () => {
+    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers']);
+  });
+
+  it('gives every game a unique, URL-safe id', () => {
+    const ids = GAMES.map((g) => g.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const id of ids) expect(id).toMatch(/^[a-z][a-z0-9-]*$/);
+  });
+
+  it('finds games by id', () => {
+    expect(findGame('chess')?.name).toBe('Chess');
+    expect(findGame('snakes')).toBeUndefined();
+    expect(findGame(undefined)).toBeUndefined();
+  });
+});
+
+describe('bot levels', () => {
+  it('are Very Easy, Easy and Medium', () => {
+    expect(BOT_LEVELS.map((l) => l.label)).toEqual(['Very Easy', 'Easy', 'Medium']);
+  });
+
+  it('rejects unknown levels', () => {
+    expect(isBotLevel('easy')).toBe(true);
+    expect(isBotLevel('impossible')).toBe(false);
+    expect(isBotLevel(null)).toBe(false);
+  });
+});

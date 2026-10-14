@@ -1,0 +1,44 @@
+import { NavLink, Outlet } from 'react-router';
+import { sampleStudent } from '../dev/sampleData';
+import { Avatar } from './Avatar';
+import { MuteButton } from './MuteButton';
+
+const NAV = [
+  { to: '/', label: 'Home', emoji: '🏠' },
+  { to: '/lobby', label: 'Lobby', emoji: '🤝' },
+  { to: '/leaderboard', label: 'Leaderboard', emoji: '🏅' },
+];
+
+export function Layout() {
+  return (
+    <>
+      <a className="skip-link" href="#main">
+        Skip to main content
+      </a>
+      <header className="topbar">
+        <NavLink to="/" className="brand">
+          <span className="brand__logo" aria-hidden="true">
+            🎲
+          </span>
+          <span>Games Hub</span>
+        </NavLink>
+        <nav aria-label="Main" className="topnav">
+          {NAV.map((item) => (
+            <NavLink key={item.to} to={item.to} end className="topnav__link">
+              <span aria-hidden="true">{item.emoji}</span> {item.label}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="topbar__right">
+          <MuteButton />
+          <NavLink to="/profile" className="topbar__profile" aria-label="My profile">
+            <Avatar colour={sampleStudent.avatarColour} size={44} />
+          </NavLink>
+        </div>
+      </header>
+      <main id="main" tabIndex={-1}>
+        <Outlet />
+      </main>
+    </>
+  );
+}
