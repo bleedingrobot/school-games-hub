@@ -78,7 +78,8 @@ Students are identified by a random internal ID, not by their name or email. Lea
 - **React + TypeScript + Vite** for the website, using hash-style links (`/#/chess`) so GitHub Pages works without extra setup.
 - **chess.js** for the chess rules. The same code runs in the browser and in the server functions.
 - **Our own checkers rules** in TypeScript, shared the same way, with tests.
-- **Vitest** for the tests.
+- **React Router** (hash mode) for moving between pages.
+- **Vitest** and Testing Library for the tests.
 - **Supabase CLI**, so the database setup lives in the repo as migrations.
 - **GitHub Actions** builds and publishes the site whenever you push.
 
@@ -118,7 +119,7 @@ To add a new game later, you add a folder with its rules, bot and board, plus on
 ## Stages
 
 1. ✅ Inspect and plan (this file)
-2. Foundation: website shell, look and feel, dashboard with clearly marked sample data, auto-deploy to GitHub Pages
+2. ✅ Foundation: website shell, look and feel, dashboard with clearly marked sample data, auto-deploy to GitHub Pages (done 15 Oct 2026, live at https://bleedingrobot.github.io/school-games-hub/)
 3. Sign-in and profiles: Google login, school-only checks, database rules, display names, avatar maker, teacher roles
 4. Chess vs bots (results saved)
 5. Checkers vs bots (results saved), then **small student trial**
