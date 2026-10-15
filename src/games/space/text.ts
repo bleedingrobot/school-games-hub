@@ -3,7 +3,8 @@
  * what each square does, and the mission log line for every engine event.
  */
 import type { Square, StarKind, GravityKind } from '../../../shared/space/board';
-import type { CosmicEvent, Pending, SpaceEvent, SpaceState } from '../../../shared/space/engine';
+import { COSMIC_EVENT_EVERY, type CosmicEvent, type Pending, type SpaceEvent, type SpaceState } from '../../../shared/space/engine';
+import { FACT_BY_ID, type FactId } from '../../../shared/space/facts';
 import { ITEMS, type ItemKind } from '../../../shared/space/items';
 
 /** Every seat has a shape as well as a colour, so rockets are never told apart by colour alone. */
@@ -82,7 +83,7 @@ export const STAR_NAMES: Record<StarKind, string> = {
   matariki: 'Matariki',
 };
 
-const STAR_HELP: Record<StarKind, string> = {
+export const STAR_HELP: Record<StarKind, string> = {
   'red-dwarf': 'Gain an item.',
   'yellow-star': 'Gain a random item.',
   'blue-giant': 'Gain a rare item.',
@@ -96,32 +97,59 @@ const STAR_HELP: Record<StarKind, string> = {
     'Matariki is a cluster of stars that rises in midwinter. For many people in Aotearoa it marks the Māori New Year, a time to remember, celebrate and share. Everyone gets a gift!',
 };
 
-const GRAVITY_NAMES: Record<GravityKind, string> = { heavy: 'Heavy gravity', low: 'Low gravity', slingshot: 'Slingshot' };
-const GRAVITY_HELP: Record<GravityKind, string> = {
+export const GRAVITY_NAMES: Record<GravityKind, string> = { heavy: 'Heavy gravity', low: 'Low gravity', slingshot: 'Slingshot' };
+export const GRAVITY_HELP: Record<GravityKind, string> = {
   heavy: 'Your next 2 rolls are halved.',
   low: '+2 on your next 2 rolls.',
   slingshot: 'Your next roll is doubled.',
 };
 export const GRAVITY_BADGE: Record<GravityKind, string> = { heavy: '🐢', low: '🎈', slingshot: '🪃' };
 
-/** What a square does, in one line, for the "tap a square" box. */
-export function squareInfo(state: SpaceState, n: number, names: readonly string[]): { title: string; text: string } {
+export interface SquareInfo {
+  title: string;
+  text: string;
+  /** A space fact about it, if there is one. */
+  fact?: string;
+}
+
+/** What a square does, in one line, for the "tap a square" box (with a space fact if it has one). */
+export function squareInfo(state: SpaceState, n: number, names: readonly string[]): SquareInfo {
+  const info = squareBasics(state, n, names);
+  const fact = info.factId && FACT_BY_ID[info.factId];
+  return { title: info.title, text: info.text, ...(fact ? { fact: fact.fact } : {}) };
+}
+
+const GRAVITY_FACT: Record<GravityKind, FactId> = { heavy: 'heavy-gravity', low: 'low-gravity', slingshot: 'slingshot' };
+
+function squareBasics(state: SpaceState, n: number, names: readonly string[]): SquareInfo & { factId?: FactId } {
   const size = state.board.size;
-  if (n === 1) return { title: 'Square 1: Earth', text: 'Every rocket launches from here.' };
-  if (n === size) return { title: `Square ${size}: the space station`, text: 'Dock here first to win!' };
+  if (n === 1) return { title: 'Square 1: Earth', text: 'Every rocket launches from here.', factId: 'earth' };
+  if (n === size) return { title: `Square ${size}: the space station`, text: 'Dock here first to win!', factId: 'space-station' };
   const mine = state.mines.find((m) => m.square === n);
   if (mine) return { title: `Square ${n}: Space Mine`, text: `${names[mine.owner]}’s mine. Any other rocket that lands here goes back 3.` };
-  if (state.asteroids.includes(n)) return { title: `Square ${n}: asteroid`, text: 'Landing here costs an item (or 1 square if you have none). Gone next round.' };
+  if (state.asteroids.includes(n)) {
+    return { title: `Square ${n}: asteroid`, text: 'Landing here costs an item (or 1 square if you have none). Gone next round.', factId: 'asteroid' };
+  }
   if (state.comet) {
-    if (state.comet.head === n) return { title: `Square ${n}: the comet’s head`, text: 'Land on the comet’s tail to ride up here. It moves every round.' };
+    if (state.comet.head === n) {
+      return { title: `Square ${n}: the comet’s head`, text: 'Land on the comet’s tail to ride up here. It moves every round.', factId: 'comet' };
+    }
     const tail = state.comet.head - n;
     if (tail > 0 && tail < state.comet.length) {
-      return { title: `Square ${n}: comet tail`, text: `Land here to ride the comet up to square ${state.comet.head}.` };
+      return { title: `Square ${n}: comet tail`, text: `Land here to ride the comet up to square ${state.comet.head}.`, factId: 'comet' };
     }
   }
   const square: Square | undefined = state.board.squares[n];
   if (!square) return { title: `Square ${n}`, text: 'Empty space.' };
-  return { title: `Square ${n}: ${squareName(square)}`, text: squareHelp(square) };
+  const factId: FactId | undefined =
+    square.kind === 'star'
+      ? square.star
+      : square.kind === 'gravity'
+        ? GRAVITY_FACT[square.gravity]
+        : square.kind === 'wormhole' || square.kind === 'black-hole' || square.kind === 'nebula'
+          ? square.kind
+          : undefined;
+  return { title: `Square ${n}: ${squareName(square)}`, text: squareHelp(square), ...(factId ? { factId } : {}) };
 }
 
 export function squareName(square: Square): string {
@@ -158,17 +186,41 @@ const ROLL_CHANGES: Record<string, string> = {
   'solar-wind': 'solar wind +1',
 };
 
-const COSMIC_TITLES: Record<CosmicEvent, string> = {
-  'solar-wind': 'Solar wind!',
-  'meteor-shower': 'Meteor shower!',
-  'wormhole-shift': 'Wormhole shift!',
+export interface Banner {
+  emoji: string;
+  title: string;
+  text: string;
+}
+
+const COSMIC_BANNERS: Record<CosmicEvent, Banner> = {
+  'solar-wind': { emoji: '☀️', title: 'Solar wind!', text: 'Everyone gets +1 on their next roll.' },
+  'meteor-shower': { emoji: '🌠', title: 'Meteor shower!', text: 'Asteroids this round. Landing on one costs an item.' },
+  'wormhole-shift': { emoji: '🌀', title: 'Wormhole shift!', text: 'A wormhole has moved where it comes out.' },
 };
 
 /** The big banner for a cosmic event or the fuel warning, or null. */
-export function bannerFor(event: SpaceEvent): string | null {
-  if (event.kind === 'cosmic') return COSMIC_TITLES[event.event];
-  if (event.kind === 'fuel-warning') return `⏱ ${event.roundsLeft} rounds of fuel left!`;
+export function bannerFor(event: SpaceEvent): Banner | null {
+  if (event.kind === 'cosmic') {
+    const banner = COSMIC_BANNERS[event.event];
+    if (event.event === 'wormhole-shift') {
+      return {
+        ...banner,
+        text: event.from === event.to ? 'The wormholes held steady this time.' : `The wormhole on ${event.wormhole} now goes to ${event.to}.`,
+      };
+    }
+    if (event.event === 'meteor-shower' && !event.squares?.length) return { ...banner, text: 'But every meteor missed!' };
+    return banner;
+  }
+  if (event.kind === 'fuel-warning') {
+    return { emoji: '⏱', title: `${event.roundsLeft} rounds of fuel left!`, text: 'After that, places go by how far everyone got.' };
+  }
   return null;
+}
+
+/** The round the next cosmic event comes at, or null if they're off. */
+export function nextCosmicRound(state: SpaceState): number | null {
+  if (!state.settings.cosmicEvents) return null;
+  return state.round + COSMIC_EVENT_EVERY - ((state.round - 1) % COSMIC_EVENT_EVERY);
 }
 
 /** The question a choice asks, in plain words. */

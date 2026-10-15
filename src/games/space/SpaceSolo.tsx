@@ -29,12 +29,13 @@ import { randomFromSeed } from '../../../shared/space/random';
 import { encodeAction, type SpaceGameReport } from '../../../shared/space/save';
 import { startSpaceBot, type SpaceBot } from './botThread';
 import { Dice, DieFace } from './Dice';
-import { Choice, ItemPicker, ItemTiles, MissionLog, Podium, RocketsPanel, type Picking } from './parts';
+import { BoardOverlays, Choice, ItemPicker, ItemTiles, MissionLog, Podium, RocketsPanel, type Picking } from './parts';
+import { SpaceGuide, type GuideTab } from './Guide';
 import { loadLessMotion, loadPrefs, saveLessMotion, savePrefs, setupFrom, SPEED_SCALE, type SpacePrefs } from './prefs';
 import { SpaceBoard, type Seat } from './SpaceBoard';
 import { SpaceSettings } from './SpaceSettings';
 import { botPlay, botQuestion, decideBot, isStudentsTurn, newSeed, startRun, studentPlay, type SoloRun } from './soloRun';
-import { choiceQuestion, itemName, ORDINAL, SEAT_COLOURS, SEAT_SHAPES, squareInfo } from './text';
+import { choiceQuestion, itemName, ORDINAL, SEAT_COLOURS, SEAT_SHAPES, squareInfo, type SquareInfo } from './text';
 import { useEventPlayer, type Batch } from './useEventPlayer';
 import './space.css';
 
@@ -104,7 +105,8 @@ export function SpaceSolo({
   const [picking, setPicking] = useState<Picking | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [showPodium, setShowPodium] = useState(false);
-  const [info, setInfo] = useState<{ n: number; title: string; text: string } | null>(null);
+  const [info, setInfo] = useState<({ n: number } & SquareInfo) | null>(null);
+  const [guide, setGuide] = useState<GuideTab | null>(null);
   const [hint, setHint] = useState('');
   const [starting, setStarting] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('practice');
@@ -120,7 +122,7 @@ export function SpaceSolo({
   const panelRef = useRef<HTMLDivElement>(null);
   const live = useRef({ scale: 1, calm: false, sound: false });
   const screen = useEventPlayer(live);
-  const { view, setView, rockets, turnSeat, setTurnSeat, dice, log, toast, banner } = screen;
+  const { view, setView, rockets, turnSeat, setTurnSeat, dice, log, toast, banner, fact, setFact } = screen;
   /** The current game's stamp; null for a practice game. */
   const stampRef = useRef<string | null>(null);
   /** Seeds already sent to the server (finished or left), so nothing is sent twice. */
@@ -344,10 +346,15 @@ export function SpaceSolo({
   keys.current = (event: KeyboardEvent) => {
     if (!game || !view) return;
     const target = event.target as HTMLElement | null;
-    if (target?.closest('input, textarea, select')) return;
+    if (guide || target?.closest('input, textarea, select')) return;
+    if (event.key === '?') {
+      setGuide('how');
+      return;
+    }
     if (event.key === 'Escape') {
       if (picking) setPicking(null);
       else if (info) setInfo(null);
+      else if (fact) setFact(null);
       else if (confirming) setConfirming(false);
       else if (showPodium) setShowPodium(false);
       return;
@@ -399,7 +406,9 @@ export function SpaceSolo({
 
   if (!game || !view) {
     return (
+      <>
       <SpaceSettings
+        onHelp={setGuide}
         prefs={prefs}
         onChange={setPrefs}
         level={level}
@@ -411,6 +420,8 @@ export function SpaceSolo({
         starting={starting}
         saving={!!saving}
       />
+      {guide && <SpaceGuide tab={guide} onClose={() => setGuide(null)} />}
+      </>
     );
   }
 
@@ -451,6 +462,7 @@ export function SpaceSolo({
       className={`space-game${lessMotion ? ' is-calm' : ''}`}
       style={{ '--rows': view.board.size / 10 } as CSSProperties}
     >
+      <h1 className="sr-only">Wormholes &amp; Black Holes</h1>
       <div className="space-game__board">
         <SpaceBoard
           state={view}
@@ -465,25 +477,15 @@ export function SpaceSolo({
           selected={info?.n ?? null}
           label={boardLabel}
         />
-        {banner && (
-          <div className="space-banner" aria-hidden="true">
-            {banner}
-          </div>
-        )}
-        {toast && (
-          <div key={toast.id} className="space-toast" aria-hidden="true">
-            <span className="space-toast__emoji">{toast.emoji}</span> {toast.text}
-          </div>
-        )}
-        {info && (
-          <div className="space-info" role="note">
-            <strong>{info.title}</strong>
-            <span>{info.text}</span>
-            <button type="button" className="space-info__close" onClick={() => setInfo(null)} aria-label="Close">
-              ✕
-            </button>
-          </div>
-        )}
+        <BoardOverlays
+          banner={banner}
+          toast={toast}
+          info={info}
+          onCloseInfo={() => setInfo(null)}
+          fact={fact}
+          onCloseFact={() => setFact(null)}
+          onOpenChart={() => setGuide('chart')}
+        />
         {over && showPodium && (
           <Podium seats={seats} places={places} mine={places[studentSeat]} ending={view.ending} saveNote={saveNote(saveStatus, saveMessage, !!saving)}>
             <button type="button" className="button button--primary" onClick={() => void start()} autoFocus>
@@ -583,12 +585,16 @@ export function SpaceSolo({
             <button type="button" className="space-action" onClick={() => setLessMotion(!lessMotion)} aria-pressed={lessMotion}>
               {lessMotion ? '✓ Less motion' : 'Less motion'}
             </button>
+            <button type="button" className="space-action" onClick={() => setGuide('how')} aria-keyshortcuts="?">
+              How to play
+            </button>
             <button type="button" className="space-action" onClick={leave}>
               Settings
             </button>
           </div>
         )}
       </aside>
+      {guide && <SpaceGuide tab={guide} onClose={() => setGuide(null)} />}
     </div>
   );
 }

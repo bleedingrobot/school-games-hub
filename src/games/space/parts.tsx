@@ -8,8 +8,21 @@ import { FUEL_WARNING_ROUNDS, KEEP_ITEMS, missionRounds, type SpaceState } from 
 import { ITEMS, type ItemKind } from '../../../shared/space/items';
 import { DieFace } from './Dice';
 import { SeatShapeIcon, type Seat } from './SpaceBoard';
-import type { LogLine } from './useEventPlayer';
-import { choiceQuestion, GRAVITY_BADGE, ITEM_EMOJI, ITEM_HELP, ITEM_SHORT, itemName, ORDINAL, SHAPE_NAMES } from './text';
+import { FACT_BY_ID } from '../../../shared/space/facts';
+import type { FactShown, LogLine } from './useEventPlayer';
+import {
+  choiceQuestion,
+  GRAVITY_BADGE,
+  ITEM_EMOJI,
+  ITEM_HELP,
+  ITEM_SHORT,
+  itemName,
+  nextCosmicRound,
+  ORDINAL,
+  SHAPE_NAMES,
+  type Banner,
+  type SquareInfo,
+} from './text';
 
 /** Arrow keys move between the buttons in a group. */
 export function arrowKeys(event: ReactKeyboardEvent<HTMLElement>) {
@@ -150,15 +163,17 @@ export function ItemTiles({
                 disabled={!usable(item)}
                 onClick={() => onUse(item)}
                 aria-keyshortcuts={String(i + 1)}
-                aria-label={`${itemName(item)}: ${ITEM_HELP[item]}`}
                 title={ITEM_HELP[item]}
               >
                 <span className="space-item__top" aria-hidden="true">
                   <span className="space-item__key">{i + 1}</span>
                   <span className="space-item__emoji">{ITEM_EMOJI[item]}</span>
                 </span>
-                <strong aria-hidden="true">{itemName(item)}</strong>
-                <small aria-hidden="true">{ITEM_SHORT[item]}</small>
+                <strong>{itemName(item)}</strong>
+                <small>
+                  <span className="sr-only">: </span>
+                  {ITEM_SHORT[item]}
+                </small>
               </button>
             </li>
           ))}
@@ -189,6 +204,7 @@ export function RocketsPanel({
   const totalRounds = missionRounds(view);
   const roundsLeft = Math.max(0, totalRounds - view.round + 1);
   const places = view.places ?? [];
+  const cosmicRound = over ? null : nextCosmicRound(view);
   return (
     <section className="space-panel space-players" aria-labelledby="space-players-title">
       <h2 id="space-players-title" className="space-panel__title">
@@ -200,6 +216,12 @@ export function RocketsPanel({
           </span>
         </span>
       </h2>
+      {cosmicRound !== null && cosmicRound <= totalRounds && (
+        <p className="space-players__cosmic">
+          <span aria-hidden="true">🌠</span>{' '}
+          {cosmicRound === view.round + 1 ? 'Cosmic event next round!' : `Next cosmic event: round ${cosmicRound}`}
+        </p>
+      )}
       <ol className="space-players__list">
         {seats.map((seat, i) => {
           const r = view.rockets[i];
@@ -218,6 +240,7 @@ export function RocketsPanel({
                 {r.anchored && <span title="Next roll halved">⚓</span>}
                 {r.shielded && <span title="Shielded until their next turn">✨</span>}
                 {r.binary && <span title="Two dice next turn">🎲</span>}
+                {r.solarWind && <span title="Solar wind: +1 on the next roll">☀️</span>}
                 {cosmic &&
                   !seat.isStudent &&
                   r.items.map((item, k) => (
@@ -239,21 +262,26 @@ export function RocketsPanel({
   );
 }
 
-/** The mission log: newest at the bottom, kept scrolled down, read out by screen readers. */
+/**
+ * The mission log: newest at the bottom, kept scrolled down, read out by screen readers.
+ * It can take keyboard focus so it can be scrolled with the arrow keys.
+ */
 export function MissionLog({ lines }: { lines: LogLine[] }) {
-  const ref = useRef<HTMLOListElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const list = ref.current;
-    if (list) list.scrollTop = list.scrollHeight;
+    const box = ref.current;
+    if (box) box.scrollTop = box.scrollHeight;
   }, [lines]);
   return (
-    <ol className="space-log__list" ref={ref} role="log" aria-live="polite" aria-relevant="additions">
-      {lines.map((line) => (
-        <li key={line.id} className={line.mine ? 'is-mine' : line.text.startsWith('—') ? 'is-round' : undefined}>
-          {line.text}
-        </li>
-      ))}
-    </ol>
+    <div className="space-log__list" ref={ref} role="log" aria-live="polite" aria-relevant="additions" aria-label="Mission log" tabIndex={0}>
+      <ol>
+        {lines.map((line) => (
+          <li key={line.id} className={line.mine ? 'is-mine' : line.text.startsWith('—') ? 'is-round' : undefined}>
+            {line.text}
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 
@@ -340,6 +368,90 @@ export function Podium({
         )}
         <div className="chess-result__buttons">{children}</div>
       </div>
+    </div>
+  );
+}
+
+/** How long a space fact stays on the board (it's on the Star chart after). */
+export const FACT_MS = 12_000;
+
+/** What sits on top of the board: the cosmic banner, the item toast, a space fact and the "tap a square" box. */
+export function BoardOverlays({
+  banner,
+  toast,
+  info,
+  onCloseInfo,
+  fact,
+  onCloseFact,
+  onOpenChart,
+}: {
+  banner: Banner | null;
+  toast: { emoji: string; text: string; id: number } | null;
+  info: SquareInfo | null;
+  onCloseInfo: () => void;
+  fact: FactShown | null;
+  onCloseFact: () => void;
+  onOpenChart: () => void;
+}) {
+  return (
+    <>
+      {banner && (
+        // The mission log reads the same news out, so this is hidden from screen readers.
+        <div className="space-banner" aria-hidden="true">
+          <span className="space-banner__title">
+            <span className="space-banner__emoji">{banner.emoji}</span> {banner.title}
+          </span>
+          <span className="space-banner__text">{banner.text}</span>
+        </div>
+      )}
+      {toast && (
+        <div key={toast.id} className="space-toast" aria-hidden="true">
+          <span className="space-toast__emoji">{toast.emoji}</span> {toast.text}
+        </div>
+      )}
+      {info ? (
+        <div className="space-info" role="note">
+          <strong>{info.title}</strong>
+          <span>{info.text}</span>
+          {info.fact && (
+            <span className="space-info__fact">
+              <span aria-hidden="true">💡</span> {info.fact}
+            </span>
+          )}
+          <button type="button" className="space-info__close" onClick={onCloseInfo} aria-label="Close">
+            ✕
+          </button>
+        </div>
+      ) : (
+        fact && <FactCard key={fact.key} fact={fact} onClose={onCloseFact} onOpenChart={onOpenChart} />
+      )}
+    </>
+  );
+}
+
+/** "Did you know?": the space fact for what your rocket just landed on. It goes by itself after a while. */
+function FactCard({ fact, onClose, onOpenChart }: { fact: FactShown; onClose: () => void; onOpenChart: () => void }) {
+  const f = FACT_BY_ID[fact.id];
+  const close = useRef(onClose);
+  close.current = onClose;
+  useEffect(() => {
+    const timer = setTimeout(() => close.current(), FACT_MS);
+    return () => clearTimeout(timer);
+  }, []);
+  return (
+    <div className={`space-info space-fact${fact.isNew ? ' is-new' : ''}`} role="note" aria-label={`Space fact: ${f.name}`}>
+      <span className="space-fact__title">
+        <span aria-hidden="true">{f.emoji}</span> <strong>Did you know?</strong>
+        {fact.isNew && (
+          <button type="button" className="space-fact__new" onClick={onOpenChart}>
+            ⭐ New on your Star chart!
+          </button>
+        )}
+      </span>
+      <span>{f.fact}</span>
+      <button type="button" className="space-info__close" onClick={onClose} aria-label="Close the space fact">
+        ✕
+      </button>
     </div>
   );
 }

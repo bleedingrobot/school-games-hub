@@ -4,7 +4,8 @@
  */
 let context: AudioContext | null = null;
 
-function tone(frequency: number, duration: number, volume: number, type: OscillatorType) {
+/** One note that slides from `frequency` to `frequency * slide` (0.6 is a gentle drop). */
+function tone(frequency: number, duration: number, volume: number, type: OscillatorType, slide = 0.6) {
   try {
     context ??= new AudioContext();
     const now = context.currentTime;
@@ -12,7 +13,7 @@ function tone(frequency: number, duration: number, volume: number, type: Oscilla
     const gain = context.createGain();
     oscillator.type = type;
     oscillator.frequency.setValueAtTime(frequency, now);
-    oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.6, now + duration);
+    oscillator.frequency.exponentialRampToValueAtTime(frequency * slide, now + duration);
     gain.gain.setValueAtTime(volume, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
     oscillator.connect(gain).connect(context.destination);
@@ -23,8 +24,24 @@ function tone(frequency: number, duration: number, volume: number, type: Oscilla
   }
 }
 
-/** 'alert' is check in chess, and a new king in checkers. */
-export type GameSound = 'move' | 'capture' | 'alert' | 'win' | 'end';
+/**
+ * 'alert' is check in chess, and a new king in checkers. The rest after 'end' are for
+ * Wormholes & Black Holes.
+ */
+export type GameSound =
+  | 'move'
+  | 'capture'
+  | 'alert'
+  | 'win'
+  | 'end'
+  | 'dice'
+  | 'hop'
+  | 'wormhole'
+  | 'black-hole'
+  | 'item'
+  | 'zap'
+  | 'shield'
+  | 'cosmic';
 
 export function playSound(sound: GameSound) {
   switch (sound) {
@@ -40,5 +57,28 @@ export function playSound(sound: GameSound) {
       return;
     case 'end':
       return tone(330, 0.3, 0.18, 'sine');
+    case 'dice':
+      // A quick rattle: four short clicks.
+      [0, 50, 105, 165].forEach((ms, i) => setTimeout(() => tone(300 + i * 60, 0.04, 0.12, 'square', 0.9), ms));
+      return;
+    case 'hop':
+      return tone(660, 0.05, 0.07, 'triangle', 1.3);
+    case 'wormhole':
+      // Up and away.
+      return tone(260, 0.55, 0.16, 'sine', 4);
+    case 'black-hole':
+      // Down the drain.
+      return tone(520, 0.7, 0.18, 'sawtooth', 0.2);
+    case 'item':
+      [880, 1175, 1568].forEach((f, i) => setTimeout(() => tone(f, 0.12, 0.12, 'triangle', 1), i * 70));
+      return;
+    case 'zap':
+      return tone(1200, 0.18, 0.12, 'square', 0.3);
+    case 'shield':
+      tone(440, 0.3, 0.14, 'sine', 1.5);
+      return setTimeout(() => tone(660, 0.25, 0.12, 'sine', 1.5), 90);
+    case 'cosmic':
+      [392, 523, 659].forEach((f, i) => setTimeout(() => tone(f, 0.35, 0.12, 'sine', 1.02), i * 140));
+      return;
   }
 }

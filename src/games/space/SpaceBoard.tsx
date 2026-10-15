@@ -74,6 +74,16 @@ function starPoints(cx: number, cy: number, points: number, outer: number, inner
   return out.join(' ');
 }
 
+/** One square's picture on its own, for How to play and the Star chart. */
+export function SquarePicture({ square, size = 52 }: { square: Square; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true" className="space-square-picture">
+      <rect x={3} y={3} width={94} height={94} rx={14} fill="#1d1850" />
+      <SquareIcon square={square} cx={50} cy={50} />
+    </svg>
+  );
+}
+
 function SquareIcon({ square, cx, cy }: { square: Square; cx: number; cy: number }) {
   switch (square.kind) {
     case 'wormhole':

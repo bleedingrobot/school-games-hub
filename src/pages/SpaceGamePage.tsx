@@ -8,6 +8,7 @@ import { useSpaceGame, type SpaceSession } from '../space/useSpaceGame';
 
 // The board and its animations load only when a game starts.
 const SpaceLive = lazy(() => import('../games/space/SpaceLive').then((m) => ({ default: m.SpaceLive })));
+const SpaceGuide = lazy(() => import('../games/space/Guide').then((m) => ({ default: m.SpaceGuide })));
 
 /** /space-game/<id>: a Wormholes & Black Holes game with classmates, from the waiting room to the podium. */
 export function SpaceGamePage() {
@@ -70,6 +71,7 @@ function Waiting({ session }: { session: SpaceSession }) {
   const { game, me, cards, busy, act } = session;
   const navigate = useNavigate();
   const [bots, setBots] = useState(0);
+  const [help, setHelp] = useState(false);
   const [, setTick] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => setTick((t) => t + 1), 1000);
@@ -186,6 +188,9 @@ function Waiting({ session }: { session: SpaceSession }) {
             {session.message}
           </p>
         )}
+        <button type="button" className="button button--light-outline space-wait__help" onClick={() => setHelp(true)}>
+          <span aria-hidden="true">📖</span> How to play
+        </button>
         <button
           type="button"
           className="button button--light"
@@ -199,6 +204,11 @@ function Waiting({ session }: { session: SpaceSession }) {
           {isHost ? 'Cancel this game' : 'Leave'}
         </button>
       </div>
+      {help && (
+        <Suspense fallback={null}>
+          <SpaceGuide tab="how" onClose={() => setHelp(false)} />
+        </Suspense>
+      )}
     </section>
   );
 }

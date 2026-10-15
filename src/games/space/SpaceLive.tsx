@@ -19,10 +19,11 @@ import { fetchReactionsEnabled, fetchSpaceLog, seatsOf, type SpaceAction, type S
 import type { PlayerCard } from '../../data/multiplayer';
 import type { SpaceSession } from '../../space/useSpaceGame';
 import { Dice, DieFace } from './Dice';
-import { arrowKeys, Choice, ItemPicker, ItemTiles, MissionLog, Podium, RocketsPanel, type Picking } from './parts';
+import { arrowKeys, BoardOverlays, Choice, ItemPicker, ItemTiles, MissionLog, Podium, RocketsPanel, type Picking } from './parts';
+import { SpaceGuide, type GuideTab } from './Guide';
 import { loadLessMotion, loadPrefs, saveLessMotion, SPEED_SCALE } from './prefs';
 import { SpaceBoard, type Seat } from './SpaceBoard';
-import { choiceQuestion, itemName, ORDINAL, SEAT_COLOURS, SEAT_SHAPES, squareInfo } from './text';
+import { choiceQuestion, itemName, ORDINAL, SEAT_COLOURS, SEAT_SHAPES, squareInfo, type SquareInfo } from './text';
 import { useEventPlayer, type Batch } from './useEventPlayer';
 import './space.css';
 
@@ -63,12 +64,13 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
   const live = useRef({ scale: 1, calm: false, sound: false });
   live.current = { scale: SPEED_SCALE[loadPrefs().speed] * timeScale, calm: lessMotion, sound: soundOn };
   const screen = useEventPlayer(live);
-  const { view, rockets, turnSeat, dice, log, toast, banner } = screen;
+  const { view, rockets, turnSeat, dice, log, toast, banner, fact, setFact } = screen;
 
   const [animating, setAnimating] = useState(true);
   const [shownVersion, setShownVersion] = useState<number | null>(null);
   const [picking, setPicking] = useState<Picking | null>(null);
-  const [info, setInfo] = useState<{ n: number; title: string; text: string } | null>(null);
+  const [info, setInfo] = useState<({ n: number } & SquareInfo) | null>(null);
+  const [guide, setGuide] = useState<GuideTab | null>(null);
   const [hint, setHint] = useState('');
   const [showPodium, setShowPodium] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -260,10 +262,15 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
   keys.current = (event: KeyboardEvent) => {
     if (!view) return;
     const target = event.target as HTMLElement | null;
-    if (target?.closest('input, textarea, select')) return;
+    if (guide || target?.closest('input, textarea, select')) return;
+    if (event.key === '?') {
+      setGuide('how');
+      return;
+    }
     if (event.key === 'Escape') {
       if (picking) setPicking(null);
       else if (info) setInfo(null);
+      else if (fact) setFact(null);
       else if (confirmLeave) setConfirmLeave(false);
       else if (showPodium) setShowPodium(false);
       return;
@@ -365,6 +372,7 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
 
   return (
     <div className={`space-game${lessMotion ? ' is-calm' : ''}`} style={{ '--rows': view.board.size / 10 } as CSSProperties}>
+      <h1 className="sr-only">Wormholes &amp; Black Holes</h1>
       <div className="space-game__board">
         <SpaceBoard
           state={view}
@@ -380,25 +388,15 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
           label={boardLabel}
           bubbles={bubbles}
         />
-        {banner && (
-          <div className="space-banner" aria-hidden="true">
-            {banner}
-          </div>
-        )}
-        {toast && (
-          <div key={toast.id} className="space-toast" aria-hidden="true">
-            <span className="space-toast__emoji">{toast.emoji}</span> {toast.text}
-          </div>
-        )}
-        {info && (
-          <div className="space-info" role="note">
-            <strong>{info.title}</strong>
-            <span>{info.text}</span>
-            <button type="button" className="space-info__close" onClick={() => setInfo(null)} aria-label="Close">
-              ✕
-            </button>
-          </div>
-        )}
+        <BoardOverlays
+          banner={banner}
+          toast={toast}
+          info={info}
+          onCloseInfo={() => setInfo(null)}
+          fact={fact}
+          onCloseFact={() => setFact(null)}
+          onOpenChart={() => setGuide('chart')}
+        />
         {finished && showPodium && (
           <Podium seats={seats} places={places} mine={left || mySeat < 0 ? null : places[mySeat]} ending={game.ending} saveNote={saveNote}>
             <button
@@ -558,12 +556,16 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
             <button type="button" className="space-action" onClick={() => setLessMotion(!lessMotion)} aria-pressed={lessMotion}>
               {lessMotion ? '✓ Less motion' : 'Less motion'}
             </button>
+            <button type="button" className="space-action" onClick={() => setGuide('how')} aria-keyshortcuts="?">
+              How to play
+            </button>
             <Link to="/lobby" className="space-action">
               Lobby
             </Link>
           </div>
         )}
       </aside>
+      {guide && <SpaceGuide tab={guide} onClose={() => setGuide(null)} />}
     </div>
   );
 }

@@ -8,7 +8,9 @@ import { useRef, useState } from 'react';
 import type { SpaceEvent, SpaceState } from '../../../shared/space/engine';
 import { playSound, type GameSound } from '../sounds';
 import type { RocketFx } from './SpaceBoard';
-import { bannerFor, describe, ITEM_EMOJI, itemName } from './text';
+import type { FactId } from '../../../shared/space/facts';
+import { discover, factFor } from './starChart';
+import { bannerFor, describe, ITEM_EMOJI, itemName, type Banner } from './text';
 
 export interface Batch {
   events: SpaceEvent[];
@@ -40,6 +42,13 @@ export interface PlayerSettings {
   sound: boolean;
 }
 
+/** A space fact on screen: `isNew` if it has just gone on the Star chart. */
+export interface FactShown {
+  id: FactId;
+  isNew: boolean;
+  key: number;
+}
+
 export const LOG_LENGTH = 80;
 
 /** Squares a rocket hops through, one at a time (bouncing back off the end if it overshot). */
@@ -62,7 +71,8 @@ export function useEventPlayer(settings: { current: PlayerSettings }) {
   const [dice, setDice] = useState<{ values: number[]; rolling: boolean; seat: number } | null>(null);
   const [log, setLog] = useState<LogLine[]>([]);
   const [toast, setToast] = useState<{ emoji: string; text: string; id: number } | null>(null);
-  const [banner, setBanner] = useState<string | null>(null);
+  const [banner, setBanner] = useState<Banner | null>(null);
+  const [fact, setFact] = useState<FactShown | null>(null);
   const rocketsRef = useRef<RocketView[]>([]);
   const nextId = useRef(0);
 
@@ -98,6 +108,7 @@ export function useEventPlayer(settings: { current: PlayerSettings }) {
     setRocket(seat, { fx: 'hop' });
     for (const n of hopPath(from, to, size, steps, bounced)) {
       setRocket(seat, { pos: n, ms: hopMs * 0.8 * settings.current.scale });
+      sound('hop');
       await wait(hopMs);
     }
     setRocket(seat, { fx: null });
@@ -122,6 +133,8 @@ export function useEventPlayer(settings: { current: PlayerSettings }) {
   async function show(event: SpaceEvent, cast: Cast, lastSteps: { value: number | null }, size: number) {
     const names = cast.names;
     logEvent(event, cast);
+    const factId = factFor(event, cast.me);
+    if (factId) setFact({ id: factId, isNew: discover(factId), key: nextId.current++ });
 
     switch (event.kind) {
       case 'round-start':
@@ -131,7 +144,7 @@ export function useEventPlayer(settings: { current: PlayerSettings }) {
         return wait(event.seat === cast.me ? 100 : 250);
       case 'dice':
         setDice({ values: event.dice, rolling: true, seat: event.seat });
-        sound('move');
+        sound('dice');
         await wait(600);
         setDice({ values: event.dice, rolling: false, seat: event.seat });
         return wait(250);
@@ -149,17 +162,18 @@ export function useEventPlayer(settings: { current: PlayerSettings }) {
         await slide(event.seat, event.to, 650);
         return setRocket(event.seat, { fx: null });
       case 'wormhole':
-        sound('alert');
+        sound('wormhole');
         await effect(event.seat, 'swirl', 450);
         await slide(event.seat, event.to, 750);
         return setRocket(event.seat, { fx: null });
       case 'black-hole':
-        sound('capture');
+        sound('black-hole');
         await effect(event.seat, 'spaghetti', 550);
         await slide(event.seat, event.to, 750);
         return setRocket(event.seat, { fx: null });
       case 'force-field':
         showToast('🛡️', 'Force Field!');
+        sound('shield');
         await effect(event.seat, 'shield', 900);
         return setRocket(event.seat, { fx: null });
       case 'star':
@@ -168,11 +182,12 @@ export function useEventPlayer(settings: { current: PlayerSettings }) {
       case 'item-gained':
         if (event.seat === cast.me || event.from !== 'matariki') {
           showToast(ITEM_EMOJI[event.item], `${names[event.seat]} got ${itemName(event.item)}`);
-          sound('move');
+          sound('item');
         }
         return wait(event.from === 'matariki' ? 350 : 900);
       case 'item-used':
         showToast(ITEM_EMOJI[event.item], `${itemName(event.item)}!`);
+        if (event.target !== undefined) sound('zap');
         return wait(800);
       case 'item-lost':
       case 'pockets-full':
@@ -180,6 +195,7 @@ export function useEventPlayer(settings: { current: PlayerSettings }) {
       case 'item-declined':
         return wait(500);
       case 'pushed':
+        sound('zap');
         setRocket(event.seat, { fx: 'bump' });
         await slide(event.seat, event.to, 450);
         return setRocket(event.seat, { fx: null });
@@ -197,6 +213,7 @@ export function useEventPlayer(settings: { current: PlayerSettings }) {
       case 'gate':
       case 'mystery':
       case 'comet':
+        sound('wormhole');
         await effect(event.seat, 'swirl', 300);
         await slide(event.seat, event.to, 650);
         return setRocket(event.seat, { fx: null });
@@ -212,6 +229,7 @@ export function useEventPlayer(settings: { current: PlayerSettings }) {
         patchView((v) => ({ ...v, mines: v.mines.filter((m) => m.square !== event.square) }));
         return wait(300);
       case 'asteroid':
+        sound('capture');
         await effect(event.seat, 'bump', 500);
         return setRocket(event.seat, { fx: null });
       case 'supernova-spent':
@@ -229,15 +247,15 @@ export function useEventPlayer(settings: { current: PlayerSettings }) {
         if (event.event === 'wormhole-shift' && wormhole !== undefined && to !== undefined) {
           patchView((v) => ({ ...v, board: { ...v.board, squares: { ...v.board.squares, [wormhole]: { kind: 'wormhole', to } } } }));
         }
-        sound('alert');
+        sound('cosmic');
         setBanner(bannerFor(event));
-        await wait(1800);
+        await wait(2400);
         return setBanner(null);
       }
       case 'fuel-warning':
         sound('alert');
         setBanner(bannerFor(event));
-        await wait(1500);
+        await wait(2000);
         return setBanner(null);
       case 'docked':
         sound(event.seat === cast.me ? 'win' : 'end');
@@ -281,6 +299,7 @@ export function useEventPlayer(settings: { current: PlayerSettings }) {
 
   /** A fresh board: everyone where the state says, nothing in the log. */
   function reset(state: SpaceState) {
+    discover('earth'); // every rocket starts on Earth
     rocketsRef.current = state.rockets.map((r) => ({ pos: r.position, fx: null, ms: 0 }));
     setRockets(rocketsRef.current);
     setView(state);
@@ -289,6 +308,7 @@ export function useEventPlayer(settings: { current: PlayerSettings }) {
     setDice(null);
     setToast(null);
     setBanner(null);
+    setFact(null);
   }
 
   return {
@@ -302,6 +322,8 @@ export function useEventPlayer(settings: { current: PlayerSettings }) {
     toast,
     setToast,
     banner,
+    fact,
+    setFact,
     animate,
     jumpTo,
     reset,

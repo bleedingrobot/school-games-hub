@@ -4,6 +4,7 @@ import { BOT_NAMES } from '../../../shared/space/bot';
 import { DESIGNED_BOARDS, DESIGNED_BOARD_IDS, type DesignedBoardId } from '../../../shared/space/boards';
 import { parseGalaxyCode, randomGalaxyCode } from '../../../shared/space/galaxy';
 import { diceFrom } from '../../../shared/space/random';
+import type { GuideTab } from './Guide';
 import { todaysGalaxy, type SpacePrefs, type Speed } from './prefs';
 
 const BOARD_ABOUT: Record<DesignedBoardId, string> = {
@@ -62,6 +63,7 @@ export function SpaceSettings({
   onStart,
   starting = false,
   saving = false,
+  onHelp,
 }: {
   prefs: SpacePrefs;
   onChange: (prefs: SpacePrefs) => void;
@@ -75,6 +77,8 @@ export function SpaceSettings({
   starting?: boolean;
   /** Finished games are saved (false in the stand-alone preview). */
   saving?: boolean;
+  /** Opens How to play or the Star chart. */
+  onHelp: (tab: GuideTab) => void;
 }) {
   const set = <K extends keyof SpacePrefs>(key: K, value: SpacePrefs[K]) => onChange({ ...prefs, [key]: value });
   const galaxyOk = prefs.board !== 'galaxy' || parseGalaxyCode(prefs.galaxy) !== null;
@@ -283,6 +287,14 @@ export function SpaceSettings({
               ? 'Every game you finish earns points for taking part, whether you win or not.'
               : 'This is a practice copy: games aren’t saved.'}
           </p>
+          <div className="space-setup__help-buttons">
+            <button type="button" className="button button--light-outline" onClick={() => onHelp('how')}>
+              <span aria-hidden="true">📖</span> How to play
+            </button>
+            <button type="button" className="button button--light-outline" onClick={() => onHelp('chart')}>
+              <span aria-hidden="true">⭐</span> Star chart
+            </button>
+          </div>
         </div>
       </form>
     </section>

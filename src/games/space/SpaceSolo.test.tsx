@@ -179,4 +179,42 @@ describe('Wormholes & Black Holes against bots', () => {
     expect(left).toHaveLength(1);
     expect(left[0]).toEqual(expect.objectContaining({ ending: 'abandoned', actions: ['roll'] }));
   });
+
+  it('opens How to play and the Star chart from the settings, and Escape closes them', async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    renderGame();
+    const howButton = screen.getByRole('button', { name: /How to play/ });
+    await user.click(howButton);
+    const help = screen.getByRole('dialog', { name: /help/ });
+    expect(within(help).getByRole('tab', { name: /How to play/ })).toHaveAttribute('aria-selected', 'true');
+    expect(within(help).getByText(/Land on its mouth to zoom up/)).toBeInTheDocument();
+    expect(within(help).getByText(/Nobody can aim at the rocket in last place/)).toBeInTheDocument();
+    await user.click(within(help).getByRole('tab', { name: /Star chart/ }));
+    expect(within(help).getByText(/You’ve found/)).toHaveTextContent('You’ve found 0 of 19');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(howButton).toHaveFocus();
+  });
+
+  it('opens How to play with ?, and the space bar doesn’t roll behind it', async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    renderGame();
+    await user.click(screen.getByRole('button', { name: /Launch/ }));
+    const roll = await screen.findByRole('button', { name: /^🎲 Roll/ });
+    await waitFor(() => expect(roll).toBeEnabled());
+    await user.keyboard('?');
+    const help = screen.getByRole('dialog', { name: /help/ });
+    within(help).getByRole('tabpanel').focus(); // not a button, so only the open help stops the roll
+    await user.keyboard(' ');
+    expect(screen.queryByText(/Speedy Otter 27 rolled/)).not.toBeInTheDocument();
+    // Starting a game puts Earth on the Star chart.
+    await user.click(within(help).getByRole('tab', { name: /Star chart/ }));
+    expect(within(help).getByText(/You’ve found/)).toHaveTextContent('You’ve found 1 of 19');
+    await user.click(within(help).getByRole('button', { name: 'Close help' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await user.keyboard(' ');
+    expect(await screen.findAllByText(/Speedy Otter 27 rolled/)).not.toHaveLength(0);
+  });
 });

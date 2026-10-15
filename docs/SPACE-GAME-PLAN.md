@@ -2,7 +2,7 @@
 
 Stage 9 of School Games Hub: a space snakes and ladders for Years 4–6, against bots or 2–4 classmates.
 Written 15 October 2026 from the brief in [prompts/space-game.md](prompts/space-game.md), after reading the code on the `stage-8` branch.
-**Status: approved by James on 15 October 2026 (answers in section 11). Stage 9.1 done (results in section 14); James happy with the numbers as they are (15 Oct 2026). Stage 9.2 done (playing against bots; phone preview built with `npm run space:preview`). Stage 9.3 done (bot games saved and checked, taking-part points, space achievements; results in section 15; not live yet). Stage 9.4 done (playing classmates; results in section 16; not live yet). Next: Stage 9.5.**
+**Status: approved by James on 15 October 2026 (answers in section 11). Stage 9.1 done (results in section 14); James happy with the numbers as they are (15 Oct 2026). Stage 9.2 done (playing against bots; phone preview built with `npm run space:preview`). Stage 9.3 done (bot games saved and checked, taking-part points, space achievements; results in section 15; not live yet). Stage 9.4 done (playing classmates; results in section 16; not live yet). Stage 9.5 done (polish; results in section 17; not live yet). Next: Stage 9.6 (pass-and-play).**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
@@ -459,4 +459,25 @@ Built on branch `stage-9`. **Nothing is live yet**: migration `20261015000700_sp
 - Unit: 12 shared tests (`live.test.ts`), 23 server tests (`space-game/handler.test.ts`), 8 screen tests (`SpaceLive.test.tsx`), 5 more lobby tests. All 451 pass.
 - Database: 51 new tests (`space_classmates.test.sql`) and 7 more security tests. All 361 pass.
 - Real browser against the local database and function, at 1366×768 and 768×1024 (mouse and touch): 2 students with a reload part-way (57 s, both +4); 3 students + 1 bot on Nebula, where one closed the lid, timed out 3 times, went on autopilot, came back and took the controls (others +4, her 0); 4 students with reactions on (bubbles seen), then a rematch everyone joined, launched and left (ended "everyone left", no points). Lobby, Dashboard and Teacher pages checked. No page errors.
+
+## 17. Stage 9.5 results: polish (15 October 2026)
+
+Built on branch `stage-9`. Website only: no database or server changes, so nothing new to put live beyond Stage 9.3 and 9.4.
+
+### What's new
+
+- **How to play** (`Guide.tsx`): a pop-up with a picture and one line for every square, star, gravity square and item, the catch-up and fair-play rules, Classic vs Cosmic, and the keys. Opens from the settings screen, the game (button or the `?` key) and the waiting room. Focus stays inside it, Escape or ✕ closes it, and focus goes back to the button. While it's open, the game's keys (Space to roll...) do nothing.
+- **Space facts** (`shared/space/facts.ts`): 19 facts, one per star type plus Earth, the space station, wormholes, black holes, comets, nebulae, asteroids and the three gravity squares. Year 4–6 wording, checked against NASA, ESA and Te Ara. A fact card pops up the first time your own rocket lands on that kind of square, and tapping a square on the board shows its fact too.
+- **Star chart** (second tab of the same pop-up): every fact you've found ("You've found 7 of 19"), the rest shown as locked. Kept on the device only (`starChart.ts`, localStorage), not in the database.
+- **Cosmic events:** a full-width banner with an emoji, a title and one line ("🌀 Wormhole shift! The wormhole on 9 now goes to 32."), held a little longer so it can be read, plus the mission log line.
+- **Sounds** (still off until the student turns them on): dice rattle, a soft hop per square, wormhole whoosh up, black hole slide down, item chime, zap (aimed items), shield, and a three-note cosmic event chord. All made in the browser, no files.
+- **Accessibility:** the game pages have a heading for screen readers, cosmic event banners are announced once, through the mission log (the banner itself is hidden from screen readers), and the fact card is a labelled note ("Space fact: Neutron star"), and every new button works with the keyboard.
+- **README** has a Wormholes & Black Holes section (boards, modes, points, classmates games, teacher switches, why it can't be faked), and **CLASS-LAUNCH** has a space game check for the day before, a space lesson plan, what to watch for, the new messages a student might see, space games in the lookup query, and a box on the problem slip.
+
+### Checked
+
+- Unit: new tests for the facts (every star has one, none repeat, at most 3 sentences each), the Star chart, the square info text, and How to play / Star chart / `?` in the game. All 461 pass. Typecheck clean.
+- Real browser on the stand-alone preview at 1366×768 (mouse) and 768×1024 (touch), Deep Space with cosmic events and sound on, played to the end: axe accessibility scan clean on settings, How to play, Star chart, game and podium at both sizes; focus trapped in the pop-up and returned on close; `?` opens help and Space behind it doesn't roll; all three cosmic events seen; fact cards shown and saved to the Star chart. No page errors.
+- Real browser against the local database and function: 2 students (with a reload part-way) and 4 students with reactions, then a rematch everyone left. Waiting-room How to play opens and closes, axe clean, both +4 points, no page errors.
+- The CLASS-LAUNCH lookup query runs on the database.
 
