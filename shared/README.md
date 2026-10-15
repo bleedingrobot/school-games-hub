@@ -6,5 +6,10 @@ Game rules code that runs in both the website and the server, so the server can 
 - `checkers/rules.ts`: English checkers rules, written by us (no well-tested library exists), with
   thorough tests in `checkers/rules.test.ts`.
 - `checkers/botGame.ts`: deciding the result of a checkers game against a bot.
+- `space/`: Wormholes & Black Holes (Stage 9). `engine.ts` is the rules, as a pure function:
+  the dice come in from outside, so the same dice always give the same game. `boards.ts` has
+  the four designed boards, `galaxy.ts` makes Random Galaxies, `bot.ts` has the bots, and
+  `replay.ts` replays a bot game from its seed. `sim.ts` plays thousands of games
+  (`npm run space:sim`). See `docs/SPACE-GAME-PLAN.md`.
 
 The `save-bot-game` server function runs exactly this code before saving a result.

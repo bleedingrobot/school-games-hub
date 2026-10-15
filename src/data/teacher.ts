@@ -31,7 +31,8 @@ interface Tally {
 export interface PersonDetail {
   points: number;
   level: number;
-  games: { game: string; bot: Tally; friend: Tally; rank: Rank; achievements: number }[];
+  /** Rank is null for games without badges (Wormholes & Black Holes). */
+  games: { game: string; bot: Tally; friend: Tally; rank: Rank | null; achievements: number }[];
   recent: {
     game: string;
     kind: 'bot' | 'friend';
@@ -40,6 +41,8 @@ export interface PersonDetail {
     result: 'won' | 'lost' | 'drawn';
     reason: string;
     finished_at: string;
+    /** Wormholes & Black Holes against bots: the place (null if they left early). */
+    place?: number | null;
   }[];
 }
 
@@ -86,6 +89,11 @@ export async function deletePerson(id: string): Promise<void> {
 
 export async function setMultiplayer(enabled: boolean): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_multiplayer', { enabled });
+  if (error) fail(error, 'We couldn’t change that.');
+}
+
+export async function setSpaceReactions(enabled: boolean): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_space_reactions', { enabled });
   if (error) fail(error, 'We couldn’t change that.');
 }
 

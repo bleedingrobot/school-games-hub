@@ -3,21 +3,36 @@ import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { seeded } from '../../../shared/seededRandom';
 import { applyMove, boardResult, legalMoves, startPosition } from '../../../shared/checkers/rules';
-import { handleSaveBotGame, type GameRow, type Services } from './handler';
+import { botAction } from '../../../shared/space/bot';
+import { DEFAULT_SETTINGS, play } from '../../../shared/space/engine';
+import { randomFromSeed } from '../../../shared/space/random';
+import { playBots, startSolo, type SoloSetup } from '../../../shared/space/replay';
+import { encodeAction, type SpaceGameReport } from '../../../shared/space/save';
+import { stamper } from '../_shared/stamp';
+import { handleSaveBotGame, type GameRow, type Services, type SpaceRow } from './handler';
 
 const FOOLS_MATE = ['f2f3', 'e7e5', 'g2g4', 'd8h4'];
 
+const NOW = 1_792_000_000;
+
 function services(over: Partial<Services> = {}) {
   const saved: GameRow[] = [];
+  const savedSpace: SpaceRow[] = [];
   const s: Services = {
-    userIdFor: vi.fn(async (token: string) => (token === 'good-token' ? 'student-1' : null)),
+    userIdFor: vi.fn(async (token: string) => (token === 'good-token' ? 'student-1' : token === 'other-token' ? 'student-2' : null)),
     record: vi.fn(async (row: GameRow) => {
       saved.push(row);
       return 'saved' as const;
     }),
+    recordSpace: vi.fn(async (row: SpaceRow) => {
+      savedSpace.push(row);
+      return 'saved' as const;
+    }),
+    stamp: stamper('test-server-key', 'space-seed'),
+    nowSeconds: () => NOW,
     ...over,
   };
-  return { s, saved };
+  return { s, saved, savedSpace };
 }
 
 function post(body: unknown, token: string | null = 'good-token', origin = 'https://bleedingrobot.github.io') {
@@ -208,6 +223,133 @@ describe('saving checkers games', () => {
     const { s, saved } = services();
     await handleSaveBotGame(post({ level: 'easy', studentColour: 'white', moves: ['e2e4'], ending: 'resigned' }), s);
     expect(saved[0].game).toBe('chess');
+  });
+});
+
+/** Asks for a seed, plays a whole game from it with a Pilot-like "student", and returns the report. */
+async function spaceGame(s: Services, setup: Omit<SoloSetup, 'seed'>, stopAfter = Infinity) {
+  const response = await handleSaveBotGame(post({ game: 'space', start: true }), s);
+  const { seed, stamp } = (await response.json()) as { seed: string; stamp: string };
+  const game = startSolo({ ...setup, seed });
+  const student = randomFromSeed('student');
+  const actions: string[] = [];
+  playBots(game, setup.level);
+  while (game.state.phase !== 'over' && actions.length < stopAfter) {
+    const action = botAction(game.state, 'easy', student);
+    actions.push(encodeAction(action));
+    game.state = play(game.state, action, game.dice).state;
+    playBots(game, setup.level);
+  }
+  const report: SpaceGameReport = {
+    game: 'space',
+    seed,
+    stamp,
+    ...setup,
+    actions,
+    ending: game.state.phase === 'over' ? 'finished' : 'abandoned',
+  };
+  return { report, state: game.state, studentSeat: game.studentSeat };
+}
+
+const NEBULA = { board: { id: 'nebula' as const }, settings: DEFAULT_SETTINGS, bots: 3, level: 'easy' as const };
+
+describe('saving Wormholes & Black Holes games', () => {
+  it('hands out a fresh seed with a stamp', async () => {
+    const { s } = services();
+    const a = await (await handleSaveBotGame(post({ game: 'space', start: true }), s)).json();
+    const b = await (await handleSaveBotGame(post({ game: 'space', start: true }), s)).json();
+    expect(a.seed).toMatch(/^s1-1792000000-[0-9a-f]{24}$/);
+    expect(a.stamp).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(a.seed).not.toBe(b.seed);
+  });
+
+  it('needs a sign-in for a seed too', async () => {
+    const { s } = services();
+    expect((await handleSaveBotGame(post({ game: 'space', start: true }, null), s)).status).toBe(401);
+  });
+
+  it('replays the game from its seed, works out the place itself and saves it', async () => {
+    const { s, savedSpace, saved } = services();
+    const { report, state, studentSeat } = await spaceGame(s, NEBULA);
+    const response = await handleSaveBotGame(post(report), s);
+    expect(response.status).toBe(200);
+    const place = state.places![studentSeat];
+    expect(await response.json()).toEqual(
+      expect.objectContaining({ result: place === 1 ? 'won' : 'lost', place, countsForPoints: true }),
+    );
+    expect(saved).toEqual([]);
+    expect(savedSpace).toHaveLength(1);
+    const row = savedSpace[0];
+    expect(row).toEqual(
+      expect.objectContaining({
+        player: 'student-1',
+        bot_level: 'easy',
+        player_side: ['first', 'second', 'third', 'fourth'][studentSeat],
+        moves: report.actions,
+        counts_for_points: true,
+      }),
+    );
+    expect(row.space).toEqual(
+      expect.objectContaining({ seed: report.seed, board: { id: 'nebula' }, bots: 3, place, rockets: 4 }),
+    );
+    expect(row.space.stats.wormholes).toBeGreaterThanOrEqual(0);
+    expect(row.player_moves).toBeGreaterThanOrEqual(5);
+  });
+
+  it('saves a game the student left part-way as left early, earning nothing', async () => {
+    const { s, savedSpace } = services();
+    const { report } = await spaceGame(s, NEBULA, 4);
+    expect((await handleSaveBotGame(post(report), s)).status).toBe(200);
+    expect(savedSpace[0]).toEqual(expect.objectContaining({ result: 'lost', reason: 'abandoned', counts_for_points: false }));
+    expect(savedSpace[0].space.place).toBeNull();
+  });
+
+  it('refuses a game that says it finished but didn’t', async () => {
+    const { s, savedSpace } = services();
+    const { report } = await spaceGame(s, NEBULA, 4);
+    expect((await handleSaveBotGame(post({ ...report, ending: 'finished' }), s)).status).toBe(400);
+    expect(savedSpace).toEqual([]);
+  });
+
+  it('refuses made-up seeds, borrowed seeds, old seeds and changed games', async () => {
+    const { s, savedSpace } = services();
+    const { report } = await spaceGame(s, NEBULA);
+    const other = services({ nowSeconds: () => NOW + 13 * 60 * 60 });
+    const cases: [object, string][] = [
+      [{ ...report, stamp: report.stamp.replace(/^./, (c) => (c === 'A' ? 'B' : 'A')) }, 'good-token'], // a forged stamp
+      [{ ...report, seed: report.seed.replace(/.$/, (c) => (c === '0' ? '1' : '0')) }, 'good-token'], // a different seed
+      [report, 'other-token'], // someone else's seed
+      [{ ...report, actions: [...report.actions.slice(1)] }, 'good-token'], // a different game
+      [{ ...report, bots: 2 }, 'good-token'], // different settings
+      [{ ...report, actions: [...report.actions, 'roll'] }, 'good-token'], // extra actions
+      [{ ...report, actions: ['use:laser'] }, 'good-token'], // not an action
+      [{ ...report, settings: { ...report.settings, maths: true } }, 'good-token'],
+      [{ ...report, board: { id: 'moon' } }, 'good-token'],
+      [{ ...report, ending: 'resigned' }, 'good-token'],
+    ];
+    for (const [body, token] of cases) expect((await handleSaveBotGame(post(body, token), s)).status).toBe(400);
+    expect((await handleSaveBotGame(post(report), other.s)).status).toBe(400); // too old
+    expect(savedSpace).toEqual([]);
+    expect(other.savedSpace).toEqual([]);
+  });
+
+  it('plays Random Galaxy boards too', async () => {
+    const { s, savedSpace } = services();
+    const { report } = await spaceGame(s, { ...NEBULA, board: { galaxy: 'comet kiwi 48', size: 50 } as never, bots: 1 });
+    expect(report.board).toEqual({ galaxy: 'comet kiwi 48', size: 50 });
+    expect((await handleSaveBotGame(post(report), s)).status).toBe(200);
+    expect(savedSpace[0].space.board).toEqual({ galaxy: 'Comet-Kiwi-48', size: 50 });
+  });
+
+  it('passes on the daily limit kindly', async () => {
+    const { s } = services({ recordSpace: vi.fn(async () => 'too-many' as const) });
+    const { report } = await spaceGame(s, NEBULA);
+    expect((await handleSaveBotGame(post(report), s)).status).toBe(429);
+  });
+
+  it('won’t hand out seeds without a server key', async () => {
+    const { s } = services({ stamp: stamper('', 'space-seed') });
+    expect((await handleSaveBotGame(post({ game: 'space', start: true }), s)).status).toBe(500);
   });
 });
 

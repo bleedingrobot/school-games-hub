@@ -26,4 +26,12 @@ export interface GameDefinition {
   Play?: ComponentType<{ level: BotLevel }>;
   /** The game against another student, refereed by the server. */
   Live?: ComponentType<{ session: FriendSession }>;
+  /**
+   * False for games of luck (Wormholes & Black Holes): they never appear on leaderboards,
+   * rank badges or the won/lost tables. Leave it out for chess-like games.
+   */
+  ranked?: boolean;
 }
+
+/** Games that count for leaderboards, rank badges and won/lost stats. */
+export const isRanked = (game: GameDefinition) => game.ranked !== false;

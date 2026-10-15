@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-preview/
 .env
 .env.*
 !.env.example
@@ -7,3 +8,4 @@ supabase/.temp/
 supabase/.branches/
 .DS_Store
 .claude/settings.local.json
+.space-sim-entry-*.ts

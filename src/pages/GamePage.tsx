@@ -4,7 +4,7 @@ import { ComingSoon } from '../components/ComingSoon';
 import type { GameDefinition } from '../games/types';
 import { BOT_LEVELS, isBotLevel } from '../games/types';
 
-const EMOJI: Record<string, string> = { chess: '♟️', checkers: '🔴' };
+const EMOJI: Record<string, string> = { chess: '♟️', checkers: '🔴', space: '🚀' };
 
 export function GamePage({ game }: { game: GameDefinition }) {
   const [params] = useSearchParams();

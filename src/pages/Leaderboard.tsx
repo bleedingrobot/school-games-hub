@@ -4,6 +4,7 @@ import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import { fetchLeaderboard, type Board, type BoardRow } from '../data/progress';
 import { GAMES } from '../games/registry';
+import { isRanked } from '../games/types';
 
 export const BOARDS: { id: Board; label: string; about: string; minGames: number; howToJoin: string }[] = [
   {
@@ -76,7 +77,7 @@ export function Leaderboard() {
         <fieldset className="choice-group">
           <legend>Game</legend>
           <div className="choice-group__chips">
-            {GAMES.map((g) => (
+            {GAMES.filter(isRanked).map((g) => (
               <label key={g.id} className="chip">
                 <input type="radio" name="board-game" checked={game === g.id} onChange={() => setGame(g.id)} />
                 <span>{g.name}</span>

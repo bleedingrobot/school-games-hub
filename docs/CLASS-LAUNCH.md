@@ -1,6 +1,6 @@
 # Class launch checklist
 
-For running a whole-class lesson (up to about 30 students) on School Games Hub: bots, friends, points, leaderboards and the teacher view.
+For running a whole-class lesson (up to about 30 students) on School Games Hub: bots, friends, points, leaderboards, the teacher view, and the space game (Wormholes & Black Holes).
 Live site: https://bleedingrobot.github.io/school-games-hub/
 
 ## The day before
@@ -9,7 +9,8 @@ Live site: https://bleedingrobot.github.io/school-games-hub/
 - [ ] **Sign in on a school Chromebook** with your own school account.
 - [ ] **Play a quick bot game:** checkers against **Very Easy**, then **Resign**. The result card should say **✓ Saved to your games**, and the game should appear under **Recent games** on the dashboard.
 - [ ] **Play a quick friend game with yourself:** open the site on a second device (or ask a colleague). Press **Start game** on one, type the code on the other, make a move on each, then resign. Both screens should show the result.
-- [ ] **Check the friends switch:** open the **Teacher** page. It should say **Games against friends are on.** If it says paused, press **Switch games against friends back on**.
+- [ ] **If you'll use the space game:** **Play the bots → Wormholes & Black Holes**, pick **Asteroid Belt** and 1 bot, and play to the end (about 2 minutes). The podium should say **Saved!**
+- [ ] **Check the friends switch:** open the **Teacher** page. It should say **Games against friends are on.** If it says paused, press **Switch games against friends back on**. It covers space games too. Decide on **Emoji reactions in space games** (off to start).
 - [ ] Check the students know their school Google login, and the Chromebooks are charged.
 - [ ] Print one **problem slip** per student (bottom of this page).
 
@@ -22,12 +23,23 @@ Live site: https://bleedingrobot.github.io/school-games-hub/
 5. **Points and boards (5 min).** Look at the dashboard (points, level, badges) and the **Leaderboard**. The **How points work** page explains it all in student words. Boards need 3 games this week (or 5 games against friends for "All time"), so not everyone will be on them in the first lesson.
 6. **Sign out** (tap their avatar, then **Sign out**) if Chromebooks are shared.
 
+### A space game lesson instead (30–45 min)
+
+Wormholes & Black Holes is a dice race, so it suits a younger group, a quick finish to the week, or students who don't play chess or checkers yet. Winning is luck, so it only gives taking-part points and never touches the leaderboards.
+
+1. **Sign in (5 min)** as above.
+2. **How to play (5 min).** Everyone opens **Play the bots → Wormholes & Black Holes → How to play**. It has a picture and one line for every square and item. Pick **Classic** mode for a gentler first game (just wormholes and black holes). Short on Chromebooks? **Who's playing → Pass-and-play** lets 2–4 students share one (just for fun: not saved, no points).
+3. **Against the bots (10 min).** **Asteroid Belt** with 1–3 bots takes 2–4 minutes. Landing on stars and other squares shows a space fact, collected on each student's **Star chart**.
+4. **With classmates (15–20 min).** Groups of 2–4: one taps **Play a friend → Start a game → Wormholes & Black Holes**, picks a board, and reads out the code. The others type it in. The host can fill empty seats with bots, then presses **Launch**. For the whole class on the same board, write a galaxy code on the board (e.g. `Comet-Kiwi-48`) or use **Galaxy of the day**.
+5. **Rematch** at the end starts a new waiting game with the same board.
+
 ## What to watch for
 
 - Students stuck at sign-in. Write down the exact words (see the table below).
 - Pairs who can't find each other's game: check the code is typed exactly (case and spaces don't matter).
 - Players who walk away: after 2 minutes, the partner gets a **Claim the win** button. Walking away counts as a loss for the one who left.
 - A player name being used to tease: **Teacher** page → the student → **New name**.
+- In space games, each turn has 30 seconds (15 for a choice). A student who misses 3 turns in a row goes on **autopilot**, so the game carries on for everyone. They can tap **Take the controls**, but that game no longer earns them points.
 - A student who needs a break from friend games: **Teacher** page → the student → **Hide**. They can still play bots.
 
 ## If something goes wrong in class
@@ -59,6 +71,12 @@ Live site: https://bleedingrobot.github.io/school-games-hub/
 | *Playing friends isn't available for you right now* | That student is hidden | Show them again on the Teacher page |
 | *📡 Live updates have dropped* | The live connection is down | Nothing: the page checks every few seconds |
 | *😴 … seems to be away* | Their partner closed the page or lost Wi-Fi | Wait, or claim the win after 2 minutes |
+| *You need at least 2 players to launch. Share the code!* | Space game: the host is alone in the waiting room | Share the code, or add bots |
+| *That game is full, or it has already launched* | Space game: 4 rockets already, or it started | Make a new game |
+| *That game stopped waiting* / *The host hasn't launched yet* | Space game: the waiting room timed out, or it's not started | Make a new game / wait for the host |
+| *Autopilot is flying your rocket* | They missed 3 turns in a row | Tap **Take the controls** (that game won't earn points) |
+| *Wait a few seconds before sending another* / *That's all the reactions for this game* | Space game emoji: one every 5 seconds, 20 a game | Nothing |
+| *Reactions are switched off* | The Teacher page switch is off | Switch it on if you want them |
 
 ## How students report problems (no typing, nothing personal)
 
@@ -96,10 +114,18 @@ cross join who cross join asked
 left join public.profiles o on o.id = case when m.first_player = who.id then m.second_player else m.first_player end
 where who.id in (m.first_player, m.second_player, m.created_by)
   and coalesce(m.finished_at, m.created_at) between asked.around - interval '1 hour' and asked.around + interval '1 hour'
+union all
+select to_char(coalesce(s.finished_at, s.created_at) at time zone 'Pacific/Auckland', 'Dy DD Mon HH24:MI'),
+       'classmates', 'space', s.rockets || ' rockets',
+       case when s.status = 'finished' then 'place ' || s.places[array_position(array[s.seat1, s.seat2, s.seat3, s.seat4], who.id)] end,
+       s.ending, null, s.counts[array_position(array[s.seat1, s.seat2, s.seat3, s.seat4], who.id)], s.status
+from public.space_games s, who, asked
+where who.id in (s.seat1, s.seat2, s.seat3, s.seat4, s.host)
+  and coalesce(s.finished_at, s.created_at) between asked.around - interval '1 hour' and asked.around + interval '1 hour'
 order by 1;
 ```
 
-How to read it: `reason` says how each game ended (`checkmate`, `resigned`, `abandoned` = left or walked away, `agreed-draw`...). `counted` is false for games that were too short or abandoned (they earn nothing). A friend game with `status` = `playing` is still going. If the student changed their name since, use **Find a player** on the Teacher page to see their new one (a teacher's **New name** shows the new name straight away).
+How to read it: `reason` says how each game ended (`checkmate`, `resigned`, `abandoned` = left or walked away, `agreed-draw`...). `counted` is false for games that were too short or abandoned (they earn nothing). A friend game with `status` = `playing` is still going. Space games say `place 1`, `place 2`... and end `docked` (someone reached the station), `mission-clock` (out of fuel) or `abandoned` (everyone left). If the student changed their name since, use **Find a player** on the Teacher page to see their new one (a teacher's **New name** shows the new name straight away).
 
 Server problems are in Supabase under **Edge Functions → (function) → Logs**, kept for one day. They never contain names, only what went wrong.
 
@@ -113,7 +139,7 @@ Supabase allows about 150 sign-ins and session refreshes every 5 minutes from on
 
 Player name (from the screen, optional): ______________________
 
-Which part? ☐ Signing in  ☐ Name or avatar  ☐ Checkers  ☐ Chess  ☐ Playing a friend  ☐ Points or leaderboard
+Which part? ☐ Signing in  ☐ Name or avatar  ☐ Checkers  ☐ Chess  ☐ Playing a friend  ☐ Space game  ☐ Points or leaderboard
 
 What happened? ☐ I got stuck  ☐ A piece wouldn't move  ☐ The bot did something weird  ☐ My friend's moves didn't show
 ☐ It said it couldn't save  ☐ Something looked broken  ☐ My points looked wrong  ☐ Too hard  ☐ Too easy

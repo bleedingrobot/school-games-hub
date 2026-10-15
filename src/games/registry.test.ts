@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { GAMES, findGame } from './registry';
-import { BOT_LEVELS, isBotLevel } from './types';
+import { BOT_LEVELS, isBotLevel, isRanked } from './types';
 
 describe('game registry', () => {
-  it('has chess and checkers', () => {
-    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers']);
+  it('has chess, checkers and Wormholes & Black Holes', () => {
+    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space']);
+  });
+
+  it('keeps Wormholes & Black Holes off the rankings', () => {
+    expect(GAMES.filter(isRanked).map((g) => g.id)).toEqual(['chess', 'checkers']);
+    expect(findGame('space')?.ranked).toBe(false);
   });
 
   it('gives every game a unique, URL-safe id', () => {

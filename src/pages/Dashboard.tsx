@@ -15,8 +15,10 @@ import {
   type PlayerCard,
 } from '../data/multiplayer';
 import { fetchMyProgress, type MyProgress } from '../data/progress';
+import { fetchMyOpenSpaceGames, fetchMySpaceStats, fetchRecentSpaceGames, seatsOf, type SpaceGame } from '../data/spaceGames';
 import { findGame, GAMES } from '../games/registry';
-import { BOT_LEVELS, type BotLevel } from '../games/types';
+import { BOT_LEVELS, isRanked, type BotLevel } from '../games/types';
+import { BOT_NAMES, placeLabel } from '../../shared/space/names';
 
 const RESULT_LABEL = { won: 'Won', lost: 'Lost', drawn: 'Draw' } as const;
 
@@ -31,7 +33,8 @@ export function whenPlayed(iso: string, now = new Date()): string {
   return then.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
 }
 
-function botName(level: string) {
+function botName(level: string, game?: string) {
+  if (game === 'space') return `${BOT_NAMES[level as BotLevel] ?? ''} bots`;
   return `${BOT_LEVELS.find((l) => l.id === level)?.label ?? ''} bot`;
 }
 
@@ -44,6 +47,26 @@ export interface RecentGame {
   finished_at: string;
   bot_level?: string;
   opponent?: PlayerCard | null;
+  /** Wormholes & Black Holes: the place (null if they left early). */
+  place?: number | null;
+  /** Wormholes & Black Holes with classmates (rather than one opponent). */
+  classmates?: boolean;
+}
+
+/** Turns a finished space game with classmates into a Recent games line. */
+export function spaceRecentGame(g: SpaceGame, me: string): RecentGame {
+  const seat = seatsOf(g).indexOf(me);
+  const left = g.ending === 'abandoned' || !!g.seat_info?.[seat]?.left;
+  const place = left ? null : (g.places?.[seat] ?? null);
+  return {
+    id: g.id,
+    game: 'space',
+    result: place === 1 ? 'won' : 'lost',
+    reason: left ? 'abandoned' : (g.ending ?? ''),
+    finished_at: g.finished_at ?? g.created_at,
+    place,
+    classmates: true,
+  };
 }
 
 /** Turns a finished friend game into a Recent games line, from this student's side. */
@@ -66,6 +89,8 @@ function useMyGames(me: string | undefined) {
   const [stats, setStats] = useState<GameStats[] | null>(null);
   const [friendStats, setFriendStats] = useState<FriendStats[] | null>(null);
   const [inProgress, setInProgress] = useState<{ game: FriendGame; opponent: PlayerCard | null }[]>([]);
+  const [spaceGoing, setSpaceGoing] = useState<SpaceGame[]>([]);
+  const [spaceStats, setSpaceStats] = useState<{ played: number; firsts: number } | null>(null);
   const [progress, setProgress] = useState<MyProgress | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -75,6 +100,22 @@ function useMyGames(me: string | undefined) {
     fetchMyProgress()
       .then((p) => current && setProgress(p))
       .catch(() => {});
+    // Space games with classmates load alongside, but never stop the rest from showing.
+    Promise.all([
+      fetchRecentSpaceGames(5).catch(() => []),
+      fetchMyOpenSpaceGames().catch(() => []),
+      fetchMySpaceStats().catch(() => null),
+    ]).then(([recentSpace, openSpace, totals]) => {
+      if (!current) return;
+      setSpaceGoing(openSpace.filter((g) => g.status === 'playing'));
+      setSpaceStats(totals);
+      if (recentSpace.length === 0) return;
+      setRecent((prev) =>
+        [...(prev ?? []), ...recentSpace.map((g) => spaceRecentGame(g, me))]
+          .sort((a, b) => b.finished_at.localeCompare(a.finished_at))
+          .slice(0, 5),
+      );
+    });
     Promise.all([fetchRecentGames(5), fetchMyStats(), fetchRecentFriendGames(5), fetchFriendStats(), fetchMyOpenGames()])
       .then(async ([botGames, totals, friendGames, friendTotals, open]) => {
         const playing = open.filter((g) => g.status === 'playing');
@@ -85,8 +126,11 @@ function useMyGames(me: string | undefined) {
           ...botGames.map((g) => ({ ...g })),
           ...friendGames.map((g) => friendRecentGame(g, me, cards)),
         ];
-        merged.sort((a, b) => b.finished_at.localeCompare(a.finished_at));
-        setRecent(merged.slice(0, 5));
+        setRecent((prev) =>
+          [...(prev ?? []).filter((g) => g.classmates), ...merged]
+            .sort((a, b) => b.finished_at.localeCompare(a.finished_at))
+            .slice(0, 5),
+        );
         setStats(totals);
         setFriendStats(friendTotals);
         setInProgress(
@@ -101,12 +145,12 @@ function useMyGames(me: string | undefined) {
       current = false;
     };
   }, [me]);
-  return { recent, stats, friendStats, inProgress, progress, failed };
+  return { recent, stats, friendStats, inProgress, spaceGoing, spaceStats, progress, failed };
 }
 
 export function Dashboard() {
   const { profile } = useAuth();
-  const { recent, stats, friendStats, inProgress, progress, failed } = useMyGames(profile?.id);
+  const { recent, stats, friendStats, inProgress, spaceGoing, spaceStats, progress, failed } = useMyGames(profile?.id);
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
@@ -144,8 +188,21 @@ export function Dashboard() {
         </div>
       </section>
 
-      {inProgress.length > 0 && (
+      {(inProgress.length > 0 || spaceGoing.length > 0) && (
         <section className="in-progress" aria-label="Games still going">
+          {spaceGoing.slice(0, 1).map((game) => (
+            <div key={game.id} className="in-progress__item">
+              <span className="in-progress__emoji" aria-hidden="true">
+                🚀
+              </span>
+              <p>
+                <strong>Your {findGame('space')?.name} game</strong> with classmates is still going!
+              </p>
+              <Link to={`/space-game/${game.id}`} className="button button--play">
+                Carry on
+              </Link>
+            </div>
+          ))}
           {inProgress.slice(0, 2).map(({ game, opponent }) => (
             <div key={game.id} className="in-progress__item">
               <AvatarImage avatar={opponent?.avatar} size={48} />
@@ -223,19 +280,25 @@ export function Dashboard() {
             <ul className="recent-list">
               {recent.map((g) => (
                 <li key={g.id}>
-                  <span className={`result result--${g.result}`}>{RESULT_LABEL[g.result]}</span>
+                  {g.game === 'space' ? (
+                    <span className={`result result--${g.place === 1 ? 'won' : 'drawn'}`}>{placeLabel(g.place)}</span>
+                  ) : (
+                    <span className={`result result--${g.result}`}>{RESULT_LABEL[g.result]}</span>
+                  )}
                   <span className="recent-list__what">
                     {g.bot_level ? (
                       <>
-                        {findGame(g.game)?.name} vs {botName(g.bot_level)}
+                        {findGame(g.game)?.name} vs {botName(g.bot_level, g.game)}
                       </>
+                    ) : g.classmates ? (
+                      <>{findGame(g.game)?.name} with classmates</>
                     ) : (
                       <>
                         {findGame(g.game)?.name} vs <AvatarImage avatar={g.opponent?.avatar} size={24} />{' '}
                         {g.opponent?.display_name ?? 'a classmate'}
                       </>
                     )}
-                    {g.reason === 'abandoned' && (
+                    {g.reason === 'abandoned' && g.game !== 'space' && (
                       <span className="recent-list__note">{g.result === 'won' ? ' (they left)' : ' (left early)'}</span>
                     )}
                   </span>
@@ -253,6 +316,7 @@ export function Dashboard() {
           </h2>
           <StatsTable caption="Against bots" stats={stats} />
           <StatsTable caption="Against friends" stats={friendStats} />
+          <SpaceStatsLine stats={stats} classmates={spaceStats} />
           {progress && <LevelBar progress={progress} />}
         </section>
 
@@ -281,6 +345,26 @@ export function Dashboard() {
   );
 }
 
+/** Wormholes & Black Holes is luck, so it gets a line of its own rather than won/lost columns. */
+function SpaceStatsLine({
+  stats,
+  classmates,
+}: {
+  stats: GameStats[] | null;
+  classmates: { played: number; firsts: number } | null;
+}) {
+  const space = stats?.find((row) => row.game === 'space');
+  const played = (space?.played ?? 0) + (classmates?.played ?? 0);
+  const firsts = (space?.won ?? 0) + (classmates?.firsts ?? 0);
+  if (!played) return null;
+  return (
+    <p className="stats-line">
+      🚀 {findGame('space')?.name}: {played} game{played === 1 ? '' : 's'}, 1st place {firsts} time
+      {firsts === 1 ? '' : 's'}
+    </p>
+  );
+}
+
 function StatsTable({ caption, stats }: { caption: string; stats: { game: string; played: number; won: number; lost: number; drawn: number }[] | null }) {
   return (
     <table className="stats-table">
@@ -295,7 +379,7 @@ function StatsTable({ caption, stats }: { caption: string; stats: { game: string
         </tr>
       </thead>
       <tbody>
-        {GAMES.map((game) => {
+        {GAMES.filter(isRanked).map((game) => {
           const s = stats?.find((row) => row.game === game.id) ?? { played: 0, won: 0, lost: 0, drawn: 0 };
           const show = (n: number) => (stats ? n : '–');
           return (

@@ -79,6 +79,8 @@ export async function fetchLeaderboard(game: string, board: Board): Promise<Boar
 export interface Rules {
   bot: Record<'very-easy' | 'easy' | 'medium', { lost: number; drawn: number; won: number }>;
   friend: { lost: number; drawn: number; won: number };
+  /** Wormholes & Black Holes: taking-part points, the same win or lose. */
+  space?: { bot: number; friend: number; friendDailyGames: number; minTurns: number };
   botDailyCap: number;
   pairDailyLimit: number;
   achievementPoints: number;

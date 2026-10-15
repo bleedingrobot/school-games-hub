@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import { fetchMultiplayerEnabled } from '../data/multiplayer';
+import { fetchReactionsEnabled } from '../data/spaceGames';
 import { FriendlyError } from '../data/profile';
 import {
   deletePerson,
@@ -11,13 +12,15 @@ import {
   renamePerson,
   setHidden,
   setMultiplayer,
+  setSpaceReactions,
   setRole,
   startNewSeason,
   type Person,
   type PersonDetail,
 } from '../data/teacher';
 import { findGame } from '../games/registry';
-import { BOT_LEVELS } from '../games/types';
+import { BOT_LEVELS, type BotLevel } from '../games/types';
+import { BOT_NAMES, placeLabel } from '../../shared/space/names';
 import { whenPlayed } from './Dashboard';
 
 /** The words a teacher types to start a new season. The server checks them too. */
@@ -73,6 +76,7 @@ function TeacherView({ me }: { me: string }) {
       <h1 className="page-title">Teacher view</h1>
 
       <FriendGamesSwitch />
+      <ReactionsSwitch />
 
       <section className="panel" aria-labelledby="people-title">
         <h2 id="people-title" className="panel__title">
@@ -166,7 +170,7 @@ function FriendGamesSwitch() {
           <p>
             {enabled
               ? 'On: students can start and join games against each other.'
-              : 'Paused: students can’t start or join games against each other. Games already going can still be finished by resigning. Bot games carry on as normal.'}
+              : 'Paused: students can’t start or join games against each other. Chess and checkers games already going can still be finished by resigning; Wormholes & Black Holes games stop where they are and end after 10 minutes. Bot games carry on as normal.'}
           </p>
           {enabled ? (
             <button type="button" className="button button--danger" onClick={() => void change(false)}>
@@ -175,6 +179,58 @@ function FriendGamesSwitch() {
           ) : (
             <button type="button" className="button button--primary" onClick={() => void change(true)}>
               Switch games against friends back on
+            </button>
+          )}
+        </>
+      )}
+      <p role="status" className="teacher__status">
+        {status}
+      </p>
+    </section>
+  );
+}
+
+/** Emoji reactions in Wormholes & Black Holes games with classmates: off until a teacher switches them on. */
+function ReactionsSwitch() {
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchReactionsEnabled()
+      .then(setEnabled)
+      .catch(() => setStatus('We couldn’t load this setting.'));
+  }, []);
+
+  async function change(on: boolean) {
+    setStatus('Saving…');
+    try {
+      await setSpaceReactions(on);
+      setEnabled(on);
+      setStatus(on ? 'Emoji reactions are on.' : 'Emoji reactions are off.');
+    } catch (error) {
+      setStatus(errorText(error));
+    }
+  }
+
+  return (
+    <section className="panel teacher__switch" aria-labelledby="reactions-title">
+      <h2 id="reactions-title" className="panel__title">
+        Emoji reactions in space games
+      </h2>
+      {enabled !== null && (
+        <>
+          <p>
+            {enabled
+              ? 'On: in Wormholes & Black Holes with classmates, students can send 🚀 👏 😮 🎉 😂 👍 (no other emoji, no text). At most one every 5 seconds and 20 a game. Each student can hide them on their own screen.'
+              : 'Off: students can’t send reactions. Nothing else changes.'}
+          </p>
+          {enabled ? (
+            <button type="button" className="button button--danger" onClick={() => void change(false)}>
+              Switch reactions off
+            </button>
+          ) : (
+            <button type="button" className="button button--primary" onClick={() => void change(true)}>
+              Switch reactions on
             </button>
           )}
         </>
@@ -267,7 +323,8 @@ function PersonPanel({
           <p className="person-panel__badges">
             {detail.games.map((g) => (
               <span key={g.game}>
-                <RankBadge rank={g.rank} game={g.game} /> {g.achievements} achievement{g.achievements === 1 ? '' : 's'}
+                {g.rank ? <RankBadge rank={g.rank} game={g.game} /> : findGame(g.game)?.name}: {g.achievements} achievement
+                {g.achievements === 1 ? '' : 's'}
               </span>
             ))}
           </p>
@@ -275,12 +332,20 @@ function PersonPanel({
             <ul className="recent-list person-panel__recent" aria-label="Recent games">
               {detail.recent.map((r, i) => (
                 <li key={i}>
-                  <span className={`result result--${r.result}`}>
-                    {r.result === 'won' ? 'Won' : r.result === 'lost' ? 'Lost' : 'Draw'}
-                  </span>
+                  {r.game === 'space' ? (
+                    <span className={`result result--${r.place === 1 ? 'won' : 'drawn'}`}>{placeLabel(r.place)}</span>
+                  ) : (
+                    <span className={`result result--${r.result}`}>
+                      {r.result === 'won' ? 'Won' : r.result === 'lost' ? 'Lost' : 'Draw'}
+                    </span>
+                  )}
                   <span className="recent-list__what">
                     {findGame(r.game)?.name} vs{' '}
-                    {r.kind === 'bot' ? `${BOT_LEVELS.find((l) => l.id === r.against)?.label ?? ''} bot` : r.against}
+                    {r.kind !== 'bot'
+                      ? r.against
+                      : r.game === 'space'
+                        ? `${BOT_NAMES[r.against as BotLevel] ?? ''} bots`
+                        : `${BOT_LEVELS.find((l) => l.id === r.against)?.label ?? ''} bot`}
                     {r.reason === 'abandoned' && <span className="recent-list__note"> (left early)</span>}
                   </span>
                   <span className="recent-list__when">{whenPlayed(r.finished_at)}</span>

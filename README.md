@@ -135,11 +135,32 @@ Students can read all of this on the **How points work** page (linked from the d
 
 **Why it can't be faked:** everything is worked out inside the database, the moment the server saves a game. The website can only read the results; it can't write points, ratings or badges, and it can't call the code that works them out.
 
+## Wormholes & Black Holes (the space game)
+
+A space snakes and ladders for 2–4 rockets: against 1–3 bots, with classmates, or pass-and-play (2–4 people taking turns on one Chromebook, never saved and no points). Race from Earth to the space station. Wormholes zoom you up, black holes pull you down, and stars give items that help you (or slow the others down). The full design, the simulation results and every decision are in [docs/SPACE-GAME-PLAN.md](docs/SPACE-GAME-PLAN.md).
+
+- **Boards:** Inner Solar System (gentle), Nebula (medium, the default), Deep Space (wild), Asteroid Belt (a quick 50-square game), and **Random Galaxy**. A galaxy has a code like `Comet-Kiwi-48`, so a class can all type the same one in. **Galaxy of the day** is the same for everyone that day.
+- **Modes:** **Cosmic** (everything) or **Classic** (just wormholes and black holes, no items and nothing to aim at other players). Use Classic for a gentler lesson.
+- **How long:** about 4–8 minutes for a big board, 2–4 for Asteroid Belt. A fuel gauge ends any game that drags on (places then go by how far everyone got).
+- **How to play** and the **Star chart** open from the settings, the game (button or the `?` key) and the waiting room. How to play has a picture and one line for every square and item, the fair-play rules and the keys. Landing on a star (or a wormhole, black hole, comet...) shows a short space fact, which is collected on the student's **Star chart**. The Star chart is kept on that device only, not in the database. The facts are in [shared/space/facts.ts](shared/space/facts.ts).
+- **Cosmic events** (on by default on Deep Space, a setting elsewhere): every 5 rounds, solar wind, a meteor shower or a wormhole shift, with a banner and a line in the mission log.
+- **Sound** is off until the student turns it on, like chess and checkers. **Less motion** turns hops into slides and stops things popping in (it's on automatically if the device asks for less motion).
+- **Keyboard:** Space or Enter rolls, 1–3 use items or pick cards, 1–6 picks a Navigator roll, arrow keys move between buttons, Escape closes things. Every move is read out by screen readers through the mission log.
+
+**Points:** taking part only. It's a dice game, so winning is mostly luck and never earns more than losing. A finished bot game earns **2** (inside the same 40-a-day bot limit as chess and checkers). A finished classmates game earns **4** (the first 6 a day). Games under 5 turns, and players who leave or go on autopilot, earn nothing. Space games **never** change ratings, badges or leaderboards. There are 6 space achievements (10 points each).
+
+**Playing classmates:** one student taps **Play a friend → Start a game → Wormholes & Black Holes**, picks a board, and reads out the code. Up to 3 others join with it (or from the lobby). The host can fill empty seats with bots, then presses **Launch**. The server rolls every die. Each turn has 30 seconds (15 for a choice). A student who misses 3 turns in a row goes on **autopilot**, so the game carries on for everyone; they can **Take the controls** back, but that game no longer earns them points. At the end, **Rematch** starts a new waiting game with the same board.
+
+**Teacher switches:** the **Pause games against friends** switch covers space games too. **Emoji reactions in space games** (on the Teacher page, off to start) lets students send one of 6 fixed emoji (🚀 👏 😮 🎉 😂 👍) over their rocket, at most one every 5 seconds and 20 a game. There's no text and no chat. Each student can hide reactions on their own screen with 🙈.
+
+**Why it can't be faked:** bot games play in the browser from a dice "seed" the server stamps at the start. At the end the server replays the whole game from that seed before saving it. In classmates games the server rolls the dice and runs the rules, and the website only asks.
+
 ## The teacher view
 
 Teachers see a **Teacher** link in the top bar (students don't, and the database refuses them even if they type the address). It has:
 
-- **Games against friends:** pause them for everyone, or switch them back on.
+- **Games against friends:** pause them for everyone (chess, checkers and space games), or switch them back on.
+- **Emoji reactions in space games:** off to start (see the space game section).
 - **Players:** everyone with an account, with their player name, avatar, games played and when they last played. Type in **Find a player** to search. Tap someone to see their games against bots and friends, how many they left early, their badges and their last 10 games. Then:
   - **New name:** gives them a new random name (for a name that's being used to tease). They can pick their own again.
   - **Hide / Show again:** a hidden student is left off leaderboards and the lobby, and can't play friends. Their bot games still work.
@@ -226,9 +247,12 @@ src/              the website
   multiplayer/    the shared screen for games against friends, and keeping them up to date
   games/chess/    the chess board, the bots, and the Stockfish connection
   games/checkers/ the checkers board and our own checkers bots
+  games/space/    Wormholes & Black Holes: board, screens, How to play, Star chart, bot worker
+  space/          keeping a space game with classmates up to date
 public/stockfish/ the Stockfish chess engine files and their licence
 shared/           game rules shared with the server (chess and checkers rules, deciding results, refereeing friend games)
-supabase/         database setup (migrations), its tests, server functions (save-bot-game, multiplayer), local settings
+  space/          the space game's rules engine, boards, bots, galaxy codes, space facts and simulation
+supabase/         database setup (migrations), its tests, server functions (save-bot-game, multiplayer, space-game), local settings
 scripts/          builds the server functions into single files
 docs/             the plan and the original brief
 .github/workflows the automatic test-and-publish steps
@@ -245,7 +269,7 @@ To update a function on the live site without the Supabase CLI:
 1. On GitHub, open `supabase/functions/<name>/index.ts` and click **Copy raw file**.
 2. In Supabase, go to **Edge Functions**, open the function, click **Code**, select everything, paste, then click **Deploy**.
 
-There are two functions: `save-bot-game` (saves bot games) and `multiplayer` (referees games between students). Both must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
+There are three functions: `save-bot-game` (saves bot games, including space games), `multiplayer` (referees chess and checkers between students) and `space-game` (runs Wormholes & Black Holes with classmates). All three must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
 
 ## Looking after the site
 

@@ -12,6 +12,7 @@ import { Lobby } from './pages/Lobby';
 import { NotFound } from './pages/NotFound';
 import { Profile } from './pages/Profile';
 import { SignIn } from './pages/SignIn';
+import { SpaceGamePage } from './pages/SpaceGamePage';
 import { Teacher } from './pages/Teacher';
 import { SoundProvider } from './sound';
 
@@ -28,6 +29,7 @@ export function AppRoutes() {
           ))}
           <Route path="lobby" element={<Lobby />} />
           <Route path="play/:id" element={<FriendGamePage />} />
+          <Route path="space-game/:id" element={<SpaceGamePage />} />
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="points" element={<HowPoints />} />
           <Route path="teacher" element={<Teacher />} />

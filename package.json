@@ -16,7 +16,9 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "build:functions": "node scripts/build-functions.mjs",
-    "functions:serve": "supabase functions serve --no-verify-jwt"
+    "functions:serve": "supabase functions serve --no-verify-jwt",
+    "space:sim": "node scripts/space-sim.mjs",
+    "space:preview": "vite build --config vite.preview.config.ts"
   },
   "engines": {
     "node": ">=22"

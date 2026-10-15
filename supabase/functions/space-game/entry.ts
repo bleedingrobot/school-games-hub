@@ -1,0 +1,112 @@
+// Connects the space-game handler to Supabase. Edit handler.ts for the logic, then run
+// `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
+import { createClient } from '@supabase/supabase-js';
+import { spaceGameHandler, type SpaceGameRow } from './handler';
+
+declare const Deno: {
+  env: { get(name: string): string | undefined };
+  serve(handler: (request: Request) => Response | Promise<Response>): void;
+};
+
+/** The server's own key. Supabase provides it automatically; it never leaves the server. */
+function serverKey(): string {
+  const legacy = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (legacy) return legacy;
+  const keys = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') ?? '{}') as Record<string, string>;
+  return keys.default ?? Object.values(keys)[0] ?? '';
+}
+
+const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', serverKey(), {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+
+const games = () => admin.from('space_games');
+
+/** Logs say which step went wrong and the database's error code, never who. */
+function logProblem(step: string, code: string | undefined) {
+  console.error(`space-game: ${step} failed (${code ?? 'unknown'})`);
+}
+
+const isUuid = (id: string) => /^[0-9a-f-]{36}$/i.test(id);
+
+Deno.serve(
+  spaceGameHandler({
+    now: () => Date.now(),
+    random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
+    async userIdFor(token) {
+      const { data, error } = await admin.auth.getUser(token);
+      return error ? null : (data.user?.id ?? null);
+    },
+    async playerStatus(player, others = []) {
+      const { data, error } = await admin.rpc('space_player_status', { player, others }).maybeSingle();
+      if (error || !data) {
+        if (error) logProblem('player check', error.code);
+        return null;
+      }
+      const row = data as {
+        school: boolean;
+        hidden: boolean;
+        multiplayer_enabled: boolean;
+        reactions_enabled: boolean;
+        created_last_hour: number;
+        gone: string[] | null;
+      };
+      return {
+        school: row.school,
+        hidden: row.hidden,
+        multiplayerEnabled: row.multiplayer_enabled,
+        reactionsEnabled: row.reactions_enabled,
+        createdLastHour: row.created_last_hour,
+        gone: row.gone ?? [],
+      };
+    },
+    async loadGame(id) {
+      if (!isUuid(id)) return null;
+      const { data, error } = await games().select('*').eq('id', id).maybeSingle();
+      if (error) logProblem('load', error.code);
+      return (data as SpaceGameRow | null) ?? null;
+    },
+    async findWaitingByCode(code) {
+      const { data, error } = await games().select('*').eq('code', code).eq('status', 'waiting').maybeSingle();
+      if (error) logProblem('find code', error.code);
+      return (data as SpaceGameRow | null) ?? null;
+    },
+    async friendCodeTaken(code) {
+      const { count, error } = await admin
+        .from('mp_games')
+        .select('id', { count: 'exact', head: true })
+        .eq('code', code)
+        .eq('status', 'waiting');
+      if (error) logProblem('check code', error.code);
+      return (count ?? 0) > 0;
+    },
+    async findWaitingHostedBy(player) {
+      const { data, error } = await games().select('*').eq('host', player).eq('status', 'waiting').maybeSingle();
+      if (error) logProblem('find waiting', error.code);
+      return (data as SpaceGameRow | null) ?? null;
+    },
+    async insertGame(row) {
+      const { data, error } = await games().insert(row).select('*').single();
+      if (!error) return data as SpaceGameRow;
+      if (error.code === '23505') {
+        return error.message.includes('one_waiting_each') ? 'already-waiting' : 'code-taken';
+      }
+      logProblem('create', error.code);
+      return 'failed';
+    },
+    async updateGame(id, version, patch) {
+      // "Only if it's still at this version": the database checks and changes in one step.
+      const { data, error } = await games().update(patch).eq('id', id).eq('version', version).select('*').maybeSingle();
+      if (error) logProblem('save', error.code);
+      return (data as SpaceGameRow | null) ?? null;
+    },
+    async addReaction(id, seat, emoji) {
+      const { data, error } = await admin.rpc('space_add_reaction', { game_id: id, seat, emoji });
+      if (error) {
+        logProblem('reaction', error.code);
+        return 'not-allowed';
+      }
+      return data as 'ok' | 'too-soon' | 'too-many' | 'not-playing' | 'not-allowed';
+    },
+  }),
+);
