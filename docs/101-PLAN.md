@@ -2,7 +2,7 @@
 
 Stage 10 of School Games Hub: James's family card game, against bots or 2–4 classmates.
 Written 16 October 2026 from the brief in [prompts/game-101.md](prompts/game-101.md), after reading the code on `main` (Stages 1–9 live).
-**Status: rule questions answered by James on 16 October 2026 (section 12); agreed rules in [101-RULES.md](101-RULES.md). Stage 10.1 done 16 October 2026 (results in section 13). Next: 10.2, playing bots on screen.**
+**Status: rule questions answered by James on 16 October 2026 (section 12); agreed rules in [101-RULES.md](101-RULES.md). Stage 10.1 done 16 October 2026 (results in section 13). Stage 10.2 done 16 October 2026 (section 14), with James's new rule that swapped-in cards go face up and lock. Next: 10.3, saving bot games and points.**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
@@ -301,3 +301,31 @@ Medium takes about 2 thousandths of a second per decision, so it won't slow a Ch
   - **Replay (9):** the replay rebuilds exactly the same game; games left part-way; made-up, changed, too-long and unknown move lists refused.
 - Type check and production build pass.
 - **Not tested yet** (they don't exist yet): screens, saving, the server function, the database and Realtime. Those come in 10.2–10.4.
+
+## 14. Stage 10.2 results: playing bots on screen (16 October 2026)
+
+Built on branch `stage-10`. Bot games play in the browser; nothing is saved yet (that's 10.3) and nothing is live.
+
+### A rule change from James (mid-stage)
+
+A card you swap into your square goes **face up**, for everyone to see, and that spot is **locked** for the rest of the round (row 12 in section 12; [101-RULES.md](101-RULES.md) updated). So:
+
+- The engine keeps which cards are face up; a swap into a face-up spot is refused ("That card is face up, so it stays"). With all four face up you can only throw away or knock.
+- Views show everyone's face-up cards. The hidden-card test now allows exactly those, and still finds no leaks.
+- Bots see face-up cards and never pick a locked spot. The simulation found two careful bots could go round for ever with their good spots locked and neither low enough to knock, so a bot now knocks when all four of its cards are face up, or once it has had 10 turns in a round.
+- Game lengths barely moved: Easy-like players 15–17 minutes to 101, Medium-like 28–29, Quick game 7–14. Medium still knocks well (lowest hand 61–78% of the times it knocks). The bot-level tests (each level beats the one below) still pass.
+
+### What's built
+
+- `src/games/card101/`: the table (green felt, your 2×2 square at the bottom, the bots round the table, stack and discard pile in the middle, the card you've just taken beside them), the peek (your bottom two cards face up with "Remember!", 15 seconds or **I've remembered them**), the scoring show (one player at a time: cards turn over, cancelled ones crossed out, the working in words such as "The 3 cancels the Queen: 10 → 0" and "Hand: 4 + 0 = 4", totals ticking up, a Skip button), scores with bars that go amber then red, a game log, a podium, and settings (1–3 bots, level, Normal to 101 or Quick to 50, remembered on the device).
+- **Card faces are our own** (big rank, big suit shape, a crown on Kings and Queens, a "101" back). The CC0 set was checked at table size first: its corner numbers came out 6–10 pixels tall, too small to read, so it isn't used and there's no extra download.
+- Bots think on the page, not in a Web Worker: Medium takes about 2 thousandths of a second a move. The screen plays them one move at a time with `playOneBot` (new in `solo.ts`), with a pause between, exactly as the server's replay will.
+- Keyboard: S stack, D discard, K knock, T throw away, arrow keys round your four cards, Enter to swap. The Knock button says why it's greyed out. Card sounds (flick, tap, knock-knock) use the existing mute setting.
+- 101 is on the dashboard (`ranked: false`). A stand-alone phone preview: `npm run 101:preview`.
+
+### Checked
+
+- 16 new screen tests (settings, the peek showing only your bottom two, swap goes face up and locks, the knock rule, keyboard, a whole Quick game to the podium, scoring words for every rules example, the game log) and 5 new rules tests for face-up cards. `npm run check` passes (552 tests; the known flaky chess "easy beats very-easy" test failed once and passed on its own).
+- Browser runs at Chromebook size (1366×640, the space a Chromebook's browser really has), tablet (768×1024) and phone (390×844): no errors, everything fits without scrolling on the Chromebook.
+- **Not done yet:** saving and points (10.3), classmates (10.4), the full How to play panel and accessibility pass (10.5).
+
