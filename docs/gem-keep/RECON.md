@@ -5,7 +5,7 @@ Stage 11 of School Games Hub. Written 16 October 2026 from the brief in
 599 unit tests passing). Branch: `stage-11`.
 
 Where the brief and the repo disagree, the repo wins. Every change to the brief is listed in
-section 3. **Status: waiting for James to review before Phase 1.**
+section 3. **Status: reviewed by James on 16 October 2026 (answers in section 4). Phase 1 next.**
 
 ## 1. What the brief got right
 
@@ -132,20 +132,19 @@ text, as the brief says.
 The hub was built for Years 4–6. The brief's default is Years 3–6. Nothing in the code depends
 on this; Year 3 just means the first levels must be very gentle.
 
-## 4. Decisions for James
+## 4. Decisions (James, 16 October 2026)
 
-1. **New season and maths data.** A new season wipes points and games. Should it also wipe Gem
-   Keep campaign progress **and** each student's times-table mastery (`fact_stats`)?
-   *My default:* wipe both. A new season is a new year and maybe a new class, and keeping less
-   data is safer. (Deleting a student always wipes everything.)
-2. **Tables setting** (3.4): campaign decides, teacher can only switch tables off.
-   *My default:* yes.
-3. **Game card** (3.7): small change to the shared card. *My default:* yes.
-4. Everything in the brief's section 7 stays at its default (Years 3–6, Chromebooks and iPads,
+1. **A new season wipes Gem Keep campaign progress and times-table mastery (`fact_stats`) too.**
+   Deleting a student always wipes everything.
+2. **The campaign decides the tables** (level 1 = ×2, ×5, ×10 and so on). The teacher setting can
+   only switch tables off, for the whole school (3.4).
+3. **Game card:** yes, add an option to hide the bot picker for Gem Keep (3.7).
+4. **No phone preview link** after Phase 1; I test it myself and report.
+5. Everything in the brief's section 7 stays at its default (Years 3–6, Chromebooks and iPads,
    Calm mode, 8/10 pass mark, division off, single player, working title "Gem Keep").
 
 ## 5. Phase 1 next
 
 Playable prototype at `/#/gem-keep`, no maths yet: one level, 3 enemy types, towers, 4 gem
 colours (with shapes), combining, mana from kills, Keep health, win/lose, pause and 2×.
-Engine tests for damage, effects and targeting. A phone/iPad preview page if James wants one.
+Engine tests for damage, effects and targeting. Tested in a browser at Chromebook and iPad sizes.
