@@ -125,7 +125,8 @@ export function Table({
   overlay?: ReactNode;
 }) {
   const me = view.seat;
-  const places = PLACES[view.players];
+  // Seats go clockwise from mine, whichever seat I'm in.
+  const placeOf = (index: number) => PLACES[view.players][(index - me + view.players) % view.players];
   const holding = view.holding;
   const myHolding = holding && holding.seat === me ? holding : null;
   const between = view.phase === 'round-over' || view.phase === 'over';
@@ -140,7 +141,7 @@ export function Table({
     return (
       <section
         key={index}
-        className={`c101-seat c101-seat--${places[index]}${isTurn ? ' is-turn' : ''}${view.out[index] ? ' is-out' : ''}`}
+        className={`c101-seat c101-seat--${placeOf(index)}${isTurn ? ' is-turn' : ''}${view.out[index] ? ' is-out' : ''}`}
         aria-label={isMe ? 'Your cards' : `${seat.name}’s cards`}
       >
         <SeatInfo seat={seat} view={view} index={index} thinking={thinking && isTurn && !isMe} />

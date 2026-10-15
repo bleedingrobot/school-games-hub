@@ -14,9 +14,8 @@
  * game before saving it (shared/card101/save.ts). No seed (no Wi-Fi, or the stand-alone
  * preview) means a practice game, and the page says so.
  */
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { randomAvatar } from '../../avatar/avatarParts';
-import { AvatarImage } from '../../avatar/AvatarImage';
 import { useSound } from '../../sound';
 import { playSound, type GameSound } from '../sounds';
 import type { BotLevel } from '../../../shared/botGame';
@@ -26,7 +25,8 @@ import type { Card101GameReport } from '../../../shared/card101/save';
 import { applySolo, parseStudentAction, playOneBot, startSolo, STUDENT_SEAT, type SoloGame, type StudentAction } from '../../../shared/card101/solo';
 import { viewFor, type SeatView } from '../../../shared/card101/view';
 import type { Slot } from '../../../shared/card101/cards';
-import { Card101Settings, CardValues } from './Card101Settings';
+import { Card101Settings } from './Card101Settings';
+import { LogPanel, placesFrom, Podium, ScoresPanel, ValuesPanel } from './parts';
 import { loadPrefs, savePrefs, type Card101Prefs } from './prefs';
 import { Scoring } from './Scoring';
 import { Table, type Flash, type Seat } from './Table';
@@ -83,16 +83,6 @@ function makeSeats(solo: SoloGame, player: Card101Player, level: BotLevel): Seat
   );
 }
 
-/** Places from totals: lowest is 1st, ties share a place. */
-export function placesFrom(totals: readonly number[], out: readonly boolean[]): number[] {
-  return totals.map((t, i) => (out[i] ? 0 : 1 + totals.filter((u, j) => !out[j] && u < t).length));
-}
-
-/** The colour of a score bar: green, then amber after 75% of the way, then red after 90%. */
-export function barLevel(total: number, target: number): 'ok' | 'warn' | 'danger' {
-  const share = total / target;
-  return share >= 0.9 ? 'danger' : share >= 0.75 ? 'warn' : 'ok';
-}
 
 const EVENT_SOUND: Partial<Record<GameEvent['kind'], GameSound>> = {
   draw: 'flick',
@@ -370,13 +360,6 @@ export function Card101Solo({
     return () => window.removeEventListener('keydown', onKey);
   }, [game]);
 
-  // Keep the newest line of the game log in sight.
-  const logRef = useRef<HTMLOListElement>(null);
-  useEffect(() => {
-    const list = logRef.current;
-    if (list) list.scrollTop = list.scrollHeight;
-  }, [log]);
-
   // When it becomes the student's turn to place a card, put focus on their first face-down card.
   const placing = phase === 'student' && view?.phase === 'play' && view.holding?.seat === STUDENT_SEAT;
   useEffect(() => {
@@ -403,7 +386,6 @@ export function Card101Solo({
   const between = view.phase === 'round-over' || over;
   const turnSeat = view.phase === 'play' ? view.turn : null;
   const places = placesFrom(view.totals, view.out);
-  const target = view.settings.target;
 
   let status: string;
   if (peeking) status = 'Peek! Remember your bottom two cards.';
@@ -424,7 +406,7 @@ export function Card101Solo({
   const scoring = between && view.lastRound && scoringRound === view.lastRound.round;
   const overlay = scoring ? (
     <Scoring
-      key={view.lastRound!.round}
+      key={`round-${view.lastRound!.round}`}
       result={view.lastRound!}
       seats={seats}
       me={STUDENT_SEAT}
@@ -443,8 +425,9 @@ export function Card101Solo({
       seats={seats}
       places={places}
       totals={view.totals}
+      me={STUDENT_SEAT}
       shared={(view.winners?.length ?? 0) > 1}
-      saveNote={saveNote(saveStatus, saveMessage, !!saving)}
+      note={saveNote(saveStatus, saveMessage, !!saving)}
     >
       <button type="button" className="button button--primary" onClick={() => void start()} disabled={starting} autoFocus>
         Play again
@@ -527,49 +510,9 @@ export function Card101Solo({
       </div>
 
       <aside className="c101-game__side" aria-label="Scores and game log">
-        <section className="c101-panel" aria-labelledby="c101-scores-title">
-          <h2 id="c101-scores-title" className="c101-panel__title">
-            Scores <span>Round {view.round} · to {target}</span>
-          </h2>
-          <ul className="c101-scores">
-            {seats.map((seat, i) => {
-              const total = view.totals[i];
-              const last = view.history.at(-1)?.hands[i];
-              return (
-                <li key={i} className={`c101-score${turnSeat === i ? ' is-turn' : ''}${view.out[i] ? ' is-out' : ''}`}>
-                  <AvatarImage avatar={seat.avatar} size={30} />
-                  <span className="c101-score__name">{seat.isStudent ? 'You' : seat.name}</span>
-                  <span className="c101-score__total" aria-label={`${total} of ${target}${last != null ? `, last hand ${last}` : ''}`}>
-                    {total}
-                    {last != null && <small>+{last}</small>}
-                  </span>
-                  <span className={`c101-bar is-${barLevel(total, target)}`} aria-hidden="true">
-                    <span style={{ width: `${Math.min(100, (total / target) * 100)}%` }} />
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-
-        <section className="c101-panel c101-panel--values" aria-labelledby="c101-values-title">
-          <h2 id="c101-values-title" className="c101-panel__title">
-            Card values
-          </h2>
-          <CardValues />
-          <p className="c101-panel__note">Pairs cancel out. Three of a kind: the whole hand is 0.</p>
-        </section>
-
-        <section className="c101-panel c101-log" aria-labelledby="c101-log-title">
-          <h2 id="c101-log-title" className="c101-panel__title">
-            What happened <span>{LOG_SAVE_NOTE[saveStatus]}</span>
-          </h2>
-          <ol ref={logRef} aria-live="polite" aria-relevant="additions">
-            {log.map((line, i) => (
-              <li key={i}>{line}</li>
-            ))}
-          </ol>
-        </section>
+        <ScoresPanel seats={seats} view={view} turnSeat={turnSeat} />
+        <ValuesPanel />
+        <LogPanel lines={log} note={LOG_SAVE_NOTE[saveStatus]} />
 
         {confirming ? (
           <div className="chess-confirm" role="group" aria-label="Are you sure?">
@@ -630,53 +573,3 @@ function saveNote(status: SaveStatus, message: string, canSave: boolean): string
   }
 }
 
-const MEDALS = ['', '🥇', '🥈', '🥉', '4️⃣'];
-
-function Podium({
-  seats,
-  places,
-  totals,
-  shared,
-  saveNote,
-  children,
-}: {
-  seats: readonly Seat[];
-  places: number[];
-  totals: number[];
-  shared: boolean;
-  saveNote: string | null;
-  children: ReactNode;
-}) {
-  const mine = places[STUDENT_SEAT];
-  const title = mine === 1 ? (shared ? 'You shared the win!' : 'You won!') : `You came ${ORDINAL[mine]}`;
-  const about = mine === 1 ? 'Lowest total wins. Great remembering!' : 'Lowest total wins. Have another go!';
-  const order = seats.map((_, i) => i).filter((i) => places[i] > 0).sort((a, b) => places[a] - places[b] || totals[a] - totals[b]);
-  return (
-    <div className="chess-result c101-podium" role="dialog" aria-modal="true" aria-labelledby="c101-result-title">
-      <div className={`chess-result__card chess-result__card--${mine === 1 ? 'won' : 'drawn'}`}>
-        <div className="chess-result__emoji" aria-hidden="true">
-          {mine === 1 ? '🏆' : MEDALS[mine]}
-        </div>
-        <h2 id="c101-result-title">{title}</h2>
-        <p>{about}</p>
-        <ol className="c101-podium__list">
-          {order.map((i) => (
-            <li key={i} className={i === STUDENT_SEAT ? 'is-me' : ''}>
-              <span aria-hidden="true">{MEDALS[places[i]]}</span>
-              <span className="sr-only">{ORDINAL[places[i]]}:</span>
-              <AvatarImage avatar={seats[i].avatar} size={32} />
-              <span>{seats[i].isStudent ? 'You' : seats[i].name}</span>
-              <strong>{totals[i]}</strong>
-            </li>
-          ))}
-        </ol>
-        {saveNote && (
-          <p className="c101-podium__save" role="status">
-            {saveNote}
-          </p>
-        )}
-        <div className="chess-result__buttons">{children}</div>
-      </div>
-    </div>
-  );
-}

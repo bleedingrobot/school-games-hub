@@ -791,3 +791,18 @@ button.c101-slot:disabled {
   margin: 0;
   font-weight: 700;
 }
+
+/* Classmates games: the clock for the peek, the last seconds of a turn, and the pause between rounds. */
+.c101-clock {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.c101-clock.is-urgent {
+  background: #ffcf4d;
+  color: var(--ink);
+}

@@ -2,7 +2,7 @@
 
 Stage 10 of School Games Hub: James's family card game, against bots or 2–4 classmates.
 Written 16 October 2026 from the brief in [prompts/game-101.md](prompts/game-101.md), after reading the code on `main` (Stages 1–9 live).
-**Status: rule questions answered by James on 16 October 2026 (section 12); agreed rules in [101-RULES.md](101-RULES.md). Stage 10.1 done 16 October 2026 (results in section 13). Stage 10.2 done 16 October 2026 (section 14), with James's new rule that swapped-in cards go face up and lock. Stage 10.3 done 16 October 2026 (section 15). Next: 10.4, playing classmates.**
+**Status: rule questions answered by James on 16 October 2026 (section 12); agreed rules in [101-RULES.md](101-RULES.md). Stage 10.1 done 16 October 2026 (results in section 13). Stage 10.2 done 16 October 2026 (section 14), with James's new rule that swapped-in cards go face up and lock. Stage 10.3 done 16 October 2026 (section 15). Stage 10.4 done 16 October 2026 (section 16). Next: 10.5, polish and go-live.**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
@@ -348,3 +348,26 @@ Built on branch `stage-10`. Migration 0800 is applied to the local copy only; no
 - 22 new tests: reading and judging reports, stats checked against the engine over 40 games, left-early games, changed games refused (11 save-function tests, including forged, borrowed, old and space-game seeds), the screen saving a whole game and the server's replay agreeing with the podium, practice games, leaving part-way. 33 new database tests (`card101_points.test.sql`): only the server can save, one save per seed, the points for each level, the shared cap, no ratings or leaderboard, all 8 achievements, How points work, the teacher's view, rebuilding scores, New season. Security test: a student can't call `record_101_bot_game`.
 - `npm run check` passes (568 tests) and all 395 database tests pass.
 - **Real browser, local server:** whole Quick games against 1 Very Easy bot and 3 Medium bots, signed in as a local test student. Both saved ("Saved! Points added."), the database replayed them (8 and 3 rounds), and points and achievements came out right (for example 1 point for a loss to Very Easy, plus First game, Perfect zero and Saved by a 3).
+
+## 16. Stage 10.4 results: playing classmates (16 October 2026)
+
+Built on branch `stage-10`. Migration 0900 is applied to the local copy only; nothing is live.
+
+### What's built
+
+- **Migration `20261016000900_101_classmates.sql`:**
+  - `card_games`: the whole game (stack, every hand). **Locked:** row level security on with no rules, no student rights, not in Realtime.
+  - `card_game_seats`: one row per player per game: the public info (code, names by seat, the clock, who's pressed Next, places at the end) plus that player's own view and events, and a log of the last 40 events they saw. A student can read only their own row; Realtime sends each row only to its player.
+  - `card_game_write()` (server only) saves the game and every seat row in one step, only if the version hasn't moved.
+  - Scoring trigger (8 a win, 4 for finishing, first 6 a day, nothing under 2 full rounds or if you were out), `card_lobby_games()`, `my_card_game_stats()`, `card_player_status()`, `waiting_code_taken()`, `card_tidy()` every 5 minutes (`tidy-card-games`), presence-only `card-game:<id>` channels, and 101 games in the teacher's views, New season, `rebuild_progress()` and `my_progress()`.
+- **New `card-game` function:** `create` (2–4 players, Normal or Quick, lobby or code), `join` (code or lobby; a game **starts by itself when full**), `start` (host, 2 or more), `leave`/`cancel`, `peek-done`, `draw`, `swap`, `throw`, `knock`, `next`, `times-up`, `rematch`. Every reply is the caller's own seat row. Shuffles use secure randomness. Hidden or deleted students are out the next time anyone acts.
+- **Timers** (`shared/card101/live.ts`): peek 15 seconds, a turn 60 seconds (then skipped; 3 in a row and you're out), between rounds when everyone has pressed Next or after 30 seconds. Pages ask "time's up?" once the clock (plus 1.5 seconds' grace) has passed; the server checks its own clock.
+- **Website:** 101 in the lobby (Start: players and length; open games list; "Your games"), the code box tries chess/checkers, then space, then 101; the waiting room (`/#/card-game/:id`); the live table (`Card101Live`: your cards at the bottom whatever your seat, the clock in the last 10 seconds, the scoring show, Next, the podium with points and Rematch, Leave); a reload brings back the table and the log; the dashboard shows a 101 game still going, recent classmates games and 101 in "Against friends". The scores, log and podium are now shared with the bot game (`parts.tsx`).
+- **Codes:** a new 101 code is checked against every waiting game (chess, checkers, space and 101). The chess/checkers and space functions weren't changed (their built files are identical), so they don't check 101 codes; with 4 million codes and a handful waiting at once, a clash is very unlikely, and the join box would open the chess/space game first.
+
+### Checked
+
+- 20 server function tests: starting (by itself when full, early by the host, bad settings, full/expired games, the hourly limit, codes, leaving the waiting room, the teacher switch and hidden students); **hidden cards** (a whole 3-player game checking every seat row after every change against exactly what that seat may know; replies never hold the stack or anyone's face-down cards; the peek shows once and the clock ends it; a stack draw's card goes only to the drawer); refereeing (out of turn, old versions, double taps, a whole game to the end, 60-second skips and out after 3, Next and the 30-second pause, leaving, hidden students, rematch).
+- 48 database tests (`card101_classmates.test.sql`): students can't read `card_games` at all and read only their own seat row, can't write either, presence only on the channel, scoring and the daily limit, no ratings, achievements, my stats, the lobby (no codes, IDs or cards), tidy-up, the teacher's view, rebuild, New season. The security test's lists now include the seat table, the two new reading functions and the Realtime list.
+- 5 new screen tests for the live table and 3 for the lobby. `npm run check` passes (596 tests) and all 443 database tests pass.
+- **Real browsers, local server, three windows** (Chromebook 1366×640, tablet 768×1024 with touch, phone 390×844): a 3-player Quick game from the lobby (one joined by code, one from the open games list) with a reload mid-game and a knock, played to the podium: correct places, "Points added!", and 8/4/4 points in the database. Then the same with one player leaving part-way: they're out with no points and the other two finish. In both, a test student's own Realtime connection, listening to every seat row of the game, received only their own row (74 updates), and reading `card_games` directly was refused. No page errors.

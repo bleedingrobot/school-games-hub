@@ -16,6 +16,7 @@ import {
   type PlayerCard,
 } from '../data/multiplayer';
 import { askSpace, fetchMyOpenSpaceGames, fetchSpaceLobby, seatsOf, type SpaceGame, type SpaceLobbyGame } from '../data/spaceGames';
+import { askCard, fetchCardLobby, fetchMyOpenCardGames, type CardLobbyGame, type SeatSummary } from '../data/cardGames';
 import { findGame, GAMES } from '../games/registry';
 import type { DesignedBoardId } from '../../shared/space/boards';
 import type { Mode } from '../../shared/space/engine';
@@ -25,12 +26,12 @@ import { boardLabel, BOARD_NAMES, DESIGNED_BOARD_ORDER } from '../../shared/spac
 export const LOBBY_REFRESH_MS = 5000;
 
 type SideChoice = Side | 'random';
-/** What can be started here: the two-player games, and Wormholes & Black Holes for up to 4. */
-type LobbyGameKind = GameKind | 'space';
+/** What can be started here: the two-player games, and Wormholes & Black Holes and 101 for up to 4. */
+type LobbyGameKind = GameKind | 'space' | '101';
 type SpaceBoardChoice = DesignedBoardId | 'galaxy-of-the-day';
 
-/** A game you can join from the list: chess or checkers (mp_games) or space (space_games). */
-type OpenGame = { kind: 'friend'; game: LobbyGame } | { kind: 'space'; game: SpaceLobbyGame };
+/** A game you can join from the list: chess or checkers (mp_games), space (space_games) or 101 (card_games). */
+type OpenGame = { kind: 'friend'; game: LobbyGame } | { kind: 'space'; game: SpaceLobbyGame } | { kind: '101'; game: CardLobbyGame };
 
 /** The lobby: start a game, join one with a code, or tap an open game. */
 export function Lobby() {
@@ -40,6 +41,7 @@ export function Lobby() {
   const [open, setOpen] = useState<OpenGame[] | null>(null);
   const [mine, setMine] = useState<FriendGame[]>([]);
   const [mySpace, setMySpace] = useState<SpaceGame[]>([]);
+  const [myCards, setMyCards] = useState<SeatSummary[]>([]);
   const [cards, setCards] = useState<Map<string, PlayerCard>>(new Map());
   const [loadFailed, setLoadFailed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -49,6 +51,8 @@ export function Lobby() {
   const [side, setSide] = useState<SideChoice>('first');
   const [spaceBoard, setSpaceBoard] = useState<SpaceBoardChoice>('nebula');
   const [spaceMode, setSpaceMode] = useState<Mode>('cosmic');
+  const [cardPlayers, setCardPlayers] = useState(3);
+  const [cardTarget, setCardTarget] = useState<50 | 101>(50);
 
   // The space game's settings live with the game, which loads only when it's picked. The
   // student's last choices fill in the form, unless they've already changed it.
@@ -81,26 +85,31 @@ export function Lobby() {
   const refresh = useCallback(async () => {
     try {
       // Space games load separately, so chess and checkers still work if they can't be loaded.
-      const [on, lobby, myGames, spaceLobby, mySpaceGames] = await Promise.all([
+      const [on, lobby, myGames, spaceLobby, mySpaceGames, cardLobby, myCardGames] = await Promise.all([
         fetchMultiplayerEnabled(),
         fetchLobby(),
         fetchMyOpenGames(),
         fetchSpaceLobby().catch(() => []),
         fetchMyOpenSpaceGames().catch(() => []),
+        fetchCardLobby().catch(() => []),
+        fetchMyOpenCardGames().catch(() => []),
       ]);
       setEnabled(on);
       setOpen(
         [
           ...lobby.map((game): OpenGame => ({ kind: 'friend', game })),
           ...spaceLobby.map((game): OpenGame => ({ kind: 'space', game })),
+          ...cardLobby.map((game): OpenGame => ({ kind: '101', game })),
         ].sort((a, b) => b.game.created_at.localeCompare(a.game.created_at)),
       );
       setMine(myGames);
       setMySpace(mySpaceGames);
+      setMyCards(myCardGames);
       setLoadFailed(false);
       const opponents = [
         ...myGames.map((g) => (g.first_player === profile?.id ? g.second_player : g.first_player)),
         ...mySpaceGames.flatMap((g) => seatsOf(g).filter((p) => p !== profile?.id)),
+        ...myCardGames.flatMap((g) => g.info.players.filter((p) => p !== profile?.id)),
       ].filter((id): id is string => !!id);
       if (opponents.length > 0) setCards(await fetchPlayerCards(opponents));
     } catch {
@@ -136,18 +145,30 @@ export function Lobby() {
       setMessage({ where: 'join', text: 'Codes are 5 letters and numbers, like KM4 TP.' });
       return;
     }
-    // The same code box joins any game: chess and checkers first, then space games.
+    // The same code box joins any game: chess and checkers first, then space games, then 101.
+    const notFound = (error: unknown) => error instanceof MultiplayerError && error.problem === 'not-found';
     void go('join', async () => {
       try {
         return friendPath(await ask({ action: 'join', code: tidy }));
       } catch (error) {
-        if (!(error instanceof MultiplayerError && error.problem === 'not-found')) throw error;
-        return spacePath(await askSpace({ action: 'join', code: tidy }));
+        if (!notFound(error)) throw error;
       }
+      try {
+        return spacePath(await askSpace({ action: 'join', code: tidy }));
+      } catch (error) {
+        if (!notFound(error)) throw error;
+      }
+      return cardPath(await askCard({ action: 'join', code: tidy }));
     });
   }
 
   function create() {
+    if (gameKind === '101') {
+      void go('create', async () =>
+        cardPath(await askCard({ action: 'create', players: cardPlayers, settings: { target: cardTarget }, lobby: inLobby })),
+      );
+      return;
+    }
     if (gameKind !== 'space') {
       const request: Action = { action: 'create', game: gameKind, side, lobby: inLobby };
       void go('create', async () => friendPath(await ask(request)));
@@ -187,6 +208,14 @@ export function Lobby() {
     return names.length === 0 ? 'your classmates' : names.join(', ');
   };
   const gameName = (id: string) => findGame(id)?.name ?? id;
+  const cardGoing = myCards.filter((g) => g.status === 'playing' || (g.status === 'waiting' && g.info.host !== profile?.id));
+  const cardWaiting = myCards.find((g) => g.status === 'waiting' && g.info.host === profile?.id);
+  const table = (g: SeatSummary) => {
+    const names = g.info.players
+      .filter((p): p is string => !!p && p !== profile?.id)
+      .map((p) => cards.get(p)?.display_name ?? 'a classmate');
+    return names.length === 0 ? 'your classmates' : names.join(', ');
+  };
 
   return (
     <div className="lobby">
@@ -194,7 +223,7 @@ export function Lobby() {
 
       {loadFailed && !open && <p className="chess-note">We couldn’t load the lobby. Check the Wi-Fi; we’ll keep trying.</p>}
 
-      {(playing.length > 0 || waiting || spaceGoing.length > 0 || spaceWaiting) && (
+      {(playing.length > 0 || waiting || spaceGoing.length > 0 || spaceWaiting || cardGoing.length > 0 || cardWaiting) && (
         <section className="panel" aria-labelledby="mine-title">
           <h2 id="mine-title" className="panel__title">
             Your games
@@ -234,6 +263,37 @@ export function Lobby() {
                 </Link>
               </li>
             ))}
+            {cardGoing.map((g) => (
+              <li key={g.game}>
+                <span className="lobby-list__emoji" aria-hidden="true">
+                  🃏
+                </span>
+                <span className="lobby-list__what">
+                  <strong>101 with {table(g)}</strong>
+                  <span>{g.status === 'playing' ? 'Still going!' : 'Waiting for more players'}</span>
+                </span>
+                <Link to={cardPath({ id: g.game })} className="button button--primary">
+                  {g.status === 'playing' ? 'Carry on' : 'Open'}
+                </Link>
+              </li>
+            ))}
+            {cardWaiting && (
+              <li>
+                <span className="lobby-list__emoji" aria-hidden="true">
+                  ⏳
+                </span>
+                <span className="lobby-list__what">
+                  <strong>Your 101 game is waiting</strong>
+                  <span>
+                    Code {cardWaiting.info.code && prettyCode(cardWaiting.info.code)} ·{' '}
+                    {cardWaiting.info.players.filter(Boolean).length} of {cardWaiting.info.wanted} joined
+                  </span>
+                </span>
+                <Link to={cardPath({ id: cardWaiting.game })} className="button button--light">
+                  Open
+                </Link>
+              </li>
+            )}
             {spaceWaiting && (
               <li>
                 <span className="lobby-list__emoji" aria-hidden="true">
@@ -290,7 +350,7 @@ export function Lobby() {
               <fieldset className="level-picker">
                 <legend>Game</legend>
                 <div className="level-picker__options">
-                  {GAMES.filter((g) => g.Live || g.id === 'space').map((g) => (
+                  {GAMES.filter((g) => g.Live || g.id === 'space' || g.id === '101').map((g) => (
                     <label key={g.id} className="level-picker__option">
                       <input
                         type="radio"
@@ -301,13 +361,40 @@ export function Lobby() {
                       />
                       <span>
                         {g.name}
-                        {g.id === 'space' && ' (2–4 players)'}
+                        {(g.id === 'space' || g.id === '101') && ' (2–4 players)'}
                       </span>
                     </label>
                   ))}
                 </div>
               </fieldset>
-              {gameKind === 'space' ? (
+              {gameKind === '101' ? (
+                <>
+                  <fieldset className="level-picker">
+                    <legend>Players</legend>
+                    <div className="level-picker__options">
+                      {[2, 3, 4].map((n) => (
+                        <label key={n} className="level-picker__option">
+                          <input type="radio" name="card-players" checked={cardPlayers === n} onChange={() => setCardPlayers(n)} />
+                          <span>{n} players</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                  <fieldset className="level-picker">
+                    <legend>Game length</legend>
+                    <div className="level-picker__options">
+                      <label className="level-picker__option">
+                        <input type="radio" name="card-target" checked={cardTarget === 50} onChange={() => setCardTarget(50)} />
+                        <span>Quick: to 50 (about 10–15 minutes)</span>
+                      </label>
+                      <label className="level-picker__option">
+                        <input type="radio" name="card-target" checked={cardTarget === 101} onChange={() => setCardTarget(101)} />
+                        <span>Normal: to 101 (about 20–30 minutes)</span>
+                      </label>
+                    </div>
+                  </fieldset>
+                </>
+              ) : gameKind === 'space' ? (
                 <>
                   <fieldset className="level-picker">
                     <legend>Board</legend>
@@ -460,6 +547,24 @@ export function Lobby() {
                         Join
                       </button>
                     </li>
+                  ) : o.kind === '101' ? (
+                    <li key={o.game.id}>
+                      <AvatarImage avatar={o.game.creator_avatar} size={44} />
+                      <span className="lobby-list__what">
+                        <strong>{o.game.creator_name} · 101</strong>
+                        <span>
+                          {o.game.target === 50 ? 'Quick game, to 50' : 'Normal game, to 101'}. {o.game.players} of {o.game.wanted} joined.
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        className="button button--primary"
+                        disabled={busy}
+                        onClick={() => void go('list', async () => cardPath(await askCard({ action: 'join', gameId: o.game.id })))}
+                      >
+                        Join
+                      </button>
+                    </li>
                   ) : (
                     <li key={o.game.id}>
                       <AvatarImage avatar={o.game.creator_avatar} size={44} />
@@ -493,3 +598,4 @@ export function Lobby() {
 
 const friendPath = (game: { id: string }) => `/play/${game.id}`;
 const spacePath = (game: { id: string }) => `/space-game/${game.id}`;
+const cardPath = (seat: { id: string } | { game: string }) => `/card-game/${'game' in seat ? seat.game : seat.id}`;

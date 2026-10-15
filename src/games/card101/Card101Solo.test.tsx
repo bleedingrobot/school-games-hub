@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SoundProvider } from '../../sound';
 import { judgeCard101Game, type Card101GameReport } from '../../../shared/card101/save';
-import { Card101Solo, barLevel, placesFrom, type Card101Saving } from './Card101Solo';
+import { Card101Solo, type Card101Saving } from './Card101Solo';
+import { barLevel, placesFrom } from './parts';
 
 function renderGame(saving?: Card101Saving) {
   const onLevelChange = vi.fn();

@@ -10,7 +10,7 @@
  */
 import { isBotLevelId, isClaimedEnding, type BotLevel, type ClaimedEnding, type Outcome } from '../botGame';
 import { makeSeed, seedProblem } from '../space/save';
-import { TARGETS, type Settings, type Target } from './engine';
+import { TARGETS, type Game, type Settings, type Target } from './engine';
 import { replaySolo, STUDENT_SEAT, type SoloSetup } from './solo';
 
 export { makeSeed, seedProblem };
@@ -79,6 +79,20 @@ export interface Card101Stats {
   savedByThree: number;
 }
 
+/** One player's stats from a game's rounds (bot games and classmates games alike). */
+export function statsFor(game: Pick<Game, 'results'>, seat: number): Card101Stats {
+  const stats: Card101Stats = { zeroHands: 0, triples: 0, knockWins: 0, savedByThree: 0 };
+  for (const result of game.results) {
+    const score = result.scores[seat];
+    if (!score) continue;
+    if (score.total === 0) stats.zeroHands += 1;
+    if (score.steps.some((s) => s.kind === 'triple')) stats.triples += 1;
+    if (result.knocker === seat && result.winners.includes(seat)) stats.knockWins += 1;
+    stats.savedByThree += score.steps.filter((s) => s.kind === 'three-cancels' && s.value === 10).length;
+  }
+  return stats;
+}
+
 export type Card101Reason = 'finished' | 'abandoned';
 
 export interface JudgedCard101Game {
@@ -116,15 +130,7 @@ export function judgeCard101Game(report: Card101GameReport): Card101Judgement {
   // have ended anyway (the page closed during the last scoring show): then it's finished.
   if (!finished && report.ending === 'finished') return { ok: false, problem: 'game not over' };
 
-  const stats: Card101Stats = { zeroHands: 0, triples: 0, knockWins: 0, savedByThree: 0 };
-  for (const result of game.results) {
-    const score = result.scores[STUDENT_SEAT];
-    if (!score) continue;
-    if (score.total === 0) stats.zeroHands += 1;
-    if (score.steps.some((s) => s.kind === 'triple')) stats.triples += 1;
-    if (result.knocker === STUDENT_SEAT && result.winners.includes(STUDENT_SEAT)) stats.knockWins += 1;
-    stats.savedByThree += score.steps.filter((s) => s.kind === 'three-cancels' && s.value === 10).length;
-  }
+  const stats = statsFor(game, STUDENT_SEAT);
 
   const total = game.totals[STUDENT_SEAT];
   const won = finished && (game.winners ?? []).includes(STUDENT_SEAT);

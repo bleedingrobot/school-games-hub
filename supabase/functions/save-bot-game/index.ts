@@ -3527,6 +3527,24 @@ function parseCard101Report(input) {
 		ending: r.ending
 	};
 }
+/** One player's stats from a game's rounds (bot games and classmates games alike). */
+function statsFor(game, seat) {
+	const stats = {
+		zeroHands: 0,
+		triples: 0,
+		knockWins: 0,
+		savedByThree: 0
+	};
+	for (const result of game.results) {
+		const score = result.scores[seat];
+		if (!score) continue;
+		if (score.total === 0) stats.zeroHands += 1;
+		if (score.steps.some((s) => s.kind === "triple")) stats.triples += 1;
+		if (result.knocker === seat && result.winners.includes(seat)) stats.knockWins += 1;
+		stats.savedByThree += score.steps.filter((s) => s.kind === "three-cancels" && s.value === 10).length;
+	}
+	return stats;
+}
 /** Replays the game from its seed and works out the result. The stamp is checked separately. */
 function judgeCard101Game(report) {
 	const setup = {
@@ -3554,20 +3572,7 @@ function judgeCard101Game(report) {
 		ok: false,
 		problem: "game not over"
 	};
-	const stats = {
-		zeroHands: 0,
-		triples: 0,
-		knockWins: 0,
-		savedByThree: 0
-	};
-	for (const result of game.results) {
-		const score = result.scores[0];
-		if (!score) continue;
-		if (score.total === 0) stats.zeroHands += 1;
-		if (score.steps.some((s) => s.kind === "triple")) stats.triples += 1;
-		if (result.knocker === 0 && result.winners.includes(0)) stats.knockWins += 1;
-		stats.savedByThree += score.steps.filter((s) => s.kind === "three-cancels" && s.value === 10).length;
-	}
+	const stats = statsFor(game, 0);
 	const total = game.totals[0];
 	const won = finished && (game.winners ?? []).includes(0);
 	const place = finished ? 1 + game.totals.filter((t, seat) => !game.out[seat] && t < total).length : null;
