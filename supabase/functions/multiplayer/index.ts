@@ -352,12 +352,23 @@ function corsHeaders(origin) {
 		"Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
 		"Access-Control-Allow-Methods": "POST, OPTIONS",
 		"Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+		"Access-Control-Max-Age": "7200",
 		Vary: "Origin"
 	};
 }
 /** The sign-in token from the request, if there is one. */
 function bearerToken(request) {
 	return request.headers.get("Authorization")?.match(/^Bearer (.+)$/)?.[1] ?? null;
+}
+/** Reads a JSON request body. Null if it's missing, unreadable or bigger than MAX_BODY_BYTES. */
+async function readJsonBody(request) {
+	if (Number(request.headers.get("Content-Length") ?? 0) > 65536) return null;
+	try {
+		const text = await request.text();
+		return text.length > 65536 ? null : JSON.parse(text);
+	} catch {
+		return null;
+	}
 }
 //#endregion
 //#region supabase/functions/multiplayer/handler.ts
@@ -457,13 +468,8 @@ function multiplayerHandler(services) {
 		const me = token ? await services.userIdFor(token) : null;
 		if (!me) return refuse(new Refused("sign-in"));
 		if (!limiter.allow(me, 60)) return refuse(new Refused("too-many"));
-		let body;
-		try {
-			const parsed = await request.json();
-			body = typeof parsed === "object" && parsed !== null ? parsed : null;
-		} catch {
-			body = null;
-		}
+		const parsed = await readJsonBody(request);
+		const body = typeof parsed === "object" && parsed !== null ? parsed : null;
 		const action = ACTIONS[String(body?.action)];
 		if (!body || !action) return refuse(new Refused("bad-request"));
 		try {

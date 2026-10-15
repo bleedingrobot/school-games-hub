@@ -48,16 +48,25 @@ function send(report: SaveableReport, token: string, keepalive: boolean) {
   });
 }
 
-/** Sends a finished game to the server, which checks it and saves it. */
+/** How long to wait before trying a save again after the network or the server hiccups. */
+export const RETRY_AFTER_MS = 1000;
+
+/**
+ * Sends a finished game to the server, which checks it and saves it. After a Wi-Fi blip or
+ * a server hiccup it tries once more. That's safe: the server spots a game it has already
+ * saved and doesn't save or score it twice.
+ */
 export async function saveBotGame(report: SaveableReport): Promise<void> {
   await refreshSaveToken();
-  if (!latestToken) throw new FriendlyError('Please sign in again to save your games.');
-  let response: Response;
-  try {
-    response = await send(report, latestToken, false);
-  } catch {
-    throw new FriendlyError("We couldn't reach the server to save this game.");
+  const token = latestToken;
+  if (!token) throw new FriendlyError('Please sign in again to save your games.');
+  const attempt = () => send(report, token, false).catch(() => 'offline' as const);
+  let response = await attempt();
+  if (response === 'offline' || response.status >= 502) {
+    await new Promise((resolve) => setTimeout(resolve, RETRY_AFTER_MS));
+    response = await attempt();
   }
+  if (response === 'offline') throw new FriendlyError("We couldn't reach the server to save this game.");
   if (response.ok) return;
   const body = (await response.json().catch(() => null)) as { error?: string } | null;
   throw new FriendlyError(body?.error ?? "We couldn't save this game.");

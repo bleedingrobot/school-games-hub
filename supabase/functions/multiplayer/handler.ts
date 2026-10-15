@@ -24,7 +24,7 @@ import {
   type GameKind,
   type Side,
 } from '../../../shared/multiplayer';
-import { bearerToken, corsHeaders } from '../_shared/http';
+import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 
 /** One row of the mp_games table. */
 export interface GameRow {
@@ -191,13 +191,8 @@ export function multiplayerHandler(services: Services) {
     if (!me) return refuse(new Refused('sign-in'));
     if (!limiter.allow(me, MAX_REQUESTS_PER_MINUTE)) return refuse(new Refused('too-many'));
 
-    let body: Body | null;
-    try {
-      const parsed: unknown = await request.json();
-      body = typeof parsed === 'object' && parsed !== null ? (parsed as Body) : null;
-    } catch {
-      body = null;
-    }
+    const parsed = await readJsonBody(request);
+    const body = typeof parsed === 'object' && parsed !== null ? (parsed as Body) : null;
     const action = ACTIONS[String(body?.action)];
     if (!body || !action) return refuse(new Refused('bad-request'));
 
