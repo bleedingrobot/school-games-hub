@@ -133,6 +133,7 @@ To add a new game later, you add a folder with its rules, bot and board, plus on
 ### Ideas for later (not scheduled)
 
 - **Tic-Tac-Toe: Power Clash** (saved 16 Oct 2026): noughts and crosses with once-a-match powers (Double Trouble, Body Swap, Freeze Ray, Board Wipe first; four more later). Full brief in [prompts/power-clash.md](prompts/power-clash.md). The brief was written as a standalone site; here it would be a new game folder on the hub (pass-and-play first, then perhaps bots and classmates). Not started: first step when picked up is a plan for James to approve.
+- **Marble game** (saved 16 Oct 2026): our own marble-rolling time-trial game in the spirit of *Marble Madness* (isometric tracks, momentum, beat the clock), with 6 courses, classmate ghost races and 2 players on one Chromebook. GitHub search found nothing reusable (no licence, desktop-only, or someone else's game files), so it's written from scratch: our own physics in `shared/marble/` so the server can replay every run, drawn with three.js. Full plan in [MARBLE-PLAN.md](MARBLE-PLAN.md). Not started: James answers the questions in its section 11 first.
 
 ## Stage 6 design: playing a friend
 
