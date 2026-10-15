@@ -1,0 +1,329 @@
+# Wormholes & Black Holes: plan
+
+Stage 9 of School Games Hub: a space snakes and ladders for Years 4–6, against bots or 2–4 classmates.
+Written 15 October 2026 from the brief in [prompts/space-game.md](prompts/space-game.md), after reading the code on the `stage-8` branch.
+**Status: waiting for James's approval. No game code has been written.**
+
+Where this plan and the brief disagree, this plan wins once James approves it.
+
+## The short version
+
+- **It's a new game card on the dashboard**, added with one line in `src/games/registry.ts`, like chess and checkers. Chess and checkers don't change at all.
+- **One rules engine in `shared/space/`** runs the whole game. The same code runs in the browser, in the bots and in the server. Give it the same board, the same dice and the same choices, and it always gives the same result. That's what makes games checkable and testable.
+- **Against bots:** the game runs in the student's browser, like chess, so it costs nothing and carries on through patchy Wi-Fi. At the start the server hands out a stamped "dice seed". At the end it replays the whole game from that seed before saving it, so a student can't invent a win.
+- **Against classmates (2–4 players):** a **new table** and a **new server function** just for this game. The server rolls every die. The browser only ever *asks* ("roll", "use my Booster", "jump through the gate"). The `mp_games` table that chess and checkers use isn't touched.
+- **Points:** this game is mostly luck, so it **never** affects ratings, badges or leaderboards. I recommend small **participation points** (the same points whether you win or lose) plus a few fun one-off achievements. Your call: see the questions at the end.
+- **Cost:** stays well inside the free plan. A whole class playing it three lessons a week adds roughly 40,000 function calls a month to the ~70,000 chess and checkers already use, against 500,000.
+
+## 1. What the brief says vs what's built now
+
+The brief was written before Stages 7 and 8. Here's what still fits and what changes.
+
+| Brief says | Now | What I'll do |
+|---|---|---|
+| "Stage 7 (points, badges, ratings) isn't built yet" | Built and live: points, levels, achievements, Elo ratings, rank badges, leaderboards, teacher view | The space game plugs into it, but only for points and achievements (section 7) |
+| Save results with `counts_for_points` like the other games | Still how it works. A database trigger scores a game the moment it's saved | Same column, same idea. The space game gets its own scoring rules |
+| Never count towards competitive ratings | Ratings come only from friend games in `mp_games` | Space games never touch `ratings`. The **Leaderboard** page and the rank badges skip games marked "not ranked" |
+| Bot games never count towards rankings | Bot games earn small points, at most 40 a day across all games | Space bot games share that same 40-a-day cap |
+| Respect the teacher's "pause games against friends" switch | Live (`app_settings.multiplayer_enabled`) | The new server function checks the same switch |
+| Use the `version` check against double taps | Live in `mp_games` | Same check in the new table |
+| Reloading or losing Wi-Fi never loses a game | Stage 8 added: one automatic retry on Wi-Fi drops and Supabase 502/503s, and bot saves that are safe to send twice | Same retry for every space request; space bot saves are safe to send twice in the same way (the stamped seed makes each game unique) |
+| Presence ("who's here") channel | Stage 8 made it **presence only**: no hidden chat | Space games get the same kind of channel, presence only, covered by the same rule and tested |
+| (not in brief) | Stage 8: new tables start locked; `security.test.sql` checks every table and function | Every new table and function is added to `security.test.sql`'s lists on purpose, with a test showing students can't write to them |
+| Brief section 1 file list mentions `CLASS-LAUNCH.md` | Exists | I'll add a short space-game part to it at the end |
+
+Two things in the current code assume "chess or checkers" and need a small, careful change (with chess and checkers tests still passing untouched):
+
+- The **Leaderboard** page and the **rank badges** list every game in the registry. I'll add `ranked: false` to the space game's entry so those pages leave it out.
+- Database `check` rules only allow `'chess'` or `'checkers'` in `bot_games`, `scored_games` and `achievement_types`. The migration adds `'space'` to those lists. `ratings` stays chess and checkers only, so a space rating can't exist.
+
+## 2. The rules
+
+The numbers below are **starting points**. Stage 9.1 builds a simulation that plays tens of thousands of bot games per board, and I'll tune the numbers from that and report them back to you before building the screens.
+
+### Moving, winning and how long a game lasts
+
+- 10×10 board, squares 1–100 in the classic back-and-forth pattern. Launch from Earth (square 1), race to the space station on 100.
+- Roll one die and move. Rockets can share a square (no bumping).
+- **Finishing:** my recommendation is **any roll that reaches 100 wins**. A quick simulation on a classic board: needing the exact roll makes games about 15–20% longer, and most of that is rockets bouncing about near the end. For 9-year-olds, that's the frustrating bit. "Exact roll" stays as a setting.
+- **Roll a 6, roll again:** a setting, off by default, at most once per turn.
+- **The mission clock (new, my idea):** dice games have long tails. In my quick simulation of a classic board (exact-roll finish), an average 4-player game took 20 rounds, but the unluckiest of 20,000 took over 100. A class can't wait that long. So after a set number of rounds (to be tuned, about 40 on the big board), the **fuel runs out** and rockets finish in order of how far they got. A "⏱ 5 rounds of fuel left" warning shows first. Almost no game should reach it. It's there so a lesson never gets stuck.
+- **Places, not just a winner:** when someone docks, the game ends and everyone gets a place (1st, 2nd, 3rd, 4th) by how far they got. A podium shows every rocket.
+- **Target length:** 8–15 minutes for 2–4 players on the big board, 3–6 on the quick board. Turns are fast, so a 4-player game of about 75 turns at roughly 6–8 seconds a turn (dice, hops, effects, decisions) lands in that range. The simulation will check it. A speed setting (Relaxed / Normal / Zippy) changes only the animations.
+
+### Wormholes and black holes
+
+- **Wormholes** (the ladders) carry you up, with a swirl through the tunnel.
+- **Black holes** (the snakes) pull you down, with a cartoon "spaghetti" stretch and spin. Silly, not scary.
+- Force Field blocks one black hole. Escape Pod halves the drop (rounded so you always lose at least 1 square).
+
+### Star squares
+
+Each star has its own shape and icon (never colour alone), plus a one-line fact for Year 4–6 readers.
+
+| Star | Effect | Notes |
+|---|---|---|
+| Red dwarf | Gain a common item | Most common star |
+| Yellow star | Gain a random item | |
+| Blue giant | Gain a rare item | Rare |
+| White dwarf | Gain a Force Field | |
+| Binary star | Next turn, roll two dice and pick one | |
+| Neutron star | Heavy gravity: your next 2 rolls are halved (rounded up, never 0) | A "hinder" square |
+| Pulsar | Every other rocket within 5 squares behind *or* ahead goes back 2 | Never pushes below square 1 |
+| Supernova | You blast forward 5, rockets within 10 go back 2, then it becomes a harmless nebula | Once per game |
+| Comet | Land anywhere on the comet and ride to the front of its tail | The comet moves forward a few squares each round, and wraps round |
+| Matariki | Everyone gets a common item. A sharing square | **Wording for you to check** (below) |
+
+**Matariki wording (draft, for you to check, perhaps with your school's te reo or tikanga lead):**
+> **Matariki.** Matariki is a cluster of stars that rises in midwinter. For many people in Aotearoa it marks the Māori New Year, a time to remember, celebrate and share. *Everyone gets a gift!*
+
+If you'd rather not include it, it's easy to drop or rename.
+
+**Full inventory:** if you already hold 3 items, a new one goes straight to you only if you choose to swap one out. In multiplayer that choice has a 15-second timer, and on timeout you keep what you have.
+
+### Items (hold up to 3, use one before rolling)
+
+| Item | Kind | Effect |
+|---|---|---|
+| Booster | help | +2 to your next roll |
+| Hyperdrive (rare) | help | Double your next roll |
+| Navigator (rare) | help | Choose your roll, 1–6 |
+| Force Field | help, automatic | Blocks the next black hole you land on |
+| Escape Pod | help, automatic | A black hole drops you only half as far |
+| Repair Kit | help | Clears a gravity effect |
+| Warp Key | help | Jump to the nearest wormhole entrance ahead of you (and ride it) |
+| Rescue Beacon | help, catch-up only | Jump forward 10. Only given to a rocket 30+ squares behind the leader |
+| Tractor Beam | hinder | Pull a chosen rocket back 3 |
+| Gravity Anchor | hinder | A chosen rocket's next roll is halved |
+| Space Mine | hinder | Drop it on your square. The next *other* rocket to land there goes back 3 |
+| Quantum Swap (rare) | hinder | Swap places with a rocket up to 15 squares ahead |
+
+**Keeping hinders fun, not mean** (my picks, the engine enforces them):
+
+1. You can't target the rocket in **last place**.
+2. After being hit by a hinder, a rocket has a **shield until its next turn**. Nobody can gang up on one player in one round.
+3. You can't target the **same rocket twice in a row**.
+4. No Quantum Swap if the target is on **square 90 or higher**. Nobody gets robbed at the finish line.
+5. Space Mines are visible to everyone, one per player on the board at a time, and fizzle out after 5 rounds.
+6. Bots follow exactly the same rules.
+7. **Classic mode has no items at all**, so younger classes can play with no hinders.
+
+### Gravity squares
+
+- **Heavy gravity:** next 2 rolls halved, rounded up (never 0).
+- **Low gravity:** +2 on your next 2 rolls.
+- **Slingshot:** your next roll doubled.
+- One gravity effect at a time. A new one replaces the old. Shown as a clear badge with an icon on the rocket and in the player list.
+
+### Teleports
+
+- **Paired gates:** land on one and choose to jump to its twin or stay. 15-second timer in multiplayer; "stay" on timeout.
+- **Mystery coordinates station:** pick one of three face-down cards. **The destination is decided by the server only after you pick**, so there's nothing hidden in the game data for a curious student to peek at with developer tools. (Same fairness, nothing to leak.) 15-second timer; card 1 on timeout.
+
+### Cosmic events (a setting)
+
+Every 5 rounds, one of three. Each one gets a full-width banner and a mission log line:
+
+- **Solar wind:** everyone's next roll +1.
+- **Meteor shower:** 5 random empty squares become asteroids for one round. Landing on one costs an item (or 1 square if you have none).
+- **Wormhole shift:** one wormhole's exit moves up to 5 squares (still obeying the fairness rules below).
+
+### Catch-up and safety rules
+
+- **Catch-up help:** the rocket in last place gets one tier better from star squares (common becomes random, random becomes rare). A rocket 30+ squares behind the leader gets a Rescue Beacon, at most once every 5 rounds.
+- **Chain reactions** (wormhole → star → gate...) are capped at **3 effects per turn**. After that, squares do nothing until the next turn, so loops are impossible. The engine also has a hard safety stop that tests check is never hit.
+- **Mission log:** a side panel with every event in plain words: "Speedy Otter 27 hit a black hole and fell from 64 to 22." Read aloud by screen readers through a live region.
+
+## 3. Boards and modes
+
+| Board | Size | Feel | Default extras |
+|---|---|---|---|
+| **Inner Solar System** | 100 | Gentle: short black holes, more wormholes, mostly helpful stars, no hinder stars | No cosmic events |
+| **Nebula** | 100 | Medium: balanced, gates and the mystery station | No cosmic events |
+| **Deep Space** | 100 | Chaotic: long wormholes and black holes, comet, pulsar, supernova | Cosmic events on |
+| **Asteroid Belt** (quick game) | 50 | Short lessons | No cosmic events |
+| **Random Galaxy** | 100 or 50 | Made by a generator with fairness rules | Your choice |
+
+Starting numbers for a 100-square board (tuned in 9.1): 8 wormholes, 8 black holes, 10 star squares, 4 gravity squares, 1 pair of gates, 1 mystery station, 1 comet. The quick board has about half.
+
+**Random Galaxy fairness rules:** no black hole on squares 1–5 or ending below square 2; no wormhole exit landing on a black hole's mouth (or the reverse); nothing on 100; at least 2 squares between special squares; wormholes and black holes roughly balanced in total distance; every board the generator makes is checked by the simulation in the tests.
+
+**Galaxy codes (new, my idea):** instead of a number, a Random Galaxy's seed is shown as three easy words, like **Comet-Kiwi-48**. A class can type it in to all play the same galaxy. There's also a **Galaxy of the day**: everyone gets the same random galaxy that day.
+
+**Modes:** **Classic** (wormholes and black holes only: no items, stars or hinders) and **Cosmic** (everything). The settings screen has these, the board, finishing rule, roll-again-on-6, cosmic events and speed. Sensible defaults: Cosmic, Nebula, any roll wins.
+
+**Mission Control maths** (off by default, built last): the engine has a "question" pause built in from the start. When it's built, landing at a wormhole's mouth can offer a quick Year 4–6 maths question to power it up further. Not built until you say so.
+
+## 4. Single player (against bots)
+
+- 1 student vs 1–3 bots: **Cadet** (Very Easy), **Pilot** (Easy), **Commander** (Medium). All bots in a game share one level, to keep the setup screen simple.
+- Dice are luck, so bot skill is all in decisions. Cadet uses items at random. Pilot uses them sensibly. Commander saves Force Fields, targets the leader, takes good gates and cards, and keeps Navigator for the finish.
+- Bots "think" for about a second, and their decisions run in a Web Worker so the page never freezes. The decision code lives in `shared/space/` because the server also needs it (for autopilot, section 5).
+- **Saving and checking:** when the game starts, the page asks the server for a dice seed. The server stamps it with a secret signature (made from the server's own key, so nothing new for you to set up). The game plays in the browser from that seed. At the end the browser sends the seed, the stamp and every decision. The server checks the stamp and replays the whole game. Wrong stamp, or a replay that doesn't match? Not saved.
+  - *Couldn't a student peek at the seed and predict the dice?* With developer tools and a lot of effort, yes. That's why I recommend points don't depend on winning (section 7): there's nothing to gain from cheating.
+  - *No Wi-Fi at the start?* The game still plays. It just says "Practice game: this one won't be saved".
+  - Sending a save twice is safe. Stage 8's "same game sent twice is saved once" check already covers it, because each seed is unique.
+- **Pass-and-play** (2–4 students sharing one Chromebook): easy to add, because it's the same engine with no server needed during play. I'd make it the optional last stage, and it would **never earn points** (the other students aren't signed in). Your call.
+
+## 5. Playing classmates (2–4 players)
+
+### A new table, not a bigger `mp_games`: why
+
+| | Stretch `mp_games` to 4 players | **New `space_games` table** (my choice) |
+|---|---|---|
+| Risk to chess and checkers | High: scoring, the tidy-up job, the lobby, stats and the rematch code all assume two players taking turns | **None**: their table and code stay exactly as they are |
+| Work | Change lots of tested Stage 6–7 code | New code, using the same patterns |
+| Lobby | One list | The lobby page shows two lists merged into one |
+| Codes | One set | Codes are checked against both tables so they never clash |
+
+### How a game runs
+
+1. **Start:** a student taps **Play friends → Wormholes & Black Holes → Start game**, picks the board and mode, and gets a 5-character code (same code letters as now), with an optional lobby listing.
+2. **Join:** classmates type the code or tap **Join** in the lobby. Same rules as now: one waiting game each, waiting games expire after 10 minutes, you can't join your own. The **Join a game** box works for any game: it asks the chess/checkers function first and, if that says "not found", the space function.
+3. **Launch:** the host sees everyone who's joined and presses **🚀 Launch** once there are at least 2 (up to 4). The server shuffles the turn order.
+4. **Each turn:** the browser asks; the server checks it's that player's turn, rolls with secure randomness, runs the shared rules engine, and saves the new state **only if the version hasn't changed** (no double rolls from double taps). It also saves the list of events. Every player's screen gets the change through Realtime and animates the events in order.
+5. **Choices** (gate, mystery card, item target, full inventory) are separate small requests, each with a timer.
+6. **The end:** places for everyone, a podium, and **Rematch**. The first to press Rematch becomes host of a new waiting game linked to the old one. Everyone else's Rematch joins it, and the host launches. That reuses the normal launch flow and works however many want to play again.
+
+### Timeouts (dice games need different rules from chess)
+
+| Situation | What happens |
+|---|---|
+| Your turn and you don't act for **30 seconds** (plus a few seconds of animation time, worked out by the server) | The server rolls for you, with no item used. A ring timer shows round your rocket for the last 10 seconds |
+| A choice isn't made in **15 seconds** | Stay (gates), card 1 (mystery), keep your items (full inventory), item not used (no target) |
+| **3 timed-out turns in a row** | **Autopilot** (a Pilot-level bot) flies your rocket, so the game goes on for everyone. The game is recorded as **abandoned for you** (no points for you). If you come back, you can tap **Take the controls** and keep playing for fun, but it stays abandoned for you |
+| Hidden by the teacher mid-game | Autopilot straight away |
+| Everyone left (no action for **10 minutes**) | The tidy-up job ends it with no points for anyone |
+| Host doesn't launch within 10 minutes | The waiting game expires, as now |
+
+**Who presses the "time's up" button?** Server functions can't wake themselves up, and the database's scheduled job can't run the rules engine. So when the server's clock says time's up, the waiting players' pages send a "time's up" request. The next player in turn order asks first, the others a few seconds later only if needed. The server checks the clock itself, so a page can't hurry anyone. The 5-minute tidy-up job is the backstop for games where everyone's gone.
+
+Autopilot turns are played by the server **inside the request that hands them the turn**, so they cost no extra function calls.
+
+### Safety, same as chess and checkers
+
+- No chat, no reactions (unless you choose them, see the questions), no free text. Names and avatars only.
+- The server works out who's asking from their sign-in token, never from the request. Players can read only games they're in.
+- Hidden students can't start or join. The teacher's pause switch stops starting, joining, launching and rolling, but leaving still works. Same as now.
+- Rate limits like now: 20 games started an hour, 10 code tries a minute, 60 requests a minute.
+
+## 6. Look, feel and accessibility
+
+- Everything drawn with SVG and CSS: starfield, planets, nebulae, rockets, holes and stars. No images, fonts or downloads from anywhere else.
+- **Each rocket wears its player's avatar** in the window (the existing `AvatarImage`), with a coloured trail and a seat shape (circle, triangle, square, diamond), so rockets are never told apart by colour alone.
+- Animations play the server's event list step by step: dice tumble → rocket hops square by square → wormhole swirl / black hole spaghetti → star sparkle → item card flips in. Short steps, plus the speed setting.
+- `prefers-reduced-motion` and an in-game **Less motion** switch: hops become slides, swirls become fades.
+- Sound uses the existing sound module (made in the browser, no files), **off by default**: a few new tones for rolls, wormholes, black holes and items.
+- **Keyboard:** Space or Enter rolls, number keys pick items, arrow keys pick targets and cards, Escape closes panels. Big tap targets everywhere. Every event announced through an `aria-live` region.
+- **Sizes:** Chromebook (1366×768): board on the left, players, items and mission log on the right. Tablet portrait (768×1024): board on top, panels below. Tested in a real browser at both, with mouse, touch and keyboard.
+- **How to play** screen: a picture of every square and item with one line each. Opens from the game and the settings screen.
+- **Space facts:** short, accurate, Year 4–6 reading level, one per star type (and some for planets on the decorations), checked against NASA or similar sources.
+
+## 7. Points: what I recommend (your call)
+
+The brief asked me to ask before deciding. My recommendation is **participation points only**, so winning a luck game is never worth cheating for, and so playing a full game with classmates is what's rewarded.
+
+| Space game | Points (win or lose) | Limit |
+|---|---|---|
+| Against bots, finished | **2** | Shares the existing 40-points-a-day bot cap with chess and checkers |
+| Against classmates, finished | **4** | First 6 a day earn points (more still show in your history) |
+| Quit, autopilot, or under 10 turns | 0 | Same as "abandoned" now |
+
+- **Never:** ratings, rank badges, leaderboards or "most improved". The Leaderboard page doesn't show a space tab.
+- **A few one-off space achievements** (10 points each, the same as other achievements): 🚀 First launch · 🛰️ Finish a game with classmates · 🌀 Ride 25 wormholes · 🛡️ Block a black hole with a Force Field · ⭐ Land on every kind of star · 🏁 Dock at the station 10 times. These show on the Profile page next to chess and checkers.
+- The **How points work** page gets a short space section, read from the database like the rest, so it never disagrees with it.
+- **Teacher view:** each student's detail shows space games played too. **New season** and **Delete student** clear space games as well (tested).
+
+The other option is **no points at all**: games are saved and shown in history only. That's simpler, but students may then see the game as "not worth playing" next to chess and checkers.
+
+## 8. How it's built (the technical part)
+
+### Rules engine (`shared/space/`)
+
+- `engine.ts`: `play(state, action, dice) → { state, events }`. A pure function: no clock, no network, no `Math.random`. The dice come in from outside: a seeded generator in bot games, secure randomness on the server, a fixed list in tests.
+- `boards.ts` (the four designed boards), `galaxy.ts` (the Random Galaxy generator and galaxy codes), `items.ts`, `bot.ts` (Cadet/Pilot/Commander decisions), `facts.ts`, `replay.ts` (replays a saved game for the server).
+- Events are plain data like `{ kind: 'black-hole', seat: 2, from: 64, to: 22 }`. The screen animates them and the mission log turns them into words. The screen **never works out results itself**.
+- `scripts/space-sim.mjs`: plays tens of thousands of bot games per board, mode and player count. It reports average and longest game (turns, rounds, estimated minutes), how often each square and item fires, win rate by turn order, how often the last-place rocket comes back, how often the mission clock or chain cap is hit, and checks no game ever loops. Its summary goes into this plan after 9.1.
+
+### Database (one new migration, applied only after you say yes)
+
+- `bot_games`, `scored_games`, `achievement_types`: allow `'space'` (not `ratings`).
+- **`space_games`** (one row per classmates game): code, lobby flag, host, `seat1`–`seat4` (each a player, and if a student is deleted that seat becomes empty and the game stays for the others, like `mp_games`), status, settings (board, mode, galaxy code, options), the current state (positions, items, effects, comet, mines, round, whose turn, any choice waiting, autopilot seats), `version`, `turn_deadline`, the last turn's events, places and `counts_for_points` per seat, rematch link. Kept small (a few KB), because every change is sent to every player.
+- **`space_game_log`** (one row per action: who, what, the dice and the events): the mission log and the record the server can replay. Players can read only their own games' logs. Not sent live; pages read it when they open a game and add new events as they arrive.
+- Row level security on both, readable only by the game's players, writable by nobody but the server. Realtime switched on for `space_games` only.
+- The presence-only "who's here" rule is extended to `space-game:<id>` channels (still presence only, still tested).
+- Small read-only functions: `space_lobby_games()`, `my_space_game_stats()`. Server-only: player status (reuses `mp_player_status`), `space_tidy()` on a new 5-minute scheduled job.
+- Scoring: a trigger on `space_games` (when a game finishes) and the existing `bot_games` trigger, with a separate `score_space_game` path. **The chess and checkers scoring functions stay as they are.**
+- `progress_rules()`, `my_progress()`, `teacher_student_detail()`, `teacher_new_season()`, `teacher_delete_student()`, `rebuild_progress()` updated to include space.
+- `security.test.sql` lists updated by hand (new readable tables, new callable functions, the new Realtime table) plus new tests: students can't write to the new tables, can't read others' games, can't call server-only functions, can't send messages on the space channel.
+
+### Server functions
+
+- **New `space-game` function:** `solo-start` (hands out a stamped seed), `create`, `join`, `cancel`, `launch`, `use-item`, `roll`, `choose`, `times-up`, `take-controls`, `leave`, `rematch`. Same structure as `multiplayer`: a testable `handler.ts`, a thin `entry.ts`, built into `index.ts` by `npm run build:functions`. Same 64 KB body limit, CORS answer remembered for 2 hours, and friendly error messages.
+- **`save-bot-game`:** accepts `game: "space"` reports and replays them. Chess and checkers reports are handled exactly as now (their tests run unchanged).
+- **`multiplayer`:** not changed.
+
+### Website
+
+- `src/games/space/`: board, rockets, dice, panels, settings, How to play, bot Web Worker, sounds. Registered with one line in `registry.ts`, with `ranked: false`.
+- `src/space/useSpaceGame.ts`: keeps a classmates game up to date, using the same approach as `useFriendGame`: live updates, checking every few seconds if they drop, reload-safe, the "away" signal, and the Stage 8 retry. Chess and checkers keep their own hook, unchanged.
+- The Lobby page shows space games in the same list, with how many seats are filled ("2 of 4").
+
+## 9. Free-tier cost
+
+Estimates now; the simulation in 9.1 will firm them up.
+
+| | Per game | A class (30 students, 3 lessons a week, ~3 space games a lesson in groups of 4) |
+|---|---|---|
+| Function calls, classmates | ~75 turns × about 1.5 requests (item, roll, choice), plus ~10 to start, join, launch and finish: **~120** | ~70 games a week × 120 ≈ 8,500 a week, **~35,000 a month** |
+| Function calls, bots | **2** (seed + save) | small |
+| Realtime messages | each change to up to 4 players: ~500 | ~35,000 a week, ~150,000 a month, against 2 million |
+| Data sent out (egress) | a few KB per change × 4 players: ~1.5 MB | ~0.5 GB a month, against 5 GB. **This is the one to watch.** It's why the mission log lives in its own table and isn't sent live |
+| Database | a few KB per game plus its log | well under 50 MB a year, against 500 MB. New season clears it |
+| Live connections | 1 per open tab, same as now | unchanged |
+
+Together with chess and checkers (~70,000 calls a month at the same class size), that's about 105,000 of 500,000 function calls. The real classroom limit is still sign-in (Stage 8 notes), not this game.
+
+## 10. Stages
+
+Each stage ends with `npm run check` passing, a browser test where there's something to see, and a short report to you.
+
+1. **9.1 Rules engine, boards, simulation, tests.** No screens yet. I report the simulation numbers (game length, fairness, how often each thing happens) and the tuned settings, so you can say "too long" or "too mean" before anything is drawn.
+2. **9.2 Playing against bots** (board, rockets, animations, items, settings, keyboard), not saved yet. Full games played in a real browser at Chromebook and tablet sizes. **Preview:** if you like, I can put this stage on a private claude.ai page that you open on your phone and actually play (no sign-in, no saving, nothing to do with the live site).
+3. **9.3 Saving bot games and points:** `save-bot-game` replays space games, the migration's points/achievements part, the Profile, How points work and teacher detail updates.
+4. **9.4 Playing classmates:** `space_games`, the `space-game` function, lobby, launch, timers, autopilot, rematch. Played with 2, 3 and 4 local accounts in separate browser windows, with reloads and a closed lid part-way.
+5. **9.5 Polish:** cosmic events, How to play, space facts, sounds, an accessibility pass, README and CLASS-LAUNCH updates.
+6. **9.6 Optional:** pass-and-play and Mission Control maths, only if you want them.
+
+**Going live:** all of Stage 9 waits until **Stage 8 is deployed and merged** (it's parked for you at the moment), because this branch is built on top of it. When Stage 9 is ready, I'll tell you exactly what the migration and the new function change, and wait for your yes, the same as Stage 8. Nothing goes live and nothing goes into `main` before that.
+
+## 11. Questions for you
+
+My recommendation is in **bold**. If you're happy with all of them, just reply **"go with your picks"**.
+
+1. **Name.** **Wormholes & Black Holes** is good. Other ideas: *Rocket Race*, *Star Hopper*, *Cosmic Climb*, *Galaxy Dash*.
+2. **Most players in a classmates game:** **4**.
+3. **Pass-and-play** (2–4 students on one Chromebook, never earns points): **yes, as the optional last stage**.
+4. **Finishing:** **any roll that reaches 100 wins** (exact roll as a setting). The simulation will confirm it.
+5. **Points:** **participation only** (section 7), or none.
+6. **Preset reactions** (🚀 👏 😮): **not for now.** The hub's promise is "no chat", and even three emojis means a new kind of message between students and a new teacher switch to manage. Easy to add later if you want it.
+7. **Bots filling empty seats in a classmates game** (e.g. 2 students + 2 Pilots): **yes, but at least 2 students must be in it for it to count**. It makes small groups more fun and costs nothing extra (the server plays the bots).
+8. **Mission clock** (fuel runs out after about 40 rounds, places by distance): **yes**, so a game can never eat a whole lesson.
+9. **Matariki square:** please check the wording in section 2 (now or at Stage 9.5).
+10. **Phone preview** of the bot game after 9.2 on a private claude.ai page: **yes**.
+
+## 12. Fun extras I've included (within the hub's rules)
+
+- **Podium** with every rocket's place, not just the winner.
+- **Galaxy codes** (Comet-Kiwi-48) and a **Galaxy of the day**, so a class can all play the same galaxy.
+- **Mission clock** with a fuel gauge, so the end is exciting rather than dragging.
+- **Rockets wear your avatar**, with a trail and a seat shape.
+- **Star chart:** every space fact you've discovered is collected on a page. Kept on that device only, not in the database.
+- **Space achievements** (section 7).
+- **Autopilot** keeps the game going for everyone when someone's Chromebook dies.
+
+## 13. What I need from you now
+
+1. Read this plan (the questions are in section 11).
+2. Reply with your answers, or **"go with your picks"**, or anything you'd change.
+3. Nothing else for now. No accounts, no settings, no live changes. I'll start Stage 9.1 when you say go.
