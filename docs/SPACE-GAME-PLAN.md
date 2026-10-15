@@ -2,7 +2,7 @@
 
 Stage 9 of School Games Hub: a space snakes and ladders for Years 4–6, against bots or 2–4 classmates.
 Written 15 October 2026 from the brief in [prompts/space-game.md](prompts/space-game.md), after reading the code on the `stage-8` branch.
-**Status: approved by James on 15 October 2026 (answers in section 11). Stage 9.1 done (results in section 14); James happy with the numbers as they are (15 Oct 2026). Stage 9.2 done (playing against bots, not saved; phone preview built with `npm run space:preview`). Next: Stage 9.3.**
+**Status: approved by James on 15 October 2026 (answers in section 11). Stage 9.1 done (results in section 14); James happy with the numbers as they are (15 Oct 2026). Stage 9.2 done (playing against bots; phone preview built with `npm run space:preview`). Stage 9.3 done (bot games saved and checked, taking-part points, space achievements; results in section 15; not live yet). Next: Stage 9.4.**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
@@ -238,7 +238,7 @@ Autopilot turns are played by the server **inside the request that hands them th
 |---|---|---|
 | Against bots, finished | **2** | Shares the existing 40-points-a-day bot cap with chess and checkers |
 | Against classmates, finished | **4** | First 6 a day earn points (more still show in your history) |
-| Quit, autopilot, or under 10 turns | 0 | Same as "abandoned" now |
+| Quit, autopilot, or under 5 turns | 0 | Same as "abandoned" now (5, not 10: see section 15) |
 | Classmates game with bots in some seats | 4 | Only if at least 2 students played it |
 
 - **Never:** ratings, rank badges, leaderboards or "most improved". The Leaderboard page doesn't show a space tab.
@@ -390,3 +390,44 @@ About 5 wormhole rides, 3½ black holes (and nearly 1 more blocked by a Force Fi
 ### Code (Stage 9.1)
 
 `shared/space/`: `engine.ts` (rules), `board.ts` (board shape and fairness rules), `boards.ts` (the four boards), `galaxy.ts` (Random Galaxy and galaxy codes), `items.ts`, `bot.ts` (Cadet, Pilot, Commander), `replay.ts` (bot games from a seed, and the server's replay check), `random.ts` (seeded dice), `sim.ts`. Run the simulation with `npm run space:sim` (add `-- --games 20000`, `-- --board nebula` or `-- --json`). Space facts (`facts.ts`) move to 9.5, where they're written and checked.
+
+## 15. Stage 9.3 results: saving and points (15 October 2026)
+
+Built on branch `stage-9`. **Nothing is live yet**: the new migration and the updated `save-bot-game` function go live with the rest of Stage 9, after James says yes.
+
+### How a bot game is saved
+
+1. When the student presses **Launch**, the page asks `save-bot-game` for a seed (`{ game: "space", start: true }`). The server makes a fresh one (`s1-<time>-<random>`) and stamps it: an HMAC of the seed and the student's ID, with a key made from the server's own key. Nothing new to set up.
+2. The game plays in the browser from that seed, exactly as in 9.2.
+3. The moment the rules say the game is over, the page sends the seed, the stamp, the settings and the student's actions (short text like `roll`, `choose:1`, `use:tractor-beam@2`). The server checks the stamp is its own and for this student, that the seed is less than 12 hours old, and replays the whole game (10–30 ms). Then it saves the place it worked out itself.
+4. A student who leaves part-way (Settings, New game, closing the tab) after doing something gets the game recorded as **left early**, earning nothing, like chess.
+5. No seed within 5 seconds (no Wi-Fi)? It's a **practice game**, and the page says so in the mission log and on the podium.
+
+### Changes from the plan
+
+- **The seed comes from `save-bot-game`, not a new `space-game` function.** Bot games then need only the one function, as chess and checkers do, and `space-game` (9.4) is only for classmates games.
+- **A game counts after 5 turns, not 10.** A quick-board game is only about 10 rounds, so "10 turns" would have left about half of them earning nothing.
+- **Each seed is saved once** (a unique index), instead of chess's "same moves" check: two space games can have the same actions (just rolling) but never the same seed.
+- **Won** means 1st place (ties too); every other place is **lost**. The website shows the place ("2nd"), never "Lost", for space games.
+
+### Database (migration `20261015000600_space_points.sql`)
+
+- `bot_games`, `scored_games`, `achievement_types` allow `space`. `ratings` doesn't. `bot_games.space` keeps the seed, board, settings, place and what the student did; `scored_games.space` keeps the counts the achievements use.
+- `record_space_bot_game()`: server only, school lock, once per seed, the same 300-a-day flood limit.
+- `score_bot_game()`: space games earn `space_bot_points()` = 2, inside the shared 40-a-day bot cap. Chess and checkers points are unchanged.
+- Six achievements: First launch, Finish a game with classmates (0 until 9.4), Ride 25 wormholes, Block a black hole with a Force Field, Land on every kind of star (9), Dock at the station 10 times.
+- `progress_rules()` has a `space` part (2, 4, 6 a day, 5 turns), read by **How points work**. `teacher_student_detail()` has a space line (no badge).
+- New season and deleting a student already clear space games (tested).
+
+### Website
+
+- **Podium:** "Saved! You earned points for taking part." (or "too short", the server's error, or "Practice game").
+- **Dashboard:** space games in Recent games with their place and "+2"; a "🚀 Wormholes & Black Holes: 3 games, 1st place 1 time" line under My stats.
+- **How points work:** a space section. **Profile:** the six space achievements. **Teacher:** space games in a student's detail and recent games.
+
+### Checked
+
+- 33 new database tests (`space_points.test.sql`) and one more security test; all 303 database tests pass, also after rebuilding the local database from scratch.
+- 10 new server tests: seeds, a full game replayed and saved, left-early, forged stamps, other students' seeds, old seeds, changed games and settings, Random Galaxy boards, the daily limit.
+- 3 new screen tests: saving, practice games, leaving part-way.
+- In a real browser against the local database and the real function: 5 whole games at Chromebook and tablet sizes (designed board and a Random Galaxy, exact finish, roll again on 6, cosmic events), each saved once with 2 points; a closed tab saved as left early with 0; no Wi-Fi gave a practice game; First launch and Force Field achievements earned. No page errors.

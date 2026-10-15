@@ -60,6 +60,8 @@ export function SpaceSettings({
   onLessMotion,
   problem,
   onStart,
+  starting = false,
+  saving = false,
 }: {
   prefs: SpacePrefs;
   onChange: (prefs: SpacePrefs) => void;
@@ -69,6 +71,10 @@ export function SpaceSettings({
   onLessMotion: (on: boolean) => void;
   problem: string;
   onStart: () => void;
+  /** Waiting for the server's dice seed. */
+  starting?: boolean;
+  /** Finished games are saved (false in the stand-alone preview). */
+  saving?: boolean;
 }) {
   const set = <K extends keyof SpacePrefs>(key: K, value: SpacePrefs[K]) => onChange({ ...prefs, [key]: value });
   const galaxyOk = prefs.board !== 'galaxy' || parseGalaxyCode(prefs.galaxy) !== null;
@@ -262,8 +268,8 @@ export function SpaceSettings({
             {problem}
           </p>
         )}
-        <button type="submit" className="button button--play chess-setup__start">
-          <span aria-hidden="true">🚀</span> Launch!
+        <button type="submit" className="button button--play chess-setup__start" disabled={starting}>
+          <span aria-hidden="true">🚀</span> {starting ? 'Getting ready…' : 'Launch!'}
         </button>
         <div className="chess-setup__help">
           <p>
@@ -271,7 +277,12 @@ export function SpaceSettings({
             it, or a black hole to fall down. Stars give you items: use one before you roll (keys 1, 2 and 3). First to the
             space station wins, and everyone gets a place.
           </p>
-          <p>Tap any square on the board to see what it does. Games against bots aren’t saved yet.</p>
+          <p>
+            Tap any square on the board to see what it does.{' '}
+            {saving
+              ? 'Every game you finish earns points for taking part, whether you win or not.'
+              : 'This is a practice copy: games aren’t saved.'}
+          </p>
         </div>
       </form>
     </section>

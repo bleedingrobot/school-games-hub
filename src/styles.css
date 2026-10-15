@@ -1631,6 +1631,10 @@ main:focus {
 .stats-table + .stats-table {
   margin-top: 10px;
 }
+.stats-line {
+  margin: 10px 0 0;
+  font-weight: 700;
+}
 
 @media (max-width: 900px) {
   .chess-game__side > .friend-note,

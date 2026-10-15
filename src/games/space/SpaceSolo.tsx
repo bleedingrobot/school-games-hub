@@ -4,7 +4,12 @@
  * The rules engine decides everything. This screen only shows what happened: each action
  * gives a list of events, and they're played one at a time (dice, hops, wormholes, items…)
  * before the next action. Rocket positions on screen come from the events, and the panels
- * catch up with the engine's state at the end of each list. Games aren't saved yet (Stage 9.3).
+ * catch up with the engine's state at the end of each list.
+ *
+ * Saving: with `saving`, each game is played from a stamped seed the server hands out, and
+ * at the end the student's actions go back to the server, which replays the game before
+ * saving it (shared/space/save.ts). No seed (no Wi-Fi, or the stand-alone preview) means a
+ * practice game that isn't saved.
  */
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
@@ -26,6 +31,7 @@ import {
 } from '../../../shared/space/engine';
 import { ITEMS, type ItemKind } from '../../../shared/space/items';
 import { randomFromSeed } from '../../../shared/space/random';
+import { encodeAction, type SpaceGameReport } from '../../../shared/space/save';
 import { playSound, type GameSound } from '../sounds';
 import { startSpaceBot, type SpaceBot } from './botThread';
 import { Dice, DieFace } from './Dice';
@@ -54,6 +60,20 @@ export interface SpacePlayer {
   name: string;
   avatar: unknown;
 }
+
+/** How games get saved. Left out (the preview), every game is a practice game. */
+export interface SpaceSaving {
+  /** A stamped seed from the server, or null if there isn't one to be had. */
+  seed(): Promise<{ seed: string; stamp: string } | null>;
+  /** Saves a finished game. Throws an error with a message for the student if it can't. */
+  save(report: SpaceGameReport): Promise<{ countsForPoints?: boolean } | void>;
+  /** Records a game the student left part-way, even while the page is closing. */
+  abandon(report: SpaceGameReport): void;
+}
+
+const isOver = (run: SoloRun) => run.state.phase === 'over';
+
+type SaveStatus = 'practice' | 'playing' | 'saving' | 'saved' | 'saved-no-points' | 'error';
 
 const CALLSIGNS = ['Kea', 'Tūī', 'Weka'];
 /** Bots think for about a second (Normal speed). */
@@ -129,11 +149,13 @@ export function SpaceSolo({
   player,
   level,
   onLevelChange,
+  saving,
   timeScale = 1,
 }: {
   player: SpacePlayer;
   level: BotLevel;
   onLevelChange: (level: BotLevel) => void;
+  saving?: SpaceSaving;
   /** Tests set this to 0 so animations don't wait. */
   timeScale?: number;
 }) {
@@ -155,6 +177,9 @@ export function SpaceSolo({
   const [showPodium, setShowPodium] = useState(false);
   const [info, setInfo] = useState<{ n: number; title: string; text: string } | null>(null);
   const [hint, setHint] = useState('');
+  const [starting, setStarting] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('practice');
+  const [saveMessage, setSaveMessage] = useState('');
 
   const runRef = useRef<SoloRun | null>(null);
   const gameRef = useRef<Game | null>(null);
@@ -167,6 +192,11 @@ export function SpaceSolo({
   const nextId = useRef(0);
   const panelRef = useRef<HTMLDivElement>(null);
   const live = useRef({ scale: 1, calm: false, sound: false });
+  /** The current game's stamp; null for a practice game. */
+  const stampRef = useRef<string | null>(null);
+  /** Seeds already sent to the server (finished or left), so nothing is sent twice. */
+  const sentRef = useRef(new Set<string>());
+  const startingRef = useRef(false);
   live.current = { scale: SPEED_SCALE[prefs.speed] * timeScale, calm: lessMotion, sound: soundOn };
 
   useEffect(() => {
@@ -175,6 +205,49 @@ export function SpaceSolo({
       keyRef.current++; // stops any game still animating
       botRef.current?.close();
       botRef.current = null;
+    };
+  }, []);
+
+  function reportFor(run: SoloRun, ending: SpaceGameReport['ending']): SpaceGameReport | null {
+    const stamp = stampRef.current;
+    if (!stamp) return null;
+    const { seed, board, settings, bots, level: botLevel } = run.setup;
+    return { game: 'space', seed, stamp, board, settings, bots, level: botLevel, actions: run.studentActions.map(encodeAction), ending };
+  }
+
+  /** Saves the game once the rules engine says it's over (before the animations finish). */
+  async function saveFinished(run: SoloRun) {
+    const report = reportFor(run, 'finished');
+    if (!saving || !report || sentRef.current.has(report.seed)) return;
+    sentRef.current.add(report.seed);
+    const mine = runRef.current === run;
+    if (mine) setSaveStatus('saving');
+    try {
+      const answer = await saving.save(report);
+      if (runRef.current === run) setSaveStatus(answer && answer.countsForPoints === false ? 'saved-no-points' : 'saved');
+    } catch (error) {
+      if (runRef.current !== run) return;
+      setSaveMessage(error instanceof Error && error.message ? error.message : 'We couldn’t save this game.');
+      setSaveStatus('error');
+    }
+  }
+
+  /** If the student leaves a game part-way (after doing something), it's recorded as left early. */
+  const leftEarly = useRef(() => {});
+  leftEarly.current = () => {
+    const run = runRef.current;
+    if (!saving || !run || run.state.phase === 'over' || run.studentActions.length === 0) return;
+    const report = reportFor(run, 'abandoned');
+    if (!report || sentRef.current.has(report.seed)) return;
+    sentRef.current.add(report.seed);
+    saving.abandon(report);
+  };
+  useEffect(() => {
+    const onHide = () => leftEarly.current();
+    window.addEventListener('pagehide', onHide);
+    return () => {
+      window.removeEventListener('pagehide', onHide);
+      onHide();
     };
   }, []);
 
@@ -408,6 +481,7 @@ export function SpaceSolo({
         }
         const run = runRef.current!;
         if (run.state.phase === 'over') {
+          void saveFinished(run);
           setPhase('over');
           setTurnSeat(null);
           await wait(400);
@@ -434,6 +508,7 @@ export function SpaceSolo({
           events = botPlay(run, decideBot(question));
         }
         queue.current.push({ events, state: run.state });
+        if (isOver(run)) void saveFinished(run);
       }
     } finally {
       if (pumpingFor.current === key) pumpingFor.current = null;
@@ -442,19 +517,33 @@ export function SpaceSolo({
 
   // ---------- Starting and acting ----------
 
-  function start() {
+  async function start() {
+    if (startingRef.current) return;
     const setup = setupFrom(prefs);
     if ('problem' in setup) {
       setProblem(setup.problem);
       return;
     }
+    leftEarly.current();
+    let stamped: { seed: string; stamp: string } | null = null;
+    if (saving) {
+      startingRef.current = true;
+      setStarting(true);
+      keyRef.current++; // stops the old game while the seed comes
+      stamped = await saving.seed().catch(() => null);
+      startingRef.current = false;
+      setStarting(false);
+    }
     let started: ReturnType<typeof startRun>;
     try {
-      started = startRun({ seed: newSeed(), board: setup.board, settings: setup.settings, bots: prefs.bots, level });
+      started = startRun({ seed: stamped?.seed ?? newSeed(), board: setup.board, settings: setup.settings, bots: prefs.bots, level });
     } catch {
       setProblem('We couldn’t make that galaxy. Try another code.');
       return;
     }
+    stampRef.current = stamped?.stamp ?? null;
+    setSaveStatus(stamped ? 'playing' : 'practice');
+    setSaveMessage('');
     const { run, events } = started;
     const key = ++keyRef.current;
     const next: Game = { key, seats: makeSeats(run, player, level), studentSeat: run.studentSeat, level };
@@ -481,6 +570,7 @@ export function SpaceSolo({
   }
 
   function leave() {
+    leftEarly.current();
     keyRef.current++;
     runRef.current = null;
     gameRef.current = null;
@@ -590,7 +680,9 @@ export function SpaceSolo({
         lessMotion={lessMotion}
         onLessMotion={setLessMotion}
         problem={problem}
-        onStart={start}
+        onStart={() => void start()}
+        starting={starting}
+        saving={!!saving}
       />
     );
   }
@@ -673,7 +765,8 @@ export function SpaceSolo({
             places={places}
             studentSeat={studentSeat}
             ending={view.ending}
-            onAgain={start}
+            onAgain={() => void start()}
+            saveNote={saveNote(saveStatus, saveMessage, !!saving)}
             onLook={() => setShowPodium(false)}
             onSettings={leave}
           />
@@ -830,7 +923,7 @@ export function SpaceSolo({
 
         <section className="space-panel space-log" aria-labelledby="space-log-title">
           <h2 id="space-log-title" className="space-panel__title">
-            Mission log <span>Practice game: not saved</span>
+            Mission log <span>{LOG_SAVE_NOTE[saveStatus]}</span>
           </h2>
           <MissionLog lines={log} />
         </section>
@@ -839,7 +932,7 @@ export function SpaceSolo({
           <div className="chess-confirm" role="group" aria-label="Are you sure?">
             <p>Start again? This game will end.</p>
             <div className="chess-actions">
-              <button type="button" className="button button--danger" onClick={start}>
+              <button type="button" className="button button--danger" onClick={() => void start()} disabled={starting}>
                 Yes, start again
               </button>
               <button type="button" className="button button--light" onClick={() => setConfirming(false)} autoFocus>
@@ -850,8 +943,8 @@ export function SpaceSolo({
         ) : (
           <div className="space-actions">
             {over ? (
-              <button type="button" className="space-action is-main" onClick={start}>
-                Play again
+              <button type="button" className="space-action is-main" onClick={() => void start()} disabled={starting}>
+                {starting ? 'Getting ready…' : 'Play again'}
               </button>
             ) : (
               <button type="button" className="space-action" onClick={() => setConfirming(true)}>
@@ -933,12 +1026,39 @@ function MissionLog({ lines }: { lines: LogLine[] }) {
 
 const MEDALS = ['', '🥇', '🥈', '🥉', '🚀'];
 
+const LOG_SAVE_NOTE: Record<SaveStatus, string> = {
+  practice: 'Practice game: not saved',
+  playing: 'Saved when you finish',
+  saving: 'Saving…',
+  saved: 'Saved ✓',
+  'saved-no-points': 'Saved ✓',
+  error: 'Not saved',
+};
+
+/** The line on the podium about saving. */
+function saveNote(status: SaveStatus, message: string, canSave: boolean): string | null {
+  switch (status) {
+    case 'practice':
+      return canSave ? 'Practice game: we couldn’t reach the server at the start, so this one isn’t saved.' : null;
+    case 'playing':
+    case 'saving':
+      return 'Saving…';
+    case 'saved':
+      return 'Saved! You earned points for taking part.';
+    case 'saved-no-points':
+      return 'Saved. That game was too short to earn points.';
+    case 'error':
+      return message;
+  }
+}
+
 function Podium({
   seats,
   places,
   studentSeat,
   ending,
   onAgain,
+  saveNote,
   onLook,
   onSettings,
 }: {
@@ -947,6 +1067,7 @@ function Podium({
   studentSeat: number;
   ending: SpaceState['ending'];
   onAgain: () => void;
+  saveNote: string | null;
   onLook: () => void;
   onSettings: () => void;
 }) {
@@ -991,6 +1112,11 @@ function Podium({
         {fourth.length > 0 && (
           <p className="space-podium__fourth">
             {fourth.map((i) => `${ORDINAL[places[i]]}: ${seats[i].isStudent ? 'You' : seats[i].name}`).join(' · ')}
+          </p>
+        )}
+        {saveNote && (
+          <p className="space-podium__save" role="status">
+            {saveNote}
           </p>
         )}
         <div className="chess-result__buttons">

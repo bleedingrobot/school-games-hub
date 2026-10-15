@@ -59,8 +59,15 @@ export type ReplayResult =
   | { ok: true; state: SpaceState; studentSeat: number; studentTurns: number; finished: boolean }
   | { ok: false; reason: string };
 
-/** Replays a bot game exactly. Fails if any action is against the rules or left over. */
-export function replaySolo(setup: SoloSetup, actions: readonly SpaceAction[]): ReplayResult {
+/**
+ * Replays a bot game exactly. Fails if any action is against the rules or left over.
+ * `onEvents` sees every event, in order, from the start of the game.
+ */
+export function replaySolo(
+  setup: SoloSetup,
+  actions: readonly SpaceAction[],
+  onEvents?: (events: SpaceEvent[]) => void,
+): ReplayResult {
   if (actions.length > MAX_STUDENT_ACTIONS) return { ok: false, reason: 'too many actions' };
   let game: SoloGame;
   try {
@@ -69,14 +76,17 @@ export function replaySolo(setup: SoloSetup, actions: readonly SpaceAction[]): R
     return { ok: false, reason: error instanceof Error ? error.message : 'bad setup' };
   }
   let studentTurns = 0;
+  onEvents?.(game.events);
   try {
-    playBots(game, setup.level);
+    playBots(game, setup.level, onEvents);
     for (const action of actions) {
       if (game.state.phase === 'over') return { ok: false, reason: 'actions after the game ended' };
       const before = game.state.turnsTaken;
-      game.state = play(game.state, action, game.dice).state;
+      const { state, events } = play(game.state, action, game.dice);
+      game.state = state;
+      onEvents?.(events);
       if (game.state.turnsTaken > before || game.state.phase === 'over') studentTurns++;
-      playBots(game, setup.level);
+      playBots(game, setup.level, onEvents);
     }
   } catch (error) {
     if (error instanceof SpaceRuleError) return { ok: false, reason: `an action broke the rules: ${error.message}` };

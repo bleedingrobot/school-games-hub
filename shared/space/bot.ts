@@ -23,11 +23,7 @@ import {
 } from './engine';
 import type { ItemKind } from './items';
 
-export const BOT_NAMES: Record<BotLevel, string> = {
-  'very-easy': 'Cadet',
-  easy: 'Pilot',
-  medium: 'Commander',
-};
+export { BOT_NAMES } from './names';
 
 /** How much a bot likes holding each item (for "pockets full" choices). */
 const ITEM_VALUE: Record<ItemKind, number> = {

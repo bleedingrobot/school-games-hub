@@ -17,7 +17,8 @@ import {
   type PersonDetail,
 } from '../data/teacher';
 import { findGame } from '../games/registry';
-import { BOT_LEVELS } from '../games/types';
+import { BOT_LEVELS, type BotLevel } from '../games/types';
+import { BOT_NAMES, placeLabel } from '../../shared/space/names';
 import { whenPlayed } from './Dashboard';
 
 /** The words a teacher types to start a new season. The server checks them too. */
@@ -267,7 +268,8 @@ function PersonPanel({
           <p className="person-panel__badges">
             {detail.games.map((g) => (
               <span key={g.game}>
-                <RankBadge rank={g.rank} game={g.game} /> {g.achievements} achievement{g.achievements === 1 ? '' : 's'}
+                {g.rank ? <RankBadge rank={g.rank} game={g.game} /> : findGame(g.game)?.name}: {g.achievements} achievement
+                {g.achievements === 1 ? '' : 's'}
               </span>
             ))}
           </p>
@@ -275,12 +277,20 @@ function PersonPanel({
             <ul className="recent-list person-panel__recent" aria-label="Recent games">
               {detail.recent.map((r, i) => (
                 <li key={i}>
-                  <span className={`result result--${r.result}`}>
-                    {r.result === 'won' ? 'Won' : r.result === 'lost' ? 'Lost' : 'Draw'}
-                  </span>
+                  {r.game === 'space' && r.kind === 'bot' ? (
+                    <span className={`result result--${r.place === 1 ? 'won' : 'drawn'}`}>{placeLabel(r.place)}</span>
+                  ) : (
+                    <span className={`result result--${r.result}`}>
+                      {r.result === 'won' ? 'Won' : r.result === 'lost' ? 'Lost' : 'Draw'}
+                    </span>
+                  )}
                   <span className="recent-list__what">
                     {findGame(r.game)?.name} vs{' '}
-                    {r.kind === 'bot' ? `${BOT_LEVELS.find((l) => l.id === r.against)?.label ?? ''} bot` : r.against}
+                    {r.kind !== 'bot'
+                      ? r.against
+                      : r.game === 'space'
+                        ? `${BOT_NAMES[r.against as BotLevel] ?? ''} bots`
+                        : `${BOT_LEVELS.find((l) => l.id === r.against)?.label ?? ''} bot`}
                     {r.reason === 'abandoned' && <span className="recent-list__note"> (left early)</span>}
                   </span>
                   <span className="recent-list__when">{whenPlayed(r.finished_at)}</span>

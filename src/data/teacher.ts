@@ -31,7 +31,8 @@ interface Tally {
 export interface PersonDetail {
   points: number;
   level: number;
-  games: { game: string; bot: Tally; friend: Tally; rank: Rank; achievements: number }[];
+  /** Rank is null for games without badges (Wormholes & Black Holes). */
+  games: { game: string; bot: Tally; friend: Tally; rank: Rank | null; achievements: number }[];
   recent: {
     game: string;
     kind: 'bot' | 'friend';
@@ -40,6 +41,8 @@ export interface PersonDetail {
     result: 'won' | 'lost' | 'drawn';
     reason: string;
     finished_at: string;
+    /** Wormholes & Black Holes against bots: the place (null if they left early). */
+    place?: number | null;
   }[];
 }
 

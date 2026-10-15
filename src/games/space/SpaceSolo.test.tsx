@@ -1,17 +1,61 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { judgeSpaceGame, type SpaceGameReport } from '../../../shared/space/save';
 import { SoundProvider } from '../../sound';
-import { SpaceSolo } from './SpaceSolo';
+import { SpaceSolo, type SpaceSaving } from './SpaceSolo';
 
-function renderGame() {
+function renderGame(saving?: SpaceSaving) {
   const onLevelChange = vi.fn();
-  render(
+  const view = render(
     <SoundProvider>
-      <SpaceSolo player={{ name: 'Speedy Otter 27', avatar: {} }} level="easy" onLevelChange={onLevelChange} timeScale={0} />
+      <SpaceSolo
+        player={{ name: 'Speedy Otter 27', avatar: {} }}
+        level="easy"
+        onLevelChange={onLevelChange}
+        saving={saving}
+        timeScale={0}
+      />
     </SoundProvider>,
   );
-  return { onLevelChange };
+  return { onLevelChange, view };
+}
+
+/** A pretend server: hands out seeds and keeps what it's sent. */
+function fakeSaving(seed: string | null = 's1-1792000000-0123456789abcdef01234567') {
+  const saved: SpaceGameReport[] = [];
+  const left: SpaceGameReport[] = [];
+  const saving: SpaceSaving = {
+    seed: vi.fn(async () => (seed ? { seed, stamp: 'x'.repeat(43) } : null)),
+    save: vi.fn(async (report: SpaceGameReport) => {
+      saved.push(report);
+      return { countsForPoints: true };
+    }),
+    abandon: vi.fn((report: SpaceGameReport) => {
+      left.push(report);
+    }),
+  };
+  return { saving, saved, left };
+}
+
+/** Plays until the podium shows. */
+async function playToTheEnd(user: ReturnType<typeof userEvent.setup>) {
+  let actions = 0;
+  for (let guard = 0; guard < 400; guard++) {
+    if (screen.queryByRole('dialog')) break;
+    const roll = screen.queryByRole('button', { name: /^🎲 Roll/ });
+    const choice = screen.queryByRole('group', { name: /gate|card|pockets|die|aim/i });
+    if (choice) {
+      await user.click(within(choice).getAllByRole('button')[0]);
+      actions++;
+    } else if (roll && !roll.hasAttribute('disabled')) {
+      await user.click(roll);
+      actions++;
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+  }
+  return { podium: await waitFor(() => screen.getByRole('dialog')), actions };
 }
 
 describe('Wormholes & Black Holes against bots', () => {
@@ -47,22 +91,7 @@ describe('Wormholes & Black Holes against bots', () => {
     await user.click(screen.getByRole('button', { name: /Launch/ }));
     expect(screen.getByRole('img', { name: /Asteroid Belt board, 50 squares/ })).toBeInTheDocument();
 
-    let actions = 0;
-    for (let guard = 0; guard < 400; guard++) {
-      if (screen.queryByRole('dialog')) break;
-      const roll = screen.queryByRole('button', { name: /^🎲 Roll/ });
-      const choice = screen.queryByRole('group', { name: /gate|card|pockets|die|aim/i });
-      if (choice) {
-        await user.click(within(choice).getAllByRole('button')[0]);
-        actions++;
-      } else if (roll && !roll.hasAttribute('disabled')) {
-        await user.click(roll);
-        actions++;
-      } else {
-        await new Promise((resolve) => setTimeout(resolve, 5));
-      }
-    }
-    const podium = await waitFor(() => screen.getByRole('dialog'));
+    const { podium, actions } = await playToTheEnd(user);
     expect(actions).toBeGreaterThan(3);
     expect(within(podium).getByRole('heading')).toHaveTextContent(/You (docked first|got the furthest|came 2nd)/);
     expect(screen.getByRole('log')).toHaveTextContent(/Speedy Otter 27 rolled/);
@@ -82,5 +111,72 @@ describe('Wormholes & Black Holes against bots', () => {
     (document.activeElement as HTMLElement | null)?.blur();
     await user.keyboard(' ');
     await waitFor(() => expect(screen.getByRole('log')).toHaveTextContent(/Speedy Otter 27 rolled/));
+  });
+
+  it('saves a finished game with everything the server needs to replay it', async () => {
+    const user = userEvent.setup();
+    const { saving, saved, left } = fakeSaving();
+    renderGame(saving);
+    expect(screen.getByText(/earns points for taking part/)).toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: /Asteroid Belt/ }));
+    await user.click(screen.getByRole('radio', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: /Launch/ }));
+    expect(saving.seed).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('heading', { name: /Mission log/ })).toHaveTextContent('Saved when you finish');
+    const { podium } = await playToTheEnd(user);
+    await waitFor(() => expect(within(podium).getByRole('status')).toHaveTextContent('Saved! You earned points for taking part.'));
+    expect(saved).toHaveLength(1);
+    expect(left).toEqual([]);
+    const report = saved[0];
+    expect(report).toEqual(
+      expect.objectContaining({
+        game: 'space',
+        seed: 's1-1792000000-0123456789abcdef01234567',
+        stamp: 'x'.repeat(43),
+        board: { id: 'asteroid-belt' },
+        bots: 1,
+        level: 'easy',
+        ending: 'finished',
+      }),
+    );
+    // The server's replay of what was sent agrees with the podium.
+    const judged = judgeSpaceGame(report);
+    expect(judged.ok).toBe(true);
+    if (judged.ok) {
+      const place = judged.game.place === 1 ? /You (docked first|got the furthest)/ : /You came 2nd/;
+      expect(within(podium).getByRole('heading')).toHaveTextContent(place);
+    }
+  }, 60_000);
+
+  it('plays a practice game when there’s no seed to be had', async () => {
+    const user = userEvent.setup();
+    const { saving, saved } = fakeSaving(null);
+    renderGame(saving);
+    await user.click(screen.getByRole('radio', { name: /Asteroid Belt/ }));
+    await user.click(screen.getByRole('radio', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: /Launch/ }));
+    expect(screen.getByRole('heading', { name: /Mission log/ })).toHaveTextContent('Practice game: not saved');
+    const { podium } = await playToTheEnd(user);
+    expect(within(podium).getByRole('status')).toHaveTextContent(/Practice game/);
+    expect(saved).toEqual([]);
+  }, 60_000);
+
+  it('records a game the student leaves part-way, once', async () => {
+    const user = userEvent.setup();
+    const { saving, left } = fakeSaving();
+    const { view } = renderGame(saving);
+    await user.click(screen.getByRole('radio', { name: '1' }));
+    await user.click(screen.getByRole('button', { name: /Launch/ }));
+    // Leaving before doing anything records nothing.
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(left).toEqual([]);
+    await user.click(screen.getByRole('button', { name: /Launch/ }));
+    const roll = screen.getByRole('button', { name: /^🎲 Roll/ });
+    await waitFor(() => expect(roll).toBeEnabled());
+    await user.click(roll);
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    view.unmount();
+    expect(left).toHaveLength(1);
+    expect(left[0]).toEqual(expect.objectContaining({ ending: 'abandoned', actions: ['roll'] }));
   });
 });

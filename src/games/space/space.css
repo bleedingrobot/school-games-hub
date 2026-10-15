@@ -404,6 +404,10 @@
   color: var(--ink-soft);
   font-weight: 700;
 }
+.space-podium__save {
+  margin: 0;
+  font-weight: 700;
+}
 
 /* Panels */
 .space-panel {

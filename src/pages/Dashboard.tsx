@@ -17,6 +17,7 @@ import {
 import { fetchMyProgress, type MyProgress } from '../data/progress';
 import { findGame, GAMES } from '../games/registry';
 import { BOT_LEVELS, isRanked, type BotLevel } from '../games/types';
+import { BOT_NAMES, placeLabel } from '../../shared/space/names';
 
 const RESULT_LABEL = { won: 'Won', lost: 'Lost', drawn: 'Draw' } as const;
 
@@ -31,7 +32,8 @@ export function whenPlayed(iso: string, now = new Date()): string {
   return then.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
 }
 
-function botName(level: string) {
+function botName(level: string, game?: string) {
+  if (game === 'space') return `${BOT_NAMES[level as BotLevel] ?? ''} bots`;
   return `${BOT_LEVELS.find((l) => l.id === level)?.label ?? ''} bot`;
 }
 
@@ -44,6 +46,8 @@ export interface RecentGame {
   finished_at: string;
   bot_level?: string;
   opponent?: PlayerCard | null;
+  /** Wormholes & Black Holes: the place (null if they left early). */
+  place?: number | null;
 }
 
 /** Turns a finished friend game into a Recent games line, from this student's side. */
@@ -223,11 +227,15 @@ export function Dashboard() {
             <ul className="recent-list">
               {recent.map((g) => (
                 <li key={g.id}>
-                  <span className={`result result--${g.result}`}>{RESULT_LABEL[g.result]}</span>
+                  {g.game === 'space' ? (
+                    <span className={`result result--${g.place === 1 ? 'won' : 'drawn'}`}>{placeLabel(g.place)}</span>
+                  ) : (
+                    <span className={`result result--${g.result}`}>{RESULT_LABEL[g.result]}</span>
+                  )}
                   <span className="recent-list__what">
                     {g.bot_level ? (
                       <>
-                        {findGame(g.game)?.name} vs {botName(g.bot_level)}
+                        {findGame(g.game)?.name} vs {botName(g.bot_level, g.game)}
                       </>
                     ) : (
                       <>
@@ -235,7 +243,7 @@ export function Dashboard() {
                         {g.opponent?.display_name ?? 'a classmate'}
                       </>
                     )}
-                    {g.reason === 'abandoned' && (
+                    {g.reason === 'abandoned' && g.game !== 'space' && (
                       <span className="recent-list__note">{g.result === 'won' ? ' (they left)' : ' (left early)'}</span>
                     )}
                   </span>
@@ -253,6 +261,7 @@ export function Dashboard() {
           </h2>
           <StatsTable caption="Against bots" stats={stats} />
           <StatsTable caption="Against friends" stats={friendStats} />
+          <SpaceStatsLine stats={stats} />
           {progress && <LevelBar progress={progress} />}
         </section>
 
@@ -278,6 +287,18 @@ export function Dashboard() {
         </section>
       </div>
     </div>
+  );
+}
+
+/** Wormholes & Black Holes is luck, so it gets a line of its own rather than won/lost columns. */
+function SpaceStatsLine({ stats }: { stats: GameStats[] | null }) {
+  const space = stats?.find((row) => row.game === 'space');
+  if (!space?.played) return null;
+  return (
+    <p className="stats-line">
+      🚀 {findGame('space')?.name}: {space.played} game{space.played === 1 ? '' : 's'}, 1st place {space.won} time
+      {space.won === 1 ? '' : 's'}
+    </p>
   );
 }
 

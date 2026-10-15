@@ -275,4 +275,4 @@ export function describe(event: SpaceEvent, names: readonly string[]): string | 
   }
 }
 
-export const ORDINAL = ['', '1st', '2nd', '3rd', '4th'];
+export { ORDINAL } from '../../../shared/space/names';

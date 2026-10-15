@@ -80,6 +80,35 @@ export function HowPoints() {
         </ul>
       </section>
 
+      {rules.space && (
+        <section className="panel" aria-labelledby="space-points-title">
+          <h2 id="space-points-title" className="panel__title">
+            🚀 Wormholes &amp; Black Holes
+          </h2>
+          <p>
+            This game is mostly luck, so you get the same points whether you come 1st or 4th. Just take part and finish
+            the game!
+          </p>
+          <ul className="how-points__list">
+            <li>
+              Against bots: <strong>{rules.space.bot} points</strong> for each game you finish. These share the{' '}
+              {rules.botDailyCap}-points-a-day limit with chess and checkers bots.
+            </li>
+            <li>
+              Against classmates: <strong>{rules.space.friend} points</strong> for each game you finish. Your first{' '}
+              {rules.space.friendDailyGames} games each day earn points.
+            </li>
+            <li>
+              A game counts if you have at least <strong>{rules.space.minTurns} turns</strong> and stay to the end.
+            </li>
+            <li>
+              It never changes your badges or the leaderboards. It does have its own achievements, worth{' '}
+              {rules.achievementPoints} bonus points each.
+            </li>
+          </ul>
+        </section>
+      )}
+
       <section className="panel" aria-labelledby="levels-title">
         <h2 id="levels-title" className="panel__title">
           Levels

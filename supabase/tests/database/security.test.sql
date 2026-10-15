@@ -3,7 +3,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(37);
+select plan(38);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -88,6 +88,9 @@ select throws_ok($$ insert into public.ratings values ('00000000-0000-0000-0000-
   '42501', null, 'a student cannot give themself a rating');
 select throws_ok($$ select public.record_bot_game('00000000-0000-0000-0000-00000000000a', 'chess', 'medium', 'white',
     array['e2e4'], 'won', 'checkmate', 10, true) $$, '42501', null, 'a student cannot save a bot game directly');
+select throws_ok($$ select public.record_space_bot_game('00000000-0000-0000-0000-00000000000a', 'easy', 'first',
+    array['roll'], 'won', 'docked', 10, true, '{"seed":"s1-made-up"}') $$, '42501', null,
+  'a student cannot save a space game directly');
 select throws_ok('select public.rebuild_progress()', '42501', null, 'a student cannot rebuild the scores');
 select throws_ok('select public.mp_tidy()', '42501', null, 'a student cannot run the tidy-up');
 select throws_ok($$ select public.mp_player_status('00000000-0000-0000-0000-00000000000b') $$, '42501', null,

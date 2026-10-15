@@ -23,6 +23,7 @@ const row = (place: number | null, name: string, extra: Partial<BoardRow> = {}):
 const rules: Rules = {
   bot: { 'very-easy': { lost: 1, drawn: 2, won: 3 }, easy: { lost: 2, drawn: 3, won: 5 }, medium: { lost: 3, drawn: 5, won: 8 } },
   friend: { lost: 4, drawn: 6, won: 8 },
+  space: { bot: 2, friend: 4, friendDailyGames: 6, minTurns: 5 },
   botDailyCap: 40,
   pairDailyLimit: 5,
   achievementPoints: 10,
@@ -70,8 +71,10 @@ vi.mock('../data/teacher', () => ({
     games: [
       { game: 'checkers', bot: { played: 0, won: 0, lost: 0, drawn: 0, left: 0 }, friend: { played: 2, won: 1, lost: 1, drawn: 0, left: 1 }, rank: 'silver', achievements: 3 },
       { game: 'chess', bot: { played: 4, won: 2, lost: 1, drawn: 1, left: 0 }, friend: { played: 0, won: 0, lost: 0, drawn: 0, left: 0 }, rank: 'bronze', achievements: 2 },
+      { game: 'space', bot: { played: 3, won: 1, lost: 2, drawn: 0, left: 1 }, friend: { played: 0, won: 0, lost: 0, drawn: 0, left: 0 }, rank: null, achievements: 1 },
     ],
     recent: [
+      { game: 'space', kind: 'bot', against: 'easy', result: 'lost', reason: 'docked', place: 3, finished_at: new Date().toISOString() },
       { game: 'checkers', kind: 'friend', against: 'Lucky Tui 12', result: 'won', reason: 'no-pieces', finished_at: new Date().toISOString() },
       { game: 'chess', kind: 'bot', against: 'medium', result: 'lost', reason: 'abandoned', finished_at: new Date().toISOString() },
     ],
@@ -188,6 +191,10 @@ describe('how points work', () => {
     expect(screen.getByText('10 bonus points')).toBeInTheDocument();
     expect(screen.getByText('Level 2').parentElement).toHaveTextContent('50 points');
     expect(screen.getByText(/Only games against friends change it. Bot games never do./)).toBeInTheDocument();
+    const space = screen.getByRole('region', { name: /Wormholes & Black Holes/ });
+    expect(space).toHaveTextContent('Against bots: 2 points for each game you finish');
+    expect(space).toHaveTextContent('Your first 6 games each day earn points');
+    expect(space).toHaveTextContent('at least 5 turns');
   });
 });
 
@@ -245,8 +252,10 @@ describe('teacher view', () => {
   it('shows a student’s stats and recent games', async () => {
     const { panel } = await openKiwi();
     const table = within(panel).getByRole('table', { name: 'Games' });
-    expect(within(table).getAllByRole('row')).toHaveLength(5);
+    expect(within(table).getAllByRole('row')).toHaveLength(7);
     expect(within(panel).getByText(/Checkers vs Lucky Tui 12/)).toBeInTheDocument();
+    expect(within(panel).getByText(/Wormholes & Black Holes vs Pilot bots/).closest('li')).toHaveTextContent('3rd');
+    expect(within(panel).getByText(/Wormholes & Black Holes: 1 achievement/)).toBeInTheDocument();
     expect(within(panel).getByText(/Chess vs Medium bot/).closest('li')).toHaveTextContent('(left early)');
   });
 
