@@ -18,7 +18,8 @@
     "build:functions": "node scripts/build-functions.mjs",
     "functions:serve": "supabase functions serve --no-verify-jwt",
     "space:sim": "node scripts/space-sim.mjs",
-    "space:preview": "vite build --config vite.preview.config.ts"
+    "space:preview": "vite build --config vite.preview.config.ts",
+    "101:sim": "node scripts/101-sim.mjs"
   },
   "engines": {
     "node": ">=22"

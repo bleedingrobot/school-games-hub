@@ -2,7 +2,7 @@
 
 Stage 10 of School Games Hub: James's family card game, against bots or 2–4 classmates.
 Written 16 October 2026 from the brief in [prompts/game-101.md](prompts/game-101.md), after reading the code on `main` (Stages 1–9 live).
-**Status: rule questions answered by James on 16 October 2026 (section 12); agreed rules in [101-RULES.md](101-RULES.md). Next: Stage 10.1.**
+**Status: rule questions answered by James on 16 October 2026 (section 12); agreed rules in [101-RULES.md](101-RULES.md). Stage 10.1 done 16 October 2026 (results in section 13). Next: 10.2, playing bots on screen.**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
@@ -182,19 +182,19 @@ Reloading, closing the lid or losing Wi-Fi just means the page reads its own sea
 - `src/card101/useCardGame.ts`: keeps a classmates game up to date from the seat row, like `useSpaceGame`.
 - Lobby: 101 in the Start list (2–4 players) and in the open games list ("2 of 3 joined"). Route `/#/card-game/:id` for the waiting room and table.
 
-## 9. Free-tier cost (estimate; the 10.1 simulation will firm it up)
+## 9. Free-tier cost (estimate, using the 10.1 simulation)
 
 | | Per game | A class (30 students, 3 lessons a week, groups of 3, ~1 game a lesson each) |
 |---|---|---|
-| Function calls, classmates | ~8 rounds × ~15 turns × ~1.7 calls (draw + place), plus peeks, joining and ending: **~230** | ~30 games a week ≈ 7,000 a week, **~30,000 a month** |
+| Function calls, classmates | ~80–160 turns (section 13) × ~2 calls (draw, then swap or throw), plus a peek per player per round and joining/ending: **~200–400** | ~30 games a week × ~300 ≈ 9,000 a week, **~40,000 a month** |
 | Function calls, bots | **2** (seed + save) | small |
-| Realtime messages | each change rewrites 3 seat rows, each sent to 1 player: **~700** | ~90,000 a month, against 2 million |
+| Realtime messages | each change rewrites every seat row, each sent to 1 player: **~600–1,200** | ~120,000 a month, against 2 million |
 | Data sent out | views are about 1–2 KB: **~1.5 MB** | ~0.2 GB a month, against 5 GB |
 | Database | a few KB per game | tiny; New season clears it |
 
-With chess, checkers and the space game (~105,000 calls a month at this class size), that's about 135,000 of 500,000. Sign-in is still the real classroom limit (Stage 8 notes), not this game.
+With chess, checkers and the space game (~105,000 calls a month at this class size), that's about 145,000 of 500,000. Sign-in is still the real classroom limit (Stage 8 notes), not this game.
 
-**One thing to watch: game length.** With 3–4 players, a game to 101 could take 25–40 minutes. The simulation in 10.1 will tell us. If it's too long for a lesson, see question 10.
+**One thing to watch: game length.** A game to 101 takes about 15–30 minutes (section 13), so the Quick game (to 50) matters for lessons.
 
 ## 10. Tests
 
@@ -238,3 +238,64 @@ All on branch `stage-10`. Nothing goes live or into `main` before your yes.
 | 9. Most players | **4** |
 | 10. Shorter option | **Yes: Quick game, first to 50**, as a setting; 101 stays the normal game |
 | 11. Who starts each round | Random in round 1, then **the next player along** each round |
+
+## 13. Stage 10.1 results: rules, views, bots and simulation (16 October 2026)
+
+Built on branch `stage-10`, in `shared/card101/`. No screens yet, nothing saved, nothing live.
+
+### What's built
+
+- `cards.ts` (the pack, values, names), `score.ts` (scores a hand and returns each step of the working), `engine.ts` (the rules as a pure function), `view.ts` (`viewFor` and `eventsFor`: what each player may see), `bot.ts` (the three levels), `solo.ts` (bot games from a seed, and the server's replay), `sim.ts` and `npm run 101:sim`, `random.ts` (seeded shuffles for bot games, `secureDice` for classmates games).
+- The rules follow [101-RULES.md](101-RULES.md) exactly, including all of James's answers in section 12.
+
+### Rule details the engine settled (not in the rules)
+
+- A skipped turn counts as a turn for the "everyone has had a turn" knocking rule.
+- If the knocker leaves, the knock still stands. If someone who owes a last turn leaves, the round ends without them.
+- If the stack is empty and the discard pile has only its top card, you can't draw from the stack, but you can still take the face-up card. (With 52 cards and at most 4 players this never happened in 24,000 simulated games: the stack never even ran out once in bot games, only in deliberately long random test games.)
+- When a student leaves a bot game, the game simply stops and is saved as left early. The bots don't play it out.
+
+### How long a game lasts (1,000 games each)
+
+Minutes assume 8 seconds a turn, plus 25 seconds a round for the deal, peek and scoring show, as if every seat were a student.
+
+| Players play like… | Players | To 101: rounds | To 101: minutes (1 in 20 longer than) | Quick game (to 50): rounds | Quick: minutes |
+|---|---|---|---|---|---|
+| Easy bots | 2 | 12.5 | 15 (21) | 6.1 | 7 (11) |
+| Easy bots | 3 | 11.0 | 16 (21) | 5.3 | 8 (12) |
+| Easy bots | 4 | 10.1 | 17 (23) | 4.8 | 8 (12) |
+| Medium bots | 2 | 20.6 | 30 (43) | 10.0 | 15 (24) |
+| Medium bots | 3 | 15.8 | 28 (40) | 7.5 | 13 (22) |
+| Medium bots | 4 | 13.4 | 27 (38) | 6.2 | 13 (20) |
+
+So a careful group of students will take **about half an hour to reach 101**, and a Quick game takes 8–15 minutes. Careful players take longer because they score lower each round (Medium averages 4–6 points a hand, Easy 7–8), so it takes more rounds to reach 101.
+
+### Fairness and how things play out
+
+- **Turn order doesn't matter:** each seat wins about equally often (for example 33%/34%/35% with 3 players).
+- **Shared wins** (a tie for lowest total at the end): 0–3% of games.
+- **Zero hands are common:** about a quarter of Easy hands and over a third of Medium hands score 0 (pairs and 3s do a lot of work). Good for the scoring show.
+- **Knocking:** the knocker has the lowest hand 58–76% of the time with Medium, 42–65% with Easy.
+
+### Bot levels (2-player games, 600 each)
+
+| Match | Stronger level wins |
+|---|---|
+| Easy vs Very Easy | 88% |
+| Medium vs Easy | 71% |
+| Medium vs Very Easy | 99% |
+
+The biggest difference between Easy and Medium turned out to be **when to knock**. Knocking only on a really low hand (about 5 or less) beat every other setting I tried, so Medium does that. Easy knocks once its hand looks 9 or less. Very Easy knocks at random once it's allowed to, which makes it easy to beat.
+
+Medium takes about 2 thousandths of a second per decision, so it won't slow a Chromebook down. Replaying a 3-Medium-bot game on the server will take roughly 0.1–0.2 seconds of computer time, well inside the free plan's limit per request.
+
+### Checked
+
+- 75 new tests, all passing (538 in total, all passing):
+  - **Scoring (16):** every example in the rules, pairs anywhere, two pairs, four of a kind, triples, 3s with pairs, a pair of 3s, ties for highest, and over 1,000 hands checked for sensible totals.
+  - **Turns and rounds (36):** drawing, swapping, throwing, putting the face-up card straight back, out-of-turn and illegal moves refused, knocking (not before everyone's had a turn), last turns, scoring, the start moving along, reshuffling, the end at 101, exactly 101, the Quick game at 50, shared wins, skips, 3 skips and you're out, leaving at every stage, the last player left, and secure shuffling.
+  - **Hidden cards (7):** 300 random games (over 20,000 moves, with skips, players leaving and reshuffles), checking every player's view and events after every move: **no card ever leaked**. Plus the peek (shown, then gone for good), stack draws, discard draws, and face-up hands at the end of a round that are hidden again once the next round is dealt. A check also proves the leak test would catch a leak.
+  - **Bots (7):** legal moves at every level with 2–4 players; the fairness test (move every card a bot can't see, and its view and choice stay exactly the same); memory; each level beats the one below.
+  - **Replay (9):** the replay rebuilds exactly the same game; games left part-way; made-up, changed, too-long and unknown move lists refused.
+- Type check and production build pass.
+- **Not tested yet** (they don't exist yet): screens, saving, the server function, the database and Realtime. Those come in 10.2–10.4.
