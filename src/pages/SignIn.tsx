@@ -1,5 +1,7 @@
 import { Navigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
+import banner from '../assets/dps-banner.png';
+import kids from '../assets/dps-kids.png';
 
 export function SignIn() {
   const { status, message, signIn } = useAuth();
@@ -7,12 +9,24 @@ export function SignIn() {
 
   return (
     <main id="main" className="signin">
-      <div className="signin__card">
-        <div className="signin__logo" aria-hidden="true">
-          🎲
-        </div>
+      <section className="signin__intro">
+        <img className="signin__banner" src={banner} alt="Douglas Park School: nurture, explore, create" width={412} height={77} />
         <h1>School Games Hub</h1>
-        <p>Play chess and checkers with your classmates.</p>
+        <p className="signin__lead">
+          Play chess, checkers, Wormholes &amp; Black Holes and 101 against bots or your classmates.
+        </p>
+        <img className="signin__kids" src={kids} alt="" width={235} height={241} />
+      </section>
+      <section className="signin__card" aria-labelledby="signin-title">
+        <div className="signin__head">
+          <span className="signin__logo" aria-hidden="true">
+            🎲
+          </span>
+          <div>
+            <h2 id="signin-title">Student sign in</h2>
+            <p className="signin__note">Use your Douglas Park school account.</p>
+          </div>
+        </div>
         {message && (
           <p className="signin__message" role="alert">
             {message}
@@ -26,8 +40,17 @@ export function SignIn() {
         >
           <GoogleLogo /> Sign in with your school Google account
         </button>
-        <p className="signin__note">Use your Douglas Park school account.</p>
-      </div>
+        <div className="signin__list">
+          <h3>What you can do</h3>
+          <ol>
+            <li>Play four games against friendly bots.</li>
+            <li>Play classmates with a game code.</li>
+            <li>Earn points, badges and achievements.</li>
+            <li>Climb the school leaderboard.</li>
+            <li>Make your own avatar.</li>
+          </ol>
+        </div>
+      </section>
     </main>
   );
 }
