@@ -333,6 +333,20 @@ function checkMove(game, moves, move) {
 	if (!replayed.ok || replayed.result) return null;
 	return findMove(replayed.position, move)?.notation ?? null;
 }
+/**
+* Why a side can't offer a draw right now, or null if it can: all its offers are used up, or
+* it must make a few more moves first. The server refuses on this, and the page uses it to
+* say why the button is greyed out.
+*/
+function drawOfferBlock(side, offersMade, lastOfferPly, plies) {
+	if (offersMade >= 3) return { problem: "draw-limit" };
+	if (lastOfferPly === null) return null;
+	const movesSince = movesBy(side, plies) - movesBy(side, lastOfferPly);
+	return movesSince < 5 ? {
+		problem: "draw-wait",
+		movesLeft: 5 - movesSince
+	} : null;
+}
 /** Recorded games earn nothing in Stage 7 if they were abandoned, or either player made fewer than 10 moves. */
 function countsForPoints(plies, reason) {
 	return reason !== "abandoned" && movesBy("second", plies) >= 10;
@@ -658,9 +672,9 @@ async function offerDraw({ services, me, body }) {
 	if (game.draw_offer === side) return game;
 	const made = side === "first" ? game.first_draw_offers : game.second_draw_offers;
 	const lastPly = side === "first" ? game.first_offer_ply : game.second_offer_ply;
-	if (made >= 3) throw new Refused("draw-limit");
 	const plies = game.moves.length;
-	if (lastPly !== null && movesBy(side, plies) - movesBy(side, lastPly) < 5) throw new Refused("draw-wait");
+	const blocked = drawOfferBlock(side, made, lastPly, plies);
+	if (blocked) throw new Refused(blocked.problem);
 	return save(services, game, side === "first" ? {
 		draw_offer: side,
 		first_draw_offers: made + 1,

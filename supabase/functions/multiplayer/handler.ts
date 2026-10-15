@@ -13,10 +13,9 @@ import {
   checkMove,
   CLAIM_WIN_AFTER_MS,
   countsForPoints,
+  drawOfferBlock,
   isGameKind,
   makeCode,
-  MAX_DRAW_OFFERS,
-  movesBy,
   MOVES_BETWEEN_DRAW_OFFERS,
   normaliseCode,
   otherSide,
@@ -411,11 +410,9 @@ async function offerDraw({ services, me, body }: Context): Promise<GameRow> {
 
   const made = side === 'first' ? game.first_draw_offers : game.second_draw_offers;
   const lastPly = side === 'first' ? game.first_offer_ply : game.second_offer_ply;
-  if (made >= MAX_DRAW_OFFERS) throw new Refused('draw-limit');
   const plies = game.moves.length;
-  if (lastPly !== null && movesBy(side, plies) - movesBy(side, lastPly) < MOVES_BETWEEN_DRAW_OFFERS) {
-    throw new Refused('draw-wait');
-  }
+  const blocked = drawOfferBlock(side, made, lastPly, plies);
+  if (blocked) throw new Refused(blocked.problem);
   return save(
     services,
     game,

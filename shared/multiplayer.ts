@@ -126,6 +126,23 @@ export function checkMove(game: GameKind, moves: readonly string[], move: unknow
   return checkers.findMove(replayed.position, move)?.notation ?? null;
 }
 
+/**
+ * Why a side can't offer a draw right now, or null if it can: all its offers are used up, or
+ * it must make a few more moves first. The server refuses on this, and the page uses it to
+ * say why the button is greyed out.
+ */
+export function drawOfferBlock(
+  side: Side,
+  offersMade: number,
+  lastOfferPly: number | null,
+  plies: number,
+): { problem: 'draw-limit' } | { problem: 'draw-wait'; movesLeft: number } | null {
+  if (offersMade >= MAX_DRAW_OFFERS) return { problem: 'draw-limit' };
+  if (lastOfferPly === null) return null;
+  const movesSince = movesBy(side, plies) - movesBy(side, lastOfferPly);
+  return movesSince < MOVES_BETWEEN_DRAW_OFFERS ? { problem: 'draw-wait', movesLeft: MOVES_BETWEEN_DRAW_OFFERS - movesSince } : null;
+}
+
 /** Recorded games earn nothing in Stage 7 if they were abandoned, or either player made fewer than 10 moves. */
 export function countsForPoints(plies: number, reason: string): boolean {
   return reason !== 'abandoned' && movesBy('second', plies) >= MIN_MOVES_TO_COUNT;

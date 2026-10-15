@@ -39,6 +39,8 @@ function friendGame(over: Partial<data.FriendGame> = {}): data.FriendGame {
     draw_offer: null,
     first_draw_offers: 0,
     second_draw_offers: 0,
+    first_offer_ply: null,
+    second_offer_ply: null,
     winner: null,
     reason: null,
     counts_for_points: null,
@@ -187,6 +189,20 @@ describe('playing a friend', () => {
     expect(await within(offer).findByText(/Brave Kiwi 7 offers a draw/)).toBeInTheDocument();
     await user.click(within(offer).getByRole('button', { name: 'No, keep playing' }));
     expect(data.ask).toHaveBeenCalledWith({ action: 'answer-draw', gameId: 'g1', accept: false });
+  });
+
+  it('greys out "Offer a draw" and says why, instead of letting the server refuse', async () => {
+    // I'm first. I offered at move 4 and have made 2 moves of my own since.
+    const { unmount } = renderGame(
+      friendGame({ moves: ['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1c4', 'g8f6', 'd2d3', 'f8c5'], first_draw_offers: 1, first_offer_ply: 4 }),
+    );
+    expect(await screen.findByRole('button', { name: /Offer a draw/ })).toBeDisabled();
+    expect(screen.getByText('You can offer another draw after 3 more moves.')).toBeInTheDocument();
+    unmount();
+
+    renderGame(friendGame({ first_draw_offers: 3, first_offer_ply: 0 }));
+    expect(await screen.findByRole('button', { name: /Offer a draw/ })).toBeDisabled();
+    expect(screen.getByText('You’ve used all 3 draw offers in this game.')).toBeInTheDocument();
   });
 
   it('asks before resigning', async () => {

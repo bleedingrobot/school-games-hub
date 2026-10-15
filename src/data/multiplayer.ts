@@ -30,6 +30,9 @@ export interface FriendGame {
   draw_offer: Side | null;
   first_draw_offers: number;
   second_draw_offers: number;
+  /** How many moves had been played when each side last offered a draw. */
+  first_offer_ply: number | null;
+  second_offer_ply: number | null;
   winner: Side | null;
   reason: string | null;
   counts_for_points: boolean | null;
@@ -152,7 +155,7 @@ async function recentlyJoined(): Promise<FriendGame | null> {
 
 const COLUMNS =
   'id, game, code, in_lobby, created_by, first_player, second_player, status, moves, version, created_at, expires_at, ' +
-  'started_at, turn_started_at, draw_offer, first_draw_offers, second_draw_offers, winner, reason, counts_for_points, ' +
+  'started_at, turn_started_at, draw_offer, first_draw_offers, second_draw_offers, first_offer_ply, second_offer_ply, winner, reason, counts_for_points, ' +
   'finished_at, first_wants_rematch, second_wants_rematch, rematch_game';
 
 export async function fetchFriendGame(id: string): Promise<FriendGame | null> {
