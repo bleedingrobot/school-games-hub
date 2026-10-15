@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import { fetchMultiplayerEnabled } from '../data/multiplayer';
+import { fetchReactionsEnabled } from '../data/spaceGames';
 import { FriendlyError } from '../data/profile';
 import {
   deletePerson,
@@ -11,6 +12,7 @@ import {
   renamePerson,
   setHidden,
   setMultiplayer,
+  setSpaceReactions,
   setRole,
   startNewSeason,
   type Person,
@@ -74,6 +76,7 @@ function TeacherView({ me }: { me: string }) {
       <h1 className="page-title">Teacher view</h1>
 
       <FriendGamesSwitch />
+      <ReactionsSwitch />
 
       <section className="panel" aria-labelledby="people-title">
         <h2 id="people-title" className="panel__title">
@@ -167,7 +170,7 @@ function FriendGamesSwitch() {
           <p>
             {enabled
               ? 'On: students can start and join games against each other.'
-              : 'Paused: students can’t start or join games against each other. Games already going can still be finished by resigning. Bot games carry on as normal.'}
+              : 'Paused: students can’t start or join games against each other. Chess and checkers games already going can still be finished by resigning; Wormholes & Black Holes games stop where they are and end after 10 minutes. Bot games carry on as normal.'}
           </p>
           {enabled ? (
             <button type="button" className="button button--danger" onClick={() => void change(false)}>
@@ -176,6 +179,58 @@ function FriendGamesSwitch() {
           ) : (
             <button type="button" className="button button--primary" onClick={() => void change(true)}>
               Switch games against friends back on
+            </button>
+          )}
+        </>
+      )}
+      <p role="status" className="teacher__status">
+        {status}
+      </p>
+    </section>
+  );
+}
+
+/** Emoji reactions in Wormholes & Black Holes games with classmates: off until a teacher switches them on. */
+function ReactionsSwitch() {
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchReactionsEnabled()
+      .then(setEnabled)
+      .catch(() => setStatus('We couldn’t load this setting.'));
+  }, []);
+
+  async function change(on: boolean) {
+    setStatus('Saving…');
+    try {
+      await setSpaceReactions(on);
+      setEnabled(on);
+      setStatus(on ? 'Emoji reactions are on.' : 'Emoji reactions are off.');
+    } catch (error) {
+      setStatus(errorText(error));
+    }
+  }
+
+  return (
+    <section className="panel teacher__switch" aria-labelledby="reactions-title">
+      <h2 id="reactions-title" className="panel__title">
+        Emoji reactions in space games
+      </h2>
+      {enabled !== null && (
+        <>
+          <p>
+            {enabled
+              ? 'On: in Wormholes & Black Holes with classmates, students can send 🚀 👏 😮 🎉 😂 👍 (no other emoji, no text). At most one every 5 seconds and 20 a game. Each student can hide them on their own screen.'
+              : 'Off: students can’t send reactions. Nothing else changes.'}
+          </p>
+          {enabled ? (
+            <button type="button" className="button button--danger" onClick={() => void change(false)}>
+              Switch reactions off
+            </button>
+          ) : (
+            <button type="button" className="button button--primary" onClick={() => void change(true)}>
+              Switch reactions on
             </button>
           )}
         </>
@@ -277,7 +332,7 @@ function PersonPanel({
             <ul className="recent-list person-panel__recent" aria-label="Recent games">
               {detail.recent.map((r, i) => (
                 <li key={i}>
-                  {r.game === 'space' && r.kind === 'bot' ? (
+                  {r.game === 'space' ? (
                     <span className={`result result--${r.place === 1 ? 'won' : 'drawn'}`}>{placeLabel(r.place)}</span>
                   ) : (
                     <span className={`result result--${r.result}`}>

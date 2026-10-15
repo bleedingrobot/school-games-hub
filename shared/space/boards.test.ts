@@ -181,3 +181,13 @@ describe('Random Galaxy', () => {
     expect(() => galaxyBoard('hello', 100)).toThrow("isn't a galaxy code");
   });
 });
+
+describe('names other pages use', () => {
+  it('match the boards and the rules', async () => {
+    const { BOARD_NAMES, DESIGNED_BOARD_ORDER, MAX_ROCKETS, MIN_ROCKETS } = await import('./names');
+    expect(DESIGNED_BOARD_ORDER).toEqual(DESIGNED_BOARD_IDS);
+    const { MAX_PLAYERS, MIN_PLAYERS } = await import('./engine');
+    for (const id of DESIGNED_BOARD_IDS) expect(BOARD_NAMES[id]).toBe(DESIGNED_BOARDS[id].name);
+    expect([MIN_ROCKETS, MAX_ROCKETS]).toEqual([MIN_PLAYERS, MAX_PLAYERS]);
+  });
+});

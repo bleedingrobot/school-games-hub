@@ -804,3 +804,92 @@
     height: 220px;
   }
 }
+
+/* Classmates games (Stage 9.4) */
+a.space-action {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.space-players__note {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.space-timer {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex: none;
+  border-radius: 50%;
+  font-weight: 900;
+  font-size: 1.05rem;
+  color: var(--ink);
+  background:
+    radial-gradient(circle, var(--surface) 58%, transparent 60%),
+    conic-gradient(#5b3fd1 var(--left), #e5e1f7 0);
+}
+.space-timer.is-mine {
+  background:
+    radial-gradient(circle, var(--surface) 58%, transparent 60%),
+    conic-gradient(#e0412b var(--left), #f7e1dd 0);
+}
+.space-reactions__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.space-reaction {
+  min-width: 44px;
+  min-height: 44px;
+  border: 2px solid #d9d3f5;
+  border-radius: 14px;
+  background: var(--surface);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+.space-reaction:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.space-reaction--hide {
+  margin-left: auto;
+}
+.space-reaction--hide[aria-pressed='true'] {
+  border-color: var(--brand);
+  background: #efeaff;
+}
+.rocket__bubble {
+  position: absolute;
+  left: 50%;
+  bottom: 92%;
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  font-size: clamp(1rem, 2.6vw, 1.6rem);
+  line-height: 1.2;
+  animation: rocket-bubble 2s ease-out both;
+}
+@keyframes rocket-bubble {
+  0% { opacity: 0; transform: translate(-50%, 8px) scale(0.6); }
+  15% { opacity: 1; transform: translate(-50%, 0) scale(1.1); }
+  25% { transform: translate(-50%, 0) scale(1); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -6px); }
+}
+.space-game.is-calm .rocket__bubble {
+  animation: rocket-bubble-calm 2s linear both;
+}
+@keyframes rocket-bubble-calm {
+  0% { opacity: 0; }
+  10%, 85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rocket__bubble {
+    animation: none;
+  }
+}

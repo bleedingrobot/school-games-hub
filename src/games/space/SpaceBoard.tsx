@@ -338,13 +338,15 @@ const BoardDrawing = memo(function BoardDrawing({ board, size }: { board: Board;
   );
 });
 
-function Rocket({ seat, fx, isTurn, style, target, onTarget }: {
+function Rocket({ seat, fx, isTurn, style, target, onTarget, bubble }: {
   seat: Seat;
   fx: RocketFx;
   isTurn: boolean;
   style: CSSProperties;
   target: boolean;
   onTarget?: () => void;
+  /** An emoji reaction popping up over the rocket for a moment. */
+  bubble?: string | null;
 }) {
   const className = ['rocket', fx && `fx-${fx}`, isTurn && 'is-turn', target && 'is-target'].filter(Boolean).join(' ');
   const body = (
@@ -362,16 +364,23 @@ function Rocket({ seat, fx, isTurn, style, target, onTarget }: {
       <ShapePath shape={seat.shape} cx={30} cy={63} r={7} fill={seat.colour} />
     </svg>
   );
+  const pop = bubble ? (
+    <span key={bubble} className="rocket__bubble">
+      {bubble}
+    </span>
+  ) : null;
   if (target) {
     return (
       <button type="button" className={className} style={style} tabIndex={-1} aria-label={`Aim at ${seat.name}`} onClick={onTarget}>
         {body}
+        {pop}
       </button>
     );
   }
   return (
     <div className={className} style={style} aria-hidden="true">
       {body}
+      {pop}
     </div>
   );
 }
@@ -406,6 +415,7 @@ export function SpaceBoard({
   onSquare,
   selected,
   label,
+  bubbles,
 }: {
   state: SpaceState;
   seats: readonly Seat[];
@@ -419,6 +429,8 @@ export function SpaceBoard({
   onSquare: (n: number) => void;
   selected: number | null;
   label: string;
+  /** Emoji reactions to show over rockets (classmates games). */
+  bubbles?: readonly (string | null)[];
 }) {
   const { board } = state;
   const size = board.size;
@@ -485,6 +497,7 @@ export function SpaceBoard({
           isTurn={turn === i}
           target={targets.includes(i)}
           onTarget={() => onTarget(i)}
+          bubble={bubbles?.[i]}
           style={{
             left: places[i].left,
             top: places[i].top,

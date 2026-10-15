@@ -92,6 +92,11 @@ export async function setMultiplayer(enabled: boolean): Promise<void> {
   if (error) fail(error, 'We couldn’t change that.');
 }
 
+export async function setSpaceReactions(enabled: boolean): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_space_reactions', { enabled });
+  if (error) fail(error, 'We couldn’t change that.');
+}
+
 export async function startNewSeason(confirm: string): Promise<{ botGames: number; friendGames: number }> {
   const { data, error } = await supabase.rpc('teacher_new_season', { confirm });
   if (error || !data) fail(error ?? {}, 'We couldn’t start a new season.');
