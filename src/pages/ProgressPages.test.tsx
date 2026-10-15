@@ -24,6 +24,7 @@ const rules: Rules = {
   bot: { 'very-easy': { lost: 1, drawn: 2, won: 3 }, easy: { lost: 2, drawn: 3, won: 5 }, medium: { lost: 3, drawn: 5, won: 8 } },
   friend: { lost: 4, drawn: 6, won: 8 },
   space: { bot: 2, friend: 4, friendDailyGames: 6, minTurns: 5 },
+  card101: { friendLost: 4, friendWon: 8, friendDailyGames: 6, minRounds: 2 },
   botDailyCap: 40,
   pairDailyLimit: 5,
   achievementPoints: 10,
@@ -195,6 +196,10 @@ describe('how points work', () => {
     expect(space).toHaveTextContent('Against bots: 2 points for each game you finish');
     expect(space).toHaveTextContent('Your first 6 games each day earn points');
     expect(space).toHaveTextContent('at least 5 turns');
+    const card101 = screen.getByRole('region', { name: /101/ });
+    expect(card101).toHaveTextContent('same points as chess and checkers');
+    expect(card101).toHaveTextContent('8 points for a win and 4 points for finishing');
+    expect(card101).toHaveTextContent('at least 2 full rounds');
   });
 });
 

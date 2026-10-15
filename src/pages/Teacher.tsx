@@ -345,7 +345,7 @@ function PersonPanel({
                       ? r.against
                       : r.game === 'space'
                         ? `${BOT_NAMES[r.against as BotLevel] ?? ''} bots`
-                        : `${BOT_LEVELS.find((l) => l.id === r.against)?.label ?? ''} bot`}
+                        : `${BOT_LEVELS.find((l) => l.id === r.against)?.label ?? ''} bot${r.game === '101' ? 's' : ''}`}
                     {r.reason === 'abandoned' && <span className="recent-list__note"> (left early)</span>}
                   </span>
                   <span className="recent-list__when">{whenPlayed(r.finished_at)}</span>

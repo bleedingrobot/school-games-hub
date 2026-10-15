@@ -9,7 +9,10 @@
  * Bots think on the page: Medium takes about 2 thousandths of a second a move, so a
  * Web Worker would only add waiting.
  *
- * Not saved yet (Stage 10.3): every game is a practice game.
+ * Saving (Stage 10.3): before a game the page asks the server for a stamped seed. At the
+ * end it sends the seed, the stamp and the student's actions, and the server replays the
+ * game before saving it (shared/card101/save.ts). No seed (no Wi-Fi, or the stand-alone
+ * preview) means a practice game, and the page says so.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { randomAvatar } from '../../avatar/avatarParts';
@@ -19,6 +22,7 @@ import { playSound, type GameSound } from '../sounds';
 import type { BotLevel } from '../../../shared/botGame';
 import { swappableSlots, RuleError, type GameEvent } from '../../../shared/card101/engine';
 import { randomFromSeed } from '../../../shared/card101/random';
+import type { Card101GameReport } from '../../../shared/card101/save';
 import { applySolo, parseStudentAction, playOneBot, startSolo, STUDENT_SEAT, type SoloGame, type StudentAction } from '../../../shared/card101/solo';
 import { viewFor, type SeatView } from '../../../shared/card101/view';
 import type { Slot } from '../../../shared/card101/cards';
@@ -33,6 +37,17 @@ export interface Card101Player {
   name: string;
   avatar: unknown;
 }
+
+/** How the page saves games. Missing in the stand-alone preview: every game is practice. */
+export interface Card101Saving {
+  /** A stamped seed from the server, or null if there isn't one (a practice game). */
+  seed(): Promise<{ seed: string; stamp: string } | null>;
+  save(report: Card101GameReport): Promise<{ countsForPoints?: boolean } | void>;
+  /** Records a game left part-way. Must work while the page is closing. */
+  abandon(report: Card101GameReport): void;
+}
+
+type SaveStatus = 'practice' | 'playing' | 'saving' | 'saved' | 'saved-no-points' | 'error';
 
 /** How long bots take over each step (Normal speed). */
 const BOT_DRAW_MS = 900;
@@ -91,11 +106,13 @@ export function Card101Solo({
   player,
   level,
   onLevelChange,
+  saving,
   timeScale = 1,
 }: {
   player: Card101Player;
   level: BotLevel;
   onLevelChange: (level: BotLevel) => void;
+  saving?: Card101Saving;
   /** Tests set this to 0 so nothing waits. */
   timeScale?: number;
 }) {
@@ -112,13 +129,21 @@ export function Card101Solo({
   const [showPodium, setShowPodium] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [peekLeft, setPeekLeft] = useState(PEEK_SECONDS);
+  const [starting, setStarting] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('practice');
+  const [saveMessage, setSaveMessage] = useState('');
 
   const soloRef = useRef<SoloGame | null>(null);
   const gameRef = useRef<Game | null>(null);
   const keyRef = useRef(0);
   const phaseRef = useRef<Phase>('bots');
-  /** Everything the student did, in order: what Stage 10.3 sends to the server. */
+  /** Everything the student did, in order: what's sent to the server. */
   const actionsRef = useRef<StudentAction[]>([]);
+  /** The current game's stamp; null for a practice game. */
+  const stampRef = useRef<string | null>(null);
+  /** Seeds already sent to the server (finished or left), so nothing is sent twice. */
+  const sentRef = useRef(new Set<string>());
+  const startingRef = useRef(false);
   const flashN = useRef(0);
   const live = useRef({ scale: timeScale, sound: soundOn });
   live.current = { scale: timeScale, sound: soundOn };
@@ -129,6 +154,48 @@ export function Card101Solo({
     },
     [],
   );
+
+  function reportFor(solo: SoloGame, ending: Card101GameReport['ending']): Card101GameReport | null {
+    const stamp = stampRef.current;
+    if (!stamp) return null;
+    const { seed, bots, level: botLevel, settings } = solo.setup;
+    return { game: '101', seed, stamp, bots, level: botLevel, settings, actions: [...actionsRef.current], ending };
+  }
+
+  /** Saves the game as soon as the rules engine says it's over (while the scoring shows). */
+  async function saveFinished(solo: SoloGame) {
+    const report = reportFor(solo, 'finished');
+    if (!saving || !report || sentRef.current.has(report.seed)) return;
+    sentRef.current.add(report.seed);
+    setSaveStatus('saving');
+    try {
+      const answer = await saving.save(report);
+      if (soloRef.current === solo) setSaveStatus(answer && answer.countsForPoints === false ? 'saved-no-points' : 'saved');
+    } catch (error) {
+      if (soloRef.current !== solo) return;
+      setSaveMessage(error instanceof Error && error.message ? error.message : 'We couldn’t save this game.');
+      setSaveStatus('error');
+    }
+  }
+
+  /** If the student leaves a game part-way (after doing something), it's recorded as left early. */
+  const leftEarly = useRef(() => {});
+  leftEarly.current = () => {
+    const solo = soloRef.current;
+    if (!saving || !solo || solo.game.phase === 'over' || actionsRef.current.length === 0) return;
+    const report = reportFor(solo, 'abandoned');
+    if (!report || sentRef.current.has(report.seed)) return;
+    sentRef.current.add(report.seed);
+    saving.abandon(report);
+  };
+  useEffect(() => {
+    const onHide = () => leftEarly.current();
+    window.addEventListener('pagehide', onHide);
+    return () => {
+      window.removeEventListener('pagehide', onHide);
+      onHide();
+    };
+  }, []);
 
   function setPrefs(next: Card101Prefs) {
     setPrefsState(next);
@@ -159,7 +226,9 @@ export function Card101Solo({
       if (event.kind === 'deal') setFlash(null);
       if (event.kind === 'round-end') setScoringRound(event.result.round);
     }
-    setView(viewFor(soloRef.current!.game, STUDENT_SEAT));
+    const solo = soloRef.current!;
+    setView(viewFor(solo.game, STUDENT_SEAT));
+    if (solo.game.phase === 'over') void saveFinished(solo);
   }
 
   /** Plays the bots until it's the student's move, or the round is over. */
@@ -188,10 +257,24 @@ export function Card101Solo({
     }
   }
 
-  function start() {
+  async function start() {
+    if (startingRef.current) return;
+    leftEarly.current();
+    let stamped: { seed: string; stamp: string } | null = null;
+    if (saving) {
+      startingRef.current = true;
+      setStarting(true);
+      keyRef.current++; // stops the old game while the seed comes
+      stamped = await saving.seed().catch(() => null);
+      startingRef.current = false;
+      setStarting(false);
+    }
     const key = ++keyRef.current;
-    const { solo, events } = startSolo({ seed: newSeed(), bots: prefs.bots, level, settings: { target: prefs.target } });
+    const { solo, events } = startSolo({ seed: stamped?.seed ?? newSeed(), bots: prefs.bots, level, settings: { target: prefs.target } });
     const next: Game = { key, seats: makeSeats(solo, player, level), level };
+    stampRef.current = stamped?.stamp ?? null;
+    setSaveStatus(stamped ? 'playing' : 'practice');
+    setSaveMessage('');
     soloRef.current = solo;
     gameRef.current = next;
     actionsRef.current = [];
@@ -210,6 +293,7 @@ export function Card101Solo({
   }
 
   function leave() {
+    leftEarly.current();
     keyRef.current++;
     soloRef.current = null;
     gameRef.current = null;
@@ -303,7 +387,9 @@ export function Card101Solo({
   // ---------- Settings screen ----------
 
   if (!game || !view) {
-    return <Card101Settings prefs={prefs} onChange={setPrefs} level={level} onLevelChange={onLevelChange} onStart={start} />;
+    return (
+      <Card101Settings prefs={prefs} onChange={setPrefs} level={level} onLevelChange={onLevelChange} onStart={() => void start()} starting={starting} saves={!!saving} />
+    );
   }
 
   // ---------- The game ----------
@@ -353,8 +439,14 @@ export function Card101Solo({
       }}
     />
   ) : over && showPodium ? (
-    <Podium seats={seats} places={places} totals={view.totals} shared={(view.winners?.length ?? 0) > 1}>
-      <button type="button" className="button button--primary" onClick={start} autoFocus>
+    <Podium
+      seats={seats}
+      places={places}
+      totals={view.totals}
+      shared={(view.winners?.length ?? 0) > 1}
+      saveNote={saveNote(saveStatus, saveMessage, !!saving)}
+    >
+      <button type="button" className="button button--primary" onClick={() => void start()} disabled={starting} autoFocus>
         Play again
       </button>
       <button type="button" className="button button--light" onClick={() => setShowPodium(false)}>
@@ -470,7 +562,7 @@ export function Card101Solo({
 
         <section className="c101-panel c101-log" aria-labelledby="c101-log-title">
           <h2 id="c101-log-title" className="c101-panel__title">
-            What happened <span>Practice game: not saved</span>
+            What happened <span>{LOG_SAVE_NOTE[saveStatus]}</span>
           </h2>
           <ol ref={logRef} aria-live="polite" aria-relevant="additions">
             {log.map((line, i) => (
@@ -483,7 +575,7 @@ export function Card101Solo({
           <div className="chess-confirm" role="group" aria-label="Are you sure?">
             <p>Start again? This game will end.</p>
             <div className="chess-actions">
-              <button type="button" className="button button--danger" onClick={start}>
+              <button type="button" className="button button--danger" onClick={() => void start()} disabled={starting}>
                 Yes, start again
               </button>
               <button type="button" className="button button--light" onClick={() => setConfirming(false)} autoFocus>
@@ -494,7 +586,7 @@ export function Card101Solo({
         ) : (
           <div className="c101-actions">
             {over ? (
-              <button type="button" className="c101-action is-main" onClick={start}>
+              <button type="button" className="c101-action is-main" onClick={() => void start()} disabled={starting}>
                 Play again
               </button>
             ) : (
@@ -512,6 +604,32 @@ export function Card101Solo({
   );
 }
 
+const LOG_SAVE_NOTE: Record<SaveStatus, string> = {
+  practice: 'Practice game: not saved',
+  playing: 'Saved when you finish',
+  saving: 'Saving…',
+  saved: 'Saved ✓',
+  'saved-no-points': 'Saved ✓',
+  error: 'Not saved',
+};
+
+/** The line on the podium about saving. */
+function saveNote(status: SaveStatus, message: string, canSave: boolean): string | null {
+  switch (status) {
+    case 'practice':
+      return canSave ? 'Practice game: we couldn’t reach the server at the start, so this one isn’t saved.' : null;
+    case 'playing':
+    case 'saving':
+      return 'Saving…';
+    case 'saved':
+      return 'Saved! Points added.';
+    case 'saved-no-points':
+      return 'Saved. That game was too short to earn points (it needs 2 full rounds).';
+    case 'error':
+      return message;
+  }
+}
+
 const MEDALS = ['', '🥇', '🥈', '🥉', '4️⃣'];
 
 function Podium({
@@ -519,12 +637,14 @@ function Podium({
   places,
   totals,
   shared,
+  saveNote,
   children,
 }: {
   seats: readonly Seat[];
   places: number[];
   totals: number[];
   shared: boolean;
+  saveNote: string | null;
   children: ReactNode;
 }) {
   const mine = places[STUDENT_SEAT];
@@ -550,6 +670,11 @@ function Podium({
             </li>
           ))}
         </ol>
+        {saveNote && (
+          <p className="c101-podium__save" role="status">
+            {saveNote}
+          </p>
+        )}
         <div className="chess-result__buttons">{children}</div>
       </div>
     </div>

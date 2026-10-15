@@ -67,6 +67,7 @@ export function Card101Settings({
   onLevelChange,
   onStart,
   starting = false,
+  saves = false,
 }: {
   prefs: Card101Prefs;
   onChange: (prefs: Card101Prefs) => void;
@@ -74,6 +75,8 @@ export function Card101Settings({
   onLevelChange: (level: BotLevel) => void;
   onStart: () => void;
   starting?: boolean;
+  /** Finished games are saved (false in the stand-alone preview). */
+  saves?: boolean;
 }) {
   return (
     <section className="chess-setup c101-setup" aria-labelledby="c101-setup-title">
@@ -121,6 +124,12 @@ export function Card101Settings({
             { value: 50, label: 'Quick: to 50' },
           ]}
         />
+
+        <p className="c101-setup__hint">
+          {saves
+            ? 'Games you finish are saved and earn points: more for harder bots, and more for winning.'
+            : 'This is a practice copy: games aren’t saved.'}
+        </p>
 
         <button type="submit" className="button button--play c101-setup__start" disabled={starting}>
           {starting ? 'Shuffling…' : '▶ Deal the cards'}

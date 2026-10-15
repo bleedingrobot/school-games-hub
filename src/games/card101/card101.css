@@ -691,6 +691,7 @@ button.c101-slot:disabled {
   padding: 4px 10px;
   border-radius: 12px;
   background: #f6f4ff;
+  color: var(--ink);
   font-weight: 800;
 }
 .c101-podium__list li.is-me {
@@ -784,4 +785,9 @@ button.c101-slot:disabled {
     animation: none !important;
     transition: none !important;
   }
+}
+
+.c101-podium__save {
+  margin: 0;
+  font-weight: 700;
 }

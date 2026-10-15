@@ -2,7 +2,7 @@
 
 Stage 10 of School Games Hub: James's family card game, against bots or 2–4 classmates.
 Written 16 October 2026 from the brief in [prompts/game-101.md](prompts/game-101.md), after reading the code on `main` (Stages 1–9 live).
-**Status: rule questions answered by James on 16 October 2026 (section 12); agreed rules in [101-RULES.md](101-RULES.md). Stage 10.1 done 16 October 2026 (results in section 13). Stage 10.2 done 16 October 2026 (section 14), with James's new rule that swapped-in cards go face up and lock. Next: 10.3, saving bot games and points.**
+**Status: rule questions answered by James on 16 October 2026 (section 12); agreed rules in [101-RULES.md](101-RULES.md). Stage 10.1 done 16 October 2026 (results in section 13). Stage 10.2 done 16 October 2026 (section 14), with James's new rule that swapped-in cards go face up and lock. Stage 10.3 done 16 October 2026 (section 15). Next: 10.4, playing classmates.**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
@@ -329,3 +329,22 @@ A card you swap into your square goes **face up**, for everyone to see, and that
 - Browser runs at Chromebook size (1366×640, the space a Chromebook's browser really has), tablet (768×1024) and phone (390×844): no errors, everything fits without scrolling on the Chromebook.
 - **Not done yet:** saving and points (10.3), classmates (10.4), the full How to play panel and accessibility pass (10.5).
 
+
+## 15. Stage 10.3 results: saving bot games and points (16 October 2026)
+
+Built on branch `stage-10`. Migration 0800 is applied to the local copy only; nothing is live.
+
+### What's built
+
+- **`shared/card101/save.ts`:** the report the page sends (seed, stamp, bots, level, settings, the student's actions, how it ended), the shape check, and `judgeCard101Game`, which replays the game with `replaySolo` and works out the result, place, rounds, total and the student's stats for achievements (zero hands, triples, knock-and-win rounds, 3s that cancelled a 10). Stamps say which game they're for (`101-seed:v1:…`), so a space seed can't be used for 101 or the other way round.
+- **`save-bot-game`:** `{ game: "101", start: true }` hands out a stamped seed; `{ game: "101", … }` saves after the replay. Chess, checkers and space work exactly as before (`multiplayer` and `space-game` built files unchanged).
+- **Migration `20261016000800_101_points.sql`:** `bot_games.card101` (one save per seed), `record_101_bot_game()` (server only), `scored_games.card101` stats, the **8 achievements**, the classmates point rules ready for 10.4 (`card101_friend_points`, 6 a day, 2-round minimum) in `progress_rules()`, and a 101 line in the teacher's student detail (kept last, so the other lines don't move).
+- **Points:** a bot game earns exactly what chess and checkers earn (Very Easy 1/3, Easy 2/5, Medium 3/8 for lost/won), inside the shared 40-a-day bot cap. A shared win counts as a win. Fewer than 2 full rounds, or leaving, earns nothing. No ratings, badges or leaderboards.
+- **Website:** the page asks for a seed when you deal (no seed = practice game, and it says so), saves the moment the game ends, and records a game left part-way as "left early" (also when the tab closes). The podium says "Saved! Points added." The settings say games are saved and earn points. 101 now appears in **My stats** (it has real wins and losses), in Recent games ("101 vs Medium bots"), on **How points work** (its own section) and in the teacher's view.
+- Fixed from 10.2: names and totals on the podium were white on a pale background.
+
+### Checked
+
+- 22 new tests: reading and judging reports, stats checked against the engine over 40 games, left-early games, changed games refused (11 save-function tests, including forged, borrowed, old and space-game seeds), the screen saving a whole game and the server's replay agreeing with the podium, practice games, leaving part-way. 33 new database tests (`card101_points.test.sql`): only the server can save, one save per seed, the points for each level, the shared cap, no ratings or leaderboard, all 8 achievements, How points work, the teacher's view, rebuilding scores, New season. Security test: a student can't call `record_101_bot_game`.
+- `npm run check` passes (568 tests) and all 395 database tests pass.
+- **Real browser, local server:** whole Quick games against 1 Very Easy bot and 3 Medium bots, signed in as a local test student. Both saved ("Saved! Points added."), the database replayed them (8 and 3 rounds), and points and achievements came out right (for example 1 point for a loss to Very Easy, plus First game, Perfect zero and Saved by a 3).

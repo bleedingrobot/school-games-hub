@@ -35,6 +35,7 @@ export function whenPlayed(iso: string, now = new Date()): string {
 
 function botName(level: string, game?: string) {
   if (game === 'space') return `${BOT_NAMES[level as BotLevel] ?? ''} bots`;
+  if (game === '101') return `${BOT_LEVELS.find((l) => l.id === level)?.label ?? ''} bots`;
   return `${BOT_LEVELS.find((l) => l.id === level)?.label ?? ''} bot`;
 }
 
@@ -345,6 +346,9 @@ export function Dashboard() {
   );
 }
 
+/** Games with real wins and losses: the ranked ones, and 101 (no badge, but you win or lose). */
+const hasWinLoss = (game: (typeof GAMES)[number]) => isRanked(game) || game.id === '101';
+
 /** Wormholes & Black Holes is luck, so it gets a line of its own rather than won/lost columns. */
 function SpaceStatsLine({
   stats,
@@ -379,7 +383,7 @@ function StatsTable({ caption, stats }: { caption: string; stats: { game: string
         </tr>
       </thead>
       <tbody>
-        {GAMES.filter(isRanked).map((game) => {
+        {GAMES.filter(hasWinLoss).map((game) => {
           const s = stats?.find((row) => row.game === game.id) ?? { played: 0, won: 0, lost: 0, drawn: 0 };
           const show = (n: number) => (stats ? n : '–');
           return (

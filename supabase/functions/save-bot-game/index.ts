@@ -48,373 +48,6 @@ function isMoveList(value) {
 	return Array.isArray(value) && value.length <= 1e3 && value.every((m) => typeof m === "string" && m.length <= 64);
 }
 //#endregion
-//#region shared/chess/rules.ts
-/**
-* Chess rules, shared by the website and the server.
-*
-* chess.js does the real work (legal moves, check, castling, en passant, promotion and
-* every draw rule). This file only adds the few things both sides need: replaying a
-* game from its list of moves, and saying how a finished game ended.
-*
-* Moves are stored in "UCI" form: from-square + to-square, plus the promotion piece
-* if there is one. For example "e2e4", "e1g1" (castling), "e7e8q" (promote to a queen).
-*/
-const UCI = /^[a-h][1-8][a-h][1-8][qrbn]?$/;
-function isUciMove(text) {
-	return typeof text === "string" && UCI.test(text);
-}
-/** Plays one UCI move. Returns the move, or null if it isn't legal here. Never throws. */
-function playUci(chess, uci) {
-	if (!isUciMove(uci)) return null;
-	try {
-		return chess.move({
-			from: uci.slice(0, 2),
-			to: uci.slice(2, 4),
-			promotion: uci[4]
-		});
-	} catch {
-		return null;
-	}
-}
-/**
-* Has the game ended by the rules? Draws end the game automatically: threefold
-* repetition, 50 moves each with no capture or pawn move, and too few pieces to mate.
-*/
-function boardResult$1(chess) {
-	if (chess.isCheckmate()) return {
-		ending: "checkmate",
-		winner: chess.turn() === "w" ? "black" : "white"
-	};
-	if (chess.isStalemate()) return {
-		ending: "stalemate",
-		winner: null
-	};
-	if (chess.isInsufficientMaterial()) return {
-		ending: "not-enough-pieces",
-		winner: null
-	};
-	if (chess.isThreefoldRepetition()) return {
-		ending: "threefold-repetition",
-		winner: null
-	};
-	if (chess.isDrawByFiftyMoves()) return {
-		ending: "fifty-moves",
-		winner: null
-	};
-	return null;
-}
-/**
-* Replays a whole game from the starting position. Fails if any move is illegal, or if
-* a move comes after the game has already ended.
-*/
-function replay$1(moves) {
-	const chess = new Chess();
-	for (let i = 0; i < moves.length; i++) if (boardResult$1(chess) || !playUci(chess, moves[i])) return {
-		ok: false,
-		badMoveIndex: i
-	};
-	return {
-		ok: true,
-		chess,
-		result: boardResult$1(chess)
-	};
-}
-//#endregion
-//#region shared/chess/botGame.ts
-/**
-* Deciding the result of a game against a bot. The website uses this to show the result
-* straight away, and the server runs the very same code before saving, so a student
-* can't send in a pretend win.
-*/
-/** Checks the shape of a report that came from outside (e.g. the browser). */
-function parseReport(input) {
-	if (typeof input !== "object" || input === null) return null;
-	const r = input;
-	if (!isBotLevelId(r.level)) return null;
-	if (r.studentColour !== "white" && r.studentColour !== "black") return null;
-	if (!isClaimedEnding(r.ending) || !isMoveList(r.moves)) return null;
-	return {
-		level: r.level,
-		studentColour: r.studentColour,
-		moves: r.moves,
-		ending: r.ending
-	};
-}
-function studentMoveCount$1(moves, studentColour) {
-	return studentColour === "white" ? Math.ceil(moves.length / 2) : Math.floor(moves.length / 2);
-}
-function judgeBotGame(report) {
-	if (report.moves.length > 1e3) return {
-		ok: false,
-		problem: "too many moves"
-	};
-	const replayed = replay$1(report.moves);
-	if (!replayed.ok) return {
-		ok: false,
-		problem: `illegal move at ${replayed.badMoveIndex + 1}`
-	};
-	const studentMoves = studentMoveCount$1(report.moves, report.studentColour);
-	const longEnough = studentMoves >= 10;
-	if (replayed.result) {
-		const { ending, winner } = replayed.result;
-		return {
-			ok: true,
-			game: {
-				outcome: winner === null ? "drawn" : winner === report.studentColour ? "won" : "lost",
-				reason: ending,
-				studentMoves,
-				countsForPoints: longEnough
-			}
-		};
-	}
-	if (report.ending === "finished") return {
-		ok: false,
-		problem: "the game is not over"
-	};
-	return {
-		ok: true,
-		game: {
-			outcome: "lost",
-			reason: report.ending,
-			studentMoves,
-			countsForPoints: report.ending === "resigned" && longEnough
-		}
-	};
-}
-function otherColour(colour) {
-	return colour === "red" ? "white" : "red";
-}
-/** Which row (0 = top, Red's back row) and column (0 = left) a square is on. */
-function rowCol(square) {
-	const row = Math.floor((square - 1) / 4);
-	const index = (square - 1) % 4;
-	return {
-		row,
-		col: row % 2 === 0 ? index * 2 + 1 : index * 2
-	};
-}
-/** The square number at a row and column, or null for a light square or off the board. */
-function squareAt(row, col) {
-	if (row < 0 || row > 7 || col < 0 || col > 7 || (row + col) % 2 === 0) return null;
-	return row * 4 + Math.floor(col / 2) + 1;
-}
-/** The far row, where a man is crowned. */
-function crownRow(colour) {
-	return colour === "red" ? 7 : 0;
-}
-/** Red men move down the board (towards row 7), White men move up. */
-function directions(piece) {
-	const forward = piece.colour === "red" ? 1 : -1;
-	const steps = [[forward, -1], [forward, 1]];
-	if (piece.king) steps.push([-forward, -1], [-forward, 1]);
-	return steps;
-}
-function startPosition() {
-	const board = [];
-	for (let square = 1; square <= 32; square++) if (square <= 12) board.push({
-		colour: "red",
-		king: false
-	});
-	else if (square >= 21) board.push({
-		colour: "white",
-		king: false
-	});
-	else board.push(null);
-	return {
-		board,
-		turn: "red",
-		quietPlies: 0
-	};
-}
-function pieceAt(position, square) {
-	return position.board[square - 1] ?? null;
-}
-function makeMove(path, captures, crowns) {
-	return {
-		path,
-		captures,
-		crowns,
-		notation: path.join(captures.length > 0 ? "x" : "-")
-	};
-}
-/** Every complete jump the piece on `from` can make. Each one carries on as far as it can. */
-function jumpsFrom(position, from) {
-	const piece = pieceAt(position, from);
-	const board = [...position.board];
-	board[from - 1] = null;
-	const found = [];
-	function explore(at, path, captured) {
-		const { row, col } = rowCol(at);
-		let canJump = false;
-		for (const [dr, dc] of directions(piece)) {
-			const over = squareAt(row + dr, col + dc);
-			const land = squareAt(row + 2 * dr, col + 2 * dc);
-			if (over === null || land === null) continue;
-			const victim = board[over - 1];
-			if (!victim || victim.colour === piece.colour || captured.includes(over) || board[land - 1]) continue;
-			canJump = true;
-			const nextPath = [...path, land];
-			const nextCaptured = [...captured, over];
-			if (!piece.king && rowCol(land).row === crownRow(piece.colour)) found.push(makeMove(nextPath, nextCaptured, true));
-			else explore(land, nextPath, nextCaptured);
-		}
-		if (!canJump && captured.length > 0) found.push(makeMove(path, captured, false));
-	}
-	explore(from, [from], []);
-	return found;
-}
-function stepsFrom(position, from) {
-	const piece = pieceAt(position, from);
-	const { row, col } = rowCol(from);
-	const moves = [];
-	for (const [dr, dc] of directions(piece)) {
-		const to = squareAt(row + dr, col + dc);
-		if (to === null || pieceAt(position, to)) continue;
-		moves.push(makeMove([from, to], [], !piece.king && rowCol(to).row === crownRow(piece.colour)));
-	}
-	return moves;
-}
-function ownSquares(position) {
-	const squares = [];
-	for (let square = 1; square <= 32; square++) if (pieceAt(position, square)?.colour === position.turn) squares.push(square);
-	return squares;
-}
-/**
-* Every legal move for the side to move. If any jump is possible, only jumps are legal
-* (captures are compulsory), but the player may pick whichever jump they like.
-*/
-function legalMoves(position) {
-	const mine = ownSquares(position);
-	const jumps = mine.flatMap((square) => jumpsFrom(position, square));
-	if (jumps.length > 0) return jumps;
-	return mine.flatMap((square) => stepsFrom(position, square));
-}
-/** Makes a move (assumed legal: get it from legalMoves). Returns the new position. */
-function applyMove(position, move) {
-	const board = [...position.board];
-	const from = move.path[0];
-	const to = move.path[move.path.length - 1];
-	const piece = board[from - 1];
-	board[from - 1] = null;
-	for (const square of move.captures) board[square - 1] = null;
-	board[to - 1] = {
-		colour: piece.colour,
-		king: piece.king || move.crowns
-	};
-	const quiet = move.captures.length === 0 && !move.crowns;
-	return {
-		board,
-		turn: otherColour(position.turn),
-		quietPlies: quiet ? position.quietPlies + 1 : 0
-	};
-}
-/** Finds a legal move from its notation, e.g. "11-15" or "15x24x31". Null if it isn't legal here. */
-function findMove(position, notation) {
-	return legalMoves(position).find((move) => move.notation === notation) ?? null;
-}
-/** Has the game ended by the rules? */
-function boardResult(position) {
-	const winner = otherColour(position.turn);
-	if (ownSquares(position).length === 0) return {
-		ending: "no-pieces",
-		winner
-	};
-	if (legalMoves(position).length === 0) return {
-		ending: "no-moves",
-		winner
-	};
-	if (position.quietPlies >= 80) return {
-		ending: "forty-moves",
-		winner: null
-	};
-	return null;
-}
-/**
-* Replays a whole game from the starting position. Fails if any move is illegal, or if
-* a move comes after the game has already ended.
-*/
-function replay(moves) {
-	let position = startPosition();
-	const played = [];
-	for (let i = 0; i < moves.length; i++) {
-		const move = boardResult(position) ? null : findMove(position, moves[i]);
-		if (!move) return {
-			ok: false,
-			badMoveIndex: i
-		};
-		position = applyMove(position, move);
-		played.push(move);
-	}
-	return {
-		ok: true,
-		position,
-		played,
-		result: boardResult(position)
-	};
-}
-//#endregion
-//#region shared/checkers/botGame.ts
-/**
-* Deciding the result of a checkers game against a bot. The website uses this to show the
-* result straight away, and the save-bot-game server function runs the very same code
-* before saving, so a student can't send in a pretend win.
-*/
-/** Checks the shape of a report that came from outside (e.g. the browser). */
-function parseCheckersReport(input) {
-	if (typeof input !== "object" || input === null) return null;
-	const r = input;
-	if (!isBotLevelId(r.level)) return null;
-	if (r.studentColour !== "red" && r.studentColour !== "white") return null;
-	if (!isClaimedEnding(r.ending) || !isMoveList(r.moves)) return null;
-	return {
-		level: r.level,
-		studentColour: r.studentColour,
-		moves: r.moves,
-		ending: r.ending
-	};
-}
-function studentMoveCount(moves, studentColour) {
-	return studentColour === "red" ? Math.ceil(moves.length / 2) : Math.floor(moves.length / 2);
-}
-function judgeCheckersGame(report) {
-	if (report.moves.length > 1e3) return {
-		ok: false,
-		problem: "too many moves"
-	};
-	const replayed = replay(report.moves);
-	if (!replayed.ok) return {
-		ok: false,
-		problem: `illegal move at ${replayed.badMoveIndex + 1}`
-	};
-	const studentMoves = studentMoveCount(report.moves, report.studentColour);
-	const longEnough = studentMoves >= 10;
-	if (replayed.result) {
-		const { ending, winner } = replayed.result;
-		return {
-			ok: true,
-			game: {
-				outcome: winner === null ? "drawn" : winner === report.studentColour ? "won" : "lost",
-				reason: ending,
-				studentMoves,
-				countsForPoints: longEnough
-			}
-		};
-	}
-	if (report.ending === "finished") return {
-		ok: false,
-		problem: "the game is not over"
-	};
-	return {
-		ok: true,
-		game: {
-			outcome: "lost",
-			reason: report.ending,
-			studentMoves,
-			countsForPoints: report.ending === "resigned" && longEnough
-		}
-	};
-}
-//#endregion
 //#region shared/space/board.ts
 const STAR_KINDS = [
 	"red-dwarf",
@@ -579,6 +212,15 @@ function pickWeighted(dice, entries) {
 		if (n <= 0) return value;
 	}
 	return entries[entries.length - 1][0];
+}
+/** A shuffled copy (Fisher–Yates), using the dice. */
+function shuffled(dice, list) {
+	const copy = [...list];
+	for (let i = copy.length - 1; i > 0; i--) {
+		const j = dice(i + 1) - 1;
+		[copy[i], copy[j]] = [copy[j], copy[i]];
+	}
+	return copy;
 }
 //#endregion
 //#region shared/space/galaxy.ts
@@ -1523,7 +1165,7 @@ function classicBoard(board) {
 	};
 }
 /** A new game, everyone on square 1, the first seat to play. */
-function newGame(board, settings, players) {
+function newGame$1(board, settings, players) {
 	if (!Number.isInteger(players) || players < 2 || players > 4) throw new SpaceRuleError(`A game needs 2 to 4 rockets.`);
 	const playBoard = settings.mode === "classic" ? classicBoard(board) : structuredClone(board);
 	return {
@@ -1566,7 +1208,7 @@ function newGame(board, settings, players) {
 		}]
 	};
 }
-function play(previous, action, dice) {
+function play$1(previous, action, dice) {
 	const s = structuredClone(previous);
 	const events = [];
 	new Game(s, dice, events).act(action);
@@ -2649,9 +2291,9 @@ function botChoice(s, level, random) {
 //#endregion
 //#region shared/space/replay.ts
 /** Starts a bot game from its setup. */
-function startSolo(setup) {
+function startSolo$1(setup) {
 	const players = setup.bots + 1;
-	const { state, events } = newGame(boardFor(setup.board), setup.settings, players);
+	const { state, events } = newGame$1(boardFor(setup.board), setup.settings, players);
 	return {
 		state,
 		events,
@@ -2661,10 +2303,10 @@ function startSolo(setup) {
 	};
 }
 /** Plays bot turns until it's the student's turn or the game is over. */
-function playBots(game, level, onEvents) {
+function playBots$1(game, level, onEvents) {
 	for (let guard = 0; game.state.phase !== "over" && game.state.turn !== game.studentSeat; guard++) {
 		if (guard > 1e4) throw new Error("Bots never finished their turns");
-		const { state, events } = play(game.state, botAction(game.state, level, game.botRandom), game.dice);
+		const { state, events } = play$1(game.state, botAction(game.state, level, game.botRandom), game.dice);
 		game.state = state;
 		game.events.push(...events);
 		onEvents?.(events);
@@ -2674,14 +2316,14 @@ function playBots(game, level, onEvents) {
 * Replays a bot game exactly. Fails if any action is against the rules or left over.
 * `onEvents` sees every event, in order, from the start of the game.
 */
-function replaySolo(setup, actions, onEvents) {
+function replaySolo$1(setup, actions, onEvents) {
 	if (actions.length > 2e3) return {
 		ok: false,
 		reason: "too many actions"
 	};
 	let game;
 	try {
-		game = startSolo(setup);
+		game = startSolo$1(setup);
 	} catch (error) {
 		return {
 			ok: false,
@@ -2691,18 +2333,18 @@ function replaySolo(setup, actions, onEvents) {
 	let studentTurns = 0;
 	onEvents?.(game.events);
 	try {
-		playBots(game, setup.level, onEvents);
+		playBots$1(game, setup.level, onEvents);
 		for (const action of actions) {
 			if (game.state.phase === "over") return {
 				ok: false,
 				reason: "actions after the game ended"
 			};
 			const before = game.state.turnsTaken;
-			const { state, events } = play(game.state, action, game.dice);
+			const { state, events } = play$1(game.state, action, game.dice);
 			game.state = state;
 			onEvents?.(events);
 			if (game.state.turnsTaken > before || game.state.phase === "over") studentTurns++;
-			playBots(game, setup.level, onEvents);
+			playBots$1(game, setup.level, onEvents);
 		}
 	} catch (error) {
 		if (error instanceof SpaceRuleError) return {
@@ -2731,7 +2373,7 @@ function makeSeed(nowSeconds, randomHex) {
 	return `s1-${String(Math.floor(nowSeconds)).padStart(10, "0")}-${randomHex}`;
 }
 /** What the server signs: the seed and who it was given to, so a seed can't be shared. */
-function stampText(player, seed) {
+function stampText$1(player, seed) {
 	return `space-seed:v1:${player}:${seed}`;
 }
 /** Null if the seed is well made and still fresh, else what's wrong. */
@@ -2834,7 +2476,7 @@ function judgeSpaceGame(report) {
 	const events = [];
 	let replayed;
 	try {
-		replayed = replaySolo(setup, actions, (batch) => events.push(...batch));
+		replayed = replaySolo$1(setup, actions, (batch) => events.push(...batch));
 	} catch {
 		return {
 			ok: false,
@@ -2870,6 +2512,1444 @@ function judgeSpaceGame(report) {
 			studentTurns,
 			countsForPoints: finished && studentTurns >= 5,
 			stats
+		}
+	};
+}
+//#endregion
+//#region shared/card101/cards.ts
+/**
+* The pack for 101: 52 cards, each written as two characters, rank then suit.
+* Ranks: A 2 3 4 5 6 7 8 9 T(en) J Q K. Suits: C(lubs) D(iamonds) H(earts) S(pades).
+* So "QH" is the Queen of hearts and "TS" the 10 of spades.
+*
+* Two characters, always upper case, so a test can find every card in any message
+* with one pattern (CARD_PATTERN) and prove no hidden card ever leaves the server.
+*/
+const RANKS = [
+	"A",
+	"2",
+	"3",
+	"4",
+	"5",
+	"6",
+	"7",
+	"8",
+	"9",
+	"T",
+	"J",
+	"Q",
+	"K"
+];
+/** Every card, in a fixed order (shuffle a copy). */
+const PACK = [
+	"C",
+	"D",
+	"H",
+	"S"
+].flatMap((suit) => RANKS.map((rank) => `${rank}${suit}`));
+const rankOf = (card) => card[0];
+/** What a card scores on its own: King 0, 3 0, Ace 1, 2 and 4–10 face value, Jack and Queen 10. */
+function cardValue(card) {
+	const rank = rankOf(card);
+	if (rank === "K" || rank === "3") return 0;
+	if (rank === "A") return 1;
+	if (rank === "T" || rank === "J" || rank === "Q") return 10;
+	return Number(rank);
+}
+/** Where each of your four cards sits. The bottom two (nearest you) are the ones you peek at. */
+const SLOTS = [
+	0,
+	1,
+	2,
+	3
+];
+const PEEK_SLOTS = [2, 3];
+const isSlot = (value) => SLOTS.includes(value);
+//#endregion
+//#region shared/card101/score.ts
+/**
+* Scoring a hand of four cards, the way James's family plays (docs/101-RULES.md):
+*
+*   1. Three or four of a kind: the whole hand scores 0.
+*   2. Pairs: two cards of the same rank, anywhere, cancel each other (both score 0).
+*   3. 3s: each 3 scores 0 and cancels the highest card still counting. A tie for highest
+*      cancels just one card. Two 3s cancel two cards (even though they're also a pair).
+*   4. Add up what's left.
+*
+* Besides the total, it returns each step, so the end-of-round screen can show the
+* working: "the 7s cancel", "the 3 cancels the Queen", "4 + 0 = 4".
+*/
+function scoreHand(hand) {
+	const values = hand.map(cardValue);
+	const steps = [];
+	const slotsByRank = new Map();
+	hand.forEach((card, slot) => {
+		const rank = rankOf(card);
+		slotsByRank.set(rank, [...slotsByRank.get(rank) ?? [], slot]);
+	});
+	for (const [rank, slots] of slotsByRank) if (slots.length >= 3) {
+		steps.push({
+			kind: "triple",
+			rank,
+			slots
+		});
+		return {
+			total: 0,
+			values: values.map(() => 0),
+			steps
+		};
+	}
+	const cancelled = new Set();
+	for (const [rank, slots] of slotsByRank) if (slots.length === 2) {
+		steps.push({
+			kind: "pair",
+			rank,
+			slots: [slots[0], slots[1]]
+		});
+		for (const slot of slots) cancelled.add(slot);
+	}
+	for (const three of slotsByRank.get("3") ?? []) {
+		let highest = -1;
+		hand.forEach((_, slot) => {
+			if (cancelled.has(slot) || values[slot] === 0) return;
+			if (highest < 0 || values[slot] > values[highest]) highest = slot;
+		});
+		if (highest < 0) break;
+		steps.push({
+			kind: "three-cancels",
+			three,
+			cancels: highest,
+			value: values[highest]
+		});
+		cancelled.add(highest);
+	}
+	const finalValues = values.map((value, slot) => cancelled.has(slot) ? 0 : value);
+	return {
+		total: finalValues.reduce((a, b) => a + b, 0),
+		values: finalValues,
+		steps
+	};
+}
+const TARGETS = [101, 50];
+var RuleError = class extends Error {};
+const fail = (message) => {
+	throw new RuleError(message);
+};
+const activeSeats = (game) => game.totals.map((_, seat) => seat).filter((seat) => !game.out[seat]);
+/** Starts a game. The first round is dealt straight away; `dice` shuffles and picks who starts. */
+function newGame(players, settings, dice) {
+	if (!Number.isInteger(players) || players < 2 || players > 4) fail("2 to 4 players");
+	if (!TARGETS.includes(settings.target)) fail("Unknown target");
+	const game = {
+		settings: { target: settings.target },
+		players,
+		totals: Array(players).fill(0),
+		out: Array(players).fill(false),
+		round: 0,
+		starter: dice(players) - 1,
+		phase: "round-over",
+		hands: Array.from({ length: players }, () => []),
+		faceUp: Array.from({ length: players }, () => []),
+		stack: [],
+		discard: [],
+		turn: 0,
+		holding: null,
+		turnsThisRound: Array(players).fill(0),
+		knocker: null,
+		owesLastTurn: Array(players).fill(false),
+		peeked: Array(players).fill(false),
+		skips: Array(players).fill(0),
+		results: [],
+		winners: null
+	};
+	const events = [];
+	deal(game, dice, events, false);
+	return {
+		game,
+		events
+	};
+}
+/** Plays one action. Throws RuleError (and changes nothing) if it isn't allowed. */
+function play(game, actor, action, dice) {
+	const g = structuredClone(game);
+	const events = [];
+	apply(g, actor, action, dice, events);
+	return {
+		game: g,
+		events
+	};
+}
+function apply(g, actor, action, dice, events) {
+	if (g.phase === "over") fail("The game is over");
+	const seat = actor === "system" ? null : actor;
+	if (seat !== null && (!Number.isInteger(seat) || seat < 0 || seat >= g.players)) fail("No such player");
+	if (seat !== null && g.out[seat]) fail("You're out of this game");
+	switch (action.type) {
+		case "peek-done":
+			if (seat === null) fail("Only a player can finish their peek");
+			if (g.phase !== "peek") fail("It isn't peek time");
+			if (g.peeked[seat]) fail("Your peek is already over");
+			g.peeked[seat] = true;
+			events.push({
+				kind: "peek-done",
+				seat
+			});
+			startPlayIfPeeksDone(g, events);
+			return;
+		case "end-peek":
+			if (seat !== null) fail("Only the referee can end the peek");
+			if (g.phase !== "peek") fail("It isn't peek time");
+			for (const s of activeSeats(g)) g.peeked[s] = true;
+			startPlayIfPeeksDone(g, events);
+			return;
+		case "next-round":
+			if (seat !== null) fail("Only the referee deals");
+			if (g.phase !== "round-over") fail("The round isn't over");
+			deal(g, dice, events, true);
+			return;
+		case "leave":
+			if (seat === null) fail("Only a player can leave");
+			putOut(g, seat, "left", events);
+			return;
+		case "skip": {
+			if (seat !== null) fail("Only the referee can skip a turn");
+			if (g.phase !== "play") fail("Nobody's turn to skip");
+			const skipped = g.turn;
+			const discarded = g.holding ? g.holding.card : null;
+			if (g.holding) g.discard.push(g.holding.card);
+			g.holding = null;
+			events.push({
+				kind: "skip",
+				seat: skipped,
+				discarded
+			});
+			g.skips[skipped] += 1;
+			if (g.skips[skipped] >= 3) {
+				putOut(g, skipped, "skipped", events);
+				return;
+			}
+			endTurn(g, events);
+			return;
+		}
+	}
+	if (g.phase !== "play") fail("It isn't time to play");
+	if (seat === null) fail("Only a player can do that");
+	if (seat !== g.turn) fail("It isn't your turn");
+	g.skips[seat] = 0;
+	switch (action.type) {
+		case "draw":
+			if (g.holding) fail("You're already holding a card");
+			if (action.from === "discard") {
+				const card = g.discard.pop() ?? fail("The discard pile is empty");
+				g.holding = {
+					card,
+					from: "discard"
+				};
+				events.push({
+					kind: "draw",
+					seat,
+					from: "discard",
+					card
+				});
+			} else if (action.from === "stack") {
+				if (g.stack.length === 0) reshuffle(g, dice, events);
+				const card = g.stack.pop() ?? fail("There are no cards left to draw");
+				g.holding = {
+					card,
+					from: "stack"
+				};
+				events.push({
+					kind: "draw",
+					seat,
+					from: "stack",
+					card
+				});
+			} else fail("Draw from the stack or the discard pile");
+			return;
+		case "swap": {
+			if (!g.holding) fail("Take a card first");
+			if (!isSlot(action.slot)) fail("Pick one of your four cards");
+			if (g.faceUp[seat][action.slot]) fail("That card is face up, so it stays. Pick a face-down card, or throw it away");
+			const discarded = g.hands[seat][action.slot];
+			const placed = g.holding.card;
+			g.hands[seat][action.slot] = placed;
+			g.faceUp[seat][action.slot] = true;
+			g.discard.push(discarded);
+			g.holding = null;
+			events.push({
+				kind: "swap",
+				seat,
+				slot: action.slot,
+				placed,
+				discarded
+			});
+			endTurn(g, events);
+			return;
+		}
+		case "throw": {
+			if (!g.holding) fail("Take a card first");
+			const card = g.holding.card;
+			g.discard.push(card);
+			g.holding = null;
+			events.push({
+				kind: "throw",
+				seat,
+				card
+			});
+			endTurn(g, events);
+			return;
+		}
+		case "knock":
+			if (!canKnock(g, seat)) fail(g.knocker !== null ? "Someone has already knocked" : "You can knock once everyone has had a turn");
+			g.knocker = seat;
+			for (const s of activeSeats(g)) g.owesLastTurn[s] = s !== seat;
+			events.push({
+				kind: "knock",
+				seat
+			});
+			endTurn(g, events);
+			return;
+		default: fail("Unknown move");
+	}
+}
+/** Whether this player could knock right now. */
+function canKnock(g, seat) {
+	return g.phase === "play" && g.turn === seat && !g.holding && g.knocker === null && activeSeats(g).every((s) => g.turnsThisRound[s] >= 1);
+}
+function startPlayIfPeeksDone(g, events) {
+	if (activeSeats(g).some((s) => !g.peeked[s])) return;
+	g.phase = "play";
+	g.turn = g.out[g.starter] ? nextActive(g, g.starter) : g.starter;
+	events.push({
+		kind: "play-starts",
+		turn: g.turn
+	});
+}
+/** Shuffles a fresh pack and deals a round. `moveStarter`: the start moves one player along. */
+function deal(g, dice, events, moveStarter) {
+	g.round += 1;
+	if (moveStarter) g.starter = nextActive(g, g.starter);
+	const pack = shuffled(dice, PACK);
+	g.hands = g.totals.map((_, seat) => g.out[seat] ? [] : pack.splice(0, 4));
+	g.faceUp = g.hands.map((hand) => hand.map(() => false));
+	g.discard = [pack.pop()];
+	g.stack = pack;
+	g.holding = null;
+	g.turn = g.starter;
+	g.turnsThisRound = Array(g.players).fill(0);
+	g.knocker = null;
+	g.owesLastTurn = Array(g.players).fill(false);
+	g.peeked = g.out.map((out) => out);
+	g.phase = "peek";
+	events.push({
+		kind: "deal",
+		round: g.round,
+		starter: g.starter,
+		discardTop: g.discard[g.discard.length - 1]
+	});
+}
+/** The stack is empty: shuffle the discard pile, except its top card, into a new stack. */
+function reshuffle(g, dice, events) {
+	const top = g.discard.pop();
+	if (top === void 0 || g.discard.length === 0) {
+		if (top !== void 0) g.discard.push(top);
+		fail("There are no cards left to draw");
+	}
+	g.stack = shuffled(dice, g.discard);
+	g.discard = [top];
+	events.push({
+		kind: "reshuffle",
+		cards: g.stack.length
+	});
+}
+function nextActive(g, from) {
+	for (let step = 1; step <= g.players; step++) {
+		const seat = (from + step) % g.players;
+		if (!g.out[seat]) return seat;
+	}
+	return from;
+}
+/** The current player's turn is over: pass it on, or score the round after the last turns. */
+function endTurn(g, events) {
+	const finished = g.turn;
+	g.turnsThisRound[finished] += 1;
+	if (g.knocker !== null) g.owesLastTurn[finished] = false;
+	passTurn(g, finished, events);
+}
+function passTurn(g, from, events) {
+	if (g.knocker !== null) {
+		for (let step = 1; step <= g.players; step++) {
+			const seat = (from + step) % g.players;
+			if (!g.out[seat] && g.owesLastTurn[seat]) {
+				g.turn = seat;
+				events.push({
+					kind: "turn",
+					seat,
+					lastTurn: true
+				});
+				return;
+			}
+		}
+		scoreRound(g, events);
+		return;
+	}
+	g.turn = nextActive(g, from);
+	events.push({
+		kind: "turn",
+		seat: g.turn,
+		lastTurn: false
+	});
+}
+function scoreRound(g, events) {
+	const scores = g.hands.map((hand, seat) => g.out[seat] ? null : scoreHand(hand));
+	const live = activeSeats(g);
+	const lowest = Math.min(...live.map((s) => scores[s].total));
+	for (const s of live) g.totals[s] += scores[s].total;
+	const result = {
+		round: g.round,
+		hands: g.hands.map((hand, seat) => g.out[seat] ? [] : [...hand]),
+		scores,
+		winners: live.filter((s) => scores[s].total === lowest),
+		knocker: g.knocker,
+		totals: [...g.totals]
+	};
+	g.results.push(result);
+	g.phase = "round-over";
+	g.holding = null;
+	events.push({
+		kind: "round-end",
+		result
+	});
+	if (live.some((s) => g.totals[s] >= g.settings.target)) finishGame(g, events);
+}
+function finishGame(g, events) {
+	const live = activeSeats(g);
+	const best = Math.min(...live.map((s) => g.totals[s]));
+	g.winners = live.filter((s) => g.totals[s] === best);
+	g.phase = "over";
+	events.push({
+		kind: "game-over",
+		winners: g.winners,
+		totals: [...g.totals]
+	});
+}
+/** A player leaves or is skipped out: their cards leave the table and the others carry on. */
+function putOut(g, seat, reason, events) {
+	if (g.out[seat]) fail("You're out of this game");
+	const wasTheirTurn = g.phase === "play" && g.turn === seat;
+	if (wasTheirTurn && g.holding) {
+		g.discard.push(g.holding.card);
+		g.holding = null;
+	}
+	g.out[seat] = true;
+	g.hands[seat] = [];
+	g.faceUp[seat] = [];
+	g.owesLastTurn[seat] = false;
+	g.peeked[seat] = true;
+	events.push({
+		kind: "out",
+		seat,
+		reason
+	});
+	const live = activeSeats(g);
+	if (live.length < 2) {
+		g.winners = live;
+		g.phase = "over";
+		events.push({
+			kind: "game-over",
+			winners: live,
+			totals: [...g.totals]
+		});
+		return;
+	}
+	if (g.phase === "peek") startPlayIfPeeksDone(g, events);
+	else if (wasTheirTurn) passTurn(g, seat, events);
+}
+//#endregion
+//#region shared/card101/bot.ts
+function newMemory(seat, players) {
+	return {
+		seat,
+		round: 0,
+		own: [
+			null,
+			null,
+			null,
+			null
+		],
+		others: Array.from({ length: players }, () => [
+			null,
+			null,
+			null,
+			null
+		]),
+		othersKept: Array.from({ length: players }, () => [
+			false,
+			false,
+			false,
+			false
+		]),
+		discardPile: [],
+		lastSeenHolding: null
+	};
+}
+/** Updates a bot's memory from what its seat was just shown. Pure: returns a new memory. */
+function observe(memory, view, events) {
+	const m = structuredClone(memory);
+	for (const event of events) switch (event.kind) {
+		case "deal":
+			m.round = event.round;
+			m.own = [
+				null,
+				null,
+				null,
+				null
+			];
+			m.others = m.others.map(() => [
+				null,
+				null,
+				null,
+				null
+			]);
+			m.othersKept = m.othersKept.map(() => [
+				false,
+				false,
+				false,
+				false
+			]);
+			m.discardPile = [event.discardTop];
+			break;
+		case "draw":
+			if (event.from === "discard") m.discardPile.pop();
+			break;
+		case "swap": {
+			const held = heldCard(m, event.seat, events, event);
+			if (event.seat === m.seat) m.own[event.slot] = held;
+			else {
+				m.others[event.seat][event.slot] = held;
+				m.othersKept[event.seat][event.slot] = held === null;
+			}
+			m.discardPile.push(event.discarded);
+			break;
+		}
+		case "throw":
+			m.discardPile.push(event.card);
+			break;
+		case "skip":
+			if (event.discarded) m.discardPile.push(event.discarded);
+			break;
+		case "reshuffle":
+			m.discardPile = m.discardPile.slice(-1);
+			break;
+		case "out":
+			m.others[event.seat] = [
+				null,
+				null,
+				null,
+				null
+			];
+			m.othersKept[event.seat] = [
+				false,
+				false,
+				false,
+				false
+			];
+	}
+	if (view.peek) view.peek.slots.forEach((slot, i) => m.own[slot] = view.peek.cards[i]);
+	view.faceUp.forEach((hand, seat) => hand.forEach((card, slot) => {
+		if (!card) return;
+		if (seat === m.seat) m.own[slot] = card;
+		else {
+			m.others[seat][slot] = card;
+			m.othersKept[seat][slot] = false;
+		}
+	}));
+	m.lastSeenHolding = view.holding ? {
+		seat: view.holding.seat,
+		card: view.holding.card
+	} : null;
+	return m;
+}
+/**
+* The card a player put into their hand with a swap: the one they were last seen holding
+* (known if it's the bot's own, or came off the discard pile), or found in the same batch.
+*/
+function heldCard(m, seat, events, swap) {
+	const at = events.indexOf(swap);
+	for (let i = at - 1; i >= 0; i--) {
+		const e = events[i];
+		if (e.kind === "draw" && e.seat === seat) return e.card ?? null;
+		if (e.kind === "turn" || e.kind === "deal") break;
+	}
+	if (m.lastSeenHolding && m.lastSeenHolding.seat === seat) return m.lastSeenHolding.card;
+	return null;
+}
+/** Decides the bot's next action. `random` gives numbers from 0 up to 1. */
+function decide(view, memory, level, random) {
+	if (view.phase === "peek") return { type: "peek-done" };
+	if (view.phase !== "play" || view.turn !== view.seat) throw new Error("It isn't this bot's turn");
+	const up = view.faceUp[view.seat] ?? [];
+	const known = memory.own.map((c, slot) => up[slot] ?? (level === "very-easy" && c && random() < .4 ? null : c));
+	const open = SLOTS.filter((slot) => !up[slot]);
+	if (view.holding) {
+		const card = view.holding.card;
+		return level === "very-easy" ? veryEasyPlace(card, known, open, random) : bestPlace(card, known, open, pool(view, memory, level), level, random);
+	}
+	const dragging = view.turnsThisRound[view.seat] >= 10;
+	if (view.canKnock && (open.length === 0 || dragging || wantsToKnock(view, memory, known, level, random))) return { type: "knock" };
+	const top = view.discardTop;
+	if (top) {
+		if (level === "very-easy") {
+			if (cardValue(top) <= 2) return {
+				type: "draw",
+				from: "discard"
+			};
+		} else {
+			const cards = pool(view, memory, level);
+			const now = expectedScore(known, cards, random, samplesFor(level));
+			const place = bestPlace(top, known, open, cards, level, random);
+			if (place.type === "swap") {
+				const after = [...known];
+				after[place.slot] = top;
+				const gain = now - expectedScore(after, cards, random, samplesFor(level));
+				if (level === "easy" ? gain >= 3 : gain >= stackGain(known, open, cards, random) + MEDIUM_TUNING.stackBonus) return {
+					type: "draw",
+					from: "discard"
+				};
+			}
+		}
+	}
+	return {
+		type: "draw",
+		from: "stack"
+	};
+}
+/** Medium's settings, tuned with the simulation (docs/101-PLAN.md section 13): knocking only on a low hand wins most. */
+const MEDIUM_TUNING = {
+	knockCap: 5,
+	knockMargin: 0,
+	guessOffset: 1.5,
+	stackBonus: .5,
+	alwaysKnockAt: 3
+};
+const samplesFor = (level) => level === "medium" ? 32 : 10;
+function veryEasyPlace(card, known, open, random) {
+	if (open.length === 0 || cardValue(card) > 4 && rankOf(card) !== "3") return { type: "throw" };
+	const high = open.filter((s) => known[s] && cardValue(known[s]) >= 7);
+	const slots = high.length ? high : open;
+	return {
+		type: "swap",
+		slot: slots[Math.floor(random() * slots.length)]
+	};
+}
+/** Swap into the spot that lowers the expected hand most, or throw it away. */
+function bestPlace(card, known, open, cards, level, random) {
+	const fills = sampleFills(known, cards.filter((c) => c !== card), random, samplesFor(level));
+	const now = averageScore(known, fills);
+	let best = null;
+	let bestScore = now - (level === "easy" ? .5 : .25);
+	for (const slot of open) {
+		const after = [...known];
+		after[slot] = card;
+		const score = averageScore(after, fills);
+		if (score < bestScore) {
+			bestScore = score;
+			best = slot;
+		}
+	}
+	return best === null ? { type: "throw" } : {
+		type: "swap",
+		slot: best
+	};
+}
+/**
+* The cards an unknown card could be. Medium leaves out everything it knows is somewhere
+* else (the discard pile, other players' known cards). Easy only leaves out its own cards.
+*/
+function pool(view, memory, level) {
+	const elsewhere = new Set(memory.own.filter((c) => c !== null));
+	if (view.holding?.card) elsewhere.add(view.holding.card);
+	if (level === "medium") {
+		for (const c of memory.discardPile) elsewhere.add(c);
+		for (const hand of memory.others) for (const c of hand) if (c) elsewhere.add(c);
+	} else if (view.discardTop) elsewhere.add(view.discardTop);
+	return PACK.filter((c) => !elsewhere.has(c));
+}
+/** Random guesses for the unknown spots, drawn without repeats from `cards`. */
+function sampleFills(known, cards, random, samples) {
+	const unknown = known.filter((c) => c === null).length;
+	const fills = [];
+	for (let n = 0; n < samples; n++) {
+		const picked = [];
+		const left = [...cards];
+		for (let i = 0; i < unknown && left.length; i++) picked.push(left.splice(Math.floor(random() * left.length), 1)[0]);
+		fills.push(picked);
+	}
+	return fills;
+}
+function averageScore(known, fills) {
+	let sum = 0;
+	for (const fill of fills) {
+		let i = 0;
+		sum += scoreHand(known.map((c) => c ?? fill[i++] ?? "KS")).total;
+	}
+	return sum / fills.length;
+}
+function expectedScore(known, cards, random, samples) {
+	return averageScore(known, sampleFills(known, cards, random, samples));
+}
+function wantsToKnock(view, memory, known, level, random) {
+	if (level === "very-easy") return random() < .2;
+	const cards = pool(view, memory, level);
+	const mine = expectedScore(known, cards, random, samplesFor(level));
+	if (level === "easy") return mine <= 9;
+	if (mine <= MEDIUM_TUNING.alwaysKnockAt) return true;
+	const others = view.totals.map((_, seat) => seat).filter((seat) => seat !== view.seat && !view.out[seat]).map((seat) => guessHand(memory, seat, cards, random) - MEDIUM_TUNING.guessOffset);
+	const theirBest = Math.min(...others);
+	return mine <= MEDIUM_TUNING.knockCap && mine < theirBest - MEDIUM_TUNING.knockMargin;
+}
+/** Medium's guess at another player's hand: known cards, low guesses for kept stack cards. */
+function guessHand(memory, seat, cards, random) {
+	const low = cards.filter((c) => cardValue(c) <= 5);
+	let sum = 0;
+	const samples = 16;
+	for (let n = 0; n < samples; n++) {
+		const used = new Set();
+		const pick = (from) => {
+			for (let tries = 0; tries < 20; tries++) {
+				const c = from[Math.floor(random() * from.length)];
+				if (!used.has(c)) {
+					used.add(c);
+					return c;
+				}
+			}
+			return "KS";
+		};
+		const hand = SLOTS.map((slot) => memory.others[seat][slot] ?? pick(memory.othersKept[seat][slot] && low.length ? low : cards));
+		sum += scoreHand(hand).total;
+	}
+	return sum / samples;
+}
+/** Medium: how much a card off the stack would lower its hand, on average. */
+function stackGain(known, open, cards, random) {
+	const fills = sampleFills(known, cards, random, 16);
+	const now = averageScore(known, fills);
+	let gain = 0;
+	const draws = 10;
+	for (let n = 0; n < draws; n++) {
+		const card = cards[Math.floor(random() * cards.length)];
+		let best = now;
+		for (const slot of open) {
+			const after = [...known];
+			after[slot] = card;
+			best = Math.min(best, averageScore(after, fills));
+		}
+		gain += now - best;
+	}
+	return gain / draws;
+}
+//#endregion
+//#region shared/card101/view.ts
+/**
+* What one player is allowed to know. This is the ONLY way card information leaves the
+* server in a classmates game: every function reply, every live update and every bot
+* goes through `viewFor` and `eventsFor`.
+*
+* A player may see: the top of the discard pile; a card they've just drawn, while they
+* hold it; a card anyone took from the discard pile (everyone saw it face up); every
+* card swapped into a hand (those go in face up); their bottom two cards during the
+* peek, and never again; and everyone's cards once a round is over. Nothing else: never
+* the stack, never anyone's face-down cards, not even their own. `view.test.ts` plays thousands of games and checks every view for leaks.
+*/
+function viewFor(game, seat) {
+	const holding = game.holding ? {
+		seat: game.turn,
+		from: game.holding.from,
+		card: game.turn === seat || game.holding.from === "discard" ? game.holding.card : null
+	} : null;
+	const peekOn = game.phase === "peek" && !game.out[seat] && !game.peeked[seat];
+	const roundShown = game.phase === "round-over" || game.phase === "over";
+	const last = game.results[game.results.length - 1];
+	return {
+		seat,
+		players: game.players,
+		settings: { ...game.settings },
+		round: game.round,
+		phase: game.phase,
+		turn: game.turn,
+		starter: game.starter,
+		totals: [...game.totals],
+		out: [...game.out],
+		cardsOnTable: game.hands.map((hand) => hand.length),
+		faceUp: game.hands.map((hand, s) => hand.map((card, slot) => game.faceUp[s][slot] ? card : null)),
+		stackCount: game.stack.length,
+		discardTop: game.discard.length ? game.discard[game.discard.length - 1] : null,
+		holding,
+		peek: peekOn ? {
+			slots: PEEK_SLOTS,
+			cards: PEEK_SLOTS.map((slot) => game.hands[seat][slot])
+		} : null,
+		peeked: [...game.peeked],
+		turnsThisRound: [...game.turnsThisRound],
+		knocker: game.knocker,
+		owesLastTurn: [...game.owesLastTurn],
+		canKnock: canKnock(game, seat),
+		skips: [...game.skips],
+		lastRound: roundShown && last && last.round === game.round ? structuredClone(last) : null,
+		history: game.results.map((r) => ({
+			round: r.round,
+			hands: r.scores.map((s) => s ? s.total : null),
+			winners: [...r.winners],
+			knocker: r.knocker,
+			totals: [...r.totals]
+		})),
+		winners: game.winners ? [...game.winners] : null
+	};
+}
+/**
+* The events one player may see. A card drawn from the stack is shown only to the
+* player who drew it, and only while they're still holding it (`game` is the game
+* after the events), so once it's swapped in it's gone from their screen too.
+*/
+function eventsFor(events, seat, game) {
+	return events.map((event) => {
+		if (event.kind === "round-end") return (game.phase === "round-over" || game.phase === "over") && game.round === event.result.round ? structuredClone(event) : {
+			kind: "round-end",
+			result: {
+				...structuredClone(event.result),
+				hands: []
+			}
+		};
+		if (event.kind !== "draw" || event.from !== "stack") return structuredClone(event);
+		const stillHolding = game.phase === "play" && game.turn === seat && game.holding?.card === event.card;
+		if (event.seat === seat && stillHolding) return { ...event };
+		return {
+			kind: "draw",
+			seat: event.seat,
+			from: "stack"
+		};
+	});
+}
+function parseStudentAction(text) {
+	switch (text) {
+		case "peek": return {
+			actor: 0,
+			action: { type: "peek-done" }
+		};
+		case "draw:stack": return {
+			actor: 0,
+			action: {
+				type: "draw",
+				from: "stack"
+			}
+		};
+		case "draw:discard": return {
+			actor: 0,
+			action: {
+				type: "draw",
+				from: "discard"
+			}
+		};
+		case "throw": return {
+			actor: 0,
+			action: { type: "throw" }
+		};
+		case "knock": return {
+			actor: 0,
+			action: { type: "knock" }
+		};
+		case "leave": return {
+			actor: 0,
+			action: { type: "leave" }
+		};
+		case "next": return {
+			actor: "system",
+			action: { type: "next-round" }
+		};
+		default: {
+			if (typeof text !== "string" || !text.startsWith("swap:")) return null;
+			const slot = Number(text.slice(5));
+			return isSlot(slot) && text === `swap:${slot}` ? {
+				actor: 0,
+				action: {
+					type: "swap",
+					slot
+				}
+			} : null;
+		}
+	}
+}
+function startSolo(setup) {
+	if (!Number.isInteger(setup.bots) || setup.bots < 1 || setup.bots > 3) throw new RuleError("1 to 3 bots");
+	const dice = seededDice(`${setup.seed}:deck`);
+	const { game, events } = newGame(setup.bots + 1, setup.settings, dice);
+	const solo = {
+		setup,
+		game,
+		dice,
+		memories: Array.from({ length: game.players }, (_, seat) => seat === 0 ? null : newMemory(seat, game.players)),
+		decisions: 0
+	};
+	tellBots(solo, events);
+	return {
+		solo,
+		events: eventsFor(events, 0, game)
+	};
+}
+/** Plays one action and shows every bot what its seat saw. Returns the student's events. */
+function applySolo(solo, actor, action) {
+	const { game, events } = play(solo.game, actor, action, solo.dice);
+	solo.game = game;
+	tellBots(solo, events);
+	return eventsFor(events, 0, game);
+}
+function tellBots(solo, events) {
+	solo.memories = solo.memories.map((memory, seat) => memory ? observe(memory, viewFor(solo.game, seat), eventsFor(events, seat, solo.game)) : null);
+}
+/** The next thing a bot wants to do, or null when it's the student's move (or between rounds). */
+function nextBotMove(solo) {
+	const g = solo.game;
+	if (g.phase === "peek") {
+		const seat = solo.memories.findIndex((m, s) => m && !g.out[s] && !g.peeked[s]);
+		return seat >= 0 ? {
+			seat,
+			action: { type: "peek-done" }
+		} : null;
+	}
+	if (g.phase !== "play" || g.turn === 0) return null;
+	const random = randomFromSeed(`${solo.setup.seed}:bot:${solo.decisions}`);
+	const action = decide(viewFor(g, g.turn), solo.memories[g.turn], solo.setup.level, random);
+	return {
+		seat: g.turn,
+		action
+	};
+}
+/**
+* Plays the next bot move, if a bot is to move. Returns what happened (the student's
+* events), or null when it's the student's move. The screen calls this one move at a
+* time, with a pause between, so it plays exactly what `playBots` would.
+*/
+function playOneBot(solo) {
+	const move = nextBotMove(solo);
+	if (!move) return null;
+	if (move.action.type !== "peek-done") solo.decisions += 1;
+	return {
+		...move,
+		events: applySolo(solo, move.seat, move.action)
+	};
+}
+/** Plays bot moves until the student has to act. `onEvents` gets the student's events after each one. */
+function playBots(solo, onEvents) {
+	for (let guard = 0;; guard++) {
+		if (guard > 5e3) throw new Error("Bots never finished their turns");
+		const move = playOneBot(solo);
+		if (!move) return;
+		onEvents?.(move.events, move.seat);
+	}
+}
+/** Replays a saved bot game from its seed and the student's actions (for the server). */
+function replaySolo(setup, actions) {
+	if (!Array.isArray(actions) || actions.length > 3e3) return {
+		ok: false,
+		reason: "Too many moves"
+	};
+	let solo;
+	try {
+		solo = startSolo(setup).solo;
+		playBots(solo);
+	} catch (error) {
+		return {
+			ok: false,
+			reason: error instanceof RuleError ? error.message : "Bad game"
+		};
+	}
+	let studentTurns = 0;
+	let left = false;
+	for (const text of actions) {
+		const parsed = parseStudentAction(text);
+		if (!parsed) return {
+			ok: false,
+			reason: "Unknown move"
+		};
+		try {
+			applySolo(solo, parsed.actor, parsed.action);
+			if ([
+				"swap",
+				"throw",
+				"knock"
+			].includes(parsed.action.type)) studentTurns += 1;
+			if (parsed.action.type === "leave") left = true;
+			playBots(solo);
+		} catch (error) {
+			return {
+				ok: false,
+				reason: error instanceof RuleError ? error.message : "Bad game"
+			};
+		}
+	}
+	const g = solo.game;
+	const rounds = g.results.length;
+	return {
+		ok: true,
+		game: g,
+		studentTurns,
+		rounds,
+		finished: g.phase === "over",
+		left
+	};
+}
+/** What the server signs: the seed and who it was given to, so a seed can't be shared or used for another game. */
+function stampText(player, seed) {
+	return `101-seed:v1:${player}:${seed}`;
+}
+/** Checks the shape of a report that came from outside (e.g. the browser). */
+function parseCard101Report(input) {
+	if (typeof input !== "object" || input === null) return null;
+	const r = input;
+	if (r.game !== "101") return null;
+	if (typeof r.seed !== "string" || r.seed.length > 64) return null;
+	if (typeof r.stamp !== "string" || !/^[A-Za-z0-9_-]{20,100}$/.test(r.stamp)) return null;
+	if (r.bots !== 1 && r.bots !== 2 && r.bots !== 3) return null;
+	if (!isBotLevelId(r.level) || !isClaimedEnding(r.ending) || r.ending === "resigned") return null;
+	const settings = r.settings;
+	if (typeof settings !== "object" || settings === null || Object.keys(settings).length !== 1) return null;
+	if (!TARGETS.includes(settings.target)) return null;
+	if (!Array.isArray(r.actions) || r.actions.length > 1e3) return null;
+	if (!r.actions.every((a) => typeof a === "string" && a.length <= 20)) return null;
+	return {
+		game: "101",
+		seed: r.seed,
+		stamp: r.stamp,
+		bots: r.bots,
+		level: r.level,
+		settings: { target: settings.target },
+		actions: r.actions,
+		ending: r.ending
+	};
+}
+/** Replays the game from its seed and works out the result. The stamp is checked separately. */
+function judgeCard101Game(report) {
+	const setup = {
+		seed: report.seed,
+		bots: report.bots,
+		level: report.level,
+		settings: report.settings
+	};
+	let replayed;
+	try {
+		replayed = replaySolo(setup, report.actions);
+	} catch {
+		return {
+			ok: false,
+			problem: "replay failed"
+		};
+	}
+	if (!replayed.ok) return {
+		ok: false,
+		problem: replayed.reason
+	};
+	const { game, studentTurns, rounds, left } = replayed;
+	const finished = replayed.finished && !left;
+	if (!finished && report.ending === "finished") return {
+		ok: false,
+		problem: "game not over"
+	};
+	const stats = {
+		zeroHands: 0,
+		triples: 0,
+		knockWins: 0,
+		savedByThree: 0
+	};
+	for (const result of game.results) {
+		const score = result.scores[0];
+		if (!score) continue;
+		if (score.total === 0) stats.zeroHands += 1;
+		if (score.steps.some((s) => s.kind === "triple")) stats.triples += 1;
+		if (result.knocker === 0 && result.winners.includes(0)) stats.knockWins += 1;
+		stats.savedByThree += score.steps.filter((s) => s.kind === "three-cancels" && s.value === 10).length;
+	}
+	const total = game.totals[0];
+	const won = finished && (game.winners ?? []).includes(0);
+	const place = finished ? 1 + game.totals.filter((t, seat) => !game.out[seat] && t < total).length : null;
+	return {
+		ok: true,
+		game: {
+			outcome: won ? "won" : "lost",
+			reason: finished ? "finished" : "abandoned",
+			place,
+			players: game.players,
+			rounds,
+			total,
+			studentTurns,
+			countsForPoints: finished && rounds >= 2,
+			stats
+		}
+	};
+}
+//#endregion
+//#region shared/chess/rules.ts
+/**
+* Chess rules, shared by the website and the server.
+*
+* chess.js does the real work (legal moves, check, castling, en passant, promotion and
+* every draw rule). This file only adds the few things both sides need: replaying a
+* game from its list of moves, and saying how a finished game ended.
+*
+* Moves are stored in "UCI" form: from-square + to-square, plus the promotion piece
+* if there is one. For example "e2e4", "e1g1" (castling), "e7e8q" (promote to a queen).
+*/
+const UCI = /^[a-h][1-8][a-h][1-8][qrbn]?$/;
+function isUciMove(text) {
+	return typeof text === "string" && UCI.test(text);
+}
+/** Plays one UCI move. Returns the move, or null if it isn't legal here. Never throws. */
+function playUci(chess, uci) {
+	if (!isUciMove(uci)) return null;
+	try {
+		return chess.move({
+			from: uci.slice(0, 2),
+			to: uci.slice(2, 4),
+			promotion: uci[4]
+		});
+	} catch {
+		return null;
+	}
+}
+/**
+* Has the game ended by the rules? Draws end the game automatically: threefold
+* repetition, 50 moves each with no capture or pawn move, and too few pieces to mate.
+*/
+function boardResult$1(chess) {
+	if (chess.isCheckmate()) return {
+		ending: "checkmate",
+		winner: chess.turn() === "w" ? "black" : "white"
+	};
+	if (chess.isStalemate()) return {
+		ending: "stalemate",
+		winner: null
+	};
+	if (chess.isInsufficientMaterial()) return {
+		ending: "not-enough-pieces",
+		winner: null
+	};
+	if (chess.isThreefoldRepetition()) return {
+		ending: "threefold-repetition",
+		winner: null
+	};
+	if (chess.isDrawByFiftyMoves()) return {
+		ending: "fifty-moves",
+		winner: null
+	};
+	return null;
+}
+/**
+* Replays a whole game from the starting position. Fails if any move is illegal, or if
+* a move comes after the game has already ended.
+*/
+function replay$1(moves) {
+	const chess = new Chess();
+	for (let i = 0; i < moves.length; i++) if (boardResult$1(chess) || !playUci(chess, moves[i])) return {
+		ok: false,
+		badMoveIndex: i
+	};
+	return {
+		ok: true,
+		chess,
+		result: boardResult$1(chess)
+	};
+}
+//#endregion
+//#region shared/chess/botGame.ts
+/**
+* Deciding the result of a game against a bot. The website uses this to show the result
+* straight away, and the server runs the very same code before saving, so a student
+* can't send in a pretend win.
+*/
+/** Checks the shape of a report that came from outside (e.g. the browser). */
+function parseReport(input) {
+	if (typeof input !== "object" || input === null) return null;
+	const r = input;
+	if (!isBotLevelId(r.level)) return null;
+	if (r.studentColour !== "white" && r.studentColour !== "black") return null;
+	if (!isClaimedEnding(r.ending) || !isMoveList(r.moves)) return null;
+	return {
+		level: r.level,
+		studentColour: r.studentColour,
+		moves: r.moves,
+		ending: r.ending
+	};
+}
+function studentMoveCount$1(moves, studentColour) {
+	return studentColour === "white" ? Math.ceil(moves.length / 2) : Math.floor(moves.length / 2);
+}
+function judgeBotGame(report) {
+	if (report.moves.length > 1e3) return {
+		ok: false,
+		problem: "too many moves"
+	};
+	const replayed = replay$1(report.moves);
+	if (!replayed.ok) return {
+		ok: false,
+		problem: `illegal move at ${replayed.badMoveIndex + 1}`
+	};
+	const studentMoves = studentMoveCount$1(report.moves, report.studentColour);
+	const longEnough = studentMoves >= 10;
+	if (replayed.result) {
+		const { ending, winner } = replayed.result;
+		return {
+			ok: true,
+			game: {
+				outcome: winner === null ? "drawn" : winner === report.studentColour ? "won" : "lost",
+				reason: ending,
+				studentMoves,
+				countsForPoints: longEnough
+			}
+		};
+	}
+	if (report.ending === "finished") return {
+		ok: false,
+		problem: "the game is not over"
+	};
+	return {
+		ok: true,
+		game: {
+			outcome: "lost",
+			reason: report.ending,
+			studentMoves,
+			countsForPoints: report.ending === "resigned" && longEnough
+		}
+	};
+}
+function otherColour(colour) {
+	return colour === "red" ? "white" : "red";
+}
+/** Which row (0 = top, Red's back row) and column (0 = left) a square is on. */
+function rowCol(square) {
+	const row = Math.floor((square - 1) / 4);
+	const index = (square - 1) % 4;
+	return {
+		row,
+		col: row % 2 === 0 ? index * 2 + 1 : index * 2
+	};
+}
+/** The square number at a row and column, or null for a light square or off the board. */
+function squareAt(row, col) {
+	if (row < 0 || row > 7 || col < 0 || col > 7 || (row + col) % 2 === 0) return null;
+	return row * 4 + Math.floor(col / 2) + 1;
+}
+/** The far row, where a man is crowned. */
+function crownRow(colour) {
+	return colour === "red" ? 7 : 0;
+}
+/** Red men move down the board (towards row 7), White men move up. */
+function directions(piece) {
+	const forward = piece.colour === "red" ? 1 : -1;
+	const steps = [[forward, -1], [forward, 1]];
+	if (piece.king) steps.push([-forward, -1], [-forward, 1]);
+	return steps;
+}
+function startPosition() {
+	const board = [];
+	for (let square = 1; square <= 32; square++) if (square <= 12) board.push({
+		colour: "red",
+		king: false
+	});
+	else if (square >= 21) board.push({
+		colour: "white",
+		king: false
+	});
+	else board.push(null);
+	return {
+		board,
+		turn: "red",
+		quietPlies: 0
+	};
+}
+function pieceAt(position, square) {
+	return position.board[square - 1] ?? null;
+}
+function makeMove(path, captures, crowns) {
+	return {
+		path,
+		captures,
+		crowns,
+		notation: path.join(captures.length > 0 ? "x" : "-")
+	};
+}
+/** Every complete jump the piece on `from` can make. Each one carries on as far as it can. */
+function jumpsFrom(position, from) {
+	const piece = pieceAt(position, from);
+	const board = [...position.board];
+	board[from - 1] = null;
+	const found = [];
+	function explore(at, path, captured) {
+		const { row, col } = rowCol(at);
+		let canJump = false;
+		for (const [dr, dc] of directions(piece)) {
+			const over = squareAt(row + dr, col + dc);
+			const land = squareAt(row + 2 * dr, col + 2 * dc);
+			if (over === null || land === null) continue;
+			const victim = board[over - 1];
+			if (!victim || victim.colour === piece.colour || captured.includes(over) || board[land - 1]) continue;
+			canJump = true;
+			const nextPath = [...path, land];
+			const nextCaptured = [...captured, over];
+			if (!piece.king && rowCol(land).row === crownRow(piece.colour)) found.push(makeMove(nextPath, nextCaptured, true));
+			else explore(land, nextPath, nextCaptured);
+		}
+		if (!canJump && captured.length > 0) found.push(makeMove(path, captured, false));
+	}
+	explore(from, [from], []);
+	return found;
+}
+function stepsFrom(position, from) {
+	const piece = pieceAt(position, from);
+	const { row, col } = rowCol(from);
+	const moves = [];
+	for (const [dr, dc] of directions(piece)) {
+		const to = squareAt(row + dr, col + dc);
+		if (to === null || pieceAt(position, to)) continue;
+		moves.push(makeMove([from, to], [], !piece.king && rowCol(to).row === crownRow(piece.colour)));
+	}
+	return moves;
+}
+function ownSquares(position) {
+	const squares = [];
+	for (let square = 1; square <= 32; square++) if (pieceAt(position, square)?.colour === position.turn) squares.push(square);
+	return squares;
+}
+/**
+* Every legal move for the side to move. If any jump is possible, only jumps are legal
+* (captures are compulsory), but the player may pick whichever jump they like.
+*/
+function legalMoves(position) {
+	const mine = ownSquares(position);
+	const jumps = mine.flatMap((square) => jumpsFrom(position, square));
+	if (jumps.length > 0) return jumps;
+	return mine.flatMap((square) => stepsFrom(position, square));
+}
+/** Makes a move (assumed legal: get it from legalMoves). Returns the new position. */
+function applyMove(position, move) {
+	const board = [...position.board];
+	const from = move.path[0];
+	const to = move.path[move.path.length - 1];
+	const piece = board[from - 1];
+	board[from - 1] = null;
+	for (const square of move.captures) board[square - 1] = null;
+	board[to - 1] = {
+		colour: piece.colour,
+		king: piece.king || move.crowns
+	};
+	const quiet = move.captures.length === 0 && !move.crowns;
+	return {
+		board,
+		turn: otherColour(position.turn),
+		quietPlies: quiet ? position.quietPlies + 1 : 0
+	};
+}
+/** Finds a legal move from its notation, e.g. "11-15" or "15x24x31". Null if it isn't legal here. */
+function findMove(position, notation) {
+	return legalMoves(position).find((move) => move.notation === notation) ?? null;
+}
+/** Has the game ended by the rules? */
+function boardResult(position) {
+	const winner = otherColour(position.turn);
+	if (ownSquares(position).length === 0) return {
+		ending: "no-pieces",
+		winner
+	};
+	if (legalMoves(position).length === 0) return {
+		ending: "no-moves",
+		winner
+	};
+	if (position.quietPlies >= 80) return {
+		ending: "forty-moves",
+		winner: null
+	};
+	return null;
+}
+/**
+* Replays a whole game from the starting position. Fails if any move is illegal, or if
+* a move comes after the game has already ended.
+*/
+function replay(moves) {
+	let position = startPosition();
+	const played = [];
+	for (let i = 0; i < moves.length; i++) {
+		const move = boardResult(position) ? null : findMove(position, moves[i]);
+		if (!move) return {
+			ok: false,
+			badMoveIndex: i
+		};
+		position = applyMove(position, move);
+		played.push(move);
+	}
+	return {
+		ok: true,
+		position,
+		played,
+		result: boardResult(position)
+	};
+}
+//#endregion
+//#region shared/checkers/botGame.ts
+/**
+* Deciding the result of a checkers game against a bot. The website uses this to show the
+* result straight away, and the save-bot-game server function runs the very same code
+* before saving, so a student can't send in a pretend win.
+*/
+/** Checks the shape of a report that came from outside (e.g. the browser). */
+function parseCheckersReport(input) {
+	if (typeof input !== "object" || input === null) return null;
+	const r = input;
+	if (!isBotLevelId(r.level)) return null;
+	if (r.studentColour !== "red" && r.studentColour !== "white") return null;
+	if (!isClaimedEnding(r.ending) || !isMoveList(r.moves)) return null;
+	return {
+		level: r.level,
+		studentColour: r.studentColour,
+		moves: r.moves,
+		ending: r.ending
+	};
+}
+function studentMoveCount(moves, studentColour) {
+	return studentColour === "red" ? Math.ceil(moves.length / 2) : Math.floor(moves.length / 2);
+}
+function judgeCheckersGame(report) {
+	if (report.moves.length > 1e3) return {
+		ok: false,
+		problem: "too many moves"
+	};
+	const replayed = replay(report.moves);
+	if (!replayed.ok) return {
+		ok: false,
+		problem: `illegal move at ${replayed.badMoveIndex + 1}`
+	};
+	const studentMoves = studentMoveCount(report.moves, report.studentColour);
+	const longEnough = studentMoves >= 10;
+	if (replayed.result) {
+		const { ending, winner } = replayed.result;
+		return {
+			ok: true,
+			game: {
+				outcome: winner === null ? "drawn" : winner === report.studentColour ? "won" : "lost",
+				reason: ending,
+				studentMoves,
+				countsForPoints: longEnough
+			}
+		};
+	}
+	if (report.ending === "finished") return {
+		ok: false,
+		problem: "the game is not over"
+	};
+	return {
+		ok: true,
+		game: {
+			outcome: "lost",
+			reason: report.ending,
+			studentMoves,
+			countsForPoints: report.ending === "resigned" && longEnough
 		}
 	};
 }
@@ -2910,9 +3990,9 @@ async function readJsonBody(request) {
 //#region supabase/functions/save-bot-game/handler.ts
 /**
 * The save-bot-game server function: the browser sends the moves of a finished chess,
-* checkers or Wormholes & Black Holes game against bots, and this decides the result and
-* saves it. For Wormholes & Black Holes it also hands out the stamped dice seed a game is
-* played from (shared/space/save.ts explains how that works).
+* checkers, Wormholes & Black Holes or 101 game against bots, and this decides the result
+* and saves it. For Wormholes & Black Holes and 101 it also hands out the stamped seed a
+* game is played from (shared/space/save.ts explains how that works).
 *
 * It never trusts the browser's word for the result. It replays every move with the same
 * rules code the website uses (chess.js for chess, shared/checkers for checkers), works
@@ -2939,9 +4019,9 @@ async function handleSaveBotGame(request, services) {
 	if (!player) return reply(401, { error: "Please sign in again." });
 	const body = await readJsonBody(request);
 	const asked = body;
-	if (asked?.game === "space" && asked.start === true) {
+	if ((asked?.game === "space" || asked?.game === "101") && asked.start === true) {
 		const seed = makeSeed(now(services), (services.randomHex ?? randomHex)(12));
-		const stamp = await services.stamp(stampText(player, seed));
+		const stamp = await services.stamp((asked.game === "space" ? stampText$1 : stampText)(player, seed));
 		if (!stamp) return reply(500, { error: "The game couldn't start." });
 		return reply(200, {
 			seed,
@@ -2949,6 +4029,7 @@ async function handleSaveBotGame(request, services) {
 		});
 	}
 	if (asked?.game === "space") return saveSpaceGame(player, body, services, reply);
+	if (asked?.game === "101") return save101Game(player, body, services, reply);
 	const checked = check(body);
 	if (!checked) return reply(400, { error: "That game couldn't be read." });
 	const { game: gameName, report, judged } = checked;
@@ -2980,7 +4061,7 @@ const TOO_MANY = "That's a lot of games today! Have a break and come back tomorr
 async function saveSpaceGame(player, body, services, reply) {
 	const report = parseSpaceReport(body);
 	if (!report) return reply(400, { error: "That game couldn't be read." });
-	const expected = await services.stamp(stampText(player, report.seed));
+	const expected = await services.stamp(stampText$1(player, report.seed));
 	const problem = seedProblem(report.seed, now(services)) ?? (expected && sameText(expected, report.stamp) ? null : "bad stamp");
 	const judged = problem ? {
 		ok: false,
@@ -3007,6 +4088,49 @@ async function saveSpaceGame(player, body, services, reply) {
 			bots: report.bots,
 			place: game.place,
 			rockets: game.rockets,
+			stats: game.stats
+		}
+	});
+	if (saved === "too-many") return reply(429, { error: TOO_MANY });
+	if (saved !== "saved") return reply(500, { error: "The game couldn't be saved." });
+	return reply(200, {
+		result: game.outcome,
+		reason: game.reason,
+		place: game.place,
+		countsForPoints: game.countsForPoints
+	});
+}
+async function save101Game(player, body, services, reply) {
+	const report = parseCard101Report(body);
+	if (!report) return reply(400, { error: "That game couldn't be read." });
+	const expected = await services.stamp(stampText(player, report.seed));
+	const problem = seedProblem(report.seed, now(services)) ?? (expected && sameText(expected, report.stamp) ? null : "bad stamp");
+	const judged = problem ? {
+		ok: false,
+		problem
+	} : judgeCard101Game(report);
+	if (!judged.ok) {
+		console.warn(`save-bot-game: refused a 101 game (${judged.problem})`);
+		return reply(400, { error: "That game couldn't be checked." });
+	}
+	const { game } = judged;
+	const saved = await services.record101({
+		player,
+		bot_level: report.level,
+		player_side: "first",
+		moves: report.actions,
+		result: game.outcome,
+		reason: game.reason,
+		player_moves: game.studentTurns,
+		counts_for_points: game.countsForPoints,
+		card101: {
+			seed: report.seed,
+			settings: report.settings,
+			bots: report.bots,
+			place: game.place,
+			players: game.players,
+			rounds: game.rounds,
+			total: game.total,
 			stats: game.stats
 		}
 	});
@@ -3085,6 +4209,13 @@ Deno.serve((request) => handleSaveBotGame(request, {
 		if (!error) return "saved";
 		if (error.code === "54000") return "too-many";
 		console.error(`save-bot-game: database refused a space game (${error.code})`);
+		return "refused";
+	},
+	async record101(row) {
+		const { error } = await admin.rpc("record_101_bot_game", row);
+		if (!error) return "saved";
+		if (error.code === "54000") return "too-many";
+		console.error(`save-bot-game: database refused a 101 game (${error.code})`);
 		return "refused";
 	},
 	stamp: stamper(key, "space-seed")
