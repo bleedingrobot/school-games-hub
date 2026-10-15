@@ -1,0 +1,95 @@
+/**
+ * Every word a student sees in Gem Keep, in one place (NZ English). Te reo Māori could be
+ * added later by swapping this file.
+ */
+import type { Colour } from '../../../shared/gem-keep/gems';
+import type { Refusal, Targeting } from '../../../shared/gem-keep/engine';
+import type { EnemyKind } from '../../../shared/gem-keep/config';
+
+export const TEXT = {
+  name: 'Gem Keep',
+  tagline: 'Forge gems, defend the Keep!',
+  loading: 'Building the Keep…',
+  keep: 'Keep',
+  mana: 'Mana',
+  wave: (n: number, of: number) => `Wave ${n} of ${of}`,
+  nextWave: (n: number) => `Start wave ${n}`,
+  bossWave: (n: number) => `Start wave ${n} (boss!)`,
+  waveRunning: 'Wave coming…',
+  pause: 'Pause',
+  resume: 'Keep going',
+  speed: (n: number) => `${n}× speed`,
+  paused: 'Paused',
+  pausedHint: 'You can still build and forge gems while the game is paused.',
+  forge: 'Forge a gem',
+  bag: 'Your gems',
+  bagEmpty: 'Empty',
+  emptySlot: (n: number) => `Gem slot ${n}, empty`,
+  gemName: (grade: number, colours: Colour[]) =>
+    `Grade ${grade} ${colours.map((c) => COLOUR_NAMES[c].toLowerCase()).join(' and ')} gem`,
+  cost: (mana: number) => `${mana} mana`,
+  build: (cost: number) => `Build a tower (${cost} mana)`,
+  buildHint: 'Towers go on grass. Then put a gem in it.',
+  cantBuild: "You can't build here. Pick a grass tile.",
+  tower: (level: number) => `Tower, level ${level}`,
+  towerEmpty: 'This tower has no gem yet. Tap a gem in your bag, or forge a new one.',
+  upgrade: (cost: number) => `Upgrade tower (${cost} mana)`,
+  maxLevel: 'Top level!',
+  takeOut: 'Take the gem out',
+  combine: 'Combine…',
+  combineCost: (cost: number) => `Combine costs ${cost} mana`,
+  combineHint: 'Tap another gem of the same grade (in your bag or a tower) to combine them.',
+  cancel: 'Cancel',
+  placeHint: 'Tap a tower to put this gem in it.',
+  pickGemHint: 'Tap a gem in your bag to put it in this tower.',
+  targeting: 'Aim at',
+  targetingNames: { first: 'First in line', strongest: 'Strongest' } satisfies Record<Targeting, string>,
+  stats: (damage: number, rate: number, range: number) =>
+    `Damage ${Math.round(damage)} · ${rate.toFixed(1)} shots a second · range ${range.toFixed(1)}`,
+  wonTitle: 'You held the Keep!',
+  wonBody: (keep: number) => `The Keep finished with ${keep}% health.`,
+  stars: (n: number) => `${n} out of 3 stars`,
+  lostTitle: 'The Keep fell',
+  lostBody: 'Every level can be won. Try a new plan: more towers, or bigger gems!',
+  playAgain: 'Play again',
+  tryAgain: 'Try again',
+  rotate: 'Turn your device sideways to play Gem Keep.',
+  boardLabel:
+    'The map. Use the arrow keys to move around it and Enter to pick a tile. Enemies walk the path to the Keep.',
+  tileLabel: (x: number, y: number, what: string) => `Column ${x + 1}, row ${y + 1}: ${what}`,
+  prototype: 'Prototype: no maths yet, and nothing is saved.',
+} as const;
+
+export const COLOUR_NAMES: Record<Colour, string> = { red: 'Red', blue: 'Blue', green: 'Green', yellow: 'Yellow' };
+
+/** What each colour does, and its shape (so it can be told apart without colour). */
+export const COLOUR_INFO: Record<Colour, { power: string; shape: string }> = {
+  red: { power: 'Hits a group', shape: 'triangle' },
+  blue: { power: 'Slows enemies', shape: 'circle' },
+  green: { power: 'Poisons', shape: 'hexagon' },
+  yellow: { power: 'Big hits', shape: 'star' },
+};
+
+export const ENEMY_NAMES: Record<EnemyKind, string> = {
+  walker: 'Walker',
+  runner: 'Runner',
+  brute: 'Brute',
+  swarm: 'Swarm',
+  boss: 'Boss',
+};
+
+export const REFUSALS: Record<Refusal, string> = {
+  'game-over': 'This game is over.',
+  'not-buildable': "You can't build there. Pick a grass tile.",
+  'tower-there': "There's already a tower there.",
+  'no-tower': "There's no tower there.",
+  'max-level': 'That tower is already at the top level.',
+  'no-mana': 'Not enough mana yet. Defeat more enemies!',
+  'no-gem': 'There is no gem there.',
+  'inventory-full': 'Your gem bag is full. Put a gem in a tower or combine two.',
+  'same-gem': 'Pick a different gem to combine with.',
+  'different-grades': 'Only gems of the same grade can combine.',
+  'max-grade': 'Grade 5 is the biggest a gem can get!',
+  'wave-running': 'A wave is already coming.',
+  'no-more-waves': 'That was the last wave.',
+};

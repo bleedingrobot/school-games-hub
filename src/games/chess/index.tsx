@@ -20,7 +20,7 @@ export const chess: GameDefinition = {
   id: 'chess',
   name: 'Chess',
   tagline: 'Outsmart the king!',
-  colours: ['#5b3cc4', '#2f55c8'],
+  colours: ['#0e7490', '#1d4ed8'],
   Icon: ChessIcon,
   Play: ChessPlay,
   Live: ChessFriendGame,

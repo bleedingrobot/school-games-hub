@@ -29,7 +29,7 @@
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: #efeaff;
+  background: var(--tint);
   font-size: 0.9rem;
 }
 .c101-values dt {
@@ -468,7 +468,7 @@ button.c101-slot:disabled {
   gap: 6px 12px;
   padding: 8px 10px;
   border-radius: 14px;
-  background: #f6f4ff;
+  background: var(--tint);
   animation: c101-slide 0.3s ease-out both;
 }
 .c101-score-row.is-winner {
@@ -620,7 +620,7 @@ button.c101-slot:disabled {
   grid-column: 2 / -1;
   height: 8px;
   border-radius: 999px;
-  background: #ece8fb;
+  background: var(--tint-hover);
   overflow: hidden;
 }
 .c101-bar > span {
@@ -655,7 +655,7 @@ button.c101-slot:disabled {
 .c101-action {
   min-height: 40px;
   padding: 6px 14px;
-  border: 2px solid #d9d3f5;
+  border: 2px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
   color: var(--ink);
@@ -691,7 +691,7 @@ button.c101-slot:disabled {
   gap: 8px;
   padding: 4px 10px;
   border-radius: 12px;
-  background: #f6f4ff;
+  background: var(--tint);
   color: var(--ink);
   font-weight: 800;
 }
