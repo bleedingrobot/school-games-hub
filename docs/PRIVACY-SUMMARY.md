@@ -7,7 +7,7 @@ School Games Hub (https://bleedingrobot.github.io/school-games-hub/) is a chess 
 **What is stored, and why**
 
 - **Our database:** a random ID; a player name from word lists (e.g. "Speedy Otter 27"); avatar choices; student or teacher; hidden or not; when the account was made. For each game: the players' random IDs, the moves, the result and the time. Points, badges and achievements. *Why:* profiles without real names, checking nobody cheats, and the points. No real names, emails, classes, photos or free text.
-- **Supabase's sign-in records:** school email, name from Google, a link to the Google profile photo, the Google account number, last sign-in time, and each signed-in device's internet (IP) address and browser type. *Why:* Supabase needs these to run Google sign-in. The site never shows them.
+- **Supabase's sign-in records:** school email, name from Google, a link to the Google profile photo, the Google account number, last sign-in time, and each signed-in device's internet (IP) address and browser type. *Why:* Supabase needs these to run Google sign-in. The site shows only the part of the email before the @ (the student's real name), and only on the teacher page.
 - **Supabase's logs:** each request's IP address, rough location (city) and browser, deleted after 1 day.
 - **The student's browser:** their sign-in session and whether sound is on. Signing out clears the session.
 
@@ -18,7 +18,7 @@ The database and server code are in **Sydney, Australia**, run by Supabase (a US
 **Who can see what**
 
 - **Students:** their own games and points, and other students' player names, avatars and badges (boards, lobby, opponents). Never emails or real names. Database rules stop them reading other students' games or changing anything except their own name and avatar. This was tested.
-- **Teachers:** every player's name, avatar, games, points and last 10 results. They can give a new random name, hide, delete, give teacher access, pause games against friends and start a new season. No emails or real names.
+- **Teachers:** every player's name, avatar, games, points and last 10 results. They can give a new random name, hide, delete, give teacher access, pause games against friends and start a new season. Since 16 Oct 2026 they also see each student's real name (the part of their school email before the @) next to the player name, so they know who is who. Nothing else from the email or Google account.
 - **James (account owner):** everything, through the Supabase and GitHub dashboards, including sign-in records and the 1-day logs.
 
 **Deleting**

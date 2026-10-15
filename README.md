@@ -18,7 +18,7 @@ Only `@douglaspark.school.nz` accounts can get in, and that's checked three time
 2. Supabase refuses to create an account for any other email (a sign-up hook, plus a database backstop).
 3. Every read of the database re-checks the school email, and students can only change their own name and avatar.
 
-Profiles store a random ID, a word-list name (like "Speedy Otter 27") and avatar codes. No emails or real names. Supabase's own sign-in records do keep each student's Google email and name; only the server can see those.
+Profiles store a random ID, a word-list name (like "Speedy Otter 27") and avatar codes. No emails or real names. Supabase's own sign-in records do keep each student's Google email and name; only the server can see those. The teacher page shows teachers the part of each student's email before the @ (their real name), so they know who is who; students never see it.
 
 **Making someone a teacher:** the first teacher is made by hand. Sign in to the website once, then in Supabase go to **SQL Editor** and run
 `select public.make_first_teacher('your.email@douglaspark.school.nz');`

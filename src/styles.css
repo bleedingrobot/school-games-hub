@@ -2163,6 +2163,12 @@ main:focus {
   min-width: 160px;
   font-weight: 800;
 }
+.people-list__real {
+  display: block;
+  color: var(--ink-soft);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
 .people-list__games,
 .people-list__when {
   color: var(--ink-soft);

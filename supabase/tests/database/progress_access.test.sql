@@ -4,7 +4,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(63);
+select plan(64);
 
 -- 14 students (s1..s14) and a teacher. IDs end in the student's number.
 insert into auth.users (id, email)
@@ -146,6 +146,8 @@ select throws_ok($$ select * from public.teacher_students() $$, '42501', null, '
 select pg_temp.act_as_teacher();
 select is((select count(*)::int from public.teacher_students()), 15, 'a teacher sees everyone, hidden students too');
 select is((select bot_games from public.teacher_students() where id = pg_temp.id(3)), 6, 'with how many games they''ve played');
+select is((select real_name from public.teacher_students() where id = pg_temp.id(3)), 's3',
+  'and their real name: the part of their email before the @');
 select is(public.teacher_student_detail(pg_temp.id(1)) #>> '{games,0,friend,won}', '5', 'a teacher can see a student''s stats');
 select is(jsonb_array_length(public.teacher_student_detail(pg_temp.id(1)) -> 'recent'), 9, 'and their recent games');
 select lives_ok($$ select public.teacher_set_multiplayer(false) $$, 'a teacher can switch off friend games');

@@ -59,9 +59,9 @@ vi.mock('../data/progress', async (importOriginal) => ({
 }));
 
 const people: Person[] = [
-  { id: 't1', display_name: 'Wise Owl 1', avatar: {}, role: 'teacher', hidden: false, bot_games: 0, friend_games: 0, points: 0, last_played: null, joined: '2026-10-01T00:00:00Z' },
-  { id: 's1', display_name: 'Brave Kiwi 7', avatar: {}, role: 'student', hidden: false, bot_games: 4, friend_games: 2, points: 50, last_played: new Date().toISOString(), joined: '2026-10-01T00:00:00Z' },
-  { id: 's2', display_name: 'Lucky Tui 12', avatar: {}, role: 'student', hidden: true, bot_games: 1, friend_games: 0, points: 3, last_played: null, joined: '2026-10-01T00:00:00Z' },
+  { id: 't1', display_name: 'Wise Owl 1', real_name: 'mr.owl', avatar: {}, role: 'teacher', hidden: false, bot_games: 0, friend_games: 0, points: 0, last_played: null, joined: '2026-10-01T00:00:00Z' },
+  { id: 's1', display_name: 'Brave Kiwi 7', real_name: 'jane.smith', avatar: {}, role: 'student', hidden: false, bot_games: 4, friend_games: 2, points: 50, last_played: new Date().toISOString(), joined: '2026-10-01T00:00:00Z' },
+  { id: 's2', display_name: 'Lucky Tui 12', real_name: 'tom.brown', avatar: {}, role: 'student', hidden: true, bot_games: 1, friend_games: 0, points: 3, last_played: null, joined: '2026-10-01T00:00:00Z' },
 ];
 
 vi.mock('../data/teacher', () => ({
@@ -231,6 +231,7 @@ describe('teacher view', () => {
     expect(screen.getByRole('link', { name: /Teacher/ })).toHaveAttribute('href', '/teacher');
     const kiwi = (await screen.findByText('Brave Kiwi 7')).closest('li')!;
     expect(kiwi).toHaveTextContent('6 games');
+    expect(kiwi).toHaveTextContent('jane.smith');
     expect(kiwi).toHaveTextContent('Last played today');
     expect(screen.getByText('Lucky Tui 12').closest('li')).toHaveTextContent('Hidden');
     expect(screen.getByText('Wise Owl 1').closest('li')).toHaveTextContent('You');
@@ -243,6 +244,15 @@ describe('teacher view', () => {
     await user.type(screen.getByLabelText('Find a player'), 'tui');
     expect(screen.queryByText('Brave Kiwi 7')).not.toBeInTheDocument();
     expect(screen.getByText('Lucky Tui 12')).toBeInTheDocument();
+  });
+
+  it('filters the list by real name too', async () => {
+    const user = userEvent.setup();
+    renderAt('/teacher', teacher);
+    await screen.findByText('Brave Kiwi 7');
+    await user.type(screen.getByLabelText('Find a player'), 'smith');
+    expect(screen.getByText('Brave Kiwi 7')).toBeInTheDocument();
+    expect(screen.queryByText('Lucky Tui 12')).not.toBeInTheDocument();
   });
 
   async function openKiwi() {

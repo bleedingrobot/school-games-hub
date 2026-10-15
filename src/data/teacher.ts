@@ -9,6 +9,8 @@ import type { Rank } from './progress';
 export interface Person {
   id: string;
   display_name: string;
+  /** The part of their school email before the @. Only teachers get this. */
+  real_name: string | null;
   avatar: unknown;
   role: 'student' | 'teacher';
   hidden: boolean;
