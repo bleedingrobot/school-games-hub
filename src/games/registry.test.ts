@@ -3,19 +3,20 @@ import { GAMES, findGame } from './registry';
 import { BOT_LEVELS, isBotLevel, isRanked } from './types';
 
 describe('game registry', () => {
-  it('has chess, checkers and Wormholes & Black Holes', () => {
-    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space']);
+  it('has chess, checkers, Wormholes & Black Holes and 101', () => {
+    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101']);
   });
 
-  it('keeps Wormholes & Black Holes off the rankings', () => {
+  it('keeps Wormholes & Black Holes and 101 off the rankings', () => {
     expect(GAMES.filter(isRanked).map((g) => g.id)).toEqual(['chess', 'checkers']);
     expect(findGame('space')?.ranked).toBe(false);
+    expect(findGame('101')?.ranked).toBe(false);
   });
 
   it('gives every game a unique, URL-safe id', () => {
     const ids = GAMES.map((g) => g.id);
     expect(new Set(ids).size).toBe(ids.length);
-    for (const id of ids) expect(id).toMatch(/^[a-z][a-z0-9-]*$/);
+    for (const id of ids) expect(id).toMatch(/^[a-z0-9][a-z0-9-]*$/);
   });
 
   it('finds games by id', () => {

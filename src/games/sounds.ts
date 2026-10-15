@@ -25,8 +25,8 @@ function tone(frequency: number, duration: number, volume: number, type: Oscilla
 }
 
 /**
- * 'alert' is check in chess, and a new king in checkers. The rest after 'end' are for
- * Wormholes & Black Holes.
+ * 'alert' is check in chess, and a new king in checkers. 'dice' to 'cosmic' are for
+ * Wormholes & Black Holes; 'flick', 'tap' and 'knock' are for 101.
  */
 export type GameSound =
   | 'move'
@@ -41,7 +41,10 @@ export type GameSound =
   | 'item'
   | 'zap'
   | 'shield'
-  | 'cosmic';
+  | 'cosmic'
+  | 'flick'
+  | 'tap'
+  | 'knock';
 
 export function playSound(sound: GameSound) {
   switch (sound) {
@@ -80,5 +83,15 @@ export function playSound(sound: GameSound) {
     case 'cosmic':
       [392, 523, 659].forEach((f, i) => setTimeout(() => tone(f, 0.35, 0.12, 'sine', 1.02), i * 140));
       return;
+    case 'flick':
+      // A card slid off a pile.
+      return tone(900, 0.06, 0.08, 'triangle', 1.6);
+    case 'tap':
+      // A card put down.
+      return tone(330, 0.07, 0.14, 'triangle', 0.7);
+    case 'knock':
+      // Knock knock.
+      tone(180, 0.09, 0.3, 'square', 0.5);
+      return setTimeout(() => tone(180, 0.09, 0.3, 'square', 0.5), 170);
   }
 }

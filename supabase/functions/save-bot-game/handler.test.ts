@@ -8,8 +8,10 @@ import { DEFAULT_SETTINGS, play } from '../../../shared/space/engine';
 import { randomFromSeed } from '../../../shared/space/random';
 import { playBots, startSolo, type SoloSetup } from '../../../shared/space/replay';
 import { encodeAction, type SpaceGameReport } from '../../../shared/space/save';
+import type { SoloSetup as Card101Setup } from '../../../shared/card101/solo';
+import { playWholeGame } from '../../../shared/card101/testing';
 import { stamper } from '../_shared/stamp';
-import { handleSaveBotGame, type GameRow, type Services, type SpaceRow } from './handler';
+import { handleSaveBotGame, type Card101Row, type GameRow, type Services, type SpaceRow } from './handler';
 
 const FOOLS_MATE = ['f2f3', 'e7e5', 'g2g4', 'd8h4'];
 
@@ -18,6 +20,7 @@ const NOW = 1_792_000_000;
 function services(over: Partial<Services> = {}) {
   const saved: GameRow[] = [];
   const savedSpace: SpaceRow[] = [];
+  const saved101: Card101Row[] = [];
   const s: Services = {
     userIdFor: vi.fn(async (token: string) => (token === 'good-token' ? 'student-1' : token === 'other-token' ? 'student-2' : null)),
     record: vi.fn(async (row: GameRow) => {
@@ -28,11 +31,15 @@ function services(over: Partial<Services> = {}) {
       savedSpace.push(row);
       return 'saved' as const;
     }),
+    record101: vi.fn(async (row: Card101Row) => {
+      saved101.push(row);
+      return 'saved' as const;
+    }),
     stamp: stamper('test-server-key', 'space-seed'),
     nowSeconds: () => NOW,
     ...over,
   };
-  return { s, saved, savedSpace };
+  return { s, saved, savedSpace, saved101 };
 }
 
 function post(body: unknown, token: string | null = 'good-token', origin = 'https://bleedingrobot.github.io') {
@@ -350,6 +357,93 @@ describe('saving Wormholes & Black Holes games', () => {
   it('won’t hand out seeds without a server key', async () => {
     const { s } = services({ stamp: stamper('', 'space-seed') });
     expect((await handleSaveBotGame(post({ game: 'space', start: true }), s)).status).toBe(500);
+  });
+});
+
+/** Asks for a 101 seed, plays a whole game from it with an Easy bot as the "student", and returns the report. */
+async function game101(s: Services, setup: Omit<Card101Setup, 'seed'>, leaveAfter = Infinity) {
+  const response = await handleSaveBotGame(post({ game: '101', start: true }), s);
+  const { seed, stamp } = (await response.json()) as { seed: string; stamp: string };
+  const { solo, actions } = playWholeGame({ ...setup, seed }, 'easy', leaveAfter);
+  // A student who walks away just stops; the browser doesn't send "leave".
+  const sent = actions.filter((a) => a !== 'leave');
+  const over = solo.game.phase === 'over' && sent.length === actions.length;
+  const report = { game: '101' as const, seed, stamp, ...setup, actions: sent, ending: over ? ('finished' as const) : ('abandoned' as const) };
+  return { report, game: solo.game };
+}
+
+const QUICK = { bots: 2, level: 'easy' as const, settings: { target: 50 as const } };
+
+describe('saving 101 games', () => {
+  it('hands out a fresh seed with a stamp', async () => {
+    const { s } = services();
+    const a = await (await handleSaveBotGame(post({ game: '101', start: true }), s)).json();
+    expect(a.seed).toMatch(/^s1-1792000000-[0-9a-f]{24}$/);
+    expect(a.stamp).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect((await handleSaveBotGame(post({ game: '101', start: true }, null), s)).status).toBe(401);
+  });
+
+  it('replays the game from its seed, works out the result itself and saves it', async () => {
+    const { s, saved101, saved, savedSpace } = services();
+    const { report, game } = await game101(s, QUICK);
+    const response = await handleSaveBotGame(post(report), s);
+    expect(response.status).toBe(200);
+    const won = game.winners!.includes(0);
+    const body = await response.json();
+    expect(body).toEqual(expect.objectContaining({ result: won ? 'won' : 'lost', reason: 'finished', countsForPoints: true }));
+    expect(body.place === 1).toBe(won);
+    expect(saved).toEqual([]);
+    expect(savedSpace).toEqual([]);
+    expect(saved101).toHaveLength(1);
+    const row = saved101[0];
+    expect(row).toEqual(
+      expect.objectContaining({ player: 'student-1', bot_level: 'easy', player_side: 'first', moves: report.actions, counts_for_points: true }),
+    );
+    expect(row.card101).toEqual(
+      expect.objectContaining({ seed: report.seed, settings: { target: 50 }, bots: 2, players: 3, total: game.totals[0], rounds: game.results.length }),
+    );
+    expect(row.card101.stats.zeroHands).toBe(game.results.filter((r) => r.scores[0]!.total === 0).length);
+  });
+
+  it('saves a game the student left part-way as left early, earning nothing', async () => {
+    const { s, saved101 } = services();
+    const { report } = await game101(s, QUICK, 12);
+    expect(report.ending).toBe('abandoned');
+    expect((await handleSaveBotGame(post(report), s)).status).toBe(200);
+    expect(saved101[0]).toEqual(expect.objectContaining({ result: 'lost', reason: 'abandoned', counts_for_points: false }));
+    expect(saved101[0].card101.place).toBeNull();
+  });
+
+  it('refuses made-up seeds, borrowed seeds, space seeds, old seeds and changed games', async () => {
+    const { s, saved101 } = services();
+    const { report } = await game101(s, QUICK);
+    const spaceSeed = (await (await handleSaveBotGame(post({ game: 'space', start: true }), s)).json()) as { seed: string; stamp: string };
+    const other = services({ nowSeconds: () => NOW + 13 * 60 * 60 });
+    const cases: [object, string][] = [
+      [{ ...report, stamp: report.stamp.replace(/^./, (c) => (c === 'A' ? 'B' : 'A')) }, 'good-token'], // a forged stamp
+      [{ ...report, seed: report.seed.replace(/.$/, (c) => (c === '0' ? '1' : '0')) }, 'good-token'], // a different seed
+      [{ ...report, ...spaceSeed }, 'good-token'], // a seed stamped for the space game
+      [report, 'other-token'], // someone else's seed
+      [{ ...report, actions: report.actions.slice(1) }, 'good-token'], // a different game
+      [{ ...report, bots: 1 }, 'good-token'], // different settings
+      [{ ...report, settings: { target: 101 } }, 'good-token'],
+      [{ ...report, settings: { target: 75 } }, 'good-token'],
+      [{ ...report, level: 'medium' }, 'good-token'],
+      [{ ...report, actions: [...report.actions, 'knock'] }, 'good-token'], // extra actions
+      [{ ...report, actions: ['peek', 'swap:4'] }, 'good-token'], // not an action
+      [{ ...report, actions: report.actions.slice(0, 12), ending: 'finished' }, 'good-token'], // says it finished, didn't
+      [{ ...report, ending: 'resigned' }, 'good-token'],
+    ];
+    for (const [body, token] of cases) expect((await handleSaveBotGame(post(body, token), s)).status).toBe(400);
+    expect((await handleSaveBotGame(post(report), other.s)).status).toBe(400); // too old
+    expect(saved101).toEqual([]);
+    expect(other.saved101).toEqual([]);
+  });
+
+  it('passes on the daily limit kindly', async () => {
+    const { s } = services({ record101: vi.fn(async () => 'too-many' as const) });
+    const { report } = await game101(s, QUICK);
+    expect((await handleSaveBotGame(post(report), s)).status).toBe(429);
   });
 });
 

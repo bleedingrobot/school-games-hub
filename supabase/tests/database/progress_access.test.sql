@@ -69,7 +69,7 @@ select throws_ok($$ select public.score_bot_game(b) from public.bot_games b limi
 select throws_ok($$ select public.award_achievements(auth.uid(), 'chess', now()) $$, '42501', null,
   'a student can''t hand out achievements');
 select throws_ok($$ update public.bot_games set result = 'won' $$, '42501', null, 'a student can''t change a saved game');
-select is((select count(*)::int from public.achievement_types), 30, 'students can read the achievement list');
+select is((select count(*)::int from public.achievement_types), 38, 'students can read the achievement list');
 
 -- ---- Signed-out visitors and outsiders see nothing ----
 select pg_temp.act_as_anon();
@@ -124,7 +124,7 @@ select is(public.my_progress() #>> '{games,0,game}', 'checkers', 'my progress fo
 select is(public.my_progress() #>> '{games,0,rank,rank}', 'silver', 'my checkers badge');
 select is(public.my_progress() #>> '{games,0,rank,next}', 'gold', 'and the next one to aim for');
 select ok(public.my_progress()::text !~ '"rating"', 'no raw rating numbers are sent to the page');
-select is(jsonb_array_length(public.my_progress() -> 'achievements'), 30, 'every achievement, with my progress on each');
+select is(jsonb_array_length(public.my_progress() -> 'achievements'), 38, 'every achievement, with my progress on each');
 select is((public.progress_rules() ->> 'botDailyCap')::int, 40, 'the rules page reads the real daily cap');
 
 -- ---- Teacher functions refuse students ----

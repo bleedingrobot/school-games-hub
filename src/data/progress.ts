@@ -81,6 +81,8 @@ export interface Rules {
   friend: { lost: number; drawn: number; won: number };
   /** Wormholes & Black Holes: taking-part points, the same win or lose. */
   space?: { bot: number; friend: number; friendDailyGames: number; minTurns: number };
+  /** 101: bot games earn the same as chess; classmates games their own points. */
+  card101?: { friendLost: number; friendWon: number; friendDailyGames: number; minRounds: number };
   botDailyCap: number;
   pairDailyLimit: number;
   achievementPoints: number;

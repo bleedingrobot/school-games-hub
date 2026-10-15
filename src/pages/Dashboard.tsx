@@ -16,6 +16,7 @@ import {
 } from '../data/multiplayer';
 import { fetchMyProgress, type MyProgress } from '../data/progress';
 import { fetchMyOpenSpaceGames, fetchMySpaceStats, fetchRecentSpaceGames, seatsOf, type SpaceGame } from '../data/spaceGames';
+import { fetchMyCardStats, fetchMyOpenCardGames, fetchRecentCardGames, type SeatSummary } from '../data/cardGames';
 import { findGame, GAMES } from '../games/registry';
 import { BOT_LEVELS, isRanked, type BotLevel } from '../games/types';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
@@ -35,6 +36,7 @@ export function whenPlayed(iso: string, now = new Date()): string {
 
 function botName(level: string, game?: string) {
   if (game === 'space') return `${BOT_NAMES[level as BotLevel] ?? ''} bots`;
+  if (game === '101') return `${BOT_LEVELS.find((l) => l.id === level)?.label ?? ''} bots`;
   return `${BOT_LEVELS.find((l) => l.id === level)?.label ?? ''} bot`;
 }
 
@@ -69,6 +71,22 @@ export function spaceRecentGame(g: SpaceGame, me: string): RecentGame {
   };
 }
 
+/** Turns a finished 101 game with classmates (my seat row) into a Recent games line. */
+export function cardRecentGame(s: SeatSummary): RecentGame {
+  const { info } = s;
+  const place = info.ending === 'abandoned' ? null : (info.places?.[s.seat] ?? null);
+  const left = !place;
+  return {
+    id: s.game,
+    game: '101',
+    result: place === 1 ? 'won' : 'lost',
+    reason: left ? 'abandoned' : 'finished',
+    finished_at: s.updated_at,
+    place,
+    classmates: true,
+  };
+}
+
 /** Turns a finished friend game into a Recent games line, from this student's side. */
 export function friendRecentGame(g: FriendGame, me: string, cards: Map<string, PlayerCard>): RecentGame {
   const mySide = g.second_player === me ? 'second' : 'first';
@@ -91,6 +109,8 @@ function useMyGames(me: string | undefined) {
   const [inProgress, setInProgress] = useState<{ game: FriendGame; opponent: PlayerCard | null }[]>([]);
   const [spaceGoing, setSpaceGoing] = useState<SpaceGame[]>([]);
   const [spaceStats, setSpaceStats] = useState<{ played: number; firsts: number } | null>(null);
+  const [cardGoing, setCardGoing] = useState<SeatSummary[]>([]);
+  const [cardStats, setCardStats] = useState<{ played: number; won: number } | null>(null);
   const [progress, setProgress] = useState<MyProgress | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -112,6 +132,22 @@ function useMyGames(me: string | undefined) {
       if (recentSpace.length === 0) return;
       setRecent((prev) =>
         [...(prev ?? []), ...recentSpace.map((g) => spaceRecentGame(g, me))]
+          .sort((a, b) => b.finished_at.localeCompare(a.finished_at))
+          .slice(0, 5),
+      );
+    });
+    // 101 games with classmates, the same way.
+    Promise.all([
+      fetchRecentCardGames(5).catch(() => []),
+      fetchMyOpenCardGames().catch(() => []),
+      fetchMyCardStats().catch(() => null),
+    ]).then(([recentCards, openCards, totals]) => {
+      if (!current) return;
+      setCardGoing(openCards.filter((g) => g.status === 'playing'));
+      setCardStats(totals);
+      if (recentCards.length === 0) return;
+      setRecent((prev) =>
+        [...(prev ?? []), ...recentCards.map(cardRecentGame)]
           .sort((a, b) => b.finished_at.localeCompare(a.finished_at))
           .slice(0, 5),
       );
@@ -145,12 +181,17 @@ function useMyGames(me: string | undefined) {
       current = false;
     };
   }, [me]);
-  return { recent, stats, friendStats, inProgress, spaceGoing, spaceStats, progress, failed };
+  // 101 with classmates goes in the "Against friends" table with chess and checkers.
+  const friendRows =
+    friendStats && cardStats
+      ? [...friendStats, { game: '101', played: cardStats.played, won: cardStats.won, lost: cardStats.played - cardStats.won, drawn: 0 }]
+      : friendStats;
+  return { recent, stats, friendStats: friendRows, inProgress, spaceGoing, spaceStats, cardGoing, progress, failed };
 }
 
 export function Dashboard() {
   const { profile } = useAuth();
-  const { recent, stats, friendStats, inProgress, spaceGoing, spaceStats, progress, failed } = useMyGames(profile?.id);
+  const { recent, stats, friendStats, inProgress, spaceGoing, spaceStats, cardGoing, progress, failed } = useMyGames(profile?.id);
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
@@ -188,8 +229,21 @@ export function Dashboard() {
         </div>
       </section>
 
-      {(inProgress.length > 0 || spaceGoing.length > 0) && (
+      {(inProgress.length > 0 || spaceGoing.length > 0 || cardGoing.length > 0) && (
         <section className="in-progress" aria-label="Games still going">
+          {cardGoing.slice(0, 1).map((game) => (
+            <div key={game.game} className="in-progress__item">
+              <span className="in-progress__emoji" aria-hidden="true">
+                🃏
+              </span>
+              <p>
+                <strong>Your 101 game</strong> with classmates is still going!
+              </p>
+              <Link to={`/card-game/${game.game}`} className="button button--play">
+                Carry on
+              </Link>
+            </div>
+          ))}
           {spaceGoing.slice(0, 1).map((game) => (
             <div key={game.id} className="in-progress__item">
               <span className="in-progress__emoji" aria-hidden="true">
@@ -280,7 +334,7 @@ export function Dashboard() {
             <ul className="recent-list">
               {recent.map((g) => (
                 <li key={g.id}>
-                  {g.game === 'space' ? (
+                  {g.game === 'space' || (g.game === '101' && g.classmates) ? (
                     <span className={`result result--${g.place === 1 ? 'won' : 'drawn'}`}>{placeLabel(g.place)}</span>
                   ) : (
                     <span className={`result result--${g.result}`}>{RESULT_LABEL[g.result]}</span>
@@ -298,7 +352,7 @@ export function Dashboard() {
                         {g.opponent?.display_name ?? 'a classmate'}
                       </>
                     )}
-                    {g.reason === 'abandoned' && g.game !== 'space' && (
+                    {g.reason === 'abandoned' && g.game !== 'space' && !(g.game === '101' && g.classmates) && (
                       <span className="recent-list__note">{g.result === 'won' ? ' (they left)' : ' (left early)'}</span>
                     )}
                   </span>
@@ -345,6 +399,9 @@ export function Dashboard() {
   );
 }
 
+/** Games with real wins and losses: the ranked ones, and 101 (no badge, but you win or lose). */
+const hasWinLoss = (game: (typeof GAMES)[number]) => isRanked(game) || game.id === '101';
+
 /** Wormholes & Black Holes is luck, so it gets a line of its own rather than won/lost columns. */
 function SpaceStatsLine({
   stats,
@@ -379,7 +436,7 @@ function StatsTable({ caption, stats }: { caption: string; stats: { game: string
         </tr>
       </thead>
       <tbody>
-        {GAMES.filter(isRanked).map((game) => {
+        {GAMES.filter(hasWinLoss).map((game) => {
           const s = stats?.find((row) => row.game === game.id) ?? { played: 0, won: 0, lost: 0, drawn: 0 };
           const show = (n: number) => (stats ? n : '–');
           return (

@@ -13,3 +13,10 @@ Game rules code that runs in both the website and the server, so the server can 
   (`npm run space:sim`). See `docs/SPACE-GAME-PLAN.md`.
 
 The `save-bot-game` server function runs exactly this code before saving a result.
+- `card101/`: 101, James's family card game (Stage 10). `score.ts` scores a hand with its
+  working, `engine.ts` is the rules as a pure function (shuffles come in from outside), and
+  `view.ts` makes what each player is allowed to see: the only way card information ever
+  leaves the server (`view.test.ts` checks every view in thousands of games for leaks).
+  `bot.ts` has the bots (they get only their own view), `solo.ts` replays a bot game from
+  its seed, and `sim.ts` plays thousands of games (`npm run 101:sim`). See `docs/101-PLAN.md`
+  and `docs/101-RULES.md`.

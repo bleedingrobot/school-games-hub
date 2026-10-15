@@ -1,8 +1,8 @@
 /**
  * The save-bot-game server function: the browser sends the moves of a finished chess,
- * checkers or Wormholes & Black Holes game against bots, and this decides the result and
- * saves it. For Wormholes & Black Holes it also hands out the stamped dice seed a game is
- * played from (shared/space/save.ts explains how that works).
+ * checkers, Wormholes & Black Holes or 101 game against bots, and this decides the result
+ * and saves it. For Wormholes & Black Holes and 101 it also hands out the stamped seed a
+ * game is played from (shared/space/save.ts explains how that works).
  *
  * It never trusts the browser's word for the result. It replays every move with the same
  * rules code the website uses (chess.js for chess, shared/checkers for checkers), works
@@ -10,6 +10,13 @@
  * determined student could still fake the bot's moves, which is why bot games will only
  * ever earn small, capped points.
  */
+import {
+  judgeCard101Game,
+  parseCard101Report,
+  stampText as card101StampText,
+  type Card101GameReport,
+  type Card101Stats,
+} from '../../../shared/card101/save';
 import { judgeBotGame, parseReport } from '../../../shared/chess/botGame';
 import { judgeCheckersGame, parseCheckersReport } from '../../../shared/checkers/botGame';
 import {
@@ -31,6 +38,8 @@ export interface Services {
   record(row: GameRow): Promise<'saved' | 'too-many' | 'refused'>;
   /** Saves a Wormholes & Black Holes game, the same way. */
   recordSpace(row: SpaceRow): Promise<'saved' | 'too-many' | 'refused'>;
+  /** Saves a 101 game, the same way. */
+  record101(row: Card101Row): Promise<'saved' | 'too-many' | 'refused'>;
   /** Signs some text with a key only the server has (an HMAC), as URL-safe base64. Null if there's no key. */
   stamp(text: string): Promise<string | null>;
   /** The time now, in seconds. */
@@ -64,6 +73,20 @@ export interface SpaceRow extends Omit<GameRow, 'game'> {
   };
 }
 
+export interface Card101Row extends Omit<GameRow, 'game'> {
+  /** The seed, setup and what happened, kept so the game can be checked again. */
+  card101: {
+    seed: string;
+    settings: Card101GameReport['settings'];
+    bots: number;
+    place: number | null;
+    players: number;
+    rounds: number;
+    total: number;
+    stats: Card101Stats;
+  };
+}
+
 export async function handleSaveBotGame(request: Request, services: Services): Promise<Response> {
   const cors = corsHeaders(request.headers.get('Origin'));
   const reply = (status: number, body: object) =>
@@ -78,14 +101,15 @@ export async function handleSaveBotGame(request: Request, services: Services): P
 
   const body = await readJsonBody(request);
   const asked = body as { game?: unknown; start?: unknown } | null;
-  if (asked?.game === 'space' && asked.start === true) {
-    // A new seed for a Wormholes & Black Holes game, stamped for this student.
+  if ((asked?.game === 'space' || asked?.game === '101') && asked.start === true) {
+    // A new seed for a Wormholes & Black Holes or 101 game, stamped for this student and this game.
     const seed = makeSeed(now(services), (services.randomHex ?? randomHex)(12));
-    const stamp = await services.stamp(stampText(player, seed));
+    const stamp = await services.stamp((asked.game === 'space' ? stampText : card101StampText)(player, seed));
     if (!stamp) return reply(500, { error: "The game couldn't start." });
     return reply(200, { seed, stamp });
   }
   if (asked?.game === 'space') return saveSpaceGame(player, body, services, reply);
+  if (asked?.game === '101') return save101Game(player, body, services, reply);
 
   const checked = check(body);
   if (!checked) return reply(400, { error: "That game couldn't be read." });
@@ -149,6 +173,47 @@ async function saveSpaceGame(
       bots: report.bots,
       place: game.place,
       rockets: game.rockets,
+      stats: game.stats,
+    },
+  });
+  if (saved === 'too-many') return reply(429, { error: TOO_MANY });
+  if (saved !== 'saved') return reply(500, { error: "The game couldn't be saved." });
+  return reply(200, { result: game.outcome, reason: game.reason, place: game.place, countsForPoints: game.countsForPoints });
+}
+
+async function save101Game(
+  player: string,
+  body: unknown,
+  services: Services,
+  reply: (status: number, body: object) => Response,
+): Promise<Response> {
+  const report = parseCard101Report(body);
+  if (!report) return reply(400, { error: "That game couldn't be read." });
+  const expected = await services.stamp(card101StampText(player, report.seed));
+  const problem = seedProblem(report.seed, now(services)) ?? (expected && sameText(expected, report.stamp) ? null : 'bad stamp');
+  const judged = problem ? { ok: false as const, problem } : judgeCard101Game(report);
+  if (!judged.ok) {
+    console.warn(`save-bot-game: refused a 101 game (${judged.problem})`);
+    return reply(400, { error: "That game couldn't be checked." });
+  }
+  const { game } = judged;
+  const saved = await services.record101({
+    player,
+    bot_level: report.level,
+    player_side: 'first',
+    moves: report.actions,
+    result: game.outcome,
+    reason: game.reason,
+    player_moves: game.studentTurns,
+    counts_for_points: game.countsForPoints,
+    card101: {
+      seed: report.seed,
+      settings: report.settings,
+      bots: report.bots,
+      place: game.place,
+      players: game.players,
+      rounds: game.rounds,
+      total: game.total,
       stats: game.stats,
     },
   });

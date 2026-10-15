@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
 import * as data from '../data/multiplayer';
 import * as space from '../data/spaceGames';
+import * as cardData from '../data/cardGames';
 import { Lobby } from './Lobby';
 
 vi.mock('../data/multiplayer', async (importOriginal) => ({
@@ -21,6 +22,12 @@ vi.mock('../data/spaceGames', async (importOriginal) => ({
   fetchSpaceLobby: vi.fn(),
   fetchMyOpenSpaceGames: vi.fn(),
 }));
+vi.mock('../data/cardGames', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../data/cardGames')>()),
+  askCard: vi.fn(),
+  fetchCardLobby: vi.fn(),
+  fetchMyOpenCardGames: vi.fn(),
+}));
 
 const signedIn = {
   status: 'signed-in',
@@ -36,6 +43,7 @@ function renderLobby() {
           <Route path="/lobby" element={<Lobby />} />
           <Route path="/play/:id" element={<p>Game page</p>} />
           <Route path="/space-game/:id" element={<p>Space game page</p>} />
+          <Route path="/card-game/:id" element={<p>101 game page</p>} />
           <Route path="/" element={<p>Home</p>} />
         </Routes>
       </MemoryRouter>
@@ -53,6 +61,9 @@ beforeEach(() => {
   vi.mocked(space.askSpace).mockReset();
   vi.mocked(space.fetchSpaceLobby).mockResolvedValue([]);
   vi.mocked(space.fetchMyOpenSpaceGames).mockResolvedValue([]);
+  vi.mocked(cardData.askCard).mockReset();
+  vi.mocked(cardData.fetchCardLobby).mockResolvedValue([]);
+  vi.mocked(cardData.fetchMyOpenCardGames).mockResolvedValue([]);
   localStorage.clear();
 });
 
@@ -94,12 +105,52 @@ describe('the lobby', () => {
   it('shows the server’s friendly message when a code is wrong', async () => {
     vi.mocked(data.ask).mockRejectedValue(new data.MultiplayerError(NOT_FOUND, 'not-found'));
     vi.mocked(space.askSpace).mockRejectedValue(new data.MultiplayerError(NOT_FOUND, 'not-found'));
+    vi.mocked(cardData.askCard).mockRejectedValue(new data.MultiplayerError(NOT_FOUND, 'not-found'));
     const user = userEvent.setup();
     renderLobby();
     await user.type(screen.getByLabelText('Type the code your friend gives you'), 'CCCCC');
     await user.click(screen.getByRole('button', { name: 'Join game' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('We couldn’t find a game with that code');
     expect(screen.queryByText('Game page')).not.toBeInTheDocument();
+  });
+
+  it('a code that isn’t chess, checkers or space is tried as a 101 game', async () => {
+    vi.mocked(data.ask).mockRejectedValue(new data.MultiplayerError(NOT_FOUND, 'not-found'));
+    vi.mocked(space.askSpace).mockRejectedValue(new data.MultiplayerError(NOT_FOUND, 'not-found'));
+    vi.mocked(cardData.askCard).mockResolvedValue({ game: 'card-1' } as cardData.SeatRow);
+    const user = userEvent.setup();
+    renderLobby();
+    await user.type(screen.getByLabelText('Type the code your friend gives you'), 'km4tp');
+    await user.click(screen.getByRole('button', { name: 'Join game' }));
+    expect(await screen.findByText('101 game page')).toBeInTheDocument();
+    expect(cardData.askCard).toHaveBeenCalledWith({ action: 'join', code: 'KM4TP' });
+  });
+
+  it('starts a 101 game with the number of players and length', async () => {
+    vi.mocked(cardData.askCard).mockResolvedValue({ game: 'card-2' } as cardData.SeatRow);
+    const user = userEvent.setup();
+    renderLobby();
+    const create = screen.getByRole('region', { name: 'Start a game' });
+    await user.click(within(create).getByRole('radio', { name: /^101/ }));
+    await user.click(within(create).getByRole('radio', { name: '4 players' }));
+    await user.click(within(create).getByRole('radio', { name: /Normal: to 101/ }));
+    await user.click(within(create).getByRole('button', { name: /Start game/ }));
+    expect(cardData.askCard).toHaveBeenCalledWith({ action: 'create', players: 4, settings: { target: 101 }, lobby: false });
+    expect(await screen.findByText('101 game page')).toBeInTheDocument();
+  });
+
+  it('lists open 101 games, and joins one with a tap', async () => {
+    vi.mocked(cardData.fetchCardLobby).mockResolvedValue([
+      { id: 'card-open', creator_name: 'Calm Tui 3', creator_avatar: {}, players: 1, wanted: 3, target: 50, created_at: '2026-10-20T00:00:00Z' },
+    ]);
+    vi.mocked(cardData.askCard).mockResolvedValue({ game: 'card-open' } as cardData.SeatRow);
+    const user = userEvent.setup();
+    renderLobby();
+    const row = (await screen.findByText(/Calm Tui 3 · 101/)).closest('li')!;
+    expect(row).toHaveTextContent('Quick game, to 50. 1 of 3 joined.');
+    await user.click(within(row).getByRole('button', { name: 'Join' }));
+    expect(cardData.askCard).toHaveBeenCalledWith({ action: 'join', gameId: 'card-open' });
+    expect(await screen.findByText('101 game page')).toBeInTheDocument();
   });
 
   it('starts a game with the chosen game, colour and lobby setting', async () => {

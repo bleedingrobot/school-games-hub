@@ -109,6 +109,33 @@ export function HowPoints() {
         </section>
       )}
 
+      {rules.card101 && (
+        <section className="panel" aria-labelledby="card101-points-title">
+          <h2 id="card101-points-title" className="panel__title">
+            🃏 101
+          </h2>
+          <ul className="how-points__list">
+            <li>
+              Against bots: the <strong>same points as chess and checkers</strong> (the table above). They share the{' '}
+              {rules.botDailyCap}-points-a-day limit. With more than one bot, winning means the lowest total of everyone.
+            </li>
+            <li>
+              Against classmates: <strong>{rules.card101.friendWon} points</strong> for a win and{' '}
+              <strong>{rules.card101.friendLost} points</strong> for finishing. Your first {rules.card101.friendDailyGames}{' '}
+              games each day earn points.
+            </li>
+            <li>
+              A game counts if it lasts at least <strong>{rules.card101.minRounds} full rounds</strong> and you stay to the
+              end.
+            </li>
+            <li>
+              It never changes your badges or the leaderboards. It has its own achievements, worth{' '}
+              {rules.achievementPoints} bonus points each.
+            </li>
+          </ul>
+        </section>
+      )}
+
       <section className="panel" aria-labelledby="levels-title">
         <h2 id="levels-title" className="panel__title">
           Levels
