@@ -2,7 +2,7 @@
 
 Stage 9 of School Games Hub: a space snakes and ladders for Years 4–6, against bots or 2–4 classmates.
 Written 15 October 2026 from the brief in [prompts/space-game.md](prompts/space-game.md), after reading the code on the `stage-8` branch.
-**Status: approved by James on 15 October 2026 (answers in section 11). Stage 9.1 done (results in section 14). Next: Stage 9.2, once James is happy with the numbers.**
+**Status: approved by James on 15 October 2026 (answers in section 11). Stage 9.1 done (results in section 14); James happy with the numbers as they are (15 Oct 2026). Next: Stage 9.2.**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
@@ -335,7 +335,7 @@ Each stage ends with `npm run check` passing, a browser test where there's somet
 
 ## 13. What I need from you now
 
-Look at section 14 and say whether game length and meanness feel right: "too long", "too short", "too mean" or "fine". Then I start 9.2.
+Nothing for now. James said the 9.1 numbers sound good (15 Oct 2026), so the tuning stays as it is. Next is 9.2.
 
 ## 14. Simulation results (Stage 9.1, 15 October 2026)
 
