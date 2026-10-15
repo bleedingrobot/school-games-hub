@@ -4,7 +4,7 @@ A chess and checkers website for Year 4–6 students. Students will sign in with
 
 **Live site:** https://bleedingrobot.github.io/school-games-hub/
 
-**Where it's up to:** Stages 1–5 of 8 are done. Students sign in with their Douglas Park Google account, pick a safe player name, build an avatar, and play chess or checkers against three bots. Every finished game is checked by the server and saved. Playing each other, and points, come in later stages; those pages say "Coming soon". The full plan is in [docs/PLAN.md](docs/PLAN.md). Before the first student trial, use [docs/STUDENT-TRIAL.md](docs/STUDENT-TRIAL.md).
+**Where it's up to:** Stages 1–7 of 8 are done. Students sign in with their Douglas Park Google account, pick a safe player name, build an avatar, and play chess or checkers against three bots or against each other. Every game is checked by the server, saved, and turned into points, levels, badges and achievements, with weekly and all-time leaderboards. Teachers have their own screen to look after students. The full plan is in [docs/PLAN.md](docs/PLAN.md). Before the first student trial, use [docs/STUDENT-TRIAL.md](docs/STUDENT-TRIAL.md).
 
 ## How sign-in stays school-only
 
@@ -18,7 +18,7 @@ Profiles store a random ID, a word-list name (like "Speedy Otter 27") and avatar
 
 **Making someone a teacher:** the first teacher is made by hand. Sign in to the website once, then in Supabase go to **SQL Editor** and run
 `select public.make_first_teacher('your.email@douglaspark.school.nz');`
-After that, teachers can make other staff teachers from inside the app (teacher screens arrive in Stage 7).
+After that, teachers can make other staff teachers from the **Teacher** page (see below).
 
 ## Chess against the bots
 
@@ -61,8 +61,8 @@ When a chess or checkers game ends, the website sends the list of moves to a sma
 
 - Resigning counts as a loss.
 - Leaving a game part-way through (closing the tab, going back home, or pressing New game) is saved as **unfinished**, and counts as a loss.
-- Unfinished games, and games where the student made fewer than 10 moves, are saved but will **earn nothing** when points arrive in Stage 7.
-- One honest limit: the bot runs in the browser, so a very determined student could fake *the bot's* moves. The server still checks every move is legal. That's why bot games will only ever earn small, capped points and never count towards the competitive rankings.
+- Unfinished games, and games where the student made fewer than 10 moves, are saved but **earn nothing**.
+- One honest limit: the bot runs in the browser, so a very determined student could fake *the bot's* moves. The server still checks every move is legal. That's why bot games earn only small, capped points and never count towards badges.
 
 ## Playing a friend
 
@@ -87,18 +87,14 @@ The game starts the moment someone joins. Then:
 
 The website never changes a game itself. It only *asks* a server function called `multiplayer`, which checks the student's sign-in, that it's their game and their turn, that the move is legal (using the same rules code as the bot games), and that the game isn't over. The server alone decides checkmate, every draw rule and every checkers ending. If two requests arrive at the same moment (say, a double-tap), only one gets through. Students can only read the games they're playing in.
 
-Games that were abandoned, or where either player made fewer than 10 moves, are saved but will **earn nothing** when points arrive in Stage 7. Games against friends and bot games are kept apart in the stats, and bot games will never count towards rankings.
+Games that were abandoned, or where either player made fewer than 10 moves, are saved but **earn nothing**. Games against friends and bot games are kept apart in the stats, and bot games never count towards badges.
 
 ### If games against friends misbehave in class
 
-You can switch them off for everyone straight away. The lobby then says "Your teacher has paused games against friends for now", and the server refuses new games and moves. Games already going can still be resigned. Bot games carry on as normal.
+You can switch them off for everyone straight away: open the **Teacher** page and press **Pause games against friends**. The lobby then says "Your teacher has paused games against friends for now", and the server refuses new games and moves. Games already going can still be resigned. Bot games carry on as normal. Press **Switch games against friends back on** to undo it.
 
-1. Log in at supabase.com and open the project.
-2. Go to **SQL Editor**, paste this and click **Run**:
-   `update public.app_settings set multiplayer_enabled = false where id;`
-3. To switch them back on, run the same line with `true` instead of `false`.
-
-(A button for this comes with the teacher screens in Stage 7.)
+If you can't sign in for some reason, the same switch works from Supabase: **SQL Editor**, paste
+`update public.app_settings set multiplayer_enabled = false where id;` and click **Run** (`true` switches it back on).
 
 Other problems:
 
@@ -106,11 +102,57 @@ Other problems:
 - **"We couldn't find a game with that code":** the code may be mistyped, or the game may have already started, been cancelled or waited 10 minutes. Make a new one.
 - **A student keeps leaving games:** each one is recorded as a loss for them, and earns nothing.
 
-## The pretend data
+## Points, levels, badges and leaderboards
 
-Points, levels and badges don't exist yet, so the dashboard shows **made-up sample data** for those. Anything made up has a yellow **SAMPLE DATA** badge next to it. The name, avatar, recent games and the chess and checkers stats are real.
+Students can read all of this on the **How points work** page (linked from the dashboard and the leaderboard). The numbers on that page come straight from the database, so it never disagrees with the scoring.
 
-All of it lives in one file: [src/dev/sampleData.ts](src/dev/sampleData.ts). It gets deleted once real data takes over.
+**How to explain it to a class:**
+
+- Every game you finish earns points, **even if you lose**. Harder bots earn more, and playing a friend earns the most.
+- Bots can earn you up to 40 points a day. Playing the same friend, your first 5 games together each day earn points.
+- Every achievement earns 10 bonus points. Points take you up levels.
+- Games only count if you each make at least 10 moves. Leaving early earns nothing.
+- Your **badge** (Bronze, Silver, Gold, Champion) comes only from games against friends. Win and you take some of the other player's hidden score; beat someone better and you climb more.
+
+| Points | Lose | Draw | Win |
+|---|---|---|---|
+| Very Easy bot | 1 | 2 | 3 |
+| Easy bot | 2 | 3 | 5 |
+| Medium bot | 3 | 5 | 8 |
+| A friend | 4 | 6 | 8 |
+
+**Levels:** level 2 at 50 points, level 3 at 125, level 4 at 225, and each level needs 25 more than the last.
+
+**Ratings and badges:** each student has a hidden chess score and a hidden checkers score, starting at 1000. Only games against friends change them (an "Elo" rating: a win against an equal player is +10, and one game moves it by 20 at most). Badges: **Silver** at 1030 (about 3 more wins than losses against players at your level), **Gold** at 1080 (about 8 more), **Champion** at 1150 with at least 15 games against friends. Students never see the numbers, only the badge and how close they are to the next one.
+
+**Achievements:** 12 for each game: first game, first win, 10 and 50 games, beating each bot, beating a friend, reaching Silver, Gold and Champion, plus Checkmate! (chess) and Crown 5 kings (checkers).
+
+**Leaderboards** (chess and checkers each): **This week** (points since Monday midnight, NZ time; needs 3 games), **All time** (by badge; needs 5 games against friends) and **Most improved** (the biggest climb this week; needs 3 games against friends). Students see the top 10 plus their own place. Boards show only player names, avatars and badges. Hidden students aren't on them.
+
+**Why it can't be faked:** everything is worked out inside the database, the moment the server saves a game. The website can only read the results; it can't write points, ratings or badges, and it can't call the code that works them out.
+
+## The teacher view
+
+Teachers see a **Teacher** link in the top bar (students don't, and the database refuses them even if they type the address). It has:
+
+- **Games against friends:** pause them for everyone, or switch them back on.
+- **Players:** everyone with an account, with their player name, avatar, games played and when they last played. Type in **Find a player** to search. Tap someone to see their games against bots and friends, how many they left early, their badges and their last 10 games. Then:
+  - **New name:** gives them a new random name (for a name that's being used to tease). They can pick their own again.
+  - **Hide / Show again:** a hidden student is left off leaderboards and the lobby, and can't play friends. Their bot games still work.
+  - **Make teacher / Remove teacher:** for other staff. You can't change your own role, so there's always at least one teacher.
+  - **Delete:** removes the student's account and all their games, points and achievements. You type their player name to confirm. It can't be undone. Friends they played keep those games, without their name. If they sign in again, they start fresh. Teachers can't be deleted (remove their teacher role first).
+- **End of year: start a new season:** see below.
+
+Teachers can see students' games and stats only through these screens; the database gives them nothing else.
+
+### End-of-year cleanup (new season)
+
+At the start of a new school year, on the Teacher page, type `NEW SEASON` (in capitals) and press **Start a new season**. It:
+
+- **deletes** every finished game, and every point, level, badge, achievement and leaderboard place, so everyone starts fresh;
+- **keeps** every account, player name and avatar, the teachers, who is hidden, the friend-games switch, and any games still being played.
+
+It can't be undone. Delete students who have left the school first, one by one. It also frees space in the free database.
 
 ## Running it on your computer
 
@@ -173,7 +215,6 @@ src/              the website
   pages/          one file per page (Dashboard, Lobby, Leaderboard...)
   components/     building blocks used on many pages (buttons, cards, avatar)
   games/          one folder per game, plus registry.ts which lists them
-  dev/            development-only sample data, to be deleted later
   styles.css      colours, sizes and layout
   auth/           sign-in and keeping pages private
   avatar/         avatar parts and drawing
@@ -217,6 +258,7 @@ The free Supabase plan **pauses a project after a week with nobody using it**. I
 - The browser saves the sign-in session and whether sound is on (sound starts off). Signing out clears the session.
 - Names come from word lists, avatars from a fixed set of parts. There's no free typing and no photo uploads.
 - Each saved bot game stores the student's random ID, the bot level, the moves, the result and the time. Nothing else. Deleting a student deletes their bot games.
+- Points, ratings and achievements store only the student's random ID, the game, the result and the numbers. Leaderboards show only player names, avatars and badges, never emails, IDs, real names or classes.
 - Each game against a friend stores the two players' random IDs, the game code, the moves, the result and the times. Each player sees the other's player name and avatar, nothing more. There's no chat. If a student is deleted, their opponents keep the game in their history, but nothing in it points back to the deleted student.
 - The chess and checkers bots run on the student's own device. Nothing about their games goes anywhere except our Supabase database.
 - The code is public, so **no passwords or secret keys ever go in it**. Only Supabase's public "publishable" key goes in the website (in `src/config.ts`). It's safe to share because the database rules do the protecting.

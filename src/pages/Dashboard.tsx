@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { GameCard } from '../components/GameCard';
-import { SampleBadge } from '../components/SampleBadge';
+import { AchievementList, LevelBar, pickAchievements, RankBadge } from '../components/Progress';
 import { fetchMyStats, fetchRecentGames, type GameStats } from '../data/botGames';
 import {
   fetchFriendStats,
@@ -14,7 +14,7 @@ import {
   type FriendStats,
   type PlayerCard,
 } from '../data/multiplayer';
-import { sampleAchievements, sampleStudent } from '../dev/sampleData';
+import { fetchMyProgress, type MyProgress } from '../data/progress';
 import { findGame, GAMES } from '../games/registry';
 import { BOT_LEVELS, type BotLevel } from '../games/types';
 
@@ -66,10 +66,15 @@ function useMyGames(me: string | undefined) {
   const [stats, setStats] = useState<GameStats[] | null>(null);
   const [friendStats, setFriendStats] = useState<FriendStats[] | null>(null);
   const [inProgress, setInProgress] = useState<{ game: FriendGame; opponent: PlayerCard | null }[]>([]);
+  const [progress, setProgress] = useState<MyProgress | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     if (!me) return;
     let current = true;
+    // Points load separately, so the games still show if they can't be loaded.
+    fetchMyProgress()
+      .then((p) => current && setProgress(p))
+      .catch(() => {});
     Promise.all([fetchRecentGames(5), fetchMyStats(), fetchRecentFriendGames(5), fetchFriendStats(), fetchMyOpenGames()])
       .then(async ([botGames, totals, friendGames, friendTotals, open]) => {
         const playing = open.filter((g) => g.status === 'playing');
@@ -96,12 +101,13 @@ function useMyGames(me: string | undefined) {
       current = false;
     };
   }, [me]);
-  return { recent, stats, friendStats, inProgress, failed };
+  return { recent, stats, friendStats, inProgress, progress, failed };
 }
 
 export function Dashboard() {
   const { profile } = useAuth();
-  const { recent, stats, friendStats, inProgress, failed } = useMyGames(profile?.id);
+  const { recent, stats, friendStats, inProgress, progress, failed } = useMyGames(profile?.id);
+  const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
@@ -118,12 +124,15 @@ export function Dashboard() {
         <div className="hero__text">
           <p className="hero__hello">Kia ora,</p>
           <h1 id="hero-title">{profile?.display_name}</h1>
-          <div className="hero__meta">
-            <span className="rank-badge">🥈 {sampleStudent.rankBadge}</span>
-            <span>Level {sampleStudent.level}</span>
-            <span>{sampleStudent.points} points</span>
-            <SampleBadge />
-          </div>
+          {progress && (
+            <div className="hero__meta">
+              <span>Level {progress.level}</span>
+              <span>{progress.points} points</span>
+              {progress.games.map((g) => (
+                <RankBadge key={g.game} rank={g.rank.rank} game={g.game} />
+              ))}
+            </div>
+          )}
         </div>
         <div className="hero__play">
           <Link className="button button--play" to={`/${featuredGame.id}?bot=${featuredLevel.id}`}>
@@ -230,6 +239,7 @@ export function Dashboard() {
                       <span className="recent-list__note">{g.result === 'won' ? ' (they left)' : ' (left early)'}</span>
                     )}
                   </span>
+                  {pointsFor.has(g.id) && <span className="recent-list__points">+{pointsFor.get(g.id)}</span>}
                   <span className="recent-list__when">{whenPlayed(g.finished_at)}</span>
                 </li>
               ))}
@@ -243,37 +253,28 @@ export function Dashboard() {
           </h2>
           <StatsTable caption="Against bots" stats={stats} />
           <StatsTable caption="Against friends" stats={friendStats} />
-          <p className="level-line">
-            Level {sampleStudent.level} — {sampleStudent.pointsToNextLevel} points to level{' '}
-            {sampleStudent.level + 1} <SampleBadge />
-          </p>
+          {progress && <LevelBar progress={progress} />}
         </section>
 
         <section className="panel" aria-labelledby="achievements-title">
           <h2 id="achievements-title" className="panel__title">
-            Achievements <SampleBadge />
+            Achievements
+            {progress && (
+              <span className="panel__count">
+                {progress.achievements.filter((a) => a.earnedAt).length} of {progress.achievements.length}
+              </span>
+            )}
           </h2>
-          <ul className="achievement-list">
-            {sampleAchievements.map((a) => {
-              const done = Math.min(a.progress, a.goal);
-              return (
-                <li key={a.id} className={done === a.goal ? 'is-done' : undefined}>
-                  <span className="achievement-list__emoji" aria-hidden="true">
-                    {a.emoji}
-                  </span>
-                  <span className="achievement-list__body">
-                    <span className="achievement-list__name">
-                      {a.name}
-                      <span className="achievement-list__count">
-                        {done}/{a.goal}
-                      </span>
-                    </span>
-                    <progress max={a.goal} value={done} aria-label={`${a.name}: ${done} of ${a.goal}`} />
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+          {progress ? (
+            <>
+              <AchievementList achievements={pickAchievements(progress.achievements)} showGame />
+              <p className="panel__more">
+                <Link to="/profile#achievements">See them all</Link>
+              </p>
+            </>
+          ) : (
+            <p className="panel__empty">Loading…</p>
+          )}
         </section>
       </div>
     </div>

@@ -9,7 +9,10 @@ import {
   type Avatar,
   type AvatarPart,
 } from '../avatar/avatarParts';
+import { AchievementList, LevelBar, RankBadge } from '../components/Progress';
 import { chooseMyName, fetchNameWords, FriendlyError, saveMyAvatar, type NameWords } from '../data/profile';
+import { fetchMyProgress, nextRankText, type MyProgress } from '../data/progress';
+import { findGame, GAMES } from '../games/registry';
 
 const PARTS = Object.keys(AVATAR_OPTIONS) as AvatarPart[];
 const COLOUR_PARTS: AvatarPart[] = ['colour', 'topColour', 'bg'];
@@ -48,6 +51,8 @@ export function Profile() {
   return (
     <div className="profile">
       <h1 className="page-title">My profile</h1>
+
+      <MyProgressPanels />
 
       <section className="panel avatar-maker" aria-labelledby="avatar-title">
         <div className="avatar-maker__preview">
@@ -198,5 +203,69 @@ function NamePicker() {
         {status}
       </p>
     </section>
+  );
+}
+
+function MyProgressPanels() {
+  const [progress, setProgress] = useState<MyProgress | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let current = true;
+    fetchMyProgress()
+      .then((p) => current && setProgress(p))
+      .catch(() => current && setFailed(true));
+    return () => {
+      current = false;
+    };
+  }, []);
+
+  if (failed) return <p className="panel__empty">We couldn’t load your points just now.</p>;
+  if (!progress) return null;
+
+  return (
+    <>
+      <section className="panel my-progress" aria-labelledby="progress-title">
+        <h2 id="progress-title" className="panel__title">
+          My progress
+        </h2>
+        <p className="my-progress__points">
+          <strong>{progress.points}</strong> points · <strong>{progress.weekPoints}</strong> this week
+        </p>
+        <LevelBar progress={progress} />
+        <ul className="my-progress__ranks">
+          {progress.games.map((g) => (
+            <li key={g.game}>
+              <RankBadge rank={g.rank.rank} game={g.game} />
+              <span>{nextRankText(g.rank)}</span>
+              {g.rank.next && g.rank.ratedGames > 0 && (
+                <progress
+                  max={1}
+                  value={g.rank.progress ?? 0}
+                  aria-label={`${findGame(g.game)?.name}: ${nextRankText(g.rank)}`}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="panel" id="achievements" aria-labelledby="all-achievements-title">
+        <h2 id="all-achievements-title" className="panel__title">
+          My achievements
+          <span className="panel__count">
+            {progress.achievements.filter((a) => a.earnedAt).length} of {progress.achievements.length}
+          </span>
+        </h2>
+        <div className="achievement-columns">
+          {GAMES.map((game) => (
+            <div key={game.id}>
+              <h3>{game.name}</h3>
+              <AchievementList achievements={progress.achievements.filter((a) => a.game === game.id)} />
+            </div>
+          ))}
+        </div>
+      </section>
+    </>
   );
 }

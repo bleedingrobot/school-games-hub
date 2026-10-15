@@ -6,11 +6,13 @@ import { GAMES } from './games/registry';
 import { Dashboard } from './pages/Dashboard';
 import { FriendGamePage } from './pages/FriendGamePage';
 import { GamePage } from './pages/GamePage';
+import { HowPoints } from './pages/HowPoints';
 import { Leaderboard } from './pages/Leaderboard';
 import { Lobby } from './pages/Lobby';
 import { NotFound } from './pages/NotFound';
 import { Profile } from './pages/Profile';
 import { SignIn } from './pages/SignIn';
+import { Teacher } from './pages/Teacher';
 import { SoundProvider } from './sound';
 
 /** All the pages. Links look like /#/chess so GitHub Pages needs no extra setup. */
@@ -27,6 +29,8 @@ export function AppRoutes() {
           <Route path="lobby" element={<Lobby />} />
           <Route path="play/:id" element={<FriendGamePage />} />
           <Route path="leaderboard" element={<Leaderboard />} />
+          <Route path="points" element={<HowPoints />} />
+          <Route path="teacher" element={<Teacher />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Route>

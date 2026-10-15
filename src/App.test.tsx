@@ -50,6 +50,28 @@ vi.mock('./data/multiplayer', async (importOriginal) => ({
   fetchMultiplayerEnabled: vi.fn(async () => true),
 }));
 
+vi.mock('./data/progress', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./data/progress')>()),
+  fetchMyProgress: vi.fn(async () => ({
+    points: 140,
+    level: 3,
+    levelStart: 125,
+    nextLevelAt: 225,
+    weekPoints: 23,
+    games: [
+      { game: 'checkers', rank: { rank: 'silver', next: 'gold', progress: 0.5, gamesNeeded: null, ratedGames: 6 }, weekRatingChange: 12 },
+      { game: 'chess', rank: { rank: 'bronze', next: 'silver', progress: 0, gamesNeeded: null, ratedGames: 0 }, weekRatingChange: null },
+    ],
+    achievements: [
+      { id: 'chess-first-win', game: 'chess', name: 'First win', emoji: '🏆', measure: 'wins', goal: 1, progress: 1, earnedAt: '2026-10-14T01:00:00Z' },
+      { id: 'chess-games-10', game: 'chess', name: 'Play 10 games', emoji: '🔟', measure: 'games', goal: 10, progress: 7, earnedAt: null },
+      { id: 'checkers-crown-5', game: 'checkers', name: 'Crown 5 kings', emoji: '👑', measure: 'crowns', goal: 5, progress: 2, earnedAt: null },
+      { id: 'checkers-gold', game: 'checkers', name: 'Reach Gold', emoji: '🥇', measure: 'rank', goal: 2, progress: 1, earnedAt: null },
+    ],
+    recent: [{ id: 'g1', points: 8 }, { id: 'f1', points: 8 }],
+  })),
+}));
+
 const signedIn: AuthState = {
   status: 'signed-in',
   profile: { id: 'u1', display_name: 'Speedy Otter 27', avatar: {}, role: 'student' },
@@ -80,9 +102,34 @@ describe('dashboard', () => {
     expect(screen.getByRole('article', { name: 'Checkers' })).toBeInTheDocument();
   });
 
-  it('labels the made-up data as sample data', () => {
+  it('shows real points, level, badges and achievements, with no sample data left', async () => {
     renderAt('/');
-    expect(screen.getAllByText('Sample data').length).toBeGreaterThanOrEqual(3);
+    const hero = screen.getByRole('region', { name: 'Speedy Otter 27' });
+    expect(await within(hero).findByText('140 points')).toBeInTheDocument();
+    expect(within(hero).getByText('Level 3')).toBeInTheDocument();
+    expect(within(hero).getByText(/Checkers: Silver/)).toBeInTheDocument();
+    expect(within(hero).getByText(/Chess: Bronze/)).toBeInTheDocument();
+
+    const stats = screen.getByRole('region', { name: 'My stats' });
+    expect(within(stats).getByText('85 points to level 4')).toBeInTheDocument();
+    expect(within(stats).getByRole('link', { name: 'How points work' })).toHaveAttribute('href', '/points');
+
+    const achievements = screen.getByRole('region', { name: /Achievements/ });
+    expect(within(achievements).getByText('1 of 4')).toBeInTheDocument();
+    expect(within(achievements).getByText('First win (Chess)').closest('li')).toHaveClass('is-done');
+    expect(within(achievements).getByText('7/10')).toBeInTheDocument();
+    // Badges are earned or not: no "1/2" count.
+    expect(within(achievements).getByText('Reach Gold (Checkers)').closest('li')).toHaveTextContent('Not yet');
+    expect(screen.queryByText('Sample data')).not.toBeInTheDocument();
+  });
+
+  it('shows the points each recent game earned', async () => {
+    renderAt('/');
+    const recent = screen.getByRole('region', { name: 'Recent games' });
+    const medium = (await within(recent).findByText('Chess vs Medium bot')).closest('li')!;
+    expect(medium).toHaveTextContent('+8');
+    const easy = within(recent).getByText(/Chess vs Easy bot/).closest('li')!;
+    expect(easy).not.toHaveTextContent('+');
   });
 
   it('shows real recent chess and checkers games and stats', async () => {
@@ -92,12 +139,10 @@ describe('dashboard', () => {
     expect(within(recent).getAllByText('Today')).toHaveLength(2);
     expect(within(recent).getByText('(left early)')).toBeInTheDocument();
     expect(within(recent).queryByText('Checkers vs Very Easy bot')).toBeInTheDocument();
-    expect(within(recent).queryByText('Sample data')).not.toBeInTheDocument();
 
     const bots = screen.getByRole('table', { name: 'Against bots' });
     const chessRow = within(bots).getByRole('row', { name: /^Chess/ });
     expect(within(chessRow).getAllByRole('cell').map((c) => c.textContent)).toEqual(['2', '1', '1', '0']);
-    expect(within(chessRow).queryByText('Sample data')).not.toBeInTheDocument();
     const checkersRow = within(bots).getByRole('row', { name: /^Checkers/ });
     expect(within(checkersRow).getAllByRole('cell').map((c) => c.textContent)).toEqual(['1', '0', '0', '1']);
   });
@@ -144,13 +189,6 @@ describe('dashboard', () => {
 });
 
 describe('pages', () => {
-  it('/leaderboard shows a friendly coming-soon page', () => {
-    renderAt('/leaderboard');
-    expect(screen.getByRole('heading', { level: 1, name: 'Leaderboard' })).toBeInTheDocument();
-    expect(screen.getByText('Coming soon!')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Back to home' })).toHaveAttribute('href', '/');
-  });
-
   it('opens checkers ready to play the bot picked on the dashboard', async () => {
     renderAt('/checkers?bot=very-easy');
     expect(await screen.findByRole('heading', { level: 1, name: /Checkers vs bot/ })).toBeInTheDocument();
