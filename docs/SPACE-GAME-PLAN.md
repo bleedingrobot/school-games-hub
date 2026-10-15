@@ -2,7 +2,7 @@
 
 Stage 9 of School Games Hub: a space snakes and ladders for Years 4–6, against bots or 2–4 classmates.
 Written 15 October 2026 from the brief in [prompts/space-game.md](prompts/space-game.md), after reading the code on the `stage-8` branch.
-**Status: approved by James on 15 October 2026 (answers in section 11). Next: Stage 9.1.**
+**Status: approved by James on 15 October 2026 (answers in section 11). Stage 9.1 done (results in section 14). Next: Stage 9.2, once James is happy with the numbers.**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
@@ -335,4 +335,58 @@ Each stage ends with `npm run check` passing, a browser test where there's somet
 
 ## 13. What I need from you now
 
-Nothing until the end of Stage 9.1, when I'll show you the simulation numbers.
+Look at section 14 and say whether game length and meanness feel right: "too long", "too short", "too mean" or "fine". Then I start 9.2.
+
+## 14. Simulation results (Stage 9.1, 15 October 2026)
+
+`npm run space:sim -- --games 5000` played 5,000 bot games (Pilots) for every board, mode (Cosmic and Classic) and number of rockets (2, 3, 4): about 330,000 games. Every game ended. No game ever looped, the safety stop was never reached, and the bots never sent a move the rules refused.
+
+**Minutes are a guess:** about 6 seconds a turn for tapping, the dice and the hops, plus a bit more for each square that acts, each choice and each item. Real classes may be slower.
+
+### How long a game lasts (Cosmic mode, the default)
+
+| Board | 2 rockets | 3 rockets | 4 rockets | Longest of 5,000 (4 rockets) |
+|---|---|---|---|---|
+| Inner Solar System (gentle) | 18 rounds, ~4 min | 16 rounds, ~5 min | 16 rounds, ~7 min | 28 rounds |
+| Nebula (medium, the default) | 18 rounds, ~4 min | 16 rounds, ~5 min | 15 rounds, ~6½ min | 37 rounds |
+| Deep Space (chaotic) | 17 rounds, ~4 min | 15 rounds, ~5 min | 13 rounds, ~6 min | 38 rounds |
+| Asteroid Belt (quick, 50 squares) | 11 rounds, ~2½ min | 10 rounds, ~3 min | 10 rounds, ~4 min | 18 rounds |
+| Random Galaxy, 100 squares (3 tried) | 18–23 rounds, 4–5 min | 16–20 rounds, 5–7 min | 15–19 rounds, 6½–8½ min | 40 rounds |
+| Random Galaxy, 50 squares (2 tried) | 11–12 rounds, ~2½ min | 10–11 rounds, ~3½ min | 10 rounds, ~4½ min | 22 rounds |
+
+Classic mode is about 10–40% longer (most on Deep Space) (4 rockets: 17–19 rounds, ~7–8 min on the big boards). 1 game in 20 takes about 1½ times the average.
+
+**Against the target** (8–15 min on the big board, 3–6 on the quick one): the quick board is on target. Big-board games come out a bit shorter, about 6–8 minutes for 4 rockets and 4–5 for 2. I've left them like that because the minutes are a guess and a short game is easier in a lesson. If you'd like longer games, the easy fix is more or longer black holes.
+
+### Fairness
+
+- **Going first:** in a 4-rocket game the first rocket wins 25–29% of games (25% would be perfectly fair); with 2 rockets, 50–54%. That's normal for a race game. Classmates games shuffle the turn order, and bot games take it from the seed.
+- **Coming back:** the rocket in last place at halfway goes on to win 5–16% of 4-rocket games. Catch-up help makes this a bit more likely in Cosmic than in Classic (Nebula: 16% against 13%).
+- **Bot levels:** in a 4-rocket game the Commander wins 27–29% and the Cadet 17–25% (usually about 21%), with Pilots in between. It's mostly luck, as it should be, but better choices do help.
+- **The mission clock** almost never ends a game: 0% in most setups, at most 1.4% (Deep Space, Classic, 2 rockets).
+- **The chain cap** (3 squares a move) stops a chain in about 1% of Deep Space games and up to 4% on one of the Random Galaxies tried. It never happens on the other designed boards.
+
+### How often things happen (Nebula, Cosmic, 4 rockets, per game)
+
+About 5 wormhole rides, 3½ black holes (and nearly 1 more blocked by a Force Field), 6 items from stars, under 1 gate or mystery-station visit, and 2 heavy-gravity hits. Hinders used per game: Tractor Beam 0.5, Space Mine 0.4, Quantum Swap 0.3, Gravity Anchor 0.2. Rescue Beacons: about 2½ a game (3½ on Deep Space).
+
+### What I changed because of the simulation
+
+1. **Gate pairs are now 8–20 squares apart** (5–12 on the quick board). At first a pair went from the bottom half to the top half, which made it a giant free wormhole: Cosmic games on gate boards were about twice as fast as Classic. Now Cosmic and Classic are about the same length.
+2. **Rescue Beacons go only to the rocket in last place** (still 30+ squares behind the leader), at most **once every 8 rounds** (the plan said 5). At first rockets were getting nearly 4 a game.
+3. **The mission clock counts rounds for 4 rockets**: 40 rounds (45 on Deep Space, 25 on the quick board), plus 5 more rounds for each empty seat, because rounds with fewer rockets go faster. A 2-rocket Nebula game gets 50.
+4. **Random Galaxy boards are checked for length** as they're made: one rocket must need about the same number of rolls on average as on the designed boards (26–38 on 100 squares, 13–18 on 50). Without that, random boards ranged from very short to twice as long.
+5. **"At least 2 squares between special squares" became "never side by side"**: a 100-square board has about 33 special squares, and with 2 squares between each they wouldn't fit.
+
+### Rule details the engine settled (not in the plan)
+
+- Squares act when **your own** rocket lands on them, including after a Warp Key, a Rescue Beacon, a mine, a supernova or the mystery station. Being pushed by someone else (Tractor Beam, pulsar, supernova, Quantum Swap) never sets off the square you land on.
+- **Matariki:** everyone with room gets an item. If your own pockets are full, you get the usual swap choice. If someone else's are full, they miss out (no one else gets a pop-up on your turn).
+- **Mystery station:** the card you pick takes you +3, +5, +8 or +12, or −3 or −6 squares (forward is more likely). It's drawn after you pick.
+- **Binary star:** on timeout you get the higher die. With a Navigator, the binary star waits for your next turn.
+- **Order of roll changes:** Navigator picks the number, then doubles (Hyperdrive, slingshot), then halves rounded up (heavy gravity, Gravity Anchor), then pluses (Booster, low gravity, solar wind). Never less than 1.
+- **The designed boards are fixed data now.** They were drafted by the generator and tuned with the simulation. Then I changed a few stars by hand so each board has Matariki, a blue giant and the stars that suit its feel (Deep Space got its supernova). Changing the generator later can't change them.
+
+### Code (Stage 9.1)
+
+`shared/space/`: `engine.ts` (rules), `board.ts` (board shape and fairness rules), `boards.ts` (the four boards), `galaxy.ts` (Random Galaxy and galaxy codes), `items.ts`, `bot.ts` (Cadet, Pilot, Commander), `replay.ts` (bot games from a seed, and the server's replay check), `random.ts` (seeded dice), `sim.ts`. Run the simulation with `npm run space:sim` (add `-- --games 20000`, `-- --board nebula` or `-- --json`). Space facts (`facts.ts`) move to 9.5, where they're written and checked.
