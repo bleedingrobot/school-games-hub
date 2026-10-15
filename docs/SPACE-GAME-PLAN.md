@@ -2,7 +2,7 @@
 
 Stage 9 of School Games Hub: a space snakes and ladders for Years 4–6, against bots or 2–4 classmates.
 Written 15 October 2026 from the brief in [prompts/space-game.md](prompts/space-game.md), after reading the code on the `stage-8` branch.
-**Status: waiting for James's approval. No game code has been written.**
+**Status: approved by James on 15 October 2026 (answers in section 11). Next: Stage 9.1.**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
@@ -202,10 +202,21 @@ Autopilot turns are played by the server **inside the request that hands them th
 
 ### Safety, same as chess and checkers
 
-- No chat, no reactions (unless you choose them, see the questions), no free text. Names and avatars only.
+- No chat and no free text. Names, avatars and (if the teacher switches them on) a few fixed emoji reactions only.
 - The server works out who's asking from their sign-in token, never from the request. Players can read only games they're in.
 - Hidden students can't start or join. The teacher's pause switch stops starting, joining, launching and rolling, but leaving still works. Same as now.
 - Rate limits like now: 20 games started an hour, 10 code tries a minute, 60 requests a minute.
+
+### Emoji reactions (James chose these, with a teacher switch)
+
+- **Off until a teacher switches them on**, with a new switch on the Teacher page next to "games against friends": *Emoji reactions in space games*.
+- **A fixed set of 6:** 🚀 👏 😮 🎉 😂 👍. No other emoji, no text. The website only shows buttons for these, and the server refuses anything else.
+- **They go through the server, not straight between browsers.** A reaction is a request to the `space-game` function, which checks the switch, that you're in the game and not hidden, and the limits. It then puts the reaction on the game row, so every player sees it through the same live update as the moves. The "who's here" channel stays presence only, so Stage 8's "no hidden chat" fix still holds and its test still passes.
+- **Limits:** one reaction every 5 seconds each, and at most 20 per player per game.
+- The reaction pops up over the sender's rocket for 2 seconds and is **not** kept in the mission log or anywhere else.
+- **Each student can hide reactions** on their own screen (a 🙈 button). That's remembered on the device.
+- Hidden students can't send them. Bots never send them.
+- Cost: each reaction is one function call. At 20 per player per game, the worst case adds about 80 calls to a 4-player game, so still well inside the free plan (section 9).
 
 ## 6. Look, feel and accessibility
 
@@ -219,22 +230,21 @@ Autopilot turns are played by the server **inside the request that hands them th
 - **How to play** screen: a picture of every square and item with one line each. Opens from the game and the settings screen.
 - **Space facts:** short, accurate, Year 4–6 reading level, one per star type (and some for planets on the decorations), checked against NASA or similar sources.
 
-## 7. Points: what I recommend (your call)
+## 7. Points (decided: taking part only)
 
-The brief asked me to ask before deciding. My recommendation is **participation points only**, so winning a luck game is never worth cheating for, and so playing a full game with classmates is what's rewarded.
+**Participation points only** (James, 15 Oct 2026), so winning a luck game is never worth cheating for, and so playing a full game with classmates is what's rewarded.
 
 | Space game | Points (win or lose) | Limit |
 |---|---|---|
 | Against bots, finished | **2** | Shares the existing 40-points-a-day bot cap with chess and checkers |
 | Against classmates, finished | **4** | First 6 a day earn points (more still show in your history) |
 | Quit, autopilot, or under 10 turns | 0 | Same as "abandoned" now |
+| Classmates game with bots in some seats | 4 | Only if at least 2 students played it |
 
 - **Never:** ratings, rank badges, leaderboards or "most improved". The Leaderboard page doesn't show a space tab.
 - **A few one-off space achievements** (10 points each, the same as other achievements): 🚀 First launch · 🛰️ Finish a game with classmates · 🌀 Ride 25 wormholes · 🛡️ Block a black hole with a Force Field · ⭐ Land on every kind of star · 🏁 Dock at the station 10 times. These show on the Profile page next to chess and checkers.
 - The **How points work** page gets a short space section, read from the database like the rest, so it never disagrees with it.
 - **Teacher view:** each student's detail shows space games played too. **New season** and **Delete student** clear space games as well (tested).
-
-The other option is **no points at all**: games are saved and shown in history only. That's simpler, but students may then see the game as "not worth playing" next to chess and checkers.
 
 ## 8. How it's built (the technical part)
 
@@ -254,12 +264,13 @@ The other option is **no points at all**: games are saved and shown in history o
 - The presence-only "who's here" rule is extended to `space-game:<id>` channels (still presence only, still tested).
 - Small read-only functions: `space_lobby_games()`, `my_space_game_stats()`. Server-only: player status (reuses `mp_player_status`), `space_tidy()` on a new 5-minute scheduled job.
 - Scoring: a trigger on `space_games` (when a game finishes) and the existing `bot_games` trigger, with a separate `score_space_game` path. **The chess and checkers scoring functions stay as they are.**
+- `app_settings` gets `space_reactions_enabled` (false to start), switched by a new teacher-only `teacher_set_space_reactions()`.
 - `progress_rules()`, `my_progress()`, `teacher_student_detail()`, `teacher_new_season()`, `teacher_delete_student()`, `rebuild_progress()` updated to include space.
 - `security.test.sql` lists updated by hand (new readable tables, new callable functions, the new Realtime table) plus new tests: students can't write to the new tables, can't read others' games, can't call server-only functions, can't send messages on the space channel.
 
 ### Server functions
 
-- **New `space-game` function:** `solo-start` (hands out a stamped seed), `create`, `join`, `cancel`, `launch`, `use-item`, `roll`, `choose`, `times-up`, `take-controls`, `leave`, `rematch`. Same structure as `multiplayer`: a testable `handler.ts`, a thin `entry.ts`, built into `index.ts` by `npm run build:functions`. Same 64 KB body limit, CORS answer remembered for 2 hours, and friendly error messages.
+- **New `space-game` function:** `solo-start` (hands out a stamped seed), `create`, `join`, `cancel`, `launch`, `use-item`, `roll`, `choose`, `times-up`, `take-controls`, `leave`, `rematch`, `react`. Same structure as `multiplayer`: a testable `handler.ts`, a thin `entry.ts`, built into `index.ts` by `npm run build:functions`. Same 64 KB body limit, CORS answer remembered for 2 hours, and friendly error messages.
 - **`save-bot-game`:** accepts `game: "space"` reports and replays them. Chess and checkers reports are handled exactly as now (their tests run unchanged).
 - **`multiplayer`:** not changed.
 
@@ -289,28 +300,28 @@ Together with chess and checkers (~70,000 calls a month at the same class size),
 Each stage ends with `npm run check` passing, a browser test where there's something to see, and a short report to you.
 
 1. **9.1 Rules engine, boards, simulation, tests.** No screens yet. I report the simulation numbers (game length, fairness, how often each thing happens) and the tuned settings, so you can say "too long" or "too mean" before anything is drawn.
-2. **9.2 Playing against bots** (board, rockets, animations, items, settings, keyboard), not saved yet. Full games played in a real browser at Chromebook and tablet sizes. **Preview:** if you like, I can put this stage on a private claude.ai page that you open on your phone and actually play (no sign-in, no saving, nothing to do with the live site).
+2. **9.2 Playing against bots** (board, rockets, animations, items, settings, keyboard), not saved yet. Full games played in a real browser at Chromebook and tablet sizes. **Preview:** I'll put this stage on a private claude.ai page that James can open on his phone and actually play (no sign-in, no saving, nothing to do with the live site).
 3. **9.3 Saving bot games and points:** `save-bot-game` replays space games, the migration's points/achievements part, the Profile, How points work and teacher detail updates.
-4. **9.4 Playing classmates:** `space_games`, the `space-game` function, lobby, launch, timers, autopilot, rematch. Played with 2, 3 and 4 local accounts in separate browser windows, with reloads and a closed lid part-way.
+4. **9.4 Playing classmates:** `space_games`, the `space-game` function, lobby, launch, timers, autopilot, bots in empty seats, rematch, emoji reactions and their teacher switch. Played with 2, 3 and 4 local accounts in separate browser windows, with reloads and a closed lid part-way.
 5. **9.5 Polish:** cosmic events, How to play, space facts, sounds, an accessibility pass, README and CLASS-LAUNCH updates.
-6. **9.6 Optional:** pass-and-play and Mission Control maths, only if you want them.
+6. **9.6 Pass-and-play** (James said yes), then Mission Control maths only if James wants it.
 
-**Going live:** all of Stage 9 waits until **Stage 8 is deployed and merged** (it's parked for you at the moment), because this branch is built on top of it. When Stage 9 is ready, I'll tell you exactly what the migration and the new function change, and wait for your yes, the same as Stage 8. Nothing goes live and nothing goes into `main` before that.
+**Going live:** Stage 8 is now deployed and merged (15 Oct 2026). When Stage 9 is ready, I'll tell you exactly what the migration and the new function change, and wait for your yes, the same as Stage 8. Nothing goes live and nothing goes into `main` before that.
 
-## 11. Questions for you
+## 11. Decisions (James, 15 October 2026)
 
-My recommendation is in **bold**. If you're happy with all of them, just reply **"go with your picks"**.
-
-1. **Name.** **Wormholes & Black Holes** is good. Other ideas: *Rocket Race*, *Star Hopper*, *Cosmic Climb*, *Galaxy Dash*.
-2. **Most players in a classmates game:** **4**.
-3. **Pass-and-play** (2–4 students on one Chromebook, never earns points): **yes, as the optional last stage**.
-4. **Finishing:** **any roll that reaches 100 wins** (exact roll as a setting). The simulation will confirm it.
-5. **Points:** **participation only** (section 7), or none.
-6. **Preset reactions** (🚀 👏 😮): **not for now.** The hub's promise is "no chat", and even three emojis means a new kind of message between students and a new teacher switch to manage. Easy to add later if you want it.
-7. **Bots filling empty seats in a classmates game** (e.g. 2 students + 2 Pilots): **yes, but at least 2 students must be in it for it to count**. It makes small groups more fun and costs nothing extra (the server plays the bots).
-8. **Mission clock** (fuel runs out after about 40 rounds, places by distance): **yes**, so a game can never eat a whole lesson.
-9. **Matariki square:** please check the wording in section 2 (now or at Stage 9.5).
-10. **Phone preview** of the bot game after 9.2 on a private claude.ai page: **yes**.
+| Question | Decision |
+|---|---|
+| Name | **Wormholes & Black Holes** |
+| Most players in a classmates game | **4** |
+| Pass-and-play | **Yes**, built last (Stage 9.6), never earns points |
+| Finishing | **Any roll that reaches 100 wins**; "exact roll" is a setting |
+| Points | **Taking part only** (section 7) |
+| Emoji reactions | **Yes, with a teacher switch, off to start** (section 5, "Emoji reactions"). This is the one change from my recommendation |
+| Bots in empty seats | **Yes**; counts only with at least 2 students |
+| Mission clock | **Yes**, about 40 rounds, tuned in 9.1 |
+| Matariki square | **Use the wording as written** in section 2 |
+| Phone preview after 9.2 | **Yes** |
 
 ## 12. Fun extras I've included (within the hub's rules)
 
@@ -324,6 +335,4 @@ My recommendation is in **bold**. If you're happy with all of them, just reply *
 
 ## 13. What I need from you now
 
-1. Read this plan (the questions are in section 11).
-2. Reply with your answers, or **"go with your picks"**, or anything you'd change.
-3. Nothing else for now. No accounts, no settings, no live changes. I'll start Stage 9.1 when you say go.
+Nothing until the end of Stage 9.1, when I'll show you the simulation numbers.
