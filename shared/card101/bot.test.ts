@@ -33,6 +33,7 @@ describe('bots play fair', () => {
     const g = structuredClone(game);
     const visible = new Set<string>();
     if (g.phase === 'peek' && !g.peeked[seat]) [2, 3].forEach((slot) => visible.add(`${seat}:${slot}`));
+    g.faceUp.forEach((up, h) => up.forEach((isUp, slot) => isUp && visible.add(`${h}:${slot}`)));
     const spots: { hand: number; slot: number }[] = [];
     g.hands.forEach((hand, h) => hand.forEach((_, slot) => !visible.has(`${h}:${slot}`) && spots.push({ hand: h, slot })));
     const hidden: Card[] = [...spots.map(({ hand, slot }) => g.hands[hand][slot]), ...g.stack];
@@ -91,7 +92,7 @@ describe('bots play fair', () => {
     expect(memory.discardPile.at(-1)).toBe(game.discard.at(-1));
   });
 
-  it("it remembers a card another player took off the discard pile, but not one they drew from the stack", () => {
+  it('it remembers cards other players swap in (they go face up), from the discard pile or the stack', () => {
     const dice = seededDice('watch');
     let { game, events } = newGame(2, { target: 101 }, dice);
     ({ game, events } = play(game, 'system', { type: 'end-peek' }, dice));
@@ -107,12 +108,14 @@ describe('bots play fair', () => {
     ({ game, events } = play(game, watcher, { type: 'draw', from: 'stack' }, dice));
     ({ game, events } = play(game, watcher, { type: 'throw' }, dice));
     const watcher2 = observe(memory, viewFor(game, watcher), eventsFor(events, watcher, game));
-    for (const action of [{ type: 'draw', from: 'stack' }, { type: 'swap', slot: 2 }] as const) {
-      ({ game, events } = play(game, mover, action, dice));
-      memory = observe(watcher2, viewFor(game, watcher), eventsFor(events, watcher, game));
-    }
-    expect(memory.others[mover][2]).toBeNull();
-    expect(memory.othersKept[mover][2]).toBe(true);
+    memory = watcher2;
+    ({ game, events } = play(game, mover, { type: 'draw', from: 'stack' }, dice));
+    const drawn = game.holding!.card;
+    memory = observe(memory, viewFor(game, watcher), eventsFor(events, watcher, game));
+    ({ game, events } = play(game, mover, { type: 'swap', slot: 2 }, dice));
+    memory = observe(memory, viewFor(game, watcher), eventsFor(events, watcher, game));
+    expect(memory.others[mover][2]).toBe(drawn);
+    expect(memory.othersKept[mover][2]).toBe(false);
   });
 });
 

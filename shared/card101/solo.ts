@@ -99,15 +99,25 @@ export function nextBotMove(solo: SoloGame): { seat: number; action: Action } | 
   return { seat: g.turn, action };
 }
 
+/**
+ * Plays the next bot move, if a bot is to move. Returns what happened (the student's
+ * events), or null when it's the student's move. The screen calls this one move at a
+ * time, with a pause between, so it plays exactly what `playBots` would.
+ */
+export function playOneBot(solo: SoloGame): { seat: number; action: Action; events: GameEvent[] } | null {
+  const move = nextBotMove(solo);
+  if (!move) return null;
+  if (move.action.type !== 'peek-done') solo.decisions += 1;
+  return { ...move, events: applySolo(solo, move.seat, move.action) };
+}
+
 /** Plays bot moves until the student has to act. `onEvents` gets the student's events after each one. */
 export function playBots(solo: SoloGame, onEvents?: (events: GameEvent[], seat: number) => void): void {
   for (let guard = 0; ; guard++) {
     if (guard > 5000) throw new Error('Bots never finished their turns');
-    const move = nextBotMove(solo);
+    const move = playOneBot(solo);
     if (!move) return;
-    if (move.action.type !== 'peek-done') solo.decisions += 1;
-    const events = applySolo(solo, move.seat, move.action);
-    onEvents?.(events, move.seat);
+    onEvents?.(move.events, move.seat);
   }
 }
 

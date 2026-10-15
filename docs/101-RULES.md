@@ -1,6 +1,6 @@
 # How to play 101
 
-Agreed with James on 16 October 2026. The game's **How to play** panel is made from this file, and the rules code follows it exactly.
+Agreed with James on 16 October 2026 (swapped-in cards go face up and are locked: added the same day). The game's **How to play** panel is made from this file, and the rules code follows it exactly.
 
 ## The aim
 
@@ -33,7 +33,8 @@ Do **one** of these:
 **Take a card**
 1. Take the top card of the **discard pile** (face up) or the top card of the **stack** (face down, only you see it).
 2. Then either:
-   - **Keep it:** swap it for one of your four cards. Your new card goes face down. The card you swapped out goes face up on the discard pile.
+   - **Keep it:** swap it for one of your **face-down** cards. Your new card goes **face up**, so everyone can see it, and it stays there for the rest of the round: a face-up card can't be swapped again. The card you swapped out goes face up on the discard pile.
+   - Once all four of your cards are face up, you can only throw away (or knock).
    - **Throw it away:** put it face up on the discard pile. (You can do this even with the card you just took from the discard pile.)
 
 **Or knock**

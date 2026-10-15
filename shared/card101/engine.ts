@@ -9,6 +9,11 @@
  * The `Game` here is the WHOLE game, with every card in it. It must never be sent to a
  * browser in a classmates game: `viewFor` (view.ts) makes the part each player may see.
  *
+ * A card swapped into a hand goes in FACE UP, so everyone can see it for the rest of the
+ * round, and it's locked: that spot can't be swapped again this round (James, 16 October
+ * 2026). So each spot is swapped at most once a round; with all four face up, a player
+ * can only throw away or knock.
+ *
  * A round: deal → peek (each player looks at their bottom two cards once) → turns →
  * someone knocks → everyone else gets one last turn → scoring → next round, until a
  * total reaches the target (101, or 50 in a Quick game).
@@ -63,6 +68,8 @@ export interface Game {
   phase: Phase;
   /** Each player's four cards, by slot (0 top left, 1 top right, 2 bottom left, 3 bottom right). */
   hands: Card[][];
+  /** Which of each player's cards are face up (swapped in this round), by slot. */
+  faceUp: boolean[][];
   /** The face-down stack. The LAST card is the top. */
   stack: Card[];
   /** The face-up discard pile. The LAST card is the top. */
@@ -107,7 +114,7 @@ export type GameEvent =
   | { kind: 'play-starts'; turn: number }
   | { kind: 'draw'; seat: number; from: 'stack'; card?: Card }
   | { kind: 'draw'; seat: number; from: 'discard'; card: Card }
-  | { kind: 'swap'; seat: number; slot: Slot; discarded: Card }
+  | { kind: 'swap'; seat: number; slot: Slot; placed: Card; discarded: Card }
   | { kind: 'throw'; seat: number; card: Card }
   | { kind: 'knock'; seat: number }
   | { kind: 'skip'; seat: number; discarded: Card | null }
@@ -138,6 +145,7 @@ export function newGame(players: number, settings: Settings, dice: Dice): { game
     starter: dice(players) - 1,
     phase: 'round-over',
     hands: Array.from({ length: players }, () => []),
+    faceUp: Array.from({ length: players }, () => []),
     stack: [],
     discard: [],
     turn: 0,
@@ -243,11 +251,14 @@ function apply(g: Game, actor: Actor, action: Action, dice: Dice, events: GameEv
     case 'swap': {
       if (!g.holding) fail('Take a card first');
       if (!isSlot(action.slot)) fail('Pick one of your four cards');
+      if (g.faceUp[seat!][action.slot]) fail('That card is face up, so it stays. Pick a face-down card, or throw it away');
       const discarded = g.hands[seat!][action.slot];
-      g.hands[seat!][action.slot] = g.holding!.card;
+      const placed = g.holding!.card;
+      g.hands[seat!][action.slot] = placed;
+      g.faceUp[seat!][action.slot] = true;
       g.discard.push(discarded);
       g.holding = null;
-      events.push({ kind: 'swap', seat: seat!, slot: action.slot, discarded });
+      events.push({ kind: 'swap', seat: seat!, slot: action.slot, placed, discarded });
       endTurn(g, events);
       return;
     }
@@ -272,6 +283,10 @@ function apply(g: Game, actor: Actor, action: Action, dice: Dice, events: GameEv
       fail('Unknown move');
   }
 }
+
+/** The slots this player may still swap into (face-down ones). */
+export const swappableSlots = (g: Pick<Game, 'faceUp'>, seat: number): Slot[] =>
+  ([0, 1, 2, 3] as Slot[]).filter((slot) => !g.faceUp[seat][slot]);
 
 /** Whether this player could knock right now. */
 export function canKnock(g: Game, seat: number): boolean {
@@ -298,6 +313,7 @@ function deal(g: Game, dice: Dice, events: GameEvent[], moveStarter: boolean): v
   if (moveStarter) g.starter = nextActive(g, g.starter);
   const pack = shuffled(dice, PACK);
   g.hands = g.totals.map((_, seat) => (g.out[seat] ? [] : pack.splice(0, 4)));
+  g.faceUp = g.hands.map((hand) => hand.map(() => false));
   g.discard = [pack.pop()!];
   g.stack = pack;
   g.holding = null;
@@ -394,6 +410,7 @@ function putOut(g: Game, seat: number, reason: 'left' | 'skipped', events: GameE
   }
   g.out[seat] = true;
   g.hands[seat] = [];
+  g.faceUp[seat] = [];
   g.owesLastTurn[seat] = false;
   g.peeked[seat] = true;
   events.push({ kind: 'out', seat, reason });

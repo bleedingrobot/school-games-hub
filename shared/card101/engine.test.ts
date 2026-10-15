@@ -105,9 +105,34 @@ describe('a turn', () => {
     expect(game.turn).toBe(1);
     expect(events).toEqual([
       { kind: 'draw', seat: 0, from: 'stack', card: '9C' },
-      { kind: 'swap', seat: 0, slot: 1, discarded: '2H' },
+      { kind: 'swap', seat: 0, slot: 1, placed: '9C', discarded: '2H' },
       { kind: 'turn', seat: 1, lastTurn: false },
     ]);
+  });
+
+  it('a swapped-in card goes face up, and that spot is locked for the rest of the round (James)', () => {
+    let { game } = run(table(['AH 2H 4H 6H', 'QS QC QD QH'], 'TC 9C 8C 7C', '5H'), [[0, draw('stack')], [0, swap(1)]]);
+    expect(game.faceUp[0]).toEqual([false, true, false, false]);
+    expect(game.faceUp[1]).toEqual([false, false, false, false]);
+    game = run(game, [[1, draw('stack')], [1, THROW], [0, draw('stack')]]).game;
+    expect(() => play(game, 0, swap(1), dice)).toThrow(/face up/);
+    game = run(game, [[0, swap(0)]]).game;
+    expect(game.faceUp[0]).toEqual([true, true, false, false]);
+  });
+
+  it('with all four cards face up you can only throw away (or knock)', () => {
+    const start = table(['AH 2H 4H 6H', 'QS QC QD QH'], 'TC 9C', '5H', {
+      faceUp: [[true, true, true, true], [false, false, false, false]],
+    });
+    const holding = run(start, [[0, draw('stack')]]).game;
+    for (const slot of [0, 1, 2, 3] as const) expect(() => play(holding, 0, swap(slot), dice)).toThrow(/face up/);
+    expect(run(holding, [[0, THROW]]).game.turn).toBe(1);
+  });
+
+  it('the next round deals everything face down again', () => {
+    const { game } = newGame(2, { target: 101 }, dice);
+    const after = run({ ...game, phase: 'round-over', faceUp: [[true, true, true, true], [true, false, false, false]] }, [['system', { type: 'next-round' }]]).game;
+    expect(after.faceUp).toEqual([[false, false, false, false], [false, false, false, false]]);
   });
 
   it('take from the stack and throw it away', () => {

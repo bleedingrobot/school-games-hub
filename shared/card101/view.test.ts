@@ -13,6 +13,7 @@ import { eventsFor, viewFor } from './view';
 /** The cards `seat` may know right now, worked out from the whole game. */
 function allowedCards(game: Game, seat: number): Set<Card> {
   const allowed = new Set<Card>(game.discard);
+  game.hands.forEach((hand, s) => hand.forEach((card, slot) => game.faceUp[s][slot] && allowed.add(card)));
   if (game.holding && (game.holding.from === 'discard' || game.turn === seat)) allowed.add(game.holding.card);
   if (game.phase === 'peek' && !game.out[seat] && !game.peeked[seat]) {
     allowed.add(game.hands[seat][2]);
@@ -130,14 +131,27 @@ describe('what each player sees', () => {
     expect(eventsFor(drawn.events, drawer, drawn.game)).toEqual([{ kind: 'draw', seat: drawer, from: 'stack', card }]);
     expect(viewFor(drawn.game, other).holding).toEqual({ seat: drawer, from: 'stack', card: null });
     expect(eventsFor(drawn.events, other, drawn.game)).toEqual([{ kind: 'draw', seat: drawer, from: 'stack' }]);
-    // Swapped in: gone, even for the drawer, and even in the events of that same change.
+    // Thrown away: face up on the discard pile, so everyone sees it.
+    const thrown = play(drawn.game, drawer, { type: 'throw' }, dice);
+    for (const seat of [0, 1, 2]) expect(viewFor(thrown.game, seat).discardTop).toBe(card);
+  });
+
+  it('a card swapped into a hand goes face up there, for everyone to see (James)', () => {
+    let { game } = start();
+    const dice = seededDice('d');
+    game = play(game, 'system', { type: 'end-peek' }, dice).game;
+    const drawer = game.turn;
+    const drawn = play(game, drawer, { type: 'draw', from: 'stack' }, dice);
+    const card = drawn.game.holding!.card;
     const swapped = play(drawn.game, drawer, { type: 'swap', slot: 0 }, dice);
     for (const seat of [0, 1, 2]) {
-      expect(cardsIn({ v: viewFor(swapped.game, seat), e: eventsFor([...drawn.events, ...swapped.events], seat, swapped.game) }).has(card)).toBe(false);
+      expect(viewFor(swapped.game, seat).faceUp[drawer]).toEqual([card, null, null, null]);
+      expect(eventsFor(swapped.events, seat, swapped.game)[0]).toMatchObject({ kind: 'swap', placed: card });
+      expect(viewFor(swapped.game, seat).faceUp.filter((_, s) => s !== drawer).flat().every((c) => c === null)).toBe(true);
     }
   });
 
-  it('a card taken from the discard pile stays visible to everyone (they all saw it), until it goes into a hand', () => {
+  it('a card taken from the discard pile stays visible to everyone (they all saw it), and face up in the hand it goes into', () => {
     let { game } = start();
     const dice = seededDice('d2');
     game = play(game, 'system', { type: 'end-peek' }, dice).game;
@@ -145,7 +159,7 @@ describe('what each player sees', () => {
     const taken = play(game, game.turn, { type: 'draw', from: 'discard' }, dice).game;
     expect(viewFor(taken, (taken.turn + 1) % 3).holding).toEqual({ seat: taken.turn, from: 'discard', card: top });
     const swapped = play(taken, taken.turn, { type: 'swap', slot: 1 }, dice).game;
-    expect(cardsIn(viewFor(swapped, 0)).has(top)).toBe(false);
+    expect(viewFor(swapped, (taken.turn + 2) % 3).faceUp[taken.turn][1]).toBe(top);
   });
 
   it("everyone's cards are shown when the round ends, and hidden again once the next round is dealt", () => {

@@ -31,7 +31,7 @@ Where this plan and the brief disagree, this plan wins once James approves it.
 
 The agreed rules are in [101-RULES.md](101-RULES.md) (James's answers in section 12), and the in-game **How to play** panel is made from it.
 
-In short: 4 face-down cards in a 2×2 square; peek at your bottom two once; each turn take the top discard or the top of the stack, then swap it in or throw it away; or knock instead. After a knock everyone else gets one last turn. Lowest hand wins the round; totals add up; the game ends when someone reaches 101 and the lowest total wins. Kings 0, Aces 1, 2 and 4–10 face value, Jacks and Queens 10, a 3 is 0 and cancels your highest card, a pair cancels out, three of a kind makes the whole hand 0.
+In short: 4 face-down cards in a 2×2 square; peek at your bottom two once; each turn take the top discard or the top of the stack, then swap it in (it goes face up and stays) or throw it away; or knock instead. After a knock everyone else gets one last turn. Lowest hand wins the round; totals add up; the game ends when someone reaches 101 and the lowest total wins. Kings 0, Aces 1, 2 and 4–10 face value, Jacks and Queens 10, a 3 is 0 and cancels your highest card, a pair cancels out, three of a kind makes the whole hand 0.
 
 ## 3. Hidden cards: how nothing leaks
 
@@ -43,19 +43,20 @@ This is the most important part of the plan.
 |---|---|
 | The stack (its order and every card in it) | **Nobody**, ever |
 | The top card of the discard pile, and every card thrown on it | Everyone (it's face up) |
-| A card you just drew from the stack | **Only you**, and only until you swap it in or throw it away |
+| A card you just drew from the stack | **Only you**, while you hold it. Then everyone: thrown away or swapped in, it ends up face up |
 | Your bottom two cards | **Only you**, during the peek, then never again |
-| Your other cards, and any card you've swapped in | **Nobody**, not even you (you have to remember) |
+| Any card swapped into a hand | **Everyone**: it goes in face up and stays put (rule 12, section 12) |
+| Your dealt cards still face down | **Nobody**, not even you (you have to remember your peek) |
 | Everyone's cards at the end of a round | Everyone (they're turned face up) |
 
-One thing is fair and stays visible: if you take a face-up card from the discard pile and swap it into your top-left spot, everyone saw that happen. A sharp student can remember it, just like at the kitchen table.
+So the memory part of the game is your two peeked cards and what's still face down; everything swapped in is on show.
 
 ### How it's enforced
 
 1. **One function makes every view.** `viewFor(game, seat)` in `shared/card101/view.ts` turns the full game into what one seat may know. It's the only way out of the server for card information. Function replies, live updates and the bots all go through it.
 2. **The full game sits in a locked table** (`card_games`). Students have no permission to read it at all: no row rules, no table permission, not in Realtime. Only the server function and the database's own scoring code can touch it.
 3. **Each player has their own small row** (`card_game_seats`: one row per player per game) holding just their view. The database's row rules let a student read only their own row. When the game changes, the server rewrites every seat's row in one go, so each browser gets its own new view live, through Realtime.
-4. **Events are filtered too.** "Speedy Otter drew from the stack and swapped it into their top-right" goes to everyone, but the card's name goes only to Speedy Otter, and only while she's holding it. Once it's swapped in, it's gone from her view as well.
+4. **Events are filtered too.** "Speedy Otter drew from the stack" goes to everyone, but the card's name goes only to Speedy Otter while they're holding it. Once it's swapped in (face up) or thrown away, everyone sees it.
 5. **The deal happens after the game starts**, and every round's shuffle uses the server's secure random numbers (`crypto.getRandomValues`, with a fair Fisher–Yates shuffle). The browser never shuffles a classmates game. This avoids boardgame.io's known trap (sending the starting hands to everyone).
 
 ### Why per-seat rows, not "something changed, come and ask"
@@ -238,6 +239,7 @@ All on branch `stage-10`. Nothing goes live or into `main` before your yes.
 | 9. Most players | **4** |
 | 10. Shorter option | **Yes: Quick game, first to 50**, as a setting; 101 stays the normal game |
 | 11. Who starts each round | Random in round 1, then **the next player along** each round |
+| 12. (added later the same day) Swapped-in cards | A card you swap in goes **face up** for everyone to see, and that spot is **locked** for the rest of the round (so each spot is swapped at most once a round). With all four face up you can only throw away or knock |
 
 ## 13. Stage 10.1 results: rules, views, bots and simulation (16 October 2026)
 

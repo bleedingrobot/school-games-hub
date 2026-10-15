@@ -788,18 +788,6 @@
 .space-actions .link-button {
   font-size: 0.92rem;
 }
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
-}
-
 /* A space fact in the "tap a square" box */
 .space-info__fact {
   margin-top: 4px;

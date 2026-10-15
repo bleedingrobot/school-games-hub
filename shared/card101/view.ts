@@ -4,10 +4,10 @@
  * goes through `viewFor` and `eventsFor`.
  *
  * A player may see: the top of the discard pile; a card they've just drawn, while they
- * hold it; a card anyone took from the discard pile (everyone saw it face up); their
- * bottom two cards during the peek, and never again; and everyone's cards once a round
- * is over. Nothing else: never the stack, never anyone's face-down cards, not even
- * their own. `view.test.ts` plays thousands of games and checks every view for leaks.
+ * hold it; a card anyone took from the discard pile (everyone saw it face up); every
+ * card swapped into a hand (those go in face up); their bottom two cards during the
+ * peek, and never again; and everyone's cards once a round is over. Nothing else: never
+ * the stack, never anyone's face-down cards, not even their own. `view.test.ts` plays thousands of games and checks every view for leaks.
  */
 import { PEEK_SLOTS, type Card, type Slot } from './cards';
 import { canKnock, type Game, type GameEvent, type Phase, type RoundResult, type Settings } from './engine';
@@ -25,6 +25,8 @@ export interface SeatView {
   out: boolean[];
   /** How many cards each player has on the table (4, or 0 once they're out). */
   cardsOnTable: number[];
+  /** Everyone's face-up cards by slot (swapped in this round); null where a card is face down. */
+  faceUp: (Card | null)[][];
   stackCount: number;
   discardTop: Card | null;
   /** Someone is holding a card they drew. `card` is there only if it's yours or came off the discard pile. */
@@ -68,6 +70,7 @@ export function viewFor(game: Game, seat: number): SeatView {
     totals: [...game.totals],
     out: [...game.out],
     cardsOnTable: game.hands.map((hand) => hand.length),
+    faceUp: game.hands.map((hand, s) => hand.map((card, slot) => (game.faceUp[s][slot] ? card : null))),
     stackCount: game.stack.length,
     discardTop: game.discard.length ? game.discard[game.discard.length - 1] : null,
     holding,

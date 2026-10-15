@@ -91,6 +91,17 @@ export function observe(memory: BotMemory, view: SeatView, events: readonly Game
     }
   }
   if (view.peek) view.peek.slots.forEach((slot, i) => (m.own[slot] = view.peek!.cards[i]));
+  // Swapped-in cards sit face up, so everyone (bots too) can see them.
+  view.faceUp.forEach((hand, seat) =>
+    hand.forEach((card, slot) => {
+      if (!card) return;
+      if (seat === m.seat) m.own[slot] = card;
+      else {
+        m.others[seat][slot] = card;
+        m.othersKept[seat][slot] = false;
+      }
+    }),
+  );
   // A card being held lands in someone's hand if they swap it in (seen in the next update).
   m.lastSeenHolding = view.holding ? { seat: view.holding.seat, card: view.holding.card } : null;
   return m;
@@ -115,14 +126,21 @@ function heldCard(m: BotMemory, seat: number, events: readonly GameEvent[], swap
 export function decide(view: SeatView, memory: BotMemory, level: BotLevel, random: () => number): Action {
   if (view.phase === 'peek') return { type: 'peek-done' };
   if (view.phase !== 'play' || view.turn !== view.seat) throw new Error("It isn't this bot's turn");
-  const known = level === 'very-easy' ? memory.own.map((c) => (c && random() < 0.4 ? null : c)) : [...memory.own];
+  const up = view.faceUp[view.seat] ?? [];
+  // Very Easy forgets cards it peeked at, but face-up cards are right there in front of it.
+  const known = memory.own.map((c, slot) => up[slot] ?? (level === 'very-easy' && c && random() < 0.4 ? null : c));
+  // Face-up spots are locked: only face-down ones can be swapped.
+  const open = SLOTS.filter((slot) => !up[slot]);
 
   if (view.holding) {
     const card = view.holding.card!;
-    return level === 'very-easy' ? veryEasyPlace(card, known, random) : bestPlace(card, known, pool(view, memory, level), level, random);
+    return level === 'very-easy' ? veryEasyPlace(card, known, open, random) : bestPlace(card, known, open, pool(view, memory, level), level, random);
   }
 
-  if (view.canKnock && wantsToKnock(view, memory, known, level, random)) return { type: 'knock' };
+  // All four face up (nothing can change any more), or the round has dragged on: finish it.
+  // Without this, two careful bots with their good spots locked could go round for ever.
+  const dragging = view.turnsThisRound[view.seat] >= LONG_ROUND_TURNS;
+  if (view.canKnock && (open.length === 0 || dragging || wantsToKnock(view, memory, known, level, random))) return { type: 'knock' };
 
   const top = view.discardTop;
   if (top) {
@@ -131,12 +149,12 @@ export function decide(view: SeatView, memory: BotMemory, level: BotLevel, rando
     } else {
       const cards = pool(view, memory, level);
       const now = expectedScore(known, cards, random, samplesFor(level));
-      const place = bestPlace(top, known, cards, level, random);
+      const place = bestPlace(top, known, open, cards, level, random);
       if (place.type === 'swap') {
         const after = [...known];
         after[place.slot] = top;
         const gain = now - expectedScore(after, cards, random, samplesFor(level));
-        if (level === 'easy' ? gain >= 3 : gain >= stackGain(known, cards, random) + MEDIUM_TUNING.stackBonus) return { type: 'draw', from: 'discard' };
+        if (level === 'easy' ? gain >= 3 : gain >= stackGain(known, open, cards, random) + MEDIUM_TUNING.stackBonus) return { type: 'draw', from: 'discard' };
       }
     }
   }
@@ -146,23 +164,26 @@ export function decide(view: SeatView, memory: BotMemory, level: BotLevel, rando
 /** Medium's settings, tuned with the simulation (docs/101-PLAN.md section 13): knocking only on a low hand wins most. */
 const MEDIUM_TUNING = { knockCap: 5, knockMargin: 0, guessOffset: 1.5, stackBonus: 0.5, alwaysKnockAt: 3 } as const;
 
+/** A bot knocks once it has had this many turns in a round, whatever its hand. */
+export const LONG_ROUND_TURNS = 10;
+
 const samplesFor = (level: BotLevel) => (level === 'medium' ? 32 : 10);
 
-function veryEasyPlace(card: Card, known: (Card | null)[], random: () => number): Action {
-  if (cardValue(card) > 4 && rankOf(card) !== '3') return { type: 'throw' };
+function veryEasyPlace(card: Card, known: (Card | null)[], open: readonly Slot[], random: () => number): Action {
+  if (open.length === 0 || (cardValue(card) > 4 && rankOf(card) !== '3')) return { type: 'throw' };
   // Swap out a high card it remembers, or else a random one.
-  const high = SLOTS.filter((s) => known[s] && cardValue(known[s]!) >= 7);
-  const slots = high.length ? high : SLOTS;
+  const high = open.filter((s) => known[s] && cardValue(known[s]!) >= 7);
+  const slots = high.length ? high : open;
   return { type: 'swap', slot: slots[Math.floor(random() * slots.length)] };
 }
 
 /** Swap into the spot that lowers the expected hand most, or throw it away. */
-function bestPlace(card: Card, known: (Card | null)[], cards: Card[], level: BotLevel, random: () => number): Action {
+function bestPlace(card: Card, known: (Card | null)[], open: readonly Slot[], cards: Card[], level: BotLevel, random: () => number): Action {
   const fills = sampleFills(known, cards.filter((c) => c !== card), random, samplesFor(level));
   const now = averageScore(known, fills);
   let best: Slot | null = null;
   let bestScore = now - (level === 'easy' ? 0.5 : 0.25);
-  for (const slot of SLOTS) {
+  for (const slot of open) {
     const after = [...known];
     after[slot] = card;
     const score = averageScore(after, fills);
@@ -255,7 +276,7 @@ function guessHand(memory: BotMemory, seat: number, cards: Card[], random: () =>
 }
 
 /** Medium: how much a card off the stack would lower its hand, on average. */
-function stackGain(known: (Card | null)[], cards: Card[], random: () => number): number {
+function stackGain(known: (Card | null)[], open: readonly Slot[], cards: Card[], random: () => number): number {
   const fills = sampleFills(known, cards, random, 16);
   const now = averageScore(known, fills);
   let gain = 0;
@@ -263,7 +284,7 @@ function stackGain(known: (Card | null)[], cards: Card[], random: () => number):
   for (let n = 0; n < draws; n++) {
     const card = cards[Math.floor(random() * cards.length)];
     let best = now;
-    for (const slot of SLOTS) {
+    for (const slot of open) {
       const after = [...known];
       after[slot] = card;
       best = Math.min(best, averageScore(after, fills));
