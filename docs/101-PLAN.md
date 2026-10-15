@@ -2,7 +2,7 @@
 
 Stage 10 of School Games Hub: James's family card game, against bots or 2–4 classmates.
 Written 16 October 2026 from the brief in [prompts/game-101.md](prompts/game-101.md), after reading the code on `main` (Stages 1–9 live).
-**Status: rule questions answered by James on 16 October 2026 (section 12); agreed rules in [101-RULES.md](101-RULES.md). Stage 10.1 done 16 October 2026 (results in section 13). Stage 10.2 done 16 October 2026 (section 14), with James's new rule that swapped-in cards go face up and lock. Stage 10.3 done 16 October 2026 (section 15). Stage 10.4 done 16 October 2026 (section 16). Stage 10.5 polish done 16 October 2026 (section 17). Next: go-live, after James's yes (section 17).**
+**Status: rule questions answered by James on 16 October 2026 (section 12); agreed rules in [101-RULES.md](101-RULES.md). Stage 10.1 done 16 October 2026 (results in section 13). Stage 10.2 done 16 October 2026 (section 14), with James's new rule that swapped-in cards go face up and lock. Stage 10.3 done 16 October 2026 (section 15). Stage 10.4 done 16 October 2026 (section 16). Stage 10.5 polish done 16 October 2026 (section 17). **Live 16 October 2026** (James's yes; steps in section 17 done and checked from outside).**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
