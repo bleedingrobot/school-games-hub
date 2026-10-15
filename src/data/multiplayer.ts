@@ -30,6 +30,9 @@ export interface FriendGame {
   draw_offer: Side | null;
   first_draw_offers: number;
   second_draw_offers: number;
+  /** How many moves had been played when each side last offered a draw. */
+  first_offer_ply: number | null;
+  second_offer_ply: number | null;
   winner: Side | null;
   reason: string | null;
   counts_for_points: boolean | null;
@@ -74,14 +77,58 @@ export type Action =
   | { action: 'move'; gameId: string; move: string; ply: number }
   | { action: 'answer-draw'; gameId: string; accept: boolean };
 
-/** Asks the server to do something. Returns the game as it is afterwards. */
+/** How long to wait before trying a request again after the network or the server hiccups. */
+export const RETRY_AFTER_MS = 1000;
+
+/** Refusals that, after a retry, just mean "your first try worked": look again quietly. */
+const ALREADY_DONE = ['over', 'changed', 'no-offer'];
+
+/**
+ * Asks the server to do something. Returns the game as it is afterwards.
+ *
+ * On patchy school Wi-Fi, or when Supabase hiccups while starting the function up (it
+ * happened a few times on 15 Oct 2026), the request is tried once more after a second.
+ * That's safe: every move says which move number it is, so the server never plays it
+ * twice, and the other actions do nothing the second time. If the first try did get
+ * through, the second gets "already done", which is treated as "look at the game again".
+ */
 export async function ask(request: Action): Promise<FriendGame> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new MultiplayerError('Please sign in again.', 'sign-in');
-  let response: Response;
+
+  let reply = await send(request, token);
+  const retried = reply === 'offline' || reply.status >= 502;
+  if (retried) {
+    await new Promise((resolve) => setTimeout(resolve, RETRY_AFTER_MS));
+    reply = await send(request, token);
+  }
+  if (reply === 'offline') {
+    throw new MultiplayerError('We couldn’t reach the server. Check the Wi-Fi and try again.', 'offline');
+  }
+
+  const body = (await reply.json().catch(() => null)) as {
+    game?: FriendGame;
+    error?: string;
+    problem?: string;
+    secondsLeft?: number;
+  } | null;
+  if (reply.ok && body?.game) return body.game;
+  const problem = body?.problem ?? 'failed';
+  if (retried && request.action === 'join' && (problem === 'not-found' || problem === 'full')) {
+    // The first try may have joined: if so, that's the game to go to.
+    const joined = await recentlyJoined();
+    if (joined) return joined;
+  }
+  if (retried && ALREADY_DONE.includes(problem)) {
+    throw new MultiplayerError('The game changed just then. Have another look.', 'changed');
+  }
+  throw new MultiplayerError(body?.error ?? 'Something went wrong. Please try again.', problem, body?.secondsLeft);
+}
+
+async function send(request: Action, token: string): Promise<Response | 'offline'> {
   try {
-    response = await fetch(`${SUPABASE_URL}/functions/v1/multiplayer`, {
+    return await fetch(`${SUPABASE_URL}/functions/v1/multiplayer`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -91,25 +138,24 @@ export async function ask(request: Action): Promise<FriendGame> {
       body: JSON.stringify(request),
     });
   } catch {
-    throw new MultiplayerError('We couldn’t reach the server. Check the Wi-Fi and try again.', 'offline');
+    return 'offline';
   }
-  const body = (await response.json().catch(() => null)) as {
-    game?: FriendGame;
-    error?: string;
-    problem?: string;
-    secondsLeft?: number;
-  } | null;
-  if (response.ok && body?.game) return body.game;
-  throw new MultiplayerError(
-    body?.error ?? 'Something went wrong. Please try again.',
-    body?.problem ?? 'failed',
-    body?.secondsLeft,
-  );
+}
+
+/** A game I started playing in the last minute, if there is one. */
+async function recentlyJoined(): Promise<FriendGame | null> {
+  try {
+    const games = await fetchMyOpenGames();
+    const now = Date.now();
+    return games.find((g) => g.status === 'playing' && g.started_at && now - Date.parse(g.started_at) < 60_000) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 const COLUMNS =
   'id, game, code, in_lobby, created_by, first_player, second_player, status, moves, version, created_at, expires_at, ' +
-  'started_at, turn_started_at, draw_offer, first_draw_offers, second_draw_offers, winner, reason, counts_for_points, ' +
+  'started_at, turn_started_at, draw_offer, first_draw_offers, second_draw_offers, first_offer_ply, second_offer_ply, winner, reason, counts_for_points, ' +
   'finished_at, first_wants_rematch, second_wants_rematch, rematch_game';
 
 export async function fetchFriendGame(id: string): Promise<FriendGame | null> {

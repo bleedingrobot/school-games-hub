@@ -401,12 +401,23 @@ function corsHeaders(origin) {
 		"Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
 		"Access-Control-Allow-Methods": "POST, OPTIONS",
 		"Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+		"Access-Control-Max-Age": "7200",
 		Vary: "Origin"
 	};
 }
 /** The sign-in token from the request, if there is one. */
 function bearerToken(request) {
 	return request.headers.get("Authorization")?.match(/^Bearer (.+)$/)?.[1] ?? null;
+}
+/** Reads a JSON request body. Null if it's missing, unreadable or bigger than MAX_BODY_BYTES. */
+async function readJsonBody(request) {
+	if (Number(request.headers.get("Content-Length") ?? 0) > 65536) return null;
+	try {
+		const text = await request.text();
+		return text.length > 65536 ? null : JSON.parse(text);
+	} catch {
+		return null;
+	}
 }
 //#endregion
 //#region supabase/functions/save-bot-game/handler.ts
@@ -437,13 +448,7 @@ async function handleSaveBotGame(request, services) {
 	const token = bearerToken(request);
 	const player = token ? await services.userIdFor(token) : null;
 	if (!player) return reply(401, { error: "Please sign in again." });
-	let body;
-	try {
-		body = await request.json();
-	} catch {
-		body = null;
-	}
-	const checked = check(body);
+	const checked = check(await readJsonBody(request));
 	if (!checked) return reply(400, { error: "That game couldn't be read." });
 	const { game: gameName, report, judged } = checked;
 	if (!judged.ok) {

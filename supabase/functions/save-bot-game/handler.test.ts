@@ -109,6 +109,26 @@ describe('the save-bot-game server function', () => {
       s,
     );
     expect(other.headers.get('Access-Control-Allow-Origin')).toBe('https://bleedingrobot.github.io');
+    // Remembered for 2 hours, so the browser doesn't ask again before every save.
+    expect(ours.headers.get('Access-Control-Max-Age')).toBe('7200');
+  });
+
+  it('refuses a huge request without trying to read it as a game', async () => {
+    const { s, saved } = services();
+    const huge = { level: 'easy', studentColour: 'white', moves: ['e2e4'], ending: 'resigned', padding: 'x'.repeat(70_000) };
+    const response = await handleSaveBotGame(post(huge), s);
+    expect(response.status).toBe(400);
+    expect(saved).toEqual([]);
+  });
+
+  it('refuses a request that isn’t JSON at all', async () => {
+    const { s, saved } = services();
+    const response = await handleSaveBotGame(
+      new Request('http://x', { method: 'POST', headers: { Authorization: 'Bearer good-token' }, body: 'not json{' }),
+      s,
+    );
+    expect(response.status).toBe(400);
+    expect(saved).toEqual([]);
   });
 });
 

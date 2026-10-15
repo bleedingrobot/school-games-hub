@@ -333,6 +333,20 @@ function checkMove(game, moves, move) {
 	if (!replayed.ok || replayed.result) return null;
 	return findMove(replayed.position, move)?.notation ?? null;
 }
+/**
+* Why a side can't offer a draw right now, or null if it can: all its offers are used up, or
+* it must make a few more moves first. The server refuses on this, and the page uses it to
+* say why the button is greyed out.
+*/
+function drawOfferBlock(side, offersMade, lastOfferPly, plies) {
+	if (offersMade >= 3) return { problem: "draw-limit" };
+	if (lastOfferPly === null) return null;
+	const movesSince = movesBy(side, plies) - movesBy(side, lastOfferPly);
+	return movesSince < 5 ? {
+		problem: "draw-wait",
+		movesLeft: 5 - movesSince
+	} : null;
+}
 /** Recorded games earn nothing in Stage 7 if they were abandoned, or either player made fewer than 10 moves. */
 function countsForPoints(plies, reason) {
 	return reason !== "abandoned" && movesBy("second", plies) >= 10;
@@ -352,12 +366,23 @@ function corsHeaders(origin) {
 		"Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
 		"Access-Control-Allow-Methods": "POST, OPTIONS",
 		"Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+		"Access-Control-Max-Age": "7200",
 		Vary: "Origin"
 	};
 }
 /** The sign-in token from the request, if there is one. */
 function bearerToken(request) {
 	return request.headers.get("Authorization")?.match(/^Bearer (.+)$/)?.[1] ?? null;
+}
+/** Reads a JSON request body. Null if it's missing, unreadable or bigger than MAX_BODY_BYTES. */
+async function readJsonBody(request) {
+	if (Number(request.headers.get("Content-Length") ?? 0) > 65536) return null;
+	try {
+		const text = await request.text();
+		return text.length > 65536 ? null : JSON.parse(text);
+	} catch {
+		return null;
+	}
 }
 //#endregion
 //#region supabase/functions/multiplayer/handler.ts
@@ -457,13 +482,8 @@ function multiplayerHandler(services) {
 		const me = token ? await services.userIdFor(token) : null;
 		if (!me) return refuse(new Refused("sign-in"));
 		if (!limiter.allow(me, 60)) return refuse(new Refused("too-many"));
-		let body;
-		try {
-			const parsed = await request.json();
-			body = typeof parsed === "object" && parsed !== null ? parsed : null;
-		} catch {
-			body = null;
-		}
+		const parsed = await readJsonBody(request);
+		const body = typeof parsed === "object" && parsed !== null ? parsed : null;
 		const action = ACTIONS[String(body?.action)];
 		if (!body || !action) return refuse(new Refused("bad-request"));
 		try {
@@ -652,9 +672,9 @@ async function offerDraw({ services, me, body }) {
 	if (game.draw_offer === side) return game;
 	const made = side === "first" ? game.first_draw_offers : game.second_draw_offers;
 	const lastPly = side === "first" ? game.first_offer_ply : game.second_offer_ply;
-	if (made >= 3) throw new Refused("draw-limit");
 	const plies = game.moves.length;
-	if (lastPly !== null && movesBy(side, plies) - movesBy(side, lastPly) < 5) throw new Refused("draw-wait");
+	const blocked = drawOfferBlock(side, made, lastPly, plies);
+	if (blocked) throw new Refused(blocked.problem);
 	return save(services, game, side === "first" ? {
 		draw_offer: side,
 		first_draw_offers: made + 1,

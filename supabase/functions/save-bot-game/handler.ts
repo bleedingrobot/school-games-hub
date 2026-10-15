@@ -10,7 +10,7 @@
  */
 import { judgeBotGame, parseReport } from '../../../shared/chess/botGame';
 import { judgeCheckersGame, parseCheckersReport } from '../../../shared/checkers/botGame';
-import { bearerToken, corsHeaders } from '../_shared/http';
+import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 
 /** The two things this needs from Supabase, passed in so the tests can stand in for them. */
 export interface Services {
@@ -44,13 +44,7 @@ export async function handleSaveBotGame(request: Request, services: Services): P
   const player = token ? await services.userIdFor(token) : null;
   if (!player) return reply(401, { error: 'Please sign in again.' });
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    body = null;
-  }
-  const checked = check(body);
+  const checked = check(await readJsonBody(request));
   if (!checked) return reply(400, { error: "That game couldn't be read." });
   const { game: gameName, report, judged } = checked;
 

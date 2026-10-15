@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
-import { CLAIM_WIN_AFTER_MS, colourName, sideToMove } from '../../shared/multiplayer';
+import { CLAIM_WIN_AFTER_MS, colourName, drawOfferBlock, MAX_DRAW_OFFERS, sideToMove } from '../../shared/multiplayer';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { playSound, type GameSound } from '../games/sounds';
@@ -97,6 +97,20 @@ export function FriendGameScreen({ session, board, rows, alert, note, endings, l
 
   const waited = playing && game.turn_started_at ? session.serverNow() - Date.parse(game.turn_started_at) : 0;
   const canClaim = playing && !myTurn && waited >= CLAIM_WIN_AFTER_MS;
+
+  // The draw rules (3 offers each, 5 of your own moves between them), so the button can say
+  // why it's greyed out instead of the server refusing.
+  const drawBlock = drawOfferBlock(
+    mySide,
+    mySide === 'first' ? game.first_draw_offers : game.second_draw_offers,
+    (mySide === 'first' ? game.first_offer_ply : game.second_offer_ply) ?? null,
+    game.moves.length,
+  );
+  const drawNote = !drawBlock
+    ? null
+    : drawBlock.problem === 'draw-limit'
+      ? `You’ve used all ${MAX_DRAW_OFFERS} draw offers in this game.`
+      : `You can offer another draw after ${drawBlock.movesLeft} more ${drawBlock.movesLeft === 1 ? 'move' : 'moves'}.`;
 
   const outcome: Outcome | null = !finished ? null : game.winner === null ? 'drawn' : game.winner === mySide ? 'won' : 'lost';
   const headline = outcome && {
@@ -288,7 +302,8 @@ export function FriendGameScreen({ session, board, rows, alert, note, endings, l
             <button
               type="button"
               className="button button--light"
-              disabled={busy || !!game.draw_offer}
+              disabled={busy || !!game.draw_offer || !!drawBlock}
+              aria-describedby={drawNote ? 'draw-note' : undefined}
               onClick={() => void act({ action: 'offer-draw', gameId: game.id })}
             >
               🤝 Offer a draw
@@ -296,6 +311,11 @@ export function FriendGameScreen({ session, board, rows, alert, note, endings, l
             <button type="button" className="button button--light" onClick={() => setConfirming(true)}>
               🏳️ Resign
             </button>
+            {drawNote && !game.draw_offer && (
+              <p id="draw-note" className="friend-note">
+                {drawNote}
+              </p>
+            )}
           </div>
         )}
 

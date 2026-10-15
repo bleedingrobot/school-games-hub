@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { seeded } from './seededRandom';
 import { applyMove, boardResult, legalMoves, startPosition, type BoardResult } from './checkers/rules';
 import {
+  drawOfferBlock,
   checkMove,
   CODE_ALPHABET,
   colourName,
@@ -50,6 +51,17 @@ describe('sides and turns', () => {
     expect(countsForPoints(20, 'checkmate')).toBe(true);
     expect(countsForPoints(20, 'agreed-draw')).toBe(true);
     expect(countsForPoints(80, 'abandoned')).toBe(false);
+  });
+});
+
+describe('draw offers', () => {
+  it('allows the first offer, then 5 of your own moves between offers, and 3 in all', () => {
+    expect(drawOfferBlock('first', 0, null, 0)).toBeNull();
+    expect(drawOfferBlock('first', 1, 0, 8)).toEqual({ problem: 'draw-wait', movesLeft: 1 });
+    expect(drawOfferBlock('first', 1, 0, 10)).toBeNull();
+    expect(drawOfferBlock('second', 1, 3, 11)).toEqual({ problem: 'draw-wait', movesLeft: 1 });
+    expect(drawOfferBlock('second', 1, 3, 13)).toBeNull();
+    expect(drawOfferBlock('first', 3, 40, 80)).toEqual({ problem: 'draw-limit' });
   });
 });
 

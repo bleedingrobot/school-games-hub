@@ -13,10 +13,9 @@ import {
   checkMove,
   CLAIM_WIN_AFTER_MS,
   countsForPoints,
+  drawOfferBlock,
   isGameKind,
   makeCode,
-  MAX_DRAW_OFFERS,
-  movesBy,
   MOVES_BETWEEN_DRAW_OFFERS,
   normaliseCode,
   otherSide,
@@ -24,7 +23,7 @@ import {
   type GameKind,
   type Side,
 } from '../../../shared/multiplayer';
-import { bearerToken, corsHeaders } from '../_shared/http';
+import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 
 /** One row of the mp_games table. */
 export interface GameRow {
@@ -191,13 +190,8 @@ export function multiplayerHandler(services: Services) {
     if (!me) return refuse(new Refused('sign-in'));
     if (!limiter.allow(me, MAX_REQUESTS_PER_MINUTE)) return refuse(new Refused('too-many'));
 
-    let body: Body | null;
-    try {
-      const parsed: unknown = await request.json();
-      body = typeof parsed === 'object' && parsed !== null ? (parsed as Body) : null;
-    } catch {
-      body = null;
-    }
+    const parsed = await readJsonBody(request);
+    const body = typeof parsed === 'object' && parsed !== null ? (parsed as Body) : null;
     const action = ACTIONS[String(body?.action)];
     if (!body || !action) return refuse(new Refused('bad-request'));
 
@@ -416,11 +410,9 @@ async function offerDraw({ services, me, body }: Context): Promise<GameRow> {
 
   const made = side === 'first' ? game.first_draw_offers : game.second_draw_offers;
   const lastPly = side === 'first' ? game.first_offer_ply : game.second_offer_ply;
-  if (made >= MAX_DRAW_OFFERS) throw new Refused('draw-limit');
   const plies = game.moves.length;
-  if (lastPly !== null && movesBy(side, plies) - movesBy(side, lastPly) < MOVES_BETWEEN_DRAW_OFFERS) {
-    throw new Refused('draw-wait');
-  }
+  const blocked = drawOfferBlock(side, made, lastPly, plies);
+  if (blocked) throw new Refused(blocked.problem);
   return save(
     services,
     game,

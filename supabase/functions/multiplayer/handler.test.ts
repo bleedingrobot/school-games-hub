@@ -568,6 +568,21 @@ describe('the server function itself', () => {
     );
     expect(response.status).toBe(204);
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:5173');
+    expect(response.headers.get('Access-Control-Max-Age')).toBe('7200');
+  });
+
+  it('refuses huge or unreadable requests', async () => {
+    const w = world();
+    const game = await w.started();
+    const handle = multiplayerHandler(w.services);
+    const send = (body: string) =>
+      handle(new Request('http://x/multiplayer', { method: 'POST', headers: { Authorization: 'Bearer ana-token' }, body }));
+    const huge = await send(JSON.stringify({ action: 'resign', gameId: game.id, padding: 'x'.repeat(70_000) }));
+    expect(huge.status).toBe(400);
+    expect((await send('{"action": "resign"')).status).toBe(400);
+    expect((await send('[1, 2, 3]')).status).toBe(400);
+    expect((await send('"resign"')).status).toBe(400);
+    expect((await w.services.loadGame(game.id))?.status).toBe('playing');
   });
 
   it('has an up-to-date index.ts (run `npm run build:functions` if this fails)', async () => {
