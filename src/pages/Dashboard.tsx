@@ -16,7 +16,7 @@ import {
 } from '../data/multiplayer';
 import { fetchMyProgress, type MyProgress } from '../data/progress';
 import { findGame, GAMES } from '../games/registry';
-import { BOT_LEVELS, type BotLevel } from '../games/types';
+import { BOT_LEVELS, isRanked, type BotLevel } from '../games/types';
 
 const RESULT_LABEL = { won: 'Won', lost: 'Lost', drawn: 'Draw' } as const;
 
@@ -295,7 +295,7 @@ function StatsTable({ caption, stats }: { caption: string; stats: { game: string
         </tr>
       </thead>
       <tbody>
-        {GAMES.map((game) => {
+        {GAMES.filter(isRanked).map((game) => {
           const s = stats?.find((row) => row.game === game.id) ?? { played: 0, won: 0, lost: 0, drawn: 0 };
           const show = (n: number) => (stats ? n : '–');
           return (

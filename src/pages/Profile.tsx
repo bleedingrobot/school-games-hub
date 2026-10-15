@@ -258,7 +258,7 @@ function MyProgressPanels() {
           </span>
         </h2>
         <div className="achievement-columns">
-          {GAMES.map((game) => (
+          {GAMES.filter((game) => progress.achievements.some((a) => a.game === game.id)).map((game) => (
             <div key={game.id}>
               <h3>{game.name}</h3>
               <AchievementList achievements={progress.achievements.filter((a) => a.game === game.id)} />

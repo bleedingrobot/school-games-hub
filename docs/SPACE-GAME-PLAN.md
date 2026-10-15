@@ -2,7 +2,7 @@
 
 Stage 9 of School Games Hub: a space snakes and ladders for Years 4–6, against bots or 2–4 classmates.
 Written 15 October 2026 from the brief in [prompts/space-game.md](prompts/space-game.md), after reading the code on the `stage-8` branch.
-**Status: approved by James on 15 October 2026 (answers in section 11). Stage 9.1 done (results in section 14); James happy with the numbers as they are (15 Oct 2026). Next: Stage 9.2.**
+**Status: approved by James on 15 October 2026 (answers in section 11). Stage 9.1 done (results in section 14); James happy with the numbers as they are (15 Oct 2026). Stage 9.2 done (playing against bots, not saved; phone preview built with `npm run space:preview`). Next: Stage 9.3.**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
