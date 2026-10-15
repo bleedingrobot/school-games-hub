@@ -2,7 +2,7 @@
 
 Stage 9 of School Games Hub: a space snakes and ladders for Years 4–6, against bots or 2–4 classmates.
 Written 15 October 2026 from the brief in [prompts/space-game.md](prompts/space-game.md), after reading the code on the `stage-8` branch.
-**Status: approved by James on 15 October 2026 (answers in section 11). Stage 9.1 done (results in section 14); James happy with the numbers as they are (15 Oct 2026). Stage 9.2 done (playing against bots; phone preview built with `npm run space:preview`). Stage 9.3 done (bot games saved and checked, taking-part points, space achievements; results in section 15; not live yet). Next: Stage 9.4.**
+**Status: approved by James on 15 October 2026 (answers in section 11). Stage 9.1 done (results in section 14); James happy with the numbers as they are (15 Oct 2026). Stage 9.2 done (playing against bots; phone preview built with `npm run space:preview`). Stage 9.3 done (bot games saved and checked, taking-part points, space achievements; results in section 15; not live yet). Stage 9.4 done (playing classmates; results in section 16; not live yet). Next: Stage 9.5.**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
@@ -431,3 +431,32 @@ Built on branch `stage-9`. **Nothing is live yet**: the new migration and the up
 - 10 new server tests: seeds, a full game replayed and saved, left-early, forged stamps, other students' seeds, old seeds, changed games and settings, Random Galaxy boards, the daily limit.
 - 3 new screen tests: saving, practice games, leaving part-way.
 - In a real browser against the local database and the real function: 5 whole games at Chromebook and tablet sizes (designed board and a Random Galaxy, exact finish, roll again on 6, cosmic events), each saved once with 2 points; a closed tab saved as left early with 0; no Wi-Fi gave a practice game; First launch and Force Field achievements earned. No page errors.
+
+## 16. Stage 9.4 results: playing classmates (15 October 2026)
+
+Built on branch `stage-9`. **Nothing is live yet**: migration `20261015000700_space_classmates.sql` and the new `space-game` function go live with the rest of Stage 9, after James says yes. `multiplayer` and `save-bot-game` don't change (their built files are identical).
+
+### How it works
+
+- **Lobby:** "Start a game" has Wormholes & Black Holes (2–4 players) next to chess and checkers, with a board (the four designed boards or Galaxy of the day) and Cosmic/Classic. Other settings come from the student's saved bot-game settings. Open space games show "Nebula, Cosmic. 2 of 4 joined". The **Join with a code** box asks chess/checkers first, then space.
+- **Waiting room** (`/#/space-game/<id>`): the code, four seats, and for the host **Fill empty seats with bots?** (0 to the empty seats; bots are Pilots) and **🚀 Launch!** (needs 2 students). Others see "Waiting for … to launch" and **Leave**.
+- **Playing:** the same board, animations and panels as the bot game (shared code now: `useEventPlayer.ts`, `parts.tsx`). The server rolls; each change arrives live with its events. A missed stretch (reload, closed lid) is read back from `space_game_log` and played, or the board jumps if more than 8 changes were missed. The mission log is refilled from the log after a reload.
+- **Timers:** 30 s a turn, 15 s a choice, plus animation time (up to 25 s). A ring timer shows the last 10 s. Pages send "time's up" (the next student 0.5 s after the deadline, others 3 s apart, the slow student's own page last); the server checks its own clock.
+- **Autopilot:** 3 timed-out turns in a row, leaving, being hidden by the teacher or deleted. The student can **Take the controls** back; it still counts as left for them. If every student has left, the game stops (no points). The tidy-up job ends games with nothing happening for 10 minutes.
+- **Rematch:** the first to press it hosts a new waiting game with the same board; everyone else's button says **Join the rematch**.
+- **Reactions:** teacher switch "Emoji reactions in space games" (off to start). 6 emoji, one every 5 s, 20 a game, on the game row via `space_add_reaction()` (doesn't move the version, so it never blocks a move). Pops over the sender's rocket for 2 s; 🙈 hides them on that device.
+- **Points:** 4 per finished game for each student who stayed with 5+ turns, if at least 2 students stayed; first 6 a day. Never ratings. Shows on Dashboard (Recent games "with classmates", the space stats line, "still going"), Teacher detail (space "Friends" row and recent), and achievements ("Finish a game with classmates" now works).
+
+### Changes from the plan
+
+- One log row per server request (not per action): it holds every action in it, including bots and autopilot.
+- Bots in a classmates game are always Pilots, and the host can only add them at launch.
+- Hidden or deleted students are put on autopilot the next time anyone in the game acts (the request that notices says "the game changed", and the page looks again).
+- Codes: a new space code is checked against waiting chess/checkers codes. The chess/checkers function doesn't check space codes (unchanged), so a clash is possible but about 1 in 5 million per waiting game.
+
+### Checked
+
+- Unit: 12 shared tests (`live.test.ts`), 23 server tests (`space-game/handler.test.ts`), 8 screen tests (`SpaceLive.test.tsx`), 5 more lobby tests. All 451 pass.
+- Database: 51 new tests (`space_classmates.test.sql`) and 7 more security tests. All 361 pass.
+- Real browser against the local database and function, at 1366×768 and 768×1024 (mouse and touch): 2 students with a reload part-way (57 s, both +4); 3 students + 1 bot on Nebula, where one closed the lid, timed out 3 times, went on autopilot, came back and took the controls (others +4, her 0); 4 students with reactions on (bubbles seen), then a rematch everyone joined, launched and left (ended "everyone left", no points). Lobby, Dashboard and Teacher pages checked. No page errors.
+

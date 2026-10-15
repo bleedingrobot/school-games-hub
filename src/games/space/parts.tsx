@@ -289,11 +289,13 @@ export function Podium({
   const about =
     ending === 'abandoned'
       ? 'Nobody was left flying, so the game stopped.'
-      : ending === 'mission-clock'
-        ? 'The fuel ran out, so places go by how far everyone got.'
-        : mine === 1
-          ? 'First to the space station. Brilliant flying!'
-          : 'Dice are luck. Have another go!';
+      : mine === null
+        ? 'Autopilot flew your rocket to the end.'
+        : ending === 'mission-clock'
+          ? 'The fuel ran out, so places go by how far everyone got.'
+          : mine === 1
+            ? 'First to the space station. Brilliant flying!'
+            : 'Dice are luck. Have another go!';
   const steps = [2, 1, 3].filter((p) => places.includes(p));
   const fourth = seats.map((_, i) => i).filter((i) => places[i] >= 4);
   return (
