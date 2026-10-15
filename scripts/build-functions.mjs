@@ -11,12 +11,15 @@ const versionOf = (name) => (pkg.dependencies[name] ?? '').replace(/^[\^~]/, '')
 // Libraries come from npm when the function runs, at the same versions the website uses.
 const LIBRARIES = ['chess.js', '@supabase/supabase-js'];
 
-export const FUNCTIONS = ['save-bot-game', 'multiplayer'];
+export const FUNCTIONS = ['save-bot-game', 'multiplayer', 'space-game'];
 
 export async function buildFunction(name) {
   const bundle = await rolldown({
     input: `supabase/functions/${name}/entry.ts`,
     external: LIBRARIES,
+    // The libraries do nothing just by being loaded, so a function that doesn't use one
+    // (space-game never touches chess.js) doesn't load it.
+    treeshake: { moduleSideEffects: (_id, external) => !external },
     logLevel: 'silent',
   });
   const { output } = await bundle.generate({ format: 'esm', comments: { legal: true, annotation: false, jsdoc: true } });

@@ -99,7 +99,7 @@ export interface SpaceGameReport {
 
 const isBool = (value: unknown): value is boolean => typeof value === 'boolean';
 
-function parseBoard(input: unknown): BoardChoice | null {
+export function parseBoard(input: unknown): BoardChoice | null {
   if (typeof input !== 'object' || input === null) return null;
   const b = input as Record<string, unknown>;
   if ('id' in b) return isDesignedBoardId(b.id) && Object.keys(b).length === 1 ? { id: b.id } : null;
@@ -108,7 +108,7 @@ function parseBoard(input: unknown): BoardChoice | null {
   return galaxy ? { galaxy, size: b.size } : null;
 }
 
-function parseSettings(input: unknown): Settings | null {
+export function parseSettings(input: unknown): Settings | null {
   if (typeof input !== 'object' || input === null) return null;
   const s = input as Record<string, unknown>;
   if (s.mode !== 'classic' && s.mode !== 'cosmic') return null;

@@ -3,7 +3,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(38);
+select plan(45);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -43,7 +43,8 @@ $$, 'signed-in users can only read tables, never write to them');
 select set_eq($$
   select table_name::text from information_schema.role_table_grants
   where table_schema = 'public' and grantee = 'authenticated'
-$$, array['achievement_types', 'app_settings', 'bot_games', 'mp_games', 'name_words', 'profiles'],
+$$, array['achievement_types', 'app_settings', 'bot_games', 'mp_games', 'name_words', 'profiles', 'space_game_log',
+  'space_games'],
   'signed-in users can read only these tables (row level security narrows them further)');
 
 select is_empty($$
@@ -56,10 +57,11 @@ select set_eq($$
   where n.nspname = 'public' and has_function_privilege('authenticated', p.oid, 'execute')
 $$, array[
   'choose_my_name', 'is_player_in', 'is_school_email', 'is_school_user', 'is_teacher', 'is_valid_avatar',
-  'leaderboard', 'lobby_games', 'my_bot_game_stats', 'my_friend_game_stats', 'my_progress', 'progress_rules',
-  'save_my_avatar', 'school_domain', 'server_time',
+  'leaderboard', 'lobby_games', 'my_bot_game_stats', 'my_friend_game_stats', 'my_progress', 'my_space_game_stats',
+  'progress_rules', 'save_my_avatar', 'school_domain', 'server_time', 'space_lobby_games',
   'teacher_delete_student', 'teacher_new_season', 'teacher_reset_name', 'teacher_set_hidden',
-  'teacher_set_multiplayer', 'teacher_set_role', 'teacher_student_detail', 'teacher_students'
+  'teacher_set_multiplayer', 'teacher_set_role', 'teacher_set_space_reactions', 'teacher_student_detail',
+  'teacher_students'
 ], 'signed-in users can call only this list of functions (each checks who is asking)');
 
 select is_empty($$
@@ -70,7 +72,7 @@ $$, 'every function has a fixed search_path');
 
 select set_eq($$
   select schemaname || '.' || tablename from pg_publication_tables where pubname = 'supabase_realtime'
-$$, array['public.mp_games'], 'live updates are switched on for friend games only');
+$$, array['public.mp_games', 'public.space_games'], 'live updates are switched on for friend games and space games only');
 
 -- A table made by a future migration starts locked, even if it forgets to say so.
 create table public.zz_security_test (id integer);
@@ -93,6 +95,11 @@ select throws_ok($$ select public.record_space_bot_game('00000000-0000-0000-0000
   'a student cannot save a space game directly');
 select throws_ok('select public.rebuild_progress()', '42501', null, 'a student cannot rebuild the scores');
 select throws_ok('select public.mp_tidy()', '42501', null, 'a student cannot run the tidy-up');
+select throws_ok('select public.space_tidy()', '42501', null, 'a student cannot run the space tidy-up');
+select throws_ok($$ select public.space_add_reaction('10000000-0000-0000-0000-000000000002', 0, '🚀') $$, '42501', null,
+  'a student cannot send a reaction without the server');
+select throws_ok($$ select * from public.space_player_status('00000000-0000-0000-0000-00000000000b') $$, '42501', null,
+  'a student cannot look up another player''s status for space games');
 select throws_ok($$ select public.mp_player_status('00000000-0000-0000-0000-00000000000b') $$, '42501', null,
   'a student cannot look up another player''s status');
 select throws_ok($$ select public.points_total('00000000-0000-0000-0000-00000000000b') $$, '42501', null,
@@ -104,6 +111,7 @@ select throws_ok($$ select public.teacher_student_detail('00000000-0000-0000-000
   'a student cannot see another student''s details');
 select throws_ok($$ select public.teacher_new_season('NEW SEASON') $$, '42501', null, 'a student cannot start a new season');
 select throws_ok('select public.teacher_set_multiplayer(false)', '42501', null, 'a student cannot pause friend games');
+select throws_ok('select public.teacher_set_space_reactions(true)', '42501', null, 'a student cannot switch on reactions');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@gmail.com');
 select throws_ok('select * from public.teacher_students()', '42501', null,
   'a teacher''s ID with a non-school email in the token gets no teacher powers');
@@ -136,6 +144,26 @@ select throws_ok($$ insert into realtime.messages (topic, extension, payload, pr
   '42501', null, 'someone else cannot join the game''s channel');
 select is((select count(*)::int from public.mp_games), 0, 'someone else cannot read the game');
 select ok(not public.is_player_in('mp-game:10000000-0000-0000-0000-000000000001'), 'and is not counted as a player in it');
+
+-- ---- The "who's here" channel for a space game: presence only, players only ----
+select pg_temp.reset();
+insert into public.space_games (id, code, host, seat1, seat2, status, setup, rockets, seat_info, state)
+values ('10000000-0000-0000-0000-000000000002', 'KMTPY', '00000000-0000-0000-0000-00000000000a',
+  '00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b', 'playing', '{}', 2, '[]', '{}');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz');
+select set_config('realtime.topic', 'space-game:10000000-0000-0000-0000-000000000002', true);
+select lives_ok($$ insert into realtime.messages (topic, extension, payload, private)
+  values ('space-game:10000000-0000-0000-0000-000000000002', 'presence', '{"here":true}', true) $$,
+  'a space player can say they''re here');
+select throws_ok($$ insert into realtime.messages (topic, extension, payload, event, private)
+  values ('space-game:10000000-0000-0000-0000-000000000002', 'broadcast', '{"text":"hi"}', 'chat', true) $$,
+  '42501', null, 'a space player cannot send messages on the channel (no hidden chat)');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz');
+select set_config('realtime.topic', 'space-game:10000000-0000-0000-0000-000000000002', true);
+select throws_ok($$ insert into realtime.messages (topic, extension, payload, private)
+  values ('space-game:10000000-0000-0000-0000-000000000002', 'presence', '{"here":true}', true) $$,
+  '42501', null, 'someone else cannot join a space game''s channel');
+select pg_temp.reset();
 
 -- ---- Saving the same bot game twice ----
 select pg_temp.act_as_server();
