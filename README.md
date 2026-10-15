@@ -137,7 +137,7 @@ Students can read all of this on the **How points work** page (linked from the d
 
 ## Wormholes & Black Holes (the space game)
 
-A space snakes and ladders for 2–4 rockets: against 1–3 bots, or with classmates. Race from Earth to the space station. Wormholes zoom you up, black holes pull you down, and stars give items that help you (or slow the others down). The full design, the simulation results and every decision are in [docs/SPACE-GAME-PLAN.md](docs/SPACE-GAME-PLAN.md).
+A space snakes and ladders for 2–4 rockets: against 1–3 bots, with classmates, or pass-and-play (2–4 people taking turns on one Chromebook, never saved and no points). Race from Earth to the space station. Wormholes zoom you up, black holes pull you down, and stars give items that help you (or slow the others down). The full design, the simulation results and every decision are in [docs/SPACE-GAME-PLAN.md](docs/SPACE-GAME-PLAN.md).
 
 - **Boards:** Inner Solar System (gentle), Nebula (medium, the default), Deep Space (wild), Asteroid Belt (a quick 50-square game), and **Random Galaxy**. A galaxy has a code like `Comet-Kiwi-48`, so a class can all type the same one in. **Galaxy of the day** is the same for everyone that day.
 - **Modes:** **Cosmic** (everything) or **Classic** (just wormholes and black holes, no items and nothing to aim at other players). Use Classic for a gentler lesson.

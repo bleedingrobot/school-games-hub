@@ -28,7 +28,7 @@ Live site: https://bleedingrobot.github.io/school-games-hub/
 Wormholes & Black Holes is a dice race, so it suits a younger group, a quick finish to the week, or students who don't play chess or checkers yet. Winning is luck, so it only gives taking-part points and never touches the leaderboards.
 
 1. **Sign in (5 min)** as above.
-2. **How to play (5 min).** Everyone opens **Play the bots → Wormholes & Black Holes → How to play**. It has a picture and one line for every square and item. Pick **Classic** mode for a gentler first game (just wormholes and black holes).
+2. **How to play (5 min).** Everyone opens **Play the bots → Wormholes & Black Holes → How to play**. It has a picture and one line for every square and item. Pick **Classic** mode for a gentler first game (just wormholes and black holes). Short on Chromebooks? **Who's playing → Pass-and-play** lets 2–4 students share one (just for fun: not saved, no points).
 3. **Against the bots (10 min).** **Asteroid Belt** with 1–3 bots takes 2–4 minutes. Landing on stars and other squares shows a space fact, collected on each student's **Star chart**.
 4. **With classmates (15–20 min).** Groups of 2–4: one taps **Play a friend → Start a game → Wormholes & Black Holes**, picks a board, and reads out the code. The others type it in. The host can fill empty seats with bots, then presses **Launch**. For the whole class on the same board, write a galaxy code on the board (e.g. `Comet-Kiwi-48`) or use **Galaxy of the day**.
 5. **Rematch** at the end starts a new waiting game with the same board.

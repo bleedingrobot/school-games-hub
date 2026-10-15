@@ -294,18 +294,21 @@ export function Podium({
   mine,
   ending,
   saveNote,
+  heading,
   children,
 }: {
   seats: readonly Seat[];
   places: number[];
   mine: number | null;
+  /** Pass-and-play: a heading about the winner instead of about "you". */
+  heading?: { title: string; about: string };
   ending: SpaceState['ending'] | 'abandoned';
   saveNote: string | null;
   /** The buttons. */
   children: ReactNode;
 }) {
-  const title =
-    ending === 'abandoned'
+  const title = heading?.title ??
+    (ending === 'abandoned'
       ? 'Everyone left'
       : mine === null
         ? 'The game is over'
@@ -313,9 +316,9 @@ export function Podium({
           ? ending === 'docked'
             ? 'You docked first!'
             : 'You got the furthest!'
-          : `You came ${ORDINAL[mine]}!`;
-  const about =
-    ending === 'abandoned'
+          : `You came ${ORDINAL[mine]}!`);
+  const about = heading?.about ??
+    (ending === 'abandoned'
       ? 'Nobody was left flying, so the game stopped.'
       : mine === null
         ? 'Autopilot flew your rocket to the end.'
@@ -323,14 +326,14 @@ export function Podium({
           ? 'The fuel ran out, so places go by how far everyone got.'
           : mine === 1
             ? 'First to the space station. Brilliant flying!'
-            : 'Dice are luck. Have another go!';
+            : 'Dice are luck. Have another go!');
   const steps = [2, 1, 3].filter((p) => places.includes(p));
   const fourth = seats.map((_, i) => i).filter((i) => places[i] >= 4);
   return (
     <div className="chess-result space-podium" role="dialog" aria-modal="true" aria-labelledby="space-result-title">
-      <div className={`chess-result__card chess-result__card--${mine === 1 ? 'won' : 'drawn'}`}>
+      <div className={`chess-result__card chess-result__card--${mine === 1 || heading ? 'won' : 'drawn'}`}>
         <div className="chess-result__emoji" aria-hidden="true">
-          {mine === 1 ? '🏆' : mine ? MEDALS[mine] : '🚀'}
+          {mine === 1 || heading ? '🏆' : mine ? MEDALS[mine] : '🚀'}
         </div>
         <h2 id="space-result-title">{title}</h2>
         <p>{about}</p>

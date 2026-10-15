@@ -2,7 +2,7 @@
 
 Stage 9 of School Games Hub: a space snakes and ladders for Years 4–6, against bots or 2–4 classmates.
 Written 15 October 2026 from the brief in [prompts/space-game.md](prompts/space-game.md), after reading the code on the `stage-8` branch.
-**Status: approved by James on 15 October 2026 (answers in section 11). Stage 9.1 done (results in section 14); James happy with the numbers as they are (15 Oct 2026). Stage 9.2 done (playing against bots; phone preview built with `npm run space:preview`). Stage 9.3 done (bot games saved and checked, taking-part points, space achievements; results in section 15; not live yet). Stage 9.4 done (playing classmates; results in section 16; not live yet). Stage 9.5 done (polish; results in section 17; not live yet). Next: Stage 9.6 (pass-and-play).**
+**Status: approved by James on 15 October 2026 (answers in section 11). Stage 9.1 done (results in section 14); James happy with the numbers as they are (15 Oct 2026). Stage 9.2 done (playing against bots; phone preview built with `npm run space:preview`). Stage 9.3 done (bot games saved and checked, taking-part points, space achievements; results in section 15; not live yet). Stage 9.4 done (playing classmates; results in section 16; not live yet). Stage 9.5 done (polish; results in section 17; not live yet). Stage 9.6 done (pass-and-play; section 18). Mission Control maths not built (only if James asks).**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
@@ -480,4 +480,18 @@ Built on branch `stage-9`. Website only: no database or server changes, so nothi
 - Real browser on the stand-alone preview at 1366×768 (mouse) and 768×1024 (touch), Deep Space with cosmic events and sound on, played to the end: axe accessibility scan clean on settings, How to play, Star chart, game and podium at both sizes; focus trapped in the pop-up and returned on close; `?` opens help and Space behind it doesn't roll; all three cosmic events seen; fact cards shown and saved to the Star chart. No page errors.
 - Real browser against the local database and function: 2 students (with a reload part-way) and 4 students with reactions, then a rematch everyone left. Waiting-room How to play opens and closes, axe clean, both +4 points, no page errors.
 - The CLASS-LAUNCH lookup query runs on the database.
+
+## 18. Stage 9.6 results: pass-and-play (16 October 2026)
+
+Website only: no database or server changes.
+
+- **Settings:** a new **Who's playing** choice: **Me vs bots** or **Pass-and-play**. Pass-and-play swaps the bot choices for **Players** (2, 3 or 4) and a name box for each (14 letters at most; blank means the student's own name for player 1 and "Player 2" and so on for the rest). The first name goes first. Names and choices are remembered on the device only.
+- **Playing:** every rocket is a person, so whoever's turn it is gets the Roll button, their own items (keys 1–3 still work) and the status line by name ("Mia's turn! Roll the dice."). Fact cards pop up for whoever landed. No bots, no worker, no server.
+- **Never saved, never points:** no seed is asked for, nothing is sent at the end or when leaving part-way, the mission log says "Pass-and-play: not saved", and the podium says "Mia docked first!" with "Pass-and-play games aren't saved."
+- **Code:** `startPassRun` in `soloRun.ts` (a `passAndPlay` run where every seat is a person), `passNames` in `prefs.ts`, a `heading` on the podium. The bot game is unchanged.
+
+### Checked
+
+- Unit: a whole 4-person game in the engine (everyone moves, no bot turns) and a whole 4-person game on the page (names, turns, podium, nothing saved or recorded as left, choices remembered). All 463 pass. Typecheck clean.
+- Real browser on the stand-alone preview: 4 players at 1366×768 (mouse and Space key) and 2 at 768×1024 (touch), both played to the podium. axe clean on settings, mid-game and podium. No page errors.
 

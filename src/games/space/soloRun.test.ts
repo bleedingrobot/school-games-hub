@@ -5,7 +5,7 @@ import type { BoardChoice } from '../../../shared/space/boards';
 import { DEFAULT_SETTINGS, type SpaceEvent } from '../../../shared/space/engine';
 import { randomFromSeed } from '../../../shared/space/random';
 import { replaySolo, type SoloSetup } from '../../../shared/space/replay';
-import { botPlay, botQuestion, decideBot, isStudentsTurn, newSeed, startRun, studentPlay } from './soloRun';
+import { botPlay, botQuestion, decideBot, isStudentsTurn, newSeed, startPassRun, startRun, studentPlay } from './soloRun';
 import { describe as describeEvent } from './text';
 
 /** Plays a whole game the way the page does, with a "student" that plays like a bot. */
@@ -69,5 +69,23 @@ describe('a bot game played on the page', () => {
     const seeds = new Set(Array.from({ length: 50 }, newSeed));
     expect(seeds.size).toBe(50);
     for (const seed of seeds) expect(seed).toMatch(/^local-[0-9a-f]{24}$/);
+  });
+});
+
+describe('pass-and-play', () => {
+  it('lets every seat move, with no bots, until the game ends', () => {
+    const { run } = startPassRun({ seed: 'pass-1', board: { id: 'asteroid-belt' }, settings: DEFAULT_SETTINGS }, 4);
+    const people = randomFromSeed('people');
+    const movers = new Set<number>();
+    for (let guard = 0; run.state.phase !== 'over'; guard++) {
+      if (guard > 5000) throw new Error('game never ended');
+      expect(isStudentsTurn(run)).toBe(true);
+      movers.add(run.state.turn);
+      studentPlay(run, botAction(run.state, 'easy', people));
+    }
+    expect(movers).toEqual(new Set([0, 1, 2, 3]));
+    expect(isStudentsTurn(run)).toBe(false);
+    expect(run.state.places).toHaveLength(4);
+    expect(() => botPlay(run, { action: { kind: 'roll' }, draws: 0 })).toThrow();
   });
 });

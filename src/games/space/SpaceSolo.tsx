@@ -31,10 +31,10 @@ import { startSpaceBot, type SpaceBot } from './botThread';
 import { Dice, DieFace } from './Dice';
 import { BoardOverlays, Choice, ItemPicker, ItemTiles, MissionLog, Podium, RocketsPanel, type Picking } from './parts';
 import { SpaceGuide, type GuideTab } from './Guide';
-import { loadLessMotion, loadPrefs, saveLessMotion, savePrefs, setupFrom, SPEED_SCALE, type SpacePrefs } from './prefs';
+import { loadLessMotion, loadPrefs, passNames, saveLessMotion, savePrefs, setupFrom, SPEED_SCALE, type SpacePrefs } from './prefs';
 import { SpaceBoard, type Seat } from './SpaceBoard';
 import { SpaceSettings } from './SpaceSettings';
-import { botPlay, botQuestion, decideBot, isStudentsTurn, newSeed, startRun, studentPlay, type SoloRun } from './soloRun';
+import { botPlay, botQuestion, decideBot, isStudentsTurn, newSeed, startPassRun, startRun, studentPlay, type SoloRun } from './soloRun';
 import { choiceQuestion, itemName, ORDINAL, SEAT_COLOURS, SEAT_SHAPES, squareInfo, type SquareInfo } from './text';
 import { useEventPlayer, type Batch } from './useEventPlayer';
 import './space.css';
@@ -69,9 +69,23 @@ interface Game {
   seats: Seat[];
   studentSeat: number;
   level: BotLevel;
+  /** People taking turns on this device: never saved. */
+  pass: boolean;
 }
 
-function makeSeats(run: SoloRun, player: SpacePlayer, level: BotLevel): Seat[] {
+/** A queued list of events, and whose they are (for fact cards in pass-and-play). */
+type Queued = Batch & { me?: number };
+
+function makeSeats(run: SoloRun, player: SpacePlayer, level: BotLevel, names: string[]): Seat[] {
+  if (run.passAndPlay) {
+    return run.state.rockets.map((_, i) => ({
+      colour: SEAT_COLOURS[i],
+      shape: SEAT_SHAPES[i],
+      isStudent: false,
+      name: names[i],
+      avatar: i === 0 && names[0] === player.name ? player.avatar : randomAvatar(randomFromSeed(`${run.setup.seed}:avatar:${i}`)),
+    }));
+  }
   let bot = 0;
   return run.state.rockets.map((_, i) => {
     const isStudent = i === run.studentSeat;
@@ -115,7 +129,7 @@ export function SpaceSolo({
   const runRef = useRef<SoloRun | null>(null);
   const gameRef = useRef<Game | null>(null);
   const keyRef = useRef(0);
-  const queue = useRef<Batch[]>([]);
+  const queue = useRef<Queued[]>([]);
   const pumpingFor = useRef<number | null>(null);
   const phaseRef = useRef<Phase>('animating');
   const botRef = useRef<SpaceBot | null>(null);
@@ -196,9 +210,10 @@ export function SpaceSolo({
   }
   const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms * live.current.scale));
 
-  async function animate(batch: Batch, key: number) {
+  async function animate(batch: Queued, key: number) {
     const g = gameRef.current!;
-    await screen.animate(batch, { names: g.seats.map((seat) => seat.name), me: g.studentSeat }, () => key === keyRef.current);
+    const me = g.pass ? (batch.me ?? null) : g.studentSeat;
+    await screen.animate(batch, { names: g.seats.map((seat) => seat.name), me }, () => key === keyRef.current);
   }
 
   /** Plays queued events, then the bots, until it's the student's turn or the game ends. */
@@ -261,8 +276,9 @@ export function SpaceSolo({
       return;
     }
     leftEarly.current();
+    const pass = prefs.who === 'pass';
     let stamped: { seed: string; stamp: string } | null = null;
-    if (saving) {
+    if (saving && !pass) {
       startingRef.current = true;
       setStarting(true);
       keyRef.current++; // stops the old game while the seed comes
@@ -272,7 +288,10 @@ export function SpaceSolo({
     }
     let started: ReturnType<typeof startRun>;
     try {
-      started = startRun({ seed: stamped?.seed ?? newSeed(), board: setup.board, settings: setup.settings, bots: prefs.bots, level });
+      const seed = stamped?.seed ?? newSeed();
+      started = pass
+        ? startPassRun({ seed, board: setup.board, settings: setup.settings }, prefs.players)
+        : startRun({ seed, board: setup.board, settings: setup.settings, bots: prefs.bots, level });
     } catch {
       setProblem('We couldn’t make that galaxy. Try another code.');
       return;
@@ -282,7 +301,13 @@ export function SpaceSolo({
     setSaveMessage('');
     const { run, events } = started;
     const key = ++keyRef.current;
-    const next: Game = { key, seats: makeSeats(run, player, level), studentSeat: run.studentSeat, level };
+    const next: Game = {
+      key,
+      seats: makeSeats(run, player, level, passNames(prefs, player.name)),
+      studentSeat: run.studentSeat,
+      level,
+      pass,
+    };
     runRef.current = run;
     gameRef.current = next;
     queue.current = [{ events, state: run.state }];
@@ -310,6 +335,7 @@ export function SpaceSolo({
   function act(action: SpaceAction) {
     const run = runRef.current;
     if (!run || phaseRef.current !== 'student') return;
+    const seat = run.state.turn;
     let events: SpaceEvent[];
     try {
       events = studentPlay(run, action);
@@ -324,7 +350,7 @@ export function SpaceSolo({
     setHint('');
     setPicking(null);
     setInfo(null);
-    queue.current.push({ events, state: run.state });
+    queue.current.push({ events, state: run.state, me: seat });
     void pump();
   }
 
@@ -381,7 +407,8 @@ export function SpaceSolo({
         act({ kind: 'choose', option: n - 1 });
       }
     } else if (view.phase === 'ready' && !picking && n <= 3) {
-      const item = view.rockets[gameRef.current!.studentSeat].items[n - 1];
+      const g = gameRef.current!;
+      const item = view.rockets[g.pass ? view.turn : g.studentSeat].items[n - 1];
       if (item) {
         event.preventDefault();
         chooseItem(item);
@@ -419,6 +446,7 @@ export function SpaceSolo({
         onStart={() => void start()}
         starting={starting}
         saving={!!saving}
+        playerName={player.name}
       />
       {guide && <SpaceGuide tab={guide} onClose={() => setGuide(null)} />}
       </>
@@ -427,8 +455,11 @@ export function SpaceSolo({
 
   // ---------- The game ----------
 
-  const { seats, studentSeat } = game;
+  const { seats, pass } = game;
+  // In pass-and-play, "me" is whoever's turn it is.
+  const studentSeat = pass ? view.turn : game.studentSeat;
   const me = view.rockets[studentSeat];
+  const who = pass ? seats[studentSeat].name : 'You';
   const myTurn = phase === 'student';
   const pending = myTurn && view.phase === 'choice' ? view.pending : null;
   const canRoll = myTurn && view.phase === 'ready' && !picking;
@@ -439,15 +470,18 @@ export function SpaceSolo({
   const over = view.phase === 'over' && phase === 'over';
   const places = view.places ?? [];
 
+  const winner = seats[places.indexOf(1)]?.name ?? '';
   let status: string;
-  if (over) {
+  if (over && pass) status = `${winner} won! 🏆`;
+  else if (over) {
     const place = places[studentSeat];
     status = place === 1 ? 'You won! 🏆' : `You came ${ORDINAL[place]}.`;
-  } else if (pending) status = choiceQuestion(pending);
+  } else if (pending) status = pass ? `${who}: ${choiceQuestion(pending)}` : choiceQuestion(pending);
   else if (picking?.kind === 'target') status = `Who should the ${itemName(picking.item)} hit? Tap a rocket.`;
   else if (picking?.kind === 'navigator') status = 'Navigator: pick your roll.';
-  else if (myTurn && view.turnInfo.rollAgainUsed && !view.turnInfo.rolled) status = 'You rolled a 6: roll again!';
-  else if (myTurn && view.turnInfo.itemUsed) status = 'Now roll!';
+  else if (myTurn && view.turnInfo.rollAgainUsed && !view.turnInfo.rolled) status = `${who} rolled a 6: roll again!`;
+  else if (myTurn && view.turnInfo.itemUsed) status = pass ? `${who}: now roll!` : 'Now roll!';
+  else if (myTurn && pass) status = `${who}’s turn! ${usable.length > 0 ? 'Use an item, or roll.' : 'Roll the dice.'}`;
   else if (myTurn) status = usable.length > 0 ? 'Your turn! Use an item, or roll.' : 'Your turn! Roll the dice.';
   else if (phase === 'thinking' && turnSeat !== null) status = `${seats[turnSeat].name} is thinking…`;
   else if (turnSeat !== null && turnSeat !== studentSeat) status = `${seats[turnSeat].name}’s turn`;
@@ -487,7 +521,24 @@ export function SpaceSolo({
           onOpenChart={() => setGuide('chart')}
         />
         {over && showPodium && (
-          <Podium seats={seats} places={places} mine={places[studentSeat]} ending={view.ending} saveNote={saveNote(saveStatus, saveMessage, !!saving)}>
+          <Podium
+            seats={seats}
+            places={places}
+            mine={pass ? null : places[studentSeat]}
+            ending={view.ending}
+            saveNote={pass ? 'Pass-and-play games aren’t saved.' : saveNote(saveStatus, saveMessage, !!saving)}
+            heading={
+              pass
+                ? {
+                    title: view.ending === 'docked' ? `${winner} docked first!` : `${winner} got the furthest!`,
+                    about:
+                      view.ending === 'mission-clock'
+                        ? 'The fuel ran out, so places go by how far everyone got.'
+                        : 'First to the space station. Great flying, everyone!',
+                  }
+                : undefined
+            }
+          >
             <button type="button" className="button button--primary" onClick={() => void start()} autoFocus>
               Play again
             </button>
@@ -554,7 +605,7 @@ export function SpaceSolo({
 
         <section className="space-panel space-log" aria-labelledby="space-log-title">
           <h2 id="space-log-title" className="space-panel__title">
-            Mission log <span>{LOG_SAVE_NOTE[saveStatus]}</span>
+            Mission log <span>{pass ? 'Pass-and-play: not saved' : LOG_SAVE_NOTE[saveStatus]}</span>
           </h2>
           <MissionLog lines={log} />
         </section>

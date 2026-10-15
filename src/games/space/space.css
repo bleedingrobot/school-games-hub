@@ -72,6 +72,28 @@
   padding: 8px 14px;
   font-size: 0.95rem;
 }
+.space-setup__names {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px 14px;
+}
+.space-setup__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+.space-setup__name .code-form__input {
+  flex: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  text-align: left;
+  min-width: 0;
+  width: auto;
+  font-size: 1.05rem;
+  border: 3px solid #d9d3f5;
+  border-radius: 14px;
+}
 .space-setup__grid {
   display: flex;
   flex-wrap: wrap;

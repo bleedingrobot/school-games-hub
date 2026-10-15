@@ -217,4 +217,37 @@ describe('Wormholes & Black Holes against bots', () => {
     await user.keyboard(' ');
     expect(await screen.findAllByText(/Speedy Otter 27 rolled/)).not.toHaveLength(0);
   });
+
+  it('plays a pass-and-play game: everyone takes turns, nothing is saved', async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    const { saving, saved, left } = fakeSaving();
+    const { view } = renderGame(saving);
+    await user.click(screen.getByRole('radio', { name: /Pass-and-play/ }));
+    expect(screen.queryByRole('radio', { name: 'Pilot' })).not.toBeInTheDocument();
+    expect(screen.getByText(/aren’t saved and don’t earn points/)).toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: /Asteroid Belt/ }));
+    await user.click(screen.getByRole('radio', { name: '4' }));
+    expect(screen.getByLabelText('Player 1')).toHaveAttribute('placeholder', 'Speedy Otter 27');
+    await user.type(screen.getByLabelText('Player 2'), 'Mia');
+    await user.click(screen.getByRole('button', { name: /Launch/ }));
+    expect(saving.seed).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: /Mission log/ })).toHaveTextContent('Pass-and-play: not saved');
+    await waitFor(() => expect(screen.getByRole('status', { name: '' })).toHaveTextContent(/Speedy Otter 27’s turn/));
+
+    const { podium } = await playToTheEnd(user);
+    const log = screen.getByRole('log');
+    expect(log).toHaveTextContent(/Speedy Otter 27 rolled/);
+    expect(log).toHaveTextContent(/Mia rolled/);
+    expect(log).toHaveTextContent(/Player 3 rolled/);
+    expect(log).toHaveTextContent(/Player 4 rolled/);
+    expect(within(podium).getByRole('heading')).toHaveTextContent(/(Speedy Otter 27|Mia|Player 3|Player 4) (docked first|got the furthest)!/);
+    expect(within(podium).getByRole('status')).toHaveTextContent('Pass-and-play games aren’t saved.');
+    view.unmount();
+    expect(saved).toEqual([]);
+    expect(left).toEqual([]);
+    expect(JSON.parse(localStorage.getItem('sgh-space-settings')!)).toEqual(
+      expect.objectContaining({ who: 'pass', players: 4, names: ['', 'Mia', '', ''] }),
+    );
+  }, 60_000);
 });

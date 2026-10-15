@@ -5,7 +5,7 @@ import { DESIGNED_BOARDS, DESIGNED_BOARD_IDS, type DesignedBoardId } from '../..
 import { parseGalaxyCode, randomGalaxyCode } from '../../../shared/space/galaxy';
 import { diceFrom } from '../../../shared/space/random';
 import type { GuideTab } from './Guide';
-import { todaysGalaxy, type SpacePrefs, type Speed } from './prefs';
+import { NAME_LENGTH, todaysGalaxy, type SpacePrefs, type Speed } from './prefs';
 
 const BOARD_ABOUT: Record<DesignedBoardId, string> = {
   'inner-solar-system': 'Gentle: lots of wormholes, short black holes.',
@@ -64,6 +64,7 @@ export function SpaceSettings({
   starting = false,
   saving = false,
   onHelp,
+  playerName,
 }: {
   prefs: SpacePrefs;
   onChange: (prefs: SpacePrefs) => void;
@@ -79,9 +80,13 @@ export function SpaceSettings({
   saving?: boolean;
   /** Opens How to play or the Star chart. */
   onHelp: (tab: GuideTab) => void;
+  /** The student's own name: the first pass-and-play player unless they type another. */
+  playerName: string;
 }) {
   const set = <K extends keyof SpacePrefs>(key: K, value: SpacePrefs[K]) => onChange({ ...prefs, [key]: value });
   const galaxyOk = prefs.board !== 'galaxy' || parseGalaxyCode(prefs.galaxy) !== null;
+  const pass = prefs.who === 'pass';
+  const setName = (i: number, name: string) => set('names', prefs.names.map((n, k) => (k === i ? name : n)));
 
   return (
     <section className="chess-setup space-setup" aria-labelledby="space-setup-title">
@@ -169,6 +174,22 @@ export function SpaceSettings({
           </div>
         )}
 
+        <Chips
+          legend="Who’s playing"
+          name="space-who"
+          value={prefs.who}
+          onChange={(v) => set('who', v)}
+          options={[
+            { value: 'bots', label: '🤖 Me vs bots' },
+            { value: 'pass', label: '👫 Pass-and-play' },
+          ]}
+        />
+        {pass && (
+          <p className="space-setup__hint">
+            2 to 4 of you take turns on this device. Pass-and-play games aren’t saved and don’t earn points.
+          </p>
+        )}
+
         <div className="space-setup__grid">
           <Chips
             legend="Mode"
@@ -180,17 +201,31 @@ export function SpaceSettings({
               { value: 'classic', label: 'Classic' },
             ]}
           />
-          <Chips
-            legend="Bots"
-            name="space-bots"
-            value={prefs.bots}
-            onChange={(v) => set('bots', v)}
-            options={[
-              { value: 1, label: '1' },
-              { value: 2, label: '2' },
-              { value: 3, label: '3' },
-            ]}
-          />
+          {pass ? (
+            <Chips
+              legend="Players"
+              name="space-players"
+              value={prefs.players}
+              onChange={(v) => set('players', v)}
+              options={[
+                { value: 2, label: '2' },
+                { value: 3, label: '3' },
+                { value: 4, label: '4' },
+              ]}
+            />
+          ) : (
+            <Chips
+              legend="Bots"
+              name="space-bots"
+              value={prefs.bots}
+              onChange={(v) => set('bots', v)}
+              options={[
+                { value: 1, label: '1' },
+                { value: 2, label: '2' },
+                { value: 3, label: '3' },
+              ]}
+            />
+          )}
         </div>
         <p className="space-setup__hint">
           {prefs.mode === 'cosmic'
@@ -198,6 +233,27 @@ export function SpaceSettings({
             : 'Classic: just wormholes and black holes. No items.'}
         </p>
 
+        {pass ? (
+          <fieldset className="choice-group space-setup__names">
+            <legend>Names (first one goes first)</legend>
+            {Array.from({ length: prefs.players }, (_, i) => (
+              <label key={i} className="space-setup__name">
+                <span aria-hidden="true">{i + 1}.</span>
+                <input
+                  aria-label={`Player ${i + 1}`}
+                  className="code-form__input"
+                  value={prefs.names[i] ?? ''}
+                  onChange={(e) => setName(i, e.target.value)}
+                  placeholder={i === 0 ? playerName : `Player ${i + 1}`}
+                  maxLength={NAME_LENGTH}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </label>
+            ))}
+          </fieldset>
+        ) : (
+        <>
         <Chips
           legend="Bot level"
           name="space-level"
@@ -208,6 +264,8 @@ export function SpaceSettings({
         <p className="space-setup__hint">
           <strong>{BOT_NAMES[level]}:</strong> {LEVEL_ABOUT[level]} Dice are luck, so any bot can win!
         </p>
+        </>
+        )}
 
         <details className="space-setup__more">
           <summary>More settings</summary>
@@ -283,7 +341,9 @@ export function SpaceSettings({
           </p>
           <p>
             Tap any square on the board to see what it does.{' '}
-            {saving
+            {pass
+              ? 'Pass-and-play games are just for fun: they aren’t saved.'
+              : saving
               ? 'Every game you finish earns points for taking part, whether you win or not.'
               : 'This is a practice copy: games aren’t saved.'}
           </p>

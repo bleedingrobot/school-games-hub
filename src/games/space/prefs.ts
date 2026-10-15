@@ -21,7 +21,16 @@ export interface SpacePrefs {
   cosmicEvents: boolean;
   speed: Speed;
   bots: 1 | 2 | 3;
+  /** Against bots, or pass-and-play (people taking turns on this device). */
+  who: 'bots' | 'pass';
+  /** Pass-and-play: how many people. */
+  players: 2 | 3 | 4;
+  /** Pass-and-play: the names typed in (blank means "Player 2" and so on). */
+  names: string[];
 }
+
+/** The longest pass-and-play name. */
+export const NAME_LENGTH = 14;
 
 export const DEFAULT_PREFS: SpacePrefs = {
   board: 'nebula',
@@ -33,6 +42,9 @@ export const DEFAULT_PREFS: SpacePrefs = {
   cosmicEvents: DESIGNED_BOARDS.nebula.cosmicEvents,
   speed: 'normal',
   bots: 3,
+  who: 'bots',
+  players: 2,
+  names: ['', '', '', ''],
 };
 
 const PREFS_KEY = 'sgh-space-settings';
@@ -59,6 +71,12 @@ export function loadPrefs(): SpacePrefs {
     cosmicEvents: typeof saved.cosmicEvents === 'boolean' ? saved.cosmicEvents : d.cosmicEvents,
     speed: pickOne(saved.speed, ['relaxed', 'normal', 'zippy'] as const, d.speed),
     bots: pickOne(saved.bots, [1, 2, 3] as const, d.bots),
+    who: pickOne(saved.who, ['bots', 'pass'] as const, d.who),
+    players: pickOne(saved.players, [2, 3, 4] as const, d.players),
+    names: d.names.map((blank, i) => {
+      const name = Array.isArray(saved.names) ? saved.names[i] : undefined;
+      return typeof name === 'string' ? name.slice(0, NAME_LENGTH) : blank;
+    }),
   };
 }
 
@@ -111,4 +129,13 @@ export function setupFrom(prefs: SpacePrefs): { board: BoardChoice; settings: Se
       cosmicEvents: prefs.mode === 'cosmic' && prefs.cosmicEvents,
     },
   };
+}
+
+/** Pass-and-play names for each seat: what was typed, or the student's own name for the first, or "Player 2". */
+export function passNames(prefs: SpacePrefs, firstName: string): string[] {
+  return Array.from({ length: prefs.players }, (_, i) => {
+    const typed = prefs.names[i]?.trim().replace(/\s+/g, ' ').slice(0, NAME_LENGTH);
+    if (typed) return typed;
+    return i === 0 ? firstName : `Player ${i + 1}`;
+  });
 }
