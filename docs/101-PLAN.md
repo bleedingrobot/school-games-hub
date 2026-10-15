@@ -1,0 +1,244 @@
+# 101: plan
+
+Stage 10 of School Games Hub: James's family card game, against bots or 2–4 classmates.
+Written 16 October 2026 from the brief in [prompts/game-101.md](prompts/game-101.md), after reading the code on `main` (Stages 1–9 live).
+**Status: waiting for James's answers to the rule questions (section 12). No rules code is written until then.**
+
+Where this plan and the brief disagree, this plan wins once James approves it.
+
+## The short version
+
+- **A new game card on the dashboard**, added with one line in `src/games/registry.ts`. Chess, checkers and the space game don't change.
+- **One rules engine in `shared/card101/`** runs the whole game, in the browser, the bots and the server. Give it the same shuffled deck and the same choices, and it always gives the same result.
+- **The big new idea is hidden cards.** Every player gets their own **view** of the game, made on the server by one small function, `viewFor(game, seat)`. A view holds only what that player is allowed to know. Browsers only ever receive views, never the whole game.
+- **Against bots:** played in the student's browser from a stamped seed (exactly how the space game does it). The server replays the whole game before saving it. Bots are only ever handed their own view, so they can't cheat.
+- **Against classmates (2–4 players):** two **new tables** and a **new server function**, `card-game`. The server shuffles with proper secure randomness, deals, and referees every move. `mp_games` and `space_games` aren't touched.
+- **Points:** small points, never ratings, badges or leaderboards (section 8).
+- **Cost:** about 230 function calls per classmates game. A class playing it three lessons a week adds roughly 30,000 calls a month, against 500,000 (section 9).
+
+## 1. What the brief says vs what's built now
+
+| Brief says | Now | What I'll do |
+|---|---|---|
+| Check where Stage 7 is up to | **Done and live** since 15 Oct, and Stages 8 and 9 too | 101 plugs into Stage 7's points and achievements (section 8). Nothing collides |
+| Decide: stretch `mp_games` or a new table | The space game (Stage 9) already chose a new table for 2–4 players, and it works live | Same choice, for the same reasons, plus one more: `mp_games` lets each player read the **whole** row, which would leak cards (section 5) |
+| Bot games: small, capped points | Bot games share one 40-points-a-day cap | 101 bot games share that cap too |
+| Teacher's "games against friends" switch, hidden students | Live | The new function checks both, the same way |
+| Presence ("who's here") channel | Stage 8 made it presence only (no hidden chat) | 101 gets the same kind of channel, covered by the same rule and test |
+| Card faces from `@letele/playing-cards` | (new) | **Licence checked: CC0 1.0** (public domain), version 0.1.0, last changed August 2023. I'll copy the SVGs in with a NOTICE file, like the chess pieces (section 7) |
+
+## 2. The rules (as written by James)
+
+The full rules are in the brief. The final, agreed version goes into `docs/101-RULES.md` once James answers section 12, and the in-game **How to play** panel is made from it.
+
+In short: 4 face-down cards in a 2×2 square; peek at your bottom two once; each turn take the top discard or the top of the stack, then swap it in or throw it away; or knock instead. After a knock everyone else gets one last turn. Lowest hand wins the round; totals add up; the game ends when someone reaches 101 and the lowest total wins. Kings 0, Aces 1, 2 and 4–10 face value, Jacks and Queens 10, a 3 is 0 and cancels your highest card, a pair cancels out, three of a kind makes the whole hand 0.
+
+## 3. Hidden cards: how nothing leaks
+
+This is the most important part of the plan.
+
+### Who may know what
+
+| Card | Who may see it |
+|---|---|
+| The stack (its order and every card in it) | **Nobody**, ever |
+| The top card of the discard pile, and every card thrown on it | Everyone (it's face up) |
+| A card you just drew from the stack | **Only you**, and only until you swap it in or throw it away |
+| Your bottom two cards | **Only you**, during the peek, then never again |
+| Your other cards, and any card you've swapped in | **Nobody**, not even you (you have to remember) |
+| Everyone's cards at the end of a round | Everyone (they're turned face up) |
+
+One thing is fair and stays visible: if you take a face-up card from the discard pile and swap it into your top-left spot, everyone saw that happen. A sharp student can remember it, just like at the kitchen table.
+
+### How it's enforced
+
+1. **One function makes every view.** `viewFor(game, seat)` in `shared/card101/view.ts` turns the full game into what one seat may know. It's the only way out of the server for card information. Function replies, live updates and the bots all go through it.
+2. **The full game sits in a locked table** (`card_games`). Students have no permission to read it at all: no row rules, no table permission, not in Realtime. Only the server function and the database's own scoring code can touch it.
+3. **Each player has their own small row** (`card_game_seats`: one row per player per game) holding just their view. The database's row rules let a student read only their own row. When the game changes, the server rewrites every seat's row in one go, so each browser gets its own new view live, through Realtime.
+4. **Events are filtered too.** "Speedy Otter drew from the stack and swapped it into their top-right" goes to everyone, but the card's name goes only to Speedy Otter, and only while she's holding it. Once it's swapped in, it's gone from her view as well.
+5. **The deal happens after the game starts**, and every round's shuffle uses the server's secure random numbers (`crypto.getRandomValues`, with a fair Fisher–Yates shuffle). The browser never shuffles a classmates game. This avoids boardgame.io's known trap (sending the starting hands to everyone).
+
+### Why per-seat rows, not "something changed, come and ask"
+
+The brief suggests a readable "something changed" row, after which each browser asks the server for its view. That works, but every move would then cost one extra server call **per player**. Writing each player's view into their own row costs nothing extra, and it's the same live-update method chess and checkers already use (Realtime only sends a row to people allowed to read it). It's simpler and cheaper, with the same safety: the secret table is never readable.
+
+### The peek
+
+- When a round is dealt, each player's view shows their bottom two cards, with a big **I've remembered them** button and a 15-second countdown.
+- The peek ends for you when you press the button or the time runs out. The server then removes the two cards from your view, for good. Asking again, reloading, or rejoining shows nothing.
+- If you reload *during* those 15 seconds, you see them again only for what's left of the 15 seconds. That's the same peek, not a second one.
+- Play starts when everyone has pressed the button or time is up.
+
+### Bot games (the honest limit)
+
+A bot game runs in the student's browser, so the shuffled deck is in the browser's memory. A student with developer tools and a lot of effort could find it. That's acceptable because bot games earn only small, capped points (as with chess, where a student could secretly use another chess program). Classmates games, which are the competitive ones, are dealt on the server and never leak.
+
+## 4. Single player (against bots)
+
+- The student picks **1–3 bots** and one level for all of them: **Very Easy**, **Easy** or **Medium**.
+- **Bots play fair.** A bot is only ever given its own seat's view plus its own memory of what it has seen. It's never given the full game. A test proves this: change every card the bot couldn't have seen, and its choice must not change.
+- **How the levels differ:**
+  - **Very Easy** forgets things: it keeps a card only if it's low, swaps it into a random spot, and knocks at random after a few turns.
+  - **Easy** remembers its own cards, swaps out its highest known card, and knocks when its hand looks low (about 10 or under).
+  - **Medium** remembers everything it has seen (its peek, every discard, what others took), works out the chances for its unknown cards, goes for pairs and 3s, and knocks when it's probably lowest.
+  - Tests play hundreds of games and check that each level beats the one below it, like the checkers tests.
+- Bots "think" for about a second and run in a Web Worker, so the page never freezes.
+- **Saving:** when the game starts, the page asks `save-bot-game` for a stamped seed (`{ game: "101", start: true }`), as the space game does. At the end it sends the seed, the stamp and the student's choices. The server replays the whole game (the deal comes from the seed, and the bots' choices are worked out again) and saves only what it worked out itself. No seed (no Wi-Fi)? It's a practice game and says so.
+
+## 5. Playing classmates (2–4 players)
+
+### A new table, not a bigger `mp_games`: why
+
+- `mp_games` is strictly two players, and its scoring, tidy-up job, lobby and rematch all assume that. Changing it risks chess and checkers.
+- More importantly, `mp_games` lets each player read the **whole** game row. That's fine for chess, where nothing is secret, but it would hand every player everyone's cards.
+- The space game already showed a separate table works well for 2–4 players. 101 copies its patterns (codes, lobby, waiting room, rematch, retry) and adds the hidden-card parts.
+
+### How a game runs
+
+1. **Start:** **Play friends → 101 → Start game**, pick **2, 3 or 4 players** and whether it's listed in the lobby. You get a 5-character code, same letters as now.
+2. **Join:** by code or from the lobby. The **Join with a code** box already asks chess/checkers then space; it will ask 101 third. New codes are checked against all three so they don't clash. Same rules as now: one waiting game each, waiting games expire after 10 minutes, you can't join your own or a full one.
+3. **Starting:** the game **starts by itself when it's full**. The host can also press **Start** early once at least 2 have joined, so nobody waits forever for a fourth player who isn't coming. The server picks who goes first at random; each later round starts with the next player along (see question 11).
+4. **Each turn:** draw (stack or discard) → the server sends the drawn card to you only → you tap one of your four cards to swap, or **Throw away**. Or press **Knock** instead of drawing. Every request is checked: your game, your turn, game not over, move legal, and "save only if nothing changed" (the same `version` check as now), so double taps and out-of-turn moves are refused.
+5. **Knock:** a big **Last turn!** banner, and the knocker's cards get a "knocked" badge. Each other player gets one more turn.
+6. **End of round:** all cards flip over and the scoring plays step by step for each player (section 7). Totals go up, and the bars showing how close each player is to 101 move. **Next round** deals again after a short pause (or when everyone taps Next).
+7. **The end:** a podium with every player's place and total, and **Rematch** (works the same as the space game: the first to press hosts, the others join).
+
+### Someone walks away (the fair, simple rule)
+
+| Situation | What happens |
+|---|---|
+| Your turn and you don't act for **60 seconds** | Your turn is **skipped**. If you'd drawn a card, it goes on the discard pile. A ring timer shows for the last 10 seconds |
+| **3 skipped turns in a row** | You're **out**: your cards leave the table, you don't score any more, and it's a loss that earns nothing |
+| You press **Leave** | Same as being out |
+| Hidden or deleted by a teacher | Out, the next time anyone in the game acts |
+| Only 1 player left | The game ends. That player wins, and it earns points only if at least 2 full rounds were played |
+| Nothing happens for 10 minutes | The tidy-up job ends the game with no points for anyone |
+| Peek not finished in 15 seconds | The peek just ends (not a skip) |
+
+Nobody has to press a "skip" button. As in the space game, when the server's clock says time's up, the other players' pages send a quiet "time's up" request; the server checks its own clock, so nobody can hurry anyone. The skip happens automatically, which avoids arguments. Draw offers don't apply.
+
+### Reconnecting
+
+Reloading, closing the lid or losing Wi-Fi just means the page reads its own seat row again when it comes back. That row never contains your peek cards after the peek has ended, so rejoining can't show you your cards. Live updates work like chess: Realtime, checking every few seconds if that drops, and the Stage 8 retry.
+
+### Safety, same as everywhere else
+
+- No chat and no free text. Names and avatars only. No emoji reactions in 101 (they could be added later behind a teacher switch, like the space game).
+- The server works out who's asking from their sign-in token, never from the request.
+- Hidden students can't start or join. The teacher's switch stops starting, joining and playing, but leaving still works.
+- Same rate limits: 20 games started an hour, 10 code tries a minute, 60 requests a minute.
+
+## 6. Points (decided: small points, no rating)
+
+**Why no rating or badge:** a rating compares two players: "I beat you, so I take some of your points." 101 can have 4 players, and the cards you're dealt matter a lot, so a rating wouldn't be fair. So 101 never changes ratings, badges, leaderboards or "most improved", like the space game (`ranked: false`).
+
+| 101 game | Points | Limit |
+|---|---|---|
+| Against bots, lost | Very Easy 1, Easy 2, Medium 3 | Shares the existing 40-a-day bot cap with chess, checkers and space |
+| Against bots, won (lowest total) | Very Easy 3, Easy 5, Medium 8 | Same as chess and checkers |
+| Against classmates, finished | 4 | First 6 classmates games a day earn points |
+| Against classmates, won | 8 | Same |
+| Left, out, or **fewer than 2 full rounds** | 0 | "Very short" for 101 means fewer than 2 full rounds |
+
+- Bot games use the same table as chess and checkers because 101 has real skill in it (remembering cards, knowing when to knock), unlike the space game.
+- **Achievements** (10 points each, earned on the server from checked games): 🃏 First game · 🏆 First win · 👫 Win against classmates · 0️⃣ Perfect zero (a hand worth 0) · 🎰 Triples! (three of a kind) · ✊ Knock and win the round · 3️⃣ Saved by a 3 (a 3 cancels a 10-point card) · 🔟 10 games finished.
+- The **How points work** page gets a 101 section, read from the database like the rest. Teacher detail shows 101 games; **New season** and **Delete student** clear them (tested).
+
+## 7. Look, feel and accessibility
+
+- **Table:** green felt, your 2×2 square big at the bottom, other players' squares round the table with their avatar and name, stack and discard pile in the middle. A glowing ring and "Your turn!" show whose turn it is.
+- **Your held card** floats above your square, big, with **Swap** (tap a card) and **Throw away**.
+- **Scores always visible:** each player's total and a bar filling towards 101 (green, then amber after 75, then red after 90).
+- **End-of-round scoring** (the maths bit): cards flip one player at a time; matching pairs slide together and show "0"; a 3 zaps the highest card ("3 cancels your Queen: 10 → 0"); triples light up the whole hand; then a written sum like **K 0 + 7 + 7 → 0 + 5 = 5**, and the total ticks up. A small celebration for the round winner, a bigger one for a 0 hand. A **Skip** button for students who want to get on.
+- **Cards:** Adrian Kennard's CC0 faces copied into `src/games/card101/cards/` with a NOTICE file. Our own card back (hub colours and a big "101"). I'll check them at Chromebook size in 10.2. If the corners are too small to read, I'll draw our own simple, big faces instead (big rank and suit, no fussy pictures). No outside fonts.
+- **Colour-blind safe:** suits use shape and the usual red/black; nothing relies on colour alone.
+- **Keyboard:** S = take from stack, D = take discard, K = knock, arrow keys move round your four cards, Enter swaps, T throws away, Escape closes panels. Big tap targets. Every event is read out through an `aria-live` region.
+- **Accessible names**, for example "Your card, top left, face down", "Discard pile: 7 of hearts", "Speedy Otter's card, bottom right, face down".
+- **Sounds** use the existing sound module and mute setting (off by default): a soft flick for drawing, a tap for swapping, a knock-knock, and a little fanfare for a round win.
+- **Sizes:** Chromebook 1366×768 (table in the middle, scores on the right) and tablet 768×1024 (table on top, scores below). Tested with mouse, touch and keyboard.
+
+## 8. How it's built (the technical part)
+
+### Rules engine (`shared/card101/`)
+
+- `cards.ts` (the deck, ranks, values), `score.ts` (scoring a hand, returning each step so the screen can show the working), `engine.ts` (`play(game, seat, action) → { game, events }`, pure: no clock, no network, no `Math.random`; the shuffled deck comes in from outside), `view.ts` (`viewFor`), `bot.ts` (the three levels, which take a view and a memory, never the game), `replay.ts` (seed → deck → replays a bot game for the server), `sim.ts` and `scripts/101-sim.mjs` (thousands of bot games to measure game length and check the levels).
+- Game id `101` throughout.
+
+### Database (two migrations, applied live only after James says yes)
+
+- **`20261016000800_101_points.sql`:** `bot_games`, `scored_games`, `achievement_types` allow `'101'` (`ratings` doesn't); `bot_games.card101` for the seed and choices; `record_101_bot_game()`; scoring for 101 bot games inside the shared cap; the 8 achievements; updates to `progress_rules()`, `my_progress()`, `teacher_student_detail()`, `rebuild_progress()`.
+- **`20261016000900_101_classmates.sql`:** `card_games` (the locked full game: deck, hands, log; no student access at all), `card_game_seats` (one row per player: their view, readable only by them, in Realtime), `card_lobby_games()`, `card_tidy()` on a 5-minute scheduled job, scoring trigger for finished games, `is_player_in` extended for `card-game:` presence channels (still presence only).
+- `security.test.sql` lists updated by hand, plus a new `card101.test.sql`.
+
+### Server functions
+
+- **New `card-game` function:** `create`, `join`, `cancel`, `start`, `peek-done`, `draw`, `place`, `knock`, `times-up`, `next-round`, `leave`, `rematch`. A testable `handler.ts` with its Supabase calls passed in, a thin `entry.ts`, built by `npm run build:functions`. Each reply carries only the caller's view.
+- **`save-bot-game`:** accepts `game: "101"` (seed start and save). Chess, checkers and space are handled exactly as now.
+- **`multiplayer` and `space-game`:** not changed (their built files must come out identical).
+
+### Website
+
+- `src/games/card101/`: table, cards, scoring show, settings, How to play, bot Web Worker. One line in `registry.ts`, `ranked: false`.
+- `src/card101/useCardGame.ts`: keeps a classmates game up to date from the seat row, like `useSpaceGame`.
+- Lobby: 101 in the Start list (2–4 players) and in the open games list ("2 of 3 joined"). Route `/#/card-game/:id` for the waiting room and table.
+
+## 9. Free-tier cost (estimate; the 10.1 simulation will firm it up)
+
+| | Per game | A class (30 students, 3 lessons a week, groups of 3, ~1 game a lesson each) |
+|---|---|---|
+| Function calls, classmates | ~8 rounds × ~15 turns × ~1.7 calls (draw + place), plus peeks, joining and ending: **~230** | ~30 games a week ≈ 7,000 a week, **~30,000 a month** |
+| Function calls, bots | **2** (seed + save) | small |
+| Realtime messages | each change rewrites 3 seat rows, each sent to 1 player: **~700** | ~90,000 a month, against 2 million |
+| Data sent out | views are about 1–2 KB: **~1.5 MB** | ~0.2 GB a month, against 5 GB |
+| Database | a few KB per game | tiny; New season clears it |
+
+With chess, checkers and the space game (~105,000 calls a month at this class size), that's about 135,000 of 500,000. Sign-in is still the real classroom limit (Stage 8 notes), not this game.
+
+**One thing to watch: game length.** With 3–4 players, a game to 101 could take 25–40 minutes. The simulation in 10.1 will tell us. If it's too long for a lesson, see question 10.
+
+## 10. Tests
+
+- **Rules:** every scoring rule and every combination from section 12, turn order, knocking and the last turns, the stack running out, the end at 101, ties.
+- **Hidden cards:**
+  - A "what does each seat know" checker plays thousands of random games and checks every view, after every move, contains only cards that seat is allowed to see. This is the strongest test, because it covers every route that uses `viewFor`.
+  - pgTAP: a student can't read `card_games` at all, can read only their own seat row, can't call server-only functions, can't write anything, and the lobby function returns no cards.
+  - Server tests: every reply carries only the caller's view; the peek can't be asked for twice.
+  - Real browser: one student subscribes to every seat row through Realtime and receives only their own.
+- **Refereeing:** out-of-turn moves, illegal moves, double taps, moves after the game ends, joining a full or started game: all refused.
+- **Bots:** only legal moves; the "change the hidden cards, the choice doesn't change" fairness test; each level beats the one below over hundreds of games.
+- **Screens:** turn flow, the peek, knocking, the scoring show.
+- **Real browser, local accounts:** full bot games at each level; classmates games with 2 and with 3 players in separate browser windows, with a reload, a knock and a player walking away; screenshots at Chromebook and tablet sizes; chess, checkers and space still play and save.
+
+## 11. Stages
+
+Each stage ends with `npm run check` and the database tests passing, a browser check where there's something to see, and a short report.
+
+1. **10.1 Rules, scoring, views, bots, simulation.** Plus `docs/101-RULES.md`. I report game length and bot level results.
+2. **10.2 Playing bots in the browser** (table, cards, peek, scoring show, keyboard), not saved yet. A private phone preview like the space game's, if you'd like it.
+3. **10.3 Saving bot games and points** (migration 0800, `save-bot-game`).
+4. **10.4 Playing classmates** (migration 0900, `card-game` function, lobby, waiting room, timers, walk-away rule, reconnecting, the hidden-card tests).
+5. **10.5 Polish and go-live:** sounds, How to play, accessibility pass, README, CLASS-LAUNCH, PLAN.md design and cost sections. Then, after your yes (and outside auto mode, which always blocks live changes), apply both migrations, deploy `save-bot-game` and `card-game`, check them from outside, record the migrations in the PLAN.md `migration repair` note, and merge to `main`.
+
+All on branch `stage-10`. Nothing goes live or into `main` before your yes.
+
+## 12. Rule questions for James
+
+My suggestion is marked ⭐. These are suggestions only: it's your family's game.
+
+1. **Doubles:** (a) ⭐ any two matching cards anywhere in the hand, or (b) only a pair in the same column?
+2. **Four of a kind:** if (1) is "anywhere", four of a kind is two pairs, so it's 0 anyway. If (1) is "same column", what does it score? (a) ⭐ 0, like triples, or (b) something else?
+3. **When special rules overlap:**
+   - (a) Order: ⭐ pairs and triples first, then each 3 cancels the highest card left. Example: 3, 9, 9, 5 → the 9s cancel, the 3 cancels the 5 → **0**. Or should the 3 cancel a 9 first (→ 9 + 5 = 14)?
+   - (b) A pair of 3s: does each 3 *also* cancel a card? Example 3, 3, 9, 7: ⭐ each 3 cancels one card → **0**; or one cancel only → **7**; or they're just a pair → **16**.
+   - (c) Two cards tie for highest (Jack and Queen, both 10): ⭐ the 3 cancels just one of them.
+4. **Taking the discard:** (a) ⭐ you must swap it in, or (b) you can put it straight back?
+5. **The stack runs out:** (a) ⭐ shuffle the discard pile (except its top card) into a new stack, or (b) the round ends straight away?
+6. **Knock on your very first turn of a round?** (a) yes, or (b) not until everyone has had one turn?
+7. **Ties:** (a) two players tie for the lowest hand in a round: nothing special happens either way, since everyone just adds their own hand; they both get the round-win celebration. ⭐ OK? (b) Tie for the lowest total at the end: ⭐ they share the win, or the lowest hand in the last round breaks it?
+8. **The end:** ⭐ 101 **or more**, or exactly 101?
+9. **Most players in one game:** ⭐ 4 (fits a Chromebook screen and matches the space game), or up to 6?
+
+Two extra questions the brief doesn't cover:
+
+10. **A shorter game option?** If the simulation shows 101 takes too long for a lesson, should there be a **Quick game: first to 50** setting (101 stays the normal game)? (a) ⭐ yes, as a choice, or (b) no, always 101?
+11. **Who starts each round?** (a) ⭐ the next player round the table each round, (b) the winner of the last round, or (c) the player with the lowest total?
