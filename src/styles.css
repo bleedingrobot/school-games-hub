@@ -1828,11 +1828,47 @@ main:focus {
     clip: rect(0 0 0 0);
     white-space: nowrap;
   }
+  /* Phones: the menu items share the row equally, emoji above the word, so nothing runs off the side. */
+  .topnav {
+    gap: 4px;
+  }
   .topnav__link {
-    padding: 8px 12px;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 6px 4px;
+    border-radius: 14px;
+    font-size: 0.82rem;
+    line-height: 1.2;
+    text-align: center;
+  }
+  .topnav__link > span {
+    font-size: 1.15rem;
+  }
+  /* Avatar on top, words underneath, so the badges get the full width. */
+  .hero {
+    flex-direction: column;
+    text-align: center;
+    padding: 22px 18px;
+  }
+  .hero__meta {
+    justify-content: center;
+  }
+  .rank-badge {
+    white-space: normal;
   }
   .hero h1 {
     font-size: 1.7rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .topnav__link {
+    padding: 6px 2px;
+    font-size: 0.72rem;
   }
 }
 
