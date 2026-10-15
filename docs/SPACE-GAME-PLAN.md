@@ -300,7 +300,7 @@ Together with chess and checkers (~70,000 calls a month at the same class size),
 Each stage ends with `npm run check` passing, a browser test where there's something to see, and a short report to you.
 
 1. **9.1 Rules engine, boards, simulation, tests.** No screens yet. I report the simulation numbers (game length, fairness, how often each thing happens) and the tuned settings, so you can say "too long" or "too mean" before anything is drawn.
-2. **9.2 Playing against bots** (board, rockets, animations, items, settings, keyboard), not saved yet. Full games played in a real browser at Chromebook and tablet sizes. **Preview:** I'll put this stage on a private claude.ai page that James can open on his phone and actually play (no sign-in, no saving, nothing to do with the live site).
+2. **9.2 Playing against bots** (board, rockets, animations, items, settings, keyboard), not saved yet. Full games played in a real browser at Chromebook and tablet sizes. **Preview:** I'll put this stage on a private claude.ai page that James can open on a phone and actually play (no sign-in, no saving, nothing to do with the live site).
 3. **9.3 Saving bot games and points:** `save-bot-game` replays space games, the migration's points/achievements part, the Profile, How points work and teacher detail updates.
 4. **9.4 Playing classmates:** `space_games`, the `space-game` function, lobby, launch, timers, autopilot, bots in empty seats, rematch, emoji reactions and their teacher switch. Played with 2, 3 and 4 local accounts in separate browser windows, with reloads and a closed lid part-way.
 5. **9.5 Polish:** cosmic events, How to play, space facts, sounds, an accessibility pass, README and CLASS-LAUNCH updates.
