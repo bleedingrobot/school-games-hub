@@ -5,7 +5,7 @@ Stage 11 of School Games Hub. Written 16 October 2026 from the brief in
 599 unit tests passing). Branch: `stage-11`.
 
 Where the brief and the repo disagree, the repo wins. Every change to the brief is listed in
-section 3. **Status: reviewed by James on 16 October 2026 (answers in section 4). Phase 1 next.**
+section 3. **Status: reviewed by James on 16 October 2026 (answers in section 4). Phase 1 done: see [PROGRESS.md](PROGRESS.md).**
 
 ## 1. What the brief got right
 
@@ -140,7 +140,9 @@ on this; Year 3 just means the first levels must be very gentle.
    only switch tables off, for the whole school (3.4).
 3. **Game card:** yes, add an option to hide the bot picker for Gem Keep (3.7).
 4. **No phone preview link** after Phase 1; I test it myself and report.
-5. Everything in the brief's section 7 stays at its default (Years 3–6, Chromebooks and iPads,
+5. **The first levels must be super easy and fun.** Building a few towers should win level 1 with
+   3 stars; difficulty only climbs after that.
+6. Everything in the brief's section 7 stays at its default (Years 3–6, Chromebooks and iPads,
    Calm mode, 8/10 pass mark, division off, single player, working title "Gem Keep").
 
 ## 5. Phase 1 next

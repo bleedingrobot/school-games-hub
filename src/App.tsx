@@ -3,6 +3,7 @@ import { AuthProvider } from './auth/AuthContext';
 import { RequireAuth } from './auth/RequireAuth';
 import { Layout } from './components/Layout';
 import { GAMES } from './games/registry';
+import { gemKeep } from './games/gem-keep';
 import { Dashboard } from './pages/Dashboard';
 import { FriendGamePage } from './pages/FriendGamePage';
 import { GamePage } from './pages/GamePage';
@@ -28,6 +29,8 @@ export function AppRoutes() {
           {GAMES.map((game) => (
             <Route key={game.id} path={game.id} element={<GamePage game={game} />} />
           ))}
+          {/* Gem Keep is still being built: reachable only by its address until Phase 5 adds it to GAMES. */}
+          <Route path={gemKeep.id} element={<GamePage game={gemKeep} />} />
           <Route path="lobby" element={<Lobby />} />
           <Route path="play/:id" element={<FriendGamePage />} />
           <Route path="space-game/:id" element={<SpaceGamePage />} />
