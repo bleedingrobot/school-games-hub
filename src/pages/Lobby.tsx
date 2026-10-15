@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { colourName, normaliseCode, otherSide, prettyCode, type GameKind, type Side } from '../../shared/multiplayer';
 import { useAuth } from '../auth/AuthContext';
@@ -50,13 +50,15 @@ export function Lobby() {
   const [spaceBoard, setSpaceBoard] = useState<SpaceBoardChoice>('nebula');
   const [spaceMode, setSpaceMode] = useState<Mode>('cosmic');
 
-  // The space game's settings live with the game, which loads only when it's picked.
+  // The space game's settings live with the game, which loads only when it's picked. The
+  // student's last choices fill in the form, unless they've already changed it.
   const spacePrefs = () => import('../games/space/prefs');
+  const spaceTouched = useRef(false);
   useEffect(() => {
-    if (gameKind !== 'space') return;
+    if (gameKind !== 'space' || spaceTouched.current) return;
     let current = true;
     void spacePrefs().then(({ loadPrefs }) => {
-      if (!current) return;
+      if (!current || spaceTouched.current) return;
       const saved = loadPrefs();
       setSpaceBoard(saved.board === 'galaxy' ? 'galaxy-of-the-day' : saved.board);
       setSpaceMode(saved.mode);
@@ -65,6 +67,14 @@ export function Lobby() {
       current = false;
     };
   }, [gameKind]);
+  const pickSpaceBoard = (board: SpaceBoardChoice) => {
+    spaceTouched.current = true;
+    setSpaceBoard(board);
+  };
+  const pickSpaceMode = (mode: Mode) => {
+    spaceTouched.current = true;
+    setSpaceMode(mode);
+  };
   const [inLobby, setInLobby] = useState(false);
   const [code, setCode] = useState('');
 
@@ -144,15 +154,20 @@ export function Lobby() {
       return;
     }
     void go('create', async () => {
-      const { loadPrefs, savePrefs, setupFrom, todaysGalaxy } = await spacePrefs();
+      const [{ loadPrefs, savePrefs, setupFrom, todaysGalaxy }, { DESIGNED_BOARDS }] = await Promise.all([
+        spacePrefs(),
+        import('../../shared/space/boards'),
+      ]);
       const saved = loadPrefs();
       const galaxy = spaceBoard === 'galaxy-of-the-day';
+      // Cosmic events come with the board (on for Deep Space), as on the bot game's settings.
       const setup = setupFrom({
         ...saved,
         mode: spaceMode,
         board: galaxy ? 'galaxy' : spaceBoard,
         galaxy: galaxy ? todaysGalaxy() : saved.galaxy,
         galaxySize: 100,
+        cosmicEvents: galaxy ? saved.cosmicEvents : DESIGNED_BOARDS[spaceBoard].cosmicEvents,
       });
       if ('problem' in setup) throw new Error(setup.problem);
       savePrefs({ ...saved, mode: spaceMode, ...(galaxy ? {} : { board: spaceBoard }) });
@@ -303,7 +318,7 @@ export function Lobby() {
                             type="radio"
                             name="space-board"
                             checked={spaceBoard === id}
-                            onChange={() => setSpaceBoard(id)}
+                            onChange={() => pickSpaceBoard(id)}
                           />
                           <span>{id === 'galaxy-of-the-day' ? 'Galaxy of the day' : BOARD_NAMES[id]}</span>
                         </label>
@@ -314,11 +329,11 @@ export function Lobby() {
                     <legend>Mode</legend>
                     <div className="level-picker__options">
                       <label className="level-picker__option">
-                        <input type="radio" name="space-mode" checked={spaceMode === 'cosmic'} onChange={() => setSpaceMode('cosmic')} />
+                        <input type="radio" name="space-mode" checked={spaceMode === 'cosmic'} onChange={() => pickSpaceMode('cosmic')} />
                         <span>✨ Cosmic (items, stars, everything)</span>
                       </label>
                       <label className="level-picker__option">
-                        <input type="radio" name="space-mode" checked={spaceMode === 'classic'} onChange={() => setSpaceMode('classic')} />
+                        <input type="radio" name="space-mode" checked={spaceMode === 'classic'} onChange={() => pickSpaceMode('classic')} />
                         <span>Classic (just wormholes and black holes)</span>
                       </label>
                     </div>

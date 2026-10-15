@@ -162,6 +162,8 @@ describe('the lobby', () => {
     expect(within(create).queryByRole('radio', { name: 'White' })).not.toBeInTheDocument();
     await user.click(within(create).getByRole('radio', { name: 'Deep Space' }));
     await user.click(within(create).getByRole('radio', { name: /Classic/ }));
+    await new Promise((resolve) => setTimeout(resolve, 50)); // the saved settings arrive late: they mustn't undo the clicks
+    expect(within(create).getByRole('radio', { name: 'Deep Space' })).toBeChecked();
     await user.click(within(create).getByRole('radio', { name: 'Anyone in the lobby' }));
     await user.click(within(create).getByRole('button', { name: /Start game/ }));
     expect(space.askSpace).toHaveBeenCalledWith({
