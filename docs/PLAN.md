@@ -1,6 +1,6 @@
 # School Games Hub — plan
 
-Last checked: 15 October 2026. Free-tier numbers change, so check them again before launch.
+Last checked: 15 October 2026 (re-checked against supabase.com/pricing in Stage 8: unchanged). Free-tier numbers change, so check them again each year.
 
 ## The short version
 
@@ -123,10 +123,10 @@ To add a new game later, you add a folder with its rules, bot and board, plus on
 2. ✅ Foundation: website shell, look and feel, dashboard with clearly marked sample data, auto-deploy to GitHub Pages (done 15 Oct 2026, live at https://bleedingrobot.github.io/school-games-hub/)
 3. ✅ Sign-in and profiles: Google login, school-only checks, database rules, display names, avatar maker, teacher roles (done 15 Oct 2026: James and students tested sign-in with real school accounts; no extra Workspace admin approval was needed)
 4. ✅ Chess vs bots, results saved (done 15 Oct 2026: chess.js rules, Stockfish 19 lite in a Web Worker, `bot_games` table, `save-bot-game` server function that replays every move; full games played against all three bots in a browser at Chromebook and tablet sizes)
-5. ✅ Checkers vs bots (done 15 Oct 2026: our own English checkers rules with thorough tests, three look-ahead bots in a Web Worker, results saved through `save-bot-game`; full games played against all three bots in a browser, as both colours, at Chromebook and tablet sizes), then **small student trial** using [STUDENT-TRIAL.md](STUDENT-TRIAL.md)
+5. ✅ Checkers vs bots (done 15 Oct 2026: our own English checkers rules with thorough tests, three look-ahead bots in a Web Worker, results saved through `save-bot-game`; full games played against all three bots in a browser, as both colours, at Chromebook and tablet sizes), then **small student trial** (its checklist is now [CLASS-LAUNCH.md](CLASS-LAUNCH.md))
 6. ✅ Multiplayer: lobby, game codes, server-checked moves, reconnecting (done 15 Oct 2026: `mp_games` table and `multiplayer` server function live; full chess and checkers games played between two local accounts in two browser windows, ending by the rules, resignation, an agreed draw and a 2-minute claim, with reloads part-way, at Chromebook and tablet sizes. Still to do: James's two-device test with real school accounts)
 7. ✅ Points, badges, ratings, leaderboards, teacher view (done 15 Oct 2026: scoring runs inside the database; 126 new database tests; bot games, friend games (a win, a rematch and an agreed draw) and every teacher action, including deleting a test student and a new season, tried in a real browser at Chromebook and tablet sizes; live migration applied and scores filled in for the games already saved. Still to do: James's live teacher test)
-8. Deploy and school testing
+8. ✅ Deploy and school testing (done 15 Oct 2026: security review with fixes, line-by-line definition of done below, 30-student load test, privacy summary, class launch checklist and maintenance guide; full games of chess and checkers against bots and friends, and every teacher action, in a real browser at Chromebook and tablet sizes with mouse, keyboard and touch. See "Stage 8" below)
 9. Space snakes and ladders game, "Wormholes & Black Holes" (not started; full brief in [prompts/space-game.md](prompts/space-game.md). First step is a plan in `docs/SPACE-GAME-PLAN.md` for James to approve before any game code. Note: the brief was written before Stage 7 was built, so its points section needs checking against what's live now)
 
 ## Stage 6 design: playing a friend
@@ -240,19 +240,62 @@ At `/#/teacher`, only for `role = 'teacher'` (checked by every function on the s
 
 Everything runs inside the database: no new server functions, no new function calls and no new live connections. A score row is about 150 bytes, so even 100 students × 10 games a day for a whole school year is about 30 MB, against the 500 MB database. The end-of-year cleanup frees it again. Leaderboard and dashboard reads are ordinary database requests, which the free plan doesn't count.
 
-## Definition of done — additions to the brief
+## Stage 8: security review, classroom load and launch
 
-- A teacher can rename, hide or remove a student, and delete that student's data.
-- The README explains how to wake the site after the holidays, when the free project pauses.
+### Security review (15 Oct 2026)
+
+Done as a curious Year 6 student with developer tools would try it, against the code, the local copy and (read-only) the live project. Most serious first:
+
+1. **Medium: a hidden chat channel.** The private "who's here" channel for a friend game let the two players send each other any message with developer tools. The website never showed them, but the brief says no chat. Proven locally (a message from one player reached the other). **Fixed** in migration `20261015000500`: the channel now carries presence only. Tested both ways.
+2. **Medium: the sign-up check is switched off on the live project.** Supabase's *Before User Created* hook (lock 2) is off. The database backstop still refuses any non-school account (tested: a gmail and a look-alike domain can't be created), and Google's Internal setting blocks them first, so nobody can get in. But one of the three locks isn't on. **James to switch on** (it changes sign-in, so it's his click).
+3. **Low-medium: re-sending a won bot game.** Copying a save request in the browser's developer tools and replaying it saved the game again, with points (up to the 40-a-day cap) and towards "Play 50 games". Lost replies on patchy Wi-Fi did the same through **Try again**. **Fixed**: the same counting game sent twice is saved and scored once (`record_bot_game`).
+4. **Low: new tables started open.** Supabase gives signed-out visitors and students full rights on every new table; each migration had removed them by hand. **Fixed**: new tables now start closed, and a test checks it.
+5. **Low: no request size limit** in the server functions. **Fixed**: bodies over 64 KB are refused unread.
+6. **Low (cost, not security): two function calls per move.** Browsers asked permission (a CORS preflight) before every request. **Fixed**: the answer is remembered for 2 hours.
+
+Checked and fine:
+
+- **Live matches the migrations:** every table, policy, grant and function was listed from the live catalogue and compared. Every function has a fixed `search_path`. Signed-out visitors can read and call nothing (probed from outside). Students can only read, never write, and only these functions: the name/avatar ones, the read-only progress, lobby and board ones, and the teacher ones (which refuse non-teachers). `security.test.sql` now checks all of this every run.
+- **Server functions:** forged and expired tokens, a deleted student's token, someone else's game (move, resign, join by ID), out-of-turn and illegal moves, the same move twice, unreadable and huge bodies, and 70 requests at once (turned away) were all tried locally.
+- **Realtime:** a third student listening to the whole `mp_games` table got nothing from a game they weren't in, and couldn't join its private channel.
+- **Sign-in:** non-school and look-alike domains, capital letters, sub-domains (pgTAP); expired sessions are refused by the database and both functions; a teacher's ID with a non-school email in the token gets no teacher powers.
+- **Public repo and site:** no secret keys, service keys, tokens or real emails in the whole git history (only made-up test addresses and the commit author's address). The published site has no source maps, no `.env`, and talks only to our Supabase project.
+- **Supabase's advisors:** the security advisor's warnings are all expected: the teacher, lobby, board and name functions are meant to be callable by signed-in users (each checks who's asking), the three score tables have row level security on and no policies on purpose (nobody reads them directly), and "leaked password protection" doesn't apply (no passwords). The performance advisor's warnings were fixed in migration `20261015000500` (rules check the caller once per query; five indexes).
+
+Known limits, not fixed (for James to decide): a determined student can still invent a bot game move by move (it earns small capped points and never affects ratings); a group of friends throwing games to each other can lift one player's badge slowly (5 games a pair a day); the 60-requests-a-minute limit lives in each copy of the function and the live logs show a new copy starting for most requests, so it's a very soft limit. A student scripting thousands of requests could use up the month's free function calls. Supabase would warn first, and the site would slow or stop until the next month, but there would be no bill.
+
+### Definition of done (brief section 13, plus PLAN.md's additions)
+
+| Line | How it's proven | Met? |
+|---|---|---|
+| School accounts can sign in, unauthorised accounts are rejected by the backend | Live: 11 accounts, all school ones. pgTAP: domain checks, the hook, and the database backstop. Locally: a gmail and a look-alike domain can't be created; expired and forged tokens are refused | ✅ (but switch the live hook on: see above) |
+| Avatars can be created and customised | pgTAP (`save_my_avatar`, free text refused); Stage 3 browser test; live: 7 of 11 players have built one | ✅ |
+| Chess and checkers both work against all three bots | Unit tests (legal moves, each level beats the one below); Stage 4–5 full browser games against every level; this stage: full chess and checkers bot games in the browser; live: real students played every level of both | ✅ |
+| Two separate accounts can play chess, and checkers, live | This stage: full games of both in two browsers, ending by checkmate and by blocking, with a reload and a closed lid part-way; live: 12 friend games between real students on 15 Oct, chess and checkers | ✅ |
+| Results and leaderboards update correctly | 126 pgTAP scoring and board tests; browser: points (+8/+4) and ratings (±10) after friend games; live: every counting game has its score, and rating changes add up to zero | ✅ |
+| Students can't modify each other's profiles, scores or results | `security.test.sql` (whole-catalogue rules), `profiles`/`bot_games`/`mp_games` tests, function tests, local probe | ✅ |
+| It works on Chromebooks and tablets | Browser tests at 1366×768 (mouse and keyboard) and 768×1024 (touch); live: 156 requests from real Chromebooks and 203 from Macs/iPads on 15 Oct | ✅ |
+| Tests, builds and security checks pass | 295 unit tests, 269 database tests, type check, production build, function build check; Supabase advisors reviewed | ✅ |
+| Deployed on the agreed free services, no surprise paid dependency | GitHub Pages, Supabase free plan, Google Cloud with no billing; no card anywhere | ✅ (James: confirm Google Cloud **Billing** shows no billing account) |
+| Clear maintenance and redeploy instructions | README, "Looking after the site" | ✅ |
+| A teacher can rename, hide or remove a student, and delete that student's data | pgTAP; this stage: every teacher action in the browser, checking the database after each (a deleted student leaves 0 rows) | ✅ (James's own live teacher test still to do) |
+| The README explains waking the site after the holidays | README, "After the holidays: waking the site"; CLASS-LAUNCH.md, "The day before" | ✅ |
+
+### Classroom load (30 students)
+
+- **Locally, 30 students at once** (`load.mjs`-style script, not kept in the repo): 15 lobby games posted in the same moment, 15 students rushing the same game (exactly 1 got in, 14 were told it was full), then 15 games of 30 moves played together. 494 requests, no errors; median 54 ms, slowest 0.9 s. Every student got live updates for their own game only (900 = 450 moves × 2 players).
+- **Patchy Wi-Fi:** reloading mid-game, and closing the page for 20 s (like a Chromebook lid), both came back to the game; the partner saw "away" and it cleared. The website now tries a request once more after a network error or a Supabase 502/503 (5 of these hit students' preflight requests on 15 Oct, all at the 5-minute marks). Retrying is safe: moves carry their number, and saves are idempotent.
+- **A week of class use** (30 students, 3 lessons, say 4 friend games of ~80 moves and 5 bot games each a lesson): about 30 × 3 × (4 × 45 + 5) ≈ 17,000 function calls a week, ~70,000 a month, against 500,000. (Before Stage 8 every call cost two, so ~140,000.) Live connections: 30–60 tabs against 200. Live messages: about 2 per move, ~30,000 a week against 2 million a month. The database is 12 MB of 500 MB. Realtime's other free limits (100 messages a second, 20 presence messages a second) are well above a class.
+- **The real limit for a class is sign-in:** Supabase allows 150 sign-ins and token refreshes per 5 minutes **per internet address**, in bursts of 30, and the whole school shares one address. Staggered sign-in is fine; if a whole class gets errors at once, raise it (README, "If Supabase or Google changes something").
 
 ## Setup notes
 
 - **Google sign-in:** Google Cloud project "School Games Hub" inside the douglaspark.school.nz organisation, consent screen set to **Internal**. Client ID `1082331069721-afm5mligouf44drvkpdb1vlatgqd6tor.apps.googleusercontent.com`. The client secret lives only in Supabase.
-- **Supabase dashboard settings** (not stored in this repo): Google provider on, Email provider off, Site URL and redirect URL set to the GitHub Pages address, and the *Before User Created* hook pointing at `public.hook_before_user_created`.
+- **Supabase dashboard settings** (not stored in this repo): Google provider on, Email provider off, Site URL and redirect URL set to the GitHub Pages address, and the *Before User Created* hook pointing at `public.hook_before_user_created`. **Checked 15 Oct 2026 (Stage 8): the hook was found switched off**; everything else as listed.
 - **Stage 6:** the migration `20261015000300_multiplayer.sql` was applied on 15 Oct 2026 with `supabase db query` (it also switches on live updates for `mp_games` and schedules the `tidy-friend-games` job). The `multiplayer` server function was deployed the same way as `save-bot-game`, with **Verify JWT off**. `save-bot-game` was redeployed at the same time (same behaviour, tidier code).
 - **Stage 5 server function:** `save-bot-game` version 2 (chess and checkers) was deployed on 15 Oct 2026 the same way. Reports say `"game": "checkers"`; reports with no game are chess. Checkers needed no database change: `bot_games` already accepted it.
 - **Stage 4 server function:** `save-bot-game` was deployed on 15 Oct 2026 with `npx supabase functions deploy save-bot-game --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api`. **Verify JWT is off** because the function checks the sign-in token itself.
 - **Claude can edit Supabase:** a Supabase access token lives in `~/.supabase/access-token` on James's server (never in the repo). Live SQL runs with `npx supabase db query --linked --project-ref zqzhetlzvtptnkmeiumi -f <file>`.
 - **Bot results:** games with fewer than 10 student moves, and abandoned games, are saved with `counts_for_points = false`. A student can save at most 300 bot games a day (stops a script flooding the database).
 - **Stage 7:** the migration `20261015000400_progress.sql` was applied on 15 Oct 2026 with `supabase db query`, then `select public.rebuild_progress();` filled in scores for the games already saved (30 scored games, 34 achievements, 4 ratings). No server function changed.
-- **Database setup:** the first migration was pasted into the SQL Editor on 15 Oct 2026, not pushed with the CLI. The Stage 4 migration (`20261015000200_bot_games.sql`) was applied on 15 Oct 2026 with `supabase db query` (also not recorded in the CLI's migration history). The Stage 6 migration (`20261015000300_multiplayer.sql`) and the Stage 7 migration (`20261015000400_progress.sql`) were applied the same way on 15 Oct 2026. Before the first `supabase db push`, run `npx supabase migration repair --status applied 20261015000100 20261015000200 20261015000300 20261015000400` so they aren't applied twice.
+- **Database setup:** the first migration was pasted into the SQL Editor on 15 Oct 2026, not pushed with the CLI. The Stage 4 migration (`20261015000200_bot_games.sql`) was applied on 15 Oct 2026 with `supabase db query` (also not recorded in the CLI's migration history). The Stage 6 migration (`20261015000300_multiplayer.sql`) and the Stage 7 migration (`20261015000400_progress.sql`) were applied the same way on 15 Oct 2026. The Stage 8 migration (`20261015000500_stage8_hardening.sql`) was applied the same way. Before the first `supabase db push`, run `npx supabase migration repair --status applied 20261015000100 20261015000200 20261015000300 20261015000400 20261015000500` so they aren't applied twice.

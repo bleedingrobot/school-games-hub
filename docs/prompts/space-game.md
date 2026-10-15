@@ -10,7 +10,7 @@ Plan first, build second. Your first job is to read the repo and write a plan, t
 
 Before planning anything, read and understand how the hub already works, and follow its conventions exactly:
 
-- `README.md`, `docs/PLAN.md`, `docs/BRIEF.md`, `docs/STUDENT-TRIAL.md`
+- `README.md`, `docs/PLAN.md`, `docs/BRIEF.md`, `docs/CLASS-LAUNCH.md`
 - `src/games/registry.ts`, `src/games/types.ts`, and the `chess/` and `checkers/` folders (board UI, bots in a Web Worker, how a game plugs into the dashboard)
 - `shared/` (rules code shared between browser and server)
 - `src/multiplayer/` (shared game screen, Realtime updates, reconnecting, "away" detection)

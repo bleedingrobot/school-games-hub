@@ -4,7 +4,11 @@ A chess and checkers website for Year 4–6 students. Students will sign in with
 
 **Live site:** https://bleedingrobot.github.io/school-games-hub/
 
-**Where it's up to:** Stages 1–7 of 8 are done. Students sign in with their Douglas Park Google account, pick a safe player name, build an avatar, and play chess or checkers against three bots or against each other. Every game is checked by the server, saved, and turned into points, levels, badges and achievements, with weekly and all-time leaderboards. Teachers have their own screen to look after students. The full plan is in [docs/PLAN.md](docs/PLAN.md). Before the first student trial, use [docs/STUDENT-TRIAL.md](docs/STUDENT-TRIAL.md).
+**Where it's up to:** all 8 stages are done, and it's ready for a whole class. Students sign in with their Douglas Park Google account, pick a safe player name, build an avatar, and play chess or checkers against three bots or against each other. Every game is checked by the server, saved, and turned into points, levels, badges and achievements, with weekly and all-time leaderboards. Teachers have their own screen to look after students. The full plan is in [docs/PLAN.md](docs/PLAN.md).
+
+- **Running a lesson:** [docs/CLASS-LAUNCH.md](docs/CLASS-LAUNCH.md) (the day before, a lesson plan, what error messages mean, the problem slip).
+- **For the principal and board:** [docs/PRIVACY-SUMMARY.md](docs/PRIVACY-SUMMARY.md).
+- **Looking after the site:** [Looking after the site](#looking-after-the-site) below.
 
 ## How sign-in stays school-only
 
@@ -75,13 +79,13 @@ The game starts the moment someone joins. Then:
 
 - Each move appears on the other screen within about a second (it took 0.3 seconds in testing).
 - **Resign** asks "Are you sure?" first, and counts as a loss.
-- **Offer a draw:** the other player taps Yes or No. Making a move instead also says no. Each player can offer at most 3 draws a game, with at least 5 of their own moves between offers.
+- **Offer a draw:** the other player taps Yes or No. Making a move instead also says no. Each player can offer at most 3 draws a game, with at least 5 of their own moves between offers. When they can't offer one, the button greys out and a note says why.
 - **The 2-minute rule:** if it's your opponent's turn and they haven't moved for 2 minutes, a **Claim the win** button appears. The server's clock decides, not the device's. Walking away counts as a loss for the one who left.
 - If the other player closes the page or loses Wi-Fi, their card says **away** after a few seconds.
 - At the end, both players see the result. **Rematch** starts a new game with the colours swapped, once both players have pressed it.
 - A waiting game is cancelled after 10 minutes if nobody joins (or straight away with **Cancel**). Each student can have one waiting game at a time.
 
-**Coming back to a game:** reloading the page, closing the Chromebook lid or losing Wi-Fi doesn't lose the game. Unfinished games are shown at the top of the dashboard and in the lobby, with a **Carry on** button. If nobody moves for 30 minutes, the game ends by itself as a loss for the player whose turn it was.
+**Coming back to a game:** reloading the page, closing the Chromebook lid or losing Wi-Fi doesn’t lose the game. If the Wi-Fi blips for a moment, the site quietly tries again once. Unfinished games are shown at the top of the dashboard and in the lobby, with a **Carry on** button. If nobody moves for 30 minutes, the game ends by itself as a loss for the player whose turn it was.
 
 ### Why students can't cheat
 
@@ -243,16 +247,76 @@ To update a function on the live site without the Supabase CLI:
 
 There are two functions: `save-bot-game` (saves bot games) and `multiplayer` (referees games between students). Both must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
 
-## After the school holidays
+## Looking after the site
 
-The free Supabase plan **pauses a project after a week with nobody using it**. If the site says sign-in isn't working after a break: log in at supabase.com, open the project and click **Restore project**. It takes a few minutes and nothing is lost.
+This part is for whoever looks after the site, including someone who isn't James.
+
+### Where the accounts live, and who owns them
+
+| Account | What it holds | Who owns it |
+|---|---|---|
+| **GitHub** `bleedingrobot` | The code (public repo `school-games-hub`) and the website (GitHub Pages) | James |
+| **Supabase** organisation "Douglas Park Games", project `zqzhetlzvtptnkmeiumi` (Sydney, free plan) | The database, sign-in and the two server functions | James (logs in to supabase.com with the GitHub account above) |
+| **Google Cloud** project "School Games Hub", inside the douglaspark.school.nz organisation | The Google sign-in button (an "Internal" app). Its client secret is stored only in Supabase | James's school Google account |
+
+No account has a credit card, so none of them can send a bill. **Give a second person access** so the site doesn't depend on one login: on GitHub (repo **Settings → Collaborators**), in Supabase (**Organization settings → Team → Invite**) and in Google Cloud (**IAM → Grant access**). Turn on two-step sign-in for all of these accounts.
+
+### After the holidays: waking the site
+
+The free Supabase plan **pauses a project after a week with nobody using it**. If the site says sign-in isn't working, or *"We couldn't load your profile"*, after a break: log in at supabase.com, open the project and click **Restore project**. It takes a few minutes and nothing is lost. Do this the day before a lesson ([CLASS-LAUNCH.md](docs/CLASS-LAUNCH.md)).
+
+### How a change gets published, and how to undo a bad one
+
+- Every push to `main` on GitHub runs the checks and, if they pass, publishes the website in 1–2 minutes (see [How publishing works](#how-publishing-works)). If a check fails, nothing is published and the old version stays up.
+- **To undo a bad website change quickly:** on GitHub, open **Actions**, click the last run *before* the bad one, then **Re-run all jobs**. That republishes the older version. (The next push publishes the newest code again, so fix or undo the code too.)
+- **To undo it in the code:** in VS Code's terminal, `git revert HEAD` (undoes the latest commit), then `git push`.
+- The website, the server functions and the database are published **separately**. Undoing a website change doesn't undo a function or database change.
+
+### Updating a server function
+
+After changing `supabase/functions/<name>/handler.ts` or the rules in `shared/`, run `npm run build:functions`, then `npm run check`. Then deploy it:
+
+```bash
+npx supabase functions deploy <name> --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api
+```
+
+Or, without the command line: on GitHub open `supabase/functions/<name>/index.ts`, click **Copy raw file**, then in Supabase go to **Edge Functions → <name> → Code**, select everything, paste and click **Deploy**. Keep **Verify JWT** switched **off** for both functions (each function checks the sign-in itself). To undo, deploy the previous version of `index.ts` the same way (GitHub's **History** button on the file shows older versions).
+
+### Changing the database
+
+Database changes are files in `supabase/migrations/`. Test them locally first (`npx supabase db reset`, then `npm run test:db`). Then apply the new file to the live project, either by pasting it into Supabase's **SQL Editor** and clicking **Run**, or with
+
+```bash
+npx supabase db query --linked --project-ref zqzhetlzvtptnkmeiumi -f supabase/migrations/<file>.sql
+```
+
+Then add its number to the `migration repair` note at the bottom of [docs/PLAN.md](docs/PLAN.md), so a later `supabase db push` doesn't apply it twice. There's no "undo" for a database change: write a new migration that puts things back. Never run anything that deletes data on the live project without a check first.
+
+### Start of the school year
+
+1. **Delete students who have left:** **Teacher** page → find them → **Delete** (type their player name). Do this first.
+2. **Start a new season:** type `NEW SEASON` on the Teacher page and press **Start a new season**. It clears every finished game, point, rating and achievement. Accounts, names, avatars and teachers stay.
+3. **New students** just sign in: their account is made the first time, with a random safe name.
+4. **A new teacher:** they sign in once, then an existing teacher finds them on the Teacher page and presses **Make teacher**. If there's no teacher left at all, use `make_first_teacher` (see [How sign-in stays school-only](#how-sign-in-stays-school-only)).
+5. Wake the site and do the "day before" checks in [CLASS-LAUNCH.md](docs/CLASS-LAUNCH.md).
+
+### If Supabase or Google changes something
+
+- **Supabase keys.** The website uses only the public *publishable* key, in `src/config.ts`. If Supabase replaces it (**Project Settings → API Keys**), put the new one there and push. The server functions get the secret key from Supabase automatically. Never put a secret key in the code.
+- **Free plan limits.** Check supabase.com/pricing once a year and update the numbers in [docs/PLAN.md](docs/PLAN.md). A class uses a small part of them (see PLAN.md, "Stage 8: classroom load"). If a limit is passed, Supabase emails the account owner and allows a grace period, then may slow or stop the project until the next month. It can't bill without a card. **Organization → Usage** in Supabase shows how much has been used.
+- **The sign-in limit.** Supabase allows about 150 sign-ins and session refreshes every 5 minutes from one internet address. The school shares one address. If whole-class sign-in errors happen, raise **Authentication → Rate Limits → Token refreshes** (e.g. to 600).
+- **The Google sign-in screen.** If Google asks for the app to be verified, or students see *access_not_configured*, check in Google Cloud that **Google Auth Platform → Audience** still says **Internal**. Internal apps for your own school don't need Google's verification. The school's Google admin can also allow it under **Security → API controls → Manage third-party app access**, using the Client ID in PLAN.md.
+- **Supabase's sign-in settings** (not stored in the code; check them if sign-in behaves oddly): **Authentication → Sign In / Providers**: Google on, Email off. **Authentication → URL Configuration**: Site URL `https://bleedingrobot.github.io/school-games-hub/`. **Authentication → Hooks**: *Before User Created* on, pointing at `public.hook_before_user_created`.
+- **If Supabase or GitHub ever stopped being free:** the code doesn't depend on anything special. The website can move to any static host, and the database to another Supabase project (paid or free) by running the migrations in order.
 
 ## Licences
 
 - **Stockfish** (the chess engine) is GPL version 3. Its licence and a link to its source code sit next to it in [public/stockfish/](public/stockfish/NOTICE.md). Keep them there if Stockfish is updated.
 - **chess.js** is BSD-2-Clause. The checkers rules and bots are our own code. **Chess piece pictures** are Colin M.L. Burnett's "cburnett" set, GPL ([notice](src/games/chess/pieces/NOTICE.md)).
 
-## Privacy and safety so far
+## Privacy and safety
+
+The one-page version for the school is [docs/PRIVACY-SUMMARY.md](docs/PRIVACY-SUMMARY.md). In short:
 
 - No tracking, analytics, ads or outside fonts. Everything the site loads comes from this repo.
 - The browser saves the sign-in session and whether sound is on (sound starts off). Signing out clears the session.
@@ -261,4 +325,5 @@ The free Supabase plan **pauses a project after a week with nobody using it**. I
 - Points, ratings and achievements store only the student's random ID, the game, the result and the numbers. Leaderboards show only player names, avatars and badges, never emails, IDs, real names or classes.
 - Each game against a friend stores the two players' random IDs, the game code, the moves, the result and the times. Each player sees the other's player name and avatar, nothing more. There's no chat. If a student is deleted, their opponents keep the game in their history, but nothing in it points back to the deleted student.
 - The chess and checkers bots run on the student's own device. Nothing about their games goes anywhere except our Supabase database.
+- Supabase's own sign-in records keep each student's school email, Google name, Google photo link and account number, last sign-in, and each signed-in device's internet address and browser type. Its request logs (internet address, rough location, browser) are kept for 1 day. Deleting a student removes their sign-in record.
 - The code is public, so **no passwords or secret keys ever go in it**. Only Supabase's public "publishable" key goes in the website (in `src/config.ts`). It's safe to share because the database rules do the protecting.
