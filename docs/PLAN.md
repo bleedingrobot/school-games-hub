@@ -130,6 +130,10 @@ To add a new game later, you add a folder with its rules, bot and board, plus on
 9. ✅ Space snakes and ladders game, "Wormholes & Black Holes" (full brief in [prompts/space-game.md](prompts/space-game.md), plan and results in [SPACE-GAME-PLAN.md](SPACE-GAME-PLAN.md)). Approved by James on 15 Oct 2026; stages 9.1–9.6 built (rules engine, bots, saving and taking-part points, classmates, polish, pass-and-play). **Live 16 Oct 2026**
 10. ✅ 101, James's family card game, against bots or 2–4 classmates (full brief in [prompts/game-101.md](prompts/game-101.md), plan and results in [101-PLAN.md](101-PLAN.md), rules in [101-RULES.md](101-RULES.md)). Plan and rule answers 16 Oct 2026; stages 10.1–10.5 built on branch `stage-10` (rules engine, bots and simulation; bot games on screen; saving and points; classmates with hidden cards; How to play, accessibility pass and docs). See "Stage 10 design" below. **Live 16 Oct 2026**
 
+### Ideas for later (not scheduled)
+
+- **Tic-Tac-Toe: Power Clash** (saved 16 Oct 2026): noughts and crosses with once-a-match powers (Double Trouble, Body Swap, Freeze Ray, Board Wipe first; four more later). Full brief in [prompts/power-clash.md](prompts/power-clash.md). The brief was written as a standalone site; here it would be a new game folder on the hub (pass-and-play first, then perhaps bots and classmates). Not started: first step when picked up is a plan for James to approve.
+
 ## Stage 6 design: playing a friend
 
 **The short version:** one new table holds every game between two students. The website can read only the games its student is playing, and can't write to the table at all. Every change (create, join, move, resign, draw, claim, rematch) goes through one new server function, `multiplayer`, which checks it with the same rules code as the bot games. Supabase Realtime tells the other player's browser the moment the game changes.
