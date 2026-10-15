@@ -2,7 +2,7 @@
 
 Stage 10 of School Games Hub: James's family card game, against bots or 2–4 classmates.
 Written 16 October 2026 from the brief in [prompts/game-101.md](prompts/game-101.md), after reading the code on `main` (Stages 1–9 live).
-**Status: waiting for James's answers to the rule questions (section 12). No rules code is written until then.**
+**Status: rule questions answered by James on 16 October 2026 (section 12); agreed rules in [101-RULES.md](101-RULES.md). Next: Stage 10.1.**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
@@ -13,14 +13,14 @@ Where this plan and the brief disagree, this plan wins once James approves it.
 - **The big new idea is hidden cards.** Every player gets their own **view** of the game, made on the server by one small function, `viewFor(game, seat)`. A view holds only what that player is allowed to know. Browsers only ever receive views, never the whole game.
 - **Against bots:** played in the student's browser from a stamped seed (exactly how the space game does it). The server replays the whole game before saving it. Bots are only ever handed their own view, so they can't cheat.
 - **Against classmates (2–4 players):** two **new tables** and a **new server function**, `card-game`. The server shuffles with proper secure randomness, deals, and referees every move. `mp_games` and `space_games` aren't touched.
-- **Points:** small points, never ratings, badges or leaderboards (section 8).
+- **Points:** small points, never ratings, badges or leaderboards (section 6).
 - **Cost:** about 230 function calls per classmates game. A class playing it three lessons a week adds roughly 30,000 calls a month, against 500,000 (section 9).
 
 ## 1. What the brief says vs what's built now
 
 | Brief says | Now | What I'll do |
 |---|---|---|
-| Check where Stage 7 is up to | **Done and live** since 15 Oct, and Stages 8 and 9 too | 101 plugs into Stage 7's points and achievements (section 8). Nothing collides |
+| Check where Stage 7 is up to | **Done and live** since 15 Oct, and Stages 8 and 9 too | 101 plugs into Stage 7's points and achievements (section 6). Nothing collides |
 | Decide: stretch `mp_games` or a new table | The space game (Stage 9) already chose a new table for 2–4 players, and it works live | Same choice, for the same reasons, plus one more: `mp_games` lets each player read the **whole** row, which would leak cards (section 5) |
 | Bot games: small, capped points | Bot games share one 40-points-a-day cap | 101 bot games share that cap too |
 | Teacher's "games against friends" switch, hidden students | Live | The new function checks both, the same way |
@@ -29,7 +29,7 @@ Where this plan and the brief disagree, this plan wins once James approves it.
 
 ## 2. The rules (as written by James)
 
-The full rules are in the brief. The final, agreed version goes into `docs/101-RULES.md` once James answers section 12, and the in-game **How to play** panel is made from it.
+The agreed rules are in [101-RULES.md](101-RULES.md) (James's answers in section 12), and the in-game **How to play** panel is made from it.
 
 In short: 4 face-down cards in a 2×2 square; peek at your bottom two once; each turn take the top discard or the top of the stack, then swap it in or throw it away; or knock instead. After a knock everyone else gets one last turn. Lowest hand wins the round; totals add up; the game ends when someone reaches 101 and the lowest total wins. Kings 0, Aces 1, 2 and 4–10 face value, Jacks and Queens 10, a 3 is 0 and cancels your highest card, a pair cancels out, three of a kind makes the whole hand 0.
 
@@ -221,24 +221,20 @@ Each stage ends with `npm run check` and the database tests passing, a browser c
 
 All on branch `stage-10`. Nothing goes live or into `main` before your yes.
 
-## 12. Rule questions for James
+## 12. Rule decisions (James, 16 October 2026)
 
-My suggestion is marked ⭐. These are suggestions only: it's your family's game.
-
-1. **Doubles:** (a) ⭐ any two matching cards anywhere in the hand, or (b) only a pair in the same column?
-2. **Four of a kind:** if (1) is "anywhere", four of a kind is two pairs, so it's 0 anyway. If (1) is "same column", what does it score? (a) ⭐ 0, like triples, or (b) something else?
-3. **When special rules overlap:**
-   - (a) Order: ⭐ pairs and triples first, then each 3 cancels the highest card left. Example: 3, 9, 9, 5 → the 9s cancel, the 3 cancels the 5 → **0**. Or should the 3 cancel a 9 first (→ 9 + 5 = 14)?
-   - (b) A pair of 3s: does each 3 *also* cancel a card? Example 3, 3, 9, 7: ⭐ each 3 cancels one card → **0**; or one cancel only → **7**; or they're just a pair → **16**.
-   - (c) Two cards tie for highest (Jack and Queen, both 10): ⭐ the 3 cancels just one of them.
-4. **Taking the discard:** (a) ⭐ you must swap it in, or (b) you can put it straight back?
-5. **The stack runs out:** (a) ⭐ shuffle the discard pile (except its top card) into a new stack, or (b) the round ends straight away?
-6. **Knock on your very first turn of a round?** (a) yes, or (b) not until everyone has had one turn?
-7. **Ties:** (a) two players tie for the lowest hand in a round: nothing special happens either way, since everyone just adds their own hand; they both get the round-win celebration. ⭐ OK? (b) Tie for the lowest total at the end: ⭐ they share the win, or the lowest hand in the last round breaks it?
-8. **The end:** ⭐ 101 **or more**, or exactly 101?
-9. **Most players in one game:** ⭐ 4 (fits a Chromebook screen and matches the space game), or up to 6?
-
-Two extra questions the brief doesn't cover:
-
-10. **A shorter game option?** If the simulation shows 101 takes too long for a lesson, should there be a **Quick game: first to 50** setting (101 stays the normal game)? (a) ⭐ yes, as a choice, or (b) no, always 101?
-11. **Who starts each round?** (a) ⭐ the next player round the table each round, (b) the winner of the last round, or (c) the player with the lowest total?
+| Question | Decision |
+|---|---|
+| 1. Pairs | **Any two matching cards anywhere** in the hand |
+| 2. Four of a kind | Two pairs, so **0** (follows from 1) |
+| 3a. A 3 and a pair | **Pairs and triples first**, then each 3 cancels the highest card still counting (3, 9, 9, 5 → 0) |
+| 3b. A pair of 3s | **Each 3 cancels a card** (3, 3, 9, 7 → 0) |
+| 3c. Two cards tie for highest | The 3 cancels **just one** |
+| 4. Taking the face-up discard | **You can put it straight back** (a change from my suggestion) |
+| 5. Stack runs out | **Reshuffle** the discard pile, except its top card |
+| 6. Knocking | **Not until everyone has had one turn** in the round |
+| 7. Ties | Round: both win the round (no effect on scores). End of game: **share the win** |
+| 8. The end | **101 or more** |
+| 9. Most players | **4** |
+| 10. Shorter option | **Yes: Quick game, first to 50**, as a setting; 101 stays the normal game |
+| 11. Who starts each round | Random in round 1, then **the next player along** each round |
