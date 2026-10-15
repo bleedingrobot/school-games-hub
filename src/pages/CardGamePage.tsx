@@ -6,6 +6,7 @@ import { useCardGame, type CardSession } from '../card101/useCardGame';
 
 // The table and its cards load only when a game starts.
 const Card101Live = lazy(() => import('../games/card101/Card101Live').then((m) => ({ default: m.Card101Live })));
+const Card101Guide = lazy(() => import('../games/card101/Guide').then((m) => ({ default: m.Card101Guide })));
 
 /** /card-game/<id>: a 101 game with classmates, from the waiting room to the podium. */
 export function CardGamePage() {
@@ -70,6 +71,7 @@ function Waiting({ session }: { session: CardSession }) {
   const { seat, me, cards, busy, act } = session;
   const { info } = seat;
   const navigate = useNavigate();
+  const [help, setHelp] = useState(false);
   const [, setTick] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => setTick((t) => t + 1), 1000);
@@ -155,6 +157,9 @@ function Waiting({ session }: { session: CardSession }) {
             {session.message}
           </p>
         )}
+        <button type="button" className="button button--light-outline space-wait__help" onClick={() => setHelp(true)}>
+          <span aria-hidden="true">📖</span> How to play
+        </button>
         <button
           type="button"
           className="button button--light"
@@ -168,6 +173,11 @@ function Waiting({ session }: { session: CardSession }) {
           {isHost ? 'Cancel this game' : 'Leave'}
         </button>
       </div>
+      {help && (
+        <Suspense fallback={null}>
+          <Card101Guide live onClose={() => setHelp(false)} />
+        </Suspense>
+      )}
     </section>
   );
 }

@@ -155,11 +155,27 @@ A space snakes and ladders for 2–4 rockets: against 1–3 bots, with classmate
 
 **Why it can't be faked:** bot games play in the browser from a dice "seed" the server stamps at the start. At the end the server replays the whole game from that seed before saving it. In classmates games the server rolls the dice and runs the rules, and the website only asks.
 
+## 101 (the card game)
+
+James's family card game, for 2–4 players: against 1–3 bots or with classmates. Everyone has 4 face-down cards and peeks at their bottom two once. On your turn, take a card from the stack or the discard pile and swap it in (it goes face up and stays) or throw it away; or knock when you think you're lowest. Pairs cancel, a 3 cancels your highest card, three of a kind makes the hand 0. Lowest total when someone reaches 101 wins. The rules are in [docs/101-RULES.md](docs/101-RULES.md); the design, simulation results and every decision are in [docs/101-PLAN.md](docs/101-PLAN.md).
+
+- **Game length:** Normal (to 101, about 15–30 minutes) or **Quick** (to 50, about 8–15 minutes). Use Quick in lessons.
+- **Bots:** Very Easy (forgets, knocks at random), Easy (remembers its own cards) and Medium (watches everyone, knocks only when it's very low). Bots are only ever given what their seat may see, so they can't peek.
+- **The scoring show:** at the end of each round every hand turns over and the working is shown in words ("The 3 cancels the Queen: 10 → 0", "Hand: 4 + 0 = 4").
+- **How to play** opens from the settings, the game (button or the `?` key) and the waiting room. Its examples are scored by the game's own scoring code.
+- **Keyboard:** S stack, D discard pile, K knock, T throw away, arrow keys and Enter to swap, ? help, Escape closes things. Every move is read out through the game log.
+
+**Points:** a bot game earns the **same as chess and checkers** (Very Easy 1/3, Easy 2/5, Medium 3/8 for lost/won; a shared lowest total is a win), inside the 40-a-day bot limit. A classmates game earns **8** for a win and **4** for finishing (the first 6 a day). Games of fewer than 2 full rounds, and players who leave or run out of time, earn nothing. 101 **never** changes ratings, badges or leaderboards. There are 8 achievements (10 points each).
+
+**Playing classmates:** one student taps **Play a friend → Start a game → 101**, picks 2, 3 or 4 players and the length, and reads out the code. The others join with it (or from the lobby). The cards are dealt as soon as the table is full, or the host can start early with 2 or more. Each turn has 60 seconds (then it's skipped; 3 skips in a row and you're out), the peek 15 seconds, and the scores between rounds wait until everyone presses Next (or 30 seconds). At the end, **Rematch** starts a new waiting game. The **Pause games against friends** switch covers 101 too. No chat and no reactions.
+
+**Hidden cards (why nobody can see anyone else's hand):** in a classmates game the whole game (the shuffled stack and every hand) is in a database table students can't read at all. Each player has their own small row holding only what they're allowed to know, and the database only lets them read their own. The server shuffles with secure randomness and referees every move. Bot games play in the browser from a seed the server stamps, and the server replays them before saving (like the space game); a student with developer tools could find the bots' cards, which is why bot games only earn small, capped points.
+
 ## The teacher view
 
 Teachers see a **Teacher** link in the top bar (students don't, and the database refuses them even if they type the address). It has:
 
-- **Games against friends:** pause them for everyone (chess, checkers and space games), or switch them back on.
+- **Games against friends:** pause them for everyone (chess, checkers, space games and 101), or switch them back on.
 - **Emoji reactions in space games:** off to start (see the space game section).
 - **Players:** everyone with an account, with their player name, avatar, games played and when they last played. Type in **Find a player** to search. Tap someone to see their games against bots and friends, how many they left early, their badges and their last 10 games. Then:
   - **New name:** gives them a new random name (for a name that's being used to tease). They can pick their own again.
@@ -249,10 +265,13 @@ src/              the website
   games/checkers/ the checkers board and our own checkers bots
   games/space/    Wormholes & Black Holes: board, screens, How to play, Star chart, bot worker
   space/          keeping a space game with classmates up to date
+  games/card101/  101: the table, cards, scoring show, How to play, bot and classmates screens
+  card101/        keeping a 101 game with classmates up to date (your own seat only)
 public/stockfish/ the Stockfish chess engine files and their licence
 shared/           game rules shared with the server (chess and checkers rules, deciding results, refereeing friend games)
   space/          the space game's rules engine, boards, bots, galaxy codes, space facts and simulation
-supabase/         database setup (migrations), its tests, server functions (save-bot-game, multiplayer, space-game), local settings
+  card101/        101's rules engine, scoring, what each player may see, bots, saving, timers and simulation
+supabase/         database setup (migrations), its tests, server functions (save-bot-game, multiplayer, space-game, card-game), local settings
 scripts/          builds the server functions into single files
 docs/             the plan and the original brief
 .github/workflows the automatic test-and-publish steps
@@ -269,7 +288,7 @@ To update a function on the live site without the Supabase CLI:
 1. On GitHub, open `supabase/functions/<name>/index.ts` and click **Copy raw file**.
 2. In Supabase, go to **Edge Functions**, open the function, click **Code**, select everything, paste, then click **Deploy**.
 
-There are three functions: `save-bot-game` (saves bot games, including space games), `multiplayer` (referees chess and checkers between students) and `space-game` (runs Wormholes & Black Holes with classmates). All three must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
+There are four functions: `save-bot-game` (saves bot games, including space and 101 games), `multiplayer` (referees chess and checkers between students), `space-game` (runs Wormholes & Black Holes with classmates) and `card-game` (runs 101 with classmates). All four must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
 
 ## Looking after the site
 
@@ -280,7 +299,7 @@ This part is for whoever looks after the site, including someone who isn't James
 | Account | What it holds | Who owns it |
 |---|---|---|
 | **GitHub** `bleedingrobot` | The code (public repo `school-games-hub`) and the website (GitHub Pages) | James |
-| **Supabase** organisation "Douglas Park Games", project `zqzhetlzvtptnkmeiumi` (Sydney, free plan) | The database, sign-in and the two server functions | James (logs in to supabase.com with the GitHub account above) |
+| **Supabase** organisation "Douglas Park Games", project `zqzhetlzvtptnkmeiumi` (Sydney, free plan) | The database, sign-in and the four server functions | James (logs in to supabase.com with the GitHub account above) |
 | **Google Cloud** project "School Games Hub", inside the douglaspark.school.nz organisation | The Google sign-in button (an "Internal" app). Its client secret is stored only in Supabase | James's school Google account |
 
 No account has a credit card, so none of them can send a bill. **Give a second person access** so the site doesn't depend on one login: on GitHub (repo **Settings → Collaborators**), in Supabase (**Organization settings → Team → Invite**) and in Google Cloud (**IAM → Grant access**). Turn on two-step sign-in for all of these accounts.
@@ -304,7 +323,7 @@ After changing `supabase/functions/<name>/handler.ts` or the rules in `shared/`,
 npx supabase functions deploy <name> --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api
 ```
 
-Or, without the command line: on GitHub open `supabase/functions/<name>/index.ts`, click **Copy raw file**, then in Supabase go to **Edge Functions → <name> → Code**, select everything, paste and click **Deploy**. Keep **Verify JWT** switched **off** for both functions (each function checks the sign-in itself). To undo, deploy the previous version of `index.ts` the same way (GitHub's **History** button on the file shows older versions).
+Or, without the command line: on GitHub open `supabase/functions/<name>/index.ts`, click **Copy raw file**, then in Supabase go to **Edge Functions → <name> → Code**, select everything, paste and click **Deploy**. Keep **Verify JWT** switched **off** for every function (each function checks the sign-in itself). To undo, deploy the previous version of `index.ts` the same way (GitHub's **History** button on the file shows older versions).
 
 ### Changing the database
 

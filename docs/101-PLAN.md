@@ -2,7 +2,7 @@
 
 Stage 10 of School Games Hub: James's family card game, against bots or 2–4 classmates.
 Written 16 October 2026 from the brief in [prompts/game-101.md](prompts/game-101.md), after reading the code on `main` (Stages 1–9 live).
-**Status: rule questions answered by James on 16 October 2026 (section 12); agreed rules in [101-RULES.md](101-RULES.md). Stage 10.1 done 16 October 2026 (results in section 13). Stage 10.2 done 16 October 2026 (section 14), with James's new rule that swapped-in cards go face up and lock. Stage 10.3 done 16 October 2026 (section 15). Stage 10.4 done 16 October 2026 (section 16). Next: 10.5, polish and go-live.**
+**Status: rule questions answered by James on 16 October 2026 (section 12); agreed rules in [101-RULES.md](101-RULES.md). Stage 10.1 done 16 October 2026 (results in section 13). Stage 10.2 done 16 October 2026 (section 14), with James's new rule that swapped-in cards go face up and lock. Stage 10.3 done 16 October 2026 (section 15). Stage 10.4 done 16 October 2026 (section 16). Stage 10.5 polish done 16 October 2026 (section 17). Next: go-live, after James's yes (section 17).**
 
 Where this plan and the brief disagree, this plan wins once James approves it.
 
@@ -371,3 +371,25 @@ Built on branch `stage-10`. Migration 0900 is applied to the local copy only; no
 - 48 database tests (`card101_classmates.test.sql`): students can't read `card_games` at all and read only their own seat row, can't write either, presence only on the channel, scoring and the daily limit, no ratings, achievements, my stats, the lobby (no codes, IDs or cards), tidy-up, the teacher's view, rebuild, New season. The security test's lists now include the seat table, the two new reading functions and the Realtime list.
 - 5 new screen tests for the live table and 3 for the lobby. `npm run check` passes (596 tests) and all 443 database tests pass.
 - **Real browsers, local server, three windows** (Chromebook 1366×640, tablet 768×1024 with touch, phone 390×844): a 3-player Quick game from the lobby (one joined by code, one from the open games list) with a reload mid-game and a knock, played to the podium: correct places, "Points added!", and 8/4/4 points in the database. Then the same with one player leaving part-way: they're out with no points and the other two finish. In both, a test student's own Realtime connection, listening to every seat row of the game, received only their own row (74 updates), and reading `card_games` directly was refused. No page errors.
+
+## 17. Stage 10.5 results: polish, and the go-live steps (16 October 2026)
+
+### What's built
+
+- **How to play** (`src/games/card101/Guide.tsx`): the aim, card values, each round, scoring with the six examples from the rules (shown as cards, with the working, and scored by the game's own scoring code so they can't drift), and a "Good to know" part (bot fairness, or the clocks for classmates games) with the keys. It opens from the settings screen, both game screens (button or `?`) and the waiting room. Escape or ✕ closes it and focus goes back.
+- **Sounds** (existing mute setting, off by default): card flick, tap, knock-knock, the round-win fanfare, and in classmates games a chime when it becomes your turn.
+- **Accessibility:** axe run on 11 screens at Chromebook size (bot settings, How to play, the peek, holding a card, the scoring show, the lobby, the waiting room, the live peek, waiting for others, live How to play, Leave). One problem found and fixed: the "What happened" list scrolled but couldn't be reached by keyboard. Now 0 problems.
+- **Docs:** README (a 101 section, four server functions, folders), CLASS-LAUNCH.md (a day-before check, a 101 lesson plan, what to watch for, the error words, the lookup query now includes 101 games, the problem slip), PLAN.md (Stage 10 design and the free-tier cost).
+
+### Checked
+
+- 3 new tests for How to play (the examples score 4, 0, 7, 0, 0, 12 as in the rules; opening from settings and with `?`; focus goes back). `npm run check` passes (599 tests) and all 443 database tests pass. The lookup query runs.
+
+### Go-live steps (need James's yes, and Claude Code out of auto mode, which always blocks live changes)
+
+1. Apply the two migrations to the live project, in order:
+   `npx supabase db query --linked --project-ref zqzhetlzvtptnkmeiumi -f supabase/migrations/20261016000800_101_points.sql`, then the same with `20261016000900_101_classmates.sql`.
+2. Deploy the functions: `npx supabase functions deploy save-bot-game --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api`, then the same for the new **`card-game`**. (`multiplayer` and `space-game` haven't changed.)
+3. Check from outside: a signed-out `GET /rest/v1/card_games` and `/rest/v1/card_game_seats` are refused (not "table not found"); `POST /functions/v1/card-game` without a sign-in answers 401 with our message (not NOT_FOUND); the 8 `101-` achievements exist; the `tidy-card-games` job is scheduled.
+4. Add `20261016000800 20261016000900` to the `migration repair` note in PLAN.md.
+5. Merge `stage-10` into `main` and push (the website publishes itself in 1–2 minutes).

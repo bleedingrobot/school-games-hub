@@ -1,6 +1,6 @@
 # Class launch checklist
 
-For running a whole-class lesson (up to about 30 students) on School Games Hub: bots, friends, points, leaderboards, the teacher view, and the space game (Wormholes & Black Holes).
+For running a whole-class lesson (up to about 30 students) on School Games Hub: bots, friends, points, leaderboards, the teacher view, the space game (Wormholes & Black Holes) and the card game 101.
 Live site: https://bleedingrobot.github.io/school-games-hub/
 
 ## The day before
@@ -10,7 +10,8 @@ Live site: https://bleedingrobot.github.io/school-games-hub/
 - [ ] **Play a quick bot game:** checkers against **Very Easy**, then **Resign**. The result card should say **✓ Saved to your games**, and the game should appear under **Recent games** on the dashboard.
 - [ ] **Play a quick friend game with yourself:** open the site on a second device (or ask a colleague). Press **Start game** on one, type the code on the other, make a move on each, then resign. Both screens should show the result.
 - [ ] **If you'll use the space game:** **Play the bots → Wormholes & Black Holes**, pick **Asteroid Belt** and 1 bot, and play to the end (about 2 minutes). The podium should say **Saved!**
-- [ ] **Check the friends switch:** open the **Teacher** page. It should say **Games against friends are on.** If it says paused, press **Switch games against friends back on**. It covers space games too. Decide on **Emoji reactions in space games** (off to start).
+- [ ] **If you'll use 101:** **Play the bots → 101**, pick 1 bot and **Quick: to 50**, and play to the end (about 5 minutes). The podium should say **Saved! Points added.**
+- [ ] **Check the friends switch:** open the **Teacher** page. It should say **Games against friends are on.** If it says paused, press **Switch games against friends back on**. It covers space games and 101 too. Decide on **Emoji reactions in space games** (off to start).
 - [ ] Check the students know their school Google login, and the Chromebooks are charged.
 - [ ] Print one **problem slip** per student (bottom of this page).
 
@@ -33,12 +34,23 @@ Wormholes & Black Holes is a dice race, so it suits a younger group, a quick fin
 4. **With classmates (15–20 min).** Groups of 2–4: one taps **Play a friend → Start a game → Wormholes & Black Holes**, picks a board, and reads out the code. The others type it in. The host can fill empty seats with bots, then presses **Launch**. For the whole class on the same board, write a galaxy code on the board (e.g. `Comet-Kiwi-48`) or use **Galaxy of the day**.
 5. **Rematch** at the end starts a new waiting game with the same board.
 
+### A 101 lesson instead (30–45 min)
+
+101 is a card game with real maths in it: adding up a hand, spotting pairs, and the 3s that cancel your highest card. It's about remembering cards and choosing when to knock, so it suits any group. Points go up like chess and checkers, but it never touches badges or leaderboards.
+
+1. **Sign in (5 min)** as above.
+2. **How to play (5 min).** Everyone opens **Play the bots → 101 → How to play**. Go through the scoring examples together: they're the maths of the game.
+3. **Against the bots (10–15 min).** **Quick: to 50** with 1 or 2 Easy bots. The scoring show at the end of each round writes out the working ("The 3 cancels the Queen: 10 → 0"). Ask students to check it.
+4. **With classmates (15–20 min).** Groups of 2–4: one taps **Play a friend → Start a game → 101**, picks the number of players and **Quick: to 50**, and reads out the code. The cards are dealt as soon as everyone's joined (or the host presses **Start now**). A Quick game with classmates takes about 10–15 minutes.
+5. **Rematch** at the end starts a new waiting game the same size.
+
 ## What to watch for
 
 - Students stuck at sign-in. Write down the exact words (see the table below).
 - Pairs who can't find each other's game: check the code is typed exactly (case and spaces don't matter).
 - Players who walk away: after 2 minutes, the partner gets a **Claim the win** button. Walking away counts as a loss for the one who left.
 - A player name being used to tease: **Teacher** page → the student → **New name**.
+- In 101 with classmates, each turn has 60 seconds; then it's skipped, and 3 skips in a row puts a student out (no points). Nobody can see anyone else's face-down cards, even by reloading: the peek happens once.
 - In space games, each turn has 30 seconds (15 for a choice). A student who misses 3 turns in a row goes on **autopilot**, so the game carries on for everyone. They can tap **Take the controls**, but that game no longer earns them points.
 - A student who needs a break from friend games: **Teacher** page → the student → **Hide**. They can still play bots.
 
@@ -76,6 +88,10 @@ Wormholes & Black Holes is a dice race, so it suits a younger group, a quick fin
 | *That game stopped waiting* / *The host hasn't launched yet* | Space game: the waiting room timed out, or it's not started | Make a new game / wait for the host |
 | *Autopilot is flying your rocket* | They missed 3 turns in a row | Tap **Take the controls** (that game won't earn points) |
 | *Wait a few seconds before sending another* / *That's all the reactions for this game* | Space game emoji: one every 5 seconds, 20 a game | Nothing |
+| *You need at least 2 players to start. Share the code!* | 101: the host is alone in the waiting room | Share the code |
+| *That game is full, or it has already started* | 101: every seat is taken, or the cards are dealt | Make a new game |
+| *You're out of this game.* | 101: they pressed Leave, or missed 3 turns in a row | Start a new game; that one earns nothing |
+| *There's still time on the clock.* | 101: a page asked to skip a turn a moment too early | Nothing: it sorts itself out |
 | *Reactions are switched off* | The Teacher page switch is off | Switch it on if you want them |
 
 ## How students report problems (no typing, nothing personal)
@@ -122,10 +138,20 @@ select to_char(coalesce(s.finished_at, s.created_at) at time zone 'Pacific/Auckl
 from public.space_games s, who, asked
 where who.id in (s.seat1, s.seat2, s.seat3, s.seat4, s.host)
   and coalesce(s.finished_at, s.created_at) between asked.around - interval '1 hour' and asked.around + interval '1 hour'
+union all
+select to_char(coalesce(c.finished_at, c.created_at) at time zone 'Pacific/Auckland', 'Dy DD Mon HH24:MI'),
+       'classmates', '101', num_nonnulls(c.seat1, c.seat2, c.seat3, c.seat4) || ' players',
+       case when c.status = 'finished' then
+         case when c.places[array_position(array[c.seat1, c.seat2, c.seat3, c.seat4], who.id)] = 0 then 'out'
+              else 'place ' || c.places[array_position(array[c.seat1, c.seat2, c.seat3, c.seat4], who.id)] end end,
+       c.ending, null, c.counts[array_position(array[c.seat1, c.seat2, c.seat3, c.seat4], who.id)], c.status
+from public.card_games c, who, asked
+where who.id in (c.seat1, c.seat2, c.seat3, c.seat4, c.host)
+  and coalesce(c.finished_at, c.created_at) between asked.around - interval '1 hour' and asked.around + interval '1 hour'
 order by 1;
 ```
 
-How to read it: `reason` says how each game ended (`checkmate`, `resigned`, `abandoned` = left or walked away, `agreed-draw`...). `counted` is false for games that were too short or abandoned (they earn nothing). A friend game with `status` = `playing` is still going. Space games say `place 1`, `place 2`... and end `docked` (someone reached the station), `mission-clock` (out of fuel) or `abandoned` (everyone left). If the student changed their name since, use **Find a player** on the Teacher page to see their new one (a teacher's **New name** shows the new name straight away).
+How to read it: `reason` says how each game ended (`checkmate`, `resigned`, `abandoned` = left or walked away, `agreed-draw`...). `counted` is false for games that were too short or abandoned (they earn nothing). A friend game with `status` = `playing` is still going. Space games say `place 1`, `place 2`... and end `docked` (someone reached the station), `mission-clock` (out of fuel) or `abandoned` (everyone left). 101 games with classmates say `place 1`, `place 2`... or `out` (they left or missed 3 turns), and end `finished` or `abandoned` (nobody played for 10 minutes); 101 bot games show as `bot` games with `game` = `101`. If the student changed their name since, use **Find a player** on the Teacher page to see their new one (a teacher's **New name** shows the new name straight away).
 
 Server problems are in Supabase under **Edge Functions → (function) → Logs**, kept for one day. They never contain names, only what went wrong.
 
@@ -139,7 +165,7 @@ Supabase allows about 150 sign-ins and session refreshes every 5 minutes from on
 
 Player name (from the screen, optional): ______________________
 
-Which part? ☐ Signing in  ☐ Name or avatar  ☐ Checkers  ☐ Chess  ☐ Playing a friend  ☐ Space game  ☐ Points or leaderboard
+Which part? ☐ Signing in  ☐ Name or avatar  ☐ Checkers  ☐ Chess  ☐ Playing a friend  ☐ Space game  ☐ 101  ☐ Points or leaderboard
 
 What happened? ☐ I got stuck  ☐ A piece wouldn't move  ☐ The bot did something weird  ☐ My friend's moves didn't show
 ☐ It said it couldn't save  ☐ Something looked broken  ☐ My points looked wrong  ☐ Too hard  ☐ Too easy

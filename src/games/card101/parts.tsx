@@ -75,7 +75,7 @@ export function LogPanel({ lines, note }: { lines: readonly string[]; note: stri
       <h2 id="c101-log-title" className="c101-panel__title">
         What happened <span>{note}</span>
       </h2>
-      <ol ref={listRef} aria-live="polite" aria-relevant="additions">
+      <ol ref={listRef} aria-live="polite" aria-relevant="additions" tabIndex={0} aria-labelledby="c101-log-title">
         {lines.map((line, i) => (
           <li key={i}>{line}</li>
         ))}

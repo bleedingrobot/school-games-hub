@@ -26,6 +26,7 @@ import { applySolo, parseStudentAction, playOneBot, startSolo, STUDENT_SEAT, typ
 import { viewFor, type SeatView } from '../../../shared/card101/view';
 import type { Slot } from '../../../shared/card101/cards';
 import { Card101Settings } from './Card101Settings';
+import { Card101Guide } from './Guide';
 import { LogPanel, placesFrom, Podium, ScoresPanel, ValuesPanel } from './parts';
 import { loadPrefs, savePrefs, type Card101Prefs } from './prefs';
 import { Scoring } from './Scoring';
@@ -119,6 +120,7 @@ export function Card101Solo({
   const [showPodium, setShowPodium] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [peekLeft, setPeekLeft] = useState(PEEK_SECONDS);
+  const [help, setHelp] = useState(false);
   const [starting, setStarting] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('practice');
   const [saveMessage, setSaveMessage] = useState('');
@@ -343,7 +345,12 @@ export function Card101Solo({
       else if (showPodium) setShowPodium(false);
       return;
     }
-    if (phaseRef.current !== 'student' || view.phase !== 'play') return;
+    if (event.key === '?') {
+      setHelp(true);
+      event.preventDefault();
+      return;
+    }
+    if (help || phaseRef.current !== 'student' || view.phase !== 'play') return;
     const key = event.key.toLowerCase();
     const holding = view.holding?.seat === STUDENT_SEAT;
     if (!holding && key === 's') doAct('draw:stack');
@@ -371,7 +378,19 @@ export function Card101Solo({
 
   if (!game || !view) {
     return (
-      <Card101Settings prefs={prefs} onChange={setPrefs} level={level} onLevelChange={onLevelChange} onStart={() => void start()} starting={starting} saves={!!saving} />
+      <>
+        <Card101Settings
+          prefs={prefs}
+          onChange={setPrefs}
+          level={level}
+          onLevelChange={onLevelChange}
+          onStart={() => void start()}
+          starting={starting}
+          saves={!!saving}
+          onHelp={() => setHelp(true)}
+        />
+        {help && <Card101Guide onClose={() => setHelp(false)} />}
+      </>
     );
   }
 
@@ -508,6 +527,7 @@ export function Card101Solo({
           </div>
         )}
       </div>
+      {help && <Card101Guide onClose={() => setHelp(false)} />}
 
       <aside className="c101-game__side" aria-label="Scores and game log">
         <ScoresPanel seats={seats} view={view} turnSeat={turnSeat} />
@@ -537,6 +557,9 @@ export function Card101Solo({
                 New game
               </button>
             )}
+            <button type="button" className="c101-action" onClick={() => setHelp(true)} aria-keyshortcuts="?">
+              How to play
+            </button>
             <button type="button" className="c101-action" onClick={leave}>
               Settings
             </button>

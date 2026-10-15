@@ -68,6 +68,7 @@ export function Card101Settings({
   onStart,
   starting = false,
   saves = false,
+  onHelp,
 }: {
   prefs: Card101Prefs;
   onChange: (prefs: Card101Prefs) => void;
@@ -77,6 +78,7 @@ export function Card101Settings({
   starting?: boolean;
   /** Finished games are saved (false in the stand-alone preview). */
   saves?: boolean;
+  onHelp: () => void;
 }) {
   return (
     <section className="chess-setup c101-setup" aria-labelledby="c101-setup-title">
@@ -133,6 +135,9 @@ export function Card101Settings({
 
         <button type="submit" className="button button--play c101-setup__start" disabled={starting}>
           {starting ? 'Shuffling…' : '▶ Deal the cards'}
+        </button>
+        <button type="button" className="button button--light c101-setup__help" onClick={onHelp}>
+          <span aria-hidden="true">📖</span> How to play
         </button>
       </form>
     </section>

@@ -15,6 +15,7 @@ import type { CardSession } from '../../card101/useCardGame';
 import { useSound } from '../../sound';
 import { playSound, type GameSound } from '../sounds';
 import { LogPanel, placesFrom, Podium, ScoresPanel, ValuesPanel } from './parts';
+import { Card101Guide } from './Guide';
 import { Scoring } from './Scoring';
 import { Table, type Flash, type Seat } from './Table';
 import { eventLine, ORDINAL } from './text';
@@ -46,6 +47,7 @@ export function Card101Live({ session }: { session: CardSession }) {
   const [scoringRound, setScoringRound] = useState<number | null>(null);
   const [showPodium, setShowPodium] = useState(true);
   const [confirming, setConfirming] = useState(false);
+  const [help, setHelp] = useState(false);
   const [now, setNow] = useState(() => session.serverNow());
   const flashN = useRef(0);
   const seenVersion = useRef(row.version);
@@ -72,6 +74,10 @@ export function Card101Live({ session }: { session: CardSession }) {
         setBanner(event.seat === mySeat ? 'You knocked! Last turn for everyone else.' : `${names[event.seat]} knocked! Last turn!`);
       }
       if (event.kind === 'round-end') setScoringRound(event.result.round);
+      // A chime when it becomes my turn, for anyone looking away.
+      if (soundOn && ((event.kind === 'turn' && event.seat === mySeat) || (event.kind === 'play-starts' && event.turn === mySeat))) {
+        playSound('alert');
+      }
       if (event.kind === 'game-over') setShowPodium(true);
     }
   }, [row.version, row.events, soundOn, mySeat, names]);
@@ -123,7 +129,12 @@ export function Card101Live({ session }: { session: CardSession }) {
       else if (showPodium && view.phase === 'over') setShowPodium(false);
       return;
     }
-    if (view.phase !== 'play' || view.turn !== mySeat || view.out[mySeat]) return;
+    if (event.key === '?') {
+      setHelp(true);
+      event.preventDefault();
+      return;
+    }
+    if (help || view.phase !== 'play' || view.turn !== mySeat || view.out[mySeat]) return;
     const key = event.key.toLowerCase();
     const holding = view.holding?.seat === mySeat;
     if (!holding && key === 's') doAct('stack');
@@ -309,6 +320,7 @@ export function Card101Live({ session }: { session: CardSession }) {
           </div>
         )}
       </div>
+      {help && <Card101Guide live onClose={() => setHelp(false)} />}
 
       <aside className="c101-game__side" aria-label="Scores and game log">
         <ScoresPanel seats={seats} view={view} turnSeat={turnSeat} />
@@ -333,6 +345,9 @@ export function Card101Live({ session }: { session: CardSession }) {
           </div>
         ) : (
           <div className="c101-actions">
+            <button type="button" className="c101-action" onClick={() => setHelp(true)} aria-keyshortcuts="?">
+              How to play
+            </button>
             {over || out ? (
               <button type="button" className="c101-action is-main" onClick={() => navigate('/lobby')}>
                 Back to the lobby
