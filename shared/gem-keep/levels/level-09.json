@@ -1,0 +1,37 @@
+{
+  "id": "level-9",
+  "name": "Storm Peaks",
+  "intro": "Bosses travel in pairs up here.",
+  "toughness": 1.63,
+  "startMana": 140,
+  "map": [
+    "................",
+    "........^.......",
+    "................",
+    "................",
+    ".^..............",
+    "..............^.",
+    "................",
+    "................",
+    ".....^........~~",
+    "..............~~"
+  ],
+  "paths": [
+    [[-1, 8], [3, 8], [3, 2], [6, 2], [6, 6], [8, 6]],
+    [[16, 1], [12, 1], [12, 8], [10, 8], [10, 4], [8, 4], [8, 6]]
+  ],
+  "waves": [
+    { "groups": [{ "kind": "walker", "count": 9, "gap": 0.7 }] },
+    { "groups": [{ "kind": "walker", "count": 10, "gap": 0.7 }] },
+    { "groups": [{ "kind": "walker", "count": 11, "gap": 0.7 }, { "kind": "runner", "count": 7, "gap": 0.6, "delay": 4 }, { "kind": "swarm", "count": 20, "gap": 0.35, "delay": 6 }] },
+    { "groups": [{ "kind": "walker", "count": 12, "gap": 0.6 }, { "kind": "brute", "count": 2, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "boss", "count": 2, "gap": 6 }, { "kind": "walker", "count": 7, "gap": 0.6, "delay": 3 }] },
+    { "groups": [{ "kind": "walker", "count": 13, "gap": 0.6 }, { "kind": "swarm", "count": 23, "gap": 0.35, "delay": 6 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "walker", "count": 14, "gap": 0.6 }, { "kind": "runner", "count": 9, "gap": 0.5, "delay": 4 }] },
+    { "groups": [{ "kind": "walker", "count": 15, "gap": 0.5 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "walker", "count": 16, "gap": 0.5 }, { "kind": "runner", "count": 10, "gap": 0.4, "delay": 4 }, { "kind": "swarm", "count": 26, "gap": 0.35, "delay": 6 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "boss", "count": 2, "gap": 6 }, { "kind": "walker", "count": 9, "gap": 0.5, "delay": 3 }] },
+    { "groups": [{ "kind": "walker", "count": 17, "gap": 0.5 }, { "kind": "runner", "count": 11, "gap": 0.4, "delay": 4 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "boss", "count": 2, "gap": 6 }, { "kind": "walker", "count": 9, "gap": 0.5, "delay": 3 }] }
+  ]
+}

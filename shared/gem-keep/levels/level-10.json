@@ -1,0 +1,37 @@
+{
+  "id": "level-10",
+  "name": "Gem Keep Castle",
+  "intro": "The final stand. Everything you have learned!",
+  "toughness": 1.17,
+  "startMana": 140,
+  "map": [
+    "................",
+    "................",
+    "................",
+    "................",
+    ".............~~.",
+    "..........^..~~.",
+    "................",
+    "^...........^...",
+    "................",
+    "................"
+  ],
+  "paths": [
+    [[-1, 0], [14, 0], [14, 2], [1, 2], [1, 4], [7, 4], [7, 6]],
+    [[16, 9], [3, 9], [3, 6], [7, 6]]
+  ],
+  "waves": [
+    { "groups": [{ "kind": "walker", "count": 10, "gap": 0.7 }] },
+    { "groups": [{ "kind": "walker", "count": 11, "gap": 0.6 }] },
+    { "groups": [{ "kind": "walker", "count": 11, "gap": 0.6 }, { "kind": "runner", "count": 7, "gap": 0.5, "delay": 4 }, { "kind": "swarm", "count": 21, "gap": 0.35, "delay": 6 }] },
+    { "groups": [{ "kind": "walker", "count": 12, "gap": 0.6 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "boss", "count": 2, "gap": 6 }, { "kind": "walker", "count": 7, "gap": 0.6, "delay": 3 }] },
+    { "groups": [{ "kind": "walker", "count": 14, "gap": 0.5 }, { "kind": "swarm", "count": 24, "gap": 0.35, "delay": 6 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "walker", "count": 15, "gap": 0.5 }, { "kind": "runner", "count": 9, "gap": 0.4, "delay": 4 }] },
+    { "groups": [{ "kind": "walker", "count": 15, "gap": 0.5 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "walker", "count": 16, "gap": 0.5 }, { "kind": "runner", "count": 10, "gap": 0.4, "delay": 4 }, { "kind": "swarm", "count": 27, "gap": 0.35, "delay": 6 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "boss", "count": 2, "gap": 6 }, { "kind": "walker", "count": 9, "gap": 0.5, "delay": 3 }] },
+    { "groups": [{ "kind": "walker", "count": 18, "gap": 0.4 }, { "kind": "runner", "count": 11, "gap": 0.3, "delay": 4 }, { "kind": "brute", "count": 4, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "boss", "count": 2, "gap": 6 }, { "kind": "walker", "count": 10, "gap": 0.4, "delay": 3 }] }
+  ]
+}

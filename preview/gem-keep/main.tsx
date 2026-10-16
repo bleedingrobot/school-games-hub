@@ -7,11 +7,10 @@
 import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { spawnEnemy } from '../../shared/gem-keep/engine';
-import { PROTOTYPE_LEVEL } from '../../shared/gem-keep/levels/prototype';
 import { MuteButton } from '../../src/components/MuteButton';
 import type { GameEngine } from '../../src/games/gem-keep/engine/GameEngine';
 import { DEFAULT_SETTINGS, type GemKeepSettings } from '../../src/games/gem-keep/settings';
-import { GemKeepGame } from '../../src/games/gem-keep/ui/GemKeepGame';
+import { GemKeepCampaign } from '../../src/games/gem-keep/ui/GemKeepCampaign';
 import { SoundProvider } from '../../src/sound';
 import '../../src/styles.css';
 import '../space/preview.css';
@@ -26,7 +25,7 @@ declare global {
 
 const expose = (engine: GameEngine) => (window.gemKeep = { engine, spawnEnemy });
 
-/** Preview only: the teacher settings that Phase 5 puts on the teacher page. Changing one restarts the level. */
+/** Preview only: the teacher settings that Phase 5 puts on the teacher page. Changing one goes back to the map. */
 function SettingsBar({ settings, onChange }: { settings: GemKeepSettings; onChange: (s: GemKeepSettings) => void }) {
   return (
     <div className="preview-settings" role="group" aria-label="Teacher settings (preview)">
@@ -73,7 +72,7 @@ function Preview() {
         {tab === 'game' ? (
           <>
             <SettingsBar settings={settings} onChange={setSettings} />
-            <GemKeepGame key={JSON.stringify(settings)} level={PROTOTYPE_LEVEL} settings={settings} onEngine={expose} />
+            <GemKeepCampaign key={JSON.stringify(settings)} settings={settings} onEngine={expose} />
           </>
         ) : (
           <MathsPractice />

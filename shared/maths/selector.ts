@@ -53,6 +53,9 @@ function stepIndex(level: number): number {
   return i >= 0 ? i : level < CAMPAIGN_STEPS[0].levels[0] ? 0 : CAMPAIGN_STEPS.length - 1;
 }
 
+/** The focus tables of a campaign level, e.g. [2, 5, 10] for levels 1–2. */
+export const campaignTables = (level: number) => CAMPAIGN_STEPS[stepIndex(level)].add;
+
 /** The facts each band draws from, for this context. */
 export function poolsFor(ctx: QuestionContext): Pools {
   const enabled = new Set(ctx.enabledTables ?? TABLES);

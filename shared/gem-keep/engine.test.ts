@@ -4,7 +4,7 @@ import { EFFECTS, ENEMIES, GEM, KEEP_HEALTH, MANA, MATHS, STEP, TOWER } from './
 import { act, enemyHealth, hit, newGame, pickTarget, spawnEnemy, step, type GameState } from './engine';
 import { combined, combineProblem, shotStats, type Gem } from './gems';
 import { checkLevel, type LevelData } from './level';
-import { PROTOTYPE_LEVEL } from './levels/prototype';
+import { CAMPAIGN } from './levels';
 
 /** A straight path along row 5, left to right, with the Keep at the end. */
 const STRAIGHT: LevelData = {
@@ -32,7 +32,7 @@ function runSeconds(state: GameState, seconds: number) {
 
 describe('levels', () => {
   it('the prototype level is valid', () => {
-    expect(checkLevel(PROTOTYPE_LEVEL)).toEqual([]);
+    expect(checkLevel(CAMPAIGN[0])).toEqual([]);
   });
 
   it('finds broken levels', () => {
@@ -281,7 +281,7 @@ describe('waves, winning and losing', () => {
   });
 
   it('doing nothing loses the prototype level', () => {
-    const state = autoplay(PROTOTYPE_LEVEL, 'idle');
+    const state = autoplay(CAMPAIGN[0], 'idle');
     expect(state.phase).toBe('lost');
     expect(state.keep).toBe(0);
     expect(act(state, { type: 'start-wave' })).toEqual({ ok: false, reason: 'game-over' });
@@ -289,25 +289,25 @@ describe('waves, winning and losing', () => {
 
   it('the first level is easy with the Mana Well: any colour wins with 3 stars, even getting most questions wrong', () => {
     for (const colours of [['red'], ['blue'], ['green'], ['yellow']] as const) {
-      const state = autoplay(PROTOTYPE_LEVEL, 'towers-only', 1, colours, { accuracy: 0.3 });
+      const state = autoplay(CAMPAIGN[0], 'towers-only', 1, colours, { accuracy: 0.3 });
       expect(state.phase).toBe('won');
-      expect(state.wave).toBe(PROTOTYPE_LEVEL.waves.length);
+      expect(state.wave).toBe(CAMPAIGN[0].waves.length);
       expect(state.stars).toBe(3);
     }
   });
 
   it('skipping the Mana Well loses: maths is the main source of mana', () => {
     for (const strategy of ['towers-only', 'sensible'] as const) {
-      const state = autoplay(PROTOTYPE_LEVEL, strategy, 1);
+      const state = autoplay(CAMPAIGN[0], strategy, 1);
       expect(state.phase).toBe('lost');
     }
-    const withMaths = autoplay(PROTOTYPE_LEVEL, 'sensible', 1, undefined, { accuracy: 0.7 });
+    const withMaths = autoplay(CAMPAIGN[0], 'sensible', 1, undefined, { accuracy: 0.7 });
     expect(withMaths.stats.wellMana).toBeGreaterThan(withMaths.stats.manaEarned / 2);
   });
 
   it('the same seed and moves always play out the same', () => {
-    const a = autoplay(PROTOTYPE_LEVEL, 'towers-only', 7, ['yellow']);
-    const b = autoplay(PROTOTYPE_LEVEL, 'towers-only', 7, ['yellow']);
+    const a = autoplay(CAMPAIGN[0], 'towers-only', 7, ['yellow']);
+    const b = autoplay(CAMPAIGN[0], 'towers-only', 7, ['yellow']);
     expect(a.step).toBe(b.step);
     expect(a.keep).toBe(b.keep);
     expect(a.mana).toBe(b.mana);

@@ -1,0 +1,33 @@
+{
+  "id": "level-4",
+  "name": "Rocky Pass",
+  "intro": "They come from the east this time.",
+  "toughness": 2.17,
+  "startMana": 140,
+  "map": [
+    "................",
+    "................",
+    ".......^^.......",
+    "................",
+    "..............^.",
+    "................",
+    "...^...^.^......",
+    "................",
+    "................",
+    "................"
+  ],
+  "paths": [
+    [[16, 1], [11, 1], [11, 4], [4, 4], [4, 1], [1, 1], [1, 8], [12, 8], [12, 6]]
+  ],
+  "waves": [
+    { "groups": [{ "kind": "walker", "count": 7, "gap": 0.9 }] },
+    { "groups": [{ "kind": "walker", "count": 8, "gap": 0.9 }] },
+    { "groups": [{ "kind": "walker", "count": 8, "gap": 0.9 }, { "kind": "runner", "count": 5, "gap": 0.7, "delay": 4 }, { "kind": "swarm", "count": 15, "gap": 0.35, "delay": 6 }] },
+    { "groups": [{ "kind": "walker", "count": 9, "gap": 0.9 }, { "kind": "brute", "count": 2, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "boss", "count": 1, "gap": 6 }, { "kind": "walker", "count": 5, "gap": 0.8, "delay": 3 }] },
+    { "groups": [{ "kind": "walker", "count": 11, "gap": 0.8 }, { "kind": "swarm", "count": 18, "gap": 0.35, "delay": 6 }, { "kind": "brute", "count": 2, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "walker", "count": 12, "gap": 0.8 }, { "kind": "runner", "count": 7, "gap": 0.6, "delay": 4 }] },
+    { "groups": [{ "kind": "walker", "count": 12, "gap": 0.8 }, { "kind": "brute", "count": 2, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "walker", "count": 13, "gap": 0.7 }, { "kind": "runner", "count": 8, "gap": 0.6, "delay": 4 }, { "kind": "swarm", "count": 21, "gap": 0.35, "delay": 6 }, { "kind": "brute", "count": 2, "gap": 3, "delay": 5 }] }
+  ]
+}

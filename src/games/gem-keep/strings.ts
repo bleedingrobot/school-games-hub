@@ -58,7 +58,20 @@ export const TEXT = {
   boardLabel:
     'The map. Use the arrow keys to move around it and Enter to pick a tile. Enemies walk the path to the Keep.',
   tileLabel: (x: number, y: number, what: string) => `Column ${x + 1}, row ${y + 1}: ${what}`,
-  prototype: 'Prototype: one level, and nothing is saved yet.',
+  // The campaign map.
+  mapTitle: 'Gem Keep',
+  mapIntro: 'Defend the Keep with gems, powered by your times tables. Pass a Level Key to open the next level.',
+  totalStars: (n: number, of: number) => `${n} of ${of} stars`,
+  levelLabel: (n: number, name: string) => `Level ${n}: ${name}`,
+  levelStars: (n: number) => (n === 1 ? '1 star' : `${n} stars`),
+  locked: (n: number) => `Pass level ${n}'s Level Key to open this`,
+  tables: (tables: number[]) => tables.map((t) => `×${t}`).join(' '),
+  tablesLabel: (tables: number[]) => `Times tables: ${tables.join(', ')}`,
+  savedHere: 'Progress is saved on this device for now.',
+  backToMap: 'Map',
+  backToMapLong: 'Back to the map',
+  nextLevel: 'Next level',
+  levelHeading: (n: number, name: string) => `Level ${n} · ${name}`,
   // The maths.
   well: 'Mana Well',
   wellLabel: (left: number) => `Mana Well: ${left} questions left`,

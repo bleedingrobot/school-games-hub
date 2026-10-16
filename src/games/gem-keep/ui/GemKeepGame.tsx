@@ -50,6 +50,11 @@ export function GemKeepGame({
   pack: givenPack,
   onEngine,
   timeScale,
+  keyDone = false,
+  onWin,
+  onKeyPassed,
+  onNext,
+  onMap,
 }: {
   level: LevelData;
   /** Which campaign level this is: decides the times tables asked. */
@@ -60,6 +65,14 @@ export function GemKeepGame({
   onEngine?: (engine: GameEngine) => void;
   /** Tests set 0 to skip the pauses after answers. */
   timeScale?: number;
+  /** This level's Level Key was passed before, so a win goes straight on. */
+  keyDone?: boolean;
+  onWin?: (stars: number) => void;
+  onKeyPassed?: () => void;
+  /** Go to the next level (only given when there is one). */
+  onNext?: () => void;
+  /** Back to the campaign map. */
+  onMap?: () => void;
 }) {
   const [engine] = useState(() => new GameEngine(level, Math.floor(Math.random() * 1e9)));
   const [pack] = useState<SkillPack>(() => givenPack ?? new TimesTables());
@@ -131,6 +144,16 @@ export function GemKeepGame({
 
   // Calm mode pauses the game while a question is up; Challenge mode slows it down.
   useEffect(() => engine.setQuestion(quiz ? settings.mode : null), [engine, quiz, settings.mode]);
+
+  // Report a win once, so the map can keep the stars.
+  const reported = useRef(false);
+  useEffect(() => {
+    if (state.phase === 'won' && !reported.current) {
+      reported.current = true;
+      onWin?.(state.stars);
+    }
+    if (state.phase !== 'won') reported.current = false;
+  });
 
   // The Keep Shield: offered once, when the Keep first drops low.
   useEffect(() => {
@@ -323,6 +346,7 @@ export function GemKeepGame({
             onFinish={(result) => {
               setQuiz(null);
               setKeyResult(result);
+              if (result.right >= settings.keyPassMark) onKeyPassed?.();
             }}
           />
         );
@@ -343,7 +367,14 @@ export function GemKeepGame({
 
   return (
     <div className="gk" onKeyDown={keys}>
-      <p className="gk-note">{TEXT.prototype}</p>
+      <div className="gk-title">
+        {onMap && (
+          <button type="button" className="gk-map-button" aria-label={TEXT.backToMapLong} onClick={onMap}>
+            <span aria-hidden="true">←</span> {TEXT.backToMap}
+          </button>
+        )}
+        <h1 className="gk-title__name">{TEXT.levelHeading(levelNumber, level.name)}</h1>
+      </div>
       <div className="gk-hud" role="group" aria-label="Game status">
         <div className="gk-stat gk-stat--keep">
           <span className="gk-stat__label">{TEXT.keep}</span>
@@ -424,9 +455,12 @@ export function GemKeepGame({
             <EndCard
               state={state}
               keyResult={keyResult}
+              keyDone={keyDone}
               passMark={settings.keyPassMark}
               onKey={() => openQuiz({ kind: 'key' })}
               onAgain={restart}
+              onNext={onNext}
+              onMap={onMap}
             />
           )}
           <div className="gk-rotate" aria-hidden="true">
@@ -649,20 +683,35 @@ function GemLine({ gem }: { gem: Gem }) {
 function EndCard({
   state,
   keyResult,
+  keyDone,
   passMark,
   onKey,
   onAgain,
+  onNext,
+  onMap,
 }: {
   state: GameState;
   keyResult: RoundResult | null;
+  keyDone: boolean;
   passMark: number;
   onKey: () => void;
   onAgain: () => void;
+  onNext?: () => void;
+  onMap?: () => void;
 }) {
   const won = state.phase === 'won';
   const passed = !!keyResult && keyResult.right >= passMark;
+  const open = keyDone || passed;
   const first = useRef<HTMLButtonElement>(null);
   useEffect(() => first.current?.focus(), [keyResult]);
+  // The main button: the Level Key until it's passed, then the next level, else play again.
+  const main = !won
+    ? { label: TEXT.tryAgain, run: onAgain }
+    : !open
+      ? { label: keyResult ? TEXT.keyAgain : TEXT.keyStart, run: onKey }
+      : onNext
+        ? { label: TEXT.nextLevel, run: onNext }
+        : { label: TEXT.playAgain, run: onAgain };
   return (
     <div className="gk-end" role="dialog" aria-modal="false" aria-labelledby="gk-end-title">
       <div className="gk-end__card">
@@ -677,7 +726,7 @@ function EndCard({
           </p>
         )}
         <p>{won ? TEXT.wonBody(Math.round((state.keep / KEEP_HEALTH) * 100)) : TEXT.lostBody}</p>
-        {won && !keyResult && <p className="gk-key">{TEXT.keyIntro(passMark)}</p>}
+        {won && !open && !keyResult && <p className="gk-key">{TEXT.keyIntro(passMark)}</p>}
         {keyResult && (
           <div className="gk-key" role="status" data-passed={passed || undefined}>
             <p>{passed ? TEXT.keyPassed(keyResult.right) : TEXT.keyFailed(keyResult.right, passMark)}</p>
@@ -694,19 +743,19 @@ function EndCard({
           </div>
         )}
         <div className="gk-end__actions">
-          {won && !passed && (
-            <button ref={first} type="button" className="button button--play" onClick={onKey}>
-              {keyResult ? TEXT.keyAgain : TEXT.keyStart}
+          <button ref={first} type="button" className="button button--play" onClick={main.run}>
+            {main.label}
+          </button>
+          {main.run !== onAgain && (
+            <button type="button" className="button gk-small" onClick={onAgain}>
+              {won ? TEXT.playAgain : TEXT.tryAgain}
             </button>
           )}
-          <button
-            ref={won && !passed ? undefined : first}
-            type="button"
-            className={won && !passed ? 'button gk-small' : 'button button--play'}
-            onClick={onAgain}
-          >
-            {won ? TEXT.playAgain : TEXT.tryAgain}
-          </button>
+          {onMap && (
+            <button type="button" className="button gk-small" onClick={onMap}>
+              {TEXT.backToMapLong}
+            </button>
+          )}
         </div>
       </div>
     </div>

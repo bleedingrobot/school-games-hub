@@ -1,7 +1,6 @@
-import { PROTOTYPE_LEVEL } from '../../../shared/gem-keep/levels/prototype';
-import { GemKeepGame } from './ui/GemKeepGame';
+import { GemKeepCampaign } from './ui/GemKeepCampaign';
 
-/** Gem Keep for the signed-in student. Phase 1: the one prototype level, nothing saved yet. */
+/** Gem Keep for the signed-in student: the campaign map and its levels. Saving comes in Phase 5. */
 export function GemKeepPlay() {
-  return <GemKeepGame level={PROTOTYPE_LEVEL} />;
+  return <GemKeepCampaign />;
 }

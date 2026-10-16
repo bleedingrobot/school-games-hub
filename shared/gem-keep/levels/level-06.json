@@ -1,0 +1,35 @@
+{
+  "id": "level-6",
+  "name": "Two Rivers",
+  "intro": "Two paths now! Watch both sides.",
+  "toughness": 1.57,
+  "startMana": 140,
+  "map": [
+    "................",
+    "............~~..",
+    "..............^.",
+    "................",
+    "................",
+    "................",
+    ".^..............",
+    "....~~..........",
+    "....~~..........",
+    "................"
+  ],
+  "paths": [
+    [[-1, 1], [3, 1], [3, 4], [6, 4], [6, 2], [8, 2], [8, 5]],
+    [[16, 8], [12, 8], [12, 4], [10, 4], [10, 7], [8, 7], [8, 5]]
+  ],
+  "waves": [
+    { "groups": [{ "kind": "walker", "count": 8, "gap": 0.8 }] },
+    { "groups": [{ "kind": "walker", "count": 9, "gap": 0.8 }] },
+    { "groups": [{ "kind": "walker", "count": 9, "gap": 0.8 }, { "kind": "runner", "count": 6, "gap": 0.6, "delay": 4 }, { "kind": "swarm", "count": 17, "gap": 0.35, "delay": 6 }] },
+    { "groups": [{ "kind": "walker", "count": 10, "gap": 0.8 }, { "kind": "brute", "count": 2, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "boss", "count": 1, "gap": 6 }, { "kind": "walker", "count": 6, "gap": 0.7, "delay": 3 }] },
+    { "groups": [{ "kind": "walker", "count": 12, "gap": 0.7 }, { "kind": "swarm", "count": 20, "gap": 0.35, "delay": 6 }, { "kind": "brute", "count": 2, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "walker", "count": 13, "gap": 0.7 }, { "kind": "runner", "count": 8, "gap": 0.6, "delay": 4 }] },
+    { "groups": [{ "kind": "walker", "count": 13, "gap": 0.7 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "walker", "count": 14, "gap": 0.7 }, { "kind": "runner", "count": 9, "gap": 0.6, "delay": 4 }, { "kind": "swarm", "count": 23, "gap": 0.35, "delay": 6 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "boss", "count": 1, "gap": 6 }, { "kind": "walker", "count": 8, "gap": 0.6, "delay": 3 }] }
+  ]
+}

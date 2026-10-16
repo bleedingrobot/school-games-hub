@@ -1,0 +1,35 @@
+{
+  "id": "level-7",
+  "name": "Frost Ridge",
+  "intro": "Tough enemies on a long climb.",
+  "toughness": 2.14,
+  "startMana": 140,
+  "map": [
+    "................",
+    "................",
+    "^...............",
+    "................",
+    "....^...........",
+    "........^.......",
+    "................",
+    "............^...",
+    "...............~",
+    "...............~"
+  ],
+  "paths": [
+    [[-1, 8], [2, 8], [2, 1], [6, 1], [6, 8], [10, 8], [10, 1], [14, 1], [14, 5]]
+  ],
+  "waves": [
+    { "groups": [{ "kind": "walker", "count": 8, "gap": 0.8 }] },
+    { "groups": [{ "kind": "walker", "count": 9, "gap": 0.8 }] },
+    { "groups": [{ "kind": "walker", "count": 10, "gap": 0.7 }, { "kind": "runner", "count": 6, "gap": 0.6, "delay": 4 }, { "kind": "swarm", "count": 18, "gap": 0.35, "delay": 6 }] },
+    { "groups": [{ "kind": "walker", "count": 11, "gap": 0.7 }, { "kind": "brute", "count": 2, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "boss", "count": 1, "gap": 6 }, { "kind": "walker", "count": 6, "gap": 0.7, "delay": 3 }] },
+    { "groups": [{ "kind": "walker", "count": 12, "gap": 0.7 }, { "kind": "swarm", "count": 21, "gap": 0.35, "delay": 6 }, { "kind": "brute", "count": 2, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "walker", "count": 13, "gap": 0.7 }, { "kind": "runner", "count": 8, "gap": 0.6, "delay": 4 }] },
+    { "groups": [{ "kind": "walker", "count": 14, "gap": 0.6 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "walker", "count": 15, "gap": 0.6 }, { "kind": "runner", "count": 9, "gap": 0.5, "delay": 4 }, { "kind": "swarm", "count": 24, "gap": 0.35, "delay": 6 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "boss", "count": 1, "gap": 6 }, { "kind": "walker", "count": 8, "gap": 0.6, "delay": 3 }] },
+    { "groups": [{ "kind": "boss", "count": 1, "gap": 6 }, { "kind": "walker", "count": 8, "gap": 0.6, "delay": 3 }] }
+  ]
+}

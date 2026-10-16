@@ -128,3 +128,58 @@ Full level played in a real browser with every question answered (every 4th one 
 at Chromebook size with the keyboard and iPad size by touch: Mana Well every wave, a question for
 every gem, the Wave Gate before the boss, the Level Key at the end. Won with 3 stars both times,
 no page errors. Tests: 7 new engine tests, 8 new game-screen tests; 681 in total, all passing.
+
+## Phase 4: campaign content (16 October 2026)
+
+**Built**
+
+- **10 levels** as JSON in `shared/gem-keep/levels/` (`index.ts` lists them in order). Maps and
+  paths designed by hand; waves made by a small generator as a starting point; then each level's
+  new `toughness` (enemy health multiplier) tuned with the computer player.
+
+  | Level | Name | Tables | Waves | Paths | Toughness | Right answers needed to win* |
+  |---|---|---|---|---|---|---|
+  | 1 | Crystal Valley | ×2 ×5 ×10 (to × 10) | 8 | 1 | 1 | 30% |
+  | 2 | Sunny Meadow | ×2 ×5 ×10 (to × 10) | 8 | 1 | 1.28 | 30% |
+  | 3 | River Bend | + ×3 ×4 | 9 | 1 | 1.83 | 35% |
+  | 4 | Rocky Pass | + ×3 ×4 | 9 | 1 | 2.17 | 35% |
+  | 5 | The Long Road | + ×6 ×8 | 10 | 1 | 2.12 | 35% |
+  | 6 | Two Rivers | + ×6 ×8 | 10 | 2 | 1.57 | 50% |
+  | 7 | Frost Ridge | + ×7 ×9 | 11 | 1 | 2.14 | 50% |
+  | 8 | Twin Gates | + ×7 ×9 | 11 | 2 | 1.58 | 55% |
+  | 9 | Storm Peaks | + ×11 ×12 | 12 | 2 | 1.63 | 55% |
+  | 10 | Gem Keep Castle | + ×11 ×12 | 12 | 2 | 1.17 | 65% |
+
+  \* The lowest share of Mana Well, Wave Gate and Keep Shield answers at which the simple
+  computer player wins (2 games out of 3). A student who combines gems and upgrades towers needs
+  less. Two-path levels have lower toughness because two paths are harder in themselves.
+  Bosses come on wave 5 and 10 and, from level 6, on the last wave too (each with a Wave Gate).
+- **Campaign map** (`ui/CampaignMap.tsx`): the 10 levels on a winding trail (1–5 left to right,
+  6–10 back), each with its number, name, times tables, best stars, and a lock until the level
+  before's Level Key is passed. Total stars at the top. The next level to play glows.
+- **In a level:** a heading ("Level 3 · River Bend") and a Map button. After a win: the Level
+  Key, then **Next level**. A level whose Key was passed before goes straight to Next level.
+  Best stars are kept.
+- **Progress** (`progress.ts`) is kept in the browser for now (`localStorage`); Phase 5 saves it
+  to the database so it follows the student between devices.
+- The maths records now carry from level to level within a visit.
+- **Level format guide** for James: [LEVELS.md](LEVELS.md).
+- The computer player now spreads its towers so both paths get covered (it used to bunch them
+  by one path, which made two-path levels look impossible).
+
+**Checked against "done when"**
+
+| Done when | Result |
+|---|---|
+| All 10 levels load and validate | Test per level: `checkLevel` finds no problems, 8–15 waves, bosses only on every 5th or the last wave; levels 6, 8, 9 and 10 have two paths |
+| All 10 are beatable | Test: the computer player wins every level in 3 out of 3 games at 80% right, and loses every level when it skips the maths. In the browser: level 1 won through the map, level 6 (two paths) won by the browser script with every question answered |
+| Difficulty rises steadily | Test: the share of right answers needed never drops by more than 5 points from one level to the next, level 1 needs at most 30%, level 10 needs at least 20 points more but no more than 80% |
+
+**Time per level (estimate, not yet measured with students):** the waves themselves take about
+2 minutes (level 1) to 7 minutes (level 7) at normal speed, half that at 2×. A full Mana Well
+of 10 questions plus building adds roughly a minute a wave. So levels 1–2 take about 10 minutes,
+and later levels about 12–18 (about 10–14 at 2× speed), which is longer than the brief's
+8–12. Easy fixes if the class trial shows they're too long: fewer Well questions a wave (each
+worth more), or fewer waves. Both are one-number changes.
+
+The full test suite is 699 tests, all passing.

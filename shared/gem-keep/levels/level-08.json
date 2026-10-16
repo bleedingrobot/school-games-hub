@@ -1,0 +1,36 @@
+{
+  "id": "level-8",
+  "name": "Twin Gates",
+  "intro": "Two gates, one Keep.",
+  "toughness": 1.58,
+  "startMana": 140,
+  "map": [
+    "......~~~.......",
+    "................",
+    "................",
+    "................",
+    "............^...",
+    "................",
+    "................",
+    "........^.......",
+    "...^............",
+    "................"
+  ],
+  "paths": [
+    [[-1, 0], [4, 0], [4, 3], [1, 3], [1, 6], [6, 6], [6, 4], [7, 4]],
+    [[16, 9], [11, 9], [11, 6], [14, 6], [14, 2], [9, 2], [9, 4], [7, 4]]
+  ],
+  "waves": [
+    { "groups": [{ "kind": "walker", "count": 9, "gap": 0.7 }] },
+    { "groups": [{ "kind": "walker", "count": 10, "gap": 0.7 }] },
+    { "groups": [{ "kind": "walker", "count": 10, "gap": 0.7 }, { "kind": "runner", "count": 6, "gap": 0.6, "delay": 4 }, { "kind": "swarm", "count": 19, "gap": 0.35, "delay": 6 }] },
+    { "groups": [{ "kind": "walker", "count": 11, "gap": 0.7 }, { "kind": "brute", "count": 2, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "boss", "count": 1, "gap": 6 }, { "kind": "walker", "count": 6, "gap": 0.7, "delay": 3 }] },
+    { "groups": [{ "kind": "walker", "count": 13, "gap": 0.6 }, { "kind": "swarm", "count": 22, "gap": 0.35, "delay": 6 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "walker", "count": 14, "gap": 0.6 }, { "kind": "runner", "count": 8, "gap": 0.5, "delay": 4 }] },
+    { "groups": [{ "kind": "walker", "count": 14, "gap": 0.6 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "walker", "count": 15, "gap": 0.6 }, { "kind": "runner", "count": 9, "gap": 0.5, "delay": 4 }, { "kind": "swarm", "count": 25, "gap": 0.35, "delay": 6 }, { "kind": "brute", "count": 3, "gap": 3, "delay": 5 }] },
+    { "groups": [{ "kind": "boss", "count": 1, "gap": 6 }, { "kind": "walker", "count": 8, "gap": 0.5, "delay": 3 }] },
+    { "groups": [{ "kind": "boss", "count": 1, "gap": 6 }, { "kind": "walker", "count": 9, "gap": 0.5, "delay": 3 }] }
+  ]
+}

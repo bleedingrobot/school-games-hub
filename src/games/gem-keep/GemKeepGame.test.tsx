@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { GEM, MATHS } from '../../../shared/gem-keep/config';
-import { PROTOTYPE_LEVEL } from '../../../shared/gem-keep/levels/prototype';
+import { CAMPAIGN } from '../../../shared/gem-keep/levels';
 import type { GameEngine } from './engine/GameEngine';
 import { DEFAULT_SETTINGS, type GemKeepSettings } from './settings';
 import { GemKeepGame } from './ui/GemKeepGame';
@@ -17,7 +17,7 @@ function solve(spoken: string): number {
 function setup(settings: GemKeepSettings = DEFAULT_SETTINGS) {
   let engine!: GameEngine;
   const user = userEvent.setup();
-  render(<GemKeepGame level={PROTOTYPE_LEVEL} settings={settings} timeScale={0} onEngine={(e) => (engine = e)} />);
+  render(<GemKeepGame level={CAMPAIGN[0]} settings={settings} timeScale={0} onEngine={(e) => (engine = e)} />);
   /** Answers the question on screen, right or wrong, and waits for the next one (or the end). */
   async function answer(right: boolean) {
     const dialog = await screen.findByRole('dialog', { name: /Mana Well|Gem Forge|Wave Gate|Keep Shield|Level Key/ });

@@ -21,6 +21,10 @@ export interface WaveGroup {
 export interface LevelData {
   id: string;
   name: string;
+  /** One line shown on the campaign map. */
+  intro?: string;
+  /** Multiplies every enemy's health (default 1). How later levels get harder. */
+  toughness?: number;
   /**
    * One string per row, one letter per tile: '.' grass (you can build here), '^' rocks and
    * '~' water (you can't). Path tiles are worked out from `paths`, so draw them as '.'.
@@ -125,6 +129,7 @@ export function checkLevel(level: LevelData): string[] {
   });
   if (keeps.size > 1) problems.push('Every path must end at the same Keep.');
   if (level.waves.length === 0) problems.push('There are no waves.');
+  if (level.toughness !== undefined && !(level.toughness > 0 && level.toughness <= 5)) problems.push('Toughness must be between 0 and 5.');
   level.waves.forEach((wave, w) => {
     if (wave.groups.length === 0) problems.push(`Wave ${w + 1} has no enemies.`);
     for (const g of wave.groups) {

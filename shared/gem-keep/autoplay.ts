@@ -10,14 +10,22 @@ import { pathTiles, type LevelData, type Tile } from './level';
 
 export type Strategy = 'idle' | 'towers-only' | 'sensible';
 
-/** Grass tiles, best first: the ones with the most path within reach of a tower. */
+/**
+ * Grass tiles, best first: the ones that reach the most path, counting path that no tower
+ * reaches yet as worth more (so two paths both get covered).
+ */
 export function bestTiles(state: GameState, reach = GEM.range): Tile[] {
   const path = state.level.paths.flatMap(pathTiles);
+  const near = (a: Tile, b: Tile) => Math.hypot(a[0] - b[0], a[1] - b[1]) <= reach;
+  const covered = path.map((p) => state.towers.filter((t) => near([t.x, t.y], p)).length);
   const tiles: { tile: Tile; score: number }[] = [];
   for (let y = 0; y < state.ground.length; y++) {
     for (let x = 0; x < state.ground[y].length; x++) {
       if (!canBuildOn(state, [x, y])) continue;
-      const score = path.filter(([px, py]) => Math.hypot(px - x, py - y) <= reach).length;
+      let score = 0;
+      path.forEach((p, i) => {
+        if (near([x, y], p)) score += 1 / (1 + covered[i]);
+      });
       tiles.push({ tile: [x, y], score });
     }
   }

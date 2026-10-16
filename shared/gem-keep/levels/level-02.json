@@ -1,0 +1,32 @@
+{
+  "id": "level-2",
+  "name": "Sunny Meadow",
+  "intro": "Runners are quick. Slow them down with blue gems!",
+  "toughness": 1.28,
+  "startMana": 140,
+  "map": [
+    "................",
+    ".^..............",
+    "................",
+    ".............^..",
+    "..^.............",
+    ".......^........",
+    "................",
+    "................",
+    ".......~~.......",
+    ".......~~......."
+  ],
+  "paths": [
+    [[-1, 7], [4, 7], [4, 2], [10, 2], [10, 7], [14, 7]]
+  ],
+  "waves": [
+    { "groups": [{ "kind": "walker", "count": 6, "gap": 1 }] },
+    { "groups": [{ "kind": "walker", "count": 7, "gap": 1 }] },
+    { "groups": [{ "kind": "walker", "count": 7, "gap": 1 }, { "kind": "runner", "count": 4, "gap": 0.8, "delay": 4 }, { "kind": "swarm", "count": 13, "gap": 0.35, "delay": 6 }] },
+    { "groups": [{ "kind": "walker", "count": 8, "gap": 0.9 }] },
+    { "groups": [{ "kind": "boss", "count": 1, "gap": 6 }, { "kind": "walker", "count": 5, "gap": 0.9, "delay": 3 }] },
+    { "groups": [{ "kind": "walker", "count": 10, "gap": 0.9 }, { "kind": "swarm", "count": 16, "gap": 0.35, "delay": 6 }] },
+    { "groups": [{ "kind": "walker", "count": 11, "gap": 0.9 }, { "kind": "runner", "count": 6, "gap": 0.7, "delay": 4 }] },
+    { "groups": [{ "kind": "walker", "count": 11, "gap": 0.9 }] }
+  ]
+}

@@ -334,13 +334,13 @@ function startWave(state: GameState, surge: number) {
   state.events.push({ type: 'wave-start', wave: state.wave, surge });
 }
 
-/** Health of this kind of enemy in this wave. */
-export const enemyHealth = (kind: EnemyKind, wave: number) =>
-  Math.round(ENEMIES[kind].health * (1 + HEALTH_PER_WAVE * (wave - 1)));
+/** Health of this kind of enemy in this wave of a level this tough. */
+export const enemyHealth = (kind: EnemyKind, wave: number, toughness = 1) =>
+  Math.round(ENEMIES[kind].health * (1 + HEALTH_PER_WAVE * (wave - 1)) * toughness);
 
 /** Puts an enemy on the map (also used by tests and the stress test). */
 export function spawnEnemy(state: GameState, kind: EnemyKind, path = 0, distance = 0): Enemy {
-  const health = enemyHealth(kind, Math.max(1, state.wave));
+  const health = enemyHealth(kind, Math.max(1, state.wave), state.level.toughness);
   const { x, y } = pointAlong(state.paths[path], distance);
   const enemy: Enemy = {
     id: state.nextId++, kind, path, distance, x, y, health, maxHealth: health,
