@@ -69,7 +69,10 @@ function TeacherView({ me }: { me: string }) {
     void load();
   }, [load]);
 
-  const shown = (people ?? []).filter((p) => p.display_name.toLowerCase().includes(filter.trim().toLowerCase()));
+  const wanted = filter.trim().toLowerCase();
+  const shown = (people ?? []).filter(
+    (p) => p.display_name.toLowerCase().includes(wanted) || (p.real_name ?? '').toLowerCase().includes(wanted),
+  );
 
   return (
     <div className="teacher">
@@ -85,7 +88,7 @@ function TeacherView({ me }: { me: string }) {
         </h2>
         <label className="teacher__filter">
           <span>Find a player</span>
-          <input type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="e.g. Otter" />
+          <input type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Player name or real name" />
         </label>
         {failed ? (
           <p className="panel__empty">{failed}</p>
@@ -109,6 +112,7 @@ function TeacherView({ me }: { me: string }) {
                     {person.id === me && <span className="tag">You</span>}
                     {person.role === 'teacher' && <span className="tag tag--teacher">Teacher</span>}
                     {person.hidden && <span className="tag tag--hidden">Hidden</span>}
+                    {person.real_name && <span className="people-list__real">{person.real_name}</span>}
                   </span>
                   <span className="people-list__games">
                     {person.bot_games + person.friend_games} game{person.bot_games + person.friend_games === 1 ? '' : 's'}

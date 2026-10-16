@@ -21,7 +21,7 @@ export const checkers: GameDefinition = {
   id: 'checkers',
   name: 'Checkers',
   tagline: 'Jump, capture, get crowned!',
-  colours: ['#c2253a', '#b8401a'],
+  colours: ['#c2410c', '#be123c'],
   Icon: CheckersIcon,
   Play: CheckersPlay,
   Live: CheckersFriendGame,

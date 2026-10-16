@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { MuteButton } from './MuteButton';
+import banner from '../assets/dps-banner.png';
 
 const NAV = [
   { to: '/', label: 'Home', emoji: '🏠' },
@@ -18,10 +19,8 @@ export function Layout() {
       </a>
       <header className="topbar">
         <NavLink to="/" className="brand">
-          <span className="brand__logo" aria-hidden="true">
-            🎲
-          </span>
-          <span>Games Hub</span>
+          <img className="brand__banner" src={banner} alt="Douglas Park School" width={412} height={77} />
+          <span className="brand__name">Games Hub</span>
         </NavLink>
         <nav aria-label="Main" className="topnav">
           {[...NAV, ...(profile?.role === 'teacher' ? [{ to: '/teacher', label: 'Teacher', emoji: '🧑‍🏫' }] : [])].map((item) => (
