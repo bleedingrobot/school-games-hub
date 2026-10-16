@@ -10,6 +10,13 @@
   display: grid;
   gap: 14px;
 }
+/* Fieldsets don't shrink below their content unless told to; long chips wrap on phones. */
+.gk-teacher fieldset {
+  min-width: 0;
+}
+.gk-teacher .chip span {
+  text-align: center;
+}
 .gk-teacher__row {
   display: flex;
   flex-wrap: wrap;
@@ -47,6 +54,7 @@
 .gk-teacher__student {
   margin-top: 16px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 .gk-teacher__heading {
@@ -82,6 +90,9 @@
   overflow-x: auto;
 }
 .gk-grid {
+  /* As wide as its squares, not the panel (a grid item stretches otherwise). */
+  justify-self: start;
+  width: max-content;
   border-collapse: separate;
   border-spacing: 2px;
   font-size: 0.8rem;
@@ -106,7 +117,8 @@
   line-height: 26px;
 }
 :is(.gk-grid td, .gk-grid__swatch)[data-mastery='not-tried'] {
-  background: var(--tint);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
   color: var(--ink-soft);
 }
 :is(.gk-grid td, .gk-grid__swatch)[data-mastery='learning'] {
@@ -139,4 +151,22 @@
   display: inline-block;
   text-align: center;
   border: 1px solid var(--line);
+}
+
+/* Phones: smaller squares so the whole grid fits without scrolling. */
+@media (max-width: 420px) {
+  .gk-grid {
+    border-spacing: 1px;
+    font-size: 0.7rem;
+  }
+  .gk-grid th {
+    min-width: 0;
+  }
+  .gk-grid td,
+  .gk-grid__swatch {
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    border-radius: 4px;
+  }
 }

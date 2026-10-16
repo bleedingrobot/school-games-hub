@@ -2090,6 +2090,13 @@ main:focus {
 .teacher {
   max-width: 980px;
 }
+/* minmax(0, …): nothing inside may push the page wider than a phone screen. */
+.teacher,
+.teacher .panel,
+.people-list,
+.person-panel {
+  grid-template-columns: minmax(0, 1fr);
+}
 .teacher .panel {
   display: grid;
   gap: 12px;
@@ -2231,6 +2238,11 @@ main:focus {
   .person-panel__stats td {
     padding: 6px 2px;
     font-size: 0.85rem;
+  }
+  /* Seven columns don't fit a phone: the table scrolls sideways, not the page. */
+  .person-panel__stats {
+    display: block;
+    overflow-x: auto;
   }
 }
 

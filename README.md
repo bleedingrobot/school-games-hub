@@ -271,7 +271,7 @@ public/stockfish/ the Stockfish chess engine files and their licence
 shared/           game rules shared with the server (chess and checkers rules, deciding results, refereeing friend games)
   space/          the space game's rules engine, boards, bots, galaxy codes, space facts and simulation
   card101/        101's rules engine, scoring, what each player may see, bots, saving, timers and simulation
-supabase/         database setup (migrations), its tests, server functions (save-bot-game, multiplayer, space-game, card-game), local settings
+supabase/         database setup (migrations), its tests, server functions (save-bot-game, multiplayer, space-game, card-game, gem-keep), local settings
 scripts/          builds the server functions into single files
 docs/             the plan and the original brief
 .github/workflows the automatic test-and-publish steps
@@ -288,7 +288,7 @@ To update a function on the live site without the Supabase CLI:
 1. On GitHub, open `supabase/functions/<name>/index.ts` and click **Copy raw file**.
 2. In Supabase, go to **Edge Functions**, open the function, click **Code**, select everything, paste, then click **Deploy**.
 
-There are four functions: `save-bot-game` (saves bot games, including space and 101 games), `multiplayer` (referees chess and checkers between students), `space-game` (runs Wormholes & Black Holes with classmates) and `card-game` (runs 101 with classmates). All four must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
+There are five functions: `save-bot-game` (saves bot games, including space and 101 games), `multiplayer` (referees chess and checkers between students), `space-game` (runs Wormholes & Black Holes with classmates), `card-game` (runs 101 with classmates) and `gem-keep` (saves Gem Keep levels, Level Keys and times-table records). All five must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
 
 ## Looking after the site
 

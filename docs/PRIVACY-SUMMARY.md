@@ -7,9 +7,10 @@ School Games Hub (https://bleedingrobot.github.io/school-games-hub/) is a chess 
 **What is stored, and why**
 
 - **Our database:** a random ID; a player name from word lists (e.g. "Speedy Otter 27"); avatar choices; student or teacher; hidden or not; when the account was made. For each game: the players' random IDs, the moves, the result and the time. Points, badges and achievements. *Why:* profiles without real names, checking nobody cheats, and the points. No real names, emails, classes, photos or free text.
+- **Gem Keep (times tables, since 17 Oct 2026):** each level played (stars, waves reached, how many maths questions were asked and answered right), the best stars and Level Keys per level, and **learning data**: for each times-table fact (e.g. 7 × 8), how often it was asked and answered right, the average answer time, a mastery box (0–4) and the last two days it was answered quickly. Never the answers typed. *Why:* so progress follows the student between devices, the game asks the facts they need, and teachers can see which facts a student (or the class) finds hard.
 - **Supabase's sign-in records:** school email, name from Google, a link to the Google profile photo, the Google account number, last sign-in time, and each signed-in device's internet (IP) address and browser type. *Why:* Supabase needs these to run Google sign-in. The site shows only the part of the email before the @ (the student's real name), and only on the teacher page.
 - **Supabase's logs:** each request's IP address, rough location (city) and browser, deleted after 1 day.
-- **The student's browser:** their sign-in session and whether sound is on. Signing out clears the session.
+- **The student's browser:** their sign-in session and whether sound is on. Signing out clears the session. For Gem Keep, a copy of their own progress and anything not yet saved (so it works through a Wi-Fi drop).
 
 **Where it is (Privacy Principle 12)**
 
@@ -18,13 +19,13 @@ The database and server code are in **Sydney, Australia**, run by Supabase (a US
 **Who can see what**
 
 - **Students:** their own games and points, and other students' player names, avatars and badges (boards, lobby, opponents). Never emails or real names. Database rules stop them reading other students' games or changing anything except their own name and avatar. This was tested.
-- **Teachers:** every player's name, avatar, games, points and last 10 results. They can give a new random name, hide, delete, give teacher access, pause games against friends and start a new season. Since 16 Oct 2026 they also see each student's real name (the part of their school email before the @) next to the player name, so they know who is who. Nothing else from the email or Google account.
+- **Teachers:** every player's name, avatar, games, points and last 10 results. They can give a new random name, hide, delete, give teacher access, pause games against friends and start a new season. Since 16 Oct 2026 they also see each student's real name (the part of their school email before the @) next to the player name, so they know who is who. Nothing else from the email or Google account. For Gem Keep they see each student's levels, stars and a 12 × 12 times-table grid (not tried / learning / secure / fluent), the class's 10 hardest facts, and they set Gem Keep's maths settings for everyone. Students never see anyone's maths: the Gem Keep leaderboard shows stars only.
 - **James (account owner):** everything, through the Supabase and GitHub dashboards, including sign-in records and the 1-day logs.
 
 **Deleting**
 
 - **One student:** Teacher page → the student → **Delete** → type their player name. This removes their sign-in record (email, name, devices), profile, games, points and achievements. Opponents keep the shared game, with nothing pointing back. Logs expire within a day. There are no backups, so it can't be undone.
-- **End of year:** delete leavers, then type `NEW SEASON`. That clears every finished game, point, rating and achievement, keeping accounts, names and avatars.
+- **End of year:** delete leavers, then type `NEW SEASON`. That clears every finished game, point, rating and achievement, and all Gem Keep progress and times-table records, keeping accounts, names and avatars.
 
 **Deliberately not there:** ads, tracking, analytics, outside fonts, chat or messages of any kind, free typing, photo uploads. Computer opponents run on the student's own Chromebook.
 

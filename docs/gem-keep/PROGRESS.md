@@ -192,3 +192,85 @@ So it's now on the dashboard as a normal game card (no bot picker: a new `noBots
 progress is kept on each device (`localStorage`), it gives **no points** and isn't on any
 leaderboard, and maths records last only for the visit. The map says so. No database or
 server changes. Phase 5 adds saving, points, the stars leaderboard and the teacher views.
+
+## Phase 5: hub integration (17 October 2026)
+
+Gem Keep is now a proper hub game: progress follows the student between devices, levels earn
+points, there's a "most stars" leaderboard, and teachers get settings, a times-table grid per
+student and the class's hardest facts.
+
+**Saving** ([shared/gem-keep/save.ts](../../shared/gem-keep/save.ts), [src/data/gemKeep.ts](../../src/data/gemKeep.ts))
+
+- Everything to save goes into a queue in the browser (one per student) and is sent to the new
+  `gem-keep` server function after each level, after a Level Key round, when leaving the game or
+  the tab, and when Gem Keep opens. With no Wi-Fi the student plays on (the map says so) and it
+  saves later. Every item is safe to send twice.
+- Four kinds of item: a finished level (won or lost), a Level Key round, the times-table
+  records, and once, the **class-trial progress** kept on the device. That is brought in the
+  first time the student opens the saving version, only if they have nothing saved yet, then
+  cleared from the device so the next person on a shared iPad can't get it. It earns no points
+  by itself.
+- The server can't replay a 10-minute game, so it checks that each level is plausible: the level
+  exists and is open (the Level Key before it passed), a win has 1–3 stars and every wave, it
+  wasn't quicker than the enemies can arrive, the Level Key score is out of 10 and is checked
+  against the teacher's pass mark on the server, and times-table records with impossibly quick
+  answers are left out. A record can only move forward (more answers), so an old tab or a second
+  device can't undo progress.
+- A copy of the student's progress, records and settings is kept in the browser, so Gem Keep
+  opens offline with the latest.
+
+**Points** (inside the 40-a-day limit shared with games against bots)
+
+| | Points |
+|---|---|
+| Win a level | 3, 4 or 5 (2 + stars) |
+| Lose after reaching wave 3 | 1 |
+| Lose earlier | 0 |
+| Each achievement | 10 |
+
+Seven achievements: win your first level, pass a Level Key, 3 stars on a level, 5 Level Keys,
+15 stars, all 10 Level Keys, all 30 stars. Gem Keep never touches ratings or badges.
+
+**Leaderboard:** a Gem Keep chip on the Leaderboard page shows the top 10 by stars (best stars per
+level, so replaying a level doesn't pad it) and the student's own place. Never maths accuracy.
+Hidden students aren't on it.
+
+**Teachers** ([src/pages/TeacherGemKeep.tsx](../../src/pages/TeacherGemKeep.tsx), loaded only on the teacher page)
+
+- **Gem Keep settings** for the whole school: Calm or Challenge, times tables on (at least one),
+  missing-number questions (from level 4 / always / never), division, multiple choice, and the
+  Level Key pass mark (5–10). Students get changes next time they open Gem Keep.
+- **Gem Keep: the class**: how many students play, how many have won and passed the Key of each
+  level, and the 10 facts most often answered wrongly (asked at least 6 times, to at least 2
+  students). Teachers' own play isn't counted.
+- **Each student's panel**: their levels (stars, Keys) and a 12 × 12 grid, each square coloured
+  and lettered (L learning, S secure, F fluent, blank not tried) so colour isn't the only clue.
+- A **new season** clears Gem Keep levels, progress and times-table records (James, 16 Oct 2026).
+  Deleting a student deletes all of theirs.
+
+**Database** (migration `20261017001100_gem_keep.sql`): tables `gem_keep_runs`,
+`gem_keep_progress`, `gem_keep_facts` (learning data), `gem_keep_imports`; students can't read or
+write any of them directly. `scored_games` gets a `solo` kind for Gem Keep levels. The privacy
+summary has a line about the learning data.
+
+**Also fixed on the way:** the teacher page was wider than a phone screen (the player list and the
+games table pushed it out); it now fits, with the games table scrolling sideways on its own.
+
+**Checked**
+
+| Done when | Result |
+|---|---|
+| Progress follows a signed-in student across devices | Browser check on the local copy: trial progress came in; a level won and its Key passed on one device; a second device opened with the same stars and the next level open |
+| Offline play saves later | Same check: a level and Key played with the connection off showed "No connection right now", stayed queued, and saved with the right points when the connection came back |
+| Teacher can change enabled tables and see the heat map | Same check: switching ×12 off saved to the database; the student's grid and levels showed |
+| A season reset clears Gem Keep progress | Database test: runs, progress and fact records all gone |
+
+Tests: 66 new database tests (`gem_keep.test.sql`), 18 for the server function, 8 for the save
+queue, and page tests for the teacher panels, the stars board and the campaign's saving. 731
+unit tests and every database test pass (the space and 101 "refuses made-up seeds" tests failed
+once in a full run and pass on their own; they weren't touched).
+
+**To go live** (needs James's yes): apply the migration with `supabase db query --linked -f`,
+deploy the new `gem-keep` function (`--no-verify-jwt`), check it from outside (anon
+`POST /functions/v1/gem-keep` → 401 JSON), then merge `stage-11` to `main`.
+

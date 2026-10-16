@@ -88,6 +88,8 @@ export function GemKeepPlay() {
       onLevelEnd={onLevelEnd}
       onKey={onKey}
       onFacts={onFacts}
+      // Local browser checks drive the game through this. Left out of the real site.
+      onEngine={import.meta.env.DEV ? (engine) => Object.assign(window, { gemKeepEngine: engine }) : undefined}
     />
   );
 }

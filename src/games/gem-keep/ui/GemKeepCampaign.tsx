@@ -73,12 +73,16 @@ export function GemKeepCampaign({
   }, [pack]);
 
   function update(change: (p: CampaignProgress) => CampaignProgress) {
-    setProgress((p) => {
-      const next = change(p);
-      onProgress(next);
-      return next;
-    });
+    setProgress(change);
   }
+
+  // Tell the page after the change has happened (never while drawing).
+  const shown = useRef(progress);
+  useEffect(() => {
+    if (shown.current === progress) return;
+    shown.current = progress;
+    onProgress(progress);
+  }, [progress, onProgress]);
 
   const reportFacts = useCallback(() => onFacts?.(pack.stats()), [onFacts, pack]);
 

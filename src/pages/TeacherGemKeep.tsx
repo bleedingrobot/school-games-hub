@@ -359,7 +359,9 @@ export function FactGrid({ facts }: { facts: FactStats[] }) {
             <span className="gk-grid__swatch" data-mastery={m} aria-hidden="true">
               {MASTERY[m].mark}
             </span>
-            <strong>{MASTERY[m].label}</strong>: {MASTERY[m].about}
+            <span>
+              <strong>{MASTERY[m].label}</strong>: {MASTERY[m].about}
+            </span>
           </li>
         ))}
       </ul>
