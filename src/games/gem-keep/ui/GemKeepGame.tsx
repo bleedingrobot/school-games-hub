@@ -20,6 +20,16 @@ import { GemIcon } from './GemIcon';
 import { MathsRound, type RoundResult } from './MathsRound';
 import '../gem-keep.css';
 
+/** How a level ended, for saving. */
+export interface LevelEnd {
+  result: 'won' | 'lost';
+  stars: number;
+  /** Waves started. */
+  waves: number;
+  /** Seconds of play (game time). */
+  gameSeconds: number;
+}
+
 type Selection = { kind: 'tile'; x: number; y: number } | { kind: 'tower'; x: number; y: number } | { kind: 'gem'; slot: number } | null;
 
 /** The maths question round on screen, if any. */
@@ -52,7 +62,9 @@ export function GemKeepGame({
   timeScale,
   keyDone = false,
   onWin,
+  onEnd,
   onKeyPassed,
+  onKeyResult,
   onNext,
   onMap,
 }: {
@@ -68,7 +80,11 @@ export function GemKeepGame({
   /** This level's Level Key was passed before, so a win goes straight on. */
   keyDone?: boolean;
   onWin?: (stars: number) => void;
+  /** Every finish, won or lost. */
+  onEnd?: (end: LevelEnd) => void;
   onKeyPassed?: () => void;
+  /** Every Level Key round, passed or not: right answers out of 10. */
+  onKeyResult?: (right: number) => void;
   /** Go to the next level (only given when there is one). */
   onNext?: () => void;
   /** Back to the campaign map. */
@@ -145,14 +161,17 @@ export function GemKeepGame({
   // Calm mode pauses the game while a question is up; Challenge mode slows it down.
   useEffect(() => engine.setQuestion(quiz ? settings.mode : null), [engine, quiz, settings.mode]);
 
-  // Report a win once, so the map can keep the stars.
+  // Report each finish once, so the map can keep the stars and the level can be saved.
   const reported = useRef(false);
   useEffect(() => {
-    if (state.phase === 'won' && !reported.current) {
+    const over = state.phase === 'won' || state.phase === 'lost';
+    if (over && !reported.current) {
       reported.current = true;
-      onWin?.(state.stars);
+      const won = state.phase === 'won';
+      if (won) onWin?.(state.stars);
+      onEnd?.({ result: won ? 'won' : 'lost', stars: won ? state.stars : 0, waves: state.wave, gameSeconds: Math.round(state.time) });
     }
-    if (state.phase !== 'won') reported.current = false;
+    if (!over) reported.current = false;
   });
 
   // The Keep Shield: offered once, when the Keep first drops low.
@@ -346,6 +365,7 @@ export function GemKeepGame({
             onFinish={(result) => {
               setQuiz(null);
               setKeyResult(result);
+              onKeyResult?.(result.right);
               if (result.right >= settings.keyPassMark) onKeyPassed?.();
             }}
           />

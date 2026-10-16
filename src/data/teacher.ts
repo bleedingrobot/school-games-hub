@@ -99,8 +99,10 @@ export async function setSpaceReactions(enabled: boolean): Promise<void> {
   if (error) fail(error, 'We couldn’t change that.');
 }
 
-export async function startNewSeason(confirm: string): Promise<{ botGames: number; friendGames: number }> {
+export async function startNewSeason(
+  confirm: string,
+): Promise<{ botGames: number; friendGames: number; gemKeepLevels?: number }> {
   const { data, error } = await supabase.rpc('teacher_new_season', { confirm });
   if (error || !data) fail(error ?? {}, 'We couldn’t start a new season.');
-  return data as { botGames: number; friendGames: number };
+  return data as { botGames: number; friendGames: number; gemKeepLevels?: number };
 }

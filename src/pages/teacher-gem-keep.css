@@ -1,0 +1,142 @@
+/* Gem Keep on the teacher page. */
+.gk-teacher {
+  display: grid;
+  gap: 12px;
+}
+.gk-teacher > p {
+  margin: 0;
+}
+.gk-teacher__settings {
+  display: grid;
+  gap: 14px;
+}
+.gk-teacher__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+.gk-teacher__pass {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.gk-teacher__pass select {
+  font: inherit;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.gk-teacher__class {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.gk-teacher__class .stats-table + .stats-table {
+  margin-top: 0;
+}
+
+/* One student. */
+.gk-teacher__none {
+  margin: 12px 0 0;
+  color: var(--ink-soft);
+}
+.gk-teacher__student {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+.gk-teacher__heading {
+  margin: 0;
+  font-size: 1rem;
+}
+.gk-teacher__levels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+.gk-teacher__levels li {
+  display: flex;
+  gap: 8px;
+  color: var(--ink-soft);
+}
+.gk-teacher__levels li[data-played] {
+  color: var(--ink);
+}
+.gk-teacher__level-name {
+  flex: 1;
+}
+
+/* The 12 x 12 grid. Each state has its own letter too, so colour isn't the only clue. */
+.gk-grid-wrap {
+  display: grid;
+  gap: 10px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.gk-grid {
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+.gk-grid caption {
+  text-align: left;
+  font-weight: 700;
+  padding-bottom: 4px;
+}
+.gk-grid th {
+  min-width: 26px;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.gk-grid td,
+.gk-grid__swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  font-weight: 700;
+  line-height: 26px;
+}
+:is(.gk-grid td, .gk-grid__swatch)[data-mastery='not-tried'] {
+  background: var(--tint);
+  color: var(--ink-soft);
+}
+:is(.gk-grid td, .gk-grid__swatch)[data-mastery='learning'] {
+  background: #fecaca;
+  color: #7f1d1d;
+}
+:is(.gk-grid td, .gk-grid__swatch)[data-mastery='secure'] {
+  background: #fde68a;
+  color: #713f12;
+}
+:is(.gk-grid td, .gk-grid__swatch)[data-mastery='fluent'] {
+  background: #86efac;
+  color: #14532d;
+}
+.gk-grid__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+.gk-grid__legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gk-grid__swatch {
+  display: inline-block;
+  text-align: center;
+  border: 1px solid var(--line);
+}

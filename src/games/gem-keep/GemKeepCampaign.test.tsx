@@ -1,10 +1,10 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { CAMPAIGN } from '../../../shared/gem-keep/levels';
 import type { GameEngine } from './engine/GameEngine';
 import { isUnlocked, loadProgress, totalStars, withKey, withWin } from './progress';
-import { GemKeepCampaign } from './ui/GemKeepCampaign';
+import { GemKeepCampaign, type FinishedLevel } from './ui/GemKeepCampaign';
 
 const IDS = CAMPAIGN.map((l) => l.id);
 
@@ -68,5 +68,48 @@ describe('campaign map', () => {
     expect(screen.getByRole('button', { name: /Level 2: Sunny Meadow/ })).toBeEnabled();
     expect(screen.getByRole('button', { name: /Level 3: River Bend/ })).toBeDisabled();
     expect(loadProgress()).toEqual({ 'level-1': { stars: 3, keyPassed: true } });
+  }, 30_000);
+
+  it('reports each level, Level Key and the maths records, for saving', async () => {
+    const user = userEvent.setup();
+    let engine!: GameEngine;
+    const ended: FinishedLevel[] = [];
+    const onKey = vi.fn();
+    const onFacts = vi.fn();
+    const onProgress = vi.fn();
+    render(
+      <GemKeepCampaign
+        initialProgress={{}}
+        initialFacts={[{ key: 'mul:2x5', attempts: 9, correct: 9, avgMs: 1500, box: 3, lastSeen: 1, quickDays: [] }]}
+        onEngine={(e) => (engine = e)}
+        onLevelEnd={(l) => ended.push(l)}
+        onKey={onKey}
+        onFacts={onFacts}
+        onProgress={onProgress}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: /Level 1: Crystal Valley/ }));
+    engine.state.phase = 'won';
+    engine.state.stars = 2;
+    engine.state.wave = CAMPAIGN[0].waves.length;
+    engine.state.time = 321.4;
+    engine.setPaused(false);
+    await user.click(await screen.findByRole('button', { name: 'Try the Level Key' }));
+    expect(ended).toEqual([
+      { levelId: 'level-1', result: 'won', stars: 2, waves: CAMPAIGN[0].waves.length, gameSeconds: 321, asked: 0, right: 0 },
+    ]);
+    expect(onProgress).toHaveBeenLastCalledWith({ 'level-1': { stars: 2, keyPassed: false } });
+    for (let i = 0; i < 10; i++) {
+      const fact = await screen.findByLabelText(/equals/);
+      await user.keyboard(`${solve(fact.getAttribute('aria-label')!)}{Enter}`);
+      await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 3000 });
+    }
+    await screen.findByRole('button', { name: 'Next level' }, { timeout: 4000 });
+    expect(onKey).toHaveBeenCalledWith('level-1', 10);
+    // The saved records carried on: the 10 new answers were added to them.
+    const facts = onFacts.mock.lastCall![0] as { attempts: number }[];
+    expect(facts.reduce((n, f) => n + f.attempts, 0)).toBe(19);
+    // Nothing goes to this browser's own storage when the progress is saved elsewhere.
+    expect(localStorage.getItem('sgh-gem-keep-progress')).toBeNull();
   }, 30_000);
 });

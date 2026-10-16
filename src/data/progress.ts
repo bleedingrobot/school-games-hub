@@ -83,6 +83,8 @@ export interface Rules {
   space?: { bot: number; friend: number; friendDailyGames: number; minTurns: number };
   /** 101: bot games earn the same as chess; classmates games their own points. */
   card101?: { friendLost: number; friendWon: number; friendDailyGames: number; minRounds: number };
+  /** Gem Keep: points for a win with 1, 2 or 3 stars, and for a loss that got far enough. */
+  gemKeep?: { won: [number, number, number]; lost: number; minWavesForLoss: number };
   botDailyCap: number;
   pairDailyLimit: number;
   achievementPoints: number;

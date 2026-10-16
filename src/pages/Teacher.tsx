@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
@@ -22,6 +22,10 @@ import { findGame } from '../games/registry';
 import { BOT_LEVELS, type BotLevel } from '../games/types';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
 import { whenPlayed } from './Dashboard';
+
+// Gem Keep's teacher parts bring the levels and maths code with them, so they load separately.
+const GemKeepTeacherPanels = lazy(() => import('./TeacherGemKeep').then((m) => ({ default: m.GemKeepTeacherPanels })));
+const GemKeepStudentPanel = lazy(() => import('./TeacherGemKeep').then((m) => ({ default: m.GemKeepStudentPanel })));
 
 /** The words a teacher types to start a new season. The server checks them too. */
 export const NEW_SEASON_WORDS = 'NEW SEASON';
@@ -80,6 +84,9 @@ function TeacherView({ me }: { me: string }) {
 
       <FriendGamesSwitch />
       <ReactionsSwitch />
+      <Suspense fallback={null}>
+        <GemKeepTeacherPanels />
+      </Suspense>
 
       <section className="panel" aria-labelledby="people-title">
         <h2 id="people-title" className="panel__title">
@@ -357,6 +364,9 @@ function PersonPanel({
               ))}
             </ul>
           )}
+          <Suspense fallback={null}>
+            <GemKeepStudentPanel student={person.id} />
+          </Suspense>
         </>
       ) : (
         !status && <p className="panel__empty">Loading…</p>
@@ -495,7 +505,7 @@ function NewSeason({ onDone }: { onDone: () => void }) {
       const done = await startNewSeason(typed.trim());
       setTyped('');
       setStatus(
-        `Done. ${done.botGames} bot games and ${done.friendGames} games between students were deleted, and everyone starts again from 0 points.`,
+        `Done. ${done.botGames} bot games, ${done.friendGames} games between students and ${done.gemKeepLevels ?? 0} Gem Keep levels were deleted, and everyone starts again from 0 points.`,
       );
       onDone();
     } catch (error) {
@@ -511,7 +521,8 @@ function NewSeason({ onDone }: { onDone: () => void }) {
       <p>For the start of a new school year. It:</p>
       <ul>
         <li>
-          <strong>deletes</strong> every finished game, and every point, level, badge, achievement and leaderboard place
+          <strong>deletes</strong> every finished game, and every point, level, badge, achievement and leaderboard place,
+          and everyone’s Gem Keep progress and times-table records
         </li>
         <li>
           <strong>keeps</strong> every account, player name and avatar, the teachers, who is hidden, and games still being

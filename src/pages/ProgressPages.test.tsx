@@ -85,7 +85,31 @@ vi.mock('../data/teacher', () => ({
   setRole: vi.fn(async () => {}),
   deletePerson: vi.fn(async () => {}),
   setMultiplayer: vi.fn(async () => {}),
-  startNewSeason: vi.fn(async () => ({ botGames: 120, friendGames: 30 })),
+  startNewSeason: vi.fn(async () => ({ botGames: 120, friendGames: 30, gemKeepLevels: 12 })),
+}));
+
+vi.mock('../data/gemKeep', () => ({
+  fetchStarsBoard: vi.fn(async () => [
+    { place: 1, display_name: 'Speedy Fox 2', avatar: {}, stars: 21, level_keys: 7, is_me: false },
+    { place: 2, display_name: 'Brave Kiwi 7', avatar: {}, stars: 9, level_keys: 3, is_me: true },
+  ]),
+  fetchGemKeepSettings: vi.fn(async () => ({
+    mode: 'calm', enabledTables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], division: false, multipleChoice: false, keyPassMark: 8,
+  })),
+  saveGemKeepSettings: vi.fn(async () => {}),
+  fetchClassGemKeep: vi.fn(async () => ({
+    players: 14,
+    levels: [{ levelId: 'level-1', won: 14, keys: 12 }],
+    hardest: [{ key: 'mul:7x8', students: 9, attempts: 40, correct: 22 }],
+  })),
+  fetchStudentGemKeep: vi.fn(async () => ({
+    levels: [{ levelId: 'level-1', stars: 3, keyPassed: true, plays: 2, wins: 2 }],
+    facts: [
+      { key: 'mul:7x8', attempts: 5, correct: 2, avgMs: 4000, box: 1, lastSeen: 0, quickDays: [] },
+      { key: 'mul:2x5', attempts: 6, correct: 6, avgMs: 1500, box: 4, lastSeen: 0, quickDays: ['2026-10-16', '2026-10-17'] },
+    ],
+    lastPlayed: null,
+  })),
 }));
 
 vi.mock('../data/multiplayer', async (importOriginal) => ({
@@ -353,6 +377,52 @@ describe('teacher view', () => {
     await user.type(within(section).getByLabelText('Type NEW SEASON'), 'NEW SEASON');
     await user.click(button);
     expect(startNewSeason).toHaveBeenCalledWith('NEW SEASON');
-    expect(await within(section).findByText(/120 bot games and 30 games between students were deleted/)).toBeInTheDocument();
+    expect(
+      await within(section).findByText(/120 bot games, 30 games between students and 12 Gem Keep levels were deleted/),
+    ).toBeInTheDocument();
+  });
+
+  it('changes the Gem Keep settings for the whole school', async () => {
+    const { saveGemKeepSettings } = await import('../data/gemKeep');
+    const user = userEvent.setup();
+    renderAt('/teacher', teacher);
+    const section = await screen.findByRole('region', { name: 'Gem Keep settings' });
+    await user.click(await within(section).findByRole('checkbox', { name: '×12' }));
+    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ enabledTables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }));
+    await user.selectOptions(within(section).getByLabelText('Level Key pass mark'), '7');
+    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ keyPassMark: 7 }));
+    expect(await within(section).findByText(/Saved/)).toBeInTheDocument();
+  });
+
+  it('shows the class’s hardest facts', async () => {
+    renderAt('/teacher', teacher);
+    const section = await screen.findByRole('region', { name: /Gem Keep: the class/ });
+    const hardest = await within(section).findByRole('table', { name: 'Hardest facts (most often wrong)' });
+    expect(within(hardest).getByRole('rowheader', { name: '7 × 8' })).toBeInTheDocument();
+    expect(within(hardest).getByText('55%')).toBeInTheDocument();
+  });
+
+  it('shows a student’s Gem Keep levels and times-table grid', async () => {
+    const { user, panel } = await openKiwi();
+    void user;
+    expect(await within(panel).findByText(/Gem Keep: 3 of 30 stars, 1 Level Key passed/)).toBeInTheDocument();
+    const grid = within(panel).getByRole('table', { name: 'Times tables: how well each fact is known' });
+    // Both orders of a fact are one record.
+    expect(within(grid).getByText('7 × 8: Learning, 2 of 5 right')).toBeInTheDocument();
+    expect(within(grid).getByText('8 × 7: Learning, 2 of 5 right')).toBeInTheDocument();
+    expect(within(grid).getByText('5 × 2: Fluent, 6 of 6 right')).toBeInTheDocument();
+    expect(within(grid).getAllByText(/Not tried/)).toHaveLength(144 - 4);
+  });
+});
+
+describe('the Gem Keep leaderboard', () => {
+  it('ranks by stars, never by maths', async () => {
+    const user = userEvent.setup();
+    renderAt('/leaderboard');
+    await user.click(await screen.findByRole('radio', { name: 'Gem Keep' }));
+    const list = await screen.findByRole('list', { name: 'Most stars leaderboard' });
+    expect(within(list).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(list).getByText('★ 21')).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: 'This week' })).not.toBeInTheDocument();
   });
 });

@@ -9,7 +9,16 @@ import { TEXT } from '../strings';
 
 const IDS = CAMPAIGN.map((l) => l.id);
 
-export function CampaignMap({ progress, onPlay }: { progress: CampaignProgress; onPlay: (index: number) => void }) {
+export function CampaignMap({
+  progress,
+  note = TEXT.savedHere,
+  onPlay,
+}: {
+  progress: CampaignProgress;
+  /** The line under the map, about saving. */
+  note?: string;
+  onPlay: (index: number) => void;
+}) {
   const open = CAMPAIGN.map((_, i) => isUnlocked(progress, IDS, i));
   // The furthest open level that hasn't been won yet glows.
   const next = open.lastIndexOf(true);
@@ -59,7 +68,9 @@ export function CampaignMap({ progress, onPlay }: { progress: CampaignProgress; 
           );
         })}
       </ol>
-      <p className="gk-campaign__note">{TEXT.savedHere}</p>
+      <p className="gk-campaign__note" role="status">
+        {note}
+      </p>
     </section>
   );
 }

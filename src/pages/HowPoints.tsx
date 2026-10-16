@@ -136,6 +136,29 @@ export function HowPoints() {
         </section>
       )}
 
+      {rules.gemKeep && (
+        <section className="panel" aria-labelledby="gem-keep-points-title">
+          <h2 id="gem-keep-points-title" className="panel__title">
+            💎 Gem Keep
+          </h2>
+          <ul className="how-points__list">
+            <li>
+              Win a level: <strong>{rules.gemKeep.won[0]}</strong>, <strong>{rules.gemKeep.won[1]}</strong> or{' '}
+              <strong>{rules.gemKeep.won[2]} points</strong> for 1, 2 or 3 stars.
+            </li>
+            <li>
+              Lose a level after reaching wave {rules.gemKeep.minWavesForLoss}: <strong>{rules.gemKeep.lost} point</strong>{' '}
+              for trying.
+            </li>
+            <li>These share the {rules.botDailyCap}-points-a-day limit with games against bots.</li>
+            <li>
+              Passing Level Keys and collecting stars earns achievements, worth {rules.achievementPoints} bonus points
+              each. Gem Keep has its own leaderboard for the most stars.
+            </li>
+          </ul>
+        </section>
+      )}
+
       <section className="panel" aria-labelledby="levels-title">
         <h2 id="levels-title" className="panel__title">
           Levels
