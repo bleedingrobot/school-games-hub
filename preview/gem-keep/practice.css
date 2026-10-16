@@ -113,3 +113,20 @@
   color: #475569;
   font-size: 0.9rem;
 }
+.preview-settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  max-width: 1200px;
+  margin: 0 auto 10px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: #fff7d6;
+  font-size: 0.9rem;
+}
+.preview-settings label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

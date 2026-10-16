@@ -93,3 +93,38 @@ The full test suite is 628 tests, all passing.
 
 **Not yet:** questions don't appear in the game until Phase 3, and nothing is saved until Phase 5.
 The full test suite is 665 tests, all passing.
+
+## Phase 3: maths in the game (16 October 2026)
+
+**Built** (numbers in `shared/gem-keep/config.ts`, `MATHS`)
+
+| Touchpoint | How it works |
+|---|---|
+| **Mana Well** | Blue button next to the mana. Up to 10 questions between waves, 15 mana for each right answer, +5 more from 3 right in a row. It rests once used up and fills again when a wave is cleared. It can be opened during a wave too (the game pauses in Calm mode); the brief said "when paused", and this is simpler for students. "Back to the game" leaves early |
+| **Gem Forge** | Forging a gem or combining two asks 1 question first. Wrong: the fact is shown, **nothing is spent**, and a new tap gives a new question. Combining grade 1 gems asks facts the student already knows well (boxes 3–4); grade 3 and 4 asks their practice edge (boxes 0–2). Problems (bag full, not enough mana, grades don't match) are caught before asking, so nobody answers for nothing |
+| **Wave Gate** | Pressing "Start wave 5 (boss!)" asks 3 questions: 3 right = Power Surge (+25% damage that wave), 2 right = +10%, otherwise the wave starts normally |
+| **Keep Shield** | Once a level, the first time the Keep drops below 25%: 5 questions, each right one heals 5% |
+| **Level Key** | After a win: 10 questions on the level's focus tables only. 8 right (teacher's setting) unlocks the next level. Otherwise it lists the missed facts, and "Try the Level Key again" asks new ones straight away, as often as needed |
+
+- **Calm mode** (default) pauses the game while any question is up. **Challenge mode** keeps it
+  going at half speed. These and the other teacher choices (tables, division, multiple choice,
+  pass mark) are in `src/games/gem-keep/settings.ts`; Phase 5 loads them from the database.
+- **Mana now mostly comes from maths:** starting mana 140, kills pay 1–6 (boss 30), clearing a
+  wave pays 10.
+- The question box reports each answer exactly once (a bug found by the new tests: with no
+  pause after an answer it could count one twice).
+- Preview: a "Teacher settings" strip above the game to try Challenge mode, multiple choice and division.
+
+**Checked against "done when"**
+
+| Done when | Result |
+|---|---|
+| A level can only be won comfortably by engaging with the Mana Well | Engine tests: without the Well, both computer players **lose** level 1; using the Well and getting only 30% right, every gem colour wins with 3 stars (James: level 1 super easy). At 70% right, more than half of all mana comes from the Well. In the browser play-throughs, 79% of mana came from the Well |
+| Wrong answers never cost resources | Tests: a wrong Well answer adds nothing and takes nothing; a wrong Forge answer spends nothing and makes no gem; the Gate and Shield only ever add |
+| Level Key gate works with retries | Test: 7/10 fails, lists the 3 missed facts, retry with new questions, 9/10 unlocks. Browser: passed 8/10 at Chromebook size (keyboard) and iPad size (touch) |
+| Calm mode pausing | Tests: the game is paused while a question is up in Calm mode and slowed in Challenge mode |
+
+Full level played in a real browser with every question answered (every 4th one wrong on purpose),
+at Chromebook size with the keyboard and iPad size by touch: Mana Well every wave, a question for
+every gem, the Wave Gate before the boss, the Level Key at the end. Won with 3 stars both times,
+no page errors. Tests: 7 new engine tests, 8 new game-screen tests; 681 in total, all passing.

@@ -6,17 +6,31 @@
  * Everything works by tapping (no dragging), with a mouse, and with the keyboard: every
  * control is a real button, and the map takes arrow keys and Enter.
  */
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { GEM, KEEP_HEALTH, SPEEDS, TOWER } from '../../../../shared/gem-keep/config';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { GEM, KEEP_HEALTH, MATHS, SPEEDS, TOWER } from '../../../../shared/gem-keep/config';
 import { canBuildOn, isBossWave, towerAt, type Action, type GemPlace, type GameState } from '../../../../shared/gem-keep/engine';
-import { combineCost, COLOURS, shotStats, type Colour, type Gem } from '../../../../shared/gem-keep/gems';
+import { combineCost, combineProblem, COLOURS, shotStats, type Colour, type Gem } from '../../../../shared/gem-keep/gems';
 import type { LevelData } from '../../../../shared/gem-keep/level';
+import type { QuestionContext, SkillPack } from '../../../../shared/maths/skillPack';
+import { TimesTables } from '../../../../shared/maths/skillPacks/timesTables';
 import { GameEngine } from '../engine/GameEngine';
+import { DEFAULT_SETTINGS, type GemKeepSettings } from '../settings';
 import { COLOUR_INFO, COLOUR_NAMES, REFUSALS, TEXT } from '../strings';
 import { GemIcon } from './GemIcon';
+import { MathsRound, type RoundResult } from './MathsRound';
 import '../gem-keep.css';
 
 type Selection = { kind: 'tile'; x: number; y: number } | { kind: 'tower'; x: number; y: number } | { kind: 'gem'; slot: number } | null;
+
+/** The maths question round on screen, if any. */
+type Quiz =
+  | { kind: 'well'; count: number }
+  | { kind: 'forge'; colour: Colour; into: { x: number; y: number } | null }
+  | { kind: 'combine'; from: GemPlace; onto: GemPlace; grade: number }
+  | { kind: 'gate' }
+  | { kind: 'shield' }
+  | { kind: 'key' }
+  | null;
 
 function gemAt(state: GameState, place: GemPlace): Gem | null {
   if ('slot' in place) return state.inventory[place.slot];
@@ -29,8 +43,44 @@ function groundName(state: GameState, x: number, y: number): string {
   return { grass: 'grass', rock: 'rocks', water: 'water', path: 'path', keep: 'the Keep' }[state.ground[y][x]];
 }
 
-export function GemKeepGame({ level, onEngine }: { level: LevelData; onEngine?: (engine: GameEngine) => void }) {
+export function GemKeepGame({
+  level,
+  levelNumber = 1,
+  settings = DEFAULT_SETTINGS,
+  pack: givenPack,
+  onEngine,
+  timeScale,
+}: {
+  level: LevelData;
+  /** Which campaign level this is: decides the times tables asked. */
+  levelNumber?: number;
+  settings?: GemKeepSettings;
+  /** The student's maths records (Phase 5 loads saved ones). */
+  pack?: SkillPack;
+  onEngine?: (engine: GameEngine) => void;
+  /** Tests set 0 to skip the pauses after answers. */
+  timeScale?: number;
+}) {
   const [engine] = useState(() => new GameEngine(level, Math.floor(Math.random() * 1e9)));
+  const [pack] = useState<SkillPack>(() => givenPack ?? new TimesTables());
+  const [quiz, setQuiz] = useState<Quiz>(null);
+  // Every round gets a new number, so a new round never carries over the last one's answers.
+  const [quizNumber, setQuizNumber] = useState(0);
+  const openQuiz = useCallback((next: Quiz) => {
+    setQuizNumber((n) => n + 1);
+    setQuiz(next);
+  }, []);
+  const [keyResult, setKeyResult] = useState<RoundResult | null>(null);
+  const ctx: QuestionContext = useMemo(
+    () => ({
+      level: levelNumber,
+      enabledTables: settings.enabledTables,
+      division: settings.division,
+      missingFactor: settings.missingFactor,
+      multipleChoice: settings.multipleChoice,
+    }),
+    [levelNumber, settings],
+  );
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useSyncExternalStore(
     useCallback((notify: () => void) => engine.on('change', notify), [engine]),
@@ -62,17 +112,30 @@ export function GemKeepGame({ level, onEngine }: { level: LevelData; onEngine?: 
     [engine, say],
   );
 
+  // Combining asks a question first (harder facts for bigger gems). Problems are caught
+  // before asking, so nobody answers a question for nothing.
   const combineInto = useCallback(
     (onto: GemPlace) => {
       if (!combining) return false;
-      if (run({ type: 'combine', from: combining, onto })) {
-        setCombining(null);
-        setSelection('slot' in onto ? { kind: 'gem', slot: onto.slot } : { kind: 'tower', x: onto.x, y: onto.y });
-      }
+      const a = gemAt(engine.state, combining);
+      const b = gemAt(engine.state, onto);
+      if (!a || !b) return false;
+      const problem = combineProblem(a, b);
+      if (problem) say(REFUSALS[problem]);
+      else if (engine.state.mana < combineCost(a.grade)) say(REFUSALS['no-mana']);
+      else openQuiz({ kind: 'combine', from: combining, onto, grade: a.grade });
       return true;
     },
-    [combining, run],
+    [combining, engine, say, openQuiz],
   );
+
+  // Calm mode pauses the game while a question is up; Challenge mode slows it down.
+  useEffect(() => engine.setQuestion(quiz ? settings.mode : null), [engine, quiz, settings.mode]);
+
+  // The Keep Shield: offered once, when the Keep first drops low.
+  useEffect(() => {
+    if (!quiz && state.shield === 'offered' && state.phase === 'wave') openQuiz({ kind: 'shield' });
+  });
 
   // Taps on the map.
   useEffect(
@@ -139,11 +202,130 @@ export function GemKeepGame({ level, onEngine }: { level: LevelData; onEngine?: 
   }
 
   function forge(colour: Colour) {
-    if (!run({ type: 'create', colour })) return;
+    if (!state.inventory.includes(null)) return say(REFUSALS['inventory-full']);
+    if (state.mana < GEM.createCost) return say(REFUSALS['no-mana']);
     // Forging with an empty tower chosen puts the new gem straight in.
-    const newest = state.inventory.reduce((best, g, i) => (g && (best < 0 || g.id > state.inventory[best]!.id) ? i : best), -1);
-    if (selection?.kind === 'tower' && !towerAt(state, selection.x, selection.y)?.gem) {
-      run({ type: 'place', slot: newest, x: selection.x, y: selection.y });
+    const into = selection?.kind === 'tower' && !towerAt(state, selection.x, selection.y)?.gem ? { x: selection.x, y: selection.y } : null;
+    openQuiz({ kind: 'forge', colour, into });
+  }
+
+  function forgeNow(colour: Colour, into: { x: number; y: number } | null) {
+    if (!run({ type: 'create', colour })) return;
+    const newest = engine.state.inventory.reduce(
+      (best, g, i) => (g && (best < 0 || g.id > engine.state.inventory[best]!.id) ? i : best),
+      -1,
+    );
+    if (into) run({ type: 'place', slot: newest, x: into.x, y: into.y });
+  }
+
+  function startWave() {
+    if (isBossWave(level, state.wave + 1)) openQuiz({ kind: 'gate' });
+    else run({ type: 'start-wave' });
+  }
+
+  function restart() {
+    setSelection(null);
+    setCombining(null);
+    setQuiz(null);
+    setKeyResult(null);
+    engine.restart();
+  }
+
+  const closeQuiz = useCallback(() => setQuiz(null), []);
+
+  function quizRound() {
+    if (!quiz) return null;
+    const common = { pack, timeScale };
+    switch (quiz.kind) {
+      case 'well':
+        return (
+          <MathsRound
+            key={quizNumber}
+            {...common}
+            ctx={ctx}
+            count={quiz.count}
+            title={TEXT.well}
+            note={(_, right) => TEXT.wellNote(right)}
+            onMarked={(result) => {
+              const before = engine.state.mana;
+              run({ type: 'well-answer', correct: result.correct });
+              return result.correct ? TEXT.wellReward(engine.state.mana - before, engine.state.wellStreak) : undefined;
+            }}
+            onFinish={closeQuiz}
+            onClose={closeQuiz}
+            closeLabel={TEXT.wellDone}
+          />
+        );
+      case 'forge':
+      case 'combine':
+        return (
+          <MathsRound
+            key={quizNumber}
+            {...common}
+            ctx={quiz.kind === 'combine' && MATHS.combineBoxes[quiz.grade]?.length ? { ...ctx, boxes: MATHS.combineBoxes[quiz.grade] } : ctx}
+            count={1}
+            title={quiz.kind === 'forge' ? TEXT.forgeTitle(quiz.colour) : TEXT.combineTitle}
+            note={() => TEXT.forgeNote}
+            onFinish={({ right }) => {
+              setQuiz(null);
+              if (!right) return say(TEXT.forgeMissed);
+              if (quiz.kind === 'forge') return forgeNow(quiz.colour, quiz.into);
+              if (run({ type: 'combine', from: quiz.from, onto: quiz.onto })) {
+                setCombining(null);
+                const onto = quiz.onto;
+                setSelection('slot' in onto ? { kind: 'gem', slot: onto.slot } : { kind: 'tower', x: onto.x, y: onto.y });
+              }
+            }}
+            onClose={closeQuiz}
+            closeLabel={TEXT.cancel}
+          />
+        );
+      case 'gate':
+        return (
+          <MathsRound
+            key={quizNumber}
+            {...common}
+            ctx={ctx}
+            count={MATHS.gate.questions}
+            title={TEXT.gateTitle}
+            note={TEXT.gateNote}
+            onFinish={({ right }) => {
+              setQuiz(null);
+              if (run({ type: 'start-wave', gateRight: right })) say(TEXT.surge(engine.state.surge));
+            }}
+          />
+        );
+      case 'shield':
+        return (
+          <MathsRound
+            key={quizNumber}
+            {...common}
+            ctx={ctx}
+            count={MATHS.shield.questions}
+            title={TEXT.shieldTitle}
+            note={TEXT.shieldNote}
+            onFinish={({ right }) => {
+              setQuiz(null);
+              const before = engine.state.keep;
+              if (run({ type: 'shield', right })) say(TEXT.shielded(engine.state.keep - before));
+            }}
+          />
+        );
+      case 'key':
+        return (
+          <MathsRound
+            key={quizNumber}
+            {...common}
+            ctx={{ ...ctx, onlyFocus: true }}
+            count={MATHS.key.questions}
+            title={TEXT.keyTitle}
+            note={TEXT.keyNote}
+            onFinish={(result) => {
+              setQuiz(null);
+              setKeyResult(result);
+            }}
+          />
+        );
     }
   }
 
@@ -173,6 +355,16 @@ export function GemKeepGame({ level, onEngine }: { level: LevelData; onEngine?: 
         <div className="gk-stat">
           <span className="gk-stat__label">{TEXT.mana}</span>
           <span className="gk-stat__value gk-mana">◆ {state.mana}</span>
+          <button
+            type="button"
+            className="gk-well"
+            disabled={over || state.wellLeft === 0}
+            aria-label={TEXT.wellLabel(state.wellLeft)}
+            onClick={() => openQuiz({ kind: 'well', count: state.wellLeft })}
+          >
+            <span aria-hidden="true">💧</span> {TEXT.well}{' '}
+            <span className="gk-well__left">{state.wellLeft ? state.wellLeft : TEXT.wellResting}</span>
+          </button>
         </div>
         <div className="gk-stat">
           <span className="gk-stat__value">{TEXT.wave(Math.max(1, state.wave), waves)}</span>
@@ -184,7 +376,7 @@ export function GemKeepGame({ level, onEngine }: { level: LevelData; onEngine?: 
             <button
               type="button"
               className="button button--play gk-start"
-              onClick={() => run({ type: 'start-wave' })}
+              onClick={startWave}
             >
               {isBossWave(level, nextWave) ? TEXT.bossWave(Math.min(nextWave, waves)) : TEXT.nextWave(Math.min(nextWave, waves))}
             </button>
@@ -228,7 +420,15 @@ export function GemKeepGame({ level, onEngine }: { level: LevelData; onEngine?: 
               <strong>{TEXT.paused}</strong> {TEXT.pausedHint}
             </div>
           )}
-          {over && <EndCard state={state} onAgain={() => { setSelection(null); setCombining(null); engine.restart(); }} />}
+          {over && (
+            <EndCard
+              state={state}
+              keyResult={keyResult}
+              passMark={settings.keyPassMark}
+              onKey={() => openQuiz({ kind: 'key' })}
+              onAgain={restart}
+            />
+          )}
           <div className="gk-rotate" aria-hidden="true">
             <span className="gk-rotate__icon">📱↻</span>
             {TEXT.rotate}
@@ -302,6 +502,7 @@ export function GemKeepGame({ level, onEngine }: { level: LevelData; onEngine?: 
           </section>
         </aside>
       </div>
+      {quizRound()}
     </div>
   );
 }
@@ -445,10 +646,23 @@ function GemLine({ gem }: { gem: Gem }) {
   );
 }
 
-function EndCard({ state, onAgain }: { state: GameState; onAgain: () => void }) {
+function EndCard({
+  state,
+  keyResult,
+  passMark,
+  onKey,
+  onAgain,
+}: {
+  state: GameState;
+  keyResult: RoundResult | null;
+  passMark: number;
+  onKey: () => void;
+  onAgain: () => void;
+}) {
   const won = state.phase === 'won';
-  const button = useRef<HTMLButtonElement>(null);
-  useEffect(() => button.current?.focus(), []);
+  const passed = !!keyResult && keyResult.right >= passMark;
+  const first = useRef<HTMLButtonElement>(null);
+  useEffect(() => first.current?.focus(), [keyResult]);
   return (
     <div className="gk-end" role="dialog" aria-modal="false" aria-labelledby="gk-end-title">
       <div className="gk-end__card">
@@ -463,9 +677,37 @@ function EndCard({ state, onAgain }: { state: GameState; onAgain: () => void }) 
           </p>
         )}
         <p>{won ? TEXT.wonBody(Math.round((state.keep / KEEP_HEALTH) * 100)) : TEXT.lostBody}</p>
-        <button ref={button} type="button" className="button button--play" onClick={onAgain}>
-          {won ? TEXT.playAgain : TEXT.tryAgain}
-        </button>
+        {won && !keyResult && <p className="gk-key">{TEXT.keyIntro(passMark)}</p>}
+        {keyResult && (
+          <div className="gk-key" role="status" data-passed={passed || undefined}>
+            <p>{passed ? TEXT.keyPassed(keyResult.right) : TEXT.keyFailed(keyResult.right, passMark)}</p>
+            {!passed && keyResult.missed.length > 0 && (
+              <>
+                <p className="gk-key__label">{TEXT.keyPractise}</p>
+                <ul className="gk-key__missed">
+                  {keyResult.missed.map((fact, i) => (
+                    <li key={i}>{fact}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
+        <div className="gk-end__actions">
+          {won && !passed && (
+            <button ref={first} type="button" className="button button--play" onClick={onKey}>
+              {keyResult ? TEXT.keyAgain : TEXT.keyStart}
+            </button>
+          )}
+          <button
+            ref={won && !passed ? undefined : first}
+            type="button"
+            className={won && !passed ? 'button gk-small' : 'button button--play'}
+            onClick={onAgain}
+          >
+            {won ? TEXT.playAgain : TEXT.tryAgain}
+          </button>
+        </div>
       </div>
     </div>
   );

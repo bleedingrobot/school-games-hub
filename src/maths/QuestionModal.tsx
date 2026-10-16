@@ -15,12 +15,17 @@ import './maths.css';
 export const FEEDBACK_MS = { right: 800, wrong: 2000 };
 const MAX_DIGITS = 3;
 
+/** A marked answer, plus what it earned, e.g. "+15 mana" (shown under "Correct!"). */
+export type MarkedAnswer = AnswerResult & { reward?: string };
+
 export function QuestionModal({
   question,
   title,
   note,
   onSubmit,
   onDone,
+  onClose,
+  closeLabel = 'Close',
   timeScale = 1,
 }: {
   question: Question;
@@ -29,14 +34,17 @@ export function QuestionModal({
   /** A line under the title, e.g. "Correct answers give mana". */
   note?: string;
   /** Marks the answer (the game records it). */
-  onSubmit: (answer: number, ms: number) => AnswerResult;
+  onSubmit: (answer: number, ms: number) => MarkedAnswer;
   /** Called after the feedback has been shown. */
-  onDone: (result: AnswerResult) => void;
+  onDone: (result: MarkedAnswer) => void;
+  /** If given, the student may stop (a button, and Escape) before answering. */
+  onClose?: () => void;
+  closeLabel?: string;
   /** Tests set 0 to skip the feedback pause. */
   timeScale?: number;
 }) {
   const [typed, setTyped] = useState('');
-  const [result, setResult] = useState<AnswerResult | null>(null);
+  const [result, setResult] = useState<MarkedAnswer | null>(null);
   const shownAt = useRef(performance.now());
   const box = useRef<HTMLDivElement>(null);
   const titleId = `question-${question.id}-title`;
@@ -49,11 +57,14 @@ export function QuestionModal({
     box.current?.focus();
   }, [question.id]);
 
+  // Each answer is reported exactly once, however often the parent re-renders.
+  const reportDone = useRef(onDone);
+  reportDone.current = onDone;
   useEffect(() => {
     if (!result) return;
-    const timer = window.setTimeout(() => onDone(result), (result.correct ? FEEDBACK_MS.right : FEEDBACK_MS.wrong) * timeScale);
+    const timer = window.setTimeout(() => reportDone.current(result), (result.correct ? FEEDBACK_MS.right : FEEDBACK_MS.wrong) * timeScale);
     return () => window.clearTimeout(timer);
-  }, [result, onDone, timeScale]);
+  }, [result, timeScale]);
 
   function submit(answer: number) {
     if (result) return;
@@ -65,6 +76,11 @@ export function QuestionModal({
   const enter = () => typed !== '' && submit(Number(typed));
 
   function keys(event: React.KeyboardEvent) {
+    if (event.key === 'Escape' && onClose && !result) {
+      event.preventDefault();
+      onClose();
+      return;
+    }
     if (result || question.choices) return;
     // Enter on a focused button (keyboard users tabbing round the pad) presses that button.
     if (event.key === 'Enter' && event.target instanceof HTMLButtonElement) return;
@@ -109,7 +125,7 @@ export function QuestionModal({
               <span className="question__sparkle" aria-hidden="true">
                 ✦
               </span>{' '}
-              Correct!
+              Correct!{result.reward && <span className="question__reward"> {result.reward}</span>}
             </>
           )}
           {result && !result.correct && <>{result.fact}</>}
@@ -136,6 +152,11 @@ export function QuestionModal({
             </p>
             <NumberPad onDigit={addDigit} onBack={back} onEnter={enter} canEnter={typed !== ''} disabled={!!result} />
           </>
+        )}
+        {onClose && (
+          <button type="button" className="question__close" disabled={!!result} onClick={onClose}>
+            {closeLabel}
+          </button>
         )}
       </div>
     </div>

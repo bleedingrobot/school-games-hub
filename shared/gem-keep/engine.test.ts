@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { autoplay } from './autoplay';
-import { EFFECTS, ENEMIES, GEM, KEEP_HEALTH, MANA, STEP, TOWER } from './config';
+import { EFFECTS, ENEMIES, GEM, KEEP_HEALTH, MANA, MATHS, STEP, TOWER } from './config';
 import { act, enemyHealth, hit, newGame, pickTarget, spawnEnemy, step, type GameState } from './engine';
 import { combined, combineProblem, shotStats, type Gem } from './gems';
 import { checkLevel, type LevelData } from './level';
@@ -287,13 +287,22 @@ describe('waves, winning and losing', () => {
     expect(act(state, { type: 'start-wave' })).toEqual({ ok: false, reason: 'game-over' });
   });
 
-  it('the first level is easy: building towers of any one colour wins with 3 stars', () => {
+  it('the first level is easy with the Mana Well: any colour wins with 3 stars, even getting most questions wrong', () => {
     for (const colours of [['red'], ['blue'], ['green'], ['yellow']] as const) {
-      const state = autoplay(PROTOTYPE_LEVEL, 'towers-only', 1, colours);
+      const state = autoplay(PROTOTYPE_LEVEL, 'towers-only', 1, colours, { accuracy: 0.3 });
       expect(state.phase).toBe('won');
       expect(state.wave).toBe(PROTOTYPE_LEVEL.waves.length);
       expect(state.stars).toBe(3);
     }
+  });
+
+  it('skipping the Mana Well loses: maths is the main source of mana', () => {
+    for (const strategy of ['towers-only', 'sensible'] as const) {
+      const state = autoplay(PROTOTYPE_LEVEL, strategy, 1);
+      expect(state.phase).toBe('lost');
+    }
+    const withMaths = autoplay(PROTOTYPE_LEVEL, 'sensible', 1, undefined, { accuracy: 0.7 });
+    expect(withMaths.stats.wellMana).toBeGreaterThan(withMaths.stats.manaEarned / 2);
   });
 
   it('the same seed and moves always play out the same', () => {
@@ -302,5 +311,82 @@ describe('waves, winning and losing', () => {
     expect(a.step).toBe(b.step);
     expect(a.keep).toBe(b.keep);
     expect(a.mana).toBe(b.mana);
+  });
+});
+
+describe('maths rewards', () => {
+  it('the Mana Well pays for right answers, adds a streak bonus, and never takes mana for wrong ones', () => {
+    const state = newGame(STRAIGHT);
+    const start = state.mana;
+    act(state, { type: 'well-answer', correct: true });
+    act(state, { type: 'well-answer', correct: true });
+    expect(state.mana).toBe(start + 2 * MATHS.well.mana);
+    act(state, { type: 'well-answer', correct: true }); // third in a row: bonus
+    expect(state.mana).toBe(start + 3 * MATHS.well.mana + MATHS.well.streakBonus);
+    const before = state.mana;
+    act(state, { type: 'well-answer', correct: false });
+    expect(state.mana).toBe(before);
+    expect(state.wellStreak).toBe(0);
+    expect(state.stats).toMatchObject({ wellAsked: 4, wellRight: 3 });
+  });
+
+  it('the Mana Well rests after 10 questions until the next wave is cleared', () => {
+    const state = newGame(STRAIGHT);
+    for (let i = 0; i < MATHS.well.questions; i++) expect(act(state, { type: 'well-answer', correct: true }).ok).toBe(true);
+    expect(act(state, { type: 'well-answer', correct: true })).toEqual({ ok: false, reason: 'well-empty' });
+    act(state, { type: 'start-wave' });
+    runSeconds(state, 30);
+    expect(state.phase).toBe('build');
+    expect(state.wellLeft).toBe(MATHS.well.questions);
+  });
+
+  it('the Wave Gate gives a Power Surge on boss waves only', () => {
+    const level: LevelData = { ...STRAIGHT, waves: [{ groups: [{ kind: 'boss', count: 1, gap: 0 }] }, ...STRAIGHT.waves] };
+    const boss = newGame(level);
+    act(boss, { type: 'start-wave', gateRight: 3 });
+    expect(boss.surge).toBe(0.25);
+    const two = newGame(level);
+    act(two, { type: 'start-wave', gateRight: 2 });
+    expect(two.surge).toBe(0.1);
+    const one = newGame(level);
+    act(one, { type: 'start-wave', gateRight: 1 });
+    expect(one.surge).toBe(0);
+    const notBoss = newGame(STRAIGHT);
+    act(notBoss, { type: 'start-wave', gateRight: 3 });
+    expect(notBoss.surge).toBe(0);
+  });
+
+  it('a Power Surge makes shots hit harder', () => {
+    const state = inWave();
+    act(state, { type: 'build', x: 5, y: 4 });
+    act(state, { type: 'create', colour: 'blue' });
+    act(state, { type: 'place', slot: 0, x: 5, y: 4 });
+    state.surge = 0.25;
+    const e = spawnEnemy(state, 'boss', 0, 5);
+    e.health = e.maxHealth = 1e6;
+    runSeconds(state, 0.5);
+    expect(e.maxHealth - e.health).toBeCloseTo(shotStats(gem(1, 'blue'), 1).damage * 1.25);
+  });
+
+  it('the Keep Shield is offered once when the Keep drops low, and heals for each right answer', () => {
+    const state = inWave();
+    state.keep = 30;
+    spawnEnemy(state, 'brute', 0, 15.95);
+    spawnEnemy(state, 'boss', 0, 2);
+    runSeconds(state, 0.2);
+    expect(state.keep).toBe(18);
+    expect(state.shield).toBe('offered');
+    expect(state.events.filter((e) => e.type === 'keep-low')).toHaveLength(1);
+    expect(act(state, { type: 'shield', right: 4 }).ok).toBe(true);
+    expect(state.keep).toBe(18 + 4 * MATHS.shield.heal * KEEP_HEALTH);
+    expect(act(state, { type: 'shield', right: 5 })).toEqual({ ok: false, reason: 'no-shield' });
+  });
+
+  it('the Keep Shield never heals past full health', () => {
+    const state = inWave();
+    state.shield = 'offered';
+    state.keep = 90;
+    act(state, { type: 'shield', right: 5 });
+    expect(state.keep).toBe(KEEP_HEALTH);
   });
 });

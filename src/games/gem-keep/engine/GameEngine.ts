@@ -3,7 +3,7 @@
  * and speed. It lives outside React. The page talks to it through a few methods and the
  * events below, and reads `engine.state` whenever `version` changes.
  */
-import { GRID_COLUMNS, GRID_ROWS, STEP, TILE } from '../../../../shared/gem-keep/config';
+import { GRID_COLUMNS, GRID_ROWS, MATHS, STEP, TILE } from '../../../../shared/gem-keep/config';
 import { act, newGame, step, type Action, type ActResult, type GameEvent, type GameState } from '../../../../shared/gem-keep/engine';
 import type { LevelData } from '../../../../shared/gem-keep/level';
 import { drawFrame, drawGround, HEIGHT, particleColour, WIDTH, type Particle, type View } from '../render/draw';
@@ -30,6 +30,8 @@ export class GameEngine {
   version = 0;
   speed = 1;
   paused = false;
+  /** A maths question is on screen: Calm mode pauses, Challenge mode slows down. */
+  question: 'calm' | 'challenge' | null = null;
   /** What the map highlights (chosen tile, keyboard cursor and so on). */
   view: View = { selectedTile: null, hoverTile: null, cursor: null, glowTowers: [], ghost: false };
   /** Frames drawn in the last second, for the stress test. */
@@ -102,6 +104,11 @@ export class GameEngine {
     this.paused = false;
     this.renderGround();
     this.changed();
+  }
+
+  /** A question opened (in this mode) or closed (null). */
+  setQuestion(mode: 'calm' | 'challenge' | null) {
+    this.question = mode;
   }
 
   setView(view: Partial<View>) {
@@ -234,16 +241,18 @@ export class GameEngine {
     }
     this.framesThisSecond++;
 
-    const running = !this.paused && this.state.phase === 'wave';
+    const running = !this.paused && this.question !== 'calm' && this.state.phase === 'wave';
     if (running) {
-      this.carry += elapsed * this.speed;
+      const speed = this.question === 'challenge' ? this.speed * MATHS.challengeSpeed : this.speed;
+      this.carry += elapsed * speed;
       let steps = 0;
-      while (this.carry >= STEP && steps < MAX_STEPS_PER_FRAME * this.speed) {
+      const most = Math.ceil(MAX_STEPS_PER_FRAME * speed);
+      while (this.carry >= STEP && steps < most) {
         step(this.state);
         this.carry -= STEP;
         steps++;
       }
-      if (steps === MAX_STEPS_PER_FRAME * this.speed) this.carry = 0;
+      if (steps === most) this.carry = 0;
       const important = this.drainEvents();
       // The page's numbers update at most 5 times a second during a wave, or straight away when it matters.
       if (important || now - this.lastChange > 200) {
@@ -253,7 +262,7 @@ export class GameEngine {
     } else {
       this.carry = 0;
     }
-    if (!this.paused) this.moveParticles(elapsed);
+    if (!this.paused && this.question !== 'calm') this.moveParticles(elapsed);
     this.draw();
   }
 

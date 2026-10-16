@@ -24,6 +24,8 @@ export interface QuestionContext {
   multipleChoice?: boolean;
   /** Only facts in these mastery boxes, when there are any (e.g. [3, 4] for confidence builders). */
   boxes?: number[];
+  /** Only the focus tables: no review or stretch (e.g. the Level Key). */
+  onlyFocus?: boolean;
 }
 
 export type Band = 'focus' | 'review' | 'stretch' | 'repeat';
@@ -116,7 +118,7 @@ export function pickFact(
     choice = { key: due.key, band: 'repeat' };
   } else {
     const roll = random();
-    const wanted: Band = roll < MIX.focus ? 'focus' : roll < MIX.focus + MIX.review ? 'review' : 'stretch';
+    const wanted: Band = ctx.onlyFocus || roll < MIX.focus ? 'focus' : roll < MIX.focus + MIX.review ? 'review' : 'stretch';
     // An empty band (e.g. no review at level 1) falls back to the others, focus first.
     const order: (keyof Pools)[] = [wanted as keyof Pools, 'focus', 'review', 'stretch'];
     const band = order.find((b) => pools[b].length > 0)!;

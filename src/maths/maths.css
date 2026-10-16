@@ -101,6 +101,25 @@
   }
 }
 
+.question__reward {
+  color: #5b3cc4;
+}
+
+.question__close {
+  min-height: 44px;
+  padding: 6px 18px;
+  border: 2px solid var(--q-key-edge);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--q-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.question__close:disabled {
+  opacity: 0.5;
+}
+
 .numpad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

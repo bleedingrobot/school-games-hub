@@ -125,6 +125,13 @@ describe('choosing facts', () => {
     expect(counts.stretch / 10000).toBeCloseTo(MIX.stretch, 1);
   });
 
+  it('can ask only the focus tables', () => {
+    const focus = new Set(poolsFor({ level: 3 }).focus);
+    const random = randomFromSeed('only-focus');
+    const memory = newMemory();
+    for (let i = 0; i < 300; i++) expect(focus.has(pickFact({ level: 3, onlyFocus: true }, new Map(), memory, random)!.key)).toBe(true);
+  });
+
   it('asks facts in lower boxes more often', () => {
     const focus = poolsFor({ focusTables: [7], enabledTables: [7] }).focus;
     const stats = new Map(focus.map((k) => [k, box(k, k === 'mul:7x8' ? 0 : TOP_BOX)]));

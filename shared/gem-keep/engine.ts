@@ -8,7 +8,7 @@
  * What happened in a step (shots, hits, kills) is added to `state.events` for the screen to
  * show; the screen empties it.
  */
-import { ENEMIES, GEM, HEALTH_PER_WAVE, KEEP_HEALTH, MANA, STARS, STEP, TOWER, type EnemyKind } from './config';
+import { ENEMIES, GEM, HEALTH_PER_WAVE, KEEP_HEALTH, MANA, MATHS, STARS, STEP, TOWER, type EnemyKind } from './config';
 import { combineCost, combined, combineProblem, shotStats, type Colour, type Gem, type ShotStats } from './gems';
 import { groundOf, pathShape, pointAlong, type Ground, type LevelData, type PathShape, type Tile } from './level';
 
@@ -55,7 +55,10 @@ export type GameEvent =
   | { type: 'hit'; x: number; y: number; colours: Colour[]; crit: boolean; splash: number }
   | { type: 'kill'; x: number; y: number; kind: EnemyKind; mana: number }
   | { type: 'leak'; kind: EnemyKind; damage: number }
-  | { type: 'wave-start'; wave: number }
+  | { type: 'wave-start'; wave: number; surge: number }
+  | { type: 'well'; correct: boolean; mana: number; streak: number }
+  | { type: 'keep-low' }
+  | { type: 'shield'; healed: number }
   | { type: 'wave-clear'; wave: number; mana: number }
   | { type: 'won'; stars: number }
   | { type: 'lost' };
@@ -79,11 +82,28 @@ export interface GameState {
   /** Enemies still to come this wave, soonest first. */
   spawns: { at: number; kind: EnemyKind; path: number }[];
   stars: number;
+  /** Mana Well questions left before the next wave. */
+  wellLeft: number;
+  /** Right answers in a row at the Mana Well. */
+  wellStreak: number;
+  /** Extra damage this wave from the Wave Gate (0.25 = +25%). */
+  surge: number;
+  /** 'ready' until the Keep first drops low; then 'offered' until the student answers; then 'used'. */
+  shield: 'ready' | 'offered' | 'used';
   nextId: number;
   /** The random generator's state (mulberry32). */
   random: number;
   events: GameEvent[];
-  stats: { kills: number; leaked: number; manaEarned: number; manaSpent: number };
+  stats: {
+    kills: number;
+    leaked: number;
+    manaEarned: number;
+    manaSpent: number;
+    /** Mana from the Mana Well. */
+    wellMana: number;
+    wellAsked: number;
+    wellRight: number;
+  };
 }
 
 /** Where a gem is: an inventory slot, or the tower on a tile. */
@@ -97,7 +117,10 @@ export type Action =
   | { type: 'place'; slot: number; x: number; y: number }
   | { type: 'take-out'; x: number; y: number }
   | { type: 'combine'; from: GemPlace; onto: GemPlace }
-  | { type: 'start-wave' };
+  /** `gateRight`: right answers at the Wave Gate (0–3). Only boss waves get the Power Surge. */
+  | { type: 'start-wave'; gateRight?: number }
+  | { type: 'well-answer'; correct: boolean }
+  | { type: 'shield'; right: number };
 
 export type Refusal =
   | 'game-over'
@@ -112,7 +135,9 @@ export type Refusal =
   | 'different-grades'
   | 'max-grade'
   | 'wave-running'
-  | 'no-more-waves';
+  | 'no-more-waves'
+  | 'well-empty'
+  | 'no-shield';
 
 export type ActResult = { ok: true } | { ok: false; reason: Refusal };
 
@@ -133,10 +158,14 @@ export function newGame(level: LevelData, seed = 1): GameState {
     projectiles: [],
     spawns: [],
     stars: 0,
+    wellLeft: MATHS.well.questions,
+    wellStreak: 0,
+    surge: 0,
+    shield: 'ready',
     nextId: 1,
     random: seed >>> 0,
     events: [],
-    stats: { kills: 0, leaked: 0, manaEarned: 0, manaSpent: 0 },
+    stats: { kills: 0, leaked: 0, manaEarned: 0, manaSpent: 0, wellMana: 0, wellAsked: 0, wellRight: 0 },
   };
 }
 
@@ -252,16 +281,44 @@ export function act(state: GameState, action: Action): ActResult {
     case 'start-wave': {
       if (state.phase === 'wave') return refuse('wave-running');
       if (state.wave >= state.level.waves.length) return refuse('no-more-waves');
-      startWave(state);
+      const right = Math.max(0, Math.min(MATHS.gate.questions, Math.floor(action.gateRight ?? 0)));
+      startWave(state, isBossWave(state.level, state.wave + 1) ? MATHS.gate.surge[right] : 0);
+      return OK;
+    }
+    case 'well-answer': {
+      if (state.wellLeft <= 0) return refuse('well-empty');
+      state.wellLeft--;
+      state.stats.wellAsked++;
+      let mana = 0;
+      if (action.correct) {
+        state.wellStreak++;
+        state.stats.wellRight++;
+        mana = MATHS.well.mana + (state.wellStreak >= MATHS.well.streakFrom ? MATHS.well.streakBonus : 0);
+        earn(state, mana);
+        state.stats.wellMana += mana;
+      } else {
+        state.wellStreak = 0;
+      }
+      state.events.push({ type: 'well', correct: action.correct, mana, streak: state.wellStreak });
+      return OK;
+    }
+    case 'shield': {
+      if (state.shield !== 'offered') return refuse('no-shield');
+      const right = Math.max(0, Math.min(MATHS.shield.questions, Math.floor(action.right)));
+      const healed = Math.min(KEEP_HEALTH - state.keep, Math.round(right * MATHS.shield.heal * KEEP_HEALTH));
+      state.keep += healed;
+      state.shield = 'used';
+      state.events.push({ type: 'shield', healed });
       return OK;
     }
   }
 }
 
-function startWave(state: GameState) {
+function startWave(state: GameState, surge: number) {
   const wave = state.level.waves[state.wave];
   state.wave++;
   state.phase = 'wave';
+  state.surge = surge;
   const pathCount = state.paths.length;
   let turn = 0;
   for (const group of wave.groups) {
@@ -274,7 +331,7 @@ function startWave(state: GameState) {
     }
   }
   state.spawns.sort((a, b) => a.at - b.at);
-  state.events.push({ type: 'wave-start', wave: state.wave });
+  state.events.push({ type: 'wave-start', wave: state.wave, surge });
 }
 
 /** Health of this kind of enemy in this wave. */
@@ -380,9 +437,10 @@ export function step(state: GameState) {
   for (const tower of state.towers) {
     tower.cooldown = Math.max(0, tower.cooldown - STEP);
     if (!tower.gem || tower.cooldown > 0) continue;
-    const stats = shotStats(tower.gem, tower.level);
-    const target = pickTarget(state, tower, stats.range);
+    const base = shotStats(tower.gem, tower.level);
+    const target = pickTarget(state, tower, base.range);
     if (!target) continue;
+    const stats = state.surge ? { ...base, damage: base.damage * (1 + state.surge) } : base;
     tower.cooldown = 1 / stats.rate;
     const x = tower.x + 0.5;
     const y = tower.y + 0.5;
@@ -430,10 +488,17 @@ export function step(state: GameState) {
     state.events.push({ type: 'lost' });
     return;
   }
+  // The Keep Shield is offered once, the first time the Keep drops low.
+  if (state.shield === 'ready' && state.keep < MATHS.shield.below * KEEP_HEALTH) {
+    state.shield = 'offered';
+    state.events.push({ type: 'keep-low' });
+  }
   if (state.spawns.length === 0 && state.enemies.length === 0) {
     state.projectiles.length = 0;
     earn(state, MANA.waveClear);
     state.events.push({ type: 'wave-clear', wave: state.wave, mana: MANA.waveClear });
+    state.surge = 0;
+    state.wellLeft = MATHS.well.questions;
     if (state.wave >= state.level.waves.length) {
       const left = state.keep / KEEP_HEALTH;
       state.stars = left >= STARS.three ? 3 : left >= STARS.two ? 2 : 1;

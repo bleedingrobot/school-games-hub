@@ -3,7 +3,7 @@
  * who builds sensibly, and lost for someone who does nothing? It isn't clever, on purpose:
  * a student playing properly should do better than it.
  */
-import { GEM, TOWER } from './config';
+import { GEM, MATHS, TOWER } from './config';
 import { act, canBuildOn, newGame, step, type GameState } from './engine';
 import { combineCost, COLOURS, type Colour } from './gems';
 import { pathTiles, type LevelData, type Tile } from './level';
@@ -81,15 +81,38 @@ export function spendMana(state: GameState, strategy: Strategy, colours: readonl
   return moves;
 }
 
-/** Plays a whole level. The player spends mana before each wave and every 2 seconds during it. */
-export function autoplay(level: LevelData, strategy: Strategy, seed = 1, colours?: readonly Colour[]): GameState {
+/** How the computer player does the maths: undefined = never visits the Mana Well. */
+export interface MathsPlay {
+  /** Share of questions answered right (0–1). */
+  accuracy: number;
+}
+
+/**
+ * Plays a whole level. Before each wave the player uses the Mana Well (if `maths` is given)
+ * and spends mana; during a wave it spends every 2 seconds and takes the Keep Shield.
+ */
+export function autoplay(level: LevelData, strategy: Strategy, seed = 1, colours?: readonly Colour[], maths?: MathsPlay): GameState {
   const state = newGame(level, seed);
+  // Its own generator for right and wrong answers, so the game's randomness is unchanged.
+  let answers = seed * 7919 + 13;
+  const right = () => {
+    answers = (answers * 1103515245 + 12345) % 2147483648;
+    return answers / 2147483648 < (maths?.accuracy ?? 0);
+  };
   while (state.phase === 'build' || state.phase === 'wave') {
     if (state.phase === 'build') {
+      if (maths) while (state.wellLeft > 0) act(state, { type: 'well-answer', correct: right() });
       spendMana(state, strategy, colours);
-      act(state, { type: 'start-wave' });
+      let gateRight = 0;
+      if (maths) for (let i = 0; i < MATHS.gate.questions; i++) if (right()) gateRight++;
+      act(state, { type: 'start-wave', gateRight });
     }
     step(state);
+    if (maths && state.shield === 'offered') {
+      let healed = 0;
+      for (let i = 0; i < MATHS.shield.questions; i++) if (right()) healed++;
+      act(state, { type: 'shield', right: healed });
+    }
     if (state.step % 120 === 0) spendMana(state, strategy, colours);
     state.events.length = 0;
   }

@@ -22,9 +22,10 @@ export const PROTOTYPE_LEVEL: LevelData = {
   paths: [
     [[-1, 2], [3, 2], [3, 7], [8, 7], [8, 2], [12, 2], [12, 6], [14, 6]],
   ],
-  // Level 1 should be super easy and fun (James, 16 Oct 2026): anyone who builds a few
-  // towers wins, and doing nothing at all still loses.
-  startMana: 260,
+  // Level 1 should be super easy and fun (James, 16 Oct 2026): anyone who uses the Mana
+  // Well and builds a few towers wins, even getting most questions wrong. Skipping the
+  // maths altogether doesn't win comfortably.
+  startMana: 140,
   waves: [
     { groups: [{ kind: 'walker', count: 5, gap: 1.6 }] },
     { groups: [{ kind: 'walker', count: 8, gap: 1.3 }] },

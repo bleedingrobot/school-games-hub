@@ -14,12 +14,12 @@ export const TILE = 60;
 
 export const KEEP_HEALTH = 100;
 
-/** Mana. Phase 3 makes the Mana Well the main source; for now it's kills and a trickle. */
+/** Mana. The Mana Well (maths) is meant to be the main source; kills and the trickle are small. */
 export const MANA = {
   /** Used when a level doesn't say. */
   start: 200,
   /** Paid after every wave is cleared. */
-  waveClear: 25,
+  waveClear: 10,
   max: 9999,
 };
 
@@ -73,11 +73,11 @@ export type EnemyKind = 'walker' | 'runner' | 'brute' | 'swarm' | 'boss';
 
 /** health, speed (tiles/s), damage to the Keep, mana for a kill, size (tiles, for drawing and splash). */
 export const ENEMIES: Record<EnemyKind, { health: number; speed: number; damage: number; mana: number; size: number }> = {
-  walker: { health: 30, speed: 1.1, damage: 5, mana: 5, size: 0.32 },
-  runner: { health: 16, speed: 2.1, damage: 4, mana: 3, size: 0.26 },
-  brute: { health: 110, speed: 0.6, damage: 12, mana: 12, size: 0.42 },
+  walker: { health: 30, speed: 1.1, damage: 5, mana: 2, size: 0.32 },
+  runner: { health: 16, speed: 2.1, damage: 4, mana: 2, size: 0.26 },
+  brute: { health: 110, speed: 0.6, damage: 12, mana: 6, size: 0.42 },
   swarm: { health: 9, speed: 1.5, damage: 2, mana: 1, size: 0.18 },
-  boss: { health: 340, speed: 0.5, damage: 30, mana: 60, size: 0.55 },
+  boss: { health: 340, speed: 0.5, damage: 30, mana: 30, size: 0.55 },
 };
 
 /** Enemy health grows by this share every wave after the first (wave 5 = 1 + 4 × share). */
@@ -85,6 +85,24 @@ export const HEALTH_PER_WAVE = 0.15;
 
 /** Stars for winning, by Keep health left. */
 export const STARS = { three: 0.9, two: 0.5 };
+
+/**
+ * The maths in the game. Right answers give; wrong answers never take anything away.
+ */
+export const MATHS = {
+  /** Mana Well: up to this many questions between waves, this much mana each, plus a bonus from 3 right in a row. */
+  well: { questions: 10, mana: 15, streakFrom: 3, streakBonus: 5 },
+  /** Wave Gate before a boss wave: 3 questions. 3 right = Power Surge (+25% damage that wave), 2 right = +10%. */
+  gate: { questions: 3, surge: [0, 0, 0.1, 0.25] as const },
+  /** Keep Shield: once a level, when the Keep drops below this share, 5 quick questions, each right one heals this share. */
+  shield: { below: 0.25, questions: 5, heal: 0.05 },
+  /** Level Key: questions on the level's focus tables, and how many must be right to unlock the next level. */
+  key: { questions: 10, passMark: 8 },
+  /** Gem Forge: combining gems of this grade asks facts from these mastery boxes (none listed = any). */
+  combineBoxes: { 1: [3, 4], 2: [], 3: [0, 1, 2], 4: [0, 1, 2] } as Record<number, number[]>,
+  /** Challenge mode: the game keeps running at this share of its speed while a question is up. */
+  challengeSpeed: 0.5,
+};
 
 /** Speeds the student can pick. */
 export const SPEEDS = [1, 2] as const;
