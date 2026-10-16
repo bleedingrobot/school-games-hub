@@ -31,6 +31,8 @@ export interface GameDefinition {
    * rank badges or the won/lost tables. Leave it out for chess-like games.
    */
   ranked?: boolean;
+  /** True for games with no bots to pick (Gem Keep): the card just says "Play". */
+  noBots?: boolean;
 }
 
 /** Games that count for leaderboards, rank badges and won/lost stats. */

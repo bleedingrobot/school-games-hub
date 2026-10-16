@@ -1,10 +1,14 @@
 /* Gem Keep. The map is a canvas; everything around it is ordinary HTML. */
 
-.gk {
+.gk,
+.gk-campaign {
   --gk-surface: var(--surface, #fff);
   --gk-tint: #eef2f7;
   --gk-line: #cbd5e1;
   --gk-gold: #ffd23f;
+}
+
+.gk {
   /* Room above and below the map: hub top bar, the status row and gaps. */
   --gk-chrome: 230px;
   display: grid;
@@ -610,7 +614,11 @@
   white-space: nowrap;
 }
 .gk-campaign__note {
+  justify-self: start;
   margin: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--gk-surface);
   color: var(--ink-soft);
   font-size: 0.85rem;
 }

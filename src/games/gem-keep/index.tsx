@@ -16,8 +16,8 @@ function GemKeepIcon({ size = 64 }: { size?: number }) {
 }
 
 /**
- * Gem Keep (Stage 11). Not in GAMES yet: until Phase 5 it's only at the hidden address
- * /#/gem-keep (see App.tsx), so it doesn't show on the dashboard, leaderboard or profile.
+ * Gem Keep (Stage 11). On the dashboard for the class trial since 16 Oct 2026: progress is
+ * kept on each device and it earns no points until Phase 5. Never ranked.
  */
 export const gemKeep: GameDefinition = {
   id: 'gem-keep',
@@ -27,4 +27,5 @@ export const gemKeep: GameDefinition = {
   Icon: GemKeepIcon,
   Play: GemKeepPlay,
   ranked: false,
+  noBots: true,
 };

@@ -67,7 +67,7 @@ export const TEXT = {
   locked: (n: number) => `Pass level ${n}'s Level Key to open this`,
   tables: (tables: number[]) => tables.map((t) => `×${t}`).join(' '),
   tablesLabel: (tables: number[]) => `Times tables: ${tables.join(', ')}`,
-  savedHere: 'Progress is saved on this device for now.',
+  savedHere: 'Trial version: your progress is saved on this device, and Gem Keep gives no points yet.',
   backToMap: 'Map',
   backToMapLong: 'Back to the map',
   nextLevel: 'Next level',

@@ -183,3 +183,12 @@ and later levels about 12–18 (about 10–14 at 2× speed), which is longer tha
 worth more), or fewer waves. Both are one-number changes.
 
 The full test suite is 699 tests, all passing.
+
+## Class trial release (16 October 2026)
+
+James asked for Gem Keep on the hub straight away so his class can try it, before Phase 5.
+So it's now on the dashboard as a normal game card (no bot picker: a new `noBots` option on
+`GameDefinition`; the other games' cards are unchanged), at `/#/gem-keep`. For the trial:
+progress is kept on each device (`localStorage`), it gives **no points** and isn't on any
+leaderboard, and maths records last only for the visit. The map says so. No database or
+server changes. Phase 5 adds saving, points, the stars leaderboard and the teacher views.

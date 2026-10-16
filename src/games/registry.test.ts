@@ -3,14 +3,15 @@ import { GAMES, findGame } from './registry';
 import { BOT_LEVELS, isBotLevel, isRanked } from './types';
 
 describe('game registry', () => {
-  it('has chess, checkers, Wormholes & Black Holes and 101', () => {
-    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101']);
+  it('has chess, checkers, Wormholes & Black Holes, 101 and Gem Keep', () => {
+    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep']);
   });
 
   it('keeps Wormholes & Black Holes and 101 off the rankings', () => {
     expect(GAMES.filter(isRanked).map((g) => g.id)).toEqual(['chess', 'checkers']);
     expect(findGame('space')?.ranked).toBe(false);
     expect(findGame('101')?.ranked).toBe(false);
+    expect(findGame('gem-keep')?.ranked).toBe(false);
   });
 
   it('gives every game a unique, URL-safe id', () => {

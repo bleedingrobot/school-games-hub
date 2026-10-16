@@ -28,15 +28,23 @@ export function GameCard({
           <p>{game.tagline}</p>
         </div>
       </div>
-      <BotLevelPicker
-        name={`level-${game.id}`}
-        legend="Bot level"
-        value={level}
-        onChange={onLevelChange}
-      />
-      <Link className="button button--light" to={`/${game.id}?bot=${level}`}>
-        Play {game.name} vs bot
-      </Link>
+      {game.noBots ? (
+        <Link className="button button--light" to={`/${game.id}`}>
+          Play {game.name}
+        </Link>
+      ) : (
+        <>
+          <BotLevelPicker
+            name={`level-${game.id}`}
+            legend="Bot level"
+            value={level}
+            onChange={onLevelChange}
+          />
+          <Link className="button button--light" to={`/${game.id}?bot=${level}`}>
+            Play {game.name} vs bot
+          </Link>
+        </>
+      )}
     </article>
   );
 }
