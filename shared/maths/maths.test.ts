@@ -80,9 +80,13 @@ describe('mastery boxes', () => {
 });
 
 describe('which facts can be asked', () => {
-  it('level 1: focus is ×2, ×5 and ×10, nothing to review, stretch is ×3 and ×4', () => {
+  it('level 1: focus is ×2, ×5 and ×10 up to × 10, nothing to review, stretch is ×3 and ×4', () => {
     const pools = poolsFor({ level: 1 });
-    expect(new Set(pools.focus)).toEqual(factsIn([2, 5, 10]));
+    const upToTen = [...factsIn([2, 5, 10])].filter((k) => parseFactKey(k)!.b <= 10);
+    expect(new Set(pools.focus)).toEqual(new Set(upToTen));
+    expect(pools.focus).toContain('mul:10x10');
+    expect(pools.focus).not.toContain('mul:10x12');
+    expect(pools.focus).not.toContain('mul:5x11');
     expect(pools.review).toEqual([]);
     expect(pools.stretch).toContain('mul:3x7');
     expect(pools.stretch).not.toContain('mul:2x3'); // already a ×2 fact
@@ -94,6 +98,7 @@ describe('which facts can be asked', () => {
     expect(pools.review).toContain('mul:5x7');
     expect(pools.review).not.toContain('mul:3x5'); // a ×3 fact, so it's focus
     expect(pools.stretch).toContain('mul:6x7');
+    expect(pools.focus).toContain('mul:3x12'); // from level 3, tables go to × 12
   });
 
   it("leaves out tables the teacher switched off", () => {
@@ -227,6 +232,7 @@ describe('times-tables questions', () => {
 
   it('only asks facts from enabled tables', () => {
     const allowed = factsIn([2, 3, 4, 5, 10]);
+    for (const q of many({ level: 2 })) expect(parseFactKey(q.factKey)!.b).toBeLessThanOrEqual(10);
     for (const q of many({ level: 3, enabledTables: [2, 3, 4, 5, 10] })) expect(allowed.has(q.factKey)).toBe(true);
   });
 

@@ -7,10 +7,12 @@ export const TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 
 /**
  * The campaign's focus tables: each step adds tables, and the tables from earlier steps
- * become review. Edit freely; levels not listed use the last step.
+ * become review. Edit freely; levels not listed use the last step. `upTo` is the biggest
+ * number any fact uses in that step (default 12): the first levels stop at × 10 so they're
+ * super easy (James, 16 Oct 2026).
  */
-export const CAMPAIGN_STEPS: { levels: number[]; add: number[] }[] = [
-  { levels: [1, 2], add: [2, 5, 10] },
+export const CAMPAIGN_STEPS: { levels: number[]; add: number[]; upTo?: number }[] = [
+  { levels: [1, 2], add: [2, 5, 10], upTo: 10 },
   { levels: [3, 4], add: [3, 4] },
   { levels: [5, 6], add: [6, 8] },
   { levels: [7, 8], add: [7, 9] },

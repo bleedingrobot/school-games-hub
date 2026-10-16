@@ -5,7 +5,7 @@
  * skipped, and a fact answered wrongly comes back 3–6 questions later.
  */
 import { AVOID_RECENT, BOX_WEIGHTS, CAMPAIGN_STEPS, MIX, REPEAT_AFTER, TABLES } from './config';
-import { factsIn } from './facts';
+import { factsIn, parseFactKey } from './facts';
 import type { FactStats } from './leitner';
 
 /** What the game wants from the next question. */
@@ -58,6 +58,7 @@ export function poolsFor(ctx: QuestionContext): Pools {
   let focusTables: number[];
   let reviewTables: number[];
   let stretchTables: number[];
+  let upTo = 12;
   if (ctx.focusTables) {
     focusTables = on(ctx.focusTables);
     reviewTables = on(TABLES.filter((t) => !ctx.focusTables!.includes(t)));
@@ -67,10 +68,12 @@ export function poolsFor(ctx: QuestionContext): Pools {
     focusTables = on(CAMPAIGN_STEPS[step].add);
     reviewTables = on(CAMPAIGN_STEPS.slice(0, step).flatMap((s) => s.add));
     stretchTables = on(CAMPAIGN_STEPS[step + 1]?.add ?? []);
+    upTo = CAMPAIGN_STEPS[step].upTo ?? 12;
   }
-  const focus = factsIn(focusTables);
-  const review = [...factsIn(reviewTables)].filter((k) => !focus.has(k));
-  const stretch = [...factsIn(stretchTables)].filter((k) => !focus.has(k) && !review.includes(k));
+  const small = (key: string) => parseFactKey(key)!.b <= upTo;
+  const focus = new Set([...factsIn(focusTables)].filter(small));
+  const review = [...factsIn(reviewTables)].filter((k) => small(k) && !focus.has(k));
+  const stretch = [...factsIn(stretchTables)].filter((k) => small(k) && !focus.has(k) && !review.includes(k));
   return { focus: [...focus], review, stretch };
 }
 
