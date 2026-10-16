@@ -270,7 +270,5 @@ queue, and page tests for the teacher panels, the stars board and the campaign's
 unit tests and every database test pass (the space and 101 "refuses made-up seeds" tests failed
 once in a full run and pass on their own; they weren't touched).
 
-**To go live** (needs James's yes): apply the migration with `supabase db query --linked -f`,
-deploy the new `gem-keep` function (`--no-verify-jwt`), check it from outside (anon
-`POST /functions/v1/gem-keep` → 401 JSON), then merge `stage-11` to `main`.
+**Live 17 Oct 2026:** migration applied with `db query`, `gem-keep` deployed (`--no-verify-jwt`), checked from outside (function 401 JSON, tables 42501), `stage-11` fast-forwarded to `main`, Pages deploy success.
 
