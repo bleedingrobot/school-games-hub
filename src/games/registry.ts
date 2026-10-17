@@ -11,7 +11,7 @@ import { powerClash } from './power-clash';
  * Power Clash database migration and the save-bot-game function applied first, see
  * docs/POWER-CLASH-PLAN.md). While it is false the game still works at /#/power-clash, but has no card.
  */
-export const POWER_CLASH_ON = false;
+export const POWER_CLASH_ON = true;
 
 /** Every game on the hub. To add a game: make a folder next to chess/, then add it here. */
 export const GAMES: GameDefinition[] = [chess, checkers, space, card101, gemKeep, ...(POWER_CLASH_ON ? [powerClash] : [])];

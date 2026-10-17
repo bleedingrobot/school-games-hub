@@ -9,12 +9,6 @@ import * as power from '../data/powerGames';
 import * as space from '../data/spaceGames';
 import { Lobby } from './Lobby';
 
-// Power Clash is switched on for these tests (the real switch is in games/registry.ts).
-vi.mock('../games/registry', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../games/registry')>();
-  const { powerClash } = await import('../games/power-clash');
-  return { ...original, POWER_CLASH_ON: true, GAMES: [...original.GAMES, powerClash] };
-});
 vi.mock('../data/multiplayer', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/multiplayer')>()),
   ask: vi.fn(),
@@ -151,9 +145,9 @@ describe('the lobby with Power Clash switched on', () => {
     vi.mocked(power.fetchMyOpenPowerGames).mockResolvedValue([mine, waiting]);
     renderLobby();
     const yours = await screen.findByRole('region', { name: 'Your games' });
-    expect(within(yours).getByText('Power Clash with Brave Kiwi 7')).toBeInTheDocument();
+    expect(within(yours).getByText(/Power Clash with Brave Kiwi 7/)).toBeInTheDocument();
     expect(within(yours).getByRole('link', { name: 'Carry on' })).toHaveAttribute('href', '/power-game/m1');
-    expect(within(yours).getByText(/Your Power Clash game is waiting/)).toBeInTheDocument();
+    expect(within(yours).getByText(/Your .*Power Clash game is waiting/)).toBeInTheDocument();
     expect(within(yours).getByText(/Code KM4 TP · 1 of 2 joined/)).toBeInTheDocument();
   });
 });

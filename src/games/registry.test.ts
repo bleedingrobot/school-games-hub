@@ -3,13 +3,13 @@ import { GAMES, POWER_CLASH_ON, findGame } from './registry';
 import { BOT_LEVELS, isBotLevel, isRanked } from './types';
 
 describe('game registry', () => {
-  it('has chess, checkers, Wormholes & Black Holes, 101 and Gem Keep', () => {
-    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep']);
+  it('has chess, checkers, Wormholes & Black Holes, 101, Gem Keep and Power Clash', () => {
+    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash']);
   });
 
-  it('keeps Power Clash off the dashboard until James switches it on', () => {
-    expect(POWER_CLASH_ON).toBe(false);
-    expect(findGame('power-clash')).toBeUndefined();
+  it('shows Power Clash on the dashboard while the switch is on', () => {
+    expect(POWER_CLASH_ON).toBe(true);
+    expect(findGame('power-clash')?.name).toBeDefined();
   });
 
   it('keeps Wormholes & Black Holes and 101 off the rankings', () => {
