@@ -2,7 +2,7 @@
 
 A marble-rolling game for the hub, in the spirit of the 1984 arcade game *Marble Madness*: steer a marble down tilted, blocky, isometric tracks against the clock, without falling off the edge.
 Written 16 October 2026 after searching GitHub for existing versions and reading the code on `main` (Stages 1–10 live, Stage 11 Gem Keep under way).
-**Status: idea saved, not scheduled.** Nothing is built. When it's picked up, James answers the questions in section 11 first, then stage M.1 starts.
+**Status: idea saved, not scheduled.** Nothing is built. Maths added to the plan 18 Oct 2026 (section 7, James picked all six ideas). When it's picked up, James answers the questions in section 12 first, then stage M.1 starts.
 
 ## The short version
 
@@ -10,7 +10,8 @@ Written 16 October 2026 after searching GitHub for existing versions and reading
 - **One rules-and-physics engine in `shared/marble/`**, pure TypeScript, no outside physics library. Same inputs in, same run out, on every device. That lets the server **replay a run to check the time** before saving it, just as it replays chess moves and space-game dice.
 - **Drawn with three.js** (MIT licence), only loaded when someone opens the marble game, so the rest of the site doesn't get slower.
 - **Modes:** solo time trials on 6 courses, race against a classmate's **ghost** (their recorded best run), and 2 players on one Chromebook (the original arcade game was 2-player at once).
-- **Points:** small taking-part points and achievements, like the space game. Per-course "fastest this week" boards are an option for James (section 11).
+- **Points:** small taking-part points and achievements, like the space game. Per-course "fastest this week" boards are an option for James (section 12).
+- **Maths, in a way that fits a fast game:** you answer by rolling into the right tunnel (**answer gates** and **coordinate gates**), and the clock stops for **pit-stop** and **rescue** questions. There are also **number gems** to collect and a **guess your time** star. A right answer helps (a shortcut, a power-up, no fall penalty) and a wrong answer never hurts. It uses Maths Monsters' maths engine, with a teacher switch like space maths (section 7).
 - **Cost:** one server call per finished run. A class playing a lesson a week adds roughly 1,500–3,000 calls a month, against the 500,000 free.
 
 ## 1. What's already on GitHub (searched 16 Oct 2026)
@@ -55,7 +56,7 @@ Six to start, getting harder. Working names, all changeable:
 | 5 | **The Factory** | Timing | Conveyor belts, moving platforms, sweeping arms |
 | 6 | **Sky Run** | Everything | Narrow bridges, falling tiles, wind fans |
 
-Later: a "course of the week", and maybe a level editor for students (section 10).
+Later: a "course of the week", and maybe a level editor for students (section 11).
 
 **Hazard ideas** (all our own, not the arcade characters): bumpers, jump pads, conveyor belts, moving platforms, sweeping arms, trapdoors, tiles that crumble after you roll over them, wind fans, ice, mud, a big slow "bowling ball" that rolls down the track, and one-way gates.
 
@@ -103,16 +104,64 @@ The ball (position, speed, spin for looks), gravity along the slope, rolling gri
 
 Live racing between two devices is left out on purpose: it needs constant updates (expensive on the free plan) and laggy school wifi makes it feel unfair. Ghosts give most of the fun.
 
-## 7. Saving, points and fairness
+## 7. Maths (added 18 October 2026)
+
+James asked for maths in this game, like Mission Control and Maths Monsters, and picked **all six ideas** below.
+
+**The rule is the same as the space game: a right answer helps you, and a wrong answer never hurts you.** It also has to fit a fast game, so a question never pops up while you're rolling at speed. Questions come at calm moments (a checkpoint, a fall, before the run), or you answer one by **steering**.
+
+### 7.1 The six maths moments
+
+| Moment | When | Right answer | Wrong answer (or skip) |
+|---|---|---|---|
+| **Answer gates** | A sign over the track ("7 × 8 = ?") and the track splits into 2 or 3 tunnels marked with answers | The right tunnel's **shortcut door** is open: about 2–3 seconds saved | The longer way round. You don't fall off, you're just a bit slower |
+| **Pit stop** | At a checkpoint. **The clock stops**, and a question card shows (Gem Keep's number pad, no timer, Skip button) | A power-up for the next section, picked by the course designer for what's coming: **Turbo** (a speed burst), **Sticky grip** (for ice), **Bubble shield** (one free fall), or **−2 seconds** | Carry on as normal |
+| **Rescue** | You fall off. While the marble is carried back, **the clock stops** and a question shows | **No time lost** for that fall | The normal fall penalty (about 3 seconds) |
+| **Number gems** | On courses 4–6. A sign at the start says "Collect multiples of 6" (or "pairs that make 100", etc.), and gems with numbers sit along the track | Each right gem: **−1 second** (5 at most a run) | You roll straight through it. Nothing happens, nothing is said |
+| **Guess your time** | Before a run (optional): "How many seconds will this take you?" | Within 10% of your real time: a **star**. It never changes your time | Nothing. Your time shows next to your guess |
+| **Coordinate gates** | Later courses: a letter-and-number grid on the floor and a sign saying "Roll through C4" | The tunnel at C4 is the shortcut, the same as an answer gate | The longer way round |
+
+Notes:
+
+- **Reading time.** A gate's sign appears at least 4 seconds before the split, on a gentle uphill or a mud patch that slows everyone down. There's also a **"Read time" setting**: the game pauses when a sign appears and waits (up to 10 seconds) until you press Go. The clock stops too, so it's fair. The pause is recorded in the run's inputs, so the server's replay sees it.
+- **Not too much.** About 3–6 questions in a run: 1–3 gates, 1 pit stop on longer courses, rescues limited to 1 every 20 seconds (falling again and again doesn't become a quiz), plus gems and the time guess. **Course 1 (Warm-up Hill)** has just one gate on a wide, slow path, as a tutorial.
+- **Rescue questions feel kind but come after a mistake.** They get their own switch (section 7.3), so a teacher can turn just these off if they feel like a telling-off.
+- **Gems aren't recorded** in a student's maths records. Rolling through one by accident isn't a real answer. Gates, pit stops, rescues and coordinate gates are recorded.
+- **Ghosts show only the path.** A classmate racing your ghost never sees your questions or which tunnel was right (each run has its own questions anyway).
+- **Two players on one Chromebook:** questions are asked, but nothing is recorded, as with space pass-and-play.
+
+### 7.2 How it works inside (stays replayable)
+
+- **Gates are part of the course data.** Behind every tunnel there's a **shortcut door**, which is just a hazard that's open or shut. Which tunnel gets the right answer, and therefore which door opens, is decided at the start of the run. The doors never change mid-run, so the physics stays the same everywhere and the server can replay it. You "answer" by rolling into a tunnel: the replay knows which one you went through.
+- **The server picks the questions.** When a run starts, `save-bot-game` hands out the stamped run id **and a list of about 10 questions** for that run. It uses the shared maths engine: the student's own records, the topics the teacher has on, and the student's level. It keeps them on the server (like `space_game_questions`), so the browser can't swap in an easy question. Gates take the next question on the list, and so do pit stops and rescues. The order of the right answer's tunnel comes from the run's seed.
+- **When the run is saved**, the server replays it, checks every typed answer and every tunnel choice against its own question list, and then adds the answers to the student's maths records in one batch (sent twice, counted once). If the records can't be updated, the run is still saved.
+- **Maths off:** gate signs show an **arrow** instead of a sum, and the shortcut is open for everyone. Pit stops, rescues and gems don't appear. That way maths-off runs aren't slower than maths-on runs where every answer is right.
+
+### 7.3 Which maths, and the switches
+
+- **The maths engine Maths Monsters is building** (`shared/maths/skillPacks/` on the `monsters` branch: times tables, adding and taking away, division, place value, fractions, decimals). The teacher's topic switches choose which packs are used. The question picker uses each student's records, so the facts they're still learning come up most.
+- **New question kinds:** "multiples of" and "pairs that make" sets for the gems, and coordinates for coordinate gates. These go in a small new pack.
+- **Teacher switch** on the Teacher page, like space maths: **Off / Students choose / On for everyone**, default *Students choose*. A separate **Rescue questions On/Off**, default On. The server checks the switch at the start of every run.
+- **Student chip** ("Maths: on/off") on the course picker when the teacher lets students choose, remembered on the device. The **Read time** setting sits next to it.
+
+### 7.4 Medals, boards, points
+
+- **Medal times** are set from each course's reference runs: **silver** is reachable with no shortcuts, and **gold** needs most of them (right answers with maths on, the arrow route with maths off).
+- **Fastest-time boards:** maths changes your time, so maths-on and maths-off runs can't share one board. My pick: **two boards per course** ("with maths" and "without"). James decides (section 12, question 6).
+- **No points for right answers** (same as space), so there's nothing to farm. **Achievements** (10 points each): **Gatekeeper** (10 right gates), **Pit crew** (10 right pit stops), **Rescued!** (5 rescues), **Gem collector** (collect every right gem on a course), **Good guesser** (5 time stars), **Map reader** (5 coordinate gates).
+- **Privacy:** others only ever see good news, never a wrong answer. The privacy summary gets a line saying marble runs add to the maths records.
+
+## 8. Saving, points and fairness
 
 Same pattern as the space game, reusing `save-bot-game`:
 
-1. **Start**: the page asks `save-bot-game` for `{game: "marble", start: true, course}` and gets a **stamped run id** (HMAC, 12-hour life, tied to the student), like the space game's seed.
+1. **Start**: the page asks `save-bot-game` for `{game: "marble", start: true, course, maths}` and gets a **stamped run id** (HMAC, 12-hour life, tied to the student), like the space game's seed. With maths on, it also gets the run's **question list** (section 7.2), which the server keeps.
 2. **Play**: entirely in the browser. Nothing is sent while playing.
 3. **Finish**: the page sends the run id, course and recorded inputs. The server:
    - checks the stamp and that this run id hasn't been saved before (unique index),
    - **replays the inputs through `shared/marble`** and works out the real time itself (it never trusts the time the browser says),
    - checks the time isn't shorter than the time since the stamp was given out (stops "fast-forward" cheats),
+   - with maths on, checks every typed answer and tunnel choice against its own question list, and adds them to the student's maths records (section 7.2),
    - saves the run, the time and the inputs (so it can be a ghost).
 4. Replaying a 90-second run is about 5,400 small steps: a few milliseconds of server time.
 
@@ -123,22 +172,25 @@ Same pattern as the space game, reusing `save-bot-game`:
 
 **New database bits** (one migration):
 
-- `marble_runs` table: student, course, time, falls, inputs, run id (unique), created at.
+- `marble_runs` table: student, course, time, falls, inputs, run id (unique), maths on/off, time guess, created at.
+- `marble_run_questions` table (students can't read it): each run's question list, as with `space_game_questions`.
+- `app_settings.marble_maths` (Off / Students choose / On for everyone) and `app_settings.marble_rescue` (On/Off), with teacher-only functions to set them.
 - `marble_bests` view or table: each student's best per course (for ghosts and medals).
 - Row rules: a student reads their own runs plus classmates' **best runs only** (for ghosts); hidden students' runs are never shown. Writes only through the server function.
 - Achievements added through the Stage 7 tables; tests added to `security.test.sql` by hand.
 
-## 8. Testing
+## 9. Testing
 
 - Physics unit tests (slopes, rails, ice, landings, each hazard).
 - Every course's reference run finishes, and its time is stable.
 - Same run gives identical results in Node and WebKit (section 4).
 - Server replay rejects a run whose inputs were edited, one with a faked time, and one saved twice.
+- Maths: a run replays the same with maths on and off apart from the doors; a claimed right answer that's wrong is refused; a question not on the server's list is refused; the teacher's Off switch is obeyed by the server; "Read time" pauses replay the same; gems and 2-player runs add nothing to the records.
 - Browser runs at Chromebook (1366×768) and tablet (768×1024) sizes with keyboard, mouse and touch, using the usual Playwright scripts.
 - A frame-rate check on a throttled CPU, to make sure slow Chromebooks are playable.
 - A private claude.ai preview for James's phone after M.2, like the space game.
 
-## 9. Stages (when picked up)
+## 10. Stages (when picked up)
 
 | Stage | What | Rough size |
 |---|---|---|
@@ -147,21 +199,25 @@ Same pattern as the space game, reusing `save-bot-game`:
 | **M.3** | The 6 courses, hazards, checkpoints, reference runs and medal times | Medium (mostly design and tuning) |
 | **M.4** | Saving: stamp, server replay, migration, points, achievements, best times | Medium |
 | **M.5** | Ghost races and 2-players-one-keyboard | Medium |
-| **M.6** | How to play, accessibility pass, slow-Chromebook check, docs, go live | Small |
+| **M.6** | Maths 1: teacher and student switches, server question list, **answer gates**, **pit stops**, Read time, records. Needs Maths Monsters' maths packs on `main` | Medium |
+| **M.7** | Maths 2: **rescue questions**, **number gems** (new "multiples of" / "pairs that make" pack), **guess your time**, **coordinate gates**, maths achievements, with-maths / without-maths boards | Medium |
+| **M.8** | How to play (including maths), accessibility pass, slow-Chromebook check, privacy summary, docs, go live | Small |
 
 Each stage ends with tests passing and a short results section here, like the other plans.
 
-## 10. Ideas for later
+## 11. Ideas for later
 
 - Student level editor (build a course, share it with the class by code, the teacher approves it first).
 - Course of the week.
 - Marble skins earned with achievements (fits the avatar maker).
 - Tilt controls on tablets.
 
-## 11. Questions for James (before M.1)
+## 12. Questions for James (before M.1)
 
 1. **Name?** Some ideas: *Marble Rush*, *Roll Out!*, *Tumble Run*, *Marble Mayhem*. (Not *Marble Madness*, which is Atari's.)
 2. **Clock**: count up with medals and no game over (my pick for this age), or the arcade-style countdown as an extra "hard mode"?
 3. **Fastest-time boards**: show a per-course "fastest this week" list for the class? It's skill, not luck, so it's fair, but it makes the game `ranked`. My pick: yes, top 10 plus "you", like the other boards, with no rating or rank badge.
 4. **Theme**: plain colourful blocks (my pick, simplest and clearest), or a theme such as space (to match Wormholes & Black Holes) or New Zealand landscapes?
-5. **Where it goes in the queue**: after Gem Keep (Stage 11), and before or after Power Clash?
+5. **Where it goes in the queue**: after Gem Keep (Stage 11), and before or after Power Clash? Its maths stages (M.6–M.7) need Maths Monsters live first, as Dragon Maths does.
+6. **Fastest-time boards with maths**: maths changes your time, so my pick is two boards per course ("with maths" and "without"). Or show boards only when maths is on for everyone, or make maths give power-ups that never change your time (fairer, less exciting).
+7. **Rescue questions**: on by default (my pick), or off by default and the teacher turns them on?
