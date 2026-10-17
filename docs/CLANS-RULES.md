@@ -22,7 +22,7 @@ Start stats. "5 is average, 8 is excellent, 3 is poor" (the original's own note)
 | Minotaur | 2 | 2 | 9 | 0 | 3 | 0 | 15 | 0 | 0 |
 | **Imp** (was Demon) | 5 | 8 | 5 | 4 | 1 | 0 | 12 | 5 | 0 |
 
-The original has 9 races, not 10 as the plan said:  Human, Dwarf, Elf, Half-Elf, Halfling, Orc, Muya, Minotaur and Demon (the plan said "10 races", the data file has 9; **the plan's number was wrong, 9 is right**). The Imp also starts knowing two spells (Fear and Bloodlust).
+The original has 9 races, not 10 as the plan said: Human, Dwarf, Elf, Half-Elf, Halfling, Orc, Muya, Minotaur and Demon. The Imp also starts knowing two spells (Fear and Bloodlust).
 
 Original race gold is a clan's starting purse. We use one shared starting purse instead (section 5) so no race feels cheated.
 
@@ -309,7 +309,7 @@ Boss numbers at 5 and 10 are close to a normal monster of that depth, so the fir
 
 ## 11. Still to do in C.0
 
-- [ ] Licence/art check: Kenney 1-Bit Pack licence re-read (CC0 stated in the plan; confirm at download).
+- [x] Licence check: Kenney 1-Bit Pack page says CC0 (18 Oct 2026). Re-check at download.
 - [ ] Check the spell "Level" meaning against the fight code (sections 4 and 8).
 - [ ] Decide the Imp's starting gold and the clan's starting purse of 200 (section 5).
 - [ ] Hand to James for a look, then stage C.1.
