@@ -2,7 +2,7 @@
 
 A marble-rolling game for the hub, in the spirit of the 1984 arcade game *Marble Madness*: steer a marble down tilted, blocky, isometric tracks against the clock, without falling off the edge.
 Written 16 October 2026 after searching GitHub for existing versions and reading the code on `main` (Stages 1–10 live, Stage 11 Gem Keep under way).
-**Status: idea saved, not scheduled.** Nothing is built. Maths added to the plan 18 Oct 2026 (section 7, James picked all six ideas). When it's picked up, James answers the questions in section 12 first, then stage M.1 starts.
+**Status: idea saved, not scheduled.** Nothing is built. Maths added to the plan 18 Oct 2026 (section 7, James picked all six ideas). Questions 3, 6 and 7 answered 18 Oct; 1, 2, 4 and 5 still open. When it's picked up, James answers the questions in section 12 first, then stage M.1 starts.
 
 ## The short version
 
@@ -141,13 +141,13 @@ Notes:
 
 - **The maths engine Maths Monsters is building** (`shared/maths/skillPacks/` on the `monsters` branch: times tables, adding and taking away, division, place value, fractions, decimals). The teacher's topic switches choose which packs are used. The question picker uses each student's records, so the facts they're still learning come up most.
 - **New question kinds:** "multiples of" and "pairs that make" sets for the gems, and coordinates for coordinate gates. These go in a small new pack.
-- **Teacher switch** on the Teacher page, like space maths: **Off / Students choose / On for everyone**, default *Students choose*. A separate **Rescue questions On/Off**, default On. The server checks the switch at the start of every run.
+- **Teacher switch** on the Teacher page, like space maths: **Off / Students choose / On for everyone**, default *Students choose*. A separate **Rescue questions On/Off**, default **On** (James, 18 Oct). The server checks the switch at the start of every run.
 - **Student chip** ("Maths: on/off") on the course picker when the teacher lets students choose, remembered on the device. The **Read time** setting sits next to it.
 
 ### 7.4 Medals, boards, points
 
 - **Medal times** are set from each course's reference runs: **silver** is reachable with no shortcuts, and **gold** needs most of them (right answers with maths on, the arrow route with maths off).
-- **Fastest-time boards:** maths changes your time, so maths-on and maths-off runs can't share one board. My pick: **two boards per course** ("with maths" and "without"). James decides (section 12, question 6).
+- **Fastest-time boards:** maths changes your time, so maths-on and maths-off runs can't share one board. **Two boards per course** ("with maths" and "without"), as James decided on 18 Oct 2026.
 - **No points for right answers** (same as space), so there's nothing to farm. **Achievements** (10 points each): **Gatekeeper** (10 right gates), **Pit crew** (10 right pit stops), **Rescued!** (5 rescues), **Gem collector** (collect every right gem on a course), **Good guesser** (5 time stars), **Map reader** (5 coordinate gates).
 - **Privacy:** others only ever see good news, never a wrong answer. The privacy summary gets a line saying marble runs add to the maths records.
 
@@ -216,8 +216,8 @@ Each stage ends with tests passing and a short results section here, like the ot
 
 1. **Name?** Some ideas: *Marble Rush*, *Roll Out!*, *Tumble Run*, *Marble Mayhem*. (Not *Marble Madness*, which is Atari's.)
 2. **Clock**: count up with medals and no game over (my pick for this age), or the arcade-style countdown as an extra "hard mode"?
-3. **Fastest-time boards**: show a per-course "fastest this week" list for the class? It's skill, not luck, so it's fair, but it makes the game `ranked`. My pick: yes, top 10 plus "you", like the other boards, with no rating or rank badge.
+3. **Answered 18 Oct: yes** (follows from question 6). **Fastest-time boards**: show a per-course "fastest this week" list for the class? It's skill, not luck, so it's fair, but it makes the game `ranked`. My pick: yes, top 10 plus "you", like the other boards, with no rating or rank badge.
 4. **Theme**: plain colourful blocks (my pick, simplest and clearest), or a theme such as space (to match Wormholes & Black Holes) or New Zealand landscapes?
 5. **Where it goes in the queue**: after Gem Keep (Stage 11), and before or after Power Clash? Its maths stages (M.6–M.7) need Maths Monsters live first, as Dragon Maths does.
-6. **Fastest-time boards with maths**: maths changes your time, so my pick is two boards per course ("with maths" and "without"). Or show boards only when maths is on for everyone, or make maths give power-ups that never change your time (fairer, less exciting).
-7. **Rescue questions**: on by default (my pick), or off by default and the teacher turns them on?
+6. **Answered 18 Oct: yes, two boards per course.** **Fastest-time boards with maths**: maths changes your time, so my pick is two boards per course ("with maths" and "without"). Or show boards only when maths is on for everyone, or make maths give power-ups that never change your time (fairer, less exciting).
+7. **Answered 18 Oct: on by default.** **Rescue questions**: on by default (my pick), or off by default and the teacher turns them on?
