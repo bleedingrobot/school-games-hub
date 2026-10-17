@@ -233,13 +233,31 @@ begin
     raise exception 'That''s a lot of playing today!' using errcode = '54000';
   end if;
 
-  -- A fight is finished once.
+  -- The hero comes first: if two devices race to make the very first save, one of them is told it is out of date
+  -- before anything else is written.
+  new_version := expect + 1;
+  if cur.player is null then
+    begin
+      insert into public.lord_heroes (player, hero, version, season, day, extra)
+      values (lord_commit.player, change -> 'hero', new_version, (change ->> 'season')::integer, change #>> '{hero,day}',
+        coalesce(change -> 'extra', '{}'));
+    exception when unique_violation then
+      return jsonb_build_object('status', 'stale', 'version', 1);
+    end;
+  else
+    update public.lord_heroes h set
+      hero = change -> 'hero', version = new_version, season = (change ->> 'season')::integer,
+      day = change #>> '{hero,day}', extra = coalesce(change -> 'extra', '{}'), saved_at = now()
+    where h.player = lord_commit.player;
+  end if;
+
+  -- A fight is finished once. (A refusal below raises, which undoes everything above, hero included.)
   if jsonb_typeof(closing) = 'object' then
     update public.lord_fights f set
       status = closing ->> 'status', actions = closing -> 'actions', result = closing -> 'result', finished_at = now()
     where f.id = (closing ->> 'id')::uuid and f.player = lord_commit.player and f.status = 'open';
     if not found then
-      return jsonb_build_object('status', 'no-fight', 'version', coalesce(cur.version, 0));
+      raise exception 'no-fight' using errcode = 'P0001';
     end if;
   end if;
   -- Only one fight is open at a time.
@@ -249,24 +267,16 @@ begin
       values ((fight ->> 'id')::uuid, lord_commit.player, fight ->> 'kind', fight #>> '{start,monster,id}',
         (fight ->> 'seed')::bigint, fight -> 'start', fight -> 'info');
     exception when unique_violation then
-      -- (the failed insert is undone; so is the fight closed above, because this whole call is refused)
       raise exception 'open-fight' using errcode = 'P0001';
     end;
   end if;
 
-  new_version := expect + 1;
-  insert into public.lord_heroes as h (player, hero, version, season, day, extra)
-  values (lord_commit.player, change -> 'hero', new_version, (change ->> 'season')::integer, change #>> '{hero,day}',
-    coalesce(change -> 'extra', '{}'))
-  on conflict on constraint lord_heroes_pkey do update set
-    hero = excluded.hero, version = excluded.version, season = excluded.season, day = excluded.day,
-    extra = excluded.extra, saved_at = now();
   insert into public.lord_events (player, request_id, action, version, summary)
   values (lord_commit.player, req, change #>> '{event,action}', new_version, coalesce(change #> '{event,summary}', '{}'));
   return jsonb_build_object('status', 'saved', 'version', new_version);
 exception when raise_exception then
-  if sqlerrm = 'open-fight' then
-    return jsonb_build_object('status', 'open-fight', 'version', coalesce(cur.version, 0));
+  if sqlerrm in ('open-fight', 'no-fight') then
+    return jsonb_build_object('status', sqlerrm, 'version', coalesce(cur.version, 0));
   end if;
   raise;
 end;
