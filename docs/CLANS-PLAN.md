@@ -3,7 +3,7 @@
 A daily-turns fantasy game for the hub, inspired by the 1997 BBS door game *The Clans* by Allen Ussher. You lead a small clan of four adventurers: send them into the mines to fight monsters, train and equip them, build an empire of land, barracks and troops, and work with the whole class to grow your village. **Maths is the tool that makes the clan stronger**: working out the shop's bill with tax, spending training points, sharing out land and troops, counting damage, cracking a quest puzzle.
 
 Written 18 October 2026 for James, after reading the game's real source code and manuals (section 1) and the hub's other plans.
-**Status: ANSWERED 18 Oct 2026 (section 13), not started.** Nothing is built. Dragon Maths goes first; this starts after it, since they share the engine and maths packs (section 2).
+**Status: ANSWERED 18 Oct 2026 (section 13). Stage C.0 started 18 Oct 2026: first draft of the rule sheet is in [CLANS-RULES.md](CLANS-RULES.md), on the `clans` branch.** No code yet. Dragon Maths goes first; this starts after it, since they share the engine and maths packs (section 2).
 
 ## The short version
 
