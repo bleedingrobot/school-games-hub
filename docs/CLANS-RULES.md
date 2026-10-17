@@ -111,12 +111,12 @@ Armour runs Rags (+1 armour, 50) to Hero's Armor (+4, 2250); shields run Wooden 
 |---|---|---|---|
 | Stat range | 0-100 | **0-60** | A finished clan in a school term |
 | Character level cap | 100 | **20** | Same |
-| Training points a level | 10-13 | **12** (flat) | Simple sums, plan section 7 |
+| Training points a level | 10-13 | **12** (flat); stats cost 3 each (armour 5, charisma 6) | Simple sums, plan section 7. Costs tuned in C.1 |
 | Prices and gold | Sword about 650 | **÷10**, so about 65 | Numbers kids can work with. Three-digit bands used on purpose |
 | Starting gold | Race + class | **One clan purse: 200** | Same for all |
 | Mine fights a day | Fixed by the sysop | **8** (answered) | |
 | Fight length | Up to 50 rounds | **3-8 rounds** | |
-| Enemies in a fight | Varies | **2-4** | |
+| Enemies in a fight | Varies | **2-3 before depth 3, then 3-4** | Tuned in C.1 |
 | Followers a fight | 4-13 | **4-13, kept** | Fine for division questions |
 | Church to wake | `(level+1) × 300` | **`(level+1) × 30`** | ÷10 |
 | Resurrect | `(level+1) × 750` | **Not needed** (knocked out, never dead) | Plan section 5 |
@@ -310,6 +310,6 @@ Boss numbers at 5 and 10 are close to a normal monster of that depth, so the fir
 ## 11. Still to do in C.0
 
 - [x] Licence check: Kenney 1-Bit Pack page says CC0 (18 Oct 2026). Re-check at download.
-- [ ] Check the spell "Level" meaning against the fight code (sections 4 and 8).
+- [x] Spell "Level" checked against the original's fight code: it makes tie-up and debuff spells harder to shrug off (the engine uses the original's comparison). Level up and damage use the caster's level and wisdom instead.
 - [ ] Decide the Imp's starting gold and the clan's starting purse of 200 (section 5).
 - [ ] Hand to James for a look, then stage C.1.

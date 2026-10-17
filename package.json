@@ -20,6 +20,7 @@
     "space:sim": "node scripts/space-sim.mjs",
     "space:preview": "vite build --config vite.preview.config.ts",
     "101:sim": "node scripts/101-sim.mjs",
+    "clans:sim": "node scripts/clans-sim.mjs",
     "101:preview": "vite build --config vite.101-preview.config.ts",
     "gem-keep:preview": "vite build --config vite.gem-keep-preview.config.ts"
   },

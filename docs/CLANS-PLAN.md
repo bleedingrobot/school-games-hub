@@ -3,7 +3,7 @@
 A daily-turns fantasy game for the hub, inspired by the 1997 BBS door game *The Clans* by Allen Ussher. You lead a small clan of four adventurers: send them into the mines to fight monsters, train and equip them, build an empire of land, barracks and troops, and work with the whole class to grow your village. **Maths is the tool that makes the clan stronger**: working out the shop's bill with tax, spending training points, sharing out land and troops, counting damage, cracking a quest puzzle.
 
 Written 18 October 2026 for James, after reading the game's real source code and manuals (section 1) and the hub's other plans.
-**Status: ANSWERED 18 Oct 2026 (section 13). Stage C.0 started 18 Oct 2026: first draft of the rule sheet is in [CLANS-RULES.md](CLANS-RULES.md), on the `clans` branch.** No code yet. Dragon Maths goes first; this starts after it, since they share the engine and maths packs (section 2).
+**Status: ANSWERED 18 Oct 2026 (section 13). Stage C.0 started 18 Oct 2026: first draft of the rule sheet is in [CLANS-RULES.md](CLANS-RULES.md), on the `clans` branch.** Stage C.1 (engine) first pass done 18 Oct 2026: see "Stage C.1 results" at the bottom. Dragon Maths goes first; this starts after it, since they share the engine and maths packs (section 2).
 
 ## The short version
 
@@ -219,3 +219,30 @@ Each stage ends with tests passing and a results section here, and stops for Jam
 
 - Game structure, rules and numbers adapted from *The Clans* by Allen Ussher (1997), open sourced under GPL-2 and now kept up by the Synchronet BBS project; no code or text copied.
 - Monster and item pictures from Kenney (CC0), if used.
+
+## Stage C.1 results (18 Oct 2026, first pass)
+
+Built in `shared/clans/` (list in `shared/README.md`): data, spells, characters, fights, a bot and a simulator (`npm run clans:sim`). 30 new tests, all passing, typecheck clean. **No screens, saving or maths questions yet** (those are C.2 onwards). Branch `clans`.
+
+**What works:** rolling a member (race + class + small roll, leader bonus), levels and training points, training costs that fall with the Training Hall, the Church bill, shop prices with tax, "examine" cost. Fights: agility-first turns (hurt fighters slow down), hit and damage as the original, experience per hit, gold per kill, followers on a win, 3-8 rounds, guard, run, heal / damage / buff / debuff / tie-up spells, Battle Cry (a right answer gives +25% damage; the engine just takes "earned or not", C.2 decides that). A fight is plain JSON, replays exactly from its seed, and survives being saved halfway.
+
+**What I changed from the first draft numbers** (all in `config.ts`):
+- XP to reach a level: 30 for level 2, then 10 more each level (was 60 + 25; far too slow: level 11 after 8 weeks).
+- Training costs per +1: agility, dexterity, strength, wisdom 3, armour 5, charisma 6; HP and SP 2 points each (+4 HP, +3 SP). The first draft's costs left clans far behind the monsters from about level 8.
+- 3-4 enemies a fight from depth 3 (2-3 before that), so fights last 3-4 rounds, not 2.
+- Not in the plan: survivors recover half their missing HP and SP after each fight (`betweenFightHeal`), and everyone is healed overnight.
+
+**What the simulator says** (bot clan, 70% of Battle Cries right, depth = average level - 1):
+
+| | Mixed clan (fighter, healer, wizard, knight) | All fighters |
+|---|---|---|
+| Win rate at "just right" depth | 96% | 85% |
+| Average level, day 14 / 28 / 42 | 9 / 15 / 17 | 9 / 15 / 17 |
+| Reaches level 20 in 60 days | no (about 17) | no (about 18) |
+
+- **Too easy early on:** days 1-14 are 100% wins at "just right". A real player pushes deeper, so that is partly the bot, but win rate is still 93% at +1 depth and 81% at +5 (mixed) / 62% (fighters). I'd move the "too easy / just right / too hard" hints later, once real depth choices are seen.
+- **Slow at the end:** levels 16-20 are a slog (monsters there have Strength 40-50 and armour 7-9 and our stat cap is 60). Target was level 20 in 6-8 weeks; right now no clan gets there in 60 days. Probably fix by easing late XP or monster armour; not guessed yet.
+- **Healers matter a lot:** the all-fighters clan runs out of gold paying the Church from about day 30. Needs a look: either cheaper wake-ups, or a free daily wake-up per clan.
+- **Gold piles up in the middle** (8,000 by day 21 with nothing to buy), which is the gap the empire (C.4) and the village chest (C.6) are meant to fill.
+
+**Not done yet in C.1:** helper spells (Call Spirit Helper, Send Spirits Away, Ghost Warrior, Divine Warrior; marked `notYet`, so Necromancer and Knight are weaker than they should be), scrolls and books, and toughening the first two bosses (they are close to ordinary monsters). Race gold is dropped: all clans start with 200.

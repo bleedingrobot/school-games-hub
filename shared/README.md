@@ -20,3 +20,10 @@ The `save-bot-game` server function runs exactly this code before saving a resul
   `bot.ts` has the bots (they get only their own view), `solo.ts` replays a bot game from
   its seed, and `sim.ts` plays thousands of games (`npm run 101:sim`). See `docs/101-PLAN.md`
   and `docs/101-RULES.md`.
+- `clans/`: Clan Quest (stage C.1). `gamedata.ts` has the races, classes, items and monsters
+  (The Clans' numbers, our names), `spells.ts` the spells, `config.ts` every tuning number.
+  `character.ts` rolls members and handles levels, training, the Church and the shop.
+  `fight.ts` is a mine fight as a pure state machine (`newFight` from a seed, `playRound`
+  with one order per member; plain JSON, so it can be saved and replayed). `bot.ts` plays a
+  sensible clan, and `sim.ts` plays whole months (`npm run clans:sim`). See `docs/CLANS-PLAN.md`
+  and `docs/CLANS-RULES.md`.
