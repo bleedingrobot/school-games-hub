@@ -15,13 +15,28 @@ export interface Question {
   /** The mastery record it counts towards, e.g. "mul:7x8". */
   factKey: string;
   kind: string;
-  /** What's on screen, left to right, with '?' for the blank: ['7', '×', '8', '=', '?']. */
+  /**
+   * What's on screen, left to right, with '?' for the blank: ['7', '×', '8', '=', '?'].
+   * A part like '3/4' or '?/8' is drawn as a fraction (the '?' is the blank). Other parts can
+   * be words ('Round', 'to the nearest 10').
+   */
   parts: string[];
   /** For screen readers: "7 times 8 equals what?" */
   spoken: string;
   answer: number;
-  /** Multiple-choice mode only: the choices, in the order to show them. */
+  /**
+   * Multiple-choice mode: the choices, in the order to show them. Always set when
+   * `choiceLabels` is (a question that can only be answered by picking).
+   */
   choices?: number[];
+  /** What each choice shows, when it isn't the number itself (e.g. '2/3' for the choice 0). */
+  choiceLabels?: string[];
+  /** 'decimal' adds a point key to the number pad (0.8, 4.15). Default whole numbers. */
+  input?: 'whole' | 'decimal';
+  /** Longest answer that can be typed, in characters. Default 3. */
+  maxLength?: number;
+  /** The numbers the question was made from, so the server can make it again and check it. */
+  params?: number[];
   band: Band;
 }
 

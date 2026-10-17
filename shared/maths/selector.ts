@@ -109,7 +109,20 @@ export function pickFact(
   memory: SessionMemory,
   random: () => number,
 ): { key: string; band: Band } | null {
-  const pools = poolsFor(ctx);
+  return pickFromPools(poolsFor(ctx), ctx, stats, memory, random);
+}
+
+/**
+ * The same picking rules over any pools of keys (the other skill packs build their own
+ * pools from difficulty bands). Returns null when every pool is empty.
+ */
+export function pickFromPools(
+  pools: Pools,
+  ctx: Pick<QuestionContext, 'boxes' | 'onlyFocus'>,
+  stats: Map<string, FactStats>,
+  memory: SessionMemory,
+  random: () => number,
+): { key: string; band: Band } | null {
   const allowed = new Set([...pools.focus, ...pools.review, ...pools.stretch]);
   if (allowed.size === 0) return null;
   memory.asked++;
