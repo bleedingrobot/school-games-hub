@@ -2,7 +2,7 @@
 
 *Times-table questions in Wormholes & Black Holes, with an on/off switch. Written 17 October 2026 for James.*
 
-**Status: approved by James on 17 October 2026: "go with your suggestions" (every answer in section 9 is the suggestion). M.1 and M.2 done (section 10). Change from the plan: the Mission Boost charges every 5 turns, not 3 (section 10).**
+**Status: approved by James on 17 October 2026: "go with your suggestions" (every answer in section 9 is the suggestion). M.1, M.2 and M.3 done (section 10). Change from the plan: the Mission Boost charges every 5 turns, not 3 (section 10).**
 
 ## 1. The idea in one paragraph
 
@@ -109,5 +109,20 @@ Every board showed the same pattern: about +3 minutes for 4 rockets with the boo
 
 So maths matters, but luck still matters more: a student who gets everything wrong still wins about 1 game in 5 of 4-rocket games. Wrong answers never move you back; the gap comes from everyone else's right answers.
 
-Next: M.3 (playing bots and pass-and-play with maths on, saving the answers).
+
+
+**M.3 Playing bots and pass-and-play (17 Oct 2026).** In the game screen (not live: the teacher's switch is M.5, and until then only a local development build can turn maths on, with `?maths=choose` or `?maths=on`; the stand-alone phone preview has it on):
+
+- **Settings:** a "Mission Control maths" On/Off chip (when the teacher lets students choose, remembered on the device) or a line saying maths is on (when it's on for everyone). Nothing shows when it's off.
+- **The question card** is the one from Gem Keep, with the title "Wormhole boost", "Black hole escape" or "Mission Boost" and a line saying what a right answer does. No timer against bots. Right gets a sparkle and a pause; wrong shows the whole fact for 2 seconds and nothing else happens to you.
+- **Which facts:** from the student's own records (the same ones Gem Keep uses), at the step they're ready for: a new student gets ×2, ×5 and ×10, and moves up a step when 70% of that step's facts are secure (`readyLevel`). The teacher's Gem Keep settings (tables on, division, missing-number, multiple choice) apply here too.
+- **Mission Boost button** with "Charging: turn 3 of 5" and "Ready!" under the dice. Keyboard: B.
+- **Log lines and animations** for every case. A wrong answer at a wormhole reads as a normal wormhole ride, with nothing said about the answer.
+- **Saving:** the game's report now carries each question (as it was shown), the number typed, and the time. The server replays the game and checks that every right/wrong choice matches the typed answer, and that no answer is missing or extra, before saving the game. It then adds the checked answers to the times-table records (one batch per game, so a game sent twice counts once). If the records can't be updated the game is still saved. Wormhole achievements count rides made with maths on too.
+- **Pass-and-play:** questions are asked from a fresh set each game; nothing is recorded or saved.
+- **Classmates games** still refuse maths until M.4.
+
+**Checked in a real browser** against the local copy, signed in as a test student, playing whole saved games on two boards with maths on: the games saved with maths on and points earned, and every answer given reached the student's records (3 answers, 2 right, in the longer game). The log showed boosts, powered-up wormholes and a black hole beaten. 5 new game-screen tests, 3 new server tests, tests for the answer checker and the ready-level helper.
+
+Next: M.4 (maths in games with classmates).
 

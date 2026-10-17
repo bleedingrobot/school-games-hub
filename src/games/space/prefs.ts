@@ -20,6 +20,8 @@ export interface SpacePrefs {
   rollAgainOnSix: boolean;
   cosmicEvents: boolean;
   speed: Speed;
+  /** Mission Control maths, when the teacher lets students choose. */
+  maths: boolean;
   bots: 1 | 2 | 3;
   /** Against bots, or pass-and-play (people taking turns on this device). */
   who: 'bots' | 'pass';
@@ -41,6 +43,7 @@ export const DEFAULT_PREFS: SpacePrefs = {
   rollAgainOnSix: DEFAULT_SETTINGS.rollAgainOnSix,
   cosmicEvents: DESIGNED_BOARDS.nebula.cosmicEvents,
   speed: 'normal',
+  maths: true,
   bots: 3,
   who: 'bots',
   players: 2,
@@ -70,6 +73,7 @@ export function loadPrefs(): SpacePrefs {
     rollAgainOnSix: typeof saved.rollAgainOnSix === 'boolean' ? saved.rollAgainOnSix : d.rollAgainOnSix,
     cosmicEvents: typeof saved.cosmicEvents === 'boolean' ? saved.cosmicEvents : d.cosmicEvents,
     speed: pickOne(saved.speed, ['relaxed', 'normal', 'zippy'] as const, d.speed),
+    maths: typeof saved.maths === 'boolean' ? saved.maths : d.maths,
     bots: pickOne(saved.bots, [1, 2, 3] as const, d.bots),
     who: pickOne(saved.who, ['bots', 'pass'] as const, d.who),
     players: pickOne(saved.players, [2, 3, 4] as const, d.players),
@@ -109,8 +113,16 @@ export function saveLessMotion(on: boolean) {
 
 export const todaysGalaxy = () => galaxyOfTheDay(new Date());
 
+/**
+ * What the teacher allows (docs/SPACE-MATHS-PLAN.md section 3): 'off' (no maths), 'choose' (a
+ * chip in settings) or 'on' (always). Whether a game has maths is this plus the student's chip.
+ */
+export type MathsMode = 'off' | 'choose' | 'on';
+
+export const mathsOn = (mode: MathsMode, prefs: SpacePrefs) => mode === 'on' || (mode === 'choose' && prefs.maths);
+
 /** The board and rules for a game from these choices, or a problem to show. */
-export function setupFrom(prefs: SpacePrefs): { board: BoardChoice; settings: Settings } | { problem: string } {
+export function setupFrom(prefs: SpacePrefs, mathsOn = false): { board: BoardChoice; settings: Settings } | { problem: string } {
   let board: BoardChoice;
   if (prefs.board === 'galaxy') {
     const code = parseGalaxyCode(prefs.galaxy);
@@ -127,6 +139,7 @@ export function setupFrom(prefs: SpacePrefs): { board: BoardChoice; settings: Se
       finish: prefs.finish,
       rollAgainOnSix: prefs.rollAgainOnSix,
       cosmicEvents: prefs.mode === 'cosmic' && prefs.cosmicEvents,
+      maths: mathsOn,
     },
   };
 }

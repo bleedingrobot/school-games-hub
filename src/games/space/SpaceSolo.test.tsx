@@ -3,9 +3,18 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { judgeSpaceGame, type SpaceGameReport } from '../../../shared/space/save';
 import { SoundProvider } from '../../sound';
-import { SpaceSolo, type SpaceSaving } from './SpaceSolo';
+import { SpaceSolo, type SpaceMaths, type SpaceSaving } from './SpaceSolo';
 
-function renderGame(saving?: SpaceSaving) {
+const ALL = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const maths = (mode: SpaceMaths['mode']): SpaceMaths => ({ mode, enabledTables: ALL, division: false, multipleChoice: false, facts: [] });
+
+function solve(spoken: string): number {
+  const [a, op, b, , c] = spoken.replace('?', '').replace('times', '×').replace('equals', '=').split(' ');
+  if (c === 'what') return op === '×' ? Number(a) * Number(b) : Number(a) / Number(b);
+  return a === 'what' ? Number(c) / Number(b) : Number(c) / Number(a);
+}
+
+function renderGame(saving?: SpaceSaving, mathsConfig?: SpaceMaths) {
   const onLevelChange = vi.fn();
   const view = render(
     <SoundProvider>
@@ -14,6 +23,7 @@ function renderGame(saving?: SpaceSaving) {
         level="easy"
         onLevelChange={onLevelChange}
         saving={saving}
+        maths={mathsConfig}
         timeScale={0}
       />
     </SoundProvider>,
@@ -251,3 +261,89 @@ describe('Wormholes & Black Holes against bots', () => {
     );
   }, 60_000);
 });
+
+describe('Mission Control maths on the game screen', () => {
+  /** Plays to the end, answering every maths question (right, wrong, right, wrong…) and taking each Mission Boost. */
+  async function playWithMaths(user: ReturnType<typeof userEvent.setup>) {
+    let asked = 0;
+    for (let guard = 0; guard < 4000; guard++) {
+      if (screen.queryByRole('dialog', { name: /Wormhole boost|Black hole escape|Mission Boost/ }) === null && screen.queryByRole('dialog')) break;
+      const fact = screen.queryByLabelText(/equals/);
+      if (fact) {
+        const answer = solve(fact.getAttribute('aria-label')!);
+        await user.keyboard(`${asked % 2 === 0 ? answer : answer + 1}{Enter}`);
+        asked++;
+        await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 4000 });
+        continue;
+      }
+      const boost = screen.queryByRole('button', { name: /Mission Boost/ });
+      const roll = screen.queryByRole('button', { name: /^🎲 Roll/ });
+      const choice = screen.queryByRole('group', { name: /gate|card|pockets|die|aim/i });
+      if (boost && !boost.hasAttribute('disabled')) await user.click(boost);
+      else if (choice) await user.click(within(choice).getAllByRole('button')[0]);
+      else if (roll && !roll.hasAttribute('disabled')) await user.click(roll);
+      else await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+    return asked;
+  }
+
+  it('shows the maths switch only when the teacher lets students choose', () => {
+    const { view } = renderGame(undefined, maths('choose'));
+    expect(screen.getByRole('group', { name: 'Mission Control maths' })).toBeInTheDocument();
+    view.unmount();
+    renderGame(undefined, maths('off'));
+    expect(screen.queryByText('Mission Control maths')).not.toBeInTheDocument();
+  });
+
+  it('says maths is on (with no switch) when the teacher turns it on for everyone', () => {
+    renderGame(undefined, maths('on'));
+    expect(screen.queryByRole('group', { name: 'Mission Control maths' })).not.toBeInTheDocument();
+    expect(screen.getByText(/Mission Control maths is on/)).toBeInTheDocument();
+  });
+
+  it('plays with maths off: no questions and no boost button', async () => {
+    const user = userEvent.setup();
+    localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', bots: 1, maths: false }));
+    renderGame(undefined, maths('choose'));
+    await user.click(screen.getByRole('button', { name: /Launch/ }));
+    await screen.findByRole('button', { name: /^🎲 Roll/ });
+    expect(screen.queryByRole('button', { name: /Mission Boost/ })).not.toBeInTheDocument();
+    localStorage.clear();
+  });
+
+  it('asks questions, applies the answers, and saves them with the game so the server can check each one', async () => {
+    const user = userEvent.setup();
+    const { saving, saved } = fakeSaving();
+    localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', bots: 1, maths: true }));
+    renderGame(saving, maths('choose'));
+    await user.click(screen.getByRole('button', { name: /Launch/ }));
+    const asked = await playWithMaths(user);
+    await waitFor(() => expect(saved).toHaveLength(1), { timeout: 5000 });
+    expect(asked).toBeGreaterThan(0);
+    const report = saved[0];
+    expect(report.settings.maths).toBe(true);
+    expect(report.answers).toHaveLength(asked);
+    expect(report.answers![0]).toMatchObject({ given: expect.any(Number), parts: expect.any(Array) });
+    // The server's own check accepts every answer the screen sent (the seed can't be checked here, so
+    // judge the game directly).
+    const judged = judgeSpaceGame(report);
+    expect(judged).toMatchObject({ ok: true });
+    if (judged.ok) expect(judged.game.answers).toHaveLength(asked);
+    localStorage.clear();
+  }, 60_000);
+
+  it('pass-and-play asks questions but saves and records nothing', async () => {
+    const user = userEvent.setup();
+    const { saving, saved } = fakeSaving();
+    localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', who: 'pass', players: 2, maths: true }));
+    const facts = [{ key: 'mul:2x5', attempts: 4, correct: 4, avgMs: 1500, box: 3, lastSeen: 1, quickDays: [] }];
+    renderGame(saving, { ...maths('choose'), facts });
+    await user.click(screen.getByRole('button', { name: /Launch/ }));
+    const asked = await playWithMaths(user);
+    expect(asked).toBeGreaterThan(0);
+    expect(saved).toEqual([]);
+    expect(saving.seed).not.toHaveBeenCalled();
+    localStorage.clear();
+  }, 60_000);
+});
+

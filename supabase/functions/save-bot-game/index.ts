@@ -3,6 +3,10 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
 import { Chess } from "npm:chess.js@1.4.0";
+//#region shared/maths/config.ts
+/** Answering correctly within this many milliseconds counts as quick. */
+const QUICK_MS = 5e3;
+//#endregion
 //#region supabase/functions/_shared/stamp.ts
 /**
 * Stamps (signatures) only the server can make: an HMAC-SHA256 of some text, as URL-safe
@@ -990,6 +994,47 @@ function boardFor(choice) {
 	return galaxyBoard(choice.galaxy, choice.size);
 }
 //#endregion
+//#region shared/maths/facts.ts
+const factKey = (x, y) => `mul:${Math.min(x, y)}x${Math.max(x, y)}`;
+new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
+//#endregion
+//#region shared/maths/skillPacks/timesTables.ts
+/**
+* Works out a question from how it was shown (e.g. ['?', '×', '8', '=', '56']): its answer and
+* the fact it belongs to. Null if it isn't a times-tables question this pack could ask. The
+* server uses this to check answers it didn't see being given.
+*/
+function solveQuestion(parts) {
+	if (!Array.isArray(parts) || parts.length !== 5 || parts[3] !== "=" || !parts.every((p) => typeof p === "string")) return null;
+	const [a, op, b, , c] = parts;
+	if (op !== "×" && op !== "÷" || parts.filter((p) => p === "?").length !== 1) return null;
+	const num = (text) => /^\d{1,3}$/.test(text) ? Number(text) : NaN;
+	const inTables = (n) => Number.isInteger(n) && n >= 1 && n <= 12;
+	let x;
+	let y;
+	let answer;
+	if (op === "×" && c === "?") {
+		[x, y] = [num(a), num(b)];
+		answer = x * y;
+	} else if (op === "×" && a === "?") {
+		y = num(b);
+		x = answer = num(c) / y;
+		if (num(c) !== x * y) return null;
+	} else if (op === "×" && b === "?") {
+		x = num(a);
+		y = answer = num(c) / x;
+		if (num(c) !== x * y) return null;
+	} else if (op === "÷" && c === "?") {
+		y = num(b);
+		x = answer = num(a) / y;
+	} else return null;
+	if (!inTables(x) || !inTables(y)) return null;
+	return {
+		answer,
+		key: factKey(x, y)
+	};
+}
+//#endregion
 //#region shared/space/items.ts
 const ITEM_KINDS = [
 	"booster",
@@ -1277,7 +1322,7 @@ function itemProblem(s, item, seat = s.turn) {
 /** True if the rocket whose turn it is may ask for a Mission Boost now. */
 function canBoost(s) {
 	const r = s.rockets[s.turn];
-	return s.settings.maths && s.phase === "ready" && !s.turnInfo.rolled && !s.turnInfo.mathsBoost && (r.boostTurns ?? 0) >= 3;
+	return s.settings.maths && s.phase === "ready" && !s.turnInfo.rolled && !s.turnInfo.mathsBoost && (r.boostTurns ?? 0) >= 5;
 }
 /** The items this rocket could use right now. */
 function usableItems(s, seat = s.turn) {
@@ -1998,7 +2043,7 @@ var Game = class {
 		s.turnInfo = newTurnInfo();
 		const me = this.me;
 		me.shielded = false;
-		if (s.settings.maths) me.boostTurns = Math.min(3, (me.boostTurns ?? 0) + 1);
+		if (s.settings.maths) me.boostTurns = Math.min(5, (me.boostTurns ?? 0) + 1);
 		this.emit({
 			kind: "turn-start",
 			seat: s.turn,
@@ -2398,7 +2443,7 @@ function playBots$1(game, level, onEvents) {
 * Replays a bot game exactly. Fails if any action is against the rules or left over.
 * `onEvents` sees every event, in order, from the start of the game.
 */
-function replaySolo$1(setup, actions, onEvents) {
+function replaySolo$1(setup, actions, onEvents, onAction) {
 	if (actions.length > 2e3) return {
 		ok: false,
 		reason: "too many actions"
@@ -2422,6 +2467,7 @@ function replaySolo$1(setup, actions, onEvents) {
 				reason: "actions after the game ended"
 			};
 			const before = game.state.turnsTaken;
+			onAction?.(game.state, action);
 			const { state, events } = play$1(game.state, action, game.dice);
 			game.state = state;
 			onEvents?.(events);
@@ -2485,6 +2531,24 @@ function decodeAction(text) {
 	};
 	return null;
 }
+function parseAnswers(input) {
+	if (input === void 0) return [];
+	if (!Array.isArray(input) || input.length > 300) return null;
+	const answers = [];
+	for (const raw of input) {
+		const a = raw ?? {};
+		if (!Array.isArray(a.parts) || a.parts.length !== 5 || !a.parts.every((p) => typeof p === "string" && p.length <= 4)) return null;
+		const whole = (n, max) => typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= max;
+		if (!whole(a.given, 1e3) || !whole(a.ms, 36e5) || !whole(a.at, 41024448e5)) return null;
+		answers.push({
+			parts: a.parts,
+			given: a.given,
+			ms: a.ms,
+			at: a.at
+		});
+	}
+	return answers;
+}
 const isBool = (value) => typeof value === "boolean";
 function parseBoard(input) {
 	if (typeof input !== "object" || input === null) return null;
@@ -2503,13 +2567,13 @@ function parseSettings(input) {
 	if (s.mode !== "classic" && s.mode !== "cosmic") return null;
 	if (s.finish !== "any" && s.finish !== "exact") return null;
 	if (!isBool(s.rollAgainOnSix) || !isBool(s.cosmicEvents)) return null;
-	if (s.maths !== false) return null;
+	if (!isBool(s.maths)) return null;
 	return {
 		mode: s.mode,
 		finish: s.finish,
 		rollAgainOnSix: s.rollAgainOnSix,
 		cosmicEvents: s.cosmicEvents,
-		maths: false
+		maths: s.maths
 	};
 }
 /** Checks the shape of a report that came from outside (e.g. the browser). */
@@ -2526,6 +2590,8 @@ function parseSpaceReport(input) {
 	if (!isBotLevelId(r.level) || !isClaimedEnding(r.ending) || r.ending === "resigned") return null;
 	if (!Array.isArray(r.actions) || r.actions.length > 1e3) return null;
 	if (!r.actions.every((a) => typeof a === "string" && a.length <= 40)) return null;
+	const answers = parseAnswers(r.answers);
+	if (!answers) return null;
 	return {
 		game: "space",
 		seed: r.seed,
@@ -2535,7 +2601,8 @@ function parseSpaceReport(input) {
 		bots: r.bots,
 		level: r.level,
 		actions: r.actions,
-		ending: r.ending
+		ending: r.ending,
+		answers
 	};
 }
 /** Replays the game from its seed and works out the result. The stamp is checked separately. */
@@ -2557,9 +2624,25 @@ function judgeSpaceGame(report) {
 		level: report.level
 	};
 	const events = [];
+	const given = report.answers ?? [];
+	const answers = [];
+	let mathsProblem = null;
+	const checkAnswer = (before, action) => {
+		if (mathsProblem || action.kind !== "choose" || before.pending?.kind !== "question") return;
+		const a = given[answers.length];
+		const solved = a ? solveQuestion(a.parts) : null;
+		if (!a || !solved) mathsProblem = "missing maths answer";
+		else if (a.given === solved.answer !== (action.option === 1)) mathsProblem = "maths answer does not match";
+		else answers.push({
+			key: solved.key,
+			correct: action.option === 1,
+			ms: a.ms,
+			at: a.at
+		});
+	};
 	let replayed;
 	try {
-		replayed = replaySolo$1(setup, actions, (batch) => events.push(...batch));
+		replayed = replaySolo$1(setup, actions, (batch) => events.push(...batch), checkAnswer);
 	} catch {
 		return {
 			ok: false,
@@ -2570,6 +2653,14 @@ function judgeSpaceGame(report) {
 		ok: false,
 		problem: replayed.reason
 	};
+	if (mathsProblem) return {
+		ok: false,
+		problem: mathsProblem
+	};
+	if (answers.length !== given.length) return {
+		ok: false,
+		problem: "extra maths answers"
+	};
 	const { state, studentSeat, studentTurns, finished } = replayed;
 	if (!finished && report.ending === "finished") return {
 		ok: false,
@@ -2578,7 +2669,7 @@ function judgeSpaceGame(report) {
 	const mine = events.filter((e) => "seat" in e && e.seat === studentSeat);
 	const stars = new Set(mine.flatMap((e) => e.kind === "star" ? [e.star] : []));
 	const stats = {
-		wormholes: mine.filter((e) => e.kind === "wormhole").length,
+		wormholes: mine.filter((e) => e.kind === "wormhole" || e.kind === "question" && (e.moment ?? "wormhole") === "wormhole").length,
 		blocks: mine.filter((e) => e.kind === "force-field").length,
 		stars: STAR_KINDS.filter((k) => stars.has(k)),
 		docked: mine.some((e) => e.kind === "docked")
@@ -2594,7 +2685,8 @@ function judgeSpaceGame(report) {
 			playerSide: SEAT_NAMES[studentSeat],
 			studentTurns,
 			countsForPoints: finished && studentTurns >= 5,
-			stats
+			stats,
+			answers
 		}
 	};
 }
@@ -4181,12 +4273,21 @@ async function saveSpaceGame(player, body, services, reply) {
 	});
 	if (saved === "too-many") return reply(429, { error: TOO_MANY });
 	if (saved !== "saved") return reply(500, { error: "The game couldn't be saved." });
+	if (game.answers.length > 0 && services.recordAnswers) await services.recordAnswers(player, await batchIdFor(`space:${report.seed}`), game.answers).catch(() => {
+		console.error("save-bot-game: maths answers not recorded");
+	});
 	return reply(200, {
 		result: game.outcome,
 		reason: game.reason,
 		place: game.place,
 		countsForPoints: game.countsForPoints
 	});
+}
+/** A UUID made from some text (the same text always gives the same id). */
+async function batchIdFor(text) {
+	const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
+	const hex = Array.from(hash.slice(0, 16), (b) => b.toString(16).padStart(2, "0")).join("");
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 async function save101Game(player, body, services, reply) {
 	const report = parseCard101Report(body);
@@ -4305,6 +4406,18 @@ Deno.serve((request) => handleSaveBotGame(request, {
 		if (error.code === "54000") return "too-many";
 		console.error(`save-bot-game: database refused a 101 game (${error.code})`);
 		return "refused";
+	},
+	async recordAnswers(player, batchId, answers) {
+		const { error } = await admin.rpc("record_fact_answers", {
+			player,
+			pack: "times-tables",
+			batch_id: batchId,
+			answers,
+			quick_ms: QUICK_MS,
+			fluent_days: 2,
+			top_box: 4
+		});
+		if (error) throw new Error(error.code ?? "unknown");
 	},
 	stamp: stamper(key, "space-seed")
 }));

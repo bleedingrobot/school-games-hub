@@ -13,10 +13,17 @@
  */
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { randomAvatar } from '../../avatar/avatarParts';
+import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { useSound } from '../../sound';
 import type { BotLevel } from '../../../shared/botGame';
+import type { FactStats } from '../../../shared/maths/leitner';
+import { readyLevel } from '../../../shared/maths/selector';
+import type { Question } from '../../../shared/maths/skillPack';
+import { TimesTables } from '../../../shared/maths/skillPacks/timesTables';
 import { BOT_NAMES } from '../../../shared/space/bot';
 import {
+  BOOST_CHARGE_TURNS,
+  canBoost,
   itemProblem,
   SpaceRuleError,
   usableItems,
@@ -31,7 +38,7 @@ import { startSpaceBot, type SpaceBot } from './botThread';
 import { Dice, DieFace } from './Dice';
 import { BoardOverlays, Choice, ItemPicker, ItemTiles, MissionLog, Podium, RocketsPanel, type Picking } from './parts';
 import { SpaceGuide, type GuideTab } from './Guide';
-import { loadLessMotion, loadPrefs, passNames, saveLessMotion, savePrefs, setupFrom, SPEED_SCALE, type SpacePrefs } from './prefs';
+import { loadLessMotion, loadPrefs, mathsOn, passNames, saveLessMotion, savePrefs, setupFrom, SPEED_SCALE, type MathsMode, type SpacePrefs } from './prefs';
 import { SpaceBoard, type Seat } from './SpaceBoard';
 import { SpaceSettings } from './SpaceSettings';
 import { botPlay, botQuestion, decideBot, isStudentsTurn, newSeed, startPassRun, startRun, studentPlay, type SoloRun } from './soloRun';
@@ -53,6 +60,24 @@ export interface SpaceSaving {
   /** Records a game the student left part-way, even while the page is closing. */
   abandon(report: SpaceGameReport): void;
 }
+
+/** Mission Control maths: what the teacher allows, the question settings and the student's records. */
+export interface SpaceMaths {
+  mode: MathsMode;
+  enabledTables: number[];
+  division: boolean;
+  missingFactor?: boolean;
+  multipleChoice: boolean;
+  /** The student's times-table records, so the questions fit what they're learning. */
+  facts: FactStats[];
+}
+
+const MOMENT_TITLE = { wormhole: 'Wormhole boost', 'black-hole': 'Black hole escape', boost: 'Mission Boost' } as const;
+const MOMENT_NOTE = {
+  wormhole: 'A right answer flies you 3 squares further.',
+  'black-hole': 'A right answer means you only fall half as far.',
+  boost: 'A right answer adds 2 to your roll.',
+} as const;
 
 const isOver = (run: SoloRun) => run.state.phase === 'over';
 
@@ -101,12 +126,15 @@ export function SpaceSolo({
   level,
   onLevelChange,
   saving,
+  maths,
   timeScale = 1,
 }: {
   player: SpacePlayer;
   level: BotLevel;
   onLevelChange: (level: BotLevel) => void;
   saving?: SpaceSaving;
+  /** Mission Control maths. Left out: no maths. */
+  maths?: SpaceMaths;
   /** Tests set this to 0 so animations don't wait. */
   timeScale?: number;
 }) {
@@ -125,6 +153,13 @@ export function SpaceSolo({
   const [starting, setStarting] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('practice');
   const [saveMessage, setSaveMessage] = useState('');
+
+  // The student's records for the questions, kept for the visit so they carry from game to game.
+  // Pass-and-play gets a fresh pack each game: nobody's records, and nothing is saved.
+  const [pack] = useState(() => new TimesTables(maths?.facts ?? []));
+  const passPack = useRef<TimesTables | null>(null);
+  const [question, setQuestion] = useState<Question | null>(null);
+  const mathsMode: MathsMode = maths?.mode ?? 'off';
 
   const runRef = useRef<SoloRun | null>(null);
   const gameRef = useRef<Game | null>(null);
@@ -157,7 +192,10 @@ export function SpaceSolo({
     const stamp = stampRef.current;
     if (!stamp) return null;
     const { seed, board, settings, bots, level: botLevel } = run.setup;
-    return { game: 'space', seed, stamp, board, settings, bots, level: botLevel, actions: run.studentActions.map(encodeAction), ending };
+    return {
+      game: 'space', seed, stamp, board, settings, bots, level: botLevel, actions: run.studentActions.map(encodeAction), ending,
+      ...(run.mathsAnswers.length > 0 ? { answers: run.mathsAnswers } : {}),
+    };
   }
 
   /** Saves the game once the rules engine says it's over (before the animations finish). */
@@ -270,7 +308,7 @@ export function SpaceSolo({
 
   async function start() {
     if (startingRef.current) return;
-    const setup = setupFrom(prefs);
+    const setup = setupFrom(prefs, mathsOn(mathsMode, prefs));
     if ('problem' in setup) {
       setProblem(setup.problem);
       return;
@@ -297,6 +335,8 @@ export function SpaceSolo({
       return;
     }
     stampRef.current = stamped?.stamp ?? null;
+    passPack.current = pass ? new TimesTables() : null;
+    setQuestion(null);
     setSaveStatus(stamped ? 'playing' : 'practice');
     setSaveMessage('');
     const { run, events } = started;
@@ -387,6 +427,11 @@ export function SpaceSolo({
     }
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     const myTurn = phaseRef.current === 'student';
+    if (event.key === 'b' && myTurn && canBoost(view) && !picking) {
+      event.preventDefault();
+      act({ kind: 'boost' });
+      return;
+    }
     if (event.key === ' ' || event.key === 'Enter') {
       if (target?.closest('button, a, summary')) return;
       if (myTurn && view.phase === 'ready' && !picking) {
@@ -429,6 +474,30 @@ export function SpaceSolo({
     panelRef.current?.querySelector<HTMLButtonElement>('.space-choice button')?.focus({ preventScroll: true });
   }, [choiceKey]);
 
+  // A Mission Control question: picked when it's asked (from this student's records), dropped when answered.
+  const askingKey =
+    phase === 'student' && view?.phase === 'choice' && view.pending?.kind === 'question'
+      ? `${view.turnsTaken}:${view.pending.moment ?? 'wormhole'}:${view.pending.square}`
+      : '';
+  useEffect(() => {
+    if (!askingKey) {
+      setQuestion(null);
+      return;
+    }
+    const active = passPack.current ?? pack;
+    const q =
+      active.nextQuestion({
+        level: readyLevel(active.stats(), maths?.enabledTables),
+        enabledTables: maths?.enabledTables,
+        division: maths?.division,
+        missingFactor: maths?.missingFactor,
+        multipleChoice: maths?.multipleChoice,
+      }) ?? active.nextQuestion({ level: 1 });
+    setQuestion(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [askingKey]);
+  const answered = useRef<{ answer: number; ms: number } | null>(null);
+
   // ---------- Settings screen ----------
 
   if (!game || !view) {
@@ -447,6 +516,7 @@ export function SpaceSolo({
         starting={starting}
         saving={!!saving}
         playerName={player.name}
+        mathsMode={mathsMode}
       />
       {guide && <SpaceGuide tab={guide} onClose={() => setGuide(null)} />}
       </>
@@ -584,7 +654,32 @@ export function SpaceSolo({
             </p>
           )}
 
-          {pending && <Choice pending={pending} items={me.items} onChoose={(option) => act({ kind: 'choose', option })} />}
+          {view.settings.maths && myTurn && !over && !pending && !picking && (
+            <div className="space-boost" role="group" aria-label="Mission Boost">
+              <button
+                type="button"
+                className="button button--light space-boost__button"
+                disabled={!canBoost(view)}
+                onClick={() => act({ kind: 'boost' })}
+                aria-keyshortcuts="b"
+              >
+                🧮 Mission Boost
+              </button>
+              <span className="space-boost__charge">
+                {canBoost(view)
+                  ? 'Ready! Answer to add 2 to this roll.'
+                  : view.turnInfo.rolled || view.turnInfo.mathsBoost
+                    ? view.turnInfo.mathsBoost
+                      ? 'Boost on: +2 on your roll!'
+                      : 'Charging…'
+                    : `Charging: turn ${Math.min(me.boostTurns ?? 0, BOOST_CHARGE_TURNS)} of ${BOOST_CHARGE_TURNS}`}
+              </span>
+            </div>
+          )}
+
+          {pending && pending.kind !== 'question' && (
+            <Choice pending={pending} items={me.items} onChoose={(option) => act({ kind: 'choose', option })} />
+          )}
 
           {picking && (
             <ItemPicker
@@ -645,6 +740,29 @@ export function SpaceSolo({
           </div>
         )}
       </aside>
+      {question && pending?.kind === 'question' && (
+        <QuestionModal
+          key={question.id}
+          question={question}
+          title={MOMENT_TITLE[pending.moment ?? 'wormhole']}
+          note={MOMENT_NOTE[pending.moment ?? 'wormhole']}
+          onSubmit={(answer, ms) => {
+            answered.current = { answer, ms };
+            return (passPack.current ?? pack).recordAnswer(question, answer, ms);
+          }}
+          onDone={(result: MarkedAnswer) => {
+            const given = answered.current;
+            const run = runRef.current;
+            // The server checks every answer against the question shown (shared/space/save.ts).
+            if (given && run && !run.passAndPlay) {
+              run.mathsAnswers.push({ parts: question.parts, given: given.answer, ms: Math.round(given.ms), at: Date.now() });
+            }
+            setQuestion(null);
+            act({ kind: 'choose', option: result.correct ? 1 : 0 });
+          }}
+          timeScale={timeScale}
+        />
+      )}
       {guide && <SpaceGuide tab={guide} onClose={() => setGuide(null)} />}
     </div>
   );

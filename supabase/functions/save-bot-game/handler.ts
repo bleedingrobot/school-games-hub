@@ -28,6 +28,7 @@ import {
   type SpaceGameReport,
   type SpaceStats,
 } from '../../../shared/space/save';
+import type { FactAnswer } from '../../../shared/maths/leitner';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 
 /** The two things this needs from Supabase, passed in so the tests can stand in for them. */
@@ -40,6 +41,11 @@ export interface Services {
   recordSpace(row: SpaceRow): Promise<'saved' | 'too-many' | 'refused'>;
   /** Saves a 101 game, the same way. */
   record101(row: Card101Row): Promise<'saved' | 'too-many' | 'refused'>;
+  /**
+   * Adds Mission Control maths answers to the student's times-table records (the same records
+   * as Gem Keep). A batch id seen before is ignored. Optional: without it answers aren't kept.
+   */
+  recordAnswers?(player: string, batchId: string, answers: FactAnswer[]): Promise<void>;
   /** Signs some text with a key only the server has (an HMAC), as URL-safe base64. Null if there's no key. */
   stamp(text: string): Promise<string | null>;
   /** The time now, in seconds. */
@@ -178,7 +184,21 @@ async function saveSpaceGame(
   });
   if (saved === 'too-many') return reply(429, { error: TOO_MANY });
   if (saved !== 'saved') return reply(500, { error: "The game couldn't be saved." });
+  if (game.answers.length > 0 && services.recordAnswers) {
+    // One batch per game (from its seed), so a game sent twice adds its answers once.
+    // The game is saved either way: losing a few answers is better than losing the game.
+    await services.recordAnswers(player, await batchIdFor(`space:${report.seed}`), game.answers).catch(() => {
+      console.error('save-bot-game: maths answers not recorded');
+    });
+  }
   return reply(200, { result: game.outcome, reason: game.reason, place: game.place, countsForPoints: game.countsForPoints });
+}
+
+/** A UUID made from some text (the same text always gives the same id). */
+export async function batchIdFor(text: string): Promise<string> {
+  const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)));
+  const hex = Array.from(hash.slice(0, 16), (b) => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
 async function save101Game(

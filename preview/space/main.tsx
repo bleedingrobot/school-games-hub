@@ -23,7 +23,12 @@ function Preview() {
         <MuteButton />
       </header>
       <main id="main">
-        <SpaceSolo player={{ name: 'Captain Kiwi', avatar: DEFAULT_AVATAR }} level={level} onLevelChange={setLevel} />
+        <SpaceSolo
+          player={{ name: 'Captain Kiwi', avatar: DEFAULT_AVATAR }}
+          level={level}
+          onLevelChange={setLevel}
+          maths={{ mode: 'choose', enabledTables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], division: false, multipleChoice: false, facts: [] }}
+        />
       </main>
     </SoundProvider>
   );

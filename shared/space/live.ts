@@ -294,5 +294,6 @@ export function parseLiveSetup(input: unknown): LiveSetup | null {
   const s = input as Record<string, unknown>;
   const board = parseBoard(s.board);
   const settings = parseSettings(s.settings);
-  return board && settings ? { board, settings } : null;
+  // Mission Control maths with classmates comes in stage M.4 (docs/SPACE-MATHS-PLAN.md).
+  return board && settings && !settings.maths ? { board, settings } : null;
 }

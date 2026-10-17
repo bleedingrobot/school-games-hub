@@ -481,7 +481,7 @@ function itemProblem(s, item, seat = s.turn) {
 /** True if the rocket whose turn it is may ask for a Mission Boost now. */
 function canBoost(s) {
 	const r = s.rockets[s.turn];
-	return s.settings.maths && s.phase === "ready" && !s.turnInfo.rolled && !s.turnInfo.mathsBoost && (r.boostTurns ?? 0) >= 3;
+	return s.settings.maths && s.phase === "ready" && !s.turnInfo.rolled && !s.turnInfo.mathsBoost && (r.boostTurns ?? 0) >= 5;
 }
 /** The items this rocket could use right now. */
 function usableItems(s, seat = s.turn) {
@@ -1202,7 +1202,7 @@ var Game = class {
 		s.turnInfo = newTurnInfo();
 		const me = this.me;
 		me.shielded = false;
-		if (s.settings.maths) me.boostTurns = Math.min(3, (me.boostTurns ?? 0) + 1);
+		if (s.settings.maths) me.boostTurns = Math.min(5, (me.boostTurns ?? 0) + 1);
 		this.emit({
 			kind: "turn-start",
 			seat: s.turn,
@@ -2341,6 +2341,7 @@ function botChoice(s, level, random) {
 		}
 	}
 }
+new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
 //#endregion
 //#region shared/space/save.ts
 /** "roll", "boost", "choose:1", "use:booster", "use:tractor-beam@2", "use:navigator=6". */
@@ -2371,13 +2372,13 @@ function parseSettings(input) {
 	if (s.mode !== "classic" && s.mode !== "cosmic") return null;
 	if (s.finish !== "any" && s.finish !== "exact") return null;
 	if (!isBool(s.rollAgainOnSix) || !isBool(s.cosmicEvents)) return null;
-	if (s.maths !== false) return null;
+	if (!isBool(s.maths)) return null;
 	return {
 		mode: s.mode,
 		finish: s.finish,
 		rollAgainOnSix: s.rollAgainOnSix,
 		cosmicEvents: s.cosmicEvents,
-		maths: false
+		maths: s.maths
 	};
 }
 //#endregion
@@ -2630,7 +2631,7 @@ function parseLiveSetup(input) {
 	const s = input;
 	const board = parseBoard(s.board);
 	const settings = parseSettings(s.settings);
-	return board && settings ? {
+	return board && settings && !settings.maths ? {
 		board,
 		settings
 	} : null;

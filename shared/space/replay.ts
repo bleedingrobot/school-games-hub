@@ -67,6 +67,8 @@ export function replaySolo(
   setup: SoloSetup,
   actions: readonly SpaceAction[],
   onEvents?: (events: SpaceEvent[]) => void,
+  /** Sees each student action with the state just before it (to check maths answers). Throws to refuse it. */
+  onAction?: (before: SpaceState, action: SpaceAction) => void,
 ): ReplayResult {
   if (actions.length > MAX_STUDENT_ACTIONS) return { ok: false, reason: 'too many actions' };
   let game: SoloGame;
@@ -82,6 +84,7 @@ export function replaySolo(
     for (const action of actions) {
       if (game.state.phase === 'over') return { ok: false, reason: 'actions after the game ended' };
       const before = game.state.turnsTaken;
+      onAction?.(game.state, action);
       const { state, events } = play(game.state, action, game.dice);
       game.state = state;
       onEvents?.(events);

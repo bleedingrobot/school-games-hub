@@ -4,7 +4,7 @@
  * they're the same fact.
  */
 import { CHOICES, DIVISION_SHARE, MISSING_FACTOR_FROM_LEVEL, MISSING_FACTOR_SHARE } from '../config';
-import { parseFactKey } from '../facts';
+import { factKey, parseFactKey } from '../facts';
 import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../leitner';
 import { newMemory, pickFact, scheduleRepeat, type QuestionContext, type SessionMemory } from '../selector';
 import type { AnswerResult, Question, SkillPack } from '../skillPack';
@@ -20,6 +20,39 @@ export const TIMES_TABLES_KINDS: Record<TimesTablesKind, { label: string; curric
   'missing-factor': { label: 'Missing factor', curriculumTags: ['TODO-missing-factor'] },
   divide: { label: 'Division facts', curriculumTags: ['TODO-division-facts'] },
 };
+
+/**
+ * Works out a question from how it was shown (e.g. ['?', '×', '8', '=', '56']): its answer and
+ * the fact it belongs to. Null if it isn't a times-tables question this pack could ask. The
+ * server uses this to check answers it didn't see being given.
+ */
+export function solveQuestion(parts: unknown): { answer: number; key: string } | null {
+  if (!Array.isArray(parts) || parts.length !== 5 || parts[3] !== '=' || !parts.every((p) => typeof p === 'string')) return null;
+  const [a, op, b, , c] = parts as string[];
+  if ((op !== '×' && op !== '÷') || parts.filter((p) => p === '?').length !== 1) return null;
+  const num = (text: string) => (/^\d{1,3}$/.test(text) ? Number(text) : NaN);
+  const inTables = (n: number) => Number.isInteger(n) && n >= 1 && n <= 12;
+  let x: number;
+  let y: number;
+  let answer: number;
+  if (op === '×' && c === '?') {
+    [x, y] = [num(a), num(b)];
+    answer = x * y;
+  } else if (op === '×' && a === '?') {
+    y = num(b);
+    x = answer = num(c) / y;
+    if (num(c) !== x * y) return null;
+  } else if (op === '×' && b === '?') {
+    x = num(a);
+    y = answer = num(c) / x;
+    if (num(c) !== x * y) return null;
+  } else if (op === '÷' && c === '?') {
+    y = num(b);
+    x = answer = num(a) / y;
+  } else return null;
+  if (!inTables(x) || !inTables(y)) return null;
+  return { answer, key: factKey(x, y) };
+}
 
 const SPOKEN: Record<string, string> = { '×': 'times', '÷': 'divided by', '=': 'equals', '?': 'what' };
 

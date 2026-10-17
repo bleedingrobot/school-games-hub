@@ -182,6 +182,7 @@ const ROLL_CHANGES: Record<string, string> = {
   'heavy-gravity': 'heavy gravity ½',
   'gravity-anchor': 'Gravity Anchor ½',
   booster: 'Booster +2',
+  'mission-boost': 'Mission Boost +2',
   'low-gravity': 'low gravity +2',
   'solar-wind': 'solar wind +1',
 };
@@ -230,7 +231,12 @@ export function choiceQuestion(pending: Pending): string {
     case 'mystery': return 'Pick a card. Where will it send you?';
     case 'inventory': return `Your pockets are full! Swap something for ${withA(itemName(pending.item))}?`;
     case 'binary': return 'Binary star: pick which die to use.';
-    case 'question': return 'Answer the question to power up the wormhole.';
+    case 'question':
+      switch (pending.moment) {
+        case 'black-hole': return 'Mission Control! Answer to fall only half as far.';
+        case 'boost': return 'Mission Boost! Answer to add 2 to your roll.';
+        default: return 'Mission Control! Answer to power up the wormhole.';
+      }
   }
 }
 
@@ -310,7 +316,15 @@ export function describe(event: SpaceEvent, names: readonly string[]): string | 
     case 'mine-fizzled': return `${who(event.owner)}’s Space Mine on ${event.square} fizzled out.`;
     case 'asteroid': return `${who(event.seat)} hit an asteroid on ${event.square}!`;
     case 'supernova-spent': return `The supernova on ${event.square} burned out into a nebula.`;
-    case 'question': return event.correct ? `${who(event.seat)} powered up the wormhole!` : null;
+    case 'question': {
+      const moment = event.moment ?? 'wormhole';
+      if (moment === 'boost') return event.correct ? `${who(event.seat)} charged the Mission Boost: +2 on the next roll!` : null;
+      if (moment === 'black-hole') return event.correct ? `${who(event.seat)} beat the black hole and only fell to ${event.to}!` : null;
+      // A wrong answer is a normal wormhole ride, with nothing said about the answer.
+      return event.correct
+        ? `${who(event.seat)} powered up the wormhole from ${event.from} all the way to ${event.to}!`
+        : `${who(event.seat)} rode a wormhole from ${event.from} up to ${event.to}!`;
+    }
     case 'chain-cap': return `That’s enough for one turn: square ${event.square} will have to wait.`;
     case 'choice': return null;
     case 'timeout': return null;

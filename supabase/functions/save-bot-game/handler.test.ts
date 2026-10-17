@@ -7,11 +7,12 @@ import { botAction } from '../../../shared/space/bot';
 import { DEFAULT_SETTINGS, play } from '../../../shared/space/engine';
 import { randomFromSeed } from '../../../shared/space/random';
 import { playBots, startSolo, type SoloSetup } from '../../../shared/space/replay';
-import { encodeAction, type SpaceGameReport } from '../../../shared/space/save';
+import { encodeAction, type SpaceGameReport, type SpaceMathsAnswer } from '../../../shared/space/save';
 import type { SoloSetup as Card101Setup } from '../../../shared/card101/solo';
 import { playWholeGame } from '../../../shared/card101/testing';
 import { stamper } from '../_shared/stamp';
-import { handleSaveBotGame, type Card101Row, type GameRow, type Services, type SpaceRow } from './handler';
+import { TimesTables } from '../../../shared/maths/skillPacks/timesTables';
+import { batchIdFor, handleSaveBotGame, type Card101Row, type GameRow, type Services, type SpaceRow } from './handler';
 
 const FOOLS_MATE = ['f2f3', 'e7e5', 'g2g4', 'd8h4'];
 
@@ -240,9 +241,16 @@ async function spaceGame(s: Services, setup: Omit<SoloSetup, 'seed'>, stopAfter 
   const game = startSolo({ ...setup, seed });
   const student = randomFromSeed('student');
   const actions: string[] = [];
+  const answers: SpaceMathsAnswer[] = [];
+  const pack = new TimesTables([], randomFromSeed('questions'));
   playBots(game, setup.level);
   while (game.state.phase !== 'over' && actions.length < stopAfter) {
     const action = botAction(game.state, 'easy', student);
+    if (action.kind === 'choose' && game.state.pending?.kind === 'question') {
+      // A Mission Control question: answer it right or wrong to match the choice.
+      const q = pack.nextQuestion({ level: 3 })!;
+      answers.push({ parts: q.parts, given: action.option === 1 ? q.answer : q.answer + 1, ms: 3000, at: NOW * 1000 });
+    }
     actions.push(encodeAction(action));
     game.state = play(game.state, action, game.dice).state;
     playBots(game, setup.level);
@@ -254,11 +262,49 @@ async function spaceGame(s: Services, setup: Omit<SoloSetup, 'seed'>, stopAfter 
     ...setup,
     actions,
     ending: game.state.phase === 'over' ? 'finished' : 'abandoned',
+    ...(answers.length ? { answers } : {}),
   };
   return { report, state: game.state, studentSeat: game.studentSeat };
 }
 
 const NEBULA = { board: { id: 'nebula' as const }, settings: DEFAULT_SETTINGS, bots: 3, level: 'easy' as const };
+
+describe('Mission Control maths in space games against bots', () => {
+  const MATHS = { ...NEBULA, settings: { ...DEFAULT_SETTINGS, maths: true } };
+
+  it('checks every answer, saves the game and adds the answers to the records once', async () => {
+    const recordAnswers = vi.fn(async () => {});
+    const { s, savedSpace } = services({ recordAnswers });
+    const { report } = await spaceGame(s, MATHS);
+    expect(report.answers!.length).toBeGreaterThan(0);
+    const response = await handleSaveBotGame(post(report), s);
+    expect(response.status).toBe(200);
+    expect(savedSpace[0].space.settings.maths).toBe(true);
+    const [player, batch, answers] = (recordAnswers.mock.calls[0] as unknown) as [string, string, { correct: boolean; key: string }[]];
+    expect(player).toBe('student-1');
+    expect(batch).toBe(await batchIdFor(`space:${report.seed}`));
+    expect(answers).toHaveLength(report.answers!.length);
+    expect(answers.every((a) => /^mul:\d+x\d+$/.test(a.key))).toBe(true);
+  });
+
+  it('refuses a "right" answer that was wrong, a missing answer or an extra one', async () => {
+    const { s, savedSpace } = services();
+    const { report } = await spaceGame(s, MATHS);
+    // Moving the first answer by one turns right into wrong and wrong (answer + 1) into right.
+    const lie = report.answers!.map((a, n) => (n === 0 ? { ...a, given: a.given - 1 } : a));
+    for (const answers of [lie, report.answers!.slice(1), [...report.answers!, report.answers![0]]]) {
+      expect((await handleSaveBotGame(post({ ...report, answers }), s)).status).toBe(400);
+    }
+    expect(savedSpace).toEqual([]);
+  });
+
+  it('still saves the game if the answers can’t be recorded', async () => {
+    const { s, savedSpace } = services({ recordAnswers: vi.fn(async () => { throw new Error('down'); }) });
+    const { report } = await spaceGame(s, MATHS);
+    expect((await handleSaveBotGame(post(report), s)).status).toBe(200);
+    expect(savedSpace).toHaveLength(1);
+  });
+});
 
 describe('saving Wormholes & Black Holes games', () => {
   it('hands out a fresh seed with a stamp', async () => {
