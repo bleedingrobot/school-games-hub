@@ -282,8 +282,8 @@ export const DRAGON_STAGES: Monster[] = (() => {
     exp: n === 3 ? friendly(p * 20) : 0,
   });
   return [
-    stage(1, 'Scorchtail, the Red Dragon', 'The Red Dragon wakes. The cave floor is warm, and the village\'s stolen treasure is piled beneath it.', 3.2, 0.44),
-    stage(2, 'Scorchtail, Roaring', 'It roars so loudly the stolen lanterns rattle. The Red Dragon is angry now.', 3.2, 0.52),
-    stage(3, 'Scorchtail, Last Stand', 'One last great breath. Whoever wins this wins the village its light back.', 3.2, 0.6),
+    stage(1, 'Scorchtail, the Red Dragon', 'The Red Dragon wakes. The cave floor is warm, and the village\'s stolen treasure is piled beneath it.', 3.05, 0.43),
+    stage(2, 'Scorchtail, Roaring', 'It roars so loudly the stolen lanterns rattle. The Red Dragon is angry now.', 3.05, 0.51),
+    stage(3, 'Scorchtail, Last Stand', 'One last great breath. Whoever wins this wins the village its light back.', 3.05, 0.59),
   ];
 })();

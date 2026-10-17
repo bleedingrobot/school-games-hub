@@ -163,7 +163,7 @@ LORD's numbers get huge: a level-12 monster drops 336,643 gold and the best armo
 ## 9. The dragon and winning
 
 - Reachable at **level 12 after beating the last master**, from the forest, like LORD.
-- A long fight in **three stages**. Before each stage, one question from a different topic. Right answers give a shield or a heavy hit for that stage. The dragon can still be beaten with great gear and no right answers, and lost with every answer right. It's a fight, not a test.
+- A long fight in **three stages**. Before each stage, one question from a different topic. Right answers give a small shield and a slightly bigger first hit for that stage. The dragon can still be beaten with great gear and no right answers, and lost with every answer right. It's a fight, not a test.
 - **Beating it:** a big news story, the Hall of Heroes, points and an achievement. Then, as in LORD, your hero starts again at level 1 with a dragon-kill star, keeping your class skill. A second run in the same season is faster.
 - **There is no game-ending kill** (LORD ends the game for everyone after 3). The season clock does that job instead (section 11).
 
@@ -259,7 +259,7 @@ What the simulator told us, and what changed because of it:
 
 - The first Trickster could not win master fights (14% against the Knight's 63%). Dodge now also hits back, and Pinch is a normal hit that lifts gold. All three classes now finish within a play day of each other.
 - Healing at LORD's price ate 55-60% of gold. Now about 40%.
-- The dragon was unbeatable (0%), then too easy. James chose "harder" (18 Oct). **The simulator was refilling a pupil's 3 daily skill uses at each dragon stage (9 uses); it is fixed, and the final numbers are in [LORD-RULES.md](LORD-RULES.md):** about 45% a try for a pupil who answers 70% right, with a 30% HP breather between stages.
+- The dragon was unbeatable (0%), then too easy. James chose "harder" (18 Oct). **The simulator was refilling a pupil's 3 daily skill uses at each dragon stage (9 uses); it is fixed, and the final numbers are in [LORD-RULES.md](LORD-RULES.md):** about 35% a try for a pupil who answers 70% right, with a 30% HP breather between stages.
 - Pace: a pupil who plays every day reaches level 12 in week 3, and one who plays 4 days a week in week 5. **A pupil who plays 2 days a week only reaches level 6 or 7 in a 5-week season.** That is open question 12 below.
 
 **L.2 done (18 Oct 2026):**
@@ -277,7 +277,7 @@ What the simulator told us, and what changed because of it:
 - **Not in yet:** the one hint per question (the shared question box has no hint button; to add in L.6 or with the next change to it), the teacher's topic switches (all topics are on), sound, and the reduced-motion and slow-Chromebook checks (L.6).
 - **Font:** the plan said VT323, but the hub's rule is "system fonts only, nothing downloaded", so the game uses the system monospace font for now. Bundling VT323 (open licence) is an option for L.6.
 
-**Question 13 (James):** the dragon's maths effect is big (about 10% a try with no right answers, 90% with all right). Keep it, or soften the shield and weaken the dragon a little? My pick: keep it for now, and watch how pupils do.
+**Question 13 answered (James, 18 Oct): "a fight, not a test".** The dragon's riddle bonuses are now small (a 17-point shield and a ×1.2 first hit), and the dragon was retuned: about 35% a try for a pupil answering 70% right as Knight or Mage (22% as Trickster). See LORD-RULES.md.
 
 **Not done yet:** ten monsters a level (five written), more events, gems, the arena and computer heroes, anything saved, anything on screen. Nothing is on the dashboard and nothing touches the database.
 

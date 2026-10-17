@@ -56,11 +56,11 @@ describe('maths moments', () => {
     expect(masterTrialStrength(5, ['wrong', 'wrong', 'wrong'])).toBe(0);
     expect(addMasterTrialBonus(hero({ level: 4 }), ['right']).strength).toBeGreaterThan(hero({ level: 4 }).strength);
   });
-  it('gives the dragon trial a shield and a heavy hit only when it is answered right', () => {
+  it('gives the dragon trial a small shield and a slightly bigger first hit only when it is answered right', () => {
     expect(dragonStageOptions('right').shield).toBeGreaterThan(dragonStageOptions('hint').shield!);
     expect(dragonStageOptions('wrong')).toEqual({});
   });
-  it('lets a skilled player beat the dragon with no right answers (rarely), and makes right answers help a lot', () => {
+  it('lets a skilled player beat the dragon with no right answers, and makes right answers help a bit (a fight, not a test)', () => {
     const strong = hero({
       level: MAX_LEVEL, exp: expNeeded(MAX_LEVEL - 1), ...baseStats(MAX_LEVEL), hp: baseStats(MAX_LEVEL).maxHp,
       maxHp: baseStats(MAX_LEVEL).maxHp, weapon: 11, armour: 11,
@@ -85,10 +85,10 @@ describe('maths moments', () => {
     };
     const none = wins('wrong');
     const all = wins('right');
-    expect(none).toBeGreaterThan(0.01); // still beatable with no right answers
-    expect(none).toBeLessThan(0.3);
-    expect(all).toBeGreaterThan(0.6);
-    expect(all).toBeLessThan(1); // and not a certainty
+    expect(none).toBeGreaterThan(0.05); // still beatable with no right answers
+    expect(all).toBeGreaterThan(none + 0.1); // right answers help
+    expect(all - none).toBeLessThan(0.5); // but gear and skills decide it
+    expect(all).toBeLessThan(0.9); // and it is never a certainty
   });
   it('pays a small prize for trying the number guess and a bigger one for winning', () => {
     expect(numberGuessPrize(3, true)).toBeGreaterThan(numberGuessPrize(3, false));

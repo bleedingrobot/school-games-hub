@@ -61,11 +61,15 @@ export function addMasterTrialBonus(hero: Hero, results: Result[]): Hero {
   return { ...hero, strength: hero.strength + masterTrialStrength(hero.level, results) };
 }
 
-/** Before each dragon stage: a right answer gives a shield and a heavy first hit. A wrong answer gives neither, and the fight still goes on. */
+/**
+ * Before each dragon stage: a right answer gives a small shield and a slightly bigger first hit. A wrong answer gives
+ * neither, and the fight still goes on. The dragon is a fight, not a test (James, 18 Oct): gear and class skills
+ * decide it, and the riddles are a nudge.
+ */
 export function dragonStageOptions(result: Result): Pick<FightOptions, 'shield' | 'firstHitBonus'> {
-  const shield = Math.round(tierPower(MAX_LEVEL) * 0.08);
-  if (result === 'right') return { shield, firstHitBonus: 1.5 };
-  if (result === 'hint') return { shield: Math.round(shield / 2), firstHitBonus: 1.25 };
+  const shield = Math.round(tierPower(MAX_LEVEL) * 0.02);
+  if (result === 'right') return { shield, firstHitBonus: 1.2 };
+  if (result === 'hint') return { shield: Math.round(shield / 2), firstHitBonus: 1.1 };
   return {};
 }
 

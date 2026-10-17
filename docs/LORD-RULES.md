@@ -50,7 +50,7 @@ Romance, marriage, children, orphans, drinking, gambling, student-written text, 
 - Monsters (5 variants a level, weakest first): HP `(1.5 + 0.3v) × tier + 4`, strength `(0.26 + 0.04v) × tier + 2`, gold `(0.8 + 0.14v) × tier`, exp `(0.7 + 0.12v) × tier`.
 - Masters (reaching level *n*): HP `4.2 × tier(n−1) + 10`, strength `0.55 × tier(n−1) + 4`.
 - Exp to challenge: running total of 14 average fights a level.
-- Dragon stages: HP `3.2 × tier(12)`, strength `0.44, 0.52, 0.6 × tier(12)`.
+- Dragon stages: HP `3.05 × tier(12)`, strength `0.43, 0.51, 0.59 × tier(12)`.
 
 ## Pace (simulator, 200 seasons each, 18 Oct 2026)
 
@@ -58,15 +58,15 @@ A simple pupil: attacks, uses class skills (3 uses a day, shared across all thre
 
 | Pupil | Level 12 | Beats the dragon in the season |
 |---|---|---|
-| Plays every day | day 18, week 3 | 100% (about 45% of tries; it can try again next day) |
-| Plays 4 days a week | 18th play day, calendar day 30, week 5 | 87-88% for Knight and Mage, 73% for Trickster |
+| Plays every day | day 18, week 3 | 100% (about 35% of tries; it can try again next day) |
+| Plays 4 days a week | 18th play day, calendar day 30, week 5 | about 80% for Knight and Mage, 50% for Trickster |
 | Plays 2 days a week | does not get there; level 6 or 7 by the end | |
 
 Also: about 2% of forest fights are lost, a master is beaten on about 64% of tries, a fight lasts about 3 rounds, healing eats about 40% of gold, and all three classes finish within a play day of each other. To see it all: `npm run lord:sim`.
 
-## The dragon and the maths (18 Oct 2026)
+## The dragon and the maths (James, 18 Oct: "a fight, not a test")
 
-With the best gear, a pupil who uses their class skills wins about **10%** of tries with no right answers, about **45%** with 70% right, and about **90%** with every answer right. So the three riddles matter most at the dragon (a shield and a ×1.5 first hit each). The plan says a pupil with great gear can still win without them, and that is true but unlikely. If that feels too decisive, lower the shield (`0.08 × tier(12)` in `shared/lord/maths.ts`) and make the dragon a little weaker.
+Each riddle before a dragon stage gives a **small** bonus for a right answer: a shield of `0.02 × tier(12)` (17) and a ×1.2 first hit (half of that after a hint). A wrong answer gives nothing and the fight goes on. With the best gear and class skills, a Knight wins about **16%** of tries with no right answers and about **45%** with every answer right (Mage 9% and 60%, Trickster 11% and 27%). A simulated pupil who answers 70% right wins about 35% of tries as Knight or Mage and about 22% as Trickster, and can try again each day. Gear and skills decide it; maths nudges it. The Trickster is the weakest against the dragon and could use a small buff later.
 
 ## Still to settle (later stages)
 
