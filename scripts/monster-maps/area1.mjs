@@ -45,6 +45,7 @@ export function kauriBush() {
   m.spot('trainer-approach', 18, 10, 'up');
   m.spot('grass-edge', 17, 14, 'down');
   m.spot('nurse', 12, 15, 'right');
+  m.spot('chest', 6, 11, 'down');
   m.spot('tower-door', 14, 6, 'up');
   m.spot('gate', 21, 2, 'up');
   m.save();

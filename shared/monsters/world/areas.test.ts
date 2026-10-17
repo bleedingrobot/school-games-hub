@@ -13,7 +13,7 @@ import { bookCounts, bookStatus, canHeal, moveToBox, moveToTeam, swapTeam, apply
 import { addToBag, describeLoot, LOOT, REPEL_STEPS } from './rewards';
 import type { GameMap, Thing, WorldState } from './types';
 import { findPath, isBlocked } from './walking';
-import { finishBattle, interact, meet, newWorld, refreshBook, step, trainerBattle, type WorldOptions } from './world';
+import { facingTile, finishBattle, interact, meet, newWorld, refreshBook, step, trainerBattle, type WorldOptions } from './world';
 
 const opts: WorldOptions = { maps: WORLD_MAPS };
 const team = () => [makeMonster('plusplash-1', 5), makeMonster('multipup-1', 5)];
@@ -93,6 +93,22 @@ describe('the six areas, in order', () => {
       expect(m.warps.some((w) => w.to === a.towerHall)).toBe(true);
       expect(m.isGrass.some(Boolean)).toBe(true);
       expect(m.far.some(Boolean) && m.far.some((f, i) => m.isGrass[i] && !f) && m.far.some((f, i) => m.isGrass[i] && f), `${a.name} has long grass in both halves`).toBe(true);
+    }
+  });
+
+  it('every area has a "chest" spot that is a free tile facing a chest, and the other test-page spots are free tiles too', () => {
+    for (const a of AREAS) {
+      const m = WORLD_MAPS[a.map];
+      const s = spot(m, 'chest');
+      const [fx, fy] = facingTile(s);
+      expect(m.things.find((t) => t.x === fx && t.y === fy)?.kind, `${a.name} chest spot`).toBe('chest');
+      for (const name of ['entrance', 'chest', 'grass-edge', 'nurse', 'tower-door', 'trainer-approach']) {
+        const p = spot(m, name);
+        expect(isBlocked(m, p.x, p.y, BADGES), `${a.name} ${name}`).toBe(false);
+      }
+      expect(m.things.find((t) => t.kind === 'nurse' && (t.x === facingTile(spot(m, 'nurse'))[0]) && t.y === facingTile(spot(m, 'nurse'))[1]), `${a.name} nurse spot faces the nurse`).toBeTruthy();
+      const g = facingTile(spot(m, 'grass-edge'));
+      expect(m.isGrass[g[1] * m.width + g[0]], `${a.name} grass-edge faces long grass`).toBe(true);
     }
   });
 

@@ -58,7 +58,7 @@ export function MonsterBookScreen({ seen, owned }: BookProps) {
           })}
         </ol>
       </div>
-      <section className="bk-detail" aria-label="About this monster" aria-live="polite">
+      <section className="bk-detail" aria-label="About this monster" aria-live="polite" tabIndex={0}>
         {shownStatus === 'unknown' ? (
           <>
             <div className="bk-detail__art bk-dark" aria-hidden="true"><MonsterArt species={shown.id} size={110} still /></div>

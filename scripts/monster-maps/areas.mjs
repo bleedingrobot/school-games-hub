@@ -39,8 +39,9 @@ export function shellBeach() {
   m.warp('to-bush', 21, 19, 'kauri-bush', 21, 1, 'down');
   m.spot('entrance', 21, 18, 'up');
   m.spot('trainer-approach', 11, 9, 'up');
-  m.spot('grass-edge', 12, 14, 'up');
+  m.spot('grass-edge', 12, 14, 'down');
   m.spot('nurse', 20, 16, 'left');
+  m.spot('chest', 22, 11, 'up');
   m.spot('tower-door', 10, 6, 'up');
   m.spot('gate', 3, 2, 'up');
   m.scatter(16, (x, y) => m.palm(x, y), { seed: 2, y0: 2 });
@@ -89,6 +90,7 @@ export function fireMountain() {
   m.spot('trainer-approach', 12, 10, 'up');
   m.spot('grass-edge', 7, 14, 'down');
   m.spot('nurse', 9, 12, 'up');
+  m.spot('chest', 20, 12, 'right');
   m.spot('tower-door', 12, 6, 'up');
   m.spot('gate', 20, 2, 'up');
   m.scatter(10, (x, y) => m.autumnTree(x, y), { seed: 5, y0: 2 });
@@ -135,8 +137,9 @@ export function snowyPeaks() {
   m.warp('to-fire-mountain', 20, 19, 'fire-mountain', 20, 1, 'down');
   m.spot('entrance', 20, 18, 'up');
   m.spot('trainer-approach', 14, 9, 'right');
-  m.spot('grass-edge', 13, 14, 'up');
+  m.spot('grass-edge', 13, 14, 'down');
   m.spot('nurse', 20, 16, 'left');
+  m.spot('chest', 22, 10, 'up');
   m.spot('tower-door', 13, 6, 'up');
   m.spot('gate', 4, 2, 'up');
   m.scatter(18, (x, y) => m.snowTree(x, y), { seed: 8, y0: 2 });
@@ -186,6 +189,7 @@ export function glowwormCaves() {
   m.spot('trainer-approach', 8, 12, 'down');
   m.spot('grass-edge', 9, 14, 'down');
   m.spot('nurse', 13, 13, 'down');
+  m.spot('chest', 22, 11, 'down');
   m.spot('tower-door', 11, 6, 'up');
   m.spot('gate', 19, 2, 'up');
   m.scatter(16, (x, y) => m.stalagmite(x, y), { seed: 12, y0: 2 });
@@ -234,6 +238,7 @@ export function harbourCity() {
   m.spot('trainer-approach', 12, 11, 'down');
   m.spot('grass-edge', 10, 14, 'down');
   m.spot('nurse', 17, 13, 'down');
+  m.spot('chest', 22, 11, 'right');
   m.spot('tower-door', 8, 6, 'up');
   m.scatter(12, (x, y) => m.bigTree(x, y), { seed: 15, y0: 2 });
   m.scatter(10, (x, y) => m.tree(x, y), { seed: 16 });

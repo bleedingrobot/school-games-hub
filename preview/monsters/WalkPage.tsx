@@ -34,6 +34,7 @@ const TELEPORTS: Teleport[] = [
       [`${a.name}`, a.map, 'entrance'],
       ['Next to the trainer', a.map, 'trainer-approach'],
       ['Next to the long grass', a.map, 'grass-edge'],
+      ['Next to a chest', a.map, 'chest'],
       ['Healing hut (next to the nurse)', a.map, 'nurse'],
       ['Outside the Tower door', a.map, 'tower-door'],
       [`Next to the gate to the next area`, a.map, 'gate'],

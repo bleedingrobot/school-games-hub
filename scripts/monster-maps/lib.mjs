@@ -240,6 +240,6 @@ export function towerRooms({ n, area, label, outside, outsideX, outsideY, guide,
   top.wall(2, 2, TD(64)); top.wall(8, 2, TD(64)); // pillars
   top.trainer(trainerName, trainerSprite, 5, 3, 'down', { sight: 3, text, win, team, badge, loot: 'tower' });
   top.wall(5, 7, TD(68)); top.warp('down', 5, 7, `tower-${n}-hall`, 5, 3, 'down');
-  top.spot('trainer-approach', 5, 5, 'up');
+  top.spot('trainer-approach', 5, 4, 'up');
   top.save();
 }
