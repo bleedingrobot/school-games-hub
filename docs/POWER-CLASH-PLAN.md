@@ -1,7 +1,7 @@
 # Tic-Tac-Toe: Power Clash — plan
 
 Noughts and crosses where each player picks three once-a-match powers (freeze a square, swap two symbols, blow one away, place twice). Written 17 October 2026 from the brief in [prompts/power-clash.md](prompts/power-clash.md) and the code on `main` (Stages 1–10 live, Gem Keep live).
-**Status: plan only, nothing built. James answers section 8, then stage P.1 starts.**
+**Status: APPROVED by James 17 Oct 2026 (section 8 answered, all my picks; queue spot = alongside the other games). Stage P.1 (engine) DONE; P.2 (screens) next.**
 
 ## The short version
 
@@ -94,3 +94,7 @@ Browser testing as before: Chromebook (1366×640 usable), tablet touch, keyboard
 5. **Between rounds:** keep the same three powers by default (point 10)?
 6. **Points:** taking-part only, not ranked (section 6)?
 7. **Where on the dashboard / which queue spot?** Gem Keep, Mission Control maths and monsters are all in progress; do you want this before or after them?
+
+## 9. Decisions (James, 17 October 2026)
+
+All recommended picks accepted: pass-and-play first; the mover wins if both have a line; Freeze Ray one turn; Board Wipe any symbol; keep the same three powers between rounds with one tap to change; taking-part points only, not ranked; built alongside Gem Keep, Mission Control maths and monsters.
