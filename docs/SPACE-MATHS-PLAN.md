@@ -66,7 +66,7 @@ Against classmates, the **host's** setting is used for the whole game, and the w
 3. **M.3 Against bots and pass-and-play:** the settings chip, the question card in the game, saving and checking answers, records for the signed-in student.
 4. **M.4 Against classmates:** server-picked questions with the 20-second timer, the waiting-room line, only good news shown to others.
 5. **M.5 Teacher switch and finishing:** the three-way teacher switch, achievements, How points work, the How to play guide, privacy summary, accessibility check (keyboard, screen reader, phone and Chromebook sizes).
-6. **Go live** (James's yes): one database change, deploy `save-bot-game`, `space-game` and `gem-keep`, then merge.
+6. **Go live** (James's yes): one database change, deploy `save-bot-game`, `space-game` and `gem-keep`, then merge. **DONE 2026-10-17: live (merge c7d2a39).**
 
 Rough size: a bit smaller than Gem Keep Phase 5. M.1–M.3 can be tried in a private preview link before anything goes live.
 
