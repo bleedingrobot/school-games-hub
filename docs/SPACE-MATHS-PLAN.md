@@ -89,7 +89,7 @@ Rough size: a bit smaller than Gem Keep Phase 5. M.1–M.3 can be tried in a pri
 - Wormhole: right = 3 squares further (as built before). Black hole: right = fall half as far (keeps your Escape Pod); wrong = as before (the Escape Pod works if you have one). A Force Field still blocks it with no question. A timeout counts as wrong.
 - Mission Boost: a new action, before rolling, once charged. Right = +2 on this roll. Wrong = normal roll. Either way it's used up.
 - Bots: Cadet answers right 60% of the time, Pilot 75%, Commander 90%. Pilot and Commander always take a charged boost, the Cadet half the time.
-- With maths off nothing changes: the bots make exactly the same moves as before (tested), so games already being played aren't affected.
+- With maths off nothing changes: no question or boost can happen (tests check this), and the bots only use their dice for maths when it's on, so they make the same moves as before and games already being played aren't affected.
 
 **Simulator (1,000 games a setting, bots at Pilot, Cosmic mode).** Minutes are the simulator's estimate, counting each question as 10 seconds.
 
