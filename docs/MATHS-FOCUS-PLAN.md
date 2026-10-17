@@ -159,7 +159,7 @@ None of this is code, but each item has to be done first:
 
 ## 11. Stages (stop for James after each)
 
-1. **F.1 Skill engine:** the skill ladder in config, generalised fact keys, and the first new fact skills (bonds to 10 and 20, doubles, halves). No database changes. Checked in the Gem Keep preview.
+1. **F.1 Skill engine:** the new times-table order (section 12), the skill ladder in config, generalised fact keys, and the first new fact skills (bonds to 10 and 20, doubles, halves). No database changes. Checked in the Gem Keep preview.
 2. **F.2 Schools and classes:** `schools`, `school_domains`, `profiles.school_id` (Douglas Park as school 1), classes, class teachers, members, join codes, the school admin role, `my_school()` in every row rule, and settings moved per class. Tests for cross-school and cross-class reads.
 3. **F.3 Maths focus and groups:** groups inside classes, focus rows with start and end times, `my_maths_focus()`, the student choice switch, the teacher's Set focus and Running focuses screens, the student note, and Gem Keep and the space game reading the focus.
 4. **F.4 Auto everywhere:** the whole ladder, placement check, and starting points by year level.
@@ -228,7 +228,7 @@ Year levels are where the NZC teaching sequence puts each skill. Auto mode follo
 
 ### What this changes in the plan
 
-- **Times-table order.** The NZC (Year 3: 2, 3, 4, 5, 8, 10) and the UK families both put **×8 with ×3 and ×4**, and ×6 with ×9. Today's `CAMPAIGN_STEPS` puts ×8 with ×6. Suggestion: change step 2 to ×3, ×4, ×8 and step 3 to ×6, ×9 (one line in config). Gem Keep players' records aren't affected.
+- **Times-table order.** The NZC (Year 3: 2, 3, 4, 5, 8, 10) and the UK families both put **×8 with ×3 and ×4**, and ×6 with ×9. Today's `CAMPAIGN_STEPS` puts ×8 with ×6. **Decided (James, 18 Oct 2026): NZC families, changed as part of F.1, not before.** The new steps are levels 1–2 ×2, ×5, ×10 (up to ×10); 3–4 ×3, ×4, ×8; 5–6 ×6, ×9; 7–8 ×7; 9–10 ×11, ×12. Students' fact records aren't affected.
 - **Weighting.** In auto, review leans towards ×6, ×7, ×8, ×9 and ×12, as the Multiplication Tables Check does, because they're the hardest.
 - **Wrong answers for multiple choice** come from known mistakes, for example adding tops and bottoms (½ + ¼ = 2/6), "longer decimals are bigger" (0.25 > 0.3), and working left to right without rules (2 + 3 × 4 = 20).
 - **Credit.** If DfE, Oak or Illustrative Mathematics material is used directly, the How to play or About page credits it, as its licence asks.
