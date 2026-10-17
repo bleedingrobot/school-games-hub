@@ -1,8 +1,8 @@
-# Monster maths adventure: plan
+# Maths Monsters: plan
 
 A Pokémon-style adventure for the hub. Walk around a small world, meet wild monsters in the long grass, and battle and catch them. **Every attack and every catch is a maths question.** Each kind of monster stands for a maths topic, so collecting and training a team means practising every topic.
 Written 17 October 2026 after a deep dive into [devshareacademy/monster-tamer](https://github.com/devshareacademy/monster-tamer) (James's find) and reading the code on `main` (Stages 1–10 live, Gem Keep live).
-**Status: idea saved, not scheduled.** Nothing is built. James picked "a world to walk around" and "several maths topics" on 17 Oct. Next: James answers section 12, then stage N.1 starts.
+**Status: APPROVED 17 Oct 2026, under way** on branch `monsters` (built on `space-maths`, because both change `shared/maths/`). James picked "a world to walk around" and "several maths topics", then answered every question in section 12 and said start now (alongside Mission Control maths).
 
 ## The short version
 
@@ -57,6 +57,7 @@ Written 17 October 2026 after a deep dive into [devshareacademy/monster-tamer](h
 - **Home town** (start, healing centre, a teacher character who explains things, your monster box, the monster book).
 - **Six areas**, each built around one topic: its wild monsters, its signs and tips, and its **Topic Tower** at the end. Beat the Tower's trainer to earn that topic's badge and open the next path.
 - **Areas open in order.** Easy topics first. Each area is "easy, then harder": monsters further from town are higher level and ask harder questions in the same topic.
+- **NZ places with English names** (James, 17 Oct): e.g. Kauri Bush, Shell Beach, Fire Mountain, Snowy Peaks, Glowworm Caves, Harbour Town.
 - **About 25 × 20 tiles per area**, made in Tiled (free editor) as JSON in `shared/monsters/maps/`, using **Kenney CC0 packs** (*Tiny Town*, *Tiny Dungeon*, *Roguelike RPG*; checked 17 Oct: all CC0).
 - **Encounters:** long grass, about one battle every 12–20 steps (tuned so it feels exciting, not annoying). A "Repel" item lets students just walk.
 - **People:** a few NPCs per area with one-line tips or jokes, and trainers who challenge you when you walk past.
@@ -117,8 +118,8 @@ Written 17 October 2026 after a deep dive into [devshareacademy/monster-tamer](h
 - **New tables** (students can't write to them directly, as usual): `monster_saves` (one row per student) and `monster_events` (what happened since the last save). A new `monster` server function checks each save before accepting it. The checks are plausibility checks, not a full replay (same reasoning as Gem Keep): exp gained must match the battles reported, levels can't jump, catches need a right answer, and the number of answers per minute must be humanly possible.
 - **Points:** inside the shared 40-a-day bot-game cap. My pick: 1 point per 3 wild battles won, 3 per trainer, 8 for a Tower badge (first time only). The game is `ranked: false` (no ratings).
 - **Achievements** (about 8): first catch, 10/25/54 monster-book entries, each badge, all six badges, a "fully evolved" team.
-- **A leaderboard is optional**: "monster book entries" or "badges", like Gem Keep's stars board.
-- **New season**: wipe saves or keep them? (question 4).
+- **Leaderboard: most monsters collected** (monster-book entries, top 10 plus you), like Gem Keep's stars board (James, 17 Oct).
+- **New season keeps the adventure** (team, box, badges, monster book) and resets only the points (James, 17 Oct).
 
 ## 9. Teacher page
 
@@ -148,16 +149,18 @@ Each stage ends with tests passing and a results section here, and stops for Jam
 - Seasonal areas (Matariki sky island).
 - More topics: measurement, time, angles.
 
-## 12. Questions for James (before N.1)
+## 12. James's answers (17 Oct 2026)
 
-1. **Name?** Some ideas: *Number Tamers*, *Maths Monsters*, *Monster Mathers*, *Sum Beasts*. (Not *Monster Tamer*, which is the tutorial's name.)
-2. **The six topics and their order** (section 4): right list for Y4–6? Anything to swap (e.g. measurement instead of decimals)?
-3. **Wrong answers**: a small graze plus showing the right answer (my pick), or no damage at all?
-4. **New season**: wipe everyone's adventure (fresh start, fair boards), or keep it (my pick: keep the save, reset only the points)?
-5. **Leaderboard**: none, monster-book entries, or badges?
-6. **Look**: chunky pixel-art world (Kenney CC0) with our own SVG monsters (my pick), or all-SVG smooth style to match the hub's restyle?
-7. **NZ flavour**: area names in te reo Māori and NZ places (bush, beach, volcano, snow), or a made-up world?
-8. **Queue spot**: after Mission Control maths, and before or after Power Clash and the marble game?
+| # | Question | Answer |
+|---|---|---|
+| 1 | Name | **Maths Monsters** |
+| 2 | Topics | **The six as planned**, in that order (section 4) |
+| 3 | Wrong answers | **A small hit (¼ damage) and the right answer shown** |
+| 4 | New season | **Keep the adventure; reset only the points** |
+| 5 | Leaderboard | **Most monsters collected** (monster-book entries, top 10 plus you) |
+| 6 | Look | **Pixel-art world (Kenney CC0) with our own smooth SVG monsters** |
+| 7 | World | **NZ places (bush, beach, volcano, snow...) with English names** |
+| 8 | When | **Start now**, alongside Mission Control maths |
 
 ## Credits to carry over
 
