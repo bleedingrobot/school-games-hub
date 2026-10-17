@@ -1,7 +1,7 @@
 # Tic-Tac-Toe: Power Clash — plan
 
 Noughts and crosses where each player picks three once-a-match powers (freeze a square, swap two symbols, blow one away, place twice). Written 17 October 2026 from the brief in [prompts/power-clash.md](prompts/power-clash.md) and the code on `main` (Stages 1–10 live, Gem Keep live).
-**Status: APPROVED by James 17 Oct 2026 (section 8 answered, all my picks; queue spot = alongside the other games). Stage P.1 (engine) DONE; P.2 (screens) next.**
+**Status: APPROVED by James 17 Oct 2026 (section 8 answered, all my picks; queue spot = alongside the other games). P.1 engine, P.2 screens, P.3 polish and P.4 bots + saving DONE (on branch `power-clash`, nothing live); P.5 (classmates) next.**
 
 ## The short version
 
@@ -113,3 +113,42 @@ Website only; nothing live, no database or function changes.
 - **Tests:** four new component tests (input locked then unlocked, shout and status text, How to play open/close/focus, reduced motion). The earlier tests now use reduced motion so they stay quick. Full run: only the usual flaky tests (Gem Keep, chess) plus four that fail only under whole-suite load and pass on their own (101 save stats, checkers leave-part-way, space `?` help, save-bot-game handler).
 
 Next: P.4 (bots, simulation, saving bot games, taking-part points; needs a migration and a `save-bot-game` change).
+
+## 11. Stage P.4 results (bots, saving, points; 17 October 2026)
+
+Nothing is live. The migration is written but **not applied**, the function is built but **not deployed**, and the dashboard card is **off**.
+
+**Bots** (`shared/power-clash/bot.ts`, pure, randomness passed in). Each bot picks one action at a time, always from the engine's list of legal actions.
+- Very Easy: random legal moves, uses a power 12% of the time it can.
+- Easy: takes a win it can see (95%), otherwise sometimes uses a random power (22%), otherwise places a symbol that doesn't hand the opponent an instant win (but slips 20% of the time). Random powers.
+- Medium: looks 3 actions ahead through placements and powers, with a fixed cap on positions looked at (a count, not a clock, so a replay gives the same answer). Always takes a win. Slips 15% of the time. Fixed powers: Double Trouble, Body Swap, Board Wipe (best of all four sets in Medium-v-Medium play: 62% of decided rounds, against 52%, 47% and 40% for the others).
+- Speed: Medium takes about 1 ms on average and 20-130 ms at the slowest. Deeper search (4 actions) was tried and was slower (up to 230 ms) for almost no extra strength, so it was left at 3.
+
+**Simulation** (`npm run power-clash:sim`, 1,000 matches per pairing, the two bots swap X and O each match, round starter alternates):
+
+| Pairing | Rounds won by the stronger | Matches won | Turns a match (both players) |
+|---|---|---|---|
+| Medium v Easy | 96.4% | 100% | 22.0 |
+| Easy v Very Easy | 88.4% (180 drawn rounds) | 99.2% | 27.4 |
+| Medium v Very Easy | 99.3% | 100% | 18.9 |
+| Medium v Medium | 51.0% | 52.0% / 48.0% | 35.7 |
+| Easy v Easy | 50.0% | 50.1% / 49.9% | 35.2 |
+| Very Easy v Very Easy | 50.6% | 52.5% / 47.5% | 40.5 |
+
+Both targets are met by a wide margin (Medium over 70% against Easy, Easy over 70% against Very Easy). Equal bots win half each, so there is no first-move or side advantage. Matches last 3-5 rounds. Counting a student's go at about 9 seconds and the bot's at about 2 seconds (think time plus animation), a match is roughly 1.5-4 minutes (Medium v Very Easy at the short end, equal bots at the long end). Against Medium a student who loses 3-0 finishes in about 1.5-2 minutes, a little under the 2-5 minute target: Medium wins fast. I can't measure real children, so whether Medium is "still beatable" for 8-10 year olds needs a class trial. If Medium turns out too hard, the knobs are `MEDIUM_SLIP`, `MEDIUM_MAX_DEPTH` and `MEDIUM_POWERS` in `bot.ts`.
+
+**Screens.** The setup screen now has "Two players, one screen" and "Play a bot" side by side. Play a bot shows the usual level picker, a side choice (X goes first; O means the bot opens) and your three powers. The bot's powers are shown from the start. The bot waits 0.6-1.0 s (a 0.15 s blink with reduced motion) and never moves while an animation is playing; between its own steps in one turn it waits for the animation (0.9 s). On its turn every square and power card is disabled, the prompt says "The Easy bot is thinking...", and the message line (aria-live) says what it did, for example "The bot froze the middle square." A "Leave game" button sits under the bot's panel along with a line saying whether the game will be saved.
+
+**Saving and points.** A bot game is a replayable game: `shared/power-clash/solo.ts` is what both the page and the server play through. The bot's powers and every one of its moves come from the seed (its powers from `seed:powers`, each move from `seed:move:N`), so the browser only sends the seed and stamp, the level, the student's side, both sets of powers and the student's actions (`place:4`, `power:freeze-ray:7`, `power:body-swap:0,8`, `skip`, `next`). `save-bot-game` replays it and refuses: made-up, borrowed, other-game and old seeds, a bot whose powers aren't the seed's, any action that isn't legal, actions left over after the end, and "finished" when it isn't. Same seed sent twice saves once. A match left part-way is saved as left early with no points. Nothing is saved from two-player games. If no seed can be had (no Wi-Fi, or the preview) the match is a practice game and says so.
+- `ranked: false`; **2 points** for a finished bot game, win or lose, inside the 40-a-day bot cap shared with every other game.
+- Migration `20261017001400_power_clash_points.sql` (built on the latest `score_bot_game`, `progress_counts` and `progress_rules`, from Gem Keep): allows `power-clash` in `bot_games`, `scored_games` and `achievement_types` (not `ratings`), adds the `power_clash` columns, `record_power_clash_bot_game()` (server only), the 2-point rule and the badges. A pgTAP test (`supabase/tests/database/power_clash_points.test.sql`) is written but **neither the migration nor the test has been run**: there is no local Supabase copy on this machine. If a later migration changes `score_bot_game`, `progress_counts` or `progress_rules` before this is applied, merge the Power Clash lines into those instead.
+- **Badges** (small change, so done): "Play a game of Power Clash", "Used all three powers in one match", "Won a round with a Body Swap", "Won a match without using a power".
+- Not done: the teacher's per-student table and Recent list were left alone (the bot games do appear in Recent under the game's id); adding Power Clash to the teacher view and the profile page belongs with P.5.
+
+**Switch.** `POWER_CLASH_ON` in `src/games/registry.ts` is `false`. While off, the game has no card and no Profile/leaderboard entries but still opens at `/#/power-clash`. Turning it on puts the card on the dashboard (the card says "Play"; the bot picker is inside the game).
+
+**Browser check** (Chromium; Chromebook 1366x640, tablet 820x1180 touch, phone 390x780 touch): a full match against each level, as X and as O, with powers used; axe found nothing on setup, game or match-over screens at any size; no sideways scroll; the bot answers in 0.5-2.7 s (the longest are Double Trouble turns, which are three steps); a keyboard-only game (Tab, Enter) works and the bot's moves are announced. The game screen is no taller than the two-player one it replaced (the setup screen at 1366x640 scrolls a little, as before). One fix on the way: the header with long bot names made the phone scroll sideways, so the score line says "You" and "Bot". Private preview: https://claude.ai/artifact/5odQT7RHRaZxuhKPuYVx3p (no sign-in, nothing is saved).
+
+**Tests.** 825 pass in the full run. New: bots always legal, take a win, block a loss, repeatable, quick, clearly different in strength; replay and judging; handler tests (valid game saved for X and O, left game, all the refusals, daily limit); screen tests (bot replies, locked on its turn, saves once at the end and what is sent replays, practice game, left early, two-player not saved).
+
+**To go live** (needs James out of auto mode): apply the migration, deploy `save-bot-game` (`supabase/functions/save-bot-game/index.ts`), then set `POWER_CLASH_ON` to `true`, merge and deploy the site. Run `npm run test:db` first if a local Supabase copy exists.

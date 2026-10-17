@@ -2,7 +2,7 @@ import { HashRouter, Route, Routes } from 'react-router';
 import { AuthProvider } from './auth/AuthContext';
 import { RequireAuth } from './auth/RequireAuth';
 import { Layout } from './components/Layout';
-import { GAMES } from './games/registry';
+import { GAMES, POWER_CLASH_ON } from './games/registry';
 import { Dashboard } from './pages/Dashboard';
 import { FriendGamePage } from './pages/FriendGamePage';
 import { GamePage } from './pages/GamePage';
@@ -29,8 +29,8 @@ export function AppRoutes() {
           {GAMES.map((game) => (
             <Route key={game.id} path={game.id} element={<GamePage game={game} />} />
           ))}
-          {/* Hidden until Stage P.4: not on the dashboard yet. */}
-          <Route path="power-clash" element={<GamePage game={powerClash} />} />
+          {/* Power Clash always has its address; its dashboard card is behind POWER_CLASH_ON (games/registry.ts). */}
+          {!POWER_CLASH_ON && <Route path="power-clash" element={<GamePage game={powerClash} />} />}
           <Route path="lobby" element={<Lobby />} />
           <Route path="play/:id" element={<FriendGamePage />} />
           <Route path="space-game/:id" element={<SpaceGamePage />} />

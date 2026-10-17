@@ -131,3 +131,29 @@
 .pc .pc__top h1 { font-size: 1.2rem; white-space: nowrap; }
 .pc .pc__score { white-space: nowrap; }
 .pc .pc__round { white-space: nowrap; }
+
+/* ---- P.4: playing a bot ---- */
+.pc__modes { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; border: 0; margin: 8px auto; padding: 0; }
+.pc__modes legend { width: 100%; text-align: center; font-weight: 800; margin-bottom: 4px; }
+.pc__mode {
+  padding: 8px 16px; border-radius: 999px; border: 2px solid #94a3b8; background: rgba(15, 23, 42, 0.6); color: #fff;
+  font: inherit; font-weight: 800; cursor: pointer;
+}
+.pc__mode--on { border-color: #fde047; background: #3b2a8f; }
+.pc__mode:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.pc__botsetup { display: flex; flex-direction: column; align-items: center; }
+.pc__botsetup .level-picker { margin: 4px auto; }
+.pc__setup-cols--one { grid-template-columns: minmax(0, 420px); justify-content: center; }
+.pc__save { margin: 0; font-size: 0.85rem; opacity: 0.9; text-align: center; }
+.pc__col { display: flex; flex-direction: column; gap: 10px; }
+.pc__extras { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.pc__extras .pc__save { text-align: left; }
+.pc__leave { font-size: 0.9rem; padding: 6px 14px; }
+.pc__leave { width: auto; }
+.pc__botrow { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 4px 28px; }
+.pc__botrow .pc__modes, .pc__botrow .level-picker { margin: 4px 0; }
+@media (min-width: 861px) {
+  .pc__setup-cols--one { grid-template-columns: minmax(0, 940px); }
+  .pc__setup-cols--one .pc__panel ul { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .pc__botsetup .pc__lead { margin: 4px auto; }
+}

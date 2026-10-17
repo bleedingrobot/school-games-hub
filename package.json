@@ -20,6 +20,7 @@
     "space:sim": "node scripts/space-sim.mjs",
     "space:preview": "vite build --config vite.preview.config.ts",
     "101:sim": "node scripts/101-sim.mjs",
+    "power-clash:sim": "node scripts/power-clash-sim.mjs",
     "101:preview": "vite build --config vite.101-preview.config.ts",
     "power-clash:preview": "vite build --config vite.power-clash-preview.config.ts",
     "gem-keep:preview": "vite build --config vite.gem-keep-preview.config.ts"

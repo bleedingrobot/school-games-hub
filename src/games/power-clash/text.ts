@@ -1,4 +1,4 @@
-import type { PowerId } from '../../../shared/power-clash/types';
+import type { GameEvent, PowerId } from '../../../shared/power-clash/types';
 
 export const TEXT = {
   name: 'Tic-Tac-Toe: Power Clash',
@@ -55,3 +55,37 @@ export const SHOUTS = {
 
 export type ShoutKind = keyof typeof SHOUTS;
 export const shout = (kind: ShoutKind, n: number) => SHOUTS[kind][n % SHOUTS[kind].length];
+
+/** What the bot is called in a game, by level. */
+export const BOT_NAMES: Record<'very-easy' | 'easy' | 'medium', string> = {
+  'very-easy': 'The Very Easy bot',
+  easy: 'The Easy bot',
+  medium: 'The Medium bot',
+};
+
+const COLUMN = ['left', 'middle', 'right'];
+const ROW = ['top', 'middle', 'bottom'];
+
+/** "the middle square", "the top-left square": how a square is said out loud. */
+export function squareName(i: number): string {
+  const row = ROW[Math.floor(i / 3)];
+  const col = COLUMN[i % 3];
+  if (i === 4) return 'the middle square';
+  if (row === 'middle') return `the middle-${col} square`;
+  if (col === 'middle') return `the ${row}-middle square`;
+  return `the ${row}-${col} square`;
+}
+
+/** What the bot just did, in a sentence for the screen reader and the message line. */
+export function botLine(events: GameEvent[]): string {
+  const parts: string[] = [];
+  for (const e of events) {
+    if (e.kind === 'double-trouble') parts.push('The bot used Double Trouble.');
+    else if (e.kind === 'body-swap') parts.push(`The bot swapped ${squareName(e.squares[0])} with ${squareName(e.squares[1])}.`);
+    else if (e.kind === 'freeze') parts.push(`The bot froze ${squareName(e.square)}.`);
+    else if (e.kind === 'wipe') parts.push(`The bot blasted the symbol on ${squareName(e.square)}.`);
+    else if (e.kind === 'place') parts.push(`The bot put ${e.player} on ${squareName(e.square)}.`);
+    else if (e.kind === 'skip') parts.push('The bot missed a go.');
+  }
+  return parts.join(' ');
+}

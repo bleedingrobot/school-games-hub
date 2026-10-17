@@ -11,7 +11,10 @@ import { encodeAction, type SpaceGameReport } from '../../../shared/space/save';
 import type { SoloSetup as Card101Setup } from '../../../shared/card101/solo';
 import { playWholeGame } from '../../../shared/card101/testing';
 import { stamper } from '../_shared/stamp';
-import { handleSaveBotGame, type Card101Row, type GameRow, type Services, type SpaceRow } from './handler';
+import type { SoloSetup as PowerClashSetup } from '../../../shared/power-clash/solo';
+import { botLoadoutFor } from '../../../shared/power-clash/solo';
+import { playWholeMatch } from '../../../shared/power-clash/testing';
+import { handleSaveBotGame, type Card101Row, type GameRow, type PowerClashRow, type Services, type SpaceRow } from './handler';
 
 const FOOLS_MATE = ['f2f3', 'e7e5', 'g2g4', 'd8h4'];
 
@@ -21,6 +24,7 @@ function services(over: Partial<Services> = {}) {
   const saved: GameRow[] = [];
   const savedSpace: SpaceRow[] = [];
   const saved101: Card101Row[] = [];
+  const savedPowerClash: PowerClashRow[] = [];
   const s: Services = {
     userIdFor: vi.fn(async (token: string) => (token === 'good-token' ? 'student-1' : token === 'other-token' ? 'student-2' : null)),
     record: vi.fn(async (row: GameRow) => {
@@ -35,11 +39,15 @@ function services(over: Partial<Services> = {}) {
       saved101.push(row);
       return 'saved' as const;
     }),
+    recordPowerClash: vi.fn(async (row: PowerClashRow) => {
+      savedPowerClash.push(row);
+      return 'saved' as const;
+    }),
     stamp: stamper('test-server-key', 'space-seed'),
     nowSeconds: () => NOW,
     ...over,
   };
-  return { s, saved, savedSpace, saved101 };
+  return { s, saved, savedSpace, saved101, savedPowerClash };
 }
 
 function post(body: unknown, token: string | null = 'good-token', origin = 'https://bleedingrobot.github.io') {
@@ -443,6 +451,115 @@ describe('saving 101 games', () => {
   it('passes on the daily limit kindly', async () => {
     const { s } = services({ record101: vi.fn(async () => 'too-many' as const) });
     const { report } = await game101(s, QUICK);
+    expect((await handleSaveBotGame(post(report), s)).status).toBe(429);
+  });
+});
+
+/** Asks for a Power Clash seed, plays a whole match from it with an Easy bot as the "student", and returns the report. */
+async function gamePowerClash(
+  s: Services,
+  setup: Omit<PowerClashSetup, 'seed'>,
+  leaveAfter = Infinity,
+) {
+  const response = await handleSaveBotGame(post({ game: 'power-clash', start: true }), s);
+  const { seed, stamp } = (await response.json()) as { seed: string; stamp: string };
+  const { solo, actions } = playWholeMatch({ ...setup, seed }, 'easy', leaveAfter);
+  const bot = botLoadoutFor(seed, setup.level);
+  const loadouts = setup.side === 'X' ? { X: setup.loadout, O: bot } : { X: bot, O: setup.loadout };
+  const over = solo.match.winner !== null;
+  const report = {
+    game: 'power-clash' as const, seed, stamp, level: setup.level, side: setup.side, loadouts, actions,
+    ending: over ? ('finished' as const) : ('abandoned' as const),
+  };
+  return { report, solo };
+}
+
+const PC = { level: 'easy' as const, side: 'X' as const, loadout: ['double-trouble', 'body-swap', 'freeze-ray'] as PowerClashSetup['loadout'] };
+
+describe('saving Power Clash games', () => {
+  it('hands out a fresh seed with a stamp that is only good for Power Clash', async () => {
+    const { s } = services();
+    const a = await (await handleSaveBotGame(post({ game: 'power-clash', start: true }), s)).json();
+    expect(a.seed).toMatch(/^s1-1792000000-[0-9a-f]{24}$/);
+    expect(a.stamp).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect((await handleSaveBotGame(post({ game: 'power-clash', start: true }, null), s)).status).toBe(401);
+    const b = await (await handleSaveBotGame(post({ game: '101', start: true }), s)).json();
+    expect(b.stamp).not.toBe(a.stamp);
+  });
+
+  it('replays the match from its seed, works out the result itself and saves it', async () => {
+    const { s, savedPowerClash, saved, saved101, savedSpace } = services();
+    const { report, solo } = await gamePowerClash(s, PC);
+    const response = await handleSaveBotGame(post(report), s);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      result: solo.match.winner === 'X' ? 'won' : 'lost',
+      reason: 'finished',
+      countsForPoints: true,
+    });
+    expect(saved).toEqual([]);
+    expect(savedSpace).toEqual([]);
+    expect(saved101).toEqual([]);
+    expect(savedPowerClash).toHaveLength(1);
+    const row = savedPowerClash[0];
+    expect(row).toEqual(
+      expect.objectContaining({ player: 'student-1', bot_level: 'easy', player_side: 'x', moves: report.actions, counts_for_points: true }),
+    );
+    expect(row.power_clash).toEqual(
+      expect.objectContaining({ seed: report.seed, side: 'X', loadouts: report.loadouts, roundsWon: solo.stats.roundsWon, roundsLost: solo.stats.roundsLost }),
+    );
+    expect(row.power_clash.stats.powersUsed).toBe(solo.stats.powersUsed);
+  });
+
+  it('works for a student who is O (the bot goes first)', async () => {
+    const { s, savedPowerClash } = services();
+    const { report } = await gamePowerClash(s, { ...PC, side: 'O', level: 'medium' });
+    expect((await handleSaveBotGame(post(report), s)).status).toBe(200);
+    expect(savedPowerClash[0].player_side).toBe('o');
+  });
+
+  it('saves a match the student left part-way as left early, earning nothing', async () => {
+    const { s, savedPowerClash } = services();
+    const { report } = await gamePowerClash(s, PC, 5);
+    expect(report.ending).toBe('abandoned');
+    expect((await handleSaveBotGame(post(report), s)).status).toBe(200);
+    expect(savedPowerClash[0]).toEqual(expect.objectContaining({ result: 'lost', reason: 'abandoned', counts_for_points: false }));
+  });
+
+  it('refuses made-up seeds, borrowed seeds, other games’ seeds, old seeds and changed games', async () => {
+    const { s, savedPowerClash } = services();
+    const { report } = await gamePowerClash(s, PC);
+    const spaceSeed = (await (await handleSaveBotGame(post({ game: 'space', start: true }), s)).json()) as { seed: string; stamp: string };
+    const seed101 = (await (await handleSaveBotGame(post({ game: '101', start: true }), s)).json()) as { seed: string; stamp: string };
+    const other = services({ nowSeconds: () => NOW + 13 * 60 * 60 });
+    const swapped = (list: string[]) => [list[1], list[0], list[2]];
+    const cases: [object, string][] = [
+      [{ ...report, stamp: report.stamp.replace(/^./, (c) => (c === 'A' ? 'B' : 'A')) }, 'good-token'], // a forged stamp
+      [{ ...report, seed: report.seed.replace(/.$/, (c) => (c === '0' ? '1' : '0')) }, 'good-token'], // a different seed
+      [{ ...report, ...spaceSeed }, 'good-token'], // a seed stamped for the space game
+      [{ ...report, ...seed101 }, 'good-token'], // a seed stamped for 101
+      [{ ...report, seed: 'made-up-seed' }, 'good-token'],
+      [report, 'other-token'], // someone else's seed
+      [{ ...report, actions: report.actions.slice(1) }, 'good-token'], // a different match
+      [{ ...report, actions: [report.actions[0], ...report.actions] }, 'good-token'], // an action that can't be played twice
+      [{ ...report, level: 'medium' }, 'good-token'], // a different bot
+      [{ ...report, side: 'O' }, 'good-token'], // a different side
+      [{ ...report, loadouts: { ...report.loadouts, O: swapped(report.loadouts.O) } }, 'good-token'], // changed bot powers
+      [{ ...report, loadouts: { ...report.loadouts, O: ['double-trouble', 'double-trouble', 'freeze-ray'] } }, 'good-token'],
+      [{ ...report, actions: [...report.actions, 'place:4'] }, 'good-token'], // extra actions after the end
+      [{ ...report, actions: ['place:99'] }, 'good-token'], // not an action
+      [{ ...report, actions: report.actions.slice(0, 3), ending: 'finished' }, 'good-token'], // says it finished, didn't
+      [{ ...report, ending: 'resigned' }, 'good-token'],
+    ];
+    for (const [i, [body, token]] of cases.entries()) expect((await handleSaveBotGame(post(body, token), s)).status, `case ${i}`).toBe(400);
+    expect((await handleSaveBotGame(post(report), other.s)).status).toBe(400); // too old
+    expect(savedPowerClash).toEqual([]);
+    expect(other.savedPowerClash).toEqual([]);
+  });
+
+  it('passes on the daily limit kindly', async () => {
+    const { s } = services({ recordPowerClash: vi.fn(async () => 'too-many' as const) });
+    const { report } = await gamePowerClash(s, PC);
     expect((await handleSaveBotGame(post(report), s)).status).toBe(429);
   });
 });

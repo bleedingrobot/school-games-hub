@@ -49,7 +49,14 @@ Deno.serve((request) =>
       console.error(`save-bot-game: database refused a 101 game (${error.code})`);
       return 'refused';
     },
-    // One key for both seeded games; the stamped text says which game (and student) it's for.
+    async recordPowerClash(row) {
+      const { error } = await admin.rpc('record_power_clash_bot_game', row);
+      if (!error) return 'saved';
+      if (error.code === '54000') return 'too-many';
+      console.error(`save-bot-game: database refused a Power Clash game (${error.code})`);
+      return 'refused';
+    },
+    // One key for all the seeded games; the stamped text says which game (and student) it's for.
     stamp: stamper(key, 'space-seed'),
   }),
 );

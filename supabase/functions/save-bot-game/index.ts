@@ -1208,7 +1208,7 @@ function newGame$1(board, settings, players) {
 		}]
 	};
 }
-function play$1(previous, action, dice) {
+function play$2(previous, action, dice) {
 	const s = structuredClone(previous);
 	const events = [];
 	new Game(s, dice, events).act(action);
@@ -2118,7 +2118,7 @@ function averageLanding(s, seat, boosts) {
 	for (let die = 1; die <= 6; die++) total += landingValue(s, seat, stepsFor(s.rockets[seat], t, die).steps);
 	return total / 6;
 }
-function pick(random, list) {
+function pick$1(random, list) {
 	return list[Math.floor(random() * list.length)];
 }
 /** The target a bot aims a hinder at: Commander and Pilot pick whoever is furthest ahead. */
@@ -2251,12 +2251,12 @@ function botAction(s, level, random) {
 	if (level === "very-easy") {
 		const usable = usableItems(s);
 		if (usable.length > 0 && random() < .4) {
-			const item = pick(random, usable);
+			const item = pick$1(random, usable);
 			const targets = validTargets(s, item);
 			return {
 				kind: "use-item",
 				item,
-				...targets.length > 0 ? { target: pick(random, targets) } : {},
+				...targets.length > 0 ? { target: pick$1(random, targets) } : {},
 				...item === "navigator" ? { value: 1 + Math.floor(random() * 6) } : {}
 			};
 		}
@@ -2269,7 +2269,7 @@ function botAction(s, level, random) {
 function botChoice(s, level, random) {
 	const pending = s.pending;
 	const seat = s.turn;
-	if (level === "very-easy") return pick(random, choiceOptions(pending));
+	if (level === "very-easy") return pick$1(random, choiceOptions(pending));
 	switch (pending.kind) {
 		case "gate": return pending.twin > pending.square ? 1 : 0;
 		case "mystery": return Math.floor(random() * 3);
@@ -2291,7 +2291,7 @@ function botChoice(s, level, random) {
 //#endregion
 //#region shared/space/replay.ts
 /** Starts a bot game from its setup. */
-function startSolo$1(setup) {
+function startSolo$2(setup) {
 	const players = setup.bots + 1;
 	const { state, events } = newGame$1(boardFor(setup.board), setup.settings, players);
 	return {
@@ -2306,7 +2306,7 @@ function startSolo$1(setup) {
 function playBots$1(game, level, onEvents) {
 	for (let guard = 0; game.state.phase !== "over" && game.state.turn !== game.studentSeat; guard++) {
 		if (guard > 1e4) throw new Error("Bots never finished their turns");
-		const { state, events } = play$1(game.state, botAction(game.state, level, game.botRandom), game.dice);
+		const { state, events } = play$2(game.state, botAction(game.state, level, game.botRandom), game.dice);
 		game.state = state;
 		game.events.push(...events);
 		onEvents?.(events);
@@ -2316,14 +2316,14 @@ function playBots$1(game, level, onEvents) {
 * Replays a bot game exactly. Fails if any action is against the rules or left over.
 * `onEvents` sees every event, in order, from the start of the game.
 */
-function replaySolo$1(setup, actions, onEvents) {
+function replaySolo$2(setup, actions, onEvents) {
 	if (actions.length > 2e3) return {
 		ok: false,
 		reason: "too many actions"
 	};
 	let game;
 	try {
-		game = startSolo$1(setup);
+		game = startSolo$2(setup);
 	} catch (error) {
 		return {
 			ok: false,
@@ -2340,7 +2340,7 @@ function replaySolo$1(setup, actions, onEvents) {
 				reason: "actions after the game ended"
 			};
 			const before = game.state.turnsTaken;
-			const { state, events } = play$1(game.state, action, game.dice);
+			const { state, events } = play$2(game.state, action, game.dice);
 			game.state = state;
 			onEvents?.(events);
 			if (game.state.turnsTaken > before || game.state.phase === "over") studentTurns++;
@@ -2373,7 +2373,7 @@ function makeSeed(nowSeconds, randomHex) {
 	return `s1-${String(Math.floor(nowSeconds)).padStart(10, "0")}-${randomHex}`;
 }
 /** What the server signs: the seed and who it was given to, so a seed can't be shared. */
-function stampText$1(player, seed) {
+function stampText$2(player, seed) {
 	return `space-seed:v1:${player}:${seed}`;
 }
 /** Null if the seed is well made and still fresh, else what's wrong. */
@@ -2476,7 +2476,7 @@ function judgeSpaceGame(report) {
 	const events = [];
 	let replayed;
 	try {
-		replayed = replaySolo$1(setup, actions, (batch) => events.push(...batch));
+		replayed = replaySolo$2(setup, actions, (batch) => events.push(...batch));
 	} catch {
 		return {
 			ok: false,
@@ -2670,7 +2670,7 @@ function newGame(players, settings, dice) {
 	};
 }
 /** Plays one action. Throws RuleError (and changes nothing) if it isn't allowed. */
-function play(game, actor, action, dice) {
+function play$1(game, actor, action, dice) {
 	const g = structuredClone(game);
 	const events = [];
 	apply(g, actor, action, dice, events);
@@ -2728,7 +2728,7 @@ function apply(g, actor, action, dice, events) {
 				putOut(g, skipped, "skipped", events);
 				return;
 			}
-			endTurn(g, events);
+			endTurn$1(g, events);
 			return;
 		}
 	}
@@ -2783,7 +2783,7 @@ function apply(g, actor, action, dice, events) {
 				placed,
 				discarded
 			});
-			endTurn(g, events);
+			endTurn$1(g, events);
 			return;
 		}
 		case "throw": {
@@ -2796,7 +2796,7 @@ function apply(g, actor, action, dice, events) {
 				seat,
 				card
 			});
-			endTurn(g, events);
+			endTurn$1(g, events);
 			return;
 		}
 		case "knock":
@@ -2807,7 +2807,7 @@ function apply(g, actor, action, dice, events) {
 				kind: "knock",
 				seat
 			});
-			endTurn(g, events);
+			endTurn$1(g, events);
 			return;
 		default: fail("Unknown move");
 	}
@@ -2870,7 +2870,7 @@ function nextActive(g, from) {
 	return from;
 }
 /** The current player's turn is over: pass it on, or score the round after the last turns. */
-function endTurn(g, events) {
+function endTurn$1(g, events) {
 	const finished = g.turn;
 	g.turnsThisRound[finished] += 1;
 	if (g.knocker !== null) g.owesLastTurn[finished] = false;
@@ -2890,7 +2890,7 @@ function passTurn(g, from, events) {
 				return;
 			}
 		}
-		scoreRound(g, events);
+		scoreRound$1(g, events);
 		return;
 	}
 	g.turn = nextActive(g, from);
@@ -2900,7 +2900,7 @@ function passTurn(g, from, events) {
 		lastTurn: false
 	});
 }
-function scoreRound(g, events) {
+function scoreRound$1(g, events) {
 	const scores = g.hands.map((hand, seat) => g.out[seat] ? null : scoreHand(hand));
 	const live = activeSeats(g);
 	const lowest = Math.min(...live.map((s) => scores[s].total));
@@ -3330,7 +3330,7 @@ function eventsFor(events, seat, game) {
 		};
 	});
 }
-function parseStudentAction(text) {
+function parseStudentAction$1(text) {
 	switch (text) {
 		case "peek": return {
 			actor: 0,
@@ -3379,7 +3379,7 @@ function parseStudentAction(text) {
 		}
 	}
 }
-function startSolo(setup) {
+function startSolo$1(setup) {
 	if (!Number.isInteger(setup.bots) || setup.bots < 1 || setup.bots > 3) throw new RuleError("1 to 3 bots");
 	const dice = seededDice(`${setup.seed}:deck`);
 	const { game, events } = newGame(setup.bots + 1, setup.settings, dice);
@@ -3398,7 +3398,7 @@ function startSolo(setup) {
 }
 /** Plays one action and shows every bot what its seat saw. Returns the student's events. */
 function applySolo(solo, actor, action) {
-	const { game, events } = play(solo.game, actor, action, solo.dice);
+	const { game, events } = play$1(solo.game, actor, action, solo.dice);
 	solo.game = game;
 	tellBots(solo, events);
 	return eventsFor(events, 0, game);
@@ -3429,7 +3429,7 @@ function nextBotMove(solo) {
 * events), or null when it's the student's move. The screen calls this one move at a
 * time, with a pause between, so it plays exactly what `playBots` would.
 */
-function playOneBot(solo) {
+function playOneBot$1(solo) {
 	const move = nextBotMove(solo);
 	if (!move) return null;
 	if (move.action.type !== "peek-done") solo.decisions += 1;
@@ -3442,20 +3442,20 @@ function playOneBot(solo) {
 function playBots(solo, onEvents) {
 	for (let guard = 0;; guard++) {
 		if (guard > 5e3) throw new Error("Bots never finished their turns");
-		const move = playOneBot(solo);
+		const move = playOneBot$1(solo);
 		if (!move) return;
 		onEvents?.(move.events, move.seat);
 	}
 }
 /** Replays a saved bot game from its seed and the student's actions (for the server). */
-function replaySolo(setup, actions) {
+function replaySolo$1(setup, actions) {
 	if (!Array.isArray(actions) || actions.length > 3e3) return {
 		ok: false,
 		reason: "Too many moves"
 	};
 	let solo;
 	try {
-		solo = startSolo(setup).solo;
+		solo = startSolo$1(setup).solo;
 		playBots(solo);
 	} catch (error) {
 		return {
@@ -3466,7 +3466,7 @@ function replaySolo(setup, actions) {
 	let studentTurns = 0;
 	let left = false;
 	for (const text of actions) {
-		const parsed = parseStudentAction(text);
+		const parsed = parseStudentAction$1(text);
 		if (!parsed) return {
 			ok: false,
 			reason: "Unknown move"
@@ -3499,7 +3499,7 @@ function replaySolo(setup, actions) {
 	};
 }
 /** What the server signs: the seed and who it was given to, so a seed can't be shared or used for another game. */
-function stampText(player, seed) {
+function stampText$1(player, seed) {
 	return `101-seed:v1:${player}:${seed}`;
 }
 /** Checks the shape of a report that came from outside (e.g. the browser). */
@@ -3555,7 +3555,7 @@ function judgeCard101Game(report) {
 	};
 	let replayed;
 	try {
-		replayed = replaySolo(setup, report.actions);
+		replayed = replaySolo$1(setup, report.actions);
 	} catch {
 		return {
 			ok: false,
@@ -3588,6 +3588,726 @@ function judgeCard101Game(report) {
 			studentTurns,
 			countsForPoints: finished && rounds >= 2,
 			stats
+		}
+	};
+}
+//#endregion
+//#region shared/power-clash/engine.ts
+const POWER_IDS = [
+	"double-trouble",
+	"body-swap",
+	"freeze-ray",
+	"board-wipe"
+];
+const LINES = [
+	[
+		0,
+		1,
+		2
+	],
+	[
+		3,
+		4,
+		5
+	],
+	[
+		6,
+		7,
+		8
+	],
+	[
+		0,
+		3,
+		6
+	],
+	[
+		1,
+		4,
+		7
+	],
+	[
+		2,
+		5,
+		8
+	],
+	[
+		0,
+		4,
+		8
+	],
+	[
+		2,
+		4,
+		6
+	]
+];
+const other = (p) => p === "X" ? "O" : "X";
+function winningLine(board, player) {
+	return LINES.find((line) => line.every((i) => board[i] === player)) ?? null;
+}
+function validLoadout(powers) {
+	return powers.length === 3 && new Set(powers).size === 3 && powers.every((p) => POWER_IDS.includes(p));
+}
+function newRound(loadout, starter) {
+	if (!validLoadout(loadout.X) || !validLoadout(loadout.O)) throw new Error("Each player needs three different powers");
+	return {
+		board: Array(9).fill(null),
+		active: starter,
+		status: "active",
+		loadout: {
+			X: [...loadout.X],
+			O: [...loadout.O]
+		},
+		used: {
+			X: [],
+			O: []
+		},
+		frozen: [],
+		powerThisTurn: null,
+		placesLeft: 1,
+		line: null
+	};
+}
+/** Squares the active player may place on right now. */
+function placeableSquares(state) {
+	if (state.status !== "active") return [];
+	const blocked = new Set(state.frozen.filter((f) => f.blockedFor === state.active).map((f) => f.square));
+	return state.board.flatMap((c, i) => c === null && !blocked.has(i) ? [i] : []);
+}
+function hasPower(state, player, power) {
+	return state.loadout[player].includes(power) && !state.used[player].includes(power);
+}
+/** Squares the active player can pick for the next target of a power. [] = none. */
+function targetChoices(state, power, picked) {
+	const me = state.active;
+	const they = other(me);
+	const all = state.board.map((_, i) => i);
+	switch (power) {
+		case "double-trouble": return [];
+		case "body-swap":
+			if (picked.length === 0) return all.filter((i) => state.board[i] === me);
+			if (picked.length === 1) return all.filter((i) => state.board[i] === they);
+			return [];
+		case "freeze-ray": return picked.length === 0 ? all.filter((i) => state.board[i] === null) : [];
+		case "board-wipe": return picked.length === 0 ? all.filter((i) => state.board[i] !== null) : [];
+	}
+}
+function targetsNeeded(power) {
+	return power === "body-swap" ? 2 : power === "double-trouble" ? 0 : 1;
+}
+/** Why the active player can't play this power right now, or null if they can. */
+function powerBlockedReason(state, power) {
+	if (state.status !== "active") return "The round is over";
+	if (!hasPower(state, state.active, power)) return "You have already used this power";
+	if (state.powerThisTurn) return "One power per turn";
+	switch (power) {
+		case "double-trouble": return placeableSquares(state).length >= 2 ? null : "Needs two squares you can place on";
+		case "body-swap": return targetChoices(state, power, []).length > 0 && targetChoices(state, power, [0]).length > 0 ? null : "Needs one X and one O on the board";
+		case "freeze-ray": return targetChoices(state, power, []).length > 0 ? null : "Needs an empty square";
+		case "board-wipe": return targetChoices(state, power, []).length > 0 ? null : "Needs a symbol on the board";
+	}
+}
+/** Win/draw check after any board change. The player who just acted wins ties. */
+function judge(state, mover, events) {
+	const lineMover = winningLine(state.board, mover);
+	const lineOther = winningLine(state.board, other(mover));
+	const winner = lineMover ? mover : lineOther ? other(mover) : null;
+	if (winner) {
+		const line = lineMover ?? lineOther;
+		events.push({
+			kind: "win",
+			player: winner,
+			line
+		});
+		return {
+			...state,
+			status: winner,
+			line
+		};
+	}
+	if (state.board.every((c) => c !== null)) {
+		events.push({ kind: "draw" });
+		return {
+			...state,
+			status: "draw"
+		};
+	}
+	return state;
+}
+function endTurn(state, events) {
+	const done = state.active;
+	for (const f of state.frozen) if (f.blockedFor === done) events.push({
+		kind: "thaw",
+		square: f.square
+	});
+	return {
+		...state,
+		frozen: state.frozen.filter((f) => f.blockedFor !== done),
+		active: other(done),
+		powerThisTurn: null,
+		placesLeft: 1
+	};
+}
+function legalSkip(state) {
+	return state.status === "active" && state.placesLeft > 0 && placeableSquares(state).length === 0;
+}
+/** Every action the active player may take right now (what a bot picks from). */
+function legalActions(state) {
+	if (state.status !== "active") return [];
+	const actions = placeableSquares(state).map((square) => ({
+		type: "place",
+		square
+	}));
+	if (legalSkip(state)) actions.push({ type: "skip" });
+	for (const power of state.loadout[state.active]) {
+		if (powerBlockedReason(state, power)) continue;
+		const walk = (picked) => {
+			if (picked.length === targetsNeeded(power)) {
+				actions.push({
+					type: "use-power",
+					power,
+					targets: picked
+				});
+				return;
+			}
+			for (const square of targetChoices(state, power, picked)) walk([...picked, square]);
+		};
+		walk([]);
+	}
+	return actions;
+}
+function play(state, action) {
+	if (state.status !== "active") return {
+		ok: false,
+		reason: "The round is over"
+	};
+	const me = state.active;
+	const events = [];
+	if (action.type === "skip") {
+		if (!legalSkip(state)) return {
+			ok: false,
+			reason: "You can still place a symbol"
+		};
+		events.push({
+			kind: "skip",
+			player: me
+		});
+		return {
+			ok: true,
+			state: endTurn(state, events),
+			events
+		};
+	}
+	if (action.type === "place") {
+		if (!placeableSquares(state).includes(action.square)) return {
+			ok: false,
+			reason: "You cannot place there"
+		};
+		const board = state.board.slice();
+		board[action.square] = me;
+		events.push({
+			kind: "place",
+			player: me,
+			square: action.square
+		});
+		let next = {
+			...state,
+			board,
+			placesLeft: state.placesLeft - 1
+		};
+		next = judge(next, me, events);
+		if (next.status !== "active") return {
+			ok: true,
+			state: next,
+			events
+		};
+		if (next.placesLeft <= 0 || placeableSquares(next).length === 0) next = endTurn(next, events);
+		return {
+			ok: true,
+			state: next,
+			events
+		};
+	}
+	const { power, targets } = action;
+	const blocked = powerBlockedReason(state, power);
+	if (blocked) return {
+		ok: false,
+		reason: blocked
+	};
+	if (targets.length !== targetsNeeded(power)) return {
+		ok: false,
+		reason: "Wrong number of targets"
+	};
+	for (let i = 0; i < targets.length; i++) if (!targetChoices(state, power, targets.slice(0, i)).includes(targets[i])) return {
+		ok: false,
+		reason: "That is not a legal target"
+	};
+	let next = {
+		...state,
+		used: {
+			...state.used,
+			[me]: [...state.used[me], power]
+		},
+		powerThisTurn: power
+	};
+	switch (power) {
+		case "double-trouble":
+			next.placesLeft = 2;
+			events.push({
+				kind: "double-trouble",
+				player: me
+			});
+			break;
+		case "body-swap": {
+			const [a, b] = targets;
+			const board = state.board.slice();
+			board[a] = state.board[b];
+			board[b] = state.board[a];
+			next.board = board;
+			events.push({
+				kind: "body-swap",
+				player: me,
+				squares: [a, b]
+			});
+			break;
+		}
+		case "freeze-ray":
+			next.frozen = [...state.frozen, {
+				square: targets[0],
+				blockedFor: other(me)
+			}];
+			events.push({
+				kind: "freeze",
+				player: me,
+				square: targets[0]
+			});
+			break;
+		case "board-wipe": {
+			const board = state.board.slice();
+			board[targets[0]] = null;
+			next.board = board;
+			events.push({
+				kind: "wipe",
+				player: me,
+				square: targets[0]
+			});
+			break;
+		}
+	}
+	next = judge(next, me, events);
+	if (next.status !== "active") return {
+		ok: true,
+		state: next,
+		events
+	};
+	return {
+		ok: true,
+		state: next,
+		events
+	};
+}
+//#endregion
+//#region shared/power-clash/bot.ts
+/** Medium's three powers. Chosen by the simulation (scripts/power-clash-sim.mjs). */
+const MEDIUM_POWERS = [
+	"double-trouble",
+	"body-swap",
+	"board-wipe"
+];
+/** The chance each level does something silly instead of its best idea. */
+const EASY_SLIP = .2;
+const MEDIUM_SLIP = .15;
+/** How often Easy uses a power when it can, and Very Easy. */
+const EASY_POWER = .22;
+const VERY_EASY_POWER = .12;
+const MEDIUM_MAX_DEPTH = 3;
+const pick = (random, list) => list[Math.min(list.length - 1, Math.floor(random() * list.length))];
+/** The three powers a bot brings to a match. Only Medium has a fixed set. */
+function chooseLoadout(level, random) {
+	if (level === "medium") return [...MEDIUM_POWERS];
+	const pool = [...POWER_IDS];
+	const chosen = [];
+	while (chosen.length < 3) chosen.push(pool.splice(Math.min(pool.length - 1, Math.floor(random() * pool.length)), 1)[0]);
+	return chosen;
+}
+/** The action the active player's bot takes. Always one of `legalActions(state)`. */
+function chooseAction(state, level, random) {
+	const actions = legalActions(state);
+	if (actions.length === 0) throw new Error("No legal action: the round is over");
+	if (actions.length === 1) return actions[0];
+	if (level === "very-easy") return veryEasy(actions, random);
+	if (level === "easy") return easy(state, actions, random);
+	return medium(state, actions, random);
+}
+const isPower = (a) => a.type === "use-power";
+function veryEasy(actions, random) {
+	const powers = actions.filter(isPower);
+	if (powers.length > 0 && random() < VERY_EASY_POWER) return pick(random, powers);
+	const rest = actions.filter((a) => !isPower(a));
+	return pick(random, rest.length ? rest : actions);
+}
+/** Does this action win the round for `me` straight away? */
+const wins = (state, action, me) => {
+	const r = play(state, action);
+	return r.ok && r.state.status === me;
+};
+function easy(state, actions, random) {
+	const me = state.active;
+	const win = actions.find((a) => wins(state, a, me));
+	if (win && random() < .95) return win;
+	const powers = actions.filter(isPower);
+	if (powers.length > 0 && random() < EASY_POWER) return pick(random, powers);
+	const places = actions.filter((a) => !isPower(a));
+	const pool = places.length ? places : actions;
+	if (random() < EASY_SLIP) return pick(random, pool);
+	const safe = pool.filter((a) => {
+		const r = play(state, a);
+		if (!r.ok || r.state.status !== "active" || r.state.active === me) return true;
+		return !legalActions(r.state).some((o) => o.type === "place" && wins(r.state, o, other(me)));
+	});
+	return pick(random, safe.length ? safe : pool);
+}
+const WIN = 1e4;
+/** How good the board looks for `root`, when the search stops looking. */
+function evaluate(state, root) {
+	const foe = other(root);
+	let score = 0;
+	for (const line of LINES) {
+		let mine = 0;
+		let theirs = 0;
+		for (const i of line) if (state.board[i] === root) mine++;
+		else if (state.board[i] === foe) theirs++;
+		if (theirs === 0 && mine > 0) score += mine === 1 ? 1 : 9;
+		if (mine === 0 && theirs > 0) score -= theirs === 1 ? 1 : 9;
+	}
+	if (state.board[4] === root) score += 2;
+	else if (state.board[4] === foe) score -= 2;
+	score += 2 * (state.loadout[root].length - state.used[root].length);
+	score -= 2 * (state.loadout[foe].length - state.used[foe].length);
+	return score;
+}
+var OutOfBudget = class extends Error {};
+function medium(state, actions, random) {
+	const me = state.active;
+	const win = actions.find((a) => wins(state, a, me));
+	if (win) return win;
+	if (random() < MEDIUM_SLIP) return pick(random, actions);
+	let nodes = 0;
+	const search = (s, depth, alpha, beta) => {
+		if (s.status !== "active") {
+			if (s.status === "draw") return 0;
+			return s.status === me ? WIN + depth : -(WIN + depth);
+		}
+		if (++nodes > 2e4) throw new OutOfBudget();
+		if (depth === 0) return evaluate(s, me);
+		const maximising = s.active === me;
+		let best = maximising ? -Infinity : Infinity;
+		for (const a of legalActions(s)) {
+			const r = play(s, a);
+			if (!r.ok) continue;
+			const v = search(r.state, depth - 1, alpha, beta);
+			if (maximising) {
+				if (v > best) best = v;
+				if (best > alpha) alpha = best;
+			} else {
+				if (v < best) best = v;
+				if (best < beta) beta = best;
+			}
+			if (alpha >= beta) break;
+		}
+		return best;
+	};
+	let ranked = actions.map((action) => ({
+		action,
+		value: 0
+	}));
+	for (let depth = 1; depth <= MEDIUM_MAX_DEPTH; depth++) try {
+		const scored = ranked.map(({ action }) => {
+			const r = play(state, action);
+			return {
+				action,
+				value: r.ok ? search(r.state, depth - 1, -Infinity, Infinity) : -Infinity
+			};
+		});
+		scored.sort((a, b) => b.value - a.value);
+		ranked = scored;
+		if (ranked[0].value >= WIN) break;
+	} catch (error) {
+		if (!(error instanceof OutOfBudget)) throw error;
+		break;
+	}
+	const top = ranked[0].value;
+	return pick(random, ranked.filter((r) => r.value === top)).action;
+}
+function newMatch(loadout, starter = "X") {
+	return {
+		score: {
+			X: 0,
+			O: 0
+		},
+		draws: 0,
+		round: 1,
+		loadout,
+		starter,
+		state: newRound(loadout, starter),
+		winner: null,
+		counted: false
+	};
+}
+/** Call once the round is over: adds the result to the score. Safe to call more than once. */
+function scoreRound(match) {
+	const { status } = match.state;
+	if (status === "active") return match;
+	if (match.counted) return match;
+	const score = { ...match.score };
+	let draws = match.draws;
+	if (status === "draw") draws += 1;
+	else score[status] += 1;
+	const winner = score.X >= 3 ? "X" : score.O >= 3 ? "O" : null;
+	return {
+		...match,
+		score,
+		draws,
+		winner,
+		counted: true
+	};
+}
+/** Next round: the starter swaps, and powers refresh (loadout may be changed). */
+function nextRound(match, loadout = match.loadout) {
+	const starter = other(match.starter);
+	return {
+		...match,
+		round: match.round + 1,
+		loadout,
+		starter,
+		state: newRound(loadout, starter),
+		counted: false
+	};
+}
+//#endregion
+//#region shared/power-clash/solo.ts
+/** The bot's three powers for this game: a pure function of the seed and level. */
+function botLoadoutFor(seed, level) {
+	return chooseLoadout(level, randomFromSeed(`${seed}:powers`));
+}
+const botSide = (setup) => setup.side === "X" ? "O" : "X";
+function startSolo(setup) {
+	if (!validLoadout(setup.loadout)) throw new Error("The student needs three different powers");
+	const bot = botLoadoutFor(setup.seed, setup.level);
+	return {
+		setup,
+		match: newMatch({
+			X: setup.side === "X" ? setup.loadout : bot,
+			O: setup.side === "O" ? setup.loadout : bot
+		}, "X"),
+		botMoves: 0,
+		studentMoves: 0,
+		stats: {
+			powersUsed: 0,
+			bodySwapWins: 0,
+			noPowerWin: false,
+			roundsWon: 0,
+			roundsLost: 0,
+			roundsDrawn: 0
+		}
+	};
+}
+const isStudentTurn = (solo) => solo.match.state.status === "active" && solo.match.state.active === solo.setup.side;
+const isBotTurn = (solo) => solo.match.state.status === "active" && solo.match.state.active === botSide(solo.setup);
+const roundIsOver = (solo) => solo.match.state.status !== "active";
+const matchIsOver = (solo) => solo.match.winner !== null;
+/** Does the round end between these two states (and how, for the stats)? */
+function noteRound(solo, mover, powerThisTurn) {
+	const { status } = solo.match.state;
+	if (status === "active" || solo.match.counted === false) return;
+	const side = solo.setup.side;
+	if (status === "draw") solo.stats.roundsDrawn++;
+	else if (status === side) {
+		solo.stats.roundsWon++;
+		if (mover === side && powerThisTurn === "body-swap") solo.stats.bodySwapWins++;
+	} else solo.stats.roundsLost++;
+}
+/** Plays one action for whoever's turn it is, and keeps the score and stats. Throws if it isn't legal. */
+function applyAction(solo, action) {
+	const before = solo.match.state;
+	const result = play(before, action);
+	if (!result.ok) throw new Error(result.reason);
+	const mover = before.active;
+	const countedBefore = solo.match.counted;
+	solo.match = scoreRound({
+		...solo.match,
+		state: result.state
+	});
+	if (action.type === "use-power" && mover === solo.setup.side) solo.stats.powersUsed++;
+	if (!countedBefore && solo.match.counted) {
+		noteRound(solo, mover, result.state.powerThisTurn);
+		if (solo.match.winner === solo.setup.side && solo.stats.powersUsed === 0) solo.stats.noPowerWin = true;
+	}
+	return result.events;
+}
+/** The student's action text, as the action the engine understands. Null if it isn't well made. */
+function parseStudentAction(text) {
+	if (text === "next") return "next";
+	if (text === "skip") return { type: "skip" };
+	const place = /^place:([0-8])$/.exec(text);
+	if (place) return {
+		type: "place",
+		square: Number(place[1])
+	};
+	const use = /^power:([a-z-]{1,20})(?::([0-8](?:,[0-8]){0,1}))?$/.exec(text);
+	if (use && POWER_IDS.includes(use[1])) return {
+		type: "use-power",
+		power: use[1],
+		targets: use[2] ? use[2].split(",").map(Number) : []
+	};
+	return null;
+}
+/** Applies what the student did. Throws (with a reason a student can read) if it isn't allowed. */
+function applyStudent(solo, text) {
+	const parsed = parseStudentAction(text);
+	if (!parsed) throw new Error("That move could not be read");
+	if (matchIsOver(solo)) throw new Error("The match is over");
+	if (parsed === "next") {
+		if (!roundIsOver(solo)) throw new Error("The round is not over yet");
+		solo.match = nextRound(solo.match);
+		return [];
+	}
+	if (!isStudentTurn(solo)) throw new Error("It is not your turn");
+	const events = applyAction(solo, parsed);
+	solo.studentMoves++;
+	return events;
+}
+/** The bot's next action, without playing it (the screen shows its "thinking" first). */
+function pickBotAction(solo) {
+	if (!isBotTurn(solo)) return null;
+	return chooseAction(solo.match.state, solo.setup.level, randomFromSeed(`${solo.setup.seed}:move:${solo.botMoves}`));
+}
+/** Plays the bot's move, if it's the bot's turn. Null if not. */
+function playOneBot(solo) {
+	const action = pickBotAction(solo);
+	if (!action) return null;
+	const events = applyAction(solo, action);
+	solo.botMoves++;
+	return {
+		action,
+		events
+	};
+}
+/**
+* Plays a whole game from its setup and the student's actions. The bot moves whenever it's
+* its turn. Fails on anything the rules don't allow, or any action left over after the
+* match is over.
+*/
+function replaySolo(setup, actions) {
+	let solo;
+	try {
+		solo = startSolo(setup);
+	} catch (error) {
+		return {
+			ok: false,
+			reason: error instanceof Error ? error.message : "bad setup"
+		};
+	}
+	const runBot = () => {
+		for (let guard = 0; guard < 200 && playOneBot(solo); guard++);
+	};
+	runBot();
+	for (const [i, text] of actions.entries()) try {
+		applyStudent(solo, text);
+		runBot();
+	} catch (error) {
+		return {
+			ok: false,
+			reason: `action ${i + 1}: ${error instanceof Error ? error.message : "not allowed"}`
+		};
+	}
+	return {
+		ok: true,
+		solo,
+		finished: matchIsOver(solo)
+	};
+}
+/** What the server signs: the seed and who it was given to, so a seed can't be shared or used for another game. */
+function stampText(player, seed) {
+	return `power-clash-seed:v1:${player}:${seed}`;
+}
+const powerList = (value) => Array.isArray(value) && value.length === 3 && value.every((p) => POWER_IDS.includes(p)) ? value : null;
+/** Checks the shape of a report that came from outside (e.g. the browser). */
+function parsePowerClashReport(input) {
+	if (typeof input !== "object" || input === null) return null;
+	const r = input;
+	if (r.game !== "power-clash") return null;
+	if (typeof r.seed !== "string" || r.seed.length > 64) return null;
+	if (typeof r.stamp !== "string" || !/^[A-Za-z0-9_-]{20,100}$/.test(r.stamp)) return null;
+	if (!isBotLevelId(r.level) || !isClaimedEnding(r.ending) || r.ending === "resigned") return null;
+	if (r.side !== "X" && r.side !== "O") return null;
+	const loadouts = r.loadouts;
+	if (typeof loadouts !== "object" || loadouts === null) return null;
+	const x = powerList(loadouts.X);
+	const o = powerList(loadouts.O);
+	if (!x || !o) return null;
+	if (!Array.isArray(r.actions) || r.actions.length > 1e3) return null;
+	if (!r.actions.every((a) => typeof a === "string" && a.length <= 40)) return null;
+	return {
+		game: "power-clash",
+		seed: r.seed,
+		stamp: r.stamp,
+		level: r.level,
+		side: r.side,
+		loadouts: {
+			X: x,
+			O: o
+		},
+		actions: r.actions,
+		ending: r.ending
+	};
+}
+/** Replays the match from its seed and works out the result. The stamp is checked separately. */
+function judgePowerClashGame(report) {
+	const bot = report.side === "X" ? "O" : "X";
+	const student = report.loadouts[report.side];
+	if (!validLoadout(student) || !validLoadout(report.loadouts[bot])) return {
+		ok: false,
+		problem: "bad powers"
+	};
+	if (botLoadoutFor(report.seed, report.level).some((p, i) => report.loadouts[bot][i] !== p)) return {
+		ok: false,
+		problem: "wrong bot powers"
+	};
+	let replayed;
+	try {
+		replayed = replaySolo({
+			seed: report.seed,
+			level: report.level,
+			side: report.side,
+			loadout: student
+		}, report.actions);
+	} catch {
+		return {
+			ok: false,
+			problem: "replay failed"
+		};
+	}
+	if (!replayed.ok) return {
+		ok: false,
+		problem: replayed.reason
+	};
+	const { solo, finished } = replayed;
+	if (!finished && report.ending === "finished") return {
+		ok: false,
+		problem: "game not over"
+	};
+	return {
+		ok: true,
+		game: {
+			outcome: finished && solo.match.winner === report.side ? "won" : "lost",
+			reason: finished ? "finished" : "abandoned",
+			roundsWon: solo.stats.roundsWon,
+			roundsLost: solo.stats.roundsLost,
+			roundsDrawn: solo.stats.roundsDrawn,
+			studentMoves: solo.studentMoves,
+			countsForPoints: finished && solo.studentMoves >= 6,
+			stats: solo.stats
 		}
 	};
 }
@@ -3995,8 +4715,8 @@ async function readJsonBody(request) {
 //#region supabase/functions/save-bot-game/handler.ts
 /**
 * The save-bot-game server function: the browser sends the moves of a finished chess,
-* checkers, Wormholes & Black Holes or 101 game against bots, and this decides the result
-* and saves it. For Wormholes & Black Holes and 101 it also hands out the stamped seed a
+* checkers, Wormholes & Black Holes, 101 or Power Clash game against bots, and this decides the
+* result and saves it. For those last three it also hands out the stamped seed a
 * game is played from (shared/space/save.ts explains how that works).
 *
 * It never trusts the browser's word for the result. It replays every move with the same
@@ -4024,9 +4744,10 @@ async function handleSaveBotGame(request, services) {
 	if (!player) return reply(401, { error: "Please sign in again." });
 	const body = await readJsonBody(request);
 	const asked = body;
-	if ((asked?.game === "space" || asked?.game === "101") && asked.start === true) {
+	if ((asked?.game === "space" || asked?.game === "101" || asked?.game === "power-clash") && asked.start === true) {
 		const seed = makeSeed(now(services), (services.randomHex ?? randomHex)(12));
-		const stamp = await services.stamp((asked.game === "space" ? stampText$1 : stampText)(player, seed));
+		const stampFor = asked.game === "space" ? stampText$2 : asked.game === "101" ? stampText$1 : stampText;
+		const stamp = await services.stamp(stampFor(player, seed));
 		if (!stamp) return reply(500, { error: "The game couldn't start." });
 		return reply(200, {
 			seed,
@@ -4035,6 +4756,7 @@ async function handleSaveBotGame(request, services) {
 	}
 	if (asked?.game === "space") return saveSpaceGame(player, body, services, reply);
 	if (asked?.game === "101") return save101Game(player, body, services, reply);
+	if (asked?.game === "power-clash") return savePowerClashGame(player, body, services, reply);
 	const checked = check(body);
 	if (!checked) return reply(400, { error: "That game couldn't be read." });
 	const { game: gameName, report, judged } = checked;
@@ -4066,7 +4788,7 @@ const TOO_MANY = "That's a lot of games today! Have a break and come back tomorr
 async function saveSpaceGame(player, body, services, reply) {
 	const report = parseSpaceReport(body);
 	if (!report) return reply(400, { error: "That game couldn't be read." });
-	const expected = await services.stamp(stampText$1(player, report.seed));
+	const expected = await services.stamp(stampText$2(player, report.seed));
 	const problem = seedProblem(report.seed, now(services)) ?? (expected && sameText(expected, report.stamp) ? null : "bad stamp");
 	const judged = problem ? {
 		ok: false,
@@ -4108,7 +4830,7 @@ async function saveSpaceGame(player, body, services, reply) {
 async function save101Game(player, body, services, reply) {
 	const report = parseCard101Report(body);
 	if (!report) return reply(400, { error: "That game couldn't be read." });
-	const expected = await services.stamp(stampText(player, report.seed));
+	const expected = await services.stamp(stampText$1(player, report.seed));
 	const problem = seedProblem(report.seed, now(services)) ?? (expected && sameText(expected, report.stamp) ? null : "bad stamp");
 	const judged = problem ? {
 		ok: false,
@@ -4145,6 +4867,47 @@ async function save101Game(player, body, services, reply) {
 		result: game.outcome,
 		reason: game.reason,
 		place: game.place,
+		countsForPoints: game.countsForPoints
+	});
+}
+async function savePowerClashGame(player, body, services, reply) {
+	const report = parsePowerClashReport(body);
+	if (!report) return reply(400, { error: "That game couldn't be read." });
+	const expected = await services.stamp(stampText(player, report.seed));
+	const problem = seedProblem(report.seed, now(services)) ?? (expected && sameText(expected, report.stamp) ? null : "bad stamp");
+	const judged = problem ? {
+		ok: false,
+		problem
+	} : judgePowerClashGame(report);
+	if (!judged.ok) {
+		console.warn(`save-bot-game: refused a Power Clash game (${judged.problem})`);
+		return reply(400, { error: "That game couldn't be checked." });
+	}
+	const { game } = judged;
+	const saved = await services.recordPowerClash({
+		player,
+		bot_level: report.level,
+		player_side: report.side.toLowerCase(),
+		moves: report.actions,
+		result: game.outcome,
+		reason: game.reason,
+		player_moves: game.studentMoves,
+		counts_for_points: game.countsForPoints,
+		power_clash: {
+			seed: report.seed,
+			side: report.side,
+			loadouts: report.loadouts,
+			roundsWon: game.roundsWon,
+			roundsLost: game.roundsLost,
+			roundsDrawn: game.roundsDrawn,
+			stats: game.stats
+		}
+	});
+	if (saved === "too-many") return reply(429, { error: TOO_MANY });
+	if (saved !== "saved") return reply(500, { error: "The game couldn't be saved." });
+	return reply(200, {
+		result: game.outcome,
+		reason: game.reason,
 		countsForPoints: game.countsForPoints
 	});
 }
@@ -4221,6 +4984,13 @@ Deno.serve((request) => handleSaveBotGame(request, {
 		if (!error) return "saved";
 		if (error.code === "54000") return "too-many";
 		console.error(`save-bot-game: database refused a 101 game (${error.code})`);
+		return "refused";
+	},
+	async recordPowerClash(row) {
+		const { error } = await admin.rpc("record_power_clash_bot_game", row);
+		if (!error) return "saved";
+		if (error.code === "54000") return "too-many";
+		console.error(`save-bot-game: database refused a Power Clash game (${error.code})`);
 		return "refused";
 	},
 	stamp: stamper(key, "space-seed")

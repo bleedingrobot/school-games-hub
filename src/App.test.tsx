@@ -209,6 +209,16 @@ describe('pages', () => {
   });
 
 
+  it('keeps Power Clash off the dashboard until it is switched on, but still opens at its address', async () => {
+    const { unmount } = renderAt('/');
+    expect(screen.queryByRole('article', { name: /Power Clash/ })).not.toBeInTheDocument();
+    unmount();
+    renderAt('/power-clash?bot=medium');
+    expect(await screen.findByRole('heading', { level: 1, name: /Power Clash/ })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Play a bot' }));
+    expect(screen.getByRole('radio', { name: 'Medium' })).toBeChecked(); // the level from the address
+  });
+
   it('shows a friendly page for unknown addresses', () => {
     renderAt('/nope');
     expect(screen.getByRole('heading', { name: /wrong square/ })).toBeInTheDocument();

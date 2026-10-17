@@ -135,6 +135,25 @@ export function legalSkip(state: PowerClashState): boolean {
   return state.status === 'active' && state.placesLeft > 0 && placeableSquares(state).length === 0;
 }
 
+/** Every action the active player may take right now (what a bot picks from). */
+export function legalActions(state: PowerClashState): Action[] {
+  if (state.status !== 'active') return [];
+  const actions: Action[] = placeableSquares(state).map((square) => ({ type: 'place', square }));
+  if (legalSkip(state)) actions.push({ type: 'skip' });
+  for (const power of state.loadout[state.active]) {
+    if (powerBlockedReason(state, power)) continue;
+    const walk = (picked: number[]) => {
+      if (picked.length === targetsNeeded(power)) {
+        actions.push({ type: 'use-power', power, targets: picked });
+        return;
+      }
+      for (const square of targetChoices(state, power, picked)) walk([...picked, square]);
+    };
+    walk([]);
+  }
+  return actions;
+}
+
 export function play(state: PowerClashState, action: Action): PlayResult {
   if (state.status !== 'active') return { ok: false, reason: 'The round is over' };
   const me = state.active;

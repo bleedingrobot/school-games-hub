@@ -2,7 +2,8 @@ import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { TEXT } from './text';
 
-const PowerClashPlay = lazy(() => import('./PowerClashPlay').then((m) => ({ default: m.PowerClashPlay })));
+// Loaded only when someone opens the game, so the dashboard stays quick.
+const PowerClashPage = lazy(() => import('./PowerClashPage').then((m) => ({ default: m.PowerClashPage })));
 
 function PowerClashIcon({ size = 64 }: { size?: number }) {
   return (
@@ -15,14 +16,14 @@ function PowerClashIcon({ size = 64 }: { size?: number }) {
   );
 }
 
-/** Tic-Tac-Toe: Power Clash. Pass-and-play only so far (Stage P.2); never ranked. */
+/** Tic-Tac-Toe: Power Clash. Two players on one screen, or against a bot (saved for taking-part points); never ranked. */
 export const powerClash: GameDefinition = {
   id: 'power-clash',
   name: TEXT.name,
   tagline: TEXT.tagline,
   colours: ['#2b1b6b', '#a3197c'],
   Icon: PowerClashIcon,
-  Play: PowerClashPlay,
+  Play: PowerClashPage,
   ranked: false,
   noBots: true,
 };
