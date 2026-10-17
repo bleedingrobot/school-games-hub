@@ -141,6 +141,26 @@ Written 17 October 2026 after a deep dive into [devshareacademy/monster-tamer](h
 
 Each stage ends with tests passing and a results section here, and stops for James's review, like Gem Keep. A class trial could start after N.4 with device-only saving (as Gem Keep did).
 
+### N.1 results (done 17 Oct 2026, branch `monsters`)
+
+- **`shared/maths/banded.ts`**: the engine behind every new topic. A topic is a set of question *families* grouped in bands; band = `QuestionContext.level`. Same 60/30/10 focus/review/stretch mix, mastery boxes and repeats as times tables (`pickFromPools`, split out of `pickFact`). Each question is made from its key + a few numbers (`params`), and `rebuild(key, params)` makes it again, so the N.6 server can check answers without trusting the browser.
+- **Five new packs** in `shared/maths/skillPacks/` (`index.ts` lists all six with `makePack` and `topicOfKey`):
+
+| Topic | Bands | Records |
+|---|---|---|
+| Place value and rounding | 4: 3-digit → 4-digit → rounding to 10/100 → rounding to 1000, 5-digit, × 10/100/1000 | 11 kinds |
+| Adding and taking away | 4: facts to 10 + 10 → tens and bridging → 2-digit with/without regrouping, pairs to 100 → 3-digit, near-hundreds | 55 facts + 14 kinds |
+| Division | 5: ÷ 2/5/10 → ÷ 3/4 → ÷ 6–9 → 2-digit ÷ 1-digit, ÷ 10/100, missing dividend → remainders, 3-digit ÷ 1-digit | 146 facts + 5 kinds |
+| Fractions | 4: unit fraction of amount, compare same bottom → non-unit of amount, equivalents, compare same top → add/take away, mixed ↔ improper → compare any, simplify | 10 kinds |
+| Decimals and money | 4: tenths → money (adding, change from $5/$10/$20) → hundredths, compare, × 10/100 → rounding, decimal × whole, fractions as decimals | 11 kinds |
+
+- Wrong choices in multiple-choice mode are the real slips (47 + 36 → 73, 0.3 + 0.5 → 0.08, 1/2 = ?/8 → 7, $10 − $3.65 forgetting the borrow...), padded with near misses.
+- **Question box** (`src/maths/QuestionModal.tsx`, used by Gem Keep too): fractions drawn top-over-bottom with the blank inside when needed, mixed numbers, a decimal point key, answers up to 6 digits, labelled "which is bigger?" choices, smaller word parts, long questions shrink to fit. Checked at 1366 × 640 and phone size; axe clean on 20 question boxes.
+- **Practice page**: `npm run maths:preview` → `dist-preview-maths/` (every topic and band, one example per kind).
+- **Curriculum tags are placeholders** (`TODO-...`), like times tables, for James to fill in from his alignment tool.
+- Tests: `shared/maths/packs.test.ts` (every family: 400 rolls or every fact ×4 → sound answer, one blank, 4 distinct choices, plain sums re-solved from the screen, rebuild matches, bad numbers refused) + 5 new question-box tests. 165 maths tests pass.
+- Known, not ours: `space-maths` has two stale server bundles (`save-bot-game`, `space-game` index.ts still have Mission Boost 3, code says 5). The Mission Control session's next `npm run build:functions` fixes it.
+
 ## 11. Ideas for later
 
 - **Battle a classmate** with your team (turn-based, so it fits the `multiplayer`-style server function). The maths questions are each player's own.
