@@ -257,7 +257,13 @@ function weightedPick(keys, stats, random) {
 * the teacher has switched every table off.
 */
 function pickFact(ctx, stats, memory, random) {
-	const pools = poolsFor(ctx);
+	return pickFromPools(poolsFor(ctx), ctx, stats, memory, random);
+}
+/**
+* The same picking rules over any pools of keys (the other skill packs build their own
+* pools from difficulty bands). Returns null when every pool is empty.
+*/
+function pickFromPools(pools, ctx, stats, memory, random) {
 	const allowed = new Set([
 		...pools.focus,
 		...pools.review,

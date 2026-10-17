@@ -179,6 +179,20 @@ begin
 end;
 $$;
 
+-- Which of these saves are already kept? A save that got through but whose reply was lost is sent
+-- again; it is told "already saved" rather than being checked against a newer save and turned down.
+create function public.known_monster_saves(player uuid, ids uuid[])
+returns uuid[]
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(array_agg(e.save_id), '{}')
+  from public.monster_events e
+  where e.player = known_monster_saves.player and e.save_id = any (ids)
+$$;
+
 -- One checked save. `save` = { saveId, seq, at, world, battles, summary: { wildWins, trainerWins,
 -- newBadges, catches, questions, right, owned, seen, badges, finalInTeam } }.
 -- Returns { status: 'saved' | 'duplicate' | 'stale', version, points }.
@@ -794,7 +808,7 @@ select cron.schedule('forget-monster-refusals', '29 3 * * *',
 
 revoke execute on function
   public.monsters_settings(), public.teacher_set_monsters(jsonb), public.monster_point_rules(),
-  public.load_monster_save(uuid), public.record_monster_save(uuid, jsonb), public.record_monster_refusal(uuid, text, integer),
+  public.load_monster_save(uuid), public.known_monster_saves(uuid, uuid[]), public.record_monster_save(uuid, jsonb), public.record_monster_refusal(uuid, text, integer),
   public.score_monster_events(public.monster_events), public.score_monster_events_trigger(),
   public.my_monsters(), public.monsters_leaderboard(), public.teacher_monster_student(uuid),
   public.teacher_monster_class(), public.teacher_students()
@@ -804,5 +818,6 @@ grant execute on function
   public.teacher_monster_student(uuid), public.teacher_monster_class(), public.teacher_students()
 to authenticated;
 grant execute on function
-  public.load_monster_save(uuid), public.record_monster_save(uuid, jsonb), public.record_monster_refusal(uuid, text, integer)
+  public.load_monster_save(uuid), public.known_monster_saves(uuid, uuid[]), public.record_monster_save(uuid, jsonb),
+  public.record_monster_refusal(uuid, text, integer)
 to service_role;
