@@ -68,6 +68,8 @@ export type FightResult = 'won' | 'lost' | 'fled' | 'timeout';
 export interface FightState {
   /** Random state (see rng.ts). */
   rng: number;
+  /** The seed the fight started from (it never changes; the Battle Cry questions come from it). */
+  seed: number;
   depth: number;
   round: number;
   clan: Fighter[];
@@ -119,7 +121,7 @@ export function bossAt(depth: number): MonsterDef | undefined {
 /** Start a fight at a mine depth (0-20). `boss` fights the depth's boss with two helpers. */
 export function newFight(members: Member[], depth: number, seed: number, boss = false): FightState {
   const state: FightState = {
-    rng: seed | 0, depth, round: 0, clan: members.map(clanFighter), enemies: [], result: null,
+    rng: seed | 0, seed: seed | 0, depth, round: 0, clan: members.map(clanFighter), enemies: [], result: null,
     xp: members.map(() => 0), gold: 0, followers: 0, log: [],
   };
   const pool = monstersAt(depth);
