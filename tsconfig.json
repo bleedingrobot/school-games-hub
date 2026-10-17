@@ -15,6 +15,6 @@
     "noEmit": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "shared", "preview", "supabase/functions", "vite.config.ts", "vite.preview.config.ts", "vite.101-preview.config.ts", "vite.gem-keep-preview.config.ts"],
+  "include": ["src", "shared", "preview", "supabase/functions", "vite.config.ts", "vite.preview.config.ts", "vite.101-preview.config.ts", "vite.gem-keep-preview.config.ts", "vite.maths-preview.config.ts", "vite.monsters-preview.config.ts"],
   "exclude": ["supabase/functions/*/index.ts"]
 }

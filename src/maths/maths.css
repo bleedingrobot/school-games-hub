@@ -262,3 +262,36 @@
     min-height: 44px;
   }
 }
+
+/* A phone on its side: the question on the left, the pad (or choices) on the right, so nothing runs off the bottom. */
+@media (max-height: 460px) and (min-width: 600px) {
+  .question {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+    grid-auto-flow: row;
+    align-items: center;
+    column-gap: 18px;
+    width: min(100%, 720px);
+    padding: 10px 16px 12px;
+  }
+  .question > * {
+    grid-column: 1;
+  }
+  .question > .numpad,
+  .question > .question__choices {
+    grid-column: 2;
+    grid-row: 1 / span 6;
+  }
+  .question__fact {
+    font-size: 2rem;
+  }
+  .question__choice {
+    min-height: 56px;
+  }
+  .numpad__key {
+    min-height: 40px;
+    font-size: 1.2rem;
+  }
+  .numpad {
+    gap: 6px;
+  }
+}

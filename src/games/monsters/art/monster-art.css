@@ -1,0 +1,265 @@
+/* Monster drawings and attack effects. Animations are off for reduced motion (end of file). */
+
+.mon-art {
+  display: inline-block;
+  width: 100%;
+  aspect-ratio: 1;
+  line-height: 0;
+}
+.mon-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.mon-art__body {
+  transform-box: view-box;
+}
+.mon-art--idle:not(.mon-art--still) svg {
+  animation: mon-bob 2.4s ease-in-out infinite;
+  transform-origin: 60px 108px;
+}
+.mon-art--hurt svg {
+  animation: mon-hurt 0.5s ease-in-out;
+  transform-origin: 60px 108px;
+}
+.mon-art--faint svg {
+  animation: mon-faint 0.9s ease-in forwards;
+  transform-origin: 60px 108px;
+}
+.mon-sparkle {
+  animation: mon-twinkle 1.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes mon-bob {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  50% { transform: translateY(-3%) scale(1.02, 0.98); }
+}
+@keyframes mon-hurt {
+  0%, 100% { transform: translateX(0) rotate(0); filter: none; }
+  15% { transform: translateX(-6%) rotate(-5deg); filter: brightness(2.2); }
+  35% { transform: translateX(6%) rotate(5deg); filter: none; }
+  55% { transform: translateX(-4%) rotate(-3deg); filter: brightness(1.6); }
+  75% { transform: translateX(3%) rotate(2deg); }
+}
+@keyframes mon-faint {
+  0% { transform: translateY(0) scaleY(1); opacity: 1; }
+  100% { transform: translateY(26%) scaleY(0.2); opacity: 0; }
+}
+@keyframes mon-twinkle {
+  0%, 100% { transform: scale(0.6); opacity: 0.6; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+
+/* ---------- Attack effects ---------- */
+
+.fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 3;
+}
+.fx * {
+  transform-box: view-box;
+  transform-origin: 60px 60px;
+}
+.fx--1 { --fx-ms: 650ms; }
+.fx--2 { --fx-ms: 850ms; }
+.fx--3 { --fx-ms: 1100ms; }
+
+.fx-swirl {
+  animation: fx-swirl var(--fx-ms) ease-in both;
+  animation-delay: var(--t);
+  opacity: 0;
+}
+@keyframes fx-swirl {
+  0% { transform: rotate(var(--a)) translateX(var(--r)) scale(0.3); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: rotate(calc(var(--a) + 540deg)) translateX(0) scale(1.1); opacity: 0; }
+}
+
+.fx-drop {
+  animation: fx-drop var(--fx-ms) ease-out both;
+  animation-delay: var(--t);
+  opacity: 0;
+}
+@keyframes fx-drop {
+  0% { transform: translate(60px, 64px) scale(0.3); opacity: 0; }
+  20% { opacity: 1; }
+  55% { transform: translate(calc(60px + var(--dx)), calc(64px + var(--dy))) scale(1); }
+  100% { transform: translate(calc(60px + var(--dx)), calc(64px + var(--dy) + 40px)) scale(0.8); opacity: 0; }
+}
+.fx-ring {
+  animation: fx-ring var(--fx-ms) ease-out both;
+  transform-origin: 60px 64px !important;
+  opacity: 0;
+}
+.fx-ring--late {
+  animation-delay: 0.18s;
+}
+@keyframes fx-ring {
+  0% { transform: scale(0.2); opacity: 0.9; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+.fx-flame {
+  animation: fx-flame var(--fx-ms) ease-out both;
+  animation-delay: var(--t);
+  opacity: 0;
+}
+@keyframes fx-flame {
+  0% { transform: translate(var(--x), 12px) scale(0.3); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translate(var(--x), -34px) scale(1.15); opacity: 0; }
+}
+
+.fx-snow {
+  animation: fx-snow var(--fx-ms) ease-in both;
+  animation-delay: var(--t);
+  opacity: 0;
+}
+@keyframes fx-snow {
+  0% { transform: translate(var(--x), -10px) rotate(0) scale(var(--s)); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translate(calc(var(--x) * 0.6), 74px) rotate(200deg) scale(var(--s)); opacity: 0; }
+}
+
+.fx-glow {
+  animation: fx-glow var(--fx-ms) ease-out both;
+  transform-origin: 60px 64px !important;
+}
+@keyframes fx-glow {
+  0% { transform: scale(0.2); opacity: 0; }
+  20% { opacity: 0.8; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+.fx-bolt {
+  animation: fx-bolt var(--fx-ms) steps(1, end) both;
+  animation-delay: var(--t);
+  opacity: 0;
+}
+@keyframes fx-bolt {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  25% { opacity: 0; }
+  40% { opacity: 1; }
+  55% { opacity: 0; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.fx-rock {
+  animation: fx-rock var(--fx-ms) cubic-bezier(0.5, 0, 0.9, 0.6) both;
+  animation-delay: var(--t);
+  opacity: 0;
+}
+@keyframes fx-rock {
+  0% { transform: translateY(-96px) rotate(0); opacity: 1; }
+  70% { transform: translateY(0) rotate(var(--spin)); opacity: 1; }
+  100% { transform: translateY(8px) rotate(var(--spin)); opacity: 0; }
+}
+
+/* ---------- Hit flash, critical pop, damage numbers ---------- */
+
+.fx-hit {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 70%);
+  animation: fx-hit 0.35s ease-out both;
+  pointer-events: none;
+  z-index: 4;
+}
+@keyframes fx-hit {
+  0% { opacity: 0; transform: scale(0.4); }
+  30% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+.fx-crit {
+  position: absolute;
+  left: 50%;
+  top: -16%;
+  translate: -50% 0;
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: #fde047;
+  color: #7c2d12;
+  border: 3px solid #7c2d12;
+  font-family: var(--display, sans-serif);
+  font-size: clamp(0.95rem, 3.4vh, 1.4rem);
+  font-weight: 900;
+  line-height: 1.3;
+  white-space: nowrap;
+  animation: fx-crit 1s ease-out both;
+  pointer-events: none;
+  z-index: 6;
+}
+@keyframes fx-crit {
+  0% { transform: scale(0.2) rotate(-10deg); opacity: 0; }
+  25% { transform: scale(1.3) rotate(4deg); opacity: 1; }
+  45% { transform: scale(1) rotate(-3deg); }
+  85% { opacity: 1; }
+  100% { transform: translateY(-14px) scale(1); opacity: 0; }
+}
+.fx-num {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  translate: -50% 0;
+  color: #fff;
+  font-family: var(--display, sans-serif);
+  font-size: clamp(1.3rem, 5.4vh, 2.2rem);
+  font-weight: 900;
+  line-height: 1;
+  -webkit-text-stroke: 5px #7f1d1d;
+  paint-order: stroke fill;
+  animation: fx-num 1.1s ease-out both;
+  animation-delay: 0.25s;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+}
+.fx-num--strong { color: #fde047; font-size: clamp(1.5rem, 6.4vh, 2.6rem); }
+.fx-num--weak { color: #cbd5e1; }
+.fx-num--heal { color: #bbf7d0; -webkit-text-stroke-color: #14532d; }
+@keyframes fx-num {
+  0% { transform: translateY(10px) scale(0.5); opacity: 0; }
+  20% { transform: translateY(0) scale(1.25); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translateY(-34px) scale(1); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mon-art svg,
+  .mon-sparkle {
+    animation: none !important;
+  }
+  .mon-art--faint svg {
+    opacity: 0.15;
+    transform: translateY(22%) scaleY(0.3);
+  }
+  .mon-art--hurt svg {
+    filter: brightness(1.6);
+  }
+  /* The effects are only decoration: show a soft glow instead of movement. */
+  .fx * {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  .fx-hit,
+  .fx-crit,
+  .fx-num {
+    animation: fx-fade 1.4s linear both !important;
+  }
+  .fx-num {
+    translate: -50% 0;
+  }
+}
+@keyframes fx-fade {
+  0%, 80% { opacity: 1; }
+  100% { opacity: 0; }
+}
