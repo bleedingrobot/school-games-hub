@@ -2,7 +2,7 @@
 
 *Times-table questions in Wormholes & Black Holes, with an on/off switch. Written 17 October 2026 for James.*
 
-**Status: plan only. Nothing is built until James approves it (answers go in section 9).**
+**Status: approved by James on 17 October 2026: "go with your suggestions" (every answer in section 9 is the suggestion).**
 
 ## 1. The idea in one paragraph
 
