@@ -149,8 +149,8 @@ Each stage ends with tests passing and a results section here, and stops for Jam
 | Topic | Bands | Records |
 |---|---|---|
 | Place value and rounding | 4: 3-digit → 4-digit → rounding to 10/100 → rounding to 1000, 5-digit, × 10/100/1000 | 11 kinds |
-| Adding and taking away | 4: facts to 10 + 10 → tens and bridging → 2-digit with/without regrouping, pairs to 100 → 3-digit, near-hundreds | 55 facts + 14 kinds |
-| Division | 5: ÷ 2/5/10 → ÷ 3/4 → ÷ 6–9 → 2-digit ÷ 1-digit, ÷ 10/100, missing dividend → remainders, 3-digit ÷ 1-digit | 146 facts + 5 kinds |
+| Adding and taking away | 4: facts to 10 + 10 → tens and bridging → 2-digit with/without regrouping, pairs to 100 → 3-digit, near-hundreds | 55 facts + 15 kinds |
+| Division | 5: ÷ 2/5/10 → ÷ 3/4 → ÷ 6–9 → 2-digit ÷ 1-digit, ÷ 10/100, missing dividend → remainders, 3-digit ÷ 1-digit | 102 facts + 5 kinds |
 | Fractions | 4: unit fraction of amount, compare same bottom → non-unit of amount, equivalents, compare same top → add/take away, mixed ↔ improper → compare any, simplify | 10 kinds |
 | Decimals and money | 4: tenths → money (adding, change from $5/$10/$20) → hundredths, compare, × 10/100 → rounding, decimal × whole, fractions as decimals | 11 kinds |
 
