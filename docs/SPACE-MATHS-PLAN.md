@@ -2,7 +2,7 @@
 
 *Times-table questions in Wormholes & Black Holes, with an on/off switch. Written 17 October 2026 for James.*
 
-**Status: approved by James on 17 October 2026: "go with your suggestions" (every answer in section 9 is the suggestion). M.1, M.2 and M.3 done (section 10). Change from the plan (17 Oct, James's idea): the Mission Boost button is replaced by a question after your turn that charges your next roll (section 11).**
+**Status: approved by James on 17 October 2026: "go with your suggestions" (every answer in section 9 is the suggestion). M.1, M.2, M.3 and M.4 done (sections 10 to 12). Change from the plan (17 Oct, James's idea): the Mission Boost button is replaced by a question after your turn that charges your next roll (section 11).**
 
 ## 1. The idea in one paragraph
 
@@ -152,4 +152,18 @@ So games are about **a sixth shorter in turns**, a bit more than the tenth we gu
 
 **Checked:** 111 game-rule tests, the game-screen tests (full games with maths on, saved reports checked by the server's own code), the server's save tests, and a real browser (phone and desktop sizes): the card appears after your turn, answering it shows "Right! +1 is ready", and your next turn shows "+1 charged from your answer".
 
-Next: M.4 (maths in games with classmates).
+## 12. M.4 Games with classmates (17 Oct 2026)
+
+Not live (needs the teacher switch, M.5, and the go-live steps). Migration `20261017001300_space_maths_live.sql` (local only so far) and a rebuilt `space-game` function.
+
+- **The host decides.** The setup the host sends (board, mode, maths on or off) is used for the whole game. The waiting room says "Mission Control maths: on". In the lobby the host gets a maths On/Off chip when students may choose, or a line saying it's on for everyone (for now both only show in a development build with `?maths=choose` or `?maths=on`, like the bot game; the teacher switch replaces that in M.5).
+- **The server picks and marks every question.** A student asks (`question`), and the server picks it from their own records and the teacher's settings (the same picker as the bot game, `shared/space/mathsQuestion.ts`), keeps it in a new table students can't read (`space_game_questions`), and sends the student the question without its answer. The student sends back the number they typed (`answer`) and the server marks it. Asking again after a reload shows the same question. The old "choose right/wrong" move is refused for a question, so nobody can claim a right answer.
+- **Wormhole and black hole questions** have a **20-second timer** (the server's clock; the screen shows a countdown). Running out counts as no answer: you move normally, and nothing is recorded. The server sends "time's up" as for any other timer.
+- **The question after your turn** shows on the side card while the others play (not before your first turn, one a turn, optional, Skip button). A right answer is kept on the server and the **+1 goes into your next roll by itself** the moment your turn starts (or straight away if you answer during your own turn before rolling); a wrong answer leaves no trace anywhere. The bots in a game also answer it every turn at 60/75/90%.
+- **Only good news is shown.** The log says "<name> is charged up: +1 on this roll!" for a right answer and nothing for a wrong one, and "powered up the wormhole" or the normal ride, as in the bot game. (The raw move still says whether a wormhole answer was right, because that decides where the rocket goes; the screen never shows it.)
+- **Records:** each marked answer goes into the student's times-table records straight away (one batch per question, so a retry counts once), with the time as the server saw it (never longer than the time since it asked).
+- **Checked:** 9 new server tests, 4 new screen tests, 7 new database tests, and a real run against the local copy with two test students playing a whole game with maths on: 6 wormhole/black hole questions (alternately right and wrong), 6 after-turn questions (4 right: 4 turns started with the +1), a claimed "right" refused, no answer ever sent with a question, and all 12 answers in the records.
+- **For M.5 and go-live:** the server must also check the teacher's switch (Off) when a game is created, in both `space-game` and `save-bot-game`: today a hand-made request could ask for maths even when the teacher has it off. Go-live now also needs migration `20261017001300` (after `...1200`) and the `space-game` deploy.
+
+Next: M.5 (teacher switch, achievements, guides, accessibility check).
+

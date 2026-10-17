@@ -1,6 +1,8 @@
 // Connects the space-game handler to Supabase. Edit handler.ts for the logic, then run
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
+import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import type { FactStats } from '../../../shared/maths/leitner';
 import { spaceGameHandler, type SpaceGameRow } from './handler';
 
 declare const Deno: {
@@ -28,6 +30,13 @@ function logProblem(step: string, code: string | undefined) {
 }
 
 const isUuid = (id: string) => /^[0-9a-f-]{36}$/i.test(id);
+
+/** The same text always gives the same ID, so an answer sent twice is only counted once. */
+async function batchIdFor(text: string): Promise<string> {
+  const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`space-maths:${text}`)));
+  const hex = [...hash.slice(0, 16)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
 
 Deno.serve(
   spaceGameHandler({
@@ -107,6 +116,70 @@ Deno.serve(
         return 'not-allowed';
       }
       return data as 'ok' | 'too-soon' | 'too-many' | 'not-playing' | 'not-allowed';
+    },
+    async loadMathsContext(player) {
+      const { data, error } = await admin.rpc('space_maths_context', { player });
+      if (error || !data) {
+        logProblem('maths records', error?.code);
+        return null;
+      }
+      const context = data as {
+        facts: FactStats[];
+        settings: { enabledTables?: number[]; division?: boolean; missingFactor?: boolean | null; multipleChoice?: boolean };
+      };
+      const { enabledTables, division, missingFactor, multipleChoice } = context.settings;
+      return {
+        facts: context.facts,
+        settings: { enabledTables, division, multipleChoice, ...(typeof missingFactor === 'boolean' ? { missingFactor } : {}) },
+      };
+    },
+    async loadQuestion(game, seat, kind) {
+      const { data, error } = await admin
+        .from('space_game_questions')
+        .select('stamp, question, asked_at, answered')
+        .eq('game', game)
+        .eq('seat', seat)
+        .eq('kind', kind)
+        .maybeSingle();
+      if (error) logProblem('load question', error.code);
+      if (!data) return null;
+      return { stamp: data.stamp, question: data.question, askedAt: Date.parse(data.asked_at), answered: data.answered };
+    },
+    async saveQuestion(game, seat, kind, stamp, question) {
+      const { error } = await admin
+        .from('space_game_questions')
+        .upsert({ game, seat, kind, stamp, question, asked_at: new Date().toISOString(), answered: false });
+      if (error) logProblem('save question', error.code);
+    },
+    async claimQuestion(game, seat, kind) {
+      // "Only if it isn't answered yet": the database checks and changes in one step.
+      const { data, error } = await admin
+        .from('space_game_questions')
+        .update({ answered: true })
+        .eq('game', game)
+        .eq('seat', seat)
+        .eq('kind', kind)
+        .eq('answered', false)
+        .select('seat');
+      if (error) logProblem('claim question', error.code);
+      return (data?.length ?? 0) > 0;
+    },
+    async dropQuestion(game, seat, kind) {
+      const { error } = await admin.from('space_game_questions').delete().eq('game', game).eq('seat', seat).eq('kind', kind);
+      if (error) logProblem('drop question', error.code);
+    },
+    async recordAnswer(player, once, answer) {
+      const { error } = await admin.rpc('record_fact_answers', {
+        player,
+        pack: 'times-tables',
+        batch_id: await batchIdFor(once),
+        answers: [answer],
+        quick_ms: QUICK_MS,
+        fluent_days: FLUENT_DAYS,
+        top_box: TOP_BOX,
+      });
+      // The game goes on if the records can't be updated.
+      if (error) logProblem('record answer', error.code);
     },
   }),
 );

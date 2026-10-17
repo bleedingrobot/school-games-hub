@@ -17,7 +17,6 @@ import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { useSound } from '../../sound';
 import type { BotLevel } from '../../../shared/botGame';
 import type { FactStats } from '../../../shared/maths/leitner';
-import { readyLevel } from '../../../shared/maths/selector';
 import type { Question } from '../../../shared/maths/skillPack';
 import { TimesTables } from '../../../shared/maths/skillPacks/timesTables';
 import { BOT_NAMES } from '../../../shared/space/bot';
@@ -31,6 +30,7 @@ import {
   type SpaceEvent,
 } from '../../../shared/space/engine';
 import { ITEMS, type ItemKind } from '../../../shared/space/items';
+import { pickSpaceQuestion } from '../../../shared/space/mathsQuestion';
 import { randomFromSeed } from '../../../shared/space/random';
 import { encodeAction, type SpaceGameReport } from '../../../shared/space/save';
 import { startSpaceBot, type SpaceBot } from './botThread';
@@ -510,16 +510,7 @@ export function SpaceSolo({
 
   /** The next question for this student, from their records at the step they're ready for. */
   function pickQuestion(): Question | null {
-    const active = passPack.current ?? pack;
-    return (
-      active.nextQuestion({
-        level: readyLevel(active.stats(), maths?.enabledTables),
-        enabledTables: maths?.enabledTables,
-        division: maths?.division,
-        missingFactor: maths?.missingFactor,
-        multipleChoice: maths?.multipleChoice,
-      }) ?? active.nextQuestion({ level: 1 })
-    );
+    return pickSpaceQuestion(passPack.current ?? pack, maths);
   }
 
   // ---------- Settings screen ----------

@@ -17,7 +17,7 @@ import type { StarKind } from './board';
 import { STAR_KINDS } from './board';
 import { boardFor, type BoardChoice } from './boards';
 import { botAction } from './bot';
-import { MAX_PLAYERS, MIN_PLAYERS, newGame, play, type Settings, type SpaceAction, type SpaceEvent, type SpaceState } from './engine';
+import { canCharge, MAX_PLAYERS, MIN_PLAYERS, newGame, play, type Settings, type SpaceAction, type SpaceEvent, type SpaceState } from './engine';
 import type { Dice } from './random';
 import { encodeAction, MIN_TURNS_TO_COUNT, parseBoard, parseSettings } from './save';
 
@@ -25,6 +25,8 @@ import { encodeAction, MIN_TURNS_TO_COUNT, parseBoard, parseSettings } from './s
 export const LIVE_BOT_LEVEL: BotLevel = 'easy';
 export const TURN_SECONDS = 30;
 export const CHOICE_SECONDS = 15;
+/** A wormhole or black hole question (Mission Control maths) gets longer than another choice. */
+export const QUESTION_SECONDS = 20;
 /** This many timed-out turns in a row and autopilot takes over. */
 export const AUTOPILOT_AFTER = 3;
 /** The most seconds added to a timer for the animations of what just happened. */
@@ -60,6 +62,11 @@ export interface SeatInfo {
   left: boolean;
   /** Timed-out turns in a row. */
   timeouts: number;
+  /**
+   * Mission Control maths: this student answered the question after their turn right, and the
+   * +1 is waiting for their next roll. Only ever set for a right answer: a wrong one leaves no trace.
+   */
+  charged?: boolean;
   stats: SeatStats;
 }
 
@@ -140,6 +147,20 @@ function step(game: LiveGame, action: SpaceAction, dice: Dice, by: LoggedAction[
   addStats(game, seat, before, state, events);
   out.events.push(...events);
   out.actions.push({ seat, action: encodeAction(action), by });
+  applyCharge(game, dice, out);
+}
+
+/** A student with a right answer waiting gets their +1 as soon as they can use it (their turn, before rolling). */
+export function applyCharge(game: LiveGame, dice: Dice, out: Played) {
+  const info = game.seats[game.state.turn];
+  if (!info?.charged || !canCharge(game.state)) return;
+  info.charged = false;
+  const seat = game.state.turn;
+  const action: SpaceAction = { kind: 'charge', right: true };
+  const { state, events } = play(game.state, action, dice);
+  game.state = state;
+  out.events.push(...events);
+  out.actions.push({ seat, action: encodeAction(action), by: 'player' });
 }
 
 /** Most bot actions one request plays (3 bots × a long turn each is about 20). */
@@ -264,7 +285,8 @@ export function animationMs(events: readonly SpaceEvent[]): number {
  */
 export function deadlineAfter(game: LiveGame, events: readonly SpaceEvent[], nowMs: number): number | null {
   if (game.state.phase === 'over') return null;
-  const base = game.state.phase === 'choice' ? CHOICE_SECONDS : TURN_SECONDS;
+  const asking = game.state.phase === 'choice' && game.state.pending?.kind === 'question';
+  const base = asking ? QUESTION_SECONDS : game.state.phase === 'choice' ? CHOICE_SECONDS : TURN_SECONDS;
   const animation = Math.min(MAX_ANIMATION_SECONDS * 1000, animationMs(events) * 1.5);
   return nowMs + base * 1000 + Math.ceil(animation);
 }
@@ -294,6 +316,5 @@ export function parseLiveSetup(input: unknown): LiveSetup | null {
   const s = input as Record<string, unknown>;
   const board = parseBoard(s.board);
   const settings = parseSettings(s.settings);
-  // Mission Control maths with classmates comes in stage M.4 (docs/SPACE-MATHS-PLAN.md).
-  return board && settings && !settings.maths ? { board, settings } : null;
+  return board && settings ? { board, settings } : null;
 }

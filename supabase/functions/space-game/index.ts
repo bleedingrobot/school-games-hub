@@ -2,6 +2,80 @@
 // then run `npm run build:functions`. Deploy this file as the "space-game" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+//#region shared/maths/config.ts
+/**
+* Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
+*/
+/** Times tables 1–12. */
+const TABLES = [
+	1,
+	2,
+	3,
+	4,
+	5,
+	6,
+	7,
+	8,
+	9,
+	10,
+	11,
+	12
+];
+/**
+* The campaign's focus tables: each step adds tables, and the tables from earlier steps
+* become review. Edit freely; levels not listed use the last step. `upTo` is the biggest
+* number any fact uses in that step (default 12): the first levels stop at × 10 so they're
+* super easy (James, 16 Oct 2026).
+*/
+const CAMPAIGN_STEPS = [
+	{
+		levels: [1, 2],
+		add: [
+			2,
+			5,
+			10
+		],
+		upTo: 10
+	},
+	{
+		levels: [3, 4],
+		add: [3, 4]
+	},
+	{
+		levels: [5, 6],
+		add: [6, 8]
+	},
+	{
+		levels: [7, 8],
+		add: [7, 9]
+	},
+	{
+		levels: [9, 10],
+		add: [11, 12]
+	}
+];
+/** Share of questions from the current focus tables, review of earlier tables, and stretch (next table up). */
+const MIX = {
+	focus: .6,
+	review: .3,
+	stretch: .1
+};
+/** Answering correctly within this many milliseconds counts as quick. */
+const QUICK_MS = 5e3;
+/** Mastery boxes 0–4 (Leitner). How likely each box is to be picked: lower boxes come up more. */
+const BOX_WEIGHTS = [
+	6,
+	5,
+	3,
+	2,
+	1
+];
+/** A fact answered wrongly comes back after this many other questions (a random number in this range). */
+const REPEAT_AFTER = {
+	min: 3,
+	max: 6
+};
+//#endregion
 //#region shared/multiplayer.ts
 /** Game codes use these: no vowels (so no rude words) and no lookalikes like O/0 or I/1. */
 const CODE_ALPHABET = "CDFGHJKMNPQRTVWXY34679";
@@ -18,6 +92,412 @@ function normaliseCode(typed) {
 	if (code.length !== 5 || [...code].some((c) => !"CDFGHJKMNPQRTVWXY34679".includes(c))) return null;
 	return code;
 }
+//#endregion
+//#region shared/maths/facts.ts
+/**
+* Times-table facts. "7 × 8" and "8 × 7" are one fact for mastery (key "mul:7x8", smaller
+* number first), but both orders get asked.
+*/
+const factKey = (x, y) => `mul:${Math.min(x, y)}x${Math.max(x, y)}`;
+function parseFactKey(key) {
+	const match = /^mul:(\d+)x(\d+)$/.exec(key);
+	if (!match) return null;
+	const a = Number(match[1]);
+	const b = Number(match[2]);
+	return a <= b && a >= 1 && b <= 12 ? {
+		a,
+		b
+	} : null;
+}
+/** Every fact in one times table: t × 1 to t × 12, as keys. */
+function tableFacts(table) {
+	return TABLES.map((n) => factKey(table, n));
+}
+/** Every fact in these tables, with no repeats. */
+function factsIn(tables) {
+	const keys = new Set();
+	for (const t of tables) for (const key of tableFacts(t)) keys.add(key);
+	return keys;
+}
+//#endregion
+//#region shared/maths/leitner.ts
+/**
+* Mastery boxes (the Leitner system). Every fact sits in box 0–4:
+* correct and quick moves it up one box, correct but slow keeps it where it is, and wrong
+* drops it to box 1. A fact only reaches box 4 ("fluent") once it has been answered
+* quickly and correctly on at least two different days, so one lucky lesson isn't enough.
+*/
+function newStats$1(key) {
+	return {
+		key,
+		attempts: 0,
+		correct: 0,
+		avgMs: 0,
+		box: 0,
+		lastSeen: 0,
+		quickDays: []
+	};
+}
+const nzDayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
+/** The New Zealand date of a moment, as YYYY-MM-DD. */
+const nzDay = (at) => nzDayFormat.format(new Date(at));
+/** The stats after one answer. Doesn't change the stats it's given. */
+function afterAnswer(stats, correct, ms, at) {
+	const attempts = stats.attempts + 1;
+	const next = {
+		...stats,
+		attempts,
+		correct: stats.correct + (correct ? 1 : 0),
+		avgMs: Math.round(stats.avgMs + (ms - stats.avgMs) / attempts),
+		lastSeen: at,
+		quickDays: [...stats.quickDays]
+	};
+	if (!correct) {
+		next.box = 1;
+		return next;
+	}
+	if (ms > 5e3) return next;
+	const day = nzDay(at);
+	if (!next.quickDays.includes(day)) next.quickDays = [...next.quickDays, day].slice(-2);
+	const canBeFluent = next.quickDays.length >= 2;
+	next.box = Math.min(stats.box + 1, canBeFluent ? 4 : 3);
+	return next;
+}
+//#endregion
+//#region shared/maths/selector.ts
+/**
+* Choosing the next fact to ask. About 60% come from the current focus tables, 30% review
+* earlier tables (weak facts more often) and 10% stretch into the next table up. Within
+* those, facts in lower mastery boxes come up more often, the last few facts asked are
+* skipped, and a fact answered wrongly comes back 3–6 questions later.
+*/
+const newMemory = () => ({
+	asked: 0,
+	recent: [],
+	repeats: []
+});
+function stepIndex(level) {
+	const i = CAMPAIGN_STEPS.findIndex((s) => s.levels.includes(level));
+	return i >= 0 ? i : level < CAMPAIGN_STEPS[0].levels[0] ? 0 : CAMPAIGN_STEPS.length - 1;
+}
+/**
+* For games with no campaign (Wormholes & Black Holes): the campaign level a student's records
+* say they're ready for. Each step whose facts are mostly secure moves them on one step, so a
+* new student starts on ×2, ×5 and ×10. Tables the teacher has switched off are skipped.
+*/
+function readyLevel(stats, enabledTables = TABLES) {
+	const byKey = new Map([...stats].map((s) => [s.key, s]));
+	const enabled = new Set(enabledTables);
+	for (let i = 0; i < CAMPAIGN_STEPS.length; i++) {
+		const step = CAMPAIGN_STEPS[i];
+		const upTo = step.upTo ?? 12;
+		const keys = [...factsIn(step.add.filter((t) => enabled.has(t)))].filter((k) => parseFactKey(k).b <= upTo);
+		if (keys.length === 0) continue;
+		if (keys.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / keys.length < .7) return step.levels[0];
+	}
+	return CAMPAIGN_STEPS[CAMPAIGN_STEPS.length - 1].levels[0];
+}
+/** The facts each band draws from, for this context. */
+function poolsFor(ctx) {
+	const enabled = new Set(ctx.enabledTables ?? TABLES);
+	const on = (tables) => tables.filter((t) => enabled.has(t));
+	let focusTables;
+	let reviewTables;
+	let stretchTables;
+	let upTo = 12;
+	if (ctx.focusTables) {
+		focusTables = on(ctx.focusTables);
+		reviewTables = on(TABLES.filter((t) => !ctx.focusTables.includes(t)));
+		stretchTables = [];
+	} else {
+		const step = stepIndex(ctx.level ?? 1);
+		focusTables = on(CAMPAIGN_STEPS[step].add);
+		reviewTables = on(CAMPAIGN_STEPS.slice(0, step).flatMap((s) => s.add));
+		stretchTables = on(CAMPAIGN_STEPS[step + 1]?.add ?? []);
+		upTo = CAMPAIGN_STEPS[step].upTo ?? 12;
+	}
+	const small = (key) => parseFactKey(key).b <= upTo;
+	const focus = new Set([...factsIn(focusTables)].filter(small));
+	const review = [...factsIn(reviewTables)].filter((k) => small(k) && !focus.has(k));
+	const stretch = [...factsIn(stretchTables)].filter((k) => small(k) && !focus.has(k) && !review.includes(k));
+	return {
+		focus: [...focus],
+		review,
+		stretch
+	};
+}
+/** How likely a fact is to be picked: lower boxes and more mistakes make it likelier. */
+function factWeight(stats) {
+	if (!stats) return BOX_WEIGHTS[0];
+	const wrongShare = stats.attempts ? (stats.attempts - stats.correct) / stats.attempts : 0;
+	return BOX_WEIGHTS[Math.min(stats.box, BOX_WEIGHTS.length - 1)] * (1 + wrongShare);
+}
+function weightedPick(keys, stats, random) {
+	const weights = keys.map((k) => factWeight(stats.get(k)));
+	let roll = random() * weights.reduce((a, b) => a + b, 0);
+	for (let i = 0; i < keys.length; i++) {
+		roll -= weights[i];
+		if (roll < 0) return keys[i];
+	}
+	return keys[keys.length - 1];
+}
+/**
+* Picks the next fact, and records that it was asked in `memory`. Returns null only when
+* the teacher has switched every table off.
+*/
+function pickFact(ctx, stats, memory, random) {
+	const pools = poolsFor(ctx);
+	const allowed = new Set([
+		...pools.focus,
+		...pools.review,
+		...pools.stretch
+	]);
+	if (allowed.size === 0) return null;
+	memory.asked++;
+	const due = memory.repeats.find((r) => r.due <= memory.asked && allowed.has(r.key));
+	let choice;
+	if (due) {
+		memory.repeats = memory.repeats.filter((r) => r !== due);
+		choice = {
+			key: due.key,
+			band: "repeat"
+		};
+	} else {
+		const roll = random();
+		const band = [
+			ctx.onlyFocus || roll < MIX.focus ? "focus" : roll < MIX.focus + MIX.review ? "review" : "stretch",
+			"focus",
+			"review",
+			"stretch"
+		].find((b) => pools[b].length > 0);
+		let keys = pools[band];
+		if (ctx.boxes) {
+			const inBoxes = keys.filter((k) => ctx.boxes.includes(stats.get(k)?.box ?? 0));
+			if (inBoxes.length) keys = inBoxes;
+		}
+		const recent = new Set(memory.recent.slice(-3));
+		const fresh = keys.filter((k) => !recent.has(k));
+		if (fresh.length) keys = fresh;
+		choice = {
+			key: weightedPick(keys, stats, random),
+			band
+		};
+	}
+	memory.recent = [...memory.recent, choice.key].slice(-10);
+	return choice;
+}
+/** After a wrong answer: ask this fact again 3–6 questions from now (once). */
+function scheduleRepeat(memory, key, random) {
+	if (memory.repeats.some((r) => r.key === key)) return;
+	const gap = REPEAT_AFTER.min + Math.floor(random() * (REPEAT_AFTER.max - REPEAT_AFTER.min + 1));
+	memory.repeats.push({
+		key,
+		due: memory.asked + gap
+	});
+}
+//#endregion
+//#region shared/maths/skillPacks/timesTables.ts
+/**
+* The times-tables skill pack: multiplication (7 × 8 = ?), missing factor (? × 8 = 56)
+* and division (56 ÷ 8 = ?). All three count towards the same fact's mastery, because
+* they're the same fact.
+*/
+/**
+* Each kind of question, with its NZ Curriculum codes. PLACEHOLDERS: James fills these in
+* from his curriculum alignment tool.
+*/
+const TIMES_TABLES_KINDS = {
+	multiply: {
+		label: "Multiplication facts",
+		curriculumTags: ["TODO-multiplication-facts"]
+	},
+	"missing-factor": {
+		label: "Missing factor",
+		curriculumTags: ["TODO-missing-factor"]
+	},
+	divide: {
+		label: "Division facts",
+		curriculumTags: ["TODO-division-facts"]
+	}
+};
+/**
+* Works out a question from how it was shown (e.g. ['?', '×', '8', '=', '56']): its answer and
+* the fact it belongs to. Null if it isn't a times-tables question this pack could ask. The
+* server uses this to check answers it didn't see being given.
+*/
+function solveQuestion(parts) {
+	if (!Array.isArray(parts) || parts.length !== 5 || parts[3] !== "=" || !parts.every((p) => typeof p === "string")) return null;
+	const [a, op, b, , c] = parts;
+	if (op !== "×" && op !== "÷" || parts.filter((p) => p === "?").length !== 1) return null;
+	const num = (text) => /^\d{1,3}$/.test(text) ? Number(text) : NaN;
+	const inTables = (n) => Number.isInteger(n) && n >= 1 && n <= 12;
+	let x;
+	let y;
+	let answer;
+	if (op === "×" && c === "?") {
+		[x, y] = [num(a), num(b)];
+		answer = x * y;
+	} else if (op === "×" && a === "?") {
+		y = num(b);
+		x = answer = num(c) / y;
+		if (num(c) !== x * y) return null;
+	} else if (op === "×" && b === "?") {
+		x = num(a);
+		y = answer = num(c) / x;
+		if (num(c) !== x * y) return null;
+	} else if (op === "÷" && c === "?") {
+		y = num(b);
+		x = answer = num(a) / y;
+	} else return null;
+	if (!inTables(x) || !inTables(y)) return null;
+	return {
+		answer,
+		key: factKey(x, y)
+	};
+}
+const SPOKEN = {
+	"×": "times",
+	"÷": "divided by",
+	"=": "equals",
+	"?": "what"
+};
+function shuffle(items, random) {
+	const out = [...items];
+	for (let i = out.length - 1; i > 0; i--) {
+		const j = Math.floor(random() * (i + 1));
+		[out[i], out[j]] = [out[j], out[i]];
+	}
+	return out;
+}
+/** Wrong answers that look believable: near misses from the same or next-door facts. */
+function choicesFor(x, y, answer, isFactor, random) {
+	const near = isFactor ? [
+		answer - 1,
+		answer + 1,
+		answer - 2,
+		answer + 2,
+		answer + 3
+	].filter((n) => n >= 1 && n <= 12) : [
+		(x + 1) * y,
+		(x - 1) * y,
+		x * (y + 1),
+		x * (y - 1),
+		answer + 1,
+		answer - 1,
+		answer + 10,
+		answer - 10,
+		x + y
+	];
+	const ok = (n) => n > 0 && n !== answer && (!isFactor || n <= 12);
+	const wrong = shuffle([...new Set(near)].filter(ok), random).slice(0, 3);
+	for (let gap = 1; wrong.length < 3; gap++) for (const n of [answer + gap, answer - gap]) if (ok(n) && !wrong.includes(n) && wrong.length < 3) wrong.push(n);
+	return shuffle([answer, ...wrong], random);
+}
+var TimesTables = class {
+	random;
+	now;
+	id = "times-tables";
+	label = "Times tables";
+	curriculumTags = Object.values(TIMES_TABLES_KINDS).flatMap((k) => k.curriculumTags);
+	records = new Map();
+	memory = newMemory();
+	nextId = 1;
+	listeners = new Set();
+	constructor(saved = [], random = Math.random, now = Date.now) {
+		this.random = random;
+		this.now = now;
+		for (const s of saved) this.records.set(s.key, s);
+	}
+	/** Hears every answer as it's recorded (for saving). Returns a function that stops listening. */
+	onAnswer(listener) {
+		this.listeners.add(listener);
+		return () => this.listeners.delete(listener);
+	}
+	stats() {
+		return [...this.records.values()];
+	}
+	statsFor(key) {
+		return this.records.get(key);
+	}
+	nextQuestion(ctx) {
+		const picked = pickFact(ctx, this.records, this.memory, this.random);
+		if (!picked) return null;
+		const fact = parseFactKey(picked.key);
+		const [x, y] = this.random() < .5 ? [fact.a, fact.b] : [fact.b, fact.a];
+		const product = x * y;
+		const missingOn = ctx.missingFactor ?? (ctx.level ?? 1) >= 4;
+		const roll = this.random();
+		const kind = ctx.division && roll < .3 ? "divide" : missingOn && roll >= .7 ? "missing-factor" : "multiply";
+		let parts;
+		let answer;
+		if (kind === "divide") {
+			parts = [
+				String(product),
+				"÷",
+				String(y),
+				"=",
+				"?"
+			];
+			answer = x;
+		} else if (kind === "missing-factor") {
+			const blankFirst = this.random() < .5;
+			parts = blankFirst ? [
+				"?",
+				"×",
+				String(y),
+				"=",
+				String(product)
+			] : [
+				String(x),
+				"×",
+				"?",
+				"=",
+				String(product)
+			];
+			answer = blankFirst ? x : y;
+		} else {
+			parts = [
+				String(x),
+				"×",
+				String(y),
+				"=",
+				"?"
+			];
+			answer = product;
+		}
+		return {
+			id: this.nextId++,
+			skill: this.id,
+			factKey: picked.key,
+			kind,
+			parts,
+			spoken: parts.map((p) => SPOKEN[p] ?? p).join(" ") + "?",
+			answer,
+			choices: ctx.multipleChoice ? choicesFor(x, y, answer, kind !== "multiply", this.random) : void 0,
+			band: picked.band
+		};
+	}
+	recordAnswer(q, answer, ms) {
+		const correct = answer === q.answer;
+		const before = this.records.get(q.factKey) ?? newStats$1(q.factKey);
+		const at = this.now();
+		const after = afterAnswer(before, correct, ms, at);
+		this.records.set(q.factKey, after);
+		for (const listener of this.listeners) listener({
+			key: q.factKey,
+			correct,
+			ms: Math.round(ms),
+			at
+		});
+		if (!correct) scheduleRepeat(this.memory, q.factKey, this.random);
+		return {
+			correct,
+			fact: q.parts.map((p) => p === "?" ? String(q.answer) : p).join(" "),
+			boxBefore: before.box,
+			boxAfter: after.box
+		};
+	}
+};
 //#endregion
 //#region shared/space/board.ts
 const STAR_KINDS = [
@@ -1336,6 +1816,21 @@ function defaultOption(pending) {
 	}
 }
 //#endregion
+//#region shared/space/mathsQuestion.ts
+/**
+* Which question Mission Control asks next: the same choice in the bot game (the browser) and
+* with classmates (the server), from a student's records at the step they're ready for.
+*/
+function pickSpaceQuestion(pack, settings = {}) {
+	return pack.nextQuestion({
+		level: readyLevel(pack.stats(), settings.enabledTables),
+		enabledTables: settings.enabledTables,
+		division: settings.division,
+		missingFactor: settings.missingFactor,
+		multipleChoice: settings.multipleChoice
+	}) ?? pack.nextQuestion({ level: 1 });
+}
+//#endregion
 //#region shared/space/galaxy.ts
 /**
 * Random Galaxy: boards made by a generator that follows the fairness rules, named by easy
@@ -2331,7 +2826,6 @@ function botChoice(s, level, random) {
 		}
 	}
 }
-new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
 //#endregion
 //#region shared/space/save.ts
 /** "roll", "charge:1" (right) or "charge:0", "choose:1", "use:booster", "use:tractor-beam@2", "use:navigator=6". */
@@ -2453,6 +2947,26 @@ function step(game, action, dice, by, out) {
 		seat,
 		action: encodeAction(action),
 		by
+	});
+	applyCharge(game, dice, out);
+}
+/** A student with a right answer waiting gets their +1 as soon as they can use it (their turn, before rolling). */
+function applyCharge(game, dice, out) {
+	const info = game.seats[game.state.turn];
+	if (!info?.charged || !canCharge(game.state)) return;
+	info.charged = false;
+	const seat = game.state.turn;
+	const action = {
+		kind: "charge",
+		right: true
+	};
+	const { state, events } = play(game.state, action, dice);
+	game.state = state;
+	out.events.push(...events);
+	out.actions.push({
+		seat,
+		action: encodeAction(action),
+		by: "player"
 	});
 }
 /** Most bot actions one request plays (3 bots × a long turn each is about 20). */
@@ -2611,7 +3125,7 @@ function animationMs(events) {
 */
 function deadlineAfter(game, events, nowMs) {
 	if (game.state.phase === "over") return null;
-	const base = game.state.phase === "choice" ? 15 : 30;
+	const base = game.state.phase === "choice" && game.state.pending?.kind === "question" ? 20 : game.state.phase === "choice" ? 15 : 30;
 	const animation = Math.min(25e3, animationMs(events) * 1.5);
 	return nowMs + base * 1e3 + Math.ceil(animation);
 }
@@ -2621,7 +3135,7 @@ function parseLiveSetup(input) {
 	const s = input;
 	const board = parseBoard(s.board);
 	const settings = parseSettings(s.settings);
-	return board && settings && !settings.maths ? {
+	return board && settings ? {
 		board,
 		settings
 	} : null;
@@ -2769,12 +3283,16 @@ function spaceGameHandler(services) {
 		const action = ACTIONS[String(body?.action)];
 		if (!body || !action) return refuse(new Refused("bad-request"));
 		try {
-			return reply(200, { game: await action({
+			const result = await action({
 				services,
 				limiter,
 				me,
 				body
-			}) });
+			});
+			return reply(200, result instanceof WithGame ? {
+				game: result.game,
+				...result.extra
+			} : { game: result });
 		} catch (error) {
 			if (error instanceof Refused) {
 				if (![
@@ -2792,6 +3310,15 @@ function spaceGameHandler(services) {
 		}
 	};
 }
+/** A reply that carries more than the game: for the student who asked only (e.g. their question). */
+var WithGame = class {
+	game;
+	extra;
+	constructor(game, extra) {
+		this.game = game;
+		this.extra = extra;
+	}
+};
 const ACTIONS = {
 	create,
 	join,
@@ -2801,6 +3328,8 @@ const ACTIONS = {
 	roll: (c) => playerTurn(c, { kind: "roll" }),
 	"use-item": (c) => playerTurn(c, itemAction(c.body)),
 	choose: (c) => playerTurn(c, chooseAction(c.body)),
+	question: askQuestion,
+	answer: answerQuestion,
 	"times-up": timesUp,
 	"take-controls": takeTheControls,
 	rematch,
@@ -3038,6 +3567,7 @@ async function playerTurn({ services, me, body }, action) {
 	if (await autopilotGone(services, game, status)) throw new Refused("changed");
 	if (game.state.turn !== seat) throw new Refused("not-your-turn");
 	if (game.seat_info[seat].autopilot) throw new Refused("autopilot");
+	if (action.kind === "choose" && game.state.phase === "choice" && game.state.pending?.kind === "question") throw new Refused("illegal", { error: "Type your answer to carry on." });
 	let played;
 	try {
 		played = playerAction(liveGame(game), action, diceFrom(services.random), services.random);
@@ -3046,6 +3576,135 @@ async function playerTurn({ services, me, body }, action) {
 		throw error;
 	}
 	return save(services, game, afterPlay(services, seatsOf(game), played));
+}
+/** What a student sees of a question: everything but the answer. */
+function publicQuestion(q) {
+	const { id, skill, kind, parts, spoken, choices } = q;
+	return {
+		id,
+		skill,
+		kind,
+		parts,
+		spoken,
+		...choices ? { choices } : {}
+	};
+}
+const isKind = (value) => value === "moment" || value === "charge";
+/** Everything that must be true for this student to be asked (or to answer) a question of this kind now. */
+function questionStamp(game, seat, kind, body) {
+	if (!game.setup.settings.maths) throw new Refused("illegal", { error: "Mission Control maths is off in this game." });
+	const info = game.seat_info[seat];
+	if (info.autopilot) throw new Refused("autopilot");
+	const s = game.state;
+	if (kind === "moment") {
+		if (body.version !== game.version) throw new Refused("changed");
+		if (s.turn !== seat) throw new Refused("not-your-turn");
+		if (s.phase !== "choice" || s.pending?.kind !== "question") throw new Refused("illegal");
+		return game.version;
+	}
+	if (!s.rockets[seat].hasPlayed) throw new Refused("illegal", { error: "Mission Control asks after your first turn." });
+	if (s.turn === seat && s.turnInfo.rolled) throw new Refused("not-yet");
+	return info.stats.turns;
+}
+/** A student asks for their question (it's picked from their records and kept, so a reload shows the same one). */
+async function askQuestion({ services, me, body }) {
+	if (!isKind(body.kind)) throw new Refused("bad-request");
+	const { game, seat } = await loadMyGame(services, me, body.gameId);
+	mustBePlaying(game);
+	await mustBeAllowed(services, me, true, otherPlayers(game, me));
+	const stamp = questionStamp(game, seat, body.kind, body);
+	const stored = await services.loadQuestion(game.id, seat, body.kind);
+	if (stored && stored.stamp === stamp) return new WithGame(game, stored.answered ? { done: true } : { question: publicQuestion(stored.question) });
+	const context = await services.loadMathsContext(me);
+	if (!context) throw new Refused("failed");
+	const question = pickSpaceQuestion(new TimesTables(context.facts, services.random), context.settings);
+	if (!question) throw new Refused("failed");
+	await services.saveQuestion(game.id, seat, body.kind, stamp, question);
+	return new WithGame(game, { question: publicQuestion(question) });
+}
+/** The student's typed answer, marked here. */
+async function answerQuestion({ services, me, body }) {
+	const typed = body.answer;
+	if (!isKind(body.kind) || !Number.isInteger(typed) || typed < 0 || typed > 1e3) throw new Refused("bad-request");
+	const { game, seat } = await loadMyGame(services, me, body.gameId);
+	mustBePlaying(game);
+	await mustBeAllowed(services, me, true, otherPlayers(game, me));
+	const kind = body.kind;
+	const stamp = questionStamp(game, seat, kind, body);
+	const stored = await services.loadQuestion(game.id, seat, kind);
+	if (!stored || stored.stamp !== stamp) throw new Refused("changed");
+	if (stored.answered) throw new Refused("illegal", { error: "You’ve already answered that one." });
+	const solved = solveQuestion(stored.question.parts);
+	if (!solved) throw new Refused("failed");
+	const right = typed === solved.answer;
+	const now = services.now();
+	const claimed = typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : Infinity;
+	const ms = Math.round(Math.min(claimed, now - stored.askedAt));
+	const answer = {
+		key: solved.key,
+		correct: right,
+		ms,
+		at: now
+	};
+	const once = `${game.id}:${seat}:${kind}:${stamp}`;
+	const reply = {
+		right,
+		answer: solved.answer
+	};
+	if (kind === "moment") {
+		let played;
+		try {
+			played = playerAction(liveGame(game), {
+				kind: "choose",
+				option: right ? 1 : 0
+			}, diceFrom(services.random), services.random);
+		} catch (error) {
+			if (error instanceof SpaceRuleError) throw new Refused("illegal", { error: error.message });
+			throw error;
+		}
+		const saved = await save(services, game, afterPlay(services, seatsOf(game), played));
+		await services.recordAnswer(me, once, answer);
+		await services.dropQuestion(game.id, seat, kind);
+		return new WithGame(saved, reply);
+	}
+	if (!await services.claimQuestion(game.id, seat, kind)) throw new Refused("illegal", { error: "You’ve already answered that one." });
+	await services.recordAnswer(me, once, answer);
+	if (!right) return new WithGame(game, reply);
+	let current = game;
+	for (let tries = 0; tries < 4 && current; tries++) {
+		const next = chargeRight(services, current, seat);
+		if (next === "nothing") return new WithGame(current, reply);
+		const saved = await services.updateGame(current.id, current.version, {
+			...next,
+			version: current.version + 1
+		});
+		if (saved) return new WithGame(saved, reply);
+		current = await services.loadGame(current.id);
+		if (!current || current.status !== "playing" || !current.state || !current.seat_info) return new WithGame(game, reply);
+	}
+	return new WithGame(current ?? game, reply);
+}
+/** What to save for a right charge answer: the +1 now if it's their turn and they haven't rolled, else keep it for their next turn. */
+function chargeRight(services, game, seat) {
+	const s = game.state;
+	if (s.turn !== seat) {
+		const seats = structuredClone(game.seat_info);
+		seats[seat].charged = true;
+		return {
+			seat_info: seats,
+			events: [],
+			actions: []
+		};
+	}
+	if (!canCharge(s)) return "nothing";
+	const played = playerAction(liveGame(game), {
+		kind: "charge",
+		right: true
+	}, diceFrom(services.random), services.random);
+	return {
+		...afterPlay(services, seatsOf(game), played),
+		turn_deadline: game.turn_deadline
+	};
 }
 /**
 * The clock ran out for whoever's turn it is. Any player's page can ask (server functions
@@ -3141,6 +3800,11 @@ function logProblem(step, code) {
 	console.error(`space-game: ${step} failed (${code ?? "unknown"})`);
 }
 const isUuid = (id) => /^[0-9a-f-]{36}$/i.test(id);
+/** The same text always gives the same ID, so an answer sent twice is only counted once. */
+async function batchIdFor(text) {
+	const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`space-maths:${text}`))).slice(0, 16)].map((b) => b.toString(16).padStart(2, "0")).join("");
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
 Deno.serve(spaceGameHandler({
 	now: () => Date.now(),
 	random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
@@ -3214,6 +3878,68 @@ Deno.serve(spaceGameHandler({
 			return "not-allowed";
 		}
 		return data;
+	},
+	async loadMathsContext(player) {
+		const { data, error } = await admin.rpc("space_maths_context", { player });
+		if (error || !data) {
+			logProblem("maths records", error?.code);
+			return null;
+		}
+		const context = data;
+		const { enabledTables, division, missingFactor, multipleChoice } = context.settings;
+		return {
+			facts: context.facts,
+			settings: {
+				enabledTables,
+				division,
+				multipleChoice,
+				...typeof missingFactor === "boolean" ? { missingFactor } : {}
+			}
+		};
+	},
+	async loadQuestion(game, seat, kind) {
+		const { data, error } = await admin.from("space_game_questions").select("stamp, question, asked_at, answered").eq("game", game).eq("seat", seat).eq("kind", kind).maybeSingle();
+		if (error) logProblem("load question", error.code);
+		if (!data) return null;
+		return {
+			stamp: data.stamp,
+			question: data.question,
+			askedAt: Date.parse(data.asked_at),
+			answered: data.answered
+		};
+	},
+	async saveQuestion(game, seat, kind, stamp, question) {
+		const { error } = await admin.from("space_game_questions").upsert({
+			game,
+			seat,
+			kind,
+			stamp,
+			question,
+			asked_at: new Date().toISOString(),
+			answered: false
+		});
+		if (error) logProblem("save question", error.code);
+	},
+	async claimQuestion(game, seat, kind) {
+		const { data, error } = await admin.from("space_game_questions").update({ answered: true }).eq("game", game).eq("seat", seat).eq("kind", kind).eq("answered", false).select("seat");
+		if (error) logProblem("claim question", error.code);
+		return (data?.length ?? 0) > 0;
+	},
+	async dropQuestion(game, seat, kind) {
+		const { error } = await admin.from("space_game_questions").delete().eq("game", game).eq("seat", seat).eq("kind", kind);
+		if (error) logProblem("drop question", error.code);
+	},
+	async recordAnswer(player, once, answer) {
+		const { error } = await admin.rpc("record_fact_answers", {
+			player,
+			pack: "times-tables",
+			batch_id: await batchIdFor(once),
+			answers: [answer],
+			quick_ms: QUICK_MS,
+			fluent_days: 2,
+			top_box: 4
+		});
+		if (error) logProblem("record answer", error.code);
 	}
 }));
 //#endregion

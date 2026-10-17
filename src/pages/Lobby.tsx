@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { colourName, normaliseCode, otherSide, prettyCode, type GameKind, type Side } from '../../shared/multiplayer';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
@@ -18,6 +18,7 @@ import {
 import { askSpace, fetchMyOpenSpaceGames, fetchSpaceLobby, seatsOf, type SpaceGame, type SpaceLobbyGame } from '../data/spaceGames';
 import { askCard, fetchCardLobby, fetchMyOpenCardGames, type CardLobbyGame, type SeatSummary } from '../data/cardGames';
 import { findGame, GAMES } from '../games/registry';
+import { mathsModeFromParam } from '../games/space/mathsMode';
 import type { DesignedBoardId } from '../../shared/space/boards';
 import type { Mode } from '../../shared/space/engine';
 import { boardLabel, BOARD_NAMES, DESIGNED_BOARD_ORDER } from '../../shared/space/names';
@@ -51,6 +52,10 @@ export function Lobby() {
   const [side, setSide] = useState<SideChoice>('first');
   const [spaceBoard, setSpaceBoard] = useState<SpaceBoardChoice>('nebula');
   const [spaceMode, setSpaceMode] = useState<Mode>('cosmic');
+  // Mission Control maths: what the teacher allows, and (if students choose) what the host picked.
+  const [params] = useSearchParams();
+  const mathsMode = mathsModeFromParam(params.get('maths'));
+  const [spaceMaths, setSpaceMaths] = useState(true);
   const [cardPlayers, setCardPlayers] = useState(3);
   const [cardTarget, setCardTarget] = useState<50 | 101>(50);
 
@@ -66,6 +71,7 @@ export function Lobby() {
       const saved = loadPrefs();
       setSpaceBoard(saved.board === 'galaxy' ? 'galaxy-of-the-day' : saved.board);
       setSpaceMode(saved.mode);
+      setSpaceMaths(saved.maths);
     });
     return () => {
       current = false;
@@ -175,23 +181,27 @@ export function Lobby() {
       return;
     }
     void go('create', async () => {
-      const [{ loadPrefs, savePrefs, setupFrom, todaysGalaxy }, { DESIGNED_BOARDS }] = await Promise.all([
+      const [{ loadPrefs, mathsOn, savePrefs, setupFrom, todaysGalaxy }, { DESIGNED_BOARDS }] = await Promise.all([
         spacePrefs(),
         import('../../shared/space/boards'),
       ]);
       const saved = loadPrefs();
       const galaxy = spaceBoard === 'galaxy-of-the-day';
+      const withMaths = { ...saved, maths: spaceMaths };
       // Cosmic events come with the board (on for Deep Space), as on the bot game's settings.
-      const setup = setupFrom({
-        ...saved,
-        mode: spaceMode,
-        board: galaxy ? 'galaxy' : spaceBoard,
-        galaxy: galaxy ? todaysGalaxy() : saved.galaxy,
-        galaxySize: 100,
-        cosmicEvents: galaxy ? saved.cosmicEvents : DESIGNED_BOARDS[spaceBoard].cosmicEvents,
-      });
+      const setup = setupFrom(
+        {
+          ...withMaths,
+          mode: spaceMode,
+          board: galaxy ? 'galaxy' : spaceBoard,
+          galaxy: galaxy ? todaysGalaxy() : saved.galaxy,
+          galaxySize: 100,
+          cosmicEvents: galaxy ? saved.cosmicEvents : DESIGNED_BOARDS[spaceBoard].cosmicEvents,
+        },
+        mathsOn(mathsMode, withMaths),
+      );
       if ('problem' in setup) throw new Error(setup.problem);
-      savePrefs({ ...saved, mode: spaceMode, ...(galaxy ? {} : { board: spaceBoard }) });
+      savePrefs({ ...saved, mode: spaceMode, ...(mathsMode === 'choose' ? { maths: spaceMaths } : {}), ...(galaxy ? {} : { board: spaceBoard }) });
       return spacePath(await askSpace({ action: 'create', setup, lobby: inLobby }));
     });
   }
@@ -425,6 +435,22 @@ export function Lobby() {
                       </label>
                     </div>
                   </fieldset>
+                  {mathsMode === 'choose' && (
+                    <fieldset className="level-picker">
+                      <legend>Mission Control maths</legend>
+                      <div className="level-picker__options">
+                        <label className="level-picker__option">
+                          <input type="radio" name="space-maths" checked={spaceMaths} onChange={() => setSpaceMaths(true)} />
+                          <span>On: times-table questions for everyone in the game</span>
+                        </label>
+                        <label className="level-picker__option">
+                          <input type="radio" name="space-maths" checked={!spaceMaths} onChange={() => setSpaceMaths(false)} />
+                          <span>Off</span>
+                        </label>
+                      </div>
+                    </fieldset>
+                  )}
+                  {mathsMode === 'on' && <p className="friend-note">Mission Control maths is on for everyone in this game.</p>}
                 </>
               ) : (
                 <fieldset className="level-picker">

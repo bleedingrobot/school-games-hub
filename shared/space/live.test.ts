@@ -6,6 +6,7 @@ import {
   autopilotSeats,
   AUTOPILOT_AFTER,
   CHOICE_SECONDS,
+  QUESTION_SECONDS,
   deadlineAfter,
   flownByBot,
   MAX_ANIMATION_SECONDS,
@@ -170,6 +171,9 @@ describe('classmates games', () => {
     const choosing = structuredClone(game);
     choosing.state.phase = 'choice';
     expect(deadlineAfter(choosing, [], now)).toBe(now + CHOICE_SECONDS * 1000);
+    // A wormhole or black hole question (Mission Control maths) gets 20.
+    choosing.state.pending = { kind: 'question', square: 5 };
+    expect(deadlineAfter(choosing, [], now)).toBe(now + QUESTION_SECONDS * 1000);
     expect(deadlineAfter(game, events, now)!).toBeGreaterThan(now + TURN_SECONDS * 1000);
     const lots = Array.from({ length: 100 }, () => ({ kind: 'cosmic' as const, event: 'solar-wind' as const }));
     expect(animationMs(lots)).toBeGreaterThan(MAX_ANIMATION_SECONDS * 1000);
@@ -192,7 +196,11 @@ describe('classmates games', () => {
       board: { galaxy: 'Comet-Kiwi-48', size: 50 },
     });
     expect(parseLiveSetup({ board: { id: 'mars' }, settings: DEFAULT_SETTINGS })).toBeNull();
-    expect(parseLiveSetup({ board: { id: 'nebula' }, settings: { ...DEFAULT_SETTINGS, maths: true } })).toBeNull();
+    // Mission Control maths comes with the host's setup.
+    expect(parseLiveSetup({ board: { id: 'nebula' }, settings: { ...DEFAULT_SETTINGS, maths: true } })).toEqual({
+      ...SETUP,
+      settings: { ...DEFAULT_SETTINGS, maths: true },
+    });
     expect(parseLiveSetup(null)).toBeNull();
   });
 });
