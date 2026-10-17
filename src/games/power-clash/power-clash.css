@@ -176,3 +176,4 @@
 .pcl__locked p, .pcl__lead { margin: 0; }
 .pcl .pc__score { flex-wrap: wrap; justify-content: center; }
 @media (max-width: 860px) { .pcl .pc__score { white-space: normal; } }
+.pcl__picker h2 { color: #fff; }

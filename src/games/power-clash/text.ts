@@ -89,3 +89,9 @@ export function botLine(events: GameEvent[]): string {
   }
   return parts.join(' ');
 }
+
+/** The names of the powers someone picked, as a short list for the waiting room. */
+export function powerNames(powers: PowerId[] | null): string {
+  if (!powers) return 'not picked yet';
+  return powers.map((p) => POWERS.find((info) => info.id === p)?.name ?? p).join(', ');
+}

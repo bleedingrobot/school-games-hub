@@ -12,7 +12,7 @@ import { PowerClashGuide } from './Guide';
 import {
   cellFx, cellLabel, describe, LOCK_CALM_MS, LOCK_MS, particles, PowerPanel, SOUNDS, swapVars, useReducedMotion, type Fx,
 } from './PowerClashPlay';
-import { POWERS, TEXT, powerInfo, shout, type ShoutKind } from './text';
+import { TEXT, powerInfo, shout, type ShoutKind } from './text';
 import './power-clash.css';
 
 /** The spoken warning comes when this many seconds are left on your turn. */
@@ -477,10 +477,4 @@ export function PowerClashLive({ session, tick = 1000 }: { session: PowerSession
       {help}
     </section>
   );
-}
-
-/** The three powers someone picked, as short words (for the waiting room). */
-export function powerNames(powers: PowerId[] | null): string {
-  if (!powers) return 'not picked yet';
-  return powers.map((p) => POWERS.find((info) => info.id === p)?.name ?? p).join(', ');
 }

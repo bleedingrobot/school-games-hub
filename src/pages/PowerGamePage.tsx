@@ -4,7 +4,7 @@ import { prettyCode } from '../../shared/multiplayer';
 import type { PowerId } from '../../shared/power-clash/types';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { PowerPicker } from '../games/power-clash/PowerPicker';
-import { powerNames } from '../games/power-clash/PowerClashLive';
+import { powerNames } from '../games/power-clash/text';
 import { usePowerGame, type PowerSession } from '../power-clash/usePowerGame';
 
 // The board and its animations load only when a game starts.
