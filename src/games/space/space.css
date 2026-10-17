@@ -1126,3 +1126,14 @@ a.space-action {
 .space-guide__list + .space-guide__note {
   margin-top: 12px;
 }
+
+/* The Mission Control question after your turn, and the "+1 charged" note. */
+.space-charge {
+  display: grid;
+  gap: 8px;
+}
+.space-charge__note {
+  margin: 0;
+  font-weight: 800;
+  text-align: center;
+}

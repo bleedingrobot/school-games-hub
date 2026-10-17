@@ -27,6 +27,7 @@ export function QuestionModal({
   onClose,
   closeLabel = 'Close',
   timeScale = 1,
+  inline = false,
 }: {
   question: Question;
   /** What the question is for, e.g. "Mana Well". */
@@ -42,6 +43,8 @@ export function QuestionModal({
   closeLabel?: string;
   /** Tests set 0 to skip the feedback pause. */
   timeScale?: number;
+  /** A card in the page, not a pop-up over it: no dimmed backdrop, no focus grab. */
+  inline?: boolean;
 }) {
   const [typed, setTyped] = useState('');
   const [result, setResult] = useState<MarkedAnswer | null>(null);
@@ -54,8 +57,8 @@ export function QuestionModal({
     setTyped('');
     setResult(null);
     shownAt.current = performance.now();
-    box.current?.focus();
-  }, [question.id]);
+    if (!inline) box.current?.focus();
+  }, [question.id, inline]);
 
   // Each answer is reported exactly once, however often the parent re-renders.
   const reportDone = useRef(onDone);
@@ -93,12 +96,12 @@ export function QuestionModal({
 
   const blank = typed === '' ? '?' : typed;
   return (
-    <div className="question-backdrop">
+    <div className={inline ? undefined : 'question-backdrop'}>
       <div
         ref={box}
-        className="question"
-        role="dialog"
-        aria-modal="true"
+        className={inline ? 'question question--inline' : 'question'}
+        role={inline ? 'group' : 'dialog'}
+        aria-modal={inline ? undefined : true}
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={keys}

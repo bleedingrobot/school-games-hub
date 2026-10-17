@@ -3,7 +3,7 @@ import type { BotLevel } from '../botGame';
 import type { Board } from './board';
 import { BOT_MATHS, botAction } from './bot';
 import { DESIGNED_BOARD_IDS, DESIGNED_BOARDS } from './boards';
-import { BOOST_CHARGE_TURNS, DEFAULT_SETTINGS, KEEP_ITEMS, newGame, type SpaceState } from './engine';
+import { DEFAULT_SETTINGS, KEEP_ITEMS, newGame, type SpaceState } from './engine';
 import { galaxyBoard, galaxyCodeAt } from './galaxy';
 import { simulate } from './sim';
 
@@ -111,14 +111,16 @@ describe('bots and Mission Control maths', () => {
     expect(right / 2000).toBeLessThan(BOT_MATHS[level] + 0.05);
   });
 
-  it('Pilot and Commander always take a charged Mission Boost; nobody can without maths', () => {
+  it('every bot sends a charge answer each turn after its first, right as often as its level; never without maths', () => {
     const s = newGame(b, { ...DEFAULT_SETTINGS, maths: true }, 2).state;
-    s.rockets[0].boostTurns = BOOST_CHARGE_TURNS;
-    expect(botAction(s, 'easy', never)).toEqual({ kind: 'boost' });
-    expect(botAction(s, 'medium', never)).toEqual({ kind: 'boost' });
+    expect(botAction(s, 'easy', never)).toEqual({ kind: 'roll' }); // no first-turn question
+    s.rockets[0].hasPlayed = true;
+    expect(botAction(s, 'easy', () => 0.1)).toEqual({ kind: 'charge', right: true });
+    expect(botAction(s, 'medium', () => 0.95)).toEqual({ kind: 'charge', right: false });
+    expect(botAction(s, 'very-easy', () => 0.5)).toEqual({ kind: 'charge', right: true });
+    expect(botAction(s, 'very-easy', () => 0.7)).toEqual({ kind: 'charge', right: false });
     const off = newGame(b, DEFAULT_SETTINGS, 2).state;
-    off.rockets[0].boostTurns = BOOST_CHARGE_TURNS;
+    off.rockets[0].hasPlayed = true;
     expect(botAction(off, 'easy', never)).toEqual({ kind: 'roll' });
   });
 });
-

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Board, Square } from './board';
 import {
-  BOOST_CHARGE_TURNS,
+  canCharge,
   DEFAULT_SETTINGS,
   FUEL_WARNING_ROUNDS,
   KEEP_ITEMS,
@@ -596,37 +596,50 @@ describe('Mission Control maths', () => {
     expect(run(asked, { kind: 'timeout' }).state.rockets[0].position).toBe(20);
   });
 
-  it('the Mission Boost is ready at the start, then recharges over BOOST_CHARGE_TURNS turns; a right answer adds 2 to the roll', () => {
+  it('the charge answer: not on a first turn, once a turn, right adds 1 to the roll, wrong changes nothing', () => {
     let s = start(board, 2, { maths: true });
-    expect(s.rockets.map((r) => r.boostTurns)).toEqual([BOOST_CHARGE_TURNS, BOOST_CHARGE_TURNS]);
-    const asked = run(s, { kind: 'boost' }).state;
-    expect(asked.pending).toEqual({ kind: 'question', square: s.rockets[0].position, moment: 'boost' });
-    const right = run(asked, choose(1)).state;
-    expect(right.phase).toBe('ready');
-    expect(right.rockets[0].boostTurns).toBe(0);
-    const rolled = run(right, roll, [2]);
-    expect(rolled.events).toContainEqual(expect.objectContaining({ kind: 'roll', die: 2, steps: 4, changes: ['mission-boost'] }));
-    // A wrong answer uses the boost up with no bonus, and you still roll.
-    const wrong = run(asked, choose(0)).state;
-    expect(wrong.rockets[0].boostTurns).toBe(0);
-    expect(run(wrong, roll, [2]).events).toContainEqual(expect.objectContaining({ kind: 'roll', steps: 2 }));
-    // Only once a turn, and not after rolling.
-    expect(() => run(right, { kind: 'boost' })).toThrow(SpaceRuleError);
-    // After using it, it takes BOOST_CHARGE_TURNS of your own turns to charge again.
-    s = run(right, roll, [1]).state; // seat 0 rolls, seat 1's turn
-    s = run(s, roll, [1]).state;
+    // Nobody has played yet, so there's nothing to answer.
+    expect(canCharge(s)).toBe(false);
+    expect(() => run(s, { kind: 'charge', right: true })).toThrow(SpaceRuleError);
+    s = run(s, roll, [1]).state; // seat 0 plays, seat 1's first turn
+    expect(() => run(s, { kind: 'charge', right: true })).toThrow(SpaceRuleError);
+    s = run(s, roll, [1]).state; // seat 1 plays, seat 0's second turn
     expect(s.turn).toBe(0);
-    expect(s.rockets[0].boostTurns).toBe(1);
-    expect(() => run(s, { kind: 'boost' })).toThrow(SpaceRuleError);
-    for (let i = 0; i < 2 * (BOOST_CHARGE_TURNS - 1); i++) s = run(s, roll, [1]).state;
-    expect(s.rockets[0].boostTurns).toBe(BOOST_CHARGE_TURNS);
-    expect(() => run(s, { kind: 'boost' })).not.toThrow();
+    expect(canCharge(s)).toBe(true);
+    const right = run(s, { kind: 'charge', right: true });
+    expect(right.events).toEqual([{ kind: 'charge', seat: 0, right: true }]);
+    expect(canCharge(right.state)).toBe(false);
+    expect(() => run(right.state, { kind: 'charge', right: true })).toThrow(SpaceRuleError);
+    const rolled = run(right.state, roll, [2]);
+    expect(rolled.events).toContainEqual(expect.objectContaining({ kind: 'roll', die: 2, steps: 3, changes: ['maths-charge'] }));
+    // Wrong: recorded, nothing else; the roll is normal.
+    const wrong = run(s, { kind: 'charge', right: false }).state;
+    expect(wrong.turnInfo.mathsCharge).toBeFalsy();
+    expect(run(wrong, roll, [2]).events).toContainEqual(expect.objectContaining({ kind: 'roll', steps: 2, changes: [] }));
+    // Skipped: just roll.
+    expect(run(s, roll, [2]).events).toContainEqual(expect.objectContaining({ kind: 'roll', steps: 2 }));
+    // The +1 is used up by the roll and doesn't carry over to the next player.
+    expect(rolled.state.turnInfo.mathsCharge).toBeFalsy();
+  });
+
+  it('the +1 goes with a roll-again on a 6 only once', () => {
+    let s = start(board, 2, { maths: true, rollAgainOnSix: true });
+    s = run(s, roll, [1]).state;
+    s = run(s, roll, [1]).state;
+    s = run(s, { kind: 'charge', right: true }).state;
+    const six = run(s, roll, [6]);
+    expect(six.events).toContainEqual(expect.objectContaining({ kind: 'roll', steps: 7 }));
+    expect(six.state.turn).toBe(0);
+    expect(() => run(six.state, { kind: 'charge', right: true })).toThrow(SpaceRuleError);
+    expect(run(six.state, roll, [2]).events).toContainEqual(expect.objectContaining({ kind: 'roll', steps: 2 }));
   });
 
   it('with maths off nothing is asked and there is no boost (games exactly as before)', () => {
     const s = setUp(start(board, 2), [47, 1]);
-    expect(s.rockets[0].boostTurns).toBeUndefined();
+    expect(s.rockets[0].hasPlayed).toBeUndefined();
     expect(run(s, roll, [3]).state.rockets[0].position).toBe(20);
-    expect(() => run(s, { kind: 'boost' })).toThrow(SpaceRuleError);
+    const played = run(run(s, roll, [1]).state, roll, [1]).state;
+    expect(canCharge(played)).toBe(false);
+    expect(() => run(played, { kind: 'charge', right: true })).toThrow(SpaceRuleError);
   });
 });

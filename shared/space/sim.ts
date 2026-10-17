@@ -21,6 +21,11 @@ export interface SimOptions {
    * (to see how much knowing your tables helps). Undefined: the bot's own rate.
    */
   mathsRight?: (number | undefined)[];
+  /**
+   * Seconds a charge question adds to the clock. 0 (the default): it's answered while others take
+   * their turns. 10 is the worst case, as if every one held the game up like a wormhole question.
+   */
+  chargeSeconds?: number;
 }
 
 export interface Spread {
@@ -62,12 +67,14 @@ function spread(values: number[]): Spread {
 /**
  * Seconds a classroom turn might take: about 6 for tapping, the dice and the hops, 1.5 more for each
  * square or hinder that acts, 4 for each choice (10 for a maths question) and 2 for each item used.
+ * The charge question after a turn costs `chargeSeconds` (default 0: it's answered while others move).
  */
-export function secondsFor(events: readonly SpaceEvent[]): number {
+export function secondsFor(events: readonly SpaceEvent[], chargeSeconds = 0): number {
   let seconds = 0;
   for (const e of events) {
     if (e.kind === 'roll') seconds += 6;
     else if (e.kind === 'choice') seconds += e.pending.kind === 'question' ? 10 : 4;
+    else if (e.kind === 'charge') seconds += chargeSeconds;
     else if (e.kind === 'item-used') seconds += 2;
     else if (['wormhole', 'black-hole', 'star', 'comet', 'pushed', 'swapped', 'gate', 'mystery', 'force-field', 'cosmic'].includes(e.kind)) seconds += 1.5;
   }
@@ -111,13 +118,14 @@ export function simulate(options: SimOptions): SimReport {
     let moveEvents = 0;
     while (state.phase !== 'over') {
       const rate = options.mathsRight?.[state.turn];
-      const action: SpaceAction =
-        rate !== undefined && state.phase === 'choice' && state.pending?.kind === 'question'
-          ? { kind: 'choose', option: random() < rate ? 1 : 0 }
-          : botAction(state, levels[state.turn], random);
+      let action: SpaceAction = botAction(state, levels[state.turn], random);
+      if (rate !== undefined && action.kind === 'charge') action = { kind: 'charge', right: random() < rate };
+      else if (rate !== undefined && state.phase === 'choice' && state.pending?.kind === 'question') {
+        action = { kind: 'choose', option: random() < rate ? 1 : 0 };
+      }
       const result = play(state, action, dice);
       state = result.state;
-      seconds += secondsFor(result.events);
+      seconds += secondsFor(result.events, options.chargeSeconds);
       for (const e of result.events) {
         if (e.kind === 'move') moveEvents = 0;
         else if (['wormhole', 'black-hole', 'comet', 'star', 'gravity', 'force-field', 'asteroid', 'mystery', 'gate'].includes(e.kind) || (e.kind === 'pushed' && e.by === 'space-mine')) {

@@ -22,8 +22,7 @@ import type { Question } from '../../../shared/maths/skillPack';
 import { TimesTables } from '../../../shared/maths/skillPacks/timesTables';
 import { BOT_NAMES } from '../../../shared/space/bot';
 import {
-  BOOST_CHARGE_TURNS,
-  canBoost,
+  canCharge,
   itemProblem,
   SpaceRuleError,
   usableItems,
@@ -72,12 +71,17 @@ export interface SpaceMaths {
   facts: FactStats[];
 }
 
-const MOMENT_TITLE = { wormhole: 'Wormhole boost', 'black-hole': 'Black hole escape', boost: 'Mission Boost' } as const;
+const MOMENT_TITLE = { wormhole: 'Wormhole boost', 'black-hole': 'Black hole escape' } as const;
 const MOMENT_NOTE = {
   wormhole: 'A right answer flies you 3 squares further.',
   'black-hole': 'A right answer means you only fall half as far.',
-  boost: 'A right answer adds 2 to your roll.',
 } as const;
+
+/** The question on the side card after your turn: waiting to be answered, or answered and waiting for your next turn. */
+interface ChargeCard {
+  question: Question;
+  done?: { right: boolean; answer: number; ms: number; at: number };
+}
 
 const isOver = (run: SoloRun) => run.state.phase === 'over';
 
@@ -159,6 +163,7 @@ export function SpaceSolo({
   const [pack] = useState(() => new TimesTables(maths?.facts ?? []));
   const passPack = useRef<TimesTables | null>(null);
   const [question, setQuestion] = useState<Question | null>(null);
+  const [charge, setCharge] = useState<ChargeCard | null>(null);
   const mathsMode: MathsMode = maths?.mode ?? 'off';
 
   const runRef = useRef<SoloRun | null>(null);
@@ -337,6 +342,7 @@ export function SpaceSolo({
     stampRef.current = stamped?.stamp ?? null;
     passPack.current = pass ? new TimesTables() : null;
     setQuestion(null);
+    setCharge(null);
     setSaveStatus(stamped ? 'playing' : 'practice');
     setSaveMessage('');
     const { run, events } = started;
@@ -368,6 +374,7 @@ export function SpaceSolo({
     keyRef.current++;
     runRef.current = null;
     gameRef.current = null;
+    setCharge(null);
     setGame(null);
     setView(null);
   }
@@ -390,6 +397,12 @@ export function SpaceSolo({
     setHint('');
     setPicking(null);
     setInfo(null);
+    // Rolling closes an unanswered question (skipped: nothing happens). When your turn ends, a new one opens.
+    if (action.kind === 'roll') setCharge(null);
+    if (run.state.settings.maths && !run.passAndPlay && seat === run.studentSeat && run.state.turn !== seat && run.state.phase !== 'over') {
+      const q = pickQuestion();
+      setCharge(q ? { question: q } : null);
+    }
     queue.current.push({ events, state: run.state, me: seat });
     void pump();
   }
@@ -427,11 +440,6 @@ export function SpaceSolo({
     }
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     const myTurn = phaseRef.current === 'student';
-    if (event.key === 'b' && myTurn && canBoost(view) && !picking) {
-      event.preventDefault();
-      act({ kind: 'boost' });
-      return;
-    }
     if (event.key === ' ' || event.key === 'Enter') {
       if (target?.closest('button, a, summary')) return;
       if (myTurn && view.phase === 'ready' && !picking) {
@@ -484,19 +492,35 @@ export function SpaceSolo({
       setQuestion(null);
       return;
     }
+    setQuestion(pickQuestion());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [askingKey]);
+
+  // An answered charge question is sent as soon as your next turn starts (before you roll).
+  useEffect(() => {
+    const run = runRef.current;
+    const done = charge?.done;
+    if (!run || !charge || !done || phase !== 'student' || run.passAndPlay || !canCharge(run.state)) return;
+    run.mathsAnswers.push({ parts: charge.question.parts, given: done.answer, ms: done.ms, at: done.at });
+    setCharge(null);
+    act({ kind: 'charge', right: done.right });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [charge, phase]);
+  const answered = useRef<{ answer: number; ms: number } | null>(null);
+
+  /** The next question for this student, from their records at the step they're ready for. */
+  function pickQuestion(): Question | null {
     const active = passPack.current ?? pack;
-    const q =
+    return (
       active.nextQuestion({
         level: readyLevel(active.stats(), maths?.enabledTables),
         enabledTables: maths?.enabledTables,
         division: maths?.division,
         missingFactor: maths?.missingFactor,
         multipleChoice: maths?.multipleChoice,
-      }) ?? active.nextQuestion({ level: 1 });
-    setQuestion(q);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [askingKey]);
-  const answered = useRef<{ answer: number; ms: number } | null>(null);
+      }) ?? active.nextQuestion({ level: 1 })
+    );
+  }
 
   // ---------- Settings screen ----------
 
@@ -654,29 +678,6 @@ export function SpaceSolo({
             </p>
           )}
 
-          {view.settings.maths && myTurn && !over && !pending && !picking && (
-            <div className="space-boost" role="group" aria-label="Mission Boost">
-              <button
-                type="button"
-                className="button button--light space-boost__button"
-                disabled={!canBoost(view)}
-                onClick={() => act({ kind: 'boost' })}
-                aria-keyshortcuts="b"
-              >
-                🧮 Mission Boost
-              </button>
-              <span className="space-boost__charge">
-                {canBoost(view)
-                  ? 'Ready! Answer to add 2 to this roll.'
-                  : view.turnInfo.rolled || view.turnInfo.mathsBoost
-                    ? view.turnInfo.mathsBoost
-                      ? 'Boost on: +2 on your roll!'
-                      : 'Charging…'
-                    : `Charging: turn ${Math.min(me.boostTurns ?? 0, BOOST_CHARGE_TURNS)} of ${BOOST_CHARGE_TURNS}`}
-              </span>
-            </div>
-          )}
-
           {pending && pending.kind !== 'question' && (
             <Choice pending={pending} items={me.items} onChoose={(option) => act({ kind: 'choose', option })} />
           )}
@@ -695,6 +696,46 @@ export function SpaceSolo({
 
           {cosmic && <ItemTiles items={me.items} usable={(item) => usable.includes(item) && !picking} onUse={chooseItem} />}
         </section>
+
+        {view.settings.maths && !pass && !over && (view.turnInfo.mathsCharge && myTurn ? (
+          <section className="space-panel space-charge" aria-label="Mission Control charge">
+            <p className="space-charge__note" role="status">
+              ⚡ +1 charged from your answer
+            </p>
+          </section>
+        ) : (
+          charge?.done?.right ? (
+            <section className="space-panel space-charge" aria-label="Mission Control charge">
+              <p className="space-charge__note" role="status">
+                ⚡ Right! +1 is ready for your next roll
+              </p>
+            </section>
+          ) : (
+          charge && !charge.done && (
+            <section className="space-panel space-charge" aria-label="Mission Control question">
+              <QuestionModal
+                inline
+                key={charge.question.id}
+                question={charge.question}
+                title="Mission Control"
+                note="Answer for +1 on your next roll. It’s up to you."
+                onSubmit={(answer, ms) => {
+                  answered.current = { answer, ms };
+                  return pack.recordAnswer(charge.question, answer, ms);
+                }}
+                onDone={(result: MarkedAnswer) => {
+                  const given = answered.current;
+                  if (given) setCharge({ question: charge.question, done: { right: result.correct, answer: given.answer, ms: Math.round(given.ms), at: Date.now() } });
+                  else setCharge(null);
+                }}
+                onClose={() => setCharge(null)}
+                closeLabel="Skip"
+                timeScale={timeScale}
+              />
+            </section>
+          )
+          )
+        ))}
 
         <RocketsPanel view={view} seats={seats} positions={positions} turnSeat={turnSeat} over={over} />
 

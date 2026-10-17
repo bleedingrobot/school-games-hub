@@ -263,24 +263,24 @@ describe('Wormholes & Black Holes against bots', () => {
 });
 
 describe('Mission Control maths on the game screen', () => {
-  /** Plays to the end, answering every maths question (right, wrong, right, wrong…) and taking each Mission Boost. */
+  /** Plays to the end, answering every maths question (right, wrong, right, wrong…), the side card after each turn too. */
   async function playWithMaths(user: ReturnType<typeof userEvent.setup>) {
     let asked = 0;
     for (let guard = 0; guard < 4000; guard++) {
-      if (screen.queryByRole('dialog', { name: /Wormhole boost|Black hole escape|Mission Boost/ }) === null && screen.queryByRole('dialog')) break;
+      if (screen.queryByRole('dialog', { name: /Wormhole boost|Black hole escape/ }) === null && screen.queryByRole('dialog')) break;
       const fact = screen.queryByLabelText(/equals/);
       if (fact) {
+        // The side card is not a pop-up, so it doesn't grab the keyboard: click into it first.
+        if (!screen.queryByRole('dialog')) (fact.closest('.question') as HTMLElement).focus();
         const answer = solve(fact.getAttribute('aria-label')!);
         await user.keyboard(`${asked % 2 === 0 ? answer : answer + 1}{Enter}`);
         asked++;
         await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 4000 });
         continue;
       }
-      const boost = screen.queryByRole('button', { name: /Mission Boost/ });
       const roll = screen.queryByRole('button', { name: /^🎲 Roll/ });
       const choice = screen.queryByRole('group', { name: /gate|card|pockets|die|aim/i });
-      if (boost && !boost.hasAttribute('disabled')) await user.click(boost);
-      else if (choice) await user.click(within(choice).getAllByRole('button')[0]);
+      if (choice) await user.click(within(choice).getAllByRole('button')[0]);
       else if (roll && !roll.hasAttribute('disabled')) await user.click(roll);
       else await new Promise((resolve) => setTimeout(resolve, 5));
     }
@@ -301,13 +301,13 @@ describe('Mission Control maths on the game screen', () => {
     expect(screen.getByText(/Mission Control maths is on/)).toBeInTheDocument();
   });
 
-  it('plays with maths off: no questions and no boost button', async () => {
+  it('plays with maths off: no questions and no side card', async () => {
     const user = userEvent.setup();
     localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', bots: 1, maths: false }));
     renderGame(undefined, maths('choose'));
     await user.click(screen.getByRole('button', { name: /Launch/ }));
     await screen.findByRole('button', { name: /^🎲 Roll/ });
-    expect(screen.queryByRole('button', { name: /Mission Boost/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: /Mission Control/ })).not.toBeInTheDocument();
     localStorage.clear();
   });
 
@@ -322,25 +322,29 @@ describe('Mission Control maths on the game screen', () => {
     expect(asked).toBeGreaterThan(0);
     const report = saved[0];
     expect(report.settings.maths).toBe(true);
-    expect(report.answers).toHaveLength(asked);
+    // An answer to the side card after the very last turn has no next turn to carry it, so it isn't sent.
+    expect(report.answers!.length).toBeGreaterThanOrEqual(asked - 1);
+    expect(report.answers!.length).toBeLessThanOrEqual(asked);
+    expect(report.actions.filter((a) => a.startsWith('charge:')).length).toBeGreaterThan(0);
     expect(report.answers![0]).toMatchObject({ given: expect.any(Number), parts: expect.any(Array) });
     // The server's own check accepts every answer the screen sent (the seed can't be checked here, so
     // judge the game directly).
     const judged = judgeSpaceGame(report);
     expect(judged).toMatchObject({ ok: true });
-    if (judged.ok) expect(judged.game.answers).toHaveLength(asked);
+    if (judged.ok) expect(judged.game.answers).toHaveLength(report.answers!.length);
     localStorage.clear();
   }, 60_000);
 
-  it('pass-and-play asks questions but saves and records nothing', async () => {
+  it('pass-and-play has no side question and saves and records nothing', async () => {
     const user = userEvent.setup();
     const { saving, saved } = fakeSaving();
     localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', who: 'pass', players: 2, maths: true }));
     const facts = [{ key: 'mul:2x5', attempts: 4, correct: 4, avgMs: 1500, box: 3, lastSeen: 1, quickDays: [] }];
     renderGame(saving, { ...maths('choose'), facts });
     await user.click(screen.getByRole('button', { name: /Launch/ }));
-    const asked = await playWithMaths(user);
-    expect(asked).toBeGreaterThan(0);
+    await playWithMaths(user);
+    // Wormholes and black holes may ask (only if someone lands on one); the side card never appears.
+    expect(screen.queryByRole('group', { name: /Mission Control/ })).not.toBeInTheDocument();
     expect(saved).toEqual([]);
     expect(saving.seed).not.toHaveBeenCalled();
     localStorage.clear();

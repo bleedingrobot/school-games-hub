@@ -182,7 +182,7 @@ const ROLL_CHANGES: Record<string, string> = {
   'heavy-gravity': 'heavy gravity ½',
   'gravity-anchor': 'Gravity Anchor ½',
   booster: 'Booster +2',
-  'mission-boost': 'Mission Boost +2',
+  'maths-charge': 'Maths charge +1',
   'low-gravity': 'low gravity +2',
   'solar-wind': 'solar wind +1',
 };
@@ -234,7 +234,6 @@ export function choiceQuestion(pending: Pending): string {
     case 'question':
       switch (pending.moment) {
         case 'black-hole': return 'Mission Control! Answer to fall only half as far.';
-        case 'boost': return 'Mission Boost! Answer to add 2 to your roll.';
         default: return 'Mission Control! Answer to power up the wormhole.';
       }
   }
@@ -318,13 +317,14 @@ export function describe(event: SpaceEvent, names: readonly string[]): string | 
     case 'supernova-spent': return `The supernova on ${event.square} burned out into a nebula.`;
     case 'question': {
       const moment = event.moment ?? 'wormhole';
-      if (moment === 'boost') return event.correct ? `${who(event.seat)} charged the Mission Boost: +2 on the next roll!` : null;
       if (moment === 'black-hole') return event.correct ? `${who(event.seat)} beat the black hole and only fell to ${event.to}!` : null;
       // A wrong answer is a normal wormhole ride, with nothing said about the answer.
       return event.correct
         ? `${who(event.seat)} powered up the wormhole from ${event.from} all the way to ${event.to}!`
         : `${who(event.seat)} rode a wormhole from ${event.from} up to ${event.to}!`;
     }
+    // Only good news: a wrong answer says nothing, to anyone.
+    case 'charge': return event.right ? `${who(event.seat)} is charged up: +1 on this roll!` : null;
     case 'chain-cap': return `That’s enough for one turn: square ${event.square} will have to wait.`;
     case 'choice': return null;
     case 'timeout': return null;

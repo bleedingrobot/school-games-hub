@@ -201,3 +201,25 @@
     animation: none;
   }
 }
+
+/* The same question as a card in the page (Mission Control's "charge" question). */
+.question--inline {
+  width: 100%;
+  padding: 12px 14px 14px;
+  border: 2px solid var(--q-key-edge);
+  border-radius: 18px;
+  box-shadow: none;
+}
+.question--inline .question__fact {
+  font-size: clamp(1.8rem, 7vw, 2.4rem);
+}
+.question--inline {
+  gap: 6px;
+}
+.question--inline .numpad {
+  gap: 6px;
+}
+.question--inline .numpad__key {
+  min-height: 44px;
+  font-size: 1.3rem;
+}

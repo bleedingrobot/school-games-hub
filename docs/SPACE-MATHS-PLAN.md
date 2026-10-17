@@ -2,11 +2,11 @@
 
 *Times-table questions in Wormholes & Black Holes, with an on/off switch. Written 17 October 2026 for James.*
 
-**Status: approved by James on 17 October 2026: "go with your suggestions" (every answer in section 9 is the suggestion). M.1, M.2 and M.3 done (section 10). Change from the plan: the Mission Boost charges every 5 turns, not 3 (section 10).**
+**Status: approved by James on 17 October 2026: "go with your suggestions" (every answer in section 9 is the suggestion). M.1, M.2 and M.3 done (section 10). Change from the plan (17 Oct, James's idea): the Mission Boost button is replaced by a question after your turn that charges your next roll (section 11).**
 
 ## 1. The idea in one paragraph
 
-At the most exciting moments of a space game (flying into a wormhole, falling into a black hole, and when the booster is charged), Mission Control radios a times-table question. **A right answer helps you. A wrong answer never hurts you:** you just move the normal way. It reuses Gem Keep's question engine and records, so the facts a student needs come up more often, and the teacher's 12 × 12 grid fills in from both games. It can be switched off by the teacher for everyone, and (if the teacher allows) by each student for their own games.
+At the most exciting moments of a space game (flying into a wormhole, falling into a black hole) and right after your own turn, Mission Control radios a times-table question. **A right answer helps you. A wrong answer never hurts you:** you just move the normal way. It reuses Gem Keep's question engine and records, so the facts a student needs come up more often, and the teacher's 12 × 12 grid fills in from both games. It can be switched off by the teacher for everyone, and (if the teacher allows) by each student for their own games.
 
 ## 2. The three maths moments
 
@@ -14,7 +14,7 @@ At the most exciting moments of a space game (flying into a wormhole, falling in
 |---|---|---|---|
 | **Wormhole boost** | You land on a wormhole's mouth | You fly through and **3 squares further** (unless that lands on another wormhole or black hole: then just the normal exit) | You fly through as normal |
 | **Black hole escape** | You land on a black hole | You fall only **half as far**, like an escape pod, without using one | You fall as normal. If you have an escape pod, it's used now, as it is today |
-| **Booster** | Before you roll, once it's charged (it charges after every 3 of your turns, and shows on screen) | Optional: tap **Booster**, answer, and get **+2** on this roll | Your roll is normal, and the booster is used up |
+| **Charge question** *(replaced the Mission Boost, section 11)* | A question on a side card as soon as your turn ends; answer it while others play | A right answer gives **+1** on your next roll | Nothing happens, and nobody else sees it |
 
 Notes:
 
@@ -128,3 +128,28 @@ So maths matters, but luck still matters more: a student who gets everything wro
 
 Next: M.4 (maths in games with classmates).
 
+## 11. Change: the question after your turn replaces the Mission Boost (17 Oct 2026)
+
+James's idea, approved: instead of a Mission Boost button, a question appears on a small side card the moment your turn ends, and you answer it while the others take their turns. **Right = +1 on your next roll. Wrong or skipped = nothing.** The wormhole and black hole questions stay as they were.
+
+- **Rules** (`shared/space/engine.ts`): a new action `charge` (`right: true/false`), sent at the start of your next turn before you roll, once a turn, only after you've finished a turn (the first turn has none). Right adds +1 (`MATHS_CHARGE_STEPS`) to that one roll. The boost action, its charge counter and its constants are gone. Bots answer it every turn at their level (60/75/90%), so they get the +1 too. With maths off nothing changes (a test checks that).
+- **Screen** (`SpaceSolo.tsx`): the question is a card in the side column (the same question picker, records and teacher settings as before), not a pop-up. No timer, with a Skip button. It stays until answered or until you roll. Answered, it's sent for you when your next turn starts, and that turn shows "⚡ +1 charged from your answer". A wrong answer shows the right fact to the student for 2 seconds and says nothing after. Pass-and-play has no side card. The old B shortcut is gone.
+- **Saving:** a `charge` action is saved as `charge:1` or `charge:0`, and its answer goes in the report's answers list in order, like the others. The server checks the typed answer matches the right/wrong sent, then adds it to the records. An answer given after the last turn of a game has no next turn to carry it, so it isn't sent.
+- **Others see only good news:** the log says "<name> is charged up: +1 on this roll!" for a right answer and nothing for a wrong one.
+
+**Simulator** (500 games, Nebula, Cosmic, Pilot bots). Minutes count the charge question as free (it's answered while others move):
+
+| | Off | Maths on |
+|---|---|---|
+| 4 rockets: rounds / turns | 15.1 / 57.9 | 12.6 / 47.7 (17% fewer) |
+| 4 rockets: minutes | 6.6 | 6.5 |
+| 2 rockets: rounds / turns | 17.8 / 34.1 | 14.8 / 28.0 (18% fewer) |
+| 2 rockets: minutes | 3.9 | 3.9 |
+
+So games are about **a sixth shorter in turns**, a bit more than the tenth we guessed (every bot gets +1 on 60–90% of its rolls, and the wormhole and black hole rights add to that). A game has about 12 charge questions per rocket (one per turn). If each of a student's questions held the game up by 10 seconds, that would add about 2 minutes to a 4-rocket game; the card is built so it doesn't (you answer while others play).
+
+**Fairness:** with maths on, 4-rocket wins by seat were 26% / 25% / 25% / 24%; 2-rocket 51% / 49%. The first rocket always right against Pilots won 28% (4 rockets) and 52% (2); never right won 14% and 32%. Knowing your tables helps, and luck still matters: a student who gets everything wrong still wins about 1 game in 7 against 3 bots.
+
+**Checked:** 111 game-rule tests, the game-screen tests (full games with maths on, saved reports checked by the server's own code), the server's save tests, and a real browser (phone and desktop sizes): the card appears after your turn, answering it shows "Right! +1 is ready", and your next turn shows "+1 charged from your answer".
+
+Next: M.4 (maths in games with classmates).

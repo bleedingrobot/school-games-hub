@@ -53,13 +53,13 @@ export function seedProblem(seed: string, nowSeconds: number): string | null {
 
 // ---------- Actions, written as short text ----------
 
-/** "roll", "boost", "choose:1", "use:booster", "use:tractor-beam@2", "use:navigator=6". */
+/** "roll", "charge:1" (right) or "charge:0", "choose:1", "use:booster", "use:tractor-beam@2", "use:navigator=6". */
 export function encodeAction(action: SpaceAction): string {
   switch (action.kind) {
     case 'roll':
       return 'roll';
-    case 'boost':
-      return 'boost';
+    case 'charge':
+      return action.right ? 'charge:1' : 'charge:0';
     case 'timeout':
       return 'timeout';
     case 'choose':
@@ -72,7 +72,7 @@ export function encodeAction(action: SpaceAction): string {
 /** The opposite of encodeAction. Null for anything it wouldn't make (timeouts too: solo games have no timer). */
 export function decodeAction(text: string): SpaceAction | null {
   if (text === 'roll') return { kind: 'roll' };
-  if (text === 'boost') return { kind: 'boost' };
+  if (text === 'charge:1' || text === 'charge:0') return { kind: 'charge', right: text === 'charge:1' };
   const choose = /^choose:([0-3])$/.exec(text);
   if (choose) return { kind: 'choose', option: Number(choose[1]) };
   const use = /^use:([a-z-]{1,20})(?:@([0-3]))?(?:=([1-6]))?$/.exec(text);
@@ -236,12 +236,14 @@ export function judgeSpaceGame(report: SpaceGameReport): SpaceJudgement {
   const answers: FactAnswer[] = [];
   let mathsProblem: string | null = null;
   const checkAnswer = (before: SpaceState, action: SpaceAction) => {
-    if (mathsProblem || action.kind !== 'choose' || before.pending?.kind !== 'question') return;
+    const asked = action.kind === 'choose' && before.pending?.kind === 'question';
+    if (mathsProblem || (!asked && action.kind !== 'charge')) return;
+    const claimedRight = action.kind === 'charge' ? action.right : action.kind === 'choose' && action.option === 1;
     const a = given[answers.length];
     const solved = a ? solveQuestion(a.parts) : null;
     if (!a || !solved) mathsProblem = 'missing maths answer';
-    else if ((a.given === solved.answer) !== (action.option === 1)) mathsProblem = 'maths answer does not match';
-    else answers.push({ key: solved.key, correct: action.option === 1, ms: a.ms, at: a.at });
+    else if ((a.given === solved.answer) !== claimedRight) mathsProblem = 'maths answer does not match';
+    else answers.push({ key: solved.key, correct: claimedRight, ms: a.ms, at: a.at });
   };
   let replayed: ReturnType<typeof replaySolo>;
   try {

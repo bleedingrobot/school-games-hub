@@ -388,8 +388,7 @@ function newGame(board, settings, players) {
 				binary: false,
 				shielded: false,
 				lastTarget: null,
-				beaconRound: null,
-				...settings.maths ? { boostTurns: 5 } : {}
+				beaconRound: null
 			})),
 			turn: 0,
 			round: 1,
@@ -478,10 +477,9 @@ function itemProblem(s, item, seat = s.turn) {
 	if (ITEMS[item].targeted && validTargets(s, item, seat).length === 0) return "No rockets you can aim at.";
 	return null;
 }
-/** True if the rocket whose turn it is may ask for a Mission Boost now. */
-function canBoost(s) {
-	const r = s.rockets[s.turn];
-	return s.settings.maths && s.phase === "ready" && !s.turnInfo.rolled && !s.turnInfo.mathsBoost && (r.boostTurns ?? 0) >= 5;
+/** True if the rocket whose turn it is may send its charge answer now (maths on, after its first turn, before rolling, once). */
+function canCharge(s) {
+	return s.settings.maths && s.phase === "ready" && !s.turnInfo.rolled && !s.turnInfo.chargeDone && s.rockets[s.turn].hasPlayed === true;
 }
 /** The items this rocket could use right now. */
 function usableItems(s, seat = s.turn) {
@@ -515,9 +513,9 @@ function stepsFor(r, t, die) {
 		steps += 2;
 		changes.push("booster");
 	}
-	if (t.mathsBoost) {
-		steps += 2;
-		changes.push("mission-boost");
+	if (t.mathsCharge) {
+		steps += 1;
+		changes.push("maths-charge");
 	}
 	if (r.gravity?.kind === "low") {
 		steps += 2;
@@ -588,12 +586,14 @@ var Game = class {
 			case "roll":
 				if (s.phase !== "ready") throw new SpaceRuleError("Make your choice first.");
 				return this.roll();
-			case "boost":
-				if (!canBoost(s)) throw new SpaceRuleError("The Mission Boost isn't ready.");
-				return this.ask({
-					kind: "question",
-					square: this.me.position,
-					moment: "boost"
+			case "charge":
+				if (!canCharge(s)) throw new SpaceRuleError("There's no charge question to answer now.");
+				s.turnInfo.chargeDone = true;
+				if (action.right) s.turnInfo.mathsCharge = true;
+				return this.emit({
+					kind: "charge",
+					seat: this.seat,
+					right: action.right
 				});
 			case "choose":
 				if (s.phase !== "choice" || !s.pending) throw new SpaceRuleError("There's nothing to choose.");
@@ -770,7 +770,7 @@ var Game = class {
 			changes
 		});
 		t.booster = t.hyperdrive = false;
-		if (t.mathsBoost) t.mathsBoost = false;
+		t.mathsCharge = false;
 		t.navigator = null;
 		me.anchored = false;
 		me.solarWind = false;
@@ -1117,19 +1117,6 @@ var Game = class {
 			case "question": {
 				const right = option === 1;
 				const moment = pending.moment ?? "wormhole";
-				if (moment === "boost") {
-					me.boostTurns = 0;
-					if (right) s.turnInfo.mathsBoost = true;
-					this.emit({
-						kind: "question",
-						seat,
-						correct: right,
-						from: me.position,
-						to: me.position,
-						moment
-					});
-					return;
-				}
 				if (moment === "black-hole") {
 					const square = s.board.squares[pending.square];
 					if (right) {
@@ -1194,6 +1181,7 @@ var Game = class {
 	nextTurn() {
 		const s = this.s;
 		s.turnsTaken++;
+		if (s.settings.maths) this.me.hasPlayed = true;
 		s.turn = (s.turn + 1) % s.rockets.length;
 		if (s.turn === 0) {
 			this.newRound();
@@ -1202,7 +1190,6 @@ var Game = class {
 		s.turnInfo = newTurnInfo();
 		const me = this.me;
 		me.shielded = false;
-		if (s.settings.maths) me.boostTurns = Math.min(5, (me.boostTurns ?? 0) + 1);
 		this.emit({
 			kind: "turn-start",
 			seat: s.turn,
@@ -2300,7 +2287,10 @@ function botAction(s, level, random) {
 		kind: "choose",
 		option: botChoice(s, level, random)
 	};
-	if (canBoost(s) && (level !== "very-easy" || random() < .5)) return { kind: "boost" };
+	if (canCharge(s)) return {
+		kind: "charge",
+		right: random() < BOT_MATHS[level]
+	};
 	if (level === "very-easy") {
 		const usable = usableItems(s);
 		if (usable.length > 0 && random() < .4) {
@@ -2344,11 +2334,11 @@ function botChoice(s, level, random) {
 new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
 //#endregion
 //#region shared/space/save.ts
-/** "roll", "boost", "choose:1", "use:booster", "use:tractor-beam@2", "use:navigator=6". */
+/** "roll", "charge:1" (right) or "charge:0", "choose:1", "use:booster", "use:tractor-beam@2", "use:navigator=6". */
 function encodeAction(action) {
 	switch (action.kind) {
 		case "roll": return "roll";
-		case "boost": return "boost";
+		case "charge": return action.right ? "charge:1" : "charge:0";
 		case "timeout": return "timeout";
 		case "choose": return `choose:${action.option}`;
 		case "use-item": return `use:${action.item}${action.target !== void 0 ? `@${action.target}` : ""}${action.value !== void 0 ? `=${action.value}` : ""}`;

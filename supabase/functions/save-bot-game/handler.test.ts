@@ -246,10 +246,11 @@ async function spaceGame(s: Services, setup: Omit<SoloSetup, 'seed'>, stopAfter 
   playBots(game, setup.level);
   while (game.state.phase !== 'over' && actions.length < stopAfter) {
     const action = botAction(game.state, 'easy', student);
-    if (action.kind === 'choose' && game.state.pending?.kind === 'question') {
+    const claimedRight = action.kind === 'charge' ? action.right : action.kind === 'choose' && action.option === 1;
+    if (action.kind === 'charge' || (action.kind === 'choose' && game.state.pending?.kind === 'question')) {
       // A Mission Control question: answer it right or wrong to match the choice.
       const q = pack.nextQuestion({ level: 3 })!;
-      answers.push({ parts: q.parts, given: action.option === 1 ? q.answer : q.answer + 1, ms: 3000, at: NOW * 1000 });
+      answers.push({ parts: q.parts, given: claimedRight ? q.answer : q.answer + 1, ms: 3000, at: NOW * 1000 });
     }
     actions.push(encodeAction(action));
     game.state = play(game.state, action, game.dice).state;
