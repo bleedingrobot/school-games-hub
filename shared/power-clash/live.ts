@@ -181,7 +181,7 @@ export function animationMs(events: readonly GameEvent[]): number {
   for (const e of events) {
     switch (e.kind) {
       case 'place': ms += 600; break;
-      case 'double-trouble': ms += 900; break;
+      case 'bonus-move': ms += 900; break;
       case 'body-swap': ms += 1300; break;
       case 'freeze': ms += 1000; break;
       case 'wipe': ms += 1400; break;

@@ -9,7 +9,7 @@ import {
 import { newMatch, nextRound, scoreRound, type Match } from './match';
 import type { Action, PowerId } from './types';
 
-const X_POWERS: PowerId[] = ['double-trouble', 'body-swap', 'freeze-ray'];
+const X_POWERS: PowerId[] = ['board-wipe', 'body-swap', 'freeze-ray'];
 const O_POWERS: PowerId[] = ['board-wipe', 'body-swap', 'freeze-ray'];
 const fresh = () => newLiveGame(X_POWERS, O_POWERS);
 
@@ -45,7 +45,7 @@ describe('a classmates match', () => {
     expect(() => playerAction(g, 1, { type: 'place', square: 0 })).toThrow('not your turn');
     const after = place(g, 0, 4);
     expect(() => playerAction(after, 1, { type: 'place', square: 4 })).toThrow(LiveRuleError);
-    expect(() => playerAction(after, 1, { type: 'use-power', power: 'double-trouble', targets: [] })).toThrow(LiveRuleError);
+    expect(() => playerAction(after, 1, { type: 'use-power', power: 'freeze-ray', targets: [4] })).toThrow(LiveRuleError);
     expect(() => playerAction(after, 1, { type: 'skip' })).toThrow(LiveRuleError);
     const won = xWinsRound(fresh());
     expect(roundIsOver(won)).toBe(true);
@@ -148,9 +148,9 @@ describe('the clock', () => {
 
   it('keeps a power already played this turn used', () => {
     let g = fresh();
-    g = move(g, 0, { type: 'use-power', power: 'double-trouble', targets: [] });
+    g = move(g, 0, { type: 'use-power', power: 'freeze-ray', targets: [8] });
     const out = timeOut(g);
-    expect(out.game.match.state.used.X).toEqual(['double-trouble']);
+    expect(out.game.match.state.used.X).toEqual(['freeze-ray']);
     expect(out.game.match.state.placesLeft).toBe(1);
   });
 
@@ -225,10 +225,10 @@ describe('the result', () => {
 
 describe('loadouts and checks', () => {
   it('accepts exactly three different powers', () => {
-    expect(parseLoadout(['double-trouble', 'body-swap', 'freeze-ray'])).toEqual(['double-trouble', 'body-swap', 'freeze-ray']);
-    expect(parseLoadout(['double-trouble', 'double-trouble', 'freeze-ray'])).toBeNull();
-    expect(parseLoadout(['double-trouble', 'body-swap'])).toBeNull();
-    expect(parseLoadout(['double-trouble', 'body-swap', 'teleport'])).toBeNull();
+    expect(parseLoadout(['board-wipe', 'body-swap', 'freeze-ray'])).toEqual(['board-wipe', 'body-swap', 'freeze-ray']);
+    expect(parseLoadout(['board-wipe', 'board-wipe', 'freeze-ray'])).toBeNull();
+    expect(parseLoadout(['board-wipe', 'body-swap'])).toBeNull();
+    expect(parseLoadout(['board-wipe', 'body-swap', 'teleport'])).toBeNull();
     expect(parseLoadout('nope')).toBeNull();
     expect(parseLoadout(null)).toBeNull();
   });
@@ -289,7 +289,7 @@ function recordedDice(random: () => number) {
 }
 
 describe('the new powers and Chaos Mode on the server', () => {
-  const ALL: PowerId[] = ['double-trouble', 'body-swap', 'freeze-ray', 'board-wipe', 'force-field', 'portal-chaos', 'wild-card', 'time-heist'];
+  const ALL: PowerId[] = ['body-swap', 'freeze-ray', 'board-wipe', 'force-field', 'portal-chaos', 'wild-card', 'time-heist'];
   const three = (random: () => number) => {
     const left = [...ALL];
     return [0, 1, 2].map(() => left.splice(Math.floor(random() * left.length), 1)[0]);
@@ -355,11 +355,10 @@ describe('the new powers and Chaos Mode on the server', () => {
   });
 
   it('counts the new powers for the "used all three" badge, and a Time Heist does not count the power it undid', () => {
-    let g = newLiveGame(['time-heist', 'force-field', 'wild-card'], ['double-trouble', 'freeze-ray', 'board-wipe']);
+    let g = newLiveGame(['time-heist', 'force-field', 'wild-card'], ['portal-chaos', 'freeze-ray', 'board-wipe']);
     g = playerAction(g, 0, { type: 'place', square: 4 }, () => 0.5).game;
-    g = playerAction(g, 1, { type: 'use-power', power: 'double-trouble', targets: [] }, () => 0.5).game;
+    g = playerAction(g, 1, { type: 'use-power', power: 'freeze-ray', targets: [8] }, () => 0.5).game;
     g = playerAction(g, 1, { type: 'place', square: 0 }, () => 0.5).game;
-    g = playerAction(g, 1, { type: 'place', square: 1 }, () => 0.5).game;
     g = playerAction(g, 0, { type: 'use-power', power: 'time-heist', targets: [] }, () => 0.5).game;
     expect(g.match.state.board.filter(Boolean)).toHaveLength(1);
     expect(g.match.state.used.O).toEqual([]);
@@ -368,7 +367,7 @@ describe('the new powers and Chaos Mode on the server', () => {
   });
 
   it('a missed go in Chaos Mode can bring a surprise', () => {
-    let g = newLiveGame(['time-heist', 'force-field', 'wild-card'], ['double-trouble', 'freeze-ray', 'board-wipe'], true);
+    let g = newLiveGame(['time-heist', 'force-field', 'wild-card'], ['portal-chaos', 'freeze-ray', 'board-wipe'], true);
     g = playerAction(g, 0, { type: 'place', square: 4 }, () => 0.5).game;
     g = playerAction(g, 1, { type: 'place', square: 0 }, () => 0.5).game;
     const r = timeOut(g, randomFromSeed('late'));

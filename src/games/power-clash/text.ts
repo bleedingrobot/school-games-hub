@@ -15,7 +15,6 @@ export interface PowerInfo {
 }
 
 export const POWERS: PowerInfo[] = [
-  { id: 'double-trouble', name: 'Double Trouble', icon: '⚡', blurb: 'Place two symbols this turn.', steps: [] },
   {
     id: 'body-swap',
     name: 'Body Swap',
@@ -94,7 +93,7 @@ export const powerInfo = (id: PowerId) => POWERS.find((p) => p.id === id)!;
 
 /** Short, kind, funny shouts. Picked in turn (not at random) so they are easy to test. */
 export const SHOUTS = {
-  'double-trouble': ['DOUBLE TROUBLE!', 'TWICE AS NICE!', 'ZAP ZAP!'],
+  'bonus-move': ['BONUS MOVE!', 'TWICE AS NICE!', 'ZAP ZAP!'],
   'body-swap': ['SWITCHEROO!', 'THAT WAS YOUR PLAN?!', 'PLOT TWIST!'],
   'freeze-ray': ['TIME CRIME!', 'BRRR! CHILLY!', 'STAY COOL!'],
   'board-wipe': ['KABOOM!', 'ABSOLUTE DISASTER.', 'YOU HAD ONE JOB.'],
@@ -136,7 +135,7 @@ export function squareName(i: number): string {
 export function botLine(events: GameEvent[]): string {
   const parts: string[] = [];
   for (const e of events) {
-    if (e.kind === 'double-trouble') parts.push('The bot used Double Trouble.');
+    if (e.kind === 'bonus-move') parts.push('The bot got a bonus move.');
     else if (e.kind === 'body-swap') parts.push(`The bot swapped ${squareName(e.squares[0])} with ${squareName(e.squares[1])}.`);
     else if (e.kind === 'freeze') parts.push(`The bot froze ${squareName(e.square)}.`);
     else if (e.kind === 'wipe') parts.push(`The bot blasted the symbol on ${squareName(e.square)}.`);

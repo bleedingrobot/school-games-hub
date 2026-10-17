@@ -36,7 +36,7 @@ $$;
 create function pg_temp.game(a text, b text) returns uuid language sql as $$
   insert into public.power_games (host, seat1, seat2, status, loadouts, game, started_at, last_action_at, deadline)
   values (pg_temp.id(a), pg_temp.id(a), pg_temp.id(b), 'playing',
-    '[["double-trouble","body-swap","freeze-ray"],["board-wipe","body-swap","freeze-ray"]]', '{"match":{}}', now(), now(),
+    '[["force-field","body-swap","freeze-ray"],["board-wipe","body-swap","freeze-ray"]]', '{"match":{}}', now(), now(),
     now() + interval '60 seconds')
   returning id
 $$;

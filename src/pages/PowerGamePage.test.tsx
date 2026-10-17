@@ -28,7 +28,7 @@ vi.mock('../data/powerGames', async (importOriginal) => ({
   watchPowerGame: vi.fn(),
 }));
 
-const ME: PowerId[] = ['double-trouble', 'body-swap', 'freeze-ray'];
+const ME: PowerId[] = ['wild-card', 'body-swap', 'freeze-ray'];
 const THEM: PowerId[] = ['board-wipe', 'body-swap', 'freeze-ray'];
 
 function powerGame(over: Partial<data.PowerGame> = {}): data.PowerGame {
@@ -93,7 +93,7 @@ describe('the waiting room', () => {
     expect(screen.getByText(/Waiting for a classmate/)).toBeInTheDocument();
     const lock = screen.getByRole('button', { name: /Lock in my powers/ });
     expect(lock).toBeEnabled();
-    await user.click(screen.getByRole('button', { name: /Double Trouble/ })); // drop one
+    await user.click(screen.getByRole('button', { name: /Body Swap/ })); // drop one
     expect(lock).toBeDisabled();
     await user.click(screen.getByRole('button', { name: /Body Swap/ }));
     expect(lock).toBeEnabled();
@@ -102,12 +102,12 @@ describe('the waiting room', () => {
   it('locking in sends the powers, then waits for the classmate without showing their picks', async () => {
     const user = userEvent.setup();
     const waiting = waitingGame({ seat2: 'them' });
-    vi.mocked(data.askPower).mockResolvedValue({ ...waiting, loadouts: [['double-trouble', 'freeze-ray', 'board-wipe'], null], version: 4 });
+    vi.mocked(data.askPower).mockResolvedValue({ ...waiting, loadouts: [['body-swap', 'freeze-ray', 'board-wipe'], null], version: 4 });
     renderGame(waiting);
     await user.click(await screen.findByRole('button', { name: /Lock in my powers/ }));
-    expect(data.askPower).toHaveBeenCalledWith({ action: 'set-powers', gameId: 'g1', powers: ['double-trouble', 'freeze-ray', 'board-wipe'] });
+    expect(data.askPower).toHaveBeenCalledWith({ action: 'set-powers', gameId: 'g1', powers: ['body-swap', 'freeze-ray', 'board-wipe'] });
     expect(await screen.findByText(/Waiting for Brave Kiwi 7 to pick their powers/)).toBeInTheDocument();
-    expect(screen.getByText(/Double Trouble, Freeze Ray, Board Wipe/)).toBeInTheDocument();
+    expect(screen.getByText(/Body Swap, Freeze Ray, Board Wipe/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Change my powers' })).toBeInTheDocument();
   });
 

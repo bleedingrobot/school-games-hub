@@ -29,7 +29,7 @@ describe('Power Clash screens', () => {
     render(<PowerClashPlay />);
     const start = screen.getByRole('button', { name: /Start the clash/ });
     expect(start).toBeEnabled();
-    await user.click(screen.getAllByRole('button', { name: /Double Trouble/ })[0]); // X drops one
+    await user.click(screen.getAllByRole('button', { name: /Body Swap/ })[0]); // X drops one
     expect(start).toBeDisabled();
   });
 
@@ -67,9 +67,8 @@ describe('Power Clash screens', () => {
     await user.click(screen.getAllByRole('button', { name: /Board Wipe/ })[0]);
     // Nothing to blast yet, so it explains instead of selecting.
     expect(screen.getAllByText(/Needs a symbol on the board/).length).toBeGreaterThan(0);
-    await user.click(screen.getAllByRole('button', { name: /Double Trouble/ })[0]);
+    await user.click(screen.getAllByRole('button', { name: /Freeze Ray/ })[0]);
     await tap(user, 1, 1);
-    await tap(user, 1, 2);
     expect(screen.getByText('Used up')).toBeInTheDocument();
   });
 });

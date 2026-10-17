@@ -29,7 +29,7 @@ returns uuid language sql as $$
   select public.record_power_clash_bot_game(('00000000-0000-0000-0000-00000000000' || who)::uuid, level, 'x',
     array['place:4', 'next'], case when won then 'won' else 'lost' end,
     case when counts then 'finished' else 'abandoned' end, 20, counts,
-    jsonb_build_object('seed', seed, 'side', 'X', 'loadouts', '{"X":["double-trouble","body-swap","freeze-ray"],"O":["board-wipe","body-swap","freeze-ray"]}'::jsonb,
+    jsonb_build_object('seed', seed, 'side', 'X', 'loadouts', '{"X":["force-field","body-swap","freeze-ray"],"O":["board-wipe","body-swap","freeze-ray"]}'::jsonb,
       'roundsWon', 3, 'roundsLost', 1, 'roundsDrawn', 0,
       'stats', jsonb_build_object('powersUsed', used, 'bodySwapWins', swap_wins, 'noPowerWin', no_power,
         'roundsWon', 3, 'roundsLost', 1, 'roundsDrawn', 0)))

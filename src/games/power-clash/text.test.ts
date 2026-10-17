@@ -13,7 +13,7 @@ describe('saying what the bot did', () => {
     expect(botLine([{ kind: 'freeze', player: 'O', square: 4 }])).toBe('The bot froze the middle square.');
     expect(botLine([{ kind: 'body-swap', player: 'O', squares: [0, 8] }])).toBe('The bot swapped the top-left square with the bottom-right square.');
     expect(botLine([{ kind: 'wipe', player: 'O', square: 2 }])).toBe('The bot blasted the symbol on the top-right square.');
-    expect(botLine([{ kind: 'double-trouble', player: 'O' }])).toBe('The bot used Double Trouble.');
+    expect(botLine([{ kind: 'bonus-move', player: 'O' }])).toBe('The bot got a bonus move.');
     expect(botLine([{ kind: 'place', player: 'O', square: 4 }])).toBe('The bot put O on the middle square.');
     expect(botLine([{ kind: 'skip', player: 'O' }])).toBe('The bot missed a go.');
   });

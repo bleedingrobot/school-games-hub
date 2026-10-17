@@ -6,7 +6,7 @@ import { legalActions, newRound, play, validLoadout } from './engine';
 import { simulate } from './sim';
 import type { Action, Cell, PowerClashState, PowerId } from './types';
 
-const A: PowerId[] = ['double-trouble', 'body-swap', 'freeze-ray'];
+const A: PowerId[] = ['board-wipe', 'body-swap', 'freeze-ray'];
 const B: PowerId[] = ['board-wipe', 'body-swap', 'freeze-ray'];
 const LEVELS = ['very-easy', 'easy', 'medium'] as const;
 
@@ -169,7 +169,7 @@ describe('the new powers and Chaos Mode', () => {
   });
 
   it('Medium stays quick with Portal Chaos in hand on a busy board', () => {
-    const s = from('X.O .X. O..', 'X', { X: ['portal-chaos', 'force-field', 'wild-card'], O: ['time-heist', 'portal-chaos', 'double-trouble'] });
+    const s = from('X.O .X. O..', 'X', { X: ['portal-chaos', 'force-field', 'wild-card'], O: ['time-heist', 'portal-chaos', 'board-wipe'] });
     const t = performance.now();
     chooseAction(s, 'medium', randomFromSeed('slow2'));
     expect(performance.now() - t).toBeLessThan(500);

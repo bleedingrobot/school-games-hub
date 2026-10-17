@@ -22,7 +22,7 @@ import {
 
 const START = Date.parse('2026-10-20T09:00:00Z');
 const NAMES = ['ana', 'ben', 'cat', 'dan'];
-const ANA: PowerId[] = ['double-trouble', 'body-swap', 'freeze-ray'];
+const ANA: PowerId[] = ['board-wipe', 'body-swap', 'freeze-ray'];
 const BEN: PowerId[] = ['board-wipe', 'body-swap', 'freeze-ray'];
 
 /** A pretend Supabase: games in memory, a clock we can move, and "save only if unchanged". */
@@ -362,7 +362,7 @@ describe('playing', () => {
     expect((await w.ask(x, { action: 'skip', gameId: g.id, version: g.version })).problem).toBe('illegal');
     expect((await w.ask(x, { action: 'use-power', gameId: g.id, version: g.version, power: 'teleport', targets: [] })).problem).toBe('bad-request');
     // a power you don't have
-    const hasNo = w.games.get(g.id)!.game!.match.state.loadout.X.includes('board-wipe') ? 'double-trouble' : 'board-wipe';
+    const hasNo = w.games.get(g.id)!.game!.match.state.loadout.X.includes('board-wipe') ? 'force-field' : 'board-wipe';
     const refused = await w.ask(x, { action: 'use-power', gameId: g.id, version: g.version, power: hasNo, targets: [4] });
     expect(refused.problem).toBe('illegal');
     expect(refused.error).toBeTruthy();
@@ -389,8 +389,8 @@ describe('playing', () => {
     const g = await w.started();
     const x = w.turnOf(g.id);
     const mine = g.game!.match.state.loadout.X;
-    const power: PowerId = mine.includes('freeze-ray') ? 'freeze-ray' : 'double-trouble';
-    const body = power === 'freeze-ray' ? { power, targets: [4] } : { power, targets: [] };
+    const power: PowerId = mine.includes('freeze-ray') ? 'freeze-ray' : 'body-swap';
+    const body = power === 'freeze-ray' ? { power, targets: [4] } : { power, targets: [0, 4] };
     const done = await w.ask(x, { action: 'use-power', gameId: g.id, version: g.version, ...body });
     expect(done.status).toBe(200);
     expect(done.game!.game!.match.state.used.X).toEqual([power]);

@@ -8,7 +8,7 @@ import { POWERS } from './text';
 
 type User = ReturnType<typeof userEvent.setup>;
 const NAMES: Record<PowerId, RegExp> = {
-  'double-trouble': /Double Trouble/, 'body-swap': /Body Swap/, 'freeze-ray': /Freeze Ray/, 'board-wipe': /Board Wipe/,
+  'body-swap': /Body Swap/, 'freeze-ray': /Freeze Ray/, 'board-wipe': /Board Wipe/,
   'force-field': /Force Field/, 'portal-chaos': /Portal Chaos/, 'wild-card': /Wild Card/, 'time-heist': /Time Heist/,
 };
 const cell = (row: number, col: number) => screen.getByRole('button', { name: new RegExp(`Row ${row}, column ${col}:`) });
@@ -47,18 +47,18 @@ async function begin(user: User, x: PowerId[], o: PowerId[], chaos = false) {
   await user.click(screen.getByRole('button', { name: /Start the clash/ }));
 }
 
-describe('the eight powers', () => {
+describe('the seven powers', () => {
   beforeEach(() => {
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), media: q, addEventListener() {}, removeEventListener() {} }));
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('lists all eight in each picker and still wants exactly three', async () => {
+  it('lists all seven in each picker and still wants exactly three', async () => {
     const user = userEvent.setup();
     render(<PowerClashPlay />);
     for (const player of ['X', 'O'] as const) {
       const panel = screen.getByRole('heading', { name: new RegExp(`Player ${player}: pick`) }).closest('section') as HTMLElement;
-      expect(within(panel).getAllByRole('button')).toHaveLength(8);
+      expect(within(panel).getAllByRole('button')).toHaveLength(7);
     }
     await pick(user, 'X', ['force-field', 'portal-chaos', 'wild-card']);
     expect(screen.getByRole('button', { name: /Start the clash/ })).toBeEnabled();
@@ -69,7 +69,7 @@ describe('the eight powers', () => {
 
   it('Force Field: pick your own symbol, it shows a shield and the other player cannot target it', async () => {
     const user = userEvent.setup();
-    await begin(user, ['force-field', 'freeze-ray', 'double-trouble'], ['board-wipe', 'body-swap', 'freeze-ray']);
+    await begin(user, ['force-field', 'freeze-ray', 'portal-chaos'], ['board-wipe', 'body-swap', 'freeze-ray']);
     await tap(user, 2, 2); // X in the middle
     await tap(user, 1, 1); // O in the corner
     await useCard(user, 'force-field');
@@ -90,7 +90,7 @@ describe('the eight powers', () => {
 
   it('Portal Chaos: tap two symbols, they are thrown, and the message says so', async () => {
     const user = userEvent.setup();
-    await begin(user, ['portal-chaos', 'freeze-ray', 'double-trouble'], ['board-wipe', 'body-swap', 'freeze-ray']);
+    await begin(user, ['portal-chaos', 'freeze-ray', 'force-field'], ['board-wipe', 'body-swap', 'freeze-ray']);
     await tap(user, 1, 1); // X
     await tap(user, 1, 2); // O
     await tap(user, 2, 2); // X
@@ -108,7 +108,7 @@ describe('the eight powers', () => {
 
   it('Wild Card: one tap spins the wheel and says what it landed on', async () => {
     const user = userEvent.setup();
-    await begin(user, ['wild-card', 'freeze-ray', 'double-trouble'], ['board-wipe', 'body-swap', 'freeze-ray']);
+    await begin(user, ['wild-card', 'freeze-ray', 'force-field'], ['board-wipe', 'body-swap', 'freeze-ray']);
     await user.click(card('wild-card'));
     expect(message()).toMatch(/Wild Card! The wheel landed on (Bonus placement|Freeze|Swap|Blast)/);
     expect(document.querySelector('.pc__wheel')).not.toBeNull();
@@ -117,7 +117,7 @@ describe('the eight powers', () => {
 
   it('Time Heist: greyed out until a go has finished, then it undoes their go', async () => {
     const user = userEvent.setup();
-    await begin(user, ['time-heist', 'freeze-ray', 'double-trouble'], ['time-heist', 'body-swap', 'freeze-ray']);
+    await begin(user, ['time-heist', 'freeze-ray', 'board-wipe'], ['time-heist', 'body-swap', 'freeze-ray']);
     expect(card('time-heist')).toBeEnabled();
     await user.click(card('time-heist'));
     expect(message()).toBe('Nobody has finished a go yet');
@@ -151,7 +151,7 @@ describe('Chaos Mode on one screen', () => {
 
   it('a normal game never shows the Chaos Mode badge', async () => {
     const user = userEvent.setup();
-    await begin(user, ['double-trouble', 'freeze-ray', 'board-wipe'], ['body-swap', 'freeze-ray', 'double-trouble']);
+    await begin(user, ['force-field', 'freeze-ray', 'board-wipe'], ['body-swap', 'freeze-ray', 'force-field']);
     expect(document.querySelector('.pc__chaosbadge')).toBeNull();
     await tap(user, 1, 1);
     await tap(user, 2, 2);
@@ -162,7 +162,7 @@ describe('Chaos Mode on one screen', () => {
 
   it('a surprise comes after the third go: a banner, one line of text, and the countdown starts again', async () => {
     const user = userEvent.setup();
-    await begin(user, ['double-trouble', 'freeze-ray', 'board-wipe'], ['body-swap', 'freeze-ray', 'double-trouble'], true);
+    await begin(user, ['force-field', 'freeze-ray', 'board-wipe'], ['body-swap', 'freeze-ray', 'force-field'], true);
     await tap(user, 1, 1);
     expect(screen.getByText(/a surprise in 2 goes/)).toBeInTheDocument();
     await tap(user, 2, 2);
@@ -175,7 +175,7 @@ describe('Chaos Mode on one screen', () => {
 
   it('Rematch keeps Chaos Mode', async () => {
     const user = userEvent.setup();
-    await begin(user, ['double-trouble', 'freeze-ray', 'board-wipe'], ['body-swap', 'freeze-ray', 'double-trouble'], true);
+    await begin(user, ['force-field', 'freeze-ray', 'board-wipe'], ['body-swap', 'freeze-ray', 'force-field'], true);
     expect(document.querySelector('.pc--chaos')).not.toBeNull();
   });
 
@@ -184,7 +184,7 @@ describe('Chaos Mode on one screen', () => {
     render(<PowerClashPlay />);
     await user.click(screen.getByRole('button', { name: /How to play/ }));
     const dialog = screen.getByRole('dialog');
-    for (const name of ['The eight powers', 'Chaos Mode', 'Force Field', 'Portal Chaos', 'Wild Card', 'Time Heist']) {
+    for (const name of ['The seven powers', 'Chaos Mode', 'Force Field', 'Portal Chaos', 'Wild Card', 'Time Heist']) {
       expect(within(dialog).getAllByText(new RegExp(name)).length).toBeGreaterThan(0);
     }
   });

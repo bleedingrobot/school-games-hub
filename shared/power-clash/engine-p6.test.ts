@@ -6,7 +6,7 @@ import { randomFromSeed } from '../space/random';
 import type { Action, Cell, GameEvent, Player, PowerClashState, PowerId, Random } from './types';
 
 const NEW4: PowerId[] = ['force-field', 'portal-chaos', 'wild-card'];
-const HEIST: PowerId[] = ['time-heist', 'double-trouble', 'freeze-ray'];
+const HEIST: PowerId[] = ['time-heist', 'board-wipe', 'freeze-ray'];
 
 /** A round with a board drawn as a picture like "XO. .X. ..O". */
 function rig(picture: string, active: Player = 'X', loadout: Partial<Record<Player, PowerId[]>> = {}, chaos = false): PowerClashState {
@@ -199,7 +199,7 @@ describe('Wild Card', () => {
       const [first, second] = r.events;
       expect(first.kind).toBe('wild-card');
       const effect = first.kind === 'wild-card' ? first.effect : 'bonus';
-      expect(second.kind).toBe({ bonus: 'double-trouble', freeze: 'freeze', swap: 'body-swap', remove: 'wipe' }[effect]);
+      expect(second.kind).toBe({ bonus: 'bonus-move', freeze: 'freeze', swap: 'body-swap', remove: 'wipe' }[effect]);
     }
   });
   it('never touches a protected symbol', () => {
@@ -294,7 +294,7 @@ describe('Time Heist', () => {
   });
   it('is one power a turn', () => {
     const s = ok(place(start(), 4), power('time-heist')).state;
-    expect(powerBlockedReason(s, 'double-trouble')).toBe('One power per turn');
+    expect(powerBlockedReason(s, 'freeze-ray')).toBe('One power per turn');
   });
   it('can not be used again (once per match) and can not be undone (no loops)', () => {
     let s = ok(place(start(), 4), power('time-heist')).state;
@@ -436,7 +436,7 @@ describe('Chaos Mode', () => {
 });
 
 describe('whole random games', () => {
-  const POOL: PowerId[] = ['double-trouble', 'body-swap', 'freeze-ray', 'board-wipe', 'force-field', 'portal-chaos', 'wild-card', 'time-heist'];
+  const POOL: PowerId[] = ['body-swap', 'freeze-ray', 'board-wipe', 'force-field', 'portal-chaos', 'wild-card', 'time-heist'];
   it('stay legal from start to end with every power and Chaos Mode, and always finish', () => {
     for (let g = 0; g < 150; g++) {
       const random = randomFromSeed(`whole:${g}`);
