@@ -14,6 +14,7 @@ import { Profile } from './pages/Profile';
 import { SignIn } from './pages/SignIn';
 import { SpaceGamePage } from './pages/SpaceGamePage';
 import { CardGamePage } from './pages/CardGamePage';
+import { powerClash } from './games/power-clash';
 import { Teacher } from './pages/Teacher';
 import { SoundProvider } from './sound';
 
@@ -28,6 +29,8 @@ export function AppRoutes() {
           {GAMES.map((game) => (
             <Route key={game.id} path={game.id} element={<GamePage game={game} />} />
           ))}
+          {/* Hidden until Stage P.4: not on the dashboard yet. */}
+          <Route path="power-clash" element={<GamePage game={powerClash} />} />
           <Route path="lobby" element={<Lobby />} />
           <Route path="play/:id" element={<FriendGamePage />} />
           <Route path="space-game/:id" element={<SpaceGamePage />} />

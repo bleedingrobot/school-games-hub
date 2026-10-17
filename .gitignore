@@ -11,3 +11,4 @@ supabase/.branches/
 .claude/settings.local.json
 .space-sim-entry-*.ts
 dist-preview-gem-keep/
+dist-preview-power-clash/
