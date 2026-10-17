@@ -161,6 +161,42 @@ Each stage ends with tests passing and a results section here, and stops for Jam
 - Tests: `shared/maths/packs.test.ts` (every family: 400 rolls or every fact ×4 → sound answer, one blank, 4 distinct choices, plain sums re-solved from the screen, rebuild matches, bad numbers refused) + 5 new question-box tests. 165 maths tests pass.
 - Known, not ours: `space-maths` has two stale server bundles (`save-bot-game`, `space-game` index.ts still have Mission Boost 3, code says 5). The Mission Control session's next `npm run build:functions` fixes it.
 
+### N.2 results (done 17 Oct 2026, branch `monsters`)
+
+- **`shared/monsters/`**, pure TypeScript, no screens, database or server: `types.ts` (six types, topics, wheel ×1.5 / ×0.75), `monsterBook.ts` (all monster data in one file), `bands.ts` (the easy-to-edit area → question band table, wild levels per area, quick-answer times), `rules.ts` (stats, damage, exp, catching, with every tunable number in one `TUNING` block), `engine.ts` (`play(state, action, random)`), `sim.ts` + `scripts/monsters-sim.mjs` (`npm run monsters:sim`).
+- **Engine.** State is plain data and `play` never changes the one it is given. Actions: fight (attack + right / quick-right / wrong), switch, bag item (potions), catch (ball + answer), run. Wild and trainer monsters hit back with no question. A fainted monster is replaced free; losing keeps everything (`healTeam` returns the team full). `questionFor` says which topic and band to ask (attacks: the attacker's topic; catches: the wild monster's topic). `judgeAnswer` decides quick-right from the question's difficulty (topic + band), not a race, and "calm" turns it off. `replayBattle` replays a whole battle from its setup, actions and random numbers (for the N.6 server check).
+- **Catching** (idea adapted from Monster Tamer, MIT, credited in `rules.ts`): about 20% at full health up to 60% nearly drained, ×2.2 after a right answer, ×2.8 quick-right, ×0.6 after a wrong one; grown monsters are harder; great balls ×1.6; never above 95%. Trainer monsters can't be caught or run from.
+- **Exp and levels.** Monster Tamer's level³ curve made levels 30-40 take six times as many battles as 5-10, so it is level^2.5. Max level 50. Evolving happens by itself on reaching the level (about 15-18 for the first growth, 30-36 for the second). Friends who fought share the exp; trainers give ×1.5.
+- **Bug the sim caught:** after choosing a replacement monster the battle stayed stuck in "choose a monster". Fixed, with a test.
+- **Tests:** `shared/monsters/engine.test.ts`, 30 tests (the book, the wheel, damage, questions and bands, fights, switch / bag / run, catching, exp and evolving, the AI, replay, bad actions refused).
+
+**Sim results** (`npm run monsters:sim`, 2,000 battles per row; pretend students; 4 s per move plus 8 s per question):
+
+| What | 50% right | 75% right | 90% right |
+|---|---|---|---|
+| Wild battle, questions (areas 1-6) | 3.8-4.8 | 3.0-3.6 | 2.6-3.2 |
+| Wild battle, minutes | about 0.9-1.0 | about 0.7 | about 0.6 |
+| Wild battle won, first area (level-5 team) | 100% | 100% | 100% |
+| Tower trainer (3 monsters), questions | 11-16 | 9-12 | 8-10 |
+| Tower won | 75-94% | 97-100% | 100% |
+| Levelling, battles per level gained | 2.7 → 7.0 | 2.6 → 5.2 | 2.6 → 4.5 |
+| Whole game, battles in all (grind to each area's top level) | 208 | 171 | 157 |
+
+- Wild fights are a little shorter than the plan's goal (3-5 questions, a bit under a minute of play by this clock); real students are slower than the sim's 8 s a question, so about 1-2 minutes is likely. Tower trainers are 10-15 questions for most students, a bit longer at 50%. A 50% student wins almost every first-area wild battle.
+- Levelling is steady (2.6 to 7 battles per level, slowing gently), but the sim student grinds in each area until the lead matches the area's top monster, which takes about 30-60 battles in areas 3-5. If that feels long, give more exp or put more trainers in those areas.
+- The sim student is a bit unlike a real one (always picks the best attack, never runs); real play will be messier.
+
+**Monster names for James to OK** (first form → second → last):
+
+| Type | Families |
+|---|---|
+| Leaf | Digibud → Tensprout → Thousandtree; Roundroot → Nearestree → Rounderoak; Placepetal → Valuebloom → Millibloom |
+| Water | Plusplash → Sumsplash → Totalwave; Minnowus → Minusfin → Minusharker; Carrycrab → Regroupcrab → Kingcarrab |
+| Fire | Factorch → Factoblaze → Factoinferno; Multipup → Multihound → Multiplosion; Squaremander → Cubemander → Powermander |
+| Ice | Divvy → Quotipeng → Emperor Quotient; Remaindeer → Remainstag → Remaindreign; Sharebear → Splitbear → Polarsplit |
+| Spark | Fractopus → Fractoshock → Fractostorm; Numeratot → Numerator → Numeratron; Denomibolt → Denomivolt → Denominator |
+| Stone | Pebblepoint → Decimound → Decimountain; Coinrock → Dollarock → Goldilith; Centipebble → Centipillar → Centurock |
+
 ## 11. Ideas for later
 
 - **Battle a classmate** with your team (turn-based, so it fits the `multiplayer`-style server function). The maths questions are each player's own.
