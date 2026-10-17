@@ -164,6 +164,30 @@ export function HowPoints() {
         </section>
       )}
 
+      {rules.monsters && (
+        <section className="panel" aria-labelledby="monsters-points-title">
+          <h2 id="monsters-points-title" className="panel__title">
+            🐾 Maths Monsters
+          </h2>
+          <ul className="how-points__list">
+            <li>
+              Win a battle with a wild monster: <strong>1 point for every {rules.monsters.wildWinsPerPoint} you win</strong>.
+            </li>
+            <li>
+              Beat a trainer: <strong>{rules.monsters.trainerWin} points</strong>.
+            </li>
+            <li>
+              Win a Topic Tower badge: <strong>{rules.monsters.badge} points</strong>, the first time only.
+            </li>
+            <li>These share the {rules.botDailyCap}-points-a-day limit with games against bots.</li>
+            <li>
+              Catching monsters, filling the monster book and winning badges earns achievements, worth{' '}
+              {rules.achievementPoints} bonus points each. Maths Monsters has its own leaderboard for the most monsters collected.
+            </li>
+          </ul>
+        </section>
+      )}
+
       <section className="panel" aria-labelledby="levels-title">
         <h2 id="levels-title" className="panel__title">
           Levels

@@ -85,6 +85,8 @@ export interface Rules {
   card101?: { friendLost: number; friendWon: number; friendDailyGames: number; minRounds: number };
   /** Gem Keep: points for a win with 1, 2 or 3 stars, and for a loss that got far enough. */
   gemKeep?: { won: [number, number, number]; lost: number; minWavesForLoss: number };
+  /** Maths Monsters (null while the game is switched off): wild wins per point, points per trainer, per badge. */
+  monsters?: { wildWinsPerPoint: number; trainerWin: number; badge: number } | null;
   botDailyCap: number;
   pairDailyLimit: number;
   achievementPoints: number;

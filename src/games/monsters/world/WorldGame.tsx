@@ -4,7 +4,7 @@
  * the settings, the team strip, the arrows) is normal HTML so screen readers work. Battles are
  * the N.3 `BattleScreen`, shown in place of the map and handing the new team back.
  *
- * Nothing is saved: the game lives in memory (stage N.6 saves it).
+ * The game lives in memory; the page around it (MonstersPlay) saves it.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SkillPack } from '../../../../shared/maths/skillPack';
@@ -18,6 +18,7 @@ import { badgeName, finishBattle, meet, placeAt, trainerBattle, wildBattle, type
 import { describeLoot } from '../../../../shared/monsters/world/rewards';
 import { useSound } from '../../../sound';
 import { playSound, type GameSound } from '../../sounds';
+import type { BattleReport } from '../../../../shared/monsters/save/check';
 import { BattleScreen, type BattleResult } from '../BattleScreen';
 import { MonsterArt } from '../art/MonsterArt';
 import { nameOf } from '../text';
@@ -43,6 +44,10 @@ export interface WorldGameProps {
   /** True while a battle has the screen (so the test page can hide its own chrome). */
   onBattling?: (on: boolean) => void;
   onState?: (s: WorldState) => void;
+  /** A battle is over: what happened in it (for saving), and the trainer if it was a trainer battle. Called before the world carries on. */
+  onBattle?: (report: BattleReport, trainer?: Thing) => void;
+  /** The topics the teacher left on (every topic when left out). */
+  enabledTopics?: readonly TopicId[];
   /** Tests pass a fixed random source and fake questions. */
   random?: () => number;
   packFor?: (topic: TopicId) => SkillPack;
@@ -65,7 +70,7 @@ const KEYS: Record<string, Dir> = {
 const TALK_KEYS = new Set([' ', 'Enter', 'e', 'E']);
 
 export function WorldGame({
-  initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, teleport, cheat, onBattling, onState, random, packFor, timeScale = 1,
+  initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, teleport, cheat, onBattling, onState, onBattle, enabledTopics, random, packFor, timeScale = 1,
 }: WorldGameProps) {
   const [world, setWorld] = useState<WorldState>(initial);
   const [scene, setScene] = useState<Scene2>({ kind: 'walk' });
@@ -84,8 +89,8 @@ export function WorldGame({
 
   // Always-current copies, so the controller's callbacks never use an old one.
   const { soundOn } = useSound();
-  const live = useRef({ scene, talk, menu, settings, onState, timeScale, soundOn });
-  live.current = { scene, talk, menu, settings, onState, timeScale, soundOn };
+  const live = useRef({ scene, talk, menu, settings, onState, onBattle, timeScale, soundOn });
+  live.current = { scene, talk, menu, settings, onState, onBattle, timeScale, soundOn };
   /** Plays a sound, but only when the hub's speaker button is on. */
   const cue = useCallback((sound: GameSound) => {
     if (live.current.soundOn) playSound(sound);
@@ -335,6 +340,15 @@ export function WorldGame({
   const onBattleDone = (result: BattleResult) => {
     const c = ctrl.current!;
     const trainer = scene.kind === 'battle' ? scene.trainer : undefined;
+    if (scene.kind === 'battle') {
+      live.current.onBattle?.(
+        {
+          id: crypto.randomUUID(), map: c.state.map, ...(trainer ? { trainer: trainer.id } : {}),
+          setup: structuredClone(scene.setup), steps: result.steps, outcome: result.outcome,
+        },
+        trainer,
+      );
+    }
     const { state: next, prize } = finishBattle(c.state, result, trainer);
     c.jump(next);
     setScene({ kind: 'walk' });
@@ -396,6 +410,7 @@ export function WorldGame({
           random={random}
           packFor={packFor}
           timeScale={timeScale}
+          enabledTopics={enabledTopics}
         />
       </div>
     );

@@ -13,7 +13,11 @@ import {
   activeFoe, activeMonster, healTeam, isOver, judgeAnswer, newBattle, play, questionFor,
   type Bag, type BattleAction, type BattleSetup, type BattleState, type ItemId,
 } from '../../../shared/monsters/engine';
+import { bandFor } from '../../../shared/monsters/bands';
 import { speciesOf } from '../../../shared/monsters/monsterBook';
+import type { BattleStep } from '../../../shared/monsters/save/check';
+import type { QuestionReport } from '../../../shared/monsters/save/verify';
+import { effectiveTopic } from '../../../shared/monsters/topics';
 import { maxHpOf, type AnswerResult, type Monster } from '../../../shared/monsters/rules';
 import { TYPE_LABEL } from '../../../shared/monsters/types';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
@@ -35,6 +39,8 @@ export interface BattleResult {
   box: Monster[];
   bag: Bag;
   questions: number;
+  /** What happened, step by step, with each maths question and the random numbers drawn: what gets saved. */
+  steps: BattleStep[];
 }
 
 export interface BattleScreenProps {
@@ -49,6 +55,8 @@ export interface BattleScreenProps {
   packFor?: (topic: TopicId) => SkillPack;
   /** Tests set 0 to skip animation pauses. */
   timeScale?: number;
+  /** The topics the teacher left on: a switched-off topic's questions come from the nearest topic that is on. */
+  enabledTopics?: readonly TopicId[];
 }
 
 type Mode = 'playing' | 'menu' | 'fight' | 'team' | 'replace' | 'bag' | 'target' | 'question' | 'end';
@@ -83,7 +91,7 @@ interface Pop {
 const clone = <T,>(v: T): T => structuredClone(v);
 const shownFrom = (s: BattleState): Shown => ({ team: clone(s.team), foes: clone(s.foes), active: s.active, foeActive: s.foeActive });
 
-export function BattleScreen({ setup, settings: given, onSettingsChange, onFinish, random = Math.random, packFor, timeScale = 1 }: BattleScreenProps) {
+export function BattleScreen({ setup, settings: given, onSettingsChange, onFinish, random = Math.random, packFor, timeScale = 1, enabledTopics }: BattleScreenProps) {
   const { soundOn } = useSound();
   const [ownSettings, setOwnSettings] = useState(loadMonsterSettings);
   const settings = given ?? ownSettings;
@@ -117,6 +125,9 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
   const timers = useRef<number[]>([]);
   const packs = useRef(new Map<TopicId, SkillPack>());
   const judged = useRef<AnswerResult>('right');
+  /** The record of the battle for saving: every step, the question behind it, and the random numbers it drew. */
+  const steps = useRef<BattleStep[]>([]);
+  const answered = useRef<QuestionReport | null>(null);
   const nextButton = useRef<HTMLButtonElement>(null);
 
   const later = useCallback((fn: () => void, ms: number) => {
@@ -288,7 +299,14 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
   /** Runs the engine for one action and starts playing what happened. */
   function run(action: BattleAction, fact?: string) {
     const before = battle;
-    const { state: next, events } = play(before, action, random);
+    const draws: number[] = [];
+    const { state: next, events } = play(before, action, () => {
+      const n = random();
+      draws.push(n);
+      return n;
+    });
+    steps.current.push({ action, ...(answered.current && (action.kind === 'fight' || action.kind === 'catch') ? { q: answered.current } : {}), randoms: draws });
+    answered.current = null;
     move.current = { before, next, action };
     log.current.push(...events);
     setAsking(null);
@@ -308,8 +326,11 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
 
   /** Asks the question for a fight or catch action (the topic and band come from the engine). */
   function ask(action: Asking['action'], back: Mode) {
-    const spec = questionFor(battle, action);
-    if (!spec) return;
+    const wanted = questionFor(battle, action);
+    if (!wanted) return;
+    // A topic the teacher switched off is swapped for the nearest one that is on (and asked at that topic's band for this place).
+    const topic = effectiveTopic(wanted.topic, enabledTopics);
+    const spec = topic === wanted.topic ? wanted : { topic, band: bandFor(topic, battle.area, battle.far) };
     const question = packOf(spec.topic).nextQuestion({ level: spec.band, multipleChoice: settings.multipleChoice });
     const answerless = (r: AnswerResult) => ({ ...action, answer: r }) as BattleAction;
     if (!question) return run(answerless('right')); // nothing can be asked: never block the battle
@@ -391,6 +412,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
       box: battle.box,
       bag: battle.bag,
       questions: battle.questions,
+      steps: steps.current,
     });
   }
 
@@ -561,6 +583,12 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
           closeLabel="Back"
           onSubmit={(answer, ms): MarkedAnswer => {
             const marked = packOf(asking.topic).recordAnswer(asking.question, answer, ms);
+            answered.current = {
+              topic: asking.topic, band: asking.band, key: asking.question.factKey,
+              ...(asking.question.params ? { params: asking.question.params } : {}),
+              ...(asking.topic === 'times-tables' ? { kind: asking.question.kind } : {}),
+              given: answer, ms: Math.round(ms), at: Date.now(),
+            };
             judged.current = judgeAnswer({ correct: marked.correct, ms, topic: asking.topic, band: asking.band, calm: settings.calm });
             const reward = judged.current === 'quick-right' ? (asking.action.kind === 'catch' ? 'Quick! Great throw!' : 'Quick! Critical hit!') : undefined;
             return { ...marked, reward };

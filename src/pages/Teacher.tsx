@@ -27,6 +27,8 @@ import { whenPlayed } from './Dashboard';
 
 // Gem Keep's teacher parts bring the levels and maths code with them, so they load separately.
 const GemKeepTeacherPanels = lazy(() => import('./TeacherGemKeep').then((m) => ({ default: m.GemKeepTeacherPanels })));
+const MonstersTeacherPanels = lazy(() => import('./TeacherMonsters').then((m) => ({ default: m.MonstersTeacherPanels })));
+const MonstersStudentPanel = lazy(() => import('./TeacherMonsters').then((m) => ({ default: m.MonstersStudentPanel })));
 const GemKeepStudentPanel = lazy(() => import('./TeacherGemKeep').then((m) => ({ default: m.GemKeepStudentPanel })));
 
 /** The words a teacher types to start a new season. The server checks them too. */
@@ -89,6 +91,7 @@ function TeacherView({ me }: { me: string }) {
       <MathsSwitchPanel />
       <Suspense fallback={null}>
         <GemKeepTeacherPanels />
+        <MonstersTeacherPanels />
       </Suspense>
 
       <section className="panel" aria-labelledby="people-title">
@@ -431,6 +434,7 @@ function PersonPanel({
           )}
           <Suspense fallback={null}>
             <GemKeepStudentPanel student={person.id} />
+            <MonstersStudentPanel student={person.id} />
           </Suspense>
         </>
       ) : (
