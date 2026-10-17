@@ -197,6 +197,17 @@ Each stage ends with tests passing and a results section here, and stops for Jam
 | Spark | Fractopus → Fractoshock → Fractostorm; Numeratot → Numerator → Numeratron; Denomibolt → Denomivolt → Denominator |
 | Stone | Pebblepoint → Decimound → Decimountain; Coinrock → Dollarock → Goldilith; Centipebble → Centipillar → Centurock |
 
+### N.3 results (done 17 Oct 2026, branch `monsters`)
+
+- **Monster art** (`src/games/monsters/art/`): `MonsterArt` takes a species id and draws it as SVG from parts, no image files. All 54 work. 18 families, each its own shape (a bud, a fish, a crab, a penguin, an octopus, a caterpillar of pebbles...). First forms are small with big eyes and cheeks, grown forms add parts, last forms get angry eyes, grins and crowns / spikes / crystals. Shiny = a different colour set. Idle bob, hurt wobble, faint (sink and fade); all off for reduced motion. Every drawing is labelled with the monster's name.
+- **Attack effects**: all 18 ids (`leaf-1` to `stone-3`) in three sizes (leaf swirl, splash and rings, flames, snowflakes, sparks, falling rocks), plus hit flash, "Critical!" pop and floating damage numbers.
+- **Battle screen** (`BattleScreen.tsx`, a normal React page): foe top right, your monster bottom left, name / level / type / health (and exp) cards, Fight / Team / Bag / Run (keys 1-4, Run hidden against trainers), `QuestionModal` from `questionFor` + `makePack`, the engine's events played one message at a time with Next and Skip, Team, Bag (potion target list, ball catch question), forced "choose your next monster", evolution moment, results sheet, and settings (Calm, number pad / multiple choice, saved on the device). Losing heals the team and keeps everything.
+- **Question box on a phone on its side**: `maths.css` now puts the pad beside the question at heights under 460 px (it ran off the bottom before). Gem Keep benefits too.
+- **Test page**: `npm run monsters:preview` builds `dist-preview-monsters/`: monster book (54, shiny toggle, effects gallery) and battle playground (team of up to 6 with type / form / level, wild or trainer of up to 3, area and far side, bag, "almost levels up" and "ready to grow" buttons). Nothing is saved.
+- **Not wired into the dashboard or game registry.** No database or server.
+- **Checked** in a real browser at 1366 x 640 and 844 x 390: menu, moves, question, team, bag, catch question, evolution, results. axe: 0 problems on the book, playground, message, menu, settings, moves, question, team, bag, catch question and results at both sizes. Two things axe found and fixed (no page heading on the test page, one low-contrast type chip).
+- **Tests**: 20 new (`MonsterArt.test.tsx`, `BattleScreen.test.tsx`: all 54 draw and are labelled, 18 effects, a scripted battle: fight right / wrong, keys, Calm, switch, potion, catch, run, win with level-up and evolution, lose with healing, forced switch, trainer, settings). Full suite: 930 pass. Known failures: the two stale server bundles (`save-bot-game`, `space-game`), same family as before. Two more tests (101 stats, chess bot) failed once under load and pass alone; they are random, not ours.
+
 ## 11. Ideas for later
 
 - **Battle a classmate** with your team (turn-based, so it fits the `multiplayer`-style server function). The maths questions are each player's own.

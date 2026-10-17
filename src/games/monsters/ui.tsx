@@ -5,7 +5,7 @@ import { speciesOf } from '../../../shared/monsters/monsterBook';
 import { expForLevel, maxHpOf, type Monster } from '../../../shared/monsters/rules';
 import { TYPE_LABEL } from '../../../shared/monsters/types';
 import { MonsterArt } from './art/MonsterArt';
-import { ITEM_LABEL, ITEM_NOTE, nameOf } from './text';
+import { earlierName, ITEM_LABEL, ITEM_NOTE, nameOf } from './text';
 
 export function HealthBar({ monster }: { monster: Monster }) {
   const max = maxHpOf(monster);
@@ -149,7 +149,7 @@ export function summarise(events: readonly BattleEvent[]) {
   let caught: string | null = null;
   for (const e of events) {
     if (e.kind === 'exp') exp.set(e.monster, (exp.get(e.monster) ?? 0) + e.amount);
-    else if (e.kind === 'level-up') levels.push(`${nameOf(e.monster)} reached level ${e.level}`);
+    else if (e.kind === 'level-up') levels.push(`${nameOf(earlierName(events, e.monster))} reached level ${e.level}`);
     else if (e.kind === 'evolved') evolved.push({ from: e.from, to: e.to });
     else if (e.kind === 'caught') caught = e.monster;
   }

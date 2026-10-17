@@ -243,7 +243,7 @@
 .mb-bag__icon--great-ball { background: linear-gradient(#3b82f6 0 46%, #0f172a 46% 54%, #fff 54%); }
 .mb-empty { color: var(--mb-soft); }
 
-.mb-end { display: grid; justify-items: start; gap: 8px; max-width: 640px; margin: 0 auto; }
+.mb-end { display: grid; justify-items: start; gap: 10px; max-width: 640px; margin: 0 auto; padding-top: 6px; font-size: 1.05rem; }
 .mb-end p, .mb-end ul { margin: 0; }
 .mb-end ul { padding-left: 22px; }
 .mb-end__caught, .mb-end__evo { display: flex; align-items: center; gap: 10px; font-weight: 800; }

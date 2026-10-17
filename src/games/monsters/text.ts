@@ -24,6 +24,17 @@ export interface Beat {
   sub?: 'evolving' | 'evolved';
 }
 
+/** A monster that is about to grow is still called by its old name while it levels up. */
+export function earlierName(events: readonly BattleEvent[], species: string): string {
+  let name = species;
+  for (let again = true; again; ) {
+    const e = events.find((x) => x.kind === 'evolved' && x.to === name);
+    again = !!e;
+    if (e && e.kind === 'evolved') name = e.from;
+  }
+  return name;
+}
+
 /**
  * The messages for the events of one move. `kind` is the battle kind (wild or trainer);
  * `fact` is the full right answer shown after a wrong one ("7 × 8 = 56").
@@ -69,7 +80,7 @@ export function beatsFor(events: readonly BattleEvent[], kind: BattleState['kind
         out.push({ event, text: `${nameOf(event.monster)} gained ${event.amount} exp.` });
         break;
       case 'level-up':
-        out.push({ event, text: `${nameOf(event.monster)} grew to level ${event.level}!` });
+        out.push({ event, text: `${nameOf(earlierName(events, event.monster))} grew to level ${event.level}!` });
         break;
       case 'evolved':
         out.push({ event, text: `What? ${nameOf(event.from)} is changing!`, sub: 'evolving' });
