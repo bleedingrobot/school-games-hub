@@ -8,7 +8,7 @@
  */
 import { checkItem, levelBefore, MAX_ITEMS, type ItemResult, type SaveItem } from '../../../shared/gem-keep/save';
 import { findLevel } from '../../../shared/gem-keep/levels';
-import type { FactStats } from '../../../shared/maths/leitner';
+import type { FactAnswer, FactStats } from '../../../shared/maths/leitner';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 import { RateLimiter } from '../_shared/limits';
 
@@ -25,6 +25,8 @@ export interface Services {
   recordRun(player: string, run: RunRow): Promise<Outcome<{ status: 'saved' | 'duplicate' | 'locked'; points: number | null }>>;
   recordKey(player: string, levelId: string, right: number): Promise<Outcome<'passed' | 'already' | 'not-passed' | 'no-win'>>;
   recordFacts(player: string, pack: string, facts: FactStats[]): Promise<Outcome<number>>;
+  /** Adds answers to the records. 0 if this batch was counted before. */
+  recordAnswers(player: string, pack: string, batchId: string, answers: FactAnswer[]): Promise<Outcome<number>>;
   importProgress(player: string, levels: { levelId: string; stars: number; keyPassed: boolean }[]): Promise<Outcome<'imported' | 'skipped'>>;
   /** Milliseconds since 1970. */
   now(): number;
@@ -115,6 +117,11 @@ async function save(player: string, item: SaveItem, services: Services): Promise
       if (item.facts.length === 0) return { type: 'facts', changed: 0 };
       const saved = await services.recordFacts(player, item.pack, item.facts);
       return settle(saved, (changed) => ({ type: 'facts', changed }));
+    }
+    case 'answers': {
+      if (item.answers.length === 0) return { type: 'answers', added: 0 };
+      const saved = await services.recordAnswers(player, item.pack, item.batchId, item.answers);
+      return settle(saved, (added) => ({ type: 'answers', added }));
     }
     case 'import': {
       const saved = await services.importProgress(player, item.levels);

@@ -35,6 +35,8 @@ import {
   type SpaceGameReport,
   type SpaceStats,
 } from '../../../shared/space/save';
+import type { FactAnswer } from '../../../shared/maths/leitner';
+import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 
 /** The two things this needs from Supabase, passed in so the tests can stand in for them. */
@@ -49,6 +51,16 @@ export interface Services {
   record101(row: Card101Row): Promise<'saved' | 'too-many' | 'refused'>;
   /** Saves a Power Clash game, the same way. */
   recordPowerClash(row: PowerClashRow): Promise<'saved' | 'too-many' | 'refused'>;
+  /**
+   * Adds Mission Control maths answers to the student's times-table records (the same records
+   * as Gem Keep). A batch id seen before is ignored. Optional: without it answers aren't kept.
+   */
+  recordAnswers?(player: string, batchId: string, answers: FactAnswer[]): Promise<void>;
+  /**
+   * The teacher's Mission Control maths switch. Optional: without it maths isn't checked (the tests'
+   * stand-in). If it can't be read, throw: a maths game isn't started or saved on a guess.
+   */
+  mathsSwitch?(): Promise<MathsSwitch>;
   /** Signs some text with a key only the server has (an HMAC), as URL-safe base64. Null if there's no key. */
   stamp(text: string): Promise<string | null>;
   /** The time now, in seconds. */
@@ -123,8 +135,10 @@ export async function handleSaveBotGame(request: Request, services: Services): P
   if (!player) return reply(401, { error: 'Please sign in again.' });
 
   const body = await readJsonBody(request);
-  const asked = body as { game?: unknown; start?: unknown } | null;
+  const asked = body as { game?: unknown; start?: unknown; maths?: unknown } | null;
   if ((asked?.game === 'space' || asked?.game === '101' || asked?.game === 'power-clash') && asked.start === true) {
+    // A new maths game can't start while the teacher has maths switched off.
+    if (asked.game === 'space' && asked.maths === true && !(await mathsAllowed(services))) return reply(403, { error: MATHS_OFF });
     // A new seed for a Wormholes & Black Holes, 101 or Power Clash game, stamped for this student and this game.
     const seed = makeSeed(now(services), (services.randomHex ?? randomHex)(12));
     const stampFor = asked.game === 'space' ? stampText : asked.game === '101' ? card101StampText : powerClashStampText;
@@ -164,6 +178,14 @@ export async function handleSaveBotGame(request: Request, services: Services): P
   return reply(200, { result: game.outcome, reason: game.reason, countsForPoints: game.countsForPoints });
 }
 
+const MATHS_OFF = 'Your teacher has switched Mission Control maths off, so this game couldn’t be saved.';
+
+/** False when the teacher has maths switched off (or the switch can't be read). */
+async function mathsAllowed(services: Services): Promise<boolean> {
+  if (!services.mathsSwitch) return true;
+  return (await services.mathsSwitch().catch(() => 'off' as const)) !== 'off';
+}
+
 const TOO_MANY = "That's a lot of games today! Have a break and come back tomorrow.";
 
 async function saveSpaceGame(
@@ -182,6 +204,10 @@ async function saveSpaceGame(
     return reply(400, { error: "That game couldn't be checked." });
   }
   const { game } = judged;
+  if (report.settings.maths && !(await mathsAllowed(services))) {
+    console.warn('save-bot-game: refused a maths game (maths is off)');
+    return reply(403, { error: MATHS_OFF });
+  }
   const saved = await services.recordSpace({
     player,
     bot_level: report.level,
@@ -203,7 +229,21 @@ async function saveSpaceGame(
   });
   if (saved === 'too-many') return reply(429, { error: TOO_MANY });
   if (saved !== 'saved') return reply(500, { error: "The game couldn't be saved." });
+  if (game.answers.length > 0 && services.recordAnswers) {
+    // One batch per game (from its seed), so a game sent twice adds its answers once.
+    // The game is saved either way: losing a few answers is better than losing the game.
+    await services.recordAnswers(player, await batchIdFor(`space:${report.seed}`), game.answers).catch(() => {
+      console.error('save-bot-game: maths answers not recorded');
+    });
+  }
   return reply(200, { result: game.outcome, reason: game.reason, place: game.place, countsForPoints: game.countsForPoints });
+}
+
+/** A UUID made from some text (the same text always gives the same id). */
+export async function batchIdFor(text: string): Promise<string> {
+  const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)));
+  const hex = Array.from(hash.slice(0, 16), (b) => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
 async function save101Game(

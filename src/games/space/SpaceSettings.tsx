@@ -5,7 +5,7 @@ import { DESIGNED_BOARDS, DESIGNED_BOARD_IDS, type DesignedBoardId } from '../..
 import { parseGalaxyCode, randomGalaxyCode } from '../../../shared/space/galaxy';
 import { diceFrom } from '../../../shared/space/random';
 import type { GuideTab } from './Guide';
-import { NAME_LENGTH, todaysGalaxy, type SpacePrefs, type Speed } from './prefs';
+import { NAME_LENGTH, todaysGalaxy, type MathsMode, type SpacePrefs, type Speed } from './prefs';
 
 const BOARD_ABOUT: Record<DesignedBoardId, string> = {
   'inner-solar-system': 'Gentle: lots of wormholes, short black holes.',
@@ -65,6 +65,7 @@ export function SpaceSettings({
   saving = false,
   onHelp,
   playerName,
+  mathsMode = 'off',
 }: {
   prefs: SpacePrefs;
   onChange: (prefs: SpacePrefs) => void;
@@ -82,6 +83,8 @@ export function SpaceSettings({
   onHelp: (tab: GuideTab) => void;
   /** The student's own name: the first pass-and-play player unless they type another. */
   playerName: string;
+  /** What the teacher allows for Mission Control maths. Off: nothing shows. */
+  mathsMode?: MathsMode;
 }) {
   const set = <K extends keyof SpacePrefs>(key: K, value: SpacePrefs[K]) => onChange({ ...prefs, [key]: value });
   const galaxyOk = prefs.board !== 'galaxy' || parseGalaxyCode(prefs.galaxy) !== null;
@@ -184,6 +187,17 @@ export function SpaceSettings({
             { value: 'pass', label: '👫 Pass-and-play' },
           ]}
         />
+        {mathsMode === 'on' && (
+          <p className="space-setup__hint">
+            🧮 <strong>Mission Control maths is on.</strong> A right times-table answer powers you up. A wrong answer never
+            costs you anything.
+          </p>
+        )}
+        {mathsMode === 'choose' && prefs.maths && (
+          <p className="space-setup__hint">
+            A right times-table answer powers you up at wormholes and black holes. A wrong answer never costs you anything.
+          </p>
+        )}
         {pass && (
           <p className="space-setup__hint">
             2 to 4 of you take turns on this device. Pass-and-play games aren’t saved and don’t earn points.
@@ -201,6 +215,18 @@ export function SpaceSettings({
               { value: 'classic', label: 'Classic' },
             ]}
           />
+          {mathsMode === 'choose' && (
+            <Chips
+              legend="Mission Control maths"
+              name="space-maths"
+              value={prefs.maths}
+              onChange={(v) => set('maths', v)}
+              options={[
+                { value: true, label: '🧮 On' },
+                { value: false, label: 'Off' },
+              ]}
+            />
+          )}
           {pass ? (
             <Chips
               legend="Players"

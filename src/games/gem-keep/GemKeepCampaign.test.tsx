@@ -75,7 +75,7 @@ describe('campaign map', () => {
     let engine!: GameEngine;
     const ended: FinishedLevel[] = [];
     const onKey = vi.fn();
-    const onFacts = vi.fn();
+    const onAnswers = vi.fn();
     const onProgress = vi.fn();
     render(
       <GemKeepCampaign
@@ -84,7 +84,7 @@ describe('campaign map', () => {
         onEngine={(e) => (engine = e)}
         onLevelEnd={(l) => ended.push(l)}
         onKey={onKey}
-        onFacts={onFacts}
+        onAnswers={onAnswers}
         onProgress={onProgress}
       />,
     );
@@ -106,8 +106,11 @@ describe('campaign map', () => {
     }
     await screen.findByRole('button', { name: 'Next level' }, { timeout: 4000 });
     expect(onKey).toHaveBeenCalledWith('level-1', 10);
-    // The saved records carried on: the 10 new answers were added to them.
-    const facts = onFacts.mock.lastCall![0] as { attempts: number }[];
+    // The 10 Key answers are reported once each, and the records carried on from the saved ones.
+    const [answers, facts] = onAnswers.mock.lastCall! as [{ key: string; correct: boolean }[], { attempts: number }[]];
+    expect(answers).toHaveLength(10);
+    expect(answers.every((a) => a.correct)).toBe(true);
+    expect(onAnswers.mock.calls.flatMap((c) => c[0])).toHaveLength(10);
     expect(facts.reduce((n, f) => n + f.attempts, 0)).toBe(19);
     // Nothing goes to this browser's own storage when the progress is saved elsewhere.
     expect(localStorage.getItem('sgh-gem-keep-progress')).toBeNull();

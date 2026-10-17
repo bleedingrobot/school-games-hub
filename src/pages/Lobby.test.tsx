@@ -21,6 +21,7 @@ vi.mock('../data/spaceGames', async (importOriginal) => ({
   askSpace: vi.fn(),
   fetchSpaceLobby: vi.fn(),
   fetchMyOpenSpaceGames: vi.fn(),
+  fetchMathsSwitch: vi.fn(async () => 'off' as const),
 }));
 vi.mock('../data/cardGames', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/cardGames')>()),
@@ -224,6 +225,49 @@ describe('the lobby', () => {
     });
     expect(data.ask).not.toHaveBeenCalled();
     expect(await screen.findByText('Space game page')).toBeInTheDocument();
+  });
+
+  describe('Mission Control maths, by the teacher’s switch', () => {
+    async function createSpace(user: ReturnType<typeof userEvent.setup>) {
+      const create = screen.getByRole('region', { name: 'Start a game' });
+      await user.click(within(create).getByRole('radio', { name: /Wormholes & Black Holes/ }));
+      return create;
+    }
+
+    it('off: no maths choice, and the game is made without maths', async () => {
+      vi.mocked(space.fetchMathsSwitch).mockResolvedValue('off');
+      vi.mocked(space.askSpace).mockResolvedValue({ id: 'space-3' } as space.SpaceGame);
+      const user = userEvent.setup();
+      renderLobby();
+      const create = await createSpace(user);
+      expect(within(create).queryByText('Mission Control maths')).not.toBeInTheDocument();
+      await user.click(within(create).getByRole('button', { name: /Start game/ }));
+      expect(vi.mocked(space.askSpace).mock.calls[0][0]).toMatchObject({ setup: { settings: { maths: false } } });
+    });
+
+    it('students choose: the host picks, and the choice goes in the setup', async () => {
+      vi.mocked(space.fetchMathsSwitch).mockResolvedValue('choose');
+      vi.mocked(space.askSpace).mockResolvedValue({ id: 'space-4' } as space.SpaceGame);
+      const user = userEvent.setup();
+      renderLobby();
+      const create = await createSpace(user);
+      const group = await within(create).findByRole('group', { name: 'Mission Control maths' });
+      await user.click(within(group).getByRole('radio', { name: 'Off' }));
+      await user.click(within(create).getByRole('button', { name: /Start game/ }));
+      expect(vi.mocked(space.askSpace).mock.calls[0][0]).toMatchObject({ setup: { settings: { maths: false } } });
+    });
+
+    it('on for everyone: a note instead of a choice, and the game has maths', async () => {
+      vi.mocked(space.fetchMathsSwitch).mockResolvedValue('on');
+      vi.mocked(space.askSpace).mockResolvedValue({ id: 'space-5' } as space.SpaceGame);
+      const user = userEvent.setup();
+      renderLobby();
+      const create = await createSpace(user);
+      expect(await within(create).findByText(/maths is on for everyone/i)).toBeInTheDocument();
+      expect(within(create).queryByRole('group', { name: 'Mission Control maths' })).not.toBeInTheDocument();
+      await user.click(within(create).getByRole('button', { name: /Start game/ }));
+      expect(vi.mocked(space.askSpace).mock.calls[0][0]).toMatchObject({ setup: { settings: { maths: true } } });
+    });
   });
 
   it('lists open space games with how many have joined, and joins one', async () => {

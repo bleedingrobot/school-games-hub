@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { fetchClockOffset, fetchPlayerCards, MultiplayerError, type LiveStatus, type PlayerCard } from '../data/multiplayer';
-import { askSpace, fetchSpaceGame, seatsOf, watchSpaceGame, type SpaceAction, type SpaceGame } from '../data/spaceGames';
+import { askSpace, askSpaceFull, fetchSpaceGame, seatsOf, watchSpaceGame, type SpaceAction, type SpaceGame, type SpaceMathsReply } from '../data/spaceGames';
 import { CHECK_EVERY_MS } from '../multiplayer/useFriendGame';
 
 export interface SpaceSession {
@@ -21,6 +21,12 @@ export interface SpaceSession {
   clearMessage: () => void;
   /** Asks the server to do something. True if it worked. */
   act: (request: SpaceAction) => Promise<boolean>;
+  /**
+   * Like act, for Mission Control questions: returns what the server said (the question, or how
+   * the answer went), or throws with a message for the student. The game it sends back is
+   * kept up to date as usual.
+   */
+  ask: (request: SpaceAction) => Promise<SpaceMathsReply>;
   /** Loads the game again (after a refusal, or when something looks out of date). */
   reload: () => Promise<void>;
 }
@@ -157,6 +163,20 @@ export function useSpaceGame(id: string): SpaceGameState {
     [accept, load],
   );
 
+  const ask = useCallback(
+    async (request: SpaceAction) => {
+      try {
+        const reply = await askSpaceFull(request);
+        accept(reply.game);
+        return reply;
+      } catch (error) {
+        if (error instanceof MultiplayerError && (error.problem === 'changed' || error.problem === 'not-your-turn')) void load();
+        throw error;
+      }
+    },
+    [accept, load],
+  );
+
   if (loadState !== 'ready' || !game) return { state: loadState === 'ready' ? 'loading' : loadState };
   return {
     state: 'ready',
@@ -172,6 +192,7 @@ export function useSpaceGame(id: string): SpaceGameState {
       message,
       clearMessage: () => setMessage(''),
       act,
+      ask,
       reload: load,
     },
   };

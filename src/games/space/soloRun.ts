@@ -15,6 +15,7 @@ import { boardFor } from '../../../shared/space/boards';
 import { newGame } from '../../../shared/space/engine';
 import { randomFromSeed, seededDice, type Dice } from '../../../shared/space/random';
 import { startSolo, type SoloSetup } from '../../../shared/space/replay';
+import type { SpaceMathsAnswer } from '../../../shared/space/save';
 
 export interface SoloRun {
   setup: SoloSetup;
@@ -27,6 +28,8 @@ export interface SoloRun {
   studentActions: SpaceAction[];
   /** Pass-and-play: every seat is a person sharing this device, and there are no bots. */
   passAndPlay: boolean;
+  /** Mission Control maths answers the student gave, in order (saved with the game). */
+  mathsAnswers: SpaceMathsAnswer[];
 }
 
 /** A fresh seed for a game played on this device. */
@@ -39,7 +42,7 @@ export function newSeed(): string {
 export function startRun(setup: SoloSetup): { run: SoloRun; events: SpaceEvent[] } {
   const game = startSolo(setup);
   return {
-    run: { setup, state: game.state, studentSeat: game.studentSeat, dice: game.dice, botDraws: 0, studentActions: [], passAndPlay: false },
+    run: { setup, state: game.state, studentSeat: game.studentSeat, dice: game.dice, botDraws: 0, studentActions: [], passAndPlay: false, mathsAnswers: [] },
     events: game.events,
   };
 }
@@ -59,6 +62,7 @@ export function startPassRun(setup: Omit<SoloSetup, 'bots' | 'level'>, players: 
       botDraws: 0,
       studentActions: [],
       passAndPlay: true,
+      mathsAnswers: [],
     },
     events,
   };

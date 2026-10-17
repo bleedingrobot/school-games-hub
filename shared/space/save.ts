@@ -11,7 +11,9 @@
 import { isBotLevelId, isClaimedEnding, type BotLevel, type ClaimedEnding, type Outcome } from '../botGame';
 import { STAR_KINDS, type StarKind } from './board';
 import { isDesignedBoardId, type BoardChoice } from './boards';
-import type { SpaceAction, SpaceEvent, Settings } from './engine';
+import type { FactAnswer } from '../maths/leitner';
+import { solveQuestion } from '../maths/skillPacks/timesTables';
+import type { SpaceAction, SpaceEvent, SpaceState, Settings } from './engine';
 import { parseGalaxyCode } from './galaxy';
 import { isItemKind } from './items';
 import { replaySolo, type SoloSetup } from './replay';
@@ -51,11 +53,13 @@ export function seedProblem(seed: string, nowSeconds: number): string | null {
 
 // ---------- Actions, written as short text ----------
 
-/** "roll", "choose:1", "use:booster", "use:tractor-beam@2", "use:navigator=6". */
+/** "roll", "charge:1" (right) or "charge:0", "choose:1", "use:booster", "use:tractor-beam@2", "use:navigator=6". */
 export function encodeAction(action: SpaceAction): string {
   switch (action.kind) {
     case 'roll':
       return 'roll';
+    case 'charge':
+      return action.right ? 'charge:1' : 'charge:0';
     case 'timeout':
       return 'timeout';
     case 'choose':
@@ -68,6 +72,7 @@ export function encodeAction(action: SpaceAction): string {
 /** The opposite of encodeAction. Null for anything it wouldn't make (timeouts too: solo games have no timer). */
 export function decodeAction(text: string): SpaceAction | null {
   if (text === 'roll') return { kind: 'roll' };
+  if (text === 'charge:1' || text === 'charge:0') return { kind: 'charge', right: text === 'charge:1' };
   const choose = /^choose:([0-3])$/.exec(text);
   if (choose) return { kind: 'choose', option: Number(choose[1]) };
   const use = /^use:([a-z-]{1,20})(?:@([0-3]))?(?:=([1-6]))?$/.exec(text);
@@ -80,6 +85,33 @@ export function decodeAction(text: string): SpaceAction | null {
     };
   }
   return null;
+}
+
+// ---------- Mission Control maths answers ----------
+
+/** One maths question the student answered: how it was shown, what they typed, how long, when. */
+export interface SpaceMathsAnswer {
+  parts: string[];
+  given: number;
+  ms: number;
+  at: number;
+}
+
+/** More answers than a game could ever ask. */
+export const MAX_SAVED_ANSWERS = 300;
+
+function parseAnswers(input: unknown): SpaceMathsAnswer[] | null {
+  if (input === undefined) return [];
+  if (!Array.isArray(input) || input.length > MAX_SAVED_ANSWERS) return null;
+  const answers: SpaceMathsAnswer[] = [];
+  for (const raw of input) {
+    const a = (raw ?? {}) as Record<string, unknown>;
+    if (!Array.isArray(a.parts) || a.parts.length !== 5 || !a.parts.every((p) => typeof p === 'string' && p.length <= 4)) return null;
+    const whole = (n: unknown, max: number): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= max;
+    if (!whole(a.given, 1000) || !whole(a.ms, 3_600_000) || !whole(a.at, 4_102_444_800_000)) return null;
+    answers.push({ parts: a.parts as string[], given: a.given, ms: a.ms, at: a.at });
+  }
+  return answers;
 }
 
 // ---------- The report the browser sends ----------
@@ -95,6 +127,8 @@ export interface SpaceGameReport {
   /** The student's actions, from encodeAction. */
   actions: string[];
   ending: ClaimedEnding;
+  /** Mission Control maths: one for each question the student answered, in order. */
+  answers?: SpaceMathsAnswer[];
 }
 
 const isBool = (value: unknown): value is boolean => typeof value === 'boolean';
@@ -114,9 +148,8 @@ export function parseSettings(input: unknown): Settings | null {
   if (s.mode !== 'classic' && s.mode !== 'cosmic') return null;
   if (s.finish !== 'any' && s.finish !== 'exact') return null;
   if (!isBool(s.rollAgainOnSix) || !isBool(s.cosmicEvents)) return null;
-  // Mission Control maths isn't built yet.
-  if (s.maths !== false) return null;
-  return { mode: s.mode, finish: s.finish, rollAgainOnSix: s.rollAgainOnSix, cosmicEvents: s.cosmicEvents, maths: false };
+  if (!isBool(s.maths)) return null;
+  return { mode: s.mode, finish: s.finish, rollAgainOnSix: s.rollAgainOnSix, cosmicEvents: s.cosmicEvents, maths: s.maths };
 }
 
 /** Checks the shape of a report that came from outside (e.g. the browser). */
@@ -133,6 +166,8 @@ export function parseSpaceReport(input: unknown): SpaceGameReport | null {
   if (!isBotLevelId(r.level) || !isClaimedEnding(r.ending) || r.ending === 'resigned') return null;
   if (!Array.isArray(r.actions) || r.actions.length > MAX_SAVED_ACTIONS) return null;
   if (!r.actions.every((a) => typeof a === 'string' && a.length <= 40)) return null;
+  const answers = parseAnswers(r.answers);
+  if (!answers) return null;
   return {
     game: 'space',
     seed: r.seed,
@@ -143,6 +178,7 @@ export function parseSpaceReport(input: unknown): SpaceGameReport | null {
     level: r.level,
     actions: r.actions as string[],
     ending: r.ending,
+    answers,
   };
 }
 
@@ -157,6 +193,10 @@ export interface SpaceStats {
   stars: StarKind[];
   /** They reached the space station. */
   docked: boolean;
+  /** Mission Control maths: right answers (all kinds), wormholes powered up, black holes half-escaped. */
+  mathsRight: number;
+  boosts: number;
+  escapes: number;
 }
 
 export type SpaceReason = 'docked' | 'out-of-fuel' | 'abandoned';
@@ -173,6 +213,8 @@ export interface JudgedSpaceGame {
   studentTurns: number;
   countsForPoints: boolean;
   stats: SpaceStats;
+  /** The student's maths answers, checked, ready for their times-table records. */
+  answers: FactAnswer[];
 }
 
 export type SpaceJudgement = { ok: true; game: JudgedSpaceGame } | { ok: false; problem: string };
@@ -193,13 +235,29 @@ export function judgeSpaceGame(report: SpaceGameReport): SpaceJudgement {
     level: report.level,
   };
   const events: SpaceEvent[] = [];
+  // Every answer to a maths question must match the question shown and the choice made.
+  const given = report.answers ?? [];
+  const answers: FactAnswer[] = [];
+  let mathsProblem: string | null = null;
+  const checkAnswer = (before: SpaceState, action: SpaceAction) => {
+    const asked = action.kind === 'choose' && before.pending?.kind === 'question';
+    if (mathsProblem || (!asked && action.kind !== 'charge')) return;
+    const claimedRight = action.kind === 'charge' ? action.right : action.kind === 'choose' && action.option === 1;
+    const a = given[answers.length];
+    const solved = a ? solveQuestion(a.parts) : null;
+    if (!a || !solved) mathsProblem = 'missing maths answer';
+    else if ((a.given === solved.answer) !== claimedRight) mathsProblem = 'maths answer does not match';
+    else answers.push({ key: solved.key, correct: claimedRight, ms: a.ms, at: a.at });
+  };
   let replayed: ReturnType<typeof replaySolo>;
   try {
-    replayed = replaySolo(setup, actions, (batch) => events.push(...batch));
+    replayed = replaySolo(setup, actions, (batch) => events.push(...batch), checkAnswer);
   } catch {
     return { ok: false, problem: 'replay failed' };
   }
   if (!replayed.ok) return { ok: false, problem: replayed.reason };
+  if (mathsProblem) return { ok: false, problem: mathsProblem };
+  if (answers.length !== given.length) return { ok: false, problem: 'extra maths answers' };
   const { state, studentSeat, studentTurns, finished } = replayed;
   // A game the student says they finished must really be over. One they say they left
   // may have ended anyway (e.g. the page closed during the last animation): then it's finished.
@@ -208,10 +266,14 @@ export function judgeSpaceGame(report: SpaceGameReport): SpaceJudgement {
   const mine = events.filter((e): e is SpaceEvent & { seat: number } => 'seat' in e && e.seat === studentSeat);
   const stars = new Set(mine.flatMap((e) => (e.kind === 'star' ? [e.star] : [])));
   const stats: SpaceStats = {
-    wormholes: mine.filter((e) => e.kind === 'wormhole').length,
+    // With maths on, a wormhole ride is a 'question' event (right or wrong) instead.
+    wormholes: mine.filter((e) => e.kind === 'wormhole' || (e.kind === 'question' && (e.moment ?? 'wormhole') === 'wormhole')).length,
     blocks: mine.filter((e) => e.kind === 'force-field').length,
     stars: STAR_KINDS.filter((k) => stars.has(k)),
     docked: mine.some((e) => e.kind === 'docked'),
+    mathsRight: mine.filter((e) => (e.kind === 'question' && e.correct) || (e.kind === 'charge' && e.right)).length,
+    boosts: mine.filter((e) => e.kind === 'question' && e.correct && (e.moment ?? 'wormhole') === 'wormhole').length,
+    escapes: mine.filter((e) => e.kind === 'question' && e.correct && e.moment === 'black-hole').length,
   };
   const place = finished ? (state.places?.[studentSeat] ?? null) : null;
   return {
@@ -225,6 +287,7 @@ export function judgeSpaceGame(report: SpaceGameReport): SpaceJudgement {
       studentTurns,
       countsForPoints: finished && studentTurns >= MIN_TURNS_TO_COUNT,
       stats,
+      answers,
     },
   };
 }

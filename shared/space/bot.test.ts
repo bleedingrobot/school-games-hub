@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { BotLevel } from '../botGame';
 import type { Board } from './board';
-import { botAction } from './bot';
+import { BOT_MATHS, botAction } from './bot';
 import { DESIGNED_BOARD_IDS, DESIGNED_BOARDS } from './boards';
 import { DEFAULT_SETTINGS, KEEP_ITEMS, newGame, type SpaceState } from './engine';
 import { galaxyBoard, galaxyCodeAt } from './galaxy';
@@ -91,5 +91,36 @@ describe('bot choices', () => {
     s.phase = 'choice';
     s.pending = { kind: 'binary', dice: [6, 3] };
     expect(botAction(s, 'easy', never)).toEqual({ kind: 'choose', option: 1 });
+  });
+});
+
+describe('bots and Mission Control maths', () => {
+  const b = board({ 10: { kind: 'wormhole', to: 30 } });
+  it.each(['very-easy', 'easy', 'medium'] as const)('the %s bot answers right about as often as it should', (level) => {
+    const s = newGame(b, { ...DEFAULT_SETTINGS, maths: true }, 2).state;
+    s.phase = 'choice';
+    s.pending = { kind: 'question', square: 10 };
+    let seed = 1;
+    const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    let right = 0;
+    for (let i = 0; i < 2000; i++) {
+      const action = botAction(s, level, random) as { kind: 'choose'; option: number };
+      right += action.option;
+    }
+    expect(right / 2000).toBeGreaterThan(BOT_MATHS[level] - 0.05);
+    expect(right / 2000).toBeLessThan(BOT_MATHS[level] + 0.05);
+  });
+
+  it('every bot sends a charge answer each turn after its first, right as often as its level; never without maths', () => {
+    const s = newGame(b, { ...DEFAULT_SETTINGS, maths: true }, 2).state;
+    expect(botAction(s, 'easy', never)).toEqual({ kind: 'roll' }); // no first-turn question
+    s.rockets[0].hasPlayed = true;
+    expect(botAction(s, 'easy', () => 0.1)).toEqual({ kind: 'charge', right: true });
+    expect(botAction(s, 'medium', () => 0.95)).toEqual({ kind: 'charge', right: false });
+    expect(botAction(s, 'very-easy', () => 0.5)).toEqual({ kind: 'charge', right: true });
+    expect(botAction(s, 'very-easy', () => 0.7)).toEqual({ kind: 'charge', right: false });
+    const off = newGame(b, DEFAULT_SETTINGS, 2).state;
+    off.rockets[0].hasPlayed = true;
+    expect(botAction(off, 'easy', never)).toEqual({ kind: 'roll' });
   });
 });

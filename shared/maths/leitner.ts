@@ -19,6 +19,16 @@ export interface FactStats {
   quickDays: string[];
 }
 
+/** One answer, as saved: the record is rebuilt from these on the server. */
+export interface FactAnswer {
+  key: string;
+  correct: boolean;
+  /** Time to answer, in milliseconds. */
+  ms: number;
+  /** When (milliseconds since 1970). */
+  at: number;
+}
+
 export type Mastery = 'not-tried' | 'learning' | 'secure' | 'fluent';
 
 export function newStats(key: string): FactStats {

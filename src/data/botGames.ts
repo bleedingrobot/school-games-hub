@@ -44,7 +44,7 @@ export async function refreshSaveToken(): Promise<void> {
 type SeededGame = 'space' | '101' | 'power-clash';
 type AnyReport = SaveableReport | SpaceGameReport | Card101GameReport | PowerClashGameReport;
 
-function send(report: AnyReport | { game: SeededGame; start: true }, token: string, keepalive: boolean) {
+function send(report: AnyReport | { game: SeededGame; start: true; maths?: true }, token: string, keepalive: boolean) {
   return fetch(`${SUPABASE_URL}/functions/v1/save-bot-game`, {
     method: 'POST',
     keepalive,
@@ -115,13 +115,13 @@ export const SEED_WAIT_MS = 5000;
  * Asks the server for a stamped seed for a Wormholes & Black Holes or 101 game. Null if it
  * can't be had (no Wi-Fi, signed out, server trouble): the game is then a practice game.
  */
-export async function fetchSeed(game: SeededGame): Promise<{ seed: string; stamp: string } | null> {
+export async function fetchSeed(game: SeededGame, maths = false): Promise<{ seed: string; stamp: string } | null> {
   try {
     await refreshSaveToken();
     const token = latestToken;
     if (!token) return null;
     const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), SEED_WAIT_MS));
-    const response = await Promise.race([send({ game, start: true }, token, false), timeout]);
+    const response = await Promise.race([send({ game, start: true, ...(maths ? { maths: true as const } : {}) }, token, false), timeout]);
     if (!response?.ok) return null;
     const body = (await response.json()) as { seed?: unknown; stamp?: unknown };
     return typeof body.seed === 'string' && typeof body.stamp === 'string' ? { seed: body.seed, stamp: body.stamp } : null;
@@ -130,7 +130,8 @@ export async function fetchSeed(game: SeededGame): Promise<{ seed: string; stamp
   }
 }
 
-export const fetchSpaceSeed = () => fetchSeed('space');
+/** `maths`: the game will have Mission Control maths, which the server refuses while the teacher has it off. */
+export const fetchSpaceSeed = (maths = false) => fetchSeed('space', maths);
 export const fetch101Seed = () => fetchSeed('101');
 export const fetchPowerClashSeed = () => fetchSeed('power-clash');
 

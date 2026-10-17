@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { enqueue, flushQueue, loadGemKeep, saveCopy, type GemKeepData } from '../../data/gemKeep';
-import type { FactStats } from '../../../shared/maths/leitner';
+import type { FactAnswer, FactStats } from '../../../shared/maths/leitner';
 import type { CampaignProgress } from './progress';
 import { TEXT } from './strings';
 import { GemKeepCampaign, type FinishedLevel } from './ui/GemKeepCampaign';
@@ -61,10 +61,10 @@ export function GemKeepPlay() {
     },
     [player, flush],
   );
-  const onFacts = useCallback(
-    (facts: FactStats[]) => {
+  const onAnswers = useCallback(
+    (answers: FactAnswer[], facts: FactStats[]) => {
       keepCopy({ facts });
-      enqueue(player, { type: 'facts', pack: 'times-tables', facts });
+      enqueue(player, { type: 'answers', pack: 'times-tables', batchId: crypto.randomUUID(), answers });
       // The page may be closing: keepalive lets the request finish anyway.
       flush(document.visibilityState === 'hidden');
     },
@@ -87,7 +87,7 @@ export function GemKeepPlay() {
       onProgress={onProgress}
       onLevelEnd={onLevelEnd}
       onKey={onKey}
-      onFacts={onFacts}
+      onAnswers={onAnswers}
       // Local browser checks drive the game through this. Left out of the real site.
       onEngine={import.meta.env.DEV ? (engine) => Object.assign(window, { gemKeepEngine: engine }) : undefined}
     />

@@ -106,6 +106,11 @@ export function HowPoints() {
               It never changes your badges or the leaderboards. It does have its own achievements, worth{' '}
               {rules.achievementPoints} bonus points each.
             </li>
+            <li>
+              <strong>Mission Control maths</strong> (when it’s on) doesn’t earn points for right answers. A right answer
+              helps your rocket, and a wrong one never costs you anything. Three achievements are about the maths: 10
+              right answers, powering up a wormhole, and escaping half a black hole.
+            </li>
           </ul>
         </section>
       )}

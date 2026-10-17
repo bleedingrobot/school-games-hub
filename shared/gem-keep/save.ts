@@ -13,7 +13,7 @@
  */
 import { FLUENT_DAYS, TOP_BOX } from '../maths/config';
 import { parseFactKey } from '../maths/facts';
-import type { FactStats } from '../maths/leitner';
+import type { FactAnswer, FactStats } from '../maths/leitner';
 import { MATHS } from './config';
 import type { LevelData } from './level';
 import { CAMPAIGN, findLevel } from './levels';
@@ -46,12 +46,25 @@ export interface FactsItem {
   facts: FactStats[];
 }
 
+/** Answers since the last save, oldest first. The server adds each to the student's records. */
+export interface AnswersItem {
+  type: 'answers';
+  pack: 'times-tables';
+  /** Made by the browser, so the same answers are only counted once. */
+  batchId: string;
+  answers: FactAnswer[];
+}
+
 export interface ImportItem {
   type: 'import';
   levels: { levelId: string; stars: number; keyPassed: boolean }[];
 }
 
-export type SaveItem = RunItem | KeyItem | FactsItem | ImportItem;
+/**
+ * `facts` (whole records) is how Gem Keep saved before 17 Oct 2026. It's still accepted, for
+ * saves waiting on a device, but the website now sends `answers`.
+ */
+export type SaveItem = RunItem | KeyItem | FactsItem | AnswersItem | ImportItem;
 
 export interface SaveRequest {
   items: SaveItem[];
@@ -62,6 +75,7 @@ export type ItemResult =
   | { type: 'run'; status: 'saved' | 'duplicate' | 'locked'; points: number | null }
   | { type: 'key'; status: 'passed' | 'already' | 'not-passed' | 'no-win' }
   | { type: 'facts'; changed: number }
+  | { type: 'answers'; added: number }
   | { type: 'import'; status: 'imported' | 'skipped' }
   | { type: 'invalid'; problem: string };
 
@@ -75,6 +89,8 @@ export interface SaveResponse {
 export const MAX_ITEMS = 40;
 /** Fact records a request may carry (there are 78 times-table facts). */
 export const MAX_FACTS = 200;
+/** Answers a request may carry. */
+export const MAX_ANSWERS = 500;
 /** An average answer quicker than this, over a few answers, isn't a person typing. */
 export const MIN_AVG_MS = 250;
 
@@ -164,6 +180,21 @@ function checkFacts(x: Record<string, unknown>, nowMs: number): Checked<FactsIte
   return { ok: true, item: { type: 'facts', pack: 'times-tables', facts } };
 }
 
+function checkAnswers(x: Record<string, unknown>, nowMs: number): Checked<AnswersItem> {
+  if (x.pack !== 'times-tables') return { ok: false, problem: 'pack' };
+  if (typeof x.batchId !== 'string' || !UUID.test(x.batchId)) return { ok: false, problem: 'batch-id' };
+  if (!Array.isArray(x.answers) || x.answers.length > MAX_ANSWERS) return { ok: false, problem: 'answers' };
+  // A bad answer is left out (an impossibly quick one too); the good ones still count.
+  const answers: FactAnswer[] = [];
+  for (const raw of x.answers) {
+    const a = (raw ?? {}) as Record<string, unknown>;
+    if (typeof a.key !== 'string' || !parseFactKey(a.key) || typeof a.correct !== 'boolean') continue;
+    if (!isInt(a.ms, MIN_AVG_MS, 3_600_000) || !isInt(a.at, nowMs - 60 * 86_400_000, nowMs + 86_400_000)) continue;
+    answers.push({ key: a.key, correct: a.correct, ms: a.ms, at: a.at });
+  }
+  return { ok: true, item: { type: 'answers', pack: 'times-tables', batchId: x.batchId, answers } };
+}
+
 /** Trial progress: stars must be 0–3 and Level Keys only in campaign order, as the game allows. */
 function checkImport(x: Record<string, unknown>): Checked<ImportItem> {
   if (!Array.isArray(x.levels) || x.levels.length > CAMPAIGN.length) return { ok: false, problem: 'levels' };
@@ -197,6 +228,8 @@ export function checkItem(raw: unknown, nowMs: number): Checked<SaveItem> {
       return checkKey(x);
     case 'facts':
       return checkFacts(x, nowMs);
+    case 'answers':
+      return checkAnswers(x, nowMs);
     case 'import':
       return checkImport(x);
     default:

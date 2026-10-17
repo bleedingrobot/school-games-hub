@@ -9,6 +9,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { BoardChoice } from '../../shared/space/boards';
 import type { Settings, SpaceEvent, SpaceState } from '../../shared/space/engine';
 import type { LiveSetup, LoggedAction, Reaction, SeatInfo } from '../../shared/space/live';
+import { parseMathsSwitch, type MathsSwitch } from '../../shared/space/mathsSwitch';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
 import { MultiplayerError, RETRY_AFTER_MS, type LiveStatus } from './multiplayer';
@@ -71,6 +72,9 @@ export type SpaceAction =
   | { action: 'roll'; gameId: string; version: number }
   | { action: 'use-item'; gameId: string; version: number; item: string; target?: number; value?: number }
   | { action: 'choose'; gameId: string; version: number; option: number }
+  /** Mission Control maths: ask for my question, then answer it with the number (the server marks it). */
+  | { action: 'question'; gameId: string; kind: 'moment' | 'charge'; version?: number }
+  | { action: 'answer'; gameId: string; kind: 'moment' | 'charge'; answer: number; ms: number; version?: number }
   | { action: 'react'; gameId: string; emoji: Reaction };
 
 /** Refusals that, after a retry, just mean "your first try worked": look again quietly. */
@@ -82,6 +86,23 @@ const ALREADY_DONE = ['over', 'changed', 'not-your-turn', 'reaction-wait'];
  * moves carry the version they were made at, so the server never plays one twice.
  */
 export async function askSpace(request: SpaceAction): Promise<SpaceGame> {
+  return (await askSpaceFull(request)).game;
+}
+
+/** What the server sends back for a maths question: the question (no answer), or how the answer went. */
+export interface SpaceMathsReply {
+  game: SpaceGame;
+  /** The question to show (an `answer` is never sent with it). */
+  question?: { id: number; skill: string; kind: string; parts: string[]; spoken: string; choices?: number[] };
+  /** The question after a turn was already answered. */
+  done?: boolean;
+  /** For an answer: was it right, and what was the answer. */
+  right?: boolean;
+  answer?: number;
+}
+
+/** Like askSpace, but also returns whatever else the server said (a maths question, or the marking). */
+export async function askSpaceFull(request: SpaceAction): Promise<SpaceMathsReply> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new MultiplayerError('Please sign in again.', 'sign-in');
@@ -95,13 +116,12 @@ export async function askSpace(request: SpaceAction): Promise<SpaceGame> {
   if (reply === 'offline') {
     throw new MultiplayerError('We couldn’t reach the server. Check the Wi-Fi and try again.', 'offline');
   }
-  const body = (await reply.json().catch(() => null)) as {
-    game?: SpaceGame;
+  const body = (await reply.json().catch(() => null)) as (Partial<SpaceMathsReply> & {
     error?: string;
     problem?: string;
     secondsLeft?: number;
-  } | null;
-  if (reply.ok && body?.game) return body.game;
+  }) | null;
+  if (reply.ok && body?.game) return body as SpaceMathsReply;
   const problem = body?.problem ?? 'failed';
   if (retried && ALREADY_DONE.includes(problem)) {
     throw new MultiplayerError('The game changed just then. Have another look.', 'changed');
@@ -182,6 +202,12 @@ export async function fetchMySpaceStats(): Promise<{ played: number; firsts: num
 export async function fetchReactionsEnabled(): Promise<boolean> {
   const { data } = await supabase.from('app_settings').select('space_reactions_enabled').maybeSingle();
   return data?.space_reactions_enabled === true;
+}
+
+/** What the teacher allows for Mission Control maths. If it can't be read, maths stays off. */
+export async function fetchMathsSwitch(): Promise<MathsSwitch> {
+  const { data } = await supabase.from('app_settings').select('space_maths').maybeSingle();
+  return parseMathsSwitch(data?.space_maths);
 }
 
 export interface SpaceLogEntry {

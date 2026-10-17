@@ -6,6 +6,7 @@ import {
   autopilotSeats,
   AUTOPILOT_AFTER,
   CHOICE_SECONDS,
+  QUESTION_SECONDS,
   deadlineAfter,
   flownByBot,
   MAX_ANIMATION_SECONDS,
@@ -170,6 +171,9 @@ describe('classmates games', () => {
     const choosing = structuredClone(game);
     choosing.state.phase = 'choice';
     expect(deadlineAfter(choosing, [], now)).toBe(now + CHOICE_SECONDS * 1000);
+    // A wormhole or black hole question (Mission Control maths) gets 20.
+    choosing.state.pending = { kind: 'question', square: 5 };
+    expect(deadlineAfter(choosing, [], now)).toBe(now + QUESTION_SECONDS * 1000);
     expect(deadlineAfter(game, events, now)!).toBeGreaterThan(now + TURN_SECONDS * 1000);
     const lots = Array.from({ length: 100 }, () => ({ kind: 'cosmic' as const, event: 'solar-wind' as const }));
     expect(animationMs(lots)).toBeGreaterThan(MAX_ANIMATION_SECONDS * 1000);
@@ -192,7 +196,39 @@ describe('classmates games', () => {
       board: { galaxy: 'Comet-Kiwi-48', size: 50 },
     });
     expect(parseLiveSetup({ board: { id: 'mars' }, settings: DEFAULT_SETTINGS })).toBeNull();
-    expect(parseLiveSetup({ board: { id: 'nebula' }, settings: { ...DEFAULT_SETTINGS, maths: true } })).toBeNull();
+    // Mission Control maths comes with the host's setup.
+    expect(parseLiveSetup({ board: { id: 'nebula' }, settings: { ...DEFAULT_SETTINGS, maths: true } })).toEqual({
+      ...SETUP,
+      settings: { ...DEFAULT_SETTINGS, maths: true },
+    });
     expect(parseLiveSetup(null)).toBeNull();
+  });
+});
+
+describe('stats for the maths achievements', () => {
+  const MATHS: LiveSetup = { board: { id: 'nebula' }, settings: { ...DEFAULT_SETTINGS, maths: true } };
+
+  /** Student 0 is on a wormhole or black hole with its question waiting; they answer. */
+  function answer(kind: 'wormhole' | 'black-hole', option: 0 | 1) {
+    const { game } = startLive(MATHS, ['ana', 'ben']);
+    const square = Object.entries(game.state.board.squares).find(([, q]) => q.kind === kind)![0];
+    game.state.rockets[0].position = Number(square);
+    game.state.phase = 'choice';
+    game.state.pending = { kind: 'question', square: Number(square), ...(kind === 'black-hole' ? { moment: 'black-hole' as const } : {}) };
+    game.state.turnInfo.rolled = true;
+    return playerAction(game, { kind: 'choose', option }, seededDice('a'), randomFromSeed('b')).game.seats[0].stats;
+  }
+
+  it('counts a right wormhole answer as a ride, a right answer and a power-up', () => {
+    expect(answer('wormhole', 1)).toMatchObject({ wormholes: 1, mathsRight: 1, boosts: 1, escapes: 0 });
+  });
+
+  it('counts a wrong wormhole answer as a ride and nothing else', () => {
+    expect(answer('wormhole', 0)).toMatchObject({ wormholes: 1, mathsRight: 0, boosts: 0, escapes: 0 });
+  });
+
+  it('counts a right black hole answer as an escape, and a wrong one as nothing', () => {
+    expect(answer('black-hole', 1)).toMatchObject({ wormholes: 0, mathsRight: 1, boosts: 0, escapes: 1 });
+    expect(answer('black-hole', 0)).toMatchObject({ mathsRight: 0, escapes: 0 });
   });
 });

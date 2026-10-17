@@ -3,6 +3,21 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
 import { Chess } from "npm:chess.js@1.4.0";
+//#region shared/maths/config.ts
+/** Answering correctly within this many milliseconds counts as quick. */
+const QUICK_MS = 5e3;
+//#endregion
+//#region shared/space/mathsSwitch.ts
+const MATHS_SWITCHES = [
+	"off",
+	"choose",
+	"on"
+];
+/** Reads the setting from the database. Anything unexpected counts as Off: nobody gets maths by accident. */
+function parseMathsSwitch(value) {
+	return MATHS_SWITCHES.includes(value) ? value : "off";
+}
+//#endregion
 //#region supabase/functions/_shared/stamp.ts
 /**
 * Stamps (signatures) only the server can make: an HMAC-SHA256 of some text, as URL-safe
@@ -990,6 +1005,47 @@ function boardFor(choice) {
 	return galaxyBoard(choice.galaxy, choice.size);
 }
 //#endregion
+//#region shared/maths/facts.ts
+const factKey = (x, y) => `mul:${Math.min(x, y)}x${Math.max(x, y)}`;
+new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
+//#endregion
+//#region shared/maths/skillPacks/timesTables.ts
+/**
+* Works out a question from how it was shown (e.g. ['?', '×', '8', '=', '56']): its answer and
+* the fact it belongs to. Null if it isn't a times-tables question this pack could ask. The
+* server uses this to check answers it didn't see being given.
+*/
+function solveQuestion(parts) {
+	if (!Array.isArray(parts) || parts.length !== 5 || parts[3] !== "=" || !parts.every((p) => typeof p === "string")) return null;
+	const [a, op, b, , c] = parts;
+	if (op !== "×" && op !== "÷" || parts.filter((p) => p === "?").length !== 1) return null;
+	const num = (text) => /^\d{1,3}$/.test(text) ? Number(text) : NaN;
+	const inTables = (n) => Number.isInteger(n) && n >= 1 && n <= 12;
+	let x;
+	let y;
+	let answer;
+	if (op === "×" && c === "?") {
+		[x, y] = [num(a), num(b)];
+		answer = x * y;
+	} else if (op === "×" && a === "?") {
+		y = num(b);
+		x = answer = num(c) / y;
+		if (num(c) !== x * y) return null;
+	} else if (op === "×" && b === "?") {
+		x = num(a);
+		y = answer = num(c) / x;
+		if (num(c) !== x * y) return null;
+	} else if (op === "÷" && c === "?") {
+		y = num(b);
+		x = answer = num(a) / y;
+	} else return null;
+	if (!inTables(x) || !inTables(y)) return null;
+	return {
+		answer,
+		key: factKey(x, y)
+	};
+}
+//#endregion
 //#region shared/space/items.ts
 const ITEM_KINDS = [
 	"booster",
@@ -1273,6 +1329,10 @@ function itemProblem(s, item, seat = s.turn) {
 	if (ITEMS[item].targeted && validTargets(s, item, seat).length === 0) return "No rockets you can aim at.";
 	return null;
 }
+/** True if the rocket whose turn it is may send its charge answer now (maths on, after its first turn, before rolling, once). */
+function canCharge(s) {
+	return s.settings.maths && s.phase === "ready" && !s.turnInfo.rolled && !s.turnInfo.chargeDone && s.rockets[s.turn].hasPlayed === true;
+}
 /** The items this rocket could use right now. */
 function usableItems(s, seat = s.turn) {
 	return [...new Set(s.rockets[seat].items)].filter((item) => itemProblem(s, item, seat) === null);
@@ -1304,6 +1364,10 @@ function stepsFor(r, t, die) {
 	if (t.booster) {
 		steps += 2;
 		changes.push("booster");
+	}
+	if (t.mathsCharge) {
+		steps += 1;
+		changes.push("maths-charge");
 	}
 	if (r.gravity?.kind === "low") {
 		steps += 2;
@@ -1374,6 +1438,15 @@ var Game = class {
 			case "roll":
 				if (s.phase !== "ready") throw new SpaceRuleError("Make your choice first.");
 				return this.roll();
+			case "charge":
+				if (!canCharge(s)) throw new SpaceRuleError("There's no charge question to answer now.");
+				s.turnInfo.chargeDone = true;
+				if (action.right) s.turnInfo.mathsCharge = true;
+				return this.emit({
+					kind: "charge",
+					seat: this.seat,
+					right: action.right
+				});
 			case "choose":
 				if (s.phase !== "choice" || !s.pending) throw new SpaceRuleError("There's nothing to choose.");
 				return this.choose(action.option);
@@ -1549,6 +1622,7 @@ var Game = class {
 			changes
 		});
 		t.booster = t.hyperdrive = false;
+		t.mathsCharge = false;
 		t.navigator = null;
 		me.anchored = false;
 		me.solarWind = false;
@@ -1683,26 +1757,12 @@ var Game = class {
 						});
 						return;
 					}
-					const pod = me.items.indexOf("escape-pod");
-					if (pod >= 0) {
-						me.items.splice(pod, 1);
-						me.position = n - Math.max(1, Math.floor((n - square.to) / 2));
-						this.emit({
-							kind: "black-hole",
-							seat,
-							from: n,
-							to: me.position,
-							escapePod: true
-						});
-					} else {
-						me.position = square.to;
-						this.emit({
-							kind: "black-hole",
-							seat,
-							from: n,
-							to: square.to
-						});
-					}
+					if (s.settings.maths) return this.ask({
+						kind: "question",
+						square: n,
+						moment: "black-hole"
+					});
+					this.fallIn(n, square.to);
 					continue;
 				}
 				case "star":
@@ -1737,6 +1797,30 @@ var Game = class {
 				});
 				case "nebula": return;
 			}
+		}
+	}
+	/** Falls into the black hole at `n`: half way with an Escape Pod (used up), else all the way. */
+	fallIn(n, to) {
+		const me = this.me;
+		const pod = me.items.indexOf("escape-pod");
+		if (pod >= 0) {
+			me.items.splice(pod, 1);
+			me.position = n - halfFall(n, to);
+			this.emit({
+				kind: "black-hole",
+				seat: this.seat,
+				from: n,
+				to: me.position,
+				escapePod: true
+			});
+		} else {
+			me.position = to;
+			this.emit({
+				kind: "black-hole",
+				seat: this.seat,
+				from: n,
+				to
+			});
 		}
 	}
 	/** A star square acts. Returns true if it moved the rocket (so the new square acts too). */
@@ -1883,16 +1967,45 @@ var Game = class {
 				}
 				return this.afterMove();
 			case "question": {
+				const right = option === 1;
+				const moment = pending.moment ?? "wormhole";
+				if (moment === "black-hole") {
+					const square = s.board.squares[pending.square];
+					if (right) {
+						me.position = pending.square - halfFall(pending.square, square.to);
+						this.emit({
+							kind: "question",
+							seat,
+							correct: true,
+							from: pending.square,
+							to: me.position,
+							moment
+						});
+					} else {
+						this.emit({
+							kind: "question",
+							seat,
+							correct: false,
+							from: pending.square,
+							to: pending.square,
+							moment
+						});
+						this.fallIn(pending.square, square.to);
+					}
+					this.land();
+					return this.afterMove();
+				}
 				const square = s.board.squares[pending.square];
 				const bonus = square.to + 3;
-				const to = option === 1 && bonus < s.board.size && !isLink(s.board.squares[bonus]) ? bonus : square.to;
+				const to = right && bonus < s.board.size && !isLink(s.board.squares[bonus]) ? bonus : square.to;
 				me.position = to;
 				this.emit({
 					kind: "question",
 					seat,
-					correct: option === 1,
+					correct: right,
 					from: pending.square,
-					to
+					to,
+					...pending.moment ? { moment } : {}
 				});
 				this.land();
 				return this.afterMove();
@@ -1920,6 +2033,7 @@ var Game = class {
 	nextTurn() {
 		const s = this.s;
 		s.turnsTaken++;
+		if (s.settings.maths) this.me.hasPlayed = true;
 		s.turn = (s.turn + 1) % s.rockets.length;
 		if (s.turn === 0) {
 			this.newRound();
@@ -2040,6 +2154,10 @@ var Game = class {
 		});
 	}
 };
+/** How far an Escape Pod (or a right answer) saves you from a black hole at `n` going to `to`. */
+function halfFall(n, to) {
+	return Math.max(1, Math.floor((n - to) / 2));
+}
 /** The options a choice has (see SpaceAction). */
 function choiceOptions(pending) {
 	switch (pending.kind) {
@@ -2071,6 +2189,12 @@ function defaultOption(pending) {
 }
 //#endregion
 //#region shared/space/bot.ts
+/** How often each bot answers Mission Control's questions right (so maths doesn't just beat bots). */
+const BOT_MATHS = {
+	"very-easy": .6,
+	easy: .75,
+	medium: .9
+};
 /** How much a bot likes holding each item (for "pockets full" choices). */
 const ITEM_VALUE = {
 	"rescue-beacon": 10,
@@ -2248,6 +2372,10 @@ function botAction(s, level, random) {
 		kind: "choose",
 		option: botChoice(s, level, random)
 	};
+	if (canCharge(s)) return {
+		kind: "charge",
+		right: random() < BOT_MATHS[level]
+	};
 	if (level === "very-easy") {
 		const usable = usableItems(s);
 		if (usable.length > 0 && random() < .4) {
@@ -2269,6 +2397,7 @@ function botAction(s, level, random) {
 function botChoice(s, level, random) {
 	const pending = s.pending;
 	const seat = s.turn;
+	if (pending.kind === "question") return random() < BOT_MATHS[level] ? 1 : 0;
 	if (level === "very-easy") return pick$1(random, choiceOptions(pending));
 	switch (pending.kind) {
 		case "gate": return pending.twin > pending.square ? 1 : 0;
@@ -2285,7 +2414,6 @@ function botChoice(s, level, random) {
 			});
 			return ITEM_VALUE[pending.item] > ITEM_VALUE[items[worst]] ? worst : 3;
 		}
-		case "question": return 1;
 	}
 }
 //#endregion
@@ -2316,7 +2444,7 @@ function playBots$1(game, level, onEvents) {
 * Replays a bot game exactly. Fails if any action is against the rules or left over.
 * `onEvents` sees every event, in order, from the start of the game.
 */
-function replaySolo$2(setup, actions, onEvents) {
+function replaySolo$2(setup, actions, onEvents, onAction) {
 	if (actions.length > 2e3) return {
 		ok: false,
 		reason: "too many actions"
@@ -2340,6 +2468,7 @@ function replaySolo$2(setup, actions, onEvents) {
 				reason: "actions after the game ended"
 			};
 			const before = game.state.turnsTaken;
+			onAction?.(game.state, action);
 			const { state, events } = play$2(game.state, action, game.dice);
 			game.state = state;
 			onEvents?.(events);
@@ -2388,6 +2517,10 @@ function seedProblem(seed, nowSeconds) {
 /** The opposite of encodeAction. Null for anything it wouldn't make (timeouts too: solo games have no timer). */
 function decodeAction(text) {
 	if (text === "roll") return { kind: "roll" };
+	if (text === "charge:1" || text === "charge:0") return {
+		kind: "charge",
+		right: text === "charge:1"
+	};
 	const choose = /^choose:([0-3])$/.exec(text);
 	if (choose) return {
 		kind: "choose",
@@ -2401,6 +2534,24 @@ function decodeAction(text) {
 		...use[3] !== void 0 ? { value: Number(use[3]) } : {}
 	};
 	return null;
+}
+function parseAnswers(input) {
+	if (input === void 0) return [];
+	if (!Array.isArray(input) || input.length > 300) return null;
+	const answers = [];
+	for (const raw of input) {
+		const a = raw ?? {};
+		if (!Array.isArray(a.parts) || a.parts.length !== 5 || !a.parts.every((p) => typeof p === "string" && p.length <= 4)) return null;
+		const whole = (n, max) => typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= max;
+		if (!whole(a.given, 1e3) || !whole(a.ms, 36e5) || !whole(a.at, 41024448e5)) return null;
+		answers.push({
+			parts: a.parts,
+			given: a.given,
+			ms: a.ms,
+			at: a.at
+		});
+	}
+	return answers;
 }
 const isBool = (value) => typeof value === "boolean";
 function parseBoard(input) {
@@ -2420,13 +2571,13 @@ function parseSettings(input) {
 	if (s.mode !== "classic" && s.mode !== "cosmic") return null;
 	if (s.finish !== "any" && s.finish !== "exact") return null;
 	if (!isBool(s.rollAgainOnSix) || !isBool(s.cosmicEvents)) return null;
-	if (s.maths !== false) return null;
+	if (!isBool(s.maths)) return null;
 	return {
 		mode: s.mode,
 		finish: s.finish,
 		rollAgainOnSix: s.rollAgainOnSix,
 		cosmicEvents: s.cosmicEvents,
-		maths: false
+		maths: s.maths
 	};
 }
 /** Checks the shape of a report that came from outside (e.g. the browser). */
@@ -2443,6 +2594,8 @@ function parseSpaceReport(input) {
 	if (!isBotLevelId(r.level) || !isClaimedEnding(r.ending) || r.ending === "resigned") return null;
 	if (!Array.isArray(r.actions) || r.actions.length > 1e3) return null;
 	if (!r.actions.every((a) => typeof a === "string" && a.length <= 40)) return null;
+	const answers = parseAnswers(r.answers);
+	if (!answers) return null;
 	return {
 		game: "space",
 		seed: r.seed,
@@ -2452,7 +2605,8 @@ function parseSpaceReport(input) {
 		bots: r.bots,
 		level: r.level,
 		actions: r.actions,
-		ending: r.ending
+		ending: r.ending,
+		answers
 	};
 }
 /** Replays the game from its seed and works out the result. The stamp is checked separately. */
@@ -2474,9 +2628,27 @@ function judgeSpaceGame(report) {
 		level: report.level
 	};
 	const events = [];
+	const given = report.answers ?? [];
+	const answers = [];
+	let mathsProblem = null;
+	const checkAnswer = (before, action) => {
+		const asked = action.kind === "choose" && before.pending?.kind === "question";
+		if (mathsProblem || !asked && action.kind !== "charge") return;
+		const claimedRight = action.kind === "charge" ? action.right : action.kind === "choose" && action.option === 1;
+		const a = given[answers.length];
+		const solved = a ? solveQuestion(a.parts) : null;
+		if (!a || !solved) mathsProblem = "missing maths answer";
+		else if (a.given === solved.answer !== claimedRight) mathsProblem = "maths answer does not match";
+		else answers.push({
+			key: solved.key,
+			correct: claimedRight,
+			ms: a.ms,
+			at: a.at
+		});
+	};
 	let replayed;
 	try {
-		replayed = replaySolo$2(setup, actions, (batch) => events.push(...batch));
+		replayed = replaySolo$2(setup, actions, (batch) => events.push(...batch), checkAnswer);
 	} catch {
 		return {
 			ok: false,
@@ -2487,6 +2659,14 @@ function judgeSpaceGame(report) {
 		ok: false,
 		problem: replayed.reason
 	};
+	if (mathsProblem) return {
+		ok: false,
+		problem: mathsProblem
+	};
+	if (answers.length !== given.length) return {
+		ok: false,
+		problem: "extra maths answers"
+	};
 	const { state, studentSeat, studentTurns, finished } = replayed;
 	if (!finished && report.ending === "finished") return {
 		ok: false,
@@ -2495,10 +2675,13 @@ function judgeSpaceGame(report) {
 	const mine = events.filter((e) => "seat" in e && e.seat === studentSeat);
 	const stars = new Set(mine.flatMap((e) => e.kind === "star" ? [e.star] : []));
 	const stats = {
-		wormholes: mine.filter((e) => e.kind === "wormhole").length,
+		wormholes: mine.filter((e) => e.kind === "wormhole" || e.kind === "question" && (e.moment ?? "wormhole") === "wormhole").length,
 		blocks: mine.filter((e) => e.kind === "force-field").length,
 		stars: STAR_KINDS.filter((k) => stars.has(k)),
-		docked: mine.some((e) => e.kind === "docked")
+		docked: mine.some((e) => e.kind === "docked"),
+		mathsRight: mine.filter((e) => e.kind === "question" && e.correct || e.kind === "charge" && e.right).length,
+		boosts: mine.filter((e) => e.kind === "question" && e.correct && (e.moment ?? "wormhole") === "wormhole").length,
+		escapes: mine.filter((e) => e.kind === "question" && e.correct && e.moment === "black-hole").length
 	};
 	const place = finished ? state.places?.[studentSeat] ?? null : null;
 	return {
@@ -2511,7 +2694,8 @@ function judgeSpaceGame(report) {
 			playerSide: SEAT_NAMES[studentSeat],
 			studentTurns,
 			countsForPoints: finished && studentTurns >= 5,
-			stats
+			stats,
+			answers
 		}
 	};
 }
@@ -5102,6 +5286,7 @@ async function handleSaveBotGame(request, services) {
 	const body = await readJsonBody(request);
 	const asked = body;
 	if ((asked?.game === "space" || asked?.game === "101" || asked?.game === "power-clash") && asked.start === true) {
+		if (asked.game === "space" && asked.maths === true && !await mathsAllowed(services)) return reply(403, { error: MATHS_OFF });
 		const seed = makeSeed(now(services), (services.randomHex ?? randomHex)(12));
 		const stampFor = asked.game === "space" ? stampText$2 : asked.game === "101" ? stampText$1 : stampText;
 		const stamp = await services.stamp(stampFor(player, seed));
@@ -5141,6 +5326,12 @@ async function handleSaveBotGame(request, services) {
 		countsForPoints: game.countsForPoints
 	});
 }
+const MATHS_OFF = "Your teacher has switched Mission Control maths off, so this game couldn’t be saved.";
+/** False when the teacher has maths switched off (or the switch can't be read). */
+async function mathsAllowed(services) {
+	if (!services.mathsSwitch) return true;
+	return await services.mathsSwitch().catch(() => "off") !== "off";
+}
 const TOO_MANY = "That's a lot of games today! Have a break and come back tomorrow.";
 async function saveSpaceGame(player, body, services, reply) {
 	const report = parseSpaceReport(body);
@@ -5156,6 +5347,10 @@ async function saveSpaceGame(player, body, services, reply) {
 		return reply(400, { error: "That game couldn't be checked." });
 	}
 	const { game } = judged;
+	if (report.settings.maths && !await mathsAllowed(services)) {
+		console.warn("save-bot-game: refused a maths game (maths is off)");
+		return reply(403, { error: MATHS_OFF });
+	}
 	const saved = await services.recordSpace({
 		player,
 		bot_level: report.level,
@@ -5177,12 +5372,21 @@ async function saveSpaceGame(player, body, services, reply) {
 	});
 	if (saved === "too-many") return reply(429, { error: TOO_MANY });
 	if (saved !== "saved") return reply(500, { error: "The game couldn't be saved." });
+	if (game.answers.length > 0 && services.recordAnswers) await services.recordAnswers(player, await batchIdFor(`space:${report.seed}`), game.answers).catch(() => {
+		console.error("save-bot-game: maths answers not recorded");
+	});
 	return reply(200, {
 		result: game.outcome,
 		reason: game.reason,
 		place: game.place,
 		countsForPoints: game.countsForPoints
 	});
+}
+/** A UUID made from some text (the same text always gives the same id). */
+async function batchIdFor(text) {
+	const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
+	const hex = Array.from(hash.slice(0, 16), (b) => b.toString(16).padStart(2, "0")).join("");
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 async function save101Game(player, body, services, reply) {
 	const report = parseCard101Report(body);
@@ -5350,6 +5554,23 @@ Deno.serve((request) => handleSaveBotGame(request, {
 		if (error.code === "54000") return "too-many";
 		console.error(`save-bot-game: database refused a Power Clash game (${error.code})`);
 		return "refused";
+	},
+	async mathsSwitch() {
+		const { data, error } = await admin.from("app_settings").select("space_maths").maybeSingle();
+		if (error) throw new Error(error.code ?? "unknown");
+		return parseMathsSwitch(data?.space_maths);
+	},
+	async recordAnswers(player, batchId, answers) {
+		const { error } = await admin.rpc("record_fact_answers", {
+			player,
+			pack: "times-tables",
+			batch_id: batchId,
+			answers,
+			quick_ms: QUICK_MS,
+			fluent_days: 2,
+			top_box: 4
+		});
+		if (error) throw new Error(error.code ?? "unknown");
 	},
 	stamp: stamper(key, "space-seed")
 }));

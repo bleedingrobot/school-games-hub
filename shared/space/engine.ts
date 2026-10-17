@@ -35,7 +35,11 @@ export interface Settings {
   finish: Finish;
   rollAgainOnSix: boolean;
   cosmicEvents: boolean;
-  /** Mission Control maths questions at wormhole mouths (not built yet: always off). */
+  /**
+   * Mission Control maths (docs/SPACE-MATHS-PLAN.md): a question at wormholes and black holes,
+   * and the question after your turn that charges your next roll. A right answer helps; a
+   * wrong one never hurts.
+   */
   maths: boolean;
 }
 
@@ -76,6 +80,10 @@ export const SUPERNOVA_BLAST = 5;
 export const SUPERNOVA_RANGE = 10;
 export const SUPERNOVA_PUSH = 2;
 export const RESCUE_JUMP = 10;
+/** Mission Control maths: a right answer at a wormhole flies this much further. */
+export const WORMHOLE_BONUS = 3;
+/** A right answer to the question after your turn adds this to your next roll. */
+export const MATHS_CHARGE_STEPS = 1;
 export const METEORS = 5;
 /** Where the mystery station can send you, and how likely each is. */
 export const MYSTERY_OFFSETS: readonly (readonly [number, number])[] = [
@@ -104,6 +112,8 @@ export interface Rocket {
   lastTarget: number | null;
   /** The round this rocket was last sent a Rescue Beacon. */
   beaconRound: number | null;
+  /** Mission Control maths: this rocket has finished a turn, so it may answer a charge question. */
+  hasPlayed?: boolean;
 }
 
 export interface Mine {
@@ -118,7 +128,11 @@ export type Pending =
   | { kind: 'mystery'; square: number }
   | { kind: 'inventory'; item: ItemKind }
   | { kind: 'binary'; dice: [number, number] }
-  | { kind: 'question'; square: number };
+  /** Mission Control maths. `moment` is missing in games from before (it was always a wormhole). */
+  | { kind: 'question'; square: number; moment?: MathsMoment };
+
+/** When Mission Control asks inside the game: landing on a wormhole or a black hole. */
+export type MathsMoment = 'wormhole' | 'black-hole';
 
 export type CosmicEvent = 'solar-wind' | 'meteor-shower' | 'wormhole-shift';
 
@@ -134,6 +148,10 @@ export interface TurnInfo {
   /** The real die showed a 6 (for roll-again-on-6). */
   rolledSix: boolean;
   rollAgainUsed: boolean;
+  /** A right answer to the charge question: +MATHS_CHARGE_STEPS on this roll. */
+  mathsCharge?: boolean;
+  /** The charge answer for this turn has been sent (one a turn). */
+  chargeDone?: boolean;
 }
 
 export type Ending = 'docked' | 'mission-clock';
@@ -192,7 +210,9 @@ export type SpaceEvent =
   | { kind: 'mine-fizzled'; owner: number; square: number }
   | { kind: 'asteroid'; seat: number; square: number }
   | { kind: 'supernova-spent'; square: number }
-  | { kind: 'question'; seat: number; correct: boolean; from: number; to: number }
+  | { kind: 'question'; seat: number; correct: boolean; from: number; to: number; moment?: MathsMoment }
+  /** The answer to the question after the last turn: right adds +1 to this roll. */
+  | { kind: 'charge'; seat: number; right: boolean }
   | { kind: 'chain-cap'; seat: number; square: number }
   | { kind: 'choice'; seat: number; pending: Pending }
   | { kind: 'timeout'; seat: number }
@@ -206,10 +226,13 @@ export type SpaceEvent =
  * What the rocket whose turn it is does. Choice options:
  * gate 0 stay / 1 jump; mystery 0–2 (the card); inventory 0–2 drop that item / 3 keep what
  * you have; binary 0 or 1 (which die); question 0 wrong / 1 right.
+ * `charge`: the answer to the question asked after your last turn, sent before rolling
+ * (maths on, once a turn). Right adds +1 to this roll; wrong changes nothing.
  */
 export type SpaceAction =
   | { kind: 'use-item'; item: ItemKind; target?: number; value?: number }
   | { kind: 'roll' }
+  | { kind: 'charge'; right: boolean }
   | { kind: 'choose'; option: number }
   | { kind: 'timeout' };
 
@@ -334,6 +357,12 @@ export function itemProblem(s: SpaceState, item: ItemKind, seat = s.turn): strin
   return null;
 }
 
+/** True if the rocket whose turn it is may send its charge answer now (maths on, after its first turn, before rolling, once). */
+export function canCharge(s: SpaceState): boolean {
+  return s.settings.maths && s.phase === 'ready' && !s.turnInfo.rolled && !s.turnInfo.chargeDone
+    && s.rockets[s.turn].hasPlayed === true;
+}
+
 /** The items this rocket could use right now. */
 export function usableItems(s: SpaceState, seat = s.turn): ItemKind[] {
   return [...new Set(s.rockets[seat].items)].filter((item) => itemProblem(s, item, seat) === null);
@@ -352,6 +381,7 @@ export function stepsFor(r: Rocket, t: TurnInfo, die: number): { steps: number; 
   if (r.gravity?.kind === 'heavy') { steps = Math.ceil(steps / 2); changes.push('heavy-gravity'); }
   if (r.anchored) { steps = Math.ceil(steps / 2); changes.push('gravity-anchor'); }
   if (t.booster) { steps += 2; changes.push('booster'); }
+  if (t.mathsCharge) { steps += MATHS_CHARGE_STEPS; changes.push('maths-charge'); }
   if (r.gravity?.kind === 'low') { steps += 2; changes.push('low-gravity'); }
   if (r.solarWind) { steps += 1; changes.push('solar-wind'); }
   return { steps: Math.max(1, steps), changes };
@@ -400,6 +430,11 @@ class Game {
       case 'roll':
         if (s.phase !== 'ready') throw new SpaceRuleError('Make your choice first.');
         return this.roll();
+      case 'charge':
+        if (!canCharge(s)) throw new SpaceRuleError("There's no charge question to answer now.");
+        s.turnInfo.chargeDone = true;
+        if (action.right) s.turnInfo.mathsCharge = true;
+        return this.emit({ kind: 'charge', seat: this.seat, right: action.right });
       case 'choose':
         if (s.phase !== 'choice' || !s.pending) throw new SpaceRuleError("There's nothing to choose.");
         return this.choose(action.option);
@@ -522,6 +557,7 @@ class Game {
     this.emit({ kind: 'roll', seat: this.seat, die, steps, changes });
     // Use up what this roll used.
     t.booster = t.hyperdrive = false;
+    t.mathsCharge = false;
     t.navigator = null;
     me.anchored = false;
     me.solarWind = false;
@@ -603,15 +639,8 @@ class Game {
             this.emit({ kind: 'force-field', seat, square: n });
             return;
           }
-          const pod = me.items.indexOf('escape-pod');
-          if (pod >= 0) {
-            me.items.splice(pod, 1);
-            me.position = n - Math.max(1, Math.floor((n - square.to) / 2));
-            this.emit({ kind: 'black-hole', seat, from: n, to: me.position, escapePod: true });
-          } else {
-            me.position = square.to;
-            this.emit({ kind: 'black-hole', seat, from: n, to: square.to });
-          }
+          if (s.settings.maths) return this.ask({ kind: 'question', square: n, moment: 'black-hole' });
+          this.fallIn(n, square.to);
           continue;
         }
         case 'star':
@@ -629,6 +658,20 @@ class Game {
         case 'nebula':
           return;
       }
+    }
+  }
+
+  /** Falls into the black hole at `n`: half way with an Escape Pod (used up), else all the way. */
+  private fallIn(n: number, to: number) {
+    const me = this.me;
+    const pod = me.items.indexOf('escape-pod');
+    if (pod >= 0) {
+      me.items.splice(pod, 1);
+      me.position = n - halfFall(n, to);
+      this.emit({ kind: 'black-hole', seat: this.seat, from: n, to: me.position, escapePod: true });
+    } else {
+      me.position = to;
+      this.emit({ kind: 'black-hole', seat: this.seat, from: n, to });
     }
   }
 
@@ -722,11 +765,25 @@ class Game {
         }
         return this.afterMove();
       case 'question': {
+        const right = option === 1;
+        const moment = pending.moment ?? 'wormhole';
+        if (moment === 'black-hole') {
+          const square = s.board.squares[pending.square] as { kind: 'black-hole'; to: number };
+          if (right) {
+            me.position = pending.square - halfFall(pending.square, square.to);
+            this.emit({ kind: 'question', seat, correct: true, from: pending.square, to: me.position, moment });
+          } else {
+            this.emit({ kind: 'question', seat, correct: false, from: pending.square, to: pending.square, moment });
+            this.fallIn(pending.square, square.to);
+          }
+          this.land();
+          return this.afterMove();
+        }
         const square = s.board.squares[pending.square] as { kind: 'wormhole'; to: number };
-        const bonus = square.to + 3;
-        const to = option === 1 && bonus < s.board.size && !isLink(s.board.squares[bonus]) ? bonus : square.to;
+        const bonus = square.to + WORMHOLE_BONUS;
+        const to = right && bonus < s.board.size && !isLink(s.board.squares[bonus]) ? bonus : square.to;
         me.position = to;
-        this.emit({ kind: 'question', seat, correct: option === 1, from: pending.square, to });
+        this.emit({ kind: 'question', seat, correct: right, from: pending.square, to, ...(pending.moment ? { moment } : {}) });
         this.land();
         return this.afterMove();
       }
@@ -752,6 +809,7 @@ class Game {
   private nextTurn() {
     const s = this.s;
     s.turnsTaken++;
+    if (s.settings.maths) this.me.hasPlayed = true;
     s.turn = (s.turn + 1) % s.rockets.length;
     if (s.turn === 0) {
       this.newRound();
@@ -840,6 +898,11 @@ class Game {
     s.places = placesFor(s);
     this.emit({ kind: 'game-over', ending, places: s.places });
   }
+}
+
+/** How far an Escape Pod (or a right answer) saves you from a black hole at `n` going to `to`. */
+function halfFall(n: number, to: number): number {
+  return Math.max(1, Math.floor((n - to) / 2));
 }
 
 /** The options a choice has (see SpaceAction). */
