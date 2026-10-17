@@ -1,9 +1,9 @@
-# Dragon maths adventure (LORD-style): plan
+# Dragon Maths: plan
 
 A daily-turns fantasy adventure for the hub, in the spirit of the 1990s BBS door game *Legend of the Red Dragon* (LORD). Visit a small village from a menu, go into the forest a few times a day, fight monsters, buy a better sword, beat your master to level up, and one day face the Red Dragon. **Maths is one of the tools that helps you win**: sizing up a monster, working out the healer's bill, counting change at the shop, cracking a riddle, a master's trial and the dragon fight.
 
 Written 17 October 2026 from James's brief ([prompts/lord-maths.md](prompts/lord-maths.md)) after reading [talisto/LORD.ts](https://github.com/talisto/LORD.ts) (v1.4.6) and the hub's code on `main` and `monsters`.
-**Status: NOT STARTED.** James answers section 14 first.
+**Status: APPROVED 17 Oct 2026, waiting.** James answered every question in section 14 (all my picks, except: start only **after Maths Monsters is live**).
 
 ## The short version
 
@@ -58,7 +58,7 @@ Both are battle adventures with maths, so they need to feel different:
 | Pace | Play as much as you like | A few minutes a day, come back tomorrow |
 | Social | Collection leaderboard | Rival heroes, arena, daily news |
 
-They share the maths engine, the question box, answer records and the teacher's topic switches. That's why this should come **after Maths Monsters N.6** (question 8): its maths packs and saving pieces are on the `monsters` branch, not on `main` yet.
+They share the maths engine, the question box, answer records and the teacher's topic switches. That's why this comes **after Maths Monsters is live** (James, question 8): its maths packs and saving pieces are on the `monsters` branch, not on `main` yet.
 
 ## 3. The village
 
@@ -202,19 +202,19 @@ The server decides everything that matters: gold, exp, HP, turns left, gear.
 
 Each stage ends with tests passing and a results section here, and stops for James's review.
 
-## 14. Questions for James
+## 14. James's answers (17 Oct 2026)
 
-| # | Question | My pick |
+| # | Question | Answer |
 |---|---|---|
-| 1 | **Name.** "Legend of the Red Dragon" belongs to someone else. Something of our own? | e.g. **Dragon Maths** or **The Red Dragon of Kauri Village** |
-| 2 | **Forest fights a day** | **10** (LORD has 15; 10 is about 5-10 minutes) |
-| 3 | **Losing a forest fight** | **Soft:** lose the gold you're carrying (banked gold is safe), keep your exp, wake at the healer, can still keep fighting. LORD's way: lose gold and 10% exp, out until tomorrow |
-| 4 | **Arena opponents** | **Classmates' heroes and computer heroes**, losing costs nothing |
-| 5 | **Gambling games at the inn** (LORD's dice and blackjack) | **Leave them out**, use the number-guess game instead |
-| 6 | **Practice Mode** | **Little gold, no exp** |
-| 7 | **Look** | **Dark BBS style** (rather than the hub's usual look) |
-| 8 | **When** | **After Maths Monsters N.6**, which this needs |
-| 9 | **New season** | **Keep heroes, reset points** (like Maths Monsters) |
+| 1 | Name | **Dragon Maths** |
+| 2 | Forest fights a day | **10** |
+| 3 | Losing a forest fight | **Soft:** lose the gold you're carrying (banked gold is safe), keep your exp, wake at the healer, keep playing |
+| 4 | Arena opponents | **Classmates' heroes and computer heroes**, losing costs nothing |
+| 5 | Inn games | **No gambling:** number-guess, riddle of the day and the bard |
+| 6 | Practice Mode | **A little gold, no exp** |
+| 7 | Look | **Dark BBS style** |
+| 8 | When | **After Maths Monsters is fully live** (not just N.6) |
+| 9 | New season | **Keep heroes, reset points** |
 
 ## Credits to carry over
 
