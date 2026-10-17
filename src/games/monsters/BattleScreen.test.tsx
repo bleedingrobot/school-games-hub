@@ -281,3 +281,42 @@ describe('the battle screen', () => {
     expect(JSON.parse(localStorage.getItem('sgh-monsters-settings')!)).toEqual({ calm: true, multipleChoice: true });
   });
 });
+
+describe('what the battle writes down for saving', () => {
+  it('records every step with the question behind it and the random numbers it drew', async () => {
+    let n = 0;
+    const random = () => [0.1, 0.4, 0.7][n++ % 3];
+    const { user, onFinish } = setup(wild({ foes: [makeMonster('digibud-1', 2)] }), choose, random);
+    await passMessages(user);
+    for (let i = 0; i < 6 && !screen.queryByText('You won!'); i++) {
+      await user.click(screen.getByRole('button', { name: 'Fight' }));
+      await user.click(screen.getByRole('button', { name: /Plus Puddle/ }));
+      await answer(user, true);
+      await passMessages(user);
+    }
+    await user.click(await screen.findByRole('button', { name: 'Continue' }));
+    const result = onFinish.mock.calls[0][0];
+    expect(result.steps.length).toBeGreaterThan(0);
+    for (const step of result.steps) {
+      expect(step.action.kind).toBe('fight');
+      expect(step.q).toMatchObject({ topic: 'add-sub', given: 4, key: 'k' });
+      expect(step.q!.ms).toBeGreaterThanOrEqual(0);
+      expect(step.q!.at).toBeGreaterThan(1_700_000_000_000);
+      expect(step.randoms.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('swaps a switched-off topic for the nearest one that is on, at that topic’s band', async () => {
+    const user = userEvent.setup();
+    const packs = fakePacks();
+    render(
+      <BattleScreen setup={wild({ area: 4, far: true })} settings={choose} onFinish={() => {}} random={() => 0.5} packFor={packs.packFor} timeScale={0} enabledTopics={['division', 'decimals']} />,
+    );
+    await passMessages(user);
+    await user.click(screen.getByRole('button', { name: 'Fight' }));
+    await user.click(screen.getByRole('button', { name: /Plus Puddle/ }));
+    // Plusplash is Water (adding), which is switched off: division is the nearest topic that is on (area 4 far = band 4).
+    expect(packs.asked).toEqual([{ topic: 'division', level: 4, multipleChoice: true }]);
+    await answer(user, true);
+  });
+});

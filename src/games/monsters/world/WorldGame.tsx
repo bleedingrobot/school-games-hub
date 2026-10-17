@@ -46,6 +46,8 @@ export interface WorldGameProps {
   onState?: (s: WorldState) => void;
   /** A battle is over: what happened in it (for saving), and the trainer if it was a trainer battle. Called before the world carries on. */
   onBattle?: (report: BattleReport, trainer?: Thing) => void;
+  /** Something worth saving just happened (the nurse healed the team). */
+  onMoment?: (kind: 'heal') => void;
   /** The topics the teacher left on (every topic when left out). */
   enabledTopics?: readonly TopicId[];
   /** Tests pass a fixed random source and fake questions. */
@@ -70,7 +72,7 @@ const KEYS: Record<string, Dir> = {
 const TALK_KEYS = new Set([' ', 'Enter', 'e', 'E']);
 
 export function WorldGame({
-  initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, teleport, cheat, onBattling, onState, onBattle, enabledTopics, random, packFor, timeScale = 1,
+  initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, teleport, cheat, onBattling, onState, onBattle, onMoment, enabledTopics, random, packFor, timeScale = 1,
 }: WorldGameProps) {
   const [world, setWorld] = useState<WorldState>(initial);
   const [scene, setScene] = useState<Scene2>({ kind: 'walk' });
@@ -89,8 +91,8 @@ export function WorldGame({
 
   // Always-current copies, so the controller's callbacks never use an old one.
   const { soundOn } = useSound();
-  const live = useRef({ scene, talk, menu, settings, onState, onBattle, timeScale, soundOn });
-  live.current = { scene, talk, menu, settings, onState, onBattle, timeScale, soundOn };
+  const live = useRef({ scene, talk, menu, settings, onState, onBattle, onMoment, timeScale, soundOn });
+  live.current = { scene, talk, menu, settings, onState, onBattle, onMoment, timeScale, soundOn };
   /** Plays a sound, but only when the hub's speaker button is on. */
   const cue = useCallback((sound: GameSound) => {
     if (live.current.soundOn) playSound(sound);
@@ -130,6 +132,7 @@ export function WorldGame({
       },
       onTalk: (out: InteractOutcome) => {
         if (out.cue) cue(out.cue);
+        if (out.cue === 'heal') live.current.onMoment?.('heal');
         showTalk({
           speaker: out.talk!.speaker,
           pages: out.talk!.pages,

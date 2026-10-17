@@ -102,8 +102,9 @@ export function MonstersPlay() {
     const timer = window.setInterval(() => {
       if (dirty.current && !battling.current) saveNow();
     }, AUTOSAVE_MS);
-    const hide = () => {
-      if (document.visibilityState === 'hidden') saveNow(true);
+    // The page is being hidden or closed: send what there is (keepalive lets the request finish).
+    const hide = (e: Event) => {
+      if (e.type === 'pagehide' || document.visibilityState === 'hidden') saveNow(true);
     };
     document.addEventListener('visibilitychange', hide);
     window.addEventListener('pagehide', hide);
@@ -202,6 +203,8 @@ export function MonstersPlay() {
         }}
         onState={onState}
         onBattle={onBattle}
+        // The nurse healed the team: that is a place to save (after this step has finished updating).
+        onMoment={() => window.setTimeout(() => saveNow(), 0)}
         onBattling={(on) => {
           battling.current = on;
         }}
