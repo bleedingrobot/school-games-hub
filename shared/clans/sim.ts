@@ -5,6 +5,8 @@
 import { averageLevel, botChores, botOrders } from './bot';
 import { CONFIG } from './config';
 import { dayReset, gainXp, rollMember } from './character';
+import { botEmpire, type EmpireDay } from './empireBot';
+import { buildingTotal, empireNewDay, empireOf, might } from './empire';
 import { nextFloat } from './rng';
 import { bossAt, newFight, playRound, settle, type FightResult } from './fight';
 import type { Clan } from './types';
@@ -38,6 +40,8 @@ export interface SimOptions {
   depthOffset: number;
   /** Rounds the bot answers a Battle Cry at all (1 = every round). */
   askEvery?: number;
+  /** Also run the bot's empire each evening (stage C.4). */
+  empire?: boolean;
 }
 
 export interface DayReport {
@@ -49,6 +53,8 @@ export interface DayReport {
   knockOuts: number;
   rounds: number;
   gold: number;
+  /** Empire figures at the end of the day (only when the empire is on). */
+  empire?: EmpireDay & { vault: number; might: number; buildings: number; barracks: number };
 }
 
 export interface SimReport {
@@ -75,6 +81,7 @@ export function simulate(opts: SimOptions): SimReport {
 
   for (let day = 1; day <= opts.days; day++) {
     dayReset(clan);
+    if (opts.empire && day > 1) empireNewDay(clan);
     const report: DayReport = { day, avgLevel: 0, depth: 0, fights: 0, wins: 0, knockOuts: 0, rounds: 0, gold: 0 };
     for (let n = 0; n < CONFIG.fightsPerDay; n++) {
       botChores(clan);
@@ -105,6 +112,11 @@ export function simulate(opts: SimOptions): SimReport {
       report.depth = depth;
       report.rounds += state.round;
       totalFights++;
+    }
+    if (opts.empire) {
+      const e = empireOf(clan);
+      const today = botEmpire(clan, opts.seed * 1000 + day);
+      report.empire = { ...today, vault: e.vault, might: might(e.troops), buildings: buildingTotal(e), barracks: e.plots.filter((p) => p.building === 'barracks').length };
     }
     report.avgLevel = averageLevel(clan);
     report.gold = clan.gold;

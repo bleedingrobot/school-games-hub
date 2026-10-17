@@ -28,7 +28,10 @@ The `save-bot-game` server function runs exactly this code before saving a resul
   sensible clan, and `sim.ts` plays whole months (`npm run clans:sim`). Stage C.2 adds
   `battleCry.ts` (the question for each round comes from the fight's seed; marks the answer,
   plays the round, replays a whole recorded fight), `moments.ts` (the shop, Training Hall,
-  Church, land and barracks questions, made from the real numbers). See `docs/CLANS-PLAN.md`
+  Church, land and barracks questions, made from the real numbers). Stage C.4 adds `empire.ts`
+  (land, buildings and worker energy, troops, the draft, six computer kingdoms, one-shot
+  battles from two armies, a plan and a seed, Friendly War, and the rule for classmate raids)
+  and `empireBot.ts` (a sensible empire builder for the simulator: `npm run clans:sim -- --empire 1`). See `docs/CLANS-PLAN.md`
   and `docs/CLANS-RULES.md`.
 - `maths/practical.ts`: the question kinds Clan Quest needs (percent of, price with tax,
   change, area and perimeter, remainders, rounding up, troop costs, budgets, ratios, negative

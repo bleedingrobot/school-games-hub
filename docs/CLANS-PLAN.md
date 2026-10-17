@@ -314,3 +314,40 @@ C.3 is built: the whole clan loop you can play in the browser, with maths in the
 - The test strip is open on the clan page and closed on the other screens, so the places fit on a small screen.
 
 **Left for later:** C.4 (empire: land, barracks, troops), sound, a phone-size check of the new screens, hosting VT323 ourselves, the Smithy / Training Hall / Church levels (they stay at 0 until the class village builds them), and the teacher page that replaces the test strip.
+
+## Stage C.4, part A results (18 Oct 2026): the empire engine
+
+The empire rules and numbers are written into [CLANS-RULES.md](CLANS-RULES.md) section 12 (that is the table to read). Built as plain, seeded, replayable code with **no screens, nothing saved, nothing live**; branch `clans`. 4B (the screens) waits for James's OK.
+
+**Built** (`shared/clans/empire.ts`, with a bot in `empireBot.ts`, the simulator extended, new tests in `empire.test.ts`): land (develop, claim more), seven buildings with daily worker energy, troops and barracks room, the draft, the six computer kingdoms, the battle plan and one-shot battle, raids on kingdoms, Friendly War, and the **rule only** for classmate raids (`raidRefusal`, `raidClassmate`, `raidNews`). `moments.ts` gains `lootShare`, and `draftJoin` now words its question about followers (`BuildOptions.about`, wording only).
+
+**Choices I made that James may want to change:**
+- **The empire has its own vault** (as the original and plan section 8 say: raiders never touch the clan purse). It means moving gold across ("Put in / Take out"). One shared purse would be simpler but then a raid could empty the money for the Church.
+- **Each troop kind has its own room in a barracks** (20 / 10 / 5), so the "how many barracks?" question has one clear answer per kind.
+- **Rounds, how hard and loot all matter.** Fewer rounds is a stalemate if you can't break them in time; Bold finishes sooner but more troops are hurt; asking for more loot makes the defenders fight harder. A Friendly War is the place to try a plan.
+- **A new clan can't raid classmates for its first 3 days either** (the plan only said it can't be raided).
+- **Gymnasium** raises the draft limit. My first idea (one more training point a day for everyone) made the mines far too easy (all-fighters win rate 85% to 99%), so it was dropped.
+- **Kingdom raids are limited to 1 a day** (the first try, 2 a day, paid too much).
+
+**What the simulator says** (20 bot clans, 56 days; the bot saves what is over 600 gold for the vault, builds in a fixed order, fills the barracks, tries a Friendly War then raids the toughest kingdom it expects to beat):
+
+| | Mixed clan | All fighters |
+|---|---|---|
+| Barracks built / all 24 buildings, by day | 7 by day 14, all by day 21 | 7 by day 14, 23 by day 21 |
+| Army strength day 14 / 21 / 42 | 106 / 450 / 468 | 101 / 270 / 434 |
+| Raids won (after a Friendly War win first) | all | all |
+| Raid gold a day late on | about 250 | about 250 |
+| Strength lost in a raid | about 10 (about 150 gold) | about 10 |
+| Mines win rate with the empire / without | 96% / 98% | 81% / 85% |
+
+- **Affordable:** a mixed clan has the whole empire (8 barracks, 24 buildings, a full army, 450 strength) by about day 21. An all-fighters clan has the buildings at the same time but fills the barracks by about day 42, because it earns less gold.
+- **Not running out of gold:** the bot keeps 600 in the clan purse. A mixed clan's purse stays healthy early and dips low (under 100) now and then after day 28; an all-fighters clan's purse is low on many days after day 21, **as it already was without an empire** (the Church costs them). So the empire doesn't cause that, but it doesn't fix it either.
+- **The mines are unchanged:** win rates with and without an empire are within 4 points (a test checks it stays under 6) and levels reached by day 30 within 0.6.
+- **Kingdoms are beatable at the right level:** an army of about 15 / 45 / 100 / 175 / 275 / 440 strength wins 80% against the six kingdoms (a test checks that twice a kingdom's strength always wins and half never does). Mills lower that by about 10%. The Bold/Careful choice makes little difference to who wins when there are enough rounds; it changes how many troops are hurt.
+- **Raids are a small bonus, not the main income.** Mines earn about 400-500 a day in the middle game; raids add about 250 for about 150 gold of hurt troops.
+- **After about 3 weeks a mixed clan has built everything and the vault just fills** (about 12,000 by day 56). That is the same gap as before: the village chest (C.6) is meant to take it, or we can add more land claims / more barracks later.
+
+**Checked:** 61 new tests: every rule above (land prices, energy, building limits, barracks room, troop prices, the draft, every classmate-raid guard rail, gold and land only moving between clans, replaying a raid exactly, news lines that never name a student), plus the maths hooks (the land, barracks, troop bill, draft, energy and loot questions each give exactly what the engine does) and the simulator checks. `shared/` and the type check are clean (see the summary for the numbers).
+
+**Left for 4B:** all screens (Empire home, Land, Barracks and troops, Raid and Friendly War, test buttons), the test page, Quests (later), and everything that needs saving (C.5).
+

@@ -12,9 +12,9 @@ import { CONFIG } from './config';
 import { usableBonus } from './character';
 import type { ItemDef, Member } from './types';
 
-function moment(settings: PracticalSettings, kind: PracticalKind, nums: number[], labels?: [string, string], item?: string): PracticalQuestion | null {
+function moment(settings: PracticalSettings, kind: PracticalKind, nums: number[], labels?: [string, string], item?: string, about?: 'followers' | 'loot'): PracticalQuestion | null {
   if (!topicAvailable(settings, topicOf(kind))) return null;
-  return buildQuestion(kind, nums, { labels, item });
+  return buildQuestion(kind, nums, { labels, item, about });
 }
 
 /** Market: "Sword 240 gold, +10% tax: what do you pay?" The answer is the shop price. */
@@ -69,7 +69,10 @@ export const troopBill = (settings: PracticalSettings, footmen: number, axemen: 
 export const energyLeft = (settings: PracticalSettings, ...used: number[]) => moment(settings, 'budget-left', [1, 100, ...used]);
 
 /** Followers and the draft: "50 followers, 20% are drafted: how many join?" */
-export const draftJoin = (settings: PracticalSettings, followers: number, percent: number) => moment(settings, 'percent-of', [percent, followers]);
+export const draftJoin = (settings: PracticalSettings, followers: number, percent: number) => (followers >= 1 && followers <= 5000 ? moment(settings, 'percent-of', [percent, followers], undefined, undefined, 'followers') : null);
+
+/** Raids: "the treasury holds 600 gold and you ask for 10%: how much do you take?" The answer is what the raid really takes. */
+export const lootShare = (settings: PracticalSettings, treasury: number, percent: number) => (treasury >= 1 && treasury <= 5000 && percent > 0 ? moment(settings, 'percent-of', [percent, treasury], undefined, undefined, 'loot') : null);
 
 /** Fame: the points table going below zero (Year 6 only, since the topic only exists there). */
 export const fameChange = (settings: PracticalSettings, start: number, change: number) => moment(settings, 'negative', [start, change]);

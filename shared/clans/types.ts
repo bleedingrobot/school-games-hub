@@ -71,6 +71,47 @@ export interface Village {
   church: number;
 }
 
+export const TROOP_KINDS = ['footman', 'axeman', 'knight'] as const;
+export type TroopKind = (typeof TROOP_KINDS)[number];
+export type Troops = Record<TroopKind, number>;
+
+export const BUILDING_KINDS = ['barracks', 'walls', 'tower', 'steelMill', 'stables', 'gymnasium', 'developersHall'] as const;
+export type BuildingKind = (typeof BUILDING_KINDS)[number];
+
+/** A developed piece of land: width by length squares, with at most one building on it. */
+export interface Plot {
+  width: number;
+  length: number;
+  building?: BuildingKind;
+}
+
+/** The clan's empire. Plain JSON. Days are whole numbers counted from the clan's first day (day 1). */
+export interface Empire {
+  /** The empire's own gold: it pays for land, buildings and troops, and it is what raiders can take. The clan's purse is safe. */
+  vault: number;
+  /** Wild land not yet developed, in plots. */
+  wild: number;
+  /** Extra plots of wild land claimed with gold so far. */
+  claimed: number;
+  plots: Plot[];
+  troops: Troops;
+  /** Share of new followers who join as footmen, 0 to 20. */
+  draftPercent: number;
+  /** Today's day number. */
+  day: number;
+  /** The day the empire began (for new-clan protection). */
+  createdDay: number;
+  /** Worker energy used today, in percent. */
+  energyUsed: number;
+  /** Raids on classmates and on computer kingdoms made today. */
+  raidsToday: number;
+  kingdomRaidsToday: number;
+  /** Nobody can raid this empire on or before this day (set after a raid on it). */
+  shieldUntil: number;
+  /** Classmate empires this one raided today (a clan can be raided by the same empire once a day). */
+  raidedToday: string[];
+}
+
 export interface Clan {
   name: string;
   members: Member[];
@@ -79,4 +120,6 @@ export interface Clan {
   village: Village;
   /** Wake-ups at the Church so far today (the first few are free). Missing means none. */
   wakesToday?: number;
+  /** Missing until the clan opens its empire. */
+  empire?: Empire;
 }

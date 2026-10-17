@@ -73,6 +73,8 @@ export interface BuildOptions {
   labels?: [string, string];
   /** The real thing being bought, for the shop's price and change questions ("Dagger"). Wording only; never marked. */
   item?: string;
+  /** Wording for a "percent of" question: followers joining the draft, or loot from a treasury. Never marked. */
+  about?: 'followers' | 'loot';
 }
 
 const MINUS = '−';
@@ -140,7 +142,7 @@ const KIND_DEFS: Record<PracticalKind, KindDef> = {
     topic: 'percentages',
     bands: YEAR_BANDS,
     valid: (n) => n.length === 2 && n[0] > 0 && n[0] <= 100 && Math.round(n[0] * 10) === n[0] * 10 && whole(n[1], 1, 5000),
-    build([pct, amount]) {
+    build([pct, amount], options) {
       const exact = amount * pct / 100;
       const answer = ceil(exact);
       const rounding = isWhole(exact) ? '' : ' Round up to a whole number.';
@@ -148,7 +150,7 @@ const KIND_DEFS: Record<PracticalKind, KindDef> = {
         `What is ${fmt(pct)}% of ${fmt(amount)}?`,
         `${fmt(amount)} followers watch you win. ${fmt(pct)}% of them join your clan. How many join?`,
         `A chest holds ${fmt(amount)} gold. You may take ${fmt(pct)}% of it. How much is that?`,
-      ][variant([pct, amount], 3)] + rounding;
+      ][options.about === 'followers' ? 1 : options.about === 'loot' ? 2 : variant([pct, amount], 3)] + rounding;
       const working: string[] = [];
       if (PERCENT_WORDS[pct]) {
         const parts = pct === 75 ? 4 : Math.round(100 / pct);

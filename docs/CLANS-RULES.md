@@ -123,8 +123,8 @@ Armour runs Rags (+1 armour, 50) to Hero's Armor (+4, 2250); shields run Wooden 
 | Resurrect | `(level+1) × 750` | **Not needed** (knocked out, never dead) | Plan section 5 |
 | Looking at an item | 25% of price | **25%, kept** | A percentage question |
 | Fame points | +10 win, -10 loss | **Positive only** | Plan section 5 |
-| Land development | Gold per plot | **To set in C.1** | Needs the simulator |
-| Barracks capacity | 20 footmen / 10 axemen / 5 knights | **Same, kept** | |
+| Land development | Gold per plot | **2 gold a square plus 1 gold for each unit of fence** (section 12) | Area and perimeter are the sums behind the price |
+| Barracks capacity | 20 footmen / 10 axemen / 5 knights | **Same, kept** (each kind has its own room) | |
 | Troop prices | 15 / 30 / 60 | **Same, kept (already small)** | |
 | Worker energy | 100% a day | **Same, kept** | |
 
@@ -314,3 +314,55 @@ Boss numbers at 5 and 10 are close to a normal monster of that depth, so the fir
 - [x] Spell "Level" checked against the original's fight code: it makes tie-up and debuff spells harder to shrug off (the engine uses the original's comparison). Level up and damage use the caster's level and wisdom instead.
 - [ ] Decide the Imp's starting gold and the clan's starting purse of 200 (section 5).
 - [ ] Hand to James for a look, then stage C.1.
+
+## 12. The empire (stage C.4, rules and numbers; set 18 Oct 2026, tuned with the simulator)
+
+All of these are in `shared/clans/config.ts` under `empire`. Section 8 of the plan says what the empire is for; this is the rule book. Nothing here is saved or live yet.
+
+**The vault.** The empire has its **own vault**. Land, buildings and troops are paid for from it, and it is the only gold a raider can take. The clan's purse (mine gold, shop, training, Church) is safe. You move gold between them with "Put in" and "Take out". (James can say if he would rather have one purse.)
+
+**Land.** A new empire has **10 plots of wild land**. You **develop** a plot by choosing its sides (each 2 to 6 squares) and paying **2 gold a square plus 1 gold for each unit of fence round it** (a 4 by 5 plot: 20 squares and 18 fence, so 40 + 18 = **58 gold**). When the wild land is used up you can **claim** more for **50 gold, then 25 more each time** (up to 14 extra plots). A plot holds one building.
+
+**Buildings** (size is the squares the plot must have; energy is a share of the day's worker energy; the workers have **100% a day**, and the energy is used up when you build, not after):
+
+| Building | Size | Energy | Gold | Most | What each one does |
+|---|---|---|---|---|---|
+| Barracks | 15 | 30% | 100 | 8 | Holds 20 footmen, 10 axemen and 5 knights |
+| Walls | 6 | 7% | 40 | 5 | Defenders take 10% less damage; raiders destroy 1 fewer building |
+| Tower | 5 | 12% | 60 | 5 | Defenders hit back 10% harder |
+| Steel Mill | 12 | 25% | 120 | 3 | Your raiding army hits 10% harder |
+| Stables | 10 | 20% | 100 | 3 | 20% fewer of the hurt troops are lost |
+| Gymnasium | 10 | 20% | 100 | 2 | The draft can go 5% higher |
+| Developer's Hall | 15 | 35% | 150 | 3 | Developing land costs 10% less |
+
+The Spy and Security buildings and the shops are left out (plan section 8). Energy examples: barracks 30% + walls 7% + tower 12% = 49%, so **51% is left**.
+
+**Troops.** Footman **15** gold, axeman **30**, knight **60**. A barracks gives room for **20 footmen, 10 axemen and 5 knights** (each kind has its own room, so 85 footmen need 5 barracks). In a battle a footman counts **1**, an axeman **2** and a knight **4**: the same as their prices.
+
+**The draft.** The share of new followers who join as footmen is set by the clan from **0 to 20%** in steps of 5 (a Gymnasium adds 5% to the top). Rounded up. They only join if the barracks have room; every follower is used up when you draft, and those not drafted go home.
+
+**Battles.** A battle is settled in one go from two armies, a **battle plan** and a seed:
+- The plan is **how many rounds** (1 to 5), **how hard** (Careful, Steady or Bold) and **how much loot** to ask for (5, 10, 15 or 20%; 10% at most against classmates).
+- Each round both sides lose about a quarter of what they have left, by luck between 60% and 139% of the usual. **Steady** is the usual. **Careful** does 60% of the damage and takes 60% (slow, fewer troops hurt). **Bold** does 150% and takes 150% (quick, more troops hurt).
+- Steel Mills add 10% to the raiders' damage each, Walls cut damage to the defenders by 10% each (so they take 1 ÷ 1.1, 1 ÷ 1.2 and so on), Towers add 10% to the defenders' damage each. Asking for more loot makes the defenders fight harder (asking 20% adds 20% to their damage).
+- When the rounds are over: the **defenders give way** (the raiders win) if they are down to half strength **and** worse off than the raiders; the **raiders fall back** (lose) if the defenders are better off; otherwise it is a **stalemate** and nobody wins.
+- **Hurt troops:** a quarter of the share of its strength a side lost does not come home, less 20% for each Stables. (A side that lost 40% of its strength loses a tenth of its troops.) The rest are back by morning.
+
+**The six computer kingdoms** (they never run out: the treasury fills up again every day):
+
+| Kingdom | Shown as | Troops (footmen / axemen / knights) | Strength | Walls / towers | Treasury | An army of this strength wins about 80% of the time |
+|---|---|---|---|---|---|---|
+| Bunny Hollow | an easy one | 12 / 0 / 0 | 12 | 0 / 0 | 300 | 15 |
+| Pebble Bridge | quite easy | 24 / 6 / 0 | 36 | 0 / 0 | 600 | 45 |
+| Hilltop Hold | a fair fight | 40 / 15 / 3 | 82 | 1 / 0 | 1,000 | 100 |
+| Ironwood | a bit tough | 50 / 30 / 6 | 134 | 2 / 1 | 1,600 | 175 |
+| Stormcrag | tough | 60 / 40 / 14 | 196 | 3 / 2 | 2,500 | 275 |
+| Dragon's Rest | very tough | 80 / 50 / 25 | 280 | 4 / 4 | 3,700 | 440 |
+
+A win takes the share of the treasury you asked for (rounded up). A loss takes nothing. **One raid on a kingdom a day** (the plan said once a day).
+
+**Friendly War.** The same battle against the same kingdoms, but **nobody loses or wins anything** and it does not count as a raid, so you can try a plan as often as you like.
+
+**Raids on classmates (rule only, no screens until C.5).** You choose to take **gold, land or buildings**. A win takes at most **10%** of the vault, or of the empty land (wild land first, never a plot with a building), or of the number of buildings (rounded up, **minus one for each Walls**, and Walls are never knocked down). The guard rails from plan section 8: no raids for the first **3 days** of a clan's life (nor on it), **1 raid a day**, not the same clan twice in a day, a **1-day shield** after being raided (it can't be raided again until the day after tomorrow), only against an empire between **half and double** your army's strength, and a teacher switch. The defender is a saved copy played by the computer with a steady plan. Both sides lose the hurt troops that don't come home. News lines say only "A raider from the Red Banner clan took 40 gold."
+
+**Not done:** Quests (a later small stage), spies, the village chest and votes (C.6), saving the empire (C.5).
