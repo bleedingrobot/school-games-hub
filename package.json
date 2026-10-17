@@ -22,7 +22,8 @@
     "101:sim": "node scripts/101-sim.mjs",
     "clans:sim": "node scripts/clans-sim.mjs",
     "101:preview": "vite build --config vite.101-preview.config.ts",
-    "gem-keep:preview": "vite build --config vite.gem-keep-preview.config.ts"
+    "gem-keep:preview": "vite build --config vite.gem-keep-preview.config.ts",
+    "clans:preview": "vite build --config vite.clans-preview.config.ts"
   },
   "engines": {
     "node": ">=22"

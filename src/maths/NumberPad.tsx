@@ -13,12 +13,15 @@ export function NumberPad({
   onEnter,
   canEnter,
   disabled,
+  onMinus,
 }: {
   onDigit: (digit: string) => void;
   onBack: () => void;
   onEnter: () => void;
   canEnter: boolean;
   disabled?: boolean;
+  /** If given, a minus key is shown (for questions with negative answers). */
+  onMinus?: () => void;
 }) {
   const digit = (d: string) => (
     <button key={d} type="button" className="numpad__key" disabled={disabled} onPointerDown={keepFocus} onClick={() => onDigit(d)}>
@@ -42,6 +45,11 @@ export function NumberPad({
       >
         ✓
       </button>
+      {onMinus ? (
+        <button type="button" className="numpad__key numpad__key--minus" disabled={disabled} aria-label="Minus" onPointerDown={keepFocus} onClick={onMinus}>
+          −
+        </button>
+      ) : null}
     </div>
   );
 }
