@@ -18,7 +18,7 @@
 import { LOADOUT_SIZE, POWER_IDS, play, timeoutTurn, validLoadout } from './engine';
 import { newMatch, nextRound, scoreRound, type Match } from './match';
 import type { PowerClashStats } from './solo';
-import type { Action, GameEvent, Player, PowerId } from './types';
+import type { Action, GameEvent, Player, PowerId, Random } from './types';
 
 export const TURN_MS = 60_000;
 export const NEXT_ROUND_MS = 30_000;
@@ -59,8 +59,8 @@ export function parseLoadout(input: unknown): PowerId[] | null {
 }
 
 /** Round one of a new match. `x` and `o` are the powers of the seat-0 and seat-1 players. */
-export function newLiveGame(x: PowerId[], o: PowerId[]): LiveGame {
-  return { match: newMatch({ X: x, O: o }, 'X'), stats: [freshStats(), freshStats()], timeouts: [0, 0], ready: [false, false] };
+export function newLiveGame(x: PowerId[], o: PowerId[], chaos = false): LiveGame {
+  return { match: newMatch({ X: x, O: o }, 'X', chaos), stats: [freshStats(), freshStats()], timeouts: [0, 0], ready: [false, false] };
 }
 
 const copy = (game: LiveGame): LiveGame => ({
@@ -93,8 +93,15 @@ function noteRound(game: LiveGame, mover: Player, powerThisTurn: PowerId | null)
 /** Plays the engine's result for one action by `mover`, and keeps the score and stats. */
 function applyResult(game: LiveGame, mover: Player, action: Action | null, result: { state: Match['state'] }) {
   const countedBefore = game.match.counted;
+  const before = game.match.state;
   game.match = scoreRound({ ...game.match, state: result.state });
   if (action?.type === 'use-power') game.stats[seatOf(mover)].powersUsed++;
+  // A Time Heist gives the other player back the power they used in the go it undid: it doesn't count as used.
+  if (action?.type === 'use-power' && action.power === 'time-heist') {
+    const foe = seatOf(mover === 'X' ? 'O' : 'X');
+    const back = before.used[mover === 'X' ? 'O' : 'X'].length - result.state.used[mover === 'X' ? 'O' : 'X'].length;
+    game.stats[foe].powersUsed = Math.max(0, game.stats[foe].powersUsed - back);
+  }
   if (!countedBefore && game.match.counted) {
     noteRound(game, mover, result.state.powerThisTurn);
     const winner = game.match.winner;
@@ -107,12 +114,16 @@ export interface Played {
   events: GameEvent[];
 }
 
-/** A player's move. Throws LiveRuleError if it isn't their turn or isn't legal. */
-export function playerAction(previous: LiveGame, seat: number, action: Action): Played {
+/**
+ * A player's move. Throws LiveRuleError if it isn't their turn or isn't legal. `random` is the
+ * dice for Portal Chaos, Wild Card and Chaos Mode: the server always passes its own secure numbers;
+ * the screens never roll anything, they only show the result.
+ */
+export function playerAction(previous: LiveGame, seat: number, action: Action, random: Random = Math.random): Played {
   if (matchIsOver(previous)) throw new LiveRuleError('The match is over.');
   if (roundIsOver(previous)) throw new LiveRuleError('This round is over. Press Next round.');
   if (turnSeat(previous) !== seat) throw new LiveRuleError('It’s not your turn yet.');
-  const result = play(previous.match.state, action);
+  const result = play(previous.match.state, action, random);
   if (!result.ok) throw new LiveRuleError(result.reason);
   const game = copy(previous);
   applyResult(game, sideOf(seat), action, result);
@@ -150,13 +161,13 @@ export interface TimedOut extends Played {
 }
 
 /** The clock ran out: a skipped placement, or the next round starts by itself. */
-export function timeOut(previous: LiveGame): TimedOut {
+export function timeOut(previous: LiveGame, random: Random = Math.random): TimedOut {
   if (matchIsOver(previous)) throw new LiveRuleError('The match is over.');
   if (roundIsOver(previous)) {
     return { game: dealNext(copy(previous)), events: [], abandoned: false, seat: null };
   }
   const seat = turnSeat(previous);
-  const result = timeoutTurn(previous.match.state);
+  const result = timeoutTurn(previous.match.state, random);
   if (!result.ok) throw new LiveRuleError(result.reason);
   const game = copy(previous);
   game.match = { ...game.match, state: result.state };
@@ -174,10 +185,17 @@ export function animationMs(events: readonly GameEvent[]): number {
       case 'body-swap': ms += 1300; break;
       case 'freeze': ms += 1000; break;
       case 'wipe': ms += 1400; break;
+      case 'force-field': ms += 1000; break;
+      case 'portal-chaos': ms += 1500; break;
+      case 'wild-card': ms += 1500; break;
+      case 'time-heist': ms += 1500; break;
+      case 'chaos': ms += 1500; break;
       case 'skip': ms += 700; break;
       case 'win': ms += 2000; break;
       case 'draw': ms += 1500; break;
-      case 'thaw': break;
+      case 'thaw':
+      case 'shield-off':
+        break;
     }
   }
   return Math.min(ms, 6000);

@@ -14,9 +14,9 @@
  */
 import type { BotLevel } from '../botGame';
 import { LINES, legalActions, other, play, POWER_IDS } from './engine';
-import type { Action, Player, PowerClashState, PowerId } from './types';
+import type { Action, Player, PowerClashState, PowerId, Random } from './types';
 
-export type Random = () => number;
+export type { Random };
 
 /** Medium's three powers. Chosen by the simulation (scripts/power-clash-sim.mjs). */
 export const MEDIUM_POWERS: PowerId[] = ['double-trouble', 'body-swap', 'board-wipe'];
@@ -54,9 +54,16 @@ export function chooseAction(state: PowerClashState, level: BotLevel, random: Ra
 
 const isPower = (a: Action) => a.type === 'use-power';
 
+/** A random power action, choosing the card first and then its target (so a card with many targets isn't favoured). */
+function pickPower(random: Random, powers: Action[]): Action {
+  const cards = [...new Set(powers.map((a) => (a.type === 'use-power' ? a.power : '')))];
+  const card = pick(random, cards);
+  return pick(random, powers.filter((a) => a.type === 'use-power' && a.power === card));
+}
+
 function veryEasy(actions: Action[], random: Random): Action {
   const powers = actions.filter(isPower);
-  if (powers.length > 0 && random() < VERY_EASY_POWER) return pick(random, powers);
+  if (powers.length > 0 && random() < VERY_EASY_POWER) return pickPower(random, powers);
   const rest = actions.filter((a) => !isPower(a));
   return pick(random, rest.length ? rest : actions);
 }
@@ -73,7 +80,7 @@ function easy(state: PowerClashState, actions: Action[], random: Random): Action
   if (win && random() < 0.95) return win;
 
   const powers = actions.filter(isPower);
-  if (powers.length > 0 && random() < EASY_POWER) return pick(random, powers);
+  if (powers.length > 0 && random() < EASY_POWER) return pickPower(random, powers);
 
   const places = actions.filter((a) => !isPower(a));
   const pool = places.length ? places : actions;

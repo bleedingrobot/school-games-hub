@@ -38,6 +38,8 @@ export interface PowerClashGameReport {
   /** The student's actions (solo.ts StudentAction). */
   actions: string[];
   ending: ClaimedEnding;
+  /** Chaos Mode game (surprises after every third go). Missing means a normal game. */
+  chaos: boolean;
 }
 
 const powerList = (value: unknown): PowerId[] | null =>
@@ -70,6 +72,7 @@ export function parsePowerClashReport(input: unknown): PowerClashGameReport | nu
     loadouts: { X: x, O: o },
     actions: r.actions as string[],
     ending: r.ending,
+    chaos: r.chaos === true,
   };
 }
 
@@ -100,7 +103,7 @@ export function judgePowerClashGame(report: PowerClashGameReport): PowerClashJud
 
   let replayed: ReturnType<typeof replaySolo>;
   try {
-    replayed = replaySolo({ seed: report.seed, level: report.level, side: report.side, loadout: student }, report.actions);
+    replayed = replaySolo({ seed: report.seed, level: report.level, side: report.side, loadout: student, chaos: report.chaos }, report.actions);
   } catch {
     return { ok: false, problem: 'replay failed' };
   }

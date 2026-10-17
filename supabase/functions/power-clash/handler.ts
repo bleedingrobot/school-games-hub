@@ -490,7 +490,7 @@ async function playerTurn({ services, me, body }: Context, action: Action | null
   if (body.version !== row.version) throw new Refused('changed');
   if (await endIfGone(services, row, me)) throw new Refused('changed');
   if (!roundIsOver(game) && !matchIsOver(game) && turnSeat(game) !== seat) throw new Refused('not-your-turn');
-  const played = rules(() => playerAction(game, seat, action));
+  const played = rules(() => playerAction(game, seat, action, () => services.random()));
   return save(services, row, afterPlay(services, row, played.game, played.events, { real: true }));
 }
 
@@ -527,7 +527,7 @@ async function timesUp({ services, me, body }: Context): Promise<PowerGameRow> {
   if (after) return after;
   const left = Date.parse(row.deadline ?? '') + GRACE_MS - services.now();
   if (!(left <= 0)) throw new Refused('not-yet', { secondsLeft: Number.isFinite(left) ? Math.ceil(left / 1000) : 60 });
-  const out = rules(() => timeOut(game));
+  const out = rules(() => timeOut(game, () => services.random()));
   if (out.abandoned) {
     const leaver = out.seat === null ? null : (seatsOf(row)[out.seat] ?? null);
     return save(services, row, abandonedPatch(services, out.game, leaver));

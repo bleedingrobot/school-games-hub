@@ -183,6 +183,92 @@ describe('Power Clash with a classmate: the board', () => {
   });
 });
 
+describe('the new powers from a classmate', () => {
+  const NEW_A: PowerId[] = ['force-field', 'portal-chaos', 'time-heist'];
+  const NEW_B: PowerId[] = ['wild-card', 'time-heist', 'freeze-ray'];
+
+  /** Ana plays first; the screen is Ana's and has seen the game before `action` arrives from Ben. */
+  async function benPlays(setup: (g: LiveGame) => LiveGame, action: Action, dice: () => number = () => 0.4) {
+    const first = setup(place(newLiveGame(NEW_A, NEW_B), 0, 4));
+    const { session } = sessionFor(rowOf(first, { version: 6, loadouts: [NEW_A, NEW_B] }), 0);
+    const { rerender } = show(session);
+    const played = playerAction(first, 1, action, dice);
+    rerender(ui({ ...session, game: rowOf(played.game, { version: 7, events: played.events, loadouts: [NEW_A, NEW_B] }) }));
+    return played;
+  }
+
+  it('shows all eight kinds of card, and my own can be pressed on my go', async () => {
+    const user = userEvent.setup();
+    const { session, act } = sessionFor(rowOf(newLiveGame(NEW_A, NEW_B), { loadouts: [NEW_A, NEW_B] }), 0);
+    show(session);
+    expect(screen.getByRole('button', { name: /Force Field/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /Wild Card/ })).toBeDisabled(); // Ben's
+    // Time Heist is greyed out on the first go, with the reason on the card.
+    expect(screen.getAllByRole('button', { name: /Time Heist/ })[0]).toBeEnabled();
+    await user.click(screen.getAllByRole('button', { name: /Time Heist/ })[0]);
+    expect(act).not.toHaveBeenCalled();
+    expect(document.querySelector('.pc__message')!.textContent).toBe('Nobody has finished a go yet');
+  });
+
+  it('Force Field: pick my symbol, then it is sent as a power with one target', async () => {
+    const user = userEvent.setup();
+    const g = place(place(newLiveGame(NEW_A, NEW_B), 0, 4), 1, 0);
+    const { session, act } = sessionFor(rowOf(g, { loadouts: [NEW_A, NEW_B] }), 0);
+    show(session);
+    await user.click(screen.getByRole('button', { name: /Force Field/ }));
+    await waitFor(() => expect(cell(5)).toBeEnabled());
+    expect(cell(1)).toBeDisabled(); // their symbol
+    await user.click(cell(5));
+    expect(act).toHaveBeenCalledWith({ action: 'use-power', gameId: 'g1', version: 5, power: 'force-field', targets: [4] });
+  });
+
+  it('Portal Chaos: two taps send two targets', async () => {
+    const user = userEvent.setup();
+    const g = place(place(newLiveGame(NEW_A, NEW_B), 0, 4), 1, 0);
+    const { session, act } = sessionFor(rowOf(g, { loadouts: [NEW_A, NEW_B] }), 0);
+    show(session);
+    await user.click(screen.getByRole('button', { name: /Portal Chaos/ }));
+    expect(screen.getByText('Tap the first symbol')).toBeInTheDocument();
+    await user.click(cell(5));
+    expect(screen.getByText('Tap the second symbol')).toBeInTheDocument();
+    await user.click(cell(1));
+    expect(act).toHaveBeenCalledWith({ action: 'use-power', gameId: 'g1', version: 5, power: 'portal-chaos', targets: [4, 0] });
+  });
+
+  it('their Wild Card shows the wheel and what it landed on, in the message', async () => {
+    await benPlays((g) => g, { type: 'use-power', power: 'wild-card', targets: [] });
+    await waitFor(() => expect(screen.getByText(/Ben Tui: Wild Card! The wheel landed on/)).toBeInTheDocument());
+    expect(document.querySelector('.pc__wheel')).not.toBeNull();
+  });
+
+  it('their Time Heist rewinds my go, and the board shows it', async () => {
+    const first = newLiveGame(NEW_A, NEW_B);
+    const g1 = place(first, 0, 4);
+    const g2 = place(g1, 1, 0);
+    const g3 = place(g2, 0, 8); // my go
+    const { session } = sessionFor(rowOf(g3, { version: 6, loadouts: [NEW_A, NEW_B] }), 0);
+    const { rerender } = show(session);
+    expect(cell(9)).toHaveTextContent('X');
+    const heist = playerAction(g3, 1, { type: 'use-power', power: 'time-heist', targets: [] });
+    rerender(ui({ ...session, game: rowOf(heist.game, { version: 7, events: heist.events, loadouts: [NEW_A, NEW_B] }) }));
+    await waitFor(() => expect(cell(9)).toHaveTextContent(''));
+    expect(screen.getByText(/Ben Tui: Time Heist! The last go never happened/)).toBeInTheDocument();
+    expect(cell(9).className).toContain('pc__cell--rewind');
+    expect(document.querySelector('.pc__board')!.className).toContain('pc__board--rewind');
+  });
+
+  it('a protected symbol shows its shield and is named as protected', () => {
+    const g = place(playerAction(place(newLiveGame(NEW_A, NEW_B), 0, 4), 1, { type: 'place', square: 0 }).game, 0, 8);
+    const guarded = playerAction(g, 1, { type: 'place', square: 1 }).game;
+    const withShield = { ...guarded, match: { ...guarded.match, state: { ...guarded.match.state, shields: [{ square: 4, owner: 'X' as const }] } } };
+    const { session } = sessionFor(rowOf(withShield, { loadouts: [NEW_A, NEW_B] }), 0);
+    show(session);
+    expect(cell(5).getAttribute('aria-label')).toMatch(/X, protected/);
+    expect(document.querySelector('.pc__shield')).not.toBeNull();
+    expect(document.querySelector('.pc__chaosbadge')).toBeNull(); // classmates games are never Chaos Mode
+  });
+});
+
 describe('the clock', () => {
   it('shows the server’s countdown as a number', () => {
     const { session, clock } = sessionFor(rowOf(newLiveGame(ANA, BEN)), 0);

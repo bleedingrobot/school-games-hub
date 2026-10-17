@@ -37,10 +37,16 @@ function world() {
 
   const copy = (g: PowerGameRow | undefined) => (g ? structuredClone(g) : null);
   const random = seeded(11);
+  /** Every number the server's dice gave out, in order. */
+  const rolled: number[] = [];
 
   const services: Services = {
     now: () => clock,
-    random,
+    random: () => {
+      const value = random();
+      rolled.push(value);
+      return value;
+    },
     userIdFor: async (token) => (token.endsWith('-token') && players.has(token.slice(0, -6)) ? token.slice(0, -6) : null),
     playerStatus: async (player, others = []) => {
       const p = players.get(player);
@@ -169,6 +175,7 @@ function world() {
     ask,
     waiting,
     started,
+    rolled,
     turnOf,
     playTurn,
     playRound,
@@ -303,7 +310,7 @@ describe('picking powers and starting', () => {
   it('refuses powers that aren’t three different real powers, or picking after the start', async () => {
     const w = world();
     const g = await w.waiting();
-    for (const powers of [['body-swap'], ['body-swap', 'body-swap', 'freeze-ray'], ['body-swap', 'freeze-ray', 'time-heist'], 'x', null]) {
+    for (const powers of [['body-swap'], ['body-swap', 'body-swap', 'freeze-ray'], ['body-swap', 'freeze-ray', 'teleport'], 'x', null]) {
       expect((await w.ask('ana', { action: 'set-powers', gameId: g.id, powers })).problem).toBe('bad-request');
     }
     expect((await w.ask('cat', { action: 'set-powers', gameId: g.id, powers: ANA })).problem).toBe('not-yours');
@@ -353,7 +360,7 @@ describe('playing', () => {
     expect((await move(x, { square: 9 })).problem).toBe('bad-request');
     expect((await move(x, { square: 'x' })).problem).toBe('bad-request');
     expect((await w.ask(x, { action: 'skip', gameId: g.id, version: g.version })).problem).toBe('illegal');
-    expect((await w.ask(x, { action: 'use-power', gameId: g.id, version: g.version, power: 'time-heist', targets: [] })).problem).toBe('bad-request');
+    expect((await w.ask(x, { action: 'use-power', gameId: g.id, version: g.version, power: 'teleport', targets: [] })).problem).toBe('bad-request');
     // a power you don't have
     const hasNo = w.games.get(g.id)!.game!.match.state.loadout.X.includes('board-wipe') ? 'double-trouble' : 'board-wipe';
     const refused = await w.ask(x, { action: 'use-power', gameId: g.id, version: g.version, power: hasNo, targets: [4] });
@@ -448,6 +455,97 @@ describe('playing', () => {
       }
     }
     expect(match).toEqual(w.games.get(g.id)!.game!.match);
+  });
+});
+
+describe('the new powers and the server\'s dice', () => {
+  const FIELD: PowerId[] = ['force-field', 'portal-chaos', 'wild-card'];
+  const HEIST: PowerId[] = ['time-heist', 'wild-card', 'portal-chaos'];
+
+  it('plays whole matches with them: a client replaying with the server\'s dice ends in the same state', async () => {
+    const used = new Set<string>();
+    for (let match = 0; match < 3; match++) {
+      const w = world();
+      for (let burn = 0; burn < match * 7; burn++) w.services.random();
+      const g = await w.started(FIELD, HEIST);
+      const log: { action: Action | 'next'; dice: number[] }[] = [];
+      for (let n = 0; w.games.get(g.id)!.status === 'playing' && n < 1500; n++) {
+        const row = w.games.get(g.id)!;
+        if (row.game!.match.state.status !== 'active') {
+          await w.ask(row.seat1!, { action: 'next', gameId: g.id });
+          await w.ask(row.seat2!, { action: 'next', gameId: g.id });
+          log.push({ action: 'next', dice: [] });
+          continue;
+        }
+        const action = chooseAction(row.game!.match.state, 'easy', seeded(n + 31 * match));
+        const body = action.type === 'place' ? { square: action.square } : action.type === 'use-power' ? { power: action.power, targets: action.targets } : {};
+        const before = w.rolled.length;
+        const done = await w.ask(w.turnOf(g.id), { action: action.type, gameId: g.id, version: row.version, ...body });
+        expect(done.status).toBe(200);
+        if (action.type === 'use-power') used.add(action.power);
+        log.push({ action, dice: w.rolled.slice(before) });
+      }
+      let client: Match = newMatch(w.games.get(g.id)!.game!.match.loadout, 'X');
+      for (const entry of log) {
+        if (entry.action === 'next') client = nextRound(client);
+        else {
+          let i = 0;
+          const r = play(client.state, entry.action, () => entry.dice[i++]);
+          if (!r.ok) throw new Error(r.reason);
+          client = scoreRound({ ...client, state: r.state });
+        }
+      }
+      expect(client).toEqual(w.games.get(g.id)!.game!.match);
+      expect(w.games.get(g.id)!.status).toBe('finished');
+    }
+    // The bots chose these at random, so over three matches at least some of the new powers were played.
+    expect([...used].filter((p) => ['force-field', 'portal-chaos', 'wild-card', 'time-heist'].includes(p)).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('shows the engine\'s events for a Wild Card in the row both players read, and uses a charge', async () => {
+    const w = world();
+    const g = await w.started(FIELD, HEIST);
+    const first = w.turnOf(g.id);
+    await w.ask(first, { action: 'place', gameId: g.id, version: g.version, square: 4 });
+    const row = w.games.get(g.id)!;
+    const second = w.turnOf(g.id);
+    const used = 'wild-card';
+    const done = await w.ask(second, { action: 'use-power', gameId: g.id, version: row.version, power: used, targets: [] });
+    expect(done.status).toBe(200);
+    expect(done.game!.events[0]).toMatchObject({ kind: 'wild-card' });
+    const state = done.game!.game!.match.state;
+    expect(state.used[state.active]).toEqual([used]);
+  });
+
+  it('refuses a Time Heist with nothing to undo, says why, and keeps the charge', async () => {
+    const w = world();
+    const g = await w.started(HEIST, HEIST);
+    const who = w.turnOf(g.id);
+    const refused = await w.ask(who, { action: 'use-power', gameId: g.id, version: g.version, power: 'time-heist', targets: [] });
+    expect(refused.status).toBe(400);
+    expect(refused.problem).toBe('illegal');
+    expect(refused.error).toMatch(/finished a go/);
+    expect(w.games.get(g.id)!.version).toBe(g.version);
+    expect(w.games.get(g.id)!.game!.match.state.used.X).toEqual([]);
+  });
+
+  it('refuses a Portal Chaos or Force Field that is aimed wrong', async () => {
+    const w = world();
+    const g = await w.started(FIELD, HEIST);
+    const who = w.turnOf(g.id);
+    const bad = await w.ask(who, { action: 'use-power', gameId: g.id, version: g.version, power: 'force-field', targets: [4] });
+    expect(bad.problem).toBe('illegal');
+    const junk = await w.ask(who, { action: 'use-power', gameId: g.id, version: g.version, power: 'portal-chaos', targets: [1, 2, 3] });
+    expect(junk.problem).toBe('bad-request');
+    const unknown = await w.ask(who, { action: 'use-power', gameId: g.id, version: g.version, power: 'teleport', targets: [] });
+    expect(unknown.problem).toBe('bad-request');
+  });
+
+  it('a missed go uses the server\'s dice too (no Chaos Mode here, so nothing is rolled), and classmates games are never Chaos Mode', async () => {
+    const w = world();
+    const g = await w.started(FIELD, HEIST);
+    expect(g.game!.match.chaos).toBe(false);
+    expect(g.game!.match.state.chaos).toBe(false);
   });
 });
 

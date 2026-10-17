@@ -177,3 +177,51 @@
 .pcl .pc__score { flex-wrap: wrap; justify-content: center; }
 @media (max-width: 860px) { .pcl .pc__score { white-space: normal; } }
 .pcl__picker h2 { color: #fff; }
+
+/* ---- P.6: Force Field, Portal Chaos, Wild Card, Time Heist and Chaos Mode ---- */
+.pc__stage { position: relative; width: 100%; display: flex; justify-content: center; }
+.pc__cell--shield { box-shadow: inset 0 0 0 3px #a5f3fc, 0 0 12px 2px rgba(165, 243, 252, 0.7); }
+.pc__shield { position: absolute; top: 3px; right: 5px; font-size: 1.1rem; line-height: 1; text-shadow: none; }
+.pc__cell--shielding { animation: pc-dome 0.8s ease-out; }
+.pc__cell--portal { animation: pc-portal 0.9s ease-in-out; z-index: 2; }
+.pc__cell--rewind { animation: pc-rewind-cell 0.8s ease-in; z-index: 2; }
+.pc__cell--chaos-meteor { animation: pc-blast 0.7s ease-out; }
+.pc__cell--chaos-frost-wave { animation: pc-frost 0.9s ease-out; }
+.pc__board--rewind { animation: pc-rewind 0.8s ease-in-out; }
+@keyframes pc-dome { 0% { box-shadow: 0 0 0 0 #a5f3fc, inset 0 0 0 3px #a5f3fc; transform: scale(1.18); } 100% { box-shadow: 0 0 18px 4px rgba(165, 243, 252, 0.7), inset 0 0 0 3px #a5f3fc; transform: none; } }
+@keyframes pc-portal { 0% { transform: translate(calc(var(--dx, 0) * 108%), calc(var(--dy, 0) * 108%)) rotate(0) scale(0.3); filter: hue-rotate(120deg) brightness(1.8); } 60% { transform: rotate(300deg) scale(1.2); } 100% { transform: none; filter: none; } }
+@keyframes pc-rewind-cell { 0% { transform: rotate(-200deg) scale(1.6); opacity: 0.1; filter: hue-rotate(160deg); } 100% { transform: none; opacity: 1; filter: none; } }
+@keyframes pc-rewind { 0%, 100% { filter: none; transform: none; } 50% { filter: hue-rotate(160deg) saturate(1.6); transform: scale(0.97) rotate(-1.5deg); } }
+
+.pc__chaos {
+  position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); z-index: 5; display: flex; align-items: center; gap: 8px;
+  padding: 6px 18px; border-radius: 999px; background: #6d28d9; border: 3px solid #fde047; color: #fff; white-space: nowrap;
+  font: 900 1.15rem/1.2 var(--display); pointer-events: none; animation: pc-banner 2.6s both;
+}
+.pc__chaos-icon { font-size: 1.5rem; }
+@keyframes pc-banner { 0% { opacity: 0; transform: translate(-50%, -150%) scale(0.6); } 12% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); } 20%, 85% { opacity: 1; transform: translate(-50%, -50%); } 100% { opacity: 0; } }
+.pc__chaosbadge { margin: 4px auto 0; width: fit-content; max-width: 100%; padding: 2px 12px; border-radius: 999px; background: #6d28d9; border: 2px solid #fde047; font-weight: 800; font-size: 0.85rem; text-align: center; }
+@media (min-width: 861px) {
+  .pc--chaos .pc__board { width: min(100%, max(240px, calc(100dvh - 292px))); }
+  .pc--setup .pc__setup-cols:not(.pc__setup-cols--one) .pc__panel ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.pc__mode--chaos.pc__mode--on { border-color: #c084fc; background: #6d28d9; }
+.pc__lead--chaos { color: #e9d5ff; }
+
+.pc__wheel {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 6; pointer-events: none; min-width: 9rem;
+  padding: 10px 20px; border-radius: 18px; background: #3b2a8f; border: 3px solid #fde047; text-align: center; color: #fff;
+  font: 900 1.25rem/1.2 var(--display); display: grid; place-items: center;
+}
+.pc__wheel > * { grid-area: 1 / 1; }
+.pc__wheel-spin { display: grid; font-size: 2.4rem; animation: pc-gone 0.01s 1.3s forwards; }
+.pc__wheel-spin > span { grid-area: 1 / 1; opacity: 0; animation: pc-flick 0.6s steps(1) 2 both; }
+.pc__wheel-spin > span:nth-child(2) { animation-delay: 0.15s; }
+.pc__wheel-spin > span:nth-child(3) { animation-delay: 0.3s; }
+.pc__wheel-spin > span:nth-child(4) { animation-delay: 0.45s; }
+.pc__wheel-result { animation: pc-reveal 0.3s 1.3s backwards; }
+@keyframes pc-flick { 0% { opacity: 1; } 25%, 100% { opacity: 0; } }
+@keyframes pc-gone { to { visibility: hidden; } }
+@keyframes pc-reveal { from { opacity: 0; transform: scale(0.6); } }
+.pc--calm .pc__wheel-spin { display: none; }
+@media (prefers-reduced-motion: reduce) { .pc__wheel-spin { display: none; } }

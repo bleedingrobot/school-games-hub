@@ -19,6 +19,8 @@ export interface SimOptions {
   b: BotLevel;
   matches: number;
   seed: string;
+  /** Chaos Mode: a surprise every third go. */
+  chaos?: boolean;
   /** Override the powers instead of letting each level choose (for picking Medium's set). */
   powers?: { a?: PowerId[]; b?: PowerId[] };
 }
@@ -56,7 +58,7 @@ export function simulate(options: SimOptions): SimReport {
       [sideOf.b]: options.powers?.b ?? chooseLoadout(options.b, random),
     } as Record<Player, PowerId[]>;
     const levelOf = { [sideOf.a]: options.a, [sideOf.b]: options.b } as Record<Player, BotLevel>;
-    let match = newMatch(loadout, 'X');
+    let match = newMatch(loadout, 'X', options.chaos);
     let n = 0;
     while (match.winner === null && n < 400) {
       const state = match.state;
@@ -70,7 +72,7 @@ export function simulate(options: SimOptions): SimReport {
       slowest = Math.max(slowest, ms);
       totalMs += ms;
       decisions++;
-      const result = play(state, action);
+      const result = play(state, action, random);
       if (!result.ok) throw new Error(`Bot made an illegal move: ${result.reason}`);
       actions[state.active === sideOf.a ? 'a' : 'b']++;
       match = scoreRound({ ...match, state: result.state });

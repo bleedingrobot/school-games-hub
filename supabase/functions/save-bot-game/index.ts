@@ -3597,8 +3597,17 @@ const POWER_IDS = [
 	"double-trouble",
 	"body-swap",
 	"freeze-ray",
-	"board-wipe"
+	"board-wipe",
+	"force-field",
+	"portal-chaos",
+	"wild-card",
+	"time-heist"
 ];
+/**
+* The dice used when nobody passes any: always the middle choice. Only for a bot looking ahead
+* (it can't know how the dice will fall) and for tests. A real game always passes its own.
+*/
+const FIXED_RANDOM = () => .5;
 const LINES = [
 	[
 		0,
@@ -3648,24 +3657,46 @@ function winningLine(board, player) {
 function validLoadout(powers) {
 	return powers.length === 3 && new Set(powers).size === 3 && powers.every((p) => POWER_IDS.includes(p));
 }
-function newRound(loadout, starter) {
-	if (!validLoadout(loadout.X) || !validLoadout(loadout.O)) throw new Error("Each player needs three different powers");
+const pickFrom = (random, list) => list[Math.min(list.length - 1, Math.floor(random() * list.length))];
+/** How things stand right now, for Time Heist to come back to. */
+function snapshot(state, heist = false) {
 	return {
+		board: state.board.slice(),
+		frozen: state.frozen.map((f) => ({ ...f })),
+		shields: state.shields.map((s) => ({ ...s })),
+		used: {
+			X: [...state.used.X],
+			O: [...state.used.O]
+		},
+		heist
+	};
+}
+function newRound(loadout, starter, chaos = false) {
+	if (!validLoadout(loadout.X) || !validLoadout(loadout.O)) throw new Error("Each player needs three different powers");
+	const base = {
 		board: Array(9).fill(null),
+		frozen: [],
+		shields: [],
+		used: {
+			X: [],
+			O: []
+		}
+	};
+	return {
+		...base,
 		active: starter,
 		status: "active",
 		loadout: {
 			X: [...loadout.X],
 			O: [...loadout.O]
 		},
-		used: {
-			X: [],
-			O: []
-		},
-		frozen: [],
 		powerThisTurn: null,
 		placesLeft: 1,
-		line: null
+		line: null,
+		chaos,
+		turns: 0,
+		turnStart: snapshot(base),
+		rewind: null
 	};
 }
 /** Squares the active player may place on right now. */
@@ -3677,24 +3708,218 @@ function placeableSquares(state) {
 function hasPower(state, player, power) {
 	return state.loadout[player].includes(power) && !state.used[player].includes(power);
 }
+const shieldedSquares = (state) => new Set(state.shields.map((s) => s.square));
+/** Squares holding a symbol (of `who`, or anyone) that no Force Field protects. */
+function unprotected(state, who) {
+	const shielded = shieldedSquares(state);
+	return state.board.flatMap((c, i) => c !== null && (who === void 0 || c === who) && !shielded.has(i) ? [i] : []);
+}
+/** Would this board give `me`'s opponent a line and not `me`? The dice never allow that. */
+const handsOverWin = (board, me) => winningLine(board, other(me)) !== null && winningLine(board, me) === null;
+/**
+* Every way the portals can throw the symbols on `a` and `b`: the first goes to `to[0]`, the
+* second to `to[1]`, two different squares among a, b and the empty squares that aren't
+* frozen. The board always ends up different, and the other player never gets a line from it.
+*/
+function portalOutcomes(state, a, b, limit = Infinity) {
+	const me = state.active;
+	const frozen = new Set(state.frozen.map((f) => f.square));
+	const pool = [
+		a,
+		b,
+		...state.board.flatMap((c, i) => c === null && !frozen.has(i) ? [i] : [])
+	].sort((x, y) => x - y);
+	const same = state.board[a] === state.board[b];
+	const out = [];
+	for (const d1 of pool) for (const d2 of pool) {
+		if (d1 === d2 || d1 === a && d2 === b || same && d1 === b && d2 === a) continue;
+		const board = state.board.slice();
+		board[a] = null;
+		board[b] = null;
+		board[d1] = state.board[a];
+		board[d2] = state.board[b];
+		if (handsOverWin(board, me)) continue;
+		out.push([d1, d2]);
+		if (out.length >= limit) return out;
+	}
+	return out;
+}
+const WILD_EFFECTS = [
+	"bonus",
+	"freeze",
+	"swap",
+	"remove"
+];
+const swapped = (board, a, b) => {
+	const next = board.slice();
+	next[a] = board[b];
+	next[b] = board[a];
+	return next;
+};
+/** Everything the Wild Card could do right now: only legal targets, never touching protection, never handing over a win. */
+function wildOutcomes(state) {
+	const me = state.active;
+	const they = other(me);
+	const out = [];
+	if (placeableSquares(state).length >= 2) out.push({ effect: "bonus" });
+	const frozenForThem = new Set(state.frozen.filter((f) => f.blockedFor === they).map((f) => f.square));
+	state.board.forEach((c, i) => {
+		if (c === null && !frozenForThem.has(i)) out.push({
+			effect: "freeze",
+			square: i
+		});
+	});
+	for (const a of unprotected(state, me)) for (const b of unprotected(state, they)) if (!handsOverWin(swapped(state.board, a, b), me)) out.push({
+		effect: "swap",
+		squares: [a, b]
+	});
+	for (const i of unprotected(state)) out.push({
+		effect: "remove",
+		square: i
+	});
+	return out;
+}
+const CHAOS_KINDS = [
+	"earthquake",
+	"frost-wave",
+	"meteor",
+	"lucky-star",
+	"recharge"
+];
+/** The surprises that could happen now, for the player about to move. None of them can make a line. */
+function chaosOutcomes(state) {
+	const next = state.active;
+	const out = [];
+	const x = unprotected(state, "X");
+	const o = unprotected(state, "O");
+	for (const a of x) for (const b of o) {
+		const board = swapped(state.board, a, b);
+		if (!winningLine(board, "X") && !winningLine(board, "O")) out.push({
+			event: "earthquake",
+			squares: [a, b]
+		});
+	}
+	const placeable = placeableSquares(state);
+	const frozen = new Set(state.frozen.map((f) => f.square));
+	if (placeable.length >= 3) {
+		for (const i of placeable) if (!frozen.has(i)) out.push({
+			event: "frost-wave",
+			squares: [i]
+		});
+	}
+	for (const i of unprotected(state)) out.push({
+		event: "meteor",
+		squares: [i]
+	});
+	if (placeable.length >= 2) out.push({
+		event: "lucky-star",
+		squares: []
+	});
+	for (const power of state.used[next]) out.push({
+		event: "recharge",
+		squares: [],
+		power
+	});
+	return out;
+}
+/** The surprise after a finished go. `state.active` is already the player about to move. */
+function chaosEvent(state, events, random) {
+	const options = chaosOutcomes(state);
+	const kinds = CHAOS_KINDS.filter((k) => options.some((o) => o.event === k));
+	if (kinds.length === 0) return state;
+	const kind = pickFrom(random, kinds);
+	const chosen = pickFrom(random, options.filter((o) => o.event === kind));
+	const affects = state.active;
+	let next = state;
+	switch (chosen.event) {
+		case "earthquake":
+			next = {
+				...state,
+				board: swapped(state.board, chosen.squares[0], chosen.squares[1])
+			};
+			break;
+		case "frost-wave":
+			next = {
+				...state,
+				frozen: [...state.frozen, {
+					square: chosen.squares[0],
+					blockedFor: affects
+				}]
+			};
+			break;
+		case "meteor": {
+			const board = state.board.slice();
+			board[chosen.squares[0]] = null;
+			next = {
+				...state,
+				board
+			};
+			break;
+		}
+		case "lucky-star":
+			next = {
+				...state,
+				placesLeft: 2
+			};
+			break;
+		case "recharge": next = {
+			...state,
+			used: {
+				...state.used,
+				[affects]: state.used[affects].filter((p) => p !== chosen.power)
+			}
+		};
+	}
+	events.push({
+		kind: "chaos",
+		event: chosen.event,
+		affects,
+		squares: [...chosen.squares],
+		...chosen.event === "recharge" ? { power: chosen.power } : {}
+	});
+	return next;
+}
 /** Squares the active player can pick for the next target of a power. [] = none. */
 function targetChoices(state, power, picked) {
 	const me = state.active;
 	const they = other(me);
 	const all = state.board.map((_, i) => i);
 	switch (power) {
-		case "double-trouble": return [];
+		case "double-trouble":
+		case "wild-card":
+		case "time-heist": return [];
 		case "body-swap":
-			if (picked.length === 0) return all.filter((i) => state.board[i] === me);
-			if (picked.length === 1) return all.filter((i) => state.board[i] === they);
+			if (picked.length === 0) return unprotected(state, me);
+			if (picked.length === 1) return unprotected(state, they);
 			return [];
 		case "freeze-ray": return picked.length === 0 ? all.filter((i) => state.board[i] === null) : [];
-		case "board-wipe": return picked.length === 0 ? all.filter((i) => state.board[i] !== null) : [];
+		case "board-wipe": return picked.length === 0 ? unprotected(state) : [];
+		case "force-field": return picked.length === 0 ? unprotected(state, me) : [];
+		case "portal-chaos":
+			if (picked.length === 0) return unprotected(state).filter((a) => unprotected(state).some((b) => b !== a && portalOutcomes(state, a, b, 1).length > 0));
+			if (picked.length === 1) return unprotected(state).filter((b) => b !== picked[0] && portalOutcomes(state, picked[0], b, 1).length > 0);
+			return [];
 	}
 }
 function targetsNeeded(power) {
-	return power === "body-swap" ? 2 : power === "double-trouble" ? 0 : 1;
+	switch (power) {
+		case "body-swap":
+		case "portal-chaos": return 2;
+		case "double-trouble":
+		case "wild-card":
+		case "time-heist": return 0;
+		default: return 1;
+	}
 }
+const sameStuff = (a, b) => {
+	const key = (s) => JSON.stringify([
+		s.board,
+		[...s.frozen].sort((p, q) => p.square - q.square),
+		[...s.shields].sort((p, q) => p.square - q.square),
+		s.used
+	]);
+	return key(a) === key(b);
+};
 /** Why the active player can't play this power right now, or null if they can. */
 function powerBlockedReason(state, power) {
 	if (state.status !== "active") return "The round is over";
@@ -3702,9 +3927,17 @@ function powerBlockedReason(state, power) {
 	if (state.powerThisTurn) return "One power per turn";
 	switch (power) {
 		case "double-trouble": return placeableSquares(state).length >= 2 ? null : "Needs two squares you can place on";
-		case "body-swap": return targetChoices(state, power, []).length > 0 && targetChoices(state, power, [0]).length > 0 ? null : "Needs one X and one O on the board";
+		case "body-swap": return targetChoices(state, power, []).length > 0 && targetChoices(state, power, [0]).length > 0 ? null : state.shields.length > 0 ? "Needs one X and one O that aren’t protected" : "Needs one X and one O on the board";
 		case "freeze-ray": return targetChoices(state, power, []).length > 0 ? null : "Needs an empty square";
-		case "board-wipe": return targetChoices(state, power, []).length > 0 ? null : "Needs a symbol on the board";
+		case "board-wipe": return targetChoices(state, power, []).length > 0 ? null : state.shields.length > 0 ? "Needs a symbol that isn’t protected" : "Needs a symbol on the board";
+		case "force-field": return targetChoices(state, power, []).length > 0 ? null : "Needs one of your symbols that isn’t protected";
+		case "portal-chaos": return targetChoices(state, power, []).length > 0 ? null : "Needs two symbols that aren’t protected";
+		case "wild-card": return wildOutcomes(state).length > 0 ? null : "Nothing wild can happen right now";
+		case "time-heist":
+			if (!state.rewind) return "Nobody has finished a go yet";
+			if (state.rewind.heist) return "A Time Heist can’t be undone";
+			if (sameStuff(state.rewind, snapshot(state))) return "Their last go changed nothing";
+			return null;
 	}
 }
 /** Win/draw check after any board change. The player who just acted wins ties. */
@@ -3734,18 +3967,33 @@ function judge(state, mover, events) {
 	}
 	return state;
 }
-function endTurn(state, events) {
+function endTurn(state, events, random) {
 	const done = state.active;
 	for (const f of state.frozen) if (f.blockedFor === done) events.push({
 		kind: "thaw",
 		square: f.square
 	});
-	return {
+	for (const s of state.shields) if (s.owner !== done) events.push({
+		kind: "shield-off",
+		square: s.square
+	});
+	let next = {
 		...state,
 		frozen: state.frozen.filter((f) => f.blockedFor !== done),
+		shields: state.shields.filter((s) => s.owner === done),
 		active: other(done),
 		powerThisTurn: null,
-		placesLeft: 1
+		placesLeft: 1,
+		turns: state.turns + 1,
+		rewind: {
+			...state.turnStart,
+			heist: state.powerThisTurn === "time-heist"
+		}
+	};
+	if (next.chaos && next.turns % 3 === 0) next = chaosEvent(next, events, random);
+	return {
+		...next,
+		turnStart: snapshot(next)
 	};
 }
 function legalSkip(state) {
@@ -3770,13 +4018,16 @@ function legalActions(state) {
 				});
 				return;
 			}
-			for (const square of targetChoices(state, power, picked)) walk([...picked, square]);
+			for (const square of targetChoices(state, power, picked)) {
+				if (power === "portal-chaos" && picked.length === 1 && square < picked[0]) continue;
+				walk([...picked, square]);
+			}
 		};
 		walk([]);
 	}
 	return actions;
 }
-function play(state, action) {
+function play(state, action, random = FIXED_RANDOM) {
 	if (state.status !== "active") return {
 		ok: false,
 		reason: "The round is over"
@@ -3794,7 +4045,7 @@ function play(state, action) {
 		});
 		return {
 			ok: true,
-			state: endTurn(state, events),
+			state: endTurn(state, events, random),
 			events
 		};
 	}
@@ -3821,7 +4072,7 @@ function play(state, action) {
 			state: next,
 			events
 		};
-		if (next.placesLeft <= 0 || placeableSquares(next).length === 0) next = endTurn(next, events);
+		if (next.placesLeft <= 0 || placeableSquares(next).length === 0) next = endTurn(next, events, random);
 		return {
 			ok: true,
 			state: next,
@@ -3860,10 +4111,7 @@ function play(state, action) {
 			break;
 		case "body-swap": {
 			const [a, b] = targets;
-			const board = state.board.slice();
-			board[a] = state.board[b];
-			board[b] = state.board[a];
-			next.board = board;
+			next.board = swapped(state.board, a, b);
 			events.push({
 				kind: "body-swap",
 				player: me,
@@ -3893,13 +4141,107 @@ function play(state, action) {
 			});
 			break;
 		}
+		case "force-field":
+			next.shields = [...state.shields, {
+				square: targets[0],
+				owner: me
+			}];
+			events.push({
+				kind: "force-field",
+				player: me,
+				square: targets[0]
+			});
+			break;
+		case "portal-chaos": {
+			const [a, b] = targets;
+			const [d1, d2] = pickFrom(random, portalOutcomes(state, a, b));
+			const board = state.board.slice();
+			board[a] = null;
+			board[b] = null;
+			board[d1] = state.board[a];
+			board[d2] = state.board[b];
+			next.board = board;
+			events.push({
+				kind: "portal-chaos",
+				player: me,
+				from: [a, b],
+				to: [d1, d2]
+			});
+			break;
+		}
+		case "wild-card": {
+			const all = wildOutcomes(state);
+			const effect = pickFrom(random, WILD_EFFECTS.filter((e) => all.some((o) => o.effect === e)));
+			const chosen = pickFrom(random, all.filter((o) => o.effect === effect));
+			events.push({
+				kind: "wild-card",
+				player: me,
+				effect
+			});
+			switch (chosen.effect) {
+				case "bonus":
+					next.placesLeft = 2;
+					events.push({
+						kind: "double-trouble",
+						player: me
+					});
+					break;
+				case "freeze":
+					next.frozen = [...state.frozen, {
+						square: chosen.square,
+						blockedFor: other(me)
+					}];
+					events.push({
+						kind: "freeze",
+						player: me,
+						square: chosen.square
+					});
+					break;
+				case "swap":
+					next.board = swapped(state.board, chosen.squares[0], chosen.squares[1]);
+					events.push({
+						kind: "body-swap",
+						player: me,
+						squares: chosen.squares
+					});
+					break;
+				case "remove": {
+					const board = state.board.slice();
+					board[chosen.square] = null;
+					next.board = board;
+					events.push({
+						kind: "wipe",
+						player: me,
+						square: chosen.square
+					});
+					break;
+				}
+			}
+			break;
+		}
+		case "time-heist": {
+			const back = state.rewind;
+			events.push({
+				kind: "time-heist",
+				player: me,
+				board: state.board.slice()
+			});
+			next = {
+				...next,
+				board: back.board.slice(),
+				frozen: back.frozen.map((f) => ({ ...f })),
+				shields: back.shields.map((s) => ({ ...s })),
+				used: {
+					...back.used,
+					[me]: [...back.used[me], power]
+				},
+				rewind: null,
+				turns: Math.max(0, state.turns - 1)
+			};
+			break;
+		}
 	}
 	next = judge(next, me, events);
-	if (next.status !== "active") return {
-		ok: true,
-		state: next,
-		events
-	};
 	return {
 		ok: true,
 		state: next,
@@ -3940,9 +4282,15 @@ function chooseAction(state, level, random) {
 	return medium(state, actions, random);
 }
 const isPower = (a) => a.type === "use-power";
+/** A random power action, choosing the card first and then its target (so a card with many targets isn't favoured). */
+function pickPower(random, powers) {
+	const cards = [...new Set(powers.map((a) => a.type === "use-power" ? a.power : ""))];
+	const card = pick(random, cards);
+	return pick(random, powers.filter((a) => a.type === "use-power" && a.power === card));
+}
 function veryEasy(actions, random) {
 	const powers = actions.filter(isPower);
-	if (powers.length > 0 && random() < VERY_EASY_POWER) return pick(random, powers);
+	if (powers.length > 0 && random() < VERY_EASY_POWER) return pickPower(random, powers);
 	const rest = actions.filter((a) => !isPower(a));
 	return pick(random, rest.length ? rest : actions);
 }
@@ -3956,7 +4304,7 @@ function easy(state, actions, random) {
 	const win = actions.find((a) => wins(state, a, me));
 	if (win && random() < .95) return win;
 	const powers = actions.filter(isPower);
-	if (powers.length > 0 && random() < EASY_POWER) return pick(random, powers);
+	if (powers.length > 0 && random() < EASY_POWER) return pickPower(random, powers);
 	const places = actions.filter((a) => !isPower(a));
 	const pool = places.length ? places : actions;
 	if (random() < EASY_SLIP) return pick(random, pool);
@@ -4039,7 +4387,7 @@ function medium(state, actions, random) {
 	const top = ranked[0].value;
 	return pick(random, ranked.filter((r) => r.value === top)).action;
 }
-function newMatch(loadout, starter = "X") {
+function newMatch(loadout, starter = "X", chaos = false) {
 	return {
 		score: {
 			X: 0,
@@ -4049,7 +4397,8 @@ function newMatch(loadout, starter = "X") {
 		round: 1,
 		loadout,
 		starter,
-		state: newRound(loadout, starter),
+		chaos,
+		state: newRound(loadout, starter, chaos),
 		winner: null,
 		counted: false
 	};
@@ -4080,7 +4429,7 @@ function nextRound(match, loadout = match.loadout) {
 		round: match.round + 1,
 		loadout,
 		starter,
-		state: newRound(loadout, starter),
+		state: newRound(loadout, starter, match.chaos),
 		counted: false
 	};
 }
@@ -4099,9 +4448,10 @@ function startSolo(setup) {
 		match: newMatch({
 			X: setup.side === "X" ? setup.loadout : bot,
 			O: setup.side === "O" ? setup.loadout : bot
-		}, "X"),
+		}, "X", setup.chaos === true),
 		botMoves: 0,
 		studentMoves: 0,
+		rolls: 0,
 		stats: {
 			powersUsed: 0,
 			bodySwapWins: 0,
@@ -4130,8 +4480,9 @@ function noteRound(solo, mover, powerThisTurn) {
 /** Plays one action for whoever's turn it is, and keeps the score and stats. Throws if it isn't legal. */
 function applyAction(solo, action) {
 	const before = solo.match.state;
-	const result = play(before, action);
+	const result = play(before, action, randomFromSeed(`${solo.setup.seed}:roll:${solo.rolls}`));
 	if (!result.ok) throw new Error(result.reason);
+	solo.rolls++;
 	const mover = before.active;
 	const countedBefore = solo.match.counted;
 	solo.match = scoreRound({
@@ -4139,6 +4490,10 @@ function applyAction(solo, action) {
 		state: result.state
 	});
 	if (action.type === "use-power" && mover === solo.setup.side) solo.stats.powersUsed++;
+	if (action.type === "use-power" && action.power === "time-heist" && mover !== solo.setup.side) {
+		const back = before.used[solo.setup.side].length - result.state.used[solo.setup.side].length;
+		solo.stats.powersUsed = Math.max(0, solo.stats.powersUsed - back);
+	}
 	if (!countedBefore && solo.match.counted) {
 		noteRound(solo, mover, result.state.powerThisTurn);
 		if (solo.match.winner === solo.setup.side && solo.stats.powersUsed === 0) solo.stats.noPowerWin = true;
@@ -4259,7 +4614,8 @@ function parsePowerClashReport(input) {
 			O: o
 		},
 		actions: r.actions,
-		ending: r.ending
+		ending: r.ending,
+		chaos: r.chaos === true
 	};
 }
 /** Replays the match from its seed and works out the result. The stamp is checked separately. */
@@ -4280,7 +4636,8 @@ function judgePowerClashGame(report) {
 			seed: report.seed,
 			level: report.level,
 			side: report.side,
-			loadout: student
+			loadout: student,
+			chaos: report.chaos
 		}, report.actions);
 	} catch {
 		return {
@@ -4897,6 +5254,7 @@ async function savePowerClashGame(player, body, services, reply) {
 			seed: report.seed,
 			side: report.side,
 			loadouts: report.loadouts,
+			chaos: report.chaos,
 			roundsWon: game.roundsWon,
 			roundsLost: game.roundsLost,
 			roundsDrawn: game.roundsDrawn,

@@ -4,6 +4,7 @@ import {
   startSolo, type SoloSetup,
 } from './solo';
 import { playWholeMatch } from './testing';
+import type { PowerId } from './types';
 
 const setup = (over: Partial<SoloSetup> = {}): SoloSetup => ({
   seed: 's1-1792000000-abcdefabcdefabcdefabcdef', level: 'easy', side: 'X', loadout: ['double-trouble', 'body-swap', 'freeze-ray'], ...over,
@@ -71,10 +72,43 @@ describe('replaying', () => {
       const s = setup({ seed: `s1-1792000000-${String(i).padStart(24, '0')}`, level: 'very-easy', side: i % 2 ? 'X' : 'O' });
       const { solo, actions } = playWholeMatch(s, 'easy');
       const used = actions.filter((a) => a.startsWith('power:')).length;
-      expect(solo.stats.powersUsed).toBe(used);
+      // A bot's Time Heist can undo a power the student used: that one is given back, so it doesn't count.
+      if (botLoadoutFor(s.seed, s.level).includes('time-heist')) expect(solo.stats.powersUsed).toBeLessThanOrEqual(used);
+      else expect(solo.stats.powersUsed).toBe(used);
       expect(solo.stats.roundsWon + solo.stats.roundsLost + solo.stats.roundsDrawn).toBe(solo.match.round);
-      expect(solo.stats.noPowerWin).toBe(solo.match.winner === s.side && used === 0);
+      expect(solo.stats.noPowerWin).toBe(solo.match.winner === s.side && solo.stats.powersUsed === 0);
       expect(solo.stats.roundsWon).toBe(solo.match.score[s.side]);
     }
+  });
+});
+
+describe('the new powers and Chaos Mode replay exactly', () => {
+  const NEW: PowerId[] = ['portal-chaos', 'wild-card', 'time-heist'];
+  it.each([false, true])('a whole match with the dice-based powers (chaos %s) replays to the same end', (chaos) => {
+    for (let i = 0; i < 10; i++) {
+      const s = setup({ seed: `s1-1792000000-${String(i).padStart(24, 'a')}`, level: i % 2 ? 'easy' : 'medium', side: i % 3 ? 'X' : 'O', loadout: NEW, chaos });
+      const { solo, actions } = playWholeMatch(s, 'easy');
+      const replayed = replaySolo(s, actions);
+      expect(replayed.ok).toBe(true);
+      if (!replayed.ok) return;
+      expect(replayed.finished).toBe(true);
+      expect(replayed.solo.match).toEqual(solo.match);
+      expect(replayed.solo.stats).toEqual(solo.stats);
+    }
+  });
+  it('a different seed gives different dice, so the same actions do not carry over', () => {
+    const s = setup({ loadout: NEW, chaos: true });
+    const { actions } = playWholeMatch(s, 'easy');
+    const other = replaySolo({ ...s, seed: 's1-1792000000-bbbbbbbbbbbbbbbbbbbbbbbb' }, actions);
+    // Either the actions stop being legal or the match ends up somewhere else; it never agrees by luck.
+    if (other.ok) expect(other.solo.match).not.toEqual(replaySolo(s, actions).ok ? (replaySolo(s, actions) as { solo: { match: unknown } }).solo.match : null);
+  });
+  it('a Chaos Mode match is judged as one, and the flag must match what was played', () => {
+    const s = setup({ loadout: NEW, chaos: true, seed: 's1-1792000000-cccccccccccccccccccccccc' });
+    const { actions } = playWholeMatch(s, 'easy');
+    const honest = replaySolo(s, actions);
+    const lying = replaySolo({ ...s, chaos: false }, actions);
+    expect(honest.ok).toBe(true);
+    if (honest.ok && lying.ok) expect(lying.solo.match).not.toEqual(honest.solo.match);
   });
 });

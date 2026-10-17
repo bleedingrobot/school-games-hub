@@ -10,12 +10,17 @@ import {
   LOADOUT_SIZE, legalSkip, placeableSquares, play, powerBlockedReason, targetChoices, validLoadout,
 } from '../../../shared/power-clash/engine';
 import { newMatch, nextRound, scoreRound, ROUNDS_TO_WIN, type Match } from '../../../shared/power-clash/match';
-import type { Action, Cell, GameEvent, Player, PowerClashState, PowerId } from '../../../shared/power-clash/types';
+import type { Action, GameEvent, Player, PowerClashState, PowerId } from '../../../shared/power-clash/types';
 import { useSound } from '../../sound';
-import { playSound, type GameSound } from '../sounds';
+import { playSound } from '../sounds';
+import {
+  ChaosBanner, WildWheel, boardClasses, cellFx, cellLabel, chaosCountdown, describe, makeFx, particles, shoutKindFor, soundFor, swapVars, type Fx,
+} from './fx';
 import { PowerClashGuide } from './Guide';
-import { BOT_NAMES, POWERS, TEXT, botLine, powerInfo, shout, type ShoutKind } from './text';
+import { BOT_NAMES, POWERS, TEXT, botLine, powerInfo, shout } from './text';
 import './power-clash.css';
+
+export { SOUNDS, cellFx, cellLabel, describe, particles, swapVars, type Fx } from './fx';
 
 type Loadouts = Record<Player, PowerId[]>;
 const DEFAULT_LOADOUTS: Loadouts = {
@@ -67,13 +72,6 @@ export interface PowerClashProps {
   timeScale?: number;
 }
 
-export interface Fx {
-  key: number;
-  events: GameEvent[];
-  /** What stood on the wiped square before the blast, so it can fly off. */
-  wiped: Cell;
-}
-
 export function useReducedMotion() {
   const [reduced, setReduced] = useState(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
   useEffect(() => {
@@ -85,10 +83,6 @@ export function useReducedMotion() {
   }, []);
   return reduced;
 }
-
-export const SOUNDS: Partial<Record<GameEvent['kind'], GameSound>> = {
-  place: 'tap', 'double-trouble': 'zap', 'body-swap': 'swap', freeze: 'freeze', wipe: 'boom', skip: 'end', win: 'win', draw: 'draw',
-};
 
 /**
  * Two players on one screen, or one player against a bot. All the rules come from
@@ -104,6 +98,8 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
   const [loadouts, setLoadouts] = useState<Loadouts>(DEFAULT_LOADOUTS);
   const [mine, setMine] = useState<PowerId[]>(MY_DEFAULT_POWERS);
   const [mode, setMode] = useState<'pass' | 'bot'>('pass');
+  const [chaos, setChaos] = useState(false);
+  const [overlay, setOverlay] = useState(false);
   const [side, setSide] = useState<Player>('X');
   const [level, setLevel] = useState<BotLevel>(levelProp);
   const [bot, setBot] = useState<BotSession | null>(null);
@@ -157,7 +153,7 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
     const { seed, level: botLevel, side: mySide, loadout } = solo.setup;
     const botPowers = botLoadoutFor(seed, botLevel);
     const loadouts = mySide === 'X' ? { X: loadout, O: botPowers } : { X: botPowers, O: loadout };
-    return { game: 'power-clash', seed, stamp, level: botLevel, side: mySide, loadouts, actions: [...actionsRef.current], ending };
+    return { game: 'power-clash', seed, stamp, level: botLevel, side: mySide, loadouts, actions: [...actionsRef.current], ending, chaos: solo.setup.chaos === true };
   }
 
   /** Saves the match as soon as the rules say it's over. */
@@ -257,7 +253,7 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
       startingRef.current = false;
       setStarting(false);
     }
-    const solo = startSolo({ seed: stamped?.seed ?? newSeed(), level, side, loadout: mine });
+    const solo = startSolo({ seed: stamped?.seed ?? newSeed(), level, side, loadout: mine, chaos });
     soloRef.current = solo;
     stampRef.current = stamped?.stamp ?? null;
     actionsRef.current = [];
@@ -282,6 +278,8 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
           helpButton={helpBtn}
           mode={mode}
           onMode={setMode}
+          chaos={chaos}
+          onChaos={setChaos}
           side={side}
           onSide={setSide}
           mine={mine}
@@ -298,7 +296,7 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
             setFx(null);
             setShoutText('');
             if (mode === 'bot') void startBotGame();
-            else setMatch(newMatch(loadouts));
+            else setMatch(newMatch(loadouts, 'X', chaos));
           }}
         />
         {help}
@@ -321,33 +319,26 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
   /** Shows what just happened: the message, animations, shouts and sound. The engine has already decided it. */
   function present(prev: PowerClashState, events: GameEvent[], scored: Match, actor: 'pass' | 'you' | 'bot') {
     setSelected(null);
-    setMessage(actor === 'bot' ? botLine(events) : describe(events.map((e) => e.kind)));
+    setMessage(actor === 'bot' ? botLine(events) : describe(events));
     setMatch(scored);
-    const wipe = events.find((e) => e.kind === 'wipe');
     plays.current += 1;
-    setFx({ key: plays.current, events, wiped: wipe ? prev.board[wipe.square] : null });
+    setFx(makeFx(plays.current, prev, scored.state, events));
 
-    const kinds = events.map((e) => e.kind);
-    let big: ShoutKind | null = null;
-    if (scored.winner) big = 'match';
-    else if (kinds.includes('win')) big = 'win';
-    else if (kinds.includes('draw')) big = 'draw';
-    else big = (['body-swap', 'freeze-ray', 'board-wipe', 'double-trouble'] as const).find((p) =>
-      kinds.includes(p === 'freeze-ray' ? 'freeze' : p === 'board-wipe' ? 'wipe' : p),
-    ) ?? (kinds.includes('skip') ? 'skip' : null);
+    const big = shoutKindFor(events, scored.winner !== null);
     setShoutText(big ? shout(big, plays.current) : '');
 
     if (live.current.soundOn) {
-      const order: GameEvent['kind'][] = ['win', 'draw', 'wipe', 'freeze', 'body-swap', 'double-trouble', 'skip', 'place'];
-      const first = order.find((k) => kinds.includes(k));
-      if (first) playSound(SOUNDS[first]!);
+      const sound = soundFor(events);
+      if (sound) playSound(sound);
     }
 
     setBusy(true);
+    setOverlay(true);
     timers.current.forEach((t) => window.clearTimeout(t));
     timers.current = [
       window.setTimeout(() => setBusy(false), (live.current.calm ? LOCK_CALM_MS : LOCK_MS) * live.current.timeScale),
       window.setTimeout(() => setShoutText(''), 1800),
+      window.setTimeout(() => setOverlay(false), 2600),
     ];
   }
 
@@ -370,7 +361,8 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
       else scheduleBot(live.current.calm ? LOCK_CALM_MS : LOCK_MS);
       return;
     }
-    const result = play(state, action);
+    // Two players on one screen: nothing to replay, so the dice are just random.
+    const result = play(state, action, Math.random);
     if (!result.ok) {
       setMessage(result.reason);
       return;
@@ -450,12 +442,8 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
 
   const fxOf = (i: number) => cellFx(fx, i);
   const kinds = fx?.events.map((e) => e.kind) ?? [];
-  const boardFx = [
-    kinds.includes('double-trouble') ? 'pc__board--zap' : '',
-    kinds.includes('wipe') || kinds.includes('win') ? 'pc__board--shake' : '',
-    kinds.includes('win') ? 'pc__board--win' : '',
-    kinds.includes('draw') ? 'pc__board--draw' : '',
-  ].join(' ');
+  const boardFx = boardClasses(fx);
+  const shieldedNow = new Set(state.shields.map((sh) => sh.square));
 
   const saveNote: Record<SaveStatus, string> = {
     practice: 'Practice game: this one won’t be saved.',
@@ -467,7 +455,7 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
   };
 
   return (
-    <section className={`pc ${calm ? 'pc--calm' : ''}`} aria-label={TEXT.name}>
+    <section className={`pc ${calm ? 'pc--calm' : ''} ${state.chaos ? 'pc--chaos' : ''}`} aria-label={TEXT.name}>
       <header className="pc__top">
         <h1>{TEXT.name}</h1>
         {helpBtn}
@@ -477,18 +465,23 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
           <span className="pc__o">{bot ? shortName('O') : 'O'} {match.score.O}</span>
         </p>
       </header>
+      {state.chaos ? <p className="pc__chaosbadge">🌀 Chaos Mode: {over ? 'surprises make every round different' : chaosCountdown(state)}</p> : null}
 
       <div className="pc__table">
         <PowerPanel player="X" match={match} selected={selected} onChoose={choosePower} locked={locked} name={bot ? nameOf('X') : undefined} isBot={foe === 'X'} />
         <section className="pc__middle">
           <p className="pc__prompt" role="status" aria-live="polite">{prompt}</p>
           <p className="pc__shout" aria-hidden="true" key={fx?.key}>{shoutText}</p>
+          <div className="pc__stage">
+          <ChaosBanner fx={fx} show={overlay} />
+          <WildWheel fx={fx} show={overlay} />
           <div className={`pc__board ${boardFx}`} role="group" aria-label="Board" aria-busy={locked || thinking}>
             {state.board.map((cell, i) => {
               const enabled = !over && !locked && choices.includes(i);
               const winning = state.line?.includes(i);
               const frozen = frozenNow.has(i) && cell === null;
               const chosen = selected?.picked.includes(i);
+              const shielded = shieldedNow.has(i) && cell !== null;
               return (
                 <button
                   type="button"
@@ -499,17 +492,19 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
                     enabled && selected ? 'pc__cell--target' : '',
                     winning ? 'pc__cell--win' : '',
                     frozen ? 'pc__cell--frozen' : '',
+                    shielded ? 'pc__cell--shield' : '',
                     chosen ? 'pc__cell--chosen' : '',
                     fxOf(i),
                   ].join(' ')}
                   key={`${i}-${fx?.key ?? 0}`}
                   style={swapVars(fx, i)}
                   disabled={!enabled}
-                  aria-label={cellLabel(i, cell, frozen)}
+                  aria-label={cellLabel(i, cell, frozen, shielded)}
                   onClick={() => tapSquare(i)}
                 >
                   {cell ?? ''}
                   {frozen ? <span className="pc__ice" aria-hidden="true">❄️</span> : null}
+                  {shielded ? <span className="pc__shield" aria-hidden="true">🛡️</span> : null}
                   {fx?.wiped && kinds.includes('wipe') && fx.events.some((e) => e.kind === 'wipe' && e.square === i) ? (
                     <span className={`pc__fly pc__fly--${fx.wiped}`} aria-hidden="true">{fx.wiped}</span>
                   ) : null}
@@ -517,6 +512,7 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
                 </button>
               );
             })}
+          </div>
           </div>
           <p className="pc__message" role="status" aria-live="polite">{message}</p>
           <div className="pc__actions">
@@ -550,7 +546,7 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
                     }
                     return;
                   }
-                  if (match.winner) setMatch(newMatch(match.loadout, match.starter === 'X' ? 'O' : 'X'));
+                  if (match.winner) setMatch(newMatch(match.loadout, match.starter === 'X' ? 'O' : 'X', match.chaos));
                   else setMatch(null);
                 }}
               >
@@ -595,54 +591,6 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
       {help}
     </section>
   );
-}
-
-/** Which animation class a square gets, read from the engine's events. */
-export function cellFx(fx: Fx | null, i: number): string {
-  if (!fx) return '';
-  const out: string[] = [];
-  for (const e of fx.events) {
-    if (e.kind === 'place' && e.square === i) out.push('pc__cell--pop');
-    if (e.kind === 'body-swap' && e.squares.includes(i)) out.push('pc__cell--swap');
-    if (e.kind === 'freeze' && e.square === i) out.push('pc__cell--frosting');
-    if (e.kind === 'wipe' && e.square === i) out.push('pc__cell--blast');
-    if (e.kind === 'win' && e.line.includes(i)) out.push('pc__cell--cheer');
-  }
-  return out.join(' ');
-}
-
-/** For a Body Swap: how far (in squares) each symbol slides to reach where it now sits. */
-export function swapVars(fx: Fx | null, i: number): React.CSSProperties | undefined {
-  const e = fx?.events.find((ev) => ev.kind === 'body-swap');
-  if (!e || e.kind !== 'body-swap' || !e.squares.includes(i)) return undefined;
-  const other = e.squares[0] === i ? e.squares[1] : e.squares[0];
-  return { '--dx': (other % 3) - (i % 3), '--dy': Math.floor(other / 3) - Math.floor(i / 3) } as React.CSSProperties;
-}
-
-/** A few short-lived sparks on the square where something big happened. */
-export function particles(fx: Fx | null, i: number) {
-  if (!fx) return null;
-  const hit = fx.events.some(
-    (e) => (e.kind === 'wipe' && e.square === i) || (e.kind === 'freeze' && e.square === i) || (e.kind === 'win' && e.line.includes(i)),
-  );
-  if (!hit) return null;
-  return Array.from({ length: 6 }, (_, n) => (
-    <span key={n} className="pc__particle" aria-hidden="true" style={{ '--a': `${n * 60 + 20}deg` } as React.CSSProperties} />
-  ));
-}
-
-export function cellLabel(i: number, cell: Player | null, frozen: boolean) {
-  const where = `Row ${Math.floor(i / 3) + 1}, column ${(i % 3) + 1}`;
-  return `${where}: ${cell ?? (frozen ? 'frozen, empty' : 'empty')}`;
-}
-
-export function describe(kinds: string[]): string {
-  if (kinds.includes('double-trouble')) return 'Double Trouble! Two symbols this turn.';
-  if (kinds.includes('body-swap')) return 'Body Swap! They traded places.';
-  if (kinds.includes('freeze')) return 'Freeze Ray! That square is frozen for one turn.';
-  if (kinds.includes('wipe')) return 'Board Wipe! Gone.';
-  if (kinds.includes('skip')) return 'Missed a go.';
-  return '';
 }
 
 export function PowerPanel({
@@ -698,7 +646,7 @@ export function PowerPanel({
 }
 
 function Setup({
-  loadouts, onChange, onStart, helpButton, mode, onMode, side, onSide, mine, onMine, level, onLevel, starting, saves,
+  loadouts, onChange, onStart, helpButton, mode, onMode, chaos, onChaos, side, onSide, mine, onMine, level, onLevel, starting, saves,
 }: {
   loadouts: Loadouts;
   onChange: (l: Loadouts) => void;
@@ -706,6 +654,8 @@ function Setup({
   helpButton: React.ReactNode;
   mode: 'pass' | 'bot';
   onMode: (m: 'pass' | 'bot') => void;
+  chaos: boolean;
+  onChaos: (on: boolean) => void;
   side: Player;
   onSide: (p: Player) => void;
   mine: PowerId[];
@@ -760,6 +710,20 @@ function Setup({
           Play a bot
         </button>
       </fieldset>
+      <fieldset className="pc__modes">
+        <legend>Which rules?</legend>
+        <button type="button" className={`pc__mode ${!chaos ? 'pc__mode--on' : ''}`} aria-pressed={!chaos} onClick={() => onChaos(false)}>
+          Normal
+        </button>
+        <button type="button" className={`pc__mode pc__mode--chaos ${chaos ? 'pc__mode--on' : ''}`} aria-pressed={chaos} onClick={() => onChaos(true)}>
+          🌀 Chaos Mode
+        </button>
+      </fieldset>
+      {chaos ? (
+        <p className="pc__lead pc__lead--chaos">
+          <strong>Chaos Mode:</strong> after every third go, a surprise happens! An earthquake, a meteor, a frost wave, a lucky star or a recharge. Everything else works as normal.
+        </p>
+      ) : null}
       <p className="pc__lead">
         {vsBot ? 'You and a bot. ' : 'Two players, one screen. '}
         {vsBot ? 'Pick' : 'Each of you picks'} <strong>{LOADOUT_SIZE} different powers</strong>.

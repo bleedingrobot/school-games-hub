@@ -13,6 +13,8 @@
  *   "next"               start the next round (after a round that didn't end the match)
  *
  * Rounds alternate who starts; the student is X or O for the whole match, and X starts round 1.
+ * Random powers (Portal Chaos, Wild Card) and Chaos Mode surprises take their dice from the seed too:
+ * action number N uses `seed:roll:N`.
  */
 import type { BotLevel } from '../botGame';
 import { randomFromSeed } from '../space/random';
@@ -30,6 +32,8 @@ export interface SoloSetup {
   side: Player;
   /** The student's three powers. */
   loadout: PowerId[];
+  /** Chaos Mode: a surprise after every third go. */
+  chaos?: boolean;
 }
 
 /** What the student did in a match, for the badges. */
@@ -51,6 +55,8 @@ export interface SoloGame {
   /** How many moves the bot has made (each one has its own random source). */
   botMoves: number;
   studentMoves: number;
+  /** How many actions have been played so far; each one gets its own dice from the seed (`seed:roll:N`). */
+  rolls: number;
   stats: PowerClashStats;
 }
 
@@ -67,9 +73,10 @@ export function startSolo(setup: SoloSetup): SoloGame {
   const loadouts = { X: setup.side === 'X' ? setup.loadout : bot, O: setup.side === 'O' ? setup.loadout : bot };
   return {
     setup,
-    match: newMatch(loadouts, 'X'),
+    match: newMatch(loadouts, 'X', setup.chaos === true),
     botMoves: 0,
     studentMoves: 0,
+    rolls: 0,
     stats: { powersUsed: 0, bodySwapWins: 0, noPowerWin: false, roundsWon: 0, roundsLost: 0, roundsDrawn: 0 },
   };
 }
@@ -96,12 +103,19 @@ function noteRound(solo: SoloGame, mover: Player, powerThisTurn: PowerId | null)
 /** Plays one action for whoever's turn it is, and keeps the score and stats. Throws if it isn't legal. */
 function applyAction(solo: SoloGame, action: Action): GameEvent[] {
   const before = solo.match.state;
-  const result = play(before, action);
+  // Portal Chaos, Wild Card and Chaos Mode surprises roll their dice from the seed, so a replay lands the same way.
+  const result = play(before, action, randomFromSeed(`${solo.setup.seed}:roll:${solo.rolls}`));
   if (!result.ok) throw new Error(result.reason);
+  solo.rolls++;
   const mover = before.active;
   const countedBefore = solo.match.counted;
   solo.match = scoreRound({ ...solo.match, state: result.state });
   if (action.type === 'use-power' && mover === solo.setup.side) solo.stats.powersUsed++;
+  // A Time Heist gives the other player back the power they used in the go it undid: it doesn't count as used.
+  if (action.type === 'use-power' && action.power === 'time-heist' && mover !== solo.setup.side) {
+    const back = before.used[solo.setup.side].length - result.state.used[solo.setup.side].length;
+    solo.stats.powersUsed = Math.max(0, solo.stats.powersUsed - back);
+  }
   if (!countedBefore && solo.match.counted) {
     noteRound(solo, mover, result.state.powerThisTurn);
     if (solo.match.winner === solo.setup.side && solo.stats.powersUsed === 0) solo.stats.noPowerWin = true;

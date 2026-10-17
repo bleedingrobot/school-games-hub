@@ -10,6 +10,8 @@ export interface Match {
   round: number;
   loadout: Record<Player, PowerId[]>;
   starter: Player;
+  /** Chaos Mode: a surprise every third go. */
+  chaos: boolean;
   state: PowerClashState;
   /** Set when someone has won three rounds. */
   winner: Player | null;
@@ -17,14 +19,15 @@ export interface Match {
   counted: boolean;
 }
 
-export function newMatch(loadout: Record<Player, PowerId[]>, starter: Player = 'X'): Match {
+export function newMatch(loadout: Record<Player, PowerId[]>, starter: Player = 'X', chaos = false): Match {
   return {
     score: { X: 0, O: 0 },
     draws: 0,
     round: 1,
     loadout,
     starter,
-    state: newRound(loadout, starter),
+    chaos,
+    state: newRound(loadout, starter, chaos),
     winner: null,
     counted: false,
   };
@@ -51,7 +54,7 @@ export function nextRound(match: Match, loadout: Record<Player, PowerId[]> = mat
     round: match.round + 1,
     loadout,
     starter,
-    state: newRound(loadout, starter),
+    state: newRound(loadout, starter, match.chaos),
     counted: false,
   };
 }

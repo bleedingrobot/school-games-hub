@@ -102,6 +102,7 @@ export interface PowerClashRow extends Omit<GameRow, 'game'> {
     seed: string;
     side: PowerClashGameReport['side'];
     loadouts: PowerClashGameReport['loadouts'];
+    chaos: boolean;
     roundsWon: number;
     roundsLost: number;
     roundsDrawn: number;
@@ -275,6 +276,7 @@ async function savePowerClashGame(
       seed: report.seed,
       side: report.side,
       loadouts: report.loadouts,
+      chaos: report.chaos,
       roundsWon: game.roundsWon,
       roundsLost: game.roundsLost,
       roundsDrawn: game.roundsDrawn,

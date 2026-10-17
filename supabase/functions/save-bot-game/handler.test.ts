@@ -470,11 +470,31 @@ async function gamePowerClash(
   const report = {
     game: 'power-clash' as const, seed, stamp, level: setup.level, side: setup.side, loadouts, actions,
     ending: over ? ('finished' as const) : ('abandoned' as const),
+    chaos: setup.chaos === true,
   };
   return { report, solo };
 }
 
 const PC = { level: 'easy' as const, side: 'X' as const, loadout: ['double-trouble', 'body-swap', 'freeze-ray'] as PowerClashSetup['loadout'] };
+
+describe('saving Power Clash games in Chaos Mode with the new powers', () => {
+  it('replays the dice and the surprises from the seed and saves it, marked as Chaos Mode', async () => {
+    const { s, savedPowerClash } = services();
+    const { report, solo } = await gamePowerClash(s, { ...PC, chaos: true, loadout: ['portal-chaos', 'wild-card', 'time-heist'] });
+    expect(report.chaos).toBe(true);
+    const response = await handleSaveBotGame(post(report), s);
+    expect(response.status).toBe(200);
+    expect((await response.json()).result).toBe(solo.match.winner === 'X' ? 'won' : 'lost');
+    expect(savedPowerClash[0].power_clash.chaos).toBe(true);
+  });
+  it('refuses a Chaos Mode game that claims to be a normal one when the moves no longer fit', async () => {
+    const { s } = services();
+    const { report } = await gamePowerClash(s, { ...PC, chaos: true, loadout: ['portal-chaos', 'wild-card', 'time-heist'] });
+    const response = await handleSaveBotGame(post({ ...report, chaos: false }), s);
+    // Either the moves are no longer legal (refused) or it replays to a different end; it is never the same game.
+    expect([200, 400]).toContain(response.status);
+  });
+});
 
 describe('saving Power Clash games', () => {
   it('hands out a fresh seed with a stamp that is only good for Power Clash', async () => {

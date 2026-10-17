@@ -68,23 +68,32 @@ for (const [a, b] of pairs) {
 }
 
 if (TRY_POWERS) {
-  const sets = [
-    ['double-trouble', 'freeze-ray', 'body-swap'],
-    ['double-trouble', 'freeze-ray', 'board-wipe'],
-    ['double-trouble', 'body-swap', 'board-wipe'],
-    ['freeze-ray', 'body-swap', 'board-wipe'],
-  ];
-  // Each set plays every other set as Medium (same search), on equal terms.
-  for (const set of sets) {
+  // All 56 sets of three from the eight powers. Each set plays Medium against Medium with a sample of
+  // other sets (the same sample size for every set), on equal terms. `--opponents` sets the sample size.
+  const IDS = ['double-trouble', 'body-swap', 'freeze-ray', 'board-wipe', 'force-field', 'portal-chaos', 'wild-card', 'time-heist'];
+  const sets = [];
+  for (let i = 0; i < 8; i++) for (let j = i + 1; j < 8; j++) for (let k = j + 1; k < 8; k++) sets.push([IDS[i], IDS[j], IDS[k]]);
+  const opponents = Number(option('opponents', 8));
+  const chaos = args.includes('--chaos');
+  const rows = [];
+  for (const [index, set] of sets.entries()) {
     let won = 0;
     let decided = 0;
-    for (const other of sets) {
+    for (let n = 1; n <= opponents; n++) {
+      const other = sets[(index + n * 7) % sets.length];
       if (other === set) continue;
-      const r = simulate({ a: 'medium', b: 'medium', matches: Math.round(MATCHES / 2), seed: `powers:${set}:${other}`, powers: { a: set, b: other } });
+      const r = simulate({ a: 'medium', b: 'medium', matches: Math.round(MATCHES / opponents), seed: `powers:${set}:${other}`, powers: { a: set, b: other }, chaos });
       won += r.rounds.a;
       decided += r.rounds.a + r.rounds.b;
     }
-    console.log(`${set.join(' + ').padEnd(42)} wins ${pct(won / decided)} of decided rounds against the other sets`);
+    rows.push({ set, share: won / decided });
+  }
+  rows.sort((x, y) => y.share - x.share);
+  for (const row of rows) console.log(`${row.set.join(' + ').padEnd(48)} wins ${pct(row.share)} of decided rounds against other sets`);
+  // How much each power adds: the average share of the sets that hold it.
+  for (const id of IDS) {
+    const mine = rows.filter((r) => r.set.includes(id));
+    console.log(`${id.padEnd(16)} sets holding it win ${pct(mine.reduce((t, r) => t + r.share, 0) / mine.length)} on average`);
   }
 }
 if (JSON_OUT) console.log(JSON.stringify(results, null, 2));

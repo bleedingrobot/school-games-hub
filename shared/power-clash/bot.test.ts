@@ -132,3 +132,58 @@ describe('the levels are clearly different', () => {
     expect(medium.aRoundShare).toBeGreaterThan(0.7);
   }, 60000);
 });
+
+describe('the new powers and Chaos Mode', () => {
+  const NEW: PowerId[] = ['force-field', 'portal-chaos', 'time-heist'];
+  const OTHER: PowerId[] = ['wild-card', 'time-heist', 'portal-chaos'];
+
+  it.each(LEVELS)('%s only picks legal actions with the new powers, with real dice and Chaos Mode on', (level) => {
+    const games = level === 'medium' ? 3 : 20;
+    for (let g = 0; g < games; g++) {
+      const random = randomFromSeed(`new:${level}:${g}`);
+      let s = newRound({ X: NEW, O: OTHER }, g % 2 ? 'O' : 'X', g % 2 === 0);
+      for (let i = 0; i < 80 && s.status === 'active'; i++) {
+        const legal = legalActions(s);
+        const action = chooseAction(s, s.active === 'X' ? level : 'easy', random);
+        expect(legal).toContainEqual(action);
+        const r = play(s, action, random);
+        expect(r.ok).toBe(true);
+        if (r.ok) s = r.state;
+      }
+    }
+  });
+
+  it('every power gets used by the random levels, not only the ones with the most targets', () => {
+    const used = new Set<PowerId>();
+    for (let g = 0; g < 80; g++) {
+      const random = randomFromSeed(`use:${g}`);
+      let s = newRound({ X: NEW, O: OTHER }, 'X');
+      for (let i = 0; i < 60 && s.status === 'active'; i++) {
+        const action = chooseAction(s, g % 2 ? 'easy' : 'very-easy', random);
+        if (action.type === 'use-power') used.add(action.power);
+        const r = play(s, action, random);
+        if (r.ok) s = r.state;
+      }
+    }
+    expect([...used].sort()).toEqual(['force-field', 'portal-chaos', 'time-heist', 'wild-card']);
+  });
+
+  it('Medium stays quick with Portal Chaos in hand on a busy board', () => {
+    const s = from('X.O .X. O..', 'X', { X: ['portal-chaos', 'force-field', 'wild-card'], O: ['time-heist', 'portal-chaos', 'double-trouble'] });
+    const t = performance.now();
+    chooseAction(s, 'medium', randomFromSeed('slow2'));
+    expect(performance.now() - t).toBeLessThan(500);
+  });
+
+  it('Medium and Easy are repeatable with the new powers', () => {
+    const s = from('X.. .O. ..X', 'X', { X: NEW, O: OTHER });
+    for (const level of LEVELS) expect(chooseAction(s, level, randomFromSeed('same2'))).toEqual(chooseAction(s, level, randomFromSeed('same2')));
+  });
+
+  it('keeps the strength order in Chaos Mode as well', () => {
+    const easy = simulate({ a: 'easy', b: 'very-easy', matches: 30, seed: 'chaos-strength', chaos: true });
+    expect(easy.aRoundShare).toBeGreaterThan(0.7);
+    const medium = simulate({ a: 'medium', b: 'easy', matches: 8, seed: 'chaos-strength', chaos: true });
+    expect(medium.aRoundShare).toBeGreaterThan(0.7);
+  }, 60000);
+});

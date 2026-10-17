@@ -10,9 +10,10 @@ import { useSound } from '../../sound';
 import { playSound } from '../sounds';
 import { PowerClashGuide } from './Guide';
 import {
-  cellFx, cellLabel, describe, LOCK_CALM_MS, LOCK_MS, particles, PowerPanel, SOUNDS, swapVars, useReducedMotion, type Fx,
-} from './PowerClashPlay';
-import { TEXT, powerInfo, shout, type ShoutKind } from './text';
+  ChaosBanner, WildWheel, boardClasses, cellFx, cellLabel, describe, makeFx, particles, shoutKindFor, soundFor, swapVars, type Fx,
+} from './fx';
+import { LOCK_CALM_MS, LOCK_MS, PowerPanel, useReducedMotion } from './PowerClashPlay';
+import { TEXT, powerInfo, shout } from './text';
 import './power-clash.css';
 
 /** The spoken warning comes when this many seconds are left on your turn. */
@@ -61,6 +62,7 @@ export function PowerClashLive({ session, tick = 1000 }: { session: PowerSession
   const [fx, setFx] = useState<Fx | null>(null);
   const [shoutText, setShoutText] = useState('');
   const [animating, setAnimating] = useState(false);
+  const [overlay, setOverlay] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [now, setNow] = useState(() => serverNow());
@@ -110,42 +112,34 @@ export function PowerClashLive({ session, tick = 1000 }: { session: PowerSession
     const kinds = events.map((e) => e.kind);
     const timedOut = kinds.includes('skip') && !legalSkip(prev);
     const who = mine ? 'You' : foeName;
+    const said = describe(events, { X: nameOf('X'), O: nameOf('O') });
     setMessage(
       timedOut
         ? mine
           ? 'Time ran out, so you missed your go.'
           : `Time ran out, so ${foeName} missed their go.`
         : mine
-          ? describe(kinds)
-          : describe(kinds) && `${who}: ${describe(kinds)}`,
+          ? said
+          : said && `${who}: ${said}`,
     );
-    const wipe = events.find((e) => e.kind === 'wipe');
     plays.current += 1;
-    setFx({ key: plays.current, events, wiped: wipe ? prev.board[wipe.square] : null });
+    setFx(makeFx(plays.current, prev, matchNow.state, events));
 
-    let big: ShoutKind | null;
-    if (matchNow.winner) big = 'match';
-    else if (kinds.includes('win')) big = 'win';
-    else if (kinds.includes('draw')) big = 'draw';
-    else {
-      big =
-        (['body-swap', 'freeze-ray', 'board-wipe', 'double-trouble'] as const).find((p) =>
-          kinds.includes(p === 'freeze-ray' ? 'freeze' : p === 'board-wipe' ? 'wipe' : p),
-        ) ?? (kinds.includes('skip') ? 'skip' : null);
-    }
+    const big = shoutKindFor(events, matchNow.winner !== null);
     setShoutText(big ? shout(big, plays.current) : '');
 
     if (settings.current.soundOn) {
-      const order: GameEvent['kind'][] = ['win', 'draw', 'wipe', 'freeze', 'body-swap', 'double-trouble', 'skip', 'place'];
-      const first = order.find((k) => kinds.includes(k));
-      if (first) playSound(SOUNDS[first]!);
+      const sound = soundFor(events);
+      if (sound) playSound(sound);
     }
 
     setAnimating(true);
+    setOverlay(true);
     timers.current.forEach((t) => window.clearTimeout(t));
     timers.current = [
       window.setTimeout(() => setAnimating(false), settings.current.calm ? LOCK_CALM_MS : LOCK_MS),
       window.setTimeout(() => setShoutText(''), 1800),
+      window.setTimeout(() => setOverlay(false), 2600),
     ];
   }
 
@@ -288,12 +282,8 @@ export function PowerClashLive({ session, tick = 1000 }: { session: PowerSession
 
   const iPressedNext = lg.ready[mySeat];
   const boardKinds = fx?.events.map((e) => e.kind) ?? [];
-  const boardFx = [
-    boardKinds.includes('double-trouble') ? 'pc__board--zap' : '',
-    boardKinds.includes('wipe') || boardKinds.includes('win') ? 'pc__board--shake' : '',
-    boardKinds.includes('win') ? 'pc__board--win' : '',
-    boardKinds.includes('draw') ? 'pc__board--draw' : '',
-  ].join(' ');
+  const boardFx = boardClasses(fx);
+  const shieldedNow = new Set(state.shields.map((sh) => sh.square));
   const connection = !online || live === 'down';
   const rematchWaiting = finished && row.rematch_game !== null;
 
@@ -351,12 +341,16 @@ export function PowerClashLive({ session, tick = 1000 }: { session: PowerSession
         <section className="pc__middle">
           <p className="pc__prompt" role="status" aria-live="polite" aria-atomic="true">{prompt}</p>
           <p className="pc__shout" aria-hidden="true" key={fx?.key}>{shoutText}</p>
+          <div className="pc__stage">
+          <ChaosBanner fx={fx} show={overlay} />
+          <WildWheel fx={fx} show={overlay} />
           <div className={`pc__board ${boardFx}`} role="group" aria-label="Board" aria-busy={locked}>
             {state.board.map((cell, i) => {
               const enabled = !finished && !roundOver && !locked && choices.includes(i);
               const winning = state.line?.includes(i);
               const frozen = frozenNow.has(i) && cell === null;
               const chosen = selected?.picked.includes(i);
+              const shielded = shieldedNow.has(i) && cell !== null;
               return (
                 <button
                   type="button"
@@ -367,17 +361,19 @@ export function PowerClashLive({ session, tick = 1000 }: { session: PowerSession
                     enabled && selected ? 'pc__cell--target' : '',
                     winning ? 'pc__cell--win' : '',
                     frozen ? 'pc__cell--frozen' : '',
+                    shielded ? 'pc__cell--shield' : '',
                     chosen ? 'pc__cell--chosen' : '',
                     cellFx(fx, i),
                   ].join(' ')}
                   key={`${i}-${fx?.key ?? 0}`}
                   style={swapVars(fx, i)}
                   disabled={!enabled}
-                  aria-label={`${cellLabel(i, cell, frozen)} (key ${i + 1})`}
+                  aria-label={`${cellLabel(i, cell, frozen, shielded)} (key ${i + 1})`}
                   onClick={() => tapSquare(i)}
                 >
                   {cell ?? ''}
                   {frozen ? <span className="pc__ice" aria-hidden="true">❄️</span> : null}
+                  {shielded ? <span className="pc__shield" aria-hidden="true">🛡️</span> : null}
                   {fx?.wiped && boardKinds.includes('wipe') && fx.events.some((e) => e.kind === 'wipe' && e.square === i) ? (
                     <span className={`pc__fly pc__fly--${fx.wiped}`} aria-hidden="true">{fx.wiped}</span>
                   ) : null}
@@ -385,6 +381,7 @@ export function PowerClashLive({ session, tick = 1000 }: { session: PowerSession
                 </button>
               );
             })}
+          </div>
           </div>
           <p className="pc__message" role="status" aria-live="polite">{message || session.message}</p>
           <p className="pcl__sr" role="status" aria-live="assertive">{warning}</p>

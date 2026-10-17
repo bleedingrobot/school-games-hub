@@ -228,7 +228,7 @@ describe('loadouts and checks', () => {
     expect(parseLoadout(['double-trouble', 'body-swap', 'freeze-ray'])).toEqual(['double-trouble', 'body-swap', 'freeze-ray']);
     expect(parseLoadout(['double-trouble', 'double-trouble', 'freeze-ray'])).toBeNull();
     expect(parseLoadout(['double-trouble', 'body-swap'])).toBeNull();
-    expect(parseLoadout(['double-trouble', 'body-swap', 'time-heist'])).toBeNull();
+    expect(parseLoadout(['double-trouble', 'body-swap', 'teleport'])).toBeNull();
     expect(parseLoadout('nope')).toBeNull();
     expect(parseLoadout(null)).toBeNull();
   });
@@ -241,15 +241,16 @@ describe('loadouts and checks', () => {
   });
 });
 
-/** What a browser would do on its own: the same engine and match scoring, no server. */
-function clientReplay(actions: { seat: number; action: Action | 'next' }[]): Match {
-  let match = newMatch({ X: X_POWERS, O: O_POWERS }, 'X');
-  for (const { action } of actions) {
+/** What a browser would do on its own: the same engine and match scoring, no server. `dice` are the server's. */
+function clientReplay(actions: { seat: number; action: Action | 'next'; roll?: number[] }[], xPowers = X_POWERS, oPowers = O_POWERS, chaos = false): Match {
+  let match = newMatch({ X: xPowers, O: oPowers }, 'X', chaos);
+  for (const { action, roll } of actions) {
     if (action === 'next') {
       match = nextRound(match);
       continue;
     }
-    const result = play(match.state, action);
+    let i = 0;
+    const result = play(match.state, action, () => roll?.[i++ % roll.length] ?? 0.5);
     if (!result.ok) throw new Error(result.reason);
     match = scoreRound({ ...match, state: result.state });
   }
@@ -278,5 +279,99 @@ describe('the server and a client replay end in the same place', () => {
     expect(replayed).toEqual(live.match);
     expect(live.stats[0].roundsWon + live.stats[0].roundsLost + live.stats[0].roundsDrawn).toBe(live.match.round);
     expect(live.stats[0].roundsWon).toBe(live.stats[1].roundsLost);
+  });
+});
+
+/** Dice that remember what they gave, so a replay can use the same numbers. */
+function recordedDice(random: () => number) {
+  const rolls: number[] = [];
+  return { roll: () => { const v = random(); rolls.push(v); return v; }, take: () => rolls.splice(0) };
+}
+
+describe('the new powers and Chaos Mode on the server', () => {
+  const ALL: PowerId[] = ['double-trouble', 'body-swap', 'freeze-ray', 'board-wipe', 'force-field', 'portal-chaos', 'wild-card', 'time-heist'];
+  const three = (random: () => number) => {
+    const left = [...ALL];
+    return [0, 1, 2].map(() => left.splice(Math.floor(random() * left.length), 1)[0]);
+  };
+
+  it.each(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'])('whole random match %s (all eight powers, Chaos Mode on half the time): a replay with the same dice ends in the same state', (seed) => {
+    const random = randomFromSeed(`live-p6:${seed}`);
+    const chaos = seed < 'e';
+    const [x, o] = [three(random), three(random)];
+    const dice = recordedDice(randomFromSeed(`dice:${seed}`));
+    let live = newLiveGame(x, o, chaos);
+    const log: { seat: number; action: Action | 'next'; roll?: number[] }[] = [];
+    for (let guard = 0; guard < 600 && !matchIsOver(live); guard++) {
+      if (roundIsOver(live)) {
+        live = pressNext(pressNext(live, 0).game, 1).game;
+        log.push({ seat: 0, action: 'next' });
+        continue;
+      }
+      const state = live.match.state;
+      const action = random() < 0.7 ? chooseAction(state, 'easy', random) : legalActions(state)[Math.floor(random() * legalActions(state).length)];
+      const seat = turnSeat(live);
+      live = playerAction(live, seat, action, dice.roll).game;
+      log.push({ seat, action, roll: dice.take() });
+    }
+    expect(matchIsOver(live)).toBe(true);
+    expect(clientReplay(log, x, o, chaos)).toEqual(live.match);
+  });
+
+  it('keeps the saved game small even after a long Chaos Mode match', () => {
+    let biggest = 0;
+    for (let g = 0; g < 20; g++) {
+      const random = randomFromSeed(`size:${g}`);
+      let live = newLiveGame(three(random), three(random), true);
+      for (let guard = 0; guard < 600 && !matchIsOver(live); guard++) {
+        if (roundIsOver(live)) {
+          live = pressNext(pressNext(live, 0).game, 1).game;
+          continue;
+        }
+        const actions = legalActions(live.match.state);
+        live = playerAction(live, turnSeat(live), actions[Math.floor(random() * actions.length)], random).game;
+        biggest = Math.max(biggest, JSON.stringify(live).length);
+      }
+    }
+    // power_games.game is capped at 20 KB.
+    expect(biggest).toBeLessThan(5000);
+  });
+
+  it('uses the dice it is given: the same dice give the same Wild Card, different dice can differ', () => {
+    const start = () => {
+      const g = newLiveGame(['wild-card', 'time-heist', 'freeze-ray'], ['wild-card', 'time-heist', 'freeze-ray']);
+      return playerAction(g, 0, { type: 'place', square: 4 }, () => 0.5).game;
+    };
+    const a = playerAction(start(), 1, { type: 'use-power', power: 'wild-card', targets: [] }, randomFromSeed('x'));
+    const b = playerAction(start(), 1, { type: 'use-power', power: 'wild-card', targets: [] }, randomFromSeed('x'));
+    expect(a.events).toEqual(b.events);
+    const effects = new Set<string>();
+    for (let n = 0; n < 60; n++) {
+      const r = playerAction(start(), 1, { type: 'use-power', power: 'wild-card', targets: [] }, randomFromSeed(`y${n}`));
+      const e = r.events[0];
+      if (e.kind === 'wild-card') effects.add(e.effect);
+    }
+    expect(effects.size).toBeGreaterThan(1);
+  });
+
+  it('counts the new powers for the "used all three" badge, and a Time Heist does not count the power it undid', () => {
+    let g = newLiveGame(['time-heist', 'force-field', 'wild-card'], ['double-trouble', 'freeze-ray', 'board-wipe']);
+    g = playerAction(g, 0, { type: 'place', square: 4 }, () => 0.5).game;
+    g = playerAction(g, 1, { type: 'use-power', power: 'double-trouble', targets: [] }, () => 0.5).game;
+    g = playerAction(g, 1, { type: 'place', square: 0 }, () => 0.5).game;
+    g = playerAction(g, 1, { type: 'place', square: 1 }, () => 0.5).game;
+    g = playerAction(g, 0, { type: 'use-power', power: 'time-heist', targets: [] }, () => 0.5).game;
+    expect(g.match.state.board.filter(Boolean)).toHaveLength(1);
+    expect(g.match.state.used.O).toEqual([]);
+    expect(g.stats[0].powersUsed).toBe(1);
+    expect(g.stats[1].powersUsed).toBe(0);
+  });
+
+  it('a missed go in Chaos Mode can bring a surprise', () => {
+    let g = newLiveGame(['time-heist', 'force-field', 'wild-card'], ['double-trouble', 'freeze-ray', 'board-wipe'], true);
+    g = playerAction(g, 0, { type: 'place', square: 4 }, () => 0.5).game;
+    g = playerAction(g, 1, { type: 'place', square: 0 }, () => 0.5).game;
+    const r = timeOut(g, randomFromSeed('late'));
+    expect(r.events.some((e) => e.kind === 'chaos')).toBe(true);
   });
 });

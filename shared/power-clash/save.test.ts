@@ -13,6 +13,7 @@ function report(s: SoloSetup, leaveAfter = Infinity): PowerClashGameReport {
   const bot = botLoadoutFor(s.seed, s.level);
   return {
     game: 'power-clash', seed: s.seed, stamp: 'x'.repeat(43), level: s.level, side: s.side,
+    chaos: s.chaos === true,
     loadouts: s.side === 'X' ? { X: s.loadout, O: bot } : { X: bot, O: s.loadout },
     actions, ending: solo.match.winner ? 'finished' : 'abandoned',
   };
@@ -76,5 +77,38 @@ describe('judging a Power Clash match', () => {
       { ...r, loadouts: { ...r.loadouts, X: ['double-trouble', 'double-trouble', 'freeze-ray'] as typeof r.loadouts.X } },
     ];
     for (const bad of refused) expect(judgePowerClashGame(bad).ok).toBe(false);
+  });
+});
+
+describe('Chaos Mode and the new powers in a saved game', () => {
+  const NEW = ['force-field', 'portal-chaos', 'wild-card'] as const;
+  it('reads the chaos flag, and a report with none is a normal game', () => {
+    const r = report(setup({ chaos: true }));
+    expect(r.chaos).toBe(true);
+    expect(parsePowerClashReport(r)?.chaos).toBe(true);
+    const { chaos: _ignored, ...old } = r;
+    void _ignored;
+    expect(parsePowerClashReport(old)?.chaos).toBe(false);
+    expect(parsePowerClashReport({ ...r, chaos: 'yes' })?.chaos).toBe(false);
+  });
+  it('judges a whole Chaos Mode match with the dice-based powers, for either side', () => {
+    for (const side of ['X', 'O'] as const) {
+      for (const chaos of [false, true]) {
+        const r = report(setup({ side, chaos, loadout: [...NEW], seed: `s1-1792000000-${side}${chaos ? 'c' : 'n'}abcdefabcdefabcdefabc` }));
+        const judged = judgePowerClashGame(r);
+        expect(judged.ok).toBe(true);
+        if (judged.ok) expect(judged.game).toEqual(expect.objectContaining({ reason: 'finished', countsForPoints: true }));
+      }
+    }
+  });
+  it('a game played in Chaos Mode can not be claimed as a normal one with a good result', () => {
+    const r = report(setup({ chaos: true, loadout: [...NEW], seed: 's1-1792000000-zzabcdefabcdefabcdefabcd' }));
+    const claimed = judgePowerClashGame({ ...r, chaos: false });
+    const honest = judgePowerClashGame(r);
+    if (claimed.ok && honest.ok) expect(claimed.game).not.toEqual(honest.game);
+  });
+  it('refuses powers that do not exist', () => {
+    const r = report(setup());
+    expect(parsePowerClashReport({ ...r, loadouts: { X: ['teleport', 'body-swap', 'freeze-ray'], O: r.loadouts.O } })).toBeNull();
   });
 });
