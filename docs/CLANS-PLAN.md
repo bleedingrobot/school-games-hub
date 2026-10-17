@@ -340,14 +340,15 @@ The empire rules and numbers are written into [CLANS-RULES.md](CLANS-RULES.md) s
 | Strength lost in a raid | about 10 (about 150 gold) | about 10 |
 | Mines win rate with the empire / without | 96% / 98% | 81% / 85% |
 
-- **Affordable:** a mixed clan has the whole empire (8 barracks, 24 buildings, a full army, 450 strength) by about day 21. An all-fighters clan has the buildings at the same time but fills the barracks by about day 42, because it earns less gold.
+- **Affordable (after James asked for a bigger empire: up to 12 barracks, 24 extra plots to claim):** a mixed clan has 12 barracks, 29 buildings and about 650 strength by about day 35. An all-fighters clan gets there around day 60-70, because it earns less gold.
 - **Not running out of gold:** the bot keeps 600 in the clan purse. A mixed clan's purse stays healthy early and dips low (under 100) now and then after day 28; an all-fighters clan's purse is low on many days after day 21, **as it already was without an empire** (the Church costs them). So the empire doesn't cause that, but it doesn't fix it either.
 - **The mines are unchanged:** win rates with and without an empire are within 4 points (a test checks it stays under 6) and levels reached by day 30 within 0.6.
 - **Kingdoms are beatable at the right level:** an army of about 15 / 45 / 100 / 175 / 275 / 440 strength wins 80% against the six kingdoms (a test checks that twice a kingdom's strength always wins and half never does). Mills lower that by about 10%. The Bold/Careful choice makes little difference to who wins when there are enough rounds; it changes how many troops are hurt.
 - **Raids are a small bonus, not the main income.** Mines earn about 400-500 a day in the middle game; raids add about 250 for about 150 gold of hurt troops.
-- **After about 3 weeks a mixed clan has built everything and the vault just fills** (about 12,000 by day 56). That is the same gap as before: the village chest (C.6) is meant to take it, or we can add more land claims / more barracks later.
+- **After about 5 weeks a mixed clan has built everything and the vault just fills** (about 9,000 by day 56). That is the same gap as before: the village chest (C.6) is meant to take it, or we can add more land claims / more barracks later.
 
 **Checked:** 61 new tests: every rule above (land prices, energy, building limits, barracks room, troop prices, the draft, every classmate-raid guard rail, gold and land only moving between clans, replaying a raid exactly, news lines that never name a student), plus the maths hooks (the land, barracks, troop bill, draft, energy and loot questions each give exactly what the engine does) and the simulator checks. `shared/` and the type check are clean (see the summary for the numbers).
 
 **Left for 4B:** all screens (Empire home, Land, Barracks and troops, Raid and Friendly War, test buttons), the test page, Quests (later), and everything that needs saving (C.5).
 
+**James's answers (18 Oct 2026):** separate empire vault: yes; new clans can't raid for 3 days either: yes; Gymnasium raises the draft limit: yes; bigger empire (more barracks and land) so it takes longer to fill: yes. The tables above were from the first, smaller empire; the sizes are now 12 barracks and 24 claims.

@@ -44,7 +44,7 @@ export const CONFIG = {
     /** Wild land plots a new empire starts with. */
     startWild: 10,
     /** Claiming one more plot of wild land costs `base` gold plus `step` for each one claimed before it, up to `max` claims. */
-    claim: { base: 50, step: 25, max: 14 },
+    claim: { base: 50, step: 25, max: 24 },
     /** A plot is between this many and this many squares along each side. */
     plotSide: { min: 2, max: 6 },
     /** Gold to develop a plot: this much a square of area, plus this much for each unit of fence round it. */
@@ -63,7 +63,7 @@ export const CONFIG = {
     draftStep: 5,
     /** Size in squares, worker energy in percent, gold, and how many you can have. `per` is the effect of each one, in percent (or points). */
     buildings: {
-      barracks: { size: 15, energy: 30, gold: 100, max: 8, per: 0 },
+      barracks: { size: 15, energy: 30, gold: 100, max: 12, per: 0 },
       walls: { size: 6, energy: 7, gold: 40, max: 5, per: 10 },
       tower: { size: 5, energy: 12, gold: 60, max: 5, per: 10 },
       steelMill: { size: 12, energy: 25, gold: 120, max: 3, per: 10 },

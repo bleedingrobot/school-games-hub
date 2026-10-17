@@ -14,6 +14,7 @@ const E = CONFIG.empire;
 export const BUILD_ORDER: BuildingKind[] = [
   'barracks', 'barracks', 'tower', 'walls', 'barracks', 'steelMill', 'gymnasium', 'walls', 'tower', 'stables', 'barracks', 'developersHall',
   'barracks', 'steelMill', 'walls', 'tower', 'barracks', 'barracks', 'stables', 'walls', 'tower', 'barracks', 'steelMill', 'walls', 'tower',
+  'barracks', 'barracks', 'barracks', 'barracks',
 ];
 
 /** The cheapest plot (by gold) that is big enough for a building. */

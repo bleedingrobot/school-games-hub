@@ -321,13 +321,13 @@ All of these are in `shared/clans/config.ts` under `empire`. Section 8 of the pl
 
 **The vault.** The empire has its **own vault**. Land, buildings and troops are paid for from it, and it is the only gold a raider can take. The clan's purse (mine gold, shop, training, Church) is safe. You move gold between them with "Put in" and "Take out". (James can say if he would rather have one purse.)
 
-**Land.** A new empire has **10 plots of wild land**. You **develop** a plot by choosing its sides (each 2 to 6 squares) and paying **2 gold a square plus 1 gold for each unit of fence round it** (a 4 by 5 plot: 20 squares and 18 fence, so 40 + 18 = **58 gold**). When the wild land is used up you can **claim** more for **50 gold, then 25 more each time** (up to 14 extra plots). A plot holds one building.
+**Land.** A new empire has **10 plots of wild land**. You **develop** a plot by choosing its sides (each 2 to 6 squares) and paying **2 gold a square plus 1 gold for each unit of fence round it** (a 4 by 5 plot: 20 squares and 18 fence, so 40 + 18 = **58 gold**). When the wild land is used up you can **claim** more for **50 gold, then 25 more each time** (up to 24 extra plots). A plot holds one building.
 
 **Buildings** (size is the squares the plot must have; energy is a share of the day's worker energy; the workers have **100% a day**, and the energy is used up when you build, not after):
 
 | Building | Size | Energy | Gold | Most | What each one does |
 |---|---|---|---|---|---|
-| Barracks | 15 | 30% | 100 | 8 | Holds 20 footmen, 10 axemen and 5 knights |
+| Barracks | 15 | 30% | 100 | 12 | Holds 20 footmen, 10 axemen and 5 knights |
 | Walls | 6 | 7% | 40 | 5 | Defenders take 10% less damage; raiders destroy 1 fewer building |
 | Tower | 5 | 12% | 60 | 5 | Defenders hit back 10% harder |
 | Steel Mill | 12 | 25% | 120 | 3 | Your raiding army hits 10% harder |
@@ -366,3 +366,5 @@ A win takes the share of the treasury you asked for (rounded up). A loss takes n
 **Raids on classmates (rule only, no screens until C.5).** You choose to take **gold, land or buildings**. A win takes at most **10%** of the vault, or of the empty land (wild land first, never a plot with a building), or of the number of buildings (rounded up, **minus one for each Walls**, and Walls are never knocked down). The guard rails from plan section 8: no raids for the first **3 days** of a clan's life (nor on it), **1 raid a day**, not the same clan twice in a day, a **1-day shield** after being raided (it can't be raided again until the day after tomorrow), only against an empire between **half and double** your army's strength, and a teacher switch. The defender is a saved copy played by the computer with a steady plan. Both sides lose the hurt troops that don't come home. News lines say only "A raider from the Red Banner clan took 40 gold."
 
 **Not done:** Quests (a later small stage), spies, the village chest and votes (C.6), saving the empire (C.5).
+
+**James's answers on the empire (18 Oct 2026):** separate vault, a new clan can't raid either for its first 3 days, Gymnasium raises the draft limit, and the empire is bigger (up to 12 barracks and 24 extra plots to claim) so it takes about 4 to 5 weeks to fill rather than 3.
