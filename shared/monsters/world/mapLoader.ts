@@ -16,7 +16,7 @@
  * Text is split into pages at new lines: one page per tap.
  */
 import { speciesOf } from '../monsterBook';
-import { DELTA, DIRS, type Dir, type GameMap, type Thing, type ThingKind, type TrainerMonster, type Warp } from './types';
+import { DIRS, type Dir, type GameMap, type Thing, type ThingKind, type TrainerMonster, type Warp } from './types';
 
 export const TILE_SIZE = 16;
 
@@ -212,11 +212,4 @@ export function parseMap(id: string, raw: TiledMap): GameMap {
     id, name, width, height, area, ground, walls, grass, blocked,
     isGrass: grass.map((g) => g !== 0), far, things, warps, spots, wild,
   };
-}
-
-/** The tile you stand on to talk to a thing from a side (or null if that side is off the map). */
-export function sideTile(map: GameMap, t: { x: number; y: number }, dir: Dir): [number, number] | null {
-  const x = t.x + DELTA[dir][0];
-  const y = t.y + DELTA[dir][1];
-  return x >= 0 && y >= 0 && x < map.width && y < map.height ? [x, y] : null;
 }
