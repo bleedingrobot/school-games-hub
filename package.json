@@ -27,7 +27,8 @@
     "maths:preview": "vite build --config vite.maths-preview.config.ts",
     "monsters:preview": "vite build --config vite.monsters-preview.config.ts",
     "monsters:single": "MONSTERS_INLINE=1 vite build --config vite.monsters-preview.config.ts && node scripts/inline-monsters-preview.mjs",
-    "power-clash:preview": "vite build --config vite.power-clash-preview.config.ts"
+    "power-clash:preview": "vite build --config vite.power-clash-preview.config.ts",
+    "lord:sim": "node scripts/lord-sim.mjs"
   },
   "engines": {
     "node": ">=22"

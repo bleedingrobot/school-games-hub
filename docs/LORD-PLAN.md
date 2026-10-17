@@ -3,7 +3,7 @@
 A daily-turns fantasy adventure for the hub, in the spirit of the 1990s BBS door game *Legend of the Red Dragon* (LORD). Visit a small village from a menu, go into the forest a few times a day, fight monsters, buy a better sword, beat your master to level up, and one day face the Red Dragon. **Maths is one of the tools that helps you win**: sizing up a monster, working out the healer's bill, counting change at the shop, cracking a riddle, a master's trial and the dragon fight.
 
 Written 17 October 2026 from James's brief ([prompts/lord-maths.md](prompts/lord-maths.md)) after reading [talisto/LORD.ts](https://github.com/talisto/LORD.ts) (v1.4.6) and the hub's code on `main` and `monsters`.
-**Status: APPROVED 17 Oct 2026, waiting.** James answered every question in section 14 (all my picks, except: start only **after Maths Monsters is live**).
+**Status: STARTED 18 Oct 2026 (Maths Monsters is on main): L.0 and L.1 done, waiting for James's review before L.2. Branch `dragon-maths`.** James answered every question in section 14 (all my picks, except: start only **after Maths Monsters is live**).
 **Updated 18 Oct 2026** after reading every file of LORD.ts (main game, all 13 add-ons, scripts, tests, change log): **5-week seasons** with a fresh start each time, **romance and orphans kept out for good**, rule-table fixes, and a simulator check of the pace. See section 15.
 
 ## The short version
@@ -248,6 +248,23 @@ The rule table in section 1, sections 7, 9 and 11 and the "kept out" list are al
 - **Don't block players who share an internet address** (a LORD.ts option): the whole school shares one.
 - **Testing:** LORD.ts has a "god mode" that can set any stat, trigger any event and force the next random numbers. The L.3 test page gets the same: jump to any level, trigger any event, go straight to the dragon.
 - **Daily reset with no server:** LORD resets a player's day the first time they play that day. Our `lord` function does the same (NZ date), so nothing needs to run at midnight. The season reset works the same way (checked on first play after the end date).
+
+## Results so far (18 Oct 2026)
+
+**L.0 done:** [LORD-RULES.md](LORD-RULES.md) lists every rule and number, and where we differ from LORD.
+
+**L.1 done:** the engine is in `shared/lord/`: seeded fights that can be saved and replayed (the whole random generator is one number), heroes, three classes, the daily rollover and New Zealand date, 35-day seasons, forest trips and events (11, four with maths hooks for L.2), masters, the three-stage dragon, healer, bank and shop. 47 tests. The simulator is `npm run lord:sim`.
+
+What the simulator told us, and what changed because of it:
+
+- The first Trickster could not win master fights (14% against the Knight's 63%). Dodge now also hits back, and Pinch is a normal hit that lifts gold. All three classes now finish within a play day of each other.
+- Healing at LORD's price ate 55-60% of gold. Now about 40%.
+- The dragon was unbeatable (0%), then too easy (93% on the first try). It now sits at about 45-50% a try, with a 30% HP breather between stages, so a pupil usually wins on the second or third day.
+- Pace: a pupil who plays every day reaches level 12 in week 3, and one who plays 4 days a week in week 5. **A pupil who plays 2 days a week only reaches level 6 or 7 in a 5-week season.** That is open question 12 below.
+
+**Not done yet:** ten monsters a level (five written), more events, gems, the arena and computer heroes, anything saved, anything on screen. Nothing is on the dashboard and nothing touches the database.
+
+**Question 12 (James):** should a pupil who plays twice a week be able to reach the dragon in a season? Options: leave as is (they get halfway, and the next season is a fresh start); make the curve gentler (every pupil gets there, but a daily player has four spare weeks); or give Practice Mode extra fights. My pick: leave it, and review once real pupils have played.
 
 ## Credits to carry over
 
