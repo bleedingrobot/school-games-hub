@@ -26,7 +26,9 @@ function tone(frequency: number, duration: number, volume: number, type: Oscilla
 
 /**
  * 'alert' is check in chess, and a new king in checkers. 'dice' to 'cosmic' are for
- * Wormholes & Black Holes; 'flick', 'tap' and 'knock' are for 101.
+ * Wormholes & Black Holes; 'flick', 'tap' and 'knock' are for 101. 'door' to 'chest' are for
+ * the Maths Monsters map: a door, a talk blip, the wild-battle flash, the healing jingle,
+ * the badge fanfare and a chest.
  */
 export type GameSound =
   | 'move'
@@ -44,7 +46,13 @@ export type GameSound =
   | 'cosmic'
   | 'flick'
   | 'tap'
-  | 'knock';
+  | 'knock'
+  | 'door'
+  | 'blip'
+  | 'flash'
+  | 'heal'
+  | 'badge'
+  | 'chest';
 
 export function playSound(sound: GameSound) {
   switch (sound) {
@@ -93,5 +101,26 @@ export function playSound(sound: GameSound) {
       // Knock knock.
       tone(180, 0.09, 0.3, 'square', 0.5);
       return setTimeout(() => tone(180, 0.09, 0.3, 'square', 0.5), 170);
+    case 'door':
+      // A latch, then the door swinging.
+      tone(200, 0.07, 0.2, 'square', 0.6);
+      return setTimeout(() => tone(150, 0.16, 0.14, 'triangle', 1.5), 80);
+    case 'blip':
+      // A tiny voice blip for each line of talk.
+      return tone(720, 0.04, 0.07, 'square', 1.15);
+    case 'flash':
+      // A wild monster! Up and up.
+      return [0, 90, 180].forEach((ms, i) => setTimeout(() => tone(330 + i * 140, 0.14, 0.14, 'square', 1.4), ms));
+    case 'heal':
+      [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.22, 0.14, 'triangle', 1.01), i * 95));
+      return;
+    case 'badge':
+      // A short fanfare: three quick notes, then up to the top.
+      [[523, 0, 0.12], [523, 120, 0.12], [523, 240, 0.12], [659, 380, 0.2], [784, 580, 0.2], [1047, 780, 0.55]].forEach(([f, ms, len]) => setTimeout(() => tone(f, len, 0.18, 'triangle', 1.01), ms));
+      return;
+    case 'chest':
+      // The lid creaks open, then a sparkle.
+      tone(140, 0.18, 0.18, 'square', 0.55);
+      return [880, 1175, 1568, 2093].forEach((f, i) => setTimeout(() => tone(f, 0.14, 0.1, 'triangle', 1), 200 + i * 70));
   }
 }

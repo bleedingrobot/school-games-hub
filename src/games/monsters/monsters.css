@@ -241,6 +241,7 @@
 .mb-bag__icon--super-potion { background: #a78bfa; border-radius: 8px 8px 14px 14px; }
 .mb-bag__icon--ball { background: linear-gradient(#ef4444 0 46%, #0f172a 46% 54%, #fff 54%); }
 .mb-bag__icon--great-ball { background: linear-gradient(#3b82f6 0 46%, #0f172a 46% 54%, #fff 54%); }
+.mb-bag__icon--repel { background: #86efac; border-radius: 50% 50% 8px 8px; }
 .mb-empty { color: var(--mb-soft); }
 
 .mb-end { display: grid; justify-items: start; gap: 10px; max-width: 640px; margin: 0 auto; padding-top: 6px; font-size: 1.05rem; }

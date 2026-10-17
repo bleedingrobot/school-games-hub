@@ -116,8 +116,13 @@ export function TeamList({ team, active, action, onPick }: TeamListProps) {
   );
 }
 
-export function BagList({ bag, wild, onPick }: { bag: Bag; wild: boolean; onPick: (item: ItemId) => void }) {
-  const items: ItemId[] = ['potion', 'super-potion', 'ball', 'great-ball'];
+const BATTLE_ITEMS: ItemId[] = ['potion', 'super-potion', 'ball', 'great-ball'];
+
+/**
+ * The bag. In a battle (`wild`: balls work against a wild monster only). On the map menu pass
+ * `items` (with Repel too) and `ballNote`, since balls can only be thrown in a wild battle.
+ */
+export function BagList({ bag, wild, onPick, items = BATTLE_ITEMS, ballNote = 'Can’t catch a trainer’s monster' }: { bag: Bag; wild: boolean; onPick: (item: ItemId) => void; items?: ItemId[]; ballNote?: string }) {
   return (
     <ul className="mb-bag">
       {items.map((item) => {
@@ -130,7 +135,7 @@ export function BagList({ bag, wild, onPick }: { bag: Bag; wild: boolean; onPick
               <span className={`mb-bag__icon mb-bag__icon--${item}`} aria-hidden="true" />
               <span className="mb-bag__text">
                 <strong>{ITEM_LABEL[item]}</strong>
-                <small>{blocked ? 'Can’t catch a trainer’s monster' : ITEM_NOTE[item]}</small>
+                <small>{blocked ? ballNote : ITEM_NOTE[item]}</small>
               </span>
               <span className="mb-bag__count" aria-label={`${count} left`}>×{count}</span>
             </button>

@@ -14,10 +14,14 @@ import { maxHpOf } from '../../../../shared/monsters/rules';
 import { RAW_MAPS, WORLD_MAPS } from '../../../../shared/monsters/maps';
 import type { TiledMap } from '../../../../shared/monsters/world/mapLoader';
 import type { Dir, GameMap, Thing, WorldState } from '../../../../shared/monsters/world/types';
-import { afterBattle, placeAt, trainerBattle, wildBattle, type InteractOutcome, type Maps, type WorldOptions } from '../../../../shared/monsters/world/world';
+import { badgeName, finishBattle, meet, placeAt, trainerBattle, wildBattle, type InteractOutcome, type Maps, type WorldOptions } from '../../../../shared/monsters/world/world';
+import { describeLoot } from '../../../../shared/monsters/world/rewards';
+import { useSound } from '../../../sound';
+import { playSound, type GameSound } from '../../sounds';
 import { BattleScreen, type BattleResult } from '../BattleScreen';
 import { MonsterArt } from '../art/MonsterArt';
 import { nameOf } from '../text';
+import { MapMenu, type MenuPage } from './MapMenu';
 import { WalkController, type ControllerEvents } from './controller';
 import { drawFrame, scaleFor, tileAt, type Scene } from './render';
 import type { WorldSettings } from './settings';
@@ -34,6 +38,8 @@ export interface WorldGameProps {
   fast?: boolean;
   /** Change `nonce` to move the player: the test page's "Teleport to". */
   teleport?: { nonce: number; map: string; x: number; y: number; facing?: Dir };
+  /** Change `nonce` to change the game state: the test page's "Give me all badges" and "Give me a full team and bag". */
+  cheat?: { nonce: number; apply: (s: WorldState) => WorldState };
   /** True while a battle has the screen (so the test page can hide its own chrome). */
   onBattling?: (on: boolean) => void;
   onState?: (s: WorldState) => void;
@@ -59,12 +65,12 @@ const KEYS: Record<string, Dir> = {
 const TALK_KEYS = new Set([' ', 'Enter', 'e', 'E']);
 
 export function WorldGame({
-  initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, teleport, onBattling, onState, random, packFor, timeScale = 1,
+  initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, teleport, cheat, onBattling, onState, random, packFor, timeScale = 1,
 }: WorldGameProps) {
   const [world, setWorld] = useState<WorldState>(initial);
   const [scene, setScene] = useState<Scene2>({ kind: 'walk' });
   const [talk, setTalk] = useState<TalkState | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
+  const [menu, setMenu] = useState<{ page: MenuPage; from: 'menu' | 'object' } | null>(null);
   const [sheets, setSheets] = useState<TileCache | null>(null);
   const [loadError, setLoadError] = useState(false);
 
@@ -77,25 +83,34 @@ export function WorldGame({
   const opts = useMemo<WorldOptions>(() => ({ maps, fast }), [maps, fast]);
 
   // Always-current copies, so the controller's callbacks never use an old one.
-  const live = useRef({ scene, talk, showSettings, settings, onState, timeScale });
-  live.current = { scene, talk, showSettings, settings, onState, timeScale };
+  const { soundOn } = useSound();
+  const live = useRef({ scene, talk, menu, settings, onState, timeScale, soundOn });
+  live.current = { scene, talk, menu, settings, onState, timeScale, soundOn };
+  /** Plays a sound, but only when the hub's speaker button is on. */
+  const cue = useCallback((sound: GameSound) => {
+    if (live.current.soundOn) playSound(sound);
+  }, []);
 
   const ctrl = useRef<WalkController | null>(null);
 
   const startBattle = useCallback((setup: BattleSetup, trainer?: Thing) => {
     const ts = live.current.timeScale;
+    cue('flash');
+    // You have now met these monsters: they go in the monster book even if you run away.
+    ctrl.current!.patch(meet(ctrl.current!.state, setup.foes));
     const go = () => setScene({ kind: 'battle', setup, trainer, key: ++battleKey.current });
     if (ts === 0) go();
     else {
       setScene({ kind: 'flash', setup, trainer });
       window.setTimeout(go, 520 * ts);
     }
-  }, []);
+  }, [cue]);
 
   const showTalk = useCallback((t: { speaker?: string; pages: string[]; after?: () => void }) => {
     ctrl.current!.lock();
+    cue('blip');
     setTalk({ ...t, at: 0 });
-  }, []);
+  }, [cue]);
 
   if (!ctrl.current) {
     const events: ControllerEvents = {
@@ -109,14 +124,20 @@ export function WorldGame({
         showTalk({ speaker: trainer.name, pages: trainer.pages, after: () => startBattle(trainerBattle(state, opts, trainer), trainer) });
       },
       onTalk: (out: InteractOutcome) => {
+        if (out.cue) cue(out.cue);
         showTalk({
           speaker: out.talk!.speaker,
           pages: out.talk!.pages,
-          after: out.challenge ? () => startBattle(trainerBattle(ctrl.current!.state, opts, out.challenge!), out.challenge) : undefined,
+          after: out.challenge
+            ? () => startBattle(trainerBattle(ctrl.current!.state, opts, out.challenge!), out.challenge)
+            : out.open
+              ? () => setMenu({ page: out.open!, from: 'object' })
+              : undefined,
         });
       },
       onEnter: () => {
         fade.current.at = performance.now();
+        cue('door');
       },
     };
     ctrl.current = new WalkController(initial, opts, events, timeScale);
@@ -156,13 +177,21 @@ export function WorldGame({
     if (!teleport || teleport.nonce === lastNonce.current) return;
     lastNonce.current = teleport.nonce;
     setTalk(null);
-    setShowSettings(false);
+    setMenu(null);
     setScene({ kind: 'walk' });
     ctrl.current!.unlock();
     ctrl.current!.jump({ ...placeAt(ctrl.current!.state, teleport.map, teleport.x, teleport.y, teleport.facing), beaten: [] });
   }, [teleport]);
 
-  const walking = scene.kind === 'walk' && !talk && !showSettings;
+  // The test page's "Give me ..." buttons.
+  const lastCheat = useRef(cheat?.nonce);
+  useEffect(() => {
+    if (!cheat || cheat.nonce === lastCheat.current) return;
+    lastCheat.current = cheat.nonce;
+    ctrl.current!.patch(cheat.apply(ctrl.current!.state));
+  }, [cheat]);
+
+  const walking = scene.kind === 'walk' && !talk && !menu;
   useEffect(() => {
     onBattling?.(scene.kind === 'battle');
   }, [scene.kind, onBattling]);
@@ -204,7 +233,7 @@ export function WorldGame({
       const f = Math.max(0, 1 - (now - fade.current.at) / 280);
       const water = sc.frames.length > 1 ? Math.floor(now / 700) % 2 : 0;
       const actors = [...view.actors].map(([id, a]) => `${id}${a.x.toFixed(2)}${a.y.toFixed(2)}${a.facing}`).join();
-      const key = `${view.x.toFixed(3)},${view.y.toFixed(3)},${view.state.facing},${view.state.map},${water},${f.toFixed(2)},${view.noticed},${actors},${view.walking}`;
+      const key = `${view.x.toFixed(3)},${view.y.toFixed(3)},${view.state.facing},${view.state.map},${water},${f.toFixed(2)},${view.noticed},${actors},${view.walking},${view.state.badges.length},${view.state.chests.length}`;
       if (key === lastKey) return;
       lastKey = key;
       const t0 = performance.now();
@@ -227,13 +256,15 @@ export function WorldGame({
   const advance = useCallback(() => {
     const t = live.current.talk;
     if (!t) return;
-    if (t.at + 1 < t.pages.length) setTalk({ ...t, at: t.at + 1 });
-    else {
+    if (t.at + 1 < t.pages.length) {
+      cue('blip');
+      setTalk({ ...t, at: t.at + 1 });
+    } else {
       setTalk(null);
       t.after?.();
       stage.current?.focus();
     }
-  }, []);
+  }, [cue]);
 
   // The keyboard.
   useEffect(() => {
@@ -243,16 +274,18 @@ export function WorldGame({
       if (target?.closest('input, select, textarea, [role="dialog"], .mb')) return;
       const L = live.current;
       if (L.scene.kind !== 'walk') return;
-      if (L.showSettings) {
-        if (e.key === 'Escape') setShowSettings(false);
-        return;
-      }
+      if (L.menu) return; // the menu handles its own keys
       if (L.talk) {
         if (TALK_KEYS.has(e.key) || e.key === 'Escape') {
           if (target?.closest('.mw-talk__next')) return; // the button handles its own press
           e.preventDefault();
           advance();
         }
+        return;
+      }
+      if (e.key === 'm' || e.key === 'M' || e.key === 'Escape') {
+        e.preventDefault();
+        if (!e.repeat) setMenu({ page: 'main', from: 'menu' });
         return;
       }
       const dir = KEYS[e.key];
@@ -299,14 +332,29 @@ export function WorldGame({
     ctrl.current!.tap(tx, ty);
   };
 
-  const finishBattle = (result: BattleResult) => {
+  const onBattleDone = (result: BattleResult) => {
     const c = ctrl.current!;
     const trainer = scene.kind === 'battle' ? scene.trainer : undefined;
-    const next = afterBattle(c.state, result, trainer);
+    const { state: next, prize } = finishBattle(c.state, result, trainer);
     c.jump(next);
     setScene({ kind: 'walk' });
     if (result.outcome === 'lost') {
-      showTalk({ speaker: undefined, pages: ['Your team is tired, so you hurried back to the Healing Centre. Everyone is rested and nothing was lost!'] });
+      showTalk({ speaker: undefined, pages: ['Your team is tired, so you hurried back to your last healing spot. Everyone is rested and nothing was lost!'] });
+      return;
+    }
+    // A trainer you have beaten says so, then pays: items the first time, and a badge for a Tower trainer.
+    if (result.outcome === 'won' && trainer) {
+      const prizeLines = [
+        ...(prize.loot ? [`${trainer.name} gave you ${describeLoot(prize.loot)}.`] : []),
+        ...(prize.badge ? [`You earned the ${badgeName(prize.badge)}!`] : []),
+      ];
+      const afterWords = prizeLines.length
+        ? () => {
+            cue(prize.badge ? 'badge' : 'chest');
+            showTalk({ pages: prizeLines });
+          }
+        : undefined;
+      showTalk({ speaker: trainer.name, pages: trainer.winPages?.length ? trainer.winPages : ['Well battled!'], after: afterWords });
     }
   };
 
@@ -344,7 +392,7 @@ export function WorldGame({
           setup={scene.setup}
           settings={settings}
           onSettingsChange={(s) => onSettingsChange({ ...settings, ...s })}
-          onFinish={finishBattle}
+          onFinish={onBattleDone}
           random={random}
           packFor={packFor}
           timeScale={timeScale}
@@ -388,7 +436,7 @@ export function WorldGame({
               );
             })}
           </ul>
-          <button type="button" className="mw-gear" onClick={() => setShowSettings(true)} aria-haspopup="dialog">Settings</button>
+          <button type="button" className="mw-gear" onClick={() => setMenu({ page: 'main', from: 'menu' })} aria-haspopup="dialog" aria-keyshortcuts="M Escape">Menu</button>
         </div>
         {settings.dpad && (
           <div className="mw-controls">
@@ -401,14 +449,20 @@ export function WorldGame({
             <button type="button" className="mw-talkbtn" onClick={() => ctrl.current!.talk()}>Talk</button>
           </div>
         )}
-        {showSettings && (
-          <div className="mw-settings" role="dialog" aria-label="Settings" aria-modal="true">
-            <h2>Settings</h2>
-            <label><input type="checkbox" checked={settings.calm} onChange={(e) => onSettingsChange({ ...settings, calm: e.target.checked })} /> Calm (no quick-answer bonus, nothing timed)</label>
-            <label><input type="checkbox" checked={settings.multipleChoice} onChange={(e) => onSettingsChange({ ...settings, multipleChoice: e.target.checked })} /> Choose answers (instead of the number pad)</label>
-            <label><input type="checkbox" checked={settings.dpad} onChange={(e) => onSettingsChange({ ...settings, dpad: e.target.checked })} /> On-screen arrows (for touch screens)</label>
-            <button type="button" className="mw-btn" onClick={() => setShowSettings(false)} autoFocus>Done</button>
-          </div>
+        {menu && (
+          <MapMenu
+            page={menu.page}
+            from={menu.from}
+            world={world}
+            settings={settings}
+            onSettingsChange={onSettingsChange}
+            onGo={(page) => setMenu({ page, from: 'menu' })}
+            onClose={() => {
+              setMenu(null);
+              stage.current?.focus({ preventScroll: true });
+            }}
+            onChange={(next) => ctrl.current!.patch(next)}
+          />
         )}
       </div>
       <div className="mw-talk" onClick={talk ? advance : undefined}>

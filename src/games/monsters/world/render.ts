@@ -63,6 +63,14 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
   const sy1 = Math.min(mapH, Math.ceil((offY + H) / S));
   if (sx1 > sx0 && sy1 > sy0) ctx.drawImage(frame, sx0, sy0, sx1 - sx0, sy1 - sy0, sx0 * S - offX, sy0 * S - offY, (sx1 - sx0) * S, (sy1 - sy0) * S);
 
+  // Things that change: a gate while it is shut, and chests (closed, then open).
+  const stamp = (gid: number, x: number, y: number) => {
+    const t = cache.tile(gid);
+    if (t) ctx.drawImage(t, 0, 0, TILE, TILE, Math.round(x * TILE * S - offX), Math.round(y * TILE * S - offY), TILE * S, TILE * S);
+  };
+  for (const g of map.gates) if (!view.state.badges.includes(g.badge)) stamp(g.gid, g.x, g.y);
+  for (const t of map.things) if (t.kind === 'chest' && t.gid) stamp(view.state.chests.includes(t.id) ? t.openGid! : t.gid, t.x, t.y);
+
   // People, back to front.
   const bob = view.walking && Math.floor(now / 100) % 2 ? -S : 0;
   const people: { x: number; y: number; img: HTMLCanvasElement | null; bob: number; id: string }[] = [];

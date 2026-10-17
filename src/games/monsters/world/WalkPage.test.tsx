@@ -106,11 +106,13 @@ describe('the Walk around test page', () => {
     const user = userEvent.setup();
     await startWalking(user);
     expect(screen.queryByRole('button', { name: 'Walk up' })).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    await user.click(screen.getByRole('button', { name: 'Menu' }));
+    await user.click(within(screen.getByRole('dialog', { name: 'Menu' })).getByRole('button', { name: /^Settings/ }));
     const box = screen.getByRole('dialog', { name: 'Settings' });
     await user.click(within(box).getByLabelText(/On-screen arrows/));
     await user.click(within(box).getByLabelText(/Calm/));
-    await user.click(within(box).getByRole('button', { name: 'Done' }));
+    await user.click(within(box).getByRole('button', { name: 'Back' }));
+    await user.click(screen.getByRole('button', { name: 'Back to the map' }));
     expect(screen.getByRole('button', { name: 'Walk up' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Talk' })).toBeInTheDocument();
     // The arrows work (the keyboard can press them too).
@@ -123,11 +125,11 @@ describe('the Walk around test page', () => {
   it('teleports, and "More battles" makes the grass start a battle within 3 steps; a win comes back to the map', async () => {
     const user = userEvent.setup();
     await startWalking(user);
-    await user.selectOptions(screen.getByLabelText('Teleport to'), 'Next to the long grass');
+    await user.selectOptions(screen.getByLabelText('Teleport to'), 'Area 1: Kauri Bush: Next to the long grass');
     await user.click(screen.getByRole('button', { name: 'Go' }));
-    await waitFor(() => expect(where()).toMatchObject({ map: 'kauri-bush', x: 12, y: 15 }));
+    await waitFor(() => expect(where()).toMatchObject({ map: 'kauri-bush', x: 17, y: 14 }));
     await user.click(screen.getByLabelText(/More battles/));
-    for (let i = 0; i < 3; i++) press('ArrowRight');
+    for (let i = 0; i < 3; i++) press('ArrowDown');
     await screen.findByText(/A wild .* appeared!/);
     await passMessages(user);
     // Fight with the first move until it is over.

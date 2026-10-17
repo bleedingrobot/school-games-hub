@@ -49,7 +49,7 @@ export function canHeal(state: WorldState, target: number): string | null {
 }
 
 /** Uses a potion or super potion on a team monster, or a Repel (no target). Balls can't be used on the map. */
-export function useItem(state: WorldState, item: ItemId, target?: number): MenuResult {
+export function applyItem(state: WorldState, item: ItemId, target?: number): MenuResult {
   if ((state.bag[item] ?? 0) < 1) return no('You have none of those');
   if (item === 'repel') {
     if (state.repel > 0) return no('A Repel is still working');

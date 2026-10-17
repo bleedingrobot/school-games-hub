@@ -1,6 +1,9 @@
 /* Maths Monsters: the world screen. Fits 1366 × 640 and a phone on its side. */
 .mw {
   --mw-ink: #0f172a;
+  --mb-ink: #0f172a;
+  --mb-soft: #475569;
+  --mb-line: #cbd5e1;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   height: var(--mw-height, min(100dvh, 640px));
@@ -74,4 +77,75 @@
   .mw-dpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); }
   .mw-talk { min-height: 60px; padding: 6px 12px; }
   .mw-talk__text { font-size: 0.95rem; }
+}
+
+/* ---------- The map menu: pages inside the Sheet look from the battle screens ---------- */
+.mm { position: absolute; inset: 0; z-index: 20; color: var(--mb-ink); }
+.mm .mb-sheet { border-radius: 0; }
+.mm-main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; max-width: 720px; margin: 0 auto; }
+.mm-main__btn { display: grid; justify-items: center; align-content: center; gap: 0; min-height: 64px; font-size: 1.15rem; }
+.mm-main__btn small { font-size: 0.78rem; font-weight: 600; color: var(--mb-soft); }
+.mm-main__btn--team { background: #bfdbfe; }
+.mm-main__btn--bag { background: #fde68a; }
+.mm-main__btn--book { background: #bbf7d0; }
+.mm-main__btn--badges { background: #fbcfe8; }
+.mm-main__btn--settings { background: #e2e8f0; }
+.mm-main__go { grid-column: 1 / -1; justify-self: center; min-width: 260px; }
+.mm-help { margin: 0 0 8px; font-weight: 600; }
+.mm-msg { margin: 8px 0 0; font-weight: 700; color: #1d4ed8; }
+.mm-msg:empty { margin: 0; }
+.mm .mb-sheet__body { display: flex; flex-direction: column; }
+.mm .mb-sheet__body > .bk { flex: 1; min-height: 0; }
+.mm .mb-sheet__body > :not(.bk) { flex: none; }
+.mm-cancel { margin-top: 10px; }
+.mm-settings { display: grid; gap: 12px; max-width: 560px; }
+.mm-settings label { display: flex; gap: 10px; align-items: flex-start; font-weight: 600; }
+.mm-settings input { width: 22px; height: 22px; flex: none; }
+.mm-badges { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.mm-badge { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 2px solid var(--mb-line); border-radius: 14px; background: #fff; opacity: 0.85; }
+.mm-badge.is-earned { border-color: #ca8a04; background: #fefce8; opacity: 1; }
+.mm-badge__medal { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border: 3px solid var(--mb-ink); border-radius: 50%; background: #e2e8f0; font-size: 1.4rem; color: #fff; }
+.mm-badge:not(.is-earned) .mm-badge__medal { background: #e2e8f0; border-style: dashed; }
+.mm-badge.is-earned .mm-badge__medal--leaf { background: #16a34a; }
+.mm-badge.is-earned .mm-badge__medal--water { background: #0284c7; }
+.mm-badge.is-earned .mm-badge__medal--fire { background: #ea580c; }
+.mm-badge.is-earned .mm-badge__medal--ice { background: #0891b2; }
+.mm-badge.is-earned .mm-badge__medal--spark { background: #ca8a04; }
+.mm-badge.is-earned .mm-badge__medal--stone { background: #78716c; }
+.mm-badge__text { display: grid; }
+.mm-badge__text small { color: var(--mb-soft); font-weight: 600; font-size: 0.8rem; }
+
+/* The monster book */
+.bk { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; min-height: 0; }
+.bk-list { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+.bk-count { margin: 0 0 6px; font-weight: 600; color: var(--mb-soft); }
+.bk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; margin: 0; padding: 0 4px 4px 0; list-style: none; overflow-y: auto; min-height: 0; align-content: start; }
+.bk-tile { display: grid; justify-items: center; width: 100%; padding: 4px 2px 3px; border: 2px solid var(--mb-line); border-radius: 12px; background: #fff; font: inherit; color: inherit; cursor: pointer; }
+.bk-tile.is-selected { border-color: #2563eb; background: #eff6ff; }
+.bk-tile:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+.bk-tile--owned { border-color: #86efac; }
+.bk-name { font-size: 0.72rem; font-weight: 800; line-height: 1.15; text-align: center; min-height: 1.7em; overflow-wrap: anywhere; }
+.bk-dark { position: relative; display: inline-block; }
+.bk-dark .mon-art, .bk-dark svg { filter: brightness(0) opacity(0.82); }
+.bk-tile--unknown .bk-name { font-size: 1.1rem; color: var(--mb-soft); }
+.bk-detail { overflow-y: auto; padding: 10px 14px; border: 2px solid var(--mb-line); border-radius: 14px; background: #fff; min-height: 0; }
+.bk-detail h3 { margin: 2px 0 0; font-size: 1.25rem; }
+.bk-detail__art { display: grid; place-items: center; }
+.bk-sub { margin: 0 0 8px; color: var(--mb-soft); font-weight: 600; font-size: 0.9rem; }
+.bk-facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 0.92rem; }
+.bk-facts dt { font-weight: 800; color: var(--mb-soft); }
+.bk-facts dd { margin: 0; }
+
+/* The monster box */
+.bx { display: grid; gap: 14px; }
+.bx h3 { margin: 0 0 6px; }
+
+@media (max-width: 760px) { .mm-badges, .mm-main { grid-template-columns: 1fr; } .bk { grid-template-columns: minmax(0, 1fr) 230px; } }
+@media (max-height: 520px) {
+  .mm-main__btn { min-height: 48px; font-size: 1rem; }
+  .bk-grid { grid-template-columns: repeat(auto-fill, minmax(66px, 1fr)); }
+  .bk-detail { padding: 6px 10px; }
+  .bk-detail__art .mon-art { width: 80px !important; height: 80px !important; }
+  .mm-badge { padding: 4px 10px; }
+  .mm-badge__medal { width: 34px; height: 34px; }
 }

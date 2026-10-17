@@ -89,7 +89,13 @@ export class WalkController {
     this.events.onState(state);
   }
 
-  /** While something else has the screen (a talk box, a battle, settings) walking waits. */
+  /** Change the game state without moving anyone (the menu used a potion, a chest was opened...). */
+  patch(state: WorldState) {
+    this.state = state;
+    this.events.onState(state);
+  }
+
+  /** While something else has the screen (a talk box, a battle, a menu) walking waits. */
   lock() {
     this.locked = true;
     this.held = [];
@@ -122,7 +128,7 @@ export class WalkController {
   /** A tap on a tile: walk there by the shortest way, or walk up to a person or sign and talk. */
   tap(tx: number, ty: number) {
     if (this.locked) return;
-    const plan = planTap(mapOf(this.opts, this.state), this.state, tx, ty);
+    const plan = planTap(mapOf(this.opts, this.state), this.state, tx, ty, this.state.badges);
     if (plan.kind === 'none') return;
     this.held = [];
     this.path = plan.path.slice();
