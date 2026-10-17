@@ -3,6 +3,7 @@
  * change are in ENCOUNTERS. No browser, no clock: random numbers come from a seeded `Dice`.
  */
 import { AREA_LEVELS } from '../bands';
+import { FAMILIES, formAt } from '../monsterBook';
 import { makeMonster, type Monster } from '../rules';
 import type { Dice } from './rng';
 import { DELTA, type GameMap, type Thing, type WorldState } from './types';
@@ -30,13 +31,17 @@ export function wildLevels(area: number, far: boolean): [number, number] {
   return far ? [mid, high] : [low, mid];
 }
 
-/** A wild monster for a tile of long grass: one of the map's species, at a level in the area's range. */
+/** The species a wild list entry gives at a level: a family grows with the level, a fixed species stays. */
+export const wildSpecies = (entry: string, level: number) => (FAMILIES[entry] ? formAt(entry, level) : entry);
+
+/** A wild monster for a tile of long grass: one of the map's monsters, at a level in the area's range. */
 export function wildFor(map: GameMap, x: number, y: number, dice: Dice): Monster | null {
   if (!map.wild.length) return null;
   const far = map.far[y * map.width + x];
   const [low, high] = wildLevels(map.area, far);
-  const species = map.wild[dice.int(0, map.wild.length - 1)];
-  return makeMonster(species, dice.int(low, high), () => dice.next());
+  const entry = map.wild[dice.int(0, map.wild.length - 1)];
+  const level = dice.int(low, high);
+  return makeMonster(wildSpecies(entry, level), level, () => dice.next());
 }
 
 export interface Sighting {
@@ -49,16 +54,16 @@ export interface Sighting {
  * A trainer who hasn't fought you yet sees you if you stand in the line of tiles they face,
  * within their sight, with nothing in the way.
  */
-export function findSighting(map: GameMap, state: Pick<WorldState, 'x' | 'y' | 'beaten'>): Sighting | null {
+export function findSighting(map: GameMap, state: Pick<WorldState, 'x' | 'y' | 'beaten'> & { badges?: string[] }): Sighting | null {
   for (const t of map.things) {
-    if (t.kind !== 'trainer' || state.beaten.includes(t.id)) continue;
+    if (t.kind !== 'trainer' || state.beaten.includes(t.id) || (t.badge && state.badges?.includes(t.badge))) continue;
     const [dx, dy] = DELTA[t.facing];
     const path: [number, number][] = [];
     for (let k = 1; k <= (t.sight ?? ENCOUNTERS.trainerSight); k++) {
       const x = t.x + dx * k;
       const y = t.y + dy * k;
       if (x === state.x && y === state.y) return { trainer: t, path };
-      if (isBlocked(map, x, y)) break;
+      if (isBlocked(map, x, y, state.badges)) break;
       path.push([x, y]);
     }
   }

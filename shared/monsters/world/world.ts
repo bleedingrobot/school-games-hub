@@ -3,11 +3,13 @@
  * Every function takes a `WorldState` and gives back a new one (the old one is never changed).
  */
 import { healTeam, type Bag, type BattleSetup } from '../engine';
+import { speciesOf } from '../monsterBook';
 import { makeMonster, type Monster } from '../rules';
 import { Dice } from './rng';
 import { findSighting, nextGrassSteps, wildFor, type Sighting } from './encounters';
-import { DELTA, type Dir, type GameMap, type Thing, type WorldState } from './types';
-import { isBlocked, thingAt, warpAt } from './walking';
+import { addToBag, describeLoot, LOOT } from './rewards';
+import { DELTA, type Dir, type Gate, type GameMap, type Thing, type WorldState } from './types';
+import { gateAt, isBlocked, thingAt, warpAt } from './walking';
 
 export type Maps = Readonly<Record<string, GameMap>>;
 
@@ -37,7 +39,7 @@ export function newWorld(opts: WorldOptions, team: Monster[], seed = 1): WorldSt
   const start = spotOf(opts, START_MAP, 'start');
   const wake = spotOf(opts, 'healing-centre', 'wake');
   const dice = new Dice(seed);
-  return {
+  return refreshBook({
     version: 1,
     map: START_MAP,
     x: start.x,
@@ -52,7 +54,31 @@ export function newWorld(opts: WorldOptions, team: Monster[], seed = 1): WorldSt
     grassSteps: nextGrassSteps(dice, opts.fast ?? false),
     repel: 0,
     steps: 0,
-  };
+    badges: [],
+    seen: [],
+    owned: [],
+    chests: [],
+    paid: [],
+  });
+}
+
+const sorted = (ids: Iterable<string>) => [...new Set(ids)].sort();
+
+/** The monsters you hold are in the book as owned, and so are the earlier forms they grew from. */
+export function refreshBook(state: WorldState): WorldState {
+  const have = new Set([...state.owned, ...state.team.map((m) => m.species), ...state.box.map((m) => m.species)]);
+  for (const id of [...have]) {
+    const { family, stage } = speciesOf(id);
+    for (let earlier = 1; earlier < stage; earlier++) have.add(`${family}-${earlier}`);
+  }
+  const owned = sorted(have);
+  return { ...state, owned, seen: sorted([...state.seen, ...owned]) };
+}
+
+/** You have met these monsters in a battle (they go in the book, even if you ran away). */
+export function meet(state: WorldState, foes: readonly Monster[]): WorldState {
+  const seen = sorted([...state.seen, ...foes.map((f) => f.species)]);
+  return seen.length === state.seen.length ? state : { ...state, seen };
 }
 
 /** Puts you at a place (used by the test page's "Teleport to"). */
@@ -81,7 +107,7 @@ export function step(state: WorldState, dir: Dir, opts: WorldOptions, { turnFirs
   const map = mapOf(opts, state);
   const nx = state.x + DELTA[dir][0];
   const ny = state.y + DELTA[dir][1];
-  if (isBlocked(map, nx, ny)) return { state: { ...state, facing: dir }, action: 'bump' };
+  if (isBlocked(map, nx, ny, state.badges)) return { state: { ...state, facing: dir }, action: 'bump' };
 
   let next: WorldState = { ...state, x: nx, y: ny, facing: dir, steps: state.steps + 1 };
   const warp = warpAt(map, nx, ny);
@@ -136,6 +162,10 @@ export interface InteractOutcome {
   /** A trainer who wants to battle once the talking is done. */
   challenge?: Thing;
   thing?: Thing;
+  /** A screen to open once the talking is done (the monster box or the monster book). */
+  open?: 'box' | 'book';
+  /** What the screen should make a sound for. */
+  cue?: 'heal' | 'chest';
 }
 
 /** The tile you face. */
@@ -143,12 +173,22 @@ export const facingTile = (s: Pick<WorldState, 'x' | 'y' | 'facing'>): [number, 
 
 const fill = (page: string, state: WorldState) => page.replace('{box}', String(state.box.length)).replace('{team}', String(state.team.length));
 
-/** Space / Enter / a tap on what you are facing: read a sign, chat, or be healed by the nurse. */
+/** "Leaf badge". */
+export const badgeName = (badge: string) => `${badge[0].toUpperCase()}${badge.slice(1)} badge`;
+
+/** What a closed gate says: its own words, then which badge is missing. */
+export const gatePages = (gate: Gate): string[] => [...gate.pages, `You need the ${badgeName(gate.badge)} to go on. Win it from the Topic Tower trainer in this area.`];
+
+/** Space / Enter / a tap on what you are facing: read a sign, chat, open a chest, or be healed by the nurse. */
 export function interact(state: WorldState, opts: WorldOptions): InteractOutcome {
   const map = mapOf(opts, state);
   const [x, y] = facingTile(state);
   const thing = thingAt(map, x, y);
-  if (!thing) return { state };
+  if (!thing) {
+    const gate = gateAt(map, x, y);
+    if (gate && isBlocked(map, x, y, state.badges)) return { state, talk: { pages: gatePages(gate) } };
+    return { state };
+  }
   const speaker = thing.kind === 'person' || thing.kind === 'trainer' || thing.kind === 'nurse' ? thing.name : undefined;
   const say = (pages: string[]) => ({ speaker, pages: pages.map((p) => fill(p, state)) });
   if (thing.kind === 'nurse') {
@@ -157,12 +197,20 @@ export function interact(state: WorldState, opts: WorldOptions): InteractOutcome
       team: healTeam(state.team),
       heal: { map: map.id, x: state.x, y: state.y, facing: state.facing },
     };
-    return { state: healed, thing, talk: say([...thing.pages, 'All done! Your monsters are fully rested.']) };
+    return { state: healed, thing, cue: 'heal', talk: say([...thing.pages, 'All done! Your monsters are fully rested.']) };
   }
   if (thing.kind === 'trainer') {
-    if (state.beaten.includes(thing.id)) return { state, thing, talk: say(thing.winPages ?? thing.pages) };
+    // Beaten this visit, or a Tower trainer whose badge you already hold: no more battle, just a chat.
+    if (state.beaten.includes(thing.id) || (thing.badge && state.badges.includes(thing.badge))) return { state, thing, talk: say(thing.winPages ?? thing.pages) };
     return { state, thing, talk: say(thing.pages), challenge: thing };
   }
+  if (thing.kind === 'chest') {
+    if (state.chests.includes(thing.id)) return { state, thing, talk: say(['The chest is empty now.']) };
+    const loot = LOOT[thing.loot ?? ''] ?? {};
+    const opened: WorldState = { ...state, chests: [...state.chests, thing.id], bag: addToBag(state.bag, loot) };
+    return { state: opened, thing, cue: 'chest', talk: say([...thing.pages, `You found ${describeLoot(loot)}!`]) };
+  }
+  if (thing.kind === 'box' || thing.kind === 'book') return { state, thing, talk: say(thing.pages), open: thing.kind };
   return { state, thing, talk: say(thing.pages) };
 }
 
@@ -192,17 +240,38 @@ export interface FinishedBattle {
   bag: Bag;
 }
 
+export interface BattlePrize {
+  /** A badge earned for the first time. */
+  badge?: string;
+  /** Items a trainer paid for the first win. */
+  loot?: Bag;
+}
+
 /**
  * Back on the map. Win, catch or run: carry on with the team, box and bag the battle ended with
  * (a caught monster is already in the team, or in the box when the team is full). Lose: the team
- * is healed, nothing is lost, and you wake up at the last healing spot.
+ * is healed, nothing is lost, and you wake up at the last healing spot. A first win over a Tower
+ * trainer gives the badge, and a first win over a trainer with `loot` pays it (never twice).
  */
-export function afterBattle(state: WorldState, result: FinishedBattle, trainer?: Thing): WorldState {
-  const next: WorldState = { ...state, team: structuredClone(result.team), box: structuredClone(result.box), bag: { ...result.bag } };
+export function finishBattle(state: WorldState, result: FinishedBattle, trainer?: Thing): { state: WorldState; prize: BattlePrize } {
+  let next: WorldState = { ...state, team: structuredClone(result.team), box: structuredClone(result.box), bag: { ...result.bag } };
+  const prize: BattlePrize = {};
   if (result.outcome === 'lost') {
     const h = state.heal;
-    return { ...next, team: healTeam(next.team), map: h.map, x: h.x, y: h.y, facing: h.facing, beaten: [] };
+    next = { ...next, team: healTeam(next.team), map: h.map, x: h.x, y: h.y, facing: h.facing, beaten: [] };
+  } else if (result.outcome === 'won' && trainer) {
+    if (!next.beaten.includes(trainer.id)) next.beaten = [...next.beaten, trainer.id];
+    if (trainer.badge && !next.badges.includes(trainer.badge)) {
+      next.badges = [...next.badges, trainer.badge];
+      prize.badge = trainer.badge;
+    }
+    if (trainer.loot && !next.paid.includes(trainer.id)) {
+      prize.loot = LOOT[trainer.loot];
+      next.bag = addToBag(next.bag, prize.loot);
+      next.paid = [...next.paid, trainer.id];
+    }
   }
-  if (result.outcome === 'won' && trainer && !next.beaten.includes(trainer.id)) next.beaten = [...next.beaten, trainer.id];
-  return next;
+  return { state: refreshBook(next), prize };
 }
+
+export const afterBattle = (state: WorldState, result: FinishedBattle, trainer?: Thing): WorldState => finishBattle(state, result, trainer).state;

@@ -112,6 +112,13 @@ export const MONSTER_BOOK: readonly Species[] = build();
 
 const BY_ID = new Map(MONSTER_BOOK.map((s) => [s.id, s]));
 
+/** The form of a family a monster of this level has (first form below its first growth level, and so on). */
+export function formAt(family: string, level: number): string {
+  const f = FAMILIES[family];
+  if (!f) throw new Error(`No monster family "${family}" in the monster book`);
+  return `${family}-${level >= f.evolveAt[1] ? 3 : level >= f.evolveAt[0] ? 2 : 1}`;
+}
+
 export function speciesOf(id: string): Species {
   const s = BY_ID.get(id);
   if (!s) throw new Error(`No monster "${id}" in the monster book`);

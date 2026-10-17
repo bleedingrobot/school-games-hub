@@ -5,7 +5,7 @@
 import { randomFromSeed } from '../space/random';
 import { AREA_LEVELS } from './bands';
 import { foeAttackIndex, healTeam, isOver, newBattle, play, type Bag, type BattleAction, type BattleState } from './engine';
-import { FAMILIES, speciesOf } from './monsterBook';
+import { FAMILIES, formAt, speciesOf } from './monsterBook';
 import { makeMonster, maxHpOf, type AnswerResult, type Monster } from './rules';
 import { typeMultiplier } from './types';
 
@@ -24,12 +24,6 @@ export const STUDENTS = { '50%': 0.5, '75%': 0.75, '90%': 0.9 };
 export const SECONDS = { perQuestion: 8, perAction: 4 };
 
 const FAMILY_IDS = Object.keys(FAMILIES);
-
-/** The form of a family a monster of this level would have in the wild. */
-export function formAt(family: string, level: number): string {
-  const evolveAt = FAMILIES[family].evolveAt;
-  return `${family}-${level >= evolveAt[1] ? 3 : level >= evolveAt[0] ? 2 : 1}`;
-}
 
 export function randomWild(level: number, random: () => number): Monster {
   const family = FAMILY_IDS[Math.floor(random() * FAMILY_IDS.length)];
@@ -206,4 +200,4 @@ export function simLevelling(student: Student, seed: string): LevellingReport {
   return { battlesToReady, levelAfterArea, battlesPerLevel: bands, totalBattles: battles, losses, minutes: seconds / 60 };
 }
 
-export { foeAttackIndex };
+export { foeAttackIndex, formAt };

@@ -25,7 +25,8 @@ import { TYPE_TOPIC, typeMultiplier } from './types';
 
 export const MAX_TEAM = 6;
 
-export type ItemId = 'potion' | 'super-potion' | 'ball' | 'great-ball';
+/** `repel` is only used on the map (the world's Bag menu); a battle refuses it. */
+export type ItemId = 'potion' | 'super-potion' | 'ball' | 'great-ball' | 'repel';
 export type Bag = Partial<Record<ItemId, number>>;
 
 export type Phase = 'choose' | 'replace' | 'won' | 'lost' | 'ran' | 'caught';

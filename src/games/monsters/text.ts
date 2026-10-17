@@ -9,12 +9,14 @@ export const ITEM_LABEL: Record<ItemId, string> = {
   'super-potion': 'Super potion',
   ball: 'Ball',
   'great-ball': 'Great ball',
+  repel: 'Repel',
 };
 export const ITEM_NOTE: Record<ItemId, string> = {
   potion: 'Heals 40 health',
   'super-potion': 'Heals 120 health',
   ball: 'Catch a wild monster',
   'great-ball': 'Catches more often',
+  repel: 'No wild battles for 50 steps in long grass',
 };
 
 /** One step the student reads and taps through. `sub` marks the two halves of an evolution. */

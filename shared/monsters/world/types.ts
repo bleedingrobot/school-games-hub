@@ -11,7 +11,7 @@ export const DELTA: Record<Dir, readonly [number, number]> = { up: [0, -1], down
 export const OPPOSITE: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
 /** Things you can talk to. They all block walking. */
-export type ThingKind = 'sign' | 'person' | 'nurse' | 'box' | 'book' | 'closed' | 'trainer';
+export type ThingKind = 'sign' | 'person' | 'nurse' | 'box' | 'book' | 'closed' | 'trainer' | 'chest';
 
 export interface TrainerMonster {
   species: string;
@@ -36,6 +36,26 @@ export interface Thing {
   sight?: number;
   /** What a trainer says after you beat them. */
   winPages?: string[];
+  /** A Tower trainer: the badge you earn the first time you win. */
+  badge?: string;
+  /** Trainers and chests: the name of the bundle of items they give once (see rewards.ts). */
+  loot?: string;
+  /** Chests: the Tiny Dungeon tiles drawn while closed and once opened. */
+  gid?: number;
+  openGid?: number;
+}
+
+/** A way on that stays closed until you hold a badge (a rope fence). The map's wall layer does not draw it; the screen does, while it is closed. */
+export interface Gate {
+  id: string;
+  x: number;
+  y: number;
+  /** The badge that opens it. */
+  badge: string;
+  /** What it says while closed. */
+  pages: string[];
+  /** The tile drawn while it is closed. */
+  gid: number;
 }
 
 export interface Warp {
@@ -74,9 +94,13 @@ export interface GameMap {
   /** The far half of the area: higher wild levels and harder questions. */
   far: boolean[];
   things: Thing[];
+  gates: Gate[];
   warps: Warp[];
   spots: Spot[];
-  /** Wild monsters in this map's long grass (species ids, first forms). */
+  /**
+   * Wild monsters in this map's long grass: a family ("fractopus", its form comes from the level)
+   * or a fixed species ("fractopus-1"). A name written twice turns up twice as often.
+   */
   wild: string[];
 }
 
@@ -108,8 +132,17 @@ export interface WorldState {
   seed: number;
   /** Long-grass steps left before the next wild battle. */
   grassSteps: number;
-  /** Steps of "Repel" left (the item comes later; this is where it plugs in). */
+  /** Steps of long grass left under a Repel (no wild battles while this is above 0). */
   repel: number;
   /** Steps taken in all. */
   steps: number;
+  /** Badges earned (the six topic names: leaf, water, fire, ice, spark, stone). Never twice. */
+  badges: string[];
+  /** The monster book: species ids met (in a battle) and owned (in the team or box now or before). Sorted, each once. */
+  seen: string[];
+  owned: string[];
+  /** Chests already opened (one-time). */
+  chests: string[];
+  /** Trainers who have already given their prize (they can battle again, but pay once). */
+  paid: string[];
 }

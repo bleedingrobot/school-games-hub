@@ -1,11 +1,14 @@
 /**
  * Checks all the maps together: every door leads somewhere real, and you can walk from the
- * start to every door, sign, person and trainer (nothing is walled in or blocks the way).
+ * start to every door, sign, person, trainer, chest, gate and patch of grass (nothing is walled in
+ * or blocks the way). `badges` is what you hold while walking: all of them by default, so the whole
+ * world must be reachable; pass fewer to see how far you get.
  */
+import { BADGES } from './mapLoader';
 import { DIRS, DELTA, type GameMap } from './types';
 import { inMap, isBlocked, warpAt } from './walking';
 
-export function checkWorld(maps: Record<string, GameMap>, start: { map: string; spot: string }): string[] {
+export function checkWorld(maps: Record<string, GameMap>, start: { map: string; spot: string }, badges: readonly string[] = BADGES): string[] {
   const problems: string[] = [];
   for (const m of Object.values(maps)) {
     for (const w of m.warps) {
@@ -15,7 +18,7 @@ export function checkWorld(maps: Record<string, GameMap>, start: { map: string; 
         continue;
       }
       if (!inMap(to, w.toX, w.toY)) problems.push(`${w.id} lands outside "${w.to}" (${w.toX},${w.toY})`);
-      else if (isBlocked(to, w.toX, w.toY)) problems.push(`${w.id} lands on a blocked tile of "${w.to}" (${w.toX},${w.toY})`);
+      else if (isBlocked(to, w.toX, w.toY, BADGES)) problems.push(`${w.id} lands on a blocked tile of "${w.to}" (${w.toX},${w.toY})`);
       else if (warpAt(to, w.toX, w.toY)) problems.push(`${w.id} lands on another door (${w.toX},${w.toY}), you'd be sent straight back`);
     }
   }
@@ -44,7 +47,7 @@ export function checkWorld(maps: Record<string, GameMap>, start: { map: string; 
     for (const d of DIRS) {
       const nx = x + DELTA[d][0];
       const ny = y + DELTA[d][1];
-      if (!isBlocked(map, nx, ny)) queue.push([id, nx, ny]);
+      if (!isBlocked(map, nx, ny, badges)) queue.push([id, nx, ny]);
     }
   }
 
@@ -53,6 +56,10 @@ export function checkWorld(maps: Record<string, GameMap>, start: { map: string; 
     if (!seen) {
       problems.push(`you can never get to "${m.id}"`);
       continue;
+    }
+    for (const g of m.gates) {
+      const beside = DIRS.some((d) => seen.has((g.y + DELTA[d][1]) * m.width + g.x + DELTA[d][0]));
+      if (!beside) problems.push(`you can't get next to the gate "${g.id}"`);
     }
     for (const w of m.warps) if (!doors.has(w.id)) problems.push(`you can't reach the door ${w.id}`);
     for (const t of m.things) {

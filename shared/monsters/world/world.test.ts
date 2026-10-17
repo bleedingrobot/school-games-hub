@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { AREA_LEVELS } from '../bands';
 import { makeMonster, maxHpOf } from '../rules';
-import { speciesOf } from '../monsterBook';
+import { FAMILIES, speciesOf } from '../monsterBook';
 import { RAW_MAPS, WORLD_MAPS } from '../maps';
 import { checkWorld } from './checkWorld';
-import { ENCOUNTERS, findSighting, wildLevels } from './encounters';
-import { MapError, parseMap, type TiledMap } from './mapLoader';
+import { ENCOUNTERS, findSighting, wildLevels, wildSpecies } from './encounters';
+import { BADGES, MapError, parseMap, type TiledMap } from './mapLoader';
 import { Dice } from './rng';
 import { DELTA, DIRS, type Dir, type GameMap, type WorldState } from './types';
 import { cameraFor, findPath, findPathBeside, isBlocked, planTap } from './walking';
@@ -34,7 +34,7 @@ function walk(state: WorldState, route: Dir[], o: WorldOptions = opts) {
 
 describe('the maps', () => {
   it('all load, and the whole world checks out (every door leads somewhere, everything can be reached)', () => {
-    expect(Object.keys(WORLD_MAPS).sort()).toEqual(['harbour-town', 'healing-centre', 'kauri-bush']);
+    expect(Object.keys(WORLD_MAPS)).toHaveLength(20); // the town, the healing centre, six areas, six towers of two rooms
     expect(checkWorld(WORLD_MAPS, { map: 'harbour-town', spot: 'start' })).toEqual([]);
   });
 
@@ -56,7 +56,8 @@ describe('the maps', () => {
       }
     }
     const kinds = new Set(Object.values(WORLD_MAPS).flatMap((m) => m.things.map((t) => t.kind)));
-    for (const k of ['sign', 'person', 'nurse', 'box', 'book', 'closed', 'trainer']) expect(kinds.has(k as never), k).toBe(true);
+    for (const k of ['sign', 'person', 'nurse', 'box', 'book', 'chest', 'trainer']) expect(kinds.has(k as never), k).toBe(true);
+    for (const m of Object.values(WORLD_MAPS)) for (const g of m.gates) expect(g.pages.length, `${g.id} has text`).toBeGreaterThan(0);
   });
 
   it('every door leads to a real tile, and you can walk from the town to the bush and back', () => {
@@ -64,7 +65,7 @@ describe('the maps', () => {
       for (const w of m.warps) {
         const to = WORLD_MAPS[w.to];
         expect(to, w.id).toBeTruthy();
-        expect(isBlocked(to, w.toX, w.toY), `${w.id} lands on a free tile`).toBe(false);
+        expect(isBlocked(to, w.toX, w.toY, BADGES), `${w.id} lands on a free tile`).toBe(false);
       }
     }
     // Walk north up the road from the start, through the exit, then straight back down through the bush's exit.
@@ -82,13 +83,18 @@ describe('the maps', () => {
     expect(bush.things.filter((t) => t.kind === 'person').length).toBeGreaterThanOrEqual(2);
     expect(bush.things.filter((t) => t.kind === 'person').length).toBeLessThanOrEqual(3);
     expect(bush.things.filter((t) => t.kind === 'trainer')).toHaveLength(1);
-    const gate = bush.things.find((t) => t.kind === 'closed')!;
+    const gate = bush.gates[0];
+    expect(gate.badge).toBe('leaf');
     expect(isBlocked(bush, gate.x, gate.y)).toBe(true);
+    expect(isBlocked(bush, gate.x, gate.y, ['leaf'])).toBe(false);
   });
 
-  it('use only first-form monsters from the book, in the area-1 range', () => {
+  it('use only monsters from the book, and at area-1 levels they are all first forms', () => {
     expect(bush.wild.length).toBeGreaterThanOrEqual(5);
-    for (const id of bush.wild) expect(speciesOf(id).stage).toBe(1);
+    for (const entry of bush.wild) {
+      expect(FAMILIES[entry] ?? speciesOf(entry)).toBeTruthy();
+      for (let level = AREA_LEVELS[0][0]; level <= AREA_LEVELS[0][1]; level++) expect(speciesOf(wildSpecies(entry, level)).stage).toBe(1);
+    }
     expect(bush.area).toBe(1);
     expect(town.wild).toEqual([]);
     expect(town.isGrass.some(Boolean)).toBe(false);
@@ -214,7 +220,7 @@ describe('walking', () => {
     if (plan.kind === 'talk') {
       expect(plan.path).toEqual(['right']);
       expect(plan.face).toBe('right');
-      expect(plan.thing.name).toBe('Teacher');
+      expect('name' in plan.thing && plan.thing.name).toBe('Teacher');
     }
     expect(planTap(town, s, 17, 15).kind).toBe('none');
     expect(planTap(town, s, 11, 10).kind).toBe('walk');
@@ -305,8 +311,9 @@ describe('wild battles in the long grass', () => {
         const r = step(s, 'right', opts);
         expect(r.trigger?.kind).toBe('wild');
         if (r.trigger?.kind !== 'wild') continue;
-        seen.add(r.trigger.foe.species);
-        expect(bush.wild).toContain(r.trigger.foe.species);
+        const foe = r.trigger.foe;
+        seen.add(foe.species);
+        expect(bush.wild.map((e) => wildSpecies(e, foe.level))).toContain(foe.species);
         const [lo, hi] = wildLevels(1, far);
         expect(r.trigger.foe.level).toBeGreaterThanOrEqual(lo);
         expect(r.trigger.foe.level).toBeLessThanOrEqual(hi);
@@ -479,7 +486,7 @@ describe('the game state is plain data', () => {
     expect(r.state).not.toBe(s);
     const moved = placeAt(r.state, 'kauri-bush', 3, 4, 'left');
     expect(JSON.parse(JSON.stringify(moved))).toEqual(moved);
-    expect(Object.keys(s).sort()).toEqual(['bag', 'beaten', 'box', 'facing', 'grassSteps', 'heal', 'map', 'repel', 'seed', 'steps', 'team', 'version', 'x', 'y']);
+    expect(Object.keys(s).sort()).toEqual(['badges', 'bag', 'beaten', 'box', 'chests', 'facing', 'grassSteps', 'heal', 'map', 'owned', 'paid', 'repel', 'seed', 'seen', 'steps', 'team', 'version', 'x', 'y']);
   });
 
   it('DIRS covers all four ways', () => {
