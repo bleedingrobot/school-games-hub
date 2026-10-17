@@ -223,6 +223,46 @@ Each stage ends with tests passing and a results section here, and stops for Jam
 - **Tests**: 54 new. `world.test.ts` (35: maps load and check, doors, reachability, loader errors, walking, camera, shortest paths, encounter step counts over 60 seeded walks, same seed same walk, levels, More battles, Repel, trainer sight and once per visit, healing, losing, JSON round trip), `controller.test.ts` (13: turn then step, never faster than a step per 200 ms, smooth position, tap walk, tap to talk, locks, trainer "!" and walk up) and `WalkPage.test.tsx` (6: the Walk around page plays a step, a talk, settings, a grass battle won and back on the map, and a loss that ends at the healing centre). Full suite: 985 of 987 pass. The 2 failures are the known stale server bundles (`save-bot-game`, `space-game`). The two random tests (101 stats, chess bot) passed this time.
 - **Rough or for James to decide**: (1) each Kenney person has one picture, so left/right only slide the face over and "up" shows the back of the head (looks fine, not like a real 4-direction sprite); (2) the long grass tile is busy and the bush is mostly grass; (3) no sounds on the map yet; (4) no team or bag menu on the map (potions only in battle), box and book say "coming soon"; (5) the area-2 name Shell Beach, the people's jokes and tips, and "Nurse Joy" are my words to OK; (6) walking speed (5 tiles a second) is easy to change in `TIMING`.
 
+### N.5 results (done 18 Oct 2026, branch `monsters`)
+
+- **Five more areas** (25 x 20 each, made by `node scripts/make-monster-maps.mjs`, now split into `scripts/monster-maps/`): **Shell Beach** (Water, sand and sea), **Fire Mountain** (Fire, ash, lava, autumn trees), **Snowy Peaks** (Ice, snow, pines, frozen pond), **Glowworm Caves** (Spark, dark cave, glowing moss, crystals) and **Harbour City** (Stone, cobbles, houses, the harbour). The order and topics match section 4 (area N = type N, badge = the type's name). Each has long grass in the near and far half, 3-4 people (tips and jokes), 1-2 trainers, 4-6 signs, 2 chests, a rest hut with a nurse, and a Tower. Kauri Bush got a Tower, a rest hut (Nurse Pania), a second chest and a real gate too.
+- **Topic Towers**: a building you walk into, then two small rooms (hall with a guide and a ladder, top floor with the Tower trainer). The Tower trainer has 3 monsters at the area's top wild level, +1 and +2 (levels 6-8, 12-14, 19-21, 27-29, 36-38, 45-47), always fights at the far-half bands, and gives the badge and a prize (super potion, 2 great balls) the **first time only**. Holding the badge, they just chat. The way on is a rope **gate** that is shut until you hold the badge; it says which badge is missing. `checkWorld` runs with and without badges: with none you reach only the town and Kauri Bush, and each badge opens exactly the next area; with all six the whole world is reachable.
+- **Wild lists use families** (`digibud`), so the form follows the level (`formAt`, moved to `monsterBook.ts`); a name written twice turns up twice as often. Trainer teams are `family:level` too.
+- **Where each family lives.** Every family's first form can be caught by area 2; its grown forms turn up where its levels are high enough. The area with the family's own type has all three of its families twice as often.
+
+| Type (area) | Families | First forms in | Second forms in | Last forms in |
+|---|---|---|---|---|
+| Leaf (1 Kauri Bush) | Digibud, Roundroot, Placepetal | areas 1 (common) | 3, 4, 5 | 5, 6 |
+| Water (2 Shell Beach) | Plusplash, Minnowus, Carrycrab | 1, 2 (common) | 3, 5 | 5, 6 |
+| Fire (3 Fire Mountain) | Factorch, Multipup, Squaremander | 1 and 2 | 3 (common), 4, 5 | 5, 6 |
+| Ice (4 Snowy Peaks) | Divvy, Remaindeer, Sharebear | 1, 2 | 3 (a few), 4 (common) | 5, 6 |
+| Spark (5 Glowworm Caves) | Fractopus, Numeratot, Denomibolt | 1, 2 | 3, 5 (common) | 5 (common), 6 |
+| Stone (6 Harbour City) | Pebblepoint, Coinrock, Centipebble | 1, 2 | 3, 4, 5 | 5, 6 (common) |
+
+  (Exact list per area is the `wild` property in `scripts/monster-maps/*.mjs`; a test lists every species that can be met and checks that all 54 are met or reached by growing.)
+- **Monster book** (`MonsterBookScreen`): all 54, met or owned in full, the rest a dark shape with "?" (no name, no tooltip), details with type, topic, family, attacks and growth. **Box** (`BoxScreen`): team 1 to 6, never empty, no typing. `WorldState` gained plain data: `badges`, `seen`, `owned` (sorted arrays), `chests`, `paid` (trainers who already gave their prize). Both screens open from the box and book in Harbour Town and from the menu.
+- **Menu** (Menu button, M or Escape): Team (swap order), Bag (potions on a hurt monster, Repel, balls greyed), Monster book, Badges, Settings, same Sheet look as the battle. Walking is locked while it is open.
+- **Items**: `repel` added as an item (50 steps in long grass, from the bag menu, found in chests). Prizes are one easy block, `shared/monsters/world/rewards.ts` (`LOOT`). Trainers pay once; each chest opens once.
+- **Sounds** in `src/games/sounds.ts` (door, talk blip, wild-battle flash, heal jingle, badge fanfare, chest), on only when the hub's speaker button is on.
+- **Battle rules not changed.** One small addition: `'repel'` is a valid `ItemId` (a battle refuses it; the existing "not a healing item" rule covers it), and the battle `BagList` takes optional `items` / `ballNote` for the menu.
+- **Test page**: Teleport lists every area (entrance, next to the trainer, long grass, a chest, healing hut, Tower door, gate), every Tower hall and "next to the Tower trainer"; buttons **Give me all badges** and **Give me a full team and bag** (six level-40 monsters, three in the box, full bag).
+
+**Sim** (`npm run monsters:sim`, real wild lists, trainers and Towers; the route student keeps one strong lead and two weaker friends, so it is pessimistic for Towers 5-6):
+
+| What | 50% right | 75% right | 90% right |
+|---|---|---|---|
+| Whole route, battles | 139 | 120 | 113 |
+| Whole route, battling time (sim clock) | about 2.8 h | 1.7 h | 1.4 h |
+| Tower won, team ready (3 at the area's top level), areas 1-6 | 95, 96, 94, 90, 82, 83% | 98-100% | 99-100% |
+| Tower won, team 3 levels behind | 15-59% | 27-92% | 49-98% |
+| Tower fight length (ready) | 10-16 questions, 2.4-3.4 min | 8-12, 1.9-2.6 min | 7-10, 1.7-2.3 min |
+| Towers beaten first time on the route | 100, 90, 75, 73, 28, 28% | 100, 95, 90, 83, 50, 68% | 100, 100, 93, 88, 65, 88% |
+
+- **Tuning**: none needed. The Towers are a real step up (three levels behind loses often) but a ready team usually wins, so no number was changed. Tower 5 and 6 are the hardest for a 50% student.
+- **Checked** in a real browser (Chromium), 1366 x 640 and 844 x 390: every area, a chest, the nurse, every Tower door, the gate talk, the menu, team, bag, book, badges, settings and box. **axe: 0 problems** on all of them at both sizes (it found two things, both fixed: the book's scrolling detail panel was not keyboard-reachable, and the badges list scrolled with nothing focusable on a phone). **Smoothness** in Fire Mountain (animated lava), 12 s of walking: 60 fps, 0 frames over 20 ms; with the CPU slowed 4 times still 60 fps, 0 frames over 34 ms; a frame took 0.18 ms on average, 4 ms at worst (0.42 and 3.4 ms slowed).
+- **Tests**: about 75 new (`areas.test.ts` 27, `routeSim.test.ts` 2, `MapMenu.test.tsx` 11, plus updates). Full suite: 1024 of 1027. The three failures: the two known stale server bundles (`save-bot-game`, `space-game`), and one Wormholes & Black Holes test that failed once under load and passes alone (not ours).
+- **Rough, or for James to decide**: (1) the game is short by the sim's clock (1.4-2.8 h of battling, maybe 3-5 h with walking, reading, catching and slower answers, against the plan's 6-10 h): more exp needed per level (`TUNING.expCurve`) or higher wild levels would stretch it; (2) areas 2-6 have only the one outdoor look the packs allow (Kenney persons face the same way, trees repeat); (3) Tower rooms are plain; (4) `closed` objects are still supported by the loader but no map uses them now; (5) names Nurse Pania, Hinemoa, Mere, Aroha, Kowhai, Sina, the Tower trainers (Hemi, Moana, Rangi, Maia, Wiremu, Aroha), and all jokes and tips are my words to OK; (6) trainers who beat you in a Tower reset each visit only if you lack the badge; with it they only chat.
+
 ## 11. Ideas for later
 
 - **Battle a classmate** with your team (turn-based, so it fits the `multiplayer`-style server function). The maths questions are each player's own.
