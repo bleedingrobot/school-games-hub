@@ -12,13 +12,13 @@ import { CONFIG } from './config';
 import { usableBonus } from './character';
 import type { ItemDef, Member } from './types';
 
-function moment(settings: PracticalSettings, kind: PracticalKind, nums: number[], labels?: [string, string]): PracticalQuestion | null {
+function moment(settings: PracticalSettings, kind: PracticalKind, nums: number[], labels?: [string, string], item?: string): PracticalQuestion | null {
   if (!topicAvailable(settings, topicOf(kind))) return null;
-  return buildQuestion(kind, nums, { labels });
+  return buildQuestion(kind, nums, { labels, item });
 }
 
 /** Market: "Sword 240 gold, +10% tax: what do you pay?" The answer is the shop price. */
-export const marketTotal = (settings: PracticalSettings, price: number, tax: number = CONFIG.shopTax) => moment(settings, 'price-with-tax', [price, tax]);
+export const marketTotal = (settings: PracticalSettings, price: number, tax: number = CONFIG.shopTax, item?: string) => moment(settings, 'price-with-tax', [price, tax], undefined, item);
 
 /** Market: what it costs to look at an item's real stats (25% of the price, rounded up). */
 export const examineCostQuestion = (settings: PracticalSettings, price: number) => moment(settings, 'percent-of', [CONFIG.examinePercent, price]);
@@ -28,6 +28,9 @@ export const noteFor = (bill: number) => Math.max(1000, Math.ceil(bill / 1000) *
 
 /** Market: change from 1,000 (or the next thousand up) for one or more things. */
 export const marketChange = (settings: PracticalSettings, ...bills: number[]) => moment(settings, 'change', [noteFor(bills.reduce((t, b) => t + b, 0)), ...bills]);
+
+/** The same, for one named thing you just bought ("the Dagger that costs 22 gold"). */
+export const marketChangeFor = (settings: PracticalSettings, item: string, bill: number) => moment(settings, 'change', [noteFor(bill), bill], undefined, item);
 
 /** What an item adds up to for "which is the better buy": the total of its usable bonuses (stats it gives). */
 export const itemPoints = (member: Member, item: ItemDef) => Object.values(usableBonus(member, item)).reduce((t, v) => t + (v ?? 0), 0);

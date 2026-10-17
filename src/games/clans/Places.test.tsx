@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { hpCost, shopPrice, spCost, trainCost } from '../../../shared/clans/character';
 import { CONFIG } from '../../../shared/clans/config';
 import { itemByName } from '../../../shared/clans/character';
-import { examineCostQuestion, marketChange, marketTotal, trainingBuy, churchBill } from '../../../shared/clans/moments';
+import { examineCostQuestion, marketChangeFor, marketTotal, trainingBuy, churchBill } from '../../../shared/clans/moments';
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalQuestion } from '../../../shared/maths/practical';
 import { ClanQuest } from './ClanQuest';
 import { examineItem, train, trainOptions, wakeAll, wakeAllCost, wakeAllPayers, wakeMember } from './places';
@@ -72,8 +72,9 @@ describe('the Market', () => {
     await u.click(screen.getByRole('button', { name: 'The Market' }));
     await u.click(screen.getByRole('button', { name: /^Dagger/ }));
     await u.click(screen.getByRole('button', { name: /^Buy for/ }));
-    const q = marketTotal(S, item('Dagger').price)!;
+    const q = marketTotal(S, item('Dagger').price, CONFIG.shopTax, 'Dagger')!;
     expect(screen.getByText(q.text)).toBeInTheDocument();
+    expect(q.text).toMatch(/^The Dagger costs 20 gold/);
     await answer(u, q, wrongFor(q));
     expect(screen.getByText(/Not quite/)).toBeInTheDocument();
     expect(screen.getByText(q.working[0])).toBeInTheDocument();
@@ -88,7 +89,7 @@ describe('the Market', () => {
     await u.click(screen.getByRole('button', { name: 'The Market' }));
     await u.click(screen.getByRole('button', { name: /^Dagger/ }));
     await u.click(screen.getByRole('button', { name: /^Buy for/ }));
-    const q = marketTotal(S, 20)!;
+    const q = marketTotal(S, 20, CONFIG.shopTax, 'Dagger')!;
     await answer(u, q, q.answer);
     expect(screen.getByText('Right! Well done.')).toBeInTheDocument();
     await u.click(screen.getByRole('button', { name: 'Pay 22 gold' }));
@@ -113,7 +114,7 @@ describe('the Market', () => {
     await u.click(screen.getByRole('button', { name: 'Show me how' }));
     await u.click(screen.getByRole('button', { name: /^Pay/ }));
     await u.click(screen.getByRole('button', { name: 'Check my change' }));
-    const q = marketChange(S, shopPrice(item('Cloth Robe')))!;
+    const q = marketChangeFor(S, 'Cloth Robe', shopPrice(item('Cloth Robe')))!;
     expect(screen.getByText(q.text)).toBeInTheDocument();
     await answer(u, q, q.answer);
     expect(screen.getByText('Right! Well done.')).toBeInTheDocument();
@@ -176,7 +177,7 @@ describe('the Market', () => {
     await u.keyboard('{Enter}');
     await tabTo(u, /^Buy for/);
     await u.keyboard('{Enter}');
-    const q = marketTotal(S, 20)!;
+    const q = marketTotal(S, 20, CONFIG.shopTax, 'Dagger')!;
     await u.keyboard(`${q.answer}{Enter}`);
     await u.keyboard('{Enter}'); // the "Pay" button has the focus
     expect(screen.getByText(/have 178 left/)).toBeInTheDocument();

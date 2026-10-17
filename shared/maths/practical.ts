@@ -71,6 +71,8 @@ export interface PracticalQuestion extends PracticalSpec {
 export interface BuildOptions {
   /** Names for the two offers of a better-buy question ("Axe", "Sword"). Wording only; never marked. */
   labels?: [string, string];
+  /** The real thing being bought, for the shop's price and change questions ("Dagger"). Wording only; never marked. */
+  item?: string;
 }
 
 const MINUS = '−';
@@ -170,12 +172,12 @@ const KIND_DEFS: Record<PracticalKind, KindDef> = {
     topic: 'percentages',
     bands: YEAR_BANDS,
     valid: (n) => n.length === 2 && whole(n[0], 1, 5000) && n[1] >= 0 && n[1] <= 100 && Math.round(n[1] * 10) === n[1] * 10,
-    build([price, tax]) {
+    build([price, tax], options) {
       const taxAmount = price * tax / 100;
       const exact = price + taxAmount;
       const answer = ceil(exact);
-      const item = GOODS[variant([price, tax], GOODS.length)];
-      const text = `A ${item} costs ${fmt(price)} gold. The village adds ${fmt(tax)}% tax. What do you pay?` + (isWhole(exact) ? '' : ' Round up to a whole gold piece.');
+      const item = options.item ? `The ${options.item}` : `A ${GOODS[variant([price, tax], GOODS.length)]}`;
+      const text = `${item} costs ${fmt(price)} gold. The village adds ${fmt(tax)}% tax. What do you pay?` + (isWhole(exact) ? '' : ' Round up to a whole gold piece.');
       const working = [
         `Work out the tax first: ${fmt(tax)}% of ${fmt(price)} = ${fmt(taxAmount)}.`,
         `Then add it on: ${fmt(price)} + ${fmt(taxAmount)} = ${fmt(exact)}.`,
@@ -194,12 +196,12 @@ const KIND_DEFS: Record<PracticalKind, KindDef> = {
     topic: 'money',
     bands: YEAR_BANDS,
     valid: (n) => n.length >= 2 && n.length <= 4 && allWhole(n, 1, 100000) && n.slice(1).reduce((t, c) => t + c, 0) <= n[0],
-    build([paid, ...costs]) {
+    build([paid, ...costs], options) {
       const total = costs.reduce((t, c) => t + c, 0);
       const answer = paid - total;
       const goods = costs.map((_, i) => GOODS[(variant([paid, ...costs], GOODS.length) + i) % GOODS.length]);
       const things = costs.length === 1
-        ? `a ${goods[0]} that costs ${fmt(costs[0])} gold`
+        ? `${options.item ? `the ${options.item}` : `a ${goods[0]}`} that costs ${fmt(costs[0])} gold`
         : `${costs.map((c, i) => `a ${goods[i]} (${fmt(c)} gold)`).join(' and ')}`;
       const text = `You pay ${fmt(paid)} gold for ${things}. How much change do you get?`;
       const working =

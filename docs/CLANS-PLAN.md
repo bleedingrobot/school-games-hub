@@ -309,7 +309,7 @@ C.3 is built: the whole clan loop you can play in the browser, with maths in the
 **Choices to know about:**
 - The shop list shows the price *before* tax ("20 gold, plus 10% village tax"); the price with tax appears after the "what do you pay?" question (or straight away if the teacher has percentages off), so the question isn't already answered on screen.
 - "Which is the better buy" only appears for items a member has looked at closely, because the comparison uses the real bonuses (which "Look closely" reveals). It compares price per point of bonus the member can actually use.
-- The question wording is the C.2 wording James approved, so the shop question says "A helmet costs 25 gold" whatever you are buying; the numbers are the real ones. Making the question use the real item name is a small change if wanted.
+- The shop's "what do you pay?" and "change" questions now name the real item ("The Dagger costs 20 gold..."), changed after James asked (18 Oct 2026). Only the wording changed; the numbers and answers are the same. Other questions keep the C.2 wording.
 - "Look closely" and the better-buy answers don't affect anything but gold; "Check my change" pays nothing (you aren't really handing over a 1,000 note).
 - The test strip is open on the clan page and closed on the other screens, so the places fit on a small screen.
 

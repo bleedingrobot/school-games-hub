@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CONFIG } from '../../../shared/clans/config';
 import { inShop } from '../../../shared/clans/character';
-import { betterBuy, examineCostQuestion, itemPoints, marketChange, marketTotal } from '../../../shared/clans/moments';
+import { betterBuy, examineCostQuestion, itemPoints, marketChangeFor, marketTotal } from '../../../shared/clans/moments';
 import { STATS, type ItemDef, type Member } from '../../../shared/clans/types';
 import { Moment } from './Moment';
 import { buyItem, examineCost, examineItem, hasExamined, shopPrice } from './places';
@@ -18,7 +18,7 @@ type Phase =
   | { t: 'buy' }
   | { t: 'examine' }
   | { t: 'bought'; item: ItemDef; price: number; who: string }
-  | { t: 'change'; price: number }
+  | { t: 'change'; price: number; item: ItemDef }
   | { t: 'compare'; other: ItemDef };
 
 /** What an item really gives, and whether this member can use it yet. Only shown after "Look closely". */
@@ -55,7 +55,7 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
   const lookedAt = shelf.filter((i) => hasExamined(session, member, i));
   const startBuy = () => {
     if (!item || clan.gold < price) return;
-    if (marketTotal(settings, item.price)) setPhase({ t: 'buy' });
+    if (marketTotal(settings, item.price, CONFIG.shopTax, item.name)) setPhase({ t: 'buy' });
     else pay(item);
   };
   const pay = (it: ItemDef) => {
@@ -79,22 +79,22 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
   if (!item) {
     detail = <p className="cq-soft">Pick something from the shelf to see more.</p>;
   } else if (phase.t === 'buy') {
-    detail = <Moment key={`buy-${item.name}`} question={marketTotal(settings, item.price)!} title={`Paying for the ${item.name}`} note="Check the bill before you pay." doneLabel={`Pay ${price} gold`} onDone={() => pay(item)} />;
+    detail = <Moment key={`buy-${item.name}`} question={marketTotal(settings, item.price, CONFIG.shopTax, item.name)!} title={`Paying for the ${item.name}`} note="Check the bill before you pay." doneLabel={`Pay ${price} gold`} onDone={() => pay(item)} />;
   } else if (phase.t === 'examine') {
     detail = <Moment key={`look-${item.name}`} question={examineCostQuestion(settings, item.price)!} title={`Looking closely at the ${item.name}`} note="Looking costs a share of the price." doneLabel={`Pay ${examineCost(item)} gold and look`} onDone={() => look(item)} />;
   } else if (phase.t === 'bought') {
-    const q = marketChange(settings, phase.price);
+    const q = marketChangeFor(settings, phase.item.name, phase.price);
     detail = (
       <div className="cq-panel" role="status">
         <p className="cq-note">{phase.who} now has the {phase.item.name}. You paid {phase.price} gold, and have {clan.gold} left.</p>
         <div className="cq-actions">
-          {q && <button type="button" className="cq-btn" onClick={() => setPhase({ t: 'change', price: phase.price })}>Check my change</button>}
+          {q && <button type="button" className="cq-btn" onClick={() => setPhase({ t: 'change', price: phase.price, item: phase.item })}>Check my change</button>}
           <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={idle}>Keep shopping</button>
         </div>
       </div>
     );
   } else if (phase.t === 'change') {
-    detail = <Moment key={`change-${phase.price}`} question={marketChange(settings, phase.price)!} title="Your change" note="Pretend you paid with a big note." doneLabel="Done" onDone={idle} />;
+    detail = <Moment key={`change-${phase.price}`} question={marketChangeFor(settings, phase.item.name, phase.price)!} title="Your change" note="Pretend you paid with a big note." doneLabel="Done" onDone={idle} />;
   } else if (phase.t === 'compare') {
     const q = betterBuy(settings, { name: item.name, price: item.price, points: itemPoints(member, item) }, { name: phase.other.name, price: phase.other.price, points: itemPoints(member, phase.other) });
     detail = q ? (
@@ -105,7 +105,7 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
   } else {
     const seen = hasExamined(session, member, item);
     const old = wearing(member, item.kind);
-    const taxed = !marketTotal(settings, item.price);
+    const taxed = !marketTotal(settings, item.price, CONFIG.shopTax, item.name);
     detail = (
       <div className="cq-detail">
         <h3><ItemSprite name={item.name} kind={item.kind} scale={3} /> {item.name}</h3>
