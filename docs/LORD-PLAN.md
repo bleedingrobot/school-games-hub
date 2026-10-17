@@ -4,11 +4,13 @@ A daily-turns fantasy adventure for the hub, in the spirit of the 1990s BBS door
 
 Written 17 October 2026 from James's brief ([prompts/lord-maths.md](prompts/lord-maths.md)) after reading [talisto/LORD.ts](https://github.com/talisto/LORD.ts) (v1.4.6) and the hub's code on `main` and `monsters`.
 **Status: APPROVED 17 Oct 2026, waiting.** James answered every question in section 14 (all my picks, except: start only **after Maths Monsters is live**).
+**Updated 18 Oct 2026** after reading every file of LORD.ts (main game, all 13 add-ons, scripts, tests, change log): **5-week seasons** with a fresh start each time, **romance and orphans kept out for good**, rule-table fixes, and a simulator check of the pace. See section 15.
 
 ## The short version
 
 - **LORD.ts is our rule book, not our code base** (the brief's "Path C"). It is GPL-3 code that needs its own always-on Node server with WebSockets and SQLite, and much of the original game is for grown-ups (the barmaid, marriage, children, drinking, gory death lines). The hub is a GitHub Pages site plus Supabase with no always-on server. So we write our own small engine in TypeScript, using LORD's *shape and numbers* (daily turns, 12 levels, masters, the damage formula, the healer's price per HP...), with fresh, kid-friendly writing and our own art. Section 1.
-- **It keeps what makes LORD special:** a limited number of forest fights each day, a menu village, cheeky random events, slow-burn progress over weeks, a daily news page, and the dragon at the end.
+- **It keeps what makes LORD special:** a limited number of forest fights each day, a menu village, cheeky random events, steady progress over weeks, a daily news page, and the dragon at the end.
+- **5-week seasons** (James, 18 Oct): every hero starts fresh at level 1 every 5 weeks, so a new pupil or a slow starter is never hopelessly behind. A steady player can reach the dragon inside one season. Section 11.
 - **Maths is short and not on every screen.** About 1 in 3 fights offers a "size it up" question, plus the shop, healer, bank, master trials, riddles and the dragon. A wrong answer shows how to do it and the game goes on. No timers, no speed bonuses.
 - **It reuses the maths engine Maths Monsters is building** (the six topic packs in `shared/maths/skillPacks/`). No new maths code except a few new question kinds (money, patterns).
 - **Saved on the server, and the server is the boss** (the brief is firm about this, and daily turns make it matter): the server hands out each fight and checks it before it counts.
@@ -29,6 +31,8 @@ Written 17 October 2026 from James's brief ([prompts/lord-maths.md](prompts/lord
 
 **Not suitable for children, so left out or rewritten:** Violet the barmaid (flirting, "lays" stat), marriage and having children (children even give you extra fights), drinking at the inn, the Dark Cloak Tavern's gambling and blackjack, the flower garden and mail (players write free text to each other), killing players who are asleep at the inn, and the gory monster death lines.
 
+**Kept out for good (James, 18 Oct): all romance and all orphans.** That means no flirting, kissing, dates, love letters, marriage or babies, and no orphans, adopting, buying, selling or "catching" children, and no children as a stat. This covers the add-on ideas too: Olodrin's Orphanage, Felicity's temple nursery and flirting, the Cavern's lost children and "lost warrior" scene, the cavern women, Violet's add-on, TeamLord's parties, and the forest's Olivia, Violet and Seth scenes. LORD's backstory (the dragon eats the village's children) is replaced too: our dragon steals the village's treasure, food and light (final wording in L.3).
+
 **What we take from it (rules and numbers, rewritten in our code, credited):**
 
 | LORD rule | LORD's number | Ours |
@@ -36,16 +40,18 @@ Written 17 October 2026 from James's brief ([prompts/lord-maths.md](prompts/lord
 | Forest fights a day | 15 | 10 (question 2) |
 | Arena (player) fights a day | 3 | 3 |
 | Levels | 12, then the dragon | Same |
-| Monsters | 11 per level, mostly your level, sometimes weaker (1 in 6) | Same, our own monsters |
-| Damage | random half of strength + half of strength, minus the defender's defence | Same |
-| Masters | 11 masters; you need enough exp to challenge one, beating them raises a level and gives strength and HP | Same, our own masters |
-| Exp needed per level | 100, 400, 1,000, 4,000, 10,000... 10,000,000 | Same shape, rescaled (section 7) |
+| Monsters | 11 listed per level but only 10 ever appear; mostly your level, sometimes weaker (1 in 6) | 10 per level, our own monsters |
+| Damage | random half of strength + half of strength. **Monsters have no defence**: only *your* defence cuts the damage you take (defence on both sides only in player fights) | Same |
+| Masters | 11 masters; you need enough exp (exp is never spent) to challenge one, **once a day**; beating them raises a level and gives strength, defence and HP; **losing costs nothing**, you're healed | Same, our own masters |
+| Exp needed per level | 100, 400, 1,000, 4,000, 10,000... 10,000,000 | **Our own curve**, tuned for a 5-week season (section 7) |
 | Healer | 5 gold × your level per HP | Same, and it's a maths moment |
 | Losing a fight | lose all gold you carry and 10% exp, dead until tomorrow | Softer (question 3) |
 | Bank | gold in the bank is safe when you lose | Same (the reason to bank) |
-| Forest events | about 1 in 5 forest turns is an event instead of a fight | Same, our own events |
-| Classes | Death Knight, Mystic, Thief, each with skill uses per day | Knight, Mage, Trickster (section 4) |
-| The dragon | very strong; killing it starts you over at level 1, stronger and famous | Same |
+| Forest events | 1 in 5 trips into the forest is an event, and **events don't use up a fight** | Same: events are free (decide finally in L.0 with the simulator) |
+| Classes | Death Knight, Mystic, Thief, each with skill uses per day; master one (40 lessons) and you can learn another | Knight, Mage, Trickster (section 4), one class per run |
+| Shop | sell your old item first (half price back); the best gear needs enough strength or defence | Same: this is what stops saved-up gold skipping half the game |
+| Bank | 10% interest added automatically every day (LORD's main money engine) | Not automatic; see section 15 |
+| The dragon | one huge fight (15,000 HP), found by a secret key at level 12; killing it starts you over at level 1, stronger and famous; **3 kills ends the game for everyone** | Three-stage fight (section 9); no game-ending kill, seasons instead |
 
 ## 2. How it fits with Maths Monsters
 
@@ -80,7 +86,7 @@ A menu, not a map (the brief says the menu is a feature). Each place is a short 
 ## 4. Your hero
 
 - **Name: your hub name** (the word-list name, e.g. *Brave Kiwi*). Nothing to type.
-- **Pick a class** (can't change until you beat the dragon):
+- **Pick a class** (can't change until you beat the dragon or a new season starts):
   - **Knight**: a power strike (×2 damage) a few times a day.
   - **Mage**: a few small spells (a heal, a shield, a zap).
   - **Trickster**: dodge, or "pinch" a little gold from a monster.
@@ -102,7 +108,7 @@ A day's turns take about 5-10 minutes. Turns don't pile up if you miss a day (li
 
 ## 6. Forest and fights
 
-**A forest turn** is a fight (4 in 5) or an event (1 in 5), as in LORD.
+**A trip into the forest** is a fight (4 in 5) or an event (1 in 5). As in LORD, only fights use up a forest fight; events are free (to confirm in L.0).
 
 **A fight:**
 
@@ -132,8 +138,9 @@ A day's turns take about 5-10 minutes. Turns don't pile up if you miss a day (li
 LORD's numbers get huge: a level-12 monster drops 336,643 gold and the best armour costs 400 million. Those are too big to do sums with. So:
 
 - **All gold and prices ÷ 100**, rounded to friendly numbers, and the shop trimmed to 12 weapons and 12 armours (about one per level). The dearest item is then about 100,000 gold. Exp is rescaled the same way.
-- The **ratios stay LORD's**, so the pace of the game should feel the same. A simulator (like the Maths Monsters one) checks it: how many days to each level, how often a student loses, how long until the dragon.
-- **The target: the dragon after about 5-8 weeks** of playing most school days. Long enough to be a goal, short enough to finish in a term.
+- **LORD's exp curve is far too slow for us.** A quick simulator on 18 Oct (LORD's real monsters, masters and shop; 10 fights a day, soft losing, no interest) put a pupil playing *every* day at level 6 after about 22 days and level 12 after about **157 days**. Exp alone needs about 117 days; levels 10 and 11 take about 29 days each. Adding interest or 15 fights still leaves it at 113-130 days.
+- **So we write our own exp curve** (and gold to match), keeping LORD's feel of each level being a step up. **The target, for a 5-week season:** a pupil who plays about 4 school days a week (about 16-20 play days in the season) reaches the dragon in week 4 or 5. That's roughly **1½ play days per level**, about 15 forest fights. Someone who plays every day gets there around week 3 and can start a second, faster run.
+- The L.1 simulator checks it against those targets: days to each level for "every day", "4 days a week" and "2 days a week" players, how often a pupil loses a fight (aim: now and then, not never), and how often a master beats you.
 
 ## 8. Maths moments
 
@@ -157,7 +164,8 @@ LORD's numbers get huge: a level-12 monster drops 336,643 gold and the best armo
 
 - Reachable at **level 12 after beating the last master**, from the forest, like LORD.
 - A long fight in **three stages**. Before each stage, one question from a different topic. Right answers give a shield or a heavy hit for that stage. The dragon can still be beaten with great gear and no right answers, and lost with every answer right. It's a fight, not a test.
-- **Beating it:** a big news story, the Hall of Heroes, points and an achievement. Then, as in LORD, your hero starts again at level 1 with a dragon-kill star, keeping your class skill. A second run is faster.
+- **Beating it:** a big news story, the Hall of Heroes, points and an achievement. Then, as in LORD, your hero starts again at level 1 with a dragon-kill star, keeping your class skill. A second run in the same season is faster.
+- **There is no game-ending kill** (LORD ends the game for everyone after 3). The season clock does that job instead (section 11).
 
 ## 10. Saving and fairness
 
@@ -177,8 +185,13 @@ The server decides everything that matters: gold, exp, HP, turns left, gear.
 - **Warriors list:** level and dragon kills, top 10 plus you, like the other games' boards. Never maths scores.
 - **Points:** inside the shared 40-a-day bot-game cap. My pick: 1 point per 3 forest wins, 3 for a master, 10 for the dragon. `ranked: false`.
 - **Achievements** (about 8): first master, level 6, level 12, dragon, 10 arena wins, 50 riddles...
-- **New season:** keep heroes, reset points (question 9).
-- **Teacher page:** game on/off; topics on/off (shared with Maths Monsters); forest fights a day; Practice Mode; each student's topics using Gem Keep's "hardest facts" panel; reset a student's hero. A CSV export can come later.
+- **5-week seasons** (James, 18 Oct; replaces question 9's "keep heroes"). LORD.ts has a similar "tournament" mode (a round lasts a set number of days, then resets).
+  - At the end of week 5 every hero goes back to level 1 with starting gold and gear. The Warriors list starts empty.
+  - **Kept forever:** achievements, dragon-kill stars, and the **Hall of Heroes**, a list per season of everyone who beat the dragon (and how many times). Hub points already earned stay earned.
+  - My pick: the teacher sets the season start date on the teacher page (default: the next Monday); seasons then run back to back, two to a 10-week term. In the school holidays the game is closed and the season clock waits.
+  - The last few days of a season show a countdown ("4 days left this season") so the reset is never a surprise. Fights already in progress finish first.
+  - Class choice can change at each new season.
+- **Teacher page:** game on/off; topics on/off (shared with Maths Monsters); forest fights a day; Practice Mode; each student's topics using Gem Keep's "hardest facts" panel; reset a student's hero; season start date and the Hall of Heroes. A CSV export can come later.
 - **Privacy:** no new personal data. Heroes use hub names; answers are stored the same way as Gem Keep's and Maths Monsters'.
 
 ## 12. Look and sound
@@ -214,7 +227,27 @@ Each stage ends with tests passing and a results section here, and stops for Jam
 | 6 | Practice Mode | **A little gold, no exp** |
 | 7 | Look | **Dark BBS style** |
 | 8 | When | **After Maths Monsters is fully live** (not just N.6) |
-| 9 | New season | **Keep heroes, reset points** |
+| 9 | New season | ~~Keep heroes, reset points~~ → **5-week seasons, heroes start fresh** (18 Oct) |
+| 10 | Romance | **Kept out for good** (18 Oct) |
+| 11 | Orphans and children | **Kept out for good** (18 Oct) |
+
+## 15. Review against all of LORD.ts (18 Oct 2026)
+
+The rule table in section 1, sections 7, 9 and 11 and the "kept out" list are already updated. These are left to settle in **L.0**, each with a pick:
+
+- **Gems.** Everywhere in LORD: 2 gems buy a permanent +1 strength, defence or HP at the inn, they pay for class lessons, and events hand them out. Good maths too ("3 gems for 2 potions", "can you afford it?"). *Pick: keep gems* as a second, rarer currency.
+- **Charm → Kindness.** LORD's charm is mostly romance (out), but it also rewards kind choices (helping the old man, leaving a grave alone, letting the fairy go). *Pick: a Kindness stat* that small events reward, giving slightly better shop prices.
+- **Bank interest.** LORD adds 10% a day automatically, and its late game depends on it. *Pick: no automatic interest*; the economy is tuned without it, and the optional interest question gives a small bonus.
+- **Running away, the fairy that can save your life, a horse for extra fights.** *Pick: keep running away (sometimes fails) and the fairy; leave out the horse* (extra fights unbalance a short season).
+- **Computer heroes** must not copy LORD's computer-player add-on, which uses different fight maths, levels up without masters and attacks real players. Ours use the same engine and simulator, level on a schedule, and **never cost a pupil anything**.
+- **Events as data, not code.** LORD's scripted events (`.ldy`) and the Cavern's scripts are filled-in tables run by a small engine. Ours too, so going from 15 events to 50 is writing work.
+- **A daily village event** (from the LrdEvent add-on): one line each day like "Market day: everything 10% off" or "A fog: one less forest fight". Cheap variety, and often a maths moment.
+- **Maths ideas to borrow (ideas only, never text):** "can you afford it?" deals where asking for too much backfires; swap rates; spot-the-cheat cup games; the class tests (the mage's number-guess only gives 6 tries for 1-100, which isn't always enough; ours gives 7 and then shows the halving trick). **Not borrowed:** higher/lower card games and wagers (gambling). If a screen ever states a chance, the code must match it (one add-on promises 25% chances that are wrong).
+- **Riddles and trivia** in the add-ons are typed answers; ours are multiple choice or a number pad (no typing).
+- **Lessons from LORD.ts's change log:** players stockpiled children for extra daily fights and disconnected mid-shop to keep purchases. Anything that adds fights or income every day will be farmed; the simulator should try the greedy strategies, and every spend is saved on the server at once (already the plan).
+- **Don't block players who share an internet address** (a LORD.ts option): the whole school shares one.
+- **Testing:** LORD.ts has a "god mode" that can set any stat, trigger any event and force the next random numbers. The L.3 test page gets the same: jump to any level, trigger any event, go straight to the dragon.
+- **Daily reset with no server:** LORD resets a player's day the first time they play that day. Our `lord` function does the same (NZ date), so nothing needs to run at midnight. The season reset works the same way (checked on first play after the end date).
 
 ## Credits to carry over
 
