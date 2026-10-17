@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EXTRA_PACKS, BANDED_PACKS } from '../maths/skillPacks';
 import { MAX_LEVEL, baseStats, expNeeded } from './data';
-import { buyGear, heal, newHero, startDragonStage, startFight, stepFight } from './engine';
+import { buyGear, dragonBreather, heal, newHero, startDragonStage, startFight, stepFight } from './engine';
 import {
   MOMENT_TOPICS, addMasterTrialBonus, dragonStageOptions, defaultBand, interestFor, masterTrialStrength, numberGuessPrize,
   offersSizeItUp, priceDiscount, sizeItUpBonus,
@@ -60,21 +60,35 @@ describe('maths moments', () => {
     expect(dragonStageOptions('right').shield).toBeGreaterThan(dragonStageOptions('hint').shield!);
     expect(dragonStageOptions('wrong')).toEqual({});
   });
-  it('lets the dragon be beaten with no right answers, and makes right answers help', () => {
+  it('lets a skilled player beat the dragon with no right answers (rarely), and makes right answers help a lot', () => {
     const strong = hero({
       level: MAX_LEVEL, exp: expNeeded(MAX_LEVEL - 1), ...baseStats(MAX_LEVEL), hp: baseStats(MAX_LEVEL).maxHp,
       maxHp: baseStats(MAX_LEVEL).maxHp, weapon: 11, armour: 11,
     });
-    const winsWith = (options: ReturnType<typeof dragonStageOptions>) => {
-      let wins = 0;
-      for (let seed = 1; seed <= 60; seed++) {
-        let f = startDragonStage(strong, 1, seed, options);
-        while (!f.over) f = stepFight(f, { type: 'attack' });
-        if (f.outcome === 'won') wins += 1;
+    const wins = (result: 'right' | 'wrong') => {
+      let won = 0;
+      const games = 200;
+      for (let seed = 1; seed <= games; seed++) {
+        let hp = strong.hp;
+        let skillLeft = strong.skillLeft;
+        let ok = true;
+        for (const stage of [1, 2, 3] as const) {
+          let f = startDragonStage({ ...strong, skillLeft }, stage, seed * 7919 + stage * 104729, { ...dragonStageOptions(result), heroHp: hp });
+          while (!f.over) f = stepFight(f, f.skillLeft > 0 ? { type: 'skill', skill: 'power-strike' } : { type: 'attack' });
+          skillLeft = f.skillLeft;
+          hp = dragonBreather(strong, f.heroHp);
+          if (f.outcome !== 'won') { ok = false; break; }
+        }
+        if (ok) won += 1;
       }
-      return wins;
+      return won / games;
     };
-    expect(winsWith(dragonStageOptions('right'))).toBeGreaterThan(winsWith(dragonStageOptions('wrong')));
+    const none = wins('wrong');
+    const all = wins('right');
+    expect(none).toBeGreaterThan(0.01); // still beatable with no right answers
+    expect(none).toBeLessThan(0.3);
+    expect(all).toBeGreaterThan(0.6);
+    expect(all).toBeLessThan(1); // and not a certainty
   });
   it('pays a small prize for trying the number guess and a bigger one for winning', () => {
     expect(numberGuessPrize(3, true)).toBeGreaterThan(numberGuessPrize(3, false));

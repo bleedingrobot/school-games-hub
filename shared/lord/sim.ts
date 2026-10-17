@@ -4,7 +4,11 @@ import {
   applyEvent, dragonBreather, loseToDragon, makeRandom, newHero, rollDay, skillsFor, startDragonStage, startFight, startMasterFight, stepFight,
   useForestTurn, withdraw,
 } from './engine';
+import { dragonStageOptions } from './maths';
 import type { FightState, Hero, HeroClass } from './types';
+
+/** How often the simulated pupil answers a maths question right. */
+export const MATHS_RIGHT_SHARE = 0.7;
 
 /**
  * Plays whole seasons with a simple, sensible pupil and reports the pace, so the exp curve and the
@@ -126,8 +130,11 @@ export function playSeason(heroClass: HeroClass, style: PlayerStyle, seed: numbe
     if (canFaceDragon(hero)) {
       let hp = hero.hp;
       let won = true;
+      let skillLeft = hero.skillLeft; // the day's skill uses are for all three stages, not for each
       for (const stage of [1, 2, 3] as const) {
-        const f = playFight(startDragonStage(hero, stage, Math.floor(rand() * 4294967296), { heroHp: hp }));
+        const riddle = rand() < MATHS_RIGHT_SHARE ? 'right' : 'wrong';
+        const f = playFight(startDragonStage({ ...hero, skillLeft }, stage, Math.floor(rand() * 4294967296), { ...dragonStageOptions(riddle), heroHp: hp }));
+        skillLeft = f.skillLeft;
         hp = dragonBreather(hero, f.heroHp);
         if (f.outcome !== 'won') {
           won = false;
@@ -148,7 +155,7 @@ export function playSeason(heroClass: HeroClass, style: PlayerStyle, seed: numbe
       const trip = forestTrip(hero, Math.floor(rand() * 4294967296));
       if (trip.kind === 'event') {
         const before = hero.gold;
-        hero = applyEvent(hero, trip.event, rand() < 0.7);
+        hero = applyEvent(hero, trip.event, rand() < MATHS_RIGHT_SHARE);
         report.goldEarned += Math.max(0, hero.gold - before);
         continue;
       }

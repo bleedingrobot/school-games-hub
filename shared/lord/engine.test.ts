@@ -156,6 +156,9 @@ describe('the forest', () => {
     const high = hero({ level: 8 });
     expect(applyEvent(high, treasure, true).gold - high.gold).toBeGreaterThan(applyEvent(h, treasure, true).gold - h.gold);
   });
+  it('does not state numbers in a maths event (the question comes from a pack, so they could disagree)', () => {
+    for (const e of EVENTS.filter((x) => x.maths)) expect(e.text, e.id).not.toMatch(/\d/);
+  });
   it('has events with unique ids', () => {
     expect(new Set(EVENTS.map((e) => e.id)).size).toBe(EVENTS.length);
   });

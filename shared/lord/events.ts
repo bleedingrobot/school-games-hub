@@ -2,7 +2,7 @@ import type { ForestEvent } from './types';
 
 /**
  * Forest events, as data, not code (LORD's scripted events work the same way), so going from a
- * dozen to fifty is writing work. Events never use up a forest fight. The ones with `maths` become
+ * dozen to fifty is writing work. A maths event's text only sets the scene: the question itself comes from a shared maths pack, so the text must not state numbers. Events never use up a forest fight. The ones with `maths` become
  * a question on the screen (L.2): the reward is paid only for a right answer, and a wrong answer
  * shows the worked solution and costs nothing. Events with no maths are just luck and jokes.
  */
@@ -16,22 +16,22 @@ export const EVENTS: ForestEvent[] = [
   { id: 'echo', title: 'The shouting hill', text: 'You shout "HELLO!" from the top of the hill. The hill shouts back "HELLO!" and then, a moment later, "WHO ARE YOU?"', exp: 5 },
   {
     id: 'treasure-piles', title: 'The treasure piles',
-    text: 'Two chests sit side by side. One is marked 4,060 coins and the other 4,600 coins. Take the bigger one!',
+    text: 'Two chests sit side by side, each stamped with a number of coins. A sign says: "Only those who can read numbers may open the chests."',
     maths: { topic: 'place-value', reward: { gold: 40 } },
   },
   {
     id: 'old-woman-riddle', title: 'The old woman\'s riddle',
-    text: 'An old woman on a stump asks: "What comes next? 3, 7, 11, 15, ..." She will pay you if you get it right.',
+    text: 'An old woman on a stump cackles: "Answer my riddle, hero, and I will pay you well!"',
     maths: { topic: 'patterns', reward: { gold: 30, exp: 10 } },
   },
   {
     id: 'gem-goblins', title: 'The gem-sharing goblins',
-    text: 'Three goblins have 24 gems and one huge argument. If they share them out fairly, what does each goblin get?',
+    text: 'Some goblins have found a heap of gems and are having one huge argument about who gets what. They want a hero to settle it with a sum.',
     maths: { topic: 'division', reward: { exp: 20, gold: 10 } },
   },
   {
     id: 'honest-pedlar', title: 'The honest pedlar',
-    text: 'A pedlar sells you a pie for 12 gold. You hand him 20 gold. How much change should he give you?',
+    text: 'A pedlar waves a pie under your nose. "Bargain!" he says. You count your gold carefully, because pedlars are good at sums, too.',
     maths: { topic: 'money', reward: { gold: 15 } },
   },
 ];

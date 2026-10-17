@@ -259,7 +259,7 @@ What the simulator told us, and what changed because of it:
 
 - The first Trickster could not win master fights (14% against the Knight's 63%). Dodge now also hits back, and Pinch is a normal hit that lifts gold. All three classes now finish within a play day of each other.
 - Healing at LORD's price ate 55-60% of gold. Now about 40%.
-- The dragon was unbeatable (0%), then too easy (93% on the first try). It now sits at about 25-45% a try by class (James chose "harder", 18 Oct), with a 30% HP breather between stages, so it takes a few days of tries.
+- The dragon was unbeatable (0%), then too easy. James chose "harder" (18 Oct). **The simulator was refilling a pupil's 3 daily skill uses at each dragon stage (9 uses); it is fixed, and the final numbers are in [LORD-RULES.md](LORD-RULES.md):** about 45% a try for a pupil who answers 70% right, with a 30% HP breather between stages.
 - Pace: a pupil who plays every day reaches level 12 in week 3, and one who plays 4 days a week in week 5. **A pupil who plays 2 days a week only reaches level 6 or 7 in a 5-week season.** That is open question 12 below.
 
 **L.2 done (18 Oct 2026):**
@@ -267,6 +267,17 @@ What the simulator told us, and what changed because of it:
 - **Two new maths packs** in `shared/maths/skillPacks/`: *Gold and shopping* (`money.ts`: change, the cost of several, totals, gold left, swap rates, how much more you need, which deal is better value as a pick-one question, bigger change) and *Number patterns* (`patterns.ts`: counting on and back, doubling, a gap in the middle, the step, growing steps, rules like n × 3 + 1). Four bands each, built the same way as the other packs, with worked answers. They are exported as `EXTRA_PACKS` and are **not** in the shared topic list, so Maths Monsters' teacher switches are unchanged. Adding them to that list is a one-line change when another game wants them.
 - **`shared/lord/maths.ts`:** which pack each moment uses, and what each result is worth. Right in *size it up* is ×1.5 on the first hit (×1.25 after a hint, ×1 if wrong); right at the shop or healer is 10% off (5% after a hint); each right answer in a master's trial adds a little strength on levelling up; a right answer before a dragon stage gives a shield and a ×1.5 first hit. A wrong answer never takes anything away. No timer and no speed bonus anywhere.
 - 56 new tests, including that every roll of every question family makes a sound question. They found one real bug (the change question could cost more than you paid), now fixed.
+
+**L.3 done, for James to try (18 Oct 2026):**
+
+- **How to open it:** `https://…/#/dragon-maths` in the hub (no card on the dashboard; `DRAGON_MATHS_ON` in `src/games/registry.ts` is false), or without signing in: `npx vite --config vite.lord-preview.config.ts` (`npm run lord:preview` builds it). The hero is kept on that browser only (clearly labelled as a trial); nothing is sent anywhere.
+- **What is there:** class choice; the village with letter keys (F, S, H, B, I, T, N, Y; Esc goes back); the forest (fights and events, events free); the fight screen (Attack, Run, class skills, number keys, a plain-words log); the shop (sell back, strength and defence needed, 10% off for a right answer); the healer (10% off); the bank (and the interest question from level 4); the inn (bard, riddle of the day, number guess); the Training Grounds (your master, 3 trial questions, then the fight); the dragon (3 riddles, 3 fights, a breather between); your hero page; a small daily news page; and **Test tools** (key X): jump to any level or straight to the dragon, +gold, +experience, refill turns, hurt me, skip to tomorrow, best gear, trigger any event, delete the trial hero.
+- **Pictures:** Kenney 1-Bit Pack (CC0, licence checked 18 Oct, copy in `src/games/lord/KENNEY-LICENSE.txt`), one-colour tiles recoloured in code by level (`tileMap.ts`). 60 monsters, 11 masters, the dragon, 12 weapons, 12 armours. The picks were checked by eye, and a few will want swapping (some monsters are look-alikes).
+- **Checked by playing it in a browser:** a whole run through the forest, shop, healer, bank, inn, a master and the dragon (both losing and winning, with the star), with no console errors. That found two bugs, both fixed: a maths event's story text named numbers that the question then didn't use (event text no longer states numbers, and a test enforces it), and the question box's title was unreadable on the dark theme.
+- **Not in yet:** the one hint per question (the shared question box has no hint button; to add in L.6 or with the next change to it), the teacher's topic switches (all topics are on), sound, and the reduced-motion and slow-Chromebook checks (L.6).
+- **Font:** the plan said VT323, but the hub's rule is "system fonts only, nothing downloaded", so the game uses the system monospace font for now. Bundling VT323 (open licence) is an option for L.6.
+
+**Question 13 (James):** the dragon's maths effect is big (about 10% a try with no right answers, 90% with all right). Keep it, or soften the shield and weaken the dragon a little? My pick: keep it for now, and watch how pupils do.
 
 **Not done yet:** ten monsters a level (five written), more events, gems, the arena and computer heroes, anything saved, anything on screen. Nothing is on the dashboard and nothing touches the database.
 

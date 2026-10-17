@@ -1,0 +1,124 @@
+/* Dragon Maths: a modern take on the old BBS door-game look. Dark page, the old 16 ANSI colours, box borders.
+   System monospace fonts only (nothing is downloaded). Fits 1366 x 640 and a phone. */
+
+.lord {
+  --lord-bg: #0b0b17;
+  --lord-panel: #12122a;
+  --lord-ink: #e4e4f0;
+  --lord-soft: #9a9ab8;
+  --lord-line: #4a4acf;
+  --lord-green: #55ff55;
+  --lord-cyan: #55ffff;
+  --lord-red: #ff5555;
+  --lord-yellow: #ffff55;
+  --lord-mag: #ff55ff;
+  box-sizing: border-box;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 12px 16px 16px;
+  border: 3px double var(--lord-line);
+  border-radius: 6px;
+  background: var(--lord-bg);
+  color: var(--lord-ink);
+  font-family: ui-monospace, 'Cascadia Mono', 'Courier New', monospace;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  min-height: min(100dvh - 120px, 600px);
+}
+.lord *, .lord *::before, .lord *::after { box-sizing: border-box; }
+.lord :is(h1, h2, h3):not(.question__title) { margin: 0 0 6px; color: var(--lord-yellow); font-weight: 700; letter-spacing: 0.02em; }
+.lord h1 { font-size: 1.5rem; }
+.lord :is(h2):not(.question__title) { font-size: 1.25rem; }
+.lord h3:not(.question__title) { font-size: 1.05rem; color: var(--lord-cyan); }
+.lord p { margin: 0 0 8px; }
+.lord-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; border-bottom: 1px solid var(--lord-line); margin-bottom: 8px; padding-bottom: 4px; }
+.lord-trial { color: var(--lord-soft); font-size: 0.85rem; }
+.lord-soft { color: var(--lord-soft); }
+.lord-lead { color: var(--lord-ink); font-size: 1.1rem; }
+.lord-big { font-size: 1.25rem; }
+.lord-note { color: var(--lord-green); }
+.lord-credits { margin-top: 12px; color: var(--lord-soft); font-size: 0.78rem; border-top: 1px solid #2a2a50; padding-top: 4px; }
+
+.lord-sprite { display: inline-block; flex: none; vertical-align: middle; image-rendering: pixelated; mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat; }
+
+.lord kbd { display: inline-block; min-width: 1.5em; padding: 0 4px; border: 1px solid var(--lord-soft); border-radius: 3px; color: var(--lord-cyan); background: #0b0b17; font: inherit; font-size: 0.85em; text-align: center; }
+
+/* Buttons */
+.lord-btn, .lord-place-btn, .lord-class {
+  font: inherit; color: var(--lord-ink); background: var(--lord-panel); border: 2px solid var(--lord-line); border-radius: 4px;
+  padding: 8px 14px; min-height: 44px; cursor: pointer; text-align: left;
+}
+.lord-btn:hover:not(:disabled), .lord-place-btn:hover:not(:disabled), .lord-class:hover { border-color: var(--lord-cyan); background: #1a1a40; }
+.lord-btn:focus-visible, .lord-place-btn:focus-visible, .lord-class:focus-visible, .lord input:focus-visible, .lord select:focus-visible { outline: 3px solid var(--lord-yellow); outline-offset: 2px; }
+.lord-btn:disabled, .lord-place-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.lord-btn--hot { border-color: var(--lord-yellow); color: var(--lord-yellow); }
+.lord-btn small { color: var(--lord-soft); }
+.lord input, .lord select { font: inherit; color: var(--lord-ink); background: #0b0b17; border: 2px solid var(--lord-line); border-radius: 4px; padding: 6px 8px; min-height: 40px; }
+.lord input[type='number'] { width: 6em; }
+
+.lord-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; }
+.lord-hint { flex-basis: 100%; margin: 0; color: var(--lord-soft); font-size: 0.85rem; }
+.lord-card { border: 1px solid var(--lord-line); border-radius: 4px; padding: 10px 12px; margin: 10px 0; background: var(--lord-panel); }
+
+/* Status line */
+.lord-status { display: flex; flex-wrap: wrap; gap: 4px 18px; list-style: none; margin: 0 0 10px; padding: 6px 10px; border: 1px solid var(--lord-line); background: var(--lord-panel); border-radius: 4px; }
+.lord-status strong { color: var(--lord-yellow); }
+
+/* Village */
+.lord-village__intro { display: flex; gap: 14px; align-items: center; margin-bottom: 8px; }
+.lord-menu { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; margin: 8px 0; }
+.lord-place-btn { display: grid; grid-template-columns: auto 1fr; gap: 0 10px; align-items: center; }
+.lord-place-btn strong { color: var(--lord-yellow); }
+.lord-place-btn span { grid-column: 2; color: var(--lord-soft); font-size: 0.88rem; }
+.lord-place-btn--forest { border-color: var(--lord-green); }
+.lord-place-btn--dragon { border-color: var(--lord-red); animation: lord-pulse 1.6s ease-in-out infinite; }
+.lord-place-btn--tools { border-style: dashed; }
+@keyframes lord-pulse { 50% { box-shadow: 0 0 14px var(--lord-red); } }
+
+/* Places */
+.lord-place { margin: 4px 0; }
+.lord-place__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.lord-place__head h2 { display: flex; align-items: center; gap: 8px; margin: 0; }
+.lord-tabs { display: flex; gap: 8px; margin: 8px 0; }
+.lord-shop { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.lord-shop li { display: grid; grid-template-columns: 52px 1fr auto auto minmax(170px, auto); align-items: center; gap: 10px; padding: 4px 8px; border: 1px solid #2a2a50; border-radius: 4px; }
+.lord-shop li.is-owned { border-color: var(--lord-green); }
+.lord-shop li.is-locked { opacity: 0.6; }
+.lord-shop__name { color: var(--lord-yellow); }
+.lord-shop li > :last-child { white-space: nowrap; }
+.lord-master { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
+.lord-hero { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start; }
+.lord-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 2px 20px; margin: 0; flex: 1; }
+.lord-stats div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted #2a2a50; }
+.lord-stats dt { color: var(--lord-soft); }
+.lord-stats dd { margin: 0; color: var(--lord-ink); text-align: right; }
+.lord-song { margin: 6px 0; padding: 6px 12px; border-left: 3px solid var(--lord-mag); color: var(--lord-mag); font-style: italic; }
+.lord-song p { margin: 0; }
+.lord-guess { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.lord-news { padding-left: 1.2em; }
+.lord-classes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+.lord-class { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 16px 10px; }
+.lord-class strong { color: var(--lord-yellow); font-size: 1.2rem; }
+.lord-class span:last-child { color: var(--lord-soft); font-size: 0.9rem; }
+.lord-encounter { text-align: center; display: flex; flex-direction: column; align-items: center; }
+.lord-encounter .lord-actions { justify-content: center; }
+
+/* Fights */
+.lord-fight__arena { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: end; padding: 8px; border: 1px solid var(--lord-line); border-radius: 4px; background: var(--lord-panel); }
+.lord-fight__foe, .lord-fight__me { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; text-align: center; }
+.lord-fight__arena h2 { margin: 0; font-size: 1.05rem; }
+.lord-bar { position: relative; width: 100%; max-width: 280px; height: 24px; border: 2px solid var(--lord-soft); border-radius: 3px; background: #05050c; overflow: hidden; }
+.lord-bar__fill { height: 100%; transition: width 0.25s; }
+.lord-bar__text { position: absolute; inset: 0; display: grid; place-items: center; font-size: 0.8rem; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+.lord-chip { margin: 0; padding: 0 8px; border: 1px solid var(--lord-cyan); border-radius: 10px; color: var(--lord-cyan); font-size: 0.8rem; }
+.lord-log { height: 7.2em; margin: 10px 0 0; padding: 6px 10px; overflow-y: auto; list-style: none; border: 1px solid #2a2a50; background: #05050c; border-radius: 4px; }
+.lord-log li:last-child { color: var(--lord-yellow); }
+.lord-reward { margin: 0; color: var(--lord-yellow); }
+
+@media (prefers-reduced-motion: reduce) { .lord-place-btn--dragon { animation: none; } .lord-bar__fill { transition: none; } }
+@media (max-width: 640px) {
+  .lord { padding: 8px 10px 12px; font-size: 1rem; }
+  .lord-shop li { grid-template-columns: 40px 1fr auto; }
+  .lord-shop li > :nth-child(n + 4) { grid-column: 2 / -1; }
+  .lord-fight__arena { gap: 8px; }
+}

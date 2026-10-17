@@ -2,7 +2,7 @@ import { HashRouter, Route, Routes } from 'react-router';
 import { AuthProvider } from './auth/AuthContext';
 import { RequireAuth } from './auth/RequireAuth';
 import { Layout } from './components/Layout';
-import { GAMES, POWER_CLASH_ON } from './games/registry';
+import { DRAGON_MATHS_ON, GAMES, POWER_CLASH_ON } from './games/registry';
 import { Dashboard } from './pages/Dashboard';
 import { FriendGamePage } from './pages/FriendGamePage';
 import { GamePage } from './pages/GamePage';
@@ -16,6 +16,7 @@ import { SpaceGamePage } from './pages/SpaceGamePage';
 import { CardGamePage } from './pages/CardGamePage';
 import { PowerGamePage } from './pages/PowerGamePage';
 import { powerClash } from './games/power-clash';
+import { dragonMaths } from './games/lord';
 import { Teacher } from './pages/Teacher';
 import { SoundProvider } from './sound';
 
@@ -32,6 +33,7 @@ export function AppRoutes() {
           ))}
           {/* Power Clash always has its address; its dashboard card is behind POWER_CLASH_ON (games/registry.ts). */}
           {!POWER_CLASH_ON && <Route path="power-clash" element={<GamePage game={powerClash} />} />}
+          {!DRAGON_MATHS_ON && <Route path="dragon-maths" element={<GamePage game={dragonMaths} />} />}
           <Route path="lobby" element={<Lobby />} />
           <Route path="play/:id" element={<FriendGamePage />} />
           <Route path="space-game/:id" element={<SpaceGamePage />} />
