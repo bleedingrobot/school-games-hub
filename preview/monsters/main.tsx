@@ -11,9 +11,10 @@ import '../../src/games/monsters/monsters.css';
 import './monsters-preview.css';
 import { MonsterBookPage } from './MonsterBookPage';
 import { PlaygroundPage } from './PlaygroundPage';
+import { WalkPage } from './WalkPage';
 
 function Preview() {
-  const [tab, setTab] = useState<'book' | 'battle'>('book');
+  const [tab, setTab] = useState<'book' | 'battle' | 'walk'>('book');
   const [battling, setBattling] = useState(false);
   return (
     <SoundProvider>
@@ -26,8 +27,9 @@ function Preview() {
       <nav className="mp-tabs" aria-label="Test page sections" hidden={battling}>
         <button type="button" aria-pressed={tab === 'book'} onClick={() => setTab('book')}>Monster book</button>
         <button type="button" aria-pressed={tab === 'battle'} onClick={() => setTab('battle')}>Battle playground</button>
+        <button type="button" aria-pressed={tab === 'walk'} onClick={() => setTab('walk')}>Walk around</button>
       </nav>
-      <main id="main">{tab === 'book' ? <MonsterBookPage /> : <PlaygroundPage onBattling={setBattling} />}</main>
+      <main id="main">{tab === 'book' ? <MonsterBookPage /> : tab === 'battle' ? <PlaygroundPage onBattling={setBattling} /> : <WalkPage onBattling={setBattling} />}</main>
     </SoundProvider>
   );
 }

@@ -1,0 +1,75 @@
+/* Maths Monsters: the world screen. Fits 1366 × 640 and a phone on its side. */
+.mw {
+  --mw-ink: #0f172a;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: var(--mw-height, min(100dvh, 640px));
+  min-height: 300px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #0f172a;
+  color: var(--mw-ink);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  font-family: 'Segoe UI', Tahoma, system-ui, sans-serif;
+}
+.mw-battle { max-width: 1366px; margin: 0 auto; --mb-height: var(--mw-height, min(calc(100dvh - 60px), 640px)); }
+
+.mw-stage { position: relative; min-height: 0; overflow: hidden; outline: none; background: #1e293b; }
+.mw-canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; touch-action: manipulation; cursor: pointer; }
+.mw-stage.is-flash::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  animation: mw-flash 0.52s steps(5) both;
+}
+@keyframes mw-flash { 0% { opacity: 0; } 20% { opacity: 1; } 40% { opacity: 0; } 60% { opacity: 1; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .mw-stage.is-flash::after { animation: none; opacity: 1; } }
+.mw-loading { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: #fff; font-weight: 700; }
+
+/* Top bar over the map: where you are, your team, settings. */
+.mw-hud { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; align-items: center; gap: 10px; pointer-events: none; }
+.mw-hud > * { pointer-events: auto; }
+.mw-place { padding: 4px 12px; border-radius: 999px; background: rgba(15, 23, 42, 0.82); color: #fff; font-size: 0.85rem; font-weight: 800; }
+.mw-team { display: flex; gap: 6px; margin: 0 0 0 auto; padding: 0; list-style: none; }
+.mw-team li { position: relative; display: grid; justify-items: center; gap: 2px; width: 44px; padding: 3px 0 4px; border-radius: 10px; background: rgba(255, 255, 255, 0.9); }
+.mw-team li > :first-child { width: 30px; height: 30px; }
+.mw-team__bar { width: 34px; height: 5px; border-radius: 3px; background: #cbd5e1; overflow: hidden; }
+.mw-team__bar > span { display: block; height: 100%; background: #22c55e; }
+.mw-team__bar > span.is-low { background: #ef4444; }
+.mw-gear { min-height: 36px; padding: 2px 14px; border: 2px solid var(--mw-ink); border-radius: 10px; background: #fff; font: inherit; font-size: 0.85rem; font-weight: 800; cursor: pointer; }
+
+.mw-btn { min-height: 44px; min-width: 88px; padding: 4px 18px; border: 2px solid var(--mw-ink); border-radius: 12px; background: #fde047; color: var(--mw-ink); font: inherit; font-weight: 900; cursor: pointer; }
+.mw-btn:focus-visible, .mw-gear:focus-visible, .mw-dpad button:focus-visible, .mw-talkbtn:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+
+/* The talk box, under the map. */
+.mw-talk { display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 10px 16px; background: #fff; border-top: 4px solid var(--mw-ink); }
+.mw-talk__text { flex: 1; font-size: 1.05rem; line-height: 1.35; font-weight: 600; }
+.mw-talk__text:empty { flex: 0; }
+.mw-talk__who { font-weight: 900; }
+.mw-talk__hint { flex: 1; margin: 0; color: #475569; font-size: 0.9rem; }
+.mw-talk__next { flex: none; }
+
+.mw-settings { position: absolute; top: 52px; right: 8px; display: grid; gap: 10px; width: min(360px, calc(100% - 16px)); padding: 12px 16px 14px; border: 3px solid var(--mw-ink); border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
+.mw-settings h2 { margin: 0; font-size: 1.1rem; }
+.mw-settings label { display: flex; gap: 10px; align-items: flex-start; font-weight: 600; }
+.mw-settings input { width: 22px; height: 22px; flex: none; }
+
+/* On-screen arrows and a Talk button, over the bottom of the map. */
+.mw-controls { position: absolute; left: 12px; right: 12px; bottom: 10px; display: flex; align-items: flex-end; justify-content: space-between; pointer-events: none; }
+.mw-controls > * { pointer-events: auto; }
+.mw-dpad { display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px); gap: 4px; }
+.mw-dpad button, .mw-talkbtn { border: 2px solid var(--mw-ink); border-radius: 14px; background: rgba(255, 255, 255, 0.88); font: inherit; font-size: 1.4rem; font-weight: 900; color: var(--mw-ink); touch-action: none; user-select: none; }
+.mw-dpad button:active, .mw-talkbtn:active { background: #fde047; }
+.mw-talkbtn { width: 96px; height: 64px; font-size: 1.1rem; touch-action: manipulation; }
+.mw-dpad__up { grid-column: 2; grid-row: 1; }
+.mw-dpad__left { grid-column: 1; grid-row: 2; }
+.mw-dpad__right { grid-column: 3; grid-row: 2; }
+.mw-dpad__down { grid-column: 2; grid-row: 3; }
+@media (max-height: 460px) {
+  .mw-team li { width: 38px; }
+  .mw-team li > :first-child { width: 26px; height: 26px; }
+  .mw-dpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); }
+  .mw-talk { min-height: 60px; padding: 6px 12px; }
+  .mw-talk__text { font-size: 0.95rem; }
+}

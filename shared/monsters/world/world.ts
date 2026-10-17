@@ -88,9 +88,11 @@ export function step(state: WorldState, dir: Dir, opts: WorldOptions, { turnFirs
   if (warp) {
     if (!opts.maps[warp.to]) throw new Error(`The door at ${map.id} ${nx},${ny} leads to a map that doesn't exist: ${warp.to}`);
     next = { ...next, map: warp.to, x: warp.toX, y: warp.toY, facing: warp.facing, beaten: warp.to === state.map ? state.beaten : [] };
-    return { state: next, action: 'warp', ...triggerAfter(next, opts, false) };
+    const after = triggerAfter(next, opts, false);
+    return { state: after.state, action: 'warp', trigger: after.trigger };
   }
-  return { state: next, action: 'move', ...triggerAfter(next, opts, true) };
+  const after = triggerAfter(next, opts, true);
+  return { state: after.state, action: 'move', trigger: after.trigger };
 }
 
 /** After arriving on a tile: has a trainer seen you, or has the grass started a battle? */
