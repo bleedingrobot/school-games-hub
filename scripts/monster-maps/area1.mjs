@@ -17,7 +17,7 @@ export function kauriBush() {
   m.longGrass(2, 11, 6, 3); m.longGrass(2, 17, 7, 2); m.longGrass(17, 15, 3, 3);
   m.longGrass(2, 3, 10, 4); m.longGrass(3, 7, 9, 3); m.longGrass(13, 8, 3, 2); m.longGrass(20, 6, 3, 7);
   for (const [x, y] of [[8, 13], [3, 14], [22, 15], [20, 17]]) m.tree(x, y);
-  for (const [x, y] of [[9, 4], [13, 10], [16, 12], [22, 4], [5, 10]]) m.bigTree(x, y);
+  for (const [x, y] of [[9, 4], [13, 10], [20, 13], [22, 4], [5, 10]]) m.bigTree(x, y);
   for (const [x, y] of [[16, 8], [21, 11], [10, 2], [23, 8], [7, 17]]) m.bush(x, y);
   m.water(21, 14, 3, 2);
   // The Tower, a healing hut, and the gate on to Shell Beach.

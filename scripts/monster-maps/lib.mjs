@@ -64,8 +64,10 @@ export class MapMaker {
   use(x, y, w = 1, h = 1) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) this.used.add(this.at(i, j)); }
   /** A rectangle of path (draw them 2 wide so the edges join up). On green maps it is dirt with grass edges. */
   path(x, y, w, h) {
+    this.pathCells ??= new Set();
     for (let j = y; j < y + h; j++) {
       for (let i = x; i < x + w; i++) {
+        this.pathCells.add(this.at(i, j));
         if (this.biome.path) this.ground[this.at(i, j)] = this.biome.path;
         else this.dirt.add(this.at(i, j));
       }
@@ -75,11 +77,13 @@ export class MapMaker {
   /** A wall-layer tile: it blocks walking. */
   wall(x, y, gid) { this.walls[this.at(x, y)] = gid; if (gid) this.grass[this.at(x, y)] = 0; this.used.add(this.at(x, y)); }
   wallRect(x, y, w, h, gid) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) this.wall(i, j, gid); }
-  tree(x, y) { this.wall(x, y, TT(28)); }
+  /** A tree standing on a path would shut the path while it still looks open. Say so when a map does that. */
+  #onPath(kind, x, y) { if (this.pathCells?.has(this.at(x, y))) console.warn(`${this.id ?? 'map'}: a ${kind} at ${x},${y} stands on a path`); }
+  tree(x, y) { this.#onPath('tree', x, y); this.wall(x, y, TT(28)); }
   /** A tall tree: two tiles, the crown above the trunk. */
-  bigTree(x, y) { this.wall(x, y - 1, TT(4)); this.wall(x, y, TT(16)); }
-  autumnTree(x, y) { this.wall(x, y - 1, TT(3)); this.wall(x, y, TT(15)); }
-  autumnSmall(x, y) { this.wall(x, y, TT(27)); }
+  bigTree(x, y) { this.#onPath('tall tree', x, y); this.#onPath('tall tree', x, y - 1); this.wall(x, y - 1, TT(4)); this.wall(x, y, TT(16)); }
+  autumnTree(x, y) { this.#onPath('tree', x, y); this.#onPath('tree', x, y - 1); this.wall(x, y - 1, TT(3)); this.wall(x, y, TT(15)); }
+  autumnSmall(x, y) { this.#onPath('tree', x, y); this.wall(x, y, TT(27)); }
   snowTree(x, y) { this.wall(x, y - 1, X(14)); this.wall(x, y, X(15)); }
   snowPine(x, y) { this.wall(x, y, X(16)); }
   snowBush(x, y) { this.wall(x, y, X(17)); }

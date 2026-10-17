@@ -467,3 +467,14 @@ describe('walking the whole route', () => {
     }
   });
 });
+
+describe('paths that look open are open', () => {
+  it('Kauri Bush: you can walk the whole way along the path east of the town trail (a tall tree used to shut it)', () => {
+    const map = WORLD_MAPS['kauri-bush'];
+    for (const y of [11, 12]) {
+      for (let x = 11; x <= 19; x++) {
+        expect(isBlocked(map, x, y, []), `tile ${x},${y} on the path`).toBe(false);
+      }
+    }
+  });
+});
