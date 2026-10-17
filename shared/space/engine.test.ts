@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Board, Square } from './board';
 import {
+  canCharge,
   DEFAULT_SETTINGS,
   FUEL_WARNING_ROUNDS,
   KEEP_ITEMS,
@@ -552,5 +553,93 @@ describe('repeatable', () => {
     s = run(s, roll, [4]).state;
     const reloaded = JSON.parse(JSON.stringify(s)) as SpaceState;
     expect(run(reloaded, roll, [3])).toEqual(run(s, roll, [3]));
+  });
+});
+
+describe('Mission Control maths', () => {
+  const choose = (option: number): SpaceAction => ({ kind: 'choose', option });
+  const board = testBoard({ 10: { kind: 'wormhole', to: 30 }, 50: { kind: 'black-hole', to: 20 } });
+  const maths = (positions: number[], items: ItemKind[][] = []) => setUp(start(board, 2, { maths: true }), positions, items);
+
+  it('asks at a wormhole: right flies 3 further, wrong flies as normal', () => {
+    const asked = run(maths([7, 1]), roll, [3]).state;
+    expect(asked.pending).toEqual({ kind: 'question', square: 10 });
+    expect(run(asked, choose(1)).state.rockets[0].position).toBe(33);
+    expect(run(asked, choose(0)).state.rockets[0].position).toBe(30);
+  });
+
+  it('asks at a black hole: right falls half as far, wrong falls all the way', () => {
+    const asked = run(maths([47, 1]), roll, [3]).state;
+    expect(asked.pending).toEqual({ kind: 'question', square: 50, moment: 'black-hole' });
+    const right = run(asked, choose(1));
+    expect(right.state.rockets[0].position).toBe(35);
+    expect(right.events).toContainEqual({ kind: 'question', seat: 0, correct: true, from: 50, to: 35, moment: 'black-hole' });
+    expect(run(asked, choose(0)).state.rockets[0].position).toBe(20);
+  });
+
+  it('a wrong answer still lets an Escape Pod work, and a right one keeps the pod', () => {
+    const asked = run(maths([47, 1], [['escape-pod']]), roll, [3]).state;
+    const wrong = run(asked, choose(0)).state;
+    expect(wrong.rockets[0].position).toBe(35);
+    expect(wrong.rockets[0].items).toEqual([]);
+    expect(run(asked, choose(1)).state.rockets[0].items).toEqual(['escape-pod']);
+  });
+
+  it('a Force Field blocks the black hole with no question', () => {
+    const { state } = run(maths([47, 1], [['force-field']]), roll, [3]);
+    expect(state.pending).toBeNull();
+    expect(state.rockets[0].position).toBe(50);
+  });
+
+  it('a timeout counts as wrong', () => {
+    const asked = run(maths([47, 1]), roll, [3]).state;
+    expect(run(asked, { kind: 'timeout' }).state.rockets[0].position).toBe(20);
+  });
+
+  it('the charge answer: not on a first turn, once a turn, right adds 1 to the roll, wrong changes nothing', () => {
+    let s = start(board, 2, { maths: true });
+    // Nobody has played yet, so there's nothing to answer.
+    expect(canCharge(s)).toBe(false);
+    expect(() => run(s, { kind: 'charge', right: true })).toThrow(SpaceRuleError);
+    s = run(s, roll, [1]).state; // seat 0 plays, seat 1's first turn
+    expect(() => run(s, { kind: 'charge', right: true })).toThrow(SpaceRuleError);
+    s = run(s, roll, [1]).state; // seat 1 plays, seat 0's second turn
+    expect(s.turn).toBe(0);
+    expect(canCharge(s)).toBe(true);
+    const right = run(s, { kind: 'charge', right: true });
+    expect(right.events).toEqual([{ kind: 'charge', seat: 0, right: true }]);
+    expect(canCharge(right.state)).toBe(false);
+    expect(() => run(right.state, { kind: 'charge', right: true })).toThrow(SpaceRuleError);
+    const rolled = run(right.state, roll, [2]);
+    expect(rolled.events).toContainEqual(expect.objectContaining({ kind: 'roll', die: 2, steps: 3, changes: ['maths-charge'] }));
+    // Wrong: recorded, nothing else; the roll is normal.
+    const wrong = run(s, { kind: 'charge', right: false }).state;
+    expect(wrong.turnInfo.mathsCharge).toBeFalsy();
+    expect(run(wrong, roll, [2]).events).toContainEqual(expect.objectContaining({ kind: 'roll', steps: 2, changes: [] }));
+    // Skipped: just roll.
+    expect(run(s, roll, [2]).events).toContainEqual(expect.objectContaining({ kind: 'roll', steps: 2 }));
+    // The +1 is used up by the roll and doesn't carry over to the next player.
+    expect(rolled.state.turnInfo.mathsCharge).toBeFalsy();
+  });
+
+  it('the +1 goes with a roll-again on a 6 only once', () => {
+    let s = start(board, 2, { maths: true, rollAgainOnSix: true });
+    s = run(s, roll, [1]).state;
+    s = run(s, roll, [1]).state;
+    s = run(s, { kind: 'charge', right: true }).state;
+    const six = run(s, roll, [6]);
+    expect(six.events).toContainEqual(expect.objectContaining({ kind: 'roll', steps: 7 }));
+    expect(six.state.turn).toBe(0);
+    expect(() => run(six.state, { kind: 'charge', right: true })).toThrow(SpaceRuleError);
+    expect(run(six.state, roll, [2]).events).toContainEqual(expect.objectContaining({ kind: 'roll', steps: 2 }));
+  });
+
+  it('with maths off nothing is asked and there is no boost (games exactly as before)', () => {
+    const s = setUp(start(board, 2), [47, 1]);
+    expect(s.rockets[0].hasPlayed).toBeUndefined();
+    expect(run(s, roll, [3]).state.rockets[0].position).toBe(20);
+    const played = run(run(s, roll, [1]).state, roll, [1]).state;
+    expect(canCharge(played)).toBe(false);
+    expect(() => run(played, { kind: 'charge', right: true })).toThrow(SpaceRuleError);
   });
 });

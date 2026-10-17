@@ -21,6 +21,7 @@ function services(over: Partial<Services> = {}) {
     recordKey: vi.fn(async () => ({ ok: true as const, value: 'passed' as const })),
     recordFacts: vi.fn(async (_p: string, _pack: string, facts: unknown[]) => ({ ok: true as const, value: facts.length })),
     importProgress: vi.fn(async () => ({ ok: true as const, value: 'imported' as const })),
+    recordAnswers: vi.fn(async (_p: string, _pack: string, _b: string, answers: unknown[]) => ({ ok: true as const, value: answers.length })),
     ...over,
   };
   return { s, runs };
@@ -107,6 +108,19 @@ describe('the gem-keep server function', () => {
     const { body } = await send(s, [{ type: 'facts', pack: 'times-tables', facts }]);
     expect(body.results[0]).toEqual({ type: 'facts', changed: 1 });
     expect(s.recordFacts).toHaveBeenCalledWith('student-1', 'times-tables', [fact()]);
+  });
+
+  it('adds answers, leaving out bad or impossibly quick ones', async () => {
+    const { s } = services();
+    const good = { key: 'mul:7x8', correct: true, ms: 2100, at: NOW - 5000 };
+    const answers = [good, { ...good, key: 'mul:8x7' }, { ...good, ms: 40 }, { ...good, at: NOW - 90 * 86_400_000 },
+      { ...good, correct: 'yes' }, { ...good, correct: false, ms: 6000 }];
+    const batchId = '0b7d5c2e-8a41-4f6b-9e3d-2c1a0f9e8d7c';
+    const { body } = await send(s, [{ type: 'answers', pack: 'times-tables', batchId, answers }]);
+    expect(body.results[0]).toEqual({ type: 'answers', added: 2 });
+    expect(s.recordAnswers).toHaveBeenCalledWith('student-1', 'times-tables', batchId, [good, { ...good, correct: false, ms: 6000 }]);
+    const bad = await send(s, [{ type: 'answers', pack: 'times-tables', batchId: 'nope', answers: [good] }]);
+    expect(bad.body.results[0].type).toBe('invalid');
   });
 
   it('brings in trial progress only in campaign order', async () => {

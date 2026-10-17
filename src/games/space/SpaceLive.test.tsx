@@ -74,6 +74,9 @@ function session(game: SpaceGame, overrides: Partial<SpaceSession> = {}): SpaceS
     message: '',
     clearMessage: () => {},
     act: vi.fn(async () => true),
+    ask: vi.fn(async () => {
+      throw new Error('no maths in this test');
+    }),
     reload: async () => {},
     ...overrides,
   };
@@ -206,5 +209,84 @@ describe('Wormholes & Black Holes with classmates', () => {
     await screen.findByRole('button', { name: /^🎲 Roll/ });
     await reactAct(async () => {});
     expect(screen.queryByRole('group', { name: 'Send a reaction' })).not.toBeInTheDocument();
+  });
+});
+
+describe('Mission Control maths with classmates', () => {
+  const MATHS = { board: { id: 'nebula' as const }, settings: { ...DEFAULT_SETTINGS, maths: true } };
+  const question = { id: 1, skill: 'times-tables', kind: 'multiply', parts: ['7', '×', '8', '=', '?'], spoken: '7 times 8 equals what?' };
+
+  /** A maths game where it's my turn. */
+  function mathsTurn(): { game: LiveGame; first: SpaceGame } {
+    for (let n = 0; n < 50; n++) {
+      const played = launchLive(MATHS, ['me', 'them'], dice, random);
+      if (played.game.state.turn === 0) return { game: played.game, first: row(played, 1, ['me', 'them'], { setup: MATHS }) };
+    }
+    throw new Error('never my turn');
+  }
+
+  it('asks the server for the wormhole question when I land on one, and sends back what I type', async () => {
+    const user = userEvent.setup();
+    const { first } = mathsTurn();
+    const state = structuredClone(first.state!);
+    const wormhole = Number(Object.entries(state.board.squares).find(([, q]) => q.kind === 'wormhole')![0]);
+    state.rockets[0].position = wormhole;
+    state.phase = 'choice';
+    state.pending = { kind: 'question', square: wormhole, moment: 'wormhole' };
+    state.turnInfo.rolled = true;
+    const ask = vi.fn(async (request: data.SpaceAction): Promise<data.SpaceMathsReply> =>
+      request.action === 'question'
+        ? { game: first, question }
+        : { game: first, right: true, answer: 56 },
+    );
+    render(wrap(<SpaceLive session={session({ ...first, state }, { ask })} timeScale={0} />));
+    const box = await screen.findByRole('dialog', { name: 'Wormhole boost' });
+    expect(ask).toHaveBeenCalledWith({ action: 'question', gameId: 'g1', kind: 'moment', version: 1 });
+    expect(box).toHaveTextContent('⏱');
+    await user.click(within(box).getByRole('button', { name: '5' }));
+    await user.click(within(box).getByRole('button', { name: '6' }));
+    await user.click(within(box).getByRole('button', { name: 'Check my answer' }));
+    await waitFor(() =>
+      expect(ask).toHaveBeenCalledWith(expect.objectContaining({ action: 'answer', kind: 'moment', answer: 56, version: 1 })),
+    );
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Wormhole boost' })).not.toBeInTheDocument(), { timeout: 3000 });
+  });
+
+  it('shows the after-turn question on the side card once I’ve finished a turn, and says nothing about a wrong answer', async () => {
+    const user = userEvent.setup();
+    const { game } = mathsTurn();
+    const mine = playerAction(game, { kind: 'roll' }, dice, random);
+    const next = row(mine, 2, ['me', 'them'], { setup: MATHS });
+    expect(next.seat_info![0].stats.turns).toBe(1);
+    const ask = vi.fn(async (request: data.SpaceAction): Promise<data.SpaceMathsReply> =>
+      request.action === 'question' ? { game: next, question } : { game: next, right: false, answer: 56 },
+    );
+    render(wrap(<SpaceLive session={session(next, { ask })} timeScale={0} />));
+    const card = await screen.findByRole('region', { name: 'Mission Control question' });
+    expect(ask).toHaveBeenCalledWith({ action: 'question', gameId: 'g1', kind: 'charge' });
+    // It's a card on the page, not a pop-up.
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await user.click(within(card).getByRole('button', { name: '1' }));
+    await user.click(within(card).getByRole('button', { name: 'Check my answer' }));
+    await waitFor(() => expect(ask).toHaveBeenCalledWith(expect.objectContaining({ action: 'answer', kind: 'charge', answer: 1 })));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Mission Control question' })).not.toBeInTheDocument(), { timeout: 3000 });
+    expect(screen.queryByText(/charged/i)).not.toBeInTheDocument();
+  });
+
+  it('says "+1 charged" on my turn when the server has added it', async () => {
+    const { first } = mathsTurn();
+    const state = structuredClone(first.state!);
+    state.turnInfo.mathsCharge = true;
+    render(wrap(<SpaceLive session={session({ ...first, state })} timeScale={0} />));
+    expect(await screen.findByText('⚡ +1 charged from your answer')).toBeInTheDocument();
+  });
+
+  it('asks nothing when maths is off', async () => {
+    const { first } = myTurnGame();
+    const s = session(first);
+    render(wrap(<SpaceLive session={s} timeScale={0} />));
+    await screen.findByRole('button', { name: /^🎲 Roll/ });
+    await reactAct(async () => {});
+    expect(s.ask).not.toHaveBeenCalled();
   });
 });

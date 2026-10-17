@@ -4,8 +4,12 @@ import { describe, expect, it } from 'vitest';
 import { CODE_ALPHABET } from '../../../shared/multiplayer';
 import { seeded } from '../../../shared/seededRandom';
 import { botAction } from '../../../shared/space/bot';
+import type { FactAnswer } from '../../../shared/maths/leitner';
+import type { Question } from '../../../shared/maths/skillPack';
+import { solveQuestion } from '../../../shared/maths/skillPacks/timesTables';
 import { DEFAULT_SETTINGS } from '../../../shared/space/engine';
 import { AUTOPILOT_AFTER, type LiveSetup } from '../../../shared/space/live';
+import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
 import { MIN_TURNS_TO_COUNT } from '../../../shared/space/save';
 import {
   MAX_CREATES_PER_HOUR,
@@ -13,8 +17,10 @@ import {
   WAITING_GAME_MS,
   type NewSpaceGame,
   type PlayerStatus,
+  type QuestionKind,
   type ReactionResult,
   type Services,
+  type StoredQuestion,
   type SpaceGameRow,
 } from './handler';
 
@@ -31,8 +37,12 @@ function world() {
   const friendCodes = new Set<string>();
   let multiplayerOn = true;
   let reactionsOn = false;
+  let mathsSwitch: MathsSwitch = 'choose';
   for (const name of NAMES) players.set(name, { school: true, hidden: false, multiplayerEnabled: true, reactionsEnabled: false });
 
+  const questions = new Map<string, StoredQuestion>();
+  const recorded: { player: string; once: string; answer: FactAnswer }[] = [];
+  const qKey = (game: string, seat: number, kind: QuestionKind) => `${game}:${seat}:${kind}`;
   const copy = (g: SpaceGameRow | undefined) => (g ? structuredClone(g) : null);
   const random = seeded(11);
 
@@ -47,6 +57,7 @@ function world() {
       const gone = others.filter((o) => !players.get(o) || players.get(o)!.hidden);
       return { ...p, multiplayerEnabled: multiplayerOn, reactionsEnabled: reactionsOn, createdLastHour, gone };
     },
+    mathsSwitch: async () => mathsSwitch,
     loadGame: async (id) => copy(games.get(id)),
     findWaitingByCode: async (code) => copy([...games.values()].find((g) => g.status === 'waiting' && g.code === code)),
     friendCodeTaken: async (code) => friendCodes.has(code),
@@ -99,6 +110,19 @@ function world() {
       };
       return 'ok';
     },
+    loadMathsContext: async () => ({ facts: [], settings: { enabledTables: [2, 5, 10] } }),
+    loadQuestion: async (game, seat, kind) => structuredClone(questions.get(qKey(game, seat, kind)) ?? null),
+    saveQuestion: async (game, seat, kind, stamp, question) => {
+      questions.set(qKey(game, seat, kind), { stamp, question, askedAt: clock, answered: false });
+    },
+    claimQuestion: async (game, seat, kind) => {
+      const q = questions.get(qKey(game, seat, kind));
+      if (!q || q.answered) return false;
+      q.answered = true;
+      return true;
+    },
+    dropQuestion: async (game, seat, kind) => void questions.delete(qKey(game, seat, kind)),
+    recordAnswer: async (player, once, answer) => void recorded.push({ player, once, answer }),
   };
 
   const handle = spaceGameHandler(services);
@@ -106,7 +130,16 @@ function world() {
     const headers: Record<string, string> = { 'Content-Type': 'application/json', Origin: 'https://bleedingrobot.github.io' };
     if (who) headers.Authorization = `Bearer ${who}-token`;
     const response = await handle(new Request('http://x/space-game', { method: 'POST', headers, body: JSON.stringify(body) }));
-    const json = (await response.json()) as { game?: SpaceGameRow; error?: string; problem?: string; secondsLeft?: number };
+    const json = (await response.json()) as {
+      game?: SpaceGameRow;
+      error?: string;
+      problem?: string;
+      secondsLeft?: number;
+      question?: Question;
+      done?: boolean;
+      right?: boolean;
+      answer?: number;
+    };
     return { status: response.status, ...json };
   }
 
@@ -120,8 +153,8 @@ function world() {
     return games.get(made.game!.id)!;
   }
 
-  async function launched(who: string[] = ['ben'], bots = 0) {
-    const g = await waiting(who);
+  async function launched(who: string[] = ['ben'], bots = 0, setup: LiveSetup = SETUP) {
+    const g = await waiting(who, setup);
     const done = await ask('ana', { action: 'launch', gameId: g.id, bots });
     if (done.status !== 200) throw new Error(`launch: ${done.problem}`);
     return done.game!;
@@ -163,6 +196,8 @@ function world() {
     games,
     players,
     friendCodes,
+    questions,
+    recorded,
     ask,
     waiting,
     launched,
@@ -173,6 +208,7 @@ function world() {
     now: () => clock,
     setMultiplayer: (on: boolean) => (multiplayerOn = on),
     setReactions: (on: boolean) => (reactionsOn = on),
+    setMathsSwitch: (mode: MathsSwitch) => (mathsSwitch = mode),
   };
 }
 
@@ -432,6 +468,178 @@ describe('reactions', () => {
     expect((await w.ask('cat', { action: 'react', gameId: g.id, emoji: '🎉' })).problem).toBe('not-yours');
     w.players.get('ben')!.hidden = true;
     expect((await w.ask('ben', { action: 'react', gameId: g.id, emoji: '🎉' })).problem).toBe('hidden');
+  });
+});
+
+const MATHS_SETUP: LiveSetup = { board: { id: 'asteroid-belt' }, settings: { ...DEFAULT_SETTINGS, maths: true } };
+
+/** Puts the student whose turn it is on a wormhole with its question waiting (as if they'd just landed there). */
+function landOnWormhole(g: SpaceGameRow) {
+  const square = Object.entries(g.state!.board.squares).find(([, q]) => q.kind === 'wormhole')![0];
+  g.state!.rockets[g.state!.turn].position = Number(square);
+  g.state!.phase = 'choice';
+  g.state!.pending = { kind: 'question', square: Number(square), moment: 'wormhole' };
+  g.state!.turnInfo.rolled = true;
+  g.version++;
+}
+
+describe('Mission Control maths with classmates', () => {
+  const typedFor = (q: Question, right: boolean) => solveQuestion(q.parts)!.answer + (right ? 0 : 1);
+
+  it('takes maths in the host’s setup, and shows the waiting room the setting', async () => {
+    const w = world();
+    const made = await w.ask('ana', { action: 'create', setup: MATHS_SETUP });
+    expect(made.status).toBe(200);
+    expect(made.game!.setup.settings.maths).toBe(true);
+  });
+
+  it('follows the teacher’s switch: Off refuses maths, On makes every game a maths game', async () => {
+    const w = world();
+    w.setMathsSwitch('off');
+    const refused = await w.ask('ana', { action: 'create', setup: MATHS_SETUP });
+    expect(refused.problem).toBe('maths-off');
+    expect(refused.status).toBe(403);
+    expect((await w.ask('ana', { action: 'create', setup: SETUP })).game!.setup.settings.maths).toBe(false);
+    w.setMathsSwitch('on');
+    const forced = await w.ask('ben', { action: 'create', setup: SETUP });
+    expect(forced.game!.setup.settings.maths).toBe(true);
+    w.setMathsSwitch('choose');
+    expect((await w.ask('cat', { action: 'create', setup: SETUP })).game!.setup.settings.maths).toBe(false);
+    expect((await w.ask('dan', { action: 'create', setup: MATHS_SETUP })).game!.setup.settings.maths).toBe(true);
+  });
+
+  it('a game that was waiting when the switch changed follows the switch at launch', async () => {
+    const w = world();
+    const made = (await w.ask('ana', { action: 'create', setup: MATHS_SETUP })).game!;
+    await w.ask('ben', { action: 'join', code: made.code });
+    w.setMathsSwitch('off');
+    const launched = await w.ask('ana', { action: 'launch', gameId: made.id });
+    expect(launched.game!.setup.settings.maths).toBe(false);
+    expect(launched.game!.state!.settings.maths).toBe(false);
+  });
+
+  it('picks the question on the server and never sends the answer', async () => {
+    const w = world();
+    const g = await w.launched(['ben'], 0, MATHS_SETUP);
+    const row = w.games.get(g.id)!;
+    landOnWormhole(row);
+    const who = w.turnOf(g.id);
+    const asked = await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
+    expect(asked.question!.parts).toHaveLength(5);
+    expect(JSON.stringify(asked)).not.toContain('"answer"');
+    // Asking again (a reload) shows the same question.
+    const again = await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
+    expect(again.question).toEqual(asked.question);
+    // The other student can't ask for it.
+    const other = who === 'ana' ? 'ben' : 'ana';
+    expect((await w.ask(other, { action: 'question', kind: 'moment', gameId: g.id, version: row.version })).problem).toBe('not-your-turn');
+  });
+
+  it('marks the answer itself: right flies further, wrong is a normal ride, and nobody can just claim "right"', async () => {
+    const w = world();
+    const g = await w.launched(['ben'], 0, MATHS_SETUP);
+    const row = w.games.get(g.id)!;
+    landOnWormhole(row);
+    const who = w.turnOf(g.id);
+    const version = row.version;
+    // "choose 1" (claiming a right answer) is refused.
+    const claim = await w.ask(who, { action: 'choose', gameId: g.id, version, option: 1 });
+    expect(claim.status).toBe(400);
+    expect(claim.problem).toBe('illegal');
+    const asked = await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version });
+    // A made-up answer to a question that wasn't asked of this version.
+    expect((await w.ask(who, { action: 'answer', kind: 'moment', gameId: g.id, version: version + 1, answer: 1 })).problem).toBe('changed');
+    w.tick(1500);
+    const done = await w.ask(who, { action: 'answer', kind: 'moment', gameId: g.id, version, answer: typedFor(asked.question!, true), ms: 900 });
+    expect(done.status).toBe(200);
+    expect(done.right).toBe(true);
+    expect(done.game!.events).toContainEqual(expect.objectContaining({ kind: 'question', correct: true }));
+    expect(done.game!.version).toBe(version + 1);
+    expect(w.recorded).toHaveLength(1);
+    expect(w.recorded[0]).toMatchObject({ player: who, answer: { correct: true, ms: 900 } });
+    // The question is used up: answering again is refused.
+    expect((await w.ask(who, { action: 'answer', kind: 'moment', gameId: g.id, version, answer: 1 })).status).not.toBe(200);
+  });
+
+  it('a wrong answer is recorded as wrong, and the server says what the answer was', async () => {
+    const w = world();
+    const g = await w.launched(['ben'], 0, MATHS_SETUP);
+    const row = w.games.get(g.id)!;
+    landOnWormhole(row);
+    const who = w.turnOf(g.id);
+    const asked = await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
+    w.tick(2000);
+    const done = await w.ask(who, { action: 'answer', kind: 'moment', gameId: g.id, version: row.version, answer: typedFor(asked.question!, false), ms: 99_999 });
+    expect(done.right).toBe(false);
+    expect(done.answer).toBe(solveQuestion(asked.question!.parts)!.answer);
+    // The time is never more than the server saw.
+    expect(w.recorded[0].answer).toMatchObject({ correct: false, ms: 2000 });
+  });
+
+  it('refuses questions when maths is off in the game', async () => {
+    const w = world();
+    const g = await w.launched(['ben']);
+    const who = w.turnOf(g.id);
+    expect((await w.ask(who, { action: 'question', kind: 'charge', gameId: g.id })).problem).toBe('illegal');
+  });
+
+  it('the question after a turn: none on a first turn, one a turn, right waits for the next turn, wrong leaves no trace', async () => {
+    const w = world();
+    const g = await w.launched(['ben'], 0, MATHS_SETUP);
+    const first = w.turnOf(g.id);
+    const second = first === 'ana' ? 'ben' : 'ana';
+    expect((await w.ask(first, { action: 'question', kind: 'charge', gameId: g.id })).problem).toBe('illegal');
+    await w.playTurn(g.id);
+    expect(w.turnOf(g.id)).toBe(second);
+    // The first student's turn is over: their question can be asked, during the second student's turn.
+    const asked = await w.ask(first, { action: 'question', kind: 'charge', gameId: g.id });
+    expect(asked.question).toBeDefined();
+    expect((await w.ask(first, { action: 'question', kind: 'charge', gameId: g.id })).question).toEqual(asked.question);
+    const done = await w.ask(first, { action: 'answer', kind: 'charge', gameId: g.id, answer: typedFor(asked.question!, true), ms: 2000 });
+    expect(done.right).toBe(true);
+    const row = w.games.get(g.id)!;
+    expect(row.seat_info![[row.seat1, row.seat2].indexOf(first)].charged).toBe(true);
+    // Only once: the same turn can't be asked or answered again.
+    expect((await w.ask(first, { action: 'question', kind: 'charge', gameId: g.id })).done).toBe(true);
+    expect((await w.ask(first, { action: 'answer', kind: 'charge', gameId: g.id, answer: 1 })).status).not.toBe(200);
+    // Their next turn starts with the +1 already in.
+    await w.playTurn(g.id); // the second student's turn
+    const after = w.games.get(g.id)!;
+    expect(after.state!.turn).toBe([after.seat1, after.seat2].indexOf(first));
+    expect(after.state!.turnInfo.mathsCharge).toBe(true);
+    expect(after.actions.map((a) => a.action)).toContain('charge:1');
+    const seat = [after.seat1, after.seat2].indexOf(first);
+    expect(after.seat_info![seat].charged).toBe(false);
+  });
+
+  it('a wrong charge answer changes nothing in the game', async () => {
+    const w = world();
+    const g = await w.launched(['ben'], 0, MATHS_SETUP);
+    const first = w.turnOf(g.id);
+    await w.playTurn(g.id);
+    const asked = await w.ask(first, { action: 'question', kind: 'charge', gameId: g.id });
+    const before = w.games.get(g.id)!.version;
+    const done = await w.ask(first, { action: 'answer', kind: 'charge', gameId: g.id, answer: typedFor(asked.question!, false), ms: 2000 });
+    expect(done.right).toBe(false);
+    expect(w.games.get(g.id)!.version).toBe(before);
+    expect(w.games.get(g.id)!.seat_info!.every((s) => !s.charged)).toBe(true);
+    expect(w.recorded[0].answer.correct).toBe(false);
+  });
+
+  it('a right charge answer given on your own turn, before rolling, counts straight away; after rolling, not', async () => {
+    const w = world();
+    const g = await w.launched(['ben'], 0, MATHS_SETUP);
+    const first = w.turnOf(g.id);
+    await w.playTurn(g.id);
+    await w.playTurn(g.id); // back to the first student
+    expect(w.turnOf(g.id)).toBe(first);
+    const asked = await w.ask(first, { action: 'question', kind: 'charge', gameId: g.id });
+    const done = await w.ask(first, { action: 'answer', kind: 'charge', gameId: g.id, answer: typedFor(asked.question!, true), ms: 1500 });
+    expect(done.game!.state!.turnInfo.mathsCharge).toBe(true);
+    // The clock isn't restarted by the +1.
+    expect(done.game!.turn_deadline).toBe(w.games.get(g.id)!.turn_deadline);
+    const rolled = await w.ask(first, { action: 'roll', gameId: g.id, version: done.game!.version });
+    expect(rolled.game!.events).toContainEqual(expect.objectContaining({ kind: 'roll', changes: expect.arrayContaining(['maths-charge']) }));
   });
 });
 

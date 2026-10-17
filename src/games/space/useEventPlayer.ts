@@ -261,10 +261,22 @@ export function useEventPlayer(settings: { current: PlayerSettings }) {
         sound(event.seat === cast.me ? 'win' : 'end');
         await effect(event.seat, 'docked', 1000);
         return;
+      case 'question':
+        // A wormhole answered (right or wrong) flies through; a right black hole answer climbs
+        // out of the fall. A wrong black hole answer falls in the next ('black-hole') event.
+        if (event.from === event.to) return;
+        if (event.moment === 'black-hole') {
+          sound('shield');
+          await effect(event.seat, 'sparkle', 450);
+        } else {
+          sound('wormhole');
+          await effect(event.seat, 'swirl', 450);
+        }
+        await slide(event.seat, event.to, 750);
+        return setRocket(event.seat, { fx: null });
       case 'game-over':
       case 'choice':
       case 'timeout':
-      case 'question':
         return;
     }
   }

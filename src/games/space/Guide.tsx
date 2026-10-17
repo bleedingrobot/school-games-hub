@@ -163,10 +163,37 @@ function HowToPlay() {
       </section>
 
       <section>
+        <h3>Mission Control maths 🧮</h3>
+        <p>
+          If maths is on, you get times-table questions. They come from your own times-table practice, so they match what
+          you’re learning. A wrong answer never costs you anything: the worst that happens is a normal move.
+        </p>
+        <ul className="space-guide__bullets">
+          <li>
+            <strong>After your turn:</strong> a question appears on a small card while the others take their turns. Answer
+            it and a right answer gives you <strong>+1 on your next roll</strong>. You can skip it.
+          </li>
+          <li>
+            <strong>Wormhole:</strong> land on a wormhole and you get a question. Right, and you’re <strong>powered up</strong>:
+            you come out a few squares further on. Wrong, and you ride the wormhole as usual.
+          </li>
+          <li>
+            <strong>Black hole:</strong> land on a black hole and you get a question. Right, and you only fall <strong>half
+            as far</strong>. Wrong, and you fall all the way.
+          </li>
+          <li>Type your answer and press <kbd>Enter</kbd>. Your answers go into your times-table records.</li>
+        </ul>
+      </section>
+
+      <section>
         <h3>Playing classmates</h3>
         <p>
           You have 30 seconds for a turn and 15 seconds for a choice. If you miss 3 turns in a row, autopilot flies your rocket
           so the game goes on for everyone (and you won’t get points for that game). You can take the controls back.
+        </p>
+        <p>
+          With maths on, a wormhole or black hole question has a <strong>20-second</strong> timer. If time runs out, you move
+          as usual and nothing is marked wrong.
         </p>
       </section>
 

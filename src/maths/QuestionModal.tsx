@@ -15,8 +15,14 @@ import './maths.css';
 export const FEEDBACK_MS = { right: 800, wrong: 2000 };
 const MAX_DIGITS = 3;
 
-/** A marked answer, plus what it earned, e.g. "+15 mana" (shown under "Correct!"). */
-export type MarkedAnswer = AnswerResult & { reward?: string };
+/** What the box needs of a question. `answer` is missing when the game's server keeps it secret until marked. */
+export type ShownQuestion = Pick<Question, 'id' | 'parts' | 'spoken' | 'choices'> & { answer?: number };
+
+/**
+ * A marked answer, plus what it earned, e.g. "+15 mana" (shown under "Correct!"). `answer` is
+ * the right answer, for when the game's server marked it (so the box didn't know it before).
+ */
+export type MarkedAnswer = AnswerResult & { reward?: string; answer?: number };
 
 export function QuestionModal({
   question,
@@ -27,14 +33,16 @@ export function QuestionModal({
   onClose,
   closeLabel = 'Close',
   timeScale = 1,
+  inline = false,
+  secondsLeft = null,
 }: {
-  question: Question;
+  question: ShownQuestion;
   /** What the question is for, e.g. "Mana Well". */
   title: string;
   /** A line under the title, e.g. "Correct answers give mana". */
   note?: string;
-  /** Marks the answer (the game records it). */
-  onSubmit: (answer: number, ms: number) => MarkedAnswer;
+  /** Marks the answer (the game records it). May take a moment, if the game's server does the marking. */
+  onSubmit: (answer: number, ms: number) => MarkedAnswer | Promise<MarkedAnswer>;
   /** Called after the feedback has been shown. */
   onDone: (result: MarkedAnswer) => void;
   /** If given, the student may stop (a button, and Escape) before answering. */
@@ -42,9 +50,15 @@ export function QuestionModal({
   closeLabel?: string;
   /** Tests set 0 to skip the feedback pause. */
   timeScale?: number;
+  /** A card in the page, not a pop-up over it: no dimmed backdrop, no focus grab. */
+  inline?: boolean;
+  /** A countdown to show, when the game gives the question a time limit. */
+  secondsLeft?: number | null;
 }) {
   const [typed, setTyped] = useState('');
   const [result, setResult] = useState<MarkedAnswer | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [trouble, setTrouble] = useState('');
   const shownAt = useRef(performance.now());
   const box = useRef<HTMLDivElement>(null);
   const titleId = `question-${question.id}-title`;
@@ -53,9 +67,11 @@ export function QuestionModal({
   useEffect(() => {
     setTyped('');
     setResult(null);
+    setChecking(false);
+    setTrouble('');
     shownAt.current = performance.now();
-    box.current?.focus();
-  }, [question.id]);
+    if (!inline) box.current?.focus();
+  }, [question.id, inline]);
 
   // Each answer is reported exactly once, however often the parent re-renders.
   const reportDone = useRef(onDone);
@@ -67,8 +83,25 @@ export function QuestionModal({
   }, [result, timeScale]);
 
   function submit(answer: number) {
-    if (result) return;
-    setResult(onSubmit(answer, Math.round(performance.now() - shownAt.current)));
+    if (result || checking) return;
+    const marked = onSubmit(answer, Math.round(performance.now() - shownAt.current));
+    if (!('then' in marked)) {
+      setResult(marked);
+      return;
+    }
+    // The server is marking it: wait for it, and let the student try again if it didn't answer.
+    setChecking(true);
+    setTrouble('');
+    marked.then(
+      (done) => {
+        setChecking(false);
+        setResult(done);
+      },
+      (error: unknown) => {
+        setChecking(false);
+        setTrouble(error instanceof Error && error.message ? error.message : 'We couldn’t check that one. Try again.');
+      },
+    );
   }
 
   const addDigit = (d: string) => setTyped((t) => (t.length >= MAX_DIGITS || (t === '0' && d === '0') ? t : t === '0' ? d : t + d));
@@ -81,7 +114,7 @@ export function QuestionModal({
       onClose();
       return;
     }
-    if (result || question.choices) return;
+    if (result || checking || question.choices) return;
     // Enter on a focused button (keyboard users tabbing round the pad) presses that button.
     if (event.key === 'Enter' && event.target instanceof HTMLButtonElement) return;
     if (/^[0-9]$/.test(event.key)) addDigit(event.key);
@@ -93,12 +126,12 @@ export function QuestionModal({
 
   const blank = typed === '' ? '?' : typed;
   return (
-    <div className="question-backdrop">
+    <div className={inline ? undefined : 'question-backdrop'}>
       <div
         ref={box}
-        className="question"
-        role="dialog"
-        aria-modal="true"
+        className={inline ? 'question question--inline' : 'question'}
+        role={inline ? 'group' : 'dialog'}
+        aria-modal={inline ? undefined : true}
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={keys}
@@ -112,14 +145,25 @@ export function QuestionModal({
           {question.parts.map((part, i) =>
             part === '?' ? (
               <span key={i} className="question__blank" data-empty={typed === '' || undefined}>
-                {result ? (result.correct ? blank : question.answer) : blank}
+                {result ? (result.correct ? blank : (result.answer ?? question.answer)) : blank}
               </span>
             ) : (
               <span key={i}>{part}</span>
             ),
           )}
         </p>
+        {secondsLeft !== null && !result && (
+          <p className="question__timer" role="timer" aria-label={`${secondsLeft} seconds left`}>
+            ⏱ {secondsLeft}
+          </p>
+        )}
+        {/* The timer above isn't read out every second; screen readers hear a warning at 10 and 5. */}
+        <p className="sr-only" aria-live="polite">
+          {secondsLeft !== null && !result && (secondsLeft === 10 || secondsLeft === 5) ? `${secondsLeft} seconds left` : ''}
+        </p>
         <p className="question__feedback" role="status">
+          {checking && 'Checking…'}
+          {trouble && !checking && !result && trouble}
           {result?.correct && (
             <>
               <span className="question__sparkle" aria-hidden="true">
@@ -137,8 +181,8 @@ export function QuestionModal({
                 key={choice}
                 type="button"
                 className="question__choice"
-                disabled={!!result}
-                data-answer={result && choice === question.answer ? true : undefined}
+                disabled={!!result || checking}
+                data-answer={result && choice === (result.answer ?? question.answer) ? true : undefined}
                 onClick={() => submit(choice)}
               >
                 {choice}
@@ -150,11 +194,11 @@ export function QuestionModal({
             <p className="sr-only" aria-live="polite">
               {typed ? `Your answer: ${typed}` : ''}
             </p>
-            <NumberPad onDigit={addDigit} onBack={back} onEnter={enter} canEnter={typed !== ''} disabled={!!result} />
+            <NumberPad onDigit={addDigit} onBack={back} onEnter={enter} canEnter={typed !== ''} disabled={!!result || checking} />
           </>
         )}
         {onClose && (
-          <button type="button" className="question__close" disabled={!!result} onClick={onClose}>
+          <button type="button" className="question__close" disabled={!!result || checking} onClick={onClose}>
             {closeLabel}
           </button>
         )}

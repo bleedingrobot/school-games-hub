@@ -282,3 +282,45 @@ describe('times-tables questions', () => {
     expect(new TimesTables().curriculumTags.length).toBeGreaterThan(0);
   });
 });
+
+describe('working out a question from how it was shown', () => {
+  it('solves every kind, and gives the fact it belongs to', async () => {
+    const { solveQuestion } = await import('./skillPacks/timesTables');
+    expect(solveQuestion(['7', '×', '8', '=', '?'])).toEqual({ answer: 56, key: 'mul:7x8' });
+    expect(solveQuestion(['?', '×', '8', '=', '56'])).toEqual({ answer: 7, key: 'mul:7x8' });
+    expect(solveQuestion(['7', '×', '?', '=', '56'])).toEqual({ answer: 8, key: 'mul:7x8' });
+    expect(solveQuestion(['56', '÷', '8', '=', '?'])).toEqual({ answer: 7, key: 'mul:7x8' });
+  });
+
+  it('refuses anything the pack could never ask', async () => {
+    const { solveQuestion } = await import('./skillPacks/timesTables');
+    for (const bad of [['13', '×', '2', '=', '?'], ['?', '×', '8', '=', '57'], ['7', '+', '8', '=', '?'], ['7', '×', '8', '=', '56'],
+      ['?', '×', '?', '=', '56'], ['55', '÷', '8', '=', '?'], 'nope', ['7', '×', '8', '?', '?']]) {
+      expect(solveQuestion(bad)).toBeNull();
+    }
+  });
+
+  it('every question the pack asks can be solved back to the right answer and fact', async () => {
+    const { solveQuestion, TimesTables } = await import('./skillPacks/timesTables');
+    let seed = 7;
+    const pack = new TimesTables([], () => ((seed = (seed * 16807) % 2147483647) / 2147483647));
+    for (let i = 0; i < 300; i++) {
+      const q = pack.nextQuestion({ level: 9, division: true, missingFactor: true })!;
+      expect(solveQuestion(q.parts)).toEqual({ answer: q.answer, key: q.factKey });
+    }
+  });
+});
+
+describe('the level a student is ready for (games with no campaign)', () => {
+  it('starts on ×2, ×5 and ×10, and moves on as each step becomes secure', async () => {
+    const { readyLevel } = await import('./selector');
+    const { factsIn, parseFactKey } = await import('./facts');
+    const secure = (tables: number[], upTo = 12) =>
+      [...factsIn(tables)].filter((k) => parseFactKey(k)!.b <= upTo).map((key) => ({ key, attempts: 3, correct: 3, avgMs: 2000, box: 3, lastSeen: 1, quickDays: [] }));
+    expect(readyLevel([])).toBe(1);
+    expect(readyLevel(secure([2, 5, 10], 10))).toBe(3);
+    expect(readyLevel([...secure([2, 5, 10], 10), ...secure([3, 4])])).toBe(5);
+    // Switched-off tables don't hold anyone back.
+    expect(readyLevel(secure([2, 5, 10], 10), [2, 5, 10, 6, 8])).toBe(5);
+  });
+});

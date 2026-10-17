@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CAMPAIGN } from '../../../../shared/gem-keep/levels';
-import type { FactStats } from '../../../../shared/maths/leitner';
+import type { FactAnswer, FactStats } from '../../../../shared/maths/leitner';
 import type { SkillPack } from '../../../../shared/maths/skillPack';
 import { TimesTables } from '../../../../shared/maths/skillPacks/timesTables';
 import type { GameEngine } from '../engine/GameEngine';
@@ -43,7 +43,7 @@ export function GemKeepCampaign({
   onProgress = saveProgress,
   onLevelEnd,
   onKey,
-  onFacts,
+  onAnswers,
   onEngine,
 }: {
   settings?: GemKeepSettings;
@@ -58,8 +58,11 @@ export function GemKeepCampaign({
   onLevelEnd?: (level: FinishedLevel) => void;
   /** A Level Key round finished: right answers out of 10. */
   onKey?: (levelId: string, right: number) => void;
-  /** The maths records, after anything that changed them. */
-  onFacts?: (facts: FactStats[]) => void;
+  /**
+   * The answers given since the last report (oldest first), and the records they make.
+   * Called after each level, Level Key and when leaving.
+   */
+  onAnswers?: (answers: FactAnswer[], facts: FactStats[]) => void;
   onEngine?: (engine: GameEngine) => void;
 }) {
   const [progress, setProgress] = useState<CampaignProgress>(() => initialProgress ?? loadProgress());
@@ -84,7 +87,15 @@ export function GemKeepCampaign({
     onProgress(progress);
   }, [progress, onProgress]);
 
-  const reportFacts = useCallback(() => onFacts?.(pack.stats()), [onFacts, pack]);
+  // Every answer, kept until it's reported.
+  const unreported = useRef<FactAnswer[]>([]);
+  useEffect(() => pack.onAnswer((answer) => unreported.current.push(answer)), [pack]);
+  const reportFacts = useCallback(() => {
+    if (unreported.current.length === 0) return;
+    const answers = unreported.current;
+    unreported.current = [];
+    onAnswers?.(answers, pack.stats());
+  }, [onAnswers, pack]);
 
   // Leaving the game (or the tab going to the background) saves the maths records too.
   useEffect(() => {

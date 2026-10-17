@@ -119,8 +119,8 @@ select ok(not pg_temp.has('a', 'space-classmates'), 'no classmates game yet');
 -- ---- What the website reads ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
 select is((public.progress_rules() -> 'space' ->> 'bot')::int, 2, 'How points work reads the space points from here');
-select is((select count(*)::int from jsonb_array_elements(public.my_progress() -> 'achievements') a where a ->> 'game' = 'space'), 6,
-  'the student''s progress lists the 6 space achievements');
+select is((select count(*)::int from jsonb_array_elements(public.my_progress() -> 'achievements') a where a ->> 'game' = 'space'), 9,
+  'the student''s progress lists the 9 space achievements');
 select is((select (a ->> 'progress')::int from jsonb_array_elements(public.my_progress() -> 'achievements') a
   where a ->> 'id' = 'space-every-star'), 9, 'with progress towards each');
 select throws_ok($$ select * from public.leaderboard('space', 'week') $$, '22023', null, 'there is no space leaderboard');

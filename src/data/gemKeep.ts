@@ -71,7 +71,7 @@ function setQueue(player: string, items: SaveItem[]) {
   write(queueKey(player), items.length ? items : null);
 }
 
-/** Fact records only need their newest copy in the queue. The longest the queue may grow. */
+/** The longest the queue may grow. */
 const MAX_QUEUE = 200;
 
 export function enqueue(player: string, item: SaveItem) {

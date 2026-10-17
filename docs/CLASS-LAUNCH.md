@@ -11,7 +11,7 @@ Live site: https://bleedingrobot.github.io/school-games-hub/
 - [ ] **Play a quick friend game with yourself:** open the site on a second device (or ask a colleague). Press **Start game** on one, type the code on the other, make a move on each, then resign. Both screens should show the result.
 - [ ] **If you'll use the space game:** **Play the bots → Wormholes & Black Holes**, pick **Asteroid Belt** and 1 bot, and play to the end (about 2 minutes). The podium should say **Saved!**
 - [ ] **If you'll use 101:** **Play the bots → 101**, pick 1 bot and **Quick: to 50**, and play to the end (about 5 minutes). The podium should say **Saved! Points added.**
-- [ ] **Check the friends switch:** open the **Teacher** page. It should say **Games against friends are on.** If it says paused, press **Switch games against friends back on**. It covers space games and 101 too. Decide on **Emoji reactions in space games** (off to start).
+- [ ] **Check the friends switch:** open the **Teacher** page. It should say **Games against friends are on.** If it says paused, press **Switch games against friends back on**. It covers space games and 101 too. Decide on **Emoji reactions in space games** (off to start) and **Mission Control maths in space games** (*Students choose* to start; *Off* if you want no times-table questions in space games, *On for everyone* for a maths lesson).
 - [ ] Check the students know their school Google login, and the Chromebooks are charged.
 - [ ] Print one **problem slip** per student (bottom of this page).
 
@@ -30,7 +30,7 @@ Wormholes & Black Holes is a dice race, so it suits a younger group, a quick fin
 
 1. **Sign in (5 min)** as above.
 2. **How to play (5 min).** Everyone opens **Play the bots → Wormholes & Black Holes → How to play**. It has a picture and one line for every square and item. Pick **Classic** mode for a gentler first game (just wormholes and black holes). Short on Chromebooks? **Who's playing → Pass-and-play** lets 2–4 students share one (just for fun: not saved, no points).
-3. **Against the bots (10 min).** **Asteroid Belt** with 1–3 bots takes 2–4 minutes. Landing on stars and other squares shows a space fact, collected on each student's **Star chart**.
+3. **Against the bots (10 min).** **Asteroid Belt** with 1–3 bots takes 2–4 minutes. Landing on stars and other squares shows a space fact, collected on each student's **Star chart**. If **Mission Control maths** is on, a times-table question comes after each turn (a right answer gives +1 on the next roll) and at wormholes and black holes. Wrong answers never cost anything, and what students answer goes into their times-table records, which you can see in the Gem Keep panels.
 4. **With classmates (15–20 min).** Groups of 2–4: one taps **Play a friend → Start a game → Wormholes & Black Holes**, picks a board, and reads out the code. The others type it in. The host can fill empty seats with bots, then presses **Launch**. For the whole class on the same board, write a galaxy code on the board (e.g. `Comet-Kiwi-48`) or use **Galaxy of the day**.
 5. **Rematch** at the end starts a new waiting game with the same board.
 
@@ -51,7 +51,7 @@ Wormholes & Black Holes is a dice race, so it suits a younger group, a quick fin
 - Players who walk away: after 2 minutes, the partner gets a **Claim the win** button. Walking away counts as a loss for the one who left.
 - A player name being used to tease: **Teacher** page → the student → **New name**.
 - In 101 with classmates, each turn has 60 seconds; then it's skipped, and 3 skips in a row puts a student out (no points). Nobody can see anyone else's face-down cards, even by reloading: the peek happens once.
-- In space games, each turn has 30 seconds (15 for a choice). A student who misses 3 turns in a row goes on **autopilot**, so the game carries on for everyone. They can tap **Take the controls**, but that game no longer earns them points.
+- In space games, each turn has 30 seconds (15 for a choice, and 20 for a maths question at a wormhole or black hole). A student who misses 3 turns in a row goes on **autopilot**, so the game carries on for everyone. They can tap **Take the controls**, but that game no longer earns them points.
 - A student who needs a break from friend games: **Teacher** page → the student → **Hide**. They can still play bots.
 
 ## If something goes wrong in class
@@ -88,6 +88,7 @@ Wormholes & Black Holes is a dice race, so it suits a younger group, a quick fin
 | *That game stopped waiting* / *The host hasn't launched yet* | Space game: the waiting room timed out, or it's not started | Make a new game / wait for the host |
 | *Autopilot is flying your rocket* | They missed 3 turns in a row | Tap **Take the controls** (that game won't earn points) |
 | *Wait a few seconds before sending another* / *That's all the reactions for this game* | Space game emoji: one every 5 seconds, 20 a game | Nothing |
+| *Your teacher has switched Mission Control maths off* | Space game: a maths game was started or saved after the teacher set maths to Off | Start a new game (without maths), or set the switch back |
 | *You need at least 2 players to start. Share the code!* | 101: the host is alone in the waiting room | Share the code |
 | *That game is full, or it has already started* | 101: every seat is taken, or the cards are dealt | Make a new game |
 | *You're out of this game.* | 101: they pressed Leave, or missed 3 turns in a row | Start a new game; that one earns nothing |

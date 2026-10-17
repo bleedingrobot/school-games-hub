@@ -2,6 +2,10 @@
 // then run `npm run build:functions`. Deploy this file as the "gem-keep" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+//#region shared/maths/config.ts
+/** Answering correctly within this many milliseconds counts as quick. */
+const QUICK_MS = 5e3;
+//#endregion
 //#region shared/maths/facts.ts
 function parseFactKey(key) {
 	const match = /^mul:(\d+)x(\d+)$/.exec(key);
@@ -1723,6 +1727,41 @@ function checkFacts(x, nowMs) {
 		}
 	};
 }
+function checkAnswers(x, nowMs) {
+	if (x.pack !== "times-tables") return {
+		ok: false,
+		problem: "pack"
+	};
+	if (typeof x.batchId !== "string" || !UUID.test(x.batchId)) return {
+		ok: false,
+		problem: "batch-id"
+	};
+	if (!Array.isArray(x.answers) || x.answers.length > 500) return {
+		ok: false,
+		problem: "answers"
+	};
+	const answers = [];
+	for (const raw of x.answers) {
+		const a = raw ?? {};
+		if (typeof a.key !== "string" || !parseFactKey(a.key) || typeof a.correct !== "boolean") continue;
+		if (!isInt(a.ms, 250, 36e5) || !isInt(a.at, nowMs - 5184e6, nowMs + 864e5)) continue;
+		answers.push({
+			key: a.key,
+			correct: a.correct,
+			ms: a.ms,
+			at: a.at
+		});
+	}
+	return {
+		ok: true,
+		item: {
+			type: "answers",
+			pack: "times-tables",
+			batchId: x.batchId,
+			answers
+		}
+	};
+}
 /** Trial progress: stars must be 0–3 and Level Keys only in campaign order, as the game allows. */
 function checkImport(x) {
 	if (!Array.isArray(x.levels) || x.levels.length > CAMPAIGN.length) return {
@@ -1776,6 +1815,7 @@ function checkItem(raw, nowMs) {
 		case "run": return checkRun(x);
 		case "key": return checkKey(x);
 		case "facts": return checkFacts(x, nowMs);
+		case "answers": return checkAnswers(x, nowMs);
 		case "import": return checkImport(x);
 		default: return {
 			ok: false,
@@ -1923,6 +1963,15 @@ async function save(player, item, services) {
 				type: "facts",
 				changed
 			}));
+		case "answers":
+			if (item.answers.length === 0) return {
+				type: "answers",
+				added: 0
+			};
+			return settle(await services.recordAnswers(player, item.pack, item.batchId, item.answers), (added) => ({
+				type: "answers",
+				added
+			}));
 		case "import": return settle(await services.importProgress(player, item.levels), (status) => ({
 			type: "import",
 			status
@@ -1982,6 +2031,15 @@ Deno.serve(makeHandler({
 		player,
 		pack,
 		facts
+	}),
+	recordAnswers: (player, pack, batchId, answers) => call("record_fact_answers", {
+		player,
+		pack,
+		batch_id: batchId,
+		answers,
+		quick_ms: QUICK_MS,
+		fluent_days: 2,
+		top_box: 4
 	}),
 	importProgress: (player, levels) => call("import_gem_keep_progress", {
 		player,

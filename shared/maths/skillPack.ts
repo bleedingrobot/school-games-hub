@@ -3,7 +3,7 @@
  * place value and so on later). Games only talk to this interface, so a new pack can be
  * dropped in without touching game code.
  */
-import type { FactStats } from './leitner';
+import type { FactAnswer, FactStats } from './leitner';
 import type { Band, QuestionContext } from './selector';
 
 export type { QuestionContext };
@@ -42,6 +42,8 @@ export interface SkillPack {
   /** Null only when nothing can be asked (every table switched off). */
   nextQuestion(ctx: QuestionContext): Question | null;
   recordAnswer(q: Question, answer: number, ms: number): AnswerResult;
-  /** Every fact's record, for saving. */
+  /** Every fact's record. */
   stats(): FactStats[];
+  /** Hears every answer as it's recorded (for saving). Returns a function that stops listening. */
+  onAnswer(listener: (answer: FactAnswer) => void): () => void;
 }
