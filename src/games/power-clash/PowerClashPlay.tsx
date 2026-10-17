@@ -24,8 +24,8 @@ export { SOUNDS, cellFx, cellLabel, describe, particles, swapVars, type Fx } fro
 
 type Loadouts = Record<Player, PowerId[]>;
 const DEFAULT_LOADOUTS: Loadouts = {
-  X: ['double-trouble', 'freeze-ray', 'board-wipe'],
-  O: ['body-swap', 'freeze-ray', 'double-trouble'],
+  X: ['body-swap', 'freeze-ray', 'board-wipe'],
+  O: ['body-swap', 'freeze-ray', 'board-wipe'],
 };
 
 /** How long input stays locked while an animation plays (never more than about a second). */
@@ -37,7 +37,7 @@ const BOT_THINK_MIN_MS = 600;
 const BOT_THINK_SPREAD_MS = 400;
 const BOT_THINK_CALM_MS = 150;
 
-const MY_DEFAULT_POWERS: PowerId[] = ['double-trouble', 'freeze-ray', 'board-wipe'];
+const MY_DEFAULT_POWERS: PowerId[] = ['body-swap', 'freeze-ray', 'board-wipe'];
 
 /** How the page saves bot games. Missing in the stand-alone preview: every bot game is practice. */
 export interface PowerClashSaving {

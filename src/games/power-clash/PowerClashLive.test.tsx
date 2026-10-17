@@ -10,7 +10,7 @@ import { SoundProvider } from '../../sound';
 import { PowerClashLive } from './PowerClashLive';
 
 const START = Date.parse('2026-10-20T09:00:00Z');
-const ANA: PowerId[] = ['double-trouble', 'body-swap', 'freeze-ray'];
+const ANA: PowerId[] = ['wild-card', 'body-swap', 'freeze-ray'];
 const BEN: PowerId[] = ['board-wipe', 'body-swap', 'freeze-ray'];
 
 const move = (g: LiveGame, seat: number, action: Action) => playerAction(g, seat, action).game;
@@ -74,7 +74,7 @@ describe('Power Clash with a classmate: the board', () => {
     expect(screen.getByLabelText('Score')).toHaveTextContent('You X 0');
     expect(screen.getByLabelText('Score')).toHaveTextContent('Ben Tui O 0');
     expect(screen.getByLabelText('Score')).toHaveTextContent('Round 1');
-    expect(screen.getAllByRole('button', { name: /Double Trouble/ })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /Wild Card/ })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: /Board Wipe/ })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: /Freeze Ray/ })).toHaveLength(2);
   });
@@ -84,8 +84,8 @@ describe('Power Clash with a classmate: the board', () => {
     show(session);
     expect(screen.getByText('Your go: pick a power or a square')).toBeInTheDocument();
     expect(allCells().every((c) => c.hasAttribute('disabled') === false)).toBe(true);
-    // Ana's Double Trouble works; Ben's Board Wipe is on the other side and never presses
-    expect(screen.getByRole('button', { name: /Double Trouble/ })).toBeEnabled();
+    // Ana's Wild Card works; Ben's Board Wipe is on the other side and never presses
+    expect(screen.getByRole('button', { name: /Wild Card/ })).toBeEnabled();
     expect(screen.getByRole('button', { name: /Board Wipe/ })).toBeDisabled();
   });
 
@@ -94,7 +94,7 @@ describe('Power Clash with a classmate: the board', () => {
     show(session);
     expect(screen.getByText('Waiting for Ana Kiwi…')).toBeInTheDocument();
     expect(allCells().every((c) => c.hasAttribute('disabled'))).toBe(true);
-    for (const button of screen.getAllByRole('button', { name: /Double Trouble|Body Swap|Freeze Ray|Board Wipe/ })) {
+    for (const button of screen.getAllByRole('button', { name: /Wild Card|Body Swap|Freeze Ray|Board Wipe/ })) {
       expect(button).toBeDisabled();
     }
     expect(act).not.toHaveBeenCalled();
@@ -124,15 +124,15 @@ describe('Power Clash with a classmate: the board', () => {
     expect(act).toHaveBeenCalledWith({ action: 'use-power', gameId: 'g1', version: 5, power: 'body-swap', targets: [0, 4] });
     // a power with no target goes straight away
     act.mockClear();
-    await user.click(screen.getByRole('button', { name: /Double Trouble/ }));
-    expect(act).toHaveBeenCalledWith({ action: 'use-power', gameId: 'g1', version: 5, power: 'double-trouble', targets: [] });
+    await user.click(screen.getByRole('button', { name: /Wild Card/ }));
+    expect(act).toHaveBeenCalledWith({ action: 'use-power', gameId: 'g1', version: 5, power: 'wild-card', targets: [] });
   });
 
   it('while a request is on its way nothing else can be pressed (so a double tap sends one move)', () => {
     const { session } = sessionFor(rowOf(newLiveGame(ANA, BEN)), 0, { busy: true });
     show(session);
     expect(allCells().every((c) => c.hasAttribute('disabled'))).toBe(true);
-    expect(screen.getByRole('button', { name: /Double Trouble/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Wild Card/ })).toBeDisabled();
   });
 
   it('keyboard: the number keys 1 to 9 place on a square, only on my turn', async () => {
@@ -197,7 +197,7 @@ describe('the new powers from a classmate', () => {
     return played;
   }
 
-  it('shows all eight kinds of card, and my own can be pressed on my go', async () => {
+  it('shows all seven kinds of card, and my own can be pressed on my go', async () => {
     const user = userEvent.setup();
     const { session, act } = sessionFor(rowOf(newLiveGame(NEW_A, NEW_B), { loadouts: [NEW_A, NEW_B] }), 0);
     show(session);

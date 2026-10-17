@@ -3,7 +3,7 @@ import type {
 } from './types';
 
 export const POWER_IDS: PowerId[] = [
-  'double-trouble', 'body-swap', 'freeze-ray', 'board-wipe', 'force-field', 'portal-chaos', 'wild-card', 'time-heist',
+  'body-swap', 'freeze-ray', 'board-wipe', 'force-field', 'portal-chaos', 'wild-card', 'time-heist',
 ];
 export const LOADOUT_SIZE = 3;
 /** Chaos Mode: a surprise after every third finished go of a round. */
@@ -248,7 +248,6 @@ export function targetChoices(state: PowerClashState, power: PowerId, picked: nu
   const they = other(me);
   const all = state.board.map((_, i) => i);
   switch (power) {
-    case 'double-trouble':
     case 'wild-card':
     case 'time-heist':
       return [];
@@ -279,7 +278,6 @@ function targetsNeeded(power: PowerId): number {
     case 'body-swap':
     case 'portal-chaos':
       return 2;
-    case 'double-trouble':
     case 'wild-card':
     case 'time-heist':
       return 0;
@@ -300,8 +298,6 @@ export function powerBlockedReason(state: PowerClashState, power: PowerId): stri
   if (!hasPower(state, state.active, power)) return 'You have already used this power';
   if (state.powerThisTurn) return 'One power per turn';
   switch (power) {
-    case 'double-trouble':
-      return placeableSquares(state).length >= 2 ? null : 'Needs two squares you can place on';
     case 'body-swap':
       return targetChoices(state, power, []).length > 0 &&
         targetChoices(state, power, [0]).length > 0
@@ -445,10 +441,6 @@ export function play(state: PowerClashState, action: Action, random: Random = FI
     powerThisTurn: power,
   };
   switch (power) {
-    case 'double-trouble':
-      next.placesLeft = 2;
-      events.push({ kind: 'double-trouble', player: me });
-      break;
     case 'body-swap': {
       const [a, b] = targets;
       next.board = swapped(state.board, a, b);
@@ -490,7 +482,7 @@ export function play(state: PowerClashState, action: Action, random: Random = FI
       switch (chosen.effect) {
         case 'bonus':
           next.placesLeft = 2;
-          events.push({ kind: 'double-trouble', player: me });
+          events.push({ kind: 'bonus-move', player: me });
           break;
         case 'freeze':
           next.frozen = [...state.frozen, { square: chosen.square, blockedFor: other(me) }];

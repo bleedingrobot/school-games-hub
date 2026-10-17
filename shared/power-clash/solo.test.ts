@@ -7,7 +7,7 @@ import { playWholeMatch } from './testing';
 import type { PowerId } from './types';
 
 const setup = (over: Partial<SoloSetup> = {}): SoloSetup => ({
-  seed: 's1-1792000000-abcdefabcdefabcdefabcdef', level: 'easy', side: 'X', loadout: ['double-trouble', 'body-swap', 'freeze-ray'], ...over,
+  seed: 's1-1792000000-abcdefabcdefabcdefabcdef', level: 'easy', side: 'X', loadout: ['board-wipe', 'body-swap', 'freeze-ray'], ...over,
 });
 
 describe('a bot game', () => {
@@ -33,7 +33,7 @@ describe('a bot game', () => {
   });
 
   it('writes actions as short text and reads them back', () => {
-    for (const text of ['place:4', 'skip', 'next', 'power:double-trouble', 'power:freeze-ray:3', 'power:body-swap:0,8']) {
+    for (const text of ['place:4', 'skip', 'next', 'power:board-wipe:4', 'power:freeze-ray:3', 'power:body-swap:0,8']) {
       expect(encodeStudentAction(parseStudentAction(text)!)).toBe(text);
     }
     for (const bad of ['place:9', 'power:laser:1', 'power:body-swap:0,1,2', 'place:', '', 'PLACE:1']) expect(parseStudentAction(bad)).toBeNull();
@@ -63,7 +63,7 @@ describe('replaying', () => {
     expect(replaySolo(s, [...actions, 'place:0']).ok).toBe(false);
     expect(replaySolo(s, ['next', ...actions]).ok).toBe(false);
     expect(replaySolo(s, actions.map((a, i) => (i === 1 ? 'place:99' : a))).ok).toBe(false);
-    expect(replaySolo({ ...s, loadout: ['double-trouble', 'double-trouble', 'freeze-ray'] }, actions).ok).toBe(false);
+    expect(replaySolo({ ...s, loadout: ['board-wipe', 'board-wipe', 'freeze-ray'] }, actions).ok).toBe(false);
   });
 
   it('counts the student’s powers, Body Swap wins and a win without powers', () => {

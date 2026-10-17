@@ -21,7 +21,6 @@ function normaliseCode(typed) {
 //#endregion
 //#region shared/power-clash/engine.ts
 const POWER_IDS = [
-	"double-trouble",
 	"body-swap",
 	"freeze-ray",
 	"board-wipe",
@@ -312,7 +311,6 @@ function targetChoices(state, power, picked) {
 	const they = other(me);
 	const all = state.board.map((_, i) => i);
 	switch (power) {
-		case "double-trouble":
 		case "wild-card":
 		case "time-heist": return [];
 		case "body-swap":
@@ -332,7 +330,6 @@ function targetsNeeded(power) {
 	switch (power) {
 		case "body-swap":
 		case "portal-chaos": return 2;
-		case "double-trouble":
 		case "wild-card":
 		case "time-heist": return 0;
 		default: return 1;
@@ -353,7 +350,6 @@ function powerBlockedReason(state, power) {
 	if (!hasPower(state, state.active, power)) return "You have already used this power";
 	if (state.powerThisTurn) return "One power per turn";
 	switch (power) {
-		case "double-trouble": return placeableSquares(state).length >= 2 ? null : "Needs two squares you can place on";
 		case "body-swap": return targetChoices(state, power, []).length > 0 && targetChoices(state, power, [0]).length > 0 ? null : state.shields.length > 0 ? "Needs one X and one O that aren’t protected" : "Needs one X and one O on the board";
 		case "freeze-ray": return targetChoices(state, power, []).length > 0 ? null : "Needs an empty square";
 		case "board-wipe": return targetChoices(state, power, []).length > 0 ? null : state.shields.length > 0 ? "Needs a symbol that isn’t protected" : "Needs a symbol on the board";
@@ -521,13 +517,6 @@ function play(state, action, random = FIXED_RANDOM) {
 		powerThisTurn: power
 	};
 	switch (power) {
-		case "double-trouble":
-			next.placesLeft = 2;
-			events.push({
-				kind: "double-trouble",
-				player: me
-			});
-			break;
 		case "body-swap": {
 			const [a, b] = targets;
 			next.board = swapped(state.board, a, b);
@@ -601,7 +590,7 @@ function play(state, action, random = FIXED_RANDOM) {
 				case "bonus":
 					next.placesLeft = 2;
 					events.push({
-						kind: "double-trouble",
+						kind: "bonus-move",
 						player: me
 					});
 					break;
@@ -889,7 +878,7 @@ function animationMs(events) {
 		case "place":
 			ms += 600;
 			break;
-		case "double-trouble":
+		case "bonus-move":
 			ms += 900;
 			break;
 		case "body-swap":

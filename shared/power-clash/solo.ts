@@ -8,7 +8,7 @@
  *
  *   "place:4"            put a symbol on square 4
  *   "power:freeze-ray:7" use a power (targets after the second colon, separated by commas)
- *   "power:double-trouble"
+ *   "power:body-swap"
  *   "skip"               miss a go (only when every empty square is frozen)
  *   "next"               start the next round (after a round that didn't end the match)
  *

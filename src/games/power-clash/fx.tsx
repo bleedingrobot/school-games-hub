@@ -33,7 +33,7 @@ export function makeFx(key: number, prev: PowerClashState, after: PowerClashStat
 
 export const SOUNDS: Partial<Record<GameEvent['kind'], GameSound>> = {
   place: 'tap',
-  'double-trouble': 'zap',
+  'bonus-move': 'zap',
   'body-swap': 'swap',
   freeze: 'freeze',
   wipe: 'boom',
@@ -51,7 +51,7 @@ export const SOUNDS: Partial<Record<GameEvent['kind'], GameSound>> = {
 export function soundFor(events: GameEvent[]): GameSound | null {
   const kinds = events.map((e) => e.kind);
   const order: GameEvent['kind'][] = [
-    'win', 'draw', 'time-heist', 'wild-card', 'portal-chaos', 'force-field', 'wipe', 'freeze', 'body-swap', 'double-trouble', 'chaos', 'skip', 'place',
+    'win', 'draw', 'time-heist', 'wild-card', 'portal-chaos', 'force-field', 'wipe', 'freeze', 'body-swap', 'bonus-move', 'chaos', 'skip', 'place',
   ];
   const first = order.find((k) => kinds.includes(k));
   return first ? SOUNDS[first]! : null;
@@ -65,7 +65,7 @@ export function shoutKindFor(events: GameEvent[], matchWon: boolean): ShoutKind 
   if (kinds.includes('draw')) return 'draw';
   const power: [GameEvent['kind'], ShoutKind][] = [
     ['time-heist', 'time-heist'], ['wild-card', 'wild-card'], ['portal-chaos', 'portal-chaos'], ['force-field', 'force-field'],
-    ['body-swap', 'body-swap'], ['freeze', 'freeze-ray'], ['wipe', 'board-wipe'], ['double-trouble', 'double-trouble'],
+    ['body-swap', 'body-swap'], ['freeze', 'freeze-ray'], ['wipe', 'board-wipe'], ['bonus-move', 'bonus-move'],
   ];
   const hit = power.find(([k]) => kinds.includes(k));
   if (hit) return hit[1];
@@ -97,7 +97,7 @@ export function boardClasses(fx: Fx | null): string {
   const chaos = fx?.events.find((e) => e.kind === 'chaos');
   const quake = chaos && chaos.kind === 'chaos' && (chaos.event === 'earthquake' || chaos.event === 'meteor');
   return [
-    kinds.includes('double-trouble') ? 'pc__board--zap' : '',
+    kinds.includes('bonus-move') ? 'pc__board--zap' : '',
     kinds.includes('wipe') || kinds.includes('win') || quake ? 'pc__board--shake' : '',
     kinds.includes('win') ? 'pc__board--win' : '',
     kinds.includes('draw') ? 'pc__board--draw' : '',
@@ -156,7 +156,7 @@ export function describe(events: GameEvent[], names?: { X: string; O: string }):
     parts.push(`Wild Card! The wheel landed on ${WILD_NAMES[wild.effect]}, ${result[wild.effect]}`);
   } else if (has('portal-chaos')) parts.push('Portal Chaos! Two symbols were thrown to new squares.');
   else if (has('force-field')) parts.push('Force Field! That symbol is protected for one go.');
-  else if (has('double-trouble')) parts.push('Double Trouble! Two symbols this turn.');
+  else if (has('bonus-move')) parts.push('Bonus move! Two symbols this turn.');
   else if (has('body-swap')) parts.push('Body Swap! They traded places.');
   else if (has('freeze')) parts.push('Freeze Ray! That square is frozen for one turn.');
   else if (has('wipe')) parts.push('Board Wipe! Gone.');

@@ -8,7 +8,6 @@ import { ROUNDS_TO_WIN } from '../../../shared/power-clash/match';
 import { POWERS } from './text';
 
 const EXAMPLES: Record<string, string> = {
-  'double-trouble': 'Example: you put an X in the corner, then another X in the middle. Two in one go!',
   'body-swap': 'Example: your X is in the corner and their O is in the middle. Swap them, and now your X is in the middle.',
   'freeze-ray': 'Example: freeze the top-middle square. They can’t put anything there on their next turn.',
   'board-wipe': 'Example: they have two in a row. Blast one of their symbols off the board before they get three!',
@@ -72,7 +71,7 @@ export function PowerClashGuide({ onClose, returnTo }: { onClose: () => void; re
             </ul>
           </section>
           <section>
-            <h3>The eight powers</h3>
+            <h3>The seven powers</h3>
             <ul className="pc-guide__powers">
               {POWERS.map((p) => (
                 <li key={p.id}>

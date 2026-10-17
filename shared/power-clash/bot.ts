@@ -19,7 +19,7 @@ import type { Action, Player, PowerClashState, PowerId, Random } from './types';
 export type { Random };
 
 /** Medium's three powers. Chosen by the simulation (scripts/power-clash-sim.mjs). */
-export const MEDIUM_POWERS: PowerId[] = ['double-trouble', 'body-swap', 'board-wipe'];
+export const MEDIUM_POWERS: PowerId[] = ['body-swap', 'board-wipe', 'freeze-ray'];
 
 /** The chance each level does something silly instead of its best idea. */
 const EASY_SLIP = 0.2;

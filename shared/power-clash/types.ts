@@ -3,7 +3,6 @@ export type Player = 'X' | 'O';
 export type Random = () => number;
 export type Cell = Player | null;
 export type PowerId =
-  | 'double-trouble'
   | 'body-swap'
   | 'freeze-ray'
   | 'board-wipe'
@@ -49,7 +48,7 @@ export interface PowerClashState {
   shields: Shield[];
   /** The power played this turn, if any (at most one). */
   powerThisTurn: PowerId | null;
-  /** Symbols the active player may still place this turn (2 after Double Trouble). */
+  /** Symbols the active player may still place this turn (2 after a Wild Card bonus). */
   placesLeft: number;
   /** Winning line squares once the round is won. */
   line: number[] | null;
@@ -81,7 +80,7 @@ export type PlayResult =
 /** What happened, for the screen to animate. The engine has already decided the outcome. */
 export type GameEvent =
   | { kind: 'place'; player: Player; square: number }
-  | { kind: 'double-trouble'; player: Player }
+  | { kind: 'bonus-move'; player: Player }
   | { kind: 'body-swap'; player: Player; squares: [number, number] }
   | { kind: 'freeze'; player: Player; square: number }
   | { kind: 'wipe'; player: Player; square: number }

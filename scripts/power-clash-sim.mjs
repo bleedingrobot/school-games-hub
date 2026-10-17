@@ -70,7 +70,7 @@ for (const [a, b] of pairs) {
 if (TRY_POWERS) {
   // All 56 sets of three from the eight powers. Each set plays Medium against Medium with a sample of
   // other sets (the same sample size for every set), on equal terms. `--opponents` sets the sample size.
-  const IDS = ['double-trouble', 'body-swap', 'freeze-ray', 'board-wipe', 'force-field', 'portal-chaos', 'wild-card', 'time-heist'];
+  const IDS = ['body-swap', 'freeze-ray', 'board-wipe', 'force-field', 'portal-chaos', 'wild-card', 'time-heist'];
   const sets = [];
   for (let i = 0; i < 8; i++) for (let j = i + 1; j < 8; j++) for (let k = j + 1; k < 8; k++) sets.push([IDS[i], IDS[j], IDS[k]]);
   const opponents = Number(option('opponents', 8));

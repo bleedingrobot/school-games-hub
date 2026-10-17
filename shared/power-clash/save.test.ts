@@ -5,7 +5,7 @@ import { playWholeMatch } from './testing';
 import { stampText as spaceStampText } from '../space/save';
 
 const setup = (over: Partial<SoloSetup> = {}): SoloSetup => ({
-  seed: 's1-1792000000-abcdefabcdefabcdefabcdef', level: 'easy', side: 'X', loadout: ['double-trouble', 'body-swap', 'freeze-ray'], ...over,
+  seed: 's1-1792000000-abcdefabcdefabcdefabcdef', level: 'easy', side: 'X', loadout: ['board-wipe', 'body-swap', 'freeze-ray'], ...over,
 });
 
 function report(s: SoloSetup, leaveAfter = Infinity): PowerClashGameReport {
@@ -27,7 +27,7 @@ describe('reading a Power Clash report', () => {
       { ...good, game: '101' },
       { ...good, side: 'Z' },
       { ...good, level: 'hard' },
-      { ...good, loadouts: { X: ['double-trouble'], O: good.loadouts.O } },
+      { ...good, loadouts: { X: ['board-wipe'], O: good.loadouts.O } },
       { ...good, loadouts: { X: ['a', 'b', 'c'], O: good.loadouts.O } },
       { ...good, loadouts: null },
       { ...good, actions: 'place:1' },
@@ -74,7 +74,7 @@ describe('judging a Power Clash match', () => {
       { ...r, actions: r.actions.slice(0, 3) }, // says finished, but isn't
       { ...r, actions: [...r.actions, 'next'] },
       { ...r, loadouts: { ...r.loadouts, O: [r.loadouts.O[1], r.loadouts.O[0], r.loadouts.O[2]] } }, // the bot's powers are the seed's
-      { ...r, loadouts: { ...r.loadouts, X: ['double-trouble', 'double-trouble', 'freeze-ray'] as typeof r.loadouts.X } },
+      { ...r, loadouts: { ...r.loadouts, X: ['board-wipe', 'board-wipe', 'freeze-ray'] as typeof r.loadouts.X } },
     ];
     for (const bad of refused) expect(judgePowerClashGame(bad).ok).toBe(false);
   });

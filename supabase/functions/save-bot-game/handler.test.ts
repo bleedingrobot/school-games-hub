@@ -557,7 +557,7 @@ async function gamePowerClash(
   return { report, solo };
 }
 
-const PC = { level: 'easy' as const, side: 'X' as const, loadout: ['double-trouble', 'body-swap', 'freeze-ray'] as PowerClashSetup['loadout'] };
+const PC = { level: 'easy' as const, side: 'X' as const, loadout: ['board-wipe', 'body-swap', 'freeze-ray'] as PowerClashSetup['loadout'] };
 
 describe('saving Power Clash games in Chaos Mode with the new powers', () => {
   it('replays the dice and the surprises from the seed and saves it, marked as Chaos Mode', async () => {
@@ -647,7 +647,7 @@ describe('saving Power Clash games', () => {
       [{ ...report, level: 'medium' }, 'good-token'], // a different bot
       [{ ...report, side: 'O' }, 'good-token'], // a different side
       [{ ...report, loadouts: { ...report.loadouts, O: swapped(report.loadouts.O) } }, 'good-token'], // changed bot powers
-      [{ ...report, loadouts: { ...report.loadouts, O: ['double-trouble', 'double-trouble', 'freeze-ray'] } }, 'good-token'],
+      [{ ...report, loadouts: { ...report.loadouts, O: ['board-wipe', 'board-wipe', 'freeze-ray'] } }, 'good-token'],
       [{ ...report, actions: [...report.actions, 'place:4'] }, 'good-token'], // extra actions after the end
       [{ ...report, actions: ['place:99'] }, 'good-token'], // not an action
       [{ ...report, actions: report.actions.slice(0, 3), ending: 'finished' }, 'good-token'], // says it finished, didn't

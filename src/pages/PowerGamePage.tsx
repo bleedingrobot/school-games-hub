@@ -11,7 +11,7 @@ import { usePowerGame, type PowerSession } from '../power-clash/usePowerGame';
 const PowerClashLive = lazy(() => import('../games/power-clash/PowerClashLive').then((m) => ({ default: m.PowerClashLive })));
 const PowerClashGuide = lazy(() => import('../games/power-clash/Guide').then((m) => ({ default: m.PowerClashGuide })));
 
-const DEFAULT_POWERS: PowerId[] = ['double-trouble', 'freeze-ray', 'board-wipe'];
+const DEFAULT_POWERS: PowerId[] = ['body-swap', 'freeze-ray', 'board-wipe'];
 
 /** /power-game/<id>: a Power Clash game with a classmate, from the waiting room to the final score. */
 export function PowerGamePage() {
