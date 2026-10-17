@@ -76,6 +76,17 @@ const REPEAT_AFTER = {
 	max: 6
 };
 //#endregion
+//#region shared/space/mathsSwitch.ts
+const MATHS_SWITCHES = [
+	"off",
+	"choose",
+	"on"
+];
+/** Reads the setting from the database. Anything unexpected counts as Off: nobody gets maths by accident. */
+function parseMathsSwitch(value) {
+	return MATHS_SWITCHES.includes(value) ? value : "off";
+}
+//#endregion
 //#region shared/multiplayer.ts
 /** Game codes use these: no vowels (so no rude words) and no lookalikes like O/0 or I/1. */
 const CODE_ALPHABET = "CDFGHJKMNPQRTVWXY34679";
@@ -2886,7 +2897,10 @@ const newStats = () => ({
 	blocks: 0,
 	stars: [],
 	docked: false,
-	turns: 0
+	turns: 0,
+	mathsRight: 0,
+	boosts: 0,
+	escapes: 0
 });
 /**
 * Starts a game. `entries` is who sits where, in turn order: a player's ID, or null for a bot.
@@ -2929,7 +2943,16 @@ function addStats(game, actor, before, after, events) {
 		const stats = game.seats[event.seat]?.stats;
 		if (!stats) continue;
 		if (event.kind === "wormhole") stats.wormholes++;
-		else if (event.kind === "force-field") stats.blocks++;
+		else if (event.kind === "question") {
+			if ((event.moment ?? "wormhole") === "wormhole") stats.wormholes++;
+			if (event.correct) {
+				stats.mathsRight = (stats.mathsRight ?? 0) + 1;
+				if (event.moment === "black-hole") stats.escapes = (stats.escapes ?? 0) + 1;
+				else stats.boosts = (stats.boosts ?? 0) + 1;
+			}
+		} else if (event.kind === "charge") {
+			if (event.right) stats.mathsRight = (stats.mathsRight ?? 0) + 1;
+		} else if (event.kind === "force-field") stats.blocks++;
 		else if (event.kind === "docked") stats.docked = true;
 		else if (event.kind === "star" && !stats.stars.includes(event.star)) stats.stars = STAR_KINDS.filter((k) => k === event.star || stats.stars.includes(k));
 	}
@@ -2960,8 +2983,10 @@ function applyCharge(game, dice, out) {
 		kind: "charge",
 		right: true
 	};
-	const { state, events } = play(game.state, action, dice);
+	const before = game.state;
+	const { state, events } = play(before, action, dice);
 	game.state = state;
+	addStats(game, seat, before, state, events);
 	out.events.push(...events);
 	out.actions.push({
 		seat,
@@ -3237,6 +3262,7 @@ const MESSAGES = {
 	expired: [410, "That game stopped waiting. Ask your friend to make a new one."],
 	"rematch-gone": [409, "That rematch has already launched or stopped waiting."],
 	"reactions-off": [403, "Reactions are switched off."],
+	"maths-off": [403, "Your teacher has switched Mission Control maths off."],
 	"reaction-wait": [429, "Wait a few seconds before sending another."],
 	"reaction-limit": [429, "That’s all the reactions for this game."],
 	failed: [500, "Something went wrong. Please try again."]
@@ -3432,8 +3458,18 @@ async function create({ services, me, body }) {
 	const setup = parseLiveSetup(body.setup);
 	if (!setup) throw new Refused("bad-request");
 	if ((await mustBeAllowed(services, me, true)).createdLastHour >= 20) throw new Refused("too-many");
-	return newWaitingGame(services, me, setup, body.lobby === true);
+	const mathsSwitch = await services.mathsSwitch();
+	if (mathsSwitch === "off" && setup.settings.maths) throw new Refused("maths-off");
+	return newWaitingGame(services, me, withMathsSwitch(setup, mathsSwitch), body.lobby === true);
 }
+/** The setup as the teacher's switch allows it. */
+const withMathsSwitch = (setup, mathsSwitch) => mathsSwitch === "choose" || setup.settings.maths === (mathsSwitch === "on") ? setup : {
+	...setup,
+	settings: {
+		...setup.settings,
+		maths: mathsSwitch === "on"
+	}
+};
 async function newWaitingGame(services, me, setup, inLobby) {
 	const waiting = await services.findWaitingHostedBy(me);
 	if (waiting) await services.updateGame(waiting.id, waiting.version, {
@@ -3529,8 +3565,10 @@ async function launch({ services, me, body }) {
 	if (students.length < 2) throw new Refused("need-players");
 	const dice = diceFrom(services.random);
 	const entries = shuffled(dice, [...students, ...Array.from({ length: bots }, () => null)]);
-	const played = launchLive(game.setup, entries, dice, services.random);
+	const setup = withMathsSwitch(game.setup, await services.mathsSwitch());
+	const played = launchLive(setup, entries, dice, services.random);
 	return save(services, game, {
+		...setup === game.setup ? {} : { setup },
 		...seatPatch(entries),
 		rockets: entries.length,
 		status: "playing",
@@ -3750,7 +3788,7 @@ async function rematch(context, tries = 0) {
 		if (next.status !== "waiting") throw new Refused("rematch-gone");
 		return joinWaiting(services, me, next);
 	}
-	const next = await newWaitingGame(services, me, game.setup, false);
+	const next = await newWaitingGame(services, me, withMathsSwitch(game.setup, await services.mathsSwitch()), false);
 	if (await services.updateGame(game.id, game.version, {
 		rematch_game: next.id,
 		version: game.version + 1,
@@ -3878,6 +3916,11 @@ Deno.serve(spaceGameHandler({
 			return "not-allowed";
 		}
 		return data;
+	},
+	async mathsSwitch() {
+		const { data, error } = await admin.from("app_settings").select("space_maths").maybeSingle();
+		if (error) logProblem("maths switch", error.code);
+		return parseMathsSwitch(data?.space_maths);
 	},
 	async loadMathsContext(player) {
 		const { data, error } = await admin.rpc("space_maths_context", { player });

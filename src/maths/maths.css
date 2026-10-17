@@ -224,6 +224,27 @@
   font-size: 1.3rem;
 }
 
+/* A laptop screen (1366 x 640 is the usable height on a school Chromebook): the card beside the board has to fit under the dice. */
+@media (max-height: 720px) and (min-width: 700px) {
+  .question--inline {
+    padding: 8px 12px 10px;
+  }
+  .question--inline .question__note {
+    margin: 0;
+    font-size: 0.85rem;
+  }
+  .question--inline .question__fact {
+    font-size: 1.9rem;
+  }
+  .question--inline .numpad {
+    gap: 4px;
+  }
+  .question--inline .numpad__key {
+    min-height: 38px;
+    font-size: 1.15rem;
+  }
+}
+
 /* A countdown, for questions with a time limit. */
 .question__timer {
   margin: 0;

@@ -3,7 +3,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(46);
+select plan(47);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -60,7 +60,7 @@ $$, array[
   'leaderboard', 'lobby_games', 'my_bot_game_stats', 'my_card_game_stats', 'my_friend_game_stats', 'my_gem_keep', 'my_progress', 'my_space_game_stats',
   'progress_rules', 'save_my_avatar', 'school_domain', 'server_time', 'space_lobby_games',
   'teacher_delete_student', 'teacher_gem_keep_class', 'teacher_gem_keep_student', 'teacher_new_season', 'teacher_reset_name', 'teacher_set_gem_keep', 'teacher_set_hidden',
-  'teacher_set_multiplayer', 'teacher_set_role', 'teacher_set_space_reactions', 'teacher_student_detail',
+  'teacher_set_multiplayer', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_space_reactions', 'teacher_student_detail',
   'teacher_students'
 ], 'signed-in users can call only this list of functions (each checks who is asking)');
 
@@ -116,6 +116,7 @@ select throws_ok($$ select public.teacher_student_detail('00000000-0000-0000-000
 select throws_ok($$ select public.teacher_new_season('NEW SEASON') $$, '42501', null, 'a student cannot start a new season');
 select throws_ok('select public.teacher_set_multiplayer(false)', '42501', null, 'a student cannot pause friend games');
 select throws_ok('select public.teacher_set_space_reactions(true)', '42501', null, 'a student cannot switch on reactions');
+select throws_ok($$select public.teacher_set_space_maths('on')$$, '42501', null, 'a student cannot change the maths switch');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@gmail.com');
 select throws_ok('select * from public.teacher_students()', '42501', null,
   'a teacher''s ID with a non-school email in the token gets no teacher powers');

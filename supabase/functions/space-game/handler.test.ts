@@ -9,6 +9,7 @@ import type { Question } from '../../../shared/maths/skillPack';
 import { solveQuestion } from '../../../shared/maths/skillPacks/timesTables';
 import { DEFAULT_SETTINGS } from '../../../shared/space/engine';
 import { AUTOPILOT_AFTER, type LiveSetup } from '../../../shared/space/live';
+import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
 import { MIN_TURNS_TO_COUNT } from '../../../shared/space/save';
 import {
   MAX_CREATES_PER_HOUR,
@@ -36,6 +37,7 @@ function world() {
   const friendCodes = new Set<string>();
   let multiplayerOn = true;
   let reactionsOn = false;
+  let mathsSwitch: MathsSwitch = 'choose';
   for (const name of NAMES) players.set(name, { school: true, hidden: false, multiplayerEnabled: true, reactionsEnabled: false });
 
   const questions = new Map<string, StoredQuestion>();
@@ -55,6 +57,7 @@ function world() {
       const gone = others.filter((o) => !players.get(o) || players.get(o)!.hidden);
       return { ...p, multiplayerEnabled: multiplayerOn, reactionsEnabled: reactionsOn, createdLastHour, gone };
     },
+    mathsSwitch: async () => mathsSwitch,
     loadGame: async (id) => copy(games.get(id)),
     findWaitingByCode: async (code) => copy([...games.values()].find((g) => g.status === 'waiting' && g.code === code)),
     friendCodeTaken: async (code) => friendCodes.has(code),
@@ -205,6 +208,7 @@ function world() {
     now: () => clock,
     setMultiplayer: (on: boolean) => (multiplayerOn = on),
     setReactions: (on: boolean) => (reactionsOn = on),
+    setMathsSwitch: (mode: MathsSwitch) => (mathsSwitch = mode),
   };
 }
 
@@ -487,6 +491,31 @@ describe('Mission Control maths with classmates', () => {
     const made = await w.ask('ana', { action: 'create', setup: MATHS_SETUP });
     expect(made.status).toBe(200);
     expect(made.game!.setup.settings.maths).toBe(true);
+  });
+
+  it('follows the teacher’s switch: Off refuses maths, On makes every game a maths game', async () => {
+    const w = world();
+    w.setMathsSwitch('off');
+    const refused = await w.ask('ana', { action: 'create', setup: MATHS_SETUP });
+    expect(refused.problem).toBe('maths-off');
+    expect(refused.status).toBe(403);
+    expect((await w.ask('ana', { action: 'create', setup: SETUP })).game!.setup.settings.maths).toBe(false);
+    w.setMathsSwitch('on');
+    const forced = await w.ask('ben', { action: 'create', setup: SETUP });
+    expect(forced.game!.setup.settings.maths).toBe(true);
+    w.setMathsSwitch('choose');
+    expect((await w.ask('cat', { action: 'create', setup: SETUP })).game!.setup.settings.maths).toBe(false);
+    expect((await w.ask('dan', { action: 'create', setup: MATHS_SETUP })).game!.setup.settings.maths).toBe(true);
+  });
+
+  it('a game that was waiting when the switch changed follows the switch at launch', async () => {
+    const w = world();
+    const made = (await w.ask('ana', { action: 'create', setup: MATHS_SETUP })).game!;
+    await w.ask('ben', { action: 'join', code: made.code });
+    w.setMathsSwitch('off');
+    const launched = await w.ask('ana', { action: 'launch', gameId: made.id });
+    expect(launched.game!.setup.settings.maths).toBe(false);
+    expect(launched.game!.state!.settings.maths).toBe(false);
   });
 
   it('picks the question on the server and never sends the answer', async () => {

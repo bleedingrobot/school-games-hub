@@ -53,7 +53,7 @@ export interface SpacePlayer {
 /** How games get saved. Left out (the preview), every game is a practice game. */
 export interface SpaceSaving {
   /** A stamped seed from the server, or null if there isn't one to be had. */
-  seed(): Promise<{ seed: string; stamp: string } | null>;
+  seed(maths: boolean): Promise<{ seed: string; stamp: string } | null>;
   /** Saves a finished game. Throws an error with a message for the student if it can't. */
   save(report: SpaceGameReport): Promise<{ countsForPoints?: boolean } | void>;
   /** Records a game the student left part-way, even while the page is closing. */
@@ -325,7 +325,7 @@ export function SpaceSolo({
       startingRef.current = true;
       setStarting(true);
       keyRef.current++; // stops the old game while the seed comes
-      stamped = await saving.seed().catch(() => null);
+      stamped = await saving.seed(!!setup.settings.maths).catch(() => null);
       startingRef.current = false;
       setStarting(false);
     }

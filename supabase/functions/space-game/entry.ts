@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
 import type { FactStats } from '../../../shared/maths/leitner';
+import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
 import { spaceGameHandler, type SpaceGameRow } from './handler';
 
 declare const Deno: {
@@ -116,6 +117,12 @@ Deno.serve(
         return 'not-allowed';
       }
       return data as 'ok' | 'too-soon' | 'too-many' | 'not-playing' | 'not-allowed';
+    },
+    async mathsSwitch() {
+      const { data, error } = await admin.from('app_settings').select('space_maths').maybeSingle();
+      if (error) logProblem('maths switch', error.code);
+      // If it can't be read, maths stays off rather than switching on by accident.
+      return parseMathsSwitch(data?.space_maths);
     },
     async loadMathsContext(player) {
       const { data, error } = await admin.rpc('space_maths_context', { player });

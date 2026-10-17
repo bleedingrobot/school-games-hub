@@ -11,7 +11,7 @@ import { encodeAction, type SpaceGameReport, type SpaceMathsAnswer } from '../..
 import type { SoloSetup as Card101Setup } from '../../../shared/card101/solo';
 import { playWholeGame } from '../../../shared/card101/testing';
 import { stamper } from '../_shared/stamp';
-import { TimesTables } from '../../../shared/maths/skillPacks/timesTables';
+import { solveQuestion, TimesTables } from '../../../shared/maths/skillPacks/timesTables';
 import { batchIdFor, handleSaveBotGame, type Card101Row, type GameRow, type Services, type SpaceRow } from './handler';
 
 const FOOLS_MATE = ['f2f3', 'e7e5', 'g2g4', 'd8h4'];
@@ -297,6 +297,41 @@ describe('Mission Control maths in space games against bots', () => {
       expect((await handleSaveBotGame(post({ ...report, answers }), s)).status).toBe(400);
     }
     expect(savedSpace).toEqual([]);
+  });
+
+  it('keeps the right-answer counts the maths achievements use', async () => {
+    const { s, savedSpace } = services();
+    const { report } = await spaceGame(s, MATHS);
+    await handleSaveBotGame(post(report), s);
+    const right = report.answers!.filter((a, n) => n >= 0 && solveQuestion(a.parts)!.answer === a.given).length;
+    const stats = savedSpace[0].space.stats;
+    expect(stats.mathsRight).toBe(right);
+    expect(stats.boosts + stats.escapes).toBeLessThanOrEqual(stats.mathsRight);
+  });
+
+  it('follows the teacher’s switch: Off refuses a maths game, at the start and when saving', async () => {
+    let mode: 'off' | 'choose' | 'on' = 'choose';
+    const { s, savedSpace } = services({ mathsSwitch: async () => mode });
+    const { report } = await spaceGame(s, MATHS);
+    mode = 'off';
+    expect((await handleSaveBotGame(post({ game: 'space', start: true, maths: true }), s)).status).toBe(403);
+    expect((await handleSaveBotGame(post({ game: 'space', start: true }), s)).status).toBe(200);
+    expect((await handleSaveBotGame(post(report), s)).status).toBe(403);
+    expect(savedSpace).toEqual([]);
+    // Games without maths are not affected.
+    const plain = await spaceGame(s, NEBULA);
+    expect((await handleSaveBotGame(post(plain.report), s)).status).toBe(200);
+    for (const on of ['choose', 'on'] as const) {
+      mode = on;
+      expect((await handleSaveBotGame(post({ game: 'space', start: true, maths: true }), s)).status).toBe(200);
+    }
+    expect((await handleSaveBotGame(post(report), s)).status).toBe(200);
+  });
+
+  it('keeps maths off if the switch can’t be read', async () => {
+    const { s } = services({ mathsSwitch: async () => { throw new Error('down'); } });
+    const { report } = await spaceGame(s, MATHS);
+    expect((await handleSaveBotGame(post(report), s)).status).toBe(403);
   });
 
   it('still saves the game if the answers can’t be recorded', async () => {

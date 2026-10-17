@@ -32,6 +32,7 @@ import {
   type Played,
   type SeatInfo,
 } from '../../../shared/space/live';
+import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
 import { diceFrom, shuffled } from '../../../shared/space/random';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 import { RateLimiter } from '../_shared/limits';
@@ -111,6 +112,8 @@ export interface Services {
   /** Saves the change only if the game is still at `version`. Null if it had changed. */
   updateGame(id: string, version: number, patch: Partial<SpaceGameRow>): Promise<SpaceGameRow | null>;
   addReaction(id: string, seat: number, emoji: string): Promise<ReactionResult>;
+  /** The teacher's Mission Control maths switch. */
+  mathsSwitch(): Promise<MathsSwitch>;
   /** A student's times-table records and the teacher's question settings, to pick the next question from. */
   loadMathsContext(player: string): Promise<{ facts: FactStats[]; settings: MathsQuestionSettings } | null>;
   loadQuestion(game: string, seat: number, kind: QuestionKind): Promise<StoredQuestion | null>;
@@ -151,6 +154,7 @@ type Problem =
   | 'expired'
   | 'rematch-gone'
   | 'reactions-off'
+  | 'maths-off'
   | 'reaction-wait'
   | 'reaction-limit'
   | 'failed';
@@ -178,6 +182,7 @@ const MESSAGES: Record<Problem, [status: number, text: string]> = {
   expired: [410, 'That game stopped waiting. Ask your friend to make a new one.'],
   'rematch-gone': [409, 'That rematch has already launched or stopped waiting.'],
   'reactions-off': [403, 'Reactions are switched off.'],
+  'maths-off': [403, 'Your teacher has switched Mission Control maths off.'],
   'reaction-wait': [429, 'Wait a few seconds before sending another.'],
   'reaction-limit': [429, 'That’s all the reactions for this game.'],
   failed: [500, 'Something went wrong. Please try again.'],
@@ -360,8 +365,15 @@ async function create({ services, me, body }: Context): Promise<SpaceGameRow> {
   if (!setup) throw new Refused('bad-request');
   const status = await mustBeAllowed(services, me, true);
   if (status.createdLastHour >= MAX_CREATES_PER_HOUR) throw new Refused('too-many');
-  return newWaitingGame(services, me, setup, body.lobby === true);
+  // The teacher's switch: Off refuses a maths game, On makes every game a maths game.
+  const mathsSwitch = await services.mathsSwitch();
+  if (mathsSwitch === 'off' && setup.settings.maths) throw new Refused('maths-off');
+  return newWaitingGame(services, me, withMathsSwitch(setup, mathsSwitch), body.lobby === true);
 }
+
+/** The setup as the teacher's switch allows it. */
+const withMathsSwitch = (setup: LiveSetup, mathsSwitch: MathsSwitch): LiveSetup =>
+  mathsSwitch === 'choose' || setup.settings.maths === (mathsSwitch === 'on') ? setup : { ...setup, settings: { ...setup.settings, maths: mathsSwitch === 'on' } };
 
 async function newWaitingGame(services: Services, me: string, setup: LiveSetup, inLobby: boolean): Promise<SpaceGameRow> {
   // One waiting game each: a new one replaces the old one.
@@ -462,8 +474,11 @@ async function launch({ services, me, body }: Context): Promise<SpaceGameRow> {
   const dice = diceFrom(services.random);
   // The server shuffles the turn order.
   const entries = shuffled<string | null>(dice, [...students, ...Array.from({ length: bots }, () => null)]);
-  const played = launchLive(game.setup, entries, dice, services.random);
+  // If the teacher changed the maths switch while this game was waiting, the switch wins.
+  const setup = withMathsSwitch(game.setup, await services.mathsSwitch());
+  const played = launchLive(setup, entries, dice, services.random);
   return save(services, game, {
+    ...(setup === game.setup ? {} : { setup }),
     ...seatPatch(entries),
     rockets: entries.length,
     status: 'playing',
@@ -693,7 +708,8 @@ async function rematch(context: Context, tries = 0): Promise<SpaceGameRow> {
     if (next.status !== 'waiting') throw new Refused('rematch-gone');
     return joinWaiting(services, me, next);
   }
-  const next = await newWaitingGame(services, me, game.setup, false);
+  // A rematch keeps the board and rules, but follows the teacher's switch as it is now.
+  const next = await newWaitingGame(services, me, withMathsSwitch(game.setup, await services.mathsSwitch()), false);
   const linked = await services.updateGame(game.id, game.version, {
     rematch_game: next.id,
     version: game.version + 1,

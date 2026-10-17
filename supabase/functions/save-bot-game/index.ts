@@ -7,6 +7,17 @@ import { Chess } from "npm:chess.js@1.4.0";
 /** Answering correctly within this many milliseconds counts as quick. */
 const QUICK_MS = 5e3;
 //#endregion
+//#region shared/space/mathsSwitch.ts
+const MATHS_SWITCHES = [
+	"off",
+	"choose",
+	"on"
+];
+/** Reads the setting from the database. Anything unexpected counts as Off: nobody gets maths by accident. */
+function parseMathsSwitch(value) {
+	return MATHS_SWITCHES.includes(value) ? value : "off";
+}
+//#endregion
 //#region supabase/functions/_shared/stamp.ts
 /**
 * Stamps (signatures) only the server can make: an HMAC-SHA256 of some text, as URL-safe
@@ -2667,7 +2678,10 @@ function judgeSpaceGame(report) {
 		wormholes: mine.filter((e) => e.kind === "wormhole" || e.kind === "question" && (e.moment ?? "wormhole") === "wormhole").length,
 		blocks: mine.filter((e) => e.kind === "force-field").length,
 		stars: STAR_KINDS.filter((k) => stars.has(k)),
-		docked: mine.some((e) => e.kind === "docked")
+		docked: mine.some((e) => e.kind === "docked"),
+		mathsRight: mine.filter((e) => e.kind === "question" && e.correct || e.kind === "charge" && e.right).length,
+		boosts: mine.filter((e) => e.kind === "question" && e.correct && (e.moment ?? "wormhole") === "wormhole").length,
+		escapes: mine.filter((e) => e.kind === "question" && e.correct && e.moment === "black-hole").length
 	};
 	const place = finished ? state.places?.[studentSeat] ?? null : null;
 	return {
@@ -4195,6 +4209,7 @@ async function handleSaveBotGame(request, services) {
 	const body = await readJsonBody(request);
 	const asked = body;
 	if ((asked?.game === "space" || asked?.game === "101") && asked.start === true) {
+		if (asked.game === "space" && asked.maths === true && !await mathsAllowed(services)) return reply(403, { error: MATHS_OFF });
 		const seed = makeSeed(now(services), (services.randomHex ?? randomHex)(12));
 		const stamp = await services.stamp((asked.game === "space" ? stampText$1 : stampText)(player, seed));
 		if (!stamp) return reply(500, { error: "The game couldn't start." });
@@ -4232,6 +4247,12 @@ async function handleSaveBotGame(request, services) {
 		countsForPoints: game.countsForPoints
 	});
 }
+const MATHS_OFF = "Your teacher has switched Mission Control maths off, so this game couldn’t be saved.";
+/** False when the teacher has maths switched off (or the switch can't be read). */
+async function mathsAllowed(services) {
+	if (!services.mathsSwitch) return true;
+	return await services.mathsSwitch().catch(() => "off") !== "off";
+}
 const TOO_MANY = "That's a lot of games today! Have a break and come back tomorrow.";
 async function saveSpaceGame(player, body, services, reply) {
 	const report = parseSpaceReport(body);
@@ -4247,6 +4268,10 @@ async function saveSpaceGame(player, body, services, reply) {
 		return reply(400, { error: "That game couldn't be checked." });
 	}
 	const { game } = judged;
+	if (report.settings.maths && !await mathsAllowed(services)) {
+		console.warn("save-bot-game: refused a maths game (maths is off)");
+		return reply(403, { error: MATHS_OFF });
+	}
 	const saved = await services.recordSpace({
 		player,
 		bot_level: report.level,
@@ -4401,6 +4426,11 @@ Deno.serve((request) => handleSaveBotGame(request, {
 		if (error.code === "54000") return "too-many";
 		console.error(`save-bot-game: database refused a 101 game (${error.code})`);
 		return "refused";
+	},
+	async mathsSwitch() {
+		const { data, error } = await admin.from("app_settings").select("space_maths").maybeSingle();
+		if (error) throw new Error(error.code ?? "unknown");
+		return parseMathsSwitch(data?.space_maths);
 	},
 	async recordAnswers(player, batchId, answers) {
 		const { error } = await admin.rpc("record_fact_answers", {

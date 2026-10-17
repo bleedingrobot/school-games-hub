@@ -2,6 +2,7 @@
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
 import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
 import { stamper } from '../_shared/stamp';
 import { handleSaveBotGame } from './handler';
 
@@ -49,6 +50,11 @@ Deno.serve((request) =>
       if (error.code === '54000') return 'too-many';
       console.error(`save-bot-game: database refused a 101 game (${error.code})`);
       return 'refused';
+    },
+    async mathsSwitch() {
+      const { data, error } = await admin.from('app_settings').select('space_maths').maybeSingle();
+      if (error) throw new Error(error.code ?? 'unknown');
+      return parseMathsSwitch(data?.space_maths);
     },
     async recordAnswers(player, batchId, answers) {
       const { error } = await admin.rpc('record_fact_answers', {

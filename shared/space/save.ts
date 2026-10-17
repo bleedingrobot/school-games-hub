@@ -193,6 +193,10 @@ export interface SpaceStats {
   stars: StarKind[];
   /** They reached the space station. */
   docked: boolean;
+  /** Mission Control maths: right answers (all kinds), wormholes powered up, black holes half-escaped. */
+  mathsRight: number;
+  boosts: number;
+  escapes: number;
 }
 
 export type SpaceReason = 'docked' | 'out-of-fuel' | 'abandoned';
@@ -267,6 +271,9 @@ export function judgeSpaceGame(report: SpaceGameReport): SpaceJudgement {
     blocks: mine.filter((e) => e.kind === 'force-field').length,
     stars: STAR_KINDS.filter((k) => stars.has(k)),
     docked: mine.some((e) => e.kind === 'docked'),
+    mathsRight: mine.filter((e) => (e.kind === 'question' && e.correct) || (e.kind === 'charge' && e.right)).length,
+    boosts: mine.filter((e) => e.kind === 'question' && e.correct && (e.moment ?? 'wormhole') === 'wormhole').length,
+    escapes: mine.filter((e) => e.kind === 'question' && e.correct && e.moment === 'black-hole').length,
   };
   const place = finished ? (state.places?.[studentSeat] ?? null) : null;
   return {

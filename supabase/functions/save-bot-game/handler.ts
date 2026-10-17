@@ -29,6 +29,7 @@ import {
   type SpaceStats,
 } from '../../../shared/space/save';
 import type { FactAnswer } from '../../../shared/maths/leitner';
+import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 
 /** The two things this needs from Supabase, passed in so the tests can stand in for them. */
@@ -46,6 +47,11 @@ export interface Services {
    * as Gem Keep). A batch id seen before is ignored. Optional: without it answers aren't kept.
    */
   recordAnswers?(player: string, batchId: string, answers: FactAnswer[]): Promise<void>;
+  /**
+   * The teacher's Mission Control maths switch. Optional: without it maths isn't checked (the tests'
+   * stand-in). If it can't be read, throw: a maths game isn't started or saved on a guess.
+   */
+  mathsSwitch?(): Promise<MathsSwitch>;
   /** Signs some text with a key only the server has (an HMAC), as URL-safe base64. Null if there's no key. */
   stamp(text: string): Promise<string | null>;
   /** The time now, in seconds. */
@@ -106,8 +112,10 @@ export async function handleSaveBotGame(request: Request, services: Services): P
   if (!player) return reply(401, { error: 'Please sign in again.' });
 
   const body = await readJsonBody(request);
-  const asked = body as { game?: unknown; start?: unknown } | null;
+  const asked = body as { game?: unknown; start?: unknown; maths?: unknown } | null;
   if ((asked?.game === 'space' || asked?.game === '101') && asked.start === true) {
+    // A new maths game can't start while the teacher has maths switched off.
+    if (asked.game === 'space' && asked.maths === true && !(await mathsAllowed(services))) return reply(403, { error: MATHS_OFF });
     // A new seed for a Wormholes & Black Holes or 101 game, stamped for this student and this game.
     const seed = makeSeed(now(services), (services.randomHex ?? randomHex)(12));
     const stamp = await services.stamp((asked.game === 'space' ? stampText : card101StampText)(player, seed));
@@ -145,6 +153,14 @@ export async function handleSaveBotGame(request: Request, services: Services): P
   return reply(200, { result: game.outcome, reason: game.reason, countsForPoints: game.countsForPoints });
 }
 
+const MATHS_OFF = 'Your teacher has switched Mission Control maths off, so this game couldn’t be saved.';
+
+/** False when the teacher has maths switched off (or the switch can't be read). */
+async function mathsAllowed(services: Services): Promise<boolean> {
+  if (!services.mathsSwitch) return true;
+  return (await services.mathsSwitch().catch(() => 'off' as const)) !== 'off';
+}
+
 const TOO_MANY = "That's a lot of games today! Have a break and come back tomorrow.";
 
 async function saveSpaceGame(
@@ -163,6 +179,10 @@ async function saveSpaceGame(
     return reply(400, { error: "That game couldn't be checked." });
   }
   const { game } = judged;
+  if (report.settings.maths && !(await mathsAllowed(services))) {
+    console.warn('save-bot-game: refused a maths game (maths is off)');
+    return reply(403, { error: MATHS_OFF });
+  }
   const saved = await services.recordSpace({
     player,
     bot_level: report.level,

@@ -5,6 +5,7 @@
 import { supabase } from '../lib/supabase';
 import { FriendlyError } from './profile';
 import type { Rank } from './progress';
+import type { MathsSwitch } from '../../shared/space/mathsSwitch';
 
 export interface Person {
   id: string;
@@ -96,6 +97,11 @@ export async function setMultiplayer(enabled: boolean): Promise<void> {
 
 export async function setSpaceReactions(enabled: boolean): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_space_reactions', { enabled });
+  if (error) fail(error, 'We couldn’t change that.');
+}
+
+export async function setSpaceMaths(mode: MathsSwitch): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_space_maths', { mode });
   if (error) fail(error, 'We couldn’t change that.');
 }
 

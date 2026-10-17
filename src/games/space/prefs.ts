@@ -5,6 +5,7 @@
 import type { BoardSize } from '../../../shared/space/board';
 import { DESIGNED_BOARDS, isDesignedBoardId, type BoardChoice, type DesignedBoardId } from '../../../shared/space/boards';
 import { DEFAULT_SETTINGS, type Finish, type Mode, type Settings } from '../../../shared/space/engine';
+import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
 import { galaxyOfTheDay, parseGalaxyCode } from '../../../shared/space/galaxy';
 
 export type Speed = 'relaxed' | 'normal' | 'zippy';
@@ -117,7 +118,7 @@ export const todaysGalaxy = () => galaxyOfTheDay(new Date());
  * What the teacher allows (docs/SPACE-MATHS-PLAN.md section 3): 'off' (no maths), 'choose' (a
  * chip in settings) or 'on' (always). Whether a game has maths is this plus the student's chip.
  */
-export type MathsMode = 'off' | 'choose' | 'on';
+export type MathsMode = MathsSwitch;
 
 export const mathsOn = (mode: MathsMode, prefs: SpacePrefs) => mode === 'on' || (mode === 'choose' && prefs.maths);
 

@@ -157,6 +157,10 @@ export function QuestionModal({
             ⏱ {secondsLeft}
           </p>
         )}
+        {/* The timer above isn't read out every second; screen readers hear a warning at 10 and 5. */}
+        <p className="sr-only" aria-live="polite">
+          {secondsLeft !== null && !result && (secondsLeft === 10 || secondsLeft === 5) ? `${secondsLeft} seconds left` : ''}
+        </p>
         <p className="question__feedback" role="status">
           {checking && 'Checking…'}
           {trouble && !checking && !result && trouble}

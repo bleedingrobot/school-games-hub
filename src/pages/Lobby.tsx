@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { colourName, normaliseCode, otherSide, prettyCode, type GameKind, type Side } from '../../shared/multiplayer';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
@@ -18,7 +18,7 @@ import {
 import { askSpace, fetchMyOpenSpaceGames, fetchSpaceLobby, seatsOf, type SpaceGame, type SpaceLobbyGame } from '../data/spaceGames';
 import { askCard, fetchCardLobby, fetchMyOpenCardGames, type CardLobbyGame, type SeatSummary } from '../data/cardGames';
 import { findGame, GAMES } from '../games/registry';
-import { mathsModeFromParam } from '../games/space/mathsMode';
+import { useMathsMode } from '../games/space/mathsMode';
 import type { DesignedBoardId } from '../../shared/space/boards';
 import type { Mode } from '../../shared/space/engine';
 import { boardLabel, BOARD_NAMES, DESIGNED_BOARD_ORDER } from '../../shared/space/names';
@@ -53,8 +53,7 @@ export function Lobby() {
   const [spaceBoard, setSpaceBoard] = useState<SpaceBoardChoice>('nebula');
   const [spaceMode, setSpaceMode] = useState<Mode>('cosmic');
   // Mission Control maths: what the teacher allows, and (if students choose) what the host picked.
-  const [params] = useSearchParams();
-  const mathsMode = mathsModeFromParam(params.get('maths'));
+  const mathsMode = useMathsMode() ?? 'off';
   const [spaceMaths, setSpaceMaths] = useState(true);
   const [cardPlayers, setCardPlayers] = useState(3);
   const [cardTarget, setCardTarget] = useState<50 | 101>(50);

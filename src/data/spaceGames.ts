@@ -9,6 +9,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { BoardChoice } from '../../shared/space/boards';
 import type { Settings, SpaceEvent, SpaceState } from '../../shared/space/engine';
 import type { LiveSetup, LoggedAction, Reaction, SeatInfo } from '../../shared/space/live';
+import { parseMathsSwitch, type MathsSwitch } from '../../shared/space/mathsSwitch';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
 import { MultiplayerError, RETRY_AFTER_MS, type LiveStatus } from './multiplayer';
@@ -201,6 +202,12 @@ export async function fetchMySpaceStats(): Promise<{ played: number; firsts: num
 export async function fetchReactionsEnabled(): Promise<boolean> {
   const { data } = await supabase.from('app_settings').select('space_reactions_enabled').maybeSingle();
   return data?.space_reactions_enabled === true;
+}
+
+/** What the teacher allows for Mission Control maths. If it can't be read, maths stays off. */
+export async function fetchMathsSwitch(): Promise<MathsSwitch> {
+  const { data } = await supabase.from('app_settings').select('space_maths').maybeSingle();
+  return parseMathsSwitch(data?.space_maths);
 }
 
 export interface SpaceLogEntry {

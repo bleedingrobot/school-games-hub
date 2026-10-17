@@ -1,12 +1,22 @@
+import { useEffect, useState } from 'react';
+import { fetchMathsSwitch } from '../../data/spaceGames';
 import type { MathsMode } from './prefs';
 
 /**
- * What the teacher allows for Mission Control maths. Not switched on for students yet: the
- * teacher's switch comes in stage M.5 (docs/SPACE-MATHS-PLAN.md). Until then only a local
- * development build can turn it on, with ?maths=choose or ?maths=on in the address.
- * Wormholes & Black Holes against bots and the classmates lobby both ask here.
+ * What the teacher allows for Mission Control maths (the switch on the Teacher page), read the
+ * way the emoji reactions switch is. Null while it loads. The bot game and the classmates
+ * lobby both ask here; the server checks the switch too, so this only decides what's shown.
  */
-export function mathsModeFromParam(param: string | null): MathsMode {
-  if (!import.meta.env.DEV) return 'off';
-  return param === 'choose' || param === 'on' ? param : 'off';
+export function useMathsMode(): MathsMode | null {
+  const [mode, setMode] = useState<MathsMode | null>(null);
+  useEffect(() => {
+    let current = true;
+    void fetchMathsSwitch()
+      .catch(() => 'off' as const)
+      .then((value) => current && setMode(value));
+    return () => {
+      current = false;
+    };
+  }, []);
+  return mode;
 }
