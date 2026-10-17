@@ -3,7 +3,7 @@
 A daily-turns fantasy adventure for the hub, in the spirit of the 1990s BBS door game *Legend of the Red Dragon* (LORD). Visit a small village from a menu, go into the forest a few times a day, fight monsters, buy a better sword, beat your master to level up, and one day face the Red Dragon. **Maths is one of the tools that helps you win**: sizing up a monster, working out the healer's bill, counting change at the shop, cracking a riddle, a master's trial and the dragon fight.
 
 Written 17 October 2026 from James's brief ([prompts/lord-maths.md](prompts/lord-maths.md)) after reading [talisto/LORD.ts](https://github.com/talisto/LORD.ts) (v1.4.6) and the hub's code on `main` and `monsters`.
-**Status: STARTED 18 Oct 2026 (Maths Monsters is on main): L.0 and L.1 done, waiting for James's review before L.2. Branch `dragon-maths`.** James answered every question in section 14 (all my picks, except: start only **after Maths Monsters is live**).
+**Status: STARTED 18 Oct 2026 (Maths Monsters is on main): L.0, L.1 and L.2 done, next is L.3 (screens). Branch `dragon-maths`.** James answered every question in section 14 (all my picks, except: start only **after Maths Monsters is live**).
 **Updated 18 Oct 2026** after reading every file of LORD.ts (main game, all 13 add-ons, scripts, tests, change log): **5-week seasons** with a fresh start each time, **romance and orphans kept out for good**, rule-table fixes, and a simulator check of the pace. See section 15.
 
 ## The short version
@@ -261,6 +261,12 @@ What the simulator told us, and what changed because of it:
 - Healing at LORD's price ate 55-60% of gold. Now about 40%.
 - The dragon was unbeatable (0%), then too easy (93% on the first try). It now sits at about 25-45% a try by class (James chose "harder", 18 Oct), with a 30% HP breather between stages, so it takes a few days of tries.
 - Pace: a pupil who plays every day reaches level 12 in week 3, and one who plays 4 days a week in week 5. **A pupil who plays 2 days a week only reaches level 6 or 7 in a 5-week season.** That is open question 12 below.
+
+**L.2 done (18 Oct 2026):**
+
+- **Two new maths packs** in `shared/maths/skillPacks/`: *Gold and shopping* (`money.ts`: change, the cost of several, totals, gold left, swap rates, how much more you need, which deal is better value as a pick-one question, bigger change) and *Number patterns* (`patterns.ts`: counting on and back, doubling, a gap in the middle, the step, growing steps, rules like n × 3 + 1). Four bands each, built the same way as the other packs, with worked answers. They are exported as `EXTRA_PACKS` and are **not** in the shared topic list, so Maths Monsters' teacher switches are unchanged. Adding them to that list is a one-line change when another game wants them.
+- **`shared/lord/maths.ts`:** which pack each moment uses, and what each result is worth. Right in *size it up* is ×1.5 on the first hit (×1.25 after a hint, ×1 if wrong); right at the shop or healer is 10% off (5% after a hint); each right answer in a master's trial adds a little strength on levelling up; a right answer before a dragon stage gives a shield and a ×1.5 first hit. A wrong answer never takes anything away. No timer and no speed bonus anywhere.
+- 56 new tests, including that every roll of every question family makes a sound question. They found one real bug (the change question could cost more than you paid), now fixed.
 
 **Not done yet:** ten monsters a level (five written), more events, gems, the arena and computer heroes, anything saved, anything on screen. Nothing is on the dashboard and nothing touches the database.
 

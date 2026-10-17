@@ -8,6 +8,8 @@ import { ADD_SUB } from './addSub';
 import { DECIMALS } from './decimals';
 import { DIVISION } from './division';
 import { FRACTIONS } from './fractions';
+import { MONEY } from './money';
+import { PATTERNS } from './patterns';
 import { PLACE_VALUE } from './placeValue';
 import { TimesTables } from './timesTables';
 
@@ -44,4 +46,15 @@ export function topicOfKey(key: string): TopicId | undefined {
     if (Object.values(def.families).some((f) => f.keys.includes(key))) return id as TopicId;
   }
   return undefined;
+}
+
+/**
+ * Packs used only by Dragon Maths for now. They are kept out of TopicId / BANDED_PACKS / TOPICS so
+ * Maths Monsters' teacher switches and topic lists do not change. Add them to those when another game wants them.
+ */
+export type ExtraTopicId = 'money' | 'patterns';
+export const EXTRA_PACKS: Record<ExtraTopicId, PackDefinition> = { money: MONEY, patterns: PATTERNS };
+
+export function makeExtraPack(id: ExtraTopicId, saved: FactStats[] = [], random?: () => number, now?: () => number): SkillPack {
+  return new BandedPack(EXTRA_PACKS[id], saved, random, now);
 }
