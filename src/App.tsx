@@ -14,6 +14,7 @@ import { Profile } from './pages/Profile';
 import { SignIn } from './pages/SignIn';
 import { SpaceGamePage } from './pages/SpaceGamePage';
 import { CardGamePage } from './pages/CardGamePage';
+import { PowerGamePage } from './pages/PowerGamePage';
 import { powerClash } from './games/power-clash';
 import { Teacher } from './pages/Teacher';
 import { SoundProvider } from './sound';
@@ -35,6 +36,7 @@ export function AppRoutes() {
           <Route path="play/:id" element={<FriendGamePage />} />
           <Route path="space-game/:id" element={<SpaceGamePage />} />
           <Route path="card-game/:id" element={<CardGamePage />} />
+          <Route path="power-game/:id" element={<PowerGamePage />} />
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="points" element={<HowPoints />} />
           <Route path="teacher" element={<Teacher />} />

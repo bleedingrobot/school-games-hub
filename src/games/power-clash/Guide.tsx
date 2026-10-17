@@ -63,7 +63,7 @@ export function PowerClashGuide({ onClose, returnTo }: { onClose: () => void; re
             <h3>On your go</h3>
             <ul>
               <li>You can use <strong>one power</strong> on your go (you don’t have to), then place your symbol.</li>
-              <li>You pick {LOADOUT_SIZE} powers before you start. Each power can be used <strong>once</strong> in the match.</li>
+              <li>You pick {LOADOUT_SIZE} powers before you start. Each power can be used <strong>once in each round</strong> (they come back for the next round).</li>
               <li>If you can’t place anywhere because every square is frozen, you miss your go.</li>
             </ul>
           </section>
@@ -87,8 +87,16 @@ export function PowerClashGuide({ onClose, returnTo }: { onClose: () => void; re
             </p>
           </section>
           <section>
+            <h3>Playing a classmate</h3>
+            <ul>
+              <li>You each pick your {LOADOUT_SIZE} powers first. Everyone sees them, and nobody can change them once the match starts.</li>
+              <li>You have <strong>60 seconds</strong> for your go. If time runs out you just miss that go (you don’t lose), but if you miss three goes in a row the game ends.</li>
+              <li>Leaving a game part-way means nobody earns points for it.</li>
+            </ul>
+          </section>
+          <section>
             <h3>Keys</h3>
-            <p><kbd>Tab</kbd> and <kbd>Enter</kbd> to choose, <kbd>Esc</kbd> to cancel a power, <kbd>?</kbd> for this help.</p>
+            <p><kbd>Tab</kbd> and <kbd>Enter</kbd> to choose, <kbd>1</kbd> to <kbd>9</kbd> to place a symbol on a square against a classmate (top left is 1, bottom right is 9), <kbd>Esc</kbd> to cancel a power, <kbd>?</kbd> for this help.</p>
           </section>
         </div>
       </div>

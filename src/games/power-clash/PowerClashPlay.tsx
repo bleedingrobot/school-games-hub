@@ -24,8 +24,8 @@ const DEFAULT_LOADOUTS: Loadouts = {
 };
 
 /** How long input stays locked while an animation plays (never more than about a second). */
-const LOCK_MS = 900;
-const LOCK_CALM_MS = 150;
+export const LOCK_MS = 900;
+export const LOCK_CALM_MS = 150;
 
 /** How long the bot "thinks" before it moves (a short, visible moment), and with reduced motion just a blink. */
 const BOT_THINK_MIN_MS = 600;
@@ -67,14 +67,14 @@ export interface PowerClashProps {
   timeScale?: number;
 }
 
-interface Fx {
+export interface Fx {
   key: number;
   events: GameEvent[];
   /** What stood on the wiped square before the blast, so it can fly off. */
   wiped: Cell;
 }
 
-function useReducedMotion() {
+export function useReducedMotion() {
   const [reduced, setReduced] = useState(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
   useEffect(() => {
     const query = window.matchMedia?.('(prefers-reduced-motion: reduce)');
@@ -86,7 +86,7 @@ function useReducedMotion() {
   return reduced;
 }
 
-const SOUNDS: Partial<Record<GameEvent['kind'], GameSound>> = {
+export const SOUNDS: Partial<Record<GameEvent['kind'], GameSound>> = {
   place: 'tap', 'double-trouble': 'zap', 'body-swap': 'swap', freeze: 'freeze', wipe: 'boom', skip: 'end', win: 'win', draw: 'draw',
 };
 
@@ -598,7 +598,7 @@ export function PowerClashPlay({ level: levelProp = 'easy', onLevelChange, savin
 }
 
 /** Which animation class a square gets, read from the engine's events. */
-function cellFx(fx: Fx | null, i: number): string {
+export function cellFx(fx: Fx | null, i: number): string {
   if (!fx) return '';
   const out: string[] = [];
   for (const e of fx.events) {
@@ -612,7 +612,7 @@ function cellFx(fx: Fx | null, i: number): string {
 }
 
 /** For a Body Swap: how far (in squares) each symbol slides to reach where it now sits. */
-function swapVars(fx: Fx | null, i: number): React.CSSProperties | undefined {
+export function swapVars(fx: Fx | null, i: number): React.CSSProperties | undefined {
   const e = fx?.events.find((ev) => ev.kind === 'body-swap');
   if (!e || e.kind !== 'body-swap' || !e.squares.includes(i)) return undefined;
   const other = e.squares[0] === i ? e.squares[1] : e.squares[0];
@@ -620,7 +620,7 @@ function swapVars(fx: Fx | null, i: number): React.CSSProperties | undefined {
 }
 
 /** A few short-lived sparks on the square where something big happened. */
-function particles(fx: Fx | null, i: number) {
+export function particles(fx: Fx | null, i: number) {
   if (!fx) return null;
   const hit = fx.events.some(
     (e) => (e.kind === 'wipe' && e.square === i) || (e.kind === 'freeze' && e.square === i) || (e.kind === 'win' && e.line.includes(i)),
@@ -631,12 +631,12 @@ function particles(fx: Fx | null, i: number) {
   ));
 }
 
-function cellLabel(i: number, cell: Player | null, frozen: boolean) {
+export function cellLabel(i: number, cell: Player | null, frozen: boolean) {
   const where = `Row ${Math.floor(i / 3) + 1}, column ${(i % 3) + 1}`;
   return `${where}: ${cell ?? (frozen ? 'frozen, empty' : 'empty')}`;
 }
 
-function describe(kinds: string[]): string {
+export function describe(kinds: string[]): string {
   if (kinds.includes('double-trouble')) return 'Double Trouble! Two symbols this turn.';
   if (kinds.includes('body-swap')) return 'Body Swap! They traded places.';
   if (kinds.includes('freeze')) return 'Freeze Ray! That square is frozen for one turn.';
@@ -645,8 +645,8 @@ function describe(kinds: string[]): string {
   return '';
 }
 
-function PowerPanel({
-  player, match, selected, onChoose, locked, name, isBot = false,
+export function PowerPanel({
+  player, match, selected, onChoose, locked, name, isBot = false, readOnly = false, turnLabel,
 }: {
   player: Player;
   match: Match;
@@ -656,25 +656,29 @@ function PowerPanel({
   /** In a bot game: "You" or the bot's name. */
   name?: string;
   isBot?: boolean;
+  /** Someone else's powers: shown, but never pressable (a classmate's panel). */
+  readOnly?: boolean;
+  /** Replaces the "← your go" note when it is this panel's turn. */
+  turnLabel?: string;
 }) {
   const { state } = match;
   const myTurn = state.active === player && state.status === 'active';
   return (
     <aside className={`pc__panel pc__panel--${player} ${myTurn ? 'pc__panel--turn' : ''}`}>
       <h2>
-        {name ? `${name} (${player})` : `Player ${player}`} {myTurn ? (isBot ? '← thinking' : '← your go') : ''}
+        {name ? `${name} (${player})` : `Player ${player}`} {myTurn ? (turnLabel ?? (isBot ? '← thinking' : '← your go')) : ''}
       </h2>
       <ul>
         {state.loadout[player].map((id) => {
           const info = powerInfo(id);
           const spent = state.used[player].includes(id);
-          const reason = myTurn && !isBot ? powerBlockedReason(state, id) : null;
+          const reason = myTurn && !isBot && !readOnly ? powerBlockedReason(state, id) : null;
           return (
             <li key={id}>
               <button
                 type="button"
                 className={`pc__power ${selected?.power === id && myTurn ? 'pc__power--on' : ''}`}
-                disabled={!myTurn || spent || locked}
+                disabled={!myTurn || spent || locked || readOnly}
                 aria-pressed={selected?.power === id && myTurn}
                 onClick={() => onChoose(id)}
                 title={reason ?? info.blurb}
