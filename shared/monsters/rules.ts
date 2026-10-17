@@ -21,7 +21,7 @@ export const TUNING = {
   answerMultiplier: { right: 1, 'quick-right': 1.5, wrong: 0.25 } as Record<AnswerResult, number>,
   /** Exp a defeated monster gives = yield × its level ÷ 5, by its stage; trainers give more. */
   expCurve: 2.5,
-  expYield: [11, 16, 21] as readonly number[],
+  expYield: [14, 20, 27] as readonly number[],
   trainerExpBonus: 1.5,
   /** Catching: chance when the monster is at full health, and how much low health adds. */
   catchBase: 0.2,

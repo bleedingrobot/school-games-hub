@@ -179,11 +179,11 @@ Each stage ends with tests passing and a results section here, and stops for Jam
 | Wild battle won, first area (level-5 team) | 100% | 100% | 100% |
 | Tower trainer (3 monsters), questions | 11-16 | 9-12 | 8-10 |
 | Tower won | 75-94% | 97-100% | 100% |
-| Levelling, battles per level gained | 2.7 → 7.0 | 2.6 → 5.2 | 2.6 → 4.5 |
-| Whole game, battles in all (grind to each area's top level) | 208 | 171 | 157 |
+| Levelling, battles per level gained | 2.0 → 4.8 | 1.9 → 3.9 | 1.9 → 3.4 |
+| Whole game, battles in all (grind to each area's top level) | 153 | 129 | 116 |
 
 - Wild fights are a little shorter than the plan's goal (3-5 questions, a bit under a minute of play by this clock); real students are slower than the sim's 8 s a question, so about 1-2 minutes is likely. Tower trainers are 10-15 questions for most students, a bit longer at 50%. A 50% student wins almost every first-area wild battle.
-- Levelling is steady (2.6 to 7 battles per level, slowing gently), but the sim student grinds in each area until the lead matches the area's top monster, which takes about 30-60 battles in areas 3-5. If that feels long, give more exp or put more trainers in those areas.
+- Levelling is steady (2.6 to 7 battles per level, slowing gently), but the sim student grinds in each area until the lead matches the area's top monster, which first took 30-60 battles in areas 3-5. James chose more exp (yield 11/16/21 → 14/20/27), so it is now about 15-40.
 - The sim student is a bit unlike a real one (always picks the best attack, never runs); real play will be messier.
 
 **Monster names for James to OK** (first form → second → last):
