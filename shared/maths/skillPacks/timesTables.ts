@@ -5,7 +5,7 @@
  */
 import { CHOICES, DIVISION_SHARE, MISSING_FACTOR_FROM_LEVEL, MISSING_FACTOR_SHARE } from '../config';
 import { parseFactKey } from '../facts';
-import { afterAnswer, newStats, type FactStats } from '../leitner';
+import { afterAnswer, newStats, type FactAnswer, type FactStats } from '../leitner';
 import { newMemory, pickFact, scheduleRepeat, type QuestionContext, type SessionMemory } from '../selector';
 import type { AnswerResult, Question, SkillPack } from '../skillPack';
 
@@ -53,6 +53,7 @@ export class TimesTables implements SkillPack {
   private records = new Map<string, FactStats>();
   private memory: SessionMemory = newMemory();
   private nextId = 1;
+  private listeners = new Set<(answer: FactAnswer) => void>();
 
   constructor(
     saved: FactStats[] = [],
@@ -60,6 +61,12 @@ export class TimesTables implements SkillPack {
     private now: () => number = Date.now,
   ) {
     for (const s of saved) this.records.set(s.key, s);
+  }
+
+  /** Hears every answer as it's recorded (for saving). Returns a function that stops listening. */
+  onAnswer(listener: (answer: FactAnswer) => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   stats(): FactStats[] {
@@ -115,8 +122,10 @@ export class TimesTables implements SkillPack {
   recordAnswer(q: Question, answer: number, ms: number): AnswerResult {
     const correct = answer === q.answer;
     const before = this.records.get(q.factKey) ?? newStats(q.factKey);
-    const after = afterAnswer(before, correct, ms, this.now());
+    const at = this.now();
+    const after = afterAnswer(before, correct, ms, at);
     this.records.set(q.factKey, after);
+    for (const listener of this.listeners) listener({ key: q.factKey, correct, ms: Math.round(ms), at });
     if (!correct) scheduleRepeat(this.memory, q.factKey, this.random);
     // The question with its blank filled in: "7 × 8 = 56", "? × 8 = 56" → "7 × 8 = 56", "56 ÷ 8 = 7".
     const fact = q.parts.map((p) => (p === '?' ? String(q.answer) : p)).join(' ');
