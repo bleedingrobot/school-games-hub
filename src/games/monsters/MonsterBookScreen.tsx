@@ -49,7 +49,7 @@ export function MonsterBookScreen({ seen, owned }: BookProps) {
                   onClick={() => setSelected(s.id)}
                 >
                   <span className={st === 'unknown' ? 'bk-dark' : 'bk-art'} aria-hidden="true">
-                    <MonsterArt species={s.id} size={52} still />
+                    <MonsterArt species={s.id} size={52} still nameless={st === 'unknown'} />
                   </span>
                   <span className="bk-name" aria-hidden="true">{st === 'unknown' ? '?' : s.name}</span>
                 </button>
@@ -61,7 +61,7 @@ export function MonsterBookScreen({ seen, owned }: BookProps) {
       <section className="bk-detail" aria-label="About this monster" aria-live="polite" tabIndex={0}>
         {shownStatus === 'unknown' ? (
           <>
-            <div className="bk-detail__art bk-dark" aria-hidden="true"><MonsterArt species={shown.id} size={110} still /></div>
+            <div className="bk-detail__art bk-dark" aria-hidden="true"><MonsterArt species={shown.id} size={110} still nameless /></div>
             <h3>? ? ?</h3>
             <p className="bk-sub">Number {number}</p>
             <p>You have not met this monster yet. Look for it in the long grass, in a Tower, or ask a trainer!</p>

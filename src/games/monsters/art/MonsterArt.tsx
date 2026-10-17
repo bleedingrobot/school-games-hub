@@ -375,10 +375,12 @@ export interface MonsterArtProps {
   /** Turn the idle bob off (for lists and the monster book). */
   still?: boolean;
   className?: string;
+  /** Draw it with no name at all (no label, no tooltip): for the monster book's dark shapes, which must not give the name away. */
+  nameless?: boolean;
 }
 
 /** Draws one monster. The drawing is labelled with the monster's name for screen readers. */
-export function MonsterArt({ species, shiny, size, state = 'idle', flip, still, className }: MonsterArtProps) {
+export function MonsterArt({ species, shiny, size, state = 'idle', flip, still, className, nameless }: MonsterArtProps) {
   const sp = speciesOf(species);
   const draw = DRAWINGS[sp.family];
   const c = (shiny ? SHINY_PALETTES : PALETTES)[sp.type];
@@ -390,8 +392,8 @@ export function MonsterArt({ species, shiny, size, state = 'idle', flip, still, 
       data-species={species}
       style={size ? { width: size, height: size } : undefined}
     >
-      <svg viewBox="0 0 120 120" role="img" aria-label={label} focusable="false">
-        <title>{label}</title>
+      <svg viewBox="0 0 120 120" {...(nameless ? { 'aria-hidden': true } : { role: 'img', 'aria-label': label })} focusable="false">
+        {!nameless && <title>{label}</title>}
         <Shadow rx={30 + sp.stage * 4} />
         <g className="mon-art__body" transform={`translate(60 108) scale(${flip ? -scale : scale} ${scale}) translate(-60 -108)`}>
           {draw(sp.stage, c)}
