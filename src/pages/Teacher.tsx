@@ -19,7 +19,7 @@ import {
   type Person,
   type PersonDetail,
 } from '../data/teacher';
-import { findGame } from '../games/registry';
+import { gameLabel } from '../games/registry';
 import { BOT_LEVELS, type BotLevel } from '../games/types';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
@@ -387,7 +387,7 @@ function PersonPanel({
               {detail.games.flatMap((g) =>
                 (['bot', 'friend'] as const).map((kind) => (
                   <tr key={`${g.game}-${kind}`}>
-                    <th scope="row">{kind === 'bot' ? findGame(g.game)?.name : ''}</th>
+                    <th scope="row">{kind === 'bot' ? gameLabel(g.game) : ''}</th>
                     <td>{kind === 'bot' ? 'Bots' : 'Friends'}</td>
                     <td>{g[kind].played}</td>
                     <td>{g[kind].won}</td>
@@ -402,7 +402,7 @@ function PersonPanel({
           <p className="person-panel__badges">
             {detail.games.map((g) => (
               <span key={g.game}>
-                {g.rank ? <RankBadge rank={g.rank} game={g.game} /> : findGame(g.game)?.name}: {g.achievements} achievement
+                {g.rank ? <RankBadge rank={g.rank} game={g.game} /> : gameLabel(g.game)}: {g.achievements} achievement
                 {g.achievements === 1 ? '' : 's'}
               </span>
             ))}
@@ -419,7 +419,7 @@ function PersonPanel({
                     </span>
                   )}
                   <span className="recent-list__what">
-                    {findGame(r.game)?.name} vs{' '}
+                    {gameLabel(r.game)} vs{' '}
                     {r.kind !== 'bot'
                       ? r.against
                       : r.game === 'space'

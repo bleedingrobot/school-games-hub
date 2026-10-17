@@ -21,11 +21,13 @@
     "monsters:sim": "node scripts/monsters-sim.mjs",
     "space:preview": "vite build --config vite.preview.config.ts",
     "101:sim": "node scripts/101-sim.mjs",
+    "power-clash:sim": "node scripts/power-clash-sim.mjs",
     "101:preview": "vite build --config vite.101-preview.config.ts",
     "gem-keep:preview": "vite build --config vite.gem-keep-preview.config.ts",
     "maths:preview": "vite build --config vite.maths-preview.config.ts",
     "monsters:preview": "vite build --config vite.monsters-preview.config.ts",
-    "monsters:single": "MONSTERS_INLINE=1 vite build --config vite.monsters-preview.config.ts && node scripts/inline-monsters-preview.mjs"
+    "monsters:single": "MONSTERS_INLINE=1 vite build --config vite.monsters-preview.config.ts && node scripts/inline-monsters-preview.mjs",
+    "power-clash:preview": "vite build --config vite.power-clash-preview.config.ts"
   },
   "engines": {
     "node": ">=22"

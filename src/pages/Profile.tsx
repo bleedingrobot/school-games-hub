@@ -12,7 +12,7 @@ import {
 import { AchievementList, LevelBar, RankBadge } from '../components/Progress';
 import { chooseMyName, fetchNameWords, FriendlyError, saveMyAvatar, type NameWords } from '../data/profile';
 import { fetchMyProgress, nextRankText, type MyProgress } from '../data/progress';
-import { findGame, GAMES } from '../games/registry';
+import { ALL_GAMES, gameLabel } from '../games/registry';
 
 const PARTS = Object.keys(AVATAR_OPTIONS) as AvatarPart[];
 const COLOUR_PARTS: AvatarPart[] = ['colour', 'topColour', 'bg'];
@@ -242,7 +242,7 @@ function MyProgressPanels() {
                 <progress
                   max={1}
                   value={g.rank.progress ?? 0}
-                  aria-label={`${findGame(g.game)?.name}: ${nextRankText(g.rank)}`}
+                  aria-label={`${gameLabel(g.game)}: ${nextRankText(g.rank)}`}
                 />
               )}
             </li>
@@ -258,7 +258,7 @@ function MyProgressPanels() {
           </span>
         </h2>
         <div className="achievement-columns">
-          {GAMES.filter((game) => progress.achievements.some((a) => a.game === game.id)).map((game) => (
+          {ALL_GAMES.filter((game) => progress.achievements.some((a) => a.game === game.id)).map((game) => (
             <div key={game.id}>
               <h3>{game.name}</h3>
               <AchievementList achievements={progress.achievements.filter((a) => a.game === game.id)} />

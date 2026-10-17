@@ -1,0 +1,227 @@
+.pc { max-width: 1100px; margin: 0 auto; padding: 12px 16px 24px; color: #fff; }
+.pc h1 { font-family: var(--display); margin: 0; font-size: 1.5rem; }
+.pc__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.pc__score { display: flex; gap: 14px; align-items: center; margin: 0; font-weight: 800; font-size: 1.2rem; }
+.pc__x { color: #67e8f9; }
+.pc__o { color: #f472b6; }
+.pc__round { font-size: 0.85rem; font-weight: 600; opacity: 0.9; }
+.pc__table { display: grid; grid-template-columns: 1fr minmax(290px, 360px) 1fr; gap: 14px; align-items: start; margin-top: 8px; }
+.pc__middle { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.pc__prompt { margin: 0; font-weight: 800; text-align: center; min-height: 2.4em; }
+.pc__message { margin: 0; min-height: 1.4em; color: #fde047; font-weight: 700; text-align: center; }
+.pc__actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.pc__board {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; padding: 10px;
+  background: #151a3d; border-radius: 18px; box-shadow: 0 0 0 3px #3b2a8f, 0 12px 28px rgba(0, 0, 0, 0.35);
+}
+.pc__cell {
+  position: relative; aspect-ratio: 1; min-height: 84px; border: 0; border-radius: 12px; cursor: default;
+  background: #232a5c; color: #fff; font: 800 3.4rem/1 var(--display);
+  display: grid; place-items: center; text-shadow: 0 0 14px currentColor;
+}
+.pc__cell--X { color: #22d3ee; }
+.pc__cell--O { color: #ec4899; }
+.pc__cell--open { cursor: pointer; background: #2a3270; }
+.pc__cell--target { box-shadow: inset 0 0 0 3px #fde047; }
+.pc__cell--open:hover, .pc__cell--open:focus-visible { background: #3d4aa0; outline: 3px solid #fff; outline-offset: 2px; }
+.pc__cell--chosen { box-shadow: inset 0 0 0 4px #fff; }
+.pc__cell--win { background: #166534; box-shadow: inset 0 0 0 4px #bbf7d0; }
+.pc__cell--frozen { background: #1e3a5f; box-shadow: inset 0 0 0 3px #7dd3fc; }
+.pc__ice { font-size: 2rem; }
+.pc__cell:disabled { opacity: 1; }
+.pc__panel { background: rgba(15, 23, 42, 0.78); border-radius: 18px; padding: 10px; border: 3px solid transparent; }
+.pc__panel h2 { margin: 0 0 8px; font-size: 1rem; font-family: var(--display); }
+.pc__panel--X h2 { color: #67e8f9; }
+.pc__panel--O h2 { color: #f472b6; }
+.pc__panel--turn.pc__panel--X { border-color: #22d3ee; }
+.pc__panel--turn.pc__panel--O { border-color: #ec4899; }
+.pc__panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pc__power {
+  width: 100%; display: grid; grid-template-columns: 2rem 1fr; gap: 0 8px; text-align: left; cursor: pointer;
+  padding: 8px 10px; border-radius: 12px; border: 2px solid #475569; background: #1e293b; color: #fff;
+}
+.pc__power:disabled { opacity: 0.55; cursor: default; }
+.pc__power--on { border-color: #fde047; background: #3b2a8f; }
+.pc__power:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.pc__power-icon { grid-row: span 2; font-size: 1.5rem; align-self: center; }
+.pc__power-name { font-weight: 800; }
+.pc__power-blurb { font-size: 0.8rem; opacity: 0.9; }
+.pc--setup { text-align: center; }
+.pc--setup .pc__panel { text-align: left; }
+.pc__lead { max-width: 640px; margin: 8px auto 12px; }
+.pc__setup-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; text-align: left; }
+@media (max-width: 860px) {
+  .pc__table { grid-template-columns: 1fr; }
+  .pc__middle { order: -1; }
+  .pc__panel ul { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .pc__setup-cols { grid-template-columns: 1fr; }
+}
+
+/* ---- P.3: animations (all short; the screen only shows what the engine already decided) ---- */
+.pc__help { font-size: 0.9rem; padding: 6px 12px; }
+.pc__help kbd, .pc-guide kbd { display: inline-block; min-width: 1.4em; padding: 0 5px; margin-left: 4px; border: 2px solid currentColor; border-radius: 6px; font-size: 0.8em; }
+.pc__shout { margin: 0; min-height: 1.5em; font: 900 1.25rem/1.2 var(--display); color: #fde047; text-align: center; animation: pc-shout 1.8s both; }
+.pc__shout:empty { animation: none; }
+.pc__cell { overflow: visible; }
+.pc__cell--pop { animation: pc-pop 0.38s ease-out; }
+.pc__cell--swap { animation: pc-swap 0.7s ease-in-out; z-index: 2; }
+.pc__cell--frosting { animation: pc-frost 0.7s ease-out; }
+.pc__cell--blast { animation: pc-blast 0.5s ease-out; }
+.pc__cell--cheer { animation: pc-cheer 0.8s ease-in-out 2; }
+.pc__board--zap { animation: pc-zap 0.5s linear; }
+.pc__board--shake { animation: pc-shake 0.45s linear; }
+.pc__board--draw { animation: pc-draw 0.8s ease-in-out 2; }
+.pc__board--win.pc__board--shake { animation: pc-shake 0.45s linear; }
+.pc__fly { position: absolute; inset: 0; display: grid; place-items: center; font: 800 3.4rem/1 var(--display); pointer-events: none; animation: pc-fly 0.8s ease-in forwards; }
+.pc__fly--X { color: #22d3ee; }
+.pc__fly--O { color: #ec4899; }
+.pc__particle { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: #fde047; pointer-events: none; animation: pc-spark 0.7s ease-out forwards; }
+@keyframes pc-pop { 0% { transform: scale(0.2); filter: brightness(2.5); } 60% { transform: scale(1.25); } 100% { transform: scale(1); filter: none; } }
+@keyframes pc-swap { 0% { transform: translate(calc(var(--dx, 0) * 108%), calc(var(--dy, 0) * 108%)) scale(1.1); filter: hue-rotate(90deg) brightness(1.6); } 100% { transform: none; filter: none; } }
+@keyframes pc-frost { 0% { box-shadow: 0 0 0 0 #e0f2fe, inset 0 0 0 3px #7dd3fc; background: #e0f2fe; } 100% { box-shadow: 0 0 0 14px transparent, inset 0 0 0 3px #7dd3fc; } }
+@keyframes pc-blast { 0% { box-shadow: 0 0 0 0 #f97316; background: #fb923c; } 100% { box-shadow: 0 0 0 18px transparent; } }
+@keyframes pc-cheer { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@keyframes pc-zap { 0%, 40% { box-shadow: 0 0 0 3px #3b2a8f, 0 0 30px 10px #fde047; } 20% { box-shadow: 0 0 0 3px #fde047, 0 0 50px 20px #fff; } 100% { box-shadow: 0 0 0 3px #3b2a8f, 0 12px 28px rgba(0, 0, 0, 0.35); } }
+@keyframes pc-shake { 0%, 100% { transform: none; } 20% { transform: translate(-6px, 2px); } 40% { transform: translate(5px, -3px); } 60% { transform: translate(-4px, -2px); } 80% { transform: translate(3px, 3px); } }
+@keyframes pc-draw { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+@keyframes pc-fly { 0% { transform: none; opacity: 1; } 100% { transform: translate(60px, -90px) rotate(200deg) scale(0.3); opacity: 0; } }
+@keyframes pc-spark { 0% { transform: rotate(var(--a)) translateX(0); opacity: 1; } 100% { transform: rotate(var(--a)) translateX(46px); opacity: 0; } }
+@keyframes pc-shout { 0% { transform: scale(0.5); opacity: 0; } 15% { transform: scale(1.15); opacity: 1; } 25%, 85% { transform: scale(1); opacity: 1; } 100% { opacity: 0; } }
+
+/* Reduced motion: no shake, no particles, no sliding. Only a quick fade. */
+@media (prefers-reduced-motion: reduce) {
+  .pc *, .pc *::before { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  .pc__particle { display: none; }
+}
+.pc--calm *, .pc--calm *::before { animation: none !important; }
+.pc--calm .pc__shout { animation: pc-fade 0.3s both !important; }
+.pc--calm .pc__particle { display: none; }
+@keyframes pc-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---- How to play pop-up ---- */
+.pc-guide { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgba(8, 10, 40, 0.75); }
+.pc-guide__card { display: flex; flex-direction: column; width: min(100%, 640px); max-height: calc(100dvh - 32px); border-radius: 20px; background: #fff; color: #1b1b3a; box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5); overflow: hidden; }
+.pc-guide__top { display: flex; align-items: center; gap: 8px; padding: 10px 10px 6px 20px; border-bottom: 2px solid #e5e7f5; }
+.pc-guide__top h2 { flex: 1; margin: 0; font-size: 1.2rem; }
+.pc-guide__close { width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: inherit; font: inherit; font-weight: 800; cursor: pointer; }
+.pc-guide__close:hover { background: #eef0fb; }
+.pc-guide__close:focus-visible, .pc-guide__body:focus-visible { outline: 3px solid #3b2a8f; outline-offset: 2px; }
+.pc-guide__body { overflow-y: auto; padding: 4px 20px 20px; line-height: 1.45; overscroll-behavior: contain; }
+.pc-guide__body h3 { margin: 14px 0 6px; font-size: 1.05rem; }
+.pc-guide__body ul { margin: 0 0 8px; padding-left: 22px; }
+.pc-guide__powers { list-style: none; padding-left: 0 !important; display: grid; gap: 8px; }
+.pc-guide__example { font-size: 0.9rem; color: #4b4b73; }
+
+/* Fit short screens (Chromebook 1366x640): header on one line, board sized from the height. */
+.pc__help { width: auto; flex: 0 0 auto; margin-left: auto; }
+.pc__top { flex-wrap: nowrap; }
+.pc--setup .pc__help { margin: 4px 0; }
+.pc__cell { min-height: 0; }
+.pc__prompt { min-height: 0; }
+.pc__shout { min-height: 1.3em; }
+.pc__message { min-height: 1.2em; }
+@media (min-width: 861px) {
+  .pc { padding-top: 6px; padding-bottom: 8px; }
+  .pc__board { width: min(100%, max(240px, calc(100dvh - 260px))); }
+  .pc__cell { font-size: clamp(2rem, 9dvh, 3.4rem); }
+  .pc__panel li + li { margin-top: 0; }
+}
+@media (max-width: 860px) { .pc__top { flex-wrap: wrap; } }
+.pc .pc__top .pc__help, .pc .pc__help { width: auto; max-width: max-content; flex: 0 0 auto; white-space: nowrap; }
+.pc .pc__top h1 { font-size: 1.2rem; white-space: nowrap; }
+.pc .pc__score { white-space: nowrap; }
+.pc .pc__round { white-space: nowrap; }
+
+/* ---- P.4: playing a bot ---- */
+.pc__modes { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; border: 0; margin: 8px auto; padding: 0; }
+.pc__modes legend { width: 100%; text-align: center; font-weight: 800; margin-bottom: 4px; }
+.pc__mode {
+  padding: 8px 16px; border-radius: 999px; border: 2px solid #94a3b8; background: rgba(15, 23, 42, 0.6); color: #fff;
+  font: inherit; font-weight: 800; cursor: pointer;
+}
+.pc__mode--on { border-color: #fde047; background: #3b2a8f; }
+.pc__mode:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.pc__botsetup { display: flex; flex-direction: column; align-items: center; }
+.pc__botsetup .level-picker { margin: 4px auto; }
+.pc__setup-cols--one { grid-template-columns: minmax(0, 420px); justify-content: center; }
+.pc__save { margin: 0; font-size: 0.85rem; opacity: 0.9; text-align: center; }
+.pc__col { display: flex; flex-direction: column; gap: 10px; }
+.pc__extras { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.pc__extras .pc__save { text-align: left; }
+.pc__leave { font-size: 0.9rem; padding: 6px 14px; }
+.pc__leave { width: auto; }
+.pc__botrow { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 4px 28px; }
+.pc__botrow .pc__modes, .pc__botrow .level-picker { margin: 4px 0; }
+@media (min-width: 861px) {
+  .pc__setup-cols--one { grid-template-columns: minmax(0, 940px); }
+  .pc__setup-cols--one .pc__panel ul { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .pc__botsetup .pc__lead { margin: 4px auto; }
+}
+
+/* ---- P.5: playing a classmate ---- */
+.pcl__who { display: inline-flex; align-items: center; gap: 6px; }
+.pcl__clock { display: inline-block; min-width: 3.6em; text-align: center; font-variant-numeric: tabular-nums; }
+/* No flashing: the number just turns yellow and bold in the last 10 seconds. */
+.pcl__clock--low { color: #fde047; font-weight: 900; }
+.pcl__banner { margin: 6px 0 0; padding: 8px 12px; border-radius: 10px; background: #7f1d1d; color: #fff; font-weight: 700; text-align: center; }
+.pcl__banner--soft { background: #1e3a5f; }
+.pcl__sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.pcl__note { margin: 0; text-align: center; font-size: 0.9rem; max-width: 34ch; }
+.pcl__confirm { background: rgba(15, 23, 42, 0.78); border-radius: 12px; padding: 8px 10px; display: grid; gap: 6px; }
+.pcl__confirm p { margin: 0; font-size: 0.9rem; }
+.pcl__wait .pcl__picker { text-align: left; margin: 10px 0; }
+.pcl__wait .pcl__picker ul { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.pcl__ready { font-size: 0.85rem; opacity: 0.85; }
+.pcl__locked { margin: 10px 0; display: grid; gap: 6px; justify-items: center; }
+.pcl__locked p, .pcl__lead { margin: 0; }
+.pcl .pc__score { flex-wrap: wrap; justify-content: center; }
+@media (max-width: 860px) { .pcl .pc__score { white-space: normal; } }
+.pcl__picker h2 { color: #fff; }
+
+/* ---- P.6: Force Field, Portal Chaos, Wild Card, Time Heist and Chaos Mode ---- */
+.pc__stage { position: relative; width: 100%; display: flex; justify-content: center; }
+.pc__cell--shield { box-shadow: inset 0 0 0 3px #a5f3fc, 0 0 12px 2px rgba(165, 243, 252, 0.7); }
+.pc__shield { position: absolute; top: 3px; right: 5px; font-size: 1.1rem; line-height: 1; text-shadow: none; }
+.pc__cell--shielding { animation: pc-dome 0.8s ease-out; }
+.pc__cell--portal { animation: pc-portal 0.9s ease-in-out; z-index: 2; }
+.pc__cell--rewind { animation: pc-rewind-cell 0.8s ease-in; z-index: 2; }
+.pc__cell--chaos-meteor { animation: pc-blast 0.7s ease-out; }
+.pc__cell--chaos-frost-wave { animation: pc-frost 0.9s ease-out; }
+.pc__board--rewind { animation: pc-rewind 0.8s ease-in-out; }
+@keyframes pc-dome { 0% { box-shadow: 0 0 0 0 #a5f3fc, inset 0 0 0 3px #a5f3fc; transform: scale(1.18); } 100% { box-shadow: 0 0 18px 4px rgba(165, 243, 252, 0.7), inset 0 0 0 3px #a5f3fc; transform: none; } }
+@keyframes pc-portal { 0% { transform: translate(calc(var(--dx, 0) * 108%), calc(var(--dy, 0) * 108%)) rotate(0) scale(0.3); filter: hue-rotate(120deg) brightness(1.8); } 60% { transform: rotate(300deg) scale(1.2); } 100% { transform: none; filter: none; } }
+@keyframes pc-rewind-cell { 0% { transform: rotate(-200deg) scale(1.6); opacity: 0.1; filter: hue-rotate(160deg); } 100% { transform: none; opacity: 1; filter: none; } }
+@keyframes pc-rewind { 0%, 100% { filter: none; transform: none; } 50% { filter: hue-rotate(160deg) saturate(1.6); transform: scale(0.97) rotate(-1.5deg); } }
+
+.pc__chaos {
+  position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); z-index: 5; display: flex; align-items: center; gap: 8px;
+  padding: 6px 18px; border-radius: 999px; background: #6d28d9; border: 3px solid #fde047; color: #fff; white-space: nowrap;
+  font: 900 1.15rem/1.2 var(--display); pointer-events: none; animation: pc-banner 2.6s both;
+}
+.pc__chaos-icon { font-size: 1.5rem; }
+@keyframes pc-banner { 0% { opacity: 0; transform: translate(-50%, -150%) scale(0.6); } 12% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); } 20%, 85% { opacity: 1; transform: translate(-50%, -50%); } 100% { opacity: 0; } }
+.pc__chaosbadge { margin: 4px auto 0; width: fit-content; max-width: 100%; padding: 2px 12px; border-radius: 999px; background: #6d28d9; border: 2px solid #fde047; font-weight: 800; font-size: 0.85rem; text-align: center; }
+@media (min-width: 861px) {
+  .pc--chaos .pc__board { width: min(100%, max(240px, calc(100dvh - 292px))); }
+  .pc--setup .pc__setup-cols:not(.pc__setup-cols--one) .pc__panel ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.pc__mode--chaos.pc__mode--on { border-color: #c084fc; background: #6d28d9; }
+.pc__lead--chaos { color: #e9d5ff; }
+
+.pc__wheel {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 6; pointer-events: none; min-width: 9rem;
+  padding: 10px 20px; border-radius: 18px; background: #3b2a8f; border: 3px solid #fde047; text-align: center; color: #fff;
+  font: 900 1.25rem/1.2 var(--display); display: grid; place-items: center;
+}
+.pc__wheel > * { grid-area: 1 / 1; }
+.pc__wheel-spin { display: grid; font-size: 2.4rem; animation: pc-gone 0.01s 1.3s forwards; }
+.pc__wheel-spin > span { grid-area: 1 / 1; opacity: 0; animation: pc-flick 0.6s steps(1) 2 both; }
+.pc__wheel-spin > span:nth-child(2) { animation-delay: 0.15s; }
+.pc__wheel-spin > span:nth-child(3) { animation-delay: 0.3s; }
+.pc__wheel-spin > span:nth-child(4) { animation-delay: 0.45s; }
+.pc__wheel-result { animation: pc-reveal 0.3s 1.3s backwards; }
+@keyframes pc-flick { 0% { opacity: 1; } 25%, 100% { opacity: 0; } }
+@keyframes pc-gone { to { visibility: hidden; } }
+@keyframes pc-reveal { from { opacity: 0; transform: scale(0.6); } }
+.pc--calm .pc__wheel-spin { display: none; }
+@media (prefers-reduced-motion: reduce) { .pc__wheel-spin { display: none; } }

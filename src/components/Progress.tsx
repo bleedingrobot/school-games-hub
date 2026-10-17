@@ -1,10 +1,10 @@
 import { Link } from 'react-router';
 import { RANKS, levelProgress, type Achievement, type MyProgress, type Rank } from '../data/progress';
-import { findGame } from '../games/registry';
+import { gameLabel } from '../games/registry';
 
 export function RankBadge({ rank, game }: { rank: Rank; game?: string }) {
   const { label, emoji } = RANKS[rank];
-  const gameName = game ? findGame(game)?.name : undefined;
+  const gameName = game ? gameLabel(game) : undefined;
   return (
     <span className={`rank-badge rank-badge--${rank}`}>
       <span aria-hidden="true">{emoji}</span> {gameName ? `${gameName}: ${label}` : label}
@@ -58,7 +58,7 @@ export function AchievementList({ achievements, showGame = false }: { achievemen
         const done = a.earnedAt !== null;
         // Badges (Silver, Gold, Champion) are done or not: no "1/2" counts.
         const counted = a.measure !== 'rank' && a.goal > 1;
-        const name = showGame ? `${a.name} (${findGame(a.game)?.name ?? a.game})` : a.name;
+        const name = showGame ? `${a.name} (${gameLabel(a.game) ?? a.game})` : a.name;
         return (
           <li key={a.id} className={done ? 'is-done' : undefined}>
             <span className="achievement-list__emoji" aria-hidden="true">

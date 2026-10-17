@@ -280,13 +280,13 @@ $$;
 
 alter table public.scored_games drop constraint scored_games_game_check;
 alter table public.scored_games add constraint scored_games_game_check
-  check (game in ('chess', 'checkers', 'space', '101', 'gem-keep', 'monsters'));
+  check (game in ('chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters'));
 alter table public.scored_games add column monster_save uuid references public.monster_events (id) on delete cascade;
 alter table public.scored_games drop constraint scored_games_check;
 alter table public.scored_games add constraint scored_games_check check (
-  num_nonnulls(bot_game, mp_game, space_game, card_game, gem_keep_run, monster_save) = 1
+  num_nonnulls(bot_game, mp_game, space_game, card_game, gem_keep_run, power_game, monster_save) = 1
   and (kind = 'bot') = (bot_game is not null)
-  and (kind = 'friend') = (mp_game is not null or space_game is not null or card_game is not null)
+  and (kind = 'friend') = (mp_game is not null or space_game is not null or card_game is not null or power_game is not null)
   and (kind = 'solo') = (gem_keep_run is not null or monster_save is not null));
 create unique index scored_games_monsters on public.scored_games (player, monster_save) where monster_save is not null;
 create index scored_games_monster_save on public.scored_games (monster_save);
@@ -342,7 +342,7 @@ execute function public.score_monster_events_trigger();
 
 alter table public.achievement_types drop constraint achievement_types_game_check;
 alter table public.achievement_types add constraint achievement_types_game_check
-  check (game in ('chess', 'checkers', 'space', '101', 'gem-keep', 'monsters'));
+  check (game in ('chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters'));
 alter table public.achievement_types drop constraint achievement_types_measure_check;
 alter table public.achievement_types add constraint achievement_types_measure_check
   check (measure in ('games', 'wins', 'beat_very_easy', 'beat_easy', 'beat_medium', 'friend_wins', 'rank',
@@ -350,9 +350,10 @@ alter table public.achievement_types add constraint achievement_types_measure_ch
     'zero_hands', 'triples', 'knock_wins', 'saved_by_three',
     'levels_won', 'level_keys', 'three_star_levels', 'stars',
     'maths_right', 'boosts', 'escapes',
+    'all_three_powers', 'body_swap_wins', 'no_power_wins',
     'monster_catches', 'monster_owned', 'monster_badges', 'monster_finals'));
 
--- Same as Mission Control's, plus the Maths Monsters counts (read from the student's save).
+-- Same as Power Clash's, plus the Maths Monsters counts (read from the student's save).
 create or replace function public.progress_counts(who uuid, which_game text)
 returns jsonb
 language sql
@@ -388,6 +389,9 @@ as $$
     'level_keys', (select count(*) from public.gem_keep_progress g where g.player = who and g.key_passed),
     'three_star_levels', (select count(*) from public.gem_keep_progress g where g.player = who and g.best_stars = 3),
     'stars', (select coalesce(sum(g.best_stars), 0) from public.gem_keep_progress g where g.player = who),
+    'all_three_powers', count(*) filter (where (s.power_clash ->> 'powersUsed')::integer >= 3),
+    'body_swap_wins', coalesce(sum((s.power_clash ->> 'bodySwapWins')::integer), 0),
+    'no_power_wins', count(*) filter (where (s.power_clash ->> 'noPowerWin')::boolean),
     'monster_catches', (select coalesce(sum(m.catches), 0) from public.monster_saves m where m.player = who),
     'monster_owned', (select coalesce(sum(m.owned_count), 0) from public.monster_saves m where m.player = who),
     'monster_badges', (select coalesce(sum(m.badges_count), 0) from public.monster_saves m where m.player = who),
@@ -432,6 +436,8 @@ as $$
               'won', jsonb_build_array(public.gem_keep_points('won', 1), public.gem_keep_points('won', 2),
                 public.gem_keep_points('won', 3)),
               'lost', public.gem_keep_points('lost', 0), 'minWavesForLoss', public.gem_keep_min_waves_for_loss()),
+    'powerClash', jsonb_build_object('bot', public.power_clash_bot_points(), 'friend', public.power_clash_friend_points(),
+              'friendDailyGames', public.power_clash_friend_daily_games()),
     -- Hidden while the game is switched off.
     'monsters', case when (select a.monsters_enabled from public.app_settings a) then public.monster_point_rules() end,
     'botDailyCap', public.bot_daily_cap(),
@@ -469,6 +475,8 @@ begin
     union all
     select 'card', c.id, c.finished_at from public.card_games c where c.status = 'finished' and true = any (c.counts)
     union all
+    select 'power', p.id, p.finished_at from public.power_games p where p.status = 'finished' and true = any (p.counts)
+    union all
     select 'gem', r.id, r.finished_at from public.gem_keep_runs r where r.counts_for_points
     union all
     select 'monster', e.id, e.finished_at from public.monster_events e where e.counts_for_points
@@ -482,6 +490,8 @@ begin
       perform public.score_space_game(s) from public.space_games s where s.id = item.id;
     elsif item.kind = 'card' then
       perform public.score_card_game(c) from public.card_games c where c.id = item.id;
+    elsif item.kind = 'power' then
+      perform public.score_power_game(p) from public.power_games p where p.id = item.id;
     elsif item.kind = 'monster' then
       perform public.score_monster_events(e) from public.monster_events e where e.id = item.id;
     else
@@ -603,9 +613,9 @@ as $$
               -- Maths Monsters' achievements are hidden while the game is switched off.
               where at.game <> 'monsters' or (select s.monsters_enabled from public.app_settings s)),
     'recent', (select coalesce(jsonb_agg(jsonb_build_object(
-                 'id', coalesce(x.bot_game, x.mp_game, x.space_game, x.card_game, x.gem_keep_run, x.monster_save),
+                 'id', coalesce(x.bot_game, x.mp_game, x.space_game, x.card_game, x.gem_keep_run, x.power_game, x.monster_save),
                  'points', x.points)), '[]')
-               from (select s.bot_game, s.mp_game, s.space_game, s.card_game, s.gem_keep_run, s.monster_save, s.points
+               from (select s.bot_game, s.mp_game, s.space_game, s.card_game, s.gem_keep_run, s.power_game, s.monster_save, s.points
                      from public.scored_games s
                      where s.player = me.id order by s.finished_at desc limit 20) x)
   )
@@ -727,7 +737,9 @@ begin
          + (select count(*)::integer from public.space_games s
           where s.status = 'finished' and p.id in (s.seat1, s.seat2, s.seat3, s.seat4))
          + (select count(*)::integer from public.card_games c
-          where c.status = 'finished' and p.id in (c.seat1, c.seat2, c.seat3, c.seat4)),
+          where c.status = 'finished' and p.id in (c.seat1, c.seat2, c.seat3, c.seat4))
+         + (select count(*)::integer from public.power_games pg
+          where pg.status = 'finished' and p.id in (pg.seat1, pg.seat2)),
          public.points_total(p.id),
          greatest(
            (select max(b.finished_at) from public.bot_games b where b.player = p.id),
@@ -737,6 +749,8 @@ begin
             where s.status = 'finished' and p.id in (s.seat1, s.seat2, s.seat3, s.seat4)),
            (select max(c.finished_at) from public.card_games c
             where c.status = 'finished' and p.id in (c.seat1, c.seat2, c.seat3, c.seat4)),
+           (select max(pg.finished_at) from public.power_games pg
+            where pg.status = 'finished' and p.id in (pg.seat1, pg.seat2)),
            (select max(r.finished_at) from public.gem_keep_runs r where r.player = p.id),
            (select m.saved_at from public.monster_saves m where m.player = p.id)),
          p.created_at
@@ -750,7 +764,7 @@ $$;
 -- 8. A new season: points only
 -- ---------------------------------------------------------------------------
 
--- Same as the last one (Mission Control's, which also clears answer batches), except that Maths
+-- Same as the last one (Power Clash's, which also clears its games and the answer batches), except that Maths
 -- Monsters keeps the adventure: the saves, the Maths Monsters achievements and the records of the
 -- five new topics all stay. Only points go: the saves' half-finished point (wild wins that hadn't
 -- made a point yet) and the save history that carried the points. Times-table records are cleared
@@ -766,6 +780,7 @@ declare
   friend_count integer;
   space_count integer;
   card_count integer;
+  power_count integer;
   gem_count integer;
 begin
   perform public.require_teacher();
@@ -785,6 +800,8 @@ begin
   get diagnostics space_count = row_count;
   delete from public.card_games where status in ('finished', 'cancelled', 'expired');
   get diagnostics card_count = row_count;
+  delete from public.power_games where status in ('finished', 'cancelled', 'expired');
+  get diagnostics power_count = row_count;
   delete from public.gem_keep_runs where true;
   get diagnostics gem_count = row_count;
   delete from public.gem_keep_progress where true;
@@ -793,7 +810,7 @@ begin
   -- Maths Monsters: the points go, the adventure stays.
   delete from public.monster_events where true;
   update public.monster_saves set wild_wins_pending = 0;
-  return jsonb_build_object('botGames', bot_count, 'friendGames', friend_count + space_count + card_count,
+  return jsonb_build_object('botGames', bot_count, 'friendGames', friend_count + space_count + card_count + power_count,
     'gemKeepLevels', gem_count);
 end;
 $$;

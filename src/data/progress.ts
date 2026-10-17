@@ -87,6 +87,8 @@ export interface Rules {
   gemKeep?: { won: [number, number, number]; lost: number; minWavesForLoss: number };
   /** Maths Monsters (null while the game is switched off): wild wins per point, points per trainer, per badge. */
   monsters?: { wildWinsPerPoint: number; trainerWin: number; badge: number } | null;
+  /** Power Clash: taking-part points against a bot and against a classmate (never ranked). */
+  powerClash?: { bot: number; friend?: number; friendDailyGames?: number };
   botDailyCap: number;
   pairDailyLimit: number;
   achievementPoints: number;

@@ -3,7 +3,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(47);
+select plan(50);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -44,7 +44,7 @@ select set_eq($$
   select table_name::text from information_schema.role_table_grants
   where table_schema = 'public' and grantee = 'authenticated'
 $$, array['achievement_types', 'app_settings', 'bot_games', 'card_game_seats', 'mp_games', 'name_words', 'profiles',
-  'space_game_log', 'space_games'],
+  'power_games', 'space_game_log', 'space_games'],
   'signed-in users can read only these tables (row level security narrows them further)');
 
 select is_empty($$
@@ -57,8 +57,8 @@ select set_eq($$
   where n.nspname = 'public' and has_function_privilege('authenticated', p.oid, 'execute')
 $$, array[
   'card_lobby_games', 'choose_my_name', 'gem_keep_leaderboard', 'is_player_in', 'is_school_email', 'is_school_user', 'is_teacher', 'is_valid_avatar',
-  'leaderboard', 'lobby_games', 'monsters_leaderboard', 'my_bot_game_stats', 'my_card_game_stats', 'my_friend_game_stats', 'my_gem_keep', 'my_monsters', 'my_progress', 'my_space_game_stats',
-  'progress_rules', 'save_my_avatar', 'school_domain', 'server_time', 'space_lobby_games',
+  'leaderboard', 'lobby_games', 'monsters_leaderboard', 'my_bot_game_stats', 'my_card_game_stats', 'my_friend_game_stats', 'my_gem_keep', 'my_monsters', 'my_power_game_stats', 'my_progress',
+  'my_space_game_stats', 'power_lobby_games', 'progress_rules', 'save_my_avatar', 'school_domain', 'server_time', 'space_lobby_games',
   'teacher_delete_student', 'teacher_gem_keep_class', 'teacher_gem_keep_student', 'teacher_monster_class', 'teacher_monster_student', 'teacher_new_season', 'teacher_reset_name', 'teacher_set_gem_keep', 'teacher_set_hidden',
   'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_space_reactions', 'teacher_student_detail',
   'teacher_students'
@@ -72,8 +72,8 @@ $$, 'every function has a fixed search_path');
 
 select set_eq($$
   select schemaname || '.' || tablename from pg_publication_tables where pubname = 'supabase_realtime'
-$$, array['public.card_game_seats', 'public.mp_games', 'public.space_games'],
-  'live updates are switched on for friend games, space games and 101 seat rows only');
+$$, array['public.card_game_seats', 'public.mp_games', 'public.power_games', 'public.space_games'],
+  'live updates are switched on for friend games, space games, Power Clash games and 101 seat rows only');
 
 -- A table made by a future migration starts locked, even if it forgets to say so.
 create table public.zz_security_test (id integer);
@@ -104,6 +104,11 @@ select throws_ok($$ select public.space_add_reaction('10000000-0000-0000-0000-00
   'a student cannot send a reaction without the server');
 select throws_ok($$ select * from public.space_player_status('00000000-0000-0000-0000-00000000000b') $$, '42501', null,
   'a student cannot look up another player''s status for space games');
+select throws_ok($$ select * from public.power_player_status('00000000-0000-0000-0000-00000000000b') $$, '42501', null,
+  'a student cannot look up another player''s status for Power Clash games');
+select throws_ok('select public.power_tidy()', '42501', null, 'a student cannot run the Power Clash tidy-up');
+select throws_ok($$ select public.score_power_game(g) from public.power_games g $$, '42501', null,
+  'a student cannot run Power Clash scoring');
 select throws_ok($$ select public.mp_player_status('00000000-0000-0000-0000-00000000000b') $$, '42501', null,
   'a student cannot look up another player''s status');
 select throws_ok($$ select public.points_total('00000000-0000-0000-0000-00000000000b') $$, '42501', null,

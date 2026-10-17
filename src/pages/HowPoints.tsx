@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchRules, RANKS, type Rules } from '../data/progress';
+import { POWER_CLASH_ON } from '../games/registry';
 
 /**
  * "How points work", for students. The numbers come from the database, so this page
@@ -136,6 +137,37 @@ export function HowPoints() {
             <li>
               It never changes your badges or the leaderboards. It has its own achievements, worth{' '}
               {rules.achievementPoints} bonus points each.
+            </li>
+          </ul>
+        </section>
+      )}
+
+      {rules.powerClash && POWER_CLASH_ON && (
+        <section className="panel" aria-labelledby="power-clash-points-title">
+          <h2 id="power-clash-points-title" className="panel__title">
+            ⚡ Tic-Tac-Toe: Power Clash
+          </h2>
+          <p>
+            Luck and powers play a big part, so you get the same points whether you win or lose. Just take part and finish the
+            match!
+          </p>
+          <ul className="how-points__list">
+            <li>
+              Against bots: <strong>{rules.powerClash.bot} points</strong> for each match you finish. These share the{' '}
+              {rules.botDailyCap}-points-a-day limit with the other bot games.
+            </li>
+            {rules.powerClash.friend !== undefined && (
+              <li>
+                Against a classmate: <strong>{rules.powerClash.friend} points</strong> for each match you finish. Your first{' '}
+                {rules.powerClash.friendDailyGames} matches each day earn points.
+              </li>
+            )}
+            <li>
+              A match counts when it is played to the end. Leaving part-way earns nothing, for you or your classmate.
+            </li>
+            <li>
+              It never changes your badges or the leaderboards. It has its own achievements, worth {rules.achievementPoints}{' '}
+              bonus points each.
             </li>
           </ul>
         </section>

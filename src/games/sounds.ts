@@ -52,7 +52,15 @@ export type GameSound =
   | 'flash'
   | 'heal'
   | 'badge'
-  | 'chest';
+  | 'chest'
+  | 'freeze'
+  | 'boom'
+  | 'swap'
+  | 'portal'
+  | 'wheel'
+  | 'rewind'
+  | 'chaos'
+  | 'draw';
 
 export function playSound(sound: GameSound) {
   switch (sound) {
@@ -122,5 +130,34 @@ export function playSound(sound: GameSound) {
       // The lid creaks open, then a sparkle.
       tone(140, 0.18, 0.18, 'square', 0.55);
       return [880, 1175, 1568, 2093].forEach((f, i) => setTimeout(() => tone(f, 0.14, 0.1, 'triangle', 1), 200 + i * 70));
+    case 'freeze':
+      // Icy twinkle going up.
+      [1568, 2093, 2637].forEach((f, i) => setTimeout(() => tone(f, 0.12, 0.08, 'sine', 0.9), i * 60));
+      return;
+    case 'boom':
+      tone(120, 0.35, 0.3, 'sawtooth', 0.3);
+      return setTimeout(() => tone(70, 0.3, 0.3, 'square', 0.5), 60);
+    case 'swap':
+      // Whoosh up, whoosh down.
+      tone(300, 0.18, 0.12, 'sine', 2.5);
+      return setTimeout(() => tone(750, 0.18, 0.12, 'sine', 0.4), 150);
+    case 'portal':
+      // A swirl: up, down, up.
+      tone(280, 0.2, 0.12, 'sine', 2);
+      setTimeout(() => tone(700, 0.2, 0.12, 'sine', 0.5), 130);
+      return setTimeout(() => tone(380, 0.25, 0.12, 'sine', 2), 260);
+    case 'wheel':
+      // A roulette wheel slowing down: clicks further and further apart, then a ding.
+      [0, 70, 150, 250, 380, 540].forEach((ms) => setTimeout(() => tone(500, 0.03, 0.1, 'square', 1), ms));
+      return setTimeout(() => tone(1175, 0.25, 0.14, 'triangle', 1), 700);
+    case 'rewind':
+      // A tape rewinding: a fast sweep down.
+      return tone(900, 0.6, 0.14, 'sawtooth', 0.15);
+    case 'chaos':
+      // A rumble, then a surprised ding.
+      tone(90, 0.4, 0.25, 'sawtooth', 0.7);
+      return setTimeout(() => tone(988, 0.2, 0.12, 'triangle', 1), 300);
+    case 'draw':
+      return tone(392, 0.4, 0.14, 'sine', 0.8);
   }
 }
