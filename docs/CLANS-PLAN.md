@@ -253,3 +253,23 @@ Done with the simulator (20 clans, 60 days, 70% of Battle Cries right):
 - **Late game:** levels cost at most 90 experience each (`xpLevelCap`), and mines deeper than 8 give 25% more experience per hit for each level deeper (`xpBoostFrom`, `xpDepthBoost`). A mixed clan now reaches level 20 in about 7-8 weeks (14 of 20 clans by day 54); an all-fighters clan in about 5 weeks. The first 14 days are unchanged. I left monster armour alone: it only takes off 7-9 damage from hits of 20+, so it wasn't the problem. Experience was.
 - **Church:** the first wake-up each day is free and the rest cost `(level + 1) × 10` (was × 30). All-fighters clans no longer run dry at the Church; they still lose about 40% of fights deep down because there's no healer, which seems right.
 - **Depth hints** (`depthHint`, as depth minus the clan's average level): up to -1 "too easy" (100% wins, nobody knocked out), 0 to +1 "just right" (99-100%), +2 to +3 "tough" (about 90%, 5+ knock-outs a day), +4 and up "too hard" (under 80%, and 30-50% early on). The early game can't really be lost until you go 4+ levels deeper than your clan; the bot always picks sensible actions, so a child will lose more than it does.
+
+## Stage C.2 results (18 Oct 2026)
+
+Built (pure TypeScript, tests only, **no screens, nothing saved, nothing live**). Branch `clans`.
+
+**Maths Monsters isn't merged into `main` yet** (the `monsters` branch still holds the other five packs), so I built on `main`'s times tables only. The new kinds sit in their own file, `shared/maths/practical.ts`, and don't depend on either.
+
+**New question kinds** (`shared/maths/practical.ts`): percent of an amount, price with tax, change (from 1,000), area, perimeter, how many you can buy, what's left over, rounding up (barracks), troop costs, "how much is left" budgets (gold or worker energy), ratios (scale up in Y4-5, share out in Y6), negative scores (Y6 only), better buy, the Church bill, and a plain times-tables question so the Battle Cry can use that topic too. 15 kinds, 8 teacher topics. Easy bands use round numbers (10%, 25%, 50%; multiples of 10); Year 6 uses 12.5%, 15%, 35% and awkward amounts. Every question is rebuilt from its kind and numbers alone (`buildQuestion`), so the server can check it without trusting the browser. Each carries its worked answer; the first line is the hint.
+
+**The Battle Cry** (`shared/clans/battleCry.ts`): the question for each round comes from the fight's seed and the round number, *not* the fight's own dice, so asking never changes how a fight plays and the server can rebuild exactly what the child saw. A right answer gives the reward the player picked (damage or heal); a wrong answer or "No thanks" is a normal round and returns the worked answer. `replayFight` replays a recorded fight (orders plus each round's answer) and gives the same result as it did live. One small change to C.1's fight: it now keeps its starting seed.
+
+**Shop and church moments** (`shared/clans/moments.ts`): market total with tax, "examine" cost, change, better buy, Training Hall (how many, what's left), Church bill (after the free wake-up), land (area and fence), barracks, troop costs, worker energy, the draft, fame (negatives). Each takes the real numbers and returns `null` if the teacher has that topic off. Tests check the answers match what the engine really charges (every item's shop price and examine cost, the Church bill). Not yet: spy odds ("1 in 5"), quests' puzzles (C.4).
+
+**Teacher switches** (hooks only): `PracticalSettings` = `enabledTopics`, `yearBand` (4/5/6) and `enabledTables`, with `readPracticalSettings` to clean up anything saved. No Teacher page or database changes.
+
+**Private:** `cryRecord` makes an answer record in the same shape as the other games (`key`, `correct`, `ms`, `at`; key like `clan:y5:percent-of`). No tables or functions added.
+
+**Checked:** 120+ new tests (153 across `shared/clans` and `shared/maths`): every kind at every band over 150 samples against a second, independent way of working out the answer; same seed gives the same question; remainders, rounding up/down, 12.5%, ties in better buys; Years 4-5 never produce negatives, decimals or answers over 1,000; 25 recorded fights replay identically; a doctored answer record is not marked right.
+
+**Left for later:** the number pad needs a minus key for Year 6 negatives (C.3); a "which is better" question is tap-to-answer (C.3); wording needs James's eye (examples in the C.2 summary); how often the Battle Cry shows a topic is equal per topic, which may want weighting once children use it.

@@ -25,5 +25,13 @@ The `save-bot-game` server function runs exactly this code before saving a resul
   `character.ts` rolls members and handles levels, training, the Church and the shop.
   `fight.ts` is a mine fight as a pure state machine (`newFight` from a seed, `playRound`
   with one order per member; plain JSON, so it can be saved and replayed). `bot.ts` plays a
-  sensible clan, and `sim.ts` plays whole months (`npm run clans:sim`). See `docs/CLANS-PLAN.md`
+  sensible clan, and `sim.ts` plays whole months (`npm run clans:sim`). Stage C.2 adds
+  `battleCry.ts` (the question for each round comes from the fight's seed; marks the answer,
+  plays the round, replays a whole recorded fight), `moments.ts` (the shop, Training Hall,
+  Church, land and barracks questions, made from the real numbers). See `docs/CLANS-PLAN.md`
   and `docs/CLANS-RULES.md`.
+- `maths/practical.ts`: the question kinds Clan Quest needs (percent of, price with tax,
+  change, area and perimeter, remainders, rounding up, troop costs, budgets, ratios, negative
+  numbers, better buys). Made and marked by code; each is rebuilt from its kind and numbers
+  (`buildQuestion`), with Year 4/5/6 bands and the teacher's topic switches
+  (`PracticalSettings`).
