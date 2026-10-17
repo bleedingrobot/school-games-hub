@@ -1,42 +1,44 @@
 /**
- * Dragon Maths, trial version (docs/LORD-PLAN.md, stage L.3): the screens, played in memory, with the
- * hero kept on this browser only. The server (stage L.4) will hand out and check fights; until then
- * nothing here counts for points, badges or the teacher.
+ * Dragon Maths (docs/LORD-PLAN.md, stage L.4): the screens, with the school's server keeping the hero.
+ *
+ * The server is the boss: the forest, a master, a dragon stage and every purchase wait for it, and it hands out
+ * each fight's monster and seed. The fight itself is played here, and when it ends the actions are sent so the
+ * server can replay them before paying anything. Opening the game (or reloading it, or opening it on another
+ * Chromebook) offers a half-finished fight again from the start, with no extra fight used.
  */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { MAX_LEVEL, SKILL_USES_PER_DAY, WEAPONS, expNeeded, masterFor } from '../../../shared/lord/data';
-import {
-  applyEvent, applyForestResult, applyMasterResult, canChallengeMaster, canFaceDragon, dragonBreather, finishDragon, forestTrip, loseToDragon,
-  newHero, nzDate, rollDay, startDragonStage, startFight, startMasterFight, useForestTurn as takeForestTurn,
-} from '../../../shared/lord/engine';
-import { dragonStageOptions, addMasterTrialBonus, offersSizeItUp, sizeItUpBonus, type Result } from '../../../shared/lord/maths';
-import type { FightAction, FightState, ForestEvent, Hero, HeroClass, Monster } from '../../../shared/lord/types';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { SKILL_USES_PER_DAY, WEAPONS, expNeeded, masterFor } from '../../../shared/lord/data';
+import { canChallengeMaster, canFaceDragon } from '../../../shared/lord/engine';
+import { EVENT_BY_ID } from '../../../shared/lord/events';
+import type { LordAction, LordState } from '../../../shared/lord/server';
+import type { FightAction, FightState, Hero, HeroClass } from '../../../shared/lord/types';
 import { useAuth } from '../../auth/AuthContext';
+import { createServerBackend, type LordBackend, type LordLoad, type PackFact } from '../../data/lord';
 import { FightScreen } from './Fight';
-import { Bank, ClassPick, Healer, HeroPage, Inn, NewsPage, Shop, Training, type PlaceProps } from './Places';
+import { Bank, ClassPick, Healer, HeroPage, Inn, NewsPage, Shop, Training, type PlaceProps, type Reply } from './Places';
 import { HeroSprite, Icon, MonsterSprite } from './Sprite';
-import { Tools } from './Tools';
-import { clearTrial, loadTrial, saveTrial, type TrialSave } from './storage';
 import { withArticle } from './text';
-import { useAsk } from './useAsk';
+import { useAsk, type Answer } from './useAsk';
 import './lord.css';
 
-const seedNow = () => Math.floor(Math.random() * 4294967296);
+// The test tools are only ever loaded in the browser-only trial (preview/lord); the live game never opens them.
+const Tools = lazy(() => import('./Tools').then((m) => ({ default: m.Tools })));
 
 type FightContext =
-  | { kind: 'forest' }
-  | { kind: 'master'; trial: Result[] }
-  | { kind: 'dragon'; stage: 1 | 2 | 3; startHp: number };
+  | { kind: 'forest'; sizeUp: Answer | null }
+  | { kind: 'master' }
+  | { kind: 'dragon'; stage: 1 | 2 | 3 };
 
 type Screen =
   | { name: 'village' }
-  | { name: 'shop' | 'healer' | 'bank' | 'inn' | 'training' | 'hero' | 'news' | 'tools' }
-  | { name: 'event'; event: ForestEvent }
-  | { name: 'encounter'; monster: Monster; seed: number }
-  | { name: 'fight'; fight: FightState; ctx: FightContext }
-  | { name: 'dragon' };
+  | { name: 'shop' | 'healer' | 'bank' | 'inn' | 'training' | 'hero' | 'news' | 'tools' | 'class' | 'dragon' }
+  | { name: 'event'; eventId: string }
+  | { name: 'encounter' }
+  | { name: 'fight'; fight: FightState; actions: FightAction[]; fightId: string; ctx: FightContext };
 
-const PLACES: { key: string; name: Screen['name']; label: string; blurb: string }[] = [
+type Place = 'shop' | 'healer' | 'bank' | 'inn' | 'training' | 'hero' | 'news';
+
+const PLACES: { key: string; name: Place; label: string; blurb: string }[] = [
   { key: 's', name: 'shop', label: 'Shop', blurb: 'Weapons and armour' },
   { key: 'h', name: 'healer', label: 'Healer', blurb: 'Mend your wounds' },
   { key: 'b', name: 'bank', label: 'Bank', blurb: 'Keep your gold safe' },
@@ -46,36 +48,144 @@ const PLACES: { key: string; name: Screen['name']; label: string; blurb: string 
   { key: 'y', name: 'hero', label: 'Your hero', blurb: 'Stats and gear' },
 ];
 
-export function LordPlay() {
+/** What the pupil is told when a request is turned down, in plain words. */
+const WHY: Partial<Record<string, string>> = {
+  stale: 'Your hero was changed somewhere else (another Chromebook?), so it has been refreshed. Have another look.',
+  duplicate: 'That had already happened, so nothing was done twice.',
+  'no-fight': 'That fight was already finished.',
+  'fight-open': 'You are in the middle of a fight. Finish it first!',
+  tampered: 'That fight could not be saved. Nothing is lost: you can play it again from the start.',
+  'not-allowed': 'Only teachers can do that.',
+  'no-hero': 'Pick a class to begin your adventure.',
+  'bad-request': 'Something went wrong with that. Please try again.',
+};
+
+const OFFLINE = 'Can’t connect to the school’s server right now. Check the Wi-Fi and try again.';
+
+/** `backend` is for the browser-only trial and the tests; the hub passes `level`, which this game does not use. */
+export function LordPlay({ backend: given }: { backend?: LordBackend; level?: unknown }) {
   const { profile } = useAuth();
   const player = profile?.id ?? '';
   const heroName = profile?.display_name ?? 'You';
-  const [save, setSave] = useState<TrialSave>(() => loadTrial(player));
+  const backend = useMemo(() => given ?? createServerBackend(player), [given, player]);
+
+  const [load, setLoad] = useState<LordLoad | { kind: 'loading' }>({ kind: 'loading' });
+  const [state, setState] = useState<LordState | null>(null);
+  const [facts, setFacts] = useState<PackFact[]>([]);
   const [screen, setScreen] = useState<Screen>({ name: 'village' });
   const [note, setNote] = useState('');
-  const { hero } = save;
-  const today = nzDate(new Date(Date.now() + save.dayOffset * 86_400_000));
-  const { ask, modal } = useAsk(hero?.level ?? 1);
+  const [busy, setBusy] = useState(false);
+  const [waiting, setWaiting] = useState(0);
+  const [deeds, setDeeds] = useState<string[]>([]);
+  const hero = state?.hero ?? null;
+  const { ask, modal } = useAsk(hero?.level ?? 1, facts);
 
-  const latest = useRef(save);
-  latest.current = save;
-  function update(change: Partial<TrialSave> | ((s: TrialSave) => Partial<TrialSave>)) {
-    const next = { ...latest.current, ...(typeof change === 'function' ? change(latest.current) : change) };
-    latest.current = next;
-    setSave(next);
-    saveTrial(player, next);
-  }
-  const setHero = (h: Hero) => update({ hero: h });
-  const addNews = (line: string) => update((s) => ({ news: [line, ...s.news].slice(0, 12) }));
+  const stateRef = useRef<LordState | null>(null);
+  stateRef.current = state;
+  const busyRef = useRef(false);
   const say = (text: string) => setNote(text);
+  const addDeed = (line: string) => setDeeds((d) => [line, ...d].slice(0, 12));
 
-  // A new day gives the turns and full health back, the first time you play (like LORD).
-  useEffect(() => {
-    if (hero && hero.day !== today) {
-      update({ hero: rollDay(hero, today) });
-      setNote('A new day dawns. Your health and your turns are back!');
+  const open = useCallback(async () => {
+    setLoad({ kind: 'loading' });
+    const result = await backend.load();
+    setLoad(result);
+    setWaiting(backend.waiting());
+    if (result.kind === 'ready') {
+      setState(result.state);
+      setFacts(result.facts);
     }
-  }, [today, hero?.day]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [backend]);
+
+  useEffect(() => {
+    void open();
+  }, [open]);
+
+  // Back online with a finished fight waiting: send it.
+  const retry = useCallback(async () => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
+    try {
+      await backend.flush();
+      setWaiting(backend.waiting());
+      const result = await backend.load();
+      if (result.kind === 'ready') {
+        setState(result.state);
+        setLoad(result);
+        if (backend.waiting() === 0) setNote('Your fight has been saved.');
+      } else setNote(OFFLINE);
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  }, [backend]);
+  useEffect(() => {
+    const onOnline = () => {
+      if (backend.waiting() > 0) void retry();
+    };
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [backend, retry]);
+
+  /**
+   * One request to the server. Returns its reply if it worked; null if it was turned down or could not be sent
+   * (the pupil has been told, and the screen carries on from whatever the server says is true now).
+   */
+  const act = useCallback(
+    async (action: LordAction): Promise<Reply | null> => {
+      if (busyRef.current) return null;
+      busyRef.current = true;
+      setBusy(true);
+      try {
+        const sent = await backend.send({ ...action, requestId: crypto.randomUUID(), version: stateRef.current?.version });
+        setWaiting(backend.waiting());
+        if (sent.kind === 'offline') {
+          setNote(OFFLINE);
+          return null;
+        }
+        if (sent.kind === 'queued') {
+          setNote('Can’t connect right now. Your fight is saved on this Chromebook and will be sent as soon as you are back online.');
+          return null;
+        }
+        const reply = sent.reply;
+        if (reply.ok) {
+          stateRef.current = reply.state;
+          setState(reply.state);
+          return reply;
+        }
+        if (reply.state) {
+          stateRef.current = reply.state;
+          setState(reply.state);
+        }
+        if (reply.reason === 'closed') {
+          setLoad({ kind: 'closed' });
+          return null;
+        }
+        if (reply.reason === 'not-started') {
+          setLoad({ kind: 'not-started', message: reply.message ?? '' });
+          return null;
+        }
+        setNote(reply.reason === 'rule' || reply.reason === 'no-turns' ? (reply.message ?? '') : (WHY[reply.reason] ?? 'That did not work. Please try again.'));
+        // A fight the server still has open comes back as a fight to carry on with.
+        if (reply.state?.openFight && ['fight-open', 'stale', 'duplicate'].includes(reply.reason)) setScreen({ name: 'village' });
+        return null;
+      } finally {
+        busyRef.current = false;
+        setBusy(false);
+      }
+    },
+    [backend],
+  );
+
+  // A new day: the server has already given the turns back; just say so.
+  const today = state?.today ?? '';
+  const lastDay = useRef('');
+  useEffect(() => {
+    if (!state?.hero) return;
+    if (lastDay.current && lastDay.current !== state.today) setNote('A new day dawns. Your health and your turns are back!');
+    lastDay.current = state.today;
+  }, [state?.today, state?.hero]);
 
   // Escape goes back to the village from any place.
   useEffect(() => {
@@ -86,50 +196,115 @@ export function LordPlay() {
     return () => window.removeEventListener('keydown', onKey);
   }, [screen.name]);
 
-  if (!hero) {
+  if (load.kind === 'loading') {
+    return <Frame backend={backend}><p className="lord-lead" role="status">Opening the village gates…</p></Frame>;
+  }
+  if (load.kind === 'closed') {
     return (
-      <Frame>
-        <ClassPick onPick={(c: HeroClass) => update({ hero: newHero(c, today), news: ['Your adventure begins!'] })} />
+      <Frame backend={backend}>
+        <section className="lord-place" aria-label="Closed">
+          <h2>The village gates are closed</h2>
+          <p className="lord-lead">Dragon Maths is switched off for now. Ask your teacher when it will open. Your hero is safe.</p>
+        </section>
+      </Frame>
+    );
+  }
+  if (load.kind === 'not-started') {
+    return (
+      <Frame backend={backend}>
+        <section className="lord-place" aria-label="Not open yet">
+          <h2>The season has not started yet</h2>
+          <p className="lord-lead">{load.message}</p>
+        </section>
+      </Frame>
+    );
+  }
+  if (load.kind === 'offline' || !state) {
+    return (
+      <Frame backend={backend}>
+        <section className="lord-place" aria-label="Cannot connect">
+          <h2>Can’t connect</h2>
+          <p className="lord-lead">{OFFLINE}</p>
+          {waiting > 0 && <p className="lord-note">Your last fight is saved on this Chromebook and will be sent as soon as you are back online.</p>}
+          <button type="button" className="lord-btn lord-btn--hot" autoFocus onClick={() => void open()}>Try again</button>
+        </section>
+      </Frame>
+    );
+  }
+
+  if (!hero || screen.name === 'class') {
+    const choosing = !hero;
+    return (
+      <Frame backend={backend} state={state}>
+        <ClassPick
+          onPick={async (c: HeroClass) => {
+            const reply = await act({ action: 'start-hero', heroClass: c });
+            if (reply) {
+              setScreen({ name: 'village' });
+              if (choosing) addDeed('Your adventure begins!');
+            }
+          }}
+        />
+        {!choosing && <button type="button" className="lord-btn" onClick={() => setScreen({ name: 'village' })}>Keep my class</button>}
+        {busy && <p className="lord-soft" role="status">One moment…</p>}
       </Frame>
     );
   }
 
   const toVillage = () => setScreen({ name: 'village' });
-  const placeProps: PlaceProps = { hero, setHero, ask, say, addNews, back: toVillage, today };
+  const placeProps: PlaceProps = { state, hero, act, ask, say, back: toVillage, busy };
 
   // ---------------------------------------------------------------- forest
 
-  function goForest() {
-    if (hero!.hp <= 0) return say('You are too hurt to go into the forest. See the healer.');
-    if (hero!.forestLeft <= 0) return say('You have used all your forest fights today. Come back tomorrow, or visit the village.');
-    const trip = forestTrip(hero!, seedNow());
-    if (trip.kind === 'event') setScreen({ name: 'event', event: trip.event });
-    else {
-      setHero(takeForestTurn(hero!));
-      setScreen({ name: 'encounter', monster: trip.monster, seed: trip.seed });
-    }
+  /** Plays the fight the server handed out, from its start. */
+  function playFight(fight: NonNullable<LordState['openFight']>, sizeUp: Answer | null = null) {
+    const ctx: FightContext = fight.kind === 'forest' ? { kind: 'forest', sizeUp } : fight.kind === 'master' ? { kind: 'master' } : { kind: 'dragon', stage: fight.stage ?? 1 };
+    const bonus = sizeUp ? (sizeUp.correct ? 1.5 : 1) : 1;
+    const start = fight.kind === 'forest' && bonus !== 1 ? { ...fight.start, firstHitBonus: bonus } : fight.start;
+    setScreen({ name: 'fight', fight: start, actions: [], fightId: fight.id, ctx });
   }
 
-  async function beginFight(monster: Monster, seed: number, sizeUp: boolean) {
-    let bonus = 1;
+  async function goForest() {
+    const s = stateRef.current!;
+    if (s.openFight) {
+      // Carry on with the fight the server is holding (a reload, or another Chromebook).
+      setNote('');
+      return s.openFight.kind === 'forest' ? setScreen({ name: 'encounter' }) : playFight(s.openFight);
+    }
+    if (s.pendingEvent) return setScreen({ name: 'event', eventId: s.pendingEvent });
+    if (s.hero!.forestLeft <= 0) return say('You have used all your forest fights today. Come back tomorrow, or visit the village.');
+    const reply = await act({ action: 'forest' });
+    if (!reply) return;
+    const r = reply.result as { kind: 'fight' | 'event'; eventId?: string };
+    setNote('');
+    setScreen(r.kind === 'event' ? { name: 'event', eventId: r.eventId! } : { name: 'encounter' });
+  }
+
+  async function beginFight(sizeUp: boolean) {
+    const fight = stateRef.current?.openFight;
+    if (!fight) return toVillage();
+    let answer: Answer | null = null;
     if (sizeUp) {
-      const asked = await ask('size-it-up', { title: `Size up the ${monster.name}`, note: 'A right answer finds its weak spot: your first hit is bigger.', closeLabel: 'Skip, just fight' });
-      bonus = asked === 'skipped' ? 1 : sizeItUpBonus(asked);
+      answer = await ask('size-it-up', { title: `Size up the ${fight.start.monster.name}`, note: 'A right answer finds its weak spot: your first hit is bigger.', closeLabel: 'Skip, just fight' });
     }
-    setScreen({ name: 'fight', fight: startFight(latest.current.hero!, monster, seed, { firstHitBonus: bonus }), ctx: { kind: 'forest' } });
+    playFight(fight, answer);
   }
 
-  async function resolveEvent(event: ForestEvent) {
-    let right = false;
+  async function resolveEvent(eventId: string) {
+    const event = EVENT_BY_ID[eventId];
+    if (!event) return toVillage();
+    let proof: Answer | null = null;
+    let walkOn = false;
     if (event.maths) {
-      const asked = await ask('treasure', { title: event.title, note: event.text, pack: event.maths.topic, closeLabel: 'Walk on' });
-      right = asked === 'right';
-      say(asked === 'skipped' ? 'You walk on. Maybe next time!' : right ? 'You solved it!' : 'Not this time, but you know the answer now.');
+      proof = await ask('treasure', { title: event.title, note: event.text, pack: event.maths.topic, closeLabel: 'Walk on' });
+      walkOn = proof === null;
     }
-    const next = applyEvent(latest.current.hero!, event, right);
-    setHero(next);
-    addNews(`${event.title}: ${event.text.split('.')[0]}.`);
-    if (!event.maths) say(eventSummary(event));
+    const reply = await act({ action: 'event', proof: proof?.proof ?? null, walkOn });
+    if (!reply) return;
+    const right = (reply.result as { right: boolean }).right;
+    addDeed(`${event.title}: ${event.text.split('.')[0]}.`);
+    if (event.maths) say(walkOn ? 'You walk on. Maybe next time!' : right ? 'You solved it!' : 'Not this time, but you know the answer now.');
+    else say(eventSummary(event));
     toVillage();
   }
 
@@ -139,74 +314,80 @@ export function LordPlay() {
     const check = canChallengeMaster(hero!);
     if (!check.ok) return say(check.reason ?? '');
     const master = masterFor(hero!.level)!;
-    const trial: Result[] = [];
+    const trial: (Answer['proof'] | null)[] = [];
     for (let i = 1; i <= 3; i++) {
       const asked = await ask('master-trial', {
         title: `${master.name}’s trial`,
         note: `Question ${i} of 3. Each right answer adds a little strength if you win.`,
         closeLabel: 'Skip this one',
       });
-      trial.push(asked === 'right' ? 'right' : 'wrong');
+      trial.push(asked?.proof ?? null);
     }
-    setScreen({ name: 'fight', fight: startMasterFight(latest.current.hero!, seedNow()), ctx: { kind: 'master', trial } });
+    const reply = await act({ action: 'master-start', trial });
+    if (!reply) return;
+    setNote('');
+    playFight(reply.state.openFight!);
   }
 
-  async function beginDragonStage(stage: 1 | 2 | 3, startHp: number) {
+  async function beginDragonStage(stage: 1 | 2 | 3) {
     const asked = await ask('dragon-trial', {
       title: `The dragon’s riddle ${stage} of 3`,
       note: 'Right answers give you a shield and a heavy first hit. Wrong answers cost you nothing, and the fight still goes on.',
       closeLabel: 'Skip',
     });
-    const options = dragonStageOptions(asked === 'right' || asked === 'wrong' ? asked : 'wrong');
-    setScreen({ name: 'fight', fight: startDragonStage(latest.current.hero!, stage, seedNow(), { ...options, heroHp: startHp }), ctx: { kind: 'dragon', stage, startHp } });
+    const reply = await act({ action: 'dragon-stage', stage, riddle: asked?.proof ?? null });
+    if (!reply) return toVillage();
+    setNote('');
+    playFight(reply.state.openFight!);
   }
 
-  function finishFight(fight: FightState, ctx: FightContext) {
-    const h = latest.current.hero!;
+  async function finishFight(fight: FightState, actions: FightAction[], fightId: string, ctx: FightContext) {
+    const name = fight.monster.name;
     if (ctx.kind === 'forest') {
-      setHero(applyForestResult(h, fight));
-      if (fight.outcome === 'won') {
-        addNews(`You beat the ${fight.monster.name}.`);
-        const after = applyForestResult(h, fight);
-        say(after.level < MAX_LEVEL && canChallengeMaster(after).ok ? `You beat the ${fight.monster.name}! You have enough experience to challenge your master.` : `You beat the ${fight.monster.name}!`);
-      } else if (fight.outcome === 'lost') {
-        addNews(`${withArticle(fight.monster.name).replace(/^a/, 'A')} flattened you.`);
+      const reply = await act({ action: 'fight-finish', fightId, actions, sizeUp: ctx.sizeUp?.proof ?? null });
+      if (!reply) return finishFailed();
+      const r = reply.result as { outcome: string; readyForMaster: boolean };
+      if (r.outcome === 'won') {
+        addDeed(`You beat the ${name}.`);
+        say(r.readyForMaster ? `You beat the ${name}! You have enough experience to challenge your master.` : `You beat the ${name}!`);
+      } else if (r.outcome === 'lost') {
+        addDeed(`${withArticle(name).replace(/^a/, 'A')} flattened you.`);
         say('You wake up at the healer’s hut. You dropped the gold you were carrying, but your experience and your bank are safe.');
       } else say('You got away safely.');
       return toVillage();
     }
     if (ctx.kind === 'master') {
-      const master = masterFor(h.level)!;
-      let next = applyMasterResult(h, fight);
-      if (fight.outcome === 'won') {
-        next = addMasterTrialBonus(next, ctx.trial);
-        addNews(`You beat ${master.name} and reached level ${next.level}!`);
-        say(`You beat ${master.name}! You are level ${next.level} and you feel stronger.${ctx.trial.includes('right') ? ' Your right answers added extra strength.' : ''}`);
+      const master = masterFor(hero!.level)!;
+      const reply = await act({ action: 'master-finish', fightId, actions });
+      if (!reply) return finishFailed();
+      const r = reply.result as { outcome: string; level: number; bonusStrength: number; trial: string[] };
+      if (r.outcome === 'won') {
+        addDeed(`You beat ${master.name} and reached level ${r.level}!`);
+        say(`You beat ${master.name}! You are level ${r.level} and you feel stronger.${r.trial.includes('right') ? ' Your right answers added extra strength.' : ''}`);
       } else say(`${master.name} won this time. Nothing is lost: you are healed and can try again tomorrow.`);
-      setHero(next);
       return toVillage();
     }
-    // The dragon
-    const carried = { ...h, skillLeft: fight.skillLeft };
-    if (fight.outcome !== 'won') {
-      setHero(loseToDragon(carried));
-      addNews('The Red Dragon sent you home.');
+    const reply = await act({ action: 'dragon-finish', fightId, actions });
+    if (!reply) return finishFailed();
+    const r = reply.result as { outcome: string; stage: number; finished: boolean; stars: number };
+    if (r.outcome !== 'won') {
+      addDeed('The Red Dragon sent you home.');
       say('The dragon was too strong today. You wake at the healer’s hut. Nothing is lost. Try again tomorrow!');
       return toVillage();
     }
-    if (ctx.stage < 3) {
-      setHero(carried);
-      void beginDragonStage((ctx.stage + 1) as 2 | 3, dragonBreather(h, fight.heroHp));
-      return;
-    }
-    setHero(finishDragon(carried, today));
-    addNews(`You beat the Red Dragon! That is star number ${h.dragonKills + 1}.`);
+    if (!r.finished) return void beginDragonStage((r.stage + 1) as 2 | 3);
+    addDeed(`You beat the Red Dragon! That is star number ${r.stars}.`);
     say('You beat the Red Dragon! The village treasure, food and light are back. Your hero starts again at level 1, with a gold star.');
     toVillage();
   }
 
-  function onFightChange(next: FightState, ctx: FightContext) {
-    setScreen({ name: 'fight', fight: next, ctx });
+  /** The finish could not be saved. If it is waiting to be sent the village says so; otherwise the fight is offered again. */
+  function finishFailed() {
+    toVillage();
+  }
+
+  function onFightChange(next: FightState, action: FightAction) {
+    setScreen((s) => (s.name === 'fight' ? { ...s, fight: next, actions: [...s.actions, action] } : s));
   }
 
   // ---------------------------------------------------------------- screens
@@ -215,56 +396,68 @@ export function LordPlay() {
   switch (screen.name) {
     case 'shop': body = <Shop {...placeProps} />; break;
     case 'healer': body = <Healer {...placeProps} />; break;
-    case 'bank': body = <Bank {...placeProps} interestDay={save.interestDay} setInterestDay={(d) => update({ interestDay: d })} />; break;
-    case 'inn':
-      body = <Inn {...placeProps} riddleDay={save.riddleDay} setRiddleDay={(d) => update({ riddleDay: d })} guessDay={save.guessDay} setGuessDay={(d) => update({ guessDay: d })} />;
-      break;
+    case 'bank': body = <Bank {...placeProps} />; break;
+    case 'inn': body = <Inn {...placeProps} today={today} />; break;
     case 'training': body = <Training hero={hero} back={toVillage} onChallenge={() => void challengeMaster()} onDragon={() => setScreen({ name: 'dragon' })} />; break;
     case 'hero': body = <HeroPage hero={hero} back={toVillage} />; break;
-    case 'news': body = <NewsPage news={save.news} today={today} back={toVillage} />; break;
+    case 'news': body = <NewsPage news={deeds} today={today} back={toVillage} />; break;
     case 'tools':
-      body = (
-        <Tools
-          hero={hero} setHero={setHero} close={toVillage} showEvent={(event) => setScreen({ name: 'event', event })}
-          skipDay={() => { update((s) => ({ dayOffset: s.dayOffset + 1 })); setNote('Skipped to tomorrow.'); }}
-          resetAll={() => { clearTrial(player); update({ hero: null, news: [], dayOffset: 0, riddleDay: '', guessDay: '', interestDay: '' }); toVillage(); }}
-        />
-      );
+      body = backend.trial ? (
+        <Suspense fallback={<p className="lord-soft">Loading…</p>}>
+          <Tools
+            state={state} act={act} busy={busy} close={toVillage}
+            showEvent={(eventId) => setScreen({ name: 'event', eventId })}
+            resetAll={() => void act({ action: 'tools', tool: 'reset' }).then((r) => r && setScreen({ name: 'class' }))}
+          />
+        </Suspense>
+      ) : null;
       break;
-    case 'event':
-      body = (
-        <section className="lord-place" aria-label={screen.event.title}>
-          <h2>{screen.event.title}</h2>
-          <p className="lord-lead">{screen.event.text}</p>
+    case 'event': {
+      const event = EVENT_BY_ID[screen.eventId];
+      body = event ? (
+        <section className="lord-place" aria-label={event.title}>
+          <h2>{event.title}</h2>
+          <p className="lord-lead">{event.text}</p>
           <p className="lord-soft">Events do not use up a forest fight.</p>
-          <button type="button" className="lord-btn lord-btn--hot" autoFocus onClick={() => void resolveEvent(screen.event)}>
-            {screen.event.maths ? 'Have a go' : 'Continue'}
+          <button type="button" className="lord-btn lord-btn--hot" autoFocus disabled={busy} onClick={() => void resolveEvent(event.id)}>
+            {event.maths ? 'Have a go' : 'Continue'}
           </button>
         </section>
-      );
+      ) : null;
       break;
+    }
     case 'encounter': {
-      const sizeUp = offersSizeItUp(screen.seed);
+      const fight = state.openFight;
+      if (!fight) {
+        body = null;
+        break;
+      }
+      const sizeUp = fight.sizeUp && fight.kind === 'forest';
       body = (
         <section className="lord-place lord-encounter" aria-label="A monster appears">
-          <MonsterSprite monster={screen.monster} scale={9} />
-          <h2>{withArticle(screen.monster.name).replace(/^a/, 'A')} appears!</h2>
-          <p className="lord-lead">{screen.monster.intro}</p>
+          <MonsterSprite monster={fight.start.monster} scale={9} />
+          <h2>{withArticle(fight.start.monster.name).replace(/^a/, 'A')} appears!</h2>
+          <p className="lord-lead">{fight.start.monster.intro}</p>
           <div className="lord-actions">
-            {sizeUp && <button type="button" className="lord-btn lord-btn--hot" onClick={() => void beginFight(screen.monster, screen.seed, true)}>Size it up (a maths question)</button>}
-            <button type="button" className={`lord-btn${sizeUp ? '' : ' lord-btn--hot'}`} autoFocus={!sizeUp} onClick={() => void beginFight(screen.monster, screen.seed, false)}>Fight!</button>
+            {sizeUp && <button type="button" className="lord-btn lord-btn--hot" onClick={() => void beginFight(true)}>Size it up (a maths question)</button>}
+            <button type="button" className={`lord-btn${sizeUp ? '' : ' lord-btn--hot'}`} autoFocus={!sizeUp} onClick={() => void beginFight(false)}>Fight!</button>
           </div>
         </section>
       );
       break;
     }
     case 'fight': {
-      const { fight, ctx } = screen;
-      body = <FightScreen key={fight.monster.id + fight.kind + (ctx.kind === 'dragon' ? ctx.stage : '')} fight={fight} heroName={heroName}
-        onChange={(next: FightState, _action: FightAction) => onFightChange(next, ctx)} onContinue={() => finishFight(fight, ctx)} />;
+      const { fight, actions, fightId, ctx } = screen;
+      body = (
+        <FightScreen
+          key={fightId + (ctx.kind === 'dragon' ? ctx.stage : '')} fight={fight} heroName={heroName}
+          onChange={onFightChange} onContinue={() => void finishFight(fight, actions, fightId, ctx)}
+        />
+      );
       break;
     }
-    case 'dragon':
+    case 'dragon': {
+      const next = state.dragon?.next ?? 1;
       body = (
         <section className="lord-place lord-encounter" aria-label="The Red Dragon">
           <MonsterSprite monster={{ id: 'dragon-1', name: 'Scorchtail, the Red Dragon', level: 13 }} scale={10} />
@@ -272,27 +465,35 @@ export function LordPlay() {
           <p className="lord-lead">
             The dragon has the village’s treasure, food and light. There are three fights, with a riddle before each one and a short rest between. You can’t run. If it goes badly, you wake at the healer and lose nothing but today’s try.
           </p>
+          {state.dragonTried && next === 1 && <p className="lord-note">You have already faced the dragon today. Come back tomorrow!</p>}
           <div className="lord-actions">
-            <button type="button" className="lord-btn lord-btn--hot" onClick={() => void beginDragonStage(1, hero.hp)}>Go in</button>
+            <button type="button" className="lord-btn lord-btn--hot" disabled={busy || (state.dragonTried && next === 1)} onClick={() => void beginDragonStage(next)}>
+              {next === 1 ? 'Go in' : `Carry on: fight ${next} of 3`}
+            </button>
             <button type="button" className="lord-btn" onClick={toVillage}>Not yet</button>
           </div>
         </section>
       );
       break;
+    }
     default:
       body = (
-        <Village hero={hero} note={note} onPlace={(n) => { setNote(''); setScreen({ name: n } as Screen); }} onForest={goForest}
-          onDragon={() => setScreen({ name: 'dragon' })} today={today} />
+        <Village
+          state={state} hero={hero} note={note} waiting={waiting} busy={busy} onRetry={() => void retry()}
+          onPlace={(n) => { setNote(''); setScreen({ name: n } as Screen); }} onForest={() => void goForest()}
+          onDragon={() => setScreen({ name: 'dragon' })} onClass={() => setScreen({ name: 'class' })} today={today} tools={backend.trial}
+        />
       );
   }
 
   const keysOn = screen.name === 'village';
   return (
-    <Frame hero={hero} hideStatus={screen.name === 'fight'}>
+    <Frame backend={backend} state={state} hero={hero} hideStatus={screen.name === 'fight'}>
       {keysOn && <VillageKeys onKey={(k) => {
-        if (k === 'f') goForest();
-        else if (k === 'd' && canFaceDragon(hero)) setScreen({ name: 'dragon' });
-        else if (k === 'x') setScreen({ name: 'tools' });
+        if (busyRef.current) return;
+        if (k === 'f') void goForest();
+        else if (k === 'd' && (canFaceDragon(hero) || state.dragon)) setScreen({ name: 'dragon' });
+        else if (k === 'x' && backend.trial) setScreen({ name: 'tools' });
         else { const p = PLACES.find((x) => x.key === k); if (p) { setNote(''); setScreen({ name: p.name } as Screen); } }
       }} />}
       {body}
@@ -301,7 +502,7 @@ export function LordPlay() {
   );
 }
 
-function eventSummary(e: ForestEvent) {
+function eventSummary(e: { gold?: number; exp?: number; gems?: number; heal?: 'full' | number; kindness?: number }) {
   const bits = [e.gold && `${e.gold} gold`, e.exp && `${e.exp} experience`, e.gems && `${e.gems} gem`, e.heal === 'full' && 'full health', e.kindness && 'kindness'].filter(Boolean);
   return bits.length ? `You gained: ${bits.join(', ')}. (Rewards grow with your level.)` : '';
 }
@@ -319,12 +520,16 @@ function VillageKeys({ onKey }: { onKey: (key: string) => void }) {
   return null;
 }
 
-function Frame({ children, hero, hideStatus }: { children: ReactNode; hero?: Hero; hideStatus?: boolean }) {
+function Frame({ children, hero, hideStatus, backend, state }: { children: ReactNode; hero?: Hero; hideStatus?: boolean; backend: LordBackend; state?: LordState }) {
   return (
     <div className="lord" data-testid="lord">
       <header className="lord-top">
         <h1>Dragon Maths</h1>
-        <span className="lord-trial">Trial: saved on this browser only, no points yet</span>
+        {backend.trial ? (
+          <span className="lord-trial">Trial: saved on this browser only, no points yet</span>
+        ) : (
+          state?.hero && <span className="lord-trial">Season {state.season.number}, day {state.season.dayOfSeason} of 35{state.season.daysLeft <= 4 ? `: ${state.season.daysLeft} days left!` : ''}</span>
+        )}
       </header>
       {hero && !hideStatus && <StatusBar hero={hero} />}
       {children}
@@ -348,11 +553,13 @@ function StatusBar({ hero }: { hero: Hero }) {
   );
 }
 
-function Village({ hero, note, onPlace, onForest, onDragon, today }: {
-  hero: Hero; note: string; onPlace: (n: Screen['name']) => void; onForest: () => void; onDragon: () => void; today: string;
+function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest, onDragon, onClass, today, tools }: {
+  state: LordState; hero: Hero; note: string; waiting: number; busy: boolean; onRetry: () => void;
+  onPlace: (n: Place | 'tools') => void; onForest: () => void; onDragon: () => void; onClass: () => void; today: string; tools: boolean;
 }) {
   const check = canChallengeMaster(hero);
-  const dragonReady = canFaceDragon(hero);
+  const dragonReady = canFaceDragon(hero) || !!state.dragon;
+  const fight = state.openFight;
   return (
     <section className="lord-village" aria-label="The village">
       <div className="lord-village__intro">
@@ -361,16 +568,30 @@ function Village({ hero, note, onPlace, onForest, onDragon, today }: {
           <h2>The village of Hollowbrook</h2>
           <p className="lord-soft">{today}. {hero.forestLeft > 0 ? `You have ${hero.forestLeft} forest fights left today.` : 'No forest fights left today. The village is still open!'}</p>
           {note && <p className="lord-note" role="status">{note}</p>}
+          {waiting > 0 && (
+            <p className="lord-note" role="status">
+              Your last fight is saved on this Chromebook and will be sent when you are back online.{' '}
+              <button type="button" className="lord-btn" disabled={busy} onClick={onRetry}>Try again now</button>
+            </p>
+          )}
+          {fight && <p className="lord-note">You were in the middle of a fight! Press F to carry on from the start of it. It won’t use another fight.</p>}
           {check.ok && <p className="lord-note">Your master is ready to fight you. Visit the Training grounds!</p>}
+          {state.classOpen && hero.forestWins === 0 && hero.exp === 0 && (
+            <p className="lord-note">
+              A new season has begun, and everyone starts again.{' '}
+              <button type="button" className="lord-btn" onClick={onClass}>Pick a class</button>
+            </p>
+          )}
+          {state.season.daysLeft <= 4 && <p className="lord-soft">{state.season.daysLeft === 0 ? 'Last day of the season!' : `${state.season.daysLeft} days left in this season.`}</p>}
         </div>
       </div>
       <div className="lord-menu">
-        <button type="button" className="lord-place-btn lord-place-btn--forest" onClick={onForest} disabled={hero.forestLeft <= 0}>
-          <kbd>F</kbd> <strong>The Forest</strong> <span>Fight monsters, find gold</span>
+        <button type="button" className="lord-place-btn lord-place-btn--forest" onClick={onForest} disabled={busy || (!fight && !state.pendingEvent && hero.forestLeft <= 0)}>
+          <kbd>F</kbd> <strong>{fight ? 'Carry on with your fight' : 'The Forest'}</strong> <span>{fight ? 'From the start of it' : 'Fight monsters, find gold'}</span>
         </button>
         {dragonReady && (
           <button type="button" className="lord-place-btn lord-place-btn--dragon" onClick={onDragon}>
-            <kbd>D</kbd> <strong>The Red Dragon</strong> <span>You are ready</span>
+            <kbd>D</kbd> <strong>The Red Dragon</strong> <span>{state.dragon ? 'The fight goes on' : 'You are ready'}</span>
           </button>
         )}
         {PLACES.map((p) => (
@@ -378,9 +599,11 @@ function Village({ hero, note, onPlace, onForest, onDragon, today }: {
             <kbd>{p.key.toUpperCase()}</kbd> <strong>{p.label}</strong> <span>{p.blurb}</span>
           </button>
         ))}
-        <button type="button" className="lord-place-btn lord-place-btn--tools" onClick={() => onPlace('tools')}>
-          <kbd>X</kbd> <strong>Test tools</strong> <span>For trying things out</span>
-        </button>
+        {tools && (
+          <button type="button" className="lord-place-btn lord-place-btn--tools" onClick={() => onPlace('tools')}>
+            <kbd>X</kbd> <strong>Test tools</strong> <span>For trying things out</span>
+          </button>
+        )}
       </div>
       <p className="lord-soft">Your weapon: {WEAPONS[hero.weapon].name}.</p>
     </section>

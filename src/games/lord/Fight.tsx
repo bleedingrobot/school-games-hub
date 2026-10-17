@@ -61,7 +61,7 @@ export function FightScreen({ fight, onChange, onContinue, heroName = 'You' }: {
 
   const logRef = useRef<HTMLUListElement>(null);
   useEffect(() => {
-    logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [lines]);
 
   const canUse = (skill: (typeof skills)[number]) => fight.skillLeft > 0 && !(skill === 'pinch' && fight.goldPinched > 0) && !(skill === 'mend' && fight.heroHp >= fight.heroMaxHp);

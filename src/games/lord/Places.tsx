@@ -1,31 +1,33 @@
 import { useState, type ReactNode } from 'react';
 import {
-  ARMOURS, CLASSES, EXP_TO_CHALLENGE, MAX_LEVEL, WEAPONS, expNeeded, friendly, masterFor, tierPower,
+  ARMOURS, CLASSES, EXP_TO_CHALLENGE, MAX_LEVEL, WEAPONS, expNeeded, masterFor,
 } from '../../../shared/lord/data';
 import {
-  buyGear, canChallengeMaster, canFaceDragon, deposit, heal, healCost, healPrice, heroAttack, heroDefence, kindnessDiscount, shopPrice, withdraw,
+  buyGear, canChallengeMaster, canFaceDragon, healCost, healPrice, heroAttack, heroDefence, kindnessDiscount, shopPrice,
 } from '../../../shared/lord/engine';
-import { NUMBER_GUESS_TRIES, interestFor, numberGuessPrize, priceDiscount } from '../../../shared/lord/maths';
+import { NUMBER_GUESS_TRIES } from '../../../shared/lord/maths';
+import type { LordAction, LordReply, LordState } from '../../../shared/lord/server';
 import type { Hero, HeroClass } from '../../../shared/lord/types';
 import type { Asked, AskOptions } from './useAsk';
 import { ArmourSprite, HeroSprite, Icon, MonsterSprite, WeaponSprite } from './Sprite';
 import { ICON_TILES } from './tileMap';
-import { BARD_SONGS, VILLAGE_NEWS, dayHash } from './text';
+import { BARD_SONGS, dayHash, VILLAGE_NEWS } from './text';
 import type { MomentId } from '../../../shared/lord/maths';
 
 export type Ask = (moment: MomentId, options: AskOptions) => Promise<Asked>;
+export type Reply = Extract<LordReply, { ok: true }>;
 
 export interface PlaceProps {
+  state: LordState;
   hero: Hero;
-  setHero: (hero: Hero) => void;
+  /** Sends one request to the server and waits. Null if it was turned down or could not be sent (the pupil has been told). */
+  act: (action: LordAction) => Promise<Reply | null>;
   ask: Ask;
   say: (note: string) => void;
-  addNews: (line: string) => void;
   back: () => void;
-  today: string;
+  /** A request is on its way: buttons wait. */
+  busy: boolean;
 }
-
-const discountOf = (asked: Asked) => (asked === 'skipped' ? 0 : priceDiscount(asked));
 
 function Place({ title, children, back, tile }: { title: string; children: ReactNode; back: () => void; tile?: keyof typeof ICON_TILES }) {
   return (
@@ -45,7 +47,7 @@ function Place({ title, children, back, tile }: { title: string; children: React
 
 // ---------------------------------------------------------------- the shop
 
-export function Shop({ hero, setHero, ask, say, addNews, back }: PlaceProps) {
+export function Shop({ hero, act, ask, say, back, busy }: PlaceProps) {
   const [slot, setSlot] = useState<'weapon' | 'armour'>('weapon');
   const table = slot === 'weapon' ? WEAPONS : ARMOURS;
   const Sprite_ = slot === 'weapon' ? WeaponSprite : ArmourSprite;
@@ -59,12 +61,10 @@ export function Shop({ hero, setHero, ask, say, addNews, back }: PlaceProps) {
       note: `Answer right for 10% off the ${table[index].name}.`,
       closeLabel: 'No thanks, pay full price',
     });
-    const result = buyGear(hero, slot, index, discountOf(asked));
-    if (!result.ok) return say(result.reason);
-    setHero(result.hero);
-    const saved = check.paid - result.paid;
-    say(`You bought the ${table[index].name} for ${result.paid} gold${result.refund ? ` (and sold your old one for ${result.refund})` : ''}${saved > 0 ? `. You saved ${saved} gold!` : '.'}`);
-    addNews(`You bought the ${table[index].name}.`);
+    const reply = await act({ action: 'shop-buy', slot, index, proof: asked?.proof ?? null });
+    if (!reply) return;
+    const r = reply.result as { item: string; paid: number; refund: number; saved: number };
+    say(`You bought the ${r.item} for ${r.paid} gold${r.refund ? ` (and sold your old one for ${r.refund})` : ''}${r.saved > 0 ? `. You saved ${r.saved} gold!` : '.'}`);
   }
 
   return (
@@ -99,7 +99,7 @@ export function Shop({ hero, setHero, ask, say, addNews, back }: PlaceProps) {
               ) : locked ? (
                 <span className="lord-soft">Needs {item.need} {stat}</span>
               ) : (
-                <button type="button" className="lord-btn" onClick={() => void buy(i)}>
+                <button type="button" className="lord-btn" disabled={busy} onClick={() => void buy(i)}>
                   Buy
                 </button>
               )}
@@ -113,7 +113,7 @@ export function Shop({ hero, setHero, ask, say, addNews, back }: PlaceProps) {
 
 // ---------------------------------------------------------------- the healer
 
-export function Healer({ hero, setHero, ask, say, back }: PlaceProps) {
+export function Healer({ hero, act, ask, say, back, busy }: PlaceProps) {
   const missing = hero.maxHp - hero.hp;
   const price = healPrice(hero.level);
 
@@ -126,10 +126,10 @@ export function Healer({ hero, setHero, ask, say, back }: PlaceProps) {
       note: `${amount} health at ${price} gold each. Answer right for 10% off.`,
       closeLabel: 'No thanks, pay full price',
     });
-    const discount = discountOf(asked);
-    const after = heal(hero, amount, discount);
-    setHero(after);
-    say(`The healer mends ${after.hp - hero.hp} health for ${hero.gold - after.gold} gold${discount ? ` (10% off!)` : ''}.`);
+    const reply = await act({ action: 'heal', hp: amount, proof: asked?.proof ?? null });
+    if (!reply) return;
+    const r = reply.result as { healed: number; paid: number; discount: number };
+    say(`The healer mends ${r.healed} health for ${r.paid} gold${r.discount ? ` (10% off!)` : ''}.`);
   }
 
   return (
@@ -139,11 +139,11 @@ export function Healer({ hero, setHero, ask, say, back }: PlaceProps) {
       </p>
       <div className="lord-actions">
         {[10, 25].map((n) => (
-          <button key={n} type="button" className="lord-btn" disabled={missing <= 0} onClick={() => void pay(n)}>
+          <button key={n} type="button" className="lord-btn" disabled={missing <= 0 || busy} onClick={() => void pay(n)}>
             Heal {Math.min(n, missing) || n} <small>({healCost(hero, Math.min(n, Math.max(missing, 1)))} gold)</small>
           </button>
         ))}
-        <button type="button" className="lord-btn lord-btn--hot" disabled={missing <= 0} onClick={() => void pay(missing)}>
+        <button type="button" className="lord-btn lord-btn--hot" disabled={missing <= 0 || busy} onClick={() => void pay(missing)}>
           Heal everything <small>({healCost(hero, missing)} gold)</small>
         </button>
       </div>
@@ -154,15 +154,20 @@ export function Healer({ hero, setHero, ask, say, back }: PlaceProps) {
 
 // ---------------------------------------------------------------- the bank
 
-export function Bank({ hero, setHero, ask, say, back, today, interestDay, setInterestDay }: PlaceProps & { interestDay: string; setInterestDay: (d: string) => void }) {
-  const canAskInterest = hero.level >= 4 && hero.bank > 0 && interestDay !== today;
+export function Bank({ hero, state, act, ask, say, back, busy }: PlaceProps) {
+  const canAskInterest = hero.level >= 4 && hero.bank > 0 && !state.interestDone;
+
+  async function move(op: 'deposit' | 'withdraw', amount: number) {
+    const reply = await act({ action: 'bank', op, amount });
+    if (reply) say(op === 'deposit' ? `You put ${(reply.result as { moved: number }).moved} gold in the bank.` : `You take ${(reply.result as { moved: number }).moved} gold out of the bank.`);
+  }
 
   async function interest() {
     const asked = await ask('bank', { title: 'The banker’s question', note: 'Answer right for a little interest on your savings.', closeLabel: 'Not today' });
-    if (asked === 'skipped') return;
-    setInterestDay(today);
-    const extra = interestFor(hero.bank, asked);
-    setHero({ ...hero, bank: hero.bank + extra });
+    if (!asked) return;
+    const reply = await act({ action: 'bank', op: 'interest', proof: asked.proof });
+    if (!reply) return;
+    const extra = (reply.result as { interest: number }).interest;
     say(extra > 0 ? `The banker adds ${extra} gold of interest. Well done!` : 'No interest today, but you can try again tomorrow.');
   }
 
@@ -173,15 +178,15 @@ export function Bank({ hero, setHero, ask, say, back, today, interestDay, setInt
         <Icon name="gold" /> Carrying <strong>{hero.gold}</strong> · In the bank <strong>{hero.bank}</strong>
       </p>
       <div className="lord-actions">
-        <button type="button" className="lord-btn lord-btn--hot" disabled={hero.gold <= 0} onClick={() => setHero(deposit(hero, hero.gold))}>Deposit all</button>
-        <button type="button" className="lord-btn" disabled={hero.gold <= 1} onClick={() => setHero(deposit(hero, Math.floor(hero.gold / 2)))}>Deposit half</button>
-        <button type="button" className="lord-btn" disabled={hero.bank <= 0} onClick={() => setHero(withdraw(hero, hero.bank))}>Withdraw all</button>
-        <button type="button" className="lord-btn" disabled={hero.bank <= 1} onClick={() => setHero(withdraw(hero, Math.floor(hero.bank / 2)))}>Withdraw half</button>
+        <button type="button" className="lord-btn lord-btn--hot" disabled={hero.gold <= 0 || busy} onClick={() => void move('deposit', hero.gold)}>Deposit all</button>
+        <button type="button" className="lord-btn" disabled={hero.gold <= 1 || busy} onClick={() => void move('deposit', Math.floor(hero.gold / 2))}>Deposit half</button>
+        <button type="button" className="lord-btn" disabled={hero.bank <= 0 || busy} onClick={() => void move('withdraw', hero.bank)}>Withdraw all</button>
+        <button type="button" className="lord-btn" disabled={hero.bank <= 1 || busy} onClick={() => void move('withdraw', Math.floor(hero.bank / 2))}>Withdraw half</button>
       </div>
       {hero.level >= 4 && (
         <div className="lord-actions">
-          <button type="button" className="lord-btn" disabled={!canAskInterest} onClick={() => void interest()}>
-            Ask about interest {interestDay === today ? '(done today)' : hero.bank <= 0 ? '(save some gold first)' : ''}
+          <button type="button" className="lord-btn" disabled={!canAskInterest || busy} onClick={() => void interest()}>
+            Ask about interest {state.interestDone ? '(done today)' : hero.bank <= 0 ? '(save some gold first)' : ''}
           </button>
         </div>
       )}
@@ -191,67 +196,72 @@ export function Bank({ hero, setHero, ask, say, back, today, interestDay, setInt
 
 // ---------------------------------------------------------------- the inn
 
-export function Inn({ hero, setHero, ask, say, back, today, riddleDay, setRiddleDay, guessDay, setGuessDay }: PlaceProps & {
-  riddleDay: string; setRiddleDay: (d: string) => void; guessDay: string; setGuessDay: (d: string) => void;
-}) {
+export function Inn({ state, act, ask, say, back, busy, today }: PlaceProps & { today: string }) {
   const song = BARD_SONGS[dayHash(today) % BARD_SONGS.length];
-  const [secret] = useState(() => 1 + Math.floor(Math.random() * 100));
-  const [guesses, setGuesses] = useState<number[]>([]);
   const [typed, setTyped] = useState('');
   const [guessNote, setGuessNote] = useState('');
-  const won = guesses.includes(secret);
-  const playing = guessDay !== today && !won && guesses.length < NUMBER_GUESS_TRIES;
+  const guess = state.guess;
+  const tries = guess?.tries ?? [];
+  const playing = !!guess && !guess.done;
 
   async function riddle() {
     const asked = await ask('riddle', { title: 'The riddle of the day', note: 'A right answer earns gold.', closeLabel: 'Not today' });
-    if (asked === 'skipped') return;
-    setRiddleDay(today);
-    const gold = asked === 'right' ? friendly(tierPower(hero.level) * 1.5) : friendly(tierPower(hero.level) * 0.3);
-    setHero({ ...hero, gold: hero.gold + gold });
-    say(asked === 'right' ? `Right! The innkeeper hands you ${gold} gold.` : `Not quite, but the innkeeper gives you ${gold} gold for trying.`);
+    if (!asked) return;
+    const reply = await act({ action: 'inn', game: 'riddle', proof: asked.proof });
+    if (!reply) return;
+    const r = reply.result as { gold: number; right: boolean };
+    say(r.right ? `Right! The innkeeper hands you ${r.gold} gold.` : `Not quite, but the innkeeper gives you ${r.gold} gold for trying.`);
   }
 
-  function guess() {
+  async function start() {
+    setGuessNote('');
+    await act({ action: 'inn', game: 'guess-start' });
+  }
+
+  async function makeGuess() {
     const n = Number(typed);
     if (!Number.isInteger(n) || n < 1 || n > 100) return setGuessNote('Pick a whole number from 1 to 100.');
-    const next = [...guesses, n];
-    setGuesses(next);
     setTyped('');
-    if (n === secret || next.length >= NUMBER_GUESS_TRIES) {
-      const win = n === secret;
-      const gold = numberGuessPrize(hero.level, win);
-      setGuessDay(today);
-      setHero({ ...hero, gold: hero.gold + gold });
-      setGuessNote(win ? `Got it in ${next.length}! You win ${gold} gold.` : `Out of guesses. It was ${secret}. Here is ${gold} gold for trying. Tip: guess the middle each time and you will always get it in 7.`);
-    } else setGuessNote(n < secret ? `${n} is too low.` : `${n} is too high.`);
+    const reply = await act({ action: 'inn', game: 'guess', n });
+    if (!reply) return;
+    const r = reply.result as { hint: 'low' | 'high' | 'win'; tries: number; over: boolean; prize: number; secret?: number };
+    if (r.hint === 'win') setGuessNote(`Got it in ${r.tries}! You win ${r.prize} gold.`);
+    else if (r.over) setGuessNote(`Out of guesses. It was ${r.secret}. Here is ${r.prize} gold for trying. Tip: guess the middle each time and you will always get it in 7.`);
+    else setGuessNote(r.hint === 'low' ? `${n} is too low.` : `${n} is too high.`);
   }
 
   return (
     <Place title="The Inn" tile="potion" back={back}>
       <blockquote className="lord-song"><p>The bard sings:</p>{song.split(' / ').map((l) => <p key={l}>{l}</p>)}</blockquote>
       <div className="lord-actions">
-        <button type="button" className="lord-btn lord-btn--hot" disabled={riddleDay === today} onClick={() => void riddle()}>
-          Riddle of the day {riddleDay === today && '(done today)'}
+        <button type="button" className="lord-btn lord-btn--hot" disabled={state.riddleDone || busy} onClick={() => void riddle()}>
+          Riddle of the day {state.riddleDone && '(done today)'}
         </button>
       </div>
       <div className="lord-card">
         <h3>Number guess</h3>
-        {guessDay === today && guesses.length === 0 ? (
-          <p className="lord-soft">You have played today. Come back tomorrow!</p>
+        {guess?.done ? (
+          <>
+            <p className="lord-soft">You have played today. Come back tomorrow!</p>
+            {guessNote && <p aria-live="polite">{guessNote}</p>}
+          </>
         ) : (
           <>
             <p>I am thinking of a number from 1 to 100. You get {NUMBER_GUESS_TRIES} guesses. (Try the middle first!)</p>
+            {!guess && (
+              <button type="button" className="lord-btn" disabled={busy} onClick={() => void start()}>Play</button>
+            )}
             {playing && (
-              <form onSubmit={(e) => { e.preventDefault(); guess(); }} className="lord-guess">
+              <form onSubmit={(e) => { e.preventDefault(); void makeGuess(); }} className="lord-guess">
                 <label>
-                  Guess {guesses.length + 1} of {NUMBER_GUESS_TRIES}{' '}
+                  Guess {tries.length + 1} of {NUMBER_GUESS_TRIES}{' '}
                   <input type="number" inputMode="numeric" min={1} max={100} value={typed} onChange={(e) => setTyped(e.target.value)} />
                 </label>
-                <button type="submit" className="lord-btn">Guess</button>
+                <button type="submit" className="lord-btn" disabled={busy}>Guess</button>
               </form>
             )}
             {guessNote && <p aria-live="polite">{guessNote}</p>}
-            {guesses.length > 0 && <p className="lord-soft">Your guesses: {guesses.join(', ')}</p>}
+            {tries.length > 0 && <p className="lord-soft">Your guesses: {tries.map((t) => `${t.n} (${t.hint === 'win' ? 'got it' : t.hint === 'low' ? 'too low' : 'too high'})`).join(', ')}</p>}
           </>
         )}
       </div>

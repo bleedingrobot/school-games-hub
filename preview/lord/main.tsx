@@ -1,12 +1,16 @@
 /**
- * A stand-alone copy of Dragon Maths for trying it without signing in (and for browser test scripts).
- * The hero is kept in this browser only. Build: npm run lord:preview. Or run it: npx vite --config vite.lord-preview.config.ts
+ * A stand-alone copy of Dragon Maths for trying it without signing in (and for browser test scripts). It runs the
+ * same rules as the school's server (shared/lord/server.ts), against a little save kept in this browser only, and
+ * has the test tools. The live game has neither. Build: npm run lord:preview. Or run it: npx vite --config vite.lord-preview.config.ts
  */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AuthContext } from '../../src/auth/AuthContext';
 import { LordPlay } from '../../src/games/lord/LordPlay';
+import { createTrialBackend } from '../../src/games/lord/trialBackend';
 import '../../src/styles.css';
+
+const backend = createTrialBackend('preview');
 
 const fakeAuth = {
   status: 'signed-in',
@@ -21,7 +25,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthContext.Provider value={fakeAuth}>
       <main style={{ padding: 12 }}>
-        <LordPlay />
+        <LordPlay backend={backend} />
       </main>
     </AuthContext.Provider>
   </StrictMode>,

@@ -1,12 +1,18 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
-import type { AnswerResult } from '../../../shared/maths/skillPack';
-import type { SkillPack } from '../../../shared/maths/skillPack';
+import type { FactStats } from '../../../shared/maths/leitner';
+import type { AnswerResult, Question, SkillPack } from '../../../shared/maths/skillPack';
 import { EXTRA_PACKS, makeExtraPack, makePack, type ExtraTopicId, type TopicId } from '../../../shared/maths/skillPacks';
-import { MOMENT_TOPICS, defaultBand, type MomentId } from '../../../shared/lord/maths';
-import type { Result } from '../../../shared/lord/maths';
+import { MOMENT_TOPICS, type MomentId } from '../../../shared/lord/maths';
+import { questionLevel, type Proof } from '../../../shared/lord/proof';
 import { QuestionModal, type ShownQuestion } from '../../maths/QuestionModal';
 
-export type Asked = Result | 'skipped';
+/** How a question went: the proof the server will check, and whether it was right (for the pupil's own feedback only). */
+export interface Answer {
+  proof: Proof;
+  correct: boolean;
+}
+/** Null: the pupil chose not to answer. The server then treats it as no answer, never as wrong. */
+export type Asked = Answer | null;
 
 export interface AskOptions {
   title: string;
@@ -18,29 +24,31 @@ export interface AskOptions {
 }
 
 interface Pending {
-  question: ShownQuestion & { answer: number };
+  question: Question;
   pack: SkillPack;
+  packId: TopicId | ExtraTopicId;
+  level: number;
+  given: { value: number; ms: number } | null;
   options: AskOptions;
   resolve: (result: Asked) => void;
-  full: Parameters<SkillPack['recordAnswer']>[0];
 }
 
 const isExtra = (id: string): id is ExtraTopicId => id in EXTRA_PACKS;
-/** Times tables use campaign levels (1-10), the other packs use bands (1-4). */
-const levelFor = (pack: string, band: number) => (pack === 'times-tables' ? [1, 3, 6, 9][band - 1] ?? 1 : band);
 
 /**
- * Asks maths questions in the dragon game. `ask(moment, options)` shows a question box and says how it went;
- * `modal` is what to render. Questions come from the shared packs and nothing is saved yet (trial).
+ * Asks maths questions in the dragon game. `ask(moment, options)` shows a question box and hands back a proof of
+ * how it went; `modal` is what to render. Questions come from the shared packs; the server rebuilds each one from
+ * its numbers and marks it itself, so what the browser thinks is right only decides what the pupil sees.
  */
-export function useAsk(heroLevel: number, enabled?: readonly string[]) {
+export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[] = []) {
   const packs = useRef(new Map<string, SkillPack>());
   const [pending, setPending] = useState<Pending | null>(null);
 
   const packOf = (id: TopicId | ExtraTopicId): SkillPack => {
     let pack = packs.current.get(id);
     if (!pack) {
-      pack = isExtra(id) ? makeExtraPack(id) : makePack(id);
+      const saved = facts.filter((f) => f.pack === id);
+      pack = isExtra(id) ? makeExtraPack(id, saved) : makePack(id, saved);
       packs.current.set(id, pack);
     }
     return pack;
@@ -48,16 +56,17 @@ export function useAsk(heroLevel: number, enabled?: readonly string[]) {
 
   const ask = useCallback(
     (moment: MomentId, options: AskOptions): Promise<Asked> => {
-      const topics = (MOMENT_TOPICS[moment] as (TopicId | ExtraTopicId)[]).filter((t) => !enabled || enabled.includes(t));
+      const topics = MOMENT_TOPICS[moment] as (TopicId | ExtraTopicId)[];
       const chosen = options.pack ?? (topics.length ? topics[Math.floor(Math.random() * topics.length)] : null);
-      if (!chosen) return Promise.resolve('skipped');
+      if (!chosen) return Promise.resolve(null);
       const pack = packOf(chosen);
-      const question = pack.nextQuestion({ level: levelFor(chosen, defaultBand(heroLevel)) });
-      if (!question) return Promise.resolve('skipped');
-      return new Promise<Asked>((resolve) => setPending({ question, pack, options, resolve, full: question }));
+      const level = questionLevel(chosen, heroLevel);
+      const question = pack.nextQuestion({ level });
+      if (!question) return Promise.resolve(null);
+      return new Promise<Asked>((resolve) => setPending({ question, pack, packId: chosen, level, given: null, options, resolve }));
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [heroLevel, enabled],
+    [heroLevel, facts],
   );
 
   const finish = (result: Asked) => {
@@ -67,13 +76,23 @@ export function useAsk(heroLevel: number, enabled?: readonly string[]) {
 
   const modal: ReactNode = pending && (
     <QuestionModal
-      question={pending.question}
+      question={pending.question as ShownQuestion & { answer: number }}
       title={pending.options.title}
       note={pending.options.note}
       closeLabel={pending.options.closeLabel}
-      onClose={pending.options.closeLabel ? () => finish('skipped') : undefined}
-      onSubmit={(answer, ms): AnswerResult & { answer: number } => ({ ...pending.pack.recordAnswer(pending.full, answer, ms), answer: pending.question.answer })}
-      onDone={(r) => finish(r.correct ? 'right' : 'wrong')}
+      onClose={pending.options.closeLabel ? () => finish(null) : undefined}
+      onSubmit={(answer, ms): AnswerResult & { answer: number } => {
+        pending.given = { value: answer, ms };
+        return { ...pending.pack.recordAnswer(pending.question, answer, ms), answer: pending.question.answer };
+      }}
+      onDone={(r) => {
+        const q = pending.question;
+        const given = pending.given ?? { value: Number.NaN, ms: 0 };
+        finish({
+          correct: r.correct,
+          proof: { pack: pending.packId, key: q.factKey, kind: q.kind, params: q.params, level: pending.level, given: given.value, ms: given.ms },
+        });
+      }}
     />
   );
 

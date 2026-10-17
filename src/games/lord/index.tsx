@@ -16,8 +16,9 @@ function DragonIcon({ size = 64 }: { size?: number }) {
 
 /**
  * Dragon Maths (docs/LORD-PLAN.md): a Legend of the Red Dragon style game with daily forest fights, a
- * menu village, 12 masters and the Red Dragon. Maths helps you win. Never ranked. The trial version
- * at /#/dragon-maths is saved on this browser only (the server save is stage L.4).
+ * menu village, 12 masters and the Red Dragon. Maths helps you win. Never ranked. The hero is kept by the school's
+ * `lord` server function (stage L.4); the card stays off the dashboard (DRAGON_MATHS_ON) until the teacher's
+ * switch and stage L.5 are ready, though the page at /#/dragon-maths opens for teachers.
  */
 export const dragonMaths: GameDefinition = {
   id: 'dragon-maths',
