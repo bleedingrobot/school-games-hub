@@ -127,13 +127,19 @@ export function WorldGame({
   useEffect(() => {
     let live = true;
     loadSheets().then(
-      (s) => live && setSheets(new TileCache(s, Object.values(rawMaps)[0].tilesets)),
+      (s) => {
+        if (!live) return;
+        const cache = new TileCache(s, Object.values(rawMaps)[0].tilesets);
+        // Paint every map now, so walking through a door never has to wait for one.
+        for (const m of Object.values(maps)) scenes.current.set(m.id, { map: m, frames: paintMap(m, rawMaps[m.id], cache), cache });
+        setSheets(cache);
+      },
       () => live && setLoadError(true),
     );
     return () => {
       live = false;
     };
-  }, [rawMaps]);
+  }, [rawMaps]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sceneFor = (cache: TileCache, map: GameMap): Scene => {
     let s = scenes.current.get(map.id);
@@ -233,7 +239,7 @@ export function WorldGame({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      const target = e.target as HTMLElement | null;
+      const target = e.target instanceof Element ? e.target : null;
       if (target?.closest('input, select, textarea, [role="dialog"], .mb')) return;
       const L = live.current;
       if (L.scene.kind !== 'walk') return;
@@ -313,7 +319,7 @@ export function WorldGame({
       aria-label={label}
       onPointerDown={(e) => {
         e.preventDefault();
-        e.currentTarget.setPointerCapture(e.pointerId);
+        e.currentTarget.setPointerCapture?.(e.pointerId);
         ctrl.current!.press(dir, performance.now());
       }}
       onPointerUp={() => ctrl.current!.release(dir)}
@@ -351,7 +357,16 @@ export function WorldGame({
     <div className="mw">
       <h1 className="sr-only">Maths Monsters</h1>
       <p className="sr-only" role="status">{`You are in ${map.name}.`}</p>
-      <div className={`mw-stage${scene.kind === 'flash' ? ' is-flash' : ''}`} ref={stage} tabIndex={-1}>
+      <div
+        className={`mw-stage${scene.kind === 'flash' ? ' is-flash' : ''}`}
+        ref={stage}
+        tabIndex={-1}
+        data-testid="mw-stage"
+        data-map={world.map}
+        data-x={world.x}
+        data-y={world.y}
+        data-facing={world.facing}
+      >
         <canvas
           ref={canvas}
           className="mw-canvas"
@@ -410,7 +425,10 @@ export function WorldGame({
             {talk.at + 1 < talk.pages.length ? 'Next' : 'Done'}
           </button>
         ) : (
-          <p className="mw-talk__hint">Arrow keys or W A S D to walk · Space to talk · or tap the map</p>
+          <p className="mw-talk__hint">
+            <span className="mw-hint-keys">Arrow keys or W A S D to walk · Space to talk · or tap the map</span>
+            <span className="mw-hint-touch">Tap the map to walk · tap a person or sign to talk to them</span>
+          </p>
         )}
       </div>
     </div>

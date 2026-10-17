@@ -10,7 +10,7 @@ import { makeMonster, type Monster } from '../../shared/monsters/rules';
 import { TYPE_LABEL, TYPES, type TypeId } from '../../shared/monsters/types';
 import { newWorld } from '../../shared/monsters/world/world';
 import { nameOf } from '../../src/games/monsters/text';
-import { WorldGame } from '../../src/games/monsters/world/WorldGame';
+import { WorldGame, type WorldGameProps } from '../../src/games/monsters/world/WorldGame';
 import { loadWorldSettings, saveWorldSettings, type WorldSettings } from '../../src/games/monsters/world/settings';
 import { MonsterArt } from '../../src/games/monsters/art/MonsterArt';
 
@@ -27,7 +27,7 @@ const TELEPORTS = [
   { label: 'Next to the closed path to area 2', map: 'kauri-bush', spot: 'area-2-gate' },
 ];
 
-export function WalkPage({ onBattling }: { onBattling?: (on: boolean) => void }) {
+export function WalkPage({ onBattling, testing }: { onBattling?: (on: boolean) => void; testing?: Pick<WorldGameProps, 'random' | 'packFor' | 'timeScale'> }) {
   const [picks, setPicks] = useState<[TypeId, TypeId]>(['water', 'fire']);
   const [team, setTeam] = useState<Monster[] | null>(null);
   const [run, setRun] = useState(0);
@@ -98,7 +98,7 @@ export function WalkPage({ onBattling }: { onBattling?: (on: boolean) => void })
           <button type="button" onClick={() => { setTeam(null); setTeleport(undefined); setRun((r) => r + 1); }}>Start again</button>
         </div>
       </details>
-      <WorldGame key={run} initial={initial} settings={settings} onSettingsChange={change} fast={fast} teleport={teleport} onBattling={(on) => { setBattling(on); onBattling?.(on); }} />
+      <WorldGame key={run} initial={initial} settings={settings} onSettingsChange={change} fast={fast} teleport={teleport} {...testing} onBattling={(on) => { setBattling(on); onBattling?.(on); }} />
     </section>
   );
 }
