@@ -102,4 +102,45 @@ describe('question box', () => {
     await user.keyboard('{Enter}');
     expect(onSubmit).toHaveBeenCalledWith(7, expect.any(Number));
   });
+
+  it('decimal questions have a point key, and a leading point becomes 0.', async () => {
+    const user = userEvent.setup();
+    const { onSubmit } = setup(question({ parts: ['0.3', '+', '0.5', '=', '?'], spoken: '0.3 plus 0.5 equals what?', answer: 0.8, input: 'decimal' }));
+    await user.click(screen.getByRole('button', { name: 'Point' }));
+    await user.keyboard('.8'); // a second point is ignored
+    expect(screen.getByLabelText('0.3 plus 0.5 equals what?')).toHaveTextContent('0.8');
+    await user.keyboard('{Enter}');
+    expect(onSubmit).toHaveBeenCalledWith(0.8, expect.any(Number));
+  });
+
+  it('whole-number questions ignore the point, and longer answers fit when the question allows', async () => {
+    const user = userEvent.setup();
+    const { onSubmit } = setup(question({ parts: ['47', '×', '100', '=', '?'], spoken: '47 times 100 equals what?', answer: 4700, maxLength: 5 }));
+    expect(screen.queryByRole('button', { name: 'Point' })).not.toBeInTheDocument();
+    await user.keyboard('47.00{Enter}');
+    expect(onSubmit).toHaveBeenCalledWith(4700, expect.any(Number));
+  });
+
+  it('fractions are drawn top over bottom, with the blank inside', async () => {
+    const user = userEvent.setup();
+    setup(question({ parts: ['1/2', '=', '?/8'], spoken: '1 half equals what eighths?', answer: 4 }));
+    const fact = screen.getByLabelText('1 half equals what eighths?');
+    expect(fact.querySelectorAll('.qfrac')).toHaveLength(2);
+    await user.keyboard('4');
+    expect(fact.querySelectorAll('.qfrac')[1].querySelector('.qfrac__top .question__blank')).toHaveTextContent('4');
+  });
+
+  it('pick questions show their labels and answer with the index', async () => {
+    const user = userEvent.setup();
+    const { onSubmit } = setup(question({ parts: ['Which is bigger?'], spoken: 'Which is bigger: 2 thirds or 3 quarters?', answer: 1, choices: [0, 1], choiceLabels: ['2/3', '3/4'] }));
+    await user.click(screen.getByRole('button', { name: '3 quarters' }));
+    expect(onSubmit).toHaveBeenCalledWith(1, expect.any(Number));
+  });
+
+  it('a wrong money answer shows the cents', async () => {
+    const user = userEvent.setup();
+    setup(question({ parts: ['$2.40', '+', '$1.70', '=', '$', '?'], spoken: '$2.40 plus $1.70 equals $ what?', answer: 4.1, input: 'decimal' }), 1);
+    await user.keyboard('5{Enter}');
+    expect(screen.getByLabelText('$2.40 plus $1.70 equals $ what?')).toHaveTextContent('4.10');
+  });
 });

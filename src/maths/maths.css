@@ -201,3 +201,64 @@
     animation: none;
   }
 }
+
+/* Decimal questions: . 0 ⌫ on the bottom row, and the tick on a row of its own. */
+.numpad[data-decimal] .numpad__key--enter {
+  grid-column: 1 / -1;
+  min-height: 52px;
+}
+
+/* Words in a question ("Round 367 to the nearest 10:") are smaller than the numbers. */
+.question__fact {
+  flex-wrap: wrap;
+  row-gap: 0.15em;
+}
+.question__word {
+  font-size: 0.42em;
+  font-weight: 800;
+  color: var(--q-soft);
+}
+
+/* Fractions: top over bottom with a bar between. */
+.qfrac {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.12em;
+}
+.qfrac__stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.72em;
+  line-height: 1.05;
+}
+.qfrac__top {
+  padding: 0 0.12em 0.06em;
+  border-bottom: 0.08em solid currentColor;
+}
+.qfrac__bottom {
+  padding-top: 0.06em;
+}
+.qfrac .question__blank {
+  min-width: 1.2em;
+  border-radius: 10px;
+}
+.question__choice .qfrac__stack {
+  font-size: 0.8em;
+}
+
+/* Long questions ("$20.00 − $14.85 = $ ?") use a smaller size so they stay on one or two short lines. */
+.question__fact[data-long] {
+  font-size: clamp(1.8rem, 7.5vw, 2.5rem);
+}
+
+/* The decimal pad has an extra row: shorter keys on Chromebook-height screens so the tick stays in view. */
+@media (max-height: 760px) {
+  .numpad[data-decimal] .numpad__key {
+    min-height: 48px;
+    font-size: 1.45rem;
+  }
+  .numpad[data-decimal] .numpad__key--enter {
+    min-height: 44px;
+  }
+}

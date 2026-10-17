@@ -1,0 +1,87 @@
+/* Preview only: the maths topics practice page. */
+body {
+  margin: 0;
+  padding: 16px;
+  background: var(--page, #9a1525);
+}
+.mp {
+  display: grid;
+  gap: 12px;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: #fff;
+  color: #0f172a;
+}
+.mp h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+.mp p {
+  margin: 0;
+}
+.mp__settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+}
+.mp__settings label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+.mp__settings select {
+  min-height: 36px;
+  font: inherit;
+}
+.mp__result {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.mp__band h2 {
+  margin: 8px 0 4px;
+  font-size: 1.1rem;
+}
+.mp__band ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mp__band li {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f1f5f9;
+}
+.mp__example {
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+.mp__mastery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.mp__mastery i {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-style: normal;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: #e2e8f0;
+}
+.mp__mastery i[data-mastery='learning'] {
+  background: #fed7aa;
+}
+.mp__mastery i[data-mastery='secure'] {
+  background: #bfdbfe;
+}
+.mp__mastery i[data-mastery='fluent'] {
+  background: #bbf7d0;
+}
