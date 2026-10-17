@@ -5,7 +5,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(81);
+select plan(87);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -167,8 +167,20 @@ select is((select monsters_topics from public.app_settings), array['add-sub', 'f
 select throws_ok($$ select public.teacher_set_monsters('{"enabled":true,"topics":[]}') $$, '22023', 'Leave at least one topic on.',
   'at least one topic stays on');
 select throws_ok($$ select public.teacher_set_monsters('{"enabled":true,"topics":["pizza"]}') $$, '22023', null, 'unknown topics are refused');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select is((select count(*)::integer from jsonb_array_elements(public.my_progress() -> 'achievements') a where a ->> 'game' = 'monsters'), 8,
+  'students see the eight achievements while the game is on');
+select is(public.progress_rules() -> 'monsters', '{"wildWinsPerPoint":3,"trainerWin":3,"badge":8}'::jsonb, '... and the points rules');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 select is(public.teacher_set_monsters('{"enabled":false,"topics":["add-sub","fractions"]}') ->> 'enabled', 'false', 'and off again');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select is((select count(*)::integer from jsonb_array_elements(public.my_progress() -> 'achievements') a where a ->> 'game' = 'monsters'), 0,
+  'the achievements are hidden while it is off');
+select is(public.progress_rules() -> 'monsters', 'null'::jsonb, '... and so are the points rules');
 select pg_temp.reset();
+select is((select count(*)::integer from public.achievements where player = pg_temp.id('d') and achievement like 'mm-%'), 8,
+  '... but what was earned is kept');
+select is((select monsters_enabled from public.app_settings), false, 'it is off again for the rest of these tests');
 
 -- ---- Maths records for the new topics ----
 select is(public.record_fact_answers(pg_temp.id('a'), 'add-sub', gen_random_uuid(),

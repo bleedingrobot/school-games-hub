@@ -432,7 +432,8 @@ as $$
               'won', jsonb_build_array(public.gem_keep_points('won', 1), public.gem_keep_points('won', 2),
                 public.gem_keep_points('won', 3)),
               'lost', public.gem_keep_points('lost', 0), 'minWavesForLoss', public.gem_keep_min_waves_for_loss()),
-    'monsters', public.monster_point_rules(),
+    -- Hidden while the game is switched off.
+    'monsters', case when (select a.monsters_enabled from public.app_settings a) then public.monster_point_rules() end,
     'botDailyCap', public.bot_daily_cap(),
     'pairDailyLimit', public.pair_daily_limit(),
     'achievementPoints', public.achievement_points(),
@@ -598,7 +599,9 @@ as $$
                 'earnedAt', a.earned_at
               ) order by at.game, at.sort)
               from public.achievement_types at
-              left join public.achievements a on a.player = me.id and a.achievement = at.id),
+              left join public.achievements a on a.player = me.id and a.achievement = at.id
+              -- Maths Monsters' achievements are hidden while the game is switched off.
+              where at.game <> 'monsters' or (select s.monsters_enabled from public.app_settings s)),
     'recent', (select coalesce(jsonb_agg(jsonb_build_object(
                  'id', coalesce(x.bot_game, x.mp_game, x.space_game, x.card_game, x.gem_keep_run, x.monster_save),
                  'points', x.points)), '[]')
