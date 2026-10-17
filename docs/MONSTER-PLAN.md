@@ -1,0 +1,165 @@
+# Monster maths adventure: plan
+
+A Pokémon-style adventure for the hub. Walk around a small world, meet wild monsters in the long grass, and battle and catch them. **Every attack and every catch is a maths question.** Each kind of monster stands for a maths topic, so collecting and training a team means practising every topic.
+Written 17 October 2026 after a deep dive into [devshareacademy/monster-tamer](https://github.com/devshareacademy/monster-tamer) (James's find) and reading the code on `main` (Stages 1–10 live, Gem Keep live).
+**Status: idea saved, not scheduled.** Nothing is built. James picked "a world to walk around" and "several maths topics" on 17 Oct. Next: James answers section 12, then stage N.1 starts.
+
+## The short version
+
+- **Monster Tamer is our blueprint, not our code base.** Its code is MIT (free to copy with credit), but it's plain JavaScript on the Phaser engine, keyboard only, with no maths and very little game yet. Most of its art and music can't go in our public repo (section 1). We borrow its *ideas* and a few small pieces of logic, and write the game in our own style, like Gem Keep.
+- **Six monster types = six maths topics.** Fire = times tables, Water = adding and taking away, and so on (section 4). Your monster's attack asks a question from its own topic. A wild monster is caught with a question from *its* topic.
+- **Right answers hit hard, fast right answers hit harder, and a wrong answer still does a little damage and shows the right answer.** Nothing is ever lost for getting maths wrong. Losing a battle just sends you back to the healing spot with everything kept.
+- **A small world**: a home town plus six areas, one per topic, each with a "Topic Tower" boss. About 6–10 hours to finish, played over many short sessions.
+- **One maths engine for the whole hub.** The new topics are built as skill packs in `shared/maths/`, next to times tables. Gem Keep and the space game can use them later for free.
+- **Saved on the server**, so a student's team follows them to any Chromebook. Small points inside the shared bot-game cap, achievements, and a teacher view of each topic.
+- **This is the biggest game yet**, roughly Gem Keep plus the space game together. Eight stages (section 10), with a test page for James after the battle stage.
+
+## 1. What we found in Monster Tamer (17 Oct 2026)
+
+**What it is:** a YouTube-tutorial game (last updated Dec 2025). A small pixel-art village, a forest and three houses. You walk on a grid, and long grass starts battles. Battles are turn-based (Fight / Switch / Item / Flee), with catching, levelling (exp = level³), a party screen, a bag, signs, NPCs, cut-scenes and save to `localStorage`.
+
+**Size:** about 11,000 lines of plain JavaScript (JSDoc types), Phaser 3.60 from a CDN, maps made in the Tiled editor. 7 monsters, 2 attacks, 4 maps.
+
+**Licences.** The code is MIT. The art and music are a separate download (`all-game-assets-v2.zip`, 71 MB) from different artists:
+
+| Assets | Licence | Can it go in our public repo? |
+|---|---|---|
+| Kenney UI packs, Kenney font | CC0 (anything goes) | Yes |
+| AxulArt tiles and player character | CC BY-SA 4.0, but also says "you may not redistribute it" | **No.** Our repo is public, which counts as redistributing |
+| Parabellum Games NPCs | itch.io pack, terms on the store page | No (same problem) |
+| Pimen attack effects | itch.io pack, terms on the store page | No (same problem) |
+| leohpaz sound effects | "free to use, may not distribute this asset pack" | **No** |
+| xDeviruchi music | CC BY-SA 4.0, "don't place copies on websites for download" | Risky. Leave it out |
+| The 7 monsters and battle background | **No licence written anywhere**, and they look AI-generated | **No** |
+
+**Other problems for us:**
+
+- **Keyboard only.** There is no touch or mouse anywhere. Tablets couldn't play.
+- **Phaser is a second game engine** (~1 MB) that the hub doesn't use. Its scenes, menus and text are drawn on canvas, so screen readers get nothing.
+- **No server saving.** Everything is in `localStorage`, and our students switch Chromebooks.
+
+**Worth borrowing (rewritten in TypeScript, MIT credit in the code and the credits screen):**
+
+- the battle "state machine": the order of intro → choose → attack → enemy attack → faint/catch/flee → exp, and how each step waits for its animation
+- the catch chance (easier when the monster's health is low) and the exp curve
+- grid walking (smooth tile-to-tile steps, turning on the spot, collisions from a Tiled layer)
+- how Tiled maps carry signs, NPCs, doors and encounter zones as object layers
+
+## 2. Why our own engine instead of Phaser
+
+- **Gem Keep already does this.** It draws a canvas game with cached sprites at 60 fps on a slow Chromebook, without Phaser. A tile map and walking sprites are simpler than a tower-defence wave.
+- **Battles work better as normal web pages.** They're menus, health bars and questions. As React screens they get screen-reader support, the hub's `QuestionModal` and `NumberPad`, and the hub's look for free. Only the monsters and attack effects are animated.
+- **Smaller and lazier:** no 1 MB download. The game loads only when opened, like the other games.
+- **Same pattern as the rest of the hub:** pure rules in `shared/monsters/` with tests and a simulator, and screens in `src/games/monsters/`.
+
+## 3. The world
+
+- **Home town** (start, healing centre, a teacher character who explains things, your monster box, the monster book).
+- **Six areas**, each built around one topic: its wild monsters, its signs and tips, and its **Topic Tower** at the end. Beat the Tower's trainer to earn that topic's badge and open the next path.
+- **Areas open in order.** Easy topics first. Each area is "easy, then harder": monsters further from town are higher level and ask harder questions in the same topic.
+- **About 25 × 20 tiles per area**, made in Tiled (free editor) as JSON in `shared/monsters/maps/`, using **Kenney CC0 packs** (*Tiny Town*, *Tiny Dungeon*, *Roguelike RPG*; checked 17 Oct: all CC0).
+- **Encounters:** long grass, about one battle every 12–20 steps (tuned so it feels exciting, not annoying). A "Repel" item lets students just walk.
+- **People:** a few NPCs per area with one-line tips or jokes, and trainers who challenge you when you walk past.
+- **No typing, no chat, no student-made text anywhere** (same safety rule as the rest of the hub).
+
+## 4. Monsters and topics
+
+| Type | Topic | Example questions | Strong against |
+|---|---|---|---|
+| Leaf | Place value and rounding | 3,406: what is the 4 worth? Round 678 to the nearest 10 | Water |
+| Water | Adding and taking away | 47 + 36, 120 − 58 | Fire |
+| Fire | Times tables | 7 × 8 (the Gem Keep pack) | Ice |
+| Ice | Division | 56 ÷ 7, 35 ÷ 5 | Spark |
+| Spark | Fractions | ½ of 18; which is bigger, ⅔ or ¾? (picked from choices, with a fraction bar) | Stone |
+| Stone | Decimals and money | 0.3 + 0.5, $2.40 + $1.75 | Leaf |
+
+- **Your monster's attacks ask questions from its type's topic.** So the team you send out *is* the practice you choose. The type wheel ("strong against") gives a reason to train every type, which means practising every topic.
+- **Catching** a wild monster asks a question from the wild monster's topic.
+- **18 monsters to start**: 3 per type, and each can grow (evolve) twice as it levels up, so 6 × 3 × 3 = 54 entries in the monster book. Rare "shiny" colours make collecting fun.
+- **Our own art, built from parts**, like the 101 card faces: a body shape + eyes + horns/fins/flames + a colour per type, drawn as SVG. Bigger and fancier parts when it evolves. That keeps everything ours, scales to any screen, and lets us add monsters cheaply. (A paid or commissioned art set is possible later if James wants a fancier look.)
+- **Names**: punny maths names (e.g. *Divvy*, *Fractopus*, *Sumbat*). James to OK the list.
+
+## 5. Battles
+
+1. A wild monster appears. Choose **Fight / Team / Bag / Run**.
+2. **Fight**: pick one of your monster's attacks (each has a power and an animation), then answer **one question** from your monster's topic.
+   - right: normal hit
+   - right *and quick* (under a time set by question difficulty, not a race against classmates): **critical hit**, ×1.5
+   - wrong: a small "graze" (¼ damage), and the correct answer is shown for a moment
+   - type advantage: ×1.5 (weak: ×0.75)
+3. The wild monster attacks back (no question for that; it's just damage).
+4. **A wild battle is about 3–6 questions and 1–2 minutes.** Tower trainers have 3 monsters, so 10–15 questions.
+5. **Catch**: throw a ball from the Bag, answer a question in the wild monster's topic. A right answer makes the catch chance much higher, and lower health helps too (borrowed from Monster Tamer).
+6. **Winning** gives exp. **Losing** ("your team is tired") sends you back to the last healing spot with all monsters and items kept.
+
+**Settings the student can change** (like Gem Keep): *Calm* (no quick-answer bonus, no timer shown) and *Number pad / Multiple choice*.
+
+## 6. The maths engine
+
+- **New skill packs** in `shared/maths/skillPacks/` that follow the existing `SkillPack` interface: `addSub`, `division`, `placeValue`, `fractions`, `decimals`. Times tables already exists.
+- **Each pack has difficulty bands**, e.g. adding: within 20 → within 100 → within 1,000 → with regrouping. An area's level sets which bands appear.
+- **The Leitner boxes still pick weak questions first**, inside the allowed bands. Fact-style topics (adding, division) track single facts like `add:47+36`. Others (place value, fractions) track question *kinds*, e.g. `pv:round10:3digit`.
+- **Curriculum tags** come from James's curriculum alignment tool, as the times-tables pack already does.
+- **Answers are saved as answer events** (the per-answer saving from Mission Control stage M.1), so a student's records stay right across games and Chromebooks.
+- **Bonus for the whole hub:** Gem Keep and Wormholes & Black Holes can offer these topics later with no new maths code.
+
+## 7. Screens and controls
+
+- **Walking:** arrow keys / WASD; on tablets, tap a tile to walk there (shortest path), plus an optional on-screen D-pad. Space/Enter or tap to talk and read signs.
+- **Battles:** big buttons, keyboard numbers 1–4, the hub's `QuestionModal` and `NumberPad`.
+- **Fits a Chromebook at 1366 × 640** (the real usable height, as checked for 101) and phones in landscape.
+- **Accessibility:** battles, menus and the monster book are normal HTML (screen readers, axe-clean like the other games). The world map is canvas, with signs and talk shown in an HTML box that is read out.
+- **Sound:** made in code like `src/games/sounds.ts`, with no sound files. Music is optional later from a CC0 source, off by default in class.
+
+## 8. Saving, points and fairness
+
+- **The save is on the server**: team, monster box, items, badges, map position and monster book. Small (a few KB). Saved at healing spots, after Tower battles and every few minutes. It's also kept on the device until the server has it, like Gem Keep's queue.
+- **New tables** (students can't write to them directly, as usual): `monster_saves` (one row per student) and `monster_events` (what happened since the last save). A new `monster` server function checks each save before accepting it. The checks are plausibility checks, not a full replay (same reasoning as Gem Keep): exp gained must match the battles reported, levels can't jump, catches need a right answer, and the number of answers per minute must be humanly possible.
+- **Points:** inside the shared 40-a-day bot-game cap. My pick: 1 point per 3 wild battles won, 3 per trainer, 8 for a Tower badge (first time only). The game is `ranked: false` (no ratings).
+- **Achievements** (about 8): first catch, 10/25/54 monster-book entries, each badge, all six badges, a "fully evolved" team.
+- **A leaderboard is optional**: "monster book entries" or "badges", like Gem Keep's stars board.
+- **New season**: wipe saves or keep them? (question 4).
+
+## 9. Teacher page
+
+- **Topics on/off** for the school (for example, fractions off until it's been taught). A switched-off topic's questions are swapped for the nearest topic that's on, so no area is ever blocked.
+- **Per-topic view:** each student's progress, and the class's hardest questions, using the same panel as Gem Keep's "hardest facts".
+- **Game switch:** off/on, like the other games.
+
+## 10. Stages (when picked up)
+
+| Stage | What | Rough size |
+|---|---|---|
+| **N.1** | Maths: the five new skill packs with bands, tests and curriculum tags. A "maths practice" test page for every topic | Medium |
+| **N.2** | `shared/monsters/` battle rules: monsters, types, attacks, damage, catching, exp, evolving, wild/trainer AI. Simulator to tune battle length and levelling | Medium |
+| **N.3** | Battle screen + monster art system (SVG parts) + first 6 monsters. **Test page artifact for James** | Big |
+| **N.4** | World: tile drawing, Tiled map loading, walking (keys + tap), grass encounters, signs/NPCs, healing centre. Home town + area 1 | Big |
+| **N.5** | The other five areas, the Towers and trainers, all 18 monster families, the monster book, bag items | Big (mostly design and tuning) |
+| **N.6** | Saving, points, achievements, teacher page (migration + `monster` function). **Go live**, needs James to say so | Medium |
+| **N.7** | How to play, accessibility pass, slow-Chromebook check, docs | Small |
+
+Each stage ends with tests passing and a results section here, and stops for James's review, like Gem Keep. A class trial could start after N.4 with device-only saving (as Gem Keep did).
+
+## 11. Ideas for later
+
+- **Battle a classmate** with your team (turn-based, so it fits the `multiplayer`-style server function). The maths questions are each player's own.
+- Trading monsters with classmates (teacher switch, both must confirm).
+- Daily "rare monster spotted in area 3" events.
+- Seasonal areas (Matariki sky island).
+- More topics: measurement, time, angles.
+
+## 12. Questions for James (before N.1)
+
+1. **Name?** Some ideas: *Number Tamers*, *Maths Monsters*, *Monster Mathers*, *Sum Beasts*. (Not *Monster Tamer*, which is the tutorial's name.)
+2. **The six topics and their order** (section 4): right list for Y4–6? Anything to swap (e.g. measurement instead of decimals)?
+3. **Wrong answers**: a small graze plus showing the right answer (my pick), or no damage at all?
+4. **New season**: wipe everyone's adventure (fresh start, fair boards), or keep it (my pick: keep the save, reset only the points)?
+5. **Leaderboard**: none, monster-book entries, or badges?
+6. **Look**: chunky pixel-art world (Kenney CC0) with our own SVG monsters (my pick), or all-SVG smooth style to match the hub's restyle?
+7. **NZ flavour**: area names in te reo Māori and NZ places (bush, beach, volcano, snow), or a made-up world?
+8. **Queue spot**: after Mission Control maths, and before or after Power Clash and the marble game?
+
+## Credits to carry over
+
+- Battle flow, catch chance, exp curve and grid walking ideas adapted from *Monster Tamer* by Dev Share Academy (MIT, © 2024).
+- Tiles from Kenney (CC0).
