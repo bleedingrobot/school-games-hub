@@ -87,7 +87,7 @@ Rough size: a bit smaller than Gem Keep Phase 5. M.1–M.3 can be tried in a pri
 **M.2 Game rules (17 Oct 2026).** In `shared/space/engine.ts` with maths on:
 
 - Wormhole: right = 3 squares further (as built before). Black hole: right = fall half as far (keeps your Escape Pod); wrong = as before (the Escape Pod works if you have one). A Force Field still blocks it with no question. A timeout counts as wrong.
-- Mission Boost: a new action, before rolling, once charged. Right = +2 on this roll. Wrong = normal roll. Either way it's used up.
+- Mission Boost: a new action, before rolling, once charged (it starts charged). Right = +2 on this roll. Wrong = normal roll. Either way it's used up.
 - Bots: Cadet answers right 60% of the time, Pilot 75%, Commander 90%. Pilot and Commander always take a charged boost, the Cadet half the time.
 - With maths off nothing changes: no question or boost can happen (tests check this), and the bots only use their dice for maths when it's on, so they make the same moves as before and games already being played aren't affected.
 
@@ -123,6 +123,8 @@ So maths matters, but luck still matters more: a student who gets everything wro
 - **Classmates games** still refuse maths until M.4.
 
 **Checked in a real browser** against the local copy, signed in as a test student, playing whole saved games on two boards with maths on: the games saved with maths on and points earned, and every answer given reached the student's records (3 answers, 2 right, in the longer game). The log showed boosts, powered-up wormholes and a black hole beaten. 5 new game-screen tests, 3 new server tests, tests for the answer checker and the ready-level helper.
+
+**Change after trying the preview (17 Oct 2026).** James found no questions in a short test: the boost took 5 turns to charge and wormholes/black holes only ask when you land on one (about 3 questions a game). The Mission Boost is now **ready on everyone's first turn** (then recharges over 5 turns), so the feature shows up straight away. Simulator (500 games, Nebula, Pilots): 4 rockets about 8.7 minutes, 2 rockets 5.2 (off: 6.6 and 3.9).
 
 Next: M.4 (maths in games with classmates).
 

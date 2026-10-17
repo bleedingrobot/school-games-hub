@@ -1220,7 +1220,7 @@ function newGame$1(board, settings, players) {
 				...settings,
 				cosmicEvents: settings.mode === "cosmic" && settings.cosmicEvents
 			},
-			rockets: Array.from({ length: players }, (_, i) => ({
+			rockets: Array.from({ length: players }, () => ({
 				position: 1,
 				items: [],
 				gravity: null,
@@ -1230,7 +1230,7 @@ function newGame$1(board, settings, players) {
 				shielded: false,
 				lastTarget: null,
 				beaconRound: null,
-				...settings.maths ? { boostTurns: i === 0 ? 1 : 0 } : {}
+				...settings.maths ? { boostTurns: 5 } : {}
 			})),
 			turn: 0,
 			round: 1,

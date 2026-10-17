@@ -83,7 +83,7 @@ export const RESCUE_JUMP = 10;
 export const WORMHOLE_BONUS = 3;
 /** The Mission Boost adds this to a roll… */
 export const MISSION_BOOST_STEPS = 2;
-/** …and is charged after this many of your turns. */
+/** …and is charged after this many of your turns (and at the start of the game). */
 export const BOOST_CHARGE_TURNS = 5;
 export const METEORS = 5;
 /** Where the mystery station can send you, and how likely each is. */
@@ -263,11 +263,12 @@ export function newGame(board: Board, settings: Settings, players: number): Play
   const state: SpaceState = {
     board: playBoard,
     settings: { ...settings, cosmicEvents: settings.mode === 'cosmic' && settings.cosmicEvents },
-    rockets: Array.from({ length: players }, (_, i) => ({
+    rockets: Array.from({ length: players }, () => ({
       position: 1, items: [], gravity: null, anchored: false, solarWind: false, binary: false,
       shielded: false, lastTarget: null, beaconRound: null,
-      // The first rocket's first turn counts towards its Mission Boost.
-      ...(settings.maths ? { boostTurns: i === 0 ? 1 : 0 } : {}),
+      // The Mission Boost is ready on everyone's first turn (so it's seen at once), then
+      // charges again over BOOST_CHARGE_TURNS turns.
+      ...(settings.maths ? { boostTurns: BOOST_CHARGE_TURNS } : {}),
     })),
     turn: 0,
     round: 1,

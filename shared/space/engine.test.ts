@@ -596,13 +596,9 @@ describe('Mission Control maths', () => {
     expect(run(asked, { kind: 'timeout' }).state.rockets[0].position).toBe(20);
   });
 
-  it('the Mission Boost charges over BOOST_CHARGE_TURNS turns, then adds 2 to the roll if answered right', () => {
+  it('the Mission Boost is ready at the start, then recharges over BOOST_CHARGE_TURNS turns; a right answer adds 2 to the roll', () => {
     let s = start(board, 2, { maths: true });
-    expect(s.rockets.map((r) => r.boostTurns)).toEqual([1, 0]);
-    expect(() => run(s, { kind: 'boost' })).toThrow(SpaceRuleError);
-    for (let i = 0; i < 2 * (BOOST_CHARGE_TURNS - 1); i++) s = run(s, roll, [1]).state;
-    expect(s.turn).toBe(0);
-    expect(s.rockets[0].boostTurns).toBe(BOOST_CHARGE_TURNS);
+    expect(s.rockets.map((r) => r.boostTurns)).toEqual([BOOST_CHARGE_TURNS, BOOST_CHARGE_TURNS]);
     const asked = run(s, { kind: 'boost' }).state;
     expect(asked.pending).toEqual({ kind: 'question', square: s.rockets[0].position, moment: 'boost' });
     const right = run(asked, choose(1)).state;
@@ -616,6 +612,15 @@ describe('Mission Control maths', () => {
     expect(run(wrong, roll, [2]).events).toContainEqual(expect.objectContaining({ kind: 'roll', steps: 2 }));
     // Only once a turn, and not after rolling.
     expect(() => run(right, { kind: 'boost' })).toThrow(SpaceRuleError);
+    // After using it, it takes BOOST_CHARGE_TURNS of your own turns to charge again.
+    s = run(right, roll, [1]).state; // seat 0 rolls, seat 1's turn
+    s = run(s, roll, [1]).state;
+    expect(s.turn).toBe(0);
+    expect(s.rockets[0].boostTurns).toBe(1);
+    expect(() => run(s, { kind: 'boost' })).toThrow(SpaceRuleError);
+    for (let i = 0; i < 2 * (BOOST_CHARGE_TURNS - 1); i++) s = run(s, roll, [1]).state;
+    expect(s.rockets[0].boostTurns).toBe(BOOST_CHARGE_TURNS);
+    expect(() => run(s, { kind: 'boost' })).not.toThrow();
   });
 
   it('with maths off nothing is asked and there is no boost (games exactly as before)', () => {
