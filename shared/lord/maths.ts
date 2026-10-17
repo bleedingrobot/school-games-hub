@@ -1,6 +1,6 @@
 import type { ExtraTopicId } from '../maths/skillPacks';
 import type { TopicId } from '../maths/skillPacks';
-import { MAX_LEVEL, levelUpGain, tierPower } from './data';
+import { MAX_LEVEL, friendly, levelUpGain, tierPower } from './data';
 import type { FightOptions } from './engine';
 import type { Hero } from './types';
 
@@ -79,3 +79,6 @@ export const interestFor = (bank: number, result: Result): number => (result ===
 /** The inn's number guess: pick 1-100 and guess in 7 tries (halving always works). A win pays well, a miss pays a little for trying. */
 export const NUMBER_GUESS_TRIES = 7;
 export const numberGuessPrize = (level: number, won: boolean): number => Math.round(tierPower(level) * (won ? 1 : 0.2));
+
+/** The inn's riddle of the day: a right answer pays well, a wrong one pays a little for trying. */
+export const riddleGold = (level: number, result: Result): number => friendly(tierPower(level) * (result === 'right' ? 1.5 : 0.3));
