@@ -270,6 +270,6 @@ Built (pure TypeScript, tests only, **no screens, nothing saved, nothing live**)
 
 **Private:** `cryRecord` makes an answer record in the same shape as the other games (`key`, `correct`, `ms`, `at`; key like `clan:y5:percent-of`). No tables or functions added.
 
-**Checked:** 120+ new tests (153 across `shared/clans` and `shared/maths`): every kind at every band over 150 samples against a second, independent way of working out the answer; same seed gives the same question; remainders, rounding up/down, 12.5%, ties in better buys; Years 4-5 never produce negatives, decimals or answers over 1,000; 25 recorded fights replay identically; a doctored answer record is not marked right.
+**Checked:** 88 new tests (whole suite: 902 passing, type check clean): every kind at every band over 150 samples against a second, independent way of working out the answer; same seed gives the same question; remainders, rounding up/down, 12.5%, ties in better buys; Years 4-5 never produce negatives, decimals or answers over 1,000; 25 recorded fights replay identically; a doctored answer record is not marked right.
 
 **Left for later:** the number pad needs a minus key for Year 6 negatives (C.3); a "which is better" question is tap-to-answer (C.3); wording needs James's eye (examples in the C.2 summary); how often the Battle Cry shows a topic is equal per topic, which may want weighting once children use it.
