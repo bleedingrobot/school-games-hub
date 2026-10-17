@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { BotLevel } from '../botGame';
 import type { Board } from './board';
-import { botAction } from './bot';
+import { BOT_MATHS, botAction } from './bot';
 import { DESIGNED_BOARD_IDS, DESIGNED_BOARDS } from './boards';
-import { DEFAULT_SETTINGS, KEEP_ITEMS, newGame, type SpaceState } from './engine';
+import { BOOST_CHARGE_TURNS, DEFAULT_SETTINGS, KEEP_ITEMS, newGame, type SpaceState } from './engine';
 import { galaxyBoard, galaxyCodeAt } from './galaxy';
 import { simulate } from './sim';
 
@@ -93,3 +93,32 @@ describe('bot choices', () => {
     expect(botAction(s, 'easy', never)).toEqual({ kind: 'choose', option: 1 });
   });
 });
+
+describe('bots and Mission Control maths', () => {
+  const b = board({ 10: { kind: 'wormhole', to: 30 } });
+  it.each(['very-easy', 'easy', 'medium'] as const)('the %s bot answers right about as often as it should', (level) => {
+    const s = newGame(b, { ...DEFAULT_SETTINGS, maths: true }, 2).state;
+    s.phase = 'choice';
+    s.pending = { kind: 'question', square: 10 };
+    let seed = 1;
+    const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    let right = 0;
+    for (let i = 0; i < 2000; i++) {
+      const action = botAction(s, level, random) as { kind: 'choose'; option: number };
+      right += action.option;
+    }
+    expect(right / 2000).toBeGreaterThan(BOT_MATHS[level] - 0.05);
+    expect(right / 2000).toBeLessThan(BOT_MATHS[level] + 0.05);
+  });
+
+  it('Pilot and Commander always take a charged Mission Boost; nobody can without maths', () => {
+    const s = newGame(b, { ...DEFAULT_SETTINGS, maths: true }, 2).state;
+    s.rockets[0].boostTurns = BOOST_CHARGE_TURNS;
+    expect(botAction(s, 'easy', never)).toEqual({ kind: 'boost' });
+    expect(botAction(s, 'medium', never)).toEqual({ kind: 'boost' });
+    const off = newGame(b, DEFAULT_SETTINGS, 2).state;
+    off.rockets[0].boostTurns = BOOST_CHARGE_TURNS;
+    expect(botAction(off, 'easy', never)).toEqual({ kind: 'roll' });
+  });
+});
+

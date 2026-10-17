@@ -35,7 +35,10 @@ export interface Settings {
   finish: Finish;
   rollAgainOnSix: boolean;
   cosmicEvents: boolean;
-  /** Mission Control maths questions at wormhole mouths (not built yet: always off). */
+  /**
+   * Mission Control maths (docs/SPACE-MATHS-PLAN.md): a question at wormholes and black holes,
+   * and the Mission Boost. A right answer helps; a wrong one never hurts.
+   */
   maths: boolean;
 }
 
@@ -76,6 +79,12 @@ export const SUPERNOVA_BLAST = 5;
 export const SUPERNOVA_RANGE = 10;
 export const SUPERNOVA_PUSH = 2;
 export const RESCUE_JUMP = 10;
+/** Mission Control maths: a right answer at a wormhole flies this much further. */
+export const WORMHOLE_BONUS = 3;
+/** The Mission Boost adds this to a roll… */
+export const MISSION_BOOST_STEPS = 2;
+/** …and is charged after this many of your turns. */
+export const BOOST_CHARGE_TURNS = 5;
 export const METEORS = 5;
 /** Where the mystery station can send you, and how likely each is. */
 export const MYSTERY_OFFSETS: readonly (readonly [number, number])[] = [
@@ -104,6 +113,8 @@ export interface Rocket {
   lastTarget: number | null;
   /** The round this rocket was last sent a Rescue Beacon. */
   beaconRound: number | null;
+  /** Mission Control maths: turns towards the next Mission Boost (charged at BOOST_CHARGE_TURNS). Missing in games from before. */
+  boostTurns?: number;
 }
 
 export interface Mine {
@@ -118,7 +129,11 @@ export type Pending =
   | { kind: 'mystery'; square: number }
   | { kind: 'inventory'; item: ItemKind }
   | { kind: 'binary'; dice: [number, number] }
-  | { kind: 'question'; square: number };
+  /** Mission Control maths. `moment` is missing in games from before (it was always a wormhole). */
+  | { kind: 'question'; square: number; moment?: MathsMoment };
+
+/** When Mission Control asks: landing on a wormhole or a black hole, or the Mission Boost. */
+export type MathsMoment = 'wormhole' | 'black-hole' | 'boost';
 
 export type CosmicEvent = 'solar-wind' | 'meteor-shower' | 'wormhole-shift';
 
@@ -134,6 +149,8 @@ export interface TurnInfo {
   /** The real die showed a 6 (for roll-again-on-6). */
   rolledSix: boolean;
   rollAgainUsed: boolean;
+  /** A right Mission Boost answer: +MISSION_BOOST_STEPS on this roll. */
+  mathsBoost?: boolean;
 }
 
 export type Ending = 'docked' | 'mission-clock';
@@ -192,7 +209,7 @@ export type SpaceEvent =
   | { kind: 'mine-fizzled'; owner: number; square: number }
   | { kind: 'asteroid'; seat: number; square: number }
   | { kind: 'supernova-spent'; square: number }
-  | { kind: 'question'; seat: number; correct: boolean; from: number; to: number }
+  | { kind: 'question'; seat: number; correct: boolean; from: number; to: number; moment?: MathsMoment }
   | { kind: 'chain-cap'; seat: number; square: number }
   | { kind: 'choice'; seat: number; pending: Pending }
   | { kind: 'timeout'; seat: number }
@@ -206,10 +223,12 @@ export type SpaceEvent =
  * What the rocket whose turn it is does. Choice options:
  * gate 0 stay / 1 jump; mystery 0–2 (the card); inventory 0–2 drop that item / 3 keep what
  * you have; binary 0 or 1 (which die); question 0 wrong / 1 right.
+ * `boost`: ask for a Mission Boost question (maths on, charged, before rolling).
  */
 export type SpaceAction =
   | { kind: 'use-item'; item: ItemKind; target?: number; value?: number }
   | { kind: 'roll' }
+  | { kind: 'boost' }
   | { kind: 'choose'; option: number }
   | { kind: 'timeout' };
 
@@ -244,9 +263,11 @@ export function newGame(board: Board, settings: Settings, players: number): Play
   const state: SpaceState = {
     board: playBoard,
     settings: { ...settings, cosmicEvents: settings.mode === 'cosmic' && settings.cosmicEvents },
-    rockets: Array.from({ length: players }, () => ({
+    rockets: Array.from({ length: players }, (_, i) => ({
       position: 1, items: [], gravity: null, anchored: false, solarWind: false, binary: false,
       shielded: false, lastTarget: null, beaconRound: null,
+      // The first rocket's first turn counts towards its Mission Boost.
+      ...(settings.maths ? { boostTurns: i === 0 ? 1 : 0 } : {}),
     })),
     turn: 0,
     round: 1,
@@ -334,6 +355,13 @@ export function itemProblem(s: SpaceState, item: ItemKind, seat = s.turn): strin
   return null;
 }
 
+/** True if the rocket whose turn it is may ask for a Mission Boost now. */
+export function canBoost(s: SpaceState): boolean {
+  const r = s.rockets[s.turn];
+  return s.settings.maths && s.phase === 'ready' && !s.turnInfo.rolled && !s.turnInfo.mathsBoost
+    && (r.boostTurns ?? 0) >= BOOST_CHARGE_TURNS;
+}
+
 /** The items this rocket could use right now. */
 export function usableItems(s: SpaceState, seat = s.turn): ItemKind[] {
   return [...new Set(s.rockets[seat].items)].filter((item) => itemProblem(s, item, seat) === null);
@@ -352,6 +380,7 @@ export function stepsFor(r: Rocket, t: TurnInfo, die: number): { steps: number; 
   if (r.gravity?.kind === 'heavy') { steps = Math.ceil(steps / 2); changes.push('heavy-gravity'); }
   if (r.anchored) { steps = Math.ceil(steps / 2); changes.push('gravity-anchor'); }
   if (t.booster) { steps += 2; changes.push('booster'); }
+  if (t.mathsBoost) { steps += MISSION_BOOST_STEPS; changes.push('mission-boost'); }
   if (r.gravity?.kind === 'low') { steps += 2; changes.push('low-gravity'); }
   if (r.solarWind) { steps += 1; changes.push('solar-wind'); }
   return { steps: Math.max(1, steps), changes };
@@ -400,6 +429,9 @@ class Game {
       case 'roll':
         if (s.phase !== 'ready') throw new SpaceRuleError('Make your choice first.');
         return this.roll();
+      case 'boost':
+        if (!canBoost(s)) throw new SpaceRuleError("The Mission Boost isn't ready.");
+        return this.ask({ kind: 'question', square: this.me.position, moment: 'boost' });
       case 'choose':
         if (s.phase !== 'choice' || !s.pending) throw new SpaceRuleError("There's nothing to choose.");
         return this.choose(action.option);
@@ -522,6 +554,7 @@ class Game {
     this.emit({ kind: 'roll', seat: this.seat, die, steps, changes });
     // Use up what this roll used.
     t.booster = t.hyperdrive = false;
+    if (t.mathsBoost) t.mathsBoost = false;
     t.navigator = null;
     me.anchored = false;
     me.solarWind = false;
@@ -603,15 +636,8 @@ class Game {
             this.emit({ kind: 'force-field', seat, square: n });
             return;
           }
-          const pod = me.items.indexOf('escape-pod');
-          if (pod >= 0) {
-            me.items.splice(pod, 1);
-            me.position = n - Math.max(1, Math.floor((n - square.to) / 2));
-            this.emit({ kind: 'black-hole', seat, from: n, to: me.position, escapePod: true });
-          } else {
-            me.position = square.to;
-            this.emit({ kind: 'black-hole', seat, from: n, to: square.to });
-          }
+          if (s.settings.maths) return this.ask({ kind: 'question', square: n, moment: 'black-hole' });
+          this.fallIn(n, square.to);
           continue;
         }
         case 'star':
@@ -629,6 +655,20 @@ class Game {
         case 'nebula':
           return;
       }
+    }
+  }
+
+  /** Falls into the black hole at `n`: half way with an Escape Pod (used up), else all the way. */
+  private fallIn(n: number, to: number) {
+    const me = this.me;
+    const pod = me.items.indexOf('escape-pod');
+    if (pod >= 0) {
+      me.items.splice(pod, 1);
+      me.position = n - halfFall(n, to);
+      this.emit({ kind: 'black-hole', seat: this.seat, from: n, to: me.position, escapePod: true });
+    } else {
+      me.position = to;
+      this.emit({ kind: 'black-hole', seat: this.seat, from: n, to });
     }
   }
 
@@ -722,11 +762,32 @@ class Game {
         }
         return this.afterMove();
       case 'question': {
+        const right = option === 1;
+        const moment = pending.moment ?? 'wormhole';
+        if (moment === 'boost') {
+          // Before rolling: the turn carries on either way, and the boost is used up.
+          me.boostTurns = 0;
+          if (right) s.turnInfo.mathsBoost = true;
+          this.emit({ kind: 'question', seat, correct: right, from: me.position, to: me.position, moment });
+          return;
+        }
+        if (moment === 'black-hole') {
+          const square = s.board.squares[pending.square] as { kind: 'black-hole'; to: number };
+          if (right) {
+            me.position = pending.square - halfFall(pending.square, square.to);
+            this.emit({ kind: 'question', seat, correct: true, from: pending.square, to: me.position, moment });
+          } else {
+            this.emit({ kind: 'question', seat, correct: false, from: pending.square, to: pending.square, moment });
+            this.fallIn(pending.square, square.to);
+          }
+          this.land();
+          return this.afterMove();
+        }
         const square = s.board.squares[pending.square] as { kind: 'wormhole'; to: number };
-        const bonus = square.to + 3;
-        const to = option === 1 && bonus < s.board.size && !isLink(s.board.squares[bonus]) ? bonus : square.to;
+        const bonus = square.to + WORMHOLE_BONUS;
+        const to = right && bonus < s.board.size && !isLink(s.board.squares[bonus]) ? bonus : square.to;
         me.position = to;
-        this.emit({ kind: 'question', seat, correct: option === 1, from: pending.square, to });
+        this.emit({ kind: 'question', seat, correct: right, from: pending.square, to, ...(pending.moment ? { moment } : {}) });
         this.land();
         return this.afterMove();
       }
@@ -760,6 +821,7 @@ class Game {
     s.turnInfo = newTurnInfo();
     const me = this.me;
     me.shielded = false;
+    if (s.settings.maths) me.boostTurns = Math.min(BOOST_CHARGE_TURNS, (me.boostTurns ?? 0) + 1);
     this.emit({ kind: 'turn-start', seat: s.turn, round: s.round });
     // Catch-up help: a Rescue Beacon for the rocket in last place, if it's far behind.
     if (
@@ -840,6 +902,11 @@ class Game {
     s.places = placesFor(s);
     this.emit({ kind: 'game-over', ending, places: s.places });
   }
+}
+
+/** How far an Escape Pod (or a right answer) saves you from a black hole at `n` going to `to`. */
+function halfFall(n: number, to: number): number {
+  return Math.max(1, Math.floor((n - to) / 2));
 }
 
 /** The options a choice has (see SpaceAction). */

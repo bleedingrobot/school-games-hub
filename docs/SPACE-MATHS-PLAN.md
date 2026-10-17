@@ -2,7 +2,7 @@
 
 *Times-table questions in Wormholes & Black Holes, with an on/off switch. Written 17 October 2026 for James.*
 
-**Status: approved by James on 17 October 2026: "go with your suggestions" (every answer in section 9 is the suggestion).**
+**Status: approved by James on 17 October 2026: "go with your suggestions" (every answer in section 9 is the suggestion). M.1 and M.2 done (section 10). Change from the plan: the Mission Boost charges every 5 turns, not 3 (section 10).**
 
 ## 1. The idea in one paragraph
 
@@ -79,3 +79,35 @@ Rough size: a bit smaller than Gem Keep Phase 5. M.1–M.3 can be tried in a pri
 5. **Bots answering:** 60/75/90% right for Cadet/Pilot/Commander? *Suggestion: yes.*
 6. **Booster:** +2 on the roll, charging every 3 turns? *Suggestion: yes. Easy to change after a class tries it.*
 7. **Show "Brave Kiwi 7 powered up the wormhole!" to classmates** (good news only)? *Suggestion: yes.*
+
+## 10. Results so far
+
+**M.1 Shared answers (17 Oct 2026).** Gem Keep now sends each answer (fact, right or wrong, time, when) in batches with their own id. The new database function `record_fact_answers()` (migration `20261017001200_fact_answers.sql`) adds them to the records in order, by the same rules as `shared/maths/leitner.ts` (a database test walks one fact through every rule with the numbers worked out by the game's own code). A batch sent twice counts once; batch ids are forgotten after 30 days or at a new season. Answers quicker than a quarter of a second are left out. Old "whole records" saves waiting on a device are still accepted. Checked in the browser on the local copy: 13 answers in a level and its Level Key all reached the records, offline answers too.
+
+**M.2 Game rules (17 Oct 2026).** In `shared/space/engine.ts` with maths on:
+
+- Wormhole: right = 3 squares further (as built before). Black hole: right = fall half as far (keeps your Escape Pod); wrong = as before (the Escape Pod works if you have one). A Force Field still blocks it with no question. A timeout counts as wrong.
+- Mission Boost: a new action, before rolling, once charged. Right = +2 on this roll. Wrong = normal roll. Either way it's used up.
+- Bots: Cadet answers right 60% of the time, Pilot 75%, Commander 90%. Pilot and Commander always take a charged boost, the Cadet half the time.
+- With maths off nothing changes: the bots make exactly the same moves as before (tested), so games already being played aren't affected.
+
+**Simulator (1,000 games a setting, bots at Pilot, Cosmic mode).** Minutes are the simulator's estimate, counting each question as 10 seconds.
+
+| Nebula | Off | Maths on, boost every 3 turns | Maths on, boost every 5 turns |
+|---|---|---|---|
+| 4 rockets: minutes | 6.6 | 9.0 | 8.1 |
+| 2 rockets: minutes | 3.9 | 5.4 | 4.9 |
+
+Every board showed the same pattern: about +3 minutes for 4 rockets with the boost every 3 turns (Inner Solar System 6.8 → 9.7, Deep Space 6.2 → 9.3, Asteroid Belt 4.0 → 5.7). Most of the extra questions were boosts, so **the boost now charges every 5 turns** (one number, `BOOST_CHARGE_TURNS`). That adds about 1½ minutes to a 4-rocket game. Games take fewer turns with maths on, because right answers move rockets further, but each question takes time.
+
+**How much knowing your tables helps** (one rocket that always or never answers right, against Pilots, boost every 5 turns, Nebula):
+
+| | Fair share | Always right | Never right |
+|---|---|---|---|
+| 4 rockets: wins | 25% | 29% | 18% |
+| 2 rockets: wins | 50% | 57% | 37% |
+
+So maths matters, but luck still matters more: a student who gets everything wrong still wins about 1 game in 5 of 4-rocket games. Wrong answers never move you back; the gap comes from everyone else's right answers.
+
+Next: M.3 (playing bots and pass-and-play with maths on, saving the answers).
+

@@ -6,7 +6,7 @@
 import type { BotLevel } from '../botGame';
 import type { Board } from './board';
 import { botAction } from './bot';
-import { newGame, play, type Settings, type SpaceEvent } from './engine';
+import { newGame, play, type Settings, type SpaceAction, type SpaceEvent } from './engine';
 import { randomFromSeed, seededDice } from './random';
 
 export interface SimOptions {
@@ -16,6 +16,11 @@ export interface SimOptions {
   levels: readonly BotLevel[];
   games: number;
   seed: string;
+  /**
+   * Mission Control maths: how often each seat answers right, in place of its bot's usual rate
+   * (to see how much knowing your tables helps). Undefined: the bot's own rate.
+   */
+  mathsRight?: (number | undefined)[];
 }
 
 export interface Spread {
@@ -56,13 +61,13 @@ function spread(values: number[]): Spread {
 
 /**
  * Seconds a classroom turn might take: about 6 for tapping, the dice and the hops, 1.5 more for each
- * square or hinder that acts, 4 for each choice and 2 for each item used.
+ * square or hinder that acts, 4 for each choice (10 for a maths question) and 2 for each item used.
  */
 export function secondsFor(events: readonly SpaceEvent[]): number {
   let seconds = 0;
   for (const e of events) {
     if (e.kind === 'roll') seconds += 6;
-    else if (e.kind === 'choice') seconds += 4;
+    else if (e.kind === 'choice') seconds += e.pending.kind === 'question' ? 10 : 4;
     else if (e.kind === 'item-used') seconds += 2;
     else if (['wormhole', 'black-hole', 'star', 'comet', 'pushed', 'swapped', 'gate', 'mystery', 'force-field', 'cosmic'].includes(e.kind)) seconds += 1.5;
   }
@@ -78,7 +83,7 @@ function countKey(e: SpaceEvent): string | null {
     case 'pushed': return `pushed:${e.by}`;
     case 'gravity': return `gravity:${e.gravity}`;
     case 'cosmic': return `cosmic:${e.event}`;
-    case 'choice': return `choice:${e.pending.kind}`;
+    case 'choice': return e.pending.kind === 'question' ? `choice:question:${e.pending.moment ?? 'wormhole'}` : `choice:${e.pending.kind}`;
     case 'turn-start': case 'round-start': case 'dice': case 'roll': case 'move': case 'game-over': case 'docked': return null;
     default: return e.kind;
   }
@@ -105,7 +110,12 @@ export function simulate(options: SimOptions): SimReport {
     const positionsByRound: number[][] = [[...state.rockets.map((r) => r.position)]];
     let moveEvents = 0;
     while (state.phase !== 'over') {
-      const result = play(state, botAction(state, levels[state.turn], random), dice);
+      const rate = options.mathsRight?.[state.turn];
+      const action: SpaceAction =
+        rate !== undefined && state.phase === 'choice' && state.pending?.kind === 'question'
+          ? { kind: 'choose', option: random() < rate ? 1 : 0 }
+          : botAction(state, levels[state.turn], random);
+      const result = play(state, action, dice);
       state = result.state;
       seconds += secondsFor(result.events);
       for (const e of result.events) {

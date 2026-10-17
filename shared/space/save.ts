@@ -51,11 +51,13 @@ export function seedProblem(seed: string, nowSeconds: number): string | null {
 
 // ---------- Actions, written as short text ----------
 
-/** "roll", "choose:1", "use:booster", "use:tractor-beam@2", "use:navigator=6". */
+/** "roll", "boost", "choose:1", "use:booster", "use:tractor-beam@2", "use:navigator=6". */
 export function encodeAction(action: SpaceAction): string {
   switch (action.kind) {
     case 'roll':
       return 'roll';
+    case 'boost':
+      return 'boost';
     case 'timeout':
       return 'timeout';
     case 'choose':
@@ -68,6 +70,7 @@ export function encodeAction(action: SpaceAction): string {
 /** The opposite of encodeAction. Null for anything it wouldn't make (timeouts too: solo games have no timer). */
 export function decodeAction(text: string): SpaceAction | null {
   if (text === 'roll') return { kind: 'roll' };
+  if (text === 'boost') return { kind: 'boost' };
   const choose = /^choose:([0-3])$/.exec(text);
   if (choose) return { kind: 'choose', option: Number(choose[1]) };
   const use = /^use:([a-z-]{1,20})(?:@([0-3]))?(?:=([1-6]))?$/.exec(text);

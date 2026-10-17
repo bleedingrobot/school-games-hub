@@ -10,6 +10,7 @@
 import type { BotLevel } from '../botGame';
 import { cometTail } from './board';
 import {
+  canBoost,
   choiceOptions,
   moveTarget,
   nextWormhole,
@@ -24,6 +25,9 @@ import {
 import type { ItemKind } from './items';
 
 export { BOT_NAMES } from './names';
+
+/** How often each bot answers Mission Control's questions right (so maths doesn't just beat bots). */
+export const BOT_MATHS: Record<BotLevel, number> = { 'very-easy': 0.6, easy: 0.75, medium: 0.9 };
 
 /** How much a bot likes holding each item (for "pockets full" choices). */
 const ITEM_VALUE: Record<ItemKind, number> = {
@@ -148,6 +152,8 @@ function itemPlans(s: SpaceState, level: BotLevel): Plan[] {
 /** What a bot does next, when it's its turn (or its choice). `random` gives 0–1. */
 export function botAction(s: SpaceState, level: BotLevel, random: () => number): SpaceAction {
   if (s.phase === 'choice' && s.pending) return { kind: 'choose', option: botChoice(s, level, random) };
+  // The Mission Boost never hurts: Pilot and Commander always take it, the Cadet half the time.
+  if (canBoost(s) && (level !== 'very-easy' || random() < 0.5)) return { kind: 'boost' };
 
   if (level === 'very-easy') {
     const usable = usableItems(s);
@@ -172,6 +178,7 @@ export function botAction(s: SpaceState, level: BotLevel, random: () => number):
 function botChoice(s: SpaceState, level: BotLevel, random: () => number): number {
   const pending = s.pending!;
   const seat = s.turn;
+  if (pending.kind === 'question') return random() < BOT_MATHS[level] ? 1 : 0;
   if (level === 'very-easy') return pick(random, choiceOptions(pending));
   switch (pending.kind) {
     case 'gate':
@@ -188,7 +195,5 @@ function botChoice(s: SpaceState, level: BotLevel, random: () => number): number
       items.forEach((item, i) => { if (ITEM_VALUE[item] < ITEM_VALUE[items[worst]]) worst = i; });
       return ITEM_VALUE[pending.item] > ITEM_VALUE[items[worst]] ? worst : KEEP_ITEMS;
     }
-    case 'question':
-      return 1;
   }
 }

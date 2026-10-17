@@ -1175,7 +1175,7 @@ function newGame$1(board, settings, players) {
 				...settings,
 				cosmicEvents: settings.mode === "cosmic" && settings.cosmicEvents
 			},
-			rockets: Array.from({ length: players }, () => ({
+			rockets: Array.from({ length: players }, (_, i) => ({
 				position: 1,
 				items: [],
 				gravity: null,
@@ -1184,7 +1184,8 @@ function newGame$1(board, settings, players) {
 				binary: false,
 				shielded: false,
 				lastTarget: null,
-				beaconRound: null
+				beaconRound: null,
+				...settings.maths ? { boostTurns: i === 0 ? 1 : 0 } : {}
 			})),
 			turn: 0,
 			round: 1,
@@ -1273,6 +1274,11 @@ function itemProblem(s, item, seat = s.turn) {
 	if (ITEMS[item].targeted && validTargets(s, item, seat).length === 0) return "No rockets you can aim at.";
 	return null;
 }
+/** True if the rocket whose turn it is may ask for a Mission Boost now. */
+function canBoost(s) {
+	const r = s.rockets[s.turn];
+	return s.settings.maths && s.phase === "ready" && !s.turnInfo.rolled && !s.turnInfo.mathsBoost && (r.boostTurns ?? 0) >= 3;
+}
 /** The items this rocket could use right now. */
 function usableItems(s, seat = s.turn) {
 	return [...new Set(s.rockets[seat].items)].filter((item) => itemProblem(s, item, seat) === null);
@@ -1304,6 +1310,10 @@ function stepsFor(r, t, die) {
 	if (t.booster) {
 		steps += 2;
 		changes.push("booster");
+	}
+	if (t.mathsBoost) {
+		steps += 2;
+		changes.push("mission-boost");
 	}
 	if (r.gravity?.kind === "low") {
 		steps += 2;
@@ -1374,6 +1384,13 @@ var Game = class {
 			case "roll":
 				if (s.phase !== "ready") throw new SpaceRuleError("Make your choice first.");
 				return this.roll();
+			case "boost":
+				if (!canBoost(s)) throw new SpaceRuleError("The Mission Boost isn't ready.");
+				return this.ask({
+					kind: "question",
+					square: this.me.position,
+					moment: "boost"
+				});
 			case "choose":
 				if (s.phase !== "choice" || !s.pending) throw new SpaceRuleError("There's nothing to choose.");
 				return this.choose(action.option);
@@ -1549,6 +1566,7 @@ var Game = class {
 			changes
 		});
 		t.booster = t.hyperdrive = false;
+		if (t.mathsBoost) t.mathsBoost = false;
 		t.navigator = null;
 		me.anchored = false;
 		me.solarWind = false;
@@ -1683,26 +1701,12 @@ var Game = class {
 						});
 						return;
 					}
-					const pod = me.items.indexOf("escape-pod");
-					if (pod >= 0) {
-						me.items.splice(pod, 1);
-						me.position = n - Math.max(1, Math.floor((n - square.to) / 2));
-						this.emit({
-							kind: "black-hole",
-							seat,
-							from: n,
-							to: me.position,
-							escapePod: true
-						});
-					} else {
-						me.position = square.to;
-						this.emit({
-							kind: "black-hole",
-							seat,
-							from: n,
-							to: square.to
-						});
-					}
+					if (s.settings.maths) return this.ask({
+						kind: "question",
+						square: n,
+						moment: "black-hole"
+					});
+					this.fallIn(n, square.to);
 					continue;
 				}
 				case "star":
@@ -1737,6 +1741,30 @@ var Game = class {
 				});
 				case "nebula": return;
 			}
+		}
+	}
+	/** Falls into the black hole at `n`: half way with an Escape Pod (used up), else all the way. */
+	fallIn(n, to) {
+		const me = this.me;
+		const pod = me.items.indexOf("escape-pod");
+		if (pod >= 0) {
+			me.items.splice(pod, 1);
+			me.position = n - halfFall(n, to);
+			this.emit({
+				kind: "black-hole",
+				seat: this.seat,
+				from: n,
+				to: me.position,
+				escapePod: true
+			});
+		} else {
+			me.position = to;
+			this.emit({
+				kind: "black-hole",
+				seat: this.seat,
+				from: n,
+				to
+			});
 		}
 	}
 	/** A star square acts. Returns true if it moved the rocket (so the new square acts too). */
@@ -1883,16 +1911,58 @@ var Game = class {
 				}
 				return this.afterMove();
 			case "question": {
+				const right = option === 1;
+				const moment = pending.moment ?? "wormhole";
+				if (moment === "boost") {
+					me.boostTurns = 0;
+					if (right) s.turnInfo.mathsBoost = true;
+					this.emit({
+						kind: "question",
+						seat,
+						correct: right,
+						from: me.position,
+						to: me.position,
+						moment
+					});
+					return;
+				}
+				if (moment === "black-hole") {
+					const square = s.board.squares[pending.square];
+					if (right) {
+						me.position = pending.square - halfFall(pending.square, square.to);
+						this.emit({
+							kind: "question",
+							seat,
+							correct: true,
+							from: pending.square,
+							to: me.position,
+							moment
+						});
+					} else {
+						this.emit({
+							kind: "question",
+							seat,
+							correct: false,
+							from: pending.square,
+							to: pending.square,
+							moment
+						});
+						this.fallIn(pending.square, square.to);
+					}
+					this.land();
+					return this.afterMove();
+				}
 				const square = s.board.squares[pending.square];
 				const bonus = square.to + 3;
-				const to = option === 1 && bonus < s.board.size && !isLink(s.board.squares[bonus]) ? bonus : square.to;
+				const to = right && bonus < s.board.size && !isLink(s.board.squares[bonus]) ? bonus : square.to;
 				me.position = to;
 				this.emit({
 					kind: "question",
 					seat,
-					correct: option === 1,
+					correct: right,
 					from: pending.square,
-					to
+					to,
+					...pending.moment ? { moment } : {}
 				});
 				this.land();
 				return this.afterMove();
@@ -1928,6 +1998,7 @@ var Game = class {
 		s.turnInfo = newTurnInfo();
 		const me = this.me;
 		me.shielded = false;
+		if (s.settings.maths) me.boostTurns = Math.min(3, (me.boostTurns ?? 0) + 1);
 		this.emit({
 			kind: "turn-start",
 			seat: s.turn,
@@ -2040,6 +2111,10 @@ var Game = class {
 		});
 	}
 };
+/** How far an Escape Pod (or a right answer) saves you from a black hole at `n` going to `to`. */
+function halfFall(n, to) {
+	return Math.max(1, Math.floor((n - to) / 2));
+}
 /** The options a choice has (see SpaceAction). */
 function choiceOptions(pending) {
 	switch (pending.kind) {
@@ -2071,6 +2146,12 @@ function defaultOption(pending) {
 }
 //#endregion
 //#region shared/space/bot.ts
+/** How often each bot answers Mission Control's questions right (so maths doesn't just beat bots). */
+const BOT_MATHS = {
+	"very-easy": .6,
+	easy: .75,
+	medium: .9
+};
 /** How much a bot likes holding each item (for "pockets full" choices). */
 const ITEM_VALUE = {
 	"rescue-beacon": 10,
@@ -2248,6 +2329,7 @@ function botAction(s, level, random) {
 		kind: "choose",
 		option: botChoice(s, level, random)
 	};
+	if (canBoost(s) && (level !== "very-easy" || random() < .5)) return { kind: "boost" };
 	if (level === "very-easy") {
 		const usable = usableItems(s);
 		if (usable.length > 0 && random() < .4) {
@@ -2269,6 +2351,7 @@ function botAction(s, level, random) {
 function botChoice(s, level, random) {
 	const pending = s.pending;
 	const seat = s.turn;
+	if (pending.kind === "question") return random() < BOT_MATHS[level] ? 1 : 0;
 	if (level === "very-easy") return pick(random, choiceOptions(pending));
 	switch (pending.kind) {
 		case "gate": return pending.twin > pending.square ? 1 : 0;
@@ -2285,7 +2368,6 @@ function botChoice(s, level, random) {
 			});
 			return ITEM_VALUE[pending.item] > ITEM_VALUE[items[worst]] ? worst : 3;
 		}
-		case "question": return 1;
 	}
 }
 //#endregion
@@ -2388,6 +2470,7 @@ function seedProblem(seed, nowSeconds) {
 /** The opposite of encodeAction. Null for anything it wouldn't make (timeouts too: solo games have no timer). */
 function decodeAction(text) {
 	if (text === "roll") return { kind: "roll" };
+	if (text === "boost") return { kind: "boost" };
 	const choose = /^choose:([0-3])$/.exec(text);
 	if (choose) return {
 		kind: "choose",

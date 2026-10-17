@@ -1,5 +1,7 @@
 // Plays thousands of Wormholes & Black Holes bot games on every board and prints what happened.
 // Run from the project folder with: npm run space:sim  [-- --games 20000] [-- --board nebula] [-- --json]
+//   [-- --maths]              Mission Control maths on (bots answer at their usual rates)
+//   [-- --student 0.9]        with --maths: the first rocket answers right this often (how much it helps)
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -14,6 +16,8 @@ const option = (name, fallback) => {
 const GAMES = Number(option('games', 5000));
 const ONLY = option('board', null);
 const JSON_OUT = args.includes('--json');
+const MATHS = args.includes('--maths');
+const STUDENT = option('student', null);
 
 // The rules are TypeScript, so bundle them into one plain JavaScript file first.
 const entry = `
@@ -51,8 +55,11 @@ const results = [];
 for (const board of boards) {
   for (const mode of ['cosmic', 'classic']) {
     for (const players of [2, 3, 4]) {
-      const settings = { ...DEFAULT_SETTINGS, mode, cosmicEvents: board.cosmicEvents };
-      const report = simulate({ board, settings, levels: Array(players).fill('easy'), games: GAMES, seed: `${board.id}:${mode}:${players}` });
+      const settings = { ...DEFAULT_SETTINGS, mode, cosmicEvents: board.cosmicEvents, maths: MATHS };
+      const report = simulate({
+        board, settings, levels: Array(players).fill('easy'), games: GAMES, seed: `${board.id}:${mode}:${players}`,
+        ...(MATHS && STUDENT !== null ? { mathsRight: [Number(STUDENT)] } : {}),
+      });
       results.push({ board: board.name, mode, players, report });
       if (!JSON_OUT) {
         console.log(
