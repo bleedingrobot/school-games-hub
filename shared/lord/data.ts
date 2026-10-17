@@ -55,7 +55,7 @@ export function levelUpGain(toLevel: number) {
   return { maxHp: a.maxHp - b.maxHp, strength: a.strength - b.strength, defence: a.defence - b.defence };
 }
 
-// ---------- Monsters: five per level for now (the plan wants ten; the rest is writing) ----------
+// ---------- Monsters: ten per level (two lists, interleaved so they run weakest to strongest) ----------
 
 type MonsterSketch = [name: string, intro: string];
 
@@ -146,24 +146,119 @@ const MONSTER_SKETCHES: MonsterSketch[][] = [
   ],
 ];
 
-export function monsterStats(level: number, variant: number) {
+
+/** The other five monsters of each level. Interleaved with the first five so each level has ten, weakest to strongest. */
+const EXTRA_SKETCHES: MonsterSketch[][] = [
+  [
+    ['Hungry Hedgehog', 'It has been eating all morning and wants dessert. You look like dessert.'],
+    ['Soggy Scarecrow', 'It lost its hat in the pond and blames you.'],
+    ['Cheeky Magpie', 'It steals your shoelace, then looks very pleased.'],
+    ['Puddle Imp', 'It jumps out of a puddle and splashes your boots on purpose.'],
+    ['Fuzzy Caterpillar', 'It is very fuzzy and very, very determined.'],
+  ],
+  [
+    ['Whiny Wisp', 'It floats about saying "it is not fair" in a tiny voice.'],
+    ['Pinecone Pixie', 'It throws pinecones, and it is a lot better at it than you would like.'],
+    ['Bramble Rat', 'It has a thorn for a sword and an opinion about everything.'],
+    ['Burr Beast', 'It is covered in sticky burrs, and now so are you.'],
+    ['Mudcrab', 'It scuttles sideways out of the swamp and waves both claws.'],
+  ],
+  [
+    ['Bridge Troll', 'He wants a toll. The bridge is not even there any more.'],
+    ['Thistle Sprite', 'It is small, green, spiky and in a terrible mood.'],
+    ['Sneezing Bear', 'It has a cold. It would like to share it with you.'],
+    ['Rabid Rabbit', 'It looks like a rabbit. It has the manners of a wolf.'],
+    ['Shrieking Owl', 'Whoo? Whoo? It is shouting, and it is not a polite question.'],
+  ],
+  [
+    ['Crow Chief', 'Twelve crows stand behind him. He is the only one who is allowed to talk.'],
+    ['Stinky Skunk', 'You smell it before you see it. Then you really smell it.'],
+    ['Swamp Hag', 'She stirs a pot of something green and tells you it is soup.'],
+    ['Goblin Archer', 'The arrow has a feather on it and a note: "Sorry in advance".'],
+    ['Tunnel Mole', 'It pops out of the ground right in front of your toes.'],
+  ],
+  [
+    ['Lantern Ghost', 'A pale glow bobs through the trees. It is holding its own lantern.'],
+    ['Rotting Stump', 'It was a stump. Now it has arms. Nobody asked it to.'],
+    ['Giant Toad', 'It sits on a toadstool the size of a table and burps a very big burp.'],
+    ['Bandit Captain', 'She has a feathered hat, a curved sword and a very long speech.'],
+    ['Wolf Rider', 'A goblin on a wolf, both very sure of themselves.'],
+  ],
+  [
+    ['Mud Giant', 'It rises out of the riverbank. It is made entirely of mud, and mood.'],
+    ['Cave Spider Queen', 'She wears a crown made of her own silk. It is very good silk.'],
+    ['Axe Ogre', 'He has one axe and zero patience.'],
+    ['Ghoul Gardener', 'He digs, hums and plants things that should not be planted.'],
+    ['Boulder Beetle', 'It rolls a rock the size of a barrel and aims it at you.'],
+  ],
+  [
+    ['Wild Gryphon', 'Half eagle, half lion, all of it cross about something.'],
+    ['Swamp Serpent', 'It slides out of the reeds with a hiss like a leaky kettle.'],
+    ['Haunted Armour', 'The armour is empty. It is still marching straight at you.'],
+    ['Troll Brute', 'It is a troll who has been to the gym.'],
+    ['Dusk Banshee', 'It wails a long, high note. All the birds leave.'],
+  ],
+  [
+    ['Ash Wolf', 'Grey as cinders, with embers in its fur. It does not like water.'],
+    ['Obsidian Imp', 'It giggles. Where it stands the stones go black and shiny.'],
+    ['Crypt Keeper', 'He has a very large ring of keys and nobody to open the doors for.'],
+    ['Giant Scorpion', 'It clicks its claws in time, like a very bad drummer.'],
+    ['Thorn Dragonling', 'A small dragon covered in thorns. It is still learning to breathe fire.'],
+  ],
+  [
+    ['Mountain Troll', 'It lives in a cave, and it will tell you all about it.'],
+    ['Ice Wraith', 'A cold gust, then a cold face in the gust.'],
+    ['Snow Yeti', 'It has been waiting on this mountain for a very long time, and it is bored.'],
+    ['Frozen Knight', 'It has been standing there since last winter. It is just thawing.'],
+    ['Blizzard Owl', 'Its wings make the snow swirl. Its eyes make you swirl.'],
+  ],
+  [
+    ['Cursed Minotaur', 'It has been lost in a maze for so long that it hates all mazes.'],
+    ['Pit Fiend', 'It climbs out of a hole with a smile that does not reach its eyes.'],
+    ['Lightning Wyvern', 'Every flap of its wings crackles. Your hair stands up.'],
+    ['Mummy Lord', 'Bandaged from head to toe, it is unwinding itself slowly to scare you.'],
+    ['Tomb Spider', 'It was asleep in a tomb for a thousand years. It is not rested.'],
+  ],
+  [
+    ['Magma Golem', 'It drips hot rock with every step and leaves little footprints of fire.'],
+    ['Smoke Dragonet', 'It coughs out a smoky ring, then looks very proud.'],
+    ['Obsidian Giant', 'It is made of black glass. It is not at all careful where it steps.'],
+    ['Death Wasp Queen', 'She is the size of a horse. Her hive is the size of a house.'],
+    ['Forge Demon', 'It carries a red-hot hammer and a long list of grievances.'],
+  ],
+  [
+    ['Dragon Cultist', 'The cultist chants the dragon\'s name and forgets the next bit.'],
+    ['Lava Serpent', 'It swims through the lava as if it were a nice cool lake.'],
+    ['Blackscale Guard', 'Black scales, red eyes, and a very stern way of standing.'],
+    ['Ash Drake', 'Not THE dragon. Its cousin. It would like you to know that.'],
+    ['Sunless Knight', 'Its armour is dark as a moonless night, and it stands in the road.'],
+  ],
+];
+
+/** Alternate two lists: a0, b0, a1, b1 ... */
+const interleave = <T,>(a: T[], b: T[]): T[] => a.flatMap((x, i) => (b[i] === undefined ? [x] : [x, b[i]]));
+
+/** Variant 0 is the level's weakest monster and `count - 1` its strongest. The spread is the same however many there are. */
+export function monsterStats(level: number, variant: number, count = 10) {
   const p = tierPower(level);
+  const v = count > 1 ? (variant / (count - 1)) * 4 : 0;
   return {
-    hp: friendly(p * (1.5 + 0.3 * variant) + 4),
-    strength: friendly(p * (0.26 + 0.04 * variant) + 2),
-    gold: friendly(p * (0.8 + 0.14 * variant)),
-    exp: friendly(p * (0.7 + 0.12 * variant)),
+    hp: friendly(p * (1.5 + 0.3 * v) + 4),
+    strength: friendly(p * (0.26 + 0.04 * v) + 2),
+    gold: friendly(p * (0.8 + 0.14 * v)),
+    exp: friendly(p * (0.7 + 0.12 * v)),
   };
 }
 
-export const MONSTERS: Monster[][] = MONSTER_SKETCHES.map((list, i) => {
+export const MONSTERS: Monster[][] = MONSTER_SKETCHES.map((first, i) => {
   const level = i + 1;
+  const list = interleave(first, EXTRA_SKETCHES[i]);
   return list.map(([name, intro], v) => ({
     id: `l${level}-${name.toLowerCase().replace(/[^a-z]+/g, '-')}`,
     name,
     level,
     intro,
-    ...monsterStats(level, v),
+    ...monsterStats(level, v, list.length),
   }));
 });
 

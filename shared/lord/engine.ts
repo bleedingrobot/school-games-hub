@@ -101,6 +101,7 @@ export function applyEvent(hero: Hero, event: ForestEvent, mathsRight = false): 
   if (event.maths && mathsRight) {
     next.gold += scaled(event.maths.reward.gold);
     next.exp += scaled(event.maths.reward.exp);
+    next.gems += event.maths.reward.gems ?? 0;
   }
   return next;
 }

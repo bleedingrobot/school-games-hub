@@ -1,3 +1,5 @@
+import type { ExtraTopicId, TopicId } from '../maths/skillPacks';
+
 /** A random-number source returning [0, 1). Real games pass a seeded one so a fight can be replayed. */
 export type Random = () => number;
 
@@ -108,7 +110,7 @@ export interface ForestEvent {
   gems?: number;
   kindness?: number;
   /** A maths moment the screens will turn into a question (L.2). The reward is paid when it is answered right. */
-  maths?: { topic: 'place-value' | 'patterns' | 'division' | 'money'; reward: { gold?: number; exp?: number } };
+  maths?: { topic: TopicId | ExtraTopicId; reward: { gold?: number; exp?: number; gems?: number } };
 }
 
 export type TripResult =

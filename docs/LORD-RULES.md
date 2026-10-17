@@ -47,7 +47,7 @@ Romance, marriage, children, orphans, drinking, gambling, student-written text, 
 
 - Hero base stats on reaching a level: HP `1.2 × tier + 8`, strength `0.4 × tier + 6`, defence `0.1 × tier + 1`.
 - Gear for level *n*: weapon power `0.6 × tier`, cost `6 × tier`; armour power `0.2 × tier`, cost `4 × tier`. Twelve of each, the first free.
-- Monsters (5 variants a level, weakest first): HP `(1.5 + 0.3v) × tier + 4`, strength `(0.26 + 0.04v) × tier + 2`, gold `(0.8 + 0.14v) × tier`, exp `(0.7 + 0.12v) × tier`.
+- Monsters (10 a level, weakest first; `v` runs from 0 to 4 across them): HP `(1.5 + 0.3v) × tier + 4`, strength `(0.26 + 0.04v) × tier + 2`, gold `(0.8 + 0.14v) × tier`, exp `(0.7 + 0.12v) × tier`.
 - Masters (reaching level *n*): HP `4.2 × tier(n−1) + 10`, strength `0.55 × tier(n−1) + 4`.
 - Exp to challenge: running total of 14 average fights a level.
 - Dragon stages: HP `3.05 × tier(12)`, strength `0.43, 0.51, 0.59 × tier(12)`.
@@ -70,6 +70,6 @@ Each riddle before a dragon stage gives a **small** bonus for a right answer: a 
 
 ## Still to settle (later stages)
 
-- Ten monsters a level (five written so far), more events, and the gem shop (L.1 follow-up and L.3).
+- The gem shop (2 gems for a permanent +1 strength, defence or HP), and more events when pupils have played.
 - Whether 2-days-a-week pupils should be able to finish. They reach level 6 or 7 in a season; Practice Mode, a bigger daily allowance for the teacher or a shorter first season could change that. James's call.
 - Kenney 1-Bit Pack and VT323 font licences: check again when the screens start (L.3).

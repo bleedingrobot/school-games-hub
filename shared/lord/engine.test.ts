@@ -8,6 +8,7 @@ import {
   finishDragon, forestTrip, heal, heroAttack, makeRandom, newHero, nextRandom, nzDate, replayFight, rollDay, seasonOf,
   startDragonStage, startFight, startMasterFight, stepFight, useForestTurn, withdraw,
 } from './engine';
+import { BANDED_PACKS, EXTRA_PACKS } from '../maths/skillPacks';
 import { EVENTS } from './events';
 import { STYLES, summarise } from './sim';
 import type { FightAction, Hero } from './types';
@@ -39,10 +40,10 @@ describe('random numbers', () => {
 });
 
 describe('the tables', () => {
-  it('have twelve levels, a few monsters each, getting stronger', () => {
+  it('have twelve levels, ten monsters each, getting stronger', () => {
     expect(MONSTERS).toHaveLength(MAX_LEVEL);
     for (const [i, list] of MONSTERS.entries()) {
-      expect(list.length).toBeGreaterThanOrEqual(5);
+      expect(list).toHaveLength(10);
       for (const m of list) expect(m.level).toBe(i + 1);
       for (let v = 1; v < list.length; v++) {
         expect(list[v].hp).toBeGreaterThanOrEqual(list[v - 1].hp);
@@ -158,6 +159,14 @@ describe('the forest', () => {
   });
   it('does not state numbers in a maths event (the question comes from a pack, so they could disagree)', () => {
     for (const e of EVENTS.filter((x) => x.maths)) expect(e.text, e.id).not.toMatch(/\d/);
+  });
+  it('only asks maths events for packs that exist, and has a good spread of them', () => {
+    const known = new Set([...Object.keys(BANDED_PACKS), 'times-tables', ...Object.keys(EXTRA_PACKS)]);
+    const maths = EVENTS.filter((e) => e.maths);
+    for (const e of maths) expect(known.has(e.maths!.topic), e.id).toBe(true);
+    expect(maths.length).toBeGreaterThanOrEqual(8);
+    expect(new Set(maths.map((e) => e.maths!.topic)).size).toBeGreaterThanOrEqual(6);
+    expect(EVENTS.length - maths.length).toBeGreaterThanOrEqual(12);
   });
   it('has events with unique ids', () => {
     expect(new Set(EVENTS.map((e) => e.id)).size).toBe(EVENTS.length);

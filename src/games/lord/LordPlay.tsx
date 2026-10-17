@@ -122,10 +122,9 @@ export function LordPlay() {
   async function resolveEvent(event: ForestEvent) {
     let right = false;
     if (event.maths) {
-      const pack = ({ 'place-value': 'place-value', patterns: 'patterns', division: 'division', money: 'money' } as const)[event.maths.topic];
-      const asked = await ask('treasure', { title: event.title, note: event.text, pack });
+      const asked = await ask('treasure', { title: event.title, note: event.text, pack: event.maths.topic, closeLabel: 'Walk on' });
       right = asked === 'right';
-      say(right ? 'You solved it!' : 'Not this time, but you know the answer now.');
+      say(asked === 'skipped' ? 'You walk on. Maybe next time!' : right ? 'You solved it!' : 'Not this time, but you know the answer now.');
     }
     const next = applyEvent(latest.current.hero!, event, right);
     setHero(next);
