@@ -180,7 +180,7 @@ export function stepFight(fight: FightState, action: FightAction): FightState {
         break;
       }
       case 'zap': {
-        const damage = Math.max(1, Math.round(f.heroAttack * 1.3 * bonus));
+        const damage = Math.max(1, Math.round(f.heroAttack * 1.5 * bonus));
         hitMonster(damage);
         log.push({ type: 'skill', skill: 'zap', amount: damage });
         break;

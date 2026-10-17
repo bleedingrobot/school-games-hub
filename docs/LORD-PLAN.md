@@ -259,7 +259,7 @@ What the simulator told us, and what changed because of it:
 
 - The first Trickster could not win master fights (14% against the Knight's 63%). Dodge now also hits back, and Pinch is a normal hit that lifts gold. All three classes now finish within a play day of each other.
 - Healing at LORD's price ate 55-60% of gold. Now about 40%.
-- The dragon was unbeatable (0%), then too easy (93% on the first try). It now sits at about 45-50% a try, with a 30% HP breather between stages, so a pupil usually wins on the second or third day.
+- The dragon was unbeatable (0%), then too easy (93% on the first try). It now sits at about 25-45% a try by class (James chose "harder", 18 Oct), with a 30% HP breather between stages, so it takes a few days of tries.
 - Pace: a pupil who plays every day reaches level 12 in week 3, and one who plays 4 days a week in week 5. **A pupil who plays 2 days a week only reaches level 6 or 7 in a 5-week season.** That is open question 12 below.
 
 **Not done yet:** ten monsters a level (five written), more events, gems, the arena and computer heroes, anything saved, anything on screen. Nothing is on the dashboard and nothing touches the database.

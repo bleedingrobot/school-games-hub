@@ -30,7 +30,7 @@ No LORD.ts code or text is copied (it is GPL-3). Rules and numbers are not owned
 | Exp curve | 100, 400, 1,000, 4,000 ... 10,000,000 (about 157 days to level 12) | About 14 fights a level, built from the monsters' own exp | A 5-week season (see below) |
 | Losing a forest fight | Lose all gold and 10% exp, dead till tomorrow | Lose carried gold only, keep exp, wake at the healer with 30% HP and keep playing | James, question 3 |
 | Bank interest | 10% a day, automatic | None; the economy is tuned without it. An optional maths bonus is possible later | Plan section 15 |
-| Classes | Death Knight, Mystic, Thief | **Knight** (Power strike, double damage), **Mage** (Zap, a fixed 1.3 × attack; Mend, heal a quarter), **Trickster** (Dodge, the next hit misses and you hit back; Pinch, a normal hit and a quarter of the monster's gold). 3 uses a day | Kid-friendly; balanced by the simulator, all three finish within a day of each other |
+| Classes | Death Knight, Mystic, Thief | **Knight** (Power strike, double damage), **Mage** (Zap, a fixed 1.5 × attack; Mend, heal a quarter), **Trickster** (Dodge, the next hit misses and you hit back; Pinch, a normal hit and a quarter of the monster's gold). 3 uses a day | Kid-friendly; balanced by the simulator, all three finish within a day of each other |
 | Healer price | 5 × level per HP | `round(level × 0.25)` per HP, at least 1 | Healing ate 55-60% of gold at the first try; now about 40% |
 | The dragon | One 15,000 HP fight; 3 kills end the game for everyone | Three stages, a breather between them (30% HP back); no game-ending kill, seasons instead | Plan section 9 |
 | Seasons | Optional tournament mode | 35 days; every hero starts again; stars and the Hall of Heroes are kept | James, 18 Oct |
@@ -50,7 +50,7 @@ Romance, marriage, children, orphans, drinking, gambling, student-written text, 
 - Monsters (5 variants a level, weakest first): HP `(1.5 + 0.3v) × tier + 4`, strength `(0.26 + 0.04v) × tier + 2`, gold `(0.8 + 0.14v) × tier`, exp `(0.7 + 0.12v) × tier`.
 - Masters (reaching level *n*): HP `4.2 × tier(n−1) + 10`, strength `0.55 × tier(n−1) + 4`.
 - Exp to challenge: running total of 14 average fights a level.
-- Dragon stages: HP `2.8 × tier(12)`, strength `0.45, 0.55, 0.65 × tier(12)`.
+- Dragon stages: HP `3.4 × tier(12)`, strength `0.5, 0.6, 0.7 × tier(12)`.
 
 ## Pace (simulator, 200 seasons each, 18 Oct 2026)
 
@@ -58,7 +58,7 @@ A simple pupil: attacks, uses class skills, heals below 40% HP, buys the best ge
 
 | Pupil | Level 12 | Beats the dragon in the season |
 |---|---|---|
-| Plays every day | day 18, week 3 | 100% (about 45% of tries; it can try again next day) |
+| Plays every day | day 18, week 3 | 100% (25-40% of tries; it can try again next day) |
 | Plays 4 days a week | 18th play day, calendar day 30, week 5 | 99% for Knight; Mage and Trickster a little lower |
 | Plays 2 days a week | does not get there; level 6 or 7 by the end | |
 
