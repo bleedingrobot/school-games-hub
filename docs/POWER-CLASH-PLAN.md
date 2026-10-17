@@ -218,3 +218,36 @@ Nothing is live. **No new migration, no new function:** the same three migration
 **Still untested:** real children, whether Chaos Mode is too wild, Time Heist feeling fair, the real server and Realtime (as before).
 
 **To go live:** apply `20261017001500`, `001600`, `001700` in order (after any `space-maths` migrations); deploy `save-bot-game` and `power-clash`; set `POWER_CLASH_ON` to true; merge and deploy the site; check from outside; play one real game between two accounts.
+
+## 15. How to run the class trial
+
+**What is on:** the Power Clash card is on the dashboard. Playing a bot or on one screen works for everyone; playing a classmate uses the new `power-clash` server function.
+
+**Suggested lesson (20 minutes):** first let the class play the bot on Easy and Medium (2 minutes of "How to play" first). Then pair them up for a classmate game (one makes a game, the other joins with the code or from the lobby). Finish with one Chaos Mode game on one screen with a partner.
+
+**What to watch for**
+- Is **Medium** too hard? (Many children losing every Medium game.)
+- Is **Chaos Mode** too wild? (Children can't follow what changed.)
+- Is **Time Heist** fair? (Does the player who loses time feel cheated?)
+- Do turns feel too slow or too fast? (The 60-second clock in classmate games; the pause after animations.)
+- Any confusion about **Portal Chaos** or **Force Field**? (Ask: "what did that one do?")
+- Anyone stuck in a waiting room, or a game that froze after the Wi-Fi dropped?
+
+**Knobs if something is off** (each is one number; change, build, deploy the site; the server function needs a redeploy only if the number is in the shared rules the server uses)
+- Medium bot too hard: raise `MEDIUM_SLIP` or lower `MEDIUM_MAX_DEPTH`, or shorten `MEDIUM_POWERS`, all in `shared/power-clash/bot.ts`.
+- Chaos Mode too wild: raise `CHAOS_EVERY` in `shared/power-clash/engine.ts` (an event every 3 turns now; this one is also used by the server, so redeploy `power-clash` and `save-bot-game`).
+- Turns too slow or fast: `TURN_MS` in `shared/power-clash/live.ts` (also redeploy `power-clash`).
+
+**Turning the card off again:** set `POWER_CLASH_ON` to `false` in `src/games/registry.ts`, update the two tests that expect the card, push to main. Games already saved and points already earned stay.
+
+## 16. Stage P.7 results (go live, 18 October 2026)
+
+James said "go all the way" in this session.
+- **Merged `main` into `power-clash`** (conflicts in the save-bot-game function, the lobby and two database tests were fixed; achievement count in the tests is now 53, security test plan 50).
+- **Checks before going live:** type check clean; full test run 1,078 passed (flaky ones, Gem Keep levels and 101 stats, passed when re-run alone); `npm run build:functions` run. Database tests: run in a scratch copy of the live structure with only the live migrations plus the three Power Clash ones: every file passes except two checks in `security.test.sql` ("a new table is closed...") that only fail because of how the scratch copy was set up (its default permissions were different), not because of the migrations. The scratch copy was deleted.
+- **Applied to the live database** with `supabase db query`: `20261017001500`, `001600`, `001700`, in that order, after confirming the maths migrations were already live (48 badges before, 53 after). Not recorded in the CLI's migration history, like the earlier ones.
+- **Deployed:** `power-clash` and `save-bot-game`.
+- **Checked from outside:** `power-clash` answers 401 JSON without sign-in; `save-bot-game` answers 401 JSON; `power_games` is closed to signed-out visitors (42501).
+- **Switched on:** `POWER_CLASH_ON = true`, tests updated, merged to `main`, site build and publish succeeded.
+- **Not yet tested:** one real game between two accounts on two devices (first proof of live updates and presence), all eight powers in a real game, `save-bot-game` saving the other games from a signed-in student (covered by unit tests only), and the dashboard card on a Chromebook.
+- **Note for the `monsters` branch:** it has its own migration `20261018001500_maths_monsters.sql` that redefines `progress_counts`, `progress_rules`, `rebuild_progress`, `my_progress` and `teacher_new_season`. Before it goes live, merge `main` into it and fold in the Power Clash lines (the three measures and the `power-clash` game name), or it will overwrite them.
