@@ -140,7 +140,7 @@ function hurt(s: FightState, attacker: Fighter, target: Fighter, damage: number)
   if (target.guarding) damage = Math.max(1, Math.ceil(damage / 2));
   damage = Math.min(damage, target.hp);
   target.hp -= damage;
-  if (attacker.side === 'clan') s.xp[attacker.index] += Math.floor(damage / 3) + 1;
+  if (attacker.side === 'clan') s.xp[attacker.index] += Math.round((Math.floor(damage / 3) + 1) * (1 + Math.max(0, s.depth - CONFIG.xpBoostFrom) * CONFIG.xpDepthBoost));
   if (target.hp <= 0) {
     s.log.push({ type: 'down', who: target.name });
     if (target.side === 'enemy') s.gold += Math.round((target.difficulty * (20 + roll(s, 10)) + 50 + roll(s, 20)) / 10);

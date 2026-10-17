@@ -77,4 +77,6 @@ export interface Clan {
   gold: number;
   followers: number;
   village: Village;
+  /** Wake-ups at the Church so far today (the first few are free). Missing means none. */
+  wakesToday?: number;
 }

@@ -118,7 +118,8 @@ Armour runs Rags (+1 armour, 50) to Hero's Armor (+4, 2250); shields run Wooden 
 | Fight length | Up to 50 rounds | **3-8 rounds** | |
 | Enemies in a fight | Varies | **2-3 before depth 3, then 3-4** | Tuned in C.1 |
 | Followers a fight | 4-13 | **4-13, kept** | Fine for division questions |
-| Church to wake | `(level+1) × 300` | **`(level+1) × 30`** | ÷10 |
+| Experience to reach a level | about 100 × level, 100 levels | **30 for level 2, then 10 more each level, but never more than 90 for one level**; mines deeper than 8 add 25% per level to experience per hit | Late game took 60+ days; now a mixed clan reaches level 20 in about 7 weeks |
+| Church to wake | `(level+1) × 300` | **`(level+1) × 10`, and the first wake-up each day is free** | ÷30, then tuned in C.2 tuning pass (the first guess of ÷10 ran an all-fighters clan out of gold by day 30) |
 | Resurrect | `(level+1) × 750` | **Not needed** (knocked out, never dead) | Plan section 5 |
 | Looking at an item | 25% of price | **25%, kept** | A percentage question |
 | Fame points | +10 win, -10 loss | **Positive only** | Plan section 5 |
@@ -127,7 +128,7 @@ Armour runs Rags (+1 armour, 50) to Hero's Armor (+4, 2250); shields run Wooden 
 | Troop prices | 15 / 30 / 60 | **Same, kept (already small)** | |
 | Worker energy | 100% a day | **Same, kept** | |
 
-**The core fight formulas stay as in the original** (plan section 1): hit if `dexterity + 2 + two small dice` is not below the target's `agility + a small die`; damage = `half strength × (80-119%) − armour strength`, at least 1; experience per hit = `damage ÷ 3 + 1`. We use whole numbers throughout. Everything is seeded (`shared/seededRandom.ts`) so the server can replay a fight.
+**The core fight formulas stay as in the original** (plan section 1): hit if `dexterity + 2 + two small dice` is not below the target's `agility + a small die`; damage = `half strength × (80-119%) − armour strength`, at least 1; experience per hit = `damage ÷ 3 + 1`, **and each mine level deeper than 8 adds 25% more experience per hit** (our change, see the table in section 6). We use whole numbers throughout. Everything is seeded (`shared/seededRandom.ts`) so the server can replay a fight.
 
 ## 6. Where we change the original on purpose
 

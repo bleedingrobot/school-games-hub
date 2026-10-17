@@ -246,3 +246,10 @@ Built in `shared/clans/` (list in `shared/README.md`): data, spells, characters,
 - **Gold piles up in the middle** (8,000 by day 21 with nothing to buy), which is the gap the empire (C.4) and the village chest (C.6) are meant to fill.
 
 **Not done yet in C.1:** helper spells (Call Spirit Helper, Send Spirits Away, Ghost Warrior, Divine Warrior; marked `notYet`, so Necromancer and Knight are weaker than they should be), scrolls and books, and toughening the first two bosses (they are close to ordinary monsters). Race gold is dropped: all clans start with 200.
+
+### Tuning pass before C.2 (18 Oct 2026)
+
+Done with the simulator (20 clans, 60 days, 70% of Battle Cries right):
+- **Late game:** levels cost at most 90 experience each (`xpLevelCap`), and mines deeper than 8 give 25% more experience per hit for each level deeper (`xpBoostFrom`, `xpDepthBoost`). A mixed clan now reaches level 20 in about 7-8 weeks (14 of 20 clans by day 54); an all-fighters clan in about 5 weeks. The first 14 days are unchanged. I left monster armour alone: it only takes off 7-9 damage from hits of 20+, so it wasn't the problem. Experience was.
+- **Church:** the first wake-up each day is free and the rest cost `(level + 1) × 10` (was × 30). All-fighters clans no longer run dry at the Church; they still lose about 40% of fights deep down because there's no healer, which seems right.
+- **Depth hints** (`depthHint`, as depth minus the clan's average level): up to -1 "too easy" (100% wins, nobody knocked out), 0 to +1 "just right" (99-100%), +2 to +3 "tough" (about 90%, 5+ knock-outs a day), +4 and up "too hard" (under 80%, and 30-50% early on). The early game can't really be lost until you go 4+ levels deeper than your clan; the bot always picks sensible actions, so a child will lose more than it does.

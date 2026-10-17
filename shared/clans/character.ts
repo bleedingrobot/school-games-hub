@@ -92,10 +92,14 @@ export function trainSp(m: Member, hall: number): boolean {
 /** The Church: gold to wake a knocked-out member. */
 export const churchCost = (m: Member) => (m.level + 1) * CONFIG.churchPerLevel;
 
+/** What waking this member costs the clan right now (nothing while free wake-ups are left today). */
+export const wakeCost = (clan: Clan, m: Member) => ((clan.wakesToday ?? 0) < CONFIG.freeWakesPerDay ? 0 : churchCost(m));
+
 export function wake(clan: Clan, m: Member): boolean {
-  const cost = churchCost(m);
+  const cost = wakeCost(clan, m);
   if (!m.knockedOut || clan.gold < cost) return false;
   clan.gold -= cost;
+  clan.wakesToday = (clan.wakesToday ?? 0) + 1;
   m.knockedOut = false;
   m.hp = Math.max(1, Math.ceil(m.maxHp / 2));
   return true;
@@ -120,9 +124,19 @@ export function buy(clan: Clan, m: Member, item: ItemDef): boolean {
 
 /** Overnight: everyone wakes up healed. */
 export function dayReset(clan: Clan): void {
+  clan.wakesToday = 0;
   for (const m of clan.members) {
     m.knockedOut = false;
     m.hp = m.maxHp;
     m.sp = m.maxSp;
   }
+}
+
+export type DepthHint = 'too easy' | 'just right' | 'tough' | 'too hard';
+
+/** The hint shown beside a mine depth, from how far it is above the clan's average level. */
+export function depthHint(depth: number, averageLevel: number): DepthHint {
+  const gap = depth - averageLevel;
+  const h = CONFIG.depthHint;
+  return gap <= h.easyUpTo ? 'too easy' : gap <= h.justRightUpTo ? 'just right' : gap <= h.toughUpTo ? 'tough' : 'too hard';
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { botOrders } from './bot';
-import { buy, churchCost, examineCost, fightStats, gainXp, inShop, itemByName, rollMember, shopPrice, trainCost, trainStat, wake } from './character';
+import { buy, churchCost, dayReset, depthHint, examineCost, fightStats, gainXp, inShop, itemByName, rollMember, shopPrice, trainCost, trainStat, wake } from './character';
 import { CONFIG } from './config';
 import { CLASSES, ITEMS, MONSTERS, RACES } from './gamedata';
 import { newFight, playRound, settle, monstersAt, type FightState } from './fight';
@@ -91,20 +91,37 @@ describe('characters', () => {
     expect(m.points).toBe(0);
   });
 
-  it('wakes the knocked out for (level + 1) × 30 gold', () => {
+  it('wakes the knocked out for (level + 1) × 10 gold, the first one each day free', () => {
     const clan = newClan('balanced', 1);
-    const m = clan.members[0];
-    m.knockedOut = true;
-    m.hp = 0;
-    m.level = 4;
-    expect(churchCost(m)).toBe(150);
-    clan.gold = 149;
-    expect(wake(clan, m)).toBe(false);
-    clan.gold = 150;
-    expect(wake(clan, m)).toBe(true);
+    const [a, b] = clan.members;
+    for (const m of [a, b]) {
+      m.knockedOut = true;
+      m.hp = 0;
+      m.level = 4;
+    }
+    expect(churchCost(a)).toBe(50);
+    clan.gold = 0;
+    expect(wake(clan, a)).toBe(true); // the free one
     expect(clan.gold).toBe(0);
-    expect(m.knockedOut).toBe(false);
-    expect(m.hp).toBeGreaterThan(0);
+    expect(wake(clan, b)).toBe(false); // now it costs
+    clan.gold = 49;
+    expect(wake(clan, b)).toBe(false);
+    clan.gold = 50;
+    expect(wake(clan, b)).toBe(true);
+    expect(clan.gold).toBe(0);
+    expect(b.knockedOut).toBe(false);
+    expect(b.hp).toBeGreaterThan(0);
+    dayReset(clan);
+    expect(clan.wakesToday).toBe(0);
+  });
+
+  it('caps the experience one level costs, and says how hard a depth is', () => {
+    expect(CONFIG.xpToReach(20) - CONFIG.xpToReach(19)).toBe(CONFIG.xpLevelCap);
+    expect(CONFIG.xpToReach(3) - CONFIG.xpToReach(2)).toBe(40);
+    expect(depthHint(3, 5)).toBe('too easy');
+    expect(depthHint(5, 5)).toBe('just right');
+    expect(depthHint(7, 5)).toBe('tough');
+    expect(depthHint(10, 5)).toBe('too hard');
   });
 
   it('adds the village tax to prices and charges 25% to examine', () => {

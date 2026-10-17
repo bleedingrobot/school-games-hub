@@ -85,7 +85,7 @@ export function botShop(clan: Clan): void {
 
 /** The between-fights chores: wake the knocked out (cheapest first), spend points, shop. */
 export function botChores(clan: Clan): void {
-  for (const m of [...clan.members].filter((x) => x.knockedOut).sort((a, b) => a.level - b.level)) wake(clan, m);
+  for (const m of [...clan.members].filter((x) => x.knockedOut).sort((a, b) => b.level - a.level)) wake(clan, m);
   for (const m of clan.members) botTrain(m, clan.village.trainingHall);
   botShop(clan);
 }
