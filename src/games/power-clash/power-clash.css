@@ -56,3 +56,78 @@
   .pc__panel ul { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
   .pc__setup-cols { grid-template-columns: 1fr; }
 }
+
+/* ---- P.3: animations (all short; the screen only shows what the engine already decided) ---- */
+.pc__help { font-size: 0.9rem; padding: 6px 12px; }
+.pc__help kbd, .pc-guide kbd { display: inline-block; min-width: 1.4em; padding: 0 5px; margin-left: 4px; border: 2px solid currentColor; border-radius: 6px; font-size: 0.8em; }
+.pc__shout { margin: 0; min-height: 1.5em; font: 900 1.25rem/1.2 var(--display); color: #fde047; text-align: center; animation: pc-shout 1.8s both; }
+.pc__shout:empty { animation: none; }
+.pc__cell { overflow: visible; }
+.pc__cell--pop { animation: pc-pop 0.38s ease-out; }
+.pc__cell--swap { animation: pc-swap 0.7s ease-in-out; z-index: 2; }
+.pc__cell--frosting { animation: pc-frost 0.7s ease-out; }
+.pc__cell--blast { animation: pc-blast 0.5s ease-out; }
+.pc__cell--cheer { animation: pc-cheer 0.8s ease-in-out 2; }
+.pc__board--zap { animation: pc-zap 0.5s linear; }
+.pc__board--shake { animation: pc-shake 0.45s linear; }
+.pc__board--draw { animation: pc-draw 0.8s ease-in-out 2; }
+.pc__board--win.pc__board--shake { animation: pc-shake 0.45s linear; }
+.pc__fly { position: absolute; inset: 0; display: grid; place-items: center; font: 800 3.4rem/1 var(--display); pointer-events: none; animation: pc-fly 0.8s ease-in forwards; }
+.pc__fly--X { color: #22d3ee; }
+.pc__fly--O { color: #ec4899; }
+.pc__particle { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: #fde047; pointer-events: none; animation: pc-spark 0.7s ease-out forwards; }
+@keyframes pc-pop { 0% { transform: scale(0.2); filter: brightness(2.5); } 60% { transform: scale(1.25); } 100% { transform: scale(1); filter: none; } }
+@keyframes pc-swap { 0% { transform: translate(calc(var(--dx, 0) * 108%), calc(var(--dy, 0) * 108%)) scale(1.1); filter: hue-rotate(90deg) brightness(1.6); } 100% { transform: none; filter: none; } }
+@keyframes pc-frost { 0% { box-shadow: 0 0 0 0 #e0f2fe, inset 0 0 0 3px #7dd3fc; background: #e0f2fe; } 100% { box-shadow: 0 0 0 14px transparent, inset 0 0 0 3px #7dd3fc; } }
+@keyframes pc-blast { 0% { box-shadow: 0 0 0 0 #f97316; background: #fb923c; } 100% { box-shadow: 0 0 0 18px transparent; } }
+@keyframes pc-cheer { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@keyframes pc-zap { 0%, 40% { box-shadow: 0 0 0 3px #3b2a8f, 0 0 30px 10px #fde047; } 20% { box-shadow: 0 0 0 3px #fde047, 0 0 50px 20px #fff; } 100% { box-shadow: 0 0 0 3px #3b2a8f, 0 12px 28px rgba(0, 0, 0, 0.35); } }
+@keyframes pc-shake { 0%, 100% { transform: none; } 20% { transform: translate(-6px, 2px); } 40% { transform: translate(5px, -3px); } 60% { transform: translate(-4px, -2px); } 80% { transform: translate(3px, 3px); } }
+@keyframes pc-draw { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+@keyframes pc-fly { 0% { transform: none; opacity: 1; } 100% { transform: translate(60px, -90px) rotate(200deg) scale(0.3); opacity: 0; } }
+@keyframes pc-spark { 0% { transform: rotate(var(--a)) translateX(0); opacity: 1; } 100% { transform: rotate(var(--a)) translateX(46px); opacity: 0; } }
+@keyframes pc-shout { 0% { transform: scale(0.5); opacity: 0; } 15% { transform: scale(1.15); opacity: 1; } 25%, 85% { transform: scale(1); opacity: 1; } 100% { opacity: 0; } }
+
+/* Reduced motion: no shake, no particles, no sliding. Only a quick fade. */
+@media (prefers-reduced-motion: reduce) {
+  .pc *, .pc *::before { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  .pc__particle { display: none; }
+}
+.pc--calm *, .pc--calm *::before { animation: none !important; }
+.pc--calm .pc__shout { animation: pc-fade 0.3s both !important; }
+.pc--calm .pc__particle { display: none; }
+@keyframes pc-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---- How to play pop-up ---- */
+.pc-guide { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgba(8, 10, 40, 0.75); }
+.pc-guide__card { display: flex; flex-direction: column; width: min(100%, 640px); max-height: calc(100dvh - 32px); border-radius: 20px; background: #fff; color: #1b1b3a; box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5); overflow: hidden; }
+.pc-guide__top { display: flex; align-items: center; gap: 8px; padding: 10px 10px 6px 20px; border-bottom: 2px solid #e5e7f5; }
+.pc-guide__top h2 { flex: 1; margin: 0; font-size: 1.2rem; }
+.pc-guide__close { width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: inherit; font: inherit; font-weight: 800; cursor: pointer; }
+.pc-guide__close:hover { background: #eef0fb; }
+.pc-guide__close:focus-visible, .pc-guide__body:focus-visible { outline: 3px solid #3b2a8f; outline-offset: 2px; }
+.pc-guide__body { overflow-y: auto; padding: 4px 20px 20px; line-height: 1.45; overscroll-behavior: contain; }
+.pc-guide__body h3 { margin: 14px 0 6px; font-size: 1.05rem; }
+.pc-guide__body ul { margin: 0 0 8px; padding-left: 22px; }
+.pc-guide__powers { list-style: none; padding-left: 0 !important; display: grid; gap: 8px; }
+.pc-guide__example { font-size: 0.9rem; color: #4b4b73; }
+
+/* Fit short screens (Chromebook 1366x640): header on one line, board sized from the height. */
+.pc__help { width: auto; flex: 0 0 auto; margin-left: auto; }
+.pc__top { flex-wrap: nowrap; }
+.pc--setup .pc__help { margin: 4px 0; }
+.pc__cell { min-height: 0; }
+.pc__prompt { min-height: 0; }
+.pc__shout { min-height: 1.3em; }
+.pc__message { min-height: 1.2em; }
+@media (min-width: 861px) {
+  .pc { padding-top: 6px; padding-bottom: 8px; }
+  .pc__board { width: min(100%, max(240px, calc(100dvh - 260px))); }
+  .pc__cell { font-size: clamp(2rem, 9dvh, 3.4rem); }
+  .pc__panel li + li { margin-top: 0; }
+}
+@media (max-width: 860px) { .pc__top { flex-wrap: wrap; } }
+.pc .pc__top .pc__help, .pc .pc__help { width: auto; max-width: max-content; flex: 0 0 auto; white-space: nowrap; }
+.pc .pc__top h1 { font-size: 1.2rem; white-space: nowrap; }
+.pc .pc__score { white-space: nowrap; }
+.pc .pc__round { white-space: nowrap; }

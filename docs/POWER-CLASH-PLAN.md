@@ -98,3 +98,18 @@ Browser testing as before: Chromebook (1366×640 usable), tablet touch, keyboard
 ## 9. Decisions (James, 17 October 2026)
 
 All recommended picks accepted: pass-and-play first; the mover wins if both have a line; Freeze Ray one turn; Board Wipe any symbol; keep the same three powers between rounds with one tap to change; taking-part points only, not ranked; built alongside Gem Keep, Mission Control maths and monsters.
+
+## 10. Stage P.3 results (polish, 17 October 2026)
+
+Website only; nothing live, no database or function changes.
+
+- **Animations** (CSS only, no new packages), all driven by the engine's `events` after the engine has already produced the new state: symbol pop-in with a glow; Double Trouble board flash; Body Swap slide between the two squares; Freeze Ray frost burst and sparks; Board Wipe blast, shake and the symbol flying off; winning line cheer, sparks and shake; draw pulse.
+- **Input lock:** squares, power cards and "Miss my go" are disabled while an animation plays (0.9 s; 0.15 s with reduced motion).
+- **Reduced motion:** follows `prefers-reduced-motion` (CSS plus a `pc--calm` class): no shake, particles or sliding, just a short fade.
+- **Sound:** uses the hub mute button (`useSound`, off by default). New synthesised sounds in `src/games/sounds.ts`: `freeze`, `boom`, `swap`, `draw` (zap, tap, end and win reused).
+- **Shouts:** short school-friendly lines per power, win, draw and match win (`SHOUTS` in `text.ts`), shown for under 2 s above the board and picked in turn, not at random. What a power did is also in an aria-live status line.
+- **How to play:** `Guide.tsx`, opened by a button or `?`, closed with Escape or the close button, focus returns to the button, Tab stays inside. Covers the goal, one power a turn, once each, the four powers with an example, and both-get-a-line (the mover wins).
+- **Accessibility and fit:** axe scan clean at 1366x640, tablet (820x1180 touch) and phone (390x780 touch). Fixed a nested `<main>` (the hub already has one). Board is sized from the screen height; the header fits on one line. No sideways scroll at any size.
+- **Tests:** four new component tests (input locked then unlocked, shout and status text, How to play open/close/focus, reduced motion). The earlier tests now use reduced motion so they stay quick. Full run: only the usual flaky tests (Gem Keep, chess) plus four that fail only under whole-suite load and pass on their own (101 save stats, checkers leave-part-way, space `?` help, save-bot-game handler).
+
+Next: P.4 (bots, simulation, saving bot games, taking-part points; needs a migration and a `save-bot-game` change).

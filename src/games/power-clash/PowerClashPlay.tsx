@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   LOADOUT_SIZE, legalSkip, placeableSquares, play, powerBlockedReason, targetChoices, validLoadout,
 } from '../../../shared/power-clash/engine';
 import { newMatch, nextRound, scoreRound, ROUNDS_TO_WIN, type Match } from '../../../shared/power-clash/match';
-import type { Action, Player, PowerId } from '../../../shared/power-clash/types';
-import { POWERS, TEXT, powerInfo } from './text';
+import type { Action, Cell, GameEvent, Player, PowerId } from '../../../shared/power-clash/types';
+import { useSound } from '../../sound';
+import { playSound, type GameSound } from '../sounds';
+import { PowerClashGuide } from './Guide';
+import { POWERS, TEXT, powerInfo, shout, type ShoutKind } from './text';
 import './power-clash.css';
 
 type Loadouts = Record<Player, PowerId[]>;
@@ -13,29 +16,82 @@ const DEFAULT_LOADOUTS: Loadouts = {
   O: ['body-swap', 'freeze-ray', 'double-trouble'],
 };
 
+/** How long input stays locked while an animation plays (never more than about a second). */
+const LOCK_MS = 900;
+const LOCK_CALM_MS = 150;
+
+interface Fx {
+  key: number;
+  events: GameEvent[];
+  /** What stood on the wiped square before the blast, so it can fly off. */
+  wiped: Cell;
+}
+
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
+  useEffect(() => {
+    const query = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (!query?.addEventListener) return;
+    const onChange = () => setReduced(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+  return reduced;
+}
+
+const SOUNDS: Partial<Record<GameEvent['kind'], GameSound>> = {
+  place: 'tap', 'double-trouble': 'zap', 'body-swap': 'swap', freeze: 'freeze', wipe: 'boom', skip: 'end', win: 'win', draw: 'draw',
+};
+
 /** Two players, one screen. All the rules come from shared/power-clash; this only shows them. */
 export function PowerClashPlay() {
   const [loadouts, setLoadouts] = useState<Loadouts>(DEFAULT_LOADOUTS);
   const [match, setMatch] = useState<Match | null>(null);
   const [selected, setSelected] = useState<{ power: PowerId; picked: number[] } | null>(null);
   const [message, setMessage] = useState('');
+  const [fx, setFx] = useState<Fx | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [shoutText, setShoutText] = useState('');
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpButton = useRef<HTMLButtonElement>(null);
+  const plays = useRef(0);
+  const timers = useRef<number[]>([]);
+  const { soundOn } = useSound();
+  const calm = useReducedMotion();
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => e.key === 'Escape' && setSelected(null);
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelected(null);
+      if (e.key === '?') setHelpOpen(true);
+    };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
+  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
+
+  const help = helpOpen ? <PowerClashGuide onClose={() => setHelpOpen(false)} returnTo={helpButton} /> : null;
+  const helpBtn = (
+    <button type="button" className="button button--light pc__help" ref={helpButton} onClick={() => setHelpOpen(true)}>
+      How to play <kbd>?</kbd>
+    </button>
+  );
 
   if (!match) {
     return (
-      <Setup
-        loadouts={loadouts}
-        onChange={setLoadouts}
-        onStart={() => {
-          setMatch(newMatch(loadouts));
-          setMessage('');
-        }}
-      />
+      <>
+        <Setup
+          loadouts={loadouts}
+          onChange={setLoadouts}
+          helpButton={helpBtn}
+          onStart={() => {
+            setMatch(newMatch(loadouts));
+            setMessage('');
+            setFx(null);
+            setShoutText('');
+          }}
+        />
+        {help}
+      </>
     );
   }
 
@@ -49,12 +105,41 @@ export function PowerClashPlay() {
       setMessage(result.reason);
       return;
     }
+    // The engine has already decided everything. From here on it is only show.
+    const scored = scoreRound({ ...match!, state: result.state });
     setSelected(null);
     setMessage(describe(result.events.map((e) => e.kind)));
-    setMatch((m) => scoreRound({ ...m!, state: result.state }));
+    setMatch(scored);
+    const wipe = result.events.find((e) => e.kind === 'wipe');
+    plays.current += 1;
+    setFx({ key: plays.current, events: result.events, wiped: wipe ? state.board[wipe.square] : null });
+
+    const kinds = result.events.map((e) => e.kind);
+    let big: ShoutKind | null = null;
+    if (scored.winner) big = 'match';
+    else if (kinds.includes('win')) big = 'win';
+    else if (kinds.includes('draw')) big = 'draw';
+    else big = (['body-swap', 'freeze-ray', 'board-wipe', 'double-trouble'] as const).find((p) =>
+      kinds.includes(p === 'freeze-ray' ? 'freeze' : p === 'board-wipe' ? 'wipe' : p),
+    ) ?? (kinds.includes('skip') ? 'skip' : null);
+    setShoutText(big ? shout(big, plays.current) : '');
+
+    if (soundOn) {
+      const order: GameEvent['kind'][] = ['win', 'draw', 'wipe', 'freeze', 'body-swap', 'double-trouble', 'skip', 'place'];
+      const first = order.find((k) => kinds.includes(k));
+      if (first) playSound(SOUNDS[first]!);
+    }
+
+    setBusy(true);
+    timers.current.forEach((t) => window.clearTimeout(t));
+    timers.current = [
+      window.setTimeout(() => setBusy(false), calm ? LOCK_CALM_MS : LOCK_MS),
+      window.setTimeout(() => setShoutText(''), 1800),
+    ];
   }
 
   function choosePower(power: PowerId) {
+    if (busy) return;
     if (selected?.power === power) {
       setSelected(null);
       return;
@@ -73,7 +158,7 @@ export function PowerClashPlay() {
   }
 
   function tapSquare(square: number) {
-    if (over) return;
+    if (over || busy) return;
     if (!selected) {
       apply({ type: 'place', square });
       return;
@@ -101,10 +186,20 @@ export function PowerClashPlay() {
   else if (state.powerThisTurn) prompt = `Player ${me}: now place your symbol`;
   else prompt = `Player ${me}: use a power, or just place a symbol`;
 
+  const fxOf = (i: number) => cellFx(fx, i);
+  const kinds = fx?.events.map((e) => e.kind) ?? [];
+  const boardFx = [
+    kinds.includes('double-trouble') ? 'pc__board--zap' : '',
+    kinds.includes('wipe') || kinds.includes('win') ? 'pc__board--shake' : '',
+    kinds.includes('win') ? 'pc__board--win' : '',
+    kinds.includes('draw') ? 'pc__board--draw' : '',
+  ].join(' ');
+
   return (
-    <main className="pc" aria-label={TEXT.name}>
+    <section className={`pc ${calm ? 'pc--calm' : ''}`} aria-label={TEXT.name}>
       <header className="pc__top">
         <h1>{TEXT.name}</h1>
+        {helpBtn}
         <p className="pc__score" aria-label="Score">
           <span className="pc__x">X {match.score.X}</span>
           <span className="pc__round">Round {match.round} · first to {ROUNDS_TO_WIN}</span>
@@ -113,18 +208,18 @@ export function PowerClashPlay() {
       </header>
 
       <div className="pc__table">
-        <PowerPanel player="X" match={match} selected={selected} onChoose={choosePower} />
+        <PowerPanel player="X" match={match} selected={selected} onChoose={choosePower} locked={busy} />
         <section className="pc__middle">
           <p className="pc__prompt" role="status" aria-live="polite">{prompt}</p>
-          <div className="pc__board" role="group" aria-label="Board">
+          <p className="pc__shout" aria-hidden="true" key={fx?.key}>{shoutText}</p>
+          <div className={`pc__board ${boardFx}`} role="group" aria-label="Board" aria-busy={busy}>
             {state.board.map((cell, i) => {
-              const enabled = !over && choices.includes(i);
+              const enabled = !over && !busy && choices.includes(i);
               const winning = state.line?.includes(i);
               const frozen = frozenNow.has(i) && cell === null;
               const chosen = selected?.picked.includes(i);
               return (
                 <button
-                  key={i}
                   type="button"
                   className={[
                     'pc__cell',
@@ -134,18 +229,25 @@ export function PowerClashPlay() {
                     winning ? 'pc__cell--win' : '',
                     frozen ? 'pc__cell--frozen' : '',
                     chosen ? 'pc__cell--chosen' : '',
+                    fxOf(i),
                   ].join(' ')}
+                  key={`${i}-${fx?.key ?? 0}`}
+                  style={swapVars(fx, i)}
                   disabled={!enabled}
                   aria-label={cellLabel(i, cell, frozen)}
                   onClick={() => tapSquare(i)}
                 >
                   {cell ?? ''}
                   {frozen ? <span className="pc__ice" aria-hidden="true">❄️</span> : null}
+                  {fx?.wiped && kinds.includes('wipe') && fx.events.some((e) => e.kind === 'wipe' && e.square === i) ? (
+                    <span className={`pc__fly pc__fly--${fx.wiped}`} aria-hidden="true">{fx.wiped}</span>
+                  ) : null}
+                  {!calm ? particles(fx, i) : null}
                 </button>
               );
             })}
           </div>
-          <p className="pc__message" aria-live="polite">{message}</p>
+          <p className="pc__message" role="status" aria-live="polite">{message}</p>
           <div className="pc__actions">
             {selected ? (
               <button type="button" className="button button--light" onClick={() => setSelected(null)}>
@@ -153,7 +255,7 @@ export function PowerClashPlay() {
               </button>
             ) : null}
             {!over && legalSkip(state) ? (
-              <button type="button" className="button button--primary" onClick={() => apply({ type: 'skip' })}>
+              <button type="button" className="button button--primary" disabled={busy} onClick={() => apply({ type: 'skip' })}>
                 Miss my go
               </button>
             ) : null}
@@ -164,6 +266,8 @@ export function PowerClashPlay() {
                 onClick={() => {
                   setMatch(nextRound(match));
                   setMessage('');
+                  setFx(null);
+                  setShoutText('');
                 }}
               >
                 Next round
@@ -174,6 +278,8 @@ export function PowerClashPlay() {
                 type="button"
                 className="button button--light"
                 onClick={() => {
+                  setFx(null);
+                  setShoutText('');
                   if (match.winner) setMatch(newMatch(match.loadout, match.starter === 'X' ? 'O' : 'X'));
                   else setMatch(null);
                 }}
@@ -188,10 +294,45 @@ export function PowerClashPlay() {
             ) : null}
           </div>
         </section>
-        <PowerPanel player="O" match={match} selected={selected} onChoose={choosePower} />
+        <PowerPanel player="O" match={match} selected={selected} onChoose={choosePower} locked={busy} />
       </div>
-    </main>
+      {help}
+    </section>
   );
+}
+
+/** Which animation class a square gets, read from the engine's events. */
+function cellFx(fx: Fx | null, i: number): string {
+  if (!fx) return '';
+  const out: string[] = [];
+  for (const e of fx.events) {
+    if (e.kind === 'place' && e.square === i) out.push('pc__cell--pop');
+    if (e.kind === 'body-swap' && e.squares.includes(i)) out.push('pc__cell--swap');
+    if (e.kind === 'freeze' && e.square === i) out.push('pc__cell--frosting');
+    if (e.kind === 'wipe' && e.square === i) out.push('pc__cell--blast');
+    if (e.kind === 'win' && e.line.includes(i)) out.push('pc__cell--cheer');
+  }
+  return out.join(' ');
+}
+
+/** For a Body Swap: how far (in squares) each symbol slides to reach where it now sits. */
+function swapVars(fx: Fx | null, i: number): React.CSSProperties | undefined {
+  const e = fx?.events.find((ev) => ev.kind === 'body-swap');
+  if (!e || e.kind !== 'body-swap' || !e.squares.includes(i)) return undefined;
+  const other = e.squares[0] === i ? e.squares[1] : e.squares[0];
+  return { '--dx': (other % 3) - (i % 3), '--dy': Math.floor(other / 3) - Math.floor(i / 3) } as React.CSSProperties;
+}
+
+/** A few short-lived sparks on the square where something big happened. */
+function particles(fx: Fx | null, i: number) {
+  if (!fx) return null;
+  const hit = fx.events.some(
+    (e) => (e.kind === 'wipe' && e.square === i) || (e.kind === 'freeze' && e.square === i) || (e.kind === 'win' && e.line.includes(i)),
+  );
+  if (!hit) return null;
+  return Array.from({ length: 6 }, (_, n) => (
+    <span key={n} className="pc__particle" aria-hidden="true" style={{ '--a': `${n * 60 + 20}deg` } as React.CSSProperties} />
+  ));
 }
 
 function cellLabel(i: number, cell: Player | null, frozen: boolean) {
@@ -209,12 +350,13 @@ function describe(kinds: string[]): string {
 }
 
 function PowerPanel({
-  player, match, selected, onChoose,
+  player, match, selected, onChoose, locked,
 }: {
   player: Player;
   match: Match;
   selected: { power: PowerId } | null;
   onChoose: (p: PowerId) => void;
+  locked: boolean;
 }) {
   const { state } = match;
   const myTurn = state.active === player && state.status === 'active';
@@ -233,7 +375,7 @@ function PowerPanel({
               <button
                 type="button"
                 className={`pc__power ${selected?.power === id && myTurn ? 'pc__power--on' : ''}`}
-                disabled={!myTurn || spent}
+                disabled={!myTurn || spent || locked}
                 aria-pressed={selected?.power === id && myTurn}
                 onClick={() => onChoose(id)}
                 title={reason ?? info.blurb}
@@ -253,11 +395,12 @@ function PowerPanel({
 }
 
 function Setup({
-  loadouts, onChange, onStart,
+  loadouts, onChange, onStart, helpButton,
 }: {
   loadouts: Loadouts;
   onChange: (l: Loadouts) => void;
   onStart: () => void;
+  helpButton: React.ReactNode;
 }) {
   const ready = validLoadout(loadouts.X) && validLoadout(loadouts.O);
   const players = useMemo<Player[]>(() => ['X', 'O'], []);
@@ -267,8 +410,9 @@ function Setup({
     onChange({ ...loadouts, [player]: next });
   }
   return (
-    <main className="pc pc--setup" aria-label={TEXT.name}>
+    <section className="pc pc--setup" aria-label={TEXT.name}>
       <h1>{TEXT.name}</h1>
+      {helpButton}
       <p className="pc__lead">
         Two players, one screen. Each of you picks <strong>{LOADOUT_SIZE} different powers</strong>.
         Every power can be used <strong>once</strong>. Get three in a row, first to {ROUNDS_TO_WIN} rounds wins.
@@ -302,6 +446,6 @@ function Setup({
       <button type="button" className="button button--play" disabled={!ready} onClick={onStart}>
         Start the clash
       </button>
-    </main>
+    </section>
   );
 }

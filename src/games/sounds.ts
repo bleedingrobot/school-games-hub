@@ -44,7 +44,11 @@ export type GameSound =
   | 'cosmic'
   | 'flick'
   | 'tap'
-  | 'knock';
+  | 'knock'
+  | 'freeze'
+  | 'boom'
+  | 'swap'
+  | 'draw';
 
 export function playSound(sound: GameSound) {
   switch (sound) {
@@ -93,5 +97,18 @@ export function playSound(sound: GameSound) {
       // Knock knock.
       tone(180, 0.09, 0.3, 'square', 0.5);
       return setTimeout(() => tone(180, 0.09, 0.3, 'square', 0.5), 170);
+    case 'freeze':
+      // Icy twinkle going up.
+      [1568, 2093, 2637].forEach((f, i) => setTimeout(() => tone(f, 0.12, 0.08, 'sine', 0.9), i * 60));
+      return;
+    case 'boom':
+      tone(120, 0.35, 0.3, 'sawtooth', 0.3);
+      return setTimeout(() => tone(70, 0.3, 0.3, 'square', 0.5), 60);
+    case 'swap':
+      // Whoosh up, whoosh down.
+      tone(300, 0.18, 0.12, 'sine', 2.5);
+      return setTimeout(() => tone(750, 0.18, 0.12, 'sine', 0.4), 150);
+    case 'draw':
+      return tone(392, 0.4, 0.14, 'sine', 0.8);
   }
 }
