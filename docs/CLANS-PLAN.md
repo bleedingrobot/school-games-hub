@@ -276,7 +276,7 @@ Built (pure TypeScript, tests only, **no screens, nothing saved, nothing live**)
 
 ## Stage C.3, part 1 results (18 Oct 2026): clan creator, the Mines and the fight
 
-C.3 is split in two (James agreed). **Part 1 (done):** clan creator, Mines, fights, Battle Cry, settings strip, pictures. **Part 2 (not started):** Market, Training Hall, Church and the full clan page with their maths moments. James said the C.2 question wording and levels were fine, so nothing changed there. Branch `clans`; nothing saved, no server, nothing live.
+C.3 is split in two (James agreed). **Part 1 (done):** clan creator, Mines, fights, Battle Cry, settings strip, pictures. **Part 2 (done, see below):** Market, Training Hall, Church and the full clan page with their maths moments. James said the C.2 question wording and levels were fine, so nothing changed there. Branch `clans`; nothing saved, no server, nothing live.
 
 **Built** (`src/games/clans/`, `src/maths/PracticalAsk.tsx`, `preview/clans/`, `npm run clans:preview`): the dark terminal look (VT323 headings, system monospace for reading; Dragon Maths' look exists only in its own folder, so this is a fresh copy with the same colours, to be merged into one later). Creator with race, class and name pickers, "Roll again" three times, clan name from two word lists, only HP / attack / defence / best stat by default and "More details" for the rest. The Mines with depth 0-20, the hint from `depthHint`, the 8-a-day counter and bosses at depths 5, 10, 15, 20. The fight: members choose in agility order, Attack / Spell / Guard / Run, Enter for the default action, keys A S G R and 1-9, a plain gentle log ("crumbles away", "runs off", "knocked out and rests"), HP and SP bars with the numbers written on them, duplicate enemies lettered A, B. The Battle Cry before each round (right: pick damage or healing; wrong or "No thanks": the worked answer and carry on; no timer). Number pad now has an optional minus key (Year 6 negatives) and "which is better" is tap-to-answer. Settings strip (year band, topics, depth, "Skip a day") for James's test only. Portraits are made from the class figure coloured by race with a race letter; monsters are Kenney's 1-Bit Pack, coloured by mine zone.
 
@@ -287,3 +287,30 @@ C.3 is split in two (James agreed). **Part 1 (done):** clan creator, Mines, figh
 **Choices to know about:** the "choosing order" on screen uses agility and health without the engine's small dice roll, so the real turn order in the round can differ slightly. The question box is a new `PracticalAsk` that reuses the number pad and look, because the old box closes itself after 2 seconds and the worked answer needs to stay. VT323 loads from Google Fonts in the test page only; the real site should host it itself. No sound yet. A phone-size screen is laid out but not tried.
 
 **Left for part 2:** Market, Training Hall, Church and the clan page's gear and "practising" line with their maths moments, the shop pictures, then the "Stage C.3 results" wrap-up.
+
+## Stage C.3 results (18 Oct 2026): the clan screens, both parts
+
+C.3 is built: the whole clan loop you can play in the browser, with maths in the shop, the Training Hall and the Church. Nothing is saved, no server, nothing live; branch `clans`.
+
+**Part 2 built** (`src/games/clans/`: `Market.tsx`, `Training.tsx`, `Church.tsx`, `Moment.tsx`, `places.ts`):
+- **Market:** pick a member, a shelf (weapons / armour / shields from `inShop`) and an item. Buying asks "what do you pay?" (`marketTotal`) before paying; right, wrong or "Show me how" all pay the true `shopPrice` (the worked answer shows after a wrong one). "Look closely" costs `examineCost` with its own question, then shows the real bonuses, what the member needs and whether they can use it yet. Once a member has looked at two items, "Which is the better buy?" (`betterBuy`, tap to answer) appears. After buying, "Check my change" (`marketChange`) is offered. Buying swaps the member's old gear for that slot. Not enough gold: the button is greyed and a kind line says how much is needed.
+- **Training Hall:** pick a member, see the cost of each stat, Health and Skill points at the current Training Hall level, then two questions (how many can you buy, what is left: `trainingBuy`), then "Buy 1" or "Buy N (all you can)". Points left are always shown.
+- **Church:** knocked-out members with their cost (the first wake-up each day is free), a wake button for each, and "Wake everyone" (dearest first so the free one saves most), which shows the bill after the free wake-up (`churchBill`). A wrong answer still charges the right amount. Not enough gold: says so kindly; waking one at a time still works.
+- **Clan page:** each member's three gear slots, a "points to spend" and a "knocked out" tag, gold, followers, average level, "Practising: ..." (topic names only, never accuracy), buttons to the Mines, Market, Training Hall and Church; "More details" is as before.
+- **Test strip:** "Give 500 gold", "Give 12 training points to everyone" and (not asked for, added so the Church can be tried without losing fights) "Knock out two members", all labelled "(test only)".
+- **Pictures:** each item has a Kenney picture coloured by kind (weapons yellow, armour cyan, shields orange); a heading picture for the Market, Training Hall and Church.
+
+**Engine:** no rules or numbers changed. Added `hpCost` and `spCost` to `shared/clans/character.ts` (the same sums `trainHp`/`trainSp` already did, now readable so the screen can show the price). Every moment still needs `question.answer` to equal what is charged; tests check it through the screens.
+
+**Licence check (18 Oct 2026):** kenney.nl still says "Creative Commons CC0" for the 1-Bit Pack.
+
+**Checked:** 31 clan screen tests (17 new: wrong and right answers in the shop still charge the right price, change, looking closely, better buy, not enough gold, a keyboard-only purchase, training with a wrong answer, the free then paid wake-up, wake everyone, not enough gold at the Church, test buttons, clan page). Type check clean. Whole suite: 935 passing; one unrelated server-side test (save-bot-game) failed once under load and passed on its own re-run. Looked at the real page at 1366 x 640: the Market, Church and Training Hall list fit with the test strip closed; the Training Hall question box is about 45px taller than the screen (number pad), so it scrolls a little.
+
+**Choices to know about:**
+- The shop list shows the price *before* tax ("20 gold, plus 10% village tax"); the price with tax appears after the "what do you pay?" question (or straight away if the teacher has percentages off), so the question isn't already answered on screen.
+- "Which is the better buy" only appears for items a member has looked at closely, because the comparison uses the real bonuses (which "Look closely" reveals). It compares price per point of bonus the member can actually use.
+- The question wording is the C.2 wording James approved, so the shop question says "A helmet costs 25 gold" whatever you are buying; the numbers are the real ones. Making the question use the real item name is a small change if wanted.
+- "Look closely" and the better-buy answers don't affect anything but gold; "Check my change" pays nothing (you aren't really handing over a 1,000 note).
+- The test strip is open on the clan page and closed on the other screens, so the places fit on a small screen.
+
+**Left for later:** C.4 (empire: land, barracks, troops), sound, a phone-size check of the new screens, hosting VT323 ourselves, the Smithy / Training Hall / Church levels (they stay at 0 until the class village builds them), and the teacher page that replaces the test strip.

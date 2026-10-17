@@ -56,10 +56,12 @@ export interface Session {
   day: number;
   depth: number;
   settings: PracticalSettings;
+  /** Items a member has looked at closely, as "member|item" (shows the real bonuses; lets you compare). */
+  examined: string[];
 }
 
 export const newSession = (clan: Clan, baseSeed: number, settings: PracticalSettings = DEFAULT_PRACTICAL_SETTINGS): Session => ({
-  clan, fightsLeft: CONFIG.fightsPerDay, fightNo: 0, baseSeed, day: 1, depth: 0, settings,
+  clan, fightsLeft: CONFIG.fightsPerDay, fightNo: 0, baseSeed, day: 1, depth: 0, settings, examined: [],
 });
 
 export const averageLevel = (clan: Clan) => clan.members.reduce((t, m) => t + m.level, 0) / Math.max(1, clan.members.length);

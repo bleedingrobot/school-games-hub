@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { SHEET_COLUMNS, SHEET_ROWS, TILE, MONSTER_TILES, DEFAULT_MONSTER_TILE, CLASS_TILES, DEFAULT_CLASS_TILE, type Tile } from './tileMap';
+import { SHEET_COLUMNS, SHEET_ROWS, TILE, MONSTER_TILES, DEFAULT_MONSTER_TILE, CLASS_TILES, DEFAULT_CLASS_TILE, ITEM_TILES, KIND_TILES, PLACE_TILES, type Tile } from './tileMap';
 import tiles from './tiles.png';
 
 /** The old terminal colours, used to colour the one-colour pictures. */
@@ -43,3 +43,15 @@ export function Portrait({ race, cls, scale = 4 }: { race: string; cls: string; 
     </span>
   );
 }
+
+const KIND_COLOURS: Record<string, string> = { weapon: ANSI.yellow, armor: ANSI.cyan, shield: ANSI.orange };
+
+/** A shop item's picture, coloured by what it is (weapons yellow, armour cyan, shields orange). */
+export const ItemSprite = ({ name, kind, scale = 3 }: { name: string; kind: string; scale?: number }) => (
+  <Sprite tile={ITEM_TILES[name] ?? KIND_TILES[kind] ?? DEFAULT_MONSTER_TILE} scale={scale} colour={KIND_COLOURS[kind] ?? ANSI.white} />
+);
+
+/** The picture beside a place's heading. */
+export const PlaceSprite = ({ place, scale = 3 }: { place: 'market' | 'training' | 'church' | 'mines'; scale?: number }) => (
+  <Sprite tile={PLACE_TILES[place]} scale={scale} colour={place === 'church' ? ANSI.magenta : place === 'training' ? ANSI.orange : ANSI.yellow} />
+);

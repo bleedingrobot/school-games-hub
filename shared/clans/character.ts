@@ -71,8 +71,12 @@ export function trainStat(m: Member, stat: Stat, hall: number): boolean {
   return true;
 }
 
+/** Points for one HP purchase and one SP purchase with the Training Hall at `hall` (never below 1). */
+export const hpCost = (hall: number) => Math.max(1, CONFIG.hpBuy.cost - Math.floor(hall / 2));
+export const spCost = (hall: number) => Math.max(1, CONFIG.spBuy.cost - Math.floor(hall / 2));
+
 export function trainHp(m: Member, hall: number): boolean {
-  const cost = Math.max(1, CONFIG.hpBuy.cost - Math.floor(hall / 2));
+  const cost = hpCost(hall);
   if (m.points < cost) return false;
   m.points -= cost;
   m.maxHp += CONFIG.hpBuy.amount;
@@ -81,7 +85,7 @@ export function trainHp(m: Member, hall: number): boolean {
 }
 
 export function trainSp(m: Member, hall: number): boolean {
-  const cost = Math.max(1, CONFIG.spBuy.cost - Math.floor(hall / 2));
+  const cost = spCost(hall);
   if (m.points < cost) return false;
   m.points -= cost;
   m.maxSp += CONFIG.spBuy.amount;

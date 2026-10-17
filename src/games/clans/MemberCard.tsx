@@ -21,6 +21,8 @@ export function MemberCard({ member, leader = false, children }: { member: Membe
           <h3>
             {member.name}
             {leader && <span className="cq-tag"> leader</span>}
+            {member.knockedOut && <span className="cq-tag cq-tag--out"> knocked out</span>}
+            {member.points > 0 && <span className="cq-tag cq-tag--up"> {member.points} points to spend</span>}
           </h3>
           <p className="cq-soft">
             {member.race} {member.cls} · level {member.level}
@@ -33,6 +35,11 @@ export function MemberCard({ member, leader = false, children }: { member: Membe
         <div><dt>Defence</dt><dd>{h.defence}</dd></div>
         <div><dt>★ Best</dt><dd>{cap(h.star.name)} {h.star.value}</dd></div>
       </dl>
+      <p className="cq-gear">
+        {([['weapon', 'Weapon'], ['armor', 'Armour'], ['shield', 'Shield']] as const).map(([k, label]) => (
+          <span key={k}>{label}: {member.gear[k] ?? 'none'}</span>
+        ))}
+      </p>
       {children}
       <button type="button" className="cq-link" aria-expanded={more} onClick={() => setMore(!more)}>
         {more ? 'Fewer details' : 'More details'}
