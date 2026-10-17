@@ -10,7 +10,7 @@
 import type { BotLevel } from '../botGame';
 import { cometTail } from './board';
 import {
-  canBoost,
+  canCharge,
   choiceOptions,
   moveTarget,
   nextWormhole,
@@ -152,8 +152,8 @@ function itemPlans(s: SpaceState, level: BotLevel): Plan[] {
 /** What a bot does next, when it's its turn (or its choice). `random` gives 0–1. */
 export function botAction(s: SpaceState, level: BotLevel, random: () => number): SpaceAction {
   if (s.phase === 'choice' && s.pending) return { kind: 'choose', option: botChoice(s, level, random) };
-  // The Mission Boost never hurts: Pilot and Commander always take it, the Cadet half the time.
-  if (canBoost(s) && (level !== 'very-easy' || random() < 0.5)) return { kind: 'boost' };
+  // The charge question never hurts, so every bot answers it each turn, right as often as its level.
+  if (canCharge(s)) return { kind: 'charge', right: random() < BOT_MATHS[level] };
 
   if (level === 'very-easy') {
     const usable = usableItems(s);

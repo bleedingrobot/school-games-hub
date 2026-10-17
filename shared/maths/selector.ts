@@ -56,6 +56,28 @@ function stepIndex(level: number): number {
 /** The focus tables of a campaign level, e.g. [2, 5, 10] for levels 1–2. */
 export const campaignTables = (level: number) => CAMPAIGN_STEPS[stepIndex(level)].add;
 
+/** A step's tables count as secure when this share of their facts are in box 2 or higher. */
+export const STEP_SECURE_SHARE = 0.7;
+
+/**
+ * For games with no campaign (Wormholes & Black Holes): the campaign level a student's records
+ * say they're ready for. Each step whose facts are mostly secure moves them on one step, so a
+ * new student starts on ×2, ×5 and ×10. Tables the teacher has switched off are skipped.
+ */
+export function readyLevel(stats: Iterable<FactStats>, enabledTables: readonly number[] = TABLES): number {
+  const byKey = new Map([...stats].map((s) => [s.key, s]));
+  const enabled = new Set(enabledTables);
+  for (let i = 0; i < CAMPAIGN_STEPS.length; i++) {
+    const step = CAMPAIGN_STEPS[i];
+    const upTo = step.upTo ?? 12;
+    const keys = [...factsIn(step.add.filter((t) => enabled.has(t)))].filter((k) => parseFactKey(k)!.b <= upTo);
+    if (keys.length === 0) continue;
+    const secure = keys.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length;
+    if (secure / keys.length < STEP_SECURE_SHARE) return step.levels[0];
+  }
+  return CAMPAIGN_STEPS[CAMPAIGN_STEPS.length - 1].levels[0];
+}
+
 /** The facts each band draws from, for this context. */
 export function poolsFor(ctx: QuestionContext): Pools {
   const enabled = new Set(ctx.enabledTables ?? TABLES);

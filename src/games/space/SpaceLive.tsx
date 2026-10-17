@@ -15,7 +15,8 @@ import { itemProblem, usableItems, validTargets } from '../../../shared/space/en
 import { ITEMS, type ItemKind } from '../../../shared/space/items';
 import { LIVE_BOT_CALLSIGNS, LIVE_BOT_LEVEL, REACTIONS, REACTION_GAP_SECONDS, MAX_REACTIONS, timesUpDelayMs, type Reaction } from '../../../shared/space/live';
 import { randomFromSeed } from '../../../shared/space/random';
-import { fetchReactionsEnabled, fetchSpaceLog, seatsOf, type SpaceAction, type SpaceGame } from '../../data/spaceGames';
+import { fetchReactionsEnabled, fetchSpaceLog, seatsOf, type SpaceAction, type SpaceGame, type SpaceMathsReply } from '../../data/spaceGames';
+import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import type { PlayerCard } from '../../data/multiplayer';
 import type { SpaceSession } from '../../space/useSpaceGame';
 import { Dice, DieFace } from './Dice';
@@ -33,6 +34,35 @@ const HIDE_REACTIONS_KEY = 'sgh-space-hide-reactions';
 const BUBBLE_MS = 2000;
 /** The ring timer shows for the last this-many seconds. */
 const RING_SECONDS = 10;
+/** A wormhole or black hole question shows a 20-second countdown. */
+const QUESTION_SECONDS = 20;
+
+type ShownQuestion = NonNullable<SpaceMathsReply['question']>;
+const MOMENT_TITLE = { wormhole: 'Wormhole boost', 'black-hole': 'Black hole escape' } as const;
+const MOMENT_NOTE = {
+  wormhole: 'A right answer flies you 3 squares further.',
+  'black-hole': 'A right answer means you only fall half as far.',
+} as const;
+
+/** The wormhole or black hole question on screen (it stays until the student has seen how they did). */
+interface MomentCard {
+  /** The game version it was asked at. */
+  version: number;
+  question: ShownQuestion;
+  moment: keyof typeof MOMENT_TITLE;
+  /** When the countdown ends, by the server's clock. */
+  endsAt: number;
+  submitted: boolean;
+}
+
+/** The question after my turn, on the side card. `turns` is how many turns I'd finished when it was asked. */
+interface ChargeCard {
+  turns: number;
+  question: ShownQuestion;
+  right?: boolean;
+}
+
+const factText = (parts: string[], answer: number) => parts.map((p) => (p === '?' ? String(answer) : p)).join(' ');
 
 function liveSeats(game: SpaceGame, cards: Map<string, PlayerCard>, mySeat: number): Seat[] {
   const players = seatsOf(game);
@@ -80,6 +110,10 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
   const [bubbles, setBubbles] = useState<(string | null)[]>([]);
   const [reactedAt, setReactedAt] = useState(0);
   const [timesUpTry, setTimesUpTry] = useState(0);
+  const [moment, setMoment] = useState<MomentCard | null>(null);
+  const [charge, setCharge] = useState<ChargeCard | null>(null);
+  /** The "turns finished" count I last asked (or skipped) the after-turn question for. */
+  const chargeAsked = useRef<number | null>(null);
 
   const seats = liveSeats(game, cards, mySeat);
   const seatsRef = useRef(seats);
@@ -214,6 +248,64 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
   const myInfo = mySeat >= 0 ? game.seat_info?.[mySeat] : undefined;
   const onAutopilot = !!myInfo?.autopilot;
   const myTurn = settled && playing && !!view && view.turn === mySeat && view.phase !== 'over' && !onAutopilot;
+
+  // ---------- Mission Control maths ----------
+  const mathsOn = game.setup.settings.maths && mySeat >= 0;
+  const myTurns = myInfo?.stats.turns ?? 0;
+  const asking = myTurn && view?.phase === 'choice' && view.pending?.kind === 'question' ? view.pending : null;
+
+  // A wormhole or black hole question: ask the server for it when I land, and keep it on screen until I've seen how I did.
+  useEffect(() => {
+    if (!mathsOn || !asking || moment) return;
+    const version = game.version;
+    let current = true;
+    session.ask({ action: 'question', gameId: game.id, kind: 'moment', version }).then(
+      (reply) => {
+        if (!current || !reply.question) return;
+        setMoment({
+          version,
+          question: reply.question,
+          moment: asking.moment ?? 'wormhole',
+          endsAt: Math.min(deadline ?? Infinity, session.serverNow() + QUESTION_SECONDS * 1000),
+          submitted: false,
+        });
+      },
+      (error: unknown) => current && setHint(error instanceof Error ? error.message : 'We couldn’t get your question.'),
+    );
+    return () => {
+      current = false;
+    };
+  }, [mathsOn, !!asking, game.version, moment === null]);
+  // The game moved on without an answer (the time ran out): close the question.
+  useEffect(() => {
+    if (moment && !moment.submitted && game.version !== moment.version) setMoment(null);
+  }, [game.version, moment]);
+
+  // The question after my turn: ask for it once for each turn I finish, and show it on the side card
+  // until I answer, skip it, or roll.
+  useEffect(() => {
+    if (!mathsOn || !settled || !playing || onAutopilot || !!myInfo?.left || myTurns < 1) return;
+    if (chargeAsked.current === myTurns || (myTurn && view?.turnInfo.rolled)) return;
+    chargeAsked.current = myTurns;
+    let current = true;
+    session.ask({ action: 'question', gameId: game.id, kind: 'charge' }).then(
+      (reply) => current && reply.question && setCharge({ turns: myTurns, question: reply.question }),
+      () => {
+        // Not asked this time (the game moved on): try again after the next change.
+        if (chargeAsked.current === myTurns) chargeAsked.current = null;
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [mathsOn, settled, playing, onAutopilot, myTurns, game.version]);
+
+  /** Sends my typed answer; the server marks it and says how I did. */
+  async function markWith(request: SpaceAction, question: ShownQuestion): Promise<MarkedAnswer> {
+    const reply = await session.ask(request);
+    if (reply.right === undefined || reply.answer === undefined) throw new Error('We couldn’t check that one. Try again.');
+    return { correct: reply.right, answer: reply.answer, fact: factText(question.parts, reply.answer), boxBefore: 0, boxAfter: 0 };
+  }
 
   function send(request: SpaceAction) {
     setHint('');
@@ -472,7 +564,7 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
             </p>
           )}
 
-          {pending && me && <Choice pending={pending} items={me.items} onChoose={choose} disabled={busy} />}
+          {pending && pending.kind !== 'question' && me && <Choice pending={pending} items={me.items} onChoose={choose} disabled={busy} />}
           {picking && (
             <ItemPicker
               picking={picking}
@@ -486,6 +578,41 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
           )}
           {cosmic && me && <ItemTiles items={me.items} usable={(item) => usable.includes(item) && !picking && !busy} onUse={chooseItem} />}
         </section>
+
+        {mathsOn && playing && !onAutopilot && !left && (
+          view.turnInfo.mathsCharge && myTurn ? (
+            <section className="space-panel space-charge" aria-label="Mission Control charge">
+              <p className="space-charge__note" role="status">
+                ⚡ +1 charged from your answer
+              </p>
+            </section>
+          ) : charge && charge.turns === myTurns && !(myTurn && view.turnInfo.rolled) ? (
+            charge.right ? (
+              <section className="space-panel space-charge" aria-label="Mission Control charge">
+                <p className="space-charge__note" role="status">
+                  ⚡ Right! +1 is ready for your next roll
+                </p>
+              </section>
+            ) : charge.right === undefined ? (
+              <section className="space-panel space-charge" aria-label="Mission Control question">
+                <QuestionModal
+                  inline
+                  key={`${charge.turns}-${charge.question.id}`}
+                  question={charge.question}
+                  title="Mission Control"
+                  note="Answer for +1 on your next roll. It’s up to you."
+                  onSubmit={(answer, ms) =>
+                    markWith({ action: 'answer', gameId: game.id, kind: 'charge', answer, ms }, charge.question)
+                  }
+                  onDone={(result: MarkedAnswer) => setCharge({ ...charge, right: result.correct })}
+                  onClose={() => setCharge(null)}
+                  closeLabel="Skip"
+                  timeScale={timeScale}
+                />
+              </section>
+            ) : null
+          ) : null
+        )}
 
         <RocketsPanel view={view} seats={seats} positions={positions} turnSeat={turnSeat} over={finished} note={note} />
 
@@ -565,6 +692,24 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
           </div>
         )}
       </aside>
+      {moment && (
+        <QuestionModal
+          key={moment.question.id}
+          question={moment.question}
+          title={MOMENT_TITLE[moment.moment]}
+          note={MOMENT_NOTE[moment.moment]}
+          onSubmit={(answer, ms) => {
+            setMoment((m) => (m ? { ...m, submitted: true } : m));
+            return markWith(
+              { action: 'answer', gameId: game.id, kind: 'moment', version: moment.version, answer, ms },
+              moment.question,
+            );
+          }}
+          onDone={() => setMoment(null)}
+          timeScale={timeScale}
+          secondsLeft={moment.submitted ? null : Math.max(0, Math.ceil((moment.endsAt - now) / 1000))}
+        />
+      )}
       {guide && <SpaceGuide tab={guide} onClose={() => setGuide(null)} />}
     </div>
   );

@@ -10,7 +10,11 @@
  * Bot games don't come here: they're played in the browser and saved by save-bot-game.
  */
 import { makeCode, normaliseCode } from '../../../shared/multiplayer';
-import { MAX_PLAYERS, MIN_PLAYERS, placesFor, SpaceRuleError, type SpaceAction, type SpaceEvent, type SpaceState } from '../../../shared/space/engine';
+import type { FactAnswer, FactStats } from '../../../shared/maths/leitner';
+import type { Question } from '../../../shared/maths/skillPack';
+import { solveQuestion, TimesTables } from '../../../shared/maths/skillPacks/timesTables';
+import { canCharge, MAX_PLAYERS, MIN_PLAYERS, placesFor, SpaceRuleError, type SpaceAction, type SpaceEvent, type SpaceState } from '../../../shared/space/engine';
+import { pickSpaceQuestion, type MathsQuestionSettings } from '../../../shared/space/mathsQuestion';
 import { isItemKind } from '../../../shared/space/items';
 import {
   autopilotSeats,
@@ -28,6 +32,7 @@ import {
   type Played,
   type SeatInfo,
 } from '../../../shared/space/live';
+import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
 import { diceFrom, shuffled } from '../../../shared/space/random';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 import { RateLimiter } from '../_shared/limits';
@@ -78,6 +83,18 @@ export interface PlayerStatus {
 
 export type ReactionResult = 'ok' | 'too-soon' | 'too-many' | 'not-playing' | 'not-allowed';
 
+/** A question the server asked a student (Mission Control maths). The answer is in it: never sent to browsers. */
+export interface StoredQuestion {
+  /** moment: the game version it was asked at. charge: the turns the student had finished. */
+  stamp: number;
+  question: Question;
+  /** Milliseconds since 1970. */
+  askedAt: number;
+  answered: boolean;
+}
+
+export type QuestionKind = 'moment' | 'charge';
+
 /** Everything this needs from Supabase, passed in so the tests can stand in for it. */
 export interface Services {
   /** Milliseconds since 1970, by the server's clock. */
@@ -95,6 +112,19 @@ export interface Services {
   /** Saves the change only if the game is still at `version`. Null if it had changed. */
   updateGame(id: string, version: number, patch: Partial<SpaceGameRow>): Promise<SpaceGameRow | null>;
   addReaction(id: string, seat: number, emoji: string): Promise<ReactionResult>;
+  /** The teacher's Mission Control maths switch. */
+  mathsSwitch(): Promise<MathsSwitch>;
+  /** A student's times-table records and the teacher's question settings, to pick the next question from. */
+  loadMathsContext(player: string): Promise<{ facts: FactStats[]; settings: MathsQuestionSettings } | null>;
+  loadQuestion(game: string, seat: number, kind: QuestionKind): Promise<StoredQuestion | null>;
+  /** Keeps this as the seat's question of that kind (replacing an older one). */
+  saveQuestion(game: string, seat: number, kind: QuestionKind, stamp: number, question: Question): Promise<void>;
+  /** Marks the question answered. False if it already was (so a double tap counts once). */
+  claimQuestion(game: string, seat: number, kind: QuestionKind): Promise<boolean>;
+  /** Removes a question once it's been dealt with. */
+  dropQuestion(game: string, seat: number, kind: QuestionKind): Promise<void>;
+  /** Adds one answer to the student's times-table records. `once` makes a retry count once. */
+  recordAnswer(player: string, once: string, answer: FactAnswer): Promise<void>;
 }
 
 export const WAITING_GAME_MS = 10 * 60 * 1000;
@@ -124,6 +154,7 @@ type Problem =
   | 'expired'
   | 'rematch-gone'
   | 'reactions-off'
+  | 'maths-off'
   | 'reaction-wait'
   | 'reaction-limit'
   | 'failed';
@@ -151,6 +182,7 @@ const MESSAGES: Record<Problem, [status: number, text: string]> = {
   expired: [410, 'That game stopped waiting. Ask your friend to make a new one.'],
   'rematch-gone': [409, 'That rematch has already launched or stopped waiting.'],
   'reactions-off': [403, 'Reactions are switched off.'],
+  'maths-off': [403, 'Your teacher has switched Mission Control maths off.'],
   'reaction-wait': [429, 'Wait a few seconds before sending another.'],
   'reaction-limit': [429, 'That’s all the reactions for this game.'],
   failed: [500, 'Something went wrong. Please try again.'],
@@ -199,8 +231,8 @@ export function spaceGameHandler(services: Services) {
     if (!body || !action) return refuse(new Refused('bad-request'));
 
     try {
-      const game = await action({ services, limiter, me, body });
-      return reply(200, { game });
+      const result = await action({ services, limiter, me, body });
+      return reply(200, result instanceof WithGame ? { game: result.game, ...result.extra } : { game: result });
     } catch (error) {
       if (error instanceof Refused) {
         // Logs say what went wrong, never who.
@@ -215,7 +247,15 @@ export function spaceGameHandler(services: Services) {
   };
 }
 
-const ACTIONS: Record<string, (c: Context) => Promise<SpaceGameRow>> = {
+/** A reply that carries more than the game: for the student who asked only (e.g. their question). */
+class WithGame {
+  constructor(
+    readonly game: SpaceGameRow,
+    readonly extra: Record<string, unknown>,
+  ) {}
+}
+
+const ACTIONS: Record<string, (c: Context) => Promise<SpaceGameRow | WithGame>> = {
   create,
   join,
   cancel: leave,
@@ -224,6 +264,8 @@ const ACTIONS: Record<string, (c: Context) => Promise<SpaceGameRow>> = {
   roll: (c) => playerTurn(c, { kind: 'roll' }),
   'use-item': (c) => playerTurn(c, itemAction(c.body)),
   choose: (c) => playerTurn(c, chooseAction(c.body)),
+  question: askQuestion,
+  answer: answerQuestion,
   'times-up': timesUp,
   'take-controls': takeTheControls,
   rematch,
@@ -323,8 +365,15 @@ async function create({ services, me, body }: Context): Promise<SpaceGameRow> {
   if (!setup) throw new Refused('bad-request');
   const status = await mustBeAllowed(services, me, true);
   if (status.createdLastHour >= MAX_CREATES_PER_HOUR) throw new Refused('too-many');
-  return newWaitingGame(services, me, setup, body.lobby === true);
+  // The teacher's switch: Off refuses a maths game, On makes every game a maths game.
+  const mathsSwitch = await services.mathsSwitch();
+  if (mathsSwitch === 'off' && setup.settings.maths) throw new Refused('maths-off');
+  return newWaitingGame(services, me, withMathsSwitch(setup, mathsSwitch), body.lobby === true);
 }
+
+/** The setup as the teacher's switch allows it. */
+const withMathsSwitch = (setup: LiveSetup, mathsSwitch: MathsSwitch): LiveSetup =>
+  mathsSwitch === 'choose' || setup.settings.maths === (mathsSwitch === 'on') ? setup : { ...setup, settings: { ...setup.settings, maths: mathsSwitch === 'on' } };
 
 async function newWaitingGame(services: Services, me: string, setup: LiveSetup, inLobby: boolean): Promise<SpaceGameRow> {
   // One waiting game each: a new one replaces the old one.
@@ -425,8 +474,11 @@ async function launch({ services, me, body }: Context): Promise<SpaceGameRow> {
   const dice = diceFrom(services.random);
   // The server shuffles the turn order.
   const entries = shuffled<string | null>(dice, [...students, ...Array.from({ length: bots }, () => null)]);
-  const played = launchLive(game.setup, entries, dice, services.random);
+  // If the teacher changed the maths switch while this game was waiting, the switch wins.
+  const setup = withMathsSwitch(game.setup, await services.mathsSwitch());
+  const played = launchLive(setup, entries, dice, services.random);
   return save(services, game, {
+    ...(setup === game.setup ? {} : { setup }),
     ...seatPatch(entries),
     rockets: entries.length,
     status: 'playing',
@@ -468,6 +520,10 @@ async function playerTurn({ services, me, body }: Context, action: SpaceAction |
   if (await autopilotGone(services, game, status)) throw new Refused('changed');
   if (game.state!.turn !== seat) throw new Refused('not-your-turn');
   if (game.seat_info![seat].autopilot) throw new Refused('autopilot');
+  // A maths question is answered with the number, which the server marks: never "I got it right".
+  if (action.kind === 'choose' && game.state!.phase === 'choice' && game.state!.pending?.kind === 'question') {
+    throw new Refused('illegal', { error: 'Type your answer to carry on.' });
+  }
 
   let played: Played;
   try {
@@ -478,6 +534,125 @@ async function playerTurn({ services, me, body }: Context, action: SpaceAction |
     throw error;
   }
   return save(services, game, afterPlay(services, seatsOf(game), played));
+}
+
+// ---------------------------------------------------------------------------
+// Mission Control maths
+// ---------------------------------------------------------------------------
+
+/** What a student sees of a question: everything but the answer. */
+function publicQuestion(q: Question) {
+  const { id, skill, kind, parts, spoken, choices } = q;
+  return { id, skill, kind, parts, spoken, ...(choices ? { choices } : {}) };
+}
+
+const isKind = (value: unknown): value is QuestionKind => value === 'moment' || value === 'charge';
+
+/** Everything that must be true for this student to be asked (or to answer) a question of this kind now. */
+function questionStamp(game: SpaceGameRow, seat: number, kind: QuestionKind, body: Body): number {
+  if (!game.setup.settings.maths) throw new Refused('illegal', { error: 'Mission Control maths is off in this game.' });
+  const info = game.seat_info![seat];
+  if (info.autopilot) throw new Refused('autopilot');
+  const s = game.state!;
+  if (kind === 'moment') {
+    if (body.version !== game.version) throw new Refused('changed');
+    if (s.turn !== seat) throw new Refused('not-your-turn');
+    if (s.phase !== 'choice' || s.pending?.kind !== 'question') throw new Refused('illegal');
+    return game.version;
+  }
+  // The question after a turn: only once you've finished one, and not once you've rolled on the next.
+  if (!s.rockets[seat].hasPlayed) throw new Refused('illegal', { error: 'Mission Control asks after your first turn.' });
+  if (s.turn === seat && s.turnInfo.rolled) throw new Refused('not-yet');
+  return info.stats.turns;
+}
+
+/** A student asks for their question (it's picked from their records and kept, so a reload shows the same one). */
+async function askQuestion({ services, me, body }: Context): Promise<SpaceGameRow | WithGame> {
+  if (!isKind(body.kind)) throw new Refused('bad-request');
+  const { game, seat } = await loadMyGame(services, me, body.gameId);
+  mustBePlaying(game);
+  await mustBeAllowed(services, me, true, otherPlayers(game, me));
+  const stamp = questionStamp(game, seat, body.kind, body);
+  const stored = await services.loadQuestion(game.id, seat, body.kind);
+  if (stored && stored.stamp === stamp) {
+    return new WithGame(game, stored.answered ? { done: true } : { question: publicQuestion(stored.question) });
+  }
+  const context = await services.loadMathsContext(me);
+  if (!context) throw new Refused('failed');
+  const pack = new TimesTables(context.facts, services.random);
+  const question = pickSpaceQuestion(pack, context.settings);
+  if (!question) throw new Refused('failed');
+  await services.saveQuestion(game.id, seat, body.kind, stamp, question);
+  return new WithGame(game, { question: publicQuestion(question) });
+}
+
+/** The student's typed answer, marked here. */
+async function answerQuestion({ services, me, body }: Context): Promise<SpaceGameRow | WithGame> {
+  const typed = body.answer;
+  if (!isKind(body.kind) || !Number.isInteger(typed) || (typed as number) < 0 || (typed as number) > 1000) throw new Refused('bad-request');
+  const { game, seat } = await loadMyGame(services, me, body.gameId);
+  mustBePlaying(game);
+  await mustBeAllowed(services, me, true, otherPlayers(game, me));
+  const kind: QuestionKind = body.kind;
+  const stamp = questionStamp(game, seat, kind, body);
+  const stored = await services.loadQuestion(game.id, seat, kind);
+  if (!stored || stored.stamp !== stamp) throw new Refused('changed');
+  if (stored.answered) throw new Refused('illegal', { error: 'You’ve already answered that one.' });
+  const solved = solveQuestion(stored.question.parts);
+  if (!solved) throw new Refused('failed');
+  const right = typed === solved.answer;
+  const now = services.now();
+  // How long it took, as far as the server can tell: never more than the time since it was asked.
+  const claimed = typeof body.ms === 'number' && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : Infinity;
+  const ms = Math.round(Math.min(claimed, now - stored.askedAt));
+  const answer: FactAnswer = { key: solved.key, correct: right, ms, at: now };
+  const once = `${game.id}:${seat}:${kind}:${stamp}`;
+  const reply = { right, answer: solved.answer };
+
+  if (kind === 'moment') {
+    // The game is waiting on this answer: play it. The version check means it counts once.
+    let played: Played;
+    try {
+      played = playerAction(liveGame(game), { kind: 'choose', option: right ? 1 : 0 }, diceFrom(services.random), services.random);
+    } catch (error) {
+      if (error instanceof SpaceRuleError) throw new Refused('illegal', { error: error.message });
+      throw error;
+    }
+    const saved = await save(services, game, afterPlay(services, seatsOf(game), played));
+    await services.recordAnswer(me, once, answer);
+    await services.dropQuestion(game.id, seat, kind);
+    return new WithGame(saved, reply);
+  }
+
+  // The question after a turn: counted once, then the +1 goes in when the student can use it.
+  if (!(await services.claimQuestion(game.id, seat, kind))) throw new Refused('illegal', { error: 'You’ve already answered that one.' });
+  await services.recordAnswer(me, once, answer);
+  if (!right) return new WithGame(game, reply);
+  let current: SpaceGameRow | null = game;
+  for (let tries = 0; tries < 4 && current; tries++) {
+    const next = chargeRight(services, current, seat);
+    if (next === 'nothing') return new WithGame(current, reply);
+    const saved = await services.updateGame(current.id, current.version, { ...next, version: current.version + 1 });
+    if (saved) return new WithGame(saved, reply);
+    // Someone moved at the same moment: look again.
+    current = await services.loadGame(current.id);
+    if (!current || current.status !== 'playing' || !current.state || !current.seat_info) return new WithGame(game, reply);
+  }
+  return new WithGame(current ?? game, reply);
+}
+
+/** What to save for a right charge answer: the +1 now if it's their turn and they haven't rolled, else keep it for their next turn. */
+function chargeRight(services: Services, game: SpaceGameRow, seat: number): Partial<SpaceGameRow> | 'nothing' {
+  const s = game.state!;
+  if (s.turn !== seat) {
+    const seats = structuredClone(game.seat_info!);
+    seats[seat].charged = true;
+    return { seat_info: seats, events: [], actions: [] };
+  }
+  if (!canCharge(s)) return 'nothing';
+  const played = playerAction(liveGame(game), { kind: 'charge', right: true }, diceFrom(services.random), services.random);
+  // The +1 doesn't give anyone a fresh clock.
+  return { ...afterPlay(services, seatsOf(game), played), turn_deadline: game.turn_deadline };
 }
 
 /**
@@ -533,7 +708,8 @@ async function rematch(context: Context, tries = 0): Promise<SpaceGameRow> {
     if (next.status !== 'waiting') throw new Refused('rematch-gone');
     return joinWaiting(services, me, next);
   }
-  const next = await newWaitingGame(services, me, game.setup, false);
+  // A rematch keeps the board and rules, but follows the teacher's switch as it is now.
+  const next = await newWaitingGame(services, me, withMathsSwitch(game.setup, await services.mathsSwitch()), false);
   const linked = await services.updateGame(game.id, game.version, {
     rematch_game: next.id,
     version: game.version + 1,

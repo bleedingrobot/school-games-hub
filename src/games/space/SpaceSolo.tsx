@@ -13,10 +13,15 @@
  */
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { randomAvatar } from '../../avatar/avatarParts';
+import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { useSound } from '../../sound';
 import type { BotLevel } from '../../../shared/botGame';
+import type { FactStats } from '../../../shared/maths/leitner';
+import type { Question } from '../../../shared/maths/skillPack';
+import { TimesTables } from '../../../shared/maths/skillPacks/timesTables';
 import { BOT_NAMES } from '../../../shared/space/bot';
 import {
+  canCharge,
   itemProblem,
   SpaceRuleError,
   usableItems,
@@ -25,13 +30,14 @@ import {
   type SpaceEvent,
 } from '../../../shared/space/engine';
 import { ITEMS, type ItemKind } from '../../../shared/space/items';
+import { pickSpaceQuestion } from '../../../shared/space/mathsQuestion';
 import { randomFromSeed } from '../../../shared/space/random';
 import { encodeAction, type SpaceGameReport } from '../../../shared/space/save';
 import { startSpaceBot, type SpaceBot } from './botThread';
 import { Dice, DieFace } from './Dice';
 import { BoardOverlays, Choice, ItemPicker, ItemTiles, MissionLog, Podium, RocketsPanel, type Picking } from './parts';
 import { SpaceGuide, type GuideTab } from './Guide';
-import { loadLessMotion, loadPrefs, passNames, saveLessMotion, savePrefs, setupFrom, SPEED_SCALE, type SpacePrefs } from './prefs';
+import { loadLessMotion, loadPrefs, mathsOn, passNames, saveLessMotion, savePrefs, setupFrom, SPEED_SCALE, type MathsMode, type SpacePrefs } from './prefs';
 import { SpaceBoard, type Seat } from './SpaceBoard';
 import { SpaceSettings } from './SpaceSettings';
 import { botPlay, botQuestion, decideBot, isStudentsTurn, newSeed, startPassRun, startRun, studentPlay, type SoloRun } from './soloRun';
@@ -47,11 +53,34 @@ export interface SpacePlayer {
 /** How games get saved. Left out (the preview), every game is a practice game. */
 export interface SpaceSaving {
   /** A stamped seed from the server, or null if there isn't one to be had. */
-  seed(): Promise<{ seed: string; stamp: string } | null>;
+  seed(maths: boolean): Promise<{ seed: string; stamp: string } | null>;
   /** Saves a finished game. Throws an error with a message for the student if it can't. */
   save(report: SpaceGameReport): Promise<{ countsForPoints?: boolean } | void>;
   /** Records a game the student left part-way, even while the page is closing. */
   abandon(report: SpaceGameReport): void;
+}
+
+/** Mission Control maths: what the teacher allows, the question settings and the student's records. */
+export interface SpaceMaths {
+  mode: MathsMode;
+  enabledTables: number[];
+  division: boolean;
+  missingFactor?: boolean;
+  multipleChoice: boolean;
+  /** The student's times-table records, so the questions fit what they're learning. */
+  facts: FactStats[];
+}
+
+const MOMENT_TITLE = { wormhole: 'Wormhole boost', 'black-hole': 'Black hole escape' } as const;
+const MOMENT_NOTE = {
+  wormhole: 'A right answer flies you 3 squares further.',
+  'black-hole': 'A right answer means you only fall half as far.',
+} as const;
+
+/** The question on the side card after your turn: waiting to be answered, or answered and waiting for your next turn. */
+interface ChargeCard {
+  question: Question;
+  done?: { right: boolean; answer: number; ms: number; at: number };
 }
 
 const isOver = (run: SoloRun) => run.state.phase === 'over';
@@ -101,12 +130,15 @@ export function SpaceSolo({
   level,
   onLevelChange,
   saving,
+  maths,
   timeScale = 1,
 }: {
   player: SpacePlayer;
   level: BotLevel;
   onLevelChange: (level: BotLevel) => void;
   saving?: SpaceSaving;
+  /** Mission Control maths. Left out: no maths. */
+  maths?: SpaceMaths;
   /** Tests set this to 0 so animations don't wait. */
   timeScale?: number;
 }) {
@@ -125,6 +157,14 @@ export function SpaceSolo({
   const [starting, setStarting] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('practice');
   const [saveMessage, setSaveMessage] = useState('');
+
+  // The student's records for the questions, kept for the visit so they carry from game to game.
+  // Pass-and-play gets a fresh pack each game: nobody's records, and nothing is saved.
+  const [pack] = useState(() => new TimesTables(maths?.facts ?? []));
+  const passPack = useRef<TimesTables | null>(null);
+  const [question, setQuestion] = useState<Question | null>(null);
+  const [charge, setCharge] = useState<ChargeCard | null>(null);
+  const mathsMode: MathsMode = maths?.mode ?? 'off';
 
   const runRef = useRef<SoloRun | null>(null);
   const gameRef = useRef<Game | null>(null);
@@ -157,7 +197,10 @@ export function SpaceSolo({
     const stamp = stampRef.current;
     if (!stamp) return null;
     const { seed, board, settings, bots, level: botLevel } = run.setup;
-    return { game: 'space', seed, stamp, board, settings, bots, level: botLevel, actions: run.studentActions.map(encodeAction), ending };
+    return {
+      game: 'space', seed, stamp, board, settings, bots, level: botLevel, actions: run.studentActions.map(encodeAction), ending,
+      ...(run.mathsAnswers.length > 0 ? { answers: run.mathsAnswers } : {}),
+    };
   }
 
   /** Saves the game once the rules engine says it's over (before the animations finish). */
@@ -270,7 +313,7 @@ export function SpaceSolo({
 
   async function start() {
     if (startingRef.current) return;
-    const setup = setupFrom(prefs);
+    const setup = setupFrom(prefs, mathsOn(mathsMode, prefs));
     if ('problem' in setup) {
       setProblem(setup.problem);
       return;
@@ -282,7 +325,7 @@ export function SpaceSolo({
       startingRef.current = true;
       setStarting(true);
       keyRef.current++; // stops the old game while the seed comes
-      stamped = await saving.seed().catch(() => null);
+      stamped = await saving.seed(!!setup.settings.maths).catch(() => null);
       startingRef.current = false;
       setStarting(false);
     }
@@ -297,6 +340,9 @@ export function SpaceSolo({
       return;
     }
     stampRef.current = stamped?.stamp ?? null;
+    passPack.current = pass ? new TimesTables() : null;
+    setQuestion(null);
+    setCharge(null);
     setSaveStatus(stamped ? 'playing' : 'practice');
     setSaveMessage('');
     const { run, events } = started;
@@ -328,6 +374,7 @@ export function SpaceSolo({
     keyRef.current++;
     runRef.current = null;
     gameRef.current = null;
+    setCharge(null);
     setGame(null);
     setView(null);
   }
@@ -350,6 +397,12 @@ export function SpaceSolo({
     setHint('');
     setPicking(null);
     setInfo(null);
+    // Rolling closes an unanswered question (skipped: nothing happens). When your turn ends, a new one opens.
+    if (action.kind === 'roll') setCharge(null);
+    if (run.state.settings.maths && !run.passAndPlay && seat === run.studentSeat && run.state.turn !== seat && run.state.phase !== 'over') {
+      const q = pickQuestion();
+      setCharge(q ? { question: q } : null);
+    }
     queue.current.push({ events, state: run.state, me: seat });
     void pump();
   }
@@ -429,6 +482,37 @@ export function SpaceSolo({
     panelRef.current?.querySelector<HTMLButtonElement>('.space-choice button')?.focus({ preventScroll: true });
   }, [choiceKey]);
 
+  // A Mission Control question: picked when it's asked (from this student's records), dropped when answered.
+  const askingKey =
+    phase === 'student' && view?.phase === 'choice' && view.pending?.kind === 'question'
+      ? `${view.turnsTaken}:${view.pending.moment ?? 'wormhole'}:${view.pending.square}`
+      : '';
+  useEffect(() => {
+    if (!askingKey) {
+      setQuestion(null);
+      return;
+    }
+    setQuestion(pickQuestion());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [askingKey]);
+
+  // An answered charge question is sent as soon as your next turn starts (before you roll).
+  useEffect(() => {
+    const run = runRef.current;
+    const done = charge?.done;
+    if (!run || !charge || !done || phase !== 'student' || run.passAndPlay || !canCharge(run.state)) return;
+    run.mathsAnswers.push({ parts: charge.question.parts, given: done.answer, ms: done.ms, at: done.at });
+    setCharge(null);
+    act({ kind: 'charge', right: done.right });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [charge, phase]);
+  const answered = useRef<{ answer: number; ms: number } | null>(null);
+
+  /** The next question for this student, from their records at the step they're ready for. */
+  function pickQuestion(): Question | null {
+    return pickSpaceQuestion(passPack.current ?? pack, maths);
+  }
+
   // ---------- Settings screen ----------
 
   if (!game || !view) {
@@ -447,6 +531,7 @@ export function SpaceSolo({
         starting={starting}
         saving={!!saving}
         playerName={player.name}
+        mathsMode={mathsMode}
       />
       {guide && <SpaceGuide tab={guide} onClose={() => setGuide(null)} />}
       </>
@@ -584,7 +669,9 @@ export function SpaceSolo({
             </p>
           )}
 
-          {pending && <Choice pending={pending} items={me.items} onChoose={(option) => act({ kind: 'choose', option })} />}
+          {pending && pending.kind !== 'question' && (
+            <Choice pending={pending} items={me.items} onChoose={(option) => act({ kind: 'choose', option })} />
+          )}
 
           {picking && (
             <ItemPicker
@@ -600,6 +687,46 @@ export function SpaceSolo({
 
           {cosmic && <ItemTiles items={me.items} usable={(item) => usable.includes(item) && !picking} onUse={chooseItem} />}
         </section>
+
+        {view.settings.maths && !pass && !over && (view.turnInfo.mathsCharge && myTurn ? (
+          <section className="space-panel space-charge" aria-label="Mission Control charge">
+            <p className="space-charge__note" role="status">
+              ⚡ +1 charged from your answer
+            </p>
+          </section>
+        ) : (
+          charge?.done?.right ? (
+            <section className="space-panel space-charge" aria-label="Mission Control charge">
+              <p className="space-charge__note" role="status">
+                ⚡ Right! +1 is ready for your next roll
+              </p>
+            </section>
+          ) : (
+          charge && !charge.done && (
+            <section className="space-panel space-charge" aria-label="Mission Control question">
+              <QuestionModal
+                inline
+                key={charge.question.id}
+                question={charge.question}
+                title="Mission Control"
+                note="Answer for +1 on your next roll. It’s up to you."
+                onSubmit={(answer, ms) => {
+                  answered.current = { answer, ms };
+                  return pack.recordAnswer(charge.question, answer, ms);
+                }}
+                onDone={(result: MarkedAnswer) => {
+                  const given = answered.current;
+                  if (given) setCharge({ question: charge.question, done: { right: result.correct, answer: given.answer, ms: Math.round(given.ms), at: Date.now() } });
+                  else setCharge(null);
+                }}
+                onClose={() => setCharge(null)}
+                closeLabel="Skip"
+                timeScale={timeScale}
+              />
+            </section>
+          )
+          )
+        ))}
 
         <RocketsPanel view={view} seats={seats} positions={positions} turnSeat={turnSeat} over={over} />
 
@@ -645,6 +772,29 @@ export function SpaceSolo({
           </div>
         )}
       </aside>
+      {question && pending?.kind === 'question' && (
+        <QuestionModal
+          key={question.id}
+          question={question}
+          title={MOMENT_TITLE[pending.moment ?? 'wormhole']}
+          note={MOMENT_NOTE[pending.moment ?? 'wormhole']}
+          onSubmit={(answer, ms) => {
+            answered.current = { answer, ms };
+            return (passPack.current ?? pack).recordAnswer(question, answer, ms);
+          }}
+          onDone={(result: MarkedAnswer) => {
+            const given = answered.current;
+            const run = runRef.current;
+            // The server checks every answer against the question shown (shared/space/save.ts).
+            if (given && run && !run.passAndPlay) {
+              run.mathsAnswers.push({ parts: question.parts, given: given.answer, ms: Math.round(given.ms), at: Date.now() });
+            }
+            setQuestion(null);
+            act({ kind: 'choose', option: result.correct ? 1 : 0 });
+          }}
+          timeScale={timeScale}
+        />
+      )}
       {guide && <SpaceGuide tab={guide} onClose={() => setGuide(null)} />}
     </div>
   );

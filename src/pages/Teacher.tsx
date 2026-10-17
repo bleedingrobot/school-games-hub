@@ -3,7 +3,7 @@ import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import { fetchMultiplayerEnabled } from '../data/multiplayer';
-import { fetchReactionsEnabled } from '../data/spaceGames';
+import { fetchMathsSwitch, fetchReactionsEnabled } from '../data/spaceGames';
 import { FriendlyError } from '../data/profile';
 import {
   deletePerson,
@@ -12,6 +12,7 @@ import {
   renamePerson,
   setHidden,
   setMultiplayer,
+  setSpaceMaths,
   setSpaceReactions,
   setRole,
   startNewSeason,
@@ -20,6 +21,7 @@ import {
 } from '../data/teacher';
 import { findGame } from '../games/registry';
 import { BOT_LEVELS, type BotLevel } from '../games/types';
+import type { MathsSwitch } from '../../shared/space/mathsSwitch';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
 import { whenPlayed } from './Dashboard';
 
@@ -84,6 +86,7 @@ function TeacherView({ me }: { me: string }) {
 
       <FriendGamesSwitch />
       <ReactionsSwitch />
+      <MathsSwitchPanel />
       <Suspense fallback={null}>
         <GemKeepTeacherPanels />
       </Suspense>
@@ -245,6 +248,68 @@ function ReactionsSwitch() {
             </button>
           )}
         </>
+      )}
+      <p role="status" className="teacher__status">
+        {status}
+      </p>
+    </section>
+  );
+}
+
+const MATHS_CHOICES: { value: MathsSwitch; label: string; detail: string }[] = [
+  { value: 'off', label: 'Off', detail: 'No maths questions in space games. Nothing else changes.' },
+  { value: 'choose', label: 'Students choose', detail: 'Each student picks maths on or off when they set up a game.' },
+  { value: 'on', label: 'On for everyone', detail: 'Every space game has maths questions, with no way to turn them off.' },
+];
+
+/**
+ * Mission Control maths in Wormholes & Black Holes (docs/SPACE-MATHS-PLAN.md): school-wide.
+ * The server checks this too, so nobody can start or save a maths game while it's off.
+ */
+export function MathsSwitchPanel() {
+  const [mode, setMode] = useState<MathsSwitch | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchMathsSwitch()
+      .then(setMode)
+      .catch(() => setStatus('We couldn’t load this setting.'));
+  }, []);
+
+  async function change(next: MathsSwitch) {
+    setStatus('Saving…');
+    try {
+      await setSpaceMaths(next);
+      setMode(next);
+      setStatus(`Mission Control maths: ${MATHS_CHOICES.find((c) => c.value === next)?.label}.`);
+    } catch (error) {
+      setStatus(errorText(error));
+    }
+  }
+
+  return (
+    <section className="panel teacher__switch" aria-labelledby="maths-title">
+      <h2 id="maths-title" className="panel__title">
+        Mission Control maths in space games
+      </h2>
+      <p>
+        Times-table questions at wormholes and black holes, and a question after each turn. They use each student’s own
+        times-table records, and what they answer goes into those records. A wrong answer never costs a student anything.
+      </p>
+      {mode !== null && (
+        <fieldset className="level-picker">
+          <legend>Who gets the questions</legend>
+          <div className="level-picker__options">
+            {MATHS_CHOICES.map((choice) => (
+              <label key={choice.value} className="level-picker__option">
+                <input type="radio" name="space-maths-switch" checked={mode === choice.value} onChange={() => void change(choice.value)} />
+                <span>
+                  <strong>{choice.label}:</strong> {choice.detail}
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
       )}
       <p role="status" className="teacher__status">
         {status}

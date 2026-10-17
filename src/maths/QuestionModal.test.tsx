@@ -25,6 +25,26 @@ function setup(q = question(), timeScale = 0) {
   return { onSubmit, onDone };
 }
 
+describe('the countdown', () => {
+  const withSeconds = (secondsLeft: number) => {
+    const q = question();
+    return <QuestionModal question={q} title="Wormhole boost" onSubmit={() => ({ correct: true, fact: '', boxBefore: 0, boxAfter: 1 })} onDone={() => {}} secondsLeft={secondsLeft} />;
+  };
+  const warning = () => document.querySelector('.sr-only[aria-live="polite"]')!;
+
+  it('has a name and a value for screen readers, and says so at 10 and 5 seconds only', () => {
+    const { rerender } = render(withSeconds(20));
+    expect(screen.getByRole('timer', { name: '20 seconds left' })).toBeInTheDocument();
+    expect(warning()).toHaveTextContent('');
+    rerender(withSeconds(10));
+    expect(warning()).toHaveTextContent('10 seconds left');
+    rerender(withSeconds(9));
+    expect(warning()).toHaveTextContent('');
+    rerender(withSeconds(5));
+    expect(warning()).toHaveTextContent('5 seconds left');
+  });
+});
+
 describe('question box', () => {
   it('shows the fact big, with a name screen readers can say', () => {
     setup();

@@ -101,6 +101,11 @@ function Waiting({ session }: { session: SpaceSession }) {
           Wormholes &amp; Black Holes · <strong>{boardLabel(game.setup.board)}</strong> ·{' '}
           {settings.mode === 'cosmic' ? '✨ Cosmic' : 'Classic'}
         </p>
+        {settings.maths && (
+          <p className="friend-note">
+            <span aria-hidden="true">🧮</span> Mission Control maths: <strong>on</strong>. There are times-table questions in this game.
+          </p>
+        )}
         {game.code && (
           <div className="friend-code">
             <span className="friend-code__label">Tell your classmates this code:</span>

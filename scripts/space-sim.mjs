@@ -17,6 +17,8 @@ const GAMES = Number(option('games', 5000));
 const ONLY = option('board', null);
 const JSON_OUT = args.includes('--json');
 const MATHS = args.includes('--maths');
+// --charge-seconds N: time each charge question adds (default 0: answered while others take their turns)
+const CHARGE_SECONDS = Number(option('charge-seconds', 0));
 const STUDENT = option('student', null);
 
 // The rules are TypeScript, so bundle them into one plain JavaScript file first.
@@ -59,6 +61,7 @@ for (const board of boards) {
       const report = simulate({
         board, settings, levels: Array(players).fill('easy'), games: GAMES, seed: `${board.id}:${mode}:${players}`,
         ...(MATHS && STUDENT !== null ? { mathsRight: [Number(STUDENT)] } : {}),
+        chargeSeconds: CHARGE_SECONDS,
       });
       results.push({ board: board.name, mode, players, report });
       if (!JSON_OUT) {

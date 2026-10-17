@@ -17,7 +17,7 @@ import type { StarKind } from './board';
 import { STAR_KINDS } from './board';
 import { boardFor, type BoardChoice } from './boards';
 import { botAction } from './bot';
-import { MAX_PLAYERS, MIN_PLAYERS, newGame, play, type Settings, type SpaceAction, type SpaceEvent, type SpaceState } from './engine';
+import { canCharge, MAX_PLAYERS, MIN_PLAYERS, newGame, play, type Settings, type SpaceAction, type SpaceEvent, type SpaceState } from './engine';
 import type { Dice } from './random';
 import { encodeAction, MIN_TURNS_TO_COUNT, parseBoard, parseSettings } from './save';
 
@@ -25,6 +25,8 @@ import { encodeAction, MIN_TURNS_TO_COUNT, parseBoard, parseSettings } from './s
 export const LIVE_BOT_LEVEL: BotLevel = 'easy';
 export const TURN_SECONDS = 30;
 export const CHOICE_SECONDS = 15;
+/** A wormhole or black hole question (Mission Control maths) gets longer than another choice. */
+export const QUESTION_SECONDS = 20;
 /** This many timed-out turns in a row and autopilot takes over. */
 export const AUTOPILOT_AFTER = 3;
 /** The most seconds added to a timer for the animations of what just happened. */
@@ -49,6 +51,12 @@ export interface SeatStats {
   docked: boolean;
   /** Turns this rocket finished. */
   turns: number;
+  /** Mission Control maths, for the maths achievements. Missing in games saved before maths existed. */
+  mathsRight?: number;
+  /** Wormholes powered up with a right answer. */
+  boosts?: number;
+  /** Black holes half-escaped with a right answer. */
+  escapes?: number;
 }
 
 /** Everything about a seat that isn't in the rules engine's state. */
@@ -60,6 +68,11 @@ export interface SeatInfo {
   left: boolean;
   /** Timed-out turns in a row. */
   timeouts: number;
+  /**
+   * Mission Control maths: this student answered the question after their turn right, and the
+   * +1 is waiting for their next roll. Only ever set for a right answer: a wrong one leaves no trace.
+   */
+  charged?: boolean;
   stats: SeatStats;
 }
 
@@ -90,7 +103,7 @@ export interface Played {
   everyoneLeft: boolean;
 }
 
-const newStats = (): SeatStats => ({ wormholes: 0, blocks: 0, stars: [], docked: false, turns: 0 });
+const newStats = (): SeatStats => ({ wormholes: 0, blocks: 0, stars: [], docked: false, turns: 0, mathsRight: 0, boosts: 0, escapes: 0 });
 
 /**
  * Starts a game. `entries` is who sits where, in turn order: a player's ID, or null for a bot.
@@ -120,7 +133,17 @@ function addStats(game: LiveGame, actor: number, before: SpaceState, after: Spac
     const stats = game.seats[event.seat]?.stats;
     if (!stats) continue;
     if (event.kind === 'wormhole') stats.wormholes++;
-    else if (event.kind === 'force-field') stats.blocks++;
+    // With maths on, a wormhole ride is a 'question' event (right or wrong) instead.
+    else if (event.kind === 'question') {
+      if ((event.moment ?? 'wormhole') === 'wormhole') stats.wormholes++;
+      if (event.correct) {
+        stats.mathsRight = (stats.mathsRight ?? 0) + 1;
+        if (event.moment === 'black-hole') stats.escapes = (stats.escapes ?? 0) + 1;
+        else stats.boosts = (stats.boosts ?? 0) + 1;
+      }
+    } else if (event.kind === 'charge') {
+      if (event.right) stats.mathsRight = (stats.mathsRight ?? 0) + 1;
+    } else if (event.kind === 'force-field') stats.blocks++;
     else if (event.kind === 'docked') stats.docked = true;
     else if (event.kind === 'star' && !stats.stars.includes(event.star)) {
       stats.stars = STAR_KINDS.filter((k) => k === event.star || stats.stars.includes(k));
@@ -140,6 +163,22 @@ function step(game: LiveGame, action: SpaceAction, dice: Dice, by: LoggedAction[
   addStats(game, seat, before, state, events);
   out.events.push(...events);
   out.actions.push({ seat, action: encodeAction(action), by });
+  applyCharge(game, dice, out);
+}
+
+/** A student with a right answer waiting gets their +1 as soon as they can use it (their turn, before rolling). */
+export function applyCharge(game: LiveGame, dice: Dice, out: Played) {
+  const info = game.seats[game.state.turn];
+  if (!info?.charged || !canCharge(game.state)) return;
+  info.charged = false;
+  const seat = game.state.turn;
+  const action: SpaceAction = { kind: 'charge', right: true };
+  const before = game.state;
+  const { state, events } = play(before, action, dice);
+  game.state = state;
+  addStats(game, seat, before, state, events);
+  out.events.push(...events);
+  out.actions.push({ seat, action: encodeAction(action), by: 'player' });
 }
 
 /** Most bot actions one request plays (3 bots × a long turn each is about 20). */
@@ -264,7 +303,8 @@ export function animationMs(events: readonly SpaceEvent[]): number {
  */
 export function deadlineAfter(game: LiveGame, events: readonly SpaceEvent[], nowMs: number): number | null {
   if (game.state.phase === 'over') return null;
-  const base = game.state.phase === 'choice' ? CHOICE_SECONDS : TURN_SECONDS;
+  const asking = game.state.phase === 'choice' && game.state.pending?.kind === 'question';
+  const base = asking ? QUESTION_SECONDS : game.state.phase === 'choice' ? CHOICE_SECONDS : TURN_SECONDS;
   const animation = Math.min(MAX_ANIMATION_SECONDS * 1000, animationMs(events) * 1.5);
   return nowMs + base * 1000 + Math.ceil(animation);
 }
