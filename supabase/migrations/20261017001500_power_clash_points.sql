@@ -18,8 +18,12 @@
 -- 6. progress_rules() includes Power Clash's points.
 --
 -- Built on the latest versions of score_bot_game(), progress_counts() and progress_rules()
--- (Gem Keep, 20261017001100). If another migration changes them before this is applied, merge
--- the Power Clash lines into the newer versions rather than running this over them.
+-- (Gem Keep, 20261017001100), and numbered after Mission Control maths (space-maths branch,
+-- 20261017001400_space_maths_switch.sql, not live yet). That migration also rewrites the
+-- achievement 'measure' list and progress_counts(), so this one keeps its three maths measures and
+-- counts: it is safe to apply after it, or without it. (This file was 001400 until P.5; it was
+-- never applied anywhere, so the rename is safe.) If another migration changes these functions
+-- before this is applied, merge the Power Clash lines into the newer versions.
 
 -- ---------------------------------------------------------------------------
 -- 1 and 2. Tables
@@ -51,6 +55,7 @@ alter table public.achievement_types add constraint achievement_types_measure_ch
     'checkmates', 'crowns', 'friend_games', 'wormholes', 'blocks', 'star_kinds', 'docks',
     'zero_hands', 'triples', 'knock_wins', 'saved_by_three',
     'levels_won', 'level_keys', 'three_star_levels', 'stars',
+    'maths_right', 'boosts', 'escapes',
     'all_three_powers', 'body_swap_wins', 'no_power_wins'));
 
 -- ---------------------------------------------------------------------------
@@ -190,6 +195,9 @@ as $$
     'star_kinds', (select count(distinct star) from public.scored_games s2,
                      jsonb_array_elements_text(coalesce(s2.space -> 'stars', '[]')) as star
                    where s2.player = who and s2.game = which_game),
+    'maths_right', coalesce(sum((s.space ->> 'mathsRight')::integer), 0),
+    'boosts', coalesce(sum((s.space ->> 'boosts')::integer), 0),
+    'escapes', coalesce(sum((s.space ->> 'escapes')::integer), 0),
     'zero_hands', coalesce(sum((s.card101 ->> 'zeroHands')::integer), 0),
     'triples', coalesce(sum((s.card101 ->> 'triples')::integer), 0),
     'knock_wins', coalesce(sum((s.card101 ->> 'knockWins')::integer), 0),

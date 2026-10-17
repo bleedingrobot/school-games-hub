@@ -131,6 +131,17 @@ function endTurn(state: PowerClashState, events: GameEvent[]): PowerClashState {
   };
 }
 
+/**
+ * The clock ran out on a turn (classmates games only): the turn passes to the other player
+ * without a symbol being placed. Never a loss by itself. A power already played this turn
+ * stays played. The engine's own 'skip' event tells the screen what happened.
+ */
+export function timeoutTurn(state: PowerClashState): PlayResult {
+  if (state.status !== 'active') return { ok: false, reason: 'The round is over' };
+  const events: GameEvent[] = [{ kind: 'skip', player: state.active }];
+  return { ok: true, state: endTurn(state, events), events };
+}
+
 export function legalSkip(state: PowerClashState): boolean {
   return state.status === 'active' && state.placesLeft > 0 && placeableSquares(state).length === 0;
 }

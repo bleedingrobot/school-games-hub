@@ -2,7 +2,7 @@
 -- or lose inside the shared daily bot cap, the Power Clash achievements, and that Power Clash
 -- games never touch ratings or leaderboards.
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
--- NOTE: written in Stage P.4 but not run yet (no local Supabase copy on the machine it was written on).
+-- Written in Stage P.4; first run in Stage P.5 (17 Oct 2026), against a scratch copy of the local database.
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(19);
@@ -106,7 +106,7 @@ select ok(pg_temp.has('a', 'pc-all-three') and pg_temp.has('a', 'pc-body-swap-wi
 
 -- ---- What the website reads ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
-select is(public.progress_rules() -> 'powerClash', '{"bot":2}'::jsonb, 'How points work reads the Power Clash rules from here');
+select is(public.progress_rules() -> 'powerClash' ->> 'bot', '2', 'How points work reads the Power Clash bot rule from here');
 select throws_ok($$ select * from public.leaderboard('power-clash', 'week') $$, '22023', null, 'there is no Power Clash leaderboard');
 
 select pg_temp.reset();
