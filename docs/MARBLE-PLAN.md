@@ -1,8 +1,8 @@
-# Marble game: plan
+# Marble Rush: plan
 
-A marble-rolling game for the hub, in the spirit of the 1984 arcade game *Marble Madness*: steer a marble down tilted, blocky, isometric tracks against the clock, without falling off the edge.
+**Marble Rush** (name picked by James, 18 Oct 2026): a marble-rolling game for the hub, in the spirit of the 1984 arcade game *Marble Madness*: steer a marble down tilted, blocky, isometric tracks against the clock, without falling off the edge.
 Written 16 October 2026 after searching GitHub for existing versions and reading the code on `main` (Stages 1–10 live, Stage 11 Gem Keep under way).
-**Status: idea saved, not scheduled.** Nothing is built. Maths added to the plan 18 Oct 2026 (section 7, James picked all six ideas). Questions 3, 6 and 7 answered 18 Oct; 1, 2, 4 and 5 still open. When it's picked up, James answers the questions in section 12 first, then stage M.1 starts.
+**Status: idea saved, not scheduled.** Nothing is built. Maths added to the plan 18 Oct 2026 (section 7, James picked all six ideas). **All questions in section 12 answered 18 Oct 2026**: Marble Rush; count-up clock plus a countdown hard mode; New Zealand landscapes inspired by real places (section 3); two boards per course; rescue questions on. James asked whether it can be built **alongside** Maths Monsters (section 10).
 
 ## The short version
 
@@ -42,19 +42,30 @@ What we change for 8–10 year olds:
 - **No "game over".** The arcade version ends when the clock runs out. Ours: the clock counts **up**, and you get a bronze, silver or gold medal for your time. Falling off costs a few seconds, never the whole run.
 - **Checkpoints** halfway along longer courses.
 - **Gentle first courses**, with wide paths and guard rails, so everyone finishes one in their first lesson.
+- **Hard mode** (James, 18 Oct): an extra choice on a course once you've finished it. The clock counts **down** from a set time, as in the arcade game, and each checkpoint adds a few seconds. Running out ends that run (try again straight away), but nothing is lost. Hard mode runs go on the same boards (a time is a time) and get a 🔥 next to them. Medals and achievements work the same, plus one achievement: **Beat the clock** (finish any course on hard mode).
 
-## 3. Courses (our own)
+## 3. Courses: New Zealand places
 
-Six to start, getting harder. Working names, all changeable:
+James's pick (18 Oct 2026): **New Zealand landscapes, inspired by real places.** Each course is a playful, blocky version of a real place, not a map of it. The tracks keep the same jobs as before (what each one teaches), and the hazards become things you'd find there. Each course gets a short "Did you know?" card about the real place (a sentence or two, with its te reo Māori name), shown on the course picker.
 
-| # | Course | Teaches | Hazards |
-|---|---|---|---|
-| 1 | **Warm-up Hill** | Steering, momentum | None. Wide path, rails |
-| 2 | **Zig-Zag** | Turning at speed | Gaps without rails |
-| 3 | **Bouncy Castle** | Bumpers, jump pads | Bumpers that push you |
-| 4 | **Slippery Slope** | Ice (no grip) and mud (lots of grip) | Ice patches, mud |
-| 5 | **The Factory** | Timing | Conveyor belts, moving platforms, sweeping arms |
-| 6 | **Sky Run** | Everything | Narrow bridges, falling tiles, wind fans |
+Six to start, getting harder. Names are working names:
+
+| # | Course | Inspired by | Teaches | Hazards, as they look there |
+|---|---|---|---|---|
+| 1 | **Boulder Beach** | Moeraki Boulders (Otago coast): huge round boulders on the sand | Steering, momentum | None. Wide sandy path, driftwood rails; the boulders are scenery (giant marbles!) |
+| 2 | **Crown Range Zig-Zag** | The Crown Range Road (Cardrona to Arrowtown), New Zealand's highest main road, with its hairpin bends | Turning at speed | Hairpins, gaps in the road barriers, a snow-pole slalom |
+| 3 | **Geyser Valley** | Rotorua's geothermal parks (Te Puia, Whakarewarewa): geysers and bubbling mud | Bumpers, jump pads | **Geysers** as jump pads (they puff on a timer), mud pots that pop and push you, steam vents |
+| 4 | **Glacier Run** | Franz Josef Glacier / Kā Roimata o Hine Hukatere (West Coast): ice flowing down to the rainforest | Ice (no grip) and mud (lots of grip) | Ice at the top, crevasse gaps, then gravel and mud at the bottom |
+| 5 | **Windy Welly** | Wellington: the cable car, the wharf cranes and the wind | Timing | The **cable car** as a moving platform, container-crane arms that sweep, conveyor belts on the wharf, gusts that push you sideways |
+| 6 | **Alpine Crossing** | The Tongariro Alpine Crossing: volcanic ridges, the Red Crater and the Emerald Lakes | Everything | Narrow ridge paths, crumbling scoria tiles, strong wind, a "Devil's Staircase" of steps, and the Emerald Lakes at the finish |
+
+**Being careful with real places:**
+
+- Many of these places are special to iwi (the Tongariro mountains are tapu to Ngāti Tūwharetoa, for example). The courses stay **on the public tracks and roads** people really use. Marbles never roll over summits or sacred sites, and nothing silly happens to a maunga. **Cape Reinga / Te Rerenga Wairua is left out**, because it's where spirits leave the land.
+- The "Did you know?" cards use place names spelled correctly, with macrons, and are checked against the official sources (DOC, the NZ Gazetteer). James (or a colleague who knows te reo) checks them before go-live.
+- Everything is drawn by us in the low-poly look. No photos, logos or brand names (no tourist company names, for example).
+
+**Later courses** (ideas): Waitomo glowworm caves (dark tunnels lit by glowworms), Milford Sound / Piopiotahi (waterfalls), Huka Falls (rushing water that pushes you), Lake Tekapo's lupins and the Church of the Good Shepherd, Castlepoint lighthouse (Wairarapa coast), and a **course near the school**, designed with the class.
 
 Later: a "course of the week", and maybe a level editor for students (section 11).
 
@@ -85,7 +96,7 @@ The ball (position, speed, spin for looks), gravity along the slope, rolling gri
 
 ## 5. On screen and controls
 
-- **three.js 0.18x** (MIT), pinned to a version at least two weeks old when building. Orthographic (isometric) camera that follows the marble smoothly. Low-poly, flat colours in the Douglas Park look; the marble gets a shine and a shadow.
+- **three.js 0.18x** (MIT), pinned to a version at least two weeks old when building. Orthographic (isometric) camera that follows the marble smoothly. Low-poly, flat colours in the Douglas Park look, coloured by each place (golden sand, blue-white ice, orange-red volcanic rock); the marble gets a shine and a shadow.
 - **Lazy loaded**: the three.js code is its own download, fetched only on the marble pages.
 - **Chromebook friendly**: screen resolution capped (pixel ratio 1.5 at most), no heavy lighting, simple shadows. If the device is slow, drop to 30 frames a second and simpler shading; the physics doesn't change.
 - **Controls**:
@@ -205,6 +216,16 @@ Same pattern as the space game, reusing `save-bot-game`:
 
 Each stage ends with tests passing and a short results section here, like the other plans.
 
+### Building alongside Maths Monsters (James asked, 18 Oct 2026)
+
+**Yes, it can.** Marble Rush gets its own branch (`marble`) and its own folder (a worktree off `main`), as Gem Keep, Maths Monsters and Power Clash have.
+
+- **M.1–M.5 don't need any maths**, so they can start now while Maths Monsters carries on.
+- **M.6–M.7 (maths) wait** until Maths Monsters is merged into `main`, because they use its maths packs. Then `main` is merged into `marble` and the maths stages start.
+- **Watch-outs:**
+  - Both games add to the same server function (`save-bot-game`), the achievements tables, the Teacher page and the database migrations. Marble keeps its changes there small, takes migration times after the newest on `main`, and merges `main` in often, so the clashes stay small.
+  - **James's checking time is the real limit.** Two games each stopping for a look means twice the "please test this". Marble stops for James only after M.2 (phone preview) and before go-live.
+
 ## 11. Ideas for later
 
 - Student level editor (build a course, share it with the class by code, the teacher approves it first).
@@ -214,10 +235,10 @@ Each stage ends with tests passing and a short results section here, like the ot
 
 ## 12. Questions for James (before M.1)
 
-1. **Name?** Some ideas: *Marble Rush*, *Roll Out!*, *Tumble Run*, *Marble Mayhem*. (Not *Marble Madness*, which is Atari's.)
-2. **Clock**: count up with medals and no game over (my pick for this age), or the arcade-style countdown as an extra "hard mode"?
+1. **Answered 18 Oct: Marble Rush.** **Name?** Some ideas: *Marble Rush*, *Roll Out!*, *Tumble Run*, *Marble Mayhem*. (Not *Marble Madness*, which is Atari's.)
+2. **Answered 18 Oct: count up with medals, plus a countdown hard mode** (section 2). **Clock**: count up with medals and no game over (my pick for this age), or the arcade-style countdown as an extra "hard mode"?
 3. **Answered 18 Oct: yes** (follows from question 6). **Fastest-time boards**: show a per-course "fastest this week" list for the class? It's skill, not luck, so it's fair, but it makes the game `ranked`. My pick: yes, top 10 plus "you", like the other boards, with no rating or rank badge.
-4. **Theme**: plain colourful blocks (my pick, simplest and clearest), or a theme such as space (to match Wormholes & Black Holes) or New Zealand landscapes?
-5. **Where it goes in the queue**: after Gem Keep (Stage 11), and before or after Power Clash? Its maths stages (M.6–M.7) need Maths Monsters live first, as Dragon Maths does.
+4. **Answered 18 Oct: New Zealand landscapes, inspired by real places** (section 3). **Theme**: plain colourful blocks (my pick, simplest and clearest), or a theme such as space (to match Wormholes & Black Holes) or New Zealand landscapes?
+5. **Answered 18 Oct: James asked whether it can be built alongside Maths Monsters** (section 10). **Where it goes in the queue**: after Gem Keep (Stage 11), and before or after Power Clash? Its maths stages (M.6–M.7) need Maths Monsters live first, as Dragon Maths does.
 6. **Answered 18 Oct: yes, two boards per course.** **Fastest-time boards with maths**: maths changes your time, so my pick is two boards per course ("with maths" and "without"). Or show boards only when maths is on for everyone, or make maths give power-ups that never change your time (fairer, less exciting).
 7. **Answered 18 Oct: on by default.** **Rescue questions**: on by default (my pick), or off by default and the teacher turns them on?
