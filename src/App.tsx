@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { HashRouter, Route, Routes } from 'react-router';
 import { AuthProvider } from './auth/AuthContext';
 import { RequireAuth } from './auth/RequireAuth';
@@ -18,6 +19,10 @@ import { PowerGamePage } from './pages/PowerGamePage';
 import { powerClash } from './games/power-clash';
 import { Teacher } from './pages/Teacher';
 import { SoundProvider } from './sound';
+import { trainingOn } from './training/switch';
+
+// Training has its own screens and styles, so it loads only when someone opens it.
+const TrainingPage = lazy(() => import('./pages/TrainingPage'));
 
 /** All the pages. Links look like /#/chess so GitHub Pages needs no extra setup. */
 export function AppRoutes() {
@@ -38,6 +43,17 @@ export function AppRoutes() {
           <Route path="card-game/:id" element={<CardGamePage />} />
           <Route path="power-game/:id" element={<PowerGamePage />} />
           <Route path="leaderboard" element={<Leaderboard />} />
+          {/* Basic facts training: no address at all until it is switched on (training/switch.ts). */}
+          {trainingOn() && (
+            <Route
+              path="training"
+              element={
+                <Suspense fallback={<div className="loading" role="status">Loading…</div>}>
+                  <TrainingPage />
+                </Suspense>
+              }
+            />
+          )}
           <Route path="points" element={<HowPoints />} />
           <Route path="teacher" element={<Teacher />} />
           <Route path="profile" element={<Profile />} />

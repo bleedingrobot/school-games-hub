@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { recordTyping, type TrainingState } from '../../shared/training/records';
+import type { AnswerEvent } from '../../shared/training/save';
 import type { SessionSummary } from '../../shared/training/summary';
+import { greenThisWeek, weekLine } from '../../shared/training/week';
 import { FactsMap } from './FactsMap';
 import { SessionRunner } from './SessionRunner';
 import { Summary } from './Summary';
@@ -14,6 +16,8 @@ interface Props {
   onState: (state: TrainingState) => void;
   /** Today's date as "YYYY-MM-DD" (the preview can pretend it's tomorrow). */
   today: string;
+  /** Called with each answer so the real page can save it. */
+  onAnswered?: (answer: AnswerEvent) => void;
   /** Extra buttons only the preview shows. */
   tools?: ReactNode;
 }
@@ -24,7 +28,7 @@ function seedFor(today: string, n: number): number {
   return h * 31 + n;
 }
 
-export function TrainingApp({ state, onState, today, tools }: Props) {
+export function TrainingApp({ state, onState, today, onAnswered, tools }: Props) {
   const [screen, setScreen] = useState<Screen>('home');
   const [summary, setSummary] = useState<SessionSummary | null>(null);
   const [sessionState, setSessionState] = useState<TrainingState>(state);
@@ -41,6 +45,7 @@ export function TrainingApp({ state, onState, today, tools }: Props) {
         <section className="tr-screen">
           <h1>Basic facts training</h1>
           <p>A few minutes a day. No clock, no score: just you and your facts.</p>
+          <p className="tr-week">{weekLine(greenThisWeek(state.records, today))}</p>
           <button type="button" className="tr-btn tr-btn-primary tr-big" onClick={start}>
             Today’s session
           </button>
@@ -73,6 +78,7 @@ export function TrainingApp({ state, onState, today, tools }: Props) {
           today={today}
           seed={seed}
           onState={onState}
+          onAnswered={onAnswered}
           onFinish={(finalState, s) => {
             const done = { ...finalState, sessionsDone: finalState.sessionsDone + 1 };
             onState(done);

@@ -486,6 +486,9 @@ main:focus {
 .link-card--board .link-card__emoji {
   background: #fff1c7;
 }
+.link-card--training .link-card__emoji {
+  background: #dff3e4;
+}
 
 .panel-grid {
   display: grid;

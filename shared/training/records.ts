@@ -180,5 +180,7 @@ export function rebuildState(
 /** Adds a typing check time for an answer length. */
 export function recordTyping(state: TrainingState, digits: number, ms: number, config: TrainingConfig = TRAINING_CONFIG): TrainingState {
   const d = Math.min(Math.max(digits, 1), 3);
-  return { ...state, typing: { ...state.typing, [d]: [...(state.typing[d] ?? []), ms].slice(-config.typing.keep * 2) } };
+  // Whole milliseconds within what the database accepts, so the same number is saved and used.
+  const whole = Math.min(Math.max(Math.round(ms), 1), config.storage.longestTypingMs);
+  return { ...state, typing: { ...state.typing, [d]: [...(state.typing[d] ?? []), whole].slice(-config.typing.keep * 2) } };
 }

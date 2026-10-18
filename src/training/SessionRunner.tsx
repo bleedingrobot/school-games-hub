@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { digitsOf } from '../../shared/training/facts';
+import { TRAINING_CONFIG } from '../../shared/training/config';
 import { recordAnswer, type TrainingState } from '../../shared/training/records';
+import type { AnswerEvent } from '../../shared/training/save';
 import { buildSession, nextQuestionIndex, type SessionQuestion } from '../../shared/training/session';
 import { summarise, type SessionSummary } from '../../shared/training/summary';
 import { AnswerEntry } from './AnswerEntry';
@@ -13,6 +15,8 @@ interface Props {
   seed: number;
   /** Called after every answer so progress is kept even if the page is closed. */
   onState: (state: TrainingState) => void;
+  /** Called with each answer (not Fix-it ones) so the real page can save it. The preview doesn't need it. */
+  onAnswered?: (answer: AnswerEvent) => void;
   onFinish: (state: TrainingState, summary: SessionSummary) => void;
 }
 
@@ -22,7 +26,7 @@ function arrayFor(q: SessionQuestion): { rows: number; cols: number } {
   return q.kind === 'mul' ? { rows: x, cols: y } : { rows: y, cols: q.answer };
 }
 
-export function SessionRunner({ state: startState, today, seed, onState, onFinish }: Props) {
+export function SessionRunner({ state: startState, today, seed, onState, onAnswered, onFinish }: Props) {
   const session = useMemo(() => buildSession(startState, today, seed), [startState, today, seed]);
   const startRecords = useRef(startState.records);
   const stateRef = useRef(startState);
@@ -42,9 +46,12 @@ export function SessionRunner({ state: startState, today, seed, onState, onFinis
     setIndex(next);
   };
 
-  const answered = (value: number, answerMs: number) => {
-    const { state, answer } = recordAnswer(stateRef.current, q.factKey, value, q.answer, answerMs, today);
+  const answered = (value: number, rawMs: number) => {
+    // Whole milliseconds, and no longer than we keep: the same number is used here and saved.
+    const answerMs = Math.min(Math.round(rawMs), TRAINING_CONFIG.storage.longestAnswerMs);
+    const { state, answer, typedMs } = recordAnswer(stateRef.current, q.factKey, value, q.answer, answerMs, today);
     stateRef.current = state;
+    onAnswered?.({ key: q.factKey, given: value, ms: answerMs, typingMs: typedMs, at: Date.now(), day: today, seed });
     practised.current.push(q.factKey);
     onState(state);
     if (answer.correct) advance();

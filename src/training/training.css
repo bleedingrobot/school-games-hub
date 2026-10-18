@@ -48,6 +48,24 @@
   color: var(--tr-soft);
   font-size: 0.95rem;
 }
+.tr-week {
+  margin: 0;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  background: #e6f8e9;
+  color: #11411a;
+  font-weight: 700;
+}
+.tr-note {
+  margin: 0 auto 0.75rem;
+  max-width: 32rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 12px;
+  background: #e8f0fb;
+  color: #0f3057;
+  font-size: 0.95rem;
+  text-align: center;
+}
 .tr-question {
   font-size: clamp(2.4rem, 9vw, 3.6rem);
   font-weight: 700;

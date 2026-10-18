@@ -19,6 +19,7 @@ import { fetchMyOpenSpaceGames, fetchMySpaceStats, fetchRecentSpaceGames, seatsO
 import { fetchMyCardStats, fetchMyOpenCardGames, fetchRecentCardGames, type SeatSummary } from '../data/cardGames';
 import { fetchMyOpenPowerGames, fetchMyPowerStats, fetchRecentPowerGames, seatsOf as powerSeatsOf, type PowerGame } from '../data/powerGames';
 import { findGame, GAMES, POWER_CLASH_ON, gameLabel } from '../games/registry';
+import { trainingOn } from '../training/switch';
 import { useMonstersEnabled } from '../games/monsters/switch';
 import { BOT_LEVELS, isRanked, type BotLevel } from '../games/types';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
@@ -376,6 +377,17 @@ export function Dashboard() {
             <span>See the top players this week</span>
           </span>
         </Link>
+        {trainingOn() && profile?.role === 'student' && (
+          <Link to="/training" className="link-card link-card--training">
+            <span className="link-card__emoji" aria-hidden="true">
+              🧮
+            </span>
+            <span>
+              <strong>Facts training</strong>
+              <span>A few minutes a day to build your facts</span>
+            </span>
+          </Link>
+        )}
       </div>
 
       <div className="panel-grid">

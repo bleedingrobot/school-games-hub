@@ -26,6 +26,11 @@ export interface AnswerInput {
   day: string;
 }
 
+/** An answer as the session screens report it: the answer, plus the seed of the session it was given in. */
+export interface AnswerEvent extends AnswerInput {
+  seed: number;
+}
+
 /** Answers since the last send, oldest first, all from one session (the `seed` rebuilds it). */
 export interface AnswersItem {
   type: 'answers';
