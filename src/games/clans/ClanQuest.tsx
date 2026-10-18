@@ -1,6 +1,8 @@
 /** Clan Quest, test version: clan creator, the Mines and fights. Nothing is saved; a refresh starts again. */
 import { useEffect, useRef, useState } from 'react';
 import type { Action } from '../../../shared/clans/actions';
+import type { OpenFight } from '../../../shared/clans/actions';
+import type { RecordedRound } from '../../../shared/clans/battleCry';
 import type { FightState } from '../../../shared/clans/fight';
 import type { Clan } from '../../../shared/clans/types';
 import type { Draft } from '../../../shared/clans/create';
@@ -79,8 +81,6 @@ function SettingsStrip({ session, onChange, open }: { session: Session; onChange
   );
 }
 
-const NO_FIGHTS_YET = 'Mine fights are not saved on the server yet, so they wait for the next stage.';
-
 /**
  * `initial` starts with a ready-made clan (for tests); normally you make one in the creator.
  * With a `server`, the clan lives on the server: it is loaded when this opens, every change is sent as an action, and
@@ -91,7 +91,13 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
   const [screen, setScreen] = useState<Screen>('home');
   const [boss, setBoss] = useState(false);
   const [summary, setSummary] = useState<FightSummary | null>(null);
-  const [loading, setLoading] = useState<'loading' | 'failed' | null>(server ? 'loading' : null);
+  const [loading, setLoading] = useState<'loading' | 'failed' | 'off' | null>(server ? 'loading' : null);
+  /** With a server: the fight being played, as the server has it. */
+  const [activeFight, setActiveFight] = useState<OpenFight | null>(null);
+  const [fightKey, setFightKey] = useState(0);
+  const activeRef = useRef<OpenFight | null>(null);
+  /** What the server said when the last round ended the fight (it has been paid). */
+  const outcome = useRef<FightSummary | null>(null);
   const [serverSeed, setServerSeed] = useState(seed);
   const [notice, setNotice] = useState('');
   /** Actions go to the server one at a time, in the order they were made. */
@@ -103,14 +109,30 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
   /** Take the server's word. While more actions are still on their way, only the last answer is shown, so the screen does not flicker back. */
   const take = (reply: ServerReply) => {
     setServerSeed(reply.seed);
-    if (waiting.current === 0) setSession((previous) => (reply.state ? sessionFrom(reply.state, previous) : previous));
+    if (waiting.current === 0) {
+      setSession((previous) => (reply.state ? sessionFrom(reply.state, previous) : previous));
+      // A fight is open on the server (this was opened after a refresh, or on another Chromebook): go straight back to it.
+      const open = reply.state?.fight;
+      if (open && !activeRef.current) {
+        activeRef.current = open;
+        setActiveFight(open);
+        setScreen('fight');
+      }
+    }
     if (!reply.ok) setNotice(reply.say);
     else if (waiting.current === 0) setNotice('');
+  };
+  /** The server's copy of the fight is the truth: show the fight again from it, or leave if it is over. */
+  const resyncFight = (fight: OpenFight | null | undefined) => {
+    activeRef.current = fight ?? null;
+    setActiveFight(fight ?? null);
+    setFightKey((k) => k + 1);
+    if (!fight) setScreen('home');
   };
   const open = () => {
     if (!server) return;
     setLoading('loading');
-    server.send({ type: 'load' }).then((reply) => { take(reply); setLoading(null); }, () => setLoading('failed'));
+    server.send({ type: 'load' }).then((reply) => { take(reply); setLoading(null); }, (error) => setLoading((error as { off?: boolean }).off ? 'off' : 'failed'));
   };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(open, [server]);
@@ -146,6 +168,74 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
     setScreen('home');
   };
 
+  /** Start a mine fight. With a server it asks for one (the server picks the monsters and takes a fight off today's count). */
+  const startFight = (b: boolean) => {
+    if (!server || !session) {
+      setBoss(b);
+      setScreen('fight');
+      return;
+    }
+    waiting.current++;
+    line.current = line.current.then(async () => {
+      try {
+        const reply = await server.send({ type: 'fightStart', depth: session.depth, boss: b });
+        waiting.current--;
+        take(reply);
+        if (reply.ok && reply.state?.fight) {
+          activeRef.current = reply.state.fight;
+          setActiveFight(reply.state.fight);
+          setScreen('fight');
+        }
+      } catch {
+        waiting.current--;
+        setNotice("We couldn't reach the server, so the fight didn't start. Please try again.");
+      }
+    });
+  };
+  /** Each round played is sent as it happens, so the server keeps the fight. Its answer says when the fight is over and paid. */
+  const sendRound = (round: number, played: RecordedRound) => {
+    if (!server) return;
+    waiting.current++;
+    line.current = line.current.then(async () => {
+      try {
+        const reply = await server.send({ type: 'fightRound', round, orders: played.orders, cry: played.cry });
+        waiting.current--;
+        take(reply);
+        if (reply.ok && reply.result.type === 'fightRound' && reply.result.over) {
+          outcome.current = reply.result.summary;
+          activeRef.current = null;
+        } else if (!reply.ok) {
+          resyncFight(reply.state?.fight);
+        }
+      } catch {
+        waiting.current--;
+        try {
+          const reply = await server.send({ type: 'load' });
+          take(reply);
+          resyncFight(reply.state?.fight);
+        } catch {
+          // Nothing more to do: the fight is safe on the server and is shown again when the connection is back.
+        }
+        setNotice("We couldn't reach the server, so that round wasn't saved. Please try again.");
+      }
+    });
+  };
+  /** The fight screen is done. With a server, wait for the answer to the last round, then show how it went. */
+  const finishServer = () => {
+    line.current = line.current.then(() => {
+      const summary = outcome.current;
+      outcome.current = null;
+      if (summary) {
+        setSummary(summary);
+        setActiveFight(null);
+        setScreen('results');
+      } else if (activeRef.current) {
+        setNotice('The server has not finished that fight yet. Here it is again.');
+        resyncFight(activeRef.current);
+      }
+    });
+  };
+
   const finish = (fight: FightState) => {
     if (!session) return;
     const done = finishFight(session, fight);
@@ -168,6 +258,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
           <p>We couldn't reach your clan just now.</p>
           <button type="button" className="cq-btn cq-btn--hot" onClick={open}>Try again</button>
         </div>
+      ) : loading === 'off' ? (
+        <p className="cq-panel" role="status">Clan Quest isn't switched on yet. Ask your teacher when it will be ready!</p>
       ) : !session ? (
         <Creator seed={serverSeed} onDone={(clan, choices) => { create(clan, choices); setScreen('home'); }} />
       ) : (
@@ -180,6 +272,11 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
               <div className="cq-cards">
                 {session.clan.members.map((m, i) => <MemberCard key={m.name} member={m} leader={i === 0} />)}
               </div>
+              {server && session.news && session.news.length > 0 && (
+                <ul className="cq-soft" aria-label="Village news">
+                  {session.news.map((line) => <li key={line}>{line}</li>)}
+                </ul>
+              )}
               <p>Gold: <strong>{session.clan.gold}</strong> · Followers: <strong>{session.clan.followers}</strong> · Average level: <strong>{Math.round(averageLevel(session.clan) * 10) / 10}</strong></p>
               <div className="cq-actions">
                 <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('mines')}>Go to the Mines</button>
@@ -192,7 +289,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
             </section>
           )}
           {screen === 'mines' && (
-            <Mines session={session} onDepth={(depth) => setSession({ ...session, depth })} onBack={() => setScreen('home')} onGo={(b) => { setBoss(b); setScreen('fight'); }} locked={server ? NO_FIGHTS_YET : undefined} />
+            <Mines session={session} onDepth={(depth) => setSession({ ...session, depth })} onBack={() => setScreen('home')} onGo={startFight} />
           )}
           {screen === 'market' && <Market session={session} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'training' && <Training session={session} onChange={change} onBack={() => setScreen('home')} />}
@@ -202,7 +299,10 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
           {screen === 'raid' && <Raid session={session} onChange={change} onBack={() => setScreen('empire')} />}
           {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} session={session} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'land' && <Land session={session} onChange={change} onBack={() => setScreen('empire')} />}
-          {screen === 'fight' && <Fight key={session.fightNo} session={session} boss={boss} onFinish={finish} />}
+          {screen === 'fight' && !server && <Fight key={session.fightNo} session={session} boss={boss} onFinish={finish} />}
+          {screen === 'fight' && server && activeFight && (
+            <Fight key={`${activeFight.no}-${fightKey}`} session={session} open={activeFight} boss={activeFight.boss} onRound={sendRound} onFinish={finishServer} />
+          )}
           {screen === 'results' && summary && <Results summary={summary} members={session.clan.members} onDone={() => setScreen('home')} />}
         </>
       )}

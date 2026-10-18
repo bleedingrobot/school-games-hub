@@ -3,7 +3,7 @@
  * the browser (so the test page works with no server at all); when there is a server, every change is also sent
  * to it as an action, and whatever it answers replaces the browser's copy. The server is the boss.
  */
-import type { Action, Result } from '../../../shared/clans/actions';
+import type { Action, OpenFight, Result } from '../../../shared/clans/actions';
 import type { Clan } from '../../../shared/clans/types';
 import type { PracticalSettings } from '../../../shared/maths/practical';
 import type { Session } from './session';
@@ -17,7 +17,11 @@ export interface ServerClan {
   fightNo: number;
   raidNo: number;
   examined: string[];
+  /** The mine fight in progress, if any (a refresh shows it again). */
+  fight: OpenFight | null;
   settings: PracticalSettings;
+  /** The latest village news lines, written by the computer. */
+  news: string[];
 }
 
 export type ServerReply =
@@ -33,7 +37,7 @@ export interface ClanServer {
 export function sessionFrom(state: ServerClan, previous?: Session | null): Session {
   return {
     clan: state.clan, baseSeed: state.seed, day: state.day, fightsLeft: state.fightsLeft, fightNo: state.fightNo, raidNo: state.raidNo,
-    examined: state.examined, settings: state.settings, depth: previous?.depth ?? 0,
+    examined: state.examined, settings: state.settings, depth: previous?.depth ?? 0, fight: state.fight, news: state.news,
   };
 }
 
@@ -68,6 +72,8 @@ export function makeClanServer(options: ServerOptions): ClanServer {
           });
           // A busy or broken server (5xx) or a busy clan (409) is worth another go; a bad request or being signed out is not.
           if (response.status >= 500 || response.status === 409) throw new Error(`The clan server said ${response.status}.`);
+          // The teacher has Clan Quest switched off.
+          if (response.status === 403) throw Object.assign(new Error('Clan Quest is not switched on yet.'), { final: true, off: true });
           if (!response.ok) throw Object.assign(new Error(`The clan server said ${response.status}.`), { final: true });
           return (await response.json()) as ServerReply;
         } catch (error) {

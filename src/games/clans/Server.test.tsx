@@ -1,7 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { applyAction, type Action, type ServerState } from '../../../shared/clans/actions';
+import { applyAction, type Action, type OpenFight, type ServerState } from '../../../shared/clans/actions';
+import { replayFight } from '../../../shared/clans/battleCry';
+import { fightSeed } from '../../../shared/clans/play';
+import { publicState } from '../../../supabase/functions/clans/handler';
 import { startingDrafts } from '../../../shared/clans/create';
 import { empireOf } from '../../../shared/clans/empire';
 import { churchBill } from '../../../shared/clans/moments';
@@ -41,7 +44,7 @@ function fakeServer(start: ServerState | null, wrap?: (action: Action, next: () 
   };
   return { box, server };
 }
-const publicOf = (s: ServerState) => ({ clan: structuredClone(s.clan), seed: s.seed, day: s.day, fightsLeft: s.fightsLeft, fightNo: s.fightNo, raidNo: s.raidNo, examined: s.examined, settings: S });
+const publicOf = (s: ServerState) => structuredClone(publicState(s, S, ['One fight was won in the Mines yesterday.']));
 
 const knockedOut = (n: number) => (s: ServerState) => { for (let i = 0; i < n; i++) { s.clan.members[i].knockedOut = true; s.clan.members[i].hp = 0; } };
 
@@ -53,16 +56,24 @@ async function answer(u: ReturnType<typeof user>, q: PracticalQuestion, value: n
 }
 
 describe('Clan Quest with a server', () => {
-  it('opens the clan the server has, without the test strip, and keeps the Mines for the next stage', async () => {
+  it('opens the clan the server has, without the test strip, and the Mines are open', async () => {
     const { server, box } = fakeServer(madeState());
     render(<ClanQuest server={server} />);
     expect(screen.getByText(/Opening your clan/)).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Red Banner' })).toBeInTheDocument();
     expect(box.sent).toEqual([{ type: 'load' }]);
     expect(screen.queryByText(/Test settings/)).toBeNull();
+    expect(screen.getByText('One fight was won in the Mines yesterday.')).toBeInTheDocument();
     await user().click(btn('Go to the Mines'));
-    expect(screen.getByText(/Mine fights are not saved on the server yet/)).toBeInTheDocument();
-    expect(btn('Into the Mines!')).toBeDisabled();
+    expect(screen.queryByText(/not saved on the server/)).toBeNull();
+    expect(btn('Into the Mines!')).toBeEnabled();
+  });
+
+  it('says so, kindly, when the teacher has Clan Quest switched off', async () => {
+    const { server } = fakeServer(madeState(), () => { throw Object.assign(new Error('off'), { off: true }); });
+    render(<ClanQuest server={server} />);
+    expect(await screen.findByText(/isn't switched on yet/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
   });
 
   it('makes a new clan on the server from the creator\'s choices (the server\'s seed, not the browser\'s)', async () => {
@@ -174,5 +185,114 @@ describe('Clan Quest with a server', () => {
     const again = await screen.findByRole('button', { name: 'Try again' });
     await user().click(again);
     expect(await screen.findByRole('heading', { name: 'Red Banner' })).toBeInTheDocument();
+  });
+
+  describe('mine fights', () => {
+    const dflt = () => screen.queryAllByRole('button', { name: /Default action/ })[0];
+
+    /** Click through one or more rounds with the default orders. */
+    async function playRounds(u: ReturnType<typeof user>, box: { sent: Action[] }, count: number) {
+      const rounds = () => box.sent.filter((a) => a.type === 'fightRound').length;
+      const target = rounds() + count;
+      for (let i = 0; i < 200 && rounds() < target; i++) {
+        if (screen.queryByRole('button', { name: 'See how everyone did' })) return;
+        const no = screen.queryByRole('button', { name: 'No thanks' });
+        if (no) await u.click(no);
+        else if (screen.queryByRole('button', { name: 'Carry on' })) await u.click(btn('Carry on'));
+        else await u.click(dflt());
+      }
+    }
+
+    it('asks the server to start the fight, shows the monsters it picked, and uses one of the day\'s fights', async () => {
+      const state = madeState();
+      const { server, box } = fakeServer(state);
+      const u = user();
+      render(<ClanQuest server={server} />);
+      await screen.findByRole('heading', { name: 'Red Banner' });
+      await u.click(btn('Go to the Mines'));
+      await u.click(btn('Into the Mines!'));
+      await waitFor(() => expect(box.saved!.fight).not.toBeNull());
+      expect(box.sent.filter((a) => a.type === 'fightStart')).toHaveLength(1);
+      const open = box.saved!.fight as OpenFight;
+      expect(open.seed).toBe(fightSeed(SEED, 0));
+      expect(box.saved!.fightsLeft).toBe(7);
+      const enemies = replayFight(box.saved!.clan.members, open.depth, open.seed, open.boss, [], open.settings).state.enemies;
+      expect(await screen.findByText(new RegExp(enemies[0].name))).toBeInTheDocument();
+    });
+
+    it('sends every round, then shows what the server paid when the fight is over', async () => {
+      const { server, box } = fakeServer(madeState());
+      const u = user();
+      render(<ClanQuest server={server} />);
+      await screen.findByRole('heading', { name: 'Red Banner' });
+      const goldBefore = box.saved!.clan.gold;
+      await u.click(btn('Go to the Mines'));
+      await u.click(btn('Into the Mines!'));
+      await playRounds(u, box, 100);
+      await u.click(await screen.findByRole('button', { name: 'See how everyone did' }));
+      await waitFor(() => expect(box.saved!.fight).toBeNull());
+      const rounds = box.sent.filter((a) => a.type === 'fightRound') as Extract<Action, { type: 'fightRound' }>[];
+      expect(rounds.map((r) => r.round)).toEqual(rounds.map((_, i) => i + 1));
+      expect(rounds.length).toBeGreaterThan(0);
+      const gained = box.saved!.clan.gold - goldBefore;
+      expect(await screen.findByText(/Gold:/)).toHaveTextContent(`+${gained}`);
+      await u.click(btn('Back to the clan'));
+      expect(box.saved!.fightsLeft).toBe(7);
+    });
+
+    it('picks the fight up again after a refresh: the same fight, the rounds kept, no extra fight used', async () => {
+      const { server, box } = fakeServer(madeState());
+      const u = user();
+      const first = render(<ClanQuest server={server} />);
+      await screen.findByRole('heading', { name: 'Red Banner' });
+      await u.click(btn('Go to the Mines'));
+      await u.click(btn('Into the Mines!'));
+      await playRounds(u, box, 1);
+      await waitFor(() => expect((box.saved!.fight as OpenFight).rounds.length).toBeGreaterThan(0));
+      const kept = structuredClone(box.saved!.fight);
+      const startsBefore = box.sent.filter((a) => a.type === 'fightStart').length;
+      first.unmount();
+      cleanup();
+      // A refresh: a new page opens the clan again.
+      render(<ClanQuest server={server} />);
+      expect(await screen.findByText(/A fight begins!/)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Into the Mines!' })).toBeNull();
+      expect(box.sent.filter((a) => a.type === 'fightStart')).toHaveLength(startsBefore);
+      expect(box.saved!.fight).toEqual(kept);
+      expect(box.saved!.fightsLeft).toBe(7);
+      // The rounds already played are in the log again.
+      expect(screen.getByText(/^Round 1$/)).toBeInTheDocument();
+    });
+
+    it('goes back to the server\'s copy of the fight when it turns a round down', async () => {
+      let refused = false;
+      const { server, box } = fakeServer(madeState(), (action, next) => {
+        if (action.type === 'fightRound' && !refused) {
+          refused = true;
+          return { ok: false, why: 'stale-round', say: 'That round was already played.', seed: SEED, state: publicOf(box.saved!) };
+        }
+        return next();
+      });
+      const u = user();
+      render(<ClanQuest server={server} />);
+      await screen.findByRole('heading', { name: 'Red Banner' });
+      await u.click(btn('Go to the Mines'));
+      await u.click(btn('Into the Mines!'));
+      await playRounds(u, box, 1);
+      expect(await screen.findByText('That round was already played.')).toBeInTheDocument();
+      // The fight is shown again from the start, as the server has it (it kept no rounds).
+      await waitFor(() => expect(screen.queryAllByText(/^Round \d/).length).toBe(0));
+      expect((box.saved!.fight as OpenFight).rounds).toHaveLength(0);
+    });
+
+    it('will not start a fight when the day\'s fights are used up', async () => {
+      const { server, box } = fakeServer(madeState((s) => { s.fightsLeft = 0; }));
+      const u = user();
+      render(<ClanQuest server={server} />);
+      await screen.findByRole('heading', { name: 'Red Banner' });
+      await u.click(btn('Go to the Mines'));
+      expect(btn('Into the Mines!')).toBeDisabled();
+      expect(box.sent.filter((a) => a.type === 'fightStart')).toHaveLength(0);
+    });
   });
 });

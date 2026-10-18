@@ -4,7 +4,8 @@
  * Keyboard: A attack, S spell, G guard, R run, 1-9 to pick, Enter for the default action, Esc to go back.
  */
 import { useEffect, useRef, useState } from 'react';
-import { markCry, nextCryQuestion, playCryRound, type CryAnswer, type CryReward } from '../../../shared/clans/battleCry';
+import type { OpenFight } from '../../../shared/clans/actions';
+import { markCry, nextCryQuestion, playCryRound, type CryAnswer, type CryReward, type RecordedRound } from '../../../shared/clans/battleCry';
 import { newFight, type FightState, type Order } from '../../../shared/clans/fight';
 import { SPELLS } from '../../../shared/clans/spells';
 import type { Member } from '../../../shared/clans/types';
@@ -20,10 +21,30 @@ import { nextSeed, type Session } from './session';
 type Phase = 'ask' | 'reward' | 'working' | 'orders' | 'over';
 type Mode = 'action' | 'spell' | 'target';
 
-export function Fight({ session, boss = false, onFinish }: { session: Session; boss?: boolean; onFinish: (fight: FightState) => void }) {
+/**
+ * With a server, `open` is the fight the server started (it picked the monsters): this plays it from where the server
+ * has it (a refresh shows the same fight, round for round), and `onRound` hands each round played back to be sent.
+ * Without one (the test page) the fight starts here and nothing is sent.
+ */
+export function Fight({ session, boss = false, open, onRound, onFinish }: {
+  session: Session; boss?: boolean; open?: OpenFight; onRound?: (round: number, played: RecordedRound) => void; onFinish: (fight: FightState) => void;
+}) {
   const members: Member[] = session.clan.members;
   const clanNames = useRef(new Set(members.map((m) => m.name))).current;
-  const [fight, setFight] = useState<FightState>(() => labelDuplicates(newFight(members, session.depth, nextSeed(session), boss)));
+  const settings = open?.settings ?? session.settings;
+  const [boot] = useState(() => {
+    if (!open) return { fight: labelDuplicates(newFight(members, session.depth, nextSeed(session), boss)), lines: ['A fight begins!'] };
+    // Rebuild the fight the server has, by playing back the rounds it has kept.
+    const fight = labelDuplicates(newFight(members, open.depth, open.seed, open.boss));
+    const lines = ['A fight begins!'];
+    for (const r of open.rounds) {
+      const before = fight.log.length;
+      playCryRound(fight, open.settings, r.orders, r.cry);
+      lines.push(...fight.log.slice(before).map((e) => describe(e, clanNames)));
+    }
+    return { fight, lines };
+  });
+  const [fight, setFight] = useState<FightState>(boot.fight);
   const [phase, setPhase] = useState<Phase>('orders');
   const [question, setQuestion] = useState<PracticalQuestion | null>(null);
   const [given, setGiven] = useState<CryAnswer | null>(null);
@@ -33,14 +54,14 @@ export function Fight({ session, boss = false, onFinish }: { session: Session; b
   const [seat, setSeat] = useState(0);
   const [mode, setMode] = useState<Mode>('action');
   const [spell, setSpell] = useState<number | null>(null);
-  const [log, setLog] = useState<string[]>(() => ['A fight begins!']);
+  const [log, setLog] = useState<string[]>(boot.lines);
   const panel = useRef<HTMLDivElement>(null);
   const logEnd = useRef<HTMLLIElement>(null);
 
   // The first round starts when the fight does; the next ones start after each round is played.
   const startRound = (f: FightState) => {
     if (f.result) return setPhase('over');
-    const q = nextCryQuestion(f, session.settings);
+    const q = nextCryQuestion(f, settings);
     setSeq(choosingOrder(f));
     setSeat(0);
     setOrders([]);
@@ -83,7 +104,8 @@ export function Fight({ session, boss = false, onFinish }: { session: Session; b
   function play(all: Order[]) {
     const next = structuredClone(fight);
     const before = next.log.length;
-    playCryRound(next, session.settings, all, given);
+    playCryRound(next, settings, all, given);
+    onRound?.(next.round, { orders: all, cry: given });
     setLog((l) => [...l, ...next.log.slice(before).map((e) => describe(e, clanNames))]);
     setFight(next);
     startRound(next);
