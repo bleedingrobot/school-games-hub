@@ -106,12 +106,27 @@ Kids can see their own progress along the ladder, not just a score.
   - `class_members`: **one current class per student**. Moving a student just changes their row.
   - `class_groups` and `class_group_members`: optional groups inside a class ("Kea", "Tūī").
 - **Getting students in:**
-  - **Join code:** the teacher shows a code made the same way as game codes (no vowels or lookalike characters), and students type it once.
+  - **Class Warp code:** see section 6b.
   - **Teacher adds students:** the teacher ticks students from a list of their school's students who have no class. This is the backup for students who type the code wrong.
 - **What teachers see:** only students in their own classes. A **school admin** sees every class in their school. All the `teacher_*` functions get this check.
 - **Settings move per class.** The settings now in `app_settings` (space maths, reactions, Gem Keep tables, multiple choice, division) become per class. The school's row becomes the default a new class starts with.
 - **End of year:** the school admin archives the year's classes. Mastery records belong to the student, not the class, so nothing is lost when they change rooms.
 - **Leaderboards:** the privacy summary promises no classes on boards. A "my class" filter is allowed, but class names are never shown to students.
+
+## 6b. Class Warp (James, 18 Oct 2026)
+
+Every class, and every group inside a class, has its own **warp code**. A student types the code and is warped into that class or group. This replaces the "join code" idea in section 6, and works the same for both.
+
+- **Codes:** short, made the same way as game codes (no vowels or lookalike characters), one for each class and one for each group. A group's code is different from its class's code.
+- **Class code:** the student joins that class. If they were in another class, the screen asks first: "Leave Room 12 and warp to Room 14?" Their records come with them, because records belong to the student.
+- **Group code:** the student joins that group, and the class it belongs to as well, so one code is enough. A student can be in one group per class.
+- **Where students type it:** a "Class Warp" button on the dashboard (and the "Join your class" step for new students). They type the code, see the class or group name, tap to confirm, and get a short warp animation and "Welcome to Room 12!".
+- **Teachers control it:** a code can be turned off (nobody can warp in), reset to a new code, or set to ask the teacher before anyone joins. The teacher sees warps as they happen ("Speedy Otter 27 joined Kea") and can move a student out.
+- **Safe by default:** codes can't be guessed in bulk (limited tries per student, like game codes), a wrong code says only "That code didn't work", and an archived class's code stops working. A code only ever gives a student a place in a class or group; it never shows them anyone else's data.
+- **Names:** students see the class or group name only after a correct code. Class names are never shown on leaderboards (the privacy summary promise stays).
+- **Teacher backup stays:** a teacher can still tick students from the list, for anyone who can't type the code.
+
+Open questions I decided without asking (James can change them): moving class asks for confirmation; "ask the teacher first" is off by default; group codes also join the class.
 
 ## 7. Schools
 
