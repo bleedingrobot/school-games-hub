@@ -151,7 +151,7 @@ insert into public.clan_fight_log (nz_date, depth, boss, result) values
   (date '1970-01-01' + 20002, 6, false, 'lost'), (date '1970-01-01' + 20002, 9, true, 'lost'), (date '1970-01-01' + 19000, 1, false, 'won');
 insert into public.clan_news (nz_date, text) values (date '1970-01-01' + 19000, 'Very old news.');
 select is(public.load_clan(pg_temp.id('a'), pg_temp.req(98)) ->> 'version', '7', 'clan a is at version 7 before the job');
-select is(public.clan_nightly(20003), '{"ran": true, "day": 20003, "rested": 1}'::jsonb, 'the job rests the one clan that nobody touched today');
+select is(public.clan_nightly(20003), '{"ran": true, "day": 20003, "rested": 1, "villagesClosed": 0}'::jsonb, 'the job rests the one clan that nobody touched today');
 select is(public.load_clan(pg_temp.id('a'), pg_temp.req(98)) -> 'state' ->> 'day', '4', 'it moves the clan to today''s day number (20003 - 20000 + 1)');
 select is(public.load_clan(pg_temp.id('a'), pg_temp.req(98)) -> 'state' ->> 'fightsLeft', '8', '... gives the fights back');
 select is(public.load_clan(pg_temp.id('a'), pg_temp.req(98)) -> 'state' -> 'clan' ->> 'wakesToday', '0', '... and the free Church wake-up');
