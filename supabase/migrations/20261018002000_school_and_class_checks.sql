@@ -1697,7 +1697,7 @@ for each row execute function public.check_same_school_seats();
 
 -- Teachers could read every Power Clash game. Now only those of their own students.
 drop policy "Players see their Power Clash games, teachers all" on public.power_games;
-create policy "Players see their Power Clash games, teachers those of their own students"
+create policy "Players and their own teachers see Power Clash games"
 on public.power_games for select to authenticated
 using (
   public.is_school_user()
