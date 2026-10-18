@@ -5,6 +5,6 @@
  *
  * To try it on your own computer without changing this file, put VITE_TRAINING_ON=true in .env.local.
  */
-const TRAINING_ON = false;
+const TRAINING_ON = true;
 
 export const trainingOn = (): boolean => TRAINING_ON || import.meta.env.VITE_TRAINING_ON === 'true';
