@@ -683,3 +683,11 @@ Built, tested and **not applied, not deployed, not merged**. Branch `clans`. No 
 **Tests**: `HowToPlay.test.tsx` (6) and `Accessibility.test.tsx` (9: contrast of every text colour on every background, border contrast, bar contrast, every animation stops for reduced motion, no target under 44px in the CSS, focus on new headings, a keyboard-only start into a fight and orders by letter, the celebration). Whole suite 2,255 passed; type check clean.
 
 **Left**: the go-live, one step at a time (`docs/prompts/clans-golive.md`). Not checked: a real screen reader and a real Chromebook touch screen.
+
+## Clan Quest went live (18 Oct 2026)
+
+- Applied the four migrations (`20261018001800` to `20261018002100`) to the live database with `supabase db query`. Checked: 0 clans, both switches off, 8 Clan Quest achievements, 202 scored games untouched.
+- Deployed the `clans` function (answers "Please sign in again." to a signed-out call).
+- Merged `clans` into `main` and pushed; the website deploy succeeded.
+- Switched **Clan Quest on** for pupils the same day at James's word. The **raids** switch is still off.
+- Not done: the signed-out table-access check (step 4) and the teacher try-out (step 6) were skipped. James chose to go straight to pupils.
