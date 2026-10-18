@@ -1,6 +1,13 @@
-# Clan Quest, going live (after stage C.7)
+# Prompt: Clan Quest, going live (after stage C.7)
 
+Paste everything below the line into a new chat to start the go-live.
+
+---
 You are continuing **Clan Quest** in James's School Games Hub (a website of games for his Year 4-6 class at Douglas Park School). Reply to James in plain, simple words (no jargon, file paths or commit hashes unless he asks).
+
+## Step 0: quick check (1 minute)
+
+Ask James, in plain words, whether he has changed or applied anything since C.7 (James tried the C.7 test page and said everything looks good on 18 Oct 2026), and which live steps he wants to do today. Then do **step 1 only** (pre-flight, nothing live) and stop for his word before step 2.
 
 ## Where things stand
 - **C.0 to C.7 are built and tested** on branch `clans` (worktree `~/projects/school-games-hub-clans`; never push or merge to `main` without James saying so). Read `docs/CLANS-PLAN.md` "Stage C.6, part B results" and "Stage C.7 results" first, then `docs/CLANS-TEACHER-GUIDE.md`.
