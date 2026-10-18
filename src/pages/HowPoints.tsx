@@ -245,6 +245,36 @@ export function HowPoints() {
         </section>
       )}
 
+      {rules.clanQuest && (
+        <section className="panel" aria-labelledby="clan-quest-points-title">
+          <h2 id="clan-quest-points-title" className="panel__title">
+            🛡️ Clan Quest
+          </h2>
+          <ul className="how-points__list">
+            <li>
+              Win fights in the Mines: <strong>1 point for every {rules.clanQuest.points.minesPerPoint} you win</strong>.
+            </li>
+            <li>
+              Beat a boss: <strong>{rules.clanQuest.points.boss} points</strong>.
+            </li>
+            <li>
+              Win a Friendly War: <strong>{rules.clanQuest.points.war} points</strong>.
+            </li>
+            <li>
+              When your class builds something in the village, everyone who voted that week gets{' '}
+              <strong>{rules.clanQuest.points.villageBuilt} points</strong>.
+            </li>
+            <li>Raids and maths questions don’t earn points, but a right answer helps your clan win.</li>
+            <li>These share the {rules.botDailyCap}-points-a-day limit with games against bots.</li>
+            <li>
+              Clan Quest also gives your clan <strong>fame</strong> (for wins, bosses, wars, raids and village buildings), shown on its
+              own Scoreboard inside the game. Fame never comes from maths scores. Eight achievements are worth {rules.achievementPoints}{' '}
+              bonus points each.
+            </li>
+          </ul>
+        </section>
+      )}
+
       <section className="panel" aria-labelledby="levels-title">
         <h2 id="levels-title" className="panel__title">
           Levels

@@ -11,7 +11,7 @@ import { build, canBuild, capacity, claimLand, deposit, developPlot, empireOf, m
 import { closeWeek, raidClassmateNz, raidTargetList, voteOptions, type TargetEntry, type VillageKind } from '../../../shared/clans/village';
 import { STATS, TROOP_KINDS, type BuildingKind, type Clan, type Empire, type ItemDef, type Member, type Stat, type Troops } from '../../../shared/clans/types';
 import { finishQuest, puzzleFor, questById, questDoneToday, todaysQuest, type PuzzleSpec, type QuestDef, type QuestDone } from '../../../shared/clans/quests';
-import type { Session } from './session';
+import { earn, type Session } from './session';
 
 const withClan = (s: Session, change: (clan: Clan) => boolean): Session | null => {
   const clan = structuredClone(s.clan);
@@ -168,8 +168,10 @@ export function sendArmy(s: Session, kingdomId: string, plan: BattlePlan, friend
   const clan = structuredClone(s.clan);
   const out = sendArmyTo(clan, kingdomId, plan, friendly, raidSeed(s));
   if (!out.ok) return out;
-  const next = { ...s, raidNo: (s.raidNo ?? 0) + 1 };
-  return { session: friendly ? next : { ...next, clan }, result: out.result, gold: out.gold, friendly };
+  const won = out.result.outcome === 'won';
+  const next = { ...s, clan: friendly ? s.clan : clan, raidNo: (s.raidNo ?? 0) + 1 };
+  const paid = earn(next, { wars: friendly && won ? 1 : 0, kingdomRaids: !friendly && won ? 1 : 0 });
+  return { session: paid, result: out.result, gold: out.gold, friendly };
 }
 
 // Test-only helpers for James's settings strip.
@@ -295,10 +297,10 @@ export function pretendRaid(s: Session, mateId: string, take: Take, plan: Battle
   const out = raidClassmateNz(state, 'you', mate, take, plan, raidSeedFor(s.baseSeed, s.raidNo ?? 0), PRETEND_TODAY + s.day - 1, s.raidsOn !== false);
   if (!out.ok) return out;
   return {
-    session: {
+    session: earn({
       ...s, clan, raidNo: (s.raidNo ?? 0) + 1, pretendRaids: (s.pretendRaids ?? 0) + 1, pretendShield: [...(s.pretendShield ?? []), mateId],
       news: [out.news, ...(s.news ?? [])],
-    },
+    }, { classRaids: out.raid.result.outcome === 'won' ? 1 : 0 }),
     take, result: out.raid.result, gold: out.raid.gold, land: out.raid.land, destroyed: out.raid.destroyed,
   };
 }

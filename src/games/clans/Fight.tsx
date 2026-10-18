@@ -166,7 +166,7 @@ export function Fight({ session, boss = false, open, onRound, onFinish }: {
   return (
     <section className="cq-fight" aria-label="The fight">
       <p className="cq-fight__top">
-        <strong>Depth {fight.depth}</strong> · Round {Math.min(fight.round + (fight.result ? 0 : 1), 8)} · Fights today: {fightsLabel(session.fightsLeft)}
+        <strong>Depth {fight.depth}</strong> · Round {Math.min(fight.round + (fight.result ? 0 : 1), 8)} · Fights today: {fightsLabel(session.fightsLeft, session.fightsPerDay)}
       </p>
       <div className="cq-arena">
         <ul className="cq-side cq-side--enemies" aria-label="Enemies">

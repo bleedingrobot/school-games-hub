@@ -161,3 +161,19 @@
 .cq-quest-choice strong { color: var(--cq-yellow); margin-right: 6px; }
 .cq-quest-choice--locked { opacity: 0.55; cursor: not-allowed; }
 .cq-quest-why { margin: 2px 0 0; font-size: 0.9rem; }
+
+/* Stage C.6 part B: the scoreboard, the achievements and the celebration. */
+.cq-table { border-collapse: collapse; width: 100%; max-width: 560px; margin: 8px 0; }
+.cq-table :is(th, td) { border-bottom: 1px solid var(--cq-line); padding: 6px 8px; text-align: left; }
+.cq-table caption { text-align: left; padding: 4px 0; }
+.cq-table .cq-me { background: #1d1d40; color: var(--cq-yellow); }
+.cq-achievement-list { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; }
+.cq-achievement { display: flex; gap: 10px; align-items: center; padding: 6px 10px; border: 1px solid var(--cq-line); border-radius: 4px; background: var(--cq-panel); opacity: 0.8; }
+.cq-achievement--earned { opacity: 1; border-color: var(--cq-yellow); }
+.cq-achievement__emoji { font-size: 1.6rem; }
+.cq-celebrate { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 12px; margin: 8px 0; border: 2px solid var(--cq-yellow); border-radius: 4px; background: var(--cq-panel); }
+.cq-celebrate p { margin: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .cq-celebrate__spark { display: inline-block; animation: cq-spark 1.2s ease-in-out 3; }
+  @keyframes cq-spark { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.35) rotate(12deg); } }
+}

@@ -25,11 +25,15 @@ import { Raid } from './Raid';
 import { Quest } from './Quest';
 import { QUESTS } from '../../../shared/clans/quests';
 import { Training } from './Training';
-import { averageLevel, finishFight, newSession, skipDay, type FightSummary, type Session } from './session';
+import { Scoreboard } from './Scoreboard';
+import { Achievements, Celebration } from './Achievements';
+import { awardNext, giveFame, newSeason, type ScoreRow } from './fame';
+import { ACHIEVEMENTS, fameFor, type AchievementDef } from '../../../shared/clans/rewards';
+import { averageLevel, earn, finishFight, newSession, skipDay, type FightSummary, type Session } from './session';
 import { sessionFrom, type ClanServer, type ServerReply } from './remote';
 import './clans.css';
 
-type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid' | 'quest' | 'village' | 'news' | 'classraid';
+type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid' | 'quest' | 'village' | 'news' | 'classraid' | 'scoreboard' | 'achievements';
 
 /** For James's test only: stands in for the Teacher page, which comes later. */
 function SettingsStrip({ session, onChange, open }: { session: Session; onChange: (s: Session) => void; open: boolean }) {
@@ -66,6 +70,10 @@ function SettingsStrip({ session, onChange, open }: { session: Session; onChange
         <button type="button" className="cq-btn" onClick={() => onChange(freshQuest(session))}>Allow another quest today (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(pretendGifts(session, 200))}>Pretend classmates give 200 gold (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(pretendWeekEnd(session))}>End the village week now (test only)</button>
+        <button type="button" className="cq-btn" onClick={() => onChange(giveFame(session, 10))}>Give 10 fame (test only)</button>
+        <button type="button" className="cq-btn" onClick={() => onChange(earn(session, { bosses: 1 }))}>Beat a boss: 5 fame and an achievement (test only)</button>
+        <button type="button" className="cq-btn" onClick={() => onChange(awardNext(session))}>Earn the next achievement (test only)</button>
+        <button type="button" className="cq-btn" onClick={() => onChange(newSeason(session))}>Start a new season: fame back to 0 (test only)</button>
         <label>
           Try quest number
           <select value={session.questPick ?? 0} onChange={(e) => onChange({ ...session, questPick: Number(e.target.value) || undefined })}>
@@ -91,7 +99,7 @@ function SettingsStrip({ session, onChange, open }: { session: Session; onChange
  * With a `server`, the clan lives on the server: it is loaded when this opens, every change is sent as an action, and
  * what the server answers replaces the browser's copy. With none (the test page), everything stays in the browser.
  */
-export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { seed?: number; initial?: Session | null; server?: ClanServer }) {
+export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board }: { seed?: number; initial?: Session | null; server?: ClanServer; board?: () => Promise<ScoreRow[]> }) {
   const [session, setSession] = useState<Session | null>(initial);
   const [screen, setScreen] = useState<Screen>('home');
   const [boss, setBoss] = useState(false);
@@ -105,8 +113,26 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
   const outcome = useRef<FightSummary | null>(null);
   const [serverSeed, setServerSeed] = useState(seed);
   const [notice, setNotice] = useState('');
+  /** Achievements just earned, shown with a small celebration. The first clan the screen sees is not celebrated: those were earned before. */
+  const [celebrate, setCelebrate] = useState<AchievementDef[]>([]);
+  const knownAchievements = useRef<string[] | null>(null);
+  /** The fame the last fight earned (the server's word), for the results screen. */
+  const fameEarned = useRef(0);
   /** Actions go to the server one at a time, in the order they were made. */
   const line = useRef<Promise<void>>(Promise.resolve());
+
+  useEffect(() => {
+    if (!session) return;
+    const now = session.achievements ?? [];
+    if (knownAchievements.current === null) {
+      knownAchievements.current = now;
+      return;
+    }
+    const before = knownAchievements.current;
+    knownAchievements.current = now;
+    const fresh = ACHIEVEMENTS.filter((a) => now.includes(a.id) && !before.includes(a.id));
+    if (fresh.length) setCelebrate(fresh);
+  }, [session]);
 
   /** How many actions have been sent and not answered yet. */
   const waiting = useRef(0);
@@ -226,6 +252,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
         take(reply);
         if (reply.ok && reply.result.type === 'fightRound' && reply.result.over) {
           outcome.current = reply.result.summary;
+          fameEarned.current = reply.result.earned ? fameFor(reply.result.earned) : 0;
           activeRef.current = null;
         } else if (!reply.ok) {
           resyncFight(reply.state?.fight);
@@ -261,8 +288,9 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
 
   const finish = (fight: FightState) => {
     if (!session) return;
-    const done = finishFight(session, fight);
+    const done = finishFight(session, fight, boss);
     setSession(done.session);
+    fameEarned.current = done.fame;
     setSummary(done.summary);
     setScreen('results');
   };
@@ -271,8 +299,9 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
     <div className="cq">
       <header className="cq-top">
         <h1>Clan Quest</h1>
-        <span className="cq-soft">{session ? `${session.clan.name} · ${session.clan.gold} gold · ${session.clan.followers} followers` : 'Test version: nothing is saved'}</span>
+        <span className="cq-soft">{session ? `${session.clan.name} · ${session.clan.gold} gold · ${session.clan.followers} followers · ${session.fame ?? 0} fame` : 'Test version: nothing is saved'}</span>
       </header>
+      <Celebration fresh={celebrate} onClose={() => setCelebrate([])} />
       {notice && <p className="cq-note" role="alert">{notice}</p>}
       {loading === 'loading' ? (
         <p role="status">Opening your clan…</p>
@@ -306,7 +335,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
                   <ul>{session.notes.map((n) => <li key={n}>{n}</li>)}</ul>
                 </div>
               )}
-              <p>Gold: <strong>{session.clan.gold}</strong> · Followers: <strong>{session.clan.followers}</strong> · Average level: <strong>{Math.round(averageLevel(session.clan) * 10) / 10}</strong></p>
+              <p>Gold: <strong>{session.clan.gold}</strong> · Followers: <strong>{session.clan.followers}</strong> · Average level: <strong>{Math.round(averageLevel(session.clan) * 10) / 10}</strong> · Fame: <strong>{session.fame ?? 0}</strong> (season {session.season ?? 1})</p>
               <div className="cq-actions">
                 <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('mines')}>Go to the Mines</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('market')}>The Market</button>
@@ -316,6 +345,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
                 <button type="button" className="cq-btn" onClick={() => setScreen('quest')}>{questUsed(session) ? 'Quest (done for today)' : 'Quest'}</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('village')}>The Village</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('news')}>Village news</button>
+                <button type="button" className="cq-btn" onClick={() => setScreen('scoreboard')}>Scoreboard</button>
+                <button type="button" className="cq-btn" onClick={() => setScreen('achievements')}>Achievements ({(session.achievements ?? []).length} of {ACHIEVEMENTS.length})</button>
               </div>
             </section>
           )}
@@ -330,6 +361,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
           {screen === 'raid' && <Raid session={session} onChange={change} onBack={() => setScreen('empire')} />}
           {screen === 'village' && <Village session={session} onChange={change} onBack={() => setScreen('home')} onNews={() => setScreen('news')} />}
           {screen === 'news' && <VillageNews session={session} onBack={() => setScreen('home')} />}
+          {screen === 'scoreboard' && <Scoreboard session={session} load={board} onBack={() => setScreen('home')} />}
+          {screen === 'achievements' && <Achievements session={session} onBack={() => setScreen('home')} />}
           {screen === 'classraid' && <ClassRaid session={session} ask={ask} onSession={setSession} onBack={() => setScreen('empire')} />}
           {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} session={session} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'land' && <Land session={session} onChange={change} onBack={() => setScreen('empire')} />}
@@ -337,7 +370,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
           {screen === 'fight' && server && activeFight && (
             <Fight key={`${activeFight.no}-${fightKey}`} session={session} open={activeFight} boss={activeFight.boss} onRound={sendRound} onFinish={finishServer} />
           )}
-          {screen === 'results' && summary && <Results summary={summary} members={session.clan.members} onDone={() => setScreen('home')} />}
+          {screen === 'results' && summary && <Results summary={summary} members={session.clan.members} fame={fameEarned.current} onDone={() => setScreen('home')} />}
         </>
       )}
       <footer className="cq-credits">Game rules adapted from The Clans by Allen Ussher (1997). Pictures: Kenney's 1-Bit Pack (CC0).</footer>

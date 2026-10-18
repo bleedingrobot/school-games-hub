@@ -17,7 +17,7 @@ export function Mines({ session, onDepth, onGo, onBack, locked }: { session: Ses
   return (
     <section className="cq-mines" aria-label="The Mines">
       <h2>The Mines</h2>
-      <p>Fights left today: <strong>{fightsLabel(session.fightsLeft)}</strong></p>
+      <p>Fights left today: <strong>{fightsLabel(session.fightsLeft, session.fightsPerDay)}</strong></p>
       <div className="cq-depth">
         <button type="button" className="cq-btn" aria-label="Go less deep" onClick={() => set(session.depth - 1)}>−</button>
         <label>
@@ -41,11 +41,11 @@ export function Mines({ session, onDepth, onGo, onBack, locked }: { session: Ses
 }
 
 /** How the fight went, member by member. */
-export function Results({ summary, members, onDone }: { summary: FightSummary; members: Member[]; onDone: () => void }) {
+export function Results({ summary, members, fame = 0, onDone }: { summary: FightSummary; members: Member[]; fame?: number; onDone: () => void }) {
   return (
     <section className="cq-results" aria-label="Fight results">
       <h2>{summary.result === 'won' ? 'Victory!' : summary.result === 'lost' ? 'A rest is needed' : 'Back safe'}</h2>
-      <p>Gold: <strong>+{summary.gold}</strong>{summary.followers > 0 && <> · Followers: <strong>+{summary.followers}</strong></>}</p>
+      <p>Gold: <strong>+{summary.gold}</strong>{summary.followers > 0 && <> · Followers: <strong>+{summary.followers}</strong></>}{fame > 0 && <> · Fame: <strong>+{fame}</strong></>}</p>
       <ul className="cq-xp">
         {members.map((m, i) => (
           <li key={m.name}>

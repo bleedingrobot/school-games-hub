@@ -12,6 +12,7 @@ import { fightSeed, payFight, type FightSummary } from '../../../shared/clans/pl
 import { CLASSES, RACES } from '../../../shared/clans/gamedata';
 import type { Clan, Member } from '../../../shared/clans/types';
 import type { VillageView } from '../../../shared/clans/village';
+import { addEarned, fameFor, measures, NO_STATS, reached, type ClanStats, type Earned } from '../../../shared/clans/rewards';
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../../../shared/maths/practical';
 
 export { MAX_ROLLS, draftMember, makeClan, rollAgain, startingDrafts, type Draft };
@@ -50,6 +51,14 @@ export interface Session {
   pretendShield?: string[];
   /** Test page only: how many raids on pretend classmates were made today. */
   pretendRaids?: number;
+  /** Fame (never goes down; a new season starts it again from 0), the fame season, and the mine fights a day the teacher gives. */
+  fame?: number;
+  season?: number;
+  fightsPerDay?: number;
+  /** The ids of the achievements earned so far. */
+  achievements?: string[];
+  /** Test page only: the lifetime counts the achievements are measured by (the server keeps them with the clan). */
+  stats?: ClanStats;
 }
 
 /** The pretend village the test page starts with: a few classmates have already given and voted. */
@@ -59,6 +68,7 @@ export const pretendVillage = (): VillageView => ({
 
 export const newSession = (clan: Clan, baseSeed: number, settings: PracticalSettings = DEFAULT_PRACTICAL_SETTINGS): Session => ({
   clan, fightsLeft: CONFIG.fightsPerDay, fightNo: 0, baseSeed, raidNo: 0, day: 1, depth: 0, settings, examined: [],
+  fame: 0, season: 1, fightsPerDay: CONFIG.fightsPerDay, achievements: [], stats: NO_STATS,
   village: pretendVillage(), news: ['The class built the Smithy (level 1)! (pretend)'], notes: [], raidsOn: true, pretendShield: [], pretendRaids: 0,
 });
 
@@ -71,11 +81,25 @@ export const nextSeed = (s: Session) => fightSeed(s.baseSeed, s.fightNo);
 
 export type { FightSummary };
 
+/**
+ * Test page only (the server does this in the database): add what something earned to the clan's fame and lifetime counts, and
+ * work out which achievements that reaches. Fame never goes down.
+ */
+export function earn(s: Session, e: Partial<Earned>): Session {
+  const stats = addEarned(s.stats ?? NO_STATS, e);
+  const next = { ...s, fame: (s.fame ?? 0) + fameFor(e), stats };
+  const ids = reached(measures(next.clan, stats));
+  return { ...next, achievements: [...new Set([...(s.achievements ?? []), ...ids])] };
+}
+
 /** Write a finished fight onto the clan. Returns a new session and what happened, for the results screen. */
-export function finishFight(s: Session, fight: FightState): { session: Session; summary: FightSummary } {
+export function finishFight(s: Session, fight: FightState, boss = false): { session: Session; summary: FightSummary; fame: number } {
   const clan = structuredClone(s.clan);
   const summary = payFight(clan, fight);
-  return { session: { ...s, clan, fightsLeft: Math.max(0, s.fightsLeft - 1), fightNo: s.fightNo + 1 }, summary };
+  const won = summary.result === 'won';
+  const earned: Partial<Earned> = { wins: won && !boss ? 1 : 0, bosses: won && boss ? 1 : 0 };
+  const paid = earn({ ...s, clan, fightsLeft: Math.max(0, s.fightsLeft - 1), fightNo: s.fightNo + 1 }, earned);
+  return { session: paid, summary, fame: fameFor(earned) };
 }
 
 /** "Skip a day" for James's testing: everyone heals, fights come back. */
@@ -83,7 +107,7 @@ export function skipDay(s: Session): Session {
   const clan = structuredClone(s.clan);
   dayReset(clan);
   empireNewDay(clan);
-  return { ...s, clan, fightsLeft: CONFIG.fightsPerDay, day: s.day + 1, pretendShield: [], pretendRaids: 0 };
+  return { ...s, clan, fightsLeft: s.fightsPerDay ?? CONFIG.fightsPerDay, day: s.day + 1, pretendShield: [], pretendRaids: 0 };
 }
 
 /** The stats a card shows by default: HP, attack, defence and one star (the member's best stat). */

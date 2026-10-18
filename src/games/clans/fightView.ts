@@ -38,7 +38,7 @@ export const defaultOrder = (state: FightState): Order => ({ action: 'attack', t
 /** The spells a member can cast right now (known, enough SP, and in the game). */
 export const castable = (f: Fighter) => f.spells.filter((id) => canCast(f, id)).map((id) => SPELLS[id]);
 
-export const fightsLabel = (left: number) => `${left} of ${CONFIG.fightsPerDay}`;
+export const fightsLabel = (left: number, perDay: number = CONFIG.fightsPerDay) => `${left} of ${perDay}`;
 
 /** One log line in gentle words. `clanNames` tells us whose side a name is on. */
 export function describe(e: FightEvent, clanNames: ReadonlySet<string>): string {

@@ -29,6 +29,11 @@ export interface ServerClan {
   raidsOn: boolean;
   /** What raiders did to this clan lately. */
   notes: string[];
+  /** Fame, the fame season, the teacher's mine fights a day, and the ids of the achievements earned. */
+  fame: number;
+  season: number;
+  fightsPerDay: number;
+  achievements: string[];
 }
 
 export type ServerReply =
@@ -46,6 +51,7 @@ export function sessionFrom(state: ServerClan, previous?: Session | null): Sessi
     clan: state.clan, baseSeed: state.seed, day: state.day, fightsLeft: state.fightsLeft, fightNo: state.fightNo, raidNo: state.raidNo,
     examined: state.examined, settings: state.settings, depth: previous?.depth ?? 0, fight: state.fight, news: state.news,
     village: state.village, notes: state.notes, raidsOn: state.raidsOn,
+    fame: state.fame, season: state.season, fightsPerDay: state.fightsPerDay, achievements: state.achievements,
   };
 }
 

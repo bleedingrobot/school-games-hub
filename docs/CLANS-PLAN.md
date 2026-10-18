@@ -621,3 +621,34 @@ Raids (on kingdoms or classmates) earn fame but **no points**, so nobody is paid
 **Tests.** Rules in TypeScript (what each result earns, nothing for lost fights or maths), the handler (earned once, twice, two at once; the teacher's settings used; an open fight keeps its settings; a browser cannot send `earned`), the database in a rolled-back transaction (fame, points under the cap, achievements, once-only, season reset, scoreboard columns, no student can reach any of it, settings checks).
 
 **Test page.** No server there, so it gets test buttons: pretend fame, a pretend scoreboard of other clans, an award button that gives the next achievement (with the celebration), and a new-season button.
+
+## Stage C.6, part B results (18 Oct 2026): fame, points, achievements, the scoreboard and the maths settings
+
+Built, tested and **not applied, not deployed, not merged**. Branch `clans`. This finishes stage C.6; only C.7 (How to play, accessibility pass, slow-Chromebook check, docs) is left.
+
+**Built**
+- `shared/clans/rewards.ts` and `CONFIG.rewards`: what a request earns, fame and points, the eight achievements. `actions.ts` puts `earned` (counts only) in the results of a finished fight, a Friendly War, a raid on a kingdom and a raid on a classmate, hands back the maths answers a fight round or quest produced, and uses the teacher's mine fights a day.
+- `supabase/migrations/20261018002100_clans_rewards.sql`: the settings columns on `app_settings`, fame / waiting wins / lifetime counts on `clans`, `clan_scores` feeding `scored_games` (inside the 40-a-day cap), the trigger that rewards a saved request, the village reward in `clan_village_close`, the eight achievements, `clan_scoreboard()`, `clan_extras()`, the teacher functions (`teacher_set_clan_maths`, `teacher_clans_new_season`, `teacher_clan_maths_class`, `teacher_clan_maths_student`), and `progress_counts`, `progress_rules`, `rebuild_progress`, `my_progress`, `teacher_students` and `teacher_new_season` redone from Dragon Maths' latest versions with Clan Quest added. `clan_fights_per_day()` now reads the setting.
+- The `clans` function reads the settings on every request (replacing `DEFAULT_PRACTICAL_SETTINGS`), sends fame, season, fights a day and achievements with the clan, and keeps the maths answers (pack `clan-quest`) once a save is kept.
+- Browser: fame in the header and on the clan page, a **Scoreboard** screen, an **Achievements** screen, a small celebration when one is earned (no sound; the sparkle stops for reduced motion), fame on the fight result, and on the teacher page the **Clan Quest maths** panel (year band, topics, times tables, mine fights a day, the school's hardest questions), the **fame season** panel and each pupil's maths records. `HowPoints` explains the points.
+- Test page: pretend clans on the Scoreboard, and test buttons for 10 fame, beating a boss, earning the next achievement and a new season. Wars and raids and won fights give fame there too.
+
+**Decisions to know about**
+- **Scoreboard covers the whole school**, like the other games' boards, not just a village group. It lists clans with fame above 0 (top 10) and always your own.
+- **Village rewards go to everyone who voted that week**, even for a different building, because they took part. Pupils who only gave gold get nothing; the plan said "when the class completes a building" and this is the fairest thing the database can know.
+- **Achievement 8 counts right answers**, not all answers.
+- **A new season (fame) and the points season are separate buttons.** The school-wide new points season clears Clan Quest's points, not fame; the fame season does the reverse.
+- **No Practice Mode**, since nothing in Clan Quest is a test.
+- **Maths answers have no timing**: the server cannot know it, so every answer is stored as a slow one and never advances a question toward "fluent".
+- **If the reward step ever fails the save is kept** (a warning is logged and the points can be rebuilt with `rebuild_progress()`, but fame cannot).
+- Fame is lost with a clan if a teacher resets it; achievements and points stay.
+
+**Checked**
+- `rewards.test.ts` (17): fame and points sums, never negative, what each action earns, nothing for a lost fight or a loss, a boss as a boss, a browser cannot supply `earned`, the teacher's fights a day, an open fight keeps its settings, the achievements, and that the SQL numbers equal `CONFIG`.
+- Function tests through the real handler (13 new, 55 in all): a win earns once even when the last round is sent twice at once, right Battle Cry answers counted and every answered question kept (wrong ones too, nothing for "No thanks"), nothing for a lost fight, a made-up `earned` ignored, Friendly War and raids, settings read on every request, an open fight keeping its own, fights a day, a quest answer kept, a database that is down.
+- 132 database checks (`clans_rewards.test.sql`) in a rolled-back transaction with the earlier migrations: students reach nothing; settings validation; fame once (sent twice, from an old copy, a made-up claim); wins making a point on the third; the 40-a-day cap; the eight achievements once each; the village reward to voters only and once; the scoreboard (top 10 and you, ties, hidden profiles, columns); the season; the points season; `rebuild_progress`; the rules hidden while off; the private maths records. The older database checks (clans, fights, village, security, scoring, progress, Dragon Maths, Maths Monsters, fact answers, Gem Keep) were run again and pass (two lists were updated: the function list and the achievement count).
+- Browser tests for the Scoreboard, achievements, the celebration (not for what was already earned when the game opens), fame on results, the teacher panels, and the points page.
+
+**To go live** (each needs James to say so, in words): apply the four migrations in order (`20261018001800`, `...1900`, `...2000`, `...2100`; Dragon Maths' `...1600` and `...1700` must be applied before them), deploy the `clans` function, merge `clans` into `main`, switch Clan Quest on, make groups, and only then switch classmate raids on.
+
+**Left:** stage C.7 (How to play, accessibility pass, slow-Chromebook check, docs). Later ideas: a Hall of past season winners (fame resets each season and nothing is kept), village rewards for gifts as well as votes.
