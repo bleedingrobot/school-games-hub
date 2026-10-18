@@ -310,3 +310,13 @@ export function medalFor(course: Course, finishSteps: number): 'gold' | 'silver'
   const m = course.def.medals;
   return sec <= m.gold ? 'gold' : sec <= m.silver ? 'silver' : sec <= m.bronze ? 'bronze' : null;
 }
+
+/** The floor's height (in tiles) under a point, or null over a gap or a wall. For drawing. */
+export function floorHeightAt(w: World, x: number, y: number): number | null {
+  return floorAt(w, x, y);
+}
+
+/** What a tile is, for drawing. Shut doors are walls. */
+export function drawTileAt(w: World, tx: number, ty: number): Tile {
+  return tileAt(w, tx, ty);
+}

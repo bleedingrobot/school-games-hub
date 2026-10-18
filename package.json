@@ -23,6 +23,7 @@
     "space:sim": "node scripts/space-sim.mjs",
     "marble:determinism": "node scripts/marble-determinism.mjs",
     "marble:sim": "node scripts/marble-sim.mjs",
+    "marble:preview": "vite build --config vite.marble-preview.config.ts",
     "monsters:sim": "node scripts/monsters-sim.mjs",
     "space:preview": "vite build --config vite.preview.config.ts",
     "101:sim": "node scripts/101-sim.mjs",
@@ -52,7 +53,8 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router": "^8.4.0",
-    "stockfish": "19.0.1"
+    "stockfish": "19.0.1",
+    "three": "0.186.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",
@@ -61,6 +63,7 @@
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/three": "0.186.0",
     "@vitejs/plugin-react": "^6.1.2",
     "jsdom": "^30.1.2",
     "rolldown": "1.2.14",

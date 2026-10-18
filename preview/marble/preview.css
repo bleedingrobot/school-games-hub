@@ -1,0 +1,6 @@
+body { background: #0f3d4c; }
+.marble-preview { max-width: 1100px; margin: 0 auto; padding: 12px 16px 32px; display: grid; gap: 12px; }
+.marble-preview header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.marble-preview h1 small { font-size: 0.9rem; font-weight: 600; opacity: 0.8; }
+.marble-preview header h1, .marble-picker > h2, .marble-picker__heading { color: #fff; }
+.marble-picker__intro { color: #d6e6ec; }

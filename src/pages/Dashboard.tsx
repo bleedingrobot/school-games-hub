@@ -50,7 +50,7 @@ function botName(level: string, game?: string) {
 const GAME_GROUPS = [
   { title: 'Non-maths games', ids: ['chess', 'checkers', '101'] },
   { title: 'Easy maths games', ids: ['space', 'gem-keep', 'power-clash'] },
-  { title: 'Complex maths games', ids: ['monsters', 'dragon-maths', 'clan-quest'] },
+  { title: 'Complex maths games', ids: ['monsters', 'dragon-maths', 'clan-quest', 'marble'] },
 ];
 
 /** One line in Recent games: against a bot, or against another student. */

@@ -1,0 +1,220 @@
+/* ---------- Marble Rush ---------- */
+
+.marble-picker {
+  display: grid;
+  gap: 12px;
+  max-width: 960px;
+}
+.marble-picker__intro {
+  margin: 0;
+  color: var(--ink-soft);
+}
+.marble-picker__heading {
+  margin-top: 8px;
+}
+.marble-courses {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+.marble-course {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 3px solid var(--line);
+}
+.marble-course__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.marble-course__head h3 {
+  font-size: 1.15rem;
+}
+.marble-course__level {
+  color: #0e7490;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.marble-course__place {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.marble-course p {
+  margin: 0;
+}
+.marble-course__know summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #0e7490;
+  min-height: 32px;
+}
+.marble-course__soon {
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.marble-course__best {
+  font-weight: 700;
+}
+.marble-course__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---------- a run ---------- */
+
+.marble-run {
+  display: grid;
+  gap: 8px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.marble-hud {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 16px;
+  background: var(--surface);
+}
+.marble-hud__clock {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 1.9rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.marble-hud__stats {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  font-weight: 700;
+  flex-wrap: wrap;
+}
+.marble-hud__flame {
+  color: #b91c1c;
+  font-weight: 700;
+}
+.marble-stage {
+  position: relative;
+  height: clamp(300px, calc(100vh - 250px), 700px);
+  border-radius: 20px;
+  overflow: hidden;
+  background: #cfe9f3;
+  touch-action: none;
+  user-select: none;
+  border: 3px solid var(--line);
+}
+.marble-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.marble-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.62);
+  color: #fff;
+}
+.marble-overlay p {
+  margin: 0;
+}
+.marble-overlay--light {
+  background: rgba(15, 23, 42, 0.38);
+}
+.marble-overlay__big {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 2rem;
+}
+.marble-overlay__time {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 2.6rem;
+  font-variant-numeric: tabular-nums;
+}
+.marble-overlay__medal {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+.marble-overlay__best {
+  font-weight: 800;
+  color: #fde047;
+}
+.marble-overlay__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 6px;
+}
+.marble-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.marble-bar .button,
+.marble-overlay .button,
+.marble-course .button {
+  min-height: 44px;
+  width: auto;
+}
+.marble-bar__help {
+  margin: 0;
+  color: #fff;
+  font-weight: 600;
+}
+.marble-stick {
+  position: absolute;
+  bottom: 18px;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.28);
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  display: grid;
+  place-items: center;
+}
+.marble-stick--right {
+  right: 18px;
+}
+.marble-stick--left {
+  left: 18px;
+}
+.marble-stick__knob {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid #0e7490;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .marble-hud {
+    grid-template-columns: 1fr auto;
+  }
+  .marble-hud__stats {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
