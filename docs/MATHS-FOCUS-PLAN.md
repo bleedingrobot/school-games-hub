@@ -465,3 +465,15 @@ Until a teacher turns the switch on, every student plays exactly as before.
 - **Ladder order:** keep section 12 as it is.
 - **Warm-up:** try it on one class after go live, once auto is switched on for them.
 - **Go live:** not yet. F.5 is built on the scratch copy first.
+
+## F.4 went live (19 October 2026)
+
+James said go. Done in this order, nothing failed:
+
+1. **Main moved again** (Maths Monsters N.7 and a Bond Match plan): merged into `maths-focus`, no new migration, and `npm run build:functions` changed nothing.
+2. **Database:** `20261019000200_maths_auto.sql` applied to the live project (`20261019000100_my_moves_left.sql` was already in). The new switch is off on all 2 settings rows.
+3. **Functions:** `gem-keep`, `space-game` and `save-bot-game` deployed straight after. Nothing else.
+4. **Website:** `maths-focus` pushed to `main` as a straight fast-forward.
+5. **Checks from outside:** the three functions answer 401 signed out; the two new tables, `app_settings` and `my_ladder` answer 401 to a signed-out visitor; profiles 36 before and after.
+
+Not checked by me: a real browser sign-in on the live site. To see it, turn the switch on for one class (Set focus), set the class's year level (My classes), and open a student's home page.
