@@ -58,9 +58,9 @@ select set_eq($$
 $$, array[
   'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'clan_scoreboard',
   'gem_keep_leaderboard', 'is_player_in', 'is_school_admin', 'is_school_email', 'is_school_user', 'is_site_owner',
-  'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby_games', 'lord_hall', 'lord_news', 'lord_warriors',
+  'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby_games', 'lord_hall', 'lord_news', 'lord_warriors', 'marble_board', 'marble_ghost',
   'monsters_leaderboard', 'my_bot_game_stats', 'my_card_game_stats', 'my_class', 'my_friend_game_stats',
-  'my_gem_keep', 'my_lord', 'my_monsters', 'my_power_game_stats', 'my_progress', 'my_school', 'my_school_info',
+  'my_gem_keep', 'my_lord', 'my_marble', 'my_monsters', 'my_power_game_stats', 'my_progress', 'my_school', 'my_school_info',
   'my_settings_id', 'my_space_game_stats', 'my_training', 'owner_add_school', 'owner_add_school_domain',
   'owner_schools', 'owner_set_school_active', 'owner_set_school_contact', 'power_lobby_games', 'progress_rules',
   'save_my_avatar', 'school_set_admin', 'school_set_default_class', 'server_time', 'space_lobby_games',

@@ -1,11 +1,15 @@
 /**
- * Marble Rush: the course picker, then a run. For now best times are kept on this device only
- * (saving to the server is stage M.4) and no maths is asked (stages M.6 and M.7).
+ * Marble Rush: the course picker, then a run. Finished runs are sent to the server, which replays
+ * them and keeps the best times (src/data/marble.ts); a copy of the bests is kept on this device.
+ * No maths is asked yet (stages M.6 and M.7).
  */
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { courseById } from '../../../shared/marble/courses';
 import { medalFor, type ClockMode } from '../../../shared/marble/engine';
-import { formatSteps, loadBests, saveBests, withFinish, type Bests } from './bests';
+import { encodeInputs } from '../../../shared/marble/inputs';
+import { useAuth } from '../../auth/AuthContext';
+import { enqueueRun, flushRuns, loadServerBests, startRun } from '../../data/marble';
+import { formatSteps, loadBests, mergeBests, saveBests, withFinish, type Bests } from './bests';
 import { COURSE_INFO } from './courseInfo';
 import type { FinishedRun } from './RunScreen';
 import './marble.css';
@@ -16,8 +20,36 @@ const RunScreen = lazy(() => import('./RunScreen').then((m) => ({ default: m.Run
 const MEDAL_ICON = { gold: '🥇', silver: '🥈', bronze: '🥉' } as const;
 
 export function MarblePlay() {
-  const [bests, setBests] = useState<Bests>(loadBests);
+  const { profile } = useAuth();
+  const player = profile?.id ?? '';
+  const [bests, setBests] = useState<Bests>(() => loadBests(player));
   const [pick, setPick] = useState<{ id: string; mode: ClockMode; round: number } | null>(null);
+  // The stamped seed for the run that is on screen (asked for as the run opens).
+  const seedRef = useRef<Promise<{ seed: string; stamp: string } | null>>(Promise.resolve(null));
+  const runKey = pick ? `${pick.id}-${pick.mode}-${pick.round}` : '';
+
+  // Send anything still waiting from an earlier visit, then bring in the server's bests.
+  useEffect(() => {
+    if (!player) return;
+    let current = true;
+    void flushRuns(player).then(() => loadServerBests()).then((server) => {
+      if (!current || !server) return;
+      setBests((have) => {
+        const merged = mergeBests(have, server);
+        saveBests(merged, player);
+        return merged;
+      });
+    });
+    return () => {
+      current = false;
+    };
+  }, [player]);
+
+  useEffect(() => {
+    if (pick) seedRef.current = player ? startRun(pick.id, pick.mode) : Promise.resolve(null);
+    // A new seed for each run (the key changes for each).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runKey, player]);
 
   const course = pick ? courseById(pick.id) : undefined;
   const hasFinished = (id: string) => bests[id]?.up !== undefined;
@@ -26,7 +58,7 @@ export function MarblePlay() {
     return (
       <Suspense fallback={<p className="loading" role="status">Setting up the course…</p>}>
         <RunScreen
-          key={`${pick.id}-${pick.mode}-${pick.round}`}
+          key={runKey}
           course={course}
           mode={pick.mode}
           best={bests[pick.id]?.[pick.mode]}
@@ -35,7 +67,14 @@ export function MarblePlay() {
             if (run.outcome !== 'finished') return { isBest: false };
             const next = withFinish(bests, run.courseId, run.mode, run.steps);
             setBests(next.bests);
-            saveBests(next.bests);
+            saveBests(next.bests, player);
+            // The server replays the run and keeps its own time. Without a seed (offline) the run only counts on this device.
+            const inputs = encodeInputs(run.inputs);
+            void seedRef.current.then((started) => {
+              if (!started || !player) return;
+              enqueueRun(player, { ...started, course: run.courseId, mode: run.mode, inputs });
+              return flushRuns(player);
+            });
             return { isBest: next.isBest };
           }}
           onAgain={() => setPick({ ...pick, round: pick.round + 1 })}

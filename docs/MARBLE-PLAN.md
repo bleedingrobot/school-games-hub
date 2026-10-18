@@ -227,6 +227,19 @@ Same pattern as the space game, reusing `save-bot-game`:
 
 Each stage ends with tests passing and a short results section here, like the other plans.
 
+### Results
+
+**M.4 (saving), built 18 Oct 2026 (night), not live yet.**
+
+- **Stand-alone, on purpose.** Marble has its own tables (`marble_runs`, `marble_bests`), its own database functions and its own server function `marble`. It does not touch `score_bot_game`, `progress_counts`, `progress_rules` or `my_progress`, because other games and the maths-focus branch change those too and a merge would be risky.
+- **No points and no achievements in the first live version.** Section 8's points and achievements are postponed, not dropped; they can come later through their own small step once the shared scoring code settles.
+- **How a run is saved.** `start` hands out a stamped seed (made for this student, course and mode). When the run is finished the browser sends the seed, the stamp and the recorded inputs. The server checks the stamp and the seed's age, replays the inputs itself (`shared/marble/save.ts`), needs a finish, refuses a time faster than the real time since the seed was handed out (3 seconds of slack), and only then saves. A time sent by the browser is never read. A seed saves once. A student can save 400 runs a day.
+- **Best times** keep the recorded inputs so they can be played back as a ghost (M.5). The picker shows the faster of the server's bests and the copy kept on that device. The device copy is now kept per student (school devices are shared).
+- **Offline.** If the seed can't be fetched the run still plays and counts on that device only. A finished run waits in a small queue (up to 12) and is sent when the server can be reached; a run the server will never take (400) is dropped.
+- **Reading.** `my_marble()` (own bests), `marble_board()` (top 10 and you, own school only, teachers and hidden profiles left out, word-names only) and `marble_ghost()` (`mine`, `next` = the classmate just faster, `top`). The board and ghost screens come in M.5; the database side is ready and tested.
+- **Tests.** Server function: 17 (edited inputs, a made-up time, faked time, saved twice, bad stamp, another student's stamp, another course or mode, old seed, daily limit, busy database). Shared save rules and the browser queue have their own tests. Database (scratch copy): `marble.test.sql` 40 checks; the security list test knows the three new functions; all 29 database test files pass.
+- **Migration:** `20261018002800_marble.sql` (after F.3's `002700` on `maths-focus`, which is not on `main`).
+
 ### Building alongside Maths Monsters (James asked, 18 Oct 2026)
 
 **Yes, it can.** Marble Rush gets its own branch (`marble`) and its own folder (a worktree off `main`), as Gem Keep, Maths Monsters and Power Clash have.
