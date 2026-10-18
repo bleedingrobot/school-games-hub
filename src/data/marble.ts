@@ -20,6 +20,9 @@ const queueKey = (player: string) => `sgh-marble-queue:${player}`;
 /** The most runs waiting to be sent (the newest are kept). */
 const MAX_QUEUE = 12;
 
+/** How long a run waits for the server to start before it is played without it. */
+const START_TIMEOUT_MS = 6000;
+
 const memoryQueues = new Map<string, MarbleRunReport[]>();
 
 function readQueue(player: string): MarbleRunReport[] {
@@ -50,7 +53,7 @@ export function enqueueRun(player: string, report: MarbleRunReport) {
   writeQueue(player, [...items, report].slice(-MAX_QUEUE));
 }
 
-async function post(body: unknown, keepalive = false): Promise<Response | null> {
+async function post(body: unknown, keepalive = false, timeoutMs = 0): Promise<Response | null> {
   try {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
@@ -58,6 +61,7 @@ async function post(body: unknown, keepalive = false): Promise<Response | null> 
     return await fetch(`${SUPABASE_URL}/functions/v1/marble`, {
       method: 'POST',
       keepalive,
+      ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
       headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
@@ -71,7 +75,7 @@ async function post(body: unknown, keepalive = false): Promise<Response | null> 
  * Null if the server can't be reached; the run can still be played without maths, it just won't be saved.
  */
 export async function startRun(course: string, mode: ClockMode, maths = false): Promise<StartReply | null> {
-  const response = await post({ action: 'start', course, mode, maths });
+  const response = await post({ action: 'start', course, mode, maths }, false, START_TIMEOUT_MS);
   if (!response?.ok) return null;
   try {
     const body = (await response.json()) as Partial<StartReply>;
@@ -145,13 +149,13 @@ interface ServerBest {
 }
 
 /** The student's saved bests (without questions), or null if the server can't be reached. */
-export async function loadServerBests(): Promise<Bests | null> {
+export async function loadServerBests(maths = false): Promise<Bests | null> {
   try {
     const { data, error } = await supabase.rpc('my_marble');
     if (error || !Array.isArray(data)) return null;
     const out: Bests = {};
     for (const b of data as ServerBest[]) {
-      if (b.maths) continue;
+      if (b.maths !== maths) continue;
       out[b.course] = { ...out[b.course], [b.mode]: b.steps };
     }
     return out;

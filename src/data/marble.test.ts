@@ -8,7 +8,7 @@ vi.mock('../lib/supabase', () => ({
   },
 }));
 
-import { enqueueRun, flushRuns, loadBoard, loadGhost, loadServerBests, queuedRuns, startRun } from './marble';
+import { answerQuestion, enqueueRun, fetchMarbleSwitches, flushRuns, loadBoard, loadGhost, loadServerBests, queuedRuns, startRun } from './marble';
 
 const fetchMock = vi.fn<typeof fetch>();
 let ME = '';
@@ -24,10 +24,34 @@ beforeEach(() => {
 });
 
 describe('the marble save queue', () => {
-  it('asks for a seed', async () => {
+  it('asks for a seed, with whether the student wants maths, and reads the setup it gets back', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ seed: 'a', stamp: 'b', maths: true, rescue: true, doors: [1, 'x'], gates: [{ slot: 0, labels: ['5', '6'], arrow: null, question: null }], pits: [], rescues: [] })));
+    expect(await startRun('boulder-beach', 'up', true)).toEqual({
+      seed: 'a', stamp: 'b', maths: true, rescue: true, doors: [1], gates: [{ slot: 0, labels: ['5', '6'], arrow: null, question: null }], pits: [], rescues: [],
+    });
+    expect(sentBody(0)).toEqual({ action: 'start', course: 'boulder-beach', mode: 'up', maths: true });
+  });
+
+  it('takes a start with no maths', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ seed: 'a', stamp: 'b', maths: false, doors: [0], gates: [] })));
+    const started = await startRun('boulder-beach', 'up');
+    expect(started).toMatchObject({ maths: false, rescue: false, doors: [0], pits: [], rescues: [] });
+    expect(sentBody(0).maths).toBe(false);
+  });
+
+  it('turns away a start it can’t read', async () => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ seed: 'a', stamp: 'b' })));
-    expect(await startRun('boulder-beach', 'up')).toEqual({ seed: 'a', stamp: 'b' });
-    expect(sentBody(0)).toEqual({ action: 'start', course: 'boulder-beach', mode: 'up' });
+    expect(await startRun('boulder-beach', 'up')).toBeNull();
+  });
+
+  it('sends an answer for marking and hands back the mark', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ right: true, answer: 56 })));
+    expect(await answerQuestion({ seed: 'a', stamp: 'b' }, 'boulder-beach', 'up', 3, 56, 1200)).toEqual({ right: true, answer: 56 });
+    expect(sentBody(0)).toEqual({ action: 'answer', seed: 'a', stamp: 'b', course: 'boulder-beach', mode: 'up', slot: 3, answer: 56, ms: 1200 });
+    fetchMock.mockResolvedValue(new Response('{}', { status: 400 }));
+    expect(await answerQuestion({ seed: 'a', stamp: 'b' }, 'boulder-beach', 'up', 3, 56, 1200)).toBeNull();
+    fetchMock.mockRejectedValue(new Error('offline'));
+    expect(await answerQuestion({ seed: 'a', stamp: 'b' }, 'boulder-beach', 'up', 3, 56, 1200)).toBeNull();
   });
 
   it('gives no seed when the server can’t be reached', async () => {
@@ -90,6 +114,16 @@ describe('loading the server’s bests', () => {
     });
     expect(await loadServerBests()).toEqual({ a: { up: 300, down: 400 } });
   });
+  it('can ask for the maths runs instead', async () => {
+    rpc.mockResolvedValue({
+      error: null,
+      data: [
+        { course: 'a', mode: 'up', maths: false, steps: 300, falls: 0 },
+        { course: 'a', mode: 'up', maths: true, steps: 100, falls: 0 },
+      ],
+    });
+    expect(await loadServerBests(true)).toEqual({ a: { up: 100 } });
+  });
   it('gives null when it can’t be reached', async () => {
     rpc.mockResolvedValue({ error: { message: 'no' }, data: null });
     expect(await loadServerBests()).toBeNull();
@@ -99,10 +133,19 @@ describe('loading the server’s bests', () => {
 });
 
 describe('ghosts and boards', () => {
-  it('asks for a ghost without maths and hands back its inputs', async () => {
-    rpc.mockResolvedValue({ data: { name: 'Quick Kea', steps: 900, inputs: '3x60' }, error: null });
-    expect(await loadGhost('boulder-beach', 'up', 'next')).toEqual({ name: 'Quick Kea', steps: 900, inputs: '3x60' });
+  it('asks for a ghost without maths and hands back its inputs and the doors it ran with', async () => {
+    rpc.mockResolvedValue({ data: { name: 'Quick Kea', steps: 900, inputs: '3x60', doors: 5 }, error: null });
+    expect(await loadGhost('boulder-beach', 'up', 'next')).toEqual({ name: 'Quick Kea', steps: 900, inputs: '3x60', doors: [0, 2] });
     expect(rpc).toHaveBeenCalledWith('marble_ghost', { in_course: 'boulder-beach', in_mode: 'up', in_maths: false, which: 'next' });
+  });
+
+  it('asks for a with-maths ghost and board when told to', async () => {
+    rpc.mockResolvedValue({ data: { name: 'Quick Kea', steps: 900, inputs: '3x60' }, error: null });
+    expect((await loadGhost('boulder-beach', 'up', 'top', true))?.doors).toEqual([]);
+    expect(rpc).toHaveBeenCalledWith('marble_ghost', { in_course: 'boulder-beach', in_mode: 'up', in_maths: true, which: 'top' });
+    rpc.mockResolvedValue({ data: { top: [], me: null, total: 0 }, error: null });
+    await loadBoard('boulder-beach', 'up', true);
+    expect(rpc).toHaveBeenCalledWith('marble_board', { in_course: 'boulder-beach', in_mode: 'up', in_maths: true });
   });
 
   it('gives no ghost when there is none, it is odd, or the server fails', async () => {
@@ -121,5 +164,23 @@ describe('ghosts and boards', () => {
     expect(rpc).toHaveBeenCalledWith('marble_board', { in_course: 'boulder-beach', in_mode: 'down', in_maths: false });
     rpc.mockResolvedValue({ data: null, error: { message: 'x' } });
     expect(await loadBoard('boulder-beach', 'up')).toBeNull();
+  });
+});
+
+describe('the teacher’s maths switches', () => {
+  it('reads them from the student’s own settings row', async () => {
+    const select = vi.fn(() => ({ maybeSingle: async () => ({ data: { marble_maths: 'on', marble_rescue: false }, error: null }) }));
+    const from = vi.fn(() => ({ select }));
+    const mod = await import('../lib/supabase');
+    (mod.supabase as unknown as { from: typeof from }).from = from;
+    expect(await fetchMarbleSwitches()).toEqual({ maths: 'on', rescue: false });
+    expect(select).toHaveBeenCalledWith('marble_maths, marble_rescue');
+  });
+  it('keeps maths off when they can’t be read, or say something odd', async () => {
+    const mod = await import('../lib/supabase');
+    (mod.supabase as unknown as { from: unknown }).from = () => ({ select: () => ({ maybeSingle: async () => ({ data: null, error: { message: 'no' } }) }) });
+    expect(await fetchMarbleSwitches()).toEqual({ maths: 'off', rescue: true });
+    (mod.supabase as unknown as { from: unknown }).from = () => ({ select: () => ({ maybeSingle: async () => ({ data: { marble_maths: 'yes please' }, error: null }) }) });
+    expect((await fetchMarbleSwitches()).maths).toBe('off');
   });
 });
