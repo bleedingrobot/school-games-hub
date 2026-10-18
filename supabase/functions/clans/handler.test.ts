@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import type { Result, ServerState } from '../../../shared/clans/actions';
+import type { OpenFight, Result, ServerState } from '../../../shared/clans/actions';
+import { nextCryQuestion, replayFight } from '../../../shared/clans/battleCry';
+import { botOrders } from '../../../shared/clans/bot';
 import { startingDrafts } from '../../../shared/clans/create';
 import { nzDayNumber } from '../../../shared/clans/clock';
 import { makeHandler, MAX_REQUESTS_PER_MINUTE, type Loaded, type Outcome, type SaveStatus, type Services } from './handler';
@@ -15,12 +17,13 @@ function fakeDb() {
   const clans = new Map<string, { version: number; state: ServerState; requests: Map<string, Result> }>();
   const seeds = new Map<string, number>();
   const log: string[] = [];
+  const flags = { enabled: true, news: ['One fight was won in the Mines yesterday.'] };
   const db: Pick<Services, 'load' | 'save'> & { raceOnce?: () => void } = {
     async load(player, requestId) {
       if (!seeds.has(player)) seeds.set(player, SEED + seeds.size);
       const row = clans.get(player);
       const replay = row?.requests.get(requestId) ?? null;
-      return { ok: true, value: { seed: row ? row.state.seed : seeds.get(player)!, version: row?.version ?? 0, state: row ? json(row.state) : null, replay: replay && json(replay) } satisfies Loaded };
+      return { ok: true, value: { seed: row ? row.state.seed : seeds.get(player)!, version: row?.version ?? 0, state: row ? json(row.state) : null, replay: replay && json(replay), enabled: flags.enabled, news: flags.news } satisfies Loaded };
     },
     async save(player, expected, requestId, action, state, result): Promise<Outcome<SaveStatus>> {
       db.raceOnce?.();
@@ -36,11 +39,11 @@ function fakeDb() {
       return { ok: true, value: { status: 'saved', version: expected + 1 } };
     },
   };
-  return { db, clans, log };
+  return { db, clans, log, flags };
 }
 
 function setup(over: Partial<Services> = {}, now = () => NOW) {
-  const { db, clans, log } = fakeDb();
+  const { db, clans, log, flags } = fakeDb();
   const services: Services = {
     now,
     userIdFor: vi.fn(async (token: string) => (token === 'ana' ? 'student-1' : token === 'ben' ? 'student-2' : null)),
@@ -57,7 +60,7 @@ function setup(over: Partial<Services> = {}, now = () => NOW) {
     const response = await handler(new Request('http://x/clans', { method: 'POST', headers, body: JSON.stringify(opts.raw ?? { requestId: opts.requestId ?? id(), action }) }));
     return { status: response.status, body: (await response.json()) as Record<string, any> };
   };
-  return { send, clans, log, services, id, handler };
+  return { send, clans, log, services, id, handler, flags };
 }
 
 const create = (seed = SEED) => ({ type: 'create', name: 'Red Banner', drafts: startingDrafts(seed) });
@@ -246,7 +249,7 @@ describe('the clans server function', () => {
   it('tells the browser the settings the server used, and never anything private', async () => {
     const { send } = setup();
     const { body } = await send(create());
-    expect(Object.keys(body.state).sort()).toEqual(['clan', 'day', 'examined', 'fightNo', 'fightsLeft', 'raidNo', 'seed', 'settings']);
+    expect(Object.keys(body.state).sort()).toEqual(['clan', 'day', 'examined', 'fight', 'fightNo', 'fightsLeft', 'news', 'raidNo', 'seed', 'settings']);
     expect(body.state.settings.yearBand).toBeDefined();
   });
 
@@ -270,6 +273,98 @@ describe('the clans server function', () => {
     for (let i = 0; i < MAX_REQUESTS_PER_MINUTE + 1; i++) last = (await send({ type: 'load' })).status;
     expect(last).toBe(429);
     expect((await send({ type: 'load' }, { token: 'ben' })).status).toBe(200);
+  });
+});
+
+describe('mine fights through the server function', () => {
+  const create = () => ({ type: 'create', name: 'Red Banner', drafts: startingDrafts(SEED) });
+
+  /** The next round, the way the browser would play it: rebuild the fight from what the server keeps, then pick orders. */
+  function nextRound(fight: OpenFight, members: ServerState['clan']['members']) {
+    const local = replayFight(members, fight.depth, fight.seed, fight.boss, fight.rounds, fight.settings).state;
+    const q = nextCryQuestion(local, fight.settings);
+    return { type: 'fightRound', round: fight.rounds.length + 1, orders: botOrders(local), cry: q ? { answer: q.answer, reward: 'damage' } : null };
+  }
+
+  it('starts a fight, plays it to the end and pays once, even if the last round is sent twice or at the same moment', async () => {
+    const t = setup();
+    await t.send(create());
+    const start = await t.send({ type: 'fightStart', depth: 2, boss: false });
+    expect(start.body.result).toEqual({ type: 'fightStart', resumed: false });
+    expect(start.body.state.fightsLeft).toBe(7);
+    let state = start.body.state;
+    for (let i = 0; i < 12 && state.fight; i++) {
+      const action = nextRound(state.fight, state.clan.members);
+      const id = t.id();
+      const [a, b] = await Promise.all([t.send(action, { requestId: id }), t.send(action, { requestId: id })]);
+      expect([a.status, b.status]).toEqual([200, 200]);
+      state = (a.body.state ?? b.body.state);
+      if (!state.fight) {
+        const goldAfter = state.clan.gold;
+        // The same request once more, and then a brand-new request for the same round: neither pays.
+        const again = await t.send(action, { requestId: id });
+        expect(again.body.replayed).toBe(true);
+        expect(again.body.state.clan.gold).toBe(goldAfter);
+        const fresh = await t.send(action);
+        expect(fresh.body).toMatchObject({ ok: false, why: 'no-fight' });
+        expect(fresh.body.state.clan.gold).toBe(goldAfter);
+      }
+    }
+    expect(state.fight).toBeNull();
+    expect(t.log.filter((l) => l.endsWith(':fightRound')).length).toBeGreaterThan(0);
+  });
+
+  it('keeps a half-finished fight for a refresh: the server shows it again and starting again uses no fight', async () => {
+    const t = setup();
+    await t.send(create());
+    let state = (await t.send({ type: 'fightStart', depth: 4, boss: false })).body.state;
+    state = (await t.send(nextRound(state.fight, state.clan.members))).body.state;
+    const open = state.fight;
+    if (!open) return;
+    const reloaded = await t.send({ type: 'load' });
+    expect(reloaded.body.state.fight).toEqual(open);
+    const again = await t.send({ type: 'fightStart', depth: 1, boss: false });
+    expect(again.body.result).toEqual({ type: 'fightStart', resumed: true });
+    expect(again.body.state.fightsLeft).toBe(7);
+    expect(again.body.state.fight).toEqual(open);
+  });
+
+  it('refuses a round with the wrong number and shows the fight as the server has it', async () => {
+    const t = setup();
+    await t.send(create());
+    const state = (await t.send({ type: 'fightStart', depth: 2, boss: false })).body.state;
+    const wrong = await t.send({ ...nextRound(state.fight, state.clan.members), round: 2 });
+    expect(wrong.body).toMatchObject({ ok: false, why: 'stale-round' });
+    expect(wrong.body.state.fight.rounds).toHaveLength(0);
+  });
+
+  it('ignores a result, gold or experience the browser claims', async () => {
+    const t = setup();
+    await t.send(create());
+    const state = (await t.send({ type: 'fightStart', depth: 2, boss: false })).body.state;
+    const claim = { ...nextRound(state.fight, state.clan.members), result: 'won', gold: 99999, summary: { gold: 99999 }, xp: [999] };
+    const out = await t.send(claim);
+    expect(out.body.state.clan.gold).toBeLessThan(1000);
+  });
+
+  it('tells the browser the open fight and the news, and nothing private', async () => {
+    const t = setup();
+    await t.send(create());
+    const out = await t.send({ type: 'fightStart', depth: 2, boss: false });
+    expect(Object.keys(out.body.state.fight).sort()).toEqual(['boss', 'depth', 'no', 'rounds', 'seed', 'settings']);
+    expect(out.body.state.news).toEqual(['One fight was won in the Mines yesterday.']);
+  });
+
+  it('stops everything with a plain message when the teacher\'s switch is off, and works again when it is on', async () => {
+    const t = setup();
+    await t.send(create());
+    t.flags.enabled = false;
+    const off = await t.send({ type: 'load' });
+    expect(off.status).toBe(403);
+    expect(off.body).toMatchObject({ off: true });
+    expect((await t.send({ type: 'fightStart', depth: 1, boss: false })).status).toBe(403);
+    t.flags.enabled = true;
+    expect((await t.send({ type: 'load' })).status).toBe(200);
   });
 });
 

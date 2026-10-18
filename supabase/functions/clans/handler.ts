@@ -7,7 +7,9 @@
  * the first answer is sent back and nothing is paid again. If two requests race, the database refuses the second
  * save (its copy was old), and this loads again and redoes the action.
  *
- * Not here yet: mine fights, the midnight job and raids on classmates (part B and stage C.6).
+ * Mine fights go through the same door as everything else: `fightStart` and one `fightRound` per round played, replayed
+ * and paid by shared/clans (see actions.ts). The teacher's switch is checked on every request, with the clan itself, so
+ * switching Clan Quest off stops it at once. Not here yet: raids on classmates (stage C.6).
  */
 import { applyAction, parseAction, type Result, type ServerState } from '../../../shared/clans/actions';
 import { nzDayNumber } from '../../../shared/clans/clock';
@@ -25,6 +27,10 @@ export interface Loaded {
   state: ServerState | null;
   /** The answer kept for this request id, if it was already done. */
   replay: Result | null;
+  /** Is Clan Quest switched on? A teacher can always use it, so they can try it before the class can. */
+  enabled: boolean;
+  /** The latest village news lines, newest first. Written by the midnight job, never by a student. */
+  news: string[];
 }
 
 export type SaveStatus = { status: 'saved'; version: number } | { status: 'duplicate'; result: Result } | { status: 'stale' };
@@ -49,9 +55,9 @@ export const MAX_TRIES = 4;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** What the browser is told about a clan: everything it shows, nothing it could use to cheat. */
-export function publicState(state: ServerState, settings: PracticalSettings) {
-  const { clan, seed, day, fightsLeft, fightNo, raidNo, examined } = state;
-  return { clan, seed, day, fightsLeft, fightNo, raidNo, examined, settings };
+export function publicState(state: ServerState, settings: PracticalSettings, news: string[] = []) {
+  const { clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight } = state;
+  return { clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight: fight ?? null, settings, news };
 }
 
 export function makeHandler(services: Services) {
@@ -84,25 +90,26 @@ export function makeHandler(services: Services) {
     for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
       const loaded = await services.load(player, requestId);
       if (!loaded.ok) return loaded.why === 'busy' ? reply(503, { error: "We couldn't reach your clan just now." }) : reply(400, { error: "That couldn't be read." });
-      const { seed, version, state, replay } = loaded.value;
+      const { seed, version, state, replay, enabled, news } = loaded.value;
+      if (!enabled) return reply(403, { error: 'Clan Quest is not switched on yet.', off: true });
 
       // Done before: the same answer, and the clan as it is now.
-      if (replay) return reply(200, { ok: true, replayed: true, seed, state: state && publicState(state, settings), result: replay });
+      if (replay) return reply(200, { ok: true, replayed: true, seed, state: state && publicState(state, settings, news), result: replay });
 
       const applied = applyAction(state, action, { seed, today, settings });
       if (!applied.ok) {
         // Refused: nothing is saved. The browser is shown the clan as it should be (after the night's rest, if a new day began).
         const current = state && applyAction(state, { type: 'load' }, { seed, today, settings });
-        return reply(200, { ok: false, why: applied.why, say: applied.say, seed, state: current && current.ok && current.state ? publicState(current.state, settings) : null });
+        return reply(200, { ok: false, why: applied.why, say: applied.say, seed, state: current && current.ok && current.state ? publicState(current.state, settings, news) : null });
       }
       if (!applied.changed || !applied.state) {
-        return reply(200, { ok: true, replayed: false, seed, state: applied.state && publicState(applied.state, settings), result: applied.result });
+        return reply(200, { ok: true, replayed: false, seed, state: applied.state && publicState(applied.state, settings, news), result: applied.result });
       }
 
       const saved = await services.save(player, version, requestId, action.type, applied.state, applied.result);
       if (!saved.ok) return saved.why === 'busy' ? reply(503, { error: "We couldn't save your clan just now." }) : reply(400, { error: "That couldn't be saved." });
       if (saved.value.status === 'saved') {
-        return reply(200, { ok: true, replayed: false, seed, state: publicState(applied.state, settings), result: applied.result });
+        return reply(200, { ok: true, replayed: false, seed, state: publicState(applied.state, settings, news), result: applied.result });
       }
       // 'duplicate' or 'stale': another copy of this request, or another request, saved first. Load again.
     }

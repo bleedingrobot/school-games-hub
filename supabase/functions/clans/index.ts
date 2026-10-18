@@ -682,6 +682,44 @@ const TROOP_COST = {
 function kindsFor(band, topics = TOPICS) {
 	return KINDS.filter((k) => KIND_DEFS[k].bands.includes(band) && topics.includes(KIND_DEFS[k].topic));
 }
+const isKind = (x) => typeof x === "string" && KINDS.includes(x);
+/** True if these numbers make a sensible question of this kind. */
+function isValidSpec(spec) {
+	const def = isKind(spec.kind) ? KIND_DEFS[spec.kind] : void 0;
+	return !!def && Array.isArray(spec.nums) && spec.nums.every((n) => typeof n === "number" && Number.isFinite(n)) && def.valid(spec.nums);
+}
+/** Make the question from its kind and numbers. Throws if the numbers don't make sense. */
+function buildQuestion(kind, nums, options = {}) {
+	if (!isValidSpec({
+		kind,
+		nums
+	})) throw new Error(`Bad numbers for a "${kind}" question: ${JSON.stringify(nums)}`);
+	const def = KIND_DEFS[kind];
+	return {
+		kind,
+		nums: [...nums],
+		topic: def.topic,
+		...def.build(nums, options)
+	};
+}
+/** Pick the numbers for a question of one kind at a year band. */
+function generateSpec(kind, band, random, tables = []) {
+	const def = KIND_DEFS[kind];
+	if (!def.bands.includes(band)) throw new Error(`"${kind}" questions are not asked at Year ${band}`);
+	return {
+		kind,
+		nums: def.generate(band, random, tables)
+	};
+}
+/** A whole question at a band: pick the numbers, then build it. */
+function generateQuestion(kind, band, random, tables = []) {
+	const spec = generateSpec(kind, band, random, tables);
+	return buildQuestion(spec.kind, spec.nums);
+}
+/** Check a typed or tapped answer. A missing answer ("No thanks") counts as not right. */
+function markAnswer(q, given) {
+	return typeof given === "number" && Number.isFinite(given) && given === q.answer;
+}
 const DEFAULT_PRACTICAL_SETTINGS = {
 	enabledTopics: TOPICS.filter((t) => t !== "integers" && t !== "times"),
 	yearBand: 5,
@@ -699,6 +737,18 @@ const DEFAULT_PRACTICAL_SETTINGS = {
 };
 /** Is a topic being asked at this year band? (Switched on, and has a kind for the band.) */
 const topicAvailable = (settings, topic) => settings.enabledTopics.includes(topic) && kindsFor(settings.yearBand, [topic]).length > 0;
+/** Pick a kind: first a switched-on topic, then one of its kinds, so each topic is asked about equally. Null if nothing is on. */
+function pickKind(settings, random) {
+	const topics = TOPICS.filter((t) => topicAvailable(settings, t));
+	if (topics.length === 0) return null;
+	const topic = choose(random, topics);
+	return choose(random, kindsFor(settings.yearBand, [topic]));
+}
+/** A random question of the teacher's topics and year band, or null if all topics are off. */
+function pickQuestion(settings, random) {
+	const kind = pickKind(settings, random);
+	return kind ? generateQuestion(kind, settings.yearBand, random, settings.enabledTables) : null;
+}
 //#endregion
 //#region shared/clans/config.ts
 /** Every tuning number for Clan Quest in one place, so the game can be balanced without hunting through code. */
@@ -1700,6 +1750,708 @@ const ITEMS = [
 		"shopLevel": 2
 	}
 ];
+const MONSTERS = [
+	{
+		"name": "Scruffy Dog",
+		"zone": "Meadow",
+		"mine": 0,
+		"boss": false,
+		"difficulty": 1,
+		"hp": 7,
+		"sp": 0,
+		"stats": {
+			"agility": 5,
+			"dexterity": 8,
+			"strength": 11,
+			"wisdom": 1,
+			"armor": 0,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Giant Rat",
+		"zone": "Meadow",
+		"mine": 0,
+		"boss": false,
+		"difficulty": 1,
+		"hp": 14,
+		"sp": 0,
+		"stats": {
+			"agility": 8,
+			"dexterity": 9,
+			"strength": 8,
+			"wisdom": 1,
+			"armor": 0,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Hedge Witch",
+		"zone": "Meadow",
+		"mine": 1,
+		"boss": false,
+		"difficulty": 1,
+		"hp": 13,
+		"sp": 10,
+		"stats": {
+			"agility": 8,
+			"dexterity": 5,
+			"strength": 8,
+			"wisdom": 10,
+			"armor": 0,
+			"charisma": 0
+		},
+		"spells": [10]
+	},
+	{
+		"name": "Rock Pal",
+		"zone": "Meadow",
+		"mine": 1,
+		"boss": false,
+		"difficulty": 1,
+		"hp": 12,
+		"sp": 0,
+		"stats": {
+			"agility": 10,
+			"dexterity": 9,
+			"strength": 12,
+			"wisdom": 3,
+			"armor": 0,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Goblin",
+		"zone": "Meadow",
+		"mine": 2,
+		"boss": false,
+		"difficulty": 2,
+		"hp": 16,
+		"sp": 0,
+		"stats": {
+			"agility": 7,
+			"dexterity": 9,
+			"strength": 10,
+			"wisdom": 4,
+			"armor": 1,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Grumpy Orc",
+		"zone": "Meadow",
+		"mine": 2,
+		"boss": false,
+		"difficulty": 2,
+		"hp": 19,
+		"sp": 0,
+		"stats": {
+			"agility": 8,
+			"dexterity": 7,
+			"strength": 10,
+			"wisdom": 3,
+			"armor": 0,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Moon Wolf",
+		"zone": "Meadow",
+		"mine": 3,
+		"boss": false,
+		"difficulty": 3,
+		"hp": 18,
+		"sp": 0,
+		"stats": {
+			"agility": 10,
+			"dexterity": 9,
+			"strength": 12,
+			"wisdom": 2,
+			"armor": 0,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Marsh Snake",
+		"zone": "Meadow",
+		"mine": 3,
+		"boss": false,
+		"difficulty": 3,
+		"hp": 20,
+		"sp": 0,
+		"stats": {
+			"agility": 10,
+			"dexterity": 8,
+			"strength": 14,
+			"wisdom": 3,
+			"armor": 1,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Giant Spider",
+		"zone": "Caves",
+		"mine": 4,
+		"boss": false,
+		"difficulty": 4,
+		"hp": 22,
+		"sp": 0,
+		"stats": {
+			"agility": 11,
+			"dexterity": 9,
+			"strength": 14,
+			"wisdom": 2,
+			"armor": 1,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Hobgoblin",
+		"zone": "Caves",
+		"mine": 4,
+		"boss": false,
+		"difficulty": 4,
+		"hp": 25,
+		"sp": 0,
+		"stats": {
+			"agility": 11,
+			"dexterity": 10,
+			"strength": 13,
+			"wisdom": 3,
+			"armor": 1,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Skeleton",
+		"zone": "Caves",
+		"mine": 5,
+		"boss": false,
+		"difficulty": 5,
+		"hp": 27,
+		"sp": 0,
+		"stats": {
+			"agility": 12,
+			"dexterity": 10,
+			"strength": 18,
+			"wisdom": 4,
+			"armor": 3,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Lizard Warrior",
+		"zone": "Caves",
+		"mine": 5,
+		"boss": false,
+		"difficulty": 5,
+		"hp": 25,
+		"sp": 0,
+		"stats": {
+			"agility": 13,
+			"dexterity": 11,
+			"strength": 17,
+			"wisdom": 3,
+			"armor": 2,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Cave Minotaur",
+		"zone": "Caves",
+		"mine": 6,
+		"boss": false,
+		"difficulty": 6,
+		"hp": 28,
+		"sp": 0,
+		"stats": {
+			"agility": 15,
+			"dexterity": 10,
+			"strength": 19,
+			"wisdom": 4,
+			"armor": 5,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Green Slime",
+		"zone": "Caves",
+		"mine": 6,
+		"boss": false,
+		"difficulty": 6,
+		"hp": 27,
+		"sp": 0,
+		"stats": {
+			"agility": 13,
+			"dexterity": 9,
+			"strength": 19,
+			"wisdom": 4,
+			"armor": 3,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Dusk Mage",
+		"zone": "Caves",
+		"mine": 7,
+		"boss": false,
+		"difficulty": 6,
+		"hp": 24,
+		"sp": 10,
+		"stats": {
+			"agility": 13,
+			"dexterity": 10,
+			"strength": 21,
+			"wisdom": 10,
+			"armor": 2,
+			"charisma": 0
+		},
+		"spells": [
+			8,
+			13,
+			14
+		]
+	},
+	{
+		"name": "Wyvern",
+		"zone": "Caves",
+		"mine": 7,
+		"boss": false,
+		"difficulty": 7,
+		"hp": 26,
+		"sp": 0,
+		"stats": {
+			"agility": 16,
+			"dexterity": 10,
+			"strength": 21,
+			"wisdom": 4,
+			"armor": 4,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Gargoyle",
+		"zone": "Swamp",
+		"mine": 8,
+		"boss": false,
+		"difficulty": 8,
+		"hp": 32,
+		"sp": 0,
+		"stats": {
+			"agility": 14,
+			"dexterity": 11,
+			"strength": 21,
+			"wisdom": 4,
+			"armor": 6,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Baby Dragon",
+		"zone": "Swamp",
+		"mine": 8,
+		"boss": false,
+		"difficulty": 8,
+		"hp": 30,
+		"sp": 15,
+		"stats": {
+			"agility": 11,
+			"dexterity": 10,
+			"strength": 23,
+			"wisdom": 4,
+			"armor": 5,
+			"charisma": 0
+		},
+		"spells": [24]
+	},
+	{
+		"name": "Swamp Ogre",
+		"zone": "Swamp",
+		"mine": 9,
+		"boss": false,
+		"difficulty": 8,
+		"hp": 31,
+		"sp": 0,
+		"stats": {
+			"agility": 15,
+			"dexterity": 9,
+			"strength": 21,
+			"wisdom": 2,
+			"armor": 5,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Large Spider",
+		"zone": "Swamp",
+		"mine": 9,
+		"boss": false,
+		"difficulty": 9,
+		"hp": 34,
+		"sp": 0,
+		"stats": {
+			"agility": 12,
+			"dexterity": 11,
+			"strength": 24,
+			"wisdom": 3,
+			"armor": 3,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Satyr",
+		"zone": "Swamp",
+		"mine": 10,
+		"boss": false,
+		"difficulty": 10,
+		"hp": 34,
+		"sp": 0,
+		"stats": {
+			"agility": 13,
+			"dexterity": 12,
+			"strength": 23,
+			"wisdom": 5,
+			"armor": 5,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Centaur",
+		"zone": "Swamp",
+		"mine": 11,
+		"boss": false,
+		"difficulty": 11,
+		"hp": 32,
+		"sp": 10,
+		"stats": {
+			"agility": 12,
+			"dexterity": 12,
+			"strength": 26,
+			"wisdom": 10,
+			"armor": 5,
+			"charisma": 0
+		},
+		"spells": [4, 5]
+	},
+	{
+		"name": "Stone Golem",
+		"zone": "Ruins",
+		"mine": 12,
+		"boss": false,
+		"difficulty": 12,
+		"hp": 40,
+		"sp": 0,
+		"stats": {
+			"agility": 14,
+			"dexterity": 13,
+			"strength": 29,
+			"wisdom": 4,
+			"armor": 6,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Cyclops",
+		"zone": "Ruins",
+		"mine": 12,
+		"boss": false,
+		"difficulty": 12,
+		"hp": 43,
+		"sp": 0,
+		"stats": {
+			"agility": 12,
+			"dexterity": 12,
+			"strength": 27,
+			"wisdom": 5,
+			"armor": 5,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Giant",
+		"zone": "Ruins",
+		"mine": 13,
+		"boss": false,
+		"difficulty": 13,
+		"hp": 41,
+		"sp": 0,
+		"stats": {
+			"agility": 13,
+			"dexterity": 12,
+			"strength": 27,
+			"wisdom": 4,
+			"armor": 5,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Ruin Sorcerer",
+		"zone": "Ruins",
+		"mine": 13,
+		"boss": false,
+		"difficulty": 13,
+		"hp": 42,
+		"sp": 17,
+		"stats": {
+			"agility": 11,
+			"dexterity": 13,
+			"strength": 28,
+			"wisdom": 6,
+			"armor": 6,
+			"charisma": 0
+		},
+		"spells": [
+			6,
+			7,
+			8
+		]
+	},
+	{
+		"name": "Bandaged Mummy",
+		"zone": "Ruins",
+		"mine": 14,
+		"boss": false,
+		"difficulty": 15,
+		"hp": 44,
+		"sp": 0,
+		"stats": {
+			"agility": 12,
+			"dexterity": 12,
+			"strength": 33,
+			"wisdom": 6,
+			"armor": 6,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Fire Spirit",
+		"zone": "Ruins",
+		"mine": 15,
+		"boss": false,
+		"difficulty": 15,
+		"hp": 44,
+		"sp": 0,
+		"stats": {
+			"agility": 15,
+			"dexterity": 13,
+			"strength": 38,
+			"wisdom": 7,
+			"armor": 7,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Young Dragon",
+		"zone": "Mountain",
+		"mine": 16,
+		"boss": false,
+		"difficulty": 16,
+		"hp": 48,
+		"sp": 0,
+		"stats": {
+			"agility": 14,
+			"dexterity": 13,
+			"strength": 39,
+			"wisdom": 8,
+			"armor": 7,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Rock Beast",
+		"zone": "Mountain",
+		"mine": 17,
+		"boss": false,
+		"difficulty": 17,
+		"hp": 50,
+		"sp": 0,
+		"stats": {
+			"agility": 15,
+			"dexterity": 14,
+			"strength": 40,
+			"wisdom": 7,
+			"armor": 8,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Emerald Wizard",
+		"zone": "Mountain",
+		"mine": 17,
+		"boss": false,
+		"difficulty": 17,
+		"hp": 50,
+		"sp": 20,
+		"stats": {
+			"agility": 16,
+			"dexterity": 15,
+			"strength": 43,
+			"wisdom": 5,
+			"armor": 5,
+			"charisma": 0
+		},
+		"spells": [
+			4,
+			5,
+			7
+		]
+	},
+	{
+		"name": "Storm Wizard",
+		"zone": "Mountain",
+		"mine": 18,
+		"boss": false,
+		"difficulty": 18,
+		"hp": 49,
+		"sp": 30,
+		"stats": {
+			"agility": 15,
+			"dexterity": 14,
+			"strength": 45,
+			"wisdom": 5,
+			"armor": 7,
+			"charisma": 0
+		},
+		"spells": [
+			12,
+			10,
+			15
+		]
+	},
+	{
+		"name": "Storm Knight",
+		"zone": "Mountain",
+		"mine": 19,
+		"boss": false,
+		"difficulty": 19,
+		"hp": 41,
+		"sp": 0,
+		"stats": {
+			"agility": 14,
+			"dexterity": 13,
+			"strength": 43,
+			"wisdom": 4,
+			"armor": 8,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Ember Hound",
+		"zone": "Mountain",
+		"mine": 20,
+		"boss": false,
+		"difficulty": 20,
+		"hp": 51,
+		"sp": 0,
+		"stats": {
+			"agility": 15,
+			"dexterity": 16,
+			"strength": 52,
+			"wisdom": 7,
+			"armor": 8,
+			"charisma": 0
+		},
+		"spells": []
+	},
+	{
+		"name": "Baron Moonbat",
+		"zone": "Caves",
+		"mine": 5,
+		"boss": true,
+		"difficulty": 5,
+		"hp": 26,
+		"sp": 18,
+		"stats": {
+			"agility": 13,
+			"dexterity": 9,
+			"strength": 19,
+			"wisdom": 14,
+			"armor": 3,
+			"charisma": 0
+		},
+		"spells": [19]
+	},
+	{
+		"name": "Stone Warden",
+		"zone": "Swamp",
+		"mine": 10,
+		"boss": true,
+		"difficulty": 10,
+		"hp": 46,
+		"sp": 12,
+		"stats": {
+			"agility": 11,
+			"dexterity": 12,
+			"strength": 24,
+			"wisdom": 4,
+			"armor": 4,
+			"charisma": 0
+		},
+		"spells": [11]
+	},
+	{
+		"name": "Ember Lord",
+		"zone": "Ruins",
+		"mine": 15,
+		"boss": true,
+		"difficulty": 15,
+		"hp": 54,
+		"sp": 20,
+		"stats": {
+			"agility": 15,
+			"dexterity": 13,
+			"strength": 38,
+			"wisdom": 7,
+			"armor": 7,
+			"charisma": 0
+		},
+		"spells": [15]
+	},
+	{
+		"name": "Emerald Dragon",
+		"zone": "Mountain",
+		"mine": 20,
+		"boss": true,
+		"difficulty": 20,
+		"hp": 53,
+		"sp": 21,
+		"stats": {
+			"agility": 15,
+			"dexterity": 14,
+			"strength": 54,
+			"wisdom": 7,
+			"armor": 9,
+			"charisma": 0
+		},
+		"spells": [17]
+	}
+];
 //#endregion
 //#region shared/clans/rng.ts
 /** A number from 0 up to (not including) 1. */
@@ -1744,6 +2496,7 @@ const BUILDING_KINDS = [
 /** Making and growing clan members: rolling stats, gear, levels, training, the Church and the shop. */
 const raceByName = (name) => RACES.find((r) => r.name === name);
 const classByName = (name) => CLASSES.find((c) => c.name === name);
+const itemByName$1 = (name) => ITEMS.find((i) => i.name === name);
 const emptyStats = () => ({
 	agility: 0,
 	dexterity: 0,
@@ -1784,6 +2537,36 @@ function rollMember(dice, name, race, cls, leader = false) {
 		points: 0,
 		knockedOut: false
 	};
+}
+/** Gear bonuses count only if the member's base stats meet the item's needs. */
+function usableBonus(m, item) {
+	if (!item) return {};
+	for (const s of STATS) if ((item.needs[s] ?? 0) > m.stats[s]) return {};
+	return item.bonus;
+}
+/** What a member fights with: base stats plus usable gear. */
+function fightStats(m) {
+	const out = { ...m.stats };
+	for (const name of [
+		m.gear.weapon,
+		m.gear.armor,
+		m.gear.shield
+	]) {
+		const bonus = usableBonus(m, name ? itemByName$1(name) : void 0);
+		for (const s of STATS) out[s] = clamp(out[s] + (bonus[s] ?? 0), 0, CONFIG.statCap);
+	}
+	return out;
+}
+/** Add experience and level up as often as it earns. Returns how many levels were gained. */
+function gainXp(m, amount) {
+	m.xp += amount;
+	let gained = 0;
+	while (m.level < CONFIG.maxLevel && m.xp >= CONFIG.xpToReach(m.level + 1)) {
+		m.level++;
+		m.points += CONFIG.pointsPerLevel;
+		gained++;
+	}
+	return gained;
 }
 /** Points to raise a stat by 1 with the Training Hall at `hall` (never below 1). */
 const trainCost = (stat, hall) => Math.max(1, CONFIG.trainCost[stat] - hall);
@@ -1848,6 +2631,616 @@ function dayReset(clan) {
 		m.hp = m.maxHp;
 		m.sp = m.maxSp;
 	}
+}
+const SPELLS = Object.fromEntries([
+	{
+		id: 1,
+		name: "Little Heal",
+		kind: "heal",
+		value: 10,
+		sp: 8,
+		level: 0,
+		friendly: true
+	},
+	{
+		id: 2,
+		name: "Heal",
+		kind: "heal",
+		value: 14,
+		sp: 13,
+		level: 0,
+		friendly: true
+	},
+	{
+		id: 3,
+		name: "Slow",
+		kind: "debuff",
+		value: 0,
+		sp: 4,
+		level: 3,
+		mod: {
+			stat: "agility",
+			amount: -2,
+			rounds: 3
+		}
+	},
+	{
+		id: 4,
+		name: "Strength",
+		kind: "buff",
+		value: 0,
+		sp: 6,
+		level: 5,
+		friendly: true,
+		mod: {
+			stat: "strength",
+			amount: 5,
+			rounds: 4
+		}
+	},
+	{
+		id: 5,
+		name: "Ropes",
+		kind: "tie",
+		value: 0,
+		sp: 9,
+		level: 3
+	},
+	{
+		id: 6,
+		name: "Call Spirit Helper",
+		kind: "summon",
+		value: 1,
+		sp: 13,
+		level: 5,
+		friendly: true,
+		notYet: true
+	},
+	{
+		id: 7,
+		name: "Send Spirits Away",
+		kind: "summon",
+		value: 0,
+		sp: 9,
+		level: 5,
+		notYet: true
+	},
+	{
+		id: 8,
+		name: "Fireball",
+		kind: "damage",
+		value: 9,
+		sp: 4,
+		level: 6
+	},
+	{
+		id: 9,
+		name: "Dragon's Uppercut",
+		kind: "damage",
+		value: 12,
+		sp: 6,
+		level: 8
+	},
+	{
+		id: 10,
+		name: "Call Ghost Warrior",
+		kind: "summon",
+		value: 1,
+		sp: 7,
+		level: 5,
+		friendly: true,
+		notYet: true
+	},
+	{
+		id: 11,
+		name: "Heavy Blow",
+		kind: "damage",
+		value: 10,
+		sp: 6,
+		level: 9
+	},
+	{
+		id: 12,
+		name: "Wither",
+		kind: "damage",
+		value: 3,
+		sp: 7,
+		level: 9,
+		all: true
+	},
+	{
+		id: 13,
+		name: "Magic Chains",
+		kind: "tie",
+		value: 0,
+		sp: 12,
+		level: 4
+	},
+	{
+		id: 14,
+		name: "Holy Heal",
+		kind: "heal",
+		value: 4,
+		sp: 7,
+		level: 0,
+		friendly: true
+	},
+	{
+		id: 15,
+		name: "Lightning Bolt",
+		kind: "damage",
+		value: 25,
+		sp: 15,
+		level: 8
+	},
+	{
+		id: 16,
+		name: "Sneak Attack",
+		kind: "damage",
+		value: 17,
+		sp: 9,
+		level: 9
+	},
+	{
+		id: 17,
+		name: "Fire Breath",
+		kind: "damage",
+		value: 10,
+		sp: 9,
+		level: 15
+	},
+	{
+		id: 18,
+		name: "Battle Fury",
+		kind: "buff",
+		value: 0,
+		sp: 7,
+		level: 6,
+		friendly: true,
+		mod: {
+			stat: "strength",
+			amount: 6,
+			rounds: 4
+		}
+	},
+	{
+		id: 19,
+		name: "Scare",
+		kind: "debuff",
+		value: 0,
+		sp: 9,
+		level: 6,
+		mod: {
+			stat: "strength",
+			amount: -3,
+			rounds: 3
+		}
+	},
+	{
+		id: 20,
+		name: "Light Blow",
+		kind: "damage",
+		value: 13,
+		sp: 4,
+		level: 3
+	},
+	{
+		id: 21,
+		name: "Hurricane Kick",
+		kind: "damage",
+		value: 10,
+		sp: 4,
+		level: 5
+	},
+	{
+		id: 22,
+		name: "Divine Warrior",
+		kind: "summon",
+		value: 1,
+		sp: 8,
+		level: 5,
+		friendly: true,
+		notYet: true
+	},
+	{
+		id: 23,
+		name: "Dazzle",
+		kind: "debuff",
+		value: 0,
+		sp: 6,
+		level: 5,
+		mod: {
+			stat: "dexterity",
+			amount: -3,
+			rounds: 3
+		}
+	},
+	{
+		id: 24,
+		name: "Fire Breath",
+		kind: "damage",
+		value: 6,
+		sp: 9,
+		level: 15
+	},
+	{
+		id: 25,
+		name: "Thunder Rain",
+		kind: "damage",
+		value: 4,
+		sp: 14,
+		level: 12,
+		all: true
+	}
+].map((s) => [s.id, s]));
+//#endregion
+//#region shared/clans/fight.ts
+/**
+* A mine fight, as a pure state machine. `newFight` picks the enemies from a seed; `playRound`
+* takes one order per clan member and runs a whole round. The same seed and the same orders
+* always give the same fight, so the server can replay what the browser played. The whole
+* state is plain JSON, so a half-finished fight can be saved.
+*
+* Rules and numbers are The Clans': agility-first turns (hurt fighters slow down), hit when
+* dexterity beats agility, damage from half strength minus armour, experience per hit.
+*/
+const stat = (f, s) => {
+	let v = f.stats[s];
+	for (const m of f.mods) v += m.amount;
+	return Math.max(0, Math.min(CONFIG.statCap, v));
+};
+const alive = (f) => f.hp > 0;
+function clanFighter(m, index) {
+	return {
+		side: "clan",
+		index,
+		name: m.name,
+		level: m.level,
+		hp: m.knockedOut ? 0 : m.hp,
+		maxHp: m.maxHp,
+		sp: m.sp,
+		maxSp: m.maxSp,
+		stats: fightStats(m),
+		spells: m.spells,
+		mods: [],
+		tied: 0,
+		guarding: false,
+		difficulty: 0
+	};
+}
+/** One enemy, with the original's wobble: stats 80-139%, HP 80-109%. */
+function spawn(dice, def, index) {
+	const stats = { ...def.stats };
+	for (const s of STATS) stats[s] = Math.floor(def.stats[s] * (80 + roll(dice, 60)) / 100);
+	const hp = Math.max(1, Math.floor(def.hp * (80 + roll(dice, 30)) / 100));
+	return {
+		side: "enemy",
+		index,
+		name: def.name,
+		level: def.difficulty,
+		hp,
+		maxHp: hp,
+		sp: def.sp,
+		maxSp: def.sp,
+		stats,
+		spells: def.spells,
+		mods: [],
+		tied: 0,
+		guarding: false,
+		difficulty: def.difficulty
+	};
+}
+/** Monsters that can turn up at a mine depth: from 2 levels above to 1 below (bosses only on request). */
+function monstersAt(depth) {
+	const pool = MONSTERS.filter((m) => !m.boss && m.mine <= depth + 1 && m.mine >= depth - 2);
+	return pool.length ? pool : MONSTERS.filter((m) => !m.boss && Math.abs(m.mine - depth) <= 4);
+}
+function bossAt(depth) {
+	return MONSTERS.find((m) => m.boss && m.mine === depth);
+}
+/** Start a fight at a mine depth (0-20). `boss` fights the depth's boss with two helpers. */
+function newFight(members, depth, seed, boss = false) {
+	const state = {
+		rng: seed | 0,
+		seed: seed | 0,
+		depth,
+		round: 0,
+		clan: members.map(clanFighter),
+		enemies: [],
+		result: null,
+		xp: members.map(() => 0),
+		gold: 0,
+		followers: 0,
+		log: []
+	};
+	const pool = monstersAt(depth);
+	const bossDef = boss ? bossAt(depth) : void 0;
+	const count = bossDef ? 2 : depth < 3 ? 2 + roll(state, 2) : 3 + roll(state, 2);
+	const list = bossDef ? [bossDef] : [];
+	while (list.length < count + (bossDef ? 1 : 0)) list.push(pool[roll(state, pool.length)]);
+	state.enemies = list.map((def, i) => spawn(state, def, i));
+	if (state.clan.every((f) => !alive(f))) state.result = "lost";
+	return state;
+}
+const team = (s, side) => side === "clan" ? s.clan : s.enemies;
+const foes = (s, f) => team(s, f.side === "clan" ? "enemy" : "clan");
+const friends = (s, f) => team(s, f.side);
+function hurt(s, attacker, target, damage) {
+	if (target.guarding) damage = Math.max(1, Math.ceil(damage / 2));
+	damage = Math.min(damage, target.hp);
+	target.hp -= damage;
+	if (attacker.side === "clan") s.xp[attacker.index] += Math.round((Math.floor(damage / 3) + 1) * (1 + Math.max(0, s.depth - CONFIG.xpBoostFrom) * CONFIG.xpDepthBoost));
+	if (target.hp <= 0) {
+		s.log.push({
+			type: "down",
+			who: target.name
+		});
+		if (target.side === "enemy") s.gold += Math.round((target.difficulty * (20 + roll(s, 10)) + 50 + roll(s, 20)) / 10);
+	}
+	return damage;
+}
+function attack(s, who, target, cry) {
+	if (stat(who, "dexterity") + roll(s, 4) + roll(s, 4) + 2 < stat(target, "agility") + roll(s, 4)) {
+		s.log.push({
+			type: "miss",
+			who: who.name,
+			target: target.name
+		});
+		return;
+	}
+	let dmg = Math.floor(Math.floor(stat(who, "strength") / 2) * (80 + roll(s, 40)) / 100);
+	if (who.side === "clan" && cry === "damage") dmg = Math.floor(dmg * CONFIG.battleCryDamage);
+	dmg = Math.max(1, dmg - stat(target, "armor"));
+	const done = hurt(s, who, target, dmg);
+	s.log.push({
+		type: "hit",
+		who: who.name,
+		target: target.name,
+		damage: done
+	});
+}
+/** Does this spell go off against a target? Healing and damage always do; the rest can be shrugged off. */
+function lands(s, who, spell, target) {
+	if (spell.kind === "heal" || spell.kind === "damage" || spell.kind === "buff") return true;
+	return who.level + stat(who, "wisdom") + roll(s, 8) + spell.level >= target.level + stat(target, "wisdom") + roll(s, 4);
+}
+function canCast(f, spellId) {
+	const sp = SPELLS[spellId];
+	return !!sp && !sp.notYet && f.spells.includes(spellId) && f.sp >= sp.sp;
+}
+function cast(s, who, spell, target) {
+	who.sp -= spell.sp;
+	const lvl = Math.min(who.level, 10);
+	if (spell.kind === "heal") {
+		const amount = Math.floor((spell.value + Math.floor(lvl / 2)) * (50 + roll(s, 50)) / 100);
+		target.hp = Math.min(target.maxHp, target.hp + amount);
+		s.log.push({
+			type: "cast",
+			who: who.name,
+			spell: spell.name,
+			target: target.name,
+			amount
+		});
+	} else if (spell.kind === "damage") {
+		const targets = spell.all ? foes(s, who).filter(alive) : [target];
+		for (const t of targets) {
+			const done = hurt(s, who, t, Math.max(1, Math.floor((spell.value + Math.floor((lvl + stat(who, "wisdom")) / 3)) * (50 + roll(s, 60)) / 100)));
+			s.log.push({
+				type: "cast",
+				who: who.name,
+				spell: spell.name,
+				target: t.name,
+				amount: done
+			});
+		}
+	} else if (!lands(s, who, spell, target)) s.log.push({
+		type: "resist",
+		who: who.name,
+		spell: spell.name,
+		target: target.name
+	});
+	else if (spell.kind === "tie") {
+		target.tied = 1;
+		s.log.push({
+			type: "cast",
+			who: who.name,
+			spell: spell.name,
+			target: target.name,
+			amount: 0
+		});
+	} else if (spell.mod) {
+		target.mods.push({
+			stat: spell.mod.stat,
+			amount: spell.mod.amount,
+			until: s.round + spell.mod.rounds - 1
+		});
+		s.log.push({
+			type: "cast",
+			who: who.name,
+			spell: spell.name,
+			target: target.name,
+			amount: spell.mod.amount
+		});
+	}
+}
+function pick$1(s, list) {
+	const live = list.filter(alive);
+	return live.length ? live[roll(s, live.length)] : void 0;
+}
+/** What an enemy does with its turn. */
+function enemyTurn(s, who, cry) {
+	const spells = who.spells.map((id) => SPELLS[id]).filter((sp) => !!sp && canCast(who, sp.id));
+	if (spells.length && roll(s, 3) === 0) {
+		const spell = spells[roll(s, spells.length)];
+		const target = spell.friendly ? friends(s, who).filter(alive).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0] : pick$1(s, foes(s, who));
+		if (target) return cast(s, who, spell, target);
+	}
+	const target = pick$1(s, foes(s, who));
+	if (target) attack(s, who, target, cry);
+}
+function clanTurn(s, who, order, cry) {
+	const fallback = () => ({
+		action: "attack",
+		target: s.enemies.findIndex(alive)
+	});
+	let o = order ?? fallback();
+	if (o.action === "run") {
+		const dex = s.clan.filter(alive).reduce((t, f) => t + stat(f, "dexterity"), 0) / Math.max(1, s.clan.filter(alive).length);
+		const agi = s.enemies.filter(alive).reduce((t, f) => t + stat(f, "agility"), 0) / Math.max(1, s.enemies.filter(alive).length);
+		const ok = dex + roll(s, 15) >= agi + roll(s, 15);
+		s.log.push({
+			type: "run",
+			ok
+		});
+		if (ok) s.result = "fled";
+		return;
+	}
+	if (o.action === "skip") return;
+	if (o.action === "guard") {
+		who.guarding = true;
+		s.log.push({
+			type: "guard",
+			who: who.name
+		});
+		return;
+	}
+	if (o.action === "spell") {
+		const spell = SPELLS[o.spell];
+		const target = (spell && spell.friendly ? s.clan : s.enemies)[o.target];
+		if (spell && canCast(who, spell.id) && target && alive(target)) return cast(s, who, spell, target);
+		o = fallback();
+	}
+	if (o.action === "attack") {
+		let target = s.enemies[o.target];
+		if (!target || !alive(target)) target = s.enemies.find(alive);
+		if (target) attack(s, who, target, cry);
+	}
+}
+function checkEnd(s) {
+	if (s.result) return;
+	if (s.enemies.every((f) => !alive(f))) s.result = "won";
+	else if (s.clan.every((f) => !alive(f))) s.result = "lost";
+}
+/** Followers who watched you win: more the deeper you go. */
+function followersFor(s) {
+	const d = s.depth;
+	return (d <= 5 ? 4 : d <= 10 ? 7 : d <= 15 ? 11 : 14) + roll(s, 3);
+}
+/**
+* Play one round. `orders[i]` is clan member i's order (anything missing or not allowed becomes
+* a plain attack). `cry` is the Battle Cry bonus the server has already decided was earned.
+*/
+function playRound(s, orders, cry = null) {
+	if (s.result) return;
+	s.round++;
+	s.log.push({
+		type: "round",
+		round: s.round
+	});
+	for (const f of [...s.clan, ...s.enemies]) {
+		f.guarding = false;
+		f.mods = f.mods.filter((m) => m.until >= s.round);
+		if (alive(f) && f.maxHp && f.spells.length) f.sp = Math.min(f.maxSp, f.sp + Math.floor(stat(f, "wisdom") * (roll(s, 15) + 5) / 150) + 1);
+	}
+	if (cry) s.log.push({
+		type: "cry",
+		kind: cry
+	});
+	if (cry === "heal") for (const f of s.clan.filter(alive)) f.hp = Math.min(f.maxHp, f.hp + Math.ceil(f.maxHp * CONFIG.battleCryHeal));
+	const order = [...s.clan, ...s.enemies].filter(alive).map((f) => ({
+		f,
+		key: stat(f, "agility") + Math.floor(f.hp * 10 / f.maxHp) + roll(s, 2)
+	})).sort((a, b) => b.key - a.key).map((x) => x.f);
+	for (const who of order) {
+		if (s.result) break;
+		if (!alive(who)) continue;
+		if (who.tied > 0) {
+			who.tied--;
+			s.log.push({
+				type: "tied",
+				who: who.name
+			});
+			continue;
+		}
+		if (who.side === "clan") clanTurn(s, who, orders[who.index], cry);
+		else enemyTurn(s, who, cry);
+		checkEnd(s);
+	}
+	if (s.result === "won") s.followers = followersFor(s);
+	else if (!s.result && s.round >= CONFIG.maxRounds) s.result = "timeout";
+}
+/**
+* Write a finished fight back onto the members: surviving HP/SP (with the between-fight rest),
+* knock-outs, and experience. Gold and followers are for the clan to take. Returns how many
+* levels each member gained.
+*/
+function settle(members, s, gain) {
+	return members.map((m, i) => {
+		const f = s.clan[i];
+		if (!f) return 0;
+		const wasOut = m.knockedOut;
+		m.sp = f.sp;
+		if (wasOut) return 0;
+		m.hp = Math.max(0, f.hp);
+		if (m.hp === 0) m.knockedOut = true;
+		else {
+			m.hp = Math.min(m.maxHp, m.hp + Math.ceil((m.maxHp - m.hp) * CONFIG.betweenFightHeal));
+			m.sp = Math.min(m.maxSp, m.sp + Math.ceil((m.maxSp - m.sp) * CONFIG.betweenFightHeal));
+		}
+		return gain(m, s.xp[i]);
+	});
+}
+//#endregion
+//#region shared/clans/battleCry.ts
+/** The question the clan faces before `round` of a fight started from `seed`. Null if the teacher has every topic off. */
+function cryQuestion(seed, round, settings) {
+	const dice = { rng: Math.imul(seed | 0, 2654435761) ^ Math.imul(round + 1, 2246822507) };
+	nextFloat(dice);
+	nextFloat(dice);
+	return pickQuestion(settings, () => nextFloat(dice));
+}
+/** The question for the round about to be played. */
+const nextCryQuestion = (state, settings) => cryQuestion(state.seed, state.round + 1, settings);
+/** Mark the player's Battle Cry answer. */
+function markCry(question, given) {
+	if (!question) return {
+		answered: false,
+		correct: false,
+		cry: null,
+		question: null
+	};
+	const correct = !!given && markAnswer(question, given.answer);
+	return {
+		answered: !!given,
+		correct,
+		cry: correct ? given.reward : null,
+		question
+	};
+}
+/** Play a round with the Battle Cry marked: the one place a round and its question meet. */
+function playCryRound(state, settings, orders, given) {
+	if (state.result) return {
+		answered: false,
+		correct: false,
+		cry: null,
+		question: null
+	};
+	const result = markCry(nextCryQuestion(state, settings), given);
+	playRound(state, orders, result.cry);
+	return result;
+}
+/** Replay a whole recorded fight from its seed. The server uses this to check what the browser reports. */
+function replayFight(members, depth, seed, boss, rounds, settings) {
+	const state = newFight(members, depth, seed, boss);
+	const cries = [];
+	for (const r of rounds) {
+		if (state.result) break;
+		cries.push(playCryRound(state, settings, r.orders, r.cry));
+	}
+	return {
+		state,
+		cries
+	};
 }
 //#endregion
 //#region shared/clans/empire.ts
@@ -2506,6 +3899,24 @@ function sendArmyTo(clan, kingdomId, plan, friendly, seed) {
 		friendly
 	} : r;
 }
+/** The seed for a mine fight: from the clan's seed and how many fights there have been (the fight about to start is number `fightNo` + 1). */
+const fightSeed = (baseSeed, fightNo) => Math.imul(baseSeed | 0, 2654435761) ^ Math.imul(fightNo + 1, 2246822507);
+/**
+* Pay out a finished fight on the clan it was played for: surviving HP and SP (with the rest between fights), knock-outs,
+* experience and levels, then the gold and followers. The browser's test page and the server both call this one function.
+*/
+function payFight(clan, fight) {
+	const levels = settle(clan.members, fight, gainXp);
+	clan.gold += fight.gold;
+	clan.followers += fight.followers;
+	return {
+		result: fight.result,
+		gold: fight.gold,
+		followers: fight.followers,
+		xp: fight.xp,
+		levels
+	};
+}
 //#endregion
 //#region shared/clans/quests.ts
 /**
@@ -3076,7 +4487,14 @@ function finishQuest(clan, day, q, choiceIndex, right) {
 * Maths never blocks: the shop, Church and Training Hall take the true price whatever the child answered, so
 * those actions carry no answers. A quest puzzle changes the prize, so the quest action carries the answer and
 * the server rebuilds the puzzle from the clan's seed, the day, the quest and the choice to mark it.
-* Fights, the midnight job and raids on classmates are not here yet (part B and stage C.6).
+*
+* A mine fight is three kinds of request. `fightStart`: the server takes one off today's fights, picks the monsters from
+* the clan's seed and the fight number, and keeps the fight open. `fightRound`: the browser plays each round itself, and
+* sends what it did (the orders and the Battle Cry answer); the server replays the whole fight from its seed with
+* `replayFight`, marks the answer by rebuilding the question, keeps the round, and when the fight is over pays out
+* (gold, followers, experience, knocked-out members) in the same save that closes the fight, so it can only pay once.
+* While a fight is open nothing else about the clan can change (that is what keeps the replay honest), and the night's
+* rest waits until the fight is over. Raids on classmates are not here yet (stage C.6).
 */
 const refuse = (why, say) => ({
 	ok: false,
@@ -3094,6 +4512,46 @@ function parsePlan(v) {
 		rounds,
 		push: v.push,
 		loot
+	};
+}
+const ORDER_ACTIONS = [
+	"attack",
+	"spell",
+	"guard",
+	"run",
+	"skip"
+];
+/** One member's order for a round. `undefined` for "none" (sent as null). Null if it is not an order. */
+function parseOrder(v) {
+	if (v === null || v === void 0) return void 0;
+	if (!isObj(v) || typeof v.action !== "string" || !ORDER_ACTIONS.includes(v.action)) return null;
+	switch (v.action) {
+		case "attack": {
+			const target = int(v.target, -1, 20);
+			return target === null ? null : {
+				action: "attack",
+				target
+			};
+		}
+		case "spell": {
+			const spell = int(v.spell, 0, 500);
+			const target = int(v.target, -1, 20);
+			return spell === null || target === null ? null : {
+				action: "spell",
+				spell,
+				target
+			};
+		}
+		default: return { action: v.action };
+	}
+}
+function parseCry(v) {
+	if (v === null || v === void 0) return null;
+	if (!isObj(v) || v.reward !== "damage" && v.reward !== "heal") return void 0;
+	const answer = v.answer === null || v.answer === void 0 ? null : typeof v.answer === "number" && Number.isFinite(v.answer) ? v.answer : void 0;
+	return answer === void 0 ? void 0 : {
+		answer,
+		reward: v.reward
 	};
 }
 /** Reads an action sent by a browser. Null if it is not one the server knows, however it is changed. */
@@ -3194,6 +4652,31 @@ function parseAction(raw) {
 				answer
 			} : null;
 		}
+		case "fightStart": {
+			const depth = int(raw.depth, 0, CONFIG.maxLevel);
+			return depth !== null && typeof raw.boss === "boolean" ? {
+				type: "fightStart",
+				depth,
+				boss: raw.boss
+			} : null;
+		}
+		case "fightRound": {
+			const round = int(raw.round, 1, CONFIG.maxRounds);
+			if (round === null || !Array.isArray(raw.orders) || raw.orders.length > CONFIG.maxMembers) return null;
+			const orders = [];
+			for (const o of raw.orders) {
+				const order = parseOrder(o);
+				if (order === null) return null;
+				orders.push(order);
+			}
+			const cry = parseCry(raw.cry);
+			return cry === void 0 ? null : {
+				type: "fightRound",
+				round,
+				orders,
+				cry
+			};
+		}
 		default: return null;
 	}
 }
@@ -3249,7 +4732,8 @@ function applyAction(saved, action, ctx) {
 		changed: false
 	} : refuse("no-clan", "Make a clan first.");
 	const state = structuredClone(saved);
-	const rested = catchUp(state, ctx.today);
+	const rested = state.fight ? false : catchUp(state, ctx.today);
+	if (state.fight && action.type !== "load" && action.type !== "fightStart" && action.type !== "fightRound") return refuse("fight-open", "You are in the middle of a fight. Finish it first!");
 	const { clan } = state;
 	const settle = (r, result) => r.ok ? done(state, result) : refuse(r.why ?? "no", r.say ?? "That cannot be done right now.");
 	switch (action.type) {
@@ -3306,6 +4790,59 @@ function applyAction(saved, action, ctx) {
 				right: finished.right,
 				prize: finished.prize
 			}) : refuse("quest", finished.say);
+		}
+		case "fightStart": {
+			if (state.fight) return done(state, {
+				type: "fightStart",
+				resumed: true
+			}, false);
+			if (state.fightsLeft <= 0) return refuse("fights", "That's all the fights for today. Come back tomorrow!");
+			if (!clan.members.some((m) => !m.knockedOut)) return refuse("resting", "Everyone is resting. They wake up tomorrow.");
+			if (action.boss && !bossAt(action.depth)) return refuse("boss", "There is no boss at that depth.");
+			const seed = fightSeed(state.seed, state.fightNo);
+			if (newFight(clan.members, action.depth, seed, action.boss).result) return refuse("resting", "Everyone is resting. They wake up tomorrow.");
+			state.fight = {
+				depth: action.depth,
+				boss: action.boss,
+				seed,
+				no: state.fightNo + 1,
+				settings,
+				rounds: []
+			};
+			state.fightsLeft--;
+			state.fightNo++;
+			return done(state, {
+				type: "fightStart",
+				resumed: false
+			});
+		}
+		case "fightRound": {
+			const open = state.fight;
+			if (!open) return refuse("no-fight", "That fight is already over.");
+			if (action.round !== open.rounds.length + 1) return refuse("stale-round", "That round was already played.");
+			const played = {
+				orders: action.orders,
+				cry: action.cry
+			};
+			const { state: replayed, cries } = replayFight(clan.members, open.depth, open.seed, open.boss, [...open.rounds, played], open.settings);
+			if (cries.length !== open.rounds.length + 1) return refuse("no-fight", "That fight is already over.");
+			if (!replayed.result) {
+				open.rounds.push(played);
+				return done(state, {
+					type: "fightRound",
+					round: action.round,
+					over: false,
+					summary: null
+				});
+			}
+			const summary = payFight(clan, replayed);
+			state.fight = null;
+			return done(state, {
+				type: "fightRound",
+				round: action.round,
+				over: true,
+				summary
+			});
 		}
 	}
 }
@@ -3385,8 +4922,8 @@ var RateLimiter = class {
 };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** What the browser is told about a clan: everything it shows, nothing it could use to cheat. */
-function publicState(state, settings) {
-	const { clan, seed, day, fightsLeft, fightNo, raidNo, examined } = state;
+function publicState(state, settings, news = []) {
+	const { clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight } = state;
 	return {
 		clan,
 		seed,
@@ -3395,7 +4932,9 @@ function publicState(state, settings) {
 		fightNo,
 		raidNo,
 		examined,
-		settings
+		fight: fight ?? null,
+		settings,
+		news
 	};
 }
 function makeHandler(services) {
@@ -3430,12 +4969,16 @@ function makeHandler(services) {
 		for (let attempt = 0; attempt < 4; attempt++) {
 			const loaded = await services.load(player, requestId);
 			if (!loaded.ok) return loaded.why === "busy" ? reply(503, { error: "We couldn't reach your clan just now." }) : reply(400, { error: "That couldn't be read." });
-			const { seed, version, state, replay } = loaded.value;
+			const { seed, version, state, replay, enabled, news } = loaded.value;
+			if (!enabled) return reply(403, {
+				error: "Clan Quest is not switched on yet.",
+				off: true
+			});
 			if (replay) return reply(200, {
 				ok: true,
 				replayed: true,
 				seed,
-				state: state && publicState(state, settings),
+				state: state && publicState(state, settings, news),
 				result: replay
 			});
 			const applied = applyAction(state, action, {
@@ -3454,14 +4997,14 @@ function makeHandler(services) {
 					why: applied.why,
 					say: applied.say,
 					seed,
-					state: current && current.ok && current.state ? publicState(current.state, settings) : null
+					state: current && current.ok && current.state ? publicState(current.state, settings, news) : null
 				});
 			}
 			if (!applied.changed || !applied.state) return reply(200, {
 				ok: true,
 				replayed: false,
 				seed,
-				state: applied.state && publicState(applied.state, settings),
+				state: applied.state && publicState(applied.state, settings, news),
 				result: applied.result
 			});
 			const saved = await services.save(player, version, requestId, action.type, applied.state, applied.result);
@@ -3470,7 +5013,7 @@ function makeHandler(services) {
 				ok: true,
 				replayed: false,
 				seed,
-				state: publicState(applied.state, settings),
+				state: publicState(applied.state, settings, news),
 				result: applied.result
 			});
 		}

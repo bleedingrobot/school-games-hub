@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { applyAction, parseAction, type Action, type Applied, type Context, type OpenFight, type ServerState } from './actions';
 import { botOrders } from './bot';
@@ -372,5 +374,31 @@ describe('random play never breaks the rules', () => {
         expect(m.level).toBeLessThanOrEqual(CONFIG.maxLevel);
       }
     }
+  });
+});
+
+describe('the midnight job agrees with the night\'s rest the server gives', () => {
+  // supabase/tests/database/clans_fights.test.sql runs the job on the same clan and checks the same things.
+  it('gives a clan nobody opened the same rest, once, and moves it to today\'s day', () => {
+    const s = created();
+    s.fightsLeft = 3;
+    s.clan.wakesToday = 2;
+    for (const m of s.clan.members) { m.knockedOut = true; m.hp = 0; m.sp = 0; }
+    const e = s.clan.empire!;
+    Object.assign(e, { energyUsed: 50, raidsToday: 1, kingdomRaidsToday: 1, raidedToday: ['x'] });
+    const day = ok(s, { type: 'load' }, { today: DAY0 + 3 }).state;
+    expect(day.day).toBe(4);
+    expect(day.fightsLeft).toBe(CONFIG.fightsPerDay);
+    expect(day.clan.wakesToday).toBe(0);
+    expect(day.clan.members.every((m) => !m.knockedOut && m.hp === m.maxHp && m.sp === m.maxSp)).toBe(true);
+    expect(day.clan.empire).toMatchObject({ day: 4, energyUsed: 0, raidsToday: 0, kingdomRaidsToday: 0, raidedToday: [] });
+    // Once the job (or the first visit) has moved the clan to today, the server finds nothing more to do.
+    const again = applyAction(day, { type: 'load' }, ctx({ today: DAY0 + 3 }));
+    expect(again.ok && again.changed).toBe(false);
+  });
+
+  it('gives the number of fights a day that the database job gives', () => {
+    const sql = readFileSync(resolve(__dirname, '../../supabase/migrations/20261018001900_clans_fights.sql'), 'utf8');
+    expect(sql).toMatch(new RegExp(`clan_fights_per_day\\(\\)[^$]*\\$\\$ select ${CONFIG.fightsPerDay} \\$\\$`));
   });
 });
