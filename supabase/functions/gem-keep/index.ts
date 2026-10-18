@@ -2652,22 +2652,24 @@ function twoTenths(key, label, ok, sign, named, aLo, aHi) {
 }
 const addFamilies = [
 	twoTenths("addten:add", "Adding tenths (1.3 + 0.2)", (a, b) => dig(a) > 0 && dig(b) > 0 && dig(a) + dig(b) < 10 && a + b <= 49, "+", (a, b) => ({
-		"lined the second number up with the ones": a / 10 + b,
-		"lined it up with the hundredths": a / 10 + b / 100
+		"forgot the point": a + b,
+		"put the point in the hundredths place": (a + b) / 100
 	}), 1, 49),
 	twoTenths("addten:carry", "Adding tenths that make a whole (0.7 + 0.5)", (a, b) => dig(a) > 0 && dig(b) > 0 && dig(a) + dig(b) >= 10 && a + b <= 59, "+", (a, b) => ({
 		"wrote the tenths total after the point": Number(`${ones(a) + ones(b)}.${dig(a) + dig(b)}`),
 		"forgot to carry the ten tenths": ones(a) + ones(b) + (dig(a) + dig(b) - 10) / 10,
-		"carried to the wrong place": ones(a) + ones(b) + (dig(a) + dig(b)) / 10
+		"carried to the wrong place": ones(a) + ones(b) + (dig(a) + dig(b)) / 10,
+		"forgot the point": a + b
 	}), 1, 49),
 	twoTenths("addten:take", "Taking away tenths (1.5 − 0.2)", (a, b) => a > b && dig(b) > 0 && dig(b) <= dig(a) && a - b >= 1, "−", (a, b) => ({
 		"added instead": (a + b) / 10,
-		"lined the second number up with the ones": a / 10 - b
+		"forgot the point": a - b
 	}), 2, 49),
 	twoTenths("addten:borrow", "Taking away tenths across a whole (1.2 − 0.5)", (a, b) => a > b && dig(b) > dig(a) && a - b >= 1 && a <= 49, "−", (a, b) => ({
 		"took the smaller tenths digit from the bigger": ones(a) - ones(b) + Math.abs(dig(a) - dig(b)) / 10,
 		"did not take one off the whole after borrowing": (a - b) / 10 + 1,
-		"added instead": (a + b) / 10
+		"added instead": (a + b) / 10,
+		"forgot the point": a - b
 	}), 2, 49),
 	oneKey("addten:whole", "A whole number and tenths (3 + 0.4, 5 − 0.3)", ADD_TAGS, 3, (_k, r) => [
 		int(r, 1, 9),

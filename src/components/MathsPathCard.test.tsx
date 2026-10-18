@@ -53,9 +53,9 @@ describe('My maths path on the home page', () => {
   });
 
   it('shows how many skills are secure, where they are, and no year levels', async () => {
-    show(on(), secure(['facts-10', 'dbl-half-10']));
+    show(on(), secure(['facts-10', 'dbl-half-10', 'ten-and']));
     expect(await screen.findByRole('heading', { name: /My maths path/ })).toBeInTheDocument();
-    expect(screen.getByText(`2 of ${built.length}`)).toBeInTheDocument();
+    expect(screen.getByText(`3 of ${built.length}`)).toBeInTheDocument();
     expect(screen.getByText(/skills secure/)).toBeInTheDocument();
     expect(screen.getByText(/You are here:/).parentElement).toHaveTextContent('Number facts to 20');
     expect(document.body.textContent).not.toMatch(/Year \d/);
@@ -63,7 +63,7 @@ describe('My maths path on the home page', () => {
 
   it('opens into the whole path, with the tables inside the times-table skills', async () => {
     const user = userEvent.setup();
-    show(on(), secure(['facts-10', 'dbl-half-10', 'facts-20', 'dbl-half-20']));
+    show(on(), secure(['facts-10', 'dbl-half-10', 'ten-and', 'facts-20', 'dbl-half-20']));
     const open = await screen.findByRole('button', { name: 'See my whole path' });
     expect(open).toHaveAttribute('aria-expanded', 'false');
     await user.click(open);
@@ -81,7 +81,7 @@ describe('My maths path on the home page', () => {
     const user = userEvent.setup();
     const two = built.find((s) => s.id === 'tables-2-5-10')!;
     const only2 = two.keys.filter((k) => /^mul:(\d+)x(\d+)$/.test(k) && k.startsWith('mul:2x')).map((k) => ({ ...newStats(k), attempts: 3, correct: 3, box: 3 }));
-    show(on(), [...secure(['facts-10', 'dbl-half-10', 'facts-20', 'dbl-half-20']), ...only2]);
+    show(on(), [...secure(['facts-10', 'dbl-half-10', 'ten-and', 'facts-20', 'dbl-half-20']), ...only2]);
     await user.click(await screen.findByRole('button', { name: 'See my whole path' }));
     const list = screen.getAllByLabelText('Tables in this skill')[0];
     const items = within(list).getAllByRole('listitem');
@@ -143,13 +143,13 @@ describe('My maths path on the home page', () => {
     it('says it once they get a skill secure, and goes away when they tap Great', async () => {
       localStorage.setItem('maths-path-seen:student-1', 'facts-10');
       const user = userEvent.setup();
-      show(on(), secure(['facts-10', 'dbl-half-10', 'facts-20']));
+      show(on(), secure(['facts-10', 'dbl-half-10', 'ten-and', 'facts-20']));
       const message = await screen.findByRole('status');
       expect(message).toHaveTextContent('You moved up!');
       expect(message).toHaveTextContent('Doubles and halves to 10 and more');
       await user.click(screen.getByRole('button', { name: 'Great!' }));
       expect(screen.queryByText(/You moved up/)).not.toBeInTheDocument();
-      expect(localStorage.getItem('maths-path-seen:student-1')).toBe('facts-10,dbl-half-10,facts-20');
+      expect(localStorage.getItem('maths-path-seen:student-1')).toBe('facts-10,dbl-half-10,ten-and,facts-20');
     });
 
     it('names a single skill', async () => {
