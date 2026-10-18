@@ -279,6 +279,17 @@ export class BandedPack implements SkillPack {
   nextQuestion(ctx: QuestionContext): Question | null {
     const picked = pickFromPools(this.poolsFor(ctx.level ?? 1), ctx, this.records, this.memory, this.random);
     if (!picked) return null;
+    return this.questionFor(picked.key, picked.band, ctx);
+  }
+
+  /** Whether this pack owns a mastery key. */
+  owns(key: string): boolean {
+    return this.familyOfKey.has(key);
+  }
+
+  /** The question for a chosen key (the picking was done by the caller, e.g. auto mode). */
+  questionFor(key: string, band: Question['band'], ctx: Pick<QuestionContext, 'multipleChoice'> = {}): Question {
+    const picked = { key, band };
     const family = this.familyOfKey.get(picked.key)!;
     // A family's roll should always make a question; try a few times in case one doesn't.
     for (let tries = 0; tries < 20; tries++) {

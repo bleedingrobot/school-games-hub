@@ -87,6 +87,17 @@ Every teacher focus has a start time and an end time. No timer or scheduled job 
 - **Placement, so a Year 6 student doesn't start on bonds to 10.** A new student gets a short placement check of about 10 questions. It jumps up the ladder while they answer right and quickly, and steps back when they don't. They start just below where they stopped. Until they've done it, they start at a point set by their class's year level.
 - **No going backwards in records.** A student who forgets ×7 gets more ×7 review, but their place on the ladder doesn't drop. This avoids the "I went down a level" feeling.
 
+## 5b. Students see how far through they are (James, 18 Oct 2026)
+
+Kids can see their own progress along the ladder, not just a score.
+
+- **What they see:** a simple path or bar along the ladder, with each skill as a stop. Skills they've got secure are filled in, the one they're on now is highlighted ("You are here"), and the rest are greyed. A line says how far along they are ("12 of 30 skills secure").
+- **Where:** on the dashboard (a small bar that opens the full path) and as a short "you moved up!" message when they pass a skill, in the style of the other achievements.
+- **Only their own path.** No one else's progress is shown, and no ranks. Times-table skills open into the tables inside them (×3, ×4, ×8).
+- **Teacher focus doesn't hide it.** While a teacher focus is running, the path still shows where the student is on the full ladder, with the focus skill marked "Your teacher's pick".
+- **How it is worked out:** one shared function (`ladderProgress(stats)`) gives the skill they're on, which skills are secure, and a percentage, using the same 70% rule as auto. It is built in F.1 so every game and screen gets the same answer; the screens come in F.4 (when auto covers the whole ladder) and F.7.
+- **Wording:** years are never shown to students ("Year 3 skill" would label them). Skills just have names.
+
 ## 6. Classes and groups
 
 - **Tables:**
@@ -162,7 +173,7 @@ None of this is code, but each item has to be done first:
 1. **F.1 Skill engine:** the new times-table order (section 12), the skill ladder in config, generalised fact keys, and the first new fact skills (bonds to 10 and 20, doubles, halves). No database changes. Checked in the Gem Keep preview.
 2. **F.2 Schools and classes:** `schools`, `school_domains`, `profiles.school_id` (Douglas Park as school 1), classes, class teachers, members, join codes, the school admin role, `my_school()` in every row rule, and settings moved per class. Tests for cross-school and cross-class reads.
 3. **F.3 Maths focus and groups:** groups inside classes, focus rows with start and end times, `my_maths_focus()`, the student choice switch, the teacher's Set focus and Running focuses screens, the student note, and Gem Keep and the space game reading the focus.
-4. **F.4 Auto everywhere:** the whole ladder, placement check, and starting points by year level.
+4. **F.4 Auto everywhere:** the whole ladder, placement check, starting points by year level, and the student progress path (section 5b).
 5. **F.5 Generated skills:** place value, rounding (with the decimal point key), BEDMAS, and question-type records.
 6. **F.6 Fractions, decimals and percentages:** the new skills, text answers for multiple choice, and wrong choices made from common mistakes.
 7. **F.7 Teacher views:** skill map and focus history.

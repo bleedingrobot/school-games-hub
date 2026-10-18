@@ -26,6 +26,12 @@ const TABLES = [
 * become review. Edit freely; levels not listed use the last step. `upTo` is the biggest
 * number any fact uses in that step (default 12): the first levels stop at × 10 so they're
 * super easy (James, 16 Oct 2026).
+*
+* The order follows the NZ Curriculum families (James, 18 Oct 2026): 2/5/10, then 3/4/8,
+* then 6/9, then 7, then 11/12. It used to put ×8 with ×6 and ×7 with ×9. Level numbers are
+* unchanged, so a student part-way through the old order keeps their level; the facts they
+* already know are in their records, so they show up as review and the new tables as focus.
+* Fact records are keyed by the fact ("mul:6x7"), not by the step, so none are lost.
 */
 const CAMPAIGN_STEPS = [
 	{
@@ -39,15 +45,19 @@ const CAMPAIGN_STEPS = [
 	},
 	{
 		levels: [3, 4],
-		add: [3, 4]
+		add: [
+			3,
+			4,
+			8
+		]
 	},
 	{
 		levels: [5, 6],
-		add: [6, 8]
+		add: [6, 9]
 	},
 	{
 		levels: [7, 8],
-		add: [7, 9]
+		add: [7]
 	},
 	{
 		levels: [9, 10],
@@ -243,8 +253,8 @@ function factWeight(stats) {
 	const wrongShare = stats.attempts ? (stats.attempts - stats.correct) / stats.attempts : 0;
 	return BOX_WEIGHTS[Math.min(stats.box, BOX_WEIGHTS.length - 1)] * (1 + wrongShare);
 }
-function weightedPick(keys, stats, random) {
-	const weights = keys.map((k) => factWeight(stats.get(k)));
+function weightedPick(keys, stats, random, extra) {
+	const weights = keys.map((k) => factWeight(stats.get(k)) * (extra?.(k) ?? 1));
 	let roll = random() * weights.reduce((a, b) => a + b, 0);
 	for (let i = 0; i < keys.length; i++) {
 		roll -= weights[i];
@@ -263,7 +273,7 @@ function pickFact(ctx, stats, memory, random) {
 * The same picking rules over any pools of keys (the other skill packs build their own
 * pools from difficulty bands). Returns null when every pool is empty.
 */
-function pickFromPools(pools, ctx, stats, memory, random) {
+function pickFromPools(pools, ctx, stats, memory, random, extraWeight) {
 	const allowed = new Set([
 		...pools.focus,
 		...pools.review,
@@ -296,7 +306,7 @@ function pickFromPools(pools, ctx, stats, memory, random) {
 		const fresh = keys.filter((k) => !recent.has(k));
 		if (fresh.length) keys = fresh;
 		choice = {
-			key: weightedPick(keys, stats, random),
+			key: weightedPick(keys, stats, random, extraWeight),
 			band
 		};
 	}
@@ -439,6 +449,18 @@ var TimesTables = class {
 	nextQuestion(ctx) {
 		const picked = pickFact(ctx, this.records, this.memory, this.random);
 		if (!picked) return null;
+		return this.questionFor(picked.key, picked.band, ctx);
+	}
+	/** Whether this pack owns a mastery key. */
+	owns(key) {
+		return parseFactKey(key) !== null;
+	}
+	/** The question for a chosen fact (the picking was done by the caller, e.g. auto mode). */
+	questionFor(key, band, ctx = {}) {
+		const picked = {
+			key,
+			band
+		};
 		const fact = parseFactKey(picked.key);
 		const [x, y] = this.random() < .5 ? [fact.a, fact.b] : [fact.b, fact.a];
 		const product = x * y;

@@ -92,9 +92,9 @@ describe('which facts can be asked', () => {
     expect(pools.stretch).not.toContain('mul:2x3'); // already a ×2 fact
   });
 
-  it('level 3: focus is ×3 and ×4, review is the earlier tables', () => {
+  it('level 3: focus is ×3, ×4 and ×8, review is the earlier tables', () => {
     const pools = poolsFor({ level: 3 });
-    expect(new Set(pools.focus)).toEqual(factsIn([3, 4]));
+    expect(new Set(pools.focus)).toEqual(factsIn([3, 4, 8]));
     expect(pools.review).toContain('mul:5x7');
     expect(pools.review).not.toContain('mul:3x5'); // a ×3 fact, so it's focus
     expect(pools.stretch).toContain('mul:6x7');
@@ -319,8 +319,8 @@ describe('the level a student is ready for (games with no campaign)', () => {
       [...factsIn(tables)].filter((k) => parseFactKey(k)!.b <= upTo).map((key) => ({ key, attempts: 3, correct: 3, avgMs: 2000, box: 3, lastSeen: 1, quickDays: [] }));
     expect(readyLevel([])).toBe(1);
     expect(readyLevel(secure([2, 5, 10], 10))).toBe(3);
-    expect(readyLevel([...secure([2, 5, 10], 10), ...secure([3, 4])])).toBe(5);
+    expect(readyLevel([...secure([2, 5, 10], 10), ...secure([3, 4, 8])])).toBe(5);
     // Switched-off tables don't hold anyone back.
-    expect(readyLevel(secure([2, 5, 10], 10), [2, 5, 10, 6, 8])).toBe(5);
+    expect(readyLevel(secure([2, 5, 10], 10), [2, 5, 10, 6, 9])).toBe(5);
   });
 });

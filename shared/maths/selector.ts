@@ -111,8 +111,11 @@ export function factWeight(stats: FactStats | undefined): number {
   return BOX_WEIGHTS[Math.min(stats.box, BOX_WEIGHTS.length - 1)] * (1 + wrongShare);
 }
 
-function weightedPick(keys: string[], stats: Map<string, FactStats>, random: () => number): string {
-  const weights = keys.map((k) => factWeight(stats.get(k)));
+/** Optionally scales how likely a key is to be picked (on top of its box and mistakes). */
+export type KeyWeight = (key: string) => number;
+
+function weightedPick(keys: string[], stats: Map<string, FactStats>, random: () => number, extra?: KeyWeight): string {
+  const weights = keys.map((k) => factWeight(stats.get(k)) * (extra?.(k) ?? 1));
   let roll = random() * weights.reduce((a, b) => a + b, 0);
   for (let i = 0; i < keys.length; i++) {
     roll -= weights[i];
@@ -144,6 +147,7 @@ export function pickFromPools(
   stats: Map<string, FactStats>,
   memory: SessionMemory,
   random: () => number,
+  extraWeight?: KeyWeight,
 ): { key: string; band: Band } | null {
   const allowed = new Set([...pools.focus, ...pools.review, ...pools.stretch]);
   if (allowed.size === 0) return null;
@@ -168,7 +172,7 @@ export function pickFromPools(
     const recent = new Set(memory.recent.slice(-AVOID_RECENT));
     const fresh = keys.filter((k) => !recent.has(k));
     if (fresh.length) keys = fresh;
-    choice = { key: weightedPick(keys, stats, random), band };
+    choice = { key: weightedPick(keys, stats, random, extraWeight), band };
   }
   memory.recent = [...memory.recent, choice.key].slice(-10);
   return choice;

@@ -113,6 +113,17 @@ export class TimesTables implements SkillPack {
   nextQuestion(ctx: QuestionContext): Question | null {
     const picked = pickFact(ctx, this.records, this.memory, this.random);
     if (!picked) return null;
+    return this.questionFor(picked.key, picked.band, ctx);
+  }
+
+  /** Whether this pack owns a mastery key. */
+  owns(key: string): boolean {
+    return parseFactKey(key) !== null;
+  }
+
+  /** The question for a chosen fact (the picking was done by the caller, e.g. auto mode). */
+  questionFor(key: string, band: Question['band'], ctx: QuestionContext = {}): Question {
+    const picked = { key, band };
     const fact = parseFactKey(picked.key)!;
     // Both orders of the fact get asked.
     const [x, y] = this.random() < 0.5 ? [fact.a, fact.b] : [fact.b, fact.a];
