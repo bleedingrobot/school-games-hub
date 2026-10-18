@@ -31,9 +31,10 @@ export function Sprite({ tile, scale = 4, colour = ANSI.green, label, className 
 export const monsterTile = (m: Pick<Monster, 'name' | 'id'>): Tile =>
   m.id.startsWith('dragon-') ? DRAGON_TILE : m.id.startsWith('master-') ? MASTER_TILES[Number(m.id.slice(7)) - 2] ?? HERO_TILE : MONSTER_TILES[m.name] ?? DEFAULT_MONSTER_TILE;
 
-export function MonsterSprite({ monster, scale = 6 }: { monster: Pick<Monster, 'name' | 'id' | 'level'>; scale?: number }) {
+/** `decorative` when the name is written right beside it, so a screen reader does not say it twice. */
+export function MonsterSprite({ monster, scale = 6, decorative = false }: { monster: Pick<Monster, 'name' | 'id' | 'level'>; scale?: number; decorative?: boolean }) {
   const dragon = monster.id.startsWith('dragon-');
-  return <Sprite tile={monsterTile(monster)} scale={scale} colour={dragon ? ANSI.red : colourForLevel(monster.level)} label={monster.name} />;
+  return <Sprite tile={monsterTile(monster)} scale={scale} colour={dragon ? ANSI.red : colourForLevel(monster.level)} label={decorative ? undefined : monster.name} />;
 }
 
 export const HeroSprite = ({ heroClass, scale = 6 }: { heroClass?: HeroClass; scale?: number }) => (

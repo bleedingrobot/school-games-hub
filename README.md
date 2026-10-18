@@ -177,6 +177,18 @@ James's family card game, for 2–4 players: against 1–3 bots or with classmat
 
 **Hidden cards (why nobody can see anyone else's hand):** in a classmates game the whole game (the shuffled stack and every hand) is in a database table students can't read at all. Each player has their own small row holding only what they're allowed to know, and the database only lets them read their own. The server shuffles with secure randomness and referees every move. Bot games play in the browser from a seed the server stamps, and the server replays them before saving (like the space game); a student with developer tools could find the bots' cards, which is why bot games only earn small, capped points.
 
+## Dragon Maths (the fantasy adventure)
+
+A game in the style of the old door game *Legend of the Red Dragon*: a few forest fights a day, a village (shop, healer, bank, inn, training grounds, arena), a master to beat for each level, and the Red Dragon at the end. Maths helps you win, and **a wrong answer never takes anything away**. The rules and every number are in [docs/LORD-RULES.md](docs/LORD-RULES.md); the design, the simulator results and every decision are in [docs/LORD-PLAN.md](docs/LORD-PLAN.md).
+
+- **Seasons:** five weeks, then everyone starts again. Stars, the Hall of Heroes and achievements stay.
+- **Teacher switch:** the game is off until a teacher switches it on from the Teacher page (it also pauses the season for holidays, and sets forest fights a day).
+- **Fairness:** the hero is kept by the `lord` server function. The browser plays the fight, then the server plays it again from the same seed before paying anything, and marks each maths answer itself.
+- **Hint:** every question has one hint button (two wrong choices greyed out, or "between 40 and 60"). A right answer after a hint earns about half the bonus. The hint is added in the shared question box, off unless a game asks for it, so other games are unchanged.
+- **How to play** is in the game: the `?` key, a button in the village, or a fold-out on the class choice.
+- **Keyboard and screen readers:** everything works with Tab, Enter and Escape. The letter keys (F, S, A…) are extras and can be switched off in the village. Fights and questions are read out; the pictures are decorative or named. It respects reduced motion.
+- **Pictures:** Kenney's 1-Bit Pack (CC0, [licence copy](src/games/lord/KENNEY-LICENSE.txt)). Headings use VT323 (SIL Open Font Licence, [licence copy](src/games/lord/VT323-OFL.txt)), a small file kept in this repo; nothing comes from outside.
+
 ## The teacher view
 
 Teachers see a **Teacher** link in the top bar (students don't, and the database refuses them even if they type the address). It has:
@@ -274,10 +286,13 @@ src/              the website
   space/          keeping a space game with classmates up to date
   games/card101/  101: the table, cards, scoring show, How to play, bot and classmates screens
   card101/        keeping a 101 game with classmates up to date (your own seat only)
+  games/lord/     Dragon Maths: the village and fight screens, How to play, pictures, the trial backend
+  maths/          the shared question box (with the optional hint button)
 public/stockfish/ the Stockfish chess engine files and their licence
 shared/           game rules shared with the server (chess and checkers rules, deciding results, refereeing friend games)
   space/          the space game's rules engine, boards, bots, galaxy codes, space facts and simulation
   card101/        101's rules engine, scoring, what each player may see, bots, saving, timers and simulation
+  lord/           Dragon Maths' rules engine, events, computer heroes, proof checking, the `lord` function's logic and simulator
 supabase/         database setup (migrations), its tests, server functions (save-bot-game, multiplayer, space-game, card-game, gem-keep), local settings
 scripts/          builds the server functions into single files
 docs/             the plan and the original brief
@@ -362,6 +377,7 @@ Then add its number to the `migration repair` note at the bottom of [docs/PLAN.m
 ## Licences
 
 - **Stockfish** (the chess engine) is GPL version 3. Its licence and a link to its source code sit next to it in [public/stockfish/](public/stockfish/NOTICE.md). Keep them there if Stockfish is updated.
+- **Dragon Maths** pictures are Kenney's 1-Bit Pack (CC0) and its headings use **VT323** (SIL Open Font Licence 1.1). Both licence copies sit next to the files in [src/games/lord/](src/games/lord/). The rules are adapted from *Legend of the Red Dragon* (Seth Able Robinson), as ported in *LORD.ts* (talisto, GPL-3); no code or text was copied.
 - **chess.js** is BSD-2-Clause. The checkers rules and bots are our own code. **Chess piece pictures** are Colin M.L. Burnett's "cburnett" set, GPL ([notice](src/games/chess/pieces/NOTICE.md)).
 
 ## Privacy and safety

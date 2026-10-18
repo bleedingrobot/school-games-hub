@@ -320,7 +320,7 @@ function mark(c: Ctx, raw: unknown, moment: MomentId, only?: string) {
   if (raw === undefined || raw === null) return { result: 'wrong' as Result, skipped: true, answers: [] as (FactAnswer & { pack: string })[], notes: [] as string[] };
   const m = markProof(raw, moment, c.w.hero.level, c.now, only);
   if (!m.ok) return { result: 'wrong' as Result, skipped: false, answers: [], notes: [m.problem] };
-  return { result: (m.correct ? 'right' : 'wrong') as Result, skipped: false, answers: [m.answer], notes: [] as string[] };
+  return { result: (m.correct ? (m.hinted ? 'hint' : 'right') : 'wrong') as Result, skipped: false, answers: [m.answer], notes: [] as string[] };
 }
 
 // ---------- The actions ----------
@@ -363,7 +363,7 @@ function event(c: Ctx): Done | Refuse {
   let notes: string[] = [];
   if (e.maths && !c.req.walkOn) {
     const m = mark(c, c.req.proof, 'treasure', e.maths.topic);
-    right = m.result === 'right';
+    right = m.result !== 'wrong';
     answers = m.answers;
     notes = m.notes;
   }
@@ -562,7 +562,7 @@ function bank(c: Ctx): Done | Refuse {
   const extraGold = interestFor(hero.bank, m.result);
   return {
     hero: { ...hero, bank: hero.bank + extraGold }, extra: { ...extra, interestDay: c.today }, answers: m.answers, notes: m.notes,
-    summary: { interest: extraGold }, result: { interest: extraGold, right: m.result === 'right' },
+    summary: { interest: extraGold }, result: { interest: extraGold, right: m.result !== 'wrong' },
   };
 }
 
@@ -576,7 +576,7 @@ function inn(c: Ctx): Done | Refuse {
     const gold = riddleGold(hero.level, m.result);
     return {
       hero: { ...hero, gold: hero.gold + gold }, extra: { ...extra, riddleDay: c.today }, answers: m.answers, notes: m.notes,
-      summary: { riddle: m.result, gold }, result: { gold, right: m.result === 'right' },
+      summary: { riddle: m.result, gold }, result: { gold, right: m.result !== 'wrong' },
     };
   }
   if (game === 'guess-start') {

@@ -15,6 +15,8 @@ import type { FightAction, FightState, Hero, HeroClass } from '../../../shared/l
 import { useAuth } from '../../auth/AuthContext';
 import { createServerBackend, type LordBackend, type LordLoad, type PackFact } from '../../data/lord';
 import { FightScreen } from './Fight';
+import { setShortcuts, shortcutsOn } from './shortcuts';
+import { HowToPlay, HowToPlayBody } from './HowToPlay';
 import { Bank, ClassPick, Healer, HeroPage, Inn, Shop, Training, type PlaceProps, type Reply } from './Places';
 import { Arena, HallOfHeroes, NewsPage, Warriors } from './Social';
 import { HeroSprite, Icon, MonsterSprite } from './Sprite';
@@ -32,7 +34,7 @@ type FightContext =
 
 type Screen =
   | { name: 'village' }
-  | { name: 'shop' | 'healer' | 'bank' | 'inn' | 'training' | 'hero' | 'news' | 'tools' | 'class' | 'dragon' | 'arena' | 'warriors' | 'hall' }
+  | { name: 'shop' | 'healer' | 'bank' | 'inn' | 'training' | 'hero' | 'news' | 'tools' | 'class' | 'dragon' | 'arena' | 'warriors' | 'hall' | 'howto' }
   | { name: 'event'; eventId: string }
   | { name: 'encounter' }
   | { name: 'fight'; fight: FightState; actions: FightAction[]; fightId: string; ctx: FightContext };
@@ -199,6 +201,16 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     lastDay.current = state.today;
   }, [state?.today, state?.hero]);
 
+  // A new screen: if the button just pressed has gone, put the keyboard on the new screen's heading, not back at the top of the page.
+  useEffect(() => {
+    const active = document.activeElement;
+    if (active && active !== document.body && document.body.contains(active)) return;
+    const heading = document.querySelector<HTMLElement>('.lord section h2, .lord-village h2');
+    if (!heading) return;
+    heading.tabIndex = -1;
+    heading.focus({ preventScroll: true });
+  }, [screen.name, !!hero]);
+
   // Escape goes back to the village from any place.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -257,6 +269,10 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
             }
           }}
         />
+        <details className="lord-fold">
+          <summary>How to play</summary>
+          <HowToPlayBody />
+        </details>
         {!choosing && <button type="button" className="lord-btn" onClick={() => setScreen({ name: 'village' })}>Keep my class</button>}
         {busy && <p className="lord-soft" role="status">One moment…</p>}
       </Frame>
@@ -415,6 +431,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     case 'arena': body = <Arena hero={hero} act={act} say={say} back={toVillage} busy={busy} />; break;
     case 'news': body = <NewsPage backend={backend} deeds={deeds} today={today} back={toVillage} />; break;
     case 'warriors': body = <Warriors backend={backend} back={toVillage} />; break;
+    case 'howto': body = <HowToPlay back={toVillage} />; break;
     case 'hall': body = <HallOfHeroes backend={backend} back={toVillage} />; break;
     case 'tools':
       body = backend.trial ? (
@@ -508,6 +525,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
         if (busyRef.current) return;
         if (k === 'f') void goForest();
         else if (k === 'd' && (canFaceDragon(hero) || state.dragon)) setScreen({ name: 'dragon' });
+        else if (k === '?' || k === '/') setScreen({ name: 'howto' });
         else if (k === 'x' && backend.trial) setScreen({ name: 'tools' });
         else { const p = PLACES.find((x) => x.key === k); if (p) { setNote(''); setScreen({ name: p.name } as Screen); } }
       }} />}
@@ -526,7 +544,7 @@ function VillageKeys({ onKey }: { onKey: (key: string) => void }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey || (e.target as HTMLElement | null)?.closest('input,select,textarea')) return;
-      if (document.querySelector('.question')) return;
+      if (document.querySelector('.question') || !shortcutsOn()) return;
       onKey(e.key.toLowerCase());
     };
     window.addEventListener('keydown', handler);
@@ -571,7 +589,7 @@ function StatusBar({ hero }: { hero: Hero }) {
 
 function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest, onDragon, onClass, today, tools }: {
   state: LordState; hero: Hero; note: string; waiting: number; busy: boolean; onRetry: () => void;
-  onPlace: (n: Place | 'tools') => void; onForest: () => void; onDragon: () => void; onClass: () => void; today: string; tools: boolean;
+  onPlace: (n: Place | 'tools' | 'howto') => void; onForest: () => void; onDragon: () => void; onClass: () => void; today: string; tools: boolean;
 }) {
   const check = canChallengeMaster(hero);
   const dragonReady = canFaceDragon(hero) || !!state.dragon;
@@ -616,6 +634,9 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
             <kbd>{p.key.toUpperCase()}</kbd> <strong>{p.label}</strong> <span>{p.blurb}</span>
           </button>
         ))}
+        <button type="button" className="lord-place-btn" onClick={() => onPlace('howto')}>
+          <kbd>?</kbd> <strong>How to play</strong> <span>Rules and tips</span>
+        </button>
         {tools && (
           <button type="button" className="lord-place-btn lord-place-btn--tools" onClick={() => onPlace('tools')}>
             <kbd>X</kbd> <strong>Test tools</strong> <span>For trying things out</span>
@@ -623,6 +644,19 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
         )}
       </div>
       <p className="lord-soft">Your weapon: {WEAPONS[hero.weapon].name}.</p>
+      <KeysSwitch />
     </section>
+  );
+}
+
+/** A switch for the letter keys, for people who find them in the way. Esc, Tab and Enter always work. */
+function KeysSwitch() {
+  const [on, setOn] = useState(shortcutsOn);
+  return (
+    <p className="lord-soft">
+      <label>
+        <input type="checkbox" checked={on} onChange={(e) => { setShortcuts(e.target.checked); setOn(e.target.checked); }} /> Letter-key shortcuts (F, S, A…). Turn off if keys get pressed by accident.
+      </label>
+    </p>
   );
 }

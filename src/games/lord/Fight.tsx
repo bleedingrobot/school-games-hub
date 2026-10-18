@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CLASSES, SKILL_NAMES } from '../../../shared/lord/data';
 import { canRun, skillsFor, stepFight } from '../../../shared/lord/engine';
 import type { FightAction, FightState } from '../../../shared/lord/types';
+import { shortcutsOn } from './shortcuts';
 import { HeroSprite, Icon, MonsterSprite } from './Sprite';
 import { SKILL_HELP, narrate } from './text';
 
@@ -45,9 +46,12 @@ export function FightScreen({ fight, onChange, onContinue, heroName = 'You' }: {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const k = e.key.toLowerCase();
       if (fight.over) {
-        if (k === 'enter' || k === 'c') onContinue();
+        // Enter on the focused Continue button already works; the letter key is the extra.
+        if (k === 'c' && shortcutsOn()) onContinue();
+        else if (k === 'enter' && !(e.target instanceof HTMLButtonElement)) onContinue();
         return;
       }
+      if (!shortcutsOn()) return;
       if (k === 'a') act({ type: 'attack' });
       else if (k === 'r' && canRun(fight)) act({ type: 'run' });
       else if (k >= '1' && k <= '9') {
@@ -70,7 +74,7 @@ export function FightScreen({ fight, onChange, onContinue, heroName = 'You' }: {
     <section className="lord-fight" aria-label={`Fight: ${fight.monster.name}`}>
       <div className="lord-fight__arena">
         <div className="lord-fight__foe">
-          <MonsterSprite monster={fight.monster} scale={dragon ? 9 : 7} />
+          <MonsterSprite monster={fight.monster} scale={dragon ? 9 : 7} decorative />
           <h2>{fight.monster.name}</h2>
           <Bar value={fight.monsterHp} max={fight.monster.hp} label="Monster" colour="var(--lord-red)" />
         </div>

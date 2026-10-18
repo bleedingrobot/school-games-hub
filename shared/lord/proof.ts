@@ -27,6 +27,8 @@ export interface Proof {
   given: number;
   /** Milliseconds to answer. */
   ms: number;
+  /** The pupil used the hint. Only ever lowers what a right answer earns, so it is safe to believe. */
+  hinted?: boolean;
 }
 
 type PackId = TopicId | ExtraTopicId;
@@ -51,7 +53,7 @@ function bandedPack(id: string): BandedPack | null {
 const isNumber = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
 
 export type Marked =
-  | { ok: true; correct: boolean; answer: FactAnswer & { pack: string } }
+  | { ok: true; correct: boolean; hinted: boolean; answer: FactAnswer & { pack: string } }
   | { ok: false; problem: string };
 
 /**
@@ -89,5 +91,5 @@ export function markProof(raw: unknown, moment: MomentId, heroLevel: number, now
     if (!made) return { ok: false, problem: 'proof-params' };
     correct = sameAnswer(p.given, made.answer);
   }
-  return { ok: true, correct, answer: { pack: p.pack, key: p.key, correct, ms, at: now } };
+  return { ok: true, correct, hinted: p.hinted === true, answer: { pack: p.pack, key: p.key, correct, ms, at: now } };
 }

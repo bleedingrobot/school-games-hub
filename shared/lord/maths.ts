@@ -81,4 +81,4 @@ export const NUMBER_GUESS_TRIES = 7;
 export const numberGuessPrize = (level: number, won: boolean): number => Math.round(tierPower(level) * (won ? 1 : 0.2));
 
 /** The inn's riddle of the day: a right answer pays well, a wrong one pays a little for trying. */
-export const riddleGold = (level: number, result: Result): number => friendly(tierPower(level) * (result === 'right' ? 1.5 : 0.3));
+export const riddleGold = (level: number, result: Result): number => friendly(tierPower(level) * (result === 'right' ? 1.5 : result === 'hint' ? 0.75 : 0.3));

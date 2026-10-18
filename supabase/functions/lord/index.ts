@@ -1315,7 +1315,7 @@ function dragonStageOptions(result) {
 const interestFor = (bank, result) => result === "right" ? Math.floor(bank * .05) : result === "hint" ? Math.floor(bank * .025) : 0;
 const numberGuessPrize = (level, won) => Math.round(tierPower(level) * (won ? 1 : .2));
 /** The inn's riddle of the day: a right answer pays well, a wrong one pays a little for trying. */
-const riddleGold = (level, result) => friendly(tierPower(level) * (result === "right" ? 1.5 : .3));
+const riddleGold = (level, result) => friendly(tierPower(level) * (result === "right" ? 1.5 : result === "hint" ? .75 : .3));
 //#endregion
 //#region shared/lord/sim.ts
 /** How often the simulated pupil answers a maths question right. */
@@ -4476,6 +4476,7 @@ function markProof(raw, moment, heroLevel, now, only) {
 	return {
 		ok: true,
 		correct,
+		hinted: p.hinted === true,
 		answer: {
 			pack: p.pack,
 			key: p.key,
@@ -4581,7 +4582,7 @@ function mark(c, raw, moment, only) {
 		notes: [m.problem]
 	};
 	return {
-		result: m.correct ? "right" : "wrong",
+		result: m.correct ? m.hinted ? "hint" : "right" : "wrong",
 		skipped: false,
 		answers: [m.answer],
 		notes: []
@@ -4665,7 +4666,7 @@ function event(c) {
 	let notes = [];
 	if (e.maths && !c.req.walkOn) {
 		const m = mark(c, c.req.proof, "treasure", e.maths.topic);
-		right = m.result === "right";
+		right = m.result !== "wrong";
 		answers = m.answers;
 		notes = m.notes;
 	}
@@ -5046,7 +5047,7 @@ function bank(c) {
 		summary: { interest: extraGold },
 		result: {
 			interest: extraGold,
-			right: m.result === "right"
+			right: m.result !== "wrong"
 		}
 	};
 }
@@ -5075,7 +5076,7 @@ function inn(c) {
 			},
 			result: {
 				gold,
-				right: m.result === "right"
+				right: m.result !== "wrong"
 			}
 		};
 	}

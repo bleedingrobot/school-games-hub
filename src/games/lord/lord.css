@@ -1,12 +1,20 @@
 /* Dragon Maths: a modern take on the old BBS door-game look. Dark page, the old 16 ANSI colours, box borders.
-   System monospace fonts only (nothing is downloaded). Fits 1366 x 640 and a phone. */
+   Body text is the system monospace font. Headings use VT323 (SIL Open Font Licence, VT323-OFL.txt), a 18 KB file that
+   ships in this repo, so nothing comes from outside. If it can't load, the system font is used. Fits 1366 x 640 and a phone. */
+@font-face {
+  font-family: 'VT323';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./vt323.woff2') format('woff2');
+}
 
 .lord {
   --lord-bg: #0b0b17;
   --lord-panel: #12122a;
   --lord-ink: #e4e4f0;
   --lord-soft: #9a9ab8;
-  --lord-line: #4a4acf;
+  --lord-line: #7373ff;
   --lord-green: #55ff55;
   --lord-cyan: #55ffff;
   --lord-red: #ff5555;
@@ -27,8 +35,9 @@
 }
 .lord *, .lord *::before, .lord *::after { box-sizing: border-box; }
 .lord :is(h1, h2, h3):not(.question__title) { margin: 0 0 6px; color: var(--lord-yellow); font-weight: 700; letter-spacing: 0.02em; }
-.lord h1 { font-size: 1.5rem; }
-.lord :is(h2):not(.question__title) { font-size: 1.25rem; }
+.lord :is(h1, h2):not(.question__title) { font-family: 'VT323', ui-monospace, 'Cascadia Mono', 'Courier New', monospace; font-weight: 400; letter-spacing: 0.03em; }
+.lord h1 { font-size: 2.1rem; }
+.lord h2:not(.question__title) { font-size: 1.7rem; }
 .lord h3:not(.question__title) { font-size: 1.05rem; color: var(--lord-cyan); }
 .lord p { margin: 0 0 8px; }
 .lord-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; border-bottom: 1px solid var(--lord-line); margin-bottom: 8px; padding-bottom: 4px; }
@@ -83,7 +92,8 @@
 .lord-shop { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
 .lord-shop li { display: grid; grid-template-columns: 52px 1fr auto auto minmax(170px, auto); align-items: center; gap: 10px; padding: 4px 8px; border: 1px solid #2a2a50; border-radius: 4px; }
 .lord-shop li.is-owned { border-color: var(--lord-green); }
-.lord-shop li.is-locked { opacity: 0.6; }
+/* Locked gear: only the picture is dimmed, so the words keep their contrast. */
+.lord-shop li.is-locked .lord-sprite { opacity: 0.5; }
 .lord-shop__name { color: var(--lord-yellow); }
 .lord-shop li > :last-child { white-space: nowrap; }
 .lord-master { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
@@ -138,4 +148,24 @@
   .lord-shop li { grid-template-columns: 40px 1fr auto; }
   .lord-shop li > :nth-child(n + 4) { grid-column: 2 / -1; }
   .lord-fight__arena { gap: 8px; }
+}
+
+.lord [tabindex="-1"]:focus { outline: none; }
+.lord-howto h3 {
+  margin: 14px 0 4px;
+}
+.lord-howto ul {
+  margin: 4px 0;
+  padding-left: 22px;
+}
+.lord-howto li {
+  margin: 4px 0;
+  line-height: 1.4;
+}
+.lord-fold {
+  margin: 12px 0;
+}
+.lord-fold summary {
+  cursor: pointer;
+  font-weight: 700;
 }

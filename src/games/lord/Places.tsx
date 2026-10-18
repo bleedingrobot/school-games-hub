@@ -29,7 +29,7 @@ export interface PlaceProps {
   busy: boolean;
 }
 
-function Place({ title, children, back, tile }: { title: string; children: ReactNode; back: () => void; tile?: keyof typeof ICON_TILES }) {
+export function Place({ title, children, back, tile }: { title: string; children: ReactNode; back: () => void; tile?: keyof typeof ICON_TILES }) {
   return (
     <section className="lord-place" aria-label={title}>
       <header className="lord-place__head">

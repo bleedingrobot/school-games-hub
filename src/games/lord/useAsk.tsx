@@ -29,6 +29,7 @@ interface Pending {
   packId: TopicId | ExtraTopicId;
   level: number;
   given: { value: number; ms: number } | null;
+  hinted: boolean;
   options: AskOptions;
   resolve: (result: Asked) => void;
 }
@@ -63,7 +64,7 @@ export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[
       const level = questionLevel(chosen, heroLevel);
       const question = pack.nextQuestion({ level });
       if (!question) return Promise.resolve(null);
-      return new Promise<Asked>((resolve) => setPending({ question, pack, packId: chosen, level, given: null, options, resolve }));
+      return new Promise<Asked>((resolve) => setPending({ question, pack, packId: chosen, level, given: null, hinted: false, options, resolve }));
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [heroLevel, facts],
@@ -80,6 +81,9 @@ export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[
       title={pending.options.title}
       note={pending.options.note}
       closeLabel={pending.options.closeLabel}
+      onHint={() => {
+        pending.hinted = true;
+      }}
       onClose={pending.options.closeLabel ? () => finish(null) : undefined}
       onSubmit={(answer, ms): AnswerResult & { answer: number } => {
         pending.given = { value: answer, ms };
@@ -90,7 +94,7 @@ export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[
         const given = pending.given ?? { value: Number.NaN, ms: 0 };
         finish({
           correct: r.correct,
-          proof: { pack: pending.packId, key: q.factKey, kind: q.kind, params: q.params, level: pending.level, given: given.value, ms: given.ms },
+          proof: { pack: pending.packId, key: q.factKey, kind: q.kind, params: q.params, level: pending.level, given: given.value, ms: given.ms, ...(pending.hinted ? { hinted: true } : {}) },
         });
       }}
     />

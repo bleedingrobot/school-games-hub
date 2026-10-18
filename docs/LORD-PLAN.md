@@ -3,7 +3,7 @@
 A daily-turns fantasy adventure for the hub, in the spirit of the 1990s BBS door game *Legend of the Red Dragon* (LORD). Visit a small village from a menu, go into the forest a few times a day, fight monsters, buy a better sword, beat your master to level up, and one day face the Red Dragon. **Maths is one of the tools that helps you win**: sizing up a monster, working out the healer's bill, counting change at the shop, cracking a riddle, a master's trial and the dragon fight.
 
 Written 17 October 2026 from James's brief ([prompts/lord-maths.md](prompts/lord-maths.md)) after reading [talisto/LORD.ts](https://github.com/talisto/LORD.ts) (v1.4.6) and the hub's code on `main` and `monsters`.
-**Status: STARTED 18 Oct 2026 (Maths Monsters is on main): L.0 to L.5 done and tested. L.4 and L.5 are built but NOT applied or deployed: they stop for James (see "L.4 results", "L.5 results" and prompts/lord-golive.md). Next is L.6 (how to play, accessibility, slow-Chromebook check, hint button, final docs), only after James has tried it with the class. Branch `dragon-maths`.** James answered every question in section 14 (all my picks, except: start only **after Maths Monsters is live**).
+**Status: STARTED 18 Oct 2026 (Maths Monsters is on main): L.0 to L.5 done and tested. L.4 and L.5 are built but NOT applied or deployed: they stop for James (see "L.4 results", "L.5 results" and prompts/lord-golive.md). L.4 and L.5 went live 18 Oct; **L.6 (how to play, accessibility, slow-Chromebook check, hint button, VT323 font, final docs) built and tested 19 Oct, see "L.6 results".** Branch `dragon-maths`.** James answered every question in section 14 (all my picks, except: start only **after Maths Monsters is live**).
 **Updated 18 Oct 2026** after reading every file of LORD.ts (main game, all 13 add-ons, scripts, tests, change log): **5-week seasons** with a fresh start each time, **romance and orphans kept out for good**, rule-table fixes, and a simulator check of the pace. See section 15.
 
 ## The short version
@@ -414,6 +414,50 @@ What the simulator told us, and what changed because of it:
 ## Stage L.4 and L.5 went live (18 Oct 2026)
 
 Both migrations (`20261018001600`, `20261018001700`) were applied to the live database and the `lord` function was deployed, then the branch was merged to `main`. Checked from outside: the function answers 401 without a sign-in; the seven Dragon Maths tables and the new reading functions are closed to signed-out visitors (42501); 8 achievements exist, 0 heroes, the game switch is OFF, and the 199 existing scored games were untouched. `DRAGON_MATHS_ON` is still false (no dashboard card). Next: James tries it as a teacher, then switches it on from the teacher page.
+
+## L.6 results (19 Oct 2026): how to play, the hint, accessibility, a slow-Chromebook check, the font and the docs
+
+**James's answer first:** the class has tried Dragon Maths and nothing felt wrong, so no changes came out of the class trial. I merged `main` into this branch first (clean).
+
+**What was built**
+
+- **How to play.** A page in plain words: the story, a day in the game, every place in the village, the dragon, where the maths comes in (a wrong answer never takes anything away, no timer, one hint), the keys, and seasons. Open it with the **?** key, from a **How to play** button in the village, or from a fold-out on the class choice screen (so a new hero can read it first). The numbers in it come from the game's own constants, so it can't go out of date.
+- **The hint button.** The shared question box (`src/maths/QuestionModal.tsx`) now takes an optional `onHint`. **Nothing changes for any other game:** without it there is no button, and a test checks that. When a game asks for it, the button gives one clue per question (rules in LORD-RULES.md, "The hint"): two wrong choices greyed out, or "the answer is between 40 and 60". It is read out to screen readers and is fresh for the next question. If the box doesn't know the answer (a game whose server keeps it secret) the button is not shown. Dragon Maths turns it on for every question. The browser tells the server the hint was used (`hinted` on the proof); the server marks a right answer with a hint as `hint`, which the engine already knew how to pay (about half). The riddle gold for a hint was the same as for a wrong answer; it is now ×0.75 (right 1.5, wrong 0.3). A forest event counts a hinted right answer as right. The plan said "a short worked step"; there is no worked-step text in the packs, so the hint is the generic clue above, which works for every topic with no new content.
+- **Letter keys can be switched off.** A tick box in the village. Single letter keys (F, S, A…) can be pressed by accident by screen-reader and voice users, so they are now a choice (on to start). Tab, Enter and Escape always work. Kept on this browser only.
+- **VT323 font.** The licence is the SIL Open Font Licence 1.1 (free to ship). The rule in the README is "no outside fonts; everything the site loads comes from this repo", and a copy kept in the repo obeys it (18 KB, `src/games/lord/vt323.woff2`, licence copy beside it). It is used for the two heading levels only (a pixel font is hard to read in paragraphs); everything else stays the system font, and if the file can't load the system font is used. It only loads when Dragon Maths opens (its CSS is part of the lazy game chunk).
+- **README and licence notes** updated: a Dragon Maths section, the folders, and the Kenney and VT323 licences.
+
+**Accessibility pass (keyboard only, screen reader, reduced motion, contrast)**
+
+Checked in a real browser (Chromium at 1366 × 640) with the keyboard only, and with an automatic checker (axe, WCAG 2 A/AA and best practice) on: class choice, village, shop, healer, inn, hero page, how to play, news, arena, training grounds, the forest, a fight, and a question box with the hint open.
+
+- **Found and fixed:** (1) after pressing a button, the keyboard fell back to the top of the page, so a keyboard user had to Tab through everything again. The new screen's heading now gets the keyboard (only when the pressed button has gone, so it never steals focus from something the pupil is using). (2) Locked gear in the shop was dimmed with transparency, which dropped its words under the contrast limit; now only the picture is dimmed. (3) The box and button borders were 2.8:1 against the page; lightened to about 5:1 (the rule for parts of controls is 3:1). (4) The monster's name was read out twice in a fight (picture and heading); the picture is now marked as decoration there. (5) The letter keys could not be turned off (above). (6) In a finished fight, Enter pressed Continue twice (once from the focused button, once from the key); fixed.
+- **Already good:** every text colour is at least 6:1 on the dark page (most 13:1 or more); a thick yellow focus ring on every button; Tab order is the reading order; the question box takes focus and a keyboard user reaches the Hint button in two Tabs; fight text, hints and results are announced through live regions; the health bars are real meters with a name and a value; the dragon button's pulse and the health bar's slide switch off under *reduced motion* (checked: no animated element left); sparkle in the question box also stops. Zero axe violations on every screen after the fixes.
+- **Not tested:** a real screen reader (NVDA, JAWS, VoiceOver, ChromeVox). The checks above are the structure screen readers depend on, but nobody listened to it. If a school Chromebook with ChromeVox is handy, five minutes on the village, a fight and a question would be worth it.
+
+**Slow-Chromebook check.** A browser with the processor slowed 6 times and a slow school connection (1.6 Mbit/s, 150 ms delay), 1366 × 640:
+
+| | normal computer | 6× slower, slow network |
+|---|---|---|
+| Opening the game to "pick a class" | 3.7 s | 4.4 s |
+| Opening the shop | 17 ms | about 110 ms |
+| A key press in a fight (average / worst, over 22 to 25 presses) | 17 / 29 ms | 33 / 80 ms |
+| Longest "frozen" moment | 80 ms | 470 ms (while the page first loads) |
+| Memory used by the page | 8 MB | 6 MB |
+| Downloaded | 660 KB (this stand-alone test page carries a lot more than the live game does) | same |
+
+That is comfortable: clicks answer in well under a tenth of a second even on the slow setting, and the only long pause is the first load. The 120 monster pictures are one small sheet recoloured in code, so there is nothing heavy to draw. Not tested: a real Chromebook.
+
+**Tests:** typecheck clean; the Dragon Maths, question-box, shared-maths and engine tests pass (421). New tests: the hint rules (two wrong choices, never the answer, the stretch always holds the answer, decimals, money, same every time); the question box hint (off by default, once, tells the game once, greys choices, hidden when the answer is secret, fresh for the next question); a hinted proof is marked `hint`, a wrong one stays wrong, and a hint pays between right and wrong; the how-to-play page from the `?` key, the button and the class screen; the letter-key switch; focus after a button press; and a whole hinted riddle through the in-memory server (recorded as a hint or wrong, never right).
+
+**Not done, and why**
+
+- **Teacher's topic switches.** Still missing, and **this needs a database change** (the settings live in `app_settings`, and `teacher_set_lord()` would have to accept and check a list of topics, and the `lord` function would have to refuse a question from a switched-off topic). I stopped here as asked. All topics are on, as before. If you want it: a column on `app_settings`, a new version of `teacher_set_lord()` and `lord_settings()`, the function change, and a tick-list on the teacher page, about a stage's worth of small work.
+- **Sound.** Still none (it was "off by default in class" in the plan and never built). Not part of L.6.
+
+**Needs James before it matters (a deploy)**
+
+The hint is in the website and in the shared rules. **The live `lord` function does not know about hints yet**, because `shared/lord/server.ts` and `proof.ts` changed. Until the function is redeployed, a pupil's hinted right answer is marked as a plain right answer and earns the full bonus (nothing breaks, nobody is hurt, and a wrong answer is still wrong). To fix it: rebuild with `node scripts/build-lord.mjs` (already done, `supabase/functions/lord/index.ts`), then `npx supabase functions deploy lord --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api`. No database change is needed for the hint. I have not deployed anything, merged to `main` or applied anything.
 
 ## Credits to carry over
 

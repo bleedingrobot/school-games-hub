@@ -152,6 +152,73 @@ describe('Dragon Maths with a server keeping the hero', () => {
     expect(db.row!.hero.forestLeft).toBe(9);
   });
 
+  it('has a how-to-play page, on the ? key and as a button, and it is in the class choice too', async () => {
+    const user = userEvent.setup();
+    const { backend } = newGame();
+    renderGame(backend);
+    await screen.findByText(/Pick the kind of hero/i);
+    await user.click(screen.getByText('How to play')); // the fold-out on the class screen
+    expect(screen.getByText(/The Red Dragon stole the village/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Knight/ }));
+    await village();
+    await user.keyboard('?');
+    expect(screen.getByRole('region', { name: 'How to play' })).toBeInTheDocument();
+    expect(screen.getByText(/A wrong answer never takes anything away/)).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await village();
+    await user.click(screen.getByRole('button', { name: /How to play/ }));
+    expect(screen.getByRole('region', { name: 'How to play' })).toBeInTheDocument();
+  });
+
+  it('can turn the letter keys off, and buttons and Escape still work', async () => {
+    const user = userEvent.setup();
+    const { backend } = newGame();
+    renderGame(backend);
+    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await village();
+    await user.click(screen.getByRole('checkbox', { name: /Letter-key shortcuts/ }));
+    await user.keyboard('s');
+    expect(screen.queryByRole('region', { name: /Blacksmith/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Shop/ }));
+    expect(screen.getByRole('region', { name: /Blacksmith/ })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(await village()).toBeInTheDocument();
+    await user.click(screen.getByRole('checkbox', { name: /Letter-key shortcuts/ }));
+    window.localStorage.removeItem('dragon-maths-letter-keys');
+  });
+
+  it('puts the keyboard on the new screen’s heading after a button press', async () => {
+    const user = userEvent.setup();
+    const { backend } = newGame();
+    renderGame(backend);
+    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await village();
+    await user.click(screen.getByRole('button', { name: /Healer/ }));
+    await waitFor(() => expect(document.activeElement?.tagName).toBe('H2'));
+  });
+
+  it('offers one hint on a question, which narrows it down and is recorded as a hint, never as a plain right answer', async () => {
+    const user = userEvent.setup();
+    const { db, backend } = newGame();
+    renderGame(backend);
+    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await village();
+    await user.keyboard('i');
+    await user.click(screen.getByRole('button', { name: /riddle/i }));
+    await user.click(await screen.findByRole('button', { name: 'Hint' }));
+    expect(screen.getByRole('button', { name: 'Hint used' })).toBeDisabled();
+    // Pick-one questions grey out two choices; typed ones say where the answer is. Either way, answer by guessing.
+    const picks = screen.queryAllByRole('button').filter((b) => b.classList.contains('question__choice') && !(b as HTMLButtonElement).disabled);
+    if (picks.length) await user.click(picks[0]);
+    else {
+      await user.click(screen.getByRole('button', { name: '1' }));
+      await user.click(screen.getByRole('button', { name: 'Check my answer' }));
+    }
+    await waitFor(() => expect(db.events.some((e) => e.action === 'inn')).toBe(true), { timeout: 4000 });
+    const summary = db.events.find((e) => e.action === 'inn')!.summary as { riddle: string };
+    expect(['hint', 'wrong']).toContain(summary.riddle);
+  });
+
   it('will not let you leave the shop with gear you cannot afford, and says why', async () => {
     const user = userEvent.setup();
     const { backend } = newGame();
