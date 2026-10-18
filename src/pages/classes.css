@@ -156,6 +156,7 @@
 
 /* ---------- My classes: the teacher's page ---------- */
 
+/* These two sit straight on the red page, so they are white like the page title. */
 .classes__back {
   display: flex;
   flex-wrap: wrap;
@@ -163,9 +164,13 @@
   gap: 8px 16px;
   margin: 0;
   font-weight: 700;
+  color: #fff;
+}
+.classes__back a {
+  color: #fff;
 }
 .classes__school {
-  color: var(--ink-soft);
+  color: #fff;
 }
 .classes__form {
   display: flex;
@@ -313,4 +318,18 @@
   .class-panel__code {
     font-size: 1.9rem;
   }
+}
+
+/* The "School admin" tag is on the red page too: dark text on its own pale background. */
+.classes__school .tag {
+  color: var(--ink);
+}
+
+/* The link to My classes sits on the red page of the teacher view. */
+.teacher__classes-link {
+  margin: 0;
+  font-weight: 700;
+}
+.teacher__classes-link a {
+  color: #fff;
 }

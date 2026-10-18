@@ -12,17 +12,21 @@ A chess and checkers website for Year 4–6 students. Students will sign in with
 
 ## How sign-in stays school-only
 
-Only `@douglaspark.school.nz` accounts can get in, and that's checked three times, all on the server:
+Only accounts from a school on the list can get in. The list is the `school_domains` table (a school can have several email domains and must be switched on in `schools`); today it holds `douglaspark.school.nz`, school number 1. That's checked three times, all on the server:
 
-1. Google's sign-in screen (the Google project is "Internal" to the school).
-2. Supabase refuses to create an account for any other email (a sign-up hook, plus a database backstop).
-3. Every read of the database re-checks the school email, and students can only change their own name and avatar.
+1. Google's sign-in screen (the Google project is "Internal" to Douglas Park, so only its accounts get through; the website no longer names a domain to Google, because that was one school's).
+2. Supabase refuses to create an account for any email whose domain isn't on an active school's list (a sign-up hook, plus a database backstop). The new profile is put in that school, and a player's school can never be changed.
+3. Every read of the database re-checks the school: `my_school()` is in every row rule and every teacher function, so one school can't read another's students, games, lobbies, boards, records or settings. Students can only change their own name and avatar.
+
+Inside a school, teachers see only the students in their own classes; a school admin sees the whole school; the site owner adds schools and sees no student data (see `docs/MATHS-FOCUS-PLAN.md`, "Stage F.2 results").
 
 Profiles store a random ID, a word-list name (like "Speedy Otter 27") and avatar codes. No emails or real names. Supabase's own sign-in records do keep each student's Google email and name; only the server can see those. The teacher page shows teachers the part of each student's email before the @ (their real name), so they know who is who; students never see it.
 
 **Making someone a teacher:** the first teacher is made by hand. Sign in to the website once, then in Supabase go to **SQL Editor** and run
 `select public.make_first_teacher('your.email@douglaspark.school.nz');`
-After that, teachers can make other staff teachers from the **Teacher** page (see below).
+Make the first school admin (a teacher who sees the whole school, makes teachers, archives classes and starts a new season) and the site owner the same way:
+`select public.make_school_admin('your.email@douglaspark.school.nz');` and `select public.make_site_owner('your.email@douglaspark.school.nz');`
+After that, a school admin can make other staff teachers from the **Teacher** page (see below).
 
 ## Chess against the bots
 

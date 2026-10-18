@@ -107,7 +107,8 @@ function MyClassesView({ me }: { me: string }) {
       const list = await fetchClasses(showArchived);
       setClasses(list);
       setFailed(null);
-      setOpen((current) => (current && list.some((c) => c.id === current) ? current : (list[0]?.id ?? null)));
+      // Keep the class that was open; otherwise open the first one this teacher teaches.
+      setOpen((current) => (current && list.some((c) => c.id === current) ? current : (list.find((c) => c.teaching)?.id ?? list[0]?.id ?? null)));
     } catch (error) {
       setFailed(errorText(error));
     }
@@ -430,14 +431,16 @@ function ClassPanel({
         {events.length === 0 ? (
           <p className="panel__empty">Nobody yet. This list updates by itself.</p>
         ) : (
-          <ul className="class-panel__list class-panel__events" role="log" aria-live="polite" aria-label="Recent warps">
-            {events.map((e) => (
-              <li key={e.id}>
-                <span>{eventText(e)}</span>
-                <span className="class-panel__when">{ago(e.at)}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="class-panel__events" role="log" aria-live="polite" aria-label="Recent warps">
+            <ul className="class-panel__list">
+              {events.map((e) => (
+                <li key={e.id}>
+                  <span>{eventText(e)}</span>
+                  <span className="class-panel__when">{ago(e.at)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </section>
 
@@ -507,17 +510,18 @@ function ClassPanel({
                   <span className="class-panel__row-actions">
                     {others.length > 0 && (
                       <>
-                        <label className="class-panel__move">
-                          <span className="sr-only">Move {m.name} to</span>
-                          <select value={moveTo[m.id] ?? ''} onChange={(e) => setMoveTo({ ...moveTo, [m.id]: e.target.value })}>
-                            <option value="">Move to…</option>
-                            {others.map((o) => (
-                              <option key={o.id} value={o.id}>
-                                {o.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+                        <select
+                          aria-label={`Move ${m.name} to`}
+                          value={moveTo[m.id] ?? ''}
+                          onChange={(e) => setMoveTo({ ...moveTo, [m.id]: e.target.value })}
+                        >
+                          <option value="">Move to…</option>
+                          {others.map((o) => (
+                            <option key={o.id} value={o.id}>
+                              {o.name}
+                            </option>
+                          ))}
+                        </select>
                         <button
                           type="button"
                           className="button button--light-outline"
