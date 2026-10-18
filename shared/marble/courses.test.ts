@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { botRun } from './bot';
+import { doorsForSeed } from './maths';
 import { compileCourse } from './course';
 import { COURSE_DEFS, COURSES } from './courses';
 import { medalFor, replay } from './engine';
@@ -31,42 +32,43 @@ describe('every course', () => {
 
 describe('reference runs', () => {
   it.each(COURSES.map((c) => [c.def.id, c] as const))('%s: the bot finishes without falling and earns gold', (_id, c) => {
-    const bot = botRun(c);
+    const openDoors = doorsForSeed(c, 'test-seed', null);
+    const bot = botRun(c, { openDoors });
     expect(bot.state.outcome).toBe('finished');
     expect(bot.state.falls).toBe(0);
     expect(medalFor(c, bot.state.finishSteps)).toBe('gold');
-    const again = replay(c, bot.runs);
+    const again = replay(c, bot.runs, { openDoors });
     expect(again?.finishSteps).toBe(bot.state.finishSteps);
   });
   it.each(COURSES.map((c) => [c.def.id, c] as const))('%s: the bot can also finish in hard mode', (_id, c) => {
-    expect(botRun(c, { mode: 'down' }).state.outcome).toBe('finished');
+    expect(botRun(c, { mode: 'down', openDoors: doorsForSeed(c, 'test-seed', null) }).state.outcome).toBe('finished');
   });
   it('reference times are stable (change a number in config.ts and this tells you the courses moved)', () => {
-    expect(COURSES.map((c) => [c.def.id, botRun(c).state.finishSteps])).toMatchInlineSnapshot(`
+    expect(COURSES.map((c) => [c.def.id, botRun(c, { openDoors: doorsForSeed(c, 'test-seed', null) }).state.finishSteps])).toMatchInlineSnapshot(`
       [
         [
           "boulder-beach",
-          1092,
+          1281,
         ],
         [
           "crown-range",
-          2669,
+          3000,
         ],
         [
           "geyser-valley",
-          1105,
+          1554,
         ],
         [
           "glacier-run",
-          1085,
+          1457,
         ],
         [
           "windy-welly",
-          1650,
+          2334,
         ],
         [
           "alpine-crossing",
-          1103,
+          1775,
         ],
         [
           "test-easy",

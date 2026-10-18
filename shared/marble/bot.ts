@@ -35,18 +35,42 @@ function mustWait(w: World, s: RunState, ux: number, uy: number): boolean {
   return false;
 }
 
+export interface BotOptions extends RunOptions {
+  /** At every answer gate, roll into a tunnel that is shut first (a student who guessed wrong), then back out and through the open one. */
+  wrongFirst?: boolean;
+}
+
+/** The waypoints for a run: the course's route with each gate's way through put in (through the open door; a shut one first if `wrongFirst`). */
+export function routeFor(course: Course, openDoors: readonly number[], wrongFirst = false): ReadonlyArray<readonly [number, number]> {
+  const out: Array<readonly [number, number]> = [];
+  const main = course.def.route;
+  let at = 0;
+  for (const gate of course.gates) {
+    out.push(...main.slice(at, gate.after));
+    at = gate.after;
+    const open = gate.tunnels.find((t) => openDoors.includes(t.door)) ?? gate.tunnels[0];
+    if (wrongFirst) {
+      const wrong = gate.tunnels.find((t) => t !== open);
+      if (wrong) out.push(...wrong.dead, main[gate.after - 1]);
+    }
+    out.push(...open.route);
+  }
+  out.push(...main.slice(at));
+  return out;
+}
+
 export interface BotRun {
   runs: [number, number][];
   state: RunState;
 }
 
 /** Aims at the next waypoint, taking whichever of the 8 directions points closest to it. */
-export function botRun(course: Course, options: RunOptions = {}, maxSteps = 60 * 120): BotRun {
+export function botRun(course: Course, options: BotOptions = {}, maxSteps = 60 * 120): BotRun {
   const w = makeWorld(course, options);
   const s = newRun(w);
   const runs: [number, number][] = [];
   let at = 0;
-  const route = course.def.route;
+  const route = routeFor(course, options.openDoors ?? [], options.wrongFirst);
   while (s.outcome === 'running' && s.steps < maxSteps) {
     let [tx, ty] = route[Math.min(at, route.length - 1)];
     if (at < route.length - 1 && (tx - s.x) ** 2 + (ty - s.y) ** 2 < 0.8 * 0.8) {

@@ -51,6 +51,8 @@ export const BUMPER_SPEED = 3.5;
 
 /** Falling off or an ouch: back to the last checkpoint, and the clock gains this much (James: about 3 seconds). */
 export const FALL_PENALTY_STEPS = 3 * STEPS_PER_SECOND;
+/** A right pit-stop answer takes this much off the clock. */
+export const PIT_BONUS_STEPS = 2 * STEPS_PER_SECOND;
 /** Below the lowest floor by this much, a falling marble is gone. */
 export const KILL_BELOW = 1.5;
 

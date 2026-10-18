@@ -34,7 +34,31 @@ export interface CourseDef {
   /** Hard mode: seconds on the clock at the start. */
   hardSeconds: number;
   /** Gusts of wind that push the marble: every `period` steps, for `on` steps (after `warn` steps of warning streaks). */
+  /** Answer gates, in the order the course meets them (maths questions; docs/MARBLE-PLAN.md section 7). */
+  gates?: readonly GateDef[];
   wind?: { dx: number; dy: number; period: number; on: number; warn: number; force: number };
+}
+
+/**
+ * An answer gate: a sign, then the track splits into tunnels (each a lane ending in a shortcut door). The door of the
+ * right tunnel is open for the whole run; the others are shut, so a wrong tunnel is a dead end to back out of.
+ * Which tunnel the marble goes into first is the student's answer (the engine writes it down; the server reads it from the replay).
+ */
+export interface GateDef {
+  /** The tile the sign stands over (the question shows when the marble comes near). */
+  sign: readonly [number, number];
+  /** How many waypoints of `route` come before this gate (the reference bot's way through a tunnel is put in at that point). */
+  after: number;
+  tunnels: ReadonlyArray<{
+    /** Every floor tile of the lane. The first one the marble touches is its choice. */
+    cells: ReadonlyArray<readonly [number, number]>;
+    /** The tile letter of this tunnel's shortcut door, as a number (0 = A). */
+    door: number;
+    /** Waypoints through this tunnel, door open. */
+    route: ReadonlyArray<readonly [number, number]>;
+    /** Waypoints into this tunnel when its door is shut and back out of it (for the bot that guesses wrong first). */
+    dead: ReadonlyArray<readonly [number, number]>;
+  }>;
 }
 
 export type Slope = 'E' | 'W' | 'N' | 'S';
@@ -58,6 +82,12 @@ export interface Course {
   /** Lowest floor, in tiles (for working out when a falling marble is gone). */
   floorMin: number;
   doorCount: number;
+  gates: readonly GateDef[];
+  /** Per tile: gate * 8 + tunnel + 1 for a tunnel tile, else 0. */
+  tunnelAt: Uint16Array;
+  /** Per checkpoint tile: which pit stop (a block of touching checkpoint tiles is one), else -1. */
+  pitAt: Int16Array;
+  pitCount: number;
 }
 
 const SLOPES: Record<string, Slope> = { '>': 'E', '<': 'W', '^': 'N', v: 'S' };
@@ -95,5 +125,43 @@ export function compileCourse(def: CourseDef): Course {
   }
   if (!start) throw new Error(`${def.id}: no start`);
   if (!finishes) throw new Error(`${def.id}: no finish`);
-  return { def, width, height, tiles, start, floorMin, doorCount };
+  const gates = def.gates ?? [];
+  const tunnelAt = new Uint16Array(width * height);
+  const doorsUsed = new Set<number>();
+  gates.forEach((g, gi) => {
+    if (g.tunnels.length < 2 || g.tunnels.length > 3) throw new Error(`${def.id}: gate ${gi} needs 2 or 3 tunnels`);
+    g.tunnels.forEach((t, ti) => {
+      if (t.door < 0 || t.door >= doorCount || doorsUsed.has(t.door)) throw new Error(`${def.id}: gate ${gi} tunnel ${ti} has a bad or shared door`);
+      doorsUsed.add(t.door);
+      for (const [x, y] of t.cells) {
+        if (x < 0 || y < 0 || x >= width || y >= height) throw new Error(`${def.id}: gate ${gi} tunnel ${ti} is off the course`);
+        tunnelAt[y * width + x] = gi * 8 + ti + 1;
+      }
+    });
+  });
+  // Touching checkpoint tiles make one pit stop.
+  const pitAt = new Int16Array(width * height).fill(-1);
+  let pitCount = 0;
+  for (let i = 0; i < tiles.length; i++) {
+    if (tiles[i].ch !== 'c' || pitAt[i] >= 0) continue;
+    const todo = [i];
+    pitAt[i] = pitCount;
+    while (todo.length) {
+      const at = todo.pop() as number;
+      const x = at % width;
+      const y = Math.floor(at / width);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+        const ni = ny * width + nx;
+        if (tiles[ni].ch === 'c' && pitAt[ni] < 0) {
+          pitAt[ni] = pitCount;
+          todo.push(ni);
+        }
+      }
+    }
+    pitCount++;
+  }
+  return { def, width, height, tiles, start, floorMin, doorCount, gates, tunnelAt, pitAt, pitCount };
 }

@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { botRun } from './bot';
 import { courseById } from './courses';
+import { doorsForSeed } from './maths';
 import { encodeInputs } from './inputs';
 import { judgeRun, makeMarbleSeed, marbleSeedProblem, marbleSeedTime, marbleStampText, parseMarbleReport } from './save';
 
 const NOW = 1_792_000_000;
-const bot = botRun(courseById('boulder-beach')!, { mode: 'up' });
-const inputs = encodeInputs(bot.runs);
 const seedAgo = (s: number) => makeMarbleSeed(NOW - s, 'ab'.repeat(12));
-const report = (over: Record<string, unknown> = {}) => ({ seed: seedAgo(200), stamp: 'x', course: 'boulder-beach', mode: 'up', inputs, ...over });
+const course = courseById('boulder-beach')!;
+const SEED = seedAgo(200);
+const doors = doorsForSeed(course, SEED, null);
+const bot = botRun(course, { mode: 'up', openDoors: doors });
+const inputs = encodeInputs(bot.runs);
+const report = (over: Record<string, unknown> = {}) => ({ seed: SEED, stamp: 'x', course: 'boulder-beach', mode: 'up', inputs, ...over });
 
 describe('seeds', () => {
   it('are made from the time and 12 bytes, and read back', () => {
@@ -41,7 +45,7 @@ describe('reading a report', () => {
 });
 
 describe('judging a run', () => {
-  const judge = (over: Record<string, unknown> = {}) => judgeRun(parseMarbleReport(report(over))!, NOW);
+  const judge = (over: Record<string, unknown> = {}) => judgeRun(parseMarbleReport(report(over))!, NOW, doors);
   it('replays the inputs and gives the time they make', () => {
     const j = judge();
     expect(j.ok).toBe(true);

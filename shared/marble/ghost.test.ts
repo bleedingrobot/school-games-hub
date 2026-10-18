@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { botRun } from './bot';
+import { doorsForSeed } from './maths';
 import { courseById } from './courses';
 import { makeWorld, newRun, replay, stateKey, stepRun } from './engine';
 import { inputPlayer } from './inputs';
@@ -12,9 +13,10 @@ describe('inputPlayer', () => {
 
   it('plays a ghost to exactly the same finish as a replay', () => {
     const course = courseById('boulder-beach')!;
-    const bot = botRun(course);
-    const want = replay(course, bot.runs)!;
-    const w = makeWorld(course);
+    const openDoors = doorsForSeed(course, 'ghost-seed', null);
+    const bot = botRun(course, { openDoors });
+    const want = replay(course, bot.runs, { openDoors })!;
+    const w = makeWorld(course, { openDoors });
     const s = newRun(w);
     const next = inputPlayer(bot.runs);
     while (s.outcome === 'running') stepRun(w, s, next());

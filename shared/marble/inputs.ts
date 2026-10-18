@@ -4,12 +4,15 @@
  * Codes: 0 none, 1–8 a direction on the grid (N, NE, E, SE, S, SW, W, NW; north is up the grid,
  * towards smaller y), 9 `HOLD` (the clock and the marble stand still: a question is showing, or
  * the student is reading a sign), 10 `REFUND` (a right rescue answer: the last fall's time
- * penalty is taken back). HOLD and REFUND are how maths will be added later without touching the physics.
+ * penalty is taken back), 11 `BONUS` (a right pit-stop answer: a few seconds come off the clock). HOLD, REFUND and
+ * BONUS are how maths is added without touching the physics: the server only allows as many REFUND and BONUS
+ * inputs as it has marked right answers for.
  */
 export const NONE = 0;
 export const HOLD = 9;
 export const REFUND = 10;
-export const MAX_CODE = 10;
+export const BONUS = 11;
+export const MAX_CODE = 11;
 
 /** A run of inputs: [code, how many steps]. */
 export type InputRuns = ReadonlyArray<readonly [number, number]>;
@@ -20,7 +23,7 @@ export const MAX_INPUT_STEPS = 60 * 60 * 6;
 /** Adds one step to a list of runs, joining it to the last run when the input is the same. */
 export function pushInput(runs: [number, number][], code: number): void {
   const last = runs[runs.length - 1];
-  if (last && last[0] === code && code !== REFUND) last[1]++;
+  if (last && last[0] === code && code !== REFUND && code !== BONUS) last[1]++;
   else runs.push([code, 1]);
 }
 
@@ -29,7 +32,7 @@ export function encodeInputs(runs: InputRuns): string {
   return runs.map(([code, n]) => `${code.toString(16)}x${n}`).join(',');
 }
 
-const RUN = /^([0-9a])x([1-9]\d{0,5})$/;
+const RUN = /^([0-9ab])x([1-9]\d{0,5})$/;
 
 /** Null if the text isn't a well-made list of runs. */
 export function decodeInputs(text: string): [number, number][] | null {
@@ -64,4 +67,9 @@ export function inputPlayer(runs: InputRuns): () => number {
     used++;
     return runs[i][0];
   };
+}
+
+/** How many steps of one input code a list of runs holds (e.g. how many REFUND inputs). */
+export function countCode(runs: InputRuns, code: number): number {
+  return runs.reduce((sum, [c, n]) => (c === code ? sum + n : sum), 0);
 }

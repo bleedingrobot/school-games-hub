@@ -6,7 +6,7 @@
  */
 import { COURSES } from './courses';
 import { makeWorld, newRun, stateKey, stepRun } from './engine';
-import { HOLD, REFUND } from './inputs';
+import { BONUS, HOLD, REFUND } from './inputs';
 
 /** A small repeatable stream of numbers (integers only, so it is exact everywhere). */
 function lcg(seed: number): () => number {
@@ -23,15 +23,15 @@ export function determinismReport(): string {
     for (const mode of ['up', 'down'] as const) {
       for (const seed of [7, 99]) {
         const next = lcg(seed);
-        const w = makeWorld(course, { mode, openDoors: [0, 2] });
+        const w = makeWorld(course, { mode, openDoors: course.gates.map((g, i) => g.tunnels[(i + seed) % g.tunnels.length].door) });
         const s = newRun(w);
         let input = 0;
         let hold = 0;
         for (let i = 0; i < 3000 && s.outcome === 'running'; i++) {
           if (i % 20 === 0) input = next() % 9;
           const r = next() % 400;
-          // Every so often: a held pause or a refund, so those are covered too.
-          const code = r === 0 ? REFUND : hold > 0 ? HOLD : input;
+          // Every so often: a held pause, a refund or a bonus, so those are covered too.
+          const code = r === 0 ? REFUND : r === 2 ? BONUS : hold > 0 ? HOLD : input;
           if (r === 1) hold = 5;
           else if (hold > 0) hold--;
           stepRun(w, s, code);

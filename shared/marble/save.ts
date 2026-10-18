@@ -10,7 +10,7 @@
  */
 import { courseById } from './courses';
 import { replay, type ClockMode } from './engine';
-import { decodeInputs, MAX_INPUT_STEPS } from './inputs';
+import { BONUS, countCode, decodeInputs, MAX_INPUT_STEPS, REFUND } from './inputs';
 
 /** How long a seed can be used for. A run takes minutes; a forgotten tab, hours. */
 export const MARBLE_SEED_LIFETIME_SECONDS = 6 * 60 * 60;
@@ -82,20 +82,28 @@ export interface JudgedRun {
   held: number;
   /** Physics steps played, which is at least how long the run took in real time (held steps are not counted). */
   played: number;
+  /** The tunnel entered first at each answer gate (-1 = never reached). */
+  gateChoices: number[];
+  /** How many pit stops the marble reached. */
+  pitStops: number;
+  /** BONUS and REFUND inputs in the run: the server only allows as many as it marked right answers. */
+  bonuses: number;
+  refunds: number;
 }
 
 export type RunJudgement = { ok: true; run: JudgedRun } | { ok: false; problem: string };
 
 /**
  * Replays the recorded inputs and checks the run. `nowSeconds` and the seed's time give the real
- * time that has passed since the seed was handed out.
+ * time that has passed since the seed was handed out. `doors` are the shortcut doors that were open
+ * for this run (the server works them out from the run's seed and question list; none for a course with no gates).
  */
-export function judgeRun(report: MarbleRunReport, nowSeconds: number): RunJudgement {
+export function judgeRun(report: MarbleRunReport, nowSeconds: number, doors: readonly number[] = []): RunJudgement {
   const course = courseById(report.course);
   if (!course) return { ok: false, problem: 'unknown course' };
   const runs = decodeInputs(report.inputs);
   if (!runs) return { ok: false, problem: 'inputs not readable' };
-  const result = replay(course, runs, { mode: report.mode });
+  const result = replay(course, runs, { mode: report.mode, openDoors: doors });
   if (!result) return { ok: false, problem: 'inputs not readable' };
   if (result.outcome !== 'finished' || result.finishSteps <= 0) return { ok: false, problem: 'no finish' };
   const made = marbleSeedTime(report.seed);
@@ -106,6 +114,9 @@ export function judgeRun(report: MarbleRunReport, nowSeconds: number): RunJudgem
   if (result.steps + result.held > MAX_INPUT_STEPS) return { ok: false, problem: 'too long' };
   return {
     ok: true,
-    run: { steps: result.finishSteps, falls: result.falls, checkpoints: result.checkpoints, held: result.held, played: result.steps },
+    run: {
+      steps: result.finishSteps, falls: result.falls, checkpoints: result.checkpoints, held: result.held, played: result.steps,
+      gateChoices: result.state.gateChoices, pitStops: result.state.pitStops.length, bonuses: countCode(runs, BONUS), refunds: countCode(runs, REFUND),
+    },
   };
 }

@@ -1,38 +1,38 @@
 {
  "boulder-beach": {
-  "gold": 21,
-  "silver": 31,
-  "bronze": 48,
-  "hard": 43
+  "gold": 22,
+  "silver": 33,
+  "bronze": 51,
+  "hard": 44
  },
  "crown-range": {
-  "gold": 52,
-  "silver": 76,
-  "bronze": 116,
-  "hard": 91
+  "gold": 51,
+  "silver": 75,
+  "bronze": 117,
+  "hard": 102
  },
  "geyser-valley": {
-  "gold": 22,
-  "silver": 32,
-  "bronze": 48,
-  "hard": 44
+  "gold": 29,
+  "silver": 44,
+  "bronze": 67,
+  "hard": 58
  },
  "glacier-run": {
-  "gold": 21,
-  "silver": 31,
-  "bronze": 48,
-  "hard": 43
+  "gold": 27,
+  "silver": 42,
+  "bronze": 62,
+  "hard": 54
  },
  "windy-welly": {
-  "gold": 32,
-  "silver": 47,
-  "bronze": 72,
-  "hard": 60
+  "gold": 40,
+  "silver": 62,
+  "bronze": 92,
+  "hard": 80
  },
  "alpine-crossing": {
-  "gold": 22,
-  "silver": 32,
-  "bronze": 48,
-  "hard": 44
+  "gold": 34,
+  "silver": 56,
+  "bronze": 82,
+  "hard": 68
  }
 }

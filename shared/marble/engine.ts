@@ -9,10 +9,10 @@
  */
 import {
   AIR_GRAVITY, AIR_STEER, BALL_RADIUS, BOUNCE, BUMPER_RADIUS, BUMPER_SPEED, CHECKPOINT_BONUS_STEPS, DT, FALL_PENALTY_STEPS,
-  CONVEYOR_PUSH, JUMP_SPEED, KILL_BELOW, LEVEL, MAX_RUN_STEPS, OUCH_SPEED, SLOPE_GRAVITY, STEER, STEP_DOWN, STEP_UP, SURFACES, TIMED,
+  CONVEYOR_PUSH, PIT_BONUS_STEPS, JUMP_SPEED, KILL_BELOW, LEVEL, MAX_RUN_STEPS, OUCH_SPEED, SLOPE_GRAVITY, STEER, STEP_DOWN, STEP_UP, SURFACES, TIMED,
 } from './config';
 import type { Course, Tile } from './course';
-import { HOLD, MAX_CODE, MAX_INPUT_STEPS, REFUND, type InputRuns } from './inputs';
+import { BONUS, HOLD, MAX_CODE, MAX_INPUT_STEPS, REFUND, type InputRuns } from './inputs';
 
 export type ClockMode = 'up' | 'down';
 
@@ -54,6 +54,10 @@ export interface RunState {
   finishSteps: number;
   /** Steps left before a jump pad can fire again, so one pad can't fire twice in a row. */
   padCooldown: number;
+  /** For each answer gate, the tunnel the marble went into first (0, 1, 2), or -1 if it has not reached the gate yet. Only written down; it never changes the physics. */
+  gateChoices: number[];
+  /** The pit stops reached (a block of touching checkpoint tiles is one), in order. */
+  pitStops: number[];
 }
 
 const R2 = 0.7071067811865476;
@@ -140,6 +144,7 @@ export function newRun(w: World): RunState {
     x, y, z: floorAt(w, x, y) ?? 0, vx: 0, vy: 0, vz: 0, grounded: true,
     steps: 0, held: 0, penalty: 0, refundable: 0, bonus: 0, falls: 0,
     respawnX: x, respawnY: y, checkpoints: [], outcome: 'running', finishSteps: 0, padCooldown: 0,
+    gateChoices: w.course.gates.map(() => -1), pitStops: [],
   };
 }
 
@@ -171,6 +176,10 @@ export function stepRun(w: World, s: RunState, input: number): void {
   if (s.outcome !== 'running') return;
   if (input === HOLD) {
     s.held++;
+    return;
+  }
+  if (input === BONUS) {
+    s.penalty -= PIT_BONUS_STEPS;
     return;
   }
   if (input === REFUND) {
@@ -261,6 +270,11 @@ export function stepRun(w: World, s: RunState, input: number): void {
   const tx = Math.floor(s.x);
   const ty = Math.floor(s.y);
   const on = tileAt(w, tx, ty);
+  const tunnel = c.tunnelAt[ty * c.width + tx];
+  if (tunnel) {
+    const gate = (tunnel - 1) >> 3;
+    if (s.gateChoices[gate] < 0) s.gateChoices[gate] = (tunnel - 1) & 7;
+  }
   if (on.ch === 'b') {
     const cx = tx + 0.5;
     const cy = ty + 0.5;
@@ -288,6 +302,7 @@ export function stepRun(w: World, s: RunState, input: number): void {
     const id = ty * c.width + tx;
     if (!s.checkpoints.includes(id)) {
       s.checkpoints.push(id);
+      if (!s.pitStops.includes(c.pitAt[id])) s.pitStops.push(c.pitAt[id]);
       s.respawnX = tx + 0.5;
       s.respawnY = ty + 0.5;
       if (w.mode === 'down') s.bonus += CHECKPOINT_BONUS_STEPS;
@@ -338,7 +353,7 @@ export function replay(course: Course, runs: InputRuns, options: RunOptions = {}
 
 /** Every number in the state as text, so two runs can be compared exactly (and between browsers). */
 export function stateKey(s: RunState): string {
-  return [s.x, s.y, s.z, s.vx, s.vy, s.vz, s.grounded ? 1 : 0, s.steps, s.held, s.penalty, s.bonus, s.falls, s.checkpoints.join('.'), s.outcome, s.finishSteps].join('|');
+  return [s.x, s.y, s.z, s.vx, s.vy, s.vz, s.grounded ? 1 : 0, s.steps, s.held, s.penalty, s.bonus, s.falls, s.checkpoints.join('.'), s.gateChoices.join('.'), s.pitStops.join('.'), s.outcome, s.finishSteps].join('|');
 }
 
 /** Medal for a finish time in clock steps, or null. */

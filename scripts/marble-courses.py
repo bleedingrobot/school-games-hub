@@ -22,6 +22,8 @@ class Track:
         self.route = []
         self.reserved = set()  # cells of a gap: no rail may close them
         self.start = (x, y)
+        self.gates = []  # answer gates (maths): see gate()
+        self.next_door = 0
 
     # painting helpers
     def _perp(self):
@@ -102,6 +104,63 @@ class Track:
         self._step(r + 1)
         return self
 
+    def gate(self, k, lane_w=2, length=5, approach=3, rails=True):
+        """An answer gate: a sign, a slow patch, then `k` tunnels side by side, each ending in a shortcut door.
+        Which door is open is decided by the maths (shared/marble/maths.ts); a shut door makes the tunnel a dead end."""
+        total = k * lane_w + (k - 1)
+        o0 = -(total // 2)
+        wide = total if total % 2 else total + 1
+        px, py = self._perp()
+        dx, dy = HEAD[self.h]
+
+        def at(off, along=0):
+            return (self.x + px * off + dx * along, self.y + py * off + dy * along)
+
+        sign = (self.x, self.y)
+        for i in range(approach):
+            self._cross('m' if i >= approach - 2 else '#', self.lvl, wide, rails)
+            self._step()
+        # the middle of the slow patch's end: where a student chooses
+        plaza = (self.x - dx + 0.5, self.y - dy + 0.5)
+        self.route.append(plaza)
+        after = len(self.route)
+        tunnels = []
+        for j in range(k):
+            first = o0 + j * (lane_w + 1)
+            tunnels.append({'off': first + (lane_w - 1) / 2, 'cells': [], 'door': self.next_door + j})
+        self.next_door += k
+        for i in range(length + 1):  # the last row is the doors
+            for off in range(o0, o0 + total):
+                j = (off - o0) // (lane_w + 1)
+                inside = (off - o0) % (lane_w + 1)
+                cell = at(off)
+                if inside == lane_w:
+                    self.grid[cell] = ['=', 0, False]
+                elif i == length:
+                    self.grid[cell] = [chr(65 + tunnels[j]['door']), self.lvl, rails]
+                else:
+                    self.grid[cell] = ['#', self.lvl, rails]
+                    tunnels[j]['cells'].append(cell)
+            self._step()
+        for i in range(2):  # the lanes join again
+            self._cross('#', self.lvl, wide, rails)
+            self._step()
+        self.wp()
+        out = []
+        for t in tunnels:
+            def row(n, off=t['off']):
+                # centre of lane row n (0 = first lane row)
+                back = (length + 1 + 2) - n
+                return (self.x - dx * back + 0.5 + px * off, self.y - dy * back + 0.5 + py * off)
+            entry, mid, end, door = row(0), row(length // 2), row(length - 1), row(length)
+            out.append({
+                'cells': t['cells'], 'door': t['door'],
+                'route': [entry, mid, end, door],
+                'dead': [entry, mid, end, mid, entry],
+            })
+        self.gates.append({'sign': sign, 'after': after, 'tunnels': out})
+        return self
+
     def mark(self, dx, dy, ch):
         """Put a special tile at an offset from where we are (for bumpers and so on)."""
         cell = (self.x + dx, self.y + dy)
@@ -179,7 +238,17 @@ def render(track):
         rows.append(r)
         hts.append(h)
     route = [(round(a - x0, 1), round(b - y0, 1)) for a, b in track.route]
-    return rows, hts, route
+    gates = []
+    for g in track.gates:
+        gates.append({
+            'sign': (g['sign'][0] - x0, g['sign'][1] - y0), 'after': g['after'],
+            'tunnels': [{
+                'cells': [(cx - x0, cy - y0) for cx, cy in t['cells']], 'door': t['door'],
+                'route': [(round(a - x0, 1), round(b - y0, 1)) for a, b in t['route']],
+                'dead': [(round(a - x0, 1), round(b - y0, 1)) for a, b in t['dead']],
+            } for t in g['tunnels']],
+        })
+    return rows, hts, route, gates
 
 
 # ----------------------------------------------------------------------------- the courses
@@ -196,7 +265,9 @@ def boulder_beach():
     t.go(2, ch='c')
     t.go(5, at={(2, 1): 'b'})
     t.turn('E')
-    t.go(4)
+    t.go(1)
+    t.gate(2)          # the one tutorial gate
+    t.go(2)
     t.down(4)
     t.go(4)
     t.turn('S')
@@ -222,7 +293,12 @@ def crown_range():
         t.turn('S', rails=False)
         t.go(3, rails=False)
         t.turn('W' if k % 2 == 0 else 'E', rails=False)
-        t.go(10, at={(3, 1): 'b', (7, -1): 'b'})
+        if k in (0, 2):
+            t.go(1)
+            t.gate(2)
+            t.go(1)
+        else:
+            t.go(10, at={(3, 1): 'b', (7, -1): 'b'})
         t.down(2)
         t.go(2)
         t.turn('S', rails=False)
@@ -256,12 +332,15 @@ def geyser_valley():
     t.gap(3, width=5)
     t.go(3)
     t.turn('E')
-    t.go(4, ch='m')
-    t.go(2)
+    t.go(1)
+    t.gate(2)
+    t.go(2, ch='m')
     t.down(3)
     t.go(2, at={(0, 0): 'g'})
     t.gap(2)
-    t.go(4)
+    t.go(2)
+    t.gate(3)
+    t.go(1)
     t.down(2)
     t.go(3, ch='f')
     return t
@@ -278,7 +357,9 @@ def glacier_run():
     t.gap(2)   # crevasse
     t.go(3, ch='i')
     t.turn('S')
-    t.go(5, ch='i')
+    t.go(1, ch='i')
+    t.gate(2)
+    t.go(1, ch='i')
     t.down(3)
     t.go(3, ch='i')
     t.go(2, ch='c')
@@ -289,7 +370,9 @@ def glacier_run():
     t.turn('E')
     t.go(3, ch='i')
     t.down(2)
-    t.go(4, ch='m')   # gravel and mud at the bottom
+    t.go(1, ch='m')
+    t.gate(3)
+    t.go(2, ch='m')   # gravel and mud at the bottom
     t.down(2)
     t.go(5, ch='m', at={(1, 1): 'b'})
     t.go(2, ch='f')
@@ -302,7 +385,9 @@ def windy_welly():
     t.mark(-5, 0, 's')
     t.go(2, ch='e')           # the wharf: conveyor belts
     t.go(4, ch='e')
-    t.go(2)
+    t.go(1)
+    t.gate(2)
+    t.go(1)
     t.go(1, ch='q')           # a crane arm sweeps across
     t.go(3)
     t.down(2)
@@ -317,7 +402,9 @@ def windy_welly():
     t.go(2)
     t.turn('W')
     t.go(4, ch='w')           # a belt that carries you backwards: push hard
-    t.go(3)
+    t.go(1)
+    t.gate(2)
+    t.go(1)
     t.go(1, ch='q')
     t.go(3)
     t.down(2)
@@ -327,7 +414,9 @@ def windy_welly():
     t.go(1, ch='q')
     t.go(5, ch='o')
     t.turn('E')
-    t.go(4)
+    t.go(1)
+    t.gate(2)
+    t.go(1)
     t.down(2)
     t.go(3, ch='f')
     return t
@@ -343,12 +432,17 @@ def alpine_crossing():
         t.down(1, rails=False)
         t.go(2, rails=False)
     t.go(2, ch='c', rails=False)
+    t.go(1, rails=False)
+    t.gate(2, rails=False)
+    t.go(1, rails=False)
     t.go(1, ch='t', rails=False)       # crumbling scoria
     t.go(2, rails=False)
     t.go(1, ch='t', rails=False)
     t.go(3, rails=False)
     t.turn('S', rails=False)
-    t.go(5, rails=False)
+    t.go(1, rails=False)
+    t.gate(3, rails=False)
+    t.go(2, rails=False)
     t.down(2, rails=False)
     t.go(2, rails=False)
     t.go(1, ch='t', rails=False)
@@ -362,7 +456,8 @@ def alpine_crossing():
     t.go(1, ch='t', rails=False)
     t.go(3, rails=False)
     t.down(2, rails=False)
-    t.go(4, width=5)              # the Emerald Lakes
+    t.go(1, width=5)
+    t.gate(2)                     # the Emerald Lakes
     t.go(2, ch='f', width=5)
     return t
 
@@ -391,7 +486,7 @@ def main():
     names = []
     for cid, name, builder, _m, _h, wind in COURSES:
         trk = builder()
-        rows, hts, route = render(trk)
+        rows, hts, route, gates = render(trk)
         med = medals_for(cid) or {'gold': 60, 'silver': 90, 'bronze': 140, 'hard': 120}
         const = ''.join(w.capitalize() for w in cid.split('-'))
         const = 'NZ_' + cid.upper().replace('-', '_')
@@ -410,6 +505,17 @@ def main():
         out.append("  route: [" + ', '.join(f"[{a}, {b}]" for a, b in route) + "],")
         out.append(f"  medals: {{ gold: {med['gold']}, silver: {med['silver']}, bronze: {med['bronze']} }},")
         out.append(f"  hardSeconds: {med['hard']},")
+        if gates:
+            out.append("  gates: [")
+            for g in gates:
+                out.append(f"    {{ sign: [{g['sign'][0]}, {g['sign'][1]}], after: {g['after']}, tunnels: [")
+                for t in g['tunnels']:
+                    cells = ', '.join(f"[{a}, {b}]" for a, b in t['cells'])
+                    rt = ', '.join(f"[{a}, {b}]" for a, b in t['route'])
+                    dd = ', '.join(f"[{a}, {b}]" for a, b in t['dead'])
+                    out.append(f"      {{ door: {t['door']}, cells: [{cells}], route: [{rt}], dead: [{dd}] }},")
+                out.append("    ] },")
+            out.append("  ],")
         if wind:
             dx, dy, period, on, warn, force = wind
             out.append(f"  wind: {{ dx: {dx}, dy: {dy}, period: {period}, on: {on}, warn: {warn}, force: {force} }},")

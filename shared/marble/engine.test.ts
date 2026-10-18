@@ -245,7 +245,7 @@ describe('replay', () => {
     expect(stateKey(replay(c, runs)!.state)).toBe(stateKey(replay(c, runs)!.state));
   });
   it('rejects a bad input', () => {
-    expect(replay(c, [[11, 5]])).toBeNull();
+    expect(replay(c, [[12, 5]])).toBeNull();
     expect(replay(c, [[1, 0]])).toBeNull();
     expect(replay(c, [[1.5, 5]])).toBeNull();
     expect(replay(c, [[E, 999_999]])).toBeNull();
