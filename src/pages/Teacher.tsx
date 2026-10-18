@@ -29,6 +29,10 @@ import { whenPlayed } from './Dashboard';
 const GemKeepTeacherPanels = lazy(() => import('./TeacherGemKeep').then((m) => ({ default: m.GemKeepTeacherPanels })));
 const MonstersTeacherPanels = lazy(() => import('./TeacherMonsters').then((m) => ({ default: m.MonstersTeacherPanels })));
 const MonstersStudentPanel = lazy(() => import('./TeacherMonsters').then((m) => ({ default: m.MonstersStudentPanel })));
+const LordTeacherPanels = lazy(() => import('./TeacherLord').then((m) => ({ default: m.LordTeacherPanels })));
+const LordStudentPanel = lazy(() => import('./TeacherLord').then((m) => ({ default: m.LordStudentPanel })));
+const ClansTeacherPanels = lazy(() => import('./TeacherClans').then((m) => ({ default: m.ClansTeacherPanels })));
+const ClansStudentPanel = lazy(() => import('./TeacherClans').then((m) => ({ default: m.ClansStudentPanel })));
 const GemKeepStudentPanel = lazy(() => import('./TeacherGemKeep').then((m) => ({ default: m.GemKeepStudentPanel })));
 
 /** The words a teacher types to start a new season. The server checks them too. */
@@ -92,6 +96,8 @@ function TeacherView({ me }: { me: string }) {
       <Suspense fallback={null}>
         <GemKeepTeacherPanels />
         <MonstersTeacherPanels />
+        <LordTeacherPanels />
+        <ClansTeacherPanels />
       </Suspense>
 
       <section className="panel" aria-labelledby="people-title">
@@ -435,6 +441,8 @@ function PersonPanel({
           <Suspense fallback={null}>
             <GemKeepStudentPanel student={person.id} />
             <MonstersStudentPanel student={person.id} />
+            <LordStudentPanel student={person.id} />
+            <ClansStudentPanel student={person.id} />
           </Suspense>
         </>
       ) : (
