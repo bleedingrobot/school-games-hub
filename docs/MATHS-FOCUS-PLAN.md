@@ -328,3 +328,9 @@ Real Google sign-in with a second school's account (needs F.8's checklist); the 
 
 ### What F.3 needs from you
 See the message that came with this stage.
+
+### James's answers after F.2 (18 October 2026)
+- **Go live:** not yet. F.3 is built on the scratch copy first.
+- **"Everyone" class:** turn the automatic joining **off at go-live** (add `select public.school_set_default_class(null);` as the school admin to the go-live list, after step 3). New students then start with no class and warp into their room.
+- **Dragon Maths seasons:** stay per class, as built.
+- **Teacher page switches:** F.3 adds a class picker, so a teacher with several classes can set each one.
