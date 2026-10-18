@@ -24,8 +24,13 @@ import type { DesignedBoardId } from '../../shared/space/boards';
 import type { Mode } from '../../shared/space/engine';
 import { boardLabel, BOARD_NAMES, DESIGNED_BOARD_ORDER } from '../../shared/space/names';
 
-/** How often the list of open games refreshes while the lobby is open. */
-export const LOBBY_REFRESH_MS = 5000;
+/**
+ * How often the list of open games refreshes while the lobby is open. Each refresh is about
+ * ten requests, so with a whole class in the lobby 5 seconds was too much for the database
+ * (19 Oct 2026). Coming back to the tab refreshes straight away, and creating or joining a
+ * game never waits for this.
+ */
+export const LOBBY_REFRESH_MS = 20000;
 
 type SideChoice = Side | 'random';
 /** What can be started here: the two-player games, and Wormholes & Black Holes and 101 for up to 4. */
@@ -139,7 +144,14 @@ export function Lobby() {
     const timer = setInterval(() => {
       if (document.visibilityState === 'visible') void refresh();
     }, LOBBY_REFRESH_MS);
-    return () => clearInterval(timer);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [refresh]);
 
   async function go(where: 'create' | 'join' | 'list', request: () => Promise<string>) {
