@@ -514,6 +514,8 @@ Built, tested and **not applied, not deployed, not merged**. Branch `clans`.
 - 78 database checks (`clans_fights.test.sql`), run together with the part A migration and the part A checks (47) in one transaction that was rolled back, so the shared local database was left as it was.
 - 5 fight tests with the real screens against a server in a box (start, the monsters the server picked, every round sent, the paid result shown, refresh, a refused round) and tests for the teacher panels and the card switch.
 
+**Whole suite:** 2,118 tests, type check clean. In the one full run a single slow 101 test (not Clan Quest) timed out at 5 seconds while the machine was busy; it passes on its own.
+
 **Choices to know about:** a round is sent for every round (see the design); the seed is visible to the browser; no computer clans exist yet; Clan Quest gives no points; the maths settings are still the defaults until the Teacher page.
 
 **To go live** (each needs James to say so): apply the two migrations (`20261018001800_clans.sql`, `20261018001900_clans_fights.sql`), deploy the `clans` function, merge `clans` into `main`, then switch Clan Quest on from the teacher page.
