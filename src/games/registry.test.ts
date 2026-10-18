@@ -3,8 +3,8 @@ import { GAMES, POWER_CLASH_ON, findGame } from './registry';
 import { BOT_LEVELS, isBotLevel, isRanked } from './types';
 
 describe('game registry', () => {
-  it('has chess, checkers, Wormholes & Black Holes, 101, Gem Keep, Power Clash and Maths Monsters', () => {
-    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters']);
+  it('has chess, checkers, Wormholes & Black Holes, 101, Gem Keep, Power Clash, Maths Monsters, Dragon Maths and Clan Quest', () => {
+    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters', 'dragon-maths', 'clan-quest']);
   });
 
   it('shows Power Clash on the dashboard while the switch is on', () => {
@@ -18,6 +18,8 @@ describe('game registry', () => {
     expect(findGame('101')?.ranked).toBe(false);
     expect(findGame('gem-keep')?.ranked).toBe(false);
     expect(findGame('monsters')?.ranked).toBe(false);
+    expect(findGame('dragon-maths')?.ranked).toBe(false);
+    expect(findGame('clan-quest')?.ranked).toBe(false);
   });
 
   it('gives every game a unique, URL-safe id', () => {

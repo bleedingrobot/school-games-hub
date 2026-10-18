@@ -87,6 +87,13 @@ export interface Rules {
   gemKeep?: { won: [number, number, number]; lost: number; minWavesForLoss: number };
   /** Maths Monsters (null while the game is switched off): wild wins per point, points per trainer, per badge. */
   monsters?: { wildWinsPerPoint: number; trainerWin: number; badge: number } | null;
+  /** Dragon Maths (null while the game is switched off): forest wins per point, points per master, for the dragon. */
+  dragonMaths?: { forestWinsPerPoint: number; masterWin: number; dragonWin: number } | null;
+  /** Clan Quest (null while the game is switched off): fame and points for each thing a clan can do. */
+  clanQuest?: {
+    fame: { mineWin: number; bossWin: number; warWin: number; kingdomRaidWin: number; classRaidWin: number; villageBuilt: number };
+    points: { minesPerPoint: number; boss: number; war: number; villageBuilt: number };
+  } | null;
   /** Power Clash: taking-part points against a bot and against a classmate (never ranked). */
   powerClash?: { bot: number; friend?: number; friendDailyGames?: number };
   botDailyCap: number;

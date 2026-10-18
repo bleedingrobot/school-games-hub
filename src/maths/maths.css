@@ -346,3 +346,35 @@
   font-variant-numeric: tabular-nums;
   color: var(--q-soft);
 }
+
+/* Practical questions (Clan Quest): the question in words, the answer under it, a label on each tap choice. */
+.question__text {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+}
+.question__answer {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.question__unit {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--q-soft);
+}
+.question__choice--label {
+  font-size: 1.1rem;
+  padding: 8px;
+}
+.numpad__key--minus {
+  grid-column: 1 / -1;
+  min-height: 44px;
+  font-size: 1.5rem;
+}
+.question--practical .question__fact {
+  display: none;
+}

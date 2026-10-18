@@ -20,6 +20,8 @@ import { fetchMyCardStats, fetchMyOpenCardGames, fetchRecentCardGames, type Seat
 import { fetchMyOpenPowerGames, fetchMyPowerStats, fetchRecentPowerGames, seatsOf as powerSeatsOf, type PowerGame } from '../data/powerGames';
 import { findGame, GAMES, POWER_CLASH_ON, gameLabel } from '../games/registry';
 import { trainingOn } from '../training/switch';
+import { useClansEnabled } from '../games/clans/switch';
+import { useLordEnabled } from '../games/lord/switch';
 import { useMonstersEnabled } from '../games/monsters/switch';
 import { BOT_LEVELS, isRanked, type BotLevel } from '../games/types';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
@@ -239,7 +241,9 @@ export function Dashboard() {
   const { recent, stats, friendStats, inProgress, spaceGoing, spaceStats, cardGoing, powerGoing, progress, failed } = useMyGames(profile?.id);
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
   const monstersOn = useMonstersEnabled() === true;
-  const shownGames = GAMES.filter((g) => g.id !== 'monsters' || monstersOn);
+  const lordOn = useLordEnabled() === true;
+  const clansOn = useClansEnabled() === true;
+  const shownGames = GAMES.filter((g) => (g.id !== 'monsters' || monstersOn) && (g.id !== 'dragon-maths' || lordOn) && (g.id !== 'clan-quest' || clansOn));
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';

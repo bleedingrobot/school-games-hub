@@ -56,12 +56,12 @@ select set_eq($$
   select p.proname::text from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public' and has_function_privilege('authenticated', p.oid, 'execute')
 $$, array[
-  'card_lobby_games', 'choose_my_name', 'gem_keep_leaderboard', 'is_player_in', 'is_school_email', 'is_school_user', 'is_teacher', 'is_valid_avatar',
-  'leaderboard', 'lobby_games', 'monsters_leaderboard', 'my_bot_game_stats', 'my_card_game_stats', 'my_friend_game_stats', 'my_gem_keep', 'my_monsters', 'my_power_game_stats', 'my_progress',
+  'card_lobby_games', 'choose_my_name', 'clan_scoreboard', 'gem_keep_leaderboard', 'is_player_in', 'is_school_email', 'is_school_user', 'is_teacher', 'is_valid_avatar',
+  'leaderboard', 'lobby_games', 'lord_hall', 'lord_news', 'lord_warriors', 'monsters_leaderboard', 'my_bot_game_stats', 'my_card_game_stats', 'my_friend_game_stats', 'my_gem_keep', 'my_lord', 'my_monsters', 'my_power_game_stats', 'my_progress',
   'my_space_game_stats', 'my_training', 'power_lobby_games', 'progress_rules', 'save_my_avatar', 'school_domain', 'server_time', 'space_lobby_games',
-  'teacher_delete_student', 'teacher_gem_keep_class', 'teacher_gem_keep_student', 'teacher_monster_class', 'teacher_monster_student', 'teacher_new_season', 'teacher_reset_name', 'teacher_set_gem_keep', 'teacher_set_hidden',
-  'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_space_reactions', 'teacher_student_detail',
-  'teacher_students', 'teacher_training_student'
+  'teacher_clan_info', 'teacher_clan_maths_class', 'teacher_clan_maths_student', 'teacher_clans_new_season', 'teacher_create_village', 'teacher_delete_student', 'teacher_delete_village', 'teacher_gem_keep_class', 'teacher_gem_keep_student', 'teacher_lord_class', 'teacher_lord_student', 'teacher_monster_class', 'teacher_monster_student', 'teacher_move_pupil', 'teacher_new_season', 'teacher_rename_village', 'teacher_reset_clan', 'teacher_reset_lord_hero', 'teacher_reset_name', 'teacher_set_clan_maths', 'teacher_set_clan_raids', 'teacher_set_clans', 'teacher_set_gem_keep', 'teacher_set_hidden',
+  'teacher_set_lord', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_space_reactions', 'teacher_student_detail',
+  'teacher_students', 'teacher_training_student', 'teacher_villages'
 ], 'signed-in users can call only this list of functions (each checks who is asking)');
 
 select is_empty($$
