@@ -2325,3 +2325,9 @@ main:focus {
   white-space: nowrap;
   border: 0;
 }
+
+.section-subtitle {
+  font-size: 1.15rem;
+  margin: 22px 0 12px;
+  color: #fff;
+}

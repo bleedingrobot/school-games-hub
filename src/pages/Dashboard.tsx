@@ -45,6 +45,13 @@ function botName(level: string, game?: string) {
   return `${BOT_LEVELS.find((l) => l.id === level)?.label ?? ''} bot`;
 }
 
+/** How the dashboard groups its games, top to bottom. A game missing from here would not show. */
+const GAME_GROUPS = [
+  { title: 'Non-maths games', ids: ['chess', 'checkers', '101'] },
+  { title: 'Easy maths games', ids: ['space', 'gem-keep', 'power-clash'] },
+  { title: 'Complex maths games', ids: ['monsters', 'dragon-maths', 'clan-quest'] },
+];
+
 /** One line in Recent games: against a bot, or against another student. */
 export interface RecentGame {
   id: string;
@@ -347,19 +354,28 @@ export function Dashboard() {
         <h2 id="games-title" className="section-title">
           Pick a game
         </h2>
-        <div className="game-grid">
-          {shownGames.map((game) => (
-            <GameCard
-              key={game.id}
-              game={game}
-              level={levelFor(game.id)}
-              onLevelChange={(level) => {
-                setLevels((prev) => ({ ...prev, [game.id]: level }));
-                setFeatured(game.id);
-              }}
-            />
-          ))}
-        </div>
+        {GAME_GROUPS.map((group) => {
+          const groupGames = group.ids.map((id) => shownGames.find((g) => g.id === id)).filter((g) => g !== undefined);
+          if (groupGames.length === 0) return null;
+          return (
+            <div key={group.title}>
+              {group.title && <h3 className="section-subtitle">{group.title}</h3>}
+              <div className="game-grid">
+                {groupGames.map((game) => (
+                  <GameCard
+                    key={game.id}
+                    game={game}
+                    level={levelFor(game.id)}
+                    onLevelChange={(level) => {
+                      setLevels((prev) => ({ ...prev, [game.id]: level }));
+                      setFeatured(game.id);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </section>
 
       <div className="link-grid">
