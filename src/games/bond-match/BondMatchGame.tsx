@@ -60,7 +60,9 @@ function Mark({ set }: { set: 0 | 1 }) {
 function WrongSet() {
   return (
     <>
-      {TEXT.wrongSetLead} {TEXT.wrongSetMatch} <Mark set={0} /> {TEXT.wrongSetWith} <Mark set={0} />, {TEXT.wrongSetOr} <Mark set={1} /> {TEXT.wrongSetWith} <Mark set={1} />.
+      {TEXT.wrongSetLead}{' '}
+      <span className="bm-nowrap">{TEXT.wrongSetMatch} <Mark set={0} /> {TEXT.wrongSetWith} <Mark set={0} />,</span>{' '}
+      <span className="bm-nowrap">{TEXT.wrongSetOr} <Mark set={1} /> {TEXT.wrongSetWith} <Mark set={1} />.</span>
     </>
   );
 }

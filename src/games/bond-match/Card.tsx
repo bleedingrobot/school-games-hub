@@ -39,7 +39,7 @@ export const Card = forwardRef<HTMLButtonElement, Props>(function Card({ index, 
     <button
       ref={ref}
       type="button"
-      className={`bm-card bm-card--${state} bm-card--set${card.set}${picture ? ' bm-card--pic' : ''}`}
+      className={`bm-card bm-card--${state} bm-card--set${card.set}${card.side.kind === 'fraction' ? ' bm-card--frac' : ''}${picture ? ' bm-card--pic' : ''}`}
       data-index={index}
       data-match-colour={state === 'matched' ? card.pair % MATCH_COLOURS : undefined}
       aria-label={label}

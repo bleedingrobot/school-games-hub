@@ -291,15 +291,25 @@
   padding-top: 0.05em;
 }
 /* The fraction picture: a bar of equal parts under the number, so the number stays the main thing. */
+/* Room under the corner mark so it never covers the top number of a fraction. */
+.bm-card--frac .bm-card__front {
+  padding-top: calc(var(--bm-card) * 0.17);
+}
+.bm-card--pic .bm-card__tick {
+  top: 2px;
+  bottom: auto;
+}
 .bm-card--pic .bm-frac {
-  font-size: 0.62em;
+  font-size: 0.56em;
 }
 .bm-bar-pic {
   display: flex;
+  flex: none;
+  box-sizing: border-box;
   gap: 1px;
   width: 70%;
-  height: max(7px, calc(var(--bm-card) * 0.09));
-  margin-top: 0.25em;
+  height: max(8px, calc(var(--bm-card) * 0.1));
+  margin-top: 0.2em;
   padding: 1px;
   border: 1.5px solid #334155;
   border-radius: 4px;
@@ -338,6 +348,9 @@
   line-height: 1.7;
   margin-top: 4px;
   color: var(--ink-soft);
+}
+.bm-nowrap {
+  white-space: nowrap;
 }
 .bm-mark {
   display: inline-block;
