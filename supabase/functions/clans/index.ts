@@ -1,0 +1,3529 @@
+// GENERATED FILE: don't edit. Edit supabase/functions/clans/handler.ts (and shared/),
+// then run `npm run build:functions`. Deploy this file as the "clans" function.
+
+import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+//#region shared/maths/practical.ts
+const YEAR_BANDS = [
+	4,
+	5,
+	6
+];
+const KINDS = [
+	"percent-of",
+	"price-with-tax",
+	"change",
+	"area",
+	"perimeter",
+	"share-whole",
+	"share-left",
+	"round-up",
+	"troop-cost",
+	"budget-left",
+	"ratio",
+	"negative",
+	"better-buy",
+	"church-bill",
+	"times"
+];
+/** What a teacher switches on and off. */
+const TOPICS = [
+	"times",
+	"percentages",
+	"money",
+	"area",
+	"division",
+	"ratios",
+	"rates",
+	"integers"
+];
+const MINUS = "−";
+/** A number for people: thousands commas, a proper minus sign, no trailing zeros. */
+function fmt(n) {
+	const rounded = Math.round(Math.abs(n) * 100) / 100;
+	const [whole, decimals] = String(rounded).split(".");
+	const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	return (n < 0 && rounded !== 0 ? MINUS : "") + grouped + (decimals ? `.${decimals}` : "");
+}
+/** Round up, ignoring the tiny errors decimals can leave behind. */
+const ceil = (x) => Math.ceil(Math.round(x * 1e6) / 1e6);
+const isWhole = (x) => Math.round(x * 1e6) / 1e6 === Math.round(x);
+/** A steady pick from a list that depends only on the numbers, so rebuilding gives the same wording. */
+const variant = (nums, count) => Math.abs(Math.round(nums.reduce((t, x, i) => t + x * (i + 3), 0))) % count;
+const int$2 = (random, lo, hi) => lo + Math.floor(random() * (hi - lo + 1));
+const choose = (random, list) => list[Math.floor(random() * list.length)];
+const stepped = (random, lo, hi, step) => lo + step * Math.floor(random() * ((hi - lo) / step + 1));
+const whole = (n, lo, hi) => Number.isInteger(n) && n >= lo && n <= hi;
+const allWhole = (nums, lo, hi) => nums.every((n) => whole(n, lo, hi));
+/** A total that is not an exact multiple of `per`, between lo and hi. */
+function withRemainder(random, per, lo, hi) {
+	for (let tries = 0; tries < 200; tries++) {
+		const total = int$2(random, lo, hi);
+		if (total % per !== 0) return total;
+	}
+	return lo - lo % per + 1;
+}
+const PERCENT_WORDS = {
+	50: "half",
+	25: "a quarter",
+	10: "a tenth",
+	20: "a fifth",
+	75: "three quarters",
+	12.5: "an eighth"
+};
+const GOODS = [
+	"shield",
+	"helmet",
+	"belt",
+	"cloak",
+	"lantern",
+	"rope"
+];
+const SUPPLIES = [
+	"arrows",
+	"potions",
+	"scrolls",
+	"torches"
+];
+const KIND_DEFS = {
+	"percent-of": {
+		topic: "percentages",
+		bands: YEAR_BANDS,
+		valid: (n) => n.length === 2 && n[0] > 0 && n[0] <= 100 && Math.round(n[0] * 10) === n[0] * 10 && whole(n[1], 1, 5e3),
+		build([pct, amount], options) {
+			const exact = amount * pct / 100;
+			const answer = ceil(exact);
+			const rounding = isWhole(exact) ? "" : " Round up to a whole number.";
+			const text = [
+				`What is ${fmt(pct)}% of ${fmt(amount)}?`,
+				`${fmt(amount)} followers watch you win. ${fmt(pct)}% of them join your clan. How many join?`,
+				`A chest holds ${fmt(amount)} gold. You may take ${fmt(pct)}% of it. How much is that?`
+			][options.about === "followers" ? 1 : options.about === "loot" ? 2 : variant([pct, amount], 3)] + rounding;
+			const working = [];
+			if (PERCENT_WORDS[pct]) {
+				const parts = pct === 75 ? 4 : Math.round(100 / pct);
+				working.push(`${fmt(pct)}% is ${PERCENT_WORDS[pct]}, so divide by ${parts}${pct === 75 ? " and times by 3" : ""}.`);
+				working.push(pct === 75 ? `${fmt(amount)} ÷ 4 = ${fmt(amount / 4)}, then × 3 = ${fmt(amount * 3 / 4)}.` : `${fmt(amount)} ÷ ${parts} = ${fmt(exact)}.`);
+			} else {
+				working.push(`1% of ${fmt(amount)} is ${fmt(amount / 100)}, so ${fmt(pct)}% is ${fmt(pct)} × ${fmt(amount / 100)}.`);
+				working.push(`${fmt(pct)} × ${fmt(amount / 100)} = ${fmt(exact)}.`);
+			}
+			if (!isWhole(exact)) working.push(`That is ${fmt(exact)}, rounded up to ${fmt(answer)}.`);
+			return {
+				text,
+				answer,
+				working
+			};
+		},
+		generate(band, random) {
+			if (band === 4) return [choose(random, [
+				10,
+				25,
+				50
+			]), choose(random, [
+				20,
+				40,
+				60,
+				80,
+				100,
+				120,
+				160,
+				200
+			])];
+			if (band === 5) return [choose(random, [
+				10,
+				20,
+				25,
+				50,
+				75
+			]), stepped(random, 40, 400, 20)];
+			return [choose(random, [
+				5,
+				15,
+				30,
+				35,
+				40,
+				45,
+				60,
+				12.5
+			]), stepped(random, 80, 800, 40)];
+		}
+	},
+	"price-with-tax": {
+		topic: "percentages",
+		bands: YEAR_BANDS,
+		valid: (n) => n.length === 2 && whole(n[0], 1, 5e3) && n[1] >= 0 && n[1] <= 100 && Math.round(n[1] * 10) === n[1] * 10,
+		build([price, tax], options) {
+			const taxAmount = price * tax / 100;
+			const exact = price + taxAmount;
+			const answer = ceil(exact);
+			const text = `${options.item ? `The ${options.item}` : `A ${GOODS[variant([price, tax], GOODS.length)]}`} costs ${fmt(price)} gold. The village adds ${fmt(tax)}% tax. What do you pay?` + (isWhole(exact) ? "" : " Round up to a whole gold piece.");
+			const working = [`Work out the tax first: ${fmt(tax)}% of ${fmt(price)} = ${fmt(taxAmount)}.`, `Then add it on: ${fmt(price)} + ${fmt(taxAmount)} = ${fmt(exact)}.`];
+			if (!isWhole(exact)) working.push(`Round up to ${fmt(answer)} gold.`);
+			return {
+				text,
+				answer,
+				unit: "gold",
+				working
+			};
+		},
+		generate(band, random) {
+			if (band === 4) return [stepped(random, 20, 200, 10), 10];
+			if (band === 5) return [stepped(random, 40, 400, 20), choose(random, [
+				10,
+				20,
+				25
+			])];
+			return [stepped(random, 80, 720, 40), choose(random, [
+				5,
+				12.5,
+				15,
+				30
+			])];
+		}
+	},
+	change: {
+		topic: "money",
+		bands: YEAR_BANDS,
+		valid: (n) => n.length >= 2 && n.length <= 4 && allWhole(n, 1, 1e5) && n.slice(1).reduce((t, c) => t + c, 0) <= n[0],
+		build([paid, ...costs], options) {
+			const total = costs.reduce((t, c) => t + c, 0);
+			const answer = paid - total;
+			const goods = costs.map((_, i) => GOODS[(variant([paid, ...costs], GOODS.length) + i) % GOODS.length]);
+			const things = costs.length === 1 ? `${options.item ? `the ${options.item}` : `a ${goods[0]}`} that costs ${fmt(costs[0])} gold` : `${costs.map((c, i) => `a ${goods[i]} (${fmt(c)} gold)`).join(" and ")}`;
+			return {
+				text: `You pay ${fmt(paid)} gold for ${things}. How much change do you get?`,
+				answer,
+				unit: "gold",
+				working: costs.length === 1 ? [`Change = what you paid − the cost.`, `${fmt(paid)} − ${fmt(costs[0])} = ${fmt(answer)}.`] : [`First add up the cost: ${costs.map(fmt).join(" + ")} = ${fmt(total)}.`, `Then take it from what you paid: ${fmt(paid)} − ${fmt(total)} = ${fmt(answer)}.`]
+			};
+		},
+		generate(band, random) {
+			if (band === 4) return [1e3, stepped(random, 50, 950, 50)];
+			if (band === 5) return [1e3, stepped(random, 10, 990, 10)];
+			if (random() < .5) return [1e3, int$2(random, 101, 999)];
+			const first = int$2(random, 100, 499);
+			return [
+				1e3,
+				first,
+				int$2(random, 100, 999 - first)
+			];
+		}
+	},
+	area: {
+		topic: "area",
+		bands: YEAR_BANDS,
+		valid: (n) => n.length === 2 && allWhole(n, 1, 200),
+		build([w, h]) {
+			const answer = w * h;
+			return {
+				text: `A plot of land is ${fmt(w)} squares wide and ${fmt(h)} squares long. What is its area?`,
+				answer,
+				unit: "squares",
+				working: [`Area = width × length.`, `${fmt(w)} × ${fmt(h)} = ${fmt(answer)} squares.`]
+			};
+		},
+		generate(band, random) {
+			if (band === 4) return [int$2(random, 2, 6), int$2(random, 2, 6)];
+			if (band === 5) return [int$2(random, 3, 12), int$2(random, 3, 12)];
+			return [int$2(random, 6, 20), int$2(random, 5, 15)];
+		}
+	},
+	perimeter: {
+		topic: "area",
+		bands: YEAR_BANDS,
+		valid: (n) => n.length === 2 && allWhole(n, 1, 200),
+		build([w, h]) {
+			const answer = 2 * (w + h);
+			return {
+				text: `You want a fence all the way round a plot ${fmt(w)} squares wide and ${fmt(h)} squares long. How many squares long is the fence?`,
+				answer,
+				unit: "squares",
+				working: [`Go all the way round: two widths and two lengths.`, `${fmt(w)} + ${fmt(h)} + ${fmt(w)} + ${fmt(h)} = ${fmt(answer)} squares.`]
+			};
+		},
+		generate(band, random) {
+			if (band === 4) return [int$2(random, 2, 8), int$2(random, 2, 8)];
+			if (band === 5) return [int$2(random, 3, 15), int$2(random, 3, 15)];
+			return [int$2(random, 5, 25), int$2(random, 5, 25)];
+		}
+	},
+	"share-whole": {
+		topic: "division",
+		bands: YEAR_BANDS,
+		valid: (n) => n.length === 2 && whole(n[0], 0, 5e3) && whole(n[1], 1, 500),
+		build([total, per]) {
+			const answer = Math.floor(total / per);
+			const left = total - answer * per;
+			return {
+				text: `You have ${fmt(total)} training points. Each +1 costs ${fmt(per)} points. How many can you buy?`,
+				answer,
+				working: [
+					`Count how many lots of ${fmt(per)} fit into ${fmt(total)}.`,
+					`${fmt(answer)} × ${fmt(per)} = ${fmt(answer * per)}, and ${fmt(answer + 1)} × ${fmt(per)} = ${fmt((answer + 1) * per)} is too many.`,
+					`So you can buy ${fmt(answer)}${left ? `, with ${fmt(left)} left over` : ""}.`
+				]
+			};
+		},
+		generate(band, random) {
+			if (band === 4) {
+				const per = choose(random, [
+					2,
+					3,
+					4,
+					5,
+					10
+				]);
+				return [withRemainder(random, per, 11, 49), per];
+			}
+			if (band === 5) {
+				const per = int$2(random, 3, 9);
+				return [withRemainder(random, per, 30, 99), per];
+			}
+			const per = int$2(random, 6, 12);
+			return [withRemainder(random, per, 60, 199), per];
+		}
+	},
+	"share-left": {
+		topic: "division",
+		bands: YEAR_BANDS,
+		valid: (n) => n.length === 2 && whole(n[0], 0, 5e3) && whole(n[1], 1, 500),
+		build([total, per]) {
+			const bought = Math.floor(total / per);
+			const answer = total - bought * per;
+			return {
+				text: `You have ${fmt(total)} training points. Each +1 costs ${fmt(per)} points. After buying as many as you can, how many points are left over?`,
+				answer,
+				working: [`First find how many you can buy: ${fmt(bought)} × ${fmt(per)} = ${fmt(bought * per)}.`, `Then what is left: ${fmt(total)} − ${fmt(bought * per)} = ${fmt(answer)}.`]
+			};
+		},
+		generate: (band, random, tables) => KIND_DEFS["share-whole"].generate(band, random, tables)
+	},
+	"round-up": {
+		topic: "division",
+		bands: YEAR_BANDS,
+		valid: (n) => n.length === 2 && whole(n[0], 1, 5e3) && whole(n[1], 1, 500),
+		build([count, cap]) {
+			const answer = ceil(count / cap);
+			const exact = count % cap === 0;
+			return {
+				text: `You have ${fmt(count)} footmen. One barracks holds ${fmt(cap)}. How many barracks do you need?`,
+				answer,
+				working: [`${fmt(count)} ÷ ${fmt(cap)} = ${fmt(Math.floor(count / cap))}${exact ? "" : ` with ${fmt(count % cap)} left over`}.`, exact ? `It fits exactly, so ${fmt(answer)} barracks.` : `Those ${fmt(count % cap)} left over still need a roof, so round up to ${fmt(answer)} barracks.`]
+			};
+		},
+		generate(band, random) {
+			if (band === 4) {
+				const cap = choose(random, [5, 10]);
+				return [withRemainder(random, cap, 6, 49), cap];
+			}
+			if (band === 5) {
+				const cap = choose(random, [
+					5,
+					10,
+					20
+				]);
+				return [withRemainder(random, cap, 21, 149), cap];
+			}
+			const cap = choose(random, [
+				5,
+				10,
+				20
+			]);
+			return [withRemainder(random, cap, 50, 399), cap];
+		}
+	},
+	"troop-cost": {
+		topic: "money",
+		bands: YEAR_BANDS,
+		valid: (n) => n.length === 3 && allWhole(n, 0, 200) && n.some((x) => x > 0),
+		build([footmen, axemen, knights]) {
+			const lines = [
+				...footmen ? [{
+					name: footmen === 1 ? "footman" : "footmen",
+					n: footmen,
+					cost: TROOP_COST.footman
+				}] : [],
+				...axemen ? [{
+					name: axemen === 1 ? "axeman" : "axemen",
+					n: axemen,
+					cost: TROOP_COST.axeman
+				}] : [],
+				...knights ? [{
+					name: knights === 1 ? "knight" : "knights",
+					n: knights,
+					cost: TROOP_COST.knight
+				}] : []
+			];
+			const answer = lines.reduce((t, l) => t + l.n * l.cost, 0);
+			const list = lines.map((l) => `${fmt(l.n)} ${l.name}`);
+			const joined = list.length > 1 ? `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}` : list[0];
+			const working = lines.map((l) => `${fmt(l.n)} × ${fmt(l.cost)} = ${fmt(l.n * l.cost)} gold for the ${l.name}.`);
+			if (lines.length > 1) working.push(`Add them up: ${lines.map((l) => fmt(l.n * l.cost)).join(" + ")} = ${fmt(answer)}.`);
+			return {
+				text: `A footman costs ${TROOP_COST.footman} gold, an axeman ${TROOP_COST.axeman} and a knight ${TROOP_COST.knight}. How much do ${joined} cost?`,
+				answer,
+				unit: "gold",
+				working
+			};
+		},
+		generate(band, random) {
+			if (band === 4) return [
+				int$2(random, 2, 9),
+				0,
+				0
+			];
+			if (band === 5) return [
+				int$2(random, 2, 12),
+				int$2(random, 1, 6),
+				0
+			];
+			return [
+				int$2(random, 4, 20),
+				int$2(random, 2, 10),
+				int$2(random, 1, 6)
+			];
+		}
+	},
+	"budget-left": {
+		topic: "money",
+		bands: YEAR_BANDS,
+		valid: (n) => n.length >= 3 && n.length <= 6 && (n[0] === 0 || n[0] === 1) && allWhole(n.slice(1), 1, 1e5) && n.slice(2).reduce((t, c) => t + c, 0) <= n[1],
+		build([unit, total, ...spent]) {
+			const sum = spent.reduce((t, c) => t + c, 0);
+			const answer = total - sum;
+			const money = unit === 0;
+			const show = (x) => money ? `${fmt(x)} gold` : `${fmt(x)}%`;
+			return {
+				text: money ? `You have ${show(total)}. You spend ${spent.map(show).join(", then ")}. How much is left?` : `Your workers have ${show(total)} energy today. Your buildings use ${spent.map(show).join(", ")}. How much energy is left?`,
+				answer,
+				unit: money ? "gold" : "%",
+				working: [`Add up what is used: ${spent.map(fmt).join(" + ")} = ${fmt(sum)}.`, `Take it from the total: ${fmt(total)} − ${fmt(sum)} = ${fmt(answer)}.`]
+			};
+		},
+		generate(band, random) {
+			if (band === 4) return [
+				0,
+				choose(random, [
+					100,
+					200,
+					500,
+					1e3
+				]),
+				stepped(random, 10, 90, 10)
+			];
+			if (band === 5) {
+				const total = choose(random, [
+					200,
+					500,
+					1e3
+				]);
+				return [
+					0,
+					total,
+					stepped(random, 10, total * .4, 10),
+					stepped(random, 10, total * .4, 10)
+				];
+			}
+			if (random() < .5) return [
+				1,
+				100,
+				int$2(random, 5, 35),
+				int$2(random, 4, 25),
+				int$2(random, 3, 20)
+			];
+			return [
+				0,
+				1e3,
+				int$2(random, 100, 300),
+				int$2(random, 100, 300),
+				int$2(random, 100, 300)
+			];
+		}
+	},
+	ratio: {
+		topic: "ratios",
+		bands: YEAR_BANDS,
+		valid: (n) => {
+			if (n.length !== 4 || !allWhole(n, 0, 5e3) || n[1] < 1 || n[2] < 1 || n[3] < 1) return false;
+			if (n[0] === 0) return n[3] % n[1] === 0;
+			if (n[0] === 1) return n[1] !== n[2] && n[3] % (n[1] + n[2]) === 0;
+			return false;
+		},
+		build([mode, a, b, n]) {
+			if (mode === 0) {
+				const lots = n / a;
+				const answer = lots * b;
+				return {
+					text: `For every ${fmt(a)} ${a === 1 ? "axeman" : "axemen"} there ${b === 1 ? "is" : "are"} ${fmt(b)} ${b === 1 ? "footman" : "footmen"}. If you have ${fmt(n)} ${n === 1 ? "axeman" : "axemen"}, how many footmen do you have?`,
+					answer,
+					working: [`${fmt(n)} axemen is ${fmt(lots)} lots of ${fmt(a)}.`, `Each lot has ${fmt(b)} footmen: ${fmt(lots)} × ${fmt(b)} = ${fmt(answer)}.`]
+				};
+			}
+			const parts = a + b;
+			const one = n / parts;
+			const answer = one * Math.max(a, b);
+			return {
+				text: `Two members share ${fmt(n)} gold in the ratio ${fmt(a)} : ${fmt(b)}. How much does the bigger share get?`,
+				answer,
+				unit: "gold",
+				working: [`${fmt(a)} + ${fmt(b)} = ${fmt(parts)} parts altogether, so one part is ${fmt(n)} ÷ ${fmt(parts)} = ${fmt(one)}.`, `The bigger share is ${fmt(Math.max(a, b))} parts: ${fmt(Math.max(a, b))} × ${fmt(one)} = ${fmt(answer)}.`]
+			};
+		},
+		generate(band, random) {
+			if (band === 4) return [
+				0,
+				1,
+				int$2(random, 2, 5),
+				int$2(random, 2, 6)
+			];
+			if (band === 5) {
+				const a = int$2(random, 2, 5);
+				let b = int$2(random, 1, 9);
+				if (b === a) b++;
+				return [
+					0,
+					a,
+					b,
+					a * int$2(random, 2, 8)
+				];
+			}
+			if (random() < .5) {
+				const a = int$2(random, 1, 6);
+				let b = int$2(random, 1, 7);
+				if (b === a) b++;
+				return [
+					1,
+					a,
+					b,
+					(a + b) * int$2(random, 3, 12)
+				];
+			}
+			const a = int$2(random, 3, 8);
+			let b = int$2(random, 2, 12);
+			if (b === a) b++;
+			return [
+				0,
+				a,
+				b,
+				a * int$2(random, 3, 12)
+			];
+		}
+	},
+	negative: {
+		topic: "integers",
+		bands: [6],
+		valid: (n) => n.length === 2 && allWhole(n, -1e3, 1e3) && n[1] !== 0,
+		build([start, change]) {
+			const answer = start + change;
+			const verb = change < 0 ? `loses ${fmt(-change)} points` : `wins ${fmt(change)} points`;
+			return {
+				text: `The clan's score is ${fmt(start)}. In the next duel it ${verb}. What is its score now?`,
+				answer,
+				working: change < 0 ? [`Losing points means taking away: ${fmt(start)} − ${fmt(-change)}.`, `${fmt(start)} − ${fmt(-change)} = ${fmt(answer)}.${answer < 0 ? " Below zero, so it is a negative number." : ""}`] : [`Winning points means adding: ${fmt(start)} + ${fmt(change)}.`, `${fmt(start)} + ${fmt(change)} = ${fmt(answer)}.`]
+			};
+		},
+		generate(_band, random) {
+			for (let tries = 0; tries < 200; tries++) {
+				const start = int$2(random, -10, 10);
+				const change = int$2(random, -15, 15);
+				if (change !== 0 && Math.abs(start + change) <= 20 && (tries > 100 || start + change < 0 || start < 0)) return [start, change];
+			}
+			return [3, -8];
+		}
+	},
+	"better-buy": {
+		topic: "rates",
+		bands: YEAR_BANDS,
+		valid: (n) => n.length === 4 && allWhole(n, 1, 5e3) && n[0] * n[3] !== n[2] * n[1],
+		build([priceA, countA, priceB, countB], options) {
+			const [nameA, nameB] = options.labels ?? ["Offer A", "Offer B"];
+			const noun = SUPPLIES[variant([
+				priceA,
+				countA,
+				priceB,
+				countB
+			], SUPPLIES.length)];
+			const answer = priceA * countB < priceB * countA ? 1 : 2;
+			const rateA = priceA / countA;
+			const rateB = priceB / countB;
+			const each = (x) => isWhole(x) ? fmt(x) : `about ${fmt(Math.round(x * 10) / 10)}`;
+			return {
+				text: `${nameA}: ${fmt(countA)} ${noun} for ${fmt(priceA)} gold. ${nameB}: ${fmt(countB)} ${noun} for ${fmt(priceB)} gold. Which is cheaper for each one?`,
+				answer,
+				choices: [{
+					value: 1,
+					label: nameA
+				}, {
+					value: 2,
+					label: nameB
+				}],
+				working: [
+					`Find the price of one: divide the gold by the number.`,
+					`${nameA}: ${fmt(priceA)} ÷ ${fmt(countA)} = ${each(rateA)} gold each. ${nameB}: ${fmt(priceB)} ÷ ${fmt(countB)} = ${each(rateB)} gold each.`,
+					`${answer === 1 ? nameA : nameB} is cheaper for each one.`
+				]
+			};
+		},
+		generate(band, random) {
+			if (band === 4) {
+				for (let tries = 0; tries < 200; tries++) {
+					const rateA = int$2(random, 5, 30);
+					const rateB = int$2(random, 5, 30);
+					const countA = int$2(random, 2, 6);
+					const countB = int$2(random, 2, 6);
+					if (Math.abs(rateA - rateB) >= 2 && countA !== countB) return [
+						rateA * countA,
+						countA,
+						rateB * countB,
+						countB
+					];
+				}
+				return [
+					60,
+					3,
+					50,
+					5
+				];
+			}
+			if (band === 5) {
+				for (let tries = 0; tries < 200; tries++) {
+					const rateA = int$2(random, 10, 60);
+					const rateB = int$2(random, 10, 60);
+					const countA = int$2(random, 2, 10);
+					const countB = int$2(random, 2, 10);
+					if (Math.abs(rateA - rateB) >= 3 && countA !== countB) return [
+						rateA * countA,
+						countA,
+						rateB * countB,
+						countB
+					];
+				}
+				return [
+					120,
+					4,
+					150,
+					6
+				];
+			}
+			for (let tries = 0; tries < 500; tries++) {
+				const countA = int$2(random, 3, 12);
+				const countB = int$2(random, 3, 12);
+				const priceA = stepped(random, 50, 800, 10);
+				const priceB = stepped(random, 50, 800, 10);
+				const rateA = priceA / countA;
+				const rateB = priceB / countB;
+				if (countA !== countB && Math.abs(rateA - rateB) / Math.min(rateA, rateB) >= .08 && Math.abs(rateA - rateB) / Math.min(rateA, rateB) <= .6) return [
+					priceA,
+					countA,
+					priceB,
+					countB
+				];
+			}
+			return [
+				500,
+				7,
+				750,
+				8
+			];
+		}
+	},
+	"church-bill": {
+		topic: "money",
+		bands: YEAR_BANDS,
+		valid: (n) => n.length >= 2 && n.length <= 8 && whole(n[0], 1, 1e3) && allWhole(n.slice(1), 1, 100),
+		build([per, ...levels]) {
+			const bills = levels.map((l) => (l + 1) * per);
+			const answer = bills.reduce((t, b) => t + b, 0);
+			const who = levels.length === 1 ? `1 member (level ${levels[0]})` : new Set(levels).size === 1 ? `${levels.length} members (all level ${levels[0]})` : `${levels.length} members (levels ${levels.slice(0, -1).join(", ")} and ${levels[levels.length - 1]})`;
+			return {
+				text: `The Church wakes a member for (level + 1) × ${fmt(per)} gold. You need to wake ${who}. What is the bill?`,
+				answer,
+				unit: "gold",
+				working: [`Each member costs (level + 1) × ${fmt(per)}: ${levels.map((l, i) => `(${l} + 1) × ${fmt(per)} = ${fmt(bills[i])}`).join("; ")}.`, bills.length > 1 ? `Add them up: ${bills.map(fmt).join(" + ")} = ${fmt(answer)}.` : `The bill is ${fmt(answer)}.`]
+			};
+		},
+		generate(band, random) {
+			if (band === 4) {
+				const level = int$2(random, 1, 9);
+				return [10, ...Array.from({ length: int$2(random, 2, 3) }, () => level)];
+			}
+			if (band === 5) return [10, ...Array.from({ length: int$2(random, 2, 3) }, () => int$2(random, 2, 12))];
+			return [10, ...Array.from({ length: int$2(random, 3, 4) }, () => int$2(random, 3, 18))];
+		}
+	},
+	times: {
+		topic: "times",
+		bands: YEAR_BANDS,
+		valid: (n) => n.length === 2 && allWhole(n, 0, 12),
+		build([a, b]) {
+			const answer = a * b;
+			return {
+				text: `${a} × ${b} = ?`,
+				answer,
+				working: [`${a} × ${b} = ${answer}.`]
+			};
+		},
+		generate(band, random, tables) {
+			return [choose(random, tables.length ? tables : [
+				2,
+				5,
+				10
+			]), int$2(random, 2, band === 4 ? 10 : 12)];
+		}
+	}
+};
+/** Gold each kind of troop costs (the rule sheet's table; footmen 15, axemen 30, knights 60). */
+const TROOP_COST = {
+	footman: 15,
+	axeman: 30,
+	knight: 60
+};
+/** The kinds that can be asked at a year band, optionally only from these topics. */
+function kindsFor(band, topics = TOPICS) {
+	return KINDS.filter((k) => KIND_DEFS[k].bands.includes(band) && topics.includes(KIND_DEFS[k].topic));
+}
+const DEFAULT_PRACTICAL_SETTINGS = {
+	enabledTopics: TOPICS.filter((t) => t !== "integers" && t !== "times"),
+	yearBand: 5,
+	enabledTables: [
+		2,
+		3,
+		4,
+		5,
+		6,
+		7,
+		8,
+		9,
+		10
+	]
+};
+/** Is a topic being asked at this year band? (Switched on, and has a kind for the band.) */
+const topicAvailable = (settings, topic) => settings.enabledTopics.includes(topic) && kindsFor(settings.yearBand, [topic]).length > 0;
+//#endregion
+//#region shared/clans/config.ts
+/** Every tuning number for Clan Quest in one place, so the game can be balanced without hunting through code. */
+const CONFIG = {
+	maxLevel: 20,
+	statCap: 60,
+	pointsPerLevel: 12,
+	minMembers: 4,
+	maxMembers: 6,
+	startGold: 200,
+	fightsPerDay: 8,
+	maxRounds: 8,
+	/** Percent added to shop prices (a fixed village tax; the class lowers it by building). */
+	shopTax: 10,
+	/** Percent of a price it costs to look at an item's real stats. */
+	examinePercent: 25,
+	/** Church: gold to wake someone is (level + 1) times this. */
+	churchPerLevel: 10,
+	/** The first this-many wake-ups each day cost nothing. */
+	freeWakesPerDay: 1,
+	/** Training points to raise a stat by 1; each Training Hall level makes it 1 cheaper (never below 1). */
+	trainCost: {
+		agility: 3,
+		dexterity: 3,
+		strength: 3,
+		wisdom: 3,
+		armor: 5,
+		charisma: 6
+	},
+	/** Points for one HP purchase and one SP purchase, and what each gives. */
+	hpBuy: {
+		cost: 2,
+		amount: 4
+	},
+	spBuy: {
+		cost: 2,
+		amount: 3
+	},
+	/** After each fight survivors get back this share of their missing HP and SP. */
+	betweenFightHeal: .5,
+	/** Mines deeper than `xpBoostFrom` give more experience per hit: multiplied by 1 + (depth - xpBoostFrom) times `xpDepthBoost`. */
+	xpBoostFrom: 8,
+	xpDepthBoost: .25,
+	/** Experience: 30 to reach level 2, then 10 more for each level, but never more than this for one level. */
+	xpLevelCap: 90,
+	/** Experience: total needed to reach `level` (level 1 needs none). */
+	xpToReach(level) {
+		let total = 0;
+		for (let l = 1; l < level; l++) total += Math.min(CONFIG.xpLevelCap, 30 + 10 * (l - 1));
+		return total;
+	},
+	/** Mine depth hints, as depth minus the clan's average level (from the simulator: 100% wins up to -1, 99% to +1, about 90% to +3, under 80% from +4). */
+	depthHint: {
+		easyUpTo: -1,
+		justRightUpTo: 1,
+		toughUpTo: 3
+	},
+	/** The empire (stage C.4). Every number is in the rule sheet's section 12. */
+	empire: {
+		/** Wild land plots a new empire starts with. */
+		startWild: 10,
+		/** Claiming one more plot of wild land costs `base` gold plus `step` for each one claimed before it, up to `max` claims. */
+		claim: {
+			base: 50,
+			step: 25,
+			max: 24
+		},
+		/** A plot is between this many and this many squares along each side. */
+		plotSide: {
+			min: 2,
+			max: 6
+		},
+		/** Gold to develop a plot: this much a square of area, plus this much for each unit of fence round it. */
+		landPerSquare: 2,
+		fencePerUnit: 1,
+		/** Worker energy a day, in percent. */
+		energyPerDay: 100,
+		/** Gold for one troop (the same numbers the troop-cost question uses). */
+		troopCost: TROOP_COST,
+		/** How many of each troop one barracks holds. */
+		troopCap: {
+			footman: 20,
+			axeman: 10,
+			knight: 5
+		},
+		/** How much each troop counts for in a battle (a knight is worth four footmen, like its price). */
+		troopMight: {
+			footman: 1,
+			axeman: 2,
+			knight: 4
+		},
+		/** The most followers a village will send, as a percent. */
+		draftMax: 20,
+		draftStep: 5,
+		/** Size in squares, worker energy in percent, gold, and how many you can have. `per` is the effect of each one, in percent (or points). */
+		buildings: {
+			barracks: {
+				size: 15,
+				energy: 30,
+				gold: 100,
+				max: 12,
+				per: 0
+			},
+			walls: {
+				size: 6,
+				energy: 7,
+				gold: 40,
+				max: 5,
+				per: 10
+			},
+			tower: {
+				size: 5,
+				energy: 12,
+				gold: 60,
+				max: 5,
+				per: 10
+			},
+			steelMill: {
+				size: 12,
+				energy: 25,
+				gold: 120,
+				max: 3,
+				per: 10
+			},
+			stables: {
+				size: 10,
+				energy: 20,
+				gold: 100,
+				max: 3,
+				per: 20
+			},
+			gymnasium: {
+				size: 10,
+				energy: 20,
+				gold: 100,
+				max: 2,
+				per: 5
+			},
+			developersHall: {
+				size: 15,
+				energy: 35,
+				gold: 150,
+				max: 3,
+				per: 10
+			}
+		},
+		battle: {
+			maxRounds: 5,
+			/** A side loses about this share of its strength each round. */
+			roundDamage: .25,
+			/** `hit` scales the damage you do, `takes` the damage you suffer. */
+			push: {
+				careful: {
+					hit: .6,
+					takes: .6
+				},
+				steady: {
+					hit: 1,
+					takes: 1
+				},
+				bold: {
+					hit: 1.5,
+					takes: 1.5
+				}
+			},
+			/** Each round's luck: a side does between `min`% and `min + span - 1`% of its usual damage. */
+			luck: {
+				min: 60,
+				span: 80
+			},
+			/** The defenders give way if they end the battle down to this share of where they began (and worse off than the attackers). */
+			retreatAt: .5,
+			/** Of the troops who were hurt, this share do not come home. */
+			lossShare: .25,
+			lootChoices: [
+				5,
+				10,
+				15,
+				20
+			]
+		},
+		raids: {
+			newClanDays: 3,
+			/** Raids on classmates a day, and on computer kingdoms a day. */
+			perDay: 1,
+			kingdomPerDay: 1,
+			shieldDays: 1,
+			/** A classmate must have between 1/this and this times your strength. */
+			fairRatio: 2,
+			/** Most you may take from a classmate, in percent. */
+			classmateLootMax: 10
+		}
+	},
+	/** Quests (stage C.4 part C): one a day, small rewards next to the Mines (a fight earns about 50 gold and 4-13 followers). */
+	quests: {
+		perDay: 1,
+		/** The best charisma in the clan has to reach `open` for a charm choice, `high` for a very charming one. */
+		charm: {
+			open: 8,
+			high: 11
+		},
+		/** What "small", "medium" and "big" mean in a quest. Points go to every member. */
+		reward: {
+			gold: {
+				small: 15,
+				medium: 30,
+				big: 50
+			},
+			followers: {
+				small: 3,
+				medium: 7,
+				big: 12
+			},
+			points: {
+				small: 1,
+				medium: 2,
+				big: 3
+			}
+		},
+		/** A found item is never worth more than this in the shop; if nobody can use it, the clan gets half its price in gold. */
+		itemMaxPrice: 70
+	},
+	/** How much a Battle Cry answer adds. */
+	battleCryDamage: 1.25,
+	battleCryHeal: .2
+};
+//#endregion
+//#region shared/clans/gamedata.ts
+const RACES = [
+	{
+		"name": "Human",
+		"stats": {
+			"agility": 5,
+			"dexterity": 5,
+			"strength": 5,
+			"wisdom": 4,
+			"armor": 0,
+			"charisma": 4
+		},
+		"hp": 12,
+		"sp": 4,
+		"spells": []
+	},
+	{
+		"name": "Dwarf",
+		"stats": {
+			"agility": 4,
+			"dexterity": 5,
+			"strength": 8,
+			"wisdom": 3,
+			"armor": 2,
+			"charisma": 3
+		},
+		"hp": 17,
+		"sp": 3,
+		"spells": []
+	},
+	{
+		"name": "Elf",
+		"stats": {
+			"agility": 7,
+			"dexterity": 8,
+			"strength": 4,
+			"wisdom": 7,
+			"armor": 0,
+			"charisma": 5
+		},
+		"hp": 16,
+		"sp": 6,
+		"spells": []
+	},
+	{
+		"name": "Half-Elf",
+		"stats": {
+			"agility": 6,
+			"dexterity": 7,
+			"strength": 5,
+			"wisdom": 6,
+			"armor": 0,
+			"charisma": 4
+		},
+		"hp": 14,
+		"sp": 4,
+		"spells": []
+	},
+	{
+		"name": "Halfling",
+		"stats": {
+			"agility": 8,
+			"dexterity": 7,
+			"strength": 3,
+			"wisdom": 4,
+			"armor": 0,
+			"charisma": 3
+		},
+		"hp": 15,
+		"sp": 8,
+		"spells": []
+	},
+	{
+		"name": "Orc",
+		"stats": {
+			"agility": 4,
+			"dexterity": 3,
+			"strength": 8,
+			"wisdom": 2,
+			"armor": 2,
+			"charisma": 0
+		},
+		"hp": 14,
+		"sp": 3,
+		"spells": []
+	},
+	{
+		"name": "Muya",
+		"stats": {
+			"agility": 6,
+			"dexterity": 5,
+			"strength": 4,
+			"wisdom": 7,
+			"armor": 0,
+			"charisma": 6
+		},
+		"hp": 8,
+		"sp": 7,
+		"spells": []
+	},
+	{
+		"name": "Minotaur",
+		"stats": {
+			"agility": 2,
+			"dexterity": 2,
+			"strength": 9,
+			"wisdom": 0,
+			"armor": 3,
+			"charisma": 0
+		},
+		"hp": 15,
+		"sp": 0,
+		"spells": []
+	},
+	{
+		"name": "Imp",
+		"stats": {
+			"agility": 5,
+			"dexterity": 8,
+			"strength": 5,
+			"wisdom": 4,
+			"armor": 1,
+			"charisma": 0
+		},
+		"hp": 12,
+		"sp": 5,
+		"spells": [19, 18]
+	}
+];
+const CLASSES = [
+	{
+		"name": "Barbarian",
+		"stats": {
+			"agility": 2,
+			"dexterity": 2,
+			"strength": 5,
+			"wisdom": -1,
+			"armor": 1,
+			"charisma": -1
+		},
+		"hp": 10,
+		"sp": -3,
+		"spells": []
+	},
+	{
+		"name": "Warrior",
+		"stats": {
+			"agility": 4,
+			"dexterity": 3,
+			"strength": 3,
+			"wisdom": 1,
+			"armor": 0,
+			"charisma": 0
+		},
+		"hp": 8,
+		"sp": 6,
+		"spells": [
+			20,
+			11,
+			18
+		]
+	},
+	{
+		"name": "Martial Artist",
+		"stats": {
+			"agility": 6,
+			"dexterity": 5,
+			"strength": 1,
+			"wisdom": 1,
+			"armor": 0,
+			"charisma": 2
+		},
+		"hp": 12,
+		"sp": 7,
+		"spells": [
+			8,
+			9,
+			10,
+			21
+		]
+	},
+	{
+		"name": "Knight",
+		"stats": {
+			"agility": 4,
+			"dexterity": 3,
+			"strength": 4,
+			"wisdom": 2,
+			"armor": 1,
+			"charisma": 4
+		},
+		"hp": 13,
+		"sp": 6,
+		"spells": [14, 22]
+	},
+	{
+		"name": "Assassin",
+		"stats": {
+			"agility": 4,
+			"dexterity": 6,
+			"strength": 1,
+			"wisdom": 2,
+			"armor": 0,
+			"charisma": 1
+		},
+		"hp": 8,
+		"sp": 9,
+		"spells": [
+			16,
+			5,
+			23
+		]
+	},
+	{
+		"name": "Healer",
+		"stats": {
+			"agility": 3,
+			"dexterity": 2,
+			"strength": 0,
+			"wisdom": 3,
+			"armor": 0,
+			"charisma": 2
+		},
+		"hp": 7,
+		"sp": 12,
+		"spells": [
+			1,
+			2,
+			4
+		]
+	},
+	{
+		"name": "Sorcerer",
+		"stats": {
+			"agility": 2,
+			"dexterity": 0,
+			"strength": -1,
+			"wisdom": 4,
+			"armor": 0,
+			"charisma": 0
+		},
+		"hp": 10,
+		"sp": 9,
+		"spells": [
+			8,
+			12,
+			13,
+			25
+		]
+	},
+	{
+		"name": "Necromancer",
+		"stats": {
+			"agility": 2,
+			"dexterity": 1,
+			"strength": -1,
+			"wisdom": 5,
+			"armor": 0,
+			"charisma": 0
+		},
+		"hp": 11,
+		"sp": 10,
+		"spells": [
+			8,
+			6,
+			7,
+			19
+		]
+	},
+	{
+		"name": "Wizard",
+		"stats": {
+			"agility": 2,
+			"dexterity": -1,
+			"strength": -1,
+			"wisdom": 5,
+			"armor": 0,
+			"charisma": 1
+		},
+		"hp": 7,
+		"sp": 13,
+		"spells": [
+			13,
+			15,
+			8,
+			2,
+			4,
+			7
+		]
+	},
+	{
+		"name": "Pirate",
+		"stats": {
+			"agility": 7,
+			"dexterity": 3,
+			"strength": 2,
+			"wisdom": 1,
+			"armor": 0,
+			"charisma": 4
+		},
+		"hp": 5,
+		"sp": 0,
+		"spells": []
+	},
+	{
+		"name": "Samurai",
+		"stats": {
+			"agility": 5,
+			"dexterity": 4,
+			"strength": 2,
+			"wisdom": 1,
+			"armor": 1,
+			"charisma": 2
+		},
+		"hp": 10,
+		"sp": 5,
+		"spells": [8, 9]
+	}
+];
+const ITEMS = [
+	{
+		"name": "Shortsword",
+		"kind": "weapon",
+		"price": 65,
+		"bonus": {
+			"strength": 5,
+			"agility": -1
+		},
+		"needs": {
+			"strength": 6,
+			"agility": 4,
+			"dexterity": 6
+		},
+		"shopLevel": 6
+	},
+	{
+		"name": "Broadsword",
+		"kind": "weapon",
+		"price": 75,
+		"bonus": {
+			"strength": 6,
+			"agility": -2,
+			"dexterity": 1,
+			"charisma": 1
+		},
+		"needs": {
+			"strength": 10,
+			"dexterity": 6
+		},
+		"shopLevel": 6
+	},
+	{
+		"name": "Axe",
+		"kind": "weapon",
+		"price": 50,
+		"bonus": {
+			"strength": 7,
+			"dexterity": -1,
+			"agility": -2,
+			"charisma": 1
+		},
+		"needs": { "strength": 13 },
+		"shopLevel": 6
+	},
+	{
+		"name": "Mace",
+		"kind": "weapon",
+		"price": 45,
+		"bonus": {
+			"strength": 4,
+			"dexterity": 1
+		},
+		"needs": {
+			"strength": 4,
+			"agility": 3,
+			"dexterity": 5
+		},
+		"shopLevel": 6
+	},
+	{
+		"name": "Dagger",
+		"kind": "weapon",
+		"price": 20,
+		"bonus": {
+			"strength": 3,
+			"dexterity": 1
+		},
+		"needs": { "dexterity": 3 },
+		"shopLevel": 6
+	},
+	{
+		"name": "Staff",
+		"kind": "weapon",
+		"price": 13,
+		"bonus": {
+			"strength": 5,
+			"agility": -1,
+			"dexterity": 1
+		},
+		"needs": {
+			"agility": 6,
+			"dexterity": 9
+		},
+		"shopLevel": 6
+	},
+	{
+		"name": "Wand",
+		"kind": "weapon",
+		"price": 25,
+		"bonus": {
+			"strength": 1,
+			"dexterity": 1,
+			"wisdom": 4
+		},
+		"needs": { "wisdom": 11 },
+		"shopLevel": 6
+	},
+	{
+		"name": "Battle Axe",
+		"kind": "weapon",
+		"price": 75,
+		"bonus": {
+			"strength": 8,
+			"agility": -1,
+			"dexterity": -3,
+			"charisma": 1
+		},
+		"needs": { "strength": 13 },
+		"shopLevel": 5
+	},
+	{
+		"name": "Morning Star",
+		"kind": "weapon",
+		"price": 80,
+		"bonus": {
+			"strength": 5,
+			"dexterity": 2
+		},
+		"needs": {
+			"strength": 6,
+			"agility": 8,
+			"dexterity": 7
+		},
+		"shopLevel": 4
+	},
+	{
+		"name": "Scythe",
+		"kind": "weapon",
+		"price": 65,
+		"bonus": {
+			"strength": 3,
+			"dexterity": 3
+		},
+		"needs": {
+			"strength": 2,
+			"agility": 4,
+			"dexterity": 3
+		},
+		"shopLevel": 3
+	},
+	{
+		"name": "Boomerang",
+		"kind": "weapon",
+		"price": 110,
+		"bonus": {
+			"strength": 5,
+			"dexterity": 4
+		},
+		"needs": {
+			"strength": 2,
+			"agility": 6,
+			"dexterity": 7
+		},
+		"shopLevel": 2
+	},
+	{
+		"name": "Falcon's Sword",
+		"kind": "weapon",
+		"price": 250,
+		"bonus": {
+			"strength": 8,
+			"agility": -3,
+			"dexterity": 1,
+			"charisma": 3
+		},
+		"needs": {
+			"strength": 12,
+			"dexterity": 10
+		},
+		"shopLevel": 1
+	},
+	{
+		"name": "Sky Sword",
+		"kind": "weapon",
+		"price": 500,
+		"bonus": {
+			"strength": 22,
+			"dexterity": 2,
+			"charisma": 5
+		},
+		"needs": {
+			"strength": 10,
+			"dexterity": 6
+		},
+		"shopLevel": 0
+	},
+	{
+		"name": "Knobbly Club",
+		"kind": "weapon",
+		"price": 10,
+		"bonus": {
+			"strength": 6,
+			"agility": -1,
+			"dexterity": -1
+		},
+		"needs": {
+			"agility": 7,
+			"dexterity": 9,
+			"strength": 8
+		},
+		"shopLevel": 2
+	},
+	{
+		"name": "Thunder Axe",
+		"kind": "weapon",
+		"price": 150,
+		"bonus": {
+			"strength": 8,
+			"agility": -3,
+			"dexterity": -1
+		},
+		"needs": {
+			"agility": 8,
+			"dexterity": 8,
+			"strength": 13
+		},
+		"shopLevel": 1
+	},
+	{
+		"name": "Moon Blade",
+		"kind": "weapon",
+		"price": 200,
+		"bonus": {
+			"strength": 8,
+			"agility": -1,
+			"dexterity": -1
+		},
+		"needs": {
+			"agility": 11,
+			"dexterity": 5,
+			"strength": 10
+		},
+		"shopLevel": 1
+	},
+	{
+		"name": "Wizard's Staff",
+		"kind": "weapon",
+		"price": 100,
+		"bonus": {
+			"strength": 2,
+			"wisdom": 6,
+			"dexterity": 2,
+			"agility": 1
+		},
+		"needs": { "wisdom": 11 },
+		"shopLevel": 6
+	},
+	{
+		"name": "Cloth Robe",
+		"kind": "armor",
+		"price": 11,
+		"bonus": { "armor": 1 },
+		"needs": {},
+		"shopLevel": 6
+	},
+	{
+		"name": "Leather Armor",
+		"kind": "armor",
+		"price": 25,
+		"bonus": {
+			"armor": 2,
+			"agility": -1,
+			"dexterity": -1
+		},
+		"needs": {
+			"strength": 9,
+			"dexterity": 7
+		},
+		"shopLevel": 6
+	},
+	{
+		"name": "Chainmail Armor",
+		"kind": "armor",
+		"price": 40,
+		"bonus": {
+			"armor": 3,
+			"agility": -2,
+			"dexterity": -1
+		},
+		"needs": {
+			"strength": 12,
+			"dexterity": 8
+		},
+		"shopLevel": 6
+	},
+	{
+		"name": "Platemail Armor",
+		"kind": "armor",
+		"price": 55,
+		"bonus": {
+			"armor": 4,
+			"agility": -3,
+			"dexterity": -2,
+			"charisma": 1
+		},
+		"needs": {
+			"strength": 14,
+			"dexterity": 9
+		},
+		"shopLevel": 6
+	},
+	{
+		"name": "Wooden Armor",
+		"kind": "armor",
+		"price": 25,
+		"bonus": {
+			"armor": 3,
+			"agility": -1,
+			"dexterity": -1
+		},
+		"needs": {
+			"strength": 9,
+			"dexterity": 6
+		},
+		"shopLevel": 6
+	},
+	{
+		"name": "Cloth Tunic",
+		"kind": "armor",
+		"price": 25,
+		"bonus": { "armor": 2 },
+		"needs": { "dexterity": 5 },
+		"shopLevel": 5
+	},
+	{
+		"name": "Kai Tunic",
+		"kind": "armor",
+		"price": 75,
+		"bonus": { "armor": 3 },
+		"needs": {
+			"agility": 9,
+			"dexterity": 8
+		},
+		"shopLevel": 3
+	},
+	{
+		"name": "Hero's Armor",
+		"kind": "armor",
+		"price": 225,
+		"bonus": {
+			"armor": 4,
+			"agility": -2,
+			"dexterity": -1,
+			"charisma": 2
+		},
+		"needs": {
+			"strength": 12,
+			"dexterity": 10
+		},
+		"shopLevel": 2
+	},
+	{
+		"name": "Rags",
+		"kind": "armor",
+		"price": 5,
+		"bonus": { "armor": 1 },
+		"needs": {},
+		"shopLevel": 5
+	},
+	{
+		"name": "Wooden Shield",
+		"kind": "shield",
+		"price": 15,
+		"bonus": { "armor": 1 },
+		"needs": { "strength": 10 },
+		"shopLevel": 6
+	},
+	{
+		"name": "Iron Shield",
+		"kind": "shield",
+		"price": 25,
+		"bonus": {
+			"armor": 2,
+			"dexterity": -1
+		},
+		"needs": { "strength": 13 },
+		"shopLevel": 6
+	},
+	{
+		"name": "Platinum Shield",
+		"kind": "shield",
+		"price": 45,
+		"bonus": {
+			"charisma": 1,
+			"armor": 2
+		},
+		"needs": { "strength": 11 },
+		"shopLevel": 6
+	},
+	{
+		"name": "Crystal Shield",
+		"kind": "shield",
+		"price": 65,
+		"bonus": {
+			"charisma": 3,
+			"armor": 3
+		},
+		"needs": {
+			"strength": 12,
+			"agility": 8
+		},
+		"shopLevel": 5
+	},
+	{
+		"name": "Hero's Shield",
+		"kind": "shield",
+		"price": 250,
+		"bonus": {
+			"charisma": 5,
+			"armor": 4
+		},
+		"needs": {
+			"strength": 13,
+			"agility": 10
+		},
+		"shopLevel": 2
+	},
+	{
+		"name": "Silver Mace",
+		"kind": "weapon",
+		"price": 65,
+		"bonus": {
+			"strength": 6,
+			"dexterity": 1
+		},
+		"needs": {
+			"strength": 3,
+			"agility": 3,
+			"dexterity": 5
+		},
+		"shopLevel": 3
+	},
+	{
+		"name": "Lion's Shield",
+		"kind": "shield",
+		"price": 70,
+		"bonus": { "armor": 2 },
+		"needs": { "strength": 7 },
+		"shopLevel": 2
+	},
+	{
+		"name": "Great Axe",
+		"kind": "weapon",
+		"price": 50,
+		"bonus": {
+			"strength": 9,
+			"dexterity": -1,
+			"agility": -2,
+			"charisma": 1
+		},
+		"needs": { "strength": 15 },
+		"shopLevel": 2
+	}
+];
+//#endregion
+//#region shared/clans/rng.ts
+/** A number from 0 up to (not including) 1. */
+function nextFloat(holder) {
+	holder.rng = holder.rng + 1831565813 | 0;
+	let t = holder.rng;
+	t = Math.imul(t ^ t >>> 15, t | 1);
+	t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+	return ((t ^ t >>> 14) >>> 0) / 4294967296;
+}
+/** A whole number from 0 up to (not including) n. */
+function roll(holder, n) {
+	return Math.floor(nextFloat(holder) * n);
+}
+//#endregion
+//#region shared/clans/types.ts
+/** Plain data shapes for Clan Quest. Everything here is JSON-safe so the server can save it. */
+const STATS = [
+	"agility",
+	"dexterity",
+	"strength",
+	"wisdom",
+	"armor",
+	"charisma"
+];
+const TROOP_KINDS = [
+	"footman",
+	"axeman",
+	"knight"
+];
+const BUILDING_KINDS = [
+	"barracks",
+	"walls",
+	"tower",
+	"steelMill",
+	"stables",
+	"gymnasium",
+	"developersHall"
+];
+//#endregion
+//#region shared/clans/character.ts
+/** Making and growing clan members: rolling stats, gear, levels, training, the Church and the shop. */
+const raceByName = (name) => RACES.find((r) => r.name === name);
+const classByName = (name) => CLASSES.find((c) => c.name === name);
+const emptyStats = () => ({
+	agility: 0,
+	dexterity: 0,
+	strength: 0,
+	wisdom: 0,
+	armor: 0,
+	charisma: 0
+});
+const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+/**
+* Race + class, then a small roll (-1 to +1 on each stat, -2 to +2 on HP and SP) for "Roll again".
+* The clan leader gets +2 on every stat but armour and +4 HP. Same dice state, same roll.
+*/
+function rollMember(dice, name, race, cls, leader = false) {
+	const r = raceByName(race);
+	const c = classByName(cls);
+	if (!r || !c) throw new Error(`Unknown race or class: ${race} ${cls}`);
+	const stats = emptyStats();
+	for (const s of STATS) {
+		const wobble = s === "armor" ? 0 : roll(dice, 3) - 1;
+		stats[s] = clamp(r.stats[s] + c.stats[s] + wobble + (leader && s !== "armor" ? 2 : 0), 0, CONFIG.statCap);
+	}
+	const maxHp = Math.max(5, r.hp + c.hp + roll(dice, 5) - 2 + (leader ? 4 : 0));
+	const maxSp = Math.max(0, r.sp + c.sp + roll(dice, 5) - 2);
+	return {
+		name,
+		race,
+		cls,
+		level: 1,
+		xp: 0,
+		hp: maxHp,
+		maxHp,
+		sp: maxSp,
+		maxSp,
+		stats,
+		spells: [...new Set([...r.spells, ...c.spells])],
+		gear: {},
+		points: 0,
+		knockedOut: false
+	};
+}
+/** Points to raise a stat by 1 with the Training Hall at `hall` (never below 1). */
+const trainCost = (stat, hall) => Math.max(1, CONFIG.trainCost[stat] - hall);
+/** Spend points on +1 of a stat. Returns false (and changes nothing) if it can't. */
+function trainStat(m, stat, hall) {
+	const cost = trainCost(stat, hall);
+	if (m.points < cost || m.stats[stat] >= CONFIG.statCap) return false;
+	m.points -= cost;
+	m.stats[stat]++;
+	return true;
+}
+/** Points for one HP purchase and one SP purchase with the Training Hall at `hall` (never below 1). */
+const hpCost = (hall) => Math.max(1, CONFIG.hpBuy.cost - Math.floor(hall / 2));
+const spCost = (hall) => Math.max(1, CONFIG.spBuy.cost - Math.floor(hall / 2));
+function trainHp(m, hall) {
+	const cost = hpCost(hall);
+	if (m.points < cost) return false;
+	m.points -= cost;
+	m.maxHp += CONFIG.hpBuy.amount;
+	m.hp += CONFIG.hpBuy.amount;
+	return true;
+}
+function trainSp(m, hall) {
+	const cost = spCost(hall);
+	if (m.points < cost) return false;
+	m.points -= cost;
+	m.maxSp += CONFIG.spBuy.amount;
+	m.sp += CONFIG.spBuy.amount;
+	return true;
+}
+/** The Church: gold to wake a knocked-out member. */
+const churchCost = (m) => (m.level + 1) * CONFIG.churchPerLevel;
+/** What waking this member costs the clan right now (nothing while free wake-ups are left today). */
+const wakeCost = (clan, m) => (clan.wakesToday ?? 0) < CONFIG.freeWakesPerDay ? 0 : churchCost(m);
+function wake(clan, m) {
+	const cost = wakeCost(clan, m);
+	if (!m.knockedOut || clan.gold < cost) return false;
+	clan.gold -= cost;
+	clan.wakesToday = (clan.wakesToday ?? 0) + 1;
+	m.knockedOut = false;
+	m.hp = Math.max(1, Math.ceil(m.maxHp / 2));
+	return true;
+}
+/** Shop price including the village tax, rounded up. */
+const shopPrice = (item, tax = CONFIG.shopTax) => Math.ceil(item.price * (100 + tax) / 100);
+/** Cost to look at an item's real stats. */
+const examineCost = (item) => Math.ceil(item.price * CONFIG.examinePercent / 100);
+/** What the Smithy has on its shelves at a given level. */
+const inShop = (smithy) => ITEMS.filter((i) => i.shopLevel >= 6 - smithy);
+function buy(clan, m, item) {
+	const price = shopPrice(item);
+	if (clan.gold < price || !inShop(clan.village.smithy).includes(item)) return false;
+	clan.gold -= price;
+	m.gear[item.kind] = item.name;
+	return true;
+}
+/** Overnight: everyone wakes up healed. */
+function dayReset(clan) {
+	clan.wakesToday = 0;
+	for (const m of clan.members) {
+		m.knockedOut = false;
+		m.hp = m.maxHp;
+		m.sp = m.maxSp;
+	}
+}
+//#endregion
+//#region shared/clans/empire.ts
+/**
+* The empire: land, buildings, worker energy, troops, the draft, six computer kingdoms, battles,
+* Friendly War, and the rule for raids on classmates. Plain data and plain functions, like
+* `fight.ts`: a battle is settled in one go from two armies, a battle plan and a seed, so the
+* same inputs always give the same answer and the server can replay it.
+*
+* The empire has its own vault. The clan's purse (mine gold) is never at risk; only the vault is.
+* Every number is in `config.ts` (CONFIG.empire).
+*/
+const E = CONFIG.empire;
+const ok$1 = { ok: true };
+const no$1 = (why, say) => ({
+	ok: false,
+	why,
+	say
+});
+const noTroops = () => ({
+	footman: 0,
+	axeman: 0,
+	knight: 0
+});
+function newEmpire(day = 1) {
+	return {
+		vault: 0,
+		wild: E.startWild,
+		claimed: 0,
+		plots: [],
+		troops: noTroops(),
+		draftPercent: 0,
+		day,
+		createdDay: day,
+		energyUsed: 0,
+		raidsToday: 0,
+		kingdomRaidsToday: 0,
+		shieldUntil: 0,
+		raidedToday: []
+	};
+}
+/** The clan's empire, made the first time it is needed. */
+function empireOf(clan) {
+	return clan.empire ??= newEmpire();
+}
+const BUILDING_NAMES = {
+	barracks: "Barracks",
+	walls: "Walls",
+	tower: "Tower",
+	steelMill: "Steel Mill",
+	stables: "Stables",
+	gymnasium: "Gymnasium",
+	developersHall: "Developer's Hall"
+};
+const TROOP_NAMES = {
+	footman: {
+		one: "footman",
+		many: "footmen"
+	},
+	axeman: {
+		one: "axeman",
+		many: "axemen"
+	},
+	knight: {
+		one: "knight",
+		many: "knights"
+	}
+};
+const area = (width, length) => width * length;
+const fence = (width, length) => 2 * (width + length);
+const countBuildings = (e, kind) => e.plots.filter((p) => p.building === kind).length;
+/** What the effect of N buildings of one kind is, in percent (or points), stopping at the most that count. */
+const effect = (e, kind) => countBuildings(e, kind) * E.buildings[kind].per;
+/** Gold to develop a plot: the squares plus the fence, less the Developer's Hall discount, rounded up. */
+function plotCost(e, width, length) {
+	const base = area(width, length) * E.landPerSquare + fence(width, length) * E.fencePerUnit;
+	return Math.ceil(base * (100 - effect(e, "developersHall")) / 100);
+}
+const validSide = (n) => Number.isInteger(n) && n >= E.plotSide.min && n <= E.plotSide.max;
+/** Gold to claim one more plot of wild land. */
+const claimCost = (e) => E.claim.base + E.claim.step * e.claimed;
+function claimLand(e) {
+	if (e.claimed >= E.claim.max) return no$1("max", "There is no more land to claim nearby.");
+	const cost = claimCost(e);
+	if (e.vault < cost) return no$1("gold", `Claiming land costs ${cost} gold and the vault has ${e.vault}.`);
+	e.vault -= cost;
+	e.claimed++;
+	e.wild++;
+	return ok$1;
+}
+/** Turn one piece of wild land into a developed plot. Paid from the empire's vault. */
+function developPlot(e, width, length) {
+	if (!validSide(width) || !validSide(length)) return no$1("size", `A plot is between ${E.plotSide.min} and ${E.plotSide.max} squares on each side.`);
+	if (e.wild < 1) return no$1("land", "There is no wild land left to develop.");
+	const cost = plotCost(e, width, length);
+	if (e.vault < cost) return no$1("gold", `That plot costs ${cost} gold and the vault has ${e.vault}.`);
+	e.vault -= cost;
+	e.wild--;
+	e.plots.push({
+		width,
+		length
+	});
+	return ok$1;
+}
+const energyLeft = (e) => E.energyPerDay - e.energyUsed;
+/** Can this building go on this plot, and what stops it? */
+function canBuild(e, plotIndex, kind) {
+	const plot = e.plots[plotIndex];
+	const def = E.buildings[kind];
+	if (!plot) return no$1("plot", "Pick one of your developed plots.");
+	if (plot.building) return no$1("taken", "That plot already has a building on it.");
+	if (area(plot.width, plot.length) < def.size) return no$1("size", `A ${BUILDING_NAMES[kind]} needs ${def.size} squares and this plot has ${area(plot.width, plot.length)}.`);
+	if (countBuildings(e, kind) >= def.max) return no$1("max", `You already have as many ${BUILDING_NAMES[kind]} as you can use (${def.max}).`);
+	if (energyLeft(e) < def.energy) return no$1("energy", `The ${BUILDING_NAMES[kind]} needs ${def.energy}% of a day's work and only ${energyLeft(e)}% is left today.`);
+	if (e.vault < def.gold) return no$1("gold", `The ${BUILDING_NAMES[kind]} costs ${def.gold} gold and the vault has ${e.vault}.`);
+	return ok$1;
+}
+function build(e, plotIndex, kind) {
+	const can = canBuild(e, plotIndex, kind);
+	if (!can.ok) return can;
+	const def = E.buildings[kind];
+	e.vault -= def.gold;
+	e.energyUsed += def.energy;
+	e.plots[plotIndex].building = kind;
+	return ok$1;
+}
+function deposit(clan, gold) {
+	const e = empireOf(clan);
+	if (!Number.isInteger(gold) || gold < 1) return no$1("amount", "Pick a number of gold to move.");
+	if (clan.gold < gold) return no$1("gold", `The clan purse only has ${clan.gold} gold.`);
+	clan.gold -= gold;
+	e.vault += gold;
+	return ok$1;
+}
+function withdraw(clan, gold) {
+	const e = empireOf(clan);
+	if (!Number.isInteger(gold) || gold < 1) return no$1("amount", "Pick a number of gold to move.");
+	if (e.vault < gold) return no$1("gold", `The vault only has ${e.vault} gold.`);
+	e.vault -= gold;
+	clan.gold += gold;
+	return ok$1;
+}
+const capacity = (e, kind) => countBuildings(e, "barracks") * E.troopCap[kind];
+const room = (e, kind) => Math.max(0, capacity(e, kind) - e.troops[kind]);
+function buyTroops(e, kind, n) {
+	if (!Number.isInteger(n) || n < 1) return no$1("amount", "Pick how many to buy.");
+	if (room(e, kind) < n) return no$1("room", `The barracks have room for ${room(e, kind)} more ${TROOP_NAMES[kind].many}.`);
+	const cost = n * E.troopCost[kind];
+	if (e.vault < cost) return no$1("gold", `That costs ${cost} gold and the vault has ${e.vault}.`);
+	e.vault -= cost;
+	e.troops[kind] += n;
+	return ok$1;
+}
+/** The most the draft can ask for: 20%, and 5% more for each Gymnasium. */
+const draftMax = (e) => E.draftMax + effect(e, "gymnasium");
+function setDraft(e, percent) {
+	const most = draftMax(e);
+	if (!Number.isInteger(percent) || percent < 0 || percent > most || percent % E.draftStep !== 0) return no$1("draft", `The draft is 0 to ${most}%, in steps of ${E.draftStep}.`);
+	e.draftPercent = percent;
+	return ok$1;
+}
+/** How many of this many followers the draft asks for (rounded up, like every "percent of" question). */
+const draftWanted = (followers, percent) => Math.ceil(followers * percent / 100);
+/**
+* Followers join as footmen at the draft share, as far as the barracks have room. All the
+* followers are used up: the ones not drafted go back to their villages.
+*/
+function draft(clan) {
+	const e = empireOf(clan);
+	const followers = clan.followers;
+	const wanted = draftWanted(followers, e.draftPercent);
+	const joined = Math.min(wanted, room(e, "footman"));
+	e.troops.footman += joined;
+	clan.followers = 0;
+	return {
+		wanted,
+		joined,
+		followers
+	};
+}
+/** A new day for the empire: fresh worker energy and raids. (A shield ends by itself when the day number passes it.) */
+function empireNewDay(clan) {
+	const e = empireOf(clan);
+	e.day++;
+	e.energyUsed = 0;
+	e.raidsToday = 0;
+	e.kingdomRaidsToday = 0;
+	e.raidedToday = [];
+}
+/** What an army is worth in a battle: footmen 1, axemen 2, knights 4. */
+const might = (t) => TROOP_KINDS.reduce((s, k) => s + t[k] * E.troopMight[k], 0);
+const sideOf = (e) => ({
+	troops: { ...e.troops },
+	walls: countBuildings(e, "walls"),
+	towers: countBuildings(e, "tower"),
+	mills: countBuildings(e, "steelMill"),
+	stables: countBuildings(e, "stables")
+});
+const KINGDOMS = [
+	{
+		id: "bunny-hollow",
+		name: "Bunny Hollow",
+		feel: "an easy one",
+		blurb: "A sleepy village with a few farmers on guard.",
+		troops: {
+			footman: 12,
+			axeman: 0,
+			knight: 0
+		},
+		walls: 0,
+		towers: 0,
+		treasury: 300
+	},
+	{
+		id: "pebble-bridge",
+		name: "Pebble Bridge",
+		feel: "quite easy",
+		blurb: "Bridge keepers who like a quiet life.",
+		troops: {
+			footman: 24,
+			axeman: 6,
+			knight: 0
+		},
+		walls: 0,
+		towers: 0,
+		treasury: 600
+	},
+	{
+		id: "hilltop-hold",
+		name: "Hilltop Hold",
+		feel: "a fair fight",
+		blurb: "A hill fort with a sturdy fence.",
+		troops: {
+			footman: 40,
+			axeman: 15,
+			knight: 3
+		},
+		walls: 1,
+		towers: 0,
+		treasury: 1e3
+	},
+	{
+		id: "ironwood",
+		name: "Ironwood",
+		feel: "a bit tough",
+		blurb: "Woodcutters with very sharp axes.",
+		troops: {
+			footman: 50,
+			axeman: 30,
+			knight: 6
+		},
+		walls: 2,
+		towers: 1,
+		treasury: 1600
+	},
+	{
+		id: "stormcrag",
+		name: "Stormcrag",
+		feel: "tough",
+		blurb: "A castle on a windy cliff.",
+		troops: {
+			footman: 60,
+			axeman: 40,
+			knight: 14
+		},
+		walls: 3,
+		towers: 2,
+		treasury: 2500
+	},
+	{
+		id: "dragons-rest",
+		name: "Dragon's Rest",
+		feel: "very tough",
+		blurb: "The biggest kingdom around, with tall walls.",
+		troops: {
+			footman: 80,
+			axeman: 50,
+			knight: 25
+		},
+		walls: 4,
+		towers: 4,
+		treasury: 3700
+	}
+];
+const kingdomById = (id) => KINGDOMS.find((k) => k.id === id);
+const kingdomSide = (k) => ({
+	troops: { ...k.troops },
+	walls: k.walls,
+	towers: k.towers,
+	mills: 0,
+	stables: 0
+});
+const PUSHES = Object.keys(E.battle.push);
+/** A plan with every part forced into what is allowed. */
+function cleanPlan(plan, lootMax = Math.max(...E.battle.lootChoices)) {
+	const rounds = Math.min(E.battle.maxRounds, Math.max(1, Math.round(plan.rounds ?? 3)));
+	const push = plan.push && PUSHES.includes(plan.push) ? plan.push : "steady";
+	const choices = E.battle.lootChoices.filter((c) => c <= lootMax);
+	const asked = plan.loot ?? choices[0];
+	return {
+		rounds,
+		push,
+		loot: [...choices].reverse().find((c) => c <= asked) ?? choices[0]
+	};
+}
+function lost(troops, start, left, stables) {
+	const hurt = start > 0 ? (start - left) / start : 0;
+	const keep = Math.max(0, 100 - stables * E.buildings.stables.per) / 100;
+	const out = noTroops();
+	for (const k of TROOP_KINDS) out[k] = Math.min(troops[k], Math.floor(troops[k] * hurt * E.battle.lossShare * keep));
+	return out;
+}
+/**
+* Settle a whole battle. Each round both sides lose about a quarter of what they have left, a
+* little more or less by luck. Mills add to the attacker's damage, walls cut the damage the
+* defender takes, towers add to the defender's; asking for more loot makes the defenders fight
+* harder. When the rounds are over, the defenders have given way if they are down to half
+* strength and worse off than the attackers; if the attackers are worse off they fall back; if
+* not, it is a stalemate and nobody wins. A careful push does less damage but takes much less,
+* a bold one does more but takes more, so more rounds means more troops hurt on both sides.
+* Nothing is taken from either side here: `raidKingdom` and `raidClassmate` do that.
+*/
+function battle(attacker, defender, planIn, seed) {
+	const plan = cleanPlan(planIn);
+	const dice = { rng: seed | 0 };
+	const b = E.battle;
+	const push = b.push[plan.push];
+	const startA = might(attacker.troops);
+	const startD = might(defender.troops);
+	let a = startA;
+	let d = startD;
+	const rounds = [];
+	let outcome = "stalemate";
+	if (startA === 0) outcome = "lost";
+	else if (startD === 0) outcome = "won";
+	else {
+		const outA = (1 + attacker.mills * E.buildings.steelMill.per / 100) * push.hit;
+		const outD = (1 + defender.towers * E.buildings.tower.per / 100) * (1 + plan.loot / 100) * push.takes;
+		const soak = 1 + defender.walls * E.buildings.walls.per / 100;
+		for (let r = 1; r <= plan.rounds; r++) {
+			const toD = Math.floor(a * outA * b.roundDamage * (b.luck.min + roll(dice, b.luck.span)) / 100 / soak);
+			const toA = Math.floor(d * outD * b.roundDamage * (b.luck.min + roll(dice, b.luck.span)) / 100);
+			d = Math.max(0, d - toD);
+			a = Math.max(0, a - toA);
+			rounds.push({
+				round: r,
+				attacker: a,
+				defender: d
+			});
+			if (a === 0 || d === 0) break;
+		}
+		const aLeft = a / startA;
+		const dLeft = d / startD;
+		outcome = dLeft < aLeft && dLeft <= b.retreatAt ? "won" : aLeft < dLeft ? "lost" : "stalemate";
+	}
+	return {
+		outcome,
+		plan,
+		startAttacker: startA,
+		startDefender: startD,
+		rounds,
+		attackerLost: lost(attacker.troops, startA, a, attacker.stables),
+		defenderLost: lost(defender.troops, startD, d, defender.stables)
+	};
+}
+function takeLosses(e, lostTroops) {
+	for (const k of TROOP_KINDS) e.troops[k] -= lostTroops[k];
+}
+/** Gold a raid takes from a treasury: the share asked for, rounded up like every "percent of" question, never more than there is. */
+const lootGold = (treasury, percent) => Math.min(treasury, Math.ceil(treasury * percent / 100));
+/** Raid a computer kingdom: your army fights, you lose the troops that do not come home, and a win takes loot into the vault. */
+function raidKingdom(e, kingdomId, plan, seed) {
+	const k = kingdomById(kingdomId);
+	if (!k) return no$1("kingdom", "Pick one of the six kingdoms.");
+	if (might(e.troops) === 0) return no$1("army", "You need some troops to send.");
+	if (e.kingdomRaidsToday >= E.raids.kingdomPerDay) return no$1("limit", `You have already raided ${E.raids.kingdomPerDay} times today. Try again tomorrow, or have a Friendly War.`);
+	const result = battle(sideOf(e), kingdomSide(k), plan, seed);
+	e.kingdomRaidsToday++;
+	takeLosses(e, result.attackerLost);
+	const gold = result.outcome === "won" ? lootGold(k.treasury, result.plan.loot) : 0;
+	e.vault += gold;
+	return {
+		ok: true,
+		result,
+		gold
+	};
+}
+/** Friendly War: the same battle, but nobody loses or wins anything, and it does not count as a raid. */
+function friendlyWar(e, kingdomId, plan, seed) {
+	const k = kingdomById(kingdomId);
+	if (!k) return no$1("kingdom", "Pick one of the six kingdoms.");
+	if (might(e.troops) === 0) return no$1("army", "You need some troops to send.");
+	return {
+		ok: true,
+		result: battle(sideOf(e), kingdomSide(k), plan, seed)
+	};
+}
+//#endregion
+//#region shared/clans/words.ts
+/** Names come from word lists (the hub's rule: nobody types a name). */
+const MEMBER_NAMES = [
+	"Aria",
+	"Bram",
+	"Cleo",
+	"Dax",
+	"Elin",
+	"Finn",
+	"Gwen",
+	"Hugo",
+	"Isla",
+	"Jory",
+	"Kira",
+	"Leif",
+	"Mira",
+	"Nico",
+	"Orla",
+	"Pip",
+	"Quill",
+	"Rowan",
+	"Sage",
+	"Tam",
+	"Una",
+	"Vik",
+	"Wren",
+	"Xara",
+	"Yuri",
+	"Zed",
+	"Ember",
+	"Moss",
+	"Tilly",
+	"Bodhi",
+	"Kiri",
+	"Hemi"
+];
+const CLAN_ADJECTIVES = [
+	"Red",
+	"Silver",
+	"Brave",
+	"Golden",
+	"Swift",
+	"Jolly",
+	"Mighty",
+	"Clever",
+	"Misty",
+	"Bold",
+	"Lucky",
+	"Iron"
+];
+const CLAN_NOUNS = [
+	"Banner",
+	"Foxes",
+	"Lanterns",
+	"Wolves",
+	"Shields",
+	"Owls",
+	"Pennants",
+	"Bears",
+	"Falcons",
+	"Hammers",
+	"Stars",
+	"Rangers"
+];
+/** The member a draft shows right now. Slot 0 is the clan leader. */
+function draftMember(d, slot) {
+	return rollMember({ rng: Math.imul(d.seed | 0, 2654435761) + d.rolls * 7919 }, d.name, d.race, d.cls, slot === 0);
+}
+/** The seed of slot `slot` of a clan with this seed. */
+const slotSeed = (seed, slot) => seed + slot * 1013;
+function makeClan(name, drafts) {
+	return {
+		name,
+		members: drafts.map((d, i) => draftMember(d, i)),
+		gold: CONFIG.startGold,
+		followers: 0,
+		village: {
+			trainingHall: 0,
+			smithy: 0,
+			church: 0
+		},
+		wakesToday: 0,
+		empire: newEmpire()
+	};
+}
+/** True if this is a clan name the creator can make: one adjective and one noun from the lists. */
+function isClanName(name) {
+	if (typeof name !== "string") return false;
+	const [adjective, noun, ...rest] = name.split(" ");
+	return rest.length === 0 && CLAN_ADJECTIVES.includes(adjective) && CLAN_NOUNS.includes(noun);
+}
+/**
+* Check what the creator sent and build the clan from it. Only the choices matter (race, class, name,
+* how many rolls); the stats are always rebuilt here from the clan's seed.
+*/
+function clanFromChoices(seed, name, drafts) {
+	if (!isClanName(name)) return {
+		ok: false,
+		say: "Pick a clan name from the lists."
+	};
+	if (!Array.isArray(drafts) || drafts.length !== CONFIG.minMembers) return {
+		ok: false,
+		say: `A new clan has ${CONFIG.minMembers} members.`
+	};
+	const built = [];
+	for (const [slot, raw] of drafts.entries()) {
+		const d = raw;
+		if (!d || typeof d !== "object") return {
+			ok: false,
+			say: "Those members could not be read."
+		};
+		if (typeof d.race !== "string" || !raceByName(d.race) || typeof d.cls !== "string" || !classByName(d.cls)) return {
+			ok: false,
+			say: "Pick a race and a class from the lists."
+		};
+		if (typeof d.name !== "string" || !MEMBER_NAMES.includes(d.name)) return {
+			ok: false,
+			say: "Pick member names from the list."
+		};
+		if (!Number.isInteger(d.rolls) || d.rolls < 0 || d.rolls > 3) return {
+			ok: false,
+			say: `You can roll again 3 times for each member.`
+		};
+		built.push({
+			race: d.race,
+			cls: d.cls,
+			name: d.name,
+			rolls: d.rolls,
+			seed: slotSeed(seed, slot)
+		});
+	}
+	return {
+		ok: true,
+		clan: makeClan(name, built)
+	};
+}
+//#endregion
+//#region shared/clans/play.ts
+/**
+* Everyday actions on a clan: shop, Training Hall, Church, troops, raids. Each one changes the clan it is given and says
+* yes or no (with a kind sentence). The screens call these through `places.ts` on a copy of the clan; the server
+* calls the very same functions, so a changed browser cannot do anything the rules refuse.
+*/
+const ok = { ok: true };
+const no = (why, say) => ({
+	ok: false,
+	why,
+	say
+});
+const TRAIN_KEYS = [
+	...STATS,
+	"hp",
+	"sp"
+];
+const memberAt = (clan, index) => clan.members[index] ?? null;
+/** Pay the shop price and put the item on the member (swapping out what was there). */
+function buyItem(clan, memberIndex, item) {
+	const m = memberAt(clan, memberIndex);
+	if (!m) return no("member", "Pick one of your clan.");
+	if (!inShop(clan.village.smithy).includes(item)) return no("shelf", "The shop does not sell that yet.");
+	const price = shopPrice(item);
+	if (clan.gold < price) return no("gold", `That costs ${price} gold and the clan has ${clan.gold}.`);
+	return buy(clan, m, item) ? ok : no("gold", "That cannot be bought right now.");
+}
+/** Pay to look closely at an item for a member (the real bonuses show). `examined` keeps who looked at what. */
+function examineItemFor(clan, examined, memberIndex, item) {
+	const m = memberAt(clan, memberIndex);
+	if (!m) return no("member", "Pick one of your clan.");
+	const cost = examineCost(item);
+	if (clan.gold < cost) return no("gold", `Looking closely costs ${cost} gold and the clan has ${clan.gold}.`);
+	clan.gold -= cost;
+	const key = `${m.name}|${item.name}`;
+	if (!examined.includes(key)) examined.push(key);
+	return ok;
+}
+/** Buy `count` of something at the Training Hall (stops early if the points run out). Fails if not even one could be bought. */
+function trainMember(clan, memberIndex, key, count) {
+	const m = memberAt(clan, memberIndex);
+	if (!m) return no("member", "Pick one of your clan.");
+	if (!TRAIN_KEYS.includes(key) || !Number.isInteger(count) || count < 1) return no("amount", "Pick what to train and how many.");
+	const hall = clan.village.trainingHall;
+	let done = 0;
+	for (let i = 0; i < count; i++) {
+		if (!(key === "hp" ? trainHp(m, hall) : key === "sp" ? trainSp(m, hall) : trainStat(m, key, hall))) break;
+		done++;
+	}
+	if (done > 0) return ok;
+	const cost = key === "hp" ? hpCost(hall) : key === "sp" ? spCost(hall) : Math.max(1, CONFIG.trainCost[key] - hall);
+	return no("points", `That needs ${cost} training points and ${m.name} has ${m.points}, or is already as strong as can be.`);
+}
+/** Wake one member at the Church (the first wake-up each day is free). */
+function wakeOne(clan, memberIndex) {
+	const m = memberAt(clan, memberIndex);
+	if (!m) return no("member", "Pick one of your clan.");
+	if (!m.knockedOut) return no("awake", `${m.name} is already awake.`);
+	const cost = wakeCost(clan, m);
+	if (clan.gold < cost) return no("gold", `Waking ${m.name} costs ${cost} gold and the clan has ${clan.gold}.`);
+	return wake(clan, m) ? ok : no("gold", "That cannot be done right now.");
+}
+const knockedOutMembers = (clan) => clan.members.map((m, i) => ({
+	m,
+	i
+})).filter(({ m }) => m.knockedOut);
+/** The order "wake everyone" goes in: dearest first, so the free wake-up saves the most. */
+const wakeOrder = (clan) => knockedOutMembers(clan).sort((a, b) => churchCost(b.m) - churchCost(a.m) || a.i - b.i);
+/** Levels of the members who would have to pay if everyone were woken now (everyone but the free ones). */
+function wakeAllPayers(clan) {
+	const free = Math.max(0, CONFIG.freeWakesPerDay - (clan.wakesToday ?? 0));
+	return wakeOrder(clan).slice(free).map(({ m }) => m.level);
+}
+/** What waking everyone costs in gold right now. */
+const wakeAllCost = (clan) => wakeAllPayers(clan).reduce((t, l) => t + (l + 1) * CONFIG.churchPerLevel, 0);
+/** Wake everyone, dearest first. Nobody is woken unless the clan can afford the lot. */
+function wakeEveryone(clan) {
+	const order = wakeOrder(clan);
+	if (order.length === 0) return no("awake", "Everyone is already awake.");
+	const cost = wakeAllCost(clan);
+	if (clan.gold < cost) return no("gold", `Waking everyone costs ${cost} gold and the clan has ${clan.gold}.`);
+	return order.every(({ i }) => wake(clan, clan.members[i])) ? ok : no("gold", "That cannot be done right now.");
+}
+const noMix = (mix) => TROOP_KINDS.every((k) => mix[k] === 0);
+/** Buy a mix of troops in one go, or none of them: the first thing that cannot be done is the answer. Works on the clan it is given, so callers keep a copy. */
+function buyTroopMix(clan, mix) {
+	const e = empireOf(clan);
+	if (noMix(mix)) return no("amount", "Pick how many to buy.");
+	const before = structuredClone(e);
+	for (const kind of TROOP_KINDS) {
+		if (mix[kind] === 0) continue;
+		const done = buyTroops(e, kind, mix[kind]);
+		if (!done.ok) {
+			Object.assign(e, before);
+			return done;
+		}
+	}
+	return ok;
+}
+/** Draft the followers: they all leave, some join as footmen as far as there is room. */
+const draftFollowers = (clan) => draft(clan);
+/** The seed for the next raid or Friendly War: from the clan's seed and how many there have been. */
+const raidSeed = (baseSeed, raidNo) => Math.imul(baseSeed | 0, 625341585) ^ Math.imul(raidNo + 1, 668265263);
+/** Send the army to a kingdom: a real raid (loses troops, wins loot) or a Friendly War (changes nothing). */
+function sendArmyTo(clan, kingdomId, plan, friendly, seed) {
+	const e = empireOf(clan);
+	if (friendly) {
+		const r = friendlyWar(e, kingdomId, plan, seed);
+		return r.ok ? {
+			ok: true,
+			result: r.result,
+			gold: 0,
+			friendly
+		} : r;
+	}
+	const r = raidKingdom(e, kingdomId, plan, seed);
+	return r.ok ? {
+		ok: true,
+		result: r.result,
+		gold: r.gold,
+		friendly
+	} : r;
+}
+//#endregion
+//#region shared/clans/quests.ts
+/**
+* Quests: one short story a day, written by us. Each has one or two choices; some choices need a charming
+* clan, some lead to a puzzle. Puzzles are made and marked by code (never an AI) and rebuilt from their kind and numbers.
+* A wrong puzzle answer never blocks: the story carries on and the prize is just the smaller one.
+* Plain data and plain functions on plain JSON, like empire.ts. Every tuning number is in config.ts (CONFIG.quests).
+*/
+const Q = CONFIG.quests;
+const int$1 = (h, lo, hi) => lo + roll(h, hi - lo + 1);
+const pick = (h, list) => list[roll(h, list.length)];
+const ANIMALS = [
+	{
+		word: "crows",
+		where: "on a fence",
+		names: [
+			"Ash",
+			"Bree",
+			"Cob",
+			"Dot"
+		]
+	},
+	{
+		word: "frogs",
+		where: "on a log",
+		names: [
+			"Fern",
+			"Gus",
+			"Hob",
+			"Ivy"
+		]
+	},
+	{
+		word: "owls",
+		where: "on a branch",
+		names: [
+			"Jem",
+			"Kit",
+			"Lark",
+			"Moss"
+		]
+	}
+];
+const COUNT_WORDS = [
+	"",
+	"",
+	"Two",
+	"Three",
+	"Four"
+];
+const ASKS = [
+	"far left",
+	"far right",
+	"middle"
+];
+/** The pattern variants: 0 = count on by the same step, 1 = the step grows by one each time, 2 = doubling. */
+const PATTERN_COUNT = 5;
+function patternSequence(variant, start, step, count) {
+	const out = [start];
+	let diff = step;
+	for (let i = 1; i < count; i++) {
+		const last = out[i - 1];
+		if (variant === 0) out.push(last + step);
+		else if (variant === 1) {
+			out.push(last + diff);
+			diff++;
+		} else out.push(last * 2);
+	}
+	return out;
+}
+/** True if these numbers make a sensible puzzle of this kind. */
+function isValidPuzzle(spec) {
+	const n = spec.nums;
+	if (!n.every((x) => Number.isInteger(x))) return false;
+	switch (spec.kind) {
+		case "pattern": return n.length === 4 && n[0] >= 0 && n[0] <= 2 && n[1] >= 1 && n[1] <= 50 && n[2] >= 1 && n[2] <= 20 && n[3] === PATTERN_COUNT;
+		case "order": {
+			const [theme, count, ask] = n;
+			return n.length === 3 + (count ?? 0) && theme >= 0 && theme < ANIMALS.length && (count === 3 || count === 4) && ask >= 0 && ask < ASKS.length && isPermutation(n.slice(3), count);
+		}
+		case "riddle": return n.length === 4 && n[0] >= 1 && n[0] <= 30 && n[1] >= 2 && n[1] <= 9 && n[2] >= 1 && n[2] <= 30 && (n[3] === 0 || n[3] === 1);
+		case "cold": return n.length === 2 && n[0] >= -20 && n[0] <= 20 && n[1] !== 0 && Math.abs(n[1]) <= 40 && Math.abs(n[0] + n[1]) <= 40;
+	}
+}
+function isPermutation(list, count) {
+	return list.length === count && [...list].sort((a, b) => a - b).every((x, i) => x === i);
+}
+/** Make the puzzle (as a question the question box can show and mark) from its kind and numbers. Throws if they make no sense. */
+function buildPuzzle(spec) {
+	if (!isValidPuzzle(spec)) throw new Error(`Bad numbers for a "${spec.kind}" puzzle: ${JSON.stringify(spec.nums)}`);
+	const n = spec.nums;
+	const base = {
+		kind: `quest-${spec.kind}`,
+		nums: [...n]
+	};
+	if (spec.kind === "pattern") {
+		const [variant, start, step, count] = n;
+		const seq = patternSequence(variant, start, step, count);
+		const next = variant === 0 ? seq[count - 1] + step : variant === 1 ? seq[count - 1] + step + count - 1 : seq[count - 1] * 2;
+		const rule = variant === 0 ? `Each number is ${step} more than the one before: ${seq[count - 1]} + ${step} = ${next}.` : variant === 1 ? `The jumps go up by one each time (${seq.slice(1).map((v, i) => v - seq[i]).join(", ")}), so the next jump is ${step + count - 1}: ${seq[count - 1]} + ${step + count - 1} = ${next}.` : `Each number is double the one before: ${seq[count - 1]} × 2 = ${next}.`;
+		return {
+			...base,
+			topic: "times",
+			text: `The glowing numbers go ${seq.map(fmt).join(", ")}, and then... What number comes next?`,
+			answer: next,
+			working: ["Look at how the numbers change from one to the next.", rule]
+		};
+	}
+	if (spec.kind === "order") {
+		const [theme, count, ask] = n;
+		const order = n.slice(3);
+		const a = ANIMALS[theme];
+		const nameAt = (place) => a.names[order[place]];
+		const clues = Array.from({ length: count - 1 }, (_, i) => (i + theme) % 2 === 0 ? `${nameAt(i)} sits left of ${nameAt(i + 1)}.` : `${nameAt(i + 1)} sits right of ${nameAt(i)}.`);
+		if (clues.length > 1) clues.push(clues.shift());
+		const askPlace = ask === 0 ? 0 : ask === 1 ? count - 1 : Math.floor((count - 1) / 2) + (count === 4 ? 1 : 0);
+		const question = ask === 0 ? "Who sits furthest left?" : ask === 1 ? "Who sits furthest right?" : count === 4 ? "Who sits third from the left?" : "Who sits in the middle?";
+		const names = [...a.names].slice(0, count);
+		const choices = [...names].sort().map((nm) => ({
+			value: a.names.indexOf(nm) + 1,
+			label: nm
+		}));
+		return {
+			...base,
+			topic: "times",
+			text: `${COUNT_WORDS[count]} ${a.word} sit in a row ${a.where}: ${names.slice(0, -1).join(", ")} and ${names[count - 1]}. ${clues.join(" ")} ${question}`,
+			answer: order[askPlace] + 1,
+			choices,
+			working: [
+				"Put the clues together to find the order, left to right.",
+				`The order is ${order.map((_, i) => nameAt(i)).join(", ")}.`,
+				`${question.replace("?", "")}: ${nameAt(askPlace)}.`
+			]
+		};
+	}
+	if (spec.kind === "riddle") {
+		const [x, mul, add, minus] = n;
+		const result = minus ? x * mul - add : x * mul + add;
+		const op = minus ? "take away" : "add";
+		return {
+			...base,
+			topic: "times",
+			text: `I am a secret number. Multiply me by ${mul}, then ${op} ${add}, and you get ${fmt(result)}. What number am I?`,
+			answer: x,
+			working: [`Work backwards. Undo the last step: ${minus ? `${fmt(result)} + ${add}` : `${fmt(result)} − ${add}`} = ${fmt(x * mul)}.`, `Now undo the multiplying: ${fmt(x * mul)} ÷ ${mul} = ${fmt(x)}.`]
+		};
+	}
+	const [start, change] = n;
+	const answer = start + change;
+	return {
+		...base,
+		topic: "integers",
+		text: `At the cave door it is ${fmt(start)} degrees. Deeper in, it is ${fmt(Math.abs(change))} degrees ${change < 0 ? "colder" : "warmer"}. What is the temperature there?`,
+		answer,
+		unit: "degrees",
+		working: [`${change < 0 ? "Colder means taking away" : "Warmer means adding"}: ${fmt(start)} ${change < 0 ? "−" : "+"} ${fmt(Math.abs(change))}.`, `${fmt(start)} ${change < 0 ? "−" : "+"} ${fmt(Math.abs(change))} = ${fmt(answer)}.${answer < 0 ? " That is below zero, so it is a negative number." : ""}`]
+	};
+}
+/** Pick the numbers for a puzzle at a year band from a seed. */
+function makePuzzle(kind, band, seed) {
+	const h = { rng: seed | 0 };
+	if (kind === "pattern") {
+		const variant = band === 4 ? 0 : band === 5 ? pick(h, [0, 1]) : pick(h, [1, 2]);
+		return {
+			kind,
+			nums: [
+				variant,
+				variant === 2 ? int$1(h, 1, 5) : int$1(h, 1, band === 4 ? 12 : 20),
+				variant === 0 ? band === 4 ? int$1(h, 2, 6) : int$1(h, 4, 12) : variant === 1 ? int$1(h, 1, 3) : 2,
+				PATTERN_COUNT
+			]
+		};
+	}
+	if (kind === "order") {
+		const count = band === 4 ? 3 : 4;
+		const order = Array.from({ length: count }, (_, i) => i);
+		for (let i = count - 1; i > 0; i--) {
+			const j = roll(h, i + 1);
+			[order[i], order[j]] = [order[j], order[i]];
+		}
+		return {
+			kind,
+			nums: [
+				roll(h, ANIMALS.length),
+				count,
+				roll(h, ASKS.length),
+				...order
+			]
+		};
+	}
+	if (kind === "riddle") {
+		const minus = band === 4 ? 0 : roll(h, 2);
+		const mul = band === 4 ? int$1(h, 2, 5) : int$1(h, 3, 9);
+		const x = int$1(h, 2, band === 4 ? 10 : 15);
+		const add = int$1(h, 2, band === 4 ? 9 : 20);
+		return {
+			kind,
+			nums: [
+				x,
+				mul,
+				minus ? Math.min(add, x * mul - 1) : add,
+				minus
+			]
+		};
+	}
+	const start = int$1(h, 2, 9);
+	return {
+		kind,
+		nums: [start, -(start + int$1(h, 1, 10))]
+	};
+}
+const ALL = [
+	4,
+	5,
+	6
+];
+const QUESTS = [
+	{
+		id: 1,
+		title: "The Wandering Goat",
+		years: ALL,
+		story: ["A goat with a bell round its neck trots into your camp and starts eating the cabbages. It does not seem sorry at all.", "A farmer far down the road is probably missing it. But the goat keeps looking at a hill, as if it wants you to follow."],
+		choices: [
+			{
+				label: "Walk the goat home to the farmer",
+				win: {
+					text: "The farmer is so happy that he gives you a bag of coins and a very large cheese. The goat nibbles your sleeve to say thank you.",
+					gold: "medium"
+				}
+			},
+			{
+				label: "Follow the goat up the hill",
+				win: {
+					text: "Over the hill is a camp of travellers who lost their goat-cart. They like your clan so much that some of them join you.",
+					followers: "medium"
+				}
+			},
+			{
+				label: "Charm the farmer’s grumpy aunt, too",
+				charm: "open",
+				win: {
+					text: "Auntie scowls at first, but your charming chat makes her laugh until she cries. She gives your clan a big reward and tells all her friends how kind you are.",
+					gold: "big",
+					followers: "small"
+				}
+			}
+		]
+	},
+	{
+		id: 2,
+		title: "The Stepping Stones",
+		years: ALL,
+		story: ["A wide river bubbles across your path. There is a bridge, but it is a day’s walk away.", "Across the water, flat stones are painted with glowing numbers. A sign says: \"Step where the pattern goes.\""],
+		choices: [{
+			label: "Hop across the stones",
+			puzzle: "pattern",
+			win: {
+				text: "You hop across without a splash! On the far bank you find a purse that a very wet frog left behind.",
+				gold: "big"
+			},
+			lose: {
+				text: "Splash! You land in the shallow water and everyone laughs, even you. You still reach the other side, and find a coin stuck to your boot.",
+				gold: "small"
+			}
+		}, {
+			label: "Wade through the shallows",
+			win: {
+				text: "It is a bit chilly, but nobody minds. A fisher on the bank thinks you are very sensible and asks to join the clan.",
+				followers: "small"
+			}
+		}]
+	},
+	{
+		id: 3,
+		title: "The Three Guards",
+		years: ALL,
+		story: ["A narrow bridge is guarded by a row of sleepy birds. A little sign says: \"Only the clever may pass.\"", "The head guard clears its throat. \"Tell me who sits where, and the toll is free. Listen to the clues.\""],
+		choices: [{
+			label: "Work out the puzzle",
+			puzzle: "order",
+			win: {
+				text: "The guards cheer! \"Clever clan!\" They let you cross, hand you a toll refund and teach you a few tricks.",
+				gold: "medium",
+				points: "small"
+			},
+			lose: {
+				text: "The guards chuckle and tell you the answer anyway. \"Good try!\" They let you cross for a small fee, and wave you off kindly.",
+				gold: "small"
+			}
+		}]
+	},
+	{
+		id: 4,
+		title: "The Riddling Troll",
+		years: ALL,
+		story: ["Under a bridge lives a troll who loves riddles more than anything. He is not scary, just bored.", "\"Nobody ever stops to chat,\" he sighs. \"Will you play with me?\""],
+		choices: [{
+			label: "Answer the troll’s riddle",
+			puzzle: "riddle",
+			win: {
+				text: "The troll claps so hard that the bridge wobbles. \"Wonderful!\" he says. He is so pleased that his cousins come and join your clan.",
+				followers: "big"
+			},
+			lose: {
+				text: "The troll shows you how the riddle works, and you both laugh. He gives you a friendly handshake and one of his cousins comes to meet you.",
+				followers: "small"
+			}
+		}, {
+			label: "Tell the troll a joke about a sheep",
+			charm: "open",
+			win: {
+				text: "The troll laughs until he falls off his stool. \"Best joke ever!\" He sends two of his friends to join you and gives you a coin for the joke.",
+				followers: "medium",
+				gold: "small"
+			}
+		}]
+	},
+	{
+		id: 5,
+		title: "The Frozen Cave",
+		years: [6],
+		story: ["A cave in the side of a mountain breathes out cold air that makes your breath puff in white clouds.", "Inside, a sleeping dragon’s treasure sparkles, and a sign on the wall says: \"Learn how cold it gets before you go in.\""],
+		choices: [{
+			label: "Check the cold before going in",
+			puzzle: "cold",
+			win: {
+				text: "You wrap up warm, tiptoe past the snoring dragon and scoop up a handful of coins. Your clan stays toasty the whole time.",
+				gold: "big"
+			},
+			lose: {
+				text: "You get a bit chilly, and your teeth chatter so loudly that the dragon rolls over in its sleep. You grab a few coins and sneak out.",
+				gold: "small"
+			}
+		}, {
+			label: "Wait outside and warm up the clan",
+			win: {
+				text: "You make a campfire and share hot soup. A passing traveller smells it and asks to join.",
+				followers: "small"
+			}
+		}]
+	},
+	{
+		id: 6,
+		title: "The Village Fair",
+		years: ALL,
+		story: ["Bunting flaps in the breeze, a band plays out of tune, and the smell of pies drifts across the green.", "The fair needs helpers. Everybody looks hopefully at your clan."],
+		choices: [
+			{
+				label: "Help at the pie stall",
+				win: {
+					text: "You sell pies all afternoon. The pie-maker pays you with gold and some very warm pies.",
+					gold: "small",
+					followers: "small"
+				}
+			},
+			{
+				label: "Juggle for the crowd",
+				win: {
+					text: "You drop two apples, but the crowd loves it. People throw coins in your hat.",
+					gold: "medium"
+				}
+			},
+			{
+				label: "Give a speech from the cart",
+				charm: "open",
+				win: {
+					text: "Your clan’s speech is so charming that the whole fair cheers. Lots of people ask to join, and the mayor gives you a thank-you purse.",
+					followers: "big",
+					gold: "small"
+				}
+			}
+		]
+	},
+	{
+		id: 7,
+		title: "The Wishing Well",
+		years: ALL,
+		story: ["In the middle of a forgotten garden stands a mossy well. Something glints at the bottom.", "A little sign, half hidden in ivy, reads: \"Be kind, and the well is kind back.\""],
+		choices: [{
+			label: "Reach down with a long stick",
+			win: {
+				text: "You fish out a tunic that someone dropped long ago. It is a little damp, but it dries out soft and warm.",
+				item: "Cloth Tunic"
+			}
+		}, {
+			label: "Make a kind wish for the whole clan",
+			win: {
+				text: "You wish that everyone in the clan gets better at something. The well glows softly and every member feels a tiny bit wiser.",
+				points: "medium"
+			}
+		}]
+	},
+	{
+		id: 8,
+		title: "The Pattern Door",
+		years: ALL,
+		story: ["At the end of a corridor is a round stone door covered in glowing tiles. The tiles show a row of numbers, and an empty circle at the end.", "Humming from behind the door sounds like a very friendly cat."],
+		choices: [{
+			label: "Press the right number into the circle",
+			puzzle: "pattern",
+			win: {
+				text: "Click! The door swings open. Behind it a very friendly cat gives you a pat of thanks, a few coins and a lesson in thinking.",
+				gold: "small",
+				points: "medium"
+			},
+			lose: {
+				text: "The door gives a polite buzz, then opens anyway. \"Nearly!\" says the cat, and shows you the pattern. You learn a bit.",
+				points: "small"
+			}
+		}]
+	},
+	{
+		id: 9,
+		title: "The Sleepy Giant",
+		years: ALL,
+		story: ["A giant is snoring across the road, with a hat over his face. Each snore blows leaves into the air.", "You could tiptoe round him. Or you could wake him up and see what happens."],
+		choices: [{
+			label: "Tiptoe past, very quietly",
+			win: {
+				text: "You make it past without a single creak! A pouch of coins has fallen out of his pocket, and you leave a note to say sorry.",
+				gold: "small"
+			}
+		}, {
+			label: "Wake him gently and ask for a favour",
+			charm: "high",
+			win: {
+				text: "The giant yawns, then smiles. \"What good manners!\" He gives your clan his old shield, which is huge for him but just right for you.",
+				item: "Lion's Shield",
+				gold: "small"
+			}
+		}]
+	},
+	{
+		id: 10,
+		title: "The Pie Cart Puzzle",
+		years: ALL,
+		story: ["A pie seller waves you over. His cart is full of pies, but he has lost count and cannot remember his secret number.", "\"Each day I count the pies a special way,\" he says. \"Can you help?\""],
+		choices: [{
+			label: "Help him work out the number",
+			puzzle: "riddle",
+			win: {
+				text: "The pie seller does a happy dance. \"That is the number!\" He gives you coins for your help and a few pies for the journey.",
+				gold: "medium",
+				followers: "small"
+			},
+			lose: {
+				text: "You and the pie seller work it out together, with plenty of pie crumbs. He pays you a little for your time.",
+				gold: "small"
+			}
+		}]
+	}
+];
+/** Does this quest suit the settings? Year 6 puzzles about below-zero numbers only appear at Year 6 and only while the teacher has that topic on. */
+function suits(q, settings) {
+	if (!q.years.includes(settings.yearBand)) return false;
+	return q.choices.every((c) => c.puzzle !== "cold" || topicAvailable(settings, "integers"));
+}
+const questsFor = (settings) => QUESTS.filter((q) => suits(q, settings));
+const mix = (a, b) => Math.imul((a | 0) ^ 2654435769, 2246822507) ^ Math.imul((b | 0) + 2135587861, 3266489909) | 0;
+/**
+* Today's quest: the suitable quests in an order fixed by the clan's seed, one per day, cycling.
+* Null if none suits the settings.
+*/
+function todaysQuest(baseSeed, day, settings) {
+	const list = questsFor(settings);
+	if (list.length === 0) return null;
+	const h = { rng: mix(baseSeed, 1234) };
+	const order = list.map((_, i) => i);
+	for (let i = order.length - 1; i > 0; i--) {
+		const j = roll(h, i + 1);
+		[order[i], order[j]] = [order[j], order[i]];
+	}
+	return list[order[(Math.max(1, day) - 1) % order.length]];
+}
+/** Has the clan done today's quest? */
+const questDoneToday = (clan, day) => clan.questDay === day;
+/** The best charisma in the clan: the one who does the talking. */
+function bestCharm(clan) {
+	let best = null;
+	for (const m of clan.members) if (!best || m.stats.charisma > best.stats.charisma) best = m;
+	return {
+		value: best ? best.stats.charisma : 0,
+		member: best
+	};
+}
+/** Can the clan pick this choice? If not, a kind sentence saying what would unlock it. */
+function choiceOpen(clan, choice) {
+	if (!choice.charm) return { open: true };
+	const need = Q.charm[choice.charm];
+	const { value } = bestCharm(clan);
+	if (value >= need) return { open: true };
+	return {
+		open: false,
+		say: `This needs a charming member (charisma ${need} or more). Your most charming member has ${value}. Training charisma at the Training Hall can open it.`
+	};
+}
+/** The numbers for a choice's puzzle today: fixed by the seed, the day, the quest and the choice. */
+function puzzleFor(q, choiceIndex, baseSeed, day, settings) {
+	const kind = q.choices[choiceIndex]?.puzzle;
+	if (!kind) return null;
+	return makePuzzle(kind, settings.yearBand, mix(mix(baseSeed, day), q.id * 10 + choiceIndex));
+}
+const itemByName = (name) => ITEMS.find((i) => i.name === name);
+/** Who can use an item: has nothing in that slot and meets its base-stat needs. Weakest-kitted first. */
+function wearer(clan, item) {
+	const needsMet = (m) => Object.entries(item.needs).every(([stat, v]) => m.stats[stat] >= (v ?? 0));
+	return clan.members.find((m) => !m.gear[item.kind] && needsMet(m)) ?? null;
+}
+/**
+* Do the quest: check it is allowed, put the prize on the clan, and mark the day as done.
+* `right` is how the puzzle went (true right, false wrong or skipped), or null if the choice had no puzzle.
+*/
+function finishQuest(clan, day, q, choiceIndex, right) {
+	const choice = q.choices[choiceIndex];
+	if (!choice) return {
+		ok: false,
+		say: "That choice is not in this story."
+	};
+	if (questDoneToday(clan, day)) return {
+		ok: false,
+		say: "Your clan has already done its quest today. Come back tomorrow for a new one."
+	};
+	const open = choiceOpen(clan, choice);
+	if (!open.open) return {
+		ok: false,
+		say: open.say
+	};
+	const outcome = choice.puzzle && !right ? choice.lose ?? choice.win : choice.win;
+	const prize = {
+		gold: outcome.gold ? Q.reward.gold[outcome.gold] : 0,
+		followers: outcome.followers ? Q.reward.followers[outcome.followers] : 0,
+		points: outcome.points ? Q.reward.points[outcome.points] : 0
+	};
+	let text = outcome.text;
+	if (outcome.item) {
+		const item = itemByName(outcome.item);
+		const who = item && item.price <= Q.itemMaxPrice ? wearer(clan, item) : null;
+		if (item && who) {
+			who.gear[item.kind] = item.name;
+			prize.item = {
+				name: item.name,
+				member: who.name
+			};
+		} else if (item) {
+			prize.gold += Math.ceil(item.price / 2);
+			text += " Nobody in the clan could use it just now, so you sold it for a fair price.";
+		}
+	}
+	clan.gold += prize.gold;
+	clan.followers += prize.followers;
+	for (const m of clan.members) m.points += prize.points;
+	clan.questDay = day;
+	return {
+		ok: true,
+		text,
+		right: choice.puzzle ? !!right : null,
+		prize
+	};
+}
+//#endregion
+//#region shared/clans/actions.ts
+/**
+* The server side of Clan Quest, as plain functions: an action comes in (what the child pressed), the saved clan
+* goes in, and either a new clan and a result come out, or a kind refusal. The server function `clans` is only
+* the plumbing around `applyAction`; the rules are the same `shared/clans` code the screens use, so a changed
+* browser cannot make the server do anything the rules refuse.
+*
+* Maths never blocks: the shop, Church and Training Hall take the true price whatever the child answered, so
+* those actions carry no answers. A quest puzzle changes the prize, so the quest action carries the answer and
+* the server rebuilds the puzzle from the clan's seed, the day, the quest and the choice to mark it.
+* Fights, the midnight job and raids on classmates are not here yet (part B and stage C.6).
+*/
+const refuse = (why, say) => ({
+	ok: false,
+	why,
+	say
+});
+const isObj = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
+const int = (v, lo, hi) => typeof v === "number" && Number.isInteger(v) && v >= lo && v <= hi ? v : null;
+function parsePlan(v) {
+	if (!isObj(v)) return null;
+	const rounds = int(v.rounds, 1, CONFIG.empire.battle.maxRounds);
+	const loot = int(v.loot, 0, 100);
+	if (rounds === null || loot === null || typeof v.push !== "string" || !PUSHES.includes(v.push)) return null;
+	return {
+		rounds,
+		push: v.push,
+		loot
+	};
+}
+/** Reads an action sent by a browser. Null if it is not one the server knows, however it is changed. */
+function parseAction(raw) {
+	if (!isObj(raw) || typeof raw.type !== "string") return null;
+	const member = int(raw.member, 0, CONFIG.maxMembers - 1);
+	switch (raw.type) {
+		case "load": return { type: "load" };
+		case "claim": return { type: "claim" };
+		case "wakeAll": return { type: "wakeAll" };
+		case "draft": return { type: "draft" };
+		case "create":
+			if (typeof raw.name !== "string" || !Array.isArray(raw.drafts) || raw.drafts.length > CONFIG.maxMembers) return null;
+			return {
+				type: "create",
+				name: raw.name,
+				drafts: raw.drafts
+			};
+		case "buy":
+		case "examine": return member !== null && typeof raw.item === "string" ? {
+			type: raw.type,
+			member,
+			item: raw.item
+		} : null;
+		case "train": {
+			const count = int(raw.count, 1, 500);
+			return member !== null && count !== null && typeof raw.key === "string" && TRAIN_KEYS.includes(raw.key) ? {
+				type: "train",
+				member,
+				key: raw.key,
+				count
+			} : null;
+		}
+		case "wake": return member !== null ? {
+			type: "wake",
+			member
+		} : null;
+		case "deposit":
+		case "withdraw": {
+			const gold = int(raw.gold, 1, 1e6);
+			return gold !== null ? {
+				type: raw.type,
+				gold
+			} : null;
+		}
+		case "develop": {
+			const width = int(raw.width, 0, 100);
+			const length = int(raw.length, 0, 100);
+			return width !== null && length !== null ? {
+				type: "develop",
+				width,
+				length
+			} : null;
+		}
+		case "build": {
+			const plot = int(raw.plot, 0, 1e3);
+			return plot !== null && typeof raw.kind === "string" && BUILDING_KINDS.includes(raw.kind) ? {
+				type: "build",
+				plot,
+				kind: raw.kind
+			} : null;
+		}
+		case "buyTroops": {
+			if (!isObj(raw.mix)) return null;
+			const mix = {};
+			for (const k of TROOP_KINDS) {
+				const n = int(raw.mix[k], 0, 1e5);
+				if (n === null) return null;
+				mix[k] = n;
+			}
+			return {
+				type: "buyTroops",
+				mix
+			};
+		}
+		case "setDraft": {
+			const percent = int(raw.percent, 0, 100);
+			return percent !== null ? {
+				type: "setDraft",
+				percent
+			} : null;
+		}
+		case "raid":
+		case "war": {
+			const plan = parsePlan(raw.plan);
+			return plan && typeof raw.kingdom === "string" && raw.kingdom.length <= 40 ? {
+				type: raw.type,
+				kingdom: raw.kingdom,
+				plan
+			} : null;
+		}
+		case "quest": {
+			const choice = int(raw.choice, 0, 5);
+			const answer = raw.answer === null || raw.answer === void 0 ? null : typeof raw.answer === "number" && Number.isFinite(raw.answer) ? raw.answer : void 0;
+			return choice !== null && answer !== void 0 ? {
+				type: "quest",
+				choice,
+				answer
+			} : null;
+		}
+		default: return null;
+	}
+}
+/** The clan's day number for this New Zealand day. */
+const clanDay = (createdNzDay, today) => Math.max(1, today - createdNzDay + 1);
+/**
+* If a new day has started since the clan was last saved, give it the night's rest: everyone heals, the Church's
+* free wake-up comes back, the empire's energy and raids reset and the fights come back. A clan that was away for
+* a week gets one night's rest and moves to today's number. Returns true if anything changed.
+*/
+function catchUp(state, today) {
+	const day = clanDay(state.createdNzDay, today);
+	if (day <= state.day) return false;
+	dayReset(state.clan);
+	empireNewDay(state.clan);
+	empireOf(state.clan).day = day;
+	state.fightsLeft = CONFIG.fightsPerDay;
+	state.day = day;
+	return true;
+}
+const done = (state, result, changed = true) => ({
+	ok: true,
+	state,
+	result,
+	changed
+});
+/**
+* Apply one action to the saved clan (null if the student has none yet). Works on a copy: the state that
+* comes in is never changed, so a refusal leaves everything as it was.
+*/
+function applyAction(saved, action, ctx) {
+	const settings = ctx.settings ?? DEFAULT_PRACTICAL_SETTINGS;
+	if (action.type === "create") {
+		if (saved) return refuse("exists", "You already have a clan.");
+		const made = clanFromChoices(ctx.seed, action.name, action.drafts);
+		if (!made.ok) return refuse("create", made.say);
+		const state = {
+			clan: made.clan,
+			seed: ctx.seed,
+			day: 1,
+			createdNzDay: ctx.today,
+			fightsLeft: CONFIG.fightsPerDay,
+			fightNo: 0,
+			raidNo: 0,
+			examined: []
+		};
+		return done(state, { type: "create" });
+	}
+	if (!saved) return action.type === "load" ? {
+		ok: true,
+		state: null,
+		result: { type: "load" },
+		changed: false
+	} : refuse("no-clan", "Make a clan first.");
+	const state = structuredClone(saved);
+	const rested = catchUp(state, ctx.today);
+	const { clan } = state;
+	const settle = (r, result) => r.ok ? done(state, result) : refuse(r.why ?? "no", r.say ?? "That cannot be done right now.");
+	switch (action.type) {
+		case "load": return done(state, { type: "load" }, rested);
+		case "buy": {
+			const item = ITEMS.find((i) => i.name === action.item);
+			return item ? settle(buyItem(clan, action.member, item), { type: "buy" }) : refuse("item", "The shop does not have that.");
+		}
+		case "examine": {
+			const item = ITEMS.find((i) => i.name === action.item);
+			return item ? settle(examineItemFor(clan, state.examined, action.member, item), { type: "examine" }) : refuse("item", "The shop does not have that.");
+		}
+		case "train": return settle(trainMember(clan, action.member, action.key, action.count), { type: "train" });
+		case "wake": return settle(wakeOne(clan, action.member), { type: "wake" });
+		case "wakeAll": return settle(wakeEveryone(clan), { type: "wakeAll" });
+		case "deposit": return settle(deposit(clan, action.gold), { type: "deposit" });
+		case "withdraw": return settle(withdraw(clan, action.gold), { type: "withdraw" });
+		case "develop": return settle(developPlot(empireOf(clan), action.width, action.length), { type: "develop" });
+		case "claim": return settle(claimLand(empireOf(clan)), { type: "claim" });
+		case "build": return settle(build(empireOf(clan), action.plot, action.kind), { type: "build" });
+		case "buyTroops": return settle(buyTroopMix(clan, action.mix), { type: "buyTroops" });
+		case "setDraft": return settle(setDraft(empireOf(clan), action.percent), { type: "setDraft" });
+		case "draft": {
+			const out = draftFollowers(clan);
+			return done(state, {
+				type: "draft",
+				...out
+			});
+		}
+		case "raid":
+		case "war": {
+			const friendly = action.type === "war";
+			const out = sendArmyTo(clan, action.kingdom, action.plan, friendly, raidSeed(state.seed, state.raidNo));
+			if (!out.ok) return refuse(out.why, out.say);
+			state.raidNo++;
+			return done(state, {
+				type: action.type,
+				friendly,
+				result: out.result,
+				gold: out.gold
+			});
+		}
+		case "quest": {
+			const q = todaysQuest(state.seed, state.day, settings);
+			if (!q) return refuse("quest", "There is no quest for you today.");
+			if (action.choice >= q.choices.length) return refuse("choice", "That choice is not in this story.");
+			const spec = puzzleFor(q, action.choice, state.seed, state.day, settings);
+			const right = spec ? action.answer !== null && buildPuzzle(spec).answer === action.answer : null;
+			const finished = finishQuest(clan, state.day, q, action.choice, right);
+			return finished.ok ? done(state, {
+				type: "quest",
+				questId: q.id,
+				text: finished.text,
+				right: finished.right,
+				prize: finished.prize
+			}) : refuse("quest", finished.say);
+		}
+	}
+}
+//#endregion
+//#region shared/clans/clock.ts
+/** Clan Quest's days are New Zealand calendar days, like the other daily games. */
+const nz = new Intl.DateTimeFormat("en-CA", {
+	timeZone: "Pacific/Auckland",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit"
+});
+/** Whole days since 1970 of the New Zealand date at this moment (milliseconds since 1970). */
+function nzDayNumber(ms) {
+	const [y, m, d] = nz.format(new Date(ms)).split("-").map(Number);
+	return Math.round(Date.UTC(y, m - 1, d) / 864e5);
+}
+//#endregion
+//#region supabase/functions/_shared/http.ts
+/** Websites allowed to call the server functions from a browser. */
+const ALLOWED_ORIGINS = [
+	"https://bleedingrobot.github.io",
+	"http://localhost:5173",
+	"http://127.0.0.1:5173",
+	"http://localhost:4173",
+	"http://127.0.0.1:4173"
+];
+function corsHeaders(origin) {
+	return {
+		"Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+		"Access-Control-Allow-Methods": "POST, OPTIONS",
+		"Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+		"Access-Control-Max-Age": "7200",
+		Vary: "Origin"
+	};
+}
+/** The sign-in token from the request, if there is one. */
+function bearerToken(request) {
+	return request.headers.get("Authorization")?.match(/^Bearer (.+)$/)?.[1] ?? null;
+}
+/** Reads a JSON request body. Null if it's missing, unreadable or bigger than MAX_BODY_BYTES. */
+async function readJsonBody(request) {
+	if (Number(request.headers.get("Content-Length") ?? 0) > 65536) return null;
+	try {
+		const text = await request.text();
+		return text.length > 65536 ? null : JSON.parse(text);
+	} catch {
+		return null;
+	}
+}
+//#endregion
+//#region supabase/functions/_shared/limits.ts
+/**
+* Counts requests per student in this server's memory. A soft limit: each server copy counts
+* separately. (The same as the one in multiplayer/handler.ts, which is left as it is so the
+* live multiplayer function doesn't change.)
+*/
+var RateLimiter = class {
+	now;
+	hits = new Map();
+	constructor(now) {
+		this.now = now;
+	}
+	/** Records a request and says whether it's within `limit` per minute. */
+	allow(key, limit) {
+		const now = this.now();
+		const recent = (this.hits.get(key) ?? []).filter((t) => now - t < 6e4);
+		if (recent.length >= limit) {
+			this.hits.set(key, recent);
+			return false;
+		}
+		recent.push(now);
+		this.hits.set(key, recent);
+		if (this.hits.size > 5e3) this.hits.clear();
+		return true;
+	}
+};
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** What the browser is told about a clan: everything it shows, nothing it could use to cheat. */
+function publicState(state, settings) {
+	const { clan, seed, day, fightsLeft, fightNo, raidNo, examined } = state;
+	return {
+		clan,
+		seed,
+		day,
+		fightsLeft,
+		fightNo,
+		raidNo,
+		examined,
+		settings
+	};
+}
+function makeHandler(services) {
+	const limiter = new RateLimiter(() => services.now());
+	return async function handleClans(request) {
+		const cors = corsHeaders(request.headers.get("Origin"));
+		const reply = (status, body) => new Response(JSON.stringify(body), {
+			status,
+			headers: {
+				...cors,
+				"Content-Type": "application/json"
+			}
+		});
+		if (request.method === "OPTIONS") return new Response(null, {
+			status: 204,
+			headers: cors
+		});
+		if (request.method !== "POST") return reply(405, { error: "Not allowed." });
+		const token = bearerToken(request);
+		const player = token ? await services.userIdFor(token) : null;
+		if (!player) return reply(401, { error: "Please sign in again." });
+		if (!limiter.allow(player, 40)) return reply(429, { error: "Slow down a little!" });
+		const body = await readJsonBody(request);
+		const action = body ? parseAction(body.action) : null;
+		if (!body || typeof body.requestId !== "string" || !UUID.test(body.requestId) || !action) {
+			console.warn("clans: refused a request that could not be read");
+			return reply(400, { error: "That couldn't be read." });
+		}
+		const requestId = body.requestId.toLowerCase();
+		const settings = services.settings?.() ?? DEFAULT_PRACTICAL_SETTINGS;
+		const today = nzDayNumber(services.now());
+		for (let attempt = 0; attempt < 4; attempt++) {
+			const loaded = await services.load(player, requestId);
+			if (!loaded.ok) return loaded.why === "busy" ? reply(503, { error: "We couldn't reach your clan just now." }) : reply(400, { error: "That couldn't be read." });
+			const { seed, version, state, replay } = loaded.value;
+			if (replay) return reply(200, {
+				ok: true,
+				replayed: true,
+				seed,
+				state: state && publicState(state, settings),
+				result: replay
+			});
+			const applied = applyAction(state, action, {
+				seed,
+				today,
+				settings
+			});
+			if (!applied.ok) {
+				const current = state && applyAction(state, { type: "load" }, {
+					seed,
+					today,
+					settings
+				});
+				return reply(200, {
+					ok: false,
+					why: applied.why,
+					say: applied.say,
+					seed,
+					state: current && current.ok && current.state ? publicState(current.state, settings) : null
+				});
+			}
+			if (!applied.changed || !applied.state) return reply(200, {
+				ok: true,
+				replayed: false,
+				seed,
+				state: applied.state && publicState(applied.state, settings),
+				result: applied.result
+			});
+			const saved = await services.save(player, version, requestId, action.type, applied.state, applied.result);
+			if (!saved.ok) return saved.why === "busy" ? reply(503, { error: "We couldn't save your clan just now." }) : reply(400, { error: "That couldn't be saved." });
+			if (saved.value.status === "saved") return reply(200, {
+				ok: true,
+				replayed: false,
+				seed,
+				state: publicState(applied.state, settings),
+				result: applied.result
+			});
+		}
+		return reply(409, { error: "Your clan was busy. Please try that again." });
+	};
+}
+//#endregion
+//#region supabase/functions/clans/entry.ts
+/** The server's own key. Supabase provides it automatically; it never leaves the server. */
+function serverKey() {
+	const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+	if (legacy) return legacy;
+	const keys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}");
+	return keys.default ?? Object.values(keys)[0] ?? "";
+}
+const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", serverKey(), { auth: {
+	persistSession: false,
+	autoRefreshToken: false
+} });
+/** Calls a database function. Logs say which one and the error code, never who. */
+async function call(name, args) {
+	const { data, error } = await admin.rpc(name, args);
+	if (!error) return {
+		ok: true,
+		value: data
+	};
+	console.error(`clans: ${name} failed (${error.code ?? "unknown"})`);
+	if (error.code && /^2[23]/.test(error.code)) return {
+		ok: false,
+		why: "refused"
+	};
+	return {
+		ok: false,
+		why: "busy"
+	};
+}
+Deno.serve(makeHandler({
+	now: () => Date.now(),
+	async userIdFor(token) {
+		const { data, error } = await admin.auth.getUser(token);
+		return error ? null : data.user?.id ?? null;
+	},
+	load: (player, requestId) => call("load_clan", {
+		player,
+		request_id: requestId
+	}),
+	save: (player, expectedVersion, requestId, action, state, result) => call("save_clan", {
+		player,
+		expected_version: expectedVersion,
+		request_id: requestId,
+		action,
+		state,
+		result
+	})
+}));
+//#endregion
