@@ -70,6 +70,48 @@
   gap: 8px;
 }
 
+.marble-picker__ghost {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line, #d8d4ee);
+  border-radius: 12px;
+}
+.marble-picker__ghost p {
+  margin: 0;
+}
+.marble-picker__hint {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+.marble-board__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+.marble-board__modes [aria-pressed='true'] {
+  outline: 3px solid currentColor;
+}
+.marble-board__list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 28px;
+}
+.marble-board__list li {
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+.marble-board__list li > * {
+  vertical-align: middle;
+  margin-right: 8px;
+}
+.marble-board__me {
+  font-weight: 700;
+  background: rgba(250, 204, 21, 0.25);
+}
+
 /* ---------- a run ---------- */
 
 .marble-run {

@@ -1,7 +1,9 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { courseById } from '../../../shared/marble/courses';
+import { botRun } from '../../../shared/marble/bot';
 import { replay } from '../../../shared/marble/engine';
+import { encodeInputs } from '../../../shared/marble/inputs';
 import { SoundProvider } from '../../sound';
 import { RunScreen, type FinishedRun } from './RunScreen';
 
@@ -130,5 +132,67 @@ describe('RunScreen', () => {
     await runFrames(8000);
     fireEvent.click(await screen.findByRole('button', { name: /Try hard mode/ }));
     expect(props.onHard).toHaveBeenCalled();
+  });
+
+  it('races a ghost: draws a second marble, and says whether the student beat it', async () => {
+    const slow = { name: 'Slow Kiwi', steps: 3000, inputs: '0x3000' };
+    const { finished } = setup({ ghost: slow });
+    await runFrames(50);
+    expect(screen.getByText(/ghost of Slow Kiwi/)).toBeInTheDocument();
+    fireEvent.keyDown(window, { code: 'ArrowRight' });
+    fireEvent.keyDown(window, { code: 'ArrowDown' });
+    await runFrames(500);
+    const others = draws.mock.calls.at(-1)![4] as { now: { x: number } }[];
+    expect(others).toHaveLength(1);
+    await runFrames(8000);
+    expect(await screen.findByText(/You beat Slow Kiwi’s ghost/)).toBeInTheDocument();
+    expect(finished).toHaveLength(1);
+  });
+
+  it('a faster ghost wins, and the ghost plays its recorded run exactly', async () => {
+    const bot = botRun(courseById('test-easy')!);
+    const want = replay(courseById('test-easy')!, bot.runs)!;
+    setup({ ghost: { name: 'Fast Fantail', steps: 10, inputs: encodeInputs(bot.runs) } });
+    await runFrames(50);
+    fireEvent.keyDown(window, { code: 'ArrowRight' });
+    fireEvent.keyDown(window, { code: 'ArrowDown' });
+    await runFrames(8000);
+    expect(await screen.findByText(/Fast Fantail’s ghost was/)).toBeInTheDocument();
+    const last = draws.mock.calls.at(-1)![4] as { now: { outcome: string; finishSteps: number } }[];
+    expect(last[0].now.outcome).toBe('finished');
+    expect(last[0].now.finishSteps).toBe(want.finishSteps);
+  });
+
+  it('ignores a ghost whose inputs are broken', async () => {
+    setup({ ghost: { name: 'Broken', steps: 100, inputs: 'nonsense' } });
+    await runFrames(50);
+    fireEvent.keyDown(window, { code: 'ArrowRight' });
+    await runFrames(100);
+    expect((draws.mock.calls.at(-1)![4] as unknown[]).length).toBe(0);
+  });
+
+  it('two players: arrow keys steer the first marble, W A S D the second, first over the line wins and nothing is saved', async () => {
+    const { finished } = setup({ twoPlayer: true });
+    await runFrames(50);
+    expect(screen.getByText(/Player 2 \(orange\) uses W A S D/)).toBeInTheDocument();
+    fireEvent.keyDown(window, { code: 'KeyD' });
+    fireEvent.keyDown(window, { code: 'KeyS' });
+    await runFrames(8000);
+    expect(await screen.findByRole('dialog', { name: 'Run finished' })).toHaveTextContent('Player 2 wins!');
+    expect(finished).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: /hard mode/i })).toBeNull();
+    expect(screen.getByText(/This game isn’t saved/)).toBeInTheDocument();
+  });
+
+  it('two players: the arrow keys never move the second marble', async () => {
+    setup({ twoPlayer: true });
+    await runFrames(50);
+    fireEvent.keyDown(window, { code: 'ArrowRight' });
+    fireEvent.keyDown(window, { code: 'ArrowDown' });
+    await runFrames(300);
+    const [rival] = draws.mock.calls.at(-1)![4] as { now: { x: number; y: number } }[];
+    const start = courseById('test-easy')!.start;
+    expect(rival.now.x).toBeCloseTo(start.x, 5);
+    expect(rival.now.y).toBeCloseTo(start.y, 5);
   });
 });

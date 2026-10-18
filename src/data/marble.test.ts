@@ -8,7 +8,7 @@ vi.mock('../lib/supabase', () => ({
   },
 }));
 
-import { enqueueRun, flushRuns, loadServerBests, queuedRuns, startRun } from './marble';
+import { enqueueRun, flushRuns, loadBoard, loadGhost, loadServerBests, queuedRuns, startRun } from './marble';
 
 const fetchMock = vi.fn<typeof fetch>();
 let ME = '';
@@ -95,5 +95,31 @@ describe('loading the server’s bests', () => {
     expect(await loadServerBests()).toBeNull();
     rpc.mockRejectedValue(new Error('offline'));
     expect(await loadServerBests()).toBeNull();
+  });
+});
+
+describe('ghosts and boards', () => {
+  it('asks for a ghost without maths and hands back its inputs', async () => {
+    rpc.mockResolvedValue({ data: { name: 'Quick Kea', steps: 900, inputs: '3x60' }, error: null });
+    expect(await loadGhost('boulder-beach', 'up', 'next')).toEqual({ name: 'Quick Kea', steps: 900, inputs: '3x60' });
+    expect(rpc).toHaveBeenCalledWith('marble_ghost', { in_course: 'boulder-beach', in_mode: 'up', in_maths: false, which: 'next' });
+  });
+
+  it('gives no ghost when there is none, it is odd, or the server fails', async () => {
+    rpc.mockResolvedValue({ data: null, error: null });
+    expect(await loadGhost('a', 'up', 'top')).toBeNull();
+    rpc.mockResolvedValue({ data: { name: 1 }, error: null });
+    expect(await loadGhost('a', 'up', 'top')).toBeNull();
+    rpc.mockRejectedValue(new Error('offline'));
+    expect(await loadGhost('a', 'up', 'top')).toBeNull();
+  });
+
+  it('loads a board, or null', async () => {
+    const board = { top: [{ rank: 1, name: 'Quick Kea', avatar: null, steps: 900, me: false }], me: null, total: 1 };
+    rpc.mockResolvedValue({ data: board, error: null });
+    expect(await loadBoard('boulder-beach', 'down')).toEqual(board);
+    expect(rpc).toHaveBeenCalledWith('marble_board', { in_course: 'boulder-beach', in_mode: 'down', in_maths: false });
+    rpc.mockResolvedValue({ data: null, error: { message: 'x' } });
+    expect(await loadBoard('boulder-beach', 'up')).toBeNull();
   });
 });

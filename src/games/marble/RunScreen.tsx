@@ -10,14 +10,21 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { DT } from '../../../shared/marble/config';
 import type { Course } from '../../../shared/marble/course';
 import { clockSteps, makeWorld, medalFor, newRun, stepRun, type ClockMode, type RunState } from '../../../shared/marble/engine';
-import { pushInput } from '../../../shared/marble/inputs';
+import { decodeInputs, inputPlayer, pushInput } from '../../../shared/marble/inputs';
 import { useSound } from '../../sound';
 import { playSound } from '../sounds';
 import { formatSteps } from './bests';
-import { dragVector, KeyTracker, screenToCode } from './controls';
+import { dragVector, KEYS_ARROWS, KEYS_LETTERS, KeyTracker, screenToCode } from './controls';
 import { infoFor } from './courseInfo';
 import { paletteFor } from './palette';
-import type { MarbleView } from './renderer';
+import type { MarbleView, OtherKind } from './renderer';
+
+/** A recorded run to race against (from src/data/marble.ts). */
+export interface GhostRun {
+  name: string;
+  steps: number;
+  inputs: string;
+}
 
 export interface FinishedRun {
   courseId: string;
@@ -42,6 +49,8 @@ export function RunScreen({
   mode,
   best,
   canTryHard,
+  ghost,
+  twoPlayer = false,
   onDone,
   onAgain,
   onHard,
@@ -53,6 +62,10 @@ export function RunScreen({
   best?: number;
   /** The "try hard mode" button is offered after a finish (the student has finished this course before). */
   canTryHard: boolean;
+  /** A see-through marble that replays this recorded run. */
+  ghost?: GhostRun | null;
+  /** Two marbles on one keyboard: arrow keys and W A S D. Nothing is saved. */
+  twoPlayer?: boolean;
   onDone: (run: FinishedRun) => { isBest: boolean };
   onAgain: () => void;
   onHard: () => void;
@@ -64,15 +77,17 @@ export function RunScreen({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const timeRef = useRef<HTMLSpanElement>(null);
+  const time2Ref = useRef<HTMLSpanElement>(null);
   const [phase, setPhase] = useState<Phase>('loading');
   const phaseRef = useRef<Phase>('loading');
   const [falls, setFalls] = useState(0);
   const [checkpoints, setCheckpoints] = useState(0);
   const [announce, setAnnounce] = useState('');
-  const [result, setResult] = useState<{ steps: number; medal: keyof typeof MEDAL | null; isBest: boolean; falls: number } | null>(null);
+  const [result, setResult] = useState<{ steps: number; medal: keyof typeof MEDAL | null; isBest: boolean; falls: number; ghost?: 'beat' | 'lost' | 'tie'; winner?: 1 | 2 | 0 } | null>(null);
   const [stickSide, setStickSide] = useState<'left' | 'right'>('right');
   const [showStick, setShowStick] = useState(isCoarse);
-  const keys = useRef(new KeyTracker());
+  const keys = useRef(new KeyTracker(twoPlayer ? KEYS_ARROWS : undefined));
+  const keys2 = useRef(new KeyTracker(KEYS_LETTERS));
   const pointerPush = useRef<[number, number] | null>(null);
   const stickPush = useRef<[number, number] | null>(null);
   const dragStart = useRef<{ id: number; x: number; y: number } | null>(null);
@@ -93,6 +108,16 @@ export function RunScreen({
     const world = makeWorld(course, { mode });
     let state: RunState = newRun(world);
     let prev: RunState = { ...state };
+    // A ghost and a second player each have a world and a run of their own, stepped together with ours.
+    const ghostRuns = ghost && !twoPlayer ? decodeInputs(ghost.inputs) : null;
+    const ghostWorld = ghostRuns ? makeWorld(course, { mode }) : null;
+    let ghostState: RunState | null = ghostWorld ? newRun(ghostWorld) : null;
+    let ghostPrev: RunState | null = ghostState ? { ...ghostState } : null;
+    let ghostNext = ghostRuns ? inputPlayer(ghostRuns) : null;
+    const world2 = twoPlayer ? makeWorld(course, { mode }) : null;
+    let state2: RunState | null = world2 ? newRun(world2) : null;
+    let prev2: RunState | null = state2 ? { ...state2 } : null;
+    const kinds: OtherKind[] = [...(ghostWorld ? ['ghost' as const] : []), ...(world2 ? ['rival' as const] : [])];
     let runs: [number, number][] = [];
     let acc = 0;
     let last = performance.now();
@@ -109,6 +134,15 @@ export function RunScreen({
     restartRef.current = () => {
       state = newRun(world);
       prev = { ...state };
+      if (ghostWorld && ghostRuns) {
+        ghostState = newRun(ghostWorld);
+        ghostPrev = { ...ghostState };
+        ghostNext = inputPlayer(ghostRuns);
+      }
+      if (world2) {
+        state2 = newRun(world2);
+        prev2 = { ...state2 };
+      }
       runs = [];
       acc = 0;
       lastFalls = 0;
@@ -120,6 +154,13 @@ export function RunScreen({
       setResult(null);
       setAnnounce('');
       goto('ready');
+    };
+
+    const readInput2 = (): number => {
+      const k = keys2.current;
+      if (!k.any) return 0;
+      const [x, y] = k.vector();
+      return screenToCode(x, y);
     };
 
     const readInput = (): number => {
@@ -137,6 +178,19 @@ export function RunScreen({
       if (soundRef.current) playSound(s);
     };
 
+    // Two players: the first marble over the line wins. Nothing is saved.
+    const finishTwo = () => {
+      if (reported || !state2) return;
+      reported = true;
+      const one = state.outcome === 'finished' ? state.finishSteps : Infinity;
+      const two = state2.outcome === 'finished' ? state2.finishSteps : Infinity;
+      const winner = one === two ? 0 : one < two ? 1 : 2;
+      setResult({ steps: Math.min(one, two), medal: null, isBest: false, falls: state.falls, winner });
+      beep('win');
+      say(winner === 0 ? 'A tie!' : `Player ${winner} wins!`);
+      goto('finished');
+    };
+
     const finish = () => {
       if (reported) return;
       reported = true;
@@ -146,7 +200,8 @@ export function RunScreen({
         courseId: course.def.id, mode, outcome: finished ? 'finished' : 'timeout', steps, falls: state.falls, checkpoints: state.checkpoints.length, inputs: runs,
       });
       if (finished) {
-        setResult({ steps, medal: mode === 'up' ? medalFor(course, steps) : null, isBest, falls: state.falls });
+        const ghostResult = ghost && ghostRuns ? (steps < ghost.steps ? 'beat' : steps > ghost.steps ? 'lost' : 'tie') : undefined;
+        setResult({ steps, medal: mode === 'up' ? medalFor(course, steps) : null, isBest, falls: state.falls, ghost: ghostResult });
         beep('win');
         say(`Finished in ${formatSteps(steps)}.`);
         goto('finished');
@@ -166,11 +221,19 @@ export function RunScreen({
       if (phaseRef.current === 'playing') {
         acc += dt;
         let n = 0;
-        while (acc >= DT && n < 6 && state.outcome === 'running') {
+        while (acc >= DT && n < 6 && state.outcome === 'running' && (!state2 || state2.outcome === 'running')) {
           prev = { ...state };
           const input = readInput();
           pushInput(runs, input);
           stepRun(world, state, input);
+          if (ghostWorld && ghostState && ghostNext) {
+            ghostPrev = { ...ghostState };
+            if (ghostState.outcome === 'running') stepRun(ghostWorld, ghostState, ghostNext());
+          }
+          if (world2 && state2) {
+            prev2 = { ...state2 };
+            stepRun(world2, state2, readInput2());
+          }
           acc -= DT;
           n++;
           if (state.falls > lastFalls) {
@@ -189,7 +252,9 @@ export function RunScreen({
           wasGrounded = state.grounded;
         }
         if (n === 6) acc = 0;
-        if (state.outcome !== 'running') finish();
+        if (state2) {
+          if (state.outcome !== 'running' || state2.outcome !== 'running') finishTwo();
+        } else if (state.outcome !== 'running') finish();
         // Slow device? After a couple of seconds, draw lighter. The physics doesn't change.
         frames++;
         if (frames > 30 && frames <= 150) {
@@ -204,12 +269,17 @@ export function RunScreen({
         const steps = clockSteps(world, state);
         timeRef.current.textContent = formatSteps(steps);
       }
+      if (time2Ref.current && world2 && state2) time2Ref.current.textContent = formatSteps(clockSteps(world2, state2));
       if (lowQuality && skip) {
         skip = false;
         return;
       }
       skip = lowQuality && phaseRef.current === 'playing';
-      view.draw(prev, state, phaseRef.current === 'playing' ? Math.min(1, acc / DT) : 1, dt);
+      const others = [
+        ...(ghostState && ghostPrev ? [{ prev: ghostPrev, now: ghostState }] : []),
+        ...(state2 && prev2 ? [{ prev: prev2, now: state2 }] : []),
+      ];
+      view.draw(prev, state, phaseRef.current === 'playing' ? Math.min(1, acc / DT) : 1, dt, others);
     };
 
     const fit = () => {
@@ -223,7 +293,7 @@ export function RunScreen({
     import('./renderer')
       .then(({ createView }) => {
         if (disposed) return;
-        view = createView(canvas, course, world, paletteFor(course.def.id), reduced);
+        view = createView(canvas, course, world, paletteFor(course.def.id), reduced, kinds);
         fit();
         goto('ready');
         raf = requestAnimationFrame((t) => {
@@ -235,7 +305,9 @@ export function RunScreen({
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (keys.current.press(e.code)) {
+      const mine = keys.current.press(e.code);
+      const second = twoPlayer && keys2.current.press(e.code);
+      if (mine || second) {
         e.preventDefault();
         if (phaseRef.current === 'ready') goto('playing');
         return;
@@ -249,9 +321,13 @@ export function RunScreen({
         goto('playing');
       }
     };
-    const onKeyUp = (e: KeyboardEvent) => keys.current.release(e.code);
+    const onKeyUp = (e: KeyboardEvent) => {
+      keys.current.release(e.code);
+      keys2.current.release(e.code);
+    };
     const onBlur = () => {
       keys.current.clear();
+      keys2.current.clear();
       if (phaseRef.current === 'playing') goto('paused');
     };
     window.addEventListener('keydown', onKeyDown);
@@ -269,10 +345,11 @@ export function RunScreen({
       window.removeEventListener('blur', onBlur);
       document.removeEventListener('visibilitychange', onVisibility);
       keys.current.clear();
+      keys2.current.clear();
       view?.dispose();
     };
     // The run is made once per course and mode; the callbacks it uses don't need to restart it.
-  }, [course, mode]);
+  }, [course, mode, ghost, twoPlayer]);
 
   // ---- dragging with a mouse, trackpad or finger ----
   const onPointerDown = (e: React.PointerEvent) => {
@@ -308,12 +385,21 @@ export function RunScreen({
         <div className="marble-hud__title">
           <strong>{info?.name ?? course.def.name}</strong>
           {hard && <span className="marble-hud__flame"> 🔥 Hard mode</span>}
+          {twoPlayer && <span> · 2 players</span>}
+          {ghost && !twoPlayer && <span> · 👻 {ghost.name} ({formatSteps(ghost.steps)})</span>}
         </div>
         <div className="marble-hud__clock" aria-label={hard ? 'Time left' : 'Time'}>
+          {twoPlayer && <span aria-hidden="true">🔵 </span>}
           <span ref={timeRef}>0:00.00</span>
+          {twoPlayer && (
+            <>
+              <span aria-hidden="true"> · 🟠 </span>
+              <span ref={time2Ref} aria-label="Player 2 time">0:00.00</span>
+            </>
+          )}
         </div>
         <div className="marble-hud__stats">
-          <span>Falls: {falls}</span>
+          {twoPlayer ? <span>🔵 arrow keys · 🟠 W A S D</span> : <span>Falls: {falls}</span>}
           <span>Checkpoints: {checkpoints}</span>
         </div>
       </div>
@@ -338,7 +424,13 @@ export function RunScreen({
         {phase === 'ready' && (
           <div className="marble-overlay marble-overlay--light">
             <p className="marble-overlay__big">{hard ? 'Hard mode: beat the clock!' : 'Ready?'}</p>
-            <p>Press an arrow key or W A S D, or drag, to start rolling.</p>
+            <p>
+              {twoPlayer
+                ? 'Player 1 (blue) uses the arrow keys. Player 2 (orange) uses W A S D. First over the line wins!'
+                : ghost
+                  ? `A see-through ghost of ${ghost.name} will race you. Press an arrow key or W A S D, or drag, to start rolling.`
+                  : 'Press an arrow key or W A S D, or drag, to start rolling.'}
+            </p>
             <button type="button" className="button button--play" onClick={() => goto('playing')}>Roll!</button>
           </div>
         )}
@@ -354,11 +446,24 @@ export function RunScreen({
         )}
         {(phase === 'finished' || phase === 'timeout') && result && (
           <div className="marble-overlay" role="dialog" aria-label="Run finished">
-            <p className="marble-overlay__big">{phase === 'finished' ? 'Finished!' : 'Out of time'}</p>
-            {phase === 'finished' && (
+            <p className="marble-overlay__big">
+              {result.winner !== undefined ? (result.winner === 0 ? 'A tie!' : `Player ${result.winner} wins!`) : phase === 'finished' ? 'Finished!' : 'Out of time'}
+            </p>
+            {result.winner !== undefined && (
+              <p>
+                {result.winner === 0 ? '' : `${result.winner === 1 ? '🔵' : '🟠'} `}
+                {formatSteps(result.steps)}. This game isn’t saved.
+              </p>
+            )}
+            {phase === 'finished' && result.winner === undefined && (
               <>
                 <p className="marble-overlay__time">{formatSteps(result.steps)}{hard && ' 🔥'}</p>
                 {result.medal && <p className="marble-overlay__medal">{MEDAL[result.medal]}</p>}
+                {result.ghost && ghost && (
+                  <p className="marble-overlay__best">
+                    {result.ghost === 'beat' ? `👻 You beat ${ghost.name}’s ghost!` : result.ghost === 'tie' ? `👻 A tie with ${ghost.name}!` : `👻 ${ghost.name}’s ghost was ${formatSteps(result.steps - ghost.steps)} faster. Try again!`}
+                  </p>
+                )}
                 {result.isBest && <p className="marble-overlay__best">⭐ New personal best!</p>}
                 {!result.isBest && best !== undefined && <p>Your best: {formatSteps(best)}</p>}
                 <p>{result.falls === 0 ? 'No falls. Smooth!' : `You fell ${result.falls} time${result.falls === 1 ? '' : 's'}.`}</p>
@@ -367,7 +472,7 @@ export function RunScreen({
             {phase === 'timeout' && <p>The clock ran out. Nothing is lost: have another go.</p>}
             <div className="marble-overlay__buttons">
               <button type="button" className="button button--play" onClick={onAgain}>Roll again</button>
-              {phase === 'finished' && !hard && canTryHard && (
+              {phase === 'finished' && !hard && canTryHard && !twoPlayer && (
                 <button type="button" className="button button--light" onClick={onHard}>Try hard mode 🔥</button>
               )}
               <button type="button" className="button button--light" onClick={onExit}>Courses</button>
@@ -389,7 +494,9 @@ export function RunScreen({
             Stick on the {stickSide === 'right' ? 'left' : 'right'}
           </button>
         )}
-        <p className="marble-bar__help">Arrow keys or W A S D to roll. Or drag. P to pause, R to start again.</p>
+        <p className="marble-bar__help">
+          {twoPlayer ? 'Blue: arrow keys. Orange: W A S D. P to pause, R to start again.' : 'Arrow keys or W A S D to roll. Or drag. P to pause, R to start again.'}
+        </p>
       </div>
 
       <div className="sr-only" role="status" aria-live="polite">{announce}</div>

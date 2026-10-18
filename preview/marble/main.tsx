@@ -4,14 +4,19 @@
  */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { AuthContext } from '../../src/auth/AuthContext';
 import { MuteButton } from '../../src/components/MuteButton';
 import { MarblePlay } from '../../src/games/marble/MarblePlay';
 import { SoundProvider } from '../../src/sound';
 import '../../src/styles.css';
 import './preview.css';
 
+// No one is signed in here, so nothing goes to a server (best times stay in this browser).
+const noAuth = { profile: null, status: 'signed-out' } as unknown as React.ContextType<typeof AuthContext>;
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <AuthContext.Provider value={noAuth}>
     <SoundProvider>
       <main className="marble-preview">
         <header>
@@ -21,5 +26,6 @@ createRoot(document.getElementById('root')!).render(
         <MarblePlay />
       </main>
     </SoundProvider>
+    </AuthContext.Provider>
   </StrictMode>,
 );

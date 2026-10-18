@@ -25,20 +25,26 @@ export function screenToCode(sx: number, sy: number): number {
   return best;
 }
 
-const KEYS: Record<string, [number, number]> = {
-  ArrowUp: [0, 1], KeyW: [0, 1],
-  ArrowDown: [0, -1], KeyS: [0, -1],
-  ArrowLeft: [-1, 0], KeyA: [-1, 0],
-  ArrowRight: [1, 0], KeyD: [1, 0],
+const ARROWS: Record<string, [number, number]> = {
+  ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
 };
+const LETTERS: Record<string, [number, number]> = {
+  KeyW: [0, 1], KeyS: [0, -1], KeyA: [-1, 0], KeyD: [1, 0],
+};
+/** One player uses both sets. In a two-player game the arrows are player 1 and W A S D are player 2. */
+export const KEYS_BOTH = { ...ARROWS, ...LETTERS };
+export const KEYS_ARROWS = ARROWS;
+export const KEYS_LETTERS = LETTERS;
 
 /** Which direction keys are down. */
 export class KeyTracker {
   private down = new Set<string>();
 
+  constructor(private readonly keys: Record<string, [number, number]> = KEYS_BOTH) {}
+
   /** True if the key is one this game uses (so the page shouldn't scroll). */
   press(code: string): boolean {
-    if (!(code in KEYS)) return false;
+    if (!(code in this.keys)) return false;
     this.down.add(code);
     return true;
   }
@@ -60,8 +66,8 @@ export class KeyTracker {
     let x = 0;
     let y = 0;
     for (const code of this.down) {
-      x += KEYS[code][0];
-      y += KEYS[code][1];
+      x += this.keys[code][0];
+      y += this.keys[code][1];
     }
     return [Math.max(-1, Math.min(1, x)), Math.max(-1, Math.min(1, y))];
   }

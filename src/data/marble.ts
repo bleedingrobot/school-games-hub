@@ -123,3 +123,41 @@ export async function loadServerBests(): Promise<Bests | null> {
     return null;
   }
 }
+
+export type GhostKind = 'mine' | 'next' | 'top';
+
+export interface Ghost {
+  name: string;
+  steps: number;
+  /** The recorded inputs, as text (decode with decodeInputs). */
+  inputs: string;
+}
+
+/** A recorded run to race against, or null (none yet, or the server can't be reached). */
+export async function loadGhost(course: string, mode: ClockMode, which: GhostKind): Promise<Ghost | null> {
+  try {
+    const { data, error } = await supabase.rpc('marble_ghost', { in_course: course, in_mode: mode, in_maths: false, which });
+    if (error || !data || typeof data !== 'object') return null;
+    const g = data as Partial<Ghost>;
+    return typeof g.name === 'string' && typeof g.steps === 'number' && typeof g.inputs === 'string' ? { name: g.name, steps: g.steps, inputs: g.inputs } : null;
+  } catch {
+    return null;
+  }
+}
+
+export interface Board {
+  top: { rank: number; name: string; avatar: unknown; steps: number; me: boolean }[];
+  me: { rank: number; steps: number } | null;
+  total: number;
+}
+
+/** The class board for a course and mode (without maths), or null if it can't be loaded. */
+export async function loadBoard(course: string, mode: ClockMode): Promise<Board | null> {
+  try {
+    const { data, error } = await supabase.rpc('marble_board', { in_course: course, in_mode: mode, in_maths: false });
+    if (error || !data || typeof data !== 'object' || !Array.isArray((data as Board).top)) return null;
+    return data as Board;
+  } catch {
+    return null;
+  }
+}

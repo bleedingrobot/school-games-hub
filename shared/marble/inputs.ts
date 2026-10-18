@@ -50,3 +50,18 @@ export function decodeInputs(text: string): [number, number][] | null {
 export function totalSteps(runs: InputRuns): number {
   return runs.reduce((sum, [, n]) => sum + n, 0);
 }
+
+/** Plays a recorded list of runs back one step at a time (for a ghost). After the end it gives NONE for ever. */
+export function inputPlayer(runs: InputRuns): () => number {
+  let i = 0;
+  let used = 0;
+  return () => {
+    while (i < runs.length && used >= runs[i][1]) {
+      i++;
+      used = 0;
+    }
+    if (i >= runs.length) return NONE;
+    used++;
+    return runs[i][0];
+  };
+}

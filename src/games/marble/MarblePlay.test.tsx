@@ -7,7 +7,11 @@ const startRun = vi.fn(async () => ({ seed: 'm1-1792000000-ababababababababababa
 const flushRuns = vi.fn(async () => true);
 const enqueueRun = vi.fn();
 const loadServerBests = vi.fn(async (): Promise<Record<string, { up?: number; down?: number }> | null> => null);
+const loadGhost = vi.fn(async (): Promise<unknown> => null);
+const loadBoard = vi.fn(async (): Promise<unknown> => null);
 vi.mock('../../data/marble', () => ({
+  loadGhost: (...a: unknown[]) => loadGhost(...(a as [])),
+  loadBoard: (...a: unknown[]) => loadBoard(...(a as [])),
   startRun: (...a: unknown[]) => startRun(...(a as [])),
   flushRuns: (...a: unknown[]) => flushRuns(...(a as [])),
   enqueueRun: (...a: unknown[]) => enqueueRun(...a),
@@ -16,9 +20,9 @@ vi.mock('../../data/marble', () => ({
 vi.mock('../../auth/AuthContext', () => ({ useAuth: () => ({ profile: { id: 'student-1' } }) }));
 
 vi.mock('./RunScreen', () => ({
-  RunScreen: ({ course, mode, onDone, onExit }: { course: { def: { id: string } }; mode: string; onDone: (r: unknown) => unknown; onExit: () => void }) => (
+  RunScreen: ({ course, mode, ghost, twoPlayer, onDone, onExit }: { course: { def: { id: string } }; mode: string; ghost?: { name: string } | null; twoPlayer?: boolean; onDone: (r: unknown) => unknown; onExit: () => void }) => (
     <div>
-      <p>Running {course.def.id} in {mode}</p>
+      <p>Running {course.def.id} in {mode}{ghost ? ` with ghost ${ghost.name}` : ''}{twoPlayer ? ' for two' : ''}</p>
       <button onClick={() => onDone({ courseId: course.def.id, mode, outcome: 'finished', steps: 200, falls: 0, checkpoints: 0, inputs: [] })}>finish</button>
       <button onClick={onExit}>exit</button>
     </div>
@@ -30,6 +34,10 @@ beforeEach(() => {
   startRun.mockClear();
   flushRuns.mockClear();
   enqueueRun.mockClear();
+  loadGhost.mockReset();
+  loadGhost.mockResolvedValue(null);
+  loadBoard.mockReset();
+  loadBoard.mockResolvedValue(null);
   loadServerBests.mockReset();
   loadServerBests.mockResolvedValue(null);
 });
@@ -96,5 +104,55 @@ describe('course picker', () => {
     localStorage.setItem('marble-rush-bests-v1:someone-else', '{"boulder-beach":{"up":50}}');
     open();
     expect(screen.queryByText(/Best:/)).toBeNull();
+  });
+
+  it('races a ghost chosen from the list, and says so when there is none yet', async () => {
+    loadGhost.mockResolvedValueOnce({ name: 'Quick Kea', steps: 900, inputs: '3x60' });
+    open();
+    fireEvent.change(screen.getByLabelText(/Race a ghost/), { target: { value: 'next' } });
+    const card = screen.getByRole('heading', { name: 'Boulder Beach' }).closest('li')!;
+    fireEvent.click(within(card).getByRole('button', { name: 'Play Boulder Beach' }));
+    expect(await screen.findByText('Running boulder-beach in up with ghost Quick Kea')).toBeInTheDocument();
+    expect(loadGhost).toHaveBeenCalledWith('boulder-beach', 'up', 'next');
+    fireEvent.click(screen.getByRole('button', { name: 'exit' }));
+    fireEvent.click(within(screen.getByRole('heading', { name: 'Boulder Beach' }).closest('li')!).getByRole('button', { name: 'Play Boulder Beach' }));
+    expect(await screen.findByText('Running boulder-beach in up')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'exit' }));
+    expect(screen.getByText(/No ghost to race on that course yet/)).toBeInTheDocument();
+  });
+
+  it('starts no ghost by default', async () => {
+    open();
+    fireEvent.click(within(screen.getByRole('heading', { name: 'Boulder Beach' }).closest('li')!).getByRole('button', { name: 'Play Boulder Beach' }));
+    await screen.findByText('Running boulder-beach in up');
+    expect(loadGhost).not.toHaveBeenCalled();
+  });
+
+  it('plays two players on one keyboard without asking for a seed or saving anything', async () => {
+    open();
+    fireEvent.click(screen.getByRole('button', { name: 'Two players on Boulder Beach' }));
+    expect(await screen.findByText('Running boulder-beach in up for two')).toBeInTheDocument();
+    expect(startRun).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'finish' }));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(enqueueRun).not.toHaveBeenCalled();
+  });
+
+  it('shows the class board with word-names and the student’s own place', async () => {
+    loadBoard.mockResolvedValue({
+      top: [{ rank: 1, name: 'Quick Kea', avatar: null, steps: 900, me: false }, { rank: 2, name: 'Me Moa', avatar: null, steps: 950, me: true }],
+      me: { rank: 2, steps: 950 },
+      total: 2,
+    });
+    open();
+    const card = screen.getByRole('heading', { name: 'Boulder Beach' }).closest('li')!;
+    const details = card.querySelector('details.marble-board') as HTMLDetailsElement;
+    details.open = true;
+    fireEvent(details, new Event('toggle'));
+    expect(await within(card).findByText('Quick Kea')).toBeInTheDocument();
+    expect(within(card).getByText('Me Moa (you)')).toBeInTheDocument();
+    expect(loadBoard).toHaveBeenCalledWith('boulder-beach', 'up');
+    fireEvent.click(within(card).getByRole('button', { name: /Hard mode/ , pressed: false }));
+    await waitFor(() => expect(loadBoard).toHaveBeenCalledWith('boulder-beach', 'down'));
   });
 });

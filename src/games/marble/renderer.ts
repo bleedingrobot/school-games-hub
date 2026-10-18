@@ -61,16 +61,23 @@ class Soup {
   }
 }
 
+/** Another marble on the course: a see-through ghost, or the second player's. */
+export interface OtherMarble {
+  prev: RunState;
+  now: RunState;
+}
+export type OtherKind = 'ghost' | 'rival';
+
 export interface MarbleView {
   /** Draws the run. `alpha` (0–1) is how far between the last two steps we are. */
-  draw(prev: RunState, now: RunState, alpha: number, dt: number): void;
+  draw(prev: RunState, now: RunState, alpha: number, dt: number, others?: OtherMarble[]): void;
   resize(width: number, height: number): void;
   /** Pixel ratio 1 and no antialiasing cost; for slow devices. */
   setLowQuality(low: boolean): void;
   dispose(): void;
 }
 
-export function createView(canvas: HTMLCanvasElement, course: Course, world: World, palette: Palette, reducedMotion: boolean): MarbleView {
+export function createView(canvas: HTMLCanvasElement, course: Course, world: World, palette: Palette, reducedMotion: boolean, otherKinds: OtherKind[] = []): MarbleView {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'low-power' });
   renderer.setClearColor(palette.sky);
   const scene = new THREE.Scene();
@@ -327,6 +334,7 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
     camera.right = halfH * aspect;
     camera.top = halfH;
     camera.bottom = -halfH;
+    camera.zoom = otherKinds.includes('rival') ? 0.72 : 1; // two players: see more of the course
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
   }
@@ -337,6 +345,20 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
 
   const spin = new THREE.Quaternion();
   const axis = new THREE.Vector3();
+  // Other marbles: a ghost is pale and see-through; the second player's is orange.
+  const others = otherKinds.map((kind) => {
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(BALL_RADIUS, 20, 14),
+      kind === 'ghost'
+        ? new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.45, depthWrite: false })
+        : new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.2, metalness: 0.25 }),
+    );
+    mesh.visible = false;
+    scene.add(mesh);
+    return { kind, mesh };
+  });
+  const rivalAt = otherKinds.indexOf('rival');
+
   let first = true;
 
   return {
@@ -346,7 +368,7 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
       setPixelRatio();
       resize(canvas.clientWidth, canvas.clientHeight);
     },
-    draw(prev, now, alpha, dt) {
+    draw(prev, now, alpha, dt, drawOthers = []) {
       const x = prev.x + (now.x - prev.x) * alpha;
       const y = prev.y + (now.y - prev.y) * alpha;
       const z = prev.z + (now.z - prev.z) * alpha;
@@ -360,8 +382,22 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
       const under = floorHeightAt(world, x, y);
       shadow.visible = under !== null && under <= z + 0.05;
       shadow.position.set(x, (under ?? z) + 0.02, y);
-      // The camera glides after the marble (more gently with reduced motion).
-      const target = new THREE.Vector3(x, Math.max(z, 0), y);
+      let seenRival: { x: number; y: number; z: number } | null = null;
+      others.forEach((o, i) => {
+        const p = drawOthers[i];
+        o.mesh.visible = !!p;
+        if (!p) return;
+        const ox = p.prev.x + (p.now.x - p.prev.x) * alpha;
+        const oy = p.prev.y + (p.now.y - p.prev.y) * alpha;
+        const oz = p.prev.z + (p.now.z - p.prev.z) * alpha;
+        o.mesh.position.set(ox, oz + BALL_RADIUS, oy);
+        if (i === rivalAt) seenRival = { x: ox, y: oy, z: oz };
+      });
+      // The camera glides after the marble (more gently with reduced motion). With two players it looks at the middle of them.
+      const rival = seenRival as { x: number; y: number; z: number } | null;
+      const target = rival
+        ? new THREE.Vector3((x + rival.x) / 2, Math.max((z + rival.z) / 2, 0), (y + rival.y) / 2)
+        : new THREE.Vector3(x, Math.max(z, 0), y);
       if (first) {
         follow.copy(target);
         first = false;

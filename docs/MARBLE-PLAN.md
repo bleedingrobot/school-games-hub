@@ -240,6 +240,14 @@ Each stage ends with tests passing and a short results section here, like the ot
 - **Tests.** Server function: 17 (edited inputs, a made-up time, faked time, saved twice, bad stamp, another student's stamp, another course or mode, old seed, daily limit, busy database). Shared save rules and the browser queue have their own tests. Database (scratch copy): `marble.test.sql` 40 checks; the security list test knows the three new functions; all 29 database test files pass.
 - **Migration:** `20261018002800_marble.sql` (after F.3's `002700` on `maths-focus`, which is not on `main`).
 
+**M.5 (ghosts, boards, two players), built 19 Oct 2026, not live yet.**
+
+- **Ghost race.** The course picker has a "Race a ghost" choice: none, my best run, the classmate just ahead of me, or the fastest in the class. The ghost is a pale see-through marble that plays back a recorded run, stepped together with the player's own marble, so it needs no live connection. It is asked for just before the run starts (`marble_ghost`); if there is none yet the run starts without it and says so. After a finish the screen says whether you beat the ghost, and by how much if not. A ghost only shows its path, never the other student's screen. A damaged ghost recording is ignored.
+- **Boards.** Each real course has a "Class board" panel (opens on tap): top 10 in your school, word-names and avatars only, and your own place even if you are below 10. Separate tabs for medal runs and hard mode. Only the "without maths" board exists until M.6/M.7.
+- **Two players, one keyboard.** A "2 players" button on every course. Blue marble: arrow keys. Orange marble: W A S D. Each has its own clock; the first over the line wins. The camera looks at the middle of the two and zooms out a little. Count-up only, and nothing is saved or sent (no seed is even asked for). Known limit: if one player rolls far ahead the other can leave the screen; they just catch up.
+- **Also fixed:** the stand-alone preview page needed a sign-in provider after M.4; it now has a "nobody signed in" one, so it works again.
+- **Tests:** ghost playback matches a replay exactly; ghost and two-player run screens (second marble drawn, arrows never steer the orange marble, winner, nothing saved); picker (ghost choice, no ghost found, two players, board panel); data calls.
+
 ### Building alongside Maths Monsters (James asked, 18 Oct 2026)
 
 **Yes, it can.** Marble Rush gets its own branch (`marble`) and its own folder (a worktree off `main`), as Gem Keep, Maths Monsters and Power Clash have.
