@@ -13,12 +13,15 @@ export function NumberPad({
   onEnter,
   canEnter,
   disabled,
+  decimal,
 }: {
   onDigit: (digit: string) => void;
   onBack: () => void;
   onEnter: () => void;
   canEnter: boolean;
   disabled?: boolean;
+  /** Adds a decimal point key (the tick then gets a row of its own). */
+  decimal?: boolean;
 }) {
   const digit = (d: string) => (
     <button key={d} type="button" className="numpad__key" disabled={disabled} onPointerDown={keepFocus} onClick={() => onDigit(d)}>
@@ -26,12 +29,18 @@ export function NumberPad({
     </button>
   );
   return (
-    <div className="numpad" role="group" aria-label="Number pad">
+    <div className="numpad" role="group" aria-label="Number pad" data-decimal={decimal || undefined}>
       {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(digit)}
+      {decimal && (
+        <button type="button" className="numpad__key" disabled={disabled} aria-label="Point" onPointerDown={keepFocus} onClick={() => onDigit('.')}>
+          .
+        </button>
+      )}
+      {decimal && digit('0')}
       <button type="button" className="numpad__key numpad__key--back" disabled={disabled} aria-label="Delete" onPointerDown={keepFocus} onClick={onBack}>
         ⌫
       </button>
-      {digit('0')}
+      {!decimal && digit('0')}
       <button
         type="button"
         className="numpad__key numpad__key--enter"

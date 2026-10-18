@@ -17,7 +17,8 @@ import {
 } from '../data/multiplayer';
 import { askSpace, fetchMyOpenSpaceGames, fetchSpaceLobby, seatsOf, type SpaceGame, type SpaceLobbyGame } from '../data/spaceGames';
 import { askCard, fetchCardLobby, fetchMyOpenCardGames, type CardLobbyGame, type SeatSummary } from '../data/cardGames';
-import { findGame, GAMES } from '../games/registry';
+import { askPower, fetchMyOpenPowerGames, fetchPowerLobby, seatsOf as powerSeatsOf, type PowerGame, type PowerLobbyGame } from '../data/powerGames';
+import { findGame, GAMES, POWER_CLASH_ON } from '../games/registry';
 import { useMathsMode } from '../games/space/mathsMode';
 import type { DesignedBoardId } from '../../shared/space/boards';
 import type { Mode } from '../../shared/space/engine';
@@ -28,11 +29,15 @@ export const LOBBY_REFRESH_MS = 5000;
 
 type SideChoice = Side | 'random';
 /** What can be started here: the two-player games, and Wormholes & Black Holes and 101 for up to 4. */
-type LobbyGameKind = GameKind | 'space' | '101';
+type LobbyGameKind = GameKind | 'space' | '101' | 'power-clash';
 type SpaceBoardChoice = DesignedBoardId | 'galaxy-of-the-day';
 
-/** A game you can join from the list: chess or checkers (mp_games), space (space_games) or 101 (card_games). */
-type OpenGame = { kind: 'friend'; game: LobbyGame } | { kind: 'space'; game: SpaceLobbyGame } | { kind: '101'; game: CardLobbyGame };
+/** A game you can join from the list: chess or checkers (mp_games), space (space_games), 101 (card_games) or Power Clash (power_games). */
+type OpenGame =
+  | { kind: 'friend'; game: LobbyGame }
+  | { kind: 'space'; game: SpaceLobbyGame }
+  | { kind: '101'; game: CardLobbyGame }
+  | { kind: 'power-clash'; game: PowerLobbyGame };
 
 /** The lobby: start a game, join one with a code, or tap an open game. */
 export function Lobby() {
@@ -43,6 +48,7 @@ export function Lobby() {
   const [mine, setMine] = useState<FriendGame[]>([]);
   const [mySpace, setMySpace] = useState<SpaceGame[]>([]);
   const [myCards, setMyCards] = useState<SeatSummary[]>([]);
+  const [myPower, setMyPower] = useState<PowerGame[]>([]);
   const [cards, setCards] = useState<Map<string, PlayerCard>>(new Map());
   const [loadFailed, setLoadFailed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -90,7 +96,7 @@ export function Lobby() {
   const refresh = useCallback(async () => {
     try {
       // Space games load separately, so chess and checkers still work if they can't be loaded.
-      const [on, lobby, myGames, spaceLobby, mySpaceGames, cardLobby, myCardGames] = await Promise.all([
+      const [on, lobby, myGames, spaceLobby, mySpaceGames, cardLobby, myCardGames, powerLobby, myPowerGames] = await Promise.all([
         fetchMultiplayerEnabled(),
         fetchLobby(),
         fetchMyOpenGames(),
@@ -98,6 +104,9 @@ export function Lobby() {
         fetchMyOpenSpaceGames().catch(() => []),
         fetchCardLobby().catch(() => []),
         fetchMyOpenCardGames().catch(() => []),
+        // Power Clash is not on the lobby until James switches it on (nothing to ask before then).
+        POWER_CLASH_ON ? fetchPowerLobby().catch(() => []) : Promise.resolve([]),
+        POWER_CLASH_ON ? fetchMyOpenPowerGames().catch(() => []) : Promise.resolve([]),
       ]);
       setEnabled(on);
       setOpen(
@@ -105,16 +114,19 @@ export function Lobby() {
           ...lobby.map((game): OpenGame => ({ kind: 'friend', game })),
           ...spaceLobby.map((game): OpenGame => ({ kind: 'space', game })),
           ...cardLobby.map((game): OpenGame => ({ kind: '101', game })),
+          ...powerLobby.map((game): OpenGame => ({ kind: 'power-clash', game })),
         ].sort((a, b) => b.game.created_at.localeCompare(a.game.created_at)),
       );
       setMine(myGames);
       setMySpace(mySpaceGames);
       setMyCards(myCardGames);
+      setMyPower(myPowerGames);
       setLoadFailed(false);
       const opponents = [
         ...myGames.map((g) => (g.first_player === profile?.id ? g.second_player : g.first_player)),
         ...mySpaceGames.flatMap((g) => seatsOf(g).filter((p) => p !== profile?.id)),
         ...myCardGames.flatMap((g) => g.info.players.filter((p) => p !== profile?.id)),
+        ...myPowerGames.flatMap((g) => powerSeatsOf(g).filter((p) => p !== profile?.id)),
       ].filter((id): id is string => !!id);
       if (opponents.length > 0) setCards(await fetchPlayerCards(opponents));
     } catch {
@@ -150,7 +162,7 @@ export function Lobby() {
       setMessage({ where: 'join', text: 'Codes are 5 letters and numbers, like KM4 TP.' });
       return;
     }
-    // The same code box joins any game: chess and checkers first, then space games, then 101.
+    // The same code box joins any game: chess and checkers first, then space games, then 101, then Power Clash.
     const notFound = (error: unknown) => error instanceof MultiplayerError && error.problem === 'not-found';
     void go('join', async () => {
       try {
@@ -163,11 +175,20 @@ export function Lobby() {
       } catch (error) {
         if (!notFound(error)) throw error;
       }
-      return cardPath(await askCard({ action: 'join', code: tidy }));
+      try {
+        return cardPath(await askCard({ action: 'join', code: tidy }));
+      } catch (error) {
+        if (!notFound(error) || !POWER_CLASH_ON) throw error;
+      }
+      return powerPath(await askPower({ action: 'join', code: tidy }));
     });
   }
 
   function create() {
+    if (gameKind === 'power-clash') {
+      void go('create', async () => powerPath(await askPower({ action: 'create', lobby: inLobby })));
+      return;
+    }
     if (gameKind === '101') {
       void go('create', async () =>
         cardPath(await askCard({ action: 'create', players: cardPlayers, settings: { target: cardTarget }, lobby: inLobby })),
@@ -217,6 +238,14 @@ export function Lobby() {
     return names.length === 0 ? 'your classmates' : names.join(', ');
   };
   const gameName = (id: string) => findGame(id)?.name ?? id;
+  const powerName = findGame('power-clash')?.name ?? 'Power Clash';
+  const powerGoing = myPower.filter((g) => g.status === 'playing' || (g.status === 'waiting' && g.host !== profile?.id));
+  const powerWaiting = myPower.find((g) => g.status === 'waiting' && g.host === profile?.id);
+  const powerMate = (g: PowerGame) =>
+    powerSeatsOf(g)
+      .filter((p): p is string => !!p && p !== profile?.id)
+      .map((p) => cards.get(p)?.display_name ?? 'a classmate')
+      .join(', ') || 'a classmate';
   const cardGoing = myCards.filter((g) => g.status === 'playing' || (g.status === 'waiting' && g.info.host !== profile?.id));
   const cardWaiting = myCards.find((g) => g.status === 'waiting' && g.info.host === profile?.id);
   const table = (g: SeatSummary) => {
@@ -232,7 +261,7 @@ export function Lobby() {
 
       {loadFailed && !open && <p className="chess-note">We couldn’t load the lobby. Check the Wi-Fi; we’ll keep trying.</p>}
 
-      {(playing.length > 0 || waiting || spaceGoing.length > 0 || spaceWaiting || cardGoing.length > 0 || cardWaiting) && (
+      {(playing.length > 0 || waiting || spaceGoing.length > 0 || spaceWaiting || cardGoing.length > 0 || cardWaiting || powerGoing.length > 0 || powerWaiting) && (
         <section className="panel" aria-labelledby="mine-title">
           <h2 id="mine-title" className="panel__title">
             Your games
@@ -286,6 +315,39 @@ export function Lobby() {
                 </Link>
               </li>
             ))}
+            {powerGoing.map((g) => (
+              <li key={g.id}>
+                <span className="lobby-list__emoji" aria-hidden="true">
+                  ⚡
+                </span>
+                <span className="lobby-list__what">
+                  <strong>
+                    {powerName} with {powerMate(g)}
+                  </strong>
+                  <span>{g.status === 'playing' ? 'Still going!' : 'Waiting to start'}</span>
+                </span>
+                <Link to={powerPath(g)} className="button button--primary">
+                  {g.status === 'playing' ? 'Carry on' : 'Open'}
+                </Link>
+              </li>
+            ))}
+            {powerWaiting && (
+              <li>
+                <span className="lobby-list__emoji" aria-hidden="true">
+                  ⏳
+                </span>
+                <span className="lobby-list__what">
+                  <strong>Your {powerName} game is waiting</strong>
+                  <span>
+                    Code {powerWaiting.code && prettyCode(powerWaiting.code)} · {powerSeatsOf(powerWaiting).filter(Boolean).length} of 2
+                    joined
+                  </span>
+                </span>
+                <Link to={powerPath(powerWaiting)} className="button button--light">
+                  Open
+                </Link>
+              </li>
+            )}
             {cardWaiting && (
               <li>
                 <span className="lobby-list__emoji" aria-hidden="true">
@@ -359,7 +421,7 @@ export function Lobby() {
               <fieldset className="level-picker">
                 <legend>Game</legend>
                 <div className="level-picker__options">
-                  {GAMES.filter((g) => g.Live || g.id === 'space' || g.id === '101').map((g) => (
+                  {GAMES.filter((g) => g.Live || g.id === 'space' || g.id === '101' || g.id === 'power-clash').map((g) => (
                     <label key={g.id} className="level-picker__option">
                       <input
                         type="radio"
@@ -451,6 +513,10 @@ export function Lobby() {
                   )}
                   {mathsMode === 'on' && <p className="friend-note">Mission Control maths is on for everyone in this game.</p>}
                 </>
+              ) : gameKind === 'power-clash' ? (
+                <p className="friend-note">
+                  Two players. You each pick 3 powers, then play noughts and crosses where the first to win 3 rounds wins.
+                </p>
               ) : (
                 <fieldset className="level-picker">
                   <legend>Your pieces</legend>
@@ -572,6 +638,24 @@ export function Lobby() {
                         Join
                       </button>
                     </li>
+                  ) : o.kind === 'power-clash' ? (
+                    <li key={o.game.id}>
+                      <AvatarImage avatar={o.game.creator_avatar} size={44} />
+                      <span className="lobby-list__what">
+                        <strong>
+                          {o.game.creator_name} · {powerName}
+                        </strong>
+                        <span>Two players. Pick three powers, first to win 3 rounds.</span>
+                      </span>
+                      <button
+                        type="button"
+                        className="button button--primary"
+                        disabled={busy}
+                        onClick={() => void go('list', async () => powerPath(await askPower({ action: 'join', gameId: o.game.id })))}
+                      >
+                        Join
+                      </button>
+                    </li>
                   ) : o.kind === '101' ? (
                     <li key={o.game.id}>
                       <AvatarImage avatar={o.game.creator_avatar} size={44} />
@@ -623,4 +707,5 @@ export function Lobby() {
 
 const friendPath = (game: { id: string }) => `/play/${game.id}`;
 const spacePath = (game: { id: string }) => `/space-game/${game.id}`;
+const powerPath = (game: { id: string }) => `/power-game/${game.id}`;
 const cardPath = (seat: { id: string } | { game: string }) => `/card-game/${'game' in seat ? seat.game : seat.id}`;

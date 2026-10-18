@@ -5,8 +5,12 @@
  * Right: a sparkle and "Correct!", then it closes. Wrong: no buzzer, nothing taken away,
  * just the whole fact ("7 × 8 = 56") for 2 seconds, then it closes. The game decides what a
  * right answer earns. Reusable by any hub game: it only knows about a `Question`.
+ *
+ * Parts like '3/4' are drawn as fractions ('?/8' has the blank on top), parts with words are
+ * drawn smaller, and decimal questions get a point key.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { spokenFraction } from '../../shared/maths/banded';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { NumberPad } from './NumberPad';
 import './maths.css';
@@ -15,8 +19,34 @@ import './maths.css';
 export const FEEDBACK_MS = { right: 800, wrong: 2000 };
 const MAX_DIGITS = 3;
 
+const FRACTION = /^(?:(\d+|\?) )?(\d+|\?)\/(\d+|\?)$/;
+
+/** One part of the question: a fraction, a word, or a plain number or sign. `blank` stands in for '?'. */
+function Part({ text, blank }: { text: string; blank: ReactNode }) {
+  const fill = (piece: string) => (piece === '?' ? blank : piece);
+  const f = FRACTION.exec(text);
+  if (f) {
+    return (
+      <span className="qfrac">
+        {f[1] !== undefined && <span className="qfrac__whole">{fill(f[1])}</span>}
+        <span className="qfrac__stack">
+          <span className="qfrac__top">{fill(f[2])}</span>
+          <span className="qfrac__bottom">{fill(f[3])}</span>
+        </span>
+      </span>
+    );
+  }
+  if (text === '?') return <>{blank}</>;
+  if (/[a-z]/i.test(text)) return <span className="question__word">{text}</span>;
+  return <span>{text}</span>;
+}
+
+/** A choice button's text: fractions drawn as fractions. */
+const choiceText = (label: string) => (FRACTION.test(label) ? <Part text={label} blank={null} /> : label);
+
+
 /** What the box needs of a question. `answer` is missing when the game's server keeps it secret until marked. */
-export type ShownQuestion = Pick<Question, 'id' | 'parts' | 'spoken' | 'choices'> & { answer?: number };
+export type ShownQuestion = Pick<Question, 'id' | 'parts' | 'spoken' | 'choices' | 'choiceLabels' | 'maxLength' | 'input'> & { answer?: number };
 
 /**
  * A marked answer, plus what it earned, e.g. "+15 mana" (shown under "Correct!"). `answer` is
@@ -104,7 +134,14 @@ export function QuestionModal({
     );
   }
 
-  const addDigit = (d: string) => setTyped((t) => (t.length >= MAX_DIGITS || (t === '0' && d === '0') ? t : t === '0' ? d : t + d));
+  const maxLength = question.maxLength ?? MAX_DIGITS;
+  const decimal = question.input === 'decimal';
+  const addDigit = (d: string) =>
+    setTyped((t) => {
+      if (t.length >= maxLength) return t;
+      if (d === '.') return !decimal || t.includes('.') ? t : t === '' ? '0.' : t + '.';
+      return t === '0' ? (d === '0' ? t : d) : t + d;
+    });
   const back = () => setTyped((t) => t.slice(0, -1));
   const enter = () => typed !== '' && submit(Number(typed));
 
@@ -117,7 +154,7 @@ export function QuestionModal({
     if (result || checking || question.choices) return;
     // Enter on a focused button (keyboard users tabbing round the pad) presses that button.
     if (event.key === 'Enter' && event.target instanceof HTMLButtonElement) return;
-    if (/^[0-9]$/.test(event.key)) addDigit(event.key);
+    if (/^[0-9.]$/.test(event.key)) addDigit(event.key);
     else if (event.key === 'Backspace') back();
     else if (event.key === 'Enter') enter();
     else return;
@@ -125,6 +162,14 @@ export function QuestionModal({
   }
 
   const blank = typed === '' ? '?' : typed;
+  // Money answers are shown with cents: 4.1 → 4.10.
+  const rightAnswer = result?.answer ?? question.answer ?? 0;
+  const answerText = question.parts.includes('$') ? rightAnswer.toFixed(2) : String(rightAnswer);
+  const blankBox = (
+    <span className="question__blank" data-empty={typed === '' || undefined}>
+      {result ? (result.correct ? blank : answerText) : blank}
+    </span>
+  );
   return (
     <div className={inline ? undefined : 'question-backdrop'}>
       <div
@@ -141,16 +186,10 @@ export function QuestionModal({
           {title}
         </h2>
         {note && <p className="question__note">{note}</p>}
-        <p className="question__fact" aria-label={question.spoken}>
-          {question.parts.map((part, i) =>
-            part === '?' ? (
-              <span key={i} className="question__blank" data-empty={typed === '' || undefined}>
-                {result ? (result.correct ? blank : (result.answer ?? question.answer)) : blank}
-              </span>
-            ) : (
-              <span key={i}>{part}</span>
-            ),
-          )}
+        <p className="question__fact" aria-label={question.spoken} data-long={question.parts.join('').length > 12 || undefined}>
+          {question.parts.map((part, i) => (
+            <Part key={i} text={part} blank={blankBox} />
+          ))}
         </p>
         {secondsLeft !== null && !result && (
           <p className="question__timer" role="timer" aria-label={`${secondsLeft} seconds left`}>
@@ -176,16 +215,17 @@ export function QuestionModal({
         </p>
         {question.choices ? (
           <div className="question__choices" role="group" aria-label="Choose an answer">
-            {question.choices.map((choice) => (
+            {question.choices.map((choice, i) => (
               <button
                 key={choice}
                 type="button"
                 className="question__choice"
+                aria-label={question.choiceLabels ? spokenFraction(question.choiceLabels[i]) : undefined}
                 disabled={!!result || checking}
                 data-answer={result && choice === (result.answer ?? question.answer) ? true : undefined}
                 onClick={() => submit(choice)}
               >
-                {choice}
+                {question.choiceLabels ? choiceText(question.choiceLabels[i]) : choice}
               </button>
             ))}
           </div>
@@ -194,7 +234,7 @@ export function QuestionModal({
             <p className="sr-only" aria-live="polite">
               {typed ? `Your answer: ${typed}` : ''}
             </p>
-            <NumberPad onDigit={addDigit} onBack={back} onEnter={enter} canEnter={typed !== ''} disabled={!!result || checking} />
+            <NumberPad onDigit={addDigit} onBack={back} onEnter={enter} canEnter={typed !== '' && typed !== '0.'} disabled={!!result || checking} decimal={decimal} />
           </>
         )}
         {onClose && (

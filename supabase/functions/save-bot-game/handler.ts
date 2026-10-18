@@ -1,7 +1,7 @@
 /**
  * The save-bot-game server function: the browser sends the moves of a finished chess,
- * checkers, Wormholes & Black Holes or 101 game against bots, and this decides the result
- * and saves it. For Wormholes & Black Holes and 101 it also hands out the stamped seed a
+ * checkers, Wormholes & Black Holes, 101 or Power Clash game against bots, and this decides the
+ * result and saves it. For those last three it also hands out the stamped seed a
  * game is played from (shared/space/save.ts explains how that works).
  *
  * It never trusts the browser's word for the result. It replays every move with the same
@@ -17,6 +17,13 @@ import {
   type Card101GameReport,
   type Card101Stats,
 } from '../../../shared/card101/save';
+import {
+  judgePowerClashGame,
+  parsePowerClashReport,
+  stampText as powerClashStampText,
+  type JudgedPowerClashGame,
+  type PowerClashGameReport,
+} from '../../../shared/power-clash/save';
 import { judgeBotGame, parseReport } from '../../../shared/chess/botGame';
 import { judgeCheckersGame, parseCheckersReport } from '../../../shared/checkers/botGame';
 import {
@@ -42,6 +49,8 @@ export interface Services {
   recordSpace(row: SpaceRow): Promise<'saved' | 'too-many' | 'refused'>;
   /** Saves a 101 game, the same way. */
   record101(row: Card101Row): Promise<'saved' | 'too-many' | 'refused'>;
+  /** Saves a Power Clash game, the same way. */
+  recordPowerClash(row: PowerClashRow): Promise<'saved' | 'too-many' | 'refused'>;
   /**
    * Adds Mission Control maths answers to the student's times-table records (the same records
    * as Gem Keep). A batch id seen before is ignored. Optional: without it answers aren't kept.
@@ -99,6 +108,20 @@ export interface Card101Row extends Omit<GameRow, 'game'> {
   };
 }
 
+export interface PowerClashRow extends Omit<GameRow, 'game'> {
+  /** The seed, setup and what happened, kept so the game can be checked again. */
+  power_clash: {
+    seed: string;
+    side: PowerClashGameReport['side'];
+    loadouts: PowerClashGameReport['loadouts'];
+    chaos: boolean;
+    roundsWon: number;
+    roundsLost: number;
+    roundsDrawn: number;
+    stats: JudgedPowerClashGame['stats'];
+  };
+}
+
 export async function handleSaveBotGame(request: Request, services: Services): Promise<Response> {
   const cors = corsHeaders(request.headers.get('Origin'));
   const reply = (status: number, body: object) =>
@@ -113,17 +136,19 @@ export async function handleSaveBotGame(request: Request, services: Services): P
 
   const body = await readJsonBody(request);
   const asked = body as { game?: unknown; start?: unknown; maths?: unknown } | null;
-  if ((asked?.game === 'space' || asked?.game === '101') && asked.start === true) {
+  if ((asked?.game === 'space' || asked?.game === '101' || asked?.game === 'power-clash') && asked.start === true) {
     // A new maths game can't start while the teacher has maths switched off.
     if (asked.game === 'space' && asked.maths === true && !(await mathsAllowed(services))) return reply(403, { error: MATHS_OFF });
-    // A new seed for a Wormholes & Black Holes or 101 game, stamped for this student and this game.
+    // A new seed for a Wormholes & Black Holes, 101 or Power Clash game, stamped for this student and this game.
     const seed = makeSeed(now(services), (services.randomHex ?? randomHex)(12));
-    const stamp = await services.stamp((asked.game === 'space' ? stampText : card101StampText)(player, seed));
+    const stampFor = asked.game === 'space' ? stampText : asked.game === '101' ? card101StampText : powerClashStampText;
+    const stamp = await services.stamp(stampFor(player, seed));
     if (!stamp) return reply(500, { error: "The game couldn't start." });
     return reply(200, { seed, stamp });
   }
   if (asked?.game === 'space') return saveSpaceGame(player, body, services, reply);
   if (asked?.game === '101') return save101Game(player, body, services, reply);
+  if (asked?.game === 'power-clash') return savePowerClashGame(player, body, services, reply);
 
   const checked = check(body);
   if (!checked) return reply(400, { error: "That game couldn't be read." });
@@ -260,6 +285,47 @@ async function save101Game(
   if (saved === 'too-many') return reply(429, { error: TOO_MANY });
   if (saved !== 'saved') return reply(500, { error: "The game couldn't be saved." });
   return reply(200, { result: game.outcome, reason: game.reason, place: game.place, countsForPoints: game.countsForPoints });
+}
+
+async function savePowerClashGame(
+  player: string,
+  body: unknown,
+  services: Services,
+  reply: (status: number, body: object) => Response,
+): Promise<Response> {
+  const report = parsePowerClashReport(body);
+  if (!report) return reply(400, { error: "That game couldn't be read." });
+  const expected = await services.stamp(powerClashStampText(player, report.seed));
+  const problem = seedProblem(report.seed, now(services)) ?? (expected && sameText(expected, report.stamp) ? null : 'bad stamp');
+  const judged = problem ? { ok: false as const, problem } : judgePowerClashGame(report);
+  if (!judged.ok) {
+    console.warn(`save-bot-game: refused a Power Clash game (${judged.problem})`);
+    return reply(400, { error: "That game couldn't be checked." });
+  }
+  const { game } = judged;
+  const saved = await services.recordPowerClash({
+    player,
+    bot_level: report.level,
+    player_side: report.side.toLowerCase(),
+    moves: report.actions,
+    result: game.outcome,
+    reason: game.reason,
+    player_moves: game.studentMoves,
+    counts_for_points: game.countsForPoints,
+    power_clash: {
+      seed: report.seed,
+      side: report.side,
+      loadouts: report.loadouts,
+      chaos: report.chaos,
+      roundsWon: game.roundsWon,
+      roundsLost: game.roundsLost,
+      roundsDrawn: game.roundsDrawn,
+      stats: game.stats,
+    },
+  });
+  if (saved === 'too-many') return reply(429, { error: TOO_MANY });
+  if (saved !== 'saved') return reply(500, { error: "The game couldn't be saved." });
+  return reply(200, { result: game.outcome, reason: game.reason, countsForPoints: game.countsForPoints });
 }
 
 const now = (services: Services) => Math.floor(services.nowSeconds?.() ?? Date.now() / 1000);

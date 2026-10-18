@@ -1,0 +1,5 @@
+/* The stand-in controls bar: small buttons in a row, so it doesn't eat the screen. */
+.preview-bar { flex-wrap: wrap; padding: 4px 12px; font-size: 0.8rem; }
+.standin-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.standin-bar .button { width: auto; min-height: 0; padding: 2px 10px; font-size: 0.8rem; }
+.standin-bar .button[aria-pressed='true'] { outline: 2px solid currentColor; }

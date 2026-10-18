@@ -1,0 +1,50 @@
+/* Preview only: the Maths Monsters test page. */
+body { margin: 0; }
+.preview-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 16px; background: #fff; font-size: 0.9rem; color: #475569; }
+.mp-tabs { display: flex; gap: 8px; padding: 10px 16px 0; }
+.mp-tabs button { min-height: 44px; padding: 6px 18px; border: 0; border-radius: 12px 12px 0 0; font: inherit; font-weight: 800; background: #e2e8f0; color: #0f172a; cursor: pointer; }
+.mp-tabs button[aria-pressed='true'] { background: #fff; }
+main { padding: 0 16px 24px; }
+.mp-page { max-width: 1100px; margin: 0 auto; padding: 18px 20px; border-radius: 0 20px 20px 20px; background: #fff; color: #0f172a; }
+.mp-page h1 { margin: 0 0 4px; font-size: 1.5rem; }
+.mp-controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin: 12px 0; }
+.mp-controls select, .mp-controls input[type='number'] { min-height: 36px; font: inherit; }
+.mb-book { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; }
+.mb-family { padding: 10px 12px; border-radius: 16px; background: #f1f5f9; border-left: 8px solid var(--t, #94a3b8); }
+.mb-family h2 { margin: 0 0 6px; font-size: 1.05rem; }
+.mb-family small { font-weight: 600; color: #475569; }
+.mb-forms { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.mb-forms li { display: grid; justify-items: center; text-align: center; gap: 2px; font-size: 0.85rem; }
+.mb-forms span { color: #475569; font-size: 0.78rem; }
+.mb-forms .mb-moves { font-size: 0.7rem; }
+.mb-family--leaf { --t: #4ade80; } .mb-family--water { --t: #38bdf8; } .mb-family--fire { --t: #fb923c; }
+.mb-family--ice { --t: #67e8f9; } .mb-family--spark { --t: #fde047; } .mb-family--stone { --t: #a8a29e; }
+@media (max-width: 620px) { .mb-book { grid-template-columns: 1fr; } }
+.mp-controls button, .pg-slot button, .mp-page > p > button, .pg-result button, .mp-page > button { min-height: 40px; padding: 4px 14px; border: 2px solid #0f172a; border-radius: 10px; background: #f1f5f9; font: inherit; font-weight: 700; cursor: pointer; }
+.pg-start { background: #fde047 !important; font-size: 1.2rem !important; min-height: 52px !important; padding: 6px 28px !important; }
+.pg-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin-bottom: 8px; }
+.pg-slot { display: grid; gap: 6px; padding: 8px 12px 10px; border: 2px solid #cbd5e1; border-radius: 14px; }
+.pg-slot label { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.pg-slot select, .pg-slot input[type='number'] { min-height: 34px; font: inherit; }
+.pg-check { justify-content: flex-start !important; }
+.pg-result { margin: 10px 0; padding: 10px 14px; border-radius: 12px; background: #dcfce7; display: grid; gap: 8px; }
+.pg-battle { max-width: 1366px; margin: 0 auto; --mb-height: min(calc(100dvh - 60px), 640px); }
+.pg-leave { margin: 4px 0; min-height: 36px; padding: 2px 12px; border: 0; border-radius: 10px; background: rgba(255,255,255,.9); font: inherit; font-weight: 700; cursor: pointer; }
+.mp-page h2 { font-size: 1.1rem; margin: 14px 0 6px; }
+[hidden] { display: none !important; }
+.mb-fx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.mb-fx-cell { display: grid; justify-items: center; gap: 4px; padding: 8px; border-radius: 12px; background: #f1f5f9; }
+.mb-fx-stage { position: relative; width: 110px; height: 110px; }
+.mb-fx-cell button { min-height: 36px; padding: 2px 12px; border: 2px solid #0f172a; border-radius: 10px; background: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.mp-page h2 { font-size: 1.1rem; margin: 14px 0 6px; }
+
+/* Walk around */
+.wp-page { max-width: 1366px; margin: 0 auto; --mw-height: min(calc(100dvh - 176px), 640px); }
+.wp-tools { margin-bottom: 6px; padding: 4px 12px; border-radius: 12px; background: #fff; color: #0f172a; }
+.wp-tools summary { min-height: 32px; font-weight: 800; cursor: pointer; }
+.wp-tools .mp-controls { margin: 4px 0 8px; }
+.wp-tools .mp-controls button { min-height: 36px; padding: 2px 14px; border: 2px solid #0f172a; border-radius: 10px; background: #f1f5f9; font: inherit; font-weight: 700; cursor: pointer; }
+.wp-team { display: inline-flex; gap: 4px; }
+.wp-team > * { width: 28px; height: 28px; }
+@media (max-height: 460px) { .preview-bar { padding: 2px 12px; } .mp-tabs { padding-top: 4px; } .mp-tabs button { min-height: 34px; } .wp-page { --mw-height: calc(100dvh - 56px); scroll-margin-top: 4px; } .wp-tools { margin-bottom: 4px; } }
+.wp-page .mw-battle { --mb-height: min(calc(100dvh - 12px), 640px); }
