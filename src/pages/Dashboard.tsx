@@ -53,8 +53,8 @@ function botName(level: string, game?: string) {
 
 /** How the dashboard groups its games, top to bottom. A game missing from here would not show. */
 const GAME_GROUPS = [
-  { title: 'Non-maths games', ids: ['chess', 'checkers', '101'] },
-  { title: 'Easy maths games', ids: ['space', 'gem-keep', 'power-clash'] },
+  { title: 'Non-maths games', ids: ['chess', 'checkers', '101', 'power-clash'] },
+  { title: 'Easy maths games', ids: ['space', 'gem-keep'] },
   { title: 'Complex maths games', ids: ['monsters', 'dragon-maths', 'clan-quest'] },
 ];
 
