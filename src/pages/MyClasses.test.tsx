@@ -142,7 +142,7 @@ describe('My classes', () => {
     const user = userEvent.setup();
     show();
     await screen.findByText('KM4 TP', { selector: '.class-panel__code' });
-    const save = screen.getByRole('button', { name: 'Save name' });
+    const save = screen.getByRole('button', { name: 'Save' });
     expect(save).toBeDisabled();
     const box = screen.getByLabelText('Name', { selector: 'input' });
     await user.clear(box);

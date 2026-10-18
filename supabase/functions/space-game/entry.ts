@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
 import type { FactStats } from '../../../shared/maths/leitner';
 import { packIdOfKey, parseFocus } from '../../../shared/maths/focus';
+import { makePlaceSyncer } from '../../../shared/maths/syncPlace';
 import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
 import { spaceGameHandler, type SpaceGameRow } from './handler';
 
@@ -22,6 +23,23 @@ function serverKey(): string {
 
 const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', serverKey(), {
   auth: { persistSession: false, autoRefreshToken: false },
+});
+
+
+/** The database calls the ladder needs: the student's records and focus, and their furthest place. Placement is saved by gem-keep. */
+const syncPlace = makePlaceSyncer({
+  async loadContext(player) {
+    const { data, error } = await admin.rpc('space_maths_context', { player });
+    if (error) throw new Error(error.code ?? 'unknown');
+    return (data as never) ?? null;
+  },
+  async savePlace(player, skill, rank) {
+    const { error } = await admin.rpc('record_ladder_place', { player, skill, rank });
+    if (error) throw new Error(error.code ?? 'unknown');
+  },
+  async savePlacementRow() {
+    return false;
+  },
 });
 
 const games = () => admin.from('space_games');
@@ -194,6 +212,7 @@ Deno.serve(
       });
       // The game goes on if the records can't be updated.
       if (error) logProblem('record answer', error.code);
+      else await syncPlace(player);
     },
   }),
 );

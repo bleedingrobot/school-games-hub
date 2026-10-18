@@ -2,6 +2,7 @@
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
 import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import { makePlaceSyncer, savePlacement, type PlacePorts } from '../../../shared/maths/syncPlace';
 import { makeHandler, type Outcome } from './handler';
 
 declare const Deno: {
@@ -32,8 +33,28 @@ async function call<T>(name: string, args: Record<string, unknown>): Promise<Out
   return { ok: false, why: 'busy' };
 }
 
+/** The database calls the ladder needs: the student's records and focus, their furthest place and their placement. */
+const placePorts: PlacePorts = {
+  async loadContext(player) {
+    const { data, error } = await admin.rpc('space_maths_context', { player });
+    if (error) throw new Error(error.code ?? 'unknown');
+    return (data as never) ?? null;
+  },
+  async savePlace(player, skill, rank) {
+    const { error } = await admin.rpc('record_ladder_place', { player, skill, rank });
+    if (error) throw new Error(error.code ?? 'unknown');
+  },
+  async savePlacementRow(player, skill, skipped) {
+    const { data, error } = await admin.rpc('record_placement', { player, start_skill: skill, was_skipped: skipped });
+    if (error) throw new Error(error.code ?? 'unknown');
+    return data === true;
+  },
+};
+
 Deno.serve(
   makeHandler({
+    syncPlace: makePlaceSyncer(placePorts),
+    savePlacement: (player, raw) => savePlacement(placePorts, player, raw),
     now: () => Date.now(),
     async userIdFor(token) {
       const { data, error } = await admin.auth.getUser(token);

@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { fetchClasses, fetchClassDetail, type ClassDetail, type ClassSummary } from '../data/classes';
-import { fetchStudentsChooseFocus, saveStudentsChooseFocus } from '../data/classSettings';
+import { fetchMathsAuto, fetchStudentsChooseFocus, saveMathsAuto, saveStudentsChooseFocus } from '../data/classSettings';
 import { endFocus, extendFocus, fetchFocuses, setFocus, type FocusBatch, type FocusLength, type FocusScope } from '../data/focus';
 import { FriendlyError } from '../data/profile';
 import { describeEnd, nzLocalToIso, skillList, timeLeft } from '../../shared/maths/focus';
@@ -113,6 +113,7 @@ function ClassFocus({ summary }: { summary: ClassSummary }) {
   const [batches, setBatches] = useState<FocusBatch[] | null>(null);
   const [history, setHistory] = useState<FocusBatch[] | null>(null);
   const [choose, setChoose] = useState<boolean | null>(null);
+  const [auto, setAuto] = useState<boolean | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
 
@@ -132,6 +133,9 @@ function ClassFocus({ summary }: { summary: ClassSummary }) {
     fetchStudentsChooseFocus(classId)
       .then(setChoose)
       .catch(() => setChoose(true));
+    fetchMathsAuto(classId)
+      .then(setAuto)
+      .catch(() => setAuto(false));
     void refresh();
   }, [classId, refresh]);
 
@@ -149,6 +153,21 @@ function ClassFocus({ summary }: { summary: ClassSummary }) {
       await saveStudentsChooseFocus(on, classId);
       setChoose(on);
       setStatus(on ? 'Students can choose their own focus.' : 'Students can’t choose their own focus. The games use your focus, or auto.');
+    } catch (error) {
+      setStatus(errorText(error));
+    }
+  }
+
+  async function changeAuto(on: boolean) {
+    setStatus('Saving…');
+    try {
+      await saveMathsAuto(on, classId);
+      setAuto(on);
+      setStatus(
+        on
+          ? 'The games now pick the maths for students with no focus. It starts with their next level or game.'
+          : 'The games ask the times tables for students with no focus, as before.',
+      );
     } catch (error) {
       setStatus(errorText(error));
     }
@@ -176,6 +195,23 @@ function ClassFocus({ summary }: { summary: ClassSummary }) {
         <p className="class-panel__hint">
           On: a student can pick their own skills on their home page, unless a focus from you is running. Off: they get your focus, or
           auto. What a student picked is kept, and comes back if you turn this back on.
+        </p>
+      </section>
+
+      <section className="panel" aria-labelledby="auto-title">
+        <h2 id="auto-title" className="panel__title">
+          Auto
+        </h2>
+        {auto !== null && (
+          <label className="classes__check">
+            <input type="checkbox" checked={auto} onChange={(e) => void changeAuto(e.target.checked)} /> Games pick the maths (auto) when
+            there is no focus
+          </label>
+        )}
+        <p className="class-panel__hint">
+          On: a student with no focus is walked up the ladder, from number facts to the times tables and beyond, starting where they are
+          ready (they can do a short warm-up to find it, or you can set your class&rsquo;s year level on My classes). Their place never goes
+          backwards. Your focus, or one a student picked, always comes first. Off: the games ask the times tables, as they always have.
         </p>
       </section>
 

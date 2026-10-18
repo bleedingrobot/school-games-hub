@@ -2,6 +2,7 @@
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
 import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import { makePlaceSyncer } from '../../../shared/maths/syncPlace';
 import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
 import { stamper } from '../_shared/stamp';
 import { handleSaveBotGame } from './handler';
@@ -23,6 +24,22 @@ const key = serverKey();
 const admin = createClient(Deno.env.get('SUPABASE_URL') ?? '', key, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
+
+/** The database calls the ladder needs: the student's records and focus, and their furthest place. Placement is saved by gem-keep. */
+const syncPlace = makePlaceSyncer({
+  async loadContext(player) {
+    const { data, error } = await admin.rpc('space_maths_context', { player });
+    if (error) throw new Error(error.code ?? 'unknown');
+    return (data as never) ?? null;
+  },
+  async savePlace(player, skill, rank) {
+    const { error } = await admin.rpc('record_ladder_place', { player, skill, rank });
+    if (error) throw new Error(error.code ?? 'unknown');
+  },
+  async savePlacementRow() {
+    return false;
+  },
+}, Date.now, 0); // a game saves once, so there is nothing to space out
 
 Deno.serve((request) =>
   handleSaveBotGame(request, {
@@ -69,6 +86,7 @@ Deno.serve((request) =>
         player, pack, batch_id: batchId, answers, quick_ms: QUICK_MS, fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
       });
       if (error) throw new Error(error.code ?? 'unknown');
+      await syncPlace(player);
     },
     // One key for all the seeded games; the stamped text says which game (and student) it's for.
     stamp: stamper(key, 'space-seed'),
