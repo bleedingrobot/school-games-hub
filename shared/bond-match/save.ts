@@ -1,7 +1,7 @@
 /**
  * What the browser will send the server when a game ends, and a replay that checks it. The deck
  * comes from the seed and the engine is pure, so the server rebuilds the game, plays the flips and
- * gets the same stars the player saw. (The server function and the database are a later stage.)
+ * gets the same stars the player saw. (The server function that uses this is supabase/functions/bond-match.)
  */
 import { findBondSet } from './bonds';
 import { BOARD_SIZES, buildDeck, isSeed, type BoardSize } from './deck';
@@ -41,4 +41,74 @@ export function replay(save: BondMatchSave): ReplayResult {
   const score = scoreGame(state, save.seconds);
   if (!score) return { ok: false, error: 'the game did not finish' };
   return { ok: true, state, score };
+}
+
+// ---------------------------------------------------------------------------
+// What the website sends the bond-match server function
+// ---------------------------------------------------------------------------
+
+/**
+ * The numbers the server and the website share, in one place.
+ * - minSecondsPerCardFlip: a game faster than this is not a human (one flip of a card, not of a pair).
+ * - pointsPerGame: small taking-part points for a finished game, whatever the stars. Grinding easy decks earns little.
+ * - pointsGamesPerDay: only this many finished games a day earn points. They also share the hub's daily cap with the bot games.
+ * - maxGamesPerDay: more finished games than this in a day are refused (a stuck loop, not a child).
+ */
+export const BOND_MATCH_SAVE = {
+  minSecondsPerCardFlip: 0.5,
+  pointsPerGame: 2,
+  pointsGamesPerDay: 10,
+  maxGamesPerDay: 100,
+} as const;
+
+/** One finished game to save: the game itself plus the id of this run, so a save sent twice is kept once. */
+export interface BondMatchItem extends BondMatchSave {
+  /** Made when the game starts (a UUID). */
+  runId: string;
+}
+
+/** The server's answer for one game. */
+export type SaveResult =
+  | { status: 'saved' | 'duplicate'; points: number | null; stars: 1 | 2 | 3; best: { flips: number; seconds: number; stars: number } }
+  | { status: 'invalid'; problem: string };
+
+export interface SaveResponse {
+  /** How many items from the front of the list are dealt with. */
+  handled: number;
+  results: SaveResult[];
+}
+
+/** The most games in one request. */
+export const MAX_ITEMS = 20;
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** The fewest seconds a game with this many card flips can honestly take. */
+export const minSecondsFor = (cardFlips: number): number => cardFlips * BOND_MATCH_SAVE.minSecondsPerCardFlip;
+
+export type Checked = { ok: true; item: BondMatchItem; score: Score } | { ok: false; problem: string };
+
+/**
+ * Checks one item from the website: the right shape, then the replay (the server's own stars, flips
+ * and deck, never the browser's), then that the time is possible for a human.
+ */
+export function checkItem(raw: unknown): Checked {
+  if (typeof raw !== 'object' || raw === null) return { ok: false, problem: 'not an object' };
+  const r = raw as Record<string, unknown>;
+  if (typeof r.runId !== 'string' || !UUID.test(r.runId)) return { ok: false, problem: 'bad run id' };
+  if (typeof r.bondId !== 'string' || typeof r.size !== 'string') return { ok: false, problem: 'bad bond or size' };
+  if (!Number.isInteger(r.seed) || !Number.isInteger(r.seconds)) return { ok: false, problem: 'bad numbers' };
+  if (!Array.isArray(r.flips) || r.flips.length > 400 || !r.flips.every((n) => Number.isInteger(n))) return { ok: false, problem: 'bad flips' };
+  const item: BondMatchItem = {
+    runId: r.runId,
+    seed: r.seed as number,
+    bondId: r.bondId,
+    size: r.size as BoardSize,
+    flips: r.flips as number[],
+    seconds: r.seconds as number,
+  };
+  const played = replay(item);
+  if (!played.ok) return { ok: false, problem: played.error };
+  if (item.seconds < minSecondsFor(item.flips.length)) return { ok: false, problem: 'too fast' };
+  return { ok: true, item, score: played.score };
 }

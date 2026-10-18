@@ -3,7 +3,7 @@ import { BOND_SETS, findBondSet } from './bonds';
 import { BOARD_SIZES, buildDeck, partnersOf } from './deck';
 import { newGame } from './engine';
 import { perfectFlips, play } from './perfectPlayer';
-import { replay, type BondMatchSave } from './save';
+import { BOND_MATCH_SAVE, checkItem, minSecondsFor, replay, type BondMatchItem, type BondMatchSave } from './save';
 import { scoreGame } from './score';
 
 const perfectSave = (bondId: string, size: BondMatchSave['size'], seed: number): BondMatchSave => {
@@ -62,5 +62,41 @@ describe('replay', () => {
     expect(replay({ ...save, seconds: 1.5 }).ok).toBe(false);
     expect(replay({ ...save, flips: 'x' as never }).ok).toBe(false);
     expect(replay({ ...save, flips: [0.5, 1] }).ok).toBe(false);
+  });
+});
+
+describe('checkItem (what the server checks)', () => {
+  const RUN = '6f1c2a54-1d3e-4b5a-9c7d-0e1f2a3b4c5d';
+  const item = (over: Partial<BondMatchItem> = {}): BondMatchItem => ({ ...perfectSave('whole-10', 'small', 3), runId: RUN, seconds: 60, ...over });
+
+  it('takes a good game and gives the server\'s own score', () => {
+    const c = checkItem(item());
+    expect(c.ok && c.score).toMatchObject({ flips: 6, stars: 3 });
+  });
+
+  it('is not fooled by the browser: stars and flips come from the replay', () => {
+    const c = checkItem({ ...item(), stars: 1, flipCount: 99 });
+    expect(c.ok && c.score.stars).toBe(3);
+  });
+
+  it('refuses a bad run id, bond, size, seed, time, or flip list', () => {
+    for (const bad of [
+      { runId: 'nope' }, { bondId: 'whole-7' }, { size: 'huge' }, { seed: 1.5 }, { seed: -1 }, { seconds: -3 }, { seconds: 1.5 },
+      { flips: [0, 1, 2.5] }, { flips: [0, 99] }, { flips: [] }, { flips: Array(500).fill(0) },
+    ]) {
+      expect(checkItem({ ...item(), ...bad }).ok, JSON.stringify(bad)).toBe(false);
+    }
+    expect(checkItem(null).ok).toBe(false);
+    expect(checkItem('x').ok).toBe(false);
+  });
+
+  it('refuses a game that is too fast for a human, and takes one right at the limit', () => {
+    const flips = item().flips;
+    expect(checkItem(item({ seconds: Math.floor(minSecondsFor(flips.length)) - 1 })).ok).toBe(false);
+    expect(checkItem(item({ seconds: Math.ceil(minSecondsFor(flips.length)) })).ok).toBe(true);
+  });
+
+  it('says what the numbers are', () => {
+    expect(BOND_MATCH_SAVE).toEqual({ minSecondsPerCardFlip: 0.5, pointsPerGame: 2, pointsGamesPerDay: 10, maxGamesPerDay: 100 });
   });
 });
