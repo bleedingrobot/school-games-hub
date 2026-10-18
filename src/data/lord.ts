@@ -13,6 +13,7 @@
  */
 import type { FactStats } from '../../shared/maths/leitner';
 import type { LordAction, LordReply, LordRequest, LordState } from '../../shared/lord/server';
+import { topicsOn } from '../../shared/lord/maths';
 import { FINISH_ACTIONS } from '../../shared/lord/server';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { readSettings } from './classSettings';
@@ -27,6 +28,8 @@ export interface LordSettings {
   enabled: boolean;
   forestPerDay: number;
   seasonStart: string | null;
+  /** The maths topics that are on. */
+  topics: string[];
   /** The day the game was switched off, while the season clock waits (null when it is running). */
   pausedSince?: string | null;
 }
@@ -244,11 +247,11 @@ export function createServerBackend(player: string): LordBackend {
 // ---------------------------------------------------------------------------
 
 export async function fetchLordSettings(classId?: string | null): Promise<LordSettings> {
-  const data = await readSettings(['lord_enabled', 'lord_forest_per_day', 'lord_season_start', 'lord_paused_since'], classId);
+  const data = await readSettings(['lord_enabled', 'lord_forest_per_day', 'lord_season_start', 'lord_paused_since', 'lord_topics'], classId);
   if (!data) throw new FriendlyError('We couldn’t load the Dragon Maths settings.');
   return {
     enabled: data.lord_enabled === true, forestPerDay: data.lord_forest_per_day as number,
-    seasonStart: (data.lord_season_start as string | null) ?? null, pausedSince: (data.lord_paused_since as string | null) ?? null,
+    seasonStart: (data.lord_season_start as string | null) ?? null, topics: topicsOn(data.lord_topics), pausedSince: (data.lord_paused_since as string | null) ?? null,
   };
 }
 

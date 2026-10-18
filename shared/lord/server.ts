@@ -23,15 +23,15 @@
 import type { FactAnswer } from '../maths/leitner';
 import { CLASSES, FOREST_FIGHTS_PER_DAY, MAX_LEVEL, SEASON_DAYS, WEAPONS, ARMOURS, baseStats, expNeeded, masterFor } from './data';
 import { computerHeroes } from './computer';
-import { EVENT_BY_ID } from './events';
+import { EVENT_BY_ID, eventsOn } from './events';
 import {
   applyEvent, applyForestResult, applyMasterResult, arenaExp, buyGear, canChallengeMaster, canFaceDragon, deposit, dragonBreather, duelistOf,
   FOREST_PILE_UP_DAYS, finishDragon, forestTrip, heal, loseToDragon, makeRandom, newHero, nzDate, playDuel, replayFight, rollDay, seasonOf, startDragonStage,
   startFight, startMasterFight, useForestTurn, withdraw, type Duelist,
 } from './engine';
 import {
-  NUMBER_GUESS_TRIES, addMasterTrialBonus, dragonStageOptions, interestFor, numberGuessPrize, offersSizeItUp, priceDiscount, riddleGold,
-  sizeItUpBonus, type MomentId, type Result,
+  ALL_TOPICS, NUMBER_GUESS_TRIES, addMasterTrialBonus, dragonStageOptions, interestFor, numberGuessPrize, offersSizeItUp, priceDiscount, riddleGold,
+  sizeItUpBonus, topicsOn, type MomentId, type Result,
 } from './maths';
 import { arenaWonLine, dailyNews, dragonWonLine, flattenedLine, masterWonLine, type NewsLine } from './news';
 import { markProof, type Proof } from './proof';
@@ -111,6 +111,8 @@ export interface Settings {
   forestPerDay: number;
   /** The first day of season 1 (YYYY-MM-DD). Null: the season starts today. */
   seasonStart: string | null;
+  /** The maths topics the teacher has left on (a missing or empty list means all of them). */
+  topics?: string[];
 }
 
 export interface Commit {
@@ -187,6 +189,8 @@ export interface LordState {
   today: string;
   season: { number: number; dayOfSeason: number; daysLeft: number };
   forestPerDay: number;
+  /** The maths topics the teacher has left on. */
+  topics: string[];
   classOpen: boolean;
   openFight: { id: string; kind: OpenFight['kind']; seed: number; start: FightState; sizeUp: boolean; stage?: 1 | 2 | 3; trial?: Result[] } | null;
   pendingEvent: string | null;
@@ -318,7 +322,7 @@ interface Ctx {
 /** Marks a proof and gathers what is needed to record it. A proof that cannot be checked is just wrong. */
 function mark(c: Ctx, raw: unknown, moment: MomentId, only?: string) {
   if (raw === undefined || raw === null) return { result: 'wrong' as Result, skipped: true, answers: [] as (FactAnswer & { pack: string })[], notes: [] as string[] };
-  const m = markProof(raw, moment, c.w.hero.level, c.now, only);
+  const m = markProof(raw, moment, c.w.hero.level, c.now, only, topicsOn(c.settings.topics));
   if (!m.ok) return { result: 'wrong' as Result, skipped: false, answers: [], notes: [m.problem] };
   return { result: (m.correct ? (m.hinted ? 'hint' : 'right') : 'wrong') as Result, skipped: false, answers: [m.answer], notes: [] as string[] };
 }
@@ -343,7 +347,7 @@ function forest(c: Ctx): Done | Refuse {
   if (extra.pendingEvent) return { summary: { kind: 'event', again: true }, result: { kind: 'event', eventId: extra.pendingEvent } };
   if (hero.forestLeft <= 0) return { refuse: 'no-turns', message: 'You have used all your forest fights today. Come back tomorrow, or visit the village.' };
   if (hero.hp <= 0) return rule('You are too hurt to go into the forest. See the healer.');
-  const trip = forestTrip(hero, c.s.seed());
+  const trip = forestTrip(hero, c.s.seed(), eventsOn(topicsOn(c.settings.topics)));
   if (trip.kind === 'event') {
     return { extra: { ...extra, pendingEvent: trip.event.id }, summary: { kind: 'event', id: trip.event.id }, result: { kind: 'event', eventId: trip.event.id } };
   }
@@ -361,7 +365,8 @@ function event(c: Ctx): Done | Refuse {
   let right = false;
   let answers: Done['answers'] = [];
   let notes: string[] = [];
-  if (e.maths && !c.req.walkOn) {
+  // An event about a topic the teacher has since switched off is just walked past: no question, no maths reward.
+  if (e.maths && !c.req.walkOn && topicsOn(c.settings.topics).includes(e.maths.topic)) {
     const m = mark(c, c.req.proof, 'treasure', e.maths.topic);
     right = m.result !== 'wrong';
     answers = m.answers;
@@ -711,6 +716,7 @@ export const viewOf = (w: Pick<Work, 'hero' | 'extra' | 'open'> | null, version:
   today,
   season: { number: season.number, dayOfSeason: season.dayOfSeason, daysLeft: season.daysLeft },
   forestPerDay: settings.forestPerDay,
+  topics: topicsOn(settings.topics),
   classOpen: w?.extra.classOpen ?? false,
   openFight: w?.open ? { id: w.open.id, kind: w.open.kind, seed: w.open.seed, start: w.open.start, sizeUp: w.open.info.sizeUp, stage: w.open.info.stage, trial: w.open.info.trial } : null,
   pendingEvent: w?.extra.pendingEvent ?? null,
@@ -722,7 +728,7 @@ export const viewOf = (w: Pick<Work, 'hero' | 'extra' | 'open'> | null, version:
   stats: w?.extra.stats ?? newStats(),
 });
 
-export const DEFAULT_SETTINGS: Settings = { enabled: false, forestPerDay: FOREST_FIGHTS_PER_DAY, seasonStart: null };
+export const DEFAULT_SETTINGS: Settings = { enabled: false, forestPerDay: FOREST_FIGHTS_PER_DAY, seasonStart: null, topics: [...ALL_TOPICS] };
 
 /** The season a day falls in. With no start date set, the first season starts today. */
 export function seasonFor(settings: Settings, today: string) {

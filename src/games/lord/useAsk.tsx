@@ -2,7 +2,7 @@ import { useCallback, useRef, useState, type ReactNode } from 'react';
 import type { FactStats } from '../../../shared/maths/leitner';
 import type { AnswerResult, Question, SkillPack } from '../../../shared/maths/skillPack';
 import { EXTRA_PACKS, makeExtraPack, makePack, type ExtraTopicId, type TopicId } from '../../../shared/maths/skillPacks';
-import { MOMENT_TOPICS, type MomentId } from '../../../shared/lord/maths';
+import { momentTopics, type MomentId } from '../../../shared/lord/maths';
 import { questionLevel, type Proof } from '../../../shared/lord/proof';
 import { QuestionModal, type ShownQuestion } from '../../maths/QuestionModal';
 
@@ -41,9 +41,12 @@ const isExtra = (id: string): id is ExtraTopicId => id in EXTRA_PACKS;
  * how it went; `modal` is what to render. Questions come from the shared packs; the server rebuilds each one from
  * its numbers and marks it itself, so what the browser thinks is right only decides what the pupil sees.
  */
-export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[] = []) {
+export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[] = [], topicsOn?: readonly string[]) {
   const packs = useRef(new Map<string, SkillPack>());
   const [pending, setPending] = useState<Pending | null>(null);
+  // The topics the teacher has left on. A ref, so a change never makes a question box in use start again.
+  const on = useRef(topicsOn);
+  on.current = topicsOn;
 
   const packOf = (id: TopicId | ExtraTopicId): SkillPack => {
     let pack = packs.current.get(id);
@@ -57,7 +60,7 @@ export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[
 
   const ask = useCallback(
     (moment: MomentId, options: AskOptions): Promise<Asked> => {
-      const topics = MOMENT_TOPICS[moment] as (TopicId | ExtraTopicId)[];
+      const topics = momentTopics(moment, on.current as (TopicId | ExtraTopicId)[] | undefined);
       const chosen = options.pack ?? (topics.length ? topics[Math.floor(Math.random() * topics.length)] : null);
       if (!chosen) return Promise.resolve(null);
       const pack = packOf(chosen);

@@ -9,7 +9,7 @@ import type { FactAnswer } from '../maths/leitner';
 import { parseFactKey } from '../maths/facts';
 import { poolsFor } from '../maths/selector';
 import { BANDED_PACKS, EXTRA_PACKS, type ExtraTopicId, type TopicId } from '../maths/skillPacks';
-import { MOMENT_TOPICS, defaultBand, type MomentId } from './maths';
+import { ALL_TOPICS, defaultBand, momentTopics, type MomentId } from './maths';
 
 /** A maths answer, as the browser reports it. */
 export interface Proof {
@@ -58,13 +58,15 @@ export type Marked =
 
 /**
  * Is this a question the game could have asked a hero of this level at this moment, and was it right?
- * `only` forces one pack (a forest event's own topic); otherwise the moment's packs are allowed.
+ * `only` forces one pack (a forest event's own topic); otherwise the moment's packs are allowed. `on` is the list of
+ * topics the teacher has left on: a question from any other topic is refused.
  */
-export function markProof(raw: unknown, moment: MomentId, heroLevel: number, now: number, only?: string): Marked {
+export function markProof(raw: unknown, moment: MomentId, heroLevel: number, now: number, only?: string, on: readonly string[] = ALL_TOPICS): Marked {
   if (!raw || typeof raw !== 'object') return { ok: false, problem: 'proof' };
   const p = raw as Record<string, unknown>;
   if (typeof p.pack !== 'string') return { ok: false, problem: 'proof-pack' };
-  const allowed: string[] = only ? [only] : (MOMENT_TOPICS[moment] as PackId[]);
+  // A topic the teacher has switched off is never allowed, even for a forest event's own question.
+  const allowed: string[] = only ? (on.includes(only) ? [only] : []) : momentTopics(moment, on as PackId[]);
   if (!allowed.includes(p.pack)) return { ok: false, problem: 'proof-pack' };
   if (typeof p.key !== 'string' || p.key.length > 60) return { ok: false, problem: 'proof-key' };
   if (!isNumber(p.given)) return { ok: false, problem: 'proof-answer' };

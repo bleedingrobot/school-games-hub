@@ -2,7 +2,8 @@ import { expect } from 'vitest';
 import { ARMOURS, MAX_LEVEL, WEAPONS, baseStats, expNeeded } from '../../../shared/lord/data';
 import { forestTrip, makeRandom, stepFight } from '../../../shared/lord/engine';
 import { emptyDb, memoryServices, type MemoryDb } from '../../../shared/lord/memoryServices';
-import { offersSizeItUp } from '../../../shared/lord/maths';
+import { eventsOn } from '../../../shared/lord/events';
+import { offersSizeItUp, topicsOn } from '../../../shared/lord/maths';
 import { questionLevel, type Proof } from '../../../shared/lord/proof';
 import type { LordState } from '../../../shared/lord/server';
 import type { FightAction, FightState, Hero } from '../../../shared/lord/types';
@@ -67,7 +68,8 @@ export class Game {
   }
   /** The next trip into the forest finds a monster (or an event, if asked). */
   forceTrip(kind: 'fight' | 'event') {
-    for (let s = 1; s < 5000; s++) if (forestTrip(this.hero(), s).kind === kind) return this.forced.push(s);
+    const events = eventsOn(topicsOn(this.db.settings.topics));
+    for (let s = 1; s < 5000; s++) if (forestTrip(this.hero(), s, events).kind === kind) return this.forced.push(s);
     throw new Error('no seed');
   }
   /** Takes a forest trip that is a fight (one that offers "size it up", if asked). */

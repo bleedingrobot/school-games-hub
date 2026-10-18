@@ -219,6 +219,26 @@ describe('Dragon Maths with a server keeping the hero', () => {
     expect(['hint', 'wrong']).toContain(summary.riddle);
   });
 
+  it('only asks about the topics the teacher left on, even where a place usually asks about others', async () => {
+    const user = userEvent.setup();
+    const { db, backend } = newGame({ topics: ['money'] });
+    renderGame(backend);
+    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await village();
+    await user.keyboard('i');
+    await user.click(screen.getByRole('button', { name: /riddle/i })); // the riddle usually asks about patterns or place value
+    await user.click(await screen.findByRole('button', { name: 'Hint' }));
+    const picks = screen.queryAllByRole('button').filter((b) => b.classList.contains('question__choice') && !(b as HTMLButtonElement).disabled);
+    if (picks.length) await user.click(picks[0]);
+    else {
+      await user.click(screen.getByRole('button', { name: '1' }));
+      await user.click(screen.getByRole('button', { name: 'Check my answer' }));
+    }
+    await waitFor(() => expect(db.events.some((e) => e.action === 'inn')).toBe(true), { timeout: 4000 });
+    expect(Object.values(db.batches).map((b) => b.pack)).toEqual(['money']);
+    expect(db.refusals).toEqual([]);
+  });
+
   it('will not let you leave the shop with gear you cannot afford, and says why', async () => {
     const user = userEvent.setup();
     const { backend } = newGame();

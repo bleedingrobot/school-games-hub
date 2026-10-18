@@ -32,6 +32,26 @@ export const MOMENT_TOPICS: Record<MomentId, PackId[]> = {
   'dragon-trial': ['add-sub', 'times-tables', 'place-value', 'division', 'fractions', 'decimals', 'money', 'patterns'],
 };
 
+/** Every topic Dragon Maths can ask about (the teacher's tick-list, all on to start). */
+export const ALL_TOPICS: PackId[] = ['place-value', 'add-sub', 'times-tables', 'division', 'fractions', 'decimals', 'money', 'patterns'];
+
+/** The topics to use from a settings list: the known ones only, and never none (an empty or unreadable list means all). */
+export function topicsOn(list: unknown): PackId[] {
+  const on = Array.isArray(list) ? ALL_TOPICS.filter((t) => list.includes(t)) : [];
+  return on.length ? on : ALL_TOPICS;
+}
+
+/**
+ * The packs a moment may draw from when the teacher has some topics off: its own packs that are on. If all of
+ * its own are off, any topic that is on, so no moment is ever without a question (the number-guess game has none).
+ */
+export function momentTopics(moment: MomentId, on: readonly PackId[] = ALL_TOPICS): PackId[] {
+  const own = MOMENT_TOPICS[moment];
+  if (own.length === 0) return [];
+  const kept = own.filter((t) => on.includes(t));
+  return kept.length ? kept : [...on];
+}
+
 /** Questions in a master's trial. */
 export const MASTER_TRIAL_QUESTIONS = 3;
 /** About one fight in this many offers "size it up". */

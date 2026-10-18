@@ -91,7 +91,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
   const [waiting, setWaiting] = useState(0);
   const [deeds, setDeeds] = useState<string[]>([]);
   const hero = state?.hero ?? null;
-  const { ask, modal } = useAsk(hero?.level ?? 1, facts);
+  const { ask, modal } = useAsk(hero?.level ?? 1, facts, state?.topics);
 
   const stateRef = useRef<LordState | null>(null);
   stateRef.current = state;
@@ -323,7 +323,11 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     if (!event) return toVillage();
     let proof: Answer | null = null;
     let walkOn = false;
-    if (event.maths) {
+    // A topic the teacher has switched off since the event turned up: walk past it, no question.
+    const topicsNow = stateRef.current?.topics;
+    const mathsOn = !!event.maths && (!topicsNow || topicsNow.includes(event.maths.topic));
+    if (event.maths && !mathsOn) walkOn = true;
+    if (event.maths && mathsOn) {
       proof = await ask('treasure', { title: event.title, note: event.text, pack: event.maths.topic, closeLabel: 'Walk on' });
       walkOn = proof === null;
     }

@@ -1,4 +1,5 @@
 import { emptyDb, memoryServices, type MemoryDb, type MemoryOptions } from '../../../shared/lord/memoryServices';
+import { ALL_TOPICS } from '../../../shared/lord/maths';
 import { runLord } from '../../../shared/lord/server';
 import type { LordBackend, Sent } from '../../data/lord';
 
@@ -50,7 +51,7 @@ export function createTrialBackend(player: string): LordBackend {
     /* a fresh trial */
   }
   db.teacher = true;
-  db.settings = { enabled: true, forestPerDay: 10, seasonStart: null };
+  db.settings = { enabled: true, forestPerDay: 10, seasonStart: null, topics: [...ALL_TOPICS] };
   return createLocalBackend(db, {
     onChange: (d) => {
       try {

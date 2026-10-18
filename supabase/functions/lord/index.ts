@@ -668,6 +668,11 @@ const EVENTS = [
 		}
 	}
 ];
+/**
+* The events the forest may find when the teacher has some topics off: a maths event about a switched-off topic is
+* left out (the rest of the forest is unchanged, and there are always events with no maths in them).
+*/
+const eventsOn = (on) => EVENTS.filter((e) => !e.maths || on.includes(e.maths.topic));
 const EVENT_BY_ID = Object.fromEntries(EVENTS.map((e) => [e.id, e]));
 //#endregion
 //#region shared/lord/engine.ts
@@ -1275,6 +1280,32 @@ const MOMENT_TOPICS = {
 		"patterns"
 	]
 };
+/** Every topic Dragon Maths can ask about (the teacher's tick-list, all on to start). */
+const ALL_TOPICS = [
+	"place-value",
+	"add-sub",
+	"times-tables",
+	"division",
+	"fractions",
+	"decimals",
+	"money",
+	"patterns"
+];
+/** The topics to use from a settings list: the known ones only, and never none (an empty or unreadable list means all). */
+function topicsOn(list) {
+	const on = Array.isArray(list) ? ALL_TOPICS.filter((t) => list.includes(t)) : [];
+	return on.length ? on : ALL_TOPICS;
+}
+/**
+* The packs a moment may draw from when the teacher has some topics off: its own packs that are on. If all of
+* its own are off, any topic that is on, so no moment is ever without a question (the number-guess game has none).
+*/
+function momentTopics(moment, on = ALL_TOPICS) {
+	const own = MOMENT_TOPICS[moment];
+	if (own.length === 0) return [];
+	const kept = own.filter((t) => on.includes(t));
+	return kept.length ? kept : [...on];
+}
 /** The difficulty band (1 easiest, 4 hardest) that suits a hero's level when nothing better is known. */
 const defaultBand = (level) => Math.min(4, Math.max(1, Math.ceil(level / 3)));
 /** Does this fight offer a "size it up" question? A pure function of the seed so a replay agrees. */
@@ -4400,9 +4431,10 @@ function bandedPack(id) {
 const isNumber = (n) => typeof n === "number" && Number.isFinite(n);
 /**
 * Is this a question the game could have asked a hero of this level at this moment, and was it right?
-* `only` forces one pack (a forest event's own topic); otherwise the moment's packs are allowed.
+* `only` forces one pack (a forest event's own topic); otherwise the moment's packs are allowed. `on` is the list of
+* topics the teacher has left on: a question from any other topic is refused.
 */
-function markProof(raw, moment, heroLevel, now, only) {
+function markProof(raw, moment, heroLevel, now, only, on = ALL_TOPICS) {
 	if (!raw || typeof raw !== "object") return {
 		ok: false,
 		problem: "proof"
@@ -4412,7 +4444,7 @@ function markProof(raw, moment, heroLevel, now, only) {
 		ok: false,
 		problem: "proof-pack"
 	};
-	if (!(only ? [only] : MOMENT_TOPICS[moment]).includes(p.pack)) return {
+	if (!(only ? on.includes(only) ? [only] : [] : momentTopics(moment, on)).includes(p.pack)) return {
 		ok: false,
 		problem: "proof-pack"
 	};
@@ -4574,7 +4606,7 @@ function mark(c, raw, moment, only) {
 		answers: [],
 		notes: []
 	};
-	const m = markProof(raw, moment, c.w.hero.level, c.now, only);
+	const m = markProof(raw, moment, c.w.hero.level, c.now, only, topicsOn(c.settings.topics));
 	if (!m.ok) return {
 		result: "wrong",
 		skipped: false,
@@ -4621,7 +4653,7 @@ function forest(c) {
 		message: "You have used all your forest fights today. Come back tomorrow, or visit the village."
 	};
 	if (hero.hp <= 0) return rule("You are too hurt to go into the forest. See the healer.");
-	const trip = forestTrip(hero, c.s.seed());
+	const trip = forestTrip(hero, c.s.seed(), eventsOn(topicsOn(c.settings.topics)));
 	if (trip.kind === "event") return {
 		extra: {
 			...extra,
@@ -4664,7 +4696,7 @@ function event(c) {
 	let right = false;
 	let answers = [];
 	let notes = [];
-	if (e.maths && !c.req.walkOn) {
+	if (e.maths && !c.req.walkOn && topicsOn(c.settings.topics).includes(e.maths.topic)) {
 		const m = mark(c, c.req.proof, "treasure", e.maths.topic);
 		right = m.result !== "wrong";
 		answers = m.answers;
@@ -5391,6 +5423,7 @@ const viewOf = (w, version, today, season, settings) => ({
 		daysLeft: season.daysLeft
 	},
 	forestPerDay: settings.forestPerDay,
+	topics: topicsOn(settings.topics),
 	classOpen: w?.extra.classOpen ?? false,
 	openFight: w?.open ? {
 		id: w.open.id,
@@ -5412,6 +5445,7 @@ const viewOf = (w, version, today, season, settings) => ({
 	} : null,
 	stats: w?.extra.stats ?? newStats()
 });
+[...ALL_TOPICS];
 /** The season a day falls in. With no start date set, the first season starts today. */
 function seasonFor(settings, today) {
 	return settings.seasonStart ? seasonOf(settings.seasonStart, today) : {
