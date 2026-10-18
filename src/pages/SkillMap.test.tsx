@@ -317,7 +317,8 @@ describe('the skill map', () => {
       }),
     ).toBeInTheDocument();
     // Division facts of the table are listed beside the grid.
-    expect(within(detail).getByRole('table', { name: 'Division facts' })).toBeInTheDocument();
+    const division = within(detail).getByRole('table', { name: 'Division facts' });
+    expect(within(division).getAllByRole('rowheader')[0]).toHaveTextContent(/^\d+ ÷ \d+$/);
   });
 
   it('tapping the same cell again, or closing its stage, closes the detail', async () => {

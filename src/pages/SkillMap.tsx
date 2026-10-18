@@ -492,6 +492,12 @@ function CellDetail({
   );
 }
 
+/** A key in words: "56 ÷ 8" for a division fact, otherwise what kind of question it is. */
+const factName = (key: string) => {
+  const div = /^div:(\d+)\/(\d+)$/.exec(key);
+  return div ? `${div[1]} ÷ ${div[2]}` : keyLabel(packIdOfKey(key) ?? '', key);
+};
+
 function KeyTable({ keys, byKey, tables }: { keys: string[]; byKey: Map<string, FactStats>; tables: boolean }) {
   return (
     <table className="stats-table skill-map__keys">
@@ -512,7 +518,7 @@ function KeyTable({ keys, byKey, tables }: { keys: string[]; byKey: Map<string, 
           const level: CellLevel = m === 'not-tried' ? 'not-started' : m;
           return (
             <tr key={key}>
-              <th scope="row">{keyLabel(packIdOfKey(key) ?? '', key)}</th>
+              <th scope="row">{factName(key)}</th>
               <td>
                 <span className="skill-map__swatch" data-level={level} aria-hidden="true">
                   {LEVELS[level].mark}

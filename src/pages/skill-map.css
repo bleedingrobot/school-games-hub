@@ -23,6 +23,8 @@
 }
 
 .skill-map__scroll {
+  /* The screen-reader-only text is positioned; this keeps it inside the box so it can't make the whole page scroll sideways. */
+  position: relative;
   max-width: 100%;
   overflow-x: auto;
   border-radius: 10px;
