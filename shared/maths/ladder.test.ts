@@ -198,7 +198,7 @@ describe('ladder progress', () => {
     const through = built.findIndex((s) => s.id === 'tables-6-9');
     const done = secure(built.slice(0, through + 1).flatMap((s) => s.keys));
     expect(ladderProgress(done).current?.id).toBe('tables-7');
-    expect(ladderProgress(done, { enabledTables: [6, 9] }).current).toBeNull();
+    expect(ladderProgress(done, { enabledTables: [6, 9] }).current?.id).toBe('times-tens'); // ×7 is skipped, the next skill is not
   });
 
   it('builds pools of focus, review and stretch around the current skill', () => {

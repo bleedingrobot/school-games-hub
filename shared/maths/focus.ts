@@ -11,6 +11,7 @@ import type { FactStats } from './leitner';
 import { AutoPack, FOCUS_PACKS, focusSkills, ladderKeyPacks, LADDER, packIdOfKey, type FocusPackId, type FocusSpec } from './ladder';
 import { floorRank, NO_LADDER, parseLadderInfo, type LadderInfo } from './place';
 import type { SkillPack } from './skillPack';
+import { solveGenerated } from './skillPacks/generated';
 import { TimesTables } from './skillPacks/timesTables';
 
 /** Where the current focus came from. */
@@ -207,7 +208,7 @@ export function makeFocusPack(stats: FactStats[], focus: MathsFocus | null | und
 /** Every record a pack holds. */
 export const packStats = (pack: SkillPack): FactStats[] => pack.stats();
 
-/** Splits answers by the pack that keeps their record (times tables, early facts, adding, division). */
+/** Splits answers by the pack that keeps their record (times tables, early facts, adding, division, generated skills). */
 export function groupByPack<T extends { key: string }>(answers: readonly T[]): Map<FocusPackId, T[]> {
   const out = new Map<FocusPackId, T[]>();
   for (const answer of answers) {
@@ -267,6 +268,9 @@ function divKeys(n: number, d: number, q: number): string[] {
 export function solveParts(parts: unknown): Solved | null {
   if (!Array.isArray(parts) || !parts.every((p) => typeof p === 'string')) return null;
   const p = parts as string[];
+  // The generated skills (bonds to 100, rounding, order of operations...) read their own questions back.
+  const generated = solveGenerated(p);
+  if (generated) return { answer: generated.answer, keys: [generated.key] };
   const blanks = p.filter((x) => x === '?').length;
   let answer = NaN;
   let keys: string[] = [];

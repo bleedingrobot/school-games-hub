@@ -57,7 +57,7 @@ describe('reading a focus from the server', () => {
 
   it('hasFocus ignores skills the games can not ask yet', () => {
     expect(hasFocus(focus(['facts-10']))).toBe(true);
-    expect(hasFocus(focus(['bedmas']))).toBe(false); // not built yet
+    expect(hasFocus(focus(['percent-of']))).toBe(false); // not built yet
     expect(hasFocus(focus(['no-such-skill']))).toBe(false);
     expect(hasFocus(AUTO_FOCUS)).toBe(false);
     expect(hasFocus(null)).toBe(false);
@@ -184,7 +184,7 @@ describe('the keys a focus draws from', () => {
   });
 
   it('ignores skills that are not built', () => {
-    expect(focusPools({ skills: ['bedmas', 'nonsense'], onlyThese: false })).toEqual({ focus: [], review: [], stretch: [] });
+    expect(focusPools({ skills: ['percent-of', 'nonsense'], onlyThese: false })).toEqual({ focus: [], review: [], stretch: [] });
   });
 
   it('puts chosen skills from different places on the ladder together', () => {
@@ -202,7 +202,7 @@ describe('the pack a game asks from', () => {
   it('is the times-table pack with no focus, as before', () => {
     expect(makeFocusPack([], null).id).toBe('times-tables');
     expect(makeFocusPack([], AUTO_FOCUS).id).toBe('times-tables');
-    expect(makeFocusPack([], focus(['bedmas'])).id).toBe('times-tables');
+    expect(makeFocusPack([], focus(['percent-of'])).id).toBe('times-tables');
   });
 
   it('keeps only times-table records in the times-table pack', () => {

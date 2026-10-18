@@ -25,6 +25,10 @@ export interface Made {
   answer: number;
   /** Believable wrong answers for multiple choice (extra or unsuitable ones are dropped). */
   wrong?: number[];
+  /** The named common mistakes behind `wrong`, for generated skills (so tests can check no wrong choice is random). */
+  named?: Record<string, number>;
+  /** Always show choices to tap (order of operations), not only when the class has multiple choice on. Needs `wrong`. */
+  choose?: boolean;
   /** A pick-only question: what each choice shows. The answer is the index of the right one. */
   pick?: string[];
   input?: 'whole' | 'decimal';
@@ -271,7 +275,7 @@ export class BandedPack implements SkillPack {
     if (made.pick) {
       choices = made.pick.map((_, i) => i);
       choiceLabels = made.pick;
-    } else if (multipleChoice) {
+    } else if (multipleChoice || made.choose) {
       choices = choicesFor(answer, made.wrong ?? [], decimal, random);
     }
     return {

@@ -36,7 +36,7 @@ describe('reading what the database says about the ladder', () => {
   it('keeps good values and drops unknown or not-yet-built skills and silly years', () => {
     const ok = parseLadderInfo({ on: true, yearLevel: 5, placed: 'done', placement: 'tables-3-4-8', furthest: 'tables-6-9' });
     expect(ok).toEqual({ on: true, yearLevel: 5, placed: 'done', placement: 'tables-3-4-8', furthest: 'tables-6-9' });
-    expect(parseLadderInfo({ on: true, placed: 'done', placement: 'bedmas' }).placed).toBeNull(); // a stub
+    expect(parseLadderInfo({ on: true, placed: 'done', placement: 'percent-of' }).placed).toBeNull(); // a stub
     expect(parseLadderInfo({ on: true, placed: 'done', placement: 'nope' }).placed).toBeNull();
     expect(parseLadderInfo({ on: true, furthest: '../etc' }).furthest).toBeNull();
     expect(parseLadderInfo({ on: true, yearLevel: 99 }).yearLevel).toBeNull();
@@ -127,18 +127,19 @@ describe('progress with a floor', () => {
   });
 
   it('forgetting a skill gives more review of it but never drops the place', () => {
-    // Everything up to the ×7 skill is secure, so they are on ×11/×12 (the furthest place).
+    // Everything up to the ×7 skill is secure, so they are on the skill after it (the furthest place).
     const upTo = built.findIndex((s) => s.id === 'tables-7');
+    const next = built[upTo + 1].id;
     const records = secure(built.slice(0, upTo + 1).flatMap((s) => s.keys));
-    expect(placeProgress(records, info({ furthest: 'tables-7' })).current?.id).toBe('tables-11-12');
+    expect(placeProgress(records, info({ furthest: 'tables-7' })).current?.id).toBe(next);
     // Then the ×7 facts are forgotten: the records now say that skill is not secure.
     const tables7 = new Set(built[upTo].keys);
     const forgotten = records.map((r) => (tables7.has(r.key) ? { ...r, box: 0 } : r));
     // Without a stored place the student would drop back a skill...
     expect(ladderProgress(forgotten).current?.id).toBe('tables-7');
     // ...with it they stay where they were, and the forgotten facts are review, weak ones likelier.
-    const after = placeProgress(forgotten, info({ furthest: 'tables-11-12' }));
-    expect(after.current?.id).toBe('tables-11-12');
+    const after = placeProgress(forgotten, info({ furthest: next }));
+    expect(after.current?.id).toBe(next);
     expect(autoPools(after).review.filter((k) => tables7.has(k)).length).toBe(tables7.size);
   });
 
