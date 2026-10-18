@@ -9,6 +9,7 @@
 import { parseFactKey } from './facts';
 import type { FactStats } from './leitner';
 import { AutoPack, FOCUS_PACKS, focusSkills, ladderKeyPacks, LADDER, packIdOfKey, type FocusPackId, type FocusSpec } from './ladder';
+import { floorRank, NO_LADDER, parseLadderInfo, type LadderInfo } from './place';
 import type { SkillPack } from './skillPack';
 import { TimesTables } from './skillPacks/timesTables';
 
@@ -26,9 +27,11 @@ export interface MathsFocus {
   canChoose: boolean;
   /** The student's own choice, kept underneath a teacher's focus. Null when they have none. */
   own: { skills: string[]; onlyThese: boolean } | null;
+  /** The ladder: whether the class has auto on, and where the student starts. Present whatever the source, so a teacher's focus doesn't hide the student's place. */
+  ladder?: LadderInfo;
 }
 
-export const AUTO_FOCUS: MathsFocus = { source: 'auto', skills: [], onlyThese: false, endsAt: null, canChoose: true, own: null };
+export const AUTO_FOCUS: MathsFocus = { source: 'auto', skills: [], onlyThese: false, endsAt: null, canChoose: true, own: null, ladder: NO_LADDER };
 
 const SOURCES: readonly FocusSource[] = ['teacher-student', 'teacher-group', 'teacher-class', 'student', 'auto'];
 const SKILL_ID = /^[a-z0-9-]{1,40}$/;
@@ -52,6 +55,7 @@ export function parseFocus(raw: unknown): MathsFocus {
     endsAt: source.startsWith('teacher') ? ends : null,
     canChoose: r.canChoose !== false,
     own: ownSkills.length ? { skills: ownSkills, onlyThese: own!.onlyThese === true } : null,
+    ladder: parseLadderInfo(r.ladder),
   };
 }
 
@@ -62,9 +66,19 @@ export function hasFocus(focus: MathsFocus | null | undefined): focus is MathsFo
 
 export const isTeacherFocus = (focus: MathsFocus) => focus.source.startsWith('teacher');
 
+/** The class has auto switched on and the student has no focus: the games ask from the whole ladder. */
+export const usesLadder = (focus: MathsFocus | null | undefined): boolean => !hasFocus(focus) && !!(focus as MathsFocus | null | undefined)?.ladder?.on;
+
+/** The ladder facts of a focus (auto off, nothing known, when it has none). */
+export const ladderOf = (focus: MathsFocus | null | undefined): LadderInfo => focus?.ladder ?? NO_LADDER;
+
 /** The same focus, so a game can tell whether it changed. */
 export const focusKey = (focus: MathsFocus | null | undefined) =>
-  hasFocus(focus) ? `${focus.source}|${focus.onlyThese ? 'only' : 'mix'}|${[...focus.skills].sort().join(',')}` : 'auto';
+  hasFocus(focus)
+    ? `${focus.source}|${focus.onlyThese ? 'only' : 'mix'}|${[...focus.skills].sort().join(',')}`
+    : usesLadder(focus)
+      ? `ladder|${floorRank(ladderOf(focus))}`
+      : 'auto';
 
 /** What the student and teacher see for a skill. */
 export const skillLabel = (id: string) => LADDER.find((s) => s.id === id)?.label ?? id;
@@ -132,9 +146,9 @@ export function currentFocus(focus: MathsFocus | null | undefined, now: Date = n
   if (!focus) return AUTO_FOCUS;
   if (isTeacherFocus(focus) && focus.endsAt && Date.parse(focus.endsAt) <= now.getTime()) {
     if (focus.canChoose && focus.own) {
-      return { source: 'student', skills: focus.own.skills, onlyThese: focus.own.onlyThese, endsAt: null, canChoose: true, own: focus.own };
+      return { source: 'student', skills: focus.own.skills, onlyThese: focus.own.onlyThese, endsAt: null, canChoose: true, own: focus.own, ladder: focus.ladder };
     }
-    return { ...AUTO_FOCUS, canChoose: focus.canChoose, own: focus.own };
+    return { ...AUTO_FOCUS, canChoose: focus.canChoose, own: focus.own, ladder: focus.ladder };
   }
   return focus;
 }
@@ -179,10 +193,12 @@ export interface FocusOptions {
 
 /**
  * The pack a game asks its questions from. With no focus it is the times-table pack, exactly
- * as before (the campaign or the student's ready step decides). With a focus it is the ladder
+ * as before (the campaign or the student's ready step decides), unless the class has auto switched on:
+ * then it is the whole ladder from the student's place. With a focus it is the ladder
  * pack, asking only that focus. `stats` is every record the student has, whatever pack kept it.
  */
 export function makeFocusPack(stats: FactStats[], focus: MathsFocus | null | undefined, opts: FocusOptions = {}, random?: () => number, now?: () => number): SkillPack {
+  if (usesLadder(focus)) return new AutoPack(stats, random, now, { enabledTables: opts.enabledTables, division: opts.division, floor: floorRank(ladderOf(focus)) });
   if (!hasFocus(focus)) return new TimesTables(stats.filter((s) => parseFactKey(s.key)), random, now);
   const spec: FocusSpec = { skills: focus.skills, onlyThese: focus.onlyThese };
   return new AutoPack(stats, random, now, { enabledTables: opts.enabledTables, division: opts.division, focus: spec });
