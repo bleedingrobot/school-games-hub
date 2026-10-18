@@ -52,6 +52,11 @@ export interface PackDefinition {
   families: Record<string, Family>;
   /** Family names in each band, easiest band first. */
   bands: string[][];
+  /**
+   * Families the pack owns (so answers can be checked and records kept) but that sit outside
+   * every band, so a game that asks by band never serves them. Only the auto ladder asks for them.
+   */
+  ladderOnly?: string[];
 }
 
 // ---------------------------------------------------------------- helpers for families
@@ -200,6 +205,14 @@ export class BandedPack implements SkillPack {
         }
       }
     });
+    for (const name of definition.ladderOnly ?? []) {
+      const family = definition.families[name];
+      if (!family) throw new Error(`${definition.id}: ladderOnly names unknown family "${name}"`);
+      for (const key of family.keys) {
+        if (this.familyOfKey.has(key)) throw new Error(`${definition.id}: key "${key}" is in two families or bands`);
+        this.familyOfKey.set(key, family);
+      }
+    }
     for (const s of saved) if (this.familyOfKey.has(s.key)) this.records.set(s.key, s);
   }
 

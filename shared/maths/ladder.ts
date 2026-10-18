@@ -59,7 +59,7 @@ function tablesSkills(): LadderSkill[] {
     // A fact like 3 × 4 sits in the first step that uses it, so a later step is only its new facts.
     const mul = [...factsIn(step.add)].filter((k) => parseFactKey(k)!.b <= upTo && !seen.has(k));
     mul.forEach((k) => seen.add(k));
-    const div = divKeys(step.add).filter((k) => !seen.has(k) && Number(/\/(\d+)$/.exec(k)![1]) <= 10);
+    const div = divKeys(step.add).filter((k) => !seen.has(k)); // facts like 132 ÷ 12 are in the pack too
     div.forEach((k) => seen.add(k));
     return {
       id: `tables-${step.add.join('-')}`,

@@ -5,6 +5,8 @@
  *            order the times-tables campaign brings tables in: ÷ 2, 5, 10, then ÷ 3, 4,
  *            then ÷ 6–9. (These are kept apart from the times-tables records so each topic
  *            shows its own progress.)
+ * Not in a band: ÷ 11 and ÷ 12 facts, which only the auto ladder asks (Maths Monsters' bands
+ *            are unchanged).
  * Band 4:    2-digit ÷ 1-digit (84 ÷ 4), dividing by 10 and 100, and missing dividends.
  * Band 5:    remainders (23 ÷ 4 = 5 r ?) and 3-digit ÷ 1-digit.
  */
@@ -52,6 +54,7 @@ const divide = (n: number, d: number, extra: Partial<Made> = {}): Made => {
 const families: Record<string, Family> = {
   'facts-2-5-10': factFamily('Division facts: ÷ 2, ÷ 5, ÷ 10', [2, 5, 10], 10),
   'facts-3-4': factFamily('Division facts: ÷ 3, ÷ 4', [3, 4], 12),
+  'facts-11-12': factFamily('Division facts: ÷ 11, ÷ 12', [11, 12], 12),
   'facts-6-9': factFamily('Division facts: ÷ 6, ÷ 7, ÷ 8, ÷ 9', [6, 7, 8, 9], 12),
 
   'div:2d/1d': {
@@ -125,6 +128,7 @@ export const DIVISION: PackDefinition = {
   id: 'division',
   label: 'Division',
   families,
+  ladderOnly: ['facts-11-12'],
   bands: [['facts-2-5-10'], ['facts-3-4'], ['facts-6-9'], ['div:2d/1d', 'div:by10', 'div:missing'], ['div:remainder', 'div:3d/1d']],
 };
 

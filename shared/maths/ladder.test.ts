@@ -7,7 +7,7 @@ import { CAMPAIGN_STEPS } from './config';
 import { parseFactKey } from './facts';
 import { afterAnswer, newStats, type FactStats } from './leitner';
 import { AutoPack, autoPools, LADDER, ladderProgress } from './ladder';
-import { sameAnswer } from './banded';
+import { BandedPack, sameAnswer } from './banded';
 import { BANDED_PACKS } from './skillPacks';
 import { earlyFactsPack, EARLY_FACTS } from './skillPacks/earlyFacts';
 
@@ -25,6 +25,8 @@ function solve(parts: string[]): number {
   m = /^Half of (\d+) = \?$/.exec(text);
   if (m) return +m[1] / 2;
   m = /^(\d+) ÷ (\d+) = \?$/.exec(text);
+  if (m) return +m[1] / +m[2];
+  m = /^(\d+) ÷ \? = (\d+)$/.exec(text);
   if (m) return +m[1] / +m[2];
   m = /^(\d+) − (\d+) = \?$/.exec(text);
   if (m) return +m[1] - +m[2];
@@ -129,6 +131,31 @@ describe('the ladder', () => {
       expect(skill.curriculumTags.length, skill.id).toBeGreaterThan(0);
       for (const tag of skill.curriculumTags) expect(text, `${skill.id}: ${tag}`).toContain(`- ${tag} `);
     }
+  });
+});
+
+describe('division by 11 and 12', () => {
+  it('is in the last tables skill, and asks correct questions', () => {
+    const skill = LADDER.find((s) => s.id === 'tables-11-12')!;
+    const div = skill.keys.filter((k) => k.startsWith('div:'));
+    expect(div).toContain('div:132/12');
+    expect(div).toContain('div:121/11');
+    expect(div).toHaveLength(24);
+    const pack = new AutoPack([], randomFromSeed('d'));
+    for (const key of div) {
+      const q = (pack as unknown as { ownerOf(k: string): { questionFor(k: string, b: 'focus'): { parts: string[]; answer: number } } }).ownerOf(key).questionFor(key, 'focus');
+      expect(sameAnswer(solve(q.parts), q.answer), `${key}: ${q.parts.join(' ')}`).toBe(true);
+    }
+  });
+
+  it('is never served by the band-based games (Maths Monsters)', () => {
+    const pack = new BandedPack(BANDED_PACKS.division);
+    for (let level = 1; level <= pack.bandCount; level++) {
+      const pools = pack.poolsFor(level);
+      expect([...pools.focus, ...pools.review, ...pools.stretch].some((k) => /\/1[12]$/.test(k))).toBe(false);
+    }
+    expect(pack.owns('div:132/12')).toBe(true);
+    expect(pack.bandOf('div:132/12')).toBeUndefined();
   });
 });
 

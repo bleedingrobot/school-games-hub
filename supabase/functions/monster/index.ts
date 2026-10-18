@@ -24227,6 +24227,14 @@ var BandedPack = class {
 				}
 			}
 		});
+		for (const name of definition.ladderOnly ?? []) {
+			const family = definition.families[name];
+			if (!family) throw new Error(`${definition.id}: ladderOnly names unknown family "${name}"`);
+			for (const key of family.keys) {
+				if (this.familyOfKey.has(key)) throw new Error(`${definition.id}: key "${key}" is in two families or bands`);
+				this.familyOfKey.set(key, family);
+			}
+		}
 		for (const s of saved) if (this.familyOfKey.has(s.key)) this.records.set(s.key, s);
 	}
 	/** Every mastery key in a band (1 = easiest). */
@@ -25025,6 +25033,8 @@ const DECIMALS = {
 *            order the times-tables campaign brings tables in: ÷ 2, 5, 10, then ÷ 3, 4,
 *            then ÷ 6–9. (These are kept apart from the times-tables records so each topic
 *            shows its own progress.)
+* Not in a band: ÷ 11 and ÷ 12 facts, which only the auto ladder asks (Maths Monsters' bands
+*            are unchanged).
 * Band 4:    2-digit ÷ 1-digit (84 ÷ 4), dividing by 10 and 100, and missing dividends.
 * Band 5:    remainders (23 ÷ 4 = 5 r ?) and 3-digit ÷ 1-digit.
 */
@@ -25123,6 +25133,7 @@ const DIVISION = {
 			10
 		], 10),
 		"facts-3-4": factFamily("Division facts: ÷ 3, ÷ 4", [3, 4], 12),
+		"facts-11-12": factFamily("Division facts: ÷ 11, ÷ 12", [11, 12], 12),
 		"facts-6-9": factFamily("Division facts: ÷ 6, ÷ 7, ÷ 8, ÷ 9", [
 			6,
 			7,
@@ -25249,6 +25260,7 @@ const DIVISION = {
 			}
 		}
 	},
+	ladderOnly: ["facts-11-12"],
 	bands: [
 		["facts-2-5-10"],
 		["facts-3-4"],

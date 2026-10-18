@@ -39,8 +39,8 @@ function solveFromScreen(parts: string[]): number | undefined {
 describe.each(PACKS.map((p) => [p.id, p] as const))('%s pack', (_id, def: PackDefinition) => {
   const pack = new BandedPack(def);
 
-  it('every family is in exactly one band, and no key is shared', () => {
-    const inBands = def.bands.flat();
+  it('every family is in exactly one band (or ladder-only), and no key is shared', () => {
+    const inBands = [...def.bands.flat(), ...(def.ladderOnly ?? [])];
     expect(new Set(inBands).size).toBe(inBands.length);
     expect(new Set(inBands)).toEqual(new Set(Object.keys(def.families)));
     const keys = Object.values(def.families).flatMap((f) => f.keys);
