@@ -685,7 +685,7 @@ Whether another school is actually ready (the checklist is in section 7): Google
 - **Real browser** (Chromium against a scratch database, signed in with real tokens, 18 checks): the running results table (2 students, one "none", total adds up), the history fold-out for a focus that ended before counting, another teacher and a student refused with 403, no failed requests. **axe clean at 1366 x 640 and 844 x 390** on Set focus with both fold-outs open (only the top bar's contrast, as since before F.2).
 
 ### What is untested
-The three functions running in Deno with the real database (the hook in `entry.ts` is covered by the helper's tests, the build and the rehearsal's copy of the same steps, not by a handler test, since `entry.ts` is the part that only runs on Supabase); a real class playing for a week; how many answers one batch can carry before the counting call is slow (a Mission Control game sends one at a time; Gem Keep and Rocket Maths send a game's worth).
+The three functions running in Deno with the real database (the hook in `entry.ts` is covered by the helper's tests, the build and the rehearsal's copy of the same steps, not by a handler test, since `entry.ts` is the part that only runs on Supabase); a real class playing for a week; how many answers one batch can carry before the counting call is slow (a Mission Control game sends one at a time; Gem Keep and the bot-game save send a game's worth).
 **Not counted:** Dragon Maths (`lord`), Clan Quest (`clans`) and Maths Monsters (`monster`) also record into the same records, but you asked for the three functions above, so answers there are not counted for a focus.
 
 ### Go-live list (when you say "go live")
