@@ -350,3 +350,19 @@ See the message that came with this stage.
 - **Teacher page switches:** F.3 adds a class picker, so a teacher with several classes can set each one.
 - **Class names:** a new class starts named after its teacher's email (the part before the @, for example "mr.teacher"); the teacher can rename it. Teachers see this on their own page only, and the privacy rule for class names stays (shown to students only after a right code). A school admin turns accounts into teachers, as now. To build in F.3 (not started).
 - **F.3:** not started yet. Waiting for James.
+
+## F.2 went live (18 October 2026)
+
+James said go. Done in this order, nothing failed:
+
+1. **Database:** the four F.2 migrations went onto the live project one after another: `002300_schools`, `002400_classes_and_warp`, `002500_school_and_class_checks`, `002600_clans_schools_and_classes`. (The go-live message said three; the list in this plan has four, and the fourth is what keeps Clan Quest and Training working, so all four went in.)
+2. **Functions:** `multiplayer`, `space-game`, `card-game`, `power-clash`, `monster`, `lord` and `save-bot-game` were deployed straight after. `gem-keep`, `clans` and `training` were left alone, as the list says.
+3. **By hand:** `jamesriley@douglaspark.school.nz` is now school admin (and teacher) and site owner. The automatic "Everyone" class is off (`schools.default_class` is empty for Douglas Park), done with the `update` form because the SQL editor is not signed in as anyone. New students now start with no class.
+4. **Website:** `maths-focus` was pushed to `main` as a straight fast-forward (nothing new on `main` to merge). The "Test and publish" run passed, build and deploy both green.
+5. **Checks from outside:**
+   - All ten functions answer **401** when signed out.
+   - All eleven new class and school tables, plus `app_settings`, answer **42501** to a signed-out visitor.
+   - **Scored games: 202 before, 202 after.** Profiles: 36 before, 36 after.
+   - Settings read back through the sign-in rules for a real student and for James's teacher account: each sees exactly one settings row, and every value matches what it was before F.2 (Gem Keep calm, Clan Quest on, Dragon Maths on, Monsters on, and so on).
+
+Not checked by me: a real browser sign-in on the live site (step 6 of the list is for James: Teacher page, a game, Clan Quest, My classes).
