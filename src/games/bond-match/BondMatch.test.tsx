@@ -315,7 +315,7 @@ describe('the finish screen', () => {
 });
 
 describe('saving a finished game', () => {
-  const answer = (over: Partial<Extract<SaveResult, { status: 'saved' }>> = {}): SaveResult =>
+  const answer = (over: Partial<Extract<SaveResult, { status: 'saved' | 'duplicate' }>> = {}): SaveResult =>
     ({ status: 'saved', points: 2, stars: 3, best: { flips: 6, seconds: 5, stars: 3 }, ...over }) as SaveResult;
   const fakeSaver = (result: SaveResult | null | 'reject', bests: Awaited<ReturnType<BondMatchSaver['loadBests']>> = []) => ({
     save: vi.fn(async () => { if (result === 'reject') throw new Error('offline'); return result; }),
