@@ -5,6 +5,7 @@
  */
 import type { Action, OpenFight, Result } from '../../../shared/clans/actions';
 import type { Clan } from '../../../shared/clans/types';
+import type { VillageView } from '../../../shared/clans/village';
 import type { PracticalSettings } from '../../../shared/maths/practical';
 import type { Session } from './session';
 
@@ -22,6 +23,12 @@ export interface ServerClan {
   settings: PracticalSettings;
   /** The latest village news lines, written by the computer. */
   news: string[];
+  /** The class village: chest, building levels, this week's votes. */
+  village: VillageView | null;
+  /** The teacher's switch for raids on classmates. */
+  raidsOn: boolean;
+  /** What raiders did to this clan lately. */
+  notes: string[];
 }
 
 export type ServerReply =
@@ -38,6 +45,7 @@ export function sessionFrom(state: ServerClan, previous?: Session | null): Sessi
   return {
     clan: state.clan, baseSeed: state.seed, day: state.day, fightsLeft: state.fightsLeft, fightNo: state.fightNo, raidNo: state.raidNo,
     examined: state.examined, settings: state.settings, depth: previous?.depth ?? 0, fight: state.fight, news: state.news,
+    village: state.village, notes: state.notes, raidsOn: state.raidsOn,
   };
 }
 

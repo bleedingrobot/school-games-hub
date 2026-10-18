@@ -6,7 +6,9 @@
 import { CONFIG } from '../../../shared/clans/config';
 import { churchCost, examineCost, hpCost, shopPrice, spCost, trainCost, wakeCost } from '../../../shared/clans/character';
 import { buyItem as buyItemFor, buyTroopMix as buyTroopMixFor, draftFollowers as draftFollowersFor, examineItemFor, knockedOutMembers, raidSeed as raidSeedFor, sendArmyTo, trainMember, wakeAllCost, wakeAllPayers, wakeEveryone, wakeOne, wakeOrder, type TrainKey } from '../../../shared/clans/play';
-import { build, canBuild, capacity, claimLand, deposit, developPlot, empireOf, raidKingdom, setDraft, withdraw, type BattlePlan, type BattleResult, type Done, type Fail } from '../../../shared/clans/empire';
+import type { ServerState } from '../../../shared/clans/actions';
+import { build, canBuild, capacity, claimLand, deposit, developPlot, empireOf, might, newEmpire, raidKingdom, setDraft, withdraw, type BattlePlan, type BattleResult, type Done, type Fail, type Take } from '../../../shared/clans/empire';
+import { closeWeek, raidClassmateNz, raidTargetList, voteOptions, type TargetEntry, type VillageKind } from '../../../shared/clans/village';
 import { STATS, TROOP_KINDS, type BuildingKind, type Clan, type Empire, type ItemDef, type Member, type Stat, type Troops } from '../../../shared/clans/types';
 import { finishQuest, puzzleFor, questById, questDoneToday, todaysQuest, type PuzzleSpec, type QuestDef, type QuestDone } from '../../../shared/clans/quests';
 import type { Session } from './session';
@@ -190,6 +192,7 @@ export function armyToLose(s: Session): Session {
 export function freshRaid(s: Session): Session {
   const next = structuredClone(s);
   empireOf(next.clan).kingdomRaidsToday = 0;
+  next.pretendRaids = 0;
   return next;
 }
 
@@ -215,4 +218,96 @@ export function freshQuest(s: Session): Session {
   const next = structuredClone(s);
   delete next.clan.questDay;
   return next;
+}
+
+// ---------------------------------------------------------------------------
+// The class village and raids on classmates (stage C.6 part A). With a server these are only drawn; on the test page the
+// pretend village below stands in so the screens can be tried.
+// ---------------------------------------------------------------------------
+
+/** Give gold to the village chest. Null if the purse does not have it, or there is no village. */
+export function giveToChest(s: Session, gold: number): Session | null {
+  if (!s.village || !Number.isInteger(gold) || gold < 1 || gold > s.clan.gold) return null;
+  const clan = structuredClone(s.clan);
+  clan.gold -= gold;
+  return { ...s, clan, village: { ...s.village, chest: s.village.chest + gold } };
+}
+
+/** Vote for a building (changing your mind replaces your vote). Null if it cannot be voted for. */
+export function voteFor(s: Session, kind: VillageKind): Session | null {
+  const v = s.village;
+  if (!v || !voteOptions(v.levels).some((o) => o.kind === kind)) return null;
+  const votes = { ...v.votes };
+  if (v.myVote) votes[v.myVote] = Math.max(0, (votes[v.myVote] ?? 0) - 1);
+  votes[kind] = (votes[kind] ?? 0) + 1;
+  return { ...s, village: { ...v, votes, myVote: kind } };
+}
+
+/** Test page only: the week ends and the vote is closed, the way the midnight job does it. */
+export function pretendWeekEnd(s: Session): Session {
+  const v = s.village;
+  if (!v) return s;
+  const done = closeWeek(v.levels, v.chest, v.votes);
+  const clan = structuredClone(s.clan);
+  clan.village = done.levels;
+  return {
+    ...s, clan, news: done.news ? [done.news, ...(s.news ?? [])] : s.news,
+    village: { ...v, levels: done.levels, chest: done.chest, votes: {}, myVote: null, week: v.week + 1 },
+  };
+}
+
+/** Test page only: pretend classmates give some gold. */
+export const pretendGifts = (s: Session, gold: number): Session => (s.village ? { ...s, village: { ...s.village, chest: s.village.chest + gold } } : s);
+
+/** Test page only: the pretend classmates, sized from your own army so there is always a fair one. */
+export function pretendMates(s: Session): { id: string; name: string; empire: Empire; createdNzDay: number }[] {
+  const mine = Math.max(10, might(empireOf(s.clan).troops));
+  const make = (id: string, name: string, share: number, created: number) => ({
+    id, name, createdNzDay: created, empire: { ...newEmpire(), vault: 400, troops: { footman: Math.max(1, Math.round(mine * share)), axeman: 0, knight: 0 }, shieldUntil: s.pretendShield?.includes(id) ? PRETEND_TODAY + s.day : 0 },
+  });
+  return [
+    make('pretend-foxes', 'Swift Foxes', 0.9, PRETEND_TODAY - 30),
+    make('pretend-owls', 'Brave Owls', 1.2, PRETEND_TODAY - 30),
+    make('pretend-wolves', 'Iron Wolves', 5, PRETEND_TODAY - 30),
+    make('pretend-stars', 'Lucky Stars', 1, PRETEND_TODAY + s.day - 1),
+  ];
+}
+/** The New Zealand day the test page pretends it is (its days are counted up from here). */
+const PRETEND_TODAY = 30000;
+
+export interface ClassDone {
+  session: Session;
+  take: Take;
+  result: BattleResult;
+  gold: number;
+  land: number;
+  destroyed: BuildingKind[];
+}
+
+/** Test page only: raid a pretend classmate, with the very same rule the server uses. Nothing is saved anywhere. */
+export function pretendRaid(s: Session, mateId: string, take: Take, plan: BattlePlan): ClassDone | Fail {
+  const mate = pretendMates(s).find((m) => m.id === mateId);
+  if (!mate) return { ok: false, why: 'target', say: 'That clan is not in your village.' };
+  const clan = structuredClone(s.clan);
+  const e = empireOf(clan);
+  e.raidsToday = s.pretendRaids ?? 0;
+  const state = { clan, seed: s.baseSeed, day: s.day, createdNzDay: PRETEND_TODAY - 30, fightsLeft: s.fightsLeft, fightNo: s.fightNo, raidNo: s.raidNo ?? 0, examined: s.examined } as ServerState;
+  const out = raidClassmateNz(state, 'you', mate, take, plan, raidSeedFor(s.baseSeed, s.raidNo ?? 0), PRETEND_TODAY + s.day - 1, s.raidsOn !== false);
+  if (!out.ok) return out;
+  return {
+    session: {
+      ...s, clan, raidNo: (s.raidNo ?? 0) + 1, pretendRaids: (s.pretendRaids ?? 0) + 1, pretendShield: [...(s.pretendShield ?? []), mateId],
+      news: [out.news, ...(s.news ?? [])],
+    },
+    take, result: out.raid.result, gold: out.raid.gold, land: out.raid.land, destroyed: out.raid.destroyed,
+  };
+}
+
+/** Test page only: who the pretend clan could raid, by the very same rule the server uses (with the reasons). */
+export function pretendTargets(s: Session): TargetEntry[] {
+  const clan = structuredClone(s.clan);
+  empireOf(clan).raidsToday = s.pretendRaids ?? 0;
+  const state = { clan, seed: s.baseSeed, day: s.day, createdNzDay: PRETEND_TODAY - 30, fightsLeft: s.fightsLeft, fightNo: s.fightNo, raidNo: s.raidNo ?? 0, examined: s.examined } as ServerState;
+  const sketches = pretendMates(s).map((m) => ({ id: m.id, name: m.name, createdNzDay: m.createdNzDay, shieldUntil: m.empire.shieldUntil, troops: m.empire.troops }));
+  return raidTargetList(state, PRETEND_TODAY + s.day - 1, 'you', s.raidsOn !== false, sketches);
 }

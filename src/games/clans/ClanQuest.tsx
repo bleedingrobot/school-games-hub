@@ -14,7 +14,10 @@ import { MemberCard } from './MemberCard';
 import { Church } from './Church';
 import { Market } from './Market';
 import { Mines, Results } from './Mines';
-import { armyToLose, armyToWin, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveVault, knockOutSome } from './places';
+import { armyToLose, armyToWin, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveVault, knockOutSome, pretendGifts, pretendWeekEnd } from './places';
+import { ClassRaid } from './ClassRaid';
+import { Village } from './Village';
+import { VillageNews } from './VillageNews';
 import { EmpireHome } from './Empire';
 import { Land } from './Land';
 import { Barracks } from './Barracks';
@@ -26,7 +29,7 @@ import { averageLevel, finishFight, newSession, skipDay, type FightSummary, type
 import { sessionFrom, type ClanServer, type ServerReply } from './remote';
 import './clans.css';
 
-type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid' | 'quest';
+type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid' | 'quest' | 'village' | 'news' | 'classraid';
 
 /** For James's test only: stands in for the Teacher page, which comes later. */
 function SettingsStrip({ session, onChange, open }: { session: Session; onChange: (s: Session) => void; open: boolean }) {
@@ -61,6 +64,8 @@ function SettingsStrip({ session, onChange, open }: { session: Session; onChange
         <button type="button" className="cq-btn" onClick={() => onChange(armyToLose(session))}>Lose the next raid (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(freshRaid(session))}>Allow another raid today (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(freshQuest(session))}>Allow another quest today (test only)</button>
+        <button type="button" className="cq-btn" onClick={() => onChange(pretendGifts(session, 200))}>Pretend classmates give 200 gold (test only)</button>
+        <button type="button" className="cq-btn" onClick={() => onChange(pretendWeekEnd(session))}>End the village week now (test only)</button>
         <label>
           Try quest number
           <select value={session.questPick ?? 0} onChange={(e) => onChange({ ...session, questPick: Number(e.target.value) || undefined })}>
@@ -162,6 +167,24 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
       }
     });
   };
+  /** Send an action to the server and give back its answer (for screens that need the answer, like a raid). Same line as every other action. */
+  const ask = server
+    ? (action: Action) =>
+        new Promise<ServerReply>((resolve, reject) => {
+          waiting.current++;
+          line.current = line.current.then(async () => {
+            try {
+              const reply = await server.send(action);
+              waiting.current--;
+              take(reply);
+              resolve(reply);
+            } catch (error) {
+              waiting.current--;
+              reject(error);
+            }
+          });
+        })
+    : undefined;
   const create = (clan: Clan, choices: { name: string; drafts: Draft[] }) => {
     if (!server) return setSession(newSession(clan, seed));
     server.send({ type: 'create', ...choices }).then(take, () => setNotice("We couldn't reach the server, so your clan wasn't made. Please try again."));
@@ -272,10 +295,16 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
               <div className="cq-cards">
                 {session.clan.members.map((m, i) => <MemberCard key={m.name} member={m} leader={i === 0} />)}
               </div>
-              {server && session.news && session.news.length > 0 && (
+              {session.news && session.news.length > 0 && (
                 <ul className="cq-soft" aria-label="Village news">
-                  {session.news.map((line) => <li key={line}>{line}</li>)}
+                  {session.news.slice(0, 5).map((line, i) => <li key={`${i}-${line}`}>{line}</li>)}
                 </ul>
+              )}
+              {session.notes && session.notes.length > 0 && (
+                <div className="cq-panel" role="group" aria-label="While you were away">
+                  <h3>While you were away</h3>
+                  <ul>{session.notes.map((n) => <li key={n}>{n}</li>)}</ul>
+                </div>
               )}
               <p>Gold: <strong>{session.clan.gold}</strong> · Followers: <strong>{session.clan.followers}</strong> · Average level: <strong>{Math.round(averageLevel(session.clan) * 10) / 10}</strong></p>
               <div className="cq-actions">
@@ -285,6 +314,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
                 <button type="button" className="cq-btn" onClick={() => setScreen('church')}>The Church</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('empire')}>The Empire</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('quest')}>{questUsed(session) ? 'Quest (done for today)' : 'Quest'}</button>
+                <button type="button" className="cq-btn" onClick={() => setScreen('village')}>The Village</button>
+                <button type="button" className="cq-btn" onClick={() => setScreen('news')}>Village news</button>
               </div>
             </section>
           )}
@@ -294,9 +325,12 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { s
           {screen === 'market' && <Market session={session} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'training' && <Training session={session} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'church' && <Church session={session} onChange={change} onBack={() => setScreen('home')} />}
-          {screen === 'empire' && <EmpireHome session={session} onChange={change} onBack={() => setScreen('home')} onLand={() => setScreen('land')} onBarracks={() => setScreen('barracks')} onRaid={() => setScreen('raid')} />}
+          {screen === 'empire' && <EmpireHome session={session} onChange={change} onBack={() => setScreen('home')} onLand={() => setScreen('land')} onBarracks={() => setScreen('barracks')} onRaid={() => setScreen('raid')} onClassRaid={() => setScreen('classraid')} />}
           {screen === 'barracks' && <Barracks session={session} onChange={change} onBack={() => setScreen('empire')} />}
           {screen === 'raid' && <Raid session={session} onChange={change} onBack={() => setScreen('empire')} />}
+          {screen === 'village' && <Village session={session} onChange={change} onBack={() => setScreen('home')} onNews={() => setScreen('news')} />}
+          {screen === 'news' && <VillageNews session={session} onBack={() => setScreen('home')} />}
+          {screen === 'classraid' && <ClassRaid session={session} ask={ask} onSession={setSession} onBack={() => setScreen('empire')} />}
           {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} session={session} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'land' && <Land session={session} onChange={change} onBack={() => setScreen('empire')} />}
           {screen === 'fight' && !server && <Fight key={session.fightNo} session={session} boss={boss} onFinish={finish} />}

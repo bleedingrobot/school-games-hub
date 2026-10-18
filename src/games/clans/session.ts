@@ -11,6 +11,7 @@ import type { FightState } from '../../../shared/clans/fight';
 import { fightSeed, payFight, type FightSummary } from '../../../shared/clans/play';
 import { CLASSES, RACES } from '../../../shared/clans/gamedata';
 import type { Clan, Member } from '../../../shared/clans/types';
+import type { VillageView } from '../../../shared/clans/village';
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../../../shared/maths/practical';
 
 export { MAX_ROLLS, draftMember, makeClan, rollAgain, startingDrafts, type Draft };
@@ -39,10 +40,26 @@ export interface Session {
   /** With a server: the mine fight in progress, and the village news. */
   fight?: OpenFight | null;
   news?: string[];
+  /** The class village: chest, building levels, this week's votes. On the test page it is a pretend one. */
+  village?: VillageView | null;
+  /** What raiders did to this clan lately, for it to read. */
+  notes?: string[];
+  /** The teacher's switch for raids on classmates. */
+  raidsOn?: boolean;
+  /** Test page only: pretend classmates that are resting behind a shield after a raid. */
+  pretendShield?: string[];
+  /** Test page only: how many raids on pretend classmates were made today. */
+  pretendRaids?: number;
 }
+
+/** The pretend village the test page starts with: a few classmates have already given and voted. */
+export const pretendVillage = (): VillageView => ({
+  name: 'Room 12 (pretend)', chest: 120, levels: { trainingHall: 0, smithy: 0, church: 0 }, week: 1, votes: { smithy: 3, church: 2 }, myVote: null, clans: 5,
+});
 
 export const newSession = (clan: Clan, baseSeed: number, settings: PracticalSettings = DEFAULT_PRACTICAL_SETTINGS): Session => ({
   clan, fightsLeft: CONFIG.fightsPerDay, fightNo: 0, baseSeed, raidNo: 0, day: 1, depth: 0, settings, examined: [],
+  village: pretendVillage(), news: ['The class built the Smithy (level 1)! (pretend)'], notes: [], raidsOn: true, pretendShield: [], pretendRaids: 0,
 });
 
 export const averageLevel = (clan: Clan) => clan.members.reduce((t, m) => t + m.level, 0) / Math.max(1, clan.members.length);
@@ -66,7 +83,7 @@ export function skipDay(s: Session): Session {
   const clan = structuredClone(s.clan);
   dayReset(clan);
   empireNewDay(clan);
-  return { ...s, clan, fightsLeft: CONFIG.fightsPerDay, day: s.day + 1 };
+  return { ...s, clan, fightsLeft: CONFIG.fightsPerDay, day: s.day + 1, pretendShield: [], pretendRaids: 0 };
 }
 
 /** The stats a card shows by default: HP, attack, defence and one star (the member's best stat). */

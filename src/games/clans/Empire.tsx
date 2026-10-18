@@ -6,7 +6,7 @@ import { putInVault, takeFromVault, whyNot } from './places';
 import type { Session, Change } from './session';
 
 /** The Empire home: the vault, the land, the buildings, the troops, today's energy and the draft. */
-export function EmpireHome({ session, onChange, onBack, onLand, onBarracks, onRaid }: { session: Session; onChange: Change; onBack: () => void; onLand: () => void; onBarracks: () => void; onRaid: () => void }) {
+export function EmpireHome({ session, onChange, onBack, onLand, onBarracks, onRaid, onClassRaid }: { session: Session; onChange: Change; onBack: () => void; onLand: () => void; onBarracks: () => void; onRaid: () => void; onClassRaid?: () => void }) {
   const { clan } = session;
   const e = empireOf(clan);
   const [amount, setAmount] = useState(100);
@@ -60,6 +60,7 @@ export function EmpireHome({ session, onChange, onBack, onLand, onBarracks, onRa
           <div className="cq-actions">
             <button type="button" className="cq-btn cq-btn--hot" onClick={onBarracks}>Barracks and troops</button>
             <button type="button" className="cq-btn cq-btn--hot" onClick={onRaid}>Raid and Friendly War</button>
+            {onClassRaid && <button type="button" className="cq-btn cq-btn--hot" onClick={onClassRaid}>Raid a classmate</button>}
           </div>
         </div>
       </div>

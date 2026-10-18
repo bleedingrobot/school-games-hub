@@ -112,6 +112,27 @@ export function goalOf(levels: Village, chest: number, votes: Votes): Goal | nul
   };
 }
 
+export interface GoalQuestion {
+  text: string;
+  answer: number;
+  /** The working, shown after the answer whether it was right or not. */
+  working: string;
+}
+
+/**
+ * A gentle class-wide maths moment: how much more gold does the class need for the goal? Made and marked by code, from the
+ * goal alone. A wrong answer blocks nothing. Null when the chest already covers the goal.
+ */
+export function goalQuestion(goal: Goal): GoalQuestion | null {
+  const need = goal.cost - goal.have;
+  if (need <= 0) return null;
+  return {
+    text: `The ${VILLAGE_NAMES[goal.kind]} (level ${goal.level}) costs ${goal.cost} gold and the chest has ${goal.have}. How much more gold does the class need?`,
+    answer: need,
+    working: `${goal.cost} − ${goal.have} = ${need}`,
+  };
+}
+
 /** What the browser is told about its village. Counts only: nobody's name or id. */
 export interface VillageView {
   name: string;
