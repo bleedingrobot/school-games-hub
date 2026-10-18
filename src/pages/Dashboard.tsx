@@ -373,6 +373,22 @@ export function Dashboard() {
                   />
                 ))}
               </div>
+              {group.title === 'Non-maths games' && trainingOn() && (
+                <>
+                  <h3 className="section-subtitle">Training</h3>
+                  <div className="link-grid">
+                    <Link to="/training" className="link-card link-card--training">
+                      <span className="link-card__emoji" aria-hidden="true">
+                        🧮
+                      </span>
+                      <span>
+                        <strong>Facts training</strong>
+                        <span>A few minutes a day to build your facts</span>
+                      </span>
+                    </Link>
+                  </div>
+                </>
+              )}
             </div>
           );
         })}
@@ -397,17 +413,6 @@ export function Dashboard() {
             <span>See the top players this week</span>
           </span>
         </Link>
-        {trainingOn() && (
-          <Link to="/training" className="link-card link-card--training">
-            <span className="link-card__emoji" aria-hidden="true">
-              🧮
-            </span>
-            <span>
-              <strong>Facts training</strong>
-              <span>A few minutes a day to build your facts</span>
-            </span>
-          </Link>
-        )}
       </div>
 
       <div className="panel-grid">
