@@ -454,7 +454,7 @@ Built, tested and **not applied, not deployed, not merged**. Branch `clans`.
 - 24 server function tests (`handler.test.ts`): sign-in needed, junk refused, a request sent twice (and two at once) pays once, a race is redone on the newer clan, a refusal saves nothing, a database that is down, the 40-a-minute limit, and that the deployed `index.ts` matches the code.
 - 47 database checks (`clans.test.sql`): students cannot read, write or call anything, a first save must use the given seed, the version check, a repeat is spotted, bad numbers are refused, the day and seed cannot go backwards, two students stay apart, old requests are forgotten, the teacher reset. Run in a transaction that was rolled back, so the shared local database was left as it was. A full clan (after a raid, a quest, buildings and troops) was also saved and loaded through the real database functions and came back identical.
 - 13 browser tests (`Server.test.tsx`, `remote.test.ts`): the real screens against a server-in-a-box that runs the real rules.
-- Whole suite and type check: see the summary.
+- Whole suite: 1,161 tests; type check clean. In the one full run, 3 slow tests (two Mines fight screens and one Gem Keep level test) timed out at 5 seconds while the machine was busy; all three pass on their own.
 
 **Choices to know about**
 - **Server seeds.** The seed is the server's, not the browser's. The test page still uses its own.
