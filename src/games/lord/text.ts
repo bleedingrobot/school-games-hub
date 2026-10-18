@@ -1,3 +1,4 @@
+import type { DuelEvent } from '../../../shared/lord/engine';
 import type { FightEvent, SkillId } from '../../../shared/lord/types';
 
 export const SKILL_HELP: Record<SkillId, string> = {
@@ -49,18 +50,29 @@ export const BARD_SONGS = [
   'Count your gold and count it twice; / A banker\'s smile is worth the price.',
 ];
 
-export const VILLAGE_NEWS = [
-  'The baker says the pies are bigger today. They are not.',
-  'A goblin was seen in the forest wearing a very small hat.',
-  'The healer has a new bell. Please do not ring it.',
-  'Market day: everyone is shouting about potions.',
-  'The old bridge was fixed. Nobody saw who did it.',
-  'A very large snail was spotted near the bank. It is still there.',
-  'The blacksmith lost his hammer. He found it in his hand.',
-  'Someone has stolen the village lanterns, and the dragon is blamed.',
-];
-
 export const dayHash = (day: string) => [...day].reduce((s, c) => s + c.charCodeAt(0), 0);
 
 /** "a goblin", "an ogre". */
 export const withArticle = (name: string) => (/^[aeiou]/i.test(name) ? 'an ' : 'a ') + name;
+
+/** What happened in an arena duel, in words. 'a' is you, 'b' is the other hero. */
+export function narrateDuel(log: DuelEvent[], them: string): string[] {
+  return log.map((e) => {
+    if (e.type === 'miss') return e.who === 'a' ? `${them} slips aside. Your strike misses!` : `You slip aside. ${them}’s strike misses!`;
+    const who = e.who === 'a' ? 'You' : them;
+    const target = e.who === 'a' ? them : 'you';
+    const verb = e.who === 'a' ? 'hit' : 'hits';
+    if (e.move === 'power-strike') return `A mighty blow! ${who} ${verb} ${target} for ${e.damage}.`;
+    if (e.move === 'zap') return `${who} ${e.who === 'a' ? 'zap' : 'zaps'} ${target} for ${e.damage}.`;
+    if (e.move === 'dodge') return `${who} ${e.who === 'a' ? 'dodge and strike' : 'dodges and strikes'} ${target} for ${e.damage}.`;
+    return `${who} ${verb} ${target} for ${e.damage}.`;
+  });
+}
+
+/** "Today", "Yesterday" or the date, for the Daily News. */
+export function dayLabel(day: string, today: string): string {
+  const diff = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${day}T00:00:00Z`)) / 86400000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  return new Date(`${day}T00:00:00Z`).toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+}

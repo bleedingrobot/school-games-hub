@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MASTERS, MAX_LEVEL, SEASON_DAYS, baseStats } from '../../../shared/lord/data';
+import { MASTERS, MAX_LEVEL, SEASON_DAYS, baseStats, expNeeded } from '../../../shared/lord/data';
 import { COMPUTER_HEROES, computerDeeds, computerHeroes } from '../../../shared/lord/computer';
 import { arenaExp, duelistOf, newHero, playDuel, type Duelist } from '../../../shared/lord/engine';
 import { VILLAGE_EVENTS, dailyNews, villageEventFor } from '../../../shared/lord/news';
@@ -400,5 +400,73 @@ describe('what the L.5 rules do not change', () => {
     const d = duelistOf(hero, 'You');
     expect(d.attack).toBeGreaterThan(hero.strength);
     expect(d.defence).toBeGreaterThan(hero.defence);
+  });
+});
+
+describe('a fight left alone for a whole day', () => {
+  const DAY3 = Date.parse('2026-10-21T00:00:00Z');
+
+  it('is still waiting the next day, and counts as a loss after a whole day has gone by', async () => {
+    const g = new Game();
+    await g.start();
+    g.patch({ gold: 80, bank: 30, exp: 12 });
+    const open = await g.fight();
+    g.clock = NZ_MIDNIGHT + 1000; // the next New Zealand day
+    expect((await g.refresh()).openFight?.id).toBe(open.id);
+    g.clock = DAY3;
+    const out = await g.send({ action: 'load' });
+    expect(out.body.ok).toBe(true);
+    expect(out.body.result).toEqual({ abandoned: 'forest' });
+    expect(out.body.state.openFight).toBeNull();
+    expect(g.db.fights[0].status).toBe('abandoned');
+    expect(g.hero()).toMatchObject({ gold: 0, bank: 30, exp: 12 });
+    expect(g.hero().forestLeft).toBe(10); // a new day's turns; the abandoned fight's turn stays spent
+    expect(g.db.events.at(-1)!.action === 'rollover' || g.db.events.some((e) => e.action === 'abandon')).toBe(true);
+    // The pupil can go straight on.
+    expect((await g.send({ action: 'forest' })).body.ok).toBe(true);
+  });
+
+  it('happens whatever the first request is, not only when the game is opened', async () => {
+    const g = new Game();
+    await g.start();
+    await g.fight();
+    g.clock = DAY3;
+    const out = await g.send({ action: 'heal', hp: 1 }, { version: g.state!.version });
+    expect(g.db.fights[0].status).toBe('abandoned');
+    expect(out.body.reason === 'stale' || out.body.reason === 'rule' || out.body.ok).toBeTruthy();
+  });
+
+  it('heals you after an abandoned master fight, and sends you home after an abandoned dragon fight', async () => {
+    const m = new Game();
+    await m.start();
+    m.patch({ exp: expNeeded(1), hp: 5, maxHp: 30 });
+    await m.refresh();
+    await m.send({ action: 'master-start', trial: [] });
+    m.clock = DAY3;
+    await m.send({ action: 'load' });
+    expect(m.hero()).toMatchObject({ level: 1, hp: 30 });
+    expect(m.db.fights[0].status).toBe('abandoned');
+
+    const d = new Game();
+    await d.start();
+    d.patch(DRAGON_SLAYER);
+    await d.refresh();
+    await d.send({ action: 'dragon-stage', stage: 1 });
+    d.clock = DAY3;
+    const out = await d.send({ action: 'load' });
+    expect(out.body.result.abandoned).toBe('dragon');
+    expect(d.hero().level).toBe(MAX_LEVEL);
+    expect(d.state!.dragon).toBeNull();
+  });
+
+  it('lets a new season start once the old fight is gone', async () => {
+    const g = new Game();
+    await g.start();
+    await g.fight();
+    g.clock = Date.parse('2026-11-23T00:00:00Z');
+    const s = await g.refresh();
+    expect(s.season.number).toBe(2);
+    expect(s.openFight).toBeNull();
+    expect(s.hero!.level).toBe(1);
   });
 });

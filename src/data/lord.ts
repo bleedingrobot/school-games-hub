@@ -26,11 +26,40 @@ export interface LordSettings {
   enabled: boolean;
   forestPerDay: number;
   seasonStart: string | null;
+  /** The day the game was switched off, while the season clock waits (null when it is running). */
+  pausedSince?: string | null;
+}
+
+/** A line of the Daily News, newest first. `kind` picks the little picture. */
+export interface NewsItem {
+  day: string;
+  kind: 'village' | 'computer' | 'master' | 'dragon' | 'arena' | 'flattened';
+  line: string;
+}
+
+/** The Warriors list for this season: level and stars (and dragons beaten this season), never maths. */
+export interface WarriorRow {
+  place: number;
+  display_name: string;
+  avatar: unknown;
+  level: number;
+  stars: number;
+  dragons: number;
+  is_me: boolean;
+}
+
+/** The Hall of Heroes: who beat the Red Dragon in each season. */
+export interface HallRow {
+  season: number;
+  display_name: string;
+  avatar: unknown;
+  kills: number;
+  is_me: boolean;
 }
 
 /** What opening the game finds. */
 export type LordLoad =
-  | { kind: 'ready'; state: LordState; facts: PackFact[]; teacher: boolean }
+  | { kind: 'ready'; state: LordState; facts: PackFact[]; teacher: boolean; abandoned?: 'forest' | 'master' | 'dragon' }
   | { kind: 'closed' }
   | { kind: 'not-started'; message: string }
   | { kind: 'offline' };
@@ -48,6 +77,10 @@ export interface LordBackend {
   flush(): Promise<'done' | 'later'>;
   /** How many finished fights are waiting to be sent. */
   waiting(): number;
+  /** The Daily News, the Warriors list and the Hall of Heroes. Null if they couldn't be fetched just now. */
+  fetchNews(): Promise<NewsItem[] | null>;
+  fetchWarriors(): Promise<WarriorRow[] | null>;
+  fetchHall(): Promise<HallRow[] | null>;
 }
 
 export const isFinish = (action: string) => (FINISH_ACTIONS as readonly string[]).includes(action);
@@ -115,6 +148,17 @@ async function call(request: LordRequest, keepalive = false): Promise<{ kind: 'r
 /** Reasons that mean "this finish has been dealt with": it is done, or it can never be done. */
 const SETTLED: string[] = ['duplicate', 'no-fight', 'tampered', 'stale', 'rule', 'bad-request', 'no-hero'];
 
+/** One of the pupil-readable lists, or null when it can't be fetched (the screen says so and offers to try again). */
+async function readList<T>(name: 'lord_news' | 'lord_warriors' | 'lord_hall'): Promise<T[] | null> {
+  try {
+    const { data, error } = await supabase.rpc(name);
+    if (error || !Array.isArray(data)) return null;
+    return data as T[];
+  } catch {
+    return null;
+  }
+}
+
 export function createServerBackend(player: string): LordBackend {
   /** One send at a time, so two sends can't race each other. */
   let chain: Promise<unknown> = Promise.resolve();
@@ -149,6 +193,9 @@ export function createServerBackend(player: string): LordBackend {
     trial: false,
     waiting: () => queuedFinishes(player).length,
     flush,
+    fetchNews: () => readList<NewsItem>('lord_news'),
+    fetchWarriors: () => readList<WarriorRow>('lord_warriors'),
+    fetchHall: () => readList<HallRow>('lord_hall'),
     async load() {
       await flush();
       let teacher = false;
@@ -172,7 +219,8 @@ export function createServerBackend(player: string): LordBackend {
         if (reply.reason === 'not-started') return { kind: 'not-started', message: reply.message ?? 'The season has not started yet.' };
         return { kind: 'offline' };
       }
-      return { kind: 'ready', state: reply.state, facts, teacher };
+      const abandoned = (reply.result as { abandoned?: 'forest' | 'master' | 'dragon' } | undefined)?.abandoned;
+      return { kind: 'ready', state: reply.state, facts, teacher, abandoned };
     },
     async send(request) {
       if (isFinish(request.action)) {
@@ -195,9 +243,12 @@ export function createServerBackend(player: string): LordBackend {
 // ---------------------------------------------------------------------------
 
 export async function fetchLordSettings(): Promise<LordSettings> {
-  const { data, error } = await supabase.from('app_settings').select('lord_enabled, lord_forest_per_day, lord_season_start').maybeSingle();
+  const { data, error } = await supabase.from('app_settings').select('lord_enabled, lord_forest_per_day, lord_season_start, lord_paused_since').maybeSingle();
   if (error || !data) throw new FriendlyError('We couldn’t load the Dragon Maths settings.');
-  return { enabled: data.lord_enabled === true, forestPerDay: data.lord_forest_per_day as number, seasonStart: (data.lord_season_start as string | null) ?? null };
+  return {
+    enabled: data.lord_enabled === true, forestPerDay: data.lord_forest_per_day as number,
+    seasonStart: (data.lord_season_start as string | null) ?? null, pausedSince: (data.lord_paused_since as string | null) ?? null,
+  };
 }
 
 /** Is the game switched on? (The dashboard hides it when it isn't.) */
@@ -215,3 +266,58 @@ export async function saveLordSettings(settings: Partial<LordSettings> & { enabl
 }
 
 export type { LordAction as LordActionRequest };
+
+// ---------------------------------------------------------------------------
+// The teacher page
+// ---------------------------------------------------------------------------
+
+export interface ClassLord {
+  season: { number: number | null; start: string | null; daysLeft: number | null };
+  /** Pupils who have a hero (any season), and how many of them are in the current season. */
+  players: number;
+  thisSeason: number;
+  /** How many heroes are at level 1 to 12 this season. */
+  levels: number[];
+  hardest: { pack: string; key: string; students: number; attempts: number; correct: number }[];
+  refusals: { name: string; realName: string; reason: string; action: string; at: string }[];
+  hall: { season: number; name: string; realName: string; kills: number }[];
+}
+
+export interface StudentLord {
+  hero: {
+    level: number;
+    heroClass: string;
+    exp: number;
+    stars: number;
+    season: number;
+    savedAt: string;
+    stats: { forestWins: number; masterWins: number; arenaWins: number; riddles: number; dragons: number; bestLevel: number } | null;
+    hall: number;
+  } | null;
+  topics: { pack: string; facts: number; attempts: number; correct: number; fluent: number }[];
+  hardest: { pack: string; key: string; attempts: number; correct: number }[];
+  refused: number;
+}
+
+function fail(error: { code?: string; message?: string } | null, text: string): never {
+  if (error?.code === '22023' && error.message) throw new FriendlyError(error.message);
+  throw new FriendlyError(text);
+}
+
+export async function fetchClassLord(): Promise<ClassLord> {
+  const { data, error } = await supabase.rpc('teacher_lord_class');
+  if (error || !data) fail(error, 'We couldn’t load Dragon Maths for the class.');
+  return data as ClassLord;
+}
+
+export async function fetchStudentLord(student: string): Promise<StudentLord> {
+  const { data, error } = await supabase.rpc('teacher_lord_student', { student });
+  if (error || !data) fail(error, 'We couldn’t load their Dragon Maths.');
+  return data as StudentLord;
+}
+
+/** Starts one pupil's hero again (they pick a class next time they play). Points, achievements and the Hall stay. */
+export async function resetLordHero(student: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_reset_lord_hero', { student });
+  if (error) fail(error, 'We couldn’t reset that hero.');
+}

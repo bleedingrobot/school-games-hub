@@ -5368,6 +5368,32 @@ function seasonFor(settings, today) {
 		started: true
 	};
 }
+const dayCount = (day) => Math.floor(Date.parse(`${day}T00:00:00Z`) / 864e5);
+function abandonedHero(open, hero, extra) {
+	if (open.kind === "forest") return {
+		hero: applyForestResult(hero, {
+			...open.start,
+			over: true,
+			outcome: "lost",
+			skillLeft: hero.skillLeft
+		}),
+		extra
+	};
+	if (open.kind === "master") return {
+		hero: {
+			...hero,
+			hp: hero.maxHp
+		},
+		extra
+	};
+	return {
+		hero: loseToDragon(hero),
+		extra: {
+			...extra,
+			dragon: null
+		}
+	};
+}
 const busy = () => ({
 	status: 503,
 	body: { error: "We couldn't reach your hero just now." }
@@ -5416,8 +5442,53 @@ async function runLord(s, player, raw) {
 	const validId = typeof requestId === "string" && UUID.test(requestId);
 	const loaded = await s.load(player, validId ? requestId : void 0);
 	if (!loaded.ok) return busy();
-	const row = loaded.value.row;
-	const stored = loaded.value.openFight;
+	let row = loaded.value.row;
+	let stored = loaded.value.openFight;
+	let abandoned = null;
+	if (row && stored && dayCount(today) - dayCount(stored.info.day) >= 2) {
+		const lost = abandonedHero(stored, row.hero, readExtra(row.extra));
+		const out = await s.commit(player, {
+			expect: row.version,
+			hero: lost.hero,
+			season: row.season,
+			extra: lost.extra,
+			openFight: null,
+			closeFight: {
+				id: stored.id,
+				status: "abandoned",
+				actions: [],
+				result: {
+					outcome: "lost",
+					abandoned: true
+				}
+			},
+			event: {
+				requestId: s.newId(),
+				action: "abandon",
+				summary: { fight: stored.kind }
+			},
+			news: [],
+			score: null,
+			hall: null,
+			doneFight: null
+		});
+		if (!out.ok) return busy();
+		if (out.value.status === "saved") {
+			abandoned = stored.kind;
+			row = {
+				...row,
+				hero: lost.hero,
+				extra: lost.extra,
+				version: out.value.version
+			};
+			stored = null;
+		} else {
+			const again = await s.load(player, validId ? requestId : void 0);
+			if (!again.ok) return busy();
+			row = again.value.row;
+			stored = again.value.openFight;
+		}
+	}
 	if (action === "load" && !loaded.value.dailyDone) await s.dailyNews(today, dailyNews(today, season));
 	let w = null;
 	let rolled = false;
@@ -5455,6 +5526,7 @@ async function runLord(s, player, raw) {
 	}
 	const finishNow = (state, version) => viewOf(state, version, today, season, settings);
 	if (action === "load" || action === "rollover") {
+		const note = abandoned ? { abandoned } : {};
 		if (!row || !w) return {
 			status: 200,
 			body: {
@@ -5468,7 +5540,7 @@ async function runLord(s, player, raw) {
 			body: {
 				ok: true,
 				state: finishNow(w, row.version),
-				result: {}
+				result: note
 			}
 		};
 		const out = await s.commit(player, {
@@ -5521,7 +5593,7 @@ async function runLord(s, player, raw) {
 			body: {
 				ok: true,
 				state: finishNow(w, out.value.version),
-				result: {}
+				result: note
 			}
 		};
 	}

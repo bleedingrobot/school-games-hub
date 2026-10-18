@@ -115,6 +115,23 @@
 .lord-log li:last-child { color: var(--lord-yellow); }
 .lord-reward { margin: 0; color: var(--lord-yellow); }
 
+/* The arena, the news, the Warriors list and the Hall of Heroes */
+.lord-duel { margin-top: 10px; border: 1px solid #2a2a50; border-radius: 4px; padding: 10px; background: #0e0e22; }
+.lord-duel__heroes { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; text-align: center; }
+.lord-duel__heroes p { margin: 4px 0 0; }
+.lord-duel .lord-log { height: auto; max-height: 11em; }
+.lord-badge { display: inline-block; padding: 0 6px; border: 1px solid var(--lord-mag); border-radius: 3px; color: var(--lord-mag); font-size: 0.8rem; }
+.lord-news li { margin-bottom: 4px; }
+.lord-news__master, .lord-news__dragon { color: var(--lord-yellow); }
+.lord-news__computer { color: var(--lord-cyan); }
+.lord-news__flattened { color: var(--lord-soft); }
+.lord-board { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 4px; }
+.lord-board li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 4px 8px; border: 1px solid #2a2a50; border-radius: 4px; background: #0e0e22; }
+.lord-board li.is-me { border-color: var(--lord-yellow); }
+.lord-board__place { min-width: 1.6em; color: var(--lord-cyan); font-weight: 700; text-align: right; }
+.lord-board__name { flex: 1; min-width: 8em; }
+.lord-board__gap { flex-basis: 100%; color: var(--lord-soft); text-align: center; }
+
 @media (prefers-reduced-motion: reduce) { .lord-place-btn--dragon { animation: none; } .lord-bar__fill { transition: none; } }
 @media (max-width: 640px) {
   .lord { padding: 8px 10px 12px; font-size: 1rem; }

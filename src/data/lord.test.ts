@@ -9,7 +9,7 @@ vi.mock('../lib/supabase', () => ({
   },
 }));
 
-import { createServerBackend, enqueueFinish, queuedFinishes } from './lord';
+import { createServerBackend, enqueueFinish, fetchClassLord, fetchStudentLord, queuedFinishes, resetLordHero } from './lord';
 
 const fetchMock = vi.fn<typeof fetch>();
 let ME = '';
@@ -155,5 +155,54 @@ describe('the queue of finished fights', () => {
     expect(queuedFinishes(ME)).toEqual([]);
     fetchMock.mockResolvedValueOnce(refused('stale', { state: state(9) }));
     expect(await backend.send({ action: 'forest', requestId: crypto.randomUUID(), version: 1 })).toMatchObject({ kind: 'reply', reply: { ok: false, reason: 'stale' } });
+  });
+});
+
+describe('the news, the Warriors list and the Hall of Heroes', () => {
+  it('reads each list through its own database function', async () => {
+    rpc.mockImplementation(async (name: string) => ({
+      data: name === 'lord_news' ? [{ day: '2026-10-19', kind: 'village', line: 'Market day!' }] : name === 'lord_warriors' ? [{ place: 1, display_name: 'Brave Tui', avatar: null, level: 3, stars: 0, dragons: 0, is_me: true }] : [{ season: 1, display_name: 'Brave Tui', avatar: null, kills: 1, is_me: false }],
+      error: null,
+    }));
+    const backend = createServerBackend(ME);
+    expect(await backend.fetchNews()).toEqual([{ day: '2026-10-19', kind: 'village', line: 'Market day!' }]);
+    expect((await backend.fetchWarriors())![0]).toMatchObject({ place: 1, level: 3 });
+    expect((await backend.fetchHall())![0]).toMatchObject({ season: 1, kills: 1 });
+    expect(rpc.mock.calls.map((c) => c[0])).toEqual(['lord_news', 'lord_warriors', 'lord_hall']);
+  });
+
+  it('gives null (not an error) when a list can’t be read, so the screen can offer to try again', async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: 'XX000', message: 'no' } });
+    const backend = createServerBackend(ME);
+    expect(await backend.fetchNews()).toBeNull();
+    rpc.mockRejectedValue(new Error('offline'));
+    expect(await backend.fetchWarriors()).toBeNull();
+    expect(await backend.fetchHall()).toBeNull();
+  });
+
+  it('passes on a fight that counted as a loss after a day, when opening the game', async () => {
+    rpc.mockResolvedValue(mine());
+    fetchMock.mockResolvedValueOnce(ok(3, { abandoned: 'forest' }));
+    const result = await createServerBackend(ME).load();
+    expect(result.kind === 'ready' && result.abandoned).toBe('forest');
+  });
+});
+
+describe('the teacher’s views', () => {
+  it('asks for the class, one pupil, and a reset', async () => {
+    rpc.mockResolvedValue({ data: { players: 2 }, error: null });
+    expect((await fetchClassLord()).players).toBe(2);
+    expect(rpc).toHaveBeenLastCalledWith('teacher_lord_class');
+    await fetchStudentLord('kid-1');
+    expect(rpc).toHaveBeenLastCalledWith('teacher_lord_student', { student: 'kid-1' });
+    rpc.mockResolvedValue({ data: { reset: true }, error: null });
+    await resetLordHero('kid-1');
+    expect(rpc).toHaveBeenLastCalledWith('teacher_reset_lord_hero', { student: 'kid-1' });
+  });
+
+  it('turns a failure into a friendly sentence', async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: 'XX000', message: 'boom' } });
+    await expect(fetchClassLord()).rejects.toThrow('We couldn’t load Dragon Maths for the class.');
+    await expect(resetLordHero('kid-1')).rejects.toThrow('We couldn’t reset that hero.');
   });
 });

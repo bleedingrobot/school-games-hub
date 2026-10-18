@@ -250,3 +250,143 @@ describe('Dragon Maths with a server keeping the hero', () => {
     expect(db.openFight).not.toBeNull();
   });
 });
+
+
+describe('the arena, the news, the Warriors list and the Hall of Heroes', () => {
+  afterEach(cleanup);
+
+  async function inVillage(over: Parameters<typeof newGame>[0] = {}, trial = false) {
+    const user = userEvent.setup();
+    const game = newGame(over, trial);
+    renderGame(game.backend);
+    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await village();
+    return { user, ...game };
+  }
+
+  it('fights a hero for you in the arena: a win pays a little, the fight is used, and it is all in words', async () => {
+    const { user, db } = await inVillage();
+    db.row!.hero = { ...db.row!.hero, strength: 900, hp: 400, maxHp: 400 };
+    await user.keyboard('a');
+    const arena = await screen.findByRole('region', { name: 'The Arena' });
+    expect(arena).toHaveTextContent('Losing costs you nothing');
+    expect(arena).toHaveTextContent('Arena fights left today: 3 of 3');
+    await user.click(screen.getByRole('button', { name: 'Step into the arena' }));
+    expect(await screen.findByText(/You won! \+\d+ experience/)).toBeInTheDocument();
+    expect(screen.getByLabelText('What happened in the fight').children.length).toBeGreaterThan(0);
+    expect(screen.getByText('computer hero')).toBeInTheDocument();
+    expect(screen.getByText(/Arena fights left today/)).toHaveTextContent('2 of 3');
+    expect(db.row!.hero.arenaWins).toBe(1);
+    expect(db.fights.at(-1)).toMatchObject({ kind: 'arena', status: 'finished' });
+  });
+
+  it('tells a loser it cost nothing, and stops after three fights', async () => {
+    const { user, db } = await inVillage();
+    db.row!.hero = { ...db.row!.hero, strength: 1, defence: 0, hp: 1, maxHp: 1, gold: 70 };
+    await user.keyboard('a');
+    for (let i = 0; i < 3; i++) {
+      await user.click(await screen.findByRole('button', { name: 'Step into the arena' }));
+      expect(await screen.findByText(/You lost this one. It costs you nothing/)).toBeInTheDocument();
+    }
+    expect(db.row!.hero).toMatchObject({ gold: 70, hp: 1, arenaLeft: 0 });
+    expect(screen.getByRole('button', { name: 'No arena fights left today' })).toBeDisabled();
+  });
+
+  it('shows the Daily News the code wrote, with the day’s village line, and your deeds this visit', async () => {
+    const { user } = await inVillage();
+    await user.keyboard('n');
+    const page = await screen.findByRole('region', { name: 'The Daily News' });
+    expect(await within(page).findByText('Today')).toBeInTheDocument();
+    expect(page.querySelectorAll('.lord-news__village').length).toBe(1);
+    expect(page).toHaveTextContent('Nobody can write into it');
+    expect(page).toHaveTextContent('Your deeds this visit');
+  });
+
+  it('says when the news can’t be fetched, and tries again', async () => {
+    const user = userEvent.setup();
+    const { backend } = newGame({}, false);
+    let tries = 0;
+    renderGame({ ...backend, fetchNews: async () => (tries++ === 0 ? null : [{ day: '2026-10-19', kind: 'village', line: 'A quiet day.' }]) });
+    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await village();
+    await user.keyboard('n');
+    expect(await screen.findByText(/couldn’t fetch that just now/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('A quiet day.')).toBeInTheDocument();
+  });
+
+  it('shows the Warriors list with levels and stars only, and you in it', async () => {
+    const user = userEvent.setup();
+    const { backend } = newGame({}, false);
+    renderGame({
+      ...backend,
+      fetchWarriors: async () => [
+        { place: 1, display_name: 'Brave Tui', avatar: null, level: 7, stars: 2, dragons: 1, is_me: false },
+        { place: 2, display_name: 'Brave Kiwi', avatar: null, level: 5, stars: 0, dragons: 0, is_me: true },
+        { place: 11, display_name: 'Quiet Moa', avatar: null, level: 1, stars: 0, dragons: 0, is_me: false },
+      ],
+    });
+    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await village();
+    await user.keyboard('w');
+    const list = await screen.findByRole('list', { name: 'Warriors this season' });
+    expect(within(list).getAllByRole('listitem')).toHaveLength(3);
+    expect(list).toHaveTextContent('Brave Tui');
+    expect(list).toHaveTextContent('Level 7');
+    expect(within(list).getByLabelText('2 dragon stars')).toHaveTextContent('★★');
+    expect(list.querySelector('.is-me')).toHaveTextContent('(you)');
+    expect(screen.getByRole('region', { name: 'The Warriors list' })).toHaveTextContent('never maths');
+  });
+
+  it('shows the Hall of Heroes season by season, or an empty hall', async () => {
+    const user = userEvent.setup();
+    const { backend } = newGame({}, false);
+    renderGame(backend);
+    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await village();
+    await user.keyboard('g');
+    expect(await screen.findByText(/The Hall is empty/)).toBeInTheDocument();
+    cleanup();
+    const filled = newGame({}, false);
+    renderGame({
+      ...filled.backend,
+      fetchHall: async () => [
+        { season: 2, display_name: 'Brave Kiwi', avatar: null, kills: 2, is_me: true },
+        { season: 1, display_name: 'Brave Tui', avatar: null, kills: 1, is_me: false },
+      ],
+    });
+    await user.click(await screen.findByRole('button', { name: /Mage/ }));
+    await village();
+    await user.keyboard('g');
+    const hall = await screen.findByRole('region', { name: 'The Hall of Heroes' });
+    expect(within(hall).getByRole('heading', { name: 'Season 2' })).toBeInTheDocument();
+    expect(hall).toHaveTextContent('beat the dragon 2 times');
+    expect(hall).toHaveTextContent('beat the dragon');
+  });
+
+  it('counts down the last days of a season', async () => {
+    const user = userEvent.setup();
+    const db = emptyDb({ enabled: true, seasonStart: '2026-09-19' });
+    const backend = createLocalBackend(db, { trial: false, now: () => Date.parse('2026-10-19T00:00:00Z') });
+    renderGame(backend);
+    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await village();
+    expect(screen.getAllByText(/4 days left/).length).toBeGreaterThan(0);
+  });
+
+  it('says when a fight left alone for a whole day counted as a loss', async () => {
+    const { backend } = newGame({}, false);
+    renderGame({ ...backend, load: async () => ({ ...(await backend.load()), abandoned: 'forest' }) as never });
+    await userEvent.click(await screen.findByRole('button', { name: /Knight/ }));
+    await village();
+    expect(screen.getByText(/left unfinished counted as a loss after a day/)).toBeInTheDocument();
+  });
+
+  it('shows arena fights left on the status bar and the lifetime counts on the hero page', async () => {
+    const { user } = await inVillage();
+    expect(screen.getByRole('list', { name: /at a glance/i })).toHaveTextContent('Arena 3');
+    await user.keyboard('y');
+    expect(await screen.findByText('All your seasons')).toBeInTheDocument();
+    expect(screen.getByText(/0 forest fights won/)).toBeInTheDocument();
+  });
+});

@@ -220,6 +220,31 @@ export function HowPoints() {
         </section>
       )}
 
+      {rules.dragonMaths && (
+        <section className="panel" aria-labelledby="dragon-maths-points-title">
+          <h2 id="dragon-maths-points-title" className="panel__title">
+            🐉 Dragon Maths
+          </h2>
+          <ul className="how-points__list">
+            <li>
+              Win fights in the forest: <strong>1 point for every {rules.dragonMaths.forestWinsPerPoint} you win</strong>.
+            </li>
+            <li>
+              Beat a master and go up a level: <strong>{rules.dragonMaths.masterWin} points</strong>.
+            </li>
+            <li>
+              Beat the Red Dragon: <strong>{rules.dragonMaths.dragonWin} points</strong>.
+            </li>
+            <li>Arena fights and maths questions don’t earn points, but a right answer helps you win.</li>
+            <li>These share the {rules.botDailyCap}-points-a-day limit with games against bots.</li>
+            <li>
+              Beating masters, reaching high levels and beating the dragon earn achievements, worth {rules.achievementPoints} bonus
+              points each. Dragon Maths has its own Warriors list and Hall of Heroes inside the game.
+            </li>
+          </ul>
+        </section>
+      )}
+
       <section className="panel" aria-labelledby="levels-title">
         <h2 id="levels-title" className="panel__title">
           Levels

@@ -6,12 +6,12 @@ import {
   buyGear, canChallengeMaster, canFaceDragon, healCost, healPrice, heroAttack, heroDefence, kindnessDiscount, shopPrice,
 } from '../../../shared/lord/engine';
 import { NUMBER_GUESS_TRIES } from '../../../shared/lord/maths';
-import type { LordAction, LordReply, LordState } from '../../../shared/lord/server';
+import type { LordAction, LordReply, LordState, Stats } from '../../../shared/lord/server';
 import type { Hero, HeroClass } from '../../../shared/lord/types';
 import type { Asked, AskOptions } from './useAsk';
 import { ArmourSprite, HeroSprite, Icon, MonsterSprite, WeaponSprite } from './Sprite';
 import { ICON_TILES } from './tileMap';
-import { BARD_SONGS, dayHash, VILLAGE_NEWS } from './text';
+import { BARD_SONGS, dayHash } from './text';
 import type { MomentId } from '../../../shared/lord/maths';
 
 export type Ask = (moment: MomentId, options: AskOptions) => Promise<Asked>;
@@ -315,7 +315,7 @@ export function Training({ hero, back, onChallenge, onDragon }: Pick<PlaceProps,
 
 // ---------------------------------------------------------------- hero page, news, class pick
 
-export function HeroPage({ hero, back }: { hero: Hero; back: () => void }) {
+export function HeroPage({ hero, stats, back }: { hero: Hero; stats?: Stats; back: () => void }) {
   const need = expNeeded(hero.level);
   return (
     <Place title="Your hero" back={back}>
@@ -339,17 +339,14 @@ export function HeroPage({ hero, back }: { hero: Hero; back: () => void }) {
         </dl>
       </div>
       <p className="lord-soft">{CLASSES[hero.heroClass].blurb}</p>
-    </Place>
-  );
-}
-
-export function NewsPage({ news, back, today }: { news: string[]; back: () => void; today: string }) {
-  return (
-    <Place title="The Daily News" tile="scroll" back={back}>
-      <p className="lord-lead">{VILLAGE_NEWS[dayHash(today) % VILLAGE_NEWS.length]}</p>
-      <h3>Your deeds</h3>
-      {news.length === 0 ? <p className="lord-soft">Nothing yet. Go and do something newsworthy!</p> : <ul className="lord-news">{news.map((n, i) => <li key={i}>{n}</li>)}</ul>}
-      <p className="lord-soft">Other heroes and the warriors list arrive in a later stage.</p>
+      {stats && (
+        <>
+          <h3>All your seasons</h3>
+          <p className="lord-soft">
+            {stats.forestWins} forest fights won, {stats.masterWins} masters beaten, {stats.arenaWins} arena fights won, {stats.riddles} riddles and puzzles solved, {stats.dragons} {stats.dragons === 1 ? 'dragon' : 'dragons'} beaten. Highest level: {stats.bestLevel}.
+          </p>
+        </>
+      )}
     </Place>
   );
 }

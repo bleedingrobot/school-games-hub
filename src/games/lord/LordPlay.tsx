@@ -15,7 +15,8 @@ import type { FightAction, FightState, Hero, HeroClass } from '../../../shared/l
 import { useAuth } from '../../auth/AuthContext';
 import { createServerBackend, type LordBackend, type LordLoad, type PackFact } from '../../data/lord';
 import { FightScreen } from './Fight';
-import { Bank, ClassPick, Healer, HeroPage, Inn, NewsPage, Shop, Training, type PlaceProps, type Reply } from './Places';
+import { Bank, ClassPick, Healer, HeroPage, Inn, Shop, Training, type PlaceProps, type Reply } from './Places';
+import { Arena, HallOfHeroes, NewsPage, Warriors } from './Social';
 import { HeroSprite, Icon, MonsterSprite } from './Sprite';
 import { withArticle } from './text';
 import { useAsk, type Answer } from './useAsk';
@@ -31,12 +32,12 @@ type FightContext =
 
 type Screen =
   | { name: 'village' }
-  | { name: 'shop' | 'healer' | 'bank' | 'inn' | 'training' | 'hero' | 'news' | 'tools' | 'class' | 'dragon' }
+  | { name: 'shop' | 'healer' | 'bank' | 'inn' | 'training' | 'hero' | 'news' | 'tools' | 'class' | 'dragon' | 'arena' | 'warriors' | 'hall' }
   | { name: 'event'; eventId: string }
   | { name: 'encounter' }
   | { name: 'fight'; fight: FightState; actions: FightAction[]; fightId: string; ctx: FightContext };
 
-type Place = 'shop' | 'healer' | 'bank' | 'inn' | 'training' | 'hero' | 'news';
+type Place = 'shop' | 'healer' | 'bank' | 'inn' | 'training' | 'arena' | 'news' | 'warriors' | 'hall' | 'hero';
 
 const PLACES: { key: string; name: Place; label: string; blurb: string }[] = [
   { key: 's', name: 'shop', label: 'Shop', blurb: 'Weapons and armour' },
@@ -44,7 +45,10 @@ const PLACES: { key: string; name: Place; label: string; blurb: string }[] = [
   { key: 'b', name: 'bank', label: 'Bank', blurb: 'Keep your gold safe' },
   { key: 'i', name: 'inn', label: 'Inn', blurb: 'Songs, riddles and a game' },
   { key: 't', name: 'training', label: 'Training grounds', blurb: 'Challenge your master' },
+  { key: 'a', name: 'arena', label: 'The Arena', blurb: 'Fight other heroes, lose nothing' },
   { key: 'n', name: 'news', label: 'Daily news', blurb: 'What happened' },
+  { key: 'w', name: 'warriors', label: 'Warriors list', blurb: 'The best heroes this season' },
+  { key: 'g', name: 'hall', label: 'Hall of Heroes', blurb: 'Who beat the dragon' },
   { key: 'y', name: 'hero', label: 'Your hero', blurb: 'Stats and gear' },
 ];
 
@@ -58,6 +62,13 @@ const WHY: Partial<Record<string, string>> = {
   'not-allowed': 'Only teachers can do that.',
   'no-hero': 'Pick a class to begin your adventure.',
   'bad-request': 'Something went wrong with that. Please try again.',
+};
+
+/** A fight left alone for a whole day counts as a loss (the soft kind). */
+const ABANDONED: Record<'forest' | 'master' | 'dragon', string> = {
+  forest: 'The fight you left unfinished counted as a loss after a day, so you dropped the gold you were carrying. Your experience and your bank are safe.',
+  master: 'The master fight you left unfinished counted as a loss after a day. Nothing is lost: you are healed.',
+  dragon: 'The dragon fight you left unfinished counted as a loss after a day. You woke at the healer, with nothing lost.',
 };
 
 const OFFLINE = 'Can’t connect to the school’s server right now. Check the Wi-Fi and try again.';
@@ -94,6 +105,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     if (result.kind === 'ready') {
       setState(result.state);
       setFacts(result.facts);
+      if (result.abandoned) setNote(ABANDONED[result.abandoned]);
     }
   }, [backend]);
 
@@ -399,8 +411,11 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     case 'bank': body = <Bank {...placeProps} />; break;
     case 'inn': body = <Inn {...placeProps} today={today} />; break;
     case 'training': body = <Training hero={hero} back={toVillage} onChallenge={() => void challengeMaster()} onDragon={() => setScreen({ name: 'dragon' })} />; break;
-    case 'hero': body = <HeroPage hero={hero} back={toVillage} />; break;
-    case 'news': body = <NewsPage news={deeds} today={today} back={toVillage} />; break;
+    case 'hero': body = <HeroPage hero={hero} stats={state.stats} back={toVillage} />; break;
+    case 'arena': body = <Arena hero={hero} act={act} say={say} back={toVillage} busy={busy} />; break;
+    case 'news': body = <NewsPage backend={backend} deeds={deeds} today={today} back={toVillage} />; break;
+    case 'warriors': body = <Warriors backend={backend} back={toVillage} />; break;
+    case 'hall': body = <HallOfHeroes backend={backend} back={toVillage} />; break;
     case 'tools':
       body = backend.trial ? (
         <Suspense fallback={<p className="lord-soft">Loading…</p>}>
@@ -547,6 +562,7 @@ function StatusBar({ hero }: { hero: Hero }) {
       <li><Icon name="gold" scale={1} /> <strong>{hero.gold}</strong> <span className="lord-soft">(bank {hero.bank})</span></li>
       <li>Exp <strong>{hero.exp}</strong>{Number.isFinite(need) ? ` / ${need}` : ''}</li>
       <li>Forest fights <strong>{hero.forestLeft}</strong></li>
+      <li>Arena <strong>{hero.arenaLeft}</strong></li>
       <li>Skills <strong>{hero.skillLeft}</strong> / {SKILL_USES_PER_DAY}</li>
       {hero.dragonKills > 0 && <li>{'★'.repeat(Math.min(hero.dragonKills, 5))}</li>}
     </ul>

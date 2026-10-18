@@ -13,6 +13,13 @@ export function createLocalBackend(db: MemoryDb, options: MemoryOptions & { tria
     trial: options.trial ?? true,
     waiting: () => 0,
     flush: async () => 'done',
+    // The trial keeps its own little news, a Warriors list of one and its own Hall of Heroes.
+    fetchNews: async () => [...db.news].reverse().map((n) => ({ day: n.day, kind: n.kind, line: n.text.replace('{p}', 'You') })),
+    fetchWarriors: async () =>
+      db.row
+        ? [{ place: 1, display_name: 'You', avatar: null, level: db.row.hero.level, stars: db.row.hero.dragonKills, dragons: db.hall.reduce((n, h) => n + h.kills, 0), is_me: true }]
+        : [],
+    fetchHall: async () => [...db.hall].sort((a, b) => b.season - a.season).map((h) => ({ season: h.season, display_name: 'You', avatar: null, kills: h.kills, is_me: true })),
     async load() {
       const out = await runLord(services, 'trial', { action: 'load' });
       if (out.status !== 200 || !('ok' in out.body)) return { kind: 'offline' };
@@ -21,7 +28,7 @@ export function createLocalBackend(db: MemoryDb, options: MemoryOptions & { tria
         if (out.body.reason === 'not-started') return { kind: 'not-started', message: out.body.message ?? '' };
         return { kind: 'offline' };
       }
-      return { kind: 'ready', state: out.body.state, facts: [], teacher: db.teacher };
+      return { kind: 'ready', state: out.body.state, facts: [], teacher: db.teacher, abandoned: (out.body.result as { abandoned?: 'forest' | 'master' | 'dragon' }).abandoned };
     },
     async send(request): Promise<Sent> {
       const out = await runLord(services, 'trial', request);

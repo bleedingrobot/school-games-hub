@@ -733,6 +733,23 @@ export interface RunResult {
   body: LordReply | { error: string };
 }
 
+const dayCount = (day: string) => Math.floor(Date.parse(`${day}T00:00:00Z`) / 86400000);
+
+/**
+ * A fight handed out and left alone for a whole day (it was handed out two or more New Zealand days ago) counts as a
+ * loss, the soft way: a forest fight drops the gold carried and wakes you at the healer, a master just heals you (the
+ * day's try stays used) and a dragon fight sends you home. Nothing else is lost, and the turn was already spent.
+ */
+export const ABANDONED_AFTER_DAYS = 2;
+
+function abandonedHero(open: OpenFight, hero: Hero, extra: Extra): { hero: Hero; extra: Extra } {
+  if (open.kind === 'forest') {
+    return { hero: applyForestResult(hero, { ...open.start, over: true, outcome: 'lost', skillLeft: hero.skillLeft }), extra };
+  }
+  if (open.kind === 'master') return { hero: { ...hero, hp: hero.maxHp }, extra };
+  return { hero: loseToDragon(hero), extra: { ...extra, dragon: null } };
+}
+
 const busy = (): RunResult => ({ status: 503, body: { error: "We couldn't reach your hero just now." } });
 
 /** Runs one request for one signed-in student. Never throws. */
@@ -766,8 +783,32 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
   const validId = typeof requestId === 'string' && UUID.test(requestId);
   const loaded = await s.load(player, validId ? requestId : undefined);
   if (!loaded.ok) return busy();
-  const row = loaded.value.row;
-  const stored = loaded.value.openFight;
+  let row = loaded.value.row;
+  let stored = loaded.value.openFight;
+  let abandoned: OpenFight['kind'] | null = null;
+
+  // A fight left unfinished for a whole day counts as a loss, so it can't hang around for ever.
+  if (row && stored && dayCount(today) - dayCount(stored.info.day) >= ABANDONED_AFTER_DAYS) {
+    const lost = abandonedHero(stored, row.hero, readExtra(row.extra));
+    const out = await s.commit(player, {
+      expect: row.version, hero: lost.hero, season: row.season, extra: lost.extra, openFight: null,
+      closeFight: { id: stored.id, status: 'abandoned', actions: [], result: { outcome: 'lost', abandoned: true } },
+      event: { requestId: s.newId(), action: 'abandon', summary: { fight: stored.kind } },
+      news: [], score: null, hall: null, doneFight: null,
+    });
+    if (!out.ok) return busy();
+    if (out.value.status === 'saved') {
+      abandoned = stored.kind;
+      row = { ...row, hero: lost.hero, extra: lost.extra, version: out.value.version };
+      stored = null;
+    } else {
+      // Another Chromebook got there first: carry on from what is saved.
+      const again = await s.load(player, validId ? requestId : undefined);
+      if (!again.ok) return busy();
+      row = again.value.row;
+      stored = again.value.openFight;
+    }
+  }
 
   // The day's own news (the village event, the computer heroes) is written by whoever opens the game first.
   if (action === 'load' && !loaded.value.dailyDone) await s.dailyNews(today, dailyNews(today, season));
@@ -801,8 +842,9 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
 
   // 2. Looking and rolling over.
   if (action === 'load' || action === 'rollover') {
+    const note = abandoned ? { abandoned } : {};
     if (!row || !w) return { status: 200, body: { ok: true, state: finishNow(null, 0), result: {} } };
-    if (!rolled) return { status: 200, body: { ok: true, state: finishNow(w, row.version), result: {} } };
+    if (!rolled) return { status: 200, body: { ok: true, state: finishNow(w, row.version), result: note } };
     const out = await s.commit(player, {
       expect: row.version, hero: w.hero, season: w.season, extra: w.extra, openFight: null, closeFight: null,
       event: { requestId: s.newId(), action: 'rollover', summary: { day: today, season: w.season } },
@@ -818,7 +860,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
       }
       return busy();
     }
-    return { status: 200, body: { ok: true, state: finishNow(w, out.value.version), result: {} } };
+    return { status: 200, body: { ok: true, state: finishNow(w, out.value.version), result: note } };
   }
 
   const refuse = (reason: Reason, message?: string): RunResult => ({

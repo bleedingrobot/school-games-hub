@@ -807,6 +807,10 @@ describe('the day rolling over, and the season ending', () => {
     const g = new Game();
     await g.start();
     g.patch({ ...STRONG, dragonKills: 0 });
+    // A fight handed out on the very last day of the season (a fight left for a whole day counts as a loss instead).
+    g.clock = Date.parse('2026-11-22T00:00:00Z');
+    await g.refresh();
+    g.patch({ ...STRONG, dragonKills: 0 });
     const open = await g.fight();
     g.clock = Date.parse('2026-11-23T00:00:00Z');
     const during = await g.refresh();
