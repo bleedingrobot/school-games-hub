@@ -573,7 +573,8 @@ begin
          (select count(*)::integer from public.warp_requests r
           where r.class_id = c.id and r.status = 'pending' and r.created_at > now() - interval '7 days')
   from public.classes c
-  where c.id in (select public.my_classes(include_archived))
+  -- Only a school admin can look at archived classes; for a teacher they have gone.
+  where c.id in (select public.my_classes(include_archived and public.is_school_admin()))
   order by c.archived, c.school_year desc, c.name;
 end;
 $$;
@@ -1066,6 +1067,8 @@ security definer
 set search_path = ''
 as $$
 begin
+  -- A student who has just joined somewhere is no longer waiting to join anywhere else.
+  update public.warp_requests set status = 'cancelled' where student_id = student and status = 'pending';
   perform public.put_in_class(student, target_class, how_joined);
   if target_group is not null then
     delete from public.class_group_members gm where gm.class_id = target_class and gm.student_id = student;
