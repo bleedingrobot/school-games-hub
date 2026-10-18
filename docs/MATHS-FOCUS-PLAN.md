@@ -334,3 +334,5 @@ See the message that came with this stage.
 - **"Everyone" class:** turn the automatic joining **off at go-live** (add `select public.school_set_default_class(null);` as the school admin to the go-live list, after step 3). New students then start with no class and warp into their room.
 - **Dragon Maths seasons:** stay per class, as built.
 - **Teacher page switches:** F.3 adds a class picker, so a teacher with several classes can set each one.
+- **Class names:** a new class starts named after its teacher's email (the part before the @, for example "mr.teacher"); the teacher can rename it. Teachers see this on their own page only, and the privacy rule for class names stays (shown to students only after a right code). A school admin turns accounts into teachers, as now. To build in F.3 (not started).
+- **F.3:** not started yet. Waiting for James.
