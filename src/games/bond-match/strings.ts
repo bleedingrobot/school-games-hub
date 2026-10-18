@@ -70,7 +70,7 @@ export const TEXT = {
   mismatchNeed: (target: string) => `You need ${target}. Keep going!`,
   mismatchWrongSet: (target: string) => `That makes ${target}, but it is the wrong colour set. Pair cards with the same mark.`,
   spokenMismatch: (a: string, b: string, sum: string) => `${speak(a)} plus ${speak(b)} equals ${speak(sum)}`,
-  matchLine: (a: string, b: string, sum: string) => `${a} + ${b} = ${sum}. A match!`,
+  match: 'A match!',
   finishTitle: 'All matched!',
   starsLine: (stars: Stars) => `${STAR_NAMES[stars]}: ${stars} ${stars === 1 ? 'star' : 'stars'}`,
   flipsDone: (n: number) => `${n} ${n === 1 ? 'flip' : 'flips'}`,

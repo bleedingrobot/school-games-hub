@@ -138,7 +138,7 @@ export function BondMatchGame({ set, size, seed, onFinish, onQuit, mismatchMs = 
             <p className="bm-line__help">{line.sumsToTarget ? TEXT.mismatchWrongSet(target) : TEXT.mismatchNeed(target)}</p>
           </>
         )}
-        {line?.type === 'match' && <p className="bm-line__sum bm-line__sum--match"><Sum texts={line.texts} sum={line.sumText} /> ✓</p>}
+        {line?.type === 'match' && <p className="bm-line__sum bm-line__sum--match"><Sum texts={line.texts} sum={line.sumText} /> ✓<span className="sr-only"> {TEXT.match}</span></p>}
       </div>
     </section>
   );
