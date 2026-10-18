@@ -4,7 +4,7 @@
  * calls the very same functions, so a changed browser cannot do anything the rules refuse.
  */
 import { CONFIG } from './config';
-import { buy, churchCost, examineCost, gainXp, hpCost, inShop, shopPrice, spCost, trainHp, trainSp, trainStat, wake, wakeCost } from './character';
+import { buy, churchCost, freeWakes, examineCost, gainXp, hpCost, inShop, shopPrice, spCost, trainHp, trainSp, trainStat, wake, wakeCost } from './character';
 import { buyTroops, draft, empireOf, friendlyWar, raidKingdom, type BattlePlan, type BattleResult, type Done } from './empire';
 import { settle, type FightState } from './fight';
 import { STATS, TROOP_KINDS, type Clan, type ItemDef, type Member, type Stat, type Troops } from './types';
@@ -73,7 +73,7 @@ export const wakeOrder = (clan: Clan) => knockedOutMembers(clan).sort((a, b) => 
 
 /** Levels of the members who would have to pay if everyone were woken now (everyone but the free ones). */
 export function wakeAllPayers(clan: Clan): number[] {
-  const free = Math.max(0, CONFIG.freeWakesPerDay - (clan.wakesToday ?? 0));
+  const free = Math.max(0, freeWakes(clan) - (clan.wakesToday ?? 0));
   return wakeOrder(clan).slice(free).map(({ m }) => m.level);
 }
 

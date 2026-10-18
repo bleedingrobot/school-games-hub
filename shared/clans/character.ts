@@ -96,8 +96,10 @@ export function trainSp(m: Member, hall: number): boolean {
 /** The Church: gold to wake a knocked-out member. */
 export const churchCost = (m: Member) => (m.level + 1) * CONFIG.churchPerLevel;
 
+/** Free wake-ups a day: the usual one, plus one for each level of the village Church. */
+export const freeWakes = (clan: Clan) => CONFIG.freeWakesPerDay + clan.village.church;
 /** What waking this member costs the clan right now (nothing while free wake-ups are left today). */
-export const wakeCost = (clan: Clan, m: Member) => ((clan.wakesToday ?? 0) < CONFIG.freeWakesPerDay ? 0 : churchCost(m));
+export const wakeCost = (clan: Clan, m: Member) => ((clan.wakesToday ?? 0) < freeWakes(clan) ? 0 : churchCost(m));
 
 export function wake(clan: Clan, m: Member): boolean {
   const cost = wakeCost(clan, m);

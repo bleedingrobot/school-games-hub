@@ -112,6 +112,19 @@ export const CONFIG = {
     itemMaxPrice: 70,
     /** A wrong puzzle answer keeps the story going; the prize is just the smaller one. */
   },
+  /**
+   * The class village (stage C.6 part A). The class builds these with the village chest; building to level n costs
+   * `base` times n gold. Training Hall and Smithy already work in the rules; each Church level gives one more free wake-up a day.
+   * The same costs are in the SQL function clan_village_cost (a test keeps them equal). `order` breaks a tie in the vote.
+   */
+  village: {
+    trainingHall: { max: 5, base: 300 },
+    smithy: { max: 6, base: 250 },
+    church: { max: 3, base: 400 },
+    order: ['trainingHall', 'smithy', 'church'],
+    /** The most gold anyone can give the chest in one go. */
+    giveMax: 100000,
+  },
   /** How much a Battle Cry answer adds. */
   battleCryDamage: 1.25,
   battleCryHeal: 0.2,

@@ -14,19 +14,20 @@
  * `replayFight`, marks the answer by rebuilding the question, keeps the round, and when the fight is over pays out
  * (gold, followers, experience, knocked-out members) in the same save that closes the fight, so it can only pay once.
  * While a fight is open nothing else about the clan can change (that is what keeps the replay honest), and the night's
- * rest waits until the fight is over. Raids on classmates are not here yet (stage C.6).
+ * rest waits until the fight is over. Stage C.6 part A adds the village chest, the weekly vote and raids on classmates (which also change the raided clan, saved in the same transaction).
  */
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../maths/practical';
 import { replayFight, type CryAnswer, type RecordedRound } from './battleCry';
 import { CONFIG } from './config';
 import { dayReset } from './character';
 import { clanFromChoices, type Draft } from './create';
-import { build, claimLand, deposit, developPlot, empireNewDay, empireOf, PUSHES, setDraft, withdraw, type BattlePlan, type BattleResult, type Push } from './empire';
+import { build, claimLand, deposit, developPlot, empireNewDay, empireOf, PUSHES, setDraft, withdraw, type BattlePlan, type BattleResult, type Push, type Take } from './empire';
 import { bossAt, newFight, type Order } from './fight';
 import { ITEMS } from './gamedata';
 import { buyItem, buyTroopMix, draftFollowers, examineItemFor, fightSeed, payFight, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type FightSummary, type TrainKey } from './play';
 import { buildPuzzle, finishQuest, puzzleFor, todaysQuest, type QuestPrize } from './quests';
-import { BUILDING_KINDS, TROOP_KINDS, type BuildingKind, type Clan, type Troops } from './types';
+import { BUILDING_KINDS, TROOP_KINDS, type BuildingKind, type Clan, type Empire, type Troops } from './types';
+import { isVillageKind, raidClassmateNz, raidTargetList, voteOptions, type RaidTarget, type Sketch, type TargetEntry, type VillageKind, type VillageView } from './village';
 
 
 /**
@@ -71,6 +72,16 @@ export interface Context {
   today: number;
   /** The teacher's maths settings (the Teacher page comes in stage C.6; until then, the defaults). */
   settings?: PracticalSettings;
+  /** The clan's village, as the server loaded it. Without one (the test page) the chest and the vote are not checked here. */
+  village?: VillageView | null;
+  /** This clan's hidden public id (never the account id), used to tell clans apart in raids. */
+  self?: string;
+  /** The teacher's switch for raids on classmates. Off unless it is given. */
+  raidsOn?: boolean;
+  /** The other clans in the village, for the list of who can be raided. */
+  mates?: Sketch[];
+  /** The clan a raid on a classmate is aimed at, loaded by the server (null if it is not in this village). */
+  target?: RaidTarget | null;
 }
 
 export type Action =
@@ -93,22 +104,38 @@ export type Action =
   | { type: 'war'; kingdom: string; plan: BattlePlan }
   | { type: 'quest'; choice: number; answer: number | null }
   | { type: 'fightStart'; depth: number; boss: boolean }
-  | { type: 'fightRound'; round: number; orders: (Order | undefined)[]; cry: CryAnswer | null };
+  | { type: 'fightRound'; round: number; orders: (Order | undefined)[]; cry: CryAnswer | null }
+  | { type: 'chestGive'; gold: number }
+  | { type: 'vote'; kind: VillageKind }
+  | { type: 'raidTargets' }
+  | { type: 'raidClass'; target: string; take: Take; plan: BattlePlan };
 
 export type ActionType = Action['type'];
 
 export type Result =
-  | { type: Exclude<ActionType, 'draft' | 'raid' | 'war' | 'quest' | 'fightStart' | 'fightRound'> }
+  | { type: Exclude<ActionType, 'draft' | 'raid' | 'war' | 'quest' | 'fightStart' | 'fightRound' | 'raidTargets' | 'raidClass' | 'chestGive'> }
   | { type: 'draft'; wanted: number; joined: number; followers: number }
   | { type: 'raid' | 'war'; friendly: boolean; result: BattleResult; gold: number }
   | { type: 'quest'; questId: number; text: string; right: boolean | null; prize: QuestPrize }
   /** `resumed`: a fight was already open, so this is it again and no fight was used. */
   | { type: 'fightStart'; resumed: boolean }
   /** `summary` is there when the round ended the fight and it has been paid. */
-  | { type: 'fightRound'; round: number; over: boolean; summary: FightSummary | null };
+  | { type: 'fightRound'; round: number; over: boolean; summary: FightSummary | null }
+  /** `gold` left the clan purse and went into the village chest. */
+  | { type: 'chestGive'; gold: number }
+  | { type: 'raidTargets'; targets: TargetEntry[] }
+  | { type: 'raidClass'; take: Take; result: BattleResult; gold: number; land: number; destroyed: BuildingKind[] };
+
+/** What else the server must do in the same save as a changed clan. Nothing in here is sent to the browser. */
+export interface Effects {
+  /** The pupil's vote for this week (the database keeps one per pupil). */
+  vote?: VillageKind;
+  /** A raid on a classmate: the raided clan's new empire and the lines to write. */
+  raid?: { targetId: string; empire: Empire; news: string; note: string };
+}
 
 export type Applied =
-  | { ok: true; state: ServerState | null; result: Result; changed: boolean }
+  | { ok: true; state: ServerState | null; result: Result; changed: boolean; effects?: Effects }
   | { ok: false; why: string; say: string };
 
 const refuse = (why: string, say: string): Applied => ({ ok: false, why, say });
@@ -231,6 +258,17 @@ export function parseAction(raw: unknown): Action | null {
       const cry = parseCry(raw.cry);
       return cry === undefined ? null : { type: 'fightRound', round, orders, cry };
     }
+    case 'chestGive': {
+      const gold = int(raw.gold, 1, CONFIG.village.giveMax);
+      return gold !== null ? { type: 'chestGive', gold } : null;
+    }
+    case 'vote': return isVillageKind(raw.kind) ? { type: 'vote', kind: raw.kind } : null;
+    case 'raidTargets': return { type: 'raidTargets' };
+    case 'raidClass': {
+      const plan = parsePlan(raw.plan);
+      const take = raw.take === 'gold' || raw.take === 'land' || raw.take === 'buildings' ? raw.take : null;
+      return plan && take && typeof raw.target === 'string' && raw.target.length >= 1 && raw.target.length <= 40 ? { type: 'raidClass', target: raw.target, take, plan } : null;
+    }
     default: return null;
   }
 }
@@ -285,7 +323,7 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
   const state = structuredClone(saved);
   // The night's rest waits until a fight in progress is over: it would heal the members the fight is being replayed with.
   const rested = state.fight ? false : catchUp(state, ctx.today);
-  if (state.fight && action.type !== 'load' && action.type !== 'fightStart' && action.type !== 'fightRound') {
+  if (state.fight && action.type !== 'load' && action.type !== 'fightStart' && action.type !== 'fightRound' && action.type !== 'vote' && action.type !== 'raidTargets') {
     return refuse('fight-open', 'You are in the middle of a fight. Finish it first!');
   }
   const { clan } = state;
@@ -333,6 +371,33 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
       const right = spec ? action.answer !== null && buildPuzzle(spec).answer === action.answer : null;
       const finished = finishQuest(clan, state.day, q, action.choice, right);
       return finished.ok ? done(state, { type: 'quest', questId: q.id, text: finished.text, right: finished.right, prize: finished.prize }) : refuse('quest', finished.say);
+    }
+    case 'chestGive': {
+      if (ctx.village && voteOptions(ctx.village.levels).length === 0) return refuse('full', 'The village has built everything already!');
+      if (action.gold > clan.gold) return refuse('gold', `The clan purse has ${clan.gold} gold.`);
+      clan.gold -= action.gold;
+      return done(state, { type: 'chestGive', gold: action.gold });
+    }
+    case 'vote': {
+      if (!ctx.village) return refuse('village', 'There is no village to vote in.');
+      if (!voteOptions(ctx.village.levels).some((o) => o.kind === action.kind)) return refuse('built', 'That building is already as big as it can be.');
+      return { ok: true, state, result: { type: 'vote' }, changed: rested, effects: { vote: action.kind } };
+    }
+    case 'raidTargets': {
+      const targets = raidTargetList(state, ctx.today, ctx.self ?? '', ctx.raidsOn ?? false, ctx.mates ?? []);
+      return done(state, { type: 'raidTargets', targets }, rested);
+    }
+    case 'raidClass': {
+      if (!ctx.target || !ctx.self) return refuse('target', 'That clan is not in your village.');
+      const out = raidClassmateNz(state, ctx.self, ctx.target, action.take, action.plan, raidSeed(state.seed, state.raidNo), ctx.today, ctx.raidsOn ?? false);
+      if (!out.ok) return refuse(out.why, out.say);
+      state.raidNo++;
+      const { gold, land, destroyed } = out.raid;
+      return {
+        ok: true, state, changed: true,
+        result: { type: 'raidClass', take: action.take, result: out.raid.result, gold, land, destroyed },
+        effects: { raid: { targetId: ctx.target.id, empire: out.defenderEmpire, news: out.news, note: out.note } },
+      };
     }
     case 'fightStart': {
       // A fight is already open (a refresh, or another Chromebook): this is that fight again, and nothing more is used.

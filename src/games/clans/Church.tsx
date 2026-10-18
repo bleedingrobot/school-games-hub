@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { freeWakes } from '../../../shared/clans/character';
 import { CONFIG } from '../../../shared/clans/config';
 import { churchBill } from '../../../shared/clans/moments';
 import { Moment } from './Moment';
@@ -14,7 +15,7 @@ export function Church({ session, onChange, onBack }: { session: Session; onChan
   const [phase, setPhase] = useState<Phase>({ t: 'idle' });
   const out = knockedOut(clan);
   const idle = () => setPhase({ t: 'idle' });
-  const freeLeft = Math.max(0, CONFIG.freeWakesPerDay - (clan.wakesToday ?? 0));
+  const freeLeft = Math.max(0, freeWakes(clan) - (clan.wakesToday ?? 0));
 
   const wakeOne = (index: number) => {
     const m = clan.members[index];
@@ -55,7 +56,7 @@ export function Church({ session, onChange, onBack }: { session: Session; onChan
   } else {
     body = (
       <>
-        <p>{freeLeft > 0 ? `The first wake-up today is free. After that, each one costs (level + 1) × ${CONFIG.churchPerLevel} gold.` : `Waking someone costs (level + 1) × ${CONFIG.churchPerLevel} gold.`}</p>
+        <p>{freeLeft > 0 ? `${freeLeft === 1 ? "The first wake-up today is free" : `The first ${freeLeft} wake-ups today are free`}. After that, each one costs (level + 1) × ${CONFIG.churchPerLevel} gold.` : `Waking someone costs (level + 1) × ${CONFIG.churchPerLevel} gold.`}</p>
         <ul className="cq-church">
           {out.map(({ m, i }) => {
             const cost = wakeCost(clan, m);
