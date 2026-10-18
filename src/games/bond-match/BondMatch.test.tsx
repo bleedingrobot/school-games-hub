@@ -1,9 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BOND_SETS, findBondSet } from '../../../shared/bond-match/bonds';
 import { BOARD_SIZES, arePartners, buildDeck, pairsOnBoard, partnersOf, type BoardSize } from '../../../shared/bond-match/deck';
 import { newGame } from '../../../shared/bond-match/engine';
+import { STAR_CONFIG } from '../../../shared/bond-match/score';
 import { sideText } from '../../../shared/bond-match/exact';
 import { perfectFlips } from '../../../shared/bond-match/perfectPlayer';
 import { SoundProvider } from '../../sound';
@@ -157,8 +160,16 @@ describe('the board', () => {
     expect(found).toBeDefined();
     await user.click(card(found![0]));
     await user.click(card(found![1]));
-    expect(screen.getByRole('status')).toHaveTextContent('That makes 10, but it is the wrong colour set');
-    expect(screen.getByRole('status')).toHaveTextContent('= 10');
+    const status = screen.getByRole('status');
+    expect(status).toHaveTextContent('Right total, wrong set!');
+    expect(status).toHaveTextContent('= 10');
+    // Both marks are shown, as shape and letter, not only said.
+    expect(status.querySelectorAll('.bm-mark--0')).toHaveLength(2);
+    expect(status.querySelectorAll('.bm-mark--1')).toHaveLength(2);
+    const shown = [...status.querySelectorAll('.bm-mark [aria-hidden]')].map((m) => m.textContent);
+    expect(shown).toEqual(['● A', '● A', '◆ B', '◆ B']);
+    expect(status).toHaveTextContent('blue circle A');
+    expect(status).not.toHaveTextContent('Keep going');
   });
 
   it('turns a mismatch back by itself after a few seconds', async () => {
@@ -218,6 +229,86 @@ describe('the board', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('fraction pictures', () => {
+  afterEach(() => localStorage.clear());
+
+  it('draws a bar under each fraction, with the right parts filled, and still says the fraction aloud', async () => {
+    const { user } = setup();
+    await pick(user, 'Eighths', 'Small');
+    const deck = deckFor('fraction-eighths', 'small');
+    await user.click(card(0));
+    const side = deck.cards[0].side as { num: number; den: number };
+    const bar = card(0).querySelector('[data-testid="fraction-picture"]')!;
+    expect(bar.querySelectorAll('.bm-bar-pic__part')).toHaveLength(side.den);
+    expect(bar.querySelectorAll('.bm-bar-pic__part--on')).toHaveLength(side.num);
+    // The picture is only a hint: hidden from screen readers, and the label and the stacked fraction are still there.
+    expect(bar).toHaveAttribute('aria-hidden', 'true');
+    expect(card(0)).toHaveAccessibleName(/^card 1, \d eighths?,/);
+    expect(card(0).querySelector('.bm-frac__bottom')).toHaveTextContent('8');
+  });
+
+  it('can be switched off, and the choice is remembered for the next game', async () => {
+    const { user } = setup();
+    await pick(user, 'Thirds', 'Small');
+    const toggle = screen.getByRole('button', { name: 'Hide pictures' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await user.click(toggle);
+    expect(screen.getByRole('button', { name: 'Show pictures' })).toHaveAttribute('aria-pressed', 'false');
+    expect(document.querySelector('[data-testid="fraction-picture"]')).toBeNull();
+    expect(localStorage.getItem('sgh-bond-match-pictures')).toBe('false');
+    await user.click(screen.getByRole('button', { name: /Pick another bond/ }));
+    await pick(user, 'Quarters', 'Small');
+    expect(screen.getByRole('button', { name: 'Show pictures' })).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="fraction-picture"]')).toBeNull();
+  });
+
+  it('is not offered, and not drawn, on whole-number and decimal decks', async () => {
+    const { user } = setup();
+    await pick(user, 'To 10', 'Small');
+    expect(screen.queryByRole('button', { name: /pictures/ })).toBeNull();
+    await user.click(screen.getByRole('button', { name: /Pick another bond/ }));
+    await pick(user, 'To 1 \\(tenths\\)', 'Small');
+    expect(screen.queryByRole('button', { name: /pictures/ })).toBeNull();
+    expect(document.querySelector('[data-testid="fraction-picture"]')).toBeNull();
+  });
+
+  it('is on when localStorage is blocked', async () => {
+    vi.stubGlobal('localStorage', { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); }, removeItem: () => {}, clear: () => {} });
+    const { user } = setup();
+    await pick(user, 'Halves', 'Small');
+    expect(document.querySelector('[data-testid="fraction-picture"]')).not.toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Hide pictures' }));
+    expect(document.querySelector('[data-testid="fraction-picture"]')).toBeNull();
+  });
+});
+
+describe('decimals that look alike', () => {
+  it('always writes the same number of places, so 0.05 and 0.50 differ in their text, not only in a small dot', () => {
+    const texts = deckFor('decimal-1-hundredths', 'large').cards.map((c) => sideText(c.side));
+    expect(texts.every((x) => /^0\.\d\d$/.test(x))).toBe(true);
+    expect(new Set(['0.05', '0.50']).size).toBe(2);
+  });
+
+  it('gives the decimal text room: the number is not shrunk on a card, and a card is never under 64px', () => {
+    const css = readFileSync(resolve(__dirname, 'bond-match.css'), 'utf8');
+    expect(css).toMatch(/--bm-card: clamp\(64px/);
+    expect(css).toMatch(/\.bm-card__front \.bm-num \{\s*font-size: 0\.85em;/);
+  });
+});
+
+describe('the finish screen', () => {
+  it('says how stars work, from the real star numbers', async () => {
+    const { user } = setup();
+    await pick(user, 'To 10', 'Small');
+    for (const i of perfectFlips(newGame(deckFor('whole-10', 'small')))) await user.click(card(i));
+    await screen.findByRole('heading', { name: 'All matched!' });
+    const rule = screen.getByTestId('stars-rule');
+    expect(rule).toHaveTextContent(`gold is within ${STAR_CONFIG.goldWithin} times the fewest flips`);
+    expect(rule).toHaveTextContent(`silver is within ${STAR_CONFIG.silverWithin} times`);
+    expect(STAR_CONFIG).toEqual({ goldWithin: 1.5, silverWithin: 2.5 });
   });
 });
 

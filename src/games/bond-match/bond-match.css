@@ -290,6 +290,29 @@
 .bm-frac__bottom {
   padding-top: 0.05em;
 }
+/* The fraction picture: a bar of equal parts under the number, so the number stays the main thing. */
+.bm-card--pic .bm-frac {
+  font-size: 0.62em;
+}
+.bm-bar-pic {
+  display: flex;
+  gap: 1px;
+  width: 70%;
+  height: max(7px, calc(var(--bm-card) * 0.09));
+  margin-top: 0.25em;
+  padding: 1px;
+  border: 1.5px solid #334155;
+  border-radius: 4px;
+  background: #fff;
+}
+.bm-bar-pic__part {
+  flex: 1 1 0;
+  border-radius: 1px;
+  background: #e2e8f0;
+}
+.bm-bar-pic__part--on {
+  background: #1d4ed8;
+}
 /* Decimals like 0.35 and 100.5 get a little smaller so they fit the card. */
 .bm-card__front .bm-num {
   font-size: 0.85em;
@@ -312,9 +335,21 @@
   color: var(--won);
 }
 .bm-line__help {
+  line-height: 1.7;
   margin-top: 4px;
   color: var(--ink-soft);
 }
+.bm-mark {
+  display: inline-block;
+  padding: 0 0.35em;
+  border: 2px solid currentColor;
+  border-radius: 8px;
+  background: #fff;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.bm-mark--0 { color: var(--bm-set0); }
+.bm-mark--1 { color: var(--bm-set1); border-style: dashed; }
 .bm-sum {
   display: inline-flex;
   align-items: center;
@@ -384,6 +419,12 @@
 }
 .bm-finish__min {
   margin: 0 0 10px;
+  color: var(--ink-soft);
+}
+.bm-finish__rule {
+  max-width: 34em;
+  margin: 0 auto 10px;
+  font-size: 0.9rem;
   color: var(--ink-soft);
 }
 .bm-finish__best p {

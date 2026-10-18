@@ -9,3 +9,12 @@ export function Value({ text }: { text: string }) {
     </span>
   );
 }
+
+/** A small bar of `den` equal parts with `num` filled in: a hint of how big the fraction is. Never the only information. */
+export function FractionBar({ num, den }: { num: number; den: number }) {
+  return (
+    <span className="bm-bar-pic" aria-hidden="true" data-testid="fraction-picture">
+      {Array.from({ length: den }, (_, i) => <span key={i} className={i < num ? 'bm-bar-pic__part bm-bar-pic__part--on' : 'bm-bar-pic__part'} />)}
+    </span>
+  );
+}

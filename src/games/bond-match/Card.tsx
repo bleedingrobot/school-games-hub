@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import { sideText } from '../../../shared/bond-match/exact';
 import type { Card as DeckCard } from '../../../shared/bond-match/deck';
 import { COLOUR_SETS, TEXT } from './strings';
-import { Value } from './Value';
+import { FractionBar, Value } from './Value';
 
 /** How many colours matched pairs cycle through. A board has at most 10 pairs, so none repeat. */
 export const MATCH_COLOURS = 10;
@@ -18,6 +18,8 @@ interface Props {
   partner?: number;
   /** Does the deck use both colour sets? Only then is the set said aloud, since otherwise it tells you nothing. */
   twoSets: boolean;
+  /** Draw the small bar under a fraction. */
+  pictures?: boolean;
   tabIndex: number;
   onFlip: (index: number) => void;
 }
@@ -26,17 +28,18 @@ interface Props {
  * One card: a real button. The colour set is on every card, face down too, as a corner mark with a
  * shape and a letter as well as a colour. A matched pair gets its own colour and a tick.
  */
-export const Card = forwardRef<HTMLButtonElement, Props>(function Card({ index, card, state, partner, twoSets, tabIndex, onFlip }, ref) {
+export const Card = forwardRef<HTMLButtonElement, Props>(function Card({ index, card, state, partner, twoSets, pictures = false, tabIndex, onFlip }, ref) {
   const text = sideText(card.side);
   const set = COLOUR_SETS[card.set];
   const number = index + 1;
   const base = state === 'down' ? TEXT.cardDown(number) : state === 'up' ? TEXT.cardUp(number, text) : TEXT.cardMatched(number, text, (partner ?? 0) + 1);
+  const picture = pictures && card.side.kind === 'fraction' ? card.side : null;
   const label = twoSets ? `${base}, ${TEXT.setOf(set.name)}` : base;
   return (
     <button
       ref={ref}
       type="button"
-      className={`bm-card bm-card--${state} bm-card--set${card.set}`}
+      className={`bm-card bm-card--${state} bm-card--set${card.set}${picture ? ' bm-card--pic' : ''}`}
       data-index={index}
       data-match-colour={state === 'matched' ? card.pair % MATCH_COLOURS : undefined}
       aria-label={label}
@@ -51,6 +54,7 @@ export const Card = forwardRef<HTMLButtonElement, Props>(function Card({ index, 
         </span>
         <span className="bm-card__face bm-card__front" aria-hidden="true">
           <Value text={text} />
+          {picture && <FractionBar num={picture.num} den={picture.den} />}
           {state === 'matched' && <span className="bm-card__tick">✓</span>}
         </span>
       </span>

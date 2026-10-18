@@ -1,4 +1,4 @@
-import type { Score } from '../../../shared/bond-match/score';
+import { STAR_CONFIG, type Score } from '../../../shared/bond-match/score';
 import type { RecordedGame } from './bests';
 import { clock, STAR_NAMES, TEXT } from './strings';
 
@@ -28,6 +28,7 @@ export function Finish({ setLabel, score, recorded, onAgain, onAnother }: Props)
         <div><dt>{TEXT.time}</dt><dd data-testid="finish-time">{clock(score.seconds)}</dd></div>
       </dl>
       <p className="bm-finish__min">{TEXT.minHint(score.minFlips)}</p>
+      <p className="bm-finish__rule" data-testid="stars-rule">{TEXT.starsRule(STAR_CONFIG.goldWithin, STAR_CONFIG.silverWithin)}</p>
       <div className="bm-finish__best" data-testid="best-line">
         <p>{TEXT.bestLine(best.flips, best.seconds)}</p>
         {!recorded.before && <p>{TEXT.firstGame}</p>}

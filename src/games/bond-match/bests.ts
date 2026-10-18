@@ -76,3 +76,22 @@ export function saveHideStats(hide: boolean): void {
     // Not remembered. That's fine.
   }
 }
+
+const PICTURES_KEY = 'sgh-bond-match-pictures';
+
+/** Fraction pictures are on unless a student turned them off on this device. */
+export function loadShowPictures(): boolean {
+  try {
+    return localStorage.getItem(PICTURES_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+export function saveShowPictures(show: boolean): void {
+  try {
+    localStorage.setItem(PICTURES_KEY, String(show));
+  } catch {
+    // Not remembered. That's fine.
+  }
+}

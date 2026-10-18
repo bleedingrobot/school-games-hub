@@ -13,6 +13,8 @@ interface Props {
   shown: readonly number[];
   reducedMotion: boolean;
   setLabel: string;
+  /** Draw the small fraction pictures on fraction cards. */
+  pictures?: boolean;
   onFlip: (index: number) => void;
 }
 
@@ -22,7 +24,7 @@ const MOVES: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight
  * The grid of cards. It scales to the screen (a card is never under 64px, see bond-match.css).
  * One card is in the tab order; the arrow keys move between cards and Enter or Space flips.
  */
-export function Board({ cards, matched, shown, reducedMotion, setLabel, onFlip }: Props) {
+export function Board({ cards, matched, shown, reducedMotion, setLabel, pictures, onFlip }: Props) {
   const cols = columnsFor(cards.length);
   const rows = Math.ceil(cards.length / cols);
   const [focus, setFocus] = useState(0);
@@ -65,6 +67,7 @@ export function Board({ cards, matched, shown, reducedMotion, setLabel, onFlip }
           state={matched[i] ? 'matched' : shown.includes(i) ? 'up' : 'down'}
           partner={partnerOf(i)}
           twoSets={twoSets}
+          pictures={pictures}
           tabIndex={i === focus ? 0 : -1}
           onFlip={(index) => { setFocus(index); onFlip(index); }}
         />
