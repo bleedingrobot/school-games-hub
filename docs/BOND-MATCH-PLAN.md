@@ -2,7 +2,7 @@
 
 **Bond Match** (name confirmed by James, 19 Oct 2026): a card-matching memory game where you don't match two *identical* cards, you match two cards that **make a number together**. Flip a 3, then find the 7 to make 10. Kids choose which bond they're practising: to 10, 20, 100, 1000, decimals to 1, fractions to 1, and more.
 Written 19 October 2026 from James's request and a read of the hub on `main` (the maths ladder, skill packs, Gem Keep's saving, the game registry).
-**Status (19 Oct 2026): M.1 to M.3 done; M.4 built and tested but NOT applied or deployed (see "Stage M.4 results"). Nothing is live.** James answered every question on 19 Oct 2026 (section 11).
+**Status (19 Oct 2026): M.1 to M.3 done; M.4 built and tested but NOT applied or deployed (see "Stage M.4 results"). The migration and function are live; the game is NOT switched on.** James answered every question on 19 Oct 2026 (section 11).
 
 ## The short version
 
@@ -133,11 +133,12 @@ M.1–M.3 can all be done and looked at without touching the database or any liv
 
 ## Stage M.4 results (19 Oct 2026)
 
-**Built, tested, pushed on `bond-match`. NOT applied to the live database, function NOT deployed, game NOT on.**
+**Built, tested, pushed on `bond-match`. APPLIED to the live database and the `bond-match` function DEPLOYED on 19 Oct 2026 (James approved). Not merged to main, game NOT on (M.7).**
 
 - **Migration** `supabase/migrations/20261019000200_bond_match.sql`: tables `bond_match_games` and `bond_match_bests`, scoring into `scored_games` (new column `bond_match_game`), `record_bond_match_game()` (server only), `my_bond_match()`, `teacher_bond_match_student()` (own students only). `rebuild_progress`, `my_progress`, `teacher_students` and `teacher_new_season` are patched from their live definitions; each patch must find its text or the whole migration stops. A dry run on the live database (inside a transaction, rolled back) passed on 19 Oct 2026.
 - **Numbers chosen:** 2 points per finished game; only the first 10 games a New Zealand day earn points (so at most 20), inside the shared 40-a-day cap; a game faster than 0.5 seconds per card flip is refused; 100 games a day is the hard limit. Constants: `BOND_MATCH_SAVE` in `shared/bond-match/save.ts` and three small functions in the migration (keep them equal).
 - **Server function** `supabase/functions/bond-match/` (rebuild with `node scripts/build-bond-match.mjs`): replays every game with the engine, ignores the browser's stars and flip count, saves once per run id, stops (keeping the queue) at the daily limit or when the database is busy.
 - **Browser:** `src/data/bondMatch.ts` (queue in localStorage, send, load bests), finish screen "Saved / Will save when you are back online" with the points line, stars per bond on the picker, `BondMatchHub` (used by the game definition), teacher panel `src/pages/TeacherBondMatch.tsx` (shows nothing until a student has played).
 - **Tests:** shared checks, SQL (`supabase/tests/database/bond_match.test.sql`, 36 checks, run on a scratch copy with the gem keep, security, monsters and lord SQL tests), handler, data, screens and teacher panel. Under load a few unrelated tests (101, Space, Training) time out; they pass when run alone.
-- **Still to do:** apply the migration, deploy the `bond-match` function, check it live (signed-out call refused; one test save saves once, a re-send adds nothing; tidy test rows). Then M.5.
+- **Applied and checked live (19 Oct 2026):** the migration was applied in one transaction (after a rolled-back dry run); only the `bond-match` function was deployed. A call with no sign-in or a fake token gets 401. A test save for a real student account, run inside a transaction that was rolled back, saved once and earned 2 points; sending it again said "duplicate" and added nothing. The live tables are empty (0 games, 0 bests, 0 Bond Match scores), so nothing needed tidying. A save through the browser with a real sign-in has not been tried because the game is not reachable yet.
+- **Still to do:** M.5 (needs James's go: it changes other games), then M.6 and M.7.
