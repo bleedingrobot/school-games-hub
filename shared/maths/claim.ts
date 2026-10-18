@@ -15,10 +15,10 @@
  * could have rolled); and the question they make has exactly the parts that were shown. The answer comes from the rebuilt question.
  *
  * Old browsers (and questions from skills that do not carry numbers, like the times tables) send only the parts: those are worked
- * out from the parts as before (`solveParts`), which still marks every skill that existed before F.6. A question that needs the
- * numbers (any F.6 pick-one question) is refused without them, which cannot happen to a real student: a browser that can ask it
- * also sends them. Numbers that do not make the question shown do not fall back to a guess: the parts are still checked the old way,
- * and only a question that reads back exactly as shown is accepted.
+ * out from the parts as before (`solveParts`), which still marks every skill that existed before F.6. A pick-one question cannot be
+ * marked that way and is refused without its numbers, which cannot happen to a real student (a browser that can ask it also sends
+ * them). If the key and numbers do not hold up, the parts are still read the old way, and the answer is only accepted when the
+ * question reads back exactly as shown: sending wrong numbers can never get a made-up question through.
  */
 import { solveParts, type Solved } from './focus';
 import { solveByNumbers } from './skillPacks/generated';
