@@ -664,3 +664,22 @@ James tried the C.6 test page (all good) and confirmed nothing is applied, deplo
 **Slow-Chromebook check.** Real Chromium at 1366 x 640, with the CPU slowed 4x, measuring page overflow on every screen, the size of what the game loads, and fight round times. Reduce anything heavy.
 
 **Docs.** Plan, `shared/README.md`, teacher guide and the memory note brought up to date, and `docs/prompts/clans-golive.md` written like Dragon Maths' go-live.
+
+## Stage C.7 results (18 Oct 2026): How to play, accessibility pass, slow-Chromebook check, docs
+
+Built, tested and **not applied, not deployed, not merged**. Branch `clans`. No rules or database changes.
+
+**Built**
+- `HowToPlay.tsx`: a How to play screen (button on the clan page) and a collapsible box on the creator's first screen. Twelve short sections; every number is read from `CONFIG` (and the clan's own fights a day).
+- Accessibility fixes: every button, field, summary and number-pad key is at least 44px (was 32 to 40 in places); box borders brightened (`--cq-line` from 2.95 to 3.7 against the page) and the HP bar darkened so its white numbers reach 5.4 to 1 (was 4.2); the number pad in a fight is two rows of six so the bigger keys do not make the fight taller; focus goes to the new screen's heading when a screen opens (unless the screen put focus on its own first button, like the quest); the fight panel has a name for each step, and fixed a real bug where "Carry on" and "See how everyone did" lost keyboard focus to the panel.
+- Docs: teacher guide (How to play, access), `shared/README.md`, and `docs/prompts/clans-golive.md`.
+
+**Checked in a real browser** (Chromium, test page, axe-core with the WCAG 2 A/AA rules)
+- Every screen (creator, home, Mines, Market, Training, Church, Empire, Quest, Village, news, Scoreboard, Achievements, How to play, and each fight step): no contrast, name or role problems. No sideways scrolling at 1366x640, at 200% zoom (683x320) or on a phone (360x640). At 200% everything is reachable by scrolling.
+- Fit at 1366x640: every screen except the fight and the Training Hall fits in 640 or less; the fight question step is about 690 tall on the test page (which has the test-settings bar), so the page scrolls by under 50px.
+- Speed (the fight, one round of four members): about 140 ms from click to painted with no slowdown, 250 ms with the CPU slowed 4 times (a typical Chromebook), 460 ms average and 800 ms at worst at 6 times. Slow-CPU first load on a slow network (1.6 Mbit): the creator is ready in about 4 to 5 seconds, with 433 KB sent uncompressed (about 140 KB compressed on the real site).
+- Size: Clan Quest loads only when opened: 124 KB of code (36 KB compressed), 13 KB of styles and 17 KB of pictures, on top of the hub itself. Nothing heavy was found, so nothing was cut.
+
+**Tests**: `HowToPlay.test.tsx` (6) and `Accessibility.test.tsx` (9: contrast of every text colour on every background, border contrast, bar contrast, every animation stops for reduced motion, no target under 44px in the CSS, focus on new headings, a keyboard-only start into a fight and orders by letter, the celebration). Whole suite 2,255 passed; type check clean.
+
+**Left**: the go-live, one step at a time (`docs/prompts/clans-golive.md`). Not checked: a real screen reader and a real Chromebook touch screen.
