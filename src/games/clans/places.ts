@@ -5,7 +5,8 @@
  */
 import { CONFIG } from '../../../shared/clans/config';
 import { buy, churchCost, examineCost, hpCost, shopPrice, spCost, trainCost, trainHp, trainSp, trainStat, wake, wakeCost } from '../../../shared/clans/character';
-import { STATS, type Clan, type ItemDef, type Member, type Stat } from '../../../shared/clans/types';
+import { build, canBuild, capacity, claimLand, deposit, developPlot, empireOf, withdraw, type Done } from '../../../shared/clans/empire';
+import { STATS, TROOP_KINDS, type BuildingKind, type Clan, type Empire, type ItemDef, type Member, type Stat } from '../../../shared/clans/types';
 import type { Session } from './session';
 
 const withClan = (s: Session, change: (clan: Clan) => boolean): Session | null => {
@@ -110,3 +111,38 @@ export const givePoints = (s: Session, amount: number): Session => ({ ...s, clan
 export const knockOutSome = (s: Session, n: number): Session => ({
   ...s, clan: { ...s.clan, members: s.clan.members.map((m, i, all) => (i >= all.length - n ? { ...m, knockedOut: true, hp: 0 } : m)) },
 });
+
+// ---------------------------------------------------------------------------
+// The empire. Same idea: apply the engine's rule to a copy, null when it can't be done.
+// ---------------------------------------------------------------------------
+
+const withEmpire = (s: Session, change: (e: Empire, clan: Clan) => Done): Session | null => withClan(s, (clan) => change(empireOf(clan), clan).ok);
+
+/** The engine's own kind sentence for why something can't be done (for the screens to show). */
+export const whyNot = (done: Done): string => (done.ok ? '' : done.say);
+
+export const putInVault = (s: Session, gold: number): Session | null => withEmpire(s, (_e, clan) => deposit(clan, gold));
+export const takeFromVault = (s: Session, gold: number): Session | null => withEmpire(s, (_e, clan) => withdraw(clan, gold));
+export const developLand = (s: Session, width: number, length: number): Session | null => withEmpire(s, (e) => developPlot(e, width, length));
+export const claimMoreLand = (s: Session): Session | null => withEmpire(s, (e) => claimLand(e));
+export const buildOn = (s: Session, plotIndex: number, kind: BuildingKind): Session | null => withEmpire(s, (e) => build(e, plotIndex, kind));
+
+/** Can this go on this plot right now? Works on a copy, so the session is never changed. */
+export const canBuildOn = (s: Session, plotIndex: number, kind: BuildingKind): Done => canBuild(empireOf(structuredClone(s.clan)), plotIndex, kind);
+/** Can this size of plot be developed right now? */
+export const canDevelop = (s: Session, width: number, length: number): Done => developPlot(empireOf(structuredClone(s.clan)), width, length);
+export const canClaim = (s: Session): Done => claimLand(empireOf(structuredClone(s.clan)));
+
+// Test-only helpers for James's settings strip.
+export const giveFollowers = (s: Session, amount: number): Session => ({ ...s, clan: { ...s.clan, followers: s.clan.followers + amount } });
+export const giveVault = (s: Session, amount: number): Session => withEmpire(s, (e) => ((e.vault += amount), { ok: true }))!;
+/** Develop a 4 by 4 plot, put a barracks on it and fill the room with troops, whatever it costs. */
+export function barracksAndFill(s: Session): Session {
+  const next = structuredClone(s);
+  const e = empireOf(next.clan);
+  if (e.wild < 1) e.wild = 1;
+  e.plots.push({ width: 4, length: 4, building: 'barracks' });
+  e.wild--;
+  for (const kind of TROOP_KINDS) e.troops[kind] = capacity(e, kind);
+  return next;
+}

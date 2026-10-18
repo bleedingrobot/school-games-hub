@@ -3,6 +3,7 @@
  * Plain functions on plain data, so the screens only draw and the rules stay in shared/clans.
  */
 import { CONFIG } from '../../../shared/clans/config';
+import { empireNewDay, newEmpire } from '../../../shared/clans/empire';
 import { dayReset, depthHint, gainXp, rollMember, type DepthHint } from '../../../shared/clans/character';
 import { settle, type FightState } from '../../../shared/clans/fight';
 import { CLASSES, RACES } from '../../../shared/clans/gamedata';
@@ -42,7 +43,7 @@ export const rollAgain = (d: Draft): Draft => (d.rolls < MAX_ROLLS ? { ...d, rol
 export function makeClan(name: string, drafts: Draft[]): Clan {
   return {
     name, members: drafts.map((d, i) => draftMember(d, i)), gold: CONFIG.startGold, followers: 0,
-    village: { trainingHall: 0, smithy: 0, church: 0 }, wakesToday: 0,
+    village: { trainingHall: 0, smithy: 0, church: 0 }, wakesToday: 0, empire: newEmpire(),
   };
 }
 
@@ -96,6 +97,7 @@ export function finishFight(s: Session, fight: FightState): { session: Session; 
 export function skipDay(s: Session): Session {
   const clan = structuredClone(s.clan);
   dayReset(clan);
+  empireNewDay(clan);
   return { ...s, clan, fightsLeft: CONFIG.fightsPerDay, day: s.day + 1 };
 }
 
