@@ -165,8 +165,8 @@ function HowToPlay() {
       <section>
         <h3>Mission Control maths 🧮</h3>
         <p>
-          If maths is on, you get times-table questions. They come from your own times-table practice, so they match what
-          you’re learning. A wrong answer never costs you anything: the worst that happens is a normal move.
+          If maths is on, you get maths questions. They come from your own maths practice, or from the focus your teacher
+          picked, so they match what you’re learning. A wrong answer never costs you anything: the worst that happens is a normal move.
         </p>
         <ul className="space-guide__bullets">
           <li>
@@ -181,7 +181,7 @@ function HowToPlay() {
             <strong>Black hole:</strong> land on a black hole and you get a question. Right, and you only fall <strong>half
             as far</strong>. Wrong, and you fall all the way.
           </li>
-          <li>Type your answer and press <kbd>Enter</kbd>. Your answers go into your times-table records.</li>
+          <li>Type your answer and press <kbd>Enter</kbd>. Your answers go into your maths records.</li>
         </ul>
       </section>
 

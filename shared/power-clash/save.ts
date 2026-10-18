@@ -9,7 +9,7 @@
  * from the seed, so a made-up game can't match.
  */
 import { isBotLevelId, isClaimedEnding, type BotLevel, type ClaimedEnding, type Outcome } from '../botGame';
-import { makeSeed, seedProblem } from '../space/save';
+import { makeSeed, seedProblem } from '../space/seed';
 import { POWER_IDS, validLoadout } from './engine';
 import { botLoadoutFor, replaySolo, type PowerClashStats } from './solo';
 import type { Player, PowerId } from './types';

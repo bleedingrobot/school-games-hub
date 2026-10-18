@@ -15,6 +15,7 @@ import type { FactStats } from '../../shared/maths/leitner';
 import type { LordAction, LordReply, LordRequest, LordState } from '../../shared/lord/server';
 import { FINISH_ACTIONS } from '../../shared/lord/server';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
+import { readSettings } from './classSettings';
 import { supabase } from '../lib/supabase';
 import { FriendlyError } from './profile';
 
@@ -242,9 +243,9 @@ export function createServerBackend(player: string): LordBackend {
 // Teachers
 // ---------------------------------------------------------------------------
 
-export async function fetchLordSettings(): Promise<LordSettings> {
-  const { data, error } = await supabase.from('app_settings').select('lord_enabled, lord_forest_per_day, lord_season_start, lord_paused_since').maybeSingle();
-  if (error || !data) throw new FriendlyError('We couldn’t load the Dragon Maths settings.');
+export async function fetchLordSettings(classId?: string | null): Promise<LordSettings> {
+  const data = await readSettings(['lord_enabled', 'lord_forest_per_day', 'lord_season_start', 'lord_paused_since'], classId);
+  if (!data) throw new FriendlyError('We couldn’t load the Dragon Maths settings.');
   return {
     enabled: data.lord_enabled === true, forestPerDay: data.lord_forest_per_day as number,
     seasonStart: (data.lord_season_start as string | null) ?? null, pausedSince: (data.lord_paused_since as string | null) ?? null,
@@ -256,8 +257,8 @@ export async function fetchLordEnabled(): Promise<boolean> {
   return (await fetchLordSettings()).enabled;
 }
 
-export async function saveLordSettings(settings: Partial<LordSettings> & { enabled: boolean }): Promise<LordSettings> {
-  const { data, error } = await supabase.rpc('teacher_set_lord', { settings });
+export async function saveLordSettings(settings: Partial<LordSettings> & { enabled: boolean }, classId?: string | null): Promise<LordSettings> {
+  const { data, error } = await supabase.rpc('teacher_set_lord', { settings, target_class: classId ?? null });
   if (error || !data) {
     if (error?.code === '22023' && error.message) throw new FriendlyError(error.message);
     throw new FriendlyError('We couldn’t save the Dragon Maths settings.');

@@ -124,6 +124,44 @@ export function timeLeft(endsAt: string, now: Date = new Date()): string {
   return `ends in ${days} days`;
 }
 
+/**
+ * What a game should follow right now. A teacher focus that has run out while the page was open (or in a copy kept for offline
+ * play) no longer counts: the student goes back to their own choice, else to auto. The server decides this too, for real.
+ */
+export function currentFocus(focus: MathsFocus | null | undefined, now: Date = new Date()): MathsFocus {
+  if (!focus) return AUTO_FOCUS;
+  if (isTeacherFocus(focus) && focus.endsAt && Date.parse(focus.endsAt) <= now.getTime()) {
+    if (focus.canChoose && focus.own) {
+      return { source: 'student', skills: focus.own.skills, onlyThese: focus.own.onlyThese, endsAt: null, canChoose: true, own: focus.own };
+    }
+    return { ...AUTO_FOCUS, canChoose: focus.canChoose, own: focus.own };
+  }
+  return focus;
+}
+
+/** 'YYYY-MM-DDTHH:mm' as the clock in New Zealand shows it at this moment. */
+export function nzWallClock(date: Date): string {
+  const f = new Intl.DateTimeFormat('en-NZ', { timeZone: NZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  const get = Object.fromEntries(f.formatToParts(date).map((p) => [p.type, p.value]));
+  return `${get.year}-${get.month}-${get.day}T${get.hour}:${get.minute}`;
+}
+
+/**
+ * A time typed as New Zealand wall-clock time ('2026-10-23T15:30', what a date-time box gives) as the real moment, in ISO.
+ * Null if it is not a time (or falls in the hour the clocks skip). Times are NZ time whatever the device clock says.
+ */
+export function nzLocalToIso(local: string): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(local);
+  if (!m) return null;
+  const [y, mo, d, h, mi] = m.slice(1).map(Number);
+  const asUtc = Date.UTC(y, mo - 1, d, h, mi);
+  for (const offsetHours of [13, 12]) {
+    const guess = new Date(asUtc - offsetHours * 3_600_000);
+    if (nzWallClock(guess) === local) return guess.toISOString();
+  }
+  return null;
+}
+
 /** The note a student sees: why their questions are what they are. */
 export function focusNote(focus: MathsFocus | null | undefined, now: Date = new Date()): string | null {
   if (!hasFocus(focus)) return null;

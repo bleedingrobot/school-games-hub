@@ -66,6 +66,7 @@ export function SpaceSettings({
   onHelp,
   playerName,
   mathsMode = 'off',
+  focusNote = null,
 }: {
   prefs: SpacePrefs;
   onChange: (prefs: SpacePrefs) => void;
@@ -85,6 +86,8 @@ export function SpaceSettings({
   playerName: string;
   /** What the teacher allows for Mission Control maths. Off: nothing shows. */
   mathsMode?: MathsMode;
+  /** Why the questions are what they are, when a maths focus decides them ("Your teacher picked ×6 until Friday"). */
+  focusNote?: string | null;
 }) {
   const set = <K extends keyof SpacePrefs>(key: K, value: SpacePrefs[K]) => onChange({ ...prefs, [key]: value });
   const galaxyOk = prefs.board !== 'galaxy' || parseGalaxyCode(prefs.galaxy) !== null;
@@ -189,13 +192,18 @@ export function SpaceSettings({
         />
         {mathsMode === 'on' && (
           <p className="space-setup__hint">
-            🧮 <strong>Mission Control maths is on.</strong> A right times-table answer powers you up. A wrong answer never
+            🧮 <strong>Mission Control maths is on.</strong> A right answer powers you up. A wrong answer never
             costs you anything.
           </p>
         )}
         {mathsMode === 'choose' && prefs.maths && (
           <p className="space-setup__hint">
-            A right times-table answer powers you up at wormholes and black holes. A wrong answer never costs you anything.
+            A right answer powers you up at wormholes and black holes. A wrong answer never costs you anything.
+          </p>
+        )}
+        {mathsMode !== 'off' && (mathsMode === 'on' || prefs.maths) && focusNote && (
+          <p className="space-setup__hint" role="status">
+            🎯 {focusNote}.
           </p>
         )}
         {pass && (

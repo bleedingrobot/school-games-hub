@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
@@ -26,6 +26,9 @@ import { useLordEnabled } from '../games/lord/switch';
 import { useMonstersEnabled } from '../games/monsters/switch';
 import { BOT_LEVELS, isRanked, type BotLevel } from '../games/types';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
+
+// The maths focus card brings the whole maths ladder with it, so it loads on its own.
+const MathsFocusCard = lazy(() => import('../components/MathsFocusCard'));
 
 const RESULT_LABEL = { won: 'Won', lost: 'Lost', drawn: 'Draw' } as const;
 
@@ -422,6 +425,12 @@ export function Dashboard() {
           </span>
         </Link>
       </div>
+
+      {profile?.role !== 'teacher' && (
+        <Suspense fallback={null}>
+          <MathsFocusCard />
+        </Suspense>
+      )}
 
       <div className="panel-grid">
         <section className="panel" aria-labelledby="recent-title">

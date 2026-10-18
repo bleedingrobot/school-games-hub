@@ -17,6 +17,7 @@ import {
   type StudentGemKeep,
 } from '../data/gemKeep';
 import { FriendlyError } from '../data/profile';
+import { useTeacherClass } from '../teacher/TeacherClass';
 import type { GemKeepSettings } from '../games/gem-keep/settings';
 import './teacher-gem-keep.css';
 
@@ -54,21 +55,25 @@ export function GemKeepTeacherPanels() {
 }
 
 function GemKeepSettingsPanel() {
+  const { classId, ready } = useTeacherClass();
   const [settings, setSettings] = useState<GemKeepSettings | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchGemKeepSettings()
+    if (!ready) return;
+    setSettings(null);
+    setStatus(null);
+    fetchGemKeepSettings(classId)
       .then(setSettings)
       .catch((error) => setStatus(errorText(error)));
-  }, []);
+  }, [ready, classId]);
 
   async function change(next: GemKeepSettings) {
     const before = settings;
     setSettings(next);
     setStatus('Saving…');
     try {
-      await saveGemKeepSettings(next);
+      await saveGemKeepSettings(next, classId);
       setStatus('Saved. Students get the new settings next time they open Gem Keep.');
     } catch (error) {
       setSettings(before);

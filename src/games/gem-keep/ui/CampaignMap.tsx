@@ -12,11 +12,14 @@ const IDS = CAMPAIGN.map((l) => l.id);
 export function CampaignMap({
   progress,
   note = TEXT.savedHere,
+  focusNote = null,
   onPlay,
 }: {
   progress: CampaignProgress;
   /** The line under the map, about saving. */
   note?: string;
+  /** Why the maths isn't the level's tables: "Your teacher picked ×6 until Friday". Null when nothing changes them. */
+  focusNote?: string | null;
   onPlay: (index: number) => void;
 }) {
   const open = CAMPAIGN.map((_, i) => isUnlocked(progress, IDS, i));
@@ -31,6 +34,11 @@ export function CampaignMap({
         </div>
         <span className="gk-campaign__total">★ {TEXT.totalStars(totalStars(progress), CAMPAIGN.length * 3)}</span>
       </header>
+      {focusNote && (
+        <p className="gk-campaign__focus" role="status">
+          <span aria-hidden="true">🎯</span> {focusNote}. {TEXT.focusAllLevels}
+        </p>
+      )}
       <ol className="gk-trail">
         {CAMPAIGN.map((level, i) => {
           const stars = progress[level.id]?.stars ?? 0;

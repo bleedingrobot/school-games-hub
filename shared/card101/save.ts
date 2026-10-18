@@ -9,7 +9,7 @@
  * can't match.
  */
 import { isBotLevelId, isClaimedEnding, type BotLevel, type ClaimedEnding, type Outcome } from '../botGame';
-import { makeSeed, seedProblem } from '../space/save';
+import { makeSeed, seedProblem } from '../space/seed';
 import { TARGETS, type Game, type Settings, type Target } from './engine';
 import { replaySolo, STUDENT_SEAT, type SoloSetup } from './solo';
 

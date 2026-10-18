@@ -3,6 +3,7 @@ import { randomFromSeed } from '../space/random';
 import { afterAnswer, newStats, type FactStats } from './leitner';
 import {
   AUTO_FOCUS,
+  currentFocus,
   describeEnd,
   focusKey,
   focusNote,
@@ -11,6 +12,8 @@ import {
   isFocusKey,
   keyForAnswer,
   makeFocusPack,
+  nzLocalToIso,
+  nzWallClock,
   parseFocus,
   skillList,
   solveParts,
@@ -108,6 +111,48 @@ describe('saying it in words', () => {
     expect(focusNote(focus(['tables-6-9'], { endsAt: '2026-10-23T11:00:00Z' }), wednesday)).toBe('Your teacher picked ×6, ×9 until Friday');
     expect(focusNote(focus(['tables-6-9'], { source: 'student' }), wednesday)).toBe('You picked ×6, ×9');
     expect(focusNote(AUTO_FOCUS, wednesday)).toBeNull();
+  });
+});
+
+describe('a focus that has run out', () => {
+  const now = new Date('2026-10-21T00:00:00Z');
+  const ended = focus(['tables-6-9'], { endsAt: '2026-10-20T11:00:00Z', own: { skills: ['facts-10'], onlyThese: true } });
+
+  it('goes back to the student\'s own choice', () => {
+    const f = currentFocus(ended, now);
+    expect(f.source).toBe('student');
+    expect(f.skills).toEqual(['facts-10']);
+    expect(f.onlyThese).toBe(true);
+  });
+
+  it('goes back to auto with no choice, or when choosing is off', () => {
+    expect(currentFocus({ ...ended, own: null }, now).source).toBe('auto');
+    expect(currentFocus({ ...ended, canChoose: false }, now).source).toBe('auto');
+  });
+
+  it('leaves one that is still running, and anything that is not a teacher\'s', () => {
+    const running = focus(['tables-6-9'], { endsAt: '2026-10-22T11:00:00Z' });
+    expect(currentFocus(running, now)).toBe(running);
+    expect(currentFocus(null, now)).toEqual(AUTO_FOCUS);
+    const own = focus(['facts-10'], { source: 'student' });
+    expect(currentFocus(own, now)).toBe(own);
+  });
+});
+
+describe('times typed as New Zealand time', () => {
+  it('turns a typed time into the real moment', () => {
+    // Summer (UTC+13) and winter (UTC+12).
+    expect(nzLocalToIso('2026-10-23T15:30')).toBe('2026-10-23T02:30:00.000Z');
+    expect(nzLocalToIso('2026-07-23T15:30')).toBe('2026-07-23T03:30:00.000Z');
+    expect(nzWallClock(new Date('2026-10-23T02:30:00.000Z'))).toBe('2026-10-23T15:30');
+  });
+
+  it('refuses what is not a time', () => {
+    expect(nzLocalToIso('')).toBeNull();
+    expect(nzLocalToIso('tomorrow')).toBeNull();
+    expect(nzLocalToIso('2026-10-23')).toBeNull();
+    // The hour the clocks skip (27 Sep 2026, 2:00 to 3:00 am).
+    expect(nzLocalToIso('2026-09-27T02:30')).toBeNull();
   });
 });
 

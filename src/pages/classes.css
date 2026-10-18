@@ -333,3 +333,19 @@
 .teacher__classes-link a {
   color: #fff;
 }
+
+/* The class picker above the Teacher page's switches (the page is red, so the text is white). */
+.teacher__picker {
+  margin: 0;
+  color: #fff;
+}
+.teacher__picker a {
+  color: #fff;
+}
+.teacher__picker select {
+  max-width: 100%;
+}
+.teacher__picker-note {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+}

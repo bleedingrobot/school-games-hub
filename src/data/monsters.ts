@@ -21,6 +21,7 @@ import type { SaveResponse } from '../../supabase/functions/monster/handler';
 import type { TypeId } from '../../shared/monsters/types';
 import type { WorldState } from '../../shared/monsters/world/types';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
+import { readSettings } from './classSettings';
 import { supabase } from '../lib/supabase';
 import { FriendlyError } from './profile';
 
@@ -275,14 +276,14 @@ function fail(error: { code?: string; message?: string } | null, fallback: strin
   throw new FriendlyError(fallback);
 }
 
-export async function fetchMonstersSettings(): Promise<MonstersSettings> {
-  const { data, error } = await supabase.from('app_settings').select('monsters_enabled, monsters_topics').maybeSingle();
-  if (error || !data) throw new FriendlyError('We couldn’t load the Maths Monsters settings.');
+export async function fetchMonstersSettings(classId?: string | null): Promise<MonstersSettings> {
+  const data = await readSettings(['monsters_enabled', 'monsters_topics'], classId);
+  if (!data) throw new FriendlyError('We couldn’t load the Maths Monsters settings.');
   return { enabled: data.monsters_enabled === true, topics: data.monsters_topics as TopicId[] };
 }
 
-export async function saveMonstersSettings(settings: MonstersSettings): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_monsters', { settings });
+export async function saveMonstersSettings(settings: MonstersSettings, classId?: string | null): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_monsters', { settings, target_class: classId ?? null });
   if (error) fail(error, 'We couldn’t save the Maths Monsters settings.');
 }
 
