@@ -29,7 +29,8 @@
   gap: 8px;
   font-weight: 600;
 }
-.gk-teacher__pass select {
+.gk-teacher__pass select,
+.gk-teacher__pass input {
   font: inherit;
   padding: 6px 10px;
   border-radius: 10px;

@@ -1,8 +1,8 @@
-# Monster maths adventure: plan
+# Maths Monsters: plan
 
 A Pokémon-style adventure for the hub. Walk around a small world, meet wild monsters in the long grass, and battle and catch them. **Every attack and every catch is a maths question.** Each kind of monster stands for a maths topic, so collecting and training a team means practising every topic.
 Written 17 October 2026 after a deep dive into [devshareacademy/monster-tamer](https://github.com/devshareacademy/monster-tamer) (James's find) and reading the code on `main` (Stages 1–10 live, Gem Keep live).
-**Status: idea saved, not scheduled.** Nothing is built. James picked "a world to walk around" and "several maths topics" on 17 Oct. Next: James answers section 12, then stage N.1 starts.
+**Status: APPROVED 17 Oct 2026, under way** on branch `monsters` (built on `space-maths`, because both change `shared/maths/`). James picked "a world to walk around" and "several maths topics", then answered every question in section 12 and said start now (alongside Mission Control maths).
 
 ## The short version
 
@@ -57,6 +57,7 @@ Written 17 October 2026 after a deep dive into [devshareacademy/monster-tamer](h
 - **Home town** (start, healing centre, a teacher character who explains things, your monster box, the monster book).
 - **Six areas**, each built around one topic: its wild monsters, its signs and tips, and its **Topic Tower** at the end. Beat the Tower's trainer to earn that topic's badge and open the next path.
 - **Areas open in order.** Easy topics first. Each area is "easy, then harder": monsters further from town are higher level and ask harder questions in the same topic.
+- **NZ places with English names** (James, 17 Oct): e.g. Kauri Bush, Shell Beach, Fire Mountain, Snowy Peaks, Glowworm Caves, Harbour Town.
 - **About 25 × 20 tiles per area**, made in Tiled (free editor) as JSON in `shared/monsters/maps/`, using **Kenney CC0 packs** (*Tiny Town*, *Tiny Dungeon*, *Roguelike RPG*; checked 17 Oct: all CC0).
 - **Encounters:** long grass, about one battle every 12–20 steps (tuned so it feels exciting, not annoying). A "Repel" item lets students just walk.
 - **People:** a few NPCs per area with one-line tips or jokes, and trainers who challenge you when you walk past.
@@ -117,8 +118,8 @@ Written 17 October 2026 after a deep dive into [devshareacademy/monster-tamer](h
 - **New tables** (students can't write to them directly, as usual): `monster_saves` (one row per student) and `monster_events` (what happened since the last save). A new `monster` server function checks each save before accepting it. The checks are plausibility checks, not a full replay (same reasoning as Gem Keep): exp gained must match the battles reported, levels can't jump, catches need a right answer, and the number of answers per minute must be humanly possible.
 - **Points:** inside the shared 40-a-day bot-game cap. My pick: 1 point per 3 wild battles won, 3 per trainer, 8 for a Tower badge (first time only). The game is `ranked: false` (no ratings).
 - **Achievements** (about 8): first catch, 10/25/54 monster-book entries, each badge, all six badges, a "fully evolved" team.
-- **A leaderboard is optional**: "monster book entries" or "badges", like Gem Keep's stars board.
-- **New season**: wipe saves or keep them? (question 4).
+- **Leaderboard: most monsters collected** (monster-book entries, top 10 plus you), like Gem Keep's stars board (James, 17 Oct).
+- **New season keeps the adventure** (team, box, badges, monster book) and resets only the points (James, 17 Oct).
 
 ## 9. Teacher page
 
@@ -140,6 +141,152 @@ Written 17 October 2026 after a deep dive into [devshareacademy/monster-tamer](h
 
 Each stage ends with tests passing and a results section here, and stops for James's review, like Gem Keep. A class trial could start after N.4 with device-only saving (as Gem Keep did).
 
+### N.1 results (done 17 Oct 2026, branch `monsters`)
+
+- **`shared/maths/banded.ts`**: the engine behind every new topic. A topic is a set of question *families* grouped in bands; band = `QuestionContext.level`. Same 60/30/10 focus/review/stretch mix, mastery boxes and repeats as times tables (`pickFromPools`, split out of `pickFact`). Each question is made from its key + a few numbers (`params`), and `rebuild(key, params)` makes it again, so the N.6 server can check answers without trusting the browser.
+- **Five new packs** in `shared/maths/skillPacks/` (`index.ts` lists all six with `makePack` and `topicOfKey`):
+
+| Topic | Bands | Records |
+|---|---|---|
+| Place value and rounding | 4: 3-digit → 4-digit → rounding to 10/100 → rounding to 1000, 5-digit, × 10/100/1000 | 11 kinds |
+| Adding and taking away | 4: facts to 10 + 10 → tens and bridging → 2-digit with/without regrouping, pairs to 100 → 3-digit, near-hundreds | 55 facts + 15 kinds |
+| Division | 5: ÷ 2/5/10 → ÷ 3/4 → ÷ 6–9 → 2-digit ÷ 1-digit, ÷ 10/100, missing dividend → remainders, 3-digit ÷ 1-digit | 102 facts + 5 kinds |
+| Fractions | 4: unit fraction of amount, compare same bottom → non-unit of amount, equivalents, compare same top → add/take away, mixed ↔ improper → compare any, simplify | 10 kinds |
+| Decimals and money | 4: tenths → money (adding, change from $5/$10/$20) → hundredths, compare, × 10/100 → rounding, decimal × whole, fractions as decimals | 11 kinds |
+
+- Wrong choices in multiple-choice mode are the real slips (47 + 36 → 73, 0.3 + 0.5 → 0.08, 1/2 = ?/8 → 7, $10 − $3.65 forgetting the borrow...), padded with near misses.
+- **Question box** (`src/maths/QuestionModal.tsx`, used by Gem Keep too): fractions drawn top-over-bottom with the blank inside when needed, mixed numbers, a decimal point key, answers up to 6 digits, labelled "which is bigger?" choices, smaller word parts, long questions shrink to fit. Checked at 1366 × 640 and phone size; axe clean on 20 question boxes.
+- **Practice page**: `npm run maths:preview` → `dist-preview-maths/` (every topic and band, one example per kind).
+- **Curriculum tags are placeholders** (`TODO-...`), like times tables, for James to fill in from his alignment tool.
+- Tests: `shared/maths/packs.test.ts` (every family: 400 rolls or every fact ×4 → sound answer, one blank, 4 distinct choices, plain sums re-solved from the screen, rebuild matches, bad numbers refused) + 5 new question-box tests. 165 maths tests pass.
+- Known, not ours: `space-maths` has two stale server bundles (`save-bot-game`, `space-game` index.ts still have Mission Boost 3, code says 5). The Mission Control session's next `npm run build:functions` fixes it.
+
+### N.2 results (done 17 Oct 2026, branch `monsters`)
+
+- **`shared/monsters/`**, pure TypeScript, no screens, database or server: `types.ts` (six types, topics, wheel ×1.5 / ×0.75), `monsterBook.ts` (all monster data in one file), `bands.ts` (the easy-to-edit area → question band table, wild levels per area, quick-answer times), `rules.ts` (stats, damage, exp, catching, with every tunable number in one `TUNING` block), `engine.ts` (`play(state, action, random)`), `sim.ts` + `scripts/monsters-sim.mjs` (`npm run monsters:sim`).
+- **Engine.** State is plain data and `play` never changes the one it is given. Actions: fight (attack + right / quick-right / wrong), switch, bag item (potions), catch (ball + answer), run. Wild and trainer monsters hit back with no question. A fainted monster is replaced free; losing keeps everything (`healTeam` returns the team full). `questionFor` says which topic and band to ask (attacks: the attacker's topic; catches: the wild monster's topic). `judgeAnswer` decides quick-right from the question's difficulty (topic + band), not a race, and "calm" turns it off. `replayBattle` replays a whole battle from its setup, actions and random numbers (for the N.6 server check).
+- **Catching** (idea adapted from Monster Tamer, MIT, credited in `rules.ts`): about 20% at full health up to 60% nearly drained, ×2.2 after a right answer, ×2.8 quick-right, ×0.6 after a wrong one; grown monsters are harder; great balls ×1.6; never above 95%. Trainer monsters can't be caught or run from.
+- **Exp and levels.** Monster Tamer's level³ curve made levels 30-40 take six times as many battles as 5-10, so it is level^2.5. Max level 50. Evolving happens by itself on reaching the level (about 15-18 for the first growth, 30-36 for the second). Friends who fought share the exp; trainers give ×1.5.
+- **Bug the sim caught:** after choosing a replacement monster the battle stayed stuck in "choose a monster". Fixed, with a test.
+- **Tests:** `shared/monsters/engine.test.ts`, 30 tests (the book, the wheel, damage, questions and bands, fights, switch / bag / run, catching, exp and evolving, the AI, replay, bad actions refused).
+
+**Sim results** (`npm run monsters:sim`, 2,000 battles per row; pretend students; 4 s per move plus 8 s per question):
+
+| What | 50% right | 75% right | 90% right |
+|---|---|---|---|
+| Wild battle, questions (areas 1-6) | 3.8-4.8 | 3.0-3.6 | 2.6-3.2 |
+| Wild battle, minutes | about 0.9-1.0 | about 0.7 | about 0.6 |
+| Wild battle won, first area (level-5 team) | 100% | 100% | 100% |
+| Tower trainer (3 monsters), questions | 11-16 | 9-12 | 8-10 |
+| Tower won | 75-94% | 97-100% | 100% |
+| Levelling, battles per level gained | 2.0 → 4.8 | 1.9 → 3.9 | 1.9 → 3.4 |
+| Whole game, battles in all (grind to each area's top level) | 153 | 129 | 116 |
+
+- Wild fights are a little shorter than the plan's goal (3-5 questions, a bit under a minute of play by this clock); real students are slower than the sim's 8 s a question, so about 1-2 minutes is likely. Tower trainers are 10-15 questions for most students, a bit longer at 50%. A 50% student wins almost every first-area wild battle.
+- Levelling is steady (2.6 to 7 battles per level, slowing gently), but the sim student grinds in each area until the lead matches the area's top monster, which first took 30-60 battles in areas 3-5. James chose more exp (yield 11/16/21 → 14/20/27), so it is now about 15-40.
+- The sim student is a bit unlike a real one (always picks the best attack, never runs); real play will be messier.
+
+**Monster names for James to OK** (first form → second → last):
+
+| Type | Families |
+|---|---|
+| Leaf | Digibud → Tensprout → Thousandtree; Roundroot → Nearestree → Rounderoak; Placepetal → Valuebloom → Millibloom |
+| Water | Plusplash → Sumsplash → Totalwave; Minnowus → Minusfin → Minusharker; Carrycrab → Regroupcrab → Kingcarrab |
+| Fire | Factorch → Factoblaze → Factoinferno; Multipup → Multihound → Multiplosion; Squaremander → Cubemander → Powermander |
+| Ice | Divvy → Quotipeng → Emperor Quotient; Remaindeer → Remainstag → Remaindreign; Sharebear → Splitbear → Polarsplit |
+| Spark | Fractopus → Fractoshock → Fractostorm; Numeratot → Numerator → Numeratron; Denomibolt → Denomivolt → Denominator |
+| Stone | Pebblepoint → Decimound → Decimountain; Coinrock → Dollarock → Goldilith; Centipebble → Centipillar → Centurock |
+
+### N.3 results (done 17 Oct 2026, branch `monsters`)
+
+- **Monster art** (`src/games/monsters/art/`): `MonsterArt` takes a species id and draws it as SVG from parts, no image files. All 54 work. 18 families, each its own shape (a bud, a fish, a crab, a penguin, an octopus, a caterpillar of pebbles...). First forms are small with big eyes and cheeks, grown forms add parts, last forms get angry eyes, grins and crowns / spikes / crystals. Shiny = a different colour set. Idle bob, hurt wobble, faint (sink and fade); all off for reduced motion. Every drawing is labelled with the monster's name.
+- **Attack effects**: all 18 ids (`leaf-1` to `stone-3`) in three sizes (leaf swirl, splash and rings, flames, snowflakes, sparks, falling rocks), plus hit flash, "Critical!" pop and floating damage numbers.
+- **Battle screen** (`BattleScreen.tsx`, a normal React page): foe top right, your monster bottom left, name / level / type / health (and exp) cards, Fight / Team / Bag / Run (keys 1-4, Run hidden against trainers), `QuestionModal` from `questionFor` + `makePack`, the engine's events played one message at a time with Next and Skip, Team, Bag (potion target list, ball catch question), forced "choose your next monster", evolution moment, results sheet, and settings (Calm, number pad / multiple choice, saved on the device). Losing heals the team and keeps everything.
+- **Question box on a phone on its side**: `maths.css` now puts the pad beside the question at heights under 460 px (it ran off the bottom before). Gem Keep benefits too.
+- **Test page**: `npm run monsters:preview` builds `dist-preview-monsters/`: monster book (54, shiny toggle, effects gallery) and battle playground (team of up to 6 with type / form / level, wild or trainer of up to 3, area and far side, bag, "almost levels up" and "ready to grow" buttons). Nothing is saved.
+- **Not wired into the dashboard or game registry.** No database or server.
+- **Checked** in a real browser at 1366 x 640 and 844 x 390: menu, moves, question, team, bag, catch question, evolution, results. axe: 0 problems on the book, playground, message, menu, settings, moves, question, team, bag, catch question and results at both sizes. Two things axe found and fixed (no page heading on the test page, one low-contrast type chip).
+- **Tests**: 20 new (`MonsterArt.test.tsx`, `BattleScreen.test.tsx`: all 54 draw and are labelled, 18 effects, a scripted battle: fight right / wrong, keys, Calm, switch, potion, catch, run, win with level-up and evolution, lose with healing, forced switch, trainer, settings). Full suite: 930 pass. Known failures: the two stale server bundles (`save-bot-game`, `space-game`), same family as before. Two more tests (101 stats, chess bot) failed once under load and pass alone; they are random, not ours.
+
+### N.4 results (done 17 Oct 2026, branch `monsters`)
+
+- **Rules** (`shared/monsters/world/`, pure, tested): `mapLoader.ts` (reads Tiled JSON and lists everything wrong with a map), `checkWorld.ts` (every door leads to a real free tile, you can walk from the start to every door, sign, person, trainer and patch of grass), `walking.ts` (blocking, shortest path, tap plan, camera), `encounters.ts` (the `ENCOUNTERS` block: 12-20 steps in long grass, 2-3 with "More battles"; wild levels; trainer sight), `world.ts` (`step`, `interact`, `afterBattle`, battle set-ups), `rng.ts` (seeded). `WorldState` is plain data (map, tile, facing, team, box, bag, beaten trainers, last healing spot, seed, grass counter, repel, steps); a JSON round trip changes nothing, so N.6 can save it as is. A place for Repel is there (`repel` steps left, 0 for now).
+- **Maps** (`shared/monsters/maps/*.json`, Tiled format, made by `node scripts/make-monster-maps.mjs`, which is a short list of steps like `path`, `house`, `sign`; edit that or open the JSON in Tiled): **Harbour Town** (24 x 18: healing centre, the teacher with 5 pages, monster box, monster book, 4 signs, a pond, a fisher), **Healing Centre** (10 x 7, inside, Nurse Joy), **Area 1: Kauri Bush** (25 x 20: long grass, 3 people, trainer Ranger Kiri, exit to town, and a rope fence over the gap at the top right marked as the closed path to area 2 / Shell Beach).
+- **Wild monsters in Kauri Bush** (first forms): Digibud (Leaf), Plusplash and Minnowus (Water), Multipup (Fire), Divvy (Ice), Pebblepoint (Stone), Fractopus (Spark). Levels 2-4 on the town half, 4-6 on the far (north) half, which also uses the harder question bands. Ranger Kiri has Digibud 4 and Plusplash 4 and always fights at the far-half bands.
+- **Art** (see `src/games/monsters/world/assets/kenney/CREDITS.md`): Kenney **Tiny Town** 1.1 (grass, paths, trees, bushes, houses, fences, signs, barrel/box) and **Tiny Dungeon** 1.0 (people, chest, shelf, counter, brick walls, banner, floor), both CC0, licence re-read on kenney.nl on 17 Oct and each pack's `License.txt` kept beside its `tilemap_packed.png`. Roguelike RPG was also checked (CC0) and not needed. Tiny Town has no water or long grass, so `scripts/make-monster-extra-tiles.py` draws those 3 tiles (2 water frames and long grass) from Tiny Town's own colours into `assets/extra-tiles.png`.
+- **Screens** (`src/games/monsters/world/`): `WorldGame` (canvas map, HUD with team and Settings, talk box under the map as a polite live region, on-screen arrows, battle in place of the map via the unchanged `BattleScreen`), `controller.ts` (timing: 200 ms a step, 110 ms to turn, so about 5 tiles a second), `render.ts` and `tiles.ts` (each map is painted once, a frame is one scaled copy, whole-number scale, no smoothing, people cached in 4 facings). Keys: arrows / WASD, Space / Enter / E. Touch: tap a tile to walk the shortest way, tap a person or sign to walk up and talk, optional arrows + Talk button (setting, off by default, saved on the device). Settings: Calm, choose answers, on-screen arrows; the first two go straight to the battle.
+- **Trainer**: sees you in a straight line up to 4 tiles ahead (not through trees), "!" for 0.7 s, walks up, talks, battles. One fight per visit; leaving the map (or losing) starts a new visit.
+- **Losing** wakes you at the last healing spot (the healing centre until you talk to another nurse), team healed, bag, box and everything else kept. Catching: the battle already puts the monster in the team or the box.
+- **Test page**: `npm run monsters:preview` gets a third tab, **Walk around** (start box for two types at level 5, Test controls: Teleport to home town / healing centre / Kauri Bush / next to the trainer / next to the long grass / next to the closed path, and More battles). `npm run monsters:single` makes one self-contained HTML file (`dist-preview-monsters/maths-monsters-test-page.html`) that was published as a private Artifact.
+- **Not wired** into the dashboard, registry, database or server. Nothing is saved.
+- **Checked** in a real browser (Chromium) at 1366 x 640 and 844 x 390 (phone, also with touch and 2x pixels): town, healing centre, bush, a sign, the trainer's "!", the challenge, a trainer battle, a grass battle starting (flash then battle), tap-to-walk and the arrows. axe: 0 problems on the start box, the map, the talk box open, settings open, the map with arrows and the healing centre at both sizes. **Smoothness**: counted `requestAnimationFrame` gaps over 12 s of walking in the bush: 60 fps, 1 gap over 20 ms (one 167 ms hitch at the first draw, now avoided by painting every map when the pictures load), and with the CPU slowed 4 times (a stand-in for a slow Chromebook) no gap over 17 ms; drawing a frame took 0.1 ms on average and 3 ms at worst (0.4 and 11 ms slowed 4 times). A frame is only drawn when something changed.
+- **Tests**: 54 new. `world.test.ts` (35: maps load and check, doors, reachability, loader errors, walking, camera, shortest paths, encounter step counts over 60 seeded walks, same seed same walk, levels, More battles, Repel, trainer sight and once per visit, healing, losing, JSON round trip), `controller.test.ts` (13: turn then step, never faster than a step per 200 ms, smooth position, tap walk, tap to talk, locks, trainer "!" and walk up) and `WalkPage.test.tsx` (6: the Walk around page plays a step, a talk, settings, a grass battle won and back on the map, and a loss that ends at the healing centre). Full suite: 985 of 987 pass. The 2 failures are the known stale server bundles (`save-bot-game`, `space-game`). The two random tests (101 stats, chess bot) passed this time.
+- **Rough or for James to decide**: (1) each Kenney person has one picture, so left/right only slide the face over and "up" shows the back of the head (looks fine, not like a real 4-direction sprite); (2) the long grass tile is busy and the bush is mostly grass; (3) no sounds on the map yet; (4) no team or bag menu on the map (potions only in battle), box and book say "coming soon"; (5) the area-2 name Shell Beach, the people's jokes and tips, and "Nurse Joy" are my words to OK; (6) walking speed (5 tiles a second) is easy to change in `TIMING`.
+
+### N.5 results (done 18 Oct 2026, branch `monsters`)
+
+- **Five more areas** (25 x 20 each, made by `node scripts/make-monster-maps.mjs`, now split into `scripts/monster-maps/`): **Shell Beach** (Water, sand and sea), **Fire Mountain** (Fire, ash, lava, autumn trees), **Snowy Peaks** (Ice, snow, pines, frozen pond), **Glowworm Caves** (Spark, dark cave, glowing moss, crystals) and **Harbour City** (Stone, cobbles, houses, the harbour). The order and topics match section 4 (area N = type N, badge = the type's name). Each has long grass in the near and far half, 3-4 people (tips and jokes), 1-2 trainers, 4-6 signs, 2 chests, a rest hut with a nurse, and a Tower. Kauri Bush got a Tower, a rest hut (Nurse Pania), a second chest and a real gate too.
+- **Topic Towers**: a building you walk into, then two small rooms (hall with a guide and a ladder, top floor with the Tower trainer). The Tower trainer has 3 monsters at the area's top wild level, +1 and +2 (levels 6-8, 12-14, 19-21, 27-29, 36-38, 45-47), always fights at the far-half bands, and gives the badge and a prize (super potion, 2 great balls) the **first time only**. Holding the badge, they just chat. The way on is a rope **gate** that is shut until you hold the badge; it says which badge is missing. `checkWorld` runs with and without badges: with none you reach only the town and Kauri Bush, and each badge opens exactly the next area; with all six the whole world is reachable.
+- **Wild lists use families** (`digibud`), so the form follows the level (`formAt`, moved to `monsterBook.ts`); a name written twice turns up twice as often. Trainer teams are `family:level` too.
+- **Where each family lives.** Every family's first form can be caught by area 2; its grown forms turn up where its levels are high enough. The area with the family's own type has all three of its families twice as often.
+
+| Type (area) | Families | First forms in | Second forms in | Last forms in |
+|---|---|---|---|---|
+| Leaf (1 Kauri Bush) | Digibud, Roundroot, Placepetal | areas 1 (common) | 3, 4, 5 | 5, 6 |
+| Water (2 Shell Beach) | Plusplash, Minnowus, Carrycrab | 1, 2 (common) | 3, 5 | 5, 6 |
+| Fire (3 Fire Mountain) | Factorch, Multipup, Squaremander | 1 and 2 | 3 (common), 4, 5 | 5, 6 |
+| Ice (4 Snowy Peaks) | Divvy, Remaindeer, Sharebear | 1, 2 | 3 (a few), 4 (common) | 5, 6 |
+| Spark (5 Glowworm Caves) | Fractopus, Numeratot, Denomibolt | 1, 2 | 3, 5 (common) | 5 (common), 6 |
+| Stone (6 Harbour City) | Pebblepoint, Coinrock, Centipebble | 1, 2 | 3, 4, 5 | 5, 6 (common) |
+
+  (Exact list per area is the `wild` property in `scripts/monster-maps/*.mjs`; a test lists every species that can be met and checks that all 54 are met or reached by growing.)
+- **Monster book** (`MonsterBookScreen`): all 54, met or owned in full, the rest a dark shape with "?" (no name, no tooltip), details with type, topic, family, attacks and growth. **Box** (`BoxScreen`): team 1 to 6, never empty, no typing. `WorldState` gained plain data: `badges`, `seen`, `owned` (sorted arrays), `chests`, `paid` (trainers who already gave their prize). Both screens open from the box and book in Harbour Town and from the menu.
+- **Menu** (Menu button, M or Escape): Team (swap order), Bag (potions on a hurt monster, Repel, balls greyed), Monster book, Badges, Settings, same Sheet look as the battle. Walking is locked while it is open.
+- **Items**: `repel` added as an item (50 steps in long grass, from the bag menu, found in chests). Prizes are one easy block, `shared/monsters/world/rewards.ts` (`LOOT`). Trainers pay once; each chest opens once.
+- **Sounds** in `src/games/sounds.ts` (door, talk blip, wild-battle flash, heal jingle, badge fanfare, chest), on only when the hub's speaker button is on.
+- **Battle rules not changed.** One small addition: `'repel'` is a valid `ItemId` (a battle refuses it; the existing "not a healing item" rule covers it), and the battle `BagList` takes optional `items` / `ballNote` for the menu.
+- **Test page**: Teleport lists every area (entrance, next to the trainer, long grass, a chest, healing hut, Tower door, gate), every Tower hall and "next to the Tower trainer"; buttons **Give me all badges** and **Give me a full team and bag** (six level-40 monsters, three in the box, full bag).
+
+**Sim** (`npm run monsters:sim`, real wild lists, trainers and Towers; the route student keeps one strong lead and two weaker friends, so it is pessimistic for Towers 5-6):
+
+| What | 50% right | 75% right | 90% right |
+|---|---|---|---|
+| Whole route, battles | 139 | 120 | 113 |
+| Whole route, battling time (sim clock) | about 2.8 h | 1.7 h | 1.4 h |
+| Tower won, team ready (3 at the area's top level), areas 1-6 | 95, 96, 94, 90, 82, 83% | 98-100% | 99-100% |
+| Tower won, team 3 levels behind | 15-59% | 27-92% | 49-98% |
+| Tower fight length (ready) | 10-16 questions, 2.4-3.4 min | 8-12, 1.9-2.6 min | 7-10, 1.7-2.3 min |
+| Towers beaten first time on the route | 100, 90, 75, 73, 28, 28% | 100, 95, 90, 83, 50, 68% | 100, 100, 93, 88, 65, 88% |
+
+- **Tuning**: none needed. The Towers are a real step up (three levels behind loses often) but a ready team usually wins, so no number was changed. Tower 5 and 6 are the hardest for a 50% student.
+- **Checked** in a real browser (Chromium), 1366 x 640 and 844 x 390: every area, a chest, the nurse, every Tower door, the gate talk, the menu, team, bag, book, badges, settings and box. **axe: 0 problems** on all of them at both sizes (it found two things, both fixed: the book's scrolling detail panel was not keyboard-reachable, and the badges list scrolled with nothing focusable on a phone). **Smoothness** in Fire Mountain (animated lava), 12 s of walking: 60 fps, 0 frames over 20 ms; with the CPU slowed 4 times still 60 fps, 0 frames over 34 ms; a frame took 0.18 ms on average, 4 ms at worst (0.42 and 3.4 ms slowed).
+- **Tests**: about 75 new (`areas.test.ts` 27, `routeSim.test.ts` 2, `MapMenu.test.tsx` 11, plus updates). Full suite: 1024 of 1027. The three failures: the two known stale server bundles (`save-bot-game`, `space-game`), and one Wormholes & Black Holes test that failed once under load and passes alone (not ours).
+- **Rough, or for James to decide**: (1) the game is short by the sim's clock (1.4-2.8 h of battling, maybe 3-5 h with walking, reading, catching and slower answers, against the plan's 6-10 h): more exp needed per level (`TUNING.expCurve`) or higher wild levels would stretch it; (2) areas 2-6 have only the one outdoor look the packs allow (Kenney persons face the same way, trees repeat); (3) Tower rooms are plain; (4) `closed` objects are still supported by the loader but no map uses them now; (5) names Nurse Pania, Hinemoa, Mere, Aroha, Kowhai, Sina, the Tower trainers (Hemi, Moana, Rangi, Maia, Wiremu, Aroha), and all jokes and tips are my words to OK; (6) trainers who beat you in a Tower reset each visit only if you lack the badge; with it they only chat.
+
+### N.6 results (built 18 Oct 2026, branch `monsters`; NOT live)
+
+- **Merged `main` into `monsters` first** (Mission Control maths is live there; the two branches both changed `QuestionModal`). Nothing was merged the other way.
+- **Saving.** New tables `monster_saves` (one row per student: the `WorldState` as JSON, a version number, counts for the board), `monster_events` (one row per accepted save: its battles with actions, maths questions and random numbers, plus counts and points) and `monster_refusals` (short codes for saves turned down). Students can't read or write them; they read their own through `my_monsters()`. Migration `20261018001500_maths_monsters.sql`.
+  - Saves are made on a new game, at the nurse, after a Tower battle, on getting a badge, every 3 minutes of play (`AUTOSAVE_MS`) and when the page is hidden or closed. They go in a queue on the device (`src/data/monsters.ts`) with the unsent game and battles ("the tail"), so a Chromebook that loses wifi loses nothing.
+  - Opening: the server's save, unless this device is ahead of it (it has saves the server hasn't heard of, or played on since). If another Chromebook saved since, the server's wins. No save anywhere = the new-game screen (pick two starters; no test controls).
+- **The server check** (`shared/monsters/save/check.ts`, run by the new `monster` function): each reported battle is replayed with the real rules (`newBattle` / `play`), with every random number and every maths question checked: the question is made again from its key and numbers and marked here, and right / quick-right / wrong has to agree. The monsters you hold (team + box, ignoring order and health) must be exactly the ones you held, with the exp the replayed battles gave plus what you caught, so levels cannot jump. Also: team 1-6, real monsters and items, a tile you can stand on, a heal spot next to a nurse, areas only open with the right badges, a badge needs a won Tower battle, a trainer pays once, a chest opens once, the bag only holds what you had plus new prizes minus what battles used, seen / owned / badges / chests only grow, answers at most 24 a minute and at least 250 ms each, steps at most 6 a second, and wild battles no more often than the steps allow. A save follows the one before it (`seq`), and one that already got through (lost reply) is told "already saved" rather than checked again.
+  - A catch needs a checked question. I read "needs a right answer" as: every throw carries a marked question. The rules still allow a throw after a wrong answer (x0.6 chance), so those saves are accepted. Say if you want a successful catch refused unless the answer was right.
+  - **What happens to a bad save:** it is refused as a whole; the last good save stays exactly as it was; the website is told "refused" (not why), drops that save and everything queued after it, stops saving for the session and says (not scary): "Your game couldn't be saved this time. You can keep playing, and next time you open Maths Monsters you'll carry on from your last save." The next opening loads the last good save. A code goes in `monster_refusals` (the teacher page lists them with the real name) and the function log (never who). A save from an out-of-date copy ("stale") is treated the same.
+  - Answers go in as answer events through `record_fact_answers` (one batch per topic per save, with ids made from the save id so a retry counts once), into the same records Gem Keep and Wormholes use. Those records' key rule was widened to allow the new topics' keys.
+- **Points** (inside the shared 40-a-day cap, game is `ranked: false`): one block, `monster_point_rules()` in the migration: **1 point per 3 wild battles won, 3 per trainer, 8 per Tower badge (a badge can only be earned once)**. A normal 20-minute session is about 12-15 battles: roughly **7-10 points**; a 30-minute lesson 10-14; a first Tower badge adds 8. The cap stops it at 40 a day. Trainers can be fought again each visit to a map and pay their 3 points each time; the cap limits that.
+- **Achievements (8):** first catch; 10, 25 and all 54 monster-book pages; 1, 3 and all 6 badges; a team of 6 fully grown monsters. Hidden (with the point rules) while the game is off.
+- **Leaderboard:** "most monsters collected" (owned book pages, never seen-only), top 10 plus you, a new tab beside Gem Keep's stars.
+- **New season** keeps the adventure and resets only points (all Maths Monsters scores, the half-made point, the save history). Decisions to check: Maths Monsters achievements stay (they belong to the kept adventure, so their bonus points stay too); the five new topics' maths records stay; times-table records are cleared with Gem Keep's, as before.
+- **Teacher page:** the game switch (**off by default**; hides the card, board tab, achievements and point rules, and the server refuses saves), topics on/off (a switched-off topic's questions come from the nearest topic that is on, at that topic's band, in every fight and catch; the server accepts any topic at the area's band so a mid-lesson switch never refuses a save), the class view (each topic's right / asked, hardest questions in words, badge counts, refused saves) and each student's panel.
+- **Wired in:** card on the dashboard (`monsters` in the registry), behind the switch. The test page keeps "Start again" and the teleports; the real game has neither.
+- **Checked in a real browser** against the local Supabase and the `monster` function: new game, walk to the nurse, save (version 2), reload (same place), a second browser profile as the same student (same team, same map), six battles fought through the question box and saved (wins, questions and answers recorded in the maths records). That run also showed the server turning down a robot that answered in 50 ms. axe: 0 problems on the new-game screen, the world with its saving note, dashboard, leaderboard tab, how-points page and teacher page at 1366 x 640 and 844 x 390, except two contrast issues on the teacher page that belong to Mission Control's panel, and the hub top bar running off the right edge on a phone on its side (all pages, not new).
+- **Tests:** 28 for the save check (honest play through all six Towers, and a refusal for each rule), 13 for the function, 14 for the device queue / opening / topics, battle report and topic swap, game page, teacher panels, and 84 database tests (saving in order, points and cap, achievements, board, switches, RLS, new season). `npm run build:functions` was run (it rebuilt the stale `space-game` bundle; `save-bot-game` was already right).
+- **To raise with James:** the game is short by the sim's clock (1.4-2.8 h of battling against the plan's 6-10 h; the fix is `TUNING.expCurve` or the wild levels in `bands.ts`), and the names, jokes and tips in the maps still await his OK.
+
+**LIVE 18 Oct 2026 (James said go): steps 1-4 below are done (migration `20261018001500` applied to the live database, `monster` function deployed with verify-JWT off, `monsters` merged into `main` and published). The game switch is still OFF: step 5 is James's. Answers: keep Maths Monsters achievements across seasons, allow a throw after a wrong answer, go live at the current length.**
+
+**How it was to go live:** 1) merge `monsters` into `main` (main already has `space-maths`, so there is no merge-order problem; the one new migration comes after `...001400`); 2) apply the migration to the live database; 3) deploy the `monster` function (and, since `npm run build:functions` rebuilt it, `space-game`'s file is already the right one on main after merge); 4) push `main` so the site builds; 5) switch Maths Monsters on from the teacher page (and pick topics). Until step 5 nobody sees it.
+
 ## 11. Ideas for later
 
 - **Battle a classmate** with your team (turn-based, so it fits the `multiplayer`-style server function). The maths questions are each player's own.
@@ -148,16 +295,18 @@ Each stage ends with tests passing and a results section here, and stops for Jam
 - Seasonal areas (Matariki sky island).
 - More topics: measurement, time, angles.
 
-## 12. Questions for James (before N.1)
+## 12. James's answers (17 Oct 2026)
 
-1. **Name?** Some ideas: *Number Tamers*, *Maths Monsters*, *Monster Mathers*, *Sum Beasts*. (Not *Monster Tamer*, which is the tutorial's name.)
-2. **The six topics and their order** (section 4): right list for Y4–6? Anything to swap (e.g. measurement instead of decimals)?
-3. **Wrong answers**: a small graze plus showing the right answer (my pick), or no damage at all?
-4. **New season**: wipe everyone's adventure (fresh start, fair boards), or keep it (my pick: keep the save, reset only the points)?
-5. **Leaderboard**: none, monster-book entries, or badges?
-6. **Look**: chunky pixel-art world (Kenney CC0) with our own SVG monsters (my pick), or all-SVG smooth style to match the hub's restyle?
-7. **NZ flavour**: area names in te reo Māori and NZ places (bush, beach, volcano, snow), or a made-up world?
-8. **Queue spot**: after Mission Control maths, and before or after Power Clash and the marble game?
+| # | Question | Answer |
+|---|---|---|
+| 1 | Name | **Maths Monsters** |
+| 2 | Topics | **The six as planned**, in that order (section 4) |
+| 3 | Wrong answers | **A small hit (¼ damage) and the right answer shown** |
+| 4 | New season | **Keep the adventure; reset only the points** |
+| 5 | Leaderboard | **Most monsters collected** (monster-book entries, top 10 plus you) |
+| 6 | Look | **Pixel-art world (Kenney CC0) with our own smooth SVG monsters** |
+| 7 | World | **NZ places (bush, beach, volcano, snow...) with English names** |
+| 8 | When | **Start now**, alongside Mission Control maths |
 
 ## Credits to carry over
 

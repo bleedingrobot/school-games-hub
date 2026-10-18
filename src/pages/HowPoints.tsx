@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchRules, RANKS, type Rules } from '../data/progress';
+import { POWER_CLASH_ON } from '../games/registry';
 
 /**
  * "How points work", for students. The numbers come from the database, so this page
@@ -141,6 +142,37 @@ export function HowPoints() {
         </section>
       )}
 
+      {rules.powerClash && POWER_CLASH_ON && (
+        <section className="panel" aria-labelledby="power-clash-points-title">
+          <h2 id="power-clash-points-title" className="panel__title">
+            ⚡ Tic-Tac-Toe: Power Clash
+          </h2>
+          <p>
+            Luck and powers play a big part, so you get the same points whether you win or lose. Just take part and finish the
+            match!
+          </p>
+          <ul className="how-points__list">
+            <li>
+              Against bots: <strong>{rules.powerClash.bot} points</strong> for each match you finish. These share the{' '}
+              {rules.botDailyCap}-points-a-day limit with the other bot games.
+            </li>
+            {rules.powerClash.friend !== undefined && (
+              <li>
+                Against a classmate: <strong>{rules.powerClash.friend} points</strong> for each match you finish. Your first{' '}
+                {rules.powerClash.friendDailyGames} matches each day earn points.
+              </li>
+            )}
+            <li>
+              A match counts when it is played to the end. Leaving part-way earns nothing, for you or your classmate.
+            </li>
+            <li>
+              It never changes your badges or the leaderboards. It has its own achievements, worth {rules.achievementPoints}{' '}
+              bonus points each.
+            </li>
+          </ul>
+        </section>
+      )}
+
       {rules.gemKeep && (
         <section className="panel" aria-labelledby="gem-keep-points-title">
           <h2 id="gem-keep-points-title" className="panel__title">
@@ -159,6 +191,55 @@ export function HowPoints() {
             <li>
               Passing Level Keys and collecting stars earns achievements, worth {rules.achievementPoints} bonus points
               each. Gem Keep has its own leaderboard for the most stars.
+            </li>
+          </ul>
+        </section>
+      )}
+
+      {rules.monsters && (
+        <section className="panel" aria-labelledby="monsters-points-title">
+          <h2 id="monsters-points-title" className="panel__title">
+            🐾 Maths Monsters
+          </h2>
+          <ul className="how-points__list">
+            <li>
+              Win a battle with a wild monster: <strong>1 point for every {rules.monsters.wildWinsPerPoint} you win</strong>.
+            </li>
+            <li>
+              Beat a trainer: <strong>{rules.monsters.trainerWin} points</strong>.
+            </li>
+            <li>
+              Win a Topic Tower badge: <strong>{rules.monsters.badge} points</strong>, the first time only.
+            </li>
+            <li>These share the {rules.botDailyCap}-points-a-day limit with games against bots.</li>
+            <li>
+              Catching monsters, filling the monster book and winning badges earns achievements, worth{' '}
+              {rules.achievementPoints} bonus points each. Maths Monsters has its own leaderboard for the most monsters collected.
+            </li>
+          </ul>
+        </section>
+      )}
+
+      {rules.dragonMaths && (
+        <section className="panel" aria-labelledby="dragon-maths-points-title">
+          <h2 id="dragon-maths-points-title" className="panel__title">
+            🐉 Dragon Maths
+          </h2>
+          <ul className="how-points__list">
+            <li>
+              Win fights in the forest: <strong>1 point for every {rules.dragonMaths.forestWinsPerPoint} you win</strong>.
+            </li>
+            <li>
+              Beat a master and go up a level: <strong>{rules.dragonMaths.masterWin} points</strong>.
+            </li>
+            <li>
+              Beat the Red Dragon: <strong>{rules.dragonMaths.dragonWin} points</strong>.
+            </li>
+            <li>Arena fights and maths questions don’t earn points, but a right answer helps you win.</li>
+            <li>These share the {rules.botDailyCap}-points-a-day limit with games against bots.</li>
+            <li>
+              Beating masters, reaching high levels and beating the dragon earn achievements, worth {rules.achievementPoints} bonus
+              points each. Dragon Maths has its own Warriors list and Hall of Heroes inside the game.
             </li>
           </ul>
         </section>

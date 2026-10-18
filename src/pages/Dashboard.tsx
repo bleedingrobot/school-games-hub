@@ -17,7 +17,10 @@ import {
 import { fetchMyProgress, type MyProgress } from '../data/progress';
 import { fetchMyOpenSpaceGames, fetchMySpaceStats, fetchRecentSpaceGames, seatsOf, type SpaceGame } from '../data/spaceGames';
 import { fetchMyCardStats, fetchMyOpenCardGames, fetchRecentCardGames, type SeatSummary } from '../data/cardGames';
-import { findGame, GAMES } from '../games/registry';
+import { fetchMyOpenPowerGames, fetchMyPowerStats, fetchRecentPowerGames, seatsOf as powerSeatsOf, type PowerGame } from '../data/powerGames';
+import { findGame, GAMES, POWER_CLASH_ON, gameLabel } from '../games/registry';
+import { useLordEnabled } from '../games/lord/switch';
+import { useMonstersEnabled } from '../games/monsters/switch';
 import { BOT_LEVELS, isRanked, type BotLevel } from '../games/types';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
 
@@ -53,6 +56,8 @@ export interface RecentGame {
   place?: number | null;
   /** Wormholes & Black Holes with classmates (rather than one opponent). */
   classmates?: boolean;
+  /** Power Clash that ended early: who left. */
+  leftBy?: 'me' | 'them' | 'nobody';
 }
 
 /** Turns a finished space game with classmates into a Recent games line. */
@@ -68,6 +73,21 @@ export function spaceRecentGame(g: SpaceGame, me: string): RecentGame {
     finished_at: g.finished_at ?? g.created_at,
     place,
     classmates: true,
+  };
+}
+
+/** Turns a finished Power Clash game with a classmate into a Recent games line. */
+export function powerRecentGame(g: PowerGame, me: string): RecentGame {
+  const seat = powerSeatsOf(g).indexOf(me);
+  const abandoned = g.ending === 'abandoned';
+  return {
+    id: g.id,
+    game: 'power-clash',
+    result: !abandoned && g.won?.[seat] ? 'won' : 'lost',
+    reason: abandoned ? 'abandoned' : 'finished',
+    finished_at: g.finished_at ?? g.created_at,
+    classmates: true,
+    ...(abandoned ? { leftBy: g.leaver === me ? ('me' as const) : g.leaver ? ('them' as const) : ('nobody' as const) } : {}),
   };
 }
 
@@ -111,6 +131,8 @@ function useMyGames(me: string | undefined) {
   const [spaceStats, setSpaceStats] = useState<{ played: number; firsts: number } | null>(null);
   const [cardGoing, setCardGoing] = useState<SeatSummary[]>([]);
   const [cardStats, setCardStats] = useState<{ played: number; won: number } | null>(null);
+  const [powerGoing, setPowerGoing] = useState<PowerGame[]>([]);
+  const [powerStats, setPowerStats] = useState<{ played: number; won: number } | null>(null);
   const [progress, setProgress] = useState<MyProgress | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -152,6 +174,24 @@ function useMyGames(me: string | undefined) {
           .slice(0, 5),
       );
     });
+    // Power Clash with a classmate, the same way (nothing to ask before it is switched on).
+    if (POWER_CLASH_ON) {
+      Promise.all([
+        fetchRecentPowerGames(5).catch(() => []),
+        fetchMyOpenPowerGames().catch(() => []),
+        fetchMyPowerStats().catch(() => null),
+      ]).then(([recentPower, openPower, totals]) => {
+        if (!current) return;
+        setPowerGoing(openPower.filter((g) => g.status === 'playing'));
+        setPowerStats(totals);
+        if (recentPower.length === 0) return;
+        setRecent((prev) =>
+          [...(prev ?? []), ...recentPower.map((g) => powerRecentGame(g, me))]
+            .sort((a, b) => b.finished_at.localeCompare(a.finished_at))
+            .slice(0, 5),
+        );
+      });
+    }
     Promise.all([fetchRecentGames(5), fetchMyStats(), fetchRecentFriendGames(5), fetchFriendStats(), fetchMyOpenGames()])
       .then(async ([botGames, totals, friendGames, friendTotals, open]) => {
         const playing = open.filter((g) => g.status === 'playing');
@@ -182,17 +222,25 @@ function useMyGames(me: string | undefined) {
     };
   }, [me]);
   // 101 with classmates goes in the "Against friends" table with chess and checkers.
-  const friendRows =
+  const withCards =
     friendStats && cardStats
       ? [...friendStats, { game: '101', played: cardStats.played, won: cardStats.won, lost: cardStats.played - cardStats.won, drawn: 0 }]
       : friendStats;
-  return { recent, stats, friendStats: friendRows, inProgress, spaceGoing, spaceStats, cardGoing, progress, failed };
+  // Power Clash with a classmate goes in the same table (a match is won or lost).
+  const friendRows =
+    withCards && powerStats
+      ? [...withCards, { game: 'power-clash', played: powerStats.played, won: powerStats.won, lost: powerStats.played - powerStats.won, drawn: 0 }]
+      : withCards;
+  return { recent, stats, friendStats: friendRows, inProgress, spaceGoing, spaceStats, cardGoing, powerGoing, progress, failed };
 }
 
 export function Dashboard() {
   const { profile } = useAuth();
-  const { recent, stats, friendStats, inProgress, spaceGoing, spaceStats, cardGoing, progress, failed } = useMyGames(profile?.id);
+  const { recent, stats, friendStats, inProgress, spaceGoing, spaceStats, cardGoing, powerGoing, progress, failed } = useMyGames(profile?.id);
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
+  const monstersOn = useMonstersEnabled() === true;
+  const lordOn = useLordEnabled() === true;
+  const shownGames = GAMES.filter((g) => (g.id !== 'monsters' || monstersOn) && (g.id !== 'dragon-maths' || lordOn));
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
@@ -229,8 +277,21 @@ export function Dashboard() {
         </div>
       </section>
 
-      {(inProgress.length > 0 || spaceGoing.length > 0 || cardGoing.length > 0) && (
+      {(inProgress.length > 0 || spaceGoing.length > 0 || cardGoing.length > 0 || powerGoing.length > 0) && (
         <section className="in-progress" aria-label="Games still going">
+          {powerGoing.slice(0, 1).map((game) => (
+            <div key={game.id} className="in-progress__item">
+              <span className="in-progress__emoji" aria-hidden="true">
+                ⚡
+              </span>
+              <p>
+                <strong>Your {gameLabel('power-clash')} game</strong> with a classmate is still going!
+              </p>
+              <Link to={`/power-game/${game.id}`} className="button button--play">
+                Carry on
+              </Link>
+            </div>
+          ))}
           {cardGoing.slice(0, 1).map((game) => (
             <div key={game.game} className="in-progress__item">
               <span className="in-progress__emoji" aria-hidden="true">
@@ -284,7 +345,7 @@ export function Dashboard() {
           Pick a game
         </h2>
         <div className="game-grid">
-          {GAMES.map((game) => (
+          {shownGames.map((game) => (
             <GameCard
               key={game.id}
               game={game}
@@ -334,7 +395,9 @@ export function Dashboard() {
             <ul className="recent-list">
               {recent.map((g) => (
                 <li key={g.id}>
-                  {g.game === 'space' || (g.game === '101' && g.classmates) ? (
+                  {g.leftBy ? (
+                    <span className="result result--drawn">Ended</span>
+                  ) : g.game === 'space' || (g.game === '101' && g.classmates) ? (
                     <span className={`result result--${g.place === 1 ? 'won' : 'drawn'}`}>{placeLabel(g.place)}</span>
                   ) : (
                     <span className={`result result--${g.result}`}>{RESULT_LABEL[g.result]}</span>
@@ -344,6 +407,8 @@ export function Dashboard() {
                       <>
                         {findGame(g.game)?.name} vs {botName(g.bot_level, g.game)}
                       </>
+                    ) : g.game === 'power-clash' && g.classmates ? (
+                      <>{gameLabel(g.game)} with a classmate</>
                     ) : g.classmates ? (
                       <>{findGame(g.game)?.name} with classmates</>
                     ) : (
@@ -352,7 +417,12 @@ export function Dashboard() {
                         {g.opponent?.display_name ?? 'a classmate'}
                       </>
                     )}
-                    {g.reason === 'abandoned' && g.game !== 'space' && !(g.game === '101' && g.classmates) && (
+                    {g.leftBy && (
+                      <span className="recent-list__note">
+                        {g.leftBy === 'me' ? ' (you left)' : g.leftBy === 'them' ? ' (they left)' : ' (ended early)'}
+                      </span>
+                    )}
+                    {g.reason === 'abandoned' && !g.leftBy && g.game !== 'space' && !(g.game === '101' && g.classmates) && (
                       <span className="recent-list__note">{g.result === 'won' ? ' (they left)' : ' (left early)'}</span>
                     )}
                   </span>
@@ -399,8 +469,8 @@ export function Dashboard() {
   );
 }
 
-/** Games with real wins and losses: the ranked ones, and 101 (no badge, but you win or lose). */
-const hasWinLoss = (game: (typeof GAMES)[number]) => isRanked(game) || game.id === '101';
+/** Games with real wins and losses: the ranked ones, and 101 and Power Clash (no badge, but you win or lose). */
+const hasWinLoss = (game: (typeof GAMES)[number]) => isRanked(game) || game.id === '101' || game.id === 'power-clash';
 
 /** Wormholes & Black Holes is luck, so it gets a line of its own rather than won/lost columns. */
 function SpaceStatsLine({

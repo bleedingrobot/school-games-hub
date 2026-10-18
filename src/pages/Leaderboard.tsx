@@ -3,6 +3,8 @@ import { Link } from 'react-router';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import { fetchStarsBoard, type StarsRow } from '../data/gemKeep';
+import { fetchMonstersBoard, type MonstersRow } from '../data/monsters';
+import { useMonstersEnabled } from '../games/monsters/switch';
 import { fetchLeaderboard, type Board, type BoardRow } from '../data/progress';
 import { GAMES } from '../games/registry';
 import { isRanked } from '../games/types';
@@ -34,7 +36,7 @@ export const BOARDS: { id: Board; label: string; about: string; minGames: number
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 /** Games with a leaderboard: the ranked ones, and Gem Keep (most stars). */
-const BOARD_GAMES = GAMES.filter((g) => isRanked(g) || g.id === 'gem-keep');
+const BOARD_GAMES = GAMES.filter((g) => isRanked(g) || g.id === 'gem-keep' || g.id === 'monsters');
 
 /** What to tell a student who isn't on the board yet. */
 export function notOnBoardText(board: Board, gamesPlayed: number): string {
@@ -46,6 +48,8 @@ export function notOnBoardText(board: Board, gamesPlayed: number): string {
 
 export function Leaderboard() {
   const [game, setGame] = useState(GAMES[0].id);
+  const monstersOn = useMonstersEnabled() === true;
+  const boardGames = BOARD_GAMES.filter((g) => g.id !== 'monsters' || monstersOn);
   return (
     <div className="leaderboard">
       <div className="leaderboard__head">
@@ -59,7 +63,7 @@ export function Leaderboard() {
         <fieldset className="choice-group">
           <legend>Game</legend>
           <div className="choice-group__chips">
-            {BOARD_GAMES.map((g) => (
+            {boardGames.map((g) => (
               <label key={g.id} className="chip">
                 <input type="radio" name="board-game" checked={game === g.id} onChange={() => setGame(g.id)} />
                 <span>{g.name}</span>
@@ -67,7 +71,7 @@ export function Leaderboard() {
             ))}
           </div>
         </fieldset>
-        {game === 'gem-keep' ? <StarsBoard /> : <RankedBoard game={game} />}
+        {game === 'gem-keep' ? <StarsBoard /> : game === 'monsters' ? <MonstersBoard /> : <RankedBoard game={game} />}
       </div>
     </div>
   );
@@ -186,6 +190,70 @@ function StarsBoard() {
       )}
       {rows && !me && <p className="leaderboard__me-off">Win a level of Gem Keep to get on this board!</p>}
     </>
+  );
+}
+
+/** Maths Monsters: most monsters in the monster book (owned, not just seen). Never how good anyone's maths is. */
+function MonstersBoard() {
+  const [rows, setRows] = useState<MonstersRow[] | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let current = true;
+    fetchMonstersBoard()
+      .then((r) => current && setRows(r))
+      .catch(() => current && setFailed(true));
+    return () => {
+      current = false;
+    };
+  }, []);
+
+  const top = rows?.slice(0, 10) ?? [];
+  const meBelow = rows?.slice(10).find((r) => r.is_me);
+  const me = rows?.find((r) => r.is_me);
+
+  return (
+    <>
+      <p className="leaderboard__about">Most monsters collected in Maths Monsters. Every page of the monster book you have filled counts, including the earlier forms of monsters that grew.</p>
+      {failed ? (
+        <p className="panel__empty">We couldn’t load the leaderboard just now. Please try again soon.</p>
+      ) : !rows ? (
+        <p className="panel__empty">Loading…</p>
+      ) : top.length === 0 ? (
+        <p className="panel__empty">Nobody has started yet. It could be you!</p>
+      ) : (
+        <ol className="board-list" aria-label="Most monsters leaderboard">
+          {top.map((row) => (
+            <MonstersLine key={row.display_name} row={row} />
+          ))}
+          {meBelow && (
+            <>
+              <li className="board-list__gap" aria-hidden="true">
+                ⋯
+              </li>
+              <MonstersLine row={meBelow} />
+            </>
+          )}
+        </ol>
+      )}
+      {rows && !me && <p className="leaderboard__me-off">Start a game of Maths Monsters to get on this board!</p>}
+    </>
+  );
+}
+
+function MonstersLine({ row }: { row: MonstersRow }) {
+  return (
+    <li className={row.is_me ? 'is-me' : undefined} value={row.place}>
+      <span className="board-list__place" aria-label={`Place ${row.place}`}>
+        {row.place <= 3 ? MEDALS[row.place - 1] : row.place}
+      </span>
+      <AvatarImage avatar={row.avatar} size={40} />
+      <span className="board-list__name">
+        {row.display_name}
+        {row.is_me && <span className="board-list__you"> (you)</span>}
+      </span>
+      <span className="board-list__points">🐾 {row.monsters}</span>
+    </li>
   );
 }
 

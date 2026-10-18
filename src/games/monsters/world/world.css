@@ -1,0 +1,156 @@
+/* Maths Monsters: the world screen. Fits 1366 × 640 and a phone on its side. */
+.mw {
+  --mw-ink: #0f172a;
+  --mb-ink: #0f172a;
+  --mb-soft: #475569;
+  --mb-line: #cbd5e1;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: var(--mw-height, min(100dvh, 640px));
+  min-height: 300px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #0f172a;
+  color: var(--mw-ink);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  font-family: 'Segoe UI', Tahoma, system-ui, sans-serif;
+}
+.mw-battle { max-width: 1366px; margin: 0 auto; --mb-height: var(--mw-height, min(calc(100dvh - 60px), 640px)); }
+
+.mw-stage { position: relative; min-height: 0; overflow: hidden; outline: none; background: #1e293b; }
+.mw-canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; touch-action: manipulation; cursor: pointer; }
+.mw-stage.is-flash::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  animation: mw-flash 0.52s steps(5) both;
+}
+@keyframes mw-flash { 0% { opacity: 0; } 20% { opacity: 1; } 40% { opacity: 0; } 60% { opacity: 1; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .mw-stage.is-flash::after { animation: none; opacity: 1; } }
+.mw-loading { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: #fff; font-weight: 700; }
+
+/* Top bar over the map: where you are, your team, settings. */
+.mw-hud { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; align-items: center; gap: 10px; pointer-events: none; }
+.mw-hud > * { pointer-events: auto; }
+.mw-place { padding: 4px 12px; border-radius: 999px; background: rgba(15, 23, 42, 0.82); color: #fff; font-size: 0.85rem; font-weight: 800; }
+.mw-team { display: flex; gap: 6px; margin: 0 0 0 auto; padding: 0; list-style: none; }
+.mw-team li { position: relative; display: grid; justify-items: center; gap: 2px; width: 44px; padding: 3px 0 4px; border-radius: 10px; background: rgba(255, 255, 255, 0.9); }
+.mw-team li > :first-child { width: 30px; height: 30px; }
+.mw-team__bar { width: 34px; height: 5px; border-radius: 3px; background: #cbd5e1; overflow: hidden; }
+.mw-team__bar > span { display: block; height: 100%; background: #22c55e; }
+.mw-team__bar > span.is-low { background: #ef4444; }
+.mw-gear { min-height: 36px; padding: 2px 14px; border: 2px solid var(--mw-ink); border-radius: 10px; background: #fff; font: inherit; font-size: 0.85rem; font-weight: 800; cursor: pointer; }
+
+.mw-btn { min-height: 44px; min-width: 88px; padding: 4px 18px; border: 2px solid var(--mw-ink); border-radius: 12px; background: #fde047; color: var(--mw-ink); font: inherit; font-weight: 900; cursor: pointer; }
+.mw-btn:focus-visible, .mw-gear:focus-visible, .mw-dpad button:focus-visible, .mw-talkbtn:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+
+/* The talk box, under the map. */
+.mw-talk { display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 10px 16px; background: #fff; border-top: 4px solid var(--mw-ink); }
+.mw-talk__text { flex: 1; font-size: 1.05rem; line-height: 1.35; font-weight: 600; }
+.mw-talk__text:empty { flex: 0; }
+.mw-talk__who { font-weight: 900; }
+.mw-talk__hint { flex: 1; margin: 0; color: #475569; font-size: 0.9rem; }
+.mw-talk__next { flex: none; }
+.mw-hint-touch { display: none; }
+@media (pointer: coarse) { .mw-hint-keys { display: none; } .mw-hint-touch { display: inline; } }
+
+.mw-settings { position: absolute; top: 52px; right: 8px; display: grid; gap: 10px; width: min(360px, calc(100% - 16px)); padding: 12px 16px 14px; border: 3px solid var(--mw-ink); border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
+.mw-settings h2 { margin: 0; font-size: 1.1rem; }
+.mw-settings label { display: flex; gap: 10px; align-items: flex-start; font-weight: 600; }
+.mw-settings input { width: 22px; height: 22px; flex: none; }
+
+/* On-screen arrows and a Talk button, over the bottom of the map. */
+.mw-controls { position: absolute; left: 12px; right: 12px; bottom: 10px; display: flex; align-items: flex-end; justify-content: space-between; pointer-events: none; }
+.mw-controls > * { pointer-events: auto; }
+.mw-dpad { display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px); gap: 4px; }
+.mw-dpad button, .mw-talkbtn { border: 2px solid var(--mw-ink); border-radius: 14px; background: rgba(255, 255, 255, 0.88); font: inherit; font-size: 1.4rem; font-weight: 900; color: var(--mw-ink); touch-action: none; user-select: none; }
+.mw-dpad button:active, .mw-talkbtn:active { background: #fde047; }
+.mw-talkbtn { width: 96px; height: 64px; font-size: 1.1rem; touch-action: manipulation; }
+.mw-dpad__up { grid-column: 2; grid-row: 1; }
+.mw-dpad__left { grid-column: 1; grid-row: 2; }
+.mw-dpad__right { grid-column: 3; grid-row: 2; }
+.mw-dpad__down { grid-column: 2; grid-row: 3; }
+@media (max-height: 460px) {
+  .mw-team li { width: 38px; }
+  .mw-team li > :first-child { width: 26px; height: 26px; }
+  .mw-dpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); }
+  .mw-talk { min-height: 60px; padding: 6px 12px; }
+  .mw-talk__text { font-size: 0.95rem; }
+}
+
+/* ---------- The map menu: pages inside the Sheet look from the battle screens ---------- */
+.mm { position: absolute; inset: 0; z-index: 20; color: var(--mb-ink); }
+.mm .mb-sheet { border-radius: 0; }
+.mm-main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; max-width: 720px; margin: 0 auto; }
+.mm-main__btn { display: grid; justify-items: center; align-content: center; gap: 0; min-height: 64px; font-size: 1.15rem; }
+.mm-main__btn small { font-size: 0.78rem; font-weight: 600; color: var(--mb-soft); }
+.mm-main__btn--team { background: #bfdbfe; }
+.mm-main__btn--bag { background: #fde68a; }
+.mm-main__btn--book { background: #bbf7d0; }
+.mm-main__btn--badges { background: #fbcfe8; }
+.mm-main__btn--settings { background: #e2e8f0; grid-column: 1 / -1; }
+.mm-main__go { grid-column: 1 / -1; justify-self: center; min-width: 260px; }
+.mm-help { margin: 0 0 8px; font-weight: 600; }
+.mm-msg { margin: 8px 0 0; font-weight: 700; color: #1d4ed8; }
+.mm-msg:empty { margin: 0; }
+.mm .mb-sheet__body { display: flex; flex-direction: column; }
+.mm .mb-sheet__body > .bk { flex: 1; min-height: 0; }
+.mm .mb-sheet__body > :not(.bk) { flex: none; }
+.mm-cancel { margin-top: 10px; }
+.mm-settings { display: grid; gap: 12px; max-width: 560px; }
+.mm-settings label { display: flex; gap: 10px; align-items: flex-start; font-weight: 600; }
+.mm-settings input { width: 22px; height: 22px; flex: none; }
+.mm-badges { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.mm-badge { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 2px solid var(--mb-line); border-radius: 14px; background: #fff; opacity: 0.85; }
+.mm-badge.is-earned { border-color: #ca8a04; background: #fefce8; opacity: 1; }
+.mm-badge__medal { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border: 3px solid var(--mb-ink); border-radius: 50%; background: #e2e8f0; font-size: 1.4rem; color: #fff; }
+.mm-badge:not(.is-earned) .mm-badge__medal { background: #e2e8f0; border-style: dashed; }
+.mm-badge.is-earned .mm-badge__medal--leaf { background: #16a34a; }
+.mm-badge.is-earned .mm-badge__medal--water { background: #0284c7; }
+.mm-badge.is-earned .mm-badge__medal--fire { background: #ea580c; }
+.mm-badge.is-earned .mm-badge__medal--ice { background: #0891b2; }
+.mm-badge.is-earned .mm-badge__medal--spark { background: #ca8a04; }
+.mm-badge.is-earned .mm-badge__medal--stone { background: #78716c; }
+.mm-badge__text { display: grid; }
+.mm-badge__text small { color: var(--mb-soft); font-weight: 600; font-size: 0.8rem; }
+
+/* The monster book */
+.bk { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; min-height: 0; }
+.bk-list { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+.bk-count { margin: 0 0 6px; font-weight: 600; color: var(--mb-soft); }
+.bk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 6px; margin: 0; padding: 0 4px 4px 0; list-style: none; overflow-y: auto; min-height: 0; align-content: start; }
+.bk-tile { display: grid; justify-items: center; width: 100%; padding: 4px 2px 3px; border: 2px solid var(--mb-line); border-radius: 12px; background: #fff; font: inherit; color: inherit; cursor: pointer; }
+.bk-tile.is-selected { border-color: #2563eb; background: #eff6ff; }
+.bk-tile:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+.bk-tile--owned { border-color: #86efac; }
+.bk-name { font-size: 0.72rem; font-weight: 800; line-height: 1.15; text-align: center; min-height: 1.7em; overflow-wrap: anywhere; }
+.bk-dark { position: relative; display: inline-block; }
+.bk-dark .mon-art, .bk-dark svg { filter: brightness(0) opacity(0.82); }
+.bk-tile--unknown .bk-name { font-size: 1.1rem; color: var(--mb-soft); }
+.bk-detail:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+.bk-detail { overflow-y: auto; padding: 10px 14px; border: 2px solid var(--mb-line); border-radius: 14px; background: #fff; min-height: 0; }
+.bk-detail h3 { margin: 2px 0 0; font-size: 1.25rem; }
+.bk-detail__art { display: grid; place-items: center; }
+.bk-sub { margin: 0 0 8px; color: var(--mb-soft); font-weight: 600; font-size: 0.9rem; }
+.bk-facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 0.92rem; }
+.bk-facts dt { font-weight: 800; color: var(--mb-soft); }
+.bk-facts dd { margin: 0; }
+
+/* The monster box */
+.bx { display: grid; gap: 14px; }
+.bx h3 { margin: 0 0 6px; }
+
+@media (max-width: 760px) { .mm-badges, .mm-main { grid-template-columns: 1fr; } .bk { grid-template-columns: minmax(0, 1fr) 230px; } }
+@media (max-height: 520px) {
+  .mm-main { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .mm-main__btn { min-height: 52px; font-size: 1rem; }
+  .mm-main__btn--settings { grid-column: auto; }
+  .mm-main__go { min-height: 44px; }
+  .bk-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+  .bk-detail { padding: 6px 10px; }
+  .bk-detail__art .mon-art { width: 80px !important; height: 80px !important; }
+  .mm-badges { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .mm-badge { padding: 4px 10px; }
+  .mm-badge__medal { width: 34px; height: 34px; }
+}

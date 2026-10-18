@@ -6,6 +6,7 @@ import { AuthContext, type AuthState } from '../auth/AuthContext';
 import * as data from '../data/multiplayer';
 import * as space from '../data/spaceGames';
 import * as cardData from '../data/cardGames';
+import * as power from '../data/powerGames';
 import { Lobby } from './Lobby';
 
 vi.mock('../data/multiplayer', async (importOriginal) => ({
@@ -22,6 +23,12 @@ vi.mock('../data/spaceGames', async (importOriginal) => ({
   fetchSpaceLobby: vi.fn(),
   fetchMyOpenSpaceGames: vi.fn(),
   fetchMathsSwitch: vi.fn(async () => 'off' as const),
+}));
+vi.mock('../data/powerGames', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../data/powerGames')>()),
+  askPower: vi.fn(),
+  fetchPowerLobby: vi.fn(),
+  fetchMyOpenPowerGames: vi.fn(),
 }));
 vi.mock('../data/cardGames', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/cardGames')>()),
@@ -65,6 +72,9 @@ beforeEach(() => {
   vi.mocked(cardData.askCard).mockReset();
   vi.mocked(cardData.fetchCardLobby).mockResolvedValue([]);
   vi.mocked(cardData.fetchMyOpenCardGames).mockResolvedValue([]);
+  vi.mocked(power.askPower).mockReset();
+  vi.mocked(power.fetchPowerLobby).mockResolvedValue([]);
+  vi.mocked(power.fetchMyOpenPowerGames).mockResolvedValue([]);
   localStorage.clear();
 });
 
@@ -107,6 +117,7 @@ describe('the lobby', () => {
     vi.mocked(data.ask).mockRejectedValue(new data.MultiplayerError(NOT_FOUND, 'not-found'));
     vi.mocked(space.askSpace).mockRejectedValue(new data.MultiplayerError(NOT_FOUND, 'not-found'));
     vi.mocked(cardData.askCard).mockRejectedValue(new data.MultiplayerError(NOT_FOUND, 'not-found'));
+    vi.mocked(power.askPower).mockRejectedValue(new data.MultiplayerError(NOT_FOUND, 'not-found'));
     const user = userEvent.setup();
     renderLobby();
     await user.type(screen.getByLabelText('Type the code your friend gives you'), 'CCCCC');

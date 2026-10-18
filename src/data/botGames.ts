@@ -1,5 +1,6 @@
 import type { Outcome } from '../../shared/botGame';
 import type { Card101GameReport, Card101Reason } from '../../shared/card101/save';
+import type { PowerClashGameReport, PowerClashReason } from '../../shared/power-clash/save';
 import type { BotGameReport, Reason as ChessReason } from '../../shared/chess/botGame';
 import type { CheckersGameReport, Reason as CheckersReason } from '../../shared/checkers/botGame';
 import type { SpaceGameReport, SpaceReason } from '../../shared/space/save';
@@ -10,7 +11,7 @@ import { FriendlyError } from './profile';
 /** A finished game to send to the server, saying which game it is. */
 export type SaveableReport = (BotGameReport & { game: 'chess' }) | (CheckersGameReport & { game: 'checkers' });
 
-export type Reason = ChessReason | CheckersReason | SpaceReason | Card101Reason;
+export type Reason = ChessReason | CheckersReason | SpaceReason | Card101Reason | PowerClashReason;
 
 export interface SavedGame {
   id: string;
@@ -40,8 +41,8 @@ export async function refreshSaveToken(): Promise<void> {
 }
 
 /** Games played from a stamped seed. */
-type SeededGame = 'space' | '101';
-type AnyReport = SaveableReport | SpaceGameReport | Card101GameReport;
+type SeededGame = 'space' | '101' | 'power-clash';
+type AnyReport = SaveableReport | SpaceGameReport | Card101GameReport | PowerClashGameReport;
 
 function send(report: AnyReport | { game: SeededGame; start: true; maths?: true }, token: string, keepalive: boolean) {
   return fetch(`${SUPABASE_URL}/functions/v1/save-bot-game`, {
@@ -75,6 +76,11 @@ export async function saveSpaceGame(report: SpaceGameReport): Promise<{ countsFo
 
 /** Saves a finished 101 game. Says whether it earned points. */
 export async function save101Game(report: Card101GameReport): Promise<{ countsForPoints?: boolean }> {
+  return (await saveReport(report)) as { countsForPoints?: boolean };
+}
+
+/** Saves a finished Power Clash match. Says whether it earned points. */
+export async function savePowerClashGame(report: PowerClashGameReport): Promise<{ countsForPoints?: boolean }> {
   return (await saveReport(report)) as { countsForPoints?: boolean };
 }
 
@@ -127,6 +133,7 @@ export async function fetchSeed(game: SeededGame, maths = false): Promise<{ seed
 /** `maths`: the game will have Mission Control maths, which the server refuses while the teacher has it off. */
 export const fetchSpaceSeed = (maths = false) => fetchSeed('space', maths);
 export const fetch101Seed = () => fetchSeed('101');
+export const fetchPowerClashSeed = () => fetchSeed('power-clash');
 
 export async function fetchRecentGames(limit = 5): Promise<SavedGame[]> {
   const { data, error } = await supabase
