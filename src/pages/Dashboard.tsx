@@ -397,7 +397,7 @@ export function Dashboard() {
             <span>See the top players this week</span>
           </span>
         </Link>
-        {trainingOn() && profile?.role === 'student' && (
+        {trainingOn() && (
           <Link to="/training" className="link-card link-card--training">
             <span className="link-card__emoji" aria-hidden="true">
               🧮

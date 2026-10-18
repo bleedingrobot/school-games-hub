@@ -1,9 +1,8 @@
 /**
  * Basic facts training in the hub: the same screens as the preview (src/training/), with the
- * student's records saved to the database. Only students; signed in is already checked by the router.
+ * student's records saved to the database. Students and teachers (teachers have their own practice records); signed in is already checked by the router.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router';
 import { dayString, type TrainingState } from '../../shared/training/records';
 import type { AnswerEvent } from '../../shared/training/save';
 import { useAuth } from '../auth/AuthContext';
@@ -16,14 +15,6 @@ const FLUSH_EVERY = 8;
 export default function TrainingPage() {
   const { profile } = useAuth();
   if (!profile) return null;
-  if (profile.role !== 'student') {
-    return (
-      <div className="page">
-        <p>Training is for students. Teachers see each student’s training on their page, soon.</p>
-        <Link to="/">Back to the hub</Link>
-      </div>
-    );
-  }
   return <StudentTraining player={profile.id} />;
 }
 

@@ -26,7 +26,7 @@ export function Layout() {
         <nav aria-label="Main" className="topnav">
           {[
             ...NAV,
-            ...(trainingOn() && profile?.role === 'student' ? [{ to: '/training', label: 'Training', emoji: '🧮' }] : []),
+            ...(trainingOn() ? [{ to: '/training', label: 'Training', emoji: '🧮' }] : []),
             ...(profile?.role === 'teacher' ? [{ to: '/teacher', label: 'Teacher', emoji: '🧑‍🏫' }] : []),
           ].map((item) => (
             <NavLink key={item.to} to={item.to} end className="topnav__link">

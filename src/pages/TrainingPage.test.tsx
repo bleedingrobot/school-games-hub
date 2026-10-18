@@ -98,10 +98,11 @@ describe('Training is hidden until it is switched on', () => {
     expect(screen.getByRole('link', { name: /Facts training/ })).toHaveAttribute('href', '/training');
   });
 
-  it('shows no link to teachers', () => {
+  it('shows the menu link and card to teachers too', () => {
     flags.on = true;
     renderAt('/', { profile: { ...student.profile!, role: 'teacher' } });
-    expect(screen.queryByRole('link', { name: /Training/ })).toBeNull();
+    expect(screen.getByRole('link', { name: /Training/ })).toHaveAttribute('href', '/training');
+    expect(screen.getByRole('link', { name: /Facts training/ })).toBeInTheDocument();
   });
 });
 
@@ -132,11 +133,11 @@ describe('the Training page', () => {
     expect(screen.getByRole('button', { name: /Today’s session/ })).toBeEnabled();
   });
 
-  it('is for students only', async () => {
+  it('opens for teachers as well, with their own records', async () => {
     flags.on = true;
     renderAt('/training', { profile: { ...student.profile!, role: 'teacher' } });
-    expect(await screen.findByText(/Training is for students/)).toBeInTheDocument();
-    expect(data.loadTraining).not.toHaveBeenCalled();
+    expect(await screen.findByRole('button', { name: /Today’s session/ })).toBeInTheDocument();
+    expect(data.loadTraining).toHaveBeenCalledWith('u1');
   });
 
   it('says so kindly when it can’t open', async () => {
