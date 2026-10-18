@@ -200,7 +200,7 @@ Needs classes from stage F.2 of the maths focus plan.
 Not before Clan Quest and Dragon Maths are finished, and not before F.1 of the maths focus plan.
 
 1. **T.1 Session and timing:** training home, a daily session on times tables, hidden timing, the typing check, thinking time, Fix-it moment, and the end-of-session summary. Preview only, no database.
-2. **T.2 Facts map and colours:** the 12×12 map with the speed bands, "this week" line, saving answers and times (database change, go-live needs James's yes).
+2. **T.2 Facts map and colours (built 18 Oct 2026 on branch `training`, local database only, hidden behind `src/training/switch.ts`, waiting for "go live"):** the 12×12 map with the speed bands, "this week" line, saving answers and times (database change, go-live needs James's yes).
 3. **T.3 Strategy lessons:** the lessons in section 4.1 for times tables, Split the rectangle, Which trick helps?, fact family triangles and missing numbers.
 4. **T.4 Early facts:** facts to 10 and 20, doubles and halves, with ten-frame lessons and their map.
 5. **T.5 Quick-fire 20, too-fast lock, and mistake patterns.**
