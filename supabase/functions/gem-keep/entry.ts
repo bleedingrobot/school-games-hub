@@ -1,7 +1,7 @@
 // Connects the gem-keep handler to Supabase. Edit handler.ts for the logic, then run
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
-import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import { FLUENT_DAYS, quickMsForPack, TOP_BOX } from '../../../shared/maths/config';
 import { makePlaceSyncer, savePlacement, type PlacePorts } from '../../../shared/maths/syncPlace';
 import { makeHandler, type Outcome } from './handler';
 
@@ -67,7 +67,7 @@ Deno.serve(
     // The rules' numbers come from the shared maths settings, so they live in one place.
     recordAnswers: (player, pack, batchId, answers) =>
       call('record_fact_answers', {
-        player, pack, batch_id: batchId, answers, quick_ms: QUICK_MS, fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
+        player, pack, batch_id: batchId, answers, quick_ms: quickMsForPack(pack), fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
       }),
     importProgress: (player, levels) => call('import_gem_keep_progress', { player, levels }),
   }),

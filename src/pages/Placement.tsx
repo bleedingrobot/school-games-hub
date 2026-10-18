@@ -17,6 +17,7 @@ import {
 } from "../../shared/maths/place";
 import type { Question } from "../../shared/maths/skillPack";
 import { QuestionModal, type MarkedAnswer } from "../maths/QuestionModal";
+import { sameAnswer } from "../../shared/maths/banded";
 import "../maths/ladderPath.css";
 
 type Step =
@@ -94,7 +95,7 @@ export default function Placement() {
     const fact = q.parts
       .map((part) => (part === "?" ? String(q.answer) : part))
       .join(" ");
-    return { correct: answer === q.answer, fact, boxBefore: 0, boxAfter: 0 };
+    return { correct: sameAnswer(answer, q.answer), fact, boxBefore: 0, boxAfter: 0 };
   }
 
   async function finish(all: PlacementAnswer[]) {
@@ -128,7 +129,7 @@ export default function Placement() {
       {
         skill: skill.id,
         correct: result.correct,
-        quick: result.correct && isQuick(ms),
+        quick: result.correct && isQuick(ms, skill),
       },
     ];
     const nextAnswers = [

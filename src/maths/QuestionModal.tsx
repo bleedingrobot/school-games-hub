@@ -41,6 +41,12 @@ function Part({ text, blank }: { text: string; blank: ReactNode }) {
   return <span>{text}</span>;
 }
 
+/** What a screen reader says for the digits typed so far: "4.15" is "4 point 1 5", "4." is "4 point". */
+function spokenTyped(typed: string): string {
+  const [whole, fraction] = typed.split('.');
+  return typed.includes('.') ? `${whole} point ${fraction.split('').join(' ')}`.trim() : whole;
+}
+
 /** A choice button's text: fractions drawn as fractions. */
 const choiceText = (label: string) => (FRACTION.test(label) ? <Part text={label} blank={null} /> : label);
 
@@ -232,7 +238,7 @@ export function QuestionModal({
         ) : (
           <>
             <p className="sr-only" aria-live="polite">
-              {typed ? `Your answer: ${typed}` : ''}
+              {typed ? `Your answer: ${spokenTyped(typed)}` : ''}
             </p>
             <NumberPad onDigit={addDigit} onBack={back} onEnter={enter} canEnter={typed !== '' && typed !== '0.'} disabled={!!result || checking} decimal={decimal} />
           </>

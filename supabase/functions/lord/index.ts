@@ -1711,7 +1711,7 @@ const nzDayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckla
 /** The New Zealand date of a moment, as YYYY-MM-DD. */
 const nzDay = (at) => nzDayFormat.format(new Date(at));
 /** The stats after one answer. Doesn't change the stats it's given. */
-function afterAnswer(stats, correct, ms, at) {
+function afterAnswer(stats, correct, ms, at, quickMs = QUICK_MS) {
 	const attempts = stats.attempts + 1;
 	const next = {
 		...stats,
@@ -1725,7 +1725,7 @@ function afterAnswer(stats, correct, ms, at) {
 		next.box = 1;
 		return next;
 	}
-	if (ms > 5e3) return next;
+	if (ms > quickMs) return next;
 	const day = nzDay(at);
 	if (!next.quickDays.includes(day)) next.quickDays = [...next.quickDays, day].slice(-2);
 	const canBeFluent = next.quickDays.length >= 2;
@@ -2071,7 +2071,7 @@ var BandedPack = class {
 		if (made.pick) {
 			choices = made.pick.map((_, i) => i);
 			choiceLabels = made.pick;
-		} else if (multipleChoice) choices = choicesFor(answer, made.wrong ?? [], decimal, random);
+		} else if (multipleChoice || made.choose) choices = choicesFor(answer, made.wrong ?? [], decimal, random);
 		return {
 			skill: this.id,
 			factKey: key,
@@ -2116,7 +2116,7 @@ var BandedPack = class {
 		const correct = sameAnswer(answer, q.answer);
 		const before = this.records.get(q.factKey) ?? newStats$1(q.factKey);
 		const at = this.now();
-		const after = afterAnswer(before, correct, ms, at);
+		const after = afterAnswer(before, correct, ms, at, this.definition.quickMs);
 		this.records.set(q.factKey, after);
 		for (const listener of this.listeners) listener({
 			key: q.factKey,

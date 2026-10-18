@@ -42,6 +42,14 @@ export const DIVISION_SHARE = 0.3;
 
 /** Answering correctly within this many milliseconds counts as quick. */
 export const QUICK_MS = 5000;
+/**
+ * Packs whose questions take longer to think through have a longer quick time (James can change these): the generated
+ * skills (rounding a 7-digit number, 2 + 3 × 4 − 1 with four choices) can't be answered in 5 seconds by a student who knows
+ * them well, and a box only moves up on a quick answer, so with 5 seconds those skills would never be secure.
+ */
+export const QUICK_MS_BY_PACK: Readonly<Record<string, number>> = { generated: 8000 };
+/** The quick time for the records of a pack ("times-tables", "generated"...). */
+export const quickMsForPack = (pack: string | null | undefined): number => (pack && Object.hasOwn(QUICK_MS_BY_PACK, pack) ? QUICK_MS_BY_PACK[pack] : QUICK_MS);
 
 /** Mastery boxes 0–4 (Leitner). How likely each box is to be picked: lower boxes come up more. */
 export const BOX_WEIGHTS = [6, 5, 3, 2, 1];

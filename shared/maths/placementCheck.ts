@@ -3,6 +3,7 @@
  * and what the student answered. The server asks the same walk where each question should have come from, works each question
  * out from how it was shown (`solveParts`), and only then says where the student starts. The result only says where to start.
  */
+import { sameAnswer } from "./banded";
 import { PLACEMENT_QUESTIONS } from "./config";
 import { solveParts } from "./focus";
 import { LADDER } from "./ladder";
@@ -12,6 +13,9 @@ import {
   placementResult,
   type PlacementStep,
 } from "./place";
+
+/** The most parts a question can have (order of operations is the longest). */
+const MAX_QUESTION_PARTS = 12;
 
 export interface PlacementAnswer {
   skill: string;
@@ -32,7 +36,7 @@ export function parsePlacementAnswers(raw: unknown): PlacementAnswer[] | null {
       typeof skill !== "string" ||
       !Array.isArray(parts) ||
       !parts.every((p) => typeof p === "string") ||
-      parts.length > 8
+      parts.length > MAX_QUESTION_PARTS
     )
       return null;
     if (
@@ -59,8 +63,8 @@ export function checkPlacement(
     const solved = solveParts(a.parts);
     if (!solved || !solved.keys.some((k) => expected.keys.includes(k)))
       return null;
-    const correct = a.answer === solved.answer;
-    steps.push({ skill: a.skill, correct, quick: correct && isQuick(a.ms) });
+    const correct = sameAnswer(a.answer, solved.answer);
+    steps.push({ skill: a.skill, correct, quick: correct && isQuick(a.ms, expected) });
   }
   if (placementNext(yearLevel, steps) !== null) return null;
   return placementResult(steps).id;

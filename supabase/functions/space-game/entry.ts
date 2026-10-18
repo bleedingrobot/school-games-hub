@@ -1,7 +1,7 @@
 // Connects the space-game handler to Supabase. Edit handler.ts for the logic, then run
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
-import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import { FLUENT_DAYS, quickMsForPack, TOP_BOX } from '../../../shared/maths/config';
 import type { FactStats } from '../../../shared/maths/leitner';
 import { packIdOfKey, parseFocus } from '../../../shared/maths/focus';
 import { makePlaceSyncer } from '../../../shared/maths/syncPlace';
@@ -201,12 +201,13 @@ Deno.serve(
       if (error) logProblem('drop question', error.code);
     },
     async recordAnswer(player, once, answer) {
+      const pack = packIdOfKey(answer.key) ?? 'times-tables';
       const { error } = await admin.rpc('record_fact_answers', {
         player,
-        pack: packIdOfKey(answer.key) ?? 'times-tables',
+        pack,
         batch_id: await batchIdFor(once),
         answers: [answer],
-        quick_ms: QUICK_MS,
+        quick_ms: quickMsForPack(pack),
         fluent_days: FLUENT_DAYS,
         top_box: TOP_BOX,
       });

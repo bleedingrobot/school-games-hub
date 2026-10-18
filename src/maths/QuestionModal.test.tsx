@@ -2,6 +2,8 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
+import { randomFromSeed } from '../../shared/space/random';
+import { generatedPack } from '../../shared/maths/skillPacks/generated';
 import { FEEDBACK_MS, QuestionModal } from './QuestionModal';
 
 const question = (extra: Partial<Question> = {}): Question => ({
@@ -162,5 +164,53 @@ describe('question box', () => {
     setup(question({ parts: ['$2.40', '+', '$1.70', '=', '$', '?'], spoken: '$2.40 plus $1.70 equals $ what?', answer: 4.1, input: 'decimal' }), 1);
     await user.keyboard('5{Enter}');
     expect(screen.getByLabelText('$2.40 plus $1.70 equals $ what?')).toHaveTextContent('4.10');
+  });
+});
+
+describe('the generated skills (rounding, order of operations)', () => {
+  const ask = (key: string, multipleChoice = false) => generatedPack([], randomFromSeed(`modal:${key}`)).questionFor(key, 'focus', { multipleChoice });
+
+  it('rounding to a tenth shows the point key, and 4.15 can be typed with the keys and read out digit by digit', async () => {
+    const user = userEvent.setup();
+    const q = ask('round:tenth:hundredths');
+    const { onSubmit } = setup(q);
+    expect(screen.getByRole('button', { name: 'Point' })).toBeInTheDocument();
+    for (const key of ['4', 'Point', '1', '5']) await user.click(screen.getByRole('button', { name: key }));
+    expect(document.querySelector('.sr-only[aria-live="polite"]:not(:empty)')).toHaveTextContent('Your answer: 4 point 1 5');
+    await user.click(screen.getByRole('button', { name: 'Check my answer' }));
+    expect(onSubmit).toHaveBeenCalledWith(4.15, expect.any(Number));
+  });
+
+  it('a whole-number rounding question has no point key and looks as it always did', () => {
+    setup(ask('round:100:3digit'));
+    expect(screen.queryByRole('button', { name: 'Point' })).not.toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Number pad' })).not.toHaveAttribute('data-decimal');
+  });
+
+  it('big answers fit: rounding to the nearest million can be typed in full', async () => {
+    const user = userEvent.setup();
+    const q = ask('round:1000000:7digit');
+    const { onSubmit } = setup(q);
+    await user.keyboard(`${q.answer}{Enter}`);
+    expect(onSubmit).toHaveBeenCalledWith(q.answer, expect.any(Number));
+  });
+
+  it('order of operations is four choices to tap, with no number pad, and a wrong choice shows the whole sum', async () => {
+    const user = userEvent.setup();
+    const q = ask('bedmas:mul-first');
+    expect(q.choices).toHaveLength(4);
+    const { onSubmit } = setup(q);
+    expect(screen.getAllByRole('button').filter((b) => b.classList.contains('question__choice'))).toHaveLength(4);
+    expect(screen.queryByRole('group', { name: 'Number pad' })).not.toBeInTheDocument();
+    const wrong = q.choices!.find((c) => c !== q.answer)!;
+    await user.click(screen.getByRole('button', { name: String(wrong) }));
+    expect(onSubmit).toHaveBeenCalledWith(wrong, expect.any(Number));
+  });
+
+  it('bracket groups are one part of the sum', () => {
+    const q = ask('bedmas:brackets-first');
+    setup(q);
+    expect(screen.getByLabelText(q.spoken).textContent!.replace(/\s/g, '')).toContain(q.parts.slice(0, -2).join('').replace(/ /g, ''));
+    expect(q.parts.filter((p) => p.startsWith('('))).toHaveLength(1);
   });
 });

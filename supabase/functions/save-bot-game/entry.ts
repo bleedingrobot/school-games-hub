@@ -1,7 +1,7 @@
 // Connects the save-bot-game handler to Supabase. Edit handler.ts for the logic, then run
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
-import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import { FLUENT_DAYS, quickMsForPack, TOP_BOX } from '../../../shared/maths/config';
 import { makePlaceSyncer } from '../../../shared/maths/syncPlace';
 import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
 import { stamper } from '../_shared/stamp';
@@ -83,7 +83,7 @@ Deno.serve((request) =>
     },
     async recordAnswers(player, batchId, answers, pack = 'times-tables') {
       const { error } = await admin.rpc('record_fact_answers', {
-        player, pack, batch_id: batchId, answers, quick_ms: QUICK_MS, fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
+        player, pack, batch_id: batchId, answers, quick_ms: quickMsForPack(pack), fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
       });
       if (error) throw new Error(error.code ?? 'unknown');
       await syncPlace(player);

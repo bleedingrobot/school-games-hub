@@ -94,7 +94,7 @@ export async function askSpace(request: SpaceAction): Promise<SpaceGame> {
 export interface SpaceMathsReply {
   game: SpaceGame;
   /** The question to show (an `answer` is never sent with it). */
-  question?: { id: number; skill: string; kind: string; parts: string[]; spoken: string; choices?: number[] };
+  question?: { id: number; skill: string; kind: string; parts: string[]; spoken: string; choices?: number[]; choiceLabels?: string[]; input?: 'whole' | 'decimal'; maxLength?: number };
   /** The question after a turn was already answered. */
   done?: boolean;
   /** For an answer: was it right, and what was the answer. */

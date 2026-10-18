@@ -10,6 +10,7 @@
  * back into a type and numbers, builds the question again from them, and only accepts it if it comes out exactly as shown.
  */
 import { BandedPack, tidy, type Family, type PackDefinition } from '../banded';
+import { quickMsForPack } from '../config';
 import type { FactStats } from '../leitner';
 import { BEDMAS_FAMILIES, BEDMAS_KEYS, parseBedmas } from './bedmas';
 import { RECORD_KEY, sameParts, type Parser } from './generatedKit';
@@ -26,6 +27,7 @@ export const GENERATED: PackDefinition = {
   families,
   bands: [],
   ladderOnly: Object.keys(families),
+  quickMs: quickMsForPack('generated'),
 };
 
 export const generatedPack = (saved?: FactStats[], random?: () => number, now?: () => number) => new BandedPack(GENERATED, saved, random, now);

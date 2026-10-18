@@ -49,8 +49,16 @@ beforeEach(() => {
 async function answer(user: ReturnType<typeof userEvent.setup>, n: number, right: boolean) {
   await screen.findByText(`Question ${n} of ${PLACEMENT_QUESTIONS}`, undefined, { timeout: 4000 });
   const q = asked[n - 1];
-  for (const digit of String(right ? q.answer : q.answer + 1)) await user.click(screen.getByRole('button', { name: digit }));
-  await user.click(screen.getByRole('button', { name: 'Check my answer' }));
+  if (q.choices) {
+    // Four choices to tap (order of operations): the right one, or a wrong one.
+    const target = right ? q.answer : q.choices.find((c) => c !== q.answer)!;
+    await user.click(screen.getByRole('button', { name: String(target) }));
+  } else {
+    // Typed on the pad; a decimal has a point key.
+    const typed = String(right ? q.answer : Number((q.answer + 1).toFixed(3)));
+    for (const char of typed) await user.click(screen.getByRole('button', { name: char === '.' ? 'Point' : char }));
+    await user.click(screen.getByRole('button', { name: 'Check my answer' }));
+  }
   // The feedback shows for a moment, then the next question (or the saving) comes up.
   await waitFor(() => expect(document.querySelector('.question[data-result]')).not.toBeNull());
   await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 4000 });

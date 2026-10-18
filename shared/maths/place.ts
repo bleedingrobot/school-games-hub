@@ -8,11 +8,12 @@
  * The server keeps the furthest place and the placement; the database cannot see the ladder, so the server functions that save
  * answers work the place out with this file (`placeToStore`) and the database only checks that it never goes back.
  */
-import { PLACEMENT_QUESTIONS, QUICK_MS, START_YEARS_BEHIND } from "./config";
+import { PLACEMENT_QUESTIONS, quickMsForPack, START_YEARS_BEHIND } from "./config";
 import type { FactStats } from "./leitner";
 import {
   LADDER,
   ladderProgress,
+  packIdOfKey,
   questionForKey,
   type LadderOptions,
   type LadderProgress,
@@ -185,4 +186,5 @@ export function placementQuestion(
   return questionForKey(pool[Math.floor(random() * pool.length)], id, random);
 }
 
-export const isQuick = (ms: number) => ms <= QUICK_MS;
+/** Quick enough for the skill: its records' own quick time (a rounding or order-of-operations question gets longer than a fact). */
+export const isQuick = (ms: number, skill?: LadderSkill | null) => ms <= quickMsForPack(skill?.keys[0] ? packIdOfKey(skill.keys[0]) : null);

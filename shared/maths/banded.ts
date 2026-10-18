@@ -61,6 +61,8 @@ export interface PackDefinition {
    * every band, so a game that asks by band never serves them. Only the auto ladder asks for them.
    */
   ladderOnly?: string[];
+  /** Answering right within this many milliseconds counts as quick (default `QUICK_MS`). */
+  quickMs?: number;
 }
 
 // ---------------------------------------------------------------- helpers for families
@@ -320,7 +322,7 @@ export class BandedPack implements SkillPack {
     const correct = sameAnswer(answer, q.answer);
     const before = this.records.get(q.factKey) ?? newStats(q.factKey);
     const at = this.now();
-    const after = afterAnswer(before, correct, ms, at);
+    const after = afterAnswer(before, correct, ms, at, this.definition.quickMs);
     this.records.set(q.factKey, after);
     for (const listener of this.listeners) listener({ key: q.factKey, correct, ms: Math.round(ms), at });
     if (!correct) scheduleRepeat(this.memory, q.factKey, this.random);

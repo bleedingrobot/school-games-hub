@@ -82,6 +82,14 @@ const MIX = {
 };
 /** Answering correctly within this many milliseconds counts as quick. */
 const QUICK_MS = 5e3;
+/**
+* Packs whose questions take longer to think through have a longer quick time (James can change these): the generated
+* skills (rounding a 7-digit number, 2 + 3 × 4 − 1 with four choices) can't be answered in 5 seconds by a student who knows
+* them well, and a box only moves up on a quick answer, so with 5 seconds those skills would never be secure.
+*/
+const QUICK_MS_BY_PACK = { generated: 8e3 };
+/** The quick time for the records of a pack ("times-tables", "generated"...). */
+const quickMsForPack = (pack) => pack && Object.hasOwn(QUICK_MS_BY_PACK, pack) ? QUICK_MS_BY_PACK[pack] : QUICK_MS;
 /** Mastery boxes 0–4 (Leitner). How likely each box is to be picked: lower boxes come up more. */
 const BOX_WEIGHTS = [
 	6,
@@ -285,7 +293,7 @@ const nzDayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckla
 /** The New Zealand date of a moment, as YYYY-MM-DD. */
 const nzDay = (at) => nzDayFormat.format(new Date(at));
 /** The stats after one answer. Doesn't change the stats it's given. */
-function afterAnswer(stats, correct, ms, at) {
+function afterAnswer(stats, correct, ms, at, quickMs = QUICK_MS) {
 	const attempts = stats.attempts + 1;
 	const next = {
 		...stats,
@@ -299,7 +307,7 @@ function afterAnswer(stats, correct, ms, at) {
 		next.box = 1;
 		return next;
 	}
-	if (ms > 5e3) return next;
+	if (ms > quickMs) return next;
 	const day = nzDay(at);
 	if (!next.quickDays.includes(day)) next.quickDays = [...next.quickDays, day].slice(-2);
 	const canBeFluent = next.quickDays.length >= 2;
@@ -504,7 +512,7 @@ var BandedPack = class {
 		if (made.pick) {
 			choices = made.pick.map((_, i) => i);
 			choiceLabels = made.pick;
-		} else if (multipleChoice) choices = choicesFor$1(answer, made.wrong ?? [], decimal, random);
+		} else if (multipleChoice || made.choose) choices = choicesFor$1(answer, made.wrong ?? [], decimal, random);
 		return {
 			skill: this.id,
 			factKey: key,
@@ -549,7 +557,7 @@ var BandedPack = class {
 		const correct = sameAnswer(answer, q.answer);
 		const before = this.records.get(q.factKey) ?? newStats$1(q.factKey);
 		const at = this.now();
-		const after = afterAnswer(before, correct, ms, at);
+		const after = afterAnswer(before, correct, ms, at, this.definition.quickMs);
 		this.records.set(q.factKey, after);
 		for (const listener of this.listeners) listener({
 			key: q.factKey,
@@ -1505,7 +1513,7 @@ const DIVISION = {
 * Band 4: comparing any two fractions, simplifying (6/8 = 3/?).
 */
 const TODO$3 = (what) => [`TODO-${what}`];
-const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+const gcd$1 = (a, b) => b === 0 ? a : gcd$1(b, a % b);
 const frac = (n, d) => `${n}/${d}`;
 /** A "which is bigger?" question: the answer is the index of the bigger fraction. */
 function bigger(n1, d1, n2, d2) {
@@ -1613,7 +1621,7 @@ const FRACTIONS = {
 				let n;
 				do
 					n = int(r, 2, d - 1);
-				while (gcd(n, d) !== 1);
+				while (gcd$1(n, d) !== 1);
 				return [
 					n,
 					d,
@@ -1627,7 +1635,7 @@ const FRACTIONS = {
 					5,
 					8,
 					10
-				].includes(d) || !isInt(n, 2, d - 1) || gcd(n, d) !== 1 || !isInt(q, 1, 10)) return null;
+				].includes(d) || !isInt(n, 2, d - 1) || gcd$1(n, d) !== 1 || !isInt(q, 1, 10)) return null;
 				const parts = [
 					frac(n, d),
 					"of",
@@ -1658,7 +1666,7 @@ const FRACTIONS = {
 				let n;
 				do
 					n = int(r, 1, d - 1);
-				while (gcd(n, d) !== 1);
+				while (gcd$1(n, d) !== 1);
 				return [
 					n,
 					d,
@@ -1667,7 +1675,7 @@ const FRACTIONS = {
 				];
 			},
 			make: (_k, [n, d, k, v]) => {
-				if (!isInt(d, 2, 5) || !isInt(n, 1, d - 1) || gcd(n, d) !== 1 || !isInt(k, 2, 5) || !isInt(v, 0, 1)) return null;
+				if (!isInt(d, 2, 5) || !isInt(n, 1, d - 1) || gcd$1(n, d) !== 1 || !isInt(k, 2, 5) || !isInt(v, 0, 1)) return null;
 				const blank = v === 0 ? `?/${d * k}` : `${n * k}/?`;
 				const parts = [
 					frac(n, d),
@@ -1867,7 +1875,7 @@ const FRACTIONS = {
 				const d = int(r, 2, 6);
 				do
 					n = int(r, 1, d - 1);
-				while (gcd(n, d) !== 1);
+				while (gcd$1(n, d) !== 1);
 				return [
 					n,
 					d,
@@ -1876,7 +1884,7 @@ const FRACTIONS = {
 				];
 			},
 			make: (_k, [n, d, k, v]) => {
-				if (!isInt(d, 2, 6) || !isInt(n, 1, d - 1) || gcd(n, d) !== 1 || !isInt(k, 2, 6) || !isInt(v, 0, 1)) return null;
+				if (!isInt(d, 2, 6) || !isInt(n, 1, d - 1) || gcd$1(n, d) !== 1 || !isInt(k, 2, 6) || !isInt(v, 0, 1)) return null;
 				const parts = [
 					frac(n * k, d * k),
 					"=",
@@ -2398,7 +2406,7 @@ const bondKeys = (prefix, total, from) => {
 	for (let a = from; a <= total / 2; a++) keys.push(`${prefix}:${a}+${total - a}`);
 	return keys;
 };
-const parseBond = (key) => {
+const parseBond$1 = (key) => {
 	const m = /^bond(10|20):(\d+)\+(\d+)$/.exec(key);
 	return m ? {
 		total: Number(m[1]),
@@ -2414,7 +2422,7 @@ function bonds(label, tag, prefix, total, from) {
 		curriculumTags: [tag],
 		keys,
 		roll: (key, r) => {
-			const { a, b } = parseBond(key);
+			const { a, b } = parseBond$1(key);
 			return [
 				a,
 				b,
@@ -2422,7 +2430,7 @@ function bonds(label, tag, prefix, total, from) {
 			];
 		},
 		make: (key, [a, b, v]) => {
-			const bond = parseBond(key);
+			const bond = parseBond$1(key);
 			if (!bond || bond.total !== total || bond.a !== a || bond.b !== b || !keys.includes(key) || !isInt(v, 0, 3)) return null;
 			const t = String(total);
 			const [parts, answer] = v === 0 ? [[
@@ -2466,11 +2474,11 @@ function bonds(label, tag, prefix, total, from) {
 		}
 	};
 }
-const range = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
+const range$1 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
 /** Doubles of dblFrom–dblTo and halves of the even numbers halfFrom–halfTo. */
 function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
-	const dbls = range(dblFrom, dblTo);
-	const halves = range(halfFrom, halfTo, 2);
+	const dbls = range$1(dblFrom, dblTo);
+	const halves = range$1(halfFrom, halfTo, 2);
 	const keys = [...dbls.map((n) => `dbl:${n}`), ...halves.map((n) => `half:${n}`)];
 	return {
 		label,
@@ -2553,6 +2561,1287 @@ const EARLY_FACTS = {
 };
 const earlyFactsPack = (saved, random, now) => new BandedPack(EARLY_FACTS, saved, random, now);
 //#endregion
+//#region shared/maths/skillPacks/generatedKit.ts
+/**
+* Small tools shared by the generated skills (bonds to 100 and 1000, rounding, times with tens and hundreds, factor pairs,
+* squares and cubes, order of operations). These skills make endless questions, so mastery is kept per question TYPE, not per
+* fact (docs/MATHS-FOCUS-PLAN.md section 3 and the F.5 results).
+*
+* Key format: `<skill word>:<detail>[:<detail>]`, lower case, for example `round:100:3digit`, `round:100:near-halfway`,
+* `bond100:fives` or `bedmas:brackets-first`. The part before the first colon is 1 to 10 letters or digits (it starts with a
+* letter); the rest uses only a-z, 0-9, ':', '+', '/' and '-', and is at most 40 characters. The database check on
+* `gem_keep_facts.fact_key` allows exactly that, so no key here needs a migration of its own.
+*/
+/** The shape the database accepts for a record key (kept in step with `gem_keep_facts_fact_key_check`). */
+const RECORD_KEY = /^[a-z][a-z0-9]{0,9}:[a-z0-9:+/-]{1,40}$/;
+/** "12 500" → 12500, "4.15" → 4.15. Null when it isn't written the way `show` writes numbers. */
+function readNumber(text) {
+	if (!/^\d+(?: \d{3})*(?:\.\d+)?$/.test(text)) return null;
+	const n = Number(text.replace(/ /g, ""));
+	return Number.isFinite(n) ? n : null;
+}
+/** Numbers of decimal places in how a number was written ("4.15" → 2, "7" → 0). */
+const decimalPlaces = (text) => (text.split(".")[1] ?? "").length;
+/**
+* Wrong choices that come from named common mistakes, never from random numbers. Every kept value is different from the
+* answer and from each other, a real number the student could type (whole unless `decimal`), and passes `ok` (used when a
+* mistake can't be allowed to be right by accident, e.g. a "factor of 24" choice that really is a factor).
+* Null when fewer than three are left: the question can't be a multiple-choice one, so the generator must roll again.
+*/
+function mistakes(answer, named, opts = {}) {
+	const kept = {};
+	const seen = [];
+	for (const [name, raw] of Object.entries(named)) {
+		const n = tidy(raw);
+		if (!Number.isFinite(n) || n < 0 || sameAnswer(n, answer)) continue;
+		if (!opts.decimal && !Number.isInteger(n)) continue;
+		if (opts.ok && !opts.ok(n)) continue;
+		if (seen.some((s) => sameAnswer(s, n))) continue;
+		seen.push(n);
+		kept[name] = n;
+	}
+	return seen.length >= 3 ? {
+		wrong: seen,
+		named: kept
+	} : null;
+}
+/** A question made from named mistakes (null when there aren't enough). */
+function withMistakes(base, named, opts = {}) {
+	const found = mistakes(base.answer, named, {
+		decimal: base.input === "decimal",
+		...opts
+	});
+	return found ? {
+		...base,
+		wrong: found.wrong,
+		named: found.named
+	} : null;
+}
+const sameParts = (a, b) => a.length === b.length && a.every((p, i) => p === b[i]);
+/**
+* A family that owns one question type. `size` is how many numbers a question is made from (null if it varies): numbers of
+* any other count are refused. A roll that makes a question which could not be asked (too few named mistakes, say) is thrown
+* away and rolled again, so every roll is a question the server will also accept.
+*/
+function oneKey(key, label, tags, size, roll, make) {
+	const safe = (k, params) => size === null || params.length === size ? make(k, params) : null;
+	return {
+		label,
+		curriculumTags: tags,
+		keys: [key],
+		make: safe,
+		roll: (k, random) => {
+			for (let tries = 0; tries < 1e3; tries++) {
+				const params = roll(k, random);
+				if (safe(k, params)) return params;
+			}
+			throw new Error(`${key}: no question could be rolled`);
+		}
+	};
+}
+/** A number for a screen reader: 12500 → "12500", 4.15 → "4 point 1 5" (a point and then the digits one by one). */
+function say(n) {
+	const [whole, frac] = String(tidy(n)).split(".");
+	return frac ? `${whole} point ${frac.split("").join(" ")}` : whole;
+}
+//#endregion
+//#region shared/maths/skillPacks/bedmas.ts
+/**
+* Order of operations (the ladder skill "bedmas"). NZ Curriculum order: brackets first, then × and ÷ left to right, then
+* + and − left to right. (Exponents have their own skill, squares and cubes; a square isn't written in these questions.)
+*
+* Question types (one mastery record each), from the first two-step questions to the mixed ones:
+*   bedmas:mul-first       2 + 3 × 4       times before adding or taking away
+*   bedmas:div-first       12 − 8 ÷ 4      dividing before adding or taking away
+*   bedmas:left-to-right   12 − 4 + 2      same rank: left to right
+*   bedmas:brackets-first  (2 + 3) × 4     brackets, then times
+*   bedmas:brackets-div    (10 − 4) ÷ 3    brackets, then divide
+*   bedmas:mixed           2 + 3 × 4 − 5   three steps, no brackets
+*   bedmas:mixed-brackets  (2 + 3) × 4 − 5 three steps with brackets
+*
+* Every question is four choices to tap (James, 19 Oct 2026). The wrong choices are what a student gets by following a named
+* mistake (working left to right gives 20 for 2 + 3 × 4), never a random number, and they are always different from the right
+* answer and from each other. A question where fewer than three mistakes give a different whole number is never asked.
+*/
+const isOp = (t) => t === "+" || t === "−" || t === "×" || t === "÷";
+const TEMPLATES = [
+	...[
+		"a + b × c",
+		"a − b × c",
+		"a × b + c",
+		"a × b − c"
+	].map((src) => ({
+		key: "bedmas:mul-first",
+		src
+	})),
+	...[
+		"a + b ÷ c",
+		"a − b ÷ c",
+		"a ÷ b + c",
+		"a ÷ b − c"
+	].map((src) => ({
+		key: "bedmas:div-first",
+		src
+	})),
+	...[
+		"a − b + c",
+		"a − b − c",
+		"a ÷ b × c",
+		"a × b ÷ c"
+	].map((src) => ({
+		key: "bedmas:left-to-right",
+		src
+	})),
+	...[
+		"(a + b) × c",
+		"(a − b) × c",
+		"a × (b + c)",
+		"a × (b − c)"
+	].map((src) => ({
+		key: "bedmas:brackets-first",
+		src
+	})),
+	...[
+		"(a + b) ÷ c",
+		"(a − b) ÷ c",
+		"a ÷ (b + c)",
+		"a ÷ (b − c)"
+	].map((src) => ({
+		key: "bedmas:brackets-div",
+		src
+	})),
+	...[
+		"a + b × c − d",
+		"a × b + c × d",
+		"a × b − c × d",
+		"a − b ÷ c + d",
+		"a + b × c + d"
+	].map((src) => ({
+		key: "bedmas:mixed",
+		src
+	})),
+	...[
+		"(a + b) × c − d",
+		"a + b × (c − d)",
+		"(a − b) × c + d",
+		"a × (b + c) − d",
+		"(a + b) × (c − d)",
+		"(a + b) ÷ c + d"
+	].map((src) => ({
+		key: "bedmas:mixed-brackets",
+		src
+	}))
+];
+const BEDMAS_KEYS = [...new Set(TEMPLATES.map((t) => t.key))];
+const lettersOf = (src) => (src.match(/[a-d]/g) ?? []).length;
+/** The template with its numbers put in, as tokens. */
+function tokensOf(src, nums) {
+	let next = 0;
+	return (src.match(/[a-d]|[+−×÷]|[()]/g) ?? []).map((t) => /[a-d]/.test(t) ? nums[next++] : t);
+}
+/** What the student sees: a bracket group is one part, '(2 + 3)'. */
+function partsOf(tokens) {
+	const parts = [];
+	let group = null;
+	for (const t of tokens) if (t === "(") group = [];
+	else if (t === ")") {
+		parts.push(`(${group.join(" ")})`);
+		group = null;
+	} else (group ?? parts).push(String(t));
+	return [
+		...parts,
+		"=",
+		"?"
+	];
+}
+const words = (tokens) => tokens.map((t) => t === "+" ? "plus" : t === "−" ? "minus" : t === "×" ? "times" : t === "÷" ? "divided by" : t === "(" ? "open bracket" : t === ")" ? "close bracket" : String(t)).join(" ");
+const RIGHT = {
+	rank: "normal",
+	brackets: true,
+	exact: true
+};
+function evaluate(all, way) {
+	const tokens = way.brackets ? all : all.filter((t) => t !== "(" && t !== ")");
+	let i = 0;
+	const level = (op) => way.rank === "flat" ? 1 : (op === "×" || op === "÷") === (way.rank === "normal") ? 2 : 1;
+	const apply = (op, a, b) => {
+		const v = op === "+" ? a + b : op === "−" ? a - b : op === "×" ? a * b : b === 0 ? NaN : a / b;
+		return way.exact && (!Number.isInteger(v) || v < 0) ? NaN : v;
+	};
+	const atom = () => {
+		const t = tokens[i++];
+		if (t === "(") {
+			const v = expr(1);
+			i++;
+			return v;
+		}
+		return typeof t === "number" ? t : NaN;
+	};
+	const expr = (min) => {
+		let left = atom();
+		while (i < tokens.length) {
+			const op = tokens[i];
+			if (!isOp(op) || level(op) < min) break;
+			i++;
+			const right = expr(way.right ? level(op) : level(op) + 1);
+			left = apply(op, left, right);
+		}
+		return left;
+	};
+	const value = expr(1);
+	return i === tokens.length ? value : NaN;
+}
+/** The tokens with the first number (or bracket group) and the sign after it taken off. */
+function withoutFirst(tokens) {
+	let i = 0;
+	if (tokens[0] === "(") i = tokens.indexOf(")") + 1;
+	else i = 1;
+	return tokens.slice(i + 1);
+}
+/** The tokens with the last number (or bracket group) and the sign before it taken off. */
+function withoutLast(tokens) {
+	let end = tokens.length;
+	if (tokens[end - 1] === ")") end = tokens.lastIndexOf("(");
+	else end -= 1;
+	return tokens.slice(0, end - 1);
+}
+/** The named mistakes, as the number each one gives for this expression. */
+function mistakesFor(tokens) {
+	const left = {
+		rank: "flat",
+		brackets: true
+	};
+	const noBrackets = { rank: "normal" };
+	const sum = tokens.filter((t) => typeof t === "number").reduce((a, b) => a + b, 0);
+	const hasBrackets = tokens.includes("(");
+	const named = {
+		"worked left to right": evaluate(tokens, left),
+		"did adding and taking away first": evaluate(tokens, {
+			rank: "reversed",
+			brackets: true
+		}),
+		"worked right to left": evaluate(tokens, {
+			rank: "flat",
+			right: true,
+			brackets: true
+		}),
+		"worked equal steps right to left": evaluate(tokens, {
+			rank: "normal",
+			right: true,
+			brackets: true
+		}),
+		"added every number": sum,
+		"left out the first number": evaluate(withoutFirst(tokens), {
+			rank: "normal",
+			brackets: true
+		}),
+		"left out the last number": evaluate(withoutLast(tokens), {
+			rank: "normal",
+			brackets: true
+		})
+	};
+	if (hasBrackets) {
+		named["ignored the brackets"] = evaluate(tokens, noBrackets);
+		named["ignored the brackets and worked left to right"] = evaluate(tokens, { rank: "flat" });
+	}
+	return named;
+}
+const MAX_NUMBER = 30;
+const MAX_ANSWER = 300;
+function build(templateIndex, nums) {
+	const template = TEMPLATES[templateIndex];
+	if (!template || nums.length !== lettersOf(template.src) || !nums.every((n) => isInt(n, 2, MAX_NUMBER))) return null;
+	const tokens = tokensOf(template.src, nums);
+	const answer = evaluate(tokens, RIGHT);
+	if (!Number.isInteger(answer) || answer < 1 || answer > MAX_ANSWER) return null;
+	return {
+		tokens,
+		answer
+	};
+}
+function bedmasFamily(key, label) {
+	const mine = TEMPLATES.map((t, i) => ({
+		...t,
+		i
+	})).filter((t) => t.key === key);
+	return oneKey(key, label, ["MS.Y6.NUM.OP.P1"], null, (_k, r) => {
+		for (;;) {
+			const t = pickOne(r, mine);
+			const nums = Array.from({ length: lettersOf(t.src) }, (_, n) => int(r, 2, n === 0 && /^a [+−]/.test(t.src) ? 30 : 12));
+			const made = build(t.i, nums);
+			if (made && withMistakes({
+				parts: [],
+				spoken: "",
+				answer: made.answer
+			}, mistakesFor(made.tokens))) return [t.i, ...nums];
+		}
+	}, (k, [index, ...nums]) => {
+		if (TEMPLATES[index]?.key !== k) return null;
+		const made = build(index, nums);
+		if (!made) return null;
+		const parts = partsOf(made.tokens);
+		return withMistakes({
+			parts,
+			spoken: `What is ${words(made.tokens)}?`,
+			answer: made.answer,
+			choose: true,
+			fact: `${parts.slice(0, -2).join(" ")} = ${made.answer}`
+		}, mistakesFor(made.tokens));
+	});
+}
+const LABELS = {
+	"bedmas:mul-first": "Times before adding or taking away (2 + 3 × 4)",
+	"bedmas:div-first": "Dividing before adding or taking away (12 − 8 ÷ 4)",
+	"bedmas:left-to-right": "Same-rank steps from left to right (12 − 4 + 2)",
+	"bedmas:brackets-first": "Brackets first, then times ((2 + 3) × 4)",
+	"bedmas:brackets-div": "Brackets first, then divide ((10 − 4) ÷ 3)",
+	"bedmas:mixed": "Three steps without brackets (2 + 3 × 4 − 5)",
+	"bedmas:mixed-brackets": "Three steps with brackets ((2 + 3) × 4 − 5)"
+};
+const BEDMAS_FAMILIES = Object.fromEntries(BEDMAS_KEYS.map((k) => [k, bedmasFamily(k, LABELS[k])]));
+/** The expression of a template as a pattern for reading it back: '(a + b) × c' → /^\((\d+) \+ (\d+)\) × (\d+)$/. */
+const PATTERNS = TEMPLATES.map((t) => new RegExp("^" + t.src.replace(/[()+×÷]/g, "\\$&").replace(/[a-d]/g, "(\\d{1,2})") + "$"));
+/** Reads '2 + 3 × 4 = ?' (as shown) back into its type and numbers. */
+const parseBedmas = (parts) => {
+	if (parts.length < 4 || parts[parts.length - 2] !== "=" || parts[parts.length - 1] !== "?") return null;
+	const text = parts.slice(0, -2).join(" ");
+	for (let i = 0; i < TEMPLATES.length; i++) {
+		const m = PATTERNS[i].exec(text);
+		if (!m) continue;
+		const nums = m.slice(1).map(Number);
+		const made = BEDMAS_FAMILIES[TEMPLATES[i].key].make(TEMPLATES[i].key, [i, ...nums]);
+		if (made && sameParts(made.parts, parts)) return {
+			key: TEMPLATES[i].key,
+			params: [i, ...nums]
+		};
+	}
+	return null;
+};
+TEMPLATES.length;
+//#endregion
+//#region shared/maths/skillPacks/placeSkills.ts
+/**
+* The generated place-value skills of the ladder: pairs that make 100 (bonds-100) and 1000 (bonds-1000), times with tens and
+* hundreds (times-tens), factor pairs (factor-pairs), and square and cube numbers (squares-cubes).
+*
+* One mastery record per question type (generatedKit.ts). Every question here can be worked out again from how it is shown
+* (its parts), because the server marks solo-game and placement answers that way. That is why no question here asks the
+* student to pick from choices that aren't in the parts. Wrong choices (when the class has multiple choice on) come from
+* named common mistakes.
+*
+* Types:
+*   bonds-100    bond100:tens  bond100:fives  bond100:any  bond100:take
+*   bonds-1000   bond1000:hundreds  bond1000:fifties  bond1000:tens  bond1000:take
+*   times-tens   times:tens  times:hundreds  times:tens-tens  times:shift  times:powers  times:div-tens
+*   factor-pairs factor:pair  factor:count  factor:largest  factor:common
+*   squares-cubes square:of  cube:of  square:root  cube:root  square:next
+*/
+const range = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
+const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+const divisorsOf = (n) => range(1, n).filter((d) => n % d === 0);
+/** Which type "a + ? = total" is, from the number shown (a pair of tens, of fives, or any). */
+function bondTypeOf(total, a) {
+	if (!Number.isInteger(a) || a < 1 || a >= total) return null;
+	if (total === 100) return a % 10 === 0 ? "tens" : a % 5 === 0 ? "fives" : "any";
+	return a % 100 === 0 ? "tens" : a % 50 === 0 ? "fives" : a % 10 === 0 ? "any" : null;
+}
+/** Bond1000 names its types for hundreds (100s), fifties (50s) and tens, so its type words differ. */
+const BOND_WORD = {
+	100: {
+		tens: "tens",
+		fives: "fives",
+		any: "any",
+		take: "take"
+	},
+	1e3: {
+		tens: "hundreds",
+		fives: "fifties",
+		any: "tens",
+		take: "take"
+	}
+};
+function bondFamily(total, type, label, tags) {
+	const key = `bond${total}:${BOND_WORD[total][type]}`;
+	const valid = (a) => type === "take" ? total === 100 ? isInt(a, 1, 99) : isInt(a, 10, 990) && a % 10 === 0 : bondTypeOf(total, a) === type;
+	const candidates = range(1, total - 1).filter(valid);
+	return oneKey(key, label, tags, 2, (_k, r) => [pickOne(r, candidates), int(r, 0, 1)], (_k, [a, v]) => {
+		if (!valid(a) || !isInt(v, 0, 1)) return null;
+		const t = String(total);
+		const answer = total - a;
+		const parts = type === "take" ? [
+			t,
+			"−",
+			String(a),
+			"=",
+			"?"
+		] : v === 0 ? [
+			String(a),
+			"+",
+			"?",
+			"=",
+			t
+		] : [
+			"?",
+			"+",
+			String(a),
+			"=",
+			t
+		];
+		const named = total === 100 ? {
+			"forgot to carry the one": answer - 1,
+			"made both digits add to ten": (10 - Math.floor(a / 10)) * 10 + (10 - a % 10),
+			"ignored the ones": 100 - Math.floor(a / 10) * 10,
+			"one ten too many": answer + 10,
+			"one ten too few": answer - 10
+		} : {
+			"one hundred too many": answer + 100,
+			"one hundred too few": answer - 100,
+			"one ten too many": answer + 10,
+			"one ten too few": answer - 10,
+			"made the hundreds add to ten": a % 100 === 0 ? 10 - a / 100 : -1
+		};
+		return withMistakes({
+			parts,
+			spoken: speak(parts),
+			answer
+		}, named, { ok: (n) => n >= 1 && n < total });
+	});
+}
+const parseBond = (total) => (parts) => {
+	const t = String(total);
+	if (parts.length !== 5 || parts[3] !== "=") return null;
+	let a = null;
+	let type = null;
+	if (parts[1] === "+" && parts[0] === "?" && parts[2] !== "?" && parts[4] === t) a = readNumber(parts[2]);
+	else if (parts[1] === "+" && parts[2] === "?" && parts[0] !== "?" && parts[4] === t) a = readNumber(parts[0]);
+	else if (parts[1] === "−" && parts[0] === t && parts[4] === "?") {
+		a = readNumber(parts[2]);
+		type = "take";
+	}
+	if (a === null) return null;
+	type ??= bondTypeOf(total, a);
+	if (!type) return null;
+	return {
+		key: `bond${total}:${BOND_WORD[total][type]}`,
+		params: [a, parts[0] === "?" ? 1 : 0]
+	};
+};
+const TENS = range(20, 90, 10);
+const HUNDREDS = range(200, 900, 100);
+const POWERS = [
+	10,
+	100,
+	1e3
+];
+const isTens = (n) => TENS.includes(n);
+const isHundreds = (n) => HUNDREDS.includes(n);
+/** The type of "x × y" (in the order shown), or null. A fact from the times tables is never one of these. */
+function timesKeyOf(x, y) {
+	const pair = (test, other) => test(x) && other(y) || test(y) && other(x);
+	const digit = (n) => n >= 2 && n <= 9;
+	if (pair(digit, isTens)) return "times:tens";
+	if (pair(digit, isHundreds)) return "times:hundreds";
+	if (isTens(x) && isTens(y)) return "times:tens-tens";
+	if (pair((n) => n >= 13 && n <= 99 && n % 10 !== 0, (n) => n === 10 || n === 100)) return "times:shift";
+	if (POWERS.includes(x) && POWERS.includes(y) && !(x === 10 && y === 10)) return "times:powers";
+	return null;
+}
+function timesFamily(key, label, pools) {
+	return oneKey(key, label, ["MS.Y4.NUM.OP.P3"], 2, (_k, r) => {
+		const pair = [pickOne(r, pools[0]), pickOne(r, pools[1])];
+		return r() < .5 ? pair : pair.reverse();
+	}, (_k, [x, y]) => {
+		if (!isInt(x, 1, 1e3) || !isInt(y, 1, 1e3) || timesKeyOf(x, y) !== key) return null;
+		const answer = x * y;
+		const parts = [
+			show(x),
+			"×",
+			show(y),
+			"=",
+			"?"
+		];
+		const named = {
+			"left out a zero": answer / 10,
+			"put in an extra zero": answer * 10,
+			"added instead of multiplying": x + y,
+			"one step too many": answer + Math.max(x, y),
+			"one step too few": answer - Math.max(x, y)
+		};
+		if (key === "times:tens-tens") named["multiplied the tens only"] = x / 10 * (y / 10);
+		if (key === "times:powers") named["two zeros too many"] = answer * 100;
+		return withMistakes({
+			parts,
+			spoken: speak(parts),
+			answer
+		}, named);
+	});
+}
+const divTens = oneKey("times:div-tens", "Dividing tens (240 ÷ 6)", ["MS.Y4.NUM.OP.P3"], 2, (_k, r) => [int(r, 2, 9), pickOne(r, TENS)], (_k, [d, q]) => {
+	if (!isInt(d, 2, 9) || !isTens(q)) return null;
+	const n = d * q;
+	const parts = [
+		show(n),
+		"÷",
+		String(d),
+		"=",
+		"?"
+	];
+	return withMistakes({
+		parts,
+		spoken: speak(parts),
+		answer: q
+	}, {
+		"left out a zero": q / 10,
+		"put in an extra zero": q * 10,
+		"took away instead of dividing": n - d,
+		"one ten too many": q + 10,
+		"one ten too few": q - 10
+	});
+});
+const parseTimes = (parts) => {
+	if (parts.length !== 5 || parts[3] !== "=" || parts[4] !== "?") return null;
+	const x = readNumber(parts[0]);
+	const y = readNumber(parts[2]);
+	if (x === null || y === null) return null;
+	if (parts[1] === "×") {
+		const key = timesKeyOf(x, y);
+		return key ? {
+			key,
+			params: [x, y]
+		} : null;
+	}
+	return parts[1] === "÷" && y >= 2 && y <= 9 && isTens(x / y) ? {
+		key: "times:div-tens",
+		params: [y, x / y]
+	} : null;
+};
+const PAIR_NUMBERS = [
+	12,
+	16,
+	18,
+	20,
+	24,
+	28,
+	30,
+	32,
+	36,
+	40,
+	42,
+	45,
+	48,
+	50,
+	54,
+	56,
+	60,
+	63,
+	64,
+	72,
+	80,
+	81,
+	84,
+	90,
+	96,
+	100
+];
+const COUNT_NUMBERS = [
+	6,
+	8,
+	10,
+	12,
+	14,
+	15,
+	16,
+	18,
+	20,
+	21,
+	24,
+	28,
+	30,
+	32,
+	36,
+	40,
+	42,
+	45,
+	48
+];
+const LARGEST_NUMBERS = [
+	6,
+	8,
+	9,
+	10,
+	12,
+	14,
+	15,
+	16,
+	18,
+	20,
+	21,
+	24,
+	25,
+	27,
+	28,
+	30,
+	32,
+	35,
+	36,
+	40,
+	42,
+	45,
+	48,
+	49,
+	50,
+	54,
+	56,
+	60,
+	63,
+	64,
+	72,
+	81
+];
+const factorTags = ["MS.Y5.NUM.NS.P2"];
+const smallestPrime = (n) => range(2, n).find((d) => n % d === 0);
+/** Two numbers whose biggest shared factor is `g`, found as g × a and g × b with a and b sharing nothing. */
+const commonPairs = range(2, 12).flatMap((g) => range(2, 6).flatMap((a) => range(a + 1, 7).filter((b) => gcd(a, b) === 1 && g * b <= 60).map((b) => [g * a, g * b])));
+const factorFamilies = [
+	oneKey("factor:pair", "Finding the other number in a factor pair", factorTags, 2, (_k, r) => {
+		const n = pickOne(r, PAIR_NUMBERS);
+		return [n, pickOne(r, divisorsOf(n).filter((d) => d >= 2 && d < n))];
+	}, (_k, [n, a]) => {
+		if (!PAIR_NUMBERS.includes(n) || !isInt(a, 2, n - 1) || n % a !== 0) return null;
+		const answer = n / a;
+		return withMistakes({
+			parts: [
+				String(a),
+				"and",
+				"?",
+				"are a factor pair of",
+				String(n)
+			],
+			spoken: `${a} and what are a factor pair of ${n}?`,
+			answer,
+			fact: `${a} × ${answer} = ${n}, so ${a} and ${answer} are a factor pair of ${n}`
+		}, {
+			"took away": n - a,
+			"added": n + a,
+			"one too many": answer + 1,
+			"one too few": answer - 1,
+			"the number itself": n
+		});
+	}),
+	oneKey("factor:count", "Counting the factors of a number", factorTags, 1, (_k, r) => [pickOne(r, COUNT_NUMBERS)], (_k, [n]) => {
+		if (!COUNT_NUMBERS.includes(n)) return null;
+		const answer = divisorsOf(n).length;
+		return withMistakes({
+			parts: [
+				"How many factors does",
+				String(n),
+				"have",
+				"?"
+			],
+			spoken: `How many factors does ${n} have?`,
+			answer,
+			fact: `${n} has ${answer} factors: ${divisorsOf(n).join(", ")}`
+		}, {
+			"left out 1 and the number": answer - 2,
+			"counted the pairs": answer / 2,
+			"one too many": answer + 1,
+			"one too few": answer - 1,
+			"two too many": answer + 2
+		});
+	}),
+	oneKey("factor:largest", "The biggest factor of a number apart from itself", factorTags, 1, (_k, r) => [pickOne(r, LARGEST_NUMBERS)], (_k, [n]) => {
+		if (!LARGEST_NUMBERS.includes(n)) return null;
+		const answer = n / smallestPrime(n);
+		return withMistakes({
+			parts: [
+				"Biggest factor of",
+				String(n),
+				"except itself",
+				"=",
+				"?"
+			],
+			spoken: `What is the biggest factor of ${n}, except ${n} itself?`,
+			answer
+		}, {
+			"one less than the number": n - 1,
+			"half of it": n / 2,
+			"a third of it": n / 3,
+			"the smallest factor": smallestPrime(n),
+			"one more": answer + 1,
+			"one less": answer - 1
+		});
+	}),
+	oneKey("factor:common", "The biggest number that goes into two numbers", factorTags, 2, (_k, r) => [...pickOne(r, commonPairs)], (_k, [a, b]) => {
+		if (!commonPairs.some(([x, y]) => x === a && y === b)) return null;
+		const answer = gcd(a, b);
+		return withMistakes({
+			parts: [
+				"Biggest number that goes into",
+				String(a),
+				"and",
+				String(b),
+				"=",
+				"?"
+			],
+			spoken: `What is the biggest number that goes into both ${a} and ${b}?`,
+			answer
+		}, {
+			"the smaller number": a,
+			"one more": answer + 1,
+			"one less": answer - 1,
+			"half of it": answer / 2,
+			"the difference": b - a,
+			"double": answer * 2
+		});
+	})
+];
+const parseFactors = (parts) => {
+	const n = (i) => readNumber(parts[i] ?? "");
+	if (parts.length === 5 && parts[1] === "and" && parts[2] === "?" && parts[3] === "are a factor pair of") {
+		const a = n(0);
+		const big = n(4);
+		return a !== null && big !== null ? {
+			key: "factor:pair",
+			params: [big, a]
+		} : null;
+	}
+	if (parts.length === 4 && parts[0] === "How many factors does" && parts[2] === "have" && parts[3] === "?") {
+		const big = n(1);
+		return big !== null ? {
+			key: "factor:count",
+			params: [big]
+		} : null;
+	}
+	if (parts.length === 5 && parts[0] === "Biggest factor of" && parts[2] === "except itself" && parts[3] === "=" && parts[4] === "?") {
+		const big = n(1);
+		return big !== null ? {
+			key: "factor:largest",
+			params: [big]
+		} : null;
+	}
+	if (parts.length === 6 && parts[0] === "Biggest number that goes into" && parts[2] === "and" && parts[4] === "=" && parts[5] === "?") {
+		const a = n(1);
+		const b = n(3);
+		return a !== null && b !== null ? {
+			key: "factor:common",
+			params: [a, b]
+		} : null;
+	}
+	return null;
+};
+const squareTags = ["MS.Y6.NUM.NS.P6"];
+const SQUARES = range(2, 12).map((n) => n * n);
+const CUBES = range(2, 5).map((n) => n ** 3);
+const isSquare = (n) => Number.isInteger(Math.sqrt(n));
+const squareFamilies = [
+	oneKey("square:of", "Square numbers (7 squared)", squareTags, 1, (_k, r) => [int(r, 2, 12)], (_k, [n]) => {
+		if (!isInt(n, 2, 12)) return null;
+		return withMistakes({
+			parts: [
+				String(n),
+				"squared",
+				"=",
+				"?"
+			],
+			spoken: `${n} squared equals what?`,
+			answer: n * n,
+			fact: `${n} squared is ${n} × ${n} = ${n * n}`
+		}, {
+			"doubled it": 2 * n,
+			"cubed it": n ** 3,
+			"the square before": (n - 1) ** 2,
+			"the square after": (n + 1) ** 2,
+			"times the next number": n * (n + 1)
+		});
+	}),
+	oneKey("cube:of", "Cube numbers (4 cubed)", squareTags, 1, (_k, r) => [int(r, 2, 5)], (_k, [n]) => {
+		if (!isInt(n, 2, 5)) return null;
+		return withMistakes({
+			parts: [
+				String(n),
+				"cubed",
+				"=",
+				"?"
+			],
+			spoken: `${n} cubed equals what?`,
+			answer: n ** 3,
+			fact: `${n} cubed is ${n} × ${n} × ${n} = ${n ** 3}`
+		}, {
+			"times 3": 3 * n,
+			"squared it": n * n,
+			"the cube before": (n - 1) ** 3,
+			"the cube after": (n + 1) ** 3,
+			"doubled the square": 2 * n * n
+		});
+	}),
+	oneKey("square:root", "Square roots of square numbers", squareTags, 1, (_k, r) => [pickOne(r, SQUARES)], (_k, [sq]) => {
+		if (!SQUARES.includes(sq)) return null;
+		const root = Math.sqrt(sq);
+		return withMistakes({
+			parts: [
+				"Square root of",
+				String(sq),
+				"=",
+				"?"
+			],
+			spoken: `What is the square root of ${sq}?`,
+			answer: root,
+			fact: `The square root of ${sq} is ${root}, because ${root} × ${root} = ${sq}`
+		}, {
+			"half of it": sq / 2,
+			"one root too many": root + 1,
+			"one root too few": root - 1,
+			"a quarter of it": sq / 4,
+			"two roots too many": root + 2
+		});
+	}),
+	oneKey("cube:root", "Cube roots of cube numbers", squareTags, 1, (_k, r) => [pickOne(r, CUBES)], (_k, [cube]) => {
+		if (!CUBES.includes(cube)) return null;
+		const root = Math.round(Math.cbrt(cube));
+		return withMistakes({
+			parts: [
+				"Cube root of",
+				String(cube),
+				"=",
+				"?"
+			],
+			spoken: `What is the cube root of ${cube}?`,
+			answer: root,
+			fact: `The cube root of ${cube} is ${root}, because ${root} × ${root} × ${root} = ${cube}`
+		}, {
+			"one root too many": root + 1,
+			"one root too few": root - 1,
+			"a third of it": cube / 3,
+			"the square root": Math.sqrt(cube),
+			"two roots too many": root + 2
+		});
+	}),
+	oneKey("square:next", "The next square number", squareTags, 1, (_k, r) => {
+		for (;;) {
+			const x = int(r, 5, 143);
+			if (!isSquare(x)) return [x];
+		}
+	}, (_k, [x]) => {
+		if (!isInt(x, 5, 143) || isSquare(x)) return null;
+		const root = Math.floor(Math.sqrt(x)) + 1;
+		return withMistakes({
+			parts: [
+				"The next square number after",
+				String(x),
+				"=",
+				"?"
+			],
+			spoken: `What is the next square number after ${x}?`,
+			answer: root * root
+		}, {
+			"the square before": (root - 1) ** 2,
+			"the square after that": (root + 1) ** 2,
+			"the root, not the square": root,
+			"one more": x + 1,
+			"one less than the square": root * root - 1
+		});
+	})
+];
+const parseSquares = (parts) => {
+	const n = (i) => readNumber(parts[i] ?? "");
+	if (!(parts[parts.length - 2] === "=" && parts[parts.length - 1] === "?")) return null;
+	if (parts.length === 4 && parts[1] === "squared") return n(0) === null ? null : {
+		key: "square:of",
+		params: [n(0)]
+	};
+	if (parts.length === 4 && parts[1] === "cubed") return n(0) === null ? null : {
+		key: "cube:of",
+		params: [n(0)]
+	};
+	if (parts.length === 4 && parts[0] === "Square root of") return n(1) === null ? null : {
+		key: "square:root",
+		params: [n(1)]
+	};
+	if (parts.length === 4 && parts[0] === "Cube root of") return n(1) === null ? null : {
+		key: "cube:root",
+		params: [n(1)]
+	};
+	if (parts.length === 4 && parts[0] === "The next square number after") return n(1) === null ? null : {
+		key: "square:next",
+		params: [n(1)]
+	};
+	return null;
+};
+const bondTags100 = ["MS.Y3.NUM.OP.P1"];
+const bondTags1000 = [];
+const PLACE_FAMILIES = Object.fromEntries([
+	bondFamily(100, "tens", "Pairs of tens that make 100", bondTags100),
+	bondFamily(100, "fives", "Pairs that make 100, ending in 5", bondTags100),
+	bondFamily(100, "any", "Any pair that makes 100", bondTags100),
+	bondFamily(100, "take", "Taking a number away from 100", bondTags100),
+	bondFamily(1e3, "tens", "Hundreds that make 1000", bondTags1000),
+	bondFamily(1e3, "fives", "Pairs ending in 50 that make 1000", bondTags1000),
+	bondFamily(1e3, "any", "Pairs of tens that make 1000", bondTags1000),
+	bondFamily(1e3, "take", "Taking a number away from 1000", bondTags1000),
+	timesFamily("times:tens", "Times a number of tens (4 × 30)", [range(2, 9), TENS]),
+	timesFamily("times:hundreds", "Times a number of hundreds (6 × 300)", [range(2, 9), HUNDREDS]),
+	timesFamily("times:tens-tens", "Tens times tens (20 × 30)", [TENS, TENS]),
+	timesFamily("times:shift", "Times 10 and 100 (34 × 10)", [range(13, 99).filter((n) => n % 10 !== 0), [10, 100]]),
+	timesFamily("times:powers", "Times 10, 100 and 1000 together (10 × 100)", [POWERS, POWERS]),
+	divTens,
+	...factorFamilies,
+	...squareFamilies
+].map((f) => [f.keys[0], f]));
+const PLACE_SKILL_KEYS = {
+	"bonds-100": [
+		"bond100:tens",
+		"bond100:fives",
+		"bond100:any",
+		"bond100:take"
+	],
+	"bonds-1000": [
+		"bond1000:hundreds",
+		"bond1000:fifties",
+		"bond1000:tens",
+		"bond1000:take"
+	],
+	"times-tens": [
+		"times:tens",
+		"times:hundreds",
+		"times:tens-tens",
+		"times:shift",
+		"times:powers",
+		"times:div-tens"
+	],
+	"factor-pairs": [
+		"factor:pair",
+		"factor:count",
+		"factor:largest",
+		"factor:common"
+	],
+	"squares-cubes": [
+		"square:of",
+		"cube:of",
+		"square:root",
+		"cube:root",
+		"square:next"
+	]
+};
+/** Reads a question back into its type and numbers, or null when none of these skills asks it. */
+const parsePlace = (parts) => parseBond(100)(parts) ?? parseBond(1e3)(parts) ?? parseTimes(parts) ?? parseFactors(parts) ?? parseSquares(parts);
+//#endregion
+//#region shared/maths/skillPacks/rounding.ts
+/**
+* Rounding, for the ladder skills round-10-100, round-1000, round-big and round-million.
+*
+* One mastery record per question TYPE (see generatedKit.ts). The type says how big the number is and whether it is the tricky
+* "exactly halfway" or "close to halfway" kind:
+*   whole numbers   round:<unit>:<n>digit   round:<unit>:halfway   round:<unit>:near-halfway     (unit 10 to 1 000 000)
+*   decimals        round:whole:tenths  round:whole:hundredths  round:whole:halfway             (to a whole number)
+*                   round:tenth:hundredths  round:tenth:halfway                                  (to a tenth, decimal answer)
+*                   round:hundredth:thousandths  round:hundredth:halfway                         (to a hundredth, decimal answer)
+* Halfway rounds up (65 → 70, 4.15 → 4.2). Wrong choices come from named mistakes: rounding the wrong way, rounding to a
+* smaller or bigger place, and being a whole step out.
+*/
+const TAG = {
+	r10: ["MS.Y3.NUM.NS.P5"],
+	r1000: ["MS.Y4.NUM.NS.K4"],
+	big: ["MS.Y5.NUM.NS.P3", "MS.Y5.NUM.NS.P4"],
+	million: ["MS.Y6.NUM.NS.P3", "MS.Y6.NUM.NS.P4"]
+};
+const roundTo = (n, unit) => Math.floor((n + unit / 2) / unit) * unit;
+/** The question type of rounding n to the nearest unit, or null if n is already a multiple of it. */
+function wholeKeyOf(unit, n) {
+	const mod = n % unit;
+	if (mod === 0) return null;
+	const half = unit / 2;
+	if (mod === half) return `round:${unit}:halfway`;
+	if (Math.abs(mod - half) <= unit / 10) return `round:${unit}:near-halfway`;
+	return `round:${unit}:${String(n).length}digit`;
+}
+const unitText = (unit) => `to the nearest ${show(unit)}`;
+function wholeFamily(unit, suffix, lo, hi, tags, label) {
+	const key = `round:${unit}:${suffix}`;
+	const half = unit / 2;
+	const zone = unit / 10;
+	return oneKey(key, label, tags, 1, (_k, r) => {
+		for (;;) {
+			let n = int(r, lo, hi);
+			if (suffix === "halfway") n = n - n % unit + half;
+			else if (suffix === "near-halfway") n = n - n % unit + half + int(r, 1, zone) * (r() < .5 ? -1 : 1);
+			if (n >= lo && n <= hi && wholeKeyOf(unit, n) === key) return [n];
+		}
+	}, (_k, [n]) => {
+		if (!isInt(n, lo, hi) || wholeKeyOf(unit, n) !== key) return null;
+		const down = n - n % unit;
+		const up = down + unit;
+		const answer = n % unit >= half ? up : down;
+		const named = {
+			"rounded the wrong way": answer === up ? down : up,
+			"rounded to a smaller place": unit >= 100 ? roundTo(n, unit / 10) : n,
+			"rounded to a bigger place": roundTo(n, unit * 10),
+			"one step too far": answer + unit,
+			"one step too few": answer - unit
+		};
+		return withMistakes({
+			parts: [
+				"Round",
+				show(n),
+				unitText(unit),
+				"=",
+				"?"
+			],
+			spoken: `Round ${n} ${unitText(unit)}. What is it?`,
+			answer,
+			fact: `${show(n)} rounded ${unitText(unit)} is ${show(answer)}`
+		}, named);
+	});
+}
+/** How many units of the answer fit in 1 (a tenth: 10). */
+const UNIT_SCALE = {
+	whole: 1,
+	tenth: 10,
+	hundredth: 100
+};
+const UNIT_WORDS = {
+	whole: "to the nearest whole number",
+	tenth: "to the nearest tenth",
+	hundredth: "to the nearest hundredth"
+};
+/** The question type of a decimal (written with `dp` places, as m units of 1/10^dp), or null if it ends in 0. */
+function decimalKeyOf(unit, dp, m) {
+	if (m % 10 === 0) return null;
+	const half = m % 10 === 5;
+	if (unit === "whole") {
+		if (dp === 1) return half ? "round:whole:halfway" : "round:whole:tenths";
+		return dp === 2 ? "round:whole:hundredths" : null;
+	}
+	if (unit === "tenth") return dp === 2 ? half ? "round:tenth:halfway" : "round:tenth:hundredths" : null;
+	return dp === 3 ? half ? "round:hundredth:halfway" : "round:hundredth:thousandths" : null;
+}
+function decimalFamily({ key, unit, dp, lo, hi, label, tags }) {
+	const scale = 10 ** dp;
+	const step = scale / UNIT_SCALE[unit];
+	const halfway = key.endsWith(":halfway");
+	const unitScale = UNIT_SCALE[unit];
+	return oneKey(key, label, tags, 1, (_k, r) => {
+		for (;;) {
+			let m = int(r, lo, hi);
+			if (halfway) m = m - m % 10 + 5;
+			if (m >= lo && m <= hi && decimalKeyOf(unit, dp, m) === key) return [m];
+		}
+	}, (_k, [m]) => {
+		if (!isInt(m, lo, hi) || decimalKeyOf(unit, dp, m) !== key) return null;
+		const lower = Math.floor(m / step);
+		const upper = lower + 1;
+		const up = m % step >= step / 2;
+		const answer = (up ? upper : lower) / unitScale;
+		const value = m / scale;
+		const shown = show(value);
+		const named = { "rounded the wrong way": (up ? lower : upper) / unitScale };
+		if (unit === "whole") {
+			named["one too many"] = answer + 1;
+			named["one too few"] = answer - 1;
+			named["two too many"] = answer + 2;
+		} else {
+			named[unit === "tenth" ? "rounded to a whole number" : "rounded to a tenth"] = Math.floor((m + 50) / 100) / (unit === "tenth" ? 1 : 10);
+			named["did not round"] = value;
+			named["one place too many"] = answer + 1 / unitScale;
+			named["one place too few"] = answer - 1 / unitScale;
+		}
+		return withMistakes({
+			parts: [
+				"Round",
+				shown,
+				UNIT_WORDS[unit],
+				"=",
+				"?"
+			],
+			spoken: `Round ${say(value)} ${UNIT_WORDS[unit]}. What is it?`,
+			answer,
+			input: unit === "whole" ? "whole" : "decimal",
+			fact: `${shown} rounded ${UNIT_WORDS[unit]} is ${show(answer)}`
+		}, named);
+	});
+}
+const W = wholeFamily;
+const D = decimalFamily;
+/** Every rounding question type, by key. */
+const ROUNDING_FAMILIES = Object.fromEntries([
+	W(10, "2digit", 11, 99, TAG.r10, "Rounding 2-digit numbers to the nearest 10"),
+	W(10, "3digit", 101, 999, TAG.r10, "Rounding 3-digit numbers to the nearest 10"),
+	W(10, "halfway", 15, 995, TAG.r10, "Rounding to the nearest 10 when the last digit is 5"),
+	W(10, "near-halfway", 14, 996, TAG.r10, "Rounding to the nearest 10 when the last digit is 4 or 6"),
+	W(100, "3digit", 101, 999, TAG.r10, "Rounding 3-digit numbers to the nearest 100"),
+	W(100, "4digit", 1001, 9999, TAG.r10, "Rounding 4-digit numbers to the nearest 100"),
+	W(100, "halfway", 150, 9950, TAG.r10, "Rounding to the nearest 100 when it is exactly halfway"),
+	W(100, "near-halfway", 140, 9960, TAG.r10, "Rounding to the nearest 100 when it is close to halfway"),
+	W(1e3, "4digit", 1001, 9999, TAG.r1000, "Rounding 4-digit numbers to the nearest 1000"),
+	W(1e3, "5digit", 10001, 99999, TAG.r1000, "Rounding 5-digit numbers to the nearest 1000"),
+	W(1e3, "halfway", 1500, 99500, TAG.r1000, "Rounding to the nearest 1000 when it is exactly halfway"),
+	W(1e3, "near-halfway", 1400, 99600, TAG.r1000, "Rounding to the nearest 1000 when it is close to halfway"),
+	W(1e4, "5digit", 10001, 99999, TAG.big, "Rounding to the nearest 10 000"),
+	W(1e4, "halfway", 15e3, 95e3, TAG.big, "Rounding to the nearest 10 000 when it is exactly halfway"),
+	W(1e5, "6digit", 100001, 999999, TAG.big, "Rounding to the nearest 100 000"),
+	W(1e5, "halfway", 15e4, 95e4, TAG.big, "Rounding to the nearest 100 000 when it is exactly halfway"),
+	D({
+		key: "round:whole:tenths",
+		unit: "whole",
+		dp: 1,
+		lo: 21,
+		hi: 989,
+		label: "Rounding tenths to a whole number",
+		tags: TAG.big
+	}),
+	D({
+		key: "round:whole:hundredths",
+		unit: "whole",
+		dp: 2,
+		lo: 201,
+		hi: 9899,
+		label: "Rounding hundredths to a whole number",
+		tags: TAG.big
+	}),
+	D({
+		key: "round:whole:halfway",
+		unit: "whole",
+		dp: 1,
+		lo: 25,
+		hi: 985,
+		label: "Rounding to a whole number when the tenths digit is 5",
+		tags: TAG.big
+	}),
+	D({
+		key: "round:tenth:hundredths",
+		unit: "tenth",
+		dp: 2,
+		lo: 101,
+		hi: 2999,
+		label: "Rounding hundredths to the nearest tenth",
+		tags: TAG.big
+	}),
+	D({
+		key: "round:tenth:halfway",
+		unit: "tenth",
+		dp: 2,
+		lo: 105,
+		hi: 2995,
+		label: "Rounding to the nearest tenth when the hundredths digit is 5",
+		tags: TAG.big
+	}),
+	W(1e6, "7digit", 1000001, 9999999, TAG.million, "Rounding to the nearest million"),
+	W(1e6, "halfway", 15e5, 95e5, TAG.million, "Rounding to the nearest million when it is exactly halfway"),
+	W(1e6, "near-halfway", 14e5, 96e5, TAG.million, "Rounding to the nearest million when it is close to halfway"),
+	W(1e5, "7digit", 1000001, 9999999, TAG.million, "Rounding a 7-digit number to the nearest 100 000"),
+	D({
+		key: "round:hundredth:thousandths",
+		unit: "hundredth",
+		dp: 3,
+		lo: 1001,
+		hi: 19999,
+		label: "Rounding thousandths to the nearest hundredth",
+		tags: TAG.million
+	}),
+	D({
+		key: "round:hundredth:halfway",
+		unit: "hundredth",
+		dp: 3,
+		lo: 1005,
+		hi: 19995,
+		label: "Rounding to the nearest hundredth when the thousandths digit is 5",
+		tags: TAG.million
+	})
+].map((f) => [f.keys[0], f]));
+const WHOLE_UNITS = [
+	10,
+	100,
+	1e3,
+	1e4,
+	1e5,
+	1e6
+];
+const DECIMAL_UNITS = Object.entries(UNIT_WORDS);
+/** Reads ['Round', '347', 'to the nearest 100', '=', '?'] back into its type and number. */
+const parseRounding = (parts) => {
+	if (parts.length !== 5 || parts[0] !== "Round" || parts[3] !== "=" || parts[4] !== "?") return null;
+	const n = readNumber(parts[1]);
+	if (n === null) return null;
+	const check = (key, params) => {
+		const made = key ? ROUNDING_FAMILIES[key]?.make(key, params) : null;
+		return key && made && sameParts(made.parts, parts) ? {
+			key,
+			params
+		} : null;
+	};
+	const whole = WHOLE_UNITS.find((u) => unitText(u) === parts[2]);
+	if (whole !== void 0) return Number.isInteger(n) ? check(wholeKeyOf(whole, n), [n]) : null;
+	const decimal = DECIMAL_UNITS.find(([, words]) => words === parts[2]);
+	if (!decimal) return null;
+	const dp = decimalPlaces(parts[1]);
+	const m = Math.round(n * 10 ** dp);
+	return check(decimalKeyOf(decimal[0], dp, m), [m]);
+};
+/** The keys of each ladder skill, in the order they are listed here. */
+const ROUNDING_SKILL_KEYS = {
+	"round-10-100": Object.keys(ROUNDING_FAMILIES).filter((k) => /^round:(10|100):/.test(k)),
+	"round-1000": Object.keys(ROUNDING_FAMILIES).filter((k) => k.startsWith("round:1000:")),
+	"round-big": Object.keys(ROUNDING_FAMILIES).filter((k) => /^round:(10000|100000):(5digit|6digit|halfway)$|^round:whole:|^round:tenth:/.test(k)),
+	"round-million": Object.keys(ROUNDING_FAMILIES).filter((k) => /^round:1000000:|^round:100000:7digit$|^round:hundredth:/.test(k))
+};
+//#endregion
+//#region shared/maths/skillPacks/generated.ts
+/**
+* The generated skills of the ladder as one pack: bonds to 100 and 1000, rounding, times with tens and hundreds, factor
+* pairs, squares and cubes, and order of operations. They make endless questions, so a mastery record is a question TYPE
+* (see generatedKit.ts for the key format), kept in the same table as the facts under the pack name "generated".
+*
+* The pack's families sit outside every band: only the auto ladder and a focus ask for them, so Maths Monsters and the
+* other games that ask by band are unchanged.
+*
+* `solveGenerated` is what the server uses to mark an answer it did not see being asked: it reads the question's parts
+* back into a type and numbers, builds the question again from them, and only accepts it if it comes out exactly as shown.
+*/
+const families = {
+	...PLACE_FAMILIES,
+	...ROUNDING_FAMILIES,
+	...BEDMAS_FAMILIES
+};
+for (const key of Object.keys(families)) if (!RECORD_KEY.test(key)) throw new Error(`generated skill key "${key}" is not a valid record key`);
+const GENERATED = {
+	id: "generated",
+	label: "Place value, rounding and order of operations",
+	families,
+	bands: [],
+	ladderOnly: Object.keys(families),
+	quickMs: quickMsForPack("generated")
+};
+const generatedPack = (saved, random, now) => new BandedPack(GENERATED, saved, random, now);
+/** The question types of each ladder skill built here, in the order the skills are asked. */
+const GENERATED_SKILL_KEYS = {
+	...PLACE_SKILL_KEYS,
+	...ROUNDING_SKILL_KEYS,
+	bedmas: BEDMAS_KEYS
+};
+/** Every question type this pack owns. */
+const GENERATED_KEYS = new Set(Object.keys(families));
+const isGeneratedKey = (key) => GENERATED_KEYS.has(key);
+const PARSERS = [
+	parseRounding,
+	parsePlace,
+	parseBedmas
+];
+/**
+* A question as it was shown (its parts) worked out again: its right answer and the record it counts towards.
+* Null if no generated skill asks that question.
+*/
+function solveGenerated(parts) {
+	for (const parse of PARSERS) {
+		const found = parse(parts);
+		if (!found) continue;
+		const made = families[found.key]?.make(found.key, found.params);
+		if (made && sameParts(made.parts, parts)) return {
+			answer: tidy(made.answer),
+			key: found.key
+		};
+	}
+	return null;
+}
+//#endregion
 //#region shared/maths/ladder.ts
 /**
 * The maths ladder: one ordered list of skills, easiest first (docs/MATHS-FOCUS-PLAN.md,
@@ -2608,6 +3897,15 @@ const stub = (id, label, stage, ...curriculumTags) => ({
 	keys: [],
 	built: false
 });
+/** A skill made of generated question types (kept per type, not per fact). */
+const generated = (id, label, stage, keys, ...curriculumTags) => ({
+	id,
+	label,
+	stage,
+	curriculumTags,
+	keys: [...keys],
+	built: true
+});
 const tables = tablesSkills();
 /** Easiest first. Table skills are in the order of `CAMPAIGN_STEPS`. */
 const LADDER = [
@@ -2645,31 +3943,31 @@ const LADDER = [
 		built: true
 	},
 	tables[0],
-	stub("bonds-100", "Pairs that make 100", "place-value", "MS.Y3.NUM.OP.P1"),
+	generated("bonds-100", "Pairs that make 100", "place-value", GENERATED_SKILL_KEYS["bonds-100"], "MS.Y3.NUM.OP.P1"),
 	tables[1],
-	stub("round-10-100", "Rounding to the nearest 10 and 100", "rounding", "MS.Y3.NUM.NS.P5"),
-	stub("bonds-1000", "Hundreds that make 1000", "place-value"),
+	generated("round-10-100", "Rounding to the nearest 10 and 100", "rounding", GENERATED_SKILL_KEYS["round-10-100"], "MS.Y3.NUM.NS.P5"),
+	generated("bonds-1000", "Hundreds that make 1000", "place-value", GENERATED_SKILL_KEYS["bonds-1000"]),
 	stub("unit-fraction-of", "A fraction of an amount (⅓ of 15)", "fractions-decimals-percentages", "MS.Y3.NUM.RN.P7"),
 	tables[2],
 	tables[3],
-	stub("times-tens", "Times with tens and hundreds (30 × 4)", "place-value", "MS.Y4.NUM.OP.P3"),
+	generated("times-tens", "Times with tens and hundreds (30 × 4)", "place-value", GENERATED_SKILL_KEYS["times-tens"], "MS.Y4.NUM.OP.P3"),
 	stub("tenths", "Tenths and decimals of a half", "fractions-decimals-percentages", "MS.Y4.NUM.RN.P3", "MS.Y4.NUM.RN.P5"),
 	stub("add-tenths", "Adding and taking away tenths", "fractions-decimals-percentages", "MS.Y4.NUM.RN.P10"),
-	stub("round-1000", "Rounding to the nearest 1000", "rounding", "MS.Y4.NUM.NS.K4"),
+	generated("round-1000", "Rounding to the nearest 1000", "rounding", GENERATED_SKILL_KEYS["round-1000"], "MS.Y4.NUM.NS.K4"),
 	tables[4],
-	stub("factor-pairs", "Factor pairs", "place-value", "MS.Y5.NUM.NS.P2"),
-	stub("round-big", "Rounding bigger numbers and decimals", "rounding", "MS.Y5.NUM.NS.P3", "MS.Y5.NUM.NS.P4"),
+	generated("factor-pairs", "Factor pairs", "place-value", GENERATED_SKILL_KEYS["factor-pairs"], "MS.Y5.NUM.NS.P2"),
+	generated("round-big", "Rounding bigger numbers and decimals", "rounding", GENERATED_SKILL_KEYS["round-big"], "MS.Y5.NUM.NS.P3", "MS.Y5.NUM.NS.P4"),
 	stub("decimal-equivalents", "Fractions as decimals", "fractions-decimals-percentages", "MS.Y5.NUM.RN.P4"),
 	stub("percent-basic", "10%, 25% and 50%", "fractions-decimals-percentages", "MS.Y5.NUM.RN.P5", "MS.Y5.NUM.RN.P15"),
 	stub("fraction-of", "Fractions of an amount (⅔ of 24)", "fractions-decimals-percentages", "MS.Y5.NUM.RN.P13"),
 	stub("times-decimals", "Times 10 and 100 with decimals", "fractions-decimals-percentages", "MS.Y5.NUM.RN.P7"),
 	stub("equivalent-fractions", "Equivalent fractions and simplifying", "fractions-decimals-percentages", "MS.Y5.NUM.RN.P9", "MS.Y6.NUM.RN.P6"),
-	stub("squares-cubes", "Square and cube numbers", "place-value", "MS.Y6.NUM.NS.P6"),
-	stub("round-million", "Rounding to the nearest million", "rounding", "MS.Y6.NUM.NS.P3", "MS.Y6.NUM.NS.P4"),
+	generated("squares-cubes", "Square and cube numbers", "place-value", GENERATED_SKILL_KEYS["squares-cubes"], "MS.Y6.NUM.NS.P6"),
+	generated("round-million", "Rounding to the nearest million", "rounding", GENERATED_SKILL_KEYS["round-million"], "MS.Y6.NUM.NS.P3", "MS.Y6.NUM.NS.P4"),
 	stub("fdp-equivalents", "Fractions, decimals and percentages", "fractions-decimals-percentages", "MS.Y6.NUM.RN.P3", "MS.Y6.NUM.RN.P4"),
 	stub("percent-of", "Percentages of an amount", "fractions-decimals-percentages", "MS.Y6.NUM.RN.P13", "MS.Y6.NUM.RN.P14"),
 	stub("whole-from-fraction", "Finding the whole from a fraction", "fractions-decimals-percentages", "MS.Y6.NUM.RN.P12"),
-	stub("bedmas", "Order of operations", "order-of-operations", "MS.Y6.NUM.OP.P1")
+	generated("bedmas", "Order of operations", "order-of-operations", GENERATED_SKILL_KEYS.bedmas, "MS.Y6.NUM.OP.P1")
 ];
 /** The skill's keys once switched-off tables are taken out. */
 function activeKeys(skill, enabledTables, division = true) {
@@ -2796,6 +4094,7 @@ function focusPools(spec, opts = {}) {
 /** Which skill pack records a mastery key ("mul:7x8" → "times-tables"), or null if it isn't a ladder key. */
 function packIdOfKey(key) {
 	if (/^mul:\d+x\d+$/.test(key)) return "times-tables";
+	if (isGeneratedKey(key)) return "generated";
 	if (/^(bond10|bond20|dbl|half):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
@@ -2837,13 +4136,15 @@ var AutoPack = class {
 			earlyFactsPack(),
 			new BandedPack(BANDED_PACKS["add-sub"]),
 			new TimesTables(),
-			new BandedPack(BANDED_PACKS.division)
+			new BandedPack(BANDED_PACKS.division),
+			generatedPack()
 		];
 		this.packs = [
 			earlyFactsPack(only(shells[0]), random, now),
 			new BandedPack(BANDED_PACKS["add-sub"], only(shells[1]), random, now),
 			new TimesTables(only(shells[2]), random, now),
-			new BandedPack(BANDED_PACKS.division, only(shells[3]), random, now)
+			new BandedPack(BANDED_PACKS.division, only(shells[3]), random, now),
+			generatedPack(only(shells[4]), random, now)
 		];
 		for (const pack of this.packs) pack.onAnswer((a) => this.listeners.forEach((l) => l(a)));
 	}
@@ -3085,6 +4386,11 @@ function divKeys(n, d, q) {
 function solveParts(parts) {
 	if (!Array.isArray(parts) || !parts.every((p) => typeof p === "string")) return null;
 	const p = parts;
+	const generated = solveGenerated(p);
+	if (generated) return {
+		answer: generated.answer,
+		keys: [generated.key]
+	};
 	const blanks = p.filter((x) => x === "?").length;
 	let answer = NaN;
 	let keys = [];
@@ -6360,14 +7666,17 @@ async function playerTurn({ services, me, body }, action) {
 }
 /** What a student sees of a question: everything but the answer. */
 function publicQuestion(q) {
-	const { id, skill, kind, parts, spoken, choices } = q;
+	const { id, skill, kind, parts, spoken, choices, choiceLabels, input, maxLength } = q;
 	return {
 		id,
 		skill,
 		kind,
 		parts,
 		spoken,
-		...choices ? { choices } : {}
+		...choices ? { choices } : {},
+		...choiceLabels ? { choiceLabels } : {},
+		...input === "decimal" ? { input } : {},
+		...maxLength ? { maxLength } : {}
 	};
 }
 /**
@@ -6375,7 +7684,7 @@ function publicQuestion(q) {
 * saved before the maths focus existed is checked the old way: worked out from how it was shown.
 */
 function markStored(q) {
-	if (q && Number.isInteger(q.answer) && typeof q.factKey === "string" && isFocusKey(q.factKey)) return {
+	if (q && Number.isFinite(q.answer) && typeof q.factKey === "string" && isFocusKey(q.factKey)) return {
 		answer: q.answer,
 		key: q.factKey
 	};
@@ -6421,7 +7730,7 @@ async function askQuestion({ services, me, body }) {
 /** The student's typed answer, marked here. */
 async function answerQuestion({ services, me, body }) {
 	const typed = body.answer;
-	if (!isKind(body.kind) || !Number.isInteger(typed) || typed < 0 || typed > 1e3) throw new Refused("bad-request");
+	if (!isKind(body.kind) || typeof typed !== "number" || !Number.isFinite(typed) || typed < 0 || typed > 1e9) throw new Refused("bad-request");
 	const { game, seat } = await loadMyGame(services, me, body.gameId);
 	mustBePlaying(game);
 	await mustBeAllowed(services, me, true, otherPlayers(game, me));
@@ -6432,7 +7741,7 @@ async function answerQuestion({ services, me, body }) {
 	if (stored.answered) throw new Refused("illegal", { error: "You’ve already answered that one." });
 	const solved = markStored(stored.question);
 	if (!solved) throw new Refused("failed");
-	const right = typed === solved.answer;
+	const right = sameAnswer(typed, solved.answer);
 	const now = services.now();
 	const claimed = typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : Infinity;
 	const ms = Math.round(Math.min(claimed, now - stored.askedAt));
@@ -6752,12 +8061,13 @@ Deno.serve(spaceGameHandler({
 		if (error) logProblem("drop question", error.code);
 	},
 	async recordAnswer(player, once, answer) {
+		const pack = packIdOfKey(answer.key) ?? "times-tables";
 		const { error } = await admin.rpc("record_fact_answers", {
 			player,
-			pack: packIdOfKey(answer.key) ?? "times-tables",
+			pack,
 			batch_id: await batchIdFor(once),
 			answers: [answer],
-			quick_ms: QUICK_MS,
+			quick_ms: quickMsForPack(pack),
 			fluent_days: 2,
 			top_box: 4
 		});

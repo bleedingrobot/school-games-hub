@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { randomFromSeed } from '../space/random';
+import { QUICK_MS, quickMsForPack } from './config';
+import { isQuick } from './place';
 import { BandedPack, sameAnswer } from './banded';
 import { solveParts } from './focus';
 import { LADDER, ladderKeyPacks, packIdOfKey, questionForKey } from './ladder';
@@ -335,5 +337,32 @@ describe('a generated pack keeps a record for each question type', () => {
     const wrong = p.recordAnswer(q, q.answer + 100, 1500);
     expect(wrong.correct).toBe(false);
     expect(wrong.fact).toMatch(/rounded to the nearest 100 is/);
+  });
+});
+
+describe('how quick is quick for a generated question', () => {
+  it('has a longer quick time than a fact (rounding a big number is not a 5 second job)', () => {
+    expect(quickMsForPack('times-tables')).toBe(QUICK_MS);
+    expect(quickMsForPack('early-facts')).toBe(QUICK_MS);
+    expect(quickMsForPack('generated')).toBeGreaterThan(QUICK_MS);
+    expect(quickMsForPack(undefined)).toBe(QUICK_MS);
+    expect(quickMsForPack('constructor')).toBe(QUICK_MS); // not looked up as an object property
+  });
+
+  it('a right answer in 7 seconds moves a type up a box, but not a times-table fact', () => {
+    let now = Date.UTC(2026, 9, 20, 1);
+    const p = new BandedPack(GENERATED, [], randomFromSeed('quick'), () => now);
+    const q = p.questionFor('bedmas:mixed', 'focus', {});
+    expect(p.recordAnswer(q, q.answer, 7000).boxAfter).toBe(1);
+    expect(p.recordAnswer(q, q.answer, 9000).boxAfter).toBe(1); // too slow: stays
+  });
+
+  it('the placement check allows the skill\'s own quick time', () => {
+    const bedmas = LADDER.find((s) => s.id === 'bedmas')!;
+    const tables = LADDER.find((s) => s.id === 'facts-10')!;
+    expect(isQuick(7000, bedmas)).toBe(true);
+    expect(isQuick(9000, bedmas)).toBe(false);
+    expect(isQuick(7000, tables)).toBe(false);
+    expect(isQuick(4000)).toBe(true);
   });
 });
