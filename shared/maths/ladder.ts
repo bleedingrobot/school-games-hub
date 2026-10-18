@@ -120,6 +120,11 @@ export interface SkillProgress {
   status: SkillStatus;
   /** Share of the skill's facts in box 2 or higher (0–1). */
   share: number;
+  /**
+   * True for a skill the student's starting point (placement, year level or furthest place) is past, but whose facts are not
+   * secure in their records. It counts as behind them (never the current skill) but not as secure, so the numbers stay honest.
+   */
+  passedOver?: boolean;
 }
 
 export interface LadderProgress {
@@ -169,7 +174,7 @@ function activeKeys(skill: LadderSkill, enabledTables: readonly number[], divisi
  * isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
  * campaign) is the one they're on. Skipped skills (all their tables switched off) are secure
  * for free. With a `floor` (placement, year level or the furthest place reached, see place.ts) the
- * built skills before it count as passed, so forgetting a fact brings more review but never
+ * built skills before it are behind the student (passed over, and secure only if their records say so), so forgetting a fact brings more review but never
  * drops the student's place below the floor.
  */
 export function ladderProgress(stats: Iterable<FactStats>, opts: LadderOptions = {}): LadderProgress {
@@ -186,8 +191,9 @@ export function ladderProgress(stats: Iterable<FactStats>, opts: LadderOptions =
     builtCount++;
     const share = keys.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / keys.length;
     if (index < floor) {
-      secureCount++;
-      return { skill, status: 'secure' as const, share };
+      const real = share >= STEP_SECURE_SHARE;
+      if (real) secureCount++;
+      return { skill, status: 'secure' as const, share, passedOver: !real };
     }
     if (current === null && share < STEP_SECURE_SHARE) {
       current = skill;

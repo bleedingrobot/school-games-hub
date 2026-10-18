@@ -97,12 +97,22 @@ describe('the floor under a student', () => {
 });
 
 describe('progress with a floor', () => {
-  it('counts skills before the floor as passed and puts the student on the floor skill', () => {
+  it('puts the student on the floor skill, with the skills before it behind them but not counted as secure', () => {
     const p = ladderProgress([], { floor: rankOf('tables-3-4-8') });
+    const before = built.slice(0, built.findIndex((s) => s.id === 'tables-3-4-8'));
     expect(p.current?.id).toBe('tables-3-4-8');
-    expect(p.skills.filter((s) => s.status === 'secure').map((s) => s.skill.id)).toEqual(built.slice(0, built.findIndex((s) => s.id === 'tables-3-4-8')).map((s) => s.id));
-    expect(p.secureCount).toBe(built.findIndex((s) => s.id === 'tables-3-4-8'));
-    expect(p.percent).toBe(Math.round((100 * p.secureCount) / p.builtCount));
+    expect(p.skills.filter((s) => s.passedOver).map((s) => s.skill.id)).toEqual(before.map((s) => s.id));
+    expect(p.skills.filter((s) => s.passedOver).every((s) => s.status === 'secure')).toBe(true);
+    expect(p.secureCount).toBe(0); // nothing is proven yet
+    expect(p.percent).toBe(0);
+  });
+
+  it('counts a skill before the floor as secure when the records say so', () => {
+    const before = built.slice(0, built.findIndex((s) => s.id === 'tables-3-4-8'));
+    const p = ladderProgress(secure(before.slice(0, 2).flatMap((s) => s.keys)), { floor: rankOf('tables-3-4-8') });
+    expect(p.secureCount).toBe(2);
+    expect(p.skills.filter((s) => s.passedOver).map((s) => s.skill.id)).toEqual(before.slice(2).map((s) => s.id));
+    expect(p.percent).toBe(Math.round((100 * 2) / p.builtCount));
   });
 
   it('is the same as before with no floor', () => {

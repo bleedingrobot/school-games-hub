@@ -113,10 +113,14 @@ describe('My maths path on the home page', () => {
   });
 
   it('starts from the placement, not the first skill', async () => {
+    const user = userEvent.setup();
     show(on({ placed: 'done', placement: 'tables-3-4-8' }));
     expect(await screen.findByText(/You are here:/)).toBeInTheDocument();
     expect(screen.getByText(/You are here:/).parentElement).toHaveTextContent('Times tables: ×3, ×4, ×8');
-    expect(screen.getByText(/skills secure/).parentElement).toHaveTextContent(`${built.findIndex((s) => s.id === 'tables-3-4-8')} of ${built.length}`);
+    // Nothing is proven yet, so nothing is counted secure; the skills before it show as moved past.
+    expect(screen.getByText(/skills secure/).parentElement).toHaveTextContent(`0 of ${built.length}`);
+    await user.click(screen.getByRole('button', { name: 'See my whole path' }));
+    expect(screen.getAllByText('Moved past')).toHaveLength(built.findIndex((s) => s.id === 'tables-3-4-8'));
   });
 
   it('says so when every skill is secure', async () => {
@@ -129,28 +133,34 @@ describe('My maths path on the home page', () => {
       const { unmount } = show(on(), secure(['facts-10']));
       await screen.findByRole('heading', { name: /My maths path/ });
       expect(screen.queryByText(/You moved up/)).not.toBeInTheDocument();
-      await vi.waitFor(() => expect(localStorage.getItem('maths-path-seen:student-1')).toBe('dbl-half-10'));
+      await vi.waitFor(() => expect(localStorage.getItem('maths-path-seen:student-1')).toBe('facts-10'));
       unmount();
       show(on(), secure(['facts-10']));
       await screen.findByRole('heading', { name: /My maths path/ });
       expect(screen.queryByText(/You moved up/)).not.toBeInTheDocument();
     });
 
-    it('says it once they pass a skill, and goes away when they tap Great', async () => {
+    it('says it once they get a skill secure, and goes away when they tap Great', async () => {
       localStorage.setItem('maths-path-seen:student-1', 'facts-10');
       const user = userEvent.setup();
       show(on(), secure(['facts-10', 'dbl-half-10', 'facts-20']));
       const message = await screen.findByRole('status');
       expect(message).toHaveTextContent('You moved up!');
-      expect(message).toHaveTextContent('Number facts to 10');
+      expect(message).toHaveTextContent('Doubles and halves to 10 and more');
       await user.click(screen.getByRole('button', { name: 'Great!' }));
       expect(screen.queryByText(/You moved up/)).not.toBeInTheDocument();
-      expect(localStorage.getItem('maths-path-seen:student-1')).toBe('dbl-half-20');
+      expect(localStorage.getItem('maths-path-seen:student-1')).toBe('facts-10,dbl-half-10,facts-20');
     });
 
-    it('is not shown again after it was dismissed, and not for a place that only fell', async () => {
-      localStorage.setItem('maths-path-seen:student-1', 'tables-3-4-8');
+    it('names a single skill', async () => {
+      localStorage.setItem('maths-path-seen:student-1', 'facts-10');
       show(on(), secure(['facts-10', 'dbl-half-10']));
+      expect(await screen.findByRole('status')).toHaveTextContent('Doubles and halves to 10 is secure now.');
+    });
+
+    it('is not shown for a jump to a new starting place, or for a place that only fell', async () => {
+      localStorage.setItem('maths-path-seen:student-1', 'facts-10,dbl-half-10');
+      show(on({ placed: 'done', placement: 'tables-3-4-8' }), secure(['facts-10']));
       await screen.findByRole('heading', { name: /My maths path/ });
       expect(screen.queryByText(/You moved up/)).not.toBeInTheDocument();
     });

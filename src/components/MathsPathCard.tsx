@@ -4,15 +4,14 @@
  * switched on, so a class that has not turned it on sees nothing new. Loaded on its own so the maths code stays out of the home
  * page's first download.
  */
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
-import { useAuth } from '../auth/AuthContext';
-import { fetchMyLadder, type MyLadder } from '../data/ladder';
-import { hasFocus, isTeacherFocus } from '../../shared/maths/focus';
-import { LADDER } from '../../shared/maths/ladder';
-import { placeProgress } from '../../shared/maths/place';
-import { LadderPath } from '../maths/LadderPath';
-import '../maths/ladderPath.css';
+import { useEffect, useState } from "react";
+import { Link } from "react-router";
+import { useAuth } from "../auth/AuthContext";
+import { fetchMyLadder, type MyLadder } from "../data/ladder";
+import { hasFocus, isTeacherFocus } from "../../shared/maths/focus";
+import { placeProgress } from "../../shared/maths/place";
+import { LadderPath } from "../maths/LadderPath";
+import "../maths/ladderPath.css";
 
 const seenKey = (id: string) => `maths-path-seen:${id}`;
 const read = (key: string) => {
@@ -47,32 +46,41 @@ export default function MathsPathCard() {
   }, []);
 
   const ladder = data?.focus.ladder;
-  const progress = data && ladder?.on ? placeProgress(data.facts, ladder, data.settings) : null;
-  const where = progress?.current ?? null;
+  const progress =
+    data && ladder?.on
+      ? placeProgress(data.facts, ladder, data.settings)
+      : null;
   const myId = profile?.id;
 
-  // "You moved up!": the skill they were on last time, against the one they are on now.
+  // "You moved up!": the skills that are secure now and weren't last time (a jump to a new starting place doesn't count: only skills
+  // the student really got secure). The first visit just remembers where they are.
+  const secureNow = progress
+    ? progress.skills
+        .filter((p) => p.status === "secure" && !p.passedOver)
+        .map((p) => p.skill.id)
+    : null;
+  const secureKey = secureNow?.join(",");
   useEffect(() => {
-    if (!progress || !myId) return;
-    const now = where ? LADDER.indexOf(where) : LADDER.length;
+    if (!progress || !myId || !secureNow) return;
     const before = read(seenKey(myId));
-    const was = before === null ? -1 : before === 'done' ? LADDER.length : LADDER.findIndex((s) => s.id === before);
-    if (before === null || was < 0) {
-      write(seenKey(myId), where ? where.id : 'done');
+    if (before === null) {
+      write(seenKey(myId), secureNow.join(","));
       return;
     }
-    if (now > was) {
-      const names = progress.skills.filter((p) => p.skill.built && LADDER.indexOf(p.skill) >= was && LADDER.indexOf(p.skill) < now).map((p) => p.skill.label);
-      if (names.length) setPassed(names);
-    }
+    const known = new Set(before.split(",").filter(Boolean));
+    const fresh = progress.skills
+      .filter((p) => secureNow.includes(p.skill.id) && !known.has(p.skill.id))
+      .map((p) => p.skill.label);
+    if (fresh.length) setPassed(fresh);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress?.current?.id, progress?.secureCount, myId]);
+  }, [secureKey, myId]);
 
   if (!data || !progress) return null;
-  const teacherSkills = hasFocus(data.focus) && isTeacherFocus(data.focus) ? data.focus.skills : [];
+  const teacherSkills =
+    hasFocus(data.focus) && isTeacherFocus(data.focus) ? data.focus.skills : [];
 
   function dismiss() {
-    if (myId) write(seenKey(myId), where ? where.id : 'done');
+    if (myId && secureNow) write(seenKey(myId), secureNow.join(","));
     setPassed(null);
   }
 
@@ -84,22 +92,35 @@ export default function MathsPathCard() {
       {passed && (
         <div className="moved-up" role="status">
           <p>
-            <span aria-hidden="true">🎉</span> <strong>You moved up!</strong> {passed.length === 1 ? passed[0] : `${passed[0]} and more`} {passed.length === 1 ? 'is' : 'are'} secure now.
+            <span aria-hidden="true">🎉</span> <strong>You moved up!</strong>{" "}
+            {passed.length === 1 ? passed[0] : `${passed[0]} and more`}{" "}
+            {passed.length === 1 ? "is" : "are"} secure now.
           </p>
-          <button type="button" className="button button--light-outline" onClick={dismiss}>
+          <button
+            type="button"
+            className="button button--light-outline"
+            onClick={dismiss}
+          >
             Great!
           </button>
         </div>
       )}
       {!ladder!.placed && (
         <div className="placement-offer">
-          <p>Want the games to start in the right place? Answer about 10 quick questions. You can skip them.</p>
+          <p>
+            Want the games to start in the right place? Answer about 10 quick
+            questions. You can skip them.
+          </p>
           <Link to="/placement" className="button button--primary">
             Find my starting place
           </Link>
         </div>
       )}
-      <LadderPath progress={progress} facts={data.facts} teacherSkills={teacherSkills} />
+      <LadderPath
+        progress={progress}
+        facts={data.facts}
+        teacherSkills={teacherSkills}
+      />
     </section>
   );
 }
