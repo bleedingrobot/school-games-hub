@@ -22,6 +22,9 @@ const FOOLS_MATE = ['f2f3', 'e7e5', 'g2g4', 'd8h4'];
 const NOW = 1_792_000_000;
 
 function services(over: Partial<Services> = {}) {
+  // Seeds that count up instead of being random, so every run plays the same games (a random seed
+  // sometimes made a changed game still a legal one, and the test failed about 1 run in 10).
+  let seedCount = 0;
   const saved: GameRow[] = [];
   const savedSpace: SpaceRow[] = [];
   const saved101: Card101Row[] = [];
@@ -45,6 +48,7 @@ function services(over: Partial<Services> = {}) {
       return 'saved' as const;
     }),
     stamp: stamper('test-server-key', 'space-seed'),
+    randomHex: (bytes: number) => (++seedCount).toString(16).padStart(bytes * 2, '0'),
     nowSeconds: () => NOW,
     ...over,
   };
