@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
+import { ClassWarpCard } from '../components/ClassWarpCard';
 import { GameCard } from '../components/GameCard';
 import { AchievementList, LevelBar, pickAchievements, RankBadge } from '../components/Progress';
 import { fetchMyStats, fetchRecentGames, type GameStats } from '../data/botGames';
@@ -274,8 +275,15 @@ export function Dashboard() {
           <p className="hero__play-hint">
             {featuredGame.name} vs {featuredLevel.label} bot
           </p>
+          {profile?.role !== 'teacher' && (
+            <Link className="button button--light-outline hero__warp" to="/warp">
+              <span aria-hidden="true">🌀</span> Class Warp
+            </Link>
+          )}
         </div>
       </section>
+
+      {profile?.role !== 'teacher' && <ClassWarpCard />}
 
       {(inProgress.length > 0 || spaceGoing.length > 0 || cardGoing.length > 0 || powerGoing.length > 0) && (
         <section className="in-progress" aria-label="Games still going">

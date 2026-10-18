@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { SCHOOL_DOMAIN } from '../config';
 import { fetchMyProfile, FriendlyError, type Profile } from '../data/profile';
 import { supabase } from '../lib/supabase';
 import { readSignInError } from './signInErrors';
@@ -86,7 +85,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}${window.location.pathname}`,
-        queryParams: { hd: SCHOOL_DOMAIN, prompt: 'select_account' },
+        // No `hd` hint any more: it named one school's domain. The list of schools' domains is on the server,
+        // which refuses any account that isn't on it.
+        queryParams: { prompt: 'select_account' },
       },
     });
     if (error) setMessage('Sign-in isn\'t working right now. Please try again in a minute.');

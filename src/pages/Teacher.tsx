@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
@@ -57,10 +58,10 @@ export function Teacher() {
       </section>
     );
   }
-  return <TeacherView me={profile.id} />;
+  return <TeacherView me={profile.id} isAdmin={profile.school_admin === true} />;
 }
 
-function TeacherView({ me }: { me: string }) {
+function TeacherView({ me, isAdmin }: { me: string; isAdmin: boolean }) {
   const [people, setPeople] = useState<Person[] | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
@@ -87,6 +88,9 @@ function TeacherView({ me }: { me: string }) {
   return (
     <div className="teacher">
       <h1 className="page-title">Teacher view</h1>
+      <p className="teacher__classes-link">
+        <Link to="/classes">🏫 My classes: class codes, who is in each class, and students who don’t have a class yet</Link>
+      </p>
 
       <FriendGamesSwitch />
       <ReactionsSwitch />
@@ -141,6 +145,7 @@ function TeacherView({ me }: { me: string }) {
                   <PersonPanel
                     person={person}
                     isMe={person.id === me}
+                    canChangeRoles={isAdmin}
                     onChanged={() => void load()}
                     onDeleted={() => {
                       setOpen(null);
@@ -154,7 +159,7 @@ function TeacherView({ me }: { me: string }) {
         )}
       </section>
 
-      <NewSeason onDone={() => void load()} />
+      {isAdmin && <NewSeason onDone={() => void load()} />}
     </div>
   );
 }
@@ -329,11 +334,14 @@ type Confirming = 'rename' | 'role' | 'delete' | null;
 function PersonPanel({
   person,
   isMe,
+  canChangeRoles,
   onChanged,
   onDeleted,
 }: {
   person: Person;
   isMe: boolean;
+  /** Only a school admin makes (or un-makes) teachers; the database checks it too. */
+  canChangeRoles: boolean;
   onChanged: () => void;
   onDeleted: () => void;
 }) {
@@ -463,7 +471,7 @@ function PersonPanel({
         >
           {person.hidden ? '👁️ Show again' : '🙈 Hide'}
         </button>
-        {!isMe && (
+        {!isMe && canChangeRoles && (
           <button type="button" className="button button--light-outline" onClick={() => setConfirming('role')}>
             {makingTeacher ? '🧑‍🏫 Make teacher' : 'Remove teacher'}
           </button>

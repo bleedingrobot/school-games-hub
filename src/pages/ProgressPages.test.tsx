@@ -125,7 +125,9 @@ const student: AuthState = {
   signOut: vi.fn(async () => {}),
   refreshProfile: vi.fn(async () => {}),
 };
-const teacher: AuthState = { ...student, profile: { id: 't1', display_name: 'Wise Owl 1', avatar: {}, role: 'teacher' } };
+const teacher: AuthState = { ...student, profile: { id: 't1', display_name: 'Wise Owl 1', avatar: {}, role: 'teacher', school_admin: true } };
+/** A teacher who isn't a school admin: they can't make teachers or start a new season. */
+const plainTeacher: AuthState = { ...student, profile: { id: 't2', display_name: 'Calm Fox 2', avatar: {}, role: 'teacher' } };
 
 function renderAt(path: string, auth: AuthState = student) {
   return render(
@@ -325,6 +327,18 @@ describe('teacher view', () => {
     await user.click(within(panel).getByRole('button', { name: /Make teacher/ }));
     await user.click(within(panel).getByRole('button', { name: 'Yes, make teacher' }));
     expect(setRole).toHaveBeenCalledWith('s1', 'teacher');
+  });
+
+  it('shows a plain teacher no way to make teachers or start a new season (only a school admin does)', async () => {
+    const user = userEvent.setup();
+    renderAt('/teacher', plainTeacher);
+    await user.click(await screen.findByRole('button', { name: /Brave Kiwi 7/ }));
+    const panel = screen.getByRole('button', { name: /Brave Kiwi 7/ }).closest('li')!;
+    await within(panel).findByText('Level 2 · 50 points');
+    expect(within(panel).queryByRole('button', { name: /Make teacher|Remove teacher/ })).not.toBeInTheDocument();
+    expect(within(panel).getByRole('button', { name: /New name/ })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'End of year: start a new season' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /My classes: class codes/ })).toHaveAttribute('href', '/classes');
   });
 
   it('can’t change their own role or delete a teacher', async () => {

@@ -5,6 +5,8 @@ export interface Profile {
   display_name: string;
   avatar: unknown;
   role: 'student' | 'teacher';
+  /** A teacher who can also see everyone in the school, make teachers and archive classes. */
+  school_admin?: boolean;
 }
 
 export interface NameWords {
@@ -27,7 +29,7 @@ function friendly(error: { code?: string; message?: string } | null, fallback: s
 export async function fetchMyProfile(userId: string): Promise<Profile> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, display_name, avatar, role')
+    .select('id, display_name, avatar, role, school_admin')
     .eq('id', userId)
     .maybeSingle();
   if (error || !data) friendly(error, "We couldn't load your profile. Please try again.");

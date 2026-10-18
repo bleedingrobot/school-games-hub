@@ -17,6 +17,8 @@ import { CardGamePage } from './pages/CardGamePage';
 import { PowerGamePage } from './pages/PowerGamePage';
 import { powerClash } from './games/power-clash';
 import { dragonMaths } from './games/lord';
+import { ClassWarp } from './pages/ClassWarp';
+import { MyClasses } from './pages/MyClasses';
 import { Teacher } from './pages/Teacher';
 import { SoundProvider } from './sound';
 
@@ -42,6 +44,8 @@ export function AppRoutes() {
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="points" element={<HowPoints />} />
           <Route path="teacher" element={<Teacher />} />
+          <Route path="classes" element={<MyClasses />} />
+          <Route path="warp" element={<ClassWarp />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Route>
