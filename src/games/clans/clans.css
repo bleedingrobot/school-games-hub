@@ -1,7 +1,7 @@
 /* Clan Quest: the dark terminal look. The old 16 colours, VT323 for headings (if it is there), box borders.
    Fits 1366 x 640 and a phone. */
 .cq {
-  --cq-bg: #0b0b17; --cq-panel: #12122a; --cq-ink: #e4e4f0; --cq-soft: #a6a6c4; --cq-line: #4a4acf;
+  --cq-bg: #0b0b17; --cq-panel: #12122a; --cq-ink: #e4e4f0; --cq-soft: #a6a6c4; --cq-line: #5a5ae0;
   --cq-green: #55ff55; --cq-cyan: #55ffff; --cq-red: #ff5555; --cq-yellow: #ffff55; --cq-mag: #ff55ff;
   box-sizing: border-box; max-width: 1100px; margin: 0 auto; padding: 8px 14px 10px;
   border: 3px double var(--cq-line); border-radius: 6px; background: var(--cq-bg); color: var(--cq-ink);
@@ -25,9 +25,9 @@
 .cq-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .cq-btn--hot { border-color: var(--cq-yellow); color: var(--cq-yellow); }
 .cq-btn small { color: var(--cq-soft); }
-.cq-link { font: inherit; color: var(--cq-cyan); background: none; border: 0; padding: 6px 0; min-height: 36px; text-decoration: underline; cursor: pointer; }
+.cq-link { font: inherit; color: var(--cq-cyan); background: none; border: 0; padding: 6px 0; min-height: 44px; text-decoration: underline; cursor: pointer; }
 .cq :is(.cq-btn, .cq-link, input, select, .cq-panel):focus-visible { outline: 3px solid var(--cq-yellow); outline-offset: 2px; }
-.cq :is(input, select) { font: inherit; color: var(--cq-ink); background: var(--cq-bg); border: 2px solid var(--cq-line); border-radius: 4px; padding: 4px 6px; min-height: 40px; }
+.cq :is(input, select) { font: inherit; color: var(--cq-ink); background: var(--cq-bg); border: 2px solid var(--cq-line); border-radius: 4px; padding: 4px 6px; min-height: 44px; }
 .cq input[type='number'] { width: 5em; }
 .cq input[type='checkbox'] { min-height: 0; width: 1.1em; height: 1.1em; }
 .cq-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
@@ -76,8 +76,8 @@
 .cq-name { font-size: 0.9rem; overflow-wrap: anywhere; }
 .cq-bar { position: relative; width: 100%; max-width: 150px; height: 18px; border: 2px solid var(--cq-soft); border-radius: 3px; background: #05050c; overflow: hidden; }
 .cq-bar__fill { display: block; height: 100%; transition: width 0.25s; }
-.cq-bar--hp .cq-bar__fill { background: #1f8f3a; } .cq-bar--sp .cq-bar__fill { background: #2a5fc4; }
-.cq-bar__text { position: absolute; inset: 0; display: grid; place-items: center; font-size: 0.72rem; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+.cq-bar--hp .cq-bar__fill { background: #187a30; } .cq-bar--sp .cq-bar__fill { background: #2a5fc4; }
+.cq-bar__text { position: absolute; inset: 0; display: grid; place-items: center; font-size: 0.78rem; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
 .cq-lower { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 10px; margin-top: 8px; }
 .cq-panel { padding: 6px 8px; border: 1px solid var(--cq-line); border-radius: 4px; background: var(--cq-panel); min-height: 0; outline: none; }
 .cq-choice h3 { margin-bottom: 6px; }
@@ -85,7 +85,7 @@
 .cq-log__round { color: var(--cq-cyan); margin-top: 4px; }
 
 /* The question box, dark and compact inside the fight */
-.cq .question { --q-ink: #e4e4f0; --q-soft: #a6a6c4; --q-key: #1d1d40; --q-key-edge: #4a4acf; --q-right: #1f8f3a; background: var(--cq-panel); color: var(--q-ink); border-color: var(--cq-line); padding: 6px 10px 8px; gap: 4px; }
+.cq .question { --q-ink: #e4e4f0; --q-soft: #a6a6c4; --q-key: #1d1d40; --q-key-edge: var(--cq-line); --q-right: #187a30; background: var(--cq-panel); color: var(--q-ink); border-color: var(--cq-line); padding: 6px 10px 8px; gap: 4px; }
 .cq .question__title { font-family: 'VT323', ui-monospace, monospace; font-size: 1.5rem; color: var(--cq-yellow); margin: 0; }
 .cq .question__note { margin: 0; font-size: 0.85rem; }
 .cq .question__text { font-size: 1.05rem; }
@@ -93,10 +93,10 @@
 .cq .question__blank { background: #1d1d40; box-shadow: inset 0 0 0 2px var(--cq-yellow); color: var(--cq-ink); border-radius: 6px; }
 .cq .question__blank[data-empty] { color: var(--cq-soft); }
 .cq .numpad { max-width: 280px; gap: 3px; }
-.cq .numpad__key { min-height: 32px; font-size: 1.2rem; border-radius: 6px; color: var(--q-ink); }
+.cq .numpad__key { min-height: 44px; font-size: 1.2rem; border-radius: 6px; color: var(--q-ink); }
 .cq .numpad__key--enter { color: #fff; }
 .cq .question__choice { background: var(--cq-panel); color: var(--q-ink); border-radius: 6px; min-height: 56px; }
-.cq .question__close { background: var(--cq-panel); color: var(--q-ink); border-radius: 6px; min-height: 40px; }
+.cq .question__close { background: var(--cq-panel); color: var(--q-ink); border-radius: 6px; min-height: 44px; }
 .working { margin: 0 0 8px; }
 .working__answer { color: var(--cq-green); }
 .working__steps { margin: 0; padding-left: 1.3em; }
@@ -128,13 +128,13 @@
 .cq-train { width: 100%; border-collapse: collapse; }
 .cq-train th, .cq-train td { padding: 2px 8px; border-bottom: 1px dotted #2a2a50; text-align: left; font-weight: 400; }
 .cq-train caption { text-align: left; padding-bottom: 4px; }
-.cq-train .cq-btn { min-height: 36px; padding: 2px 10px; }
+.cq-train .cq-btn { min-height: 44px; padding: 2px 10px; }
 .cq-church { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; }
 .cq-church li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .cq-moment p { margin: 0 0 6px; }
 @media (max-width: 760px) { .cq-shop { grid-template-columns: 1fr; } .cq-shelf, .cq-shop__detail { max-height: none; } }
 .cq-place__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.cq-place__head .cq-btn { min-height: 36px; padding: 2px 12px; }
+.cq-place__head .cq-btn { min-height: 44px; padding: 2px 12px; }
 .cq-place__head h2 { margin: 0; }
 .cq-shelf, .cq-shop__detail { max-height: 15em; }
 .cq-empire, .cq-land { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px; }
@@ -142,13 +142,13 @@
 .cq-empire p, .cq-land p { margin: 0 0 4px; }
 .cq-troops { list-style: none; margin: 0 0 4px; padding: 0; }
 .cq-sides { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 4px; }
-.cq-sides .cq-btn { min-height: 40px; min-width: 40px; padding: 2px 10px; }
+.cq-sides .cq-btn { min-height: 44px; min-width: 44px; padding: 2px 10px; }
 .cq-buildings { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 4px; max-height: 13em; overflow-y: auto; }
 .cq-buildings li { display: flex; align-items: center; gap: 8px; }
-.cq-buildings .cq-btn { min-height: 36px; min-width: 130px; padding: 2px 8px; }
+.cq-buildings .cq-btn { min-height: 44px; min-width: 130px; padding: 2px 8px; }
 .cq-empire input[type='number'] { width: 6em; }
 .cq-kingdoms { list-style: none; margin: 0 0 4px; padding: 0; display: grid; gap: 4px; }
-.cq-kingdoms .cq-btn { min-height: 36px; padding: 2px 10px; width: 100%; text-align: left; }
+.cq-kingdoms .cq-btn { min-height: 44px; padding: 2px 10px; width: 100%; text-align: left; }
 .cq-rounds { list-style: none; margin: 0 0 6px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 4px 10px; max-height: 12em; overflow-y: auto; }
 .cq-rounds li { display: grid; gap: 2px; }
 .cq-war p { margin: 0 0 4px; }
@@ -177,3 +177,15 @@
   .cq-celebrate__spark { display: inline-block; animation: cq-spark 1.2s ease-in-out 3; }
   @keyframes cq-spark { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.35) rotate(12deg); } }
 }
+
+/* Stage C.7: touch targets of at least 44px, a readable focus ring and a two-row number pad. */
+.cq summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; }
+.cq-depth .cq-btn { min-width: 44px; }
+.cq label:has(> input[type='checkbox']) { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+.cq summary:focus-visible { outline: 3px solid var(--cq-yellow); outline-offset: 2px; }
+.cq input[type='checkbox']:focus-visible { outline: 3px solid var(--cq-yellow); outline-offset: 2px; }
+.cq .numpad { max-width: 330px; }
+.cq .numpad:not([data-decimal]) { grid-template-columns: repeat(6, 1fr); }
+.cq .numpad[data-decimal] .numpad__key, .cq .numpad[data-decimal] .numpad__key--enter { min-height: 44px; }
+.cq [tabindex='-1']:focus { outline: none; }
+.cq h2[tabindex='-1']:focus-visible { outline: 3px solid var(--cq-yellow); outline-offset: 2px; }

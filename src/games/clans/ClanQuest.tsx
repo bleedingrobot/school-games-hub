@@ -26,6 +26,7 @@ import { Quest } from './Quest';
 import { QUESTS } from '../../../shared/clans/quests';
 import { Training } from './Training';
 import { Scoreboard } from './Scoreboard';
+import { HowToPlay } from './HowToPlay';
 import { Achievements, Celebration } from './Achievements';
 import { awardNext, giveFame, newSeason, type ScoreRow } from './fame';
 import { ACHIEVEMENTS, fameFor, type AchievementDef } from '../../../shared/clans/rewards';
@@ -33,7 +34,7 @@ import { averageLevel, earn, finishFight, newSession, skipDay, type FightSummary
 import { sessionFrom, type ClanServer, type ServerReply } from './remote';
 import './clans.css';
 
-type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid' | 'quest' | 'village' | 'news' | 'classraid' | 'scoreboard' | 'achievements';
+type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid' | 'quest' | 'village' | 'news' | 'classraid' | 'scoreboard' | 'achievements' | 'howto';
 
 /** For James's test only: stands in for the Teacher page, which comes later. */
 function SettingsStrip({ session, onChange, open }: { session: Session; onChange: (s: Session) => void; open: boolean }) {
@@ -118,6 +119,24 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const knownAchievements = useRef<string[] | null>(null);
   /** The fame the last fight earned (the server's word), for the results screen. */
   const fameEarned = useRef(0);
+  /** When a new screen opens, focus its heading so a keyboard or screen-reader user starts at the top of it (not on a button that is gone). */
+  const root = useRef<HTMLDivElement>(null);
+  const firstScreen = useRef(true);
+  useEffect(() => {
+    if (firstScreen.current) {
+      firstScreen.current = false;
+      return;
+    }
+    if (screen === 'fight') return;
+    const heading = root.current?.querySelector<HTMLElement>('section h2, section h1');
+    // A screen that has already put focus on its own first button (the quest does) keeps it.
+    const now = document.activeElement;
+    if (now && now !== document.body && root.current?.querySelector('section')?.contains(now)) return;
+    if (heading) {
+      heading.setAttribute('tabindex', '-1');
+      heading.focus({ preventScroll: true });
+    }
+  }, [screen]);
   /** Actions go to the server one at a time, in the order they were made. */
   const line = useRef<Promise<void>>(Promise.resolve());
 
@@ -296,7 +315,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   };
 
   return (
-    <div className="cq">
+    <div className="cq" ref={root}>
       <header className="cq-top">
         <h1>Clan Quest</h1>
         <span className="cq-soft">{session ? `${session.clan.name} · ${session.clan.gold} gold · ${session.clan.followers} followers · ${session.fame ?? 0} fame` : 'Test version: nothing is saved'}</span>
@@ -346,6 +365,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
                 <button type="button" className="cq-btn" onClick={() => setScreen('village')}>The Village</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('news')}>Village news</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('scoreboard')}>Scoreboard</button>
+                <button type="button" className="cq-btn" onClick={() => setScreen('howto')}>How to play</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('achievements')}>Achievements ({(session.achievements ?? []).length} of {ACHIEVEMENTS.length})</button>
               </div>
             </section>
@@ -362,6 +382,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'village' && <Village session={session} onChange={change} onBack={() => setScreen('home')} onNews={() => setScreen('news')} />}
           {screen === 'news' && <VillageNews session={session} onBack={() => setScreen('home')} />}
           {screen === 'scoreboard' && <Scoreboard session={session} load={board} onBack={() => setScreen('home')} />}
+          {screen === 'howto' && <HowToPlay fightsPerDay={session.fightsPerDay} onBack={() => setScreen('home')} />}
           {screen === 'achievements' && <Achievements session={session} onBack={() => setScreen('home')} />}
           {screen === 'classraid' && <ClassRaid session={session} ask={ask} onSession={setSession} onBack={() => setScreen('empire')} />}
           {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} session={session} onChange={change} onBack={() => setScreen('home')} />}

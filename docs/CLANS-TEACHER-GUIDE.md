@@ -10,6 +10,15 @@ Each pupil makes a clan of four heroes, goes down the Mines to fight monsters (w
 2. **Switch Clan Quest on.** The card appears on every pupil's home page. **Switch it off** and the card disappears and nothing can be played. Clans are kept while it is off.
 3. You can always open Clan Quest yourself (from the address `#/clan-quest`), even when it is off, to try it first. Your clan is a real clan on your account.
 
+## How to play, for the pupils
+Pupils have a **How to play** button on their clan page, and a "How to play" box on the very first screen where they make their clan. It explains the Mines, the Battle Cry, the shop, training, the Church, the empire, quests, the village, raids (and that you can switch them off), fame, the scoreboard and achievements, in short sections. Its numbers come from the game's own settings, including the mine fights a day you choose, so it never goes out of date.
+
+## For pupils who need a different way to play
+- Everything can be done with the **keyboard** alone: Tab and Enter move around, and in a fight the letters **A** attack, **S** spell, **G** guard, **R** run, **Enter** does the default action, the number keys pick from a list and **Esc** goes back. The focus ring is a thick yellow outline.
+- Every button is at least 44 pixels tall, so it works on a touch screen. The text and borders have strong colour contrast on the dark background, and nothing is shown by colour alone (health bars have their numbers written on them, tags say "Up next" or "resting" in words).
+- If a pupil's computer is set to **reduce motion**, the health bars and the achievement sparkle stop moving. The page also works at 200% zoom with nothing cut off (it scrolls).
+- Screen readers hear each screen's heading when it opens, the fight's orders and Battle Cry question have names, and the fight log is announced as it grows.
+
 ## A day in the game
 - Each clan gets **8 mine fights a day** (you can change that, see below), one quest, one raid on a computer kingdom, and one free wake-up at the Church.
 - Everything comes back **at midnight, New Zealand time**. A clan nobody opened still gets its night's rest, and never twice.

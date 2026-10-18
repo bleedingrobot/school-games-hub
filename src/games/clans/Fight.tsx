@@ -73,7 +73,8 @@ export function Fight({ session, boss = false, open, onRound, onFinish }: {
   useEffect(() => startRound(fight), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (phase !== 'ask') panel.current?.focus();
+    // The orders and the reward are answered with letter keys, so the panel takes focus. The question, "how it works" and "over" have their own focus (the box or an autofocused button).
+    if (phase === 'orders' || phase === 'reward') panel.current?.focus();
   }, [phase, seat, mode]);
   useEffect(() => logEnd.current?.scrollIntoView?.({ block: 'nearest' }), [log]);
 
@@ -195,7 +196,7 @@ export function Fight({ session, boss = false, open, onRound, onFinish }: {
         </ul>
       </div>
       <div className="cq-lower">
-        <div className="cq-panel" ref={panel} tabIndex={-1} onKeyDown={keys}>
+        <div className="cq-panel" ref={panel} tabIndex={-1} onKeyDown={keys} role="group" aria-label={phase === 'ask' ? 'Battle Cry question' : phase === 'reward' ? 'Battle Cry reward' : phase === 'working' ? 'How the answer works' : phase === 'orders' && who ? `Orders for ${who.name}` : 'The fight is over'}>
           {phase === 'ask' && question && (
             <PracticalAsk question={question} title="Battle Cry!" note="A right answer powers up the whole clan. No timer, nothing lost." onSubmit={submitCry} onNoThanks={noThanks} />
           )}
@@ -273,7 +274,7 @@ export function Fight({ session, boss = false, open, onRound, onFinish }: {
           )}
           {phase === 'over' && <FightOver fight={fight} onFinish={() => onFinish(fight)} />}
         </div>
-        <ol className="cq-log" aria-label="Fight log" aria-live="polite">
+        <ol className="cq-log" aria-label="Fight log" aria-live="polite" aria-relevant="additions">
           {log.map((line, i) => (
             <li key={i} className={line.startsWith('Round') ? 'cq-log__round' : undefined}>
               {line}

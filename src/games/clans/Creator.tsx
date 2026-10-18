@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CLASS_NAMES, draftMember, MAX_ROLLS, RACE_NAMES, rollAgain, startingDrafts, makeClan, type Draft } from './session';
 import { MemberCard } from './MemberCard';
+import { HowToPlayBody } from './HowToPlay';
 import { CLAN_ADJECTIVES, CLAN_NOUNS, MEMBER_NAMES, clanNameFrom } from './words';
 import type { Clan } from '../../../shared/clans/types';
 
@@ -16,6 +17,10 @@ export function Creator({ seed, onDone }: { seed: number; onDone: (clan: Clan, c
     <section className="cq-creator" aria-label="Make your clan">
       <h2>Make your clan</h2>
       <p className="cq-soft">Pick a race and a class for each of your four adventurers. Don't like the numbers? Roll again (up to {MAX_ROLLS} times each). The first one is your clan leader, with a little extra.</p>
+      <details className="cq-panel cq-creator__help">
+        <summary>How to play</summary>
+        <HowToPlayBody />
+      </details>
       <div className="cq-cards">
         {drafts.map((d, i) => (
           <MemberCard key={i} member={draftMember(d, i)} leader={i === 0}>

@@ -652,3 +652,15 @@ Built, tested and **not applied, not deployed, not merged**. Branch `clans`. Thi
 **To go live** (each needs James to say so, in words): apply the four migrations in order (`20261018001800`, `...1900`, `...2000`, `...2100`; Dragon Maths' `...1600` and `...1700` must be applied before them), deploy the `clans` function, merge `clans` into `main`, switch Clan Quest on, make groups, and only then switch classmate raids on.
 
 **Left:** stage C.7 (How to play, accessibility pass, slow-Chromebook check, docs). Later ideas: a Hall of past season winners (fame resets each season and nothing is kept), village rewards for gifts as well as votes.
+
+## Stage C.7: design (18 Oct 2026)
+
+James tried the C.6 test page (all good) and confirmed nothing is applied, deployed or merged. C.7 adds no rules and no database changes.
+
+**How to play.** A new `HowToPlay` screen (`src/games/clans/HowToPlay.tsx`), reached from a button on the clan page and from a link on the creator's first screen. Short sections in words a 9-year-old reads easily, each a heading with two or three short lines: your clan, the Mines, the Battle Cry, the shop, training, the Church, the empire, quests, the village, raids (and that the teacher can switch them off), fame and the scoreboard, achievements. Every number on it is read from `CONFIG` (and from the clan's own fights-a-day setting), never typed in twice; a test fails if the page and `CONFIG` ever drift apart. On the creator it is a collapsible "How to play" box, so the pupil does not lose the clan they are making.
+
+**Accessibility pass.** Read every screen for keyboard use, focus, names, live regions, contrast, colour-only meaning, reduced motion, 44px targets and 200% zoom. Fix what is found. What can be tested in jsdom gets a test (names, live regions, focus moving to the heading on each new screen); contrast is checked with a small script that works out the ratios from the CSS colours; zoom, fit and speed are checked in a real browser.
+
+**Slow-Chromebook check.** Real Chromium at 1366 x 640, with the CPU slowed 4x, measuring page overflow on every screen, the size of what the game loads, and fight round times. Reduce anything heavy.
+
+**Docs.** Plan, `shared/README.md`, teacher guide and the memory note brought up to date, and `docs/prompts/clans-golive.md` written like Dragon Maths' go-live.
