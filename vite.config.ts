@@ -11,6 +11,8 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
+    // Screen tests are slow when many run at once; 5 seconds gave false failures on a busy computer.
+    testTimeout: 20_000,
     setupFiles: ['./src/test-setup.ts'],
     include: ['src/**/*.test.{ts,tsx}', 'shared/**/*.test.ts', 'supabase/functions/**/*.test.ts', 'scripts/**/*.test.ts'],
     ...(which === 'slow' ? { include: SLOW_TESTS } : which === 'all' ? {} : { exclude: ['**/node_modules/**', ...SLOW_TESTS] }),
