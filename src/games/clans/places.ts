@@ -7,6 +7,7 @@ import { CONFIG } from '../../../shared/clans/config';
 import { buy, churchCost, examineCost, hpCost, shopPrice, spCost, trainCost, trainHp, trainSp, trainStat, wake, wakeCost } from '../../../shared/clans/character';
 import { build, buyTroops, canBuild, capacity, claimLand, deposit, developPlot, draft, empireOf, friendlyWar, raidKingdom, setDraft, withdraw, type BattlePlan, type BattleResult, type Done, type Fail } from '../../../shared/clans/empire';
 import { STATS, TROOP_KINDS, type BuildingKind, type Clan, type Empire, type ItemDef, type Member, type Stat, type Troops } from '../../../shared/clans/types';
+import { finishQuest, puzzleFor, questById, questDoneToday, todaysQuest, type PuzzleSpec, type QuestDef, type QuestDone } from '../../../shared/clans/quests';
 import type { Session } from './session';
 
 const withClan = (s: Session, change: (clan: Clan) => boolean): Session | null => {
@@ -232,5 +233,29 @@ export function armyToLose(s: Session): Session {
 export function freshRaid(s: Session): Session {
   const next = structuredClone(s);
   empireOf(next.clan).kingdomRaidsToday = 0;
+  return next;
+}
+
+// Quests.
+/** The quest to show: the one picked for testing, or today's. Null if no quest suits the settings. */
+export const questToday = (s: Session): QuestDef | null => (s.questPick ? questById(s.questPick) ?? null : todaysQuest(s.baseSeed, s.day, s.settings));
+
+/** Has the clan already done a quest today? */
+export const questUsed = (s: Session) => questDoneToday(s.clan, s.day);
+
+/** The puzzle on one of today's choices, made from the clan's seed and the day. */
+export const questPuzzle = (s: Session, q: QuestDef, choice: number): PuzzleSpec | null => puzzleFor(q, choice, s.baseSeed, s.day, s.settings);
+
+/** Do the quest on a copy of the clan. `right` is how the puzzle went (null if the choice had none). */
+export function doQuest(s: Session, q: QuestDef, choice: number, right: boolean | null): { session: Session; done: Extract<QuestDone, { ok: true }> } | Extract<QuestDone, { ok: false }> {
+  const clan = structuredClone(s.clan);
+  const done = finishQuest(clan, s.day, q, choice, right);
+  return done.ok ? { session: { ...s, clan }, done } : done;
+}
+
+// Test-only helpers for James's settings strip.
+export function freshQuest(s: Session): Session {
+  const next = structuredClone(s);
+  delete next.clan.questDay;
   return next;
 }

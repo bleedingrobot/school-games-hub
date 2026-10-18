@@ -9,16 +9,18 @@ import { MemberCard } from './MemberCard';
 import { Church } from './Church';
 import { Market } from './Market';
 import { Mines, Results } from './Mines';
-import { armyToLose, armyToWin, barracksAndFill, freshRaid, giveFollowers, giveGold, givePoints, giveVault, knockOutSome } from './places';
+import { armyToLose, armyToWin, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveVault, knockOutSome } from './places';
 import { EmpireHome } from './Empire';
 import { Land } from './Land';
 import { Barracks } from './Barracks';
 import { Raid } from './Raid';
+import { Quest } from './Quest';
+import { QUESTS } from '../../../shared/clans/quests';
 import { Training } from './Training';
 import { averageLevel, finishFight, newSession, skipDay, type FightSummary, type Session } from './session';
 import './clans.css';
 
-type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid';
+type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid' | 'quest';
 
 /** For James's test only: stands in for the Teacher page, which comes later. */
 function SettingsStrip({ session, onChange, open }: { session: Session; onChange: (s: Session) => void; open: boolean }) {
@@ -52,6 +54,14 @@ function SettingsStrip({ session, onChange, open }: { session: Session; onChange
         <button type="button" className="cq-btn" onClick={() => onChange(armyToWin(session))}>Win the next raid (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(armyToLose(session))}>Lose the next raid (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(freshRaid(session))}>Allow another raid today (test only)</button>
+        <button type="button" className="cq-btn" onClick={() => onChange(freshQuest(session))}>Allow another quest today (test only)</button>
+        <label>
+          Try quest number
+          <select value={session.questPick ?? 0} onChange={(e) => onChange({ ...session, questPick: Number(e.target.value) || undefined })}>
+            <option value={0}>Today's quest</option>
+            {QUESTS.map((q) => <option key={q.id} value={q.id}>{q.id}. {q.title}</option>)}
+          </select>
+        </label>
       </div>
       <fieldset className="cq-settings__topics">
         <legend>Maths topics</legend>
@@ -105,6 +115,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null }: { seed?: nu
                 <button type="button" className="cq-btn" onClick={() => setScreen('training')}>The Training Hall</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('church')}>The Church</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('empire')}>The Empire</button>
+                <button type="button" className="cq-btn" onClick={() => setScreen('quest')}>{questUsed(session) ? 'Quest (done for today)' : 'Quest'}</button>
               </div>
             </section>
           )}
@@ -117,6 +128,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null }: { seed?: nu
           {screen === 'empire' && <EmpireHome session={session} onChange={setSession} onBack={() => setScreen('home')} onLand={() => setScreen('land')} onBarracks={() => setScreen('barracks')} onRaid={() => setScreen('raid')} />}
           {screen === 'barracks' && <Barracks session={session} onChange={setSession} onBack={() => setScreen('empire')} />}
           {screen === 'raid' && <Raid session={session} onChange={setSession} onBack={() => setScreen('empire')} />}
+          {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} session={session} onChange={setSession} onBack={() => setScreen('home')} />}
           {screen === 'land' && <Land session={session} onChange={setSession} onBack={() => setScreen('empire')} />}
           {screen === 'fight' && <Fight key={session.fightNo} session={session} boss={boss} onFinish={finish} />}
           {screen === 'results' && summary && <Results summary={summary} members={session.clan.members} onDone={() => setScreen('home')} />}

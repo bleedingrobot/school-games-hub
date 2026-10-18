@@ -61,6 +61,8 @@ export interface Session {
   settings: PracticalSettings;
   /** Items a member has looked at closely, as "member|item" (shows the real bonuses; lets you compare). */
   examined: string[];
+  /** For James's testing only: try this quest number instead of today's. */
+  questPick?: number;
 }
 
 export const newSession = (clan: Clan, baseSeed: number, settings: PracticalSettings = DEFAULT_PRACTICAL_SETTINGS): Session => ({

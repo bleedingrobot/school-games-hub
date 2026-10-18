@@ -33,7 +33,7 @@ The `save-bot-game` server function runs exactly this code before saving a resul
   battles from two armies, a plan and a seed, Friendly War, and the rule for classmate raids)
   and `empireBot.ts` (a sensible empire builder for the simulator: `npm run clans:sim -- --empire 1`). See `docs/CLANS-PLAN.md`
   and `docs/CLANS-RULES.md`. The screens for all of it (Empire, Land, Barracks and troops, Raid and Friendly War)
-  are in `src/games/clans/` and only call these functions through `places.ts`.
+  are in `src/games/clans/` and only call these functions through `places.ts`. Stage C.4 part C adds `quests.ts` (ten short stories with choices, the charisma rule, one a day, and puzzles made and marked by code: patterns, order, number riddles, temperatures below zero).
 - `maths/practical.ts`: the question kinds Clan Quest needs (percent of, price with tax,
   change, area and perimeter, remainders, rounding up, troop costs, budgets, ratios, negative
   numbers, better buys). Made and marked by code; each is rebuilt from its kind and numbers

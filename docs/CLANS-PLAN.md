@@ -376,3 +376,26 @@ James had no changes to the first half. **Built** (`Barracks.tsx`, `Raid.tsx`, m
 **Checked:** 18 new tests in `Raid.test.tsx`: buy troops (right and wrong answer both charge the right amount), no room, no barracks, not enough gold, barracks-needed question, the draft with room and with none, keyboard only for the draft and for a Friendly War, raid won (loot answer equals what lands in the vault, also after a wrong answer), raid lost, stalemate, Friendly War changes nothing, one raid a day then the test button, no troops, kingdoms shown kindly. Looked at the real page at 1366 x 640: both new screens and a result fit with the test strip closed.
 
 **Left for later:** Quests (a small stage of their own), classmate raids (the rule exists, no screen), and C.5 (saving, the server and the daily reset). **Whole of C.4 part B:** Empire home, Land and buildings, Barracks and troops, Raid and Friendly War; nothing saved, no server, nothing live, nothing merged to `main`.
+
+## Stage C.4, part C (18 Oct 2026): Quests
+
+James had nothing to change in the Barracks, Raid and Friendly War screens. Branch `clans`; nothing saved, no server, nothing live, nothing merged to `main`.
+
+**Built:**
+- **Engine** (`shared/clans/quests.ts`, numbers in `CONFIG.quests`): ten quests as plain data (title, years, story paragraphs, one to three choices, what each gives), the charisma rule, one quest a day (`clan.questDay`, the day number of the last one), a seeded order (`todaysQuest`: the suitable quests in an order fixed by the clan's seed, one a day, cycling with no repeats), and `finishQuest`, which checks the rules and puts the prize on the clan.
+- **Prizes** are small, medium or big, mapped to numbers in config: gold 15 / 30 / 50, followers 3 / 7 / 12, training points for every member 1 / 2 / 3. A fight in the Mines earns about 50 gold and 4-13 followers, so a quest is worth about one fight. A found item (Cloth Tunic, Lion's Shield) goes to a member who has the slot free and meets its needs; if nobody can use it, the clan gets half its price in gold. No item over 70 gold. Tests check the caps.
+- **The ten quests:** The Wandering Goat (pure story + charm), The Stepping Stones (pattern puzzle), The Three Guards (logic puzzle), The Riddling Troll (number riddle + charm), The Frozen Cave (below-zero puzzle, Year 6 only), The Village Fair (story + charm), The Wishing Well (found item), The Pattern Door (pattern puzzle), The Sleepy Giant (story + a very charming choice, found item), The Pie Cart Puzzle (number riddle).
+- **Charisma:** the best charisma in the clan has to reach 8 for a charm choice and 11 for a very charming one. A locked choice is shown greyed with the reason and what would open it. The best charisma in a new clan is 5 to 9 (usually 7), so about a third of clans can use a charm choice straight away and the rest need one to three points of charisma at 6 training points each; the very charming choice needs more.
+- **Puzzles** are made by code from a kind and numbers (`makePuzzle`, `buildPuzzle`, `isValidPuzzle`), with Year 4/5/6 bands, so a server can rebuild and mark them. Four kinds: patterns (count on, growing jumps, doubling), order puzzles (three or four animals in a row; clues chain together), number riddles (work backwards), and temperatures below zero. They reuse the question box and the "show the working" step. A wrong answer, or "Show me how", gives the smaller prize and the story carries on.
+- **Below-zero puzzle** is only in Year 6 and only while the teacher has "Negative numbers" on; it is never a score.
+- **Screen** (`Quest.tsx`): a "Quest" button on the clan page (it says "Quest (done for today)" once used), the story one paragraph at a time ("Read on"), big choice buttons with letters A, B, C (tap or press the letter), the puzzle through `Moment`, then a plain result with the prize in words.
+- **Test strip:** "Allow another quest today (test only)" and a "Try quest number" list.
+
+**Checked:** 25 engine tests (every quest's shape, rewards under the caps, every kind of puzzle valid and rebuildable over thousands of seeds, the right answers, the cycle, Year 6 only below zero, one a day, charm locks, found items) and 11 screen tests (every quest by every route through the real screens, right and wrong puzzle answers, the one-a-day and new-day reset, charm greyed and then open, keyboard only, the Year 6 puzzle with a minus sign). Looked at the real page at 1366 x 640: the story, the choices and the puzzle fit with the test strip closed.
+
+**Choices to know about:**
+- The quest day is the session's day number, so "Skip a day" gives a new quest. When saving comes (C.5) the daily reset has to set the day properly.
+- Puzzles are not tied to a teacher switch except the below-zero one; patterns, logic and riddles are always on. A teacher switch for "story puzzles" can be added if wanted.
+- Picking a quest by number shows it whatever the year, so James can see all ten; the daily pick follows the year.
+
+**Left for later:** C.5 (saving, the server and the daily reset), classmate-raid screens, more quests (the engine takes more as plain data).

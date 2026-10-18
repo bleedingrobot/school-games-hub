@@ -97,6 +97,21 @@ export const CONFIG = {
       classmateLootMax: 10,
     },
   },
+  /** Quests (stage C.4 part C): one a day, small rewards next to the Mines (a fight earns about 50 gold and 4-13 followers). */
+  quests: {
+    perDay: 1,
+    /** The best charisma in the clan has to reach `open` for a charm choice, `high` for a very charming one. */
+    charm: { open: 8, high: 11 },
+    /** What "small", "medium" and "big" mean in a quest. Points go to every member. */
+    reward: {
+      gold: { small: 15, medium: 30, big: 50 },
+      followers: { small: 3, medium: 7, big: 12 },
+      points: { small: 1, medium: 2, big: 3 },
+    },
+    /** A found item is never worth more than this in the shop; if nobody can use it, the clan gets half its price in gold. */
+    itemMaxPrice: 70,
+    /** A wrong puzzle answer keeps the story going; the prize is just the smaller one. */
+  },
   /** How much a Battle Cry answer adds. */
   battleCryDamage: 1.25,
   battleCryHeal: 0.2,

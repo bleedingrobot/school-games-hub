@@ -120,6 +120,8 @@ export interface Clan {
   village: Village;
   /** Wake-ups at the Church so far today (the first few are free). Missing means none. */
   wakesToday?: number;
+  /** The day number of the last quest done (one quest a day). Missing means none yet. */
+  questDay?: number;
   /** Missing until the clan opens its empire. */
   empire?: Empire;
 }
