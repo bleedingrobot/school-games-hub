@@ -1,6 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { spokenLabel } from '../../shared/maths/banded';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { randomFromSeed } from '../../shared/space/random';
 import { generatedPack } from '../../shared/maths/skillPacks/generated';
@@ -212,5 +213,70 @@ describe('the generated skills (rounding, order of operations)', () => {
     setup(q);
     expect(screen.getByLabelText(q.spoken).textContent!.replace(/\s/g, '')).toContain(q.parts.slice(0, -2).join('').replace(/ /g, ''));
     expect(q.parts.filter((p) => p.startsWith('('))).toHaveLength(1);
+  });
+});
+
+describe('fractions, decimals and percentages (F.6)', () => {
+  const askPick = (key: string, seed = 'f6') => generatedPack([], randomFromSeed(`${seed}:${key}`)).questionFor(key, 'focus', {});
+
+  it('a fraction answer is four choices to tap with fractions drawn as fractions, read out as "3 quarters"', async () => {
+    const user = userEvent.setup();
+    const q = askPick('pct:to-fraction');
+    const { onSubmit } = setup(q);
+    const buttons = screen.getAllByRole('button').filter((b) => b.classList.contains('question__choice'));
+    expect(buttons).toHaveLength(4);
+    expect(buttons.every((b) => b.querySelector('.qfrac'))).toBe(true);
+    expect(screen.queryByRole('group', { name: 'Number pad' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText(q.spoken).textContent).toMatch(/%/);
+    const right = q.choiceLabels![q.answer];
+    await user.click(screen.getByRole('button', { name: spokenLabel(right) }));
+    expect(onSubmit).toHaveBeenCalledWith(q.answer, expect.any(Number));
+  });
+
+  it('after the tap the blank shows the choice, never the number of the choice, and a wrong tap says the whole fact', async () => {
+    const user = userEvent.setup();
+    const q = askPick('tenth:to-fraction');
+    const right = q.choiceLabels![q.answer];
+    const onSubmit = vi.fn((answer: number) => ({ correct: answer === q.answer, fact: `${q.parts[0]} = ${right}`, boxBefore: 0, boxAfter: 0 }));
+    render(<QuestionModal question={q} title="Mana Well" onSubmit={onSubmit} onDone={() => {}} timeScale={1000} />);
+    const wrong = q.choices!.find((c) => c !== q.answer)!;
+    await user.click(screen.getByRole('button', { name: spokenLabel(q.choiceLabels![wrong]) }));
+    const blank = document.querySelector('.question__blank')!;
+    expect(blank.textContent!.replace(/\s/g, '')).toBe(right.replace('/', ''));
+    expect(screen.getByRole('status')).toHaveTextContent(`${q.parts[0]} = ${right}`);
+  });
+
+  it('percentages and decimals are read out as "25 percent" and "0 point 2 5"', () => {
+    expect(spokenLabel('25%')).toBe('25 percent');
+    expect(spokenLabel('0.25')).toBe('0 point 2 5');
+    expect(spokenLabel('0.6%')).toBe('0 point 6 percent');
+    expect(spokenLabel('3/4')).toBe('3 quarters');
+    expect(spokenLabel('1/10')).toBe('1 tenth');
+    const q = askPick('pct:half');
+    expect(q.spoken).toMatch(/50 percent of \d+ equals what\?/);
+    const r = askPick('deceq:compare');
+    setup(r);
+    for (const label of r.choiceLabels!) expect(screen.getByRole('button', { name: spokenLabel(label) })).toBeInTheDocument();
+  });
+
+  it('a percentage question is typed on the pad; the point key shows only for decimals', () => {
+    const { unmount } = render(<QuestionModal question={askPick('pct:quarter')} title="t" onSubmit={() => ({ correct: true, fact: '', boxBefore: 0, boxAfter: 0 })} onDone={() => {}} />);
+    expect(screen.queryByRole('button', { name: 'Point' })).not.toBeInTheDocument();
+    unmount();
+    render(<QuestionModal question={askPick('addten:add')} title="t" onSubmit={() => ({ correct: true, fact: '', boxBefore: 0, boxAfter: 0 })} onDone={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Point' })).toBeInTheDocument();
+  });
+
+  it('a typed question follows the class\'s multiple-choice switch; a pick question is always choices', () => {
+    for (const key of ['fracof:third', 'pct:ten', 'addten:carry']) {
+      const typed = generatedPack([], randomFromSeed(key)).questionFor(key, 'focus', { multipleChoice: false });
+      expect(typed.choices, key).toBeUndefined();
+      const asChoices = generatedPack([], randomFromSeed(key)).questionFor(key, 'focus', { multipleChoice: true });
+      expect(asChoices.choices, key).toHaveLength(4);
+    }
+    for (const key of ['pct:to-fraction', 'deceq:pick', 'equiv:simplify', 'fdp:match']) {
+      const off = generatedPack([], randomFromSeed(key)).questionFor(key, 'focus', { multipleChoice: false });
+      expect(off.choiceLabels, key).toHaveLength(4);
+    }
   });
 });

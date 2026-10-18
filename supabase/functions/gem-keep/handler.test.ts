@@ -153,6 +153,21 @@ describe('the gem-keep server function', () => {
     expect(other.body.results[0]).toEqual({ type: 'answers', added: 0 });
   });
 
+  it('keeps the answers of the fraction, decimal and percentage skills in the "generated" pack, and the ten-and facts in early-facts', async () => {
+    const { s } = services();
+    const answer = (key: string) => ({ key, correct: true, ms: 6500, at: NOW - 5000 });
+    const batchId = '0b7d5c2e-8a41-4f6b-9e3d-2c1a0f9e8d7c';
+    const keys = ['fracof:third', 'fracof:non:eighths', 'pct:to-fraction', 'pct:whole:quarter', 'tenth:to-decimal', 'addten:borrow', 'deceq:compare', 'timesdec:missing', 'equiv:simplify', 'fdp:match', 'whole:other'];
+    const { body } = await send(s, [
+      { type: 'answers', pack: 'generated', batchId, answers: [...keys.map(answer), answer('tenand:4'), answer('fracof:Third'), answer('pct:50%')] },
+      { type: 'answers', pack: 'early-facts', batchId: '1b7d5c2e-8a41-4f6b-9e3d-2c1a0f9e8d7c', answers: [answer('tenand:4'), answer('tenand:10'), answer('fracof:third')] },
+    ]);
+    // A ten-and fact sent as a generated one, a capital and a percent sign are left out; so are the new keys sent as early facts.
+    expect(body.results.map((r: { added?: number }) => r.added)).toEqual([keys.length, 1]);
+    expect(s.recordAnswers).toHaveBeenCalledWith('student-1', 'generated', batchId, keys.map(answer));
+    expect(s.recordAnswers).toHaveBeenCalledWith('student-1', 'early-facts', expect.any(String), [answer('tenand:4')]);
+  });
+
   describe('the place on the maths ladder', () => {
     const answersItem = { type: 'answers', pack: 'times-tables', batchId: '6f1c2a54-1d3e-4b5a-9c7d-0e1f2a3b4c5d', answers: [{ key: 'mul:7x8', correct: true, ms: 1200, at: NOW - 1000 }] };
 

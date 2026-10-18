@@ -1,3 +1,4 @@
+import { LADDER } from '../../../shared/maths/ladder';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -651,6 +652,42 @@ describe('Mission Control maths with classmates', () => {
           expect(done.right).toBe(right);
           expect(done.answer).toBe(solved.answer);
           expect(w.recorded[0].answer).toMatchObject({ key: solved.keys[0], correct: right });
+        });
+      }
+    });
+
+    describe.each([
+      'ten-and', 'unit-fraction-of', 'tenths', 'add-tenths', 'decimal-equivalents', 'percent-basic',
+      'fraction-of', 'times-decimals', 'equivalent-fractions', 'fdp-equivalents', 'percent-of', 'whole-from-fraction',
+    ] as const)('asks and marks %s (F.6) with classmates', (skill) => {
+      for (const right of [true, false]) {
+        it(`${right ? 'right' : 'wrong'} answers are marked on the server against the question it kept, and recorded under the question type`, async () => {
+          for (let round = 0; round < 6; round++) {
+            const w = world();
+            w.setFocus(teacherFocus([skill]));
+            const g = await w.launched(['ben'], 0, MATHS_SETUP);
+            const row = w.games.get(g.id)!;
+            landOnWormhole(row);
+            const who = w.turnOf(g.id);
+            const asked = await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
+            const q = asked.question!;
+            const kept = [...w.questions.entries()].find(([k]) => k.includes(`${g.id}`))![1].question;
+            // The student sees the sum (and the choices, with their labels), never the answer.
+            expect(JSON.stringify(asked)).not.toContain('"answer"');
+            if (kept.choiceLabels) {
+              expect(q.choiceLabels).toEqual(kept.choiceLabels);
+              expect(q.choices).toEqual(kept.choiceLabels.map((_: string, i: number) => i));
+            }
+            const picks = q.choices ?? [];
+            const typed = right ? kept.answer : picks.length ? picks.find((c: number) => c !== kept.answer)! : Number((kept.answer + 1).toFixed(3));
+            w.tick(1500);
+            const done = await w.ask(who, { action: 'answer', kind: 'moment', gameId: g.id, version: row.version, answer: typed, ms: 900 });
+            expect(done.status).toBe(200);
+            expect(done.right, `${q.parts.join(' ')} ${kept.choiceLabels?.join('|') ?? ''}`).toBe(right);
+            expect(done.answer).toBe(kept.answer);
+            expect(w.recorded[0].answer).toMatchObject({ key: kept.factKey, correct: right });
+            expect(LADDER.find((s) => s.id === skill)!.keys).toContain(kept.factKey);
+          }
         });
       }
     });
