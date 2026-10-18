@@ -1,0 +1,433 @@
+/* Bond Match. Plain HTML buttons in a grid; the hub's colours and buttons are reused. */
+
+.bm {
+  --bm-set0: #1d4ed8;
+  --bm-set1: #c2410c;
+  --bm-gap: 10px;
+  --bm-back: #1e3a8a;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 8px 0 32px;
+  color: var(--ink);
+}
+
+.bm-title {
+  margin: 0 0 12px;
+  font-family: var(--display);
+  font-size: 1.5rem;
+  color: #fff;
+}
+
+/* ---------- Picker ---------- */
+
+.bm-picker,
+.bm-finish,
+.bm-game {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.bm-picker__title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.6rem;
+}
+.bm-picker__help,
+.bm-picker__note {
+  margin: 4px 0 12px;
+  color: var(--ink-soft);
+}
+.bm-picker__note {
+  margin: 16px 0 0;
+  font-size: 0.9rem;
+}
+
+.bm-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.bm-sizes__title {
+  font-weight: 800;
+  margin-right: 4px;
+}
+.bm-size {
+  min-height: 44px;
+  padding: 8px 18px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bm-size[aria-pressed='true'] {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
+.bm-shelf {
+  margin-top: 14px;
+}
+.bm-shelf__name {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+.bm-shelf__sets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.bm-bond {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 64px;
+  padding: 10px 14px;
+  border: 2px solid var(--line);
+  border-left-width: 8px;
+  border-radius: 14px;
+  background: var(--tint);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.bm-bond:hover {
+  background: var(--tint-hover);
+}
+.bm-bond--whole { border-left-color: #1d4ed8; }
+.bm-bond--decimal { border-left-color: #0f766e; }
+.bm-bond--fraction { border-left-color: #a21caf; }
+.bm-bond__label {
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+.bm-bond__pairs {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+.bm-bond__pairs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+.bm-bond__count--now {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+/* ---------- Game ---------- */
+
+.bm-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+.bm-bar__title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.2rem;
+  flex: 1 1 auto;
+}
+.bm-link {
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.bm-link:hover {
+  border-color: var(--brand);
+}
+.bm-stats {
+  display: inline-flex;
+  gap: 16px;
+  font-size: 1.05rem;
+}
+.bm-stats--hidden {
+  color: var(--ink-soft);
+}
+
+.bm-board {
+  /* A card is never smaller than 64px; it grows with the screen, and shrinks if the rows would not fit the height. */
+  --bm-card: clamp(64px, min(calc((100vw - 32px - 32px - 3 * var(--bm-gap)) / var(--bm-cols)), calc((100dvh - 300px) / var(--bm-rows))), 132px);
+  display: grid;
+  grid-template-columns: repeat(var(--bm-cols), var(--bm-card));
+  grid-auto-rows: var(--bm-card);
+  gap: var(--bm-gap);
+  justify-content: center;
+  font-size: calc(var(--bm-card) * 0.4);
+}
+
+.bm-card {
+  position: relative;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  perspective: 600px;
+}
+.bm-card[aria-disabled='true'] {
+  cursor: default;
+}
+.bm-card:focus-visible {
+  outline: 4px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.bm-card__inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.35s ease;
+}
+.bm-card--up .bm-card__inner,
+.bm-card--matched .bm-card__inner {
+  transform: rotateY(180deg);
+}
+.bm-card__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  border: 4px solid var(--bm-set0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.bm-card--set1 .bm-card__face {
+  border-color: var(--bm-set1);
+  border-style: dashed;
+}
+.bm-card__back {
+  background: repeating-linear-gradient(45deg, var(--bm-back), var(--bm-back) 8px, #274690 8px, #274690 16px);
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 900;
+}
+.bm-card__front {
+  transform: rotateY(180deg);
+  flex-direction: column;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 900;
+  font-family: var(--display);
+}
+
+/* The set mark: shape and letter, in the corner, on the back and the front. Never colour alone. */
+.bm-card__corner {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--bm-set0);
+  font-size: max(0.72rem, calc(var(--bm-card) * 0.17));
+  font-weight: 900;
+  line-height: 1.4;
+  pointer-events: none;
+}
+.bm-card--set1 .bm-card__corner {
+  color: var(--bm-set1);
+}
+
+/* Matched pairs: their own colour, plus a tick. */
+.bm-card--matched .bm-card__front {
+  color: #0f172a;
+}
+.bm-card--matched[data-match-colour='0'] .bm-card__front { background: #bbf7d0; border-color: #15803d; }
+.bm-card--matched[data-match-colour='1'] .bm-card__front { background: #fde68a; border-color: #a16207; }
+.bm-card--matched[data-match-colour='2'] .bm-card__front { background: #fbcfe8; border-color: #be185d; }
+.bm-card--matched[data-match-colour='3'] .bm-card__front { background: #bae6fd; border-color: #0369a1; }
+.bm-card--matched[data-match-colour='4'] .bm-card__front { background: #ddd6fe; border-color: #6d28d9; }
+.bm-card--matched[data-match-colour='5'] .bm-card__front { background: #fed7aa; border-color: #c2410c; }
+.bm-card--matched[data-match-colour='6'] .bm-card__front { background: #a7f3d0; border-color: #047857; }
+.bm-card--matched[data-match-colour='7'] .bm-card__front { background: #fecaca; border-color: #b91c1c; }
+.bm-card--matched[data-match-colour='8'] .bm-card__front { background: #e9d5ff; border-color: #7e22ce; }
+.bm-card--matched[data-match-colour='9'] .bm-card__front { background: #cbd5e1; border-color: #334155; }
+.bm-card__tick {
+  position: absolute;
+  right: 6px;
+  bottom: 2px;
+  font-size: 0.55em;
+  color: #14532d;
+}
+
+.bm-num {
+  line-height: 1;
+}
+.bm-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.8em;
+  line-height: 1.05;
+}
+.bm-frac__top {
+  padding: 0 0.15em 0.05em;
+  border-bottom: 0.09em solid currentColor;
+}
+.bm-frac__bottom {
+  padding-top: 0.05em;
+}
+/* Decimals like 0.35 and 100.5 get a little smaller so they fit the card. */
+.bm-card__front .bm-num {
+  font-size: 0.85em;
+}
+
+.bm-line {
+  min-height: 4.5rem;
+  margin-top: 14px;
+  text-align: center;
+}
+.bm-line p {
+  margin: 0;
+}
+.bm-line__sum {
+  font-family: var(--display);
+  font-size: 1.6rem;
+  font-weight: 900;
+}
+.bm-line__sum--match {
+  color: var(--won);
+}
+.bm-line__help {
+  margin-top: 4px;
+  color: var(--ink-soft);
+}
+.bm-sum {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+.bm-sum .bm-frac {
+  font-size: 0.85em;
+}
+
+/* ---------- Finish ---------- */
+
+.bm-finish {
+  text-align: center;
+}
+.bm-finish__title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 2rem;
+}
+.bm-finish__set {
+  margin: 2px 0 12px;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.bm-stars {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 28px;
+  border-radius: 20px;
+  border: 4px solid;
+}
+.bm-stars--3 { border-color: #a16207; background: #fef3c7; color: #713f12; }
+.bm-stars--2 { border-color: #475569; background: #e2e8f0; color: #1e293b; }
+.bm-stars--1 { border-color: #9a3412; background: #ffedd5; color: #7c2d12; }
+.bm-stars__row {
+  font-size: 3rem;
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+}
+.bm-stars__name {
+  font-weight: 900;
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.bm-finish__facts {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin: 16px 0 4px;
+}
+.bm-finish__facts div {
+  display: flex;
+  flex-direction: column-reverse;
+}
+.bm-finish__facts dt {
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.bm-finish__facts dd {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 2.2rem;
+  font-weight: 900;
+}
+.bm-finish__min {
+  margin: 0 0 10px;
+  color: var(--ink-soft);
+}
+.bm-finish__best p {
+  margin: 2px 0;
+  font-weight: 700;
+}
+.bm-finish__new {
+  color: var(--won);
+}
+.bm-finish__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+.bm-finish__buttons .button {
+  width: auto;
+}
+
+/* ---------- Less movement ---------- */
+
+/* No 3D flip: the card just changes. Asked for by the device (this media query) or by the page (bm-board--still, which the tests can see). */
+@media (prefers-reduced-motion: reduce) {
+  .bm-card__inner { transition: none; }
+}
+.bm-board--still .bm-card__inner {
+  transition: none;
+  transform: none !important;
+}
+.bm-board--still .bm-card__face {
+  transform: none;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+}
+.bm-board--still .bm-card--down .bm-card__front,
+.bm-board--still .bm-card--up .bm-card__back,
+.bm-board--still .bm-card--matched .bm-card__back {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .bm-title { font-size: 1.25rem; }
+  .bm-picker, .bm-finish, .bm-game { padding: 12px; }
+  .bm-shelf__sets { grid-template-columns: repeat(2, 1fr); }
+  .bm-line__sum { font-size: 1.35rem; }
+}
