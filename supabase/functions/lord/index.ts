@@ -1364,6 +1364,7 @@ function playSeason(heroClass, style, seed, days = 35) {
 		forestFights: 0,
 		forestWins: 0,
 		forestLosses: 0,
+		arenaWins: 0,
 		masterTries: 0,
 		masterWins: 0,
 		goldEarned: 0,
@@ -1461,6 +1462,17 @@ function playSeason(heroClass, style, seed, days = 35) {
 			} else if (f.outcome === "lost") report.forestLosses += 1;
 			hero = shop(hero, report);
 			tryMaster();
+		}
+		for (let i = 0; i < 3; i++) {
+			const mirror = duelistOf(hero, "Mirror");
+			if (playDuel(duelistOf(hero, "You"), mirror, Math.floor(rand() * 4294967296)).winner === "a") {
+				hero = {
+					...hero,
+					exp: hero.exp + arenaExp(hero.level),
+					arenaWins: hero.arenaWins + 1
+				};
+				report.arenaWins += 1;
+			}
 		}
 		hero = deposit(hero, Math.max(0, hero.gold - 0));
 		report.heroByDay.push(hero);

@@ -34,8 +34,20 @@ No LORD.ts code or text is copied (it is GPL-3). Rules and numbers are not owned
 | Healer price | 5 × level per HP | `round(level × 0.25)` per HP, at least 1 | Healing ate 55-60% of gold at the first try; now about 40% |
 | The dragon | One 15,000 HP fight; 3 kills end the game for everyone | Three stages, a breather between them (30% HP back); no game-ending kill, seasons instead | Plan section 9 |
 | Seasons | Optional tournament mode | 35 days; every hero starts again; stars and the Hall of Heroes are kept | James, 18 Oct |
-| Player fights | Lose gold and exp | Arena (later): losing costs nothing | Plan section 11 |
+| Player fights | Lose gold and exp | Arena: the computer plays both heroes, losing costs nothing, a classmate's hero is only a copy | Plan section 11, "The arena" below |
 | Kindness | "Charm", mostly romance | Kindness: small events reward it; 1% off shop prices per point, up to 10% | Plan section 15 |
+
+## The arena, the computer heroes, news and points (L.5)
+
+- **The arena:** 3 a day (they don't pile up). The server picks an opponent within one level of yours (or the three closest if nobody is): a saved copy of a classmate's hero (this season, never hidden, never yourself) or one of the eight computer heroes. Both heroes start at full health; the computer plays both sides for up to 30 rounds, you first. A hit is LORD's damage roll minus a random 0 to the other hero's defence (defence counts on both sides in player fights), at least 1. In round 2 each hero uses its class move once for free (Knight: double hit; Mage: 1.5 × attack, no roll; Trickster: the next hit misses). If it isn't over after 30 rounds the larger share of health left wins. The duel is seeded, so the two heroes and the seed play it again exactly (stored in `lord_fights`).
+- **Win:** `round(0.5 × tierPower(level))` experience (about half a forest monster). **Lose:** nothing, no health, no gold, no exp. A classmate's real hero is never touched.
+- **Computer heroes:** Sir Gareth, Dame Maple, Old Bram, Lady Wren, Captain Flint, Wizard Pim, Sister Hazel and Big Mort. Each is one whole season played by the same simulator that tunes the pupils' pace (a steady 2 to 7 days a week), so they level up by beating real masters, buy gear, and now and then beat the dragon and start again. They are worked out from the season number, never stored, and clearly labelled "computer hero" everywhere.
+- **Daily News:** one village line a day (a little life, often with a number in it; nothing about the day changes), what the computer heroes did, and lines about pupils from things the server accepted: a master beaten, the dragon beaten, an arena win, being flattened by a monster. One line per pupil per kind per day. All written by the code; `{p}` is filled in with the hub name when read. Hidden profiles leave no lines. Kept 30 days, shown for 3.
+- **Warriors list:** this season's heroes, ordered by dragons beaten this season, then level. Hub name, avatar, level, stars. Top 10 plus you. Never maths. **Hall of Heroes:** who beat the dragon in each season and how many times, kept for good.
+- **Points** (`lord_point_rules()`): 1 for every 3 forest fights won, 3 for beating a master, 10 for beating the dragon. Inside the 40-a-day limit every game against the computer shares. Arena fights and maths answers earn none. A new points season clears them; heroes, stars, the Hall and the achievements stay.
+- **Achievements (8):** first master, level 6, level 12, beat the dragon, beat it twice, 50 forest wins, 10 arena wins, 50 riddles and puzzles. They read counts the server keeps for each pupil over all seasons.
+- **A fight left alone for a whole day** (handed out two or more New Zealand days ago) counts as a loss, the soft kind: a forest fight drops the gold carried and wakes you at the healer; a master fight heals you (the day's try stays used); a dragon fight sends you home.
+- **The season pause:** switching the game off pauses the season clock; switching it on moves the start date forward by the days it was closed.
 
 ## Kept out for good
 
@@ -52,17 +64,19 @@ Romance, marriage, children, orphans, drinking, gambling, student-written text, 
 - Exp to challenge: running total of 14 average fights a level.
 - Dragon stages: HP `3.05 × tier(12)`, strength `0.43, 0.51, 0.59 × tier(12)`.
 
-## Pace (simulator, 200 seasons each, 18 Oct 2026)
+## Pace (simulator, 200 seasons each, 18 Oct 2026, with the arena)
 
-A simple pupil: attacks, uses class skills (3 uses a day, shared across all three dragon stages), heals below 40% HP, buys the best gear it can, tries its master every day, and answers maths questions right 70% of the time.
+A simple pupil: attacks, uses class skills (3 uses a day, shared across all three dragon stages), heals below 40% HP, buys the best gear it can, tries its master every day, answers maths questions right 70% of the time, and wins about half of three arena duels a day against a hero of its own strength.
 
 | Pupil | Level 12 | Beats the dragon in the season |
 |---|---|---|
-| Plays every day | day 18, week 3 | 100% (about 35% of tries; it can try again next day) |
-| Plays 4 days a week | 18th play day, calendar day 30, week 5 | about 80% for Knight and Mage, 50% for Trickster |
-| Plays 2 days a week | does not get there; level 6 or 7 by the end | |
+| Plays every day | day 16, week 3 | 100% (about 35% of tries; it can try again next day) |
+| Plays 4 days a week | 16th play day, calendar day 25, week 4 | about 95% for Knight, 98% Mage, 77% Trickster |
+| Plays 2 days a week | does not get there; level 8 by the end | |
 
-Also: about 2% of forest fights are lost, a master is beaten on about 64% of tries, a fight lasts about 3 rounds, healing eats about 40% of gold, and all three classes finish within a play day of each other. To see it all: `npm run lord:sim`.
+The arena adds about 15% to the pace (three duels are worth about 1½ forest fights' experience), which moved a 4-days-a-week pupil from week 5 to week 4 and a 2-days-a-week pupil from level 6-7 to level 8. **What stops a 2-days-a-week pupil is the one master try a day**: 10 play days is at most 10 tries, a master is beaten on about 3 tries in 4, and 11 are needed. Tried before the arena was added: 10 fights a level instead of 14, with a second master try a day after a loss, left a 2-days-a-week pupil at level 9 while a daily pupil reached the dragon in 13 days (week 2). So it isn't one setting. It would take a second master try a day or turns that pile up for missed days. James's call (plan question 12).
+
+Also: about 2% of forest fights are lost, a master is beaten on about 73% of tries, a fight lasts about 3 rounds, healing eats about 45% of gold, and all three classes finish within a play day of each other. To see it all: `npm run lord:sim`.
 
 ## The dragon and the maths (James, 18 Oct: "a fight, not a test")
 
@@ -71,5 +85,5 @@ Each riddle before a dragon stage gives a **small** bonus for a right answer: a 
 ## Still to settle (later stages)
 
 - The gem shop (2 gems for a permanent +1 strength, defence or HP), and more events when pupils have played.
-- Whether 2-days-a-week pupils should be able to finish. They reach level 6 or 7 in a season; Practice Mode, a bigger daily allowance for the teacher or a shorter first season could change that. James's call.
+- Whether 2-days-a-week pupils should be able to finish. They reach level 8 in a season (see Pace). A second master try a day, turns that pile up for missed days, Practice Mode or a shorter first season could change that. James's call.
 - Kenney 1-Bit Pack and VT323 font licences: check again when the screens start (L.3).

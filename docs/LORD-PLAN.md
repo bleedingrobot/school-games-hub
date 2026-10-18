@@ -3,7 +3,7 @@
 A daily-turns fantasy adventure for the hub, in the spirit of the 1990s BBS door game *Legend of the Red Dragon* (LORD). Visit a small village from a menu, go into the forest a few times a day, fight monsters, buy a better sword, beat your master to level up, and one day face the Red Dragon. **Maths is one of the tools that helps you win**: sizing up a monster, working out the healer's bill, counting change at the shop, cracking a riddle, a master's trial and the dragon fight.
 
 Written 17 October 2026 from James's brief ([prompts/lord-maths.md](prompts/lord-maths.md)) after reading [talisto/LORD.ts](https://github.com/talisto/LORD.ts) (v1.4.6) and the hub's code on `main` and `monsters`.
-**Status: STARTED 18 Oct 2026 (Maths Monsters is on main): L.0 to L.4 done (L.4 is built and tested but NOT applied or deployed: it stops for James, see "L.4 results"). Next is L.5 (arena, news, points, teacher page), only after James has tried real saving. Branch `dragon-maths`.** James answered every question in section 14 (all my picks, except: start only **after Maths Monsters is live**).
+**Status: STARTED 18 Oct 2026 (Maths Monsters is on main): L.0 to L.5 done and tested. L.4 and L.5 are built but NOT applied or deployed: they stop for James (see "L.4 results", "L.5 results" and prompts/lord-golive.md). Next is L.6 (how to play, accessibility, slow-Chromebook check, hint button, final docs), only after James has tried it with the class. Branch `dragon-maths`.** James answered every question in section 14 (all my picks, except: start only **after Maths Monsters is live**).
 **Updated 18 Oct 2026** after reading every file of LORD.ts (main game, all 13 add-ons, scripts, tests, change log): **5-week seasons** with a fresh start each time, **romance and orphans kept out for good**, rule-table fixes, and a simulator check of the pace. See section 15.
 
 ## The short version
@@ -327,6 +327,47 @@ What the simulator told us, and what changed because of it:
 - **Test tools in the live game for a teacher:** the server allows them for teachers but the screens only show them in the browser trial (my pick, as the brief asked). Say if James wants a teacher-only button in the live game.
 - The server asks the database 3 or 4 times per request. The brief's budget (about 25 requests per pupil a day) still holds: roughly 2 requests per fight, plus shopping.
 - Not done (L.5): points, achievements, the arena, computer heroes, the daily news and warriors list, the teacher page for the switch, the season dates and the refusals list (the tables and `teacher_set_lord()` are ready), and the one-hint-per-question button.
+
+## L.5 results (18 Oct 2026): the arena, news, points and the teacher page, built and tested, NOT live
+
+**Nothing is applied and nothing is deployed.** The new migration is `supabase/migrations/20261018001700_dragon_maths_l5.sql` (it follows the L.4 one, so both must go in, in order). `DRAGON_MATHS_ON` is still `false`. The steps to go live (L.4 and L.5 together) are in [prompts/lord-golive.md](prompts/lord-golive.md). The numbers and rules are in [LORD-RULES.md](LORD-RULES.md) ("The arena, the computer heroes, news and points").
+
+**James's answers to the L.4 questions (asked 18 Oct):** an abandoned fight counts as a loss after a day (done); a teacher does not see the test tools in the live game (nothing to do: they stay in the browser trial); a pupil who plays twice a week should be able to reach the dragon (**not done, see the finding below**). The dragon's 10 points were not answered, so the pick stands (1 point per 3 forest wins, 3 for a master, 10 for the dragon).
+
+**What was built**
+
+- **Computer heroes** (`shared/lord/computer.ts`): eight named heroes, each a whole season played by the pace simulator (`sim.ts` now also keeps the hero at the end of every day), at a steady 2 to 7 days a week. Worked out from the season number, never stored, same every time. They level up by beating real masters. Marked "(computer hero)" in news lines and "computer hero" in the arena.
+- **The arena** (`playDuel` in `engine.ts`, the `arena` action): 3 a day, an opponent within a level of yours (a classmate's saved copy from `lord_arena_candidates()`, or a computer hero), played by the server from a seed, stored finished in `lord_fights` (kind `arena`, the two heroes' numbers and the seed, so it can be played again; a test does). A win pays `round(0.5 × tierPower)` experience; losing costs nothing; the classmate's hero is never written to. Odd data for a classmate's hero is ignored.
+- **Daily News** (`lord_news` table, read only through `lord_news()`): the server writes the village line and the computer heroes' deeds once a day (the first `load` of the day does it; `load_lord` says whether it's done), and lines about pupils when it accepts a master win, a dragon win, an arena win or a forest loss (`lord_commit` stores them in the same save). One line per kind per pupil per day. `{p}` is filled in with the hub name on reading. No student text can reach it (a test sends junk and checks).
+- **Warriors list and Hall of Heroes** (`lord_warriors()`, `lord_hall()`, the `lord_hall` table): level, stars and dragons this season, hub names and avatars only. The Hall is written when the dragon is beaten, under that season's number, and kept for good.
+- **Points and achievements** (`lord_scores`, `lord_point_rules()`, eight `dm-` achievements): the server counts forest wins, masters and dragons per request; the database turns them into points inside the shared 40-a-day limit (`scored_games` has a new `lord_score` link). The lifetime counts live in each hero's `extra.stats` and survive new runs, new seasons and class changes. `progress_counts`, `progress_rules`, `rebuild_progress`, `my_progress`, `teacher_students` and `teacher_new_season` were redone from Maths Monsters' latest versions with Dragon Maths added. A new points season clears Dragon Maths points only.
+- **Seasons:** the last four days show "N days left" (the header and the village); the Hall is saved at the dragon win; a fight left alone for a whole day counts as a loss; **the holiday pause** is `teacher_set_lord()`: switching off notes the day, switching on moves the season start forward by the days it was closed (a start date typed in wins; a pause before the first season moves nothing).
+- **Teacher page** (`src/pages/TeacherLord.tsx`, three lines in `Teacher.tsx`): the game switch (with the pause), forest fights a day, the first season date, a class view (season and days left, heroes at each level, hardest questions, requests turned down with real names, the Hall of Heroes) and a panel on each pupil (hero, lifetime counts, topics, their hardest questions, **reset this hero**, which keeps points, achievements and the Hall).
+- **Dashboard card behind a switch:** `useLordEnabled()` hides the card until the teacher's switch is on, once `DRAGON_MATHS_ON` is turned on (it isn't). The how-points page explains the new points.
+
+**What was checked**
+
+- 101 handler tests (33 new for L.5: computer heroes, the duel, the arena, news, points and counts, fights left alone for a day, the countdown) with every old one still passing; the shared harness moved into `supabase/functions/lord/testKit.ts`. 213 tests in all across the Dragon Maths files.
+- 119 new SQL tests (`lord_l5.test.sql`: closed tables and server-only functions, the news and its names, points step by step and the daily limit, achievements, the Hall, the arena's classmate list, Warriors, the pause, the teacher's views and reset, a new points season) plus every old suite (run in rolled-back transactions on the local copy: the migrations 1600 and 1700 and then each file). Two old tests were updated for the new rules (an `arena` fight is now allowed; 8 more achievements; the six new functions pupils or teachers can call).
+- Website tests for the arena, the news (and "try again"), Warriors, the Hall, the countdown, the abandoned-fight note, the teacher page, the data layer and the dashboard switch.
+- The pace was re-run with the arena in the simulator (see LORD-RULES).
+
+**Finding: a pupil who plays twice a week still can't reach the dragon.** With the arena, a daily pupil reaches level 12 on day 16 (week 3), a 4-days-a-week pupil on day 25 (week 4) and a 2-days-a-week pupil gets to level 8. What stops them is the one master try a day: 10 play days is at most 10 tries, a master is beaten about 3 times in 4, and 11 masters are needed. A gentler curve alone can't fix it (a second master try a day plus 10 fights a level got them to level 9 and made a daily pupil reach the dragon in week 2). Options: (a) leave it, (b) a second master try a day after a loss plus a gentler curve (shorter game for everyone), (c) turns that pile up for missed days, up to a day or two (a casual pupil then gets 20 fights on a play day; a rule change from LORD). My pick: (c), then re-run the simulator. I did not change the pace without James.
+
+**Where I differ from the brief, or chose**
+
+- Arena opponents are within one level (or the three closest). The arena news line for a win over a classmate doesn't name the classmate ("Brave Kiwi won a fight in the arena!"), so nobody is named as a loser; wins over a computer hero name it.
+- A forest loss does make a news line ("Quiet Tui was flattened by a Grumpy Troll"), as the brief's example does, once a pupil a day. It is one line in `shared/lord/news.ts` to remove if it embarrasses anyone.
+- The village event of the day is a line only (often with a sum in it). "Market day: 10% off" would be a real rule; left for later.
+- The Warriors list puts pupils who beat the dragon this season first, then by level, because beating the dragon sends you back to level 1.
+- Pupils read the news, Warriors list and Hall through database functions called straight from the website (like the other games' boards), not through the `lord` function, so reading costs no function requests.
+- Hidden profiles (teachers) leave no news lines, no Warriors place and are never an arena opponent.
+
+**Known limits**
+
+- A missing-factor times-table question also accepts the other factor (8 × ? = 72 takes 8 or 9). It comes from L.4's proof check, which can't tell which factor was hidden. The worst it does is a 10% discount for a wrong answer; fixing it means the question box sending which side was hidden. (It made one L.4 test fail now and then; the test now uses a wrong answer far from any right one.)
+- The fight itself is still played in the browser from the server's seed (L.4's note); the arena is not, it is played entirely on the server.
+- Switching the game off while pupils are mid-fight leaves those fights open; the "whole day" rule applies from the day it comes back on.
 
 ## Credits to carry over
 

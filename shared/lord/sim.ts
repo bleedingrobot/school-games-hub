@@ -1,7 +1,7 @@
 import { ARMOURS, FOREST_FIGHTS_PER_DAY, MAX_LEVEL, SEASON_DAYS, WEAPONS } from './data';
 import {
   applyForestResult, applyMasterResult, buyGear, canChallengeMaster, canFaceDragon, deposit, finishDragon, forestTrip, heal,
-  applyEvent, dragonBreather, loseToDragon, makeRandom, newHero, rollDay, skillsFor, startDragonStage, startFight, startMasterFight, stepFight,
+  applyEvent, arenaExp, dragonBreather, duelistOf, loseToDragon, playDuel, makeRandom, newHero, rollDay, skillsFor, startDragonStage, startFight, startMasterFight, stepFight,
   useForestTurn, withdraw,
 } from './engine';
 import { dragonStageOptions } from './maths';
@@ -35,6 +35,7 @@ export interface SeasonReport {
   forestFights: number;
   forestWins: number;
   forestLosses: number;
+  arenaWins: number;
   masterTries: number;
   masterWins: number;
   goldEarned: number;
@@ -93,7 +94,7 @@ export function playSeason(heroClass: HeroClass, style: PlayerStyle, seed: numbe
   const rand = makeRandom(seed);
   const report: SeasonReport = {
     levelDay: Array(MAX_LEVEL + 1).fill(null), levelCalendarDay: Array(MAX_LEVEL + 1).fill(null),
-    forestFights: 0, forestWins: 0, forestLosses: 0, masterTries: 0, masterWins: 0, goldEarned: 0, goldOnHealing: 0, goldOnGear: 0,
+    forestFights: 0, forestWins: 0, forestLosses: 0, arenaWins: 0, masterTries: 0, masterWins: 0, goldEarned: 0, goldOnHealing: 0, goldOnGear: 0,
     dragonKills: 0, dragonTries: 0, dragonDay: null, playDays: 0, avgRounds: 0, heroByDay: [],
   };
   let rounds = 0;
@@ -178,6 +179,14 @@ export function playSeason(heroClass: HeroClass, style: PlayerStyle, seed: numbe
       tryMaster();
     }
 
+    // The arena: three duels a day against a hero of the same strength (the computer plays both), a little exp for a win.
+    for (let i = 0; i < 3; i++) {
+      const mirror = duelistOf(hero, 'Mirror');
+      if (playDuel(duelistOf(hero, 'You'), mirror, Math.floor(rand() * 4294967296)).winner === 'a') {
+        hero = { ...hero, exp: hero.exp + arenaExp(hero.level), arenaWins: hero.arenaWins + 1 };
+        report.arenaWins += 1;
+      }
+    }
     hero = deposit(hero, Math.max(0, hero.gold - 0));
     report.heroByDay.push(hero);
   }
