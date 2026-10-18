@@ -1,5 +1,6 @@
 /** A new game: pick the two types you start with (no typing). */
 import { useState } from 'react';
+import { HowToPlayBody } from './HowToPlay';
 import { startTeam, starterFor } from '../../../shared/monsters/world/start';
 import { TYPE_LABEL, TYPES, type TypeId } from '../../../shared/monsters/types';
 import type { Monster } from '../../../shared/monsters/rules';
@@ -37,6 +38,10 @@ export function StartScreen({ onStart }: { onStart: (picks: [TypeId, TypeId], te
           Start walking
         </button>
       </p>
+      <details className="mp-start__howto">
+        <summary>How to play</summary>
+        <HowToPlayBody />
+      </details>
     </section>
   );
 }

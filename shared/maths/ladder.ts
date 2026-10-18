@@ -120,6 +120,11 @@ export interface SkillProgress {
   status: SkillStatus;
   /** Share of the skill's facts in box 2 or higher (0–1). */
   share: number;
+  /**
+   * True for a skill the student's starting point (placement, year level or furthest place) is past, but whose facts are not
+   * secure in their records. It counts as behind them (never the current skill) but not as secure, so the numbers stay honest.
+   */
+  passedOver?: boolean;
 }
 
 export interface LadderProgress {
@@ -136,8 +141,13 @@ export interface LadderProgress {
 export interface LadderOptions {
   /** Tables the teacher has left on. Default all. A skill with none of its tables on is skipped. */
   enabledTables?: readonly number[];
-  /** Division facts (56 ÷ 8) are asked only when this isn't false. Only a focus reads it; auto asks them as before. */
+  /** Division facts (56 ÷ 8) are asked, and counted towards progress, only when this isn't false. Not set = included. */
   division?: boolean;
+  /**
+   * Where the student starts on the whole ladder (an index into `LADDER`): their placement, their class's year level, or the
+   * furthest place they have reached. Built skills before it count as passed, so a place never drops below it.
+   */
+  floor?: number;
   /** A maths focus (teacher's or the student's own) instead of auto. */
   focus?: FocusSpec;
 }
@@ -149,13 +159,13 @@ export interface FocusSpec {
 }
 
 /** The skill's keys once switched-off tables are taken out. */
-function activeKeys(skill: LadderSkill, enabledTables: readonly number[]): string[] {
+function activeKeys(skill: LadderSkill, enabledTables: readonly number[], division = true): string[] {
   const on = new Set(enabledTables);
   return skill.keys.filter((k) => {
     const mul = parseFactKey(k);
     if (mul) return on.has(mul.a) || on.has(mul.b);
     const div = /^div:\d+\/(\d+)$/.exec(k);
-    return div ? on.has(Number(div[1])) : true;
+    return div ? division && on.has(Number(div[1])) : true;
   });
 }
 
@@ -163,8 +173,9 @@ function activeKeys(skill: LadderSkill, enabledTables: readonly number[]): strin
  * Where a student is on the ladder, worked out from their records: the first built skill that
  * isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
  * campaign) is the one they're on. Skipped skills (all their tables switched off) are secure
- * for free. The place can fall back if a student gets facts wrong; saving the furthest place
- * so it never goes down comes with the stored focus in F.4.
+ * for free. With a `floor` (placement, year level or the furthest place reached, see place.ts) the
+ * built skills before it are behind the student (passed over, and secure only if their records say so), so forgetting a fact brings more review but never
+ * drops the student's place below the floor.
  */
 export function ladderProgress(stats: Iterable<FactStats>, opts: LadderOptions = {}): LadderProgress {
   const byKey = new Map([...stats].map((s) => [s.key, s]));
@@ -172,12 +183,18 @@ export function ladderProgress(stats: Iterable<FactStats>, opts: LadderOptions =
   let current: LadderSkill | null = null;
   let secureCount = 0;
   let builtCount = 0;
-  const skills: SkillProgress[] = LADDER.map((skill) => {
+  const floor = opts.floor ?? 0;
+  const skills: SkillProgress[] = LADDER.map((skill, index) => {
     if (!skill.built) return { skill, status: 'later' as const, share: 0 };
-    const keys = activeKeys(skill, enabled);
+    const keys = activeKeys(skill, enabled, opts.division !== false);
     if (keys.length === 0) return { skill, status: 'upcoming' as const, share: 1 };
     builtCount++;
     const share = keys.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / keys.length;
+    if (index < floor) {
+      const real = share >= STEP_SECURE_SHARE;
+      if (real) secureCount++;
+      return { skill, status: 'secure' as const, share, passedOver: !real };
+    }
     if (current === null && share < STEP_SECURE_SHARE) {
       current = skill;
       return { skill, status: 'current' as const, share };
@@ -191,7 +208,7 @@ export function ladderProgress(stats: Iterable<FactStats>, opts: LadderOptions =
 /** The focus, review and stretch keys auto draws from for these records. */
 export function autoPools(progress: LadderProgress, opts: LadderOptions = {}): Pools {
   const enabled = opts.enabledTables ?? TABLES;
-  const live = progress.skills.filter((p) => p.skill.built).map((p) => ({ ...p, keys: activeKeys(p.skill, enabled) })).filter((p) => p.keys.length);
+  const live = progress.skills.filter((p) => p.skill.built).map((p) => ({ ...p, keys: activeKeys(p.skill, enabled, opts.division !== false) })).filter((p) => p.keys.length);
   const at = live.findIndex((p) => p.status === 'current');
   if (at < 0) return { focus: [], review: live.flatMap((p) => p.keys), stretch: [] };
   return { focus: live[at].keys, review: live.slice(0, at).flatMap((p) => p.keys), stretch: live[at + 1]?.keys ?? [] };
@@ -229,6 +246,23 @@ export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-
   return null;
 }
 
+/**
+ * A question for one mastery key, as the pack that owns the key would ask it (nothing is recorded).
+ * The placement check uses it to ask about a skill without a student's records.
+ */
+export function questionForKey(key: string, id: number, random: () => number = Math.random): Question | null {
+  const packs: (BandedPack | TimesTables)[] = [
+    earlyFactsPack([], random),
+    new BandedPack(BANDED_PACKS['add-sub'], [], random),
+    new TimesTables([], random),
+    new BandedPack(BANDED_PACKS.division, [], random),
+  ];
+  const pack = packs.find((p) => p.owns(key));
+  if (!pack) return null;
+  const question = pack.questionFor(key, 'focus', { missingFactor: false });
+  return { ...question, id };
+}
+
 /** The packs a game keeps records for under a focus (everything the built ladder uses). */
 export const FOCUS_PACKS = ['times-tables', 'early-facts', 'add-sub', 'division'] as const;
 export type FocusPackId = (typeof FOCUS_PACKS)[number];
@@ -259,6 +293,8 @@ export class AutoPack implements SkillPack {
   readonly curriculumTags = [...new Set(LADDER.filter((s) => s.built).flatMap((s) => s.curriculumTags))];
   private packs: (BandedPack | TimesTables)[];
   private memory: SessionMemory = newMemory();
+  /** Each pack numbers its own questions, so the ladder numbers them again: a question box tells questions apart by this. */
+  private asked = 0;
   private listeners = new Set<(answer: FactAnswer) => void>();
 
   constructor(
@@ -324,7 +360,7 @@ export class AutoPack implements SkillPack {
     const firstTables = progress.skills.findIndex((p) => p.skill.stage === 'times-tables');
     const at = focusSpec ? LADDER.indexOf(focusSkills(focusSpec)[0]) : progress.skills.findIndex((p) => p.status === 'current');
     const missingFactor = focusSpec && ctx.missingFactor !== undefined ? ctx.missingFactor : at < 0 || at > firstTables;
-    return pack.questionFor(picked.key, picked.band, { ...ctx, missingFactor });
+    return { ...pack.questionFor(picked.key, picked.band, { ...ctx, missingFactor }), id: ++this.asked };
   }
 
   recordAnswer(q: Question, answer: number, ms: number): AnswerResult {

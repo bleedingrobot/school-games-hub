@@ -93,6 +93,10 @@ function factsIn(tables) {
 	for (const t of tables) for (const key of tableFacts(t)) keys.add(key);
 	return keys;
 }
+//#endregion
+//#region shared/maths/selector.ts
+/** A step's tables count as secure when this share of their facts are in box 2 or higher. */
+const STEP_SECURE_SHARE = .7;
 new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
 //#endregion
 //#region shared/maths/banded.ts
@@ -1970,7 +1974,7 @@ const addKeys = (test) => Object.values(BANDED_PACKS["add-sub"].families).flatMa
 	return m && test(Number(m[1]) + Number(m[2]));
 });
 /** Division fact keys ("div:56/8") whose divisor is one of these. */
-const divKeys = (divisors) => Object.values(BANDED_PACKS.division.families).flatMap((f) => f.keys).filter((k) => {
+const divKeys$1 = (divisors) => Object.values(BANDED_PACKS.division.families).flatMap((f) => f.keys).filter((k) => {
 	const m = /^div:(\d+)\/(\d+)$/.exec(k);
 	return m && divisors.includes(Number(m[2]));
 });
@@ -1988,7 +1992,7 @@ function tablesSkills() {
 		const upTo = step.upTo ?? 12;
 		const mul = [...factsIn(step.add)].filter((k) => parseFactKey(k).b <= upTo && !seen.has(k));
 		mul.forEach((k) => seen.add(k));
-		const div = divKeys(step.add).filter((k) => !seen.has(k));
+		const div = divKeys$1(step.add).filter((k) => !seen.has(k));
 		div.forEach((k) => seen.add(k));
 		return {
 			id: `tables-${step.add.join("-")}`,
@@ -2071,6 +2075,77 @@ const LADDER = [
 	stub("whole-from-fraction", "Finding the whole from a fraction", "fractions-decimals-percentages", "MS.Y6.NUM.RN.P12"),
 	stub("bedmas", "Order of operations", "order-of-operations", "MS.Y6.NUM.OP.P1")
 ];
+/** The skill's keys once switched-off tables are taken out. */
+function activeKeys(skill, enabledTables, division = true) {
+	const on = new Set(enabledTables);
+	return skill.keys.filter((k) => {
+		const mul = parseFactKey(k);
+		if (mul) return on.has(mul.a) || on.has(mul.b);
+		const div = /^div:\d+\/(\d+)$/.exec(k);
+		return div ? division && on.has(Number(div[1])) : true;
+	});
+}
+/**
+* Where a student is on the ladder, worked out from their records: the first built skill that
+* isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
+* campaign) is the one they're on. Skipped skills (all their tables switched off) are secure
+* for free. With a `floor` (placement, year level or the furthest place reached, see place.ts) the
+* built skills before it are behind the student (passed over, and secure only if their records say so), so forgetting a fact brings more review but never
+* drops the student's place below the floor.
+*/
+function ladderProgress(stats, opts = {}) {
+	const byKey = new Map([...stats].map((s) => [s.key, s]));
+	const enabled = opts.enabledTables ?? TABLES;
+	let current = null;
+	let secureCount = 0;
+	let builtCount = 0;
+	const floor = opts.floor ?? 0;
+	return {
+		skills: LADDER.map((skill, index) => {
+			if (!skill.built) return {
+				skill,
+				status: "later",
+				share: 0
+			};
+			const keys = activeKeys(skill, enabled, opts.division !== false);
+			if (keys.length === 0) return {
+				skill,
+				status: "upcoming",
+				share: 1
+			};
+			builtCount++;
+			const share = keys.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / keys.length;
+			if (index < floor) {
+				const real = share >= STEP_SECURE_SHARE;
+				if (real) secureCount++;
+				return {
+					skill,
+					status: "secure",
+					share,
+					passedOver: !real
+				};
+			}
+			if (current === null && share < .7) {
+				current = skill;
+				return {
+					skill,
+					status: "current",
+					share
+				};
+			}
+			if (current === null) secureCount++;
+			return {
+				skill,
+				status: current === null ? "secure" : "upcoming",
+				share
+			};
+		}),
+		current,
+		secureCount,
+		builtCount,
+		percent: builtCount ? Math.round(100 * secureCount / builtCount) : 0
+	};
+}
 /** Which skill pack records a mastery key ("mul:7x8" → "times-tables"), or null if it isn't a ladder key. */
 function packIdOfKey(key) {
 	if (/^mul:\d+x\d+$/.test(key)) return "times-tables";
@@ -2099,11 +2174,362 @@ function ladderKeyPacks() {
 	return out;
 }
 //#endregion
+//#region shared/maths/place.ts
+/**
+* A student's place on the ladder (docs/MATHS-FOCUS-PLAN.md section 5). Three things set the floor under it:
+*  - their class's year level, until they have done the placement check;
+*  - the placement check (about 10 questions that jump up while they answer right and quickly and step back when they don't);
+*  - the furthest place they have ever reached, kept on the server so it only ever moves forward.
+* Skills before the floor count as passed. Forgetting ×7 gives more ×7 review, but never drops the place.
+*
+* The server keeps the furthest place and the placement; the database cannot see the ladder, so the server functions that save
+* answers work the place out with this file (`placeToStore`) and the database only checks that it never goes back.
+*/
+const NO_LADDER = {
+	on: false,
+	yearLevel: null,
+	placed: null,
+	placement: null,
+	furthest: null
+};
+const ID = /^[a-z0-9-]{1,40}$/;
+const skillId = (v) => typeof v === "string" && ID.test(v) && LADDER.some((s) => s.id === v && s.built) ? v : null;
+function parseLadderInfo(raw) {
+	if (!raw || typeof raw !== "object") return NO_LADDER;
+	const r = raw;
+	const year = typeof r.yearLevel === "number" && Number.isInteger(r.yearLevel) && r.yearLevel >= 0 && r.yearLevel <= 13 ? r.yearLevel : null;
+	const placement = skillId(r.placement);
+	const placed = r.placed === "skipped" ? "skipped" : r.placed === "done" && placement ? "done" : null;
+	return {
+		on: r.on === true,
+		yearLevel: year,
+		placed,
+		placement: placed === "done" ? placement : null,
+		furthest: skillId(r.furthest)
+	};
+}
+/** The year a skill is taught, from its first NZ Curriculum tag ("MS.Y4.NUM.OP.P2" → 4). */
+function skillYear(skill) {
+	const m = /^MS\.Y(\d+)\./.exec(skill.curriculumTags[0] ?? "");
+	return m ? Number(m[1]) : null;
+}
+const builtSkills = () => LADDER.filter((s) => s.built);
+const indexOfSkill = (id) => id ? LADDER.findIndex((s) => s.id === id) : -1;
+/** Where a class's year level starts students: an index into `LADDER`. No year level = the first skill. */
+function yearStartRank(yearLevel) {
+	const built = builtSkills();
+	if (yearLevel === null) return LADDER.indexOf(built[0]);
+	const want = yearLevel - 1;
+	const found = built.find((s) => (skillYear(s) ?? 0) >= want) ?? built[built.length - 1];
+	return LADDER.indexOf(found);
+}
+/** The floor under a student's place: an index into `LADDER`. */
+function floorRank(info) {
+	const start = info.placed === "done" ? indexOfSkill(info.placement) : yearStartRank(info.yearLevel);
+	return Math.max(0, start, indexOfSkill(info.furthest));
+}
+/** The student's place on the ladder, with the floor applied. */
+function placeProgress(stats, info, opts = {}) {
+	return ladderProgress(stats, {
+		...opts,
+		floor: floorRank(info)
+	});
+}
+/** The furthest place to keep: where they are now, or the last built skill once all of them are secure. */
+function placeToStore(stats, info, opts = {}) {
+	const skill = placeProgress(stats, info, opts).current ?? builtSkills().at(-1) ?? null;
+	return skill ? {
+		skill: skill.id,
+		rank: LADDER.indexOf(skill)
+	} : null;
+}
+/**
+* Where the check goes next, given the answers so far: the skill to ask about, or null when it is finished.
+* It starts at the class's year start and moves up two skills after a right, quick answer (one after it has missed
+* once) and back one when the answer is wrong or slow. All steps are over the built skills only.
+*/
+function placementNext(yearLevel, steps) {
+	const built = builtSkills();
+	const top = built.length - 1;
+	let level = Math.max(0, built.findIndex((s) => LADDER.indexOf(s) >= yearStartRank(yearLevel)));
+	let jump = 2;
+	for (const step of steps) if (step.correct && step.quick) level = Math.min(top, level + jump);
+	else {
+		level = Math.max(0, level - 1);
+		jump = 1;
+	}
+	return steps.length >= 10 ? null : built[level];
+}
+/** Where to start: just below the highest skill they answered right and quickly. A student who got nothing right starts at the first skill. */
+function placementResult(steps) {
+	const built = builtSkills();
+	let best = -1;
+	for (const step of steps) {
+		const at = built.findIndex((s) => s.id === step.skill);
+		if (step.correct && step.quick && at > best) best = at;
+	}
+	return built[Math.max(0, best - 1)];
+}
+const isQuick = (ms) => ms <= QUICK_MS;
+//#endregion
 //#region shared/maths/focus.ts
+const AUTO_FOCUS = {
+	source: "auto",
+	skills: [],
+	onlyThese: false,
+	endsAt: null,
+	canChoose: true,
+	own: null,
+	ladder: NO_LADDER
+};
+const SOURCES = [
+	"teacher-student",
+	"teacher-group",
+	"teacher-class",
+	"student",
+	"auto"
+];
+const SKILL_ID = /^[a-z0-9-]{1,40}$/;
+const cleanSkills = (raw) => Array.isArray(raw) ? [...new Set(raw.filter((s) => typeof s === "string" && SKILL_ID.test(s)))].slice(0, 12) : [];
+/** Reads what the server sent. Anything odd counts as auto: nobody gets a strange focus by accident. */
+function parseFocus(raw) {
+	if (!raw || typeof raw !== "object") return AUTO_FOCUS;
+	const r = raw;
+	const source = SOURCES.find((s) => s === r.source) ?? "auto";
+	const skills = cleanSkills(r.skills);
+	const own = r.own && typeof r.own === "object" ? r.own : null;
+	const ownSkills = own ? cleanSkills(own.skills) : [];
+	const ends = typeof r.endsAt === "string" && !Number.isNaN(Date.parse(r.endsAt)) ? r.endsAt : null;
+	return {
+		source: source !== "auto" && skills.length === 0 ? "auto" : source,
+		skills: source === "auto" ? [] : skills,
+		onlyThese: r.onlyThese === true,
+		endsAt: source.startsWith("teacher") ? ends : null,
+		canChoose: r.canChoose !== false,
+		own: ownSkills.length ? {
+			skills: ownSkills,
+			onlyThese: own.onlyThese === true
+		} : null,
+		ladder: parseLadderInfo(r.ladder)
+	};
+}
+/** The ladder facts of a focus (auto off, nothing known, when it has none). */
+const ladderOf = (focus) => focus?.ladder ?? NO_LADDER;
 const ladderKeys = ladderKeyPacks();
 for (let a = 1; a <= 12; a++) for (let b = a; b <= 12; b++) ladderKeys.set(`mul:${a}x${b}`, "times-tables");
 /** True for a mastery key the games record under a focus. */
 const isFocusKey = (key) => ladderKeys.has(key);
+const NUMBER = /^\d{1,4}$/;
+const num = (text) => NUMBER.test(text) ? Number(text) : NaN;
+const whole = (n) => Number.isInteger(n) && n >= 0;
+/** The adding and pairs-that-make-N records for two numbers that add to `total`. */
+function sumKeys(p, q, total) {
+	const keys = [];
+	const lo = Math.min(p, q);
+	const hi = Math.max(p, q);
+	keys.push(`add:${lo}+${hi}`);
+	if (total === 10) keys.push(`bond10:${lo}+${hi}`);
+	if (total === 20) keys.push(`bond20:${lo}+${hi}`);
+	if (p === q) keys.push(`dbl:${p}`);
+	return keys;
+}
+/** The times-table and division-fact records for n ÷ d = q. */
+function divKeys(n, d, q) {
+	const keys = [];
+	if (d >= 1 && d <= 12 && q >= 1 && q <= 12) keys.push(`mul:${Math.min(d, q)}x${Math.max(d, q)}`);
+	keys.push(`div:${n}/${d}`);
+	if (d === 2) keys.push(`half:${n}`);
+	return keys;
+}
+/**
+* Works a question out from how it was shown (['7', '+', '?', '=', '10']): its answer, and the
+* records it could count towards. Null if no ladder skill asks that shape. The server uses this
+* to check answers from a solo game it didn't see being asked. It knows nothing the generators
+* don't: the tests make thousands of questions and check this agrees with every one.
+*/
+function solveParts(parts) {
+	if (!Array.isArray(parts) || !parts.every((p) => typeof p === "string")) return null;
+	const p = parts;
+	const blanks = p.filter((x) => x === "?").length;
+	let answer = NaN;
+	let keys = [];
+	if (p.length === 4 && p[0] === "Double" && p[2] === "=" && p[3] === "?") {
+		const n = num(p[1]);
+		answer = 2 * n;
+		keys = [`dbl:${n}`];
+	} else if (p.length === 5 && p[0] === "Half" && p[1] === "of" && p[3] === "=" && p[4] === "?") {
+		const n = num(p[2]);
+		answer = n / 2;
+		keys = [`half:${n}`];
+	} else if (p.length === 5 && p[3] === "=" && blanks === 1) {
+		const [x, op, y, , z] = p;
+		const [a, b, c] = [
+			num(x),
+			num(y),
+			num(z)
+		];
+		if (op === "+") {
+			const [addendA, addendB, total] = z === "?" ? [
+				a,
+				b,
+				a + b
+			] : x === "?" ? [
+				c - b,
+				b,
+				c
+			] : [
+				a,
+				c - a,
+				c
+			];
+			answer = z === "?" ? total : x === "?" ? addendA : addendB;
+			if (whole(addendA) && whole(addendB)) keys = sumKeys(addendA, addendB, total);
+		} else if (op === "−") {
+			if (z === "?") {
+				answer = a - b;
+				if (whole(answer)) keys = sumKeys(b, answer, a);
+			} else if (y === "?") {
+				answer = a - c;
+				if (whole(answer)) keys = sumKeys(c, answer, a);
+			}
+		} else if (op === "×") {
+			const [f, g, product] = z === "?" ? [
+				a,
+				b,
+				a * b
+			] : x === "?" ? [
+				c / b,
+				b,
+				c
+			] : [
+				a,
+				c / a,
+				c
+			];
+			answer = z === "?" ? product : x === "?" ? f : g;
+			if (Number.isInteger(f) && Number.isInteger(g) && f * g === product && f >= 1 && f <= 12 && g >= 1 && g <= 12) keys = [`mul:${Math.min(f, g)}x${Math.max(f, g)}`];
+		} else if (op === "÷") {
+			if (z === "?") {
+				answer = a / b;
+				if (whole(answer) && b > 0) keys = divKeys(a, b, answer);
+			} else if (y === "?") {
+				answer = a / c;
+				if (whole(answer) && c > 0) keys = divKeys(a, answer, c);
+			}
+		}
+	}
+	if (!whole(answer) || answer > 1e3) return null;
+	keys = keys.filter(isFocusKey);
+	return keys.length ? {
+		answer,
+		keys
+	} : null;
+}
+//#endregion
+//#region shared/maths/placeContext.ts
+/**
+* Reads what the database sends about a student's ladder (`space_maths_context`: records, question settings and focus) into the
+* pieces the ladder code wants.
+*/
+function ladderOfContext(context) {
+	return {
+		facts: Array.isArray(context.facts) ? context.facts : [],
+		info: ladderOf(parseFocus(context.focus)),
+		opts: {
+			enabledTables: context.settings?.enabledTables,
+			division: context.settings?.division
+		}
+	};
+}
+//#endregion
+//#region shared/maths/placementCheck.ts
+/**
+* Checking a placement check on the server (docs/MATHS-FOCUS-PLAN.md section 5). The website sends the ten questions it showed
+* and what the student answered. The server asks the same walk where each question should have come from, works each question
+* out from how it was shown (`solveParts`), and only then says where the student starts. The result only says where to start.
+*/
+/** True if this looks like a placement answer; anything else is thrown away. */
+function parsePlacementAnswers(raw) {
+	if (!Array.isArray(raw) || raw.length !== 10) return null;
+	const out = [];
+	for (const r of raw) {
+		if (!r || typeof r !== "object") return null;
+		const { skill, parts, answer, ms } = r;
+		if (typeof skill !== "string" || !Array.isArray(parts) || !parts.every((p) => typeof p === "string") || parts.length > 8) return null;
+		if (typeof answer !== "number" || !Number.isFinite(answer) || typeof ms !== "number" || !Number.isFinite(ms)) return null;
+		out.push({
+			skill,
+			parts,
+			answer,
+			ms: Math.max(0, ms)
+		});
+	}
+	return out;
+}
+/** The skill to start at, or null if the answers can't be a placement check for this year level. */
+function checkPlacement(yearLevel, answers) {
+	const steps = [];
+	for (const a of answers) {
+		const expected = placementNext(yearLevel, steps);
+		if (!expected || expected.id !== a.skill) return null;
+		const solved = solveParts(a.parts);
+		if (!solved || !solved.keys.some((k) => expected.keys.includes(k))) return null;
+		const correct = a.answer === solved.answer;
+		steps.push({
+			skill: a.skill,
+			correct,
+			quick: correct && isQuick(a.ms)
+		});
+	}
+	if (placementNext(yearLevel, steps) !== null) return null;
+	return placementResult(steps).id;
+}
+//#endregion
+//#region shared/maths/syncPlace.ts
+/**
+* The server side of a student's place on the ladder (docs/MATHS-FOCUS-PLAN.md section 5). The functions that save answers call
+* `makePlaceSyncer` after saving, which works the place out from the student's records and hands it to the database, which only
+* ever moves it forward. `savePlacement` checks a placement check before storing where to start. Both take their database calls
+* as ports, so the tests (and each function's entry file) can stand in for Supabase.
+*/
+/** Looks at a student's records and keeps their furthest place up to date. Never throws: a late or missing update is harmless. */
+function makePlaceSyncer(ports, now = Date.now, minGapMs = 3e4) {
+	const last = new Map();
+	return async function syncPlace(player) {
+		const at = now();
+		const before = last.get(player);
+		if (before !== void 0 && at - before < minGapMs) return;
+		last.set(player, at);
+		if (last.size > 5e3) last.clear();
+		try {
+			const context = await ports.loadContext(player);
+			if (!context) return;
+			const { facts, info, opts } = ladderOfContext(context);
+			if (!info.on) return;
+			const place = placeToStore(facts, info, opts);
+			if (place) await ports.savePlace(player, place.skill, place.rank);
+		} catch {
+			console.error("place: not updated");
+		}
+	};
+}
+/** Checks a placement from the website (`{ skip: true }` or `{ answers: [...] }`) and stores where to start. */
+async function savePlacement(ports, player, raw) {
+	const context = await ports.loadContext(player);
+	if (!context) throw new Error("place: cannot read the ladder");
+	const { info } = ladderOfContext(context);
+	if (!info.on) return { outcome: "refused" };
+	if (info.placed) return { outcome: "already" };
+	const body = raw && typeof raw === "object" ? raw : {};
+	if (body.skip === true) return { outcome: await ports.savePlacementRow(player, null, true) ? "saved" : "already" };
+	const answers = parsePlacementAnswers(body.answers);
+	const start = answers ? checkPlacement(info.yearLevel, answers) : null;
+	if (!start) return { outcome: "refused" };
+	return {
+		outcome: await ports.savePlacementRow(player, start, false) ? "saved" : "already",
+		start
+	};
+}
 //#endregion
 //#region shared/gem-keep/config.ts
 /**
@@ -3992,6 +4418,15 @@ function makeHandler(services) {
 		if (!player) return reply(401, { error: "Please sign in again." });
 		if (!limiter.allow(player, 20)) return reply(429, { error: "Slow down a little!" });
 		const body = await readJsonBody(request);
+		if (body && body.placement !== void 0 && body.items === void 0) {
+			if (!services.savePlacement) return reply(404, { error: "Not here." });
+			try {
+				const saved = await services.savePlacement(player, body.placement);
+				return saved.outcome === "refused" ? reply(400, { error: "That couldn't be used." }) : reply(200, saved);
+			} catch {
+				return reply(503, { error: "We couldn't save that just now." });
+			}
+		}
 		if (!body || !Array.isArray(body.items) || body.items.length > 40) return reply(400, { error: "That couldn't be read." });
 		const results = [];
 		for (const raw of body.items) {
@@ -4008,6 +4443,7 @@ function makeHandler(services) {
 			if (result === "stop") break;
 			results.push(result);
 		}
+		if (services.syncPlace && results.some((r) => r.type === "answers" && r.added > 0 || r.type === "facts" && r.changed > 0)) await services.syncPlace(player);
 		if (results.length < body.items.length && results.length === 0) return reply(503, { error: "We couldn't save your Gem Keep progress just now." });
 		return reply(200, {
 			handled: results.length,
@@ -4100,7 +4536,34 @@ async function call(name, args) {
 		why: "busy"
 	};
 }
+/** The database calls the ladder needs: the student's records and focus, their furthest place and their placement. */
+const placePorts = {
+	async loadContext(player) {
+		const { data, error } = await admin.rpc("space_maths_context", { player });
+		if (error) throw new Error(error.code ?? "unknown");
+		return data ?? null;
+	},
+	async savePlace(player, skill, rank) {
+		const { error } = await admin.rpc("record_ladder_place", {
+			player,
+			skill,
+			rank
+		});
+		if (error) throw new Error(error.code ?? "unknown");
+	},
+	async savePlacementRow(player, skill, skipped) {
+		const { data, error } = await admin.rpc("record_placement", {
+			player,
+			start_skill: skill,
+			was_skipped: skipped
+		});
+		if (error) throw new Error(error.code ?? "unknown");
+		return data === true;
+	}
+};
 Deno.serve(makeHandler({
+	syncPlace: makePlaceSyncer(placePorts),
+	savePlacement: (player, raw) => savePlacement(placePorts, player, raw),
 	now: () => Date.now(),
 	async userIdFor(token) {
 		const { data, error } = await admin.auth.getUser(token);

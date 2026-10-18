@@ -29,6 +29,8 @@ import { trainingOn } from './training/switch';
 const TrainingPage = lazy(() => import('./pages/TrainingPage'));
 // The maths focus screen brings the whole maths ladder with it, so it loads only when a teacher opens it.
 const SetFocus = lazy(() => import('./pages/SetFocus'));
+// So does the warm-up that finds a student's starting place.
+const Placement = lazy(() => import('./pages/Placement'));
 
 /** All the pages. Links look like /#/chess so GitHub Pages needs no extra setup. */
 export function AppRoutes() {
@@ -74,6 +76,14 @@ export function AppRoutes() {
             }
           />
           <Route path="warp" element={<ClassWarp />} />
+          <Route
+            path="placement"
+            element={
+              <Suspense fallback={<div className="loading" role="status">Loading…</div>}>
+                <Placement />
+              </Suspense>
+            }
+          />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Route>

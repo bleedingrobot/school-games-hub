@@ -30,6 +30,7 @@ import { BOT_NAMES, placeLabel } from '../../shared/space/names';
 
 // The maths focus card brings the whole maths ladder with it, so it loads on its own.
 const MathsFocusCard = lazy(() => import('../components/MathsFocusCard'));
+const MathsPathCard = lazy(() => import('../components/MathsPathCard'));
 
 const RESULT_LABEL = { won: 'Won', lost: 'Lost', drawn: 'Draw' } as const;
 
@@ -442,6 +443,7 @@ export function Dashboard() {
       {profile?.role !== 'teacher' && (
         <Suspense fallback={null}>
           <MathsFocusCard />
+          <MathsPathCard />
         </Suspense>
       )}
 

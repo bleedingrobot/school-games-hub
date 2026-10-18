@@ -6,11 +6,11 @@
  *
  * The game lives in memory; the page around it (MonstersPlay) saves it.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SkillPack } from '../../../../shared/maths/skillPack';
 import type { TopicId } from '../../../../shared/maths/skillPacks';
 import type { BattleSetup } from '../../../../shared/monsters/engine';
-import { maxHpOf } from '../../../../shared/monsters/rules';
+import { maxHpOf, type Monster } from '../../../../shared/monsters/rules';
 import { RAW_MAPS, WORLD_MAPS } from '../../../../shared/monsters/maps';
 import type { TiledMap } from '../../../../shared/monsters/world/mapLoader';
 import type { Dir, GameMap, Thing, WorldState } from '../../../../shared/monsters/world/types';
@@ -144,13 +144,19 @@ export function WorldGame({
         });
       },
       onEnter: () => {
-        fade.current.at = performance.now();
+        // Walking through a door fades in from white: skipped for people who asked their computer for less motion.
+        if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) fade.current.at = performance.now();
         cue('door');
       },
     };
     ctrl.current = new WalkController(initial, opts, events, timeScale);
   }
   useEffect(() => ctrl.current!.setOptions(opts), [opts]);
+
+  // A new game or a loaded one starts with the keyboard on the map, not lost on the page behind.
+  useEffect(() => {
+    stage.current?.focus({ preventScroll: true });
+  }, []);
 
   // Load the pictures.
   useEffect(() => {
@@ -443,17 +449,7 @@ export function WorldGame({
         {!sheets && <p className="mw-loading">{loadError ? 'The map pictures did not load. Try reloading.' : 'Loading the map…'}</p>}
         <div className="mw-hud">
           <span className="mw-place">{map.name}</span>
-          <ul className="mw-team" aria-label="Your team">
-            {world.team.map((m, i) => {
-              const hp = m.hp / maxHpOf(m);
-              return (
-                <li key={i} aria-label={`${nameOf(m.species)}, level ${m.level}, ${hp >= 1 ? 'full health' : hp <= 0 ? 'tired' : `${Math.round(hp * 100)} percent health`}`}>
-                  <MonsterArt species={m.species} shiny={m.shiny} size={30} still />
-                  <span className="mw-team__bar" aria-hidden="true"><span style={{ width: `${Math.round(hp * 100)}%` }} className={hp < 0.3 ? 'is-low' : ''} /></span>
-                </li>
-              );
-            })}
-          </ul>
+          <TeamStrip team={world.team} />
           <button type="button" className="mw-gear" onClick={() => setMenu({ page: 'main', from: 'menu' })} aria-haspopup="dialog" aria-keyshortcuts="M Escape">Menu</button>
         </div>
         {settings.dpad && (
@@ -506,6 +502,26 @@ export function WorldGame({
     </div>
   );
 }
+
+/**
+ * The little team picture strip. It only changes when the team does, so walking (a new world state every step)
+ * does not draw six monster pictures again each step: on a slow Chromebook that was most of the cost of a step.
+ */
+const TeamStrip = memo(function TeamStrip({ team }: { team: readonly Monster[] }) {
+  return (
+    <ul className="mw-team" aria-label="Your team">
+      {team.map((m, i) => {
+        const hp = m.hp / maxHpOf(m);
+        return (
+          <li key={i} aria-label={`${nameOf(m.species)}, level ${m.level}, ${hp >= 1 ? 'full health' : hp <= 0 ? 'tired' : `${Math.round(hp * 100)} percent health`}`}>
+            <MonsterArt species={m.species} shiny={m.shiny} size={30} still />
+            <span className="mw-team__bar" aria-hidden="true"><span style={{ width: `${Math.round(hp * 100)}%` }} className={hp < 0.3 ? 'is-low' : ''} /></span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+});
 
 /** Drawing cost, kept for the test page's smoothness check (read from the browser console: `__mmPerf`). */
 const perf = { draws: 0, drawMs: 0, worst: 0 };

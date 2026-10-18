@@ -409,3 +409,59 @@ Until the site is merged nothing is visible, and with no focus set every student
 
 ### What F.4 needs from you
 See the message that came with this stage.
+
+## F.3 went live (19 October 2026)
+
+James said go. The F.3 migration (`20261018002700_maths_focus.sql`) was applied to the live database, `gem-keep`, `space-game` and `save-bot-game` were deployed straight after, and `maths-focus` was fast-forwarded into `main` (55daa87); Pages built green. With no focus set, students play exactly as before.
+
+## Stage F.4 results: auto everywhere, placement, and the student path (19 October 2026)
+
+**Status: built and tested on a scratch copy of the database and in a real browser. Nothing is live.** No migration was applied to the live database, no function was deployed, nothing was merged to `main`. Work is on branch `maths-focus`.
+
+### Before I started
+`main` had moved since F.3: it brought in `20261019000100_my_moves_left.sql` (the moves-left cards), so F.4's migration is numbered **`20261019000200_maths_auto.sql`**. I merged `main` into `maths-focus` first. No test was failing before I started (my first full run happened while I was editing, and its one failure was the built `space-game` file being out of date from my own change).
+
+### What I built
+- **The class switch** "Games pick the maths (auto) when there is no focus" (`app_settings.maths_auto`, **off by default**, per class, new classes copy it). On the Set focus screen, with a short explanation. With it off, nothing changes: every student's focus is byte-for-byte what it was (checked in the rehearsal), and Gem Keep and Mission Control keep asking the times tables.
+- **Auto over the whole ladder** in Gem Keep and Mission Control. When a student has no focus and the class has the switch on, the games use `AutoPack`: 60% their current skill, 30% review (weakest first, hard tables a bit likelier), 10% stretch. Gem Keep levels unlock as before. The class's tables-off, division and multiple-choice settings still apply (see "Decisions"). A teacher focus, or one the student picked, still wins. The switch and the student's start point ride inside the focus the database already sends, so the games needed almost no new plumbing.
+- **Never going backwards.** `ladder_places` (closed to the website) holds each student's furthest place. Only the answer-saving server functions write it, from the student's records, through `record_ladder_place`, and a trigger refuses any move back even with the server's key. Forgetting ×7 gives more ×7 review but never drops the place (tested).
+- **Placement check** (`/placement`, ~10 questions): starts at the class's year start, jumps up two skills after a right-and-quick answer (one after a first miss), steps back one after a wrong or slow one, and starts the student just below the highest skill they passed. Friendly, never called a test, no score, **skippable**. The server re-checks every question (it works each one out from how it was shown, and replays the walk) before storing only "where to start" in `ladder_placements`, once; a skip is stored too so they aren't asked again. Until it is done, the start is the class's year level, or the first skill if the year is empty.
+- **Starting points by year level**: the first built skill taught a year below the class (one year behind, because earlier skills come back as review; the number is `START_YEARS_BEHIND` in `config.ts`). Year 5 starts on ×6, ×9.
+- **Student progress path** ("My maths path" on the home page): a strip of stops, "You are here", "N of M skills secure", a button that opens the full path, times-table skills open into their tables, "Your teacher's pick" marked while a teacher focus runs, and a "You moved up!" message (once, with a "Great!" button; reduced-motion safe). Only their own path, no ranks, no years. It appears only when the class has auto on, so a class that hasn't turned it on sees nothing new. Everything comes from `ladderProgress`/`placeProgress`, so the path, Gem Keep, Mission Control and the server agree.
+- **Teacher side:** the switch on Set focus; a **Year level** box on My classes (it could only be set when making a class before).
+- **A bug found on the way:** `AutoPack` took question numbers from whichever pack made the question, so two questions in a row could share a number and the question box did not reset. Fixed (the ladder numbers its own questions). This also affected F.3 focuses that mixed packs.
+- **Another:** when Gem Keep or the solo space game switched pack between levels, only the times-table records were carried over. They now keep every record.
+
+### Decisions I made (change any you don't like)
+- **Skills before a student's starting point are "Moved past", not "Secure".** They sit behind the student (auto never puts them back there) but the count "N of M skills secure" only counts skills their records really show secure, so a Year 5 student starts on "0 of 9" instead of getting free credit. The "You moved up!" message only fires for skills that became really secure, not for a jump to a new starting place.
+- **Division off now also means division isn't counted**: with a class's division switch off, division facts are left out of auto's questions *and* out of "is this skill secure" (otherwise a student could never finish a times-table skill). Teacher focuses were already like this.
+- **Only built skills show on the path and count.** **9 of the 31 skills in the ladder list are built** (the plan said 30; the list has 31). The other 22 stay skipped by auto and don't count; they appear as F.5 and F.6 build them.
+- **The furthest place is only kept while the class has auto on**, and is updated whenever answers are saved (at most once every 30 seconds per student in Gem Keep and Mission Control).
+- **A skipped placement is final** (the class's year start is used). There is no teacher button to reset a placement yet.
+- **Placement answers are not added to the student's records** (they only say where to start).
+- **Placement checks are on the honour system for speed**: the server checks every question and the walk, but "answered in under 5 seconds" is the browser's word, so a student could claim to be quick. Cheating only gives them harder questions.
+
+### Tests
+- **Database (scratch copy):** new `maths_auto.test.sql` (67 checks: switch off by default and nothing changes while off, who may turn it on, the focus carrying the ladder, the furthest place only moving forward even by direct update, the placement stored once, nobody else can read or write another student's, class's or school's place, `my_ladder` only gives your own); `security.test.sql` updated (two new callable functions). All files pass in the scratch copy except two Clan Quest checks about scheduled midnight jobs, which fail only because a scratch copy made without `SCRATCH_BASE` has no scheduler for them (the same test passes on the F.3 scratch recipe; not touched by F.4).
+- **Rehearsal on today's data** (`scripts/f4-rehearsal.sh`, 39 checks, today's live state plus fake classes, a group, running focuses, a student's own pick, changed settings and records): nothing lost, every student's focus identical apart from the ladder facts, every setting identical with the new switch off everywhere, every teacher list identical, the new parts work on it. `scripts/scratch-db.sh` now also copies Douglas Park's rows when no `SCRATCH_BASE` is given (the shared local copy is now fully up to date, so the old recipe collides).
+- **Shared maths** (`place.test.ts`, 38 tests): auto over the ladder with seeded random, the 60/30/10 mix from a starting place, tables-off and division settings kept, the solver agrees with every question auto can ask (many seeds and starting places), forgetting never drops the place, placement jumps up and steps back, the server check refuses a wrong walk, a bad question or a wrong count.
+- **Servers and screens:** Gem Keep on auto (slow suite), Mission Control server and solo game on auto, gem-keep handler (place sync, placement), the path card (hidden when off, tables, teacher's pick, moved up, no storage), the placement page, Set focus switch, My classes year level.
+- **Real browser** (Chromium against a scratch database, signed in with real tokens): a Year 5 student sees "0 of 9", "You are here: ×6, ×9", opens the full path (six "Moved past", tables inside), does the warm-up (ten answers sent and accepted by the server check), sees "All done!" with no score; after a placement the path starts there; a student who gets a skill secure sees "You moved up!" once; a student on a teacher focus sees "Your teacher's pick"; a student in a class with auto off sees nothing new; the teacher turns auto on for one class (only that class changes) and sets a year level. **axe clean** at 1366 x 640 and 844 x 390 on every new and changed screen, with reduced motion too; at 844 x 390 the top bar's contrast fails exactly as it did before F.2 (not touched).
+- **App:** type check clean; whole suite including the slow files passes (144 files, 2,624 tests, 1 skipped on purpose, none failing); production build works; `npm run build:functions` run — only `gem-keep`, `space-game` and `save-bot-game` changed.
+
+### What is untested
+Real Google sign-in; the live Supabase project; the three edge functions running in Deno (their code is covered by handler tests, the shared tests and the build, and the database calls by the rehearsal); the placement check's *timing* on a real student's device; what teachers and students think of the path; Mission Control with classmates on auto in a real browser (covered by handler tests); the top bar at phone width.
+
+### Go-live list (when you say "go live")
+1. Check `20261019000100_my_moves_left.sql` is already applied (it came from `main`). Then apply **`20261019000200_maths_auto.sql`** (one migration; nothing by hand).
+2. Deploy the **three** functions whose files changed: `gem-keep` (placement, keeps the furthest place), `space-game` and `save-bot-game` (keep the furthest place; auto questions). Deploy them **right after** the migration. No other function changed (`monster`, `lord`, `multiplayer`, `card-game`, `power-clash`, `clans`, `training` are identical).
+3. Merge `maths-focus` to `main`; wait for Pages.
+4. Afterwards: on Set focus, turn "Games pick the maths (auto)" on for one class; set that class's year level on My classes; as a student in it open the home page (the maths path), do the warm-up, and play a Gem Keep level.
+Until a teacher turns the switch on, every student plays exactly as before.
+
+### James's answers after F.4 (19 October 2026)
+- **Decimal point key:** yes, add it in F.5 (shown only on questions that need it).
+- **Order of operations:** answers are **four choices to tap**, with wrong choices made from common mistakes (working left to right gives 20 for 2 + 3 × 4).
+- **Ladder order:** keep section 12 as it is.
+- **Warm-up:** try it on one class after go live, once auto is switched on for them.
+- **Go live:** not yet. F.5 is built on the scratch copy first.

@@ -329,3 +329,14 @@
     display: none;
   }
 }
+
+.mp-start__howto { max-width: 720px; margin: 12px auto 0; text-align: left; }
+.mp-start__howto summary { cursor: pointer; font-weight: 800; padding: 6px 0; }
+
+/* Reduced motion: nothing shakes, flashes, shrinks or slides. The messages still say what happened. */
+@media (prefers-reduced-motion: reduce) {
+  .mb-foe, .mb-bar > span { transition: none; }
+  .mb-foe.has-ball > .mon-art { animation: none; opacity: 0; }
+  .mb-ball { animation: none; }
+  .mb-me.is-evolving .mon-art svg { animation: none !important; filter: brightness(1.4); }
+}

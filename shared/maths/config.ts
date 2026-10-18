@@ -56,3 +56,12 @@ export const AVOID_RECENT = 3;
 
 /** How many choices in multiple-choice mode. */
 export const CHOICES = 4;
+
+/**
+ * Auto's starting point from a class's year level, until a student has done the placement check: the first built skill whose
+ * teaching year (from its NZ Curriculum tag) is this many years below the class. One year behind, because earlier skills
+ * come back as review and a student should meet work they can mostly do.
+ */
+export const START_YEARS_BEHIND = 1;
+/** The placement check asks this many questions. */
+export const PLACEMENT_QUESTIONS = 10;
