@@ -1920,7 +1920,8 @@ const SPOKEN_WORDS = {
 	"÷": "divided by",
 	"=": "equals",
 	"?": "what",
-	r: "remainder"
+	r: "remainder",
+	"%": "percent"
 };
 const ORDINAL = {
 	2: ["half", "halves"],
@@ -1948,9 +1949,22 @@ function spokenFraction(part) {
 	if (top === "?") return `what ${names[1]}`;
 	return `${top} ${top === "1" ? names[0] : names[1]}`;
 }
+/**
+* One part or choice in words for a screen reader: "3/4" is "3 quarters", "25%" is "25 percent", "0.25" is "0 point 2 5".
+* Anything else is read as it is.
+*/
+function spokenLabel(part) {
+	const percent = /^(\d+(?:\.\d+)?)%$/.exec(part);
+	if (percent) return `${spokenLabel(percent[1])} percent`;
+	if (/^\d+\.\d+$/.test(part)) {
+		const [whole, frac] = part.split(".");
+		return `${whole} point ${frac.split("").join(" ")}`;
+	}
+	return part.includes("/") ? spokenFraction(part) : part;
+}
 /** The spoken version of a question's parts, for screen readers. */
 function speak(parts) {
-	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
+	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (/^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
 	return /[?.!:]$/.test(text) ? text : text + "?";
 }
 /** The parts with the blank filled in: "7 + 8 = ?" → "7 + 8 = 15", "1/2 = ?/8" → "1/2 = 4/8". */

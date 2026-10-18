@@ -11,6 +11,10 @@ import { RECORD_KEY } from './skillPacks/generatedKit';
 
 const FAMILIES = Object.values(GENERATED.families);
 const KEYS = FAMILIES.flatMap((f) => f.keys);
+/** The F.5 question types: read back from their parts by the old solver. F.6's carry their numbers (fdp.test.ts). */
+const F6_SKILLS = ['unit-fraction-of', 'tenths', 'add-tenths', 'decimal-equivalents', 'percent-basic', 'fraction-of', 'times-decimals', 'equivalent-fractions', 'fdp-equivalents', 'percent-of', 'whole-from-fraction'] as const;
+const F6_KEYS = new Set(F6_SKILLS.flatMap((id) => GENERATED_SKILL_KEYS[id]));
+const F5_KEYS = KEYS.filter((k) => !F6_KEYS.has(k));
 const pack = generatedPack();
 
 /** A number as the screen shows it: "12 500" → 12500. */
@@ -39,11 +43,7 @@ describe('the generated skills in the ladder', () => {
       expect(skill.keys.length, id).toBeGreaterThanOrEqual(4);
       for (const key of skill.keys) expect(packIdOfKey(key), key).toBe('generated');
     }
-    expect(LADDER.filter((s) => s.built)).toHaveLength(19);
-    // The fraction, decimal and percentage stubs wait for F.6.
-    for (const id of ['unit-fraction-of', 'tenths', 'add-tenths', 'decimal-equivalents', 'percent-basic', 'fraction-of', 'times-decimals', 'equivalent-fractions', 'fdp-equivalents', 'percent-of', 'whole-from-fraction', 'ten-and']) {
-      expect(LADDER.find((s) => s.id === id)!.built, id).toBe(false);
-    }
+    expect(LADDER.filter((s) => s.built)).toHaveLength(31); // F.6 built the rest
   });
 
   it('every generated key has a pack in ladderKeyPacks', () => {
@@ -61,7 +61,7 @@ describe('the generated skills in the ladder', () => {
   });
 });
 
-describe.each(KEYS.map((k) => [k] as const))('%s', (key) => {
+describe.each(F5_KEYS.map((k) => [k] as const))('%s', (key) => {
   const family = GENERATED.families[key];
 
   it('every roll makes a sound, repeatable question the solver agrees with', () => {
@@ -314,7 +314,7 @@ describe('the solver does not take over other skills', () => {
   });
 
   it('questionForKey (the placement check) asks every generated key', () => {
-    for (const key of KEYS) {
+    for (const key of F5_KEYS) {
       const q = questionForKey(key, 7, randomFromSeed(`q:${key}`));
       expect(q, key).not.toBeNull();
       expect(q!.factKey).toBe(key);

@@ -1,3 +1,4 @@
+import { spokenLabel } from '../../shared/maths/banded';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
@@ -52,7 +53,9 @@ async function answer(user: ReturnType<typeof userEvent.setup>, n: number, right
   if (q.choices) {
     // Four choices to tap (order of operations): the right one, or a wrong one.
     const target = right ? q.answer : q.choices.find((c) => c !== q.answer)!;
-    await user.click(screen.getByRole('button', { name: String(target) }));
+    // A pick-one question names its buttons by the choice (spoken: "3 tenths"), not by its number.
+    const name = q.choiceLabels ? spokenLabel(q.choiceLabels[target]) : String(target);
+    await user.click(screen.getByRole('button', { name }));
   } else {
     // Typed on the pad; a decimal has a point key.
     const typed = String(right ? q.answer : Number((q.answer + 1).toFixed(3)));

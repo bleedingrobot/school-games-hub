@@ -131,7 +131,8 @@ const SPOKEN_WORDS = {
 	"÷": "divided by",
 	"=": "equals",
 	"?": "what",
-	r: "remainder"
+	r: "remainder",
+	"%": "percent"
 };
 const ORDINAL = {
 	2: ["half", "halves"],
@@ -159,9 +160,22 @@ function spokenFraction(part) {
 	if (top === "?") return `what ${names[1]}`;
 	return `${top} ${top === "1" ? names[0] : names[1]}`;
 }
+/**
+* One part or choice in words for a screen reader: "3/4" is "3 quarters", "25%" is "25 percent", "0.25" is "0 point 2 5".
+* Anything else is read as it is.
+*/
+function spokenLabel(part) {
+	const percent = /^(\d+(?:\.\d+)?)%$/.exec(part);
+	if (percent) return `${spokenLabel(percent[1])} percent`;
+	if (/^\d+\.\d+$/.test(part)) {
+		const [whole, frac] = part.split(".");
+		return `${whole} point ${frac.split("").join(" ")}`;
+	}
+	return part.includes("/") ? spokenFraction(part) : part;
+}
 /** The spoken version of a question's parts, for screen readers. */
 function speak(parts) {
-	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
+	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (/^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
 	return /[?.!:]$/.test(text) ? text : text + "?";
 }
 /** Same answer, allowing for floating-point dust (0.30000000000000004). */
@@ -323,7 +337,7 @@ function kind(key, label, tag, roll, valid, make) {
 		make: (_k, [a, b]) => isInt(a, 0, 9999) && isInt(b, 0, 9999) && valid(a, b) ? make(a, b) : null
 	};
 }
-const ones = (n) => n % 10;
+const ones$1 = (n) => n % 10;
 const tens = (n) => Math.floor(n / 10) % 10;
 const ADD_SUB = {
 	id: "add-sub",
@@ -344,35 +358,35 @@ const ADD_SUB = {
 			a - b - 10,
 			a + b
 		] })),
-		"add:2d+tens": kind("add:2d+tens", "Adding tens to a 2-digit number (47 + 30)", "add-tens-to-2d", (r) => [int(r, 1, 6) * 10 + int(r, 1, 9), int(r, 1, 3) * 10], (a, b) => a >= 11 && a <= 69 && ones(a) !== 0 && b % 10 === 0 && b >= 10 && b <= 30, (a, b) => sum(a, b, { wrong: addWrong(a, b).concat([a + b / 10]) })),
+		"add:2d+tens": kind("add:2d+tens", "Adding tens to a 2-digit number (47 + 30)", "add-tens-to-2d", (r) => [int(r, 1, 6) * 10 + int(r, 1, 9), int(r, 1, 3) * 10], (a, b) => a >= 11 && a <= 69 && ones$1(a) !== 0 && b % 10 === 0 && b >= 10 && b <= 30, (a, b) => sum(a, b, { wrong: addWrong(a, b).concat([a + b / 10]) })),
 		"sub:2d-tens": kind("sub:2d-tens", "Taking tens from a 2-digit number (77 − 30)", "sub-tens-from-2d", (r) => {
 			const b = int(r, 1, 3) * 10;
 			return [b + int(r, 1, 5) * 10 + int(r, 1, 9), b];
-		}, (a, b) => b % 10 === 0 && b >= 10 && b <= 30 && a - b >= 11 && a - b <= 59 && ones(a) !== 0, (a, b) => diff(a, b, { wrong: subWrong(a, b).concat([a - b / 10]) })),
+		}, (a, b) => b % 10 === 0 && b >= 10 && b <= 30 && a - b >= 11 && a - b <= 59 && ones$1(a) !== 0, (a, b) => diff(a, b, { wrong: subWrong(a, b).concat([a - b / 10]) })),
 		"add:bridge10": kind("add:bridge10", "Adding across a ten (47 + 8)", "add-bridge-ten", (r) => {
 			const a = int(r, 1, 8) * 10 + int(r, 2, 9);
-			return [a, int(r, 11 - ones(a), 9)];
-		}, (a, b) => a >= 12 && a <= 89 && b >= 2 && b <= 9 && ones(a) + b >= 10, (a, b) => sum(a, b, { wrong: addWrong(a, b) })),
+			return [a, int(r, 11 - ones$1(a), 9)];
+		}, (a, b) => a >= 12 && a <= 89 && b >= 2 && b <= 9 && ones$1(a) + b >= 10, (a, b) => sum(a, b, { wrong: addWrong(a, b) })),
 		"sub:bridge10": kind("sub:bridge10", "Taking away across a ten (53 − 8)", "sub-bridge-ten", (r) => {
 			const a = int(r, 2, 9) * 10 + int(r, 0, 7);
-			return [a, int(r, Math.max(2, ones(a) + 1), 9)];
-		}, (a, b) => a >= 20 && a <= 97 && b >= 2 && b <= 9 && ones(a) < b, (a, b) => diff(a, b, { wrong: subWrong(a, b) })),
+			return [a, int(r, Math.max(2, ones$1(a) + 1), 9)];
+		}, (a, b) => a >= 20 && a <= 97 && b >= 2 && b <= 9 && ones$1(a) < b, (a, b) => diff(a, b, { wrong: subWrong(a, b) })),
 		"add:2d+2d": kind("add:2d+2d", "Adding 2-digit numbers (34 + 25)", "add-2d", (r) => {
 			const a = int(r, 1, 7) * 10 + int(r, 1, 8);
-			return [a, int(r, 1, 8 - tens(a)) * 10 + int(r, 1, 9 - ones(a))];
-		}, (a, b) => a >= 10 && a <= 99 && b >= 10 && b <= 99 && ones(a) + ones(b) <= 9 && a + b <= 99, (a, b) => sum(a, b, { wrong: addWrong(a, b) })),
+			return [a, int(r, 1, 8 - tens(a)) * 10 + int(r, 1, 9 - ones$1(a))];
+		}, (a, b) => a >= 10 && a <= 99 && b >= 10 && b <= 99 && ones$1(a) + ones$1(b) <= 9 && a + b <= 99, (a, b) => sum(a, b, { wrong: addWrong(a, b) })),
 		"sub:2d-2d": kind("sub:2d-2d", "Taking away 2-digit numbers (59 − 25)", "sub-2d", (r) => {
 			const b = int(r, 1, 7) * 10 + int(r, 1, 8);
-			return [b + int(r, 1, 9 - tens(b)) * 10 + int(r, 0, 9 - ones(b)), b];
-		}, (a, b) => a >= 10 && a <= 99 && b >= 10 && b <= 99 && a > b && ones(a) >= ones(b) && a - b >= 10, (a, b) => diff(a, b, { wrong: subWrong(a, b) })),
+			return [b + int(r, 1, 9 - tens(b)) * 10 + int(r, 0, 9 - ones$1(b)), b];
+		}, (a, b) => a >= 10 && a <= 99 && b >= 10 && b <= 99 && a > b && ones$1(a) >= ones$1(b) && a - b >= 10, (a, b) => diff(a, b, { wrong: subWrong(a, b) })),
 		"add:2d+2d:carry": kind("add:2d+2d:carry", "Adding 2-digit numbers, with regrouping (47 + 36)", "add-2d-regroup", (r) => {
 			const a = int(r, 1, 7) * 10 + int(r, 2, 9);
-			return [a, int(r, 1, 8 - tens(a)) * 10 + int(r, 10 - ones(a), 9)];
-		}, (a, b) => a >= 10 && a <= 99 && b >= 10 && b <= 99 && ones(a) + ones(b) >= 10 && a + b <= 99, (a, b) => sum(a, b, { wrong: addWrong(a, b) })),
+			return [a, int(r, 1, 8 - tens(a)) * 10 + int(r, 10 - ones$1(a), 9)];
+		}, (a, b) => a >= 10 && a <= 99 && b >= 10 && b <= 99 && ones$1(a) + ones$1(b) >= 10 && a + b <= 99, (a, b) => sum(a, b, { wrong: addWrong(a, b) })),
 		"sub:2d-2d:borrow": kind("sub:2d-2d:borrow", "Taking away 2-digit numbers, with regrouping (52 − 37)", "sub-2d-regroup", (r) => {
 			const a = int(r, 3, 9) * 10 + int(r, 0, 8);
-			return [a, int(r, 1, tens(a) - 2) * 10 + int(r, ones(a) + 1, 9)];
-		}, (a, b) => a >= 30 && a <= 99 && b >= 10 && b <= 99 && ones(a) < ones(b) && a - b >= 10, (a, b) => diff(a, b, { wrong: subWrong(a, b) })),
+			return [a, int(r, 1, tens(a) - 2) * 10 + int(r, ones$1(a) + 1, 9)];
+		}, (a, b) => a >= 30 && a <= 99 && b >= 10 && b <= 99 && ones$1(a) < ones$1(b) && a - b >= 10, (a, b) => diff(a, b, { wrong: subWrong(a, b) })),
 		"add:to100": {
 			label: "Pairs that make 100 (64 + ? = 100)",
 			curriculumTags: TODO$6("pairs-to-100"),
@@ -393,7 +407,7 @@ const ADD_SUB = {
 					spoken: speak(parts),
 					answer: b,
 					wrong: [
-						(10 - tens(a)) * 10 + (10 - ones(a)),
+						(10 - tens(a)) * 10 + (10 - ones$1(a)),
 						b + 10,
 						b - 10,
 						b + 1
@@ -463,8 +477,8 @@ const ADD_SUB = {
 * Band 4: rounding to a whole number, decimals × whole numbers, fractions as decimals (3/4 = 0.75).
 */
 const TODO$5 = (what) => [`TODO-${what}`];
-const tenths = (n) => show(n / 10);
-const hundredths = (n) => show(n / 100);
+const tenths$1 = (n) => show(n / 10);
+const hundredths$1 = (n) => show(n / 100);
 const decimal = (made) => ({
 	...made,
 	input: "decimal"
@@ -490,9 +504,9 @@ const DECIMALS = {
 			make: (_k, [a, b]) => {
 				if (!isInt(a, 1, 9) || !isInt(b, 1, 9)) return null;
 				const parts = [
-					tenths(a),
+					tenths$1(a),
 					"+",
-					tenths(b),
+					tenths$1(b),
 					"=",
 					"?"
 				];
@@ -522,9 +536,9 @@ const DECIMALS = {
 			make: (_k, [a, b]) => {
 				if (!isInt(a, 2, 19) || !isInt(b, 1, Math.min(9, a - 1))) return null;
 				const parts = [
-					tenths(a),
+					tenths$1(a),
 					"−",
-					tenths(b),
+					tenths$1(b),
 					"=",
 					"?"
 				];
@@ -653,9 +667,9 @@ const DECIMALS = {
 			make: (_k, [a, b]) => {
 				if (!isInt(a, 11, 99) || a % 10 === 0 || !isInt(b, 10, 90) || b % 10) return null;
 				const parts = [
-					hundredths(a),
+					hundredths$1(a),
 					"+",
-					hundredths(b),
+					hundredths$1(b),
 					"=",
 					"?"
 				];
@@ -686,7 +700,7 @@ const DECIMALS = {
 			},
 			make: (_k, [a, b]) => {
 				if (!isInt(a, 1, 99) || !isInt(b, 1, 99) || a === b || a % 10 === 0 === (b % 10 === 0)) return null;
-				const labels = [hundredths(a), hundredths(b)];
+				const labels = [hundredths$1(a), hundredths$1(b)];
 				const answer = a > b ? 0 : 1;
 				return decimal({
 					parts: ["Which is bigger?"],
@@ -712,7 +726,7 @@ const DECIMALS = {
 				if (!isInt(a, 1, 99) || a % 10 === 0 || !isInt(p, 1, 2)) return null;
 				const m = 10 ** p;
 				const parts = [
-					tenths(a),
+					tenths$1(a),
 					"×",
 					String(m),
 					"=",
@@ -749,7 +763,7 @@ const DECIMALS = {
 				const answer = a % 10 >= 5 ? down + 1 : down;
 				const parts = [
 					"Round",
-					tenths(a),
+					tenths$1(a),
 					"to the nearest whole number:",
 					"?"
 				];
@@ -763,7 +777,7 @@ const DECIMALS = {
 						answer + 1,
 						a / 10
 					],
-					fact: `${tenths(a)} rounded to the nearest whole number is ${answer}`
+					fact: `${tenths$1(a)} rounded to the nearest whole number is ${answer}`
 				});
 			}
 		},
@@ -775,7 +789,7 @@ const DECIMALS = {
 			make: (_k, [a, b]) => {
 				if (!isInt(a, 1, 9) || !isInt(b, 2, 9)) return null;
 				const parts = [
-					tenths(a),
+					tenths$1(a),
 					"×",
 					String(b),
 					"=",
@@ -1101,11 +1115,11 @@ const DIVISION = {
 * Band 4: comparing any two fractions, simplifying (6/8 = 3/?).
 */
 const TODO$3 = (what) => [`TODO-${what}`];
-const gcd$1 = (a, b) => b === 0 ? a : gcd$1(b, a % b);
-const frac = (n, d) => `${n}/${d}`;
+const gcd$2 = (a, b) => b === 0 ? a : gcd$2(b, a % b);
+const frac$1 = (n, d) => `${n}/${d}`;
 /** A "which is bigger?" question: the answer is the index of the bigger fraction. */
 function bigger(n1, d1, n2, d2) {
-	const labels = [frac(n1, d1), frac(n2, d2)];
+	const labels = [frac$1(n1, d1), frac$1(n2, d2)];
 	const answer = n1 / d1 > n2 / d2 ? 0 : 1;
 	return {
 		parts: ["Which is bigger?"],
@@ -1125,7 +1139,7 @@ const DENOMINATORS = [
 	10,
 	12
 ];
-const FRACTIONS = {
+const FRACTIONS$1 = {
 	id: "fractions",
 	label: "Fractions",
 	families: {
@@ -1149,7 +1163,7 @@ const FRACTIONS = {
 					10
 				].includes(d) || !isInt(q, 1, 10)) return null;
 				const parts = [
-					frac(1, d),
+					frac$1(1, d),
 					"of",
 					String(d * q),
 					"=",
@@ -1209,7 +1223,7 @@ const FRACTIONS = {
 				let n;
 				do
 					n = int(r, 2, d - 1);
-				while (gcd$1(n, d) !== 1);
+				while (gcd$2(n, d) !== 1);
 				return [
 					n,
 					d,
@@ -1223,9 +1237,9 @@ const FRACTIONS = {
 					5,
 					8,
 					10
-				].includes(d) || !isInt(n, 2, d - 1) || gcd$1(n, d) !== 1 || !isInt(q, 1, 10)) return null;
+				].includes(d) || !isInt(n, 2, d - 1) || gcd$2(n, d) !== 1 || !isInt(q, 1, 10)) return null;
 				const parts = [
-					frac(n, d),
+					frac$1(n, d),
 					"of",
 					String(d * q),
 					"=",
@@ -1254,7 +1268,7 @@ const FRACTIONS = {
 				let n;
 				do
 					n = int(r, 1, d - 1);
-				while (gcd$1(n, d) !== 1);
+				while (gcd$2(n, d) !== 1);
 				return [
 					n,
 					d,
@@ -1263,10 +1277,10 @@ const FRACTIONS = {
 				];
 			},
 			make: (_k, [n, d, k, v]) => {
-				if (!isInt(d, 2, 5) || !isInt(n, 1, d - 1) || gcd$1(n, d) !== 1 || !isInt(k, 2, 5) || !isInt(v, 0, 1)) return null;
+				if (!isInt(d, 2, 5) || !isInt(n, 1, d - 1) || gcd$2(n, d) !== 1 || !isInt(k, 2, 5) || !isInt(v, 0, 1)) return null;
 				const blank = v === 0 ? `?/${d * k}` : `${n * k}/?`;
 				const parts = [
-					frac(n, d),
+					frac$1(n, d),
 					"=",
 					blank
 				];
@@ -1327,9 +1341,9 @@ const FRACTIONS = {
 			make: (_k, [a, b, d]) => {
 				if (!isInt(d, 3, 12) || !isInt(a, 1, d - 2) || !isInt(b, 1, d - 1 - a)) return null;
 				const parts = [
-					frac(a, d),
+					frac$1(a, d),
 					"+",
-					frac(b, d),
+					frac$1(b, d),
 					"=",
 					`?/${d}`
 				];
@@ -1362,9 +1376,9 @@ const FRACTIONS = {
 			make: (_k, [a, b, d]) => {
 				if (!isInt(d, 3, 12) || !isInt(a, 2, d) || !isInt(b, 1, a - 1)) return null;
 				const parts = [
-					frac(a, d),
+					frac$1(a, d),
 					"−",
-					frac(b, d),
+					frac$1(b, d),
 					"=",
 					`?/${d}`
 				];
@@ -1399,7 +1413,7 @@ const FRACTIONS = {
 				const top = w * d + n;
 				if (v === 0) {
 					const parts = [
-						`${w} ${frac(n, d)}`,
+						`${w} ${frac$1(n, d)}`,
 						"=",
 						`?/${d}`
 					];
@@ -1417,9 +1431,9 @@ const FRACTIONS = {
 					};
 				}
 				const parts = [
-					frac(top, d),
+					frac$1(top, d),
 					"=",
-					`? ${frac(n, d)}`
+					`? ${frac$1(n, d)}`
 				];
 				return {
 					parts,
@@ -1463,7 +1477,7 @@ const FRACTIONS = {
 				const d = int(r, 2, 6);
 				do
 					n = int(r, 1, d - 1);
-				while (gcd$1(n, d) !== 1);
+				while (gcd$2(n, d) !== 1);
 				return [
 					n,
 					d,
@@ -1472,9 +1486,9 @@ const FRACTIONS = {
 				];
 			},
 			make: (_k, [n, d, k, v]) => {
-				if (!isInt(d, 2, 6) || !isInt(n, 1, d - 1) || gcd$1(n, d) !== 1 || !isInt(k, 2, 6) || !isInt(v, 0, 1)) return null;
+				if (!isInt(d, 2, 6) || !isInt(n, 1, d - 1) || gcd$2(n, d) !== 1 || !isInt(k, 2, 6) || !isInt(v, 0, 1)) return null;
 				const parts = [
-					frac(n * k, d * k),
+					frac$1(n * k, d * k),
 					"=",
 					v === 0 ? `${n}/?` : `?/${d}`
 				];
@@ -1793,10 +1807,10 @@ const BANDED_PACKS = {
 	"place-value": PLACE_VALUE,
 	"add-sub": ADD_SUB,
 	division: DIVISION,
-	fractions: FRACTIONS,
+	fractions: FRACTIONS$1,
 	decimals: DECIMALS
 };
-PLACE_VALUE.label, ADD_SUB.label, DIVISION.label, FRACTIONS.label, DECIMALS.label;
+PLACE_VALUE.label, ADD_SUB.label, DIVISION.label, FRACTIONS$1.label, DECIMALS.label;
 //#endregion
 //#region shared/maths/skillPacks/earlyFacts.ts
 /**
@@ -1882,11 +1896,11 @@ function bonds(label, tag, prefix, total, from) {
 		}
 	};
 }
-const range$1 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
+const range$4 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
 /** Doubles of dblFrom–dblTo and halves of the even numbers halfFrom–halfTo. */
 function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
-	const dbls = range$1(dblFrom, dblTo);
-	const halves = range$1(halfFrom, halfTo, 2);
+	const dbls = range$4(dblFrom, dblTo);
+	const halves = range$4(halfFrom, halfTo, 2);
 	const keys = [...dbls.map((n) => `dbl:${n}`), ...halves.map((n) => `half:${n}`)];
 	return {
 		label,
@@ -1955,6 +1969,54 @@ const EARLY_FACTS = {
 	id: "early-facts",
 	label: "Early number facts",
 	families: {
+		tenAnd: {
+			label: "\"Ten and\" facts (10 + 4)",
+			curriculumTags: ["MS.Y1.NUM.OP.P6"],
+			keys: range$4(1, 9).map((n) => `tenand:${n}`),
+			roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
+			make: (key, [n, v]) => {
+				if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
+				const t = String(10 + n);
+				const [parts, answer] = v === 0 ? [[
+					"10",
+					"+",
+					String(n),
+					"=",
+					"?"
+				], 10 + n] : v === 1 ? [[
+					String(n),
+					"+",
+					"10",
+					"=",
+					"?"
+				], 10 + n] : v === 2 ? [[
+					"10",
+					"+",
+					"?",
+					"=",
+					t
+				], n] : [[
+					t,
+					"−",
+					"10",
+					"=",
+					"?"
+				], n];
+				return {
+					parts,
+					spoken: speak(parts),
+					answer,
+					wrong: [
+						answer + 1,
+						answer - 1,
+						answer + 10,
+						n + 1,
+						20,
+						1 + n
+					]
+				};
+			}
+		},
 		bond10: bonds("Pairs that make 10", "MS.Y1.NUM.OP.P1", "bond10", 10, 0),
 		dblHalf10: doublesHalves("Doubles and halves to 10", "MS.Y1.NUM.OP.P2", 1, 5, 2, 10),
 		bond20: bonds("Pairs that make 20", "MS.Y2.NUM.OP.P1", "bond20", 20, 1),
@@ -1965,7 +2027,8 @@ const EARLY_FACTS = {
 		["dblHalf10"],
 		["bond20"],
 		["dblHalf20"]
-	]
+	],
+	ladderOnly: ["tenAnd"]
 };
 //#endregion
 //#region shared/maths/skillPacks/generatedKit.ts
@@ -2325,6 +2388,1579 @@ const parseBedmas = (parts) => {
 	return null;
 };
 TEMPLATES.length;
+//#endregion
+//#region shared/maths/skillPacks/pickKit.ts
+/**
+* Tools for the fraction, decimal and percentage skills (F.6): questions where the student taps one of several text choices
+* ("3/4", "0.25", "25%"), and spoken text that reads fractions, decimals and percentages well.
+*
+* A pick question is made from its numbers like every other: the numbers end with two more, `slot` (where the right choice sits)
+* and `salt` (which of the named mistakes are used), both rolled once and kept in `Question.params`. So the same numbers always
+* make the same question, choices in the same order, and the server can rebuild it to mark the tap (the answer is the index of
+* the choice, 0 to 3).
+*
+* Wrong choices are always the answer a student gets by following a named mistake, never a random number. Fractions stay under
+* one (James, 19 Oct 2026): no 7/4 or 1 3/4 as a question or a choice.
+*/
+/** The value a choice shows: "3/4" → 0.75, "25%" → 0.25, "0.25" → 0.25. Null for anything else. */
+function labelValue(label) {
+	const f = /^(\d+)\/(\d+)$/.exec(label);
+	if (f) return Number(f[2]) > 0 ? Number(f[1]) / Number(f[2]) : null;
+	const p = /^(\d+(?:\.\d+)?)%$/.exec(label);
+	if (p) return Number(p[1]) / 100;
+	return /^\d+(?:\.\d+)?$/.test(label) ? Number(label) : null;
+}
+const frac = (n, d) => `${n}/${d}`;
+const gcd$1 = (a, b) => b === 0 ? a : gcd$1(b, a % b);
+/** A question's parts spoken for a screen reader: "3/4" is "3 quarters", "25%" is "25 percent", "0.25" is "0 point 2 5". */
+function talk(parts) {
+	const words = {
+		"+": "plus",
+		"−": "minus",
+		"×": "times",
+		"÷": "divided by",
+		"=": "equals",
+		"?": "what",
+		"%": "percent"
+	};
+	const text = parts.map((p) => words[p] ?? (/^\d+\.\d+$/.test(p) ? say(Number(p)) : spokenLabel(p))).join(" ").replace(/\s+/g, " ").trim();
+	return /[?.!:]$/.test(text) ? text : `${text}?`;
+}
+/** The two numbers every pick question ends with. */
+const rollPick = (random, wrong = 3) => [int(random, 0, wrong), int(random, 0, 9)];
+/** Are `slot` and `salt` numbers a roll could have given? */
+const goodPick = (slot, salt, wrong = 3) => isInt(slot, 0, wrong) && isInt(salt, 0, 9);
+/**
+* A question with the right choice and choices from named mistakes. `named` maps the name of each mistake to the choice it
+* gives. Choices that repeat the right one (or each other, in value) are dropped; null when fewer than needed are left, so the
+* generator rolls again.
+*/
+function pick$2(base, right, named, opts) {
+	const need = opts.wrong ?? 3;
+	if (!goodPick(opts.slot, opts.salt, need)) return null;
+	const kept = [];
+	const labels = new Set([right]);
+	const values = [];
+	const rightValue = labelValue(right);
+	if (rightValue !== null) values.push(rightValue);
+	for (const [name, label] of Object.entries(named)) {
+		if (labels.has(label)) continue;
+		const v = labelValue(label);
+		if (/^\d+\/\d+$/.test(label) && (v === null || v > 1 || v === 0)) continue;
+		if (!opts.allowEqual && v !== null && values.some((x) => Math.abs(x - v) < 1e-9)) continue;
+		labels.add(label);
+		if (v !== null) values.push(v);
+		kept.push([name, label]);
+	}
+	if (kept.length < need) return null;
+	const start = opts.salt % kept.length;
+	const used = Array.from({ length: need }, (_, i) => kept[(start + i) % kept.length]);
+	const choices = used.map(([, label]) => label);
+	choices.splice(opts.slot, 0, right);
+	return {
+		...base,
+		answer: opts.slot,
+		pick: choices,
+		namedLabels: Object.fromEntries(used),
+		fact: base.fact
+	};
+}
+//#endregion
+//#region shared/maths/skillPacks/decimalSkills.ts
+/**
+* Tenths and decimals (ladder skills `tenths`, `add-tenths`, `decimal-equivalents` and `times-decimals`).
+*
+* Number answers (1.3 + 0.2, 34 ÷ 10) are typed on the pad with the point key. A question whose answer is a fraction or a
+* decimal that is picked from a list is always four choices to tap, with text labels ("3/10", "0.3"). Wrong choices are the
+* answer a named mistake gives ("put it in the hundredths place", "thought the longer decimal is bigger"), never a random number.
+*
+* Decimals are made from whole numbers of tenths or hundredths (1.3 is 13 tenths), so no question is ever made from a number that
+* carries floating-point dust.
+*
+* Types:
+*   tenths              tenth:to-fraction  tenth:to-decimal  tenth:divide  tenth:count  tenth:half
+*   add-tenths          addten:add  addten:carry  addten:take  addten:borrow  addten:whole  addten:to-one
+*   decimal-equivalents deceq:common  deceq:pick  deceq:hundredths  deceq:to-fraction  deceq:compare
+*   times-decimals      timesdec:ten  timesdec:hundred  timesdec:div-ten  timesdec:div-hundred  timesdec:missing
+*/
+const range$3 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
+const tenths = (n) => show(n / 10);
+const hundredths = (n) => show(n / 100);
+const notTen = (n) => n % 10 !== 0;
+const TENTH_TAGS = ["MS.Y4.NUM.RN.P3", "MS.Y4.NUM.RN.P5"];
+/** Whole tenths, which a tenth count of 1 to 39 that is not a whole number can be shown as (0.7, 1.4, 3.9). */
+const COUNTS = range$3(1, 39).filter(notTen);
+const tenthFamilies = [
+	oneKey("tenth:to-fraction", "A decimal as tenths (0.3 = 3/10)", TENTH_TAGS, 3, (_k, r) => [int(r, 2, 9), ...rollPick(r)], (_k, [d, slot, salt]) => {
+		if (!isInt(d, 2, 9) || !goodPick(slot, salt)) return null;
+		const right = frac(d, 10);
+		const parts = [
+			tenths(d),
+			"=",
+			"?"
+		];
+		return pick$2({
+			parts,
+			spoken: talk(parts),
+			fact: `${tenths(d)} = ${right}`
+		}, right, {
+			"put it over 100": frac(d, 100),
+			"put 1 over the digit": frac(1, d),
+			"counted from the other end": frac(10 - d, 10),
+			"put 1 over the digit with a zero": frac(1, d * 10)
+		}, {
+			slot,
+			salt
+		});
+	}),
+	oneKey("tenth:to-decimal", "Tenths as a decimal (3/10 = 0.3)", TENTH_TAGS, 3, (_k, r) => [int(r, 1, 9), ...rollPick(r)], (_k, [d, slot, salt]) => {
+		if (!isInt(d, 1, 9) || !goodPick(slot, salt)) return null;
+		const right = tenths(d);
+		const parts = [
+			frac(d, 10),
+			"=",
+			"?"
+		];
+		return pick$2({
+			parts,
+			spoken: talk(parts),
+			fact: `${frac(d, 10)} = ${right}`
+		}, right, {
+			"put it in the hundredths place": hundredths(d),
+			"read it as a whole number and a tenth": `${d}.1`,
+			"counted from the other end": tenths(10 - d),
+			"wrote just the top number": String(d)
+		}, {
+			slot,
+			salt
+		});
+	}),
+	oneKey("tenth:divide", "Dividing by 10 to make tenths (27 ÷ 10 = 2.7)", TENTH_TAGS, 1, (_k, r) => [pickOne(r, range$3(1, 99).filter(notTen))], (_k, [n]) => {
+		if (!isInt(n, 1, 99) || !notTen(n)) return null;
+		const parts = [
+			show(n),
+			"÷",
+			"10",
+			"=",
+			"?"
+		];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: n / 10,
+			input: "decimal"
+		}, {
+			"multiplied by 10 instead": n * 10,
+			"moved the point two places": n / 100,
+			"left it as it was": n,
+			"moved the point two places the wrong way": n * 100
+		});
+	}),
+	oneKey("tenth:count", "How many tenths (1.4 = ?/10)", TENTH_TAGS, 1, (_k, r) => [pickOne(r, COUNTS)], (_k, [t]) => {
+		if (!COUNTS.includes(t)) return null;
+		const parts = [
+			tenths(t),
+			"=",
+			"?/10"
+		];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: t
+		}, {
+			"used the digit after the point only": t % 10,
+			"added a zero": t * 10,
+			"used the whole number only": Math.floor(t / 10),
+			"one tenth too many": t + 1,
+			"one tenth too few": t - 1
+		});
+	}),
+	oneKey("tenth:half", "Half and double of tenths (half of 1.4 = 0.7)", TENTH_TAGS, 2, (_k, r) => r() < .5 ? [pickOne(r, range$3(2, 38, 2)), 0] : [int(r, 1, 24), 1], (_k, [t, v]) => {
+		if (v === 0) {
+			if (!isInt(t, 2, 38) || t % 2 !== 0) return null;
+			const parts = [
+				"Half",
+				"of",
+				tenths(t),
+				"=",
+				"?"
+			];
+			const whole = Math.floor(t / 10);
+			const part = t % 10;
+			return withMistakes({
+				parts,
+				spoken: talk(parts),
+				answer: t / 20,
+				input: "decimal"
+			}, {
+				"halved only the whole number": whole / 2 + part / 10,
+				"halved only the tenths": whole + part / 20,
+				"doubled instead of halving": t / 5,
+				"gave the number back": t / 10,
+				"took half off the number": t / 10 - .5
+			});
+		}
+		if (v !== 1 || !isInt(t, 1, 24)) return null;
+		const parts = [
+			"Double",
+			tenths(t),
+			"=",
+			"?"
+		];
+		const whole = Math.floor(t / 10);
+		const part = t % 10;
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: t / 5,
+			input: "decimal"
+		}, {
+			"doubled only the whole number": whole * 2 + part / 10,
+			"doubled only the tenths": whole + part / 5,
+			"halved instead of doubling": t / 20,
+			"gave the number back": t / 10,
+			"added 2": t / 10 + 2
+		});
+	})
+];
+const ADD_TAGS = ["MS.Y4.NUM.RN.P10"];
+const ones = (t) => Math.floor(t / 10);
+const dig = (t) => t % 10;
+/** A pair of tenth counts for "a + b" or "a − b", made by `make`; the type checks which kind of pair it is. */
+function twoTenths(key, label, ok, sign, named, aLo, aHi) {
+	const pool = range$3(aLo, aHi).flatMap((a) => range$3(1, aHi).filter((b) => ok(a, b)).map((b) => [a, b]));
+	return oneKey(key, label, ADD_TAGS, 2, (_k, r) => pickOne(r, pool), (_k, [a, b]) => {
+		if (!isInt(a, 1, 99) || !isInt(b, 1, 99) || !ok(a, b)) return null;
+		const parts = [
+			tenths(a),
+			sign,
+			tenths(b),
+			"=",
+			"?"
+		];
+		const answer = (sign === "+" ? a + b : a - b) / 10;
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer,
+			input: "decimal"
+		}, {
+			...named(a, b),
+			"one tenth too many": answer + .1,
+			"one tenth too few": answer - .1
+		});
+	});
+}
+const addFamilies = [
+	twoTenths("addten:add", "Adding tenths (1.3 + 0.2)", (a, b) => dig(a) > 0 && dig(b) > 0 && dig(a) + dig(b) < 10 && a + b <= 49, "+", (a, b) => ({
+		"lined the second number up with the ones": a / 10 + b,
+		"lined it up with the hundredths": a / 10 + b / 100
+	}), 1, 49),
+	twoTenths("addten:carry", "Adding tenths that make a whole (0.7 + 0.5)", (a, b) => dig(a) > 0 && dig(b) > 0 && dig(a) + dig(b) >= 10 && a + b <= 59, "+", (a, b) => ({
+		"wrote the tenths total after the point": Number(`${ones(a) + ones(b)}.${dig(a) + dig(b)}`),
+		"forgot to carry the ten tenths": ones(a) + ones(b) + (dig(a) + dig(b) - 10) / 10,
+		"carried to the wrong place": ones(a) + ones(b) + (dig(a) + dig(b)) / 10
+	}), 1, 49),
+	twoTenths("addten:take", "Taking away tenths (1.5 − 0.2)", (a, b) => a > b && dig(b) > 0 && dig(b) <= dig(a) && a - b >= 1, "−", (a, b) => ({
+		"added instead": (a + b) / 10,
+		"lined the second number up with the ones": a / 10 - b
+	}), 2, 49),
+	twoTenths("addten:borrow", "Taking away tenths across a whole (1.2 − 0.5)", (a, b) => a > b && dig(b) > dig(a) && a - b >= 1 && a <= 49, "−", (a, b) => ({
+		"took the smaller tenths digit from the bigger": ones(a) - ones(b) + Math.abs(dig(a) - dig(b)) / 10,
+		"did not take one off the whole after borrowing": (a - b) / 10 + 1,
+		"added instead": (a + b) / 10
+	}), 2, 49),
+	oneKey("addten:whole", "A whole number and tenths (3 + 0.4, 5 − 0.3)", ADD_TAGS, 3, (_k, r) => [
+		int(r, 1, 9),
+		int(r, 1, 9),
+		int(r, 0, 2)
+	], (_k, [w, t, v]) => {
+		if (!isInt(w, 1, 9) || !isInt(t, 1, 9) || !isInt(v, 0, 2)) return null;
+		const small = tenths(t);
+		if (v === 2) {
+			const parts = [
+				String(w),
+				"−",
+				small,
+				"=",
+				"?"
+			];
+			const answer = w - t / 10;
+			return withMistakes({
+				parts,
+				spoken: talk(parts),
+				answer,
+				input: "decimal"
+			}, {
+				"took off whole ones, not tenths": w - t,
+				"added instead": w + t / 10,
+				"took one off the whole and kept the tenths": w - 1 + t / 10,
+				"one tenth too many": answer + .1,
+				"one tenth too few": answer - .1
+			});
+		}
+		const parts = v === 0 ? [
+			String(w),
+			"+",
+			small,
+			"=",
+			"?"
+		] : [
+			small,
+			"+",
+			String(w),
+			"=",
+			"?"
+		];
+		const answer = w + t / 10;
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer,
+			input: "decimal"
+		}, {
+			"ignored the point": w * 10 + t,
+			"put the tenths in the hundredths place": w + t / 100,
+			"added the digits": w + t,
+			"one tenth too many": answer + .1,
+			"one tenth too few": answer - .1
+		});
+	}),
+	oneKey("addten:to-one", "Tenths that make a whole (0.4 + ? = 1)", ADD_TAGS, 3, (_k, r) => [
+		int(r, 1, 9),
+		int(r, 1, 2),
+		int(r, 0, 2)
+	], (_k, [t, target, v]) => {
+		if (!isInt(t, 1, 9) || !isInt(target, 1, 2) || !isInt(v, 0, 2)) return null;
+		const small = tenths(t);
+		const parts = v === 0 ? [
+			small,
+			"+",
+			"?",
+			"=",
+			String(target)
+		] : v === 1 ? [
+			"?",
+			"+",
+			small,
+			"=",
+			String(target)
+		] : [
+			String(target),
+			"−",
+			small,
+			"=",
+			"?"
+		];
+		const answer = target - t / 10;
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer,
+			input: "decimal"
+		}, {
+			"wrote the same tenths": t / 10,
+			"added instead": target + t / 10,
+			"forgot the point": answer * 10,
+			"put it in the hundredths place": answer / 10,
+			"one tenth too many": answer + .1,
+			"one tenth too few": answer - .1
+		});
+	})
+];
+const EQUIV_TAGS$1 = ["MS.Y5.NUM.RN.P4"];
+/** Fractions with an easy decimal: [top, bottom]. */
+const COMMON = [
+	[1, 2],
+	[1, 4],
+	[3, 4],
+	[1, 5],
+	[2, 5],
+	[3, 5],
+	[4, 5]
+];
+const isCommon = (n, d) => COMMON.some(([a, b]) => a === n && b === d);
+const decimalOf = (n, d) => n / d;
+/** What a student gets by following each named mistake, as a decimal. */
+function decimalMistakes(n, d) {
+	return {
+		"put the top and bottom either side of the point": Number(`${n}.${d}`),
+		"put the top and bottom after a zero point": Number(`0.${n}${d}`),
+		"put the bottom and top either side of the point": Number(`${d}.${n}`),
+		"gave the part that is left": 1 - n / d,
+		"used the bottom number after the point": Number(`0.${d}`),
+		"used the top number after the point": Number(`0.${n}`)
+	};
+}
+const fractionOf = {
+	"0.5": {
+		"put 1 over the digit": "1/5",
+		"put 1 over the number": "1/50",
+		"put it over 100": "5/100",
+		"mixed up with 0.25": "1/4"
+	},
+	"0.25": {
+		"put 1 over the digits": "1/25",
+		"used the digits as top and bottom": "2/5",
+		"mixed up with 0.5": "1/2",
+		"mixed up with 0.2": "1/5"
+	},
+	"0.75": {
+		"put 1 over the digits": "1/75",
+		"swapped the digits": "5/7",
+		"mixed up with 0.25": "1/4",
+		"used only the tenths digit": "7/10"
+	},
+	"0.2": {
+		"swapped the digit and the point": "1/2",
+		"put it over 100": "2/100",
+		"put 1 over the number with a zero": "1/20",
+		"mixed up with 0.4": "2/5"
+	}
+};
+const FRACTION_DECIMALS = [
+	["0.5", "1/2"],
+	["0.25", "1/4"],
+	["0.75", "3/4"],
+	["0.2", "1/5"]
+];
+const equivFamilies$1 = [
+	oneKey("deceq:common", "A fraction as a decimal (3/4 = 0.75)", EQUIV_TAGS$1, 2, (_k, r) => pickOne(r, COMMON), (_k, [n, d]) => {
+		if (!isCommon(n, d)) return null;
+		const parts = [
+			frac(n, d),
+			"=",
+			"?"
+		];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: decimalOf(n, d),
+			input: "decimal"
+		}, decimalMistakes(n, d));
+	}),
+	oneKey("deceq:pick", "Which decimal is the same as the fraction? (3/4 = 0.75)", EQUIV_TAGS$1, 4, (_k, r) => [...pickOne(r, COMMON), ...rollPick(r)], (_k, [n, d, slot, salt]) => {
+		if (!isCommon(n, d) || !goodPick(slot, salt)) return null;
+		const right = show(decimalOf(n, d));
+		const parts = [
+			frac(n, d),
+			"=",
+			"?"
+		];
+		const named = Object.fromEntries(Object.entries(decimalMistakes(n, d)).map(([name, v]) => [name, show(v)]));
+		return pick$2({
+			parts,
+			spoken: talk(parts),
+			fact: `${frac(n, d)} = ${right}`
+		}, right, named, {
+			slot,
+			salt
+		});
+	}),
+	oneKey("deceq:hundredths", "Hundredths as a decimal (7/100 = 0.07)", EQUIV_TAGS$1, 1, (_k, r) => [pickOne(r, range$3(1, 99).filter(notTen))], (_k, [n]) => {
+		if (!isInt(n, 1, 99) || !notTen(n)) return null;
+		const parts = [
+			frac(n, 100),
+			"=",
+			"?"
+		];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: n / 100,
+			input: "decimal"
+		}, {
+			"put it in the tenths place": n / 10,
+			"wrote it as a whole number": n,
+			"put it in the thousandths place": n / 1e3,
+			...n >= 10 ? { "swapped the digits": Number(`0.${String(n).split("").reverse().join("")}`) } : {}
+		});
+	}),
+	oneKey("deceq:to-fraction", "A decimal as a fraction (0.75 = 3/4)", EQUIV_TAGS$1, 3, (_k, r) => [int(r, 0, FRACTION_DECIMALS.length - 1), ...rollPick(r)], (_k, [i, slot, salt]) => {
+		const pair = FRACTION_DECIMALS[i];
+		if (!pair || !isInt(i, 0, FRACTION_DECIMALS.length - 1) || !goodPick(slot, salt)) return null;
+		const [decimal, right] = pair;
+		const parts = [
+			decimal,
+			"=",
+			"?"
+		];
+		return pick$2({
+			parts,
+			spoken: talk(parts),
+			fact: `${decimal} = ${right}`
+		}, right, fractionOf[decimal], {
+			slot,
+			salt
+		});
+	}),
+	oneKey("deceq:compare", "Which decimal is bigger? (0.25 or 0.3)", EQUIV_TAGS$1, 5, (_k, r) => {
+		if (r() < .5) {
+			const x = pickOne(r, range$3(1, 98).filter(notTen));
+			return [
+				x,
+				int(r, Math.floor(x / 10) + 1, 9),
+				0,
+				...rollPick(r, 1)
+			];
+		}
+		const x = pickOne(r, range$3(11, 99).filter(notTen));
+		return [
+			x,
+			Math.floor(x / 10),
+			1,
+			...rollPick(r, 1)
+		];
+	}, (_k, [x, y, v, slot, salt]) => {
+		if (!goodPick(slot, salt, 1) || !isInt(x, 1, 99) || !notTen(x) || !isInt(v, 0, 1)) return null;
+		const smaller = v === 0 ? x : y * 10;
+		const bigger = v === 0 ? y * 10 : x;
+		if (v === 0 && !(isInt(y, 1, 9) && y * 10 > x)) return null;
+		if (v === 1 && !(isInt(y, 1, 9) && y === Math.floor(x / 10))) return null;
+		const right = hundredths(bigger);
+		const wrong = hundredths(smaller);
+		return pick$2({
+			parts: ["Which is bigger?"],
+			spoken: "Which is bigger?",
+			fact: `${right} is bigger than ${wrong}`
+		}, right, { [v === 0 ? "thought the longer decimal is bigger" : "ignored the last digit"]: wrong }, {
+			slot,
+			salt,
+			wrong: 1
+		});
+	})
+];
+const TIMES_TAGS = ["MS.Y5.NUM.RN.P7"];
+/** The four ways a student gets the number of zeros or places wrong. */
+const places = (answer) => {
+	const all = {
+		"moved the point one place too far": answer * 10,
+		"moved the point one place too few": answer / 10,
+		"moved the point two places too far": answer * 100,
+		"moved the point two places too few": answer / 100
+	};
+	return Object.fromEntries(Object.entries(all).filter(([, v]) => v >= .01));
+};
+function moveFamily(key, label, make, check, build) {
+	return oneKey(key, label, TIMES_TAGS, 1, (_k, r) => make(r), (_k, [n]) => {
+		if (!isInt(n, 1, 1e5) || !check(n)) return null;
+		const { parts, answer, named } = build(n);
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer,
+			input: "decimal"
+		}, named);
+	});
+}
+const timesFamilies = [
+	moveFamily("timesdec:ten", "Times 10 with a decimal (3.4 × 10)", (r) => [pickOne(r, range$3(11, 99).filter(notTen))], (t) => t >= 11 && t <= 99 && notTen(t), (t) => ({
+		parts: [
+			tenths(t),
+			"×",
+			"10",
+			"=",
+			"?"
+		],
+		answer: t,
+		named: {
+			"moved the point the wrong way": t / 100,
+			"did not move the point": t / 10,
+			"moved the point two places": t * 10,
+			"moved the point two places the wrong way": t / 1e3
+		}
+	})),
+	moveFamily("timesdec:hundred", "Times 100 with a decimal (0.35 × 100)", (r) => [pickOne(r, range$3(11, 999).filter((h) => h % 100 !== 0))], (h) => h >= 11 && h <= 999 && h % 100 !== 0, (h) => ({
+		parts: [
+			hundredths(h),
+			"×",
+			"100",
+			"=",
+			"?"
+		],
+		answer: h,
+		named: {
+			"moved the point only one place": h / 10,
+			"moved the point the wrong way": h / 1e4,
+			"did not move the point": h / 100,
+			"moved the point three places": h * 10
+		}
+	})),
+	moveFamily("timesdec:div-ten", "Dividing a decimal by 10 (3.4 ÷ 10)", (r) => [pickOne(r, range$3(11, 199).filter(notTen))], (t) => t >= 11 && t <= 199 && notTen(t), (t) => ({
+		parts: [
+			tenths(t),
+			"÷",
+			"10",
+			"=",
+			"?"
+		],
+		answer: t / 100,
+		named: {
+			"moved the point the wrong way": t,
+			"moved the point two places": t / 1e3,
+			"did not move the point": t / 10,
+			"moved the point two places the wrong way": t * 10
+		}
+	})),
+	moveFamily("timesdec:div-hundred", "Dividing by 100 (345 ÷ 100)", (r) => [pickOne(r, range$3(12, 999).filter((n) => n % 100 !== 0))], (n) => n >= 12 && n <= 999 && n % 100 !== 0, (n) => ({
+		parts: [
+			show(n),
+			"÷",
+			"100",
+			"=",
+			"?"
+		],
+		answer: n / 100,
+		named: {
+			"moved the point only one place": n / 10,
+			"moved the point the wrong way": n * 100,
+			"moved the point three places": n / 1e3,
+			"did not move the point": n
+		}
+	})),
+	oneKey("timesdec:missing", "A missing 10 or 100 (0.6 × ? = 60)", TIMES_TAGS, 2, (_k, r) => [pickOne(r, range$3(11, 99).filter(notTen)), int(r, 0, 3)], (_k, [t, v]) => {
+		if (!isInt(t, 11, 99) || !notTen(t) || !isInt(v, 0, 3)) return null;
+		const small = tenths(t);
+		const [parts, answer] = v === 0 ? [[
+			small,
+			"×",
+			"?",
+			"=",
+			String(t)
+		], 10] : v === 1 ? [[
+			small,
+			"×",
+			"?",
+			"=",
+			String(t * 10)
+		], 100] : v === 2 ? [[
+			"?",
+			"×",
+			"10",
+			"=",
+			small
+		], t / 100] : [[
+			"?",
+			"÷",
+			"10",
+			"=",
+			small
+		], t];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer,
+			input: "decimal"
+		}, places(answer));
+	})
+];
+const DECIMAL_FAMILIES = Object.fromEntries([
+	...tenthFamilies,
+	...addFamilies,
+	...equivFamilies$1,
+	...timesFamilies
+].map((f) => [f.keys[0], f]));
+const DECIMAL_SKILL_KEYS = {
+	tenths: [
+		"tenth:to-fraction",
+		"tenth:to-decimal",
+		"tenth:divide",
+		"tenth:count",
+		"tenth:half"
+	],
+	"add-tenths": [
+		"addten:add",
+		"addten:carry",
+		"addten:take",
+		"addten:borrow",
+		"addten:whole",
+		"addten:to-one"
+	],
+	"decimal-equivalents": [
+		"deceq:common",
+		"deceq:pick",
+		"deceq:hundredths",
+		"deceq:to-fraction",
+		"deceq:compare"
+	],
+	"times-decimals": [
+		"timesdec:ten",
+		"timesdec:hundred",
+		"timesdec:div-ten",
+		"timesdec:div-hundred",
+		"timesdec:missing"
+	]
+};
+//#endregion
+//#region shared/maths/skillPacks/fdpSkills.ts
+/**
+* Fractions, decimals and percentages that mean the same thing (ladder skill `fdp-equivalents`): fifths, tenths, twentieths and
+* hundredths as percentages and decimals.
+*
+* A number answer (3/5 = ?%) is typed on the pad; picking the fraction or the percentage is always four choices to tap. Wrong
+* choices are the answer a named mistake gives, never a random number. Fractions stay under one.
+*
+* Types: fdp:frac-to-pct  fdp:pct-to-frac  fdp:dec-to-pct  fdp:pct-to-dec  fdp:match
+*/
+const TAGS = ["MS.Y6.NUM.RN.P3", "MS.Y6.NUM.RN.P4"];
+const range$2 = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+const reversed = (n) => Number(String(n).split("").reverse().join(""));
+/** Fractions with an easy percentage: [top, bottom]. */
+const FRACTIONS = [
+	[1, 5],
+	[2, 5],
+	[3, 5],
+	[4, 5],
+	[1, 20],
+	[3, 10],
+	[7, 10],
+	[9, 10]
+];
+const percentOf = (n, d) => n * 100 / d;
+/** The fraction for each percentage in `pct:pct-to-frac`, and what a student gets by following a named mistake. */
+const FRACTION_FOR = {
+	20: {
+		right: "1/5",
+		named: {
+			"put 1 over the percent": "1/20",
+			"mixed up with 50%": "1/2",
+			"mixed up with 25%": "1/4",
+			"mixed up with 10%": "1/10"
+		}
+	},
+	40: {
+		right: "2/5",
+		named: {
+			"put 1 over the percent": "1/40",
+			"doubled the right fraction": "4/5",
+			"put 1 over the tens digit": "1/4",
+			"mixed up with 50%": "1/2"
+		}
+	},
+	60: {
+		right: "3/5",
+		named: {
+			"put 1 over the percent": "1/60",
+			"put 1 over the tens digit": "1/6",
+			"mixed up with 40%": "2/5",
+			"mixed up with 75%": "3/4"
+		}
+	},
+	80: {
+		right: "4/5",
+		named: {
+			"put 1 over the percent": "1/80",
+			"put 1 over the tens digit": "1/8",
+			"mixed up with 75%": "3/4",
+			"mixed up with 40%": "2/5"
+		}
+	},
+	5: {
+		right: "1/20",
+		named: {
+			"put 1 over the digit": "1/5",
+			"put 1 over the number with a zero": "1/50",
+			"mixed up with 50%": "1/2",
+			"mixed up with 10%": "1/10"
+		}
+	},
+	30: {
+		right: "3/10",
+		named: {
+			"put 1 over the percent": "1/30",
+			"put 1 over the tens digit": "1/3",
+			"put it over 100": "3/100",
+			"counted from the other end": "7/10"
+		}
+	},
+	70: {
+		right: "7/10",
+		named: {
+			"put 1 over the percent": "1/70",
+			"put 1 over the tens digit": "1/7",
+			"put it over 100": "7/100",
+			"counted from the other end": "3/10"
+		}
+	},
+	90: {
+		right: "9/10",
+		named: {
+			"put 1 over the percent": "1/90",
+			"put 1 over the tens digit": "1/9",
+			"put it over 100": "9/100",
+			"counted from the other end": "1/10"
+		}
+	}
+};
+const FRACTION_PERCENTS = Object.keys(FRACTION_FOR).map(Number);
+/** Percentages for the typed percentage-to-decimal and the match question: not the ones other skills already ask. */
+const OTHERS = range$2(1, 99).filter((p) => ![
+	10,
+	25,
+	50,
+	75
+].includes(p));
+const MATCH = range$2(1, 99).filter((h) => h % 10 !== 0 && h !== 25 && h !== 75);
+const families$1 = [
+	oneKey("fdp:frac-to-pct", "A fraction as a percentage (3/5 = 60%)", TAGS, 2, (_k, r) => pickOne(r, FRACTIONS), (_k, [n, d]) => {
+		if (!FRACTIONS.some(([a, b]) => a === n && b === d)) return null;
+		const p = percentOf(n, d);
+		const parts = [
+			frac(n, d),
+			"=",
+			"?",
+			"%"
+		];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: p
+		}, {
+			"used the bottom number": d,
+			"used the top number": n,
+			"gave the part that is left": 100 - p,
+			"ten times too big": p * 10,
+			"ten times too small": p / 10,
+			"multiplied the top number by 10": n * 10
+		});
+	}),
+	oneKey("fdp:pct-to-frac", "A percentage as a fraction (60% = 3/5)", TAGS, 3, (_k, r) => [pickOne(r, FRACTION_PERCENTS), ...rollPick(r)], (_k, [p, slot, salt]) => {
+		const f = FRACTION_FOR[p];
+		if (!f || !goodPick(slot, salt)) return null;
+		const parts = [
+			`${p}%`,
+			"=",
+			"?"
+		];
+		return pick$2({
+			parts,
+			spoken: talk(parts),
+			fact: `${p}% = ${f.right}`
+		}, f.right, f.named, {
+			slot,
+			salt
+		});
+	}),
+	oneKey("fdp:dec-to-pct", "A decimal as a percentage (0.35 = 35%)", TAGS, 1, (_k, r) => [pickOne(r, range$2(1, 99))], (_k, [h]) => {
+		if (!isInt(h, 1, 99)) return null;
+		const parts = [
+			show(h / 100),
+			"=",
+			"?",
+			"%"
+		];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: h,
+			input: "decimal"
+		}, {
+			"moved the point one place only": h / 10,
+			"did not move the point": h / 100,
+			"moved the point three places": h * 10,
+			...h >= 10 && h % 11 !== 0 && h % 10 !== 0 ? { "swapped the digits": reversed(h) } : {}
+		});
+	}),
+	oneKey("fdp:pct-to-dec", "A percentage as a decimal (35% = 0.35)", TAGS, 1, (_k, r) => [pickOne(r, OTHERS)], (_k, [p]) => {
+		if (!OTHERS.includes(p)) return null;
+		const parts = [
+			`${p}%`,
+			"=",
+			"?"
+		];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: p / 100,
+			input: "decimal"
+		}, {
+			"moved the point one place only": p / 10,
+			"did not move the point": p,
+			"moved the point three places": p / 1e3,
+			...p >= 10 && p % 11 !== 0 && p % 10 !== 0 ? { "swapped the digits": Number(`0.${reversed(p)}`) } : {}
+		});
+	}),
+	oneKey("fdp:match", "Which percentage is the same as the decimal? (0.35 = 35%)", TAGS, 3, (_k, r) => [pickOne(r, MATCH), ...rollPick(r)], (_k, [h, slot, salt]) => {
+		if (!MATCH.includes(h) || !goodPick(slot, salt)) return null;
+		const right = `${h}%`;
+		const parts = [
+			show(h / 100),
+			"=",
+			"?"
+		];
+		return pick$2({
+			parts,
+			spoken: talk(parts),
+			fact: `${show(h / 100)} = ${right}`
+		}, right, {
+			"did not move the point": `${show(h / 100)}%`,
+			"moved the point one place only": `${show(h / 10)}%`,
+			"moved the point three places": `${h * 10}%`,
+			...h >= 10 && h % 11 !== 0 ? { "swapped the digits": `${reversed(h)}%` } : {}
+		}, {
+			slot,
+			salt
+		});
+	})
+];
+const FDP_FAMILIES = Object.fromEntries(families$1.map((f) => [f.keys[0], f]));
+const FDP_SKILL_KEYS = { "fdp-equivalents": [
+	"fdp:frac-to-pct",
+	"fdp:pct-to-frac",
+	"fdp:dec-to-pct",
+	"fdp:pct-to-dec",
+	"fdp:match"
+] };
+//#endregion
+//#region shared/maths/skillPacks/fractionSkills.ts
+/**
+* Fractions of an amount, equivalent fractions and finding the whole (ladder skills `unit-fraction-of`, `fraction-of`,
+* `equivalent-fractions` and `whole-from-fraction`). Fractions stay under one: no 7/4 or 1 3/4 as a question or a choice.
+*
+* One mastery record per question type (generatedKit.ts). Number answers are typed on the pad (and become four choices when the
+* class has multiple choice on); fraction answers are always four choices to tap, with text labels ("3/4"). Wrong choices are
+* the answer a named mistake gives, never a random number.
+*
+* Types:
+*   unit-fraction-of     fracof:half  fracof:third  fracof:quarter  fracof:fifth  fracof:tenth  fracof:big
+*   fraction-of          fracof:non:thirds  :quarters  :fifths  :sixths  :eighths  :tenths
+*   equivalent-fractions equiv:missing-top  equiv:missing-bottom  equiv:same-as  equiv:simplify  equiv:simplify-blank
+*   whole-from-fraction  whole:half  whole:unit  whole:thirds  whole:quarters  whole:other
+*/
+const range$1 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
+const UNIT_TAGS = ["MS.Y3.NUM.RN.P7"];
+/** 1/d of an amount that d goes into exactly. `dens` are the bottom numbers this type uses. */
+function unitFamily(key, label, dens, qLo, qHi) {
+	return oneKey(key, label, UNIT_TAGS, 2, (_k, r) => [pickOne(r, dens), int(r, qLo, qHi)], (_k, [d, q]) => {
+		if (!dens.includes(d) || !isInt(q, qLo, qHi)) return null;
+		const amount = d * q;
+		const parts = [
+			frac(1, d),
+			"of",
+			show(amount),
+			"=",
+			"?"
+		];
+		const named = {
+			"used the bottom number as the answer": d,
+			"took one share away from the amount": amount - q,
+			"one share too many": q + 1,
+			"one share too few": q - 1,
+			"multiplied instead of dividing": amount * d,
+			"took the bottom number off the amount": amount - d,
+			"halved the amount": amount / 2
+		};
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: q
+		}, named);
+	});
+}
+const NON_TAGS = ["MS.Y5.NUM.RN.P13"];
+/** The fractions each non-unit type uses (all under one, all in their simplest form). */
+const NON_UNIT = {
+	thirds: {
+		d: 3,
+		tops: [2],
+		label: "Two thirds of an amount (2/3 of 24)"
+	},
+	quarters: {
+		d: 4,
+		tops: [3],
+		label: "Three quarters of an amount (3/4 of 20)"
+	},
+	fifths: {
+		d: 5,
+		tops: [
+			2,
+			3,
+			4
+		],
+		label: "Fifths of an amount (3/5 of 40)"
+	},
+	sixths: {
+		d: 6,
+		tops: [5],
+		label: "Five sixths of an amount (5/6 of 30)"
+	},
+	eighths: {
+		d: 8,
+		tops: [
+			3,
+			5,
+			7
+		],
+		label: "Eighths of an amount (3/8 of 40)"
+	},
+	tenths: {
+		d: 10,
+		tops: [
+			3,
+			7,
+			9
+		],
+		label: "Tenths of an amount (7/10 of 50)"
+	}
+};
+function nonUnitFamily(word) {
+	const { d, tops, label } = NON_UNIT[word];
+	return oneKey(`fracof:non:${word}`, label, NON_TAGS, 3, (_k, r) => [
+		pickOne(r, tops),
+		d,
+		int(r, 1, 10)
+	], (_k, [n, den, q]) => {
+		if (den !== d || !tops.includes(n) || !isInt(q, 1, 10)) return null;
+		const parts = [
+			frac(n, d),
+			"of",
+			show(d * q),
+			"=",
+			"?"
+		];
+		const named = {
+			"stopped at one share": q,
+			"divided by the top number": d * q / n,
+			"one share too many": n * q + q,
+			"one share too few": n * q - q,
+			"found the part that is left": (d - n) * q,
+			"added the top number to one share": q + n,
+			"multiplied the amount by the top number": n * d * q
+		};
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: n * q
+		}, named);
+	});
+}
+const EQUIV_TAGS = ["MS.Y5.NUM.RN.P9", "MS.Y6.NUM.RN.P6"];
+/** Fractions in their simplest form, under one, with a bottom number up to 6. */
+const SIMPLEST = range$1(2, 6).flatMap((d) => range$1(1, d - 1).filter((n) => gcd$1(n, d) === 1).map((n) => [n, d]));
+const isSimplest = (n, d) => isInt(d, 2, 6) && isInt(n, 1, d - 1) && gcd$1(n, d) === 1;
+/** Smallest number that divides k other than 1, if k is not prime (so 12/16 can be "only halved"). */
+const smallestFactor = (k) => range$1(2, k - 1).find((p) => k % p === 0);
+const equivFamilies = [
+	oneKey("equiv:missing-top", "Equivalent fractions, the top number (1/2 = ?/8)", EQUIV_TAGS, 3, (_k, r) => {
+		const [n, d] = pickOne(r, SIMPLEST);
+		return [
+			n,
+			d,
+			int(r, 2, 6)
+		];
+	}, (_k, [n, d, k]) => {
+		if (!isSimplest(n, d) || !isInt(k, 2, 6)) return null;
+		const parts = [
+			frac(n, d),
+			"=",
+			`?/${d * k}`
+		];
+		const named = {
+			"added the same to the top as the bottom grew by": n + (d * k - d),
+			"kept the top the same": n,
+			"top one too many": n * k + 1,
+			"top one too few": n * k - 1,
+			"used the multiplier": k,
+			"added the multiplier to the top": n + k
+		};
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: n * k
+		}, named);
+	}),
+	oneKey("equiv:missing-bottom", "Equivalent fractions, the bottom number (3/4 = 9/?)", EQUIV_TAGS, 3, (_k, r) => {
+		const [n, d] = pickOne(r, SIMPLEST);
+		return [
+			n,
+			d,
+			int(r, 2, 6)
+		];
+	}, (_k, [n, d, k]) => {
+		if (!isSimplest(n, d) || !isInt(k, 2, 6)) return null;
+		const parts = [
+			frac(n, d),
+			"=",
+			`${n * k}/?`
+		];
+		const named = {
+			"added the same to the bottom as the top grew by": d + (n * k - n),
+			"kept the bottom the same": d,
+			"bottom one too many": d * k + 1,
+			"bottom one too few": d * k - 1,
+			"used the multiplier": k,
+			"added the multiplier to the bottom": d + k,
+			"used the new top number": n * k
+		};
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: d * k
+		}, named);
+	}),
+	oneKey("equiv:same-as", "Which fraction is the same? (1/2 = 4/8)", EQUIV_TAGS, 5, (_k, r) => {
+		const [n, d] = pickOne(r, SIMPLEST);
+		return [
+			n,
+			d,
+			int(r, 2, 5),
+			...rollPick(r)
+		];
+	}, (_k, [n, d, k, slot, salt]) => {
+		if (!isSimplest(n, d) || !isInt(k, 2, 5) || !goodPick(slot, salt)) return null;
+		const right = frac(n * k, d * k);
+		const parts = [
+			frac(n, d),
+			"=",
+			"?"
+		];
+		return pick$2({
+			parts,
+			spoken: talk(parts),
+			fact: `${frac(n, d)} = ${right}`
+		}, right, {
+			"added the same number to the top and bottom": frac(n + k, d + k),
+			"changed only the bottom": frac(n, d * k),
+			"changed only the top": frac(n * k, d),
+			"top and bottom not changed the same": frac(n * k, d * k + 1),
+			"top one too many": frac(n * k + 1, d * k)
+		}, {
+			slot,
+			salt
+		});
+	}),
+	oneKey("equiv:simplify", "Simplifying a fraction (6/8 = 3/4)", EQUIV_TAGS, 5, (_k, r) => {
+		const [n, d] = pickOne(r, SIMPLEST);
+		return [
+			n,
+			d,
+			int(r, 2, 5),
+			...rollPick(r)
+		];
+	}, (_k, [n, d, k, slot, salt]) => {
+		if (!isSimplest(n, d) || !isInt(k, 2, 5) || !goodPick(slot, salt)) return null;
+		const shown = frac(n * k, d * k);
+		const parts = [
+			"Simplify",
+			shown,
+			"=",
+			"?"
+		];
+		const p = smallestFactor(k);
+		return pick$2({
+			parts,
+			spoken: talk(parts),
+			fact: `${shown} = ${frac(n, d)} in its simplest form`
+		}, frac(n, d), {
+			"divided only the top": frac(n, d * k),
+			"divided only the bottom": frac(n * k, d),
+			"took the same off the top and bottom": frac(n * k - k, d * k - k),
+			...p ? { "stopped before the simplest": frac(n * k / p, d * k / p) } : {},
+			"top and bottom not divided the same": frac(n, d + 1)
+		}, {
+			slot,
+			salt,
+			allowEqual: true
+		});
+	}),
+	oneKey("equiv:simplify-blank", "Simplifying with a missing number (6/8 = 3/?)", EQUIV_TAGS, 4, (_k, r) => {
+		const [n, d] = pickOne(r, SIMPLEST);
+		return [
+			n,
+			d,
+			int(r, 2, 5),
+			int(r, 0, 1)
+		];
+	}, (_k, [n, d, k, v]) => {
+		if (!isSimplest(n, d) || !isInt(k, 2, 5) || !isInt(v, 0, 1)) return null;
+		const shown = frac(n * k, d * k);
+		if (v === 0) {
+			const parts = [
+				shown,
+				"=",
+				`${n}/?`
+			];
+			return withMistakes({
+				parts,
+				spoken: talk(parts),
+				answer: d
+			}, {
+				"took the same off the bottom as the top": d * k - (n * k - n),
+				"bottom one too many": d + 1,
+				"bottom one too few": d - 1,
+				"kept the bottom the same": d * k,
+				"used the divisor": k
+			});
+		}
+		const parts = [
+			shown,
+			"=",
+			`?/${d}`
+		];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: n
+		}, {
+			"took the same off the top as the bottom": n * k - (d * k - d),
+			"top one too many": n + 1,
+			"top one too few": n - 1,
+			"kept the top the same": n * k,
+			"used the divisor": k
+		});
+	})
+];
+const WHOLE_TAGS = ["MS.Y6.NUM.RN.P12"];
+/** "3/4 of ? = 90": the part shown is n × q, the whole to find is d × q. */
+function wholeFamily$2(key, label, shapes, qLo, qHi) {
+	return oneKey(key, label, WHOLE_TAGS, 3, (_k, r) => {
+		const [n, d] = pickOne(r, shapes);
+		return [
+			n,
+			d,
+			int(r, qLo, qHi)
+		];
+	}, (_k, [n, d, q]) => {
+		if (!shapes.some(([a, b]) => a === n && b === d) || !isInt(q, qLo, qHi)) return null;
+		const part = n * q;
+		const whole = d * q;
+		const parts = [
+			frac(n, d),
+			"of",
+			"?",
+			"=",
+			show(part)
+		];
+		const named = {
+			"gave the part back as the answer": part,
+			"found the fraction of the number instead": part * n / d,
+			"multiplied the part by the bottom number": part * d,
+			"stopped at one share": q,
+			"one share too few": whole - q,
+			"one share too many": whole + q,
+			"added the bottom number to the part": part + d
+		};
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: whole
+		}, named);
+	});
+}
+const FRACTION_FAMILIES = Object.fromEntries([
+	unitFamily("fracof:half", "Half of an amount (1/2 of 18)", [2], 1, 12),
+	unitFamily("fracof:third", "A third of an amount (1/3 of 15)", [3], 1, 10),
+	unitFamily("fracof:quarter", "A quarter of an amount (1/4 of 20)", [4], 1, 10),
+	unitFamily("fracof:fifth", "A fifth of an amount (1/5 of 35)", [5], 1, 10),
+	unitFamily("fracof:tenth", "A tenth of an amount (1/10 of 70)", [10], 1, 10),
+	unitFamily("fracof:big", "A unit fraction of a bigger amount (1/4 of 80)", [
+		2,
+		3,
+		4,
+		5,
+		10
+	], 11, 25),
+	...Object.keys(NON_UNIT).map(nonUnitFamily),
+	...equivFamilies,
+	wholeFamily$2("whole:half", "The whole from a half (1/2 of ? = 14)", [[1, 2]], 2, 30),
+	wholeFamily$2("whole:unit", "The whole from a unit fraction (1/4 of ? = 6)", [
+		[1, 3],
+		[1, 4],
+		[1, 5],
+		[1, 10]
+	], 2, 12),
+	wholeFamily$2("whole:thirds", "The whole from two thirds (2/3 of ? = 12)", [[2, 3]], 2, 12),
+	wholeFamily$2("whole:quarters", "The whole from three quarters (3/4 of ? = 90)", [[3, 4]], 2, 12),
+	wholeFamily$2("whole:other", "The whole from another fraction (3/5 of ? = 18)", [
+		[2, 5],
+		[3, 5],
+		[4, 5],
+		[3, 8],
+		[5, 8],
+		[3, 10],
+		[7, 10],
+		[5, 6]
+	], 2, 10)
+].map((f) => [f.keys[0], f]));
+const FRACTION_SKILL_KEYS = {
+	"unit-fraction-of": [
+		"fracof:half",
+		"fracof:third",
+		"fracof:quarter",
+		"fracof:fifth",
+		"fracof:tenth",
+		"fracof:big"
+	],
+	"fraction-of": Object.keys(NON_UNIT).map((w) => `fracof:non:${w}`),
+	"equivalent-fractions": [
+		"equiv:missing-top",
+		"equiv:missing-bottom",
+		"equiv:same-as",
+		"equiv:simplify",
+		"equiv:simplify-blank"
+	],
+	"whole-from-fraction": [
+		"whole:half",
+		"whole:unit",
+		"whole:thirds",
+		"whole:quarters",
+		"whole:other"
+	]
+};
+//#endregion
+//#region shared/maths/skillPacks/percentSkills.ts
+/**
+* Percentages (ladder skills `percent-basic` and `percent-of`).
+*
+* `percent-basic`: 50%, 10% and 25% of an amount, and what those percentages are as a fraction and as a decimal (75% comes in
+* beside 25%). `percent-of`: 1%, 20% and 75% of an amount, bigger amounts, and finding the whole from a percentage.
+*
+* Number answers are typed on the pad (four choices when the class has multiple choice on); a percentage as a fraction is
+* always four choices to tap. Wrong choices are the answer a named mistake gives ("found 25% instead", "divided by the percent").
+*
+* Types:
+*   percent-basic  pct:half  pct:ten  pct:quarter  pct:to-fraction  pct:from-fraction  pct:to-decimal
+*   percent-of     pct:one  pct:twenty  pct:three-quarters  pct:big  pct:whole:ten  pct:whole:fifty  pct:whole:quarter
+*/
+const BASIC_TAGS = ["MS.Y5.NUM.RN.P5", "MS.Y5.NUM.RN.P15"];
+const OF_TAGS = ["MS.Y6.NUM.RN.P13", "MS.Y6.NUM.RN.P14"];
+const pct = (p) => `${p}%`;
+/** The answer a student gets by following a named mistake, for "p% of a". */
+function ofMistakes(p, a) {
+	const named = {};
+	for (const other of [
+		1,
+		10,
+		20,
+		25,
+		50,
+		75
+	]) if (other !== p) named[`found ${other}% instead`] = a * other / 100;
+	named["took the percent off the amount"] = a - p;
+	named["multiplied by the percent"] = a * p;
+	named["divided by the percent"] = a / p;
+	return named;
+}
+/** "p% of an amount that is q × step". */
+function ofFamily(key, label, tags, p, step, qLo, qHi) {
+	return oneKey(key, label, tags, 1, (_k, r) => [int(r, qLo, qHi)], (_k, [q]) => {
+		if (!isInt(q, qLo, qHi)) return null;
+		const amount = q * step;
+		const parts = [
+			pct(p),
+			"of",
+			show(amount),
+			"=",
+			"?"
+		];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: amount * p / 100
+		}, ofMistakes(p, amount));
+	});
+}
+/** "p% of an amount" for bigger amounts: 10%, 25% or 50%. */
+const BIG = {
+	10: {
+		step: 10,
+		lo: 21,
+		hi: 100
+	},
+	25: {
+		step: 4,
+		lo: 26,
+		hi: 100
+	},
+	50: {
+		step: 2,
+		lo: 51,
+		hi: 250
+	}
+};
+const bigFamily = oneKey("pct:big", "A simple percentage of a bigger amount (25% of 360)", OF_TAGS, 2, (_k, r) => {
+	const p = pickOne(r, [
+		10,
+		25,
+		50
+	]);
+	return [p, int(r, BIG[p].lo, BIG[p].hi)];
+}, (_k, [p, q]) => {
+	const shape = BIG[p];
+	if (!shape || !isInt(q, shape.lo, shape.hi)) return null;
+	const amount = q * shape.step;
+	const parts = [
+		pct(p),
+		"of",
+		show(amount),
+		"=",
+		"?"
+	];
+	return withMistakes({
+		parts,
+		spoken: talk(parts),
+		answer: amount * p / 100
+	}, ofMistakes(p, amount));
+});
+/** "p% of ? = x": the whole from a percentage. */
+function wholeFamily$1(key, label, p, xLo, xHi) {
+	return oneKey(key, label, OF_TAGS, 1, (_k, r) => [int(r, xLo, xHi)], (_k, [x]) => {
+		if (!isInt(x, xLo, xHi)) return null;
+		const parts = [
+			pct(p),
+			"of",
+			"?",
+			"=",
+			show(x)
+		];
+		const named = {
+			"gave the part back as the answer": x,
+			"found the percentage of it instead": x * p / 100,
+			"multiplied the part by the percent": x * p,
+			"added the percent to the part": x + p
+		};
+		for (const other of [
+			10,
+			20,
+			25,
+			50
+		]) if (other !== p) named[`used ${other}% instead`] = x * 100 / other;
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: x * 100 / p
+		}, named);
+	});
+}
+/** The percentages in these conversions, with the fraction each one is. */
+const CONVERT = {
+	10: [1, 10],
+	25: [1, 4],
+	50: [1, 2],
+	75: [3, 4]
+};
+const CONVERT_PERCENTS = Object.keys(CONVERT).map(Number);
+const toFraction = oneKey("pct:to-fraction", "A percentage as a fraction (25% = 1/4)", BASIC_TAGS, 3, (_k, r) => [pickOne(r, CONVERT_PERCENTS), ...rollPick(r)], (_k, [p, slot, salt]) => {
+	const f = CONVERT[p];
+	if (!f || !goodPick(slot, salt)) return null;
+	const right = frac(...f);
+	const parts = [
+		pct(p),
+		"=",
+		"?"
+	];
+	return pick$2({
+		parts,
+		spoken: talk(parts),
+		fact: `${pct(p)} = ${right}`
+	}, right, {
+		10: {
+			"put 1 over 100": "1/100",
+			"mixed up with 20%": "1/5",
+			"mixed up with 25%": "1/4",
+			"mixed up with 50%": "1/2"
+		},
+		25: {
+			"put 1 over the percent": "1/25",
+			"used the digits as top and bottom": "2/5",
+			"mixed up with 50%": "1/2",
+			"mixed up with 10%": "1/10",
+			"mixed up with 75%": "3/4"
+		},
+		50: {
+			"put 1 over the percent": "1/50",
+			"dropped the zero": "1/5",
+			"mixed up with 25%": "1/4",
+			"mixed up with 10%": "1/10"
+		},
+		75: {
+			"put 1 over the percent": "1/75",
+			"swapped the digits": "5/7",
+			"mixed up with 25%": "1/4",
+			"mixed up with 50%": "1/2",
+			"used only the tens digit": "7/10"
+		}
+	}[p], {
+		slot,
+		salt
+	});
+});
+const fromFraction = oneKey("pct:from-fraction", "A fraction as a percentage (1/4 = ?%)", BASIC_TAGS, 1, (_k, r) => [pickOne(r, CONVERT_PERCENTS)], (_k, [p]) => {
+	const f = CONVERT[p];
+	if (!f) return null;
+	const [n, d] = f;
+	const parts = [
+		frac(n, d),
+		"=",
+		"?",
+		"%"
+	];
+	return withMistakes({
+		parts,
+		spoken: talk(parts),
+		answer: p
+	}, {
+		"used the bottom number": d,
+		"used the top number": n,
+		"gave the part that is left": 100 - p,
+		"ten times too big": p * 10,
+		"ten times too small": p / 10
+	});
+});
+const swapDigits = (p) => Number(`0.${String(p).split("").reverse().join("")}`);
+const toDecimal = oneKey("pct:to-decimal", "A percentage as a decimal (25% = 0.25)", BASIC_TAGS, 1, (_k, r) => [pickOne(r, CONVERT_PERCENTS)], (_k, [p]) => {
+	if (!CONVERT[p]) return null;
+	const parts = [
+		pct(p),
+		"=",
+		"?"
+	];
+	return withMistakes({
+		parts,
+		spoken: talk(parts),
+		answer: p / 100,
+		input: "decimal"
+	}, {
+		"ten times too big": p / 10,
+		"ten times too small": p / 1e3,
+		"used the percent number as it is": p,
+		"swapped the digits": swapDigits(p)
+	});
+});
+const PERCENT_FAMILIES = Object.fromEntries([
+	ofFamily("pct:half", "50% of an amount (50% of 60)", BASIC_TAGS, 50, 2, 1, 50),
+	ofFamily("pct:ten", "10% of an amount (10% of 70)", BASIC_TAGS, 10, 10, 1, 20),
+	ofFamily("pct:quarter", "25% of an amount (25% of 80)", BASIC_TAGS, 25, 4, 1, 25),
+	toFraction,
+	fromFraction,
+	toDecimal,
+	ofFamily("pct:one", "1% of an amount (1% of 300)", OF_TAGS, 1, 100, 1, 10),
+	ofFamily("pct:twenty", "20% of an amount (20% of 45)", OF_TAGS, 20, 5, 2, 40),
+	ofFamily("pct:three-quarters", "75% of an amount (75% of 60)", OF_TAGS, 75, 4, 2, 50),
+	bigFamily,
+	wholeFamily$1("pct:whole:ten", "The whole from 10% (10% of ? = 7)", 10, 2, 30),
+	wholeFamily$1("pct:whole:fifty", "The whole from 50% (50% of ? = 18)", 50, 5, 60),
+	wholeFamily$1("pct:whole:quarter", "The whole from 25% (25% of ? = 12)", 25, 3, 40)
+].map((f) => [f.keys[0], f]));
+const PERCENT_SKILL_KEYS = {
+	"percent-basic": [
+		"pct:half",
+		"pct:ten",
+		"pct:quarter",
+		"pct:to-fraction",
+		"pct:from-fraction",
+		"pct:to-decimal"
+	],
+	"percent-of": [
+		"pct:one",
+		"pct:twenty",
+		"pct:three-quarters",
+		"pct:big",
+		"pct:whole:ten",
+		"pct:whole:fifty",
+		"pct:whole:quarter"
+	]
+};
 //#endregion
 //#region shared/maths/skillPacks/placeSkills.ts
 /**
@@ -3206,7 +4842,11 @@ const ROUNDING_SKILL_KEYS = {
 const families = {
 	...PLACE_FAMILIES,
 	...ROUNDING_FAMILIES,
-	...BEDMAS_FAMILIES
+	...BEDMAS_FAMILIES,
+	...FRACTION_FAMILIES,
+	...PERCENT_FAMILIES,
+	...DECIMAL_FAMILIES,
+	...FDP_FAMILIES
 };
 for (const key of Object.keys(families)) if (!RECORD_KEY$1.test(key)) throw new Error(`generated skill key "${key}" is not a valid record key`);
 Object.keys(families), quickMsForPack("generated");
@@ -3214,7 +4854,11 @@ Object.keys(families), quickMsForPack("generated");
 const GENERATED_SKILL_KEYS = {
 	...PLACE_SKILL_KEYS,
 	...ROUNDING_SKILL_KEYS,
-	bedmas: BEDMAS_KEYS
+	bedmas: BEDMAS_KEYS,
+	...FRACTION_SKILL_KEYS,
+	...PERCENT_SKILL_KEYS,
+	...DECIMAL_SKILL_KEYS,
+	...FDP_SKILL_KEYS
 };
 /** Every question type this pack owns. */
 const GENERATED_KEYS = new Set(Object.keys(families));
@@ -3239,6 +4883,19 @@ function solveGenerated(parts) {
 		};
 	}
 	return null;
+}
+/**
+* A question made again from its record key and the numbers it was made from (`Question.params`), accepted only when it comes out
+* exactly as it was shown. This is how the server marks answers to every generated question, including the pick-one ones whose
+* choices are not in the parts. Null if no generated skill owns the key, the numbers are not ones it could have rolled, or the
+* question they make is not the one shown. See claim.ts.
+*/
+function solveByNumbers(key, params, parts) {
+	const made = Object.hasOwn(families, key) ? families[key].make(key, params) : null;
+	return made && sameParts(made.parts, parts) ? {
+		answer: tidy(made.answer),
+		key
+	} : null;
 }
 //#endregion
 //#region shared/maths/ladder.ts
@@ -3288,14 +4945,6 @@ function tablesSkills() {
 		};
 	});
 }
-const stub = (id, label, stage, ...curriculumTags) => ({
-	id,
-	label,
-	stage,
-	curriculumTags,
-	keys: [],
-	built: false
-});
 /** A skill made of generated question types (kept per type, not per fact). */
 const generated = (id, label, stage, keys, ...curriculumTags) => ({
 	id,
@@ -3324,7 +4973,14 @@ const LADDER = [
 		keys: earlyKeys("dblHalf10"),
 		built: true
 	},
-	stub("ten-and", "Ten and a number (10 + 4)", "early-facts", "MS.Y1.NUM.OP.P6"),
+	{
+		id: "ten-and",
+		label: "Ten and a number (10 + 4)",
+		stage: "early-facts",
+		curriculumTags: ["MS.Y1.NUM.OP.P6"],
+		keys: earlyKeys("tenAnd"),
+		built: true
+	},
 	{
 		id: "facts-20",
 		label: "Number facts to 20",
@@ -3346,26 +5002,26 @@ const LADDER = [
 	tables[1],
 	generated("round-10-100", "Rounding to the nearest 10 and 100", "rounding", GENERATED_SKILL_KEYS["round-10-100"], "MS.Y3.NUM.NS.P5"),
 	generated("bonds-1000", "Hundreds that make 1000", "place-value", GENERATED_SKILL_KEYS["bonds-1000"]),
-	stub("unit-fraction-of", "A fraction of an amount (⅓ of 15)", "fractions-decimals-percentages", "MS.Y3.NUM.RN.P7"),
+	generated("unit-fraction-of", "A fraction of an amount (⅓ of 15)", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["unit-fraction-of"], "MS.Y3.NUM.RN.P7"),
 	tables[2],
 	tables[3],
 	generated("times-tens", "Times with tens and hundreds (30 × 4)", "place-value", GENERATED_SKILL_KEYS["times-tens"], "MS.Y4.NUM.OP.P3"),
-	stub("tenths", "Tenths and decimals of a half", "fractions-decimals-percentages", "MS.Y4.NUM.RN.P3", "MS.Y4.NUM.RN.P5"),
-	stub("add-tenths", "Adding and taking away tenths", "fractions-decimals-percentages", "MS.Y4.NUM.RN.P10"),
+	generated("tenths", "Tenths and decimals of a half", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["tenths"], "MS.Y4.NUM.RN.P3", "MS.Y4.NUM.RN.P5"),
+	generated("add-tenths", "Adding and taking away tenths", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["add-tenths"], "MS.Y4.NUM.RN.P10"),
 	generated("round-1000", "Rounding to the nearest 1000", "rounding", GENERATED_SKILL_KEYS["round-1000"], "MS.Y4.NUM.NS.K4"),
 	tables[4],
 	generated("factor-pairs", "Factor pairs", "place-value", GENERATED_SKILL_KEYS["factor-pairs"], "MS.Y5.NUM.NS.P2"),
 	generated("round-big", "Rounding bigger numbers and decimals", "rounding", GENERATED_SKILL_KEYS["round-big"], "MS.Y5.NUM.NS.P3", "MS.Y5.NUM.NS.P4"),
-	stub("decimal-equivalents", "Fractions as decimals", "fractions-decimals-percentages", "MS.Y5.NUM.RN.P4"),
-	stub("percent-basic", "10%, 25% and 50%", "fractions-decimals-percentages", "MS.Y5.NUM.RN.P5", "MS.Y5.NUM.RN.P15"),
-	stub("fraction-of", "Fractions of an amount (⅔ of 24)", "fractions-decimals-percentages", "MS.Y5.NUM.RN.P13"),
-	stub("times-decimals", "Times 10 and 100 with decimals", "fractions-decimals-percentages", "MS.Y5.NUM.RN.P7"),
-	stub("equivalent-fractions", "Equivalent fractions and simplifying", "fractions-decimals-percentages", "MS.Y5.NUM.RN.P9", "MS.Y6.NUM.RN.P6"),
+	generated("decimal-equivalents", "Fractions as decimals", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["decimal-equivalents"], "MS.Y5.NUM.RN.P4"),
+	generated("percent-basic", "10%, 25% and 50%", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["percent-basic"], "MS.Y5.NUM.RN.P5", "MS.Y5.NUM.RN.P15"),
+	generated("fraction-of", "Fractions of an amount (⅔ of 24)", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["fraction-of"], "MS.Y5.NUM.RN.P13"),
+	generated("times-decimals", "Times 10 and 100 with decimals", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["times-decimals"], "MS.Y5.NUM.RN.P7"),
+	generated("equivalent-fractions", "Equivalent fractions and simplifying", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["equivalent-fractions"], "MS.Y5.NUM.RN.P9", "MS.Y6.NUM.RN.P6"),
 	generated("squares-cubes", "Square and cube numbers", "place-value", GENERATED_SKILL_KEYS["squares-cubes"], "MS.Y6.NUM.NS.P6"),
 	generated("round-million", "Rounding to the nearest million", "rounding", GENERATED_SKILL_KEYS["round-million"], "MS.Y6.NUM.NS.P3", "MS.Y6.NUM.NS.P4"),
-	stub("fdp-equivalents", "Fractions, decimals and percentages", "fractions-decimals-percentages", "MS.Y6.NUM.RN.P3", "MS.Y6.NUM.RN.P4"),
-	stub("percent-of", "Percentages of an amount", "fractions-decimals-percentages", "MS.Y6.NUM.RN.P13", "MS.Y6.NUM.RN.P14"),
-	stub("whole-from-fraction", "Finding the whole from a fraction", "fractions-decimals-percentages", "MS.Y6.NUM.RN.P12"),
+	generated("fdp-equivalents", "Fractions, decimals and percentages", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["fdp-equivalents"], "MS.Y6.NUM.RN.P3", "MS.Y6.NUM.RN.P4"),
+	generated("percent-of", "Percentages of an amount", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["percent-of"], "MS.Y6.NUM.RN.P13", "MS.Y6.NUM.RN.P14"),
+	generated("whole-from-fraction", "Finding the whole from a fraction", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["whole-from-fraction"], "MS.Y6.NUM.RN.P12"),
 	generated("bedmas", "Order of operations", "order-of-operations", GENERATED_SKILL_KEYS.bedmas, "MS.Y6.NUM.OP.P1")
 ];
 /** The skill's keys once switched-off tables are taken out. */
@@ -3443,7 +5099,7 @@ function ladderProgress(stats, opts = {}) {
 function packIdOfKey(key) {
 	if (/^mul:\d+x\d+$/.test(key)) return "times-tables";
 	if (isGeneratedKey(key)) return "generated";
-	if (/^(bond10|bond20|dbl|half):/.test(key)) return "early-facts";
+	if (/^(bond10|bond20|dbl|half|tenand):/.test(key)) return "early-facts";
 	if (key.startsWith("add:")) return "add-sub";
 	if (key.startsWith("div:")) return "division";
 	return null;
@@ -3600,6 +5256,7 @@ function sumKeys(p, q, total) {
 	if (total === 10) keys.push(`bond10:${lo}+${hi}`);
 	if (total === 20) keys.push(`bond20:${lo}+${hi}`);
 	if (p === q) keys.push(`dbl:${p}`);
+	if (hi === 10 && lo >= 1 && lo <= 9) keys.push(`tenand:${lo}`);
 	return keys;
 }
 /** The times-table and division-fact records for n ÷ d = q. */
@@ -3721,6 +5378,25 @@ function ladderOfContext(context) {
 			division: context.settings?.division
 		}
 	};
+}
+/** The numbers if they are a plausible list, else null. */
+function cleanParams(raw) {
+	if (!Array.isArray(raw) || raw.length === 0 || raw.length > 12) return null;
+	return raw.every((n) => typeof n === "number" && Number.isFinite(n) && Math.abs(n) <= 1e9) ? raw : null;
+}
+/** The right answer and the record of a question as the browser says it was asked, or null when it does not hold up. */
+function solveClaim(claim) {
+	if (typeof claim.key === "string" && claim.params !== void 0) {
+		const params = cleanParams(claim.params);
+		if (params && Array.isArray(claim.parts) && claim.parts.every((p) => typeof p === "string")) {
+			const found = solveByNumbers(claim.key, params, claim.parts);
+			if (found) return {
+				answer: found.answer,
+				keys: [found.key]
+			};
+		}
+	}
+	return solveParts(claim.parts);
 }
 //#endregion
 //#region shared/maths/syncPlace.ts
@@ -8758,16 +10434,23 @@ function parseAnswers(input) {
 	const answers = [];
 	for (const raw of input) {
 		const a = raw ?? {};
-		if (!Array.isArray(a.parts) || a.parts.length < 4 || a.parts.length > 12 || !a.parts.every((p) => typeof p === "string" && p.length <= MAX_PART_LENGTH)) return null;
+		if (!Array.isArray(a.parts) || a.parts.length < 1 || a.parts.length > 12 || !a.parts.every((p) => typeof p === "string" && p.length <= MAX_PART_LENGTH)) return null;
 		if (a.key !== void 0 && (typeof a.key !== "string" || !RECORD_KEY.test(a.key))) return null;
 		const whole = (n, max) => typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= max;
 		if (typeof a.given !== "number" || !Number.isFinite(a.given) || a.given < 0 || a.given > MAX_GIVEN || !whole(a.ms, 36e5) || !whole(a.at, 41024448e5)) return null;
+		let params;
+		if (a.params !== void 0) {
+			const clean = cleanParams(a.params);
+			if (!clean) return null;
+			params = clean;
+		}
 		answers.push({
 			parts: a.parts,
 			given: a.given,
 			ms: a.ms,
 			at: a.at,
-			...typeof a.key === "string" ? { key: a.key } : {}
+			...typeof a.key === "string" ? { key: a.key } : {},
+			...params ? { params } : {}
 		});
 	}
 	return answers;
@@ -8855,7 +10538,7 @@ function judgeSpaceGame(report) {
 		if (mathsProblem || !asked && action.kind !== "charge") return;
 		const claimedRight = action.kind === "charge" ? action.right : action.kind === "choose" && action.option === 1;
 		const a = given[answers.length];
-		const solved = a ? solveParts(a.parts) : null;
+		const solved = a ? solveClaim(a) : null;
 		if (!a || !solved) mathsProblem = "missing maths answer";
 		else if (sameAnswer(a.given, solved.answer) !== claimedRight) mathsProblem = "maths answer does not match";
 		else answers.push({

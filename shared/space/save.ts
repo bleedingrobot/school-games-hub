@@ -105,7 +105,7 @@ function parseAnswers(input: unknown): SpaceMathsAnswer[] | null {
   const answers: SpaceMathsAnswer[] = [];
   for (const raw of input) {
     const a = (raw ?? {}) as Record<string, unknown>;
-    if (!Array.isArray(a.parts) || a.parts.length < 4 || a.parts.length > MAX_QUESTION_PARTS || !a.parts.every((p) => typeof p === 'string' && p.length <= MAX_PART_LENGTH)) return null;
+    if (!Array.isArray(a.parts) || a.parts.length < 1 || a.parts.length > MAX_QUESTION_PARTS || !a.parts.every((p) => typeof p === 'string' && p.length <= MAX_PART_LENGTH)) return null;
     if (a.key !== undefined && (typeof a.key !== 'string' || !RECORD_KEY.test(a.key))) return null;
     const whole = (n: unknown, max: number): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= max;
     // An answer can be a decimal (4.3) or big (3 000 000) since the rounding skills: any number from 0 up to a billion.

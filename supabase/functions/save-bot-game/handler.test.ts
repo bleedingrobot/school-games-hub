@@ -263,7 +263,7 @@ async function spaceGame(s: Services, setup: Omit<SoloSetup, 'seed'>, stopAfter 
     if (action.kind === 'charge' || (action.kind === 'choose' && game.state.pending?.kind === 'question')) {
       // A Mission Control question: answer it right or wrong to match the choice.
       const q = pack.nextQuestion({ level: 3 })!;
-      answers.push({ parts: q.parts, given: claimedRight ? q.answer : q.answer + 1, ms: 3000, at: NOW * 1000, ...(focus ? { key: q.factKey } : {}) });
+      answers.push({ parts: q.parts, given: claimedRight ? q.answer : (q.answer + 1) % (q.choices ? q.choices.length : 10 ** 6), ms: 3000, at: NOW * 1000, ...(focus ? { key: q.factKey } : {}), ...(focus && q.params?.length ? { params: q.params } : {}) });
     }
     actions.push(encodeAction(action));
     game.state = play(game.state, action, game.dice).state;
@@ -346,6 +346,51 @@ describe('Mission Control maths in space games against bots', () => {
       // A made-up sum is refused.
       const made = report.answers!.map((a, n) => (n === 0 ? { ...a, parts: ['Round', '347', 'to the nearest 100', '=', '?'], given: 400 } : a));
       expect((await handleSaveBotGame(post({ ...report, answers: made }), s)).status).toBe(400);
+    });
+
+    it('takes the fraction, decimal and percentage skills, picks included, marked from the key and numbers each answer carries', async () => {
+      const f6: MathsFocus = {
+        source: 'teacher-class',
+        skills: ['ten-and', 'unit-fraction-of', 'tenths', 'add-tenths', 'decimal-equivalents', 'percent-basic', 'fraction-of', 'times-decimals', 'equivalent-fractions', 'fdp-equivalents', 'percent-of', 'whole-from-fraction'],
+        onlyThese: true,
+        endsAt: null,
+        canChoose: true,
+        own: null,
+      };
+      const recordAnswers = vi.fn(async () => {});
+      const { s } = services({ recordAnswers });
+      const { report } = await spaceGame(s, MATHS, Infinity, f6);
+      const answers = report.answers!;
+      expect(answers.every((a) => a.params?.length || /^tenand:/.test(a.key ?? ''))).toBe(true);
+      expect((await handleSaveBotGame(post(report), s)).status).toBe(200);
+      const calls = recordAnswers.mock.calls as unknown as [string, string, { key: string }[], string][];
+      const total = calls.reduce((n, c) => n + c[2].length, 0);
+      expect(total).toBe(answers.length);
+      // A pick-one question (the answer is the number of the choice) is marked against the question made again from its numbers.
+      const PICK = /^(pct:to-fraction|tenth:to-fraction|tenth:to-decimal|deceq:(pick|to-fraction|compare)|equiv:(same-as|simplify)|fdp:(pct-to-frac|match))$/;
+      const picked = answers.findIndex((a) => PICK.test(a.key ?? ''));
+      expect(picked).toBeGreaterThanOrEqual(0);
+      // Moving the answer turns right into wrong and wrong into right, which the player's own action disagrees with.
+      const lie = answers.map((a, n) => (n === picked ? { ...a, given: a.given === 0 ? 1 : a.given - 1 } : a));
+      expect((await handleSaveBotGame(post({ ...report, answers: lie }), s)).status).toBe(400);
+      // Without the numbers a browser cannot be believed about a pick: refused.
+      const bare = answers.map((a) => ({ ...a, params: undefined }));
+      expect((await handleSaveBotGame(post({ ...report, answers: bare }), s)).status).toBe(400);
+      // Numbers that do not make the sum on screen are refused too.
+      const wrongNumbers = answers.map((a, n) => (n === 0 && a.params ? { ...a, params: a.params.map((x) => x + 1) } : a));
+      if (answers[0].params) expect((await handleSaveBotGame(post({ ...report, answers: wrongNumbers }), s)).status).toBe(400);
+      // Silly numbers are refused before anything is worked out.
+      for (const params of [[], Array(13).fill(1), [1e12], ['1']]) {
+        expect((await handleSaveBotGame(post({ ...report, answers: answers.map((a, n) => (n === 0 ? { ...a, params } : a)) }), s)).status).toBe(400);
+      }
+    });
+
+    it('still takes a browser that sends only the sum for the skills from before F.6', async () => {
+      const old: MathsFocus = { source: 'teacher-class', skills: ['bonds-100', 'round-10-100', 'bedmas'], onlyThese: true, endsAt: null, canChoose: true, own: null };
+      const { s } = services();
+      const { report } = await spaceGame(s, MATHS, Infinity, old);
+      const withoutNumbers = report.answers!.map(({ params: _params, ...rest }) => rest);
+      expect((await handleSaveBotGame(post({ ...report, answers: withoutNumbers }), s)).status).toBe(200);
     });
 
     it('counts a question towards the fact the browser says only if it really fits', async () => {

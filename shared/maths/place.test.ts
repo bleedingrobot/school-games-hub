@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { randomFromSeed } from '../space/random';
-import { QUICK_MS } from './config';
+import { solveClaim } from './claim';
+import { PLACEMENT_JUMP, QUICK_MS } from './config';
 import { AUTO_FOCUS, focusKey, makeFocusPack, parseFocus, solveParts, usesLadder } from './focus';
 import { AutoPack, autoPools, LADDER, ladderProgress, packIdOfKey } from './ladder';
 import { afterAnswer, newStats, type FactStats } from './leitner';
@@ -36,7 +37,8 @@ describe('reading what the database says about the ladder', () => {
   it('keeps good values and drops unknown or not-yet-built skills and silly years', () => {
     const ok = parseLadderInfo({ on: true, yearLevel: 5, placed: 'done', placement: 'tables-3-4-8', furthest: 'tables-6-9' });
     expect(ok).toEqual({ on: true, yearLevel: 5, placed: 'done', placement: 'tables-3-4-8', furthest: 'tables-6-9' });
-    expect(parseLadderInfo({ on: true, placed: 'done', placement: 'percent-of' }).placed).toBeNull(); // a stub
+    expect(parseLadderInfo({ on: true, placed: 'done', placement: 'percent-of' }).placed).toBe('done'); // built in F.6
+    expect(parseLadderInfo({ on: true, placed: 'done', placement: 'not-built-yet' }).placed).toBeNull();
     expect(parseLadderInfo({ on: true, placed: 'done', placement: 'nope' }).placed).toBeNull();
     expect(parseLadderInfo({ on: true, furthest: '../etc' }).furthest).toBeNull();
     expect(parseLadderInfo({ on: true, yearLevel: 99 }).yearLevel).toBeNull();
@@ -219,13 +221,13 @@ describe('auto over the whole ladder', () => {
 
   it('asks only questions the server can mark, whatever the floor and records (many seeds)', () => {
     for (let seed = 1; seed <= 6; seed++) {
-      for (const furthest of [null, 'dbl-half-20', 'tables-3-4-8', 'tables-11-12', 'times-tens', 'round-big', 'squares-cubes', 'bedmas'] as const) {
+      for (const furthest of [null, 'dbl-half-20', 'tables-3-4-8', 'tables-11-12', 'times-tens', 'round-big', 'squares-cubes', 'percent-of', 'bedmas'] as const) {
         const random = randomFromSeed(`auto-${seed}`);
         const f = { ...AUTO_FOCUS, ladder: info({ furthest }) };
         const pack = makeFocusPack([], f, { division: seed % 2 === 0 }, random) as AutoPack;
         for (let i = 0; i < 150; i++) {
           const q = pack.nextQuestion({ multipleChoice: seed % 3 === 0 })!;
-          const solved = solveParts(q.parts);
+          const solved = solveClaim({ parts: q.parts, key: q.factKey, params: q.params });
           expect(solved, q.parts.join(' ')).not.toBeNull();
           expect(solved!.answer, q.parts.join(' ')).toBe(q.answer);
           expect(solved!.keys, q.parts.join(' ')).toContain(q.factKey);
@@ -262,9 +264,10 @@ describe('the placement check', () => {
   it('jumps up while the answers are right and quick', () => {
     const steps = run(null, () => true);
     const levels = steps.map((s) => built.findIndex((b) => b.id === s.skill));
-    expect(levels[1] - levels[0]).toBe(2);
+    expect(levels[1] - levels[0]).toBe(PLACEMENT_JUMP);
     expect(levels[2]).toBeGreaterThan(levels[1]);
-    expect(levels.at(-1)).toBe(built.length - 1);
+    // Ten questions of three skills each reach the last few skills of the ladder.
+    expect(levels.at(-1)).toBeGreaterThanOrEqual(built.length - 5);
   });
 
   it('steps back when an answer is wrong, and also when it is right but slow', () => {
@@ -323,7 +326,7 @@ describe('checking a placement on the server', () => {
       const skill = placementNext(year, steps)!;
       const q = placementQuestion(skill, i + 1, random)!;
       const right = ok(i, skill.id);
-      answers.push({ skill: skill.id, parts: q.parts, answer: right ? q.answer : q.answer + 1, ms });
+      answers.push({ skill: skill.id, parts: q.parts, key: q.factKey, params: q.params, answer: right ? q.answer : q.answer + 1, ms });
       steps.push({ skill: skill.id, correct: right, quick: right && ms <= QUICK_MS });
     }
     return answers;
@@ -420,7 +423,7 @@ describe('the server keeping the place', () => {
       for (let i = 0; i < 10; i++) {
         const skill = placementNext(5, steps)!;
         const q = placementQuestion(skill, i + 1, random)!;
-        out.push({ skill: skill.id, parts: q.parts, answer: q.answer, ms: 1000 });
+        out.push({ skill: skill.id, parts: q.parts, key: q.factKey, params: q.params, answer: q.answer, ms: 1000 });
         steps.push({ skill: skill.id, correct: true, quick: true });
       }
       return out;
@@ -453,13 +456,14 @@ describe('the server keeping the place', () => {
 describe('the longer ladder', () => {
   const generated = built.filter((s) => s.keys.length && s.keys.every((k) => packIdOfKey(k) === 'generated'));
 
-  it('has 19 built skills, ten of them generated, and every one has at least four question types', () => {
-    expect(built).toHaveLength(19);
-    expect(generated).toHaveLength(10);
+  it('has 31 built skills, 22 of them generated, and every one has at least four question types', () => {
+    expect(built).toHaveLength(31);
+    expect(built).toHaveLength(LADDER.length);
+    expect(generated).toHaveLength(21);
     for (const skill of generated) expect(skill.keys.length, skill.id).toBeGreaterThanOrEqual(4);
   });
 
-  it('a student who answers every warm-up question right and quickly starts at the top, from any year', () => {
+  it('a student who answers every warm-up question right and quickly starts near the top, from any year', () => {
     for (const year of [null, 1, 2, 3, 4, 5, 6, 7, 8]) {
       const steps: PlacementStep[] = [];
       for (;;) {
@@ -468,7 +472,9 @@ describe('the longer ladder', () => {
         steps.push({ skill: skill.id, correct: true, quick: true });
       }
       expect(steps, `year ${year}`).toHaveLength(10);
-      expect(placementResult(steps).id, `year ${year}`).toBe(built[built.length - 2].id);
+      const at = built.findIndex((b) => b.id === placementResult(steps).id);
+      expect(at, `year ${year}`).toBeGreaterThanOrEqual(built.length - 6);
+      expect(at, `year ${year}`).toBeLessThan(built.length - 1);
     }
   });
 

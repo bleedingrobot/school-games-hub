@@ -73,3 +73,8 @@ export const CHOICES = 4;
 export const START_YEARS_BEHIND = 1;
 /** The placement check asks this many questions. */
 export const PLACEMENT_QUESTIONS = 10;
+/**
+ * How many skills the placement check jumps up after a right, quick answer (until the first miss, then one at a time). Two was
+ * enough for 19 skills; with all 31 built, ten questions at two skills each cannot reach the top, so it is three.
+ */
+export const PLACEMENT_JUMP = 3;

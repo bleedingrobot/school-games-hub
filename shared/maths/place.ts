@@ -8,7 +8,7 @@
  * The server keeps the furthest place and the placement; the database cannot see the ladder, so the server functions that save
  * answers work the place out with this file (`placeToStore`) and the database only checks that it never goes back.
  */
-import { PLACEMENT_QUESTIONS, quickMsForPack, START_YEARS_BEHIND } from "./config";
+import { PLACEMENT_JUMP, PLACEMENT_QUESTIONS, quickMsForPack, START_YEARS_BEHIND } from "./config";
 import type { FactStats } from "./leitner";
 import {
   LADDER,
@@ -137,7 +137,7 @@ export interface PlacementStep {
 
 /**
  * Where the check goes next, given the answers so far: the skill to ask about, or null when it is finished.
- * It starts at the class's year start and moves up two skills after a right, quick answer (one after it has missed
+ * It starts at the class's year start and moves up three skills (`PLACEMENT_JUMP`) after a right, quick answer (one after it has missed
  * once) and back one when the answer is wrong or slow. All steps are over the built skills only.
  */
 export function placementNext(
@@ -150,7 +150,7 @@ export function placementNext(
     0,
     built.findIndex((s) => LADDER.indexOf(s) >= yearStartRank(yearLevel)),
   );
-  let jump = 2;
+  let jump = PLACEMENT_JUMP;
   for (const step of steps) {
     if (step.correct && step.quick) level = Math.min(top, level + jump);
     else {
