@@ -3,7 +3,7 @@ import type { GameDefinition } from '../types';
 import { TEXT } from './strings';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
-const BondMatchPlay = lazy(() => import('./BondMatchPlay').then((m) => ({ default: m.BondMatchPlay })));
+const BondMatchHub = lazy(() => import('./BondMatchHub').then((m) => ({ default: m.BondMatchHub })));
 
 function BondMatchIcon({ size = 64 }: { size?: number }) {
   return (
@@ -16,7 +16,7 @@ function BondMatchIcon({ size = 64 }: { size?: number }) {
 }
 
 /**
- * Bond Match (M.2). Written but NOT in src/games/registry.ts, so nothing in the live app can reach
+ * Bond Match (M.2, saving added in M.4). Written but NOT in src/games/registry.ts, so nothing in the live app can reach
  * it; adding it there is stage M.7. Never ranked, no bots yet.
  */
 export const bondMatch: GameDefinition = {
@@ -25,7 +25,7 @@ export const bondMatch: GameDefinition = {
   tagline: TEXT.tagline,
   colours: ['#0f766e', '#6d28d9'],
   Icon: BondMatchIcon,
-  Play: BondMatchPlay,
+  Play: BondMatchHub,
   ranked: false,
   noBots: true,
 };

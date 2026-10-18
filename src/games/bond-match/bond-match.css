@@ -485,3 +485,27 @@
   .bm-shelf__sets { grid-template-columns: repeat(2, 1fr); }
   .bm-line__sum { font-size: 1.35rem; }
 }
+
+/* ---------- Saved stars and the save line (M.4) ---------- */
+
+.bm-bond__stars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+.bm-bond__star--on {
+  color: #a16207;
+  font-weight: 800;
+}
+.bm-finish__save {
+  margin: 10px 0 0;
+  font-weight: 700;
+}
+.bm-finish__save--saved {
+  color: var(--won);
+}
+.bm-finish__save--later {
+  color: var(--ink-soft);
+}

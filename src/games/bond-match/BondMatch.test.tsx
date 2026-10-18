@@ -9,6 +9,8 @@ import { newGame } from '../../../shared/bond-match/engine';
 import { STAR_CONFIG } from '../../../shared/bond-match/score';
 import { sideText } from '../../../shared/bond-match/exact';
 import { perfectFlips } from '../../../shared/bond-match/perfectPlayer';
+import type { BondMatchSaver } from '../../data/bondMatch';
+import type { SaveResult } from '../../../shared/bond-match/save';
 import { SoundProvider } from '../../sound';
 import { GAMES, findGame } from '../registry';
 import { BondMatchPlay } from './BondMatchPlay';
@@ -18,12 +20,12 @@ const SEED = 7;
 
 afterEach(() => vi.unstubAllGlobals());
 
-function setup(props: { makeSeed?: () => number; mismatchMs?: number } = {}) {
+function setup(props: { makeSeed?: () => number; mismatchMs?: number; saver?: BondMatchSaver; makeRunId?: () => string } = {}) {
   const user = userEvent.setup();
   const makeSeed = props.makeSeed ?? vi.fn(() => SEED);
   render(
     <SoundProvider>
-      <BondMatchPlay makeSeed={makeSeed} finishMs={0} mismatchMs={props.mismatchMs ?? 60_000} />
+      <BondMatchPlay makeSeed={makeSeed} finishMs={0} mismatchMs={props.mismatchMs ?? 60_000} saver={props.saver} makeRunId={props.makeRunId} />
     </SoundProvider>,
   );
   return { user, makeSeed };
@@ -312,6 +314,114 @@ describe('the finish screen', () => {
   });
 });
 
+describe('saving a finished game', () => {
+  const answer = (over: Partial<Extract<SaveResult, { status: 'saved' }>> = {}): SaveResult =>
+    ({ status: 'saved', points: 2, stars: 3, best: { flips: 6, seconds: 5, stars: 3 }, ...over }) as SaveResult;
+  const fakeSaver = (result: SaveResult | null | 'reject', bests: Awaited<ReturnType<BondMatchSaver['loadBests']>> = []) => ({
+    save: vi.fn(async () => { if (result === 'reject') throw new Error('offline'); return result; }),
+    loadBests: vi.fn(async () => bests),
+  });
+  const playTo10 = async (user: ReturnType<typeof userEvent.setup>) => {
+    await pick(user, 'To 10', 'Small');
+    for (const i of perfectFlips(newGame(deckFor('whole-10', 'small')))) await user.click(card(i));
+    await screen.findByRole('heading', { name: 'All matched!' });
+  };
+
+  it('sends the game itself: run id, seed, bond, size, every flip and the seconds (no stars, they are worked out by the server)', async () => {
+    const saver = fakeSaver(answer());
+    const { user } = setup({ saver, makeRunId: () => 'run-1' });
+    await playTo10(user);
+    expect(saver.save).toHaveBeenCalledTimes(1);
+    const sent = (saver.save.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
+    expect(sent).toMatchObject({ runId: 'run-1', seed: SEED, bondId: 'whole-10', size: 'small', flips: perfectFlips(newGame(deckFor('whole-10', 'small'))) });
+    expect(Number.isInteger(sent.seconds)).toBe(true);
+    expect(Object.keys(sent).sort()).toEqual(['bondId', 'flips', 'runId', 'seconds', 'seed', 'size']);
+  });
+
+  it('says Saved and how many points were earned', async () => {
+    const { user } = setup({ saver: fakeSaver(answer({ points: 2 })) });
+    await playTo10(user);
+    expect(await screen.findByTestId('save-line')).toHaveTextContent('Saved ✓ You earned 2 points.');
+  });
+
+  it('says Saved, with no more points today, when the cap is reached', async () => {
+    const { user } = setup({ saver: fakeSaver(answer({ points: 0 })) });
+    await playTo10(user);
+    expect(await screen.findByTestId('save-line')).toHaveTextContent('No more points today, but your stars are saved.');
+  });
+
+  it('says only Saved when the game earned no points to talk about (null)', async () => {
+    const { user } = setup({ saver: fakeSaver(answer({ points: null })) });
+    await playTo10(user);
+    expect(await screen.findByTestId('save-line')).toHaveTextContent(/^Saved ✓$/);
+  });
+
+  it('says it will save later when the server cannot be reached', async () => {
+    for (const result of [null, 'reject'] as const) {
+      const { user } = setup({ saver: fakeSaver(result) });
+      await playTo10(user);
+      expect(await screen.findByTestId('save-line')).toHaveTextContent('Will save when you are back online.');
+      document.body.innerHTML = '';
+    }
+  });
+
+  it('says nothing more when the server refuses the game for good', async () => {
+    const { user } = setup({ saver: fakeSaver({ status: 'invalid', problem: 'too fast' }) });
+    await playTo10(user);
+    await waitFor(() => expect(screen.queryByTestId('save-line')).toBeNull());
+  });
+
+  it('still shows the finish screen and local bests while it is saving', async () => {
+    const saver = { save: vi.fn(() => new Promise<SaveResult | null>(() => {})), loadBests: vi.fn(async () => []) };
+    const { user } = setup({ saver });
+    await playTo10(user);
+    expect(screen.getByTestId('save-line')).toHaveTextContent('Saving…');
+    expect(screen.getByTestId('best-line')).toHaveTextContent('Your best: 6 flips');
+    expect(screen.getByRole('button', { name: 'Play again' })).toBeEnabled();
+  });
+
+  it('has no save line, and no stars on the picker, when there is no server', async () => {
+    const { user } = setup();
+    await playTo10(user);
+    expect(screen.queryByTestId('save-line')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Pick another bond' }));
+    expect(screen.queryByTestId('stars-whole-10')).toBeNull();
+  });
+
+  it('gives Play again a new run id, so each game is saved on its own', async () => {
+    const saver = fakeSaver(answer());
+    let n = 0;
+    const { user } = setup({ saver, makeRunId: () => `run-${++n}` });
+    await playTo10(user);
+    await user.click(screen.getByRole('button', { name: 'Play again' }));
+    for (const i of perfectFlips(newGame(deckFor('whole-10', 'small')))) await user.click(card(i));
+    await waitFor(() => expect(saver.save).toHaveBeenCalledTimes(2));
+    expect(saver.save.mock.calls.map((c) => (c as unknown[])[0] as { runId: string }).map((g) => g.runId)).toEqual(['run-1', 'run-2']);
+  });
+
+  it('shows the stars the student already has on each bond, in words for a screen reader too', async () => {
+    const bests = [
+      { bondId: 'whole-10', size: 'small', flips: 6, seconds: 30, stars: 3, plays: 2 },
+      { bondId: 'whole-10', size: 'large', flips: 20, seconds: 90, stars: 1, plays: 1 },
+    ];
+    setup({ saver: fakeSaver(answer(), bests) });
+    const stars = await screen.findByTestId('stars-whole-10');
+    expect(stars).toHaveTextContent('S ★★★');
+    expect(stars).toHaveTextContent('M –');
+    expect(stars).toHaveTextContent('L ★');
+    expect(screen.getByRole('button', { name: /^To 10, Medium board.*Your best stars: Small 3 stars, Large 1 star$/ })).toBeInTheDocument();
+    expect(screen.queryByTestId('stars-whole-20')).toBeNull();
+  });
+
+  it('adds the new stars to the picker straight after a game', async () => {
+    const { user } = setup({ saver: fakeSaver(answer({ best: { flips: 6, seconds: 5, stars: 3 } })) });
+    await playTo10(user);
+    await screen.findByText(/Saved ✓/);
+    await user.click(screen.getByRole('button', { name: 'Pick another bond' }));
+    expect(screen.getByTestId('stars-whole-10')).toHaveTextContent('S ★★★');
+  });
+});
+
 describe('moving less', () => {
   const stubMotion = (reduce: boolean) =>
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: reduce && q.includes('reduce'), media: q, addEventListener() {}, removeEventListener() {} }));
@@ -435,7 +545,7 @@ describe('not live yet', () => {
     const { execSync } = await import('node:child_process');
     const hits = execSync("grep -rIl 'games/bond-match\\|from \\./bond-match\\|bond-match/index' src preview supabase --include=*.ts --include=*.tsx || true", { cwd: process.cwd() })
       .toString().split('\n').filter(Boolean)
-      .filter((f) => !f.startsWith('src/games/bond-match/'));
+      .filter((f) => !f.startsWith('src/games/bond-match/') && !f.startsWith('supabase/functions/bond-match/'));
     expect(hits).toEqual(['preview/bond-match/main.tsx']);
   });
 });

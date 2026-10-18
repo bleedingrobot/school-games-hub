@@ -35,6 +35,7 @@ const LordTeacherPanels = lazy(() => import('./TeacherLord').then((m) => ({ defa
 const LordStudentPanel = lazy(() => import('./TeacherLord').then((m) => ({ default: m.LordStudentPanel })));
 const ClansTeacherPanels = lazy(() => import('./TeacherClans').then((m) => ({ default: m.ClansTeacherPanels })));
 const ClansStudentPanel = lazy(() => import('./TeacherClans').then((m) => ({ default: m.ClansStudentPanel })));
+const BondMatchStudentPanel = lazy(() => import('./TeacherBondMatch').then((m) => ({ default: m.BondMatchStudentPanel })));
 const GemKeepStudentPanel = lazy(() => import('./TeacherGemKeep').then((m) => ({ default: m.GemKeepStudentPanel })));
 
 /** The words a teacher types to start a new season. The server checks them too. */
@@ -471,6 +472,7 @@ function PersonPanel({
             <MonstersStudentPanel student={person.id} />
             <LordStudentPanel student={person.id} />
             <ClansStudentPanel student={person.id} />
+            <BondMatchStudentPanel student={person.id} />
           </Suspense>
         </>
       ) : (

@@ -3,13 +3,18 @@ import { BOND_SETS, type BondSet } from '../../../shared/bond-match/bonds';
 import { BOARD_SIZES, pairsOnBoard, type BoardSize } from '../../../shared/bond-match/deck';
 import { SHELVES, SIZE_NAMES, TEXT } from './strings';
 
+/** Best stars the student has on each bond set and board size: { 'whole-10': { small: 3 } }. */
+export type StarsBySet = Record<string, Partial<Record<BoardSize, number>>>;
+
 interface Props {
+  /** Shown on each bond when the student's saved stars are known. */
+  stars?: StarsBySet;
   onPick: (set: BondSet, size: BoardSize) => void;
   initialSize?: BoardSize;
 }
 
 /** "What are you practising?": a board size, then the bond sets on three shelves. Picking a bond starts the game. */
-export function BondPicker({ onPick, initialSize = 'medium' }: Props) {
+export function BondPicker({ onPick, initialSize = 'medium', stars }: Props) {
   const [size, setSize] = useState<BoardSize>(initialSize);
   return (
     <section className="bm-picker" aria-labelledby="bm-pick-title">
@@ -34,12 +39,14 @@ export function BondPicker({ onPick, initialSize = 'medium' }: Props) {
             <div className="bm-shelf__sets">
               {sets.map((set) => {
                 const counts = BOARD_SIZES.map((s) => pairsOnBoard(set, s));
+                const mine = stars?.[set.id];
+                const best = mine ? BOARD_SIZES.filter((s) => mine[s]).map((s) => TEXT.bestStarsLine(SIZE_NAMES[s], mine[s])).join(', ') : '';
                 return (
                   <button
                     key={set.id}
                     type="button"
                     className={`bm-bond bm-bond--${shelf.id}`}
-                    aria-label={TEXT.bondButton(set.label, size, pairsOnBoard(set, size))}
+                    aria-label={TEXT.bondButton(set.label, size, pairsOnBoard(set, size)) + (best ? `. ${TEXT.bestStarsLabel}: ${best}` : '')}
                     onClick={() => onPick(set, size)}
                   >
                     <span className="bm-bond__label">{set.label}</span>
@@ -50,6 +57,15 @@ export function BondPicker({ onPick, initialSize = 'medium' }: Props) {
                         </span>
                       ))}
                     </span>
+                    {mine && Object.keys(mine).length > 0 && (
+                      <span className="bm-bond__stars" aria-hidden="true" data-testid={`stars-${set.id}`}>
+                        {BOARD_SIZES.map((s) => (
+                          <span key={s} className={mine[s] ? 'bm-bond__star bm-bond__star--on' : 'bm-bond__star'}>
+                            {SIZE_NAMES[s][0]} {mine[s] ? '★'.repeat(mine[s]!) : '–'}
+                          </span>
+                        ))}
+                      </span>
+                    )}
                   </button>
                 );
               })}

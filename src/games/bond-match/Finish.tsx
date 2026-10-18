@@ -2,7 +2,11 @@ import { STAR_CONFIG, type Score } from '../../../shared/bond-match/score';
 import type { RecordedGame } from './bests';
 import { clock, STAR_NAMES, TEXT } from './strings';
 
+/** Where the save to the server is up to. Undefined when nothing is saved (the preview with no server). */
+export type SaveState = { status: 'saving' } | { status: 'saved'; points: number | null } | { status: 'later' };
+
 interface Props {
+  save?: SaveState;
   setLabel: string;
   score: Score;
   recorded: RecordedGame;
@@ -11,7 +15,7 @@ interface Props {
 }
 
 /** Stars as words as well as shapes: gold, silver or bronze is said, never just coloured. */
-export function Finish({ setLabel, score, recorded, onAgain, onAnother }: Props) {
+export function Finish({ save, setLabel, score, recorded, onAgain, onAnother }: Props) {
   const { best } = recorded;
   return (
     <section className="bm-finish" aria-labelledby="bm-finish-title">
@@ -35,6 +39,13 @@ export function Finish({ setLabel, score, recorded, onAgain, onAnother }: Props)
         {recorded.newFlips && <p className="bm-finish__new">{TEXT.newBestFlips}</p>}
         {recorded.newTime && <p className="bm-finish__new">{TEXT.newBestTime}</p>}
       </div>
+      {save && (
+        <p className={`bm-finish__save bm-finish__save--${save.status}`} role="status" data-testid="save-line">
+          {save.status === 'saving' && TEXT.saving}
+          {save.status === 'later' && TEXT.saveLater}
+          {save.status === 'saved' && (save.points ? TEXT.savedPoints(save.points) : save.points === 0 ? TEXT.savedNoPoints : TEXT.savedLine)}
+        </p>
+      )}
       <div className="bm-finish__buttons">
         <button type="button" className="button button--primary" onClick={onAgain}>{TEXT.again}</button>
         <button type="button" className="button button--light" onClick={onAnother}>{TEXT.another}</button>
