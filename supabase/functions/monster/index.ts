@@ -24362,7 +24362,7 @@ var BandedPack = class {
 * Band 3: 2-digit ± 2-digit, without then with regrouping, and pairs to 100.
 * Band 4: 3-digit ± 3-digit, and near-hundreds (398 + 250, 634 − 299).
 */
-const TODO$4 = (what) => [`TODO-${what}`];
+const TODO$6 = (what) => [`TODO-${what}`];
 const sum = (a, b, extra = {}) => {
 	const parts = [
 		show(a),
@@ -24440,7 +24440,7 @@ const parseFact$1 = (key) => {
 /** Variants: 0 a + b, 1 b + a, 2 (a+b) − a, 3 (a+b) − b, 4 a + ? = a+b. */
 const facts = {
 	label: "Adding and taking away facts to 20",
-	curriculumTags: TODO$4("addition-facts"),
+	curriculumTags: TODO$6("addition-facts"),
 	keys: factKeys$1,
 	roll: (key, r) => {
 		const { a, b } = parseFact$1(key);
@@ -24502,7 +24502,7 @@ const facts = {
 function kind(key, label, tag, roll, valid, make) {
 	return {
 		label,
-		curriculumTags: TODO$4(tag),
+		curriculumTags: TODO$6(tag),
 		keys: [key],
 		roll: (_k, r) => roll(r),
 		make: (_k, [a, b]) => isInt$1(a, 0, 9999) && isInt$1(b, 0, 9999) && valid(a, b) ? make(a, b) : null
@@ -24560,7 +24560,7 @@ const ADD_SUB = {
 		}, (a, b) => a >= 30 && a <= 99 && b >= 10 && b <= 99 && ones(a) < ones(b) && a - b >= 10, (a, b) => diff(a, b, { wrong: subWrong(a, b) })),
 		"add:to100": {
 			label: "Pairs that make 100 (64 + ? = 100)",
-			curriculumTags: TODO$4("pairs-to-100"),
+			curriculumTags: TODO$6("pairs-to-100"),
 			keys: ["add:to100"],
 			roll: (_k, r) => [int(r, 1, 8) * 10 + int(r, 1, 9)],
 			make: (_k, [a]) => {
@@ -24647,7 +24647,7 @@ const ADD_SUB = {
 * Band 3: hundredths (0.25 + 0.5), which decimal is bigger (0.5 or 0.45), × 10 and × 100.
 * Band 4: rounding to a whole number, decimals × whole numbers, fractions as decimals (3/4 = 0.75).
 */
-const TODO$3 = (what) => [`TODO-${what}`];
+const TODO$5 = (what) => [`TODO-${what}`];
 const tenths = (n) => show(n / 10);
 const hundredths = (n) => show(n / 100);
 const decimal = (made) => ({
@@ -24669,7 +24669,7 @@ const DECIMALS = {
 	families: {
 		"dec:tenths:add": {
 			label: "Adding tenths (0.3 + 0.5)",
-			curriculumTags: TODO$3("add-tenths"),
+			curriculumTags: TODO$5("add-tenths"),
 			keys: ["dec:tenths:add"],
 			roll: (_k, r) => [int(r, 1, 9), int(r, 1, 9)],
 			make: (_k, [a, b]) => {
@@ -24698,7 +24698,7 @@ const DECIMALS = {
 		},
 		"dec:tenths:sub": {
 			label: "Taking away tenths (1.5 − 0.7)",
-			curriculumTags: TODO$3("subtract-tenths"),
+			curriculumTags: TODO$5("subtract-tenths"),
 			keys: ["dec:tenths:sub"],
 			roll: (_k, r) => {
 				const a = int(r, 2, 19);
@@ -24729,7 +24729,7 @@ const DECIMALS = {
 		},
 		"dec:from-frac:tenths": {
 			label: "Tenths as decimals (7/10 = 0.7)",
-			curriculumTags: TODO$3("tenths-as-decimals"),
+			curriculumTags: TODO$5("tenths-as-decimals"),
 			keys: ["dec:from-frac:tenths"],
 			roll: (_k, r) => [int(r, 1, 9)],
 			make: (_k, [n]) => {
@@ -24754,7 +24754,7 @@ const DECIMALS = {
 		},
 		"money:add": {
 			label: "Adding money ($2.40 + $1.75)",
-			curriculumTags: TODO$3("money-add"),
+			curriculumTags: TODO$5("money-add"),
 			keys: ["money:add"],
 			roll: (_k, r) => [int(r, 21, 199) * 5, int(r, 21, 199) * 5],
 			make: (_k, [a, b]) => {
@@ -24785,7 +24785,7 @@ const DECIMALS = {
 		},
 		"money:change": {
 			label: "Working out change ($10 − $3.65)",
-			curriculumTags: TODO$3("money-change"),
+			curriculumTags: TODO$5("money-change"),
 			keys: ["money:change"],
 			roll: (_k, r) => {
 				const paid = pickOne(r, [
@@ -24826,7 +24826,7 @@ const DECIMALS = {
 		},
 		"dec:hundredths:add": {
 			label: "Adding hundredths (0.25 + 0.5)",
-			curriculumTags: TODO$3("add-hundredths"),
+			curriculumTags: TODO$5("add-hundredths"),
 			keys: ["dec:hundredths:add"],
 			roll: (_k, r) => {
 				let a;
@@ -24859,7 +24859,7 @@ const DECIMALS = {
 		},
 		"dec:compare": {
 			label: "Which decimal is bigger? (0.5 or 0.45)",
-			curriculumTags: TODO$3("compare-decimals"),
+			curriculumTags: TODO$5("compare-decimals"),
 			keys: ["dec:compare"],
 			roll: (_k, r) => {
 				const a = int(r, 1, 9) * 10;
@@ -24884,7 +24884,7 @@ const DECIMALS = {
 		},
 		"dec:times10": {
 			label: "Decimals × 10 and × 100 (0.7 × 10)",
-			curriculumTags: TODO$3("decimals-times-powers-of-ten"),
+			curriculumTags: TODO$5("decimals-times-powers-of-ten"),
 			keys: ["dec:times10"],
 			roll: (_k, r) => {
 				let a;
@@ -24919,7 +24919,7 @@ const DECIMALS = {
 		},
 		"dec:round": {
 			label: "Rounding decimals to a whole number (3.6 → 4)",
-			curriculumTags: TODO$3("round-decimals"),
+			curriculumTags: TODO$5("round-decimals"),
 			keys: ["dec:round"],
 			roll: (_k, r) => {
 				let a;
@@ -24954,7 +24954,7 @@ const DECIMALS = {
 		},
 		"dec:times-whole": {
 			label: "Decimals × whole numbers (0.3 × 4)",
-			curriculumTags: TODO$3("multiply-decimals"),
+			curriculumTags: TODO$5("multiply-decimals"),
 			keys: ["dec:times-whole"],
 			roll: (_k, r) => [int(r, 1, 9), int(r, 2, 9)],
 			make: (_k, [a, b]) => {
@@ -24981,7 +24981,7 @@ const DECIMALS = {
 		},
 		"dec:from-frac": {
 			label: "Fractions as decimals (3/4 = 0.75)",
-			curriculumTags: TODO$3("fractions-as-decimals"),
+			curriculumTags: TODO$5("fractions-as-decimals"),
 			keys: ["dec:from-frac"],
 			roll: (_k, r) => r() < .3 ? [int(r, 1, 99), 100] : pickOne(r, FRACTIONS_AS_DECIMALS),
 			make: (_k, [n, d]) => {
@@ -25038,7 +25038,7 @@ const DECIMALS = {
 * Band 4:    2-digit ÷ 1-digit (84 ÷ 4), dividing by 10 and 100, and missing dividends.
 * Band 5:    remainders (23 ÷ 4 = 5 r ?) and 3-digit ÷ 1-digit.
 */
-const TODO$2 = (what) => [`TODO-${what}`];
+const TODO$4 = (what) => [`TODO-${what}`];
 /** Quotients go to 10 in band 1 (like the first Gem Keep levels) and 12 after. */
 const factKeys = (divisors, upTo) => divisors.flatMap((d) => Array.from({ length: upTo }, (_, i) => `div:${d * (i + 1)}/${d}`));
 const parseFact = (key) => {
@@ -25053,7 +25053,7 @@ function factFamily(label, divisors, upTo) {
 	const owned = new Set(keys);
 	return {
 		label,
-		curriculumTags: TODO$2("division-facts"),
+		curriculumTags: TODO$4("division-facts"),
 		keys,
 		roll: (key, r) => {
 			const { n, d } = parseFact(key);
@@ -25142,7 +25142,7 @@ const DIVISION = {
 		], 12),
 		"div:2d/1d": {
 			label: "Dividing a 2-digit number (84 ÷ 4)",
-			curriculumTags: TODO$2("divide-2d-by-1d"),
+			curriculumTags: TODO$4("divide-2d-by-1d"),
 			keys: ["div:2d/1d"],
 			roll: (_k, r) => {
 				const d = int(r, 2, 6);
@@ -25161,7 +25161,7 @@ const DIVISION = {
 		},
 		"div:by10": {
 			label: "Dividing by 10 and 100 (340 ÷ 10)",
-			curriculumTags: TODO$2("divide-by-10-100"),
+			curriculumTags: TODO$4("divide-by-10-100"),
 			keys: ["div:by10"],
 			roll: (_k, r) => [int(r, 1, 9) * 10 + int(r, 1, 9), int(r, 1, 2)],
 			make: (_k, [q, p]) => {
@@ -25177,7 +25177,7 @@ const DIVISION = {
 		},
 		"div:missing": {
 			label: "Missing number in a division (? ÷ 4 = 7)",
-			curriculumTags: TODO$2("division-missing-dividend"),
+			curriculumTags: TODO$4("division-missing-dividend"),
 			keys: ["div:missing"],
 			roll: (_k, r) => [int(r, 2, 9), int(r, 2, 12)],
 			make: (_k, [d, q]) => {
@@ -25204,7 +25204,7 @@ const DIVISION = {
 		},
 		"div:remainder": {
 			label: "Remainders (23 ÷ 4 = 5 r ?)",
-			curriculumTags: TODO$2("division-remainders"),
+			curriculumTags: TODO$4("division-remainders"),
 			keys: ["div:remainder"],
 			roll: (_k, r) => {
 				const d = int(r, 3, 9);
@@ -25242,7 +25242,7 @@ const DIVISION = {
 		},
 		"div:3d/1d": {
 			label: "Dividing a 3-digit number (756 ÷ 7)",
-			curriculumTags: TODO$2("divide-3d-by-1d"),
+			curriculumTags: TODO$4("divide-3d-by-1d"),
 			keys: ["div:3d/1d"],
 			roll: (_k, r) => {
 				const d = int(r, 3, 9);
@@ -25285,7 +25285,7 @@ const DIVISION = {
 * Band 3: adding and taking away with the same bottom number, mixed numbers ↔ improper fractions.
 * Band 4: comparing any two fractions, simplifying (6/8 = 3/?).
 */
-const TODO$1 = (what) => [`TODO-${what}`];
+const TODO$3 = (what) => [`TODO-${what}`];
 const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
 const frac = (n, d) => `${n}/${d}`;
 /** A "which is bigger?" question: the answer is the index of the bigger fraction. */
@@ -25316,7 +25316,7 @@ const FRACTIONS = {
 	families: {
 		"frac:of:unit": {
 			label: "A unit fraction of an amount (1/4 of 20)",
-			curriculumTags: TODO$1("unit-fraction-of-amount"),
+			curriculumTags: TODO$3("unit-fraction-of-amount"),
 			keys: ["frac:of:unit"],
 			roll: (_k, r) => [pickOne(r, [
 				2,
@@ -25356,7 +25356,7 @@ const FRACTIONS = {
 		},
 		"frac:compare:same-den": {
 			label: "Which fraction is bigger? (same bottom number)",
-			curriculumTags: TODO$1("compare-fractions"),
+			curriculumTags: TODO$3("compare-fractions"),
 			keys: ["frac:compare:same-den"],
 			roll: (_k, r) => {
 				const d = pickOne(r, [
@@ -25381,7 +25381,7 @@ const FRACTIONS = {
 		},
 		"frac:of:nonunit": {
 			label: "A fraction of an amount (3/4 of 20)",
-			curriculumTags: TODO$1("fraction-of-amount"),
+			curriculumTags: TODO$3("fraction-of-amount"),
 			keys: ["frac:of:nonunit"],
 			roll: (_k, r) => {
 				const d = pickOne(r, [
@@ -25432,7 +25432,7 @@ const FRACTIONS = {
 		},
 		"frac:equiv": {
 			label: "Equivalent fractions (1/2 = ?/8)",
-			curriculumTags: TODO$1("equivalent-fractions"),
+			curriculumTags: TODO$3("equivalent-fractions"),
 			keys: ["frac:equiv"],
 			roll: (_k, r) => {
 				const d = int(r, 2, 5);
@@ -25480,7 +25480,7 @@ const FRACTIONS = {
 		},
 		"frac:compare:same-num": {
 			label: "Which fraction is bigger? (same top number)",
-			curriculumTags: TODO$1("compare-fractions"),
+			curriculumTags: TODO$3("compare-fractions"),
 			keys: ["frac:compare:same-num"],
 			roll: (_k, r) => {
 				const d1 = pickOne(r, DENOMINATORS);
@@ -25498,7 +25498,7 @@ const FRACTIONS = {
 		},
 		"frac:add:same-den": {
 			label: "Adding fractions with the same bottom number",
-			curriculumTags: TODO$1("add-fractions"),
+			curriculumTags: TODO$3("add-fractions"),
 			keys: ["frac:add:same-den"],
 			roll: (_k, r) => {
 				const d = int(r, 3, 12);
@@ -25533,7 +25533,7 @@ const FRACTIONS = {
 		},
 		"frac:sub:same-den": {
 			label: "Taking away fractions with the same bottom number",
-			curriculumTags: TODO$1("subtract-fractions"),
+			curriculumTags: TODO$3("subtract-fractions"),
 			keys: ["frac:sub:same-den"],
 			roll: (_k, r) => {
 				const d = int(r, 3, 12);
@@ -25568,7 +25568,7 @@ const FRACTIONS = {
 		},
 		"frac:improper": {
 			label: "Mixed numbers and improper fractions (2 1/3 = ?/3)",
-			curriculumTags: TODO$1("mixed-numbers"),
+			curriculumTags: TODO$3("mixed-numbers"),
 			keys: ["frac:improper"],
 			roll: (_k, r) => {
 				const d = int(r, 2, 8);
@@ -25621,7 +25621,7 @@ const FRACTIONS = {
 		},
 		"frac:compare:mixed": {
 			label: "Which fraction is bigger? (any two)",
-			curriculumTags: TODO$1("compare-fractions"),
+			curriculumTags: TODO$3("compare-fractions"),
 			keys: ["frac:compare:mixed"],
 			roll: (_k, r) => {
 				for (;;) {
@@ -25641,7 +25641,7 @@ const FRACTIONS = {
 		},
 		"frac:simplify": {
 			label: "Simplifying fractions (6/8 = 3/?)",
-			curriculumTags: TODO$1("simplify-fractions"),
+			curriculumTags: TODO$3("simplify-fractions"),
 			keys: ["frac:simplify"],
 			roll: (_k, r) => {
 				let n;
@@ -25702,6 +25702,32 @@ const FRACTIONS = {
 		["frac:compare:mixed", "frac:simplify"]
 	]
 };
+//#endregion
+//#region shared/maths/skillPacks/money.ts
+/**
+* Gold and shopping (Dragon Maths: the shop, the healer, the inn and forest treasure).
+*
+* Band 1: change from a purchase, and the cost of 2 or 3 of something.
+* Band 2: the total of two things, and gold left after buying two things.
+* Band 3: swap rates (gems for potions), and "do I have enough?" as how many more gold I need.
+* Band 4: which is better value (pick one), and bigger change.
+*
+* Gold is a whole number, so no decimals. Every question is made from its numbers, so the server can make it again.
+*/
+const TODO$2 = (what) => [`TODO-${what}`];
+TODO$2("money-change"), TODO$2("money-several"), TODO$2("money-total"), TODO$2("money-left"), TODO$2("money-swap"), TODO$2("money-short"), TODO$2("money-value"), TODO$2("money-change-big");
+//#endregion
+//#region shared/maths/skillPacks/patterns.ts
+/**
+* Number patterns (Dragon Maths: riddles, the old woman in the forest, the inn).
+*
+* Band 1: next number when counting on by 2 to 10 ("3, 7, 11, 15, ?").
+* Band 2: counting back, and doubling.
+* Band 3: a missing number in the middle, and "what is the step?".
+* Band 4: growing steps (+1, +2, +3 ...) and rules like "n × 3 + 1".
+*/
+const TODO$1 = (what) => [`TODO-${what}`];
+TODO$1("pattern-add"), TODO$1("pattern-down"), TODO$1("pattern-double"), TODO$1("pattern-missing"), TODO$1("pattern-step"), TODO$1("pattern-grow"), TODO$1("pattern-rule");
 //#endregion
 //#region shared/maths/skillPacks/placeValue.ts
 /**
