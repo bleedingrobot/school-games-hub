@@ -405,7 +405,8 @@ function ClassPanel({
           <p className="class-panel__hint">
             Your students see this name after they type the class code, so make it one they will recognise. The year level is never shown to
             students: auto uses it to choose where the games start (a student can do a short warm-up to find a better place).{' '}
-            <Link to={`/focus?class=${id}`}>🎯 Choose the maths for this class</Link>
+            <Link to={`/focus?class=${id}`}>🎯 Choose the maths for this class</Link> ·{' '}
+            <Link to={`/skills?class=${id}`}>🗺️ See the skill map</Link>
           </p>
         </section>
       )}

@@ -161,7 +161,7 @@ export interface FocusSpec {
 }
 
 /** The skill's keys once switched-off tables are taken out. */
-function activeKeys(skill: LadderSkill, enabledTables: readonly number[], division = true): string[] {
+export function activeKeys(skill: LadderSkill, enabledTables: readonly number[], division = true): string[] {
   const on = new Set(enabledTables);
   return skill.keys.filter((k) => {
     const mul = parseFactKey(k);

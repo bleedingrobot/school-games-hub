@@ -1,0 +1,235 @@
+/* The teacher's skill map. Colours match the times-table grid; every level also has a letter (and a pattern), never colour alone. */
+.skill-map__tools {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.skill-map__tools > .button {
+  justify-self: start;
+}
+.skill-map__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+.skill-map__legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.skill-map__scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 10px;
+}
+.skill-map__scroll:focus-visible {
+  outline: 3px solid var(--focus, #1d4ed8);
+  outline-offset: 2px;
+}
+.skill-map {
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-size: 0.85rem;
+  width: max-content;
+  min-width: 100%;
+}
+.skill-map th,
+.skill-map td {
+  vertical-align: middle;
+}
+.skill-map thead th {
+  color: var(--ink);
+  font-weight: 700;
+  text-align: center;
+  padding: 4px 6px;
+  background: var(--tint, transparent);
+  border-radius: 8px;
+}
+.skill-map thead .skill-map__who,
+.skill-map thead .skill-map__place {
+  text-align: left;
+}
+.skill-map__stage button {
+  all: unset;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  cursor: pointer;
+  padding: 4px 2px;
+  border-radius: 6px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.skill-map__stage button:focus-visible {
+  outline: 3px solid var(--focus, #1d4ed8);
+  outline-offset: 1px;
+}
+.skill-map__skill {
+  min-width: 78px;
+  max-width: 120px;
+  font-size: 0.78rem;
+}
+.skill-map__skill-name {
+  display: block;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.skill-map__focus {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* The first column stays put while the rest scrolls sideways. */
+.skill-map tbody th.skill-map__who,
+.skill-map tfoot th.skill-map__who {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface, #fff);
+  text-align: left;
+  min-width: 130px;
+  max-width: 180px;
+  padding: 3px 8px 3px 4px;
+  font-weight: 400;
+}
+.skill-map__name {
+  display: block;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.skill-map__real {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.skill-map__place {
+  text-align: left;
+  min-width: 150px;
+  font-size: 0.8rem;
+  padding: 3px 6px;
+}
+.skill-map__here,
+.skill-map__far {
+  display: block;
+  line-height: 1.25;
+}
+.skill-map__far {
+  color: var(--ink-soft);
+}
+.skill-map__tag {
+  display: inline-block;
+  min-width: 3.4em;
+  font-weight: 700;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+}
+
+.skill-map__cell {
+  min-width: 56px;
+  height: 40px;
+  padding: 0;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 700;
+  position: relative;
+}
+.skill-map__cell > button {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 40px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.skill-map__cell > button:focus-visible {
+  outline: 3px solid var(--focus, #1d4ed8);
+  outline-offset: 1px;
+}
+.skill-map__cell[data-picked] {
+  box-shadow: 0 0 0 3px var(--ink, #111);
+}
+.skill-map__cell--stage {
+  display: table-cell;
+  padding: 2px 6px;
+}
+.skill-map__mark {
+  font-size: 1rem;
+  margin-right: 4px;
+}
+.skill-map__count {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.skill-map__cell--stage[data-here] {
+  box-shadow: inset 0 0 0 3px var(--ink, #111);
+}
+.skill-map__total {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+/* Levels: a colour, a letter (in the cell) and a pattern. */
+:is(.skill-map__cell, .skill-map__swatch)[data-level='off'] {
+  background: repeating-linear-gradient(135deg, var(--surface, #fff) 0 4px, var(--line, #ddd) 4px 5px);
+  color: var(--ink-soft);
+}
+:is(.skill-map__cell, .skill-map__swatch)[data-level='not-started'] {
+  background: var(--surface, #fff);
+  box-shadow: inset 0 0 0 1px var(--line, #ddd);
+  color: var(--ink-soft);
+}
+:is(.skill-map__cell, .skill-map__swatch)[data-level='learning'] {
+  background: #fecaca;
+  color: #7f1d1d;
+}
+:is(.skill-map__cell, .skill-map__swatch)[data-level='secure'] {
+  background: #fde68a;
+  color: #713f12;
+}
+:is(.skill-map__cell, .skill-map__swatch)[data-level='fluent'] {
+  background: #86efac;
+  color: #14532d;
+}
+.skill-map__cell--stage[data-here][data-level='not-started'],
+.skill-map__cell[data-level='not-started'][data-picked] {
+  box-shadow:
+    inset 0 0 0 1px var(--line, #ddd),
+    0 0 0 3px var(--ink, #111);
+}
+.skill-map__swatch {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 700;
+  border: 1px solid var(--line, #ddd);
+  flex: none;
+}
+
+.skill-map__detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 12px;
+}
+.skill-map__detail h2:focus {
+  outline: none;
+}
+.skill-map__keys {
+  margin-top: 10px;
+}

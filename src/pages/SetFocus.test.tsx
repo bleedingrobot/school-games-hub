@@ -6,6 +6,7 @@ import { AuthContext, type AuthState } from '../auth/AuthContext';
 import * as classes from '../data/classes';
 import * as settings from '../data/classSettings';
 import * as focus from '../data/focus';
+import * as skillMap from '../data/skillMap';
 import { FriendlyError } from '../data/profile';
 import SetFocus, { REFRESH_MS, whoFor } from './SetFocus';
 
@@ -27,6 +28,12 @@ vi.mock('../data/focus', async (importOriginal) => ({
   setFocus: vi.fn(),
   extendFocus: vi.fn(),
   endFocus: vi.fn(),
+}));
+
+vi.mock('../data/skillMap', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../data/skillMap')>()),
+  fetchFocusHistory: vi.fn(),
+  fetchClassMap: vi.fn(),
 }));
 
 const base: AuthState = {
@@ -78,6 +85,7 @@ beforeEach(() => {
   vi.mocked(classes.fetchClassDetail).mockResolvedValue(detail);
   vi.mocked(settings.fetchStudentsChooseFocus).mockResolvedValue(true);
   vi.mocked(settings.saveStudentsChooseFocus).mockReset();
+  vi.mocked(skillMap.fetchFocusHistory).mockResolvedValue([]);
   vi.mocked(settings.fetchMathsAuto).mockResolvedValue(false);
   vi.mocked(settings.saveMathsAuto).mockReset();
   vi.mocked(focus.fetchFocuses).mockResolvedValue([classFocus, studentFocus]);
@@ -287,15 +295,47 @@ describe('the Set focus screen', () => {
     expect(box).not.toBeChecked();
   });
 
-  it('shows the history on request', async () => {
-    const ended: focus.FocusBatch = { ...classFocus, batch: 'old', status: 'ended', skills: ['tables-2-5-10'], startsAt: '2026-10-05T00:00:00Z', endsAt: '2026-10-09T11:00:00Z' };
-    vi.mocked(focus.fetchFocuses).mockImplementation(async (_c, includeEnded) => (includeEnded ? [classFocus, ended] : [classFocus]));
+  it('shows this term\'s history by default, and every earlier focus when asked', async () => {
+    const ended: skillMap.HistoryBatch = {
+      batch: 'old', scope: 'class', targets: [], skills: ['tables-2-5-10'], onlyThese: false, startsAt: '2026-10-05T00:00:00Z',
+      endsAt: '2026-10-09T11:00:00Z', createdAt: '2026-10-05T00:00:00Z', status: 'ended', setBy: 'Wise Owl 1', setByReal: 'mr.teacher',
+    };
+    vi.mocked(skillMap.fetchFocusHistory).mockImplementation(async (_c, since) => (since ? [ended] : [ended, { ...ended, batch: 'older', skills: ['facts-10'] }]));
     const user = userEvent.setup();
     show();
-    await user.click(await screen.findByRole('button', { name: 'Show earlier focuses' }));
-    expect(focus.fetchFocuses).toHaveBeenLastCalledWith('c12', true);
     expect(await screen.findByText(/Whole class/, { selector: 'strong' })).toBeInTheDocument();
+    expect(skillMap.fetchFocusHistory).toHaveBeenLastCalledWith('c12', expect.any(Date));
+    expect(screen.getByText(/set by Wise Owl 1/)).toBeInTheDocument();
     expect(screen.getByText(/Mon,? 5 Oct to Sat,? 10 Oct/)).toBeInTheDocument();
+    await user.click(screen.getByRole('checkbox', { name: /Show every earlier focus/ }));
+    expect(skillMap.fetchFocusHistory).toHaveBeenLastCalledWith('c12', null);
+    expect(await screen.findAllByText(/Whole class/, { selector: 'strong' })).toHaveLength(2);
+  });
+
+  it('says so when no focus has ended this term', async () => {
+    vi.mocked(skillMap.fetchFocusHistory).mockResolvedValue([]);
+    show();
+    expect(await screen.findByText('No focuses have ended this term.')).toBeInTheDocument();
+  });
+
+  it('opens with a student and a skill already ticked when the skill map sends you here', async () => {
+    show(base, '/focus?class=c12&student=s1&skill=tables-6-9');
+    expect(await screen.findByRole('radio', { name: 'Some students' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /Speedy Otter 27/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /Speedy Otter 27/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /×6, ×9/ })).toBeChecked();
+  });
+
+  it('ticks only a skill for the whole class when the link names no student, and ignores a name it does not know', async () => {
+    show(base, '/focus?class=c12&skill=facts-10&student=nobody');
+    expect(await screen.findByRole('radio', { name: 'The whole class' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /Number facts to 10/ })).toBeChecked();
+  });
+
+  it('ignores a skill that is not on the ladder', async () => {
+    show(base, '/focus?class=c12&skill=../../etc');
+    expect(await screen.findByRole('radio', { name: 'The whole class' })).toBeChecked();
+    expect(screen.getAllByRole('checkbox', { checked: true }).filter((b) => /Number facts|×/.test(b.getAttribute('aria-label') ?? b.parentElement?.textContent ?? ''))).toHaveLength(0);
   });
 });
 

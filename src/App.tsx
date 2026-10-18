@@ -29,6 +29,8 @@ import { trainingOn } from './training/switch';
 const TrainingPage = lazy(() => import('./pages/TrainingPage'));
 // The maths focus screen brings the whole maths ladder with it, so it loads only when a teacher opens it.
 const SetFocus = lazy(() => import('./pages/SetFocus'));
+// The skill map does too (it colours cells with the same maths the games use).
+const SkillMap = lazy(() => import('./pages/SkillMap'));
 // So does the warm-up that finds a student's starting place.
 const Placement = lazy(() => import('./pages/Placement'));
 
@@ -72,6 +74,14 @@ export function AppRoutes() {
             element={
               <Suspense fallback={<div className="loading" role="status">Loading…</div>}>
                 <SetFocus />
+              </Suspense>
+            }
+          />
+          <Route
+            path="skills"
+            element={
+              <Suspense fallback={<div className="loading" role="status">Loading…</div>}>
+                <SkillMap />
               </Suspense>
             }
           />
