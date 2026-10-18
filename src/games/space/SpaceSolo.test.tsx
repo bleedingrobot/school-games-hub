@@ -386,6 +386,26 @@ describe('Mission Control maths on the game screen', () => {
       localStorage.clear();
     }, 60_000);
 
+    it('on auto (the class has the switch on) asks from the whole ladder: early facts for a new student, each saved under its own record', async () => {
+      const user = userEvent.setup();
+      const { saving, saved } = fakeSaving();
+      localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', bots: 1, maths: true }));
+      const auto: MathsFocus = {
+        source: 'auto', skills: [], onlyThese: false, endsAt: null, canChoose: true, own: null,
+        ladder: { on: true, yearLevel: null, placed: null, placement: null, furthest: null },
+      };
+      renderGame(saving, { ...maths('choose'), focus: auto });
+      await user.click(screen.getByRole('button', { name: /Launch/ }));
+      await playWithMaths(user);
+      await waitFor(() => expect(saved).toHaveLength(1), { timeout: 5000 });
+      const keys = saved[0].answers!.map((a) => a.key ?? '');
+      expect(keys.length).toBeGreaterThan(0);
+      expect(keys.every((k) => isFocusKey(k))).toBe(true);
+      expect(keys.filter((k) => !k.startsWith('mul:')).length).toBeGreaterThan(keys.length / 2); // number facts, not tables
+      expect(judgeSpaceGame(saved[0])).toMatchObject({ ok: true });
+      localStorage.clear();
+    }, 60_000);
+
     it('looks for a new focus as a game starts, and follows it', async () => {
       const user = userEvent.setup();
       const { saving, saved } = fakeSaving();

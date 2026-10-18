@@ -287,6 +287,8 @@ export class AutoPack implements SkillPack {
   readonly curriculumTags = [...new Set(LADDER.filter((s) => s.built).flatMap((s) => s.curriculumTags))];
   private packs: (BandedPack | TimesTables)[];
   private memory: SessionMemory = newMemory();
+  /** Each pack numbers its own questions, so the ladder numbers them again: a question box tells questions apart by this. */
+  private asked = 0;
   private listeners = new Set<(answer: FactAnswer) => void>();
 
   constructor(
@@ -352,7 +354,7 @@ export class AutoPack implements SkillPack {
     const firstTables = progress.skills.findIndex((p) => p.skill.stage === 'times-tables');
     const at = focusSpec ? LADDER.indexOf(focusSkills(focusSpec)[0]) : progress.skills.findIndex((p) => p.status === 'current');
     const missingFactor = focusSpec && ctx.missingFactor !== undefined ? ctx.missingFactor : at < 0 || at > firstTables;
-    return pack.questionFor(picked.key, picked.band, { ...ctx, missingFactor });
+    return { ...pack.questionFor(picked.key, picked.band, { ...ctx, missingFactor }), id: ++this.asked };
   }
 
   recordAnswer(q: Question, answer: number, ms: number): AnswerResult {

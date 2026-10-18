@@ -130,13 +130,19 @@ function solveSpokenAny(spoken: string): number {
   if (m) return +m[1] + +m[2];
   m = /^(\d+) minus (\d+) equals what$/.exec(t);
   if (m) return +m[1] - +m[2];
+  m = /^(\d+) minus what equals (\d+)$/.exec(t);
+  if (m) return +m[1] - +m[2];
+  m = /^what minus (\d+) equals (\d+)$/.exec(t);
+  if (m) return +m[1] + +m[2];
   m = /^Double (\d+) equals what$/.exec(t);
   if (m) return 2 * +m[1];
   m = /^Half of (\d+) equals what$/.exec(t);
   if (m) return +m[1] / 2;
   m = /^(\d+) divided by (\d+) equals what$/.exec(t);
   if (m) return +m[1] / +m[2];
-  return solve(spoken);
+  const out = solve(spoken);
+  if (Number.isNaN(out)) throw new Error(`cannot solve: ${spoken}`);
+  return out;
 }
 
 const teacherFocus = (skills: string[], extra: Partial<MathsFocus> = {}): MathsFocus => ({
@@ -208,4 +214,55 @@ describe('Gem Keep with a maths focus', () => {
     expect(asked.every((a) => /times|divided/.test(a) || /equals/.test(a))).toBe(true);
     expect(asked.some((a) => /^Double|^Half of/.test(a))).toBe(false);
   }, 30_000);
+
+  describe('on auto (the class has the switch on)', () => {
+    const autoFocus = (furthest: string | null, extra: Partial<MathsFocus> = {}): MathsFocus => ({
+      ...AUTO_FOCUS,
+      ladder: { on: true, yearLevel: null, placed: null, placement: null, furthest },
+      ...extra,
+    });
+
+    it('asks from the whole ladder, from the student’s place: early facts for a new student', async () => {
+      const user = userEvent.setup();
+      let engine!: GameEngine;
+      render(<GemKeepCampaign focus={autoFocus(null)} onEngine={(e) => (engine = e)} onProgress={vi.fn()} />);
+      const asked = await playKey(user, () => engine);
+      // Number facts to 10 are the main questions at the start; a few review/stretch come from the next skill up.
+      expect(asked.filter((a) => /plus|minus/.test(a)).length).toBeGreaterThanOrEqual(6);
+      expect(asked.some((a) => /times/.test(a))).toBe(false);
+    }, 30_000);
+
+    it('asks times tables for a student whose place is on a times-table skill', async () => {
+      const user = userEvent.setup();
+      let engine!: GameEngine;
+      render(<GemKeepCampaign focus={autoFocus('tables-3-4-8')} onEngine={(e) => (engine = e)} onProgress={vi.fn()} />);
+      const asked = await playKey(user, () => engine);
+      expect(asked.filter((a) => /times|divided/.test(a)).length).toBeGreaterThanOrEqual(6);
+    }, 30_000);
+
+    it('keeps the campaign’s own tables with the switch off', async () => {
+      const user = userEvent.setup();
+      let engine!: GameEngine;
+      render(<GemKeepCampaign focus={{ ...AUTO_FOCUS, ladder: { ...autoFocus(null).ladder!, on: false } }} onEngine={(e) => (engine = e)} onProgress={vi.fn()} />);
+      const asked = await playKey(user, () => engine);
+      expect(asked.every((a) => /times/.test(a))).toBe(true);
+    }, 30_000);
+
+    it('lets a teacher’s focus win over auto', async () => {
+      const user = userEvent.setup();
+      let engine!: GameEngine;
+      render(<GemKeepCampaign focus={autoFocus('tables-3-4-8', teacherFocus(['dbl-half-10']))} onEngine={(e) => (engine = e)} onProgress={vi.fn()} />);
+      const asked = await playKey(user, () => engine);
+      expect(asked.every((a) => /^(Double|Half of|\d+ plus \d+ equals what|\d+ divided by 2 equals what)/.test(a))).toBe(true);
+    }, 30_000);
+
+    it('picks up auto being turned on when the next level starts', async () => {
+      const user = userEvent.setup();
+      let engine!: GameEngine;
+      const loadFocus = vi.fn(async () => autoFocus(null));
+      render(<GemKeepCampaign focus={AUTO_FOCUS} loadFocus={loadFocus} onEngine={(e) => (engine = e)} onProgress={vi.fn()} />);
+      const asked = await playKey(user, () => engine);
+      expect(asked.some((a) => /plus|minus/.test(a))).toBe(true);
+    }, 30_000);
+  });
 });

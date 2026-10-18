@@ -630,6 +630,53 @@ describe('Mission Control maths with classmates', () => {
       expect(w.recorded[0].answer.correct).toBe(false);
     });
 
+    describe('on auto (the class has the switch on)', () => {
+      const autoFocus = (furthest: string | null): MathsFocus => ({
+        ...AUTO_FOCUS,
+        ladder: { on: true, yearLevel: null, placed: null, placement: null, furthest },
+      });
+
+      it('asks from the whole ladder for a new student: early facts, marked and recorded under their own key', async () => {
+        const w = world();
+        w.setFocus(autoFocus(null));
+        const g = await w.launched(['ben'], 0, MATHS_SETUP);
+        const row = w.games.get(g.id)!;
+        landOnWormhole(row);
+        const who = w.turnOf(g.id);
+        const asked = await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
+        const solved = solveParts(asked.question!.parts)!;
+        expect(solved).not.toBeNull();
+        expect(JSON.stringify(asked)).not.toContain('"answer"');
+        w.tick(1500);
+        const done = await w.ask(who, { action: 'answer', kind: 'moment', gameId: g.id, version: row.version, answer: solved.answer, ms: 900 });
+        expect(done.right).toBe(true);
+        expect(w.recorded[0].answer.key).not.toMatch(/^mul:/); // the first skill is number facts, not tables
+      });
+
+      it('asks times tables for a student whose place is on a tables skill, and the teacher’s tables still apply', async () => {
+        const w = world();
+        w.setFocus(autoFocus('tables-3-4-8'));
+        const g = await w.launched(['ben'], 0, MATHS_SETUP);
+        const row = w.games.get(g.id)!;
+        landOnWormhole(row);
+        const who = w.turnOf(g.id);
+        const asked = await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
+        const solved = solveParts(asked.question!.parts)!;
+        expect(solved.keys.some((k) => /^(mul|add|div|bond|dbl|half)/.test(k))).toBe(true);
+      });
+
+      it('with the switch off the questions are times tables as always', async () => {
+        const w = world();
+        w.setFocus({ ...AUTO_FOCUS, ladder: { ...autoFocus(null).ladder!, on: false } });
+        const g = await w.launched(['ben'], 0, MATHS_SETUP);
+        const row = w.games.get(g.id)!;
+        landOnWormhole(row);
+        const who = w.turnOf(g.id);
+        const asked = await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
+        expect(solveParts(asked.question!.parts)!.keys.every((k) => k.startsWith('mul:'))).toBe(true);
+      });
+    });
+
     it('with no focus, the questions are times tables as always', async () => {
       const w = world();
       w.setFocus(AUTO_FOCUS);

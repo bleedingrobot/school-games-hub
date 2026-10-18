@@ -449,3 +449,16 @@ describe('progress by records for the path', () => {
     expect(pack.progress().secureCount).toBe(path.secureCount);
   });
 });
+
+describe('question numbers', () => {
+  it('are different for every question, across the packs the ladder draws from', () => {
+    const pack = new AutoPack([], randomFromSeed('ids'), Date.now, { floor: rankOf('tables-2-5-10') });
+    const ids: number[] = [];
+    for (let i = 0; i < 200; i++) {
+      const q = pack.nextQuestion({})!;
+      ids.push(q.id);
+      pack.recordAnswer(q, q.answer, 9000);
+    }
+    expect(new Set(ids).size).toBe(200);
+  });
+});
