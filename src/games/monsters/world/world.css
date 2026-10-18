@@ -40,7 +40,7 @@
 .mw-team__bar { width: 34px; height: 5px; border-radius: 3px; background: #cbd5e1; overflow: hidden; }
 .mw-team__bar > span { display: block; height: 100%; background: #22c55e; }
 .mw-team__bar > span.is-low { background: #ef4444; }
-.mw-gear { min-height: 36px; padding: 2px 14px; border: 2px solid var(--mw-ink); border-radius: 10px; background: #fff; font: inherit; font-size: 0.85rem; font-weight: 800; cursor: pointer; }
+.mw-gear { min-height: 44px; padding: 2px 14px; border: 2px solid var(--mw-ink); border-radius: 10px; background: #fff; font: inherit; font-size: 0.85rem; font-weight: 800; cursor: pointer; }
 
 .mw-btn { min-height: 44px; min-width: 88px; padding: 4px 18px; border: 2px solid var(--mw-ink); border-radius: 12px; background: #fde047; color: var(--mw-ink); font: inherit; font-weight: 900; cursor: pointer; }
 .mw-btn:focus-visible, .mw-gear:focus-visible, .mw-dpad button:focus-visible, .mw-talkbtn:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
@@ -89,7 +89,8 @@
 .mm-main__btn--bag { background: #fde68a; }
 .mm-main__btn--book { background: #bbf7d0; }
 .mm-main__btn--badges { background: #fbcfe8; }
-.mm-main__btn--settings { background: #e2e8f0; grid-column: 1 / -1; }
+.mm-main__btn--settings { background: #e2e8f0; }
+.mm-main__btn--howto { background: #ddd6fe; }
 .mm-main__go { grid-column: 1 / -1; justify-self: center; min-width: 260px; }
 .mm-help { margin: 0 0 8px; font-weight: 600; }
 .mm-msg { margin: 8px 0 0; font-weight: 700; color: #1d4ed8; }
@@ -154,3 +155,10 @@
   .mm-badge { padding: 4px 10px; }
   .mm-badge__medal { width: 34px; height: 34px; }
 }
+
+/* How to play (in the Menu, and on the new-game screen). */
+.mm-howto { max-width: 720px; margin: 0 auto; line-height: 1.45; color: var(--mb-ink, #0f172a); }
+.mm-howto h3 { margin: 14px 0 4px; font-size: 1.05rem; }
+.mm-howto p, .mm-howto ul { margin: 0 0 8px; }
+.mm-howto ul { padding-left: 20px; }
+.mm-howto kbd { display: inline-block; min-width: 1.4em; padding: 0 5px; border: 1px solid #94a3b8; border-bottom-width: 2px; border-radius: 5px; background: #f1f5f9; font: 700 0.85em/1.4 inherit; text-align: center; }
