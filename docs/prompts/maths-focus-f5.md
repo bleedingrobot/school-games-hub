@@ -2,7 +2,7 @@ Maths focus F.5: generated skills (place value, rounding, order of operations) a
 
 Where things are:
 - School Games Hub, worktree ~/projects/school-games-hub-focus, branch `maths-focus`. Other sessions use the main checkout and other worktrees: don't touch them, never use bare `git stash`, careful with `pkill -f` (it can match your own shell; find processes by port instead).
-- F.1 to F.3 are LIVE. F.4 (auto over the whole ladder, placement, furthest place, student path) is built and pushed (5ac4f59 and later) but NOT live unless the plan has a "F.4 went live" section: check. Run `git fetch`; if `main` has moved, merge it into `maths-focus` first and say if it brought in new migrations, so yours are numbered after the newest (F.4's is `20261019000200_maths_auto.sql`).
+- F.1 to F.4 are all LIVE as of 19 October 2026 (F.4's migration `20261019000200_maths_auto.sql` applied, `gem-keep`, `space-game` and `save-bot-game` deployed, `maths-focus` fast-forwarded into `main`; see the "F.4 went live" section). Run `git fetch`; if `main` has moved, merge it into `maths-focus` first and say if it brought in new migrations, so yours are numbered after the newest. The plan doesn't yet have an "F.5" go-live section: add one when I say go live.
 - Scratch database: `scripts/scratch-db.sh <name>` (the shared local copy is now up to date, so no SCRATCH_BASE needed), `scripts/scratch-test.sh`, and `scripts/f4-rehearsal.sh` as the model for a rehearsal on today's data. The real-browser setup (a second PostgREST on the scratch database behind a small proxy, tokens signed with the local JWT key, Chromium and axe) is described in "Stage F.3 results" and "Stage F.4 results".
 
 Rules:
