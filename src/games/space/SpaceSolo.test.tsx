@@ -5,6 +5,26 @@ import { isFocusKey, type MathsFocus } from '../../../shared/maths/focus';
 import { judgeSpaceGame, type SpaceGameReport } from '../../../shared/space/save';
 import { SoundProvider } from '../../sound';
 import { SpaceSolo, type SpaceMaths, type SpaceSaving } from './SpaceSolo';
+import type { Question } from '../../../shared/maths/skillPack';
+
+/** The latest question the game's pack made, so a test can answer questions whose spoken text it can't read (rounding, order of operations). */
+const latest: { question: Question | null } = { question: null };
+vi.mock('../../../shared/maths/focus', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../../../shared/maths/focus')>();
+  return {
+    ...real,
+    makeFocusPack: (...args: Parameters<typeof real.makeFocusPack>) => {
+      const pack = real.makeFocusPack(...args);
+      const next = pack.nextQuestion.bind(pack);
+      pack.nextQuestion = (ctx) => {
+        const q = next(ctx);
+        if (q) latest.question = q;
+        return q;
+      };
+      return pack;
+    },
+  };
+});
 
 const ALL = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const maths = (mode: SpaceMaths['mode']): SpaceMaths => ({ mode, enabledTables: ALL, division: false, multipleChoice: false, facts: [] });
@@ -405,6 +425,54 @@ describe('Mission Control maths on the game screen', () => {
       expect(judgeSpaceGame(saved[0])).toMatchObject({ ok: true });
       localStorage.clear();
     }, 60_000);
+
+    it('asks the generated skills (rounding, order of operations...): choices to tap, a point key, big answers, all saved and checked', async () => {
+      const user = userEvent.setup();
+      const { saving, saved } = fakeSaving();
+      localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', bots: 1, maths: true }));
+      const focus = teacherFocus(['bonds-100', 'round-10-100', 'round-big', 'round-million', 'times-tens', 'factor-pairs', 'squares-cubes', 'bedmas']);
+      renderGame(saving, { ...maths('choose'), focus });
+      await user.click(screen.getByRole('button', { name: /Launch/ }));
+      const seen = { choices: 0, point: 0, typed: 0 };
+      let asked = 0;
+      for (let guard = 0; guard < 4000; guard++) {
+        if (screen.queryByRole('dialog', { name: /Wormhole boost|Black hole escape/ }) === null && screen.queryByRole('dialog')) break;
+        const fact = document.querySelector('.question__fact');
+        if (fact && latest.question) {
+          const q = latest.question;
+          const right = asked % 2 === 0;
+          if (!screen.queryByRole('dialog')) (fact.closest('.question') as HTMLElement).focus();
+          if (q.choices) {
+            seen.choices++;
+            const target = right ? q.answer : q.choices.find((c) => c !== q.answer)!;
+            await user.click(screen.getByRole('button', { name: String(target) }));
+          } else {
+            seen.typed++;
+            if (q.input === 'decimal') {
+              seen.point++;
+              expect(screen.getByRole('button', { name: 'Point' })).toBeInTheDocument();
+            } else expect(screen.queryByRole('button', { name: 'Point' })).not.toBeInTheDocument();
+            await user.keyboard(`${right ? q.answer : Number((q.answer + 1).toFixed(2))}{Enter}`);
+          }
+          asked++;
+          await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 4000 });
+          continue;
+        }
+        const roll = screen.queryByRole('button', { name: /^🎲 Roll/ });
+        const choice = screen.queryByRole('group', { name: /gate|card|pockets|die|aim/i });
+        if (choice) await user.click(within(choice).getAllByRole('button')[0]);
+        else if (roll && !roll.hasAttribute('disabled')) await user.click(roll);
+        else await new Promise((resolve) => setTimeout(resolve, 5));
+      }
+      await waitFor(() => expect(saved).toHaveLength(1), { timeout: 5000 });
+      const report = saved[0];
+      expect(report.answers!.length).toBeLessThanOrEqual(asked); // an answer given as the game ends is not part of it
+      expect(report.answers!.length).toBeGreaterThan(3);
+      expect(report.answers!.every((a) => a.key && isFocusKey(a.key) && !a.key.startsWith('mul:'))).toBe(true);
+      expect(judgeSpaceGame(report)).toMatchObject({ ok: true });
+      expect(seen.typed + seen.choices).toBe(asked);
+      localStorage.clear();
+    }, 120_000);
 
     it('looks for a new focus as a game starts, and follows it', async () => {
       const user = userEvent.setup();

@@ -8,6 +8,7 @@ import type { FactAnswer } from '../../../shared/maths/leitner';
 import type { Question } from '../../../shared/maths/skillPack';
 import { solveQuestion } from '../../../shared/maths/skillPacks/timesTables';
 import { AUTO_FOCUS, solveParts, type MathsFocus } from '../../../shared/maths/focus';
+import { generatedPack } from '../../../shared/maths/skillPacks/generated';
 import { DEFAULT_SETTINGS } from '../../../shared/space/engine';
 import { AUTOPILOT_AFTER, type LiveSetup } from '../../../shared/space/live';
 import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
@@ -612,6 +613,78 @@ describe('Mission Control maths with classmates', () => {
       // The record is the one the question was asked for.
       expect(w.recorded[0].answer.key).toMatch(/^(dbl|half):/);
       expect(w.recorded[0].answer.correct).toBe(true);
+    });
+
+    describe.each([
+      ['bonds-100', 'bond100:'],
+      ['round-10-100', 'round:'],
+      ['round-million', 'round:'],
+      ['round-big', 'round:'],
+      ['times-tens', 'times:'],
+      ['factor-pairs', 'factor:'],
+      ['squares-cubes', /^(square|cube):/],
+      ['bedmas', 'bedmas:'],
+    ] as const)('asks and marks %s (a generated skill) with classmates', (skill, prefix) => {
+      for (const right of [true, false]) {
+        it(`${right ? 'right' : 'wrong'} answers are marked on the server and recorded under the question type`, async () => {
+          const w = world();
+          w.setFocus(teacherFocus([skill]));
+          const g = await w.launched(['ben'], 0, MATHS_SETUP);
+          const row = w.games.get(g.id)!;
+          landOnWormhole(row);
+          const who = w.turnOf(g.id);
+          const asked = await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
+          const q = asked.question!;
+          const solved = solveParts(q.parts)!;
+          expect(solved, q.parts.join(' ')).not.toBeNull();
+          expect(typeof prefix === 'string' ? solved.keys[0].startsWith(prefix) : prefix.test(solved.keys[0])).toBe(true);
+          // The student sees the sum, never the answer; big answers have room, decimal ones have the point key.
+          expect(JSON.stringify(asked)).not.toContain('"answer"');
+          expect(q.maxLength).toBeGreaterThanOrEqual(String(solved.answer).length);
+          expect(q.input === 'decimal').toBe(/^round:(tenth|hundredth):/.test(solved.keys[0]));
+          if (skill === 'bedmas') expect(q.choices).toHaveLength(4);
+          else expect(q.choices).toBeUndefined();
+          w.tick(1500);
+          const typed = right ? solved.answer : q.choices ? q.choices.find((c) => c !== solved.answer)! : Number((solved.answer + 1).toFixed(2));
+          const done = await w.ask(who, { action: 'answer', kind: 'moment', gameId: g.id, version: row.version, answer: typed, ms: 900 });
+          expect(done.status).toBe(200);
+          expect(done.right).toBe(right);
+          expect(done.answer).toBe(solved.answer);
+          expect(w.recorded[0].answer).toMatchObject({ key: solved.keys[0], correct: right });
+        });
+      }
+    });
+
+    it('takes a decimal answer such as 4.3, however it is typed, and a big one such as 3000000', async () => {
+      for (const key of ['round:tenth:hundredths', 'round:1000000:7digit']) {
+        const w = world();
+        const g = await w.launched(['ben'], 0, MATHS_SETUP);
+        const row = w.games.get(g.id)!;
+        landOnWormhole(row);
+        const who = w.turnOf(g.id);
+        await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
+        const stored = [...w.questions.entries()].find(([k]) => k.includes(`${g.id}`))![1];
+        const made = generatedPack([], () => 0.37).questionFor(key, 'focus', {});
+        stored.question = made;
+        w.tick(1500);
+        const done = await w.ask(who, { action: 'answer', kind: 'moment', gameId: g.id, version: row.version, answer: made.answer, ms: 900 });
+        expect(done.status).toBe(200);
+        expect(done.right, `${made.parts.join(' ')} = ${made.answer}`).toBe(true);
+        expect(w.recorded[0].answer).toMatchObject({ key, correct: true });
+      }
+    });
+
+    it('refuses answers that are not numbers a student could type', async () => {
+      const w = world();
+      w.setFocus(teacherFocus(['round-million']));
+      const g = await w.launched(['ben'], 0, MATHS_SETUP);
+      const row = w.games.get(g.id)!;
+      landOnWormhole(row);
+      const who = w.turnOf(g.id);
+      await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
+      for (const answer of [-1, NaN, 'x', 1e12, null]) {
+        expect((await w.ask(who, { action: 'answer', kind: 'moment', gameId: g.id, version: row.version, answer: answer as number })).problem).toBe('bad-request');
+      }
     });
 
     it('marks a wrong answer wrong, and says what the answer was', async () => {

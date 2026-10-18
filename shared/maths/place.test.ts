@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { randomFromSeed } from '../space/random';
 import { QUICK_MS } from './config';
 import { AUTO_FOCUS, focusKey, makeFocusPack, parseFocus, solveParts, usesLadder } from './focus';
-import { AutoPack, autoPools, LADDER, ladderProgress } from './ladder';
+import { AutoPack, autoPools, LADDER, ladderProgress, packIdOfKey } from './ladder';
 import { afterAnswer, newStats, type FactStats } from './leitner';
 import {
   floorRank,
@@ -219,7 +219,7 @@ describe('auto over the whole ladder', () => {
 
   it('asks only questions the server can mark, whatever the floor and records (many seeds)', () => {
     for (let seed = 1; seed <= 6; seed++) {
-      for (const furthest of [null, 'dbl-half-20', 'tables-3-4-8', 'tables-11-12'] as const) {
+      for (const furthest of [null, 'dbl-half-20', 'tables-3-4-8', 'tables-11-12', 'times-tens', 'round-big', 'squares-cubes', 'bedmas'] as const) {
         const random = randomFromSeed(`auto-${seed}`);
         const f = { ...AUTO_FOCUS, ladder: info({ furthest }) };
         const pack = makeFocusPack([], f, { division: seed % 2 === 0 }, random) as AutoPack;
@@ -447,6 +447,72 @@ describe('the server keeping the place', () => {
     expect((await savePlacement(bad.p, 's1', 'nonsense')).outcome).toBe('refused');
     expect((await savePlacement(bad.p, 's1', null)).outcome).toBe('refused');
     expect(bad.placements).toHaveLength(0);
+  });
+});
+
+describe('the longer ladder', () => {
+  const generated = built.filter((s) => s.keys.length && s.keys.every((k) => packIdOfKey(k) === 'generated'));
+
+  it('has 19 built skills, ten of them generated, and every one has at least four question types', () => {
+    expect(built).toHaveLength(19);
+    expect(generated).toHaveLength(10);
+    for (const skill of generated) expect(skill.keys.length, skill.id).toBeGreaterThanOrEqual(4);
+  });
+
+  it('a student who answers every warm-up question right and quickly starts at the top, from any year', () => {
+    for (const year of [null, 1, 2, 3, 4, 5, 6, 7, 8]) {
+      const steps: PlacementStep[] = [];
+      for (;;) {
+        const skill = placementNext(year, steps);
+        if (!skill) break;
+        steps.push({ skill: skill.id, correct: true, quick: true });
+      }
+      expect(steps, `year ${year}`).toHaveLength(10);
+      expect(placementResult(steps).id, `year ${year}`).toBe(built[built.length - 2].id);
+    }
+  });
+
+  it('a generated skill is secure when 70% of its question types are in box 2 or higher', () => {
+    const skill = built.find((s) => s.id === 'round-10-100')!;
+    const need = Math.ceil(skill.keys.length * 0.7);
+    const some = (n: number) => skill.keys.map((k, i) => rec(k, i < n ? 2 : 0));
+    expect(ladderProgress(secure(built.slice(0, built.indexOf(skill)).flatMap((s) => s.keys)).concat(some(need - 1))).current?.id).toBe('round-10-100');
+    expect(ladderProgress(secure(built.slice(0, built.indexOf(skill)).flatMap((s) => s.keys)).concat(some(need))).current?.id).not.toBe('round-10-100');
+    // Eight types need six in box 2: twelve quick right answers, two in each type, so one lucky type is not enough.
+    expect(skill.keys).toHaveLength(8);
+    expect(need).toBe(6);
+  });
+
+  it('auto from the start of a generated skill asks that skill most (the 60% focus) with the others as review', () => {
+    const skill = built.find((s) => s.id === 'bonds-100')!;
+    const floor = LADDER.indexOf(skill);
+    const pack = new AutoPack([], randomFromSeed('mix'), Date.now, { floor });
+    let mine = 0;
+    for (let i = 0; i < 300; i++) {
+      const q = pack.nextQuestion({})!;
+      if (skill.keys.includes(q.factKey)) mine++;
+      pack.recordAnswer(q, q.answer + 1, 1500); // always wrong, so the student stays on the skill
+    }
+    expect(mine / 300).toBeGreaterThan(0.45);
+    expect(mine / 300).toBeLessThan(0.85);
+  });
+
+  it('the server accepts a warm-up where the student takes up to 8 seconds on a generated question, but not on a fact', () => {
+    const random = randomFromSeed('slow');
+    const skill = built.find((s) => s.id === 'bedmas')!;
+    const q = placementQuestion(skill, 1, random)!;
+    const steps: PlacementStep[] = [];
+    // Ten answers to the same last skill (what the walk asks after the climb), each 7 seconds.
+    const answers: PlacementAnswer[] = [];
+    for (let i = 0; i < 10; i++) {
+      const next = placementNext(8, steps)!;
+      const qq = placementQuestion(next, i + 1, random)!;
+      const ms = 7000;
+      answers.push({ skill: next.id, parts: qq.parts, answer: qq.answer, ms });
+      steps.push({ skill: next.id, correct: true, quick: ms <= (next.keys[0] && packIdOfKey(next.keys[0]) === 'generated' ? 8000 : QUICK_MS) });
+    }
+    expect(q.factKey.startsWith('bedmas:')).toBe(true);
+    expect(checkPlacement(8, answers)).toBe(placementResult(steps).id);
   });
 });
 

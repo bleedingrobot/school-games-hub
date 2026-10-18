@@ -139,6 +139,20 @@ describe('the gem-keep server function', () => {
     expect(s.recordAnswers).toHaveBeenCalledWith('student-1', 'division', expect.any(String), [answer('div:56/8')]);
   });
 
+  it('keeps the answers of the generated skills (rounding, order of operations...) in the "generated" pack, per question type', async () => {
+    const { s } = services();
+    const answer = (key: string) => ({ key, correct: true, ms: 6500, at: NOW - 5000 });
+    const batchId = '0b7d5c2e-8a41-4f6b-9e3d-2c1a0f9e8d7c';
+    const keys = ['round:100:3digit', 'round:tenth:halfway', 'bond100:fives', 'bedmas:brackets-first', 'times:tens-tens', 'factor:common', 'square:next'];
+    const { body } = await send(s, [{ type: 'answers', pack: 'generated', batchId, answers: [...keys.map(answer), answer('mul:7x8'), answer('bond10:3+7'), answer('pv:round10'), answer('round:100.5')] }]);
+    // Only the question types of the ladder: a times-table fact, an early fact, Maths Monsters' own key and a bad key are left out.
+    expect(body.results[0]).toEqual({ type: 'answers', added: keys.length });
+    expect(s.recordAnswers).toHaveBeenCalledWith('student-1', 'generated', batchId, keys.map(answer));
+    // And a generated key sent as another pack is left out too.
+    const other = await send(s, [{ type: 'answers', pack: 'early-facts', batchId: '1b7d5c2e-8a41-4f6b-9e3d-2c1a0f9e8d7c', answers: [answer('round:100:3digit')] }]);
+    expect(other.body.results[0]).toEqual({ type: 'answers', added: 0 });
+  });
+
   describe('the place on the maths ladder', () => {
     const answersItem = { type: 'answers', pack: 'times-tables', batchId: '6f1c2a54-1d3e-4b5a-9c7d-0e1f2a3b4c5d', answers: [{ key: 'mul:7x8', correct: true, ms: 1200, at: NOW - 1000 }] };
 

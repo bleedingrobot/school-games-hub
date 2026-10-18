@@ -322,6 +322,32 @@ describe('Mission Control maths in space games against bots', () => {
       expect(total).toBe(report.answers!.length);
     });
 
+    it('takes the generated skills: decimal and big answers, order-of-operations choices, recorded under the "generated" pack', async () => {
+      const generated: MathsFocus = {
+        source: 'teacher-class',
+        skills: ['bonds-100', 'round-10-100', 'bonds-1000', 'times-tens', 'round-1000', 'factor-pairs', 'round-big', 'squares-cubes', 'round-million', 'bedmas'],
+        onlyThese: true,
+        endsAt: null,
+        canChoose: true,
+        own: null,
+      };
+      const recordAnswers = vi.fn(async () => {});
+      const { s } = services({ recordAnswers });
+      const { report } = await spaceGame(s, MATHS, Infinity, generated);
+      expect(report.answers!.some((a) => /[().]| \d{3}/.test(a.parts.join(' ')) || a.given > 1000)).toBe(true);
+      expect((await handleSaveBotGame(post(report), s)).status).toBe(200);
+      const calls = recordAnswers.mock.calls as unknown as [string, string, { key: string }[], string][];
+      expect(calls.map((c) => c[3])).toEqual(['generated']);
+      expect(calls[0][2]).toHaveLength(report.answers!.length);
+      expect(calls[0][1]).toBe(await batchIdFor(`space:${report.seed}:generated`));
+      // A wrong answer is still caught: the server works the question out itself.
+      const lie = report.answers!.map((a, n) => (n === 0 ? { ...a, given: a.given + 1 } : a));
+      expect((await handleSaveBotGame(post({ ...report, answers: lie }), s)).status).toBe(400);
+      // A made-up sum is refused.
+      const made = report.answers!.map((a, n) => (n === 0 ? { ...a, parts: ['Round', '347', 'to the nearest 100', '=', '?'], given: 400 } : a));
+      expect((await handleSaveBotGame(post({ ...report, answers: made }), s)).status).toBe(400);
+    });
+
     it('counts a question towards the fact the browser says only if it really fits', async () => {
       const recordAnswers = vi.fn(async () => {});
       const { s } = services({ recordAnswers });
