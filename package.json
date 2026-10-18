@@ -21,6 +21,8 @@
     "build:functions": "node scripts/build-functions.mjs",
     "functions:serve": "supabase functions serve --no-verify-jwt",
     "space:sim": "node scripts/space-sim.mjs",
+    "marble:determinism": "node scripts/marble-determinism.mjs",
+    "marble:sim": "node scripts/marble-sim.mjs",
     "monsters:sim": "node scripts/monsters-sim.mjs",
     "space:preview": "vite build --config vite.preview.config.ts",
     "101:sim": "node scripts/101-sim.mjs",

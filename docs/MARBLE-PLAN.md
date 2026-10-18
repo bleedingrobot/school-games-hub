@@ -117,6 +117,17 @@ Live racing between two devices is left out on purpose: it needs constant update
 
 ## 7. Maths (added 18 October 2026)
 
+> **Update, 18 Oct 2026 (evening): every question comes from the shared maths question system.** James asked that Marble Rush tie in with the maths focus work (docs/MATHS-FOCUS-PLAN.md). This replaces anything below that says "Maths Monsters' maths engine" or "a small new pack":
+>
+> - **One door for questions.** The server builds the run's question list with `makeFocusPack(facts, focus, settings)` from `shared/maths/focus.ts`, exactly as Mission Control does (`loadMathsContext(player)` gives the student's records, the class's question settings and `my_maths_focus()`). So a teacher focus ("×6 until Friday"), the student's own pick, or **auto** (the whole skill ladder) all decide what the gates, pit stops and rescues ask. Marble never picks a skill itself.
+> - **Focus is fixed for a run.** The list is made when the run starts, so a focus that ends mid-run changes things from the next run (the plan's "finish on the old focus" rule).
+> - **Answers are marked by the shared code.** The server keeps each question (like `space_game_questions`), marks with `isFocusKey` / `solveParts`, and records every answer under the question's own `factKey` through `record_fact_answers`, so Marble adds to the same mastery records, ladder progress and teacher skill map as every other game.
+> - **Every question kind works.** Number-pad questions, decimal questions (decimal key) and **fraction questions (multiple choice, with `choiceLabels`)** all fit: a gate's **tunnels are simply the question's choices**, labelled with the choice labels ("3/4"). Pit stops and rescues show the same answer card as Gem Keep.
+> - **The focus note** ("Your teacher picked ×6 until Friday", from `focusNote`) shows on the course picker, and progress along the ladder is the shared `ladderProgress`.
+> - **Number gems change:** instead of a separate "multiples of" pack, a gem trail shows **one question from the list** on its sign, and the gems carry that question's answer choices (one right, the rest the usual common-mistake wrong choices). Roll through the right one. Still never recorded.
+> - **Coordinate gates and guess-your-time are not maths-system questions** (the ladder has no coordinates skill, and estimating a time isn't a fact). They stay as game features that are **never recorded**. Coordinate gates are parked until the ladder has a coordinates skill.
+> - **Maths switch.** Per class, like the space maths switch (`app_settings` is per class since F.2). Dependencies: M.6 needs F.3 on `main`.
+
 James asked for maths in this game, like Mission Control and Maths Monsters, and picked **all six ideas** below.
 
 **The rule is the same as the space game: a right answer helps you, and a wrong answer never hurts you.** It also has to fit a fast game, so a question never pops up while you're rolling at speed. Questions come at calm moments (a checkpoint, a fall, before the run), or you answer one by **steering**.
@@ -210,8 +221,8 @@ Same pattern as the space game, reusing `save-bot-game`:
 | **M.3** | The 6 courses, hazards, checkpoints, reference runs and medal times | Medium (mostly design and tuning) |
 | **M.4** | Saving: stamp, server replay, migration, points, achievements, best times | Medium |
 | **M.5** | Ghost races and 2-players-one-keyboard | Medium |
-| **M.6** | Maths 1: teacher and student switches, server question list, **answer gates**, **pit stops**, Read time, records. Needs Maths Monsters' maths packs on `main` | Medium |
-| **M.7** | Maths 2: **rescue questions**, **number gems** (new "multiples of" / "pairs that make" pack), **guess your time**, **coordinate gates**, maths achievements, with-maths / without-maths boards | Medium |
+| **M.6** | Maths 1: teacher and student switches, server question list from the **focus system** (section 7 update), **answer gates**, **pit stops**, Read time, records. Needs maths focus F.3 on `main` | Medium |
+| **M.7** | Maths 2: **rescue questions**, **number gems** (a question from the list), **guess your time**, maths achievements, with-maths / without-maths boards | Medium |
 | **M.8** | How to play (including maths), accessibility pass, slow-Chromebook check, privacy summary, docs, go live | Small |
 
 Each stage ends with tests passing and a short results section here, like the other plans.

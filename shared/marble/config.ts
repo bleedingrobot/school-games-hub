@@ -1,0 +1,60 @@
+/**
+ * Every tuning number for Marble Rush's physics, in one place (docs/MARBLE-PLAN.md, section 4).
+ *
+ * The physics only ever adds, subtracts, multiplies, divides, takes a square root and floors a
+ * number. Those give identical answers in every browser and on the server. `Math.sin` and friends
+ * can differ slightly between Chrome and Safari, so nothing here (or in engine.ts) uses them.
+ */
+
+/** The physics always moves forward this many steps a second, whatever the screen is doing. */
+export const STEPS_PER_SECOND = 60;
+export const DT = 1 / STEPS_PER_SECOND;
+
+/** How high one height level is, in tile widths. 0.5 means a slope that drops one level over one tile is a gentle hill. */
+export const LEVEL = 0.5;
+
+export const BALL_RADIUS = 0.3;
+
+/** Gravity along a slope: a slope that drops `LEVEL` per tile pulls this much × LEVEL tiles/s². */
+export const SLOPE_GRAVITY = 9;
+/** Gravity pulling a marble down in the air, tiles/s². */
+export const AIR_GRAVITY = 18;
+
+/** How hard the player can push, tiles/s², and the speed limit. */
+export const STEER = 9;
+export const MAX_SPEED = 4.5;
+/** The marble can climb or drop this much (in tiles) in one go without it counting as a wall or a cliff. */
+export const STEP_UP = 0.3;
+export const STEP_DOWN = 0.3;
+
+/** Sticky and slippery floors. `steer` multiplies the push, `drag` is the share of speed lost each step, `max` the speed limit. */
+export const SURFACES = {
+  normal: { steer: 1, drag: 0.012, max: MAX_SPEED },
+  ice: { steer: 0.3, drag: 0.0015, max: MAX_SPEED },
+  mud: { steer: 1.3, drag: 0.06, max: 2.5 },
+} as const;
+export type Surface = keyof typeof SURFACES;
+
+/** In the air the player can only nudge the marble. */
+export const AIR_STEER = 0.3;
+/** A bounce off a wall keeps this share of the speed. */
+export const BOUNCE = 0.45;
+
+/** Jump pads throw the marble up this fast, tiles/s. */
+export const JUMP_SPEED = 7;
+/** Landing harder than this (tiles/s downwards) is an "ouch": back to the checkpoint. */
+export const OUCH_SPEED = 9;
+
+/** Bumpers push the marble out of a circle this big, at this speed. */
+export const BUMPER_RADIUS = 0.45;
+export const BUMPER_SPEED = 3.5;
+
+/** Falling off or an ouch: back to the last checkpoint, and the clock gains this much (James: about 3 seconds). */
+export const FALL_PENALTY_STEPS = 3 * STEPS_PER_SECOND;
+/** Below the lowest floor by this much, a falling marble is gone. */
+export const KILL_BELOW = 1.5;
+
+/** Hard mode: each new checkpoint adds this much time. */
+export const CHECKPOINT_BONUS_STEPS = 5 * STEPS_PER_SECOND;
+/** A run that takes longer than this (count-up) is stopped. */
+export const MAX_RUN_STEPS = 5 * 60 * STEPS_PER_SECOND;
