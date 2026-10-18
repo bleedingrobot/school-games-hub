@@ -6,6 +6,7 @@ import type { FactStats } from '../../../shared/maths/leitner';
 import { packIdOfKey, parseFocus } from '../../../shared/maths/focus';
 import { makePlaceSyncer } from '../../../shared/maths/syncPlace';
 import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
+import { countForFocuses } from '../_shared/focusResults';
 import { spaceGameHandler, type SpaceGameRow } from './handler';
 
 declare const Deno: {
@@ -202,7 +203,7 @@ Deno.serve(
     },
     async recordAnswer(player, once, answer) {
       const pack = packIdOfKey(answer.key) ?? 'times-tables';
-      const { error } = await admin.rpc('record_fact_answers', {
+      const { data, error } = await admin.rpc('record_fact_answers', {
         player,
         pack,
         batch_id: await batchIdFor(once),
@@ -213,7 +214,11 @@ Deno.serve(
       });
       // The game goes on if the records can't be updated.
       if (error) logProblem('record answer', error.code);
-      else await syncPlace(player);
+      else {
+        // Only an answer the records took for the first time counts for a focus, so a retry never counts twice.
+        if (typeof data === 'number' && data > 0) await countForFocuses((name, args) => admin.rpc(name, args), player, pack, [answer], 'space-game');
+        await syncPlace(player);
+      }
     },
   }),
 );

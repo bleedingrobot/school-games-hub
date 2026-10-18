@@ -33,6 +33,7 @@ vi.mock('../data/focus', async (importOriginal) => ({
 vi.mock('../data/skillMap', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/skillMap')>()),
   fetchFocusHistory: vi.fn(),
+  fetchFocusResults: vi.fn(),
   fetchClassMap: vi.fn(),
 }));
 
@@ -132,6 +133,20 @@ describe('the Set focus screen', () => {
     expect(screen.getByText(/Speedy Otter 27, Brave Kiwi 7: Number facts to 10 and Doubles and halves to 10/)).toBeInTheDocument();
     expect(screen.getByText('Only these')).toBeInTheDocument();
     expect(screen.getByText(/ends in 40 minutes \(for another 40 minutes\)/)).toBeInTheDocument();
+  });
+
+  it('lets a teacher open how a running focus is going, and an ended one has the same', async () => {
+    vi.mocked(skillMap.fetchFocusResults).mockResolvedValue({
+      since: new Date('2026-10-01T00:00:00Z'),
+      students: [{ id: 's1', name: 'Speedy Otter 27', realName: 'ana', answers: 5, correct: 4, quick: 2 }, { id: 's2', name: 'Brave Kiwi 7', realName: 'ben', answers: 0, correct: 0, quick: 0 }],
+      total: { answers: 5, correct: 4, quick: 2 },
+    });
+    const user = userEvent.setup();
+    show();
+    await user.click((await screen.findAllByText('How they are doing so far'))[0]);
+    expect(skillMap.fetchFocusResults).toHaveBeenCalledWith('b1');
+    expect(await screen.findByRole('row', { name: /Brave Kiwi 7/ })).toHaveTextContent('none');
+    expect(screen.getByRole('row', { name: /Speedy Otter 27/ })).toHaveTextContent('5');
   });
 
   it('says so when nothing is running', async () => {
@@ -295,7 +310,7 @@ describe('the Set focus screen', () => {
     expect(box).not.toBeChecked();
   });
 
-  it('shows this term\'s history by default, and every earlier focus when asked', async () => {
+  it('shows the last 10 weeks of history by default, and every earlier focus when asked', async () => {
     const ended: skillMap.HistoryBatch = {
       batch: 'old', scope: 'class', targets: [], skills: ['tables-2-5-10'], onlyThese: false, startsAt: '2026-10-05T00:00:00Z',
       endsAt: '2026-10-09T11:00:00Z', createdAt: '2026-10-05T00:00:00Z', status: 'ended', setBy: 'Wise Owl 1', setByReal: 'mr.teacher',
@@ -312,10 +327,10 @@ describe('the Set focus screen', () => {
     expect(await screen.findAllByText(/Whole class/, { selector: 'strong' })).toHaveLength(2);
   });
 
-  it('says so when no focus has ended this term', async () => {
+  it('says so when no focus has ended in the last 10 weeks', async () => {
     vi.mocked(skillMap.fetchFocusHistory).mockResolvedValue([]);
     show();
-    expect(await screen.findByText('No focuses have ended this term.')).toBeInTheDocument();
+    expect(await screen.findByText('No focuses have ended in the last 10 weeks.')).toBeInTheDocument();
   });
 
   it('opens with a student and a skill already ticked when the skill map sends you here', async () => {

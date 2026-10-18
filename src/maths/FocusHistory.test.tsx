@@ -13,6 +13,7 @@ vi.mock('../data/skillMap', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/skillMap')>()),
   fetchFocusHistory: vi.fn(),
   fetchClassMap: vi.fn(),
+  fetchFocusResults: vi.fn(),
 }));
 
 const member = (id: string, name: string, group: string | null) => ({
@@ -116,13 +117,13 @@ describe('who a finished focus was for', () => {
 });
 
 describe('the focus history', () => {
-  it('asks for this term by default and for everything when switched', async () => {
+  it('asks for the last 10 weeks by default and for everything when switched', async () => {
     vi.mocked(skillMap.fetchFocusHistory).mockResolvedValue([batch()]);
     const user = userEvent.setup();
     render(<FocusHistory classId="c12" detail={detail} now={new Date('2026-10-19T02:00:00Z')} />);
     expect(await screen.findByText(/Whole class/, { selector: 'strong' })).toBeInTheDocument();
     expect(skillMap.fetchFocusHistory).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(skillMap.fetchFocusHistory).mock.calls[0][1]?.toISOString()).toBe('2026-10-11T11:00:00.000Z');
+    expect(vi.mocked(skillMap.fetchFocusHistory).mock.calls[0][1]?.toISOString()).toBe('2026-08-10T02:00:00.000Z');
     await user.click(screen.getByRole('checkbox', { name: /Show every earlier focus/ }));
     expect(skillMap.fetchFocusHistory).toHaveBeenLastCalledWith('c12', null);
     expect(skillMap.fetchFocusHistory).toHaveBeenCalledTimes(2);
@@ -155,10 +156,18 @@ describe('the focus history', () => {
     expect(screen.getByText(/set by mr\.teacher/)).toBeInTheDocument(); // falls back to the school name when no player name
   });
 
-  it('says what it cannot show: how students did while a focus ran', async () => {
+  it('offers how students did while the focus ran, loaded only when opened', async () => {
     vi.mocked(skillMap.fetchFocusHistory).mockResolvedValue([batch()]);
+    vi.mocked(skillMap.fetchFocusResults).mockResolvedValue({
+      since: new Date('2026-10-01T00:00:00Z'),
+      students: [{ id: 's1', name: 'Speedy Otter 27', realName: null, answers: 7, correct: 6, quick: 5 }],
+      total: { answers: 7, correct: 6, quick: 5 },
+    });
+    const user = userEvent.setup();
     render(<FocusHistory classId="c12" detail={detail} />);
-    expect(await screen.findByText(/can’t be shown yet/)).toBeInTheDocument();
+    await user.click(await screen.findByText('How they did'));
+    expect(skillMap.fetchFocusResults).toHaveBeenCalledWith('b1');
+    expect(await screen.findByRole('row', { name: /Speedy Otter 27/ })).toHaveTextContent('7');
   });
 
   it("shows where each student stands now on the focus's skills, only for those it was for, and only when opened", async () => {
@@ -179,11 +188,11 @@ describe('the focus history', () => {
     expect(within(table).getByRole('row', { name: /Calm Fern 3/ })).toHaveTextContent('Not started');
   });
 
-  it('says so for an empty term and for everything', async () => {
+  it('says so for an empty 10 weeks and for everything', async () => {
     vi.mocked(skillMap.fetchFocusHistory).mockResolvedValue([]);
     const user = userEvent.setup();
     render(<FocusHistory classId="c12" detail={detail} />);
-    expect(await screen.findByText('No focuses have ended this term.')).toBeInTheDocument();
+    expect(await screen.findByText('No focuses have ended in the last 10 weeks.')).toBeInTheDocument();
     await user.click(screen.getByRole('checkbox', { name: /Show every earlier focus/ }));
     expect(await screen.findByText('No earlier focuses yet.')).toBeInTheDocument();
   });

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { supabase } from '../lib/supabase';
 import { FriendlyError } from './profile';
-import { fetchClassMap, fetchFocusHistory, fetchStudentLadder, parseClassMap, resetPlacement } from './skillMap';
+import { fetchClassMap, fetchFocusHistory, fetchFocusResults, parseFocusResults, fetchStudentLadder, parseClassMap, resetPlacement } from './skillMap';
 
 vi.mock('../lib/supabase', () => ({ supabase: { rpc: vi.fn() } }));
 const rpc = vi.mocked(supabase.rpc);
@@ -181,5 +181,37 @@ describe('asking the database', () => {
     });
     rpc.mockResolvedValueOnce({ data: null, error: null } as never);
     await expect(fetchFocusHistory('c1', null)).rejects.toThrow('We couldn’t load the focus history.');
+  });
+});
+
+describe('focus results', () => {
+  const sent = {
+    since: '2026-10-19T00:00:00Z',
+    students: [{ id: 's1', name: 'Speedy Otter 27', realName: 'ana', answers: 12, correct: 9, quick: 4 }],
+    total: { answers: 12, correct: 9, quick: 4 },
+  };
+
+  it('asks the database for one focus and tidies the answer', async () => {
+    rpc.mockResolvedValue({ data: sent, error: null } as never);
+    const r = await fetchFocusResults('b1');
+    expect(rpc).toHaveBeenCalledWith('teacher_maths_focus_results', { batch: 'b1' });
+    expect(r.since?.toISOString()).toBe('2026-10-19T00:00:00.000Z');
+    expect(r.students[0]).toEqual({ id: 's1', name: 'Speedy Otter 27', realName: 'ana', answers: 12, correct: 9, quick: 4 });
+    expect(r.total).toEqual({ answers: 12, correct: 9, quick: 4 });
+  });
+
+  it('turns anything odd into zeros or nothing, and never shows a negative', () => {
+    const r = parseFocusResults({ since: 'soon', students: [{ id: 's1', name: 'A', answers: -3, correct: 'x', quick: 2.7 }], total: {} });
+    expect(r.since).toBeNull();
+    expect(r.students[0]).toMatchObject({ answers: 0, correct: 0, quick: 2, realName: null });
+    expect(r.total).toEqual({ answers: 0, correct: 0, quick: 0 });
+    expect(parseFocusResults(null).students).toEqual([]);
+  });
+
+  it('shows our own message for a refusal and a plain one for anything else', async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'That isn’t one of your classes.' } } as never);
+    await expect(fetchFocusResults('b1')).rejects.toThrow('That isn’t one of your classes.');
+    rpc.mockResolvedValue({ data: null, error: { code: '57014', message: 'timeout' } } as never);
+    await expect(fetchFocusResults('b1')).rejects.toBeInstanceOf(FriendlyError);
   });
 });

@@ -1,9 +1,7 @@
 /**
- * "What we practised": every focus that has ended for a class (nothing is ever deleted), this term by default, with a switch for
- * all of them. Each one says what was practised, when, who set it, and where each student stands on those skills today.
- *
- * What it cannot say yet: how students did while the focus ran. The database keeps a record for each fact or question type
- * (totals and when it was last seen), not every answer, so answers between a focus's start and end cannot be worked out afterwards.
+ * "What we practised": every focus that has ended for a class (nothing is ever deleted), the last 10 weeks by default, with a switch
+ * for all of them. Each one says what was practised, when, who set it, how students did while it ran, and where each student
+ * stands on those skills today.
  */
 import { useEffect, useState } from 'react';
 import { fetchFocusHistory, fetchClassMap, type ClassMap, type HistoryBatch } from '../data/skillMap';
@@ -12,9 +10,12 @@ import { FriendlyError } from '../data/profile';
 import { skillList, skillShortLabel } from '../../shared/maths/focus';
 import { focusSkills } from '../../shared/maths/ladder';
 import { cellFor, LEVELS, studentMap } from '../../shared/maths/skillMap';
-import { termStart } from '../../shared/maths/terms';
+import { FocusResults } from './FocusResults';
 import { day, whoFor } from './focusText';
 import '../pages/skill-map.css';
+
+/** How far back the list goes unless "every earlier focus" is ticked: 10 weeks. */
+export const HISTORY_DAYS = 70;
 
 const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
 
@@ -35,7 +36,7 @@ export function FocusHistory({ classId, detail, now }: { classId: string; detail
   const [items, setItems] = useState<HistoryBatch[] | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   // Worked out once when the panel opens (a new Date on every render would make the list load again and again).
-  const [since] = useState(() => termStart(now ?? new Date()));
+  const [since] = useState(() => new Date((now ?? new Date()).getTime() - HISTORY_DAYS * 86_400_000));
 
   useEffect(() => {
     let current = true;
@@ -56,7 +57,7 @@ export function FocusHistory({ classId, detail, now }: { classId: string; detail
         {items && <span className="panel__count">{items.length}</span>}
       </h2>
       <label className="classes__check">
-        <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} /> Show every earlier focus, not just this term
+        <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} /> Show every earlier focus, not just the last 10 weeks
       </label>
       {failed ? (
         <p role="alert" className="panel__empty">
@@ -67,7 +68,7 @@ export function FocusHistory({ classId, detail, now }: { classId: string; detail
           Loading…
         </p>
       ) : items.length === 0 ? (
-        <p className="panel__empty">{all ? 'No earlier focuses yet.' : 'No focuses have ended this term.'}</p>
+        <p className="panel__empty">{all ? 'No earlier focuses yet.' : 'No focuses have ended in the last 10 weeks.'}</p>
       ) : (
         <ul className="class-panel__list focus-history">
           {items.map((b) => (
@@ -76,8 +77,7 @@ export function FocusHistory({ classId, detail, now }: { classId: string; detail
         </ul>
       )}
       <p className="class-panel__hint">
-        Games keep a record for each fact or question type, not every answer, so how students did <em>while</em> a focus ran can’t be shown
-        yet. “Where they are now” is each student’s record today.
+        “How they did” counts the answers students gave on a focus’s skills while it ran. “Where they are now” is each student’s record today.
       </p>
     </section>
   );
@@ -113,6 +113,7 @@ function HistoryItem({ batch, classId, detail }: { batch: HistoryBatch; classId:
       <span className="class-panel__when">
         {day(batch.startsAt)} to {day(batch.endsAt)}
       </span>
+      <FocusResults batch={batch.batch} startsAt={batch.startsAt} endsAt={batch.endsAt} running={false} />
       <details className="focus-history__now" onToggle={(e) => setOpened((e.currentTarget as HTMLDetailsElement).open)}>
         <summary>Where they are now on these skills</summary>
         {failed ? (

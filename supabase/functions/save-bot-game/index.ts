@@ -5441,6 +5441,57 @@ function parseMathsSwitch(value) {
 	return MATHS_SWITCHES.includes(value) ? value : "off";
 }
 //#endregion
+//#region shared/maths/focusResults.ts
+/**
+* What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
+* results"). The database matches each answer to the focuses that were running at its time; the server works out the two
+* things only the maths code knows: which ladder skills own the answer's key, and whether it was quick.
+*/
+let owners = null;
+/** The ladder skills that own a mastery key (usually one). Empty if the key isn't on the ladder. */
+function skillsOfKey(key) {
+	if (!owners) {
+		owners = new Map();
+		for (const skill of LADDER) for (const k of skill.keys) owners.set(k, [...owners.get(k) ?? [], skill.id]);
+	}
+	return owners.get(key) ?? [];
+}
+/** The answers worth sending: those on a ladder skill. */
+function focusResultAnswers(answers, pack) {
+	const quickMs = quickMsForPack(pack);
+	const out = [];
+	for (const a of answers) {
+		const skills = skillsOfKey(a.key);
+		if (skills.length > 0) out.push({
+			skills,
+			at: a.at,
+			correct: a.correct,
+			quick: a.correct && a.ms <= quickMs
+		});
+	}
+	return out;
+}
+//#endregion
+//#region supabase/functions/_shared/focusResults.ts
+/**
+* Adds a batch of answers to the results of the maths focuses running for the student (stage F.8). Call it only for a batch the
+* records took for the first time (record_fact_answers says 0 for one it has seen), so a retry never counts twice. It never
+* throws and never blocks saving: the answers are already saved, and a problem here is only logged (the code, never who).
+*/
+async function countForFocuses(rpc, player, pack, answers, from) {
+	try {
+		const rows = focusResultAnswers(answers, pack);
+		if (rows.length === 0) return;
+		const { error } = await rpc("add_maths_focus_results", {
+			player,
+			answers: rows
+		});
+		if (error) console.error(`${from}: focus results not counted (${error.code ?? "unknown"})`);
+	} catch {
+		console.error(`${from}: focus results not counted`);
+	}
+}
+//#endregion
 //#region supabase/functions/_shared/stamp.ts
 /**
 * Stamps (signatures) only the server can make: an HMAC-SHA256 of some text, as URL-safe
@@ -10967,7 +11018,7 @@ Deno.serve((request) => handleSaveBotGame(request, {
 		return parseMathsSwitch(data?.space_maths);
 	},
 	async recordAnswers(player, batchId, answers, pack = "times-tables") {
-		const { error } = await admin.rpc("record_fact_answers", {
+		const { data, error } = await admin.rpc("record_fact_answers", {
 			player,
 			pack,
 			batch_id: batchId,
@@ -10977,6 +11028,7 @@ Deno.serve((request) => handleSaveBotGame(request, {
 			top_box: 4
 		});
 		if (error) throw new Error(error.code ?? "unknown");
+		if (typeof data === "number" && data > 0) await countForFocuses((name, args) => admin.rpc(name, args), player, pack, answers, "save-bot-game");
 		await syncPlace(player);
 	},
 	stamp: stamper(key, "space-seed")

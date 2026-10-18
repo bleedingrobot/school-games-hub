@@ -123,3 +123,45 @@ export async function fetchFocusHistory(classId: string, since: Date | null): Pr
   if (error || !Array.isArray(data)) fail(error, 'We couldn’t load the focus history.');
   return data as HistoryBatch[];
 }
+
+export interface FocusResultRow {
+  id: string;
+  name: string;
+  /** The part of their school email before the @. Teachers already see this on their other pages. */
+  realName: string | null;
+  answers: number;
+  correct: number;
+  quick: number;
+}
+
+export interface FocusResults {
+  /** The day the database began counting. Focuses that ended before it have no results, which is not the same as zero. */
+  since: Date | null;
+  students: FocusResultRow[];
+  total: { answers: number; correct: number; quick: number };
+}
+
+const count = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0);
+
+/** What the database sends for one focus, tidied. */
+export function parseFocusResults(raw: unknown): FocusResults {
+  const r = (raw ?? {}) as { since?: unknown; students?: unknown; total?: Record<string, unknown> };
+  const since = typeof r.since === 'string' && !Number.isNaN(Date.parse(r.since)) ? new Date(r.since) : null;
+  const students = (Array.isArray(r.students) ? r.students : []).map((s: Record<string, unknown>) => ({
+    id: String(s.id),
+    name: String(s.name ?? ''),
+    realName: typeof s.realName === 'string' && s.realName ? s.realName : null,
+    answers: count(s.answers),
+    correct: count(s.correct),
+    quick: count(s.quick),
+  }));
+  const t = r.total ?? {};
+  return { since, students, total: { answers: count(t.answers), correct: count(t.correct), quick: count(t.quick) } };
+}
+
+/** How the students of one focus did while it ran. Teachers of the class only. */
+export async function fetchFocusResults(batch: string): Promise<FocusResults> {
+  const { data, error } = await supabase.rpc('teacher_maths_focus_results', { batch });
+  if (error || !data) fail(error, 'We couldn’t load the results for this focus.');
+  return parseFocusResults(data);
+}

@@ -13,6 +13,7 @@ import { FriendlyError } from '../data/profile';
 import { describeEnd, nzLocalToIso, skillList, timeLeft } from '../../shared/maths/focus';
 import { LADDER } from '../../shared/maths/ladder';
 import { FocusHistory } from '../maths/FocusHistory';
+import { FocusResults } from '../maths/FocusResults';
 import { whoFor } from '../maths/focusText';
 import { LengthPicker, LENGTHS } from '../maths/LengthPicker';
 import { SkillPicker } from '../maths/SkillPicker';
@@ -293,6 +294,7 @@ function Running({ batch, now, onDone, onError }: { batch: FocusBatch; now: Date
           End now
         </button>
       </span>
+      <FocusResults batch={batch.batch} startsAt={batch.startsAt} endsAt={batch.endsAt} running />
       {extending && (
         <div className="set-focus__form">
           <LengthPicker value={length} custom={custom} onChange={setLength} onCustom={setCustom} legend="Run it until…" />
