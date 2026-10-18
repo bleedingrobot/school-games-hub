@@ -458,3 +458,10 @@ Real Google sign-in; the live Supabase project; the three edge functions running
 3. Merge `maths-focus` to `main`; wait for Pages.
 4. Afterwards: on Set focus, turn "Games pick the maths (auto)" on for one class; set that class's year level on My classes; as a student in it open the home page (the maths path), do the warm-up, and play a Gem Keep level.
 Until a teacher turns the switch on, every student plays exactly as before.
+
+### James's answers after F.4 (19 October 2026)
+- **Decimal point key:** yes, add it in F.5 (shown only on questions that need it).
+- **Order of operations:** answers are **four choices to tap**, with wrong choices made from common mistakes (working left to right gives 20 for 2 + 3 × 4).
+- **Ladder order:** keep section 12 as it is.
+- **Warm-up:** try it on one class after go live, once auto is switched on for them.
+- **Go live:** not yet. F.5 is built on the scratch copy first.
