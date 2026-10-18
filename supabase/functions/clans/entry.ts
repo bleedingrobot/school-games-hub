@@ -3,7 +3,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Result, ServerState } from '../../../shared/clans/actions';
 import type { Sketch } from '../../../shared/clans/village';
-import { makeHandler, type Loaded, type LoadedTarget, type Outcome, type SaveStatus } from './handler';
+import { FACT_PACK } from '../../../shared/clans/battleCry';
+import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import { batchIdFor, makeHandler, type Extras, type Loaded, type LoadedTarget, type Outcome, type SaveStatus } from './handler';
 
 declare const Deno: {
   env: { get(name: string): string | undefined };
@@ -38,6 +40,12 @@ Deno.serve(
     async userIdFor(token) {
       const { data, error } = await admin.auth.getUser(token);
       return error ? null : (data.user?.id ?? null);
+    },
+    extras: (player) => call<Extras>('clan_extras', { player }),
+    async recordAnswers(player, batchKey, answers) {
+      return call<number>('record_fact_answers', {
+        player, pack: FACT_PACK, batch_id: await batchIdFor(batchKey), answers, quick_ms: QUICK_MS, fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
+      });
     },
     load: (player, requestId) => call<Loaded>('load_clan', { player, request_id: requestId }),
     save: (player, expectedVersion, requestId, action, state: ServerState, result: Result) =>

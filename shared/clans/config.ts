@@ -125,6 +125,18 @@ export const CONFIG = {
     /** The most gold anyone can give the chest in one go. */
     giveMax: 100000,
   },
+  /**
+   * Fame and points (stage C.6 part B). Fame is earned, never lost, and never comes from maths scores. Points sit inside the hub's
+   * 40-a-day cap; raids earn fame but no points. `minesPerPoint`: every 3rd mine fight won is a point (a boss is worth `boss`
+   * and does not count toward the 3). The village rewards go to everyone who voted in the week the class built a building.
+   * The same numbers are in the SQL function clan_reward_rules (a test keeps them equal).
+   */
+  rewards: {
+    fame: { mineWin: 1, bossWin: 5, warWin: 2, kingdomRaidWin: 2, classRaidWin: 3, villageBuilt: 10 },
+    points: { minesPerPoint: 3, boss: 3, war: 2, villageBuilt: 5 },
+    /** Mine fights a day a teacher may choose (the default is `fightsPerDay`). */
+    fightsPerDayRange: { min: 1, max: 30 },
+  },
   /** How much a Battle Cry answer adds. */
   battleCryDamage: 1.25,
   battleCryHeal: 0.2,

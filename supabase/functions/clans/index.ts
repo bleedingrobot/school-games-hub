@@ -735,6 +735,18 @@ const DEFAULT_PRACTICAL_SETTINGS = {
 		10
 	]
 };
+/** Settings from anything saved (or nothing): unknown topics, bad bands and bad tables fall back to the defaults. */
+function readPracticalSettings(raw) {
+	const obj = raw && typeof raw === "object" ? raw : {};
+	const topics = Array.isArray(obj.enabledTopics) ? TOPICS.filter((t) => obj.enabledTopics.includes(t)) : DEFAULT_PRACTICAL_SETTINGS.enabledTopics;
+	const band = YEAR_BANDS.find((b) => b === obj.yearBand) ?? DEFAULT_PRACTICAL_SETTINGS.yearBand;
+	const tables = Array.isArray(obj.enabledTables) ? [...new Set(obj.enabledTables.filter((t) => typeof t === "number" && Number.isInteger(t) && t >= 1 && t <= 12))].sort((a, b) => a - b) : DEFAULT_PRACTICAL_SETTINGS.enabledTables;
+	return {
+		enabledTopics: [...topics],
+		yearBand: band,
+		enabledTables: tables.length ? tables : [...DEFAULT_PRACTICAL_SETTINGS.enabledTables]
+	};
+}
 /** Is a topic being asked at this year band? (Switched on, and has a kind for the band.) */
 const topicAvailable = (settings, topic) => settings.enabledTopics.includes(topic) && kindsFor(settings.yearBand, [topic]).length > 0;
 /** Pick a kind: first a switched-on topic, then one of its kinds, so each topic is asked about equally. Null if nothing is on. */
@@ -996,6 +1008,33 @@ const CONFIG = {
 		],
 		/** The most gold anyone can give the chest in one go. */
 		giveMax: 1e5
+	},
+	/**
+	* Fame and points (stage C.6 part B). Fame is earned, never lost, and never comes from maths scores. Points sit inside the hub's
+	* 40-a-day cap; raids earn fame but no points. `minesPerPoint`: every 3rd mine fight won is a point (a boss is worth `boss`
+	* and does not count toward the 3). The village rewards go to everyone who voted in the week the class built a building.
+	* The same numbers are in the SQL function clan_reward_rules (a test keeps them equal).
+	*/
+	rewards: {
+		fame: {
+			mineWin: 1,
+			bossWin: 5,
+			warWin: 2,
+			kingdomRaidWin: 2,
+			classRaidWin: 3,
+			villageBuilt: 10
+		},
+		points: {
+			minesPerPoint: 3,
+			boss: 3,
+			war: 2,
+			villageBuilt: 5
+		},
+		/** Mine fights a day a teacher may choose (the default is `fightsPerDay`). */
+		fightsPerDayRange: {
+			min: 1,
+			max: 30
+		}
 	},
 	/** How much a Battle Cry answer adds. */
 	battleCryDamage: 1.25,
@@ -3270,6 +3309,16 @@ function replayFight(members, depth, seed, boss, rounds, settings) {
 		cries
 	};
 }
+/** The key a question kind is kept under in the teacher's private maths records: the kind and the year band, never the numbers. */
+const factKey = (band, kind) => `clan:y${band}:${kind}`;
+/** The pack Clan Quest's answers are kept in (the same table Gem Keep and Dragon Maths use). */
+const FACT_PACK = "clan-quest";
+/** The server cannot know how long a child took, so every answer is kept as a slow one: it counts as tried and right, never as "fluent". */
+const UNTIMED_MS = 6e4;
+//#endregion
+//#region shared/maths/config.ts
+/** Answering correctly within this many milliseconds counts as quick. */
+const QUICK_MS = 5e3;
 //#endregion
 //#region shared/clans/empire.ts
 /**
@@ -3912,6 +3961,24 @@ function clanFromChoices(seed, name, drafts) {
 		ok: true,
 		clan: makeClan(name, built)
 	};
+}
+//#endregion
+//#region shared/clans/rewards.ts
+const NOTHING = {
+	wins: 0,
+	bosses: 0,
+	wars: 0,
+	kingdomRaids: 0,
+	classRaids: 0,
+	cries: 0
+};
+/** Counts for an event, or undefined if it earned nothing (so results stay small). */
+function earnedOrNone(part) {
+	const e = {
+		...NOTHING,
+		...part
+	};
+	return Object.keys(NOTHING).some((k) => e[k] > 0) ? e : void 0;
 }
 //#endregion
 //#region shared/clans/play.ts
@@ -4729,6 +4796,7 @@ const refuse = (why, say) => ({
 	why,
 	say
 });
+const earnedPart = (earned) => earned ? { earned } : {};
 const isObj = (v) => typeof v === "object" && v !== null && !Array.isArray(v);
 const int = (v, lo, hi) => typeof v === "number" && Number.isInteger(v) && v >= lo && v <= hi ? v : null;
 function parsePlan(v) {
@@ -4937,21 +5005,22 @@ const clanDay = (createdNzDay, today) => Math.max(1, today - createdNzDay + 1);
 * free wake-up comes back, the empire's energy and raids reset and the fights come back. A clan that was away for
 * a week gets one night's rest and moves to today's number. Returns true if anything changed.
 */
-function catchUp(state, today) {
+function catchUp(state, today, fightsPerDay = CONFIG.fightsPerDay) {
 	const day = clanDay(state.createdNzDay, today);
 	if (day <= state.day) return false;
 	dayReset(state.clan);
 	empireNewDay(state.clan);
 	empireOf(state.clan).day = day;
-	state.fightsLeft = CONFIG.fightsPerDay;
+	state.fightsLeft = fightsPerDay;
 	state.day = day;
 	return true;
 }
-const done = (state, result, changed = true) => ({
+const done = (state, result, changed = true, effects) => ({
 	ok: true,
 	state,
 	result,
-	changed
+	changed,
+	...effects ? { effects } : {}
 });
 /**
 * Apply one action to the saved clan (null if the student has none yet). Works on a copy: the state that
@@ -4968,7 +5037,7 @@ function applyAction(saved, action, ctx) {
 			seed: ctx.seed,
 			day: 1,
 			createdNzDay: ctx.today,
-			fightsLeft: CONFIG.fightsPerDay,
+			fightsLeft: ctx.fightsPerDay ?? CONFIG.fightsPerDay,
 			fightNo: 0,
 			raidNo: 0,
 			examined: []
@@ -4982,7 +5051,7 @@ function applyAction(saved, action, ctx) {
 		changed: false
 	} : refuse("no-clan", "Make a clan first.");
 	const state = structuredClone(saved);
-	const rested = state.fight ? false : catchUp(state, ctx.today);
+	const rested = state.fight ? false : catchUp(state, ctx.today, ctx.fightsPerDay);
 	if (state.fight && action.type !== "load" && action.type !== "fightStart" && action.type !== "fightRound" && action.type !== "vote" && action.type !== "raidTargets") return refuse("fight-open", "You are in the middle of a fight. Finish it first!");
 	const { clan } = state;
 	const settle = (r, result) => r.ok ? done(state, result) : refuse(r.why ?? "no", r.say ?? "That cannot be done right now.");
@@ -5019,11 +5088,17 @@ function applyAction(saved, action, ctx) {
 			const out = sendArmyTo(clan, action.kingdom, action.plan, friendly, raidSeed(state.seed, state.raidNo));
 			if (!out.ok) return refuse(out.why, out.say);
 			state.raidNo++;
+			const won = out.result.outcome === "won";
+			const earned = earnedOrNone({
+				wars: friendly && won ? 1 : 0,
+				kingdomRaids: !friendly && won ? 1 : 0
+			});
 			return done(state, {
 				type: action.type,
 				friendly,
 				result: out.result,
-				gold: out.gold
+				gold: out.gold,
+				...earned ? { earned } : {}
 			});
 		}
 		case "quest": {
@@ -5033,13 +5108,17 @@ function applyAction(saved, action, ctx) {
 			const spec = puzzleFor(q, action.choice, state.seed, state.day, settings);
 			const right = spec ? action.answer !== null && buildPuzzle(spec).answer === action.answer : null;
 			const finished = finishQuest(clan, state.day, q, action.choice, right);
+			const answers = spec && finished.ok ? [{
+				key: factKey(settings.yearBand, buildPuzzle(spec).kind),
+				correct: right === true
+			}] : void 0;
 			return finished.ok ? done(state, {
 				type: "quest",
 				questId: q.id,
 				text: finished.text,
 				right: finished.right,
 				prize: finished.prize
-			}) : refuse("quest", finished.say);
+			}, true, answers ? { answers } : void 0) : refuse("quest", finished.say);
 		}
 		case "chestGive":
 			if (ctx.village && voteOptions(ctx.village.levels).length === 0) return refuse("full", "The village has built everything already!");
@@ -5082,7 +5161,8 @@ function applyAction(saved, action, ctx) {
 					result: out.raid.result,
 					gold,
 					land,
-					destroyed
+					destroyed,
+					...earnedPart(earnedOrNone({ classRaids: out.raid.result.outcome === "won" ? 1 : 0 }))
 				},
 				effects: { raid: {
 					targetId: ctx.target.id,
@@ -5127,23 +5207,39 @@ function applyAction(saved, action, ctx) {
 			};
 			const { state: replayed, cries } = replayFight(clan.members, open.depth, open.seed, open.boss, [...open.rounds, played], open.settings);
 			if (cries.length !== open.rounds.length + 1) return refuse("no-fight", "That fight is already over.");
+			const cry = cries[cries.length - 1];
+			const answers = cry.answered && cry.question ? [{
+				key: factKey(open.settings.yearBand, cry.question.kind),
+				correct: cry.correct
+			}] : void 0;
+			const effects = answers ? { answers } : void 0;
+			const rightCry = cry.answered && cry.correct ? 1 : 0;
 			if (!replayed.result) {
 				open.rounds.push(played);
 				return done(state, {
 					type: "fightRound",
 					round: action.round,
 					over: false,
-					summary: null
-				});
+					summary: null,
+					...earnedPart(earnedOrNone({ cries: rightCry }))
+				}, true, effects);
 			}
+			const boss = open.boss;
 			const summary = payFight(clan, replayed);
 			state.fight = null;
+			const won = summary.result === "won";
+			const earned = earnedOrNone({
+				wins: won && !boss ? 1 : 0,
+				bosses: won && boss ? 1 : 0,
+				cries: rightCry
+			});
 			return done(state, {
 				type: "fightRound",
 				round: action.round,
 				over: true,
-				summary
-			});
+				summary,
+				...earnedPart(earned)
+			}, true, effects);
 		}
 	}
 }
@@ -5221,9 +5317,36 @@ var RateLimiter = class {
 		return true;
 	}
 };
+//#endregion
+//#region supabase/functions/clans/handler.ts
+/**
+* The clans server function (Clan Quest, stage C.5 part A). The website sends one action at a time ("buy this",
+* "wake her", "do today's quest with this answer"); this loads the clan, runs the very same shared/clans rules the
+* screens use, and saves the result. The browser is never believed about gold, levels, days or prizes.
+*
+* Every request carries an id the browser made. If the same id arrives twice (a slow connection, a double tap)
+* the first answer is sent back and nothing is paid again. If two requests race, the database refuses the second
+* save (its copy was old), and this loads again and redoes the action.
+*
+* Mine fights go through the same door as everything else: `fightStart` and one `fightRound` per round played, replayed
+* and paid by shared/clans (see actions.ts). The teacher's switch is checked on every request, with the clan itself, so
+* switching Clan Quest off stops it at once.
+*
+* Stage C.6 part B: the teacher's maths settings (year band, topics, times tables, mine fights a day) are read from the database on every
+* request and sent with the clan, so the browser and the server always use the same ones. Fame, points and achievements are added by the
+* database in the same save (from the counts the rules put in the result); this only asks for the new fame and achievements afterwards.
+* The maths answers a request produced go in the teacher's private records once the save is kept (a retry reuses the same batch id).
+*/
+const hex = (bytes) => [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+/** A batch id for the answers of one request: the same request always gives the same id, so a retry is never counted twice. */
+async function batchIdFor(key) {
+	const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`clans:${key}`)));
+	const h = hex(digest.slice(0, 16));
+	return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`;
+}
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** What the browser is told about a clan: everything it shows, nothing it could use to cheat. */
-function publicState(state, settings, loaded) {
+function publicState(state, settings, loaded, extras) {
 	const { clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight } = state;
 	return {
 		clan,
@@ -5238,7 +5361,11 @@ function publicState(state, settings, loaded) {
 		news: loaded.news,
 		village: loaded.village ?? null,
 		raidsOn: loaded.raidsOn ?? false,
-		notes: loaded.notes ?? []
+		notes: loaded.notes ?? [],
+		fame: extras?.fame ?? 0,
+		season: extras?.settings.season ?? 1,
+		fightsPerDay: extras?.settings.fightsPerDay ?? CONFIG.fightsPerDay,
+		achievements: extras?.achievements ?? []
 	};
 }
 function makeHandler(services) {
@@ -5268,8 +5395,11 @@ function makeHandler(services) {
 			return reply(400, { error: "That couldn't be read." });
 		}
 		const requestId = body.requestId.toLowerCase();
-		const settings = services.settings?.() ?? DEFAULT_PRACTICAL_SETTINGS;
 		const today = nzDayNumber(services.now());
+		let extras = await services.extras(player);
+		if (!extras.ok) return extras.why === "busy" ? reply(503, { error: "We couldn't reach your clan just now." }) : reply(400, { error: "That couldn't be read." });
+		const settings = readPracticalSettings(extras.value.settings);
+		const fightsPerDay = Number.isInteger(extras.value.settings.fightsPerDay) ? extras.value.settings.fightsPerDay : CONFIG.fightsPerDay;
 		for (let attempt = 0; attempt < 4; attempt++) {
 			const loaded = await services.load(player, requestId);
 			if (!loaded.ok) return loaded.why === "busy" ? reply(503, { error: "We couldn't reach your clan just now." }) : reply(400, { error: "That couldn't be read." });
@@ -5279,7 +5409,7 @@ function makeHandler(services) {
 				off: true
 			});
 			if (state && loaded.value.village) state.clan.village = loaded.value.village.levels;
-			const shown = (s, from = loaded.value) => publicState(s, settings, from);
+			const shown = (s, from = loaded.value) => publicState(s, settings, from, extras.ok ? extras.value : void 0);
 			if (replay) return reply(200, {
 				ok: true,
 				replayed: true,
@@ -5291,6 +5421,7 @@ function makeHandler(services) {
 				seed,
 				today,
 				settings,
+				fightsPerDay,
 				village: loaded.value.village ?? null,
 				self: loaded.value.self ?? void 0,
 				raidsOn: loaded.value.raidsOn ?? false
@@ -5356,6 +5487,18 @@ function makeHandler(services) {
 			} : await services.save(player, version, requestId, action.type, applied.state, applied.result);
 			if (!saved.ok) return saved.why === "busy" ? reply(503, { error: "We couldn't save your clan just now." }) : reply(400, { error: "That couldn't be saved." });
 			if (saved.value.status === "saved") {
+				if (effects.answers?.length) {
+					const at = services.now();
+					const answers = effects.answers.map((a) => ({
+						key: a.key,
+						correct: a.correct,
+						ms: UNTIMED_MS,
+						at
+					}));
+					await services.recordAnswers(player, requestId, answers);
+				}
+				const fresh = await services.extras(player);
+				if (fresh.ok) extras = fresh;
 				let latest = loaded.value;
 				if (applied.result.type === "chestGive" || applied.result.type === "raidClass") {
 					const again = await services.load(player, "00000000-0000-4000-8000-000000000000");
@@ -5408,6 +5551,18 @@ Deno.serve(makeHandler({
 	async userIdFor(token) {
 		const { data, error } = await admin.auth.getUser(token);
 		return error ? null : data.user?.id ?? null;
+	},
+	extras: (player) => call("clan_extras", { player }),
+	async recordAnswers(player, batchKey, answers) {
+		return call("record_fact_answers", {
+			player,
+			pack: FACT_PACK,
+			batch_id: await batchIdFor(batchKey),
+			answers,
+			quick_ms: QUICK_MS,
+			fluent_days: 2,
+			top_box: 4
+		});
 	},
 	load: (player, requestId) => call("load_clan", {
 		player,

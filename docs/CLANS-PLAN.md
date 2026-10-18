@@ -579,3 +579,45 @@ Built, tested and **not applied, not deployed, not merged**. Branch `clans`.
 **To go live** (each needs James to say so, in words): apply the three migrations in order (`20261018001800`, `20261018001900`, `20261018002000`), deploy the `clans` function, merge `clans` into `main`, switch Clan Quest on, make groups, and only then switch classmate raids on.
 
 **Left for C.6 part B:** points, achievements, the scoreboard and fame, the maths topics page, storing maths answers.
+
+## Stage C.6, part B: design (18 Oct 2026)
+
+James had read the part A summary and said to carry on. Nothing from A or B is applied, deployed or merged. Part B adds fame and the scoreboard, points, achievements, the teacher's private view of maths answers, and the Teacher page for maths topics and settings.
+
+**Fame.** A number kept on each clan (`clans.fame`, never below 0). It is earned, never lost, and **never comes from maths scores**:
+
+| What | Fame |
+|---|---|
+| A mine fight won | 1 |
+| A boss beaten | 5 (instead of the 1) |
+| A Friendly War won | 2 |
+| A raid on a computer kingdom won | 2 |
+| A raid on a classmate won | 3 |
+| The class builds a village building (everyone who voted that week) | 10 |
+
+All the numbers are in `CONFIG.rewards` and in one SQL function that a test keeps equal. A **new season** (a button on the Clan Quest teacher panel, with a typed confirmation) sets every clan's fame to 0 and adds one to the season number. Clans, levels, gold and achievements stay. The school-wide "new points season" clears Clan Quest's *points* only, like Dragon Maths (fame has its own season, since James asked for that).
+
+**Scoreboard.** One screen, "Scoreboard": the top 10 clans and you, by fame (ties share a place, then the older clan first). It shows **clan names and fame only** (no student name, no account id, no level, no maths). It covers **the whole school**, like the other games' boards: raids and the village project are what the class groups are for, and a board per group would be too small to be fun. Pupils whose profile is hidden are left off. The pupil's own clan is always shown, even outside the top 10. It is a database function that returns only those columns, so there is nothing else to leak.
+
+**Points.** Inside the shared 40-a-day cap (the bot cap that every game against the computer shares), awarded only by the database. Scale checked against Dragon Maths (1 point per 3 forest wins, 3 per master, 10 per dragon) and Maths Monsters (same shape):
+
+| What | Points |
+|---|---|
+| Every 3rd mine fight won | 1 |
+| A boss beaten | 3 (does not count toward the 3) |
+| A Friendly War won | 2 |
+| The class builds a village building (everyone who voted that week) | 5 |
+
+Raids (on kingdoms or classmates) earn fame but **no points**, so nobody is paid points for taking from a classmate. Maths answers earn no points. Eight fights a day is at most about 24 points even if every fight is a boss, under the cap. `ranked: false`.
+
+**Once only.** The server writes what a request earned inside the result it saves (`result.earned`), and a database trigger on the saved-requests table adds the fame, the points and the lifetime counts **in the same transaction as the save**. A request id can only be saved once (it is the table's key), so a request sent twice, or two at once, can earn only once; a refused request saves nothing and earns nothing. The browser can never send `earned`: it is made by the rules after the server has replayed the fight. The midnight job's village reward is guarded by "this week has been closed" (each village closes each week once).
+
+**Achievements** (eight, 10 points each like every game's): first win, first boss, level 10, level 20, 5 buildings, first Friendly War win, a village building (took part in one), and 50 Battle Cry questions answered **right** (a wrong answer does not count; the plan said "answers", but counting wrong ones would pay for guessing). Level and buildings are read from the clan itself; the rest from lifetime counts kept on the clan (`clans.stats`). The server awards them in the same transaction (the shared `award_achievements`), the page shows the ones just earned with a small celebration, and the clan page lists all eight.
+
+**Storing maths answers.** Like Dragon Maths and Gem Keep: every Battle Cry answer (marked by the server's replay) and every quest puzzle answer goes into `gem_keep_facts` under the pack `clan-quest`, key `clan:y5:percent-of` (the kind of question and the year band, never the numbers). It is private to the teacher. The server cannot know how long a child took, so every answer is recorded as slow: Clan Quest answers raise attempts and right answers, never the "fluent" box. Wrong answers are stored and never block. They are recorded after the save is kept, under a batch id made from the request id, so a retry counts once. The teacher sees, per pupil, how each kind of question is going, and for the school the hardest kinds.
+
+**Teacher page, settings.** School-wide (the hub has no classes), kept in `app_settings`: year band (4, 5 or 6), topics on/off (the eight topics), which times tables the "times" topic uses, mine fights a day (1 to 30), and the Practice Mode setting is **not** added (Clan Quest has no Practice Mode: nothing in it is a test). The `clans` function reads them on every request (`clan_extras`) and sends them with the clan, so the browser and the server always use the same ones; an open fight keeps the settings it started with, so a change cannot alter it. "Mine fights a day" also sets what the midnight job and the night's rest give back (the one SQL function that held 8 now reads the setting; a test keeps the TypeScript default equal to the column default).
+
+**Tests.** Rules in TypeScript (what each result earns, nothing for lost fights or maths), the handler (earned once, twice, two at once; the teacher's settings used; an open fight keeps its settings; a browser cannot send `earned`), the database in a rolled-back transaction (fame, points under the cap, achievements, once-only, season reset, scoreboard columns, no student can reach any of it, settings checks).
+
+**Test page.** No server there, so it gets test buttons: pretend fame, a pretend scoreboard of other clans, an award button that gives the next achievement (with the celebration), and a new-season button.

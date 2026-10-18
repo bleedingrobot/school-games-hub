@@ -8,8 +8,12 @@ import { startingDrafts } from '../../../shared/clans/create';
 import { nzDayNumber } from '../../../shared/clans/clock';
 import type { Empire } from '../../../shared/clans/types';
 import { empireOf } from '../../../shared/clans/empire';
+import { todaysQuest } from '../../../shared/clans/quests';
 import type { Sketch, VillageKind, VillageView } from '../../../shared/clans/village';
-import { makeHandler, MAX_REQUESTS_PER_MINUTE, type Loaded, type LoadedTarget, type Outcome, type SaveStatus, type Services } from './handler';
+import { addEarned, fameFor, measures, NO_STATS, pointsFor, reached, type ClanStats, type Earned } from '../../../shared/clans/rewards';
+import type { FactAnswer } from '../../../shared/maths/leitner';
+import { DEFAULT_PRACTICAL_SETTINGS } from '../../../shared/maths/practical';
+import { makeHandler, MAX_REQUESTS_PER_MINUTE, type Extras, type Loaded, type LoadedTarget, type Outcome, type SaveStatus, type Services } from './handler';
 
 const NOW = Date.UTC(2026, 9, 19, 2, 0, 0);
 const SEED = 424242;
@@ -26,6 +30,22 @@ function fakeDb() {
   const flags = { enabled: true, raidsOn: false, news: ['One fight was won in the Mines yesterday.'] };
   const village = { chest: 0, levels: { trainingHall: 0, smithy: 0, church: 0 }, votes: new Map<string, VillageKind>(), news: [] as string[] };
   const notes = new Map<string, string[]>();
+  // What the database's trigger keeps: fame, the wins waiting for a point, lifetime counts, points earned, and the teacher's private maths records.
+  const fame = new Map<string, number>();
+  const waiting = new Map<string, number>();
+  const stats = new Map<string, ClanStats>();
+  const points: { player: string; points: number }[] = [];
+  const answers: { player: string; batch: string; list: FactAnswer[] }[] = [];
+  const teacher = { enabledTopics: [...DEFAULT_PRACTICAL_SETTINGS.enabledTopics] as string[], yearBand: 5, enabledTables: [...DEFAULT_PRACTICAL_SETTINGS.enabledTables], fightsPerDay: 8, season: 1 };
+  const earn = (player: string, result: Result) => {
+    const earned = 'earned' in result ? (result.earned as Earned | undefined) : undefined;
+    if (!earned) return;
+    fame.set(player, (fame.get(player) ?? 0) + fameFor(earned));
+    const p = pointsFor(earned, waiting.get(player) ?? 0);
+    waiting.set(player, p.pending);
+    if (p.points > 0) points.push({ player, points: p.points });
+    stats.set(player, addEarned(stats.get(player) ?? NO_STATS, earned));
+  };
   const publicId = (player: string) => player.replace('student-', 'pid-');
   const playerOf = (id: string) => [...clans.keys()].find((p) => publicId(p) === id);
   const villageView = (player: string): VillageView => {
@@ -33,7 +53,7 @@ function fakeDb() {
     for (const k of village.votes.values()) votes[k] = (votes[k] ?? 0) + 1;
     return { name: 'Room 12', chest: village.chest, levels: { ...village.levels }, week: 2900, votes, myVote: village.votes.get(player) ?? null, clans: clans.size };
   };
-  const db: Pick<Services, 'load' | 'save' | 'vote' | 'mates' | 'target' | 'saveRaid'> & { raceOnce?: () => void } = {
+  const db: Pick<Services, 'load' | 'save' | 'vote' | 'mates' | 'target' | 'saveRaid' | 'extras' | 'recordAnswers'> & { raceOnce?: () => void } = {
     async load(player, requestId) {
       if (!seeds.has(player)) seeds.set(player, SEED + seeds.size);
       const row = clans.get(player);
@@ -64,8 +84,20 @@ function fakeDb() {
       const requests = row?.requests ?? new Map<string, Result>();
       requests.set(requestId, json(result));
       clans.set(player, { version: expected + 1, state: json(state), requests });
+      earn(player, result);
       log.push(`${player}:${action}`);
       return { ok: true, value: { status: 'saved', version: expected + 1 } };
+    },
+    async extras(player): Promise<Outcome<Extras>> {
+      const row = clans.get(player);
+      const achievements = row ? reached(measures(row.state.clan, stats.get(player) ?? NO_STATS)) : [];
+      return { ok: true, value: { settings: json(teacher), fame: fame.get(player) ?? 0, achievements } };
+    },
+    async recordAnswers(player, batch, list) {
+      // Like record_fact_answers: a batch seen before adds nothing.
+      if (answers.some((a) => a.player === player && a.batch === batch)) return { ok: true, value: 0 };
+      answers.push({ player, batch, list: json(list) });
+      return { ok: true, value: list.length };
     },
     async vote(player, kind) {
       if (village.levels[kind] >= { trainingHall: 5, smithy: 6, church: 3 }[kind]) return { ok: true, value: { ok: false } };
@@ -103,6 +135,7 @@ function fakeDb() {
       if (empireOf(a.state.clan).vault + empireOf(d.state.clan).vault !== empireOf(state.clan).vault + raid.empire.vault) return { ok: false, why: 'refused' };
       a.requests.set(requestId, json(result));
       clans.set(player, { version: a.version + 1, state: json(state), requests: a.requests });
+      earn(player, result);
       const after = json(d.state);
       after.clan.empire = json(raid.empire) as Empire;
       clans.set(defender, { version: d.version + 1, state: after, requests: d.requests });
@@ -112,11 +145,11 @@ function fakeDb() {
       return { ok: true, value: { status: 'saved', version: a.version + 1 } };
     },
   };
-  return { db, clans, log, flags, village, notes };
+  return { db, clans, log, flags, village, notes, fame, points, answers, teacher, stats };
 }
 
 function setup(over: Partial<Services> = {}, now = () => NOW) {
-  const { db, clans, log, flags, village, notes } = fakeDb();
+  const { db, clans, log, flags, village, notes, fame, points, answers, teacher, stats } = fakeDb();
   const services: Services = {
     now,
     userIdFor: vi.fn(async (token: string) => (token === 'ana' ? 'student-1' : token === 'ben' ? 'student-2' : token === 'cai' ? 'student-3' : null)),
@@ -133,7 +166,7 @@ function setup(over: Partial<Services> = {}, now = () => NOW) {
     const response = await handler(new Request('http://x/clans', { method: 'POST', headers, body: JSON.stringify(opts.raw ?? { requestId: opts.requestId ?? id(), action }) }));
     return { status: response.status, body: (await response.json()) as Record<string, any> };
   };
-  return { send, clans, log, services, id, handler, flags, village, notes };
+  return { send, clans, log, services, id, handler, flags, village, notes, fame, points, answers, teacher, stats };
 }
 
 const create = (seed = SEED) => ({ type: 'create', name: 'Red Banner', drafts: startingDrafts(seed) });
@@ -322,7 +355,7 @@ describe('the clans server function', () => {
   it('tells the browser the settings the server used, and never anything private', async () => {
     const { send } = setup();
     const { body } = await send(create());
-    expect(Object.keys(body.state).sort()).toEqual(['clan', 'day', 'examined', 'fight', 'fightNo', 'fightsLeft', 'news', 'notes', 'raidNo', 'raidsOn', 'seed', 'settings', 'village']);
+    expect(Object.keys(body.state).sort()).toEqual(['achievements', 'clan', 'day', 'examined', 'fame', 'fight', 'fightNo', 'fightsLeft', 'fightsPerDay', 'news', 'notes', 'raidNo', 'raidsOn', 'season', 'seed', 'settings', 'village']);
     expect(body.state.settings.yearBand).toBeDefined();
   });
 
@@ -650,6 +683,230 @@ describe('raids on classmates', () => {
     const ben = await selfOf(t, 'ben');
     await t.send({ type: 'fightStart', depth: 1, boss: false });
     expect((await t.send({ type: 'raidClass', target: ben, take: 'gold', plan: PLAN })).body).toMatchObject({ ok: false, why: 'fight-open' });
+  });
+});
+
+describe('fame, points, settings and maths records through the server function', () => {
+  const create = () => ({ type: 'create', name: 'Red Banner', drafts: startingDrafts(SEED) });
+
+  function nextRound(fight: OpenFight, members: ServerState['clan']['members'], answer: 'right' | 'wrong' | 'none' = 'right') {
+    const local = replayFight(members, fight.depth, fight.seed, fight.boss, fight.rounds, fight.settings).state;
+    const q = nextCryQuestion(local, fight.settings);
+    const cry = !q || answer === 'none' ? null : { answer: answer === 'right' ? q.answer : q.answer + 1, reward: 'damage' };
+    return { type: 'fightRound', round: fight.rounds.length + 1, orders: botOrders(local), cry };
+  }
+
+  /** Plays a whole fight, sending each round twice at the same moment. Returns the last body. */
+  async function fightTo(t: ReturnType<typeof setup>, depth: number, boss = false, answer: 'right' | 'wrong' | 'none' = 'right') {
+    let state = (await t.send({ type: 'fightStart', depth, boss })).body.state;
+    let last: Record<string, any> = {};
+    for (let i = 0; i < 20 && state.fight; i++) {
+      const action = nextRound(state.fight, state.clan.members, answer);
+      const id = t.id();
+      const [a, b] = await Promise.all([t.send(action, { requestId: id }), t.send(action, { requestId: id })]);
+      last = a.body.state ? a.body : b.body;
+      state = last.state;
+    }
+    return last;
+  }
+
+  it('earns a mine win once: fame, a lifetime count, and nothing more when the last round is sent twice at once', async () => {
+    const t = setup();
+    await t.send(create());
+    const end = await fightTo(t, 0);
+    expect(end.result.summary.result).toBe('won');
+    expect(end.result.earned).toMatchObject({ wins: 1, bosses: 0 });
+    expect(t.fame.get('student-1')).toBe(1);
+    expect(end.state.fame).toBe(1);
+    expect(end.state.achievements).toContain('cq-first-win');
+    expect(t.stats.get('student-1')?.mineWins).toBe(1);
+    // The same last request again, and a brand-new request for the same round: still 1.
+    const again = await t.send({ type: 'fightRound', round: 1, orders: [], cry: null });
+    expect(again.body.ok).toBe(false);
+    expect(t.fame.get('student-1')).toBe(1);
+  });
+
+  it('earns the Battle Cry count only for right answers, and keeps every answered question in the private records', async () => {
+    const t = setup();
+    await t.send(create());
+    let state = (await t.send({ type: 'fightStart', depth: 0, boss: false })).body.state;
+    const right = await t.send(nextRound(state.fight, state.clan.members, 'right'));
+    expect(right.body.result.earned).toMatchObject({ cries: 1 });
+    state = right.body.state;
+    if (state.fight) {
+      const wrong = await t.send(nextRound(state.fight, state.clan.members, 'wrong'));
+      expect(wrong.body.ok).toBe(true);
+      expect(wrong.body.result.earned?.cries ?? 0).toBe(0);
+      state = wrong.body.state;
+    }
+    const list = t.answers.flatMap((a) => a.list);
+    expect(list.length).toBeGreaterThanOrEqual(1);
+    expect(list[0]).toMatchObject({ correct: true, ms: 60_000 });
+    expect(list[0].key).toMatch(/^clan:y5:[a-z-]+$/);
+    if (list.length > 1) expect(list[1].correct).toBe(false);
+  });
+
+  it('keeps nothing for "No thanks", and a wrong answer is kept but never blocks the round', async () => {
+    const t = setup();
+    await t.send(create());
+    const state = (await t.send({ type: 'fightStart', depth: 0, boss: false })).body.state;
+    const skipped = await t.send(nextRound(state.fight, state.clan.members, 'none'));
+    expect(skipped.body.ok).toBe(true);
+    expect(t.answers).toHaveLength(0);
+    const s2 = skipped.body.state;
+    if (s2.fight) {
+      const wrong = await t.send(nextRound(s2.fight, s2.clan.members, 'wrong'));
+      expect(wrong.body.ok).toBe(true);
+      expect(t.answers.flatMap((a) => a.list).map((a) => a.correct)).toEqual([false]);
+    }
+  });
+
+  it('earns nothing from a fight that was not won', async () => {
+    const t = setup();
+    await t.send(create());
+    const end = await fightTo(t, 20);
+    expect(end.result.summary.result).not.toBe('won');
+    expect(end.result.earned?.wins ?? 0).toBe(0);
+    expect(t.fame.get('student-1') ?? 0).toBe(0);
+  });
+
+  it('never believes a browser that says what it earned', async () => {
+    const t = setup();
+    await t.send(create());
+    const gift = await t.send({ type: 'chestGive', gold: 5, earned: { wins: 50, bosses: 50 }, fame: 9999, points: 9999 });
+    expect(gift.body.ok).toBe(true);
+    expect(gift.body.result.earned).toBeUndefined();
+    const state = (await t.send({ type: 'fightStart', depth: 0, boss: false })).body.state;
+    const round = await t.send({ ...nextRound(state.fight, state.clan.members, 'none'), earned: { wins: 50, bosses: 50 }, fame: 9999 });
+    expect(round.body.ok).toBe(true);
+    expect(t.fame.get('student-1') ?? 0).toBeLessThanOrEqual(1);
+    expect((t.stats.get('student-1')?.bossWins ?? 0)).toBe(0);
+  });
+
+  it('gives a Friendly War win 2 fame and 2 points, and a raid on a kingdom fame but no points', async () => {
+    const t = setup();
+    await village(t);
+    const war = await t.send({ type: 'war', kingdom: 'bunny-hollow', plan: PLAN });
+    expect(war.body.ok).toBe(true);
+    expect(war.body.result.result.outcome).toBe('won');
+    expect(war.body.result.earned).toMatchObject({ wars: 1 });
+    expect(t.fame.get('student-1')).toBe(2);
+    expect(t.points).toEqual([{ player: 'student-1', points: 2 }]);
+    const raid = await t.send({ type: 'raid', kingdom: 'bunny-hollow', plan: PLAN });
+    expect(raid.body.ok).toBe(true);
+    expect(raid.body.result.result.outcome).toBe('won');
+    expect(raid.body.result.earned).toMatchObject({ kingdomRaids: 1 });
+    expect(t.fame.get('student-1')).toBe(4);
+    expect(t.points).toEqual([{ player: 'student-1', points: 2 }]);
+  });
+
+  it('gives a won raid on a classmate 3 fame and no points', async () => {
+    const t = setup();
+    await village(t);
+    const ben = await selfOf(t, 'ben');
+    // A bigger army (still near enough in size to be allowed) and a bold push, so the result does not depend on luck.
+    empireOf(t.clans.get('student-1')!.state.clan).troops.footman = 55;
+    const out = await t.send({ type: 'raidClass', target: ben, take: 'gold', plan: { rounds: 4, push: 'bold', loot: 10 } });
+    expect(out.body.ok).toBe(true);
+    expect(out.body.result.result.outcome).toBe('won');
+    expect(out.body.result.earned).toMatchObject({ classRaids: 1 });
+    expect(t.fame.get('student-1')).toBe(3);
+    expect(t.points).toEqual([]);
+    // The raided clan earns nothing for being raided.
+    expect(t.fame.get('student-2') ?? 0).toBe(0);
+  });
+
+  it('tells the browser the fame, the season, the fights a day and the achievements it has', async () => {
+    const t = setup();
+    const made = await t.send(create());
+    expect(made.body.state).toMatchObject({ fame: 0, season: 1, fightsPerDay: 8, achievements: [] });
+    t.teacher.season = 3;
+    const again = await t.send({ type: 'load' });
+    expect(again.body.state.season).toBe(3);
+  });
+
+  it('reads the teacher\'s maths settings on every request and sends them with the clan', async () => {
+    const t = setup();
+    await t.send(create());
+    expect((await t.send({ type: 'load' })).body.state.settings).toMatchObject({ yearBand: 5 });
+    t.teacher.yearBand = 6;
+    t.teacher.enabledTopics = ['area', 'ratios'];
+    t.teacher.enabledTables = [3, 4];
+    const now = (await t.send({ type: 'load' })).body.state.settings;
+    expect(now).toEqual({ yearBand: 6, enabledTopics: ['area', 'ratios'], enabledTables: [3, 4] });
+    // A fight started now is made with them.
+    const start = await t.send({ type: 'fightStart', depth: 0, boss: false });
+    expect(start.body.state.fight.settings).toEqual(now);
+  });
+
+  it('does not change an open fight when the teacher changes the settings', async () => {
+    const t = setup();
+    await t.send(create());
+    const start = await t.send({ type: 'fightStart', depth: 3, boss: false });
+    const original = start.body.state.fight.settings;
+    t.teacher.yearBand = 4;
+    t.teacher.enabledTopics = ['times'];
+    let state = start.body.state;
+    for (let i = 0; i < 20 && state.fight; i++) {
+      expect(state.fight.settings).toEqual(original);
+      const out = await t.send(nextRound(state.fight, state.clan.members));
+      // The round is marked with the OLD questions: a right answer to one of them is right, so the Battle Cry counts.
+      expect(out.body.ok).toBe(true);
+      expect(out.body.result.earned?.cries ?? 1).toBe(1);
+      state = out.body.state;
+    }
+    expect(state.fight).toBeNull();
+    expect(state.settings.yearBand).toBe(4);
+    // The next fight uses the new ones.
+    const next = await t.send({ type: 'fightStart', depth: 1, boss: false });
+    expect(next.body.state.fight.settings.yearBand).toBe(4);
+  });
+
+  it('gives a new clan, and a new day, the teacher\'s number of mine fights', async () => {
+    let clock = NOW;
+    const t = setup({}, () => clock);
+    t.teacher.fightsPerDay = 3;
+    const made = await t.send(create());
+    expect(made.body.state.fightsLeft).toBe(3);
+    await t.send({ type: 'fightStart', depth: 0, boss: false });
+    expect(t.clans.get('student-1')!.state.fightsLeft).toBe(2);
+    t.clans.get('student-1')!.state.fight = null;
+    clock += 24 * 3600 * 1000;
+    t.teacher.fightsPerDay = 5;
+    const next = await t.send({ type: 'load' });
+    expect(next.body.state.day).toBe(2);
+    expect(next.body.state.fightsLeft).toBe(5);
+  });
+
+  it('records a quest puzzle answer, right or wrong, in the private records', async () => {
+    const t = setup();
+    await t.send(create());
+    const row = t.clans.get('student-1')!;
+    // Find a day whose story has a choice with a puzzle (not every story has one).
+    let found: { day: number; choice: number } | null = null;
+    for (let day = 1; day < 40 && !found; day++) {
+      const q = todaysQuest(row.state.seed, day, DEFAULT_PRACTICAL_SETTINGS);
+      const choice = q ? q.choices.findIndex((c) => c.puzzle) : -1;
+      if (choice >= 0) found = { day, choice };
+    }
+    expect(found).not.toBeNull();
+    row.state.day = found!.day;
+    row.state.createdNzDay = DAY - (found!.day - 1);
+    row.state.clan.members.forEach((m) => (m.stats.charisma = 20));
+    const out = await t.send({ type: 'quest', choice: found!.choice, answer: 987654 });
+    expect(out.body.ok).toBe(true);
+    expect(out.body.result.right).toBe(false);
+    const list = t.answers.flatMap((a) => a.list);
+    expect(list).toHaveLength(1);
+    expect(list[0]).toMatchObject({ correct: false });
+    expect(list[0].key).toMatch(/^clan:y5:quest-[a-z-]+$/);
+  });
+
+  it('says so, and does nothing, when the database cannot give the settings', async () => {
+    const t = setup({ extras: async () => ({ ok: false, why: 'busy' }) });
+    const out = await t.send({ type: 'load' });
+    expect(out.status).toBe(503);
+    expect(t.log).toEqual([]);
   });
 });
 

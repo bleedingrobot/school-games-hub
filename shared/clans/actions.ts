@@ -17,13 +17,14 @@
  * rest waits until the fight is over. Stage C.6 part A adds the village chest, the weekly vote and raids on classmates (which also change the raided clan, saved in the same transaction).
  */
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../maths/practical';
-import { replayFight, type CryAnswer, type RecordedRound } from './battleCry';
+import { factKey, replayFight, type CryAnswer, type RecordedRound } from './battleCry';
 import { CONFIG } from './config';
 import { dayReset } from './character';
 import { clanFromChoices, type Draft } from './create';
 import { build, claimLand, deposit, developPlot, empireNewDay, empireOf, PUSHES, setDraft, withdraw, type BattlePlan, type BattleResult, type Push, type Take } from './empire';
 import { bossAt, newFight, type Order } from './fight';
 import { ITEMS } from './gamedata';
+import { earnedOrNone, type Earned } from './rewards';
 import { buyItem, buyTroopMix, draftFollowers, examineItemFor, fightSeed, payFight, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type FightSummary, type TrainKey } from './play';
 import { buildPuzzle, finishQuest, puzzleFor, todaysQuest, type QuestPrize } from './quests';
 import { BUILDING_KINDS, TROOP_KINDS, type BuildingKind, type Clan, type Empire, type Troops } from './types';
@@ -72,6 +73,8 @@ export interface Context {
   today: number;
   /** The teacher's maths settings (the Teacher page comes in stage C.6; until then, the defaults). */
   settings?: PracticalSettings;
+  /** Mine fights a day (the teacher's setting). The default is `CONFIG.fightsPerDay`. */
+  fightsPerDay?: number;
   /** The clan's village, as the server loaded it. Without one (the test page) the chest and the vote are not checked here. */
   village?: VillageView | null;
   /** This clan's hidden public id (never the account id), used to tell clans apart in raids. */
@@ -115,16 +118,16 @@ export type ActionType = Action['type'];
 export type Result =
   | { type: Exclude<ActionType, 'draft' | 'raid' | 'war' | 'quest' | 'fightStart' | 'fightRound' | 'raidTargets' | 'raidClass' | 'chestGive'> }
   | { type: 'draft'; wanted: number; joined: number; followers: number }
-  | { type: 'raid' | 'war'; friendly: boolean; result: BattleResult; gold: number }
+  | { type: 'raid' | 'war'; friendly: boolean; result: BattleResult; gold: number; earned?: Earned }
   | { type: 'quest'; questId: number; text: string; right: boolean | null; prize: QuestPrize }
   /** `resumed`: a fight was already open, so this is it again and no fight was used. */
   | { type: 'fightStart'; resumed: boolean }
   /** `summary` is there when the round ended the fight and it has been paid. */
-  | { type: 'fightRound'; round: number; over: boolean; summary: FightSummary | null }
+  | { type: 'fightRound'; round: number; over: boolean; summary: FightSummary | null; earned?: Earned }
   /** `gold` left the clan purse and went into the village chest. */
   | { type: 'chestGive'; gold: number }
   | { type: 'raidTargets'; targets: TargetEntry[] }
-  | { type: 'raidClass'; take: Take; result: BattleResult; gold: number; land: number; destroyed: BuildingKind[] };
+  | { type: 'raidClass'; take: Take; result: BattleResult; gold: number; land: number; destroyed: BuildingKind[]; earned?: Earned };
 
 /** What else the server must do in the same save as a changed clan. Nothing in here is sent to the browser. */
 export interface Effects {
@@ -132,6 +135,8 @@ export interface Effects {
   vote?: VillageKind;
   /** A raid on a classmate: the raided clan's new empire and the lines to write. */
   raid?: { targetId: string; empire: Empire; news: string; note: string };
+  /** Maths answers to keep in the teacher's private records: the question's kind and year band (never the numbers), and whether it was right. */
+  answers?: { key: string; correct: boolean }[];
 }
 
 export type Applied =
@@ -139,6 +144,7 @@ export type Applied =
   | { ok: false; why: string; say: string };
 
 const refuse = (why: string, say: string): Applied => ({ ok: false, why, say });
+const earnedPart = (earned: Earned | undefined) => (earned ? { earned } : {});
 
 // ---------------------------------------------------------------------------
 // Reading an action from JSON
@@ -285,13 +291,13 @@ export const clanDay = (createdNzDay: number, today: number) => Math.max(1, toda
  * free wake-up comes back, the empire's energy and raids reset and the fights come back. A clan that was away for
  * a week gets one night's rest and moves to today's number. Returns true if anything changed.
  */
-export function catchUp(state: ServerState, today: number): boolean {
+export function catchUp(state: ServerState, today: number, fightsPerDay: number = CONFIG.fightsPerDay): boolean {
   const day = clanDay(state.createdNzDay, today);
   if (day <= state.day) return false;
   dayReset(state.clan);
   empireNewDay(state.clan);
   empireOf(state.clan).day = day;
-  state.fightsLeft = CONFIG.fightsPerDay;
+  state.fightsLeft = fightsPerDay;
   state.day = day;
   return true;
 }
@@ -300,7 +306,7 @@ export function catchUp(state: ServerState, today: number): boolean {
 // Doing an action
 // ---------------------------------------------------------------------------
 
-const done = (state: ServerState, result: Result, changed = true): Applied => ({ ok: true, state, result, changed });
+const done = (state: ServerState, result: Result, changed = true, effects?: Effects): Applied => ({ ok: true, state, result, changed, ...(effects ? { effects } : {}) });
 
 /**
  * Apply one action to the saved clan (null if the student has none yet). Works on a copy: the state that
@@ -313,7 +319,7 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
     if (saved) return refuse('exists', 'You already have a clan.');
     const made = clanFromChoices(ctx.seed, action.name, action.drafts);
     if (!made.ok) return refuse('create', made.say);
-    const state: ServerState = { clan: made.clan, seed: ctx.seed, day: 1, createdNzDay: ctx.today, fightsLeft: CONFIG.fightsPerDay, fightNo: 0, raidNo: 0, examined: [] };
+    const state: ServerState = { clan: made.clan, seed: ctx.seed, day: 1, createdNzDay: ctx.today, fightsLeft: ctx.fightsPerDay ?? CONFIG.fightsPerDay, fightNo: 0, raidNo: 0, examined: [] };
     return done(state, { type: 'create' });
   }
   if (!saved) {
@@ -322,7 +328,7 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
 
   const state = structuredClone(saved);
   // The night's rest waits until a fight in progress is over: it would heal the members the fight is being replayed with.
-  const rested = state.fight ? false : catchUp(state, ctx.today);
+  const rested = state.fight ? false : catchUp(state, ctx.today, ctx.fightsPerDay);
   if (state.fight && action.type !== 'load' && action.type !== 'fightStart' && action.type !== 'fightRound' && action.type !== 'vote' && action.type !== 'raidTargets') {
     return refuse('fight-open', 'You are in the middle of a fight. Finish it first!');
   }
@@ -361,7 +367,9 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
       const out = sendArmyTo(clan, action.kingdom, action.plan, friendly, raidSeed(state.seed, state.raidNo));
       if (!out.ok) return refuse(out.why, out.say);
       state.raidNo++;
-      return done(state, { type: action.type, friendly, result: out.result, gold: out.gold });
+      const won = out.result.outcome === 'won';
+      const earned = earnedOrNone({ wars: friendly && won ? 1 : 0, kingdomRaids: !friendly && won ? 1 : 0 });
+      return done(state, { type: action.type, friendly, result: out.result, gold: out.gold, ...(earned ? { earned } : {}) });
     }
     case 'quest': {
       const q = todaysQuest(state.seed, state.day, settings);
@@ -370,7 +378,9 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
       const spec = puzzleFor(q, action.choice, state.seed, state.day, settings);
       const right = spec ? action.answer !== null && buildPuzzle(spec).answer === action.answer : null;
       const finished = finishQuest(clan, state.day, q, action.choice, right);
-      return finished.ok ? done(state, { type: 'quest', questId: q.id, text: finished.text, right: finished.right, prize: finished.prize }) : refuse('quest', finished.say);
+      // A puzzle that was tried (even wrongly, even given up on) goes in the teacher's private records.
+      const answers = spec && finished.ok ? [{ key: factKey(settings.yearBand, buildPuzzle(spec).kind), correct: right === true }] : undefined;
+      return finished.ok ? done(state, { type: 'quest', questId: q.id, text: finished.text, right: finished.right, prize: finished.prize }, true, answers ? { answers } : undefined) : refuse('quest', finished.say);
     }
     case 'chestGive': {
       if (ctx.village && voteOptions(ctx.village.levels).length === 0) return refuse('full', 'The village has built everything already!');
@@ -395,7 +405,7 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
       const { gold, land, destroyed } = out.raid;
       return {
         ok: true, state, changed: true,
-        result: { type: 'raidClass', take: action.take, result: out.raid.result, gold, land, destroyed },
+        result: { type: 'raidClass', take: action.take, result: out.raid.result, gold, land, destroyed, ...earnedPart(earnedOrNone({ classRaids: out.raid.result.outcome === 'won' ? 1 : 0 })) },
         effects: { raid: { targetId: ctx.target.id, empire: out.defenderEmpire, news: out.news, note: out.note } },
       };
     }
@@ -420,13 +430,21 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
       const { state: replayed, cries } = replayFight(clan.members, open.depth, open.seed, open.boss, [...open.rounds, played], open.settings);
       // The replay stops once the fight is over, so a round that was sent after the end has no result.
       if (cries.length !== open.rounds.length + 1) return refuse('no-fight', 'That fight is already over.');
+      // The question was marked by the server's own replay. A question that was taken goes in the teacher's private records.
+      const cry = cries[cries.length - 1];
+      const answers = cry.answered && cry.question ? [{ key: factKey(open.settings.yearBand, cry.question.kind), correct: cry.correct }] : undefined;
+      const effects: Effects | undefined = answers ? { answers } : undefined;
+      const rightCry = cry.answered && cry.correct ? 1 : 0;
       if (!replayed.result) {
         open.rounds.push(played);
-        return done(state, { type: 'fightRound', round: action.round, over: false, summary: null });
+        return done(state, { type: 'fightRound', round: action.round, over: false, summary: null, ...earnedPart(earnedOrNone({ cries: rightCry })) }, true, effects);
       }
+      const boss = open.boss;
       const summary = payFight(clan, replayed);
       state.fight = null;
-      return done(state, { type: 'fightRound', round: action.round, over: true, summary });
+      const won = summary.result === 'won';
+      const earned = earnedOrNone({ wins: won && !boss ? 1 : 0, bosses: won && boss ? 1 : 0, cries: rightCry });
+      return done(state, { type: 'fightRound', round: action.round, over: true, summary, ...earnedPart(earned) }, true, effects);
     }
   }
 }

@@ -94,5 +94,14 @@ export function replayFight(
  * the year band; nobody but the student and the teacher ever sees these.
  */
 export function cryRecord(question: PracticalQuestion, band: YearBand, correct: boolean, ms: number, at: number): FactAnswer {
-  return { key: `clan:y${band}:${question.kind}`, correct, ms, at };
+  return { key: factKey(band, question.kind), correct, ms, at };
 }
+
+/** The key a question kind is kept under in the teacher's private maths records: the kind and the year band, never the numbers. */
+export const factKey = (band: YearBand, kind: string) => `clan:y${band}:${kind}`;
+
+/** The pack Clan Quest's answers are kept in (the same table Gem Keep and Dragon Maths use). */
+export const FACT_PACK = 'clan-quest';
+
+/** The server cannot know how long a child took, so every answer is kept as a slow one: it counts as tried and right, never as "fluent". */
+export const UNTIMED_MS = 60_000;
