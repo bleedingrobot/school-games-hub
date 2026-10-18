@@ -13,6 +13,7 @@ export function NumberPad({
   onEnter,
   canEnter,
   disabled,
+  onMinus,
   decimal,
 }: {
   onDigit: (digit: string) => void;
@@ -20,6 +21,8 @@ export function NumberPad({
   onEnter: () => void;
   canEnter: boolean;
   disabled?: boolean;
+  /** If given, a minus key is shown (for questions with negative answers). */
+  onMinus?: () => void;
   /** Adds a decimal point key (the tick then gets a row of its own). */
   decimal?: boolean;
 }) {
@@ -51,6 +54,11 @@ export function NumberPad({
       >
         ✓
       </button>
+      {onMinus ? (
+        <button type="button" className="numpad__key numpad__key--minus" disabled={disabled} aria-label="Minus" onPointerDown={keepFocus} onClick={onMinus}>
+          −
+        </button>
+      ) : null}
     </div>
   );
 }

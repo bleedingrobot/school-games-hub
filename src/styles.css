@@ -486,6 +486,9 @@ main:focus {
 .link-card--board .link-card__emoji {
   background: #fff1c7;
 }
+.link-card--training .link-card__emoji {
+  background: #dff3e4;
+}
 
 .panel-grid {
   display: grid;
@@ -2321,4 +2324,10 @@ main:focus {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+.section-subtitle {
+  font-size: 1.15rem;
+  margin: 22px 0 12px;
+  color: #fff;
 }

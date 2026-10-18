@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
+import { trainingOn } from '../training/switch';
 import { MuteButton } from './MuteButton';
 import banner from '../assets/dps-banner.png';
 
@@ -23,7 +24,11 @@ export function Layout() {
           <span className="brand__name">Games Hub</span>
         </NavLink>
         <nav aria-label="Main" className="topnav">
-          {[...NAV, ...(profile?.role === 'teacher' ? [{ to: '/teacher', label: 'Teacher', emoji: '🧑‍🏫' }] : [])].map((item) => (
+          {[
+            ...NAV,
+            ...(trainingOn() ? [{ to: '/training', label: 'Training', emoji: '🧮' }] : []),
+            ...(profile?.role === 'teacher' ? [{ to: '/teacher', label: 'Teacher', emoji: '🧑‍🏫' }] : []),
+          ].map((item) => (
             <NavLink key={item.to} to={item.to} end className="topnav__link">
               <span aria-hidden="true">{item.emoji}</span> {item.label}
             </NavLink>

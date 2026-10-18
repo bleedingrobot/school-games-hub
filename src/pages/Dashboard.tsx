@@ -20,6 +20,8 @@ import { fetchMyOpenSpaceGames, fetchMySpaceStats, fetchRecentSpaceGames, seatsO
 import { fetchMyCardStats, fetchMyOpenCardGames, fetchRecentCardGames, type SeatSummary } from '../data/cardGames';
 import { fetchMyOpenPowerGames, fetchMyPowerStats, fetchRecentPowerGames, seatsOf as powerSeatsOf, type PowerGame } from '../data/powerGames';
 import { findGame, GAMES, POWER_CLASH_ON, gameLabel } from '../games/registry';
+import { trainingOn } from '../training/switch';
+import { useClansEnabled } from '../games/clans/switch';
 import { useLordEnabled } from '../games/lord/switch';
 import { useMonstersEnabled } from '../games/monsters/switch';
 import { BOT_LEVELS, isRanked, type BotLevel } from '../games/types';
@@ -43,6 +45,13 @@ function botName(level: string, game?: string) {
   if (game === '101') return `${BOT_LEVELS.find((l) => l.id === level)?.label ?? ''} bots`;
   return `${BOT_LEVELS.find((l) => l.id === level)?.label ?? ''} bot`;
 }
+
+/** How the dashboard groups its games, top to bottom. A game missing from here would not show. */
+const GAME_GROUPS = [
+  { title: 'Non-maths games', ids: ['chess', 'checkers', '101'] },
+  { title: 'Easy maths games', ids: ['space', 'gem-keep', 'power-clash'] },
+  { title: 'Complex maths games', ids: ['monsters', 'dragon-maths', 'clan-quest'] },
+];
 
 /** One line in Recent games: against a bot, or against another student. */
 export interface RecentGame {
@@ -241,7 +250,8 @@ export function Dashboard() {
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
   const monstersOn = useMonstersEnabled() === true;
   const lordOn = useLordEnabled() === true;
-  const shownGames = GAMES.filter((g) => (g.id !== 'monsters' || monstersOn) && (g.id !== 'dragon-maths' || lordOn));
+  const clansOn = useClansEnabled() === true;
+  const shownGames = GAMES.filter((g) => (g.id !== 'monsters' || monstersOn) && (g.id !== 'dragon-maths' || lordOn) && (g.id !== 'clan-quest' || clansOn));
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
@@ -352,19 +362,44 @@ export function Dashboard() {
         <h2 id="games-title" className="section-title">
           Pick a game
         </h2>
-        <div className="game-grid">
-          {shownGames.map((game) => (
-            <GameCard
-              key={game.id}
-              game={game}
-              level={levelFor(game.id)}
-              onLevelChange={(level) => {
-                setLevels((prev) => ({ ...prev, [game.id]: level }));
-                setFeatured(game.id);
-              }}
-            />
-          ))}
-        </div>
+        {GAME_GROUPS.map((group) => {
+          const groupGames = group.ids.map((id) => shownGames.find((g) => g.id === id)).filter((g) => g !== undefined);
+          if (groupGames.length === 0) return null;
+          return (
+            <div key={group.title}>
+              {group.title && <h3 className="section-subtitle">{group.title}</h3>}
+              <div className="game-grid">
+                {groupGames.map((game) => (
+                  <GameCard
+                    key={game.id}
+                    game={game}
+                    level={levelFor(game.id)}
+                    onLevelChange={(level) => {
+                      setLevels((prev) => ({ ...prev, [game.id]: level }));
+                      setFeatured(game.id);
+                    }}
+                  />
+                ))}
+              </div>
+              {group.title === 'Non-maths games' && trainingOn() && (
+                <>
+                  <h3 className="section-subtitle">Training</h3>
+                  <div className="link-grid">
+                    <Link to="/training" className="link-card link-card--training">
+                      <span className="link-card__emoji" aria-hidden="true">
+                        🧮
+                      </span>
+                      <span>
+                        <strong>Facts training</strong>
+                        <span>A few minutes a day to build your facts</span>
+                      </span>
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
       </section>
 
       <div className="link-grid">
