@@ -7,6 +7,7 @@ import { gemKeep } from './gem-keep';
 import { monsters } from './monsters';
 import { powerClash } from './power-clash';
 import { dragonMaths } from './lord';
+import { clanQuest } from './clans/game';
 
 /**
  * Is Power Clash on the dashboard? The switch James flips when he's happy with it (it needs the
@@ -21,11 +22,18 @@ export const POWER_CLASH_ON = true;
  */
 export const DRAGON_MATHS_ON = true;
 
+/**
+ * Is Clan Quest on the dashboard? The card still hides itself while the teacher's switch (the Clan Quest panel on the
+ * teacher page) is off, and the database starts with that switch off. Turn this off to remove the card completely.
+ * Needs the clans migrations applied and the `clans` function deployed first (docs/CLANS-PLAN.md).
+ */
+export const CLAN_QUEST_ON = true;
+
 /** Every game on the hub. To add a game: make a folder next to chess/, then add it here. */
-export const GAMES: GameDefinition[] = [chess, checkers, space, card101, gemKeep, ...(POWER_CLASH_ON ? [powerClash] : []), monsters, ...(DRAGON_MATHS_ON ? [dragonMaths] : [])];
+export const GAMES: GameDefinition[] = [chess, checkers, space, card101, gemKeep, ...(POWER_CLASH_ON ? [powerClash] : []), monsters, ...(DRAGON_MATHS_ON ? [dragonMaths] : []), ...(CLAN_QUEST_ON ? [clanQuest] : [])];
 
 /** Every game that can have saved games: the dashboard's, plus Power Clash even while its card is switched off. */
-export const ALL_GAMES: GameDefinition[] = [...GAMES, ...(POWER_CLASH_ON ? [] : [powerClash]), ...(DRAGON_MATHS_ON ? [] : [dragonMaths])];
+export const ALL_GAMES: GameDefinition[] = [...GAMES, ...(POWER_CLASH_ON ? [] : [powerClash]), ...(DRAGON_MATHS_ON ? [] : [dragonMaths]), ...(CLAN_QUEST_ON ? [] : [clanQuest])];
 
 /** A game's name for lists of saved games, even for Power Clash while its card is off. */
 export const gameLabel = (id: string | undefined) => ALL_GAMES.find((game) => game.id === id)?.name;

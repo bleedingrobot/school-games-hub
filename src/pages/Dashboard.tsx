@@ -19,6 +19,7 @@ import { fetchMyOpenSpaceGames, fetchMySpaceStats, fetchRecentSpaceGames, seatsO
 import { fetchMyCardStats, fetchMyOpenCardGames, fetchRecentCardGames, type SeatSummary } from '../data/cardGames';
 import { fetchMyOpenPowerGames, fetchMyPowerStats, fetchRecentPowerGames, seatsOf as powerSeatsOf, type PowerGame } from '../data/powerGames';
 import { findGame, GAMES, POWER_CLASH_ON, gameLabel } from '../games/registry';
+import { useClansEnabled } from '../games/clans/switch';
 import { useLordEnabled } from '../games/lord/switch';
 import { useMonstersEnabled } from '../games/monsters/switch';
 import { BOT_LEVELS, isRanked, type BotLevel } from '../games/types';
@@ -240,7 +241,8 @@ export function Dashboard() {
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
   const monstersOn = useMonstersEnabled() === true;
   const lordOn = useLordEnabled() === true;
-  const shownGames = GAMES.filter((g) => (g.id !== 'monsters' || monstersOn) && (g.id !== 'dragon-maths' || lordOn));
+  const clansOn = useClansEnabled() === true;
+  const shownGames = GAMES.filter((g) => (g.id !== 'monsters' || monstersOn) && (g.id !== 'dragon-maths' || lordOn) && (g.id !== 'clan-quest' || clansOn));
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
