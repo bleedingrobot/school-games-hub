@@ -57,9 +57,9 @@ select set_eq($$
   where n.nspname = 'public' and has_function_privilege('authenticated', p.oid, 'execute')
 $$, array[
   'card_lobby_games', 'choose_my_name', 'gem_keep_leaderboard', 'is_player_in', 'is_school_email', 'is_school_user', 'is_teacher', 'is_valid_avatar',
-  'leaderboard', 'lobby_games', 'monsters_leaderboard', 'my_bot_game_stats', 'my_card_game_stats', 'my_friend_game_stats', 'my_gem_keep', 'my_lord', 'my_monsters', 'my_power_game_stats', 'my_progress',
+  'leaderboard', 'lobby_games', 'lord_hall', 'lord_news', 'lord_warriors', 'monsters_leaderboard', 'my_bot_game_stats', 'my_card_game_stats', 'my_friend_game_stats', 'my_gem_keep', 'my_lord', 'my_monsters', 'my_power_game_stats', 'my_progress',
   'my_space_game_stats', 'power_lobby_games', 'progress_rules', 'save_my_avatar', 'school_domain', 'server_time', 'space_lobby_games',
-  'teacher_delete_student', 'teacher_gem_keep_class', 'teacher_gem_keep_student', 'teacher_monster_class', 'teacher_monster_student', 'teacher_new_season', 'teacher_reset_name', 'teacher_set_gem_keep', 'teacher_set_hidden',
+  'teacher_delete_student', 'teacher_gem_keep_class', 'teacher_gem_keep_student', 'teacher_lord_class', 'teacher_lord_student', 'teacher_monster_class', 'teacher_monster_student', 'teacher_new_season', 'teacher_reset_lord_hero', 'teacher_reset_name', 'teacher_set_gem_keep', 'teacher_set_hidden',
   'teacher_set_lord', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_space_reactions', 'teacher_student_detail',
   'teacher_students'
 ], 'signed-in users can call only this list of functions (each checks who is asking)');

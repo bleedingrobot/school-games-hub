@@ -21,17 +21,19 @@
  *  6. One atomic save (`Services.commit`): the hero, the fight and a note of what happened, or nothing.
  */
 import type { FactAnswer } from '../maths/leitner';
-import { CLASSES, FOREST_FIGHTS_PER_DAY, MAX_LEVEL, SEASON_DAYS, WEAPONS, ARMOURS, baseStats, expNeeded } from './data';
+import { CLASSES, FOREST_FIGHTS_PER_DAY, MAX_LEVEL, SEASON_DAYS, WEAPONS, ARMOURS, baseStats, expNeeded, masterFor } from './data';
+import { computerHeroes } from './computer';
 import { EVENT_BY_ID } from './events';
 import {
-  applyEvent, applyForestResult, applyMasterResult, buyGear, canChallengeMaster, canFaceDragon, deposit, dragonBreather, finishDragon,
-  forestTrip, heal, loseToDragon, newHero, nzDate, replayFight, rollDay, seasonOf, startDragonStage, startFight, startMasterFight,
-  useForestTurn, withdraw,
+  applyEvent, applyForestResult, applyMasterResult, arenaExp, buyGear, canChallengeMaster, canFaceDragon, deposit, dragonBreather, duelistOf,
+  finishDragon, forestTrip, heal, loseToDragon, makeRandom, newHero, nzDate, playDuel, replayFight, rollDay, seasonOf, startDragonStage,
+  startFight, startMasterFight, useForestTurn, withdraw, type Duelist,
 } from './engine';
 import {
   NUMBER_GUESS_TRIES, addMasterTrialBonus, dragonStageOptions, interestFor, numberGuessPrize, offersSizeItUp, priceDiscount, riddleGold,
   sizeItUpBonus, type MomentId, type Result,
 } from './maths';
+import { arenaWonLine, dailyNews, dragonWonLine, flattenedLine, masterWonLine, type NewsLine } from './news';
 import { markProof, type Proof } from './proof';
 import type { FightAction, FightState, Hero, HeroClass, SkillId } from './types';
 
@@ -39,6 +41,19 @@ import type { FightAction, FightState, Hero, HeroClass, SkillId } from './types'
 
 /** A database answer. 'refused': the database said no. 'too-many' (the daily limit) and 'busy' (couldn't reach it). */
 export type Outcome<T> = { ok: true; value: T } | { ok: false; why: 'too-many' | 'refused' | 'busy' };
+
+/** What a pupil has done over all their seasons (the achievements read this; a new season or a new run never clears it). */
+export interface Stats {
+  forestWins: number;
+  masterWins: number;
+  arenaWins: number;
+  /** Maths questions answered right, anywhere in the game. */
+  riddles: number;
+  dragons: number;
+  bestLevel: number;
+}
+
+export const newStats = (): Stats => ({ forestWins: 0, masterWins: 0, arenaWins: 0, riddles: 0, dragons: 0, bestLevel: 1 });
 
 /** The things that belong to a hero but not to the engine's `Hero`. */
 export interface Extra {
@@ -55,9 +70,15 @@ export interface Extra {
   dragonDay: string;
   /** True after a new season starts, until the hero does something: the class can be changed. */
   classOpen: boolean;
+  stats: Stats;
 }
 
-export const newExtra = (): Extra => ({ riddleDay: '', interestDay: '', guess: null, pendingEvent: null, dragon: null, dragonDay: '', classOpen: false });
+export const newExtra = (stats: Stats = newStats()): Extra => ({
+  riddleDay: '', interestDay: '', guess: null, pendingEvent: null, dragon: null, dragonDay: '', classOpen: false, stats,
+});
+
+/** An `extra` as saved, filled in where an older save had no such part. */
+export const readExtra = (saved: Partial<Extra> | null | undefined): Extra => ({ ...newExtra(), ...saved, stats: { ...newStats(), ...saved?.stats } });
 
 export interface FightInfo {
   /** The New Zealand day it was handed out. */
@@ -104,6 +125,32 @@ export interface Commit {
   closeFight: { id: string; status: 'finished' | 'abandoned'; actions: FightAction[]; result: object } | null;
   /** The audit note, whose id makes a repeated request count once. */
   event: { requestId: string; action: string; summary: object };
+  /** Lines for the Daily News about what this request did. */
+  news: NewsLine[];
+  /** What this request earned toward points: the database turns it into points inside the daily cap. */
+  score: { forest: number; master: number; dragon: number } | null;
+  /** The dragon was beaten this season: the Hall of Heroes keeps it. */
+  hall: { season: number } | null;
+  /** A fight that began and ended in this one request (the arena). */
+  doneFight: DoneFight | null;
+}
+
+export interface DoneFight {
+  id: string;
+  kind: 'arena';
+  /** Who it was against, for the record ("computer-gareth", "pupil-1a2b3c4d"). */
+  monster: string;
+  seed: number;
+  start: object;
+  info: object;
+  result: object;
+}
+
+/** A classmate's hero, as the database hands it over for the arena. */
+export interface ArenaCandidate {
+  player: string;
+  name: string;
+  hero: Hero;
 }
 
 export type CommitStatus = 'saved' | 'duplicate' | 'stale' | 'open-fight' | 'no-fight';
@@ -118,11 +165,15 @@ export interface Services {
   isTeacher(player: string): Promise<Outcome<boolean>>;
   settings(): Promise<Outcome<Settings>>;
   /** The hero and the fight in progress (null for a pupil with no hero), and whether this request id was already used. */
-  load(player: string, requestId?: string): Promise<Outcome<{ row: LordRow | null; openFight: OpenFight | null; seen: boolean }>>;
+  load(player: string, requestId?: string): Promise<Outcome<{ row: LordRow | null; openFight: OpenFight | null; seen: boolean; dailyDone?: boolean }>>;
   commit(player: string, commit: Commit): Promise<Outcome<{ status: CommitStatus; version: number }>>;
   /** Adds answers to the student's maths records. `batchKey` makes a retry count once. */
   recordAnswers(player: string, pack: string, batchKey: string, answers: FactAnswer[]): Promise<Outcome<number>>;
   recordRefusal(player: string, reason: string, action: string): Promise<Outcome<null>>;
+  /** Classmates' heroes of this season near this level, for the arena (the pupil's own hero is left out). */
+  arenaCandidates(player: string, season: number, level: number): Promise<Outcome<ArenaCandidate[]>>;
+  /** The day's own news lines (the village event, the computer heroes). Each line is kept once. */
+  dailyNews(day: string, lines: NewsLine[]): Promise<Outcome<null>>;
 }
 
 // ---------- What goes back to the browser ----------
@@ -143,6 +194,8 @@ export interface LordState {
   riddleDone: boolean;
   interestDone: boolean;
   guess: { done: boolean; tries: { n: number; hint: 'low' | 'high' | 'win' }[] } | null;
+  /** Everything done over all seasons. */
+  stats: Stats;
 }
 
 export type Reason =
@@ -185,6 +238,7 @@ export type LordAction =
   | { action: 'inn'; game: 'riddle'; proof?: Proof | null }
   | { action: 'inn'; game: 'guess-start' }
   | { action: 'inn'; game: 'guess'; n: number }
+  | { action: 'arena' }
   | { action: 'tools'; tool: ToolId; value?: number | string };
 
 /** What the browser sends: an action, with an id that makes a repeat count once, and the version it was made from. */
@@ -198,7 +252,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const SKILLS: SkillId[] = ['power-strike', 'zap', 'mend', 'dodge', 'pinch'];
 const ACTIONS = [
   'load', 'rollover', 'start-hero', 'forest', 'event', 'fight-finish', 'master-start', 'master-finish', 'dragon-stage', 'dragon-finish',
-  'shop-buy', 'heal', 'bank', 'inn', 'tools',
+  'shop-buy', 'heal', 'bank', 'inn', 'arena', 'tools',
 ];
 
 function parseActions(raw: unknown): FightAction[] | null {
@@ -236,6 +290,11 @@ interface Done {
   answers?: (FactAnswer & { pack: string })[];
   /** Codes for the teacher page: things that were off but not worth an error (an answer that could not be checked). */
   notes?: string[];
+  news?: NewsLine[];
+  /** Added to the pupil's lifetime counts (and to their points, for the three that earn them). */
+  gain?: Partial<Stats>;
+  hall?: boolean;
+  doneFight?: DoneFight;
 }
 
 type Refuse = { refuse: Reason; message?: string; note?: string };
@@ -243,6 +302,7 @@ const rule = (message: string): Refuse => ({ refuse: 'rule', message });
 const isRefuse = <T extends object>(x: T | Refuse): x is Refuse => 'refuse' in x;
 
 interface Ctx {
+  player: string;
   w: Work;
   req: Record<string, unknown>;
   today: string;
@@ -273,7 +333,7 @@ function startHero(c: Ctx, existing: boolean): Done | Refuse {
   }
   const next = newHero(cls as HeroClass, c.today, existing ? { dragonKills: hero.dragonKills } : undefined);
   next.forestLeft = c.settings.forestPerDay;
-  return { hero: next, extra: newExtra(), summary: { heroClass: cls }, result: {} };
+  return { hero: next, extra: newExtra(extra.stats), summary: { heroClass: cls }, result: {} };
 }
 
 function forest(c: Ctx): Done | Refuse {
@@ -350,8 +410,11 @@ function fightFinish(c: Ctx): Done | Refuse {
   const crossed = was.info.day !== c.today;
   const hero = keepToday(applyForestResult(c.w.hero, fight), c.w.hero, crossed);
   const rewards = fight.outcome === 'won' ? { gold: fight.monster.gold + fight.goldPinched, exp: fight.monster.exp } : { gold: 0, exp: 0 };
+  const won = fight.outcome === 'won';
   return {
     hero, answers, notes,
+    gain: won ? { forestWins: 1 } : undefined,
+    news: fight.outcome === 'lost' ? [flattenedLine(c.player, fight.monster.name)] : undefined,
     closeFight: { status: 'finished', actions, result: { outcome: fight.outcome, rounds: fight.round, ...rewards, sizeUp } },
     summary: { outcome: fight.outcome, monster: fight.monster.id, ...rewards },
     result: { outcome: fight.outcome, ...rewards, sizeUp, readyForMaster: fight.outcome === 'won' && hero.level < MAX_LEVEL && canChallengeMaster(hero).ok },
@@ -388,8 +451,11 @@ function masterFinish(c: Ctx): Done | Refuse {
   const trial = open.info.trial ?? [];
   if (fight.outcome === 'won') hero = addMasterTrialBonus(hero, trial);
   hero = keepToday(hero, was, open.info.day !== c.today);
+  const won = fight.outcome === 'won';
   return {
     hero,
+    gain: won ? { masterWins: 1 } : undefined,
+    news: won ? [masterWonLine(c.player, masterFor(was.level)?.name ?? 'your master', hero.level)] : undefined,
     closeFight: { status: 'finished', actions, result: { outcome: fight.outcome, rounds: fight.round, level: hero.level } },
     summary: { outcome: fight.outcome, level: hero.level },
     result: { outcome: fight.outcome, level: hero.level, trial, bonusStrength: hero.strength - was.strength },
@@ -434,6 +500,9 @@ function dragonFinish(c: Ctx): Done | Refuse {
   }
   return {
     hero: next, extra: { ...extra, dragon },
+    gain: finished ? { dragons: 1 } : undefined,
+    hall: finished,
+    news: finished ? [dragonWonLine(c.player, next.dragonKills)] : undefined,
     closeFight: { status: 'finished', actions, result: { outcome: fight.outcome, rounds: fight.round, stage } },
     summary: { outcome: fight.outcome, stage, finished },
     result: { outcome: fight.outcome, stage, finished, stars: next.dragonKills, hpGoingIn: dragon?.hp ?? null },
@@ -533,6 +602,69 @@ function inn(c: Ctx): Done | Refuse {
   return { refuse: 'bad-request' };
 }
 
+/** A hero the pupil can meet in the arena: a classmate's saved copy, or a computer hero. */
+interface Opponent {
+  kind: 'pupil' | 'computer';
+  id: string;
+  name: string;
+  duelist: Duelist;
+}
+
+const sane = (h: unknown): h is Hero => {
+  const x = h as Hero | null;
+  return !!x && typeof x === 'object' && Number.isInteger(x.level) && x.level >= 1 && x.level <= MAX_LEVEL
+    && Number.isInteger(x.weapon) && x.weapon >= 0 && x.weapon < WEAPONS.length
+    && Number.isInteger(x.armour) && x.armour >= 0 && x.armour < ARMOURS.length
+    && Number.isFinite(x.strength) && Number.isFinite(x.defence) && Number.isFinite(x.maxHp) && x.maxHp > 0
+    && typeof x.heroClass === 'string' && x.heroClass in CLASSES;
+};
+
+/** Three fights a day against a saved copy of a classmate's hero or a computer hero, near your level. Played by the server. */
+async function arena(c: Ctx): Promise<Done | Refuse> {
+  const { hero } = c.w;
+  if (hero.arenaLeft <= 0) return { refuse: 'no-turns', message: 'You have used your arena fights today. Come back tomorrow!' };
+  const season = seasonFor(c.settings, c.today);
+  const classmates = await c.s.arenaCandidates(c.player, season.number, hero.level);
+  const pool: Opponent[] = [];
+  if (classmates.ok) {
+    for (const k of classmates.value) {
+      if (k && typeof k.player === 'string' && k.player !== c.player && typeof k.name === 'string' && sane(k.hero)) {
+        pool.push({ kind: 'pupil', id: k.player, name: k.name, duelist: duelistOf(k.hero, k.name) });
+      }
+    }
+  }
+  for (const k of computerHeroes(season.number, season.dayOfSeason)) pool.push({ kind: 'computer', id: k.id, name: k.name, duelist: k.duelist });
+  // Near your level: within one, or else the three closest.
+  const gap = (o: Opponent) => Math.abs(o.duelist.level - hero.level);
+  const near = pool.filter((o) => gap(o) <= 1);
+  const choices = near.length > 0 ? near : [...pool].sort((x, y) => gap(x) - gap(y)).slice(0, 3);
+  const seed = c.s.seed();
+  const rand = makeRandom(seed ^ 0xa5a5a5a5);
+  const opponent = choices[Math.min(choices.length - 1, Math.floor(rand() * choices.length))];
+  const you = duelistOf(hero, 'You');
+  const duel = playDuel(you, opponent.duelist, seed);
+  const won = duel.winner === 'a';
+  const exp = won ? arenaExp(hero.level) : 0;
+  const after: Hero = { ...hero, arenaLeft: hero.arenaLeft - 1, exp: hero.exp + exp, arenaWins: hero.arenaWins + (won ? 1 : 0) };
+  const slug = opponent.kind === 'computer' ? `computer-${opponent.id}` : `pupil-${opponent.id.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12)}`;
+  const result = { outcome: won ? 'won' : 'lost', rounds: duel.rounds, hpYou: duel.hpA, hpThem: duel.hpB, exp, log: duel.log };
+  return {
+    hero: after,
+    gain: won ? { arenaWins: 1 } : undefined,
+    news: won ? [arenaWonLine(c.player, opponent.kind === 'computer' ? opponent.name : null)] : undefined,
+    doneFight: {
+      id: c.s.newId(), kind: 'arena', monster: slug, seed, start: { a: you, b: opponent.duelist },
+      info: { day: c.today, opponent: { kind: opponent.kind, name: opponent.name, level: opponent.duelist.level } }, result,
+    },
+    summary: { arena: won ? 'won' : 'lost', against: slug, rounds: duel.rounds, exp },
+    result: {
+      ...result,
+      you: { name: you.name, heroClass: you.heroClass, level: you.level, maxHp: you.maxHp },
+      opponent: { name: opponent.name, heroClass: opponent.duelist.heroClass, level: opponent.duelist.level, maxHp: opponent.duelist.maxHp, computer: opponent.kind === 'computer' },
+    },
+  };
+}
+
 /** Test tools: for teachers only. The browser trial (preview/lord) is its own teacher. */
 async function tools(c: Ctx): Promise<Done | Refuse> {
   if (!(await c.teacher())) return { refuse: 'not-allowed', note: 'tools' };
@@ -564,7 +696,7 @@ async function tools(c: Ctx): Promise<Done | Refuse> {
       if (typeof value !== 'string' || !EVENT_BY_ID[value]) return { refuse: 'bad-request' };
       return { extra: { ...extra, pendingEvent: value }, summary: { tool, event: value }, result: {} };
     }
-    case 'reset': return { hero: newHero(hero.heroClass, c.today), extra: { ...newExtra(), classOpen: true }, summary: { tool }, result: {} };
+    case 'reset': return { hero: newHero(hero.heroClass, c.today), extra: { ...newExtra(extra.stats), classOpen: true }, summary: { tool }, result: {} };
     default: return { refuse: 'bad-request' };
   }
 }
@@ -585,6 +717,7 @@ export const viewOf = (w: Pick<Work, 'hero' | 'extra' | 'open'> | null, version:
   riddleDone: w?.extra.riddleDay === today,
   interestDone: w?.extra.interestDay === today,
   guess: w?.extra.guess?.day === today ? { done: w.extra.guess.done, tries: w.extra.guess.tries } : null,
+  stats: w?.extra.stats ?? newStats(),
 });
 
 export const DEFAULT_SETTINGS: Settings = { enabled: false, forestPerDay: FOREST_FIGHTS_PER_DAY, seasonStart: null };
@@ -636,17 +769,20 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
   const row = loaded.value.row;
   const stored = loaded.value.openFight;
 
+  // The day's own news (the village event, the computer heroes) is written by whoever opens the game first.
+  if (action === 'load' && !loaded.value.dailyDone) await s.dailyNews(today, dailyNews(today, season));
+
   // 1. Nothing runs at midnight: the first request of a new day (or season) does it.
   let w: Work | null = null;
   let rolled = false;
   if (row) {
     let hero = row.hero;
-    let extra = row.extra;
+    let extra = readExtra(row.extra);
     let rowSeason = row.season;
     // A new season starts the hero again, once any fight in progress is finished.
     if (rowSeason < season.number && !stored) {
       hero = newHero(hero.heroClass, today, { dragonKills: hero.dragonKills });
-      extra = { ...newExtra(), classOpen: true };
+      extra = { ...newExtra(extra.stats), classOpen: true };
       rowSeason = season.number;
       rolled = true;
     }
@@ -670,6 +806,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
     const out = await s.commit(player, {
       expect: row.version, hero: w.hero, season: w.season, extra: w.extra, openFight: null, closeFight: null,
       event: { requestId: s.newId(), action: 'rollover', summary: { day: today, season: w.season } },
+      news: [], score: null, hall: null, doneFight: null,
     });
     if (!out.ok) return out.why === 'busy' ? busy() : { status: 200, body: { ok: true, state: finishNow(w, row.version), result: {} } };
     // Someone else got there first (another Chromebook): carry on from what is saved.
@@ -711,7 +848,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
   }
 
   const base: Work = w ?? { hero: newHero('knight', today), extra: newExtra(), season: season.number, open: null };
-  const ctx: Ctx = { w: base, req, today, settings, now, s, rolled, teacher };
+  const ctx: Ctx = { player, w: base, req, today, settings, now, s, rolled, teacher };
   let done: Done | Refuse;
   switch (action) {
     case 'start-hero': done = startHero(ctx, !!row); break;
@@ -726,6 +863,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
     case 'heal': done = healAction(ctx); break;
     case 'bank': done = bank(ctx); break;
     case 'inn': done = inn(ctx); break;
+    case 'arena': done = await arena(ctx); break;
     case 'tools': done = await tools(ctx); break;
     default: done = { refuse: 'bad-request' };
   }
@@ -737,9 +875,19 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
 
   // 4. One atomic save: the hero, the fight and a note of what happened.
   const nextHero = done.hero ?? base.hero;
-  const nextExtra = done.extra ?? base.extra;
+  // What the pupil has done over all seasons: the achievements read this, and the points come from the first three.
+  const gain = done.gain ?? {};
+  const rightAnswers = (done.answers ?? []).filter((a) => a.correct).length;
+  const before = (done.extra ?? base.extra).stats;
+  const stats: Stats = {
+    forestWins: before.forestWins + (gain.forestWins ?? 0), masterWins: before.masterWins + (gain.masterWins ?? 0),
+    arenaWins: before.arenaWins + (gain.arenaWins ?? 0), riddles: before.riddles + rightAnswers,
+    dragons: before.dragons + (gain.dragons ?? 0), bestLevel: Math.max(before.bestLevel, nextHero.level),
+  };
+  const nextExtra: Extra = { ...(done.extra ?? base.extra), stats };
   const nextOpen = done.openFight ?? (done.closeFight ? null : base.open);
-  const changed = !!(done.hero || done.extra || done.openFight || done.closeFight);
+  const changed = !!(done.hero || done.extra || done.openFight || done.closeFight || done.doneFight);
+  const earned = { forest: gain.forestWins ?? 0, master: gain.masterWins ?? 0, dragon: gain.dragons ?? 0 };
   const reply = (state: Work, version: number): RunResult => ({ status: 200, body: { ok: true, state: finishNow(state, version), result: done.result } });
   const after: Work = { hero: nextHero, extra: nextExtra, season: base.season, open: nextOpen };
   if (!changed && !rolled) return reply(after, row?.version ?? 0);
@@ -749,6 +897,10 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
     openFight: done.openFight ?? null,
     closeFight: done.closeFight && base.open ? { id: base.open.id, ...done.closeFight } : null,
     event: { requestId: requestId as string, action, summary: done.summary },
+    news: done.news ?? [],
+    score: earned.forest + earned.master + earned.dragon > 0 ? earned : null,
+    hall: done.hall ? { season: base.season } : null,
+    doneFight: done.doneFight ?? null,
   });
   if (!out.ok) return out.why === 'busy' || out.why === 'too-many' ? busy() : refuse('bad-request');
   if (out.value.status !== 'saved') {

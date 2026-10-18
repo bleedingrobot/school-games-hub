@@ -2,7 +2,7 @@
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
 import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
-import type { Outcome, Settings } from '../../../shared/lord/server';
+import type { ArenaCandidate, Outcome, Settings } from '../../../shared/lord/server';
 import { batchIdFor, makeHandler } from './handler';
 
 declare const Deno: {
@@ -56,5 +56,7 @@ Deno.serve(
       });
     },
     recordRefusal: (player, reason, action) => call('record_lord_refusal', { player, reason, action }),
+    arenaCandidates: (player, season, level) => call<ArenaCandidate[]>('lord_arena_candidates', { player, season, lvl: level }),
+    dailyNews: (day, lines) => call('lord_daily_news', { news_day: day, lines }),
   }),
 );

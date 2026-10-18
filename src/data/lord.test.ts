@@ -16,7 +16,8 @@ let ME = '';
 
 const state = (version: number, over: Partial<LordState> = {}): LordState => ({
   hero: null, version, today: '2026-10-19', season: { number: 1, dayOfSeason: 1, daysLeft: 34 }, forestPerDay: 10, classOpen: false,
-  openFight: null, pendingEvent: null, dragon: null, dragonTried: false, riddleDone: false, interestDone: false, guess: null, ...over,
+  openFight: null, pendingEvent: null, dragon: null, dragonTried: false, riddleDone: false, interestDone: false, guess: null,
+  stats: { forestWins: 0, masterWins: 0, arenaWins: 0, riddles: 0, dragons: 0, bestLevel: 1 }, ...over,
 });
 const ok = (version: number, result: Record<string, unknown> = {}): Response => new Response(JSON.stringify({ ok: true, state: state(version), result } satisfies LordReply));
 const refused = (reason: string, extra: object = {}): Response => new Response(JSON.stringify({ ok: false, reason, ...extra }));

@@ -390,3 +390,95 @@ export function buyGear(hero: Hero, slot: 'weapon' | 'armour', index: number, ex
   if (hero.gold + refund < paid) return { ok: false, reason: `You need ${paid - refund - hero.gold} more gold (after selling your old one).` };
   return { ok: true, hero: { ...hero, [slot]: index, gold: hero.gold + refund - paid }, paid, refund };
 }
+
+// ---------- The arena: two heroes, played by the computer ----------
+
+/** What a hero brings to a duel. Nothing about gold, gear names or the pupil: just the numbers that decide it. */
+export interface Duelist {
+  name: string;
+  heroClass: HeroClass;
+  level: number;
+  attack: number;
+  defence: number;
+  maxHp: number;
+}
+
+export type DuelEvent =
+  | { who: 'a' | 'b'; type: 'hit'; damage: number; move?: SkillId }
+  | { who: 'a' | 'b'; type: 'miss' };
+
+export interface DuelResult {
+  winner: 'a' | 'b';
+  rounds: number;
+  hpA: number;
+  hpB: number;
+  log: DuelEvent[];
+}
+
+/** The most rounds a duel can last. After that, whoever has the larger share of health left wins. */
+export const MAX_DUEL_ROUNDS = 30;
+/** The round each side uses its class move. */
+const MOVE_ROUND = 2;
+
+export const duelistOf = (hero: Hero, name: string): Duelist => ({
+  name, heroClass: hero.heroClass, level: hero.level, attack: heroAttack(hero), defence: heroDefence(hero), maxHp: hero.maxHp,
+});
+
+/**
+ * An arena duel. Both heroes start at full health and take turns (a first, then b) for up to 30 rounds. A hit is
+ * LORD's damage roll minus a random 0 to the other hero's defence (in player fights defence counts on both sides),
+ * and always at least 1. In round 2 each hero uses its class move once, for free: a Knight's power strike (double),
+ * a Mage's zap (1.5 × attack, no roll) or a Trickster's dodge (the next hit misses). Pure and seeded, so the very
+ * same duel can be played again from the same two heroes and the same seed.
+ */
+export function playDuel(a: Duelist, b: Duelist, seed: number): DuelResult {
+  let rng = seed >>> 0;
+  const rand = () => {
+    const [value, next] = nextRandom(rng);
+    rng = next;
+    return value;
+  };
+  const hp = { a: a.maxHp, b: b.maxHp };
+  const side = { a, b };
+  const dodging = { a: false, b: false };
+  const log: DuelEvent[] = [];
+  let rounds = 0;
+  const strike = (who: 'a' | 'b') => {
+    const us = side[who];
+    const other = who === 'a' ? 'b' : 'a';
+    const them = side[other];
+    if (dodging[other]) {
+      dodging[other] = false;
+      log.push({ who, type: 'miss' });
+      return;
+    }
+    let move: SkillId | undefined;
+    let raw: number;
+    if (rounds === MOVE_ROUND && us.heroClass === 'knight') {
+      move = 'power-strike';
+      raw = damageRoll(us.attack, rand) * 2;
+    } else if (rounds === MOVE_ROUND && us.heroClass === 'mage') {
+      move = 'zap';
+      raw = Math.round(us.attack * 1.5);
+    } else {
+      raw = damageRoll(us.attack, rand);
+      if (rounds === MOVE_ROUND && us.heroClass === 'trickster') {
+        move = 'dodge';
+        dodging[who] = true;
+      }
+    }
+    const damage = Math.max(1, raw - Math.floor(rand() * (them.defence + 1)));
+    hp[other] = Math.max(0, hp[other] - damage);
+    log.push({ who, type: 'hit', damage, ...(move ? { move } : {}) });
+  };
+  while (rounds < MAX_DUEL_ROUNDS && hp.a > 0 && hp.b > 0) {
+    rounds += 1;
+    strike('a');
+    if (hp.b > 0) strike('b');
+  }
+  const winner = hp.b <= 0 ? 'a' : hp.a <= 0 ? 'b' : hp.a / a.maxHp > hp.b / b.maxHp ? 'a' : 'b';
+  return { winner, rounds, hpA: hp.a, hpB: hp.b, log };
+}
+
+/** A little experience for an arena win: about half a forest monster's worth. Losing costs nothing and gives nothing. */
+export const arenaExp = (level: number) => Math.max(1, Math.round(tierPower(level) * 0.5));

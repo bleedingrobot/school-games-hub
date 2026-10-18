@@ -45,6 +45,8 @@ export interface SeasonReport {
   dragonDay: number | null;
   playDays: number;
   avgRounds: number;
+  /** The hero at the end of each calendar day (index 0 is the first day), played days or not. The computer heroes read this. */
+  heroByDay: Hero[];
 }
 
 const dayString = (n: number) => new Date(Date.UTC(2026, 0, 1) + n * 86400000).toISOString().slice(0, 10);
@@ -92,7 +94,7 @@ export function playSeason(heroClass: HeroClass, style: PlayerStyle, seed: numbe
   const report: SeasonReport = {
     levelDay: Array(MAX_LEVEL + 1).fill(null), levelCalendarDay: Array(MAX_LEVEL + 1).fill(null),
     forestFights: 0, forestWins: 0, forestLosses: 0, masterTries: 0, masterWins: 0, goldEarned: 0, goldOnHealing: 0, goldOnGear: 0,
-    dragonKills: 0, dragonTries: 0, dragonDay: null, playDays: 0, avgRounds: 0,
+    dragonKills: 0, dragonTries: 0, dragonDay: null, playDays: 0, avgRounds: 0, heroByDay: [],
   };
   let rounds = 0;
   let hero = newHero(heroClass, dayString(0));
@@ -108,7 +110,10 @@ export function playSeason(heroClass: HeroClass, style: PlayerStyle, seed: numbe
   };
 
   for (let day = 0; day < days; day++) {
-    if (!style.plays(day)) continue;
+    if (!style.plays(day)) {
+      report.heroByDay.push(hero);
+      continue;
+    }
     report.playDays += 1;
     hero = rollDay(hero, dayString(day));
     hero = shop(withdraw(hero, hero.bank), report);
@@ -174,6 +179,7 @@ export function playSeason(heroClass: HeroClass, style: PlayerStyle, seed: numbe
     }
 
     hero = deposit(hero, Math.max(0, hero.gold - 0));
+    report.heroByDay.push(hero);
   }
   report.avgRounds = report.forestFights ? rounds / report.forestFights : 0;
   return report;

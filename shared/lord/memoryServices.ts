@@ -5,7 +5,9 @@
  * (preview/lord), which keeps it in localStorage so the hero survives a refresh.
  */
 import type { FactAnswer } from '../maths/leitner';
-import type { Commit, LordRow, OpenFight, Outcome, Services, Settings } from './server';
+import { nzDate } from './engine';
+import type { ArenaCandidate, Commit, LordRow, OpenFight, Outcome, Services, Settings } from './server';
+import type { NewsLine } from './news';
 
 export interface MemoryDb {
   settings: Settings;
@@ -13,11 +15,19 @@ export interface MemoryDb {
   row: LordRow | null;
   openFight: OpenFight | null;
   requestIds: string[];
-  fights: { id: string; status: 'open' | 'finished' | 'abandoned'; actions: unknown[]; result: unknown }[];
+  fights: { id: string; status: 'open' | 'finished' | 'abandoned'; actions: unknown[]; result: unknown; kind?: string; monster?: string; seed?: number; start?: unknown }[];
   events: { requestId: string; action: string; summary: object }[];
   refusals: { reason: string; action: string }[];
   /** Answers by batch key, as the maths records would count them. */
   batches: Record<string, { pack: string; answers: FactAnswer[] }>;
+  /** Classmates' heroes the arena can pick from (the trial has none, so it is all computer heroes). */
+  classmates: ArenaCandidate[];
+  /** The Daily News: one line per day and key. */
+  news: (NewsLine & { day: string })[];
+  /** The Hall of Heroes: dragons beaten in a season. */
+  hall: { season: number; kills: number }[];
+  /** What was earned toward points, request by request (the database works out the points). */
+  scores: { forest: number; master: number; dragon: number }[];
 }
 
 export const emptyDb = (settings: Partial<Settings> = {}): MemoryDb => ({
@@ -30,6 +40,10 @@ export const emptyDb = (settings: Partial<Settings> = {}): MemoryDb => ({
   events: [],
   refusals: [],
   batches: {},
+  classmates: [],
+  news: [],
+  hall: [],
+  scores: [],
 });
 
 const ok = <T,>(value: T): Outcome<T> => ({ ok: true, value });
@@ -59,7 +73,10 @@ export function memoryServices(db: MemoryDb, options: MemoryOptions = {}): Servi
     isTeacher: async () => ok(db.teacher),
     settings: async () => ok(copy(db.settings)),
     load: async (_player, requestId) =>
-      ok({ row: db.row ? copy(db.row) : null, openFight: db.openFight ? copy(db.openFight) : null, seen: !!requestId && db.requestIds.includes(requestId) }),
+      ok({
+        row: db.row ? copy(db.row) : null, openFight: db.openFight ? copy(db.openFight) : null, seen: !!requestId && db.requestIds.includes(requestId),
+        dailyDone: db.news.some((n) => n.dedupe === 'village' && n.day === nzDate(new Date((options.now ?? Date.now)()))),
+      }),
     commit: async (_player: string, c: Commit) => {
       if (db.requestIds.includes(c.event.requestId)) return ok({ status: 'duplicate' as const, version: db.row?.version ?? 0 });
       if ((db.row?.version ?? 0) !== c.expect) return ok({ status: 'stale' as const, version: db.row?.version ?? 0 });
@@ -71,6 +88,12 @@ export function memoryServices(db: MemoryDb, options: MemoryOptions = {}): Servi
         fight.result = c.closeFight.result;
         db.openFight = null;
       }
+      if (c.doneFight) {
+        db.fights.push({
+          id: c.doneFight.id, status: 'finished', actions: [], result: copy(c.doneFight.result), kind: c.doneFight.kind, monster: c.doneFight.monster,
+          seed: c.doneFight.seed, start: copy(c.doneFight.start),
+        });
+      }
       if (c.openFight) {
         if (db.fights.some((f) => f.status === 'open')) return ok({ status: 'open-fight' as const, version: db.row?.version ?? 0 });
         db.fights.push({ id: c.openFight.id, status: 'open', actions: [], result: null });
@@ -79,6 +102,14 @@ export function memoryServices(db: MemoryDb, options: MemoryOptions = {}): Servi
       db.row = { hero: copy(c.hero), version: c.expect + 1, season: c.season, extra: copy(c.extra) };
       db.requestIds.push(c.event.requestId);
       db.events.push(copy(c.event));
+      const day = nzDate(new Date((options.now ?? Date.now)()));
+      for (const line of c.news) if (!db.news.some((n) => n.day === day && n.dedupe === line.dedupe)) db.news.push({ ...copy(line), day });
+      if (c.hall) {
+        const mine = db.hall.find((h) => h.season === c.hall!.season);
+        if (mine) mine.kills += 1;
+        else db.hall.push({ season: c.hall.season, kills: 1 });
+      }
+      if (c.score) db.scores.push(copy(c.score));
       options.onChange?.(db);
       return ok({ status: 'saved' as const, version: c.expect + 1 });
     },
@@ -90,6 +121,14 @@ export function memoryServices(db: MemoryDb, options: MemoryOptions = {}): Servi
     },
     recordRefusal: async (_player, reason, action) => {
       db.refusals.push({ reason, action });
+      return ok(null);
+    },
+    arenaCandidates: async (_player, _season, level) =>
+      // The server checks what it is handed, so the stand-in lets odd data through (the real database only holds heroes the server wrote).
+      ok(copy(db.classmates).filter((k) => typeof k.hero?.level !== 'number' || Math.abs(k.hero.level - level) <= 2)),
+    dailyNews: async (day, lines) => {
+      for (const line of lines) if (!db.news.some((n) => n.day === day && n.dedupe === line.dedupe)) db.news.push({ ...copy(line), day });
+      options.onChange?.(db);
       return ok(null);
     },
   };

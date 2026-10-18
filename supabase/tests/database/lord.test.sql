@@ -128,7 +128,7 @@ select is((select status from public.lord_fights where id = '00000000-0000-0000-
 select throws_ok($$ insert into public.lord_fights (id, player, kind, monster, seed, start, status)
   values (gen_random_uuid(), pg_temp.id('a'), 'forest', 'x', 1, '{}', 'finished') $$, '23514', null, 'a finished fight must say when');
 select throws_ok($$ insert into public.lord_fights (id, player, kind, monster, seed, start)
-  values (gen_random_uuid(), pg_temp.id('a'), 'arena', 'x', 1, '{}') $$, '23514', null, 'a fight must be forest, master or dragon');
+  values (gen_random_uuid(), pg_temp.id('a'), 'duel', 'x', 1, '{}') $$, '23514', null, 'a fight must be forest, master, dragon or arena');
 
 -- ---- Each student sees only their own ----
 select pg_temp.commit('b', 0, gen_random_uuid(), 'start-hero', 77);

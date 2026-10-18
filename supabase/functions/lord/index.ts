@@ -734,9 +734,9 @@ function rollDay(hero, today, forestPerDay = 10) {
 		hp: hero.maxHp
 	};
 }
-const dayNumber = (date) => Math.floor(Date.parse(`${date}T00:00:00Z`) / 864e5);
+const dayNumber$1 = (date) => Math.floor(Date.parse(`${date}T00:00:00Z`) / 864e5);
 function seasonOf(seasonOneStart, today) {
-	const days = dayNumber(today) - dayNumber(seasonOneStart);
+	const days = dayNumber$1(today) - dayNumber$1(seasonOneStart);
 	if (days < 0) return {
 		number: 0,
 		dayOfSeason: 0,
@@ -1126,6 +1126,95 @@ function buyGear(hero, slot, index, extraDiscount = 0) {
 		refund
 	};
 }
+/** The round each side uses its class move. */
+const MOVE_ROUND = 2;
+const duelistOf = (hero, name) => ({
+	name,
+	heroClass: hero.heroClass,
+	level: hero.level,
+	attack: heroAttack(hero),
+	defence: heroDefence(hero),
+	maxHp: hero.maxHp
+});
+/**
+* An arena duel. Both heroes start at full health and take turns (a first, then b) for up to 30 rounds. A hit is
+* LORD's damage roll minus a random 0 to the other hero's defence (in player fights defence counts on both sides),
+* and always at least 1. In round 2 each hero uses its class move once, for free: a Knight's power strike (double),
+* a Mage's zap (1.5 × attack, no roll) or a Trickster's dodge (the next hit misses). Pure and seeded, so the very
+* same duel can be played again from the same two heroes and the same seed.
+*/
+function playDuel(a, b, seed) {
+	let rng = seed >>> 0;
+	const rand = () => {
+		const [value, next] = nextRandom(rng);
+		rng = next;
+		return value;
+	};
+	const hp = {
+		a: a.maxHp,
+		b: b.maxHp
+	};
+	const side = {
+		a,
+		b
+	};
+	const dodging = {
+		a: false,
+		b: false
+	};
+	const log = [];
+	let rounds = 0;
+	const strike = (who) => {
+		const us = side[who];
+		const other = who === "a" ? "b" : "a";
+		const them = side[other];
+		if (dodging[other]) {
+			dodging[other] = false;
+			log.push({
+				who,
+				type: "miss"
+			});
+			return;
+		}
+		let move;
+		let raw;
+		if (rounds === MOVE_ROUND && us.heroClass === "knight") {
+			move = "power-strike";
+			raw = damageRoll(us.attack, rand) * 2;
+		} else if (rounds === MOVE_ROUND && us.heroClass === "mage") {
+			move = "zap";
+			raw = Math.round(us.attack * 1.5);
+		} else {
+			raw = damageRoll(us.attack, rand);
+			if (rounds === MOVE_ROUND && us.heroClass === "trickster") {
+				move = "dodge";
+				dodging[who] = true;
+			}
+		}
+		const damage = Math.max(1, raw - Math.floor(rand() * (them.defence + 1)));
+		hp[other] = Math.max(0, hp[other] - damage);
+		log.push({
+			who,
+			type: "hit",
+			damage,
+			...move ? { move } : {}
+		});
+	};
+	while (rounds < 30 && hp.a > 0 && hp.b > 0) {
+		rounds += 1;
+		strike("a");
+		if (hp.b > 0) strike("b");
+	}
+	return {
+		winner: hp.b <= 0 ? "a" : hp.a <= 0 ? "b" : hp.a / a.maxHp > hp.b / b.maxHp ? "a" : "b",
+		rounds,
+		hpA: hp.a,
+		hpB: hp.b,
+		log
+	};
+}
+/** A little experience for an arena win: about half a forest monster's worth. Losing costs nothing and gives nothing. */
+const arenaExp = (level) => Math.max(1, Math.round(tierPower(level) * .5));
 //#endregion
 //#region shared/lord/maths.ts
 /** The pack each moment draws from. Where the teacher has turned a topic off, the game uses the next in the list. */
@@ -1212,6 +1301,366 @@ const numberGuessPrize = (level, won) => Math.round(tierPower(level) * (won ? 1 
 /** The inn's riddle of the day: a right answer pays well, a wrong one pays a little for trying. */
 const riddleGold = (level, result) => friendly(tierPower(level) * (result === "right" ? 1.5 : .3));
 //#endregion
+//#region shared/lord/sim.ts
+/** How often the simulated pupil answers a maths question right. */
+const MATHS_RIGHT_SHARE = .7;
+const dayString = (n) => new Date(Date.UTC(2026, 0, 1) + n * 864e5).toISOString().slice(0, 10);
+/** The pupil's fight: attack, with class skills used when it makes sense. */
+function playFight(start) {
+	let f = start;
+	let guard = 0;
+	while (!f.over && guard++ < 200) {
+		const hpShare = f.heroHp / f.heroMaxHp;
+		const skills = f.skillLeft > 0 ? skillsFor(f.heroClass) : [];
+		if (skills.includes("mend") && hpShare < .45 && f.heroHp < f.heroMaxHp) f = stepFight(f, {
+			type: "skill",
+			skill: "mend"
+		});
+		else if (skills.includes("power-strike")) f = stepFight(f, {
+			type: "skill",
+			skill: "power-strike"
+		});
+		else if (skills.includes("zap")) f = stepFight(f, {
+			type: "skill",
+			skill: "zap"
+		});
+		else if (skills.includes("dodge") && hpShare < .6) f = stepFight(f, {
+			type: "skill",
+			skill: "dodge"
+		});
+		else if (skills.includes("pinch") && f.goldPinched === 0) f = stepFight(f, {
+			type: "skill",
+			skill: "pinch"
+		});
+		else f = stepFight(f, { type: "attack" });
+	}
+	return f;
+}
+function shop(hero, report) {
+	let h = hero;
+	for (let again = 0; again < 4; again++) {
+		let bought = false;
+		for (const slot of ["weapon", "armour"]) {
+			const top = (slot === "weapon" ? WEAPONS : ARMOURS).length - 1;
+			for (let i = top; i > h[slot]; i--) {
+				const r = buyGear(h, slot, i);
+				if (r.ok) {
+					report.goldOnGear += r.paid - r.refund;
+					h = r.hero;
+					bought = true;
+					break;
+				}
+			}
+		}
+		if (!bought) break;
+	}
+	return h;
+}
+function playSeason(heroClass, style, seed, days = 35) {
+	const rand = makeRandom(seed);
+	const report = {
+		levelDay: Array(13).fill(null),
+		levelCalendarDay: Array(13).fill(null),
+		forestFights: 0,
+		forestWins: 0,
+		forestLosses: 0,
+		masterTries: 0,
+		masterWins: 0,
+		goldEarned: 0,
+		goldOnHealing: 0,
+		goldOnGear: 0,
+		dragonKills: 0,
+		dragonTries: 0,
+		dragonDay: null,
+		playDays: 0,
+		avgRounds: 0,
+		heroByDay: []
+	};
+	let rounds = 0;
+	let hero = newHero(heroClass, dayString(0));
+	report.levelDay[1] = 0;
+	report.levelCalendarDay[1] = 0;
+	const tryHeal = (h) => {
+		if (h.hp >= h.maxHp * style.healBelow) return h;
+		const withBank = withdraw(h, h.bank);
+		const healed = heal(withBank, h.maxHp - h.hp);
+		report.goldOnHealing += withBank.gold - healed.gold;
+		return deposit(healed, healed.gold);
+	};
+	for (let day = 0; day < days; day++) {
+		if (!style.plays(day)) {
+			report.heroByDay.push(hero);
+			continue;
+		}
+		report.playDays += 1;
+		hero = rollDay(hero, dayString(day));
+		hero = shop(withdraw(hero, hero.bank), report);
+		const tryMaster = () => {
+			if (!canChallengeMaster(hero).ok) return;
+			report.masterTries += 1;
+			const f = playFight(startMasterFight(hero, Math.floor(rand() * 4294967296)));
+			hero = applyMasterResult(hero, f);
+			if (f.outcome === "won") {
+				report.masterWins += 1;
+				report.levelDay[hero.level] ??= report.playDays;
+				report.levelCalendarDay[hero.level] ??= day;
+				hero = shop(withdraw(hero, hero.bank), report);
+			}
+		};
+		tryMaster();
+		if (canFaceDragon(hero)) {
+			let hp = hero.hp;
+			let won = true;
+			let skillLeft = hero.skillLeft;
+			for (const stage of [
+				1,
+				2,
+				3
+			]) {
+				const riddle = rand() < .7 ? "right" : "wrong";
+				const f = playFight(startDragonStage({
+					...hero,
+					skillLeft
+				}, stage, Math.floor(rand() * 4294967296), {
+					...dragonStageOptions(riddle),
+					heroHp: hp
+				}));
+				skillLeft = f.skillLeft;
+				hp = dragonBreather(hero, f.heroHp);
+				if (f.outcome !== "won") {
+					won = false;
+					break;
+				}
+			}
+			report.dragonTries += 1;
+			if (won) {
+				report.dragonKills += 1;
+				report.dragonDay ??= report.playDays;
+				hero = finishDragon(hero, dayString(day));
+			} else hero = loseToDragon(hero);
+		}
+		let guard = 0;
+		while (hero.forestLeft > 0 && guard++ < 40) {
+			hero = tryHeal(hero);
+			const trip = forestTrip(hero, Math.floor(rand() * 4294967296));
+			if (trip.kind === "event") {
+				const before = hero.gold;
+				hero = applyEvent(hero, trip.event, rand() < MATHS_RIGHT_SHARE);
+				report.goldEarned += Math.max(0, hero.gold - before);
+				continue;
+			}
+			hero = useForestTurn(hero);
+			const f = playFight(startFight(hero, trip.monster, trip.seed));
+			report.forestFights += 1;
+			rounds += f.round;
+			const before = hero.gold;
+			hero = applyForestResult(hero, f);
+			if (f.outcome === "won") {
+				report.forestWins += 1;
+				report.goldEarned += hero.gold - before;
+			} else if (f.outcome === "lost") report.forestLosses += 1;
+			hero = shop(hero, report);
+			tryMaster();
+		}
+		hero = deposit(hero, Math.max(0, hero.gold - 0));
+		report.heroByDay.push(hero);
+	}
+	report.avgRounds = report.forestFights ? rounds / report.forestFights : 0;
+	return report;
+}
+//#endregion
+//#region shared/lord/computer.ts
+const days = (...on) => Array.from({ length: 7 }, (_, d) => on.includes(d));
+const COMPUTER_HEROES = [
+	{
+		id: "gareth",
+		name: "Sir Gareth",
+		heroClass: "knight",
+		plays: days(0, 1, 2, 3, 4)
+	},
+	{
+		id: "maple",
+		name: "Dame Maple",
+		heroClass: "mage",
+		plays: days(0, 1, 2, 3)
+	},
+	{
+		id: "bram",
+		name: "Old Bram",
+		heroClass: "knight",
+		plays: days(0, 2, 4)
+	},
+	{
+		id: "wren",
+		name: "Lady Wren",
+		heroClass: "trickster",
+		plays: days(0, 1, 2, 3, 4, 5, 6)
+	},
+	{
+		id: "flint",
+		name: "Captain Flint",
+		heroClass: "trickster",
+		plays: days(1, 2, 3, 4)
+	},
+	{
+		id: "orrin",
+		name: "Wizard Pim",
+		heroClass: "mage",
+		plays: days(0, 1, 3, 4)
+	},
+	{
+		id: "hazel",
+		name: "Sister Hazel",
+		heroClass: "mage",
+		plays: days(1, 3, 5)
+	},
+	{
+		id: "mort",
+		name: "Big Mort",
+		heroClass: "knight",
+		plays: days(0, 1, 2, 3, 4, 5)
+	}
+];
+const hashOf = (text) => {
+	let h = 2166136261;
+	for (const c of text) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+	return h >>> 0;
+};
+/** One full season of one computer hero, kept for the next request (the server process stays warm for a while). */
+const seasons = new Map();
+function seasonOfHero(spec, seasonNumber) {
+	const key = `${spec.id}:${seasonNumber}`;
+	let heroes = seasons.get(key);
+	if (!heroes) {
+		const style = {
+			name: spec.name,
+			plays: (d) => spec.plays[d % 7],
+			healBelow: .4
+		};
+		heroes = playSeason(spec.heroClass, style, hashOf(key), 35).heroByDay;
+		seasons.set(key, heroes);
+		if (seasons.size > 40) seasons.delete(seasons.keys().next().value);
+	}
+	return heroes;
+}
+/** Where every computer hero stands at the end of the day (`dayOfSeason` 1 to 35). */
+function computerHeroes(seasonNumber, dayOfSeason) {
+	const index = Math.max(0, Math.min(35, dayOfSeason) - 1);
+	return COMPUTER_HEROES.map((spec) => {
+		const hero = seasonOfHero(spec, seasonNumber)[index];
+		return {
+			id: spec.id,
+			name: spec.name,
+			hero,
+			duelist: duelistOf(hero, spec.name)
+		};
+	});
+}
+/** What the computer heroes did on a day: a level gained (by beating a master) or the dragon beaten. */
+function computerDeeds(seasonNumber, dayOfSeason) {
+	if (dayOfSeason < 2) return [];
+	const out = [];
+	for (const spec of COMPUTER_HEROES) {
+		const run = seasonOfHero(spec, seasonNumber);
+		const before = run[Math.min(35, dayOfSeason) - 2];
+		const after = run[Math.min(35, dayOfSeason) - 1];
+		if (after.dragonKills > before.dragonKills) out.push({
+			id: spec.id,
+			kind: "dragon",
+			text: `${spec.name} (computer hero) beat the Red Dragon! The village cheers.`
+		});
+		else if (after.level > before.level && after.level <= 12) {
+			const master = masterFor(after.level - 1);
+			out.push({
+				id: spec.id,
+				kind: "level",
+				text: `${spec.name} (computer hero) beat ${master?.name ?? "a master"} and reached level ${after.level}!`
+			});
+		}
+	}
+	return out;
+}
+//#endregion
+//#region shared/lord/news.ts
+/**
+* The village's event of the day: a little life, often with a number in it. Lines only: nothing about the day
+* changes (the plan's "market day 10% off" would be a real rule, and is left for later).
+*/
+const VILLAGE_EVENTS = [
+	"Market day! The baker has 6 trays of pies with 8 pies on each. That is 48 pies, and one goblin has already tried to buy them all.",
+	"A fog rolls over Hollowbrook. The lamplighter lights 20 lamps, then gets lost on the way to the 21st.",
+	"The blacksmith gives a free sharpen to anyone who can say what 7 × 8 is. The whole queue says 56, and he runs out of sharpening stones.",
+	"The inn is full tonight: 4 tables, 5 heroes at each. That is 20 heroes, all arguing about whose goblin was biggest.",
+	"A travelling pedlar sells 3 turnips for 12 gold. Each turnip costs 4. Nobody wants a turnip.",
+	"The village clock has chimed 13 times. The clockmaker says that is one more than it should. He is looking for the extra one.",
+	"A sheep has been found on the bank roof. The farmer counts his flock: 30 sheep, so 29 now on the ground. He says it is a very clever sheep.",
+	"The healer is running a sale on bandages: buy 2, get 1 free. Nobody has been hurt, but the queue is long.",
+	"A rainbow lands behind the mill. The children count 7 colours. The goblins count 9 and are told to count again.",
+	"The bard has a new song with 12 verses. By verse 8, the audience has gone to the shop.",
+	"Heavy rain! Puddles everywhere. The ducks have 10 new swimming pools and are very happy about it.",
+	"A baker’s dozen is 13, says the baker, putting 13 buns in each bag. 4 bags is 52 buns, and no profit.",
+	"Dragon-watch: the tower guard sees a smoke cloud on the hill. It is the cook burning the porridge again.",
+	"The mayor measures the town square: 12 steps one way and 10 the other. That is 120 steps of paving to sweep!",
+	"A lost cat is found in the library, asleep on the book about dogs.",
+	"Training day at the grounds: 5 heroes each do 9 press-ups. The master counts 45 and gives them a biscuit.",
+	"The fishmonger has 24 fish and 6 customers. Everyone gets 4 fish, and one customer gets a surprised look.",
+	"Somebody has painted the well bright pink. The pink is very good. Nobody will say who did it.",
+	"Frost this morning! The pond is icy. A brave frog is sliding across it on purpose.",
+	"The armourer polishes 15 helmets. Each one takes 2 minutes. He will be done in half an hour, or at tea time.",
+	"A bag of gold coins is found by the bridge: 100 coins, if you count the one that is chocolate.",
+	"The village band plays 3 songs, each 4 minutes long. The goblins in the front row ask for a 4th, and a snack.",
+	"A kite festival! 18 kites go up and 9 come down in a tree. The tree has asked to be left in peace.",
+	"The mill grinds 50 sacks of flour in a day. The baker says that is 50 reasons to expect more pies.",
+	"A quiet day in Hollowbrook. The only thing to report is that nothing happened, and that the news-writer is very tired.",
+	"The grocer sells apples at 5 gold each. A hero buys 6 and pays 30, and gets a free worm.",
+	"A comet streaks over the forest tonight. The wizard says it is a sign. The sign says \"back in 5 minutes\".",
+	"The bank has counted the village savings: 1,000 gold in the vault, 250 more in the tin, and 1 button.",
+	"A parade of 8 ducks, in 2 neat rows of 4. The ducks do not know it is a parade.",
+	"Someone has tied a ribbon round the Great Oak, 9 metres round. The oak says nothing but looks pleased."
+];
+const dayNumber = (day) => Math.floor(Date.parse(`${day}T00:00:00Z`) / 864e5);
+const villageEventFor = (day) => VILLAGE_EVENTS[(dayNumber(day) % VILLAGE_EVENTS.length + VILLAGE_EVENTS.length) % VILLAGE_EVENTS.length];
+/** The lines that belong to a day whoever plays: the village event and what the computer heroes did. */
+function dailyNews(day, season) {
+	const lines = [{
+		kind: "village",
+		text: villageEventFor(day),
+		player: null,
+		dedupe: "village"
+	}];
+	for (const deed of computerDeeds(season.number, season.dayOfSeason)) lines.push({
+		kind: "computer",
+		text: deed.text,
+		player: null,
+		dedupe: `computer:${deed.id}`
+	});
+	return lines;
+}
+const masterWonLine = (player, masterName, level) => ({
+	kind: "master",
+	text: `{p} beat ${masterName} and reached level ${level}!`,
+	player,
+	dedupe: `master:${player}:${level}`
+});
+const dragonWonLine = (player, star) => ({
+	kind: "dragon",
+	text: `{p} beat the Red Dragon! That is star number ${star}. The village treasure, food and light are back!`,
+	player,
+	dedupe: `dragon:${player}`
+});
+const arenaWonLine = (player, opponent) => ({
+	kind: "arena",
+	text: opponent ? `{p} beat ${opponent} (computer hero) in the arena!` : "{p} won a fight in the arena!",
+	player,
+	dedupe: `arena:${player}`
+});
+const flattenedLine = (player, monster) => ({
+	kind: "flattened",
+	text: `{p} was flattened by ${/^[aeiou]/i.test(monster) ? "an" : "a"} ${monster}. The healer has put the kettle on.`,
+	player,
+	dedupe: `flat:${player}`
+});
+//#endregion
 //#region shared/maths/leitner.ts
 /**
 * Mastery boxes (the Leitner system). Every fact sits in box 0–4:
@@ -1219,7 +1668,7 @@ const riddleGold = (level, result) => friendly(tierPower(level) * (result === "r
 * drops it to box 1. A fact only reaches box 4 ("fluent") once it has been answered
 * quickly and correctly on at least two different days, so one lucky lesson isn't enough.
 */
-function newStats(key) {
+function newStats$1(key) {
 	return {
 		key,
 		attempts: 0,
@@ -1617,7 +2066,7 @@ var BandedPack = class {
 	}
 	recordAnswer(q, answer, ms) {
 		const correct = sameAnswer(answer, q.answer);
-		const before = this.records.get(q.factKey) ?? newStats(q.factKey);
+		const before = this.records.get(q.factKey) ?? newStats$1(q.factKey);
 		const at = this.now();
 		const after = afterAnswer(before, correct, ms, at);
 		this.records.set(q.factKey, after);
@@ -3986,14 +4435,32 @@ function markProof(raw, moment, heroLevel, now, only) {
 }
 //#endregion
 //#region shared/lord/server.ts
-const newExtra = () => ({
+const newStats = () => ({
+	forestWins: 0,
+	masterWins: 0,
+	arenaWins: 0,
+	riddles: 0,
+	dragons: 0,
+	bestLevel: 1
+});
+const newExtra = (stats = newStats()) => ({
 	riddleDay: "",
 	interestDay: "",
 	guess: null,
 	pendingEvent: null,
 	dragon: null,
 	dragonDay: "",
-	classOpen: false
+	classOpen: false,
+	stats
+});
+/** An `extra` as saved, filled in where an older save had no such part. */
+const readExtra = (saved) => ({
+	...newExtra(),
+	...saved,
+	stats: {
+		...newStats(),
+		...saved?.stats
+	}
 });
 const FINISH_ACTIONS = [
 	"fight-finish",
@@ -4023,6 +4490,7 @@ const ACTIONS = [
 	"heal",
 	"bank",
 	"inn",
+	"arena",
 	"tools"
 ];
 function parseActions(raw) {
@@ -4078,7 +4546,7 @@ function startHero(c, existing) {
 	next.forestLeft = c.settings.forestPerDay;
 	return {
 		hero: next,
-		extra: newExtra(),
+		extra: newExtra(extra.stats),
 		summary: { heroClass: cls },
 		result: {}
 	};
@@ -4232,10 +4700,13 @@ function fightFinish(c) {
 		gold: 0,
 		exp: 0
 	};
+	const won = fight.outcome === "won";
 	return {
 		hero,
 		answers,
 		notes,
+		gain: won ? { forestWins: 1 } : void 0,
+		news: fight.outcome === "lost" ? [flattenedLine(c.player, fight.monster.name)] : void 0,
 		closeFight: {
 			status: "finished",
 			actions,
@@ -4310,8 +4781,11 @@ function masterFinish(c) {
 	const trial = open.info.trial ?? [];
 	if (fight.outcome === "won") hero = addMasterTrialBonus(hero, trial);
 	hero = keepToday(hero, was, open.info.day !== c.today);
+	const won = fight.outcome === "won";
 	return {
 		hero,
+		gain: won ? { masterWins: 1 } : void 0,
+		news: won ? [masterWonLine(c.player, masterFor(was.level)?.name ?? "your master", hero.level)] : void 0,
 		closeFight: {
 			status: "finished",
 			actions,
@@ -4405,6 +4879,9 @@ function dragonFinish(c) {
 			...extra,
 			dragon
 		},
+		gain: finished ? { dragons: 1 } : void 0,
+		hall: finished,
+		news: finished ? [dragonWonLine(c.player, next.dragonKills)] : void 0,
 		closeFight: {
 			status: "finished",
 			actions,
@@ -4612,6 +5089,106 @@ function inn(c) {
 	}
 	return { refuse: "bad-request" };
 }
+const sane = (h) => {
+	const x = h;
+	return !!x && typeof x === "object" && Number.isInteger(x.level) && x.level >= 1 && x.level <= 12 && Number.isInteger(x.weapon) && x.weapon >= 0 && x.weapon < WEAPONS.length && Number.isInteger(x.armour) && x.armour >= 0 && x.armour < ARMOURS.length && Number.isFinite(x.strength) && Number.isFinite(x.defence) && Number.isFinite(x.maxHp) && x.maxHp > 0 && typeof x.heroClass === "string" && x.heroClass in CLASSES;
+};
+/** Three fights a day against a saved copy of a classmate's hero or a computer hero, near your level. Played by the server. */
+async function arena(c) {
+	const { hero } = c.w;
+	if (hero.arenaLeft <= 0) return {
+		refuse: "no-turns",
+		message: "You have used your arena fights today. Come back tomorrow!"
+	};
+	const season = seasonFor(c.settings, c.today);
+	const classmates = await c.s.arenaCandidates(c.player, season.number, hero.level);
+	const pool = [];
+	if (classmates.ok) {
+		for (const k of classmates.value) if (k && typeof k.player === "string" && k.player !== c.player && typeof k.name === "string" && sane(k.hero)) pool.push({
+			kind: "pupil",
+			id: k.player,
+			name: k.name,
+			duelist: duelistOf(k.hero, k.name)
+		});
+	}
+	for (const k of computerHeroes(season.number, season.dayOfSeason)) pool.push({
+		kind: "computer",
+		id: k.id,
+		name: k.name,
+		duelist: k.duelist
+	});
+	const gap = (o) => Math.abs(o.duelist.level - hero.level);
+	const near = pool.filter((o) => gap(o) <= 1);
+	const choices = near.length > 0 ? near : [...pool].sort((x, y) => gap(x) - gap(y)).slice(0, 3);
+	const seed = c.s.seed();
+	const rand = makeRandom(seed ^ 2779096485);
+	const opponent = choices[Math.min(choices.length - 1, Math.floor(rand() * choices.length))];
+	const you = duelistOf(hero, "You");
+	const duel = playDuel(you, opponent.duelist, seed);
+	const won = duel.winner === "a";
+	const exp = won ? arenaExp(hero.level) : 0;
+	const after = {
+		...hero,
+		arenaLeft: hero.arenaLeft - 1,
+		exp: hero.exp + exp,
+		arenaWins: hero.arenaWins + (won ? 1 : 0)
+	};
+	const slug = opponent.kind === "computer" ? `computer-${opponent.id}` : `pupil-${opponent.id.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 12)}`;
+	const result = {
+		outcome: won ? "won" : "lost",
+		rounds: duel.rounds,
+		hpYou: duel.hpA,
+		hpThem: duel.hpB,
+		exp,
+		log: duel.log
+	};
+	return {
+		hero: after,
+		gain: won ? { arenaWins: 1 } : void 0,
+		news: won ? [arenaWonLine(c.player, opponent.kind === "computer" ? opponent.name : null)] : void 0,
+		doneFight: {
+			id: c.s.newId(),
+			kind: "arena",
+			monster: slug,
+			seed,
+			start: {
+				a: you,
+				b: opponent.duelist
+			},
+			info: {
+				day: c.today,
+				opponent: {
+					kind: opponent.kind,
+					name: opponent.name,
+					level: opponent.duelist.level
+				}
+			},
+			result
+		},
+		summary: {
+			arena: won ? "won" : "lost",
+			against: slug,
+			rounds: duel.rounds,
+			exp
+		},
+		result: {
+			...result,
+			you: {
+				name: you.name,
+				heroClass: you.heroClass,
+				level: you.level,
+				maxHp: you.maxHp
+			},
+			opponent: {
+				name: opponent.name,
+				heroClass: opponent.duelist.heroClass,
+				level: opponent.duelist.level,
+				maxHp: opponent.duelist.maxHp,
+				computer: opponent.kind === "computer"
+			}
+		}
+	};
+}
 /** Test tools: for teachers only. The browser trial (preview/lord) is its own teacher. */
 async function tools(c) {
 	if (!await c.teacher()) return {
@@ -4742,7 +5319,7 @@ async function tools(c) {
 		case "reset": return {
 			hero: newHero(hero.heroClass, c.today),
 			extra: {
-				...newExtra(),
+				...newExtra(extra.stats),
 				classOpen: true
 			},
 			summary: { tool },
@@ -4779,7 +5356,8 @@ const viewOf = (w, version, today, season, settings) => ({
 	guess: w?.extra.guess?.day === today ? {
 		done: w.extra.guess.done,
 		tries: w.extra.guess.tries
-	} : null
+	} : null,
+	stats: w?.extra.stats ?? newStats()
 });
 /** The season a day falls in. With no start date set, the first season starts today. */
 function seasonFor(settings, today) {
@@ -4840,16 +5418,17 @@ async function runLord(s, player, raw) {
 	if (!loaded.ok) return busy();
 	const row = loaded.value.row;
 	const stored = loaded.value.openFight;
+	if (action === "load" && !loaded.value.dailyDone) await s.dailyNews(today, dailyNews(today, season));
 	let w = null;
 	let rolled = false;
 	if (row) {
 		let hero = row.hero;
-		let extra = row.extra;
+		let extra = readExtra(row.extra);
 		let rowSeason = row.season;
 		if (rowSeason < season.number && !stored) {
 			hero = newHero(hero.heroClass, today, { dragonKills: hero.dragonKills });
 			extra = {
-				...newExtra(),
+				...newExtra(extra.stats),
 				classOpen: true
 			};
 			rowSeason = season.number;
@@ -4906,7 +5485,11 @@ async function runLord(s, player, raw) {
 					day: today,
 					season: w.season
 				}
-			}
+			},
+			news: [],
+			score: null,
+			hall: null,
+			doneFight: null
 		});
 		if (!out.ok) return out.why === "busy" ? busy() : {
 			status: 200,
@@ -4973,6 +5556,7 @@ async function runLord(s, player, raw) {
 		open: null
 	};
 	const ctx = {
+		player,
 		w: base,
 		req,
 		today,
@@ -5020,6 +5604,9 @@ async function runLord(s, player, raw) {
 		case "inn":
 			done = inn(ctx);
 			break;
+		case "arena":
+			done = await arena(ctx);
+			break;
 		case "tools":
 			done = await tools(ctx);
 			break;
@@ -5031,9 +5618,28 @@ async function runLord(s, player, raw) {
 	}
 	for (const code of done.notes ?? []) await note(code);
 	const nextHero = done.hero ?? base.hero;
-	const nextExtra = done.extra ?? base.extra;
+	const gain = done.gain ?? {};
+	const rightAnswers = (done.answers ?? []).filter((a) => a.correct).length;
+	const before = (done.extra ?? base.extra).stats;
+	const stats = {
+		forestWins: before.forestWins + (gain.forestWins ?? 0),
+		masterWins: before.masterWins + (gain.masterWins ?? 0),
+		arenaWins: before.arenaWins + (gain.arenaWins ?? 0),
+		riddles: before.riddles + rightAnswers,
+		dragons: before.dragons + (gain.dragons ?? 0),
+		bestLevel: Math.max(before.bestLevel, nextHero.level)
+	};
+	const nextExtra = {
+		...done.extra ?? base.extra,
+		stats
+	};
 	const nextOpen = done.openFight ?? (done.closeFight ? null : base.open);
-	const changed = !!(done.hero || done.extra || done.openFight || done.closeFight);
+	const changed = !!(done.hero || done.extra || done.openFight || done.closeFight || done.doneFight);
+	const earned = {
+		forest: gain.forestWins ?? 0,
+		master: gain.masterWins ?? 0,
+		dragon: gain.dragons ?? 0
+	};
 	const reply = (state, version) => ({
 		status: 200,
 		body: {
@@ -5063,7 +5669,11 @@ async function runLord(s, player, raw) {
 			requestId,
 			action,
 			summary: done.summary
-		}
+		},
+		news: done.news ?? [],
+		score: earned.forest + earned.master + earned.dragon > 0 ? earned : null,
+		hall: done.hall ? { season: base.season } : null,
+		doneFight: done.doneFight ?? null
 	});
 	if (!out.ok) return out.why === "busy" || out.why === "too-many" ? busy() : refuse("bad-request");
 	if (out.value.status !== "saved") {
@@ -5264,6 +5874,15 @@ Deno.serve(makeHandler({
 		player,
 		reason,
 		action
+	}),
+	arenaCandidates: (player, season, level) => call("lord_arena_candidates", {
+		player,
+		season,
+		lvl: level
+	}),
+	dailyNews: (day, lines) => call("lord_daily_news", {
+		news_day: day,
+		lines
 	})
 }));
 //#endregion
