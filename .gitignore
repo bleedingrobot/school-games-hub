@@ -12,5 +12,6 @@ supabase/.branches/
 .space-sim-entry-*.ts
 dist-preview-gem-keep/
 dist-preview-maths/
+dist-preview-training/
 dist-preview-monsters/
 dist-preview-power-clash/
