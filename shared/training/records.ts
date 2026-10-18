@@ -73,22 +73,20 @@ export function isStruggling(state: TrainingState, config: TrainingConfig = TRAI
 }
 
 /**
- * Records one answer and returns the new state (the old one is not changed).
- * `answerMs` is the time from the question being fully shown to the answer going in.
- * Fix-it answers must NOT be passed in here: they don't count.
+ * The one place an answer changes a fact's record. `typedMs` is the typing time that was taken off
+ * for this answer; it is passed in (not looked up) so that answers rebuilt from the database give
+ * the same records as answers given live.
  */
-export function recordAnswer(
+function applyAnswer(
   state: TrainingState,
   factKey: string,
-  answer: number,
-  correctAnswer: number,
+  correct: boolean,
   answerMs: number,
+  typedMs: number,
   day: string,
-  config: TrainingConfig = TRAINING_CONFIG,
+  config: TrainingConfig,
 ): { state: TrainingState; answer: Answer } {
-  const correct = answer === correctAnswer;
-  const typed = typingMsFor(digitsOf(correctAnswer), state.typing, config);
-  const entry: Answer = { correct, thinkMs: correct ? thinkingMs(answerMs, typed) : null, day };
+  const entry: Answer = { correct, thinkMs: correct ? thinkingMs(answerMs, typedMs) : null, day };
   const old = state.records[factKey];
   const answers = [...(old?.answers ?? []), entry].slice(-config.historyLength);
   const greenDays = [...(old?.greenDays ?? [])];
@@ -101,6 +99,82 @@ export function recordAnswer(
       recent: [...state.recent, correct].slice(-config.struggling.window),
     },
   };
+}
+
+/**
+ * Records one answer and returns the new state (the old one is not changed).
+ * `answerMs` is the time from the question being fully shown to the answer going in.
+ * `typedMs` is the typing time that was taken off, so it can be saved with the answer.
+ * Fix-it answers must NOT be passed in here: they don't count.
+ */
+export function recordAnswer(
+  state: TrainingState,
+  factKey: string,
+  answer: number,
+  correctAnswer: number,
+  answerMs: number,
+  day: string,
+  config: TrainingConfig = TRAINING_CONFIG,
+): { state: TrainingState; answer: Answer; correct: boolean; typedMs: number } {
+  const correct = answer === correctAnswer;
+  const typedMs = typingMsFor(digitsOf(correctAnswer), state.typing, config);
+  return { ...applyAnswer(state, factKey, correct, answerMs, typedMs, day, config), correct, typedMs };
+}
+
+// ---------------------------------------------------------------------------
+// Saved answers (stage T.2): what the database keeps, and getting the records back from it.
+// ---------------------------------------------------------------------------
+
+/** One answer as saved. `at` is milliseconds since 1970; `day` is the student's own date, "YYYY-MM-DD". */
+export interface SavedAnswer {
+  key: string;
+  correct: boolean;
+  ms: number;
+  typingMs: number;
+  day: string;
+  at: number;
+}
+
+/** A student's saved settings: typing check times, auto-submit and how many sessions they have done. */
+export interface SavedStudent {
+  typing: Record<number, number[]>;
+  autoSubmit: boolean;
+  sessionsDone: number;
+}
+
+/** The same answer, whichever copy it came from. */
+export const savedAnswerId = (a: Pick<SavedAnswer, 'key' | 'at'>) => `${a.at}|${a.key}`;
+
+/**
+ * Saved answers followed by answers not yet saved, without any answer counted twice (a batch can
+ * reach the database and the reply get lost, so it is still in the queue when the page loads).
+ */
+export function withUnsaved(saved: readonly SavedAnswer[], unsaved: readonly SavedAnswer[]): SavedAnswer[] {
+  const seen = new Set(saved.map(savedAnswerId));
+  const out = [...saved];
+  for (const a of unsaved) {
+    if (seen.has(savedAnswerId(a))) continue;
+    seen.add(savedAnswerId(a));
+    out.push(a);
+  }
+  return out;
+}
+
+/** Rebuilds a student's records by giving every saved answer again, oldest first. Same result as answering live. */
+export function rebuildState(
+  answers: readonly SavedAnswer[],
+  student: Partial<SavedStudent> | null = null,
+  config: TrainingConfig = TRAINING_CONFIG,
+): TrainingState {
+  let state: TrainingState = {
+    ...emptyState(),
+    typing: { ...(student?.typing ?? {}) },
+    autoSubmit: student?.autoSubmit ?? true,
+    sessionsDone: student?.sessionsDone ?? 0,
+  };
+  const ordered = answers.map((a, i) => ({ a, i })).sort((p, q) => p.a.at - q.a.at || p.i - q.i);
+  for (const { a } of ordered) state = applyAnswer(state, a.key, a.correct, a.ms, a.typingMs, a.day, config).state;
+  return state;
 }
 
 /** Adds a typing check time for an answer length. */

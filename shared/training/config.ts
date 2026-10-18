@@ -61,6 +61,14 @@ export const TRAINING_CONFIG = {
   /** Struggling = fewer than this share right over the last `window` answers (needs at least `minAnswers`). */
   struggling: { window: 12, minAnswers: 8, belowCorrect: 0.6 },
 
+  /**
+   * Saving answers (stage T.2). The newest `answersPerFact` answers of each fact are kept in the
+   * database (enough to rebuild its colour, green days and review date), and a student can save
+   * `answersPerDay` answers a day. The browser stops timing an answer at `longestAnswerMs`
+   * (anything slower is "New to me" anyway), and the server turns away times over `rejectAnswerMs`.
+   */
+  storage: { answersPerFact: 30, answersPerDay: 600, longestAnswerMs: 120_000, rejectAnswerMs: 600_000, longestTypingMs: 10_000 },
+
   /** Days before a fact is due for review again, by how many green days it has. */
   reviewDays: [1, 2, 4, 7, 14],
 
