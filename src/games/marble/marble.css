@@ -9,6 +9,19 @@
   margin: 0;
   color: var(--ink-soft);
 }
+/* The page is school-red, so headings are white and everything else sits on a white card. */
+.marble-picker > h2,
+.marble-picker__top h2,
+.marble-picker__heading {
+  color: #fff;
+}
+.marble-picker__panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface);
+}
 .marble-picker__heading {
   margin-top: 8px;
 }
@@ -340,4 +353,37 @@
   border: 2px solid #fff;
   background: #fff;
   color: #0f172a;
+}
+
+.marble-picker__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.marble-picker__top h2 {
+  margin: 0;
+}
+.marble-picker__top .button,
+.marble-howto-screen .button {
+  min-height: 44px;
+  width: auto;
+}
+.marble-howto h3 {
+  margin: 14px 0 4px;
+}
+.marble-howto__big {
+  font-family: var(--display);
+  font-size: 1.4rem;
+}
+.marble-howto p {
+  margin: 0 0 6px;
+  max-width: 46rem;
+}
+.marble-howto kbd {
+  padding: 1px 6px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  font-size: 0.9em;
 }

@@ -18,6 +18,7 @@ import type { Question } from '../../../shared/maths/skillPack';
 import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
 import { FocusNote } from '../../maths/FocusNote';
 import { formatSteps, loadBests, mergeBests, saveBests, withFinish, type Bests } from './bests';
+import { HowToPlayBody } from './HowToPlay';
 import { loadPrefs, savePrefs, type MarblePrefs } from './prefs';
 import { COURSE_INFO } from './courseInfo';
 import type { FinishedRun } from './RunScreen';
@@ -48,6 +49,7 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
   // What the teacher allows. Until it is known (or if it can't be read) there is no maths.
   const [mathsSwitch, setMathsSwitch] = useState<MathsSwitch>(localMaths ? 'choose' : 'off');
   const localQuestions = useRef<Question[]>([]);
+  const [showHow, setShowHow] = useState(false);
   const [focus, setFocus] = useState<MathsFocus | null>(null);
   const [pick, setPick] = useState<{ id: string; mode: ClockMode; round: number; ghost: Ghost | null; two: boolean; setup: RunSetup; started: StartReply | null } | null>(null);
   const [ghostChoice, setGhostChoice] = useState<GhostKind | 'none'>('none');
@@ -172,8 +174,11 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
     );
   }
 
+  if (showHow) return <HowToPlay mathsAllowed={mathsSwitch !== 'off'} onBack={() => setShowHow(false)} />;
+
   return (
     <CoursePicker
+      onHowTo={() => setShowHow(true)}
       bests={bests}
       mathsSwitch={mathsSwitch}
       prefs={prefs}
@@ -201,9 +206,25 @@ async function markHere(question: Question | undefined, answer: number): Promise
   return marked ? { right: sameAnswer(answer, marked.answer), answer: marked.answer } : null;
 }
 
+/** The How to play screen: its own page with a Back button; the heading takes the focus so a screen reader starts there. */
+function HowToPlay({ mathsAllowed, onBack }: { mathsAllowed: boolean; onBack: () => void }) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => heading.current?.focus(), []);
+  return (
+    <section className="marble-picker marble-howto-screen">
+      <h2 ref={heading} tabIndex={-1}>How to play Marble Rush</h2>
+      <div className="marble-picker__panel">
+        <HowToPlayBody mathsAllowed={mathsAllowed} />
+      </div>
+      <button type="button" className="button button--play" onClick={onBack}>Back to the courses</button>
+    </section>
+  );
+}
+
 function CoursePicker({
-  bests, mathsSwitch, prefs, onPrefs, focus, wantMaths, onPlay, hasFinished, ghostChoice, onGhostChoice, busy, note,
+  onHowTo, bests, mathsSwitch, prefs, onPrefs, focus, wantMaths, onPlay, hasFinished, ghostChoice, onGhostChoice, busy, note,
 }: {
+  onHowTo: () => void;
   bests: Bests;
   mathsSwitch: MathsSwitch;
   prefs: MarblePrefs;
@@ -269,7 +290,11 @@ function CoursePicker({
 
   return (
     <section className="marble-picker">
-      <h2>Marble Rush</h2>
+      <div className="marble-picker__top">
+        <h2>Marble Rush</h2>
+        <button type="button" className="button button--light" onClick={onHowTo}>How to play</button>
+      </div>
+      <div className="marble-picker__panel">
       <p className="marble-picker__intro">Steer your marble down the track as fast as you can. Falling off costs a few seconds, never the whole run. Win a bronze, silver or gold medal for your time.</p>
       {mathsSwitch !== 'off' && (
         <div className="marble-picker__maths">
@@ -301,8 +326,9 @@ function CoursePicker({
           {GHOST_CHOICES.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
         </select>
         <p className="marble-picker__hint">A ghost is a see-through marble that plays back a recorded run. Nobody has to be online.</p>
-        {busy && <p role="status">Finding your ghost…</p>}
+        {busy && <p role="status">Setting up your run…</p>}
         {note && <p role="status">{note}</p>}
+      </div>
       </div>
       <h3 className="marble-picker__heading">Courses</h3>
       <ul className="marble-courses">{real.map(card)}</ul>

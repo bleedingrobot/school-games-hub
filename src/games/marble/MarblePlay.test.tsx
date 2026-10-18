@@ -281,3 +281,29 @@ describe('maths in the picker and at the start of a run', () => {
     await waitFor(() => expect(loadBoard).toHaveBeenCalledWith('boulder-beach', 'up', false));
   });
 });
+
+describe('how to play', () => {
+  it('opens its own page with the heading focused, and goes back to the courses', () => {
+    open();
+    fireEvent.click(screen.getByRole('button', { name: 'How to play' }));
+    const heading = screen.getByRole('heading', { name: 'How to play Marble Rush' });
+    expect(heading).toHaveFocus();
+    expect(screen.getByRole('heading', { name: 'Falling and checkpoints' })).toBeInTheDocument();
+    expect(screen.getByText('3 seconds')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Answer gates' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Back to the courses' }));
+    expect(screen.getByRole('heading', { name: 'Boulder Beach' })).toBeInTheDocument();
+  });
+
+  it('explains the maths when the teacher allows it, with the numbers from the game', async () => {
+    fetchMarbleSwitches.mockResolvedValue({ maths: 'choose', rescue: true });
+    open();
+    await screen.findByLabelText('Maths: on');
+    fireEvent.click(screen.getByRole('button', { name: 'How to play' }));
+    for (const name of ['Answer gates', 'Pit stops', 'Rescue questions', 'Number gems', 'Guess your time', 'Your maths records']) {
+      expect(screen.getByRole('heading', { name })).toBeInTheDocument();
+    }
+    expect(screen.getByText(/never costs you/)).toBeInTheDocument();
+    expect(screen.getByText(/up to 5 a run/)).toBeInTheDocument();
+  });
+});
