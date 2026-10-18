@@ -2670,21 +2670,22 @@ const LADDER = [
 	stub("bedmas", "Order of operations", "order-of-operations", "MS.Y6.NUM.OP.P1")
 ];
 /** The skill's keys once switched-off tables are taken out. */
-function activeKeys(skill, enabledTables) {
+function activeKeys(skill, enabledTables, division = true) {
 	const on = new Set(enabledTables);
 	return skill.keys.filter((k) => {
 		const mul = parseFactKey(k);
 		if (mul) return on.has(mul.a) || on.has(mul.b);
 		const div = /^div:\d+\/(\d+)$/.exec(k);
-		return div ? on.has(Number(div[1])) : true;
+		return div ? division && on.has(Number(div[1])) : true;
 	});
 }
 /**
 * Where a student is on the ladder, worked out from their records: the first built skill that
 * isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
 * campaign) is the one they're on. Skipped skills (all their tables switched off) are secure
-* for free. The place can fall back if a student gets facts wrong; saving the furthest place
-* so it never goes down comes with the stored focus in F.4.
+* for free. With a `floor` (placement, year level or the furthest place reached, see place.ts) the
+* built skills before it count as passed, so forgetting a fact brings more review but never
+* drops the student's place below the floor.
 */
 function ladderProgress(stats, opts = {}) {
 	const byKey = new Map([...stats].map((s) => [s.key, s]));
@@ -2692,14 +2693,15 @@ function ladderProgress(stats, opts = {}) {
 	let current = null;
 	let secureCount = 0;
 	let builtCount = 0;
+	const floor = opts.floor ?? 0;
 	return {
-		skills: LADDER.map((skill) => {
+		skills: LADDER.map((skill, index) => {
 			if (!skill.built) return {
 				skill,
 				status: "later",
 				share: 0
 			};
-			const keys = activeKeys(skill, enabled);
+			const keys = activeKeys(skill, enabled, opts.division !== false);
 			if (keys.length === 0) return {
 				skill,
 				status: "upcoming",
@@ -2707,6 +2709,14 @@ function ladderProgress(stats, opts = {}) {
 			};
 			builtCount++;
 			const share = keys.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / keys.length;
+			if (index < floor) {
+				secureCount++;
+				return {
+					skill,
+					status: "secure",
+					share
+				};
+			}
 			if (current === null && share < .7) {
 				current = skill;
 				return {
@@ -2733,7 +2743,7 @@ function autoPools(progress, opts = {}) {
 	const enabled = opts.enabledTables ?? TABLES;
 	const live = progress.skills.filter((p) => p.skill.built).map((p) => ({
 		...p,
-		keys: activeKeys(p.skill, enabled)
+		keys: activeKeys(p.skill, enabled, opts.division !== false)
 	})).filter((p) => p.keys.length);
 	const at = live.findIndex((p) => p.status === "current");
 	if (at < 0) return {
@@ -2881,6 +2891,76 @@ var AutoPack = class {
 	}
 };
 //#endregion
+//#region shared/maths/place.ts
+/**
+* A student's place on the ladder (docs/MATHS-FOCUS-PLAN.md section 5). Three things set the floor under it:
+*  - their class's year level, until they have done the placement check;
+*  - the placement check (about 10 questions that jump up while they answer right and quickly and step back when they don't);
+*  - the furthest place they have ever reached, kept on the server so it only ever moves forward.
+* Skills before the floor count as passed. Forgetting ×7 gives more ×7 review, but never drops the place.
+*
+* The server keeps the furthest place and the placement; the database cannot see the ladder, so the server functions that save
+* answers work the place out with this file (`placeToStore`) and the database only checks that it never goes back.
+*/
+const NO_LADDER = {
+	on: false,
+	yearLevel: null,
+	placed: null,
+	placement: null,
+	furthest: null
+};
+const ID = /^[a-z0-9-]{1,40}$/;
+const skillId = (v) => typeof v === "string" && ID.test(v) && LADDER.some((s) => s.id === v && s.built) ? v : null;
+function parseLadderInfo(raw) {
+	if (!raw || typeof raw !== "object") return NO_LADDER;
+	const r = raw;
+	const year = typeof r.yearLevel === "number" && Number.isInteger(r.yearLevel) && r.yearLevel >= 0 && r.yearLevel <= 13 ? r.yearLevel : null;
+	const placement = skillId(r.placement);
+	const placed = r.placed === "skipped" ? "skipped" : r.placed === "done" && placement ? "done" : null;
+	return {
+		on: r.on === true,
+		yearLevel: year,
+		placed,
+		placement: placed === "done" ? placement : null,
+		furthest: skillId(r.furthest)
+	};
+}
+/** The year a skill is taught, from its first NZ Curriculum tag ("MS.Y4.NUM.OP.P2" → 4). */
+function skillYear(skill) {
+	const m = /^MS\.Y(\d+)\./.exec(skill.curriculumTags[0] ?? "");
+	return m ? Number(m[1]) : null;
+}
+const builtSkills = () => LADDER.filter((s) => s.built);
+const indexOfSkill = (id) => id ? LADDER.findIndex((s) => s.id === id) : -1;
+/** Where a class's year level starts students: an index into `LADDER`. No year level = the first skill. */
+function yearStartRank(yearLevel) {
+	const built = builtSkills();
+	if (yearLevel === null) return LADDER.indexOf(built[0]);
+	const want = yearLevel - 1;
+	const found = built.find((s) => (skillYear(s) ?? 0) >= want) ?? built[built.length - 1];
+	return LADDER.indexOf(found);
+}
+/** The floor under a student's place: an index into `LADDER`. */
+function floorRank(info) {
+	const start = info.placed === "done" ? indexOfSkill(info.placement) : yearStartRank(info.yearLevel);
+	return Math.max(0, start, indexOfSkill(info.furthest));
+}
+/** The student's place on the ladder, with the floor applied. */
+function placeProgress(stats, info, opts = {}) {
+	return ladderProgress(stats, {
+		...opts,
+		floor: floorRank(info)
+	});
+}
+/** The furthest place to keep: where they are now, or the last built skill once all of them are secure. */
+function placeToStore(stats, info, opts = {}) {
+	const skill = placeProgress(stats, info, opts).current ?? builtSkills().at(-1) ?? null;
+	return skill ? {
+		skill: skill.id,
+		rank: LADDER.indexOf(skill)
+	} : null;
+}
+//#endregion
 //#region shared/maths/focus.ts
 /**
 * The maths focus as the games see it (docs/MATHS-FOCUS-PLAN.md, sections 4 and 8).
@@ -2896,7 +2976,8 @@ const AUTO_FOCUS = {
 	onlyThese: false,
 	endsAt: null,
 	canChoose: true,
-	own: null
+	own: null,
+	ladder: NO_LADDER
 };
 const SOURCES = [
 	"teacher-student",
@@ -2925,19 +3006,30 @@ function parseFocus(raw) {
 		own: ownSkills.length ? {
 			skills: ownSkills,
 			onlyThese: own.onlyThese === true
-		} : null
+		} : null,
+		ladder: parseLadderInfo(r.ladder)
 	};
 }
 /** True when the focus names at least one skill the games can ask today. */
 function hasFocus(focus) {
 	return !!focus && focus.source !== "auto" && focusSkills(focus).length > 0;
 }
+/** The class has auto switched on and the student has no focus: the games ask from the whole ladder. */
+const usesLadder = (focus) => !hasFocus(focus) && !!focus?.ladder?.on;
+/** The ladder facts of a focus (auto off, nothing known, when it has none). */
+const ladderOf = (focus) => focus?.ladder ?? NO_LADDER;
 /**
 * The pack a game asks its questions from. With no focus it is the times-table pack, exactly
-* as before (the campaign or the student's ready step decides). With a focus it is the ladder
+* as before (the campaign or the student's ready step decides), unless the class has auto switched on:
+* then it is the whole ladder from the student's place. With a focus it is the ladder
 * pack, asking only that focus. `stats` is every record the student has, whatever pack kept it.
 */
 function makeFocusPack(stats, focus, opts = {}, random, now) {
+	if (usesLadder(focus)) return new AutoPack(stats, random, now, {
+		enabledTables: opts.enabledTables,
+		division: opts.division,
+		floor: floorRank(ladderOf(focus))
+	});
 	if (!hasFocus(focus)) return new TimesTables(stats.filter((s) => parseFactKey(s.key)), random, now);
 	const spec = {
 		skills: focus.skills,
@@ -3058,6 +3150,51 @@ function solveParts(parts) {
 		answer,
 		keys
 	} : null;
+}
+//#endregion
+//#region shared/maths/placeContext.ts
+/**
+* Reads what the database sends about a student's ladder (`space_maths_context`: records, question settings and focus) into the
+* pieces the ladder code wants.
+*/
+function ladderOfContext(context) {
+	return {
+		facts: Array.isArray(context.facts) ? context.facts : [],
+		info: ladderOf(parseFocus(context.focus)),
+		opts: {
+			enabledTables: context.settings?.enabledTables,
+			division: context.settings?.division
+		}
+	};
+}
+//#endregion
+//#region shared/maths/syncPlace.ts
+/**
+* The server side of a student's place on the ladder (docs/MATHS-FOCUS-PLAN.md section 5). The functions that save answers call
+* `makePlaceSyncer` after saving, which works the place out from the student's records and hands it to the database, which only
+* ever moves it forward. `savePlacement` checks a placement check before storing where to start. Both take their database calls
+* as ports, so the tests (and each function's entry file) can stand in for Supabase.
+*/
+/** Looks at a student's records and keeps their furthest place up to date. Never throws: a late or missing update is harmless. */
+function makePlaceSyncer(ports, now = Date.now, minGapMs = 3e4) {
+	const last = new Map();
+	return async function syncPlace(player) {
+		const at = now();
+		const before = last.get(player);
+		if (before !== void 0 && at - before < minGapMs) return;
+		last.set(player, at);
+		if (last.size > 5e3) last.clear();
+		try {
+			const context = await ports.loadContext(player);
+			if (!context) return;
+			const { facts, info, opts } = ladderOfContext(context);
+			if (!info.on) return;
+			const place = placeToStore(facts, info, opts);
+			if (place) await ports.savePlace(player, place.skill, place.rank);
+		} catch {
+			console.error("place: not updated");
+		}
+	};
 }
 //#endregion
 //#region shared/space/mathsSwitch.ts
@@ -6444,6 +6581,25 @@ const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", serverKey(), { au
 	persistSession: false,
 	autoRefreshToken: false
 } });
+/** The database calls the ladder needs: the student's records and focus, and their furthest place. Placement is saved by gem-keep. */
+const syncPlace = makePlaceSyncer({
+	async loadContext(player) {
+		const { data, error } = await admin.rpc("space_maths_context", { player });
+		if (error) throw new Error(error.code ?? "unknown");
+		return data ?? null;
+	},
+	async savePlace(player, skill, rank) {
+		const { error } = await admin.rpc("record_ladder_place", {
+			player,
+			skill,
+			rank
+		});
+		if (error) throw new Error(error.code ?? "unknown");
+	},
+	async savePlacementRow() {
+		return false;
+	}
+});
 const games = () => admin.from("space_games");
 /** Logs say which step went wrong and the database's error code, never who. */
 function logProblem(step, code) {
@@ -6597,6 +6753,7 @@ Deno.serve(spaceGameHandler({
 			top_box: 4
 		});
 		if (error) logProblem("record answer", error.code);
+		else await syncPlace(player);
 	}
 }));
 //#endregion

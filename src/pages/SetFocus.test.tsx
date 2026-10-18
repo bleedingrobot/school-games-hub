@@ -18,6 +18,8 @@ vi.mock('../data/classSettings', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/classSettings')>()),
   fetchStudentsChooseFocus: vi.fn(),
   saveStudentsChooseFocus: vi.fn(),
+  fetchMathsAuto: vi.fn(),
+  saveMathsAuto: vi.fn(),
 }));
 vi.mock('../data/focus', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/focus')>()),
@@ -76,6 +78,8 @@ beforeEach(() => {
   vi.mocked(classes.fetchClassDetail).mockResolvedValue(detail);
   vi.mocked(settings.fetchStudentsChooseFocus).mockResolvedValue(true);
   vi.mocked(settings.saveStudentsChooseFocus).mockReset();
+  vi.mocked(settings.fetchMathsAuto).mockResolvedValue(false);
+  vi.mocked(settings.saveMathsAuto).mockReset();
   vi.mocked(focus.fetchFocuses).mockResolvedValue([classFocus, studentFocus]);
   for (const fn of [focus.setFocus, focus.extendFocus, focus.endFocus]) vi.mocked(fn).mockReset();
   vi.mocked(focus.setFocus).mockResolvedValue(1);
@@ -245,6 +249,31 @@ describe('the Set focus screen', () => {
     await screen.findByRole('heading', { name: 'Set a focus' });
     expect(screen.getByRole('radio', { name: /A group/ })).toBeDisabled();
     expect(screen.getByText(/make a group on the My classes page first/)).toBeInTheDocument();
+  });
+
+  it('turns auto (the whole ladder for students with no focus) on and off, for this class only', async () => {
+    const user = userEvent.setup();
+    show();
+    const box = await screen.findByRole('checkbox', { name: /Games pick the maths \(auto\) when there is no focus/ });
+    expect(box).not.toBeChecked(); // off unless the teacher turns it on
+    expect(settings.fetchMathsAuto).toHaveBeenCalledWith('c12');
+    await user.click(box);
+    expect(settings.saveMathsAuto).toHaveBeenCalledWith(true, 'c12');
+    expect(await screen.findByText(/now pick the maths for students with no focus/)).toBeInTheDocument();
+    expect(box).toBeChecked();
+    await user.click(box);
+    expect(settings.saveMathsAuto).toHaveBeenLastCalledWith(false, 'c12');
+    expect(await screen.findByText(/ask the times tables for students with no focus, as before/)).toBeInTheDocument();
+  });
+
+  it('says so when the switch could not be saved, and leaves it as it was', async () => {
+    const user = userEvent.setup();
+    vi.mocked(settings.saveMathsAuto).mockRejectedValue(new Error('Nope.'));
+    show();
+    const box = await screen.findByRole('checkbox', { name: /Games pick the maths/ });
+    await user.click(box);
+    expect(await screen.findByText(/Something went wrong|Nope/)).toBeInTheDocument();
+    expect(box).not.toBeChecked();
   });
 
   it('turns students choosing their own focus off and on, for this class', async () => {

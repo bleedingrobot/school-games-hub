@@ -332,7 +332,10 @@ export function SpaceSolo({
       const latest = await Promise.race([maths.refreshFocus().catch(() => null), new Promise<null>((done) => window.setTimeout(() => done(null), 1500))]);
       const next = currentFocus(latest ?? packFocus);
       if (focusKey(next) !== focusKey(packFocus)) {
-        setPack(makeSpacePack(pack.stats(), next, maths));
+        // The old pack may hold only some of the records (times tables): the records the game opened with fill the rest.
+        const records = new Map((maths?.facts ?? []).map((f) => [f.key, f]));
+        for (const s of pack.stats()) records.set(s.key, s);
+        setPack(makeSpacePack([...records.values()], next, maths));
         setPackFocus(next);
       }
     }

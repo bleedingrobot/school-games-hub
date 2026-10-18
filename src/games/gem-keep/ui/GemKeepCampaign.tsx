@@ -133,7 +133,10 @@ export function GemKeepCampaign({
       if (focusKey(latest) !== focusKey(packFocus)) {
         // The answers so far are reported before the pack changes; its records carry over to the new one.
         reportFacts();
-        next = makeFocusPack(pack.stats(), latest, packOptions);
+        // The old pack may hold only some of the records (times tables), so the records Gem Keep opened with fill the rest.
+        const records = new Map(initialFacts.map((f) => [f.key, f]));
+        for (const s of pack.stats()) records.set(s.key, s);
+        next = makeFocusPack([...records.values()], latest, packOptions);
         setPackFocus(latest);
         setPack(next);
       }

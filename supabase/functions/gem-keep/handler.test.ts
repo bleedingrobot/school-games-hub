@@ -139,6 +139,50 @@ describe('the gem-keep server function', () => {
     expect(s.recordAnswers).toHaveBeenCalledWith('student-1', 'division', expect.any(String), [answer('div:56/8')]);
   });
 
+  describe('the place on the maths ladder', () => {
+    const answersItem = { type: 'answers', pack: 'times-tables', batchId: '6f1c2a54-1d3e-4b5a-9c7d-0e1f2a3b4c5d', answers: [{ key: 'mul:7x8', correct: true, ms: 1200, at: NOW - 1000 }] };
+
+    it('keeps the furthest place up to date after answers are saved', async () => {
+      const syncPlace = vi.fn(async () => undefined);
+      const { s } = services({ syncPlace });
+      const { status } = await send(s, [answersItem]);
+      expect(status).toBe(200);
+      expect(syncPlace).toHaveBeenCalledOnce();
+      expect(syncPlace).toHaveBeenCalledWith('student-1');
+    });
+
+    it('does not bother when nothing about the records changed', async () => {
+      const syncPlace = vi.fn(async () => undefined);
+      const { s } = services({ syncPlace, recordAnswers: vi.fn(async () => ({ ok: true as const, value: 0 })) });
+      await send(s, [answersItem]);
+      await send(s, [won()]);
+      expect(syncPlace).not.toHaveBeenCalled();
+    });
+
+    it('checks a placement and says where it was stored', async () => {
+      const savePlacement = vi.fn(async () => ({ outcome: 'saved' as const, start: 'tables-3-4-8' }));
+      const { s } = services({ savePlacement });
+      const response = await makeHandler(s)(post({ placement: { skip: true } }));
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ outcome: 'saved', start: 'tables-3-4-8' });
+      expect(savePlacement).toHaveBeenCalledWith('student-1', { skip: true });
+    });
+
+    it('says "already" for a second placement, and refuses one that does not check out', async () => {
+      const { s } = services({ savePlacement: vi.fn(async () => ({ outcome: 'already' as const })) });
+      const again = await makeHandler(s)(post({ placement: { skip: true } }));
+      expect(await again.json()).toEqual({ outcome: 'already' });
+      const { s: bad } = services({ savePlacement: vi.fn(async () => ({ outcome: 'refused' as const })) });
+      expect((await makeHandler(bad)(post({ placement: { answers: [] } }))).status).toBe(400);
+    });
+
+    it('needs a signed-in student for the placement too, and copes with a database error', async () => {
+      const { s } = services({ savePlacement: vi.fn(async () => Promise.reject(new Error('down'))) });
+      expect((await makeHandler(s)(post({ placement: { skip: true } }, null))).status).toBe(401);
+      expect((await makeHandler(s)(post({ placement: { skip: true } }))).status).toBe(503);
+    });
+  });
+
   it('leaves out an answer that does not belong to the pack it is sent as', async () => {
     const { s } = services();
     const answer = (key: string) => ({ key, correct: true, ms: 2100, at: NOW - 5000 });
