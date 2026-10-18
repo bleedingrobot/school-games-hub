@@ -420,7 +420,7 @@ describe('a fight left alone for a whole day', () => {
     expect(out.body.state.openFight).toBeNull();
     expect(g.db.fights[0].status).toBe('abandoned');
     expect(g.hero()).toMatchObject({ gold: 0, bank: 30, exp: 12 });
-    expect(g.hero().forestLeft).toBe(10); // a new day's turns; the abandoned fight's turn stays spent
+    expect(g.hero().forestLeft).toBe(20); // two days gone: the pile-up cap; the abandoned fight's turn stays spent
     expect(g.db.events.at(-1)!.action === 'rollover' || g.db.events.some((e) => e.action === 'abandon')).toBe(true);
     // The pupil can go straight on.
     expect((await g.send({ action: 'forest' })).body.ok).toBe(true);
@@ -468,5 +468,24 @@ describe('a fight left alone for a whole day', () => {
     expect(s.season.number).toBe(2);
     expect(s.openFight).toBeNull();
     expect(s.hero!.level).toBe(1);
+  });
+});
+
+describe('saved-up turns for pupils who miss days', () => {
+  it('lets a pupil who missed a few days challenge their master a second time after a loss, once', async () => {
+    const g = new Game();
+    await g.start();
+    g.patch({ exp: expNeeded(1), strength: 1, hp: 5, maxHp: 15 });
+    g.clock += 3 * 86_400_000;
+    await g.refresh();
+    expect(g.hero().masterExtra).toBe(2);
+    for (let i = 0; i < 3; i++) {
+      const out = await g.send({ action: 'master-start', trial: [] });
+      expect(out.body.ok).toBe(true);
+      const open = out.body.state.openFight;
+      await g.send({ action: 'master-finish', fightId: open.id, actions: play(open.start).actions });
+    }
+    expect(g.hero()).toMatchObject({ masterTried: true, masterExtra: 0 });
+    expect((await g.send({ action: 'master-start', trial: [] })).body.reason).toBe('rule');
   });
 });

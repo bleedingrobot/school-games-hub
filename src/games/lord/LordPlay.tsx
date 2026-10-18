@@ -592,6 +592,7 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
           )}
           {fight && <p className="lord-note">You were in the middle of a fight! Press F to carry on from the start of it. It won’t use another fight.</p>}
           {check.ok && <p className="lord-note">Your master is ready to fight you. Visit the Training grounds!</p>}
+          {hero.forestLeft > state.forestPerDay && <p className="lord-note">You were away, so you have saved-up forest fights: {hero.forestLeft} today!</p>}
           {state.classOpen && hero.forestWins === 0 && hero.exp === 0 && (
             <p className="lord-note">
               A new season has begun, and everyone starts again.{' '}

@@ -47,6 +47,7 @@ No LORD.ts code or text is copied (it is GPL-3). Rules and numbers are not owned
 - **Points** (`lord_point_rules()`): 1 for every 3 forest fights won, 3 for beating a master, 10 for beating the dragon. Inside the 40-a-day limit every game against the computer shares. Arena fights and maths answers earn none. A new points season clears them; heroes, stars, the Hall and the achievements stay.
 - **Achievements (8):** first master, level 6, level 12, beat the dragon, beat it twice, 50 forest wins, 10 arena wins, 50 riddles and puzzles. They read counts the server keeps for each pupil over all seasons.
 - **A fight left alone for a whole day** (handed out two or more New Zealand days ago) counts as a loss, the soft kind: a forest fight drops the gold carried and wakes you at the healer; a master fight heals you (the day's try stays used); a dragon fight sends you home.
+- **Saved-up turns:** unused forest fights pile up for missed days (two days' worth at most); a missed day saves up an extra master try (two at most). See Pace.
 - **The season pause:** switching the game off pauses the season clock; switching it on moves the start date forward by the days it was closed.
 
 ## Kept out for good
@@ -64,19 +65,19 @@ Romance, marriage, children, orphans, drinking, gambling, student-written text, 
 - Exp to challenge: running total of 14 average fights a level.
 - Dragon stages: HP `3.05 × tier(12)`, strength `0.43, 0.51, 0.59 × tier(12)`.
 
-## Pace (simulator, 200 seasons each, 18 Oct 2026, with the arena)
+## Pace (simulator, 200 seasons each, 18 Oct 2026, with the arena and saved-up turns)
 
 A simple pupil: attacks, uses class skills (3 uses a day, shared across all three dragon stages), heals below 40% HP, buys the best gear it can, tries its master every day, answers maths questions right 70% of the time, and wins about half of three arena duels a day against a hero of its own strength.
 
 | Pupil | Level 12 | Beats the dragon in the season |
 |---|---|---|
 | Plays every day | day 16, week 3 | 100% (about 35% of tries; it can try again next day) |
-| Plays 4 days a week | 16th play day, calendar day 25, week 4 | about 95% for Knight, 98% Mage, 77% Trickster |
-| Plays 2 days a week | does not get there; level 8 by the end | |
+| Plays 4 days a week | 14th play day, calendar day 23, week 4 | 91% to 100% (Trickster the lowest) |
+| Plays 2 days a week | reaches level 12 in 32% to 46% of seasons (level 10 or 11 otherwise) | 6% to 9% |
 
-The arena adds about 15% to the pace (three duels are worth about 1½ forest fights' experience), which moved a 4-days-a-week pupil from week 5 to week 4 and a 2-days-a-week pupil from level 6-7 to level 8. **What stops a 2-days-a-week pupil is the one master try a day**: 10 play days is at most 10 tries, a master is beaten on about 3 tries in 4, and 11 are needed. Tried before the arena was added: 10 fights a level instead of 14, with a second master try a day after a loss, left a 2-days-a-week pupil at level 9 while a daily pupil reached the dragon in 13 days (week 2). So it isn't one setting. It would take a second master try a day or turns that pile up for missed days. James's call (plan question 12).
+**Saved-up turns (James, 18 Oct: a pupil who plays twice a week should be able to reach the dragon).** Forest fights you didn't use pile up for the days you missed, up to two days' worth (20 on a play day after a break). A missed day also saves up an extra master try, up to two (spent before the day's try, win or lose). Arena fights, skills and health don't pile up. Nothing changes for a pupil who plays every day or most days (the numbers above for them are the same as before). A 2-days-a-week pupil went from level 8 to level 10 or 11, and about 4 in 10 now reach the dragon, but only about 1 in 12 beat it before the season ends: they arrive late and get few tries. That's still a stretch for a very casual pupil, and is what the arena plus saving up can honestly do without making the game short for everyone. Before the saving up, the wall was the one master try a day: 10 play days is at most 10 tries.
 
-Also: about 2% of forest fights are lost, a master is beaten on about 73% of tries, a fight lasts about 3 rounds, healing eats about 45% of gold, and all three classes finish within a play day of each other. To see it all: `npm run lord:sim`.
+Also: about 2% of forest fights are lost, a master is beaten on about 61% to 73% of tries (less for a casual pupil who rushes), a fight lasts about 3 rounds, healing eats about 45% of gold, and all three classes finish within a play day of each other. To see it all: `npm run lord:sim`.
 
 ## The dragon and the maths (James, 18 Oct: "a fight, not a test")
 
@@ -85,5 +86,5 @@ Each riddle before a dragon stage gives a **small** bonus for a right answer: a 
 ## Still to settle (later stages)
 
 - The gem shop (2 gems for a permanent +1 strength, defence or HP), and more events when pupils have played.
-- Whether 2-days-a-week pupils should be able to finish. They reach level 8 in a season (see Pace). A second master try a day, turns that pile up for missed days, Practice Mode or a shorter first season could change that. James's call.
+- 2-days-a-week pupils now often reach the dragon but rarely beat it in the first season (see Pace). A longer first season or Practice Mode could help. James's call, after real pupils have played.
 - Kenney 1-Bit Pack and VT323 font licences: check again when the screens start (L.3).

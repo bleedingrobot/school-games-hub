@@ -718,20 +718,24 @@ function nzDate(now) {
 	}).format(now);
 }
 /**
-* The first play of a new day gives back the day's turns and full health. Turns don't pile up if
-* you miss days (like LORD). Called by the server at the start of every request, so nothing has
-* to run at midnight.
+* The first play of a new day gives back the day's turns and full health. Forest fights you didn't use pile up for
+* the days you missed, but never past two days' worth (a pupil who plays twice a week gets a double day), and a missed
+* day saves up one extra master try. Arena fights and skills don't pile up. Called by the server at the start of every request, so nothing
+* has to run at midnight.
 */
 function rollDay(hero, today, forestPerDay = 10) {
 	if (hero.day === today) return hero;
+	const gone = Math.max(1, dayNumber$1(today) - dayNumber$1(hero.day || today));
+	const kept = Math.max(0, hero.forestLeft);
 	return {
 		...hero,
 		day: today,
-		forestLeft: forestPerDay,
+		forestLeft: Math.min(forestPerDay * 2, kept + forestPerDay * gone),
 		arenaLeft: 3,
 		skillLeft: 3,
 		masterTried: false,
-		hp: hero.maxHp
+		hp: hero.maxHp,
+		masterExtra: Math.min(2, (hero.masterExtra ?? 0) + Math.max(0, gone - 1))
 	};
 }
 const dayNumber$1 = (date) => Math.floor(Date.parse(`${date}T00:00:00Z`) / 864e5);
@@ -1011,9 +1015,11 @@ function startMasterFight(hero, seed, options = {}) {
 /** Beat your master and you go up a level, a bit stronger, fully healed. Lose and nothing is lost: you are just healed. */
 function applyMasterResult(hero, fight) {
 	if (!fight.over) throw new Error("The fight is not finished");
+	const extra = hero.masterExtra ?? 0;
 	const next = {
 		...hero,
-		masterTried: true,
+		masterTried: extra <= 0,
+		masterExtra: Math.max(0, extra - 1),
 		skillLeft: fight.skillLeft
 	};
 	if (fight.outcome === "won") {
@@ -1044,7 +1050,7 @@ function dragonBreather(hero, hp) {
 }
 /** Win all three stages: a star, and your hero starts again at level 1 (class and stars are kept). */
 function finishDragon(hero, today) {
-	return rollDay(newHero(hero.heroClass, "", { dragonKills: hero.dragonKills + 1 }), today);
+	return newHero(hero.heroClass, today, { dragonKills: hero.dragonKills + 1 });
 }
 /** Lose to the dragon: you wake at the healer, nothing lost but a day's try. */
 function loseToDragon(hero) {
@@ -5525,9 +5531,9 @@ async function runLord(s, player, raw) {
 			};
 			rolled = true;
 		}
-		if (hero.forestLeft > settings.forestPerDay) hero = {
+		if (hero.forestLeft > settings.forestPerDay * 2) hero = {
 			...hero,
-			forestLeft: settings.forestPerDay
+			forestLeft: settings.forestPerDay * 2
 		};
 		w = {
 			hero,

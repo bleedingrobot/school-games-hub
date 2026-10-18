@@ -748,17 +748,23 @@ describe('the day rolling over, and the season ending', () => {
     g.clock = NZ_MIDNIGHT; // 00:00:00 on the 20th
     const after = await g.refresh();
     expect(after.today).toBe('2026-10-20');
-    expect(after.hero).toMatchObject({ forestLeft: 10, skillLeft: 3, masterTried: false, day: '2026-10-20' });
+    expect(after.hero).toMatchObject({ forestLeft: 12, skillLeft: 3, masterTried: false, day: '2026-10-20' }); // 2 left over + the day's 10
     expect(after.hero!.hp).toBe(after.hero!.maxHp);
     expect(g.db.events.at(-1)?.action).toBe('rollover');
     expect(g.db.row!.version).toBe(after.version);
   });
 
-  it('does not pile the turns up if a few days are missed', async () => {
+  it('piles forest fights up for missed days, but never past two days’ worth, and arena fights and skills do not pile up', async () => {
     const g = new Game();
     await g.start();
+    g.patch({ arenaLeft: 3, skillLeft: 1 });
     g.clock += 5 * 86_400_000;
-    expect((await g.refresh()).hero!.forestLeft).toBe(10);
+    const s = await g.refresh();
+    expect(s.hero).toMatchObject({ forestLeft: 20, arenaLeft: 3, skillLeft: 3, masterExtra: 2 });
+    const teacherLowered = new Game({ seasonStart: SEASON_START, forestPerDay: 4 });
+    await teacherLowered.start();
+    teacherLowered.clock += 5 * 86_400_000;
+    expect((await teacherLowered.refresh()).hero!.forestLeft).toBe(8);
   });
 
   it('the first request of a new day can be an ordinary one: it rolls over and then does its job', async () => {
@@ -782,7 +788,7 @@ describe('the day rolling over, and the season ending', () => {
     expect(out.body.ok).toBe(true);
     expect(g.hero().day).toBe('2026-10-20');
     expect(g.hero().hp).toBe(g.hero().maxHp);
-    expect(g.hero().forestLeft).toBe(10);
+    expect(g.hero().forestLeft).toBe(19); // 9 left from the fight's day + the new day's 10
   });
 
   it('starts everyone again when a new 5-week season begins, keeping stars, and lets the class be changed', async () => {
@@ -895,7 +901,7 @@ describe('test tools', () => {
     expect(g.state!.openFight).toBeNull();
     await g.send({ action: 'tools', tool: 'new-day' });
     await g.refresh();
-    expect(g.hero().forestLeft).toBe(10);
+    expect(g.hero().forestLeft).toBe(20); // the tool pretends a long time has gone by
     await g.send({ action: 'tools', tool: 'reset' });
     expect(g.hero().level).toBe(1);
     expect(g.state!.classOpen).toBe(true);

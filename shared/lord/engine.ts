@@ -52,16 +52,23 @@ export function nzDate(now: Date): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Pacific/Auckland', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 }
 
+/** Unused forest fights pile up for missed days, up to this many days' worth in all (a casual pupil gets a double day). */
+export const FOREST_PILE_UP_DAYS = 2;
+
 /**
- * The first play of a new day gives back the day's turns and full health. Turns don't pile up if
- * you miss days (like LORD). Called by the server at the start of every request, so nothing has
- * to run at midnight.
+ * The first play of a new day gives back the day's turns and full health. Forest fights you didn't use pile up for
+ * the days you missed, but never past two days' worth (a pupil who plays twice a week gets a double day), and a missed
+ * day saves up one extra master try. Arena fights and skills don't pile up. Called by the server at the start of every request, so nothing
+ * has to run at midnight.
  */
 export function rollDay(hero: Hero, today: string, forestPerDay = FOREST_FIGHTS_PER_DAY): Hero {
   if (hero.day === today) return hero;
+  const gone = Math.max(1, dayNumber(today) - dayNumber(hero.day || today));
+  const kept = Math.max(0, hero.forestLeft);
   return {
-    ...hero, day: today, forestLeft: forestPerDay, arenaLeft: ARENA_FIGHTS_PER_DAY, skillLeft: SKILL_USES_PER_DAY,
-    masterTried: false, hp: hero.maxHp,
+    ...hero, day: today, forestLeft: Math.min(forestPerDay * FOREST_PILE_UP_DAYS, kept + forestPerDay * gone),
+    arenaLeft: ARENA_FIGHTS_PER_DAY, skillLeft: SKILL_USES_PER_DAY, masterTried: false, hp: hero.maxHp,
+    masterExtra: Math.min(2, (hero.masterExtra ?? 0) + Math.max(0, gone - 1)),
   };
 }
 
@@ -296,7 +303,9 @@ export function startMasterFight(hero: Hero, seed: number, options: Omit<FightOp
 /** Beat your master and you go up a level, a bit stronger, fully healed. Lose and nothing is lost: you are just healed. */
 export function applyMasterResult(hero: Hero, fight: FightState): Hero {
   if (!fight.over) throw new Error('The fight is not finished');
-  const next: Hero = { ...hero, masterTried: true, skillLeft: fight.skillLeft };
+  // A saved-up extra try is used before the day's try is spent.
+  const extra = hero.masterExtra ?? 0;
+  const next: Hero = { ...hero, masterTried: extra <= 0, masterExtra: Math.max(0, extra - 1), skillLeft: fight.skillLeft };
   if (fight.outcome === 'won') {
     const gain = levelUpGain(hero.level + 1);
     next.level += 1;
@@ -328,7 +337,7 @@ export function dragonBreather(hero: Hero, hp: number): number {
 
 /** Win all three stages: a star, and your hero starts again at level 1 (class and stars are kept). */
 export function finishDragon(hero: Hero, today: string): Hero {
-  return rollDay(newHero(hero.heroClass, '', { dragonKills: hero.dragonKills + 1 }), today);
+  return newHero(hero.heroClass, today, { dragonKills: hero.dragonKills + 1 });
 }
 
 /** Lose to the dragon: you wake at the healer, nothing lost but a day's try. */

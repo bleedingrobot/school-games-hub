@@ -102,7 +102,26 @@ describe('days and seasons', () => {
     expect(next).toMatchObject({ forestLeft: FOREST_FIGHTS_PER_DAY, hp: tired.maxHp, masterTried: false, skillLeft: 3 });
   });
   it('lets the teacher change the forest fights a day', () => {
-    expect(rollDay(hero(), '2026-10-20', 6).forestLeft).toBe(6);
+    expect(rollDay(hero({ forestLeft: 0 }), '2026-10-20', 6).forestLeft).toBe(6);
+  });
+  it('piles unused forest fights up for missed days, never past two days’ worth', () => {
+    expect(rollDay(hero({ forestLeft: 4 }), '2026-10-20').forestLeft).toBe(14);
+    expect(rollDay(hero({ forestLeft: 0 }), '2026-10-23').forestLeft).toBe(20); // three days gone: two days' worth, no more
+    expect(rollDay(hero({ forestLeft: 10 }), '2026-10-30').forestLeft).toBe(20);
+    expect(rollDay(hero({ forestLeft: 0 }), '2026-10-20', 6).forestLeft).toBe(6);
+    expect(rollDay(hero({ forestLeft: 6 }), '2026-10-25', 6).forestLeft).toBe(12);
+  });
+  it('saves up an extra master try for each missed day, to two, and spends it before the day’s try', () => {
+    expect(rollDay(hero(), '2026-10-20').masterExtra).toBe(0);
+    expect(rollDay(hero(), '2026-10-21').masterExtra).toBe(1);
+    expect(rollDay(hero(), '2026-10-30').masterExtra).toBe(2);
+    const banked = rollDay(hero({ exp: 99999 }), '2026-10-30');
+    const lost = applyMasterResult(banked, { ...startMasterFight(banked, 1), over: true, outcome: 'lost' });
+    expect(lost).toMatchObject({ masterTried: false, masterExtra: 1 });
+    const again = applyMasterResult(lost, { ...startMasterFight(lost, 2), over: true, outcome: 'lost' });
+    expect(again).toMatchObject({ masterTried: false, masterExtra: 0 });
+    const last = applyMasterResult(again, { ...startMasterFight(again, 3), over: true, outcome: 'lost' });
+    expect(last.masterTried).toBe(true);
   });
   it('uses the New Zealand date', () => {
     expect(nzDate(new Date('2026-10-18T12:30:00Z'))).toBe('2026-10-19'); // NZDT is UTC+13

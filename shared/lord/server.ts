@@ -26,7 +26,7 @@ import { computerHeroes } from './computer';
 import { EVENT_BY_ID } from './events';
 import {
   applyEvent, applyForestResult, applyMasterResult, arenaExp, buyGear, canChallengeMaster, canFaceDragon, deposit, dragonBreather, duelistOf,
-  finishDragon, forestTrip, heal, loseToDragon, makeRandom, newHero, nzDate, playDuel, replayFight, rollDay, seasonOf, startDragonStage,
+  FOREST_PILE_UP_DAYS, finishDragon, forestTrip, heal, loseToDragon, makeRandom, newHero, nzDate, playDuel, replayFight, rollDay, seasonOf, startDragonStage,
   startFight, startMasterFight, useForestTurn, withdraw, type Duelist,
 } from './engine';
 import {
@@ -833,8 +833,8 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
       extra = { ...extra, dragon: null };
       rolled = true;
     }
-    // The teacher may lower the day's fights.
-    if (hero.forestLeft > settings.forestPerDay) hero = { ...hero, forestLeft: settings.forestPerDay };
+    // The teacher may lower the day's fights (a pile-up never goes past two days' worth).
+    if (hero.forestLeft > settings.forestPerDay * FOREST_PILE_UP_DAYS) hero = { ...hero, forestLeft: settings.forestPerDay * FOREST_PILE_UP_DAYS };
     w = { hero, extra, season: rowSeason, open: stored };
   }
 

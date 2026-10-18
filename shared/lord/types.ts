@@ -27,6 +27,8 @@ export interface Hero {
   arenaLeft: number;
   skillLeft: number;
   masterTried: boolean;
+  /** A second master try saved up from a missed day (0 or 1): finishing a master fight uses it before the day's try is spent. */
+  masterExtra?: number;
   // Counters, for achievements and the simulator
   forestWins: number;
   arenaWins: number;
