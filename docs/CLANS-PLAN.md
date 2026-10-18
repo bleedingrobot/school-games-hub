@@ -352,3 +352,16 @@ The empire rules and numbers are written into [CLANS-RULES.md](CLANS-RULES.md) s
 **Left for 4B:** all screens (Empire home, Land, Barracks and troops, Raid and Friendly War, test buttons), the test page, Quests (later), and everything that needs saving (C.5).
 
 **James's answers (18 Oct 2026):** separate empire vault: yes; new clans can't raid for 3 days either: yes; Gymnasium raises the draft limit: yes; bigger empire (more barracks and land) so it takes longer to fill: yes. The tables above were from the first, smaller empire; the sizes are now 12 barracks and 24 claims.
+
+## Stage C.4, part B, first half (18 Oct 2026): the Empire home and Land screens
+
+Split in two at James's choice. **First half (done):** Empire home, Land and buildings, test buttons. **Second half (next):** Barracks and troops (buy, the draft setting and "draft my followers"), Raid, Friendly War, and a "win / lose a raid" test button. Quests stay for a later small stage. Branch `clans`; nothing saved, no server, nothing live. James had no rule changes.
+
+**Built** (`src/games/clans/Empire.tsx`, `Land.tsx`, `places.ts`, `session.ts`): a new clan now starts with an empire (`makeClan`), and "Skip a day" also runs `empireNewDay` (worker energy back to 100%).
+- **Empire home:** vault and clan purse, "Put in / Take out" with a number box (the engine's kind sentence if there isn't enough), wild land, plots, buildings, today's worker energy, troops with room and prices, army strength, the draft (read-only for now). Button on the clan page.
+- **Land and buildings:** pick sides 2-6 (big buttons), area question then fence question (`landPlot`), then the price worked out on screen (it comes from the two answers; shows the Developer's Hall discount if there is one), then "Develop it". "Claim more land" appears when the wild land is gone (50, then 25 more each time). Build: pick a plot, pick a building (all seven listed with size, energy, gold and what it does; ones that can't be built are greyed with the engine's `say`), then the energy question (`energyLeft`, counting energy already used today) and "Build it". A wrong answer still builds and charges the right amount.
+- **Test buttons:** Give 100 followers, Put 1,000 gold in the vault, Build a barracks and fill it (all labelled "test only").
+
+**Checked:** 14 new tests (empire home, vault moves both ways with the kind messages, test buttons, keyboard reach, develop with a right and a wrong answer, empty vault, claiming land and not enough gold, building with a wrong answer, energy already used, not enough energy, plot too small, a new day). Type check clean; all `src/games/clans` and `shared/clans` tests pass (159). Looked at the real page at 1366 x 640: the Empire home and the Land question fit with the test strip closed.
+
+**Choices to know about:** the energy question uses what was used so far today as one lump, so it asks one building at a time (not "all three at once"). The draft shows but can't be changed until the second half. The test page link changed: the old Artifact had been deleted, so a new one was made.
