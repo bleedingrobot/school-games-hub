@@ -10,7 +10,7 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-update public.profiles set role = 'teacher' where id = '00000000-0000-0000-0000-00000000000e';
+update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -96,10 +96,10 @@ select ok(pg_temp.has('a', 'gk-first-win') and pg_temp.has('a', 'gk-first-key') 
   'first win, first Key and 3 stars are achievements');
 select is(pg_temp.run('a', 2, 'won', 2) ->> 'status', 'saved', 'level 2 opens after the Key');
 
-update public.app_settings set gem_keep_key_pass = 10 where id;
+update public.app_settings set gem_keep_key_pass = 10 where true;
 select pg_temp.run('c', 1);
 select is(pg_temp.key('c', 1, 9), 'not-passed', 'the teacher''s pass mark is the one used');
-update public.app_settings set gem_keep_key_pass = 8 where id;
+update public.app_settings set gem_keep_key_pass = 8 where true;
 
 -- ---- The daily cap is shared with bot games ----
 select public.record_bot_game(pg_temp.id('b'), 'chess', 'medium', 'white', array['e2e4', 'm' || g], 'won', 'checkmate', 20, true)

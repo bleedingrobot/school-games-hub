@@ -7,7 +7,7 @@ select plan(13);
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-update public.profiles set role = 'teacher' where id = '00000000-0000-0000-0000-00000000000e';
+update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -34,10 +34,10 @@ create function pg_temp.has(achievement text) returns boolean language sql as $$
 $$;
 
 -- ---- The switch ----
-select is((select space_maths from public.app_settings), 'choose', 'students choose by default');
+select is((select space_maths from public.app_settings order by class_id nulls last limit 1), 'choose', 'students choose by default');
 
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
-select is((select space_maths from public.app_settings), 'choose', 'a student can read the switch');
+select is((select space_maths from public.app_settings order by class_id nulls last limit 1), 'choose', 'a student can read the switch');
 select throws_ok($$ select public.teacher_set_space_maths('off') $$, '42501', null, 'but not change it');
 select throws_ok($$ update public.app_settings set space_maths = 'off' $$, '42501', null, 'not even directly');
 select pg_temp.reset();
@@ -46,7 +46,7 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@dougla
 select lives_ok($$ select public.teacher_set_space_maths('on') $$, 'a teacher can change it');
 select throws_ok($$ select public.teacher_set_space_maths('sometimes') $$, '22023', null, 'to a known setting only');
 select pg_temp.reset();
-select is((select space_maths from public.app_settings), 'on', 'and it is saved');
+select is((select space_maths from public.app_settings order by class_id nulls last limit 1), 'on', 'and it is saved');
 
 -- ---- Achievements ----
 select pg_temp.act_as_server();

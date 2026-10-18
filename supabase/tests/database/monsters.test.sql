@@ -13,7 +13,7 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000d', 'dan@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-update public.profiles set role = 'teacher' where id = '00000000-0000-0000-0000-00000000000e';
+update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -163,7 +163,7 @@ select pg_temp.reset();
 -- ---- Teacher switches ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 select is(public.teacher_set_monsters('{"enabled":true,"topics":["fractions","add-sub"]}') ->> 'enabled', 'true', 'a teacher switches the game on');
-select is((select monsters_topics from public.app_settings), array['add-sub', 'fractions'], '... and picks the topics');
+select is((select monsters_topics from public.app_settings order by class_id nulls last limit 1), array['add-sub', 'fractions'], '... and picks the topics');
 select throws_ok($$ select public.teacher_set_monsters('{"enabled":true,"topics":[]}') $$, '22023', 'Leave at least one topic on.',
   'at least one topic stays on');
 select throws_ok($$ select public.teacher_set_monsters('{"enabled":true,"topics":["pizza"]}') $$, '22023', null, 'unknown topics are refused');
@@ -180,7 +180,7 @@ select is(public.progress_rules() -> 'monsters', 'null'::jsonb, '... and so are 
 select pg_temp.reset();
 select is((select count(*)::integer from public.achievements where player = pg_temp.id('d') and achievement like 'mm-%'), 8,
   '... but what was earned is kept');
-select is((select monsters_enabled from public.app_settings), false, 'it is off again for the rest of these tests');
+select is((select monsters_enabled from public.app_settings order by class_id nulls last limit 1), false, 'it is off again for the rest of these tests');
 
 -- ---- Maths records for the new topics ----
 select is(public.record_fact_answers(pg_temp.id('a'), 'add-sub', gen_random_uuid(),

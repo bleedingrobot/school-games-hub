@@ -10,7 +10,7 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-update public.profiles set role = 'teacher' where id = '00000000-0000-0000-0000-00000000000e';
+update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -56,12 +56,24 @@ select set_eq($$
   select p.proname::text from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public' and has_function_privilege('authenticated', p.oid, 'execute')
 $$, array[
-  'card_lobby_games', 'choose_my_name', 'gem_keep_leaderboard', 'is_player_in', 'is_school_email', 'is_school_user', 'is_teacher', 'is_valid_avatar',
-  'leaderboard', 'lobby_games', 'lord_hall', 'lord_news', 'lord_warriors', 'monsters_leaderboard', 'my_bot_game_stats', 'my_card_game_stats', 'my_friend_game_stats', 'my_gem_keep', 'my_lord', 'my_monsters', 'my_power_game_stats', 'my_progress',
-  'my_space_game_stats', 'power_lobby_games', 'progress_rules', 'save_my_avatar', 'school_domain', 'server_time', 'space_lobby_games',
-  'teacher_delete_student', 'teacher_gem_keep_class', 'teacher_gem_keep_student', 'teacher_lord_class', 'teacher_lord_student', 'teacher_monster_class', 'teacher_monster_student', 'teacher_new_season', 'teacher_reset_lord_hero', 'teacher_reset_name', 'teacher_set_gem_keep', 'teacher_set_hidden',
-  'teacher_set_lord', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_space_reactions', 'teacher_student_detail',
-  'teacher_students'
+  'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'gem_keep_leaderboard',
+  'is_player_in', 'is_school_admin', 'is_school_email', 'is_school_user', 'is_site_owner', 'is_teacher',
+  'is_valid_avatar', 'leaderboard', 'lobby_games', 'lord_hall', 'lord_news', 'lord_warriors', 'monsters_leaderboard',
+  'my_bot_game_stats', 'my_card_game_stats', 'my_class', 'my_friend_game_stats', 'my_gem_keep', 'my_lord',
+  'my_monsters', 'my_power_game_stats', 'my_progress', 'my_school', 'my_school_info', 'my_settings_id',
+  'my_space_game_stats', 'owner_add_school', 'owner_add_school_domain', 'owner_schools', 'owner_set_school_active',
+  'owner_set_school_contact', 'power_lobby_games', 'progress_rules', 'save_my_avatar', 'school_set_admin',
+  'school_set_default_class', 'server_time', 'space_lobby_games', 'teacher_add_co_teacher', 'teacher_add_to_class',
+  'teacher_answer_warp', 'teacher_archive_class', 'teacher_class_detail', 'teacher_class_events', 'teacher_classes',
+  'teacher_create_class', 'teacher_create_group', 'teacher_delete_group', 'teacher_delete_student',
+  'teacher_gem_keep_class', 'teacher_gem_keep_student', 'teacher_lord_class', 'teacher_lord_student',
+  'teacher_monster_class', 'teacher_monster_student', 'teacher_move_student', 'teacher_new_season',
+  'teacher_remove_co_teacher', 'teacher_remove_from_class', 'teacher_reset_lord_hero', 'teacher_reset_name',
+  'teacher_reset_warp_code', 'teacher_school_teachers', 'teacher_set_gem_keep', 'teacher_set_group_member',
+  'teacher_set_hidden', 'teacher_set_lord', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_role',
+  'teacher_set_space_maths', 'teacher_set_space_reactions', 'teacher_set_warp_mode', 'teacher_student_detail',
+  'teacher_students', 'teacher_unassigned_students', 'teacher_update_class', 'teacher_warp_requests', 'warp_join',
+  'warp_preview'
 ], 'signed-in users can call only this list of functions (each checks who is asking)');
 
 select is_empty($$

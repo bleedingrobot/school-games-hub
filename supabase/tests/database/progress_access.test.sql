@@ -11,7 +11,7 @@ insert into auth.users (id, email)
 select ('00000000-0000-0000-0000-0000000001' || lpad(n::text, 2, '0'))::uuid, 's' || n || '@douglaspark.school.nz'
 from generate_series(1, 14) n;
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-update public.profiles set role = 'teacher' where id = '00000000-0000-0000-0000-00000000000e';
+update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
 
 create function pg_temp.id(n integer) returns uuid language sql as $$
   select ('00000000-0000-0000-0000-0000000001' || lpad(n::text, 2, '0'))::uuid
@@ -151,7 +151,7 @@ select is((select real_name from public.teacher_students() where id = pg_temp.id
 select is(public.teacher_student_detail(pg_temp.id(1)) #>> '{games,0,friend,won}', '5', 'a teacher can see a student''s stats');
 select is(jsonb_array_length(public.teacher_student_detail(pg_temp.id(1)) -> 'recent'), 9, 'and their recent games');
 select lives_ok($$ select public.teacher_set_multiplayer(false) $$, 'a teacher can switch off friend games');
-select is((select multiplayer_enabled from public.app_settings), false, '...and they''re off');
+select is((select multiplayer_enabled from public.app_settings order by class_id nulls last limit 1), false, '...and they''re off');
 select lives_ok(format('select public.teacher_set_role(%L, ''teacher'')', pg_temp.id(2)), 'a teacher can make someone a teacher');
 select throws_ok($$ select public.teacher_set_role('00000000-0000-0000-0000-00000000000e', 'student') $$, '42501', null,
   'but not change their own role');

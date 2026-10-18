@@ -990,17 +990,25 @@ begin
   delete from public.bot_games where player = any (mine);
   get diagnostics bot_count = row_count;
   delete from public.mp_games
-  where status in ('finished', 'cancelled', 'expired') and coalesce(created_by, first_player, second_player) = any (mine);
+  where status in ('finished', 'cancelled', 'expired')
+    and (array[created_by, first_player, second_player] && mine
+         or coalesce(created_by, first_player, second_player) is null);
   get diagnostics friend_count = row_count;
   -- A finished game a newer one points at (a rematch) goes too; the link just empties.
   delete from public.space_games
-  where status in ('finished', 'cancelled', 'expired') and coalesce(host, seat1) = any (mine);
+  where status in ('finished', 'cancelled', 'expired')
+    and (array[host, seat1, seat2, seat3, seat4] && mine
+         or coalesce(host, seat1, seat2, seat3, seat4) is null);
   get diagnostics space_count = row_count;
   delete from public.card_games
-  where status in ('finished', 'cancelled', 'expired') and coalesce(host, seat1) = any (mine);
+  where status in ('finished', 'cancelled', 'expired')
+    and (array[host, seat1, seat2, seat3, seat4] && mine
+         or coalesce(host, seat1, seat2, seat3, seat4) is null);
   get diagnostics card_count = row_count;
   delete from public.power_games
-  where status in ('finished', 'cancelled', 'expired') and coalesce(host, seat1) = any (mine);
+  where status in ('finished', 'cancelled', 'expired')
+    and (array[host, seat1, seat2] && mine
+         or coalesce(host, seat1, seat2) is null);
   get diagnostics power_count = row_count;
   delete from public.gem_keep_runs where player = any (mine);
   get diagnostics gem_count = row_count;

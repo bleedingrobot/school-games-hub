@@ -13,7 +13,7 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-update public.profiles set role = 'teacher' where id = '00000000-0000-0000-0000-00000000000e';
+update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -50,7 +50,7 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.s
 select throws_ok($$ select pg_temp.commit('a', 0, gen_random_uuid(), 'start-hero') $$, '42501', null, 'a student cannot save a hero directly');
 select throws_ok($$ select public.load_lord(pg_temp.id('a')) $$, '42501', null, 'a student cannot ask for a hero to check against');
 select throws_ok($$ select public.record_lord_refusal(pg_temp.id('a'), 'tools', 'tools') $$, '42501', null, 'a student cannot write a refusal');
-select throws_ok($$ select public.lord_server_settings() $$, '42501', null, 'a student cannot call the server''s settings');
+select throws_ok($$ select public.lord_server_settings('00000000-0000-0000-0000-00000000000a') $$, '42501', null, 'a student cannot call the server''s settings');
 select throws_ok($$ select * from public.lord_heroes $$, '42501', null, 'students cannot read heroes');
 select throws_ok($$ select * from public.lord_fights $$, '42501', null, 'students cannot read fights');
 select throws_ok($$ select * from public.lord_events $$, '42501', null, 'students cannot read the history');

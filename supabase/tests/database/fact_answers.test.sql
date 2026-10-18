@@ -8,7 +8,7 @@ select plan(14);
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-update public.profiles set role = 'teacher' where id = '00000000-0000-0000-0000-00000000000e';
+update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
 
 create function pg_temp.answer(batch text, correct boolean, ms integer, at bigint) returns integer language sql as $$
   select public.record_fact_answers('00000000-0000-0000-0000-00000000000a', 'times-tables',

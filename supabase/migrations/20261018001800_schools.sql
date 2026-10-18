@@ -364,7 +364,6 @@ $$;
 -- is granted here. Nothing earlier is revoked.
 grant execute on function
   public.my_school(),
-  public.same_school(uuid),
   public.is_school_admin(),
   public.is_site_owner(),
   public.my_school_info(),

@@ -13,8 +13,9 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000d', 'dan@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000f', 'fay@douglaspark.school.nz'),
+  ('00000000-0000-0000-0000-000000000010', 'gus@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-update public.profiles set role = 'teacher' where id = '00000000-0000-0000-0000-00000000000e';
+update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
 update public.profiles set hidden = true where id = '00000000-0000-0000-0000-00000000000d';
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
@@ -69,7 +70,7 @@ select throws_ok($$ select * from public.lord_hall $$, '42501', null, 'students 
 select throws_ok($$ select * from public.lord_scores $$, '42501', null, 'students cannot read the scores table');
 select throws_ok($$ insert into public.lord_news (day, kind, text, dedupe) values (current_date, 'village', 'Free gold!', 'x') $$, '42501', null, 'students cannot write news');
 select throws_ok($$ insert into public.lord_hall (player, season, kills) values (pg_temp.id('a'), 1, 5) $$, '42501', null, 'students cannot write themselves into the Hall of Heroes');
-select throws_ok($$ select public.lord_daily_news(current_date, '[]') $$, '42501', null, 'students cannot write the day''s news');
+select throws_ok($$ select public.lord_daily_news(pg_temp.id('a'), current_date, '[]') $$, '42501', null, 'students cannot write the day''s news');
 select throws_ok($$ select public.lord_arena_candidates(pg_temp.id('a'), 1, 5) $$, '42501', null, 'students cannot ask for classmates'' heroes');
 select throws_ok($$ select public.record_lord_score(pg_temp.id('a'), 0, 0, 100) $$, '42501', null, 'students cannot give themselves points');
 select throws_ok($$ select public.teacher_lord_class() $$, '42501', null, 'students cannot see the class view');
@@ -79,14 +80,14 @@ select pg_temp.reset();
 
 -- ---- The Daily News: written by the code, read through a function ----
 select is(public.load_lord(pg_temp.id('a')) ->> 'dailyDone', 'false', 'the day''s own news has not been written yet');
-select lives_ok($$ select public.lord_daily_news(pg_temp.today(), '[
+select lives_ok($$ select public.lord_daily_news(pg_temp.id('a'), pg_temp.today(), '[
   {"kind":"village","text":"Market day! 6 trays of 8 pies make 48.","dedupe":"village"},
   {"kind":"computer","text":"Sir Gareth (computer hero) beat Master Basalt and reached level 4!","dedupe":"computer:gareth"}]') $$, 'the day''s lines go in');
-select lives_ok($$ select public.lord_daily_news(pg_temp.today(), '[{"kind":"village","text":"A different line","dedupe":"village"}]') $$, 'writing a line again is allowed');
+select lives_ok($$ select public.lord_daily_news(pg_temp.id('a'), pg_temp.today(), '[{"kind":"village","text":"A different line","dedupe":"village"}]') $$, 'writing a line again is allowed');
 select is((select count(*)::integer from public.lord_news where day = pg_temp.today()), 2, 'but a line with the same key is kept once');
 select is((select text from public.lord_news where dedupe = 'village'), 'Market day! 6 trays of 8 pies make 48.', 'and the first one stays');
-select throws_ok($$ select public.lord_daily_news(pg_temp.today() - 1, '[]') $$, '22023', null, 'news for another day is refused');
-select throws_ok($$ select public.lord_daily_news(pg_temp.today(), '[{"kind":"gossip","text":"x","dedupe":"x"}]') $$, '23514', null, 'a kind of line that does not exist is refused');
+select throws_ok($$ select public.lord_daily_news(pg_temp.id('a'), pg_temp.today() - 1, '[]') $$, '22023', null, 'news for another day is refused');
+select throws_ok($$ select public.lord_daily_news(pg_temp.id('a'), pg_temp.today(), '[{"kind":"gossip","text":"x","dedupe":"x"}]') $$, '23514', null, 'a kind of line that does not exist is refused');
 select is(public.load_lord(pg_temp.id('a')) ->> 'dailyDone', 'true', 'the server is told the day''s news is done');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz');
 select is(cardinality(pg_temp.news_for('b')), 2, 'a pupil reads the day''s lines');
@@ -106,7 +107,7 @@ select ok(pg_temp.name('a') || ' beat Master Basalt and reached level 2!' = any 
 select is((select count(*)::integer from public.lord_news() where line like '%{p}%'), 0, 'with no placeholder left');
 select is((select count(*)::integer from public.lord_news() where line like '%arena%'), 0, 'a hidden pupil leaves no lines');
 select pg_temp.reset();
-insert into public.lord_news (day, kind, text, dedupe) values (pg_temp.today() - 2, 'village', 'Two days ago.', 'old2'), (pg_temp.today() - 5, 'village', 'Too old.', 'old5');
+insert into public.lord_news (school_id, day, kind, text, dedupe) values (1, pg_temp.today() - 2, 'village', 'Two days ago.', 'old2'), (1, pg_temp.today() - 5, 'village', 'Too old.', 'old5');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz');
 select ok('Two days ago.' = any (pg_temp.news_for('b')), 'news from a couple of days ago is still read');
 select ok(not ('Too old.' = any (pg_temp.news_for('b'))), 'but not news from last week');
@@ -212,19 +213,19 @@ update public.app_settings set lord_paused_since = pg_temp.today() - 7;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 select is(public.teacher_set_lord('{"enabled":true}') ->> 'seasonStart', (pg_temp.today() - 3)::text, 'switching it back on moves the start forward by the days it was closed');
 select pg_temp.reset();
-select is((select lord_paused_since from public.app_settings), null, 'and the pause is over');
-select is(public.lord_current_season(), 1, 'the season carries on where it left off');
+select is((select lord_paused_since from public.app_settings order by class_id nulls last limit 1), null, 'and the pause is over');
+select is(public.lord_current_season(pg_temp.id('a')), 1, 'the season carries on where it left off');
 update public.app_settings set lord_enabled = false, lord_season_start = pg_temp.today() + 5, lord_paused_since = pg_temp.today() - 2;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 select is(public.teacher_set_lord('{"enabled":true}') ->> 'seasonStart', (pg_temp.today() + 5)::text, 'a pause before the first season starts moves nothing');
 select pg_temp.reset();
-select is(public.lord_current_season(), null::integer, 'and the season is not under way yet');
+select is(public.lord_current_season(pg_temp.id('a')), null::integer, 'and the season is not under way yet');
 update public.app_settings set lord_enabled = false, lord_season_start = pg_temp.today() - 10, lord_paused_since = pg_temp.today() - 7;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 select is(public.teacher_set_lord(jsonb_build_object('enabled', true, 'seasonStart', (pg_temp.today() - 40)::text)) ->> 'seasonStart', (pg_temp.today() - 40)::text, 'a start date the teacher types wins over the pause');
 select pg_temp.reset();
-select is(public.lord_current_season(), 2, 'forty days in is the second season');
-select is((select lord_paused_since from public.app_settings), null, 'and clears the pause');
+select is(public.lord_current_season(pg_temp.id('a')), 2, 'forty days in is the second season');
+select is((select lord_paused_since from public.app_settings order by class_id nulls last limit 1), null, 'and clears the pause');
 update public.app_settings set lord_enabled = true, lord_season_start = pg_temp.today(), lord_paused_since = null;
 
 -- ---- The teacher's views ----
@@ -240,7 +241,7 @@ select is(jsonb_array_length(public.teacher_lord_class() -> 'hall'), 2, 'the Hal
 select is(public.teacher_lord_student(pg_temp.id('a')) -> 'hero' ->> 'level', '5', 'one pupil''s hero at a glance');
 select is(public.teacher_lord_student(pg_temp.id('a')) -> 'hero' -> 'stats' ->> 'masterWins', '5', 'with everything they have done');
 select is(public.teacher_lord_student(pg_temp.id('a')) ->> 'refused', '1', 'and the requests turned down this week');
-select is(public.teacher_lord_student(pg_temp.id('e')) -> 'hero', 'null'::jsonb, 'a pupil with no hero has none');
+select is(public.teacher_lord_student('00000000-0000-0000-0000-000000000010') -> 'hero', 'null'::jsonb, 'a pupil with no hero has none');
 select pg_temp.reset();
 
 -- ---- Resetting a hero ----
