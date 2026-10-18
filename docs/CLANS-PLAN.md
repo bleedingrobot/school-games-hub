@@ -465,3 +465,55 @@ Built, tested and **not applied, not deployed, not merged**. Branch `clans`.
 - **Lazy days.** A new day is applied when the clan is next opened, not at midnight. Nothing is lost either way; part B adds the midnight job for the computer clans and news.
 
 **Left:** to apply the migration and deploy the function (James says so, for each); part B; the Teacher page; storing maths answers; classmate raids; the class trial.
+
+## Stage C.5, part B: design (18 Oct 2026)
+
+James had read the part A summary and had no changes. He chose to try the saving part after part B, so nothing from A or B is applied, deployed or merged. Before building, `main` was merged into `clans` (it had moved on: Maths Monsters, Dragon Maths, Power Clash); the migrations here are numbered after those.
+
+**A mine fight, step by step**
+1. **Start** (`fightStart`). The server checks there are fights left and someone is awake, takes one off today's count, and picks the fight's seed from the clan's seed and the fight number (`fightSeed`, the same formula the test page already used). The monsters come from `newFight` with that seed. It keeps the fight "open" and sends it to the browser (depth, boss, seed, the maths settings in force, and the rounds so far, none yet).
+2. **Play.** The browser plays each round itself (so the screen answers at once and the test page needs no server) and sends what it did: the order for each member and the Battle Cry answer, as `fightRound` with the round number.
+3. **Check.** For every round the server rebuilds the whole fight from the seed with `replayFight`, marking the Battle Cry answer by rebuilding the question from the seed and round number. It never reads a result from the browser. Any extra fields (a claimed result, gold, experience) are dropped when the request is read.
+4. **Pay.** When the replay says the fight is over, the server pays in one go (`payFight`, the same function the test page uses): surviving HP and SP, knock-outs, experience and levels, gold, followers. The open fight is closed in the same save, so a fight can only pay once.
+5. **Same fight sent twice.** An identical request (same request id from part A) gets the first answer back. A *new* request for a round that was already played is refused ("stale round"), and one for a fight that is over is refused ("no fight"). Nothing is paid either time.
+
+**A half-finished fight is kept after every round** (so a refresh, or another Chromebook, rebuilds it exactly), as the plan said. That costs about one request per round (4 or 5 a fight, up to about 40 a day if all 8 fights are used) instead of one per fight; it is the price of "a refresh must not lose it or give a free retry". The function already allows 40 a minute and a round takes far longer than that to play. Starting a fight while one is open just shows the open one (no extra fight used); the fight screen then replays the kept rounds to show the same log and the same state.
+
+**Where fights are kept:** a new table `clan_fights`, one row per clan at most (the open fight: depth, boss, seed, fight number, maths settings, rounds so far). It is deleted when the fight is paid and when a teacher resets the clan. The members are *not* copied: instead, **nothing else about a clan can change while a fight is open** (shop, training, Church, empire, quest and raids are refused with "You are in the middle of a fight. Finish it first!") and **the night's rest waits until the fight is over**. That keeps the replay honest without a second copy of the clan. The maths settings are kept with the fight so a teacher's change cannot alter an open fight's questions.
+
+**What the browser can and cannot do.** The browser is told the seed (it has to play the fight), so a child with developer tools could work out the best orders before sending them. The fight pays about 50 gold, the server caps it at 8 fights a day, and a replay can never produce more than the rules allow. If that is ever seen in class, the next step is for the server to play each round and never send the seed; it is a bigger change and not needed for a trial.
+
+**The midnight job** (`clan_nightly`, a database function run by two schedules, 11:00 and 12:00 UTC, which are midnight in New Zealand summer and winter time; the one that is not midnight finds the day already done and stops):
+- **Rest for clans nobody opened.** Does in SQL exactly what `catchUp` does when a clan is next opened: heal and wake everyone, the Church's free wake-up back, empire energy and raids reset, 8 fights, and the clan's day moved to today's number. Because the day is moved, the server then finds nothing left to do, so **a clan is never rested twice**. A clan in the middle of a fight is skipped and rests after its fight (same rule as the server). The job raises the clan's version, so a request made from an older copy is refused and redone. The "8" lives in one SQL function and a test checks it matches `CONFIG.fightsPerDay`; a TypeScript test and the database test check the same clan gives the same rest both ways.
+- **Computer clans' day.** There are no computer clans yet (the six computer kingdoms have no day of their own: fixed armies). The job is where they will go in stage C.6. Nothing is faked here.
+- **News.** Computer-written lines from the finished-fight log, counts only: "N fights were won in the Mines yesterday." and one line for each boss beaten (by depth, up to three). The log and the news tables have no student id or name at all, so a line cannot name a student. The clan page shows the latest five. Lines are tidied after 30 days.
+- **Tidying:** old fight log lines, the job's own record, remembered requests.
+
+**Class trial** (everything a first trial needs and nothing more):
+- **A switch:** `app_settings.clans_enabled`, off until a teacher turns it on, with a Clan Quest panel on the teacher page. Off means the hub card is hidden and the `clans` function refuses every request ("not switched on yet"). A teacher can always open it, so James can try it before the class can.
+- **Teacher's reset button:** on each pupil's page, the clan at a glance (name, day, level, gold, fights left, in a fight) and "Reset this clan…" with a confirm (`teacher_reset_clan`, which also removes an open fight).
+- **A short teacher guide** (`docs/CLANS-TEACHER-GUIDE.md`).
+- **Not in:** classmate raids, the village chest, votes, points, achievements, the scoreboard, the maths-topics teacher page (all stage C.6). Clan Quest gives no points yet.
+
+**Browser:** the Mines open when there is a server; "Into the Mines!" asks the server to start; each round is sent as it is played (in order, one at a time); the results screen shows what the server paid, not the browser's sum. If a round is turned down or the connection drops, the fight screen is shown again from the server's copy with a plain message. The test page (no server) still plays everything in the browser, unchanged.
+
+## Stage C.5, part B results (18 Oct 2026): fights, the midnight job and the class trial
+
+Built, tested and **not applied, not deployed, not merged**. Branch `clans`.
+
+**Built**
+- `shared/clans/actions.ts`: `fightStart` and `fightRound` actions, the open fight in the saved state, the "finish your fight first" rule, the rest waiting for a fight to end. `play.ts`: `fightSeed`, `payFight`, `FightSummary` (the test page's fight now uses the same ones).
+- `supabase/migrations/20261018001900_clans_fights.sql`: `clan_fights`, `clan_fight_log`, `clan_news`, `clan_daily_runs`, the class switch (`clans_enabled`, `teacher_set_clans`), `teacher_clan_info`, `load_clan` and `save_clan` replaced (they carry the fight, the switch and the news), `clan_nightly` and its two schedules.
+- The `clans` function: refuses everything when the switch is off, sends the open fight and the news.
+- Browser: Mines unlocked, the fight screen plays a server fight (start, send each round, resume after a refresh), the Clan Quest card on the hub behind the teacher's switch, the teacher panel and the student panel, the news on the clan page.
+- Docs: `docs/CLANS-TEACHER-GUIDE.md`.
+
+**Checked** (numbers are in the summary)
+- 51 rule tests (`shared/clans/fights.test.ts`): start, seed per fight, resume, fights running out, a fight replayed identically, equal to the browser's own engine, Battle Cry marked by the server, paid exactly once, a changed or repeated round refused, a refresh in the middle (and the same ending as an uninterrupted fight), other actions refused while a fight is open, the night's rest waiting, bad requests refused, 60 fights of random play, and the night's rest agreeing with the database job.
+- 6 function tests for fights through the real handler (a repeated and a simultaneous last round pay once; a refresh; a wrong round number; a claimed result ignored; the switch).
+- 78 database checks (`clans_fights.test.sql`), run together with the part A migration and the part A checks (47) in one transaction that was rolled back, so the shared local database was left as it was.
+- 5 fight tests with the real screens against a server in a box (start, the monsters the server picked, every round sent, the paid result shown, refresh, a refused round) and tests for the teacher panels and the card switch.
+
+**Choices to know about:** a round is sent for every round (see the design); the seed is visible to the browser; no computer clans exist yet; Clan Quest gives no points; the maths settings are still the defaults until the Teacher page.
+
+**To go live** (each needs James to say so): apply the two migrations (`20261018001800_clans.sql`, `20261018001900_clans_fights.sql`), deploy the `clans` function, merge `clans` into `main`, then switch Clan Quest on from the teacher page.
