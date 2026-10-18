@@ -1,5 +1,5 @@
 -- Rehearsal for the schools-and-classes migrations (F.2): the checks after the migrations ran on "today's" data.
-select plan(27);
+select plan(36);
 
 select is((select count(*)::int from public.profiles where school_id = 1), (select n::int from before_counts where t = 'profiles'),
   'every existing profile is in school 1');
@@ -65,6 +65,18 @@ select is_empty($$ select name from before_functions where name <> 'school_domai
   except select p.proname::text from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public' and has_function_privilege('authenticated', p.oid, 'execute') $$,
   'everything a signed-in user could call before can still be called (except the old one-school function)');
+
+-- Clan Quest and Training, as they were before.
+select is((select school_id from public.clan_villages where name = 'Room 12'), 1, 'the group belongs to Douglas Park');
+select is((select count(*)::int from public.clan_villages where is_default and school_id = 1 and id = 1), 1, 'and "Everyone else" is still village 1');
+select is((select school_id from public.clan_news where text like 'One fight%'), 1, 'the village news line belongs to Douglas Park');
+select is((select school_id from public.clan_fight_log), 1, 'and so does the Mines log line');
+select is(public.clan_village_of('00000000-0000-0000-0000-0000000000a2'), 2::bigint, 'a pupil in a group is still in it');
+select is(public.clan_village_of('00000000-0000-0000-0000-0000000000a1'), 1::bigint, 'and the others are still in village 1');
+select is(public.clans_settings('00000000-0000-0000-0000-0000000000a1'), '{"season": 3, "yearBand": 6, "fightsPerDay": 5, "enabledTables": [2,3,4,5,6,7,8,9,10], "enabledTopics": ["percentages","money","area","division","ratios","rates"]}'::jsonb,
+  'Clan Quest''s maths settings carried over');
+select is((public.load_clan('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-000000000001') ->> 'enabled'), 'true', 'Clan Quest is still on for a student');
+select is((select s.clan_raids_enabled from public.settings_of('00000000-0000-0000-0000-0000000000a1') s), true, 'and so are raids');
 
 select * from finish();
 rollback;

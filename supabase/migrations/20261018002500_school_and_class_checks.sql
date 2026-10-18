@@ -161,6 +161,7 @@ AS $function$
     -- Hidden while the game is switched off.
     'monsters', case when (select a.monsters_enabled from public.settings_of(auth.uid()) a) then public.monster_point_rules() end,
     'dragonMaths', case when (select a.lord_enabled from public.settings_of(auth.uid()) a) then public.lord_point_rules() end,
+    'clanQuest', case when (select a.clans_enabled from public.settings_of(auth.uid()) a) then public.clan_reward_rules() end,
     'botDailyCap', public.bot_daily_cap(),
     'pairDailyLimit', public.pair_daily_limit(),
     'achievementPoints', public.achievement_points(),
@@ -209,13 +210,14 @@ AS $function$
               ) order by at.game, at.sort)
               from public.achievement_types at
               left join public.achievements a on a.player = me.id and a.achievement = at.id
-              -- Maths Monsters' and Dragon Maths' achievements are hidden while the game is switched off.
+              -- Maths Monsters', Dragon Maths' and Clan Quest's achievements are hidden while the game is switched off.
               where (at.game <> 'monsters' or (select s.monsters_enabled from public.settings_of(auth.uid()) s))
-                and (at.game <> 'dragon-maths' or (select s.lord_enabled from public.settings_of(auth.uid()) s))),
+                and (at.game <> 'dragon-maths' or (select s.lord_enabled from public.settings_of(auth.uid()) s))
+                and (at.game <> 'clan-quest' or (select s.clans_enabled from public.settings_of(auth.uid()) s))),
     'recent', (select coalesce(jsonb_agg(jsonb_build_object(
-                 'id', coalesce(x.bot_game, x.mp_game, x.space_game, x.card_game, x.gem_keep_run, x.power_game, x.monster_save, x.lord_score),
+                 'id', coalesce(x.bot_game, x.mp_game, x.space_game, x.card_game, x.gem_keep_run, x.power_game, x.monster_save, x.lord_score, x.clan_score),
                  'points', x.points)), '[]')
-               from (select s.bot_game, s.mp_game, s.space_game, s.card_game, s.gem_keep_run, s.power_game, s.monster_save, s.lord_score, s.points
+               from (select s.bot_game, s.mp_game, s.space_game, s.card_game, s.gem_keep_run, s.power_game, s.monster_save, s.lord_score, s.clan_score, s.points
                      from public.scored_games s
                      where s.player = me.id order by s.finished_at desc limit 20) x)
   )
@@ -902,7 +904,8 @@ begin
             where pg.status = 'finished' and p.id in (pg.seat1, pg.seat2)),
            (select max(r.finished_at) from public.gem_keep_runs r where r.player = p.id),
            (select m.saved_at from public.monster_saves m where m.player = p.id),
-           (select l.saved_at from public.lord_heroes l where l.player = p.id)),
+           (select l.saved_at from public.lord_heroes l where l.player = p.id),
+           (select c.updated_at from public.clans c where c.player = p.id)),
          p.created_at
   from public.profiles p
   left join auth.users u on u.id = p.id
@@ -984,7 +987,7 @@ begin
   select coalesce(array_agg(p.id), '{}') into mine from public.profiles p where p.school_id = public.my_school();
   delete from public.achievements
   where player = any (mine)
-    and achievement not in (select t.id from public.achievement_types t where t.game in ('monsters', 'dragon-maths'));
+    and achievement not in (select t.id from public.achievement_types t where t.game in ('monsters', 'dragon-maths', 'clan-quest'));
   delete from public.scored_games where player = any (mine);
   delete from public.ratings where player = any (mine);
   delete from public.bot_games where player = any (mine);
@@ -1021,6 +1024,9 @@ begin
   -- Dragon Maths: the points go, the heroes, stars, Hall of Heroes and achievements stay.
   delete from public.lord_scores where player = any (mine);
   update public.lord_heroes set wins_pending = 0 where player = any (mine);
+  -- Clan Quest: the points go; clans, fame and achievements stay (fame has its own season button).
+  delete from public.clan_scores where player = any (mine);
+  update public.clans set wins_pending = 0 where player = any (mine);
   return jsonb_build_object('botGames', bot_count, 'friendGames', friend_count + space_count + card_count + power_count,
     'gemKeepLevels', gem_count);
 end;

@@ -9,7 +9,7 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000b', 'ben@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000c', 'cai@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-update public.profiles set role = 'teacher' where id = '00000000-0000-0000-0000-00000000000e';
+update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -146,10 +146,10 @@ select pg_temp.save('a', 6, 30, pg_temp.state('a', 1, true));
 select pg_temp.save('b', 0, 31, pg_temp.state('b', 1, true));
 select pg_temp.save('b', 1, 32, pg_temp.state('b', 1, true, pg_temp.fight(1), 1));
 select pg_temp.save('c', 0, 33, pg_temp.state('c', 4, true));
-insert into public.clan_fight_log (nz_date, depth, boss, result) values
-  (date '1970-01-01' + 20002, 3, false, 'won'), (date '1970-01-01' + 20002, 4, false, 'won'), (date '1970-01-01' + 20002, 5, true, 'won'),
-  (date '1970-01-01' + 20002, 6, false, 'lost'), (date '1970-01-01' + 20002, 9, true, 'lost'), (date '1970-01-01' + 19000, 1, false, 'won');
-insert into public.clan_news (nz_date, text) values (date '1970-01-01' + 19000, 'Very old news.');
+insert into public.clan_fight_log (nz_date, depth, boss, result, school_id) values
+  (date '1970-01-01' + 20002, 3, false, 'won', 1), (date '1970-01-01' + 20002, 4, false, 'won', 1), (date '1970-01-01' + 20002, 5, true, 'won', 1),
+  (date '1970-01-01' + 20002, 6, false, 'lost', 1), (date '1970-01-01' + 20002, 9, true, 'lost', 1), (date '1970-01-01' + 19000, 1, false, 'won', 1);
+insert into public.clan_news (nz_date, text, school_id) values (date '1970-01-01' + 19000, 'Very old news.', 1);
 select is(public.load_clan(pg_temp.id('a'), pg_temp.req(98)) ->> 'version', '7', 'clan a is at version 7 before the job');
 select is(public.clan_nightly(20003), '{"ran": true, "day": 20003, "rested": 1, "villagesClosed": 0}'::jsonb, 'the job rests the one clan that nobody touched today');
 select is(public.load_clan(pg_temp.id('a'), pg_temp.req(98)) -> 'state' ->> 'day', '4', 'it moves the clan to today''s day number (20003 - 20000 + 1)');

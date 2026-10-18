@@ -1,6 +1,6 @@
 -- Rehearsal for the schools-and-classes migrations (F.2): "today's" Douglas Park, before the migrations.
 -- Run by scripts/f2-rehearsal.sh inside one transaction (nothing is kept), in a scratch database that
--- has every migration up to 20261018001700 and none of F.2's.
+-- has every migration that is live today (up to Training, 20261018002200) and none of F.2's.
 begin;
 create extension if not exists pgtap with schema extensions;
 
@@ -20,7 +20,14 @@ update public.profiles set hidden = true where id = '00000000-0000-0000-0000-000
 update public.app_settings set multiplayer_enabled = false, space_reactions_enabled = true, gem_keep_mode = 'challenge',
   gem_keep_tables = '{2,5,10}', gem_keep_division = true, gem_keep_multiple_choice = true, gem_keep_key_pass = 9,
   space_maths = 'on', monsters_enabled = true, monsters_topics = '{add-sub,fractions}',
-  lord_enabled = true, lord_forest_per_day = 7, lord_season_start = current_date - 3;
+  lord_enabled = true, lord_forest_per_day = 7, lord_season_start = current_date - 3,
+  clans_enabled = true, clan_raids_enabled = true, clans_year_band = 6, clans_fights_per_day = 5, clans_season = 3;
+
+-- Clan Quest as it is today: a group, a pupil in it, a news line, a Mines log line.
+insert into public.clan_villages (name, closed_week) values ('Room 12', public.clan_nz_week() - 1);
+insert into public.clan_village_members (player, village_id) values ('00000000-0000-0000-0000-0000000000a2', 2);
+insert into public.clan_news (nz_date, text) values (current_date, 'One fight was won in the Mines yesterday.');
+insert into public.clan_fight_log (nz_date, depth, boss, result) values (current_date, 3, false, 'won');
 
 -- Some saved data of each kind.
 select public.record_bot_game('00000000-0000-0000-0000-0000000000a1', 'chess', 'easy', 'black', array['f2f3', 'e7e5', 'g2g4', 'd8h4'], 'won', 'checkmate', 2, false);

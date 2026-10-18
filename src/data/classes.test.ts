@@ -5,7 +5,7 @@ import { tidyWarpCode } from './classes';
 
 describe('Class Warp codes', () => {
   it('are made the way game codes are: the database uses the same letters and length', () => {
-    const migration = readFileSync('supabase/migrations/20261018001900_classes_and_warp.sql', 'utf8');
+    const migration = readFileSync('supabase/migrations/20261018002400_classes_and_warp.sql', 'utf8');
     expect(migration).toContain(`alphabet constant text := '${CODE_ALPHABET}';`);
     expect(migration).toContain(`for i in 1..${CODE_LENGTH} loop`);
     // The table refuses any other code, whatever made it.

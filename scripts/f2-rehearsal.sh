@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # Rehearses the schools-and-classes migrations (F.2) on a copy of "today's" data:
-# builds a scratch database with everything up to Dragon Maths (20261018001700), puts fake Douglas Park rows in,
-# applies the three F.2 migrations, and checks that every row, every setting and every teacher list came through.
+# builds a scratch database with everything live today, up to Training (20261018002200), puts fake Douglas Park rows in,
+# applies the four F.2 migrations, and checks that every row, every setting and every teacher list came through.
 # Nothing is kept (it all runs in one transaction in a scratch database that is deleted at the end).
 #   scripts/f2-rehearsal.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
 CONTAINER="${SUPABASE_DB_CONTAINER:-supabase_db_school-games-hub}"
 NAME=f2_rehearsal
-scripts/scratch-db.sh "$NAME" 20261018001700 | tail -2
+SCRATCH_BASE=20261018001500 scripts/scratch-db.sh "$NAME" 20261018002200 | tail -2
 {
   cat supabase/tests/rehearsal/f2-today-before.sql
-  for f in supabase/migrations/20261018001800_schools.sql supabase/migrations/20261018001900_classes_and_warp.sql supabase/migrations/20261018002000_school_and_class_checks.sql; do
+  for f in supabase/migrations/20261018002300_schools.sql supabase/migrations/20261018002400_classes_and_warp.sql supabase/migrations/20261018002500_school_and_class_checks.sql supabase/migrations/20261018002600_clans_schools_and_classes.sql; do
     cat "$f"; echo
   done
   cat supabase/tests/rehearsal/f2-today-after.sql

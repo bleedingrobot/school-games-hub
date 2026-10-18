@@ -2,6 +2,8 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
+-- Sequences aren't rolled back, so say where the group numbers start (the default village is 1, the first new one 2).
+select setval(pg_get_serial_sequence('public.clan_villages', 'id'), 1);
 select plan(130);
 
 insert into auth.users (id, email) values
@@ -11,7 +13,7 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000d', 'dee@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000f', 'fay@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-update public.profiles set role = 'teacher' where id = '00000000-0000-0000-0000-00000000000e';
+update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -89,7 +91,7 @@ select public.teacher_move_pupil(pg_temp.id('a'), 2);
 select public.teacher_move_pupil(pg_temp.id('b'), 2);
 select public.teacher_move_pupil(pg_temp.id('d'), 2);
 select throws_ok($$ select public.teacher_move_pupil(pg_temp.id('a'), 99) $$, '22023', null, 'a pupil cannot be moved to a group that is not there');
-select throws_ok($$ select public.teacher_move_pupil(pg_temp.id('e'), 2) $$, '22023', null, 'a teacher is not moved into a village');
+select throws_ok($$ select public.teacher_move_pupil(pg_temp.id('e'), 2) $$, '42501', null, 'a teacher is not moved into a village');
 select is((public.teacher_villages() -> 'villages' -> 1 ->> 'pupils')::integer, 3, 'the group has three pupils');
 select is((public.teacher_villages() -> 'villages' -> 0 ->> 'pupils')::integer, 2, '... and the others stay in the default one (c and f)');
 select pg_temp.reset();

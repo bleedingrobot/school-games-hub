@@ -10,7 +10,7 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000c', 'cai@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000d', 'dee@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-update public.profiles set role = 'teacher' where id = '00000000-0000-0000-0000-00000000000e';
+update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -82,9 +82,9 @@ select throws_ok($$ select public.teacher_clan_maths_student(pg_temp.id('a')) $$
 select pg_temp.reset();
 
 -- ---- Settings ----
-create function pg_temp.cs() returns jsonb language sql security definer as $$ select public.clans_settings() $$;
+create function pg_temp.cs() returns jsonb language sql security definer as $$ select public.clans_settings(pg_temp.id('a')) $$;
 create function pg_temp.rules() returns jsonb language sql security definer as $$ select public.clan_reward_rules() $$;
-create function pg_temp.fpd() returns integer language sql security definer as $$ select public.clan_fights_per_day() $$;
+create function pg_temp.fpd() returns integer language sql security definer as $$ select public.clan_fights_per_day(pg_temp.id('a')) $$;
 select is(pg_temp.cs(), '{"season": 1, "yearBand": 5, "fightsPerDay": 8, "enabledTables": [2,3,4,5,6,7,8,9,10], "enabledTopics": ["percentages","money","area","division","ratios","rates"]}'::jsonb,
   'the settings start as the Year 5 defaults, 8 fights a day, season 1');
 select is(pg_temp.fpd(), 8, 'the night''s rest gives back 8 fights by default');
