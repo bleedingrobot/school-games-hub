@@ -547,3 +547,35 @@ C.6 is split in two. **Part A (this one):** the class village (groups, chest, we
 **Tests.** Rules in TypeScript for every refusal, conservation, once-only and the vote counting; the function through the real handler; the database in a rolled-back transaction. No `supabase db reset`.
 
 **Test page.** No server there, so it gets a pretend village (chest, a vote that "closes" with a button, news) and a pretend classmate to raid.
+
+## Stage C.6, part A results (18 Oct 2026): the class village, the news page and classmate raids
+
+Built, tested and **not applied, not deployed, not merged**. Branch `clans`.
+
+**Built**
+- `shared/clans/village.ts`: the rules for the chest, the three buildings and their costs (`CONFIG.village`), weeks, the vote (`winner`, `closeWeek`), the class goal and its maths question, who a clan may raid (`raidTargetList`) and `raidClassmateNz` (the existing `raidClassmate` rule, with New Zealand day numbers). The Church level now gives one more free wake-up a day (`freeWakes`).
+- `actions.ts`: `chestGive`, `vote`, `raidTargets` and `raidClass`. A raid also hands back the raided clan's new empire and the news lines (never sent to the browser).
+- `supabase/migrations/20261018002000_clans_village.sql`: villages, groups, votes, private raid notes, the hidden `public_id` on each clan, village news, the raids switch (off by default), `load_clan` and `save_clan` replaced (village, notes, gifts to the chest), `save_raid` (both clans in one transaction), `clan_vote`, `clan_village_close` and `clan_nightly` replaced (closes each village's vote once), the teacher functions for groups. I also gave the two pure SQL functions a fixed search path, which the repo's security test requires, and added the new teacher functions to that test's list.
+- The `clans` function: loads the village, hands the vote to the database, loads the raided clan, saves a raid through `save_raid`, and re-reads the village after a gift or a raid.
+- Browser: The Village screen (goal bar, gift buttons, vote buttons, what is built), Village news (and "While you were away"), Raid a classmate, a pretend village and four pretend classmates on the test page with two extra test buttons, and on the teacher page the Clan Quest villages panel (raids switch, make/rename/delete groups, move pupils).
+- Docs: teacher guide, shared README, this section.
+
+**Decisions to know about**
+- **Raids stay inside one village.** A pupil with no group is in "Everyone else", which is one village, so before groups are made every pupil can see every other clan.
+- **Gifts stay with the group they were given to.** Moving a pupil takes back their open vote but not their gold.
+- **A tie in the vote goes to the cheaper building**; no votes builds nothing; a short chest builds nothing and keeps its gold.
+- **Costs:** Training Hall 300 gold a level (to 5), Smithy 250 (to 6), Church 400 (to 3). All in `CONFIG.village` and in one SQL function that a test keeps equal. Not yet tuned against how much a class actually earns.
+- **Days:** clans count days from their own first day, so classmate raids use New Zealand day numbers (`shieldUntil` is now such a number; nothing used it before).
+- **News is the last 12 lines** and is tidied after a week. Raid lines are written when the raid happens, not at midnight.
+- **The database also checks the news lines**: only the exact sentences the game writes, naming the raiders' clan, are accepted, so a line cannot carry a name.
+- **Not changed:** the maths topics are still the Year 5 defaults, and Clan Quest still gives no points.
+
+**Checked**
+- 38 rule tests (`village.test.ts`): weeks, costs, the vote (including 5,000 random weeks that never make the chest negative), the goal, every refusal for a classmate raid (switch off, own clan, new attacker, new defender, no troops, too big or small, shield, once a day, same clan twice, fight open), vault gold, land and buildings only moving between the two clans, input never changed, same seed same result, no name in any news line, and that the SQL numbers equal the game's settings.
+- 19 more function tests through the real handler: a gift pays once, a vote counts once, finished buildings refused, village levels put on every clan, the fair list, raids off, the news and the raided clan's note, a raid sent twice paying once, and two raiders at once (the second redoes on the newer clan and is told about the shield). No account id appears anywhere in what the browser is told.
+- 130 database checks (`clans_village.test.sql`) plus the 47 and 78 from before, run together in one transaction that was rolled back (the shared local database was left as it was): students cannot reach any of it, groups, gifts counted once and never more than the purse, the vote counted once and moved, the midnight job closing each week once, a short chest, ties, a raid saved in one go, a repeat spotted, a second raider on an old copy turned away, every way of making or losing something refused, news that names anyone else refused, notes forgotten after two days.
+- 14 screen tests (`Village.test.tsx`), 5 teacher panel tests, and the whole suite: 2,187 tests, type check clean, all passing in the one full run.
+
+**To go live** (each needs James to say so, in words): apply the three migrations in order (`20261018001800`, `20261018001900`, `20261018002000`), deploy the `clans` function, merge `clans` into `main`, switch Clan Quest on, make groups, and only then switch classmate raids on.
+
+**Left for C.6 part B:** points, achievements, the scoreboard and fame, the maths topics page, storing maths answers.
