@@ -89,6 +89,8 @@ export async function startRun(course: string, mode: ClockMode, maths = false): 
       gates: body.gates as StartReply['gates'],
       pits: Array.isArray(body.pits) ? body.pits : [],
       rescues: Array.isArray(body.rescues) ? body.rescues : [],
+      gems: Array.isArray(body.gems) ? body.gems : [],
+      rightGems: Array.isArray(body.rightGems) ? body.rightGems.filter((d): d is number => Number.isInteger(d)) : [],
     };
   } catch {
     return null;
@@ -173,6 +175,8 @@ export interface Ghost {
   inputs: string;
   /** The shortcut doors that were open for that run (a run can only be played back with the same doors). */
   doors: number[];
+  /** The gems that were right for that run (they took time off, so a replay needs them too). */
+  gems: number[];
 }
 
 /** A recorded run to race against, or null (none yet, or the server can't be reached). */
@@ -180,9 +184,9 @@ export async function loadGhost(course: string, mode: ClockMode, which: GhostKin
   try {
     const { data, error } = await supabase.rpc('marble_ghost', { in_course: course, in_mode: mode, in_maths: maths, which });
     if (error || !data || typeof data !== 'object') return null;
-    const g = data as Partial<Ghost> & { doors?: unknown };
+    const g = data as Partial<Ghost> & { doors?: unknown; gems?: unknown };
     if (typeof g.name !== 'string' || typeof g.steps !== 'number' || typeof g.inputs !== 'string') return null;
-    return { name: g.name, steps: g.steps, inputs: g.inputs, doors: doorsFromMask(typeof g.doors === 'number' ? g.doors : 0) };
+    return { name: g.name, steps: g.steps, inputs: g.inputs, doors: doorsFromMask(typeof g.doors === 'number' ? g.doors : 0), gems: doorsFromMask(typeof g.gems === 'number' ? g.gems : 0, 16) };
   } catch {
     return null;
   }

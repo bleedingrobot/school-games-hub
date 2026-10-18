@@ -4,7 +4,7 @@
  */
 import type { Course } from './course';
 import { DIRS, clockSteps, gateOpen, geyserPhase, makeWorld, newRun, stepRun, trapdoorSolid, type RunOptions, type RunState, type World } from './engine';
-import { pushInput, type InputRuns } from './inputs';
+import { BONUS, pushInput, type InputRuns } from './inputs';
 
 /**
  * True if the next tile or two along the marble's way is a hazard it should wait for: a gate that is shut or about to
@@ -23,13 +23,14 @@ function mustWait(w: World, s: RunState, ux: number, uy: number): boolean {
       break;
     }
   }
-  for (const reach of [0.9, 1.7]) {
+  // (A marble on a belt takes a few tiles to stop, so look a good way ahead.)
+  for (const reach of [0.9, 1.7, 2.6, 3.5]) {
     const tx = Math.floor(s.x + ux * reach);
     const ty = Math.floor(s.y + uy * reach);
     if (tx < 0 || ty < 0 || tx >= w.course.width || ty >= w.course.height) continue;
     const ch = w.course.tiles[ty * w.course.width + tx].ch;
     // Crossing takes under a second; the hazard must stay friendly for that long.
-    if (ch === 'q' && !(gateOpen(w.t + 5, tx) && gateOpen(w.t + 45, tx))) return true;
+    if (ch === 'q' && ![5, 30, 55, 80].every((d) => gateOpen(w.t + d, tx))) return true;
     if (ch === 't' && !(trapdoorSolid(w.t, tx) && trapdoorSolid(w.t + 70, tx))) return true;
   }
   return false;
@@ -38,25 +39,43 @@ function mustWait(w: World, s: RunState, ux: number, uy: number): boolean {
 export interface BotOptions extends RunOptions {
   /** At every answer gate, roll into a tunnel that is shut first (a student who guessed wrong), then back out and through the open one. */
   wrongFirst?: boolean;
+  /** Answer every pit stop right (a BONUS input takes the seconds off). The right gems come from `rightGems`. */
+  answers?: boolean;
 }
 
-/** The waypoints for a run: the course's route with each gate's way through put in (through the open door; a shut one first if `wrongFirst`). */
-export function routeFor(course: Course, openDoors: readonly number[], wrongFirst = false): ReadonlyArray<readonly [number, number]> {
+/**
+ * The waypoints for a run: the course's route with each gate's way through put in (through the open door; a shut one first if
+ * `wrongFirst`), and a detour to the right gem of each gem group.
+ */
+export function routeFor(course: Course, openDoors: readonly number[], wrongFirst = false, rightGems: readonly number[] = []): ReadonlyArray<readonly [number, number]> {
+  const events: Array<{ after: number; points: Array<readonly [number, number]> }> = [];
+  for (const gate of course.gates) {
+    const open = gate.tunnels.find((t) => openDoors.includes(t.door)) ?? gate.tunnels[0];
+    const points: Array<readonly [number, number]> = [];
+    if (wrongFirst) {
+      const wrong = gate.tunnels.find((t) => t !== open);
+      if (wrong) points.push(...wrong.dead, course.def.route[gate.after - 1]);
+    }
+    points.push(...open.route);
+    events.push({ after: gate.after, points });
+  }
+  course.gems.forEach((trail, t) => {
+    trail.groups.forEach((group, g) => {
+      const gem = course.gemList.find((spot, id) => spot.trail === t && spot.group === g && rightGems.includes(id));
+      if (gem) events.push({ after: group.after, points: [[gem.x, gem.y]] });
+    });
+  });
+  events.sort((a, b) => a.after - b.after);
   const out: Array<readonly [number, number]> = [];
   const main = course.def.route;
   let at = 0;
-  for (const gate of course.gates) {
-    out.push(...main.slice(at, gate.after));
-    at = gate.after;
-    const open = gate.tunnels.find((t) => openDoors.includes(t.door)) ?? gate.tunnels[0];
-    if (wrongFirst) {
-      const wrong = gate.tunnels.find((t) => t !== open);
-      if (wrong) out.push(...wrong.dead, main[gate.after - 1]);
-    }
-    out.push(...open.route);
+  for (const e of events) {
+    out.push(...main.slice(at, e.after), ...e.points);
+    at = Math.max(at, e.after);
   }
   out.push(...main.slice(at));
-  return out;
+  // A waypoint on top of the one before it would look like a sharp turn to the bot.
+  return out.filter((p, i) => i === 0 || p[0] !== out[i - 1][0] || p[1] !== out[i - 1][1]);
 }
 
 export interface BotRun {
@@ -70,7 +89,16 @@ export function botRun(course: Course, options: BotOptions = {}, maxSteps = 60 *
   const s = newRun(w);
   const runs: [number, number][] = [];
   let at = 0;
-  const route = routeFor(course, options.openDoors ?? [], options.wrongFirst);
+  const route = routeFor(course, options.openDoors ?? [], options.wrongFirst, options.rightGems ?? []);
+  let pitsAnswered = 0;
+  // A right answer at a pit stop is a BONUS input, right after the marble reaches it.
+  const takeBonus = () => {
+    if (options.answers && s.pitStops.length > pitsAnswered) {
+      pitsAnswered = s.pitStops.length;
+      pushInput(runs, BONUS);
+      stepRun(w, s, BONUS);
+    }
+  };
   while (s.outcome === 'running' && s.steps < maxSteps) {
     let [tx, ty] = route[Math.min(at, route.length - 1)];
     if (at < route.length - 1 && (tx - s.x) ** 2 + (ty - s.y) ** 2 < 0.8 * 0.8) {
@@ -122,6 +150,7 @@ export function botRun(course: Course, options: BotOptions = {}, maxSteps = 60 *
       }
       pushInput(runs, brake);
       stepRun(w, s, brake);
+      takeBonus();
       continue;
     }
     let best = 0;
@@ -135,6 +164,7 @@ export function botRun(course: Course, options: BotOptions = {}, maxSteps = 60 *
     }
     pushInput(runs, best);
     stepRun(w, s, best);
+    takeBonus();
   }
   return { runs, state: s };
 }

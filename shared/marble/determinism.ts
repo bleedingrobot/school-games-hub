@@ -23,7 +23,7 @@ export function determinismReport(): string {
     for (const mode of ['up', 'down'] as const) {
       for (const seed of [7, 99]) {
         const next = lcg(seed);
-        const w = makeWorld(course, { mode, openDoors: course.gates.map((g, i) => g.tunnels[(i + seed) % g.tunnels.length].door) });
+        const w = makeWorld(course, { mode, openDoors: course.gates.map((g, i) => g.tunnels[(i + seed) % g.tunnels.length].door), rightGems: course.gemList.map((_, i) => i).filter((i) => (i + seed) % 2 === 0) });
         const s = newRun(w);
         let input = 0;
         let hold = 0;

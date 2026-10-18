@@ -45,7 +45,7 @@ describe('reading a report', () => {
 });
 
 describe('judging a run', () => {
-  const judge = (over: Record<string, unknown> = {}) => judgeRun(parseMarbleReport(report(over))!, NOW, doors);
+  const judge = (over: Record<string, unknown> = {}) => judgeRun(parseMarbleReport(report(over))!, NOW, { doors });
   it('replays the inputs and gives the time they make', () => {
     const j = judge();
     expect(j.ok).toBe(true);

@@ -86,6 +86,8 @@ export interface JudgedRun {
   gateChoices: number[];
   /** How many pit stops the marble reached. */
   pitStops: number;
+  /** How many right gems were picked up. */
+  gems: number;
   /** BONUS and REFUND inputs in the run: the server only allows as many as it marked right answers. */
   bonuses: number;
   refunds: number;
@@ -95,15 +97,16 @@ export type RunJudgement = { ok: true; run: JudgedRun } | { ok: false; problem: 
 
 /**
  * Replays the recorded inputs and checks the run. `nowSeconds` and the seed's time give the real
- * time that has passed since the seed was handed out. `doors` are the shortcut doors that were open
- * for this run (the server works them out from the run's seed and question list; none for a course with no gates).
+ * time that has passed since the seed was handed out. `doors` are the shortcut doors that were open and
+ * `rightGems` the gems that were right for this run (the server works both out from the run's seed and question
+ * list; none for a course with no gates or gems).
  */
-export function judgeRun(report: MarbleRunReport, nowSeconds: number, doors: readonly number[] = []): RunJudgement {
+export function judgeRun(report: MarbleRunReport, nowSeconds: number, run: { doors?: readonly number[]; rightGems?: readonly number[] } = {}): RunJudgement {
   const course = courseById(report.course);
   if (!course) return { ok: false, problem: 'unknown course' };
   const runs = decodeInputs(report.inputs);
   if (!runs) return { ok: false, problem: 'inputs not readable' };
-  const result = replay(course, runs, { mode: report.mode, openDoors: doors });
+  const result = replay(course, runs, { mode: report.mode, openDoors: run.doors ?? [], rightGems: run.rightGems ?? [] });
   if (!result) return { ok: false, problem: 'inputs not readable' };
   if (result.outcome !== 'finished' || result.finishSteps <= 0) return { ok: false, problem: 'no finish' };
   const made = marbleSeedTime(report.seed);
@@ -116,7 +119,7 @@ export function judgeRun(report: MarbleRunReport, nowSeconds: number, doors: rea
     ok: true,
     run: {
       steps: result.finishSteps, falls: result.falls, checkpoints: result.checkpoints, held: result.held, played: result.steps,
-      gateChoices: result.state.gateChoices, pitStops: result.state.pitStops.length, bonuses: countCode(runs, BONUS), refunds: countCode(runs, REFUND),
+      gateChoices: result.state.gateChoices, pitStops: result.state.pitStops.length, gems: result.state.gemsTaken.length, bonuses: countCode(runs, BONUS), refunds: countCode(runs, REFUND),
     },
   };
 }

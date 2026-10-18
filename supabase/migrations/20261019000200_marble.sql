@@ -17,8 +17,9 @@
 --
 -- Times are clock steps (1/60 of a second). Mode: 'up' (count up) or 'down' (hard mode).
 -- `maths` is true for a run played with maths questions: those runs get their own boards. A run with
--- answer gates also keeps `doors`, the shortcut doors that were open (bit 0 = door A), because a
--- recorded run can only be played back (as a ghost) with the same doors open.
+-- answer gates also keeps `doors`, the shortcut doors that were open (bit 0 = door A), and `gems`, the
+-- number gems that were right (bit 0 = gem 0), because a recorded run can only be played back (as a ghost)
+-- with the same doors open and the same gems taking time off.
 --
 -- Stage M.6 (maths) adds, in this same file because none of it is live yet:
 --   * app_settings.marble_maths ('off' | 'choose' | 'on') and .marble_rescue, with teacher_set_marble_maths()
@@ -40,6 +41,7 @@ create table public.marble_runs (
   checkpoints integer not null check (checkpoints between 0 and 1000),
   held integer not null default 0 check (held between 0 and 1000000),
   doors integer not null default 0 check (doors between 0 and 255),
+  gems integer not null default 0 check (gems between 0 and 65535),
   created_at timestamptz not null default now(),
   unique (player, seed)
 );
@@ -53,6 +55,7 @@ create table public.marble_bests (
   steps integer not null check (steps between 1 and 1000000),
   falls integer not null check (falls between 0 and 100000),
   doors integer not null default 0 check (doors between 0 and 255),
+  gems integer not null default 0 check (gems between 0 and 65535),
   -- The recorded run: "codeXcount,..." (shared/marble/inputs.ts). Small: a long run is a few KB.
   inputs text not null check (length(inputs) between 1 and 60000),
   achieved_at timestamptz not null default now(),
@@ -86,7 +89,8 @@ create function public.record_marble_run(
   held integer,
   inputs text,
   daily_limit integer,
-  doors integer
+  doors integer,
+  gems integer
 )
 returns text
 language plpgsql
@@ -101,8 +105,8 @@ begin
       where r.player = record_marble_run.player and r.created_at > now() - interval '1 day') >= daily_limit then
     raise exception 'That''s a lot of rolling today! Have a break and come back tomorrow.' using errcode = '54000';
   end if;
-  insert into public.marble_runs (player, course, mode, maths, seed, steps, falls, checkpoints, held, doors)
-  values (player, course, mode, maths, seed, steps, falls, checkpoints, held, doors)
+  insert into public.marble_runs (player, course, mode, maths, seed, steps, falls, checkpoints, held, doors, gems)
+  values (player, course, mode, maths, seed, steps, falls, checkpoints, held, doors, gems)
   on conflict on constraint marble_runs_player_seed_key do nothing;
   if not found then
     return 'duplicate';
@@ -113,10 +117,10 @@ begin
   if old_steps is not null and old_steps <= steps then
     return 'saved';
   end if;
-  insert into public.marble_bests as b (player, course, mode, maths, steps, falls, doors, inputs)
-  values (player, course, mode, maths, steps, falls, doors, inputs)
+  insert into public.marble_bests as b (player, course, mode, maths, steps, falls, doors, gems, inputs)
+  values (player, course, mode, maths, steps, falls, doors, gems, inputs)
   on conflict on constraint marble_bests_pkey do update set
-    steps = excluded.steps, falls = excluded.falls, doors = excluded.doors, inputs = excluded.inputs, achieved_at = now();
+    steps = excluded.steps, falls = excluded.falls, doors = excluded.doors, gems = excluded.gems, inputs = excluded.inputs, achieved_at = now();
   return 'best';
 end;
 $$;
@@ -179,7 +183,7 @@ $$;
 
 -- A recorded run to play back as a ghost. `which`: 'mine' (the student's own best), 'next' (the
 -- classmate just faster than the student's best, or the fastest if the student has none) or 'top'
--- (the fastest in the school). { name, steps, inputs, doors } or null.
+-- (the fastest in the school). { name, steps, inputs, doors, gems } or null.
 create function public.marble_ghost(in_course text, in_mode text, in_maths boolean, which text)
 returns jsonb
 language plpgsql
@@ -200,11 +204,11 @@ begin
   select b.steps into mine from public.marble_bests b
   where b.player = auth.uid() and b.course = in_course and b.mode = in_mode and b.maths = in_maths;
   if which = 'mine' then
-    select p.display_name as name, b.steps, b.inputs, b.doors into found_row
+    select p.display_name as name, b.steps, b.inputs, b.doors, b.gems into found_row
     from public.marble_bests b join public.profiles p on p.id = b.player
     where b.player = auth.uid() and b.course = in_course and b.mode = in_mode and b.maths = in_maths;
   elsif which = 'next' and mine is not null then
-    select p.display_name as name, b.steps, b.inputs, b.doors into found_row
+    select p.display_name as name, b.steps, b.inputs, b.doors, b.gems into found_row
     from public.marble_bests b join public.profiles p on p.id = b.player
     where b.course = in_course and b.mode = in_mode and b.maths = in_maths
       and b.player <> auth.uid() and b.steps < mine
@@ -212,7 +216,7 @@ begin
     order by b.steps desc, b.achieved_at, b.player
     limit 1;
   else
-    select p.display_name as name, b.steps, b.inputs, b.doors into found_row
+    select p.display_name as name, b.steps, b.inputs, b.doors, b.gems into found_row
     from public.marble_bests b join public.profiles p on p.id = b.player
     where b.course = in_course and b.mode = in_mode and b.maths = in_maths
       and b.player <> auth.uid()
@@ -223,7 +227,7 @@ begin
   if found_row.inputs is null then
     return null;
   end if;
-  return jsonb_build_object('name', found_row.name, 'steps', found_row.steps, 'inputs', found_row.inputs, 'doors', found_row.doors);
+  return jsonb_build_object('name', found_row.name, 'steps', found_row.steps, 'inputs', found_row.inputs, 'doors', found_row.doors, 'gems', found_row.gems);
 end;
 $$;
 
@@ -417,7 +421,7 @@ $$;
 -- ---------------------------------------------------------------------------
 
 revoke execute on function
-  public.record_marble_run(uuid, text, text, text, boolean, integer, integer, integer, integer, text, integer, integer),
+  public.record_marble_run(uuid, text, text, text, boolean, integer, integer, integer, integer, text, integer, integer, integer),
   public.my_marble(), public.marble_board(text, text, boolean), public.marble_ghost(text, text, boolean, text),
   public.teacher_set_marble_maths(text, uuid), public.teacher_set_marble_rescue(boolean, uuid),
   public.marble_store_run(uuid, text, boolean, jsonb), public.marble_load_run(uuid, text),
@@ -427,7 +431,7 @@ grant execute on function public.my_marble(), public.marble_board(text, text, bo
   public.marble_ghost(text, text, boolean, text),
   public.teacher_set_marble_maths(text, uuid), public.teacher_set_marble_rescue(boolean, uuid) to authenticated;
 grant execute on function
-  public.record_marble_run(uuid, text, text, text, boolean, integer, integer, integer, integer, text, integer, integer),
+  public.record_marble_run(uuid, text, text, text, boolean, integer, integer, integer, integer, text, integer, integer, integer),
   public.marble_store_run(uuid, text, boolean, jsonb), public.marble_load_run(uuid, text),
   public.marble_claim_answer(uuid, text, integer, numeric, boolean)
 to service_role;

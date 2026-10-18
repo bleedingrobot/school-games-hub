@@ -223,7 +223,7 @@ function CoursePicker({
     const course = c.playable ? courseById(c.playable) : undefined;
     const best = bests[c.id]?.up ?? (c.playable ? bests[c.playable]?.up : undefined);
     const bestHard = c.playable ? bests[c.playable]?.down : undefined;
-    const medal = course && best !== undefined ? medalFor(course, best) : null;
+    const medal = course && best !== undefined ? medalFor(course, best, wantMaths) : null;
     return (
       <li key={c.id} className="marble-course">
         <div className="marble-course__head">

@@ -131,6 +131,7 @@ Deno.serve(
         mode: report.mode,
         maths: extra.maths,
         doors: extra.doors,
+        gems: extra.gems,
         steps: run.steps,
         falls: run.falls,
         checkpoints: run.checkpoints,

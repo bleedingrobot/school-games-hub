@@ -313,7 +313,11 @@ def crown_range():
     for k in range(3):
         t.go(10, at={(3, -1): 'b', (7, 1): 'b'} if k % 2 == 0 else {(3, 1): 'b', (7, -1): 'b'})
         t.down(2)
-        t.go(2, ch='c') if k == 1 else t.go(2)
+        if k == 1:
+            t.go(2, ch='c')
+            t.go(2)
+        else:
+            t.go(4)
         t.turn('S', rails=False)
         t.go(3, rails=False)
         t.turn('W' if k % 2 == 0 else 'E', rails=False)
@@ -348,8 +352,9 @@ def geyser_valley():
     t.go(3, ch='#')
     t.down(2)
     t.go(2, ch='c')
+    t.go(3)          # (a turn paints over the two cells before it, so the checkpoint needs room)
     t.turn('S')
-    t.go(4, at={(1, 0): 'm', (1, 1): 'm', (2, -1): 'm'})
+    t.go(1)
     t.down(2)
     t.go(2)
     t.go(1, ch='g', width=3)
@@ -421,6 +426,7 @@ def windy_welly():
     t.gems(0)
     t.down(2)
     t.go(2, ch='c')
+    t.go(2)
     t.turn('S')
     t.go(2, ch='o')
     t.go(5, ch='o')
@@ -440,6 +446,7 @@ def windy_welly():
     t.gems(1)
     t.down(2)
     t.go(2, ch='c')
+    t.go(2)
     t.turn('S')
     t.go(3)
     t.go(1, ch='q')
@@ -470,8 +477,9 @@ def alpine_crossing():
     t.go(1, ch='t', rails=False)       # crumbling scoria
     t.go(2, rails=False)
     t.go(1, ch='t', rails=False)
-    t.go(3, rails=False)
+    t.go(2, rails=False)
     t.gems(0)
+    t.go(1, rails=False)
     t.turn('S', rails=False)
     t.go(1, rails=False)
     t.gate(3, rails=False)
@@ -482,8 +490,9 @@ def alpine_crossing():
     t.go(2, rails=False)
     t.go(2, ch='c', rails=False)
     t.turn('E', rails=False)
-    t.go(5, rails=False)
+    t.go(4, rails=False)
     t.gems(1)
+    t.go(1, rails=False)
     for _ in range(3):
         t.down(1, rails=False)
         t.go(2, rails=False)
@@ -538,7 +547,8 @@ def main():
             out.append(f"    '{h}',")
         out.append("  ],")
         out.append("  route: [" + ', '.join(f"[{a}, {b}]" for a, b in route) + "],")
-        out.append(f"  medals: {{ gold: {med['gold']}, silver: {med['silver']}, bronze: {med['bronze']} }},")
+        gm = f", goldMaths: {med['goldMaths']}" if 'goldMaths' in med else ''
+        out.append(f"  medals: {{ gold: {med['gold']}, silver: {med['silver']}, bronze: {med['bronze']}{gm} }},")
         out.append(f"  hardSeconds: {med['hard']},")
         if gates:
             out.append("  gates: [")

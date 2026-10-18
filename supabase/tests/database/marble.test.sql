@@ -5,7 +5,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(69);
+select plan(70);
 
 -- School 1 is Douglas Park (made by the migration). School 2 is made here.
 select setval(pg_get_serial_sequence('public.schools', 'id'), 1);
@@ -33,9 +33,9 @@ $$;
 create function pg_temp.id(who text) returns uuid language sql as $$ select ('00000000-0000-0000-0000-0000000000' || who)::uuid $$;
 -- Saves a run for a student: `n` makes the seed, so the same n is the same seed.
 create function pg_temp.save(who text, n integer, in_steps integer, in_course text default 'boulder-beach',
-  in_mode text default 'up', in_daily integer default 400, in_doors integer default 0) returns text language sql as $$
+  in_mode text default 'up', in_daily integer default 400, in_doors integer default 0, in_gems integer default 0) returns text language sql as $$
   select public.record_marble_run(pg_temp.id(who), 'seed-for-run-' || who || '-' || n, in_course, in_mode, false,
-    in_steps, 1, 0, 0, '1x' || in_steps, in_daily, in_doors)
+    in_steps, 1, 0, 0, '1x' || in_steps, in_daily, in_doors, in_gems)
 $$;
 
 -- ---- Nobody reaches the tables or the saving function directly ----
@@ -110,11 +110,12 @@ select is(public.marble_board('boulder-beach', 'up', false), null, 'someone who 
 
 -- ---- Maths (M.6): doors kept with a run, the teacher's switches, and the questions of a run ----
 select pg_temp.act_as_server();
-select is(public.record_marble_run(pg_temp.id('0b'), 'maths-seed-1', 'boulder-beach', 'up', true, 2000, 0, 0, 0, '1x2000', 400, 5), 'best', 'a run with maths is saved on its own');
+select is(public.record_marble_run(pg_temp.id('0b'), 'maths-seed-1', 'boulder-beach', 'up', true, 2000, 0, 0, 0, '1x2000', 400, 5, 9), 'best', 'a run with maths is saved on its own');
 select is((select doors from public.marble_bests where player = pg_temp.id('0b') and maths), 5, '... with the doors that were open');
 select is((select count(*)::integer from public.marble_bests where player = pg_temp.id('0b') and not maths), 1, '... and the run without maths is kept apart');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cai@douglaspark.school.nz');
 select is(public.marble_ghost('boulder-beach', 'up', true, 'top') ->> 'doors', '5', 'a ghost carries the doors it was run with');
+select is(public.marble_ghost('boulder-beach', 'up', true, 'top') ->> 'gems', '9', '... and the gems that were right');
 select is(public.marble_board('boulder-beach', 'up', true) ->> 'total', '1', 'the with-maths board is separate');
 select is((public.marble_ghost('boulder-beach', 'up', false, 'top') ->> 'doors')::integer, 0, 'a run with no gates keeps no doors');
 select pg_temp.reset();

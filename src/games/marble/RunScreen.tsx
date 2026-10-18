@@ -7,10 +7,10 @@
  * run through `onDone`.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DT } from '../../../shared/marble/config';
+import { DT, MAX_GEM_BONUSES, RESCUE_GAP_STEPS } from '../../../shared/marble/config';
 import type { Course } from '../../../shared/marble/course';
 import { clockSteps, makeWorld, medalFor, newRun, stepRun, type ClockMode, type RunState } from '../../../shared/marble/engine';
-import { BONUS, decodeInputs, inputPlayer, pushInput } from '../../../shared/marble/inputs';
+import { BONUS, decodeInputs, inputPlayer, pushInput, REFUND } from '../../../shared/marble/inputs';
 import { plainSetup, type PublicQuestion, type RunSetup } from '../../../shared/marble/maths';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
 import { useSound } from '../../sound';
@@ -19,7 +19,8 @@ import { formatSteps } from './bests';
 import { dragVector, KEYS_ARROWS, KEYS_LETTERS, KeyTracker, screenToCode } from './controls';
 import { infoFor } from './courseInfo';
 import { paletteFor } from './palette';
-import { gateSigns } from './signs';
+import { isGoodGuess } from './guess';
+import { gateSigns, gemSprites } from './signs';
 import type { MarbleView, OtherKind } from './renderer';
 
 /** A recorded run to race against (from src/data/marble.ts). */
@@ -29,6 +30,8 @@ export interface GhostRun {
   inputs: string;
   /** The shortcut doors that were open for that run (it only plays back with the same doors). */
   doors?: number[];
+  /** The gems that were right for that run (they took time off, so playing it back needs them too). */
+  gems?: number[];
 }
 
 export interface FinishedRun {
@@ -50,6 +53,8 @@ type Phase = 'loading' | 'ready' | 'playing' | 'reading' | 'question' | 'paused'
 
 /** How close (in tiles) the marble has to be to a gate's sign for its question to show. */
 const SIGN_RANGE = 7;
+/** How close to a number gem trail's gems its question shows. */
+const GEM_RANGE = 8;
 /** The longest the game waits for a student to read a gate, in milliseconds. */
 const READ_TIME_MS = 10_000;
 
@@ -115,11 +120,17 @@ export function RunScreen({
   const [falls, setFalls] = useState(0);
   const [checkpoints, setCheckpoints] = useState(0);
   const [announce, setAnnounce] = useState('');
-  const [banner, setBanner] = useState<PublicQuestion | null>(null);
-  const [ask, setAsk] = useState<{ slot: number; question: PublicQuestion } | null>(null);
+  const [banner, setBanner] = useState<{ kind: 'gate' | 'gems'; question: PublicQuestion } | null>(null);
+  const [ask, setAsk] = useState<{ slot: number; question: PublicQuestion; kind: 'pit' | 'rescue' } | null>(null);
+  // "Guess your time" (maths only, never saved): what the student typed, and how it turned out.
+  const [guess, setGuess] = useState('');
+  const guessRef = useRef('');
+  guessRef.current = guess;
+  const [guessResult, setGuessResult] = useState<{ guess: number; star: boolean } | null>(null);
   const [toast, setToast] = useState('');
   const resumeRef = useRef<() => void>(() => {});
   const closeAskRef = useRef<(right: boolean) => void>(() => {});
+  const askKindRef = useRef<'pit' | 'rescue'>('pit');
   const [result, setResult] = useState<{ steps: number; medal: keyof typeof MEDAL | null; isBest: boolean; falls: number; ghost?: 'beat' | 'lost' | 'tie'; winner?: 1 | 2 | 0 } | null>(null);
   const [stickSide, setStickSide] = useState<'left' | 'right'>('right');
   const [showStick, setShowStick] = useState(isCoarse);
@@ -142,16 +153,16 @@ export function RunScreen({
     let disposed = false;
     let raf = 0;
     let view: MarbleView | null = null;
-    const world = makeWorld(course, { mode, openDoors: setup.doors });
+    const world = makeWorld(course, { mode, openDoors: setup.doors, rightGems: setup.rightGems });
     let state: RunState = newRun(world);
     let prev: RunState = { ...state };
     // A ghost and a second player each have a world and a run of their own, stepped together with ours.
     const ghostRuns = ghost && !twoPlayer ? decodeInputs(ghost.inputs) : null;
-    const ghostWorld = ghostRuns ? makeWorld(course, { mode, openDoors: ghost?.doors ?? [] }) : null;
+    const ghostWorld = ghostRuns ? makeWorld(course, { mode, openDoors: ghost?.doors ?? [], rightGems: ghost?.gems ?? [] }) : null;
     let ghostState: RunState | null = ghostWorld ? newRun(ghostWorld) : null;
     let ghostPrev: RunState | null = ghostState ? { ...ghostState } : null;
     let ghostNext = ghostRuns ? inputPlayer(ghostRuns) : null;
-    const world2 = twoPlayer ? makeWorld(course, { mode, openDoors: setup.doors }) : null;
+    const world2 = twoPlayer ? makeWorld(course, { mode, openDoors: setup.doors, rightGems: setup.rightGems }) : null;
     let state2: RunState | null = world2 ? newRun(world2) : null;
     let prev2: RunState | null = state2 ? { ...state2 } : null;
     const kinds: OtherKind[] = [...(ghostWorld ? ['ghost' as const] : []), ...(world2 ? ['rival' as const] : [])];
@@ -165,7 +176,11 @@ export function RunScreen({
     let lastFalls = 0;
     let lastChecks = 0;
     let lastPits = 0;
+    let lastGems = 0;
+    let rescuesAsked = 0;
+    let lastRescueAt = -Infinity;
     let nearGate = -1;
+    let nearTrail = -1;
     const read = new Set<number>();
     let readTimer = 0;
     let wasGrounded = true;
@@ -189,7 +204,12 @@ export function RunScreen({
       lastFalls = 0;
       lastChecks = 0;
       lastPits = 0;
+      lastGems = 0;
+      rescuesAsked = 0;
+      lastRescueAt = -Infinity;
       nearGate = -1;
+      nearTrail = -1;
+      setGuessResult(null);
       read.clear();
       window.clearTimeout(readTimer);
       setBanner(null);
@@ -247,9 +267,12 @@ export function RunScreen({
       const { isBest } = onDone({
         courseId: course.def.id, mode, outcome: finished ? 'finished' : 'timeout', steps, falls: state.falls, checkpoints: state.checkpoints.length, inputs: runs, maths: setup.maths,
       });
+      // Guess your time: within 10% of the real time is a star. Never saved.
+      const wanted = Number(guessRef.current);
+      if (finished && setup.maths && !twoPlayer && Number.isFinite(wanted) && wanted > 0) setGuessResult({ guess: wanted, star: isGoodGuess(wanted, steps / 60) });
       if (finished) {
         const ghostResult = ghost && ghostRuns ? (steps < ghost.steps ? 'beat' : steps > ghost.steps ? 'lost' : 'tie') : undefined;
-        setResult({ steps, medal: mode === 'up' ? medalFor(course, steps) : null, isBest, falls: state.falls, ghost: ghostResult });
+        setResult({ steps, medal: mode === 'up' ? medalFor(course, steps, setup.maths) : null, isBest, falls: state.falls, ghost: ghostResult });
         beep('win');
         say(`Finished in ${formatSteps(steps)}.`);
         goto('finished');
@@ -262,18 +285,20 @@ export function RunScreen({
     };
 
     // A pit-stop question: the number pad over the course. A right answer takes a couple of seconds off (the BONUS input).
-    const openAsk = (q: PublicQuestion) => {
-      setAsk({ slot: q.slot, question: q });
+    const openAsk = (q: PublicQuestion, kind: 'pit' | 'rescue') => {
+      askKindRef.current = kind;
+      setAsk({ slot: q.slot, question: q, kind });
       goto('question');
     };
     closeAskRef.current = (right: boolean) => {
       if (right) {
-        pushInput(runs, BONUS);
+        const rescue = askKindRef.current === 'rescue';
+        pushInput(runs, rescue ? REFUND : BONUS);
         prev = { ...state };
-        stepRun(world, state, BONUS);
-        setToast('Right! 2 seconds off your time');
+        stepRun(world, state, rescue ? REFUND : BONUS);
+        setToast(rescue ? 'Right! No time lost for that fall' : 'Right! 2 seconds off your time');
         beep('item');
-        say('Right! Two seconds off your time.');
+        say(rescue ? 'Right! The fall cost you no time.' : 'Right! Two seconds off your time.');
         window.setTimeout(() => setToast(''), 2500);
       }
       setAsk(null);
@@ -312,6 +337,12 @@ export function RunScreen({
             setFalls(lastFalls);
             beep('black-hole');
             say(`You fell. Back to the ${state.checkpoints.length ? 'checkpoint' : 'start'}.`);
+            // A rescue question (if the teacher allows them): a right answer takes the fall's time back. Never more than one in twenty seconds of play.
+            if (setup.rescue && !state2 && rescuesAsked < setup.rescues.length && state.steps - lastRescueAt >= RESCUE_GAP_STEPS) {
+              lastRescueAt = state.steps;
+              openAsk(setup.rescues[rescuesAsked++], 'rescue');
+              break;
+            }
           }
           if (state.checkpoints.length > lastChecks) {
             lastChecks = state.checkpoints.length;
@@ -327,22 +358,46 @@ export function RunScreen({
             lastPits = state.pitStops.length;
             const q = setup.pits[group];
             if (q) {
-              openAsk(q);
+              openAsk(q, 'pit');
               break;
             }
+          }
+          if (state.gemsTaken.length > lastGems) {
+            lastGems = state.gemsTaken.length;
+            beep('item');
+            if (lastGems <= MAX_GEM_BONUSES) {
+              setToast('Gem! 1 second off');
+              say('Right gem. One second off your time.');
+            } else {
+              setToast(`That's ${MAX_GEM_BONUSES} gems, the most that count`);
+            }
+            window.setTimeout(() => setToast(''), 2000);
           }
         }
         if (n === 6) acc = 0;
         // The nearest gate whose tunnel hasn't been chosen yet, if its sign is close: its question shows, and the game can wait to be read.
+        // (When no gate is near, a number-gem trail's question shows while the marble is among its gems.)
         if (setup.maths && !state2 && phaseRef.current === 'playing') {
           let near = -1;
           course.gates.forEach((gate, i) => {
             if (near >= 0 || state.gateChoices[i] >= 0) return;
             if ((gate.sign[0] + 0.5 - state.x) ** 2 + (gate.sign[1] + 0.5 - state.y) ** 2 < SIGN_RANGE * SIGN_RANGE) near = i;
           });
+          let trail = -1;
+          if (near < 0) {
+            course.gems.forEach((t, i) => {
+              if (trail >= 0) return;
+              if (t.groups.some((g) => g.spots.some(([gx, gy]) => (gx - state.x) ** 2 + (gy - state.y) ** 2 < GEM_RANGE * GEM_RANGE) || (t.sign[0] + 0.5 - state.x) ** 2 + (t.sign[1] + 0.5 - state.y) ** 2 < SIGN_RANGE * SIGN_RANGE)) trail = i;
+            });
+          }
+          if (trail !== nearTrail) {
+            nearTrail = trail;
+            if (near < 0) setBanner(trail >= 0 && setup.gems[trail] ? { kind: 'gems', question: setup.gems[trail].question } : null);
+          }
           if (near !== nearGate) {
             nearGate = near;
-            setBanner(near >= 0 ? (setup.gates[near]?.question ?? null) : null);
+            const gateQuestion = near >= 0 ? (setup.gates[near]?.question ?? null) : null;
+            setBanner(gateQuestion ? { kind: 'gate', question: gateQuestion } : trail >= 0 && setup.gems[trail] ? { kind: 'gems', question: setup.gems[trail].question } : null);
             if (near >= 0 && readTime && !read.has(near)) {
               read.add(near);
               goto('reading');
@@ -392,7 +447,7 @@ export function RunScreen({
     import('./renderer')
       .then(({ createView }) => {
         if (disposed) return;
-        view = createView(canvas, course, world, paletteFor(course.def.id), reduced, kinds, gateSigns(course, setup));
+        view = createView(canvas, course, world, paletteFor(course.def.id), reduced, kinds, gateSigns(course, setup), gemSprites(course, setup));
         fit();
         goto('ready');
         raf = requestAnimationFrame((t) => {
@@ -491,7 +546,7 @@ export function RunScreen({
     if (!reply) throw new Error('We couldn’t check that one. Try again, or skip it.');
     const q = ask?.question;
     const label = q?.choices && q.choiceLabels ? q.choiceLabels[q.choices.indexOf(reply.answer)] : String(reply.answer);
-    return { correct: reply.right, fact: `The answer was ${label}.`, boxBefore: 0, boxAfter: 0, answer: reply.answer, ...(reply.right ? { reward: '2 seconds off!' } : {}) };
+    return { correct: reply.right, fact: `The answer was ${label}.`, boxBefore: 0, boxAfter: 0, answer: reply.answer, ...(reply.right ? { reward: ask?.kind === 'rescue' ? 'No time lost!' : '2 seconds off!' } : {}) };
   };
 
   const info = infoFor(course.def.id);
@@ -535,11 +590,15 @@ export function RunScreen({
 
         {setup.maths && banner && phase !== 'ready' && phase !== 'question' && (
           <div className="marble-gate" role="status">
-            <p className="marble-gate__question" aria-label={banner.spoken}>
-              Gate: <strong>{questionText(banner)}</strong>
+            <p className="marble-gate__question" aria-label={banner.question.spoken}>
+              {banner.kind === 'gate' ? 'Gate' : 'Gems'}: <strong>{questionText(banner.question)}</strong>
             </p>
-            <p className="marble-gate__hint">Roll into the tunnel with the answer. A wrong tunnel is a dead end.</p>
-            {phase === 'reading' && (
+            <p className="marble-gate__hint">
+              {banner.kind === 'gate'
+                ? 'Roll into the tunnel with the answer. A wrong tunnel is a dead end.'
+                : `Roll through the gem with the answer: 1 second off each (up to ${MAX_GEM_BONUSES}). Wrong gems do nothing.`}
+            </p>
+            {phase === 'reading' && banner.kind === 'gate' && (
               <button type="button" className="button button--play" onClick={() => resumeRef.current()}>
                 Go!
               </button>
@@ -550,8 +609,8 @@ export function RunScreen({
         {phase === 'question' && ask && (
           <QuestionModal
             question={shown(ask.question)}
-            title="Pit stop"
-            note="The clock has stopped. A right answer takes 2 seconds off your time."
+            title={ask.kind === 'rescue' ? 'Rescue' : 'Pit stop'}
+            note={ask.kind === 'rescue' ? 'You fell! The clock has stopped. A right answer gives back the time the fall cost.' : 'The clock has stopped. A right answer takes 2 seconds off your time.'}
             onSubmit={mark}
             onDone={(result) => closeAskRef.current(result.correct)}
             onClose={() => closeAskRef.current(false)}
@@ -576,6 +635,12 @@ export function RunScreen({
                   ? `A see-through ghost of ${ghost.name} will race you. Press an arrow key or W A S D, or drag, to start rolling.`
                   : 'Press an arrow key or W A S D, or drag, to start rolling.'}
             </p>
+            {setup.maths && !twoPlayer && (
+              <label className="marble-guess">
+                <span>Guess your time, in seconds (just for fun):</span>
+                <input type="number" inputMode="numeric" min={1} max={999} value={guess} onChange={(e) => setGuess(e.target.value.slice(0, 3))} onKeyDown={(e) => e.stopPropagation()} />
+              </label>
+            )}
             <button type="button" className="button button--play" onClick={() => goto('playing')}>Roll!</button>
           </div>
         )}
@@ -610,6 +675,13 @@ export function RunScreen({
                   </p>
                 )}
                 {result.isBest && <p className="marble-overlay__best">⭐ New personal best!</p>}
+                {guessResult && (
+                  <p className="marble-overlay__best">
+                    {guessResult.star
+                      ? `⭐ Good guess! You said ${guessResult.guess} seconds and it took ${(result.steps / 60).toFixed(1)}.`
+                      : `You guessed ${guessResult.guess} seconds. It took ${(result.steps / 60).toFixed(1)}.`}
+                  </p>
+                )}
                 {!result.isBest && best !== undefined && <p>Your best: {formatSteps(best)}</p>}
                 <p>{result.falls === 0 ? 'No falls. Smooth!' : `You fell ${result.falls} time${result.falls === 1 ? '' : 's'}.`}</p>
               </>

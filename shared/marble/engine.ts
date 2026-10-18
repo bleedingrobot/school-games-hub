@@ -9,7 +9,7 @@
  */
 import {
   AIR_GRAVITY, AIR_STEER, BALL_RADIUS, BOUNCE, BUMPER_RADIUS, BUMPER_SPEED, CHECKPOINT_BONUS_STEPS, DT, FALL_PENALTY_STEPS,
-  CONVEYOR_PUSH, PIT_BONUS_STEPS, JUMP_SPEED, KILL_BELOW, LEVEL, MAX_RUN_STEPS, OUCH_SPEED, SLOPE_GRAVITY, STEER, STEP_DOWN, STEP_UP, SURFACES, TIMED,
+  CONVEYOR_PUSH, GEM_BONUS_STEPS, GEM_PICKUP_RADIUS, MAX_GEM_BONUSES, PIT_BONUS_STEPS, JUMP_SPEED, KILL_BELOW, LEVEL, MAX_RUN_STEPS, OUCH_SPEED, SLOPE_GRAVITY, STEER, STEP_DOWN, STEP_UP, SURFACES, TIMED,
 } from './config';
 import type { Course, Tile } from './course';
 import { BONUS, HOLD, MAX_CODE, MAX_INPUT_STEPS, REFUND, type InputRuns } from './inputs';
@@ -20,6 +20,8 @@ export interface RunOptions {
   mode?: ClockMode;
   /** Which shortcut doors (0 = A, 1 = B …) are open. Decided before the run, never changed during it. */
   openDoors?: readonly number[];
+  /** Which gems (their numbers in `course.gemList`) are the right answers. Decided before the run, never changed during it. */
+  rightGems?: readonly number[];
 }
 
 export type RunOutcome = 'running' | 'finished' | 'timeout';
@@ -58,6 +60,8 @@ export interface RunState {
   gateChoices: number[];
   /** The pit stops reached (a block of touching checkpoint tiles is one), in order. */
   pitStops: number[];
+  /** The right gems picked up, in order (each took `GEM_BONUS_STEPS` off the clock; at most `MAX_GEM_BONUSES` count). */
+  gemsTaken: number[];
 }
 
 const R2 = 0.7071067811865476;
@@ -75,12 +79,14 @@ export interface World {
   course: Course;
   mode: ClockMode;
   open: ReadonlySet<number>;
+  /** The right gems, lowest number first. */
+  rightGems: readonly number[];
   /** The step being played (set by `stepRun`); timed hazards depend only on this. */
   t: number;
 }
 
 export function makeWorld(course: Course, options: RunOptions = {}): World {
-  return { course, mode: options.mode ?? 'up', open: new Set(options.openDoors ?? []), t: 0 };
+  return { course, mode: options.mode ?? 'up', open: new Set(options.openDoors ?? []), rightGems: [...new Set(options.rightGems ?? [])].sort((a, b) => a - b), t: 0 };
 }
 
 function tileAt(w: World, tx: number, ty: number): Tile {
@@ -144,7 +150,7 @@ export function newRun(w: World): RunState {
     x, y, z: floorAt(w, x, y) ?? 0, vx: 0, vy: 0, vz: 0, grounded: true,
     steps: 0, held: 0, penalty: 0, refundable: 0, bonus: 0, falls: 0,
     respawnX: x, respawnY: y, checkpoints: [], outcome: 'running', finishSteps: 0, padCooldown: 0,
-    gateChoices: w.course.gates.map(() => -1), pitStops: [],
+    gateChoices: w.course.gates.map(() => -1), pitStops: [], gemsTaken: [],
   };
 }
 
@@ -275,6 +281,18 @@ export function stepRun(w: World, s: RunState, input: number): void {
     const gate = (tunnel - 1) >> 3;
     if (s.gateChoices[gate] < 0) s.gateChoices[gate] = (tunnel - 1) & 7;
   }
+  // Number gems: rolling through a right one takes a second off, up to five a run. Wrong gems do nothing, so they are not looked at.
+  if (w.rightGems.length) {
+    for (const id of w.rightGems) {
+      if (s.gemsTaken.includes(id)) continue;
+      const gem = c.gemList[id];
+      const gx = s.x - gem.x;
+      const gy = s.y - gem.y;
+      if (gx * gx + gy * gy >= GEM_PICKUP_RADIUS * GEM_PICKUP_RADIUS) continue;
+      s.gemsTaken.push(id);
+      if (s.gemsTaken.length <= MAX_GEM_BONUSES) s.penalty -= GEM_BONUS_STEPS;
+    }
+  }
   if (on.ch === 'b') {
     const cx = tx + 0.5;
     const cy = ty + 0.5;
@@ -353,14 +371,15 @@ export function replay(course: Course, runs: InputRuns, options: RunOptions = {}
 
 /** Every number in the state as text, so two runs can be compared exactly (and between browsers). */
 export function stateKey(s: RunState): string {
-  return [s.x, s.y, s.z, s.vx, s.vy, s.vz, s.grounded ? 1 : 0, s.steps, s.held, s.penalty, s.bonus, s.falls, s.checkpoints.join('.'), s.gateChoices.join('.'), s.pitStops.join('.'), s.outcome, s.finishSteps].join('|');
+  return [s.x, s.y, s.z, s.vx, s.vy, s.vz, s.grounded ? 1 : 0, s.steps, s.held, s.penalty, s.bonus, s.falls, s.checkpoints.join('.'), s.gateChoices.join('.'), s.pitStops.join('.'), s.gemsTaken.join('.'), s.outcome, s.finishSteps].join('|');
 }
 
 /** Medal for a finish time in clock steps, or null. */
-export function medalFor(course: Course, finishSteps: number): 'gold' | 'silver' | 'bronze' | null {
+export function medalFor(course: Course, finishSteps: number, maths = false): 'gold' | 'silver' | 'bronze' | null {
   const sec = finishSteps / 60;
   const m = course.def.medals;
-  return sec <= m.gold ? 'gold' : sec <= m.silver ? 'silver' : sec <= m.bronze ? 'bronze' : null;
+  // With maths the pit stops and gems can take seconds off, so gold is a little faster.
+  return sec <= (maths ? (m.goldMaths ?? m.gold) : m.gold) ? 'gold' : sec <= m.silver ? 'silver' : sec <= m.bronze ? 'bronze' : null;
 }
 
 /** The floor's height (in tiles) under a point, or null over a gap or a wall. For drawing. */

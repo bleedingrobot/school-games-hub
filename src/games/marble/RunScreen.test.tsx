@@ -215,7 +215,7 @@ const q = (slot: number, parts: string[]) => ({ slot, parts, spoken: parts.join(
 const MATHS: RunSetup = {
   maths: true, rescue: false, doors: [0],
   gates: [{ slot: 0, labels: ['54', '56'], arrow: null, question: q(0, ['7', '×', '8', '=', '?']) }],
-  pits: [q(1, ['3', '×', '4', '=', '?'])], rescues: [],
+  pits: [q(1, ['3', '×', '4', '=', '?'])], rescues: [], gems: [], rightGems: [],
 };
 
 describe('RunScreen with maths', () => {
@@ -339,11 +339,124 @@ describe('RunScreen with maths', () => {
   });
 
   it('hands over whether the run had maths', async () => {
-    const { finished } = setup({ course: courseById('test-easy')!, setup: { ...MATHS, maths: false, gates: [], pits: [], doors: [] } });
+    const { finished } = setup({ course: courseById('test-easy')!, setup: { ...MATHS, maths: false, gates: [], pits: [], doors: [], gems: [], rightGems: [] } });
     await runFrames(50);
     fireEvent.keyDown(window, { code: 'ArrowRight' });
     fireEvent.keyDown(window, { code: 'ArrowDown' });
     await runFrames(8000);
     expect(finished[0].maths).toBe(false);
+  });
+});
+
+// A straight with a two-tile gap, so the marble falls: for the rescue questions.
+const GAP = compileCourse({
+  id: 'tiny-gap', name: 'Tiny gap',
+  rows: ['==========', '=s#..###f=', '=##..###f=', '=========='],
+  heights: Array(4).fill('2222222222'),
+  route: [], medals: { gold: 2, silver: 4, bronze: 8 }, hardSeconds: 30,
+});
+// Two gems side by side on a straight; gem 0 is the right one.
+const GEMMY = compileCourse({
+  id: 'tiny-gems', name: 'Tiny gems',
+  rows: ['==========', '=s###f====', '=####f====', '=========='],
+  heights: Array(4).fill('2222222222'),
+  route: [], medals: { gold: 2, silver: 4, bronze: 8 }, hardSeconds: 30,
+  gems: [{ sign: [1, 1], groups: [{ after: 0, spots: [[3.5, 1.5], [3.5, 2.5]] }] }],
+});
+
+describe('RunScreen: rescue questions and number gems', () => {
+  const go = async () => {
+    await runFrames(50);
+    fireEvent.keyDown(window, { code: 'ArrowRight' });
+    fireEvent.keyDown(window, { code: 'ArrowDown' });
+  };
+  const rescueSetup: RunSetup = { maths: true, rescue: true, doors: [], gates: [], pits: [], rescues: [q(5, ['2', '×', '6', '=', '?']), q(6, ['3', '×', '3', '=', '?'])], gems: [], rightGems: [] };
+
+  it('asks a rescue question after a fall; a right answer takes the fall\'s three seconds back', async () => {
+    const onAnswer = vi.fn(async () => ({ right: true, answer: 12 }));
+    setup({ course: GAP, setup: rescueSetup, onAnswer: onAnswer as never });
+    await go();
+    await runFrames(3000);
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('Rescue');
+    const during = screen.getByLabelText('Time').textContent!;
+    const seconds = (t: string) => Number(t.split(':')[0]) * 60 + Number(t.split(':')[1]);
+    expect(seconds(during)).toBeGreaterThanOrEqual(3);
+    // Let go of the keys, or the marble rolls straight into the gap again.
+    fireEvent.keyUp(window, { code: 'ArrowRight' });
+    fireEvent.keyUp(window, { code: 'ArrowDown' });
+    fireEvent.keyDown(dialog, { key: '1' });
+    fireEvent.keyDown(dialog, { key: '2' });
+    fireEvent.keyDown(dialog, { key: 'Enter' });
+    await runFrames(100);
+    await waitFor(() => expect(onAnswer).toHaveBeenCalledWith(5, 12, expect.any(Number)));
+    await runFrames(1500);
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(screen.getByText(/No time lost for that fall/)).toBeInTheDocument();
+    await runFrames(100);
+    expect(seconds(screen.getByLabelText('Time').textContent!)).toBeLessThan(seconds(during) - 2.5);
+  });
+
+  it('a wrong rescue answer or skipping gives nothing back, and the clock keeps the fall', async () => {
+    setup({ course: GAP, setup: rescueSetup, onAnswer: (async () => ({ right: false, answer: 12 })) as never });
+    await go();
+    await runFrames(3000);
+    await screen.findByRole('dialog');
+    const during = screen.getByLabelText('Time').textContent!;
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    await runFrames(100);
+    expect(screen.queryByText(/No time lost/)).toBeNull();
+    expect(screen.getByLabelText('Time').textContent!.localeCompare(during)).toBeGreaterThanOrEqual(0);
+  });
+
+  it('asks no rescue question when the teacher has them off, or when maths is off', async () => {
+    setup({ course: GAP, setup: { ...rescueSetup, rescue: false, rescues: [] } });
+    await go();
+    await runFrames(3000);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('does not ask again within twenty seconds of play', async () => {
+    setup({ course: GAP, setup: rescueSetup, onAnswer: (async () => ({ right: false, answer: 12 })) as never });
+    await go();
+    await runFrames(3000);
+    fireEvent.click(await screen.findByRole('button', { name: 'Skip' }));
+    await runFrames(200);
+    // Rolling east again falls again within seconds: no second question yet.
+    fireEvent.keyDown(window, { code: 'ArrowRight' });
+    fireEvent.keyDown(window, { code: 'ArrowDown' });
+    await runFrames(3000);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('shows a gem trail\'s question near its gems, and a right gem takes a second off', async () => {
+    const gemSetup: RunSetup = {
+      maths: true, rescue: false, doors: [], gates: [], pits: [], rescues: [],
+      gems: [{ slot: 2, question: q(2, ['6', '×', '7', '=', '?']), groups: [{ labels: ['42', '40'] }] }], rightGems: [0],
+    };
+    setup({ course: GEMMY, setup: gemSetup });
+    await go();
+    await runFrames(200);
+    expect(screen.getByText(/Gems:/)).toHaveTextContent('Gems: 6 × 7 = …');
+    await runFrames(1500);
+    expect(screen.getByText('Gem! 1 second off')).toBeInTheDocument();
+  });
+
+  it('lets a student guess their time before rolling, and says how close it was', async () => {
+    const plain: RunSetup = { ...rescueSetup, rescue: false, rescues: [] };
+    setup({ course: courseById('test-easy')!, setup: plain });
+    await runFrames(50);
+    const input = screen.getByLabelText(/Guess your time/);
+    fireEvent.change(input, { target: { value: '9' } });
+    fireEvent.keyDown(window, { code: 'ArrowRight' });
+    fireEvent.keyDown(window, { code: 'ArrowDown' });
+    await runFrames(8000);
+    expect(await screen.findByText(/You guessed 9 seconds. It took 3\.5\./)).toBeInTheDocument();
+  });
+
+  it('offers no guess without maths', async () => {
+    setup({ course: courseById('test-easy')!, setup: { ...rescueSetup, maths: false, rescue: false, rescues: [] } });
+    await runFrames(50);
+    expect(screen.queryByLabelText(/Guess your time/)).toBeNull();
   });
 });

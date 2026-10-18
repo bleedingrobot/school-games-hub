@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { botRun } from '../../../shared/marble/bot';
 import { courseById } from '../../../shared/marble/courses';
 import { BONUS, encodeInputs } from '../../../shared/marble/inputs';
-import { doorsForSeed } from '../../../shared/marble/maths';
+import { doorMask, doorsForSeed, rightGemsForSeed } from '../../../shared/marble/maths';
 import { marbleStampText, MARBLE_RUNS_PER_DAY } from '../../../shared/marble/save';
 import type { Question } from '../../../shared/maths/skillPack';
 import { makeHandler, MAX_REQUESTS_PER_MINUTE, type Services, type StoredRun } from './handler';
@@ -120,6 +120,7 @@ describe('the marble server function', () => {
     const [, , , extra] = vi.mocked(s.record).mock.calls[0];
     expect(extra.maths).toBe(false);
     expect(extra.doors).toBe(doorsForSeed(course, SEED, null).reduce((m, d) => m | (1 << d), 0));
+    expect(extra.gems).toBe(0);
   });
 
   it('refuses inputs that were edited into something that does not finish', async () => {
@@ -446,6 +447,55 @@ describe('maths: saving a run through the gates', () => {
     // ... but only one for one right answer
     const two = await send(s, { ...report, inputs: encodeInputs([[BONUS, 1], [BONUS, 1], ...bot2.runs]) });
     expect(two.status).toBe(400);
+  });
+});
+
+describe('maths: number gems', () => {
+  const glacier = courseById('glacier-run')!;
+
+  async function playedGlacier() {
+    const m = mathsServices();
+    const { body } = await send(m.s, { action: 'start', course: 'glacier-run', mode: 'up', maths: true });
+    const stored = m.runs.get(body.seed)!;
+    const doors = doorsForSeed(glacier, body.seed, stored.questions);
+    const right = rightGemsForSeed(glacier, body.seed, stored.questions);
+    const bot2 = botRun(glacier, { mode: 'up', openDoors: doors, rightGems: right, answers: false });
+    m.clock.now = NOW + (bot2.state.steps / 60 + 30) * 1000;
+    return { ...m, body, stored, right, bot2, report: { action: 'save', course: 'glacier-run', mode: 'up', seed: body.seed, stamp: body.stamp, inputs: encodeInputs(bot2.runs) } };
+  }
+
+  it('hands the browser each trail\'s question, what every gem carries and which are right, never an answer', async () => {
+    const m = mathsServices();
+    const { body } = await send(m.s, { action: 'start', course: 'glacier-run', mode: 'up', maths: true });
+    expect(body.gems).toHaveLength(glacier.gems.length);
+    expect(body.gems[0].groups).toHaveLength(glacier.gems[0].groups.length);
+    expect(body.rightGems).toEqual(rightGemsForSeed(glacier, body.seed, m.runs.get(body.seed)!.questions));
+    expect(JSON.stringify(body.gems)).not.toContain('"answer"');
+  });
+
+  it('has no gems with maths off', async () => {
+    const { body } = await send(mathsServices({}, { maths: 'off', rescue: true }).s, { action: 'start', course: 'glacier-run', mode: 'up', maths: true });
+    expect(body.gems).toEqual([]);
+    expect(body.rightGems).toEqual([]);
+  });
+
+  it('replays a run with the right gems, saves its time with their seconds off, and keeps which gems they were', async () => {
+    const { s, report, right, bot2 } = await playedGlacier();
+    const { status } = await send(s, report);
+    expect(status).toBe(200);
+    const call = vi.mocked(s.record).mock.calls[0];
+    expect(call[2].steps).toBe(bot2.state.finishSteps);
+    expect(call[3].gems).toBe(doorMask(right));
+    expect(call[2].gems).toBe(bot2.state.gemsTaken.length);
+  });
+
+  it('records nothing for a gem (gems are never recorded)', async () => {
+    const { s, recorded, report, stored } = await playedGlacier();
+    await send(s, report);
+    // Only the gate answers are recorded: one per gate.
+    expect(recorded[0].answers).toHaveLength(glacier.gates.length);
+    const keys = recorded[0].answers.map((a) => a.key);
+    expect(keys.length).toBeLessThanOrEqual(stored.questions.length);
   });
 });
 

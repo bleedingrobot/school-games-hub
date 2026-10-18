@@ -27,7 +27,7 @@ describe('the marble save queue', () => {
   it('asks for a seed, with whether the student wants maths, and reads the setup it gets back', async () => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ seed: 'a', stamp: 'b', maths: true, rescue: true, doors: [1, 'x'], gates: [{ slot: 0, labels: ['5', '6'], arrow: null, question: null }], pits: [], rescues: [] })));
     expect(await startRun('boulder-beach', 'up', true)).toEqual({
-      seed: 'a', stamp: 'b', maths: true, rescue: true, doors: [1], gates: [{ slot: 0, labels: ['5', '6'], arrow: null, question: null }], pits: [], rescues: [],
+      seed: 'a', stamp: 'b', maths: true, rescue: true, doors: [1], gates: [{ slot: 0, labels: ['5', '6'], arrow: null, question: null }], pits: [], rescues: [], gems: [], rightGems: [],
     });
     expect(sentBody(0)).toEqual({ action: 'start', course: 'boulder-beach', mode: 'up', maths: true });
   });
@@ -135,7 +135,7 @@ describe('loading the server’s bests', () => {
 describe('ghosts and boards', () => {
   it('asks for a ghost without maths and hands back its inputs and the doors it ran with', async () => {
     rpc.mockResolvedValue({ data: { name: 'Quick Kea', steps: 900, inputs: '3x60', doors: 5 }, error: null });
-    expect(await loadGhost('boulder-beach', 'up', 'next')).toEqual({ name: 'Quick Kea', steps: 900, inputs: '3x60', doors: [0, 2] });
+    expect(await loadGhost('boulder-beach', 'up', 'next')).toEqual({ name: 'Quick Kea', steps: 900, inputs: '3x60', doors: [0, 2], gems: [] });
     expect(rpc).toHaveBeenCalledWith('marble_ghost', { in_course: 'boulder-beach', in_mode: 'up', in_maths: false, which: 'next' });
   });
 

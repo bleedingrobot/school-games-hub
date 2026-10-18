@@ -30,12 +30,14 @@ export interface CourseDef {
   /** Waypoints (tile coordinates, e.g. [3.5, 2.5] is the middle of tile 3,2) a bot follows to finish the course. Used for reference runs. */
   route: ReadonlyArray<readonly [number, number]>;
   /** Medal times in seconds (count-up mode). */
-  medals: { gold: number; silver: number; bronze: number };
+  medals: { gold: number; silver: number; bronze: number; /** Gold with maths (right pit stops and gems take seconds off). */ goldMaths?: number };
   /** Hard mode: seconds on the clock at the start. */
   hardSeconds: number;
   /** Gusts of wind that push the marble: every `period` steps, for `on` steps (after `warn` steps of warning streaks). */
   /** Answer gates, in the order the course meets them (maths questions; docs/MARBLE-PLAN.md section 7). */
   gates?: readonly GateDef[];
+  /** Number gems, on the harder courses. */
+  gems?: readonly GemTrailDef[];
   wind?: { dx: number; dy: number; period: number; on: number; warn: number; force: number };
 }
 
@@ -61,6 +63,30 @@ export interface GateDef {
   }>;
 }
 
+/**
+ * Number gems (maths): a trail has a sign and groups of gems across the track; every gem in a group carries an answer to the
+ * trail's question and one is right. Rolling through the right gem takes a second off. Which gem is right is decided from the run's
+ * seed, like the doors, and never changes during a run. Wrong gems do nothing.
+ */
+export interface GemTrailDef {
+  /** The tile the sign stands over (the question shows when the marble comes near). */
+  sign: readonly [number, number];
+  groups: ReadonlyArray<{
+    /** How many waypoints of `route` come before this group (the reference bot's detour to the right gem is put in at that point). */
+    after: number;
+    /** Where each gem is, in tile coordinates (2 or 3 across the track). */
+    spots: ReadonlyArray<readonly [number, number]>;
+  }>;
+}
+
+export interface GemSpot {
+  trail: number;
+  group: number;
+  spot: number;
+  x: number;
+  y: number;
+}
+
 export type Slope = 'E' | 'W' | 'N' | 'S';
 
 export interface Tile {
@@ -83,6 +109,9 @@ export interface Course {
   floorMin: number;
   doorCount: number;
   gates: readonly GateDef[];
+  gems: readonly GemTrailDef[];
+  /** Every gem, in the order of its trail, group and place in the group: its position here is its number. */
+  gemList: readonly GemSpot[];
   /** Per tile: gate * 8 + tunnel + 1 for a tunnel tile, else 0. */
   tunnelAt: Uint16Array;
   /** Per checkpoint tile: which pit stop (a block of touching checkpoint tiles is one), else -1. */
@@ -139,6 +168,23 @@ export function compileCourse(def: CourseDef): Course {
       }
     });
   });
+  const gems = def.gems ?? [];
+  const gemList: GemSpot[] = [];
+  gems.forEach((trail, ti) => {
+    const size = trail.groups[0]?.spots.length ?? 0;
+    if (!trail.groups.length || size < 2 || size > 3) throw new Error(`${def.id}: gem trail ${ti} needs groups of 2 or 3 gems`);
+    trail.groups.forEach((group, gi) => {
+      if (group.spots.length !== size) throw new Error(`${def.id}: gem trail ${ti} has groups of different sizes`);
+      group.spots.forEach(([x, y], si) => {
+        const at = tiles[Math.floor(y) * width + Math.floor(x)];
+        if (x < 0 || y < 0 || x >= width || y >= height || !at || at.ch === '.' || at.ch === '=' || at.door >= 0) {
+          throw new Error(`${def.id}: gem ${ti}.${gi}.${si} is not over a floor tile`);
+        }
+        gemList.push({ trail: ti, group: gi, spot: si, x, y });
+      });
+    });
+  });
+  if (gemList.length > 16) throw new Error(`${def.id}: more than 16 gems`);
   // Touching checkpoint tiles make one pit stop.
   const pitAt = new Int16Array(width * height).fill(-1);
   let pitCount = 0;
@@ -163,5 +209,5 @@ export function compileCourse(def: CourseDef): Course {
     }
     pitCount++;
   }
-  return { def, width, height, tiles, start, floorMin, doorCount, gates, tunnelAt, pitAt, pitCount };
+  return { def, width, height, tiles, start, floorMin, doorCount, gates, gems, gemList, tunnelAt, pitAt, pitCount };
 }

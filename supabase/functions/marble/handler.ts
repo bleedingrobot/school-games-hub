@@ -13,7 +13,7 @@
  */
 import { courseById } from '../../../shared/marble/courses';
 import type { Course } from '../../../shared/marble/course';
-import { doorMask, doorsForSeed, gateLayout, runSetup, slotPlan, type GateLayout, type StartReply } from '../../../shared/marble/maths';
+import { doorMask, doorsForSeed, gateLayout, rightGemsForSeed, runSetup, slotPlan, type GateLayout, type StartReply } from '../../../shared/marble/maths';
 import { makeRunQuestions, markQuestion, sameAnswer, type MathsContext } from '../../../shared/marble/questions';
 import {
   judgeRun,
@@ -68,7 +68,7 @@ export interface Services {
   /** Adds answers to the student's maths records (sent twice, counted once, by `once`). The run goes on if this fails. */
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** Saves a replayed run. */
-  record(player: string, report: MarbleRunReport, run: JudgedRun, extra: { maths: boolean; doors: number }): Promise<Outcome<SaveResult>>;
+  record(player: string, report: MarbleRunReport, run: JudgedRun, extra: { maths: boolean; doors: number; gems: number }): Promise<Outcome<SaveResult>>;
   /** Milliseconds since 1970. */
   now(): number;
   /** Random bytes as hex text. */
@@ -195,7 +195,8 @@ export function makeHandler(services: Services) {
       const stored = await services.loadRun(player, report.seed);
       if (stored === 'busy') return reply(503, { error: "We couldn't save your run just now." });
       const doors = doorsForSeed(course, report.seed, stored?.questions ?? null);
-      const judged = judgeRun(report, nowSeconds, doors);
+      const rightGems = rightGemsForSeed(course, report.seed, stored?.questions ?? null);
+      const judged = judgeRun(report, nowSeconds, { doors, rightGems });
       if (!judged.ok) {
         console.warn(`marble: refused a run (${judged.problem})`);
         return reply(400, { error: "That run couldn't be saved." });
@@ -210,7 +211,7 @@ export function makeHandler(services: Services) {
         console.warn('marble: refused a run (more bonuses than right answers)');
         return reply(400, { error: "That run couldn't be saved." });
       }
-      const saved = await services.record(player, report, judged.run, { maths: stored !== null, doors: doorMask(doors) });
+      const saved = await services.record(player, report, judged.run, { maths: stored !== null, doors: doorMask(doors), gems: doorMask(rightGems) });
       if (!saved.ok) {
         if (saved.why === 'too-many') return reply(429, { error: TOO_MANY });
         return saved.why === 'refused' ? reply(400, { error: "That run couldn't be saved." }) : reply(503, { error: "We couldn't save your run just now." });
@@ -224,6 +225,8 @@ export function makeHandler(services: Services) {
 }
 
 /**
+ * (Number gems are never recorded: the questions are asked, but rolling through a gem is not an answer.)
+ *
  * The student's answer at each gate is the tunnel they rolled into first (read from the replay). Each is marked
  * against the stored list and counted once, even if the run is sent twice. If the records can't be updated the run is still saved.
  */

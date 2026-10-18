@@ -9,7 +9,7 @@ import type { Course, Tile } from '../../../shared/marble/course';
 import { TIMED } from '../../../shared/marble/config';
 import { floorHeightAt, gateOpen, geyserPhase, trapdoorSolid, windBlowing, type RunState, type World } from '../../../shared/marble/engine';
 import type { Palette } from './palette';
-import type { GateSign } from './signs';
+import type { GateSign, GemSprite } from './signs';
 
 /** How thick a block looks where nothing is beside it, in tiles. */
 const THICK = 1.2;
@@ -104,7 +104,7 @@ export interface MarbleView {
   dispose(): void;
 }
 
-export function createView(canvas: HTMLCanvasElement, course: Course, world: World, palette: Palette, reducedMotion: boolean, otherKinds: OtherKind[] = [], signs: GateSign[] = []): MarbleView {
+export function createView(canvas: HTMLCanvasElement, course: Course, world: World, palette: Palette, reducedMotion: boolean, otherKinds: OtherKind[] = [], signs: GateSign[] = [], gems: GemSprite[] = []): MarbleView {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'low-power' });
   renderer.setClearColor(palette.sky);
   const scene = new THREE.Scene();
@@ -397,6 +397,21 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
     return sprite;
   });
 
+  // ---- number gems: a spinning gem with its answer over it. A right gem vanishes when the marble takes it; a wrong one stays. ----
+  const gemGeometry = new THREE.OctahedronGeometry(0.2);
+  const gemMaterial = new THREE.MeshStandardMaterial({ color: 0x22d3ee, roughness: 0.25, metalness: 0.2, emissive: 0x0e7490, emissiveIntensity: 0.4 });
+  const gemObjects = gems.map((gem) => {
+    const floor = course.tiles[gem.ty * W + gem.tx].level * LEVEL;
+    const mesh = new THREE.Mesh(gemGeometry, gemMaterial);
+    mesh.position.set(gem.x, floor + 0.45, gem.y);
+    const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: signTexture(gem.text, false), transparent: true, depthTest: false }));
+    label.position.set(gem.x, floor + 1.15, gem.y);
+    label.scale.set(1.2, 0.6, 1);
+    label.renderOrder = 10;
+    scene.add(mesh, label);
+    return { id: gem.id, mesh, label };
+  });
+
   let first = true;
 
   return {
@@ -444,6 +459,12 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
         follow.lerp(target, k);
       }
       const clock = world.t;
+      for (const g of gemObjects) {
+        const taken = now.gemsTaken.includes(g.id);
+        g.mesh.visible = !taken;
+        g.label.visible = !taken;
+        if (!reducedMotion) g.mesh.rotation.y = clock * 0.04;
+      }
       for (const d of trapdoors) {
         const solidNow = trapdoorSolid(clock, d.tx);
         const warning = solidNow && !trapdoorSolid(clock + TIMED.trapdoor.warn, d.tx);
@@ -472,6 +493,12 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
       renderer.render(scene, camera);
     },
     dispose() {
+      gemGeometry.dispose();
+      gemMaterial.dispose();
+      for (const g of gemObjects) {
+        g.label.material.map?.dispose();
+        g.label.material.dispose();
+      }
       for (const sprite of signSprites) {
         sprite.material.map?.dispose();
         sprite.material.dispose();

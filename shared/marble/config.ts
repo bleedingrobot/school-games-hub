@@ -53,6 +53,13 @@ export const BUMPER_SPEED = 3.5;
 export const FALL_PENALTY_STEPS = 3 * STEPS_PER_SECOND;
 /** A right pit-stop answer takes this much off the clock. */
 export const PIT_BONUS_STEPS = 2 * STEPS_PER_SECOND;
+/** Number gems: each right gem takes this much off the clock, up to `MAX_GEM_BONUSES` a run. */
+export const GEM_BONUS_STEPS = 1 * STEPS_PER_SECOND;
+export const MAX_GEM_BONUSES = 5;
+/** The marble picks a gem up when it is this close to it (tiles). */
+export const GEM_PICKUP_RADIUS = 0.5;
+/** A fall asks a rescue question at most once in this many steps of play. */
+export const RESCUE_GAP_STEPS = 20 * STEPS_PER_SECOND;
 /** Below the lowest floor by this much, a falling marble is gone. */
 export const KILL_BELOW = 1.5;
 

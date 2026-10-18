@@ -4,7 +4,9 @@ import { compileCourse, type CourseDef } from './course';
 import { COURSES, courseById } from './courses';
 import { BONUS, countCode, decodeInputs, encodeInputs, pushInput } from './inputs';
 import { clockSteps, makeWorld, newRun, replay, stepRun } from './engine';
-import { doorMask, doorsForSeed, doorsFromMask, gateLayout, openDoors, publicQuestion, seededRandom, slotPlan } from './maths';
+import { doorMask, doorsForSeed, doorsFromMask, gateLayout, gemLayout, openDoors, publicQuestion, rightGems, rightGemsForSeed, runSetup, seededRandom, slotPlan } from './maths';
+import { botRun } from './bot';
+import { GEM_BONUS_STEPS, MAX_GEM_BONUSES } from './config';
 import { PIT_BONUS_STEPS } from './config';
 
 const q = (answer: number, extra: Partial<Question> = {}): Question => ({
@@ -148,5 +150,92 @@ describe('the bonus input', () => {
   it('a replay counts them the same way', () => {
     const r = replay(c, [[3, 10], [BONUS, 1], [3, 10]])!;
     expect(r.state.penalty).toBe(-PIT_BONUS_STEPS);
+  });
+});
+
+describe('number gems', () => {
+  const course = courseById('glacier-run')!;
+  const list = (n: number) => Array.from({ length: n }, (_, i) => q(i === 3 ? 42 : 56));
+
+  it('are on the harder courses only, 2 or 3 to a group, never more than 16 in all', () => {
+    expect(COURSES.filter((c) => c.gems.length).map((c) => c.def.id)).toEqual(['glacier-run', 'windy-welly', 'alpine-crossing']);
+    for (const c of COURSES) {
+      expect(c.gemList.length).toBeLessThanOrEqual(16);
+      c.gems.forEach((t) => t.groups.forEach((g) => expect([2, 3]).toContain(g.spots.length)));
+    }
+  });
+  it('give each trail a question slot between the pit stops and the rescue questions', () => {
+    const plan = slotPlan(course);
+    expect(plan.trails).toBe(course.gems.length);
+    expect(plan.gemStart).toBe(plan.gates + plan.pits);
+    expect(plan.rescueStart).toBe(plan.gemStart + plan.trails);
+    expect(plan.total).toBe(plan.rescueStart + plan.rescues);
+  });
+  it('have one right gem in every group, carrying the answer, the same every time from the seed', () => {
+    const plan = slotPlan(course);
+    const questions = list(plan.total);
+    const layout = gemLayout(course, 'gem-seed', questions);
+    expect(gemLayout(course, 'gem-seed', questions)).toEqual(layout);
+    layout.forEach((trail) => {
+      const answer = String(questions[trail.slot].answer);
+      trail.groups.forEach((g) => {
+        expect(g.labels[g.right]).toBe(answer);
+        expect(g.labels.filter((l) => l === answer)).toHaveLength(1);
+      });
+    });
+    const right = rightGems(course, layout);
+    expect(right).toHaveLength(course.gems.reduce((n, t) => n + t.groups.length, 0));
+    expect(rightGemsForSeed(course, 'gem-seed', questions)).toEqual(right);
+  });
+  it('are not there with maths off', () => {
+    expect(gemLayout(course, 'gem-seed', null)).toEqual([]);
+    expect(rightGemsForSeed(course, 'gem-seed', null)).toEqual([]);
+    expect(runSetup(course, 'gem-seed', null, true).gems).toEqual([]);
+  });
+  it('are told to the browser without answers, the right ones as numbers', () => {
+    const setup = runSetup(course, 'gem-seed', list(slotPlan(course).total), true);
+    expect(setup.gems).toHaveLength(course.gems.length);
+    expect(setup.rightGems.length).toBeGreaterThan(0);
+    expect(JSON.stringify(setup.gems)).not.toContain('answer');
+  });
+  it('take a second off when a right one is rolled through, and a wrong one nothing', () => {
+    const tiny = compileCourse({
+      id: 'tiny-gems', name: 'Tiny gems', rows: ['==========', '=s###f====', '=####f====', '=========='], heights: Array(4).fill('2222222222'),
+      route: [], medals: { gold: 2, silver: 4, bronze: 8 }, hardSeconds: 30,
+      gems: [{ sign: [1, 1], groups: [{ after: 0, spots: [[3.5, 1.5], [3.5, 2.5]] }] }],
+    });
+    const run = (right: number[]) => {
+      const w = makeWorld(tiny, { rightGems: right });
+      const s = newRun(w);
+      for (let i = 0; i < 200 && s.outcome === 'running'; i++) stepRun(w, s, 3);
+      return s;
+    };
+    const rightOne = run([0]);
+    const wrongOne = run([1]);
+    expect(rightOne.gemsTaken).toEqual([0]);
+    expect(wrongOne.gemsTaken).toEqual([]);
+    expect(rightOne.outcome).toBe('finished');
+    expect(rightOne.finishSteps).toBe(wrongOne.finishSteps - GEM_BONUS_STEPS);
+  });
+  it('count for no more than five a run, and each only once', () => {
+    const spots = Array.from({ length: 7 }, (_, i) => [1.5 + i * 0.9, 1.5] as [number, number]);
+    const many = compileCourse({
+      id: 'many-gems', name: 'Many gems', rows: ['=============', '=s#########f=', '=============',], heights: Array(3).fill('2222222222222'),
+      route: [], medals: { gold: 2, silver: 4, bronze: 8 }, hardSeconds: 30,
+      gems: [{ sign: [1, 1], groups: spots.map((p) => ({ after: 0, spots: [p, [p[0], 1.9] as [number, number]] })) }],
+    });
+    const ids = many.gemList.filter((g) => g.spot === 0).map((g) => many.gemList.indexOf(g));
+    const w = makeWorld(many, { rightGems: ids });
+    const s = newRun(w);
+    for (let i = 0; i < 400 && s.outcome === 'running'; i++) stepRun(w, s, 3);
+    expect(s.gemsTaken.length).toBeGreaterThan(MAX_GEM_BONUSES);
+    expect(s.finishSteps).toBe(s.steps - MAX_GEM_BONUSES * GEM_BONUS_STEPS);
+  });
+  it('are in the replay: the same inputs with another set of right gems give another time', () => {
+    const doors = doorsForSeed(course, 'g', null);
+    const none = botRun(course, { openDoors: doors });
+    const withGems = replay(course, none.runs, { openDoors: doors, rightGems: [0, 1, 2] });
+    const without = replay(course, none.runs, { openDoors: doors });
+    expect(withGems!.finishSteps).toBeLessThanOrEqual(without!.finishSteps);
   });
 });

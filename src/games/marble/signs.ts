@@ -23,6 +23,25 @@ export function arrowFor(dx: number, dy: number): string {
   return dy >= 0 ? '⬇' : '⬆';
 }
 
+/** One number gem: where it lies, and the answer it carries. */
+export interface GemSprite {
+  /** Its number in `course.gemList` (the engine's `gemsTaken` lists these). */
+  id: number;
+  x: number;
+  y: number;
+  tx: number;
+  ty: number;
+  text: string;
+}
+
+/** The gems of a run, with what each carries (none with maths off). */
+export function gemSprites(course: Course, setup: RunSetup): GemSprite[] {
+  return course.gemList.flatMap((gem, id) => {
+    const text = setup.gems[gem.trail]?.groups[gem.group]?.labels[gem.spot];
+    return text === undefined ? [] : [{ id, x: gem.x, y: gem.y, tx: Math.floor(gem.x), ty: Math.floor(gem.y), text }];
+  });
+}
+
 export function gateSigns(course: Course, setup: RunSetup): GateSign[] {
   const out: GateSign[] = [];
   course.gates.forEach((gate, g) => {

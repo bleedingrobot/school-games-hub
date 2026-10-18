@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SoundProvider } from '../../sound';
 import { MarblePlay } from './MarblePlay';
 
-const SETUP = { maths: false, rescue: false, doors: [0], gates: [{ slot: 0, labels: null, arrow: 0, question: null }], pits: [], rescues: [] };
+const SETUP = { maths: false, rescue: false, doors: [0], gates: [{ slot: 0, labels: null, arrow: 0, question: null }], pits: [], rescues: [], gems: [], rightGems: [] };
 const startRun = vi.fn(async (..._args: unknown[]): Promise<unknown> => ({ seed: 'm1-1792000000-abababababababababababab', stamp: 'stamp', ...SETUP }));
 const answerQuestion = vi.fn(async (..._args: unknown[]): Promise<unknown> => ({ right: true, answer: 56 }));
 const fetchMarbleSwitches = vi.fn(async (): Promise<{ maths: string; rescue: boolean }> => ({ maths: 'off', rescue: true }));
