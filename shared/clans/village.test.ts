@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { applyAction, parseAction, type Action, type Context, type ServerState } from './actions';
 import { CONFIG } from './config';
@@ -322,5 +324,28 @@ describe('the news can never name a pupil', () => {
         expect(raidNote('Red Banner', { result: out.result.type === 'raidClass' ? out.result.result : (null as never), take, gold: 1, land: 1, destroyed: [] })).toMatch(/Red Banner/);
       }
     }
+  });
+});
+
+describe('the database keeps the same numbers', () => {
+  const sql = readFileSync(resolve('supabase/migrations/20261018002000_clans_village.sql'), 'utf8');
+  it('costs and top levels in SQL are the same as in the game\'s settings', () => {
+    const costs = /when 'trainingHall' then (\d+) when 'smithy' then (\d+) when 'church' then (\d+) end/.exec(sql);
+    expect(costs?.slice(1).map(Number)).toEqual([CONFIG.village.trainingHall.base, CONFIG.village.smithy.base, CONFIG.village.church.base]);
+    const max = /as \$\$ select case kind when 'trainingHall' then (\d+) when 'smithy' then (\d+) when 'church' then (\d+) end/.exec(sql);
+    expect(max?.slice(1).map(Number)).toEqual([CONFIG.village.trainingHall.max, CONFIG.village.smithy.max, CONFIG.village.church.max]);
+    expect(CONFIG.village.order).toEqual(['trainingHall', 'smithy', 'church']);
+    // The tie-break order the SQL uses.
+    expect(sql).toContain("case t.kind when 'trainingHall' then 1 when 'smithy' then 2 else 3 end");
+  });
+  it('the week and the top levels checked in the villages table match too', () => {
+    expect(sql).toContain('floor((coalesce(nz_day, public.clan_nz_day()) + 3) / 7.0)');
+    expect(sql).toContain("(levels ->> 'trainingHall')::integer between 0 and 5");
+    expect(sql).toContain("(levels ->> 'smithy')::integer between 0 and 6");
+    expect(sql).toContain("(levels ->> 'church')::integer between 0 and 3");
+  });
+  it('the vote closes the same way as closeWeek: a tie goes to the cheaper building', () => {
+    expect(winner(levels(), { trainingHall: 2, smithy: 2, church: 2 })?.kind).toBe('smithy');
+    expect(winner(levels(0, 3, 0), { trainingHall: 2, smithy: 2, church: 2 })?.kind).toBe('trainingHall');
   });
 });

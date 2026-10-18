@@ -44,7 +44,7 @@ function fakeServer(start: ServerState | null, wrap?: (action: Action, next: () 
   };
   return { box, server };
 }
-const publicOf = (s: ServerState) => structuredClone(publicState(s, S, ['One fight was won in the Mines yesterday.']));
+const publicOf = (s: ServerState) => structuredClone(publicState(s, S, { news: ['One fight was won in the Mines yesterday.'] }));
 
 const knockedOut = (n: number) => (s: ServerState) => { for (let i = 0; i < n; i++) { s.clan.members[i].knockedOut = true; s.clan.members[i].hp = 0; } };
 

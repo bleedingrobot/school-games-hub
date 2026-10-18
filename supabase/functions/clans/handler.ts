@@ -11,7 +11,9 @@
  * and paid by shared/clans (see actions.ts). The teacher's switch is checked on every request, with the clan itself, so
  * switching Clan Quest off stops it at once. Not here yet: raids on classmates (stage C.6).
  */
-import { applyAction, parseAction, type Result, type ServerState } from '../../../shared/clans/actions';
+import { applyAction, parseAction, type Applied, type Effects, type Result, type ServerState } from '../../../shared/clans/actions';
+import type { Empire } from '../../../shared/clans/types';
+import type { RaidTarget, Sketch, VillageKind, VillageView } from '../../../shared/clans/village';
 import { nzDayNumber } from '../../../shared/clans/clock';
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../../../shared/maths/practical';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
@@ -29,8 +31,28 @@ export interface Loaded {
   replay: Result | null;
   /** Is Clan Quest switched on? A teacher can always use it, so they can try it before the class can. */
   enabled: boolean;
-  /** The latest village news lines, newest first. Written by the midnight job, never by a student. */
+  /** The latest village news lines, newest first. Written by the midnight job and by raids, never by a student. */
   news: string[];
+  /** The clan's village: chest, building levels, this week's votes. Null until the clan exists. */
+  village?: VillageView | null;
+  /** This clan's hidden public id (never the account id). */
+  self?: string | null;
+  /** The teacher's switch for raids on classmates. */
+  raidsOn?: boolean;
+  /** What raiders did to this clan lately, for it to read. */
+  notes?: string[];
+}
+
+/** A clan to be raided, as the database loads it. `version` is the copy the save will be checked against. */
+export type LoadedTarget = (RaidTarget & { version: number }) | null;
+
+/** What a raid saves besides the raiders' clan: the raided clan's empire (checked against its version) and the lines to write. */
+export interface RaidSave {
+  targetId: string;
+  targetVersion: number;
+  empire: Empire;
+  news: string;
+  note: string;
 }
 
 export type SaveStatus = { status: 'saved'; version: number } | { status: 'duplicate'; result: Result } | { status: 'stale' };
@@ -41,6 +63,14 @@ export interface Services {
   userIdFor(token: string): Promise<string | null>;
   load(player: string, requestId: string): Promise<Outcome<Loaded>>;
   save(player: string, expectedVersion: number, requestId: string, action: string, state: ServerState, result: Result): Promise<Outcome<SaveStatus>>;
+  /** Keeps this pupil's vote for the week. `ok: false` if that building is already built. */
+  vote(player: string, kind: VillageKind): Promise<Outcome<{ ok: boolean }>>;
+  /** The other clans in the pupil's village, for the list of who can be raided. */
+  mates(player: string): Promise<Outcome<Sketch[]>>;
+  /** One clan in the pupil's village, to raid it. Null if there is none. */
+  target(player: string, targetId: string): Promise<Outcome<LoadedTarget>>;
+  /** Saves a raid: both clans, one transaction. */
+  saveRaid(player: string, expectedVersion: number, raid: RaidSave, requestId: string, state: ServerState, result: Result): Promise<Outcome<SaveStatus>>;
   /** Milliseconds since 1970. */
   now(): number;
   /** The teacher's maths settings. Until the Teacher page (stage C.6) this is the defaults. */
@@ -55,9 +85,12 @@ export const MAX_TRIES = 4;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** What the browser is told about a clan: everything it shows, nothing it could use to cheat. */
-export function publicState(state: ServerState, settings: PracticalSettings, news: string[] = []) {
+export function publicState(state: ServerState, settings: PracticalSettings, loaded: Pick<Loaded, 'news' | 'village' | 'raidsOn' | 'notes'>) {
   const { clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight } = state;
-  return { clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight: fight ?? null, settings, news };
+  return {
+    clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight: fight ?? null, settings, news: loaded.news,
+    village: loaded.village ?? null, raidsOn: loaded.raidsOn ?? false, notes: loaded.notes ?? [],
+  };
 }
 
 export function makeHandler(services: Services) {
@@ -90,26 +123,69 @@ export function makeHandler(services: Services) {
     for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
       const loaded = await services.load(player, requestId);
       if (!loaded.ok) return loaded.why === 'busy' ? reply(503, { error: "We couldn't reach your clan just now." }) : reply(400, { error: "That couldn't be read." });
-      const { seed, version, state, replay, enabled, news } = loaded.value;
+      const { seed, version, state, replay, enabled } = loaded.value;
       if (!enabled) return reply(403, { error: 'Clan Quest is not switched on yet.', off: true });
+      // The village's building levels are the clan's (the database already puts them on; this keeps the rules honest if it did not).
+      if (state && loaded.value.village) state.clan.village = loaded.value.village.levels;
+      const shown = (s: ServerState, from: Pick<Loaded, 'news' | 'village' | 'raidsOn' | 'notes'> = loaded.value) => publicState(s, settings, from);
 
       // Done before: the same answer, and the clan as it is now.
-      if (replay) return reply(200, { ok: true, replayed: true, seed, state: state && publicState(state, settings, news), result: replay });
+      if (replay) return reply(200, { ok: true, replayed: true, seed, state: state && shown(state), result: replay });
 
-      const applied = applyAction(state, action, { seed, today, settings });
+      const village = loaded.value.village ?? null;
+      const ctx = { seed, today, settings, village, self: loaded.value.self ?? undefined, raidsOn: loaded.value.raidsOn ?? false };
+      let target: LoadedTarget = null;
+      if (state && action.type === 'raidTargets') {
+        const mates = await services.mates(player);
+        if (!mates.ok) return mates.why === 'busy' ? reply(503, { error: "We couldn't reach your village just now." }) : reply(400, { error: "That couldn't be read." });
+        Object.assign(ctx, { mates: mates.value });
+      }
+      if (state && action.type === 'raidClass') {
+        const found = await services.target(player, action.target);
+        if (!found.ok) return found.why === 'busy' ? reply(503, { error: "We couldn't reach your village just now." }) : reply(400, { error: "That couldn't be read." });
+        target = found.value;
+        Object.assign(ctx, { target });
+      }
+
+      const applied: Applied = applyAction(state, action, ctx);
       if (!applied.ok) {
         // Refused: nothing is saved. The browser is shown the clan as it should be (after the night's rest, if a new day began).
-        const current = state && applyAction(state, { type: 'load' }, { seed, today, settings });
-        return reply(200, { ok: false, why: applied.why, say: applied.say, seed, state: current && current.ok && current.state ? publicState(current.state, settings, news) : null });
+        const current = state && applyAction(state, { type: 'load' }, ctx);
+        return reply(200, { ok: false, why: applied.why, say: applied.say, seed, state: current && current.ok && current.state ? shown(current.state) : null });
       }
-      if (!applied.changed || !applied.state) {
-        return reply(200, { ok: true, replayed: false, seed, state: applied.state && publicState(applied.state, settings, news), result: applied.result });
+      const effects: Effects = applied.effects ?? {};
+
+      // A vote is kept in the village, not the clan. The database says no if the building is already built.
+      if (effects.vote) {
+        const voted = await services.vote(player, effects.vote);
+        if (!voted.ok) return voted.why === 'busy' ? reply(503, { error: "We couldn't count your vote just now." }) : reply(400, { error: "That couldn't be read." });
+        if (!voted.value.ok) return reply(200, { ok: false, why: 'built', say: 'That building is already as big as it can be.', seed, state: state && shown(state) });
       }
 
-      const saved = await services.save(player, version, requestId, action.type, applied.state, applied.result);
+      if (!applied.changed || !applied.state) {
+        // Nothing to save. After a vote the village has changed, so ask for it again.
+        let latest: Pick<Loaded, 'news' | 'village' | 'raidsOn' | 'notes'> = loaded.value;
+        if (effects.vote) {
+          const again = await services.load(player, requestId);
+          if (again.ok) latest = again.value;
+        }
+        return reply(200, { ok: true, replayed: false, seed, state: applied.state && shown(applied.state, latest), result: applied.result });
+      }
+
+      const saved = effects.raid
+        ? target
+          ? await services.saveRaid(player, version, { targetId: target.id, targetVersion: target.version, empire: effects.raid.empire, news: effects.raid.news, note: effects.raid.note }, requestId, applied.state, applied.result)
+          : ({ ok: false, why: 'refused' } as const)
+        : await services.save(player, version, requestId, action.type, applied.state, applied.result);
       if (!saved.ok) return saved.why === 'busy' ? reply(503, { error: "We couldn't save your clan just now." }) : reply(400, { error: "That couldn't be saved." });
       if (saved.value.status === 'saved') {
-        return reply(200, { ok: true, replayed: false, seed, state: publicState(applied.state, settings, news), result: applied.result });
+        // A gift to the chest, or a raid, changed the village or the news: ask again so the browser sees them.
+        let latest: Pick<Loaded, 'news' | 'village' | 'raidsOn' | 'notes'> = loaded.value;
+        if (applied.result.type === 'chestGive' || applied.result.type === 'raidClass') {
+          const again = await services.load(player, '00000000-0000-4000-8000-000000000000');
+          if (again.ok) latest = again.value;
+        }
+        return reply(200, { ok: true, replayed: false, seed, state: shown(applied.state, latest), result: applied.result });
       }
       // 'duplicate' or 'stale': another copy of this request, or another request, saved first. Load again.
     }
