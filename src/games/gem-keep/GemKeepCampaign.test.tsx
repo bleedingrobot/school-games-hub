@@ -1,3 +1,4 @@
+import { spokenLabel } from '../../../shared/maths/banded';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -243,6 +244,39 @@ describe('Gem Keep with a maths focus', () => {
     const keys = onAnswers.mock.calls.flatMap(([answers]) => (answers as { key: string }[]).map((a) => a.key));
     expect(keys.length).toBe(10);
     expect(keys.every((k) => isFocusKey(k) && packIdOfKey(k) === 'generated')).toBe(true);
+  }, 60_000);
+
+  it('asks the fraction, decimal and percentage skills in the Level Key: fractions to tap, a point key for decimals, all recorded under their question type', async () => {
+    const user = userEvent.setup();
+    let engine!: GameEngine;
+    const onAnswers = vi.fn();
+    const skills = ['unit-fraction-of', 'tenths', 'add-tenths', 'decimal-equivalents', 'percent-basic', 'fraction-of', 'times-decimals', 'equivalent-fractions', 'fdp-equivalents', 'percent-of', 'whole-from-fraction'];
+    render(<GemKeepCampaign focus={teacherFocus(skills)} onEngine={(e) => (engine = e)} onProgress={vi.fn()} onAnswers={onAnswers} />);
+    await user.click(screen.getByRole('button', { name: /Level 1: Crystal Valley/ }));
+    engine.state.phase = 'won';
+    engine.state.stars = 3;
+    engine.setPaused(false);
+    await user.click(await screen.findByRole('button', { name: 'Try the Level Key' }));
+    let picks = 0;
+    for (let i = 0; i < 10; i++) {
+      await screen.findByText(new RegExp(`Question ${i + 1} of 10`));
+      await waitFor(() => expect(document.querySelector('.question__fact')).not.toBeNull());
+      const q = latest.question!;
+      if (q.choices) {
+        if (q.choiceLabels) picks++;
+        const label = q.choiceLabels ? spokenLabel(q.choiceLabels[q.answer]) : String(q.answer);
+        await user.click(screen.getByRole('button', { name: label }));
+      } else {
+        expect(Boolean(screen.queryByRole('button', { name: 'Point' }))).toBe(q.input === 'decimal');
+        await user.keyboard(`${q.answer}{Enter}`);
+      }
+      await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 8000 });
+    }
+    expect(picks).toBeGreaterThanOrEqual(0);
+    await waitFor(() => expect(onAnswers).toHaveBeenCalled());
+    const answers = onAnswers.mock.calls.flatMap(([a]) => a as { key: string; correct: boolean }[]);
+    expect(answers.length).toBe(10);
+    expect(answers.every((a) => isFocusKey(a.key) && packIdOfKey(a.key) === 'generated' && a.correct)).toBe(true);
   }, 60_000);
 
   it('keeps the focus it has when the lookup fails', async () => {
