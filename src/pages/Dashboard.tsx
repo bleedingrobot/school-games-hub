@@ -15,6 +15,7 @@ import {
   type FriendStats,
   type PlayerCard,
 } from '../data/multiplayer';
+import { fetchMyMovesLeft, type MovesByGame } from '../data/movesLeft';
 import { fetchMyProgress, type MyProgress } from '../data/progress';
 import { fetchMyOpenSpaceGames, fetchMySpaceStats, fetchRecentSpaceGames, seatsOf, type SpaceGame } from '../data/spaceGames';
 import { fetchMyCardStats, fetchMyOpenCardGames, fetchRecentCardGames, type SeatSummary } from '../data/cardGames';
@@ -255,6 +256,17 @@ export function Dashboard() {
   const lordOn = useLordEnabled() === true;
   const clansOn = useClansEnabled() === true;
   const shownGames = GAMES.filter((g) => (g.id !== 'monsters' || monstersOn) && (g.id !== 'dragon-maths' || lordOn) && (g.id !== 'clan-quest' || clansOn));
+  const [moves, setMoves] = useState<MovesByGame>({});
+  const meId = profile?.id;
+  useEffect(() => {
+    if (!meId) return;
+    let current = true;
+    // Daily moves left (Dragon Maths, Clan Quest) are only a nicety: no line on the card if they can't be read.
+    fetchMyMovesLeft().then((m) => current && setMoves(m));
+    return () => {
+      current = false;
+    };
+  }, [meId]);
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
@@ -377,6 +389,7 @@ export function Dashboard() {
                     key={game.id}
                     game={game}
                     level={levelFor(game.id)}
+                    moves={moves[game.id]}
                     onLevelChange={(level) => {
                       setLevels((prev) => ({ ...prev, [game.id]: level }));
                       setFeatured(game.id);
