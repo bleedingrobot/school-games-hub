@@ -4,6 +4,7 @@
  * Medal times are set from each course's reference run (`reference.test.ts` keeps them honest).
  */
 import { compileCourse, type Course, type CourseDef } from './course';
+import { NZ_COURSE_DEFS } from './nzCourses';
 
 export const TEST_EASY: CourseDef = {
   id: 'test-easy',
@@ -61,7 +62,7 @@ export const TEST_HARD: CourseDef = {
   hardSeconds: 20,
 };
 
-export const COURSE_DEFS: readonly CourseDef[] = [TEST_EASY, TEST_HARD];
+export const COURSE_DEFS: readonly CourseDef[] = [...NZ_COURSE_DEFS, TEST_EASY, TEST_HARD];
 
 export const COURSES: readonly Course[] = COURSE_DEFS.map(compileCourse);
 

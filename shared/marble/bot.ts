@@ -3,8 +3,37 @@
  * reference run (the proof the course can be finished, and where the gold time comes from).
  */
 import type { Course } from './course';
-import { DIRS, clockSteps, makeWorld, newRun, stepRun, type RunOptions, type RunState } from './engine';
+import { DIRS, clockSteps, gateOpen, geyserPhase, makeWorld, newRun, stepRun, trapdoorSolid, type RunOptions, type RunState, type World } from './engine';
 import { pushInput, type InputRuns } from './inputs';
+
+/**
+ * True if the next tile or two along the marble's way is a hazard it should wait for: a gate that is shut or about to
+ * shut, or a trapdoor that is about to drop away. (A person would watch the timing too.)
+ */
+function mustWait(w: World, s: RunState, ux: number, uy: number): boolean {
+  // A geyser: stop about two tiles short and go when it is about to puff, so the marble arrives as it throws.
+  for (let reach = 0.5; reach <= 2.6; reach += 0.5) {
+    const gx = Math.floor(s.x + ux * reach);
+    const gy = Math.floor(s.y + uy * reach);
+    if (gx < 0 || gy < 0 || gx >= w.course.width || gy >= w.course.height) continue;
+    if (w.course.tiles[gy * w.course.width + gx].ch === 'g') {
+      const speed = Math.sqrt(s.vx * s.vx + s.vy * s.vy);
+      const ahead = speed > 2 ? 14 : 40;
+      if (geyserPhase(w.t + ahead, gx, gy) !== 2 || geyserPhase(w.t + ahead - 10, gx, gy) === 0) return true;
+      break;
+    }
+  }
+  for (const reach of [0.9, 1.7]) {
+    const tx = Math.floor(s.x + ux * reach);
+    const ty = Math.floor(s.y + uy * reach);
+    if (tx < 0 || ty < 0 || tx >= w.course.width || ty >= w.course.height) continue;
+    const ch = w.course.tiles[ty * w.course.width + tx].ch;
+    // Crossing takes under a second; the hazard must stay friendly for that long.
+    if (ch === 'q' && !(gateOpen(w.t + 5, tx) && gateOpen(w.t + 45, tx))) return true;
+    if (ch === 't' && !(trapdoorSolid(w.t, tx) && trapdoorSolid(w.t + 70, tx))) return true;
+  }
+  return false;
+}
 
 export interface BotRun {
   runs: [number, number][];
@@ -33,6 +62,44 @@ export function botRun(course: Course, options: RunOptions = {}, maxSteps = 60 *
     const along = s.vx * ux + s.vy * uy;
     const dx = ux * 3 - 0.6 * (s.vx - along * ux);
     const dy = uy * 3 - 0.6 * (s.vy - along * uy);
+    // Slow down before a sharp corner coming up (momentum would carry the marble off the track):
+    // look along the route for the first sharp turn and keep to a speed that can stop in time.
+    const speedNow = Math.sqrt(s.vx * s.vx + s.vy * s.vy);
+    let cornerBrake = false;
+    {
+      let along = dist;
+      for (let j = at; j < route.length - 1 && along < 6; j++) {
+        const [ax, ay] = route[j];
+        const [bx, by] = route[j + 1];
+        const [px, py] = j === at ? [s.x, s.y] : route[j - 1];
+        const d1x = ax - px, d1y = ay - py, d2x = bx - ax, d2y = by - ay;
+        const l1 = Math.sqrt(d1x * d1x + d1y * d1y) || 1;
+        const l2 = Math.sqrt(d2x * d2x + d2y * d2y) || 1;
+        if ((d1x * d2x + d1y * d2y) / (l1 * l2) < 0.5) {
+          cornerBrake = speedNow > 0.5 + 0.8 * along;
+          break;
+        }
+        along += l2;
+      }
+    }
+    if (mustWait(w, s, ux, uy) || cornerBrake) {
+      // Hold still (push against the way we are going) until it is safe.
+      const speed = Math.sqrt(s.vx * s.vx + s.vy * s.vy);
+      let brake = 0;
+      if (speed > 0.25) {
+        let bd = -Infinity;
+        for (let code = 1; code <= 8; code++) {
+          const d = -(DIRS[code][0] * s.vx + DIRS[code][1] * s.vy);
+          if (d > bd) {
+            bd = d;
+            brake = code;
+          }
+        }
+      }
+      pushInput(runs, brake);
+      stepRun(w, s, brake);
+      continue;
+    }
     let best = 0;
     let bestDot = -Infinity;
     for (let code = 1; code <= 8; code++) {

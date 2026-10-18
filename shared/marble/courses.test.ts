@@ -45,6 +45,30 @@ describe('reference runs', () => {
     expect(COURSES.map((c) => [c.def.id, botRun(c).state.finishSteps])).toMatchInlineSnapshot(`
       [
         [
+          "boulder-beach",
+          1092,
+        ],
+        [
+          "crown-range",
+          2669,
+        ],
+        [
+          "geyser-valley",
+          1105,
+        ],
+        [
+          "glacier-run",
+          1085,
+        ],
+        [
+          "windy-welly",
+          1650,
+        ],
+        [
+          "alpine-crossing",
+          1103,
+        ],
+        [
           "test-easy",
           209,
         ],

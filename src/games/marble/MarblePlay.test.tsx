@@ -17,12 +17,13 @@ beforeEach(() => localStorage.clear());
 const open = () => render(<SoundProvider><MarblePlay /></SoundProvider>);
 
 describe('course picker', () => {
-  it('shows the six New Zealand courses as coming soon, with a Did you know card', () => {
+  it('shows the six New Zealand courses, each with a Did you know card', () => {
     open();
     for (const name of ['Boulder Beach', 'Crown Range Zig-Zag', 'Geyser Valley', 'Glacier Run', 'Windy Welly', 'Alpine Crossing']) {
       expect(screen.getByRole('heading', { name })).toBeInTheDocument();
     }
-    expect(screen.getAllByText('Coming soon')).toHaveLength(6);
+    expect(screen.queryAllByText('Coming soon')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Play Boulder Beach' })).toBeInTheDocument();
     expect(screen.getAllByText('Did you know?')).toHaveLength(6);
     expect(screen.getByText(/1,076 metres/)).toBeInTheDocument();
   });

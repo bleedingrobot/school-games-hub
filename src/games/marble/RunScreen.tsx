@@ -279,7 +279,11 @@ export function RunScreen({
     if ((e.target as HTMLElement).closest('button, .marble-stick')) return;
     if (e.pointerType === 'touch') setShowStick(true);
     dragStart.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
-    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    } catch {
+      // The pointer is already gone: nothing to hold on to.
+    }
     if (phaseRef.current === 'ready') goto('playing');
   };
   const onPointerMove = (e: React.PointerEvent) => {
@@ -428,7 +432,11 @@ function ThumbStick({ side, onPush }: { side: 'left' | 'right'; onPush: (v: [num
       aria-hidden="true"
       onPointerDown={(e) => {
         active.current = e.pointerId;
-        e.currentTarget.setPointerCapture?.(e.pointerId);
+        try {
+          e.currentTarget.setPointerCapture?.(e.pointerId);
+        } catch {
+          // The pointer is already gone.
+        }
         update(e);
       }}
       onPointerMove={(e) => active.current === e.pointerId && update(e)}

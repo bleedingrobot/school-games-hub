@@ -9,7 +9,7 @@
  */
 import {
   AIR_GRAVITY, AIR_STEER, BALL_RADIUS, BOUNCE, BUMPER_RADIUS, BUMPER_SPEED, CHECKPOINT_BONUS_STEPS, DT, FALL_PENALTY_STEPS,
-  JUMP_SPEED, KILL_BELOW, LEVEL, MAX_RUN_STEPS, OUCH_SPEED, SLOPE_GRAVITY, STEER, STEP_DOWN, STEP_UP, SURFACES,
+  CONVEYOR_PUSH, JUMP_SPEED, KILL_BELOW, LEVEL, MAX_RUN_STEPS, OUCH_SPEED, SLOPE_GRAVITY, STEER, STEP_DOWN, STEP_UP, SURFACES, TIMED,
 } from './config';
 import type { Course, Tile } from './course';
 import { HOLD, MAX_CODE, MAX_INPUT_STEPS, REFUND, type InputRuns } from './inputs';
@@ -62,6 +62,8 @@ export const DIRS: ReadonlyArray<readonly [number, number]> = [
   [0, 0], [0, -1], [R2, -R2], [1, 0], [R2, R2], [0, 1], [-R2, R2], [-1, 0], [-R2, -R2],
 ];
 
+const CONVEYORS: Record<string, readonly [number, number]> = { e: [1, 0], w: [-1, 0], n: [0, -1], o: [0, 1] };
+
 const WALL: Tile = { ch: '=', level: 0, surface: 'normal', slope: null, door: -1 };
 const VOID: Tile = { ch: '.', level: 0, surface: 'normal', slope: null, door: -1 };
 
@@ -69,10 +71,12 @@ export interface World {
   course: Course;
   mode: ClockMode;
   open: ReadonlySet<number>;
+  /** The step being played (set by `stepRun`); timed hazards depend only on this. */
+  t: number;
 }
 
 export function makeWorld(course: Course, options: RunOptions = {}): World {
-  return { course, mode: options.mode ?? 'up', open: new Set(options.openDoors ?? []) };
+  return { course, mode: options.mode ?? 'up', open: new Set(options.openDoors ?? []), t: 0 };
 }
 
 function tileAt(w: World, tx: number, ty: number): Tile {
@@ -80,7 +84,25 @@ function tileAt(w: World, tx: number, ty: number): Tile {
   if (tx < 0 || ty < 0 || tx >= c.width || ty >= c.height) return VOID;
   const t = c.tiles[ty * c.width + tx];
   if (t.door >= 0) return w.open.has(t.door) ? { ...t, ch: '#' } : WALL;
+  if (t.ch === 't') return trapdoorSolid(w.t, tx) ? t : VOID;
+  if (t.ch === 'q') return gateOpen(w.t, tx) ? { ...t, ch: '#' } : WALL;
   return t;
+}
+
+/** Hazards in the same column share a timer, so a row of them moves together. */
+export const trapdoorSolid = (t: number, tx: number) => (t + tx * 53) % TIMED.trapdoor.period < TIMED.trapdoor.solid;
+export const gateOpen = (t: number, tx: number) => (t + tx * 53) % TIMED.gate.period < TIMED.gate.open;
+/** 0 = quiet, 1 = steaming (a warning), 2 = throwing the marble up. */
+export function geyserPhase(t: number, tx: number, ty: number): 0 | 1 | 2 {
+  const p = (t + tx * 37 + ty * 91) % TIMED.geyser.period;
+  return p < TIMED.geyser.warn ? 1 : p < TIMED.geyser.warn + TIMED.geyser.active ? 2 : 0;
+}
+/** True while a gust of wind is blowing (and, with `warn`, for the steps just before). */
+export function windBlowing(w: World, t: number, warn = false): boolean {
+  const wind = w.course.def.wind;
+  if (!wind) return false;
+  const p = t % wind.period;
+  return warn ? p >= wind.period - wind.warn || p < wind.on : p < wind.on;
 }
 
 /** The floor's height (in tiles) at a point, or null for a gap or a wall. */
@@ -158,6 +180,7 @@ export function stepRun(w: World, s: RunState, input: number): void {
   }
   const c = w.course;
   s.steps++;
+  w.t = s.steps;
   const dir = DIRS[input] ?? DIRS[0];
   const here = tileAt(w, Math.floor(s.x), Math.floor(s.y));
   let max: number = SURFACES.normal.max;
@@ -174,12 +197,22 @@ export function stepRun(w: World, s: RunState, input: number): void {
       else if (here.slope === 'S') ay += g;
       else ay -= g;
     }
+    const belt = CONVEYORS[here.ch];
+    if (belt) {
+      ax += belt[0] * CONVEYOR_PUSH;
+      ay += belt[1] * CONVEYOR_PUSH;
+    }
     s.vx = (s.vx + ax * DT) * (1 - surf.drag);
     s.vy = (s.vy + ay * DT) * (1 - surf.drag);
   } else {
     s.vx += dir[0] * STEER * AIR_STEER * DT;
     s.vy += dir[1] * STEER * AIR_STEER * DT;
     s.vz -= AIR_GRAVITY * DT;
+  }
+  const wind = c.def.wind;
+  if (wind && s.steps % wind.period < wind.on) {
+    s.vx += wind.dx * wind.force * DT;
+    s.vy += wind.dy * wind.force * DT;
   }
   const v2 = s.vx * s.vx + s.vy * s.vy;
   if (v2 > max * max) {
@@ -243,6 +276,10 @@ export function stepRun(w: World, s: RunState, input: number): void {
       s.vx = nxv * BUMPER_SPEED;
       s.vy = nyv * BUMPER_SPEED;
     }
+  } else if (on.ch === 'g' && s.grounded && s.padCooldown === 0 && geyserPhase(s.steps, tx, ty) === 2) {
+    s.grounded = false;
+    s.vz = JUMP_SPEED * TIMED.geyser.boost;
+    s.padCooldown = 30;
   } else if (on.ch === 'j' && s.grounded && s.padCooldown === 0) {
     s.grounded = false;
     s.vz = JUMP_SPEED;

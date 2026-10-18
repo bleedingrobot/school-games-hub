@@ -11,6 +11,10 @@
  *   b  a bumper (flat floor with a post in the middle)
  *   j  a jump pad          c  a checkpoint        s  the start (exactly one)
  *   f  the finish (one or more)
+ *   e w n o  a conveyor belt pushing east, west, north (up the grid) or south
+ *   g  a geyser: steams, then throws the marble into the air, on a timer
+ *   t  a trapdoor: solid, then drops away, on a timer
+ *   q  a gate (a sweeping arm): open, then shut like a wall, on a timer. Gates and trapdoors in the same column share a timer.
  *   A–H  a shortcut door. Shut it is a wall; open it is flat floor. Which are open is decided
  *        before the run starts and never changes during it (this is how maths gates will work).
  */
@@ -29,6 +33,8 @@ export interface CourseDef {
   medals: { gold: number; silver: number; bronze: number };
   /** Hard mode: seconds on the clock at the start. */
   hardSeconds: number;
+  /** Gusts of wind that push the marble: every `period` steps, for `on` steps (after `warn` steps of warning streaks). */
+  wind?: { dx: number; dy: number; period: number; on: number; warn: number; force: number };
 }
 
 export type Slope = 'E' | 'W' | 'N' | 'S';
@@ -55,7 +61,7 @@ export interface Course {
 }
 
 const SLOPES: Record<string, Slope> = { '>': 'E', '<': 'W', '^': 'N', v: 'S' };
-const KNOWN = new Set('.#im><^v=bjcsfABCDEFGH'.split(''));
+const KNOWN = new Set('.#im><^v=bjcsfABCDEFGHewnogtq'.split(''));
 
 export function compileCourse(def: CourseDef): Course {
   const height = def.rows.length;

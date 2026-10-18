@@ -23,32 +23,32 @@ export interface CourseInfo {
 
 export const COURSE_INFO: readonly CourseInfo[] = [
   {
-    id: 'boulder-beach', name: 'Boulder Beach', place: 'Moeraki Boulders, Otago', difficulty: 1,
+    id: 'boulder-beach', playable: 'boulder-beach', name: 'Boulder Beach', place: 'Moeraki Boulders, Otago', difficulty: 1,
     blurb: 'A wide sandy path with giant round boulders. Learn to steer.',
     didYouKnow: 'The Moeraki Boulders on Koekohe Beach are huge round stones that took millions of years to form, slowly, on the seabed.',
   },
   {
-    id: 'crown-range', name: 'Crown Range Zig-Zag', place: 'Crown Range Road, Central Otago', difficulty: 2,
+    id: 'crown-range', playable: 'crown-range', name: 'Crown Range Zig-Zag', place: 'Crown Range Road, Central Otago', difficulty: 2,
     blurb: 'Hairpin bends, gaps in the barriers and a snow-pole slalom.',
     didYouKnow: 'The Crown Range Road is the highest main road in New Zealand, about 1,076 metres above sea level.',
   },
   {
-    id: 'geyser-valley', name: 'Geyser Valley', place: 'Rotorua', difficulty: 3,
+    id: 'geyser-valley', playable: 'geyser-valley', name: 'Geyser Valley', place: 'Rotorua', difficulty: 3,
     blurb: 'Geysers that puff you into the air, and popping mud pots.',
     didYouKnow: 'Pōhutu Geyser at Te Puia, Rotorua, can shoot hot water as high as 30 metres.',
   },
   {
-    id: 'glacier-run', name: 'Glacier Run', place: 'Franz Josef Glacier, West Coast', difficulty: 4,
+    id: 'glacier-run', playable: 'glacier-run', name: 'Glacier Run', place: 'Franz Josef Glacier, West Coast', difficulty: 4,
     blurb: 'Slippery ice at the top, then sticky mud and gravel at the bottom.',
     didYouKnow: 'Franz Josef Glacier also has a Māori name, Kā Roimata o Hine Hūkatere, which means the tears of Hine Hūkatere.',
   },
   {
-    id: 'windy-welly', name: 'Windy Welly', place: 'Wellington', difficulty: 5,
+    id: 'windy-welly', playable: 'windy-welly', name: 'Windy Welly', place: 'Wellington', difficulty: 5,
     blurb: 'A cable car, sweeping crane arms and gusts of wind. Timing is everything.',
     didYouKnow: 'The Wellington Cable Car has carried people up the hill to Kelburn since 1902.',
   },
   {
-    id: 'alpine-crossing', name: 'Alpine Crossing', place: 'Tongariro Alpine Crossing', difficulty: 6,
+    id: 'alpine-crossing', playable: 'alpine-crossing', name: 'Alpine Crossing', place: 'Tongariro Alpine Crossing', difficulty: 6,
     blurb: 'A narrow ridge, crumbly rock and strong wind, ending at the Emerald Lakes.',
     didYouKnow: 'The Emerald Lakes get their bright colour from minerals washed into the water from the volcanic rock around them.',
   },

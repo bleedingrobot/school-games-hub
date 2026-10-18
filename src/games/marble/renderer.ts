@@ -6,7 +6,8 @@
 import * as THREE from 'three';
 import { BALL_RADIUS, LEVEL } from '../../../shared/marble/config';
 import type { Course, Tile } from '../../../shared/marble/course';
-import { drawTileAt, floorHeightAt, type RunState, type World } from '../../../shared/marble/engine';
+import { TIMED } from '../../../shared/marble/config';
+import { floorHeightAt, gateOpen, geyserPhase, trapdoorSolid, windBlowing, type RunState, type World } from '../../../shared/marble/engine';
 import type { Palette } from './palette';
 
 /** How thick a block looks where nothing is beside it, in tiles. */
@@ -15,6 +16,9 @@ const THICK = 1.2;
 const WALL_HEIGHT = 0.7;
 
 type Corners = [number, number, number, number]; // nw, ne, se, sw
+
+/** Which way a conveyor belt carries you (grid x, y). */
+const CONVEYOR_DIR: Record<string, readonly [number, number]> = { e: [1, 0], w: [-1, 0], n: [0, -1], o: [0, 1] };
 
 function corners(t: Tile): Corners {
   const hi = t.level * LEVEL;
@@ -78,8 +82,17 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
   // ---- the blocks ----
   const soup = new Soup();
   const { width: W, height: H } = course;
-  const tile = (x: number, y: number) => drawTileAt(world, x, y);
+  // The fixed layout. Timed things (trapdoors, gates, geysers) are drawn separately below and move with the clock.
+  const WALL_TILE: Tile = { ch: '=', level: 0, surface: 'normal', slope: null, door: -1 };
+  const VOID_TILE: Tile = { ch: '.', level: 0, surface: 'normal', slope: null, door: -1 };
+  const tile = (x: number, y: number): Tile => {
+    if (x < 0 || y < 0 || x >= W || y >= H) return VOID_TILE;
+    const t = course.tiles[y * W + x];
+    if (t.door >= 0) return world.open.has(t.door) ? { ...t, ch: '#' } : WALL_TILE;
+    return t.ch === 'q' ? { ...t, ch: '#' } : t;
+  };
   const isFloor = (t: Tile) => t.ch !== '.' && t.ch !== '=';
+  const drawsTop = (t: Tile) => t.ch !== '.' && t.ch !== '=' && t.ch !== 't';
   /** Heights of the neighbour's edge facing us, matched to our two corners; null if no floor there. */
   const across = (x: number, y: number, side: 'N' | 'E' | 'S' | 'W'): [number, number] | null => {
     const n = tile(x + (side === 'E' ? 1 : side === 'W' ? -1 : 0), y + (side === 'S' ? 1 : side === 'N' ? -1 : 0));
@@ -92,8 +105,7 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const t = tile(x, y);
-      if (t.ch === '.') continue;
-      if (t.ch === '=') continue; // walls below
+      if (!drawsTop(t)) continue; // gaps, walls (below) and trapdoors (moving, below)
       const [nw, ne, se, sw] = corners(t);
       let top = (x + y) % 2 === 0 ? palette.floorA : palette.floorB;
       if (t.ch === 'i') top = palette.ice;
@@ -103,6 +115,8 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
       else if (t.ch === 'f') top = (x + y) % 2 === 0 ? palette.finishA : palette.finishB;
       else if (t.ch === 'j') top = palette.pad;
       else if (t.door >= 0) top = palette.door;
+      else if (CONVEYOR_DIR[t.ch]) top = palette.belt;
+      else if (t.ch === 'g') top = palette.geyser;
       const P = (cx: number, cy: number, h: number) => [x + cx, h, y + cy];
       soup.quad(P(0, 0, nw), P(0, 1, sw), P(1, 1, se), P(1, 0, ne), top);
 
@@ -118,6 +132,21 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
         for (const [dx, dy] of [[0.25, 0.3], [0.65, 0.25], [0.5, 0.7], [0.8, 0.75]]) {
           const s = 0.1;
           soup.quad([x + dx - s, h, y + dy - s], [x + dx - s, h, y + dy + s], [x + dx + s, h, y + dy + s], [x + dx + s, h, y + dy - s], 0x3e2a16);
+        }
+      }
+
+      const belt = CONVEYOR_DIR[t.ch];
+      if (belt) {
+        // Chevrons pointing the way the belt carries you (so it reads without colour).
+        const h = nw + 0.012;
+        for (const k of [0.25, 0.6]) {
+          const cx = x + 0.5 + belt[0] * (k - 0.5);
+          const cy = y + 0.5 + belt[1] * (k - 0.5);
+          const fx = belt[0] * 0.16;
+          const fy = belt[1] * 0.16;
+          const px = -belt[1] * 0.22;
+          const py = belt[0] * 0.22;
+          soup.tri([cx + fx, h, cy + fy], [cx + px, h, cy + py], [cx - px, h, cy - py], 0xffffff);
         }
       }
 
@@ -198,7 +227,7 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
           arrow.rotation.y = Math.PI / 4;
           scene.add(arrow);
         }
-      } else if (t.ch === 'c' || t.ch === 'f') {
+      } else if ((t.ch === 'c' || t.ch === 'f') && tile(x - 1, y).ch !== t.ch && tile(x, y - 1).ch !== t.ch) {
         const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.1, 8), solid(0x374151));
         pole.position.set(x + 0.12, h + 0.55, y + 0.12);
         scene.add(pole);
@@ -206,6 +235,48 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
         flag.position.set(x + 0.4, h + 0.95, y + 0.12);
         scene.add(flag);
       }
+    }
+  }
+
+  // ---- timed hazards ----
+  const trapdoors: { mesh: THREE.Mesh; tx: number }[] = [];
+  const gates: { mesh: THREE.Mesh; tx: number }[] = [];
+  const geysers: { plume: THREE.Mesh; tx: number; ty: number }[] = [];
+  const plumeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.65, depthWrite: false });
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const t = course.tiles[y * W + x];
+      const h = t.level * LEVEL;
+      if (t.ch === 't') {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.22, 0.96), solid(palette.trapdoor));
+        mesh.position.set(x + 0.5, h - 0.11, y + 0.5);
+        scene.add(mesh);
+        trapdoors.push({ mesh, tx: x });
+      } else if (t.ch === 'q') {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, WALL_HEIGHT + 0.1, 1), solid(palette.gate));
+        mesh.position.set(x + 0.5, h + (WALL_HEIGHT + 0.1) / 2, y + 0.5);
+        scene.add(mesh);
+        gates.push({ mesh, tx: x });
+      } else if (t.ch === 'g') {
+        const plume = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.32, 1, 14), plumeMat);
+        plume.position.set(x + 0.5, h, y + 0.5);
+        scene.add(plume);
+        geysers.push({ plume, tx: x, ty: y });
+      }
+    }
+  }
+  // Wind streaks, shown while a gust blows (and a moment before, as a warning).
+  const wind = course.def.wind;
+  const streaks: THREE.Mesh[] = [];
+  if (wind) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, depthWrite: false });
+    for (let i = 0; i < 16; i++) {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.05), mat);
+      m.rotation.x = -Math.PI / 2;
+      m.rotation.z = Math.atan2(-wind.dy, wind.dx);
+      m.visible = false;
+      scene.add(m);
+      streaks.push(m);
     }
   }
 
@@ -297,6 +368,30 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
       } else {
         const k = 1 - Math.pow(reducedMotion ? 0.02 : 0.0008, Math.min(dt, 0.1));
         follow.lerp(target, k);
+      }
+      const clock = world.t;
+      for (const d of trapdoors) {
+        const solidNow = trapdoorSolid(clock, d.tx);
+        const warning = solidNow && !trapdoorSolid(clock + TIMED.trapdoor.warn, d.tx);
+        d.mesh.visible = solidNow && !(warning && Math.floor(clock / 6) % 2 === 0);
+      }
+      for (const d of gates) d.mesh.visible = !gateOpen(clock, d.tx);
+      for (const d of geysers) {
+        const phase = geyserPhase(clock, d.tx, d.ty);
+        d.plume.visible = phase > 0;
+        const tall = phase === 2 ? 1.6 : 0.5;
+        d.plume.scale.y = tall;
+        d.plume.position.y = course.tiles[d.ty * W + d.tx].level * LEVEL + tall / 2;
+      }
+      if (wind) {
+        const blowing = windBlowing(world, clock, true);
+        streaks.forEach((m, i) => {
+          m.visible = blowing;
+          if (!blowing) return;
+          const along = ((clock * 0.12 + i * 1.37) % 9) - 4.5;
+          const across = ((i * 2.31) % 7) - 3.5;
+          m.position.set(follow.x + wind.dx * along - wind.dy * across, follow.y + 0.5 + (i % 3) * 0.4, follow.z + wind.dy * along + wind.dx * across);
+        });
       }
       camera.position.set(follow.x + D, follow.y + D, follow.z + D);
       camera.lookAt(follow);

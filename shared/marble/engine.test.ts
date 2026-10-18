@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { compileCourse, type CourseDef } from './course';
-import { clockSteps, makeWorld, medalFor, newRun, replay, stateKey, stepRun, type RunOptions } from './engine';
+import { clockSteps, gateOpen, geyserPhase, makeWorld, medalFor, newRun, replay, stateKey, stepRun, trapdoorSolid, type RunOptions } from './engine';
 import { decodeInputs, encodeInputs, HOLD, REFUND, totalSteps } from './inputs';
 import { FALL_PENALTY_STEPS, CHECKPOINT_BONUS_STEPS } from './config';
 
@@ -279,5 +279,72 @@ describe('medals', () => {
     expect(medalFor(c, 3 * 60)).toBe('silver');
     expect(medalFor(c, 7 * 60)).toBe('bronze');
     expect(medalFor(c, 9 * 60)).toBeNull();
+  });
+});
+
+describe('timed hazards and conveyors', () => {
+  /** Pushes east a moment (to get onto the belts), then lets go. */
+  const coastOn = (c: ReturnType<typeof tiny>) => {
+    const w = makeWorld(c);
+    const s = newRun(w);
+    for (let i = 0; i < 20; i++) stepRun(w, s, E);
+    for (let i = 0; i < 400; i++) stepRun(w, s, 0);
+    return s;
+  };
+  it('a conveyor carries a marble along with no input', () => {
+    expect(coastOn(tiny(['========', '=seeeef=', '========'])).outcome).toBe('finished');
+  });
+  it('a conveyor pushing the other way carries it back', () => {
+    const s = coastOn(tiny(['========', '=swwwwf=', '========']));
+    expect(s.outcome).toBe('running');
+    expect(s.x).toBeLessThan(3);
+  });
+  it('a trapdoor drops away on its timer, and a marble standing on it falls', () => {
+    const c = tiny(['=====', '=s#tf', '=====']);
+    const w = makeWorld(c);
+    const s = newRun(w);
+    s.x = 3.5; // standing on the trapdoor
+    for (let i = 0; i < 300 && s.falls === 0; i++) stepRun(w, s, 0);
+    expect(s.falls).toBe(1);
+    expect(trapdoorSolid(0, 3)).toBe(true);
+  });
+  it('a gate is shut like a wall at some moments and open at others, the same every run', () => {
+    expect(gateOpen(0, 3)).toBe(false);
+    expect(gateOpen(60, 3)).toBe(true);
+    expect(gateOpen(60 + 210, 3)).toBe(true);
+    const c = tiny(['=======', '=s#q#f=', '=======']);
+    // Waiting at the gate and pushing east until it opens: it finishes, but later than a clear run would.
+    const { s } = play(c, E, 600);
+    expect(s.outcome).toBe('finished');
+    const again = play(c, E, 600).s;
+    expect(again.finishSteps).toBe(s.finishSteps);
+    const clear = tiny(['=======', '=s###f=', '=======']);
+    expect(s.finishSteps).toBeGreaterThanOrEqual(play(clear, E, 600).s.finishSteps);
+  });
+  it('a geyser throws the marble up when it goes off', () => {
+    const c = tiny(['=====', '=s#gf', '=====']);
+    const w = makeWorld(c);
+    const s = newRun(w);
+    s.x = 3.5;
+    let flew = false;
+    for (let i = 0; i < 400 && s.outcome === 'running'; i++) {
+      stepRun(w, s, 0);
+      if (!s.grounded) flew = true;
+    }
+    expect(flew).toBe(true);
+    expect(geyserPhase(0, 0, 0)).toBe(1);
+    expect(geyserPhase(20, 0, 0)).toBe(2);
+    expect(geyserPhase(100, 0, 0)).toBe(0);
+  });
+  it('gusts of wind push the marble during their window only', () => {
+    const wind = { dx: 1, dy: 0, period: 120, on: 30, warn: 20, force: 20 };
+    const c = tiny(['==========', '=s#######f', '=========='.replace(/=/g, '=')], undefined, { wind });
+    const w = makeWorld(c);
+    const s = newRun(w);
+    for (let i = 0; i < 29; i++) stepRun(w, s, 0);
+    expect(s.vx).toBeGreaterThan(0.2);
+    const during = s.vx;
+    for (let i = 0; i < 60; i++) stepRun(w, s, 0);
+    expect(s.vx).toBeLessThan(during);
   });
 });

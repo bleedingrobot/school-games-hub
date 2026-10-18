@@ -58,3 +58,19 @@ export const KILL_BELOW = 1.5;
 export const CHECKPOINT_BONUS_STEPS = 5 * STEPS_PER_SECOND;
 /** A run that takes longer than this (count-up) is stopped. */
 export const MAX_RUN_STEPS = 5 * 60 * STEPS_PER_SECOND;
+
+/** Conveyor belts push a marble along at this rate, tiles/s². */
+export const CONVEYOR_PUSH = 6;
+
+/**
+ * Timed hazards. Everything is worked out from the step number, so the same run always meets the same hazard
+ * at the same moment (no randomness, nothing to remember). Times are in steps (60 a second).
+ */
+export const TIMED = {
+  /** A geyser puffs every `period` steps; for the first `warn` it only steams (a warning), then for `active` it throws the marble up. */
+  geyser: { period: 180, warn: 15, active: 30, boost: 1.2 },
+  /** A trapdoor is solid for `solid` steps out of every `period`, then drops away. It flickers for the last `warn` steps before. */
+  trapdoor: { period: 240, solid: 170, warn: 25 },
+  /** A gate (a sweeping arm) is open for `open` steps out of every `period`, then shuts. */
+  gate: { period: 210, open: 120, warn: 25 },
+} as const;
