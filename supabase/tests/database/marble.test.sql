@@ -5,7 +5,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(64);
+select plan(69);
 
 -- School 1 is Douglas Park (made by the migration). School 2 is made here.
 select setval(pg_get_serial_sequence('public.schools', 'id'), 1);
@@ -147,6 +147,16 @@ select is(public.marble_claim_answer(pg_temp.id('0a'), 'question-seed-1', 3, 56,
 select is(public.marble_claim_answer(pg_temp.id('0a'), 'question-seed-1', 3, 12, false), false, '... and a second answer to the same slot is turned away');
 select is(public.marble_load_run(pg_temp.id('0a'), 'question-seed-1') #>> '{answered,3,right}', 'true', '... and the first one stands');
 select throws_ok($$ select public.marble_store_run(pg_temp.id('0a'), 'question-seed-2', true, '[]') $$, '22023', null, 'an empty question list is refused');
+
+-- ---- A new season clears the school's Marble Rush times (and only that school's) ----
+update public.profiles set role = 'teacher', school_admin = true where id = pg_temp.id('0c');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cai@douglaspark.school.nz');
+select lives_ok($$ select public.teacher_new_season('NEW SEASON') $$, 'a school admin can start a new season');
+select pg_temp.reset();
+select is((select count(*)::integer from public.marble_bests where player = pg_temp.id('0a')), 0, 'the season clears the school''s best times');
+select is((select count(*)::integer from public.marble_runs where player = pg_temp.id('0b')), 0, '... and its saved runs');
+select is((select count(*)::integer from public.marble_questions where player = pg_temp.id('0a')), 0, '... and its question lists');
+select is((select count(*)::integer from public.marble_bests where player = pg_temp.id('1a')), 1, 'another school keeps its times');
 
 select * from finish();
 rollback;

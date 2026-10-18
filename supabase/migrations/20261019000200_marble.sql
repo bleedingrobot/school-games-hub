@@ -333,6 +333,85 @@ begin
 end;
 $$;
 
+
+-- ---------------------------------------------------------------------------
+-- New season: Marble Rush's times go too
+-- ---------------------------------------------------------------------------
+
+-- The newest teacher_new_season (school_and_class_checks) with one more step: a school admin's NEW SEASON also clears
+-- that school's Marble Rush best times, saved runs and question lists, so each year starts with fresh boards.
+-- (If a later migration redefines teacher_new_season, it must keep the three marble lines.)
+create or replace function public.teacher_new_season(confirm text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  bot_count integer;
+  friend_count integer;
+  space_count integer;
+  card_count integer;
+  power_count integer;
+  gem_count integer;
+  mine uuid[];
+begin
+  perform public.require_school_admin();
+  if confirm is distinct from 'NEW SEASON' then
+    raise exception 'Type NEW SEASON to start a new season.' using errcode = '22023';
+  end if;
+  select coalesce(array_agg(p.id), '{}') into mine from public.profiles p where p.school_id = public.my_school();
+  delete from public.achievements
+  where player = any (mine)
+    and achievement not in (select t.id from public.achievement_types t where t.game in ('monsters', 'dragon-maths', 'clan-quest'));
+  delete from public.scored_games where player = any (mine);
+  delete from public.ratings where player = any (mine);
+  delete from public.bot_games where player = any (mine);
+  get diagnostics bot_count = row_count;
+  delete from public.mp_games
+  where status in ('finished', 'cancelled', 'expired')
+    and (array[created_by, first_player, second_player] && mine
+         or coalesce(created_by, first_player, second_player) is null);
+  get diagnostics friend_count = row_count;
+  -- A finished game a newer one points at (a rematch) goes too; the link just empties.
+  delete from public.space_games
+  where status in ('finished', 'cancelled', 'expired')
+    and (array[host, seat1, seat2, seat3, seat4] && mine
+         or coalesce(host, seat1, seat2, seat3, seat4) is null);
+  get diagnostics space_count = row_count;
+  delete from public.card_games
+  where status in ('finished', 'cancelled', 'expired')
+    and (array[host, seat1, seat2, seat3, seat4] && mine
+         or coalesce(host, seat1, seat2, seat3, seat4) is null);
+  get diagnostics card_count = row_count;
+  delete from public.power_games
+  where status in ('finished', 'cancelled', 'expired')
+    and (array[host, seat1, seat2] && mine
+         or coalesce(host, seat1, seat2) is null);
+  get diagnostics power_count = row_count;
+  delete from public.gem_keep_runs where player = any (mine);
+  get diagnostics gem_count = row_count;
+  delete from public.gem_keep_progress where player = any (mine);
+  delete from public.gem_keep_facts where pack = 'times-tables' and player = any (mine);
+  delete from public.fact_answer_batches where player = any (mine);
+  -- Maths Monsters: the points go, the adventure stays.
+  delete from public.monster_events where player = any (mine);
+  update public.monster_saves set wild_wins_pending = 0 where player = any (mine);
+  -- Dragon Maths: the points go, the heroes, stars, Hall of Heroes and achievements stay.
+  delete from public.lord_scores where player = any (mine);
+  update public.lord_heroes set wins_pending = 0 where player = any (mine);
+  -- Clan Quest: the points go; clans, fame and achievements stay (fame has its own season button).
+  delete from public.clan_scores where player = any (mine);
+  update public.clans set wins_pending = 0 where player = any (mine);
+  -- Marble Rush: best times, saved runs and any question lists left over go (a fresh board for the new year).
+  delete from public.marble_bests where player = any (mine);
+  delete from public.marble_runs where player = any (mine);
+  delete from public.marble_questions where player = any (mine);
+  return jsonb_build_object('botGames', bot_count, 'friendGames', friend_count + space_count + card_count + power_count,
+    'gemKeepLevels', gem_count);
+end;
+$$;
+
 -- ---------------------------------------------------------------------------
 -- Who can call what
 -- ---------------------------------------------------------------------------

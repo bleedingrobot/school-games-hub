@@ -24,6 +24,7 @@ class Track:
         self.start = (x, y)
         self.gates = []  # answer gates (maths): see gate()
         self.next_door = 0
+        self.trails = []  # number gems (maths): see gems()
 
     # painting helpers
     def _perp(self):
@@ -161,6 +162,21 @@ class Track:
         self.gates.append({'sign': sign, 'after': after, 'tunnels': out})
         return self
 
+    def gems(self, trail, offsets=(-1, 0, 1)):
+        """A group of number gems across the track at the cell just painted (call it right after a go()). Groups with the same
+        `trail` number share one question; the first group of a trail also puts the trail's sign five cells back."""
+        px, py = self._perp()
+        dx, dy = HEAD[self.h]
+        cx, cy = self.x - dx, self.y - dy  # the cell just painted
+        while len(self.trails) <= trail:
+            self.trails.append(None)
+        if self.trails[trail] is None:
+            self.trails[trail] = {'sign': (cx - dx * 5, cy - dy * 5), 'groups': []}
+        spots = [(cx + px * o + 0.5, cy + py * o + 0.5) for o in offsets]
+        # the route goes through the cell's middle; the bot reaches out to the right gem from there
+        self.trails[trail]['groups'].append({'after': len(self.route), 'spots': spots})
+        return self
+
     def mark(self, dx, dy, ch):
         """Put a special tile at an offset from where we are (for bumpers and so on)."""
         cell = (self.x + dx, self.y + dy)
@@ -248,7 +264,15 @@ def render(track):
                 'dead': [(round(a - x0, 1), round(b - y0, 1)) for a, b in t['dead']],
             } for t in g['tunnels']],
         })
-    return rows, hts, route, gates
+    trails = []
+    for tr in track.trails:
+        if tr is None:
+            continue
+        trails.append({
+            'sign': (tr['sign'][0] - x0, tr['sign'][1] - y0),
+            'groups': [{'after': g['after'], 'spots': [(round(a - x0, 1), round(b - y0, 1)) for a, b in g['spots']]} for g in tr['groups']],
+        })
+    return rows, hts, route, gates, trails
 
 
 # ----------------------------------------------------------------------------- the courses
@@ -373,8 +397,12 @@ def glacier_run():
     t.go(1, ch='m')
     t.gate(3)
     t.go(2, ch='m')   # gravel and mud at the bottom
+    t.gems(0)
     t.down(2)
-    t.go(5, ch='m', at={(1, 1): 'b'})
+    t.go(3, ch='m')
+    t.gems(0)
+    t.go(3, ch='m', at={(1, 1): 'b'})
+    t.gems(0)
     t.go(2, ch='f')
     return t
 
@@ -390,6 +418,7 @@ def windy_welly():
     t.go(1)
     t.go(1, ch='q')           # a crane arm sweeps across
     t.go(3)
+    t.gems(0)
     t.down(2)
     t.go(2, ch='c')
     t.turn('S')
@@ -398,6 +427,7 @@ def windy_welly():
     t.go(2)
     t.go(1, ch='q')
     t.go(3)
+    t.gems(0)
     t.down(3)
     t.go(2)
     t.turn('W')
@@ -407,6 +437,7 @@ def windy_welly():
     t.go(1)
     t.go(1, ch='q')
     t.go(3)
+    t.gems(1)
     t.down(2)
     t.go(2, ch='c')
     t.turn('S')
@@ -427,6 +458,7 @@ def alpine_crossing():
     t.go(5)
     t.mark(-5, 0, 's')
     t.go(6, rails=False)
+    t.gems(0)
     # the Devil's Staircase: steps down
     for _ in range(4):
         t.down(1, rails=False)
@@ -439,6 +471,7 @@ def alpine_crossing():
     t.go(2, rails=False)
     t.go(1, ch='t', rails=False)
     t.go(3, rails=False)
+    t.gems(0)
     t.turn('S', rails=False)
     t.go(1, rails=False)
     t.gate(3, rails=False)
@@ -450,11 +483,13 @@ def alpine_crossing():
     t.go(2, ch='c', rails=False)
     t.turn('E', rails=False)
     t.go(5, rails=False)
+    t.gems(1)
     for _ in range(3):
         t.down(1, rails=False)
         t.go(2, rails=False)
     t.go(1, ch='t', rails=False)
     t.go(3, rails=False)
+    t.gems(1)
     t.down(2, rails=False)
     t.go(1, width=5)
     t.gate(2)                     # the Emerald Lakes
@@ -486,7 +521,7 @@ def main():
     names = []
     for cid, name, builder, _m, _h, wind in COURSES:
         trk = builder()
-        rows, hts, route, gates = render(trk)
+        rows, hts, route, gates, trails = render(trk)
         med = medals_for(cid) or {'gold': 60, 'silver': 90, 'bronze': 140, 'hard': 120}
         const = ''.join(w.capitalize() for w in cid.split('-'))
         const = 'NZ_' + cid.upper().replace('-', '_')
@@ -514,6 +549,15 @@ def main():
                     rt = ', '.join(f"[{a}, {b}]" for a, b in t['route'])
                     dd = ', '.join(f"[{a}, {b}]" for a, b in t['dead'])
                     out.append(f"      {{ door: {t['door']}, cells: [{cells}], route: [{rt}], dead: [{dd}] }},")
+                out.append("    ] },")
+            out.append("  ],")
+        if trails:
+            out.append("  gems: [")
+            for tr in trails:
+                out.append(f"    {{ sign: [{tr['sign'][0]}, {tr['sign'][1]}], groups: [")
+                for g in tr['groups']:
+                    spots = ', '.join(f"[{a}, {b}]" for a, b in g['spots'])
+                    out.append(f"      {{ after: {g['after']}, spots: [{spots}] }},")
                 out.append("    ] },")
             out.append("  ],")
         if wind:

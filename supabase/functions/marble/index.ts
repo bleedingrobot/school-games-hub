@@ -5219,6 +5219,25 @@ function doorMask(doors) {
 function doorsForSeed(course, seed, questions) {
 	return openDoors(course, gateLayout(course, seed, questions));
 }
+/** The setup for a run. `questions` is the run's list (maths on) or null (maths off: arrows). */
+function runSetup(course, seed, questions, rescue) {
+	const layout = gateLayout(course, seed, questions);
+	const plan = slotPlan(course);
+	const pub = (slot) => publicQuestion(questions[slot], slot);
+	return {
+		maths: questions !== null,
+		rescue: questions !== null && rescue,
+		doors: openDoors(course, layout),
+		gates: layout.map((l) => ({
+			slot: l.slot,
+			labels: l.labels,
+			arrow: questions ? null : l.right,
+			question: questions ? pub(l.slot) : null
+		})),
+		pits: questions ? Array.from({ length: plan.pits }, (_, i) => pub(plan.pitStart + i)) : [],
+		rescues: questions && rescue ? Array.from({ length: plan.rescues }, (_, i) => pub(plan.rescueStart + i)) : []
+	};
+}
 //#endregion
 //#region shared/space/mathsQuestion.ts
 /**
@@ -5789,27 +5808,6 @@ const MAX_ANSWER_MS = 6e4;
 function mathsWanted(mode, chosen) {
 	return mode === "on" || mode === "choose" && chosen === true;
 }
-function startReply(course, seed, stamp, questions, rescue) {
-	const layout = gateLayout(course, seed, questions);
-	const plan = slotPlan(course);
-	const doors = doorsForSeed(course, seed, questions);
-	const pub = (slot) => publicQuestion(questions[slot], slot);
-	return {
-		seed,
-		stamp,
-		maths: questions !== null,
-		rescue: questions !== null && rescue,
-		doors,
-		gates: layout.map((l) => ({
-			slot: l.slot,
-			labels: l.labels,
-			arrow: questions ? null : l.right,
-			question: questions ? pub(l.slot) : null
-		})),
-		pits: questions ? Array.from({ length: plan.pits }, (_, i) => pub(plan.pitStart + i)) : [],
-		rescues: questions && rescue ? Array.from({ length: plan.rescues }, (_, i) => pub(plan.rescueStart + i)) : []
-	};
-}
 function makeHandler(services) {
 	const limiter = new RateLimiter(() => services.now());
 	return async function handleMarble(request) {
@@ -5859,7 +5857,11 @@ function makeHandler(services) {
 					}
 				}
 			}
-			return reply(200, startReply(course, seed, stamp, questions, rescue));
+			return reply(200, {
+				seed,
+				stamp,
+				...runSetup(course, seed, questions, rescue)
+			});
 		}
 		if (body.action === "answer") {
 			const course = typeof body.course === "string" ? courseById(body.course) : void 0;
