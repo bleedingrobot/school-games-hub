@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { bestCharm, buildPuzzle, choiceOpen, type QuestDef, type QuestPrize } from '../../../shared/clans/quests';
 import { Moment } from './Moment';
 import { doQuest, questPuzzle, questToday, questUsed } from './places';
-import type { Session } from './session';
+import type { Session, Change } from './session';
 
 type Phase = { t: 'story'; shown: number } | { t: 'puzzle'; choice: number } | { t: 'result'; text: string; prize: QuestPrize; right: boolean | null };
 
@@ -20,15 +20,15 @@ function prizeLine(p: QuestPrize): string {
 }
 
 /** One quest a day: the story one paragraph at a time, big choice buttons, sometimes a puzzle, and a plain result. */
-export function Quest({ session, onChange, onBack }: { session: Session; onChange: (s: Session) => void; onBack: () => void }) {
+export function Quest({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
   const quest = questToday(session);
   const [phase, setPhase] = useState<Phase>({ t: 'story', shown: 1 });
   const used = questUsed(session) && phase.t !== 'result';
 
-  const finish = (q: QuestDef, choice: number, right: boolean | null) => {
+  const finish = (q: QuestDef, choice: number, right: boolean | null, answer: number | null = null) => {
     const res = doQuest(session, q, choice, right);
     if ('ok' in res) return;
-    onChange(res.session);
+    onChange(res.session, { type: 'quest', choice, answer });
     setPhase({ t: 'result', text: res.done.text, prize: res.done.prize, right });
   };
   const pick = (q: QuestDef, choice: number) => {
@@ -70,7 +70,7 @@ export function Quest({ session, onChange, onBack }: { session: Session; onChang
     );
   } else if (phase.t === 'puzzle') {
     const spec = questPuzzle(session, quest, phase.choice)!;
-    body = <Moment key={`${quest.id}-${phase.choice}`} question={buildPuzzle(spec)} title={quest.title} note={quest.choices[phase.choice].label} doneLabel="See what happens" onDone={(right) => finish(quest, phase.choice, right)} />;
+    body = <Moment key={`${quest.id}-${phase.choice}`} question={buildPuzzle(spec)} title={quest.title} note={quest.choices[phase.choice].label} doneLabel="See what happens" onDone={(right, answer) => finish(quest, phase.choice, right, answer)} />;
   } else {
     const shown = phase.shown;
     const { value: charm, member } = bestCharm(session.clan);

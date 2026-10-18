@@ -8,11 +8,11 @@ import type { Member } from '../../../shared/clans/types';
 const HINT_TEXT = { 'too easy': 'Too easy', 'just right': 'Just right', tough: 'Tough', 'too hard': 'Too hard' } as const;
 
 /** Choose how deep to go. */
-export function Mines({ session, onDepth, onGo, onBack }: { session: Session; onDepth: (d: number) => void; onGo: (boss: boolean) => void; onBack: () => void }) {
+export function Mines({ session, onDepth, onGo, onBack, locked }: { session: Session; onDepth: (d: number) => void; onGo: (boss: boolean) => void; onBack: () => void; locked?: string }) {
   const hint = hintFor(session);
   const boss = bossAt(session.depth);
   const awake = session.clan.members.some((m) => !m.knockedOut);
-  const canGo = session.fightsLeft > 0 && awake;
+  const canGo = session.fightsLeft > 0 && awake && !locked;
   const set = (d: number) => onDepth(Math.max(0, Math.min(CONFIG.maxLevel, d)));
   return (
     <section className="cq-mines" aria-label="The Mines">
@@ -33,6 +33,7 @@ export function Mines({ session, onDepth, onGo, onBack }: { session: Session; on
         {boss && <button type="button" className="cq-btn" disabled={!canGo} onClick={() => onGo(true)}>Take on the boss: {boss.name}</button>}
         <button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
       </div>
+      {locked && <p className="cq-note">{locked}</p>}
       {session.fightsLeft === 0 && <p className="cq-note">That's all the fights for today. Come back tomorrow!</p>}
       {session.fightsLeft > 0 && !awake && <p className="cq-note">Everyone is resting. They wake up tomorrow.</p>}
     </section>

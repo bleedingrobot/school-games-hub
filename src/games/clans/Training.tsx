@@ -3,13 +3,13 @@ import { CONFIG } from '../../../shared/clans/config';
 import { trainingBuy } from '../../../shared/clans/moments';
 import { Moment } from './Moment';
 import { train, trainOptions, type TrainKey, type TrainOption } from './places';
-import type { Session } from './session';
+import type { Session, Change } from './session';
 import { PlaceSprite, Portrait } from './Sprite';
 
 type Phase = { t: 'idle' } | { t: 'many'; opt: TrainOption } | { t: 'left'; opt: TrainOption } | { t: 'choose'; opt: TrainOption } | { t: 'done'; text: string };
 
 /** The Training Hall: spend a member's points. Two maths moments (how many can you buy, what's left), then you choose. */
-export function Training({ session, onChange, onBack }: { session: Session; onChange: (s: Session) => void; onBack: () => void }) {
+export function Training({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
   const { clan, settings } = session;
   const [mi, setMi] = useState(0);
   const [phase, setPhase] = useState<Phase>({ t: 'idle' });
@@ -22,7 +22,7 @@ export function Training({ session, onChange, onBack }: { session: Session; onCh
   const buyNow = (key: TrainKey, count: number, label: string) => {
     const next = train(session, mi, key, count);
     if (!next) return;
-    onChange(next);
+    onChange(next, { type: 'train', member: mi, key, count });
     setPhase({ t: 'done', text: `${member.name} trained ${label} ${count > 1 ? `${count} times` : 'once'}. ${next.clan.members[mi].points} points left.` });
   };
 

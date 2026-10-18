@@ -1,6 +1,9 @@
 /** Clan Quest, test version: clan creator, the Mines and fights. Nothing is saved; a refresh starts again. */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { Action } from '../../../shared/clans/actions';
 import type { FightState } from '../../../shared/clans/fight';
+import type { Clan } from '../../../shared/clans/types';
+import type { Draft } from '../../../shared/clans/create';
 import { TOPIC_LABELS, TOPICS, YEAR_BANDS, type PracticalTopic, type YearBand } from '../../../shared/maths/practical';
 import { CONFIG } from '../../../shared/clans/config';
 import { Creator } from './Creator';
@@ -18,6 +21,7 @@ import { Quest } from './Quest';
 import { QUESTS } from '../../../shared/clans/quests';
 import { Training } from './Training';
 import { averageLevel, finishFight, newSession, skipDay, type FightSummary, type Session } from './session';
+import { sessionFrom, type ClanServer, type ServerReply } from './remote';
 import './clans.css';
 
 type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid' | 'quest';
@@ -75,12 +79,72 @@ function SettingsStrip({ session, onChange, open }: { session: Session; onChange
   );
 }
 
-/** `initial` starts with a ready-made clan (for tests); normally you make one in the creator. */
-export function ClanQuest({ seed = Date.now() | 0, initial = null }: { seed?: number; initial?: Session | null }) {
+const NO_FIGHTS_YET = 'Mine fights are not saved on the server yet, so they wait for the next stage.';
+
+/**
+ * `initial` starts with a ready-made clan (for tests); normally you make one in the creator.
+ * With a `server`, the clan lives on the server: it is loaded when this opens, every change is sent as an action, and
+ * what the server answers replaces the browser's copy. With none (the test page), everything stays in the browser.
+ */
+export function ClanQuest({ seed = Date.now() | 0, initial = null, server }: { seed?: number; initial?: Session | null; server?: ClanServer }) {
   const [session, setSession] = useState<Session | null>(initial);
   const [screen, setScreen] = useState<Screen>('home');
   const [boss, setBoss] = useState(false);
   const [summary, setSummary] = useState<FightSummary | null>(null);
+  const [loading, setLoading] = useState<'loading' | 'failed' | null>(server ? 'loading' : null);
+  const [serverSeed, setServerSeed] = useState(seed);
+  const [notice, setNotice] = useState('');
+  /** Actions go to the server one at a time, in the order they were made. */
+  const line = useRef<Promise<void>>(Promise.resolve());
+
+  /** How many actions have been sent and not answered yet. */
+  const waiting = useRef(0);
+
+  /** Take the server's word. While more actions are still on their way, only the last answer is shown, so the screen does not flicker back. */
+  const take = (reply: ServerReply) => {
+    setServerSeed(reply.seed);
+    if (waiting.current === 0) setSession((previous) => (reply.state ? sessionFrom(reply.state, previous) : previous));
+    if (!reply.ok) setNotice(reply.say);
+    else if (waiting.current === 0) setNotice('');
+  };
+  const open = () => {
+    if (!server) return;
+    setLoading('loading');
+    server.send({ type: 'load' }).then((reply) => { take(reply); setLoading(null); }, () => setLoading('failed'));
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(open, [server]);
+
+  /** A screen changed something. Show it at once, and (with a server) ask the server to do the same: its answer wins. */
+  const change = (next: Session, action?: Action) => {
+    if (!server || !action) return setSession(next);
+    const before = session;
+    setSession(next);
+    setNotice('');
+    waiting.current++;
+    line.current = line.current.then(async () => {
+      try {
+        const reply = await server.send(action);
+        waiting.current--;
+        take(reply);
+      } catch {
+        waiting.current--;
+        // Not saved. Ask for the clan as the server has it; if even that fails, put things back as they were.
+        try {
+          const reply = await server.send({ type: 'load' });
+          take(reply);
+        } catch {
+          setSession(before);
+        }
+        setNotice("We couldn't reach the server, so that didn't happen. Please try again.");
+      }
+    });
+  };
+  const create = (clan: Clan, choices: { name: string; drafts: Draft[] }) => {
+    if (!server) return setSession(newSession(clan, seed));
+    server.send({ type: 'create', ...choices }).then(take, () => setNotice("We couldn't reach the server, so your clan wasn't made. Please try again."));
+    setScreen('home');
+  };
 
   const finish = (fight: FightState) => {
     if (!session) return;
@@ -96,11 +160,19 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null }: { seed?: nu
         <h1>Clan Quest</h1>
         <span className="cq-soft">{session ? `${session.clan.name} · ${session.clan.gold} gold · ${session.clan.followers} followers` : 'Test version: nothing is saved'}</span>
       </header>
-      {!session ? (
-        <Creator seed={seed} onDone={(clan) => { setSession(newSession(clan, seed)); setScreen('home'); }} />
+      {notice && <p className="cq-note" role="alert">{notice}</p>}
+      {loading === 'loading' ? (
+        <p role="status">Opening your clan…</p>
+      ) : loading === 'failed' ? (
+        <div className="cq-panel" role="alert">
+          <p>We couldn't reach your clan just now.</p>
+          <button type="button" className="cq-btn cq-btn--hot" onClick={open}>Try again</button>
+        </div>
+      ) : !session ? (
+        <Creator seed={serverSeed} onDone={(clan, choices) => { create(clan, choices); setScreen('home'); }} />
       ) : (
         <>
-          <SettingsStrip session={session} onChange={setSession} open={screen === 'home'} />
+          {!server && <SettingsStrip session={session} onChange={setSession} open={screen === 'home'} />}
           {screen === 'home' && (
             <section aria-label="Your clan">
               <h2>{session.clan.name}</h2>
@@ -120,16 +192,16 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null }: { seed?: nu
             </section>
           )}
           {screen === 'mines' && (
-            <Mines session={session} onDepth={(depth) => setSession({ ...session, depth })} onBack={() => setScreen('home')} onGo={(b) => { setBoss(b); setScreen('fight'); }} />
+            <Mines session={session} onDepth={(depth) => setSession({ ...session, depth })} onBack={() => setScreen('home')} onGo={(b) => { setBoss(b); setScreen('fight'); }} locked={server ? NO_FIGHTS_YET : undefined} />
           )}
-          {screen === 'market' && <Market session={session} onChange={setSession} onBack={() => setScreen('home')} />}
-          {screen === 'training' && <Training session={session} onChange={setSession} onBack={() => setScreen('home')} />}
-          {screen === 'church' && <Church session={session} onChange={setSession} onBack={() => setScreen('home')} />}
-          {screen === 'empire' && <EmpireHome session={session} onChange={setSession} onBack={() => setScreen('home')} onLand={() => setScreen('land')} onBarracks={() => setScreen('barracks')} onRaid={() => setScreen('raid')} />}
-          {screen === 'barracks' && <Barracks session={session} onChange={setSession} onBack={() => setScreen('empire')} />}
-          {screen === 'raid' && <Raid session={session} onChange={setSession} onBack={() => setScreen('empire')} />}
-          {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} session={session} onChange={setSession} onBack={() => setScreen('home')} />}
-          {screen === 'land' && <Land session={session} onChange={setSession} onBack={() => setScreen('empire')} />}
+          {screen === 'market' && <Market session={session} onChange={change} onBack={() => setScreen('home')} />}
+          {screen === 'training' && <Training session={session} onChange={change} onBack={() => setScreen('home')} />}
+          {screen === 'church' && <Church session={session} onChange={change} onBack={() => setScreen('home')} />}
+          {screen === 'empire' && <EmpireHome session={session} onChange={change} onBack={() => setScreen('home')} onLand={() => setScreen('land')} onBarracks={() => setScreen('barracks')} onRaid={() => setScreen('raid')} />}
+          {screen === 'barracks' && <Barracks session={session} onChange={change} onBack={() => setScreen('empire')} />}
+          {screen === 'raid' && <Raid session={session} onChange={change} onBack={() => setScreen('empire')} />}
+          {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} session={session} onChange={change} onBack={() => setScreen('home')} />}
+          {screen === 'land' && <Land session={session} onChange={change} onBack={() => setScreen('empire')} />}
           {screen === 'fight' && <Fight key={session.fightNo} session={session} boss={boss} onFinish={finish} />}
           {screen === 'results' && summary && <Results summary={summary} members={session.clan.members} onDone={() => setScreen('home')} />}
         </>

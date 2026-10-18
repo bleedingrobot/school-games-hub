@@ -2,6 +2,7 @@
  * The clan's state in the browser for this test stage (nothing is saved; a refresh starts again).
  * Plain functions on plain data, so the screens only draw and the rules stay in shared/clans.
  */
+import type { Action } from '../../../shared/clans/actions';
 import { CONFIG } from '../../../shared/clans/config';
 import { empireNewDay } from '../../../shared/clans/empire';
 import { MAX_ROLLS, draftMember, makeClan, rollAgain, startingDrafts, type Draft } from '../../../shared/clans/create';
@@ -14,6 +15,9 @@ import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../../../sha
 export { MAX_ROLLS, draftMember, makeClan, rollAgain, startingDrafts, type Draft };
 export const RACE_NAMES = RACES.map((r) => r.name);
 export const CLASS_NAMES = CLASSES.map((c) => c.name);
+
+/** How a screen hands back a changed session. `action` is what the server needs to do the same thing; screens that have none (test buttons) leave it out. */
+export type Change = (s: Session, action?: Action) => void;
 
 /** Everything that changes while you play. */
 export interface Session {

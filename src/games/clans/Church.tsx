@@ -3,13 +3,13 @@ import { CONFIG } from '../../../shared/clans/config';
 import { churchBill } from '../../../shared/clans/moments';
 import { Moment } from './Moment';
 import { knockedOut, wakeAll, wakeAllCost, wakeAllPayers, wakeCost, wakeMember } from './places';
-import type { Session } from './session';
+import type { Session, Change } from './session';
 import { PlaceSprite, Portrait } from './Sprite';
 
 type Phase = { t: 'idle' } | { t: 'one'; index: number } | { t: 'all' } | { t: 'done'; text: string };
 
 /** The Church: wake knocked-out members. The first wake-up each day is free; the rest cost (level + 1) x 10. */
-export function Church({ session, onChange, onBack }: { session: Session; onChange: (s: Session) => void; onBack: () => void }) {
+export function Church({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
   const { clan, settings } = session;
   const [phase, setPhase] = useState<Phase>({ t: 'idle' });
   const out = knockedOut(clan);
@@ -21,7 +21,7 @@ export function Church({ session, onChange, onBack }: { session: Session; onChan
     const cost = wakeCost(clan, m);
     const next = wakeMember(session, index);
     if (!next) return;
-    onChange(next);
+    onChange(next, { type: 'wake', member: index });
     setPhase({ t: 'done', text: `${m.name} is awake again. ${cost === 0 ? 'That one was free.' : `That cost ${cost} gold.`}` });
   };
   const startOne = (index: number) => {
@@ -33,7 +33,7 @@ export function Church({ session, onChange, onBack }: { session: Session; onChan
     const cost = wakeAllCost(clan);
     const next = wakeAll(session);
     if (!next) return;
-    onChange(next);
+    onChange(next, { type: 'wakeAll' });
     setPhase({ t: 'done', text: `Everyone is awake again. ${cost === 0 ? 'That was free.' : `That cost ${cost} gold.`}` });
   };
   const startAll = () => {

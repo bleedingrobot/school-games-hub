@@ -5,7 +5,7 @@ import { CLAN_ADJECTIVES, CLAN_NOUNS, MEMBER_NAMES, clanNameFrom } from './words
 import type { Clan } from '../../../shared/clans/types';
 
 /** Pick race and class for four members, see the stats, roll again (up to 3 times), choose names from a list. */
-export function Creator({ seed, onDone }: { seed: number; onDone: (clan: Clan) => void }) {
+export function Creator({ seed, onDone }: { seed: number; onDone: (clan: Clan, choices: { name: string; drafts: Draft[] }) => void }) {
   const [drafts, setDrafts] = useState<Draft[]>(() => startingDrafts(seed));
   const [adj, setAdj] = useState(Math.abs(seed) % CLAN_ADJECTIVES.length);
   const [noun, setNoun] = useState(Math.abs(seed >> 3) % CLAN_NOUNS.length);
@@ -55,7 +55,7 @@ export function Creator({ seed, onDone }: { seed: number; onDone: (clan: Clan) =
             {CLAN_NOUNS.map((n, i) => <option key={n} value={i}>{n}</option>)}
           </select>
         </label>
-        <button type="button" className="cq-btn cq-btn--hot" onClick={() => onDone(makeClan(clanNameFrom(adj, noun), drafts))}>
+        <button type="button" className="cq-btn cq-btn--hot" onClick={() => { const name = clanNameFrom(adj, noun); onDone(makeClan(name, drafts), { name, drafts }); }}>
           Start the adventure
         </button>
       </div>

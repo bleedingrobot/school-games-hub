@@ -3,10 +3,10 @@ import { CONFIG } from '../../../shared/clans/config';
 import { BUILDING_NAMES, deposit, withdraw, TROOP_NAMES, capacity, countBuildings, draftMax, empireOf, energyLeft as energyPercentLeft, might } from '../../../shared/clans/empire';
 import { BUILDING_KINDS, TROOP_KINDS } from '../../../shared/clans/types';
 import { putInVault, takeFromVault, whyNot } from './places';
-import type { Session } from './session';
+import type { Session, Change } from './session';
 
 /** The Empire home: the vault, the land, the buildings, the troops, today's energy and the draft. */
-export function EmpireHome({ session, onChange, onBack, onLand, onBarracks, onRaid }: { session: Session; onChange: (s: Session) => void; onBack: () => void; onLand: () => void; onBarracks: () => void; onRaid: () => void }) {
+export function EmpireHome({ session, onChange, onBack, onLand, onBarracks, onRaid }: { session: Session; onChange: Change; onBack: () => void; onLand: () => void; onBarracks: () => void; onRaid: () => void }) {
   const { clan } = session;
   const e = empireOf(clan);
   const [amount, setAmount] = useState(100);
@@ -14,7 +14,7 @@ export function EmpireHome({ session, onChange, onBack, onLand, onBarracks, onRa
   const move = (dir: 'in' | 'out') => {
     const next = dir === 'in' ? putInVault(session, amount) : takeFromVault(session, amount);
     if (next) {
-      onChange(next);
+      onChange(next, dir === 'in' ? { type: 'deposit', gold: amount } : { type: 'withdraw', gold: amount });
       setSaid(dir === 'in' ? `${amount} gold went into the vault.` : `${amount} gold came out of the vault.`);
     } else {
       const probe = structuredClone(clan);

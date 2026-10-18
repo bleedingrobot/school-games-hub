@@ -5,7 +5,7 @@ import { barracksNeeded, draftJoin, troopBill } from '../../../shared/clans/mome
 import { TROOP_KINDS, type Troops } from '../../../shared/clans/types';
 import { Moment } from './Moment';
 import { buyTroopMix, canBuyMix, draftFollowers, setDraftTo } from './places';
-import type { Session } from './session';
+import type { Session, Change } from './session';
 
 type Phase =
   | { t: 'idle' }
@@ -18,7 +18,7 @@ const none = (): Troops => ({ footman: 0, axeman: 0, knight: 0 });
 const nameOf = (kind: keyof Troops, n: number) => (n === 1 ? TROOP_NAMES[kind].one : TROOP_NAMES[kind].many);
 
 /** Barracks and troops: room, buying, and the draft. */
-export function Barracks({ session, onChange, onBack }: { session: Session; onChange: (s: Session) => void; onBack: () => void }) {
+export function Barracks({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
   const { clan, settings } = session;
   const e = empireOf(clan);
   const [phase, setPhase] = useState<Phase>({ t: 'idle' });
@@ -34,7 +34,7 @@ export function Barracks({ session, onChange, onBack }: { session: Session; onCh
   const buy = (m: Troops) => {
     const next = buyTroopMix(session, m);
     if ('fail' in next) return setPhase({ t: 'done', text: next.fail.say });
-    onChange(next);
+    onChange(next, { type: 'buyTroops', mix: m });
     setMix(none());
     setPhase({ t: 'done', text: `Your troops arrived. That cost ${troopBillOf(m)} gold.` });
   };
@@ -44,7 +44,7 @@ export function Barracks({ session, onChange, onBack }: { session: Session; onCh
   };
   const runDraft = () => {
     const r = draftFollowers(session);
-    onChange(r.session);
+    onChange(r.session, { type: 'draft' });
     const used = `All ${r.followers} ${r.followers === 1 ? 'follower is' : 'followers are'} used up: `;
     const text = r.joined === r.wanted
       ? `${used}${r.joined} joined as ${nameOf('footman', r.joined)}, and the rest went home.`
@@ -106,7 +106,7 @@ export function Barracks({ session, onChange, onBack }: { session: Session; onCh
           <p>You have <strong>{clan.followers}</strong> followers. The draft asks a share of them to join as footmen (up to {draftMax(e)}%).</p>
           <div className="cq-sides" role="group" aria-label="Draft share">
             {draftPercents.map((p) => (
-              <button key={p} type="button" className="cq-btn" aria-pressed={e.draftPercent === p} aria-label={`Draft ${p} percent`} onClick={() => { const next = setDraftTo(session, p); if (next) onChange(next); }}>{p}%</button>
+              <button key={p} type="button" className="cq-btn" aria-pressed={e.draftPercent === p} aria-label={`Draft ${p} percent`} onClick={() => { const next = setDraftTo(session, p); if (next) onChange(next, { type: 'setDraft', percent: p }); }}>{p}%</button>
             ))}
           </div>
           <p className="cq-soft">At {e.draftPercent}%, {draftWanted(clan.followers, e.draftPercent)} of {clan.followers} would join. Followers are used up when you draft: the ones who don't join go home.</p>

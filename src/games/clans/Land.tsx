@@ -5,7 +5,7 @@ import { energyLeft, landPlot } from '../../../shared/clans/moments';
 import { BUILDING_KINDS, type BuildingKind } from '../../../shared/clans/types';
 import { Moment } from './Moment';
 import { buildOn, canBuildOn, canClaim, canDevelop, claimMoreLand, developLand, whyNot } from './places';
-import type { Session } from './session';
+import type { Session, Change } from './session';
 
 const E = CONFIG.empire;
 const SIDES = Array.from({ length: E.plotSide.max - E.plotSide.min + 1 }, (_, i) => E.plotSide.min + i);
@@ -17,7 +17,7 @@ type Phase =
   | { t: 'done'; text: string };
 
 /** Land and buildings: develop a plot (area and fence maths, then the price), claim more land, build with the energy maths. */
-export function Land({ session, onChange, onBack }: { session: Session; onChange: (s: Session) => void; onBack: () => void }) {
+export function Land({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
   const { clan, settings } = session;
   const e = empireOf(clan);
   const [w, setW] = useState(4);
@@ -33,20 +33,20 @@ export function Land({ session, onChange, onBack }: { session: Session; onChange
     const cost = plotCost(e, pw, pl);
     const next = developLand(session, pw, pl);
     if (!next) return;
-    onChange(next);
+    onChange(next, { type: 'develop', width: pw, length: pl });
     setPhase({ t: 'done', text: `A ${pw} by ${pl} plot is ready. That cost ${cost} gold.` });
   };
   const claim = () => {
     const cost = claimCost(e);
     const next = claimMoreLand(session);
     if (!next) return;
-    onChange(next);
+    onChange(next, { type: 'claim' });
     setPhase({ t: 'done', text: `You claimed one more plot of wild land for ${cost} gold.` });
   };
   const construct = (index: number, kind: BuildingKind) => {
     const next = buildOn(session, index, kind);
     if (!next) return;
-    onChange(next);
+    onChange(next, { type: 'build', plot: index, kind });
     setPhase({ t: 'done', text: `The ${BUILDING_NAMES[kind]} is built. ${energyPercentLeft(empireOf(next.clan))}% of today's work is left.` });
   };
   const startBuild = (index: number, kind: BuildingKind) => {

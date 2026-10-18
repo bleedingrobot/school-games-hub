@@ -6,7 +6,7 @@ import { TROOP_KINDS, type Troops } from '../../../shared/clans/types';
 import { Bar } from './Bars';
 import { Moment } from './Moment';
 import { canRaid, sendArmy, type WarDone } from './places';
-import type { Session } from './session';
+import type { Session, Change } from './session';
 
 const B = CONFIG.empire.battle;
 const ROUNDS = Array.from({ length: B.maxRounds }, (_, i) => i + 1);
@@ -27,7 +27,7 @@ const ENDING = {
 } as const;
 
 /** Raid a kingdom, or have a Friendly War with it: pick the kingdom, make the battle plan, see how it went. */
-export function Raid({ session, onChange, onBack }: { session: Session; onChange: (s: Session) => void; onBack: () => void }) {
+export function Raid({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
   const { clan, settings } = session;
   const e = empireOf(clan);
   const [phase, setPhase] = useState<Phase>({ t: 'plan' });
@@ -40,7 +40,7 @@ export function Raid({ session, onChange, onBack }: { session: Session; onChange
   const go = (k: Kingdom, friendly: boolean) => {
     const war = sendArmy(session, k.id, plan, friendly);
     if ('ok' in war) return;
-    onChange(war.session);
+    onChange(war.session, { type: friendly ? 'war' : 'raid', kingdom: k.id, plan });
     setPhase({ t: 'result', kingdom: k, war });
   };
   const startRaid = () => {

@@ -399,3 +399,69 @@ James had nothing to change in the Barracks, Raid and Friendly War screens. Bran
 - Picking a quest by number shows it whatever the year, so James can see all ten; the daily pick follows the year.
 
 **Left for later:** C.5 (saving, the server and the daily reset), classmate-raid screens, more quests (the engine takes more as plain data).
+
+## Stage C.5, part A: design (18 Oct 2026)
+
+C.5 is split in two, as James agreed (he had no changes to the Quests). **Part A (this one):** keeping a clan between visits and doing every action except fights on the server. **Part B (next, after James has read this):** starting a mine fight, the server replaying it from its seed before it pays out, a half-finished fight kept on the server, the midnight reset job (turns, computer clans' day, news) and what is needed for a first class trial. Nothing in part A is applied, deployed or merged.
+
+**How it works, in one paragraph.** The `clans` server function takes one action at a time ("buy this", "wake her", "do the quest with this answer"), loads the saved clan, runs the *same* `shared/clans` rules the screens use (`shared/clans/actions.ts` and `play.ts`), and saves the result. The browser is never believed about gold, levels, days, seeds or prizes: it only says what the child pressed. The database keeps what it is told and refuses numbers that make no sense.
+
+**Tables** (written like Gem Keep's: row security on, no rights for students, only the server function can reach them):
+
+| Table | One row per | Holds |
+|---|---|---|
+| `clan_seeds` | student | The number the clan is built from, **chosen by the server**. |
+| `clans` | student | Name, seed, version, day number, the first day, clan purse (gold), followers, village levels, Church wake-ups today, the day of the last quest, fights left, fight and raid counters, the "looked closely" list. |
+| `clan_members` | student and slot (0-5) | The whole member (stats, gear, spells, HP, points, knocked out) as the rules keep it. |
+| `clan_empires` | student | Vault, land, plots and buildings, troops, the draft, worker energy and today's raids. |
+| `clan_requests` | request | The answer to each request, for two days, so one sent twice only counts once. |
+
+Left for C.6 (nothing is needed from them yet): votes, news, the village chest, scores, points and achievements. Classmate raids also wait for C.6, because they need the news lines, the teacher switch and a list of who can be raided; the rule itself (`raidRefusal`) already exists and is tested.
+
+**Which columns the server owns.** All of them. Students have no right to read or write any table or call any function (a database test tries each one). The server function checks the sign-in, and the database functions check again that the player is a school account.
+
+**Keeping the browser honest.**
+- **Seeds are the server's.** The first time a student opens Clan Quest the database picks their clan seed. The creator's rolls, the order of quests, every puzzle's numbers and every raid come from it. A browser cannot shop around for good rolls: it can only choose a race, class and name from the lists and press "Roll again" up to three times per member, and the server rebuilds every member from those choices (any stats, seeds or gold sent with them are ignored).
+- **Maths never blocks, so the shop, Church and Training Hall carry no answers.** They take the true price whatever the child answered. A quest puzzle changes the prize, so the quest request carries the typed answer and the server rebuilds the puzzle from the seed, the day, the quest and the choice to mark it.
+- **Everything the rules refuse is refused:** not enough gold or points, no room in the barracks, a building that does not fit, an unknown item or kingdom, one quest a day, one raid a day, the charm rule, the draft steps, and so on. A refused request changes nothing and the browser is shown the clan as it should be, with the engine's kind sentence.
+- **Each raid and Friendly War gets its seed from the server** (the clan's seed and a counter the server keeps), so the result is the one the engine gives for that seed and nobody can re-roll a raid.
+
+**Doing the same request twice must not pay twice.** Every request carries an id made by the browser. The id and the answer are kept for two days, and a repeat gets the first answer back (even when the rules would now say no). If two requests race, the second save is refused by a version number and the server loads again and redoes it. The browser retries a dropped connection with the *same* id, which is what makes retrying safe.
+
+**Days.** A clan's day is counted in New Zealand calendar days from its first day. The first time the server sees a clan on a new day it gives it the night's rest (everyone healed, free Church wake-up back, empire energy and raids reset, fights back) and moves it to today's number, so quests and raids come back each day. That is done when the clan is next touched, so a clan away for a week gets one night's rest and today's number. The scheduled midnight job (part B) will still be needed for the things nobody touches: computer clans' day and the news.
+
+**If a teacher resets a clan.** `teacher_reset_clan(student)` deletes the clan, members, empire, remembered requests and the seed, so the student makes a new clan with new rolls. A new season keeps clans (James, 18 Oct 2026, question 10); fame resets in C.6 once fame exists.
+
+**Cost.** One request per action, plus one to open the clan. A day is about 1 to open, 5-8 in the shop, 3-5 training, 1-2 at the Church, 5-8 for the empire, 1-2 raids and 1 quest: roughly 25-30 a day, as planned. Part B adds about 10 for fights. The function allows at most 40 a minute per student.
+
+**What the browser does.** The screens still work out each change themselves (so the test page works with no server at all). With a server, `ClanQuest` loads the clan when it opens, sends each change as an action and replaces its copy with whatever the server answers. If the server says no, the screen shows its sentence; if it cannot be reached the change is undone and the child is told. While the server only has part A, the Mines button is switched off with a kind note, and the test strip is hidden.
+
+## Stage C.5, part A results (18 Oct 2026): saving and the server
+
+Built, tested and **not applied, not deployed, not merged**. Branch `clans`.
+
+**Built**
+- `shared/clans/actions.ts`: `parseAction` (reads an action sent by a browser; anything odd is refused), `applyAction` (does it on a copy and either gives the new clan and a result or a refusal), `catchUp` (the night's rest for a new day), plus `clock.ts` (New Zealand day numbers).
+- `shared/clans/play.ts`: the shop, Training Hall, Church, troop and raid rules that used to sit in the browser's `places.ts`. `places.ts` now calls them, so the browser and the server run one copy. `create.ts` (the creator's rules, rebuilt from choices) and `words.ts` (the name lists) moved into `shared/clans` for the same reason.
+- `supabase/migrations/20261018001800_clans.sql`: the tables above, `clan_offer_seed`, `load_clan`, `save_clan`, `teacher_reset_clan`.
+- `supabase/functions/clans/`: the server function (`handler.ts`, `entry.ts`, built `index.ts`), 40 requests a minute per student, up to four tries when requests race.
+- Browser: `remote.ts` (the thin layer: `ClanServer`, `makeClanServer` with retry under the same id, `sessionFrom`), `src/data/clans.ts` (binds it to the live function; nothing uses it yet), every screen passes the action with its change, `Moment` passes the typed answer, `ClanQuest` takes an optional `server`.
+
+**Actions the server does** (all but fights): create, load, buy, look closely, train, wake one, wake everyone, put in and take out of the vault, develop, claim land, build, buy troops, set and use the draft, raid a kingdom, Friendly War, quest.
+
+**Checked**
+- 59 rule tests (`actions.test.ts`): every action refused when it should be, paid exactly once, the same raid seed gives the same result as the engine, a quest marked by rebuilding the puzzle, the night's rest, a creator that ignores made-up stats, and 2,000 random requests that never make gold, followers, vault, land, troops or points negative.
+- 24 server function tests (`handler.test.ts`): sign-in needed, junk refused, a request sent twice (and two at once) pays once, a race is redone on the newer clan, a refusal saves nothing, a database that is down, the 40-a-minute limit, and that the deployed `index.ts` matches the code.
+- 47 database checks (`clans.test.sql`): students cannot read, write or call anything, a first save must use the given seed, the version check, a repeat is spotted, bad numbers are refused, the day and seed cannot go backwards, two students stay apart, old requests are forgotten, the teacher reset. Run in a transaction that was rolled back, so the shared local database was left as it was. A full clan (after a raid, a quest, buildings and troops) was also saved and loaded through the real database functions and came back identical.
+- 13 browser tests (`Server.test.tsx`, `remote.test.ts`): the real screens against a server-in-a-box that runs the real rules.
+- Whole suite and type check: see the summary.
+
+**Choices to know about**
+- **Server seeds.** The seed is the server's, not the browser's. The test page still uses its own.
+- **Maths answers are not stored yet.** The shop, Church and Training Hall never needed an answer to be right. Storing each answer the way Gem Keep does (for the teacher's "practising" view and the hardest facts) is not in part A; it belongs with the Teacher page in C.6.
+- **Teacher settings are the defaults for now** (Year 5, the usual topics). The server sends its settings with the clan and the screens use them, so the browser and the server agree. The Teacher page replaces this in C.6.
+- **No fights yet** (part B), so the Mines button is switched off when there is a server. Fights left, fight number and the day are already kept.
+- **Classmate raids** are not an action yet (C.6).
+- **Lazy days.** A new day is applied when the clan is next opened, not at midnight. Nothing is lost either way; part B adds the midnight job for the computer clans and news.
+
+**Left:** to apply the migration and deploy the function (James says so, for each); part B; the Teacher page; storing maths answers; classmate raids; the class trial.

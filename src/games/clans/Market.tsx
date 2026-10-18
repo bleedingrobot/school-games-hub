@@ -5,7 +5,7 @@ import { betterBuy, examineCostQuestion, itemPoints, marketChangeFor, marketTota
 import { STATS, type ItemDef, type Member } from '../../../shared/clans/types';
 import { Moment } from './Moment';
 import { buyItem, examineCost, examineItem, hasExamined, shopPrice } from './places';
-import type { Session } from './session';
+import type { Session, Change } from './session';
 import { ItemSprite, PlaceSprite, Portrait } from './Sprite';
 import { ITEM_TEXT, KIND_WORD, STAT_WORD } from './text';
 
@@ -39,7 +39,7 @@ function RealStats({ member, item }: { member: Member; item: ItemDef }) {
 }
 
 /** The Market: pick a member, pick an item, check the bill with a maths moment, pay. */
-export function Market({ session, onChange, onBack }: { session: Session; onChange: (s: Session) => void; onBack: () => void }) {
+export function Market({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
   const { clan, settings } = session;
   const [mi, setMi] = useState(0);
   const [tab, setTab] = useState<Kind>('weapon');
@@ -61,7 +61,7 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
   const pay = (it: ItemDef) => {
     const next = buyItem(session, mi, it);
     if (!next) return;
-    onChange(next);
+    onChange(next, { type: 'buy', member: mi, item: it.name });
     setPhase({ t: 'bought', item: it, price: shopPrice(it), who: member.name });
   };
   const startExamine = () => {
@@ -71,7 +71,7 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
   };
   const look = (it: ItemDef) => {
     const next = examineItem(session, mi, it);
-    if (next) onChange(next);
+    if (next) onChange(next, { type: 'examine', member: mi, item: it.name });
     idle();
   };
 
