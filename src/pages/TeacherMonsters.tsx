@@ -13,6 +13,7 @@ import {
   type ClassMonsters, type MonstersSettings, type StudentMonsters,
 } from '../data/monsters';
 import { FriendlyError } from '../data/profile';
+import { useTeacherClass } from '../teacher/TeacherClass';
 import { whenPlayed } from './Dashboard';
 import './teacher-gem-keep.css';
 
@@ -58,21 +59,25 @@ export function MonstersTeacherPanels() {
 }
 
 function MonstersSettingsPanel() {
+  const { classId, ready } = useTeacherClass();
   const [settings, setSettings] = useState<MonstersSettings | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchMonstersSettings()
+    if (!ready) return;
+    setSettings(null);
+    setStatus(null);
+    fetchMonstersSettings(classId)
       .then(setSettings)
       .catch((error) => setStatus(errorText(error)));
-  }, []);
+  }, [ready, classId]);
 
   async function change(next: MonstersSettings, message: string) {
     const before = settings;
     setSettings(next);
     setStatus('Saving…');
     try {
-      await saveMonstersSettings(next);
+      await saveMonstersSettings(next, classId);
       setStatus(message);
     } catch (error) {
       setSettings(before);

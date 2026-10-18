@@ -502,7 +502,7 @@ export function Lobby() {
                       <div className="level-picker__options">
                         <label className="level-picker__option">
                           <input type="radio" name="space-maths" checked={spaceMaths} onChange={() => setSpaceMaths(true)} />
-                          <span>On: times-table questions for everyone in the game</span>
+                          <span>On: maths questions for everyone in the game</span>
                         </label>
                         <label className="level-picker__option">
                           <input type="radio" name="space-maths" checked={!spaceMaths} onChange={() => setSpaceMaths(false)} />

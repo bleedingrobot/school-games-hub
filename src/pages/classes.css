@@ -329,7 +329,33 @@
 .teacher__classes-link {
   margin: 0;
   font-weight: 700;
+  color: #fff;
 }
 .teacher__classes-link a {
   color: #fff;
+}
+
+/* The class picker above the Teacher page's switches (the page is red, so the text is white). */
+.teacher__picker {
+  margin: 0;
+  color: #fff;
+}
+.teacher__picker a {
+  color: #fff;
+}
+.teacher__picker select {
+  max-width: 100%;
+}
+.teacher__picker-note {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+}
+
+/* The group name box next to Rename and Delete. */
+.class-panel__row-actions input {
+  font: inherit;
+  padding: 8px 10px;
+  min-width: 150px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
 }

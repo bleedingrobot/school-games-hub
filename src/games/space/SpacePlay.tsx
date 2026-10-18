@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useAuth } from '../../auth/AuthContext';
 import { fetchSpaceSeed, saveAbandonedGame, saveSpaceGame } from '../../data/botGames';
+import { tryFetchMyFocus } from '../../data/focus';
 import { loadGemKeep } from '../../data/gemKeep';
 import type { BotLevel } from '../types';
 import { useMathsMode } from './mathsMode';
@@ -29,7 +30,7 @@ export function SpacePlay({ level }: { level: BotLevel }) {
     void loadGemKeep(player).then((data) => {
       if (!current) return;
       const { enabledTables, division, missingFactor, multipleChoice } = data.settings;
-      setMaths({ mode, enabledTables, division, missingFactor, multipleChoice, facts: data.facts });
+      setMaths({ mode, enabledTables, division, missingFactor, multipleChoice, facts: data.facts, focus: data.focus, refreshFocus: data.offline ? undefined : tryFetchMyFocus });
     });
     return () => {
       current = false;

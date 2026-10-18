@@ -42,10 +42,10 @@ describe('the Dragon Maths teacher switches', () => {
     render(<LordTeacherPanels />);
     expect(await screen.findByText('Off: pupils can’t play it yet.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Switch Dragon Maths on' }));
-    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: true });
+    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: true }, null);
     expect(await screen.findByText('On: pupils can play it.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Switch Dragon Maths off/ }));
-    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: false });
+    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: false }, null);
     expect(await screen.findByText('Dragon Maths is off, and the season clock is paused.')).toBeInTheDocument();
   });
 
@@ -54,7 +54,7 @@ describe('the Dragon Maths teacher switches', () => {
     render(<LordTeacherPanels />);
     expect(await screen.findByText(/Off since 2026-12-18: the season clock is paused/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /carry on the season/ }));
-    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: true });
+    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: true }, null);
     expect(await screen.findByText(/The season carries on where it left off/)).toBeInTheDocument();
   });
 
@@ -66,10 +66,10 @@ describe('the Dragon Maths teacher switches', () => {
     await user.clear(perDay);
     await user.type(perDay, '6');
     await user.click(screen.getByRole('button', { name: 'Save forest fights' }));
-    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: true, forestPerDay: 6 });
+    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: true, forestPerDay: 6 }, null);
     await user.type(screen.getByLabelText('First day of season 1'), '2026-11-23');
     await user.click(screen.getByRole('button', { name: 'Save the date' }));
-    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: true, seasonStart: '2026-11-23' });
+    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: true, seasonStart: '2026-11-23' }, null);
   });
 
   it('puts the setting back and says so in plain words when saving fails', async () => {

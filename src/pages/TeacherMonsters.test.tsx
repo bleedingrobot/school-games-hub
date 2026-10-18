@@ -34,14 +34,14 @@ describe('the Maths Monsters teacher switches', () => {
     render(<MonstersTeacherPanels />);
     expect(await screen.findByText('Off: students can’t see it yet.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Switch Maths Monsters on' }));
-    expect(data.saveMonstersSettings).toHaveBeenLastCalledWith({ enabled: true, topics: ALL_TOPICS });
+    expect(data.saveMonstersSettings).toHaveBeenLastCalledWith({ enabled: true, topics: ALL_TOPICS }, null);
     expect(await screen.findByText('On: students can play it from the dashboard.')).toBeInTheDocument();
     await user.click(screen.getByRole('checkbox', { name: 'Fractions' }));
-    expect(data.saveMonstersSettings).toHaveBeenLastCalledWith({ enabled: true, topics: ALL_TOPICS.filter((t) => t !== 'fractions') });
+    expect(data.saveMonstersSettings).toHaveBeenLastCalledWith({ enabled: true, topics: ALL_TOPICS.filter((t) => t !== 'fractions') }, null);
     await user.click(screen.getByRole('checkbox', { name: 'Fractions' }));
-    expect(data.saveMonstersSettings).toHaveBeenLastCalledWith({ enabled: true, topics: ALL_TOPICS });
+    expect(data.saveMonstersSettings).toHaveBeenLastCalledWith({ enabled: true, topics: ALL_TOPICS }, null);
     await user.click(screen.getByRole('button', { name: 'Switch Maths Monsters off' }));
-    expect(data.saveMonstersSettings).toHaveBeenLastCalledWith({ enabled: false, topics: ALL_TOPICS });
+    expect(data.saveMonstersSettings).toHaveBeenLastCalledWith({ enabled: false, topics: ALL_TOPICS }, null);
   });
 
   it('never lets the last topic go off', async () => {

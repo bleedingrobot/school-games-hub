@@ -68,6 +68,7 @@ export const TEXT = {
   tables: (tables: number[]) => tables.map((t) => `×${t}`).join(' '),
   tablesLabel: (tables: number[]) => `Times tables: ${tables.join(', ')}`,
   savedHere: 'Your progress is saved on this device.',
+  focusAllLevels: 'The maths in every level follows this. Levels unlock the same way as always.',
   savedAccount: 'Your progress is saved to your account, so it follows you to any device.',
   savingLater: 'No connection right now: you can still play, and your progress saves when you’re back online.',
   backToMap: 'Map',

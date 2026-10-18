@@ -18,6 +18,8 @@ import { useSound } from '../../sound';
 import type { BotLevel } from '../../../shared/botGame';
 import type { FactStats } from '../../../shared/maths/leitner';
 import type { Question } from '../../../shared/maths/skillPack';
+import { currentFocus, focusKey, focusNote, type MathsFocus } from '../../../shared/maths/focus';
+import type { SkillPack } from '../../../shared/maths/skillPack';
 import { TimesTables } from '../../../shared/maths/skillPacks/timesTables';
 import { BOT_NAMES } from '../../../shared/space/bot';
 import {
@@ -30,7 +32,7 @@ import {
   type SpaceEvent,
 } from '../../../shared/space/engine';
 import { ITEMS, type ItemKind } from '../../../shared/space/items';
-import { pickSpaceQuestion } from '../../../shared/space/mathsQuestion';
+import { makeSpacePack, pickSpaceQuestion } from '../../../shared/space/mathsQuestion';
 import { randomFromSeed } from '../../../shared/space/random';
 import { encodeAction, type SpaceGameReport } from '../../../shared/space/save';
 import { startSpaceBot, type SpaceBot } from './botThread';
@@ -67,8 +69,12 @@ export interface SpaceMaths {
   division: boolean;
   missingFactor?: boolean;
   multipleChoice: boolean;
-  /** The student's times-table records, so the questions fit what they're learning. */
+  /** The student's maths records (times tables, and early facts, adding and division for a focus), so the questions fit what they're learning. */
   facts: FactStats[];
+  /** The maths focus when the page opened. Auto, or missing, is the times-table step the student is ready for, as always. */
+  focus?: MathsFocus;
+  /** Asks for the focus again. It is asked as a new game starts, so a change shows up in the next game and never halfway through one. */
+  refreshFocus?: () => Promise<MathsFocus>;
 }
 
 const MOMENT_TITLE = { wormhole: 'Wormhole boost', 'black-hole': 'Black hole escape' } as const;
@@ -160,8 +166,9 @@ export function SpaceSolo({
 
   // The student's records for the questions, kept for the visit so they carry from game to game.
   // Pass-and-play gets a fresh pack each game: nobody's records, and nothing is saved.
-  const [pack] = useState(() => new TimesTables(maths?.facts ?? []));
-  const passPack = useRef<TimesTables | null>(null);
+  const [packFocus, setPackFocus] = useState<MathsFocus>(() => currentFocus(maths?.focus));
+  const [pack, setPack] = useState<SkillPack>(() => makeSpacePack(maths?.facts ?? [], packFocus, maths));
+  const passPack = useRef<SkillPack | null>(null);
   const [question, setQuestion] = useState<Question | null>(null);
   const [charge, setCharge] = useState<ChargeCard | null>(null);
   const mathsMode: MathsMode = maths?.mode ?? 'off';
@@ -320,6 +327,15 @@ export function SpaceSolo({
     }
     leftEarly.current();
     const pass = prefs.who === 'pass';
+    // A new game follows the focus as it is now (a teacher may have set or ended one since the last game).
+    if (maths?.refreshFocus && !pass) {
+      const latest = await Promise.race([maths.refreshFocus().catch(() => null), new Promise<null>((done) => window.setTimeout(() => done(null), 1500))]);
+      const next = currentFocus(latest ?? packFocus);
+      if (focusKey(next) !== focusKey(packFocus)) {
+        setPack(makeSpacePack(pack.stats(), next, maths));
+        setPackFocus(next);
+      }
+    }
     let stamped: { seed: string; stamp: string } | null = null;
     if (saving && !pass) {
       startingRef.current = true;
@@ -501,7 +517,7 @@ export function SpaceSolo({
     const run = runRef.current;
     const done = charge?.done;
     if (!run || !charge || !done || phase !== 'student' || run.passAndPlay || !canCharge(run.state)) return;
-    run.mathsAnswers.push({ parts: charge.question.parts, given: done.answer, ms: done.ms, at: done.at });
+    run.mathsAnswers.push({ parts: charge.question.parts, given: done.answer, ms: done.ms, at: done.at, key: charge.question.factKey });
     setCharge(null);
     act({ kind: 'charge', right: done.right });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -532,6 +548,7 @@ export function SpaceSolo({
         saving={!!saving}
         playerName={player.name}
         mathsMode={mathsMode}
+        focusNote={focusNote(packFocus)}
       />
       {guide && <SpaceGuide tab={guide} onClose={() => setGuide(null)} />}
       </>
@@ -787,7 +804,7 @@ export function SpaceSolo({
             const run = runRef.current;
             // The server checks every answer against the question shown (shared/space/save.ts).
             if (given && run && !run.passAndPlay) {
-              run.mathsAnswers.push({ parts: question.parts, given: given.answer, ms: Math.round(given.ms), at: Date.now() });
+              run.mathsAnswers.push({ parts: question.parts, given: given.answer, ms: Math.round(given.ms), at: Date.now(), key: question.factKey });
             }
             setQuestion(null);
             act({ kind: 'choose', option: result.correct ? 1 : 0 });

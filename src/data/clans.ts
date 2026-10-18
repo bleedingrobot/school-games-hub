@@ -3,6 +3,7 @@ import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { toScoreRow, type ScoreRow, type ScoreRowRaw } from '../games/clans/fame';
 import { makeClanServer, type ClanServer } from '../games/clans/remote';
 import { readPracticalSettings, type PracticalSettings } from '../../shared/maths/practical';
+import { readSettings } from './classSettings';
 import { supabase } from '../lib/supabase';
 import { FriendlyError } from './profile';
 
@@ -19,14 +20,14 @@ export function liveClanServer(): ClanServer {
 // ---------------------------------------------------------------------------
 
 /** Is Clan Quest switched on for the class? (The dashboard hides the card when it isn't.) */
-export async function fetchClansEnabled(): Promise<boolean> {
-  const { data, error } = await supabase.from('app_settings').select('clans_enabled').maybeSingle();
-  if (error || !data) throw new FriendlyError('We couldn’t load the Clan Quest setting.');
+export async function fetchClansEnabled(classId?: string | null): Promise<boolean> {
+  const data = await readSettings(['clans_enabled'], classId);
+  if (!data) throw new FriendlyError('We couldn’t load the Clan Quest setting.');
   return data.clans_enabled === true;
 }
 
-export async function saveClansEnabled(enabled: boolean): Promise<boolean> {
-  const { data, error } = await supabase.rpc('teacher_set_clans', { enabled });
+export async function saveClansEnabled(enabled: boolean, classId?: string | null): Promise<boolean> {
+  const { data, error } = await supabase.rpc('teacher_set_clans', { enabled, target_class: classId ?? null });
   if (error || typeof data !== 'boolean') throw new FriendlyError('We couldn’t save the Clan Quest setting.');
   return data;
 }
@@ -61,14 +62,14 @@ export async function resetClan(student: string): Promise<boolean> {
 // ---------------------------------------------------------------------------
 
 /** Are raids on classmates switched on? Off until a teacher turns them on. */
-export async function fetchClanRaidsEnabled(): Promise<boolean> {
-  const { data, error } = await supabase.from('app_settings').select('clan_raids_enabled').maybeSingle();
-  if (error || !data) throw new FriendlyError('We couldn’t load the raids setting.');
+export async function fetchClanRaidsEnabled(classId?: string | null): Promise<boolean> {
+  const data = await readSettings(['clan_raids_enabled'], classId);
+  if (!data) throw new FriendlyError('We couldn’t load the raids setting.');
   return data.clan_raids_enabled === true;
 }
 
-export async function saveClanRaidsEnabled(enabled: boolean): Promise<boolean> {
-  const { data, error } = await supabase.rpc('teacher_set_clan_raids', { enabled });
+export async function saveClanRaidsEnabled(enabled: boolean, classId?: string | null): Promise<boolean> {
+  const { data, error } = await supabase.rpc('teacher_set_clan_raids', { enabled, target_class: classId ?? null });
   if (error || typeof data !== 'boolean') throw new FriendlyError('We couldn’t save the raids setting.');
   return data;
 }
@@ -142,22 +143,22 @@ export interface ClanMathsSettings extends PracticalSettings {
   season: number;
 }
 
-export async function fetchClanMathsSettings(): Promise<ClanMathsSettings> {
-  const { data, error } = await supabase
-    .from('app_settings')
-    .select('clans_year_band, clans_topics, clans_tables, clans_fights_per_day, clans_season')
-    .maybeSingle();
-  if (error || !data) throw new FriendlyError('We couldn’t load the Clan Quest maths settings.');
+export async function fetchClanMathsSettings(classId?: string | null): Promise<ClanMathsSettings> {
+  const data = await readSettings(['clans_year_band', 'clans_topics', 'clans_tables', 'clans_fights_per_day', 'clans_season'], classId);
+  if (!data) throw new FriendlyError('We couldn’t load the Clan Quest maths settings.');
   return {
     ...readPracticalSettings({ yearBand: data.clans_year_band, enabledTopics: data.clans_topics, enabledTables: data.clans_tables }),
-    fightsPerDay: data.clans_fights_per_day ?? 8,
-    season: data.clans_season ?? 1,
+    fightsPerDay: (data.clans_fights_per_day as number | null) ?? 8,
+    season: (data.clans_season as number | null) ?? 1,
   };
 }
 
 /** Saves the maths settings (any of year band, topics, times tables, fights a day). Pupils get them next time they open the game; a fight already open keeps its own. */
-export async function saveClanMathsSettings(settings: Partial<Pick<ClanMathsSettings, 'yearBand' | 'enabledTopics' | 'enabledTables' | 'fightsPerDay'>>): Promise<void> {
-  const { error } = await supabase.rpc('teacher_set_clan_maths', { settings });
+export async function saveClanMathsSettings(
+  settings: Partial<Pick<ClanMathsSettings, 'yearBand' | 'enabledTopics' | 'enabledTables' | 'fightsPerDay'>>,
+  classId?: string | null,
+): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_clan_maths', { settings, target_class: classId ?? null });
   if (error) throw new FriendlyError(error.code === '22023' ? error.message : 'We couldn’t save the Clan Quest settings.');
 }
 

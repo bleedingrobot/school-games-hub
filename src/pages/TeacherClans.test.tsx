@@ -54,10 +54,10 @@ describe('the Clan Quest teacher switch', () => {
     render(<ClansTeacherPanels />);
     expect(await screen.findByText('Off: pupils can’t see it yet.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Switch Clan Quest on' }));
-    expect(data.saveClansEnabled).toHaveBeenLastCalledWith(true);
+    expect(data.saveClansEnabled).toHaveBeenLastCalledWith(true, null);
     expect(await screen.findByText('On: pupils can play it.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Switch Clan Quest off' }));
-    expect(data.saveClansEnabled).toHaveBeenLastCalledWith(false);
+    expect(data.saveClansEnabled).toHaveBeenLastCalledWith(false, null);
     expect(await screen.findByText(/Clan Quest is off/)).toBeInTheDocument();
   });
 
@@ -118,10 +118,10 @@ describe('the village groups on the teacher page', () => {
     render(<ClansTeacherPanels />);
     expect(await screen.findByText('Off.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Switch raids on' }));
-    expect(data.saveClanRaidsEnabled).toHaveBeenLastCalledWith(true);
+    expect(data.saveClanRaidsEnabled).toHaveBeenLastCalledWith(true, null);
     expect(await screen.findByText('On.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Switch raids off' }));
-    expect(data.saveClanRaidsEnabled).toHaveBeenLastCalledWith(false);
+    expect(data.saveClanRaidsEnabled).toHaveBeenLastCalledWith(false, null);
   });
 
   it('makes a group, moves a pupil, and asks before deleting a group', async () => {
@@ -170,7 +170,7 @@ describe('the Clan Quest maths settings on the teacher page', () => {
     await user.clear(fights);
     await user.type(fights, '5');
     await user.click(screen.getByRole('button', { name: 'Save settings' }));
-    expect(data.saveClanMathsSettings).toHaveBeenCalledWith({ yearBand: 6, enabledTopics: ['percentages', 'money', 'ratios'].sort((a, b) => ['times', 'percentages', 'money', 'area', 'division', 'ratios', 'rates', 'integers'].indexOf(a) - ['times', 'percentages', 'money', 'area', 'division', 'ratios', 'rates', 'integers'].indexOf(b)), enabledTables: [2, 3], fightsPerDay: 5 });
+    expect(data.saveClanMathsSettings).toHaveBeenCalledWith({ yearBand: 6, enabledTopics: ['percentages', 'money', 'ratios'].sort((a, b) => ['times', 'percentages', 'money', 'area', 'division', 'ratios', 'rates', 'integers'].indexOf(a) - ['times', 'percentages', 'money', 'area', 'division', 'ratios', 'rates', 'integers'].indexOf(b)), enabledTables: [2, 3], fightsPerDay: 5 }, null);
     expect(await screen.findByText(/A fight that is already open keeps the questions it started with/)).toBeInTheDocument();
   });
 

@@ -13,6 +13,7 @@
  */
 import { FLUENT_DAYS, TOP_BOX } from '../maths/config';
 import { parseFactKey } from '../maths/facts';
+import { FOCUS_PACKS, isFocusKey, packIdOfKey, type FocusPackId } from '../maths/focus';
 import type { FactAnswer, FactStats } from '../maths/leitner';
 import { MATHS } from './config';
 import type { LevelData } from './level';
@@ -49,7 +50,11 @@ export interface FactsItem {
 /** Answers since the last save, oldest first. The server adds each to the student's records. */
 export interface AnswersItem {
   type: 'answers';
-  pack: 'times-tables';
+  /**
+   * The pack that keeps these records. Times tables unless a maths focus asked for early facts, adding or
+   * division (every key in one item belongs to its pack, so a mixed batch is sent as one item for each pack).
+   */
+  pack: FocusPackId;
   /** Made by the browser, so the same answers are only counted once. */
   batchId: string;
   answers: FactAnswer[];
@@ -181,18 +186,19 @@ function checkFacts(x: Record<string, unknown>, nowMs: number): Checked<FactsIte
 }
 
 function checkAnswers(x: Record<string, unknown>, nowMs: number): Checked<AnswersItem> {
-  if (x.pack !== 'times-tables') return { ok: false, problem: 'pack' };
+  const pack = FOCUS_PACKS.find((p) => p === x.pack);
+  if (!pack) return { ok: false, problem: 'pack' };
   if (typeof x.batchId !== 'string' || !UUID.test(x.batchId)) return { ok: false, problem: 'batch-id' };
   if (!Array.isArray(x.answers) || x.answers.length > MAX_ANSWERS) return { ok: false, problem: 'answers' };
   // A bad answer is left out (an impossibly quick one too); the good ones still count.
   const answers: FactAnswer[] = [];
   for (const raw of x.answers) {
     const a = (raw ?? {}) as Record<string, unknown>;
-    if (typeof a.key !== 'string' || !parseFactKey(a.key) || typeof a.correct !== 'boolean') continue;
+    if (typeof a.key !== 'string' || !isFocusKey(a.key) || packIdOfKey(a.key) !== pack || typeof a.correct !== 'boolean') continue;
     if (!isInt(a.ms, MIN_AVG_MS, 3_600_000) || !isInt(a.at, nowMs - 60 * 86_400_000, nowMs + 86_400_000)) continue;
     answers.push({ key: a.key, correct: a.correct, ms: a.ms, at: a.at });
   }
-  return { ok: true, item: { type: 'answers', pack: 'times-tables', batchId: x.batchId, answers } };
+  return { ok: true, item: { type: 'answers', pack, batchId: x.batchId, answers } };
 }
 
 /** Trial progress: stars must be 0–3 and Level Keys only in campaign order, as the game allows. */

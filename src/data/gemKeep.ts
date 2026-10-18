@@ -10,8 +10,10 @@
  * so Gem Keep still opens with everything in place when the server can't be reached.
  */
 import type { SaveItem, SaveResponse } from '../../shared/gem-keep/save';
+import { AUTO_FOCUS, parseFocus, type MathsFocus } from '../../shared/maths/focus';
 import type { FactStats } from '../../shared/maths/leitner';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
+import { readSettings } from './classSettings';
 import { supabase } from '../lib/supabase';
 import type { CampaignProgress } from '../games/gem-keep/progress';
 import { DEFAULT_SETTINGS, type GemKeepSettings } from '../games/gem-keep/settings';
@@ -19,8 +21,11 @@ import { FriendlyError } from './profile';
 
 export interface GemKeepData {
   progress: CampaignProgress;
+  /** Every maths record the student has for the packs Gem Keep can ask (times tables, and a focus's early facts, adding, division). */
   facts: FactStats[];
   settings: GemKeepSettings;
+  /** The maths focus when the data was loaded (a teacher's, the student's own, or auto). */
+  focus: MathsFocus;
   /** The class trial's progress on this device may still be brought in. */
   canImport: boolean;
 }
@@ -29,6 +34,7 @@ interface ServerData {
   progress: { levelId: string; stars: number; keyPassed: boolean }[];
   facts: FactStats[];
   settings: Omit<GemKeepSettings, 'missingFactor'> & { missingFactor: boolean | null };
+  focus?: unknown;
   canImport: boolean;
 }
 
@@ -146,6 +152,7 @@ function fromServer(raw: ServerData): GemKeepData {
     progress,
     facts: raw.facts,
     settings: { ...DEFAULT_SETTINGS, ...rest, missingFactor: missingFactor ?? undefined },
+    focus: parseFocus(raw.focus),
     canImport: raw.canImport,
   };
 }
@@ -178,7 +185,8 @@ export async function loadGemKeep(player: string): Promise<GemKeepData & { offli
     return { ...loaded, offline: false };
   } catch {
     const copy = read<GemKeepData>(copyKey(player));
-    return { ...(copy ?? { progress: {}, facts: [], settings: DEFAULT_SETTINGS, canImport: false }), offline: true };
+    // A copy kept before the maths focus existed has none: that is auto.
+    return { ...(copy ?? { progress: {}, facts: [], settings: DEFAULT_SETTINGS, canImport: false }), focus: parseFocus(copy?.focus ?? AUTO_FOCUS), offline: true };
   }
 }
 
@@ -231,25 +239,26 @@ export async function fetchClassGemKeep(): Promise<ClassGemKeep> {
   return data as ClassGemKeep;
 }
 
-export async function fetchGemKeepSettings(): Promise<GemKeepSettings> {
-  const { data, error } = await supabase
-    .from('app_settings')
-    .select('gem_keep_mode, gem_keep_tables, gem_keep_division, gem_keep_missing_factor, gem_keep_multiple_choice, gem_keep_key_pass')
-    .maybeSingle();
-  if (error || !data) throw new FriendlyError('We couldn’t load the Gem Keep settings.');
+export async function fetchGemKeepSettings(classId?: string | null): Promise<GemKeepSettings> {
+  const data = await readSettings(
+    ['gem_keep_mode', 'gem_keep_tables', 'gem_keep_division', 'gem_keep_missing_factor', 'gem_keep_multiple_choice', 'gem_keep_key_pass'],
+    classId,
+  );
+  if (!data) throw new FriendlyError('We couldn’t load the Gem Keep settings.');
   return {
-    mode: data.gem_keep_mode,
-    enabledTables: data.gem_keep_tables,
-    division: data.gem_keep_division,
-    missingFactor: data.gem_keep_missing_factor ?? undefined,
-    multipleChoice: data.gem_keep_multiple_choice,
-    keyPassMark: data.gem_keep_key_pass,
+    mode: data.gem_keep_mode as GemKeepSettings['mode'],
+    enabledTables: data.gem_keep_tables as number[],
+    division: data.gem_keep_division as boolean,
+    missingFactor: (data.gem_keep_missing_factor as boolean | null) ?? undefined,
+    multipleChoice: data.gem_keep_multiple_choice as boolean,
+    keyPassMark: data.gem_keep_key_pass as number,
   };
 }
 
-export async function saveGemKeepSettings(settings: GemKeepSettings): Promise<void> {
+export async function saveGemKeepSettings(settings: GemKeepSettings, classId?: string | null): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_gem_keep', {
     settings: { ...settings, missingFactor: settings.missingFactor ?? null },
+    target_class: classId ?? null,
   });
   if (error) fail(error, 'We couldn’t save the Gem Keep settings.');
 }

@@ -12,6 +12,7 @@ import {
   type ClassLord, type LordSettings, type StudentLord,
 } from '../data/lord';
 import { FriendlyError } from '../data/profile';
+import { useTeacherClass } from '../teacher/TeacherClass';
 import { whenPlayed } from './Dashboard';
 import { keyLabel } from './TeacherMonsters';
 import './teacher-gem-keep.css';
@@ -46,25 +47,29 @@ export function LordTeacherPanels() {
 }
 
 function LordSettingsPanel() {
+  const { classId, ready } = useTeacherClass();
   const [settings, setSettings] = useState<LordSettings | null>(null);
   const [perDay, setPerDay] = useState('10');
   const [start, setStart] = useState('');
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchLordSettings()
+    if (!ready) return;
+    setSettings(null);
+    setStatus(null);
+    fetchLordSettings(classId)
       .then((s) => {
         setSettings(s);
         setPerDay(String(s.forestPerDay));
         setStart(s.seasonStart ?? '');
       })
       .catch((error) => setStatus(errorText(error)));
-  }, []);
+  }, [ready, classId]);
 
   async function save(change: Partial<LordSettings> & { enabled: boolean }, message: string) {
     setStatus('Saving…');
     try {
-      const next = await saveLordSettings(change);
+      const next = await saveLordSettings(change, classId);
       setSettings(next);
       setPerDay(String(next.forestPerDay));
       setStart(next.seasonStart ?? '');

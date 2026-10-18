@@ -25,6 +25,7 @@ import {
   type PowerClashGameReport,
 } from '../../../shared/power-clash/save';
 import { judgeBotGame, parseReport } from '../../../shared/chess/botGame';
+import { groupByPack, type FocusPackId } from '../../../shared/maths/focus';
 import { judgeCheckersGame, parseCheckersReport } from '../../../shared/checkers/botGame';
 import {
   judgeSpaceGame,
@@ -55,7 +56,7 @@ export interface Services {
    * Adds Mission Control maths answers to the student's times-table records (the same records
    * as Gem Keep). A batch id seen before is ignored. Optional: without it answers aren't kept.
    */
-  recordAnswers?(player: string, batchId: string, answers: FactAnswer[]): Promise<void>;
+  recordAnswers?(player: string, batchId: string, answers: FactAnswer[], pack?: FocusPackId): Promise<void>;
   /**
    * The teacher's Mission Control maths switch. Optional: without it maths isn't checked (the tests'
    * stand-in). If it can't be read, throw: a maths game isn't started or saved on a guess.
@@ -230,11 +231,15 @@ async function saveSpaceGame(
   if (saved === 'too-many') return reply(429, { error: TOO_MANY });
   if (saved !== 'saved') return reply(500, { error: "The game couldn't be saved." });
   if (game.answers.length > 0 && services.recordAnswers) {
-    // One batch per game (from its seed), so a game sent twice adds its answers once.
+    // One batch per game and pack (from its seed), so a game sent twice adds its answers once.
+    // Answers from a maths focus can belong to other packs (early facts, adding, division); each pack keeps its own records.
     // The game is saved either way: losing a few answers is better than losing the game.
-    await services.recordAnswers(player, await batchIdFor(`space:${report.seed}`), game.answers).catch(() => {
-      console.error('save-bot-game: maths answers not recorded');
-    });
+    for (const [pack, answers] of groupByPack(game.answers)) {
+      const batch = await batchIdFor(pack === 'times-tables' ? `space:${report.seed}` : `space:${report.seed}:${pack}`);
+      await services.recordAnswers(player, batch, answers, pack).catch(() => {
+        console.error('save-bot-game: maths answers not recorded');
+      });
+    }
   }
   return reply(200, { result: game.outcome, reason: game.reason, place: game.place, countsForPoints: game.countsForPoints });
 }

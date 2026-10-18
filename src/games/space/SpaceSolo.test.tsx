@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { isFocusKey, type MathsFocus } from '../../../shared/maths/focus';
 import { judgeSpaceGame, type SpaceGameReport } from '../../../shared/space/save';
 import { SoundProvider } from '../../sound';
 import { SpaceSolo, type SpaceMaths, type SpaceSaving } from './SpaceSolo';
@@ -8,11 +9,29 @@ import { SpaceSolo, type SpaceMaths, type SpaceSaving } from './SpaceSolo';
 const ALL = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const maths = (mode: SpaceMaths['mode']): SpaceMaths => ({ mode, enabledTables: ALL, division: false, multipleChoice: false, facts: [] });
 
+/** Reads a question the way a screen reader does ("3 plus what equals 10", "7 times 8 equals what") and works out the answer. */
 function solve(spoken: string): number {
-  const [a, op, b, , c] = spoken.replace('?', '').replace('times', '×').replace('equals', '=').split(' ');
+  const t = spoken.replace(/\?$/, '');
+  let m = /^(\d+) plus what equals (\d+)$/.exec(t);
+  if (m) return +m[2] - +m[1];
+  m = /^what plus (\d+) equals (\d+)$/.exec(t);
+  if (m) return +m[2] - +m[1];
+  m = /^(\d+) plus (\d+) equals what$/.exec(t);
+  if (m) return +m[1] + +m[2];
+  m = /^(\d+) minus (\d+) equals what$/.exec(t);
+  if (m) return +m[1] - +m[2];
+  m = /^Double (\d+) equals what$/.exec(t);
+  if (m) return 2 * +m[1];
+  m = /^Half of (\d+) equals what$/.exec(t);
+  if (m) return +m[1] / 2;
+  const [a, op, b, , c] = spoken.replace('?', '').replace('times', '×').replace('divided by', '÷').replace('equals', '=').split(' ');
   if (c === 'what') return op === '×' ? Number(a) * Number(b) : Number(a) / Number(b);
   return a === 'what' ? Number(c) / Number(b) : Number(c) / Number(a);
 }
+
+const teacherFocus = (skills: string[], extra: Partial<MathsFocus> = {}): MathsFocus => ({
+  source: 'teacher-class', skills, onlyThese: true, endsAt: '2099-01-01T11:00:00Z', canChoose: true, own: null, ...extra,
+});
 
 function renderGame(saving?: SpaceSaving, mathsConfig?: SpaceMaths) {
   const onLevelChange = vi.fn();
@@ -334,6 +353,69 @@ describe('Mission Control maths on the game screen', () => {
     if (judged.ok) expect(judged.game.answers).toHaveLength(report.answers!.length);
     localStorage.clear();
   }, 60_000);
+
+  describe('with a maths focus', () => {
+    it('says why the questions are what they are, on the settings screen', () => {
+      renderGame(undefined, { ...maths('on'), focus: teacherFocus(['facts-10']) });
+      expect(screen.getByText(/Your teacher picked Number facts to 10 until/)).toBeInTheDocument();
+    });
+
+    it('says nothing when the maths is switched off, or there is no focus', () => {
+      const { view } = renderGame(undefined, { ...maths('off'), focus: teacherFocus(['facts-10']) });
+      expect(screen.queryByText(/Your teacher picked/)).not.toBeInTheDocument();
+      view.unmount();
+      renderGame(undefined, maths('on'));
+      expect(screen.queryByText(/Your teacher picked/)).not.toBeInTheDocument();
+    });
+
+    it('asks the focus, and saves each answer with the record it was for so the server can check it', async () => {
+      const user = userEvent.setup();
+      const { saving, saved } = fakeSaving();
+      localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', bots: 1, maths: true }));
+      renderGame(saving, { ...maths('choose'), focus: teacherFocus(['facts-10', 'dbl-half-10']) });
+      await user.click(screen.getByRole('button', { name: /Launch/ }));
+      const asked = await playWithMaths(user);
+      await waitFor(() => expect(saved).toHaveLength(1), { timeout: 5000 });
+      expect(asked).toBeGreaterThan(0);
+      const report = saved[0];
+      expect(report.answers!.every((a) => a.key && isFocusKey(a.key) && !a.key.startsWith('mul:'))).toBe(true);
+      expect(report.answers!.some((a) => a.parts.includes('×'))).toBe(false);
+      const judged = judgeSpaceGame(report);
+      expect(judged).toMatchObject({ ok: true });
+      if (judged.ok) expect(judged.game.answers.map((a) => a.key)).toEqual(report.answers!.map((a) => a.key));
+      localStorage.clear();
+    }, 60_000);
+
+    it('looks for a new focus as a game starts, and follows it', async () => {
+      const user = userEvent.setup();
+      const { saving, saved } = fakeSaving();
+      const refreshFocus = vi.fn(async () => teacherFocus(['dbl-half-10']));
+      localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', bots: 1, maths: true }));
+      renderGame(saving, { ...maths('choose'), refreshFocus });
+      expect(refreshFocus).not.toHaveBeenCalled();
+      await user.click(screen.getByRole('button', { name: /Launch/ }));
+      await playWithMaths(user);
+      await waitFor(() => expect(saved).toHaveLength(1), { timeout: 5000 });
+      expect(refreshFocus).toHaveBeenCalledTimes(1);
+      expect(saved[0].answers!.every((a) => /^(dbl|half):/.test(a.key ?? ''))).toBe(true);
+      localStorage.clear();
+    }, 60_000);
+
+    it('keeps the focus it has if the lookup fails', async () => {
+      const user = userEvent.setup();
+      const { saving, saved } = fakeSaving();
+      const refreshFocus = vi.fn(async () => {
+        throw new Error('offline');
+      });
+      localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', bots: 1, maths: true }));
+      renderGame(saving, { ...maths('choose'), focus: teacherFocus(['dbl-half-10']), refreshFocus });
+      await user.click(screen.getByRole('button', { name: /Launch/ }));
+      await playWithMaths(user);
+      await waitFor(() => expect(saved).toHaveLength(1), { timeout: 5000 });
+      expect(saved[0].answers!.every((a) => /^(dbl|half):/.test(a.key ?? ''))).toBe(true);
+      localStorage.clear();
+    }, 60_000);
+  });
 
   it('pass-and-play has no side question and saves and records nothing', async () => {
     const user = userEvent.setup();

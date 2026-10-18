@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
+import { tryFetchMyFocus } from '../../data/focus';
 import { enqueue, flushQueue, loadGemKeep, saveCopy, type GemKeepData } from '../../data/gemKeep';
+import { groupByPack } from '../../../shared/maths/focus';
 import type { FactAnswer, FactStats } from '../../../shared/maths/leitner';
 import type { CampaignProgress } from './progress';
 import { TEXT } from './strings';
@@ -64,7 +66,10 @@ export function GemKeepPlay() {
   const onAnswers = useCallback(
     (answers: FactAnswer[], facts: FactStats[]) => {
       keepCopy({ facts });
-      enqueue(player, { type: 'answers', pack: 'times-tables', batchId: crypto.randomUUID(), answers });
+      // A maths focus can ask for early facts, adding or division as well as times tables: each pack keeps its own records.
+      for (const [pack, group] of groupByPack(answers)) {
+        enqueue(player, { type: 'answers', pack, batchId: crypto.randomUUID(), answers: group });
+      }
       // The page may be closing: keepalive lets the request finish anyway.
       flush(document.visibilityState === 'hidden');
     },
@@ -81,6 +86,8 @@ export function GemKeepPlay() {
   return (
     <GemKeepCampaign
       settings={data.settings}
+      focus={data.focus}
+      loadFocus={offline ? undefined : tryFetchMyFocus}
       initialProgress={data.progress}
       initialFacts={data.facts}
       note={offline ? TEXT.savingLater : TEXT.savedAccount}

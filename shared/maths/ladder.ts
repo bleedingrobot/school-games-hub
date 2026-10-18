@@ -136,6 +136,16 @@ export interface LadderProgress {
 export interface LadderOptions {
   /** Tables the teacher has left on. Default all. A skill with none of its tables on is skipped. */
   enabledTables?: readonly number[];
+  /** Division facts (56 ÷ 8) are asked only when this isn't false. Only a focus reads it; auto asks them as before. */
+  division?: boolean;
+  /** A maths focus (teacher's or the student's own) instead of auto. */
+  focus?: FocusSpec;
+}
+
+/** The skills a focus names, and whether earlier skills are left out ("only these"). */
+export interface FocusSpec {
+  skills: readonly string[];
+  onlyThese: boolean;
 }
 
 /** The skill's keys once switched-off tables are taken out. */
@@ -187,6 +197,55 @@ export function autoPools(progress: LadderProgress, opts: LadderOptions = {}): P
   return { focus: live[at].keys, review: live.slice(0, at).flatMap((p) => p.keys), stretch: live[at + 1]?.keys ?? [] };
 }
 
+/** The built ladder skills a focus really names, in ladder order. Unknown or not-yet-built names are ignored. */
+export function focusSkills(spec: FocusSpec): LadderSkill[] {
+  const wanted = new Set(spec.skills);
+  return LADDER.filter((s) => s.built && wanted.has(s.id));
+}
+
+/**
+ * The keys a focus draws from. The chosen skills are the focus; earlier skills come up as review
+ * (about 30% of questions) unless the focus is "only these"; there is no stretch, so a teacher's
+ * ×6 never drifts on to ×7. Switched-off tables, and division when it's off, are left out.
+ */
+export function focusPools(spec: FocusSpec, opts: LadderOptions = {}): Pools {
+  const enabled = opts.enabledTables ?? TABLES;
+  const keysOf = (skill: LadderSkill) => activeKeys(skill, enabled).filter((k) => opts.division !== false || !k.startsWith('div:'));
+  const chosen = focusSkills(spec);
+  if (chosen.length === 0) return { focus: [], review: [], stretch: [] };
+  const focus = [...new Set(chosen.flatMap(keysOf))];
+  if (spec.onlyThese) return { focus, review: [], stretch: [] };
+  const mine = new Set(focus);
+  const before = LADDER.slice(0, LADDER.indexOf(chosen[0])).filter((s) => s.built);
+  return { focus, review: before.flatMap(keysOf).filter((k) => !mine.has(k)), stretch: [] };
+}
+
+/** Which skill pack records a mastery key ("mul:7x8" → "times-tables"), or null if it isn't a ladder key. */
+export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-sub' | 'division' | null {
+  if (/^mul:\d+x\d+$/.test(key)) return 'times-tables';
+  if (/^(bond10|bond20|dbl|half):/.test(key)) return 'early-facts';
+  if (key.startsWith('add:')) return 'add-sub';
+  if (key.startsWith('div:')) return 'division';
+  return null;
+}
+
+/** The packs a game keeps records for under a focus (everything the built ladder uses). */
+export const FOCUS_PACKS = ['times-tables', 'early-facts', 'add-sub', 'division'] as const;
+export type FocusPackId = (typeof FOCUS_PACKS)[number];
+
+/** Every mastery key the built ladder asks, with the pack that keeps its record. */
+export function ladderKeyPacks(): Map<string, FocusPackId> {
+  const out = new Map<string, FocusPackId>();
+  for (const skill of LADDER) {
+    if (!skill.built) continue;
+    for (const key of skill.keys) {
+      const pack = packIdOfKey(key);
+      if (pack) out.set(key, pack);
+    }
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------- the auto pack
 
 /**
@@ -234,6 +293,11 @@ export class AutoPack implements SkillPack {
     return this.packs.flatMap((p) => p.stats());
   }
 
+  /** The pack that keeps the record for a key (so saving can sort answers by pack). */
+  static packOf(key: string) {
+    return packIdOfKey(key);
+  }
+
   /** Where the student is on the ladder right now. */
   progress(): LadderProgress {
     return ladderProgress(this.stats(), this.opts);
@@ -241,7 +305,8 @@ export class AutoPack implements SkillPack {
 
   nextQuestion(ctx: QuestionContext = {}): Question | null {
     const progress = this.progress();
-    const pools = autoPools(progress, this.opts);
+    const focusSpec = this.opts.focus && focusSkills(this.opts.focus).length ? this.opts.focus : null;
+    const pools = focusSpec ? focusPools(focusSpec, this.opts) : autoPools(progress, this.opts);
     const focus = new Set(pools.focus);
     const hardTable = (key: string) => {
       const mul = parseFactKey(key);
@@ -255,9 +320,10 @@ export class AutoPack implements SkillPack {
     if (!picked) return null;
     const pack = this.ownerOf(picked.key);
     // Missing-factor questions come in once the first tables skill is behind the student.
+    // Under a focus the teacher's own setting decides, else it starts at the first chosen skill after ×2, ×5, ×10.
     const firstTables = progress.skills.findIndex((p) => p.skill.stage === 'times-tables');
-    const now = progress.skills.findIndex((p) => p.status === 'current');
-    const missingFactor = now < 0 || now > firstTables;
+    const at = focusSpec ? LADDER.indexOf(focusSkills(focusSpec)[0]) : progress.skills.findIndex((p) => p.status === 'current');
+    const missingFactor = focusSpec && ctx.missingFactor !== undefined ? ctx.missingFactor : at < 0 || at > firstTables;
     return pack.questionFor(picked.key, picked.band, { ...ctx, missingFactor });
   }
 

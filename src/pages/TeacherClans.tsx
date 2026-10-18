@@ -36,6 +36,7 @@ import {
   type YearBand,
 } from "../../shared/maths/practical";
 import { FriendlyError } from "../data/profile";
+import { useTeacherClass } from "../teacher/TeacherClass";
 import { whenPlayed } from "./Dashboard";
 import "./teacher-gem-keep.css";
 
@@ -45,19 +46,23 @@ const errorText = (error: unknown) =>
     : "Something went wrong. Please try again.";
 
 export function ClansTeacherPanels() {
+  const { classId, ready } = useTeacherClass();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchClansEnabled().then(setEnabled, (error) =>
+    if (!ready) return;
+    setEnabled(null);
+    setStatus(null);
+    fetchClansEnabled(classId).then(setEnabled, (error) =>
       setStatus(errorText(error)),
     );
-  }, []);
+  }, [ready, classId]);
 
   async function save(next: boolean, message: string) {
     setStatus("Saving…");
     try {
-      setEnabled(await saveClansEnabled(next));
+      setEnabled(await saveClansEnabled(next, classId));
       setStatus(message);
     } catch (error) {
       setStatus(errorText(error));
@@ -131,6 +136,7 @@ const rate = (k: MathsKind) =>
 
 /** What the maths in Clan Quest asks (year band, topics, times tables), how many mine fights a day, and how the school is getting on. */
 export function ClansMathsPanel() {
+  const { classId, ready } = useTeacherClass();
   const [saved, setSaved] = useState<ClanMathsSettings | null>(null);
   const [draft, setDraft] = useState<ClanMathsSettings | null>(null);
   const [records, setRecords] = useState<ClanMathsClass | null>(null);
@@ -138,7 +144,11 @@ export function ClansMathsPanel() {
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchClanMathsSettings().then(
+    if (!ready) return;
+    setSaved(null);
+    setDraft(null);
+    setStatus(null);
+    fetchClanMathsSettings(classId).then(
       (s) => {
         setSaved(s);
         setDraft(s);
@@ -146,7 +156,7 @@ export function ClansMathsPanel() {
       (error) => setStatus(errorText(error)),
     );
     fetchClanMathsClass().then(setRecords, () => undefined);
-  }, []);
+  }, [ready, classId]);
 
   if (!draft) {
     return status ? <p className="panel__empty">{status}</p> : null;
@@ -176,7 +186,7 @@ export function ClansMathsPanel() {
         enabledTopics: draft.enabledTopics,
         enabledTables: draft.enabledTables,
         fightsPerDay: draft.fightsPerDay,
-      });
+      }, classId);
       setSaved(draft);
       setStatus(
         "Saved. Pupils get these next time they open Clan Quest. A fight that is already open keeps the questions it started with.",
@@ -418,6 +428,7 @@ export function ClansSeasonPanel() {
 
 /** Raids on classmates (a switch, off until a teacher turns it on) and the village groups: who builds the village together. */
 export function ClansVillagePanel() {
+  const { classId, ready } = useTeacherClass();
   const [raids, setRaids] = useState<boolean | null>(null);
   const [data, setData] = useState<Villages | null>(null);
   const [name, setName] = useState("");
@@ -427,11 +438,14 @@ export function ClansVillagePanel() {
   const load = () =>
     fetchVillages().then(setData, (error) => setStatus(errorText(error)));
   useEffect(() => {
-    fetchClanRaidsEnabled().then(setRaids, (error) =>
+    if (!ready) return;
+    setRaids(null);
+    fetchClanRaidsEnabled(classId).then(setRaids, (error) =>
       setStatus(errorText(error)),
     );
     void load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, classId]);
 
   async function run(job: () => Promise<unknown>, message: string) {
     setStatus("Saving…");
@@ -469,7 +483,7 @@ export function ClansVillagePanel() {
               className="button button--danger"
               onClick={() =>
                 void run(
-                  async () => setRaids(await saveClanRaidsEnabled(false)),
+                  async () => setRaids(await saveClanRaidsEnabled(false, classId)),
                   "Raids on classmates are off.",
                 )
               }
@@ -482,7 +496,7 @@ export function ClansVillagePanel() {
               className="button button--primary"
               onClick={() =>
                 void run(
-                  async () => setRaids(await saveClanRaidsEnabled(true)),
+                  async () => setRaids(await saveClanRaidsEnabled(true, classId)),
                   "Raids on classmates are on.",
                 )
               }

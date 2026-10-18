@@ -494,7 +494,6 @@ function putOut(g, seat, reason, events) {
 	if (g.phase === "peek") startPlayIfPeeksDone(g, events);
 	else if (wasTheirTurn) passTurn(g, seat, events);
 }
-new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
 //#endregion
 //#region shared/card101/view.ts
 /**

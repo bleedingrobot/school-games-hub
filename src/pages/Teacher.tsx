@@ -21,6 +21,7 @@ import {
   type PersonDetail,
 } from '../data/teacher';
 import { gameLabel } from '../games/registry';
+import { TeacherClassPicker, TeacherClassProvider, useTeacherClass } from '../teacher/TeacherClass';
 import { BOT_LEVELS, type BotLevel } from '../games/types';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
@@ -94,15 +95,22 @@ function TeacherView({ me, isAdmin }: { me: string; isAdmin: boolean }) {
         <Link to="/classes">🏫 My classes: class codes, who is in each class, and students who don’t have a class yet</Link>
       </p>
 
-      <FriendGamesSwitch />
-      <ReactionsSwitch />
-      <MathsSwitchPanel />
-      <Suspense fallback={null}>
-        <GemKeepTeacherPanels />
-        <MonstersTeacherPanels />
-        <LordTeacherPanels />
-        <ClansTeacherPanels />
-      </Suspense>
+      <p className="teacher__classes-link">
+        <Link to="/focus">🎯 Maths focus: choose what maths the games ask for a class, a group or some students</Link>
+      </p>
+
+      <TeacherClassProvider>
+        <TeacherClassPicker />
+        <FriendGamesSwitch />
+        <ReactionsSwitch />
+        <MathsSwitchPanel />
+        <Suspense fallback={null}>
+          <GemKeepTeacherPanels />
+          <MonstersTeacherPanels />
+          <LordTeacherPanels />
+          <ClansTeacherPanels />
+        </Suspense>
+      </TeacherClassProvider>
 
       <section className="panel" aria-labelledby="people-title">
         <h2 id="people-title" className="panel__title">
@@ -168,21 +176,25 @@ function TeacherView({ me, isAdmin }: { me: string; isAdmin: boolean }) {
 }
 
 function FriendGamesSwitch() {
+  const { classId, ready } = useTeacherClass();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchMultiplayerEnabled()
+    if (!ready) return;
+    setEnabled(null);
+    setStatus(null);
+    fetchMultiplayerEnabled(classId)
       .then(setEnabled)
       .catch(() => setStatus('We couldn’t load this setting.'));
-  }, []);
+  }, [ready, classId]);
 
   async function change(on: boolean) {
     setStatus('Saving…');
     try {
-      await setMultiplayer(on);
+      await setMultiplayer(on, classId);
       setEnabled(on);
-      setStatus(on ? 'Games against friends are on.' : 'Games against friends are paused for everyone.');
+      setStatus(on ? 'Games against friends are on.' : 'Games against friends are paused for this class.');
     } catch (error) {
       setStatus(errorText(error));
     }
@@ -220,19 +232,23 @@ function FriendGamesSwitch() {
 
 /** Emoji reactions in Wormholes & Black Holes games with classmates: off until a teacher switches them on. */
 function ReactionsSwitch() {
+  const { classId, ready } = useTeacherClass();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchReactionsEnabled()
+    if (!ready) return;
+    setEnabled(null);
+    setStatus(null);
+    fetchReactionsEnabled(classId)
       .then(setEnabled)
       .catch(() => setStatus('We couldn’t load this setting.'));
-  }, []);
+  }, [ready, classId]);
 
   async function change(on: boolean) {
     setStatus('Saving…');
     try {
-      await setSpaceReactions(on);
+      await setSpaceReactions(on, classId);
       setEnabled(on);
       setStatus(on ? 'Emoji reactions are on.' : 'Emoji reactions are off.');
     } catch (error) {
@@ -281,19 +297,23 @@ const MATHS_CHOICES: { value: MathsSwitch; label: string; detail: string }[] = [
  * The server checks this too, so nobody can start or save a maths game while it's off.
  */
 export function MathsSwitchPanel() {
+  const { classId, ready } = useTeacherClass();
   const [mode, setMode] = useState<MathsSwitch | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchMathsSwitch()
+    if (!ready) return;
+    setMode(null);
+    setStatus(null);
+    fetchMathsSwitch(classId)
       .then(setMode)
       .catch(() => setStatus('We couldn’t load this setting.'));
-  }, []);
+  }, [ready, classId]);
 
   async function change(next: MathsSwitch) {
     setStatus('Saving…');
     try {
-      await setSpaceMaths(next);
+      await setSpaceMaths(next, classId);
       setMode(next);
       setStatus(`Mission Control maths: ${MATHS_CHOICES.find((c) => c.value === next)?.label}.`);
     } catch (error) {

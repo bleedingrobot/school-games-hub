@@ -372,10 +372,10 @@ describe('teacher view', () => {
     const { setMultiplayer } = await import('../data/teacher');
     const user = userEvent.setup();
     renderAt('/teacher', teacher);
-    await user.click(await screen.findByRole('button', { name: 'Pause games against friends' }));
-    expect(setMultiplayer).toHaveBeenCalledWith(false);
+    await user.click(await screen.findByRole('button', { name: 'Pause games against friends' }, { timeout: 5000 }));
+    expect(setMultiplayer).toHaveBeenCalledWith(false, null);
     expect(await screen.findByRole('button', { name: 'Switch games against friends back on' })).toBeInTheDocument();
-    expect(screen.getByText('Games against friends are paused for everyone.')).toBeInTheDocument();
+    expect(screen.getByText('Games against friends are paused for this class.')).toBeInTheDocument();
   });
 
   it('starts a new season only after NEW SEASON is typed', async () => {
@@ -402,9 +402,9 @@ describe('teacher view', () => {
     renderAt('/teacher', teacher);
     const section = await screen.findByRole('region', { name: 'Gem Keep settings' });
     await user.click(await within(section).findByRole('checkbox', { name: '×12' }));
-    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ enabledTables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }));
+    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ enabledTables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }), null);
     await user.selectOptions(within(section).getByLabelText('Level Key pass mark'), '7');
-    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ keyPassMark: 7 }));
+    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ keyPassMark: 7 }), null);
     expect(await within(section).findByText(/Saved/)).toBeInTheDocument();
   });
 

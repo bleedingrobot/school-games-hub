@@ -8,6 +8,8 @@ import {
   answerWarp,
   archiveClass,
   createClass,
+  createGroup,
+  deleteGroup,
   fetchClassDetail,
   fetchClassEvents,
   fetchClasses,
@@ -18,8 +20,11 @@ import {
   moveStudent,
   removeCoTeacher,
   removeFromClass,
+  renameGroup,
   resetWarpCode,
+  setGroupMember,
   setWarpMode,
+  updateClass,
   type ClassDetail,
   type ClassSummary,
   type SchoolInfo,
@@ -231,8 +236,8 @@ function MakeClass({ onMade }: { onMade: (id: string) => void }) {
       </h2>
       <form className="classes__form" onSubmit={(e) => void submit(e)}>
         <label className="teacher__type">
-          <span>Class name</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={30} placeholder="Room 12" required />
+          <span>Class name (optional)</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={30} placeholder="Room 12" aria-describedby="make-class-name-help" />
         </label>
         <label className="teacher__type">
           <span>School year</span>
@@ -255,10 +260,14 @@ function MakeClass({ onMade }: { onMade: (id: string) => void }) {
             ))}
           </select>
         </label>
-        <button type="submit" className="button button--primary" disabled={name.trim() === ''}>
+        <button type="submit" className="button button--primary">
           Make class
         </button>
       </form>
+      <p id="make-class-name-help" className="class-panel__hint">
+        Leave the name blank and the class is named after your email (the part before the @). You can rename it any time. Students
+        see a class name once they type its code, so give it a name your class will recognise.
+      </p>
       <p role="status" className="teacher__status">
         {status}
       </p>
@@ -287,7 +296,10 @@ function ClassPanel({
   const [ticked, setTicked] = useState<Set<string>>(new Set());
   const [coTeacher, setCoTeacher] = useState('');
   const [moveTo, setMoveTo] = useState<Record<string, string>>({});
-  const [confirming, setConfirming] = useState<'reset' | 'archive' | `reset-group:${string}` | null>(null);
+  const [confirming, setConfirming] = useState<'reset' | 'archive' | `reset-group:${string}` | `delete-group:${string}` | null>(null);
+  const [rename, setRename] = useState<string | null>(null);
+  const [newGroup, setNewGroup] = useState('');
+  const [groupNames, setGroupNames] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<string | null>(null);
 
   const id = summary.id;
@@ -345,8 +357,40 @@ function ClassPanel({
   const canAddTeacher = staff.filter((t) => !teacherIds.has(t.id));
   const editable = !detail.archived && (summary.teaching || isAdmin);
 
+  const nameNow = rename ?? detail.name;
+
   return (
     <div className="class-panel">
+      {editable && (
+        <section aria-labelledby={`name-${id}`} className="class-panel__section">
+          <h3 id={`name-${id}`}>Class name</h3>
+          <form
+            className="class-panel__add-teacher"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const name = nameNow.trim();
+              void act(async () => {
+                await updateClass(id, name, detail.schoolYear, detail.yearLevel);
+                setRename(null);
+                return `The class is now called ${name}.`;
+              });
+            }}
+          >
+            <label className="teacher__type">
+              <span>Name</span>
+              <input value={nameNow} onChange={(e) => setRename(e.target.value)} maxLength={30} />
+            </label>
+            <button type="submit" className="button button--light-outline" disabled={nameNow.trim() === '' || nameNow.trim() === detail.name}>
+              Save name
+            </button>
+          </form>
+          <p className="class-panel__hint">
+            Your students see this name after they type the class code, so make it one they will recognise.{' '}
+            <Link to={`/focus?class=${id}`}>🎯 Choose the maths for this class</Link>
+          </p>
+        </section>
+      )}
+
       <section aria-labelledby={`warp-${id}`} className="class-panel__section">
         <h3 id={`warp-${id}`}>Class Warp code</h3>
         <p className="class-panel__code" aria-label={`The code for ${detail.name} is ${detail.warpCode.split('').join(' ')}`}>
@@ -446,8 +490,34 @@ function ClassPanel({
 
       <section aria-labelledby={`groups-${id}`} className="class-panel__section">
         <h3 id={`groups-${id}`}>Groups</h3>
+        <p className="class-panel__hint">
+          A group is a smaller set of students inside this class, for example a maths group. Each group has its own Class Warp code
+          and can have its own maths focus. A student is in one group at a time.
+        </p>
+        {editable && (
+          <form
+            className="class-panel__add-teacher"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const name = newGroup.trim();
+              void act(async () => {
+                await createGroup(id, name);
+                setNewGroup('');
+                return `The ${name} group is made. Pick its students below.`;
+              });
+            }}
+          >
+            <label className="teacher__type">
+              <span>New group name</span>
+              <input value={newGroup} onChange={(e) => setNewGroup(e.target.value)} maxLength={30} placeholder="Kea" />
+            </label>
+            <button type="submit" className="button button--light-outline" disabled={newGroup.trim() === ''}>
+              Make group
+            </button>
+          </form>
+        )}
         {detail.groups.length === 0 ? (
-          <p className="panel__empty">No groups yet. Making and filling groups comes in the next update.</p>
+          <p className="panel__empty">No groups yet.</p>
         ) : (
           <ul className="class-panel__list">
             {detail.groups.map((g) => (
@@ -469,6 +539,50 @@ function ClassPanel({
                     })
                   }
                 />
+                {editable && (
+                  <span className="class-panel__row-actions">
+                    <input
+                      aria-label={`Name of the ${g.name} group`}
+                      value={groupNames[g.id] ?? g.name}
+                      maxLength={30}
+                      onChange={(e) => setGroupNames({ ...groupNames, [g.id]: e.target.value })}
+                    />
+                    <button
+                      type="button"
+                      className="button button--light-outline"
+                      aria-label={`Rename ${g.name}`}
+                      disabled={(groupNames[g.id] ?? g.name).trim() === '' || (groupNames[g.id] ?? g.name).trim() === g.name}
+                      onClick={() =>
+                        void act(async () => {
+                          const name = (groupNames[g.id] ?? g.name).trim();
+                          await renameGroup(g.id, name);
+                          setGroupNames((all) => Object.fromEntries(Object.entries(all).filter(([k]) => k !== g.id)));
+                          return `The group is now called ${name}.`;
+                        })
+                      }
+                    >
+                      Rename
+                    </button>
+                    {confirming === `delete-group:${g.id}` ? (
+                      <>
+                        <button
+                          type="button"
+                          className="button button--primary"
+                          onClick={() => void act(async () => { await deleteGroup(g.id); return `The ${g.name} group is gone. Its students are still in the class.`; })}
+                        >
+                          Yes, delete {g.name}
+                        </button>
+                        <button type="button" className="button button--light-outline" onClick={() => setConfirming(null)}>
+                          Keep it
+                        </button>
+                      </>
+                    ) : (
+                      <button type="button" className="button button--light-outline" aria-label={`Delete ${g.name}`} onClick={() => setConfirming(`delete-group:${g.id}`)}>
+                        Delete
+                      </button>
+                    )}
+                  </span>
+                )}
                 {editable && (
                   <button
                     type="button"
@@ -508,6 +622,30 @@ function ClassPanel({
                 </span>
                 {editable && (
                   <span className="class-panel__row-actions">
+                    {detail.groups.length > 0 && (
+                      <select
+                        aria-label={`Group for ${m.name}`}
+                        value={m.groupId ?? ''}
+                        onChange={(e) => {
+                          const to = e.target.value;
+                          void act(async () => {
+                            if (to === '') {
+                              if (m.groupId) await setGroupMember(m.groupId, m.id, false);
+                              return `${m.name} is in no group.`;
+                            }
+                            await setGroupMember(to, m.id, true);
+                            return `${m.name} is in ${detail.groups.find((g) => g.id === to)?.name ?? 'the group'}.`;
+                          });
+                        }}
+                      >
+                        <option value="">No group</option>
+                        {detail.groups.map((g) => (
+                          <option key={g.id} value={g.id}>
+                            {g.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     {others.length > 0 && (
                       <>
                         <select

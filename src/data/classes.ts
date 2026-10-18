@@ -33,6 +33,7 @@ export interface ClassMember {
   hidden: boolean;
   joinedAt: string;
   group: string | null;
+  groupId?: string | null;
 }
 
 export interface ClassGroup {
@@ -128,6 +129,34 @@ export async function createClass(name: string, year: number, level: number | nu
   const { data, error } = await supabase.rpc('teacher_create_class', { class_name: name, in_year: year, level });
   if (error || !data) fail(error ?? {}, 'We couldn’t make that class.');
   return data as string;
+}
+
+/** Renames a class (and sets its year and year level). Teachers see the name; students only after typing a right code. */
+export async function updateClass(id: string, name: string, year: number, level: number | null): Promise<void> {
+  const { error } = await supabase.rpc('teacher_update_class', { target: id, class_name: name, in_year: year, level });
+  if (error) fail(error, 'We couldn’t rename that class.');
+}
+
+export async function createGroup(classId: string, name: string): Promise<string> {
+  const { data, error } = await supabase.rpc('teacher_create_group', { target: classId, group_name: name });
+  if (error || !data) fail(error ?? {}, 'We couldn’t make that group.');
+  return data as string;
+}
+
+export async function renameGroup(groupId: string, name: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_rename_group', { target: groupId, group_name: name });
+  if (error) fail(error, 'We couldn’t rename that group.');
+}
+
+export async function deleteGroup(groupId: string): Promise<void> {
+  const { error } = await supabase.rpc('teacher_delete_group', { target: groupId });
+  if (error) fail(error, 'We couldn’t delete that group.');
+}
+
+/** Puts a student in a group of their class (leaving the group they were in), or takes them out of it. */
+export async function setGroupMember(groupId: string, student: string, member: boolean): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_group_member', { target: groupId, student, member });
+  if (error) fail(error, 'We couldn’t change that group.');
 }
 
 export async function archiveClass(id: string, archive: boolean): Promise<void> {

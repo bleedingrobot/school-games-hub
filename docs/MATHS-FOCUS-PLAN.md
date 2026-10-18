@@ -366,3 +366,46 @@ James said go. Done in this order, nothing failed:
    - Settings read back through the sign-in rules for a real student and for James's teacher account: each sees exactly one settings row, and every value matches what it was before F.2 (Gem Keep calm, Clan Quest on, Dragon Maths on, Monsters on, and so on).
 
 Not checked by me: a real browser sign-in on the live site (step 6 of the list is for James: Teacher page, a game, Clan Quest, My classes).
+
+## Stage F.3 results: groups and timed focus (18 October 2026)
+
+**Status: built and tested on a scratch copy of the database and in a real browser. Nothing is live.** No migration was applied to the live database, no function was deployed, nothing was merged to `main`. F.2 is live (see "F.2 went live"), so I started from `main` as it is now. Work is on branch `maths-focus`.
+
+### What I built
+- **The focus, decided on the server** (`20261018002700_maths_focus.sql`). A student's focus is the first of: a running teacher focus for them, for their group, for their class, their own choice (if the class allows), auto. `maths_focus_of(player)` works it out and `my_maths_focus()` gives it to the signed-in student. A teacher focus only counts while it is running, and only in the class it was made for, so moving class drops it. Games never decide the focus.
+- **Timed focuses.** Tables `maths_focuses` (one row per student, group or class, with start, end, an "ended early" time and a batch id so one press = one entry) and `student_maths_focus` (the student's own pick). Closed to the website. Lengths are worked out by the server in New Zealand time: This lesson (1 hour), Rest of today (midnight), **Until Friday (midnight at the end of Friday, the default)**, 1 week, or a time you pick. Nothing is deleted: End now just sets an end time, and ended ones stay for the history. No timer or scheduled job.
+- **Teacher functions:** set (class, group, or a list of students), extend (must end later than it does now), end now, list running (and history), the class switch `students_choose_focus` (on by default, per class, new classes copy it), and `teacher_class_settings` (reads one class's settings for the picker).
+- **Student's own choice** (`set_my_maths_focus`, `clear_my_maths_focus`): refused with a plain message when the class switch is off. What they picked is kept underneath, and comes back when a teacher focus ends or the switch goes back on.
+- **Groups:** the F.2 tables and functions are now used by screens: make, rename (new `teacher_rename_group`), delete, fill (a drop-down on each student). Each group still has its own Class Warp code.
+- **Class names:** a class made with no name is named from the teacher's email before the @ (marks a class name can't hold become a dash, " 2" added if taken that year). Renaming had no screen before; it does now.
+- **Screens:** `/focus` (Set focus: class picker, the switch, Running focuses with Extend and End now, Set a focus, history); a **class picker** on the Teacher page (every switch there now reads and changes the picked class only); a **"My maths focus" card** on a student's home page (the note, and a picker when allowed); the note on Gem Keep's map and on Mission Control's settings screen; groups, rename and the optional class name on My classes.
+- **Gem Keep and Mission Control follow the focus.** One shared pack (`makeFocusPack`): no focus = exactly what they did before (times tables); with a focus = the chosen skills as the main questions, earlier skills as review (about 30%, off with "only these"), no stretch. The class's own Gem Keep switches still apply (tables switched off, division, multiple choice). **The change shows from the next level or the next game**: Gem Keep asks again when a level is about to start, Mission Control as a game starts; if the lookup fails or is slow (1.5 s) the focus it has is kept. Chess, checkers and 101 are untouched.
+- **Every built skill works in both games** (early facts, adding facts, times tables, division), which needed more than the screens: answers are saved under the right pack (Gem Keep's saving and the two game servers now accept the four packs), and the server can mark a question for any of them (`solveParts`, checked against every question the generators make). A record key like `bond10:3+7` was **refused by the database** (letters-only check): this migration widens it. Without that, early-facts answers could never have been saved.
+
+### Decisions I made (change any you don't like)
+- **Level Key follows the focus too.** All of a level's maths, including the Level Key, comes from the focus. The alternative (key always uses the level's own tables) would have meant a second pack and mixed records. A student can therefore pass a key by answering the focus skill.
+- **Auto in the games is unchanged for now** (F.4 makes auto cover the whole ladder). So "no focus" is today's behaviour, not the ladder.
+- **Switched-off tables and division still win** over a focus (a ×7 focus with ×7 switched off gives no ×7).
+- **Unknown skill names** are accepted by the database (it can't see the ladder) and ignored by the games. The screens only offer built skills.
+- **The teacher picker has no "all my classes" choice**, and lists the classes I teach first. A teacher with one class sees its name; with none, a nudge to make one.
+- **Class names from the email show to students** after a right code. If an email is a real name ("jamesriley") a student would see it after warping in. The My classes page says to rename it; it doesn't stop it. Say if you'd rather it never defaults to the email.
+- **A student's pick can't be saved while the switch is off**, and nothing in the focus is shown to other classes: the teacher list shows student names (the safe word names) only.
+
+### Tests
+- **Database (scratch copy):** all 29 files pass. New `maths_focus.test.sql` (180 checks): precedence, newest wins, ending, expiry, layering, own choice kept underneath, switch on/off, Friday/midnight (New Zealand time), extend/end/history, **teachers can't set, extend, end, list or read another teacher's class, a student in another class, or another school**; moving class drops a focus; groups; names; settings picker; grants. `security.test.sql` has the new function list.
+- **Rehearsal on today's data** (`scripts/f3-rehearsal.sh`, 39 checks, F.2's live state plus fake classes, a group, changed settings and records of every pack): nothing lost, settings identical, new switch on everywhere, lists identical, and the new parts work on it.
+- **App:** type check clean; production build works; `npm run build:functions` run. Whole suite passes, including the slow Gem Keep and Mission Control files. New tests for the shared maths (focus rules, solver against every generator), the three servers, the Set focus screen, the picker, the student card, groups and names on My classes, and the data layer.
+- **Real browser** (Chromium, the real site against a scratch database, signed in as real tokens): a blank class name became `ms.teacher`, renamed; groups made, renamed and filled; the picker changed Room 14's switch only (checked in the database); Set focus for a class and for a group; Running focuses showed both with time left; a student in the group saw "Your teacher picked Number facts to 10 for another 60 minutes" and could not change it, one in the class saw "×6, ×9 until Friday"; a student picked their own focus and it survived a reload; the teacher turned choosing off (student told so) and on (their pick came back); Gem Keep's Level Key asked bonds/doubles, ×6/×9, and doubles/halves for the three students; **axe clean** at 1366 x 640 on the Teacher page, Set focus, My classes with groups and the student card. At 844 x 390 only the top bar's contrast fails, as before F.2.
+
+### What is untested
+Real Google sign-in; the live Supabase project; the edge functions running in Deno (code is covered by handler tests and the build); Mission Control with classmates in a real browser (covered by handler tests; the solo game in the browser only to the settings note); what teachers think of the screens with real use; a student's phone.
+
+### Go-live list (when you say "go live")
+1. Apply `20261018002700_maths_focus.sql` (one migration; nothing by hand).
+2. Deploy the **three** functions whose behaviour changed: `gem-keep` (accepts the other packs), `space-game` (reads the focus) and `save-bot-game` (marks and records every pack). Deploy them **right after** the migration. The `card-game` file also changed by one unused line (it no longer carries the space game's code): no need to redeploy it.
+3. Merge `maths-focus` to `main`; wait for Pages.
+4. Afterwards: as a teacher open Teacher page (picker), Maths focus, My classes (groups); as a student check the home card and Gem Keep.
+Until the site is merged nothing is visible, and with no focus set every student plays exactly as before.
+
+### What F.4 needs from you
+See the message that came with this stage.
