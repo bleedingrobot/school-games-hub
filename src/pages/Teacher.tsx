@@ -5,6 +5,7 @@ import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import { fetchMultiplayerEnabled } from '../data/multiplayer';
 import { fetchMathsSwitch, fetchReactionsEnabled } from '../data/spaceGames';
+import { marbleOn } from '../games/marble/switch';
 import { FriendlyError } from '../data/profile';
 import {
   deletePerson,
@@ -34,6 +35,7 @@ const MonstersStudentPanel = lazy(() => import('./TeacherMonsters').then((m) => 
 const LordTeacherPanels = lazy(() => import('./TeacherLord').then((m) => ({ default: m.LordTeacherPanels })));
 const LordStudentPanel = lazy(() => import('./TeacherLord').then((m) => ({ default: m.LordStudentPanel })));
 const ClansTeacherPanels = lazy(() => import('./TeacherClans').then((m) => ({ default: m.ClansTeacherPanels })));
+const MarbleTeacherPanel = lazy(() => import('./TeacherMarble').then((m) => ({ default: m.MarbleTeacherPanel })));
 const ClansStudentPanel = lazy(() => import('./TeacherClans').then((m) => ({ default: m.ClansStudentPanel })));
 const GemKeepStudentPanel = lazy(() => import('./TeacherGemKeep').then((m) => ({ default: m.GemKeepStudentPanel })));
 
@@ -109,6 +111,7 @@ function TeacherView({ me, isAdmin }: { me: string; isAdmin: boolean }) {
           <MonstersTeacherPanels />
           <LordTeacherPanels />
           <ClansTeacherPanels />
+          {marbleOn() && <MarbleTeacherPanel />}
         </Suspense>
       </TeacherClassProvider>
 

@@ -166,3 +166,53 @@ export function doorsFromMask(mask: number): number[] {
 export function doorsForSeed(course: Course, seed: string, questions: readonly Question[] | null): number[] {
   return openDoors(course, gateLayout(course, seed, questions));
 }
+
+// ---------------------------------------------------------------- what the browser needs to play a run
+
+/** One answer gate as the browser sees it. */
+export interface GateSetup {
+  slot: number;
+  /** What each tunnel's sign shows (maths on), else null. */
+  labels: string[] | null;
+  /** With maths off: the tunnel the arrow points to. */
+  arrow: number | null;
+  /** With maths on: the question over the gate. */
+  question: PublicQuestion | null;
+}
+
+/** Everything the screen needs to play one run: the open doors, the gates and the questions for pit stops and rescues (never an answer). */
+export interface RunSetup {
+  maths: boolean;
+  rescue: boolean;
+  /** The shortcut doors that are open this run (0 = A). */
+  doors: number[];
+  gates: GateSetup[];
+  pits: PublicQuestion[];
+  rescues: PublicQuestion[];
+}
+
+/** What a start gives the browser: the seed with its stamp, and the setup. */
+export interface StartReply extends RunSetup {
+  seed: string;
+  stamp: string;
+}
+
+/** The setup for a run. `questions` is the run's list (maths on) or null (maths off: arrows). */
+export function runSetup(course: Course, seed: string, questions: readonly Question[] | null, rescue: boolean): RunSetup {
+  const layout = gateLayout(course, seed, questions);
+  const plan = slotPlan(course);
+  const pub = (slot: number) => publicQuestion((questions as readonly Question[])[slot], slot);
+  return {
+    maths: questions !== null,
+    rescue: questions !== null && rescue,
+    doors: openDoors(course, layout),
+    gates: layout.map((l) => ({ slot: l.slot, labels: l.labels, arrow: questions ? null : l.right, question: questions ? pub(l.slot) : null })),
+    pits: questions ? Array.from({ length: plan.pits }, (_, i) => pub(plan.pitStart + i)) : [],
+    rescues: questions && rescue ? Array.from({ length: plan.rescues }, (_, i) => pub(plan.rescueStart + i)) : [],
+  };
+}
+
+/** A run with no maths and no server (offline, or two players on one keyboard): arrows, with the open doors chosen from a local seed. */
+export function plainSetup(course: Course, random: () => number = Math.random): RunSetup {
+  return runSetup(course, `local-${Math.floor(random() * 1e9)}`, null, false);
+}

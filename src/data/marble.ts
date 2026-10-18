@@ -8,7 +8,11 @@
  */
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
+import { parseMathsSwitch, type MathsSwitch } from '../../shared/space/mathsSwitch';
+import { readSettings } from './classSettings';
+import { FriendlyError } from './profile';
 import type { ClockMode } from '../../shared/marble/engine';
+import { doorsFromMask, type StartReply } from '../../shared/marble/maths';
 import type { MarbleRunReport } from '../../shared/marble/save';
 import type { Bests } from '../games/marble/bests';
 
@@ -62,13 +66,45 @@ async function post(body: unknown, keepalive = false): Promise<Response | null> 
   }
 }
 
-/** A stamped seed for a run, or null if the server can't be reached (the run can still be played, it just won't be saved). */
-export async function startRun(course: string, mode: ClockMode): Promise<{ seed: string; stamp: string } | null> {
-  const response = await post({ action: 'start', course, mode });
+/**
+ * Starts a run: a stamped seed, and (if the teacher allows maths and the student wants it) the run's questions and open doors.
+ * Null if the server can't be reached; the run can still be played without maths, it just won't be saved.
+ */
+export async function startRun(course: string, mode: ClockMode, maths = false): Promise<StartReply | null> {
+  const response = await post({ action: 'start', course, mode, maths });
   if (!response?.ok) return null;
   try {
-    const body = (await response.json()) as { seed?: unknown; stamp?: unknown };
-    return typeof body.seed === 'string' && typeof body.stamp === 'string' ? { seed: body.seed, stamp: body.stamp } : null;
+    const body = (await response.json()) as Partial<StartReply>;
+    if (typeof body.seed !== 'string' || typeof body.stamp !== 'string' || !Array.isArray(body.doors) || !Array.isArray(body.gates)) return null;
+    return {
+      seed: body.seed,
+      stamp: body.stamp,
+      maths: body.maths === true,
+      rescue: body.rescue === true,
+      doors: body.doors.filter((d): d is number => Number.isInteger(d)),
+      gates: body.gates as StartReply['gates'],
+      pits: Array.isArray(body.pits) ? body.pits : [],
+      rescues: Array.isArray(body.rescues) ? body.rescues : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** The server's mark for a pit-stop or rescue answer: null if it could not be reached (the question is then just skipped). */
+export async function answerQuestion(
+  started: { seed: string; stamp: string },
+  course: string,
+  mode: ClockMode,
+  slot: number,
+  answer: number,
+  ms: number,
+): Promise<{ right: boolean; answer: number } | null> {
+  const response = await post({ action: 'answer', seed: started.seed, stamp: started.stamp, course, mode, slot, answer, ms });
+  if (!response?.ok) return null;
+  try {
+    const body = (await response.json()) as { right?: unknown; answer?: unknown };
+    return typeof body.right === 'boolean' && typeof body.answer === 'number' ? { right: body.right, answer: body.answer } : null;
   } catch {
     return null;
   }
@@ -131,15 +167,18 @@ export interface Ghost {
   steps: number;
   /** The recorded inputs, as text (decode with decodeInputs). */
   inputs: string;
+  /** The shortcut doors that were open for that run (a run can only be played back with the same doors). */
+  doors: number[];
 }
 
 /** A recorded run to race against, or null (none yet, or the server can't be reached). */
-export async function loadGhost(course: string, mode: ClockMode, which: GhostKind): Promise<Ghost | null> {
+export async function loadGhost(course: string, mode: ClockMode, which: GhostKind, maths = false): Promise<Ghost | null> {
   try {
-    const { data, error } = await supabase.rpc('marble_ghost', { in_course: course, in_mode: mode, in_maths: false, which });
+    const { data, error } = await supabase.rpc('marble_ghost', { in_course: course, in_mode: mode, in_maths: maths, which });
     if (error || !data || typeof data !== 'object') return null;
-    const g = data as Partial<Ghost>;
-    return typeof g.name === 'string' && typeof g.steps === 'number' && typeof g.inputs === 'string' ? { name: g.name, steps: g.steps, inputs: g.inputs } : null;
+    const g = data as Partial<Ghost> & { doors?: unknown };
+    if (typeof g.name !== 'string' || typeof g.steps !== 'number' || typeof g.inputs !== 'string') return null;
+    return { name: g.name, steps: g.steps, inputs: g.inputs, doors: doorsFromMask(typeof g.doors === 'number' ? g.doors : 0) };
   } catch {
     return null;
   }
@@ -151,13 +190,31 @@ export interface Board {
   total: number;
 }
 
-/** The class board for a course and mode (without maths), or null if it can't be loaded. */
-export async function loadBoard(course: string, mode: ClockMode): Promise<Board | null> {
+/** The class board for a course and mode (with or without maths), or null if it can't be loaded. */
+export async function loadBoard(course: string, mode: ClockMode, maths = false): Promise<Board | null> {
   try {
-    const { data, error } = await supabase.rpc('marble_board', { in_course: course, in_mode: mode, in_maths: false });
+    const { data, error } = await supabase.rpc('marble_board', { in_course: course, in_mode: mode, in_maths: maths });
     if (error || !data || typeof data !== 'object' || !Array.isArray((data as Board).top)) return null;
     return data as Board;
   } catch {
     return null;
   }
+}
+
+// ---------------------------------------------------------------- maths (stage M.6)
+
+/** What the teacher allows for Marble Rush maths in a class. If it can't be read, maths stays off. */
+export async function fetchMarbleSwitches(classId?: string | null): Promise<{ maths: MathsSwitch; rescue: boolean }> {
+  const row = await readSettings(['marble_maths', 'marble_rescue'], classId);
+  return { maths: parseMathsSwitch(row?.marble_maths), rescue: row ? row.marble_rescue !== false : true };
+}
+
+export async function saveMarbleMaths(mode: MathsSwitch, classId?: string | null): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_marble_maths', { mode, target_class: classId ?? null });
+  if (error) throw new FriendlyError('We couldn’t change that.');
+}
+
+export async function saveMarbleRescue(enabled: boolean, classId?: string | null): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_marble_rescue', { enabled, target_class: classId ?? null });
+  if (error) throw new FriendlyError('We couldn’t change that.');
 }

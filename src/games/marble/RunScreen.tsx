@@ -6,17 +6,20 @@
  * and asks the renderer to draw the latest state. Nothing is saved from here: it reports the finished
  * run through `onDone`.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DT } from '../../../shared/marble/config';
 import type { Course } from '../../../shared/marble/course';
 import { clockSteps, makeWorld, medalFor, newRun, stepRun, type ClockMode, type RunState } from '../../../shared/marble/engine';
-import { decodeInputs, inputPlayer, pushInput } from '../../../shared/marble/inputs';
+import { BONUS, decodeInputs, inputPlayer, pushInput } from '../../../shared/marble/inputs';
+import { plainSetup, type PublicQuestion, type RunSetup } from '../../../shared/marble/maths';
+import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
 import { useSound } from '../../sound';
 import { playSound } from '../sounds';
 import { formatSteps } from './bests';
 import { dragVector, KEYS_ARROWS, KEYS_LETTERS, KeyTracker, screenToCode } from './controls';
 import { infoFor } from './courseInfo';
 import { paletteFor } from './palette';
+import { gateSigns } from './signs';
 import type { MarbleView, OtherKind } from './renderer';
 
 /** A recorded run to race against (from src/data/marble.ts). */
@@ -24,6 +27,8 @@ export interface GhostRun {
   name: string;
   steps: number;
   inputs: string;
+  /** The shortcut doors that were open for that run (it only plays back with the same doors). */
+  doors?: number[];
 }
 
 export interface FinishedRun {
@@ -34,9 +39,23 @@ export interface FinishedRun {
   falls: number;
   checkpoints: number;
   inputs: [number, number][];
+  /** True if the run had maths questions (it counts on the with-maths board). */
+  maths: boolean;
 }
 
-type Phase = 'loading' | 'ready' | 'playing' | 'paused' | 'finished' | 'timeout' | 'broken';
+/** The server's mark for an answer (null if it could not be reached). */
+export type Marker = (slot: number, answer: number, ms: number) => Promise<{ right: boolean; answer: number } | null>;
+
+type Phase = 'loading' | 'ready' | 'playing' | 'reading' | 'question' | 'paused' | 'finished' | 'timeout' | 'broken';
+
+/** How close (in tiles) the marble has to be to a gate's sign for its question to show. */
+const SIGN_RANGE = 7;
+/** The longest the game waits for a student to read a gate, in milliseconds. */
+const READ_TIME_MS = 10_000;
+
+const shown = (q: PublicQuestion): ShownQuestion => ({ id: q.slot, parts: q.parts, spoken: q.spoken, choices: q.choices, choiceLabels: q.choiceLabels, maxLength: q.maxLength, input: q.input });
+/** The words on a question, as one line. */
+const questionText = (q: PublicQuestion) => q.parts.map((p) => (p === '?' ? '…' : p)).join(' ');
 
 const MEDAL = { gold: '🥇 Gold', silver: '🥈 Silver', bronze: '🥉 Bronze' } as const;
 const DEAD_ZONE = 14;
@@ -51,6 +70,9 @@ export function RunScreen({
   canTryHard,
   ghost,
   twoPlayer = false,
+  setup: givenSetup,
+  readTime = false,
+  onAnswer,
   onDone,
   onAgain,
   onHard,
@@ -66,12 +88,22 @@ export function RunScreen({
   ghost?: GhostRun | null;
   /** Two marbles on one keyboard: arrow keys and W A S D. Nothing is saved. */
   twoPlayer?: boolean;
+  /** The open doors, gates and questions for this run (from the server). Without one: arrows, and no maths. */
+  setup?: RunSetup;
+  /** Pause when a gate's question comes into view, until the student presses Go. */
+  readTime?: boolean;
+  /** Marks a pit-stop answer on the server. */
+  onAnswer?: Marker;
   onDone: (run: FinishedRun) => { isBest: boolean };
   onAgain: () => void;
   onHard: () => void;
   onExit: () => void;
 }) {
   const { soundOn } = useSound();
+  // A run with no setup from the server (offline) is a plain one: arrows at the gates, with the doors chosen here.
+  const setup = useMemo(() => givenSetup ?? plainSetup(course), [givenSetup, course]);
+  const answerRef = useRef(onAnswer);
+  answerRef.current = onAnswer;
   const soundRef = useRef(soundOn);
   soundRef.current = soundOn;
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -83,6 +115,11 @@ export function RunScreen({
   const [falls, setFalls] = useState(0);
   const [checkpoints, setCheckpoints] = useState(0);
   const [announce, setAnnounce] = useState('');
+  const [banner, setBanner] = useState<PublicQuestion | null>(null);
+  const [ask, setAsk] = useState<{ slot: number; question: PublicQuestion } | null>(null);
+  const [toast, setToast] = useState('');
+  const resumeRef = useRef<() => void>(() => {});
+  const closeAskRef = useRef<(right: boolean) => void>(() => {});
   const [result, setResult] = useState<{ steps: number; medal: keyof typeof MEDAL | null; isBest: boolean; falls: number; ghost?: 'beat' | 'lost' | 'tie'; winner?: 1 | 2 | 0 } | null>(null);
   const [stickSide, setStickSide] = useState<'left' | 'right'>('right');
   const [showStick, setShowStick] = useState(isCoarse);
@@ -105,16 +142,16 @@ export function RunScreen({
     let disposed = false;
     let raf = 0;
     let view: MarbleView | null = null;
-    const world = makeWorld(course, { mode });
+    const world = makeWorld(course, { mode, openDoors: setup.doors });
     let state: RunState = newRun(world);
     let prev: RunState = { ...state };
     // A ghost and a second player each have a world and a run of their own, stepped together with ours.
     const ghostRuns = ghost && !twoPlayer ? decodeInputs(ghost.inputs) : null;
-    const ghostWorld = ghostRuns ? makeWorld(course, { mode }) : null;
+    const ghostWorld = ghostRuns ? makeWorld(course, { mode, openDoors: ghost?.doors ?? [] }) : null;
     let ghostState: RunState | null = ghostWorld ? newRun(ghostWorld) : null;
     let ghostPrev: RunState | null = ghostState ? { ...ghostState } : null;
     let ghostNext = ghostRuns ? inputPlayer(ghostRuns) : null;
-    const world2 = twoPlayer ? makeWorld(course, { mode }) : null;
+    const world2 = twoPlayer ? makeWorld(course, { mode, openDoors: setup.doors }) : null;
     let state2: RunState | null = world2 ? newRun(world2) : null;
     let prev2: RunState | null = state2 ? { ...state2 } : null;
     const kinds: OtherKind[] = [...(ghostWorld ? ['ghost' as const] : []), ...(world2 ? ['rival' as const] : [])];
@@ -127,6 +164,10 @@ export function RunScreen({
     let skip = false;
     let lastFalls = 0;
     let lastChecks = 0;
+    let lastPits = 0;
+    let nearGate = -1;
+    const read = new Set<number>();
+    let readTimer = 0;
     let wasGrounded = true;
     let reported = false;
     const reduced = prefersReducedMotion();
@@ -147,6 +188,13 @@ export function RunScreen({
       acc = 0;
       lastFalls = 0;
       lastChecks = 0;
+      lastPits = 0;
+      nearGate = -1;
+      read.clear();
+      window.clearTimeout(readTimer);
+      setBanner(null);
+      setAsk(null);
+      setToast('');
       wasGrounded = true;
       reported = false;
       setFalls(0);
@@ -197,7 +245,7 @@ export function RunScreen({
       const finished = state.outcome === 'finished';
       const steps = finished ? state.finishSteps : state.steps + state.penalty;
       const { isBest } = onDone({
-        courseId: course.def.id, mode, outcome: finished ? 'finished' : 'timeout', steps, falls: state.falls, checkpoints: state.checkpoints.length, inputs: runs,
+        courseId: course.def.id, mode, outcome: finished ? 'finished' : 'timeout', steps, falls: state.falls, checkpoints: state.checkpoints.length, inputs: runs, maths: setup.maths,
       });
       if (finished) {
         const ghostResult = ghost && ghostRuns ? (steps < ghost.steps ? 'beat' : steps > ghost.steps ? 'lost' : 'tie') : undefined;
@@ -211,6 +259,29 @@ export function RunScreen({
         say('Out of time. Try again!');
         goto('timeout');
       }
+    };
+
+    // A pit-stop question: the number pad over the course. A right answer takes a couple of seconds off (the BONUS input).
+    const openAsk = (q: PublicQuestion) => {
+      setAsk({ slot: q.slot, question: q });
+      goto('question');
+    };
+    closeAskRef.current = (right: boolean) => {
+      if (right) {
+        pushInput(runs, BONUS);
+        prev = { ...state };
+        stepRun(world, state, BONUS);
+        setToast('Right! 2 seconds off your time');
+        beep('item');
+        say('Right! Two seconds off your time.');
+        window.setTimeout(() => setToast(''), 2500);
+      }
+      setAsk(null);
+      goto('playing');
+    };
+    resumeRef.current = () => {
+      window.clearTimeout(readTimer);
+      if (phaseRef.current === 'reading') goto('playing');
     };
 
     const frame = (t: number) => {
@@ -250,8 +321,36 @@ export function RunScreen({
           }
           if (wasGrounded && !state.grounded && state.vz > 1) beep('hop');
           wasGrounded = state.grounded;
+          // A new pit stop: the clock and the marble stop while the question is answered (the physics simply isn't stepped).
+          if (setup.maths && !state2 && state.pitStops.length > lastPits) {
+            const group = state.pitStops[lastPits];
+            lastPits = state.pitStops.length;
+            const q = setup.pits[group];
+            if (q) {
+              openAsk(q);
+              break;
+            }
+          }
         }
         if (n === 6) acc = 0;
+        // The nearest gate whose tunnel hasn't been chosen yet, if its sign is close: its question shows, and the game can wait to be read.
+        if (setup.maths && !state2 && phaseRef.current === 'playing') {
+          let near = -1;
+          course.gates.forEach((gate, i) => {
+            if (near >= 0 || state.gateChoices[i] >= 0) return;
+            if ((gate.sign[0] + 0.5 - state.x) ** 2 + (gate.sign[1] + 0.5 - state.y) ** 2 < SIGN_RANGE * SIGN_RANGE) near = i;
+          });
+          if (near !== nearGate) {
+            nearGate = near;
+            setBanner(near >= 0 ? (setup.gates[near]?.question ?? null) : null);
+            if (near >= 0 && readTime && !read.has(near)) {
+              read.add(near);
+              goto('reading');
+              window.clearTimeout(readTimer);
+              readTimer = window.setTimeout(() => phaseRef.current === 'reading' && goto('playing'), READ_TIME_MS);
+            }
+          }
+        }
         if (state2) {
           if (state.outcome !== 'running' || state2.outcome !== 'running') finishTwo();
         } else if (state.outcome !== 'running') finish();
@@ -293,7 +392,7 @@ export function RunScreen({
     import('./renderer')
       .then(({ createView }) => {
         if (disposed) return;
-        view = createView(canvas, course, world, paletteFor(course.def.id), reduced, kinds);
+        view = createView(canvas, course, world, paletteFor(course.def.id), reduced, kinds, gateSigns(course, setup));
         fit();
         goto('ready');
         raf = requestAnimationFrame((t) => {
@@ -305,11 +404,19 @@ export function RunScreen({
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // A question has its own keys.
+      if (phaseRef.current === 'question') return;
       const mine = keys.current.press(e.code);
       const second = twoPlayer && keys2.current.press(e.code);
       if (mine || second) {
         e.preventDefault();
         if (phaseRef.current === 'ready') goto('playing');
+        else if (phaseRef.current === 'reading') resumeRef.current();
+        return;
+      }
+      if ((e.code === 'Space' || e.code === 'Enter') && phaseRef.current === 'reading' && !(e.target instanceof HTMLButtonElement)) {
+        e.preventDefault();
+        resumeRef.current();
         return;
       }
       if (e.code === 'KeyP' || e.code === 'Escape') {
@@ -346,10 +453,11 @@ export function RunScreen({
       document.removeEventListener('visibilitychange', onVisibility);
       keys.current.clear();
       keys2.current.clear();
+      window.clearTimeout(readTimer);
       view?.dispose();
     };
     // The run is made once per course and mode; the callbacks it uses don't need to restart it.
-  }, [course, mode, ghost, twoPlayer]);
+  }, [course, mode, ghost, twoPlayer, setup, readTime]);
 
   // ---- dragging with a mouse, trackpad or finger ----
   const onPointerDown = (e: React.PointerEvent) => {
@@ -362,6 +470,7 @@ export function RunScreen({
       // The pointer is already gone: nothing to hold on to.
     }
     if (phaseRef.current === 'ready') goto('playing');
+    else if (phaseRef.current === 'reading') resumeRef.current();
   };
   const onPointerMove = (e: React.PointerEvent) => {
     const d = dragStart.current;
@@ -373,6 +482,16 @@ export function RunScreen({
       dragStart.current = null;
       pointerPush.current = null;
     }
+  };
+
+  const mark = async (answer: number, ms: number): Promise<MarkedAnswer> => {
+    const slot = ask?.slot ?? -1;
+    const marker = answerRef.current;
+    const reply = marker ? await marker(slot, answer, ms) : null;
+    if (!reply) throw new Error('We couldn’t check that one. Try again, or skip it.');
+    const q = ask?.question;
+    const label = q?.choices && q.choiceLabels ? q.choiceLabels[q.choices.indexOf(reply.answer)] : String(reply.answer);
+    return { correct: reply.right, fact: `The answer was ${label}.`, boxBefore: 0, boxAfter: 0, answer: reply.answer, ...(reply.right ? { reward: '2 seconds off!' } : {}) };
   };
 
   const info = infoFor(course.def.id);
@@ -413,6 +532,32 @@ export function RunScreen({
         onPointerCancel={onPointerUp}
       >
         <canvas ref={canvasRef} className="marble-canvas" role="img" aria-label={`The ${info?.name ?? course.def.name} course, seen from above and to the side. Your marble is the blue and white ball.`} />
+
+        {setup.maths && banner && phase !== 'ready' && phase !== 'question' && (
+          <div className="marble-gate" role="status">
+            <p className="marble-gate__question" aria-label={banner.spoken}>
+              Gate: <strong>{questionText(banner)}</strong>
+            </p>
+            <p className="marble-gate__hint">Roll into the tunnel with the answer. A wrong tunnel is a dead end.</p>
+            {phase === 'reading' && (
+              <button type="button" className="button button--play" onClick={() => resumeRef.current()}>
+                Go!
+              </button>
+            )}
+          </div>
+        )}
+        {toast && <p className="marble-toast" role="status">{toast}</p>}
+        {phase === 'question' && ask && (
+          <QuestionModal
+            question={shown(ask.question)}
+            title="Pit stop"
+            note="The clock has stopped. A right answer takes 2 seconds off your time."
+            onSubmit={mark}
+            onDone={(result) => closeAskRef.current(result.correct)}
+            onClose={() => closeAskRef.current(false)}
+            closeLabel="Skip"
+          />
+        )}
 
         {phase === 'loading' && <div className="marble-overlay" role="status">Setting up the course…</div>}
         {phase === 'broken' && (

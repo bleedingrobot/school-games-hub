@@ -260,3 +260,67 @@
     justify-content: flex-start;
   }
 }
+
+/* ---- maths: the gate's question, the "2 seconds off" note, the picker's maths choices ---- */
+.marble-gate {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(94%, 36rem);
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  text-align: center;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #fff;
+  z-index: 3;
+}
+.marble-gate p {
+  margin: 0;
+}
+.marble-gate__question strong {
+  font-family: var(--display);
+  font-size: 1.6rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.marble-gate__hint {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.marble-gate .button {
+  min-height: 44px;
+  width: auto;
+}
+.marble-toast {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #166534;
+  color: #fff;
+  font-weight: 800;
+  z-index: 3;
+}
+.marble-picker__maths {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.marble-picker__maths label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-weight: 700;
+}
+.marble-picker__maths input[type='checkbox'] {
+  width: 24px;
+  height: 24px;
+}

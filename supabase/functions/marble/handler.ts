@@ -13,7 +13,7 @@
  */
 import { courseById } from '../../../shared/marble/courses';
 import type { Course } from '../../../shared/marble/course';
-import { doorMask, doorsForSeed, gateLayout, publicQuestion, slotPlan, type GateLayout, type PublicQuestion } from '../../../shared/marble/maths';
+import { doorMask, doorsForSeed, gateLayout, runSetup, slotPlan, type GateLayout, type StartReply } from '../../../shared/marble/maths';
 import { makeRunQuestions, markQuestion, sameAnswer, type MathsContext } from '../../../shared/marble/questions';
 import {
   judgeRun,
@@ -91,37 +91,6 @@ export function mathsWanted(mode: MathsSwitch, chosen: unknown): boolean {
   return mode === 'on' || (mode === 'choose' && chosen === true);
 }
 
-/** What a student's browser is told when a run starts. Never an answer. */
-export interface StartReply {
-  seed: string;
-  stamp: string;
-  maths: boolean;
-  rescue: boolean;
-  /** The shortcut doors that are open this run (0 = A). */
-  doors: number[];
-  /** With maths: the gates' questions and tunnel signs. Without: which tunnel the arrow points to. */
-  gates: Array<{ slot: number; labels: string[] | null; arrow: number | null; question: PublicQuestion | null }>;
-  pits: PublicQuestion[];
-  rescues: PublicQuestion[];
-}
-
-function startReply(course: Course, seed: string, stamp: string, questions: Question[] | null, rescue: boolean): StartReply {
-  const layout = gateLayout(course, seed, questions);
-  const plan = slotPlan(course);
-  const doors = doorsForSeed(course, seed, questions);
-  const pub = (slot: number) => publicQuestion((questions as Question[])[slot], slot);
-  return {
-    seed,
-    stamp,
-    maths: questions !== null,
-    rescue: questions !== null && rescue,
-    doors,
-    gates: layout.map((l) => ({ slot: l.slot, labels: l.labels, arrow: questions ? null : l.right, question: questions ? pub(l.slot) : null })),
-    pits: questions ? Array.from({ length: plan.pits }, (_, i) => pub(plan.pitStart + i)) : [],
-    rescues: questions && rescue ? Array.from({ length: plan.rescues }, (_, i) => pub(plan.rescueStart + i)) : [],
-  };
-}
-
 export function makeHandler(services: Services) {
   const limiter = new RateLimiter(() => services.now());
 
@@ -171,7 +140,8 @@ export function makeHandler(services: Services) {
           }
         }
       }
-      return reply(200, startReply(course, seed, stamp, questions, rescue));
+      const started: StartReply = { seed, stamp, ...runSetup(course, seed, questions, rescue) };
+      return reply(200, started);
     }
 
     if (body.action === 'answer') {

@@ -10,12 +10,12 @@ export interface CourseBests {
 export type Bests = Record<string, CourseBests>;
 
 const KEY = 'marble-rush-bests-v1';
-/** One copy per student: the school's devices are shared. Without a student it is the old shared key. */
-const keyFor = (player?: string) => (player ? `${KEY}:${player}` : KEY);
+/** One copy per student: the school's devices are shared. Without a student it is the old shared key. Runs with maths are kept apart. */
+const keyFor = (player?: string, maths = false) => `${KEY}${maths ? '-maths' : ''}${player ? `:${player}` : ''}`;
 
-export function loadBests(player?: string): Bests {
+export function loadBests(player?: string, maths = false): Bests {
   try {
-    const raw = JSON.parse(localStorage.getItem(keyFor(player)) ?? '{}') as unknown;
+    const raw = JSON.parse(localStorage.getItem(keyFor(player, maths)) ?? '{}') as unknown;
     if (!raw || typeof raw !== 'object') return {};
     const out: Bests = {};
     for (const [id, v] of Object.entries(raw as Record<string, unknown>)) {
@@ -37,9 +37,9 @@ export function withFinish(bests: Bests, courseId: string, mode: 'up' | 'down', 
   return { bests: { ...bests, [courseId]: { ...bests[courseId], [mode]: steps } }, isBest };
 }
 
-export function saveBests(bests: Bests, player?: string): void {
+export function saveBests(bests: Bests, player?: string, maths = false): void {
   try {
-    localStorage.setItem(keyFor(player), JSON.stringify(bests));
+    localStorage.setItem(keyFor(player, maths), JSON.stringify(bests));
   } catch {
     // Storage blocked: bests just won't be remembered.
   }

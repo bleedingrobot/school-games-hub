@@ -9,6 +9,7 @@ import type { Course, Tile } from '../../../shared/marble/course';
 import { TIMED } from '../../../shared/marble/config';
 import { floorHeightAt, gateOpen, geyserPhase, trapdoorSolid, windBlowing, type RunState, type World } from '../../../shared/marble/engine';
 import type { Palette } from './palette';
+import type { GateSign } from './signs';
 
 /** How thick a block looks where nothing is beside it, in tiles. */
 const THICK = 1.2;
@@ -61,6 +62,32 @@ class Soup {
   }
 }
 
+/** A sign's picture: big, high-contrast text on a rounded plate, drawn once. */
+function signTexture(text: string, arrow: boolean): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 128;
+  const g = canvas.getContext('2d');
+  if (g) {
+    g.fillStyle = arrow ? '#fde047' : '#ffffff';
+    g.strokeStyle = '#1e293b';
+    g.lineWidth = 8;
+    g.beginPath();
+    g.roundRect(6, 6, 244, 116, 22);
+    g.fill();
+    g.stroke();
+    g.fillStyle = '#0f172a';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    const size = text.length <= 3 ? 84 : text.length <= 5 ? 66 : 46;
+    g.font = `800 ${size}px system-ui, sans-serif`;
+    g.fillText(text, 128, 68, 230);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 /** Another marble on the course: a see-through ghost, or the second player's. */
 export interface OtherMarble {
   prev: RunState;
@@ -77,7 +104,7 @@ export interface MarbleView {
   dispose(): void;
 }
 
-export function createView(canvas: HTMLCanvasElement, course: Course, world: World, palette: Palette, reducedMotion: boolean, otherKinds: OtherKind[] = []): MarbleView {
+export function createView(canvas: HTMLCanvasElement, course: Course, world: World, palette: Palette, reducedMotion: boolean, otherKinds: OtherKind[] = [], signs: GateSign[] = []): MarbleView {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'low-power' });
   renderer.setClearColor(palette.sky);
   const scene = new THREE.Scene();
@@ -359,6 +386,17 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
   });
   const rivalAt = otherKinds.indexOf('rival');
 
+  // ---- the signs over the tunnels of an answer gate: an answer each (maths), or an arrow over the open tunnel ----
+  const signSprites = signs.map((sign) => {
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: signTexture(sign.text, sign.arrow), transparent: true, depthTest: false }));
+    const floor = course.tiles[sign.ty * W + sign.tx].level * LEVEL;
+    sprite.position.set(sign.x, floor + 1.5, sign.y);
+    sprite.scale.set(1.9, 0.95, 1);
+    sprite.renderOrder = 10;
+    scene.add(sprite);
+    return sprite;
+  });
+
   let first = true;
 
   return {
@@ -434,6 +472,10 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
       renderer.render(scene, camera);
     },
     dispose() {
+      for (const sprite of signSprites) {
+        sprite.material.map?.dispose();
+        sprite.material.dispose();
+      }
       scene.traverse((o) => {
         if (o instanceof THREE.Mesh) {
           o.geometry.dispose();
