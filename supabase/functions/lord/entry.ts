@@ -47,7 +47,7 @@ Deno.serve(
       if (error || !data) return { ok: false, why: 'busy' };
       return { ok: true, value: data.role === 'teacher' };
     },
-    settings: () => call<Settings>('lord_server_settings', {}),
+    settings: (player) => call<Settings>('lord_server_settings', { player }),
     load: (player, requestId) => call('load_lord', { player, request_id: requestId ?? null }),
     commit: (player, commit) => call('lord_commit', { player, change: commit }),
     async recordAnswers(player, pack, batchKey, answers) {
@@ -57,6 +57,6 @@ Deno.serve(
     },
     recordRefusal: (player, reason, action) => call('record_lord_refusal', { player, reason, action }),
     arenaCandidates: (player, season, level) => call<ArenaCandidate[]>('lord_arena_candidates', { player, season, lvl: level }),
-    dailyNews: (day, lines) => call('lord_daily_news', { news_day: day, lines }),
+    dailyNews: (player, day, lines) => call('lord_daily_news', { player, news_day: day, lines }),
   }),
 );

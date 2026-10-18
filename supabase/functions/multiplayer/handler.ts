@@ -64,6 +64,8 @@ export interface PlayerStatus {
   hidden: boolean;
   multiplayerEnabled: boolean;
   createdLastHour: number;
+  /** Which school the player belongs to. A game is only ever shared inside one school. */
+  schoolId: number | null;
 }
 
 /** Everything this needs from Supabase, passed in so the tests can stand in for it. */
@@ -332,7 +334,10 @@ async function join({ services, limiter, me, body }: Context): Promise<GameRow> 
     game = await services.loadGame(body.gameId);
     if (!game || !game.in_lobby) throw new Refused('not-found');
   }
-  await mustBeAllowed(services, me, true);
+  const status = await mustBeAllowed(services, me, true);
+  // A game made at another school looks exactly like a code that doesn't exist: nothing is shared between schools.
+  const maker = game.created_by ? await services.playerStatus(game.created_by) : null;
+  if (maker && maker.schoolId !== status.schoolId) throw new Refused('not-found');
 
   if (game.created_by === me) throw new Refused('own-game');
   if (game.status === 'playing' || game.status === 'finished') throw new Refused('full');
@@ -452,10 +457,10 @@ async function rematch(context: Context, tries = 0): Promise<GameRow> {
   const { game, side } = await loadMyGame(services, me, body.gameId);
   if (game.status !== 'finished') throw new Refused('bad-request');
   if (game.rematch_game) return game;
-  await mustBeAllowed(services, me, true);
+  const mine = await mustBeAllowed(services, me, true);
   const opponent = side === 'first' ? game.second_player : game.first_player;
   const them = opponent && (await services.playerStatus(opponent));
-  if (!them || !them.school || them.hidden) throw new Refused('no-opponent');
+  if (!them || !them.school || them.hidden || them.schoolId !== mine.schoolId) throw new Refused('no-opponent');
 
   const flag = side === 'first' ? 'first_wants_rematch' : 'second_wants_rematch';
   let asked: GameRow;

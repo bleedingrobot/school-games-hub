@@ -48,6 +48,7 @@ Deno.serve(
         hidden: boolean;
         multiplayer_enabled: boolean;
         created_last_hour: number;
+        school_id: number | null;
         gone: string[] | null;
       };
       return {
@@ -55,6 +56,7 @@ Deno.serve(
         hidden: row.hidden,
         multiplayerEnabled: row.multiplayer_enabled,
         createdLastHour: row.created_last_hour,
+        schoolId: row.school_id ?? null,
         gone: row.gone ?? [],
       };
     },

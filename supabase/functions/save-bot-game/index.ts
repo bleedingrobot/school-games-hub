@@ -5275,7 +5275,7 @@ async function handleSaveBotGame(request, services) {
 	const body = await readJsonBody(request);
 	const asked = body;
 	if ((asked?.game === "space" || asked?.game === "101" || asked?.game === "power-clash") && asked.start === true) {
-		if (asked.game === "space" && asked.maths === true && !await mathsAllowed(services)) return reply(403, { error: MATHS_OFF });
+		if (asked.game === "space" && asked.maths === true && !await mathsAllowed(services, player)) return reply(403, { error: MATHS_OFF });
 		const seed = makeSeed(now(services), (services.randomHex ?? randomHex)(12));
 		const stampFor = asked.game === "space" ? stampText$2 : asked.game === "101" ? stampText$1 : stampText;
 		const stamp = await services.stamp(stampFor(player, seed));
@@ -5317,9 +5317,9 @@ async function handleSaveBotGame(request, services) {
 }
 const MATHS_OFF = "Your teacher has switched Mission Control maths off, so this game couldn’t be saved.";
 /** False when the teacher has maths switched off (or the switch can't be read). */
-async function mathsAllowed(services) {
+async function mathsAllowed(services, player) {
 	if (!services.mathsSwitch) return true;
-	return await services.mathsSwitch().catch(() => "off") !== "off";
+	return await services.mathsSwitch(player).catch(() => "off") !== "off";
 }
 const TOO_MANY = "That's a lot of games today! Have a break and come back tomorrow.";
 async function saveSpaceGame(player, body, services, reply) {
@@ -5336,7 +5336,7 @@ async function saveSpaceGame(player, body, services, reply) {
 		return reply(400, { error: "That game couldn't be checked." });
 	}
 	const { game } = judged;
-	if (report.settings.maths && !await mathsAllowed(services)) {
+	if (report.settings.maths && !await mathsAllowed(services, player)) {
 		console.warn("save-bot-game: refused a maths game (maths is off)");
 		return reply(403, { error: MATHS_OFF });
 	}
@@ -5544,8 +5544,8 @@ Deno.serve((request) => handleSaveBotGame(request, {
 		console.error(`save-bot-game: database refused a Power Clash game (${error.code})`);
 		return "refused";
 	},
-	async mathsSwitch() {
-		const { data, error } = await admin.from("app_settings").select("space_maths").maybeSingle();
+	async mathsSwitch(player) {
+		const { data, error } = await admin.rpc("settings_of", { player }).maybeSingle();
 		if (error) throw new Error(error.code ?? "unknown");
 		return parseMathsSwitch(data?.space_maths);
 	},

@@ -59,6 +59,7 @@ Deno.serve(
         multiplayer_enabled: boolean;
         reactions_enabled: boolean;
         created_last_hour: number;
+        school_id: number | null;
         gone: string[] | null;
       };
       return {
@@ -67,6 +68,7 @@ Deno.serve(
         multiplayerEnabled: row.multiplayer_enabled,
         reactionsEnabled: row.reactions_enabled,
         createdLastHour: row.created_last_hour,
+        schoolId: row.school_id ?? null,
         gone: row.gone ?? [],
       };
     },
@@ -118,11 +120,12 @@ Deno.serve(
       }
       return data as 'ok' | 'too-soon' | 'too-many' | 'not-playing' | 'not-allowed';
     },
-    async mathsSwitch() {
-      const { data, error } = await admin.from('app_settings').select('space_maths').maybeSingle();
+    async mathsSwitch(player) {
+      // The switch of this student's class (or their school's default if they have no class).
+      const { data, error } = await admin.rpc('settings_of', { player }).maybeSingle();
       if (error) logProblem('maths switch', error.code);
       // If it can't be read, maths stays off rather than switching on by accident.
-      return parseMathsSwitch(data?.space_maths);
+      return parseMathsSwitch((data as { space_maths?: string } | null)?.space_maths);
     },
     async loadMathsContext(player) {
       const { data, error } = await admin.rpc('space_maths_context', { player });

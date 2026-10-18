@@ -77,6 +77,8 @@ export interface PlayerStatus {
   multiplayerEnabled: boolean;
   reactionsEnabled: boolean;
   createdLastHour: number;
+  /** Which school the player belongs to. A game is only ever shared inside one school. */
+  schoolId: number | null;
   /** Which of the other players asked about are hidden, or don't exist any more. */
   gone: string[];
 }
@@ -113,7 +115,7 @@ export interface Services {
   updateGame(id: string, version: number, patch: Partial<SpaceGameRow>): Promise<SpaceGameRow | null>;
   addReaction(id: string, seat: number, emoji: string): Promise<ReactionResult>;
   /** The teacher's Mission Control maths switch. */
-  mathsSwitch(): Promise<MathsSwitch>;
+  mathsSwitch(player: string): Promise<MathsSwitch>;
   /** A student's times-table records and the teacher's question settings, to pick the next question from. */
   loadMathsContext(player: string): Promise<{ facts: FactStats[]; settings: MathsQuestionSettings } | null>;
   loadQuestion(game: string, seat: number, kind: QuestionKind): Promise<StoredQuestion | null>;
@@ -366,7 +368,7 @@ async function create({ services, me, body }: Context): Promise<SpaceGameRow> {
   const status = await mustBeAllowed(services, me, true);
   if (status.createdLastHour >= MAX_CREATES_PER_HOUR) throw new Refused('too-many');
   // The teacher's switch: Off refuses a maths game, On makes every game a maths game.
-  const mathsSwitch = await services.mathsSwitch();
+  const mathsSwitch = await services.mathsSwitch(me);
   if (mathsSwitch === 'off' && setup.settings.maths) throw new Refused('maths-off');
   return newWaitingGame(services, me, withMathsSwitch(setup, mathsSwitch), body.lobby === true);
 }
@@ -412,8 +414,15 @@ async function join({ services, limiter, me, body }: Context): Promise<SpaceGame
     // From the lobby: only games posted there can be joined without the code.
     if (!game || !game.in_lobby) throw new Refused('not-found');
   }
-  await mustBeAllowed(services, me, true);
+  const status = await mustBeAllowed(services, me, true);
+  await mustBeSameSchool(services, status, game.host);
   return joinWaiting(services, me, game);
+}
+
+/** A game made at another school looks exactly like a code that doesn't exist: nothing is shared between schools. */
+async function mustBeSameSchool(services: Services, me: PlayerStatus, host: string | null): Promise<void> {
+  const theirs = host ? await services.playerStatus(host) : null;
+  if (theirs && theirs.schoolId !== me.schoolId) throw new Refused('not-found');
 }
 
 /** Takes the first empty seat in a waiting game. Already in it? Then that's fine. */
@@ -475,7 +484,7 @@ async function launch({ services, me, body }: Context): Promise<SpaceGameRow> {
   // The server shuffles the turn order.
   const entries = shuffled<string | null>(dice, [...students, ...Array.from({ length: bots }, () => null)]);
   // If the teacher changed the maths switch while this game was waiting, the switch wins.
-  const setup = withMathsSwitch(game.setup, await services.mathsSwitch());
+  const setup = withMathsSwitch(game.setup, await services.mathsSwitch(me));
   const played = launchLive(setup, entries, dice, services.random);
   return save(services, game, {
     ...(setup === game.setup ? {} : { setup }),
@@ -709,7 +718,7 @@ async function rematch(context: Context, tries = 0): Promise<SpaceGameRow> {
     return joinWaiting(services, me, next);
   }
   // A rematch keeps the board and rules, but follows the teacher's switch as it is now.
-  const next = await newWaitingGame(services, me, withMathsSwitch(game.setup, await services.mathsSwitch()), false);
+  const next = await newWaitingGame(services, me, withMathsSwitch(game.setup, await services.mathsSwitch(me)), false);
   const linked = await services.updateGame(game.id, game.version, {
     rematch_game: next.id,
     version: game.version + 1,

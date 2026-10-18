@@ -163,7 +163,8 @@ export interface Services {
   seed(): number;
   newId(): string;
   isTeacher(player: string): Promise<Outcome<boolean>>;
-  settings(): Promise<Outcome<Settings>>;
+  /** The settings of this student's class (or their school's default). */
+  settings(player: string): Promise<Outcome<Settings>>;
   /** The hero and the fight in progress (null for a pupil with no hero), and whether this request id was already used. */
   load(player: string, requestId?: string): Promise<Outcome<{ row: LordRow | null; openFight: OpenFight | null; seen: boolean; dailyDone?: boolean }>>;
   commit(player: string, commit: Commit): Promise<Outcome<{ status: CommitStatus; version: number }>>;
@@ -173,7 +174,8 @@ export interface Services {
   /** Classmates' heroes of this season near this level, for the arena (the pupil's own hero is left out). */
   arenaCandidates(player: string, season: number, level: number): Promise<Outcome<ArenaCandidate[]>>;
   /** The day's own news lines (the village event, the computer heroes). Each line is kept once. */
-  dailyNews(day: string, lines: NewsLine[]): Promise<Outcome<null>>;
+  /** Today's news for the school of the student who opened the game (each school has its own). */
+  dailyNews(player: string, day: string, lines: NewsLine[]): Promise<Outcome<null>>;
 }
 
 // ---------- What goes back to the browser ----------
@@ -758,7 +760,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
   const action = req?.action;
   if (!req || typeof action !== 'string' || !ACTIONS.includes(action)) return { status: 200, body: { ok: false, reason: 'bad-request' } };
 
-  const settingsOut = await s.settings();
+  const settingsOut = await s.settings(player);
   if (!settingsOut.ok) return busy();
   const settings = settingsOut.value;
   let teacherKnown: boolean | undefined;
@@ -811,7 +813,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
   }
 
   // The day's own news (the village event, the computer heroes) is written by whoever opens the game first.
-  if (action === 'load' && !loaded.value.dailyDone) await s.dailyNews(today, dailyNews(today, season));
+  if (action === 'load' && !loaded.value.dailyDone) await s.dailyNews(player, today, dailyNews(today, season));
 
   // 1. Nothing runs at midnight: the first request of a new day (or season) does it.
   let w: Work | null = null;

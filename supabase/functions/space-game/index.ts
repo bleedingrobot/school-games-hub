@@ -3486,7 +3486,7 @@ async function create({ services, me, body }) {
 	const setup = parseLiveSetup(body.setup);
 	if (!setup) throw new Refused("bad-request");
 	if ((await mustBeAllowed(services, me, true)).createdLastHour >= 20) throw new Refused("too-many");
-	const mathsSwitch = await services.mathsSwitch();
+	const mathsSwitch = await services.mathsSwitch(me);
 	if (mathsSwitch === "off" && setup.settings.maths) throw new Refused("maths-off");
 	return newWaitingGame(services, me, withMathsSwitch(setup, mathsSwitch), body.lobby === true);
 }
@@ -3537,8 +3537,13 @@ async function join({ services, limiter, me, body }) {
 		game = await services.loadGame(body.gameId);
 		if (!game || !game.in_lobby) throw new Refused("not-found");
 	}
-	await mustBeAllowed(services, me, true);
+	await mustBeSameSchool(services, await mustBeAllowed(services, me, true), game.host);
 	return joinWaiting(services, me, game);
+}
+/** A game made at another school looks exactly like a code that doesn't exist: nothing is shared between schools. */
+async function mustBeSameSchool(services, me, host) {
+	const theirs = host ? await services.playerStatus(host) : null;
+	if (theirs && theirs.schoolId !== me.schoolId) throw new Refused("not-found");
 }
 /** Takes the first empty seat in a waiting game. Already in it? Then that's fine. */
 async function joinWaiting(services, me, first) {
@@ -3593,7 +3598,7 @@ async function launch({ services, me, body }) {
 	if (students.length < 2) throw new Refused("need-players");
 	const dice = diceFrom(services.random);
 	const entries = shuffled(dice, [...students, ...Array.from({ length: bots }, () => null)]);
-	const setup = withMathsSwitch(game.setup, await services.mathsSwitch());
+	const setup = withMathsSwitch(game.setup, await services.mathsSwitch(me));
 	const played = launchLive(setup, entries, dice, services.random);
 	return save(services, game, {
 		...setup === game.setup ? {} : { setup },
@@ -3816,7 +3821,7 @@ async function rematch(context, tries = 0) {
 		if (next.status !== "waiting") throw new Refused("rematch-gone");
 		return joinWaiting(services, me, next);
 	}
-	const next = await newWaitingGame(services, me, withMathsSwitch(game.setup, await services.mathsSwitch()), false);
+	const next = await newWaitingGame(services, me, withMathsSwitch(game.setup, await services.mathsSwitch(me)), false);
 	if (await services.updateGame(game.id, game.version, {
 		rematch_game: next.id,
 		version: game.version + 1,
@@ -3894,6 +3899,7 @@ Deno.serve(spaceGameHandler({
 			multiplayerEnabled: row.multiplayer_enabled,
 			reactionsEnabled: row.reactions_enabled,
 			createdLastHour: row.created_last_hour,
+			schoolId: row.school_id ?? null,
 			gone: row.gone ?? []
 		};
 	},
@@ -3945,8 +3951,8 @@ Deno.serve(spaceGameHandler({
 		}
 		return data;
 	},
-	async mathsSwitch() {
-		const { data, error } = await admin.from("app_settings").select("space_maths").maybeSingle();
+	async mathsSwitch(player) {
+		const { data, error } = await admin.rpc("settings_of", { player }).maybeSingle();
 		if (error) logProblem("maths switch", error.code);
 		return parseMathsSwitch(data?.space_maths);
 	},

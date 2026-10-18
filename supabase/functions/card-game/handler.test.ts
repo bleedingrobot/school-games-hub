@@ -21,7 +21,7 @@ function world() {
   const players = new Map<string, Omit<PlayerStatus, 'gone' | 'createdLastHour' | 'multiplayerEnabled'>>();
   const otherCodes = new Set<string>();
   let multiplayerOn = true;
-  for (const name of NAMES) players.set(name, { school: true, hidden: false });
+  for (const name of NAMES) players.set(name, { school: true, hidden: false, schoolId: 1 });
 
   const copy = (g: CardGameRow | undefined) => (g ? structuredClone(g) : null);
   const random = seeded(11);
@@ -86,6 +86,7 @@ function world() {
     seat: (id: string, who: string) => seats.get(`${id}/${who}`) ?? null,
     tick: (ms: number) => (clock += ms),
     hide: (who: string) => (players.get(who)!.hidden = true),
+    moveToSchool: (who: string, school: number) => (players.get(who)!.schoolId = school),
     pause: () => (multiplayerOn = false),
     takeCode: (code: string) => otherCodes.add(code),
   };
@@ -183,6 +184,17 @@ describe('starting a game', () => {
     expect(w.game(id).game!.players).toBe(2);
     expect((await w.ask('ana', { action: 'start', gameId: id })).status).toBe(200); // a second tap is fine
     expect((await w.ask('cat', { action: 'join', gameId: id })).body.problem).toBe('not-found'); // not in the lobby
+  });
+
+  it('treats a game from another school like a code that does not exist', async () => {
+    const w = world();
+    const made = await w.ask('ana', { action: 'create', players: 2, settings: { target: 50 }, lobby: true });
+    const code = made.body.seat!.info.code;
+    w.moveToSchool('ben', 2);
+    expect((await w.ask('ben', { action: 'join', code })).body.problem).toBe('not-found');
+    expect((await w.ask('ben', { action: 'join', gameId: made.body.seat!.game })).body.problem).toBe('not-found');
+    w.moveToSchool('ben', 1);
+    expect((await w.ask('ben', { action: 'join', code })).status).toBe(200);
   });
 
   it('refuses bad settings, full games, expired games, and too many new games', async () => {

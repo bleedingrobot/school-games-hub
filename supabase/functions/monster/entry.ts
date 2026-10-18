@@ -39,10 +39,11 @@ Deno.serve(
       const { data, error } = await admin.auth.getUser(token);
       return error ? null : (data.user?.id ?? null);
     },
-    async enabled() {
-      const { data, error } = await admin.from('app_settings').select('monsters_enabled').maybeSingle();
+    async enabled(player) {
+      // The settings that apply to this student: their class's, or their school's default.
+      const { data, error } = await admin.rpc('settings_of', { player }).maybeSingle();
       if (error || !data) return { ok: false, why: 'busy' };
-      return { ok: true, value: data.monsters_enabled === true };
+      return { ok: true, value: (data as { monsters_enabled?: boolean }).monsters_enabled === true };
     },
     async loadSave(player) {
       const loaded = await call<{ world: never; version: number; clientAt: number } | null>('load_monster_save', { player });

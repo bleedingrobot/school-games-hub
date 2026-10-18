@@ -74,6 +74,8 @@ export interface PlayerStatus {
   hidden: boolean;
   multiplayerEnabled: boolean;
   createdLastHour: number;
+  /** Which school the player belongs to. A game is only ever shared inside one school. */
+  schoolId: number | null;
   /** Which of the other players asked about are hidden, or don't exist any more. */
   gone: string[];
 }
@@ -370,8 +372,15 @@ async function join({ services, limiter, me, body }: Context): Promise<PowerGame
     // From the lobby: only games posted there can be joined without the code.
     if (!row || !row.in_lobby) throw new Refused('not-found');
   }
-  await mustBeAllowed(services, me, true);
+  const status = await mustBeAllowed(services, me, true);
+  await mustBeSameSchool(services, status, row.host);
   return joinWaiting(services, me, row, null);
+}
+
+/** A game made at another school looks exactly like a code that doesn't exist: nothing is shared between schools. */
+async function mustBeSameSchool(services: Services, me: PlayerStatus, host: string | null): Promise<void> {
+  const theirs = host ? await services.playerStatus(host) : null;
+  if (theirs && theirs.schoolId !== me.schoolId) throw new Refused('not-found');
 }
 
 /**

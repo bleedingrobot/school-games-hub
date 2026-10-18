@@ -126,7 +126,7 @@ export function memoryServices(db: MemoryDb, options: MemoryOptions = {}): Servi
     arenaCandidates: async (_player, _season, level) =>
       // The server checks what it is handed, so the stand-in lets odd data through (the real database only holds heroes the server wrote).
       ok(copy(db.classmates).filter((k) => typeof k.hero?.level !== 'number' || Math.abs(k.hero.level - level) <= 2)),
-    dailyNews: async (day, lines) => {
+    dailyNews: async (_player, day, lines) => {
       for (const line of lines) if (!db.news.some((n) => n.day === day && n.dedupe === line.dedupe)) db.news.push({ ...copy(line), day });
       options.onChange?.(db);
       return ok(null);

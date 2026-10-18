@@ -33,7 +33,7 @@ function world() {
   const players = new Map<string, Omit<PlayerStatus, 'gone' | 'createdLastHour'>>();
   const otherCodes = new Set<string>();
   let multiplayerOn = true;
-  for (const name of NAMES) players.set(name, { school: true, hidden: false, multiplayerEnabled: true });
+  for (const name of NAMES) players.set(name, { school: true, hidden: false, multiplayerEnabled: true, schoolId: 1 });
 
   const copy = (g: PowerGameRow | undefined) => (g ? structuredClone(g) : null);
   const random = seeded(11);
@@ -232,6 +232,16 @@ describe('starting and joining', () => {
     expect((await w.ask('ben', { action: 'join', gameId: g.id })).problem).toBe('not-found');
     const open = (await w.ask('cat', { action: 'create', lobby: true })).game!;
     expect((await w.ask('ben', { action: 'join', gameId: open.id })).game!.seat2).toBe('ben');
+  });
+
+  it('treats a game from another school like a code that does not exist', async () => {
+    const w = world();
+    const g = (await w.ask('ana', { action: 'create', lobby: true })).game!;
+    w.players.get('ben')!.schoolId = 2;
+    expect((await w.ask('ben', { action: 'join', code: g.code })).problem).toBe('not-found');
+    expect((await w.ask('ben', { action: 'join', gameId: g.id })).problem).toBe('not-found');
+    w.players.get('ben')!.schoolId = 1;
+    expect((await w.ask('ben', { action: 'join', code: g.code })).game!.seat2).toBe('ben');
   });
 
   it('turns away hidden students, old games, and everyone while games are paused', async () => {

@@ -611,7 +611,9 @@ async function join({ services, limiter, me, body }) {
 		game = await services.loadGame(body.gameId);
 		if (!game || !game.in_lobby) throw new Refused("not-found");
 	}
-	await mustBeAllowed(services, me, true);
+	const status = await mustBeAllowed(services, me, true);
+	const maker = game.created_by ? await services.playerStatus(game.created_by) : null;
+	if (maker && maker.schoolId !== status.schoolId) throw new Refused("not-found");
 	if (game.created_by === me) throw new Refused("own-game");
 	if (game.status === "playing" || game.status === "finished") throw new Refused("full");
 	if (game.status !== "waiting" || Date.parse(game.expires_at) <= services.now()) throw new Refused("expired");
@@ -711,10 +713,10 @@ async function rematch(context, tries = 0) {
 	const { game, side } = await loadMyGame(services, me, body.gameId);
 	if (game.status !== "finished") throw new Refused("bad-request");
 	if (game.rematch_game) return game;
-	await mustBeAllowed(services, me, true);
+	const mine = await mustBeAllowed(services, me, true);
 	const opponent = side === "first" ? game.second_player : game.first_player;
 	const them = opponent && await services.playerStatus(opponent);
-	if (!them || !them.school || them.hidden) throw new Refused("no-opponent");
+	if (!them || !them.school || them.hidden || them.schoolId !== mine.schoolId) throw new Refused("no-opponent");
 	const flag = side === "first" ? "first_wants_rematch" : "second_wants_rematch";
 	let asked;
 	try {
@@ -785,7 +787,8 @@ Deno.serve(multiplayerHandler({
 			school: row.school,
 			hidden: row.hidden,
 			multiplayerEnabled: row.multiplayer_enabled,
-			createdLastHour: row.created_last_hour
+			createdLastHour: row.created_last_hour,
+			schoolId: row.school_id ?? null
 		};
 	},
 	async loadGame(id) {

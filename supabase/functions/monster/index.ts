@@ -26542,7 +26542,7 @@ function makeHandler(services) {
 			handled: 0,
 			results: []
 		});
-		const on = await services.enabled();
+		const on = await services.enabled(player);
 		if (!on.ok) return reply(503, { error: "We couldn't save your game just now." });
 		if (!on.value) return reply(503, { error: "Maths Monsters is switched off." });
 		const first = await services.loadSave(player);
@@ -26693,8 +26693,8 @@ Deno.serve(makeHandler({
 		const { data, error } = await admin.auth.getUser(token);
 		return error ? null : data.user?.id ?? null;
 	},
-	async enabled() {
-		const { data, error } = await admin.from("app_settings").select("monsters_enabled").maybeSingle();
+	async enabled(player) {
+		const { data, error } = await admin.rpc("settings_of", { player }).maybeSingle();
 		if (error || !data) return {
 			ok: false,
 			why: "busy"

@@ -46,7 +46,8 @@ export interface Services {
   /** Who owns this sign-in token? Null if it's missing, expired or fake. */
   userIdFor(token: string): Promise<string | null>;
   /** Is the game switched on? */
-  enabled(): Promise<Outcome<boolean>>;
+  /** Is the game switched on for this student's class (or their school, if they have no class)? */
+  enabled(player: string): Promise<Outcome<boolean>>;
   /** The last good save, or null for a student who has none. */
   loadSave(player: string): Promise<Outcome<(Stored & { version: number }) | null>>;
   /** Which of these save ids are already kept (a save whose reply was lost is sent again). */
@@ -104,7 +105,7 @@ export function makeHandler(services: Services) {
     if (body.items.length === 0) return reply(200, { handled: 0, results: [] });
 
     // The game switch: nothing is saved while it is off (the website keeps its queue for when it is on).
-    const on = await services.enabled();
+    const on = await services.enabled(player);
     if (!on.ok) return reply(503, { error: "We couldn't save your game just now." });
     if (!on.value) return reply(503, { error: 'Maths Monsters is switched off.' });
 

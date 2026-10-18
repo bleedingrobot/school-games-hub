@@ -1255,8 +1255,13 @@ async function join({ services, limiter, me, body }) {
 		row = await services.loadGame(body.gameId);
 		if (!row || !row.in_lobby) throw new Refused("not-found");
 	}
-	await mustBeAllowed(services, me, true);
+	await mustBeSameSchool(services, await mustBeAllowed(services, me, true), row.host);
 	return joinWaiting(services, me, row, null);
+}
+/** A game made at another school looks exactly like a code that doesn't exist: nothing is shared between schools. */
+async function mustBeSameSchool(services, me, host) {
+	const theirs = host ? await services.playerStatus(host) : null;
+	if (theirs && theirs.schoolId !== me.schoolId) throw new Refused("not-found");
 }
 /**
 * Takes the empty seat in a waiting game. Already in it? Then that's fine. `powers` are the
@@ -1498,6 +1503,7 @@ Deno.serve(powerClashHandler({
 			hidden: row.hidden,
 			multiplayerEnabled: row.multiplayer_enabled,
 			createdLastHour: row.created_last_hour,
+			schoolId: row.school_id ?? null,
 			gone: row.gone ?? []
 		};
 	},

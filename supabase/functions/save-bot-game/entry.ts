@@ -58,10 +58,11 @@ Deno.serve((request) =>
       console.error(`save-bot-game: database refused a Power Clash game (${error.code})`);
       return 'refused';
     },
-    async mathsSwitch() {
-      const { data, error } = await admin.from('app_settings').select('space_maths').maybeSingle();
+    async mathsSwitch(player) {
+      // The switch of this student's class (or their school's default if they have no class).
+      const { data, error } = await admin.rpc('settings_of', { player }).maybeSingle();
       if (error) throw new Error(error.code ?? 'unknown');
-      return parseMathsSwitch(data?.space_maths);
+      return parseMathsSwitch((data as { space_maths?: string } | null)?.space_maths);
     },
     async recordAnswers(player, batchId, answers) {
       const { error } = await admin.rpc('record_fact_answers', {

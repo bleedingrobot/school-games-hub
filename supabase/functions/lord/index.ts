@@ -26,6 +26,12 @@ const TABLES = [
 * become review. Edit freely; levels not listed use the last step. `upTo` is the biggest
 * number any fact uses in that step (default 12): the first levels stop at × 10 so they're
 * super easy (James, 16 Oct 2026).
+*
+* The order follows the NZ Curriculum families (James, 18 Oct 2026): 2/5/10, then 3/4/8,
+* then 6/9, then 7, then 11/12. It used to put ×8 with ×6 and ×7 with ×9. Level numbers are
+* unchanged, so a student part-way through the old order keeps their level; the facts they
+* already know are in their records, so they show up as review and the new tables as focus.
+* Fact records are keyed by the fact ("mul:6x7"), not by the step, so none are lost.
 */
 const CAMPAIGN_STEPS = [
 	{
@@ -39,15 +45,19 @@ const CAMPAIGN_STEPS = [
 	},
 	{
 		levels: [3, 4],
-		add: [3, 4]
+		add: [
+			3,
+			4,
+			8
+		]
 	},
 	{
 		levels: [5, 6],
-		add: [6, 8]
+		add: [6, 9]
 	},
 	{
 		levels: [7, 8],
-		add: [7, 9]
+		add: [7]
 	},
 	{
 		levels: [9, 10],
@@ -1801,8 +1811,8 @@ function factWeight(stats) {
 	const wrongShare = stats.attempts ? (stats.attempts - stats.correct) / stats.attempts : 0;
 	return BOX_WEIGHTS[Math.min(stats.box, BOX_WEIGHTS.length - 1)] * (1 + wrongShare);
 }
-function weightedPick(keys, stats, random) {
-	const weights = keys.map((k) => factWeight(stats.get(k)));
+function weightedPick(keys, stats, random, extra) {
+	const weights = keys.map((k) => factWeight(stats.get(k)) * (extra?.(k) ?? 1));
 	let roll = random() * weights.reduce((a, b) => a + b, 0);
 	for (let i = 0; i < keys.length; i++) {
 		roll -= weights[i];
@@ -1814,7 +1824,7 @@ function weightedPick(keys, stats, random) {
 * The same picking rules over any pools of keys (the other skill packs build their own
 * pools from difficulty bands). Returns null when every pool is empty.
 */
-function pickFromPools(pools, ctx, stats, memory, random) {
+function pickFromPools(pools, ctx, stats, memory, random, extraWeight) {
 	const allowed = new Set([
 		...pools.focus,
 		...pools.review,
@@ -1847,7 +1857,7 @@ function pickFromPools(pools, ctx, stats, memory, random) {
 		const fresh = keys.filter((k) => !recent.has(k));
 		if (fresh.length) keys = fresh;
 		choice = {
-			key: weightedPick(keys, stats, random),
+			key: weightedPick(keys, stats, random, extraWeight),
 			band
 		};
 	}
@@ -2003,6 +2013,14 @@ var BandedPack = class {
 				}
 			}
 		});
+		for (const name of definition.ladderOnly ?? []) {
+			const family = definition.families[name];
+			if (!family) throw new Error(`${definition.id}: ladderOnly names unknown family "${name}"`);
+			for (const key of family.keys) {
+				if (this.familyOfKey.has(key)) throw new Error(`${definition.id}: key "${key}" is in two families or bands`);
+				this.familyOfKey.set(key, family);
+			}
+		}
 		for (const s of saved) if (this.familyOfKey.has(s.key)) this.records.set(s.key, s);
 	}
 	/** Every mastery key in a band (1 = easiest). */
@@ -2071,6 +2089,18 @@ var BandedPack = class {
 	nextQuestion(ctx) {
 		const picked = pickFromPools(this.poolsFor(ctx.level ?? 1), ctx, this.records, this.memory, this.random);
 		if (!picked) return null;
+		return this.questionFor(picked.key, picked.band, ctx);
+	}
+	/** Whether this pack owns a mastery key. */
+	owns(key) {
+		return this.familyOfKey.has(key);
+	}
+	/** The question for a chosen key (the picking was done by the caller, e.g. auto mode). */
+	questionFor(key, band, ctx = {}) {
+		const picked = {
+			key,
+			band
+		};
 		const family = this.familyOfKey.get(picked.key);
 		for (let tries = 0; tries < 20; tries++) {
 			const built = this.rebuild(picked.key, family.roll(picked.key, this.random), !!ctx.multipleChoice);
@@ -2789,6 +2819,8 @@ const DECIMALS = {
 *            order the times-tables campaign brings tables in: ÷ 2, 5, 10, then ÷ 3, 4,
 *            then ÷ 6–9. (These are kept apart from the times-tables records so each topic
 *            shows its own progress.)
+* Not in a band: ÷ 11 and ÷ 12 facts, which only the auto ladder asks (Maths Monsters' bands
+*            are unchanged).
 * Band 4:    2-digit ÷ 1-digit (84 ÷ 4), dividing by 10 and 100, and missing dividends.
 * Band 5:    remainders (23 ÷ 4 = 5 r ?) and 3-digit ÷ 1-digit.
 */
@@ -2887,6 +2919,7 @@ const DIVISION = {
 			10
 		], 10),
 		"facts-3-4": factFamily("Division facts: ÷ 3, ÷ 4", [3, 4], 12),
+		"facts-11-12": factFamily("Division facts: ÷ 11, ÷ 12", [11, 12], 12),
 		"facts-6-9": factFamily("Division facts: ÷ 6, ÷ 7, ÷ 8, ÷ 9", [
 			6,
 			7,
@@ -3013,6 +3046,7 @@ const DIVISION = {
 			}
 		}
 	},
+	ladderOnly: ["facts-11-12"],
 	bands: [
 		["facts-2-5-10"],
 		["facts-3-4"],
@@ -5427,7 +5461,7 @@ async function runLord(s, player, raw) {
 			reason: "bad-request"
 		}
 	};
-	const settingsOut = await s.settings();
+	const settingsOut = await s.settings(player);
 	if (!settingsOut.ok) return busy();
 	const settings = settingsOut.value;
 	let teacherKnown;
@@ -5507,7 +5541,7 @@ async function runLord(s, player, raw) {
 			stored = again.value.openFight;
 		}
 	}
-	if (action === "load" && !loaded.value.dailyDone) await s.dailyNews(today, dailyNews(today, season));
+	if (action === "load" && !loaded.value.dailyDone) await s.dailyNews(player, today, dailyNews(today, season));
 	let w = null;
 	let rolled = false;
 	if (row) {
@@ -5940,7 +5974,7 @@ Deno.serve(makeHandler({
 			value: data.role === "teacher"
 		};
 	},
-	settings: () => call("lord_server_settings", {}),
+	settings: (player) => call("lord_server_settings", { player }),
 	load: (player, requestId) => call("load_lord", {
 		player,
 		request_id: requestId ?? null
@@ -5970,7 +6004,8 @@ Deno.serve(makeHandler({
 		season,
 		lvl: level
 	}),
-	dailyNews: (day, lines) => call("lord_daily_news", {
+	dailyNews: (player, day, lines) => call("lord_daily_news", {
+		player,
 		news_day: day,
 		lines
 	})

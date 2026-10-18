@@ -71,6 +71,7 @@ const services: Services = {
     school: player in PLAYERS,
     hidden: false,
     multiplayerEnabled: true,
+    schoolId: 1,
     createdLastHour: Object.values(readDb().games).filter((g) => g.host === player && Date.now() + skew() - Date.parse(g.created_at) < 3_600_000).length,
     gone: [],
   }),

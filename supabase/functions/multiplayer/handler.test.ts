@@ -44,7 +44,7 @@ function world() {
   let gate: { n: number; waiting: (() => void)[] } | null = null;
 
   for (const name of ['ana', 'ben', 'cat', 'dan']) {
-    players.set(name, { school: true, hidden: false, multiplayerEnabled: true, createdLastHour: 0 });
+    players.set(name, { school: true, hidden: false, multiplayerEnabled: true, createdLastHour: 0, schoolId: 1 });
     tokens.set(`${name}-token`, name);
   }
 
@@ -251,6 +251,16 @@ describe('joining a game', () => {
     const w = world();
     const { game } = await w.ask('ana', { action: 'create', game: 'chess', side: 'first' });
     expect((await w.ask('ana', { action: 'join', code: game!.code })).problem).toBe('own-game');
+  });
+
+  it('treats a game from another school like a code that does not exist', async () => {
+    const w = world();
+    const { game } = await w.ask('ana', { action: 'create', game: 'chess', side: 'first', lobby: true });
+    w.players.get('ben')!.schoolId = 2;
+    expect((await w.ask('ben', { action: 'join', code: game!.code })).problem).toBe('not-found');
+    expect((await w.ask('ben', { action: 'join', gameId: game!.id })).problem).toBe('not-found');
+    w.players.get('ben')!.schoolId = 1;
+    expect((await w.ask('ben', { action: 'join', code: game!.code })).game!.status).toBe('playing');
   });
 
   it("doesn't let a third student join a full game", async () => {

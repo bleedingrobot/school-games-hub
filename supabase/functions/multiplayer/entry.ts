@@ -41,12 +41,13 @@ Deno.serve(
         if (error) logProblem('player check', error.code);
         return null;
       }
-      const row = data as { school: boolean; hidden: boolean; multiplayer_enabled: boolean; created_last_hour: number };
+      const row = data as { school: boolean; hidden: boolean; multiplayer_enabled: boolean; created_last_hour: number; school_id: number | null };
       return {
         school: row.school,
         hidden: row.hidden,
         multiplayerEnabled: row.multiplayer_enabled,
         createdLastHour: row.created_last_hour,
+        schoolId: row.school_id ?? null,
       };
     },
     async loadGame(id) {
