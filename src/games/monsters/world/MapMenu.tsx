@@ -13,12 +13,13 @@ import { ITEM_ORDER } from '../../../../shared/monsters/world/rewards';
 import type { WorldState } from '../../../../shared/monsters/world/types';
 import { TYPE_LABEL, TYPE_TOPIC } from '../../../../shared/monsters/types';
 import { BoxScreen } from '../BoxScreen';
+import { HowToPlayBody } from '../HowToPlay';
 import { MonsterBookScreen } from '../MonsterBookScreen';
 import { ITEM_LABEL } from '../text';
 import { BagList, Sheet, TeamList } from '../ui';
 import type { WorldSettings } from './settings';
 
-export type MenuPage = 'main' | 'team' | 'bag' | 'book' | 'badges' | 'settings' | 'box';
+export type MenuPage = 'main' | 'team' | 'bag' | 'book' | 'badges' | 'settings' | 'box' | 'howto';
 
 export interface MapMenuProps {
   page: MenuPage;
@@ -32,7 +33,7 @@ export interface MapMenuProps {
   onChange: (next: WorldState) => void;
 }
 
-const TITLES: Record<MenuPage, string> = { main: 'Menu', team: 'Team', bag: 'Bag', book: 'Monster book', badges: 'Badges', settings: 'Settings', box: 'Monster box' };
+const TITLES: Record<MenuPage, string> = { main: 'Menu', team: 'Team', bag: 'Bag', book: 'Monster book', badges: 'Badges', settings: 'Settings', box: 'Monster box', howto: 'How to play' };
 const topicLabel = (id: string) => TOPICS.find((t) => t.id === id)?.label ?? id;
 
 export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, onClose, onChange }: MapMenuProps) {
@@ -69,10 +70,10 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
         }
       }}
     >
-      <Sheet title={TITLES[page]} onBack={back} backLabel={page === 'main' || from === 'object' ? 'Close' : 'Back'}>
+      <Sheet title={TITLES[page]} reading={page === 'howto' || page === 'badges'} onBack={back} backLabel={page === 'main' || from === 'object' ? 'Close' : 'Back'}>
         {page === 'main' && (
           <nav aria-label="Menu" className="mm-main">
-            {(['team', 'bag', 'book', 'badges', 'settings'] as const).map((p) => (
+            {(['team', 'bag', 'book', 'badges', 'settings', 'howto'] as const).map((p) => (
               <button key={p} type="button" className={`mb-btn mm-main__btn mm-main__btn--${p}`} onClick={() => onGo(p)}>
                 {TITLES[p]}
                 {p === 'book' && <small>{bookCounts(world).owned} owned · {bookCounts(world).seen} met</small>}
@@ -87,6 +88,7 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
         {page === 'bag' && <BagPage world={world} apply={apply} />}
         {page === 'book' && <MonsterBookScreen seen={world.seen} owned={world.owned} />}
         {page === 'badges' && <BadgesPage world={world} />}
+        {page === 'howto' && <HowToPlayBody />}
         {page === 'box' && (
           <BoxScreen
             team={world.team}

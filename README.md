@@ -177,6 +177,19 @@ James's family card game, for 2–4 players: against 1–3 bots or with classmat
 
 **Hidden cards (why nobody can see anyone else's hand):** in a classmates game the whole game (the shuffled stack and every hand) is in a database table students can't read at all. Each player has their own small row holding only what they're allowed to know, and the database only lets them read their own. The server shuffles with secure randomness and referees every move. Bot games play in the browser from a seed the server stamps, and the server replays them before saving (like the space game); a student with developer tools could find the bots' cards, which is why bot games only earn small, capped points.
 
+## Maths Monsters (the adventure game)
+
+A walk-around adventure for one student at a time. Walk through Harbour Town and six New Zealand places (Kauri Bush, Shell Beach, Fire Mountain, Snowy Peaks, Glowworm Caves, Harbour City), find wild monsters in the long grass, battle trainers, catch monsters and win a badge from each place's Tower. **Every attack and every catch is a maths question**, and each of the six monster types asks its own topic: Leaf place value and rounding, Water adding and taking away, Fire times tables, Ice division, Spark fractions, Stone decimals and money. A wrong answer is a small hit and the right answer is shown. Nothing is lost for getting maths wrong, and losing a battle only sends you back to your last healing spot. The design and every decision are in [docs/MONSTER-PLAN.md](docs/MONSTER-PLAN.md), with a results section for each stage.
+
+- **Switched off until the teacher turns it on** (Teacher page, **Maths Monsters**: the game switch, which topics are on, the class view of right answers and hardest questions, each student's panel, and a list of saves the server turned down). While it is off the card, leaderboard tab, achievements and point rules are hidden and the server refuses saves.
+- **Saving:** the whole adventure is saved on the server, so it follows a student to any Chromebook. It saves at a new game, at the nurse, after a Tower battle, on a badge, every 3 minutes and when the page closes; if the internet drops it waits on the device and sends later. The server replays every battle with the real rules and checks every maths question, so levels and monsters can't be made up. A refused save leaves the last good save alone.
+- **Points** (inside the 40-a-day cap, never ranked): 1 for every 3 wild battles won, 3 for a trainer, 8 for a Tower badge (first time only). Eight achievements. The leaderboard is "most monsters collected". A new season keeps the adventure and clears only the points.
+- **How to play** is on the new-game screen and in the in-game **Menu**. It is written for 9-year-olds, and its numbers come from the game's own rules.
+- **Keyboard and screen readers:** arrow keys or W A S D to walk, Space or Enter to talk, M or Esc for the Menu, 1-4 in battles. Everything except the map picture is normal HTML with names (the map picture has a description). Menus keep Tab inside them, pages that are only words can be scrolled with the keyboard, and the battle effects, door fade and white flash are switched off for people who ask their computer for less motion. **Calm** turns off the quick-answer bonus, **Choose answers** replaces the number pad with four buttons, and **On-screen arrows** are there for touch screens (tapping the map to walk works too).
+- **Slow Chromebooks:** the map is drawn only when something changes. In a real browser with the processor slowed 6 times, walking stayed at 60 frames a second and a battle opened with no slow frames.
+- **Making maps:** the maps are Tiled JSON in `shared/monsters/maps/`, made by `node scripts/make-monster-maps.mjs` (the steps are in `scripts/monster-maps/`). The map maker warns when a tree, bush or rock stands on a path, and a test checks that the files in the game are exactly what the map maker makes, so don't edit the JSON by hand without also changing the script. `npm run monsters:sim` plays whole battles to tune levelling; `npm run monsters:preview` builds a stand-alone test page.
+- **Credits:** tiles from Kenney (CC0); battle flow and the catch and exp ideas adapted from *Monster Tamer* by Dev Share Academy (MIT).
+
 ## The teacher view
 
 Teachers see a **Teacher** link in the top bar (students don't, and the database refuses them even if they type the address). It has:
@@ -274,10 +287,12 @@ src/              the website
   space/          keeping a space game with classmates up to date
   games/card101/  101: the table, cards, scoring show, How to play, bot and classmates screens
   card101/        keeping a 101 game with classmates up to date (your own seat only)
+  games/monsters/ Maths Monsters: the map and walking, battle screen, monster pictures, menus, How to play
 public/stockfish/ the Stockfish chess engine files and their licence
 shared/           game rules shared with the server (chess and checkers rules, deciding results, refereeing friend games)
   space/          the space game's rules engine, boards, bots, galaxy codes, space facts and simulation
   card101/        101's rules engine, scoring, what each player may see, bots, saving, timers and simulation
+  monsters/       Maths Monsters: monsters and attacks, battle rules, the maps and walking rules, and the check the server runs on a save
 supabase/         database setup (migrations), its tests, server functions (save-bot-game, multiplayer, space-game, card-game, gem-keep), local settings
 scripts/          builds the server functions into single files
 docs/             the plan and the original brief
@@ -295,7 +310,7 @@ To update a function on the live site without the Supabase CLI:
 1. On GitHub, open `supabase/functions/<name>/index.ts` and click **Copy raw file**.
 2. In Supabase, go to **Edge Functions**, open the function, click **Code**, select everything, paste, then click **Deploy**.
 
-There are five functions: `save-bot-game` (saves bot games, including space and 101 games), `multiplayer` (referees chess and checkers between students), `space-game` (runs Wormholes & Black Holes with classmates), `card-game` (runs 101 with classmates) and `gem-keep` (saves Gem Keep levels, Level Keys and times-table records). All five must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
+There are five functions: `save-bot-game` (saves bot games, including space and 101 games), `multiplayer` (referees chess and checkers between students), `space-game` (runs Wormholes & Black Holes with classmates), `card-game` (runs 101 with classmates) `gem-keep` (saves Gem Keep levels, Level Keys and times-table records) and `monster` (checks and saves Maths Monsters). The newer games have functions of their own too (`clans`, `lord`, `power-clash`, `training`), each described in its plan. The ones named above all must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
 
 ## Looking after the site
 
