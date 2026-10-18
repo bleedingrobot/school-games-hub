@@ -5,7 +5,7 @@
  */
 import { sameAnswer } from "./banded";
 import { PLACEMENT_QUESTIONS } from "./config";
-import { solveParts } from "./focus";
+import { cleanParams, solveClaim } from "./claim";
 import { LADDER } from "./ladder";
 import {
   isQuick,
@@ -20,6 +20,9 @@ const MAX_QUESTION_PARTS = 12;
 export interface PlacementAnswer {
   skill: string;
   parts: string[];
+  /** The record the question counts towards and the numbers it was made from, so the server can make it again (claim.ts). */
+  key?: string;
+  params?: number[];
   answer: number;
   /** How long it took, in milliseconds. */
   ms: number;
@@ -31,7 +34,9 @@ export function parsePlacementAnswers(raw: unknown): PlacementAnswer[] | null {
   const out: PlacementAnswer[] = [];
   for (const r of raw) {
     if (!r || typeof r !== "object") return null;
-    const { skill, parts, answer, ms } = r as Record<string, unknown>;
+    const { skill, parts, answer, ms, key, params } = r as Record<string, unknown>;
+    if (key !== undefined && (typeof key !== "string" || key.length > 51)) return null;
+    if (params !== undefined && !cleanParams(params)) return null;
     if (
       typeof skill !== "string" ||
       !Array.isArray(parts) ||
@@ -46,7 +51,14 @@ export function parsePlacementAnswers(raw: unknown): PlacementAnswer[] | null {
       !Number.isFinite(ms)
     )
       return null;
-    out.push({ skill, parts: parts as string[], answer, ms: Math.max(0, ms) });
+    out.push({
+      skill,
+      parts: parts as string[],
+      answer,
+      ms: Math.max(0, ms),
+      ...(typeof key === "string" ? { key } : {}),
+      ...(params ? { params: params as number[] } : {}),
+    });
   }
   return out;
 }
@@ -60,7 +72,7 @@ export function checkPlacement(
   for (const a of answers) {
     const expected = placementNext(yearLevel, steps);
     if (!expected || expected.id !== a.skill) return null;
-    const solved = solveParts(a.parts);
+    const solved = solveClaim(a);
     if (!solved || !solved.keys.some((k) => expected.keys.includes(k)))
       return null;
     const correct = sameAnswer(a.answer, solved.answer);

@@ -92,9 +92,9 @@ export default function Placement() {
   /** Marks it here for the feedback box; the server marks it again for real. */
   function mark(q: Question, answer: number, ms: number): MarkedAnswer {
     given.current = { answer, ms };
-    const fact = q.parts
-      .map((part) => (part === "?" ? String(q.answer) : part))
-      .join(" ");
+    // A pick-one question's answer is the number of the choice, so say the choice instead.
+    const right = q.choiceLabels ? q.choiceLabels[q.answer] : String(q.answer);
+    const fact = q.parts.map((part) => (part === "?" ? right : part)).join(" ");
     return { correct: sameAnswer(answer, q.answer), fact, boxBefore: 0, boxAfter: 0 };
   }
 
@@ -134,7 +134,14 @@ export default function Placement() {
     ];
     const nextAnswers = [
       ...answers,
-      { skill: skill.id, parts: q.parts, answer, ms },
+      {
+        skill: skill.id,
+        parts: q.parts,
+        answer,
+        ms,
+        key: q.factKey,
+        ...(q.params?.length ? { params: q.params } : {}),
+      },
     ];
     setSteps(nextSteps);
     setAnswers(nextAnswers);

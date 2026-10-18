@@ -14,16 +14,20 @@ import { quickMsForPack } from '../config';
 import type { FactStats } from '../leitner';
 import { BEDMAS_FAMILIES, BEDMAS_KEYS, parseBedmas } from './bedmas';
 import { RECORD_KEY, sameParts, type Parser } from './generatedKit';
+import { DECIMAL_FAMILIES, DECIMAL_SKILL_KEYS } from './decimalSkills';
+import { FDP_FAMILIES, FDP_SKILL_KEYS } from './fdpSkills';
+import { FRACTION_FAMILIES, FRACTION_SKILL_KEYS } from './fractionSkills';
+import { PERCENT_FAMILIES, PERCENT_SKILL_KEYS } from './percentSkills';
 import { PLACE_FAMILIES, PLACE_SKILL_KEYS, parsePlace } from './placeSkills';
 import { ROUNDING_FAMILIES, ROUNDING_SKILL_KEYS, parseRounding } from './rounding';
 
-const families: Record<string, Family> = { ...PLACE_FAMILIES, ...ROUNDING_FAMILIES, ...BEDMAS_FAMILIES };
+const families: Record<string, Family> = { ...PLACE_FAMILIES, ...ROUNDING_FAMILIES, ...BEDMAS_FAMILIES, ...FRACTION_FAMILIES, ...PERCENT_FAMILIES, ...DECIMAL_FAMILIES, ...FDP_FAMILIES };
 
 for (const key of Object.keys(families)) if (!RECORD_KEY.test(key)) throw new Error(`generated skill key "${key}" is not a valid record key`);
 
 export const GENERATED: PackDefinition = {
   id: 'generated',
-  label: 'Place value, rounding and order of operations',
+  label: 'Place value, rounding, order of operations, fractions, decimals and percentages',
   families,
   bands: [],
   ladderOnly: Object.keys(families),
@@ -37,6 +41,10 @@ export const GENERATED_SKILL_KEYS = {
   ...PLACE_SKILL_KEYS,
   ...ROUNDING_SKILL_KEYS,
   bedmas: BEDMAS_KEYS,
+  ...FRACTION_SKILL_KEYS,
+  ...PERCENT_SKILL_KEYS,
+  ...DECIMAL_SKILL_KEYS,
+  ...FDP_SKILL_KEYS,
 } as const;
 
 /** Every question type this pack owns. */
@@ -58,4 +66,15 @@ export function solveGenerated(parts: readonly string[]): { answer: number; key:
     if (made && sameParts(made.parts, parts)) return { answer: tidy(made.answer), key: found.key };
   }
   return null;
+}
+
+/**
+ * A question made again from its record key and the numbers it was made from (`Question.params`), accepted only when it comes out
+ * exactly as it was shown. This is how the server marks answers to every generated question, including the pick-one ones whose
+ * choices are not in the parts. Null if no generated skill owns the key, the numbers are not ones it could have rolled, or the
+ * question they make is not the one shown. See claim.ts.
+ */
+export function solveByNumbers(key: string, params: readonly number[], parts: readonly string[]): { answer: number; key: string } | null {
+  const made = Object.hasOwn(families, key) ? families[key].make(key, params) : null;
+  return made && sameParts(made.parts, parts) ? { answer: tidy(made.answer), key } : null;
 }

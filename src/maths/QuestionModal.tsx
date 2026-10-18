@@ -10,7 +10,7 @@
  * drawn smaller, and decimal questions get a point key.
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { spokenFraction } from '../../shared/maths/banded';
+import { spokenLabel } from '../../shared/maths/banded';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { NumberPad } from './NumberPad';
 import './maths.css';
@@ -170,10 +170,12 @@ export function QuestionModal({
   const blank = typed === '' ? '?' : typed;
   // Money answers are shown with cents: 4.1 → 4.10.
   const rightAnswer = result?.answer ?? question.answer ?? 0;
-  const answerText = question.parts.includes('$') ? rightAnswer.toFixed(2) : String(rightAnswer);
+  // A pick-one question's answer is the number of the choice: show the choice itself in the blank.
+  const pickedLabel = question.choiceLabels?.[rightAnswer];
+  const answerText = pickedLabel ?? (question.parts.includes('$') ? rightAnswer.toFixed(2) : String(rightAnswer));
   const blankBox = (
     <span className="question__blank" data-empty={typed === '' || undefined}>
-      {result ? (result.correct ? blank : answerText) : blank}
+      {result ? (result.correct && !pickedLabel ? blank : pickedLabel ? choiceText(answerText) : answerText) : blank}
     </span>
   );
   return (
@@ -226,7 +228,7 @@ export function QuestionModal({
                 key={choice}
                 type="button"
                 className="question__choice"
-                aria-label={question.choiceLabels ? spokenFraction(question.choiceLabels[i]) : undefined}
+                aria-label={question.choiceLabels ? spokenLabel(question.choiceLabels[i]) : undefined}
                 disabled={!!result || checking}
                 data-answer={result && choice === (result.answer ?? question.answer) ? true : undefined}
                 onClick={() => submit(choice)}

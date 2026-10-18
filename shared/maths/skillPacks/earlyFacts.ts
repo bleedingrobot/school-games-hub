@@ -71,7 +71,26 @@ function doublesHalves(label: string, tag: string, dblFrom: number, dblTo: numbe
   };
 }
 
+/** "Ten and" facts (10 + 4, 7 + 10): one record for each of the nine, key "tenand:4". Variants: 0 10 + n, 1 n + 10, 2 10 + ? = 10 + n, 3 (10 + n) − 10. */
+const tenAnd: Family = {
+  label: '"Ten and" facts (10 + 4)',
+  curriculumTags: ['MS.Y1.NUM.OP.P6'],
+  keys: range(1, 9).map((n) => `tenand:${n}`),
+  roll: (key, r) => [Number(key.split(':')[1]), int(r, 0, 3)],
+  make: (key, [n, v]) => {
+    if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
+    const t = String(10 + n);
+    const [parts, answer] =
+      v === 0 ? [['10', '+', String(n), '=', '?'], 10 + n]
+      : v === 1 ? [[String(n), '+', '10', '=', '?'], 10 + n]
+      : v === 2 ? [['10', '+', '?', '=', t], n]
+      : [[t, '−', '10', '=', '?'], n];
+    return { parts: parts as string[], spoken: speak(parts as string[]), answer: answer as number, wrong: [(answer as number) + 1, (answer as number) - 1, (answer as number) + 10, n + 1, 20, 1 + n] };
+  },
+};
+
 const families: Record<string, Family> = {
+  tenAnd,
   bond10: bonds('Pairs that make 10', 'MS.Y1.NUM.OP.P1', 'bond10', 10, 0),
   dblHalf10: doublesHalves('Doubles and halves to 10', 'MS.Y1.NUM.OP.P2', 1, 5, 2, 10),
   bond20: bonds('Pairs that make 20', 'MS.Y2.NUM.OP.P1', 'bond20', 20, 1),
@@ -83,6 +102,8 @@ export const EARLY_FACTS: PackDefinition = {
   label: 'Early number facts',
   families,
   bands: [['bond10'], ['dblHalf10'], ['bond20'], ['dblHalf20']],
+  // Only the ladder asks the "ten and" facts.
+  ladderOnly: ['tenAnd'],
 };
 
 export const earlyFactsPack = (saved?: FactStats[], random?: () => number, now?: () => number) => new BandedPack(EARLY_FACTS, saved, random, now);

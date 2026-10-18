@@ -73,7 +73,6 @@ function tablesSkills(): LadderSkill[] {
   });
 }
 
-const stub = (id: string, label: string, stage: LadderStage, ...curriculumTags: string[]): LadderSkill => ({ id, label, stage, curriculumTags, keys: [], built: false });
 /** A skill made of generated question types (kept per type, not per fact). */
 const generated = (id: string, label: string, stage: LadderStage, keys: readonly string[], ...curriculumTags: string[]): LadderSkill => ({ id, label, stage, curriculumTags, keys: [...keys], built: true });
 const tables = tablesSkills();
@@ -82,7 +81,7 @@ const tables = tablesSkills();
 export const LADDER: LadderSkill[] = [
   { id: 'facts-10', label: 'Number facts to 10', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P1'], keys: [...earlyKeys('bond10'), ...addKeys((s) => s <= 10)], built: true },
   { id: 'dbl-half-10', label: 'Doubles and halves to 10', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P2'], keys: earlyKeys('dblHalf10'), built: true },
-  stub('ten-and', 'Ten and a number (10 + 4)', 'early-facts', 'MS.Y1.NUM.OP.P6'),
+  { id: 'ten-and', label: 'Ten and a number (10 + 4)', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P6'], keys: earlyKeys('tenAnd'), built: true },
   { id: 'facts-20', label: 'Number facts to 20', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P1'], keys: [...earlyKeys('bond20'), ...addKeys((s) => s > 10)], built: true },
   { id: 'dbl-half-20', label: 'Doubles and halves to 20', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P2'], keys: earlyKeys('dblHalf20'), built: true },
   tables[0],
@@ -90,26 +89,26 @@ export const LADDER: LadderSkill[] = [
   tables[1],
   generated('round-10-100', 'Rounding to the nearest 10 and 100', 'rounding', GENERATED_SKILL_KEYS['round-10-100'], 'MS.Y3.NUM.NS.P5'),
   generated('bonds-1000', 'Hundreds that make 1000', 'place-value', GENERATED_SKILL_KEYS['bonds-1000']),
-  stub('unit-fraction-of', 'A fraction of an amount (⅓ of 15)', 'fractions-decimals-percentages', 'MS.Y3.NUM.RN.P7'),
+  generated('unit-fraction-of', 'A fraction of an amount (⅓ of 15)', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['unit-fraction-of'], 'MS.Y3.NUM.RN.P7'),
   tables[2],
   tables[3],
   generated('times-tens', 'Times with tens and hundreds (30 × 4)', 'place-value', GENERATED_SKILL_KEYS['times-tens'], 'MS.Y4.NUM.OP.P3'),
-  stub('tenths', 'Tenths and decimals of a half', 'fractions-decimals-percentages', 'MS.Y4.NUM.RN.P3', 'MS.Y4.NUM.RN.P5'),
-  stub('add-tenths', 'Adding and taking away tenths', 'fractions-decimals-percentages', 'MS.Y4.NUM.RN.P10'),
+  generated('tenths', 'Tenths and decimals of a half', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['tenths'], 'MS.Y4.NUM.RN.P3', 'MS.Y4.NUM.RN.P5'),
+  generated('add-tenths', 'Adding and taking away tenths', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['add-tenths'], 'MS.Y4.NUM.RN.P10'),
   generated('round-1000', 'Rounding to the nearest 1000', 'rounding', GENERATED_SKILL_KEYS['round-1000'], 'MS.Y4.NUM.NS.K4'),
   tables[4],
   generated('factor-pairs', 'Factor pairs', 'place-value', GENERATED_SKILL_KEYS['factor-pairs'], 'MS.Y5.NUM.NS.P2'),
   generated('round-big', 'Rounding bigger numbers and decimals', 'rounding', GENERATED_SKILL_KEYS['round-big'], 'MS.Y5.NUM.NS.P3', 'MS.Y5.NUM.NS.P4'),
-  stub('decimal-equivalents', 'Fractions as decimals', 'fractions-decimals-percentages', 'MS.Y5.NUM.RN.P4'),
-  stub('percent-basic', '10%, 25% and 50%', 'fractions-decimals-percentages', 'MS.Y5.NUM.RN.P5', 'MS.Y5.NUM.RN.P15'),
-  stub('fraction-of', 'Fractions of an amount (⅔ of 24)', 'fractions-decimals-percentages', 'MS.Y5.NUM.RN.P13'),
-  stub('times-decimals', 'Times 10 and 100 with decimals', 'fractions-decimals-percentages', 'MS.Y5.NUM.RN.P7'),
-  stub('equivalent-fractions', 'Equivalent fractions and simplifying', 'fractions-decimals-percentages', 'MS.Y5.NUM.RN.P9', 'MS.Y6.NUM.RN.P6'),
+  generated('decimal-equivalents', 'Fractions as decimals', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['decimal-equivalents'], 'MS.Y5.NUM.RN.P4'),
+  generated('percent-basic', '10%, 25% and 50%', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['percent-basic'], 'MS.Y5.NUM.RN.P5', 'MS.Y5.NUM.RN.P15'),
+  generated('fraction-of', 'Fractions of an amount (⅔ of 24)', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['fraction-of'], 'MS.Y5.NUM.RN.P13'),
+  generated('times-decimals', 'Times 10 and 100 with decimals', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['times-decimals'], 'MS.Y5.NUM.RN.P7'),
+  generated('equivalent-fractions', 'Equivalent fractions and simplifying', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['equivalent-fractions'], 'MS.Y5.NUM.RN.P9', 'MS.Y6.NUM.RN.P6'),
   generated('squares-cubes', 'Square and cube numbers', 'place-value', GENERATED_SKILL_KEYS['squares-cubes'], 'MS.Y6.NUM.NS.P6'),
   generated('round-million', 'Rounding to the nearest million', 'rounding', GENERATED_SKILL_KEYS['round-million'], 'MS.Y6.NUM.NS.P3', 'MS.Y6.NUM.NS.P4'),
-  stub('fdp-equivalents', 'Fractions, decimals and percentages', 'fractions-decimals-percentages', 'MS.Y6.NUM.RN.P3', 'MS.Y6.NUM.RN.P4'),
-  stub('percent-of', 'Percentages of an amount', 'fractions-decimals-percentages', 'MS.Y6.NUM.RN.P13', 'MS.Y6.NUM.RN.P14'),
-  stub('whole-from-fraction', 'Finding the whole from a fraction', 'fractions-decimals-percentages', 'MS.Y6.NUM.RN.P12'),
+  generated('fdp-equivalents', 'Fractions, decimals and percentages', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['fdp-equivalents'], 'MS.Y6.NUM.RN.P3', 'MS.Y6.NUM.RN.P4'),
+  generated('percent-of', 'Percentages of an amount', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['percent-of'], 'MS.Y6.NUM.RN.P13', 'MS.Y6.NUM.RN.P14'),
+  generated('whole-from-fraction', 'Finding the whole from a fraction', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['whole-from-fraction'], 'MS.Y6.NUM.RN.P12'),
   generated('bedmas', 'Order of operations', 'order-of-operations', GENERATED_SKILL_KEYS.bedmas, 'MS.Y6.NUM.OP.P1'),
 ];
 
@@ -244,7 +243,7 @@ export function focusPools(spec: FocusSpec, opts: LadderOptions = {}): Pools {
 export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-sub' | 'division' | 'generated' | null {
   if (/^mul:\d+x\d+$/.test(key)) return 'times-tables';
   if (isGeneratedKey(key)) return 'generated';
-  if (/^(bond10|bond20|dbl|half):/.test(key)) return 'early-facts';
+  if (/^(bond10|bond20|dbl|half|tenand):/.test(key)) return 'early-facts';
   if (key.startsWith('add:')) return 'add-sub';
   if (key.startsWith('div:')) return 'division';
   return null;
