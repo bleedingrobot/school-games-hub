@@ -127,7 +127,7 @@ describe('giving to the chest', () => {
   it('is refused once the village has built everything, and while a fight is open', () => {
     expect(applyAction(created(), { type: 'chestGive', gold: 5 }, ctx({ village: village({ levels: levels(5, 6, 3) }) })).ok).toBe(false);
     const s = created();
-    s.fight = { depth: 0, boss: false, seed: 1, no: 1, settings: { ...({} as never) }, rounds: [] };
+    s.fight = { depth: 0, boss: false, seed: 1, no: 1, settings: {} as never, rounds: [] };
     expect(applyAction(s, { type: 'chestGive', gold: 5 }, ctx({ village: village() })).ok).toBe(false);
   });
   it('does not touch the empire vault', () => {
