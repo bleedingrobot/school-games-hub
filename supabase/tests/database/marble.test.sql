@@ -5,7 +5,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(40);
+select plan(64);
 
 -- School 1 is Douglas Park (made by the migration). School 2 is made here.
 select setval(pg_get_serial_sequence('public.schools', 'id'), 1);
@@ -33,9 +33,9 @@ $$;
 create function pg_temp.id(who text) returns uuid language sql as $$ select ('00000000-0000-0000-0000-0000000000' || who)::uuid $$;
 -- Saves a run for a student: `n` makes the seed, so the same n is the same seed.
 create function pg_temp.save(who text, n integer, in_steps integer, in_course text default 'boulder-beach',
-  in_mode text default 'up', in_daily integer default 400) returns text language sql as $$
+  in_mode text default 'up', in_daily integer default 400, in_doors integer default 0) returns text language sql as $$
   select public.record_marble_run(pg_temp.id(who), 'seed-for-run-' || who || '-' || n, in_course, in_mode, false,
-    in_steps, 1, 0, 0, '1x' || in_steps, in_daily)
+    in_steps, 1, 0, 0, '1x' || in_steps, in_daily, in_doors)
 $$;
 
 -- ---- Nobody reaches the tables or the saving function directly ----
@@ -107,6 +107,46 @@ select is(public.marble_board('boulder-beach', 'up', false) ->> 'total', '1', 'a
 
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000f', 'someone@gmail.com');
 select is(public.marble_board('boulder-beach', 'up', false), null, 'someone who is not at a school gets no board');
+
+-- ---- Maths (M.6): doors kept with a run, the teacher's switches, and the questions of a run ----
+select pg_temp.act_as_server();
+select is(public.record_marble_run(pg_temp.id('0b'), 'maths-seed-1', 'boulder-beach', 'up', true, 2000, 0, 0, 0, '1x2000', 400, 5), 'best', 'a run with maths is saved on its own');
+select is((select doors from public.marble_bests where player = pg_temp.id('0b') and maths), 5, '... with the doors that were open');
+select is((select count(*)::integer from public.marble_bests where player = pg_temp.id('0b') and not maths), 1, '... and the run without maths is kept apart');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cai@douglaspark.school.nz');
+select is(public.marble_ghost('boulder-beach', 'up', true, 'top') ->> 'doors', '5', 'a ghost carries the doors it was run with');
+select is(public.marble_board('boulder-beach', 'up', true) ->> 'total', '1', 'the with-maths board is separate');
+select is((public.marble_ghost('boulder-beach', 'up', false, 'top') ->> 'doors')::integer, 0, 'a run with no gates keeps no doors');
+select pg_temp.reset();
+
+-- The teacher's switches (a student cannot change them)
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select throws_ok($$ select public.teacher_set_marble_maths('on') $$, null, null, 'a student cannot change the maths switch');
+select throws_ok($$ select public.teacher_set_marble_rescue(false) $$, null, null, 'a student cannot change the rescue switch');
+select is((select marble_maths from public.app_settings limit 1), 'choose', 'the maths switch starts at "students choose"');
+select is((select marble_rescue from public.app_settings limit 1), true, '... and rescue questions start on');
+select pg_temp.reset();
+update public.profiles set role = 'teacher', school_admin = true where id = pg_temp.id('0c');
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000c', 'cai@douglaspark.school.nz');
+select lives_ok($$ select public.teacher_set_marble_maths('on') $$, 'a teacher can switch maths on for everyone');
+select is((select marble_maths from public.app_settings limit 1), 'on', '... and it is saved');
+select throws_ok($$ select public.teacher_set_marble_maths('sometimes') $$, '22023', null, 'an unknown setting is refused');
+select lives_ok($$ select public.teacher_set_marble_rescue(false) $$, 'a teacher can switch rescue questions off');
+select is((select marble_rescue from public.app_settings limit 1), false, '... and it is saved');
+select pg_temp.reset();
+
+-- The question list of a run: only the server function can use it
+select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
+select throws_ok($$ select * from public.marble_questions $$, '42501', null, 'students cannot read the question lists');
+select throws_ok($$ select public.marble_load_run(auth.uid(), 'question-seed-1') $$, '42501', null, 'students cannot load a question list');
+select pg_temp.act_as_server();
+select lives_ok($$ select public.marble_store_run(pg_temp.id('0a'), 'question-seed-1', true, '[{"answer":56},{"answer":48}]') $$, 'the server keeps a run''s questions');
+select is(public.marble_load_run(pg_temp.id('0a'), 'question-seed-1') #>> '{questions,1,answer}', '48', '... and loads them back with their answers');
+select is(public.marble_load_run(pg_temp.id('0a'), 'question-seed-none'), null, 'a run with no list (no maths) loads as nothing');
+select is(public.marble_claim_answer(pg_temp.id('0a'), 'question-seed-1', 3, 56, true), true, 'an answer is marked once');
+select is(public.marble_claim_answer(pg_temp.id('0a'), 'question-seed-1', 3, 12, false), false, '... and a second answer to the same slot is turned away');
+select is(public.marble_load_run(pg_temp.id('0a'), 'question-seed-1') #>> '{answered,3,right}', 'true', '... and the first one stands');
+select throws_ok($$ select public.marble_store_run(pg_temp.id('0a'), 'question-seed-2', true, '[]') $$, '22023', null, 'an empty question list is refused');
 
 select * from finish();
 rollback;

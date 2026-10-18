@@ -73,7 +73,7 @@ $$, array[
   'teacher_new_season', 'teacher_remove_co_teacher', 'teacher_remove_from_class', 'teacher_rename_group', 'teacher_rename_village',
   'teacher_reset_clan', 'teacher_reset_lord_hero', 'teacher_reset_name', 'teacher_reset_warp_code',
   'teacher_school_teachers', 'teacher_set_clan_maths', 'teacher_set_clan_raids', 'teacher_set_clans',
-  'teacher_set_gem_keep', 'teacher_set_group_member', 'teacher_set_hidden', 'teacher_set_lord', 'teacher_set_maths_focus',
+  'teacher_set_gem_keep', 'teacher_set_group_member', 'teacher_set_hidden', 'teacher_set_lord', 'teacher_set_marble_maths', 'teacher_set_marble_rescue', 'teacher_set_maths_focus',
   'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_students_choose_focus',
   'teacher_set_space_reactions', 'teacher_set_warp_mode', 'teacher_student_detail', 'teacher_students',
   'teacher_training_student', 'teacher_unassigned_students', 'teacher_update_class', 'teacher_villages',

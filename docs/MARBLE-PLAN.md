@@ -238,7 +238,7 @@ Each stage ends with tests passing and a short results section here, like the ot
 - **Offline.** If the seed can't be fetched the run still plays and counts on that device only. A finished run waits in a small queue (up to 12) and is sent when the server can be reached; a run the server will never take (400) is dropped.
 - **Reading.** `my_marble()` (own bests), `marble_board()` (top 10 and you, own school only, teachers and hidden profiles left out, word-names only) and `marble_ghost()` (`mine`, `next` = the classmate just faster, `top`). The board and ghost screens come in M.5; the database side is ready and tested.
 - **Tests.** Server function: 17 (edited inputs, a made-up time, faked time, saved twice, bad stamp, another student's stamp, another course or mode, old seed, daily limit, busy database). Shared save rules and the browser queue have their own tests. Database (scratch copy): `marble.test.sql` 40 checks; the security list test knows the three new functions; all 29 database test files pass.
-- **Migration:** `20261018002800_marble.sql` (after F.3's `002700` on `maths-focus`, which is not on `main`).
+- **Migration:** `20261019000200_marble.sql` (after F.3's `002700` on `maths-focus`, which is not on `main`).
 
 **M.5 (ghosts, boards, two players), built 19 Oct 2026, not live yet.**
 
