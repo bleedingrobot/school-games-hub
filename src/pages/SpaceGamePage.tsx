@@ -103,7 +103,7 @@ function Waiting({ session }: { session: SpaceSession }) {
         </p>
         {settings.maths && (
           <p className="friend-note">
-            <span aria-hidden="true">🧮</span> Mission Control maths: <strong>on</strong>. There are times-table questions in this game.
+            <span aria-hidden="true">🧮</span> Mission Control maths: <strong>on</strong>. There are maths questions in this game.
           </p>
         )}
         {game.code && (

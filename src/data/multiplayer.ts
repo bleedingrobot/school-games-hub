@@ -8,6 +8,7 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { GameKind, Side } from '../../shared/multiplayer';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
+import { readSettings } from './classSettings';
 import { supabase } from '../lib/supabase';
 import { FriendlyError } from './profile';
 
@@ -196,9 +197,9 @@ export async function fetchLobby(): Promise<LobbyGame[]> {
 }
 
 /** Is playing friends switched on? (The teacher can switch it off for everyone.) */
-export async function fetchMultiplayerEnabled(): Promise<boolean> {
-  const { data, error } = await supabase.from('app_settings').select('multiplayer_enabled').maybeSingle();
-  if (error || !data) throw new FriendlyError('We couldn’t load the lobby.');
+export async function fetchMultiplayerEnabled(classId?: string | null): Promise<boolean> {
+  const data = await readSettings(['multiplayer_enabled'], classId);
+  if (!data) throw new FriendlyError('We couldn’t load the lobby.');
   return data.multiplayer_enabled as boolean;
 }
 

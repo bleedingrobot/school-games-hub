@@ -27,6 +27,8 @@ import { trainingOn } from './training/switch';
 
 // Training has its own screens and styles, so it loads only when someone opens it.
 const TrainingPage = lazy(() => import('./pages/TrainingPage'));
+// The maths focus screen brings the whole maths ladder with it, so it loads only when a teacher opens it.
+const SetFocus = lazy(() => import('./pages/SetFocus'));
 
 /** All the pages. Links look like /#/chess so GitHub Pages needs no extra setup. */
 export function AppRoutes() {
@@ -63,6 +65,14 @@ export function AppRoutes() {
           <Route path="points" element={<HowPoints />} />
           <Route path="teacher" element={<Teacher />} />
           <Route path="classes" element={<MyClasses />} />
+          <Route
+            path="focus"
+            element={
+              <Suspense fallback={<div className="loading" role="status">Loading…</div>}>
+                <SetFocus />
+              </Suspense>
+            }
+          />
           <Route path="warp" element={<ClassWarp />} />
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />

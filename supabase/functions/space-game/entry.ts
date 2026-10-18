@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
 import type { FactStats } from '../../../shared/maths/leitner';
+import { packIdOfKey, parseFocus } from '../../../shared/maths/focus';
 import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
 import { spaceGameHandler, type SpaceGameRow } from './handler';
 
@@ -136,10 +137,13 @@ Deno.serve(
       const context = data as {
         facts: FactStats[];
         settings: { enabledTables?: number[]; division?: boolean; missingFactor?: boolean | null; multipleChoice?: boolean };
+        focus?: unknown;
       };
       const { enabledTables, division, missingFactor, multipleChoice } = context.settings;
       return {
         facts: context.facts,
+        // Anything odd counts as no focus: the questions are then the times-table step, as before.
+        focus: parseFocus(context.focus),
         settings: { enabledTables, division, multipleChoice, ...(typeof missingFactor === 'boolean' ? { missingFactor } : {}) },
       };
     },
@@ -181,7 +185,7 @@ Deno.serve(
     async recordAnswer(player, once, answer) {
       const { error } = await admin.rpc('record_fact_answers', {
         player,
-        pack: 'times-tables',
+        pack: packIdOfKey(answer.key) ?? 'times-tables',
         batch_id: await batchIdFor(once),
         answers: [answer],
         quick_ms: QUICK_MS,

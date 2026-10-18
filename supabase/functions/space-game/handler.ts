@@ -12,9 +12,9 @@
 import { makeCode, normaliseCode } from '../../../shared/multiplayer';
 import type { FactAnswer, FactStats } from '../../../shared/maths/leitner';
 import type { Question } from '../../../shared/maths/skillPack';
-import { solveQuestion, TimesTables } from '../../../shared/maths/skillPacks/timesTables';
+import { isFocusKey, solveParts, type MathsFocus } from '../../../shared/maths/focus';
 import { canCharge, MAX_PLAYERS, MIN_PLAYERS, placesFor, SpaceRuleError, type SpaceAction, type SpaceEvent, type SpaceState } from '../../../shared/space/engine';
-import { pickSpaceQuestion, type MathsQuestionSettings } from '../../../shared/space/mathsQuestion';
+import { makeSpacePack, pickSpaceQuestion, type MathsQuestionSettings } from '../../../shared/space/mathsQuestion';
 import { isItemKind } from '../../../shared/space/items';
 import {
   autopilotSeats,
@@ -117,7 +117,7 @@ export interface Services {
   /** The teacher's Mission Control maths switch. */
   mathsSwitch(player: string): Promise<MathsSwitch>;
   /** A student's times-table records and the teacher's question settings, to pick the next question from. */
-  loadMathsContext(player: string): Promise<{ facts: FactStats[]; settings: MathsQuestionSettings } | null>;
+  loadMathsContext(player: string): Promise<{ facts: FactStats[]; settings: MathsQuestionSettings; focus?: MathsFocus } | null>;
   loadQuestion(game: string, seat: number, kind: QuestionKind): Promise<StoredQuestion | null>;
   /** Keeps this as the seat's question of that kind (replacing an older one). */
   saveQuestion(game: string, seat: number, kind: QuestionKind, stamp: number, question: Question): Promise<void>;
@@ -555,6 +555,16 @@ function publicQuestion(q: Question) {
   return { id, skill, kind, parts, spoken, ...(choices ? { choices } : {}) };
 }
 
+/**
+ * The answer and the record of a question this server asked (it keeps the whole question, answer and all). A question
+ * saved before the maths focus existed is checked the old way: worked out from how it was shown.
+ */
+function markStored(q: Question): { answer: number; key: string } | null {
+  if (q && Number.isInteger(q.answer) && typeof q.factKey === 'string' && isFocusKey(q.factKey)) return { answer: q.answer, key: q.factKey };
+  const solved = solveParts(q?.parts);
+  return solved ? { answer: solved.answer, key: solved.keys[0] } : null;
+}
+
 const isKind = (value: unknown): value is QuestionKind => value === 'moment' || value === 'charge';
 
 /** Everything that must be true for this student to be asked (or to answer) a question of this kind now. */
@@ -588,7 +598,8 @@ async function askQuestion({ services, me, body }: Context): Promise<SpaceGameRo
   }
   const context = await services.loadMathsContext(me);
   if (!context) throw new Refused('failed');
-  const pack = new TimesTables(context.facts, services.random);
+  // The student's focus, worked out by the database for this moment (a teacher's focus, their own choice, or none = as before).
+  const pack = makeSpacePack(context.facts, context.focus, context.settings, services.random);
   const question = pickSpaceQuestion(pack, context.settings);
   if (!question) throw new Refused('failed');
   await services.saveQuestion(game.id, seat, body.kind, stamp, question);
@@ -607,7 +618,7 @@ async function answerQuestion({ services, me, body }: Context): Promise<SpaceGam
   const stored = await services.loadQuestion(game.id, seat, kind);
   if (!stored || stored.stamp !== stamp) throw new Refused('changed');
   if (stored.answered) throw new Refused('illegal', { error: 'You’ve already answered that one.' });
-  const solved = solveQuestion(stored.question.parts);
+  const solved = markStored(stored.question);
   if (!solved) throw new Refused('failed');
   const right = typed === solved.answer;
   const now = services.now();

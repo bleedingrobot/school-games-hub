@@ -12,7 +12,7 @@ import { isBotLevelId, isClaimedEnding, type BotLevel, type ClaimedEnding, type 
 import { STAR_KINDS, type StarKind } from './board';
 import { isDesignedBoardId, type BoardChoice } from './boards';
 import type { FactAnswer } from '../maths/leitner';
-import { solveQuestion } from '../maths/skillPacks/timesTables';
+import { keyForAnswer, solveParts } from '../maths/focus';
 import type { SpaceAction, SpaceEvent, SpaceState, Settings } from './engine';
 import { parseGalaxyCode } from './galaxy';
 import { isItemKind } from './items';
@@ -21,35 +21,14 @@ import { replaySolo, type SoloSetup } from './replay';
 /** Games where the student had fewer turns than this earn nothing. Lower than chess's 10
  * moves, because a quick-board game is only about 10 rounds. */
 export const MIN_TURNS_TO_COUNT = 5;
-/** How long a seed can be used for. A real game takes minutes; a forgotten tab, hours. */
-export const SEED_LIFETIME_SECONDS = 12 * 60 * 60;
 /** The most actions a save can carry (bot_games keeps up to 1,000; a long game is ~200). */
 export const MAX_SAVED_ACTIONS = 1000;
 
-const SEED_PATTERN = /^s1-(\d{10})-[0-9a-f]{24}$/;
 const SEAT_NAMES = ['first', 'second', 'third', 'fourth'] as const;
 
-// ---------- Seeds ----------
+// ---------- Seeds (kept in ./seed so the other card games can use them without all of this) ----------
 
-/** A new seed: when it was made and 12 random bytes. */
-export function makeSeed(nowSeconds: number, randomHex: string): string {
-  return `s1-${String(Math.floor(nowSeconds)).padStart(10, '0')}-${randomHex}`;
-}
-
-/** What the server signs: the seed and who it was given to, so a seed can't be shared. */
-export function stampText(player: string, seed: string): string {
-  return `space-seed:v1:${player}:${seed}`;
-}
-
-/** Null if the seed is well made and still fresh, else what's wrong. */
-export function seedProblem(seed: string, nowSeconds: number): string | null {
-  const match = SEED_PATTERN.exec(seed);
-  if (!match) return 'not a server seed';
-  const age = nowSeconds - Number(match[1]);
-  if (age < -300) return 'seed from the future';
-  if (age > SEED_LIFETIME_SECONDS) return 'seed too old';
-  return null;
-}
+export { makeSeed, seedProblem, SEED_LIFETIME_SECONDS, stampText } from './seed';
 
 // ---------- Actions, written as short text ----------
 
@@ -95,7 +74,14 @@ export interface SpaceMathsAnswer {
   given: number;
   ms: number;
   at: number;
+  /**
+   * The record the question was asked for ("bond10:3+7"). Only a maths focus sets it: a question like 10 − 3 = ? fits more
+   * than one record, and the browser knows which it meant. The server uses it only if the question really fits that record.
+   */
+  key?: string;
 }
+
+const RECORD_KEY = /^[a-z][a-z0-9]{0,9}:[a-z0-9:+/-]{1,40}$/;
 
 /** More answers than a game could ever ask. */
 export const MAX_SAVED_ANSWERS = 300;
@@ -106,10 +92,11 @@ function parseAnswers(input: unknown): SpaceMathsAnswer[] | null {
   const answers: SpaceMathsAnswer[] = [];
   for (const raw of input) {
     const a = (raw ?? {}) as Record<string, unknown>;
-    if (!Array.isArray(a.parts) || a.parts.length !== 5 || !a.parts.every((p) => typeof p === 'string' && p.length <= 4)) return null;
+    if (!Array.isArray(a.parts) || a.parts.length < 4 || a.parts.length > 5 || !a.parts.every((p) => typeof p === 'string' && p.length <= 6)) return null;
+    if (a.key !== undefined && (typeof a.key !== 'string' || !RECORD_KEY.test(a.key))) return null;
     const whole = (n: unknown, max: number): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= max;
     if (!whole(a.given, 1000) || !whole(a.ms, 3_600_000) || !whole(a.at, 4_102_444_800_000)) return null;
-    answers.push({ parts: a.parts as string[], given: a.given, ms: a.ms, at: a.at });
+    answers.push({ parts: a.parts as string[], given: a.given, ms: a.ms, at: a.at, ...(typeof a.key === 'string' ? { key: a.key } : {}) });
   }
   return answers;
 }
@@ -244,10 +231,10 @@ export function judgeSpaceGame(report: SpaceGameReport): SpaceJudgement {
     if (mathsProblem || (!asked && action.kind !== 'charge')) return;
     const claimedRight = action.kind === 'charge' ? action.right : action.kind === 'choose' && action.option === 1;
     const a = given[answers.length];
-    const solved = a ? solveQuestion(a.parts) : null;
+    const solved = a ? solveParts(a.parts) : null;
     if (!a || !solved) mathsProblem = 'missing maths answer';
     else if ((a.given === solved.answer) !== claimedRight) mathsProblem = 'maths answer does not match';
-    else answers.push({ key: solved.key, correct: claimedRight, ms: a.ms, at: a.at });
+    else answers.push({ key: keyForAnswer(solved, a.key), correct: claimedRight, ms: a.ms, at: a.at });
   };
   let replayed: ReturnType<typeof replaySolo>;
   try {

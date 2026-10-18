@@ -2331,3 +2331,45 @@ main:focus {
   margin: 22px 0 12px;
   color: #fff;
 }
+
+/* Daily moves left on a game card (Dragon Maths, Clan Quest). */
+.game-card__moves {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.22);
+  color: #fff;
+}
+.game-card__moves p {
+  margin: 0;
+}
+.game-card__moves-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.game-card__moves ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.game-card__moves li {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.game-card__moves li.is-empty {
+  opacity: 0.55;
+  font-weight: 500;
+  text-decoration: line-through;
+}
+.game-card__moves-done {
+  font-weight: 700;
+}

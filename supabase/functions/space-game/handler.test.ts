@@ -7,6 +7,7 @@ import { botAction } from '../../../shared/space/bot';
 import type { FactAnswer } from '../../../shared/maths/leitner';
 import type { Question } from '../../../shared/maths/skillPack';
 import { solveQuestion } from '../../../shared/maths/skillPacks/timesTables';
+import { AUTO_FOCUS, solveParts, type MathsFocus } from '../../../shared/maths/focus';
 import { DEFAULT_SETTINGS } from '../../../shared/space/engine';
 import { AUTOPILOT_AFTER, type LiveSetup } from '../../../shared/space/live';
 import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
@@ -38,6 +39,7 @@ function world() {
   let multiplayerOn = true;
   let reactionsOn = false;
   let mathsSwitch: MathsSwitch = 'choose';
+  let focus: MathsFocus = AUTO_FOCUS;
   for (const name of NAMES) players.set(name, { school: true, hidden: false, multiplayerEnabled: true, reactionsEnabled: false, schoolId: 1 });
 
   const questions = new Map<string, StoredQuestion>();
@@ -110,7 +112,7 @@ function world() {
       };
       return 'ok';
     },
-    loadMathsContext: async () => ({ facts: [], settings: { enabledTables: [2, 5, 10] } }),
+    loadMathsContext: async () => ({ facts: [], settings: { enabledTables: [2, 5, 10] }, focus }),
     loadQuestion: async (game, seat, kind) => structuredClone(questions.get(qKey(game, seat, kind)) ?? null),
     saveQuestion: async (game, seat, kind, stamp, question) => {
       questions.set(qKey(game, seat, kind), { stamp, question, askedAt: clock, answered: false });
@@ -209,6 +211,7 @@ function world() {
     setMultiplayer: (on: boolean) => (multiplayerOn = on),
     setReactions: (on: boolean) => (reactionsOn = on),
     setMathsSwitch: (mode: MathsSwitch) => (mathsSwitch = mode),
+    setFocus: (next: MathsFocus) => (focus = next),
   };
 }
 
@@ -584,6 +587,79 @@ describe('Mission Control maths with classmates', () => {
     expect(done.answer).toBe(solveQuestion(asked.question!.parts)!.answer);
     // The time is never more than the server saw.
     expect(w.recorded[0].answer).toMatchObject({ correct: false, ms: 2000 });
+  });
+
+  describe('with a maths focus', () => {
+    const teacherFocus = (skills: string[], onlyThese = true): MathsFocus => ({
+      source: 'teacher-class', skills, onlyThese, endsAt: '2026-12-01T00:00:00Z', canChoose: true, own: null,
+    });
+
+    it('asks from the focus: early facts here, which the times-table marking could not read', async () => {
+      const w = world();
+      w.setFocus(teacherFocus(['dbl-half-10']));
+      const g = await w.launched(['ben'], 0, MATHS_SETUP);
+      const row = w.games.get(g.id)!;
+      landOnWormhole(row);
+      const who = w.turnOf(g.id);
+      const asked = await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
+      const solved = solveParts(asked.question!.parts)!;
+      expect(solved.keys.some((k) => /^(dbl|half):/.test(k))).toBe(true);
+      expect(JSON.stringify(asked)).not.toContain('"answer"');
+      w.tick(1500);
+      const done = await w.ask(who, { action: 'answer', kind: 'moment', gameId: g.id, version: row.version, answer: solved.answer, ms: 900 });
+      expect(done.status).toBe(200);
+      expect(done.right).toBe(true);
+      // The record is the one the question was asked for.
+      expect(w.recorded[0].answer.key).toMatch(/^(dbl|half):/);
+      expect(w.recorded[0].answer.correct).toBe(true);
+    });
+
+    it('marks a wrong answer wrong, and says what the answer was', async () => {
+      const w = world();
+      w.setFocus(teacherFocus(['facts-10']));
+      const g = await w.launched(['ben'], 0, MATHS_SETUP);
+      const row = w.games.get(g.id)!;
+      landOnWormhole(row);
+      const who = w.turnOf(g.id);
+      const asked = await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
+      const solved = solveParts(asked.question!.parts)!;
+      w.tick(1500);
+      const done = await w.ask(who, { action: 'answer', kind: 'moment', gameId: g.id, version: row.version, answer: solved.answer + 1, ms: 900 });
+      expect(done.right).toBe(false);
+      expect(done.answer).toBe(solved.answer);
+      expect(w.recorded[0].answer.correct).toBe(false);
+    });
+
+    it('with no focus, the questions are times tables as always', async () => {
+      const w = world();
+      w.setFocus(AUTO_FOCUS);
+      const g = await w.launched(['ben'], 0, MATHS_SETUP);
+      const row = w.games.get(g.id)!;
+      landOnWormhole(row);
+      const who = w.turnOf(g.id);
+      const asked = await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
+      expect(solveQuestion(asked.question!.parts)).not.toBeNull();
+    });
+
+    it('still marks a question that was saved before the focus existed (no record on it)', async () => {
+      const w = world();
+      const g = await w.launched(['ben'], 0, MATHS_SETUP);
+      const row = w.games.get(g.id)!;
+      landOnWormhole(row);
+      const who = w.turnOf(g.id);
+      const asked = await w.ask(who, { action: 'question', kind: 'moment', gameId: g.id, version: row.version });
+      const seat = [row.seat1, row.seat2, row.seat3, row.seat4].indexOf(who);
+      const stored = [...w.questions.entries()].find(([k]) => k.includes(`${g.id}`))!;
+      const old = { ...stored[1].question } as Record<string, unknown>;
+      delete old.answer;
+      delete old.factKey;
+      stored[1].question = old as unknown as Question;
+      void seat;
+      w.tick(1500);
+      const done = await w.ask(who, { action: 'answer', kind: 'moment', gameId: g.id, version: row.version, answer: solveQuestion(asked.question!.parts)!.answer, ms: 900 });
+      expect(done.right).toBe(true);
+      expect(w.recorded[0].answer.key).toBe(solveQuestion(asked.question!.parts)!.key);
+    });
   });
 
   it('refuses questions when maths is off in the game', async () => {

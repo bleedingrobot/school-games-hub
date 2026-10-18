@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { CAMPAIGN } from '../../../shared/gem-keep/levels';
+import { AUTO_FOCUS, type MathsFocus } from '../../../shared/maths/focus';
 import type { GameEngine } from './engine/GameEngine';
 import { isUnlocked, loadProgress, totalStars, withKey, withWin } from './progress';
 import { GemKeepCampaign, type FinishedLevel } from './ui/GemKeepCampaign';
@@ -114,5 +115,97 @@ describe('campaign map', () => {
     expect(facts.reduce((n, f) => n + f.attempts, 0)).toBe(19);
     // Nothing goes to this browser's own storage when the progress is saved elsewhere.
     expect(localStorage.getItem('sgh-gem-keep-progress')).toBeNull();
+  }, 30_000);
+});
+
+
+/** Reads a question the way a screen reader does ("3 plus what equals 10") and works out the answer. */
+function solveSpokenAny(spoken: string): number {
+  const t = spoken.replace(/\?$/, '');
+  let m = /^(\d+) plus what equals (\d+)$/.exec(t);
+  if (m) return +m[2] - +m[1];
+  m = /^what plus (\d+) equals (\d+)$/.exec(t);
+  if (m) return +m[2] - +m[1];
+  m = /^(\d+) plus (\d+) equals what$/.exec(t);
+  if (m) return +m[1] + +m[2];
+  m = /^(\d+) minus (\d+) equals what$/.exec(t);
+  if (m) return +m[1] - +m[2];
+  m = /^Double (\d+) equals what$/.exec(t);
+  if (m) return 2 * +m[1];
+  m = /^Half of (\d+) equals what$/.exec(t);
+  if (m) return +m[1] / 2;
+  m = /^(\d+) divided by (\d+) equals what$/.exec(t);
+  if (m) return +m[1] / +m[2];
+  return solve(spoken);
+}
+
+const teacherFocus = (skills: string[], extra: Partial<MathsFocus> = {}): MathsFocus => ({
+  source: 'teacher-class', skills, onlyThese: true, endsAt: '2099-01-01T00:00:00Z', canChoose: true, own: null, ...extra,
+});
+
+/** Wins level 1 and plays the Level Key with right answers; returns the keys of the answers reported. */
+async function playKey(user: ReturnType<typeof userEvent.setup>, getEngine: () => GameEngine) {
+  await user.click(screen.getByRole('button', { name: /Level 1: Crystal Valley/ }));
+  const engine = getEngine();
+  engine.state.phase = 'won';
+  engine.state.stars = 3;
+  engine.setPaused(false);
+  await user.click(await screen.findByRole('button', { name: 'Try the Level Key' }));
+  const asked: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    // Wait for this question to be the one on screen (not the one just answered).
+    await screen.findByText(new RegExp(`Question ${i + 1} of 10`));
+    const fact = await screen.findByLabelText(/equals/);
+    asked.push(fact.getAttribute('aria-label')!);
+    await user.keyboard(`${solveSpokenAny(fact.getAttribute('aria-label')!)}{Enter}`);
+    await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 8000 });
+  }
+  return asked;
+}
+
+describe('Gem Keep with a maths focus', () => {
+  it('says on the map why the maths is what it is', () => {
+    render(<GemKeepCampaign focus={teacherFocus(['tables-6-9'], { endsAt: '2099-01-01T11:00:00Z' })} />);
+    expect(screen.getByText(/Your teacher picked ×6, ×9/)).toBeInTheDocument();
+    expect(screen.getByText(/The maths in every level follows this/)).toBeInTheDocument();
+  });
+
+  it('shows nothing extra with no focus', () => {
+    render(<GemKeepCampaign focus={AUTO_FOCUS} />);
+    expect(screen.queryByText(/follows this/)).not.toBeInTheDocument();
+  });
+
+  it('picks up a focus set after Gem Keep opened when the next level starts, and not before', async () => {
+    const user = userEvent.setup();
+    let engine!: GameEngine;
+    const loadFocus = vi.fn(async () => teacherFocus(['dbl-half-10']));
+    render(<GemKeepCampaign focus={AUTO_FOCUS} loadFocus={loadFocus} onEngine={(e) => (engine = e)} onProgress={vi.fn()} />);
+    expect(screen.queryByText(/follows this/)).not.toBeInTheDocument();
+    expect(loadFocus).not.toHaveBeenCalled();
+    const asked = await playKey(user, () => engine);
+    expect(loadFocus).toHaveBeenCalledTimes(1);
+    expect(asked.every((a) => /^(Double|Half of|\d+ plus \d+ equals what|\d+ divided by 2 equals what)/.test(a))).toBe(true);
+  }, 30_000);
+
+  it('keeps the focus it has when the lookup fails', async () => {
+    const user = userEvent.setup();
+    let engine!: GameEngine;
+    const loadFocus = vi.fn(async () => {
+      throw new Error('offline');
+    });
+    render(<GemKeepCampaign focus={teacherFocus(['dbl-half-10'])} loadFocus={loadFocus} onEngine={(e) => (engine = e)} onProgress={vi.fn()} />);
+    const asked = await playKey(user, () => engine);
+    expect(loadFocus).toHaveBeenCalled();
+    expect(asked.every((a) => /^(Double|Half of|\d+ plus \d+ equals what|\d+ divided by 2 equals what)/.test(a))).toBe(true);
+  }, 30_000);
+
+  it('drops a teacher focus that has already ended (a copy kept for offline play)', async () => {
+    const user = userEvent.setup();
+    let engine!: GameEngine;
+    render(<GemKeepCampaign focus={teacherFocus(['dbl-half-10'], { endsAt: '2020-01-01T00:00:00Z' })} onEngine={(e) => (engine = e)} onProgress={vi.fn()} />);
+    expect(screen.queryByText(/follows this/)).not.toBeInTheDocument();
+    const asked = await playKey(user, () => engine);
+    expect(asked.every((a) => /times|divided/.test(a) || /equals/.test(a))).toBe(true);
+    expect(asked.some((a) => /^Double|^Half of/.test(a))).toBe(false);
   }, 30_000);
 });

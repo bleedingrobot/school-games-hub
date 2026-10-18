@@ -64,9 +64,9 @@ Deno.serve((request) =>
       if (error) throw new Error(error.code ?? 'unknown');
       return parseMathsSwitch((data as { space_maths?: string } | null)?.space_maths);
     },
-    async recordAnswers(player, batchId, answers) {
+    async recordAnswers(player, batchId, answers, pack = 'times-tables') {
       const { error } = await admin.rpc('record_fact_answers', {
-        player, pack: 'times-tables', batch_id: batchId, answers, quick_ms: QUICK_MS, fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
+        player, pack, batch_id: batchId, answers, quick_ms: QUICK_MS, fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
       });
       if (error) throw new Error(error.code ?? 'unknown');
     },

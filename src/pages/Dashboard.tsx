@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
@@ -15,6 +15,7 @@ import {
   type FriendStats,
   type PlayerCard,
 } from '../data/multiplayer';
+import { fetchMyMovesLeft, type MovesByGame } from '../data/movesLeft';
 import { fetchMyProgress, type MyProgress } from '../data/progress';
 import { fetchMyOpenSpaceGames, fetchMySpaceStats, fetchRecentSpaceGames, seatsOf, type SpaceGame } from '../data/spaceGames';
 import { fetchMyCardStats, fetchMyOpenCardGames, fetchRecentCardGames, type SeatSummary } from '../data/cardGames';
@@ -26,6 +27,9 @@ import { useLordEnabled } from '../games/lord/switch';
 import { useMonstersEnabled } from '../games/monsters/switch';
 import { BOT_LEVELS, isRanked, type BotLevel } from '../games/types';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
+
+// The maths focus card brings the whole maths ladder with it, so it loads on its own.
+const MathsFocusCard = lazy(() => import('../components/MathsFocusCard'));
 
 const RESULT_LABEL = { won: 'Won', lost: 'Lost', drawn: 'Draw' } as const;
 
@@ -252,6 +256,17 @@ export function Dashboard() {
   const lordOn = useLordEnabled() === true;
   const clansOn = useClansEnabled() === true;
   const shownGames = GAMES.filter((g) => (g.id !== 'monsters' || monstersOn) && (g.id !== 'dragon-maths' || lordOn) && (g.id !== 'clan-quest' || clansOn));
+  const [moves, setMoves] = useState<MovesByGame>({});
+  const meId = profile?.id;
+  useEffect(() => {
+    if (!meId) return;
+    let current = true;
+    // Daily moves left (Dragon Maths, Clan Quest) are only a nicety: no line on the card if they can't be read.
+    fetchMyMovesLeft().then((m) => current && setMoves(m));
+    return () => {
+      current = false;
+    };
+  }, [meId]);
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
@@ -374,6 +389,7 @@ export function Dashboard() {
                     key={game.id}
                     game={game}
                     level={levelFor(game.id)}
+                    moves={moves[game.id]}
                     onLevelChange={(level) => {
                       setLevels((prev) => ({ ...prev, [game.id]: level }));
                       setFeatured(game.id);
@@ -422,6 +438,12 @@ export function Dashboard() {
           </span>
         </Link>
       </div>
+
+      {profile?.role !== 'teacher' && (
+        <Suspense fallback={null}>
+          <MathsFocusCard />
+        </Suspense>
+      )}
 
       <div className="panel-grid">
         <section className="panel" aria-labelledby="recent-title">

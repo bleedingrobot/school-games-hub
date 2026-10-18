@@ -123,6 +123,41 @@ describe('the gem-keep server function', () => {
     expect(bad.body.results[0].type).toBe('invalid');
   });
 
+  it('keeps the answers of the other packs a maths focus asks, each in its own pack', async () => {
+    const { s } = services();
+    const answer = (key: string) => ({ key, correct: true, ms: 2100, at: NOW - 5000 });
+    const batchId = '0b7d5c2e-8a41-4f6b-9e3d-2c1a0f9e8d7c';
+    const early = [answer('bond10:3+7'), answer('dbl:7'), answer('half:14')];
+    const { body } = await send(s, [
+      { type: 'answers', pack: 'early-facts', batchId, answers: early },
+      { type: 'answers', pack: 'add-sub', batchId: '1b7d5c2e-8a41-4f6b-9e3d-2c1a0f9e8d7c', answers: [answer('add:3+4')] },
+      { type: 'answers', pack: 'division', batchId: '2b7d5c2e-8a41-4f6b-9e3d-2c1a0f9e8d7c', answers: [answer('div:56/8')] },
+    ]);
+    expect(body.results.map((r: { added?: number }) => r.added)).toEqual([3, 1, 1]);
+    expect(s.recordAnswers).toHaveBeenCalledWith('student-1', 'early-facts', batchId, early);
+    expect(s.recordAnswers).toHaveBeenCalledWith('student-1', 'add-sub', expect.any(String), [answer('add:3+4')]);
+    expect(s.recordAnswers).toHaveBeenCalledWith('student-1', 'division', expect.any(String), [answer('div:56/8')]);
+  });
+
+  it('leaves out an answer that does not belong to the pack it is sent as', async () => {
+    const { s } = services();
+    const answer = (key: string) => ({ key, correct: true, ms: 2100, at: NOW - 5000 });
+    const batchId = '0b7d5c2e-8a41-4f6b-9e3d-2c1a0f9e8d7c';
+    const { body } = await send(s, [{ type: 'answers', pack: 'early-facts', batchId, answers: [answer('mul:7x8'), answer('bond10:3+7'), answer('bond10:3+8'), answer('add:3+4')] }]);
+    expect(body.results[0]).toEqual({ type: 'answers', added: 1 });
+    expect(s.recordAnswers).toHaveBeenCalledWith('student-1', 'early-facts', batchId, [answer('bond10:3+7')]);
+  });
+
+  it('refuses a pack it does not know', async () => {
+    const { s } = services();
+    const answer = { key: 'mul:7x8', correct: true, ms: 2100, at: NOW - 5000 };
+    for (const pack of ['money', 'times_tables', '', 7, null]) {
+      const { body } = await send(s, [{ type: 'answers', pack, batchId: '0b7d5c2e-8a41-4f6b-9e3d-2c1a0f9e8d7c', answers: [answer] }]);
+      expect(body.results[0], String(pack)).toEqual({ type: 'invalid', problem: 'pack' });
+    }
+    expect(s.recordAnswers).not.toHaveBeenCalled();
+  });
+
   it('brings in trial progress only in campaign order', async () => {
     const { s } = services();
     await send(s, [{

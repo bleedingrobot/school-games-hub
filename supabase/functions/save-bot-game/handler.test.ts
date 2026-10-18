@@ -16,6 +16,7 @@ import { botLoadoutFor } from '../../../shared/power-clash/solo';
 import { playWholeMatch } from '../../../shared/power-clash/testing';
 import { batchIdFor, handleSaveBotGame, type Card101Row, type GameRow, type PowerClashRow, type Services, type SpaceRow } from './handler';
 import { solveQuestion, TimesTables } from '../../../shared/maths/skillPacks/timesTables';
+import { makeFocusPack, packIdOfKey, type MathsFocus } from '../../../shared/maths/focus';
 
 const FOOLS_MATE = ['f2f3', 'e7e5', 'g2g4', 'd8h4'];
 
@@ -247,14 +248,14 @@ describe('saving checkers games', () => {
 });
 
 /** Asks for a seed, plays a whole game from it with a Pilot-like "student", and returns the report. */
-async function spaceGame(s: Services, setup: Omit<SoloSetup, 'seed'>, stopAfter = Infinity) {
+async function spaceGame(s: Services, setup: Omit<SoloSetup, 'seed'>, stopAfter = Infinity, focus?: MathsFocus) {
   const response = await handleSaveBotGame(post({ game: 'space', start: true }), s);
   const { seed, stamp } = (await response.json()) as { seed: string; stamp: string };
   const game = startSolo({ ...setup, seed });
   const student = randomFromSeed('student');
   const actions: string[] = [];
   const answers: SpaceMathsAnswer[] = [];
-  const pack = new TimesTables([], randomFromSeed('questions'));
+  const pack = focus ? makeFocusPack([], focus, {}, randomFromSeed('questions')) : new TimesTables([], randomFromSeed('questions'));
   playBots(game, setup.level);
   while (game.state.phase !== 'over' && actions.length < stopAfter) {
     const action = botAction(game.state, 'easy', student);
@@ -262,7 +263,7 @@ async function spaceGame(s: Services, setup: Omit<SoloSetup, 'seed'>, stopAfter 
     if (action.kind === 'charge' || (action.kind === 'choose' && game.state.pending?.kind === 'question')) {
       // A Mission Control question: answer it right or wrong to match the choice.
       const q = pack.nextQuestion({ level: 3 })!;
-      answers.push({ parts: q.parts, given: claimedRight ? q.answer : q.answer + 1, ms: 3000, at: NOW * 1000 });
+      answers.push({ parts: q.parts, given: claimedRight ? q.answer : q.answer + 1, ms: 3000, at: NOW * 1000, ...(focus ? { key: q.factKey } : {}) });
     }
     actions.push(encodeAction(action));
     game.state = play(game.state, action, game.dice).state;
@@ -298,6 +299,50 @@ describe('Mission Control maths in space games against bots', () => {
     expect(batch).toBe(await batchIdFor(`space:${report.seed}`));
     expect(answers).toHaveLength(report.answers!.length);
     expect(answers.every((a) => /^mul:\d+x\d+$/.test(a.key))).toBe(true);
+  });
+
+  describe('with a maths focus', () => {
+    const focus: MathsFocus = { source: 'teacher-class', skills: ['facts-10', 'dbl-half-10', 'tables-2-5-10'], onlyThese: true, endsAt: null, canChoose: true, own: null };
+
+    it('adds each answer to the records of the right pack, once for each pack', async () => {
+      const recordAnswers = vi.fn(async () => {});
+      const { s } = services({ recordAnswers });
+      const { report } = await spaceGame(s, MATHS, Infinity, focus);
+      expect((await handleSaveBotGame(post(report), s)).status).toBe(200);
+      const calls = recordAnswers.mock.calls as unknown as [string, string, { key: string }[], string][];
+      const packs = calls.map((c) => c[3]);
+      expect(new Set(packs).size).toBe(packs.length); // a pack is recorded once
+      expect(packs.length).toBeGreaterThan(1);
+      let total = 0;
+      for (const [, batch, answers, pack] of calls) {
+        total += answers.length;
+        expect(answers.every((a) => packIdOfKey(a.key) === pack)).toBe(true);
+        expect(batch).toBe(await batchIdFor(pack === 'times-tables' ? `space:${report.seed}` : `space:${report.seed}:${pack}`));
+      }
+      expect(total).toBe(report.answers!.length);
+    });
+
+    it('counts a question towards the fact the browser says only if it really fits', async () => {
+      const recordAnswers = vi.fn(async () => {});
+      const { s } = services({ recordAnswers });
+      const { report } = await spaceGame(s, MATHS, Infinity, focus);
+      const lied = report.answers!.map((a) => ({ ...a, key: 'mul:12x12' }));
+      expect((await handleSaveBotGame(post({ ...report, answers: lied }), s)).status).toBe(200);
+      const keys = (recordAnswers.mock.calls as unknown as [string, string, { key: string }[]][]).flatMap((c) => c[2].map((a) => a.key));
+      // 12 x 12 fits none of these questions, so each counts towards the fact it was really asked about.
+      expect(keys).not.toContain('mul:12x12');
+      expect(keys).toHaveLength(report.answers!.length);
+    });
+
+    it('refuses a question shape no skill asks', async () => {
+      const { s, savedSpace } = services();
+      const { report } = await spaceGame(s, MATHS, Infinity, focus);
+      const odd = report.answers!.map((a, n) => (n === 0 ? { ...a, parts: ['7', '^', '3', '=', '?'] } : a));
+      expect((await handleSaveBotGame(post({ ...report, answers: odd }), s)).status).toBe(400);
+      const badKey = report.answers!.map((a, n) => (n === 0 ? { ...a, key: '<script>' } : a));
+      expect((await handleSaveBotGame(post({ ...report, answers: badKey }), s)).status).toBe(400);
+      expect(savedSpace).toEqual([]);
+    });
   });
 
   it('refuses a "right" answer that was wrong, a missing answer or an extra one', async () => {

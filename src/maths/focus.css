@@ -1,0 +1,133 @@
+/* The maths focus: the student's card, the note in the games, and the teacher's Set focus screen. */
+.focus-note {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--tint);
+  color: var(--ink);
+  font-weight: 700;
+}
+.focus-card__small {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+.focus-card__form {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+.focus-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.focus-card__only {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.focus-card__status {
+  margin: 8px 0 0;
+  min-height: 1.4em;
+}
+
+.skill-picker {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px 12px;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.skill-picker legend {
+  font-weight: 700;
+  padding: 0 6px;
+}
+.skill-picker__stage h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  color: var(--ink-soft);
+}
+.skill-picker__stage ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 4px 16px;
+}
+.skill-picker__stage label {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 4px 0;
+}
+.skill-picker input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+/* ---------- The teacher's Set focus screen ---------- */
+.set-focus__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+}
+.set-focus__form {
+  display: grid;
+  gap: 14px;
+}
+.set-focus__form fieldset {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 14px 12px;
+  margin: 0;
+}
+.set-focus__form legend {
+  font-weight: 700;
+  padding: 0 6px;
+}
+.set-focus__options {
+  display: grid;
+  gap: 6px;
+}
+.set-focus__options label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.set-focus__students {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 2px 14px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.running-focus {
+  display: grid;
+  gap: 6px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.running-focus:first-child {
+  border-top: 0;
+}
+.running-focus__what {
+  font-weight: 700;
+}
+.running-focus__meta {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+.running-focus__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  align-items: center;
+}

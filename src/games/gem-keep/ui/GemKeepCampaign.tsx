@@ -7,9 +7,9 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CAMPAIGN } from '../../../../shared/gem-keep/levels';
+import { AUTO_FOCUS, currentFocus, focusKey, focusNote, makeFocusPack, type MathsFocus } from '../../../../shared/maths/focus';
 import type { FactAnswer, FactStats } from '../../../../shared/maths/leitner';
 import type { SkillPack } from '../../../../shared/maths/skillPack';
-import { TimesTables } from '../../../../shared/maths/skillPacks/timesTables';
 import type { GameEngine } from '../engine/GameEngine';
 import { loadProgress, saveProgress, withKey, withWin, type CampaignProgress } from '../progress';
 import { DEFAULT_SETTINGS, type GemKeepSettings } from '../settings';
@@ -45,8 +45,17 @@ export function GemKeepCampaign({
   onKey,
   onAnswers,
   onEngine,
+  focus = AUTO_FOCUS,
+  loadFocus,
 }: {
   settings?: GemKeepSettings;
+  /** The maths focus when Gem Keep opened. Auto (the default) is the campaign's own tables, as always. */
+  focus?: MathsFocus;
+  /**
+   * Asks for the focus again. It is asked when a level is about to start, so a change (a teacher sets or ends a focus) shows up
+   * in the next level, never halfway through one.
+   */
+  loadFocus?: () => Promise<MathsFocus>;
   /** Saved progress. Default: what this browser kept. */
   initialProgress?: CampaignProgress;
   /** Saved maths records. */
@@ -67,12 +76,15 @@ export function GemKeepCampaign({
 }) {
   const [progress, setProgress] = useState<CampaignProgress>(() => initialProgress ?? loadProgress());
   const [playing, setPlaying] = useState<number | null>(null);
-  // One set of maths records for the whole visit, so mastery carries from level to level.
-  const [pack] = useState<SkillPack>(() => new TimesTables(initialFacts));
+  // One set of maths records for the whole visit, so mastery carries from level to level. The pack follows the maths focus:
+  // the campaign's times tables with none, the focus with one. It changes only between levels.
+  const packOptions = { enabledTables: settings.enabledTables, division: settings.division };
+  const [packFocus, setPackFocus] = useState<MathsFocus>(() => currentFocus(focus));
+  const [pack, setPack] = useState<SkillPack>(() => makeFocusPack(initialFacts, packFocus, packOptions));
   // The answer totals when this attempt at the level began, to count the answers in it.
   const startTotals = useRef(totals(pack));
-  const begin = useCallback(() => {
-    startTotals.current = totals(pack);
+  const begin = useCallback((from: SkillPack = pack) => {
+    startTotals.current = totals(from);
   }, [pack]);
 
   function update(change: (p: CampaignProgress) => CampaignProgress) {
@@ -107,13 +119,33 @@ export function GemKeepCampaign({
     };
   }, [reportFacts]);
 
-  function play(index: number | null) {
-    begin();
+  /** The focus for the level about to start. A slow or failed lookup never holds up a level: the last one is kept. */
+  async function freshFocus(): Promise<MathsFocus> {
+    if (!loadFocus) return currentFocus(focus);
+    const answer = await Promise.race([loadFocus().catch(() => null), new Promise<null>((done) => window.setTimeout(() => done(null), 1500))]);
+    return currentFocus(answer ?? packFocus);
+  }
+
+  async function play(index: number | null) {
+    let next = pack;
+    if (index !== null) {
+      const latest = await freshFocus();
+      if (focusKey(latest) !== focusKey(packFocus)) {
+        // The answers so far are reported before the pack changes; its records carry over to the new one.
+        reportFacts();
+        next = makeFocusPack(pack.stats(), latest, packOptions);
+        setPackFocus(latest);
+        setPack(next);
+      }
+    }
+    begin(next);
     if (playing !== null) reportFacts();
     setPlaying(index);
   }
 
-  if (playing === null) return <CampaignMap progress={progress} note={note} onPlay={play} />;
+  if (playing === null) {
+    return <CampaignMap progress={progress} note={note} focusNote={focusNote(packFocus)} onPlay={(i) => void play(i)} />;
+  }
   const level = CAMPAIGN[playing];
   return (
     <GemKeepGame
@@ -142,8 +174,8 @@ export function GemKeepCampaign({
         reportFacts();
       }}
       onKeyPassed={() => update((p) => withKey(p, level.id))}
-      onNext={playing + 1 < CAMPAIGN.length ? () => play(playing + 1) : undefined}
-      onMap={() => play(null)}
+      onNext={playing + 1 < CAMPAIGN.length ? () => void play(playing + 1) : undefined}
+      onMap={() => void play(null)}
     />
   );
 }
