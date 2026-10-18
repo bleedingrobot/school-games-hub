@@ -16,10 +16,10 @@ import { dragonMaths } from './lord';
 export const POWER_CLASH_ON = true;
 
 /**
- * Is Dragon Maths on the dashboard? Off until James says so (docs/LORD-PLAN.md, stage L.5). While it is false the
- * trial still works at /#/dragon-maths, but has no card. The trial is saved on that browser only.
+ * Is Dragon Maths on the dashboard? On since 18 Oct 2026 (James said go). The card still hides itself while the
+ * teacher's switch (the Dragon Maths panel on the teacher page) is off. Turn this off to remove the card completely.
  */
-export const DRAGON_MATHS_ON = false;
+export const DRAGON_MATHS_ON = true;
 
 /** Every game on the hub. To add a game: make a folder next to chess/, then add it here. */
 export const GAMES: GameDefinition[] = [chess, checkers, space, card101, gemKeep, ...(POWER_CLASH_ON ? [powerClash] : []), monsters, ...(DRAGON_MATHS_ON ? [dragonMaths] : [])];

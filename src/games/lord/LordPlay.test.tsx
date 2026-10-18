@@ -49,8 +49,8 @@ const village = () => screen.findByRole('region', { name: 'The village' });
 describe('Dragon Maths with a server keeping the hero', () => {
   afterEach(cleanup);
 
-  it('stays off the dashboard until it is switched on', () => {
-    expect(GAMES.map((g) => g.id)).not.toContain(dragonMaths.id);
+  it('has a card on the dashboard (which hides itself while the teacher’s switch is off)', () => {
+    expect(GAMES.map((g) => g.id)).toContain(dragonMaths.id);
   });
 
   it('asks you to pick a class, then shows the village with your turns', async () => {
