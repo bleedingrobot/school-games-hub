@@ -37,7 +37,7 @@ export function SkillPicker({
       <legend>{legend}</legend>
       {stages.map((stage) => (
         <div key={stage} className="skill-picker__stage" role="group" aria-labelledby={`${id}-${stage}`}>
-          <h4 id={`${id}-${stage}`}>{STAGE_NAMES[stage]}</h4>
+          <h3 id={`${id}-${stage}`}>{STAGE_NAMES[stage]}</h3>
           <ul>
             {OFFERED_SKILLS.filter((s) => s.stage === stage).map((skill) => (
               <li key={skill.id}>

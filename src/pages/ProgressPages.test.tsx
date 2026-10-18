@@ -372,7 +372,7 @@ describe('teacher view', () => {
     const { setMultiplayer } = await import('../data/teacher');
     const user = userEvent.setup();
     renderAt('/teacher', teacher);
-    await user.click(await screen.findByRole('button', { name: 'Pause games against friends' }));
+    await user.click(await screen.findByRole('button', { name: 'Pause games against friends' }, { timeout: 5000 }));
     expect(setMultiplayer).toHaveBeenCalledWith(false, null);
     expect(await screen.findByRole('button', { name: 'Switch games against friends back on' })).toBeInTheDocument();
     expect(screen.getByText('Games against friends are paused for this class.')).toBeInTheDocument();

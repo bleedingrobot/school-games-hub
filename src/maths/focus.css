@@ -44,7 +44,7 @@
   font-weight: 700;
   padding: 0 6px;
 }
-.skill-picker__stage h4 {
+.skill-picker__stage h3 {
   margin: 0 0 4px;
   font-size: 1rem;
   color: var(--ink-soft);
