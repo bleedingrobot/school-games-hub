@@ -4,8 +4,9 @@
  * calls the very same functions, so a changed browser cannot do anything the rules refuse.
  */
 import { CONFIG } from './config';
-import { buy, churchCost, examineCost, hpCost, inShop, shopPrice, spCost, trainHp, trainSp, trainStat, wake, wakeCost } from './character';
+import { buy, churchCost, examineCost, gainXp, hpCost, inShop, shopPrice, spCost, trainHp, trainSp, trainStat, wake, wakeCost } from './character';
 import { buyTroops, draft, empireOf, friendlyWar, raidKingdom, type BattlePlan, type BattleResult, type Done } from './empire';
+import { settle, type FightState } from './fight';
 import { STATS, TROOP_KINDS, type Clan, type ItemDef, type Member, type Stat, type Troops } from './types';
 
 const ok = { ok: true } as const;
@@ -123,4 +124,28 @@ export function sendArmyTo(clan: Clan, kingdomId: string, plan: Partial<BattlePl
   }
   const r = raidKingdom(e, kingdomId, plan, seed);
   return r.ok ? { ok: true, result: r.result, gold: r.gold, friendly } : r;
+}
+
+/** The seed for a mine fight: from the clan's seed and how many fights there have been (the fight about to start is number `fightNo` + 1). */
+export const fightSeed = (baseSeed: number, fightNo: number) => Math.imul(baseSeed | 0, 0x9e3779b1) ^ Math.imul(fightNo + 1, 0x85ebca6b);
+
+/** How a finished fight went, for the results screen. */
+export interface FightSummary {
+  result: FightState['result'];
+  gold: number;
+  followers: number;
+  xp: number[];
+  /** Levels gained by each member. */
+  levels: number[];
+}
+
+/**
+ * Pay out a finished fight on the clan it was played for: surviving HP and SP (with the rest between fights), knock-outs,
+ * experience and levels, then the gold and followers. The browser's test page and the server both call this one function.
+ */
+export function payFight(clan: Clan, fight: FightState): FightSummary {
+  const levels = settle(clan.members, fight, gainXp);
+  clan.gold += fight.gold;
+  clan.followers += fight.followers;
+  return { result: fight.result, gold: fight.gold, followers: fight.followers, xp: fight.xp, levels };
 }

@@ -6,8 +6,9 @@ import type { Action } from '../../../shared/clans/actions';
 import { CONFIG } from '../../../shared/clans/config';
 import { empireNewDay } from '../../../shared/clans/empire';
 import { MAX_ROLLS, draftMember, makeClan, rollAgain, startingDrafts, type Draft } from '../../../shared/clans/create';
-import { dayReset, depthHint, gainXp, type DepthHint } from '../../../shared/clans/character';
-import { settle, type FightState } from '../../../shared/clans/fight';
+import { dayReset, depthHint, type DepthHint } from '../../../shared/clans/character';
+import type { FightState } from '../../../shared/clans/fight';
+import { fightSeed, payFight, type FightSummary } from '../../../shared/clans/play';
 import { CLASSES, RACES } from '../../../shared/clans/gamedata';
 import type { Clan, Member } from '../../../shared/clans/types';
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../../../shared/maths/practical';
@@ -46,27 +47,15 @@ export const averageLevel = (clan: Clan) => clan.members.reduce((t, m) => t + m.
 export const hintFor = (s: Session): DepthHint => depthHint(s.depth, averageLevel(s.clan));
 
 /** The seed for the next fight. */
-export const nextSeed = (s: Session) => Math.imul(s.baseSeed | 0, 0x9e3779b1) ^ Math.imul(s.fightNo + 1, 0x85ebca6b);
+export const nextSeed = (s: Session) => fightSeed(s.baseSeed, s.fightNo);
 
-export interface FightSummary {
-  result: FightState['result'];
-  gold: number;
-  followers: number;
-  xp: number[];
-  /** Levels gained by each member. */
-  levels: number[];
-}
+export type { FightSummary };
 
 /** Write a finished fight onto the clan. Returns a new session and what happened, for the results screen. */
 export function finishFight(s: Session, fight: FightState): { session: Session; summary: FightSummary } {
   const clan = structuredClone(s.clan);
-  const levels = settle(clan.members, fight, gainXp);
-  clan.gold += fight.gold;
-  clan.followers += fight.followers;
-  return {
-    session: { ...s, clan, fightsLeft: Math.max(0, s.fightsLeft - 1), fightNo: s.fightNo + 1 },
-    summary: { result: fight.result, gold: fight.gold, followers: fight.followers, xp: fight.xp, levels },
-  };
+  const summary = payFight(clan, fight);
+  return { session: { ...s, clan, fightsLeft: Math.max(0, s.fightsLeft - 1), fightNo: s.fightNo + 1 }, summary };
 }
 
 /** "Skip a day" for James's testing: everyone heals, fights come back. */

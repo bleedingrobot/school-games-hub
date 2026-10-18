@@ -7,18 +7,43 @@
  * Maths never blocks: the shop, Church and Training Hall take the true price whatever the child answered, so
  * those actions carry no answers. A quest puzzle changes the prize, so the quest action carries the answer and
  * the server rebuilds the puzzle from the clan's seed, the day, the quest and the choice to mark it.
- * Fights, the midnight job and raids on classmates are not here yet (part B and stage C.6).
+ *
+ * A mine fight is three kinds of request. `fightStart`: the server takes one off today's fights, picks the monsters from
+ * the clan's seed and the fight number, and keeps the fight open. `fightRound`: the browser plays each round itself, and
+ * sends what it did (the orders and the Battle Cry answer); the server replays the whole fight from its seed with
+ * `replayFight`, marks the answer by rebuilding the question, keeps the round, and when the fight is over pays out
+ * (gold, followers, experience, knocked-out members) in the same save that closes the fight, so it can only pay once.
+ * While a fight is open nothing else about the clan can change (that is what keeps the replay honest), and the night's
+ * rest waits until the fight is over. Raids on classmates are not here yet (stage C.6).
  */
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../maths/practical';
+import { replayFight, type CryAnswer, type RecordedRound } from './battleCry';
 import { CONFIG } from './config';
 import { dayReset } from './character';
 import { clanFromChoices, type Draft } from './create';
 import { build, claimLand, deposit, developPlot, empireNewDay, empireOf, PUSHES, setDraft, withdraw, type BattlePlan, type BattleResult, type Push } from './empire';
+import { bossAt, newFight, type Order } from './fight';
 import { ITEMS } from './gamedata';
-import { buyItem, buyTroopMix, draftFollowers, examineItemFor, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type TrainKey } from './play';
+import { buyItem, buyTroopMix, draftFollowers, examineItemFor, fightSeed, payFight, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type FightSummary, type TrainKey } from './play';
 import { buildPuzzle, finishQuest, puzzleFor, todaysQuest, type QuestPrize } from './quests';
 import { BUILDING_KINDS, TROOP_KINDS, type BuildingKind, type Clan, type Troops } from './types';
 
+
+/**
+ * A mine fight that has been started and not finished. The monsters and the dice come from `seed`; the rounds are what the
+ * browser has played so far, so the fight can be rebuilt (by a refresh, or another Chromebook) exactly where it was.
+ * The clan's members cannot change while it is open, so they are not copied here.
+ */
+export interface OpenFight {
+  depth: number;
+  boss: boolean;
+  seed: number;
+  /** The clan's fight number this was (1 for the first fight ever). */
+  no: number;
+  /** The maths settings the fight's Battle Cry questions were made with, kept so a teacher's change cannot alter an open fight. */
+  settings: PracticalSettings;
+  rounds: RecordedRound[];
+}
 
 /** Everything the server keeps about one clan, besides the clan itself. */
 export interface ServerState {
@@ -34,6 +59,8 @@ export interface ServerState {
   raidNo: number;
   /** Items a member has looked at closely, as "member|item". */
   examined: string[];
+  /** The mine fight in progress, if any. */
+  fight?: OpenFight | null;
 }
 
 /** What changes from request to request, passed in so tests can fix it. */
@@ -64,15 +91,21 @@ export type Action =
   | { type: 'draft' }
   | { type: 'raid'; kingdom: string; plan: BattlePlan }
   | { type: 'war'; kingdom: string; plan: BattlePlan }
-  | { type: 'quest'; choice: number; answer: number | null };
+  | { type: 'quest'; choice: number; answer: number | null }
+  | { type: 'fightStart'; depth: number; boss: boolean }
+  | { type: 'fightRound'; round: number; orders: (Order | undefined)[]; cry: CryAnswer | null };
 
 export type ActionType = Action['type'];
 
 export type Result =
-  | { type: Exclude<ActionType, 'draft' | 'raid' | 'war' | 'quest'> }
+  | { type: Exclude<ActionType, 'draft' | 'raid' | 'war' | 'quest' | 'fightStart' | 'fightRound'> }
   | { type: 'draft'; wanted: number; joined: number; followers: number }
   | { type: 'raid' | 'war'; friendly: boolean; result: BattleResult; gold: number }
-  | { type: 'quest'; questId: number; text: string; right: boolean | null; prize: QuestPrize };
+  | { type: 'quest'; questId: number; text: string; right: boolean | null; prize: QuestPrize }
+  /** `resumed`: a fight was already open, so this is it again and no fight was used. */
+  | { type: 'fightStart'; resumed: boolean }
+  /** `summary` is there when the round ended the fight and it has been paid. */
+  | { type: 'fightRound'; round: number; over: boolean; summary: FightSummary | null };
 
 export type Applied =
   | { ok: true; state: ServerState | null; result: Result; changed: boolean }
@@ -94,6 +127,33 @@ function parsePlan(v: unknown): BattlePlan | null {
   const loot = int(v.loot, 0, 100);
   if (rounds === null || loot === null || typeof v.push !== 'string' || !PUSHES.includes(v.push as Push)) return null;
   return { rounds, push: v.push as Push, loot };
+}
+
+const ORDER_ACTIONS = ['attack', 'spell', 'guard', 'run', 'skip'];
+
+/** One member's order for a round. `undefined` for "none" (sent as null). Null if it is not an order. */
+function parseOrder(v: unknown): Order | undefined | null {
+  if (v === null || v === undefined) return undefined;
+  if (!isObj(v) || typeof v.action !== 'string' || !ORDER_ACTIONS.includes(v.action)) return null;
+  switch (v.action) {
+    case 'attack': {
+      const target = int(v.target, -1, 20);
+      return target === null ? null : { action: 'attack', target };
+    }
+    case 'spell': {
+      const spell = int(v.spell, 0, 500);
+      const target = int(v.target, -1, 20);
+      return spell === null || target === null ? null : { action: 'spell', spell, target };
+    }
+    default: return { action: v.action } as Order;
+  }
+}
+
+function parseCry(v: unknown): CryAnswer | null | undefined {
+  if (v === null || v === undefined) return null;
+  if (!isObj(v) || (v.reward !== 'damage' && v.reward !== 'heal')) return undefined;
+  const answer = v.answer === null || v.answer === undefined ? null : typeof v.answer === 'number' && Number.isFinite(v.answer) ? v.answer : undefined;
+  return answer === undefined ? undefined : { answer, reward: v.reward };
 }
 
 /** Reads an action sent by a browser. Null if it is not one the server knows, however it is changed. */
@@ -155,6 +215,22 @@ export function parseAction(raw: unknown): Action | null {
       const answer = raw.answer === null || raw.answer === undefined ? null : typeof raw.answer === 'number' && Number.isFinite(raw.answer) ? raw.answer : undefined;
       return choice !== null && answer !== undefined ? { type: 'quest', choice, answer } : null;
     }
+    case 'fightStart': {
+      const depth = int(raw.depth, 0, CONFIG.maxLevel);
+      return depth !== null && typeof raw.boss === 'boolean' ? { type: 'fightStart', depth, boss: raw.boss } : null;
+    }
+    case 'fightRound': {
+      const round = int(raw.round, 1, CONFIG.maxRounds);
+      if (round === null || !Array.isArray(raw.orders) || raw.orders.length > CONFIG.maxMembers) return null;
+      const orders: (Order | undefined)[] = [];
+      for (const o of raw.orders) {
+        const order = parseOrder(o);
+        if (order === null) return null;
+        orders.push(order);
+      }
+      const cry = parseCry(raw.cry);
+      return cry === undefined ? null : { type: 'fightRound', round, orders, cry };
+    }
     default: return null;
   }
 }
@@ -207,7 +283,11 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
   }
 
   const state = structuredClone(saved);
-  const rested = catchUp(state, ctx.today);
+  // The night's rest waits until a fight in progress is over: it would heal the members the fight is being replayed with.
+  const rested = state.fight ? false : catchUp(state, ctx.today);
+  if (state.fight && action.type !== 'load' && action.type !== 'fightStart' && action.type !== 'fightRound') {
+    return refuse('fight-open', 'You are in the middle of a fight. Finish it first!');
+  }
   const { clan } = state;
   const settle = (r: { ok: boolean } & Partial<{ why: string; say: string }>, result: Result): Applied =>
     r.ok ? done(state, result) : refuse(r.why ?? 'no', r.say ?? 'That cannot be done right now.');
@@ -253,6 +333,35 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
       const right = spec ? action.answer !== null && buildPuzzle(spec).answer === action.answer : null;
       const finished = finishQuest(clan, state.day, q, action.choice, right);
       return finished.ok ? done(state, { type: 'quest', questId: q.id, text: finished.text, right: finished.right, prize: finished.prize }) : refuse('quest', finished.say);
+    }
+    case 'fightStart': {
+      // A fight is already open (a refresh, or another Chromebook): this is that fight again, and nothing more is used.
+      if (state.fight) return done(state, { type: 'fightStart', resumed: true }, false);
+      if (state.fightsLeft <= 0) return refuse('fights', "That's all the fights for today. Come back tomorrow!");
+      if (!clan.members.some((m) => !m.knockedOut)) return refuse('resting', 'Everyone is resting. They wake up tomorrow.');
+      if (action.boss && !bossAt(action.depth)) return refuse('boss', 'There is no boss at that depth.');
+      const seed = fightSeed(state.seed, state.fightNo);
+      if (newFight(clan.members, action.depth, seed, action.boss).result) return refuse('resting', 'Everyone is resting. They wake up tomorrow.');
+      state.fight = { depth: action.depth, boss: action.boss, seed, no: state.fightNo + 1, settings, rounds: [] };
+      state.fightsLeft--;
+      state.fightNo++;
+      return done(state, { type: 'fightStart', resumed: false });
+    }
+    case 'fightRound': {
+      const open = state.fight;
+      if (!open) return refuse('no-fight', 'That fight is already over.');
+      if (action.round !== open.rounds.length + 1) return refuse('stale-round', 'That round was already played.');
+      const played: RecordedRound = { orders: action.orders, cry: action.cry };
+      const { state: replayed, cries } = replayFight(clan.members, open.depth, open.seed, open.boss, [...open.rounds, played], open.settings);
+      // The replay stops once the fight is over, so a round that was sent after the end has no result.
+      if (cries.length !== open.rounds.length + 1) return refuse('no-fight', 'That fight is already over.');
+      if (!replayed.result) {
+        open.rounds.push(played);
+        return done(state, { type: 'fightRound', round: action.round, over: false, summary: null });
+      }
+      const summary = payFight(clan, replayed);
+      state.fight = null;
+      return done(state, { type: 'fightRound', round: action.round, over: true, summary });
     }
   }
 }
