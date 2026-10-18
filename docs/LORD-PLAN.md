@@ -411,6 +411,10 @@ What the simulator told us, and what changed because of it:
 - The fight itself is still played in the browser from the server's seed (L.4's note); the arena is not, it is played entirely on the server.
 - Switching the game off while pupils are mid-fight leaves those fights open; the "whole day" rule applies from the day it comes back on.
 
+## Stage L.4 and L.5 went live (18 Oct 2026)
+
+Both migrations (`20261018001600`, `20261018001700`) were applied to the live database and the `lord` function was deployed, then the branch was merged to `main`. Checked from outside: the function answers 401 without a sign-in; the seven Dragon Maths tables and the new reading functions are closed to signed-out visitors (42501); 8 achievements exist, 0 heroes, the game switch is OFF, and the 199 existing scored games were untouched. `DRAGON_MATHS_ON` is still false (no dashboard card). Next: James tries it as a teacher, then switches it on from the teacher page.
+
 ## Credits to carry over
 
 - Game structure, rules and numbers adapted from *Legend of the Red Dragon* by Seth Able Robinson, as ported to TypeScript in *LORD.ts* by talisto (GPL-3; no code or text copied).
