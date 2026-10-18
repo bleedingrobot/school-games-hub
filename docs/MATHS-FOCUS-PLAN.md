@@ -652,3 +652,46 @@ Students see nothing new, and with no class on auto and no focus set every stude
 
 ### What F.8 (opening to another school) needs from you
 Whether another school is actually ready (the checklist is in section 7): Google sign-in set to External, which school and its email domain, who signs it off for privacy, and whether the numbers need a paid Supabase plan. Also your answer on per-focus results above, since a second school's teachers will want it.
+
+
+## Stage F.8 results, part A: how students did while a focus ran (19 October 2026)
+
+**Status: built and tested on a scratch copy of the database and in a real browser. Nothing is live.** No migration was applied to the live database, no function was deployed, nothing was merged to `main`. Work is on branch `maths-focus` (pushed). **Part B (opening to another school) was not started, as you asked.**
+
+### Before I started
+`main` had not moved. F.5, F.6 and F.7 are still not live, so this is built on top of them and they go first. The normal suite passed before I changed anything (147 files, 3,220 tests, 1 skipped on purpose, none failing).
+
+### What I built
+- **Table `maths_focus_results`** (migration `20261019000500_maths_focus_results.sql`): one row per student per **"Set focus" press** (batch), with three counters: answers, right, quick. Closed to the website. **Why per press and not per focus row:** one press makes one row for each group or student it names, and a student can be in two groups of the same press. Keyed by the press, that student is counted once. Keyed by row, they would be counted twice and the page would add them up wrongly.
+- **`add_maths_focus_results(player, answers)`**: server-only. For each answer it finds the focuses running for that student **at the answer's own time** (between the start and the earlier of the end time and "End now"), in the student's class, for the class, their group or them, whose skills include one of the answer's skills. Late batches still count by each answer's own time. Malformed or unknown input adds nothing.
+- **Which skill owns a key, and "quick", are worked out in the server code** (`shared/maths/focusResults.ts`: `skillsOfKey`, quick = right and within `quickMsForPack`), not in SQL.
+- **Hooked into `gem-keep`, `space-game` and `save-bot-game`** (`supabase/functions/_shared/focusResults.ts`), right after the answers are saved, and **only when the records report they took the batch for the first time** (`record_fact_answers` returns 0 for a batch it has seen). A retry therefore never counts twice. The hook never throws: if it fails, the answers are already saved, and the problem is logged (the error code, never who).
+- **`teacher_maths_focus_results(batch)`**: for a class you teach (school admins can read any class in their school). Lists every student the focus is for, with 0 for those who did none (not hidden), a class total, and the day counting began.
+- **Screens:** a fold-out **"How they did"** on each ended focus in the history, and **"How they are doing so far"** on each running focus. Students with no answers show **"none"**. A focus that ended before counting began says so instead of showing zeros; one that started before says "counted from <day>". "Where they are now" stays beside it.
+- **Terms removed, as you asked:** the history now shows **the last 10 weeks** (with the "show every earlier focus" tick). `shared/maths/terms.ts` and its test are deleted (nothing else used them).
+- **Privacy:** `docs/PRIVACY-SUMMARY.md` has a plain-words line for the new totals.
+
+### Decisions I made
+- **Overlapping focuses: all of them count.** An answer on a skill that two running focuses name counts for both, because it really was practice for both. Within one press it counts once. A student's answer never counts for a focus whose skills it doesn't touch, so a group's results can't be inflated by the class focus.
+- **"Quick" counts only right answers** (the same rule as the records).
+- **A student who has left the class** stays in that focus's list if they answered something during it.
+- **The class a focus belongs to is the student's class at the time the answer is saved**, the same rule as `maths_focus_of`.
+
+### Tests
+- **Database (scratch copy):** `maths_focus_results.test.sql`, 47 checks: counts only inside the window (before the start, after the end, after "End now", a focus that starts tomorrow), only the right student, only the skills named, overlapping focuses, an answer owned by two skills of one focus counted once, a student with no class, bad input, closed to students, teachers, signed-out visitors and the website, teacher-only read with other-class, other-school, student and signed-out refusals. `security.test.sql` updated (one new callable function); passes.
+- **Shared/server:** `focusResults.test.ts` (key to skill for every key of every skill, quick per pack, order kept) and `_shared/focusResults.test.ts` (sends the right call, costs nothing with no ladder answers, **a failing or crashing call is logged and does not throw**).
+- **Screens:** `FocusResults.test.tsx` (9), plus the history, Set focus (running and ended) and data-layer tests.
+- **Rehearsal on today's data** (`scripts/f8-rehearsal.sh`, 31 checks): every record, setting, focus, list and student's data is exactly as it was after the migration; nothing is counted backwards; playing the servers' part, results fill in, a retry counts once, a student whose class has no focus costs nothing, the record counts are unaffected, and the only new function a signed-in person can call is the teacher one.
+- **Real browser** (Chromium against a scratch database, signed in with real tokens, 18 checks): the running results table (2 students, one "none", total adds up), the history fold-out for a focus that ended before counting, another teacher and a student refused with 403, no failed requests. **axe clean at 1366 x 640 and 844 x 390** on Set focus with both fold-outs open (only the top bar's contrast, as since before F.2).
+
+### What is untested
+The three functions running in Deno with the real database (the hook in `entry.ts` is covered by the helper's tests, the build and the rehearsal's copy of the same steps, not by a handler test, since `entry.ts` is the part that only runs on Supabase); a real class playing for a week; how many answers one batch can carry before the counting call is slow (a Mission Control game sends one at a time; Gem Keep and Rocket Maths send a game's worth).
+**Not counted:** Dragon Maths (`lord`), Clan Quest (`clans`) and Maths Monsters (`monster`) also record into the same records, but you asked for the three functions above, so answers there are not counted for a focus.
+
+### Go-live list (when you say "go live")
+1. F.5, F.6 and F.7 first (see their lists): migrations `20261019000300` and `20261019000400`, then the F.5 deploys.
+2. Apply **`20261019000500_maths_focus_results.sql`** (two new tables, two new functions; nothing existing changes). Counting starts from the moment it is applied.
+3. **Deploy `gem-keep`, `space-game` and `save-bot-game` straight after** (they now count answers). Answers saved between steps 2 and 3 are not counted. Deploying them before step 2 is safe: the counting call would fail, be logged, and the answers still save.
+4. Merge `maths-focus` to `main`; wait for Pages.
+5. Afterwards: set a short focus for a test class, play a few questions on its skills as a test student, open "How they are doing so far".
+Students see nothing new, and with no class on auto and no focus set every student plays exactly as before. Chess, checkers and 101 stay maths-free.
