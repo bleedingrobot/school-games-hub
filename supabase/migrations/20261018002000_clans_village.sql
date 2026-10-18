@@ -32,6 +32,7 @@ create function public.clan_village_cost(kind text, to_level integer)
 returns integer
 language sql
 immutable
+set search_path = ''
 as $$
   select to_level * case kind when 'trainingHall' then 300 when 'smithy' then 250 when 'church' then 400 end
 $$;
@@ -40,6 +41,7 @@ create function public.clan_village_max(kind text)
 returns integer
 language sql
 immutable
+set search_path = ''
 as $$ select case kind when 'trainingHall' then 5 when 'smithy' then 6 when 'church' then 3 end $$;
 
 create table public.clan_villages (

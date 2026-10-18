@@ -291,6 +291,7 @@ create function public.clan_fights_per_day()
 returns integer
 language sql
 immutable
+set search_path = ''
 as $$ select 8 $$;
 
 -- New Zealand's calendar day as a whole number of days since 1970, the same number shared/clans/clock.ts gives.
