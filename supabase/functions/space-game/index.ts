@@ -139,6 +139,8 @@ function stepIndex(level) {
 	const i = CAMPAIGN_STEPS.findIndex((s) => s.levels.includes(level));
 	return i >= 0 ? i : level < CAMPAIGN_STEPS[0].levels[0] ? 0 : CAMPAIGN_STEPS.length - 1;
 }
+/** A step's tables count as secure when this share of their facts are in box 2 or higher. */
+const STEP_SECURE_SHARE = .7;
 /**
 * For games with no campaign (Wormholes & Black Holes): the campaign level a student's records
 * say they're ready for. Each step whose facts are mostly secure moves them on one step, so a
@@ -2684,7 +2686,7 @@ function activeKeys(skill, enabledTables, division = true) {
 * isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
 * campaign) is the one they're on. Skipped skills (all their tables switched off) are secure
 * for free. With a `floor` (placement, year level or the furthest place reached, see place.ts) the
-* built skills before it count as passed, so forgetting a fact brings more review but never
+* built skills before it are behind the student (passed over, and secure only if their records say so), so forgetting a fact brings more review but never
 * drops the student's place below the floor.
 */
 function ladderProgress(stats, opts = {}) {
@@ -2710,11 +2712,13 @@ function ladderProgress(stats, opts = {}) {
 			builtCount++;
 			const share = keys.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / keys.length;
 			if (index < floor) {
-				secureCount++;
+				const real = share >= STEP_SECURE_SHARE;
+				if (real) secureCount++;
 				return {
 					skill,
 					status: "secure",
-					share
+					share,
+					passedOver: !real
 				};
 			}
 			if (current === null && share < .7) {
@@ -2822,6 +2826,8 @@ var AutoPack = class {
 	curriculumTags = [...new Set(LADDER.filter((s) => s.built).flatMap((s) => s.curriculumTags))];
 	packs;
 	memory = newMemory();
+	/** Each pack numbers its own questions, so the ladder numbers them again: a question box tells questions apart by this. */
+	asked = 0;
 	listeners = new Set();
 	constructor(saved = [], random = Math.random, now = Date.now, opts = {}) {
 		this.random = random;
@@ -2879,10 +2885,13 @@ var AutoPack = class {
 		const firstTables = progress.skills.findIndex((p) => p.skill.stage === "times-tables");
 		const at = focusSpec ? LADDER.indexOf(focusSkills(focusSpec)[0]) : progress.skills.findIndex((p) => p.status === "current");
 		const missingFactor = focusSpec && ctx.missingFactor !== void 0 ? ctx.missingFactor : at < 0 || at > firstTables;
-		return pack.questionFor(picked.key, picked.band, {
-			...ctx,
-			missingFactor
-		});
+		return {
+			...pack.questionFor(picked.key, picked.band, {
+				...ctx,
+				missingFactor
+			}),
+			id: ++this.asked
+		};
 	}
 	recordAnswer(q, answer, ms) {
 		const result = this.ownerOf(q.factKey).recordAnswer(q, answer, ms);

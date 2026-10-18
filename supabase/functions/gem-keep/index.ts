@@ -93,6 +93,10 @@ function factsIn(tables) {
 	for (const t of tables) for (const key of tableFacts(t)) keys.add(key);
 	return keys;
 }
+//#endregion
+//#region shared/maths/selector.ts
+/** A step's tables count as secure when this share of their facts are in box 2 or higher. */
+const STEP_SECURE_SHARE = .7;
 new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
 //#endregion
 //#region shared/maths/banded.ts
@@ -2086,7 +2090,7 @@ function activeKeys(skill, enabledTables, division = true) {
 * isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
 * campaign) is the one they're on. Skipped skills (all their tables switched off) are secure
 * for free. With a `floor` (placement, year level or the furthest place reached, see place.ts) the
-* built skills before it count as passed, so forgetting a fact brings more review but never
+* built skills before it are behind the student (passed over, and secure only if their records say so), so forgetting a fact brings more review but never
 * drops the student's place below the floor.
 */
 function ladderProgress(stats, opts = {}) {
@@ -2112,11 +2116,13 @@ function ladderProgress(stats, opts = {}) {
 			builtCount++;
 			const share = keys.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / keys.length;
 			if (index < floor) {
-				secureCount++;
+				const real = share >= STEP_SECURE_SHARE;
+				if (real) secureCount++;
 				return {
 					skill,
 					status: "secure",
-					share
+					share,
+					passedOver: !real
 				};
 			}
 			if (current === null && share < .7) {
