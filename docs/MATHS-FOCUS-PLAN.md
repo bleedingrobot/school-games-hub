@@ -695,3 +695,15 @@ The three functions running in Deno with the real database (the hook in `entry.t
 4. Merge `maths-focus` to `main`; wait for Pages.
 5. Afterwards: set a short focus for a test class, play a few questions on its skills as a test student, open "How they are doing so far".
 Students see nothing new, and with no class on auto and no focus set every student plays exactly as before. Chess, checkers and 101 stay maths-free.
+
+## F.5 to F.8 went live (19 October 2026)
+
+James said go for F.5, F.6, F.7 and F.8 Part A together. Done in this order, nothing failed:
+
+1. **Checks first:** `main` had not moved (no new migrations). Typecheck, the quick tests (149 files, 3241 passed, 1 skipped) and `npm run build:functions` (no diff) were all clean. The live database was checked by what exists in it, because migrations go on with `db query` and are not in the CLI's history: 000100 and 000200 were in; 000300, 000400 and 000500 were not.
+2. **Database, one at a time, each checked after:** `20261019000300_maths_generated.sql` (F.5; `my_gem_keep` and `space_maths_context` now list the "generated" pack), `20261019000400_maths_teacher_views.sql` (F.7; four teacher functions), `20261019000500_maths_focus_results.sql` (F.8 Part A; two tables, two functions; the "counting starts" table has its one row and no results yet). F.6 has no migration.
+3. **Functions:** `gem-keep` (now v5), `space-game` (v6) and `save-bot-game` (v13) deployed straight after, and nothing else. Answers saved between steps 2 and 3 are not counted for focus results.
+4. **Website:** `maths-focus` pushed to `main` as a straight fast-forward (30bbe5d..574aad1); Pages built and deployed. Local `main` in the main checkout was not touched.
+5. **Checks from outside:** the site answers 200; the seven functions tested answer 401 signed out; the two new tables and the teacher results function refuse a signed-out visitor (42501).
+
+Not checked by me: a real browser sign-in, the teacher screens, or a student playing with a focus. To see it: as a teacher open Skill map and Set focus (the "How they did" and "How they are doing so far" fold-outs), set a short focus on a test class, play a few of its questions as a test student, and watch the count go up. F.8 Part B (second school) is not built.
