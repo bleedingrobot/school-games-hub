@@ -6,7 +6,7 @@ import { putInVault, takeFromVault, whyNot } from './places';
 import type { Session } from './session';
 
 /** The Empire home: the vault, the land, the buildings, the troops, today's energy and the draft. */
-export function EmpireHome({ session, onChange, onBack, onLand }: { session: Session; onChange: (s: Session) => void; onBack: () => void; onLand: () => void }) {
+export function EmpireHome({ session, onChange, onBack, onLand, onBarracks, onRaid }: { session: Session; onChange: (s: Session) => void; onBack: () => void; onLand: () => void; onBarracks: () => void; onRaid: () => void }) {
   const { clan } = session;
   const e = empireOf(clan);
   const [amount, setAmount] = useState(100);
@@ -57,6 +57,10 @@ export function EmpireHome({ session, onChange, onBack, onLand }: { session: Ses
           </ul>
           <p>Army strength: <strong>{army}</strong></p>
           <p>The draft: <strong>{e.draftPercent}%</strong> of new followers join (up to {draftMax(e)}%). You have {clan.followers} followers.</p>
+          <div className="cq-actions">
+            <button type="button" className="cq-btn cq-btn--hot" onClick={onBarracks}>Barracks and troops</button>
+            <button type="button" className="cq-btn cq-btn--hot" onClick={onRaid}>Raid and Friendly War</button>
+          </div>
         </div>
       </div>
     </section>

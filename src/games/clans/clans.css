@@ -147,3 +147,9 @@
 .cq-buildings li { display: flex; align-items: center; gap: 8px; }
 .cq-buildings .cq-btn { min-height: 36px; min-width: 130px; padding: 2px 8px; }
 .cq-empire input[type='number'] { width: 6em; }
+.cq-kingdoms { list-style: none; margin: 0 0 4px; padding: 0; display: grid; gap: 4px; }
+.cq-kingdoms .cq-btn { min-height: 36px; padding: 2px 10px; width: 100%; text-align: left; }
+.cq-rounds { list-style: none; margin: 0 0 6px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 4px 10px; max-height: 12em; overflow-y: auto; }
+.cq-rounds li { display: grid; gap: 2px; }
+.cq-war p { margin: 0 0 4px; }
+.cq-war h3 { margin: 0 0 4px; }

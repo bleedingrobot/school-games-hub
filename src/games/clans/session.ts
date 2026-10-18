@@ -54,6 +54,8 @@ export interface Session {
   /** Counts up so each fight gets its own seed. */
   fightNo: number;
   baseSeed: number;
+  /** Counts up so each raid and Friendly War gets its own seed. */
+  raidNo: number;
   day: number;
   depth: number;
   settings: PracticalSettings;
@@ -62,7 +64,7 @@ export interface Session {
 }
 
 export const newSession = (clan: Clan, baseSeed: number, settings: PracticalSettings = DEFAULT_PRACTICAL_SETTINGS): Session => ({
-  clan, fightsLeft: CONFIG.fightsPerDay, fightNo: 0, baseSeed, day: 1, depth: 0, settings, examined: [],
+  clan, fightsLeft: CONFIG.fightsPerDay, fightNo: 0, baseSeed, raidNo: 0, day: 1, depth: 0, settings, examined: [],
 });
 
 export const averageLevel = (clan: Clan) => clan.members.reduce((t, m) => t + m.level, 0) / Math.max(1, clan.members.length);

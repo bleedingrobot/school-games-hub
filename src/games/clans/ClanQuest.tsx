@@ -9,14 +9,16 @@ import { MemberCard } from './MemberCard';
 import { Church } from './Church';
 import { Market } from './Market';
 import { Mines, Results } from './Mines';
-import { barracksAndFill, giveFollowers, giveGold, givePoints, giveVault, knockOutSome } from './places';
+import { armyToLose, armyToWin, barracksAndFill, freshRaid, giveFollowers, giveGold, givePoints, giveVault, knockOutSome } from './places';
 import { EmpireHome } from './Empire';
 import { Land } from './Land';
+import { Barracks } from './Barracks';
+import { Raid } from './Raid';
 import { Training } from './Training';
 import { averageLevel, finishFight, newSession, skipDay, type FightSummary, type Session } from './session';
 import './clans.css';
 
-type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land';
+type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid';
 
 /** For James's test only: stands in for the Teacher page, which comes later. */
 function SettingsStrip({ session, onChange, open }: { session: Session; onChange: (s: Session) => void; open: boolean }) {
@@ -47,6 +49,9 @@ function SettingsStrip({ session, onChange, open }: { session: Session; onChange
         <button type="button" className="cq-btn" onClick={() => onChange(giveFollowers(session, 100))}>Give 100 followers (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(giveVault(session, 1000))}>Put 1,000 gold in the vault (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(barracksAndFill(session))}>Build a barracks and fill it (test only)</button>
+        <button type="button" className="cq-btn" onClick={() => onChange(armyToWin(session))}>Win the next raid (test only)</button>
+        <button type="button" className="cq-btn" onClick={() => onChange(armyToLose(session))}>Lose the next raid (test only)</button>
+        <button type="button" className="cq-btn" onClick={() => onChange(freshRaid(session))}>Allow another raid today (test only)</button>
       </div>
       <fieldset className="cq-settings__topics">
         <legend>Maths topics</legend>
@@ -109,7 +114,9 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null }: { seed?: nu
           {screen === 'market' && <Market session={session} onChange={setSession} onBack={() => setScreen('home')} />}
           {screen === 'training' && <Training session={session} onChange={setSession} onBack={() => setScreen('home')} />}
           {screen === 'church' && <Church session={session} onChange={setSession} onBack={() => setScreen('home')} />}
-          {screen === 'empire' && <EmpireHome session={session} onChange={setSession} onBack={() => setScreen('home')} onLand={() => setScreen('land')} />}
+          {screen === 'empire' && <EmpireHome session={session} onChange={setSession} onBack={() => setScreen('home')} onLand={() => setScreen('land')} onBarracks={() => setScreen('barracks')} onRaid={() => setScreen('raid')} />}
+          {screen === 'barracks' && <Barracks session={session} onChange={setSession} onBack={() => setScreen('empire')} />}
+          {screen === 'raid' && <Raid session={session} onChange={setSession} onBack={() => setScreen('empire')} />}
           {screen === 'land' && <Land session={session} onChange={setSession} onBack={() => setScreen('empire')} />}
           {screen === 'fight' && <Fight key={session.fightNo} session={session} boss={boss} onFinish={finish} />}
           {screen === 'results' && summary && <Results summary={summary} members={session.clan.members} onDone={() => setScreen('home')} />}

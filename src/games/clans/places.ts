@@ -5,8 +5,8 @@
  */
 import { CONFIG } from '../../../shared/clans/config';
 import { buy, churchCost, examineCost, hpCost, shopPrice, spCost, trainCost, trainHp, trainSp, trainStat, wake, wakeCost } from '../../../shared/clans/character';
-import { build, canBuild, capacity, claimLand, deposit, developPlot, empireOf, withdraw, type Done } from '../../../shared/clans/empire';
-import { STATS, TROOP_KINDS, type BuildingKind, type Clan, type Empire, type ItemDef, type Member, type Stat } from '../../../shared/clans/types';
+import { build, buyTroops, canBuild, capacity, claimLand, deposit, developPlot, draft, empireOf, friendlyWar, raidKingdom, setDraft, withdraw, type BattlePlan, type BattleResult, type Done, type Fail } from '../../../shared/clans/empire';
+import { STATS, TROOP_KINDS, type BuildingKind, type Clan, type Empire, type ItemDef, type Member, type Stat, type Troops } from '../../../shared/clans/types';
 import type { Session } from './session';
 
 const withClan = (s: Session, change: (clan: Clan) => boolean): Session | null => {
@@ -144,5 +144,93 @@ export function barracksAndFill(s: Session): Session {
   e.plots.push({ width: 4, length: 4, building: 'barracks' });
   e.wild--;
   for (const kind of TROOP_KINDS) e.troops[kind] = capacity(e, kind);
+  return next;
+}
+
+// ---------------------------------------------------------------------------
+// Troops, the draft, raids and Friendly War
+// ---------------------------------------------------------------------------
+
+const noMix = (mix: Troops) => TROOP_KINDS.every((k) => mix[k] === 0);
+
+/** Buy a mix of troops in one go, or none of them: the first thing that can't be done is the answer. */
+export function buyTroopMix(s: Session, mix: Troops): Session | { fail: Fail } {
+  const clan = structuredClone(s.clan);
+  const e = empireOf(clan);
+  if (noMix(mix)) return { fail: { ok: false, why: 'amount', say: 'Pick how many to buy.' } };
+  for (const kind of TROOP_KINDS) {
+    if (mix[kind] === 0) continue;
+    const done = buyTroops(e, kind, mix[kind]);
+    if (!done.ok) return { fail: done };
+  }
+  return { ...s, clan };
+}
+/** Can this mix be bought right now? Works on a copy. */
+export const canBuyMix = (s: Session, mix: Troops): Done => { const r = buyTroopMix(s, mix); return 'fail' in r ? r.fail : { ok: true }; };
+
+export const setDraftTo = (s: Session, percent: number): Session | null => withEmpire(s, (e) => setDraft(e, percent));
+
+/** Draft the followers: they all leave, some join as footmen as far as there is room. */
+export function draftFollowers(s: Session): { session: Session; wanted: number; joined: number; followers: number } {
+  const clan = structuredClone(s.clan);
+  const out = draft(clan);
+  return { session: { ...s, clan }, ...out };
+}
+
+/** The seed for the next raid or Friendly War. */
+export const raidSeed = (s: Session) => Math.imul(s.baseSeed | 0, 0x2545f491) ^ Math.imul((s.raidNo ?? 0) + 1, 0x27d4eb2f);
+
+/** Has today's raid on a kingdom been used? */
+export const raidUsed = (s: Session) => canRaid(s) !== null;
+/** Why a real raid can't go out right now, or null if it can. */
+export function canRaid(s: Session): string | null {
+  const probe = structuredClone(s.clan);
+  const e = empireOf(probe);
+  const r = raidKingdom(e, 'bunny-hollow', {}, 1);
+  return r.ok ? null : r.say;
+}
+
+export interface WarDone {
+  session: Session;
+  result: BattleResult;
+  /** Gold won (0 for a Friendly War or a loss). */
+  gold: number;
+  friendly: boolean;
+}
+
+/** Send the army to a kingdom: a real raid (loses troops, wins loot) or a Friendly War (changes nothing). */
+export function sendArmy(s: Session, kingdomId: string, plan: BattlePlan, friendly: boolean): WarDone | Fail {
+  const clan = structuredClone(s.clan);
+  const e = empireOf(clan);
+  const seed = raidSeed(s);
+  const next = { ...s, raidNo: (s.raidNo ?? 0) + 1 };
+  if (friendly) {
+    const r = friendlyWar(e, kingdomId, plan, seed);
+    return r.ok ? { session: next, result: r.result, gold: 0, friendly } : r;
+  }
+  const r = raidKingdom(e, kingdomId, plan, seed);
+  return r.ok ? { session: { ...next, clan }, result: r.result, gold: r.gold, friendly } : r;
+}
+
+// Test-only helpers for James's settings strip.
+/** A huge army, and the day's raid not yet used. */
+export function armyToWin(s: Session): Session {
+  const next = structuredClone(s);
+  const e = empireOf(next.clan);
+  e.troops = { footman: 2000, axeman: 500, knight: 200 };
+  e.kingdomRaidsToday = 0;
+  return next;
+}
+/** One lone footman, and the day's raid not yet used. */
+export function armyToLose(s: Session): Session {
+  const next = structuredClone(s);
+  const e = empireOf(next.clan);
+  e.troops = { footman: 1, axeman: 0, knight: 0 };
+  e.kingdomRaidsToday = 0;
+  return next;
+}
+export function freshRaid(s: Session): Session {
+  const next = structuredClone(s);
+  empireOf(next.clan).kingdomRaidsToday = 0;
   return next;
 }
