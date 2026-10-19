@@ -1,0 +1,303 @@
+# Building a new game for School Games Hub
+
+*A practical guide for a Claude session building one game on its own, alongside other sessions building other games, and getting it live without clashing or breaking the live site. Written 20 October 2026 from the code on `main` (c33f69b) and the branches `marble`, `bond-match`, `dragon-maths`, `clans` and `maths-focus`. Everything here was checked in the code. Anything marked **PROPOSED** does not exist yet.*
+
+---
+
+## 0. Quick start (read this first)
+
+1. **Who you work for.** James, a Year 4–6 teacher at Douglas Park School. Reply to him in plain, simple words: no jargon, file paths or commit hashes unless he asks. He decides every live step.
+2. **Your own branch and worktree.** Never work in `~/projects/school-games-hub` (the main checkout) and never commit to `main`. Set up as in [section 6](#6-branch-and-worktree).
+3. **Stay in your folders.** Your game lives in its own folders ([section 2](#2-folder-layout-and-what-you-may-touch)). The shared files have one-line edits only, made at the end ([section 3](#3-where-sessions-clash-and-the-rule-for-each)).
+4. **Never touch these from a game branch:** `shared/maths/`, `src/maths/`, `src/styles.css`, other games' folders, other games' server functions, or old migrations. If your game needs one of them changed, stop and tell James. It becomes its own small branch.
+5. **Maths questions come from the shared focus system only** ([section 4](#4-maths-questions-the-one-approved-way)). Never work out a student's focus yourself, never write your own times-table or ladder questions, and never trust the browser's marking.
+6. **The server is in charge.** Anything that counts (a score, a best time, an answer, a reward) is checked or replayed by your server function before it is saved.
+7. **Nothing live without James's words in this session:** applying a migration, deploying a function, merging to `main`, switching the game on. Each one is separate. Approval for one is not approval for the next ([section 8](#8-going-live-one-step-at-a-time)).
+8. **Never** `supabase db reset` (other sessions share the local database), and never a bare `git push` from a worktree whose upstream might be `origin/main`. Push your branch by name: `git push origin <branch>`.
+9. **Write it down as you go.** Keep a plan in `docs/<GAME>-PLAN.md` with a "Stage X results" section after each stage (what you built, decisions you made, tests, what is untested, the go-live list). The next session starts from it.
+10. **Stop after each stage** and tell James what's ready and what he needs to decide.
+
+The best example to copy is **Marble Rush** (branch `marble`). It is almost entirely in its own folders, gets its maths from the focus system, and has the server make and mark every question. **Clan Quest** and **Dragon Maths** are good for go-live routines, How to play screens and accessibility tests. Their maths is the older year-band kind, so don't copy that part.
+
+---
+
+## 1. How the existing games were built (what worked)
+
+Each game that went smoothly followed the same shape:
+
+| Piece | Where | Examples |
+|---|---|---|
+| Rules, as pure functions (same seed + same inputs = same result), shared by the browser and the server | `shared/<game>/` | `shared/lord/`, `shared/clans/`, `shared/marble/` (branch) |
+| Screens | `src/games/<game>/` with its own CSS file | `src/games/clans/clans.css` (`.cq-` classes) |
+| Talking to the server | `src/data/<game>.ts` | `src/data/lord.ts` |
+| Server function | `supabase/functions/<name>/` with `handler.ts` (logic, testable), `entry.ts` (database plumbing), `index.ts` (generated, deployed) | `lord`, `clans`, `marble` |
+| Database | its own tables, prefixed with the game's name, in one or more new migrations | `lord_heroes`, `clan_fights`, `marble_runs` |
+| Teacher settings | new columns on `app_settings` plus `teacher_set_<game>()` functions, and a panel `src/pages/Teacher<Game>.tsx` | `TeacherMarble.tsx` |
+| On/off switches | a **code switch** (is the card in the build at all?) and a **teacher switch** (is it on for this class?) | `CLAN_QUEST_ON` plus `clans_enabled`; `marbleOn()` |
+| A preview anyone can try without signing in | `preview/<game>/` + `vite.<game>-preview.config.ts`, a fake signed-in pupil and a trial backend that runs the same shared rules in the browser | `preview/lord/main.tsx` |
+| A simulator for balance | `scripts/<game>-sim.mjs` | `npm run clans:sim` |
+| How to play | `src/games/<game>/HowToPlay.tsx`, numbers read from the game's config, so changing a number changes the page | Clan Quest, Maths Monsters |
+| Go-live prompt | `docs/prompts/<game>-golive.md`, step by step | `clans-golive.md`, `lord-golive.md` |
+
+---
+
+## 2. Folder layout and what you may touch
+
+**Yours (create and change freely):**
+
+```
+shared/<game>/                      rules, config (every tuning number in one file), sim, tests
+src/games/<game>/                   screens, index.tsx (the GameDefinition), switch.ts, <game>.css, HowToPlay.tsx
+src/data/<game>.ts                  calls to your server function and your database functions
+src/pages/Teacher<Game>.tsx         your teacher panel (only if you need settings)
+supabase/functions/<name>/          handler.ts, entry.ts, handler.test.ts, index.ts (generated)
+supabase/migrations/<number>_<game>.sql      new files only
+supabase/tests/database/<game>.test.sql
+preview/<game>/ + vite.<game>-preview.config.ts
+scripts/<game>-*.mjs
+docs/<GAME>-PLAN.md, docs/<GAME>-RULES.md, docs/prompts/<game>-*.md
+```
+
+**Shared, a small edit at the end of your work (see section 3 for each):** `src/games/registry.ts`, `src/App.tsx` (only if you need extra routes), `src/pages/Dashboard.tsx`, `src/pages/Teacher.tsx`, `scripts/build-functions.mjs` (the `FUNCTIONS` list), `package.json` (`scripts` only), `shared/README.md`, `docs/PRIVACY-SUMMARY.md`, `docs/PLAN.md` (the migration note), `.gitignore` (your preview's `dist-preview-<game>/`).
+
+**Off limits from a game branch:** `shared/maths/`, `src/maths/`, `src/styles.css`, `src/components/`, `src/auth/`, `supabase/functions/_shared/`, other games' folders and functions, any migration already on `main`, `package-lock.json` / dependencies (ask James first; check the licence).
+
+**Reuse, don't copy:**
+- `useAuth()` from `src/auth/AuthContext` for the signed-in person (`profile.id`, `profile.display_name`, `profile.role`).
+- `QuestionModal` (`src/maths/QuestionModal.tsx`) to show every maths question. It already handles typed answers, choices, the decimal key, fractions and screen-reader text.
+- `readSettings()` (`src/data/classSettings.ts`) for your switches. It shares one remembered request with every other game.
+- `fetchMyFocus()` (`src/data/focus.ts`), only if your browser needs the focus (section 4).
+- `AvatarImage` (`src/avatar/`), `useSound()` / `playSound()` (`src/sound.tsx`, `src/games/sounds.ts`), `MuteButton`.
+- `_shared/signIn.ts` (`userIdFromToken`), `_shared/stamp.ts`, `_shared/limits.ts`, `_shared/http.ts`, `_shared/focusResults.ts` in your server function.
+
+### Looking like the hub
+
+The site has a Douglas Park look (matching the Classroom Randomiser): school-red page, soft pink cards, navy buttons, system fonts only. It's all in `src/styles.css`. Your game should sit inside it, not restyle it:
+- **Use the colour tokens** (`var(--ink)`, `var(--ink-soft)`, `var(--surface)`, `var(--card)`, `var(--line)`, `var(--brand)`, `var(--focus)`, `var(--won)`, `var(--lost)`, `var(--radius)`, `var(--shadow)`, `var(--display)` for headings) instead of new colours for text, panels and edges. Inside the play area itself (a board, a map, a track) your own art and colours are fine.
+- **Use the shared buttons:** `button` with `button--primary`, `button--play`, `button--light`, `button--light-outline` or `button--danger`.
+- **Prefix every class of your own** with a short game prefix (`.mr-`, like `.gk-`, `.cq-`, `.lord-`). Never style a bare element or a shared class (`.button`, `h2`, `.panel`) from your CSS file, because it would change every page.
+- **Dashboard card:** `colours` in your `GameDefinition` is a two-stop gradient that must keep white text readable, and `Icon` is an SVG component (see the other games' `index.tsx`).
+- **For Year 4–6 pupils:** buttons and targets at least 44 px, contrast at least 4.5:1, keyboard focus visible (the site's `:focus-visible` outline: don't remove it), move focus to each new screen's heading, respect `prefers-reduced-motion`, and test at 1366 × 640 (classroom Chromebook) and 844 × 390 (phone). Clan Quest's `Accessibility.test.tsx` reads its CSS and checks contrast, target size and reduced motion: copy it.
+- **Words:** short, kind, plain. Never show a student's year level ("Year 3 skill") or anyone else's maths results.
+
+---
+
+## 3. Where sessions clash, and the rule for each
+
+| Clash point | What goes wrong | Rule |
+|---|---|---|
+| **Migration numbers** | Files are named `YYYYMMDD` + a running six-digit counter, and every branch takes "the next one". It has already gone wrong twice: `bond-match` has `20261019000200_bond_match.sql` and `dragon-maths` has `20261019000300_lord_topics.sql`, while `main` already has `…000200_maths_auto` and `…000300_maths_generated`. Live migrations are pasted in by hand, so the live database doesn't care, but a fresh copy (CI's database checks, `supabase start`, `scratch-db.sh`) refuses two files with the same number. | **While building:** take the next number above the highest on `main` **and every branch** (`git fetch` first, then check `git ls-tree -r --name-only <branch> supabase/migrations` for each branch in `git branch -a`), and write it in your plan. **At go-live:** check again, and rename your file to a free number after everything on `main` if anything has taken yours or arrived after it. Never rename a migration that is already on `main`. |
+| **Shared database functions** (`progress_counts`, `progress_rules`, `rebuild_progress`, `my_progress`, `teacher_students`, `teacher_new_season`, `my_home_page`, `settings_of`) | A game that adds points, achievements, a season reset or a teacher-list column has to **re-create the whole function** from its newest version. Dragon Maths, Clan Quest and Marble Rush each did this. Two branches doing it at once means whichever is applied second silently wipes the other's lines. | **Avoid them if you can:** a first version without points or achievements needs none of them (Marble Rush). If you must, do it **as your last stage, after merging `main`**: copy the newest version on `main` (`grep -l "function public.<name>" supabase/migrations/*` and take the newest file) and change only your lines. At go-live, check again that nothing newer has re-created it. If something has, redo yours on top. Say in the migration's header which version you started from. |
+| **`app_settings`** (one row per class plus one default per school) | Fine to add to; dangerous to rebuild. | **Add columns only** (`alter table public.app_settings add column <game>_… not null default …`). Write `teacher_set_<game>(…, target_class uuid default null)` using `require_settings_target()`, as `teacher_set_marble_maths` does. Never re-create shared settings functions. |
+| **`scripts/build-functions.mjs`** | `npm run build:functions` rebuilds **every** function. That rewrites `supabase/functions/monster/index.ts`, which is deliberately left as deployed (its test is skipped), and churns other games' files. | **Build only your function:** `node -e "import('./scripts/build-functions.mjs').then(async m => (await import('node:fs')).writeFileSync('supabase/functions/<name>/index.ts', await m.buildFunction('<name>')))"` (or copy `scripts/build-lord.mjs` to `scripts/build-<name>.mjs`). Add your name to the end of `FUNCTIONS` (needed for `buildFunction`). If `monster/index.ts` changes anyway, `git checkout` it. |
+| **Shared code inside other functions** | Each function's `index.ts` bundles the `shared/` code it uses. Change anything in `shared/maths/` (or any shared file another function imports) and the other functions' `index.ts` go out of date, their "index.ts is up to date" tests fail, and they would need redeploying. | **Don't change shared code from a game branch.** If you need it, stop and ask James. It becomes its own branch with its own go-live (the `maths-focus` and `gem-keep-marking` branches worked this way). |
+| **The games list** (`src/games/registry.ts`) | Everyone adds to the same `GAMES` line. | Add your import and **append** to the end of `GAMES`, behind your code switch: `...(myGameOn() ? [myGame] : [])`. Do this at the end, after merging `main`. |
+| **Routes** (`src/App.tsx`) | Every game in `GAMES` already gets `/#/<id>` automatically. | Only add a route if you need a second page (like `card-game/:id`). If your card can be switched off in code but teachers should still reach it, copy the `!CLAN_QUEST_ON && <Route …>` line. |
+| **Dashboard** (`src/pages/Dashboard.tsx`) | The groups (`'Non-maths games'`, `'Easy maths games'`, `'Complex maths games'`) and the line that hides switched-off games (`shownGames = …`) list game ids by hand. | Add your id to one group's `ids`. If you have a teacher on/off switch, add a `useXEnabled()` hook (copy `src/games/clans/switch.ts`, read through `readSettings`) and one `&& (g.id !== '<id>' \|\| xOn)` to `shownGames`. **PROPOSED** fix in section 10. |
+| **Teacher page** (`src/pages/Teacher.tsx`) | Each game adds a lazy import and a panel line. | Add a `lazy(() => import('./Teacher<Game>')…)` line and your panel at the end of the list, behind your code switch. Your panel file is yours. |
+| **`package.json`** | Every game adds `<game>:sim` / `<game>:preview` scripts on neighbouring lines, so merges conflict. Dependencies change `package-lock.json`, which is painful to merge. | Add your scripts at the **end** of `scripts`. No new dependencies without James (check the licence, pin the version). Never run `npm install <x>` on a game branch without asking. |
+| **`src/styles.css`, `src/maths/maths.css`** | Every page uses them. | Never edit from a game branch. Your own CSS file with a prefix (section 2). |
+| **Shared tables** (`fact_answers` records, `scored_games`, `achievements`, `maths_focus_results`) | Other games and the teacher pages read them. | Only write to them **through the database functions made for it** (`record_fact_answers`, `add_maths_focus_results`, the points trigger pattern). Never alter their columns. |
+| **The local database** (one Docker copy shared by every session) | One session's `db reset` or half-applied migration breaks the others. | Test migrations on a throw-away copy: `scripts/scratch-db.sh <yourname>` then `scripts/scratch-test.sh <yourname>`, and drop it after. Or use `begin; … rollback;` (see the Clan Quest go-live prompt). Never `supabase db reset`. |
+| **`docs/PLAN.md`, `shared/README.md`, `docs/PRIVACY-SUMMARY.md`, CLAUDE.md** | Everyone appends. | Add your lines in the merge step only, at the end of the relevant section. CLAUDE.md: don't edit from a game branch. |
+
+---
+
+## 4. Maths questions: the one approved way
+
+Maths is the most important shared system. A student has **one maths focus** at a time, decided by the server: a teacher focus for the student, then for their group, then for their class, then the student's own choice (if the class allows it), then **auto** (the ladder of 31 skills from bonds to 10 up to fractions, decimals and percentages). Plan: `docs/MATHS-FOCUS-PLAN.md`. Code: `shared/maths/`.
+
+**Which games do it this way today:** Gem Keep (questions made in the browser, marked again on the server), Wormholes & Black Holes / Mission Control (both ways), the placement warm-up, and Marble Rush (branch; questions made and marked on the server). **Maths Monsters, Dragon Maths and Clan Quest don't.** They ask their own year-band questions (`shared/maths/banded.ts`, `practical.ts`), which don't follow the focus and don't move a student up the ladder. Whether they should is an open question for James, so **don't copy their maths**. **Basic facts training** keeps its own separate records (`training_answers`) on purpose. Don't copy that for a game either.
+
+### 4.1 The rules
+
+1. **Read the focus, never work it out.** On the server: `space_maths_context(player)` (server key only) returns `{ facts, settings, focus }`. In the browser: `fetchMyFocus()` (`my_maths_focus()`), or include `maths_focus_of(auth.uid())` in your own load function, as `my_gem_keep()` does. Always pass it through `parseFocus()`. Anything odd becomes auto. Keep the focus you have for the rest of a level or run, even if a new one could be read. A focus that ended mid-game takes effect next time (`currentFocus()` does the time check).
+2. **Get questions from the pack.** `makeFocusPack(facts, focus, { enabledTables, division }, random)` from `shared/maths/focus.ts` gives a `SkillPack`, and `pack.nextQuestion(ctx)` gives one `Question`. This one function covers every case: auto off (the times-table campaign), auto on (the ladder from the student's place), a teacher or student focus. Pass a **seeded** `random` (as `shared/marble/maths.ts` does) so the server can make the same questions again.
+3. **Asking for different kinds** goes in the `QuestionContext` you hand `nextQuestion`:
+   - `multipleChoice: true` gives four choices to tap (follow the class switch: `settings.multipleChoice`).
+   - `onlyFocus: true` asks only the focus skills, with no review or stretch (Gem Keep's Level Key).
+   - `boxes: [0, 1]` gives only facts in those mastery boxes (easier: weakest first); `boxes: [3, 4]` gives confidence builders.
+   - `missingFactor`, `division` follow the class's settings for times tables.
+   - Easier or harder *within* the focus is the pack's job (60% focus, 30% review, 10% stretch). Don't pick skills yourself.
+4. **Show every kind of question the ladder can make**, so a skill added later just works. Show it with `QuestionModal` (or pass a `ShownQuestion` to it), and never draw `parts` yourself. If you must build your own display (Marble's answer gates), handle **all** of these:
+   - `parts`: text left to right with `'?'` as the blank; a part like `'3/4'` or `'?/8'` is a fraction; parts can be words (`'Round'`). Plus an optional `prompt` line above.
+   - `choices` (numbers) with optional `choiceLabels` (`'2/3'`, `'0.25'`, `'25%'`). **When `choiceLabels` is set, the question can only be answered by picking**, whatever the multiple-choice switch says. There can be 2 or 4 choices.
+   - `input: 'decimal'` means show a point key; `maxLength` is the longest answer (default 3).
+   - `spoken`: what a screen reader says. Use it as the question's accessible name.
+   A test should run every skill in `LADDER` through your display (Marble's `maths.test.ts` and F.6's browser check did this).
+5. **The server marks, never the browser.** Two safe ways (section 4.2). Either way the right answer comes from a question the server made or rebuilt, never from what the browser says.
+6. **Record every marked answer** so it counts towards the student's records, their place on the ladder, the teacher's skill map and the focus results:
+   - Split by pack: `groupByPack(answers)` (from `shared/maths/focus.ts`).
+   - For each pack: `record_fact_answers(player, pack, batch_id, answers, quick_ms, fluent_days, top_box)` with `quick_ms: quickMsForPack(pack)` (**not** `QUICK_MS`: the `generated` pack's quick time is 8 s), `FLUENT_DAYS`, `TOP_BOX` from `shared/maths/config.ts`. `batch_id` is a UUID made from something unique to that save (hash it, as Marble's `batchIdFor` does), so a retried save counts once.
+   - If it returned more than 0 (a new batch): `countForFocuses(rpc, player, pack, answers, '<name>')` from `_shared/focusResults.ts`, so the teacher's focus results include your game.
+   - `answers` are `FactAnswer`s: `{ key, correct, ms, at }`, where `key` is the question's `factKey`. Cap `ms` sensibly (2 minutes; the `answer-times` branch adds `LONGEST_ANSWER_MS` for this).
+7. **No warm-up yet? Do nothing special.** A student who hasn't done the placement warm-up starts at the first skill and climbs from their own answers (changed 20 Oct 2026). The home page's path card already offers the warm-up. Your game doesn't need to ask or block.
+8. **A maths switch for your game, if it has optional maths:** a column `<game>_maths text default 'choose' check (… in ('off','choose','on'))` and `parseMathsSwitch()` from `shared/space/mathsSwitch.ts` (Marble copies Mission Control here). If maths is the whole game, you don't need one.
+9. **Teacher settings page:** only if your game needs settings of its own. Make `src/pages/Teacher<Game>.tsx` (copy `TeacherMarble.tsx`), hand it the class picker's `classId`, and save through `teacher_set_<game>()`. The focus itself is set on the shared **Set focus** page. Never add focus controls of your own.
+
+### 4.2 Two ways to mark
+
+**A. The server makes the questions (recommended; Marble Rush).** It's best for anything with a score, a time or a reward.
+1. The browser asks your function to start (`{ type: 'start' }`).
+2. The function reads `space_maths_context(player)`, makes the pack from a fresh seed, makes N questions, and **stores the whole questions** in a table pupils can't read (`<game>_questions`: RLS on, no policy, no grant; compare `marble_questions`).
+3. It sends the browser only what to show: Marble's `publicQuestion()` strips `answer`, `factKey` and `params`.
+4. The browser shows each one with `QuestionModal` and sends `{ seed, slot, value, ms }`.
+5. The function loads the stored question, marks `value === question.answer`, claims the slot **once** (`<game>_claim_answer` returns false if it was already answered), and records it (rule 6).
+
+**B. The browser makes the questions (Gem Keep).** Use this only when the game must keep going offline.
+1. The browser builds the pack itself from `my_<game>()` (facts + settings + focus) and wraps it in `showingPack()` (`shared/maths/claim.ts`), so every answer carries `key`, `params` (the numbers the question was made from), `parts` (what was shown) and the value given.
+2. Your function marks each one with `solveClaim()`, which rebuilds the question from its key and numbers and checks the parts match exactly. Anything that doesn't hold up is refused and not recorded.
+
+### 4.3 Worked example: a new game asks 5 questions from the focus and saves the answers
+
+Server side (`supabase/functions/<name>/entry.ts`, way A, trimmed). Copy the real error handling and limits from Marble.
+
+```ts
+import { FLUENT_DAYS, TOP_BOX, quickMsForPack } from '../../../shared/maths/config';
+import { groupByPack, makeFocusPack, parseFocus } from '../../../shared/maths/focus';
+import { seededRandom } from '../../../shared/marble/maths'; // PROPOSED: move to shared/maths so games don't import each other
+import { countForFocuses } from '../_shared/focusResults';
+import { userIdFromToken } from '../_shared/signIn';
+
+// start: make and keep 5 questions, send only what to show
+const ctxRow = (await admin.rpc('space_maths_context', { player })).data;
+const focus = parseFocus(ctxRow.focus);
+const { enabledTables, division, multipleChoice } = ctxRow.settings;
+const pack = makeFocusPack(ctxRow.facts, focus, { enabledTables, division }, seededRandom(seed));
+const questions = [];
+for (let i = 0; i < 5; i++) {
+  const q = pack.nextQuestion({ multipleChoice, enabledTables, division });
+  if (q) questions.push(q);
+}
+await admin.rpc('<game>_store_questions', { player, seed, questions });   // a table pupils can't read
+return { seed, questions: questions.map((q, slot) => publicQuestion(q, slot)) };
+
+// answer: mark it here, once, and record it
+const stored = (await admin.rpc('<game>_load_questions', { player, seed })).data;
+const q = stored.questions[slot];
+const correct = value === q.answer;
+if (!(await admin.rpc('<game>_claim_answer', { player, seed, slot, value, right_answer: correct })).data) return { already: true };
+const answers = [{ key: q.factKey, correct, ms: Math.min(ms, 120_000), at: Date.now() }];
+for (const [pack, group] of groupByPack(answers)) {
+  const { data: saved } = await admin.rpc('record_fact_answers', {
+    player, pack, batch_id: await batchIdFor(`${seed}:${slot}:${pack}`), answers: group,
+    quick_ms: quickMsForPack(pack), fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
+  });
+  if (saved > 0) await countForFocuses((n, a) => admin.rpc(n, a), player, pack, group, '<name>');
+}
+return { correct, answer: q.answer };   // the browser shows "7 × 8 = 56" after a wrong answer
+```
+
+Browser side (trimmed):
+
+```tsx
+const { seed, questions } = await startRound();          // src/data/<game>.ts → your function
+<QuestionModal
+  question={questions[i]}                                  // no answer in it: the server keeps it
+  title="Bridge gate"
+  onSubmit={async (value, ms) => {
+    const r = await sendAnswer(seed, questions[i].slot, value, ms);
+    return { correct: r.correct, fact: …, boxBefore: 0, boxAfter: 0, answer: r.answer };
+  }}
+  onDone={() => setI(i + 1)}
+/>
+```
+
+Tests to copy: Marble's `handler.test.ts` (right, wrong, sent twice, a slot that doesn't exist, another student's seed) and `maths.test.ts` (every ladder skill comes through and shows).
+
+---
+
+## 5. The signed-in pupil, saving, scores and progress
+
+- **Who is playing.** Browser: `useAuth().profile` (the `RequireAuth` route already makes sure someone is signed in). Server: send the session token (`supabase.auth.getSession()` → `Authorization: Bearer <token>`, plus `apikey: SUPABASE_PUBLISHABLE_KEY`, as in `src/data/lord.ts`). The function reads it with `userIdFromToken(admin.auth)` from `_shared/signIn.ts` and is deployed with `--no-verify-jwt` (server-load S.5). Note: the `marble` branch still uses `admin.auth.getUser`. Switch it to `signIn.ts` before it goes live.
+- **The school check.** Every database function that shows or changes another person's data uses `my_school()` (or `my_students()` / `require_teacher_of()` for teachers) so schools never see each other (`20261018002500` migration). Boards are own-school only, with teachers and hidden profiles left out (`marble_board()`).
+- **Saving.** Your own tables, prefixed with your game. RLS on. Pupils read their own rows through a `my_<game>()` function, not the table. Saving is done by your server function with the server key, through a `record_<game>_…()` function that the server key alone may run. At the end of each migration, revoke every new function from `public, anon` and grant only what's needed (see the "lock new functions" block at the end of `20261018002500`). A save that's sent twice must count once (a seed or request id with a unique index).
+- **Daily limits and cost.** The project is on Supabase's free size, and a whole class at once is the danger (`docs/SERVER-LOAD-PLAN.md`). Ask the server as few times as possible: one request per level, run or turn, not per tap. Add a daily cap if a game could be farmed (`marble_runs` asks for a break after `daily_limit`). Estimate requests per class per week in your plan (101's plan did: about 30,000 a month against 500,000).
+- **Points and achievements (EXISTS, but costly to add).** Points come from `scored_games` and each game's own "what was earned" table, and achievements from `achievement_types` rows (with `game = '<id>'`) checked by the shared functions in section 3. Adding them means re-creating those shared functions (Dragon Maths' L.5 and Clan Quest's C.6 part B migrations are the examples). **Ask James before adding points or achievements**, and do it as its own last stage after merging `main`. Bot-type games share the 40-points-a-day cap (`bot_daily_cap()`). `HowPoints.tsx` reads the numbers from `progress_rules()`. Points are never ranked against maths.
+- **New season.** If your game keeps per-season boards, a school admin's new season must clear them (`teacher_new_season()`, re-created as above; Marble did this).
+- **Privacy.** Add what you store and who can see it to `docs/PRIVACY-SUMMARY.md`. Never show a pupil's maths results to classmates. Store display names only (real names stay with teachers).
+
+---
+
+## 6. Branch and worktree
+
+```bash
+git -C ~/projects/school-games-hub fetch origin
+git -C ~/projects/school-games-hub worktree add -b <game> ~/projects/school-games-hub-<game> origin/main
+cd ~/projects/school-games-hub-<game>
+git branch --unset-upstream          # so a bare `git push` can never go to main
+npm ci
+git push -u origin <game>            # first push sets the upstream to origin/<game>
+```
+
+- Commit after each stage with a clear message. Push with `git push origin <game>`.
+- **Merge `origin/main` into your branch** (don't rebase a pushed branch) at the start of each stage and before go-live. Then re-check migration numbers and the shared functions (section 3).
+- Other sessions may share the stash: never bare `git stash` / `git stash pop`. Use a WIP commit.
+
+---
+
+## 7. Running and testing the game on its own
+
+- **Your tests:** `npx vitest run shared/<game> src/games/<game> src/data/<game>.test.ts supabase/functions/<name>` while you work. Before saying a stage is done: `npm run typecheck`, `npm run test:all` (about 2¾ minutes; a few busy-computer timeouts pass when run alone with `--testTimeout=30000`: say so, don't hide it) and `npm run build`. Mark slow screen tests the way `vitest.slow.ts` expects.
+- **Database:** write `supabase/tests/database/<game>.test.sql` (pgTAP). Check: pupils can't read the server-only tables (42501), can't call the server-only functions, see only their school, and a save sent twice counts once. Run it on a throw-away copy: `scripts/scratch-db.sh <game>` then `scripts/scratch-test.sh <game> supabase/tests/database/<game>.test.sql`, then drop the copy. CI's "Database checks" runs every file on a fresh copy when `main` is pushed, so a duplicate migration number fails there.
+- **Server function:** keep logic in `handler.ts` with the database passed in, so `handler.test.ts` runs without Deno or a database (every function does this). Rebuild only your `index.ts` (section 3) and keep the "index.ts is up to date" test.
+- **In the real site, locally:** `npm run dev` with your code switch on only on your computer: `const ON = false; export const myGameOn = () => ON || import.meta.env.VITE_<GAME>_ON === 'true'` (copy `src/training/switch.ts`), and put `VITE_<GAME>_ON=true` in `.env.local`. It talks to the **live** project unless pointed at the local one, so don't save test data there without James's OK.
+- **Preview for James (no sign-in):** `preview/<game>/main.tsx` with a fake signed-in pupil and a trial backend that runs your `shared/` rules in the browser (copy `preview/lord/main.tsx` and `src/games/lord/trialBackend.ts`), built with `npx vite build --config vite.<game>-preview.config.ts`. A preview must never call the live server (Marble's first preview did, by accident, for the maths focus). Give it a fixed fake focus and facts. James tries it on his phone; publishing it as a private Artifact has worked well.
+- **Simulator:** for games with balance numbers, `scripts/<game>-sim.mjs` plays thousands of games using the shared rules.
+
+---
+
+## 8. Going live, one step at a time
+
+Write `docs/prompts/<game>-golive.md` (copy `clans-golive.md`). Before each live step, ask James in plain words, say exactly what will happen, and wait for his yes. **Approval for one step is not approval for the next.**
+
+0. **Pre-flight (nothing live).** Merge `origin/main`. Re-check migration numbers (renumber yours if needed) and any shared database functions you re-create (section 3). Run typecheck, `test:all`, build, and your database tests on a scratch copy built from `main`'s migrations plus yours. Check the live database has what you depend on by querying for it (`select to_regclass('public.<table>')`), not by trusting docs. Live migrations aren't in the CLI history.
+1. **Apply the migration(s)** to the live database, in order: `npx supabase db query --linked --project-ref zqzhetlzvtptnkmeiumi -f supabase/migrations/<file>` (or paste it into the SQL Editor). Check: your tables exist and are empty, switches start **off**. Add the number to the `migration repair` note at the bottom of `docs/PLAN.md`.
+2. **Deploy the function:** rebuild only yours, then `npx supabase functions deploy <name> --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api`. Check: an unsigned `curl -X POST …/functions/v1/<name>` answers a 401 message, not a crash or 404. Only deploy other functions if your branch really changed them, and say so.
+3. **Check from outside.** Signed out and as a pupil: server-only tables and functions refused (42501), pupils see only their own and their school's rows, older data untouched (e.g. `select count(*) from public.scored_games;` not smaller).
+4. **Merge to `main`.** Only on James's word. Merge `origin/main` into your branch one last time, then either open a pull request for James (he has merged from his phone) or push `<game>:main` if he says so. Never push from the main checkout. "Test and publish" runs every test and publishes only if they pass. Watch it go green.
+5. **Try it live as a teacher** while the pupils' switch is off (teachers can open `/#/<id>`).
+6. **Switch it on** for pupils (the code switch, then the teacher switch on the Teacher page). Only with James's OK.
+7. **Write it down:** a "went live" note in your plan (what was applied, deployed and checked, when), and update the memory note. Then stop for James's feedback.
+
+**Turning it off again (rollback), from gentlest to strongest:**
+- **The teacher switch** on the Teacher page. Pupils see "not switched on", the data is kept, and the server refuses requests (make sure your function checks the switch itself).
+- **The code switch** set to `false` and published: the card disappears.
+- **Delete the function** in the Supabase dashboard: everything that needs the server stops.
+- **Database:** don't drop tables. Write a new migration if something must change. (Note: the SQL in `clans-golive.md`'s rollback, `update … where id;`, no longer works now that `app_settings` has one row per class. Use the Teacher page.)
+
+---
+
+## 9. Ready to go live? (risk-based checklist)
+
+**Must be true (stop if not):**
+- [ ] Nothing that counts is decided by the browser: the server replays or marks it, and a save sent twice counts once.
+- [ ] Maths comes only from `makeFocusPack` with the server's focus. It's marked on the server and recorded with `record_fact_answers` (per pack, `quickMsForPack`) and `countForFocuses`.
+- [ ] Every new table has RLS on. Server-only tables have no policy and no grant. Every new function is locked to the right role. Pupils only ever see their own school.
+- [ ] Your migration number is free across `main` and every branch, and comes after everything it builds on. Any shared function you re-create starts from `main`'s newest version.
+- [ ] Merged with the latest `origin/main`; typecheck, `test:all`, build and your database tests pass (or every failure is explained to James).
+- [ ] The game's switches start **off**, and the server refuses requests while it's off.
+- [ ] No other game's function or `index.ts` changed (or James knows which and why).
+
+**Should be true:**
+- [ ] Every kind of ladder question shows and can be answered (typed, choices, decimal key, fractions), with readable spoken text.
+- [ ] 44 px targets, 4.5:1 contrast, focus moved on each new screen, reduced motion respected; checked at 1366 × 640 and 844 × 390.
+- [ ] Requests per class per lesson estimated and acceptable; daily cap if it could be farmed.
+- [ ] How to play reads its numbers from the config.
+- [ ] `docs/PRIVACY-SUMMARY.md`, `shared/README.md` and your plan are updated.
+- [ ] James has tried the preview, and ideally some pupils have too.
+
+---
+
+## 10. What needs fixing before parallel development really works
+
+Listed in order. None of these is built. Each needs James's go, on its own branch.
+
+1. **Renumber the two duplicate migrations before they reach `main`.** *(Tiny, must do.)* `bond-match`'s `20261019000200_bond_match.sql` clashes with `main`'s `…000200_maths_auto.sql`, and `dragon-maths`' `20261019000300_lord_topics.sql` with `…000300_maths_generated.sql`. Bond Match's is already applied live by hand, which is fine: renaming the file changes nothing live. If merged as they are, CI's database checks (and any fresh copy) would fail. Rename each to the next free number when its branch next merges `main`, and update its docs.
+2. **A duplicate-number test on `main`.** *(Tiny.)* A test that fails if two files in `supabase/migrations/` share a number, so a bad merge is caught before publishing.
+3. **`build:functions` takes a name.** *(Small.)* `npm run build:functions -- marble` rebuilds just that one, so nobody rewrites other games' files by accident. This replaces `build-lord.mjs` / `build-clans.mjs`. Separately, settle `monster/index.ts` (left as deployed, out of date with the code): the next Maths Monsters deploy (`monsters-marking`) should rebuild it and turn its test back on.
+4. **One shared helper for recording maths answers.** *(Small to medium.)* `_shared/recordAnswers.ts`: pack split, batch id, `quickMsForPack`, `countForFocuses`, in one place. Today each function copies this and they have drifted: `lord`, `clans`, `monster` and the `marble` branch use the 5-second `QUICK_MS` for every pack, and `marble` doesn't count focus results at all. Also move `seededRandom` and `publicQuestion` from `shared/marble/` into `shared/maths/`, so games don't import each other. New games would use these. Older functions move over when they are next deployed anyway.
+5. **Games describe their own switch and teacher panels.** *(Small to medium.)* Give `GameDefinition` an optional `useEnabled` hook and lazy `TeacherPanels` / `StudentPanel`, so `Dashboard.tsx` and `Teacher.tsx` stop listing games by hand. A new game would then touch only `registry.ts`.
+6. **Points and achievements without re-creating shared functions.** *(Medium to large; touches live scoring.)* For example, each game provides its own `progress_counts_<game>()` and the shared function calls them. This is only worth doing when two games want points at the same time. Until then the rule in section 3 works.
+
+Before Marble Rush goes live (found while writing this, on its branch): switch its function to `_shared/signIn.ts`, use `quickMsForPack`, and add `countForFocuses` (items 4 and the sign-in note in section 5).
