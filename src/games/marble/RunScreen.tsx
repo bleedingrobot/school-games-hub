@@ -516,7 +516,8 @@ export function RunScreen({
 
   // ---- dragging with a mouse, trackpad or finger ----
   const onPointerDown = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest('button, .marble-stick')) return;
+    // Tapping a button, the stick or the guess box (it sits on the course) must not start the run.
+    if ((e.target as HTMLElement).closest('button, input, label, .marble-stick')) return;
     if (e.pointerType === 'touch') setShowStick(true);
     dragStart.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
     try {

@@ -469,6 +469,18 @@ describe('RunScreen: rescue questions and number gems', () => {
     expect(await screen.findByText(/You guessed 9 seconds. It took 3\.5\./)).toBeInTheDocument();
   });
 
+  it('tapping or clicking the guess box does not start the run', async () => {
+    const plain: RunSetup = { ...rescueSetup, rescue: false, rescues: [] };
+    setup({ course: courseById('test-easy')!, setup: plain });
+    await runFrames(50);
+    const input = screen.getByLabelText(/Guess your time/);
+    fireEvent.pointerDown(input, { pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 100 });
+    fireEvent.pointerDown(screen.getByText(/Guess your time/), { pointerId: 2, pointerType: 'mouse', clientX: 100, clientY: 90 });
+    await runFrames(300);
+    expect(screen.getByText('Ready?')).toBeInTheDocument();
+    expect(screen.getByLabelText('Time').textContent).toBe('0:00.00');
+  });
+
   it('offers no guess without maths', async () => {
     setup({ course: courseById('test-easy')!, setup: { ...rescueSetup, maths: false, rescue: false, rescues: [] } });
     await runFrames(50);
