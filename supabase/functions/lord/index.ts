@@ -2169,6 +2169,43 @@ var BandedPack = class {
 	}
 };
 //#endregion
+//#region shared/maths/skillPacks/timesTables.ts
+/**
+* Works out a question from how it was shown (e.g. ['?', '×', '8', '=', '56']): its answer and
+* the fact it belongs to. Null if it isn't a times-tables question this pack could ask. The
+* server uses this to check answers it didn't see being given.
+*/
+function solveQuestion(parts) {
+	if (!Array.isArray(parts) || parts.length !== 5 || parts[3] !== "=" || !parts.every((p) => typeof p === "string")) return null;
+	const [a, op, b, , c] = parts;
+	if (op !== "×" && op !== "÷" || parts.filter((p) => p === "?").length !== 1) return null;
+	const num = (text) => /^\d{1,3}$/.test(text) ? Number(text) : NaN;
+	const inTables = (n) => Number.isInteger(n) && n >= 1 && n <= 12;
+	let x;
+	let y;
+	let answer;
+	if (op === "×" && c === "?") {
+		[x, y] = [num(a), num(b)];
+		answer = x * y;
+	} else if (op === "×" && a === "?") {
+		y = num(b);
+		x = answer = num(c) / y;
+		if (num(c) !== x * y) return null;
+	} else if (op === "×" && b === "?") {
+		x = num(a);
+		y = answer = num(c) / x;
+		if (num(c) !== x * y) return null;
+	} else if (op === "÷" && c === "?") {
+		y = num(b);
+		x = answer = num(a) / y;
+	} else return null;
+	if (!inTables(x) || !inTables(y)) return null;
+	return {
+		answer,
+		key: factKey(x, y)
+	};
+}
+//#endregion
 //#region shared/maths/skillPacks/addSub.ts
 /**
 * Adding and taking away (the Water topic in Maths Monsters).
@@ -4464,8 +4501,7 @@ function markProof(raw, moment, heroLevel, now, only, on = ALL_TOPICS) {
 	const ms = isNumber(p.ms) ? Math.max(0, Math.min(12e4, Math.round(p.ms))) : 6e4;
 	let correct;
 	if (p.pack === "times-tables") {
-		const fact = parseFactKey(p.key);
-		if (!fact) return {
+		if (!parseFactKey(p.key)) return {
 			ok: false,
 			problem: "proof-key"
 		};
@@ -4482,7 +4518,17 @@ function markProof(raw, moment, heroLevel, now, only, on = ALL_TOPICS) {
 			ok: false,
 			problem: "proof-kind"
 		};
-		correct = p.kind === "multiply" ? p.given === fact.a * fact.b : p.given === fact.a || p.given === fact.b;
+		const parts = Array.isArray(p.parts) && p.parts.length === 5 && p.parts.every((x) => typeof x === "string") ? p.parts : null;
+		const solved = parts ? solveQuestion(parts) : null;
+		if (!parts || !solved || solved.key !== p.key) return {
+			ok: false,
+			problem: "proof-parts"
+		};
+		if ((parts[1] === "÷" ? "divide" : parts[4] === "?" ? "multiply" : "missing-factor") !== p.kind) return {
+			ok: false,
+			problem: "proof-kind"
+		};
+		correct = p.given === solved.answer;
 	} else {
 		const pack = bandedPack(p.pack);
 		if (!pack) return {

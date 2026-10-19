@@ -15,7 +15,7 @@ const proofFor = (pack: (typeof ALL_TOPICS)[number], level = 1) => {
   const p = pack === 'money' || pack === 'patterns' ? makeExtraPack(pack) : makePack(pack);
   const l = questionLevel(pack, level);
   const q = p.nextQuestion({ level: l })!;
-  return { pack, key: q.factKey, kind: q.kind, params: q.params, level: l, given: q.answer, ms: 3000 };
+  return { pack, key: q.factKey, kind: q.kind, params: q.params, ...(pack === 'times-tables' ? { parts: q.parts } : {}), level: l, given: q.answer, ms: 3000 };
 };
 
 describe('the topic list', () => {

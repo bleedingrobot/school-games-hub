@@ -104,9 +104,8 @@ export function proof(pack: TopicId | ExtraTopicId, heroLevel: number, right = t
   const p = pack === 'money' || pack === 'patterns' ? makeExtraPack(pack) : makePack(pack);
   const level = questionLevel(pack, heroLevel);
   const q = p.nextQuestion({ level })!;
-  // Far from any real answer: a missing-factor question also accepts the other factor, which "answer + 1" can be.
   const wrong = q.answer + 1000;
-  return { pack, key: q.factKey, kind: q.kind, params: q.params, level, given: right ? q.answer : wrong, ms: 4000 };
+  return { pack, key: q.factKey, kind: q.kind, params: q.params, ...(pack === 'times-tables' ? { parts: q.parts } : {}), level, given: right ? q.answer : wrong, ms: 4000 };
 }
 
 export const STRONG = { strength: 900, defence: 50, hp: 400, maxHp: 400 };

@@ -97,7 +97,7 @@ export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[
         const given = pending.given ?? { value: Number.NaN, ms: 0 };
         finish({
           correct: r.correct,
-          proof: { pack: pending.packId, key: q.factKey, kind: q.kind, params: q.params, level: pending.level, given: given.value, ms: given.ms, ...(pending.hinted ? { hinted: true } : {}) },
+          proof: { pack: pending.packId, key: q.factKey, kind: q.kind, params: q.params, ...(pending.packId === 'times-tables' ? { parts: q.parts } : {}), level: pending.level, given: given.value, ms: given.ms, ...(pending.hinted ? { hinted: true } : {}) },
         });
       }}
     />
