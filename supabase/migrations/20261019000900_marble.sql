@@ -398,6 +398,12 @@ begin
   delete from public.gem_keep_progress where player = any (mine);
   delete from public.gem_keep_facts where pack = 'times-tables' and player = any (mine);
   delete from public.fact_answer_batches where player = any (mine);
+  -- Bond Match: its tables are live (its migration 20261019001000 is on the bond-match branch, not yet on main), and the
+  -- live New Season clears them, so this keeps doing that. Only when the tables exist, so a fresh database without them works too.
+  if to_regclass('public.bond_match_games') is not null then
+    execute 'delete from public.bond_match_games where player = any ($1)' using mine;
+    execute 'delete from public.bond_match_bests where player = any ($1)' using mine;
+  end if;
   -- Maths Monsters: the points go, the adventure stays.
   delete from public.monster_events where player = any (mine);
   update public.monster_saves set wild_wins_pending = 0 where player = any (mine);
