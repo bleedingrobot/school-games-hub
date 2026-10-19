@@ -288,7 +288,7 @@ describe('how to play', () => {
     fireEvent.click(screen.getByRole('button', { name: 'How to play' }));
     const heading = screen.getByRole('heading', { name: 'How to play Marble Rush' });
     expect(heading).toHaveFocus();
-    expect(screen.getByRole('heading', { name: 'Falling and checkpoints' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Falling off' })).toBeInTheDocument();
     expect(screen.getByText('3 seconds')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Answer gates' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Back to the courses' }));

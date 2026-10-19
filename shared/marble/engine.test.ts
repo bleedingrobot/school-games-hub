@@ -130,14 +130,56 @@ describe('falling', () => {
 });
 
 describe('checkpoints, finish and jump pads', () => {
-  it('respawns at the last checkpoint', () => {
-    const c = tiny(['======..', '=sc#..f=', '======..'.replace(/\./g, '=')]);
+  it('after a fall the marble goes back onto the track near where it fell, not to the start', () => {
+    // A long straight with a gap near the end and no checkpoint.
+    const c = tiny(['==================', '=s############..f=', '=================='.replace(/=/g, '=')]);
+    const w = makeWorld(c);
+    const s = newRun(w);
+    for (let i = 0; i < 600 && s.falls === 0; i++) stepRun(w, s, E);
+    expect(s.falls).toBe(1);
+    expect(s.checkpoints.length).toBe(0);
+    // Well along the track, on a tile centre, a little back from the edge (the gap starts at x = 14).
+    expect(s.x).toBeGreaterThan(6);
+    expect(s.x).toBeLessThan(13);
+    expect(s.x % 1).toBe(0.5);
+    expect(s.vx).toBe(0);
+  });
+  it('is never put back on ice or anything that moves or pushes', () => {
+    const c = tiny(['================', '=s####iiiiii..f=', '================']);
+    const w = makeWorld(c);
+    const s = newRun(w);
+    for (let i = 0; i < 900 && s.falls === 0; i++) stepRun(w, s, E);
+    expect(s.falls).toBe(1);
+    expect(s.x).toBeLessThan(6);
+  });
+  it('falling again straight away never moves the marble further on', () => {
+    const c = tiny(['==================', '=s############..f=', '==================']);
+    const w = makeWorld(c);
+    const s = newRun(w);
+    const after: number[] = [];
+    for (let i = 0; i < 3000 && after.length < 4; i++) {
+      const falls = s.falls;
+      stepRun(w, s, E);
+      if (s.falls > falls) after.push(s.x);
+    }
+    expect(after.length).toBe(4);
+    for (let i = 1; i < after.length; i++) expect(after[i]).toBeLessThanOrEqual(after[0]);
+  });
+  it('a fall before any tile is old enough goes back to the start (or the last checkpoint)', () => {
+    const c = tiny(['=======', '=s...f=', '=======']);
+    const w = makeWorld(c);
+    const s = newRun(w);
+    for (let i = 0; i < 300 && s.falls === 0; i++) stepRun(w, s, E);
+    expect(s.falls).toBe(1);
+    expect([s.x, s.y]).toEqual([c.start.x, c.start.y]);
+  });
+  it('a checkpoint is still where the marble comes back to if it falls just after one', () => {
+    const c = tiny(['======..', '=sc#..f=', '========']);
     const w = makeWorld(c);
     const s = newRun(w);
     for (let i = 0; i < 300 && s.falls === 0; i++) stepRun(w, s, E);
     expect(s.checkpoints.length).toBe(1);
-    expect(s.respawnX).toBe(2.5);
-    expect(s.x).toBe(2.5);
+    expect(s.x).toBeLessThanOrEqual(2.5);
   });
   it('a jump pad throws the marble over a gap', () => {
     const c = tiny(['==========', '=s##j..#f=', '=========='].map((r) => r.padEnd(10, '=')));

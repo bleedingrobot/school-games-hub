@@ -336,7 +336,7 @@ export function RunScreen({
             lastFalls = state.falls;
             setFalls(lastFalls);
             beep('black-hole');
-            say(`You fell. Back to the ${state.checkpoints.length ? 'checkpoint' : 'start'}.`);
+            say('You fell. Back on the track.');
             // A rescue question (if the teacher allows them): a right answer takes the fall's time back. Never more than one in twenty seconds of play.
             if (setup.rescue && !state2 && rescuesAsked < setup.rescues.length && state.steps - lastRescueAt >= RESCUE_GAP_STEPS) {
               lastRescueAt = state.steps;

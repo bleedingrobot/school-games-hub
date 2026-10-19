@@ -30,9 +30,9 @@ export function HowToPlayBody({ mathsAllowed }: { mathsAllowed: boolean }) {
         </p>
       </section>
       <section aria-labelledby="mh-falls">
-        <h3 id="mh-falls">Falling and checkpoints</h3>
+        <h3 id="mh-falls">Falling off</h3>
         <p>
-          Roll off the edge, or land too hard, and you go back to the last checkpoint. A fall costs <strong>{fall} seconds</strong>, never the whole run.
+          Roll off the edge, or land too hard, and you’re put back on the track a little behind where you fell. A fall costs <strong>{fall} seconds</strong>, never the whole run.
         </p>
       </section>
       <section aria-labelledby="mh-floor">

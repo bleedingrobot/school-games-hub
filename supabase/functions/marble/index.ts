@@ -8649,6 +8649,7 @@ function newRun(w) {
 		falls: 0,
 		respawnX: x,
 		respawnY: y,
+		safeSpots: [],
 		checkpoints: [],
 		outcome: "running",
 		finishSteps: 0,
@@ -8667,9 +8668,17 @@ function fall(w, s) {
 	s.falls++;
 	s.penalty += 180;
 	s.refundable = 180;
-	s.x = s.respawnX;
-	s.y = s.respawnY;
+	const spots = s.safeSpots;
+	let spot = -1;
+	for (let i = spots.length - 2; i >= 0; i -= 2) if (spots[i + 1] <= s.steps - 60) {
+		spot = spots[i];
+		break;
+	}
+	const W = w.course.width;
+	s.x = spot >= 0 ? spot % W + .5 : s.respawnX;
+	s.y = spot >= 0 ? Math.floor(spot / W) + .5 : s.respawnY;
 	s.z = floorAt(w, s.x, s.y) ?? 0;
+	s.safeSpots = [Math.floor(s.y) * W + Math.floor(s.x), s.steps - 60];
 	s.vx = s.vy = s.vz = 0;
 	s.grounded = true;
 }
@@ -8770,6 +8779,14 @@ function stepRun(w, s, input) {
 	const tx = Math.floor(s.x);
 	const ty = Math.floor(s.y);
 	const on = tileAt(w, tx, ty);
+	if (s.grounded && !on.slope && on.surface !== "ice" && !".=fqtgjbewno".includes(on.ch)) {
+		const id = ty * c.width + tx;
+		const spots = s.safeSpots;
+		if (spots[spots.length - 2] !== id) {
+			spots.push(id, s.steps);
+			if (spots.length > 32) spots.splice(0, 2);
+		}
+	}
 	const tunnel = c.tunnelAt[ty * c.width + tx];
 	if (tunnel) {
 		const gate = tunnel - 1 >> 3;

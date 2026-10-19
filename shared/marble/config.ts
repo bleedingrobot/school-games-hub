@@ -49,8 +49,18 @@ export const OUCH_SPEED = 9;
 export const BUMPER_RADIUS = 0.45;
 export const BUMPER_SPEED = 3.5;
 
-/** Falling off or an ouch: back to the last checkpoint, and the clock gains this much (James: about 3 seconds). */
+/** Falling off or an ouch: back onto the track near where it happened (see `SAFE_SPOT_AGE`), and the clock gains this much (James: about 3 seconds). */
 export const FALL_PENALTY_STEPS = 3 * STEPS_PER_SECOND;
+/**
+ * After a fall the marble goes back to the last safe tile it was rolling on at least this long before (James, 20 Oct 2026:
+ * "put you back on track near where you fell off", instead of the last checkpoint). A safe tile is flat, not ice, and not
+ * anything that moves or pushes. Going back a little stops the marble being put right on the edge it just went over.
+ */
+export const SAFE_SPOT_AGE = 1 * STEPS_PER_SECOND;
+/** How many recent safe tiles are remembered (more than enough to cover `SAFE_SPOT_AGE` at top speed). */
+export const SAFE_SPOTS_KEPT = 16;
+/** Tiles a marble is never put back on: gaps, walls, the finish, and anything timed, bouncy or pushing. */
+export const UNSAFE_TILES = '.=fqtgjbewno';
 /** A right pit-stop answer takes this much off the clock. */
 export const PIT_BONUS_STEPS = 2 * STEPS_PER_SECOND;
 /** Number gems: each right gem takes this much off the clock, up to `MAX_GEM_BONUSES` a run. */

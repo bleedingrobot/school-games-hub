@@ -9,7 +9,7 @@
  */
 import {
   AIR_GRAVITY, AIR_STEER, BALL_RADIUS, BOUNCE, BUMPER_RADIUS, BUMPER_SPEED, CHECKPOINT_BONUS_STEPS, DT, FALL_PENALTY_STEPS,
-  CONVEYOR_PUSH, GEM_BONUS_STEPS, GEM_PICKUP_RADIUS, MAX_GEM_BONUSES, PIT_BONUS_STEPS, JUMP_SPEED, KILL_BELOW, LEVEL, MAX_RUN_STEPS, OUCH_SPEED, SLOPE_GRAVITY, STEER, STEP_DOWN, STEP_UP, SURFACES, TIMED,
+  CONVEYOR_PUSH, GEM_BONUS_STEPS, SAFE_SPOT_AGE, SAFE_SPOTS_KEPT, UNSAFE_TILES, GEM_PICKUP_RADIUS, MAX_GEM_BONUSES, PIT_BONUS_STEPS, JUMP_SPEED, KILL_BELOW, LEVEL, MAX_RUN_STEPS, OUCH_SPEED, SLOPE_GRAVITY, STEER, STEP_DOWN, STEP_UP, SURFACES, TIMED,
 } from './config';
 import type { Course, Tile } from './course';
 import { BONUS, HOLD, MAX_CODE, MAX_INPUT_STEPS, REFUND, type InputRuns } from './inputs';
@@ -46,9 +46,11 @@ export interface RunState {
   /** Time added by checkpoints (hard mode only), in steps. */
   bonus: number;
   falls: number;
-  /** Respawn point: the start, or the last checkpoint reached. */
+  /** Where a fall goes back to if no safe tile is old enough: the start, or the last checkpoint reached. */
   respawnX: number;
   respawnY: number;
+  /** Recent safe tiles the marble rolled onto, oldest first, as pairs: tile number, step it was reached. A fall goes back to one of these. */
+  safeSpots: number[];
   /** Checkpoint tiles reached (their tile numbers), in order. */
   checkpoints: number[];
   outcome: RunOutcome;
@@ -149,7 +151,7 @@ export function newRun(w: World): RunState {
   return {
     x, y, z: floorAt(w, x, y) ?? 0, vx: 0, vy: 0, vz: 0, grounded: true,
     steps: 0, held: 0, penalty: 0, refundable: 0, bonus: 0, falls: 0,
-    respawnX: x, respawnY: y, checkpoints: [], outcome: 'running', finishSteps: 0, padCooldown: 0,
+    respawnX: x, respawnY: y, safeSpots: [], checkpoints: [], outcome: 'running', finishSteps: 0, padCooldown: 0,
     gateChoices: w.course.gates.map(() => -1), pitStops: [], gemsTaken: [],
   };
 }
@@ -164,9 +166,22 @@ function fall(w: World, s: RunState): void {
   s.falls++;
   s.penalty += FALL_PENALTY_STEPS;
   s.refundable = FALL_PENALTY_STEPS;
-  s.x = s.respawnX;
-  s.y = s.respawnY;
+  // Back onto the track: the newest safe tile reached at least SAFE_SPOT_AGE ago (so not right on the edge just gone over).
+  const spots = s.safeSpots;
+  let spot = -1;
+  for (let i = spots.length - 2; i >= 0; i -= 2) {
+    if (spots[i + 1] <= s.steps - SAFE_SPOT_AGE) {
+      spot = spots[i];
+      break;
+    }
+  }
+  const W = w.course.width;
+  s.x = spot >= 0 ? (spot % W) + 0.5 : s.respawnX;
+  s.y = spot >= 0 ? Math.floor(spot / W) + 0.5 : s.respawnY;
   s.z = floorAt(w, s.x, s.y) ?? 0;
+  // Start the list again from here, old enough to be used straight away if the marble falls again at once.
+  const id = Math.floor(s.y) * W + Math.floor(s.x);
+  s.safeSpots = [id, s.steps - SAFE_SPOT_AGE];
   s.vx = s.vy = s.vz = 0;
   s.grounded = true;
 }
@@ -276,6 +291,15 @@ export function stepRun(w: World, s: RunState, input: number): void {
   const tx = Math.floor(s.x);
   const ty = Math.floor(s.y);
   const on = tileAt(w, tx, ty);
+  // Remember safe tiles rolled onto, for falls.
+  if (s.grounded && !on.slope && on.surface !== 'ice' && !UNSAFE_TILES.includes(on.ch)) {
+    const id = ty * c.width + tx;
+    const spots = s.safeSpots;
+    if (spots[spots.length - 2] !== id) {
+      spots.push(id, s.steps);
+      if (spots.length > SAFE_SPOTS_KEPT * 2) spots.splice(0, 2);
+    }
+  }
   const tunnel = c.tunnelAt[ty * c.width + tx];
   if (tunnel) {
     const gate = (tunnel - 1) >> 3;
@@ -371,7 +395,7 @@ export function replay(course: Course, runs: InputRuns, options: RunOptions = {}
 
 /** Every number in the state as text, so two runs can be compared exactly (and between browsers). */
 export function stateKey(s: RunState): string {
-  return [s.x, s.y, s.z, s.vx, s.vy, s.vz, s.grounded ? 1 : 0, s.steps, s.held, s.penalty, s.bonus, s.falls, s.checkpoints.join('.'), s.gateChoices.join('.'), s.pitStops.join('.'), s.gemsTaken.join('.'), s.outcome, s.finishSteps].join('|');
+  return [s.x, s.y, s.z, s.vx, s.vy, s.vz, s.grounded ? 1 : 0, s.steps, s.held, s.penalty, s.bonus, s.falls, s.checkpoints.join('.'), s.safeSpots.join('.'), s.gateChoices.join('.'), s.pitStops.join('.'), s.gemsTaken.join('.'), s.outcome, s.finishSteps].join('|');
 }
 
 /** Medal for a finish time in clock steps, or null. */
