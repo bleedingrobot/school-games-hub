@@ -2,7 +2,7 @@
 
 *How to make the hub ask the server for much less, so a whole class can use it at once without the database timing out. Written 19 October 2026 for James, after the lobby timeout that morning.*
 
-**Status: S.1 and S.2 built and tested on the `server-load` branch, S.3 on the `server-load-s3` branch (which starts from S.2), and S.4 on the `server-load-s4` branch (which starts from S.3); none of them live (see the results sections at the end, and the go-live rehearsal). S.5 and S.6 not built. The lobby already refreshes every 20 seconds instead of 5, and the faster points-and-level job is live (both 19 Oct 2026). James answered the questions the same day (section 7). Everything below waits for James to say go, one stage at a time, starting with S.1.**
+**Status: S.1, S.2 and S.3 are live (19 Oct 2026 evening; see "S.1 to S.3 went live"). S.4 is built and tested on the `server-load-s4` branch (which starts from S.3), not live: it waits for James to say go. S.5 and S.6 not built. The lobby already refreshes every 20 seconds instead of 5, and the faster points-and-level job is live (both 19 Oct 2026). James answered the questions the same day (section 7).**
 
 ## 1. Why
 
@@ -332,6 +332,14 @@ Pupils notice nothing from this step: the site doesn't use the job yet.
 
 - **Step 1:** nothing needs undoing; the job can stay even if the site goes back. If it must go, paste `drop function public.my_home_page();` into the SQL Editor, but only once step 2 has been undone, or the home page will show "We couldn’t load your games just now".
 - **Step 2 or 3:** on GitHub, open the pull request and press **Revert** (then merge the new pull request it makes), or tell Claude to revert the merge on `main` and push. The site goes back to how it was in a few minutes. Pupils with a page open keep what they have until they reload.
+
+## S.1 to S.3 went live (19 Oct 2026, evening)
+
+- **S.1 and S.2:** James pasted `20261019000700_my_home_page.sql` into the SQL Editor. Checked live, read only: its text is the same as the file's, it runs as the pupil, and only signed-in users can use it. Then `server-load` was merged into GitHub's `main` (merge commit `e7c2e4e`) and pushed; "Test and publish" passed. That also put the Power Clash home-page move live.
+- **Check before S.3 (read only):** the published site asks for `my_home_page` and the home page's separate requests are no longer in its main files. Only 2 `my_home_page` calls had come in by 7:35 pm (a quiet evening): 106 ms and 1,276 ms, the second most likely a cold start. The request counts are totals since 14 Oct, so whether the old separate calls have stopped can only be seen by comparing with that evening's numbers after a school day (saved at 7:35 pm: `my_progress` 1,119, `my_class` 516, `my_moves_left` 470, `my_maths_focus` 477, `my_ladder` 440, `my_home_page` 2).
+- **S.3:** `server-load-s3` merged into GitHub's `main` (merge commit `80f3ea9`, on top of `dd44a51`, which had three newer commits: a maths question wording change, a crash screen and a Clan Quest fix) and pushed with James's approval. "Test and publish" passed (run 39212833539). The published files have S.3's waits (4, 8, 16 and 30 seconds). No database change.
+- **Not checked by Claude:** a real game with a classmate on the live site (James to try).
+- **Undo:** revert the merge on `main` and push (James approves), or GitHub's Revert button.
 
 ## Stage S.4 results (19 Oct 2026)
 
