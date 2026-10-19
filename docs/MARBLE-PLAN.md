@@ -145,10 +145,10 @@ James asked for maths in this game, like Mission Control and Maths Monsters, and
 
 Notes:
 
-- **Reading time.** A gate's sign appears at least 4 seconds before the split, on a gentle uphill or a mud patch that slows everyone down. There's also a **"Read time" setting**: the game pauses when a sign appears and waits (up to 10 seconds) until you press Go. The clock stops too, so it's fair. The pause is recorded in the run's inputs, so the server's replay sees it.
+- **Reading time.** A gate's sign appears at least 4 seconds before the split, on a gentle uphill or a mud patch that slows everyone down. There's also a **"Read time" setting**: the game pauses when a sign appears and waits (up to 10 seconds) until you press Go. The clock stops too, so it's fair. *(As built: a pause stops the physics instead of being written down as `HOLD` steps; nothing in the replay could tell the difference. See M.6 results.)*
 - **Not too much.** About 3–6 questions in a run: 1–3 gates, 1 pit stop on longer courses, rescues limited to 1 every 20 seconds (falling again and again doesn't become a quiz), plus gems and the time guess. **Course 1 (Warm-up Hill)** has just one gate on a wide, slow path, as a tutorial.
 - **Rescue questions feel kind but come after a mistake.** They get their own switch (section 7.3), so a teacher can turn just these off if they feel like a telling-off.
-- **Gems aren't recorded** in a student's maths records. Rolling through one by accident isn't a real answer. Gates, pit stops, rescues and coordinate gates are recorded.
+- **Gems aren't recorded** in a student's maths records. *(As built: each gem trail shows one question from the list; which gem is right comes from the run's seed, like the doors. Gems are on Glacier Run, Windy Welly and Alpine Crossing.)* Rolling through one by accident isn't a real answer. Gates, pit stops, rescues and coordinate gates are recorded.
 - **Ghosts show only the path.** A classmate racing your ghost never sees your questions or which tunnel was right (each run has its own questions anyway).
 - **Two players on one Chromebook:** questions are asked, but nothing is recorded, as with space pass-and-play.
 
@@ -170,7 +170,7 @@ Notes:
 
 - **Medal times** are set from each course's reference runs: **silver** is reachable with no shortcuts, and **gold** needs most of them (right answers with maths on, the arrow route with maths off).
 - **Fastest-time boards:** maths changes your time, so maths-on and maths-off runs can't share one board. **Two boards per course** ("with maths" and "without"), as James decided on 18 Oct 2026.
-- **No points for right answers** (same as space), so there's nothing to farm. **Achievements** (10 points each): **Gatekeeper** (10 right gates), **Pit crew** (10 right pit stops), **Rescued!** (5 rescues), **Gem collector** (collect every right gem on a course), **Good guesser** (5 time stars), **Map reader** (5 coordinate gates).
+- **No points for right answers** (same as space), so there's nothing to farm. *(As built, M.7: no maths achievements yet; they are postponed with the rest of section 8's points and achievements, and James is asked before any are added. Gold with maths has its own time, `goldMaths`, because right pit stops and gems take seconds off.)* **Achievements** (10 points each): **Gatekeeper** (10 right gates), **Pit crew** (10 right pit stops), **Rescued!** (5 rescues), **Gem collector** (collect every right gem on a course), **Good guesser** (5 time stars), **Map reader** (5 coordinate gates).
 - **Privacy:** others only ever see good news, never a wrong answer. The privacy summary gets a line saying marble runs add to the maths records.
 
 ## 8. Saving, points and fairness
@@ -222,7 +222,7 @@ Same pattern as the space game, reusing `save-bot-game`:
 | **M.4** | Saving: stamp, server replay, migration, points, achievements, best times | Medium |
 | **M.5** | Ghost races and 2-players-one-keyboard | Medium |
 | **M.6** | Maths 1: teacher and student switches, server question list from the **focus system** (section 7 update), **answer gates**, **pit stops**, Read time, records. Needs maths focus F.3 on `main` | Medium |
-| **M.7** | Maths 2: **rescue questions**, **number gems** (a question from the list), **guess your time**, maths achievements, with-maths / without-maths boards | Medium |
+| **M.7** | Maths 2: **rescue questions**, **number gems** (a question from the list), **guess your time**, with-maths / without-maths boards (maths achievements postponed) | Medium |
 | **M.8** | How to play (including maths), accessibility pass, slow-Chromebook check, privacy summary, docs, go live | Small |
 
 Each stage ends with tests passing and a short results section here, like the other plans.
@@ -250,7 +250,7 @@ Each stage ends with tests passing and a short results section here, like the ot
 
 **M.6 (maths 1), built 19 Oct 2026, not live yet.**
 
-- **Merged `main` first** (maths focus F.3, groups, class names). One test list clashed (the list of functions students may call) and was joined by hand. Marble's migration moved to `20261019000900_marble.sql`, after main's `my_moves_left` (`20261019000100`); it was never applied live, so renaming was safe.
+- **Merged `main` first** (maths focus F.3, groups, class names). One test list clashed (the list of functions students may call) and was joined by hand. Marble's migration moved to `20261019000200_marble.sql`, after main's `my_moves_left` (`20261019000100`); it was never applied live, so renaming was safe. (Renumbered again in M.8, see below.)
 - **Answer gates are in the six New Zealand courses** (1 gate on Boulder Beach as the tutorial, 2 on Crown Range, Geyser Valley and Glacier Run, 3 on Windy Welly and Alpine Crossing; 2 or 3 tunnels each, never more than 8 doors on a course). A gate is a sign, a slow mud patch, then side-by-side tunnels that each end in a shortcut door. The open door belongs to the tunnel with the right answer; a wrong tunnel is a dead end to back out of (about 5 to 7 seconds lost). The course drawing script (`scripts/marble-courses.py`) has a `gate()` command, and the six courses were redrawn. The engine only writes down which tunnel the marble entered first (`gateChoices`); the server reads the student's answer from the replay, so the browser never says what was chosen.
 - **Which tunnel is right** comes from the run's seed and the question list (`shared/marble/maths.ts`), the same on the server and in the browser. With maths off the sign is an arrow and the same kind of door is open (also from the seed), so a run without maths is just as quick.
 - **Server question list.** `start` asks the teacher's switch (checked for every run), then makes about 10 questions with `makeFocusPack` (so a teacher focus, the student's own pick or auto all work, exactly as Mission Control) and keeps them in `marble_questions`, a table students can't read. The browser is sent the question text, the tunnel signs and the open doors, never an answer. Known limit: the open doors tell a determined student which tunnel is right. It only gets them a faster run (their record gets a "right" for a gate they didn't work out); pit-stop and rescue answers can't be got round this way because they are marked on the server.
@@ -262,6 +262,24 @@ Each stage ends with tests passing and a short results section here, like the ot
 - **Medal times** were reset with the bot (`npm run marble:sim -- --write-medals`): gold is the perfect run through every open door (slowest of 8 seeds, which differ by up to 4 seconds on courses with 3-tunnel gates), silver is reachable guessing wrong first at every gate. Determinism check: Node, Chromium and WebKit all identical (new fingerprint pinned).
 - **Phone preview.** `npm run marble:preview` makes its own questions in the browser (nobody is signed in), so the gates and pit stops can be tried without a server.
 - **Tests.** Shared: gate layout, doors, bonus input, pit stops; server function (start with each switch setting, answers marked once, wrong stamps, bonuses only for right answers, gate answers recorded once, run saved when records fail): 41 tests; database (scratch copy): `marble.test.sql` 64 checks; Teacher panel; picker; run screen (gate question, read time, pit stop right/skip/server away). Seeing it in a real browser: signs drawn over every tunnel, arrows with maths off, at 1366x640 and 768x1024.
+
+**M.7 (maths 2), built 19 Oct 2026, not live yet.**
+
+- **Rescue questions.** After a fall, while the marble is carried back, the clock stops and a question shows (if the teacher's Rescue switch is on). A right answer takes back that fall's time penalty with a new `REFUND` input. At most one rescue per 20 seconds of play (`RESCUE_GAP_STEPS`), so falling again and again doesn't become a quiz. The server marks the answer and allows only as many `REFUND` inputs as right rescue answers it marked.
+- **Number gems** on Glacier Run, Windy Welly and Alpine Crossing. Each gem trail's sign shows one question from the list and the gems show its answer choices. Which gem is right comes from the run's seed, as with the doors. Each right gem takes 1 second off, 5 at most a run. Gems are **never recorded** in the maths records (rolling through one by accident isn't a real answer). The right gems are kept with a saved run (`gems`), so a ghost plays back the same.
+- **Guess your time** (optional, before a run): within 10% of the real time gives a star. It never changes the time and is never saved.
+- **Medals.** Gold with maths has its own time (`goldMaths`), because right pit stops and gems take seconds off.
+- **Not added:** maths achievements and points (section 7.4). They wait with the rest of section 8's points and achievements; ask James first.
+- **Also fixed:** four courses had no checkpoints (corner pieces had been painted over them). Every course has real checkpoints now.
+
+**M.8 (finishing), built 19–20 Oct 2026, not live yet.**
+
+- **How to play** screen (`src/games/marble/HowToPlay.tsx`), including the maths.
+- **Accessibility pass.** No axe problems at 1366×640 and 768×1024. The course picker sits on a white card, because the real page behind it is school red.
+- **New Season** clears Marble's runs, bests and question lists (three delete lines in `teacher_new_season`, in the Marble migration). If a later migration redefines `teacher_new_season`, it must keep them.
+- **Merged `main` again (20 Oct)** and renumbered the migration to `20261019000900_marble.sql`, after main's `lobby` (`20261019000800`), because main now has its own `20261019000200`. The only shared function the migration rewrites is `teacher_new_season`, and nothing on main has changed it since `20261018002500`, so nothing of main's is undone.
+- **Known limits.** The open doors and right gems tell a determined student which answer is right; it only gets them a faster run (pit-stop and rescue answers are marked on the server). Gold times differ by up to about 4 seconds between seeds on courses with 3-tunnel gates. Pauses stop the physics instead of being written down as `HOLD` steps. The bot can't do "wrong tunnel first" on Geyser Valley, Glacier Run, Windy Welly or Alpine Crossing, so silver there is the perfect run plus 6.5 seconds per gate. Gems are not in the gold bot run.
+- **Going live:** `docs/prompts/marble-rush-m8-finish.md`, step 4.
 
 ### Building alongside Maths Monsters (James asked, 18 Oct 2026)
 
