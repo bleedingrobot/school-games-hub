@@ -1,10 +1,28 @@
 # School Games Hub
 
-A chess and checkers website for Year 4–6 students. Students will sign in with their school Google account, build an avatar, and play against computer bots or each other.
+A games website for Year 4–6 students: maths games, classic games and basic facts training. Students sign in with their school Google account, build an avatar, and play against computer bots or each other.
 
 **Live site:** https://bleedingrobot.github.io/school-games-hub/
 
-**Where it's up to:** all 8 stages are done, and it's ready for a whole class. Students sign in with their Douglas Park Google account, pick a safe player name, build an avatar, and play chess or checkers against three bots or against each other. Every game is checked by the server, saved, and turned into points, levels, badges and achievements, with weekly and all-time leaderboards. Teachers have their own screen to look after students. The full plan is in [docs/PLAN.md](docs/PLAN.md).
+**Where it's up to (20 Oct 2026):** it started as chess and checkers (Stages 1–8) and is now nine games, a basic facts training area and a shared maths system, all live. Students sign in with their Douglas Park Google account, pick a safe player name and build an avatar. Every game is checked by the server, saved, and turned into points, levels, badges and achievements, with leaderboards. Teachers have classes, a skill map and a maths focus, plus a switch and a panel for each game. The full plan and the stage list are in [docs/PLAN.md](docs/PLAN.md); each game has its own plan in `docs/`.
+
+### The games
+
+| Game | What it is | Maths | On the dashboard |
+|---|---|---|---|
+| [Chess](#chess-against-the-bots) | Against 3 bots or a friend | None | Always |
+| [Checkers](#checkers-against-the-bots) | Against 3 bots or a friend | None | Always |
+| [Wormholes & Black Holes](#wormholes--black-holes-the-space-game) | Space snakes and ladders, 2–4 players | Mission Control maths (teacher switch) | Always |
+| [101](#101-the-card-game) | James's family card game, 2–4 players | None | Always |
+| [Gem Keep](#gem-keep-the-tower-defence-game) | Tower defence powered by times tables | Follows the maths focus | Always |
+| [Power Clash](#power-clash-tic-tac-toe-with-powers) | Noughts and crosses with powers | None | Always |
+| [Maths Monsters](#maths-monsters-the-adventure-game) | Walk-around monster adventure | Every attack and catch | Only when the teacher switches it on |
+| [Dragon Maths](#dragon-maths-the-daily-adventure) | Daily-turns village and forest adventure | At chosen moments | Only when the teacher switches it on |
+| [Clan Quest](#clan-quest-the-clan-game) | Build a clan of four heroes and an empire | Battle Cry and quest questions | Only when the teacher switches it on |
+
+Plus **[Facts training](#facts-training)**, a practice area outside the games. How the maths fits together is in [How the maths works](#how-the-maths-works).
+
+**Built on other branches, not on `main` yet:** Bond Match (`bond-match`; its database change and server function are already live, but the game isn't on the site), Marble Rush (`marble`) and the last Dragon Maths stage, L.6, with teacher topic switches (`dragon-maths`). See "Not on main yet" in [docs/PLAN.md](docs/PLAN.md).
 
 - **Running a lesson:** [docs/CLASS-LAUNCH.md](docs/CLASS-LAUNCH.md) (the day before, a lesson plan, what error messages mean, the problem slip).
 - **For the principal and board:** [docs/PRIVACY-SUMMARY.md](docs/PRIVACY-SUMMARY.md).
@@ -133,9 +151,11 @@ Students can read all of this on the **How points work** page (linked from the d
 
 **Ratings and badges:** each student has a hidden chess score and a hidden checkers score, starting at 1000. Only games against friends change them (an "Elo" rating: a win against an equal player is +10, and one game moves it by 20 at most). Badges: **Silver** at 1030 (about 3 more wins than losses against players at your level), **Gold** at 1080 (about 8 more), **Champion** at 1150 with at least 15 games against friends. Students never see the numbers, only the badge and how close they are to the next one.
 
-**Achievements:** 12 for each game: first game, first win, 10 and 50 games, beating each bot, beating a friend, reaching Silver, Gold and Champion, plus Checkmate! (chess) and Crown 5 kings (checkers).
+**Achievements:** chess and checkers have 12 each: first game, first win, 10 and 50 games, beating each bot, beating a friend, reaching Silver, Gold and Champion, plus Checkmate! (chess) and Crown 5 kings (checkers).
 
 **Leaderboards** (chess and checkers each): **This week** (points since Monday midnight, NZ time; needs 3 games), **All time** (by badge; needs 5 games against friends) and **Most improved** (the biggest climb this week; needs 3 games against friends). Students see the top 10 plus their own place. Boards show only player names, avatars and badges. Hidden students aren't on them.
+
+The other games have their own points, achievements and boards (Gem Keep's most stars, Maths Monsters' most monsters collected, Dragon Maths' Warriors list, Clan Quest's fame Scoreboard). They're in each game's section below, and all of them on the **How points work** page. Only chess and checkers change ratings and badges.
 
 **Why it can't be faked:** everything is worked out inside the database, the moment the server saves a game. The website can only read the results; it can't write points, ratings or badges, and it can't call the code that works them out.
 
@@ -190,11 +210,77 @@ A walk-around adventure for one student at a time. Walk through Harbour Town and
 - **Making maps:** the maps are Tiled JSON in `shared/monsters/maps/`, made by `node scripts/make-monster-maps.mjs` (the steps are in `scripts/monster-maps/`). The map maker warns when a tree, bush or rock stands on a path, and a test checks that the files in the game are exactly what the map maker makes, so don't edit the JSON by hand without also changing the script. `npm run monsters:sim` plays whole battles to tune levelling; `npm run monsters:preview` builds a stand-alone test page.
 - **Credits:** tiles from Kenney (CC0); battle flow and the catch and exp ideas adapted from *Monster Tamer* by Dev Share Academy (MIT).
 
+## Gem Keep (the tower defence game)
+
+A tower defence game for one student, where times tables power everything. Students answer facts to earn mana, forge and combine gems, and stop the waves. There are 10 levels on a campaign map, and a **Level Key** (a short round of facts) opens each new level. The questions follow the student's [maths focus](#how-the-maths-works). The plan is [docs/gem-keep/RECON.md](docs/gem-keep/RECON.md); what was built, phase by phase, is in [docs/gem-keep/PROGRESS.md](docs/gem-keep/PROGRESS.md).
+
+- **Saving:** progress is saved on the server through the `gem-keep` function, so it follows the student to any device. With no Wi-Fi it keeps playing and saves later. The server can't replay a whole level, so it checks that each result is possible.
+- **Points** (inside the 40-a-day bot limit): a win is 3, 4 or 5 (2 plus the stars), a loss after wave 3 is 1. Seven achievements. A "most stars" leaderboard, never maths accuracy. No ratings or badges.
+- **Teacher page:** Gem Keep settings (Calm or Challenge, which tables, missing-number questions, division, multiple choice, the Level Key pass mark), the class's hardest facts, and a 12 × 12 grid for each student. A new season clears Gem Keep progress and records.
+- **Still to do:** Phase 6 (polish and a classroom test).
+
+## Power Clash (tic-tac-toe with powers)
+
+Noughts and crosses with once-a-match powers: Body Swap, Freeze Ray, Board Wipe, Force Field, Portal Chaos, Wild Card and Time Heist (Double Trouble was taken out on 18 Oct 2026), plus a Chaos Mode with random events. Each player picks 3 powers. A match is best of five. Play it two-to-a-Chromebook, against Very Easy, Easy or Medium bots, or against a classmate with a game code. The plan and every stage's results are in [docs/POWER-CLASH-PLAN.md](docs/POWER-CLASH-PLAN.md).
+
+- **Points:** taking part only. A finished bot game earns 2 (inside the 40-a-day bot limit); a finished classmates game earns 4 (the first 6 a day). Never ratings, badges or leaderboards.
+- **Playing a classmate:** refereed by the `power-clash` server function. 60 seconds a turn; 3 missed turns in a row ends the game. The **Pause games against friends** switch covers it.
+- **Still to do:** one real two-device game and the class trial.
+
+## Dragon Maths (the daily adventure)
+
+A *Legend of the Red Dragon*-style game: each day a hero gets 10 forest fights and 3 arena fights, visits the village (shop, healer, bank, inn), beats 12 masters to level up, and finally faces the dragon. Every hero starts again each 5-week season. Maths turns up at chosen moments (sizing up a monster, shop change, the healer's bill, riddles, the master and dragon trials), with no timer, and a wrong answer shows how to do it and the game goes on. LORD.ts is used as a rule book only: the code, writing and art are our own. The plan is [docs/LORD-PLAN.md](docs/LORD-PLAN.md) and the rules are in [docs/LORD-RULES.md](docs/LORD-RULES.md).
+
+- **Switched off until the teacher turns it on** (the Dragon Maths panel on the Teacher page).
+- **Saving:** on the server, through the `lord` function, which hands out each fight and checks it before it counts.
+- **Points** (inside the 40-a-day limit): 1 for every 3 forest fights won, 3 for a master, 10 for the dragon. Arena fights and maths answers earn none. Eight achievements. A Warriors list for this season and a Hall of Heroes that's kept for good.
+- **Still to do:** L.6 (How to play, hint button, accessibility, font) and teacher topic switches are built on the `dragon-maths` branch, not on `main` yet.
+
+## Clan Quest (the clan game)
+
+Each student builds a clan of four heroes, fights in the Mines (with a maths **Battle Cry** question before each round that can help), shops, trains, does one quest a day and builds a small empire. Clans belong to a class **village** that builds together, and can raid computer kingdoms (and classmates, if the teacher allows it). Everything is saved on the server through the `clans` function. The plan is [docs/CLANS-PLAN.md](docs/CLANS-PLAN.md), the rules are in [docs/CLANS-RULES.md](docs/CLANS-RULES.md), and a two-minute teacher guide is [docs/CLANS-TEACHER-GUIDE.md](docs/CLANS-TEACHER-GUIDE.md).
+
+- **Switched off until the teacher turns it on** (the Clan Quest panel). Raids on classmates have their own switch, off to start.
+- **The maths has its own settings**, not the maths focus: a year band (4, 5 or 6), which topics (times tables, percentages, money, area and perimeter, remainders, ratios, better buys, negative numbers) and how many mine fights a day. The questions are word-problem style, from `shared/maths/practical.ts`.
+- **Points** (inside the 40-a-day limit): 1 for every 3 mine fights won, 3 for a boss, 2 for a Friendly War win, 5 for voting in a week the village builds something. Eight achievements. The in-game Scoreboard ranks clans by **fame**, never by maths. Not on the hub's leaderboards.
+
+## Facts training
+
+A practice area next to the games, not part of them (open it from the dashboard or `/#/training`). A student does a short daily session of times-table and division facts. Timing is hidden while they answer; afterwards a **facts map** colours each fact by how quickly *that child* knows it, after taking off how long they take just to type. There's no clock, no score and no ranking. A wrong answer shows the right one and the student types it in. The plan is [docs/TRAINING-PLAN.md](docs/TRAINING-PLAN.md).
+
+- **Kept apart from the games (James, 18 Oct 2026):** training keeps its own records (the `training` function and its own tables) and its own list of facts (`shared/training/facts.ts`). Training answers don't change what the games ask, and game answers don't change training.
+- **Built and live:** T.1 (sessions, the typing check, Fix-it moments, the summary) and T.2 (the facts map, the "this week" line, saving). **Not built yet:** T.3 onwards (strategy lessons, early facts, Quick-fire 20, fractions, the teacher view and more). The on/off switch is `src/training/switch.ts`.
+
+## How the maths works
+
+The maths games share one maths system in `shared/maths/`. The full plan is [docs/MATHS-FOCUS-PLAN.md](docs/MATHS-FOCUS-PLAN.md).
+
+- **The ladder** (`shared/maths/ladder.ts`): one ordered list of skills, easiest first. It goes from early facts (bonds to 10, doubles), through times tables and division, place value and rounding, order of operations, to fractions, decimals and percentages. Each skill is tagged with the NZC teaching-sequence step it matches. To change the order, move a line.
+- **Skill packs** (`shared/maths/skillPacks/`): one per topic. They make every question and mark it in code (never AI), so the server can rebuild and check any answer.
+- **Choosing questions** (`shared/maths/selector.ts`): about 60% from what the student is working on, 30% review (weak facts more often) and 10% stretch. A fact answered wrongly comes back 3–6 questions later. Mastery records use Leitner boxes (`leitner.ts`).
+- **The question box** (`src/maths/QuestionModal.tsx`): the same pop-up in every game. A right answer gives a sparkle; a wrong one shows the whole fact, with nothing taken away.
+- **Maths focus:** a teacher can set what the maths asks for a class, a group or one student, for a set time ("×6 until Friday", on the **Maths focus** page). When that time ends it goes back to the student's own choice or to **auto**, which walks them up the ladder. A short warm-up (`/#/placement`) finds where a new student starts.
+- **Which games use what:**
+
+| | Ladder and maths focus | Skill packs and question box | Its own maths settings |
+|---|---|---|---|
+| Gem Keep, Wormholes & Black Holes | ✅ | ✅ | Gem Keep and space maths switches |
+| Maths Monsters | | ✅ (each monster type asks its own topic) | Teacher picks which topics are on |
+| Dragon Maths | | ✅ (each moment asks its own topics) | All topics on for now (teacher topic switches are on the `dragon-maths` branch) |
+| Clan Quest | | Uses `shared/maths/practical.ts` | Year band, topics, fights a day |
+| Facts training | | | Its own facts list and records |
+
+- **Records:** Gem Keep, the space game, Maths Monsters, Dragon Maths and Clan Quest all send their answers to the database through `record_fact_answers`, by the same rules as `leitner.ts` (each game's server function checks the answers first). Teachers see them on the **Skill map** page (one row per student, one column per ladder stage). Facts training keeps its own records.
+
+### Classes and schools
+
+Students belong to a **class**; a class has one or more teachers and belongs to a **school** (Douglas Park is school 1). Teachers make classes and groups on **My classes**. Each class and group has a **warp code**: a student types it to join. Game switches and settings are kept per class. A teacher sees only their own classes; a school admin sees the whole school. Opening the hub to a second school (F.8 Part B) isn't built yet.
+
 ## The teacher view
 
 Teachers see a **Teacher** link in the top bar (students don't, and the database refuses them even if they type the address). It has:
 
-- **Games against friends:** pause them for everyone (chess, checkers, space games and 101), or switch them back on.
+- **Games against friends:** pause them for everyone (chess, checkers, space games, 101 and Power Clash), or switch them back on.
 - **Emoji reactions in space games:** off to start (see the space game section).
 - **Mission Control maths in space games:** Off / Students choose (the start) / On for everyone (see the space game section).
 - **Players:** everyone with an account, with their player name, avatar, games played and when they last played. Type in **Find a player** to search. Tap someone to see their games against bots and friends, how many they left early, their badges and their last 10 games. Then:
@@ -202,7 +288,10 @@ Teachers see a **Teacher** link in the top bar (students don't, and the database
   - **Hide / Show again:** a hidden student is left off leaderboards and the lobby, and can't play friends. Their bot games still work.
   - **Make teacher / Remove teacher:** for other staff. You can't change your own role, so there's always at least one teacher.
   - **Delete:** removes the student's account and all their games, points and achievements. You type their player name to confirm. It can't be undone. Friends they played keep those games, without their name. If they sign in again, they start fresh. Teachers can't be deleted (remove their teacher role first).
+- **A panel for each newer game:** Gem Keep, Maths Monsters, Dragon Maths and Clan Quest each have their own switch and settings (see each game's section above). Switches and settings are per class: a teacher's change applies to every class they teach.
 - **End of year: start a new season:** see below.
+
+The maths pages are linked at the top of the Teacher page: **My classes** (classes, groups, warp codes, co-teachers), **Maths focus** (what the games ask) and **Skill map** (where each student is on the ladder) (see [How the maths works](#how-the-maths-works)).
 
 Teachers can see students' games and stats only through these screens; the database gives them nothing else.
 
@@ -302,18 +391,33 @@ src/              the website
   games/card101/  101: the table, cards, scoring show, How to play, bot and classmates screens
   card101/        keeping a 101 game with classmates up to date (your own seat only)
   games/monsters/ Maths Monsters: the map and walking, battle screen, monster pictures, menus, How to play
+  games/gem-keep/ Gem Keep: the drawing engine, game screen, campaign map and maths rounds
+  games/power-clash/ Power Clash: board, power picker, effects, bot and classmates screens, Guide
+  power-clash/    keeping a Power Clash game with classmates up to date
+  games/lord/     Dragon Maths: the village, forest, arena and news screens
+  games/clans/    Clan Quest: clan, Mines, market, empire, village and quest screens
+  maths/          the shared question box, number pad, ladder path and maths focus screens
+  training/       Facts training: sessions, facts map, summary
+  teacher/        the teacher's class panel
 public/stockfish/ the Stockfish chess engine files and their licence
 shared/           game rules shared with the server (chess and checkers rules, deciding results, refereeing friend games)
+  maths/          the maths ladder, skill packs, question picker, mastery records and maths focus (see "How the maths works")
   space/          the space game's rules engine, boards, bots, galaxy codes, space facts and simulation
   card101/        101's rules engine, scoring, what each player may see, bots, saving, timers and simulation
   monsters/       Maths Monsters: monsters and attacks, battle rules, the maps and walking rules, and the check the server runs on a save
-supabase/         database setup (migrations), its tests, server functions (save-bot-game, multiplayer, space-game, card-game, gem-keep), local settings
-scripts/          builds the server functions into single files
-docs/             the plan and the original brief
+  gem-keep/       Gem Keep: levels, towers and gems, saving checks
+  power-clash/    Power Clash: rules engine, powers, bots, match and classmates rules
+  lord/           Dragon Maths: rules, monsters, masters, maths moments, the server's checks
+  clans/          Clan Quest: game data, fights, quests, empire, Battle Cry maths
+  training/       Facts training: the facts list, sessions, speed colours, saving
+supabase/         database setup (migrations), its tests, the ten server functions, local settings
+scripts/          builds the server functions into single files; game simulations; the Maths Monsters map maker
+preview/          stand-alone test pages for single games (built with the `*:preview` npm scripts)
+docs/             the main plan, a plan for each game, the original brief and the prompts used to build each stage (docs/prompts/)
 .github/workflows the automatic test-and-publish steps
 ```
 
-**Adding a game later:** make a new folder in `src/games/` (copy `chess/` as a starting point) and add one line to `src/games/registry.ts`. It then gets its own card on the dashboard and its own page.
+**Adding a game later:** make a new folder in `src/games/` and its rules in `shared/<game>/`, then add one line to `src/games/registry.ts`. It then gets its own card on the dashboard and its own page. For a game without maths, `card101/` is the closest example; for a maths game, copy how `gem-keep/` gets its questions from `shared/maths/` and shows them with `src/maths/QuestionModal.tsx`.
 
 ## Server functions (Supabase Edge Functions)
 
@@ -324,7 +428,7 @@ To update a function on the live site without the Supabase CLI:
 1. On GitHub, open `supabase/functions/<name>/index.ts` and click **Copy raw file**.
 2. In Supabase, go to **Edge Functions**, open the function, click **Code**, select everything, paste, then click **Deploy**.
 
-There are five functions: `save-bot-game` (saves bot games, including space and 101 games), `multiplayer` (referees chess and checkers between students), `space-game` (runs Wormholes & Black Holes with classmates), `card-game` (runs 101 with classmates) `gem-keep` (saves Gem Keep levels, Level Keys and times-table records) and `monster` (checks and saves Maths Monsters). The newer games have functions of their own too (`clans`, `lord`, `power-clash`, `training`), each described in its plan. The ones named above all must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
+There are ten functions: `save-bot-game` (saves bot games: chess, checkers, space, 101 and Power Clash), `multiplayer` (referees chess and checkers between students), `space-game` (runs Wormholes & Black Holes with classmates), `card-game` (runs 101 with classmates), `power-clash` (runs Power Clash with classmates), `gem-keep` (saves Gem Keep levels, Level Keys and times-table records), `monster` (checks and saves Maths Monsters), `lord` (runs and saves Dragon Maths), `clans` (runs and saves Clan Quest) and `training` (saves Facts training). `_shared/` holds code they all use. Every function must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
 
 ## Looking after the site
 
@@ -335,7 +439,7 @@ This part is for whoever looks after the site, including someone who isn't James
 | Account | What it holds | Who owns it |
 |---|---|---|
 | **GitHub** `bleedingrobot` | The code (public repo `school-games-hub`) and the website (GitHub Pages) | James |
-| **Supabase** organisation "Douglas Park Games", project `zqzhetlzvtptnkmeiumi` (Sydney, free plan) | The database, sign-in and the four server functions | James (logs in to supabase.com with the GitHub account above) |
+| **Supabase** organisation "Douglas Park Games", project `zqzhetlzvtptnkmeiumi` (Sydney, free plan) | The database, sign-in and the ten server functions | James (logs in to supabase.com with the GitHub account above) |
 | **Google Cloud** project "School Games Hub", inside the douglaspark.school.nz organisation | The Google sign-in button (an "Internal" app). Its client secret is stored only in Supabase | James's school Google account |
 
 No account has a credit card, so none of them can send a bill. **Give a second person access** so the site doesn't depend on one login: on GitHub (repo **Settings → Collaborators**), in Supabase (**Organization settings → Team → Invite**) and in Google Cloud (**IAM → Grant access**). Turn on two-step sign-in for all of these accounts.

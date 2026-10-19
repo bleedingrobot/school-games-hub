@@ -2,7 +2,7 @@
 
 A Pokémon-style adventure for the hub. Walk around a small world, meet wild monsters in the long grass, and battle and catch them. **Every attack and every catch is a maths question.** Each kind of monster stands for a maths topic, so collecting and training a team means practising every topic.
 Written 17 October 2026 after a deep dive into [devshareacademy/monster-tamer](https://github.com/devshareacademy/monster-tamer) (James's find) and reading the code on `main` (Stages 1–10 live, Gem Keep live).
-**Status: APPROVED 17 Oct 2026, under way** on branch `monsters` (built on `space-maths`, because both change `shared/maths/`). James picked "a world to walk around" and "several maths topics", then answered every question in section 12 and said start now (alongside Mission Control maths).
+**Status (checked 20 Oct 2026): LIVE since 18 Oct 2026** (see "N.6 results"), and the game switch is on (checked 19 Oct 2026). N.1 to N.7 are done and on `main`. Still waiting for James: the names, jokes and tips, and the game length. Approved 17 Oct 2026; built on the `monsters` branch. James picked "a world to walk around" and "several maths topics", then answered every question in section 12 and said start now (alongside Mission Control maths).
 
 ## The short version
 

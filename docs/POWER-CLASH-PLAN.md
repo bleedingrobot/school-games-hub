@@ -1,7 +1,7 @@
 # Tic-Tac-Toe: Power Clash — plan
 
 Noughts and crosses where each player picks three once-a-match powers (freeze a square, swap two symbols, blow one away, place twice). Written 17 October 2026 from the brief in [prompts/power-clash.md](prompts/power-clash.md) and the code on `main` (Stages 1–10 live, Gem Keep live).
-**Status: APPROVED by James 17 Oct 2026 (section 8 answered, all my picks; queue spot = alongside the other games). P.1 engine, P.2 screens, P.3 polish and P.4 bots + saving DONE (on branch `power-clash`, nothing live); P.5 (classmates) next.**
+**Status (checked 20 Oct 2026): LIVE since 18 Oct 2026.** P.1 to P.7 are done (see section 16, "Stage P.7 results"). Double Trouble was taken out on 18 Oct 2026, so there are seven powers. Still to do: one real two-device game and the class trial. Approved by James 17 Oct 2026 (section 8 answered, all my picks).
 
 ## The short version
 

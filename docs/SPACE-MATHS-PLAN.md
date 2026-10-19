@@ -2,7 +2,7 @@
 
 *Times-table questions in Wormholes & Black Holes, with an on/off switch. Written 17 October 2026 for James.*
 
-**Status: approved by James on 17 October 2026: "go with your suggestions" (every answer in section 9 is the suggestion). M.1, M.2, M.3 and M.4 done (sections 10 to 12). Change from the plan (17 Oct, James's idea): the Mission Boost button is replaced by a question after your turn that charges your next roll (section 11).**
+**Status (checked 20 Oct 2026): LIVE since 17 Oct 2026.** M.1 to M.5 are done (sections 10 to 13); the "Not live" notes inside those sections were true when written. **Approved by James on 17 October 2026: "go with your suggestions" (every answer in section 9 is the suggestion). Change from the plan (17 Oct, James's idea): the Mission Boost button is replaced by a question after your turn that charges your next roll (section 11).**
 
 ## 1. The idea in one paragraph
 

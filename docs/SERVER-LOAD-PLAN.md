@@ -2,7 +2,7 @@
 
 *How to make the hub ask the server for much less, so a whole class can use it at once without the database timing out. Written 19 October 2026 for James, after the lobby timeout that morning.*
 
-**Status: S.1, S.2 and S.3 are live (19 Oct 2026 evening; see "S.1 to S.3 went live"). S.4 is built and tested on the `server-load-s4` branch (which starts from S.3), not live: it waits for James to say go. S.5 and S.6 not built. The lobby already refreshes every 20 seconds instead of 5, and the faster points-and-level job is live (both 19 Oct 2026). James answered the questions the same day (section 7).**
+**Status: S.1, S.2 and S.3 are live (19 Oct 2026 evening; see "S.1 to S.3 went live"). S.4 was merged into `main` on 20 Oct 2026 (so the website part is published); whether `20261019000800_lobby.sql` has been applied to the live database isn't recorded here yet, so check before relying on it (the S.4 go-live check below lists what was left). S.5 and S.6 not built. The lobby already refreshes every 20 seconds instead of 5, and the faster points-and-level job is live (both 19 Oct 2026). James answered the questions the same day (section 7).**
 
 ## 1. Why
 
