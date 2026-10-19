@@ -2,6 +2,29 @@
 // then run `npm run build:functions`. Deploy this file as the "monster" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+//#region supabase/functions/_shared/signIn.ts
+/**
+* Who owns this sign-in token? Null if it's missing, expired, fake or not a signed-in user's.
+*
+* With the project's newer sign-in keys, the token's signature is checked right here against the
+* project's public keys (fetched once and kept for 10 minutes), with no trip to the sign-in
+* service. With the older shared secret (or a token signed with a key we don't know), the library
+* asks the sign-in service instead, exactly as `getUser` did. So this works the same before and
+* after the keys are switched in the Supabase dashboard; it only gets cheaper after.
+*/
+function userIdFromToken(auth) {
+	return async (token) => {
+		try {
+			const { data, error } = await auth.getClaims(token);
+			const claims = error ? null : data?.claims;
+			if (!claims || claims.role !== "authenticated" || typeof claims.sub !== "string" || !claims.sub) return null;
+			return claims.sub;
+		} catch {
+			return null;
+		}
+	};
+}
+//#endregion
 //#region shared/maths/config.ts
 /**
 * Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
@@ -24306,6 +24329,7 @@ var BandedPack = class {
 			kind: key,
 			parts: made.parts,
 			spoken: made.spoken,
+			...made.prompt ? { prompt: made.prompt } : {},
 			answer,
 			choices,
 			choiceLabels,
@@ -24650,6 +24674,10 @@ const ADD_SUB = {
 	]
 };
 //#endregion
+//#region shared/maths/skillPacks/generatedKit.ts
+/** Shown above a typed "3/4 = ?" or "35% = ?", which on its own could want any kind of answer. */
+const AS_DECIMAL = "Write it as a decimal.";
+//#endregion
 //#region shared/maths/skillPacks/decimals.ts
 /**
 * Decimals and money (the Stone topic in Maths Monsters). Every question here has a decimal
@@ -24756,6 +24784,7 @@ const DECIMALS = {
 				return decimal({
 					parts,
 					spoken: speak(parts),
+					prompt: AS_DECIMAL,
 					answer: n / 10,
 					wrong: [
 						n,
@@ -26703,10 +26732,7 @@ async function call(name, args) {
 }
 Deno.serve(makeHandler({
 	now: () => Date.now(),
-	async userIdFor(token) {
-		const { data, error } = await admin.auth.getUser(token);
-		return error ? null : data.user?.id ?? null;
-	},
+	userIdFor: userIdFromToken(admin.auth),
 	async enabled(player) {
 		const { data, error } = await admin.rpc("settings_of", { player }).maybeSingle();
 		if (error || !data) return {

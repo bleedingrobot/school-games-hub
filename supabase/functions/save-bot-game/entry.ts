@@ -1,6 +1,7 @@
 // Connects the save-bot-game handler to Supabase. Edit handler.ts for the logic, then run
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
+import { userIdFromToken } from '../_shared/signIn';
 import { FLUENT_DAYS, quickMsForPack, TOP_BOX } from '../../../shared/maths/config';
 import { makePlaceSyncer } from '../../../shared/maths/syncPlace';
 import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
@@ -44,10 +45,7 @@ const syncPlace = makePlaceSyncer({
 
 Deno.serve((request) =>
   handleSaveBotGame(request, {
-    async userIdFor(token) {
-      const { data, error } = await admin.auth.getUser(token);
-      return error ? null : (data.user?.id ?? null);
-    },
+    userIdFor: userIdFromToken(admin.auth),
     async record(row) {
       const { error } = await admin.rpc('record_bot_game', row);
       if (!error) return 'saved';
