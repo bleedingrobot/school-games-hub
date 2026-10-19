@@ -2373,3 +2373,16 @@ main:focus {
 .game-card__moves-done {
   font-weight: 700;
 }
+
+/* ---------- A page that broke (CrashScreen) ---------- */
+
+.crash__details {
+  margin-top: 16px;
+  max-width: min(640px, 100%);
+  font-size: 0.85rem;
+  text-align: left;
+}
+.crash__details pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
