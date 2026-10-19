@@ -40,5 +40,19 @@
   "silver": 57,
   "bronze": 83,
   "hard": 70
+ },
+ "wide-hill": {
+  "gold": 23,
+  "goldMaths": 19,
+  "silver": 34,
+  "bronze": 53,
+  "hard": 46
+ },
+ "gap-and-ice": {
+  "gold": 23,
+  "goldMaths": 19,
+  "silver": 34,
+  "bronze": 53,
+  "hard": 46
  }
 }

@@ -507,6 +507,68 @@ def alpine_crossing():
     return t
 
 
+def wide_hill():
+    """Practice 1 (James, 20 Oct 2026: the first practice tracks were too short and had no maths). Wide, railed and gentle."""
+    t = Track(2, 2, 'E', width=5, level=20)
+    t.go(5)
+    t.mark(-5, 0, 's')
+    t.go(4, stop=(2, 'k'))
+    t.down(2)
+    t.go(3, ch='m')    # a mud patch
+    t.go(6)
+    t.turn('S')
+    t.go(2)
+    t.down(2)
+    t.go(2, ch='c')
+    t.go(4)
+    t.turn('E')
+    t.go(1)
+    t.gate(2)
+    t.go(2)
+    t.down(2)
+    t.go(4, stop=(1, 'h'))
+    t.turn('S')
+    t.go(2)
+    t.down(2)
+    t.go(3, at={(1, 0): 'b'})
+    t.turn('W')
+    t.go(6)
+    t.down(1)
+    t.go(2, ch='f')
+    return t
+
+
+def gap_and_ice():
+    """Practice 2: a jump pad over a small gap, an icy stretch and a bumper, all railed."""
+    t = Track(2, 2, 'E', width=5, level=22)
+    t.go(5)
+    t.mark(-5, 0, 's')
+    t.go(3, stop=(1, 'k'))
+    t.down(2)
+    t.go(3)
+    t.go(1, ch='j', width=5)
+    t.gap(2)
+    t.go(4)
+    t.turn('S')
+    t.go(1)
+    t.gate(2)
+    t.go(1)
+    t.down(2)
+    t.go(2, ch='c')
+    t.go(5, ch='i')    # ice
+    t.go(3)
+    t.turn('E')
+    t.go(4, at={(2, 0): 'b'})
+    t.go(3, stop=(1, 'h'))
+    t.down(2)
+    t.go(3)
+    t.turn('S')
+    t.go(5)
+    t.down(1)
+    t.go(2, ch='f')
+    return t
+
+
 # id, name, builder, medals (seconds), hard-mode seconds, wind
 COURSES = [
     ('boulder-beach', 'Boulder Beach', boulder_beach, (0, 0, 0), 0, None),
@@ -515,6 +577,8 @@ COURSES = [
     ('glacier-run', 'Glacier Run', glacier_run, (0, 0, 0), 0, None),
     ('windy-welly', 'Windy Welly', windy_welly, (0, 0, 0), 0, (0, 1, 360, 70, 40, 8)),
     ('alpine-crossing', 'Alpine Crossing', alpine_crossing, (0, 0, 0), 0, (1, 0, 420, 80, 40, 6)),
+    ('wide-hill', 'Wide Hill', wide_hill, (0, 0, 0), 0, None),
+    ('gap-and-ice', 'Gap and Ice', gap_and_ice, (0, 0, 0), 0, None),
 ]
 
 

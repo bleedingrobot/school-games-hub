@@ -71,6 +71,14 @@ describe('reference runs', () => {
           1795,
         ],
         [
+          "wide-hill",
+          1334,
+        ],
+        [
+          "gap-and-ice",
+          1331,
+        ],
+        [
           "test-easy",
           209,
         ],

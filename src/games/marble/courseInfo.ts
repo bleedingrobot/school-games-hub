@@ -52,8 +52,16 @@ export const COURSE_INFO: readonly CourseInfo[] = [
     blurb: 'A narrow ridge, crumbly rock and strong wind, ending at the Emerald Lakes.',
     didYouKnow: 'The Emerald Lakes get their bright colour from minerals washed into the water from the volcanic rock around them.',
   },
-  { id: 'test-easy', name: 'Wide Hill', place: 'Practice course', difficulty: 1, blurb: 'A wide track with a mud patch.', playable: 'test-easy', practice: true },
-  { id: 'test-hard', name: 'Gap and Ice', place: 'Practice course', difficulty: 3, blurb: 'A jump over a gap, then ice and a bumper.', playable: 'test-hard', practice: true },
+  // The practice courses (rebuilt 20 Oct 2026: the first ones were the engine's tiny test tracks, which stay in
+  // shared/marble/courses.ts for the tests only and are not on the menu).
+  {
+    id: 'wide-hill', playable: 'wide-hill', name: 'Wide Hill', place: 'Practice course', difficulty: 1, practice: true,
+    blurb: 'A wide, gentle track with rails all the way: a mud patch, a gate, a pit stop and two question stops.',
+  },
+  {
+    id: 'gap-and-ice', playable: 'gap-and-ice', name: 'Gap and Ice', place: 'Practice course', difficulty: 2, practice: true,
+    blurb: 'Jump a small gap, roll across the ice and dodge a bumper, with a gate, a pit stop and two question stops.',
+  },
 ];
 
 export const infoFor = (playableId: string) => COURSE_INFO.find((c) => c.playable === playableId);

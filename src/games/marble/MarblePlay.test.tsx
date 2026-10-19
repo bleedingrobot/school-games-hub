@@ -68,18 +68,25 @@ describe('course picker', () => {
     expect(screen.getByText(/1,076 metres/)).toBeInTheDocument();
   });
 
+  it('lists the two practice courses, and not the tiny test tracks', () => {
+    open();
+    expect(screen.getByRole('heading', { name: 'Wide Hill' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Gap and Ice' })).toBeInTheDocument();
+    expect(screen.queryByText(/test-easy|test-hard/)).toBeNull();
+  });
+
   it('plays a practice course, remembers the best time and then offers hard mode', async () => {
     open();
     const card = screen.getByRole('heading', { name: 'Wide Hill' }).closest('li')!;
     expect(within(card).queryByRole('button', { name: /Hard mode/ })).toBeNull();
     fireEvent.click(within(card).getByRole('button', { name: 'Play Wide Hill' }));
-    expect(await screen.findByText('Running test-easy in up')).toBeInTheDocument();
+    expect(await screen.findByText('Running wide-hill in up')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'finish' }));
     fireEvent.click(screen.getByRole('button', { name: 'exit' }));
     const after = screen.getByRole('heading', { name: 'Wide Hill' }).closest('li')!;
     expect(within(after).getByText(/Best: 0:03.33/)).toBeInTheDocument();
     fireEvent.click(within(after).getByRole('button', { name: /Hard mode/ }));
-    expect(await screen.findByText('Running test-easy in down')).toBeInTheDocument();
+    expect(await screen.findByText('Running wide-hill in down')).toBeInTheDocument();
   });
 
   it('asks the server for a stamped seed as a run opens, and sends the finished run to be replayed', async () => {

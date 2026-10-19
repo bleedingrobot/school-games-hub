@@ -35,8 +35,10 @@ describe('every course', () => {
     const plan = slotPlan(c);
     expect(plan.total).toBeGreaterThanOrEqual(c.gates.length + c.pitCount + 2);
   });
-  it('the six New Zealand courses have gates and the practice ones none', () => {
-    expect(COURSES.filter((c) => c.gates.length).map((c) => c.def.id)).toEqual(['boulder-beach', 'crown-range', 'geyser-valley', 'glacier-run', 'windy-welly', 'alpine-crossing']);
+  it('every course on the menu has gates, and a pit stop and both question stops; the tiny test tracks have none', () => {
+    expect(COURSES.filter((c) => c.gates.length).map((c) => c.def.id)).toEqual(['boulder-beach', 'crown-range', 'geyser-valley', 'glacier-run', 'windy-welly', 'alpine-crossing', 'wide-hill', 'gap-and-ice']);
+    for (const c of COURSES.filter((c) => !c.def.id.startsWith('test-'))) expect(new Set(c.pitKind)).toEqual(new Set(['c', 'k', 'h']));
+    expect(courseById('wide-hill')!.gates).toHaveLength(1);
     expect(courseById('boulder-beach')!.gates).toHaveLength(1);
   });
 });
