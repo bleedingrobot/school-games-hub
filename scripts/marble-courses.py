@@ -55,9 +55,10 @@ class Track:
         self.route.append((self.x + 0.5, self.y + 0.5))
 
     # commands
-    def go(self, n, ch='#', width=None, rails=True, at=None, every=3):
+    def go(self, n, ch='#', width=None, rails=True, at=None, every=3, stop=None):
+        # stop=(i, 'k' or 'h'): row i, right across the track, is a question stop (1 s or half a second off).
         for i in range(n):
-            self._cross(ch, self.lvl, width, rails, at, i)
+            self._cross(stop[1] if stop and i == stop[0] else ch, self.lvl, width, rails, at, i)
             if i % every == every - 1 or i == n - 1:
                 self.wp()
             self._step()
@@ -293,13 +294,13 @@ def boulder_beach():
     t.gate(2)          # the one tutorial gate
     t.go(2)
     t.down(4)
-    t.go(4)
+    t.go(4, stop=(1, 'k'))
     t.turn('S')
     t.go(2)
     t.down(3)
     t.go(3, at={(1, -1): 'b', (1, 1): 'b'})
     t.turn('E')
-    t.go(5)
+    t.go(5, stop=(2, 'h'))
     t.down(2)
     t.go(2, ch='f')
     return t
@@ -311,7 +312,7 @@ def crown_range():
     t.mark(-4, 0, 's')
     # hairpins: long straights joined by open-edged turns
     for k in range(3):
-        t.go(10, at={(3, -1): 'b', (7, 1): 'b'} if k % 2 == 0 else {(3, 1): 'b', (7, -1): 'b'})
+        t.go(10, at={(3, -1): 'b', (7, 1): 'b'} if k % 2 == 0 else {(3, 1): 'b', (7, -1): 'b'}, stop={0: (5, 'k'), 2: (5, 'h')}.get(k))
         t.down(2)
         if k == 1:
             t.go(2, ch='c')
@@ -349,7 +350,7 @@ def geyser_valley():
     t.go(2)
     t.go(1, ch='g', width=1)  # one geyser launches you over the first trench
     t.gap(3)
-    t.go(3, ch='#')
+    t.go(3, ch='#', stop=(1, 'k'))
     t.down(2)
     t.go(2, ch='c')
     t.go(3)          # (a turn paints over the two cells before it, so the checkpoint needs room)
@@ -369,7 +370,7 @@ def geyser_valley():
     t.gap(2)
     t.go(2)
     t.gate(3)
-    t.go(1)
+    t.go(1, stop=(0, 'h'))
     t.down(2)
     t.go(3, ch='f')
     return t
@@ -381,7 +382,7 @@ def glacier_run():
     t.mark(-5, 0, 's')
     t.go(4, ch='i')
     t.down(3, ch=None)
-    t.go(4, ch='i')
+    t.go(4, ch='i', stop=(1, 'k'))
     t.go(1, ch='j', width=5)
     t.gap(2)   # crevasse
     t.go(3, ch='i')
@@ -397,7 +398,7 @@ def glacier_run():
     t.gap(2)
     t.go(3, ch='i')
     t.turn('E')
-    t.go(3, ch='i')
+    t.go(3, ch='i', stop=(1, 'h'))
     t.down(2)
     t.go(1, ch='m')
     t.gate(3)
@@ -429,7 +430,7 @@ def windy_welly():
     t.go(2)
     t.turn('S')
     t.go(2, ch='o')
-    t.go(5, ch='o')
+    t.go(5, ch='o', stop=(2, 'k'))
     t.go(2)
     t.go(1, ch='q')
     t.go(3)
@@ -448,7 +449,7 @@ def windy_welly():
     t.go(2, ch='c')
     t.go(2)
     t.turn('S')
-    t.go(3)
+    t.go(3, stop=(1, 'h'))
     t.go(1, ch='q')
     t.go(5, ch='o')
     t.turn('E')
@@ -464,7 +465,7 @@ def alpine_crossing():
     t = Track(2, 2, 'E', width=3, level=30)
     t.go(5)
     t.mark(-5, 0, 's')
-    t.go(6, rails=False)
+    t.go(6, rails=False, stop=(2, 'k'))
     t.gems(0)
     # the Devil's Staircase: steps down
     for _ in range(4):
@@ -490,7 +491,7 @@ def alpine_crossing():
     t.go(2, rails=False)
     t.go(2, ch='c', rails=False)
     t.turn('E', rails=False)
-    t.go(4, rails=False)
+    t.go(4, rails=False, stop=(1, 'h'))
     t.gems(1)
     t.go(1, rails=False)
     for _ in range(3):

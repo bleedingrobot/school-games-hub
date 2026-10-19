@@ -104,7 +104,7 @@ export interface MarbleView {
   dispose(): void;
 }
 
-export function createView(canvas: HTMLCanvasElement, course: Course, world: World, palette: Palette, reducedMotion: boolean, otherKinds: OtherKind[] = [], signs: GateSign[] = [], gems: GemSprite[] = []): MarbleView {
+export function createView(canvas: HTMLCanvasElement, course: Course, world: World, palette: Palette, reducedMotion: boolean, otherKinds: OtherKind[] = [], signs: GateSign[] = [], gems: GemSprite[] = [], stopSigns = false): MarbleView {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'low-power' });
   renderer.setClearColor(palette.sky);
   const scene = new THREE.Scene();
@@ -146,6 +146,7 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
       else if (t.ch === 'm') top = palette.mud;
       else if (t.ch === 's') top = palette.start;
       else if (t.ch === 'c') top = palette.checkpoint;
+      else if (t.ch === 'k' || t.ch === 'h') top = palette.stop;
       else if (t.ch === 'f') top = (x + y) % 2 === 0 ? palette.finishA : palette.finishB;
       else if (t.ch === 'j') top = palette.pad;
       else if (t.door >= 0) top = palette.door;
@@ -397,6 +398,27 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
     return sprite;
   });
 
+  // ---- question stops (maths on): a sign over each, saying what a right answer takes off ----
+  const stopSprites: THREE.Sprite[] = [];
+  if (stopSigns) {
+    for (let stop = 0; stop < course.pitCount; stop++) {
+      const kind = course.pitKind[stop];
+      if (kind === 'c') continue;
+      // The middle tile of the stop's strip.
+      const cells: number[] = [];
+      course.pitAt.forEach((p, i) => p === stop && cells.push(i));
+      const mid = cells[Math.floor(cells.length / 2)];
+      const tx = mid % W;
+      const ty = Math.floor(mid / W);
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: signTexture(kind === 'k' ? '−1s' : '−½s', false), transparent: true, depthTest: false }));
+      sprite.position.set(tx + 0.5, course.tiles[mid].level * LEVEL + 1.2, ty + 0.5);
+      sprite.scale.set(1.3, 0.65, 1);
+      sprite.renderOrder = 10;
+      scene.add(sprite);
+      stopSprites.push(sprite);
+    }
+  }
+
   // ---- number gems: a spinning gem with its answer over it. A right gem vanishes when the marble takes it; a wrong one stays. ----
   const gemGeometry = new THREE.OctahedronGeometry(0.2);
   const gemMaterial = new THREE.MeshStandardMaterial({ color: 0x22d3ee, roughness: 0.25, metalness: 0.2, emissive: 0x0e7490, emissiveIntensity: 0.4 });
@@ -499,7 +521,7 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
         g.label.material.map?.dispose();
         g.label.material.dispose();
       }
-      for (const sprite of signSprites) {
+      for (const sprite of [...signSprites, ...stopSprites]) {
         sprite.material.map?.dispose();
         sprite.material.dispose();
       }

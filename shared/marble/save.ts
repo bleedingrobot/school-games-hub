@@ -84,8 +84,10 @@ export interface JudgedRun {
   played: number;
   /** The tunnel entered first at each answer gate (-1 = never reached). */
   gateChoices: number[];
-  /** How many pit stops the marble reached. */
+  /** How many stops (pit stops and question stops) the marble reached. */
   pitStops: number;
+  /** The stops that took time off (a BONUS input at each): the server checks each had a right answer. */
+  paidStops: number[];
   /** How many right gems were picked up. */
   gems: number;
   /** BONUS and REFUND inputs in the run: the server only allows as many as it marked right answers. */
@@ -119,7 +121,7 @@ export function judgeRun(report: MarbleRunReport, nowSeconds: number, run: { doo
     ok: true,
     run: {
       steps: result.finishSteps, falls: result.falls, checkpoints: result.checkpoints, held: result.held, played: result.steps,
-      gateChoices: result.state.gateChoices, pitStops: result.state.pitStops.length, gems: result.state.gemsTaken.length, bonuses: countCode(runs, BONUS), refunds: countCode(runs, REFUND),
+      gateChoices: result.state.gateChoices, pitStops: result.state.pitStops.length, paidStops: result.state.pitsPaid, gems: result.state.gemsTaken.length, bonuses: countCode(runs, BONUS), refunds: countCode(runs, REFUND),
     },
   };
 }

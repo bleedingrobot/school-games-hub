@@ -9,7 +9,7 @@
  */
 import {
   AIR_GRAVITY, AIR_STEER, BALL_RADIUS, BOUNCE, BUMPER_RADIUS, BUMPER_SPEED, CHECKPOINT_BONUS_STEPS, DT, FALL_PENALTY_STEPS,
-  CONVEYOR_PUSH, GEM_BONUS_STEPS, SAFE_SPOT_AGE, SAFE_SPOTS_KEPT, UNSAFE_TILES, GEM_PICKUP_RADIUS, MAX_GEM_BONUSES, PIT_BONUS_STEPS, JUMP_SPEED, KILL_BELOW, LEVEL, MAX_RUN_STEPS, OUCH_SPEED, SLOPE_GRAVITY, STEER, STEP_DOWN, STEP_UP, SURFACES, TIMED,
+  CONVEYOR_PUSH, GEM_BONUS_STEPS, SAFE_SPOT_AGE, SAFE_SPOTS_KEPT, UNSAFE_TILES, GEM_PICKUP_RADIUS, MAX_GEM_BONUSES, JUMP_SPEED, KILL_BELOW, LEVEL, MAX_RUN_STEPS, OUCH_SPEED, SLOPE_GRAVITY, STEER, STEP_DOWN, STEP_UP, SURFACES, TIMED,
 } from './config';
 import type { Course, Tile } from './course';
 import { BONUS, HOLD, MAX_CODE, MAX_INPUT_STEPS, REFUND, type InputRuns } from './inputs';
@@ -60,8 +60,10 @@ export interface RunState {
   padCooldown: number;
   /** For each answer gate, the tunnel the marble went into first (0, 1, 2), or -1 if it has not reached the gate yet. Only written down; it never changes the physics. */
   gateChoices: number[];
-  /** The pit stops reached (a block of touching checkpoint tiles is one), in order. */
+  /** The stops reached (pit stops and question stops; a block of touching tiles is one), in order. */
   pitStops: number[];
+  /** The stops that took time off for a right answer (a `BONUS` input), in order. Each stop pays once. */
+  pitsPaid: number[];
   /** The right gems picked up, in order (each took `GEM_BONUS_STEPS` off the clock; at most `MAX_GEM_BONUSES` count). */
   gemsTaken: number[];
 }
@@ -152,7 +154,7 @@ export function newRun(w: World): RunState {
     x, y, z: floorAt(w, x, y) ?? 0, vx: 0, vy: 0, vz: 0, grounded: true,
     steps: 0, held: 0, penalty: 0, refundable: 0, bonus: 0, falls: 0,
     respawnX: x, respawnY: y, safeSpots: [], checkpoints: [], outcome: 'running', finishSteps: 0, padCooldown: 0,
-    gateChoices: w.course.gates.map(() => -1), pitStops: [], gemsTaken: [],
+    gateChoices: w.course.gates.map(() => -1), pitStops: [], pitsPaid: [], gemsTaken: [],
   };
 }
 
@@ -200,7 +202,12 @@ export function stepRun(w: World, s: RunState, input: number): void {
     return;
   }
   if (input === BONUS) {
-    s.penalty -= PIT_BONUS_STEPS;
+    // A right answer at the stop the marble reached last: its value comes off the clock, once per stop.
+    const stop = s.pitStops[s.pitStops.length - 1];
+    if (stop !== undefined && !s.pitsPaid.includes(stop)) {
+      s.pitsPaid.push(stop);
+      s.penalty -= w.course.pitValue[stop];
+    }
     return;
   }
   if (input === REFUND) {
@@ -349,6 +356,9 @@ export function stepRun(w: World, s: RunState, input: number): void {
       s.respawnY = ty + 0.5;
       if (w.mode === 'down') s.bonus += CHECKPOINT_BONUS_STEPS;
     }
+  } else if (on.ch === 'k' || on.ch === 'h') {
+    const stop = c.pitAt[ty * c.width + tx];
+    if (!s.pitStops.includes(stop)) s.pitStops.push(stop);
   } else if (on.ch === 'f') {
     s.outcome = 'finished';
     s.finishSteps = s.steps + s.penalty;
@@ -395,7 +405,7 @@ export function replay(course: Course, runs: InputRuns, options: RunOptions = {}
 
 /** Every number in the state as text, so two runs can be compared exactly (and between browsers). */
 export function stateKey(s: RunState): string {
-  return [s.x, s.y, s.z, s.vx, s.vy, s.vz, s.grounded ? 1 : 0, s.steps, s.held, s.penalty, s.bonus, s.falls, s.checkpoints.join('.'), s.safeSpots.join('.'), s.gateChoices.join('.'), s.pitStops.join('.'), s.gemsTaken.join('.'), s.outcome, s.finishSteps].join('|');
+  return [s.x, s.y, s.z, s.vx, s.vy, s.vz, s.grounded ? 1 : 0, s.steps, s.held, s.penalty, s.bonus, s.falls, s.checkpoints.join('.'), s.safeSpots.join('.'), s.gateChoices.join('.'), s.pitStops.join('.'), s.pitsPaid.join('.'), s.gemsTaken.join('.'), s.outcome, s.finishSteps].join('|');
 }
 
 /** Medal for a finish time in clock steps, or null. */

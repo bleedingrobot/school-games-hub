@@ -317,7 +317,7 @@ function CoursePicker({
           )}
           <p className="marble-picker__hint">
             {wantMaths
-              ? 'With maths, each gate asks a question and the right tunnel is the shortcut. Pit stops at checkpoints take 2 seconds off for a right answer. A wrong answer only means a longer way round. Your times with maths have their own board.'
+              ? 'With maths, each gate asks a question and the right tunnel is the shortcut. Pit stops at checkpoints take 2 seconds off for a right answer, and the purple question stops take 1 second or half a second off. A wrong answer only means a longer way round. Your times with maths have their own board.'
               : 'Without maths, an arrow shows you the shortcut. Your times without maths have their own board.'}
           </p>
           <FocusNote focus={focus} />

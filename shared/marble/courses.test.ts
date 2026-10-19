@@ -64,7 +64,7 @@ describe('reference runs', () => {
         ],
         [
           "windy-welly",
-          2897,
+          2898,
         ],
         [
           "alpine-crossing",

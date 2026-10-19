@@ -132,14 +132,24 @@ describe('running through a gate', () => {
 });
 
 describe('the bonus input', () => {
-  const c = courseById('boulder-beach')!;
-  it('takes a pit-stop bonus off the clock, and each one is a run of its own', () => {
-    const w = makeWorld(c);
+  // A straight with a pit stop (2 s), a 1-second stop and a half-second stop.
+  const line = compileCourse({
+    id: 'stops', name: 'Stops', rows: ['==============', '=s#c##k##h##f=', '=============='], heights: ['22222222222222', '22222222222222', '22222222222222'],
+    route: [], medals: { gold: 2, silver: 4, bronze: 8 }, hardSeconds: 10,
+  });
+  /** Rolls east until the marble has reached `n` stops. */
+  const rollTo = (n: number) => {
+    const w = makeWorld(line);
     const s = newRun(w);
+    while (s.pitStops.length < n && s.steps < 2000) stepRun(w, s, 3);
+    return { w, s };
+  };
+  it('does nothing before a stop is reached (each one is still a run of its own)', () => {
+    const { w, s } = rollTo(0);
     stepRun(w, s, 3);
     const before = clockSteps(w, s);
     stepRun(w, s, BONUS);
-    expect(clockSteps(w, s)).toBe(before - PIT_BONUS_STEPS);
+    expect(clockSteps(w, s)).toBe(before);
     const runs: [number, number][] = [];
     pushInput(runs, BONUS);
     pushInput(runs, BONUS);
@@ -147,9 +157,34 @@ describe('the bonus input', () => {
     expect(countCode(runs, BONUS)).toBe(2);
     expect(decodeInputs(encodeInputs(runs))).toEqual(runs);
   });
+  it('takes off what the stop just reached is worth: 2 s at a pit stop, 1 s and half a second at question stops', () => {
+    expect(line.pitKind).toEqual(['c', 'k', 'h']);
+    expect(line.pitValue).toEqual([PIT_BONUS_STEPS, 60, 30]);
+    for (const [n, off] of [[1, PIT_BONUS_STEPS], [2, 60], [3, 30]]) {
+      const { w, s } = rollTo(n);
+      const before = clockSteps(w, s);
+      stepRun(w, s, BONUS);
+      expect(clockSteps(w, s)).toBe(before - off);
+      expect(s.pitsPaid).toEqual([n - 1]);
+    }
+  });
+  it('pays each stop once, however many bonus inputs are sent', () => {
+    const { w, s } = rollTo(2);
+    const before = clockSteps(w, s);
+    stepRun(w, s, BONUS);
+    stepRun(w, s, BONUS);
+    expect(clockSteps(w, s)).toBe(before - 60);
+    expect(s.pitsPaid).toEqual([1]);
+  });
+  it('a question stop is not a checkpoint', () => {
+    const { s } = rollTo(3);
+    expect(s.checkpoints.length).toBe(1);
+  });
   it('a replay counts them the same way', () => {
-    const r = replay(c, [[3, 10], [BONUS, 1], [3, 10]])!;
+    const { s } = rollTo(1);
+    const r = replay(line, [[3, s.steps], [BONUS, 1], [3, 10]])!;
     expect(r.state.penalty).toBe(-PIT_BONUS_STEPS);
+    expect(r.state.pitsPaid).toEqual([0]);
   });
 });
 

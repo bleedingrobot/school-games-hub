@@ -424,29 +424,51 @@ describe('maths: saving a run through the gates', () => {
     expect(status).toBe(sameDoors ? 200 : 400);
   });
 
-  it('refuses a bonus input with no right pit-stop answer, and allows one with it', async () => {
-    const { s, report, body, bot2, stored, clock } = await played();
-    const withBonus = encodeInputs([[BONUS, 1], ...bot2.runs]);
+  /** The bot's run, answering at every stop (a BONUS right after each one). Boulder Beach: a pit stop, a 1 s and a half-second stop. */
+  const answeringBot = (seed: string, questions: Question[]) => botRun(course, { mode: 'up', openDoors: doorsForSeed(course, seed, questions), answers: true });
+  const answerStop = (s: Services, body: Record<string, unknown>, stored: StoredRun, stop: number, right: boolean) => {
+    const slot = (body.pits as { slot: number }[])[stop].slot;
+    const answer = (stored.questions[slot] as Question).answer as number;
+    return send(s, { action: 'answer', course: COURSE, mode: 'up', seed: body.seed, stamp: body.stamp, slot, answer: right ? answer : answer + 1 });
+  };
+
+  it('refuses time off at a stop with no right answer there', async () => {
+    const { s, report, body, stored } = await played();
+    const withBonus = encodeInputs(answeringBot(body.seed, stored.questions).runs);
     expect((await send(s, { ...report, inputs: withBonus })).status).toBe(400);
-    const slot = body.pits[0].slot as number;
-    const answerBase = { action: 'answer', course: COURSE, mode: 'up', seed: body.seed, stamp: body.stamp, slot };
-    const wrong = await send(s, { ...answerBase, answer: stored.questions[slot].answer + 1 });
-    expect(wrong.body.right).toBe(false);
+    expect((await answerStop(s, body, stored, 0, false)).body.right).toBe(false);
     expect((await send(s, { ...report, inputs: withBonus })).status).toBe(400);
-    void clock;
   });
 
-  it('allows a bonus after a right pit-stop answer, and takes the time off', async () => {
-    const { s, report, body, bot2, stored } = await played();
-    const slot = body.pits[0].slot as number;
-    const right = await send(s, { action: 'answer', course: COURSE, mode: 'up', seed: body.seed, stamp: body.stamp, slot, answer: stored.questions[slot].answer });
-    expect(right.body.right).toBe(true);
+  it('allows time off at every stop answered right: 2 s, 1 s and half a second', async () => {
+    const { s, report, body, stored } = await played();
+    const answering = answeringBot(body.seed, stored.questions);
+    expect(course.pitKind).toEqual(['c', 'k', 'h']);
+    expect(answering.state.pitsPaid).toEqual([0, 1, 2]);
+    // Only the pit stop answered: the other two stops' time off is refused.
+    expect((await answerStop(s, body, stored, 0, true)).body.right).toBe(true);
+    expect((await send(s, { ...report, inputs: encodeInputs(answering.runs) })).status).toBe(400);
+    expect((await answerStop(s, body, stored, 1, true)).body.right).toBe(true);
+    expect((await answerStop(s, body, stored, 2, true)).body.right).toBe(true);
+    const ok = await send(s, { ...report, inputs: encodeInputs(answering.runs) });
+    expect(ok.status).toBe(200);
+    expect(vi.mocked(s.record).mock.calls.at(-1)![2].steps).toBe(answering.state.finishSteps);
+    expect(answering.state.finishSteps).toBe(answering.state.steps - 120 - 60 - 30);
+  });
+
+  it('a bonus input away from a stop takes nothing off, so it does no harm', async () => {
+    const { s, report, bot2 } = await played();
     const ok = await send(s, { ...report, inputs: encodeInputs([[BONUS, 1], ...bot2.runs]) });
     expect(ok.status).toBe(200);
-    expect(vi.mocked(s.record).mock.calls.at(-1)![2].steps).toBe(bot2.state.finishSteps - 120);
-    // ... but only one for one right answer
-    const two = await send(s, { ...report, inputs: encodeInputs([[BONUS, 1], [BONUS, 1], ...bot2.runs]) });
-    expect(two.status).toBe(400);
+    expect(vi.mocked(s.record).mock.calls.at(-1)![2].steps).toBe(bot2.state.finishSteps);
+  });
+
+  it('marks no answer for a number-gem question (gems are never recorded)', async () => {
+    const m = mathsServices();
+    const { body } = await send(m.s, { action: 'start', course: 'glacier-run', mode: 'up', maths: true });
+    const gemSlot = (body.gems as { slot: number }[])[0].slot;
+    const r = await send(m.s, { action: 'answer', course: 'glacier-run', mode: 'up', seed: body.seed, stamp: body.stamp, slot: gemSlot, answer: 1 });
+    expect(r.status).toBe(400);
   });
 });
 

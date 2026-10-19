@@ -300,7 +300,7 @@ describe('how to play', () => {
     open();
     await screen.findByLabelText('Maths: on');
     fireEvent.click(screen.getByRole('button', { name: 'How to play' }));
-    for (const name of ['Answer gates', 'Pit stops', 'Rescue questions', 'Number gems', 'Guess your time', 'Your maths records']) {
+    for (const name of ['Answer gates', 'Pit stops and question stops', 'Rescue questions', 'Number gems', 'Guess your time', 'Your maths records']) {
       expect(screen.getByRole('heading', { name })).toBeInTheDocument();
     }
     expect(screen.getByText(/never costs you/)).toBeInTheDocument();

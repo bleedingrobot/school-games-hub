@@ -309,12 +309,39 @@ describe('RunScreen with maths', () => {
     expect(answers[0].slice(0, 2)).toEqual([1, 12]);
     await runFrames(1500);
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(screen.getByText(/2 seconds off your time/)).toBeInTheDocument();
+    expect(document.querySelector('.marble-toast')).toHaveTextContent('Right! 2 seconds off your time');
     // The marble goes on: through the gate's doors... which are shut here, so only check what was written down.
     await runFrames(8000);
     const out = finished[0];
     if (out) expect(out.inputs.some(([code]) => code === BONUS)).toBe(true);
     else expect(true).toBe(true);
+  });
+
+  it('a half-second question stop says what it is worth, and takes half a second off', async () => {
+    const STOPS = compileCourse({
+      id: 'tiny-stops', name: 'Tiny stops', rows: ['=========', '=s##h##f=', '========='], heights: Array(3).fill('222222222'),
+      route: [], medals: { gold: 2, silver: 4, bronze: 8 }, hardSeconds: 30,
+    });
+    const onAnswer = vi.fn(async () => ({ right: true, answer: 12 }));
+    const { finished } = setup({ course: STOPS, setup: { ...MATHS, gates: [], doors: [] }, readTime: false, onAnswer: onAnswer as never });
+    await start();
+    await runFrames(1500);
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('Quick question');
+    expect(dialog).toHaveTextContent('A right answer takes half a second off your time.');
+    fireEvent.keyDown(dialog, { key: '1' });
+    fireEvent.keyDown(dialog, { key: '2' });
+    fireEvent.keyDown(dialog, { key: 'Enter' });
+    await runFrames(100);
+    await waitFor(() => expect(onAnswer).toHaveBeenCalled());
+    await runFrames(1500);
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(document.querySelector('.marble-toast')).toHaveTextContent('Right! Half a second off your time');
+    await runFrames(4000);
+    const out = finished[0]!;
+    const r = replay(STOPS, out.inputs)!;
+    expect(r.state.pitsPaid).toEqual([0]);
+    expect(r.finishSteps).toBe(r.steps - 30);
   });
 
   it('lets a pit stop be skipped, with no bonus', async () => {

@@ -9,7 +9,8 @@
  *               Its digit is its HIGH edge; the low edge is one level lower.
  *   =  a wall or rail the marble bounces off
  *   b  a bumper (flat floor with a post in the middle)
- *   j  a jump pad          c  a checkpoint        s  the start (exactly one)
+ *   j  a jump pad          c  a checkpoint (and pit stop)   s  the start (exactly one)
+ *   k  a 1-second question stop      h  a half-second question stop (maths; flat floor otherwise)
  *   f  the finish (one or more)
  *   e w n o  a conveyor belt pushing east, west, north (up the grid) or south
  *   g  a geyser: steams, then throws the marble into the air, on a timer
@@ -18,7 +19,7 @@
  *   A–H  a shortcut door. Shut it is a wall; open it is flat floor. Which are open is decided
  *        before the run starts and never changes during it (this is how maths gates will work).
  */
-import { LEVEL, type Surface } from './config';
+import { LEVEL, STOP_BONUS_STEPS, type Surface } from './config';
 
 export interface CourseDef {
   id: string;
@@ -114,13 +115,17 @@ export interface Course {
   gemList: readonly GemSpot[];
   /** Per tile: gate * 8 + tunnel + 1 for a tunnel tile, else 0. */
   tunnelAt: Uint16Array;
-  /** Per checkpoint tile: which pit stop (a block of touching checkpoint tiles is one), else -1. */
+  /** Per stop tile: which stop (a block of touching tiles of one kind is one: pit stops `c`, question stops `k` and `h`), else -1. */
   pitAt: Int16Array;
   pitCount: number;
+  /** Per stop: what a right answer there takes off the clock, in steps. */
+  pitValue: readonly number[];
+  /** Per stop: its tile letter (`c` pit stop, `k` or `h` question stop). */
+  pitKind: readonly string[];
 }
 
 const SLOPES: Record<string, Slope> = { '>': 'E', '<': 'W', '^': 'N', v: 'S' };
-const KNOWN = new Set('.#im><^v=bjcsfABCDEFGHewnogtq'.split(''));
+const KNOWN = new Set('.#im><^v=bjcsfABCDEFGHewnogtqkh'.split(''));
 
 export function compileCourse(def: CourseDef): Course {
   const height = def.rows.length;
@@ -185,11 +190,16 @@ export function compileCourse(def: CourseDef): Course {
     });
   });
   if (gemList.length > 16) throw new Error(`${def.id}: more than 16 gems`);
-  // Touching checkpoint tiles make one pit stop.
+  // Touching tiles of one stop kind make one stop (pit stops `c`, question stops `k` and `h`), numbered in reading order.
   const pitAt = new Int16Array(width * height).fill(-1);
   let pitCount = 0;
+  const pitValue: number[] = [];
+  const pitKind: string[] = [];
   for (let i = 0; i < tiles.length; i++) {
-    if (tiles[i].ch !== 'c' || pitAt[i] >= 0) continue;
+    const kind = tiles[i].ch;
+    if (!(kind in STOP_BONUS_STEPS) || pitAt[i] >= 0) continue;
+    pitValue.push(STOP_BONUS_STEPS[kind]);
+    pitKind.push(kind);
     const todo = [i];
     pitAt[i] = pitCount;
     while (todo.length) {
@@ -201,7 +211,7 @@ export function compileCourse(def: CourseDef): Course {
         const ny = y + dy;
         if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
         const ni = ny * width + nx;
-        if (tiles[ni].ch === 'c' && pitAt[ni] < 0) {
+        if (tiles[ni].ch === kind && pitAt[ni] < 0) {
           pitAt[ni] = pitCount;
           todo.push(ni);
         }
@@ -209,5 +219,5 @@ export function compileCourse(def: CourseDef): Course {
     }
     pitCount++;
   }
-  return { def, width, height, tiles, start, floorMin, doorCount, gates, gems, gemList, tunnelAt, pitAt, pitCount };
+  return { def, width, height, tiles, start, floorMin, doorCount, gates, gems, gemList, tunnelAt, pitAt, pitCount, pitValue, pitKind };
 }

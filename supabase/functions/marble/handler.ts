@@ -163,8 +163,9 @@ export function makeHandler(services: Services) {
       if (run === 'busy') return reply(503, { error: "We couldn't check your answer just now." });
       const plan = slotPlan(course);
       const at = slot as number;
-      // Only pit stops and (if the teacher allows them) rescues are answered here; a gate is answered by rolling through a tunnel.
-      const allowed = at >= plan.pitStart && at < plan.rescueStart + (run?.rescue ? plan.rescues : 0);
+      // Only stops and (if the teacher allows them) rescues are answered here; a gate is answered by rolling through a tunnel,
+      // and gems are never marked or recorded.
+      const allowed = (at >= plan.pitStart && at < plan.gemStart) || (run?.rescue === true && at >= plan.rescueStart && at < plan.total);
       if (!run || !allowed) {
         console.warn('marble: refused an answer (no such question)');
         return reply(400, { error: "That answer couldn't be marked." });
@@ -201,13 +202,15 @@ export function makeHandler(services: Services) {
         console.warn(`marble: refused a run (${judged.problem})`);
         return reply(400, { error: "That run couldn't be saved." });
       }
-      // A bonus or a refund in the inputs is only allowed for a right answer that was marked (and a pit stop or fall that really happened).
+      // Time off is only allowed for right answers that were marked here: every stop that took time off needs a right answer
+      // to its own question, and refunds can't outnumber right rescue answers (or falls that really happened).
       const plan = slotPlan(course);
+      const answered = stored?.answered ?? {};
       const rightIn = (from: number, to: number) =>
-        Object.entries(stored?.answered ?? {}).filter(([slot, a]) => a.right && Number(slot) >= from && Number(slot) < to).length;
-      const bonusesAllowed = Math.min(rightIn(plan.pitStart, plan.rescueStart), judged.run.pitStops);
+        Object.entries(answered).filter(([slot, a]) => a.right && Number(slot) >= from && Number(slot) < to).length;
+      const paidRight = judged.run.paidStops.every((stop) => answered[plan.pitStart + stop]?.right === true);
       const refundsAllowed = stored?.rescue ? Math.min(rightIn(plan.rescueStart, plan.total), judged.run.falls) : 0;
-      if (judged.run.bonuses > bonusesAllowed || judged.run.refunds > refundsAllowed) {
+      if (!paidRight || judged.run.bonuses > judged.run.pitStops || judged.run.refunds > refundsAllowed) {
         console.warn('marble: refused a run (more bonuses than right answers)');
         return reply(400, { error: "That run couldn't be saved." });
       }

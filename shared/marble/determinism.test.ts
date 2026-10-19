@@ -8,5 +8,5 @@ it('plays the same busy workload the same way every time', () => {
 });
 
 it('keeps the pinned fingerprint (if physics numbers change on purpose, update it and re-run npm run marble:determinism)', () => {
-  expect(fingerprint(determinismReport())).toMatchInlineSnapshot(`"f69bc154"`);
+  expect(fingerprint(determinismReport())).toMatchInlineSnapshot(`"cf25906b"`);
 });

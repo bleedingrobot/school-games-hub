@@ -74,9 +74,13 @@ export function HowToPlayBody({ mathsAllowed }: { mathsAllowed: boolean }) {
             </p>
           </section>
           <section aria-labelledby="mh-pit">
-            <h3 id="mh-pit">Pit stops</h3>
+            <h3 id="mh-pit">Pit stops and question stops</h3>
             <p>
               At a checkpoint the clock stops and you get a question. A right answer takes <strong>{seconds(PIT_BONUS_STEPS)} seconds</strong> off your time. You can always skip it.
+            </p>
+            <p>
+              Every course also has two purple <strong>question stops</strong> across the track. They work the same way: one takes <strong>1 second</strong> off for a right answer
+              and the other takes <strong>half a second</strong> off (the sign over each one says which).
             </p>
           </section>
           <section aria-labelledby="mh-rescue">

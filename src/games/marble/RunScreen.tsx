@@ -121,7 +121,7 @@ export function RunScreen({
   const [checkpoints, setCheckpoints] = useState(0);
   const [announce, setAnnounce] = useState('');
   const [banner, setBanner] = useState<{ kind: 'gate' | 'gems'; question: PublicQuestion } | null>(null);
-  const [ask, setAsk] = useState<{ slot: number; question: PublicQuestion; kind: 'pit' | 'rescue' } | null>(null);
+  const [ask, setAsk] = useState<{ slot: number; question: PublicQuestion; kind: 'pit' | 'quick' | 'rescue'; off: string } | null>(null);
   // "Guess your time" (maths only, never saved): what the student typed, and how it turned out.
   const [guess, setGuess] = useState('');
   const guessRef = useRef('');
@@ -130,7 +130,8 @@ export function RunScreen({
   const [toast, setToast] = useState('');
   const resumeRef = useRef<() => void>(() => {});
   const closeAskRef = useRef<(right: boolean) => void>(() => {});
-  const askKindRef = useRef<'pit' | 'rescue'>('pit');
+  const askKindRef = useRef<'pit' | 'quick' | 'rescue'>('pit');
+  const askOffRef = useRef('');
   const [result, setResult] = useState<{ steps: number; medal: keyof typeof MEDAL | null; isBest: boolean; falls: number; ghost?: 'beat' | 'lost' | 'tie'; winner?: 1 | 2 | 0 } | null>(null);
   const [stickSide, setStickSide] = useState<'left' | 'right'>('right');
   const [showStick, setShowStick] = useState(isCoarse);
@@ -285,9 +286,11 @@ export function RunScreen({
     };
 
     // A pit-stop question: the number pad over the course. A right answer takes a couple of seconds off (the BONUS input).
-    const openAsk = (q: PublicQuestion, kind: 'pit' | 'rescue') => {
+    // `off` is what a right answer takes off, in words ("2 seconds", "half a second").
+    const openAsk = (q: PublicQuestion, kind: 'pit' | 'quick' | 'rescue', off = '') => {
       askKindRef.current = kind;
-      setAsk({ slot: q.slot, question: q, kind });
+      askOffRef.current = off;
+      setAsk({ slot: q.slot, question: q, kind, off });
       goto('question');
     };
     closeAskRef.current = (right: boolean) => {
@@ -296,9 +299,10 @@ export function RunScreen({
         pushInput(runs, rescue ? REFUND : BONUS);
         prev = { ...state };
         stepRun(world, state, rescue ? REFUND : BONUS);
-        setToast(rescue ? 'Right! No time lost for that fall' : 'Right! 2 seconds off your time');
+        const off = askOffRef.current.charAt(0).toUpperCase() + askOffRef.current.slice(1);
+        setToast(rescue ? 'Right! No time lost for that fall' : `Right! ${off} off your time`);
         beep('item');
-        say(rescue ? 'Right! The fall cost you no time.' : 'Right! Two seconds off your time.');
+        say(rescue ? 'Right! The fall cost you no time.' : `Right! ${off} off your time.`);
         window.setTimeout(() => setToast(''), 2500);
       }
       setAsk(null);
@@ -358,7 +362,7 @@ export function RunScreen({
             lastPits = state.pitStops.length;
             const q = setup.pits[group];
             if (q) {
-              openAsk(q, 'pit');
+              openAsk(q, course.pitKind[group] === 'c' ? 'pit' : 'quick', secondsOff(course.pitValue[group]));
               break;
             }
           }
@@ -447,7 +451,7 @@ export function RunScreen({
     import('./renderer')
       .then(({ createView }) => {
         if (disposed) return;
-        view = createView(canvas, course, world, paletteFor(course.def.id), reduced, kinds, gateSigns(course, setup), gemSprites(course, setup));
+        view = createView(canvas, course, world, paletteFor(course.def.id), reduced, kinds, gateSigns(course, setup), gemSprites(course, setup), setup.maths);
         fit();
         goto('ready');
         raf = requestAnimationFrame((t) => {
@@ -610,8 +614,8 @@ export function RunScreen({
         {phase === 'question' && ask && (
           <QuestionModal
             question={shown(ask.question)}
-            title={ask.kind === 'rescue' ? 'Rescue' : 'Pit stop'}
-            note={ask.kind === 'rescue' ? 'You fell! The clock has stopped. A right answer gives back the time the fall cost.' : 'The clock has stopped. A right answer takes 2 seconds off your time.'}
+            title={ask.kind === 'rescue' ? 'Rescue' : ask.kind === 'quick' ? 'Quick question' : 'Pit stop'}
+            note={ask.kind === 'rescue' ? 'You fell! The clock has stopped. A right answer gives back the time the fall cost.' : `The clock has stopped. A right answer takes ${ask.off} off your time.`}
             onSubmit={mark}
             onDone={(result) => closeAskRef.current(result.correct)}
             onClose={() => closeAskRef.current(false)}
@@ -721,6 +725,13 @@ export function RunScreen({
       <div className="sr-only" role="status" aria-live="polite">{announce}</div>
     </div>
   );
+}
+
+/** Time off in words: "2 seconds", "1 second", "half a second". */
+export function secondsOff(steps: number): string {
+  if (steps === 30) return 'half a second';
+  const sec = steps / 60;
+  return sec === 1 ? '1 second' : `${sec} seconds`;
 }
 
 /** A thumb stick for touch screens: drag the knob the way you want to roll. */

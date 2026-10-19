@@ -63,6 +63,12 @@ export const SAFE_SPOTS_KEPT = 16;
 export const UNSAFE_TILES = '.=fqtgjbewno';
 /** A right pit-stop answer takes this much off the clock. */
 export const PIT_BONUS_STEPS = 2 * STEPS_PER_SECOND;
+/**
+ * Question stops (James, 20 Oct 2026: "2 more maths checks, for 1 sec off and .5 second off"). Like a pit stop (the clock
+ * stops, a question, recorded), but not a checkpoint: `k` takes 1 second off for a right answer, `h` half a second.
+ * What each kind of stop takes off for a right answer, in steps, by tile letter.
+ */
+export const STOP_BONUS_STEPS: Readonly<Record<string, number>> = { c: PIT_BONUS_STEPS, k: 1 * STEPS_PER_SECOND, h: STEPS_PER_SECOND / 2 };
 /** Number gems: each right gem takes this much off the clock, up to `MAX_GEM_BONUSES` a run. */
 export const GEM_BONUS_STEPS = 1 * STEPS_PER_SECOND;
 export const MAX_GEM_BONUSES = 5;
