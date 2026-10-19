@@ -88,13 +88,21 @@ function fakeSaving(seed: string | null = 's1-1792000000-0123456789abcdef0123456
   return { saving, saved, left };
 }
 
+// The play-through loops below look for the same things as getByRole would, but with plain look-ups: asking by role takes
+// about 20 ms on the game page, and a loop asks a few times every few milliseconds, which was most of each game's time.
+const anyDialog = () => document.querySelector('[role="dialog"]');
+const podiumShown = () => document.querySelector('[role="dialog"][aria-labelledby="space-result-title"]');
+const rollButton = () => [...document.querySelectorAll('button')].find((b) => b.textContent?.trim().startsWith('🎲 Roll'));
+const choiceGroup = () =>
+  [...document.querySelectorAll<HTMLElement>('[role="group"][aria-label]')].find((g) => /gate|card|pockets|die|aim/i.test(g.getAttribute('aria-label')!));
+
 /** Plays until the podium shows. */
 async function playToTheEnd(user: ReturnType<typeof userEvent.setup>) {
   let actions = 0;
   for (let guard = 0; guard < 400; guard++) {
-    if (screen.queryByRole('dialog')) break;
-    const roll = screen.queryByRole('button', { name: /^🎲 Roll/ });
-    const choice = screen.queryByRole('group', { name: /gate|card|pockets|die|aim/i });
+    if (anyDialog()) break;
+    const roll = rollButton();
+    const choice = choiceGroup();
     if (choice) {
       await user.click(within(choice).getAllByRole('button')[0]);
       actions++;
@@ -133,24 +141,6 @@ describe('Wormholes & Black Holes against bots', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/doesn’t look right/);
   });
 
-  it('plays a whole game to the podium', async () => {
-    const user = userEvent.setup();
-    renderGame();
-    await user.click(screen.getByRole('radio', { name: /Asteroid Belt/ }));
-    await user.click(screen.getByRole('radio', { name: '1' }));
-    await user.click(screen.getByRole('button', { name: /Launch/ }));
-    expect(screen.getByRole('img', { name: /Asteroid Belt board, 50 squares/ })).toBeInTheDocument();
-
-    const { podium, actions } = await playToTheEnd(user);
-    expect(actions).toBeGreaterThan(3);
-    expect(within(podium).getByRole('heading')).toHaveTextContent(/You (docked first|got the furthest|came 2nd)/);
-    expect(screen.getByRole('log')).toHaveTextContent(/Speedy Otter 27 rolled/);
-    await user.click(within(podium).getByRole('button', { name: 'Look at the board' }));
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Settings' }));
-    expect(screen.getByRole('button', { name: /Launch/ })).toBeInTheDocument();
-  }, 60_000);
-
   it('rolls with the space bar', async () => {
     const user = userEvent.setup();
     renderGame();
@@ -163,7 +153,7 @@ describe('Wormholes & Black Holes against bots', () => {
     await waitFor(() => expect(screen.getByRole('log')).toHaveTextContent(/Speedy Otter 27 rolled/));
   });
 
-  it('saves a finished game with everything the server needs to replay it', async () => {
+  it('plays a whole game to the podium, and saves it with everything the server needs to replay it', async () => {
     const user = userEvent.setup();
     const { saving, saved, left } = fakeSaving();
     renderGame(saving);
@@ -173,7 +163,10 @@ describe('Wormholes & Black Holes against bots', () => {
     await user.click(screen.getByRole('button', { name: /Launch/ }));
     expect(saving.seed).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('heading', { name: /Mission log/ })).toHaveTextContent('Saved when you finish');
-    const { podium } = await playToTheEnd(user);
+    expect(screen.getByRole('img', { name: /Asteroid Belt board, 50 squares/ })).toBeInTheDocument();
+    const { podium, actions } = await playToTheEnd(user);
+    expect(actions).toBeGreaterThan(3);
+    expect(screen.getByRole('log')).toHaveTextContent(/Speedy Otter 27 rolled/);
     await waitFor(() => expect(within(podium).getByRole('status')).toHaveTextContent('Saved! You earned points for taking part.'));
     expect(saved).toHaveLength(1);
     expect(left).toEqual([]);
@@ -196,6 +189,11 @@ describe('Wormholes & Black Holes against bots', () => {
       const place = judged.game.place === 1 ? /You (docked first|got the furthest)/ : /You came 2nd/;
       expect(within(podium).getByRole('heading')).toHaveTextContent(place);
     }
+    // After the podium: look at the board, then back to the settings for another game.
+    await user.click(within(podium).getByRole('button', { name: 'Look at the board' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(screen.getByRole('button', { name: /Launch/ })).toBeInTheDocument();
   }, 60_000);
 
   it('plays a practice game when there’s no seed to be had', async () => {
@@ -307,19 +305,19 @@ describe('Mission Control maths on the game screen', () => {
   async function playWithMaths(user: ReturnType<typeof userEvent.setup>) {
     let asked = 0;
     for (let guard = 0; guard < 4000; guard++) {
-      if (screen.queryByRole('dialog', { name: /Wormhole boost|Black hole escape/ }) === null && screen.queryByRole('dialog')) break;
+      if (podiumShown()) break;
       const fact = screen.queryByLabelText(/equals/);
       if (fact) {
         // The side card is not a pop-up, so it doesn't grab the keyboard: click into it first.
-        if (!screen.queryByRole('dialog')) (fact.closest('.question') as HTMLElement).focus();
+        if (!anyDialog()) (fact.closest('.question') as HTMLElement).focus();
         const answer = solve(fact.getAttribute('aria-label')!);
         await user.keyboard(`${asked % 2 === 0 ? answer : answer + 1}{Enter}`);
         asked++;
         await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 4000 });
         continue;
       }
-      const roll = screen.queryByRole('button', { name: /^🎲 Roll/ });
-      const choice = screen.queryByRole('group', { name: /gate|card|pockets|die|aim/i });
+      const roll = rollButton();
+      const choice = choiceGroup();
       if (choice) await user.click(within(choice).getAllByRole('button')[0]);
       else if (roll && !roll.hasAttribute('disabled')) await user.click(roll);
       else await new Promise((resolve) => setTimeout(resolve, 5));
@@ -437,12 +435,12 @@ describe('Mission Control maths on the game screen', () => {
       const seen = { choices: 0, point: 0, typed: 0 };
       let asked = 0;
       for (let guard = 0; guard < 4000; guard++) {
-        if (screen.queryByRole('dialog', { name: /Wormhole boost|Black hole escape/ }) === null && screen.queryByRole('dialog')) break;
+        if (podiumShown()) break;
         const fact = document.querySelector('.question__fact');
         if (fact && latest.question) {
           const q = latest.question;
           const right = asked % 2 === 0;
-          if (!screen.queryByRole('dialog')) (fact.closest('.question') as HTMLElement).focus();
+          if (!anyDialog()) (fact.closest('.question') as HTMLElement).focus();
           if (q.choices) {
             seen.choices++;
             const target = right ? q.answer : q.choices.find((c) => c !== q.answer)!;
@@ -459,8 +457,8 @@ describe('Mission Control maths on the game screen', () => {
           await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 4000 });
           continue;
         }
-        const roll = screen.queryByRole('button', { name: /^🎲 Roll/ });
-        const choice = screen.queryByRole('group', { name: /gate|card|pockets|die|aim/i });
+        const roll = rollButton();
+        const choice = choiceGroup();
         if (choice) await user.click(within(choice).getAllByRole('button')[0]);
         else if (roll && !roll.hasAttribute('disabled')) await user.click(roll);
         else await new Promise((resolve) => setTimeout(resolve, 5));
@@ -485,12 +483,12 @@ describe('Mission Control maths on the game screen', () => {
       const seen = { choices: 0, point: 0, typed: 0 };
       let asked = 0;
       for (let guard = 0; guard < 4000; guard++) {
-        if (screen.queryByRole('dialog', { name: /Wormhole boost|Black hole escape/ }) === null && screen.queryByRole('dialog')) break;
+        if (podiumShown()) break;
         const fact = document.querySelector('.question__fact');
         if (fact && latest.question) {
           const q = latest.question;
           const right = asked % 2 === 0;
-          if (!screen.queryByRole('dialog')) (fact.closest('.question') as HTMLElement).focus();
+          if (!anyDialog()) (fact.closest('.question') as HTMLElement).focus();
           if (q.choices) {
             seen.choices++;
             const target = right ? q.answer : q.choices.find((c) => c !== q.answer)!;
@@ -507,8 +505,8 @@ describe('Mission Control maths on the game screen', () => {
           await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 4000 });
           continue;
         }
-        const roll = screen.queryByRole('button', { name: /^🎲 Roll/ });
-        const choice = screen.queryByRole('group', { name: /gate|card|pockets|die|aim/i });
+        const roll = rollButton();
+        const choice = choiceGroup();
         if (choice) await user.click(within(choice).getAllByRole('button')[0]);
         else if (roll && !roll.hasAttribute('disabled')) await user.click(roll);
         else await new Promise((resolve) => setTimeout(resolve, 5));

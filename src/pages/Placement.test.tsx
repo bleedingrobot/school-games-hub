@@ -2,13 +2,21 @@ import { spokenLabel } from '../../shared/maths/banded';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as ladderData from '../data/ladder';
 import { AUTO_FOCUS, type MathsFocus } from '../../shared/maths/focus';
 import { PLACEMENT_QUESTIONS } from '../../shared/maths/config';
 import { checkPlacement } from '../../shared/maths/placementCheck';
 import type { Question } from '../../shared/maths/skillPack';
 import Placement from './Placement';
+import { FEEDBACK_MS } from '../maths/QuestionModal';
+
+// The warm-up is 10 questions, and the right/wrong message stays up for up to 2 seconds after each one. These tests are
+// about which question comes next and what is sent, not that pause (QuestionModal.test covers it), so shorten it; it stays
+// long enough for the tests to see the message come and go.
+const SHOWN = { ...FEEDBACK_MS };
+beforeAll(() => Object.assign(FEEDBACK_MS, { right: 150, wrong: 150 }));
+afterAll(() => Object.assign(FEEDBACK_MS, SHOWN));
 
 /** Every question the page asked, in order, so the test can answer them. */
 const asked: Question[] = [];

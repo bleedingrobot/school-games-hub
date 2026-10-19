@@ -1,7 +1,14 @@
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { useEffect } from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { FEEDBACK_MS } from '../../maths/QuestionModal';
 import { useAsk, type Asked } from './useAsk';
+
+// The answers below are often wrong, and a wrong answer's message stays up for 2 seconds. On a busy computer that left too
+// little of the 10 seconds to find the next question. A short pause still shows the mark before the next question comes.
+const SHOWN = { ...FEEDBACK_MS };
+beforeAll(() => Object.assign(FEEDBACK_MS, { right: 150, wrong: 150 }));
+afterAll(() => Object.assign(FEEDBACK_MS, SHOWN));
 
 afterEach(cleanup);
 

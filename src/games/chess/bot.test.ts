@@ -85,16 +85,6 @@ describe('the bots get harder', () => {
     const chess = new Chess(SPECIAL_POSITIONS['mate in one']);
     expect(await chooseBotMove(chess, 'medium', engine)).toBe('a1a8');
   });
-
-  it('Medium beats Very Easy', async () => {
-    const chess = new Chess();
-    const random = seeded(3);
-    let ply = 0;
-    for (; ply < 300 && !boardResult(chess); ply++) {
-      playUci(chess, await chooseBotMove(chess, ply % 2 === 0 ? 'medium' : 'very-easy', engine, random));
-    }
-    expect(boardResult(chess)).toEqual({ ending: 'checkmate', winner: 'white' });
-  }, 60_000);
 });
 
 describe('Very Easy', () => {

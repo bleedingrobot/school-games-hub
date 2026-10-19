@@ -235,16 +235,30 @@ It prints a link like `http://localhost:5173/`. Ctrl-click it to open the site. 
 
 ## Checking it works
 
+The tests come in two groups: **logic** (the game rules, the maths and the server functions, in `shared/`, `supabase/functions/` and `scripts/`) and **screens** (the website, in `src/`). A few files that play many whole games are marked slow in `vitest.slow.ts`.
+
+**While you work** (quick, pick what fits the change):
+
 | Command | What it does |
 |---|---|
-| `npm test` | Runs the automatic tests |
-| `npm run typecheck` | Checks the code for type mistakes |
-| `npm run build` | Builds the finished website into the `dist` folder |
-| `npm run check` | Does all three, in that order |
+| `npm run test:watch` | Keeps running, and re-runs the tests for each file you save |
+| `npm run test:changed` | Runs only the tests affected by what you have changed and not yet committed (`npm run test:changed -- main` for everything since `main`) |
+| `npm run test:logic` | Just the rules, maths and server functions (about a minute) |
+| `npx vitest run src/games/clans` | Just the tests in one folder (or one file) |
+| `npm test` | Every test except the slow files |
+
+**Before you push or merge** (the full set):
+
+| Command | What it does |
+|---|---|
+| `npm run check` | Type check, **every** test (slow ones too) and the build: exactly what the publish runs |
+| `npm run check:quick` | Type check and `npm test`, for in between |
+| `npm run test:all` | Every test, slow ones too |
 | `npm run test:db` | Tests the database rules (needs the local Supabase copy, see below) |
+| `npm run typecheck` / `npm run build` | The type check, or the build into `dist`, on their own |
 | `npm run build:functions` | Rebuilds the server functions after you change them (see below) |
 
-Run `npm run check` before pushing. If it says everything passed, the publish will work too.
+Run `npm run check` before pushing. If it says everything passed, the publish will work too. The publish runs the full set every time, so a skipped check on your computer can't reach the live site.
 
 ### Testing the database rules on your computer
 

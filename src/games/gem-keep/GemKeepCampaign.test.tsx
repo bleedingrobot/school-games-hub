@@ -1,15 +1,22 @@
 import { spokenLabel } from '../../../shared/maths/banded';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CAMPAIGN } from '../../../shared/gem-keep/levels';
 import { AUTO_FOCUS, isFocusKey, packIdOfKey, type MathsFocus } from '../../../shared/maths/focus';
 import type { Question } from '../../../shared/maths/skillPack';
 import type { GameEngine } from './engine/GameEngine';
 import { isUnlocked, loadProgress, totalStars, withKey, withWin } from './progress';
 import { GemKeepCampaign, type FinishedLevel } from './ui/GemKeepCampaign';
+import { FEEDBACK_MS } from '../../maths/QuestionModal';
 
 const IDS = CAMPAIGN.map((l) => l.id);
+
+// Each Level Key is 10 questions, and the right/wrong message stays up for most of a second after each one. These tests
+// are about which questions are asked and what is reported, not that pause (QuestionModal.test covers it), so skip it.
+const SHOWN = { ...FEEDBACK_MS };
+beforeAll(() => Object.assign(FEEDBACK_MS, { right: 0, wrong: 0 }));
+afterAll(() => Object.assign(FEEDBACK_MS, SHOWN));
 
 /** The latest question the game's pack made, so a test can answer ones whose spoken text it can't read (rounding, order of operations). */
 const latest: { question: Question | null } = { question: null };
@@ -257,13 +264,11 @@ describe('Gem Keep with a maths focus', () => {
     engine.state.stars = 3;
     engine.setPaused(false);
     await user.click(await screen.findByRole('button', { name: 'Try the Level Key' }));
-    let picks = 0;
     for (let i = 0; i < 10; i++) {
       await screen.findByText(new RegExp(`Question ${i + 1} of 10`));
       await waitFor(() => expect(document.querySelector('.question__fact')).not.toBeNull());
       const q = latest.question!;
       if (q.choices) {
-        if (q.choiceLabels) picks++;
         const label = q.choiceLabels ? spokenLabel(q.choiceLabels[q.answer]) : String(q.answer);
         await user.click(screen.getByRole('button', { name: label }));
       } else {
@@ -272,7 +277,6 @@ describe('Gem Keep with a maths focus', () => {
       }
       await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 8000 });
     }
-    expect(picks).toBeGreaterThanOrEqual(0);
     await waitFor(() => expect(onAnswers).toHaveBeenCalled());
     const answers = onAnswers.mock.calls.flatMap(([a]) => a as { key: string; correct: boolean }[]);
     expect(answers.length).toBe(10);
