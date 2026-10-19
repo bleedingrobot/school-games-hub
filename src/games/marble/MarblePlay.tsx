@@ -62,8 +62,11 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
   // The teacher's switch, and the student's focus (to say why the questions are what they are).
   useEffect(() => {
     let current = true;
-    if (!localMaths) void fetchMarbleSwitches().then((s) => current && setMathsSwitch(s.maths), () => undefined);
-    void fetchMyFocus().then((f) => current && setFocus(f), () => undefined);
+    // The preview has no server, so it asks for neither.
+    if (!localMaths) {
+      void fetchMarbleSwitches().then((s) => current && setMathsSwitch(s.maths), () => undefined);
+      void fetchMyFocus().then((f) => current && setFocus(f), () => undefined);
+    }
     return () => {
       current = false;
     };

@@ -7,5 +7,8 @@ export default defineConfig({
   root: 'preview/marble',
   base: './',
   plugins: [react()],
-  build: { outDir: '../../dist-preview-marble', emptyOutDir: true, assetsInlineLimit: process.env.MARBLE_INLINE ? 100_000_000 : 4096 },
+  build: { outDir: '../../dist-preview-marble', emptyOutDir: true, assetsInlineLimit: process.env.MARBLE_INLINE ? 100_000_000 : 4096,
+    // One file can't load parts of itself later, so the inline build keeps every part in the one script.
+    ...(process.env.MARBLE_INLINE ? { rolldownOptions: { output: { codeSplitting: false } } } : {}),
+  },
 });

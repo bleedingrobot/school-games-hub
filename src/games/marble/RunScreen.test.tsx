@@ -114,6 +114,21 @@ describe('RunScreen', () => {
     expect(screen.getByLabelText('Time').textContent).toBe('0:00.00');
   });
 
+  it('touch: a drag starts the run, and the thumb stick shows only while rolling (never over the Ready or Paused buttons)', async () => {
+    setup();
+    await runFrames(50);
+    const stage = document.querySelector('.marble-stage')!;
+    expect(document.querySelector('.marble-stick')).toBeNull();
+    fireEvent.pointerDown(stage, { pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 100 });
+    await runFrames(200);
+    expect(screen.queryByText('Ready?')).toBeNull();
+    expect(document.querySelector('.marble-stick')).not.toBeNull();
+    fireEvent.keyDown(window, { code: 'KeyP' });
+    await runFrames(50);
+    expect(screen.getByText('Paused')).toBeInTheDocument();
+    expect(document.querySelector('.marble-stick')).toBeNull();
+  });
+
   it('hard mode counts down, and running out says so', async () => {
     const { finished, props } = setup({ mode: 'down' });
     await runFrames(50);

@@ -697,7 +697,8 @@ export function RunScreen({
           </div>
         )}
 
-        {showStick && phase !== 'loading' && <ThumbStick side={stickSide} onPush={(v) => (stickPush.current = v)} />}
+        {/* Only while rolling: on a phone it would sit over the Ready, question and finish buttons (dragging anywhere starts a run). */}
+        {showStick && (phase === 'playing' || phase === 'reading') && <ThumbStick side={stickSide} onPush={(v) => (stickPush.current = v)} />}
       </div>
 
       <div className="marble-bar">
