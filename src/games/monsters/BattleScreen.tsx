@@ -586,7 +586,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
             answered.current = {
               topic: asking.topic, band: asking.band, key: asking.question.factKey,
               ...(asking.question.params ? { params: asking.question.params } : {}),
-              ...(asking.topic === 'times-tables' ? { kind: asking.question.kind } : {}),
+              ...(asking.topic === 'times-tables' ? { kind: asking.question.kind, parts: asking.question.parts } : {}),
               given: answer, ms: Math.round(ms), at: Date.now(),
             };
             judged.current = judgeAnswer({ correct: marked.correct, ms, topic: asking.topic, band: asking.band, calm: settings.calm });
