@@ -62,6 +62,9 @@ export function withMistakes(base: Omit<Made, 'wrong' | 'named'>, named: Named, 
   return found ? { ...base, wrong: found.wrong, named: found.named } : null;
 }
 
+/** Shown above a typed "3/4 = ?" or "35% = ?", which on its own could want any kind of answer. */
+export const AS_DECIMAL = 'Write it as a decimal.';
+
 export const sameParts = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((p, i) => p === b[i]);
 
 /**

@@ -15,7 +15,7 @@
  *   times-decimals      timesdec:ten  timesdec:hundred  timesdec:div-ten  timesdec:div-hundred  timesdec:missing
  */
 import { int, isInt, pickOne, show, type Family } from '../banded';
-import { oneKey, withMistakes, type Named } from './generatedKit';
+import { AS_DECIMAL, oneKey, withMistakes, type Named } from './generatedKit';
 import { frac, goodPick, pick, rollPick, talk } from './pickKit';
 
 const range = (from: number, to: number, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
@@ -315,7 +315,7 @@ const equivFamilies: Family[] = [
     (_k, [n, d]) => {
       if (!isCommon(n, d)) return null;
       const parts = [frac(n, d), '=', '?'];
-      return withMistakes({ parts, spoken: talk(parts), answer: decimalOf(n, d), input: 'decimal' }, decimalMistakes(n, d));
+      return withMistakes({ parts, spoken: talk(parts), prompt: AS_DECIMAL, answer: decimalOf(n, d), input: 'decimal' }, decimalMistakes(n, d));
     },
   ),
   oneKey(
@@ -342,7 +342,7 @@ const equivFamilies: Family[] = [
       if (!isInt(n, 1, 99) || !notTen(n)) return null;
       const parts = [frac(n, 100), '=', '?'];
       return withMistakes(
-        { parts, spoken: talk(parts), answer: n / 100, input: 'decimal' },
+        { parts, spoken: talk(parts), prompt: AS_DECIMAL, answer: n / 100, input: 'decimal' },
         {
           'put it in the tenths place': n / 10,
           'wrote it as a whole number': n,

@@ -279,4 +279,10 @@ describe('fractions, decimals and percentages (F.6)', () => {
       expect(off.choiceLabels, key).toHaveLength(4);
     }
   });
+
+  it('shows what to do above the sum when the question says', () => {
+    const question = { id: 1, parts: ['6/10', '=', '?'], spoken: '6 tenths equals what?', prompt: 'Write it as a decimal.', input: 'decimal' as const, answer: 0.6 };
+    render(<QuestionModal question={question} title="Size up" onSubmit={() => ({ correct: true, fact: '', boxBefore: 0, boxAfter: 0 })} onDone={() => {}} />);
+    expect(screen.getByText('Write it as a decimal.')).toBeTruthy();
+  });
 });

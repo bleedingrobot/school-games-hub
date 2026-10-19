@@ -34,6 +34,8 @@ export interface Made {
   /** A pick-only question: what each choice shows. The answer is the index of the right one. */
   pick?: string[];
   input?: 'whole' | 'decimal';
+  /** What to do, shown above the sum: "Write it as a decimal." See `Question.prompt`. */
+  prompt?: string;
   /** The right answer in words, when filling in the blank doesn't say it ("3/4 is bigger than 2/3"). */
   fact?: string;
 }
@@ -303,6 +305,7 @@ export class BandedPack implements SkillPack {
       kind: key,
       parts: made.parts,
       spoken: made.spoken,
+      ...(made.prompt ? { prompt: made.prompt } : {}),
       answer,
       choices,
       choiceLabels,

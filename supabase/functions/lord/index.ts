@@ -2092,6 +2092,7 @@ var BandedPack = class {
 			kind: key,
 			parts: made.parts,
 			spoken: made.spoken,
+			...made.prompt ? { prompt: made.prompt } : {},
 			answer,
 			choices,
 			choiceLabels,
@@ -2436,6 +2437,10 @@ const ADD_SUB = {
 	]
 };
 //#endregion
+//#region shared/maths/skillPacks/generatedKit.ts
+/** Shown above a typed "3/4 = ?" or "35% = ?", which on its own could want any kind of answer. */
+const AS_DECIMAL = "Write it as a decimal.";
+//#endregion
 //#region shared/maths/skillPacks/decimals.ts
 /**
 * Decimals and money (the Stone topic in Maths Monsters). Every question here has a decimal
@@ -2542,6 +2547,7 @@ const DECIMALS = {
 				return decimal({
 					parts,
 					spoken: speak(parts),
+					prompt: AS_DECIMAL,
 					answer: n / 10,
 					wrong: [
 						n,

@@ -52,7 +52,7 @@ const choiceText = (label: string) => (FRACTION.test(label) ? <Part text={label}
 
 
 /** What the box needs of a question. `answer` is missing when the game's server keeps it secret until marked. */
-export type ShownQuestion = Pick<Question, 'id' | 'parts' | 'spoken' | 'choices' | 'choiceLabels' | 'maxLength' | 'input'> & { answer?: number };
+export type ShownQuestion = Pick<Question, 'id' | 'parts' | 'spoken' | 'prompt' | 'choices' | 'choiceLabels' | 'maxLength' | 'input'> & { answer?: number };
 
 /**
  * A marked answer, plus what it earned, e.g. "+15 mana" (shown under "Correct!"). `answer` is
@@ -194,6 +194,7 @@ export function QuestionModal({
           {title}
         </h2>
         {note && <p className="question__note">{note}</p>}
+        {question.prompt && <p className="question__prompt">{question.prompt}</p>}
         <p className="question__fact" aria-label={question.spoken} data-long={question.parts.join('').length > 12 || undefined}>
           {question.parts.map((part, i) => (
             <Part key={i} text={part} blank={blankBox} />

@@ -12,7 +12,7 @@
  *   percent-of     pct:one  pct:twenty  pct:three-quarters  pct:big  pct:whole:ten  pct:whole:fifty  pct:whole:quarter
  */
 import { int, isInt, pickOne, show, type Family } from '../banded';
-import { oneKey, withMistakes, type Named } from './generatedKit';
+import { AS_DECIMAL, oneKey, withMistakes, type Named } from './generatedKit';
 import { frac, goodPick, pick, rollPick, talk } from './pickKit';
 
 const BASIC_TAGS = ['MS.Y5.NUM.RN.P5', 'MS.Y5.NUM.RN.P15'];
@@ -155,7 +155,7 @@ const toDecimal = oneKey(
     if (!CONVERT[p]) return null;
     const parts = [pct(p), '=', '?'];
     return withMistakes(
-      { parts, spoken: talk(parts), answer: p / 100, input: 'decimal' },
+      { parts, spoken: talk(parts), prompt: AS_DECIMAL, answer: p / 100, input: 'decimal' },
       {
         'ten times too big': p / 10,
         'ten times too small': p / 1000,

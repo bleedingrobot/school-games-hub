@@ -8,7 +8,7 @@
  * Types: fdp:frac-to-pct  fdp:pct-to-frac  fdp:dec-to-pct  fdp:pct-to-dec  fdp:match
  */
 import { isInt, pickOne, show, type Family } from '../banded';
-import { oneKey, withMistakes } from './generatedKit';
+import { AS_DECIMAL, oneKey, withMistakes } from './generatedKit';
 import { frac, goodPick, pick, rollPick, talk } from './pickKit';
 
 const TAGS = ['MS.Y6.NUM.RN.P3', 'MS.Y6.NUM.RN.P4'];
@@ -103,7 +103,7 @@ const families: Family[] = [
       if (!OTHERS.includes(p)) return null;
       const parts = [`${p}%`, '=', '?'];
       return withMistakes(
-        { parts, spoken: talk(parts), answer: p / 100, input: 'decimal' },
+        { parts, spoken: talk(parts), prompt: AS_DECIMAL, answer: p / 100, input: 'decimal' },
         {
           'moved the point one place only': p / 10,
           'did not move the point': p,
