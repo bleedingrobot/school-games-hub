@@ -105,7 +105,7 @@ describe('reading the settings of one class', () => {
     from.mockReturnValue({ select });
     expect(await readSettings(['students_choose_focus'])).toEqual({ students_choose_focus: false });
     expect(from).toHaveBeenCalledWith('app_settings');
-    expect(select).toHaveBeenCalledWith('students_choose_focus');
+    expect(select).toHaveBeenCalledWith('*'); // the whole row, shared by every switch for 5 minutes
     expect(await fetchStudentsChooseFocus()).toBe(false);
   });
 
