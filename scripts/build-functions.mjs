@@ -1,7 +1,8 @@
 // Builds each server function into a single index.ts file, so it can be deployed with the
 // Supabase CLI or pasted straight into the Supabase dashboard's function editor.
 // Run from the project folder with: npm run build:functions   (a test fails if index.ts is out of date)
-import { readFileSync, writeFileSync } from 'node:fs';
+// or, for just some: npm run build:functions -- lord clans
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { rolldown } from 'rolldown';
 
@@ -36,7 +37,15 @@ export async function buildFunction(name) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  for (const name of FUNCTIONS) {
+  // Name the functions to build only those (npm run build:functions -- lord clans); with none, every function in FUNCTIONS.
+  // Build only your own: rebuilding every one rewrites monster/index.ts, which is deliberately left as deployed.
+  const named = process.argv.slice(2);
+  const unknown = named.filter((name) => !/^[a-z0-9-]+$/.test(name) || !existsSync(`supabase/functions/${name}/entry.ts`));
+  if (unknown.length) {
+    console.error(`No such function: ${unknown.join(', ')} (each needs supabase/functions/<name>/entry.ts)`);
+    process.exit(1);
+  }
+  for (const name of named.length ? named : FUNCTIONS) {
     writeFileSync(`supabase/functions/${name}/index.ts`, await buildFunction(name));
     console.log(`Built supabase/functions/${name}/index.ts`);
   }
