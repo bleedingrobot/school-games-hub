@@ -469,6 +469,8 @@ Nothing they can see. **One difference in how sign-out works:** after a pupil si
 
 **Keys were already switched (James's screenshot, 20 Oct 2026):** the JWT Keys page shows the current key is ECC (P-256), with the HS256 shared secret under "Previously used", both created/rotated about 15 Oct. So step 4 isn't needed: pupils' tokens are already ES256, and **S.5 has been saving the sign-in requests since the functions were deployed this morning.** (So the new check's local path is what's live, not the `getUser` fallback.) Nothing to press; leave the old secret as it is. Still to do: the outside check on the other ten functions and merging `server-load-s5` into `main` (manual mode), then compare request counts after a school day.
 
+**S.5 finished (20 Oct 2026, 9 am):** the year-level change (682ba9d) had redeployed `save-bot-game`, `space-game` and `gem-keep` from `main` at about 7:05, taking them back to `getUser`. Merge commit 40bfecd (682ba9d + `server-load-s5`; type check and all tests passed) pushed to `main` with James's approval; "Test and publish" passed. The three were redeployed from it (the only difference from live was the sign-in check). Checked: all eleven live functions use the new check and none uses `getUser`; all answer 401 to no token and to a forged one. From now on, deploys from `main` include the new check. Still to do: compare request counts after a school day.
+
 ## Stage S.6 results (20 Oct 2026)
 
 **Built on its own branch, `server-load-s6` (worktree `~/projects/school-games-hub-server-load-s6`, from `main` after S.5), not live.** Screen only: no migration, no server functions.
