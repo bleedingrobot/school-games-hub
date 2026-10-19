@@ -3,6 +3,7 @@ import type { GameDefinition } from '../types';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const MarblePlay = lazy(() => import('./MarblePlay').then((m) => ({ default: m.MarblePlay })));
+const MarbleTeacherPanel = lazy(() => import('../../pages/TeacherMarble').then((m) => ({ default: m.MarbleTeacherPanel })));
 
 function MarbleIcon({ size = 64 }: { size?: number }) {
   return (
@@ -28,4 +29,6 @@ export const marbleRush: GameDefinition = {
   Play: MarblePlay,
   ranked: false,
   noBots: true,
+  group: 'complex-maths',
+  TeacherPanels: MarbleTeacherPanel,
 };

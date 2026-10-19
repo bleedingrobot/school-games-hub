@@ -4,6 +4,9 @@ import { TEXT } from './strings';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const GemKeepPlay = lazy(() => import('./GemKeepPlay').then((m) => ({ default: m.GemKeepPlay })));
+// Gem Keep's teacher parts bring the levels and maths code with them, so they load separately.
+const GemKeepTeacherPanels = lazy(() => import('../../pages/TeacherGemKeep').then((m) => ({ default: m.GemKeepTeacherPanels })));
+const GemKeepStudentPanel = lazy(() => import('../../pages/TeacherGemKeep').then((m) => ({ default: m.GemKeepStudentPanel })));
 
 function GemKeepIcon({ size = 64 }: { size?: number }) {
   return (
@@ -28,4 +31,7 @@ export const gemKeep: GameDefinition = {
   Play: GemKeepPlay,
   ranked: false,
   noBots: true,
+  group: 'easy-maths',
+  TeacherPanels: GemKeepTeacherPanels,
+  StudentPanel: GemKeepStudentPanel,
 };

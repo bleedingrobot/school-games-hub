@@ -5,7 +5,6 @@ import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
 import { fetchMultiplayerEnabled } from '../data/multiplayer';
 import { fetchMathsSwitch, fetchReactionsEnabled } from '../data/spaceGames';
-import { marbleOn } from '../games/marble/switch';
 import { FriendlyError } from '../data/profile';
 import {
   deletePerson,
@@ -21,25 +20,16 @@ import {
   type Person,
   type PersonDetail,
 } from '../data/teacher';
-import { gameLabel } from '../games/registry';
+import { ALL_GAMES, gameLabel } from '../games/registry';
 import { TeacherClassPicker, TeacherClassProvider, useTeacherClass } from '../teacher/TeacherClass';
 import { BOT_LEVELS, type BotLevel } from '../games/types';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
 import { whenPlayed } from './Dashboard';
 
-// Gem Keep's teacher parts bring the levels and maths code with them, so they load separately.
-const GemKeepTeacherPanels = lazy(() => import('./TeacherGemKeep').then((m) => ({ default: m.GemKeepTeacherPanels })));
-const MonstersTeacherPanels = lazy(() => import('./TeacherMonsters').then((m) => ({ default: m.MonstersTeacherPanels })));
-const MonstersStudentPanel = lazy(() => import('./TeacherMonsters').then((m) => ({ default: m.MonstersStudentPanel })));
-const LordTeacherPanels = lazy(() => import('./TeacherLord').then((m) => ({ default: m.LordTeacherPanels })));
-const LordStudentPanel = lazy(() => import('./TeacherLord').then((m) => ({ default: m.LordStudentPanel })));
-const ClansTeacherPanels = lazy(() => import('./TeacherClans').then((m) => ({ default: m.ClansTeacherPanels })));
-const MarbleTeacherPanel = lazy(() => import('./TeacherMarble').then((m) => ({ default: m.MarbleTeacherPanel })));
-const ClansStudentPanel = lazy(() => import('./TeacherClans').then((m) => ({ default: m.ClansStudentPanel })));
+// Each game's own teacher panels come from its GameDefinition (TeacherPanels, StudentPanel), loaded separately.
 // The warm-up reset brings the maths ladder with it, so it loads with the student's panel, not with the page.
 const PlacementReset = lazy(() => import('../maths/PlacementReset').then((m) => ({ default: m.PlacementReset })));
-const GemKeepStudentPanel = lazy(() => import('./TeacherGemKeep').then((m) => ({ default: m.GemKeepStudentPanel })));
 
 /** The words a teacher types to start a new season. The server checks them too. */
 export const NEW_SEASON_WORDS = 'NEW SEASON';
@@ -113,11 +103,7 @@ function TeacherView({ me, isAdmin }: { me: string; isAdmin: boolean }) {
         <ReactionsSwitch />
         <MathsSwitchPanel />
         <Suspense fallback={null}>
-          <GemKeepTeacherPanels />
-          <MonstersTeacherPanels />
-          <LordTeacherPanels />
-          <ClansTeacherPanels />
-          {marbleOn() && <MarbleTeacherPanel />}
+          {ALL_GAMES.map((game) => game.TeacherPanels && <game.TeacherPanels key={game.id} />)}
         </Suspense>
       </TeacherClassProvider>
 
@@ -477,10 +463,7 @@ function PersonPanel({
           )}
           <Suspense fallback={null}>
             {person.role === 'student' && <PlacementReset student={person.id} name={person.display_name} />}
-            <GemKeepStudentPanel student={person.id} />
-            <MonstersStudentPanel student={person.id} />
-            <LordStudentPanel student={person.id} />
-            <ClansStudentPanel student={person.id} />
+            {ALL_GAMES.map((game) => game.StudentPanel && <game.StudentPanel key={game.id} student={person.id} />)}
           </Suspense>
         </>
       ) : (

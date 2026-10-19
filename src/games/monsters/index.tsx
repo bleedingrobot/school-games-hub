@@ -1,8 +1,11 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
+import { useMonstersEnabled } from './switch';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const MonstersPlay = lazy(() => import('./MonstersPlay').then((m) => ({ default: m.MonstersPlay })));
+const MonstersTeacherPanels = lazy(() => import('../../pages/TeacherMonsters').then((m) => ({ default: m.MonstersTeacherPanels })));
+const MonstersStudentPanel = lazy(() => import('../../pages/TeacherMonsters').then((m) => ({ default: m.MonstersStudentPanel })));
 
 function MonstersIcon({ size = 64 }: { size?: number }) {
   return (
@@ -32,4 +35,8 @@ export const monsters: GameDefinition = {
   Play: MonstersPlay,
   ranked: false,
   noBots: true,
+  group: 'complex-maths',
+  useTeacherSwitch: useMonstersEnabled,
+  TeacherPanels: MonstersTeacherPanels,
+  StudentPanel: MonstersStudentPanel,
 };

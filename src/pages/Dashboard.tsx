@@ -15,10 +15,7 @@ import type { SeatSummary } from '../data/cardGames';
 import { seatsOf as powerSeatsOf, type PowerGame } from '../data/powerGames';
 import { findGame, GAMES, POWER_CLASH_ON, gameLabel } from '../games/registry';
 import { trainingOn } from '../training/switch';
-import { useClansEnabled } from '../games/clans/switch';
-import { useLordEnabled } from '../games/lord/switch';
-import { useMonstersEnabled } from '../games/monsters/switch';
-import { BOT_LEVELS, isRanked, type BotLevel } from '../games/types';
+import { BOT_LEVELS, isRanked, type BotLevel, type DashboardGroup, type GameDefinition } from '../games/types';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
 
 // The maths focus card brings the whole maths ladder with it, so it loads on its own.
@@ -44,12 +41,23 @@ function botName(level: string, game?: string) {
   return `${BOT_LEVELS.find((l) => l.id === level)?.label ?? ''} bot`;
 }
 
-/** How the dashboard groups its games, top to bottom. A game missing from here would not show. */
-const GAME_GROUPS = [
-  { title: 'Non-maths games', ids: ['chess', 'checkers', '101', 'power-clash'] },
-  { title: 'Easy maths games', ids: ['space', 'gem-keep'] },
-  { title: 'Complex maths games', ids: ['monsters', 'dragon-maths', 'clan-quest', 'marble'] },
+/** How the dashboard groups its games, top to bottom. Each game says its group (`group` in its GameDefinition). */
+const GAME_GROUPS: { title: string; group: DashboardGroup }[] = [
+  { title: 'Non-maths games', group: 'no-maths' },
+  { title: 'Easy maths games', group: 'easy-maths' },
+  { title: 'Complex maths games', group: 'complex-maths' },
 ];
+
+/**
+ * The games whose cards show: every game in GAMES, less those whose teacher switch is off (or still loading, so a card
+ * never flashes up). Each game's switch hook is called on every render, in GAMES order, which never changes while the
+ * page is open.
+ */
+function useShownGames(): GameDefinition[] {
+  const off = new Set<string>();
+  for (const game of GAMES) if (game.useTeacherSwitch && game.useTeacherSwitch() !== true) off.add(game.id);
+  return GAMES.filter((game) => !off.has(game.id));
+}
 
 /** One line in Recent games: against a bot, or against another student. */
 export interface RecentGame {
@@ -216,10 +224,7 @@ export function Dashboard() {
   // The cards wait for the home page's answer, or ask for themselves if there is nobody to ask it for.
   const cardsFrom = meId ? homePage : undefined;
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
-  const monstersOn = useMonstersEnabled() === true;
-  const lordOn = useLordEnabled() === true;
-  const clansOn = useClansEnabled() === true;
-  const shownGames = GAMES.filter((g) => (g.id !== 'monsters' || monstersOn) && (g.id !== 'dragon-maths' || lordOn) && (g.id !== 'clan-quest' || clansOn));
+  const shownGames = useShownGames();
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
@@ -331,7 +336,7 @@ export function Dashboard() {
           Pick a game
         </h2>
         {GAME_GROUPS.map((group) => {
-          const groupGames = group.ids.map((id) => shownGames.find((g) => g.id === id)).filter((g) => g !== undefined);
+          const groupGames = shownGames.filter((g) => g.group === group.group);
           if (groupGames.length === 0) return null;
           return (
             <div key={group.title}>

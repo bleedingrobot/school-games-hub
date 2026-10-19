@@ -24,4 +24,5 @@ export const card101: GameDefinition = {
   Icon: Card101Icon,
   Play: Card101Play,
   ranked: false,
+  group: 'no-maths',
 };
