@@ -410,3 +410,11 @@ Nothing live changed. Before asking James to paste the lobby migration:
 - **The merged code passes everything:** type check, build, and the whole suite (`TESTS=all`, 164 files, 3,385 tests, 1 skipped).
 - **Every database test file passes with the lobby migration** (36 files, including `lobby` 37, `security` 50, `home_page` 40), each run on the local copy inside a transaction that was rolled back, so the local copy is still at 000700. Once `main` has the migration, the publish's own database check will run it too, so a broken migration would stop the publish.
 - **Not done:** the live read-only checks (is `lobby` already there, and the request counts after a school day). Claude Code's safety check refused them in auto mode; they wait for James (manual mode, or he approves them at his computer).
+
+## S.4 went live (20 Oct 2026)
+
+- **Migration:** James pasted `20261019000800_lobby.sql` into the Supabase SQL Editor ("Success. No rows returned"). Checked read only on the live database: `lobby()` is there, returns `json`, is `plpgsql` and `security invoker`; signed-in users can call it, `anon` and `public` can't. Its text is exactly the file's except that the SQL Editor saved every line ending as Windows-style (61 extra carriage returns, one per line); with those set back, the text's md5 matches the file's. Harmless: PL/pgSQL reads a carriage return as a space.
+- **Site:** merge commit 6310ae0 (origin/main 16b93a9 + `server-load-s4`) pushed to `main` with James's approval. The first "Test and publish" run failed on the known flaky wormhole test in `src/games/space/SpaceLive.test.tsx` (nothing published; database checks passed; the test passed 5 out of 5 on its own); re-running the failed jobs passed and published. The published JS asks for `lobby` once per refresh.
+- **To check:** the lobby lists open games and "Your games" as before; starting a game and joining with a code work.
+- **To undo:** revert the merge on `main` and push (or GitHub's Revert button). The job can stay.
+- Still to do: compare the lobby's requests in `extensions.pg_stat_statements` against section 1 after a school day.
