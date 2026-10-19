@@ -42,8 +42,8 @@ function errorText(error: unknown) {
   return error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.';
 }
 
-/** How often the "who has joined" list and the requests look again, in milliseconds. */
-export const LIVE_MS = 8000;
+/** How often the "who has joined" list and the requests look again, in milliseconds (and straight away when the tab comes back). */
+export const LIVE_MS = 30_000;
 
 /** "just now", "3 minutes ago", "2 hours ago", or the day. */
 export function ago(iso: string, now = Date.now()): string {
@@ -330,12 +330,20 @@ function ClassPanel({
     void refreshLists();
   }, [refresh, refreshLists]);
 
-  // The "joined" list and the requests are live: look again every few seconds while the page is showing.
+  // The "joined" list and the requests are live: look again every 30 seconds while the page is showing,
+  // and straight away when the tab comes back.
   useEffect(() => {
     const timer = window.setInterval(() => {
       if (document.visibilityState !== 'hidden') void refresh();
     }, LIVE_MS);
-    return () => window.clearInterval(timer);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [refresh]);
 
   async function act(work: () => Promise<string>) {
