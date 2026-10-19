@@ -410,3 +410,61 @@ Nothing live changed. Before asking James to paste the lobby migration:
 - **The merged code passes everything:** type check, build, and the whole suite (`TESTS=all`, 164 files, 3,385 tests, 1 skipped).
 - **Every database test file passes with the lobby migration** (36 files, including `lobby` 37, `security` 50, `home_page` 40), each run on the local copy inside a transaction that was rolled back, so the local copy is still at 000700. Once `main` has the migration, the publish's own database check will run it too, so a broken migration would stop the publish.
 - **Not done:** the live read-only checks (is `lobby` already there, and the request counts after a school day). Claude Code's safety check refused them in auto mode; they wait for James (manual mode, or he approves them at his computer).
+
+## S.4 went live (20 Oct 2026)
+
+- **Migration:** James pasted `20261019000800_lobby.sql` into the Supabase SQL Editor ("Success. No rows returned"). Checked read only on the live database: `lobby()` is there, returns `json`, is `plpgsql` and `security invoker`; signed-in users can call it, `anon` and `public` can't. Its text is exactly the file's except that the SQL Editor saved every line ending as Windows-style (61 extra carriage returns, one per line); with those set back, the text's md5 matches the file's. Harmless: PL/pgSQL reads a carriage return as a space.
+- **Site:** merge commit 6310ae0 (origin/main 16b93a9 + `server-load-s4`) pushed to `main` with James's approval. The first "Test and publish" run failed on the known flaky wormhole test in `src/games/space/SpaceLive.test.tsx` (nothing published; database checks passed; the test passed 5 out of 5 on its own); re-running the failed jobs passed and published. The published JS asks for `lobby` once per refresh.
+- **To check:** the lobby lists open games and "Your games" as before; starting a game and joining with a code work.
+- **To undo:** revert the merge on `main` and push (or GitHub's Revert button). The job can stay.
+- Still to do: compare the lobby's requests in `extensions.pg_stat_statements` against section 1 after a school day.
+
+## Stage S.5 results (20 Oct 2026)
+
+**Built on its own branch, `server-load-s5` (worktree `~/projects/school-games-hub-server-load-s5`, from `main` after S.4), not live.** No migration, no screen change: only the ten server functions.
+
+### What was built
+
+- **One shared sign-in check,** `supabase/functions/_shared/signIn.ts`, used by all ten functions (`save-bot-game`, `multiplayer`, `space-game`, `card-game`, `gem-keep`, `power-clash`, `monster`, `lord`, `clans`, `training`) in place of their own `getUser` call. It uses the Supabase library's `getClaims`:
+  - **With the newer sign-in keys** (after James's switch in the dashboard), the token's signature is checked inside the function against the project's public keys. The library fetches those keys once and keeps them for 10 minutes, so a pupil's moves no longer ask the sign-in service (and its database) who they are.
+  - **With the older shared secret** (now, and for up to an hour after the switch while old tokens run out), or a token naming a key the project doesn't have, the library asks the sign-in service, exactly as `getUser` does today. So **this can go live before the switch and changes nothing until then.**
+  - Only a signed-in user's token is accepted (`role` is `authenticated` and it names the user); expired, changed, forged or junk tokens are refused, and a failure to fetch the keys is a refusal, never a crash. What each function does after the check is unchanged.
+- The ten `index.ts` files are rebuilt. `monster/index.ts` also picks up the "Write it as a decimal." wording that was on `main` but never rebuilt into it (Maths Monsters is switched off for pupils).
+- All ten functions were already deployed with Supabase's own gate ("Verify JWT") **off** (README; the go-live checks it). That matters: Supabase's docs say that gate breaks with the newer keys, so it must stay off.
+
+### What changes for pupils
+
+Nothing they can see. **One difference in how sign-out works:** after a pupil signs out, the functions keep accepting their old sign-in token until it expires (at most 1 hour), because the check no longer asks the sign-in service. The browser throws the token away on sign-out, so this only matters if someone had copied it out of the browser. Teachers removing or hiding a pupil is unchanged: the functions' own database checks still look the pupil up on every request.
+
+### Tests
+
+- **`supabase/functions/_shared/signIn.test.ts`** (12 tests): the real Supabase library against a pretend sign-in service, with real tokens signed by real ES256 keys. Right pupil with no request to the sign-in service, keys fetched once for three checks; expired, changed after signing, signed by a forger's key under the project's key name, the site's public key, the server's key, no user, wrong role, junk: all refused; an unknown key asks the sign-in service; a new key is picked up straight away; keys that can't be fetched mean a refusal; older-style tokens ask the sign-in service and trust only its yes. Checked that the tests catch a missing role check.
+- **Against the real sign-in service on the local copy** (which already signs with ES256): a throwaway pupil signed in; 21 checks gave the right pupil with one request (the public keys), about 3 ms each after the first; the site's public key, the server key and a changed token were refused; the old `getUser` agreed. After sign-out, the new check still accepted the token and `getUser` did not (the difference above). The pupil was then removed. (Side finding: removing a user through the sign-in service's admin API failed locally with "permission denied for table class_group_members"; the user was removed directly instead. Worth checking before anyone deletes a pupil from the Supabase dashboard.)
+- **Whole suite:** type check, and `TESTS=all` (165 files, 3,397 tests, 1 skipped) all pass, including every function's handler tests, unchanged.
+
+**Not tested:** the live project after the switch (needs James's dashboard change); the request counts, which can only be read after it goes live.
+
+### Go-live steps (in this order)
+
+1. **Check the live functions (read only, needs manual mode):** each of the ten deployed functions matches `main`'s `index.ts` today (apart from `monster`'s wording), so deploying doesn't bring in anything else, and each has Verify JWT off.
+2. **Deploy the ten functions** from this branch: `npx supabase functions deploy <name> --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api` for each (James approves). Nothing changes yet: with the older secret they ask the sign-in service, as now. Check from outside: each still answers 401 without a sign-in; a quick game still saves.
+3. **Merge `server-load-s5` into `main`** (James approves the push). The site's own code is unchanged, so this just keeps `main` the same as what's deployed.
+4. **James switches the keys** in the Supabase dashboard: **Project Settings → JWT Keys**, then **Migrate JWT secret** (the old secret carries on working and a new ECC key is made, waiting), then **Rotate keys** so the new key signs new sign-ins. **Don't revoke the old secret, and leave the legacy API keys on:** the site uses them. Pupils stay signed in; their tokens switch over as they refresh (within an hour).
+5. **Check** an hour later: a game with a classmate and a Clan Quest fight still work; then, after a school day, the sign-in service's database requests from the functions should have dropped (compare `extensions.pg_stat_statements` with section 1).
+
+**To undo:** before step 4, redeploy the previous `index.ts` files (or just leave them: they behave as before). After step 4, nothing needs undoing for the functions to work, since they handle both kinds of key; rotating back is in the same dashboard page.
+
+## S.5 functions deployed (20 Oct 2026)
+
+**Step 1 check (read only) found two things the plan didn't expect:**
+
+- **Six live functions were older than `main`,** each exactly an older commit on `main`: `save-bot-game`, `space-game`, `gem-keep` from eb09215 (F.8 part A); `card-game`, `monster`, `lord` from f13f87c (F.2). Deploying `main`'s versions would also have put live the "Write it as a decimal." wording (all six) and F.3 part 2, F.5 and F.6 (`card-game`, `monster`, `lord`), none of which had been deployed in those functions. So **each function was built from the exact commit that is live, plus only the sign-in change** (temporary worktrees at eb09215, f13f87c and the `bond-match` tip 4b3101e; `multiplayer`, `power-clash`, `clans`, `training` were already identical to `main`). For all eleven, the new file differs from the downloaded live file by exactly the sign-in check and the one `userIdFor` line (28 changed lines, the same in each; `multiplayer` 27, one comment fewer). All load `@supabase/supabase-js@2.117.3`, the version tested.
+- **An eleventh function, `bond-match`** (live from the `bond-match` branch tip 4b3101e, game switched off), had **Verify JWT on**, which Supabase says breaks after the key switch. It checks the sign-in itself, so it got the same sign-in change and was deployed with Verify JWT off, like the rest. The change is **not committed to the `bond-match` branch** (its worktree has someone's unsaved files): the branch's `bond-match/entry.ts` still has `getUser`, so its next deploy must take the change or it goes back to asking the sign-in service (still works) — and must keep `--no-verify-jwt`.
+
+**Deployed** all eleven with `functions deploy <name> --no-verify-jwt --use-api` (Maths Monsters first, as it's switched off). From outside, Maths Monsters answered 401 "Please sign in again." with no token, a junk token and a forged ES256 token naming a made-up key. The same outside check on the other ten was refused by the auto-mode safety check; it waits for manual mode.
+
+**So `main` and live functions still differ** in the same six (that was already so): `main` has maths changes not yet deployed in them. Whoever deploys those next takes the sign-in change with them from this branch once merged.
+
+**To undo:** redeploy the previous builds (`git show eb09215:supabase/functions/<name>/index.ts`, `f13f87c:…`, `origin/main:…` for the four, `4b3101e:…` for `bond-match`). Not needed for the key switch to be safe: before it, the new check asks the sign-in service exactly as before.
+
+**Keys were already switched (James's screenshot, 20 Oct 2026):** the JWT Keys page shows the current key is ECC (P-256), with the HS256 shared secret under "Previously used", both created/rotated about 15 Oct. So step 4 isn't needed: pupils' tokens are already ES256, and **S.5 has been saving the sign-in requests since the functions were deployed this morning.** (So the new check's local path is what's live, not the `getUser` fallback.) Nothing to press; leave the old secret as it is. Still to do: the outside check on the other ten functions and merging `server-load-s5` into `main` (manual mode), then compare request counts after a school day.

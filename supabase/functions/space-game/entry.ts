@@ -1,6 +1,7 @@
 // Connects the space-game handler to Supabase. Edit handler.ts for the logic, then run
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
+import { userIdFromToken } from '../_shared/signIn';
 import { FLUENT_DAYS, quickMsForPack, TOP_BOX } from '../../../shared/maths/config';
 import type { FactStats } from '../../../shared/maths/leitner';
 import { packIdOfKey, parseFocus } from '../../../shared/maths/focus';
@@ -63,10 +64,7 @@ Deno.serve(
   spaceGameHandler({
     now: () => Date.now(),
     random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
-    async userIdFor(token) {
-      const { data, error } = await admin.auth.getUser(token);
-      return error ? null : (data.user?.id ?? null);
-    },
+    userIdFor: userIdFromToken(admin.auth),
     async playerStatus(player, others = []) {
       const { data, error } = await admin.rpc('space_player_status', { player, others }).maybeSingle();
       if (error || !data) {
