@@ -2,7 +2,7 @@
 
 *How to make the hub ask the server for much less, so a whole class can use it at once without the database timing out. Written 19 October 2026 for James, after the lobby timeout that morning.*
 
-**Status: nothing built yet. The lobby already refreshes every 20 seconds instead of 5, and the faster points-and-level job is live (both 19 Oct 2026). James answered the questions the same day (section 7). Everything below waits for James to say go, one stage at a time, starting with S.1.**
+**Status: S.1 built and tested on the `server-load` branch, not live (see "Stage S.1 results" at the end); nothing else built. The lobby already refreshes every 20 seconds instead of 5, and the faster points-and-level job is live (both 19 Oct 2026). James answered the questions the same day (section 7). Everything below waits for James to say go, one stage at a time, starting with S.1.**
 
 ## 1. Why
 
@@ -135,3 +135,61 @@ The next size up costs about US$10 a month on the paid plan (the plan's fixed cr
 3. The home-page change (Power Clash moved to "Non-maths games") is **committed to `main`**, so the branch starts from it.
 4. **Bigger server: later, if still needed** after S.1 to S.3 and a full-class try.
 5. **Yes, clear the database's request counts** once S.1 to S.3 are live, after copying section 1's numbers (and any newer ones) into this plan. Only the counts are cleared, never pupil data.
+
+## Stage S.1 results (19 Oct 2026)
+
+**Built on `server-load`, not live.** Nothing merged, pushed to `main`, deployed or changed in the database.
+
+### What was built
+
+- **One read for every switch.** With no class picked, the screen now asks for the person's whole settings row once (`src/data/settingsMemory.ts`, used by `readSettings` in `src/data/classSettings.ts`) and every switch takes its column from it. A signed-in person may read all 27 columns of `app_settings` (checked on the live database, read only), so it asks for `*` and none are left out. Maths Monsters' own direct read now goes through the same place.
+- **Remembered for 5 minutes.** Pages asking at the same moment share one request. A failed read (or no row) is not remembered, so the next one tries again. Each caller still shows the same message as before when the read fails.
+- **Forgotten:** on sign-out; when a different person signs in on the device (a token refresh for the same pupil keeps it); when the tab comes back after being hidden for more than 5 minutes; and straight after every teacher save that changes a setting (`teacher_set_` multiplayer, space reactions, space maths, Gem Keep, Dragon Maths, Maths Monsters, Clan Quest, raids, Clan Quest maths, pupils choosing focus, maths auto, and the Clan Quest new season). This happens whichever class the save was for, which is a little more than asked and costs at most one extra read. A read already on its way when the row is forgotten is not kept.
+- **Teacher class picker:** a picked class is still read fresh every time, not remembered.
+- No database change and no server function change.
+
+### Requests (test mock, `src/pages/RequestCount.test.tsx`)
+
+Only the Supabase client is faked; every page and data function is the real one. Empty answers, so cards that only load when there are games (names, maths focus and path cards) don't add their requests here; the live count is a little higher, as in section 5.
+
+| | Before | After |
+|---|---|---|
+| Home page opening | 20 (3 of them switches) | 18 (1 switch read) |
+| Lobby opening | 10 (2 switches: friends and Mission Control maths) | 9 (1) |
+| Home page, then lobby | 5 switch reads | 1 |
+| Any page within the next 5 minutes | 1 or more switch reads each | 0 |
+
+The big saving is the last line: on 14 to 19 Oct the switches were read about 45,000 times; now a pupil reads them at most about once every 5 minutes.
+
+### The server still checks every switch (step 4)
+
+| Game or switch | Where the server refuses it |
+|---|---|
+| Maths Monsters | `monster` function: nothing saved while off (`supabase/functions/monster/handler.ts`, "Maths Monsters is switched off.") |
+| Dragon Maths | `lord` function: every action answers "closed" while off, except for teachers (`shared/lord/server.ts`, `settings.enabled`) |
+| Clan Quest | `clans` function: every action refused while off, except for teachers (`supabase/functions/clans/handler.ts`, from `load_clan`'s `clans_enabled`) |
+| Clan Quest raids | Raid targets and raids refused while off (`shared/clans/actions.ts` / `empire.ts` `raidRefusal`, switch read by the server) |
+| Playing friends: chess and checkers | `multiplayer` function, "paused" (`handler.ts`, `multiplayerEnabled`) |
+| Playing friends: Wormholes & Black Holes | `space-game` function, "paused" |
+| Playing friends: 101 | `card-game` function, "paused" |
+| Playing friends: Power Clash | `power-clash` function, "paused" |
+| Space reactions | `space-game` function, "Reactions are switched off." |
+| Mission Control maths | `space-game` (classmates: refused or set to match the switch) and `save-bot-game` (a bot space game with maths can't start while off) |
+| Pupils choosing their own focus | The database job that saves a pupil's focus checks `students_choose_focus` |
+
+Gem Keep and maths auto are settings, not on/off switches; the server reads them itself. No game relies only on the screen.
+
+### Tests
+
+- New: `src/data/settingsMemory.test.tsx` (10 tests: three home-page switches in one request; two callers sharing one; 5 minutes then fresh; failed read not kept; class picker fresh; hidden tab over 5 minutes, but not a short break; every teacher save; a read on its way when forgotten; sign-out and a different pupil, with the real sign-in code) and `src/pages/RequestCount.test.tsx` (3 tests).
+- Changed: one line in `src/data/focus.test.ts` (the read now asks for `*`). The test setup forgets the row after each test. Every other switch test passes unchanged.
+- Quick tests before the change: all 149 files passed (my first edits were made while that run was finishing). After: all pass.
+
+**Not tested:** a real browser and the real sign-in service (the tests fake Supabase); the live request counts, which can only be read after it goes live.
+
+### Go-live steps
+
+1. Merge `server-load` into `main` and push `main`. That deploys the site. No functions to deploy and no database changes.
+2. Pupils' screens pick up a teacher's switch change within 5 minutes or on reload; a teacher's own device sees it straight away.
+3. After S.1 to S.3 are live, compare the switch reads in `extensions.pg_stat_statements` against section 1 (James's answer 5).
+
