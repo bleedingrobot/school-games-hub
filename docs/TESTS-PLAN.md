@@ -16,6 +16,8 @@ applied to a database, or changes how the game plays.
 
 ## Step 1: merge the test changes
 
+**Done 19 Oct 2026:** merged and pushed to `main` (4734db3).
+
 **Why first:** the longer it waits, the more other branches change the same test files.
 
 1. In the `lean-tests` worktree: `git fetch`, then merge `origin/main` into `lean-tests` if it has moved.
@@ -54,6 +56,14 @@ row"), so that fix may not cover every case. For a pupil this would mean a trial
 6. Run `npm run check`. Push only when James says so.
 
 **Done when:** the test passes 30 runs out of 30 and James has seen a trial work in the browser.
+
+**Results (19 Oct 2026, branch `question-box`, not merged):** the shared-number guess was wrong; `useAsk` already gives
+each box its own `key`. The real cause: `QuestionModal` cleared its answer in a plain `useEffect`, which can run just
+after a tap that comes the moment the box appears, so the tap was wiped and the box sat on "?". The test taps at machine
+speed; a pupil would need to tap within about one screen refresh. Fix: that clear-up is now a `useLayoutEffect`, which
+runs before the box can be pressed. New test "keeps an answer given the moment the next box appears" fails every time
+without the fix; the `useAsk` tests passed 30 runs out of 30 with it; `npm run check` passes. Still to do: James tries a
+master's trial in the browser trial, then merge and push.
 
 ## Step 3: bring the local database up to date
 
