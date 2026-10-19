@@ -18,7 +18,7 @@ const built = LADDER.filter((s) => s.built);
 const secure = (ids: string[]): FactStats[] => built.filter((s) => ids.includes(s.id)).flatMap((s) => s.keys.map((k) => ({ ...newStats(k), attempts: 3, correct: 3, box: 3 })));
 const on = (over: Partial<NonNullable<MathsFocus['ladder']>> = {}): MathsFocus => ({
   ...AUTO_FOCUS,
-  ladder: { on: true, yearLevel: null, placed: 'done', placement: 'facts-10', furthest: null, ...over },
+  ladder: { on: true, placed: 'done', placement: 'facts-10', furthest: null, ...over },
 });
 const show = (focus: MathsFocus, facts: FactStats[] = []) => {
   vi.mocked(ladderData.fetchMyLadder).mockResolvedValue({ facts, settings: {}, focus });

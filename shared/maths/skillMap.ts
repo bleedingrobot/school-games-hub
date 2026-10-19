@@ -142,7 +142,6 @@ export function studentMap(stats: Iterable<FactStats>, info: LadderInfo, setting
           placed: null,
           placement: null,
           furthest: null,
-          yearLevel: null,
         },
     options,
   );

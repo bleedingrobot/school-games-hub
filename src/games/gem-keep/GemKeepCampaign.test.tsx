@@ -308,7 +308,7 @@ describe('Gem Keep with a maths focus', () => {
   describe('on auto (the class has the switch on)', () => {
     const autoFocus = (furthest: string | null, extra: Partial<MathsFocus> = {}): MathsFocus => ({
       ...AUTO_FOCUS,
-      ladder: { on: true, yearLevel: null, placed: null, placement: null, furthest },
+      ladder: { on: true, placed: null, placement: null, furthest },
       ...extra,
     });
 

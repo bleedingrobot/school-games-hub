@@ -39,7 +39,7 @@ vi.mock('../data/ladder', async (importOriginal) => ({
 
 const focus = (over: Partial<NonNullable<MathsFocus['ladder']>> = {}): MathsFocus => ({
   ...AUTO_FOCUS,
-  ladder: { on: true, yearLevel: 5, placed: null, placement: null, furthest: null, ...over },
+  ladder: { on: true, placed: null, placement: null, furthest: null, ...over },
 });
 const show = () =>
   render(
@@ -94,10 +94,10 @@ describe('the warm-up that finds a starting place', () => {
     for (let n = 1; n <= PLACEMENT_QUESTIONS; n++) await answer(user, n, true);
     await screen.findByText(/All done/);
     expect(ladderData.sendPlacement).toHaveBeenCalledTimes(1);
-    const sent = vi.mocked(ladderData.sendPlacement).mock.calls[0][0] as { answers: Parameters<typeof checkPlacement>[1] };
+    const sent = vi.mocked(ladderData.sendPlacement).mock.calls[0][0] as { answers: Parameters<typeof checkPlacement>[0] };
     expect(sent.answers).toHaveLength(PLACEMENT_QUESTIONS);
-    // What it sends is exactly what the server will accept for this class.
-    expect(checkPlacement(5, sent.answers)).not.toBeNull();
+    // What it sends is exactly what the server will accept.
+    expect(checkPlacement(sent.answers)).not.toBeNull();
     // Shows no score.
     expect(document.body.textContent).not.toMatch(/\d+ (out )?of \d+ (right|correct)/i);
   }, 30_000);

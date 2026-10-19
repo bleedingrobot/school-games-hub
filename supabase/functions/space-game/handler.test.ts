@@ -743,7 +743,7 @@ describe('Mission Control maths with classmates', () => {
     describe('on auto (the class has the switch on)', () => {
       const autoFocus = (furthest: string | null): MathsFocus => ({
         ...AUTO_FOCUS,
-        ladder: { on: true, yearLevel: null, placed: null, placement: null, furthest },
+        ladder: { on: true, placed: null, placement: null, furthest },
       });
 
       it('asks from the whole ladder for a new student: early facts, marked and recorded under their own key', async () => {

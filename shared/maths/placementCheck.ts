@@ -63,14 +63,13 @@ export function parsePlacementAnswers(raw: unknown): PlacementAnswer[] | null {
   return out;
 }
 
-/** The skill to start at, or null if the answers can't be a placement check for this year level. */
+/** The skill to start at, or null if the answers can't be a placement check. */
 export function checkPlacement(
-  yearLevel: number | null,
   answers: readonly PlacementAnswer[],
 ): string | null {
   const steps: PlacementStep[] = [];
   for (const a of answers) {
-    const expected = placementNext(yearLevel, steps);
+    const expected = placementNext(steps);
     if (!expected || expected.id !== a.skill) return null;
     const solved = solveClaim(a);
     if (!solved || !solved.keys.some((k) => expected.keys.includes(k)))
@@ -78,7 +77,7 @@ export function checkPlacement(
     const correct = sameAnswer(a.answer, solved.answer);
     steps.push({ skill: a.skill, correct, quick: correct && isQuick(a.ms, expected) });
   }
-  if (placementNext(yearLevel, steps) !== null) return null;
+  if (placementNext(steps) !== null) return null;
   return placementResult(steps).id;
 }
 

@@ -1,14 +1,14 @@
 /**
- * A student's place on the ladder (docs/MATHS-FOCUS-PLAN.md section 5). Three things set the floor under it:
- *  - their class's year level, until they have done the placement check;
+ * A student's place on the ladder (docs/MATHS-FOCUS-PLAN.md section 5). Two things set the floor under it:
  *  - the placement check (about 10 questions that jump up while they answer right and quickly and step back when they don't);
  *  - the furthest place they have ever reached, kept on the server so it only ever moves forward.
+ * Without either, a student starts at the first skill. A class's year level plays no part (it is only a label for the teacher).
  * Skills before the floor count as passed. Forgetting ×7 gives more ×7 review, but never drops the place.
  *
  * The server keeps the furthest place and the placement; the database cannot see the ladder, so the server functions that save
  * answers work the place out with this file (`placeToStore`) and the database only checks that it never goes back.
  */
-import { PLACEMENT_JUMP, PLACEMENT_QUESTIONS, quickMsForPack, START_YEARS_BEHIND } from "./config";
+import { PLACEMENT_JUMP, PLACEMENT_QUESTIONS, quickMsForPack } from "./config";
 import type { FactStats } from "./leitner";
 import {
   LADDER,
@@ -25,8 +25,6 @@ import type { Question } from "./skillPack";
 export interface LadderInfo {
   /** The class has "Games pick the maths (auto)" switched on. */
   on: boolean;
-  /** The class's year level, if the teacher set one. */
-  yearLevel: number | null;
   /** Placement: 'done' (with `placement` saying where to start), 'skipped', or not yet. */
   placed: "done" | "skipped" | null;
   placement: string | null;
@@ -36,7 +34,6 @@ export interface LadderInfo {
 
 export const NO_LADDER: LadderInfo = {
   on: false,
-  yearLevel: null,
   placed: null,
   placement: null,
   furthest: null,
@@ -53,13 +50,6 @@ const skillId = (v: unknown) =>
 export function parseLadderInfo(raw: unknown): LadderInfo {
   if (!raw || typeof raw !== "object") return NO_LADDER;
   const r = raw as Record<string, unknown>;
-  const year =
-    typeof r.yearLevel === "number" &&
-    Number.isInteger(r.yearLevel) &&
-    r.yearLevel >= 0 &&
-    r.yearLevel <= 13
-      ? r.yearLevel
-      : null;
   const placement = skillId(r.placement);
   const placed =
     r.placed === "skipped"
@@ -69,39 +59,19 @@ export function parseLadderInfo(raw: unknown): LadderInfo {
         : null;
   return {
     on: r.on === true,
-    yearLevel: year,
     placed,
     placement: placed === "done" ? placement : null,
     furthest: skillId(r.furthest),
   };
 }
 
-/** The year a skill is taught, from its first NZ Curriculum tag ("MS.Y4.NUM.OP.P2" → 4). */
-export function skillYear(skill: LadderSkill): number | null {
-  const m = /^MS\.Y(\d+)\./.exec(skill.curriculumTags[0] ?? "");
-  return m ? Number(m[1]) : null;
-}
-
 const builtSkills = () => LADDER.filter((s) => s.built);
 const indexOfSkill = (id: string | null) =>
   id ? LADDER.findIndex((s) => s.id === id) : -1;
 
-/** Where a class's year level starts students: an index into `LADDER`. No year level = the first skill. */
-export function yearStartRank(yearLevel: number | null): number {
-  const built = builtSkills();
-  if (yearLevel === null) return LADDER.indexOf(built[0]);
-  const want = yearLevel - START_YEARS_BEHIND;
-  const found =
-    built.find((s) => (skillYear(s) ?? 0) >= want) ?? built[built.length - 1];
-  return LADDER.indexOf(found);
-}
-
 /** The floor under a student's place: an index into `LADDER`. */
 export function floorRank(info: LadderInfo): number {
-  const start =
-    info.placed === "done"
-      ? indexOfSkill(info.placement)
-      : yearStartRank(info.yearLevel);
+  const start = info.placed === "done" ? indexOfSkill(info.placement) : -1;
   return Math.max(0, start, indexOfSkill(info.furthest));
 }
 
@@ -137,19 +107,15 @@ export interface PlacementStep {
 
 /**
  * Where the check goes next, given the answers so far: the skill to ask about, or null when it is finished.
- * It starts at the class's year start and moves up three skills (`PLACEMENT_JUMP`) after a right, quick answer (one after it has missed
+ * It starts at the first skill and moves up three skills (`PLACEMENT_JUMP`) after a right, quick answer (one after it has missed
  * once) and back one when the answer is wrong or slow. All steps are over the built skills only.
  */
 export function placementNext(
-  yearLevel: number | null,
   steps: readonly PlacementStep[],
 ): LadderSkill | null {
   const built = builtSkills();
   const top = built.length - 1;
-  let level = Math.max(
-    0,
-    built.findIndex((s) => LADDER.indexOf(s) >= yearStartRank(yearLevel)),
-  );
+  let level = 0;
   let jump = PLACEMENT_JUMP;
   for (const step of steps) {
     if (step.correct && step.quick) level = Math.min(top, level + jump);

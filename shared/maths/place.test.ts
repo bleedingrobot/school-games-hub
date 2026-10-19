@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { randomFromSeed } from '../space/random';
 import { solveClaim } from './claim';
-import { PLACEMENT_JUMP, QUICK_MS } from './config';
+import { PLACEMENT_JUMP, PLACEMENT_QUESTIONS, QUICK_MS } from './config';
 import { AUTO_FOCUS, focusKey, makeFocusPack, parseFocus, solveParts, usesLadder } from './focus';
 import { AutoPack, autoPools, LADDER, ladderProgress, packIdOfKey } from './ladder';
 import { afterAnswer, newStats, type FactStats } from './leitner';
@@ -14,8 +14,6 @@ import {
   placementNext,
   placementQuestion,
   placementResult,
-  skillYear,
-  yearStartRank,
   type LadderInfo,
   type PlacementStep,
 } from './place';
@@ -34,14 +32,13 @@ describe('reading what the database says about the ladder', () => {
     expect(parseLadderInfo({ on: 'yes' }).on).toBe(false);
   });
 
-  it('keeps good values and drops unknown or not-yet-built skills and silly years', () => {
+  it('keeps good values and drops unknown or not-yet-built skills (and the year level, which plays no part)', () => {
     const ok = parseLadderInfo({ on: true, yearLevel: 5, placed: 'done', placement: 'tables-3-4-8', furthest: 'tables-6-9' });
-    expect(ok).toEqual({ on: true, yearLevel: 5, placed: 'done', placement: 'tables-3-4-8', furthest: 'tables-6-9' });
+    expect(ok).toEqual({ on: true, placed: 'done', placement: 'tables-3-4-8', furthest: 'tables-6-9' });
     expect(parseLadderInfo({ on: true, placed: 'done', placement: 'percent-of' }).placed).toBe('done'); // built in F.6
     expect(parseLadderInfo({ on: true, placed: 'done', placement: 'not-built-yet' }).placed).toBeNull();
     expect(parseLadderInfo({ on: true, placed: 'done', placement: 'nope' }).placed).toBeNull();
     expect(parseLadderInfo({ on: true, furthest: '../etc' }).furthest).toBeNull();
-    expect(parseLadderInfo({ on: true, yearLevel: 99 }).yearLevel).toBeNull();
     expect(parseLadderInfo({ on: true, placed: 'skipped' }).placed).toBe('skipped');
   });
 
@@ -53,47 +50,19 @@ describe('reading what the database says about the ladder', () => {
   });
 });
 
-describe('where the year level starts a student', () => {
-  it('starts with no year level on the first skill', () => {
-    expect(yearStartRank(null)).toBe(LADDER.indexOf(built[0]));
-  });
-
-  it('only ever lands on a built skill, and never goes backwards as the year goes up', () => {
-    let last = -1;
-    for (let year = 0; year <= 13; year++) {
-      const rank = yearStartRank(year);
-      expect(LADDER[rank].built).toBe(true);
-      expect(rank).toBeGreaterThanOrEqual(last);
-      last = rank;
-    }
-  });
-
-  it('starts a Year 5 student about a year behind their class, a Year 1 student at the start', () => {
-    expect(yearStartRank(1)).toBe(LADDER.indexOf(built[0]));
-    const y5 = LADDER[yearStartRank(5)];
-    expect(skillYear(y5)).toBe(4);
-    expect(y5.stage).toBe('times-tables');
-  });
-
-  it('reads the teaching year from the curriculum tag', () => {
-    expect(skillYear({ ...LADDER[0], curriculumTags: ['MS.Y4.NUM.OP.P2'] })).toBe(4);
-    expect(skillYear({ ...LADDER[0], curriculumTags: [] })).toBeNull();
-  });
-});
-
 describe('the floor under a student', () => {
-  it('is the year level until the placement is done', () => {
-    expect(floorRank(info({ yearLevel: 5 }))).toBe(yearStartRank(5));
-    expect(floorRank(info({ yearLevel: 5, placed: 'skipped' }))).toBe(yearStartRank(5));
-    expect(floorRank(info())).toBe(LADDER.indexOf(built[0]));
+  it('is the start of the ladder until the placement is done, whatever the class year level', () => {
+    expect(floorRank(info())).toBe(0);
+    expect(floorRank(info({ placed: 'skipped' }))).toBe(0);
+    expect(floorRank(parseLadderInfo({ on: true, yearLevel: 6 }))).toBe(0);
   });
 
-  it('is the placement once it is done, even if that is lower than the year level', () => {
-    expect(floorRank(info({ yearLevel: 6, placed: 'done', placement: 'dbl-half-10' }))).toBe(rankOf('dbl-half-10'));
+  it('is the placement once it is done', () => {
+    expect(floorRank(info({ placed: 'done', placement: 'dbl-half-10' }))).toBe(rankOf('dbl-half-10'));
   });
 
   it('never drops below the furthest place', () => {
-    expect(floorRank(info({ yearLevel: 6, placed: 'done', placement: 'dbl-half-10', furthest: 'tables-7' }))).toBe(rankOf('tables-7'));
+    expect(floorRank(info({ placed: 'done', placement: 'dbl-half-10', furthest: 'tables-7' }))).toBe(rankOf('tables-7'));
     expect(floorRank(info({ furthest: 'tables-2-5-10' }))).toBe(rankOf('tables-2-5-10'));
   });
 });
@@ -150,7 +119,7 @@ describe('progress with a floor', () => {
     expect(none).toEqual({ skill: 'facts-10', rank: rankOf('facts-10') });
     const all = placeToStore(secure(built.flatMap((s) => s.keys)), info());
     expect(all?.skill).toBe(built.at(-1)!.id);
-    expect(placeToStore([], info({ yearLevel: 6 }))?.rank).toBe(yearStartRank(6));
+    expect(placeToStore([], parseLadderInfo({ on: true, yearLevel: 6 }))?.rank).toBe(rankOf('facts-10')); // a year level moves nobody
   });
 
   it('counts division only when it is on: with it off a skill can be secure without them', () => {
@@ -189,9 +158,9 @@ describe('auto over the whole ladder', () => {
   });
 
   it('starts a student at the floor, with earlier skills as review', () => {
-    const f = { ...AUTO_FOCUS, ladder: info({ yearLevel: 5 }) };
+    const f = { ...AUTO_FOCUS, ladder: info({ placed: 'done', placement: 'tables-11-12' }) };
     const pack = makeFocusPack([], f, {}, randomFromSeed('2')) as AutoPack;
-    const start = LADDER[yearStartRank(5)];
+    const start = LADDER[rankOf('tables-11-12')];
     const bands: Record<string, number> = { focus: 0, review: 0, stretch: 0, repeat: 0 };
     for (let i = 0; i < 1500; i++) {
       const q = pack.nextQuestion({})!;
@@ -240,10 +209,10 @@ describe('auto over the whole ladder', () => {
 
 describe('the placement check', () => {
   const step = (skill: string, ok: boolean, quick = ok): PlacementStep => ({ skill, correct: ok, quick });
-  const run = (year: number | null, answerRight: (skill: string, i: number) => boolean | 'slow') => {
+  const run = (answerRight: (skill: string, i: number) => boolean | 'slow') => {
     const steps: PlacementStep[] = [];
     for (let i = 0; i < 20; i++) {
-      const skill = placementNext(year, steps);
+      const skill = placementNext(steps);
       if (!skill) break;
       const r = answerRight(skill.id, i);
       steps.push(step(skill.id, r !== false, r === true));
@@ -252,17 +221,16 @@ describe('the placement check', () => {
   };
 
   it('asks 10 questions and then stops', () => {
-    expect(run(5, () => true)).toHaveLength(10);
-    expect(placementNext(5, run(5, () => true))).toBeNull();
+    expect(run(() => true)).toHaveLength(10);
+    expect(placementNext(run(() => true))).toBeNull();
   });
 
-  it('starts at the class’s year start, or the first skill with none', () => {
-    expect(placementNext(5, [])?.id).toBe(LADDER[yearStartRank(5)].id);
-    expect(placementNext(null, [])?.id).toBe(built[0].id);
+  it('starts at the first skill (a class year level plays no part)', () => {
+    expect(placementNext([])?.id).toBe(built[0].id);
   });
 
   it('jumps up while the answers are right and quick', () => {
-    const steps = run(null, () => true);
+    const steps = run(() => true);
     const levels = steps.map((s) => built.findIndex((b) => b.id === s.skill));
     expect(levels[1] - levels[0]).toBe(PLACEMENT_JUMP);
     expect(levels[2]).toBeGreaterThan(levels[1]);
@@ -271,16 +239,17 @@ describe('the placement check', () => {
   });
 
   it('steps back when an answer is wrong, and also when it is right but slow', () => {
-    const start = built.findIndex((b) => b.id === placementNext(5, [])!.id);
     for (const reply of [false, 'slow'] as const) {
-      const steps = run(5, (_s, i) => (i === 0 ? reply : true));
+      // Climb once, then miss: the third question is one skill below the second.
+      const steps = run((_s, i) => (i === 1 ? reply : true));
       const second = built.findIndex((b) => b.id === steps[1].skill);
-      expect(second).toBe(Math.max(0, start - 1));
+      const third = built.findIndex((b) => b.id === steps[2].skill);
+      expect(third).toBe(second - 1);
     }
   });
 
   it('after a miss it climbs one at a time', () => {
-    const steps = run(null, (_s, i) => i !== 2);
+    const steps = run((_s, i) => i !== 2);
     const levels = steps.map((s) => built.findIndex((b) => b.id === s.skill));
     for (let i = 4; i < levels.length; i++) expect(levels[i] - levels[i - 1]).toBeLessThanOrEqual(1);
   });
@@ -288,15 +257,16 @@ describe('the placement check', () => {
   it('starts just below where the student got to', () => {
     // Right and quick everywhere up to ×3/×4/×8, wrong above.
     const limit = built.findIndex((b) => b.id === 'tables-3-4-8');
-    const steps = run(null, (skill) => built.findIndex((b) => b.id === skill) <= limit);
+    const steps = run((skill) => built.findIndex((b) => b.id === skill) <= limit);
     const best = Math.max(...steps.filter((s) => s.correct && s.quick).map((s) => built.findIndex((b) => b.id === s.skill)));
     expect(best).toBe(limit);
     expect(placementResult(steps).id).toBe(built[limit - 1].id);
   });
 
-  it('starts at the first skill for a student who gets nothing right, and just below the top for one who gets everything', () => {
-    expect(placementResult(run(6, () => false)).id).toBe(built[0].id);
-    expect(placementResult(run(6, () => true)).id).toBe(built[built.length - 2].id);
+  it('starts at the first skill for a student who gets nothing right, and near the top for one who gets everything', () => {
+    expect(placementResult(run(() => false)).id).toBe(built[0].id);
+    // Ten questions climbing three skills at a time from the bottom reach skill 27; the start is one below that.
+    expect(placementResult(run(() => true)).id).toBe(built[1 + (PLACEMENT_QUESTIONS - 1) * PLACEMENT_JUMP - 2].id);
     expect(placementResult([]).id).toBe(built[0].id);
   });
 
@@ -318,12 +288,12 @@ describe('the placement check', () => {
 
 describe('checking a placement on the server', () => {
   /** An honest run: the browser walks the same steps and answers with `rightAt(level)`. */
-  function honest(year: number | null, ok: (i: number, skill: string) => boolean, ms = 1500): PlacementAnswer[] {
+  function honest(ok: (i: number, skill: string) => boolean, ms = 1500): PlacementAnswer[] {
     const random = randomFromSeed('check');
     const steps: PlacementStep[] = [];
     const answers: PlacementAnswer[] = [];
     for (let i = 0; i < 10; i++) {
-      const skill = placementNext(year, steps)!;
+      const skill = placementNext(steps)!;
       const q = placementQuestion(skill, i + 1, random)!;
       const right = ok(i, skill.id);
       answers.push({ skill: skill.id, parts: q.parts, key: q.factKey, params: q.params, answer: right ? q.answer : q.answer + 1, ms });
@@ -333,33 +303,32 @@ describe('checking a placement on the server', () => {
   }
 
   it('gives the same start the browser worked out', () => {
-    const answers = honest(5, () => true);
+    const answers = honest(() => true);
     const steps = answers.map((a) => ({ skill: a.skill, correct: true, quick: true }));
-    expect(checkPlacement(5, answers)).toBe(placementResult(steps).id);
+    expect(checkPlacement(answers)).toBe(placementResult(steps).id);
   });
 
   it('works out right and wrong itself and does not take the browser’s word', () => {
-    const wrong = honest(null, () => false);
-    expect(checkPlacement(null, wrong)).toBe(built[0].id);
+    const wrong = honest(() => false);
+    expect(checkPlacement(wrong)).toBe(built[0].id);
     // The same answers sent slowly are not quick, so nothing is passed.
-    const slow = honest(null, () => true, 20_000);
-    expect(checkPlacement(null, slow)).toBe(built[0].id);
+    const slow = honest(() => true, 20_000);
+    expect(checkPlacement(slow)).toBe(built[0].id);
   });
 
   it('refuses a run that is not the walk it should have been', () => {
-    const answers = honest(5, () => true);
-    expect(checkPlacement(5, answers.slice(0, 9))).toBeNull();
-    expect(checkPlacement(5, [...answers, answers[0]])).toBeNull();
-    expect(checkPlacement(6, answers)).toBeNull(); // asked for another year's start
+    const answers = honest(() => true);
+    expect(checkPlacement(answers.slice(0, 9))).toBeNull();
+    expect(checkPlacement([...answers, answers[0]])).toBeNull();
     const swapped = [...answers];
     [swapped[0], swapped[1]] = [swapped[1], swapped[0]];
-    expect(checkPlacement(5, swapped)).toBeNull();
-    expect(checkPlacement(5, answers.map((a, i) => (i === 3 ? { ...a, parts: ['9', '+', '9', '=', '?'] } : a)))).toBeNull(); // not a question of that skill
-    expect(checkPlacement(5, answers.map((a, i) => (i === 3 ? { ...a, parts: ['nonsense'] } : a)))).toBeNull();
+    expect(checkPlacement(swapped)).toBeNull();
+    expect(checkPlacement(answers.map((a, i) => (i === 3 ? { ...a, parts: ['9', '+', '9', '=', '?'] } : a)))).toBeNull(); // not a question of that skill
+    expect(checkPlacement(answers.map((a, i) => (i === 3 ? { ...a, parts: ['nonsense'] } : a)))).toBeNull();
   });
 
   it('reads answers carefully', () => {
-    const answers = honest(null, () => true);
+    const answers = honest(() => true);
     expect(parsePlacementAnswers(answers)).toHaveLength(10);
     expect(parsePlacementAnswers(null)).toBeNull();
     expect(parsePlacementAnswers(answers.slice(1))).toBeNull();
@@ -394,7 +363,7 @@ describe('the server keeping the place', () => {
   it('saves the place from the records, and only when auto is on', async () => {
     const on = ports();
     await makePlaceSyncer(on.p)('s1');
-    expect(on.saved).toEqual([{ skill: LADDER[yearStartRank(5)].id, rank: yearStartRank(5) }]);
+    expect(on.saved).toEqual([{ skill: 'facts-10', rank: rankOf('facts-10') }]); // the class's year level moves nobody
     const off = ports({ ladder: { on: false } });
     await makePlaceSyncer(off.p)('s1');
     expect(off.saved).toEqual([]);
@@ -421,7 +390,7 @@ describe('the server keeping the place', () => {
       const steps: PlacementStep[] = [];
       const out: PlacementAnswer[] = [];
       for (let i = 0; i < 10; i++) {
-        const skill = placementNext(5, steps)!;
+        const skill = placementNext(steps)!;
         const q = placementQuestion(skill, i + 1, random)!;
         out.push({ skill: skill.id, parts: q.parts, key: q.factKey, params: q.params, answer: q.answer, ms: 1000 });
         steps.push({ skill: skill.id, correct: true, quick: true });
@@ -463,19 +432,17 @@ describe('the longer ladder', () => {
     for (const skill of generated) expect(skill.keys.length, skill.id).toBeGreaterThanOrEqual(4);
   });
 
-  it('a student who answers every warm-up question right and quickly starts near the top, from any year', () => {
-    for (const year of [null, 1, 2, 3, 4, 5, 6, 7, 8]) {
-      const steps: PlacementStep[] = [];
-      for (;;) {
-        const skill = placementNext(year, steps);
-        if (!skill) break;
-        steps.push({ skill: skill.id, correct: true, quick: true });
-      }
-      expect(steps, `year ${year}`).toHaveLength(10);
-      const at = built.findIndex((b) => b.id === placementResult(steps).id);
-      expect(at, `year ${year}`).toBeGreaterThanOrEqual(built.length - 6);
-      expect(at, `year ${year}`).toBeLessThan(built.length - 1);
+  it('a student who answers every warm-up question right and quickly starts near the top', () => {
+    const steps: PlacementStep[] = [];
+    for (;;) {
+      const skill = placementNext(steps);
+      if (!skill) break;
+      steps.push({ skill: skill.id, correct: true, quick: true });
     }
+    expect(steps).toHaveLength(10);
+    const at = built.findIndex((b) => b.id === placementResult(steps).id);
+    expect(at).toBeGreaterThanOrEqual(built.length - 6);
+    expect(at).toBeLessThan(built.length - 1);
   });
 
   it('a generated skill is secure when 70% of its question types are in box 2 or higher', () => {
@@ -508,17 +475,19 @@ describe('the longer ladder', () => {
     const skill = built.find((s) => s.id === 'bedmas')!;
     const q = placementQuestion(skill, 1, random)!;
     const steps: PlacementStep[] = [];
-    // Ten answers to the same last skill (what the walk asks after the climb), each 7 seconds.
+    // Quick on the facts, then 7 seconds on each generated question near the top.
+    const isGenerated = (s: (typeof built)[number]) => !!s.keys[0] && packIdOfKey(s.keys[0]) === 'generated';
     const answers: PlacementAnswer[] = [];
     for (let i = 0; i < 10; i++) {
-      const next = placementNext(8, steps)!;
+      const next = placementNext(steps)!;
       const qq = placementQuestion(next, i + 1, random)!;
-      const ms = 7000;
-      answers.push({ skill: next.id, parts: qq.parts, answer: qq.answer, ms });
-      steps.push({ skill: next.id, correct: true, quick: ms <= (next.keys[0] && packIdOfKey(next.keys[0]) === 'generated' ? 8000 : QUICK_MS) });
+      const ms = isGenerated(next) ? 7000 : 1000;
+      answers.push({ skill: next.id, parts: qq.parts, key: qq.factKey, params: qq.params, answer: qq.answer, ms });
+      steps.push({ skill: next.id, correct: true, quick: ms <= (isGenerated(next) ? 8000 : QUICK_MS) });
     }
+    expect(steps.some((st) => st.quick && isGenerated(built.find((b) => b.id === st.skill)!))).toBe(true);
     expect(q.factKey.startsWith('bedmas:')).toBe(true);
-    expect(checkPlacement(8, answers)).toBe(placementResult(steps).id);
+    expect(checkPlacement(answers)).toBe(placementResult(steps).id);
   });
 });
 

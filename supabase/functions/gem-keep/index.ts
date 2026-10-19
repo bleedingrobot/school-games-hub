@@ -5046,7 +5046,7 @@ function activeKeys(skill, enabledTables, division = true) {
 * Where a student is on the ladder, worked out from their records: the first built skill that
 * isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
 * campaign) is the one they're on. Skipped skills (all their tables switched off) are secure
-* for free. With a `floor` (placement, year level or the furthest place reached, see place.ts) the
+* for free. With a `floor` (placement or the furthest place reached, see place.ts) the
 * built skills before it are behind the student (passed over, and secure only if their records say so), so forgetting a fact brings more review but never
 * drops the student's place below the floor.
 */
@@ -5135,10 +5135,10 @@ function ladderKeyPacks() {
 //#endregion
 //#region shared/maths/place.ts
 /**
-* A student's place on the ladder (docs/MATHS-FOCUS-PLAN.md section 5). Three things set the floor under it:
-*  - their class's year level, until they have done the placement check;
+* A student's place on the ladder (docs/MATHS-FOCUS-PLAN.md section 5). Two things set the floor under it:
 *  - the placement check (about 10 questions that jump up while they answer right and quickly and step back when they don't);
 *  - the furthest place they have ever reached, kept on the server so it only ever moves forward.
+* Without either, a student starts at the first skill. A class's year level plays no part (it is only a label for the teacher).
 * Skills before the floor count as passed. Forgetting ×7 gives more ×7 review, but never drops the place.
 *
 * The server keeps the furthest place and the placement; the database cannot see the ladder, so the server functions that save
@@ -5146,7 +5146,6 @@ function ladderKeyPacks() {
 */
 const NO_LADDER = {
 	on: false,
-	yearLevel: null,
 	placed: null,
 	placement: null,
 	furthest: null
@@ -5156,35 +5155,20 @@ const skillId = (v) => typeof v === "string" && ID.test(v) && LADDER.some((s) =>
 function parseLadderInfo(raw) {
 	if (!raw || typeof raw !== "object") return NO_LADDER;
 	const r = raw;
-	const year = typeof r.yearLevel === "number" && Number.isInteger(r.yearLevel) && r.yearLevel >= 0 && r.yearLevel <= 13 ? r.yearLevel : null;
 	const placement = skillId(r.placement);
 	const placed = r.placed === "skipped" ? "skipped" : r.placed === "done" && placement ? "done" : null;
 	return {
 		on: r.on === true,
-		yearLevel: year,
 		placed,
 		placement: placed === "done" ? placement : null,
 		furthest: skillId(r.furthest)
 	};
 }
-/** The year a skill is taught, from its first NZ Curriculum tag ("MS.Y4.NUM.OP.P2" → 4). */
-function skillYear(skill) {
-	const m = /^MS\.Y(\d+)\./.exec(skill.curriculumTags[0] ?? "");
-	return m ? Number(m[1]) : null;
-}
 const builtSkills = () => LADDER.filter((s) => s.built);
 const indexOfSkill = (id) => id ? LADDER.findIndex((s) => s.id === id) : -1;
-/** Where a class's year level starts students: an index into `LADDER`. No year level = the first skill. */
-function yearStartRank(yearLevel) {
-	const built = builtSkills();
-	if (yearLevel === null) return LADDER.indexOf(built[0]);
-	const want = yearLevel - 1;
-	const found = built.find((s) => (skillYear(s) ?? 0) >= want) ?? built[built.length - 1];
-	return LADDER.indexOf(found);
-}
 /** The floor under a student's place: an index into `LADDER`. */
 function floorRank(info) {
-	const start = info.placed === "done" ? indexOfSkill(info.placement) : yearStartRank(info.yearLevel);
+	const start = info.placed === "done" ? indexOfSkill(info.placement) : -1;
 	return Math.max(0, start, indexOfSkill(info.furthest));
 }
 /** The student's place on the ladder, with the floor applied. */
@@ -5204,13 +5188,13 @@ function placeToStore(stats, info, opts = {}) {
 }
 /**
 * Where the check goes next, given the answers so far: the skill to ask about, or null when it is finished.
-* It starts at the class's year start and moves up three skills (`PLACEMENT_JUMP`) after a right, quick answer (one after it has missed
+* It starts at the first skill and moves up three skills (`PLACEMENT_JUMP`) after a right, quick answer (one after it has missed
 * once) and back one when the answer is wrong or slow. All steps are over the built skills only.
 */
-function placementNext(yearLevel, steps) {
+function placementNext(steps) {
 	const built = builtSkills();
 	const top = built.length - 1;
-	let level = Math.max(0, built.findIndex((s) => LADDER.indexOf(s) >= yearStartRank(yearLevel)));
+	let level = 0;
 	let jump = 3;
 	for (const step of steps) if (step.correct && step.quick) level = Math.min(top, level + jump);
 	else {
@@ -5457,11 +5441,11 @@ function parsePlacementAnswers(raw) {
 	}
 	return out;
 }
-/** The skill to start at, or null if the answers can't be a placement check for this year level. */
-function checkPlacement(yearLevel, answers) {
+/** The skill to start at, or null if the answers can't be a placement check. */
+function checkPlacement(answers) {
 	const steps = [];
 	for (const a of answers) {
-		const expected = placementNext(yearLevel, steps);
+		const expected = placementNext(steps);
 		if (!expected || expected.id !== a.skill) return null;
 		const solved = solveClaim(a);
 		if (!solved || !solved.keys.some((k) => expected.keys.includes(k))) return null;
@@ -5472,7 +5456,7 @@ function checkPlacement(yearLevel, answers) {
 			quick: correct && isQuick(a.ms, expected)
 		});
 	}
-	if (placementNext(yearLevel, steps) !== null) return null;
+	if (placementNext(steps) !== null) return null;
 	return placementResult(steps).id;
 }
 //#endregion
@@ -5514,7 +5498,7 @@ async function savePlacement(ports, player, raw) {
 	const body = raw && typeof raw === "object" ? raw : {};
 	if (body.skip === true) return { outcome: await ports.savePlacementRow(player, null, true) ? "saved" : "already" };
 	const answers = parsePlacementAnswers(body.answers);
-	const start = answers ? checkPlacement(info.yearLevel, answers) : null;
+	const start = answers ? checkPlacement(answers) : null;
 	if (!start) return { outcome: "refused" };
 	return {
 		outcome: await ports.savePlacementRow(player, start, false) ? "saved" : "already",

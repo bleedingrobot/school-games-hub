@@ -203,7 +203,7 @@ function ClassFocus({ summary, preset }: { summary: ClassSummary; preset: Preset
         )}
         <p className="class-panel__hint">
           On: a student with no focus is walked up the ladder, from number facts to the times tables and beyond, starting where they are
-          ready (they can do a short warm-up to find it, or you can set your class&rsquo;s year level on My classes). Their place never goes
+          ready (they can do a short warm-up to find it). Their place never goes
           backwards. Your focus, or one a student picked, always comes first. Off: the games ask the times tables, as they always have.
         </p>
       </section>

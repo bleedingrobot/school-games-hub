@@ -85,6 +85,7 @@ Every teacher focus has a start time and an end time. No timer or scheduled job 
 
 - **Moving up.** A student's place on the ladder is the first skill that isn't secure yet (70% of its facts or question types in box 2 or higher, as now). Questions are 60% from that skill, 30% review of earlier skills (weakest first) and 10% stretch into the next one.
 - **Placement, so a Year 6 student doesn't start on bonds to 10.** A new student gets a short placement check of about 10 questions. It jumps up the ladder while they answer right and quickly, and steps back when they don't. They start just below where they stopped. Until they've done it, they start at a point set by their class's year level.
+  - **Changed 20 October 2026:** the class year level no longer sets a start, and the warm-up starts at the first skill. Setting Year 6 had put a whole class straight onto ×11, ×12, and that became their furthest place, which never goes back. Without a warm-up, students start at the first skill and climb from their own answers. The year level is now only a label for the teacher. The six Riley students it had moved were reset (their saved furthest place was deleted, their answers kept).
 - **No going backwards in records.** A student who forgets ×7 gets more ×7 review, but their place on the ladder doesn't drop. This avoids the "I went down a level" feeling.
 
 ## 5b. Students see how far through they are (James, 18 Oct 2026)

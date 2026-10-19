@@ -411,7 +411,7 @@ describe('Mission Control maths on the game screen', () => {
       localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', bots: 1, maths: true }));
       const auto: MathsFocus = {
         source: 'auto', skills: [], onlyThese: false, endsAt: null, canChoose: true, own: null,
-        ladder: { on: true, yearLevel: null, placed: null, placement: null, furthest: null },
+        ladder: { on: true, placed: null, placement: null, furthest: null },
       };
       renderGame(saving, { ...maths('choose'), focus: auto });
       await user.click(screen.getByRole('button', { name: /Launch/ }));

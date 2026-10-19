@@ -5636,7 +5636,7 @@ function activeKeys(skill, enabledTables, division = true) {
 * Where a student is on the ladder, worked out from their records: the first built skill that
 * isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
 * campaign) is the one they're on. Skipped skills (all their tables switched off) are secure
-* for free. With a `floor` (placement, year level or the furthest place reached, see place.ts) the
+* for free. With a `floor` (placement or the furthest place reached, see place.ts) the
 * built skills before it are behind the student (passed over, and secure only if their records say so), so forgetting a fact brings more review but never
 * drops the student's place below the floor.
 */
@@ -5855,19 +5855,8 @@ var AutoPack = class {
 };
 //#endregion
 //#region shared/maths/place.ts
-/**
-* A student's place on the ladder (docs/MATHS-FOCUS-PLAN.md section 5). Three things set the floor under it:
-*  - their class's year level, until they have done the placement check;
-*  - the placement check (about 10 questions that jump up while they answer right and quickly and step back when they don't);
-*  - the furthest place they have ever reached, kept on the server so it only ever moves forward.
-* Skills before the floor count as passed. Forgetting ×7 gives more ×7 review, but never drops the place.
-*
-* The server keeps the furthest place and the placement; the database cannot see the ladder, so the server functions that save
-* answers work the place out with this file (`placeToStore`) and the database only checks that it never goes back.
-*/
 const NO_LADDER = {
 	on: false,
-	yearLevel: null,
 	placed: null,
 	placement: null,
 	furthest: null
@@ -5877,35 +5866,20 @@ const skillId = (v) => typeof v === "string" && ID.test(v) && LADDER.some((s) =>
 function parseLadderInfo(raw) {
 	if (!raw || typeof raw !== "object") return NO_LADDER;
 	const r = raw;
-	const year = typeof r.yearLevel === "number" && Number.isInteger(r.yearLevel) && r.yearLevel >= 0 && r.yearLevel <= 13 ? r.yearLevel : null;
 	const placement = skillId(r.placement);
 	const placed = r.placed === "skipped" ? "skipped" : r.placed === "done" && placement ? "done" : null;
 	return {
 		on: r.on === true,
-		yearLevel: year,
 		placed,
 		placement: placed === "done" ? placement : null,
 		furthest: skillId(r.furthest)
 	};
 }
-/** The year a skill is taught, from its first NZ Curriculum tag ("MS.Y4.NUM.OP.P2" → 4). */
-function skillYear(skill) {
-	const m = /^MS\.Y(\d+)\./.exec(skill.curriculumTags[0] ?? "");
-	return m ? Number(m[1]) : null;
-}
 const builtSkills = () => LADDER.filter((s) => s.built);
 const indexOfSkill = (id) => id ? LADDER.findIndex((s) => s.id === id) : -1;
-/** Where a class's year level starts students: an index into `LADDER`. No year level = the first skill. */
-function yearStartRank(yearLevel) {
-	const built = builtSkills();
-	if (yearLevel === null) return LADDER.indexOf(built[0]);
-	const want = yearLevel - 1;
-	const found = built.find((s) => (skillYear(s) ?? 0) >= want) ?? built[built.length - 1];
-	return LADDER.indexOf(found);
-}
 /** The floor under a student's place: an index into `LADDER`. */
 function floorRank(info) {
-	const start = info.placed === "done" ? indexOfSkill(info.placement) : yearStartRank(info.yearLevel);
+	const start = info.placed === "done" ? indexOfSkill(info.placement) : -1;
 	return Math.max(0, start, indexOfSkill(info.furthest));
 }
 /** The student's place on the ladder, with the floor applied. */

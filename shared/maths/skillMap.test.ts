@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TABLES, TOP_BOX } from './config';
 import { LADDER, ladderProgress } from './ladder';
 import { newStats, type FactStats } from './leitner';
-import { NO_LADDER, placeProgress, type LadderInfo } from './place';
+import { NO_LADDER, parseLadderInfo, placeProgress, type LadderInfo } from './place';
 import { STEP_SECURE_SHARE } from './selector';
 import { cellFor, classCounts, LEVELS, STAGES, stageOfSkill, stageSkills, studentMap, type CellLevel } from './skillMap';
 
@@ -201,8 +201,9 @@ describe('the map agrees with ladderProgress', () => {
       expect(cell.level).toBe('not-started'); // the colour only tells what the records show
     }
     expect(cellFor(map, start.id)?.passedOver).toBe(false);
-    const year = studentMap([], info({ yearLevel: 6 }));
-    expect(year.current?.id).toBe(placeProgress([], info({ yearLevel: 6 })).current?.id);
+    // A class year level moves nobody.
+    const year = studentMap([], parseLadderInfo({ on: true, yearLevel: 6 }));
+    expect(year.current?.id).toBe(built[0].id);
   });
 
   it('with auto off: no floor, nothing kept, and the furthest place is not shown', () => {
@@ -211,7 +212,6 @@ describe('the map agrees with ladderProgress', () => {
         placed: 'done',
         placement: 'tables-6-9',
         furthest: 'tables-6-9',
-        yearLevel: 8,
       }),
       on: false,
     });

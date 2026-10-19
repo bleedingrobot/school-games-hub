@@ -5,7 +5,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { fetchMyLadder, sendPlacement, type MyLadder } from "../data/ladder";
+import { fetchMyLadder, sendPlacement } from "../data/ladder";
 import { FriendlyError } from "../data/profile";
 import { PLACEMENT_QUESTIONS } from "../../shared/maths/config";
 import type { PlacementAnswer } from "../../shared/maths/placementCheck";
@@ -35,7 +35,6 @@ const errorText = (error: unknown) =>
     : "Something went wrong. Please try again.";
 
 export default function Placement() {
-  const [ladder, setLadder] = useState<MyLadder | null>(null);
   const [step, setStep] = useState<Step>("loading");
   /** The questions asked so far (the last one is on screen) and what was answered, side by side. */
   const [asked, setAsked] = useState<Question[]>([]);
@@ -44,7 +43,6 @@ export default function Placement() {
   const [message, setMessage] = useState<string | null>(null);
   /** What the student typed for the question on screen, and how long it took. */
   const given = useRef({ answer: 0, ms: 0 });
-  const yearLevel = ladder?.focus.ladder?.yearLevel ?? null;
   const question = step === "asking" ? (asked[steps.length] ?? null) : null;
 
   useEffect(() => {
@@ -52,7 +50,6 @@ export default function Placement() {
     fetchMyLadder().then(
       (d) => {
         if (!current) return;
-        setLadder(d);
         setStep(
           d.focus.ladder?.on && !d.focus.ladder.placed
             ? "intro"
@@ -71,7 +68,7 @@ export default function Placement() {
     done: readonly PlacementStep[],
     before: readonly Question[],
   ): Question | null {
-    const skill = placementNext(yearLevel, done);
+    const skill = placementNext(done);
     if (!skill) return null;
     const used = before
       .filter((_, i) => done[i]?.skill === skill.id)
@@ -122,7 +119,7 @@ export default function Placement() {
   }
 
   function onDone(q: Question, result: MarkedAnswer) {
-    const skill = placementNext(yearLevel, steps)!;
+    const skill = placementNext(steps)!;
     const { answer, ms } = given.current;
     const nextSteps = [
       ...steps,
