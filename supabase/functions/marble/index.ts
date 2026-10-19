@@ -80,6 +80,14 @@ const MIX = {
 	review: .3,
 	stretch: .1
 };
+/**
+* The longest an answer is kept as taking. A student who looks away for ten minutes mid-question has not spent ten minutes on
+* the sum: kept as it is, one such answer would swamp the average time teachers see for that fact. Longer answers still count,
+* as this long (right or wrong is untouched, and anything this slow is far from quick).
+*/
+const LONGEST_ANSWER_MS = 12e4;
+/** An answer's time as it is kept: whole milliseconds, 0 to `LONGEST_ANSWER_MS`. */
+const keptMs = (ms) => Math.min(LONGEST_ANSWER_MS, Math.max(0, Math.round(ms)));
 /** Answering correctly within this many milliseconds counts as quick. */
 const QUICK_MS = 5e3;
 /**
@@ -293,7 +301,8 @@ const nzDayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckla
 /** The New Zealand date of a moment, as YYYY-MM-DD. */
 const nzDay = (at) => nzDayFormat.format(new Date(at));
 /** The stats after one answer. Doesn't change the stats it's given. */
-function afterAnswer(stats, correct, ms, at, quickMs = QUICK_MS) {
+function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
+	const ms = keptMs(rawMs);
 	const attempts = stats.attempts + 1;
 	const next = {
 		...stats,
