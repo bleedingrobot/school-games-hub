@@ -47,3 +47,20 @@ describe('how Clan Quest points work', () => {
     expect(screen.queryByRole('heading', { name: /Clan Quest/ })).toBeNull();
   });
 });
+
+describe('how a new game\'s points work', () => {
+  it('shows each new game the database lists, with its own sentences, under the game\'s name', async () => {
+    rules.value = { ...base, hubGames: { marble: { lines: ['Finish a course: 3 points.', 'These share the 40-points-a-day limit.'] } } };
+    render(<HowPoints />);
+    const heading = await screen.findByRole('heading', { name: 'Marble Rush' });
+    const section = heading.closest('section')!;
+    expect(section).toHaveTextContent('Finish a course: 3 points.');
+    expect(section).toHaveTextContent('These share the 40-points-a-day limit.');
+  });
+
+  it('shows nothing extra when no new game has points', async () => {
+    render(<HowPoints />);
+    await screen.findByRole('heading', { name: 'How points work' });
+    expect(screen.queryByRole('heading', { name: 'Marble Rush' })).toBeNull();
+  });
+});
