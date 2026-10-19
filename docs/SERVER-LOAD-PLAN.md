@@ -2,7 +2,7 @@
 
 *How to make the hub ask the server for much less, so a whole class can use it at once without the database timing out. Written 19 October 2026 for James, after the lobby timeout that morning.*
 
-**Status: S.1 and S.2 built and tested on the `server-load` branch, not live (see "Stage S.1 results" and "Stage S.2 results" at the end); nothing else built. The lobby already refreshes every 20 seconds instead of 5, and the faster points-and-level job is live (both 19 Oct 2026). James answered the questions the same day (section 7). Everything below waits for James to say go, one stage at a time, starting with S.1.**
+**Status: S.1 and S.2 built and tested on the `server-load` branch, and S.3 on the `server-load-s3` branch (which starts from S.2); none of them live (see the results sections at the end). S.4 to S.6 not built. The lobby already refreshes every 20 seconds instead of 5, and the faster points-and-level job is live (both 19 Oct 2026). James answered the questions the same day (section 7). Everything below waits for James to say go, one stage at a time, starting with S.1.**
 
 ## 1. Why
 
@@ -247,3 +247,43 @@ So the one job is no slower; the work inside is the same (half of it is `my_prog
 **Pupils with the page open in between:** nothing changes for them. Their page keeps using the old separate requests, which all still exist, until they reload or open the site again, and then they get the new page. Undoing it later only needs the site rolled back: the job can stay.
 
 After S.1 to S.3 are live, compare the home page's jobs (`my_progress`, `my_class`, `my_moves_left`, `my_maths_focus`, `my_ladder` and the table reads) in `extensions.pg_stat_statements` against section 1, then clear the counts (James's answer 5).
+
+## Stage S.3 results (19 Oct 2026)
+
+**Built on its own branch, `server-load-s3` (worktree `~/projects/school-games-hub-server-load-s3`), not live.** It starts from the end of S.2, so S.1 and S.2 can go live from `server-load` without it. No database change and no server function change: it is only the screen.
+
+### What was built
+
+- **One shared piece for the checks** (`src/multiplayer/useGameChecks.ts`), used by all four kinds of game with classmates: chess and checkers (`useFriendGame`), Wormholes & Black Holes (`useSpaceGame`), 101 (`useCardGame`) and Power Clash (`usePowerGame`). Before, each had its own timer: every 20 seconds while live updates worked, every 4 seconds while they didn't.
+- **When live updates break:** the waits between checks are 4, 8, 16 and then 30 seconds, and stay at 30. As soon as live updates work again, it goes back to every 20 seconds; if they break again, it starts at 4 seconds again. "Connecting" counts the same as broken, so a connection that keeps dropping and coming back doesn't keep starting the waits again.
+- **Spread out:** each wait is made up to a quarter longer at random (so 20 to 25 seconds while live updates work, 4 to 5, 8 to 10, 16 to 20 when broken), so a class doesn't ask at the same moment. **No wait is ever longer than 30 seconds**, which keeps James's answer 2 (an opponent's move shows within 30 seconds). The plan said "up to a quarter of the gap" for every wait, which would have made the longest 37.5 seconds; it is capped at 30 instead. The randomness in the shorter waits before it still keeps a class out of step.
+- **Hidden tabs:** no checks at all while the tab is hidden. Coming back to the tab still looks again straight away (that was already there, and is unchanged).
+- **Your own moves** still go straight to the server and show straight away. Only the "did anything change?" checks slow down.
+
+### Requests
+
+| One pupil's game screen, over 2 minutes | Before | After |
+|---|---|---|
+| Live updates broken | 30 checks | 6 (fewer with the random spread) |
+| Live updates working | 6 | 6 or fewer (20 to 25 seconds apart) |
+| Tab hidden | 6 or 30 | 0 |
+
+### What a pupil might notice
+
+Only when live updates are broken: an opponent's move can take up to 30 seconds to appear, instead of about 4. When live updates work, nothing changes.
+
+### Tests
+
+- New: `src/multiplayer/useGameChecks.test.tsx` (18 tests). The waits are 20 seconds, or 4, 8, 16 then 30; the spread is up to a quarter longer and never over 30 seconds; 6 checks in 2 minutes with live updates broken; back to 20 seconds when they work and starting at 4 again when they break again; a dropping connection doesn't restart the waits; no checks while hidden; none once the game is over. For each of the four kinds of game, with only the server requests faked: 6 checks in 2 minutes broken and 6 working; nothing while hidden and one check straight away on coming back.
+- Quick tests before the change: all 152 files passed. After: the whole suite (`TESTS=all`, 160 files), the type check and the build pass. The existing game page tests pass unchanged.
+
+**Not tested:** real live updates breaking in a real browser (the tests fake the live-updates channel and the clock).
+
+### Go-live steps
+
+S.3 needs S.1 and S.2 to go first, because its branch contains them.
+
+1. Once S.1 and S.2 are live (the `my_home_page` migration applied, then `server-load` merged into `main` and pushed), merge `server-load-s3` into `main` and push. That deploys the site. No migration and no functions.
+2. A pupil already in a game keeps the old checks until they reload or open the game again.
+
+If S.3 ever has to go before S.1 and S.2, the `my_home_page` migration must be applied first, for the same reason as in S.2.
