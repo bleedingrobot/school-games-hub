@@ -239,15 +239,50 @@ describe('My classes', () => {
     expect(classes.answerWarp).toHaveBeenCalledWith('r1', true);
   });
 
-  it('looks again for new warps every few seconds', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    show();
-    await screen.findByRole('log', { name: 'Recent warps' });
-    const before = vi.mocked(classes.fetchClassEvents).mock.calls.length;
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(LIVE_MS + 100);
+  describe('looking again for new warps', () => {
+    let visibility: DocumentVisibilityState = 'visible';
+    const looks = () => vi.mocked(classes.fetchClassEvents).mock.calls.length;
+    const pass = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
+    const tab = async (now: DocumentVisibilityState) => {
+      visibility = now;
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+    };
+
+    beforeEach(() => {
+      visibility = 'visible';
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => visibility });
     });
-    expect(vi.mocked(classes.fetchClassEvents).mock.calls.length).toBeGreaterThan(before);
+    afterEach(() => {
+      delete (document as { visibilityState?: unknown }).visibilityState;
+    });
+
+    it('looks again every 30 seconds, not more often', async () => {
+      expect(LIVE_MS).toBe(30_000);
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      show();
+      await screen.findByRole('log', { name: 'Recent warps' });
+      const before = looks();
+      await pass(20_000);
+      expect(looks()).toBe(before);
+      await pass(10_100);
+      expect(looks()).toBe(before + 1);
+      expect(classes.fetchClassDetail).toHaveBeenCalledTimes(before + 1);
+      expect(classes.fetchWarpRequests).toHaveBeenCalledTimes(before + 1);
+    });
+
+    it("doesn't look while the tab is hidden, and looks straight away when it comes back", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      show();
+      await screen.findByRole('log', { name: 'Recent warps' });
+      const before = looks();
+      await tab('hidden');
+      await pass(5 * LIVE_MS);
+      expect(looks()).toBe(before);
+      await tab('visible');
+      expect(looks()).toBe(before + 1);
+    });
   });
 
   it('adds ticked students from the list of students with no class', async () => {
