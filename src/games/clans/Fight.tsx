@@ -70,13 +70,18 @@ export function Fight({ session, boss = false, open, onRound, onFinish }: {
     setQuestion(q);
     setPhase(q ? 'ask' : 'orders');
   };
-  useEffect(() => startRound(fight), []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    startRound(fight);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // The orders and the reward are answered with letter keys, so the panel takes focus. The question, "how it works" and "over" have their own focus (the box or an autofocused button).
     if (phase === 'orders' || phase === 'reward') panel.current?.focus();
   }, [phase, seat, mode]);
-  useEffect(() => logEnd.current?.scrollIntoView?.({ block: 'nearest' }), [log]);
+  // Braces matter: newer Chrome's scrollIntoView gives back a promise, and React would try to call it as the clean-up.
+  useEffect(() => {
+    logEnd.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [log]);
 
   // ---- the Battle Cry
   const submitCry = (answer: number) => {

@@ -104,6 +104,23 @@ describe('a fight', () => {
     expect(screen.getByText('7 of 8')).toBeInTheDocument();
   });
 
+  it('keeps going round after round when scrollIntoView gives back a promise (newer Chrome did, and the page went blank)', async () => {
+    const had = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollIntoView');
+    Element.prototype.scrollIntoView = function () {
+      return Promise.resolve() as unknown as void;
+    };
+    try {
+      const u = user();
+      await makeClanOnScreen(u);
+      await intoFight(u);
+      await playOut(u);
+      expect(screen.getByText(/enemies are beaten/)).toBeInTheDocument();
+    } finally {
+      if (had) Object.defineProperty(Element.prototype, 'scrollIntoView', had);
+      else delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+
   it('a right Battle Cry answer lets you pick damage or healing, with the key too', async () => {
     const u = user();
     await makeClanOnScreen(u);
