@@ -15,6 +15,7 @@ import type { FactStats } from '../../shared/maths/leitner';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { readSettings } from './classSettings';
 import { supabase } from '../lib/supabase';
+import { forgetSettings } from './settingsMemory';
 import type { CampaignProgress } from '../games/gem-keep/progress';
 import { DEFAULT_SETTINGS, type GemKeepSettings } from '../games/gem-keep/settings';
 import { FriendlyError } from './profile';
@@ -260,5 +261,6 @@ export async function saveGemKeepSettings(settings: GemKeepSettings, classId?: s
     settings: { ...settings, missingFactor: settings.missingFactor ?? null },
     target_class: classId ?? null,
   });
+  forgetSettings();
   if (error) fail(error, 'We couldn’t save the Gem Keep settings.');
 }

@@ -2,12 +2,14 @@
  * "My maths path" on a student's home page: where they are on the maths ladder, a short "you moved up!" when they pass a skill, and
  * (until it is done or skipped) an offer of the warm-up that finds their starting place. It only appears when the class has auto
  * switched on, so a class that has not turned it on sees nothing new. Loaded on its own so the maths code stays out of the home
- * page's first download.
+ * page's first download. On the home page it takes its part of the page's one request (`homePage`, null while that is on its way);
+ * anywhere else it asks for itself.
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useAuth } from "../auth/AuthContext";
-import { fetchMyLadder, type MyLadder } from "../data/ladder";
+import { partOf, type HomePage } from "../data/homePage";
+import { fetchMyLadder, ladderFrom, type MyLadder } from "../data/ladder";
 import { hasFocus, isTeacherFocus } from "../../shared/maths/focus";
 import { placeProgress } from "../../shared/maths/place";
 import { LadderPath } from "../maths/LadderPath";
@@ -29,21 +31,26 @@ const write = (key: string, value: string) => {
   }
 };
 
-export default function MathsPathCard() {
+export default function MathsPathCard({
+  homePage,
+}: {
+  homePage?: Promise<HomePage> | null;
+}) {
   const { profile } = useAuth();
   const [data, setData] = useState<MyLadder | null>(null);
   const [passed, setPassed] = useState<string[] | null>(null);
 
   useEffect(() => {
+    if (homePage === null) return;
     let current = true;
-    fetchMyLadder().then(
+    partOf<MyLadder | null>(homePage, "ladder", ladderFrom, fetchMyLadder).then(
       (d) => current && setData(d),
       () => undefined, // no path is better than a broken home page
     );
     return () => {
       current = false;
     };
-  }, []);
+  }, [homePage]);
 
   const ladder = data?.focus.ladder;
   const progress =

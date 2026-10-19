@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { fetchMyProfile, FriendlyError, type Profile } from '../data/profile';
+import { forgetSettings } from '../data/settingsMemory';
 import { supabase } from '../lib/supabase';
 import { readSignInError } from './signInErrors';
 
@@ -34,12 +35,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadProfile = useCallback(async (session: Session | null) => {
     if (!session) {
+      // Signed out: whoever signs in next on this device reads their own game switches.
+      forgetSettings();
       userId.current = null;
       setProfile(null);
       setStatus('signed-out');
       return;
     }
     if (userId.current === session.user.id) return;
+    forgetSettings(); // someone else signed in on this device
     userId.current = session.user.id;
     try {
       setProfile(await fetchMyProfile(session.user.id));
@@ -96,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     signingOut.current = true;
     setMessage(null);
+    forgetSettings();
     await supabase.auth.signOut();
   }, []);
 
