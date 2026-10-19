@@ -1,7 +1,7 @@
 # Tests plan: after the audit
 
 Written 19 Oct 2026, after the test audit on the `lean-tests` branch (worktree `~/projects/school-games-hub-lean-tests`).
-Four steps, in this order. Each one stops and waits for James to say "go" in words before anything is pushed,
+**All four steps done, 20 Oct 2026.** Four steps, in this order. Each one stops and waits for James to say "go" in words before anything is pushed,
 applied to a database, or changes how the game plays.
 
 ## Where things stand
@@ -57,7 +57,7 @@ row"), so that fix may not cover every case. For a pupil this would mean a trial
 
 **Done when:** the test passes 30 runs out of 30 and James has seen a trial work in the browser.
 
-**Results (19 Oct 2026, branch `question-box`, not merged):** the shared-number guess was wrong; `useAsk` already gives
+**Results (19 Oct 2026; James tried it, merged and live 20 Oct):** the shared-number guess was wrong; `useAsk` already gives
 each box its own `key`. The real cause: `QuestionModal` cleared its answer in a plain `useEffect`, which can run just
 after a tap that comes the moment the box appears, so the tap was wiped and the box sat on "?". The test taps at machine
 speed; a pupil would need to tap within about one screen refresh. Fix: that clear-up is now a `useLayoutEffect`, which
@@ -81,6 +81,8 @@ the nightly scheduler, which a scratch copy only fakes.
 
 **Done when:** `npm run test:db` passes on the local copy.
 
+**Done 20 Oct 2026:** the six were applied with `migration up --local` (no gaps); 35 files, 2,083 checks pass.
+
 ## Step 4 (later, optional): database tests in the publish
 
 **Why:** the 1,872 database checks keep each school's and each pupil's data apart, and at the moment nothing runs them
@@ -94,6 +96,10 @@ automatically. They only run when someone remembers `npm run test:db`.
 4. **Stop. Push only when James says so.**
 
 **Done when:** a publish shows the database job passing, and a deliberately broken check on a test branch stops it.
+
+**Done 20 Oct 2026:** the job is `.github/workflows/db-tests.yml`, called from `deploy.yml`; the publish needs both. On a
+throwaway branch it applied all 37 migrations and passed 2,083 checks in about 2¾ minutes, and a deliberately broken
+check failed it. It runs alongside the site checks, so on the first real publish it added no time (it finished first).
 
 ## The everyday commands (for reference)
 
