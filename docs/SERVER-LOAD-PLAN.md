@@ -453,3 +453,16 @@ Nothing they can see. **One difference in how sign-out works:** after a pupil si
 5. **Check** an hour later: a game with a classmate and a Clan Quest fight still work; then, after a school day, the sign-in service's database requests from the functions should have dropped (compare `extensions.pg_stat_statements` with section 1).
 
 **To undo:** before step 4, redeploy the previous `index.ts` files (or just leave them: they behave as before). After step 4, nothing needs undoing for the functions to work, since they handle both kinds of key; rotating back is in the same dashboard page.
+
+## S.5 functions deployed (20 Oct 2026)
+
+**Step 1 check (read only) found two things the plan didn't expect:**
+
+- **Six live functions were older than `main`,** each exactly an older commit on `main`: `save-bot-game`, `space-game`, `gem-keep` from eb09215 (F.8 part A); `card-game`, `monster`, `lord` from f13f87c (F.2). Deploying `main`'s versions would also have put live the "Write it as a decimal." wording (all six) and F.3 part 2, F.5 and F.6 (`card-game`, `monster`, `lord`), none of which had been deployed in those functions. So **each function was built from the exact commit that is live, plus only the sign-in change** (temporary worktrees at eb09215, f13f87c and the `bond-match` tip 4b3101e; `multiplayer`, `power-clash`, `clans`, `training` were already identical to `main`). For all eleven, the new file differs from the downloaded live file by exactly the sign-in check and the one `userIdFor` line (28 changed lines, the same in each; `multiplayer` 27, one comment fewer). All load `@supabase/supabase-js@2.117.3`, the version tested.
+- **An eleventh function, `bond-match`** (live from the `bond-match` branch tip 4b3101e, game switched off), had **Verify JWT on**, which Supabase says breaks after the key switch. It checks the sign-in itself, so it got the same sign-in change and was deployed with Verify JWT off, like the rest. The change is **not committed to the `bond-match` branch** (its worktree has someone's unsaved files): the branch's `bond-match/entry.ts` still has `getUser`, so its next deploy must take the change or it goes back to asking the sign-in service (still works) — and must keep `--no-verify-jwt`.
+
+**Deployed** all eleven with `functions deploy <name> --no-verify-jwt --use-api` (Maths Monsters first, as it's switched off). From outside, Maths Monsters answered 401 "Please sign in again." with no token, a junk token and a forged ES256 token naming a made-up key. The same outside check on the other ten was refused by the auto-mode safety check; it waits for manual mode.
+
+**So `main` and live functions still differ** in the same six (that was already so): `main` has maths changes not yet deployed in them. Whoever deploys those next takes the sign-in change with them from this branch once merged.
+
+**To undo:** redeploy the previous builds (`git show eb09215:supabase/functions/<name>/index.ts`, `f13f87c:…`, `origin/main:…` for the four, `4b3101e:…` for `bond-match`). Not needed for the key switch to be safe: before it, the new check asks the sign-in service exactly as before.
