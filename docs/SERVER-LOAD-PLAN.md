@@ -2,7 +2,7 @@
 
 *How to make the hub ask the server for much less, so a whole class can use it at once without the database timing out. Written 19 October 2026 for James, after the lobby timeout that morning.*
 
-**Status: S.1 built and tested on the `server-load` branch, not live (see "Stage S.1 results" at the end); nothing else built. The lobby already refreshes every 20 seconds instead of 5, and the faster points-and-level job is live (both 19 Oct 2026). James answered the questions the same day (section 7). Everything below waits for James to say go, one stage at a time, starting with S.1.**
+**Status: S.1 and S.2 built and tested on the `server-load` branch, not live (see "Stage S.1 results" and "Stage S.2 results" at the end); nothing else built. The lobby already refreshes every 20 seconds instead of 5, and the faster points-and-level job is live (both 19 Oct 2026). James answered the questions the same day (section 7). Everything below waits for James to say go, one stage at a time, starting with S.1.**
 
 ## 1. Why
 
@@ -193,3 +193,57 @@ Gem Keep and maths auto are settings, not on/off switches; the server reads them
 2. Pupils' screens pick up a teacher's switch change within 5 minutes or on reload; a teacher's own device sees it straight away.
 3. After S.1 to S.3 are live, compare the switch reads in `extensions.pg_stat_statements` against section 1 (James's answer 5).
 
+## Stage S.2 results (19 Oct 2026)
+
+**Built on `server-load`, not live.** Nothing merged, pushed to `main` or deployed, and the migration is **not applied** to the live database (it was only run inside rolled-back transactions on the local copy).
+
+### What was built
+
+- **One database job, `my_home_page()`** (migration `20261019000700_my_home_page.sql`, the next free number across every branch and worktree, local and on GitHub). It runs as the pupil (`security invoker`), so each table's row rules still decide what they see. It calls the jobs that already exist (`my_progress`, the five `my_…_game_stats`, `my_moves_left`, `my_class`, `my_maths_focus`, `my_ladder`) and makes the page's ten table reads with the same columns, filters, order and limits, plus the names-and-avatars lookup for the other players. Signed-in users only, like the other `my_` jobs; added to the security test's list.
+- **The home page asks once, every time it opens.** Nothing is remembered between visits, so points, recent games and moves left are up to date straight after a game. The switches still come from S.1's remembered read.
+- **The three cards** (Join your class, My maths focus, My maths path) take their parts from the same answer. They keep their own request for when they are shown without the home page's answer, or the answer has no part for them. The maths cards read their own parts, so the maths code stays out of the home page's first download (checked in the build).
+- **If the one request fails**, the page shows exactly what it showed when every request failed: "We couldn’t load your games just now.", achievements "Loading…", dashes in the stats, no class card, no maths path, and the maths focus card on auto. The cards don't then ask for themselves.
+- **One difference in how things fail:** before, each part could fail on its own (say the points while the games still showed). Now the parts come together, so a failure inside any one of them shows the "everything failed" page above. In normal use no part fails on its own.
+- The old one-at-a-time data functions are still there (the lobby and other pages use some; the rest are no longer used by any page and could be tidied away later).
+
+### Requests (test mock, `src/pages/RequestCount.test.tsx`)
+
+| | Before S.2 | After |
+|---|---|---|
+| Home page opening (test mock, maths cards included) | 20 | 2: the one job, and S.1's switch read |
+| Home page live, with friend games (adds the names lookup) | 21 | 2 |
+| Coming back from a game (switches remembered) | 19 to 20 | 1 |
+
+With S.1 and S.2 together, a class opening the home page sends about 1 request each instead of about 23.
+
+### Timing on the live database (step 5, read only)
+
+Run as the busiest pupil (bd09…, 37 games of four kinds) and the next busiest (f1b3…, 28 games of five kinds), inside a transaction that ended in a deliberate error, so nothing could be kept. The new job's query against all the separate requests run one after another, 15 times each, database time only:
+
+| Pupil | One job (median) | Separate requests added together (median) |
+|---|---|---|
+| Busiest | 46.2 ms | 46.4 ms |
+| Next busiest | 47.9 ms | 48.6 ms |
+
+So the one job is no slower; the work inside is the same (half of it is `my_progress`, about 24 ms). The saving is everything around the work: one sign-in check, one connection and one round trip instead of about 20, which is what queued up on 19 Oct.
+
+### Tests
+
+- Database (`supabase/tests/database/home_page.test.sql`, 40 checks, in a rolled-back transaction with the four migrations the local copy was missing): the job gives exactly the same answer as the separate jobs and table reads for a pupil with more games of every kind than the page shows, a brand-new pupil, a hidden pupil, both teachers, a class with a maths focus and one without, and with every game switched off. Lists are newest first and cut at 5 and 10; a pupil sees only their own 101 seat rows, not a classmate's games or waiting games; hidden players' names are left out; signed-out visitors can't call it; it runs as the person asking. The security test (50), `progress_access` and `mp_games` tests still pass with it.
+- Screen (`src/pages/DashboardHome.test.tsx`, 7 tests, with a pretend server that answers both the old requests and the new one from the same games, `src/pages/homePageFake.ts`): one request on opening plus at most the switch read; the same cards and numbers for a busy pupil and a new pupil; the old messages when it fails, with nothing more asked; each card asks for itself when the answer has no part for it; a teacher gets one request and no pupil cards; coming back from a game asks again.
+- Old page against new: during the build, the page as it was before S.2 and the new one were drawn side by side from the same made-up games (busy pupil, new pupil, teacher, everything failing, new pupil with everything failing). The pages came out identical, down to the HTML. That comparison was temporary and isn't kept in the repo.
+- Existing tests: the card tests and `Dashboard.test.ts` pass unchanged. `App.test.tsx`'s five home page tests pass unchanged; the file gained one fake for the new request, built from its existing made-up answers. `RequestCount.test.tsx` now expects exactly two requests.
+- Quick tests before the change: all 151 files passed. After: the whole suite (`TESTS=all`, 159 files, 3,351 tests), the type check and the build all pass.
+
+**Not tested:** a real browser against a real Supabase (the tests fake the client; the database test checks the job's answer against the same reads the client makes, which is what PostgREST runs); the job on the live database itself (only its query was timed there, as above); live request counts, which can only be read after it goes live.
+
+### Go-live steps (in this order)
+
+1. **Apply the one migration** to the live database: `20261019000700_my_home_page.sql` only. It adds one job and changes nothing else, so pages already open, and the site as it is now, carry on exactly as before (they don't call it).
+2. **Then merge `server-load` into `main` and push `main`.** That deploys the site (S.1 and S.2 together, if S.1 hasn't gone already). No server functions to deploy.
+
+**Why this order:** the new site asks for `my_home_page`. If the site went first, every pupil's home page would show "We couldn’t load your games just now" until the migration was applied. The other way round there is no gap.
+
+**Pupils with the page open in between:** nothing changes for them. Their page keeps using the old separate requests, which all still exist, until they reload or open the site again, and then they get the new page. Undoing it later only needs the site rolled back: the job can stay.
+
+After S.1 to S.3 are live, compare the home page's jobs (`my_progress`, `my_class`, `my_moves_left`, `my_maths_focus`, `my_ladder` and the table reads) in `extensions.pg_stat_statements` against section 1, then clear the counts (James's answer 5).
