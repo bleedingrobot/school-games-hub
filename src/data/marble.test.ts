@@ -8,6 +8,7 @@ vi.mock('../lib/supabase', () => ({
   },
 }));
 
+import { forgetSettings } from './settingsMemory';
 import { answerQuestion, enqueueRun, fetchMarbleSwitches, flushRuns, loadBoard, loadGhost, loadServerBests, queuedRuns, startRun } from './marble';
 
 const fetchMock = vi.fn<typeof fetch>();
@@ -168,18 +169,21 @@ describe('ghosts and boards', () => {
 });
 
 describe('the teacher’s maths switches', () => {
+  // The settings row is read once and remembered (shared with the other games), so start each test afresh.
+  beforeEach(() => forgetSettings());
   it('reads them from the student’s own settings row', async () => {
     const select = vi.fn(() => ({ maybeSingle: async () => ({ data: { marble_maths: 'on', marble_rescue: false }, error: null }) }));
     const from = vi.fn(() => ({ select }));
     const mod = await import('../lib/supabase');
     (mod.supabase as unknown as { from: typeof from }).from = from;
     expect(await fetchMarbleSwitches()).toEqual({ maths: 'on', rescue: false });
-    expect(select).toHaveBeenCalledWith('marble_maths, marble_rescue');
+    expect(select).toHaveBeenCalledWith('*');
   });
   it('keeps maths off when they can’t be read, or say something odd', async () => {
     const mod = await import('../lib/supabase');
     (mod.supabase as unknown as { from: unknown }).from = () => ({ select: () => ({ maybeSingle: async () => ({ data: null, error: { message: 'no' } }) }) });
     expect(await fetchMarbleSwitches()).toEqual({ maths: 'off', rescue: true });
+    forgetSettings();
     (mod.supabase as unknown as { from: unknown }).from = () => ({ select: () => ({ maybeSingle: async () => ({ data: { marble_maths: 'yes please' }, error: null }) }) });
     expect((await fetchMarbleSwitches()).maths).toBe('off');
   });

@@ -27,6 +27,7 @@
     "marble:determinism": "node scripts/marble-determinism.mjs",
     "marble:sim": "node scripts/marble-sim.mjs",
     "marble:preview": "vite build --config vite.marble-preview.config.ts",
+    "marble:single": "MARBLE_INLINE=1 vite build --config vite.marble-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-marble marble-rush-test-page.html",
     "monsters:sim": "node scripts/monsters-sim.mjs",
     "space:preview": "vite build --config vite.preview.config.ts",
     "101:sim": "node scripts/101-sim.mjs",
