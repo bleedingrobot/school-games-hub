@@ -401,3 +401,12 @@ S.4 needs S.1 to S.3 to go first, because its branch contains them: steps 1 to 3
 **Pupils with the lobby open in between:** nothing changes for them. Their open lobby keeps using the old separate requests (which all still exist) every 20 seconds until they reload or open the site again, and then they get the new lobby. Undoing it later only needs the site rolled back (revert the merge): the job can stay.
 
 After it is live, compare the lobby's requests (`lobby_games`, `space_lobby_games`, `card_lobby_games`, `power_lobby_games` and the table reads) in `extensions.pg_stat_statements` against section 1.
+
+## S.4 go-live check (20 Oct 2026, morning)
+
+Nothing live changed. Before asking James to paste the lobby migration:
+
+- **Still merges cleanly** with GitHub's `main` (now 16b93a9, which has the faster tests, the database checks in the publish and the Dragon Maths question box fix). No new migrations on `main` since 000700, so 000800 is still the next number.
+- **The merged code passes everything:** type check, build, and the whole suite (`TESTS=all`, 164 files, 3,385 tests, 1 skipped).
+- **Every database test file passes with the lobby migration** (36 files, including `lobby` 37, `security` 50, `home_page` 40), each run on the local copy inside a transaction that was rolled back, so the local copy is still at 000700. Once `main` has the migration, the publish's own database check will run it too, so a broken migration would stop the publish.
+- **Not done:** the live read-only checks (is `lobby` already there, and the request counts after a school day). Claude Code's safety check refused them in auto mode; they wait for James (manual mode, or he approves them at his computer).
