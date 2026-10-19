@@ -80,11 +80,12 @@ describe('requests sent when a page opens', () => {
     expect([...sent].sort()).toEqual(['from app_settings', 'rpc my_home_page']);
   });
 
-  it('the lobby reads the playing-friends switch with one request', async () => {
+  it('the lobby sends one request, plus one read of the game switches', async () => {
     show(<Lobby />);
     await settle();
+    // Written down for the plan's results. Before S.1 it was 10, before S.4 it was 9.
     console.info(`lobby: ${sent.length} requests\n  ${[...sent].sort().join('\n  ')}`);
-    expect(sent.filter((s) => s === 'from app_settings').length).toBeLessThanOrEqual(1);
+    expect([...sent].sort()).toEqual(['from app_settings', 'rpc lobby']);
   });
 
   it('opening the home page and then the lobby reads the switches once between them', async () => {

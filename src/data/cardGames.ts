@@ -113,8 +113,13 @@ export async function fetchMyOpenCardGames(): Promise<SeatSummary[]> {
     .order('updated_at', { ascending: false })
     .limit(10);
   if (error || !data) throw new FriendlyError('We couldn’t load your games.');
+  return stillOpenSeats(data as SeatSummary[]);
+}
+
+/** My open 101 games worth offering, as stillOpen does for the others (101 keeps its time in the seat's info). */
+export function stillOpenSeats(seats: SeatSummary[]): SeatSummary[] {
   const now = Date.now();
-  return (data as SeatSummary[]).filter((s) => s.status === 'playing' || Date.parse(s.info.expiresAt) > now);
+  return seats.filter((s) => s.status === 'playing' || Date.parse(s.info.expiresAt) > now);
 }
 
 /** My finished 101 games with classmates, newest first. */
