@@ -40,6 +40,15 @@ export const MISSING_FACTOR_SHARE = 0.3;
 /** When division is switched on, this share of questions are division. */
 export const DIVISION_SHARE = 0.3;
 
+/**
+ * The longest an answer is kept as taking. A student who looks away for ten minutes mid-question has not spent ten minutes on
+ * the sum: kept as it is, one such answer would swamp the average time teachers see for that fact. Longer answers still count,
+ * as this long (right or wrong is untouched, and anything this slow is far from quick).
+ */
+export const LONGEST_ANSWER_MS = 120_000;
+/** An answer's time as it is kept: whole milliseconds, 0 to `LONGEST_ANSWER_MS`. */
+export const keptMs = (ms: number) => Math.min(LONGEST_ANSWER_MS, Math.max(0, Math.round(ms)));
+
 /** Answering correctly within this many milliseconds counts as quick. */
 export const QUICK_MS = 5000;
 /**

@@ -15,6 +15,7 @@ import type { FactAnswer } from '../maths/leitner';
 import { sameAnswer } from '../maths/banded';
 import { keyForAnswer } from '../maths/focus';
 import { cleanParams, solveClaim } from '../maths/claim';
+import { keptMs } from '../maths/config';
 import type { SpaceAction, SpaceEvent, SpaceState, Settings } from './engine';
 import { parseGalaxyCode } from './galaxy';
 import { isItemKind } from './items';
@@ -254,7 +255,7 @@ export function judgeSpaceGame(report: SpaceGameReport): SpaceJudgement {
     const solved = a ? solveClaim(a) : null;
     if (!a || !solved) mathsProblem = 'missing maths answer';
     else if (sameAnswer(a.given, solved.answer) !== claimedRight) mathsProblem = 'maths answer does not match';
-    else answers.push({ key: keyForAnswer(solved, a.key), correct: claimedRight, ms: a.ms, at: a.at });
+    else answers.push({ key: keyForAnswer(solved, a.key), correct: claimedRight, ms: keptMs(a.ms), at: a.at });
   };
   let replayed: ReturnType<typeof replaySolo>;
   try {

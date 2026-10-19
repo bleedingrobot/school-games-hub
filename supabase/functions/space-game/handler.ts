@@ -13,6 +13,7 @@ import { makeCode, normaliseCode } from '../../../shared/multiplayer';
 import type { FactAnswer, FactStats } from '../../../shared/maths/leitner';
 import { sameAnswer } from '../../../shared/maths/banded';
 import type { Question } from '../../../shared/maths/skillPack';
+import { keptMs } from '../../../shared/maths/config';
 import { isFocusKey, solveParts, type MathsFocus } from '../../../shared/maths/focus';
 import { canCharge, MAX_PLAYERS, MIN_PLAYERS, placesFor, SpaceRuleError, type SpaceAction, type SpaceEvent, type SpaceState } from '../../../shared/space/engine';
 import { makeSpacePack, pickSpaceQuestion, type MathsQuestionSettings } from '../../../shared/space/mathsQuestion';
@@ -623,9 +624,9 @@ async function answerQuestion({ services, me, body }: Context): Promise<SpaceGam
   if (!solved) throw new Refused('failed');
   const right = sameAnswer(typed, solved.answer);
   const now = services.now();
-  // How long it took, as far as the server can tell: never more than the time since it was asked.
+  // How long it took, as far as the server can tell: never more than the time since it was asked (nor the longest kept).
   const claimed = typeof body.ms === 'number' && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : Infinity;
-  const ms = Math.round(Math.min(claimed, now - stored.askedAt));
+  const ms = keptMs(Math.min(claimed, now - stored.askedAt));
   const answer: FactAnswer = { key: solved.key, correct: right, ms, at: now };
   const once = `${game.id}:${seat}:${kind}:${stamp}`;
   const reply = { right, answer: solved.answer };

@@ -104,3 +104,10 @@ describe('every question the website asks is one the server can mark the same wa
     });
   }
 });
+
+describe('answer times', () => {
+  it('an answer longer than two minutes is kept as two minutes (right or wrong unchanged)', () => {
+    const slow = { ...shown('mul:6x8', ['6', '×', '8', '=', '?'], 48), ms: 600_000 };
+    expect(kept('times-tables', [slow])).toEqual([{ key: 'mul:6x8', correct: true, ms: 120_000, at: BEFORE - 5000 }]);
+  });
+});

@@ -88,6 +88,14 @@ const CAMPAIGN_STEPS = [
 		add: [11, 12]
 	}
 ];
+/**
+* The longest an answer is kept as taking. A student who looks away for ten minutes mid-question has not spent ten minutes on
+* the sum: kept as it is, one such answer would swamp the average time teachers see for that fact. Longer answers still count,
+* as this long (right or wrong is untouched, and anything this slow is far from quick).
+*/
+const LONGEST_ANSWER_MS = 12e4;
+/** An answer's time as it is kept: whole milliseconds, 0 to `LONGEST_ANSWER_MS`. */
+const keptMs = (ms) => Math.min(LONGEST_ANSWER_MS, Math.max(0, Math.round(ms)));
 /** Answering correctly within this many milliseconds counts as quick. */
 const QUICK_MS = 5e3;
 /**
@@ -10601,7 +10609,7 @@ function judgeSpaceGame(report) {
 		else answers.push({
 			key: keyForAnswer(solved, a.key),
 			correct: claimedRight,
-			ms: a.ms,
+			ms: keptMs(a.ms),
 			at: a.at
 		});
 	};

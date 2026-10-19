@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { randomFromSeed } from '../space/random';
-import { BOX_WEIGHTS, MIX, QUICK_MS, REPEAT_AFTER, TOP_BOX } from './config';
+import { BOX_WEIGHTS, LONGEST_ANSWER_MS, MIX, QUICK_MS, REPEAT_AFTER, TOP_BOX } from './config';
 import { factKey, factsIn, parseFactKey, tableFacts } from './facts';
 import { afterAnswer, mastery, newStats, nzDay, type FactStats } from './leitner';
 import { newMemory, pickFact, poolsFor, scheduleRepeat, type Band } from './selector';
@@ -76,6 +76,15 @@ describe('mastery boxes', () => {
     expect(mastery(box('k', 1))).toBe('learning');
     expect(mastery(box('k', 2))).toBe('secure');
     expect(mastery(box('k', 4))).toBe('fluent');
+  });
+});
+
+describe('answer times', () => {
+  it('an answer longer than the longest kept counts as that long, so one look-away does not swamp the average', () => {
+    const once = afterAnswer(newStats('mul:6x8'), true, 2000, 0);
+    const away = afterAnswer(once, true, 15 * 60_000, 1);
+    expect(away.avgMs).toBe(Math.round((2000 + LONGEST_ANSWER_MS) / 2));
+    expect(away.correct).toBe(2);
   });
 });
 

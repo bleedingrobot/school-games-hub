@@ -13,7 +13,7 @@
  */
 import { sameAnswer } from '../maths/banded';
 import { cleanParams, solveClaim, type ShownAnswer } from '../maths/claim';
-import { FLUENT_DAYS, TOP_BOX } from '../maths/config';
+import { FLUENT_DAYS, keptMs, TOP_BOX } from '../maths/config';
 import { parseFactKey } from '../maths/facts';
 import { FOCUS_PACKS, isFocusKey, packIdOfKey, type FocusPackId } from '../maths/focus';
 import type { FactAnswer, FactStats } from '../maths/leitner';
@@ -216,7 +216,7 @@ function checkAnswers(x: Record<string, unknown>, nowMs: number): Checked<Answer
     if (!isInt(a.ms, MIN_AVG_MS, 3_600_000) || !isInt(a.at, nowMs - 60 * 86_400_000, nowMs + 86_400_000)) continue;
     const correct = a.parts === undefined ? oldStyleCorrect(a, nowMs) : markShown(a, a.key);
     if (correct === null) continue;
-    answers.push({ key: a.key, correct, ms: a.ms, at: a.at });
+    answers.push({ key: a.key, correct, ms: keptMs(a.ms), at: a.at });
   }
   return { ok: true, item: { type: 'answers', pack, batchId: x.batchId, answers } };
 }

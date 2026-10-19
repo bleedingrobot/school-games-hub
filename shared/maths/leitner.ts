@@ -4,7 +4,7 @@
  * drops it to box 1. A fact only reaches box 4 ("fluent") once it has been answered
  * quickly and correctly on at least two different days, so one lucky lesson isn't enough.
  */
-import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from './config';
+import { FLUENT_DAYS, keptMs, QUICK_MS, TOP_BOX } from './config';
 
 export interface FactStats {
   key: string;
@@ -41,7 +41,8 @@ const nzDayFormat = new Intl.DateTimeFormat('en-CA', { timeZone: 'Pacific/Auckla
 export const nzDay = (at: number) => nzDayFormat.format(new Date(at));
 
 /** The stats after one answer. Doesn't change the stats it's given. */
-export function afterAnswer(stats: FactStats, correct: boolean, ms: number, at: number, quickMs: number = QUICK_MS): FactStats {
+export function afterAnswer(stats: FactStats, correct: boolean, rawMs: number, at: number, quickMs: number = QUICK_MS): FactStats {
+  const ms = keptMs(rawMs);
   const attempts = stats.attempts + 1;
   const next: FactStats = {
     ...stats,
