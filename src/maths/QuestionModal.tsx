@@ -9,7 +9,7 @@
  * Parts like '3/4' are drawn as fractions ('?/8' has the blank on top), parts with words are
  * drawn smaller, and decimal questions get a point key.
  */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { spokenLabel } from '../../shared/maths/banded';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { NumberPad } from './NumberPad';
@@ -99,8 +99,9 @@ export function QuestionModal({
   const box = useRef<HTMLDivElement>(null);
   const titleId = `question-${question.id}-title`;
 
-  // A new question: clear the answer and start the clock.
-  useEffect(() => {
+  // A new question: clear the answer and start the clock. A layout effect, so it runs before the box can be pressed:
+  // a plain effect could run just after a quick first tap and wipe it, leaving the box waiting on "?".
+  useLayoutEffect(() => {
     setTyped('');
     setResult(null);
     setChecking(false);
