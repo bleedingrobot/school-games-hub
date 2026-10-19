@@ -2,7 +2,7 @@
 
 *How to make the hub ask the server for much less, so a whole class can use it at once without the database timing out. Written 19 October 2026 for James, after the lobby timeout that morning.*
 
-**Status: S.1 and S.2 built and tested on the `server-load` branch, not live (see "Stage S.1 results" and "Stage S.2 results" at the end); nothing else built. The lobby already refreshes every 20 seconds instead of 5, and the faster points-and-level job is live (both 19 Oct 2026). James answered the questions the same day (section 7). Everything below waits for James to say go, one stage at a time, starting with S.1.**
+**Status: S.1 and S.2 built and tested on the `server-load` branch, and S.3 on the `server-load-s3` branch (which starts from S.2); none of them live (see the results sections at the end). S.4 to S.6 not built. The lobby already refreshes every 20 seconds instead of 5, and the faster points-and-level job is live (both 19 Oct 2026). James answered the questions the same day (section 7). Everything below waits for James to say go, one stage at a time, starting with S.1.**
 
 ## 1. Why
 
@@ -247,3 +247,88 @@ So the one job is no slower; the work inside is the same (half of it is `my_prog
 **Pupils with the page open in between:** nothing changes for them. Their page keeps using the old separate requests, which all still exist, until they reload or open the site again, and then they get the new page. Undoing it later only needs the site rolled back: the job can stay.
 
 After S.1 to S.3 are live, compare the home page's jobs (`my_progress`, `my_class`, `my_moves_left`, `my_maths_focus`, `my_ladder` and the table reads) in `extensions.pg_stat_statements` against section 1, then clear the counts (James's answer 5).
+
+## Stage S.3 results (19 Oct 2026)
+
+**Built on its own branch, `server-load-s3` (worktree `~/projects/school-games-hub-server-load-s3`), not live.** It starts from the end of S.2, so S.1 and S.2 can go live from `server-load` without it. No database change and no server function change: it is only the screen.
+
+### What was built
+
+- **One shared piece for the checks** (`src/multiplayer/useGameChecks.ts`), used by all four kinds of game with classmates: chess and checkers (`useFriendGame`), Wormholes & Black Holes (`useSpaceGame`), 101 (`useCardGame`) and Power Clash (`usePowerGame`). Before, each had its own timer: every 20 seconds while live updates worked, every 4 seconds while they didn't.
+- **When live updates break:** the waits between checks are 4, 8, 16 and then 30 seconds, and stay at 30. As soon as live updates work again, it goes back to every 20 seconds; if they break again, it starts at 4 seconds again. "Connecting" counts the same as broken, so a connection that keeps dropping and coming back doesn't keep starting the waits again.
+- **Spread out:** each wait is made up to a quarter longer at random (so 20 to 25 seconds while live updates work, 4 to 5, 8 to 10, 16 to 20 when broken), so a class doesn't ask at the same moment. **No wait is ever longer than 30 seconds**, which keeps James's answer 2 (an opponent's move shows within 30 seconds). The plan said "up to a quarter of the gap" for every wait, which would have made the longest 37.5 seconds; it is capped at 30 instead. The randomness in the shorter waits before it still keeps a class out of step.
+- **Hidden tabs:** no checks at all while the tab is hidden. Coming back to the tab still looks again straight away (that was already there, and is unchanged).
+- **Your own moves** still go straight to the server and show straight away. Only the "did anything change?" checks slow down.
+
+### Requests
+
+| One pupil's game screen, over 2 minutes | Before | After |
+|---|---|---|
+| Live updates broken | 30 checks | 6 (fewer with the random spread) |
+| Live updates working | 6 | 6 or fewer (20 to 25 seconds apart) |
+| Tab hidden | 6 or 30 | 0 |
+
+### What a pupil might notice
+
+Only when live updates are broken: an opponent's move can take up to 30 seconds to appear, instead of about 4. When live updates work, nothing changes.
+
+### Tests
+
+- New: `src/multiplayer/useGameChecks.test.tsx` (18 tests). The waits are 20 seconds, or 4, 8, 16 then 30; the spread is up to a quarter longer and never over 30 seconds; 6 checks in 2 minutes with live updates broken; back to 20 seconds when they work and starting at 4 again when they break again; a dropping connection doesn't restart the waits; no checks while hidden; none once the game is over. For each of the four kinds of game, with only the server requests faked: 6 checks in 2 minutes broken and 6 working; nothing while hidden and one check straight away on coming back.
+- Quick tests before the change: all 152 files passed. After: the whole suite (`TESTS=all`, 160 files), the type check and the build pass. The existing game page tests pass unchanged.
+
+**Not tested:** real live updates breaking in a real browser (the tests fake the live-updates channel and the clock).
+
+### Go-live steps
+
+S.3 needs S.1 and S.2 to go first, because its branch contains them.
+
+1. Once S.1 and S.2 are live (the `my_home_page` migration applied, then `server-load` merged into `main` and pushed), merge `server-load-s3` into `main` and push. That deploys the site. No migration and no functions.
+2. A pupil already in a game keeps the old checks until they reload or open the game again.
+
+If S.3 ever has to go before S.1 and S.2, the `my_home_page` migration must be applied first, for the same reason as in S.2.
+
+## Go-live rehearsal (19 Oct 2026)
+
+**A practice run of putting S.1 to S.3 live, with nothing live touched.** It was done on a throwaway branch from GitHub's `main` (in a throwaway worktree, both deleted afterwards and never pushed).
+
+### What was checked
+
+- **Merging:** `server-load`, then `server-load-s3`, went into today's `main` with **no clashes**. `main` had gained one commit since the branches were made (a Dragon Maths question-box fix), which touches different files. Merging into the `main` on this computer gives exactly the same files: it has four commits that aren't on GitHub yet (the Power Clash home-page move, this plan, the S.1 prompt and a merge), and `server-load` already contains the first three. So pushing `main` after the merge also puts live **Power Clash moving to "Non-maths games"** on the home page (section 7, answer 3).
+- **The merged copy:** the type check, the whole suite (`TESTS=all`: 161 files, 3,370 tests) and the build all pass.
+- **The database side, on the local copy, in rolled-back transactions:** the local copy had migrations up to `20261019000100`. With `000200` to `000600` from `main` and then `20261019000700_my_home_page.sql` piped in, `home_page.test.sql` passes (40 of 40), and so does the security test on its own (50 of 50). Nothing was kept.
+- **The live database, read only:** every job `my_home_page` calls (`my_progress`, the five `my_…_game_stats`, `my_moves_left`, `my_class`, `my_maths_focus`, `my_ladder`) is there with the same inputs and the same kind of answer, and every table column it reads (`mp_games`, `bot_games`, `space_games`, `card_game_seats`, `power_games`, `profiles`) is there with the same type. The bodies match `main`'s migrations except one: **the live `my_progress` is Bond Match's version** (M.4, applied live), which adds Bond Match games to the recent points list. `my_home_page` passes its answer on unchanged, so that's fine, and it is the version pupils get now. (Worth knowing: `main`'s `20261019000600_faster_my_progress.sql` is the older one, so it must never be re-run on the live database.) `my_home_page` and `lobby` are not there yet, as expected. The live database keeps no list of applied migrations: they have always been pasted in by hand.
+- **Not redone: the live timing.** Timing the job's query as the busiest pupil on the live database was refused by Claude Code's safety check this time, and was not tried another way. S.2's numbers from earlier the same day (46.2 ms against 46.4 ms) stand: nothing the job uses has changed since, apart from the Bond Match line above.
+
+### Go-live steps for James
+
+Each step only when you say so. Do them in this order.
+
+**Step 1. Add the home page's job to the database.**
+
+1. On GitHub, open the `server-load` branch's file `supabase/migrations/20261019000700_my_home_page.sql` (github.com/bleedingrobot/school-games-hub/blob/server-load/supabase/migrations/20261019000700_my_home_page.sql) and press **Raw**. Select all and copy.
+2. In the Supabase dashboard, open the project, then **SQL Editor**, then **New query**. Paste the whole file in and press **Run**.
+3. **If it worked** you see "Success. No rows returned". If you see "function my_home_page already exists", it was already in: that's fine too. Any other red message: stop and tell Claude what it says.
+4. Tell Claude **"done"**. Claude then checks, read only, that the job is there, runs as the pupil, and only signed-in users can use it, before going on.
+
+Pupils notice nothing from this step: the site doesn't use the job yet.
+
+**Step 2. Put S.1 and S.2 live (and the Power Clash home-page move).**
+
+- Claude merges `server-load` into `main` and pushes `main`.
+- **Or from your phone:** on GitHub open github.com/bleedingrobot/school-games-hub/compare/main...server-load, press **Create pull request**, then **Create pull request** again, then **Merge pull request** and **Confirm merge**. (Claude tidies up the copy of `main` on the computer afterwards.)
+- Either way, GitHub then runs its checks and publishes the site, which takes a few minutes. On GitHub, **Actions** shows a green tick when it's out. A red cross means a check failed and nothing was published: the old site stays.
+
+**Step 3. Later, put S.3 live.** After a school day or so with step 2 looking fine: Claude merges `server-load-s3` into `main` and pushes `main` (or, from the phone, the same as step 2 with github.com/bleedingrobot/school-games-hub/compare/main...server-load-s3). No database step.
+
+### What to check afterwards
+
+- After step 2: open the site as a pupil (or ask one). The home page shows points, recent games and the class card as before, all at once rather than bit by bit, and the lobby works. "We couldn’t load your games just now" would mean something is wrong.
+- After step 2, Claude can check the live request records (read only) to see the home page asking `my_home_page` once instead of about 20 separate requests.
+- After step 3: a game with a classmate works as before.
+- Once all three are in, copy section 1's numbers and then clear the request counts (section 7, answer 5).
+
+### How to undo each step
+
+- **Step 1:** nothing needs undoing; the job can stay even if the site goes back. If it must go, paste `drop function public.my_home_page();` into the SQL Editor, but only once step 2 has been undone, or the home page will show "We couldn’t load your games just now".
+- **Step 2 or 3:** on GitHub, open the pull request and press **Revert** (then merge the new pull request it makes), or tell Claude to revert the merge on `main` and push. The site goes back to how it was in a few minutes. Pupils with a page open keep what they have until they reload.
