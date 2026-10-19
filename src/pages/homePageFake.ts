@@ -1,7 +1,8 @@
 /**
- * For tests: a pretend Supabase that answers the home page's old separate requests and its one new request (my_home_page) from
- * the same made-up games, the way the database does (each list in the same order, with the same limits). Everything sent is
- * written down in `sent`. Use it with vi.mock('../lib/supabase', async () => (await import('./homePageFake')).fakeSupabase()).
+ * For tests: a pretend Supabase that answers the home page's and the lobby's old separate requests and their one new request each
+ * (my_home_page, lobby) from the same made-up games, the way the database does (each list in the same order, with the same
+ * limits). Everything sent is written down in `sent`. Use it with
+ * vi.mock('../lib/supabase', async () => (await import('./homePageFake')).fakeSupabase()).
  */
 
 type Row = Record<string, unknown>;
@@ -14,6 +15,10 @@ export interface World {
   me: string;
   /** Every request fails. */
   down?: boolean;
+  /** Just these requests fail (rpc names or tables). */
+  failing?: string[];
+  /** These rpc requests never answer, as on a very slow connection. */
+  waiting?: string[];
   /** my_home_page leaves out these parts (as an older answer would). */
   missing?: string[];
 }
@@ -32,7 +37,7 @@ const DOWN = { data: null, error: { message: 'down' } };
 function read(table: string) {
   let rows = [...(world.tables[table] ?? [])];
   let single = false;
-  const answer = () => (world.down ? DOWN : { data: single ? (rows[0] ?? null) : rows, error: null });
+  const answer = () => (world.down || world.failing?.includes(table) ? DOWN : { data: single ? (rows[0] ?? null) : rows, error: null });
   const chain: Record<string, unknown> = {
     select: () => chain,
     eq: (col: string, value: unknown) => ((rows = rows.filter((r) => r[col] === value)), chain),
@@ -88,14 +93,42 @@ export function homeAnswer(): Row {
   return home;
 }
 
+/** What lobby() answers for this world: the four lobby jobs' lists, my open games, and the other players in them. */
+export function lobbyAnswer(): Row {
+  const t = world.tables;
+  const friendOpen = newest(open(t.mp_games), 'created_at', 10);
+  const spaceOpen = newest(open(t.space_games), 'created_at', 10);
+  const cardOpen = newest(open(t.card_game_seats), 'updated_at', 10);
+  const powerOpen = newest(open(t.power_games), 'created_at', 10);
+  const others = [
+    ...friendOpen.flatMap((g) => [g.first_player, g.second_player]),
+    ...spaceOpen.flatMap((g) => [g.seat1, g.seat2, g.seat3, g.seat4]),
+    ...cardOpen.flatMap((s) => (s.info as { players: unknown[] }).players),
+    ...powerOpen.flatMap((g) => [g.seat1, g.seat2]),
+  ].filter((id) => id && id !== world.me);
+  const job = (name: string) => world.jobs[name] ?? [];
+  return {
+    friendLobby: job('lobby_games'),
+    spaceLobby: job('space_lobby_games'),
+    cardLobby: job('card_lobby_games'),
+    powerLobby: job('power_lobby_games'),
+    friendOpen,
+    spaceOpen,
+    cardOpen,
+    powerOpen,
+    players: (t.profiles ?? []).filter((p) => others.includes(p.id)),
+  };
+}
+
 function rpc(name: string) {
   sent.push(`rpc ${name}`);
-  const data = name === 'my_home_page' ? homeAnswer() : (world.jobs[name] ?? null);
-  const answer = () => (world.down ? DOWN : { data, error: null });
+  const data = name === 'my_home_page' ? homeAnswer() : name === 'lobby' ? lobbyAnswer() : (world.jobs[name] ?? null);
+  const answer = () => (world.down || world.failing?.includes(name) ? DOWN : { data, error: null });
+  const reply = () => (world.waiting?.includes(name) ? new Promise<never>(() => {}) : Promise.resolve(answer()));
   return {
-    maybeSingle: () => Promise.resolve(answer()),
-    single: () => Promise.resolve(answer()),
-    then: (ok: (v: unknown) => unknown, bad: (e: unknown) => unknown) => Promise.resolve(answer()).then(ok, bad),
+    maybeSingle: reply,
+    single: reply,
+    then: (ok: (v: unknown) => unknown, bad: (e: unknown) => unknown) => reply().then(ok, bad),
   };
 }
 
@@ -226,6 +259,62 @@ export function newPupil(): World {
       my_class: { className: 'Room 12', groupName: null, waitingFor: null },
       my_maths_focus: { source: 'auto', skills: [], onlyThese: false, endsAt: null, canChoose: false, own: null },
       my_ladder: null,
+    },
+  };
+}
+
+/**
+ * A pupil in a busy lobby: open games of every kind to join (two of them made at the same moment), and their own games of every
+ * kind being played and waiting, one with hidden Cat (no name) and one waiting game past its time (not offered).
+ */
+export function busyLobby(): World {
+  const tie = at(2);
+  const late = { expires_at: at(5) };
+  return {
+    me: 'me',
+    tables: {
+      app_settings: [SETTINGS],
+      mp_games: [
+        friendGame('f4', 'chess', 'ben', 'me', 'playing', 0),
+        friendGame('f5', 'checkers', 'me', 'cat', 'playing', 4),
+        friendGame('f7', 'chess', 'me', null, 'waiting', 1),
+        friendGame('f1', 'chess', 'me', 'ben', 'finished', 3, 'first'),
+      ],
+      space_games: [
+        spaceGame('s3', 'playing', 0, null),
+        { ...spaceGame('s4', 'waiting', 2, null), code: 'JKMNP', in_lobby: true, seat2: 'dan' },
+        { ...spaceGame('s5', 'waiting', 6, null), host: 'ben', seat1: 'ben', seat2: 'me', ...late },
+        spaceGame('s1', 'finished', 5, [1, 2]),
+      ],
+      card_game_seats: [
+        cardSeat('c3', 'playing', 0, null),
+        { game: 'c4', player: 'me', seat: 0, version: 1, status: 'waiting', updated_at: at(1),
+          info: { status: 'waiting', host: 'me', code: 'CDFGH', players: ['me', null, null], wanted: 3, places: null, ending: null, expiresAt: at(-10) } },
+        { game: 'c5', player: 'me', seat: 1, version: 2, status: 'waiting', updated_at: at(3),
+          info: { status: 'waiting', host: 'fin', code: 'QRTVW', players: ['fin', 'me'], wanted: 4, places: null, ending: null, expiresAt: at(-10) } },
+        cardSeat('c1', 'finished', 7, [2, 1]),
+      ],
+      power_games: [powerGame('p3', 'playing', 0), { ...powerGame('p4', 'waiting', 1), seat2: null, code: 'XY346', in_lobby: true }],
+      profiles: [
+        { id: 'ben', display_name: 'Brave Kiwi 7', avatar: {} },
+        { id: 'dan', display_name: 'Calm Tui 3', avatar: {} },
+        { id: 'fin', display_name: 'Lively Lynx 5', avatar: {} },
+      ],
+    },
+    jobs: {
+      lobby_games: [
+        { id: 'o1', game: 'checkers', creator_name: 'Lively Lynx 5', creator_avatar: {}, open_side: 'second', created_at: at(1) },
+        { id: 'o2', game: 'chess', creator_name: 'Calm Tui 3', creator_avatar: {}, open_side: 'first', created_at: tie },
+        { id: 'o3', game: 'chess', creator_name: 'Brave Kiwi 7', creator_avatar: {}, open_side: 'second', created_at: at(9) },
+      ],
+      space_lobby_games: [
+        { id: 'o4', creator_name: 'Calm Tui 3', creator_avatar: {}, players: 2, board: { id: 'nebula' }, mode: 'cosmic', created_at: at(3) },
+      ],
+      card_lobby_games: [
+        { id: 'o5', creator_name: 'Brave Kiwi 7', creator_avatar: {}, players: 1, wanted: 3, target: 50, created_at: tie },
+        { id: 'o6', creator_name: 'Lively Lynx 5', creator_avatar: {}, players: 2, wanted: 2, target: 101, created_at: at(8) },
+      ],
+      power_lobby_games: [{ id: 'o7', creator_name: 'Lively Lynx 5', creator_avatar: {}, created_at: at(4) }],
     },
   };
 }

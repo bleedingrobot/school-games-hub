@@ -13,7 +13,7 @@ import { parseMathsSwitch, type MathsSwitch } from '../../shared/space/mathsSwit
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { readSettings } from './classSettings';
 import { supabase } from '../lib/supabase';
-import { MultiplayerError, RETRY_AFTER_MS, type LiveStatus } from './multiplayer';
+import { MultiplayerError, RETRY_AFTER_MS, stillOpen, type LiveStatus } from './multiplayer';
 import { FriendlyError } from './profile';
 
 /** One classmates game: a row of the space_games table. */
@@ -170,8 +170,7 @@ export async function fetchMyOpenSpaceGames(): Promise<SpaceGame[]> {
     .order('created_at', { ascending: false })
     .limit(10);
   if (error || !data) throw new FriendlyError('We couldn’t load your games.');
-  const now = Date.now();
-  return (data as unknown as SpaceGame[]).filter((g) => g.status === 'playing' || Date.parse(g.expires_at) > now);
+  return stillOpen(data as unknown as SpaceGame[]);
 }
 
 /** My finished space games, newest first. */
