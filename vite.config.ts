@@ -41,6 +41,10 @@ export default defineConfig({
         test: {
           name: 'screens',
           environment: 'jsdom',
+          // Each file still gets its own fresh page, but the pretend browser is set up once per worker instead of once per
+          // file: that was a quarter of the time. A worker that grows past the limit is replaced, to keep memory in check.
+          pool: 'vmThreads',
+          vmMemoryLimit: '400MB',
           setupFiles: ['./src/test-setup.ts'],
           ...files(['src/**/*.test.{ts,tsx}'], ['src/']),
         },

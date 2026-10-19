@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -114,7 +114,8 @@ describe('the Set focus screen', () => {
   it('opens on the first class, or the class in the address', async () => {
     show();
     expect(await screen.findByRole('heading', { name: /Running focuses/ })).toBeInTheDocument();
-    expect(classes.fetchClassDetail).toHaveBeenCalledWith('c12');
+    // The class is asked for once the page knows which one, which can be just after the heading shows.
+    await waitFor(() => expect(classes.fetchClassDetail).toHaveBeenCalledWith('c12'));
     expect(screen.getByRole('combobox', { name: 'Class' })).toHaveValue('c12');
   });
 
@@ -122,7 +123,7 @@ describe('the Set focus screen', () => {
     vi.mocked(classes.fetchClassDetail).mockResolvedValue({ ...detail, id: 'c14', name: 'Room 14' });
     show(base, '/focus?class=c14');
     await screen.findByRole('heading', { name: /Running focuses/ });
-    expect(classes.fetchClassDetail).toHaveBeenCalledWith('c14');
+    await waitFor(() => expect(classes.fetchClassDetail).toHaveBeenCalledWith('c14'));
     expect(focus.fetchFocuses).toHaveBeenCalledWith('c14');
   });
 

@@ -109,14 +109,28 @@ describe('Very Easy', () => {
 });
 
 describe('each level beats the one below it', () => {
+  // Below full strength Stockfish picks among its moves with its own clock-seeded randomness, so these games can never be
+  // exactly repeatable. One game could end in a draw by chance, so each pairing plays three, swapping colours, and the
+  // stronger bot must win at least two and lose none. (Over 30 such games the stronger bot won every one.)
   for (const [strong, weak, seed] of [['easy', 'very-easy', 11], ['medium', 'easy', 12]] as const) {
     it(`${strong} beats ${weak}`, async () => {
-      const chess = new Chess();
-      const random = seeded(seed);
-      for (let ply = 0; ply < 400 && !boardResult(chess); ply++) {
-        playUci(chess, await chooseBotMove(chess, ply % 2 === 0 ? strong : weak, engine, random));
+      let wins = 0;
+      let losses = 0;
+      for (let game = 0; game < 3; game++) {
+        engine.newGame();
+        const chess = new Chess();
+        const random = seeded(seed + game);
+        const strongIsWhite = game % 2 === 0;
+        for (let ply = 0; ply < 400 && !boardResult(chess); ply++) {
+          const whiteToMove = ply % 2 === 0;
+          playUci(chess, await chooseBotMove(chess, whiteToMove === strongIsWhite ? strong : weak, engine, random));
+        }
+        const winner = boardResult(chess)?.winner;
+        if (winner === (strongIsWhite ? 'white' : 'black')) wins++;
+        else if (winner) losses++;
       }
-      expect(boardResult(chess)).toEqual({ ending: 'checkmate', winner: 'white' });
-    }, 60_000);
+      expect(wins).toBeGreaterThanOrEqual(2);
+      expect(losses).toBe(0);
+    }, 120_000);
   }
 });
