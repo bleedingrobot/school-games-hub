@@ -7157,6 +7157,14 @@ function findLevel(id) {
 		number: i + 1
 	};
 }
+/**
+* Old-style saves (see `SaveItem`) are accepted until this moment (by the server's clock), then refused. 15 Nov 2026, midnight
+* in New Zealand: a few weeks after the change goes live, long enough for every Chromebook to have reloaded the page.
+*/
+const OLD_SAVES_UNTIL = Date.parse("2026-11-15T00:00:00+13:00");
+/** The most parts a question is shown in (order of operations is the longest), and the longest part. */
+const MAX_PARTS = 12;
+const MAX_PART_LENGTH = 40;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const isInt = (n, min, max) => typeof n === "number" && Number.isInteger(n) && n >= min && n <= max;
@@ -7263,6 +7271,10 @@ function checkFact(f, nowMs) {
 	};
 }
 function checkFacts(x, nowMs) {
+	if (nowMs >= OLD_SAVES_UNTIL) return {
+		ok: false,
+		problem: "old-save"
+	};
 	if (x.pack !== "times-tables") return {
 		ok: false,
 		problem: "pack"
@@ -7306,11 +7318,13 @@ function checkAnswers(x, nowMs) {
 	const answers = [];
 	for (const raw of x.answers) {
 		const a = raw ?? {};
-		if (typeof a.key !== "string" || !isFocusKey(a.key) || packIdOfKey(a.key) !== pack || typeof a.correct !== "boolean") continue;
+		if (typeof a.key !== "string" || !isFocusKey(a.key) || packIdOfKey(a.key) !== pack) continue;
 		if (!isInt(a.ms, 250, 36e5) || !isInt(a.at, nowMs - 5184e6, nowMs + 864e5)) continue;
+		const correct = a.parts === void 0 ? oldStyleCorrect(a, nowMs) : markShown(a, a.key);
+		if (correct === null) continue;
 		answers.push({
 			key: a.key,
-			correct: a.correct,
+			correct,
 			ms: a.ms,
 			at: a.at
 		});
@@ -7324,6 +7338,25 @@ function checkAnswers(x, nowMs) {
 			answers
 		}
 	};
+}
+/** Marks an answer from the question as it was shown: right, wrong, or null when that question can't be this record's. */
+function markShown(a, key) {
+	const { parts, given, params } = a;
+	if (!Array.isArray(parts) || parts.length === 0 || parts.length > MAX_PARTS) return null;
+	if (!parts.every((p) => typeof p === "string" && p.length <= MAX_PART_LENGTH)) return null;
+	if (typeof given !== "number" || !Number.isFinite(given)) return null;
+	if (params !== void 0 && !cleanParams(params)) return null;
+	const solved = solveClaim({
+		parts,
+		key,
+		params
+	});
+	if (!solved || !solved.keys.includes(key)) return null;
+	return sameAnswer(given, solved.answer);
+}
+/** An answer from a browser older than 20 Oct 2026 (no question shown): its own word, until `OLD_SAVES_UNTIL`. */
+function oldStyleCorrect(a, nowMs) {
+	return nowMs < OLD_SAVES_UNTIL && typeof a.correct === "boolean" ? a.correct : null;
 }
 /** Trial progress: stars must be 0–3 and Level Keys only in campaign order, as the game allows. */
 function checkImport(x) {

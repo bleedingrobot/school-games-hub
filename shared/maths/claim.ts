@@ -21,6 +21,8 @@
  * question reads back exactly as shown: sending wrong numbers can never get a made-up question through.
  */
 import { solveParts, type Solved } from './focus';
+import type { FactAnswer } from './leitner';
+import type { Question, SkillPack } from './skillPack';
 import { solveByNumbers } from './skillPacks/generated';
 
 /** The most numbers a question can be made from (order of operations is the longest, with 5). */
@@ -53,4 +55,45 @@ export function solveClaim(claim: AnswerClaim): Solved | null {
     }
   }
   return solveParts(claim.parts);
+}
+
+/** An answer as it is saved from a solo game: the record, plus the question as it was shown and what the student gave, so the server can mark it itself. */
+export interface ShownAnswer extends FactAnswer {
+  parts: string[];
+  /** What the student typed or tapped (for a pick-one question, the index of the choice). */
+  given: number;
+  params?: number[];
+}
+
+/**
+ * The same pack, but its answers carry the question as it was shown and what was given (`ShownAnswer`). The pack tells its
+ * listeners about an answer while `recordAnswer` runs, so the question being answered is known at that moment.
+ */
+export type ShowingPack<P extends SkillPack = SkillPack> = Omit<P, 'onAnswer'> & { onAnswer(listener: (answer: ShownAnswer) => void): () => void };
+
+export function showingPack<P extends SkillPack>(pack: P): ShowingPack<P> {
+  let shown: { q: Question; given: number } | null = null;
+  const recordAnswer = (q: Question, given: number, ms: number) => {
+    shown = { q, given };
+    try {
+      return pack.recordAnswer(q, given, ms);
+    } finally {
+      shown = null;
+    }
+  };
+  const onAnswer = (listener: (answer: ShownAnswer) => void) =>
+    pack.onAnswer((a) => {
+      if (!shown) return;
+      const { q, given } = shown;
+      listener({ ...a, parts: [...q.parts], given, ...(q.params ? { params: [...q.params] } : {}) });
+    });
+  // Everything else is the pack's own, called on the pack itself so its state stays in one place.
+  return new Proxy(pack, {
+    get(target, prop) {
+      if (prop === 'recordAnswer') return recordAnswer;
+      if (prop === 'onAnswer') return onAnswer;
+      const value = Reflect.get(target, prop, target);
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  }) as unknown as ShowingPack<P>;
 }

@@ -3,7 +3,8 @@ import { useAuth } from '../../auth/AuthContext';
 import { tryFetchMyFocus } from '../../data/focus';
 import { enqueue, flushQueue, loadGemKeep, saveCopy, type GemKeepData } from '../../data/gemKeep';
 import { groupByPack } from '../../../shared/maths/focus';
-import type { FactAnswer, FactStats } from '../../../shared/maths/leitner';
+import type { ShownAnswer } from '../../../shared/maths/claim';
+import type { FactStats } from '../../../shared/maths/leitner';
 import type { CampaignProgress } from './progress';
 import { TEXT } from './strings';
 import { GemKeepCampaign, type FinishedLevel } from './ui/GemKeepCampaign';
@@ -64,7 +65,7 @@ export function GemKeepPlay() {
     [player, flush],
   );
   const onAnswers = useCallback(
-    (answers: FactAnswer[], facts: FactStats[]) => {
+    (answers: ShownAnswer[], facts: FactStats[]) => {
       keepCopy({ facts });
       // A maths focus can ask for early facts, adding or division as well as times tables: each pack keeps its own records.
       for (const [pack, group] of groupByPack(answers)) {
