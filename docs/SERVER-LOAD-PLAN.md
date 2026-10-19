@@ -287,3 +287,48 @@ S.3 needs S.1 and S.2 to go first, because its branch contains them.
 2. A pupil already in a game keeps the old checks until they reload or open the game again.
 
 If S.3 ever has to go before S.1 and S.2, the `my_home_page` migration must be applied first, for the same reason as in S.2.
+
+## Go-live rehearsal (19 Oct 2026)
+
+**A practice run of putting S.1 to S.3 live, with nothing live touched.** It was done on a throwaway branch from GitHub's `main` (in a throwaway worktree, both deleted afterwards and never pushed).
+
+### What was checked
+
+- **Merging:** `server-load`, then `server-load-s3`, went into today's `main` with **no clashes**. `main` had gained one commit since the branches were made (a Dragon Maths question-box fix), which touches different files. Merging into the `main` on this computer gives exactly the same files: it has four commits that aren't on GitHub yet (the Power Clash home-page move, this plan, the S.1 prompt and a merge), and `server-load` already contains the first three. So pushing `main` after the merge also puts live **Power Clash moving to "Non-maths games"** on the home page (section 7, answer 3).
+- **The merged copy:** the type check, the whole suite (`TESTS=all`: 161 files, 3,370 tests) and the build all pass.
+- **The database side, on the local copy, in rolled-back transactions:** the local copy had migrations up to `20261019000100`. With `000200` to `000600` from `main` and then `20261019000700_my_home_page.sql` piped in, `home_page.test.sql` passes (40 of 40), and so does the security test on its own (50 of 50). Nothing was kept.
+- **The live database, read only:** every job `my_home_page` calls (`my_progress`, the five `my_…_game_stats`, `my_moves_left`, `my_class`, `my_maths_focus`, `my_ladder`) is there with the same inputs and the same kind of answer, and every table column it reads (`mp_games`, `bot_games`, `space_games`, `card_game_seats`, `power_games`, `profiles`) is there with the same type. The bodies match `main`'s migrations except one: **the live `my_progress` is Bond Match's version** (M.4, applied live), which adds Bond Match games to the recent points list. `my_home_page` passes its answer on unchanged, so that's fine, and it is the version pupils get now. (Worth knowing: `main`'s `20261019000600_faster_my_progress.sql` is the older one, so it must never be re-run on the live database.) `my_home_page` and `lobby` are not there yet, as expected. The live database keeps no list of applied migrations: they have always been pasted in by hand.
+- **Not redone: the live timing.** Timing the job's query as the busiest pupil on the live database was refused by Claude Code's safety check this time, and was not tried another way. S.2's numbers from earlier the same day (46.2 ms against 46.4 ms) stand: nothing the job uses has changed since, apart from the Bond Match line above.
+
+### Go-live steps for James
+
+Each step only when you say so. Do them in this order.
+
+**Step 1. Add the home page's job to the database.**
+
+1. On GitHub, open the `server-load` branch's file `supabase/migrations/20261019000700_my_home_page.sql` (github.com/bleedingrobot/school-games-hub/blob/server-load/supabase/migrations/20261019000700_my_home_page.sql) and press **Raw**. Select all and copy.
+2. In the Supabase dashboard, open the project, then **SQL Editor**, then **New query**. Paste the whole file in and press **Run**.
+3. **If it worked** you see "Success. No rows returned". If you see "function my_home_page already exists", it was already in: that's fine too. Any other red message: stop and tell Claude what it says.
+4. Tell Claude **"done"**. Claude then checks, read only, that the job is there, runs as the pupil, and only signed-in users can use it, before going on.
+
+Pupils notice nothing from this step: the site doesn't use the job yet.
+
+**Step 2. Put S.1 and S.2 live (and the Power Clash home-page move).**
+
+- Claude merges `server-load` into `main` and pushes `main`.
+- **Or from your phone:** on GitHub open github.com/bleedingrobot/school-games-hub/compare/main...server-load, press **Create pull request**, then **Create pull request** again, then **Merge pull request** and **Confirm merge**. (Claude tidies up the copy of `main` on the computer afterwards.)
+- Either way, GitHub then runs its checks and publishes the site, which takes a few minutes. On GitHub, **Actions** shows a green tick when it's out. A red cross means a check failed and nothing was published: the old site stays.
+
+**Step 3. Later, put S.3 live.** After a school day or so with step 2 looking fine: Claude merges `server-load-s3` into `main` and pushes `main` (or, from the phone, the same as step 2 with github.com/bleedingrobot/school-games-hub/compare/main...server-load-s3). No database step.
+
+### What to check afterwards
+
+- After step 2: open the site as a pupil (or ask one). The home page shows points, recent games and the class card as before, all at once rather than bit by bit, and the lobby works. "We couldn’t load your games just now" would mean something is wrong.
+- After step 2, Claude can check the live request records (read only) to see the home page asking `my_home_page` once instead of about 20 separate requests.
+- After step 3: a game with a classmate works as before.
+- Once all three are in, copy section 1's numbers and then clear the request counts (section 7, answer 5).
+
+### How to undo each step
+
+- **Step 1:** nothing needs undoing; the job can stay even if the site goes back. If it must go, paste `drop function public.my_home_page();` into the SQL Editor, but only once step 2 has been undone, or the home page will show "We couldn’t load your games just now".
+- **Step 2 or 3:** on GitHub, open the pull request and press **Revert** (then merge the new pull request it makes), or tell Claude to revert the merge on `main` and push. The site goes back to how it was in a few minutes. Pupils with a page open keep what they have until they reload.
