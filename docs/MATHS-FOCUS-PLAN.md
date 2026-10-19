@@ -2,7 +2,7 @@
 
 *Teachers and students choose what maths the games ask (×6, doubles, rounding…), or leave it on auto. Students are grouped into classes with their teachers, and the hub can hold more than one school. Written 18 October 2026 for James.*
 
-**Status: draft. Brainstormed with James on 18 October 2026. He asked for a schools option and for teacher focuses that end after a set time, and answered every question in section 10 the same day. Not started: F.1 is first.**
+**Status (checked 20 Oct 2026): F.1 to F.7 and F.8 Part A are LIVE** (F.1 to F.4 on 18–19 Oct 2026, F.5 to F.8 Part A on 19 Oct 2026; see "F.5 to F.8 went live" at the bottom). F.8 Part B (opening to a second school) is not built. Brainstormed with James on 18 October 2026; he answered every question in section 10 the same day. The status lines inside each stage's results below were written at the time and say "Nothing is live"; that was true then.
 
 ## 1. The idea in one paragraph
 

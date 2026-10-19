@@ -2,7 +2,7 @@
   "name": "school-games-hub",
   "private": true,
   "version": "0.1.0",
-  "description": "A chess and checkers website for Year 4-6 students",
+  "description": "Maths games, classic games and basic facts training for Year 4-6 students, with school sign-in",
   "type": "module",
   "scripts": {
     "dev": "vite",

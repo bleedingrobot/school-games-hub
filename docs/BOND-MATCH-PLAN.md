@@ -2,7 +2,7 @@
 
 **Bond Match** (name confirmed by James, 19 Oct 2026): a card-matching memory game where you don't match two *identical* cards, you match two cards that **make a number together**. Flip a 3, then find the 7 to make 10. Kids choose which bond they're practising: to 10, 20, 100, 1000, decimals to 1, fractions to 1, and more.
 Written 19 October 2026 from James's request and a read of the hub on `main` (the maths ladder, skill packs, Gem Keep's saving, the game registry).
-**Status: idea planned, not scheduled. Nothing is built.** James answered every question on 19 Oct 2026 (section 11).
+**Status (checked 20 Oct 2026): this copy on `main` is out of date.** Bond Match is built on the `bond-match` branch (M.1 to M.4), and its migration and `bond-match` function are already live (checked from outside 20 Oct 2026), though the game isn't on the site. Read that copy for the current state. Its migration number (`20261019000200`) is already used on `main`, so it needs a new number before merging (see PLAN.md, "Not on main yet"). James answered every question on 19 Oct 2026 (section 11).
 
 ## The short version
 

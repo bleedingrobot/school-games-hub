@@ -3,7 +3,7 @@
 A daily-turns fantasy game for the hub, inspired by the 1997 BBS door game *The Clans* by Allen Ussher. You lead a small clan of four adventurers: send them into the mines to fight monsters, train and equip them, build an empire of land, barracks and troops, and work with the whole class to grow your village. **Maths is the tool that makes the clan stronger**: working out the shop's bill with tax, spending training points, sharing out land and troops, counting damage, cracking a quest puzzle.
 
 Written 18 October 2026 for James, after reading the game's real source code and manuals (section 1) and the hub's other plans.
-**Status: ANSWERED 18 Oct 2026 (section 13). Stage C.0 started 18 Oct 2026: first draft of the rule sheet is in [CLANS-RULES.md](CLANS-RULES.md), on the `clans` branch.** Stage C.1 (engine) first pass done 18 Oct 2026: see "Stage C.1 results" at the bottom. Dragon Maths goes first; this starts after it, since they share the engine and maths packs (section 2).
+**Status (checked 20 Oct 2026): LIVE since 18 Oct 2026.** Stages C.0 to C.7 are done (results sections below) and on `main`; see "Clan Quest went live" at the bottom. Switched on for pupils on 18 Oct 2026; the raids switch is still off. James's answers are in section 13; the rules are in [CLANS-RULES.md](CLANS-RULES.md).
 
 ## The short version
 

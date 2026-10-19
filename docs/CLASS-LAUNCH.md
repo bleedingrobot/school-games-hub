@@ -1,6 +1,6 @@
 # Class launch checklist
 
-For running a whole-class lesson (up to about 30 students) on School Games Hub: bots, friends, points, leaderboards, the teacher view, the space game (Wormholes & Black Holes) and the card game 101.
+For running a whole-class lesson (up to about 30 students) on School Games Hub: bots, friends, points, leaderboards, the teacher view, the space game (Wormholes & Black Holes) and the card game 101. The newer games (Gem Keep, Power Clash, Maths Monsters, Dragon Maths, Clan Quest) and Facts training have short notes in [Other games](#other-games-and-facts-training); each one's own section in the [README](../README.md) has the details.
 Live site: https://bleedingrobot.github.io/school-games-hub/
 
 ## The day before
@@ -12,6 +12,8 @@ Live site: https://bleedingrobot.github.io/school-games-hub/
 - [ ] **If you'll use the space game:** **Play the bots → Wormholes & Black Holes**, pick **Asteroid Belt** and 1 bot, and play to the end (about 2 minutes). The podium should say **Saved!**
 - [ ] **If you'll use 101:** **Play the bots → 101**, pick 1 bot and **Quick: to 50**, and play to the end (about 5 minutes). The podium should say **Saved! Points added.**
 - [ ] **Check the friends switch:** open the **Teacher** page. It should say **Games against friends are on.** If it says paused, press **Switch games against friends back on**. It covers space games and 101 too. Decide on **Emoji reactions in space games** (off to start) and **Mission Control maths in space games** (*Students choose* to start; *Off* if you want no times-table questions in space games, *On for everyone* for a maths lesson).
+- [ ] **If you'll use Maths Monsters, Dragon Maths or Clan Quest:** check its panel on the **Teacher** page. Their dashboard cards only show while the teacher's switch is on, and the switch is per class.
+- [ ] **If you'll use a maths game:** check what maths it will ask. Gem Keep and the space game follow the class's **Maths focus** (Teacher page → Maths focus); Maths Monsters and Dragon Maths use the topics on their panels; Clan Quest uses its own year band and topics.
 - [ ] Check the students know their school Google login, and the Chromebooks are charged.
 - [ ] Print one **problem slip** per student (bottom of this page).
 
@@ -43,6 +45,13 @@ Wormholes & Black Holes is a dice race, so it suits a younger group, a quick fin
 3. **Against the bots (10–15 min).** **Quick: to 50** with 1 or 2 Easy bots. The scoring show at the end of each round writes out the working ("The 3 cancels the Queen: 10 → 0"). Ask students to check it.
 4. **With classmates (15–20 min).** Groups of 2–4: one taps **Play a friend → Start a game → 101**, picks the number of players and **Quick: to 50**, and reads out the code. The cards are dealt as soon as everyone's joined (or the host presses **Start now**). A Quick game with classmates takes about 10–15 minutes.
 5. **Rematch** at the end starts a new waiting game the same size.
+
+### Other games and Facts training
+
+- **Gem Keep, Maths Monsters, Dragon Maths, Clan Quest:** one student each, saved on the server, so a student can stop and carry on next lesson on any Chromebook. Dragon Maths and Clan Quest give a set number of fights a day, so short daily sessions suit them better than one long lesson.
+- **Power Clash:** pairs on one Chromebook, against the bots, or with a classmate by game code like 101. The **Pause games against friends** switch covers it.
+- **Facts training:** about 3 minutes a day, no clock on screen and no rankings. A good warm-up at the start of a maths lesson.
+- **New students in a class:** they type the class's **warp code** (from **My classes**) to join it, so its switches and maths focus apply to them.
 
 ## What to watch for
 

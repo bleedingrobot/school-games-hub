@@ -5,7 +5,7 @@ Stage 11 of School Games Hub. Written 16 October 2026 from the brief in
 599 unit tests passing). Branch: `stage-11`.
 
 Where the brief and the repo disagree, the repo wins. Every change to the brief is listed in
-section 3. **Status: reviewed by James on 16 October 2026 (answers in section 4). Phase 1 done: see [PROGRESS.md](PROGRESS.md).**
+section 3. **Status: reviewed by James on 16 October 2026 (answers in section 4). Phases 1 to 5 done; Gem Keep is live with saving and points since 17 Oct 2026. Phase 6 (polish and classroom test) not done yet. Details in [PROGRESS.md](PROGRESS.md).** (checked 20 Oct 2026)
 
 ## 1. What the brief got right
 
