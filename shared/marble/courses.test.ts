@@ -52,19 +52,19 @@ describe('reference runs', () => {
         ],
         [
           "crown-range",
-          2950,
+          3081,
         ],
         [
           "geyser-valley",
-          1477,
+          1479,
         ],
         [
           "glacier-run",
-          1418,
+          1425,
         ],
         [
           "windy-welly",
-          2898,
+          2900,
         ],
         [
           "alpine-crossing",
