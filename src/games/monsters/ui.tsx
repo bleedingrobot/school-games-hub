@@ -1,5 +1,5 @@
 /** Small battle screen pieces: health and exp bars, name cards, and the Team / Bag / end sheets. */
-import type { ReactNode } from 'react';
+import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import type { Bag, BattleEvent, ItemId } from '../../../shared/monsters/engine';
 import { speciesOf } from '../../../shared/monsters/monsterBook';
 import { expForLevel, maxHpOf, type Monster } from '../../../shared/monsters/rules';
@@ -65,10 +65,30 @@ export function NameCard({ monster, mine, side }: { monster: Monster; mine?: boo
   );
 }
 
-/** A full-size panel over the battle (Team, Bag, results). */
-export function Sheet({ title, children, onBack, backLabel = 'Back' }: { title: string; children: ReactNode; onBack?: () => void; backLabel?: string }) {
+const FOCUSABLE = 'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
+
+/** Tab and Shift+Tab go round inside a panel that covers the screen, instead of wandering to the page behind it. */
+export function keepFocusInside(e: KeyboardEvent, panel: HTMLElement | null) {
+  if (e.key !== 'Tab' || !panel) return;
+  const items = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => !el.closest('[hidden], [inert]'));
+  if (!items.length) return;
+  const first = items[0];
+  const last = items[items.length - 1];
+  const now = document.activeElement;
+  if (e.shiftKey && (now === first || !panel.contains(now))) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && (now === last || !panel.contains(now))) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+
+/** A full-size panel over the battle (Team, Bag, results). `reading`: it holds only words, so the body itself can be focused to scroll it. */
+export function Sheet({ title, children, onBack, backLabel = 'Back', reading = false }: { title: string; children: ReactNode; onBack?: () => void; backLabel?: string; reading?: boolean }) {
+  const root = useRef<HTMLDivElement>(null);
   return (
-    <div className="mb-sheet" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="mb-sheet" ref={root} role="dialog" aria-modal="true" aria-label={title} onKeyDown={(e) => keepFocusInside(e, root.current)}>
       <div className="mb-sheet__head">
         <h2>{title}</h2>
         {onBack && (
@@ -77,7 +97,8 @@ export function Sheet({ title, children, onBack, backLabel = 'Back' }: { title: 
           </button>
         )}
       </div>
-      <div className="mb-sheet__body">{children}</div>
+      {/* A sheet with only words on it can scroll, so the keyboard has to be able to land on it (arrow keys and Page Down then scroll). */}
+      <div className="mb-sheet__body" {...(reading ? { tabIndex: 0, role: 'region', 'aria-label': `${title}, use the arrow keys to read on` } : {})}>{children}</div>
     </div>
   );
 }

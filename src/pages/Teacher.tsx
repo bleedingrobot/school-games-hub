@@ -37,6 +37,8 @@ const LordStudentPanel = lazy(() => import('./TeacherLord').then((m) => ({ defau
 const ClansTeacherPanels = lazy(() => import('./TeacherClans').then((m) => ({ default: m.ClansTeacherPanels })));
 const MarbleTeacherPanel = lazy(() => import('./TeacherMarble').then((m) => ({ default: m.MarbleTeacherPanel })));
 const ClansStudentPanel = lazy(() => import('./TeacherClans').then((m) => ({ default: m.ClansStudentPanel })));
+// The warm-up reset brings the maths ladder with it, so it loads with the student's panel, not with the page.
+const PlacementReset = lazy(() => import('../maths/PlacementReset').then((m) => ({ default: m.PlacementReset })));
 const GemKeepStudentPanel = lazy(() => import('./TeacherGemKeep').then((m) => ({ default: m.GemKeepStudentPanel })));
 
 /** The words a teacher types to start a new season. The server checks them too. */
@@ -99,6 +101,10 @@ function TeacherView({ me, isAdmin }: { me: string; isAdmin: boolean }) {
 
       <p className="teacher__classes-link">
         <Link to="/focus">🎯 Maths focus: choose what maths the games ask for a class, a group or some students</Link>
+      </p>
+
+      <p className="teacher__classes-link">
+        <Link to="/skills">🗺️ Skill map: how each student in a class is getting on across the maths ladder</Link>
       </p>
 
       <TeacherClassProvider>
@@ -470,6 +476,7 @@ function PersonPanel({
             </ul>
           )}
           <Suspense fallback={null}>
+            {person.role === 'student' && <PlacementReset student={person.id} name={person.display_name} />}
             <GemKeepStudentPanel student={person.id} />
             <MonstersStudentPanel student={person.id} />
             <LordStudentPanel student={person.id} />

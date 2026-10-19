@@ -2,6 +2,29 @@
 // then run `npm run build:functions`. Deploy this file as the "lord" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+//#region supabase/functions/_shared/signIn.ts
+/**
+* Who owns this sign-in token? Null if it's missing, expired, fake or not a signed-in user's.
+*
+* With the project's newer sign-in keys, the token's signature is checked right here against the
+* project's public keys (fetched once and kept for 10 minutes), with no trip to the sign-in
+* service. With the older shared secret (or a token signed with a key we don't know), the library
+* asks the sign-in service instead, exactly as `getUser` did. So this works the same before and
+* after the keys are switched in the Supabase dashboard; it only gets cheaper after.
+*/
+function userIdFromToken(auth) {
+	return async (token) => {
+		try {
+			const { data, error } = await auth.getClaims(token);
+			const claims = error ? null : data?.claims;
+			if (!claims || claims.role !== "authenticated" || typeof claims.sub !== "string" || !claims.sub) return null;
+			return claims.sub;
+		} catch {
+			return null;
+		}
+	};
+}
+//#endregion
 //#region shared/maths/config.ts
 /**
 * Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
@@ -1711,7 +1734,7 @@ const nzDayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckla
 /** The New Zealand date of a moment, as YYYY-MM-DD. */
 const nzDay = (at) => nzDayFormat.format(new Date(at));
 /** The stats after one answer. Doesn't change the stats it's given. */
-function afterAnswer(stats, correct, ms, at) {
+function afterAnswer(stats, correct, ms, at, quickMs = QUICK_MS) {
 	const attempts = stats.attempts + 1;
 	const next = {
 		...stats,
@@ -1725,7 +1748,7 @@ function afterAnswer(stats, correct, ms, at) {
 		next.box = 1;
 		return next;
 	}
-	if (ms > 5e3) return next;
+	if (ms > quickMs) return next;
 	const day = nzDay(at);
 	if (!next.quickDays.includes(day)) next.quickDays = [...next.quickDays, day].slice(-2);
 	const canBeFluent = next.quickDays.length >= 2;
@@ -1920,7 +1943,8 @@ const SPOKEN_WORDS = {
 	"÷": "divided by",
 	"=": "equals",
 	"?": "what",
-	r: "remainder"
+	r: "remainder",
+	"%": "percent"
 };
 const ORDINAL = {
 	2: ["half", "halves"],
@@ -1948,9 +1972,22 @@ function spokenFraction(part) {
 	if (top === "?") return `what ${names[1]}`;
 	return `${top} ${top === "1" ? names[0] : names[1]}`;
 }
+/**
+* One part or choice in words for a screen reader: "3/4" is "3 quarters", "25%" is "25 percent", "0.25" is "0 point 2 5".
+* Anything else is read as it is.
+*/
+function spokenLabel(part) {
+	const percent = /^(\d+(?:\.\d+)?)%$/.exec(part);
+	if (percent) return `${spokenLabel(percent[1])} percent`;
+	if (/^\d+\.\d+$/.test(part)) {
+		const [whole, frac] = part.split(".");
+		return `${whole} point ${frac.split("").join(" ")}`;
+	}
+	return part.includes("/") ? spokenFraction(part) : part;
+}
 /** The spoken version of a question's parts, for screen readers. */
 function speak(parts) {
-	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
+	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (/^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
 	return /[?.!:]$/.test(text) ? text : text + "?";
 }
 /** The parts with the blank filled in: "7 + 8 = ?" → "7 + 8 = 15", "1/2 = ?/8" → "1/2 = 4/8". */
@@ -2071,13 +2108,14 @@ var BandedPack = class {
 		if (made.pick) {
 			choices = made.pick.map((_, i) => i);
 			choiceLabels = made.pick;
-		} else if (multipleChoice) choices = choicesFor(answer, made.wrong ?? [], decimal, random);
+		} else if (multipleChoice || made.choose) choices = choicesFor(answer, made.wrong ?? [], decimal, random);
 		return {
 			skill: this.id,
 			factKey: key,
 			kind: key,
 			parts: made.parts,
 			spoken: made.spoken,
+			...made.prompt ? { prompt: made.prompt } : {},
 			answer,
 			choices,
 			choiceLabels,
@@ -2116,7 +2154,7 @@ var BandedPack = class {
 		const correct = sameAnswer(answer, q.answer);
 		const before = this.records.get(q.factKey) ?? newStats$1(q.factKey);
 		const at = this.now();
-		const after = afterAnswer(before, correct, ms, at);
+		const after = afterAnswer(before, correct, ms, at, this.definition.quickMs);
 		this.records.set(q.factKey, after);
 		for (const listener of this.listeners) listener({
 			key: q.factKey,
@@ -2422,6 +2460,10 @@ const ADD_SUB = {
 	]
 };
 //#endregion
+//#region shared/maths/skillPacks/generatedKit.ts
+/** Shown above a typed "3/4 = ?" or "35% = ?", which on its own could want any kind of answer. */
+const AS_DECIMAL = "Write it as a decimal.";
+//#endregion
 //#region shared/maths/skillPacks/decimals.ts
 /**
 * Decimals and money (the Stone topic in Maths Monsters). Every question here has a decimal
@@ -2528,6 +2570,7 @@ const DECIMALS = {
 				return decimal({
 					parts,
 					spoken: speak(parts),
+					prompt: AS_DECIMAL,
 					answer: n / 10,
 					wrong: [
 						n,
@@ -5959,10 +6002,7 @@ Deno.serve(makeHandler({
 	now: () => Date.now(),
 	seed: () => crypto.getRandomValues(new Uint32Array(1))[0],
 	newId: () => crypto.randomUUID(),
-	async userIdFor(token) {
-		const { data, error } = await admin.auth.getUser(token);
-		return error ? null : data.user?.id ?? null;
-	},
+	userIdFor: userIdFromToken(admin.auth),
 	async isTeacher(player) {
 		const { data, error } = await admin.from("profiles").select("role").eq("id", player).maybeSingle();
 		if (error || !data) return {

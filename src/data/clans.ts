@@ -5,6 +5,7 @@ import { makeClanServer, type ClanServer } from '../games/clans/remote';
 import { readPracticalSettings, type PracticalSettings } from '../../shared/maths/practical';
 import { readSettings } from './classSettings';
 import { supabase } from '../lib/supabase';
+import { forgetSettings } from './settingsMemory';
 import { FriendlyError } from './profile';
 
 export function liveClanServer(): ClanServer {
@@ -28,6 +29,7 @@ export async function fetchClansEnabled(classId?: string | null): Promise<boolea
 
 export async function saveClansEnabled(enabled: boolean, classId?: string | null): Promise<boolean> {
   const { data, error } = await supabase.rpc('teacher_set_clans', { enabled, target_class: classId ?? null });
+  forgetSettings();
   if (error || typeof data !== 'boolean') throw new FriendlyError('We couldn’t save the Clan Quest setting.');
   return data;
 }
@@ -70,6 +72,7 @@ export async function fetchClanRaidsEnabled(classId?: string | null): Promise<bo
 
 export async function saveClanRaidsEnabled(enabled: boolean, classId?: string | null): Promise<boolean> {
   const { data, error } = await supabase.rpc('teacher_set_clan_raids', { enabled, target_class: classId ?? null });
+  forgetSettings();
   if (error || typeof data !== 'boolean') throw new FriendlyError('We couldn’t save the raids setting.');
   return data;
 }
@@ -159,12 +162,14 @@ export async function saveClanMathsSettings(
   classId?: string | null,
 ): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_clan_maths', { settings, target_class: classId ?? null });
+  forgetSettings();
   if (error) throw new FriendlyError(error.code === '22023' ? error.message : 'We couldn’t save the Clan Quest settings.');
 }
 
 /** Starts a new fame season: every clan's fame goes to 0; clans stay. */
 export async function startClansNewSeason(confirm: string): Promise<{ season: number; clans: number }> {
   const { data, error } = await supabase.rpc('teacher_clans_new_season', { confirm });
+  forgetSettings();
   if (error) throw new FriendlyError(error.code === '22023' ? error.message : 'We couldn’t start a new season.');
   return data as { season: number; clans: number };
 }

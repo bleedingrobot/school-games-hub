@@ -23,6 +23,7 @@ import type { WorldState } from '../../shared/monsters/world/types';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { readSettings } from './classSettings';
 import { supabase } from '../lib/supabase';
+import { forgetSettings } from './settingsMemory';
 import { FriendlyError } from './profile';
 
 export interface MonstersSettings {
@@ -219,8 +220,8 @@ export async function loadMonsters(player: string): Promise<MonstersData> {
 
 /** Is the game switched on? (The dashboard hides it when it isn't.) */
 export async function fetchMonstersEnabled(): Promise<boolean> {
-  const { data, error } = await supabase.from('app_settings').select('monsters_enabled').maybeSingle();
-  if (error || !data) throw new FriendlyError('We couldn’t load this setting.');
+  const data = await readSettings(['monsters_enabled']);
+  if (!data) throw new FriendlyError('We couldn’t load this setting.');
   return data.monsters_enabled === true;
 }
 
@@ -284,6 +285,7 @@ export async function fetchMonstersSettings(classId?: string | null): Promise<Mo
 
 export async function saveMonstersSettings(settings: MonstersSettings, classId?: string | null): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_monsters', { settings, target_class: classId ?? null });
+  forgetSettings();
   if (error) fail(error, 'We couldn’t save the Maths Monsters settings.');
 }
 

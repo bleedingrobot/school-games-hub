@@ -36,6 +36,8 @@ vi.mock('../data/cardGames', async (importOriginal) => ({
   fetchCardLobby: vi.fn(),
   fetchMyOpenCardGames: vi.fn(),
 }));
+// The lobby's one request (S.4), answered from the separate fakes above.
+vi.mock('../data/lobby', async () => ({ fetchLobbyPage: (await import('./lobbyFromSeparate')).lobbyFromSeparate }));
 
 const signedIn = {
   status: 'signed-in',

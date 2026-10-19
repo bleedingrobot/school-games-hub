@@ -7,10 +7,14 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { fetchClasses, fetchClassDetail, type ClassDetail, type ClassSummary } from '../data/classes';
-import { fetchStudentsChooseFocus, saveStudentsChooseFocus } from '../data/classSettings';
+import { fetchMathsAuto, fetchStudentsChooseFocus, saveMathsAuto, saveStudentsChooseFocus } from '../data/classSettings';
 import { endFocus, extendFocus, fetchFocuses, setFocus, type FocusBatch, type FocusLength, type FocusScope } from '../data/focus';
 import { FriendlyError } from '../data/profile';
 import { describeEnd, nzLocalToIso, skillList, timeLeft } from '../../shared/maths/focus';
+import { LADDER } from '../../shared/maths/ladder';
+import { FocusHistory } from '../maths/FocusHistory';
+import { FocusResults } from '../maths/FocusResults';
+import { whoFor } from '../maths/focusText';
 import { LengthPicker, LENGTHS } from '../maths/LengthPicker';
 import { SkillPicker } from '../maths/SkillPicker';
 import '../maths/focus.css';
@@ -37,15 +41,7 @@ export default function SetFocus() {
   return <SetFocusView />;
 }
 
-/** Who a focus is for, in words. */
-export function whoFor(b: FocusBatch): string {
-  if (b.scope === 'class') return 'Whole class';
-  const names = b.targets.map((t) => t.name);
-  if (b.scope === 'group') return names.length === 1 ? `Group ${names[0]}` : `Groups ${names.join(', ')}`;
-  return names.length <= 4 ? names.join(', ') : `${names.slice(0, 4).join(', ')} and ${names.length - 4} more`;
-}
-
-const day = (iso: string) => new Date(iso).toLocaleDateString('en-NZ', { timeZone: 'Pacific/Auckland', weekday: 'short', day: 'numeric', month: 'short' });
+export { whoFor };
 
 function SetFocusView() {
   const [params, setParams] = useSearchParams();
@@ -100,19 +96,25 @@ function SetFocusView() {
               </label>
             </div>
           )}
-          {chosen && <ClassFocus key={chosen.id} summary={chosen} />}
+          {chosen && <ClassFocus key={chosen.id} summary={chosen} preset={{ student: params.get('student'), skill: params.get('skill') }} />}
         </>
       )}
     </div>
   );
 }
 
-function ClassFocus({ summary }: { summary: ClassSummary }) {
+/** A skill map link can ask for a student, a skill or both to be ticked already. */
+interface Preset {
+  student: string | null;
+  skill: string | null;
+}
+
+function ClassFocus({ summary, preset }: { summary: ClassSummary; preset: Preset }) {
   const classId = summary.id;
   const [detail, setDetail] = useState<ClassDetail | null>(null);
   const [batches, setBatches] = useState<FocusBatch[] | null>(null);
-  const [history, setHistory] = useState<FocusBatch[] | null>(null);
   const [choose, setChoose] = useState<boolean | null>(null);
+  const [auto, setAuto] = useState<boolean | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
 
@@ -132,6 +134,9 @@ function ClassFocus({ summary }: { summary: ClassSummary }) {
     fetchStudentsChooseFocus(classId)
       .then(setChoose)
       .catch(() => setChoose(true));
+    fetchMathsAuto(classId)
+      .then(setAuto)
+      .catch(() => setAuto(false));
     void refresh();
   }, [classId, refresh]);
 
@@ -154,9 +159,16 @@ function ClassFocus({ summary }: { summary: ClassSummary }) {
     }
   }
 
-  async function showHistory() {
+  async function changeAuto(on: boolean) {
+    setStatus('Saving…');
     try {
-      setHistory((await fetchFocuses(classId, true)).filter((b) => b.status === 'ended'));
+      await saveMathsAuto(on, classId);
+      setAuto(on);
+      setStatus(
+        on
+          ? 'The games now pick the maths for students with no focus. It starts with their next level or game.'
+          : 'The games ask the times tables for students with no focus, as before.',
+      );
     } catch (error) {
       setStatus(errorText(error));
     }
@@ -176,6 +188,23 @@ function ClassFocus({ summary }: { summary: ClassSummary }) {
         <p className="class-panel__hint">
           On: a student can pick their own skills on their home page, unless a focus from you is running. Off: they get your focus, or
           auto. What a student picked is kept, and comes back if you turn this back on.
+        </p>
+      </section>
+
+      <section className="panel" aria-labelledby="auto-title">
+        <h2 id="auto-title" className="panel__title">
+          Auto
+        </h2>
+        {auto !== null && (
+          <label className="classes__check">
+            <input type="checkbox" checked={auto} onChange={(e) => void changeAuto(e.target.checked)} /> Games pick the maths (auto) when
+            there is no focus
+          </label>
+        )}
+        <p className="class-panel__hint">
+          On: a student with no focus is walked up the ladder, from number facts to the times tables and beyond, starting where they are
+          ready (they can do a short warm-up to find it). Their place never goes
+          backwards. Your focus, or one a student picked, always comes first. Off: the games ask the times tables, as they always have.
         </p>
       </section>
 
@@ -201,6 +230,7 @@ function ClassFocus({ summary }: { summary: ClassSummary }) {
         <NewFocus
           classId={classId}
           detail={detail}
+          preset={preset}
           onSet={(message) => {
             setStatus(message);
             void refresh();
@@ -209,32 +239,7 @@ function ClassFocus({ summary }: { summary: ClassSummary }) {
         />
       )}
 
-      <section className="panel" aria-labelledby="history-title">
-        <h2 id="history-title" className="panel__title">
-          What we practised
-        </h2>
-        {history === null ? (
-          <button type="button" className="button button--light-outline" onClick={() => void showHistory()}>
-            Show earlier focuses
-          </button>
-        ) : history.length === 0 ? (
-          <p className="panel__empty">No earlier focuses yet.</p>
-        ) : (
-          <ul className="class-panel__list">
-            {history.map((b) => (
-              <li key={b.batch}>
-                <span>
-                  <strong>{whoFor(b)}</strong>: {skillList(b.skills)}
-                  {b.onlyThese && ' (only these)'}
-                </span>
-                <span className="class-panel__when">
-                  {day(b.startsAt)} to {day(b.endsAt)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <FocusHistory classId={classId} detail={detail} />
 
       <p role="status" className="teacher__classes-link">
         {status}
@@ -289,6 +294,7 @@ function Running({ batch, now, onDone, onError }: { batch: FocusBatch; now: Date
           End now
         </button>
       </span>
+      <FocusResults batch={batch.batch} startsAt={batch.startsAt} endsAt={batch.endsAt} running />
       {extending && (
         <div className="set-focus__form">
           <LengthPicker value={length} custom={custom} onChange={setLength} onCustom={setCustom} legend="Run it until…" />
@@ -306,11 +312,13 @@ function Running({ batch, now, onDone, onError }: { batch: FocusBatch; now: Date
   );
 }
 
-function NewFocus({ classId, detail, onSet, onError }: { classId: string; detail: ClassDetail; onSet: (message: string) => void; onError: (error: unknown) => void }) {
-  const [scope, setScope] = useState<FocusScope>('class');
+function NewFocus({ classId, detail, preset, onSet, onError }: { classId: string; detail: ClassDetail; preset: Preset; onSet: (message: string) => void; onError: (error: unknown) => void }) {
+  const presetStudent = detail.members.find((m) => m.id === preset.student)?.id ?? null;
+  const presetSkill = LADDER.find((l) => l.built && l.id === preset.skill)?.id ?? null;
+  const [scope, setScope] = useState<FocusScope>(presetStudent ? 'student' : 'class');
   const [group, setGroup] = useState('');
-  const [students, setStudents] = useState<Set<string>>(new Set());
-  const [skills, setSkills] = useState<string[]>([]);
+  const [students, setStudents] = useState<Set<string>>(new Set(presetStudent ? [presetStudent] : []));
+  const [skills, setSkills] = useState<string[]>(presetSkill ? [presetSkill] : []);
   const [onlyThese, setOnlyThese] = useState(false);
   const [length, setLength] = useState<FocusLength>('friday');
   const [custom, setCustom] = useState('');

@@ -5,21 +5,14 @@ import { AvatarImage } from '../avatar/AvatarImage';
 import { ClassWarpCard } from '../components/ClassWarpCard';
 import { GameCard } from '../components/GameCard';
 import { AchievementList, LevelBar, pickAchievements, RankBadge } from '../components/Progress';
-import { fetchMyStats, fetchRecentGames, type GameStats } from '../data/botGames';
-import {
-  fetchFriendStats,
-  fetchMyOpenGames,
-  fetchPlayerCards,
-  fetchRecentFriendGames,
-  type FriendGame,
-  type FriendStats,
-  type PlayerCard,
-} from '../data/multiplayer';
-import { fetchMyMovesLeft, type MovesByGame } from '../data/movesLeft';
-import { fetchMyProgress, type MyProgress } from '../data/progress';
-import { fetchMyOpenSpaceGames, fetchMySpaceStats, fetchRecentSpaceGames, seatsOf, type SpaceGame } from '../data/spaceGames';
-import { fetchMyCardStats, fetchMyOpenCardGames, fetchRecentCardGames, type SeatSummary } from '../data/cardGames';
-import { fetchMyOpenPowerGames, fetchMyPowerStats, fetchRecentPowerGames, seatsOf as powerSeatsOf, type PowerGame } from '../data/powerGames';
+import type { GameStats } from '../data/botGames';
+import { fetchMyHomePage, type HomePage } from '../data/homePage';
+import type { FriendGame, FriendStats, PlayerCard } from '../data/multiplayer';
+import type { MovesByGame } from '../data/movesLeft';
+import type { MyProgress } from '../data/progress';
+import { seatsOf, type SpaceGame } from '../data/spaceGames';
+import type { SeatSummary } from '../data/cardGames';
+import { seatsOf as powerSeatsOf, type PowerGame } from '../data/powerGames';
 import { findGame, GAMES, POWER_CLASH_ON, gameLabel } from '../games/registry';
 import { trainingOn } from '../training/switch';
 import { useClansEnabled } from '../games/clans/switch';
@@ -30,6 +23,7 @@ import { BOT_NAMES, placeLabel } from '../../shared/space/names';
 
 // The maths focus card brings the whole maths ladder with it, so it loads on its own.
 const MathsFocusCard = lazy(() => import('../components/MathsFocusCard'));
+const MathsPathCard = lazy(() => import('../components/MathsPathCard'));
 
 const RESULT_LABEL = { won: 'Won', lost: 'Lost', drawn: 'Draw' } as const;
 
@@ -52,8 +46,8 @@ function botName(level: string, game?: string) {
 
 /** How the dashboard groups its games, top to bottom. A game missing from here would not show. */
 const GAME_GROUPS = [
-  { title: 'Non-maths games', ids: ['chess', 'checkers', '101'] },
-  { title: 'Easy maths games', ids: ['space', 'gem-keep', 'power-clash'] },
+  { title: 'Non-maths games', ids: ['chess', 'checkers', '101', 'power-clash'] },
+  { title: 'Easy maths games', ids: ['space', 'gem-keep'] },
   { title: 'Complex maths games', ids: ['monsters', 'dragon-maths', 'clan-quest', 'marble'] },
 ];
 
@@ -135,8 +129,13 @@ export function friendRecentGame(g: FriendGame, me: string, cards: Map<string, P
   };
 }
 
-/** The student's real saved games and stats, against bots and friends. */
+/**
+ * The student's real saved games and stats, against bots and friends, from the home page's one request (my_home_page). It is asked
+ * every time the page opens, so everything is up to date straight after a game. `homePage` is that request, for the cards to take
+ * their parts from (null until it is sent).
+ */
 function useMyGames(me: string | undefined) {
+  const [homePage, setHomePage] = useState<Promise<HomePage> | null>(null);
   const [recent, setRecent] = useState<RecentGame[] | null>(null);
   const [stats, setStats] = useState<GameStats[] | null>(null);
   const [friendStats, setFriendStats] = useState<FriendStats[] | null>(null);
@@ -148,89 +147,51 @@ function useMyGames(me: string | undefined) {
   const [powerGoing, setPowerGoing] = useState<PowerGame[]>([]);
   const [powerStats, setPowerStats] = useState<{ played: number; won: number } | null>(null);
   const [progress, setProgress] = useState<MyProgress | null>(null);
+  // Daily moves left (Dragon Maths, Clan Quest) are only a nicety: no line on the card if they can't be read.
+  const [moves, setMoves] = useState<MovesByGame>({});
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     if (!me) return;
     let current = true;
-    // Points load separately, so the games still show if they can't be loaded.
-    fetchMyProgress()
-      .then((p) => current && setProgress(p))
-      .catch(() => {});
-    // Space games with classmates load alongside, but never stop the rest from showing.
-    Promise.all([
-      fetchRecentSpaceGames(5).catch(() => []),
-      fetchMyOpenSpaceGames().catch(() => []),
-      fetchMySpaceStats().catch(() => null),
-    ]).then(([recentSpace, openSpace, totals]) => {
-      if (!current) return;
-      setSpaceGoing(openSpace.filter((g) => g.status === 'playing'));
-      setSpaceStats(totals);
-      if (recentSpace.length === 0) return;
-      setRecent((prev) =>
-        [...(prev ?? []), ...recentSpace.map((g) => spaceRecentGame(g, me))]
-          .sort((a, b) => b.finished_at.localeCompare(a.finished_at))
-          .slice(0, 5),
-      );
-    });
-    // 101 games with classmates, the same way.
-    Promise.all([
-      fetchRecentCardGames(5).catch(() => []),
-      fetchMyOpenCardGames().catch(() => []),
-      fetchMyCardStats().catch(() => null),
-    ]).then(([recentCards, openCards, totals]) => {
-      if (!current) return;
-      setCardGoing(openCards.filter((g) => g.status === 'playing'));
-      setCardStats(totals);
-      if (recentCards.length === 0) return;
-      setRecent((prev) =>
-        [...(prev ?? []), ...recentCards.map(cardRecentGame)]
-          .sort((a, b) => b.finished_at.localeCompare(a.finished_at))
-          .slice(0, 5),
-      );
-    });
-    // Power Clash with a classmate, the same way (nothing to ask before it is switched on).
-    if (POWER_CLASH_ON) {
-      Promise.all([
-        fetchRecentPowerGames(5).catch(() => []),
-        fetchMyOpenPowerGames().catch(() => []),
-        fetchMyPowerStats().catch(() => null),
-      ]).then(([recentPower, openPower, totals]) => {
+    const answer = fetchMyHomePage();
+    setHomePage(answer);
+    answer.then(
+      (home) => {
         if (!current) return;
-        setPowerGoing(openPower.filter((g) => g.status === 'playing'));
-        setPowerStats(totals);
-        if (recentPower.length === 0) return;
-        setRecent((prev) =>
-          [...(prev ?? []), ...recentPower.map((g) => powerRecentGame(g, me))]
+        setProgress(home.progress);
+        setMoves(home.moves);
+        // Space and 101 games with classmates, and Power Clash with a classmate (nothing of it shows before it is switched on).
+        setSpaceGoing(home.spaceOpen.filter((g) => g.status === 'playing'));
+        setSpaceStats(home.spaceStats);
+        setCardGoing(home.cardOpen.filter((g) => g.status === 'playing'));
+        setCardStats(home.cardStats);
+        if (POWER_CLASH_ON) {
+          setPowerGoing(home.powerOpen.filter((g) => g.status === 'playing'));
+          setPowerStats(home.powerStats);
+        }
+        const playing = home.friendOpen.filter((g) => g.status === 'playing');
+        setRecent(
+          [
+            ...home.botRecent.map((g) => ({ ...g })),
+            ...home.friendRecent.map((g) => friendRecentGame(g, me, home.players)),
+            ...home.spaceRecent.map((g) => spaceRecentGame(g, me)),
+            ...home.cardRecent.map(cardRecentGame),
+            ...(POWER_CLASH_ON ? home.powerRecent.map((g) => powerRecentGame(g, me)) : []),
+          ]
             .sort((a, b) => b.finished_at.localeCompare(a.finished_at))
             .slice(0, 5),
         );
-      });
-    }
-    Promise.all([fetchRecentGames(5), fetchMyStats(), fetchRecentFriendGames(5), fetchFriendStats(), fetchMyOpenGames()])
-      .then(async ([botGames, totals, friendGames, friendTotals, open]) => {
-        const playing = open.filter((g) => g.status === 'playing');
-        const ids = [...friendGames, ...playing].flatMap((g) => [g.first_player, g.second_player]);
-        const cards = await fetchPlayerCards(ids.filter((id): id is string => !!id && id !== me));
-        if (!current) return;
-        const merged: RecentGame[] = [
-          ...botGames.map((g) => ({ ...g })),
-          ...friendGames.map((g) => friendRecentGame(g, me, cards)),
-        ];
-        setRecent((prev) =>
-          [...(prev ?? []).filter((g) => g.classmates), ...merged]
-            .sort((a, b) => b.finished_at.localeCompare(a.finished_at))
-            .slice(0, 5),
-        );
-        setStats(totals);
-        setFriendStats(friendTotals);
+        setStats(home.botStats);
+        setFriendStats(home.friendStats);
         setInProgress(
           playing.map((g) => {
             const opponentId = g.first_player === me ? g.second_player : g.first_player;
-            return { game: g, opponent: (opponentId && cards.get(opponentId)) || null };
+            return { game: g, opponent: (opponentId && home.players.get(opponentId)) || null };
           }),
         );
-      })
-      .catch(() => current && setFailed(true));
+      },
+      () => current && setFailed(true),
+    );
     return () => {
       current = false;
     };
@@ -245,28 +206,20 @@ function useMyGames(me: string | undefined) {
     withCards && powerStats
       ? [...withCards, { game: 'power-clash', played: powerStats.played, won: powerStats.won, lost: powerStats.played - powerStats.won, drawn: 0 }]
       : withCards;
-  return { recent, stats, friendStats: friendRows, inProgress, spaceGoing, spaceStats, cardGoing, powerGoing, progress, failed };
+  return { homePage, recent, stats, friendStats: friendRows, inProgress, spaceGoing, spaceStats, cardGoing, powerGoing, progress, moves, failed };
 }
 
 export function Dashboard() {
   const { profile } = useAuth();
-  const { recent, stats, friendStats, inProgress, spaceGoing, spaceStats, cardGoing, powerGoing, progress, failed } = useMyGames(profile?.id);
+  const meId = profile?.id;
+  const { homePage, recent, stats, friendStats, inProgress, spaceGoing, spaceStats, cardGoing, powerGoing, progress, moves, failed } = useMyGames(meId);
+  // The cards wait for the home page's answer, or ask for themselves if there is nobody to ask it for.
+  const cardsFrom = meId ? homePage : undefined;
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
   const monstersOn = useMonstersEnabled() === true;
   const lordOn = useLordEnabled() === true;
   const clansOn = useClansEnabled() === true;
   const shownGames = GAMES.filter((g) => (g.id !== 'monsters' || monstersOn) && (g.id !== 'dragon-maths' || lordOn) && (g.id !== 'clan-quest' || clansOn));
-  const [moves, setMoves] = useState<MovesByGame>({});
-  const meId = profile?.id;
-  useEffect(() => {
-    if (!meId) return;
-    let current = true;
-    // Daily moves left (Dragon Maths, Clan Quest) are only a nicety: no line on the card if they can't be read.
-    fetchMyMovesLeft().then((m) => current && setMoves(m));
-    return () => {
-      current = false;
-    };
-  }, [meId]);
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
@@ -308,7 +261,7 @@ export function Dashboard() {
         </div>
       </section>
 
-      {profile?.role !== 'teacher' && <ClassWarpCard />}
+      {profile?.role !== 'teacher' && <ClassWarpCard homePage={cardsFrom} />}
 
       {(inProgress.length > 0 || spaceGoing.length > 0 || cardGoing.length > 0 || powerGoing.length > 0) && (
         <section className="in-progress" aria-label="Games still going">
@@ -441,7 +394,8 @@ export function Dashboard() {
 
       {profile?.role !== 'teacher' && (
         <Suspense fallback={null}>
-          <MathsFocusCard />
+          <MathsFocusCard homePage={cardsFrom} />
+          <MathsPathCard homePage={cardsFrom} />
         </Suspense>
       )}
 

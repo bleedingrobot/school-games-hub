@@ -286,6 +286,11 @@ export async function joinWarp(typed: string): Promise<WarpResult> {
 export async function fetchMyClass(): Promise<MyClass> {
   const { data, error } = await supabase.rpc('my_class');
   if (error) throw new FriendlyError('We couldn’t load your class.');
+  return myClassFrom(data);
+}
+
+/** What my_class() said (null for someone outside a school). */
+export function myClassFrom(data: unknown): MyClass {
   const row = (data ?? {}) as Partial<MyClass>;
   return { className: row.className ?? null, groupName: row.groupName ?? null, waitingFor: row.waitingFor ?? null };
 }

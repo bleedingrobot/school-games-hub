@@ -23,6 +23,11 @@ export interface Question {
   parts: string[];
   /** For screen readers: "7 times 8 equals what?" */
   spoken: string;
+  /**
+   * What to do, shown above the sum when the sum alone doesn't say it: "Write it as a decimal." Not part of `parts`, so the
+   * server's check that a question was shown as it was made never depends on it.
+   */
+  prompt?: string;
   answer: number;
   /**
    * Multiple-choice mode: the choices, in the order to show them. Always set when

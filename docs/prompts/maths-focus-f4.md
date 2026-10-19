@@ -2,11 +2,11 @@ Maths focus F.4: auto everywhere, placement check, starting points by year level
 
 Where things are:
 - School Games Hub, worktree ~/projects/school-games-hub-focus, branch `maths-focus`. Other sessions use the main checkout and other worktrees: don't touch them, never use bare `git stash`, careful with `pkill -f` (it can match your own shell; find processes by port instead).
-- F.1 (ladder, AutoPack, `ladderProgress`) and F.2 (schools and classes) are live. **F.3 (focus, groups, Set focus screen) is built and reviewed on the branch; check the plan says it is live before you start. If it is not, stop and tell me.** If it is live, merge `main` into `maths-focus` first and say if it brought in new migrations, so yours are numbered after the newest.
+- F.1, F.2 and F.3 are all LIVE as of 19 October 2026 (migration 20261018002700_maths_focus.sql applied, gem-keep / space-game / save-bot-game deployed, `maths-focus` fast-forwarded into `main` at 55daa87, Pages green). Check with `git fetch` that `main` hasn't moved; if it has, merge it into `maths-focus` first and say if it brought in new migrations, so yours are numbered after the newest. The plan doc doesn't yet have an "F.3 went live" section: add a short one.
 - Scratch database recipe and the real-browser setup are in the "Stage F.3 results" and "Stage F.2 results" sections and in `scripts/` (`scratch-db.sh` with `SCRATCH_BASE=20261018001500`, `scratch-test.sh`, `f3-rehearsal.sh` as the model for a rehearsal on today's data). A browser check works by running a second PostgREST on the scratch database behind a small proxy and signing in with tokens signed by the local JWT key.
 
 Rules:
-- **Nothing live.** Do not apply any migration to the live database, deploy any function, or merge to main until I say "go live". Build and test on a scratch database first.
+- **Nothing live.** Do not apply any migration to the live database, deploy any function, or merge to main until I say "go live". Build and test on a scratch database first. (If the auto-mode safety check blocks a live command, stop and tell me; I'll switch to manual mode.)
 - With no focus set, students must keep playing exactly as they do today until the stage's switch is turned on: put the new auto behind a class setting, off by default, like the other switches. Chess, checkers and 101 stay maths-free.
 - No real names or free typing anywhere new. Years are never shown to students ("Year 3 skill" would label them). Plain words everywhere.
 - Say which tests failed before you started, if any. Known flaky: a few load-timing tests; re-run them alone.

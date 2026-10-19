@@ -77,21 +77,26 @@ export class MapMaker {
   /** A wall-layer tile: it blocks walking. */
   wall(x, y, gid) { this.walls[this.at(x, y)] = gid; if (gid) this.grass[this.at(x, y)] = 0; this.used.add(this.at(x, y)); }
   wallRect(x, y, w, h, gid) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) this.wall(i, j, gid); }
-  /** A tree standing on a path would shut the path while it still looks open. Say so when a map does that. */
-  #onPath(kind, x, y) { if (this.pathCells?.has(this.at(x, y))) console.warn(`${this.id ?? 'map'}: a ${kind} at ${x},${y} stands on a path`); }
+  /** Anything you cannot walk through standing on a path would shut the path while it still looks open. Say so when a map does that. */
+  #onPath(kind, x, y) {
+    if (!this.pathCells?.has(this.at(x, y))) return;
+    const text = `${this.id ?? 'map'}: a ${kind} at ${x},${y} stands on a path`;
+    (this.warnings ??= []).push(text);
+    console.warn(text);
+  }
   tree(x, y) { this.#onPath('tree', x, y); this.wall(x, y, TT(28)); }
   /** A tall tree: two tiles, the crown above the trunk. */
   bigTree(x, y) { this.#onPath('tall tree', x, y); this.#onPath('tall tree', x, y - 1); this.wall(x, y - 1, TT(4)); this.wall(x, y, TT(16)); }
   autumnTree(x, y) { this.#onPath('tree', x, y); this.#onPath('tree', x, y - 1); this.wall(x, y - 1, TT(3)); this.wall(x, y, TT(15)); }
   autumnSmall(x, y) { this.#onPath('tree', x, y); this.wall(x, y, TT(27)); }
-  snowTree(x, y) { this.wall(x, y - 1, X(14)); this.wall(x, y, X(15)); }
-  snowPine(x, y) { this.wall(x, y, X(16)); }
-  snowBush(x, y) { this.wall(x, y, X(17)); }
-  palm(x, y) { this.wall(x, y - 1, X(22)); this.wall(x, y, X(23)); }
-  boulder(x, y, dark = false) { this.wall(x, y, X(dark ? 19 : 18)); }
-  stalagmite(x, y) { this.wall(x, y, X(20)); }
-  crystal(x, y) { this.wall(x, y, X(21)); }
-  bush(x, y) { this.wall(x, y, TT(5)); }
+  snowTree(x, y) { this.#onPath('tall tree', x, y); this.#onPath('tall tree', x, y - 1); this.wall(x, y - 1, X(14)); this.wall(x, y, X(15)); }
+  snowPine(x, y) { this.#onPath('tree', x, y); this.wall(x, y, X(16)); }
+  snowBush(x, y) { this.#onPath('bush', x, y); this.wall(x, y, X(17)); }
+  palm(x, y) { this.#onPath('palm', x, y); this.#onPath('palm', x, y - 1); this.wall(x, y - 1, X(22)); this.wall(x, y, X(23)); }
+  boulder(x, y, dark = false) { this.#onPath('boulder', x, y); this.wall(x, y, X(dark ? 19 : 18)); }
+  stalagmite(x, y) { this.#onPath('stalagmite', x, y); this.wall(x, y, X(20)); }
+  crystal(x, y) { this.#onPath('crystal', x, y); this.wall(x, y, X(21)); }
+  bush(x, y) { this.#onPath('bush', x, y); this.wall(x, y, TT(5)); }
   water(x, y, w, h) { this.wallRect(x, y, w, h, WATER); }
   lava(x, y, w, h) { this.wallRect(x, y, w, h, LAVA); }
   /** Rock wall (caves): a block, or a rectangle of them. */

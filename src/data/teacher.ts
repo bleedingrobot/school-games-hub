@@ -3,6 +3,7 @@
  * anyone whose profile isn't a teacher, whatever the page does.
  */
 import { supabase } from '../lib/supabase';
+import { forgetSettings } from './settingsMemory';
 import { FriendlyError } from './profile';
 import type { Rank } from './progress';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
@@ -92,16 +93,19 @@ export async function deletePerson(id: string): Promise<void> {
 
 export async function setMultiplayer(enabled: boolean, classId?: string | null): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_multiplayer', { enabled, target_class: classId ?? null });
+  forgetSettings();
   if (error) fail(error, 'We couldn’t change that.');
 }
 
 export async function setSpaceReactions(enabled: boolean, classId?: string | null): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_space_reactions', { enabled, target_class: classId ?? null });
+  forgetSettings();
   if (error) fail(error, 'We couldn’t change that.');
 }
 
 export async function setSpaceMaths(mode: MathsSwitch, classId?: string | null): Promise<void> {
   const { error } = await supabase.rpc('teacher_set_space_maths', { mode, target_class: classId ?? null });
+  forgetSettings();
   if (error) fail(error, 'We couldn’t change that.');
 }
 

@@ -1,6 +1,7 @@
 // Connects the monster handler to Supabase. Edit handler.ts for the logic, then run
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
+import { userIdFromToken } from '../_shared/signIn';
 import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
 import { makeHandler, type Outcome } from './handler';
 
@@ -35,10 +36,7 @@ async function call<T>(name: string, args: Record<string, unknown>): Promise<Out
 Deno.serve(
   makeHandler({
     now: () => Date.now(),
-    async userIdFor(token) {
-      const { data, error } = await admin.auth.getUser(token);
-      return error ? null : (data.user?.id ?? null);
-    },
+    userIdFor: userIdFromToken(admin.auth),
     async enabled(player) {
       // The settings that apply to this student: their class's, or their school's default.
       const { data, error } = await admin.rpc('settings_of', { player }).maybeSingle();

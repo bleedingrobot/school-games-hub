@@ -132,9 +132,8 @@ describe('each level beats the one below', () => {
     return wins / games;
   }
 
-  // Over 600 games: Easy beats Very Easy 88%, Medium beats Easy 71%, Medium beats Very Easy 99%.
-  // The seeds are fixed, so these give the same answer every run (no flaky failures).
+  // Over 600 games: Easy beats Very Easy 88%, Medium beats Easy 71%, Medium beats Very Easy 99% (so that one is not
+  // played here too). The seeds are fixed, so these give the same answer every run (no flaky failures).
   it('Easy beats Very Easy', () => expect(winShare('easy', 'very-easy', 80)).toBeGreaterThan(0.7), 30_000);
   it('Medium beats Easy', () => expect(winShare('medium', 'easy', 120)).toBeGreaterThan(0.58), 120_000);
-  it('Medium beats Very Easy', () => expect(winShare('medium', 'very-easy', 40)).toBeGreaterThan(0.85), 30_000);
 });

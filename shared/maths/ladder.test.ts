@@ -166,7 +166,7 @@ describe('ladder progress', () => {
     expect(p.secureCount).toBe(0);
     expect(p.percent).toBe(0);
     expect(p.skills.find((s) => s.skill.id === 'facts-10')?.status).toBe('current');
-    expect(p.skills.find((s) => s.skill.id === 'ten-and')?.status).toBe('later');
+    expect(p.skills.find((s) => s.skill.id === 'ten-and')?.status).toBe('upcoming'); // built in F.6; every skill is built now
   });
 
   it('moves on at 70% in box 2 or higher, and holds back just under it', () => {
@@ -198,7 +198,7 @@ describe('ladder progress', () => {
     const through = built.findIndex((s) => s.id === 'tables-6-9');
     const done = secure(built.slice(0, through + 1).flatMap((s) => s.keys));
     expect(ladderProgress(done).current?.id).toBe('tables-7');
-    expect(ladderProgress(done, { enabledTables: [6, 9] }).current).toBeNull();
+    expect(ladderProgress(done, { enabledTables: [6, 9] }).current?.id).toBe('times-tens'); // ×7 is skipped, the next skill is not
   });
 
   it('builds pools of focus, review and stretch around the current skill', () => {

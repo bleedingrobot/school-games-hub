@@ -28,6 +28,10 @@ export interface Services {
   /** Adds answers to the records. 0 if this batch was counted before. */
   recordAnswers(player: string, pack: string, batchId: string, answers: FactAnswer[]): Promise<Outcome<number>>;
   importProgress(player: string, levels: { levelId: string; stars: number; keyPassed: boolean }[]): Promise<Outcome<'imported' | 'skipped'>>;
+  /** Keeps the student's furthest place on the maths ladder up to date after their answers are saved. Never throws. */
+  syncPlace?(player: string): Promise<void>;
+  /** Checks a placement check (or a skip) and stores where to start. */
+  savePlacement?(player: string, raw: unknown): Promise<{ outcome: 'saved' | 'already' | 'refused'; start?: string }>;
   /** Milliseconds since 1970. */
   now(): number;
 }
@@ -66,7 +70,17 @@ export function makeHandler(services: Services) {
     if (!player) return reply(401, { error: 'Please sign in again.' });
     if (!limiter.allow(player, MAX_REQUESTS_PER_MINUTE)) return reply(429, { error: 'Slow down a little!' });
 
-    const body = (await readJsonBody(request)) as { items?: unknown } | null;
+    const body = (await readJsonBody(request)) as { items?: unknown; placement?: unknown } | null;
+    if (body && body.placement !== undefined && body.items === undefined) {
+      // The placement check: a one-off, checked on the server (shared/maths/placementCheck.ts).
+      if (!services.savePlacement) return reply(404, { error: 'Not here.' });
+      try {
+        const saved = await services.savePlacement(player, body.placement);
+        return saved.outcome === 'refused' ? reply(400, { error: "That couldn't be used." }) : reply(200, saved);
+      } catch {
+        return reply(503, { error: "We couldn't save that just now." });
+      }
+    }
     if (!body || !Array.isArray(body.items) || body.items.length > MAX_ITEMS) {
       return reply(400, { error: "That couldn't be read." });
     }
@@ -83,6 +97,10 @@ export function makeHandler(services: Services) {
       const result = await save(player, checked.item, services);
       if (result === 'stop') break;
       results.push(result);
+    }
+    // New answers can move the student on the ladder: keep their furthest place up to date (late or missed is harmless).
+    if (services.syncPlace && results.some((r) => (r.type === 'answers' && r.added > 0) || (r.type === 'facts' && r.changed > 0))) {
+      await services.syncPlace(player);
     }
     const stopped = results.length < body.items.length;
     if (stopped && results.length === 0) return reply(503, { error: "We couldn't save your Gem Keep progress just now." });

@@ -35,6 +35,8 @@ vi.mock('../data/powerGames', async (importOriginal) => ({
   fetchPowerLobby: vi.fn(),
   fetchMyOpenPowerGames: vi.fn(),
 }));
+// The lobby's one request (S.4), answered from the separate fakes above.
+vi.mock('../data/lobby', async () => ({ fetchLobbyPage: (await import('./lobbyFromSeparate')).lobbyFromSeparate }));
 
 const signedIn = {
   status: 'signed-in',

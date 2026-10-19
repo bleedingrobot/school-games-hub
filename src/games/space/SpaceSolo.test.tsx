@@ -1,3 +1,4 @@
+import { spokenLabel } from '../../../shared/maths/banded';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -5,6 +6,26 @@ import { isFocusKey, type MathsFocus } from '../../../shared/maths/focus';
 import { judgeSpaceGame, type SpaceGameReport } from '../../../shared/space/save';
 import { SoundProvider } from '../../sound';
 import { SpaceSolo, type SpaceMaths, type SpaceSaving } from './SpaceSolo';
+import type { Question } from '../../../shared/maths/skillPack';
+
+/** The latest question the game's pack made, so a test can answer questions whose spoken text it can't read (rounding, order of operations). */
+const latest: { question: Question | null } = { question: null };
+vi.mock('../../../shared/maths/focus', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../../../shared/maths/focus')>();
+  return {
+    ...real,
+    makeFocusPack: (...args: Parameters<typeof real.makeFocusPack>) => {
+      const pack = real.makeFocusPack(...args);
+      const next = pack.nextQuestion.bind(pack);
+      pack.nextQuestion = (ctx) => {
+        const q = next(ctx);
+        if (q) latest.question = q;
+        return q;
+      };
+      return pack;
+    },
+  };
+});
 
 const ALL = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const maths = (mode: SpaceMaths['mode']): SpaceMaths => ({ mode, enabledTables: ALL, division: false, multipleChoice: false, facts: [] });
@@ -67,13 +88,21 @@ function fakeSaving(seed: string | null = 's1-1792000000-0123456789abcdef0123456
   return { saving, saved, left };
 }
 
+// The play-through loops below look for the same things as getByRole would, but with plain look-ups: asking by role takes
+// about 20 ms on the game page, and a loop asks a few times every few milliseconds, which was most of each game's time.
+const anyDialog = () => document.querySelector('[role="dialog"]');
+const podiumShown = () => document.querySelector('[role="dialog"][aria-labelledby="space-result-title"]');
+const rollButton = () => [...document.querySelectorAll('button')].find((b) => b.textContent?.trim().startsWith('🎲 Roll'));
+const choiceGroup = () =>
+  [...document.querySelectorAll<HTMLElement>('[role="group"][aria-label]')].find((g) => /gate|card|pockets|die|aim/i.test(g.getAttribute('aria-label')!));
+
 /** Plays until the podium shows. */
 async function playToTheEnd(user: ReturnType<typeof userEvent.setup>) {
   let actions = 0;
   for (let guard = 0; guard < 400; guard++) {
-    if (screen.queryByRole('dialog')) break;
-    const roll = screen.queryByRole('button', { name: /^🎲 Roll/ });
-    const choice = screen.queryByRole('group', { name: /gate|card|pockets|die|aim/i });
+    if (anyDialog()) break;
+    const roll = rollButton();
+    const choice = choiceGroup();
     if (choice) {
       await user.click(within(choice).getAllByRole('button')[0]);
       actions++;
@@ -112,24 +141,6 @@ describe('Wormholes & Black Holes against bots', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/doesn’t look right/);
   });
 
-  it('plays a whole game to the podium', async () => {
-    const user = userEvent.setup();
-    renderGame();
-    await user.click(screen.getByRole('radio', { name: /Asteroid Belt/ }));
-    await user.click(screen.getByRole('radio', { name: '1' }));
-    await user.click(screen.getByRole('button', { name: /Launch/ }));
-    expect(screen.getByRole('img', { name: /Asteroid Belt board, 50 squares/ })).toBeInTheDocument();
-
-    const { podium, actions } = await playToTheEnd(user);
-    expect(actions).toBeGreaterThan(3);
-    expect(within(podium).getByRole('heading')).toHaveTextContent(/You (docked first|got the furthest|came 2nd)/);
-    expect(screen.getByRole('log')).toHaveTextContent(/Speedy Otter 27 rolled/);
-    await user.click(within(podium).getByRole('button', { name: 'Look at the board' }));
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Settings' }));
-    expect(screen.getByRole('button', { name: /Launch/ })).toBeInTheDocument();
-  }, 60_000);
-
   it('rolls with the space bar', async () => {
     const user = userEvent.setup();
     renderGame();
@@ -142,7 +153,7 @@ describe('Wormholes & Black Holes against bots', () => {
     await waitFor(() => expect(screen.getByRole('log')).toHaveTextContent(/Speedy Otter 27 rolled/));
   });
 
-  it('saves a finished game with everything the server needs to replay it', async () => {
+  it('plays a whole game to the podium, and saves it with everything the server needs to replay it', async () => {
     const user = userEvent.setup();
     const { saving, saved, left } = fakeSaving();
     renderGame(saving);
@@ -152,7 +163,10 @@ describe('Wormholes & Black Holes against bots', () => {
     await user.click(screen.getByRole('button', { name: /Launch/ }));
     expect(saving.seed).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('heading', { name: /Mission log/ })).toHaveTextContent('Saved when you finish');
-    const { podium } = await playToTheEnd(user);
+    expect(screen.getByRole('img', { name: /Asteroid Belt board, 50 squares/ })).toBeInTheDocument();
+    const { podium, actions } = await playToTheEnd(user);
+    expect(actions).toBeGreaterThan(3);
+    expect(screen.getByRole('log')).toHaveTextContent(/Speedy Otter 27 rolled/);
     await waitFor(() => expect(within(podium).getByRole('status')).toHaveTextContent('Saved! You earned points for taking part.'));
     expect(saved).toHaveLength(1);
     expect(left).toEqual([]);
@@ -175,6 +189,11 @@ describe('Wormholes & Black Holes against bots', () => {
       const place = judged.game.place === 1 ? /You (docked first|got the furthest)/ : /You came 2nd/;
       expect(within(podium).getByRole('heading')).toHaveTextContent(place);
     }
+    // After the podium: look at the board, then back to the settings for another game.
+    await user.click(within(podium).getByRole('button', { name: 'Look at the board' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(screen.getByRole('button', { name: /Launch/ })).toBeInTheDocument();
   }, 60_000);
 
   it('plays a practice game when there’s no seed to be had', async () => {
@@ -286,19 +305,19 @@ describe('Mission Control maths on the game screen', () => {
   async function playWithMaths(user: ReturnType<typeof userEvent.setup>) {
     let asked = 0;
     for (let guard = 0; guard < 4000; guard++) {
-      if (screen.queryByRole('dialog', { name: /Wormhole boost|Black hole escape/ }) === null && screen.queryByRole('dialog')) break;
+      if (podiumShown()) break;
       const fact = screen.queryByLabelText(/equals/);
       if (fact) {
         // The side card is not a pop-up, so it doesn't grab the keyboard: click into it first.
-        if (!screen.queryByRole('dialog')) (fact.closest('.question') as HTMLElement).focus();
+        if (!anyDialog()) (fact.closest('.question') as HTMLElement).focus();
         const answer = solve(fact.getAttribute('aria-label')!);
         await user.keyboard(`${asked % 2 === 0 ? answer : answer + 1}{Enter}`);
         asked++;
         await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 4000 });
         continue;
       }
-      const roll = screen.queryByRole('button', { name: /^🎲 Roll/ });
-      const choice = screen.queryByRole('group', { name: /gate|card|pockets|die|aim/i });
+      const roll = rollButton();
+      const choice = choiceGroup();
       if (choice) await user.click(within(choice).getAllByRole('button')[0]);
       else if (roll && !roll.hasAttribute('disabled')) await user.click(roll);
       else await new Promise((resolve) => setTimeout(resolve, 5));
@@ -385,6 +404,124 @@ describe('Mission Control maths on the game screen', () => {
       if (judged.ok) expect(judged.game.answers.map((a) => a.key)).toEqual(report.answers!.map((a) => a.key));
       localStorage.clear();
     }, 60_000);
+
+    it('on auto (the class has the switch on) asks from the whole ladder: early facts for a new student, each saved under its own record', async () => {
+      const user = userEvent.setup();
+      const { saving, saved } = fakeSaving();
+      localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', bots: 1, maths: true }));
+      const auto: MathsFocus = {
+        source: 'auto', skills: [], onlyThese: false, endsAt: null, canChoose: true, own: null,
+        ladder: { on: true, placed: null, placement: null, furthest: null },
+      };
+      renderGame(saving, { ...maths('choose'), focus: auto });
+      await user.click(screen.getByRole('button', { name: /Launch/ }));
+      await playWithMaths(user);
+      await waitFor(() => expect(saved).toHaveLength(1), { timeout: 5000 });
+      const keys = saved[0].answers!.map((a) => a.key ?? '');
+      expect(keys.length).toBeGreaterThan(0);
+      expect(keys.every((k) => isFocusKey(k))).toBe(true);
+      expect(keys.filter((k) => !k.startsWith('mul:')).length).toBeGreaterThan(keys.length / 2); // number facts, not tables
+      expect(judgeSpaceGame(saved[0])).toMatchObject({ ok: true });
+      localStorage.clear();
+    }, 60_000);
+
+    it('asks the generated skills (rounding, order of operations...): choices to tap, a point key, big answers, all saved and checked', async () => {
+      const user = userEvent.setup();
+      const { saving, saved } = fakeSaving();
+      localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', bots: 1, maths: true }));
+      const focus = teacherFocus(['bonds-100', 'round-10-100', 'round-big', 'round-million', 'times-tens', 'factor-pairs', 'squares-cubes', 'bedmas']);
+      renderGame(saving, { ...maths('choose'), focus });
+      await user.click(screen.getByRole('button', { name: /Launch/ }));
+      const seen = { choices: 0, point: 0, typed: 0 };
+      let asked = 0;
+      for (let guard = 0; guard < 4000; guard++) {
+        if (podiumShown()) break;
+        const fact = document.querySelector('.question__fact');
+        if (fact && latest.question) {
+          const q = latest.question;
+          const right = asked % 2 === 0;
+          if (!anyDialog()) (fact.closest('.question') as HTMLElement).focus();
+          if (q.choices) {
+            seen.choices++;
+            const target = right ? q.answer : q.choices.find((c) => c !== q.answer)!;
+            await user.click(screen.getByRole('button', { name: String(target) }));
+          } else {
+            seen.typed++;
+            if (q.input === 'decimal') {
+              seen.point++;
+              expect(screen.getByRole('button', { name: 'Point' })).toBeInTheDocument();
+            } else expect(screen.queryByRole('button', { name: 'Point' })).not.toBeInTheDocument();
+            await user.keyboard(`${right ? q.answer : Number((q.answer + 1).toFixed(2))}{Enter}`);
+          }
+          asked++;
+          await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 4000 });
+          continue;
+        }
+        const roll = rollButton();
+        const choice = choiceGroup();
+        if (choice) await user.click(within(choice).getAllByRole('button')[0]);
+        else if (roll && !roll.hasAttribute('disabled')) await user.click(roll);
+        else await new Promise((resolve) => setTimeout(resolve, 5));
+      }
+      await waitFor(() => expect(saved).toHaveLength(1), { timeout: 5000 });
+      const report = saved[0];
+      expect(report.answers!.length).toBeLessThanOrEqual(asked); // an answer given as the game ends is not part of it
+      expect(report.answers!.length).toBeGreaterThan(3);
+      expect(report.answers!.every((a) => a.key && isFocusKey(a.key) && !a.key.startsWith('mul:'))).toBe(true);
+      expect(judgeSpaceGame(report)).toMatchObject({ ok: true });
+      expect(seen.typed + seen.choices).toBe(asked);
+      localStorage.clear();
+    }, 120_000);
+
+    it('asks the fraction, decimal and percentage skills: fractions to tap, a point key, all saved with their numbers and checked by the server', async () => {
+      const user = userEvent.setup();
+      const { saving, saved } = fakeSaving();
+      localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', bots: 1, maths: true }));
+      const focus = teacherFocus(['unit-fraction-of', 'tenths', 'add-tenths', 'decimal-equivalents', 'percent-basic', 'fraction-of', 'times-decimals', 'equivalent-fractions', 'fdp-equivalents', 'percent-of', 'whole-from-fraction']);
+      renderGame(saving, { ...maths('choose'), focus });
+      await user.click(screen.getByRole('button', { name: /Launch/ }));
+      const seen = { choices: 0, point: 0, typed: 0 };
+      let asked = 0;
+      for (let guard = 0; guard < 4000; guard++) {
+        if (podiumShown()) break;
+        const fact = document.querySelector('.question__fact');
+        if (fact && latest.question) {
+          const q = latest.question;
+          const right = asked % 2 === 0;
+          if (!anyDialog()) (fact.closest('.question') as HTMLElement).focus();
+          if (q.choices) {
+            seen.choices++;
+            const target = right ? q.answer : q.choices.find((c) => c !== q.answer)!;
+            await user.click(screen.getByRole('button', { name: q.choiceLabels ? spokenLabel(q.choiceLabels[target]) : String(target) }));
+          } else {
+            seen.typed++;
+            if (q.input === 'decimal') {
+              seen.point++;
+              expect(screen.getByRole('button', { name: 'Point' })).toBeInTheDocument();
+            } else expect(screen.queryByRole('button', { name: 'Point' })).not.toBeInTheDocument();
+            await user.keyboard(`${right ? q.answer : Number((q.answer + 1).toFixed(3))}{Enter}`);
+          }
+          asked++;
+          await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 4000 });
+          continue;
+        }
+        const roll = rollButton();
+        const choice = choiceGroup();
+        if (choice) await user.click(within(choice).getAllByRole('button')[0]);
+        else if (roll && !roll.hasAttribute('disabled')) await user.click(roll);
+        else await new Promise((resolve) => setTimeout(resolve, 5));
+      }
+      await waitFor(() => expect(saved).toHaveLength(1), { timeout: 5000 });
+      const report = saved[0];
+      expect(report.answers!.length).toBeLessThanOrEqual(asked); // an answer given as the game ends is not part of it
+      expect(report.answers!.length).toBeGreaterThan(3);
+      expect(report.answers!.every((a) => a.key && isFocusKey(a.key) && !a.key.startsWith('mul:'))).toBe(true);
+      // Every answer carries the numbers its question was made from, and the server check accepts the whole game.
+      expect(report.answers!.every((a) => a.params && a.params.length > 0)).toBe(true);
+      expect(judgeSpaceGame(report)).toMatchObject({ ok: true });
+      expect(seen.typed + seen.choices).toBe(asked);
+      localStorage.clear();
+    }, 120_000);
 
     it('looks for a new focus as a game starts, and follows it', async () => {
       const user = userEvent.setup();

@@ -3,29 +3,24 @@ import { Link, useNavigate } from 'react-router';
 import { colourName, normaliseCode, otherSide, prettyCode, type GameKind, type Side } from '../../shared/multiplayer';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
-import {
-  ask,
-  MultiplayerError,
-  fetchLobby,
-  fetchMultiplayerEnabled,
-  fetchMyOpenGames,
-  fetchPlayerCards,
-  type Action,
-  type FriendGame,
-  type LobbyGame,
-  type PlayerCard,
-} from '../data/multiplayer';
-import { askSpace, fetchMyOpenSpaceGames, fetchSpaceLobby, seatsOf, type SpaceGame, type SpaceLobbyGame } from '../data/spaceGames';
-import { askCard, fetchCardLobby, fetchMyOpenCardGames, type CardLobbyGame, type SeatSummary } from '../data/cardGames';
-import { askPower, fetchMyOpenPowerGames, fetchPowerLobby, seatsOf as powerSeatsOf, type PowerGame, type PowerLobbyGame } from '../data/powerGames';
+import { fetchLobbyPage } from '../data/lobby';
+import { ask, MultiplayerError, fetchMultiplayerEnabled, type Action, type FriendGame, type LobbyGame, type PlayerCard } from '../data/multiplayer';
+import { askSpace, seatsOf, type SpaceGame, type SpaceLobbyGame } from '../data/spaceGames';
+import { askCard, type CardLobbyGame, type SeatSummary } from '../data/cardGames';
+import { askPower, seatsOf as powerSeatsOf, type PowerGame, type PowerLobbyGame } from '../data/powerGames';
 import { findGame, GAMES, POWER_CLASH_ON } from '../games/registry';
 import { useMathsMode } from '../games/space/mathsMode';
 import type { DesignedBoardId } from '../../shared/space/boards';
 import type { Mode } from '../../shared/space/engine';
 import { boardLabel, BOARD_NAMES, DESIGNED_BOARD_ORDER } from '../../shared/space/names';
 
-/** How often the list of open games refreshes while the lobby is open. */
-export const LOBBY_REFRESH_MS = 5000;
+/**
+ * How often the list of open games refreshes while the lobby is open. Each refresh used to be
+ * about ten requests, so with a whole class in the lobby 5 seconds was too much for the database
+ * (19 Oct 2026); now it is one (S.4). Coming back to the tab refreshes straight away, and creating
+ * or joining a game never waits for this.
+ */
+export const LOBBY_REFRESH_MS = 20000;
 
 type SideChoice = Side | 'random';
 /** What can be started here: the two-player games, and Wormholes & Black Holes and 101 for up to 4. */
@@ -93,42 +88,29 @@ export function Lobby() {
   const [inLobby, setInLobby] = useState(false);
   const [code, setCode] = useState('');
 
+  // One request for the open games, my own games and the other players' names (S.4); the switch comes from the remembered
+  // settings read (S.1). If either fails, the lobby keeps what it has and says so if it has nothing yet. Asks again for whoever
+  // signs in.
   const refresh = useCallback(async () => {
     try {
-      // Space games load separately, so chess and checkers still work if they can't be loaded.
-      const [on, lobby, myGames, spaceLobby, mySpaceGames, cardLobby, myCardGames, powerLobby, myPowerGames] = await Promise.all([
-        fetchMultiplayerEnabled(),
-        fetchLobby(),
-        fetchMyOpenGames(),
-        fetchSpaceLobby().catch(() => []),
-        fetchMyOpenSpaceGames().catch(() => []),
-        fetchCardLobby().catch(() => []),
-        fetchMyOpenCardGames().catch(() => []),
-        // Power Clash is not on the lobby until James switches it on (nothing to ask before then).
-        POWER_CLASH_ON ? fetchPowerLobby().catch(() => []) : Promise.resolve([]),
-        POWER_CLASH_ON ? fetchMyOpenPowerGames().catch(() => []) : Promise.resolve([]),
-      ]);
+      const [on, lobby] = await Promise.all([fetchMultiplayerEnabled(), fetchLobbyPage()]);
+      // Power Clash is not on the lobby until James switches it on.
+      const powerLobby = POWER_CLASH_ON ? lobby.powerLobby : [];
       setEnabled(on);
       setOpen(
         [
-          ...lobby.map((game): OpenGame => ({ kind: 'friend', game })),
-          ...spaceLobby.map((game): OpenGame => ({ kind: 'space', game })),
-          ...cardLobby.map((game): OpenGame => ({ kind: '101', game })),
+          ...lobby.friendLobby.map((game): OpenGame => ({ kind: 'friend', game })),
+          ...lobby.spaceLobby.map((game): OpenGame => ({ kind: 'space', game })),
+          ...lobby.cardLobby.map((game): OpenGame => ({ kind: '101', game })),
           ...powerLobby.map((game): OpenGame => ({ kind: 'power-clash', game })),
         ].sort((a, b) => b.game.created_at.localeCompare(a.game.created_at)),
       );
-      setMine(myGames);
-      setMySpace(mySpaceGames);
-      setMyCards(myCardGames);
-      setMyPower(myPowerGames);
+      setMine(lobby.friendOpen);
+      setMySpace(lobby.spaceOpen);
+      setMyCards(lobby.cardOpen);
+      setMyPower(POWER_CLASH_ON ? lobby.powerOpen : []);
+      setCards(lobby.players);
       setLoadFailed(false);
-      const opponents = [
-        ...myGames.map((g) => (g.first_player === profile?.id ? g.second_player : g.first_player)),
-        ...mySpaceGames.flatMap((g) => seatsOf(g).filter((p) => p !== profile?.id)),
-        ...myCardGames.flatMap((g) => g.info.players.filter((p) => p !== profile?.id)),
-        ...myPowerGames.flatMap((g) => powerSeatsOf(g).filter((p) => p !== profile?.id)),
-      ].filter((id): id is string => !!id);
-      if (opponents.length > 0) setCards(await fetchPlayerCards(opponents));
     } catch {
       setLoadFailed(true);
     }
@@ -139,7 +121,14 @@ export function Lobby() {
     const timer = setInterval(() => {
       if (document.visibilityState === 'visible') void refresh();
     }, LOBBY_REFRESH_MS);
-    return () => clearInterval(timer);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [refresh]);
 
   async function go(where: 'create' | 'join' | 'list', request: () => Promise<string>) {

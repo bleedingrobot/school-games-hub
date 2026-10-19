@@ -298,6 +298,7 @@ function ClassPanel({
   const [moveTo, setMoveTo] = useState<Record<string, string>>({});
   const [confirming, setConfirming] = useState<'reset' | 'archive' | `reset-group:${string}` | `delete-group:${string}` | null>(null);
   const [rename, setRename] = useState<string | null>(null);
+  const [level, setLevel] = useState<string | null>(null);
   const [newGroup, setNewGroup] = useState('');
   const [groupNames, setGroupNames] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<string | null>(null);
@@ -358,6 +359,7 @@ function ClassPanel({
   const editable = !detail.archived && (summary.teaching || isAdmin);
 
   const nameNow = rename ?? detail.name;
+  const levelNow = level ?? (detail.yearLevel === null ? '' : String(detail.yearLevel));
 
   return (
     <div className="class-panel">
@@ -370,9 +372,10 @@ function ClassPanel({
               e.preventDefault();
               const name = nameNow.trim();
               void act(async () => {
-                await updateClass(id, name, detail.schoolYear, detail.yearLevel);
+                await updateClass(id, name, detail.schoolYear, levelNow === '' ? null : Number(levelNow));
                 setRename(null);
-                return `The class is now called ${name}.`;
+                setLevel(null);
+                return `Saved. The class is called ${name}${levelNow === '' ? '' : `, Year ${levelNow}`}.`;
               });
             }}
           >
@@ -380,13 +383,30 @@ function ClassPanel({
               <span>Name</span>
               <input value={nameNow} onChange={(e) => setRename(e.target.value)} maxLength={30} />
             </label>
-            <button type="submit" className="button button--light-outline" disabled={nameNow.trim() === '' || nameNow.trim() === detail.name}>
-              Save name
+            <label className="teacher__type">
+              <span>Year level</span>
+              <select value={levelNow} onChange={(e) => setLevel(e.target.value)}>
+                <option value="">Not set</option>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((l) => (
+                  <option key={l} value={l}>
+                    Year {l}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="submit"
+              className="button button--light-outline"
+              disabled={nameNow.trim() === '' || (nameNow.trim() === detail.name && levelNow === (detail.yearLevel === null ? '' : String(detail.yearLevel)))}
+            >
+              Save
             </button>
           </form>
           <p className="class-panel__hint">
-            Your students see this name after they type the class code, so make it one they will recognise.{' '}
-            <Link to={`/focus?class=${id}`}>🎯 Choose the maths for this class</Link>
+            Your students see this name after they type the class code, so make it one they will recognise. The year level is just a label for you:
+            students never see it, and it doesn&rsquo;t change the maths.{' '}
+            <Link to={`/focus?class=${id}`}>🎯 Choose the maths for this class</Link> ·{' '}
+            <Link to={`/skills?class=${id}`}>🗺️ See the skill map</Link>
           </p>
         </section>
       )}

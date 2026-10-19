@@ -8,7 +8,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CAMPAIGN } from '../../../../shared/gem-keep/levels';
 import { AUTO_FOCUS, currentFocus, focusKey, focusNote, makeFocusPack, type MathsFocus } from '../../../../shared/maths/focus';
-import type { FactAnswer, FactStats } from '../../../../shared/maths/leitner';
+import { showingPack, type ShowingPack, type ShownAnswer } from '../../../../shared/maths/claim';
+import type { FactStats } from '../../../../shared/maths/leitner';
 import type { SkillPack } from '../../../../shared/maths/skillPack';
 import type { GameEngine } from '../engine/GameEngine';
 import { loadProgress, saveProgress, withKey, withWin, type CampaignProgress } from '../progress';
@@ -71,7 +72,7 @@ export function GemKeepCampaign({
    * The answers given since the last report (oldest first), and the records they make.
    * Called after each level, Level Key and when leaving.
    */
-  onAnswers?: (answers: FactAnswer[], facts: FactStats[]) => void;
+  onAnswers?: (answers: ShownAnswer[], facts: FactStats[]) => void;
   onEngine?: (engine: GameEngine) => void;
 }) {
   const [progress, setProgress] = useState<CampaignProgress>(() => initialProgress ?? loadProgress());
@@ -80,7 +81,8 @@ export function GemKeepCampaign({
   // the campaign's times tables with none, the focus with one. It changes only between levels.
   const packOptions = { enabledTables: settings.enabledTables, division: settings.division };
   const [packFocus, setPackFocus] = useState<MathsFocus>(() => currentFocus(focus));
-  const [pack, setPack] = useState<SkillPack>(() => makeFocusPack(initialFacts, packFocus, packOptions));
+  // Answers carry the question as shown, so the server marks them itself.
+  const [pack, setPack] = useState<ShowingPack>(() => showingPack(makeFocusPack(initialFacts, packFocus, packOptions)));
   // The answer totals when this attempt at the level began, to count the answers in it.
   const startTotals = useRef(totals(pack));
   const begin = useCallback((from: SkillPack = pack) => {
@@ -100,7 +102,7 @@ export function GemKeepCampaign({
   }, [progress, onProgress]);
 
   // Every answer, kept until it's reported.
-  const unreported = useRef<FactAnswer[]>([]);
+  const unreported = useRef<ShownAnswer[]>([]);
   useEffect(() => pack.onAnswer((answer) => unreported.current.push(answer)), [pack]);
   const reportFacts = useCallback(() => {
     if (unreported.current.length === 0) return;
@@ -133,7 +135,10 @@ export function GemKeepCampaign({
       if (focusKey(latest) !== focusKey(packFocus)) {
         // The answers so far are reported before the pack changes; its records carry over to the new one.
         reportFacts();
-        next = makeFocusPack(pack.stats(), latest, packOptions);
+        // The old pack may hold only some of the records (times tables), so the records Gem Keep opened with fill the rest.
+        const records = new Map(initialFacts.map((f) => [f.key, f]));
+        for (const s of pack.stats()) records.set(s.key, s);
+        next = showingPack(makeFocusPack([...records.values()], latest, packOptions));
         setPackFocus(latest);
         setPack(next);
       }

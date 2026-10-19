@@ -42,6 +42,14 @@
   text-align: center;
 }
 
+/* What to do, when the sum alone doesn't say it ("Write it as a decimal."). */
+.question__prompt {
+  margin: 2px 0 -4px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-align: center;
+}
+
 .question__fact {
   display: flex;
   align-items: center;

@@ -13,9 +13,8 @@ import {
   type LiveStatus,
   type PlayerCard,
 } from '../data/multiplayer';
+import { useGameChecks } from './useGameChecks';
 
-/** How often to check the game when live updates are working (a safety net), and when they aren't. */
-export const CHECK_EVERY_MS = { live: 20_000, down: 4_000 };
 /** The opponent counts as away once they've been missing from the game for this long. */
 export const AWAY_AFTER_MS = 8_000;
 
@@ -102,13 +101,9 @@ export function useFriendGame(id: string): FriendGameState {
     return () => watch.stop();
   }, [id, me, accept]);
 
-  // Check now and then anyway: often if live updates are down, rarely if they're fine.
+  // Check now and then anyway: rarely if live updates are fine, soon and then less and less often if they're down.
   const active = game?.status === 'waiting' || game?.status === 'playing' || (game?.status === 'finished' && !game.rematch_game);
-  useEffect(() => {
-    if (!active) return;
-    const timer = setInterval(() => void load(), live === 'live' ? CHECK_EVERY_MS.live : CHECK_EVERY_MS.down);
-    return () => clearInterval(timer);
-  }, [active, live, load]);
+  useGameChecks(active, live, load);
 
   // Coming back to the tab, or the Wi-Fi coming back: look again straight away.
   useEffect(() => {

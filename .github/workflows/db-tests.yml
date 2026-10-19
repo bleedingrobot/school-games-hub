@@ -1,0 +1,24 @@
+# The database rules: each school's and each pupil's data kept apart, scoring, the games' server checks.
+# Starts a throwaway database on GitHub's machine, applies every migration to it, and runs supabase/tests/database.
+# The publish (deploy.yml) waits for this, so a failing check stops it. Same as `npm run test:db` on your own copy.
+name: Database checks
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Only the database: the rest of Supabase isn't needed for these checks.
+      - run: npx supabase db start
+      - run: npx supabase test db supabase/tests/database
