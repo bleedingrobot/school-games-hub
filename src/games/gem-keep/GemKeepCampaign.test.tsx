@@ -1,4 +1,5 @@
 import { spokenLabel } from '../../../shared/maths/banded';
+import { checkItem, type AnswersItem } from '../../../shared/gem-keep/save';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -140,6 +141,12 @@ describe('campaign map', () => {
     expect(answers).toHaveLength(10);
     expect(answers.every((a) => a.correct)).toBe(true);
     expect(onAnswers.mock.calls.flatMap((c) => c[0])).toHaveLength(10);
+    // Each carries the question as shown and what was typed, so the server marks it itself.
+    // (A test types faster than any person, so it is given a person's time: the server leaves out impossibly quick answers.)
+    const sent = { type: 'answers', pack: 'times-tables', batchId: '6f1c2a54-1d3e-4b5a-9c7d-0e1f2a3b4c5d', answers: answers.map((a) => ({ ...a, ms: 2000 })) };
+    const checked = checkItem(sent, (answers[0] as unknown as { at: number }).at + 1000);
+    expect(checked.ok && (checked.item as AnswersItem).answers.map((a) => a.correct)).toEqual(Array(10).fill(true));
+    expect(answers.every((a) => Array.isArray((a as unknown as { parts: unknown }).parts))).toBe(true);
     expect(facts.reduce((n, f) => n + f.attempts, 0)).toBe(19);
     // Nothing goes to this browser's own storage when the progress is saved elsewhere.
     expect(localStorage.getItem('sgh-gem-keep-progress')).toBeNull();
