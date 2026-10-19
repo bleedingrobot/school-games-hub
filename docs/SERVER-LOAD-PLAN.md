@@ -468,3 +468,16 @@ Nothing they can see. **One difference in how sign-out works:** after a pupil si
 **To undo:** redeploy the previous builds (`git show eb09215:supabase/functions/<name>/index.ts`, `f13f87c:…`, `origin/main:…` for the four, `4b3101e:…` for `bond-match`). Not needed for the key switch to be safe: before it, the new check asks the sign-in service exactly as before.
 
 **Keys were already switched (James's screenshot, 20 Oct 2026):** the JWT Keys page shows the current key is ECC (P-256), with the HS256 shared secret under "Previously used", both created/rotated about 15 Oct. So step 4 isn't needed: pupils' tokens are already ES256, and **S.5 has been saving the sign-in requests since the functions were deployed this morning.** (So the new check's local path is what's live, not the `getUser` fallback.) Nothing to press; leave the old secret as it is. Still to do: the outside check on the other ten functions and merging `server-load-s5` into `main` (manual mode), then compare request counts after a school day.
+
+**S.5 finished (20 Oct 2026, 9 am):** the year-level change (682ba9d) had redeployed `save-bot-game`, `space-game` and `gem-keep` from `main` at about 7:05, taking them back to `getUser`. Merge commit 40bfecd (682ba9d + `server-load-s5`; type check and all tests passed) pushed to `main` with James's approval; "Test and publish" passed. The three were redeployed from it (the only difference from live was the sign-in check). Checked: all eleven live functions use the new check and none uses `getUser`; all answer 401 to no token and to a forged one. From now on, deploys from `main` include the new check. Still to do: compare request counts after a school day.
+
+## Stage S.6 results (20 Oct 2026)
+
+**Built on its own branch, `server-load-s6` (worktree `~/projects/school-games-hub-server-load-s6`, from `main` after S.5), not live.** Screen only: no migration, no server functions.
+
+- **The teacher's class page** (`src/pages/MyClasses.tsx`, `LIVE_MS`) looks again every **30 seconds** instead of every 8 while it's showing, and now also **straight away when the tab comes back** (it didn't before; same way as the lobby). Still nothing while the tab is hidden. Each look is three requests (the class, its news, the warp requests), so a page left open goes from about 22 requests a minute to 6.
+- **What a teacher might notice:** a pupil who has just joined, or a new request to join, can take up to 30 seconds to show instead of up to 8 (switching tabs away and back shows it at once). Answering a request is unchanged.
+- **Left as they are:** the pupil's "waiting for my teacher to say yes" check on the Class Warp page (still every 8 seconds, and only while waiting; a pupil waiting 30 seconds would think it was broken), and the four clean-up jobs (cheap, as the plan said).
+- **Tests:** `MyClasses.test.tsx`'s "every few seconds" test replaced by two: nothing more before 30 seconds and one look after (all three requests); none while hidden, one straight away when the tab comes back. Checked they fail with the old 8 seconds and without the tab-return look. Type check, build and the whole suite (`TESTS=all`, 165 files, 3,394 tests, 1 skipped) pass.
+
+**Go-live:** merge `server-load-s6` into `main` and push (James approves); the publish action deploys the site. **To undo:** revert the merge.
