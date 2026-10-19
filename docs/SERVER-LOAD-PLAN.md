@@ -2,7 +2,7 @@
 
 *How to make the hub ask the server for much less, so a whole class can use it at once without the database timing out. Written 19 October 2026 for James, after the lobby timeout that morning.*
 
-**Status: S.1 and S.2 built and tested on the `server-load` branch, and S.3 on the `server-load-s3` branch (which starts from S.2); none of them live (see the results sections at the end). S.4 to S.6 not built. The lobby already refreshes every 20 seconds instead of 5, and the faster points-and-level job is live (both 19 Oct 2026). James answered the questions the same day (section 7). Everything below waits for James to say go, one stage at a time, starting with S.1.**
+**Status: S.1 and S.2 built and tested on the `server-load` branch, S.3 on the `server-load-s3` branch (which starts from S.2), and S.4 on the `server-load-s4` branch (which starts from S.3); none of them live (see the results sections at the end, and the go-live rehearsal). S.5 and S.6 not built. The lobby already refreshes every 20 seconds instead of 5, and the faster points-and-level job is live (both 19 Oct 2026). James answered the questions the same day (section 7). Everything below waits for James to say go, one stage at a time, starting with S.1.**
 
 ## 1. Why
 
@@ -332,3 +332,64 @@ Pupils notice nothing from this step: the site doesn't use the job yet.
 
 - **Step 1:** nothing needs undoing; the job can stay even if the site goes back. If it must go, paste `drop function public.my_home_page();` into the SQL Editor, but only once step 2 has been undone, or the home page will show "We couldn’t load your games just now".
 - **Step 2 or 3:** on GitHub, open the pull request and press **Revert** (then merge the new pull request it makes), or tell Claude to revert the merge on `main` and push. The site goes back to how it was in a few minutes. Pupils with a page open keep what they have until they reload.
+
+## Stage S.4 results (19 Oct 2026)
+
+**Built on its own branch, `server-load-s4` (worktree `~/projects/school-games-hub-server-load-s4`), not live.** It starts from `server-load-s3` after the go-live rehearsal, so it contains S.1 to S.3. Nothing merged, pushed to `main` or deployed, and the migration is **not applied** to the live database (it was only run inside rolled-back transactions on the local copy).
+
+### What was built
+
+- **One database job, `lobby()`** (migration `20261019000800_lobby.sql`, the next free number across every branch and worktree, local and on GitHub). It runs as the pupil (`security invoker`), so each table's row rules still decide what they see. It calls the four jobs that already exist for the open games anyone can join (`lobby_games`, `space_lobby_games`, `card_lobby_games`, `power_lobby_games`) and passes each list on in its own order. It reads my own open games of each kind with the same columns, order and limits as the lobby did (the same reads as `my_home_page`), and looks up the names and avatars of the other players in them, by id, as the lobby did (hidden players are left out by the profiles' own row rule). Signed-in users only, like the other jobs; added to the security test's list.
+- **Written for speed:** it is written in PL/pgSQL (the database's own scripting language), so the database keeps its plan between calls instead of working it out again every 20 seconds for every pupil, and it builds its answer as plain JSON, the way the server builds each separate answer. See the timing below for why.
+- **The lobby asks once per refresh.** `refresh` in `src/pages/Lobby.tsx` now asks `lobby` once (`src/data/lobby.ts`), plus S.1's remembered switch read. Still every 20 seconds while the tab is shown, still straight away when the tab comes back, and creating or joining a game still never waits for it. The lobby still drops my waiting games that are past their time, with the same rule as before (now shared: `stillOpen` in `multiplayer.ts`, `stillOpenSeats` in `cardGames.ts`, also used by the old fetchers). Power Clash still shows only while `POWER_CLASH_ON` is on.
+- The old one-at-a-time fetchers are still there (the games still use `fetchPlayerCards`; the lobby lists and "my open games" fetchers are no longer used by any page and could be tidied away later).
+
+### What changes when something fails
+
+- **Before:** the space, 101 and Power Clash parts were asked for separately and could each fail on their own: the lobby then still showed chess and checkers and the other kinds, with that kind missing. If the names failed, the games showed "a classmate".
+- **Now** it is one request. If it fails, the lobby shows exactly what it showed before when everything failed: "We couldn’t load the lobby. Check the Wi-Fi; we’ll keep trying.", "Loading…" under open games, and the Start a game and Join with a code boxes (which still work). If a later refresh fails, it keeps showing what it had and tries again in 20 seconds, as before. In normal use no part fails on its own.
+
+### What a pupil might notice
+
+Nothing, except that classmates' names in "Your games" now come with the games, instead of "a classmate" for a moment first.
+
+### Requests (test mock, `src/pages/RequestCount.test.tsx` and `src/pages/LobbyRequests.test.tsx`)
+
+| The lobby | Before S.4 | After |
+|---|---|---|
+| Opening (switches not yet remembered) | 9 (10 before S.1) | 2: the one job, and S.1's switch read |
+| Opening, with games with classmates (adds the names lookup) | 10 | 2 |
+| Each refresh after that (every 20 seconds) | 8 or 9 | 1 |
+
+So a class of 28 in the lobby sends about 28 requests every 20 seconds instead of about 250.
+
+### Timing (step 4)
+
+- **On the live database: not done.** Claude Code's safety check refused timing queries as a pupil on the live database (in the rehearsal too), and it was not tried another way.
+- **Instead, on the local copy,** with the database test's made-up games, as the pupil with games of every kind: the one job against the nine separate requests one after another, 200 rounds, median, database time only. Both sides were timed the way the real server runs them: plans kept between calls (the server's connections stay open), each separate answer turned into JSON, and the server's setup at the start of each request.
+- **The first version was slower:** about 16 ms against 14 ms. That's the "stop" case in step 4, so before going further I found out why, and fixed all three causes: a plain SQL job is planned again on every call (about 1.3 ms here), the names were compared as text (so the profiles' row rule was checked for every pupil instead of the few needed), and the answer was built in the slower `jsonb` form.
+- **The final version: the same.** 13.9 to 14.2 ms each way, over three runs (within 0.03 ms). Most of that is the four existing open-game jobs (about 2.5 ms each here), which are unchanged. The saving is everything around the work: one sign-in check, one connection and one round trip instead of nine.
+- The live database is a different machine with more pupils, so if James wants the live number before it goes live, Claude needs his OK for that read-only check at his computer.
+
+### Tests
+
+- **Database** (`supabase/tests/database/lobby.test.sql`, 37 checks, in a rolled-back transaction with the migrations the local copy was missing): the job gives exactly the same answer as the four lobby jobs, the four table reads and the names lookup for a pupil with open games of every kind (more chess and checkers games than the lobby shows), a classmate, a hidden pupil, a pupil with none, a pupil at another school, a teacher, and with playing friends switched off. Lists are in the same order and cut at 10; finished games, expired lobby games, a hidden pupil's lobby game, a code-only game and the other school's games are left out, as now; a hidden player is left out of other pupils' names; a pupil sees only their own 101 seat rows, never a classmate's; signed-out visitors can't call it; it runs as the person asking. Checked that the test catches mistakes: a wrong limit fails 5 checks, running as the owner instead of the pupil fails 21. The security test (50) and `home_page` test (40) pass with it, and so does every other database test file.
+- **Screen** (`src/pages/LobbyRequests.test.tsx`, 8 tests, with the pretend server from S.2 now answering the lobby's old requests and its new one from the same games, `src/pages/homePageFake.ts`): one request on opening plus the remembered switch read; the same open games and "Your games" in the same order as before (including two games made at the same moment, a hidden player and an expired waiting game); one request every 20 seconds and none while the tab is hidden; one straight away when the tab comes back; the old message when it fails, with nothing more asked; the games kept when a later refresh fails; creating and joining with a code still work while the lobby's request hasn't answered. Pointed at the old lobby, the five request tests fail and the order, create and join tests pass, as they should.
+- **Old lobby against new:** during the build, the lobby as it was before S.4 and the new one were drawn side by side from the same made-up games (a busy lobby, an empty one, everything failing, playing friends paused). The HTML came out identical (once React's automatic ids for the avatar pictures, which just count up between drawings, were set aside). With one part failing on its own, the old lobby still showed the other games and the new one shows the "everything failed" page, as described above. That comparison was temporary and isn't kept in the repo.
+- **Existing tests:** `Lobby.test.tsx` and `LobbyPower.test.tsx` pass with their tests unchanged; each file gained two lines, a fake for the new request built from the fakes they already set up (`src/pages/lobbyFromSeparate.ts`). `RequestCount.test.tsx`'s lobby test now expects exactly the two requests.
+- Quick tests before the change: 152 of 153 files passed; `SetFocus` failed once and passed on its own (known flaky). After: the whole suite (`TESTS=all`, 161 files, 3,377 tests), the type check and the build all pass.
+
+**Not tested:** a real browser against a real Supabase (the tests fake the client; the database test checks the job's answer against the same reads the client makes); the timing on the live database; live request counts, which can only be read after it goes live.
+
+### Go-live steps (in this order)
+
+S.4 needs S.1 to S.3 to go first, because its branch contains them: steps 1 to 3 of the go-live rehearsal above (the `my_home_page` migration, then `server-load`, then `server-load-s3`). Then:
+
+1. **Apply the one migration** to the live database: `20261019000800_lobby.sql` only, pasted into the Supabase SQL Editor from the `server-load-s4` branch on GitHub (github.com/bleedingrobot/school-games-hub/blob/server-load-s4/supabase/migrations/20261019000800_lobby.sql, then **Raw**). If it worked you see "Success. No rows returned". Tell Claude "done", and Claude checks (read only) that the job is there, runs as the pupil and only signed-in users can use it.
+2. **Then merge `server-load-s4` into `main` and push `main`** (or, from the phone, github.com/bleedingrobot/school-games-hub/compare/main...server-load-s4, then **Create pull request** and **Merge pull request**). That deploys the site. No server functions.
+
+**Why this order:** the new lobby asks for `lobby`. If the site went first, every pupil's lobby would show "We couldn’t load the lobby" until the migration was applied. The job adds nothing else and changes nothing, so applying it first leaves no gap. If S.4 is merged before S.3 has gone, it takes S.3 (and S.1 and S.2) live with it, so the `my_home_page` migration must be in first as well.
+
+**Pupils with the lobby open in between:** nothing changes for them. Their open lobby keeps using the old separate requests (which all still exist) every 20 seconds until they reload or open the site again, and then they get the new lobby. Undoing it later only needs the site rolled back (revert the merge): the job can stay.
+
+After it is live, compare the lobby's requests (`lobby_games`, `space_lobby_games`, `card_lobby_games`, `power_lobby_games` and the table reads) in `extensions.pg_stat_statements` against section 1.
