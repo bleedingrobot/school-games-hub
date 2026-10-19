@@ -71,13 +71,13 @@ afterEach(() => {
 });
 
 describe('requests sent when a page opens', () => {
-  it('the home page reads the game switches with one request', async () => {
+  it('the home page sends one request, plus one read of the game switches', async () => {
     show(<Dashboard />);
     await screen.findAllByRole('heading');
     await settle();
-    // Written down for the plan's results (npx vitest run src/pages/RequestCount.test.tsx shows it).
+    // Written down for the plan's results (npx vitest run src/pages/RequestCount.test.tsx shows it). Before S.2 it was 20.
     console.info(`home page: ${sent.length} requests\n  ${[...sent].sort().join('\n  ')}`);
-    expect(sent.filter((s) => s === 'from app_settings')).toHaveLength(1);
+    expect([...sent].sort()).toEqual(['from app_settings', 'rpc my_home_page']);
   });
 
   it('the lobby reads the playing-friends switch with one request', async () => {

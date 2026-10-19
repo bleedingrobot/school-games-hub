@@ -1,18 +1,20 @@
 /**
  * "My maths focus" on a student's home page: what the games are asking right now and why, and (when their teacher allows it, and
  * no teacher focus is running) a way to pick their own skills or go back to auto. Loaded on its own so the maths code stays out of the
- * home page's first download.
+ * home page's first download. On the home page it takes its part of the page's one request (`homePage`, null while that is on its
+ * way); anywhere else it asks for itself.
  */
 import { useEffect, useState } from 'react';
 import { clearMyFocus, fetchMyFocus, saveMyFocus } from '../data/focus';
+import { partOf, type HomePage } from '../data/homePage';
 import { FriendlyError } from '../data/profile';
-import { focusNote, hasFocus, isTeacherFocus, skillList, type MathsFocus } from '../../shared/maths/focus';
+import { AUTO_FOCUS, focusNote, hasFocus, isTeacherFocus, parseFocus, skillList, type MathsFocus } from '../../shared/maths/focus';
 import { SkillPicker } from '../maths/SkillPicker';
 import '../maths/focus.css';
 
 const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
 
-export default function MathsFocusCard() {
+export default function MathsFocusCard({ homePage }: { homePage?: Promise<HomePage> | null }) {
   const [focus, setFocus] = useState<MathsFocus | null>(null);
   const [choosing, setChoosing] = useState(false);
   const [skills, setSkills] = useState<string[]>([]);
@@ -20,12 +22,16 @@ export default function MathsFocusCard() {
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
+    if (homePage === null) return;
     let current = true;
-    void fetchMyFocus().then((f) => current && setFocus(f));
+    // Like fetchMyFocus: if it can't be read, the answer is auto.
+    void partOf(homePage, 'focus', parseFocus, fetchMyFocus)
+      .catch(() => AUTO_FOCUS)
+      .then((f) => current && setFocus(f));
     return () => {
       current = false;
     };
-  }, []);
+  }, [homePage]);
 
   if (!focus) return null;
   const teacher = hasFocus(focus) && isTeacherFocus(focus);

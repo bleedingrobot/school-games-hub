@@ -223,7 +223,11 @@ export async function fetchPlayerCards(ids: string[]): Promise<Map<string, Playe
   if (wanted.length === 0) return new Map();
   const { data, error } = await supabase.from('profiles').select('id, display_name, avatar').in('id', wanted);
   if (error || !data) return new Map();
-  return new Map((data as PlayerCard[]).map((p) => [p.id, p]));
+  return cardsById(data as PlayerCard[]);
+}
+
+export function cardsById(cards: PlayerCard[]): Map<string, PlayerCard> {
+  return new Map(cards.map((p) => [p.id, p]));
 }
 
 /** How far the server's clock is ahead of this device's, in milliseconds. */
