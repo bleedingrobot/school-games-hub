@@ -7,6 +7,6 @@ describe('determinism', () => {
   });
 
   it('gives the pinned fingerprint (if this changes, the rules changed: every saved run and board time is affected)', () => {
-    expect(fingerprint(determinismReport())).toBe('4376138e');
+    expect(fingerprint(determinismReport())).toBe('e3b847d2');
   });
 });

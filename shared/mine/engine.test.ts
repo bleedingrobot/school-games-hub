@@ -5,7 +5,7 @@ import {
 } from './config';
 import { clockSteps, makeWorld, newRun, replay, stateKey, stepRun, type RunState, type World } from './engine';
 import { GRANT, HOLD, IDLE, NO_INPUT, PENALTY, packInput, pushInput, type PilotInput } from './inputs';
-import { RECIPES, makeLevel, roomAt } from './level';
+import { RECIPES, hardRecipe, makeLevel, roomAt } from './level';
 
 const level1 = makeLevel(RECIPES[0]);
 const level3 = makeLevel(RECIPES[2]);
@@ -13,7 +13,10 @@ const press = (p: Partial<PilotInput>) => packInput({ ...NO_INPUT, ...p });
 
 function setup(level = level1, steady = true): { w: World; s: RunState } {
   const w = makeWorld(level, { steady });
-  return { w, s: newRun(w) };
+  const s = newRun(w);
+  // These tests were written facing +y; the real start faces down a tunnel (see 'starts the ship looking down a tunnel').
+  s.fx = 0; s.fy = 1; s.fz = 0; s.ux = 0; s.uy = 0; s.uz = 1; s.rx = 1; s.ry = 0; s.rz = 0;
+  return { w, s };
 }
 function placeAt(s: RunState, x: number, y: number, z: number): void {
   s.px = x; s.py = y; s.pz = z; s.vx = 0; s.vy = 0; s.vz = 0;
@@ -401,5 +404,30 @@ describe('replay', () => {
     const w = makeWorld(level1);
     const s = replay(w, [[IDLE, 5]]);
     expect(s.steps).toBe(5);
+  });
+});
+
+describe('the start', () => {
+  it('starts the ship looking down a tunnel, never at a blank wall, on every level (normal and hard)', () => {
+    for (const r of [...RECIPES, ...RECIPES.map(hardRecipe)]) {
+      const w = makeWorld(makeLevel(r));
+      const s = newRun(w);
+      if (s.fz !== 0) {
+        // Every way out is a shaft: it looks up or down it, and the ship's three arrows are still a straight set.
+        expect(Math.abs(s.fz)).toBe(0.8);
+        expect(s.fx * s.fx + s.fy * s.fy + s.fz * s.fz).toBeCloseTo(1, 12);
+        expect(s.rx * s.fx + s.ry * s.fy + s.rz * s.fz).toBeCloseTo(0, 12);
+        expect(s.ux * s.fx + s.uy * s.fy + s.uz * s.fz).toBeCloseTo(0, 12);
+        continue;
+      }
+      expect(Math.abs(s.fx) + Math.abs(s.fy)).toBe(1);
+      // Open space for the whole way to the next room: look along the nose.
+      for (let d = 1; d <= 12; d++) {
+        const x = Math.floor(s.px + s.fx * d);
+        const y = Math.floor(s.py + s.fy * d);
+        const z = Math.floor(s.pz);
+        expect(w.level.solid[x + w.level.nx * (y + w.level.ny * z)], `${r.id} ${d} blocks ahead`).toBe(0);
+      }
+    }
   });
 });

@@ -108,13 +108,40 @@ export function makeWorld(level: Level, options: { steady?: boolean } = {}): Wor
   return { level, steady: options.steady ?? true };
 }
 
+/**
+ * Which way the ship faces at the start: down a tunnel leading out of the start room, never at a blank wall. A level
+ * tunnel is best (the way to the reactor if it runs level, else the first one). If every way out is up or down a
+ * shaft, the ship looks up or down it at a slant (a 3-4-5 triangle, so the numbers are exact everywhere).
+ */
+function startFacing(level: Level): { f: [number, number, number]; u: [number, number, number]; r: [number, number, number] } {
+  const start = level.rooms[level.start];
+  const exits: number[] = [];
+  const next = level.path[1];
+  if (next !== undefined) exits.push(next);
+  for (const [a, b] of level.edges) {
+    const other = a === level.start ? b : b === level.start ? a : -1;
+    if (other >= 0) exits.push(other);
+  }
+  for (const other of exits) {
+    const o = level.rooms[other];
+    if (o.cz !== start.cz) continue;
+    const dx = Math.sign(o.cx - start.cx);
+    const dy = Math.sign(o.cy - start.cy);
+    return { f: [dx, dy, 0], u: [0, 0, 1], r: [dy, -dx, 0] };
+  }
+  const o = level.rooms[exits[0] ?? level.start];
+  const dz = o.cz > start.cz ? 1 : -1;
+  return { f: [0, 0.6, 0.8 * dz], u: [0, -0.8 * dz, 0.6], r: [1, 0, 0] };
+}
+
 export function newRun(w: World): RunState {
   const { level } = w;
   const room = level.rooms[level.start];
+  const face = startFacing(level);
   return {
     px: room.cx + 0.5, py: room.cy + 0.5, pz: room.cz + 0.5,
     vx: 0, vy: 0, vz: 0,
-    fx: 0, fy: 1, fz: 0, ux: 0, uy: 0, uz: 1, rx: 1, ry: 0, rz: 0,
+    fx: face.f[0], fy: face.f[1], fz: face.f[2], ux: face.u[0], uy: face.u[1], uz: face.u[2], rx: face.r[0], ry: face.r[1], rz: face.r[2],
     shield: MAX_SHIELD, energy: MAX_ENERGY, missiles: START_MISSILES, laserCool: 0, missileCool: 0,
     steps: 0, held: 0, penalty: 0, bonus: 0, padBonuses: 0,
     keys: [0, 0, 0],

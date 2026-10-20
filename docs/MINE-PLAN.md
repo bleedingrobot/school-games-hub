@@ -271,3 +271,5 @@ Every stage: merge `origin/main` first; own tests as I go; before saying a stage
 **Untested / for James:** whether the roomier mines now feel right; whether mines 1-2 are gentle enough and 5-6 hard enough for real Year 4-6 pupils (medal times are bot-based guesses until real pupils play); how the brute and hard mode feel; sounds; real phone and Chromebook. Medal times may need retuning after real play.
 
 **Go-live list so far:** nothing live. Next free migration number `20261020000400` (re-check at Stage 4).
+
+**Start view fix (21 Oct 2026, James):** the ship now starts looking down a tunnel, not at a wall (`startFacing` in `engine.ts`: the tunnel towards the reactor if it runs level, else the first level tunnel, else a slant up or down the shaft). Rules change, so the pinned fingerprint is now `e3b847d2` (Node, Chromium and WebKit still identical). The pilot's l5:hard run now dies a lot (it never dodges), so the medal test only asks it to finish on the two hardest hard mines.
