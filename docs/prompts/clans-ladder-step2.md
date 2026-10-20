@@ -19,7 +19,7 @@ You are continuing the **Clan Quest "Battle Cry from the ladder"** go-live in Ja
    - `select column_name from information_schema.columns where table_schema = 'public' and table_name = 'clan_fights' and column_name in ('questions','marks');` gives both.
    - `pg_get_functiondef('public.save_clan'::regproc)` contains `questions = excluded.questions`, and `load_clan`'s contains `'questions', f.questions`.
    - `select count(*) from public.clan_fights;` works, and open fights are still there (compare with a count taken just before applying).
-   - Look at the Supabase logs for the `clans` function for a few minutes (`mcp__claude_ai_Supabase__get_logs` or `query_logs`, service `edge-function`) and check there are no new save errors (`clans: save_clan failed`).
+   - Look at the Supabase logs for the `clans` function for a few minutes (the Supabase `query_logs` tool, edge function logs) and check there are no new save errors (`clans: save_clan failed`).
 5. **Record it:** add a line to `docs/CLANS-PLAN.md` under "Battle Cry from the ladder" ("Migration 20261020000300 applied live on <date and NZ time>; checks …"), and add the number to the `migration repair` note at the bottom of `docs/PLAN.md` if that note is there. Commit on `clans-ladder` (don't push). Update the memory note `clans-ladder.md` (and its line in `MEMORY.md`).
 6. **Stop.** Tell James it's done, and that the next step is deploying the server part (step 3 of `docs/prompts/clans-ladder-golive.md`), which needs his separate yes. Also remind him of the suggested try-out after step 3: run the new page on this computer against the live server, and he plays one fight as his teacher account before the website goes live.
 
