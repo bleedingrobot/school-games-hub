@@ -14,7 +14,8 @@ import { GENERATED, GENERATED_SKILL_KEYS, generatedPack, solveByNumbers } from '
 import { RECORD_KEY } from './skillPacks/generatedKit';
 import { labelValue } from './skillPacks/pickKit';
 
-const NEW_SKILLS = ['unit-fraction-of', 'tenths', 'add-tenths', 'decimal-equivalents', 'percent-basic', 'fraction-of', 'times-decimals', 'equivalent-fractions', 'fdp-equivalents', 'percent-of', 'whole-from-fraction'] as const;
+// F.6's skills, and M.5's decimal and fraction bonds (docs/BOND-MATCH-PLAN.md), which are built the same way.
+const NEW_SKILLS = ['fraction-bonds', 'decimal-bonds', 'unit-fraction-of', 'tenths', 'add-tenths', 'decimal-equivalents', 'percent-basic', 'fraction-of', 'times-decimals', 'equivalent-fractions', 'fdp-equivalents', 'percent-of', 'whole-from-fraction'] as const;
 const KEYS = NEW_SKILLS.flatMap((id) => GENERATED_SKILL_KEYS[id]);
 const pack = generatedPack();
 
@@ -62,12 +63,17 @@ function oracle(key: string, parts: string[]): number {
   if (key === 'fdp:dec-to-pct') return clean(Number(first) * 100);
   if (key === 'deceq:common' || key === 'deceq:hundredths') return clean(n / d);
   if (key === 'tenth:count') return clean(Number(first) * 10);
+  if (key === 'bondf1:whole') return Number(third.split('/')[1]);
+  if (key === 'bondf1:missing-top') {
+    const [top, bottom] = (first.includes('?') ? third : first).split('/').map(Number);
+    return bottom - top;
+  }
   if (key === 'tenth:half') return first === 'Half' ? clean(Number(third) / 2) : clean(Number(second) * 2);
   return solveSum(parts);
 }
 
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
-const PICK_KEYS = new Set(KEYS.filter((k) => /^(pct:to-fraction|tenth:to-fraction|tenth:to-decimal|deceq:pick|deceq:to-fraction|deceq:compare|equiv:same-as|equiv:simplify|fdp:pct-to-frac|fdp:match)$/.test(k)));
+const PICK_KEYS = new Set(KEYS.filter((k) => /^(pct:to-fraction|tenth:to-fraction|tenth:to-decimal|deceq:pick|deceq:to-fraction|deceq:compare|equiv:same-as|equiv:simplify|fdp:pct-to-frac|fdp:match|bondf1:small|bondf1:big|bondf1:take)$/.test(k)));
 
 describe('the new skills in the ladder', () => {
   it('every stub from F.6 is built, with its question types, in the ladder order and with the right record packs', () => {
@@ -193,6 +199,13 @@ describe.each(KEYS.map((k) => [k] as const))('%s', (key) => {
           expect(worth(right), where).toBeCloseTo(worth(top), 9);
           const [rn, rd] = right.split('/').map(Number);
           expect(gcd(rn, rd), where).toBe(1);
+        } else if (key.startsWith('bondf1:')) {
+          // "3/8 + ? = 1" and "1 − 3/8 = ?": the right choice and the fraction shown make 1.
+          const given = shown.find((p) => p.includes('/'))!;
+          expect(worth(right) + worth(given), where).toBeCloseTo(1, 9);
+          labels.forEach((label, k) => {
+            if (k !== q!.answer) expect(Math.abs(worth(label) - worth(right)), `${where} ${label}`).toBeGreaterThan(1e-9);
+          });
         } else {
           const given = shown[0];
           expect(worth(right), where).toBeCloseTo(worth(given), 9);
