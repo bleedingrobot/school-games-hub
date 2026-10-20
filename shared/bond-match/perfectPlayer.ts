@@ -9,9 +9,10 @@ export function perfectFlips(state: GameState): number[] {
   const flips: number[] = [];
   state.deck.cards.forEach((_, i) => {
     if (done.has(i)) return;
-    flips.push(i, partners[i][0]);
+    const j = partners[i].find((k) => !done.has(k))!;
+    flips.push(i, j);
     done.add(i);
-    done.add(partners[i][0]);
+    done.add(j);
   });
   return flips;
 }

@@ -10,7 +10,7 @@ import { useSound } from '../../sound';
 import { playSound } from '../sounds';
 import { Board } from './Board';
 import { loadHideStats, loadShowPictures, saveHideStats, saveShowPictures } from './bests';
-import { clock, COLOUR_SETS, playerName, TEXT, type Players } from './strings';
+import { clock, playerName, TEXT, type Players } from './strings';
 import { useReducedMotion } from './useReducedMotion';
 import { Value } from './Value';
 
@@ -56,28 +56,6 @@ function Sum({ texts, sum }: { texts: readonly [string, string]; sum: string }) 
     <span role="img" aria-label={TEXT.spokenMismatch(texts[0], texts[1], sum)} className="bm-sum">
       <Value text={texts[0]} /> + <Value text={texts[1]} /> = <Value text={sum} />
     </span>
-  );
-}
-
-/** A colour set's mark: its shape and letter, with the name said aloud (the shape alone is not read out). */
-function Mark({ set }: { set: 0 | 1 }) {
-  const mark = COLOUR_SETS[set];
-  return (
-    <span className={`bm-mark bm-mark--${set}`}>
-      <span aria-hidden="true">{mark.shape} {mark.letter}</span>
-      <span className="sr-only">{mark.name} {mark.letter}</span>
-    </span>
-  );
-}
-
-/** "Right total, wrong set! Match ● A with ● A, or ◆ B with ◆ B." The two marks are shown, not only said. */
-function WrongSet() {
-  return (
-    <>
-      {TEXT.wrongSetLead}{' '}
-      <span className="bm-nowrap">{TEXT.wrongSetMatch} <Mark set={0} /> {TEXT.wrongSetWith} <Mark set={0} />,</span>{' '}
-      <span className="bm-nowrap">{TEXT.wrongSetOr} <Mark set={1} /> {TEXT.wrongSetWith} <Mark set={1} />.</span>
-    </>
   );
 }
 
@@ -228,12 +206,12 @@ export function BondMatchGame({
           </p>
         </div>
       )}
-      <Board cards={game.deck.cards} matched={game.matched} shown={shown} reducedMotion={reducedMotion} setLabel={set.label} pictures={hasFractions && pictures} onFlip={onFlip} />
+      <Board cards={game.deck.cards} matched={game.matched} pairedWith={game.pairedWith} matchNo={game.matchNo} shown={shown} reducedMotion={reducedMotion} setLabel={set.label} pictures={hasFractions && pictures} onFlip={onFlip} />
       <div className="bm-line" role="status" aria-live="polite">
         {line?.type === 'mismatch' && (
           <div className="bm-line__pill bm-line__pill--miss">
             <p className="bm-line__sum"><Sum texts={line.texts} sum={line.sumText} /></p>
-            <p className="bm-line__help">{line.sumsToTarget ? <WrongSet /> : TEXT.mismatchNeed(target)}</p>
+            <p className="bm-line__help">{TEXT.mismatchNeed(target)}</p>
           </div>
         )}
         {line?.type === 'match' && (

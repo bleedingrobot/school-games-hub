@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { findBondSet } from './bonds';
 import { buildDeck, partnersOf } from './deck';
+import { perfectFlips } from './perfectPlayer';
 import { newVersus, otherPlayer, versusFlip, winnerOf, type VersusState } from './versus';
 
 const start = () => newVersus(buildDeck(findBondSet('whole-10')!, 'small', 7));
@@ -35,17 +36,11 @@ describe('two players on one board', () => {
 
   it('counts the pairs and names the winner when the board is clear', () => {
     let s = start();
-    const partners = partnersOf(s.game.deck);
     // Player 1 misses once, so player 2 clears the board.
     s = versusFlip(versusFlip(s, 0).state, wrongFor(s, 0)).state;
     expect(winnerOf(s)).toBeUndefined();
-    const done = new Set<number>();
-    s.game.deck.cards.forEach((_, i) => {
-      if (done.has(i)) return;
-      const j = partners[i][0];
-      s = versusFlip(versusFlip(s, i).state, j).state;
-      done.add(i).add(j);
-    });
+    const flips = perfectFlips(s.game);
+    for (let k = 0; k < flips.length; k += 2) s = versusFlip(versusFlip(s, flips[k]).state, flips[k + 1]).state;
     expect(s.game.finished).toBe(true);
     expect(s.pairs).toEqual([0, 6]);
     expect(winnerOf(s)).toBe(1);

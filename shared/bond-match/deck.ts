@@ -18,7 +18,7 @@ export const MAX_COLOUR_SETS = 2;
 
 export interface Card {
   side: Side;
-  /** Which colour set the card is in (0 or 1). A card only matches its own colour set's partner. */
+  /** 0 for the first deal of each pair, 1 when the pair is dealt again to fill the board. It doesn't change what matches. */
   set: number;
   /** Which pair of the deck the card was dealt from. */
   pair: number;
@@ -69,10 +69,13 @@ export function buildDeck(set: BondSet, size: BoardSize, seed: number): Deck {
   return { bondId: set.id, target: set.target, size, seed, cards: shuffle(cards, random), pairCount: wanted };
 }
 
-/** Do these two cards add up to the target AND share a colour set? That is what makes them a match. */
+/**
+ * Do these two cards add up to the target? That is all a match needs (James, 20 Oct 2026): any 3 matches any 7, so a
+ * child who finds a right pair is never told it's wrong. (A card's `set` only says which round of dealing it came from.)
+ */
 export const arePartners = (target: Exact, a: Card, b: Card): boolean =>
-  a.set === b.set && sameExact(addExact(sideValue(a.side), sideValue(b.side)), target);
+  sameExact(addExact(sideValue(a.side), sideValue(b.side)), target);
 
-/** For every card, the other cards that would match it. A fair deck has exactly one for each card. */
+/** For every card, the other cards that would match it. A repeated pair gives a card more than one. */
 export const partnersOf = (deck: Deck): number[][] =>
   deck.cards.map((card, i) => deck.cards.flatMap((other, j) => (j !== i && arePartners(deck.target, card, other) ? [j] : [])));

@@ -6,13 +6,13 @@
  * Add ?server=ok|cap|offline|none for the stand-in server, ?bests=1 for some saved stars.
  * Add ?seed=123 to get the same shuffle every game (for screenshots), and ?mismatchMs=60000 to keep
  * a mismatch on show. The page also gives test scripts window.bondMatchPreview.perfectFlips(bond, size),
- * the card numbers to click for a perfect game with that seed, wrongPair and wrongSetPair for the
- * mismatch messages.
+ * the card numbers to click for a perfect game with that seed and wrongPair for the
+ * mismatch message.
  */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { findBondSet } from '../../shared/bond-match/bonds';
-import { arePartners, buildDeck, partnersOf, type BoardSize } from '../../shared/bond-match/deck';
+import { buildDeck, partnersOf, type BoardSize } from '../../shared/bond-match/deck';
 import { perfectFlips } from '../../shared/bond-match/perfectPlayer';
 import { newGame } from '../../shared/bond-match/engine';
 import { replay } from '../../shared/bond-match/save';
@@ -37,8 +37,6 @@ declare global {
       perfectFlips: (bondId: string, size: BoardSize) => number[];
       /** Two cards that do not match, as card numbers from 0. */
       wrongPair: (bondId: string, size: BoardSize) => [number, number];
-      /** Two cards that make the target but are in different colour sets (needs a board with both sets), or undefined. */
-      wrongSetPair: (bondId: string, size: BoardSize) => [number, number] | undefined;
     };
   }
 }
@@ -52,17 +50,6 @@ window.bondMatchPreview = {
     const partners = partnersOf(deck);
     const b = partners.findIndex((_, j) => j !== 0 && !partners[0].includes(j));
     return [0, b];
-  },
-  wrongSetPair(bondId, size) {
-    const deck = buildDeck(findBondSet(bondId)!, size, seed ?? 0);
-    for (let i = 0; i < deck.cards.length; i++) {
-      for (let j = i + 1; j < deck.cards.length; j++) {
-        const x = deck.cards[i];
-        const y = deck.cards[j];
-        if (x.set !== y.set && arePartners(deck.target, x, { ...y, set: x.set })) return [i, j];
-      }
-    }
-    return undefined;
   },
 };
 

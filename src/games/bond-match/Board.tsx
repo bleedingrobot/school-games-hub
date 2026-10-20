@@ -9,6 +9,9 @@ export const columnsFor = (cards: number): number => (cards <= 4 ? 2 : 4);
 interface Props {
   cards: readonly DeckCard[];
   matched: readonly boolean[];
+  /** The card each matched card paired with (-1 for the rest), and which match it was, from the game. */
+  pairedWith: readonly number[];
+  matchNo: readonly number[];
   /** Cards turned face up and not matched (one waiting, or two on show as a mismatch). */
   shown: readonly number[];
   reducedMotion: boolean;
@@ -24,18 +27,11 @@ const MOVES: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight
  * The grid of cards. It scales to the screen (a card is never under 64px, see bond-match.css).
  * One card is in the tab order; the arrow keys move between cards and Enter or Space flips.
  */
-export function Board({ cards, matched, shown, reducedMotion, setLabel, pictures, onFlip }: Props) {
+export function Board({ cards, matched, pairedWith, matchNo, shown, reducedMotion, setLabel, pictures, onFlip }: Props) {
   const cols = columnsFor(cards.length);
   const rows = Math.ceil(cards.length / cols);
   const [focus, setFocus] = useState(0);
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
-  const twoSets = cards.some((c) => c.set === 1);
-
-  const partnerOf = (i: number): number | undefined => {
-    if (!matched[i]) return undefined;
-    const j = cards.findIndex((c, k) => k !== i && matched[k] && c.pair === cards[i].pair);
-    return j < 0 ? undefined : j;
-  };
 
   function onKeyDown(e: KeyboardEvent) {
     const move = MOVES[e.key];
@@ -65,8 +61,8 @@ export function Board({ cards, matched, shown, reducedMotion, setLabel, pictures
           index={i}
           card={card}
           state={matched[i] ? 'matched' : shown.includes(i) ? 'up' : 'down'}
-          partner={partnerOf(i)}
-          twoSets={twoSets}
+          partner={matched[i] && pairedWith[i] >= 0 ? pairedWith[i] : undefined}
+          matchNo={matchNo[i]}
           pictures={pictures}
           tabIndex={i === focus ? 0 : -1}
           onFlip={(index) => { setFocus(index); onFlip(index); }}

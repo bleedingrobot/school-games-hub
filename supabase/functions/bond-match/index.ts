@@ -209,21 +209,25 @@ function buildDeck(set, size, seed) {
 		pairCount: wanted
 	};
 }
-/** Do these two cards add up to the target AND share a colour set? That is what makes them a match. */
-const arePartners = (target, a, b) => a.set === b.set && sameExact(addExact(sideValue(a.side), sideValue(b.side)), target);
+/**
+* Do these two cards add up to the target? That is all a match needs (James, 20 Oct 2026): any 3 matches any 7, so a
+* child who finds a right pair is never told it's wrong. (A card's `set` only says which round of dealing it came from.)
+*/
+const arePartners = (target, a, b) => sameExact(addExact(sideValue(a.side), sideValue(b.side)), target);
 //#endregion
 //#region shared/bond-match/engine.ts
 /**
 * The rules of Bond Match, as pure functions: flip a card, get the new state and what happened.
 * No clock, no random, no screen, so the browser and the server run exactly the same game.
 *
-* A turn is two flips. If the two cards add up to the target and are in the same colour set they
-* match and stay up. If not they stay face up (so the screen can show "3 + 4 = 7") until the next
+* A turn is two flips. If the two cards add up to the target they match and stay up. If not they stay face up (so the screen can show "3 + 4 = 7") until the next
 * flip, which turns them back first.
 */
 const newGame = (deck) => ({
 	deck,
 	matched: deck.cards.map(() => false),
+	pairedWith: deck.cards.map(() => -1),
+	matchNo: deck.cards.map(() => -1),
 	shown: [],
 	flips: 0,
 	log: [],
@@ -259,6 +263,9 @@ function flip(state, index) {
 	const flips = state.flips + 1;
 	if (arePartners(deck.target, other, card)) {
 		const matched = state.matched.map((m, i) => m || i === index || i === waiting);
+		const pairedWith = state.pairedWith.map((p, i) => i === index ? waiting : i === waiting ? index : p);
+		const n = Math.max(-1, ...state.matchNo) + 1;
+		const matchNo = state.matchNo.map((m, i) => i === index || i === waiting ? n : m);
 		const finished = matched.every(Boolean);
 		const events = [{
 			type: "match",
@@ -274,6 +281,8 @@ function flip(state, index) {
 			state: {
 				...state,
 				matched,
+				pairedWith,
+				matchNo,
 				shown: [],
 				flips,
 				log,
@@ -297,8 +306,7 @@ function flip(state, index) {
 			texts,
 			values,
 			sum,
-			sumText: sumText([other.side, card.side]),
-			sumsToTarget: sameExact(sum, deck.target)
+			sumText: sumText([other.side, card.side])
 		}]
 	};
 }

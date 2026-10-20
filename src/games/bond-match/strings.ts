@@ -51,12 +51,6 @@ export const SIZE_NAMES: Record<BoardSize, string> = { small: 'Small', medium: '
 
 export const STAR_NAMES: Record<Stars, string> = { 3: 'Gold', 2: 'Silver', 1: 'Bronze' };
 
-/** The two colour sets: a shape and a letter as well as a colour, so nobody has to tell them apart by colour. */
-export const COLOUR_SETS = [
-  { name: 'blue circle', letter: 'A', shape: '●' },
-  { name: 'orange diamond', letter: 'B', shape: '◆' },
-] as const;
-
 export const TEXT = {
   name: 'Bond Match',
   tagline: 'Find the pairs that make the number!',
@@ -81,16 +75,11 @@ export const TEXT = {
   cardDown: (n: number) => `card ${n}, face down`,
   cardUp: (n: number, face: string) => `card ${n}, ${speak(face)}`,
   cardMatched: (n: number, face: string, partner: number) => `card ${n}, ${speak(face)}, matched with card ${partner}`,
-  setOf: (name: string) => `${name} set`,
   tick: 'matched',
   mismatch: (a: string, b: string, sum: string) => `${a} + ${b} = ${sum}`,
   mismatchNeed: (target: string) => `You need ${target}. Keep going!`,
   showPictures: 'Show pictures',
   hidePictures: 'Hide pictures',
-  wrongSetLead: 'Right total, wrong set!',
-  wrongSetMatch: 'Match',
-  wrongSetWith: 'with',
-  wrongSetOr: 'or',
   saving: 'Saving…',
   savedLine: 'Saved ✓',
   savedPoints: (n: number) => `Saved ✓ You earned ${n} ${n === 1 ? 'point' : 'points'}.`,

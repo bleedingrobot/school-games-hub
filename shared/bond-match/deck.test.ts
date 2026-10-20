@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { BOND_SETS, findBondSet } from './bonds';
+import { newGame } from './engine';
+import { perfectFlips, play } from './perfectPlayer';
 import { BOARD_PAIRS, BOARD_SIZES, buildDeck, MAX_COLOUR_SETS, pairsOnBoard, partnersOf } from './deck';
 import { sideText } from './exact';
 
 const seeds = Array.from({ length: 200 }, (_, i) => i * 10007 + 1);
 
 describe('buildDeck', () => {
-  it.each(BOND_SETS.map((b) => [b.id, b] as const))('%s builds every board size with one partner per card (200 seeds)', (_id, set) => {
+  it.each(BOND_SETS.map((b) => [b.id, b] as const))('%s builds every board size where every card can be cleared (200 seeds)', (_id, set) => {
     for (const size of BOARD_SIZES) {
       for (const seed of seeds) {
         const deck = buildDeck(set, size, seed);
@@ -14,9 +16,11 @@ describe('buildDeck', () => {
         expect(deck.pairCount).toBe(pairsOnBoard(set, size));
         const partners = partnersOf(deck);
         partners.forEach((p, i) => {
-          expect(p).toHaveLength(1);
-          expect(partners[p[0]]).toEqual([i]); // and it is mutual
+          expect(p.length).toBeGreaterThanOrEqual(1);
+          for (const j of p) expect(partners[j]).toContain(i); // and it is mutual
         });
+        // The whole board can be cleared, so nobody is ever left with a card that has no partner.
+        expect(play(newGame(deck), perfectFlips(newGame(deck))).finished).toBe(true);
       }
     }
   });
@@ -26,7 +30,7 @@ describe('buildDeck', () => {
     expect(buildDeck(findBondSet('whole-100-any')!, 'large', 1).cards.every((c) => c.set === 0)).toBe(true);
   });
 
-  it('repeats pairs in a second colour set for small bond sets, never more than twice', () => {
+  it('repeats pairs for small bond sets, never more than twice', () => {
     const tens = findBondSet('whole-10')!;
     const deck = buildDeck(tens, 'large', 5);
     expect(deck.pairCount).toBe(10);
@@ -45,10 +49,19 @@ describe('buildDeck', () => {
     expect(buildDeck(findBondSet('fraction-eighths')!, 'large', 3).pairCount).toBe(8);
   });
 
-  it('keeps identical-sided pairs as one card matching its twin', () => {
-    const deck = buildDeck(findBondSet('whole-10')!, 'small', 9);
+  it('keeps identical-sided pairs: a 5 matches any other 5', () => {
+    const deck = buildDeck(findBondSet('whole-10')!, 'large', 9);
     const fives = deck.cards.flatMap((c, i) => (sideText(c.side) === '5' ? [i] : []));
-    for (const i of fives) expect(partnersOf(deck)[i]).toHaveLength(1);
+    expect(fives.length).toBeGreaterThanOrEqual(2);
+    for (const i of fives) expect(partnersOf(deck)[i].sort((x, y) => x - y)).toEqual(fives.filter((j) => j !== i));
+  });
+
+  it('a repeated pair matches either way: any 3 goes with any 7', () => {
+    const deck = buildDeck(findBondSet('whole-10')!, 'large', 5);
+    const threes = deck.cards.flatMap((c, i) => (sideText(c.side) === '3' ? [i] : []));
+    const sevens = deck.cards.flatMap((c, i) => (sideText(c.side) === '7' ? [i] : []));
+    expect(threes).toHaveLength(2);
+    for (const i of threes) expect(partnersOf(deck)[i].sort((x, y) => x - y)).toEqual(sevens);
   });
 
   it('is repeatable: same seed same deck, different seed different deck', () => {

@@ -37,7 +37,7 @@ describe('flip', () => {
     const [a, b] = wrongPair(s);
     const r = flip(flip(s, a).state, b);
     expect(r.events).toHaveLength(1);
-    expect(r.events[0]).toMatchObject({ type: 'mismatch', cards: [a, b], sumsToTarget: false });
+    expect(r.events[0]).toMatchObject({ type: 'mismatch', cards: [a, b] });
     expect(r.state.shown).toEqual([a, b]);
     expect(r.state.flips).toBe(1);
     const next = flip(r.state, a); // flipping again turns the pair back; the new card is a first flip
@@ -63,16 +63,21 @@ describe('flip', () => {
     expect(fe.values.map((v) => v.n / v.d).every((v) => v > 0 && v < 1)).toBe(true);
   });
 
-  it('knows two cards that make the target in different colour sets still do not match', () => {
+  it('matches any two cards that make the target, even from different deals of a repeated pair', () => {
     const s = game('whole-10', 4, 'large');
     const cards = s.deck.cards;
     let found: [number, number] | undefined;
     cards.forEach((c, i) => cards.forEach((o, j) => {
-      if (!found && c.set !== o.set && c.side.kind === 'whole' && o.side.kind === 'whole' && c.side.n + o.side.n === 10) found = [i, j];
+      if (!found && c.pair !== o.pair && c.side.kind === 'whole' && o.side.kind === 'whole' && c.side.n + o.side.n === 10) found = [i, j];
     }));
     expect(found).toBeDefined();
-    const ev = flip(flip(s, found![0]).state, found![1]).events[0];
-    expect(ev).toMatchObject({ type: 'mismatch', sumsToTarget: true, sumText: '10' });
+    const r = flip(flip(s, found![0]).state, found![1]);
+    expect(r.events[0]).toMatchObject({ type: 'match', sumText: '10' });
+    // It remembers who matched whom, and which match it was, for the screen.
+    expect(r.state.pairedWith[found![0]]).toBe(found![1]);
+    expect(r.state.pairedWith[found![1]]).toBe(found![0]);
+    expect(r.state.matchNo[found![0]]).toBe(0);
+    expect(r.state.matchNo.filter((m) => m === 0)).toHaveLength(2);
   });
 
   it('exact sum for 0.1 + 0.2', () => {

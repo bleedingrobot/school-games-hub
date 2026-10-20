@@ -2,17 +2,20 @@
  * The rules of Bond Match, as pure functions: flip a card, get the new state and what happened.
  * No clock, no random, no screen, so the browser and the server run exactly the same game.
  *
- * A turn is two flips. If the two cards add up to the target and are in the same colour set they
- * match and stay up. If not they stay face up (so the screen can show "3 + 4 = 7") until the next
+ * A turn is two flips. If the two cards add up to the target they match and stay up. If not they stay face up (so the screen can show "3 + 4 = 7") until the next
  * flip, which turns them back first.
  */
-import { addExact, sameExact, sideText, sideValue, sumText, type Exact } from './exact';
+import { addExact, sideText, sideValue, sumText, type Exact } from './exact';
 import { arePartners, type Deck } from './deck';
 
 export interface GameState {
   readonly deck: Deck;
   /** Cards that have been matched, by index. */
   readonly matched: readonly boolean[];
+  /** For a matched card, the card it matched with; -1 for the rest. */
+  readonly pairedWith: readonly number[];
+  /** For a matched card, which match it was (0 for the first pair found), so each pair keeps its own colour; -1 for the rest. */
+  readonly matchNo: readonly number[];
   /** Cards face up and not matched: none, one (waiting for a second flip) or two (a mismatch on show). */
   readonly shown: readonly number[];
   /** Turns taken: a pair of flips counts as one. */
@@ -34,8 +37,6 @@ export type GameEvent =
       sum: Exact;
       /** The sum, written the way the cards are ("1.0", "7"), for the "3 + 4 = 7" line. */
       sumText: string;
-      /** True when they add up to the target but are in different colour sets, so the screen can say so. */
-      sumsToTarget: boolean;
     }
   | { type: 'finish'; flips: number };
 
@@ -51,6 +52,8 @@ export interface FlipResult {
 export const newGame = (deck: Deck): GameState => ({
   deck,
   matched: deck.cards.map(() => false),
+  pairedWith: deck.cards.map(() => -1),
+  matchNo: deck.cards.map(() => -1),
   shown: [],
   flips: 0,
   log: [],
@@ -77,10 +80,13 @@ export function flip(state: GameState, index: number): FlipResult {
   const flips = state.flips + 1;
   if (arePartners(deck.target, other, card)) {
     const matched = state.matched.map((m, i) => m || i === index || i === waiting);
+    const pairedWith = state.pairedWith.map((p, i) => (i === index ? waiting : i === waiting ? index : p));
+    const n = Math.max(-1, ...state.matchNo) + 1;
+    const matchNo = state.matchNo.map((m, i) => (i === index || i === waiting ? n : m));
     const finished = matched.every(Boolean);
     const events: GameEvent[] = [{ type: 'match', cards: [waiting, index], texts, sumText: sumText([other.side, card.side]) }];
     if (finished) events.push({ type: 'finish', flips });
-    return { state: { ...state, matched, shown: [], flips, log, finished }, events };
+    return { state: { ...state, matched, pairedWith, matchNo, shown: [], flips, log, finished }, events };
   }
   const values: [Exact, Exact] = [sideValue(other.side), sideValue(card.side)];
   const sum = addExact(values[0], values[1]);
@@ -88,7 +94,7 @@ export function flip(state: GameState, index: number): FlipResult {
     state: { ...state, shown: [waiting, index], flips, log },
     events: [{
       type: 'mismatch', cards: [waiting, index], texts, values, sum,
-      sumText: sumText([other.side, card.side]), sumsToTarget: sameExact(sum, deck.target),
+      sumText: sumText([other.side, card.side]),
     }],
   };
 }

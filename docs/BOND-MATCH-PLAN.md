@@ -19,9 +19,9 @@ Written 19 October 2026 from James's request and a read of the hub on `main` (th
 3. If they **add up to the target**, they stay face up with a tick, and glow in matching colours. If not, they flip back after a moment and the sum shows ("3 + 4 = 7").
 4. Clear the board to finish. Stars come from how few flips it took (section 4).
 
-**One partner per card.** A deck never has two cards that could both pair with the same card. For "make 10" the cards are 1, 9, 2, 8, 3, 7, 4, 6 and 5, 5 (the two 5s pair with each other), so every card has exactly one right partner. A test checks this for every deck, so a kid is never "right but marked wrong".
+**Any two cards that make the number match (James, 20 Oct 2026).** Any 3 matches any 7, any 5 matches any other 5. So a child who finds a right pair is never told it's wrong, and there are no colour sets or A/B marks on the cards. (Until 20 Oct the plan had "one partner per card" with two marked colour sets for repeated pairs; James found the marks cluttered.) A test checks every deck at every size can be cleared.
 
-**Board sizes:** Small (6 pairs, 12 cards, 3×4), Medium (8 pairs, 4×4), Large (10 pairs, 4×5). Bond sets with few possible pairs (bonds to 10 has only 5) **repeat pairs** to fill the board (James's pick). A repeated pair is shown in a second colour set, and a card still matches only its own colour set's partner, so every card still has exactly one partner. A pair never appears more than twice.
+**Board sizes:** Small (6 pairs, 12 cards, 3×4), Medium (8 pairs, 4×4), Large (10 pairs, 4×5). Bond sets with few possible pairs (bonds to 10 has only 5) **repeat pairs** to fill the board (James's pick). A pair never appears more than twice.
 
 ## 2. The bonds a student can choose
 
@@ -155,3 +155,7 @@ M.1–M.3 can all be done and looked at without touching the database or any liv
 - **Preview:** rebuilt and published as a private page for James.
 - **Not done:** M.5 (after go-live); a playtest with real kids (James's class, at go-live).
 - **Go-live:** `docs/prompts/bond-match-golive.md`: apply `20261020000200`, deploy `bond-match`, merge to main, then James switches it on for his class.
+
+## New look and the matching rule (20 Oct 2026)
+
+James said the picker was "really ugly" (the S/M/L pair counts meant nothing to him) and asked for a much better look. Redone: a banner with example cards; "Who's playing?" and "Board size" as big picture buttons (board sizes show a tiny grid and "12 cards"); bond tiles with the target in a coloured badge, an example sum and the stars for the chosen size; shelves in blue, teal and purple; a tidier game bar ("Make 10" badge, flips and time chips, round icon toggles); teal-to-violet card backs; matched pairs pop; the finish screen has stars that pop in and three number boxes, with "How do stars work?" folded away. The picker remembers the last board size. James: "it looks lovely". He then asked to **remove the A/B marks**: matching is now any two cards that make the target (`arePartners` in `shared/bond-match/deck.ts`); the game state records `pairedWith` and `matchNo` so each pair keeps its own colour. This needs the `bond-match` function redeployed (go-live step 2 does it); nothing was saved under the old rule (the live tables are empty).

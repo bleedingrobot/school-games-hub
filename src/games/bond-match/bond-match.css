@@ -3,8 +3,6 @@
 .bm {
   --bm-teal: #0f766e;
   --bm-violet: #6d28d9;
-  --bm-set0: #1d4ed8;
-  --bm-set1: #c2410c;
   --bm-gap: 10px;
   --bm-soft: #f1f5f9;
   --bm-whole: #2563eb;
@@ -495,7 +493,7 @@
   -webkit-backface-visibility: hidden;
 }
 
-/* Backs: the game's colours for a one-set board; blue with circles or orange with diamonds when there are two sets. */
+/* Backs: the game's teal and violet, with its + mark. */
 .bm-card__back {
   background:
     radial-gradient(circle at 25% 20%, rgba(255, 255, 255, 0.22), transparent 45%),
@@ -503,36 +501,12 @@
   color: #fff;
   box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.35), 0 4px 0 rgba(15, 23, 42, 0.25);
 }
-.bm-card--two.bm-card--set0 .bm-card__back {
-  background:
-    radial-gradient(circle, rgba(255, 255, 255, 0.16) 18%, transparent 20%) 0 0 / 18px 18px,
-    linear-gradient(135deg, #3b82f6, #1e3a8a);
-}
-.bm-card--two.bm-card--set1 .bm-card__back {
-  background:
-    linear-gradient(45deg, transparent 42%, rgba(255, 255, 255, 0.16) 42% 58%, transparent 58%) 0 0 / 16px 16px,
-    linear-gradient(-45deg, transparent 42%, rgba(255, 255, 255, 0.16) 42% 58%, transparent 58%) 0 0 / 16px 16px,
-    linear-gradient(135deg, #fb923c, #9a3412);
-}
 .bm-card__logo {
   font-family: var(--display);
   font-size: 1.2em;
   font-weight: 900;
   opacity: 0.85;
 }
-.bm-card__set {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.08em;
-  padding: 0.12em 0.32em;
-  border-radius: 0.3em;
-  background: rgba(255, 255, 255, 0.95);
-  font-size: 0.48em;
-  font-weight: 900;
-  line-height: 1.1;
-}
-.bm-card--set0 .bm-card__set { color: var(--bm-set0); }
-.bm-card--set1 .bm-card__set { color: var(--bm-set1); }
 
 .bm-card__front {
   transform: rotateY(180deg);
@@ -547,22 +521,6 @@
   box-shadow: inset 0 0 0 4px var(--bm-violet), 0 4px 0 rgba(15, 23, 42, 0.2);
 }
 
-/* The set's small mark on a face-up card (two-set boards only). Shape and letter, never colour alone. */
-.bm-card__corner {
-  position: absolute;
-  top: 5px;
-  left: 6px;
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-  font-size: max(0.7rem, calc(var(--bm-card) * 0.14));
-  font-weight: 900;
-  line-height: 1;
-  color: var(--bm-set0);
-}
-.bm-card--set1 .bm-card__corner {
-  color: var(--bm-set1);
-}
 
 /* Matched pairs: their own colour, a tick and a little pop. */
 .bm-card--matched .bm-card__front {
@@ -608,10 +566,6 @@
 }
 .bm-frac__bottom {
   padding-top: 0.05em;
-}
-/* Room under the corner mark so it never covers the top number of a fraction. */
-.bm-card--frac.bm-card--two .bm-card__front {
-  padding-top: calc(var(--bm-card) * 0.12);
 }
 .bm-card--pic .bm-card__tick {
   top: 4px;
@@ -692,17 +646,6 @@
 .bm-nowrap {
   white-space: nowrap;
 }
-.bm-mark {
-  display: inline-block;
-  padding: 0 0.35em;
-  border: 2px solid currentColor;
-  border-radius: 8px;
-  background: #fff;
-  font-weight: 900;
-  white-space: nowrap;
-}
-.bm-mark--0 { color: var(--bm-set0); }
-.bm-mark--1 { color: var(--bm-set1); border-style: dashed; }
 .bm-sum {
   display: inline-flex;
   align-items: center;

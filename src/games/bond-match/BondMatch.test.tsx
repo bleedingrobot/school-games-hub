@@ -85,18 +85,14 @@ describe('the picker', () => {
 });
 
 describe('the board', () => {
-  it('gives every card a spoken label, face down, and shows the set on it', async () => {
+  it('gives every card a spoken label, face down, with no set marks (any two cards that make the number match)', async () => {
     const { user } = setup();
     await pick(user, 'To 10');
     const deck = deckFor('whole-10', 'medium');
-    expect(card(2)).toHaveAccessibleName(/^card 3, face down/);
-    // The deck repeats pairs, so both colour sets are in use and are said aloud.
-    expect(deck.cards.some((c) => c.set === 1)).toBe(true);
-    expect(card(2)).toHaveAccessibleName(/(blue circle|orange diamond) set$/);
-    // The mark is on the card face down: a shape and a letter, not just a colour.
-    expect(card(2).textContent).toMatch(/[●◆][AB]/);
+    expect(card(2)).toHaveAccessibleName(/^card 3, face down$/);
+    expect(card(2).textContent).not.toMatch(/[●◆]/);
     await user.click(card(2));
-    expect(card(2)).toHaveAccessibleName(new RegExp(`^card 3, ${sideText(deck.cards[2].side)},`));
+    expect(card(2)).toHaveAccessibleName(new RegExp(`^card 3, ${sideText(deck.cards[2].side)}$`));
   });
 
   it('draws fractions stacked and decimals with fixed places', async () => {
@@ -112,7 +108,7 @@ describe('the board', () => {
     const face = card(0).querySelector('.bm-frac');
     expect(face?.querySelector('.bm-frac__top')?.textContent).toMatch(/^\d$/);
     expect(face?.querySelector('.bm-frac__bottom')?.textContent).toBe('8');
-    expect(card(0)).toHaveAccessibleName(/^card 1, \d eighths?,/);
+    expect(card(0)).toHaveAccessibleName(/^card 1, \d eighths?$/);
   });
 
   it('plays a whole game by clicking, and ends on the finish screen with gold stars', async () => {
@@ -153,27 +149,21 @@ describe('the board', () => {
     expect(line).toBeEmptyDOMElement();
   });
 
-  it('says so when two cards make the target but are the wrong colour', async () => {
+  it('matches two cards from different deals of a repeated pair: any 3 goes with any 7', async () => {
     const { user } = setup();
     await pick(user, 'To 10', 'Large');
     const deck = deckFor('whole-10', 'large');
     let found: [number, number] | undefined;
     deck.cards.forEach((x, i) => deck.cards.forEach((y, j) => {
-      if (!found && i < j && x.set !== y.set && arePartners(deck.target, x, { ...y, set: x.set })) found = [i, j];
+      if (!found && i < j && x.pair !== y.pair && arePartners(deck.target, x, y)) found = [i, j];
     }));
     expect(found).toBeDefined();
     await user.click(card(found![0]));
     await user.click(card(found![1]));
-    const status = screen.getByRole('status');
-    expect(status).toHaveTextContent('Right total, wrong set!');
-    expect(status).toHaveTextContent('= 10');
-    // Both marks are shown, as shape and letter, not only said.
-    expect(status.querySelectorAll('.bm-mark--0')).toHaveLength(2);
-    expect(status.querySelectorAll('.bm-mark--1')).toHaveLength(2);
-    const shown = [...status.querySelectorAll('.bm-mark [aria-hidden]')].map((m) => m.textContent);
-    expect(shown).toEqual(['● A', '● A', '◆ B', '◆ B']);
-    expect(status).toHaveTextContent('blue circle A');
-    expect(status).not.toHaveTextContent('Keep going');
+    expect(screen.getByRole('status')).toHaveTextContent('= 10');
+    expect(card(found![0])).toHaveAccessibleName(new RegExp(`matched with card ${found![1] + 1}$`));
+    expect(card(found![1])).toHaveAccessibleName(new RegExp(`matched with card ${found![0] + 1}$`));
+    expect(card(found![0]).dataset.matchColour).toBe(card(found![1]).dataset.matchColour);
   });
 
   it('turns a mismatch back by itself after a few seconds', async () => {
@@ -250,7 +240,7 @@ describe('fraction pictures', () => {
     expect(bar.querySelectorAll('.bm-bar-pic__part--on')).toHaveLength(side.num);
     // The picture is only a hint: hidden from screen readers, and the label and the stacked fraction are still there.
     expect(bar).toHaveAttribute('aria-hidden', 'true');
-    expect(card(0)).toHaveAccessibleName(/^card 1, \d eighths?,/);
+    expect(card(0)).toHaveAccessibleName(/^card 1, \d eighths?$/);
     expect(card(0).querySelector('.bm-frac__bottom')).toHaveTextContent('8');
   });
 
@@ -469,7 +459,7 @@ describe('keyboard play', () => {
     await user.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}');
     expect(card(8)).toHaveFocus();
     await user.keyboard('{Enter}');
-    expect(card(8)).toHaveAccessibleName(new RegExp(`^card 9, ${sideText(deck.cards[8].side)},`));
+    expect(card(8)).toHaveAccessibleName(new RegExp(`^card 9, ${sideText(deck.cards[8].side)}$`));
   });
 
   it('plays a whole game with the keyboard alone', async () => {
