@@ -7,7 +7,7 @@ import { fetchMineEnabled } from '../../data/mine';
  * Even when this is on, the card hides itself while the teacher's switch (the Mine Runner panel on the teacher page) is
  * off for the pupil's class, and the database starts with that switch off everywhere.
  */
-const ON = false;
+const ON = true;
 
 export const mineOn = (): boolean => ON || import.meta.env.VITE_MINE_ON === 'true';
 
