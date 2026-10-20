@@ -84,6 +84,7 @@ Follows the hub's existing pattern ("make a folder next to chess/, then add it i
 
 This is the part that makes it more than a memory game.
 
+- **Rule, confirmed again by James on 20 Oct 2026: Bond Match is never evidence for the ladder.** A match may be memory or a guess, so nothing Bond Match does may write fact records, move a ladder place, count towards a maths focus or its results, or feed Auto. M.5 may only *read* the ladder and focus (to pick which bond to open on); the new bond skills are proven only by other games' real questions. A test (`handler.test.ts`, "never touches fact records") checks the server has no way to.
 - **Bond Match never writes to a student's fact record (James, 19 Oct 2026).** Many matches are guesses, so neither a match nor a mismatch counts. The game is practice and fun only. Stars, bests and points are the only things it saves.
 - **The ladder still gets the new bonds**, through the other games: new bond fact keys (`bond100:30+70`, `bond1000:400+600`, `bondd1:0.3+0.7`, `bondf1:1/3+2/3`, next to the existing `bond10:` and `bond20:`) and a question pack for them, so Monsters, Space and Dragon Maths can ask them and those answers do build the records.
 - **Ladder:** `bonds-100` and `bonds-1000` are existing stubs in `shared/maths/ladder.ts` (`built: false`). M.5 builds the question pack, adds the decimal and fraction bond skills where they belong on the ladder, and flips `built` to true. **That makes the new bonds appear in Auto for every other maths game too** (Monsters, Space, Dragon Maths), because they share the ladder. James said yes to this (19 Oct). It changes other games' behaviour once deployed, so it is still its own stage with its own go-ahead.
@@ -105,7 +106,7 @@ This is the part that makes it more than a memory game.
 | **M.2** | Screens: picker, board, finish; browser-saved bests; preview page and screenshots | Looks at screenshots |
 | **M.3** | Teaching touches: mismatch sum line, fraction pies, hundredths decks, hint, sounds, reduce-motion, keyboard play | Playtest |
 | **M.4** | Saving: server function, replay check, points, per-bond stars on the student page, teacher view of stars | **Go to apply the migration and deploy** |
-| **M.5** | Ladder and focus: bond question pack, flip the `bonds-100` / `bonds-1000` stubs, decimal and fraction bond skills, focus choices, Auto picking the bond | **Go (changes other games)** |
+| **M.5** | Ladder and focus (read only for Bond Match; never evidence): bond question pack, flip the `bonds-100` / `bonds-1000` stubs, decimal and fraction bond skills, focus choices, Auto picking the bond | **Go (changes other games)** |
 | **M.6** | M.6a pass-and-play, then M.6b bot | Playtest |
 | **M.7** | Go-live: registry switch on, teacher guide paragraph, privacy summary line (no new personal data) | **Only when he says** |
 
