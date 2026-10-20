@@ -25,8 +25,8 @@ interface Props {
 }
 
 /**
- * One card: a real button. The colour set is on every card, face down too, as a corner mark with a
- * shape and a letter as well as a colour. A matched pair gets its own colour and a tick.
+ * One card: a real button. When the board has two colour sets, a card's set is its back (a colour, plus a big shape and
+ * letter, so never colour alone) and a small corner mark on its face. A matched pair gets its own colour and a tick.
  */
 export const Card = forwardRef<HTMLButtonElement, Props>(function Card({ index, card, state, partner, twoSets, pictures = false, tabIndex, onFlip }, ref) {
   const text = sideText(card.side);
@@ -39,7 +39,7 @@ export const Card = forwardRef<HTMLButtonElement, Props>(function Card({ index, 
     <button
       ref={ref}
       type="button"
-      className={`bm-card bm-card--${state} bm-card--set${card.set}${card.side.kind === 'fraction' ? ' bm-card--frac' : ''}${picture ? ' bm-card--pic' : ''}`}
+      className={`bm-card bm-card--${state} bm-card--set${twoSets ? card.set : 0}${twoSets ? ' bm-card--two' : ''}${card.side.kind === 'fraction' ? ' bm-card--frac' : ''}${picture ? ' bm-card--pic' : ''}`}
       data-index={index}
       data-match-colour={state === 'matched' ? card.pair % MATCH_COLOURS : undefined}
       aria-label={label}
@@ -50,18 +50,27 @@ export const Card = forwardRef<HTMLButtonElement, Props>(function Card({ index, 
     >
       <span className="bm-card__inner">
         <span className="bm-card__face bm-card__back" aria-hidden="true">
-          <span className="bm-card__mark">?</span>
+          {/* The back shows the card's set (shape and letter) when the board has two; otherwise just the game's mark. */}
+          {twoSets ? (
+            <span className="bm-card__set">
+              <span className="bm-card__shape">{set.shape}</span>
+              <span className="bm-card__letter">{set.letter}</span>
+            </span>
+          ) : (
+            <span className="bm-card__logo">+</span>
+          )}
         </span>
         <span className="bm-card__face bm-card__front" aria-hidden="true">
           <Value text={text} />
           {picture && <FractionBar num={picture.num} den={picture.den} />}
           {state === 'matched' && <span className="bm-card__tick">✓</span>}
+          {twoSets && (
+            <span className="bm-card__corner">
+              {set.shape}
+              <span className="bm-card__letter">{set.letter}</span>
+            </span>
+          )}
         </span>
-      </span>
-      {/* Outside the flipping part, so the set can be told before a card is flipped and while it is. */}
-      <span className="bm-card__corner" aria-hidden="true">
-        {set.shape}
-        <span className="bm-card__letter">{set.letter}</span>
       </span>
     </button>
   );

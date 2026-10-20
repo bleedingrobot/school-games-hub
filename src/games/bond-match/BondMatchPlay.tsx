@@ -47,6 +47,8 @@ type Screen =
 export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, saver, makeRunId = newRunId, random, botMs, botAfterMismatchMs }: Props) {
   const [screen, setScreen] = useState<Screen>({ name: 'pick' });
   const [players, setPlayers] = useState<Players>({ mode: 'solo' });
+  // The board size last played, so the picker opens on it again.
+  const [lastSize, setLastSize] = useState<BoardSize>('medium');
   const [saved, setSaved] = useState<SaveState | undefined>();
   const [stars, setStars] = useState<StarsBySet>({});
 
@@ -59,6 +61,7 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
 
   const start = (set: BondSet, size: BoardSize) => {
     setSaved(undefined);
+    setLastSize(size);
     setScreen({ name: 'play', set, size, seed: makeSeed(), runId: makeRunId(), players });
   };
 
@@ -83,7 +86,7 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
   return (
     <div className="bm">
       <h1 className="bm-title">{TEXT.name}</h1>
-      {screen.name === 'pick' && <BondPicker onPick={start} stars={saver ? stars : undefined} players={players} onPlayers={setPlayers} />}
+      {screen.name === 'pick' && <BondPicker initialSize={lastSize} onPick={start} stars={saver ? stars : undefined} players={players} onPlayers={setPlayers} />}
       {screen.name === 'play' && (
         <BondMatchGame
           set={screen.set}

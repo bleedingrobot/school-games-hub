@@ -1,126 +1,334 @@
-/* Bond Match. Plain HTML buttons in a grid; the hub's colours and buttons are reused. */
+/* Bond Match. Plain HTML buttons in a grid, in the game's own teal and violet on the hub's white panels. */
 
 .bm {
+  --bm-teal: #0f766e;
+  --bm-violet: #6d28d9;
   --bm-set0: #1d4ed8;
   --bm-set1: #c2410c;
   --bm-gap: 10px;
-  --bm-back: #1e3a8a;
-  max-width: 880px;
+  --bm-soft: #f1f5f9;
+  --bm-whole: #2563eb;
+  --bm-decimal: #0d9488;
+  --bm-fraction: #9333ea;
+  max-width: 920px;
   margin: 0 auto;
   padding: 8px 0 32px;
   color: var(--ink);
 }
 
 .bm-title {
-  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
   font-family: var(--display);
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   color: #fff;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
 }
-
-/* ---------- Picker ---------- */
 
 .bm-picker,
 .bm-finish,
 .bm-game {
-  padding: 16px;
+  padding: 20px;
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow);
 }
-.bm-picker__title {
-  margin: 0;
-  font-family: var(--display);
-  font-size: 1.6rem;
-}
-.bm-picker__help,
-.bm-picker__note {
-  margin: 4px 0 12px;
-  color: var(--ink-soft);
-}
-.bm-picker__note {
-  margin: 16px 0 0;
-  font-size: 0.9rem;
-}
 
-.bm-sizes {
+/* ---------- Picker ---------- */
+
+.bm-hero {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: -20px -20px 18px;
+  padding: 22px 24px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: linear-gradient(120deg, var(--bm-teal), var(--bm-violet));
+  color: #fff;
+}
+.bm-hero__text {
+  flex: 1 1 260px;
+}
+.bm-hero__title {
+  font-size: 1.7rem;
+}
+.bm-hero__help {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.92);
+}
+.bm-hero__cards {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--display);
+  font-weight: 900;
+}
+.bm-hero__card {
+  display: grid;
+  place-items: center;
+  min-width: 52px;
+  height: 64px;
+  padding: 0 8px;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 1.6rem;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.18);
+}
+.bm-hero__card--a { transform: rotate(-6deg); }
+.bm-hero__card--b { transform: rotate(5deg); }
+.bm-hero__card--t {
+  background: #fde047;
+  transform: rotate(-3deg);
+}
+.bm-hero__plus {
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.bm-setup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.bm-setup__box {
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--bm-soft);
+}
+.bm-setup__title {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+}
+.bm-setup__note {
+  margin: 10px 0 0;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+}
+
+/* A row of big choices: icon on top, name, and a small line under it. */
+.bm-seg {
+  display: grid;
   gap: 8px;
-  margin-bottom: 8px;
 }
-.bm-sizes__title {
-  font-weight: 800;
-  margin-right: 4px;
+.bm-seg--3 {
+  grid-template-columns: repeat(3, 1fr);
 }
-.bm-size {
-  min-height: 44px;
-  padding: 8px 18px;
-  border: 2px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
+.bm-seg__opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 92px;
+  padding: 10px 6px;
+  border: 3px solid transparent;
+  border-radius: 14px;
+  background: #fff;
   color: var(--ink);
   font: inherit;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 2px 0 var(--line);
+}
+.bm-seg__opt:hover {
+  border-color: #c7d2fe;
+}
+.bm-seg__opt[aria-pressed='true'] {
+  border-color: var(--bm-violet);
+  background: #f5f3ff;
+  box-shadow: 0 3px 0 var(--bm-violet);
+}
+.bm-seg__opt:focus-visible,
+.bm-chip:focus-visible,
+.bm-bond:focus-visible,
+.bm-back:focus-visible,
+.bm-icon-btn:focus-visible {
+  outline: 4px solid var(--focus);
+  outline-offset: 2px;
+}
+.bm-seg__icon {
+  font-size: 1.7rem;
+  line-height: 1;
+}
+.bm-seg__label {
+  font-size: 0.95rem;
+}
+.bm-seg__sub {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+/* A tiny board: 3, 4 or 5 rows of 4. */
+.bm-grid-icon {
+  display: grid;
+  grid-template-columns: repeat(4, 7px);
+  gap: 2px;
+  height: 37px;
+  align-content: center;
+}
+.bm-grid-icon span {
+  width: 7px;
+  height: 5px;
+  border-radius: 1.5px;
+  background: var(--bm-teal);
+}
+.bm-seg__opt[aria-pressed='true'] .bm-grid-icon span {
+  background: var(--bm-violet);
+}
+
+.bm-level {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-top: 12px;
+}
+.bm-level__title {
   font-weight: 700;
+  font-size: 0.95rem;
+}
+.bm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bm-chip {
+  min-height: 44px;
+  padding: 6px 14px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  font-size: 0.92rem;
   cursor: pointer;
 }
-.bm-size[aria-pressed='true'] {
-  border-color: var(--brand);
-  background: var(--brand);
+.bm-chip[aria-pressed='true'] {
+  border-color: var(--bm-violet);
+  background: var(--bm-violet);
   color: #fff;
 }
 
+/* The shelves of bonds: each shelf has its own colour, every bond shows its number and an example. */
 .bm-shelf {
-  margin-top: 14px;
+  --shelf: var(--bm-whole);
+  --shelf-soft: #eff6ff;
+  margin-top: 18px;
+}
+.bm-shelf--decimal {
+  --shelf: var(--bm-decimal);
+  --shelf-soft: #f0fdfa;
+}
+.bm-shelf--fraction {
+  --shelf: var(--bm-fraction);
+  --shelf-soft: #faf5ff;
 }
 .bm-shelf__name {
-  margin: 0 0 6px;
-  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  color: var(--shelf);
+}
+.bm-shelf__name::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--shelf);
 }
 .bm-shelf__sets {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
 }
 .bm-bond {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  min-height: 64px;
-  padding: 10px 14px;
-  border: 2px solid var(--line);
-  border-left-width: 8px;
-  border-radius: 14px;
-  background: var(--tint);
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+  padding: 10px 12px;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  background: var(--shelf-soft);
   color: var(--ink);
   font: inherit;
   text-align: left;
   cursor: pointer;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--shelf) 35%, transparent);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 .bm-bond:hover {
-  background: var(--tint-hover);
+  border-color: var(--shelf);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--shelf) 45%, transparent);
 }
-.bm-bond--whole { border-left-color: #1d4ed8; }
-.bm-bond--decimal { border-left-color: #0f766e; }
-.bm-bond--fraction { border-left-color: #a21caf; }
-.bm-bond__label {
-  font-weight: 800;
+.bm-bond:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--shelf) 45%, transparent);
+}
+.bm-bond__target {
+  display: grid;
+  flex: none;
+  place-items: center;
+  min-width: 52px;
+  height: 52px;
+  padding: 0 8px;
+  border-radius: 14px;
+  background: var(--shelf);
+  color: #fff;
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 1.35rem;
+}
+/* 1000 needs a smaller size to fit. */
+.bm-bond__target--long {
   font-size: 1.05rem;
 }
-.bm-bond__pairs {
-  font-size: 0.85rem;
+.bm-bond__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.bm-bond__label {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 1.02rem;
+  line-height: 1.2;
+}
+.bm-bond__example {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  margin-top: 2px;
+  font-weight: 700;
   color: var(--ink-soft);
 }
-.bm-bond__pairs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px 10px;
+.bm-bond__example .bm-frac {
+  font-size: 0.72em;
 }
-.bm-bond__count--now {
-  color: var(--ink);
-  font-weight: 800;
+.bm-bond__stars {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  color: #cbd5e1;
+}
+.bm-bond__star--on {
+  color: #f59e0b;
 }
 
 /* ---------- Game ---------- */
@@ -129,46 +337,118 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
-  margin-bottom: 12px;
+  gap: 10px 14px;
+  margin-bottom: 14px;
 }
-.bm-bar__title {
-  margin: 0;
-  font-family: var(--display);
-  font-size: 1.2rem;
-  flex: 1 1 auto;
-}
-.bm-link {
+.bm-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   min-height: 44px;
-  padding: 6px 12px;
-  border: 2px solid var(--line);
+  padding: 6px 14px;
+  border: 0;
   border-radius: 999px;
-  background: var(--surface);
+  background: var(--bm-soft);
   color: var(--ink);
   font: inherit;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
 }
-.bm-link:hover {
-  border-color: var(--brand);
+.bm-back:hover {
+  background: var(--tint-hover);
+}
+.bm-goal {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 1.1rem;
+}
+.bm-goal__make {
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.bm-goal__num {
+  display: inline-grid;
+  place-items: center;
+  min-width: 52px;
+  height: 46px;
+  padding: 0 10px;
+  border-radius: 12px;
+  background: linear-gradient(120deg, var(--bm-teal), var(--bm-violet));
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+.bm-goal__num .bm-frac {
+  font-size: 0.6em;
+}
+.bm-goal__set {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.bm-bar__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .bm-stats {
   display: inline-flex;
-  gap: 16px;
-  font-size: 1.05rem;
+  gap: 6px;
+}
+.bm-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--bm-soft);
+  font-size: 0.95rem;
+}
+.bm-stat__name {
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.bm-stat strong {
+  min-width: 2.2ch;
+  font-variant-numeric: tabular-nums;
 }
 .bm-stats--hidden {
+  font-size: 0.9rem;
   color: var(--ink-soft);
+}
+.bm-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.bm-icon-btn:hover {
+  border-color: var(--bm-violet);
+}
+.bm-icon-btn[aria-pressed='true'] {
+  background: #f5f3ff;
+  border-color: var(--bm-violet);
 }
 
 .bm-board {
   /* A card is never smaller than 64px; it grows with the screen, and shrinks if the rows would not fit the height. */
-  --bm-card: clamp(64px, min(calc((100vw - 32px - 32px - 3 * var(--bm-gap)) / var(--bm-cols)), calc((100dvh - 300px) / var(--bm-rows))), 132px);
+  --bm-card: clamp(64px, min(calc((100vw - 32px - 40px - 3 * var(--bm-gap)) / var(--bm-cols)), calc((100dvh - 320px) / var(--bm-rows))), 128px);
   display: grid;
   grid-template-columns: repeat(var(--bm-cols), var(--bm-card));
   grid-auto-rows: var(--bm-card);
   gap: var(--bm-gap);
   justify-content: center;
+  padding: 14px;
+  border-radius: 20px;
+  background: radial-gradient(circle at 30% 0%, #f5f3ff, var(--bm-soft) 70%);
   font-size: calc(var(--bm-card) * 0.4);
 }
 
@@ -176,11 +456,15 @@
   position: relative;
   padding: 0;
   border: 0;
-  border-radius: 14px;
+  border-radius: 16px;
   background: transparent;
   font: inherit;
   cursor: pointer;
-  perspective: 600px;
+  perspective: 700px;
+  transition: transform 0.12s ease;
+}
+.bm-card--down:hover {
+  transform: translateY(-3px);
 }
 .bm-card[aria-disabled='true'] {
   cursor: default;
@@ -194,7 +478,7 @@
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
-  transition: transform 0.35s ease;
+  transition: transform 0.4s cubic-bezier(0.3, 1.3, 0.5, 1);
 }
 .bm-card--up .bm-card__inner,
 .bm-card--matched .bm-card__inner {
@@ -206,20 +490,50 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
-  border: 4px solid var(--bm-set0);
+  border-radius: 16px;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
-.bm-card--set1 .bm-card__face {
-  border-color: var(--bm-set1);
-  border-style: dashed;
-}
+
+/* Backs: the game's colours for a one-set board; blue with circles or orange with diamonds when there are two sets. */
 .bm-card__back {
-  background: repeating-linear-gradient(45deg, var(--bm-back), var(--bm-back) 8px, #274690 8px, #274690 16px);
-  color: rgba(255, 255, 255, 0.55);
-  font-weight: 900;
+  background:
+    radial-gradient(circle at 25% 20%, rgba(255, 255, 255, 0.22), transparent 45%),
+    linear-gradient(135deg, var(--bm-teal), var(--bm-violet));
+  color: #fff;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.35), 0 4px 0 rgba(15, 23, 42, 0.25);
 }
+.bm-card--two.bm-card--set0 .bm-card__back {
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.16) 18%, transparent 20%) 0 0 / 18px 18px,
+    linear-gradient(135deg, #3b82f6, #1e3a8a);
+}
+.bm-card--two.bm-card--set1 .bm-card__back {
+  background:
+    linear-gradient(45deg, transparent 42%, rgba(255, 255, 255, 0.16) 42% 58%, transparent 58%) 0 0 / 16px 16px,
+    linear-gradient(-45deg, transparent 42%, rgba(255, 255, 255, 0.16) 42% 58%, transparent 58%) 0 0 / 16px 16px,
+    linear-gradient(135deg, #fb923c, #9a3412);
+}
+.bm-card__logo {
+  font-family: var(--display);
+  font-size: 1.2em;
+  font-weight: 900;
+  opacity: 0.85;
+}
+.bm-card__set {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.08em;
+  padding: 0.12em 0.32em;
+  border-radius: 0.3em;
+  background: rgba(255, 255, 255, 0.95);
+  font-size: 0.48em;
+  font-weight: 900;
+  line-height: 1.1;
+}
+.bm-card--set0 .bm-card__set { color: var(--bm-set0); }
+.bm-card--set1 .bm-card__set { color: var(--bm-set1); }
+
 .bm-card__front {
   transform: rotateY(180deg);
   flex-direction: column;
@@ -227,50 +541,55 @@
   color: #0f172a;
   font-weight: 900;
   font-family: var(--display);
+  box-shadow: inset 0 0 0 3px #cbd5e1, 0 4px 0 rgba(15, 23, 42, 0.2);
+}
+.bm-card--up .bm-card__front {
+  box-shadow: inset 0 0 0 4px var(--bm-violet), 0 4px 0 rgba(15, 23, 42, 0.2);
 }
 
-/* The set mark: shape and letter, in the corner, on the back and the front. Never colour alone. */
+/* The set's small mark on a face-up card (two-set boards only). Shape and letter, never colour alone. */
 .bm-card__corner {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  z-index: 2;
+  top: 5px;
+  left: 6px;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 0 6px;
-  border-radius: 8px;
-  background: #fff;
-  color: var(--bm-set0);
-  font-size: max(0.72rem, calc(var(--bm-card) * 0.17));
+  gap: 1px;
+  font-size: max(0.7rem, calc(var(--bm-card) * 0.14));
   font-weight: 900;
-  line-height: 1.4;
-  pointer-events: none;
+  line-height: 1;
+  color: var(--bm-set0);
 }
 .bm-card--set1 .bm-card__corner {
   color: var(--bm-set1);
 }
 
-/* Matched pairs: their own colour, plus a tick. */
+/* Matched pairs: their own colour, a tick and a little pop. */
 .bm-card--matched .bm-card__front {
   color: #0f172a;
+  animation: bm-pop 0.45s ease;
 }
-.bm-card--matched[data-match-colour='0'] .bm-card__front { background: #bbf7d0; border-color: #15803d; }
-.bm-card--matched[data-match-colour='1'] .bm-card__front { background: #fde68a; border-color: #a16207; }
-.bm-card--matched[data-match-colour='2'] .bm-card__front { background: #fbcfe8; border-color: #be185d; }
-.bm-card--matched[data-match-colour='3'] .bm-card__front { background: #bae6fd; border-color: #0369a1; }
-.bm-card--matched[data-match-colour='4'] .bm-card__front { background: #ddd6fe; border-color: #6d28d9; }
-.bm-card--matched[data-match-colour='5'] .bm-card__front { background: #fed7aa; border-color: #c2410c; }
-.bm-card--matched[data-match-colour='6'] .bm-card__front { background: #a7f3d0; border-color: #047857; }
-.bm-card--matched[data-match-colour='7'] .bm-card__front { background: #fecaca; border-color: #b91c1c; }
-.bm-card--matched[data-match-colour='8'] .bm-card__front { background: #e9d5ff; border-color: #7e22ce; }
-.bm-card--matched[data-match-colour='9'] .bm-card__front { background: #cbd5e1; border-color: #334155; }
+.bm-card--matched[data-match-colour='0'] .bm-card__front { background: #bbf7d0; box-shadow: inset 0 0 0 4px #15803d; }
+.bm-card--matched[data-match-colour='1'] .bm-card__front { background: #fde68a; box-shadow: inset 0 0 0 4px #a16207; }
+.bm-card--matched[data-match-colour='2'] .bm-card__front { background: #fbcfe8; box-shadow: inset 0 0 0 4px #be185d; }
+.bm-card--matched[data-match-colour='3'] .bm-card__front { background: #bae6fd; box-shadow: inset 0 0 0 4px #0369a1; }
+.bm-card--matched[data-match-colour='4'] .bm-card__front { background: #ddd6fe; box-shadow: inset 0 0 0 4px #6d28d9; }
+.bm-card--matched[data-match-colour='5'] .bm-card__front { background: #fed7aa; box-shadow: inset 0 0 0 4px #c2410c; }
+.bm-card--matched[data-match-colour='6'] .bm-card__front { background: #a7f3d0; box-shadow: inset 0 0 0 4px #047857; }
+.bm-card--matched[data-match-colour='7'] .bm-card__front { background: #fecaca; box-shadow: inset 0 0 0 4px #b91c1c; }
+.bm-card--matched[data-match-colour='8'] .bm-card__front { background: #e9d5ff; box-shadow: inset 0 0 0 4px #7e22ce; }
+.bm-card--matched[data-match-colour='9'] .bm-card__front { background: #cbd5e1; box-shadow: inset 0 0 0 4px #334155; }
 .bm-card__tick {
   position: absolute;
-  right: 6px;
-  bottom: 2px;
-  font-size: 0.55em;
+  right: 7px;
+  bottom: 4px;
+  font-size: 0.5em;
   color: #14532d;
+}
+@keyframes bm-pop {
+  0% { transform: rotateY(180deg) scale(1); }
+  45% { transform: rotateY(180deg) scale(1.08); }
+  100% { transform: rotateY(180deg) scale(1); }
 }
 
 .bm-num {
@@ -290,18 +609,18 @@
 .bm-frac__bottom {
   padding-top: 0.05em;
 }
-/* The fraction picture: a bar of equal parts under the number, so the number stays the main thing. */
 /* Room under the corner mark so it never covers the top number of a fraction. */
-.bm-card--frac .bm-card__front {
-  padding-top: calc(var(--bm-card) * 0.17);
+.bm-card--frac.bm-card--two .bm-card__front {
+  padding-top: calc(var(--bm-card) * 0.12);
 }
 .bm-card--pic .bm-card__tick {
-  top: 2px;
+  top: 4px;
   bottom: auto;
 }
 .bm-card--pic .bm-frac {
   font-size: 0.56em;
 }
+/* The fraction picture: a bar of equal parts under the number, so the number stays the main thing. */
 .bm-bar-pic {
   display: flex;
   flex: none;
@@ -321,20 +640,41 @@
   background: #e2e8f0;
 }
 .bm-bar-pic__part--on {
-  background: #1d4ed8;
+  background: var(--bm-violet);
 }
 /* Decimals like 0.35 and 100.5 get a little smaller so they fit the card. */
 .bm-card__front .bm-num {
   font-size: 0.85em;
 }
 
+/* The line under the board: what that pair made. */
 .bm-line {
-  min-height: 4.5rem;
+  display: flex;
+  justify-content: center;
+  min-height: 5rem;
   margin-top: 14px;
   text-align: center;
 }
 .bm-line p {
   margin: 0;
+}
+.bm-line__pill {
+  padding: 8px 22px;
+  border-radius: 18px;
+  animation: bm-rise 0.2s ease;
+}
+.bm-line__pill--miss {
+  background: #fff7ed;
+  box-shadow: inset 0 0 0 2px #fed7aa;
+}
+.bm-line__pill--match {
+  align-self: flex-start;
+  background: #f0fdf4;
+  box-shadow: inset 0 0 0 2px #bbf7d0;
+}
+@keyframes bm-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
 }
 .bm-line__sum {
   font-family: var(--display);
@@ -346,7 +686,7 @@
 }
 .bm-line__help {
   line-height: 1.7;
-  margin-top: 4px;
+  margin-top: 2px;
   color: var(--ink-soft);
 }
 .bm-nowrap {
@@ -372,132 +712,164 @@
   font-size: 0.85em;
 }
 
+/* ---------- Two players and the computer ---------- */
+
+.bm-turn {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 10px;
+  margin-bottom: 12px;
+}
+.bm-player {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 3px solid transparent;
+  border-radius: 16px;
+  background: var(--bm-soft);
+  opacity: 0.75;
+  transition: opacity 0.2s ease;
+}
+/* Whose go it is: a thick border, a lift and the words below, so it is never shown by colour alone. */
+.bm-player--now {
+  border-color: var(--bm-violet);
+  background: #f5f3ff;
+  opacity: 1;
+  box-shadow: 0 3px 0 var(--bm-violet);
+}
+.bm-player__icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.bm-player__name {
+  font-weight: 800;
+}
+.bm-player__pairs {
+  font-family: var(--display);
+  font-weight: 900;
+}
+.bm-turn__now {
+  grid-column: 1 / -1;
+  margin: 0;
+  text-align: center;
+  font-family: var(--display);
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+
 /* ---------- Finish ---------- */
 
 .bm-finish {
+  overflow: hidden;
+  padding-top: 0;
   text-align: center;
+}
+.bm-finish__top {
+  margin: 0 -20px 16px;
+  padding: 22px 20px 20px;
+  background: linear-gradient(120deg, var(--bm-teal), var(--bm-violet));
+  color: #fff;
 }
 .bm-finish__title {
   margin: 0;
   font-family: var(--display);
-  font-size: 2rem;
+  font-size: 2.1rem;
 }
 .bm-finish__set {
   margin: 2px 0 12px;
-  color: var(--ink-soft);
   font-weight: 700;
+  opacity: 0.9;
+}
+.bm-finish__trophy {
+  margin: 0;
+  font-size: 3rem;
+  line-height: 1.1;
 }
 .bm-stars {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 8px 28px;
+  gap: 0;
+  padding: 6px 26px 10px;
   border-radius: 20px;
-  border: 4px solid;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.18);
 }
-.bm-stars--3 { border-color: #a16207; background: #fef3c7; color: #713f12; }
-.bm-stars--2 { border-color: #475569; background: #e2e8f0; color: #1e293b; }
-.bm-stars--1 { border-color: #9a3412; background: #ffedd5; color: #7c2d12; }
 .bm-stars__row {
-  font-size: 3rem;
-  letter-spacing: 0.1em;
+  font-size: 3.2rem;
+  letter-spacing: 0.06em;
   line-height: 1.1;
 }
+.bm-star {
+  color: #cbd5e1;
+}
+.bm-star--on {
+  display: inline-block;
+  animation: bm-star 0.5s ease backwards;
+}
+.bm-star--on:nth-child(2) { animation-delay: 0.15s; }
+.bm-star--on:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bm-star {
+  from { transform: scale(0.2) rotate(-30deg); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.bm-stars--3 .bm-star--on { color: #f59e0b; }
+.bm-stars--2 .bm-star--on { color: #64748b; }
+.bm-stars--1 .bm-star--on { color: #c2410c; }
 .bm-stars__name {
   font-weight: 900;
-  font-size: 1.3rem;
+  font-size: 1.05rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
 }
+.bm-stars--3 .bm-stars__name { color: #92400e; }
+.bm-stars--2 .bm-stars__name { color: #334155; }
+.bm-stars--1 .bm-stars__name { color: #9a3412; }
 .bm-finish__facts {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 32px;
-  margin: 16px 0 4px;
+  gap: 10px;
+  margin: 0 0 12px;
 }
 .bm-finish__facts div {
   display: flex;
   flex-direction: column-reverse;
+  min-width: 110px;
+  padding: 8px 14px;
+  border-radius: 16px;
+  background: var(--bm-soft);
 }
 .bm-finish__facts dt {
   color: var(--ink-soft);
   font-weight: 700;
+  font-size: 0.88rem;
 }
 .bm-finish__facts dd {
   margin: 0;
   font-family: var(--display);
-  font-size: 2.2rem;
+  font-size: 1.9rem;
   font-weight: 900;
+  font-variant-numeric: tabular-nums;
 }
-.bm-finish__min {
-  margin: 0 0 10px;
-  color: var(--ink-soft);
-}
-.bm-finish__rule {
-  max-width: 34em;
-  margin: 0 auto 10px;
-  font-size: 0.9rem;
-  color: var(--ink-soft);
-}
-.bm-finish__best p {
+.bm-finish__best p,
+.bm-finish__pairs {
   margin: 2px 0;
   font-weight: 700;
 }
+.bm-finish__pairs {
+  font-size: 1.15rem;
+}
 .bm-finish__new {
   color: var(--won);
+  font-size: 1.1rem;
 }
-.bm-finish__buttons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 18px;
-}
-.bm-finish__buttons .button {
-  width: auto;
-}
-
-/* ---------- Less movement ---------- */
-
-/* No 3D flip: the card just changes. Asked for by the device (this media query) or by the page (bm-board--still, which the tests can see). */
-@media (prefers-reduced-motion: reduce) {
-  .bm-card__inner { transition: none; }
-}
-.bm-board--still .bm-card__inner {
-  transition: none;
-  transform: none !important;
-}
-.bm-board--still .bm-card__face {
-  transform: none;
-  backface-visibility: visible;
-  -webkit-backface-visibility: visible;
-}
-.bm-board--still .bm-card--down .bm-card__front,
-.bm-board--still .bm-card--up .bm-card__back,
-.bm-board--still .bm-card--matched .bm-card__back {
-  display: none;
-}
-
-@media (max-width: 480px) {
-  .bm-title { font-size: 1.25rem; }
-  .bm-picker, .bm-finish, .bm-game { padding: 12px; }
-  .bm-shelf__sets { grid-template-columns: repeat(2, 1fr); }
-  .bm-line__sum { font-size: 1.35rem; }
-}
-
-/* ---------- Saved stars and the save line (M.4) ---------- */
-
-.bm-bond__stars {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 8px;
-  font-size: 0.8rem;
+.bm-finish__soft {
+  margin: 6px 0 0;
   color: var(--ink-soft);
-}
-.bm-bond__star--on {
-  color: #a16207;
-  font-weight: 800;
+  font-weight: 600;
 }
 .bm-finish__save {
   margin: 10px 0 0;
@@ -509,38 +881,83 @@
 .bm-finish__save--later {
   color: var(--ink-soft);
 }
-
-/* ---------- Two players and the computer ---------- */
-
-.bm-turn {
-  margin-bottom: 12px;
-  text-align: center;
-}
-.bm-turn p {
-  margin: 0;
-}
-.bm-turn__now {
-  font-family: var(--display);
-  font-size: 1.3rem;
-  font-weight: 900;
-}
-.bm-turn__pairs {
+.bm-finish__buttons {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px 16px;
-  margin-top: 6px;
+  gap: 12px;
+  margin-top: 16px;
 }
-.bm-turn__player {
-  padding: 4px 12px;
-  border: 3px solid transparent;
-  border-radius: 999px;
+.bm-finish__buttons .button {
+  width: auto;
 }
-/* Whose go it is: a thick border as well as the words above, so it is never shown by colour alone. */
-.bm-turn__player--now {
-  border-color: var(--brand);
+.bm-finish__how {
+  max-width: 34em;
+  margin: 16px auto 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
 }
-.bm-finish__pairs {
-  font-size: 1.15rem;
+.bm-finish__how summary {
+  min-height: 44px;
+  padding-top: 10px;
   font-weight: 700;
+  cursor: pointer;
+}
+.bm-finish__rule,
+.bm-finish__min {
+  margin: 4px 0;
+}
+
+/* ---------- Less movement ---------- */
+
+/* No 3D flip or bounce: the card just changes. Asked for by the device (this media query) or by the page (bm-board--still, which the tests can see). */
+@media (prefers-reduced-motion: reduce) {
+  .bm-card__inner { transition: none; }
+  .bm-card,
+  .bm-bond { transition: none; }
+  .bm-card--down:hover,
+  .bm-bond:hover { transform: none; }
+  .bm-card--matched .bm-card__front,
+  .bm-star--on,
+  .bm-line__pill { animation: none; }
+}
+.bm-board--still .bm-card__inner {
+  transition: none;
+  transform: none !important;
+}
+.bm-board--still .bm-card__face {
+  transform: none;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+  animation: none;
+}
+.bm-board--still .bm-card--down .bm-card__front,
+.bm-board--still .bm-card--up .bm-card__back,
+.bm-board--still .bm-card--matched .bm-card__back {
+  display: none;
+}
+
+/* ---------- Phones ---------- */
+
+@media (max-width: 560px) {
+  .bm-title { font-size: 1.3rem; }
+  .bm-picker, .bm-finish, .bm-game { padding: 14px; }
+  .bm-hero { margin: -14px -14px 14px; padding: 18px 16px; }
+  .bm-hero__title { font-size: 1.4rem; }
+  .bm-hero__card { min-width: 40px; height: 48px; font-size: 1.25rem; }
+  .bm-finish__top { margin: 0 -14px 14px; }
+  .bm-setup { grid-template-columns: 1fr; }
+  .bm-seg__opt { min-height: 84px; }
+  .bm-seg__label { font-size: 0.85rem; }
+  .bm-shelf__sets { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .bm-bond { flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px; }
+  .bm-bond__target { min-width: 44px; height: 44px; font-size: 1.15rem; }
+  .bm-bond__target--long { font-size: 1rem; }
+  .bm-back__text { display: none; }
+  .bm-goal__set { display: none; }
+  .bm-board { padding: 8px; --bm-gap: 8px; }
+  .bm-line__sum { font-size: 1.35rem; }
+  .bm-turn { grid-template-columns: 1fr 1fr; }
+  .bm-player { grid-template-columns: auto 1fr; padding: 6px 8px; }
+  .bm-player__pairs { grid-column: 1 / -1; font-size: 0.9rem; }
 }

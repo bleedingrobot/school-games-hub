@@ -186,48 +186,61 @@ export function BondMatchGame({
   return (
     <section className="bm-game" aria-label={TEXT.name}>
       <div className="bm-bar">
-        <button type="button" className="bm-link" onClick={onQuit}>← {TEXT.quit}</button>
-        <h2 className="bm-bar__title">{set.label}</h2>
-        {hideStats ? (
-          <span className="bm-stats bm-stats--hidden">{TEXT.statsHidden}</span>
-        ) : (
-          <span className="bm-stats">
-            <span>{TEXT.flips}: <strong data-testid="flips">{game.flips}</strong></span>
-            <span>{TEXT.time}: <strong data-testid="time">{clock(elapsed)}</strong></span>
-          </span>
-        )}
-        <button type="button" className="bm-link" aria-pressed={hideStats} onClick={toggleStats}>
-          {hideStats ? TEXT.showStats : TEXT.hideStats}
+        <button type="button" className="bm-back" aria-label={TEXT.quit} onClick={onQuit}>
+          <span aria-hidden="true">←</span>
+          <span className="bm-back__text" aria-hidden="true">{TEXT.back}</span>
         </button>
-        {hasFractions && (
-          <button type="button" className="bm-link" aria-pressed={pictures} onClick={togglePictures}>
-            {pictures ? TEXT.hidePictures : TEXT.showPictures}
+        <h2 className="bm-goal">
+          <span className="bm-goal__make" aria-hidden="true">{TEXT.make}</span>
+          <span className="bm-goal__num" aria-hidden="true"><Value text={target} /></span>
+          <span className="bm-goal__set">{set.label}</span>
+        </h2>
+        <div className="bm-bar__right">
+          {hideStats ? (
+            <span className="bm-stats bm-stats--hidden">{TEXT.statsHidden}</span>
+          ) : (
+            <span className="bm-stats">
+              <span className="bm-stat"><span className="bm-stat__name">{TEXT.flips}</span> <strong data-testid="flips">{game.flips}</strong></span>
+              <span className="bm-stat"><span className="bm-stat__name">{TEXT.time}</span> <strong data-testid="time">{clock(elapsed)}</strong></span>
+            </span>
+          )}
+          <button type="button" className="bm-icon-btn" aria-pressed={hideStats} aria-label={hideStats ? TEXT.showStats : TEXT.hideStats} title={hideStats ? TEXT.showStats : TEXT.hideStats} onClick={toggleStats}>
+            <span aria-hidden="true">{hideStats ? '🙈' : '⏱️'}</span>
           </button>
-        )}
+          {hasFractions && (
+            <button type="button" className="bm-icon-btn" aria-pressed={pictures} aria-label={pictures ? TEXT.hidePictures : TEXT.showPictures} title={pictures ? TEXT.hidePictures : TEXT.showPictures} onClick={togglePictures}>
+              <span aria-hidden="true">{pictures ? '📊' : '🔢'}</span>
+            </button>
+          )}
+        </div>
       </div>
       {twoPlayers && (
         <div className="bm-turn" data-testid="turn">
+          {([0, 1] as const).map((p) => (
+            <div key={p} className={`bm-player bm-player--${p}${vs.turn === p && !game.finished ? ' bm-player--now' : ''}`}>
+              <span className="bm-player__icon" aria-hidden="true">{players.mode === 'bot' && p === 1 ? '🤖' : p === 0 ? '🙂' : '😃'}</span>
+              <span className="bm-player__name">{playerName(players, p)}</span>
+              <span className="bm-player__pairs">{TEXT.pairs(vs.pairs[p])}</span>
+            </div>
+          ))}
           <p className="bm-turn__now" aria-live="polite">
             {game.finished ? TEXT.allPairsFound : TEXT.turn(players, vs.turn)}
-          </p>
-          <p className="bm-turn__pairs">
-            {([0, 1] as const).map((p) => (
-              <span key={p} className={`bm-turn__player bm-turn__player--${p}${vs.turn === p && !game.finished ? ' bm-turn__player--now' : ''}`}>
-                {playerName(players, p)}: <strong>{TEXT.pairs(vs.pairs[p])}</strong>
-              </span>
-            ))}
           </p>
         </div>
       )}
       <Board cards={game.deck.cards} matched={game.matched} shown={shown} reducedMotion={reducedMotion} setLabel={set.label} pictures={hasFractions && pictures} onFlip={onFlip} />
       <div className="bm-line" role="status" aria-live="polite">
         {line?.type === 'mismatch' && (
-          <>
+          <div className="bm-line__pill bm-line__pill--miss">
             <p className="bm-line__sum"><Sum texts={line.texts} sum={line.sumText} /></p>
             <p className="bm-line__help">{line.sumsToTarget ? <WrongSet /> : TEXT.mismatchNeed(target)}</p>
-          </>
+          </div>
         )}
-        {line?.type === 'match' && <p className="bm-line__sum bm-line__sum--match"><Sum texts={line.texts} sum={line.sumText} /> ✓<span className="sr-only"> {TEXT.match}</span></p>}
+        {line?.type === 'match' && (
+          <div className="bm-line__pill bm-line__pill--match">
+            <p className="bm-line__sum bm-line__sum--match"><Sum texts={line.texts} sum={line.sumText} /> ✓<span className="sr-only"> {TEXT.match}</span></p>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -52,7 +52,9 @@ describe('the picker', () => {
   it('offers Small, Medium and Large, with Medium chosen to start', () => {
     setup();
     const size = screen.getByRole('group', { name: 'Board size' });
-    expect(within(size).getAllByRole('button').map((b) => b.textContent)).toEqual(['Small', 'Medium', 'Large']);
+    expect(within(size).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Small', 'Medium', 'Large']);
+    // Each size says how many cards it has, so Small, Medium and Large mean something.
+    expect(within(size).getAllByRole('button').map((b) => b.textContent)).toEqual(['Small12 cards', 'Medium16 cards', 'Large20 cards']);
     expect(within(size).getByRole('button', { name: 'Medium' })).toHaveAttribute('aria-pressed', 'true');
   });
 
@@ -407,10 +409,15 @@ describe('saving a finished game', () => {
     ];
     setup({ saver: fakeSaver(answer(), bests) });
     const stars = await screen.findByTestId('stars-whole-10');
-    expect(stars).toHaveTextContent('S ★★★');
-    expect(stars).toHaveTextContent('M –');
-    expect(stars).toHaveTextContent('L ★');
-    expect(screen.getByRole('button', { name: /^To 10, Medium board.*Your best stars: Small 3 stars, Large 1 star$/ })).toBeInTheDocument();
+    const lit = () => screen.getByTestId('stars-whole-10').querySelectorAll('.bm-bond__star--on').length;
+    // The tile shows the stars for the board size that is picked (Medium to start: none yet).
+    expect(stars.querySelectorAll('.bm-bond__star')).toHaveLength(3);
+    expect(lit()).toBe(0);
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Small' }));
+    expect(lit()).toBe(3);
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Large' }));
+    expect(lit()).toBe(1);
+    expect(screen.getByRole('button', { name: /^To 10, Large board.*Your best stars: Small 3 stars, Large 1 star$/ })).toBeInTheDocument();
     expect(screen.queryByTestId('stars-whole-20')).toBeNull();
   });
 
@@ -419,7 +426,9 @@ describe('saving a finished game', () => {
     await playTo10(user);
     await screen.findByText(/Saved ✓/);
     await user.click(screen.getByRole('button', { name: 'Pick another bond' }));
-    expect(screen.getByTestId('stars-whole-10')).toHaveTextContent('S ★★★');
+    // Back on the picker, the board size played is still picked, and its new stars show.
+    expect(screen.getByRole('button', { name: 'Small' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('stars-whole-10').querySelectorAll('.bm-bond__star--on')).toHaveLength(3);
   });
 });
 
@@ -562,7 +571,7 @@ describe('two players and the computer', () => {
   it('offers Just me, Two players and Me vs the computer, with Just me to start', () => {
     setupVersus();
     const group = screen.getByRole('group', { name: 'Who’s playing?' });
-    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual(['Just me', 'Two players', 'Me vs the computer']);
+    expect(within(group).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Just me', 'Two players', 'Me vs the computer']);
     expect(within(group).getByRole('button', { name: 'Just me' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByRole('group', { name: 'How good is the computer?' })).toBeNull();
   });
