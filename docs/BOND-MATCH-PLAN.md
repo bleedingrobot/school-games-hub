@@ -163,4 +163,5 @@ James said the picker was "really ugly" (the S/M/L pair counts meant nothing to 
 ## Going live (20 Oct 2026)
 
 - **Step 1 done (James's yes):** `20261020000200_bond_match_switch.sql` applied to the live database. Checked: the switch is off for all 4 settings rows; `hub_games` has the switch and `bond_match_point_rules()`; `bond_match_games.mode` exists; teachers can call `teacher_set_bond_match`, signed-out users can't, pupils still can't save directly; `scored_games` still 412 rows, `bond_match_games` 0. Before applying, the live `record_bond_match_game` matched the repo's M.4 version (a copy was kept for undo).
-- **Next:** step 2, deploy the `bond-match` function (switch check, any-pair rule).
+- **Step 2 done (James's yes):** `bond-match` function deployed (version 3, Verify JWT off, `_shared/signIn.ts`, class-switch check, any-pair rule). Checked: signed out and a fake sign-in both get 401 "Please sign in again."; the browser check (OPTIONS) gets 204.
+- **Next:** step 3, merge `bond-match` to `main` (publishes the site; Bond Match shows on the Teacher page, off).
