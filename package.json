@@ -35,6 +35,7 @@
     "clans:sim": "node scripts/clans-sim.mjs",
     "101:preview": "vite build --config vite.101-preview.config.ts",
     "gem-keep:preview": "vite build --config vite.gem-keep-preview.config.ts",
+    "bond-match:preview": "vite build --config vite.bond-match-preview.config.ts",
     "maths:preview": "vite build --config vite.maths-preview.config.ts",
     "training:preview": "vite build --config vite.training-preview.config.ts",
     "monsters:preview": "vite build --config vite.monsters-preview.config.ts",
