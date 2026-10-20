@@ -58,6 +58,17 @@ vi.mock('../data/progress', async (importOriginal) => ({
   })),
 }));
 
+// The profile takes its points and achievements from the home page's one request: made here from the answer above.
+vi.mock('../data/homePage', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../data/homePage')>()),
+  fetchMyHomePage: vi.fn(async () => ({
+    progress: await (await import('../data/progress')).fetchMyProgress(),
+    botRecent: [], botStats: [], friendRecent: [], friendStats: [], friendOpen: [], players: new Map(),
+    spaceRecent: [], spaceOpen: [], spaceStats: null, cardRecent: [], cardOpen: [], cardStats: null,
+    powerRecent: [], powerOpen: [], powerStats: null, moves: {}, parts: {},
+  })),
+}));
+
 const people: Person[] = [
   { id: 't1', display_name: 'Wise Owl 1', real_name: 'mr.owl', avatar: {}, role: 'teacher', hidden: false, bot_games: 0, friend_games: 0, points: 0, last_played: null, joined: '2026-10-01T00:00:00Z' },
   { id: 's1', display_name: 'Brave Kiwi 7', real_name: 'jane.smith', avatar: {}, role: 'student', hidden: false, bot_games: 4, friend_games: 2, points: 50, last_played: new Date().toISOString(), joined: '2026-10-01T00:00:00Z' },

@@ -140,16 +140,22 @@ describe('dashboard', () => {
     expect(within(hero).getByText(/Checkers: Silver/)).toBeInTheDocument();
     expect(within(hero).getByText(/Chess: Bronze/)).toBeInTheDocument();
 
-    const stats = screen.getByRole('region', { name: 'My stats' });
-    expect(within(stats).getByText('85 points to level 4')).toBeInTheDocument();
-    expect(within(stats).getByRole('link', { name: 'How points work' })).toHaveAttribute('href', '/points');
+    // The level bar sits in the welcome strip now, and the stats tables are on the profile page.
+    expect(within(hero).getByText('· 85 to level 4')).toBeInTheDocument();
+    expect(within(hero).getByRole('progressbar', { name: 'Level 3: 85 points to level 4' })).toBeInTheDocument();
+    expect(within(hero).getByRole('link', { name: 'How points work' })).toHaveAttribute('href', '/points');
+    expect(screen.queryByRole('region', { name: 'My stats' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'See my stats' })).toHaveAttribute('href', '/profile#stats');
 
+    // Achievements: the count, then the 3 nearest to being earned.
     const achievements = screen.getByRole('region', { name: /Achievements/ });
     expect(within(achievements).getByText('1 of 4')).toBeInTheDocument();
-    expect(within(achievements).getByText('First win (Chess)').closest('li')).toHaveClass('is-done');
+    expect(within(achievements).getAllByRole('listitem')).toHaveLength(3);
+    expect(within(achievements).queryByText('First win (Chess)')).not.toBeInTheDocument();
     expect(within(achievements).getByText('7/10')).toBeInTheDocument();
     // Badges are earned or not: no "1/2" count.
     expect(within(achievements).getByText('Reach Gold (Checkers)').closest('li')).toHaveTextContent('Not yet');
+    expect(within(achievements).getByRole('link', { name: 'See them all' })).toHaveAttribute('href', '/profile#achievements');
     expect(screen.queryByText('Sample data')).not.toBeInTheDocument();
   });
 
@@ -162,9 +168,9 @@ describe('dashboard', () => {
     expect(easy).not.toHaveTextContent('+');
   });
 
-  it('shows real recent chess and checkers games and stats', async () => {
-    renderAt('/');
-    const recent = screen.getByRole('region', { name: 'Recent games' });
+  it('shows real recent chess and checkers games, and the stats on the profile page', async () => {
+    renderAt('/profile');
+    const recent = await screen.findByRole('region', { name: 'My stats' });
     expect(await within(recent).findByText('Chess vs Medium bot')).toBeInTheDocument();
     expect(within(recent).getAllByText('Today')).toHaveLength(2);
     expect(within(recent).getByText('(left early)')).toBeInTheDocument();
@@ -177,9 +183,9 @@ describe('dashboard', () => {
     expect(within(checkersRow).getAllByRole('cell').map((c) => c.textContent)).toEqual(['1', '0', '0', '1']);
   });
 
-  it('shows games against friends, kept apart from bot games', async () => {
-    renderAt('/');
-    const recent = screen.getByRole('region', { name: 'Recent games' });
+  it('shows games against friends, kept apart from bot games (profile page)', async () => {
+    renderAt('/profile');
+    const recent = await screen.findByRole('region', { name: 'My stats' });
     const friendGame = (await within(recent).findByText('Brave Kiwi 7', { exact: false })).closest('li')!;
     expect(friendGame).toHaveTextContent('Won');
     expect(friendGame).toHaveTextContent('Checkers vs');

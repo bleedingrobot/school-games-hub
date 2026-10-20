@@ -67,3 +67,29 @@ export function randomAvatar(random: () => number = Math.random): Avatar {
   }
   return result as Avatar;
 }
+
+/**
+ * The look of the hub pages, picked by each pupil on their profile. It is saved as one more short code in the avatar
+ * ({"theme":"menu"}), which the server's avatar check already accepts, so it follows the pupil to any Chromebook.
+ */
+export const THEMES = [
+  { id: 'tidy', label: 'Tidy school' },
+  { id: 'menu', label: 'Game menu' },
+  { id: 'soft', label: 'Soft and bright' },
+] as const;
+export type HubTheme = (typeof THEMES)[number]['id'];
+export const DEFAULT_THEME: HubTheme = 'tidy';
+
+/** The theme saved with an avatar: missing or unknown is the default (Tidy school). */
+export function themeOf(saved: unknown): HubTheme {
+  const value = saved && typeof saved === 'object' ? (saved as Record<string, unknown>).theme : undefined;
+  return THEMES.some((t) => t.id === value) ? (value as HubTheme) : DEFAULT_THEME;
+}
+
+/**
+ * What to save: the avatar's parts and the theme together. Saving replaces the whole avatar, so each save carries both
+ * (saving the avatar keeps the theme, and saving the theme keeps the avatar).
+ */
+export function avatarToSave(avatar: Avatar, theme: HubTheme): Avatar & { theme?: HubTheme } {
+  return theme === DEFAULT_THEME ? { ...avatar } : { ...avatar, theme };
+}

@@ -88,21 +88,21 @@ describe('Training is hidden until it is switched on', () => {
   it('has no link on the home page or in the menu while the switch is off', () => {
     renderAt('/');
     expect(screen.queryByRole('link', { name: /Training/ })).toBeNull();
-    expect(screen.queryByRole('link', { name: /Facts training/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: /Multiplication and division training/ })).toBeNull();
   });
 
   it('shows a menu link and a home page card to students once it is on', () => {
     flags.on = true;
     renderAt('/');
     expect(screen.getByRole('link', { name: /Training/ })).toHaveAttribute('href', '/training');
-    expect(screen.getByRole('link', { name: /Facts training/ })).toHaveAttribute('href', '/training');
+    expect(screen.getByRole('link', { name: /Multiplication and division training/ })).toHaveAttribute('href', '/training');
   });
 
   it('shows the menu link and card to teachers too', () => {
     flags.on = true;
     renderAt('/', { profile: { ...student.profile!, role: 'teacher' } });
     expect(screen.getByRole('link', { name: /Training/ })).toHaveAttribute('href', '/training');
-    expect(screen.getByRole('link', { name: /Facts training/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Multiplication and division training/ })).toBeInTheDocument();
   });
 });
 

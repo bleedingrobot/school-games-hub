@@ -175,3 +175,41 @@ describe('My maths path on the home page', () => {
     });
   });
 });
+
+describe('folded into the home page’s My maths box', () => {
+  const showFolded = (focus: MathsFocus, facts: FactStats[] = []) => {
+    vi.mocked(ladderData.fetchMyLadder).mockResolvedValue({ facts, settings: {}, focus });
+    return render(
+      <MemoryRouter>
+        <MathsPathCard folded />
+      </MemoryRouter>,
+    );
+  };
+
+  it('keeps the path folded away behind Show my path, with the count showing', async () => {
+    const user = userEvent.setup();
+    showFolded(on(), secure(['facts-10', 'dbl-half-10', 'ten-and']));
+    const toggle = await screen.findByRole('button', { name: 'Show my path' });
+    expect(screen.getAllByText(`3 of ${built.length}`)[0]).toBeVisible();
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('heading', { name: /My maths path/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/You are here:/)).not.toBeVisible();
+    await user.click(toggle);
+    expect(screen.getByRole('button', { name: 'Hide my path' })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText(/You are here:/)).toBeVisible();
+  });
+
+  it('still shows the warm-up offer open while the path is folded', async () => {
+    showFolded(on({ placed: null, placement: null }));
+    expect(await screen.findByRole('link', { name: 'Find my starting place' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Show my path' })).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('still shows "You moved up!" open while the path is folded', async () => {
+    localStorage.setItem('maths-path-seen:student-1', 'facts-10');
+    showFolded(on(), secure(['facts-10', 'dbl-half-10']));
+    const message = await screen.findByRole('status');
+    expect(message).toHaveTextContent('You moved up!');
+    expect(message).toBeVisible();
+  });
+});
