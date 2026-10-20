@@ -3,24 +3,27 @@
  * (the step before this one, to draw smoothly between steps; rooms visited, for the map; things that just happened,
  * for messages and sounds). It never draws and never reads the keyboard.
  */
-import { USE_RANGE } from '../../../shared/mine/config';
+import { PAD_ANSWERS, USE_RANGE } from '../../../shared/mine/config';
 import { clockSteps, makeWorld, newRun, stepRun, type RunState, type World } from '../../../shared/mine/engine';
 import { GRANT, PENALTY, pushInput } from '../../../shared/mine/inputs';
-import { makeLevel, type PadKind, type Recipe } from '../../../shared/mine/level';
+import { makeLevel, reactorTargetId, type PadKind, type Recipe } from '../../../shared/mine/level';
 import { PAD_QUESTIONS } from '../../../shared/mine/maths';
 
-/** A power-up pad is tried at most this many times in a run (docs/MINE-PLAN.md, section 7). */
+/** A power-up pad is tried at most this many times in a run (it needs PAD_ANSWERS right; docs/MINE-PLAN.md, section 7). */
 export const MAX_PAD_TRIES = PAD_QUESTIONS;
 
 export type UseTarget =
   | { kind: 'door'; id: number; x: number; y: number; z: number; distance: number }
-  | { kind: 'pad'; id: number; padKind: PadKind; x: number; y: number; z: number; distance: number };
+  | { kind: 'pad'; id: number; padKind: PadKind; x: number; y: number; z: number; distance: number; left: number }
+  | { kind: 'reactor'; id: number; x: number; y: number; z: number; distance: number; left: number };
 
 export type MineEvent =
   | { kind: 'key'; colour: 'blue' | 'yellow' | 'red' }
   | { kind: 'door'; id: number; byKey: boolean }
   | { kind: 'pickup'; what: 'shield' | 'energy' | 'missiles' }
   | { kind: 'pad'; padKind: PadKind }
+  | { kind: 'pad-step'; padKind: PadKind; left: number }
+  | { kind: 'reactor-step'; left: number }
   | { kind: 'robot-down'; x: number; y: number; z: number }
   | { kind: 'hurt'; amount: number }
   | { kind: 'wrong' }
@@ -90,7 +93,7 @@ export class MineSession {
     if (s.outcome !== 'running') return;
     const before = {
       keys: [...s.keys], doors: s.doorsOpen.filter(Boolean).length, byKey: s.doorsByKey, pickups: s.pickupsTaken.map((v) => v),
-      pads: s.padsUsed.filter(Boolean).length, killed: s.robotsKilled, alive: s.robots.map((r) => r.alive), damage: s.damageTaken,
+      pads: [...s.padsUsed], lock: s.reactorLock, killed: s.robotsKilled, alive: s.robots.map((r) => r.alive), damage: s.damageTaken,
       reactorHp: s.reactorHp, reactorDown: s.reactorDown, deaths: s.deaths, wrong: s.wrongAnswers,
       missiles: s.shots.filter((t) => t.k === 1).map((t) => ({ x: t.x + t.vx, y: t.y + t.vy, z: t.z + t.vz, life: t.life })),
       laserCool: s.laserCool, missileCool: s.missileCool, missileCount: s.missiles,
@@ -103,7 +106,7 @@ export class MineSession {
     this.diff(before, room);
   }
 
-  private diff(b: { keys: number[]; doors: number; byKey: number; pickups: number[]; pads: number; killed: number; alive: number[]; damage: number; reactorHp: number; reactorDown: number; deaths: number; wrong: number; missiles: { x: number; y: number; z: number; life: number }[]; laserCool: number; missileCool: number; missileCount: number }, room: number): void {
+  private diff(b: { keys: number[]; doors: number; byKey: number; pickups: number[]; pads: number[]; lock: number; killed: number; alive: number[]; damage: number; reactorHp: number; reactorDown: number; deaths: number; wrong: number; missiles: { x: number; y: number; z: number; life: number }[]; laserCool: number; missileCool: number; missileCount: number }, room: number): void {
     const s = this.state;
     const L = this.world.level;
     const ev = this.events;
@@ -122,14 +125,14 @@ export class MineSession {
     s.pickupsTaken.forEach((v, i) => {
       if (v === 1 && b.pickups[i] === 0) ev.push({ kind: 'pickup', what: L.pickups[i].kind });
     });
-    if (s.padsUsed.filter(Boolean).length > b.pads) {
-      s.padsUsed.forEach((v, n) => {
-        if (v === 1 && !this.announcedPads.has(n)) {
-          this.announcedPads.add(n);
-          ev.push({ kind: 'pad', padKind: L.pads[n].kind });
-        }
-      });
-    }
+    s.padsUsed.forEach((v, n) => {
+      if (v <= b.pads[n]) return;
+      if (v >= PAD_ANSWERS && !this.announcedPads.has(n)) {
+        this.announcedPads.add(n);
+        ev.push({ kind: 'pad', padKind: L.pads[n].kind });
+      } else if (v < PAD_ANSWERS) ev.push({ kind: 'pad-step', padKind: L.pads[n].kind, left: PAD_ANSWERS - v });
+    });
+    if (s.reactorLock < b.lock) ev.push({ kind: 'reactor-step', left: s.reactorLock });
     s.robots.forEach((r, i) => {
       if (b.alive[i] === 1 && r.alive === 0) ev.push({ kind: 'robot-down', x: r.x, y: r.y, z: r.z });
     });
@@ -157,7 +160,7 @@ export class MineSession {
     if (s.outcome === 'timeout') ev.push({ kind: 'timeout' });
   }
 
-  /** The nearest question door or power-up pad the pilot can use from here, if any. */
+  /** The nearest question door, power-up pad or locked reactor the pilot can use from here, if any. */
   target(): UseTarget | null {
     const s = this.state;
     if (s.outcome !== 'running' || !this.world.maths) return null;
@@ -170,10 +173,15 @@ export class MineSession {
       if (distance <= USE_RANGE - 0.05 && (!best || distance < best.distance)) best = { kind: 'door', id: d.id, x: d.x, y: d.y, z: d.z, distance };
     }
     L.pads.forEach((p, n) => {
-      if (s.padsUsed[n] === 1 || (this.padTries.get(p.id) ?? 0) >= MAX_PAD_TRIES) return;
+      if (s.padsUsed[n] >= PAD_ANSWERS || (this.padTries.get(p.id) ?? 0) >= MAX_PAD_TRIES) return;
       const distance = near(p.x, p.y, p.z);
-      if (distance <= USE_RANGE - 0.05 && (!best || distance < best.distance)) best = { kind: 'pad', id: p.id, padKind: p.kind, x: p.x, y: p.y, z: p.z, distance };
+      if (distance <= USE_RANGE - 0.05 && (!best || distance < best.distance)) best = { kind: 'pad', id: p.id, padKind: p.kind, x: p.x, y: p.y, z: p.z, distance, left: PAD_ANSWERS - s.padsUsed[n] };
     });
+    if (s.reactorLock > 0 && !s.reactorDown) {
+      const R = L.reactor;
+      const distance = near(R.x, R.y, R.z);
+      if (distance <= USE_RANGE - 0.05 && (!best || distance < best.distance)) best = { kind: 'reactor', id: reactorTargetId(L), x: R.x, y: R.y, z: R.z, distance, left: s.reactorLock };
+    }
     return best;
   }
 
@@ -181,7 +189,7 @@ export class MineSession {
   answered(target: UseTarget, correct: boolean): void {
     if (target.kind === 'pad') this.padTries.set(target.id, (this.padTries.get(target.id) ?? 0) + 1);
     if (correct) this.step(GRANT + target.id);
-    else if (target.kind === 'door') this.step(PENALTY);
+    else if (target.kind !== 'pad') this.step(PENALTY);
   }
 
   /** How many tries a pad has left. */

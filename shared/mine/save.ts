@@ -8,9 +8,9 @@
  * opened by an answer and how many wrong-answer penalties were charged, so it can check them against the answers it
  * marked. The seed can only be saved once (the database keeps it).
  */
-import { MAX_RUN_STEPS, STEPS_PER_SECOND } from './config';
+import { MAX_RUN_STEPS, REACTOR_LOCK_ANSWERS, STEPS_PER_SECOND } from './config';
 import { decodeInputs, MAX_INPUT_STEPS } from './inputs';
-import { makeLevel, recipeById } from './level';
+import { makeLevel, reactorTargetId, recipeById } from './level';
 import { makeWorld, replay } from './engine';
 
 /** How long a seed can be used for. A mine takes minutes; a forgotten tab, hours. */
@@ -89,9 +89,9 @@ export interface JudgedRun {
   played: number;
   held: number;
   deaths: number;
-  /** `GRANT` numbers that opened a question door or filled a pad (each at most once). */
+  /** `GRANT` numbers for every right answer the run used: one for each question door opened, one for each of a pad's answers, one for each of the reactor's. */
   grants: number[];
-  /** Wrong-answer penalties charged at question doors. */
+  /** Wrong-answer penalties charged at question doors and the reactor's console. */
   penalties: number;
 }
 
@@ -122,8 +122,9 @@ export function judgeRun(report: MineRunReport, nowSeconds: number): RunJudgemen
     if (door.kind === 'question' && state.doorsOpen[door.id] === 1 && world.maths) grants.push(door.id);
   });
   world.level.pads.forEach((pad, n) => {
-    if (state.padsUsed[n] === 1) grants.push(pad.id);
+    for (let k = 0; k < state.padsUsed[n]; k++) grants.push(pad.id);
   });
+  if (world.maths) for (let k = state.reactorLock; k < REACTOR_LOCK_ANSWERS; k++) grants.push(reactorTargetId(world.level));
   return {
     ok: true,
     run: { steps: state.finishSteps, played: state.steps, held: state.held, deaths: state.deaths, grants, penalties: state.wrongAnswers },

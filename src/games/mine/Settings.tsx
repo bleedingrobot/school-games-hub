@@ -1,5 +1,5 @@
 /** The choices a pupil can change, remembered on this device: flight, goal arrow, motion, mouse and touch. */
-import { MINE_POINTS_BEST, MINE_POINTS_FIRST, WRONG_ANSWER_DAMAGE, WRONG_ANSWER_STEPS, STEPS_PER_SECOND, REBUILD_PENALTY_STEPS } from '../../../shared/mine/config';
+import { MINE_POINTS_BEST, MINE_POINTS_FIRST, WRONG_ANSWER_DAMAGE, WRONG_ANSWER_STEPS, STEPS_PER_SECOND, REBUILD_PENALTY_STEPS, REACTOR_LOCK_ANSWERS } from '../../../shared/mine/config';
 import type { MinePrefs } from './prefs';
 
 export function SettingsPanel({
@@ -72,7 +72,7 @@ export function ControlsHelp() {
         <div><dt>Q / E</dt><dd>Roll (only if steady flight is off)</dd></div>
         <div><dt>Space</dt><dd>Fire the laser</dd></div>
         <div><dt>Shift or X</dt><dd>Launch a missile</dd></div>
-        <div><dt>Enter</dt><dd>Use a question door or pad</dd></div>
+        <div><dt>Enter</dt><dd>Use a question door, pad or the reactor lock</dd></div>
         <div><dt>M</dt><dd>Map</dd></div>
         <div><dt>Esc or P</dt><dd>Pause</dd></div>
         <div><dt>Mouse</dt><dd>Drag to look, quick tap to fire (or capture the mouse in Settings)</dd></div>
@@ -94,9 +94,12 @@ export function HowToPlayBody({ questions }: { questions: boolean }) {
             adds {Math.round(WRONG_ANSWER_STEPS / STEPS_PER_SECOND)} seconds, and you try again with a new question.
           </li>
         )}
-        {questions && <li><strong>Glowing pads</strong> give you a big refill when you answer right. A wrong answer costs nothing, and you get three tries.</li>}
+        {questions && <li><strong>Number gates</strong> are question doors with numbers floating in front of them. Fly into the number that answers the question. You can still press Enter to answer in a pop-up instead.</li>}
+        {questions && <li><strong>Glowing pads</strong> give you a big refill when you answer two questions right. A wrong answer costs nothing, and you get five tries.</li>}
         <li><strong>Shoot the robots</strong> with lasers (they use energy) and missiles. They are only machines.</li>
-        <li><strong>Destroy the reactor.</strong> It is the glowing orange ball in a cage, in the furthest room. Keep shooting it until it breaks (missiles hit hardest). Then an escape timer starts.</li>
+        <li>
+          <strong>Destroy the reactor.</strong> It is the glowing orange ball in a cage, in the furthest room. {questions && `It is locked inside a blue shell until you answer ${REACTOR_LOCK_ANSWERS} questions right (fly close and press Enter). `}Keep shooting it until it breaks (missiles hit hardest). Then an escape timer starts.
+        </li>
         <li><strong>Race back to the exit</strong> before the timer runs out.</li>
       </ol>
       <p>If your shield runs out, your ship is rebuilt in the last room you were in and {Math.round(REBUILD_PENALTY_STEPS / STEPS_PER_SECOND)} seconds are added to your time. You never lose your keys.</p>

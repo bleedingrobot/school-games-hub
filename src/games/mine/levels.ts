@@ -37,12 +37,12 @@ const NAMES = [
   'Volcanic Deep',
 ];
 const BLURBS = [
-  'A cave of glowing greenstone. One blue key and a few slow drones. A good first dive.',
-  'Old gold-rush tunnels. A blue key and a question door.',
-  'A twisty gold mine. Two keys, a question door and more robots.',
-  'Deep coal tunnels. Hunters, turrets and heavy diggers join in.',
-  'Caverns under glowing ceilings. Three keys and two question doors.',
-  'The deepest mine, deep under a volcano. Lots of robots.',
+  'A cave of glowing greenstone. A blue key, a question door and a few slow drones. A good first dive.',
+  'Old gold-rush tunnels. A blue key, a question door and your first number gate.',
+  'A twisty gold mine. Two keys, two question doors and more robots.',
+  'Deep coal tunnels. Three question doors, and hunters, turrets and heavy diggers join in.',
+  'Caverns under glowing ceilings. Three keys and three question doors.',
+  'The deepest mine, deep under a volcano. Lots of robots and lots of doors.',
 ];
 
 const needsQuestions = (r: Recipe) => r.doors.includes('question') || r.pads.length > 0;

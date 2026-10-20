@@ -27,6 +27,8 @@ export interface Recipe {
   dims: readonly [number, number, number];
   /** Doors on the way to the reactor, in order. Each key colour at most once. */
   doors: readonly DoorKind[];
+  /** Which of those doors (by position in `doors`) are question doors drawn as number gates: same rules, a different look. */
+  gates?: readonly number[];
   /** Robots in ordinary rooms, and extra guards in the reactor room. */
   robots: number;
   guards: number;
@@ -59,6 +61,8 @@ export interface Room {
 export interface Door {
   id: number;
   kind: DoorKind;
+  /** A question door drawn as a gate with answer panels (the rules are the same as for any question door). */
+  gate: boolean;
   /** The two rooms it sits between. */
   rooms: readonly [number, number];
   /** The blocks that make it up (they are open space until the door is shut by `doorAt`). */
@@ -67,6 +71,11 @@ export interface Door {
   x: number;
   y: number;
   z: number;
+}
+
+/** The number a GRANT uses for the reactor's console: after all the doors and pads. */
+export function reactorTargetId(level: { doors: readonly unknown[]; pads: readonly unknown[] }): number {
+  return level.doors.length + level.pads.length;
 }
 
 export interface Spot {
@@ -216,7 +225,7 @@ export function makeLevel(recipe: Recipe): Level {
   path.reverse();
   const edgesOnPath = path.length - 1;
   if (edgesOnPath < recipe.doors.length + 1) throw new Error(`level ${recipe.id}: the way to the reactor is too short for ${recipe.doors.length} doors`);
-  if (recipe.doors.length + recipe.pads.length > MAX_TARGETS) throw new Error(`level ${recipe.id}: too many doors and pads`);
+  if (recipe.doors.length + recipe.pads.length + 1 > MAX_TARGETS) throw new Error(`level ${recipe.id}: too many doors and pads`);
 
   // Doors sit on evenly spaced steps of the way to the reactor.
   const doorEdges: number[] = []; // door i is between path[e − 1] and path[e]
@@ -285,7 +294,7 @@ export function makeLevel(recipe: Recipe): Level {
         doorAt[idx] = id;
         blocks.push(idx);
       }
-    return { id, kind, rooms: [a.index, b.index] as const, blocks, x: mx + 0.5, y: my + 0.5, z: mz + 0.5 };
+    return { id, kind, gate: kind === 'question' && (recipe.gates ?? []).includes(id), rooms: [a.index, b.index] as const, blocks, x: mx + 0.5, y: my + 0.5, z: mz + 0.5 };
   });
 
   // Keys: each in a room you can reach before its door (never the start or reactor room), spread out.
@@ -394,12 +403,12 @@ export function roomAt(level: Level, x: number, y: number, z: number): number {
  * slow drones), so nearly everyone finishes them in their first lesson; levels 5 and 6 are the real challenge.
  */
 export const RECIPES: readonly Recipe[] = [
-  { id: 'l1', seed: 101, dims: [3, 3, 2], doors: ['blue'], robots: 3, guards: 1, mix: [1, 0, 0], pickups: { shield: 3, energy: 2, missiles: 2 }, pads: ['shield'], loops: 1, escapeFactor: 3.4 },
-  { id: 'l2', seed: 202, dims: [4, 3, 2], doors: ['blue', 'question'], robots: 5, guards: 1, mix: [5, 1, 0], pickups: { shield: 3, energy: 3, missiles: 3 }, pads: ['shield', 'missiles'], loops: 2, escapeFactor: 3 },
-  { id: 'l3', seed: 303, dims: [4, 4, 2], doors: ['blue', 'question', 'yellow'], robots: 10, guards: 3, mix: [3, 3, 1], pickups: { shield: 4, energy: 3, missiles: 3 }, pads: ['shield', 'energy', 'missiles'], loops: 3, escapeFactor: 2.3 },
-  { id: 'l4', seed: 404, dims: [4, 4, 3], doors: ['blue', 'yellow', 'question', 'question'], robots: 14, guards: 4, mix: [2, 3, 2, 1], pickups: { shield: 5, energy: 4, missiles: 4 }, pads: ['shield', 'energy', 'missiles'], loops: 3, escapeFactor: 2.1 },
-  { id: 'l5', seed: 505, dims: [5, 4, 3], doors: ['blue', 'question', 'yellow', 'question', 'red'], robots: 18, guards: 5, mix: [2, 3, 3, 1], pickups: { shield: 6, energy: 5, missiles: 5 }, pads: ['shield', 'shield', 'energy', 'missiles'], loops: 4, escapeFactor: 1.9 },
-  { id: 'l6', seed: 606, dims: [5, 5, 3], doors: ['blue', 'question', 'yellow', 'question', 'red', 'question'], robots: 24, guards: 6, mix: [2, 3, 3, 2], pickups: { shield: 7, energy: 6, missiles: 6 }, pads: ['shield', 'shield', 'energy', 'energy', 'missiles'], loops: 5, escapeFactor: 1.7 },
+  { id: 'l1', seed: 101, dims: [3, 3, 2], doors: ['blue', 'question'], robots: 3, guards: 1, mix: [1, 0, 0], pickups: { shield: 3, energy: 2, missiles: 2 }, pads: ['shield'], loops: 1, escapeFactor: 3.4 },
+  { id: 'l2', seed: 202, dims: [4, 3, 2], doors: ['blue', 'question', 'question'], gates: [2], robots: 5, guards: 1, mix: [5, 1, 0], pickups: { shield: 3, energy: 3, missiles: 3 }, pads: ['shield', 'missiles'], loops: 2, escapeFactor: 3 },
+  { id: 'l3', seed: 303, dims: [4, 4, 2], doors: ['blue', 'question', 'yellow', 'question'], gates: [3], robots: 10, guards: 3, mix: [3, 3, 1], pickups: { shield: 4, energy: 3, missiles: 3 }, pads: ['shield', 'energy', 'missiles'], loops: 3, escapeFactor: 2.3 },
+  { id: 'l4', seed: 404, dims: [4, 4, 3], doors: ['blue', 'question', 'yellow', 'question', 'question'], gates: [3], robots: 14, guards: 4, mix: [2, 3, 2, 1], pickups: { shield: 5, energy: 4, missiles: 4 }, pads: ['shield', 'energy', 'missiles'], loops: 3, escapeFactor: 2.1 },
+  { id: 'l5', seed: 505, dims: [5, 4, 3], doors: ['blue', 'question', 'yellow', 'question', 'red', 'question'], gates: [3, 5], robots: 18, guards: 5, mix: [2, 3, 3, 1], pickups: { shield: 6, energy: 5, missiles: 5 }, pads: ['shield', 'shield', 'energy', 'missiles'], loops: 4, escapeFactor: 1.9 },
+  { id: 'l6', seed: 606, dims: [5, 5, 3], doors: ['blue', 'question', 'yellow', 'question', 'red', 'question', 'question'], gates: [3, 6], robots: 24, guards: 6, mix: [2, 3, 3, 2], pickups: { shield: 7, energy: 6, missiles: 6 }, pads: ['shield', 'shield', 'energy', 'energy', 'missiles'], loops: 5, escapeFactor: 1.7 },
 ];
 
 /**
