@@ -1,4 +1,4 @@
-import { FLUENT_DAYS, TOP_BOX, quickMsForPack } from '../../../shared/maths/config';
+import { FLUENT_DAYS, TOP_BOX, keptMs, quickMsForPack } from '../../../shared/maths/config';
 import { groupByPack } from '../../../shared/maths/focus';
 import type { FactAnswer } from '../../../shared/maths/leitner';
 import { countForFocuses } from './focusResults';
@@ -23,7 +23,8 @@ export interface Recorded {
 /**
  * Saves answers the server has marked, the one approved way (docs/GAME_DEVELOPMENT_GUIDE.md, section 4.1 rule 6):
  * split by the pack that keeps each record, one batch per pack with an id made from `once` (something unique to this
- * save, such as the run's seed and the question's slot), each pack's own quick time, and the running maths focuses'
+ * save, such as the run's seed and the question's slot), each pack's own quick time, times kept to at most two
+ * minutes (`keptMs`), and the running maths focuses'
  * results counted for a batch the records took for the first time, so a retry never counts twice.
  * It never throws: a problem is logged with its code (never who) and the game goes on.
  */
@@ -35,7 +36,8 @@ export async function recordMathsAnswers(rpc: RpcWithData, player: string, answe
         player,
         pack,
         batch_id: await batchIdFor(`${from}:${once}:${pack}`),
-        answers: group,
+        // Times as they are kept: at most two minutes (a pupil who wandered off isn't slow at the fact).
+        answers: group.map((a) => ({ ...a, ms: keptMs(a.ms) })),
         quick_ms: quickMsForPack(pack),
         fluent_days: FLUENT_DAYS,
         top_box: TOP_BOX,

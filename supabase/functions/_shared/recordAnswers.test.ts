@@ -60,6 +60,12 @@ describe('saving marked maths answers', () => {
     await expect(recordMathsAnswers(rpc, 'student-1', [tables], 'x', 'marble')).resolves.toEqual({ saved: 0, failed: 1 });
   });
 
+  it('keeps each time to at most two minutes', async () => {
+    const rpc = fakeDb();
+    await recordMathsAnswers(rpc, 'student-1', [{ ...tables, ms: 600_000 }], 'x', 'marble');
+    expect((rpc.mock.calls[0][1].answers as { ms: number }[])[0].ms).toBe(120_000);
+  });
+
   it('answers that belong to no pack cost nothing', async () => {
     const rpc = fakeDb();
     await expect(recordMathsAnswers(rpc, 'student-1', [{ key: 'nonsense', correct: true, ms: 1, at: 1 }], 'x', 'marble')).resolves.toEqual({ saved: 0, failed: 0 });
