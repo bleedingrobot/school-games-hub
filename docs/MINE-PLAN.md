@@ -3,7 +3,9 @@
 A 3D "fly a ship through underground mine tunnels" game for the hub, in the spirit of the 1995 game *Descent*: full freedom of movement in all directions, robots to shoot, coloured keys and locked doors, a reactor to blow up, and a dash to the exit before it goes.
 Written 20 October 2026 (Stage 0: plan only, **no code yet**). Branch `mine`, folder `~/projects/school-games-hub-mine`, short id `mine`, CSS prefix `.mn-`. Next free migration number when this was written: `20261020000400` (re-check before the first migration).
 
-**Status: waiting for James to read this and answer section 12.**
+**Status: James answered section 12 on 20 Oct 2026. Stage 1 built 20 Oct 2026 (rules only, no screen); waiting for James before Stage 2.**
+
+**Decisions (James, 20 Oct 2026):** name **Mine Runner** (id `mine`, prefix `.mn-`); theme **New Zealand mines** (Stage 3 picks the places, carefully, as for Marble); **Chromebooks + phones/tablets**; points and achievements **as listed in section 9**; boards as section 8 but **20 counted runs a day**; shooting **classic but tougher** (read as: rebuild costs +20 s instead of +10 s, and robots hit harder and shoot back more; all numbers live in `shared/mine/config.ts` so they're easy to retune); **doors: key doors need keys, question doors need an answer, a wrong answer costs shield and time**; **start Stage 1 now**.
 
 ## The short version
 
@@ -186,4 +188,32 @@ Every stage: merge `origin/main` first; own tests as I go; before saying a stage
 
 ## Stage results
 
-*(Stages 1–6 will add their results here.)*
+### Stage 1 results (20 Oct 2026): the rules, no screen
+
+**Built** (all in `shared/mine/`, pure TypeScript, nothing else on the site touched, nothing live):
+- `config.ts`: every tuning number in one place (30 steps a second, ship speed and turn rate, robot types, damage, rebuild +20 s, wrong answer −20 shield and +6 s, pads, escape timer). "Tougher" is the rebuild cost, harder-hitting robots and faster shooting; retune here.
+- `inputs.ts`: one whole number per step (push in 3 directions, turn left/right and up/down −6..6, roll, laser, missile) plus special codes `HOLD`, `PENALTY` (wrong answer) and `GRANT + n` (right answer for door or pad n). Encode/decode text, strict checking, play-back.
+- `level.ts`: makes a mine from a recipe and seed. A twisty 3D maze of rooms joined by 3-block tunnels, always finishable (key 1 reachable with no keys, key 2 behind door 1, and so on; extra loop tunnels never go round a door). Six fixed recipes `l1`–`l6` (3–6 doors, 5–30 robots, more doors and robots as they go).
+- `engine.ts`: ship flight with sliding wall collisions (ball against blocks, no outside library), steady and free flight, key doors that open by themselves with the key, question doors that open only on a `GRANT`, power-up pads, pickups, three robot kinds (drone, hunter, turret) that wake up on sight and shoot back, lasers and missiles (splash), reactor, escape timer, exit, rebuild after a wreck (in the last room entered, keys kept), `replay`, `stateKey`.
+- `bot.ts`: a pretend pilot that flies each level by the same rules and records the same inputs a person would.
+- `determinism.ts`: a long busy workload on all six levels in both flight modes; pinned fingerprint `ab9b563b` in Node.
+
+**Decisions made along the way**
+- Rules step at 30 a second (half Marble's 60), which halves recorded run size.
+- Maths never touches the physics: `PENALTY` and `GRANT` steps are "held" steps (clock and ship stand still), as Marble's pauses are. The server will only accept as many `PENALTY` and `GRANT` steps as it marked wrong and right. A `GRANT` for something that isn't there or is out of reach is counted in `badGrants`, so a fair run has none.
+- Robots sleep until they see the ship, and only chase while they can see it (no path-finding yet). They never stand in the middle column of a room, so a vertical shaft can't be blocked by one.
+- Steady flight stops looking up or down at about 76°; a thing directly above or below has to be lined up by sliding sideways (the bot does this).
+- Laser energy refills at 9 a second. At 4.5 a second the bot got stuck out of energy facing a turret down a long corridor.
+- No `app_settings`, tables or shared files yet: that is Stage 4/5.
+
+**Tests:** 55 in `shared/mine/` (inputs, level, engine, bot, determinism). The bot finishes all six levels, using only question-door `GRANT`s, and its recorded run replays to exactly the same final state. Full checks on top of merged `origin/main`: `npm run typecheck`, `npm run test:all` (207 files, 4,012 tests), `npm run build` all pass.
+
+**Recorded run size (the plan's biggest risk): fine.** Bot runs are 5–26 KB of text (l1 5.4 KB for 70 s up to l6 26 KB for 5 minutes). A worst case where every step is different (a nervous mouse for 3 minutes) is 38 KB; holding the mouse number for 3 steps (10 aim updates a second) makes it 14 KB. At the 15-minute cap the worst case would be about 190 KB. So the plan is: let a saved run be up to **200 KB** of text, and have the screen update mouse aim about 10 times a second. No need for the "stepped turning" fallback.
+
+**Not done / untested**
+- Bot run times are a rough guide only: l1 70 s, l2 73 s, l3 119 s, l4 177 s, l5 248 s, l6 500 s (with 9 wrecks). Level 6 is too hard for a bot that never dodges; medal times and balance are Stage 3.
+- The bot can't dodge, and robots can't path-find round corners, so real play will feel different. Stage 2 (your phone preview) is the real test.
+- Determinism is only pinned in Node. Chromium and WebKit comparison is Stage 3.
+- Level names/places (New Zealand mines), pickups' look, sounds: Stage 2–3.
+
+**Go-live list so far:** nothing live. Next free migration number is `20261020000400` (re-check at Stage 4).
