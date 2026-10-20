@@ -2,7 +2,7 @@
 
 **Bond Match** (name confirmed by James, 19 Oct 2026): a card-matching memory game where you don't match two *identical* cards, you match two cards that **make a number together**. Flip a 3, then find the 7 to make 10. Kids choose which bond they're practising: to 10, 20, 100, 1000, decimals to 1, fractions to 1, and more.
 Written 19 October 2026 from James's request and a read of the hub on `main` (the maths ladder, skill packs, Gem Keep's saving, the game registry).
-**Status (19 Oct 2026): M.1 to M.3 done; M.4 built and tested but NOT applied or deployed (see "Stage M.4 results"). The migration and function are live; the game is NOT switched on.** James answered every question on 19 Oct 2026 (section 11).
+**Status (20 Oct 2026): M.1 to M.4 and M.6 done; M.4 is live. M.6 and the per-class switch are built and tested, NOT live (see "Stage M.6 results"). M.5 comes after go-live (James, 20 Oct 2026).** James answered every question on 19 Oct 2026 (section 11).
 
 ## The short version
 
@@ -142,3 +142,16 @@ M.1–M.3 can all be done and looked at without touching the database or any liv
 - **Tests:** shared checks, SQL (`supabase/tests/database/bond_match.test.sql`, 36 checks, run on a scratch copy with the gem keep, security, monsters and lord SQL tests), handler, data, screens and teacher panel. Under load a few unrelated tests (101, Space, Training) time out; they pass when run alone.
 - **Applied and checked live (19 Oct 2026):** the migration was applied in one transaction (after a rolled-back dry run); only the `bond-match` function was deployed. A call with no sign-in or a fake token gets 401. A test save for a real student account, run inside a transaction that was rolled back, saved once and earned 2 points; sending it again said "duplicate" and added nothing. The live tables are empty (0 games, 0 bests, 0 Bond Match scores), so nothing needed tidying. A save through the browser with a real sign-in has not been tried because the game is not reachable yet.
 - **Still to do:** M.5 (needs James's go: it changes other games), then M.6 and M.7.
+
+## Stage M.6 results (20 Oct 2026)
+
+**James's order (20 Oct 2026): M.6, then go live with his class as the playtest, then M.5 (ladder and focus) as its own job.** Built, tested and pushed on `bond-match`. Nothing new is live.
+
+- **Merged `origin/main`** (133 commits). Bond Match now follows the game guide: its student panel comes from its `GameDefinition`; `scripts/build-functions.mjs` lists it next to Marble.
+- **Per-class switch** (migration `20261020000200_bond_match_switch.sql`): `app_settings.bond_match_enabled`, off everywhere; `teacher_set_bond_match(enabled, target_class)`; Bond Match's row in `hub_games` gets the switch and a How points work line ("Finish a game: 2 points, for your first 10 games each day."), shown only where it's on. The server function reads the switch (`settings_of`) and answers 403 while it is off, so nothing is saved and the website keeps its queue. The function also now uses `_shared/signIn.ts` (as the live copy already did since server-load S.5).
+- **Two players and the computer:** a "Who's playing?" row on the picker: *Just me*, *Two players* (pass-and-play: a match goes again, a mismatch passes, most pairs wins) and *Me vs the computer* at Very Easy, Easy or Medium. The computer (`shared/bond-match/bot.ts`) only sees face-up cards, remembers 2, 5 or 8 of them and sometimes guesses (30%, 15%, 5%); it flips one card every 0.9 s, and waits 2.2 s after a child's mismatch so the sum can be read. A tap during its turn does nothing. These games are saved with `mode` 'pass' or 'bot', replayed by the server like any other, and earn the same capped points; they don't change bests or stars (a shared board isn't one person's memory). The finish screen says who won and the pairs each found.
+- **Registry:** in `GAMES` (`BOND_MATCH_ON = true`, group "easy maths"), with `useTeacherSwitch`, so the card shows only where a teacher switched it on. Teacher page panel: the switch for the picked class.
+- **Tests:** shared (bot plays every level to the end with legal flips that replay; more memory means fewer flips; turns and winner), server function (switch off → 403, settings unreadable → 503, modes), screens (players choice, two-player turns and winner, the computer playing by itself, taps ignored on its turn), registry. SQL: `bond_match_switch.test.sql` (18 checks) and the security list. Full run: typecheck, `test:all` (3,861) and build pass. On a scratch copy every database file passes except the three failures every copy has (two Clan Quest midnight-job checks, `maths_focus_results` check 42), which also fail without this migration.
+- **Preview:** rebuilt and published as a private page for James.
+- **Not done:** M.5 (after go-live); a playtest with real kids (James's class, at go-live).
+- **Go-live:** `docs/prompts/bond-match-golive.md`: apply `20261020000200`, deploy `bond-match`, merge to main, then James switches it on for his class.

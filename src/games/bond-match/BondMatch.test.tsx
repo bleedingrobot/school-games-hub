@@ -591,7 +591,7 @@ describe('two players and the computer', () => {
     const { user } = setupVersus({ saver });
     await user.click(screen.getByRole('button', { name: 'Me vs the computer' }));
     const levels = screen.getByRole('group', { name: 'How good is the computer?' });
-    expect(within(levels).getAllByRole('button').map((b) => b.textContent)).toEqual(['Very easy', 'Easy', 'Medium']);
+    expect(within(levels).getAllByRole('button').map((b) => b.textContent)).toEqual(['Very Easy', 'Easy', 'Medium']);
     await user.click(within(levels).getByRole('button', { name: 'Medium' }));
     await pick(user, 'To 10', 'Small');
     expect(screen.getByTestId('turn')).toHaveTextContent('Your turn');

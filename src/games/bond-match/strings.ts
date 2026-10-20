@@ -10,7 +10,7 @@ import type { Player } from '../../../shared/bond-match/versus';
 /** Who is playing: one student, two on one Chromebook, or one against the computer. */
 export type Players = { mode: 'solo' } | { mode: 'pass' } | { mode: 'bot'; level: BotLevel };
 
-export const BOT_LEVEL_NAMES: Record<BotLevel, string> = { 'very-easy': 'Very easy', easy: 'Easy', medium: 'Medium' };
+export const BOT_LEVEL_NAMES: Record<BotLevel, string> = { 'very-easy': 'Very Easy', easy: 'Easy', medium: 'Medium' };
 
 /** "Player 1", "Player 2", or "You" and "The computer". */
 export function playerName(players: Players, p: Player): string {

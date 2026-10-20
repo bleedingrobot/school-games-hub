@@ -3,8 +3,8 @@ import { ALL_GAMES, GAMES, POWER_CLASH_ON, findGame } from './registry';
 import { BOT_LEVELS, isBotLevel, isRanked } from './types';
 
 describe('game registry', () => {
-  it('has chess, checkers, Wormholes & Black Holes, 101, Gem Keep, Power Clash, Maths Monsters, Dragon Maths, Clan Quest and Marble Rush', () => {
-    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters', 'dragon-maths', 'clan-quest', 'marble']);
+  it('has chess, checkers, Wormholes & Black Holes, 101, Gem Keep, Power Clash, Maths Monsters, Dragon Maths, Clan Quest, Marble Rush and Bond Match', () => {
+    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match']);
   });
 
   it('shows Power Clash on the dashboard while the switch is on', () => {
@@ -20,6 +20,7 @@ describe('game registry', () => {
     expect(findGame('monsters')?.ranked).toBe(false);
     expect(findGame('dragon-maths')?.ranked).toBe(false);
     expect(findGame('clan-quest')?.ranked).toBe(false);
+    expect(findGame('bond-match')?.ranked).toBe(false);
   });
 
   it('gives every game a unique, URL-safe id', () => {
@@ -31,15 +32,15 @@ describe('game registry', () => {
   it('puts every game in a dashboard group, in the same order as before games said their own group', () => {
     const inGroup = (group: string) => ALL_GAMES.filter((g) => g.group === group).map((g) => g.id);
     expect(inGroup('no-maths')).toEqual(['chess', 'checkers', '101', 'power-clash']);
-    expect(inGroup('easy-maths')).toEqual(['space', 'gem-keep']);
+    expect(inGroup('easy-maths')).toEqual(['space', 'gem-keep', 'bond-match']);
     expect(inGroup('complex-maths')).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'marble']);
     expect(ALL_GAMES.filter((g) => !g.group)).toEqual([]);
   });
 
   it('the games with a teacher switch and teacher panels say so themselves', () => {
-    expect(ALL_GAMES.filter((g) => g.useTeacherSwitch).map((g) => g.id)).toEqual(['monsters', 'dragon-maths', 'clan-quest']);
-    expect(ALL_GAMES.filter((g) => g.TeacherPanels).map((g) => g.id)).toEqual(['gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'marble']);
-    expect(ALL_GAMES.filter((g) => g.StudentPanel).map((g) => g.id)).toEqual(['gem-keep', 'monsters', 'dragon-maths', 'clan-quest']);
+    expect(ALL_GAMES.filter((g) => g.useTeacherSwitch).map((g) => g.id)).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'bond-match']);
+    expect(ALL_GAMES.filter((g) => g.TeacherPanels).map((g) => g.id)).toEqual(['gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match']);
+    expect(ALL_GAMES.filter((g) => g.StudentPanel).map((g) => g.id)).toEqual(['gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'bond-match']);
   });
 
   it('finds games by id', () => {
