@@ -724,3 +724,5 @@ Not checked by me: a real browser sign-in, the teacher screens, or a student pla
 - **Go-live:** `docs/prompts/maths-bonds-golive.md`. Redeploy `gem-keep`, `space-game`, `save-bot-game` and `marble` (their bundled copies changed), then merge to `main`. `clans` and `lord` did not change. `monster` was not rebuilt (it is left as deployed; the `monsters-marking` branch rebuilds it).
 
 - **Step 2 live (20 Oct 2026):** gem-keep, space-game, save-bot-game and marble deployed with the bond question code (each answers 401). The ladder skills are not on the website yet (step 3).
+
+- **Step 3 live (20 Oct 2026):** `maths-bonds` fast-forwarded to `main` (de50c6f). "Test and publish" green, site answers 200. Ladder is 33 skills. Next: Bond Match opens on the new bonds (step 4).
