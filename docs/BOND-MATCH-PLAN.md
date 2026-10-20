@@ -167,3 +167,22 @@ James said the picker was "really ugly" (the S/M/L pair counts meant nothing to 
 - **Step 2 done (James's yes):** `bond-match` function deployed (version 3, Verify JWT off, `_shared/signIn.ts`, class-switch check, any-pair rule). Checked: signed out and a fake sign-in both get 401 "Please sign in again."; the browser check (OPTIONS) gets 204.
 - **Step 3 done (James's yes):** `bond-match` pushed to `main` (fast-forward, 079b1f6); "Test and publish" green (build, db, deploy). Bond Match is on the Teacher page, switched off.
 - **Switching on:** James asked to "turn it all on" (every class, as the other games are: Riley, Everyone, Teachers and the school default). The update from Claude's session was blocked by the permission check, so James switches it on from the Teacher page (each class), or allows the update.
+
+## Stage M.5 results (20 Oct 2026)
+
+**Part B (Bond Match reads the focus and Auto): built, tested and pushed on `bond-match`. Not merged, nothing live.** Part A (new decimal and fraction bond questions for the ladder, branch `maths-bonds`) is a proposal waiting for James's pick; nothing is built for it yet.
+
+- **Read only, never evidence.** The game loads `my_ladder()` once when it opens (it already gives the facts, the class settings and the focus with the ladder info) and only reads it. No server change, no migration, nothing about saving, points or stars changed. If it can't be read, the picker is exactly as before.
+- **Map** (`src/games/bond-match/suggest.ts`, `SKILL_BONDS`): `facts-10` → To 10; `facts-20` → To 20; `bonds-100` → To 100 (tens), then To 100 (any) once `bond100:tens` is in box 2 or higher; `bonds-1000` → To 1000 (hundreds), then To 1000 (tens) once `bond1000:hundreds` is; `add-tenths` → To 1 (tenths) (its `addten:to-one` type). The decimal hundredths, decimals-to-10 and fraction sets get skills when Part A is built.
+- **A focus:** the first focus skill (in ladder order) with a bond set. A teacher's focus (class, group or student) shows **"Teacher's pick"** (said aloud as "Your teacher picked this"); a student's own focus shows **"Your focus"**. A focus with no bond set (times tables) suggests nothing, because a focus switches Auto off. An ended teacher focus is ignored (`currentFocus`).
+- **Auto** (no focus, class has auto on): the bond for the student's current ladder place, or the last bond skill below it (a student on ×3 ×4 gets To 20; someone at the top gets To 1 (tenths)). Badge **"Good for you now"**.
+- **Picker:** the suggested bond moves to the front of its shelf, with a shelf-colour ring and one small amber badge over its top edge. It never starts a game by itself; every bond can still be picked. Checked at 390 px and 1366 px.
+- **Preview:** `?suggest=teacher` (default: a class focus on Bonds to 100), `own`, `auto` (placed at Hundreds that make 1000) or `none`. Republished to James's private preview page.
+- **Tests:** `suggest.test.ts` (12: map names real skills and sets, teacher/group/student focus, moving on to the harder set, own focus, focus with no bond, ended focus, Auto at and below a bond skill, no focus no Auto, and a check that no Bond Match file names any maths-record, ladder-place or focus-result writer); picker tests (badge, first on shelf, spoken name, nothing starts by itself, no suggestion = same order and no badge); `BondMatchHub.test.tsx` (reads the ladder once; works as before when it can't be read). The server's "never touches fact records" test still passes. Full run: typecheck, `test:all` (3,879 passed) and build pass (three Space tests timed out once under load and passed on the rerun).
+- **Going live (Part B):** merge `bond-match` to `main` only. No migration, no function deploy.
+
+### Part A proposal (for James)
+
+Checked 20 Oct 2026: the ladder has no hundredths-to-1 (0.35 + 0.65), no decimals-to-10 (3.4 + 6.6) and no fractions-to-1 (⅓ + ⅔). Two ways:
+1. **New ladder skills (recommended):** "Decimals that make 1 and 10" (after Adding and taking away tenths) and "Fractions that make 1" (after A fraction of an amount). Teachers can pick them on Set focus, progress shows them, and Bond Match can open on them. Every class with Auto gets two more steps on its ladder (33 instead of 31), so progress percentages move a little.
+2. **New question types inside existing skills** (hundredths and to-10 inside Adding tenths or Fractions as decimals; fractions-to-1 inside Equivalent fractions): less changes, but teachers can't pick them on their own and Bond Match can't tell them apart from the rest of the skill.

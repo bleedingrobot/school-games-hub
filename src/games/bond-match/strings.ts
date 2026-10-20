@@ -6,6 +6,7 @@ import type { BoardSize } from '../../../shared/bond-match/deck';
 import type { Stars } from '../../../shared/bond-match/score';
 import type { BotLevel } from '../../../shared/botGame';
 import type { Player } from '../../../shared/bond-match/versus';
+import type { SuggestWhy } from './suggest';
 
 /** Who is playing: one student, two on one Chromebook, or one against the computer. */
 export type Players = { mode: 'solo' } | { mode: 'pass' } | { mode: 'bot'; level: BotLevel };
@@ -121,4 +122,8 @@ export const TEXT = {
   versusNote: 'Stars and bests are for games on your own.',
   again: 'Play again',
   another: 'Pick another bond',
+  /** The badge on the bond the maths focus or ladder suggests (suggest.ts): short enough for a phone tile. */
+  suggest: { teacher: 'Teacher’s pick', own: 'Your focus', auto: 'Good for you now' } as Record<SuggestWhy, string>,
+  /** ...and what a screen reader says before the bond's name. */
+  suggestSpoken: { teacher: 'Your teacher picked this', own: 'Your focus', auto: 'Good for you now' } as Record<SuggestWhy, string>,
 };

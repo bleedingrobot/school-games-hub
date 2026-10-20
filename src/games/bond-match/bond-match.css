@@ -328,6 +328,28 @@
 .bm-bond__star--on {
   color: #f59e0b;
 }
+/* The bond the maths focus or ladder suggests: a ring in the shelf colour and one small badge over the top edge. */
+.bm-bond--suggested {
+  border-color: var(--shelf);
+  padding-top: 18px;
+}
+.bm-bond__badge {
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  padding: 1px 8px;
+  border: 1px solid #f59e0b;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #78350f;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.bm-shelf__sets:has(.bm-bond--suggested) {
+  padding-top: 6px;
+}
 
 /* ---------- Game ---------- */
 

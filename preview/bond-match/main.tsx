@@ -4,6 +4,8 @@
  * Build: npm run bond-match:preview. Or run it: npx vite --config vite.bond-match-preview.config.ts
  *
  * Add ?server=ok|cap|offline|none for the stand-in server, ?bests=1 for some saved stars.
+ * Add ?suggest=teacher|own|auto|none for a made-up maths focus (teacher: Bonds to 100 for the class, the default; own: the
+ * student's own focus on adding tenths; auto: no focus, auto on, starting at Hundreds that make 1000).
  * Add ?seed=123 to get the same shuffle every game (for screenshots), and ?mismatchMs=60000 to keep
  * a mismatch on show. The page also gives test scripts window.bondMatchPreview.perfectFlips(bond, size),
  * the card numbers to click for a perfect game with that seed and wrongPair for the
@@ -19,6 +21,8 @@ import { replay } from '../../shared/bond-match/save';
 import type { BondMatchSaver, ServerBest } from '../../src/data/bondMatch';
 import { MuteButton } from '../../src/components/MuteButton';
 import { BondMatchPlay } from '../../src/games/bond-match/BondMatchPlay';
+import { suggestBond } from '../../src/games/bond-match/suggest';
+import { ladderFrom } from '../../src/data/ladder';
 import { SoundProvider } from '../../src/sound';
 import '../../src/styles.css';
 import '../space/preview.css';
@@ -30,6 +34,15 @@ const server = params.get('server') ?? 'ok';
 const seedParam = params.get('seed');
 const seed = seedParam === null ? undefined : Number(seedParam);
 const mismatchMs = params.has('mismatchMs') ? Number(params.get('mismatchMs')) : undefined;
+
+// A fixed, made-up maths focus run through the real suggestion code, as if my_ladder() had said it.
+const FAKE_FOCUS: Record<string, unknown> = {
+  teacher: { source: 'teacher-class', skills: ['bonds-100'], onlyThese: false, endsAt: '2099-01-01T00:00:00Z', canChoose: true, own: null },
+  own: { source: 'student', skills: ['add-tenths'], onlyThese: false, endsAt: null, canChoose: true, own: { skills: ['add-tenths'], onlyThese: false } },
+  auto: { source: 'auto', skills: [], onlyThese: false, endsAt: null, canChoose: false, own: null, ladder: { on: true, placed: 'done', placement: 'bonds-1000', furthest: null } },
+};
+const suggestParam = params.get('suggest') ?? 'teacher';
+const suggested = FAKE_FOCUS[suggestParam] ? suggestBond(ladderFrom({ facts: [], settings: {}, focus: FAKE_FOCUS[suggestParam] })) : null;
 
 declare global {
   interface Window {
@@ -97,7 +110,7 @@ createRoot(document.getElementById('root')!).render(
         <MuteButton />
       </header>
       <main id="main">
-        <BondMatchPlay makeSeed={seed === undefined ? undefined : () => seed} mismatchMs={mismatchMs} saver={fakeSaver()} />
+        <BondMatchPlay makeSeed={seed === undefined ? undefined : () => seed} mismatchMs={mismatchMs} saver={fakeSaver()} suggested={suggested} />
       </main>
     </SoundProvider>
   </StrictMode>,
