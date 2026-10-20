@@ -38,6 +38,28 @@ describe('the map from ladder skills to bond sets', () => {
   });
 });
 
+describe('the decimal and fraction bond skills', () => {
+  const focus = (skill: string, facts: FactStats[] = []) => suggestBond(ladder({ source: 'teacher-class', skills: [skill], endsAt: LATER }, facts), NOW);
+
+  it('opens a decimal bonds focus on hundredths to 1, then tenths to 10 once hundredths are secure', () => {
+    expect(focus('decimal-bonds')).toEqual({ bondId: 'decimal-1-hundredths', why: 'teacher' });
+    expect(focus('decimal-bonds', [fact('bondd1:hundredths', 1)])?.bondId).toBe('decimal-1-hundredths');
+    expect(focus('decimal-bonds', [fact('bondd1:hundredths', 2)])?.bondId).toBe('decimal-10-tenths');
+  });
+
+  it('opens a fraction bonds focus on quarters, then eighths once the small fractions are secure', () => {
+    expect(focus('fraction-bonds')).toEqual({ bondId: 'fraction-quarters', why: 'teacher' });
+    expect(focus('fraction-bonds', [fact('bondf1:small', 1)])?.bondId).toBe('fraction-quarters');
+    expect(focus('fraction-bonds', [fact('bondf1:small', 2)])?.bondId).toBe('fraction-eighths');
+  });
+
+  it.each(['decimal-bonds', 'fraction-bonds'])('marks %s for a student on Auto at that skill', (skill) => {
+    const got = suggestBond(auto({ on: true, placed: 'done', placement: skill, furthest: null }), NOW);
+    expect(got?.why).toBe('auto');
+    expect(got?.bondId).toBe(SKILL_BONDS[skill][0].bond);
+  });
+});
+
 describe('a maths focus', () => {
   it('opens on the bond for a teacher focus, saying the teacher picked it', () => {
     expect(suggestBond(teacher(['bonds-100']), NOW)).toEqual({ bondId: 'whole-100-tens', why: 'teacher' });
@@ -80,7 +102,7 @@ describe('auto (no focus)', () => {
     // The first times-table step comes straight after Doubles and halves to 20, so the bonds are to 20.
     const firstTables = LADDER.find((s) => s.stage === 'times-tables')!.id;
     expect(suggestBond(auto({ on: true, placed: 'done', placement: firstTables, furthest: null }), NOW)?.bondId).toBe('whole-20');
-    expect(suggestBond(auto({ on: true, placed: 'done', placement: 'bedmas', furthest: null }), NOW)?.bondId).toBe('decimal-1-tenths');
+    expect(suggestBond(auto({ on: true, placed: 'done', placement: 'bedmas', furthest: null }), NOW)?.bondId).toBe('decimal-1-hundredths');
   });
 
   it('suggests nothing when auto is off and there is no focus: the picker is as before', () => {
