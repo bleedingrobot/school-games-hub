@@ -96,6 +96,9 @@ export const CALM_RADIUS = 12;
 // ——— Reactor, exit, doors, pickups ———
 export const REACTOR_HP = 160;
 export const REACTOR_RADIUS = 1.2;
+/** Aim assist on the reactor: shots bend to it when it is this near and within about 20 degrees (cosine) of the nose. */
+export const AIM_ASSIST_RANGE = 40;
+export const AIM_ASSIST_COS = 0.94;
 export const EXIT_RADIUS = 2.5;
 /** The escape timer: the way back at this speed (units a second), times the level's factor, plus a little extra. */
 export const ESCAPE_SPEED = 6;

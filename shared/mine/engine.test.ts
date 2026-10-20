@@ -32,6 +32,30 @@ function aloneWith(s: RunState, keep: number): void {
   });
 }
 
+describe('aim assist on the reactor', () => {
+  it('bends a shot at the reactor from above, when the nose is a little off, and leaves other shots alone', () => {
+    const { w, s } = setup();
+    const R = w.level.reactor;
+    // 17 metres straight above the reactor, nose pointing 15 degrees off straight down (steady flight can't look further).
+    placeAt(s, R.x, R.y, R.z + 8);
+    const tilt = 0.26;
+    s.fx = Math.sin(tilt); s.fy = 0; s.fz = -Math.cos(tilt);
+    const before = s.shots.length;
+    stepRun(w, s, press({ fire: true }));
+    const shot = s.shots[before];
+    // The shot flies straight down at the reactor.
+    expect(Math.abs(shot.vx)).toBeLessThan(1e-9);
+    expect(shot.vz).toBeLessThan(0);
+    // Pointing well away from the reactor, it flies where the nose points.
+    const other = setup();
+    placeAt(other.s, R.x, R.y, R.z + 8);
+    other.s.fx = 1; other.s.fy = 0; other.s.fz = 0;
+    stepRun(other.w, other.s, press({ fire: true }));
+    expect(other.s.shots[0].vx).toBeGreaterThan(0);
+    expect(other.s.shots[0].vz).toBe(0);
+  });
+});
+
 describe('starting', () => {
   it('begins in the start room, level, with full shield', () => {
     const { w, s } = setup();

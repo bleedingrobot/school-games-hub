@@ -7466,15 +7466,56 @@ function explode(w, s, x, y, z) {
 	const R = w.level.reactor;
 	if (dist(x, y, z, R.x, R.y, R.z) - 1.2 < 2.5) hurtReactor(s, w, 50);
 }
-function fire(s, k, speed, life, dmg) {
+/**
+* Where a shot goes. Straight ahead, except that the reactor is a gentle aim-assist target: if it is within range, in
+* clear view and within about 20 degrees of where the nose points, the shot flies straight at it. (Steady flight can't
+* look straight down a shaft, and the reactor often sits at the bottom of one.)
+*/
+function aimOf(w, s) {
+	if (s.reactorDown) return [
+		s.fx,
+		s.fy,
+		s.fz
+	];
+	const R = w.level.reactor;
+	const dx = R.x - s.px;
+	const dy = R.y - s.py;
+	const dz = R.z - s.pz;
+	const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+	if (d < 1 || d > 40) return [
+		s.fx,
+		s.fy,
+		s.fz
+	];
+	const ax = dx / d;
+	const ay = dy / d;
+	const az = dz / d;
+	if (ax * s.fx + ay * s.fy + az * s.fz < .94) return [
+		s.fx,
+		s.fy,
+		s.fz
+	];
+	if (!lineClear(w, s, s.px, s.py, s.pz, R.x, R.y, R.z)) return [
+		s.fx,
+		s.fy,
+		s.fz
+	];
+	return [
+		ax,
+		ay,
+		az
+	];
+}
+function fire(w, s, k, speed, life, dmg) {
+	const [ax, ay, az] = aimOf(w, s);
 	s.shots.push({
 		k,
-		x: s.px + s.fx * .6,
-		y: s.py + s.fy * .6,
-		z: s.pz + s.fz * .6,
-		vx: s.fx * speed,
-		vy: s.fy * speed,
-		vz: s.fz * speed,
+		x: s.px + ax * .6,
+		y: s.py + ay * .6,
+		z: s.pz + az * .6,
+		vx: ax * speed,
+		vy: ay * speed,
+		vz: az * speed,
 		life,
 		dmg
 	});
@@ -7613,12 +7654,12 @@ function stepRun(w, s, code) {
 	if (input.fire && s.laserCool <= 0 && s.energy >= 4) {
 		s.energy -= 4;
 		s.laserCool = 4;
-		fire(s, 0, LASER_SPEED, 40, 8);
+		fire(w, s, 0, LASER_SPEED, 40, 8);
 	}
 	if (input.missile && s.missileCool <= 0 && s.missiles > 0) {
 		s.missiles--;
 		s.missileCool = 20;
-		fire(s, 1, MISSILE_SPEED, 90, 50);
+		fire(w, s, 1, MISSILE_SPEED, 90, 50);
 	}
 	if (s.laserCool > 0) s.laserCool--;
 	if (s.missileCool > 0) s.missileCool--;

@@ -9,7 +9,7 @@
  * Everything that looks random (a robot's aim, how long it waits) comes from `state.rng`.
  */
 import {
-  CALM_RADIUS, DRAG, DT, ENERGY_PICKUP, ENERGY_REGEN, EXIT_RADIUS, KEY_DOOR_RANGE, KEY_RADIUS, LASER_COOLDOWN, LASER_COST, LASER_DAMAGE,
+  AIM_ASSIST_COS, AIM_ASSIST_RANGE, CALM_RADIUS, DRAG, DT, ENERGY_PICKUP, ENERGY_REGEN, EXIT_RADIUS, KEY_DOOR_RANGE, KEY_RADIUS, LASER_COOLDOWN, LASER_COST, LASER_DAMAGE,
   LASER_LIFE, LASER_SPEED, LOSE_SIGHT_STEPS, MAX_ENERGY, MAX_MISSILES, MAX_PAD_BONUSES, MAX_RUN_STEPS, MAX_SHIELD, MAX_SPEED, MISSILE_COOLDOWN,
   MISSILE_DAMAGE, MISSILE_LIFE, MISSILE_PICKUP, MISSILE_SPEED, MISSILE_SPLASH, PAD_BONUS_STEPS, PAD_ENERGY, PAD_MISSILES, PAD_SHIELD,
   PICKUP_RADIUS, PROJECTILE_SUBSTEPS, REACTOR_HP, REACTOR_RADIUS, REBUILD_PENALTY_STEPS, REBUILD_SHIELD, ROBOTS, ROBOT_SHOT_LIFE, ACCEL,
@@ -376,8 +376,30 @@ function explode(w: World, s: RunState, x: number, y: number, z: number): void {
   if (dist(x, y, z, R.x, R.y, R.z) - REACTOR_RADIUS < MISSILE_SPLASH) hurtReactor(s, w, MISSILE_DAMAGE);
 }
 
-function fire(s: RunState, k: 0 | 1, speed: number, life: number, dmg: number): void {
-  s.shots.push({ k, x: s.px + s.fx * 0.6, y: s.py + s.fy * 0.6, z: s.pz + s.fz * 0.6, vx: s.fx * speed, vy: s.fy * speed, vz: s.fz * speed, life, dmg });
+/**
+ * Where a shot goes. Straight ahead, except that the reactor is a gentle aim-assist target: if it is within range, in
+ * clear view and within about 20 degrees of where the nose points, the shot flies straight at it. (Steady flight can't
+ * look straight down a shaft, and the reactor often sits at the bottom of one.)
+ */
+function aimOf(w: World, s: RunState): [number, number, number] {
+  if (s.reactorDown) return [s.fx, s.fy, s.fz];
+  const R = w.level.reactor;
+  const dx = R.x - s.px;
+  const dy = R.y - s.py;
+  const dz = R.z - s.pz;
+  const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  if (d < 1 || d > AIM_ASSIST_RANGE) return [s.fx, s.fy, s.fz];
+  const ax = dx / d;
+  const ay = dy / d;
+  const az = dz / d;
+  if (ax * s.fx + ay * s.fy + az * s.fz < AIM_ASSIST_COS) return [s.fx, s.fy, s.fz];
+  if (!lineClear(w, s, s.px, s.py, s.pz, R.x, R.y, R.z)) return [s.fx, s.fy, s.fz];
+  return [ax, ay, az];
+}
+
+function fire(w: World, s: RunState, k: 0 | 1, speed: number, life: number, dmg: number): void {
+  const [ax, ay, az] = aimOf(w, s);
+  s.shots.push({ k, x: s.px + ax * 0.6, y: s.py + ay * 0.6, z: s.pz + az * 0.6, vx: ax * speed, vy: ay * speed, vz: az * speed, life, dmg });
 }
 
 function openDoor(w: World, s: RunState, id: number): void {
@@ -507,12 +529,12 @@ export function stepRun(w: World, s: RunState, code: number): void {
   if (input.fire && s.laserCool <= 0 && s.energy >= LASER_COST) {
     s.energy -= LASER_COST;
     s.laserCool = LASER_COOLDOWN;
-    fire(s, 0, LASER_SPEED, LASER_LIFE, LASER_DAMAGE);
+    fire(w, s, 0, LASER_SPEED, LASER_LIFE, LASER_DAMAGE);
   }
   if (input.missile && s.missileCool <= 0 && s.missiles > 0) {
     s.missiles--;
     s.missileCool = MISSILE_COOLDOWN;
-    fire(s, 1, MISSILE_SPEED, MISSILE_LIFE, MISSILE_DAMAGE);
+    fire(w, s, 1, MISSILE_SPEED, MISSILE_LIFE, MISSILE_DAMAGE);
   }
   if (s.laserCool > 0) s.laserCool--;
   if (s.missileCool > 0) s.missileCool--;
