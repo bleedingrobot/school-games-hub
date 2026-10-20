@@ -2340,21 +2340,28 @@ const PLACE_VALUE = {
 * they're the same fact.
 */
 /**
-* Each kind of question, with its NZ Curriculum codes. PLACEHOLDERS: James fills these in
-* from his curriculum alignment tool.
+* Each kind of question, with its NZ Curriculum codes: the codes the ladder gives its times-table skills (`tablesSkills` in
+* ladder.ts, one per campaign step), shared by all three kinds because each is the same fact asked a different way
+* (James, 20 Oct 2026; to check against his curriculum alignment tool). A test keeps them the same as the ladder's.
 */
+const TIMES_TABLES_TAGS = [
+	"MS.Y2.NUM.OP.P9",
+	"MS.Y3.NUM.OP.P6",
+	"MS.Y4.NUM.OP.P2",
+	"MS.Y5.NUM.OP.P2"
+];
 const TIMES_TABLES_KINDS = {
 	multiply: {
 		label: "Multiplication facts",
-		curriculumTags: ["TODO-multiplication-facts"]
+		curriculumTags: TIMES_TABLES_TAGS
 	},
 	"missing-factor": {
 		label: "Missing factor",
-		curriculumTags: ["TODO-missing-factor"]
+		curriculumTags: TIMES_TABLES_TAGS
 	},
 	divide: {
 		label: "Division facts",
-		curriculumTags: ["TODO-division-facts"]
+		curriculumTags: TIMES_TABLES_TAGS
 	}
 };
 const SPOKEN = {
@@ -2400,7 +2407,7 @@ var TimesTables = class {
 	now;
 	id = "times-tables";
 	label = "Times tables";
-	curriculumTags = Object.values(TIMES_TABLES_KINDS).flatMap((k) => k.curriculumTags);
+	curriculumTags = [...new Set(Object.values(TIMES_TABLES_KINDS).flatMap((k) => k.curriculumTags))];
 	records = new Map();
 	memory = newMemory();
 	nextId = 1;
@@ -5667,8 +5674,8 @@ function activeKeys(skill, enabledTables, division = true) {
 /**
 * Where a student is on the ladder, worked out from their records: the first built skill that
 * isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
-* campaign) is the one they're on. Skipped skills (all their tables switched off) are secure
-* for free. With a `floor` (placement or the furthest place reached, see place.ts) the
+* campaign) is the one they're on. A skill with all its tables switched off is left out: it never becomes the
+* current skill and doesn't count towards progress (it shows as 'upcoming' with a share of 1). With a `floor` (placement or the furthest place reached, see place.ts) the
 * built skills before it are behind the student (passed over, and secure only if their records say so), so forgetting a fact brings more review but never
 * drops the student's place below the floor.
 */

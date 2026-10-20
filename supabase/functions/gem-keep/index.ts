@@ -5076,8 +5076,8 @@ function activeKeys(skill, enabledTables, division = true) {
 /**
 * Where a student is on the ladder, worked out from their records: the first built skill that
 * isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
-* campaign) is the one they're on. Skipped skills (all their tables switched off) are secure
-* for free. With a `floor` (placement or the furthest place reached, see place.ts) the
+* campaign) is the one they're on. A skill with all its tables switched off is left out: it never becomes the
+* current skill and doesn't count towards progress (it shows as 'upcoming' with a share of 1). With a `floor` (placement or the furthest place reached, see place.ts) the
 * built skills before it are behind the student (passed over, and secure only if their records say so), so forgetting a fact brings more review but never
 * drops the student's place below the floor.
 */

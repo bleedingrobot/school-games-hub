@@ -12,13 +12,16 @@ import type { AnswerResult, Question, SkillPack } from '../skillPack';
 export type TimesTablesKind = 'multiply' | 'missing-factor' | 'divide';
 
 /**
- * Each kind of question, with its NZ Curriculum codes. PLACEHOLDERS: James fills these in
- * from his curriculum alignment tool.
+ * Each kind of question, with its NZ Curriculum codes: the codes the ladder gives its times-table skills (`tablesSkills` in
+ * ladder.ts, one per campaign step), shared by all three kinds because each is the same fact asked a different way
+ * (James, 20 Oct 2026; to check against his curriculum alignment tool). A test keeps them the same as the ladder's.
  */
+export const TIMES_TABLES_TAGS = ['MS.Y2.NUM.OP.P9', 'MS.Y3.NUM.OP.P6', 'MS.Y4.NUM.OP.P2', 'MS.Y5.NUM.OP.P2'];
+
 export const TIMES_TABLES_KINDS: Record<TimesTablesKind, { label: string; curriculumTags: string[] }> = {
-  multiply: { label: 'Multiplication facts', curriculumTags: ['TODO-multiplication-facts'] },
-  'missing-factor': { label: 'Missing factor', curriculumTags: ['TODO-missing-factor'] },
-  divide: { label: 'Division facts', curriculumTags: ['TODO-division-facts'] },
+  multiply: { label: 'Multiplication facts', curriculumTags: TIMES_TABLES_TAGS },
+  'missing-factor': { label: 'Missing factor', curriculumTags: TIMES_TABLES_TAGS },
+  divide: { label: 'Division facts', curriculumTags: TIMES_TABLES_TAGS },
 };
 
 /**
@@ -82,7 +85,7 @@ export function choicesFor(x: number, y: number, answer: number, isFactor: boole
 export class TimesTables implements SkillPack {
   readonly id = 'times-tables';
   readonly label = 'Times tables';
-  readonly curriculumTags = Object.values(TIMES_TABLES_KINDS).flatMap((k) => k.curriculumTags);
+  readonly curriculumTags = [...new Set(Object.values(TIMES_TABLES_KINDS).flatMap((k) => k.curriculumTags))];
   private records = new Map<string, FactStats>();
   private memory: SessionMemory = newMemory();
   private nextId = 1;
