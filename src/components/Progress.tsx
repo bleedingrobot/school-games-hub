@@ -35,6 +35,42 @@ export function LevelBar({ progress }: { progress: Pick<MyProgress, 'points' | '
   );
 }
 
+/** The home page's welcome strip: "Level 3", a slim bar, "140 points · 85 to level 4", and a link to how points work. */
+export function HeroLevel({ progress }: { progress: Pick<MyProgress, 'points' | 'level' | 'levelStart' | 'nextLevelAt'> }) {
+  const toGo = progress.nextLevelAt - progress.points;
+  return (
+    <span className="hero-level">
+      <span>Level {progress.level}</span>
+      <progress
+        max={1}
+        value={levelProgress(progress)}
+        aria-label={`Level ${progress.level}: ${toGo} points to level ${progress.level + 1}`}
+      />
+      <span>{progress.points} points</span>
+      <span className="hero-level__to-go">· {toGo} to level {progress.level + 1}</span>
+      <Link to="/points" className="hero-level__link">
+        How points work
+      </Link>
+    </span>
+  );
+}
+
+/**
+ * The home page's few achievements: the ones nearest to being earned, topped up with the newest earned ones when nearly
+ * everything is earned.
+ */
+export function nextAchievements(all: Achievement[], count = 3): Achievement[] {
+  const next = all
+    .filter((a) => !a.earnedAt)
+    .sort((a, b) => b.progress / b.goal - a.progress / a.goal)
+    .slice(0, count);
+  const earned = all
+    .filter((a) => a.earnedAt)
+    .sort((a, b) => (b.earnedAt ?? '').localeCompare(a.earnedAt ?? ''))
+    .slice(0, count - next.length);
+  return [...next, ...earned];
+}
+
 /**
  * The achievements worth showing on the dashboard: the newest ones earned, then the ones
  * nearest to being earned.
@@ -51,9 +87,18 @@ export function pickAchievements(all: Achievement[], count = 6): Achievement[] {
   return [...earned, ...next];
 }
 
-export function AchievementList({ achievements, showGame = false }: { achievements: Achievement[]; showGame?: boolean }) {
+export function AchievementList({
+  achievements,
+  showGame = false,
+  compact = false,
+}: {
+  achievements: Achievement[];
+  showGame?: boolean;
+  /** Small badges in a row (the home page), rather than a list with bars. */
+  compact?: boolean;
+}) {
   return (
-    <ul className="achievement-list">
+    <ul className={`achievement-list${compact ? ' achievement-list--compact' : ''}`}>
       {achievements.map((a) => {
         const done = a.earnedAt !== null;
         // Badges (Silver, Gold, Champion) are done or not: no "1/2" counts.
