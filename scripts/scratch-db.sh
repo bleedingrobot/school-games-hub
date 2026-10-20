@@ -28,8 +28,13 @@ if [[ -n "$BASE" ]]; then LATEST="$BASE"; fi
 
 docker exec "$CONTAINER" pg_dump -U postgres --schema-only --no-owner postgres \
   | grep -v -E 'CREATE EXTENSION IF NOT EXISTS pg_cron|COMMENT ON EXTENSION pg_cron' > "$WORK/schema.sql"
-docker exec "$CONTAINER" pg_dump -U postgres --data-only --no-owner \
-  -t public.achievement_types -t public.app_settings -t public.name_words postgres > "$WORK/seed.sql"
+# Without SCRATCH_BASE the copy is already at the newest migrations, so the rows those migrations made (Douglas Park, its sign-in
+# domain, the Everyone class and village) must come too; with SCRATCH_BASE the migrations are applied again and make them.
+SEED_TABLES=(-t public.achievement_types -t public.name_words)
+if [[ -z "$BASE" ]]; then SEED_TABLES+=(-t public.schools -t public.school_domains -t public.classes -t public.clan_villages); fi
+docker exec "$CONTAINER" pg_dump -U postgres --data-only --no-owner "${SEED_TABLES[@]}" postgres > "$WORK/seed.sql"
+# The settings rows point at classes, so they go in last.
+docker exec "$CONTAINER" pg_dump -U postgres --data-only --no-owner -t public.app_settings postgres >> "$WORK/seed.sql"
 
 docker exec "$CONTAINER" psql -U postgres -q -c "drop database if exists \"$NAME\"" -c "create database \"$NAME\"" 2>&1 | grep -v NOTICE || true
 "${PSQL[@]}" -d "$NAME" <<'SQL'
@@ -42,7 +47,15 @@ create function cron.unschedule(text) returns boolean language sql as 'select tr
 SQL
 # The dump has a few lines a plain copy can't run (grants it can't re-grant, the scheduler's own settings): they are harmless.
 docker exec -i "$CONTAINER" psql -U postgres -q -d "$NAME" < "$WORK/schema.sql" > "$WORK/restore.log" 2>&1 || true
+# schools and classes point at each other: take the one link away while the rows go in, then put it back.
+DEFAULT_CLASS_FK="$(docker exec "$CONTAINER" psql -U postgres -d "$NAME" -t -A -c "select pg_get_constraintdef(oid) from pg_constraint where conname = 'schools_default_class_fkey'")"
+if [[ -z "$BASE" && -n "$DEFAULT_CLASS_FK" ]]; then
+  docker exec "$CONTAINER" psql -U postgres -q -d "$NAME" -c 'alter table public.schools drop constraint schools_default_class_fkey' >> "$WORK/restore.log" 2>&1 || true
+fi
 docker exec -i "$CONTAINER" psql -U postgres -q -d "$NAME" < "$WORK/seed.sql" >> "$WORK/restore.log" 2>&1 || true
+if [[ -z "$BASE" && -n "$DEFAULT_CLASS_FK" ]]; then
+  docker exec "$CONTAINER" psql -U postgres -q -d "$NAME" -c "alter table public.schools add constraint schools_default_class_fkey $DEFAULT_CLASS_FK" >> "$WORK/restore.log" 2>&1 || true
+fi
 
 # undo: Training (20261018002200) may already be in the shared copy; take it out so its migration can run in order.
 if [[ -n "$BASE" && "$BASE" < "20261018002200" ]]; then

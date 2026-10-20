@@ -1,8 +1,11 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
+import { useClansEnabled } from './switch';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const ClanPlay = lazy(() => import('./ClanPlay').then((m) => ({ default: m.ClanPlay })));
+const ClansTeacherPanels = lazy(() => import('../../pages/TeacherClans').then((m) => ({ default: m.ClansTeacherPanels })));
+const ClansStudentPanel = lazy(() => import('../../pages/TeacherClans').then((m) => ({ default: m.ClansStudentPanel })));
 
 function ClanIcon({ size = 64 }: { size?: number }) {
   return (
@@ -26,4 +29,8 @@ export const clanQuest: GameDefinition = {
   Play: ClanPlay,
   ranked: false,
   noBots: true,
+  group: 'complex-maths',
+  useTeacherSwitch: useClansEnabled,
+  TeacherPanels: ClansTeacherPanels,
+  StudentPanel: ClansStudentPanel,
 };

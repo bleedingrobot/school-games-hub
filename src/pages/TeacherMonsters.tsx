@@ -7,6 +7,9 @@ import { useEffect, useState } from 'react';
 import { BandedPack } from '../../shared/maths/banded';
 import { parseFactKey } from '../../shared/maths/facts';
 import { BANDED_PACKS, TOPICS, type TopicId } from '../../shared/maths/skillPacks';
+import type { PackDefinition } from '../../shared/maths/banded';
+import { EARLY_FACTS } from '../../shared/maths/skillPacks/earlyFacts';
+import { GENERATED } from '../../shared/maths/skillPacks/generated';
 import { speciesOf } from '../../shared/monsters/monsterBook';
 import {
   ALL_TOPICS, fetchClassMonsters, fetchMonstersSettings, fetchStudentMonsters, saveMonstersSettings,
@@ -18,7 +21,12 @@ import { whenPlayed } from './Dashboard';
 import './teacher-gem-keep.css';
 
 const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
-const TOPIC_LABEL = Object.fromEntries(TOPICS.map((t) => [t.id, t.label])) as Record<TopicId, string>;
+/** The ladder's own packs, which Maths Monsters doesn't ask but whose records show here too. */
+const LADDER_PACKS: Record<string, PackDefinition> = { 'early-facts': EARLY_FACTS, generated: GENERATED };
+export const TOPIC_LABEL: Record<string, string> = {
+  ...(Object.fromEntries(TOPICS.map((t) => [t.id, t.label])) as Record<TopicId, string>),
+  ...Object.fromEntries(Object.entries(LADDER_PACKS).map(([id, def]) => [id, def.label])),
+};
 const share = (right: number, asked: number) => (asked ? `${Math.round((right / asked) * 100)}%` : '–');
 
 const packs = new Map<string, BandedPack>();
@@ -28,8 +36,9 @@ export function keyLabel(pack: string, key: string): string {
   if (times) return `${times.a} × ${times.b}`;
   const sum = /^(add|sub):(\d+)([+-])(\d+)$/.exec(key);
   if (sum) return `${sum[2]} ${sum[3] === '+' ? '+' : '−'} ${sum[4]}`;
-  if (pack in BANDED_PACKS) {
-    if (!packs.has(pack)) packs.set(pack, new BandedPack(BANDED_PACKS[pack as keyof typeof BANDED_PACKS]));
+  const definition = pack in BANDED_PACKS ? BANDED_PACKS[pack as keyof typeof BANDED_PACKS] : LADDER_PACKS[pack];
+  if (definition) {
+    if (!packs.has(pack)) packs.set(pack, new BandedPack(definition));
     return packs.get(pack)!.labelOf(key) ?? key;
   }
   return key;

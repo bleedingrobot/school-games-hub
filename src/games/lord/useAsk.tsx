@@ -24,6 +24,8 @@ export interface AskOptions {
 }
 
 interface Pending {
+  /** New for every question, so the box starts fresh even when one question follows straight on from another. */
+  id: number;
   question: Question;
   pack: SkillPack;
   packId: TopicId | ExtraTopicId;
@@ -43,6 +45,7 @@ const isExtra = (id: string): id is ExtraTopicId => id in EXTRA_PACKS;
 export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[] = []) {
   const packs = useRef(new Map<string, SkillPack>());
   const [pending, setPending] = useState<Pending | null>(null);
+  const nextId = useRef(0);
 
   const packOf = (id: TopicId | ExtraTopicId): SkillPack => {
     let pack = packs.current.get(id);
@@ -63,7 +66,7 @@ export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[
       const level = questionLevel(chosen, heroLevel);
       const question = pack.nextQuestion({ level });
       if (!question) return Promise.resolve(null);
-      return new Promise<Asked>((resolve) => setPending({ question, pack, packId: chosen, level, given: null, options, resolve }));
+      return new Promise<Asked>((resolve) => setPending({ id: ++nextId.current, question, pack, packId: chosen, level, given: null, options, resolve }));
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [heroLevel, facts],
@@ -76,6 +79,7 @@ export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[
 
   const modal: ReactNode = pending && (
     <QuestionModal
+      key={pending.id}
       question={pending.question as ShownQuestion & { answer: number }}
       title={pending.options.title}
       note={pending.options.note}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { askCard, fetchMySeat, watchCardGame, type CardAction, type SeatRow } from '../data/cardGames';
 import { fetchClockOffset, fetchPlayerCards, MultiplayerError, type LiveStatus, type PlayerCard } from '../data/multiplayer';
-import { CHECK_EVERY_MS } from '../multiplayer/useFriendGame';
+import { useGameChecks } from '../multiplayer/useGameChecks';
 
 export interface CardSession {
   /** My seat row: the public info, and my own view of the cards. */
@@ -99,11 +99,7 @@ export function useCardGame(id: string): CardGameState {
 
   const status = seat?.status;
   const active = status === 'waiting' || status === 'playing' || (status === 'finished' && !seat?.info.rematchGame);
-  useEffect(() => {
-    if (!active) return;
-    const timer = setInterval(() => void load(), live === 'live' ? CHECK_EVERY_MS.live : CHECK_EVERY_MS.down);
-    return () => clearInterval(timer);
-  }, [active, live, load]);
+  useGameChecks(active, live, load);
 
   useEffect(() => {
     const again = () => {

@@ -1,0 +1,32 @@
+Maths focus F.6: fractions, decimals and percentages, with multiple-choice text answers, and the leftover `ten-and` skill. Read docs/MATHS-FOCUS-PLAN.md fully first (sections 3, 4, 5, 8, 11 and 12, "Stage F.4 results", "Stage F.5 results" and "James's answers after F.5"). Start Stage F.6 only.
+
+Where things are:
+- School Games Hub, worktree ~/projects/school-games-hub-focus, branch `maths-focus`. Other sessions use the main checkout and other worktrees: don't touch them, never use bare `git stash`, careful with `pkill -f` (find processes by port instead).
+- F.1 to F.4 are LIVE. F.5 is built and pushed but may or may not be live yet: check the end of the plan for an "F.5 went live" section. Run `git fetch`; if `main` has moved, merge it into `maths-focus` first and say if it brought in new migrations, so yours are numbered after the newest (F.5's is 20261019000300). If F.5 is not live yet, build F.6 on top of it and say so in the go-live list (F.5 goes first).
+- Scratch database: `scripts/scratch-db.sh <name> [last-migration]`, `scripts/scratch-test.sh`, `scripts/f5-rehearsal.sh` as the model for a rehearsal on today's data. The real-browser setup (a second PostgREST container on the scratch database behind a small proxy, tokens signed with the local JWT key, Chromium via ~/.npm/_npx/e41f203b7505f1fb/node_modules/playwright, axe from maths-alignment-tool) is described in "Stage F.3, F.4 and F.5 results"; old scripts are in /tmp/claude-1000/-home-james/*/scratchpad (proxy.mjs, tokens.mjs, browser-f5.mjs) if still there. Clean up what you start (containers, ports, scratch databases).
+
+Rules:
+- **Nothing live.** Do not apply any migration to the live database, deploy any function, or merge to main until I say "go live". Build and test on a scratch database first. (If the auto-mode safety check blocks a live command, stop and tell me; I'll switch to manual mode.)
+- With auto off and no focus set, students must keep playing exactly as today. New skills only appear through auto (class switch on) or a focus. Chess, checkers and 101 stay maths-free.
+- No real names or free typing anywhere new. Years are never shown to students. Plain words everywhere.
+- Say which tests failed before you started, if any. Known flaky: a few load-timing tests; re-run them alone.
+
+My answers (19 October 2026):
+- **Marking pick-one questions:** every saved answer carries the numbers its question was made from (`Question.params`), and the server rebuilds the question from its key and numbers to mark it. Solo games, the warm-up, Gem Keep and classmate games all need this; `solveParts` alone cannot mark a question whose choices are not in its parts. Make it work for the F.5 skills too if it is simpler to have one way, but do not weaken the checks that exist.
+- **Fractions stay under one** at first: no mixed numbers or top-heavy fractions (7/4, 1 3/4) as questions or choices.
+- **Build in this order, each shippable alone through the `built` flag:** fractions of an amount (`unit-fraction-of`, `fraction-of`), simple percentages (`percent-basic`, then `percent-of`), tenths and decimals (`tenths`, `add-tenths`, `decimal-equivalents`, `times-decimals`). Then, only if it goes well and is not rushed: `equivalent-fractions`, `fdp-equivalents`, `whole-from-fraction`. Say which you built and which you left, and why.
+- **Also build `ten-and`** (10 + 4, 7 + 10), the early-facts stub, as a normal fact skill (one record per fact, like the other early facts).
+- Fraction answers are multiple choice with text labels ("3/4"); wrong choices come from named common mistakes (adding tops and bottoms, longer decimals being bigger, and so on), never random numbers, always distinct. Number answers (⅓ of 15, 25% of 80, 1.3 + 0.2) are typed on the pad, with the point key where needed.
+- Keep the ladder order in section 12 and the 8-second quick time for generated skills (`QUICK_MS_BY_PACK`); say if a skill needs another.
+
+Build F.6:
+1. **Answers that carry their numbers.** Design and document it (what is sent, what the server checks, size limits, what happens to old browsers that do not send it), then change `shared/space/save.ts`, the placement check, the three answer-saving functions and the Mission Control server as needed. Keep every F.5 test passing.
+2. **Generators** for the skills above in `shared/maths/skillPacks/`, each rebuildable from its numbers, with question-type keys that fit the record key check (`^[a-z][a-z0-9]{0,9}:[a-z0-9:+/-]{1,40}$`; no points, no capitals). Decide whether they join the `generated` pack or a new one; if new, the migration must add it to `my_gem_keep` and `space_maths_context` (as F.5's did).
+3. **Fraction display and pick-one questions.** The question box already draws fractions (`3/4`, `?/8`) and has `choiceLabels`; check what is there, make sure the screen-reader text reads fractions and percentages well ("3 quarters", "25 percent"), and that the choices work with the class's multiple-choice switch (fractions are always choices; number answers follow the switch).
+4. **Auto, focus, path, placement** pick up built skills automatically; check each place, say the new `built` count, and check the placement walk still works over the longer list (its question count may need a look).
+5. **Gem Keep and Mission Control** must ask and mark every new type, including on a classmate server game.
+6. **Teacher side:** nothing new unless needed; keep any labels plain.
+
+Tests: SQL (new keys accepted, bad ones refused), shared maths (every generator: correct answers worked out separately, distinct choices all from named mistakes, deterministic with a seed, rebuilt from its numbers; the solver or rebuild-from-numbers agrees with every question auto and focus can ask; progress and placement over the longer ladder), servers and screens (fraction display, choices, the point key, Gem Keep, Mission Control), a rehearsal on today's data (new script like `f5-rehearsal.sh`), and a real-browser pass with axe at 1366 x 640 and 844 x 390 on anything new or changed. Run the whole suite (including `TESTS=all`), the type check, the build, and `npm run build:functions` (say which functions changed).
+
+Write a "Stage F.6 results" section at the end of the plan: what you built, decisions you made, what is untested, and the exact go-live list (migrations in order, functions to deploy, anything by hand). Commit as you go and push `maths-focus`. Stop at the end and tell me in plain words what you built and what F.7 (teacher skill map and focus history) needs from me. Do not start F.7.

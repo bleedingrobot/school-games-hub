@@ -10,6 +10,7 @@
  */
 import { BandedPack, dollars, int, isInt, pickOne, show, speak, tidy, type Family, type Made, type PackDefinition } from '../banded';
 import type { FactStats } from '../leitner';
+import { AS_DECIMAL } from './generatedKit';
 
 const TODO = (what: string) => [`TODO-${what}`];
 
@@ -65,7 +66,7 @@ const families: Record<string, Family> = {
     make: (_k, [n]) => {
       if (!isInt(n, 1, 9)) return null;
       const parts = [`${n}/10`, '=', '?'];
-      return decimal({ parts, spoken: speak(parts), answer: n / 10, wrong: [n, n / 100, (n + 1) / 10, Number(`${n}.1`)] });
+      return decimal({ parts, spoken: speak(parts), prompt: AS_DECIMAL, answer: n / 10, wrong: [n, n / 100, (n + 1) / 10, Number(`${n}.1`)] });
     },
   },
 

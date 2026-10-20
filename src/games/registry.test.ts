@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { GAMES, POWER_CLASH_ON, findGame } from './registry';
+import { ALL_GAMES, GAMES, POWER_CLASH_ON, findGame } from './registry';
 import { BOT_LEVELS, isBotLevel, isRanked } from './types';
 
 describe('game registry', () => {
-  it('has chess, checkers, Wormholes & Black Holes, 101, Gem Keep, Power Clash, Maths Monsters, Dragon Maths and Clan Quest', () => {
-    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters', 'dragon-maths', 'clan-quest']);
+  it('has chess, checkers, Wormholes & Black Holes, 101, Gem Keep, Power Clash, Maths Monsters, Dragon Maths, Clan Quest and Marble Rush', () => {
+    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters', 'dragon-maths', 'clan-quest', 'marble']);
   });
 
   it('shows Power Clash on the dashboard while the switch is on', () => {
@@ -26,6 +26,20 @@ describe('game registry', () => {
     const ids = GAMES.map((g) => g.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const id of ids) expect(id).toMatch(/^[a-z0-9][a-z0-9-]*$/);
+  });
+
+  it('puts every game in a dashboard group, in the same order as before games said their own group', () => {
+    const inGroup = (group: string) => ALL_GAMES.filter((g) => g.group === group).map((g) => g.id);
+    expect(inGroup('no-maths')).toEqual(['chess', 'checkers', '101', 'power-clash']);
+    expect(inGroup('easy-maths')).toEqual(['space', 'gem-keep']);
+    expect(inGroup('complex-maths')).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'marble']);
+    expect(ALL_GAMES.filter((g) => !g.group)).toEqual([]);
+  });
+
+  it('the games with a teacher switch and teacher panels say so themselves', () => {
+    expect(ALL_GAMES.filter((g) => g.useTeacherSwitch).map((g) => g.id)).toEqual(['monsters', 'dragon-maths', 'clan-quest']);
+    expect(ALL_GAMES.filter((g) => g.TeacherPanels).map((g) => g.id)).toEqual(['gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'marble']);
+    expect(ALL_GAMES.filter((g) => g.StudentPanel).map((g) => g.id)).toEqual(['gem-keep', 'monsters', 'dragon-maths', 'clan-quest']);
   });
 
   it('finds games by id', () => {

@@ -112,6 +112,12 @@ vi.mock('../data/gemKeep', () => ({
   })),
 }));
 
+vi.mock('../data/skillMap', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../data/skillMap')>()),
+  fetchStudentLadder: vi.fn(async () => ({ on: true, yearLevel: 5, placed: 'done', placement: 'tables-6-9', furthest: 'tables-6-9' })),
+  resetPlacement: vi.fn(async () => true),
+}));
+
 vi.mock('../data/multiplayer', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/multiplayer')>()),
   fetchMultiplayerEnabled: vi.fn(async () => true),
@@ -317,6 +323,17 @@ describe('teacher view', () => {
     expect(setHidden).toHaveBeenCalledWith('s1', true);
   });
 
+  it('shows where a student\'s maths warm-up stands, and offers it again only after a confirm step', async () => {
+    const { resetPlacement } = await import('../data/skillMap');
+    const { user, panel } = await openKiwi();
+    expect(await within(panel).findByText(/warm-up done, started at ×6, ×9/)).toBeInTheDocument();
+    await user.click(within(panel).getByRole('button', { name: 'Offer the warm-up again' }));
+    expect(resetPlacement).not.toHaveBeenCalled();
+    await user.click(within(panel).getByRole('button', { name: 'Yes, offer it again' }));
+    expect(resetPlacement).toHaveBeenCalledWith('s1');
+    expect(await within(panel).findByText(/will be offered the warm-up again/)).toBeInTheDocument();
+  });
+
   it('makes someone a teacher only after a warning', async () => {
     const { setRole } = await import('../data/teacher');
     const { user, panel } = await openKiwi();
@@ -339,6 +356,7 @@ describe('teacher view', () => {
     expect(within(panel).getByRole('button', { name: /New name/ })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'End of year: start a new season' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /My classes: class codes/ })).toHaveAttribute('href', '/classes');
+    expect(screen.getByRole('link', { name: /Skill map: how each student/ })).toHaveAttribute('href', '/skills');
   });
 
   it('can’t change their own role or delete a teacher', async () => {

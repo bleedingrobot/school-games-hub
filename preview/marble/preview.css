@@ -1,0 +1,5 @@
+/* The preview uses the site's own page (school red), so it looks and passes the contrast checks like the real game page. */
+.marble-preview { max-width: 1100px; margin: 0 auto; padding: 12px 16px 32px; display: grid; gap: 12px; }
+.marble-preview header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.marble-preview header h1 { color: #fff; }
+.marble-preview h1 small { font-size: 0.9rem; font-weight: 600; opacity: 0.9; }

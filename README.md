@@ -190,6 +190,14 @@ A walk-around adventure for one student at a time. Walk through Harbour Town and
 - **Making maps:** the maps are Tiled JSON in `shared/monsters/maps/`, made by `node scripts/make-monster-maps.mjs` (the steps are in `scripts/monster-maps/`). The map maker warns when a tree, bush or rock stands on a path, and a test checks that the files in the game are exactly what the map maker makes, so don't edit the JSON by hand without also changing the script. `npm run monsters:sim` plays whole battles to tune levelling; `npm run monsters:preview` builds a stand-alone test page.
 - **Credits:** tiles from Kenney (CC0); battle flow and the catch and exp ideas adapted from *Monster Tamer* by Dev Share Academy (MIT).
 
+## Marble Rush (the marble racing game)
+
+Roll a marble down six courses named after New Zealand places, against the clock. Our own physics (`shared/marble/`) runs the same on every computer, so the server replays every run to check the time; a time sent by the browser is never trusted. Ghost races (your own best, the classmate just ahead, the class's fastest), fastest-time boards for your school, and two players on one keyboard. Design and results: [docs/MARBLE-PLAN.md](docs/MARBLE-PLAN.md).
+
+- **Maths** (Teacher page: Off / Students choose / On for everyone, and a separate Rescue questions switch, per class): answer gates (roll through the tunnel with the right answer to find the shortcut), pit stops and rescue questions (the clock stops; a right answer takes seconds off), number gems and guess your time. Questions come from the maths focus system, like Mission Control, and a wrong answer never costs more than a slower route. Runs with and without maths have separate bests and boards.
+- **No points or achievements yet** (postponed in the plan). New Season clears Marble's times.
+- `npm run marble:sim` plays the courses with a bot (and sets medal times), `npm run marble:determinism` checks Node, Chromium and WebKit give identical runs, `npm run marble:preview` builds a stand-alone test page.
+
 ## The teacher view
 
 Teachers see a **Teacher** link in the top bar (students don't, and the database refuses them even if they type the address). It has:
@@ -235,16 +243,30 @@ It prints a link like `http://localhost:5173/`. Ctrl-click it to open the site. 
 
 ## Checking it works
 
+The tests come in two groups: **logic** (the game rules, the maths and the server functions, in `shared/`, `supabase/functions/` and `scripts/`) and **screens** (the website, in `src/`). A few files that play many whole games are marked slow in `vitest.slow.ts`.
+
+**While you work** (quick, pick what fits the change):
+
 | Command | What it does |
 |---|---|
-| `npm test` | Runs the automatic tests |
-| `npm run typecheck` | Checks the code for type mistakes |
-| `npm run build` | Builds the finished website into the `dist` folder |
-| `npm run check` | Does all three, in that order |
+| `npm run test:watch` | Keeps running, and re-runs the tests for each file you save |
+| `npm run test:changed` | Runs only the tests affected by what you have changed and not yet committed (`npm run test:changed -- main` for everything since `main`) |
+| `npm run test:logic` | Just the rules, maths and server functions (about a minute) |
+| `npx vitest run src/games/clans` | Just the tests in one folder (or one file) |
+| `npm test` | Every test except the slow files |
+
+**Before you push or merge** (the full set):
+
+| Command | What it does |
+|---|---|
+| `npm run check` | Type check, **every** test (slow ones too) and the build: exactly what the publish runs |
+| `npm run check:quick` | Type check and `npm test`, for in between |
+| `npm run test:all` | Every test, slow ones too |
 | `npm run test:db` | Tests the database rules (needs the local Supabase copy, see below) |
+| `npm run typecheck` / `npm run build` | The type check, or the build into `dist`, on their own |
 | `npm run build:functions` | Rebuilds the server functions after you change them (see below) |
 
-Run `npm run check` before pushing. If it says everything passed, the publish will work too.
+Run `npm run check` before pushing. If it says everything passed, the publish will work too. The publish runs the full set every time, so a skipped check on your computer can't reach the live site.
 
 ### Testing the database rules on your computer
 
@@ -310,7 +332,7 @@ To update a function on the live site without the Supabase CLI:
 1. On GitHub, open `supabase/functions/<name>/index.ts` and click **Copy raw file**.
 2. In Supabase, go to **Edge Functions**, open the function, click **Code**, select everything, paste, then click **Deploy**.
 
-There are five functions: `save-bot-game` (saves bot games, including space and 101 games), `multiplayer` (referees chess and checkers between students), `space-game` (runs Wormholes & Black Holes with classmates), `card-game` (runs 101 with classmates) `gem-keep` (saves Gem Keep levels, Level Keys and times-table records) and `monster` (checks and saves Maths Monsters). The newer games have functions of their own too (`clans`, `lord`, `power-clash`, `training`), each described in its plan. The ones named above all must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
+There are seven main functions: `save-bot-game` (saves bot games, including space and 101 games), `multiplayer` (referees chess and checkers between students), `space-game` (runs Wormholes & Black Holes with classmates), `card-game` (runs 101 with classmates), `gem-keep` (saves Gem Keep levels, Level Keys and times-table records), `monster` (checks and saves Maths Monsters) and `marble` (checks and saves Marble Rush runs and marks its maths). The newer games have functions of their own too (`clans`, `lord`, `power-clash`, `training`), each described in its plan. The ones named above all must have **Verify JWT** switched **off** (under the function's **Details**). That's safe: each function checks the student's sign-in itself.
 
 ## Looking after the site
 

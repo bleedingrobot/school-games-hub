@@ -332,7 +332,10 @@ export function SpaceSolo({
       const latest = await Promise.race([maths.refreshFocus().catch(() => null), new Promise<null>((done) => window.setTimeout(() => done(null), 1500))]);
       const next = currentFocus(latest ?? packFocus);
       if (focusKey(next) !== focusKey(packFocus)) {
-        setPack(makeSpacePack(pack.stats(), next, maths));
+        // The old pack may hold only some of the records (times tables): the records the game opened with fill the rest.
+        const records = new Map((maths?.facts ?? []).map((f) => [f.key, f]));
+        for (const s of pack.stats()) records.set(s.key, s);
+        setPack(makeSpacePack([...records.values()], next, maths));
         setPackFocus(next);
       }
     }
@@ -517,7 +520,7 @@ export function SpaceSolo({
     const run = runRef.current;
     const done = charge?.done;
     if (!run || !charge || !done || phase !== 'student' || run.passAndPlay || !canCharge(run.state)) return;
-    run.mathsAnswers.push({ parts: charge.question.parts, given: done.answer, ms: done.ms, at: done.at, key: charge.question.factKey });
+    run.mathsAnswers.push({ parts: charge.question.parts, given: done.answer, ms: done.ms, at: done.at, key: charge.question.factKey, ...(charge.question.params?.length ? { params: charge.question.params } : {}) });
     setCharge(null);
     act({ kind: 'charge', right: done.right });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -804,7 +807,7 @@ export function SpaceSolo({
             const run = runRef.current;
             // The server checks every answer against the question shown (shared/space/save.ts).
             if (given && run && !run.passAndPlay) {
-              run.mathsAnswers.push({ parts: question.parts, given: given.answer, ms: Math.round(given.ms), at: Date.now(), key: question.factKey });
+              run.mathsAnswers.push({ parts: question.parts, given: given.answer, ms: Math.round(given.ms), at: Date.now(), key: question.factKey, ...(question.params?.length ? { params: question.params } : {}) });
             }
             setQuestion(null);
             act({ kind: 'choose', option: result.correct ? 1 : 0 });

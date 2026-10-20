@@ -139,6 +139,79 @@ describe('the gem-keep server function', () => {
     expect(s.recordAnswers).toHaveBeenCalledWith('student-1', 'division', expect.any(String), [answer('div:56/8')]);
   });
 
+  it('keeps the answers of the generated skills (rounding, order of operations...) in the "generated" pack, per question type', async () => {
+    const { s } = services();
+    const answer = (key: string) => ({ key, correct: true, ms: 6500, at: NOW - 5000 });
+    const batchId = '0b7d5c2e-8a41-4f6b-9e3d-2c1a0f9e8d7c';
+    const keys = ['round:100:3digit', 'round:tenth:halfway', 'bond100:fives', 'bedmas:brackets-first', 'times:tens-tens', 'factor:common', 'square:next'];
+    const { body } = await send(s, [{ type: 'answers', pack: 'generated', batchId, answers: [...keys.map(answer), answer('mul:7x8'), answer('bond10:3+7'), answer('pv:round10'), answer('round:100.5')] }]);
+    // Only the question types of the ladder: a times-table fact, an early fact, Maths Monsters' own key and a bad key are left out.
+    expect(body.results[0]).toEqual({ type: 'answers', added: keys.length });
+    expect(s.recordAnswers).toHaveBeenCalledWith('student-1', 'generated', batchId, keys.map(answer));
+    // And a generated key sent as another pack is left out too.
+    const other = await send(s, [{ type: 'answers', pack: 'early-facts', batchId: '1b7d5c2e-8a41-4f6b-9e3d-2c1a0f9e8d7c', answers: [answer('round:100:3digit')] }]);
+    expect(other.body.results[0]).toEqual({ type: 'answers', added: 0 });
+  });
+
+  it('keeps the answers of the fraction, decimal and percentage skills in the "generated" pack, and the ten-and facts in early-facts', async () => {
+    const { s } = services();
+    const answer = (key: string) => ({ key, correct: true, ms: 6500, at: NOW - 5000 });
+    const batchId = '0b7d5c2e-8a41-4f6b-9e3d-2c1a0f9e8d7c';
+    const keys = ['fracof:third', 'fracof:non:eighths', 'pct:to-fraction', 'pct:whole:quarter', 'tenth:to-decimal', 'addten:borrow', 'deceq:compare', 'timesdec:missing', 'equiv:simplify', 'fdp:match', 'whole:other'];
+    const { body } = await send(s, [
+      { type: 'answers', pack: 'generated', batchId, answers: [...keys.map(answer), answer('tenand:4'), answer('fracof:Third'), answer('pct:50%')] },
+      { type: 'answers', pack: 'early-facts', batchId: '1b7d5c2e-8a41-4f6b-9e3d-2c1a0f9e8d7c', answers: [answer('tenand:4'), answer('tenand:10'), answer('fracof:third')] },
+    ]);
+    // A ten-and fact sent as a generated one, a capital and a percent sign are left out; so are the new keys sent as early facts.
+    expect(body.results.map((r: { added?: number }) => r.added)).toEqual([keys.length, 1]);
+    expect(s.recordAnswers).toHaveBeenCalledWith('student-1', 'generated', batchId, keys.map(answer));
+    expect(s.recordAnswers).toHaveBeenCalledWith('student-1', 'early-facts', expect.any(String), [answer('tenand:4')]);
+  });
+
+  describe('the place on the maths ladder', () => {
+    const answersItem = { type: 'answers', pack: 'times-tables', batchId: '6f1c2a54-1d3e-4b5a-9c7d-0e1f2a3b4c5d', answers: [{ key: 'mul:7x8', correct: true, ms: 1200, at: NOW - 1000 }] };
+
+    it('keeps the furthest place up to date after answers are saved', async () => {
+      const syncPlace = vi.fn(async () => undefined);
+      const { s } = services({ syncPlace });
+      const { status } = await send(s, [answersItem]);
+      expect(status).toBe(200);
+      expect(syncPlace).toHaveBeenCalledOnce();
+      expect(syncPlace).toHaveBeenCalledWith('student-1');
+    });
+
+    it('does not bother when nothing about the records changed', async () => {
+      const syncPlace = vi.fn(async () => undefined);
+      const { s } = services({ syncPlace, recordAnswers: vi.fn(async () => ({ ok: true as const, value: 0 })) });
+      await send(s, [answersItem]);
+      await send(s, [won()]);
+      expect(syncPlace).not.toHaveBeenCalled();
+    });
+
+    it('checks a placement and says where it was stored', async () => {
+      const savePlacement = vi.fn(async () => ({ outcome: 'saved' as const, start: 'tables-3-4-8' }));
+      const { s } = services({ savePlacement });
+      const response = await makeHandler(s)(post({ placement: { skip: true } }));
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ outcome: 'saved', start: 'tables-3-4-8' });
+      expect(savePlacement).toHaveBeenCalledWith('student-1', { skip: true });
+    });
+
+    it('says "already" for a second placement, and refuses one that does not check out', async () => {
+      const { s } = services({ savePlacement: vi.fn(async () => ({ outcome: 'already' as const })) });
+      const again = await makeHandler(s)(post({ placement: { skip: true } }));
+      expect(await again.json()).toEqual({ outcome: 'already' });
+      const { s: bad } = services({ savePlacement: vi.fn(async () => ({ outcome: 'refused' as const })) });
+      expect((await makeHandler(bad)(post({ placement: { answers: [] } }))).status).toBe(400);
+    });
+
+    it('needs a signed-in student for the placement too, and copes with a database error', async () => {
+      const { s } = services({ savePlacement: vi.fn(async () => Promise.reject(new Error('down'))) });
+      expect((await makeHandler(s)(post({ placement: { skip: true } }, null))).status).toBe(401);
+      expect((await makeHandler(s)(post({ placement: { skip: true } }))).status).toBe(503);
+    });
+  });
+
   it('leaves out an answer that does not belong to the pack it is sent as', async () => {
     const { s } = services();
     const answer = (key: string) => ({ key, correct: true, ms: 2100, at: NOW - 5000 });

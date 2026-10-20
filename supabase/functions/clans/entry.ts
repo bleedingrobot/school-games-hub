@@ -1,6 +1,7 @@
 // Connects the clans handler to Supabase. Edit handler.ts for the logic, then run
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
+import { userIdFromToken } from '../_shared/signIn';
 import type { Result, ServerState } from '../../../shared/clans/actions';
 import type { Sketch } from '../../../shared/clans/village';
 import { FACT_PACK } from '../../../shared/clans/battleCry';
@@ -37,10 +38,7 @@ async function call<T>(name: string, args: Record<string, unknown>): Promise<Out
 Deno.serve(
   makeHandler({
     now: () => Date.now(),
-    async userIdFor(token) {
-      const { data, error } = await admin.auth.getUser(token);
-      return error ? null : (data.user?.id ?? null);
-    },
+    userIdFor: userIdFromToken(admin.auth),
     extras: (player) => call<Extras>('clan_extras', { player }),
     async recordAnswers(player, batchKey, answers) {
       return call<number>('record_fact_answers', {

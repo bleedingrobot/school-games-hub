@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -100,7 +100,8 @@ describe('the class picker on the Teacher page', () => {
     show();
     expect(await screen.findByText('Room 12', { selector: 'strong' })).toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-    expect(space.fetchMathsSwitch).toHaveBeenCalledWith('c12');
+    // The switch panel asks once it knows the class, which can be just after the name shows.
+    await waitFor(() => expect(space.fetchMathsSwitch).toHaveBeenCalledWith('c12'));
   });
 
   it('nudges a teacher with no class to make one, and leaves the switches as they always were', async () => {
@@ -108,7 +109,7 @@ describe('the class picker on the Teacher page', () => {
     show();
     expect(await screen.findByText(/You don’t teach a class yet/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Make one on the My classes page/ })).toHaveAttribute('href', '/classes');
-    expect(space.fetchMathsSwitch).toHaveBeenCalledWith(null);
+    await waitFor(() => expect(space.fetchMathsSwitch).toHaveBeenCalledWith(null));
   });
 
   it('says so when the classes cannot be loaded', async () => {

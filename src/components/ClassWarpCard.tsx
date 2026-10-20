@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { fetchMyClass } from '../data/classes';
+import { fetchMyClass, myClassFrom } from '../data/classes';
+import { partOf, type HomePage } from '../data/homePage';
 
 const SKIP_KEY = 'classWarpSkipped';
 
@@ -15,20 +16,24 @@ function wasSkipped(): boolean {
 /**
  * The "Join your class" step for a student who isn't in a class yet. Skippable: a student with no class plays
  * everything. Once they skip, the Class Warp button on the home page is still there for later.
+ *
+ * On the home page it takes its part of the page's one request (`homePage`, null while that is on its way); anywhere else it asks
+ * for itself.
  */
-export function ClassWarpCard() {
+export function ClassWarpCard({ homePage }: { homePage?: Promise<HomePage> | null }) {
   const [needsClass, setNeedsClass] = useState(false);
   const [skipped, setSkipped] = useState(wasSkipped);
 
   useEffect(() => {
+    if (homePage === null) return;
     let current = true;
-    fetchMyClass()
+    partOf(homePage, 'myClass', myClassFrom, fetchMyClass)
       .then((mine) => current && setNeedsClass(mine.className === null && mine.waitingFor === null))
       .catch(() => undefined);
     return () => {
       current = false;
     };
-  }, []);
+  }, [homePage]);
 
   if (!needsClass || skipped) return null;
   return (

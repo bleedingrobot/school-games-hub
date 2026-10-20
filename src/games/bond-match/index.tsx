@@ -4,6 +4,7 @@ import { TEXT } from './strings';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const BondMatchHub = lazy(() => import('./BondMatchHub').then((m) => ({ default: m.BondMatchHub })));
+const BondMatchStudentPanel = lazy(() => import('../../pages/TeacherBondMatch').then((m) => ({ default: m.BondMatchStudentPanel })));
 
 function BondMatchIcon({ size = 64 }: { size?: number }) {
   return (
@@ -28,4 +29,5 @@ export const bondMatch: GameDefinition = {
   Play: BondMatchHub,
   ranked: false,
   noBots: true,
+  StudentPanel: BondMatchStudentPanel,
 };

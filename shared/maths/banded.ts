@@ -25,9 +25,17 @@ export interface Made {
   answer: number;
   /** Believable wrong answers for multiple choice (extra or unsuitable ones are dropped). */
   wrong?: number[];
+  /** The named common mistakes behind `wrong`, for generated skills (so tests can check no wrong choice is random). */
+  named?: Record<string, number>;
+  /** For a pick-one question: the named mistake behind each wrong choice's label (so tests can check none is random). */
+  namedLabels?: Record<string, string>;
+  /** Always show choices to tap (order of operations), not only when the class has multiple choice on. Needs `wrong`. */
+  choose?: boolean;
   /** A pick-only question: what each choice shows. The answer is the index of the right one. */
   pick?: string[];
   input?: 'whole' | 'decimal';
+  /** What to do, shown above the sum: "Write it as a decimal." See `Question.prompt`. */
+  prompt?: string;
   /** The right answer in words, when filling in the blank doesn't say it ("3/4 is bigger than 2/3"). */
   fact?: string;
 }
@@ -57,6 +65,8 @@ export interface PackDefinition {
    * every band, so a game that asks by band never serves them. Only the auto ladder asks for them.
    */
   ladderOnly?: string[];
+  /** Answering right within this many milliseconds counts as quick (default `QUICK_MS`). */
+  quickMs?: number;
 }
 
 // ---------------------------------------------------------------- helpers for families
@@ -100,6 +110,7 @@ const SPOKEN_WORDS: Record<string, string> = {
   '=': 'equals',
   '?': 'what',
   r: 'remainder',
+  '%': 'percent',
 };
 const ORDINAL: Record<number, [string, string]> = {
   2: ['half', 'halves'],
@@ -129,9 +140,23 @@ export function spokenFraction(part: string): string {
   return `${top} ${top === '1' ? names[0] : names[1]}`;
 }
 
+/**
+ * One part or choice in words for a screen reader: "3/4" is "3 quarters", "25%" is "25 percent", "0.25" is "0 point 2 5".
+ * Anything else is read as it is.
+ */
+export function spokenLabel(part: string): string {
+  const percent = /^(\d+(?:\.\d+)?)%$/.exec(part);
+  if (percent) return `${spokenLabel(percent[1])} percent`;
+  if (/^\d+\.\d+$/.test(part)) {
+    const [whole, frac] = part.split('.');
+    return `${whole} point ${frac.split('').join(' ')}`;
+  }
+  return part.includes('/') ? spokenFraction(part) : part;
+}
+
 /** The spoken version of a question's parts, for screen readers. */
 export function speak(parts: string[]): string {
-  const words = parts.map((p) => SPOKEN_WORDS[p] ?? (p.includes('/') ? spokenFraction(p) : p.replace(/^\$/, '$')));
+  const words = parts.map((p) => SPOKEN_WORDS[p] ?? (/^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes('/') ? spokenFraction(p) : p.replace(/^\$/, '$')));
   const text = words.join(' ').replace(/\s+/g, ' ').trim();
   return /[?.!:]$/.test(text) ? text : text + '?';
 }
@@ -271,7 +296,7 @@ export class BandedPack implements SkillPack {
     if (made.pick) {
       choices = made.pick.map((_, i) => i);
       choiceLabels = made.pick;
-    } else if (multipleChoice) {
+    } else if (multipleChoice || made.choose) {
       choices = choicesFor(answer, made.wrong ?? [], decimal, random);
     }
     return {
@@ -280,6 +305,7 @@ export class BandedPack implements SkillPack {
       kind: key,
       parts: made.parts,
       spoken: made.spoken,
+      ...(made.prompt ? { prompt: made.prompt } : {}),
       answer,
       choices,
       choiceLabels,
@@ -316,7 +342,7 @@ export class BandedPack implements SkillPack {
     const correct = sameAnswer(answer, q.answer);
     const before = this.records.get(q.factKey) ?? newStats(q.factKey);
     const at = this.now();
-    const after = afterAnswer(before, correct, ms, at);
+    const after = afterAnswer(before, correct, ms, at, this.definition.quickMs);
     this.records.set(q.factKey, after);
     for (const listener of this.listeners) listener({ key: q.factKey, correct, ms: Math.round(ms), at });
     if (!correct) scheduleRepeat(this.memory, q.factKey, this.random);

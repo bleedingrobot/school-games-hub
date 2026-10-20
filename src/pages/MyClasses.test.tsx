@@ -142,14 +142,27 @@ describe('My classes', () => {
     const user = userEvent.setup();
     show();
     await screen.findByText('KM4 TP', { selector: '.class-panel__code' });
-    const save = screen.getByRole('button', { name: 'Save name' });
+    const save = screen.getByRole('button', { name: 'Save' });
     expect(save).toBeDisabled();
     const box = screen.getByLabelText('Name', { selector: 'input' });
     await user.clear(box);
     await user.type(box, 'Kea Room');
     await user.click(save);
     expect(classes.updateClass).toHaveBeenCalledWith('c12', 'Kea Room', 2026, 5);
-    expect(await screen.findByText('The class is now called Kea Room.')).toBeInTheDocument();
+    expect(await screen.findByText('Saved. The class is called Kea Room, Year 5.')).toBeInTheDocument();
+  });
+
+  it('sets the year level of a class, and clears it', async () => {
+    const user = userEvent.setup();
+    show();
+    await screen.findByText('KM4 TP', { selector: '.class-panel__code' });
+    const level = screen.getByLabelText('Year level', { selector: 'select' });
+    await user.selectOptions(level, '4');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(classes.updateClass).toHaveBeenLastCalledWith('c12', expect.any(String), 2026, 4);
+    await user.selectOptions(screen.getByLabelText('Year level', { selector: 'select' }), '');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(classes.updateClass).toHaveBeenLastCalledWith('c12', expect.any(String), 2026, null);
   });
 
   it('links to the maths focus screen for the class', async () => {
@@ -226,15 +239,50 @@ describe('My classes', () => {
     expect(classes.answerWarp).toHaveBeenCalledWith('r1', true);
   });
 
-  it('looks again for new warps every few seconds', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    show();
-    await screen.findByRole('log', { name: 'Recent warps' });
-    const before = vi.mocked(classes.fetchClassEvents).mock.calls.length;
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(LIVE_MS + 100);
+  describe('looking again for new warps', () => {
+    let visibility: DocumentVisibilityState = 'visible';
+    const looks = () => vi.mocked(classes.fetchClassEvents).mock.calls.length;
+    const pass = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
+    const tab = async (now: DocumentVisibilityState) => {
+      visibility = now;
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+    };
+
+    beforeEach(() => {
+      visibility = 'visible';
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => visibility });
     });
-    expect(vi.mocked(classes.fetchClassEvents).mock.calls.length).toBeGreaterThan(before);
+    afterEach(() => {
+      delete (document as { visibilityState?: unknown }).visibilityState;
+    });
+
+    it('looks again every 30 seconds, not more often', async () => {
+      expect(LIVE_MS).toBe(30_000);
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      show();
+      await screen.findByRole('log', { name: 'Recent warps' });
+      const before = looks();
+      await pass(20_000);
+      expect(looks()).toBe(before);
+      await pass(10_100);
+      expect(looks()).toBe(before + 1);
+      expect(classes.fetchClassDetail).toHaveBeenCalledTimes(before + 1);
+      expect(classes.fetchWarpRequests).toHaveBeenCalledTimes(before + 1);
+    });
+
+    it("doesn't look while the tab is hidden, and looks straight away when it comes back", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      show();
+      await screen.findByRole('log', { name: 'Recent warps' });
+      const before = looks();
+      await tab('hidden');
+      await pass(5 * LIVE_MS);
+      expect(looks()).toBe(before);
+      await tab('visible');
+      expect(looks()).toBe(before + 1);
+    });
   });
 
   it('adds ticked students from the list of students with no class', async () => {

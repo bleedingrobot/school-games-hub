@@ -26,4 +26,5 @@ export const powerClash: GameDefinition = {
   Play: PowerClashPage,
   ranked: false,
   noBots: true,
+  group: 'no-maths',
 };

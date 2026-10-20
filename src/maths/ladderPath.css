@@ -1,0 +1,162 @@
+/* The student's path along the maths ladder (home page card). Colour never carries meaning alone: every stop has a symbol or words. */
+.ladder-path {
+  display: grid;
+  gap: 10px;
+}
+.ladder-path__count,
+.ladder-path__here,
+.ladder-path__pick {
+  margin: 0;
+}
+.ladder-path__strip,
+.ladder-path__list,
+.ladder-path__tables {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ladder-path__strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.ladder-path__dot {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--ink-soft);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+}
+[data-state='secure'] > .ladder-path__dot {
+  background: var(--won);
+  border-color: var(--won);
+  color: #fff;
+}
+[data-state='past'] > .ladder-path__dot {
+  border-color: var(--won);
+  color: var(--won);
+}
+[data-state='here'] > .ladder-path__dot {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px var(--focus);
+  color: var(--focus);
+}
+[data-state='next'] > .ladder-path__dot {
+  border-style: dashed;
+  opacity: 0.85;
+}
+.ladder-path__stop[data-pick] > .ladder-path__dot::after {
+  content: '⭐';
+  position: absolute;
+  transform: translate(14px, -14px);
+  font-size: 0.8rem;
+}
+.ladder-path__stop {
+  position: relative;
+}
+.ladder-path__list {
+  display: grid;
+  gap: 10px;
+}
+.ladder-path__row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.ladder-path__what {
+  display: grid;
+  gap: 2px;
+}
+.ladder-path__name {
+  font-weight: 700;
+}
+.ladder-path__state {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+.ladder-path__tables {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.ladder-path__tables li {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.ladder-path__tables li[data-secure] {
+  border-color: var(--won);
+  color: var(--won);
+}
+
+/* "You moved up!" */
+.moved-up {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  margin: 0 0 4px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 2px solid var(--won);
+  animation: moved-up-pop 0.5s ease-out;
+}
+.moved-up p {
+  margin: 0;
+}
+@keyframes moved-up-pop {
+  from {
+    transform: scale(0.96);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .moved-up {
+    animation: none;
+  }
+}
+
+.placement-offer {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--tint);
+}
+.placement-offer p {
+  margin: 0 0 8px;
+}
+.placement {
+  display: grid;
+  gap: 14px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+.placement__count {
+  margin: 0;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.placement__panel {
+  display: grid;
+  gap: 14px;
+}
+.placement__panel p {
+  margin: 0;
+}

@@ -1,0 +1,389 @@
+/* ---------- Marble Rush ---------- */
+
+.marble-picker {
+  display: grid;
+  gap: 12px;
+  max-width: 960px;
+}
+.marble-picker__intro {
+  margin: 0;
+  color: var(--ink-soft);
+}
+/* The page is school-red, so headings are white and everything else sits on a white card. */
+.marble-picker > h2,
+.marble-picker__top h2,
+.marble-picker__heading {
+  color: #fff;
+}
+.marble-picker__panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface);
+}
+.marble-picker__heading {
+  margin-top: 8px;
+}
+.marble-courses {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+.marble-course {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 3px solid var(--line);
+}
+.marble-course__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.marble-course__head h3 {
+  font-size: 1.15rem;
+}
+.marble-course__level {
+  color: #0e7490;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.marble-course__place {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.marble-course p {
+  margin: 0;
+}
+.marble-course__know summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #0e7490;
+  min-height: 32px;
+}
+.marble-course__soon {
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.marble-course__best {
+  font-weight: 700;
+}
+.marble-course__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.marble-picker__ghost {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line, #d8d4ee);
+  border-radius: 12px;
+}
+.marble-picker__ghost p {
+  margin: 0;
+}
+.marble-picker__hint {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+.marble-board__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+.marble-board__modes [aria-pressed='true'] {
+  outline: 3px solid currentColor;
+}
+.marble-board__list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 28px;
+}
+.marble-board__list li {
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+.marble-board__list li > * {
+  vertical-align: middle;
+  margin-right: 8px;
+}
+.marble-board__me {
+  font-weight: 700;
+  background: rgba(250, 204, 21, 0.25);
+}
+
+/* ---------- a run ---------- */
+
+.marble-run {
+  display: grid;
+  gap: 8px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.marble-hud {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 16px;
+  background: var(--surface);
+}
+.marble-hud__clock {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 1.9rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.marble-hud__stats {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  font-weight: 700;
+  flex-wrap: wrap;
+}
+.marble-hud__flame {
+  color: #b91c1c;
+  font-weight: 700;
+}
+.marble-stage {
+  position: relative;
+  height: clamp(300px, calc(100vh - 250px), 700px);
+  border-radius: 20px;
+  overflow: hidden;
+  background: #cfe9f3;
+  touch-action: none;
+  user-select: none;
+  border: 3px solid var(--line);
+}
+.marble-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.marble-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.62);
+  color: #fff;
+}
+.marble-overlay p {
+  margin: 0;
+}
+.marble-overlay--light {
+  background: rgba(15, 23, 42, 0.38);
+}
+.marble-overlay__big {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 2rem;
+}
+.marble-overlay__time {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 2.6rem;
+  font-variant-numeric: tabular-nums;
+}
+.marble-overlay__medal {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+.marble-overlay__best {
+  font-weight: 800;
+  color: #fde047;
+}
+.marble-overlay__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 6px;
+}
+.marble-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.marble-bar .button,
+.marble-overlay .button,
+.marble-course .button {
+  min-height: 44px;
+  width: auto;
+}
+.marble-bar__help {
+  margin: 0;
+  color: #fff;
+  font-weight: 600;
+}
+.marble-stick {
+  position: absolute;
+  bottom: 18px;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.28);
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  display: grid;
+  place-items: center;
+}
+.marble-stick--right {
+  right: 18px;
+}
+.marble-stick--left {
+  left: 18px;
+}
+.marble-stick__knob {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid #0e7490;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .marble-hud {
+    grid-template-columns: 1fr auto;
+  }
+  .marble-hud__stats {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
+/* ---- maths: the gate's question, the "2 seconds off" note, the picker's maths choices ---- */
+.marble-gate {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(94%, 36rem);
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  text-align: center;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #fff;
+  z-index: 3;
+}
+.marble-gate p {
+  margin: 0;
+}
+.marble-gate__question strong {
+  font-family: var(--display);
+  font-size: 1.6rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.marble-gate__hint {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.marble-gate .button {
+  min-height: 44px;
+  width: auto;
+}
+.marble-toast {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #166534;
+  color: #fff;
+  font-weight: 800;
+  z-index: 3;
+}
+.marble-picker__maths {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.marble-picker__maths label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-weight: 700;
+}
+.marble-picker__maths input[type='checkbox'] {
+  width: 24px;
+  height: 24px;
+}
+
+.marble-guess {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  font-weight: 700;
+}
+.marble-guess input {
+  width: 6rem;
+  min-height: 44px;
+  font-size: 1.2rem;
+  text-align: center;
+  border-radius: 10px;
+  border: 2px solid #fff;
+  background: #fff;
+  color: #0f172a;
+}
+
+.marble-picker__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.marble-picker__top h2 {
+  margin: 0;
+}
+.marble-picker__top .button,
+.marble-howto-screen .button {
+  min-height: 44px;
+  width: auto;
+}
+.marble-howto h3 {
+  margin: 14px 0 4px;
+}
+.marble-howto__big {
+  font-family: var(--display);
+  font-size: 1.4rem;
+}
+.marble-howto p {
+  margin: 0 0 6px;
+  max-width: 46rem;
+}
+.marble-howto kbd {
+  padding: 1px 6px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  font-size: 0.9em;
+}

@@ -174,9 +174,13 @@ export async function fetchMyOpenGames(): Promise<FriendGame[]> {
     .order('created_at', { ascending: false })
     .limit(10);
   if (error || !data) throw new FriendlyError('We couldn’t load your games.');
+  return stillOpen(data as unknown as FriendGame[]);
+}
+
+/** My open games worth offering: the ones being played, and the waiting ones still in time. A waiting game past its time is on its way out. */
+export function stillOpen<T extends { status: string; expires_at: string }>(games: T[]): T[] {
   const now = Date.now();
-  // A waiting game past its time is on its way out; don't offer it.
-  return (data as unknown as FriendGame[]).filter((g) => g.status === 'playing' || Date.parse(g.expires_at) > now);
+  return games.filter((g) => g.status === 'playing' || Date.parse(g.expires_at) > now);
 }
 
 export async function fetchRecentFriendGames(limit = 5): Promise<FriendGame[]> {
@@ -223,7 +227,11 @@ export async function fetchPlayerCards(ids: string[]): Promise<Map<string, Playe
   if (wanted.length === 0) return new Map();
   const { data, error } = await supabase.from('profiles').select('id, display_name, avatar').in('id', wanted);
   if (error || !data) return new Map();
-  return new Map((data as PlayerCard[]).map((p) => [p.id, p]));
+  return cardsById(data as PlayerCard[]);
+}
+
+export function cardsById(cards: PlayerCard[]): Map<string, PlayerCard> {
+  return new Map(cards.map((p) => [p.id, p]));
 }
 
 /** How far the server's clock is ahead of this device's, in milliseconds. */

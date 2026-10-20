@@ -131,3 +131,25 @@
   gap: 8px 10px;
   align-items: center;
 }
+
+/* The focus history: each ended focus, with a fold-out of where students stand now. */
+.focus-history > li {
+  flex-wrap: wrap;
+}
+.focus-history__by {
+  color: var(--ink-soft);
+}
+.focus-history__now {
+  flex-basis: 100%;
+  margin-top: 6px;
+}
+.focus-history__now summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.focus-history__now table {
+  margin-top: 8px;
+}
+.placement-reset {
+  margin: 12px 0;
+}

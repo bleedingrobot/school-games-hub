@@ -72,6 +72,36 @@ vi.mock('./data/progress', async (importOriginal) => ({
   })),
 }));
 
+// The home page asks for everything in one request (server load S.2): its answer is made from the same made-up answers as above.
+vi.mock('./data/homePage', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./data/homePage')>()),
+  fetchMyHomePage: vi.fn(async () => {
+    const bots = await import('./data/botGames');
+    const friends = await import('./data/multiplayer');
+    const points = await import('./data/progress');
+    return {
+      progress: await points.fetchMyProgress(),
+      botRecent: await bots.fetchRecentGames(),
+      botStats: await bots.fetchMyStats(),
+      friendRecent: await friends.fetchRecentFriendGames(),
+      friendStats: await friends.fetchFriendStats(),
+      friendOpen: await friends.fetchMyOpenGames(),
+      players: await friends.fetchPlayerCards([]),
+      spaceRecent: [],
+      spaceOpen: [],
+      spaceStats: null,
+      cardRecent: [],
+      cardOpen: [],
+      cardStats: null,
+      powerRecent: [],
+      powerOpen: [],
+      powerStats: null,
+      moves: {},
+      parts: {},
+    };
+  }),
+}));
+
 const signedIn: AuthState = {
   status: 'signed-in',
   profile: { id: 'u1', display_name: 'Speedy Otter 27', avatar: {}, role: 'student' },

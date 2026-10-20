@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { fetchClockOffset, fetchPlayerCards, MultiplayerError, type LiveStatus, type PlayerCard } from '../data/multiplayer';
 import { askSpace, askSpaceFull, fetchSpaceGame, seatsOf, watchSpaceGame, type SpaceAction, type SpaceGame, type SpaceMathsReply } from '../data/spaceGames';
-import { CHECK_EVERY_MS } from '../multiplayer/useFriendGame';
+import { useGameChecks } from '../multiplayer/useGameChecks';
 
 export interface SpaceSession {
   game: SpaceGame;
@@ -112,11 +112,7 @@ export function useSpaceGame(id: string): SpaceGameState {
   }, [id, me, accept]);
 
   const active = game?.status === 'waiting' || game?.status === 'playing' || (game?.status === 'finished' && !game.rematch_game);
-  useEffect(() => {
-    if (!active) return;
-    const timer = setInterval(() => void load(), live === 'live' ? CHECK_EVERY_MS.live : CHECK_EVERY_MS.down);
-    return () => clearInterval(timer);
-  }, [active, live, load]);
+  useGameChecks(active, live, load);
 
   useEffect(() => {
     const again = () => {

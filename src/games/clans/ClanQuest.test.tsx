@@ -32,15 +32,22 @@ async function intoFight(u: ReturnType<typeof user>) {
   await u.click(screen.getByRole('button', { name: 'Into the Mines!' }));
 }
 
+// The fight loops look for buttons by their words with a plain look-up: asking by role is slow on the fight page, and a
+// fight is dozens of steps, which made the look-ups most of each fight's time.
+const button = (name: string | RegExp) =>
+  [...document.querySelectorAll('button')].find((b) => {
+    const label = (b.getAttribute('aria-label') ?? b.textContent ?? '').trim();
+    return typeof name === 'string' ? label === name : name.test(label);
+  });
+
 /** Click through a whole fight with the default action. */
 async function playOut(u: ReturnType<typeof user>) {
   for (let i = 0; i < 120; i++) {
-    const done = screen.queryByRole('button', { name: 'See how everyone did' });
+    const done = button('See how everyone did');
     if (done) return done;
-    const no = screen.queryByRole('button', { name: 'No thanks' });
-    if (no) await u.click(no);
-    else if (screen.queryByRole('button', { name: 'Carry on' })) await u.click(screen.getByRole('button', { name: 'Carry on' }));
-    else await u.click(screen.getByRole('button', { name: /Default action/ }));
+    const next = button('No thanks') ?? button('Carry on') ?? button(/Default action/);
+    if (!next) throw new Error('No button to press in the fight');
+    await u.click(next);
   }
   throw new Error('The fight never ended');
 }
@@ -104,6 +111,23 @@ describe('a fight', () => {
     expect(screen.getByText('7 of 8')).toBeInTheDocument();
   });
 
+  it('keeps going round after round when scrollIntoView gives back a promise (newer Chrome did, and the page went blank)', async () => {
+    const had = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollIntoView');
+    Element.prototype.scrollIntoView = function () {
+      return Promise.resolve() as unknown as void;
+    };
+    try {
+      const u = user();
+      await makeClanOnScreen(u);
+      await intoFight(u);
+      await playOut(u);
+      expect(screen.getByText(/enemies are beaten/)).toBeInTheDocument();
+    } finally {
+      if (had) Object.defineProperty(Element.prototype, 'scrollIntoView', had);
+      else delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+
   it('a right Battle Cry answer lets you pick damage or healing, with the key too', async () => {
     const u = user();
     await makeClanOnScreen(u);
@@ -147,7 +171,7 @@ describe('a fight', () => {
     for (const box of screen.getAllByRole('checkbox')) if ((box as HTMLInputElement).checked) await u.click(box);
     await intoFight(u);
     // from here: keys only. Enter = default action for each member; a, then 1 = attack the first enemy.
-    for (let i = 0; i < 60 && !screen.queryByRole('button', { name: 'See how everyone did' }); i++) {
+    for (let i = 0; i < 60 && !button('See how everyone did'); i++) {
       await u.keyboard(i % 3 === 0 ? 'a' : '{Enter}');
       if (screen.queryByText(/Which enemy|attack…/)) await u.keyboard('1');
     }

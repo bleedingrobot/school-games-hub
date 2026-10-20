@@ -1,6 +1,7 @@
 // Connects the lord handler to Supabase. Edit handler.ts (and shared/lord/server.ts) for the logic, then run
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
+import { userIdFromToken } from '../_shared/signIn';
 import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
 import type { ArenaCandidate, Outcome, Settings } from '../../../shared/lord/server';
 import { batchIdFor, makeHandler } from './handler';
@@ -38,10 +39,7 @@ Deno.serve(
     now: () => Date.now(),
     seed: () => crypto.getRandomValues(new Uint32Array(1))[0],
     newId: () => crypto.randomUUID(),
-    async userIdFor(token) {
-      const { data, error } = await admin.auth.getUser(token);
-      return error ? null : (data.user?.id ?? null);
-    },
+    userIdFor: userIdFromToken(admin.auth),
     async isTeacher(player) {
       const { data, error } = await admin.from('profiles').select('role').eq('id', player).maybeSingle();
       if (error || !data) return { ok: false, why: 'busy' };
