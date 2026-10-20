@@ -6109,6 +6109,127 @@ function parseMathsSwitch(value) {
 	return MATHS_SWITCHES.includes(value) ? value : "off";
 }
 //#endregion
+//#region shared/maths/focusResults.ts
+/**
+* What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
+* results"). The database matches each answer to the focuses that were running at its time; the server works out the two
+* things only the maths code knows: which ladder skills own the answer's key, and whether it was quick.
+*/
+let owners = null;
+/** The ladder skills that own a mastery key (usually one). Empty if the key isn't on the ladder. */
+function skillsOfKey(key) {
+	if (!owners) {
+		owners = new Map();
+		for (const skill of LADDER) for (const k of skill.keys) owners.set(k, [...owners.get(k) ?? [], skill.id]);
+	}
+	return owners.get(key) ?? [];
+}
+/** The answers worth sending: those on a ladder skill. */
+function focusResultAnswers(answers, pack) {
+	const quickMs = quickMsForPack(pack);
+	const out = [];
+	for (const a of answers) {
+		const skills = skillsOfKey(a.key);
+		if (skills.length > 0) out.push({
+			skills,
+			at: a.at,
+			correct: a.correct,
+			quick: a.correct && a.ms <= quickMs
+		});
+	}
+	return out;
+}
+//#endregion
+//#region supabase/functions/_shared/focusResults.ts
+/**
+* Adds a batch of answers to the results of the maths focuses running for the student (stage F.8). Call it only for a batch the
+* records took for the first time (record_fact_answers says 0 for one it has seen), so a retry never counts twice. It never
+* throws and never blocks saving: the answers are already saved, and a problem here is only logged (the code, never who).
+*/
+async function countForFocuses(rpc, player, pack, answers, from) {
+	try {
+		const rows = focusResultAnswers(answers, pack);
+		if (rows.length === 0) return;
+		const { error } = await rpc("add_maths_focus_results", {
+			player,
+			answers: rows
+		});
+		if (error) console.error(`${from}: focus results not counted (${error.code ?? "unknown"})`);
+	} catch {
+		console.error(`${from}: focus results not counted`);
+	}
+}
+//#endregion
+//#region supabase/functions/_shared/recordAnswers.ts
+/** A UUID made from text: the same text always gives the same id, so a save sent twice is one batch. */
+async function batchIdFor$1(text) {
+	const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`maths-answers:${text}`))).slice(0, 16)].map((b) => b.toString(16).padStart(2, "0")).join("");
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+/**
+* Saves answers the server has marked, the one approved way (docs/GAME_DEVELOPMENT_GUIDE.md, section 4.1 rule 6):
+* split by the pack that keeps each record, one batch per pack with an id made from `once` (something unique to this
+* save, such as the run's seed and the question's slot), each pack's own quick time, times kept to at most two
+* minutes (`keptMs`), and the running maths focuses'
+* results counted for a batch the records took for the first time, so a retry never counts twice.
+* It never throws: a problem is logged with its code (never who) and the game goes on.
+*/
+async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor$1(`${from}:${o}:${pack}`)) {
+	const result = {
+		saved: 0,
+		failed: 0
+	};
+	for (const [pack, group] of groupByPack(answers)) try {
+		const { data, error } = await rpc("record_fact_answers", {
+			player,
+			pack,
+			batch_id: await batchId(once, pack),
+			answers: group.map((a) => ({
+				...a,
+				ms: keptMs(a.ms)
+			})),
+			quick_ms: quickMsForPack(pack),
+			fluent_days: 2,
+			top_box: 4
+		});
+		if (error) {
+			result.failed++;
+			console.error(`${from}: record answers failed (${error.code ?? "unknown"})`);
+			continue;
+		}
+		const saved = typeof data === "number" ? data : 0;
+		result.saved += saved;
+		if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
+	} catch {
+		result.failed++;
+		console.error(`${from}: record answers failed`);
+	}
+	return result;
+}
+//#endregion
+//#region supabase/functions/_shared/signIn.ts
+/**
+* Who owns this sign-in token? Null if it's missing, expired, fake or not a signed-in user's.
+*
+* With the project's newer sign-in keys, the token's signature is checked right here against the
+* project's public keys (fetched once and kept for 10 minutes), with no trip to the sign-in
+* service. With the older shared secret (or a token signed with a key we don't know), the library
+* asks the sign-in service instead, exactly as `getUser` did. So this works the same before and
+* after the keys are switched in the Supabase dashboard; it only gets cheaper after.
+*/
+function userIdFromToken(auth) {
+	return async (token) => {
+		try {
+			const { data, error } = await auth.getClaims(token);
+			const claims = error ? null : data?.claims;
+			if (!claims || claims.role !== "authenticated" || typeof claims.sub !== "string" || !claims.sub) return null;
+			return claims.sub;
+		} catch {
+			return null;
+		}
+	};
+}
+//#endregion
 //#region supabase/functions/_shared/stamp.ts
 /**
 * Stamps (signatures) only the server can make: an HMAC-SHA256 of some text, as URL-safe
@@ -9731,10 +9852,7 @@ Deno.serve(makeHandler({
 	random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
 	randomHex: (bytes) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, "0")).join(""),
 	stamp: stamper(key, "marble-run"),
-	async userIdFor(token) {
-		const { data, error } = await admin.auth.getUser(token);
-		return error ? null : data.user?.id ?? null;
-	},
+	userIdFor: userIdFromToken(admin.auth),
 	async settings(player) {
 		const { data, error } = await admin.rpc("settings_of", { player }).maybeSingle();
 		if (error || !data) {
@@ -9808,18 +9926,7 @@ Deno.serve(makeHandler({
 		return data === true;
 	},
 	async recordAnswers(player, once, answers) {
-		for (const [pack, group] of groupByPack(answers)) {
-			const { error } = await admin.rpc("record_fact_answers", {
-				player,
-				pack,
-				batch_id: await batchIdFor(`${once}:${pack}`),
-				answers: group,
-				quick_ms: QUICK_MS,
-				fluent_days: 2,
-				top_box: 4
-			});
-			if (error) console.error(`marble: record answers failed (${error.code ?? "unknown"})`);
-		}
+		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "marble", (o, pack) => batchIdFor(`${o}:${pack}`));
 	},
 	record: (player, report, run, extra) => call("record_marble_run", {
 		player,

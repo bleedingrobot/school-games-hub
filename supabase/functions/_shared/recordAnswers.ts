@@ -28,14 +28,23 @@ export interface Recorded {
  * results counted for a batch the records took for the first time, so a retry never counts twice.
  * It never throws: a problem is logged with its code (never who) and the game goes on.
  */
-export async function recordMathsAnswers(rpc: RpcWithData, player: string, answers: readonly FactAnswer[], once: string, from: string): Promise<Recorded> {
+export async function recordMathsAnswers(
+  rpc: RpcWithData,
+  player: string,
+  answers: readonly FactAnswer[],
+  once: string,
+  from: string,
+  // A game that made its own batch ids before this helper existed keeps making them the same way, so a save sent again
+  // after the switch still counts once.
+  batchId: (once: string, pack: string) => Promise<string> = (o, pack) => batchIdFor(`${from}:${o}:${pack}`),
+): Promise<Recorded> {
   const result: Recorded = { saved: 0, failed: 0 };
   for (const [pack, group] of groupByPack(answers)) {
     try {
       const { data, error } = await rpc('record_fact_answers', {
         player,
         pack,
-        batch_id: await batchIdFor(`${from}:${once}:${pack}`),
+        batch_id: await batchId(once, pack),
         // Times as they are kept: at most two minutes (a pupil who wandered off isn't slow at the fact).
         answers: group.map((a) => ({ ...a, ms: keptMs(a.ms) })),
         quick_ms: quickMsForPack(pack),
