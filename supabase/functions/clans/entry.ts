@@ -6,6 +6,9 @@ import type { Result, ServerState } from '../../../shared/clans/actions';
 import type { Sketch } from '../../../shared/clans/village';
 import { FACT_PACK } from '../../../shared/clans/battleCry';
 import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import { parseFocus } from '../../../shared/maths/focus';
+import type { MathsContext } from '../../../shared/maths/serverQuestions';
+import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { batchIdFor, makeHandler, type Extras, type Loaded, type LoadedTarget, type Outcome, type SaveStatus } from './handler';
 
 declare const Deno: {
@@ -44,6 +47,30 @@ Deno.serve(
       return call<number>('record_fact_answers', {
         player, pack: FACT_PACK, batch_id: await batchIdFor(batchKey), answers, quick_ms: QUICK_MS, fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
       });
+    },
+    async mathsContext(player): Promise<MathsContext | null> {
+      // As Marble Rush does: the child's records, their class's question settings and their maths focus.
+      const { data, error } = await admin.rpc('space_maths_context', { player });
+      if (error || !data) {
+        console.error(`clans: maths records failed (${error?.code ?? 'none'})`);
+        return null;
+      }
+      const context = data as {
+        facts: MathsContext['facts'];
+        settings: { enabledTables?: number[]; division?: boolean; missingFactor?: boolean | null; multipleChoice?: boolean };
+        focus?: unknown;
+      };
+      const { enabledTables, division, missingFactor, multipleChoice } = context.settings;
+      return {
+        facts: context.facts,
+        // Anything odd counts as no focus.
+        focus: parseFocus(context.focus),
+        settings: { enabledTables, division, multipleChoice, ...(typeof missingFactor === 'boolean' ? { missingFactor } : {}) },
+      };
+    },
+    async recordLadderAnswers(player, once, answers) {
+      // The shared way: per pack with each pack's quick time, and counted for the teacher's focus results.
+      await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'clans');
     },
     load: (player, requestId) => call<Loaded>('load_clan', { player, request_id: requestId }),
     save: (player, expectedVersion, requestId, action, state: ServerState, result: Result) =>

@@ -9052,13 +9052,17 @@ function pickSpaceQuestion(pack, settings = {}) {
 	return pack.nextQuestion(ctx) ?? new TimesTables().nextQuestion({ level: 1 });
 }
 //#endregion
-//#region shared/marble/questions.ts
+//#region shared/maths/serverQuestions.ts
 /**
-* Making and marking the questions of a Marble Rush run (docs/MARBLE-PLAN.md, section 7). The server makes the list when a
-* run starts, keeps it where students can't read it, and marks every answer against it.
+* For games whose server makes the maths questions and marks them itself (docs/GAME_DEVELOPMENT_GUIDE.md, section 4.2 A):
+* a random number generator made from a text seed, so the server can make the same questions again, and the part of a
+* question the browser may see (never its answer).
 *
-* Questions come from the shared focus system, as in Mission Control: `makeSpacePack` -> `makeFocusPack`, so a teacher's
-* focus, a student's own pick or the whole ladder (auto) all decide what the gates, pit stops and rescues ask.
+* Moved here from shared/marble/questions.ts (20 Oct 2026) so Clan Quest's Battle Cry makes its questions the same way;
+* Marble's file re-exports them, so nothing about a Marble run changed.
+*
+* `seededRandom` gives exactly the same numbers as Marble Rush's own copy (shared/marble/maths.ts on its branch), so
+* Marble can switch to this one without any run changing.
 */
 /** The answer and the mastery record of a stored question. Null if it can't be marked. */
 function markQuestion(q) {

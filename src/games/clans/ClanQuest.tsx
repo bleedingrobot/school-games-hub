@@ -1,7 +1,7 @@
 /** Clan Quest, test version: clan creator, the Mines and fights. Nothing is saved; a refresh starts again. */
 import { useEffect, useRef, useState } from 'react';
 import type { Action } from '../../../shared/clans/actions';
-import type { OpenFight } from '../../../shared/clans/actions';
+import type { ShownFight } from '../../../shared/clans/actions';
 import type { RecordedRound } from '../../../shared/clans/battleCry';
 import type { FightState } from '../../../shared/clans/fight';
 import type { Clan } from '../../../shared/clans/types';
@@ -9,7 +9,7 @@ import type { Draft } from '../../../shared/clans/create';
 import { TOPIC_LABELS, TOPICS, YEAR_BANDS, type PracticalTopic, type YearBand } from '../../../shared/maths/practical';
 import { CONFIG } from '../../../shared/clans/config';
 import { Creator } from './Creator';
-import { Fight } from './Fight';
+import { Fight, type CryChecked } from './Fight';
 import { MemberCard } from './MemberCard';
 import { Church } from './Church';
 import { Market } from './Market';
@@ -107,9 +107,9 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const [summary, setSummary] = useState<FightSummary | null>(null);
   const [loading, setLoading] = useState<'loading' | 'failed' | 'off' | null>(server ? 'loading' : null);
   /** With a server: the fight being played, as the server has it. */
-  const [activeFight, setActiveFight] = useState<OpenFight | null>(null);
+  const [activeFight, setActiveFight] = useState<ShownFight | null>(null);
   const [fightKey, setFightKey] = useState(0);
-  const activeRef = useRef<OpenFight | null>(null);
+  const activeRef = useRef<ShownFight | null>(null);
   /** What the server said when the last round ended the fight (it has been paid). */
   const outcome = useRef<FightSummary | null>(null);
   const [serverSeed, setServerSeed] = useState(seed);
@@ -173,7 +173,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
     else if (waiting.current === 0) setNotice('');
   };
   /** The server's copy of the fight is the truth: show the fight again from it, or leave if it is over. */
-  const resyncFight = (fight: OpenFight | null | undefined) => {
+  const resyncFight = (fight: ShownFight | null | undefined) => {
     activeRef.current = fight ?? null;
     setActiveFight(fight ?? null);
     setFightKey((k) => k + 1);
@@ -246,7 +246,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
     waiting.current++;
     line.current = line.current.then(async () => {
       try {
-        const reply = await server.send({ type: 'fightStart', depth: session.depth, boss: b });
+        // `ladder`: this screen can show Battle Cry questions from the child's own maths.
+        const reply = await server.send({ type: 'fightStart', depth: session.depth, boss: b, ladder: true });
         waiting.current--;
         take(reply);
         if (reply.ok && reply.state?.fight) {
@@ -273,6 +274,9 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           outcome.current = reply.result.summary;
           fameEarned.current = reply.result.earned ? fameFor(reply.result.earned) : 0;
           activeRef.current = null;
+        } else if (reply.ok && reply.state?.fight) {
+          // The server's copy, with this round in it, in case the fight has to be shown again.
+          activeRef.current = reply.state.fight;
         } else if (!reply.ok) {
           resyncFight(reply.state?.fight);
         }
@@ -288,6 +292,16 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
         setNotice("We couldn't reach the server, so that round wasn't saved. Please try again.");
       }
     });
+  };
+  /** A ladder fight's Battle Cry answer, marked by the server (in the same line as the rounds, so they stay in order). */
+  const checkCry = async (round: number, answer: number, ms: number): Promise<CryChecked> => {
+    const reply = await ask!({ type: 'cryCheck', round, answer, ms }).catch(() => {
+      throw new Error('We couldn’t reach the server to check that. Try again.');
+    });
+    if (!reply.ok || reply.result.type !== 'cryCheck') throw new Error(reply.ok ? 'We couldn’t check that one. Try again.' : reply.say);
+    // Keep the server's copy with this mark, so showing the fight again replays it the same way.
+    if (reply.state?.fight) activeRef.current = reply.state.fight;
+    return { correct: reply.result.correct, answer: reply.result.answer, given: reply.result.given };
   };
   /** The fight screen is done. With a server, wait for the answer to the last round, then show how it went. */
   const finishServer = () => {
@@ -389,7 +403,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'land' && <Land session={session} onChange={change} onBack={() => setScreen('empire')} />}
           {screen === 'fight' && !server && <Fight key={session.fightNo} session={session} boss={boss} onFinish={finish} />}
           {screen === 'fight' && server && activeFight && (
-            <Fight key={`${activeFight.no}-${fightKey}`} session={session} open={activeFight} boss={activeFight.boss} onRound={sendRound} onFinish={finishServer} />
+            <Fight key={`${activeFight.no}-${fightKey}`} session={session} open={activeFight} boss={activeFight.boss} onRound={sendRound} onCheck={checkCry} onFinish={finishServer} />
           )}
           {screen === 'results' && summary && <Results summary={summary} members={session.clan.members} fame={fameEarned.current} onDone={() => setScreen('home')} />}
         </>

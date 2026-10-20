@@ -12,7 +12,9 @@ import { todaysQuest } from '../../../shared/clans/quests';
 import type { Sketch, VillageKind, VillageView } from '../../../shared/clans/village';
 import { addEarned, fameFor, measures, NO_STATS, pointsFor, reached, type ClanStats, type Earned } from '../../../shared/clans/rewards';
 import type { FactAnswer } from '../../../shared/maths/leitner';
+import { parseFocus } from '../../../shared/maths/focus';
 import { DEFAULT_PRACTICAL_SETTINGS } from '../../../shared/maths/practical';
+import type { MathsContext } from '../../../shared/maths/serverQuestions';
 import { makeHandler, MAX_REQUESTS_PER_MINUTE, type Extras, type Loaded, type LoadedTarget, type Outcome, type SaveStatus, type Services } from './handler';
 
 const NOW = Date.UTC(2026, 9, 19, 2, 0, 0);
@@ -36,6 +38,8 @@ function fakeDb() {
   const stats = new Map<string, ClanStats>();
   const points: { player: string; points: number }[] = [];
   const answers: { player: string; batch: string; list: FactAnswer[] }[] = [];
+  // The child's own maths (space_maths_context) and the answers kept in it (recordMathsAnswers), for ladder fights.
+  const ladder = { context: { facts: [], settings: { enabledTables: [2, 3, 4, 5, 10] }, focus: parseFocus(null) } as MathsContext | null, loads: [] as string[], kept: [] as { player: string; once: string; list: FactAnswer[] }[] };
   const teacher = { enabledTopics: [...DEFAULT_PRACTICAL_SETTINGS.enabledTopics] as string[], yearBand: 5, enabledTables: [...DEFAULT_PRACTICAL_SETTINGS.enabledTables], fightsPerDay: 8, season: 1 };
   const earn = (player: string, result: Result) => {
     const earned = 'earned' in result ? (result.earned as Earned | undefined) : undefined;
@@ -53,7 +57,7 @@ function fakeDb() {
     for (const k of village.votes.values()) votes[k] = (votes[k] ?? 0) + 1;
     return { name: 'Room 12', chest: village.chest, levels: { ...village.levels }, week: 2900, votes, myVote: village.votes.get(player) ?? null, clans: clans.size };
   };
-  const db: Pick<Services, 'load' | 'save' | 'vote' | 'mates' | 'target' | 'saveRaid' | 'extras' | 'recordAnswers'> & { raceOnce?: () => void } = {
+  const db: Pick<Services, 'load' | 'save' | 'vote' | 'mates' | 'target' | 'saveRaid' | 'extras' | 'recordAnswers' | 'mathsContext' | 'recordLadderAnswers'> & { raceOnce?: () => void } = {
     async load(player, requestId) {
       if (!seeds.has(player)) seeds.set(player, SEED + seeds.size);
       const row = clans.get(player);
@@ -98,6 +102,14 @@ function fakeDb() {
       if (answers.some((a) => a.player === player && a.batch === batch)) return { ok: true, value: 0 };
       answers.push({ player, batch, list: json(list) });
       return { ok: true, value: list.length };
+    },
+    async mathsContext(player) {
+      ladder.loads.push(player);
+      return ladder.context && json(ladder.context);
+    },
+    async recordLadderAnswers(player, once, list) {
+      // Like recordMathsAnswers: a batch seen before adds nothing.
+      if (!ladder.kept.some((k) => k.player === player && k.once === once)) ladder.kept.push({ player, once, list: json(list) });
     },
     async vote(player, kind) {
       if (village.levels[kind] >= { trainingHall: 5, smithy: 6, church: 3 }[kind]) return { ok: true, value: { ok: false } };
@@ -145,11 +157,11 @@ function fakeDb() {
       return { ok: true, value: { status: 'saved', version: a.version + 1 } };
     },
   };
-  return { db, clans, log, flags, village, notes, fame, points, answers, teacher, stats };
+  return { db, clans, log, flags, village, notes, fame, points, answers, teacher, stats, ladder };
 }
 
 function setup(over: Partial<Services> = {}, now = () => NOW) {
-  const { db, clans, log, flags, village, notes, fame, points, answers, teacher, stats } = fakeDb();
+  const { db, clans, log, flags, village, notes, fame, points, answers, teacher, stats, ladder } = fakeDb();
   const services: Services = {
     now,
     userIdFor: vi.fn(async (token: string) => (token === 'ana' ? 'student-1' : token === 'ben' ? 'student-2' : token === 'cai' ? 'student-3' : null)),
@@ -166,7 +178,7 @@ function setup(over: Partial<Services> = {}, now = () => NOW) {
     const response = await handler(new Request('http://x/clans', { method: 'POST', headers, body: JSON.stringify(opts.raw ?? { requestId: opts.requestId ?? id(), action }) }));
     return { status: response.status, body: (await response.json()) as Record<string, any> };
   };
-  return { send, clans, log, services, id, handler, flags, village, notes, fame, points, answers, teacher, stats };
+  return { send, clans, log, services, id, handler, flags, village, notes, fame, points, answers, teacher, stats, ladder };
 }
 
 const create = (seed = SEED) => ({ type: 'create', name: 'Red Banner', drafts: startingDrafts(seed) });
@@ -907,6 +919,69 @@ describe('fame, points, settings and maths records through the server function',
     const out = await t.send({ type: 'load' });
     expect(out.status).toBe(503);
     expect(t.log).toEqual([]);
+  });
+});
+
+describe('ladder fights through the server function', () => {
+  const create = () => ({ type: 'create', name: 'Red Banner', drafts: startingDrafts(SEED) });
+  const stored = (t: ReturnType<typeof setup>) => t.clans.get('student-1')!.state.fight as OpenFight;
+
+  it('loads the child\'s maths only to start a ladder fight, and keeps the questions with the fight', async () => {
+    const t = setup();
+    await t.send(create());
+    await t.send({ type: 'load' });
+    expect(t.ladder.loads).toEqual([]);
+    const start = await t.send({ type: 'fightStart', depth: 1, boss: false, ladder: true });
+    expect(start.body.ok).toBe(true);
+    expect(t.ladder.loads).toEqual(['student-1']);
+    expect(stored(t).questions).toHaveLength(8);
+  });
+
+  it('never shows the browser an answer: only what to show of each question, by its round', async () => {
+    const t = setup();
+    await t.send(create());
+    const start = await t.send({ type: 'fightStart', depth: 1, boss: false, ladder: true });
+    const shown = start.body.state.fight;
+    expect(shown.questions).toHaveLength(8);
+    shown.questions.forEach((q: Record<string, unknown>, i: number) => {
+      expect(q.slot).toBe(i);
+      expect(q).not.toHaveProperty('answer');
+      expect(q).not.toHaveProperty('factKey');
+      expect(q).not.toHaveProperty('params');
+    });
+    expect(JSON.stringify(start.body)).not.toMatch(/"answer"|"factKey"|"params"/);
+    // A refresh (load) is the same.
+    expect(JSON.stringify((await t.send({ type: 'load' })).body)).not.toMatch(/"answer"|"factKey"|"params"/);
+  });
+
+  it('marks an answer, keeps it in the child\'s own maths records once, and a resent check counts once too', async () => {
+    const t = setup();
+    await t.send(create());
+    await t.send({ type: 'fightStart', depth: 1, boss: false, ladder: true });
+    const q = stored(t).questions![0];
+    const requestId = t.id();
+    const first = await t.send({ type: 'cryCheck', round: 1, answer: q.answer, ms: 3000 }, { requestId });
+    expect(first.body.result).toEqual({ type: 'cryCheck', round: 1, correct: true, answer: q.answer, given: q.answer });
+    // The same request again (a dropped connection), then a new one for the same question.
+    expect((await t.send({ type: 'cryCheck', round: 1, answer: q.answer, ms: 3000 }, { requestId })).body.result).toEqual(first.body.result);
+    expect((await t.send({ type: 'cryCheck', round: 1, answer: 999, ms: 10 })).body.result).toMatchObject({ correct: true });
+    expect(t.ladder.kept).toHaveLength(1);
+    expect(t.ladder.kept[0].list).toEqual([{ key: q.factKey, correct: true, ms: 3000, at: NOW }]);
+    // None of it goes in the old Clan Quest records.
+    expect(t.answers).toEqual([]);
+  });
+
+  it('starts an old-style fight for an older browser, and when the child\'s maths can\'t be read', async () => {
+    const t = setup();
+    await t.send(create());
+    await t.send({ type: 'fightStart', depth: 1, boss: false });
+    expect(t.ladder.loads).toEqual([]);
+    expect(stored(t).questions).toBeUndefined();
+    const u = setup();
+    u.ladder.context = null;
+    await u.send(create());
+    expect((await u.send({ type: 'fightStart', depth: 1, boss: false, ladder: true })).body.ok).toBe(true);
+    expect(stored(u).questions).toBeUndefined();
   });
 });
 

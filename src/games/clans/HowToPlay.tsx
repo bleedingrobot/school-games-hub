@@ -26,8 +26,8 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         </section>
         <section aria-labelledby="htp-cry">
           <h3 id="htp-cry">Battle Cry</h3>
-          <p>Before each round you get a maths question. Get it right and your clan chooses a power-up: <strong>{percent(CONFIG.battleCryDamage)}% more damage</strong> or <strong>a little healing</strong> for everyone.</p>
-          <p>Get it wrong? Nothing is lost, and the game shows you how it works. There is no timer.</p>
+          <p>Before each round you get a maths question from your own maths: the same kind you are working on in the other maths games. Get it right and your clan chooses a power-up: <strong>{percent(CONFIG.battleCryDamage)}% more damage</strong> or <strong>a little healing</strong> for everyone.</p>
+          <p>Get it wrong? Nothing is lost, and the game shows you the right answer. There is no timer. Not sure? Press <strong>No thanks</strong> and the round goes on as normal.</p>
         </section>
         <section aria-labelledby="htp-keys">
           <h3 id="htp-keys">Using the keyboard</h3>

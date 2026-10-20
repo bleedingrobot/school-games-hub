@@ -3,7 +3,7 @@
  * the browser (so the test page works with no server at all); when there is a server, every change is also sent
  * to it as an action, and whatever it answers replaces the browser's copy. The server is the boss.
  */
-import type { Action, OpenFight, Result } from '../../../shared/clans/actions';
+import type { Action, Result, ShownFight } from '../../../shared/clans/actions';
 import type { Clan } from '../../../shared/clans/types';
 import type { VillageView } from '../../../shared/clans/village';
 import type { PracticalSettings } from '../../../shared/maths/practical';
@@ -19,7 +19,7 @@ export interface ServerClan {
   raidNo: number;
   examined: string[];
   /** The mine fight in progress, if any (a refresh shows it again). */
-  fight: OpenFight | null;
+  fight: ShownFight | null;
   settings: PracticalSettings;
   /** The latest village news lines, written by the computer. */
   news: string[];

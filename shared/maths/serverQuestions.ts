@@ -3,9 +3,15 @@
  * a random number generator made from a text seed, so the server can make the same questions again, and the part of a
  * question the browser may see (never its answer).
  *
+ * Moved here from shared/marble/questions.ts (20 Oct 2026) so Clan Quest's Battle Cry makes its questions the same way;
+ * Marble's file re-exports them, so nothing about a Marble run changed.
+ *
  * `seededRandom` gives exactly the same numbers as Marble Rush's own copy (shared/marble/maths.ts on its branch), so
  * Marble can switch to this one without any run changing.
  */
+import { makeSpacePack, pickSpaceQuestion, type MathsQuestionSettings } from '../space/mathsQuestion';
+import { isFocusKey, solveParts, type MathsFocus } from './focus';
+import type { FactStats } from './leitner';
 import type { Question } from './skillPack';
 
 function hashSeed(text: string): number {
@@ -52,4 +58,46 @@ export function publicQuestion(q: Question, slot: number): PublicQuestion {
     ...(q.input ? { input: q.input } : {}),
     ...(q.maxLength ? { maxLength: q.maxLength } : {}),
   };
+}
+
+/** What the database knows about a student for maths: their records, the class's question settings and their focus. */
+export interface MathsContext {
+  facts: FactStats[];
+  settings: MathsQuestionSettings;
+  focus?: MathsFocus;
+}
+
+/** The answer and the mastery record of a stored question. Null if it can't be marked. */
+export function markQuestion(q: Question | undefined): { answer: number; key: string } | null {
+  if (q && typeof q.answer === 'number' && Number.isFinite(q.answer) && typeof q.factKey === 'string' && isFocusKey(q.factKey)) {
+    return { answer: q.answer, key: q.factKey };
+  }
+  const solved = solveParts(q?.parts);
+  return solved ? { answer: solved.answer, key: solved.keys[0] } : null;
+}
+
+/** Decimal answers are typed as text, so compare with a hair of room. */
+export const sameAnswer = (typed: number, answer: number): boolean => Math.abs(typed - answer) < 1e-9;
+
+/**
+ * `count` questions for one run, different from each other where the focus allows. Every question can be marked
+ * (anything that can't is left out). Fewer than `count` come back only if the focus really has nothing more to ask.
+ */
+export function makeRunQuestions(context: MathsContext, count: number, random: () => number): Question[] {
+  const pack = makeSpacePack(context.facts, context.focus, context.settings, random);
+  const out: Question[] = [];
+  const seen = new Set<string>();
+  const spare: Question[] = [];
+  for (let tries = 0; tries < count * 8 && out.length < count; tries++) {
+    const q = pickSpaceQuestion(pack, context.settings);
+    if (!q || !markQuestion(q)) continue;
+    // Gates need an answer you can pick, so a question with no answer to choose between is still fine: gates make their own wrong answers.
+    if (seen.has(q.factKey)) spare.push(q);
+    else {
+      seen.add(q.factKey);
+      out.push({ ...q, id: out.length });
+    }
+  }
+  while (out.length < count && spare.length) out.push({ ...(spare.shift() as Question), id: out.length });
+  return out;
 }
