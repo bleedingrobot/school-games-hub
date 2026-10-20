@@ -1,6 +1,7 @@
 import { STAR_CONFIG, type Score } from '../../../shared/bond-match/score';
 import type { RecordedGame } from './bests';
-import { clock, STAR_NAMES, TEXT } from './strings';
+import type { Player } from '../../../shared/bond-match/versus';
+import { clock, STAR_NAMES, TEXT, type Players } from './strings';
 
 /** Where the save to the server is up to. Undefined when nothing is saved (the preview with no server). */
 export type SaveState = { status: 'saving' } | { status: 'saved'; points: number | null } | { status: 'later' };
@@ -44,6 +45,39 @@ export function Finish({ save, setLabel, score, recorded, onAgain, onAnother }: 
           {save.status === 'saving' && TEXT.saving}
           {save.status === 'later' && TEXT.saveLater}
           {save.status === 'saved' && (save.points ? TEXT.savedPoints(save.points) : save.points === 0 ? TEXT.savedNoPoints : TEXT.savedLine)}
+        </p>
+      )}
+      <div className="bm-finish__buttons">
+        <button type="button" className="button button--primary" onClick={onAgain}>{TEXT.again}</button>
+        <button type="button" className="button button--light" onClick={onAnother}>{TEXT.another}</button>
+      </div>
+    </section>
+  );
+}
+
+interface VersusProps {
+  save?: SaveState;
+  setLabel: string;
+  players: Players;
+  pairs: readonly [number, number];
+  winner: Player | 'tie';
+  onAgain: () => void;
+  onAnother: () => void;
+}
+
+/** The end of a two-player or computer game: who won and the pairs each found. No stars: those are for solo games. */
+export function VersusFinish({ save, setLabel, players, pairs, winner, onAgain, onAnother }: VersusProps) {
+  return (
+    <section className="bm-finish" aria-labelledby="bm-finish-title">
+      <h2 id="bm-finish-title" className="bm-finish__title" data-testid="winner">{TEXT.winner(players, winner)}</h2>
+      <p className="bm-finish__set">{setLabel}</p>
+      <p className="bm-finish__pairs" data-testid="pairs-score">{TEXT.pairsScore(players, pairs)}</p>
+      <p className="bm-finish__rule">{TEXT.versusNote}</p>
+      {save && (
+        <p className={`bm-finish__save bm-finish__save--${save.status}`} role="status" data-testid="save-line">
+          {save.status === 'saving' && TEXT.saving}
+          {save.status === 'later' && TEXT.saveLater}
+          {save.status === 'saved' && (save.points ? TEXT.savedPoints(save.points) : save.points === 0 ? TEXT.savedNoPointsVersus : TEXT.savedLine)}
         </p>
       )}
       <div className="bm-finish__buttons">

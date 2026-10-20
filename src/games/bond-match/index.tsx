@@ -1,9 +1,11 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { TEXT } from './strings';
+import { useBondMatchEnabled } from './switch';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const BondMatchHub = lazy(() => import('./BondMatchHub').then((m) => ({ default: m.BondMatchHub })));
+const BondMatchTeacherPanels = lazy(() => import('../../pages/TeacherBondMatch').then((m) => ({ default: m.BondMatchTeacherPanels })));
 const BondMatchStudentPanel = lazy(() => import('../../pages/TeacherBondMatch').then((m) => ({ default: m.BondMatchStudentPanel })));
 
 function BondMatchIcon({ size = 64 }: { size?: number }) {
@@ -17,8 +19,8 @@ function BondMatchIcon({ size = 64 }: { size?: number }) {
 }
 
 /**
- * Bond Match (M.2, saving added in M.4). Written but NOT in src/games/registry.ts, so nothing in the live app can reach
- * it; adding it there is stage M.7. Never ranked, no bots yet.
+ * Bond Match (docs/BOND-MATCH-PLAN.md). On the dashboard while BOND_MATCH_ON (./switch.ts) is true and the teacher has
+ * switched it on for the pupil's class. Never ranked: it is practice, and points are small and capped.
  */
 export const bondMatch: GameDefinition = {
   id: 'bond-match',
@@ -29,5 +31,8 @@ export const bondMatch: GameDefinition = {
   Play: BondMatchHub,
   ranked: false,
   noBots: true,
+  group: 'easy-maths',
+  useTeacherSwitch: useBondMatchEnabled,
+  TeacherPanels: BondMatchTeacherPanels,
   StudentPanel: BondMatchStudentPanel,
 };

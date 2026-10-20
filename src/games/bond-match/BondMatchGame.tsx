@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import type { BondSet } from '../../../shared/bond-match/bonds';
+import { botView, chooseFlip, rememberFlip, type Memory } from '../../../shared/bond-match/bot';
 import { buildDeck, type BoardSize } from '../../../shared/bond-match/deck';
-import { flip, newGame, type GameEvent, type GameState } from '../../../shared/bond-match/engine';
+import type { GameEvent, GameState } from '../../../shared/bond-match/engine';
+import { newVersus, versusFlip, winnerOf, type Player, type VersusState } from '../../../shared/bond-match/versus';
 import { sumText } from '../../../shared/bond-match/exact';
 import { scoreGame, type Score } from '../../../shared/bond-match/score';
 import { useSound } from '../../sound';
 import { playSound } from '../sounds';
 import { Board } from './Board';
 import { loadHideStats, loadShowPictures, saveHideStats, saveShowPictures } from './bests';
-import { clock, COLOUR_SETS, TEXT } from './strings';
+import { clock, COLOUR_SETS, playerName, TEXT, type Players } from './strings';
 import { useReducedMotion } from './useReducedMotion';
 import { Value } from './Value';
 
@@ -16,10 +18,16 @@ import { Value } from './Value';
 export const MISMATCH_MS = 4000;
 /** The last pair stays on show this long before the finish screen. */
 export const FINISH_MS = 1200;
+/** How long the computer waits before each card it flips, so a child can follow it. */
+export const BOT_MS = 900;
+/** ...and before its first card after a child's mismatch, so the "3 + 4 = 7" line can be read first. */
+export const BOT_AFTER_MISMATCH_MS = 2200;
 
 export interface FinishedGame {
   state: GameState;
   score: Score;
+  /** Pairs won by each player, and who won, in a two-player or computer game. */
+  versus?: { pairs: readonly [number, number]; winner: Player | 'tie' };
 }
 
 interface Props {
@@ -29,8 +37,14 @@ interface Props {
   seed: number;
   onFinish: (game: FinishedGame) => void;
   onQuit: () => void;
+  /** Who is playing. Solo when left out. */
+  players?: Players;
   mismatchMs?: number;
   finishMs?: number;
+  botMs?: number;
+  botAfterMismatchMs?: number;
+  /** The computer's dice (0 up to 1). Tests pass a fixed one. */
+  random?: () => number;
 }
 
 type Line = Extract<GameEvent, { type: 'match' | 'mismatch' }>;
@@ -68,10 +82,18 @@ function WrongSet() {
 }
 
 /** One game on one board. Counts the time (the engine has no clock) and hands the finished game up. */
-export function BondMatchGame({ set, size, seed, onFinish, onQuit, mismatchMs = MISMATCH_MS, finishMs = FINISH_MS }: Props) {
+export function BondMatchGame({
+  set, size, seed, onFinish, onQuit, players = { mode: 'solo' }, mismatchMs = MISMATCH_MS, finishMs = FINISH_MS,
+  botMs = BOT_MS, botAfterMismatchMs = BOT_AFTER_MISMATCH_MS, random = Math.random,
+}: Props) {
   const { soundOn } = useSound();
   const reducedMotion = useReducedMotion();
-  const [game, setGame] = useState<GameState>(() => newGame(buildDeck(set, size, seed)));
+  // Solo games use the same two-player state and simply ignore whose turn it is.
+  const [vs, setVs] = useState<VersusState>(() => newVersus(buildDeck(set, size, seed)));
+  const game = vs.game;
+  const memory = useRef<Memory>([]);
+  const twoPlayers = players.mode !== 'solo';
+  const botTurn = players.mode === 'bot' && vs.turn === 1 && !game.finished;
   const [line, setLine] = useState<Line | null>(null);
   const [hideStats, setHideStats] = useState(loadHideStats);
   const [pictures, setPictures] = useState(loadShowPictures);
@@ -98,7 +120,8 @@ export function BondMatchGame({ set, size, seed, onFinish, onQuit, mismatchMs = 
     if (!game.finished) return;
     const timer = setTimeout(() => {
       const score = scoreGame(game, seconds(finishedAt.current ?? Date.now()));
-      if (score) onFinish({ state: game, score });
+      const winner = winnerOf(vs);
+      if (score) onFinish({ state: game, score, ...(twoPlayers && winner !== undefined ? { versus: { pairs: vs.pairs, winner } } : {}) });
     }, finishMs);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once, when the game finishes
@@ -106,14 +129,31 @@ export function BondMatchGame({ set, size, seed, onFinish, onQuit, mismatchMs = 
 
   const play = (sound: Parameters<typeof playSound>[0]) => { if (soundOn) playSound(sound); };
 
+  // The computer's turn: one card at a time, slowly enough to watch. It sees only what is face up (shared/bond-match/bot.ts).
+  useEffect(() => {
+    if (!botTurn || players.mode !== 'bot') return;
+    const level = players.level;
+    const wait = game.shown.length === 2 && line?.type === 'mismatch' ? botAfterMismatchMs : botMs;
+    const timer = setTimeout(() => flipCard(chooseFlip(botView(game, memory.current), level, random)), wait);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs again after each of the computer's flips
+  }, [vs, botTurn]);
+
+  /** A child's tap: ignored while it is the computer's go. */
   function onFlip(index: number) {
+    if (botTurn) return;
+    flipCard(index);
+  }
+
+  function flipCard(index: number) {
     if (game.finished) return;
-    const result = flip(game, index);
+    const result = versusFlip(vs, index);
     if (result.refused) return;
+    if (players.mode === 'bot') memory.current = rememberFlip(memory.current, result.state.game, result.events, players.level);
     const at = Date.now();
     if (startedAt.current === null) startedAt.current = at;
     setNow(at);
-    setGame(result.state);
+    setVs(result.state);
     // Every accepted flip starts by clearing the line; a mismatch or a match then puts a new one up.
     let next: Line | null = null;
     for (const event of result.events) {
@@ -165,6 +205,20 @@ export function BondMatchGame({ set, size, seed, onFinish, onQuit, mismatchMs = 
           </button>
         )}
       </div>
+      {twoPlayers && (
+        <div className="bm-turn" data-testid="turn">
+          <p className="bm-turn__now" aria-live="polite">
+            {game.finished ? TEXT.allPairsFound : TEXT.turn(players, vs.turn)}
+          </p>
+          <p className="bm-turn__pairs">
+            {([0, 1] as const).map((p) => (
+              <span key={p} className={`bm-turn__player bm-turn__player--${p}${vs.turn === p && !game.finished ? ' bm-turn__player--now' : ''}`}>
+                {playerName(players, p)}: <strong>{TEXT.pairs(vs.pairs[p])}</strong>
+              </span>
+            ))}
+          </p>
+        </div>
+      )}
       <Board cards={game.deck.cards} matched={game.matched} shown={shown} reducedMotion={reducedMotion} setLabel={set.label} pictures={hasFractions && pictures} onFlip={onFlip} />
       <div className="bm-line" role="status" aria-live="polite">
         {line?.type === 'mismatch' && (

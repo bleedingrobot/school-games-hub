@@ -3,10 +3,12 @@
  * face up (it is never given the deck), it remembers the last few cards it has seen, and sometimes it
  * ignores what it remembers and guesses.
  */
+import type { BotLevel } from '../botGame';
 import { arePartners, type Card } from './deck';
+import type { GameEvent, GameState } from './engine';
 import type { Exact } from './exact';
 
-export type BotLevel = 'very-easy' | 'easy' | 'medium';
+export type { BotLevel };
 
 export const BOT_MEMORY: Record<BotLevel, { cards: number; slip: number }> = {
   /** `cards`: how many face-up cards it can keep in mind. `slip`: how often it guesses even when it knows a partner. */
@@ -64,4 +66,27 @@ export function chooseFlip(view: BotView, level: BotLevel, random: () => number)
   const fresh = choices.filter((i) => !remembered.has(i));
   const from = fresh.length > 0 ? fresh : choices;
   return from[Math.floor(random() * from.length)];
+}
+
+/** What the computer may see of a game: the target, what's matched and what's face up. Never the face-down cards. */
+export function botView(game: GameState, memory: Memory): BotView {
+  return {
+    target: game.deck.target,
+    matched: game.matched,
+    waiting: game.shown.length === 1 ? game.shown[0] : undefined,
+    memory,
+  };
+}
+
+/**
+ * Writes down every card a flip turned face up (by either player: everyone sees the board). `game` is the state after
+ * the flip; only cards named in the events, which are face up, are read from it.
+ */
+export function rememberFlip(memory: Memory, game: GameState, events: readonly GameEvent[], level: BotLevel): Memory {
+  let next = memory;
+  for (const e of events) {
+    const faceUp = e.type === 'first' ? [e.card] : e.type === 'mismatch' ? e.cards : [];
+    for (const i of faceUp) next = remember(next, i, game.deck.cards[i], level);
+  }
+  return next;
 }

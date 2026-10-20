@@ -4,6 +4,19 @@
 import type { Shelf } from '../../../shared/bond-match/bonds';
 import type { BoardSize } from '../../../shared/bond-match/deck';
 import type { Stars } from '../../../shared/bond-match/score';
+import type { BotLevel } from '../../../shared/botGame';
+import type { Player } from '../../../shared/bond-match/versus';
+
+/** Who is playing: one student, two on one Chromebook, or one against the computer. */
+export type Players = { mode: 'solo' } | { mode: 'pass' } | { mode: 'bot'; level: BotLevel };
+
+export const BOT_LEVEL_NAMES: Record<BotLevel, string> = { 'very-easy': 'Very easy', easy: 'Easy', medium: 'Medium' };
+
+/** "Player 1", "Player 2", or "You" and "The computer". */
+export function playerName(players: Players, p: Player): string {
+  if (players.mode === 'bot') return p === 0 ? 'You' : 'Computer';
+  return `Player ${p + 1}`;
+}
 
 const DENOMINATORS: Record<number, [string, string]> = {
   2: ['half', 'halves'],
@@ -78,6 +91,7 @@ export const TEXT = {
   savedLine: 'Saved ✓',
   savedPoints: (n: number) => `Saved ✓ You earned ${n} ${n === 1 ? 'point' : 'points'}.`,
   savedNoPoints: 'Saved ✓ No more points today, but your stars are saved.',
+  savedNoPointsVersus: 'Saved ✓ No more points today.',
   saveLater: 'Will save when you are back online.',
   bestStarsLine: (size: string, stars: number | undefined) => `${size} ${stars ? `${stars} ${stars === 1 ? 'star' : 'stars'}` : 'no stars yet'}`,
   bestStarsLabel: 'Your best stars',
@@ -93,6 +107,23 @@ export const TEXT = {
   newBestTime: 'New best time!',
   firstGame: 'That is your first game on this board. Beat it next time!',
   minHint: (min: number) => `The fewest possible is ${min}.`,
+  playersTitle: 'Who’s playing?',
+  playersSolo: 'Just me',
+  playersPass: 'Two players',
+  playersBot: 'Me vs the computer',
+  playersPassHelp: 'Take turns on this device. Find a pair and you go again. Most pairs wins!',
+  playersBotHelp: 'Take turns with the computer. It remembers some cards, but not all of them!',
+  levelTitle: 'How good is the computer?',
+  turn: (players: Players, p: Player) =>
+    players.mode === 'bot' ? (p === 0 ? 'Your turn' : 'The computer’s turn…') : `Player ${p + 1}’s turn`,
+  allPairsFound: 'All pairs found!',
+  winner: (players: Players, winner: Player | 'tie') =>
+    winner === 'tie' ? 'It’s a tie!'
+      : players.mode === 'bot' ? (winner === 0 ? 'You win!' : 'The computer wins this time!')
+      : `Player ${winner + 1} wins!`,
+  pairsScore: (players: Players, pairs: readonly [number, number]) =>
+    `${playerName(players, 0)}: ${pairs[0] === 1 ? '1 pair' : `${pairs[0]} pairs`}. ${playerName(players, 1)}: ${pairs[1] === 1 ? '1 pair' : `${pairs[1]} pairs`}.`,
+  versusNote: 'Stars and bests are for games on your own.',
   again: 'Play again',
   another: 'Pick another bond',
 };

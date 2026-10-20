@@ -11,6 +11,9 @@
 import { MAX_ITEMS, type BondMatchItem, type SaveResponse, type SaveResult } from '../../shared/bond-match/save';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
+import { readSettings } from './classSettings';
+import { FriendlyError } from './profile';
+import { forgetSettings } from './settingsMemory';
 
 const queueKey = (player: string) => `sgh-bond-match-queue:${player}`;
 /** The longest the queue may grow. */
@@ -158,4 +161,24 @@ export async function fetchStudentBondMatch(student: string): Promise<StudentBon
   const { data, error } = await supabase.rpc('teacher_bond_match_student', { student });
   if (error || !data) throw new Error('We couldn’t load their Bond Match.');
   return data as StudentBondMatch;
+}
+
+// ---------------------------------------------------------------------------
+// The switch (per class, off to start; the server refuses to save while it is off)
+// ---------------------------------------------------------------------------
+
+/** Is Bond Match switched on for this class (or, with no class given, for the signed-in person's own)? */
+export async function fetchBondMatchEnabled(classId?: string | null): Promise<boolean> {
+  const data = await readSettings(['bond_match_enabled'], classId);
+  if (!data) throw new FriendlyError('We couldn’t load the Bond Match setting.');
+  return data.bond_match_enabled === true;
+}
+
+export async function saveBondMatchEnabled(enabled: boolean, classId?: string | null): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_bond_match', { enabled, target_class: classId ?? null });
+  forgetSettings();
+  if (!error) return;
+  // Messages we wrote in the database ("You don't teach a class yet…") are safe to show; anything else gets the fallback.
+  if ((error.code === '22023' || error.code === '42501') && error.message) throw new FriendlyError(error.message);
+  throw new FriendlyError('We couldn’t save the Bond Match setting.');
 }

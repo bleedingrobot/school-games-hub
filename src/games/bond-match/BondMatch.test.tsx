@@ -335,7 +335,8 @@ describe('saving a finished game', () => {
     const sent = (saver.save.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
     expect(sent).toMatchObject({ runId: 'run-1', seed: SEED, bondId: 'whole-10', size: 'small', flips: perfectFlips(newGame(deckFor('whole-10', 'small'))) });
     expect(Number.isInteger(sent.seconds)).toBe(true);
-    expect(Object.keys(sent).sort()).toEqual(['bondId', 'flips', 'runId', 'seconds', 'seed', 'size']);
+    expect(Object.keys(sent).sort()).toEqual(['bondId', 'flips', 'mode', 'runId', 'seconds', 'seed', 'size']);
+    expect(sent.mode).toBe('solo');
   });
 
   it('says Saved and how many points were earned', async () => {
@@ -529,23 +530,103 @@ describe('best scores', () => {
   });
 });
 
-describe('not live yet', () => {
-  it('is not in the game registry', () => {
-    expect(GAMES.map((g) => g.id)).not.toContain('bond-match');
-    expect(findGame('bond-match')).toBeUndefined();
+describe('in the hub', () => {
+  it('is in the game registry, behind the teacher\'s per-class switch', () => {
+    expect(GAMES.map((g) => g.id)).toContain('bond-match');
+    expect(findGame('bond-match')).toBe(bondMatch);
+    expect(bondMatch.useTeacherSwitch).toBeTypeOf('function');
+    expect(bondMatch.TeacherPanels).toBeDefined();
+    expect(bondMatch.StudentPanel).toBeDefined();
+    expect(bondMatch.group).toBe('easy-maths');
   });
 
-  it('has a game definition ready for M.7', () => {
-    expect(bondMatch.id).toBe('bond-match');
+  it('is never ranked', () => {
     expect(bondMatch.name).toBe('Bond Match');
     expect(bondMatch.ranked).toBe(false);
   });
+});
 
-  it('is not imported by anything outside its own folder, the preview and its tests', async () => {
-    const { execSync } = await import('node:child_process');
-    const hits = execSync("grep -rIl 'games/bond-match\\|from \\./bond-match\\|bond-match/index' src preview supabase --include=*.ts --include=*.tsx || true", { cwd: process.cwd() })
-      .toString().split('\n').filter(Boolean)
-      .filter((f) => !f.startsWith('src/games/bond-match/') && !f.startsWith('supabase/functions/bond-match/'));
-    expect(hits).toEqual(['preview/bond-match/main.tsx']);
+describe('two players and the computer', () => {
+  function setupVersus(props: { saver?: BondMatchSaver; random?: () => number } = {}) {
+    const user = userEvent.setup();
+    render(
+      <SoundProvider>
+        <BondMatchPlay makeSeed={() => SEED} finishMs={0} mismatchMs={60_000} saver={props.saver} botMs={0} botAfterMismatchMs={0} random={props.random ?? (() => 0.99)} />
+      </SoundProvider>,
+    );
+    return { user };
+  }
+  const deck = () => deckFor('whole-10', 'small');
+  const wrongFor = (i: number) => deck().cards.findIndex((_, j) => j !== i && !partnersOf(deck())[i].includes(j));
+
+  it('offers Just me, Two players and Me vs the computer, with Just me to start', () => {
+    setupVersus();
+    const group = screen.getByRole('group', { name: 'Who’s playing?' });
+    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual(['Just me', 'Two players', 'Me vs the computer']);
+    expect(within(group).getByRole('button', { name: 'Just me' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('group', { name: 'How good is the computer?' })).toBeNull();
+  });
+
+  it('two players take turns: a match goes again, a mismatch passes; most pairs wins', async () => {
+    const saver = { save: vi.fn(async () => ({ status: 'saved', points: 2, stars: 1, best: null }) as SaveResult), loadBests: vi.fn(async () => []) };
+    const { user } = setupVersus({ saver });
+    await user.click(screen.getByRole('button', { name: 'Two players' }));
+    await pick(user, 'To 10', 'Small');
+    expect(screen.getByTestId('turn')).toHaveTextContent('Player 1’s turn');
+    // Player 1 misses, so it is Player 2's turn, and Player 2 finds every pair.
+    await user.click(card(0));
+    await user.click(card(wrongFor(0)));
+    expect(screen.getByTestId('turn')).toHaveTextContent('Player 2’s turn');
+    for (const i of perfectFlips(newGame(deck()))) await user.click(card(i));
+    expect(await screen.findByTestId('winner')).toHaveTextContent('Player 2 wins!');
+    expect(screen.getByTestId('pairs-score')).toHaveTextContent('Player 1: 0 pairs. Player 2: 6 pairs.');
+    expect(screen.queryByText(/Gold|Silver|Bronze/)).toBeNull();
+    const sent = (saver.save.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
+    expect(sent.mode).toBe('pass');
+    expect(await screen.findByTestId('save-line')).toHaveTextContent('Saved ✓ You earned 2 points.');
+  });
+
+  it('the computer takes its turn by itself, and the child cannot flip while it does', async () => {
+    const saver = { save: vi.fn(async () => ({ status: 'saved', points: 2, stars: 1, best: null }) as SaveResult), loadBests: vi.fn(async () => []) };
+    const { user } = setupVersus({ saver });
+    await user.click(screen.getByRole('button', { name: 'Me vs the computer' }));
+    const levels = screen.getByRole('group', { name: 'How good is the computer?' });
+    expect(within(levels).getAllByRole('button').map((b) => b.textContent)).toEqual(['Very easy', 'Easy', 'Medium']);
+    await user.click(within(levels).getByRole('button', { name: 'Medium' }));
+    await pick(user, 'To 10', 'Small');
+    expect(screen.getByTestId('turn')).toHaveTextContent('Your turn');
+    // A miss hands the board to the computer, which plays on until the board is clear or it misses.
+    await user.click(card(0));
+    await user.click(card(wrongFor(0)));
+    // Then take turns until the board is clear: the computer plays its own turns, the test plays the child's.
+    for (let n = 0; n < 200 && !screen.queryByTestId('winner'); n++) {
+      if (screen.getByTestId('turn').textContent?.includes('Your turn')) {
+        const down = deck().cards.findIndex((_, i) => card(i).getAttribute('aria-label')?.includes('face down'));
+        if (down < 0) break;
+        await user.click(card(down));
+      } else {
+        await act(() => new Promise((r) => setTimeout(r, 5)));
+      }
+    }
+    expect(await screen.findByTestId('winner')).toHaveTextContent(/You win!|The computer wins this time!|It’s a tie!/);
+    const sent = (saver.save.mock.calls[0] as unknown[])[0] as Record<string, unknown>;
+    expect(sent.mode).toBe('bot');
+  });
+
+  it('the computer\'s flips are ignored for a tap: tapping during its turn does nothing', async () => {
+    const user = userEvent.setup();
+    render(
+      <SoundProvider>
+        <BondMatchPlay makeSeed={() => SEED} finishMs={0} mismatchMs={60_000} botMs={60_000} botAfterMismatchMs={60_000} random={() => 0.99} />
+      </SoundProvider>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Me vs the computer' }));
+    await pick(user, 'To 10', 'Small');
+    await user.click(card(0));
+    await user.click(card(wrongFor(0)));
+    expect(screen.getByTestId('turn')).toHaveTextContent('The computer’s turn');
+    const other = deck().cards.findIndex((_, i) => i !== 0 && i !== wrongFor(0));
+    await user.click(card(other));
+    expect(card(other)).toHaveAccessibleName(/face down/);
   });
 });

@@ -509,3 +509,38 @@
 .bm-finish__save--later {
   color: var(--ink-soft);
 }
+
+/* ---------- Two players and the computer ---------- */
+
+.bm-turn {
+  margin-bottom: 12px;
+  text-align: center;
+}
+.bm-turn p {
+  margin: 0;
+}
+.bm-turn__now {
+  font-family: var(--display);
+  font-size: 1.3rem;
+  font-weight: 900;
+}
+.bm-turn__pairs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+  margin-top: 6px;
+}
+.bm-turn__player {
+  padding: 4px 12px;
+  border: 3px solid transparent;
+  border-radius: 999px;
+}
+/* Whose go it is: a thick border as well as the words above, so it is never shown by colour alone. */
+.bm-turn__player--now {
+  border-color: var(--brand);
+}
+.bm-finish__pairs {
+  font-size: 1.15rem;
+  font-weight: 700;
+}

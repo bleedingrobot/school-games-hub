@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { BOND_SETS, type BondSet } from '../../../shared/bond-match/bonds';
 import { BOARD_SIZES, pairsOnBoard, type BoardSize } from '../../../shared/bond-match/deck';
-import { SHELVES, SIZE_NAMES, TEXT } from './strings';
+import { BOT_LEVEL_IDS } from '../../../shared/botGame';
+import { BOT_LEVEL_NAMES, SHELVES, SIZE_NAMES, TEXT, type Players } from './strings';
 
 /** Best stars the student has on each bond set and board size: { 'whole-10': { small: 3 } }. */
 export type StarsBySet = Record<string, Partial<Record<BoardSize, number>>>;
@@ -11,15 +12,53 @@ interface Props {
   stars?: StarsBySet;
   onPick: (set: BondSet, size: BoardSize) => void;
   initialSize?: BoardSize;
+  /** Who is playing, kept by the caller so it stays the same for the next game. Left out: solo only, no choice shown. */
+  players?: Players;
+  onPlayers?: (players: Players) => void;
 }
 
 /** "What are you practising?": a board size, then the bond sets on three shelves. Picking a bond starts the game. */
-export function BondPicker({ onPick, initialSize = 'medium', stars }: Props) {
+export function BondPicker({ onPick, initialSize = 'medium', stars, players, onPlayers }: Props) {
   const [size, setSize] = useState<BoardSize>(initialSize);
   return (
     <section className="bm-picker" aria-labelledby="bm-pick-title">
       <h2 id="bm-pick-title" className="bm-picker__title">{TEXT.pickTitle}</h2>
       <p className="bm-picker__help">{TEXT.pickHelp}</p>
+
+      {players && onPlayers && (
+        <>
+          <div role="group" aria-label={TEXT.playersTitle} className="bm-sizes">
+            <span className="bm-sizes__title" aria-hidden="true">{TEXT.playersTitle}</span>
+            <button type="button" className="bm-size" aria-pressed={players.mode === 'solo'} onClick={() => onPlayers({ mode: 'solo' })}>
+              {TEXT.playersSolo}
+            </button>
+            <button type="button" className="bm-size" aria-pressed={players.mode === 'pass'} onClick={() => onPlayers({ mode: 'pass' })}>
+              {TEXT.playersPass}
+            </button>
+            <button
+              type="button"
+              className="bm-size"
+              aria-pressed={players.mode === 'bot'}
+              onClick={() => onPlayers({ mode: 'bot', level: players.mode === 'bot' ? players.level : 'easy' })}
+            >
+              {TEXT.playersBot}
+            </button>
+          </div>
+          {players.mode === 'bot' && (
+            <div role="group" aria-label={TEXT.levelTitle} className="bm-sizes">
+              <span className="bm-sizes__title" aria-hidden="true">{TEXT.levelTitle}</span>
+              {BOT_LEVEL_IDS.map((level) => (
+                <button key={level} type="button" className="bm-size" aria-pressed={players.level === level} onClick={() => onPlayers({ mode: 'bot', level })}>
+                  {BOT_LEVEL_NAMES[level]}
+                </button>
+              ))}
+            </div>
+          )}
+          {players.mode !== 'solo' && (
+            <p className="bm-picker__help">{players.mode === 'pass' ? TEXT.playersPassHelp : TEXT.playersBotHelp}</p>
+          )}
+        </>
+      )}
 
       <div role="group" aria-label={TEXT.sizeTitle} className="bm-sizes">
         <span className="bm-sizes__title" aria-hidden="true">{TEXT.sizeTitle}</span>
