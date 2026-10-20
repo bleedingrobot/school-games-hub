@@ -4,13 +4,16 @@
  */
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
-import { LEVELS, PRACTICE, formatClock, type LevelInfo } from './levels';
+import { medalFor, MEDALS, type Medal } from '../../../shared/mine/medals';
+import { LEVELS, PRACTICE, baseOf, formatClock, hardOf, type LevelInfo } from './levels';
 import { loadBests, loadPrefs, savePrefs, type Bests, type MinePrefs } from './prefs';
 import { ControlsHelp, HowToPlayBody, SettingsPanel } from './Settings';
 import './mine.css';
 
 // The picture (three.js) and the run screen load only when someone starts a mine.
 const MineRun = lazy(() => import('./MineRun').then((m) => ({ default: m.MineRun })));
+
+const MEDAL_WORDS: Record<Medal, string> = { gold: 'gold medal', silver: 'silver medal', bronze: 'bronze medal' };
 
 function Heading({ children }: { children: string }) {
   const ref = useRef<HTMLHeadingElement>(null);
@@ -29,6 +32,7 @@ function MineRoot({ trial }: { trial: boolean }) {
   const [bests, setBests] = useState<Bests>(() => loadBests(player));
   const [run, setRun] = useState<{ level: LevelInfo; round: number } | null>(null);
   const [screen, setScreen] = useState<'picker' | 'howto' | 'controls'>('picker');
+  const [hard, setHard] = useState(false);
 
   function changePrefs(p: MinePrefs) {
     setPrefs(p);
@@ -36,8 +40,9 @@ function MineRoot({ trial }: { trial: boolean }) {
   }
 
   if (run) {
-    const index = LEVELS.findIndex((l) => l.id === run.level.id);
-    const next = index >= 0 && index < LEVELS.length - 1 && (trial || !LEVELS[index + 1].needsQuestions) ? LEVELS[index + 1] : null;
+    const index = LEVELS.findIndex((l) => l.id === baseOf(run.level).id);
+    const following = index >= 0 && index < LEVELS.length - 1 && (trial || !LEVELS[index + 1].needsQuestions) ? LEVELS[index + 1] : null;
+    const next = following && run.level.hard ? hardOf(following) : following;
     return (
       <Suspense fallback={<p role="status" className="mn-loading">Loading the mine…</p>}>
         <MineRun
@@ -66,9 +71,12 @@ function MineRoot({ trial }: { trial: boolean }) {
     );
   }
 
-  const card = (l: LevelInfo) => {
+  const card = (base: LevelInfo) => {
+    const l = hard ? hardOf(base) : base;
     const locked = l.needsQuestions && !trial;
     const best = bests[l.id];
+    const medal = best !== undefined ? medalFor(l.id, best) : null;
+    const goals = MEDALS[l.id];
     return (
       <li key={l.id} className="mn-level">
         <div className="mn-level__head">
@@ -81,7 +89,12 @@ function MineRoot({ trial }: { trial: boolean }) {
           )}
         </div>
         <p>{l.blurb}</p>
-        {!l.practice && <p className="mn-level__best">{best !== undefined ? `Best on this device: ${formatClock(best)}` : 'No time yet'}</p>}
+        {!l.practice && (
+          <p className="mn-level__best">
+            {best !== undefined ? `Best on this device: ${formatClock(best)}${medal ? ` (${MEDAL_WORDS[medal]})` : ''}` : 'No time yet'}
+          </p>
+        )}
+        {goals && <p className="mn-hint">Medals: gold {formatClock(goals.gold * 30)}, silver {formatClock(goals.silver * 30)}, bronze {formatClock(goals.bronze * 30)}</p>}
         <button type="button" className="button button--play mn-btn" disabled={locked} onClick={() => setRun({ level: l, round: 0 })}>
           Play {l.name}
         </button>
@@ -110,6 +123,12 @@ function MineRoot({ trial }: { trial: boolean }) {
       <h3 className="mn-subhead">Start here</h3>
       <ul className="mn-levels">{card(PRACTICE)}</ul>
       <h3 className="mn-subhead">The mines</h3>
+      <div className="mn-card">
+        <label className="mn-check">
+          <input type="checkbox" checked={hard} onChange={(e) => setHard(e.target.checked)} />
+          <span>Hard mode: more and tougher robots, fewer pick-ups, a shorter escape. It has its own times.</span>
+        </label>
+      </div>
       <ul className="mn-levels">{LEVELS.map(card)}</ul>
     </section>
   );

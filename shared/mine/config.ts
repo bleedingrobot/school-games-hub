@@ -18,11 +18,11 @@ export const MAX_RUN_STEPS = STEPS_PER_SECOND * 60 * 15;
 /** Size of one block of the mine, in world units. The mine is a grid of these. */
 export const CELL = 1;
 /** Rooms sit on a coarse grid this many blocks apart. */
-export const ROOM_SPACING = 14;
+export const ROOM_SPACING = 18;
 /** Tunnels are this many blocks across (odd, so they have a middle). */
-export const TUNNEL_WIDTH = 3;
-/** A room is 5 or 7 blocks across each way (half of it, not counting the middle block). */
-export const ROOM_HALF_SIZES = [2, 3] as const;
+export const TUNNEL_WIDTH = 5;
+/** A room is 7 or 9 blocks across each way (half of it, not counting the middle block). */
+export const ROOM_HALF_SIZES = [3, 4] as const;
 
 // ——— The ship ———
 export const SHIP_RADIUS = 0.45;
@@ -59,7 +59,7 @@ export const MISSILE_LIFE = 90;
 export const PROJECTILE_SUBSTEPS = 3;
 
 // ——— Robots ———
-export type RobotType = 'drone' | 'hunter' | 'turret';
+export type RobotType = 'drone' | 'hunter' | 'turret' | 'brute';
 export interface RobotSpec {
   hp: number;
   /** Units a second. */
@@ -81,8 +81,10 @@ export const ROBOTS: Record<RobotType, RobotSpec> = {
   drone: { hp: 24, speed: 3.2, radius: 0.6, damage: 9, cooldown: 36, sight: 18, keepAway: 5, spread: 0.12, shotSpeed: 14 * DT },
   hunter: { hp: 48, speed: 5.2, radius: 0.7, damage: 13, cooldown: 26, sight: 22, keepAway: 6, spread: 0.08, shotSpeed: 18 * DT },
   turret: { hp: 70, speed: 0, radius: 0.8, damage: 15, cooldown: 22, sight: 24, keepAway: 0, spread: 0.06, shotSpeed: 20 * DT },
+  /** A slow, heavy digger: lots of armour, a hard hit, a slow shot. Best dealt with from a distance. */
+  brute: { hp: 110, speed: 2.4, radius: 1, damage: 22, cooldown: 50, sight: 20, keepAway: 7, spread: 0.1, shotSpeed: 12 * DT },
 };
-export const ROBOT_TYPES: readonly RobotType[] = ['drone', 'hunter', 'turret'];
+export const ROBOT_TYPES: readonly RobotType[] = ['drone', 'hunter', 'turret', 'brute'];
 /** How often (in steps) a robot looks for the ship. Robots take turns, so they don't all look at once. */
 export const SIGHT_EVERY = 5;
 /** A robot that has lost sight of the ship for this many steps goes back to sleep. */

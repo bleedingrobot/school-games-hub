@@ -3,7 +3,7 @@
  *
  * A level is made from a recipe and a seed, so the browser and the server build exactly the same
  * mine. The mine is a 3D grid of blocks (1 unit each). Rooms sit on a coarse grid and are joined by
- * 3-block tunnels that bend up, down and sideways, like a twisty maze. Keys and doors are placed so
+ * 5-block tunnels that bend up, down and sideways, like a twisty maze. Keys and doors are placed so
  * the level can always be finished: key 1 is somewhere you can reach with no keys, key 2 is behind
  * door 1, and so on. Question doors are opened by a right answer (a GRANT input), not a key.
  *
@@ -30,8 +30,8 @@ export interface Recipe {
   /** Robots in ordinary rooms, and extra guards in the reactor room. */
   robots: number;
   guards: number;
-  /** Relative chances of [drone, hunter, turret]. */
-  mix: readonly [number, number, number];
+  /** Relative chances of [drone, hunter, turret] and, optionally, brute. */
+  mix: readonly [number, number, number] | readonly [number, number, number, number];
   pickups: { shield: number; energy: number; missiles: number };
   pads: readonly PadKind[];
   /** Extra tunnels that make loops, never around a door. */
@@ -334,12 +334,13 @@ export function makeLevel(recipe: Recipe): Level {
     const room = anyRoom();
     return { id: doors.length + n, kind, room, ...spotIn(rooms[room], rng, 1) };
   });
-  const total = recipe.mix[0] + recipe.mix[1] + recipe.mix[2];
+  const mix = [recipe.mix[0], recipe.mix[1], recipe.mix[2], recipe.mix[3] ?? 0];
+  const total = mix[0] + mix[1] + mix[2] + mix[3];
   const robotType = (): RobotType => {
     let roll = pick(total);
-    for (let t = 0; t < 3; t++) {
-      if (roll < recipe.mix[t]) return ROBOT_TYPES[t];
-      roll -= recipe.mix[t];
+    for (let t = 0; t < 4; t++) {
+      if (roll < mix[t]) return ROBOT_TYPES[t];
+      roll -= mix[t];
     }
     return 'drone';
   };
@@ -388,16 +389,40 @@ export function roomAt(level: Level, x: number, y: number, z: number): number {
   return -1;
 }
 
-/** The six levels. Fixed seeds, so the boards compare like with like. Names and places come in Stage 3. */
+/**
+ * The six levels. Fixed seeds, so the boards compare like with like. The first two are gentle (few robots, only
+ * slow drones), so nearly everyone finishes them in their first lesson; levels 5 and 6 are the real challenge.
+ */
 export const RECIPES: readonly Recipe[] = [
-  { id: 'l1', seed: 101, dims: [3, 3, 2], doors: ['blue'], robots: 4, guards: 1, mix: [4, 1, 0], pickups: { shield: 3, energy: 2, missiles: 2 }, pads: ['shield'], loops: 1, escapeFactor: 3 },
-  { id: 'l2', seed: 202, dims: [4, 3, 2], doors: ['blue', 'question'], robots: 7, guards: 2, mix: [4, 2, 1], pickups: { shield: 3, energy: 3, missiles: 3 }, pads: ['shield', 'missiles'], loops: 2, escapeFactor: 2.6 },
+  { id: 'l1', seed: 101, dims: [3, 3, 2], doors: ['blue'], robots: 3, guards: 1, mix: [1, 0, 0], pickups: { shield: 3, energy: 2, missiles: 2 }, pads: ['shield'], loops: 1, escapeFactor: 3.4 },
+  { id: 'l2', seed: 202, dims: [4, 3, 2], doors: ['blue', 'question'], robots: 5, guards: 1, mix: [5, 1, 0], pickups: { shield: 3, energy: 3, missiles: 3 }, pads: ['shield', 'missiles'], loops: 2, escapeFactor: 3 },
   { id: 'l3', seed: 303, dims: [4, 4, 2], doors: ['blue', 'question', 'yellow'], robots: 10, guards: 3, mix: [3, 3, 1], pickups: { shield: 4, energy: 3, missiles: 3 }, pads: ['shield', 'energy', 'missiles'], loops: 3, escapeFactor: 2.3 },
-  { id: 'l4', seed: 404, dims: [4, 4, 3], doors: ['blue', 'yellow', 'question', 'question'], robots: 14, guards: 4, mix: [2, 3, 2], pickups: { shield: 5, energy: 4, missiles: 4 }, pads: ['shield', 'energy', 'missiles'], loops: 3, escapeFactor: 2.1 },
-  { id: 'l5', seed: 505, dims: [5, 4, 3], doors: ['blue', 'question', 'yellow', 'question', 'red'], robots: 18, guards: 5, mix: [2, 3, 3], pickups: { shield: 6, energy: 5, missiles: 5 }, pads: ['shield', 'shield', 'energy', 'missiles'], loops: 4, escapeFactor: 1.9 },
-  { id: 'l6', seed: 606, dims: [5, 5, 3], doors: ['blue', 'question', 'yellow', 'question', 'red', 'question'], robots: 24, guards: 6, mix: [2, 3, 3], pickups: { shield: 7, energy: 6, missiles: 6 }, pads: ['shield', 'shield', 'energy', 'energy', 'missiles'], loops: 5, escapeFactor: 1.7 },
+  { id: 'l4', seed: 404, dims: [4, 4, 3], doors: ['blue', 'yellow', 'question', 'question'], robots: 14, guards: 4, mix: [2, 3, 2, 1], pickups: { shield: 5, energy: 4, missiles: 4 }, pads: ['shield', 'energy', 'missiles'], loops: 3, escapeFactor: 2.1 },
+  { id: 'l5', seed: 505, dims: [5, 4, 3], doors: ['blue', 'question', 'yellow', 'question', 'red'], robots: 18, guards: 5, mix: [2, 3, 3, 1], pickups: { shield: 6, energy: 5, missiles: 5 }, pads: ['shield', 'shield', 'energy', 'missiles'], loops: 4, escapeFactor: 1.9 },
+  { id: 'l6', seed: 606, dims: [5, 5, 3], doors: ['blue', 'question', 'yellow', 'question', 'red', 'question'], robots: 24, guards: 6, mix: [2, 3, 3, 2], pickups: { shield: 7, energy: 6, missiles: 6 }, pads: ['shield', 'shield', 'energy', 'energy', 'missiles'], loops: 5, escapeFactor: 1.7 },
 ];
 
+/**
+ * Hard mode: the same mine (same seed, so the same tunnels, keys and doors) with more robots, tougher kinds, fewer
+ * pickups and a shorter escape timer. Its times go on their own board (`l1:hard`).
+ */
+export function hardRecipe(r: Recipe): Recipe {
+  const m = r.mix;
+  return {
+    ...r,
+    id: `${r.id}:hard`,
+    robots: Math.ceil(r.robots * 1.5),
+    guards: r.guards + 2,
+    mix: [Math.max(1, m[0] - 1), m[1] + 2, m[2] + 1, (m[3] ?? 0) + 1],
+    pickups: { shield: Math.max(1, r.pickups.shield - 1), energy: r.pickups.energy, missiles: Math.max(1, r.pickups.missiles - 1) },
+    escapeFactor: Math.max(1.3, r.escapeFactor - 0.4),
+  };
+}
+
 export function recipeById(id: string): Recipe | undefined {
+  if (id.endsWith(':hard')) {
+    const base = RECIPES.find((r) => r.id === id.slice(0, -5));
+    return base && hardRecipe(base);
+  }
   return RECIPES.find((r) => r.id === id);
 }

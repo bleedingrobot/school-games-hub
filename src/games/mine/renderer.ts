@@ -193,8 +193,8 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
   exit.position.copy(v3(level.exit.x, level.exit.y, level.exit.z));
   scene.add(exit);
 
-  // ——— Robots: three simple shapes ———
-  const robotColour: Record<RobotType, number> = { drone: 0x7f8fb0, hunter: 0xb8763c, turret: 0x77649a };
+  // ——— Robots: four simple shapes ———
+  const robotColour: Record<RobotType, number> = { drone: 0x7f8fb0, hunter: 0xb8763c, turret: 0x77649a, brute: 0x8a5a48 };
   const eyeOff = own(basic(0x7a5a2a));
   const eyeOn = own(basic(0xff3b30));
   const robots = session.state.robots.map((r) => {
@@ -212,6 +212,19 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
       const wing = new THREE.Mesh(own(new THREE.BoxGeometry(radius * 2.5, 0.07, radius * 0.7)), body);
       wing.position.z = -radius * 0.5;
       g.add(wing);
+    } else if (r.type === 'brute') {
+      // A chunky digger: a big block on two tracks with a drill in front.
+      g.add(new THREE.Mesh(own(new THREE.BoxGeometry(radius * 1.5, radius * 1.1, radius * 1.7)), body));
+      const track = own(lit(0x3b3330));
+      for (const side of [-1, 1]) {
+        const t2 = new THREE.Mesh(own(new THREE.BoxGeometry(radius * 0.45, radius * 0.7, radius * 2)), track);
+        t2.position.set(side * radius * 0.95, -radius * 0.35, 0);
+        g.add(t2);
+      }
+      const drill = new THREE.Mesh(own(new THREE.ConeGeometry(radius * 0.4, radius * 0.9, 6)), own(lit(0xc9c2b8)));
+      drill.rotation.x = Math.PI / 2;
+      drill.position.z = radius * 1.3;
+      g.add(drill);
     } else {
       g.add(new THREE.Mesh(own(new THREE.BoxGeometry(radius * 1.6, radius * 0.9, radius * 1.6)), body));
       g.add(new THREE.Mesh(own(new THREE.SphereGeometry(radius * 0.7, 8, 6)), body));

@@ -66,7 +66,25 @@ describe('the picker', () => {
   it('shows best times saved on this device', () => {
     saveBests({ l2: 30 * 75 }, 'pilot-1');
     render(wrap(<MinePreview />));
-    expect(screen.getByText('Best on this device: 1:15.0')).toBeInTheDocument();
+    expect(screen.getByText('Best on this device: 1:15.0 (gold medal)')).toBeInTheDocument();
+  });
+
+  it('shows the medal times on every mine', () => {
+    render(wrap(<MinePreview />));
+    expect(screen.getAllByText(/^Medals: gold/).length).toBe(LEVELS.length);
+    expect(screen.getByText('Medals: gold 1:35.0, silver 2:10.0, bronze 3:20.0')).toBeInTheDocument();
+  });
+
+  it('hard mode swaps every mine for its hard version, with its own times', async () => {
+    saveBests({ l2: 30 * 75, 'l2:hard': 30 * 150 }, 'pilot-1');
+    const u = userEvent.setup();
+    render(wrap(<MinePreview />));
+    await u.click(screen.getByRole('checkbox', { name: /hard mode/i }));
+    for (const l of LEVELS) expect(screen.getByRole('button', { name: `Play ${l.name} (hard)` })).toBeEnabled();
+    expect(screen.getByText('Best on this device: 2:30.0 (silver medal)')).toBeInTheDocument();
+    expect(screen.queryByText(/1:15.0/)).toBeNull();
+    await u.click(screen.getByRole('checkbox', { name: /hard mode/i }));
+    expect(screen.getByRole('button', { name: `Play ${LEVELS[0].name}` })).toBeEnabled();
   });
 
   it('moves focus to the heading of the how-to-play and controls screens, and back', async () => {
@@ -195,7 +213,7 @@ describe('finishing', () => {
   });
 
   it('keeps a best time for a real level on this device and offers the next mine', async () => {
-    await flyTheBot('Mine 1', 'l1');
+    await flyTheBot('Greenstone Hollow', 'l1');
     await screen.findByRole('heading', { name: 'You made it out!' });
     expect(screen.getByText('A new best time on this device!')).toBeInTheDocument();
     expect(loadBests('pilot-1').l1).toBeGreaterThan(0);
@@ -215,7 +233,7 @@ describe('finishing', () => {
 describe('question doors and pads (trial questions in the preview)', () => {
   /** Flies the bot until a question door or pad is in reach. */
   async function toTheDoor() {
-    const u = await start('Mine 2');
+    const u = await start('Otago Diggings');
     const s = session();
     const bot = flyLevel(makeWorld(s.world.level, { steady: true }));
     act(() => {

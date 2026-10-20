@@ -1,5 +1,5 @@
-/** The levels on the picker. Names and places (New Zealand mines) come in Stage 3, so for now they are numbered. */
-import { RECIPES, type Recipe } from '../../../shared/mine/level';
+/** The levels on the picker: six New Zealand mines, each with a hard mode that has its own board. */
+import { RECIPES, hardRecipe, type Recipe } from '../../../shared/mine/level';
 
 export interface LevelInfo {
   id: string;
@@ -11,6 +11,8 @@ export interface LevelInfo {
   practice: boolean;
   /** Question doors and pads need maths questions (a server in the real game, trial questions in the preview). */
   needsQuestions: boolean;
+  /** True for the hard-mode version of a mine (its id ends in ":hard"). */
+  hard: boolean;
 }
 
 /**
@@ -22,34 +24,63 @@ export const PRACTICE_RECIPE: Recipe = {
   pickups: { shield: 2, energy: 2, missiles: 3 }, pads: [], loops: 1, escapeFactor: 5,
 };
 
+/**
+ * Made-up mines in the style of real New Zealand mining country. No real mine is named (some real places carry
+ * sad history), so these are about the kind of place, not a place.
+ */
+const NAMES = [
+  'Greenstone Hollow',
+  'Otago Diggings',
+  'Coromandel Gold Tunnel',
+  'West Coast Coal Seam',
+  'Glow-worm Caverns',
+  'Volcanic Deep',
+];
 const BLURBS = [
-  'One blue key, a few robots. A good first dive.',
-  'A blue key and a question door.',
-  'Two keys, a question door and more robots.',
-  'Hunters and turrets join in.',
-  'Three keys and two question doors.',
-  'The deepest mine. Lots of robots.',
+  'A cave of glowing greenstone. One blue key and a few slow drones. A good first dive.',
+  'Old gold-rush tunnels. A blue key and a question door.',
+  'A twisty gold mine. Two keys, a question door and more robots.',
+  'Deep coal tunnels. Hunters, turrets and heavy diggers join in.',
+  'Caverns under glowing ceilings. Three keys and two question doors.',
+  'The deepest mine, deep under a volcano. Lots of robots.',
 ];
 
 const needsQuestions = (r: Recipe) => r.doors.includes('question') || r.pads.length > 0;
 
 export const LEVELS: readonly LevelInfo[] = RECIPES.map((recipe, i) => ({
   id: recipe.id,
-  name: `Mine ${i + 1}`,
+  name: NAMES[i],
   difficulty: i + 1,
   blurb: BLURBS[i],
   recipe,
   practice: false,
   needsQuestions: needsQuestions(recipe),
+  hard: false,
 }));
+
+/** The hard version of a mine: same tunnels, more and tougher robots, a shorter escape. Its times are kept apart. */
+export function hardOf(level: LevelInfo): LevelInfo {
+  if (level.practice || level.hard) return level;
+  return { ...level, id: `${level.id}:hard`, name: `${level.name} (hard)`, recipe: hardRecipe(level.recipe), hard: true };
+}
+
+/** The normal version of a mine, whichever version is given. */
+export function baseOf(level: LevelInfo): LevelInfo {
+  return level.hard ? (LEVELS.find((l) => `${l.id}:hard` === level.id) ?? level) : level;
+}
 
 export const PRACTICE: LevelInfo = {
   id: 'practice', name: 'Practice mine', difficulty: 0, blurb: 'Learn the controls. Small, slow robots, nothing is saved.',
-  recipe: PRACTICE_RECIPE, practice: true, needsQuestions: false,
+  recipe: PRACTICE_RECIPE, practice: true, needsQuestions: false, hard: false,
 };
 
 export function levelById(id: string): LevelInfo | undefined {
-  return id === PRACTICE.id ? PRACTICE : LEVELS.find((l) => l.id === id);
+  if (id === PRACTICE.id) return PRACTICE;
+  if (id.endsWith(':hard')) {
+    const base = LEVELS.find((l) => l.id === id.slice(0, -5));
+    return base && hardOf(base);
+  }
+  return LEVELS.find((l) => l.id === id);
 }
 
 /** "1:05.3" for a count of steps (30 a second). */

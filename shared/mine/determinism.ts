@@ -6,7 +6,7 @@
  */
 import { makeWorld, newRun, stateKey, stepRun } from './engine';
 import { GRANT, HOLD, PENALTY, packInput } from './inputs';
-import { RECIPES, makeLevel } from './level';
+import { RECIPES, hardRecipe, makeLevel } from './level';
 
 /** A small repeatable stream of numbers (integers only, so it is exact everywhere). */
 function lcg(seed: number): () => number {
@@ -19,7 +19,7 @@ function lcg(seed: number): () => number {
 
 export function determinismReport(): string {
   const lines: string[] = [];
-  for (const recipe of RECIPES) {
+  for (const recipe of [...RECIPES, ...RECIPES.map(hardRecipe)]) {
     const level = makeLevel(recipe);
     for (const steady of [true, false]) {
       for (const seed of [7, 99]) {

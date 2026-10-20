@@ -9,7 +9,10 @@ describe('the list of mines', () => {
     expect(LEVELS.map((l) => l.id)).toEqual(['l1', 'l2', 'l3', 'l4', 'l5', 'l6']);
     expect(LEVELS.map((l) => l.difficulty)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(levelById('practice')).toBe(PRACTICE);
-    expect(levelById('l4')?.name).toBe('Mine 4');
+    expect(levelById('l4')?.name).toBe('West Coast Coal Seam');
+    expect(levelById('l4:hard')?.name).toBe('West Coast Coal Seam (hard)');
+    expect(levelById('l4:hard')?.hard).toBe(true);
+    expect(levelById('l9:hard')).toBeUndefined();
     expect(levelById('nope')).toBeUndefined();
   });
   it('knows which levels need questions', () => {

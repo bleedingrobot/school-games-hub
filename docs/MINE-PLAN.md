@@ -3,7 +3,7 @@
 A 3D "fly a ship through underground mine tunnels" game for the hub, in the spirit of the 1995 game *Descent*: full freedom of movement in all directions, robots to shoot, coloured keys and locked doors, a reactor to blow up, and a dash to the exit before it goes.
 Written 20 October 2026 (Stage 0: plan only, **no code yet**). Branch `mine`, folder `~/projects/school-games-hub-mine`, short id `mine`, CSS prefix `.mn-`. Next free migration number when this was written: `20261020000400` (re-check before the first migration).
 
-**Status: James answered section 12 on 20 Oct 2026. Stage 1 built 20 Oct 2026 (rules only). Stage 2 built 20 Oct 2026 (the screen and a phone preview); waiting for James to try the preview before Stage 3.**
+**Status: James answered section 12 on 20 Oct 2026. Stage 1 built 20 Oct 2026 (rules only). Stage 2 built 20 Oct 2026 (the screen and a phone preview). Stage 3 built 21 Oct 2026 (roomier mines, six named levels, hard mode, medals, WebKit check); waiting for James to try the preview before Stage 4.**
 
 **Decisions (James, 20 Oct 2026):** name **Mine Runner** (id `mine`, prefix `.mn-`); theme **New Zealand mines** (Stage 3 picks the places, carefully, as for Marble); **Chromebooks + phones/tablets**; points and achievements **as listed in section 9**; boards as section 8 but **20 counted runs a day**; shooting **classic but tougher** (read as: rebuild costs +20 s instead of +10 s, and robots hit harder and shoot back more; all numbers live in `shared/mine/config.ts` so they're easy to retune); **doors: key doors need keys, question doors need an answer, a wrong answer costs shield and time**; **start Stage 1 now**.
 
@@ -248,5 +248,26 @@ Every stage: merge `origin/main` first; own tests as I go; before saying a stage
 **Looked at in a real browser:** 1366x640 and 844x390 (touch), picker, flying, map, pause. Fixed: blown-out lighting, full-width stacked buttons, cramped map and pause on a short screen, toast over the goal chip.
 
 **Untested / for James:** how it *feels* (speed, dizziness, difficulty), real phone touch, pointer capture on a school Chromebook, sound, a real Safari. WebKit determinism is still Stage 3. Robots still can't path-find and the bot can't dodge, so real play will differ from the bot's times.
+
+**Go-live list so far:** nothing live. Next free migration number `20261020000400` (re-check at Stage 4).
+
+### Stage 3 results (21 Oct 2026): the six levels tuned
+
+**James's feedback on the Stage 2 preview:** "the level felt tight, not much room to move." Answers: places picked by me; gentle first two levels; hard mode as a toggle with its own board.
+
+**Built**
+- **Roomier mines** (rules change, `config.ts`): tunnels 5 blocks across (was 3), rooms 7 or 9 across (was 5 or 7), rooms 18 apart (was 14). Bot times barely moved (l1 83 s, l6 about 460 s when it doesn't die).
+- **Fourth robot, the brute** (slow, 110 shield-hits of armour, hits for 22, slow shot). Drawn as a block on tracks with a drill. Appears from mine 4. `mix` may now have a 4th number.
+- **Gentle first two mines:** mine 1 has 3 robots (plus 1 guard), slow drones only; mine 2 has 5 (mostly drones, one hunter); escape timers longer.
+- **Hard mode** (`hardRecipe`): same seed, so the same tunnels, keys and doors; 1.5x robots, 2 extra guards, more hunters/turrets/brutes, one fewer shield and missile pick-up, escape timer 0.4 shorter. Board ids `l1:hard` … `l6:hard`. Picker checkbox swaps every card to its hard version; "Next mine" stays in hard.
+- **Medals** (`shared/mine/medals.ts`): gold/silver/bronze for all 12 boards, set from the pilot's clean time (its time minus the 20 s per rebuild it paid) x 1.15 / 1.6 / 2.4. Shown on the picker card (best time and goals) and the finish screen. A test keeps them honest (the pilot wins at least bronze everywhere, gold on mines 1 and 2).
+- **Six New Zealand mine names**, none a real mine (some real places carry sad history; these name the kind of place): Greenstone Hollow, Otago Diggings, Coromandel Gold Tunnel, West Coast Coal Seam, Glow-worm Caverns, Volcanic Deep. Each has its own rock colours.
+- **Determinism in real browsers:** `npm run mine:determinism` (with `PLAYWRIGHT_DIR`, and `WEBKIT_PATH` if the WebKit build number differs). **Node, Chromium and real WebKit give an identical 768-line report** (all twelve boards, steady and free flight). New pinned fingerprint `4376138e` (the rules changed, so the old `ab9b563b` was retired on purpose; nothing is live, so no saved run is affected).
+
+**Bot times (s, with deaths):** l1 83/0, l2 86/0, l3 145/0, l4 261/3, l5 312/2, l6 576/9; hard l1 90, l2 107, l3 240/4, l4 398/9, l5 445/8, l6 750/16. The bot never dodges, so deaths on 4-6 overstate what a person suffers.
+
+**Tests:** new `medals.test.ts`, picker tests for medals and hard mode, level-list tests; the Stage 1-2 tests all still pass with the roomier mines.
+
+**Untested / for James:** whether the roomier mines now feel right; whether mines 1-2 are gentle enough and 5-6 hard enough for real Year 4-6 pupils (medal times are bot-based guesses until real pupils play); how the brute and hard mode feel; sounds; real phone and Chromebook. Medal times may need retuning after real play.
 
 **Go-live list so far:** nothing live. Next free migration number `20261020000400` (re-check at Stage 4).

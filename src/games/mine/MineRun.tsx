@@ -14,6 +14,7 @@ import { formatClock, type LevelInfo } from './levels';
 import { MineMap } from './MineMap';
 import { SettingsPanel } from './Settings';
 import { TouchControls } from './TouchControls';
+import { MEDALS, medalFor } from '../../../shared/mine/medals';
 import { loadBests, saveBests, showTouchControls, withFinish, wantsLessMotion, type MinePrefs } from './prefs';
 import type { MineView } from './renderer';
 import { MineSession, type MineEvent, type UseTarget } from './session';
@@ -416,6 +417,7 @@ export function MineRun({
   const escapeSeconds = Math.ceil(hud.escapeLeft * DT);
   const target = session.target();
   const finishedWell = finished?.run.outcome === 'finished';
+  const finishMedal = finished && finishedWell && !level.practice ? medalFor(level.id, finished.run.steps) : null;
 
   return (
     <section className="mn-run" aria-label={`${level.name}: flying`} data-less-motion={lessMotion || undefined}>
@@ -547,6 +549,7 @@ export function MineRun({
             {finishedWell ? (
               <>
                 <p className="mn-bigtime">{formatClock(finished.run.steps)}</p>
+                {!level.practice && (finishMedal ? <p className="mn-medal"><strong>{finishMedal[0].toUpperCase() + finishMedal.slice(1)} medal!</strong></p> : <p>No medal this time. Bronze is {formatClock((MEDALS[level.id]?.bronze ?? 0) * 30)} or faster.</p>)}
                 {level.practice ? <p>Nice flying. Practice times are not saved.</p> : finished.isBest ? <p><strong>A new best time on this device!</strong></p> : finished.best !== null && <p>Your best here: {formatClock(finished.best)}</p>}
               </>
             ) : (
