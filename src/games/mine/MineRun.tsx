@@ -60,6 +60,13 @@ function describeEvent(e: MineEvent): string | null {
   }
 }
 
+/** The goal chip's words: the reactor and the exit say what to do, not just where. */
+function goalWords(label: string): string {
+  if (label === 'reactor') return 'Destroy the reactor';
+  if (label === 'exit') return 'Escape to the exit';
+  return label[0].toUpperCase() + label.slice(1);
+}
+
 function goalInfo(session: MineSession): Hud['goal'] {
   const s = session.state;
   const g = nextGoal(session.world, s);
@@ -471,17 +478,21 @@ export function MineRun({
             </div>
           )}
           {prefs.arrow && (
-            <div className="mn-goal" aria-label={`Next goal: ${goal.label}, ${Math.round(goal.metres)} metres`}>
+            <div className="mn-goal" aria-label={`Next goal: ${goalWords(goal.label)}, ${Math.round(goal.metres)} metres`}>
               <span className="mn-goal__arrow" aria-hidden="true" data-here={goal.ahead || undefined} style={{ transform: goal.ahead ? undefined : `rotate(${goal.angle}deg)` }}>
                 {goal.ahead ? '◎' : '➤'}
               </span>
               <span className="mn-goal__text" aria-hidden="true">
-                {goal.label}
+                {goalWords(goal.label)}
                 <small>{goal.behind ? 'behind you · ' : goal.ahead ? 'ahead · ' : ''}{Math.round(goal.metres)} m</small>
               </span>
             </div>
           )}
         </div>
+
+        {goal.label === 'reactor' && goal.metres < 30 && hud.reactorHp === REACTOR_HP && !hud.reactorDown && (
+          <p className="mn-reactorhint" role="status">That is the reactor. Shoot it until it breaks. Missiles hit hardest.</p>
+        )}
 
         <div className="mn-hud__right">
           <button type="button" className="button button--light mn-btn mn-hudbtn" onClick={() => { controls.clear(); setMapOpen(true); }}>Map</button>

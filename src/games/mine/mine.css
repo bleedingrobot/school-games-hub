@@ -182,3 +182,5 @@
 @media (prefers-reduced-motion: reduce) {
   .mn-hurt { opacity: 0.35; }
 }
+
+.mn-reactorhint { position: absolute; left: 50%; top: 110px; transform: translateX(-50%); margin: 0; max-width: min(92%, 420px); padding: 8px 14px; border-radius: 12px; background: rgba(20, 24, 40, 0.88); color: #fff; font-weight: 700; text-align: center; pointer-events: none; }

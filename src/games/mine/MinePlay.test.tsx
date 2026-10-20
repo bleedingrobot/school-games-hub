@@ -190,6 +190,23 @@ describe('flying', () => {
   });
 });
 
+describe('saying what to do with the reactor', () => {
+  it('names the goal in words and explains the reactor when the ship gets near it', async () => {
+    await start('Practice mine');
+    const s = session();
+    const L = s.world.level;
+    // Open every door and take every key so the reactor is the next goal.
+    act(() => {
+      s.state.keys = [1, 1, 1];
+      s.state.doorsOpen = s.state.doorsOpen.map(() => 1);
+      s.state.px = L.reactor.x - 6; s.state.py = L.reactor.y; s.state.pz = L.reactor.z;
+      s.step(0);
+    });
+    await waitFor(() => expect(screen.getByLabelText(/Next goal: Destroy the reactor/)).toBeInTheDocument());
+    expect(await screen.findByText(/That is the reactor\. Shoot it until it breaks/)).toBeInTheDocument();
+  });
+});
+
 describe('finishing', () => {
   async function flyTheBot(name: string, id: string) {
     const u = await start(name);

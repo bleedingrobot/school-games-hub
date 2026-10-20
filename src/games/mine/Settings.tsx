@@ -90,7 +90,7 @@ export function HowToPlayBody({ questions }: { questions: boolean }) {
         )}
         {questions && <li><strong>Glowing pads</strong> give you a big refill when you answer right. A wrong answer costs nothing, and you get three tries.</li>}
         <li><strong>Shoot the robots</strong> with lasers (they use energy) and missiles. They are only machines.</li>
-        <li><strong>Blow up the reactor</strong> at the bottom of the mine. Then a timer starts.</li>
+        <li><strong>Destroy the reactor.</strong> It is the glowing orange ball in a cage, in the furthest room. Keep shooting it until it breaks (missiles hit hardest). Then an escape timer starts.</li>
         <li><strong>Race back to the exit</strong> before the timer runs out.</li>
       </ol>
       <p>If your shield runs out, your ship is rebuilt in the last room you were in and {Math.round(REBUILD_PENALTY_STEPS / STEPS_PER_SECOND)} seconds are added to your time. You never lose your keys.</p>
