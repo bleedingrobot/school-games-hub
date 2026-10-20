@@ -319,3 +319,13 @@ Every stage: merge `origin/main` first; own tests as I go; before saying a stage
 **Not done / untested:** a real phone or Chromebook, the slow-Chromebook speed check, a real sign-in, the live database. The accessibility pass was done by eye at 1366 x 640 and 844 x 390 with a pretend server plus the existing CSS test. The aim assist's feel (20 degrees) needs James.
 
 **Go-live list (nothing done):** re-check migration numbers; apply `20261021000100_mine.sql` then `20261021000200_mine_hub.sql`; `npm run build:functions -- mine` and `npx supabase functions deploy mine --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api`; check from outside; add both numbers to the migration-repair note in `docs/PLAN.md`; merge to `main`; try as a teacher; turn on `ON` in `src/games/mine/switch.ts`; the teacher switch. Stage 6 writes `docs/prompts/mine-golive.md` from this.
+
+## Went live (21 Oct 2026)
+
+- **Applied** to the live database, in order, with `supabase db query`: `20261021000100_mine.sql` then `20261021000200_mine_hub.sql`. No errors. Checked: `mine_runs` has 0 rows, 6 `mine` achievements, one `hub_games` row `mine`, `scored_games` unchanged at 427. The migration-repair note in `docs/PLAN.md` has both numbers.
+- **Deployed** the `mine` function. Called with no sign-in it answers 401 "Please sign in again."
+- **Checked from outside** by reading the database's permission lists: signed-out visitors can call no `mine_*` function and read no `mine_*` table; a signed-in pupil can call only `my_mine`, `mine_board` and the two `teacher_set_mine*` functions (which check for a teacher themselves); the tables are closed to everyone but the server. Not yet tried by actually signing in as a pupil.
+- **Merged** to `main` as pull request #6 (code switch `ON = true`). "Test and publish" went green.
+- **Switched on** for all classes by James's word, the same day: `app_settings.mine_enabled` set to true on all 4 class rows (by SQL, before the teacher trial in step 6).
+- **Still to do:** the teacher trial (question doors right and wrong, a pad, finish a mine, boards and "Your best", Practice, hard mode, the maths switch, points and achievements on the progress page, James's phone), and watching the function logs and request count in the first lesson.
+- To turn it off: Teacher page, Mine Runner panel, Switch Mine Runner off.
