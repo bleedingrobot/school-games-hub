@@ -28,6 +28,9 @@ export const SKILL_BONDS: Readonly<Record<string, readonly Step[]>> = {
   'bonds-1000': [{ bond: 'whole-1000-hundreds', movesOnAt: 'bond1000:hundreds' }, { bond: 'whole-1000-tens' }],
   // Tenths to make 1 is one of this skill's question types (addten:to-one).
   'add-tenths': [{ bond: 'decimal-1-tenths' }],
+  // The two bond skills added with M.5: hundredths to 1 first, then tenths to 10; quarters first, then eighths.
+  'decimal-bonds': [{ bond: 'decimal-1-hundredths', movesOnAt: 'bondd1:hundredths' }, { bond: 'decimal-10-tenths' }],
+  'fraction-bonds': [{ bond: 'fraction-quarters', movesOnAt: 'bondf1:small' }, { bond: 'fraction-eighths' }],
 };
 
 export type SuggestWhy = 'teacher' | 'own' | 'auto';
