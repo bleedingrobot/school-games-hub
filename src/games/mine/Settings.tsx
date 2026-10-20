@@ -2,7 +2,13 @@
 import { WRONG_ANSWER_DAMAGE, WRONG_ANSWER_STEPS, STEPS_PER_SECOND, REBUILD_PENALTY_STEPS } from '../../../shared/mine/config';
 import type { MinePrefs } from './prefs';
 
-export function SettingsPanel({ prefs, onChange, inRun = false }: { prefs: MinePrefs; onChange: (p: MinePrefs) => void; inRun?: boolean }) {
+export function SettingsPanel({
+  prefs, onChange, inRun = false,
+}: {
+  prefs: MinePrefs;
+  onChange: (p: MinePrefs) => void;
+  inRun?: boolean;
+}) {
   const set = <K extends keyof MinePrefs>(key: K, value: MinePrefs[K]) => onChange({ ...prefs, [key]: value });
   return (
     <div className="mn-settings">

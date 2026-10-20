@@ -23,6 +23,11 @@ export interface World {
   level: Level;
   /** Steady flight keeps the ship level (up is always up). Decided before the run, never changed during it. */
   steady: boolean;
+  /**
+   * Whether this run has maths. With maths (the default) question doors open only on a right answer. Without it
+   * (a class with maths switched off) question doors start open and pads do nothing. Decided before the run.
+   */
+  maths: boolean;
 }
 
 export type RunOutcome = 'running' | 'finished' | 'timeout';
@@ -104,8 +109,8 @@ export interface RunState {
   finishSteps: number;
 }
 
-export function makeWorld(level: Level, options: { steady?: boolean } = {}): World {
-  return { level, steady: options.steady ?? true };
+export function makeWorld(level: Level, options: { steady?: boolean; maths?: boolean } = {}): World {
+  return { level, steady: options.steady ?? true, maths: options.maths ?? true };
 }
 
 /**
@@ -145,7 +150,7 @@ export function newRun(w: World): RunState {
     shield: MAX_SHIELD, energy: MAX_ENERGY, missiles: START_MISSILES, laserCool: 0, missileCool: 0,
     steps: 0, held: 0, penalty: 0, bonus: 0, padBonuses: 0,
     keys: [0, 0, 0],
-    doorsOpen: level.doors.map(() => 0),
+    doorsOpen: level.doors.map((d) => (w.maths || d.kind !== 'question' ? 0 : 1)),
     padsUsed: level.pads.map(() => 0),
     pickupsTaken: level.pickups.map(() => 0),
     robots: level.robots.map((r) => ({ type: r.type, x: r.x, y: r.y, z: r.z, hp: ROBOTS[r.type].hp, alive: 1, alert: 0, seen: 0, cool: 0, lost: 0 })),
@@ -408,6 +413,11 @@ function stepSpecial(w: World, s: RunState, code: number): void {
   }
   const L = w.level;
   const id = code - GRANT;
+  if (!w.maths) {
+    // A run without maths has no questions, so nothing can have been answered.
+    s.badGrants++;
+    return;
+  }
   if (id < L.doors.length) {
     const door = L.doors[id];
     if (door.kind !== 'question' || s.doorsOpen[id] === 1 || dist(s.px, s.py, s.pz, door.x, door.y, door.z) > USE_RANGE) {

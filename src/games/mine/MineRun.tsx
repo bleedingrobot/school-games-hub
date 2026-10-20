@@ -3,12 +3,15 @@
  * finish screen. The rules run in `MineSession` at a fixed 30 steps a second; this draws between steps.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
+import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
+import { answerQuestion, enqueueRun, flushRuns, outcomeOf, type StartReply } from '../../data/mine';
 import { useSound } from '../../sound';
 import { playSound } from '../sounds';
 import { DT, MAX_ENERGY, MAX_SHIELD, REACTOR_HP } from '../../../shared/mine/config';
-import { packInput } from '../../../shared/mine/inputs';
+import { encodeInputs, packInput } from '../../../shared/mine/inputs';
+import { questionPlan } from '../../../shared/mine/maths';
 import { Controls } from './controls';
+import { factText } from './factText';
 import { nextGoal } from './guide';
 import { formatClock, type LevelInfo } from './levels';
 import { MineMap } from './MineMap';
@@ -93,8 +96,18 @@ function readHud(session: MineSession): Hud {
   };
 }
 
+type SaveState = 'none' | 'saving' | 'saved' | 'waiting' | 'refused' | 'break';
+
+const SAVE_WORDS: Record<Exclude<SaveState, 'none'>, string> = {
+  saving: 'Sending your time to the school…',
+  saved: 'Your time is saved to the school board.',
+  waiting: 'We couldn’t send your time yet. It is kept on this device and will be sent the next time you open Mine Runner.',
+  refused: 'This time couldn’t be counted.',
+  break: 'That’s a lot of mining today! Have a break and come back tomorrow. Your time is kept and will be sent then.',
+};
+
 export function MineRun({
-  level, prefs, onPrefs, player, trial, onFinish, onAgain, onNext, onExit,
+  level, prefs, onPrefs, player, trial, started, serverBest, onFinish, onAgain, onNext, onExit,
 }: {
   level: LevelInfo;
   prefs: MinePrefs;
@@ -102,9 +115,13 @@ export function MineRun({
   player: string;
   /** Question doors and pads use the trial questions (preview only). */
   trial: boolean;
+  /** The server’s start for a counted run (seed, stamp and questions). Null when nothing will be counted (practice, offline). */
+  started: StartReply | null;
+  /** The pupil’s best time on this board before this run (steps), if they have one. */
+  serverBest: number | null;
   onFinish: (run: FinishedRun) => void;
-  onAgain: () => void;
-  onNext: (() => void) | null;
+  onAgain: () => void | Promise<void>;
+  onNext: (() => void | Promise<void>) | null;
   onExit: () => void;
 }) {
   const { soundOn } = useSound();
@@ -114,7 +131,9 @@ export function MineRun({
   const stage = useRef<HTMLDivElement>(null);
   // Steady or free flight is decided when the run starts and never changes during it.
   const steadyAtStart = useRef(prefs.steady);
-  const session = useMemo(() => new MineSession(level.recipe, { steady: steadyAtStart.current }), [level.recipe]);
+  // A run has maths when it is the preview's trial maths, or the server made it a run with questions.
+  const mathsRun = trial || started?.maths === true;
+  const session = useMemo(() => new MineSession(level.recipe, { steady: steadyAtStart.current, maths: mathsRun }), [level.recipe, mathsRun]);
   const controls = useMemo(() => new Controls(), []);
   const viewRef = useRef<MineView | null>(null);
   const [problem, setProblem] = useState('');
@@ -123,8 +142,15 @@ export function MineRun({
   const [hit, setHit] = useState(0);
   const [paused, setPaused] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
-  const [question, setQuestion] = useState<{ target: UseTarget; q: ReturnType<typeof trialQuestion> } | null>(null);
+  const [question, setQuestion] = useState<{ target: UseTarget; q: ShownQuestion; slot: number; trialQ?: ReturnType<typeof trialQuestion> } | null>(null);
   const [finished, setFinished] = useState<{ run: FinishedRun; isBest: boolean; best: number | null } | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>('none');
+  const [busy, setBusy] = useState(false);
+  // Questions used at each question door or pad so far, and an answer sent but not yet confirmed (sent again if the pupil retries).
+  const slotsUsed = useRef(new Map<number, number>());
+  const pending = useRef(new Map<number, number>());
+  const plan = useMemo(() => questionPlan(session.world.level), [session]);
+  const flight = steadyAtStart.current ? 'steady' : 'free';
   const [needsStart, setNeedsStart] = useState(true);
   const prefsRef = useRef(prefs);
   prefsRef.current = prefs;
@@ -154,12 +180,26 @@ export function MineRun({
   }, []);
 
   const openQuestion = useCallback(() => {
-    if (blocked.current || !trial) return;
+    if (blocked.current || (!trial && !started?.maths)) return;
     const target = session.target();
     if (!target) return;
+    if (trial) {
+      const q = trialQuestion();
+      controls.clear();
+      setQuestion({ target, q: { ...q }, slot: -1, trialQ: q });
+      return;
+    }
+    // A real question: the next one the server made for this very door or pad.
+    const spot = plan.targets.find((t) => t.id === target.id);
+    const used = slotsUsed.current.get(target.id) ?? 0;
+    const shown = spot && used < spot.count ? started?.questions[spot.first + used] : undefined;
+    if (!spot || !shown) {
+      say('That door has no more questions in this run. Start the mine again to get new ones.');
+      return;
+    }
     controls.clear();
-    setQuestion({ target, q: trialQuestion() });
-  }, [controls, session, trial]);
+    setQuestion({ target, q: { ...shown, id: shown.slot }, slot: shown.slot });
+  }, [controls, session, trial, started, plan, say]);
 
   const pause = useCallback(() => {
     controls.clear();
@@ -275,14 +315,29 @@ export function MineRun({
         setHud(readHud(session));
         let isBest = false;
         let best: number | null = null;
+        let sent = false;
         if (run.outcome === 'finished' && !level.practice) {
-          const next = withFinish(loadBests(player), level.id, run.steps);
-          isBest = next.isBest;
-          best = next.bests[level.id];
-          saveBests(next.bests, player);
+          if (started) {
+            // A counted run: the time is the server's to keep. It is queued here, so a dropped connection only delays it.
+            isBest = serverBest === null || run.steps < serverBest;
+            best = serverBest === null ? run.steps : Math.min(serverBest, run.steps);
+            const report = { seed: started.seed, stamp: started.stamp, level: level.id, mode: flight, maths: started.maths, inputs: encodeInputs(session.runs) } as const;
+            enqueueRun(player, report);
+            sent = true;
+            setSaveState('saving');
+            void flushRuns(player).then(() => {
+              setSaveState(outcomeOf(report.seed) ?? 'waiting');
+              onFinish(run);
+            });
+          } else if (trial) {
+            const next = withFinish(loadBests(player), level.id, run.steps);
+            isBest = next.isBest;
+            best = next.bests[level.id];
+            saveBests(next.bests, player);
+          }
           beep('win');
         } else if (run.outcome === 'finished') beep('win');
-        onFinish(run);
+        if (!sent) onFinish(run);
         setFinished({ run, isBest, best });
       }
     }
@@ -399,17 +454,39 @@ export function MineRun({
     runHeading.current?.focus({ preventScroll: true });
   }, []);
 
+  /** Starting another dive asks the server for a new run, which takes a moment. */
+  async function go(action: () => void | Promise<void>) {
+    setBusy(true);
+    try {
+      await action();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function resume() {
     setPaused(false);
     runHeading.current?.focus({ preventScroll: true });
   }
 
-  function onSubmit(value: number): MarkedAnswer {
-    const q = question!.q;
-    return { correct: value === q.answer, fact: trialFact(q), boxBefore: 0, boxAfter: 0, answer: q.answer };
+  function onSubmit(value: number, ms: number): MarkedAnswer | Promise<MarkedAnswer> {
+    const asked = question!;
+    if (asked.trialQ) {
+      const q = asked.trialQ;
+      return { correct: value === q.answer, fact: trialFact(q), boxBefore: 0, boxAfter: 0, answer: q.answer };
+    }
+    // The server marks it. If the answer was sent and the reply was lost, a retry sends that same answer again (it is
+    // answered the same way and counted once).
+    const sendValue = pending.current.get(asked.slot) ?? value;
+    pending.current.set(asked.slot, sendValue);
+    return answerQuestion(started!, level.id, flight, asked.slot, sendValue, ms).then((r) => {
+      pending.current.delete(asked.slot);
+      return { correct: r.correct, fact: factText(asked.q, r.answer), boxBefore: 0, boxAfter: 0, answer: r.answer };
+    });
   }
   function onAnswered(result: MarkedAnswer) {
     const target = question!.target;
+    if (!question!.trialQ) slotsUsed.current.set(target.id, (slotsUsed.current.get(target.id) ?? 0) + 1);
     setQuestion(null);
     session.answered(target, result.correct);
     if (!result.correct && target.kind === 'pad') {
@@ -502,13 +579,13 @@ export function MineRun({
         <div className="mn-cross" aria-hidden="true" />
         {hit > 0 && <div key={hit} className="mn-hurt" aria-hidden="true" />}
         <p className="mn-toast" role="status" aria-live="polite">{message}</p>
-        {target && trial && (
+        {target && mathsRun && (
           <button type="button" className="button button--play mn-btn mn-use" onClick={openQuestion}>
             {hud.useLabel} <kbd>Enter</kbd>
           </button>
         )}
         <p className="mn-rotate">Turn your phone sideways for a better view.</p>
-        {touch && <TouchControls controls={controls} hand={prefs.hand} canUse={target !== null && trial} onUse={openQuestion} />}
+        {touch && <TouchControls controls={controls} hand={prefs.hand} canUse={target !== null && mathsRun} onUse={openQuestion} />}
       </div>
 
       {needsStart && !problem && <p className="mn-loading" role="status">Starting the mine…</p>}
@@ -529,7 +606,7 @@ export function MineRun({
             <h2 id="mn-pause-title" ref={heading} tabIndex={-1}>Paused</h2>
             <div className="mn-row mn-pause__buttons">
               <button type="button" className="button button--play mn-btn" onClick={resume}>Resume</button>
-              <button type="button" className="button button--light mn-btn" onClick={onAgain}>Start again</button>
+              <button type="button" className="button button--light mn-btn" disabled={busy} onClick={() => void go(onAgain)}>Start again</button>
               <button type="button" className="button button--light mn-btn" onClick={onExit}>Back to the mines</button>
             </div>
             <SettingsPanel prefs={prefs} onChange={onPrefs} inRun />
@@ -545,7 +622,7 @@ export function MineRun({
         <QuestionModal
           question={question.q}
           title={question.target.kind === 'door' ? 'Question door' : `Power-up pad: ${PAD_WORDS[question.target.padKind]}`}
-          note={`${TRIAL_NOTE} ${question.target.kind === 'door' ? 'A wrong answer costs 20 shield and 6 seconds.' : 'A wrong answer costs nothing.'}`}
+          note={`${trial ? `${TRIAL_NOTE} ` : ''}${question.target.kind === 'door' ? 'A wrong answer costs 20 shield and 6 seconds.' : 'A wrong answer costs nothing.'}`}
           onSubmit={onSubmit}
           onDone={onAnswered}
           onClose={() => { setQuestion(null); runHeading.current?.focus({ preventScroll: true }); }}
@@ -561,7 +638,16 @@ export function MineRun({
               <>
                 <p className="mn-bigtime">{formatClock(finished.run.steps)}</p>
                 {!level.practice && (finishMedal ? <p className="mn-medal"><strong>{finishMedal[0].toUpperCase() + finishMedal.slice(1)} medal!</strong></p> : <p>No medal this time. Bronze is {formatClock((MEDALS[level.id]?.bronze ?? 0) * 30)} or faster.</p>)}
-                {level.practice ? <p>Nice flying. Practice times are not saved.</p> : finished.isBest ? <p><strong>A new best time on this device!</strong></p> : finished.best !== null && <p>Your best here: {formatClock(finished.best)}</p>}
+                {level.practice ? (
+                  <p>Nice flying. Practice times are not saved.</p>
+                ) : !started && !trial ? (
+                  <p>This dive was practice only, so it was not saved.</p>
+                ) : finished.isBest ? (
+                  <p><strong>A new best time{trial ? ' on this device' : ''}!</strong></p>
+                ) : (
+                  finished.best !== null && <p>Your best here: {formatClock(finished.best)}</p>
+                )}
+                {saveState !== 'none' && <p role="status" className="mn-save" data-state={saveState}>{SAVE_WORDS[saveState]}</p>}
               </>
             ) : (
               <p>{hud.reactorDown ? 'You did not reach the exit in time. Have another go: you know the way now.' : 'That was a very long dive. Have another go.'}</p>
@@ -572,8 +658,8 @@ export function MineRun({
               {finished.run.wrongAnswers > 0 && <li>Wrong answers: {finished.run.wrongAnswers}</li>}
             </ul>
             <div className="mn-row">
-              <button type="button" className="button button--play mn-btn" onClick={onAgain}>{finishedWell ? 'Fly it again' : 'Try again'}</button>
-              {finishedWell && onNext && <button type="button" className="button button--light mn-btn" onClick={onNext}>Next mine</button>}
+              <button type="button" className="button button--play mn-btn" disabled={busy} onClick={() => void go(onAgain)}>{finishedWell ? 'Fly it again' : 'Try again'}</button>
+              {finishedWell && onNext && <button type="button" className="button button--light mn-btn" disabled={busy} onClick={() => void go(onNext)}>Next mine</button>}
               <button type="button" className="button button--light mn-btn" onClick={onExit}>Back to the mines</button>
             </div>
           </div>

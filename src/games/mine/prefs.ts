@@ -18,9 +18,11 @@ export interface MinePrefs {
   sensitivity: number;
   /** Looking up and down the other way round. */
   invertY: boolean;
+  /** Fly with maths questions at the doors and pads, when the teacher lets pupils choose. */
+  maths: boolean;
 }
 
-export const DEFAULT_PREFS: MinePrefs = { hand: 'right', touch: 'auto', steady: true, arrow: true, lock: false, lessMotion: null, sensitivity: 1, invertY: false };
+export const DEFAULT_PREFS: MinePrefs = { hand: 'right', touch: 'auto', steady: true, arrow: true, lock: false, lessMotion: null, sensitivity: 1, invertY: false, maths: true };
 
 const keyFor = (player?: string) => `mine-runner-prefs-v1${player ? `:${player}` : ''}`;
 
@@ -37,6 +39,7 @@ export function parsePrefs(raw: unknown): MinePrefs {
     lessMotion: typeof o.lessMotion === 'boolean' ? o.lessMotion : null,
     sensitivity: sens,
     invertY: bool('invertY', DEFAULT_PREFS.invertY),
+    maths: bool('maths', DEFAULT_PREFS.maths),
   };
 }
 
@@ -78,7 +81,7 @@ export function isTouchDevice(): boolean {
 
 export const showTouchControls = (p: MinePrefs): boolean => (p.touch === 'on' ? true : p.touch === 'off' ? false : isTouchDevice());
 
-// ——— Best times, on this device only (nothing is saved to a server in this stage) ———
+// ——— Best times on this device: only the phone preview uses them (the real game keeps best times on the school's server) ———
 const bestsKey = (player?: string) => `mine-runner-bests-v1${player ? `:${player}` : ''}`;
 export type Bests = Record<string, number>;
 

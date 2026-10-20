@@ -14,6 +14,8 @@
 .mn-level__head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .mn-level__head h3 { margin: 0; }
 .mn-level__dots { letter-spacing: 2px; color: var(--ink); }
+.mn-level__actions { display: grid; gap: 8px; }
+.mn-level__actions .button--light { width: auto; justify-self: start; }
 .mn-level__best { color: var(--ink-soft); font-size: 0.92rem; }
 .mn-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .mn-btn { min-height: 44px; }
@@ -184,3 +186,17 @@
 }
 
 .mn-reactorhint { position: absolute; left: 50%; top: 110px; transform: translateX(-50%); margin: 0; max-width: min(92%, 420px); padding: 8px 14px; border-radius: 12px; background: rgba(20, 24, 40, 0.88); color: #fff; font-weight: 700; text-align: center; pointer-events: none; }
+
+/* ---------- Server: notices, the school board, the save line ---------- */
+.mn-notice { display: grid; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #fef3c7; color: #78350f; font-weight: 600; }
+.mn-notice p { margin: 0; }
+.mn-notice .mn-btn { width: auto; justify-self: start; }
+.mn-board__list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.mn-board__list li { display: grid; grid-template-columns: 2.2em 24px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 4px 8px; border-radius: 8px; min-height: 34px; }
+.mn-board__rank { text-align: right; }
+.mn-board__name { overflow-wrap: anywhere; }
+.mn-board__time { font-variant-numeric: tabular-nums; }
+.mn-board__me { font-weight: 700; background: rgba(250, 204, 21, 0.3); }
+.mn-card [aria-pressed='true'] { outline: 3px solid currentColor; }
+.mn-save { margin: 0; font-size: 0.95rem; }
+.mn-save[data-state='waiting'], .mn-save[data-state='break'], .mn-save[data-state='refused'] { color: #fde68a; }

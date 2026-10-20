@@ -6,7 +6,7 @@ import { makeWorld } from '../../../shared/mine/engine';
 import { AuthContext, type AuthState } from '../../auth/AuthContext';
 import { SoundProvider } from '../../sound';
 import { LEVELS } from './levels';
-import { MinePlay, MinePreview } from './MinePlay';
+import { MinePreview } from './MinePlay';
 import { loadBests, saveBests } from './prefs';
 import type { MineSession } from './session';
 
@@ -53,14 +53,6 @@ describe('the picker', () => {
     expect(screen.getByRole('button', { name: 'Play Practice mine' })).toBeEnabled();
     for (const l of LEVELS) expect(screen.getByRole('button', { name: `Play ${l.name}` })).toBeEnabled();
     expect(screen.getByText(/trial questions/i)).toBeInTheDocument();
-  });
-
-  it('only offers the practice mine until the server’s questions arrive (the real, not-yet-live game)', () => {
-    render(wrap(<MinePlay />));
-    expect(screen.getByRole('button', { name: 'Play Practice mine' })).toBeEnabled();
-    for (const l of LEVELS) expect(screen.getByRole('button', { name: `Play ${l.name}` })).toBeDisabled();
-    expect(screen.getAllByText(/question server/i).length).toBe(LEVELS.length);
-    expect(screen.queryByText(/trial questions/i)).toBeNull();
   });
 
   it('shows best times saved on this device', () => {

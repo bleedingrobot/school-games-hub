@@ -7,9 +7,10 @@ import { USE_RANGE } from '../../../shared/mine/config';
 import { clockSteps, makeWorld, newRun, stepRun, type RunState, type World } from '../../../shared/mine/engine';
 import { GRANT, PENALTY, pushInput } from '../../../shared/mine/inputs';
 import { makeLevel, type PadKind, type Recipe } from '../../../shared/mine/level';
+import { PAD_QUESTIONS } from '../../../shared/mine/maths';
 
 /** A power-up pad is tried at most this many times in a run (docs/MINE-PLAN.md, section 7). */
-export const MAX_PAD_TRIES = 3;
+export const MAX_PAD_TRIES = PAD_QUESTIONS;
 
 export type UseTarget =
   | { kind: 'door'; id: number; x: number; y: number; z: number; distance: number }
@@ -66,8 +67,9 @@ export class MineSession {
   private announcedDoors = new Set<number>();
   private announcedPads = new Set<number>();
 
-  constructor(recipe: Recipe, options: { steady: boolean }) {
-    this.world = makeWorld(makeLevel(recipe), { steady: options.steady });
+  /** `maths: false` is a run with no questions (question doors start open and pads do nothing). */
+  constructor(recipe: Recipe, options: { steady: boolean; maths?: boolean }) {
+    this.world = makeWorld(makeLevel(recipe), { steady: options.steady, maths: options.maths ?? true });
     this.state = newRun(this.world);
     this.prev = snapshot(this.state);
     this.visited.add(this.state.lastRoom);
@@ -158,7 +160,7 @@ export class MineSession {
   /** The nearest question door or power-up pad the pilot can use from here, if any. */
   target(): UseTarget | null {
     const s = this.state;
-    if (s.outcome !== 'running') return null;
+    if (s.outcome !== 'running' || !this.world.maths) return null;
     const L = this.world.level;
     let best: UseTarget | null = null;
     const near = (x: number, y: number, z: number) => Math.sqrt((s.px - x) ** 2 + (s.py - y) ** 2 + (s.pz - z) ** 2);
