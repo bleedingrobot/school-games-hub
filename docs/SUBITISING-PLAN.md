@@ -2,7 +2,7 @@
 
 *A picture-flash practice inside Basic facts Training, where students learn to see how many at a glance instead of counting. Written 21 October 2026 for James, from his research document "Subitising Practice Design Plan" (Google Doc 1WF34d0sqY-5gayF3ogjNpvHQAmQ6GV1mbMX3_USpjHA). Every number below was read from the document, including the ones that were equation pictures.*
 
-**Status: planned. Nothing is built. James said (21 Oct 2026) the website is now for all primary ages, so the document's ages (5 to 8) apply directly.** Stop for James after each step in section 9.
+**Status: planned and answered (section 10). Nothing is built. James said (21 Oct 2026) the website is now for all primary ages, so the document's ages (5 to 8) apply directly.** Stop for James after each step in section 9.
 
 ## 1. The idea in one paragraph
 
@@ -86,9 +86,9 @@ Flash is 1000 to 1200 ms depending on the stage. Feedback is gentle: right → c
 - **S.2 Saving and the Training card.** `sub:` and `gap:` keys in `shared/training/save.ts`, a "Quick looks" button on the Training home, rebuild only the `training` function. Go-live only on James's yes, switch off first.
 - **S.3 Later.** Stages 5 and 6 and scattered dots, Compare, Same Number, Make the Target, Look-Group-Select, koru and finger cards, te reo audio, teacher view, and an array version for times tables (my idea, not in the document).
 
-## 10. Questions for James
+## 10. James's answers (21 October 2026)
 
-1. Is "optional for everyone, with a starting check" right, or should teachers switch it on?
-2. Progress by accuracy and a growing garden (my pick) or the Training speed colours?
-3. First release = stages 1 to 4 with Flash and Identify and Missing Spots (the document's own starting set)?
-4. The four numbers in section 3 where the document disagrees with itself: are my picks fine?
+1. **Everyone sees Quick looks**, placed by a short starting check.
+2. **Progress by stages and a growing garden**, no speed colours.
+3. **First release = stages 1 to 4**, with Flash and Identify and Missing Spots.
+4. **My number picks are fine**: stage 3 = 3 to 7, stage 4 = 5 to 10, stage 5 = 4 to 10, stage 1 starts at 1200 ms.
