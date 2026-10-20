@@ -301,3 +301,12 @@ describe('auto', () => {
     expect(BANDED_PACKS['add-sub']).toBeDefined();
   });
 });
+
+describe('times-table curriculum codes', () => {
+  it('the times-table pack carries the codes the ladder gives its times-table skills', async () => {
+    const { TIMES_TABLES_TAGS, TimesTables } = await import('./skillPacks/timesTables');
+    const ladder = [...new Set(LADDER.filter((s) => s.stage === 'times-tables').flatMap((s) => s.curriculumTags))];
+    expect([...TIMES_TABLES_TAGS].sort()).toEqual(ladder.sort());
+    expect(new TimesTables().curriculumTags.some((t) => t.startsWith('TODO'))).toBe(false);
+  });
+});
