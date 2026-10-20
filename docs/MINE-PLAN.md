@@ -355,3 +355,8 @@ Every stage: merge `origin/main` first; own tests as I go; before saying a stage
 **Untested / for James:** how gates feel to fly into (panel size and spacing, the half-second feel of a wrong tile), whether three reactor questions every mine is too many, phone and Chromebook, and the real server. Medal times are unchanged (a question stops the clock; only wrong answers add time). The "Brain power" achievement (10 doors or pads opened by answering) now counts every right answer, so it comes sooner; change the number in a migration if James wants.
 
 **Go-live list (nothing done):** `docs/prompts/mine-maths-golive.md`. In short: clear the old boards (`delete from mine_bests; delete from mine_runs;`), deploy the `mine` function, merge to `main`. No migration is needed.
+
+### Stage 7 went live (21 Oct 2026)
+- Function `mine` deployed, old boards cleared (3 bests, 3 runs), pull request #8 merged to `main`; "Test and publish" went green. No migration.
+- Pre-flight: all tests pass; determinism `384a26e9` matched in Node and WebKit (Chromium could not run here: browser version mismatch).
+- Not yet done: James's live try-out as a teacher (door, gate, pad, reactor, Practice, hard mode, phone). Waiting for his feedback.
