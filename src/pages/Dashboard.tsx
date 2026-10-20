@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { Fragment, lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
@@ -200,38 +200,47 @@ export function Dashboard() {
         {GAME_GROUPS.map((group) => {
           const groupGames = shownGames.filter((g) => g.group === group.group);
           if (groupGames.length === 0) return null;
-          const training = group.group === 'no-maths' && trainingOn();
           return (
-            <div key={group.title} className={`game-group game-group--${group.group}`}>
-              <h3 className="game-group__label">
-                <span>{group.title}</span>
-              </h3>
-              <div className="game-grid">
-                {groupGames.map((game) => (
-                  <GameCard
-                    key={game.id}
-                    game={game}
-                    level={levelFor(game.id)}
-                    moves={moves[game.id]}
-                    onLevelChange={(level) => {
-                      setLevels((prev) => ({ ...prev, [game.id]: level }));
-                      setFeatured(game.id);
-                    }}
-                  />
-                ))}
-                {training && (
-                  <Link to="/training" className="link-tile">
-                    <span className="link-tile__emoji" aria-hidden="true">
-                      🧮
-                    </span>
-                    <span>
-                      <strong>Facts training</strong>
-                      <span>A few minutes a day to build your facts</span>
-                    </span>
-                  </Link>
-                )}
+            <Fragment key={group.title}>
+              <div className={`game-group game-group--${group.group}`}>
+                <h3 className="game-group__label">
+                  <span>{group.title}</span>
+                </h3>
+                <div className="game-grid">
+                  {groupGames.map((game) => (
+                    <GameCard
+                      key={game.id}
+                      game={game}
+                      level={levelFor(game.id)}
+                      moves={moves[game.id]}
+                      onLevelChange={(level) => {
+                        setLevels((prev) => ({ ...prev, [game.id]: level }));
+                        setFeatured(game.id);
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+              {/* Training has a line of its own, under the non-maths games. */}
+              {group.group === 'no-maths' && trainingOn() && (
+                <div className="game-group game-group--training">
+                  <h3 className="game-group__label">
+                    <span>Training</span>
+                  </h3>
+                  <div className="game-grid">
+                    <Link to="/training" className="link-tile">
+                      <span className="link-tile__emoji" aria-hidden="true">
+                        🧮
+                      </span>
+                      <span>
+                        <strong>Multiplication and division training</strong>
+                        <span>A few minutes a day to build your facts</span>
+                      </span>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </Fragment>
           );
         })}
       </section>

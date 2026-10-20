@@ -63,7 +63,7 @@ describe.each(THEMES.map((t) => t.id))('the %s theme', (theme) => {
 
 describe('the Soft and bright extras', () => {
   it('gives the white group tags at least 4.5 to 1', () => {
-    for (const group of ['no-maths', 'easy-maths', 'complex-maths']) {
+    for (const group of ['no-maths', 'easy-maths', 'complex-maths', 'training']) {
       const bg = css.match(new RegExp(`game-group--${group} \\.game-group__label span \\{\\s*background: (#[0-9a-f]{6})`))![1];
       expect(contrast('#ffffff', bg), group).toBeGreaterThanOrEqual(4.5);
     }

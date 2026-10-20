@@ -2893,6 +2893,9 @@ main:focus {
 [data-hub-theme='soft'] .game-group--complex-maths .game-group__label span {
   background: #6d28d9;
 }
+[data-hub-theme='soft'] .game-group--training .game-group__label span {
+  background: #15803d;
+}
 
 /* Game menu: a bright edge on each card, and a glow on hover. */
 [data-hub-theme='menu'] .game-card {
