@@ -720,3 +720,5 @@ Not checked by me: a real browser sign-in, the teacher screens, or a student pla
 - **No migration:** the keys fit the record-key check, and the pack list is unchanged.
 - **Tests:** the F.6 tests (`fdp.test.ts`) now include both skills (every roll checked against separate arithmetic, named mistakes, rebuilt and marked from its numbers, refused when changed), and the ladder and placement counts. Full run: typecheck, `test:all` (3,901) and build pass.
 - **Go-live:** `docs/prompts/maths-bonds-golive.md`. Redeploy `gem-keep`, `space-game`, `save-bot-game` and `marble` (their bundled copies changed), then merge to `main`. `clans` and `lord` did not change. `monster` was not rebuilt (it is left as deployed; the `monsters-marking` branch rebuilds it).
+
+- **Step 2 live (20 Oct 2026):** gem-keep, space-game, save-bot-game and marble deployed with the bond question code (each answers 401). The ladder skills are not on the website yet (step 3).
