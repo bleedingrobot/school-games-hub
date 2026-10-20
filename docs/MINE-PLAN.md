@@ -12,7 +12,7 @@ Written 20 October 2026 (Stage 0: plan only, **no code yet**). Branch `mine`, fo
 - **Drawn with three.js**, which is already in the project (`three@0.186.0`, used by Marble Rush), so **no new dependency**. Loaded only when someone opens the game.
 - **Solo play** against robots, with **school-only best-time boards**.
 - **Classic-style shooting** (lasers, missiles, hostile robots) but with the kindness rules we use everywhere: robots only (no people), no blood, and **no game over** (a wrecked ship is rebuilt a little way back, with a few seconds added to the clock).
-- **Maths** has two jobs, both from the shared maths focus system only: **answer gates** (a locked door asks a question; right answer = it opens) and **power-up pads** (right answer = shield, missiles or ammo; wrong = nothing, never a penalty). The server makes and marks every question.
+- **Maths** has two jobs, both from the shared maths focus system only: **answer gates** (a question door opens on a right answer, a wrong one costs shield and time) and **power-up pads** (right answer = shield, missiles or ammo; wrong = nothing, never a penalty). The server makes and marks every question.
 - **Points and achievements:** a small set through the new `hub_games` hooks (the shared progress functions are not touched).
 - **Cost:** about 2 server requests per level for the run itself plus 1 per maths question (section 8). A class playing one lesson a week is a few thousand requests a month, against 500,000 free.
 
@@ -89,10 +89,11 @@ Follows `GAME_DEVELOPMENT_GUIDE.md` section 4 exactly. The maths is **never** wo
 
 | Moment | What the pupil sees | Right answer | Wrong answer / skip |
 |---|---|---|---|
-| **Answer gate** (a locked door) | A coloured door shows a panel. "Fly up to the door and press Use" opens one question (the ship hovers; the robots keep out of the way for the 10 seconds the question is open, so it's fair). | The door opens. | The door stays shut. Try again (a **new** question each time, each question answerable once) or go and shoot something. No penalty. |
-| **Power-up pad** | A glowing pad (shield, missiles, energy). Fly onto it and press Use. | A big refill of that thing (and a small bonus: +5 s off the clock at most 3 times a level so the rewards can't be farmed for time). | Nothing is lost; the pad stays so the pupil can try a new question (limit 3 tries a pad per run). |
+| **Key door** (locked door) | A coloured door that needs the matching key. Fly the key to it and the door opens. | n/a | n/a (no question) |
+| **Question door** (locked door) | A door with a panel. Fly up and press Use: one question appears (robots keep clear while it's open). | The door opens. | **The ship takes damage and time is added** (James, 20 Oct 2026). The door stays shut; try again with a **new** question (each question answerable once). |
+| **Power-up pad** | A glowing pad (shield, missiles, energy). Fly onto it and press Use. | A big refill of that thing, plus a small time bonus (at most 3 a level, so it can't be farmed). | Nothing is lost and the pad stays (limit 3 tries a pad per run). |
 
-Gates are needed to progress; pads are optional. A pupil who can't or won't do a question can still use the **key** that matches the door (keys are still found by flying and shooting). Honest design point: doors open with **either** the right key **or** a right answer, so maths is a way through, not a wall. A teacher switch sets whether maths is Off / Students choose / On, like Marble (default "Students choose"). With maths Off the pads become plain pick-ups and gates are just doors opened by keys.
+**Doors (James's decision, 20 Oct 2026):** there are two kinds of locked door. **Key doors** open only with the matching key. **Question doors** open only by answering. A wrong answer at a question door costs a bit of shield and adds seconds to the clock, but never ends the run (the "rebuilt, +10 s" rule still applies if shield hits zero). The damage and time amounts are set in `shared/mine/config.ts` and go through the replay, so the server charges them too (a `PENALTY` input the server only accepts as many times as it marked wrong answers, like Marble's `REFUND`). With maths Off, question doors become key doors and pads become plain pick-ups. A teacher switch sets Off / Students choose / On (default "Students choose").
 
 **How it works inside** (copy of Marble Rush, `docs/MARBLE-PLAN.md` section 7.2 and 4.3 of the guide):
 - `start` → function reads `space_maths_context(player)` → `makeFocusPack(facts, parseFocus(focus), { enabledTables, division }, seededRandom(seed))` → makes about 12 questions for the level → stores them whole in `mine_questions` (RLS on, no policy, no grant) → returns to the browser only `publicQuestion(q, slot)`.
@@ -179,7 +180,7 @@ Every stage: merge `origin/main` first; own tests as I go; before saying a stage
 3. **Theme.** Plain "robot mine" (my pick, simplest), or New Zealand mines (pounamu, Otago gold-rush tunnels, a coal mine, glow-worm caves), done as carefully as Marble's New Zealand places? Either needs no photos or logos.
 4. **How rough can the shooting get?** Your answer was classic-style. I'll make it lasers and missiles against dull-coloured mining robots, sparks and a flash when one is destroyed, no blood, no people. And a wrecked ship is rebuilt at the room you last entered with +10 s, never "game over". OK?
 5. **Achievements.** Do the 8 in section 9 look right, and is "2 points for a first finish, 1 for an improved time (once a day per level)" about right?
-6. **Gates vs keys.** I'd have doors open with *either* the right key *or* a right answer, so maths never blocks a pupil. Or should some doors **only** open by answering (so maths is required)?
+6. **Gates vs keys.** Answered 20 Oct: key doors need keys, question doors need answers; a wrong answer costs shield and time.
 7. **Boards.** One board per level per maths mode (with / without maths), top 10 plus you, own school only, display names only. And a limit of 40 counted runs a day per pupil?
 8. **Where it goes in the queue.** Starting now alongside other branches (it only uses its own folders until Stage 5). Stage 2 is the first time you'd need to try something (a phone preview link).
 
