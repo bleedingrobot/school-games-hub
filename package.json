@@ -45,7 +45,11 @@
     "lord:preview": "vite build --config vite.lord-preview.config.ts",
     "clans:preview": "vite build --config vite.clans-preview.config.ts",
     "home:preview": "vite build --config vite.home-preview.config.ts",
-    "home:single": "HOME_INLINE=1 vite build --config vite.home-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-home home-themes-test-page.html"
+    "home:single": "HOME_INLINE=1 vite build --config vite.home-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-home home-themes-test-page.html",
+    "mine:preview": "vite build --config vite.mine-preview.config.ts",
+    "mine:single": "MINE_INLINE=1 vite build --config vite.mine-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-mine mine-runner-test-page.html",
+    "mine:determinism": "node scripts/mine-determinism.mjs",
+    "mine:sim": "node scripts/mine-sim.mjs"
   },
   "engines": {
     "node": ">=22"

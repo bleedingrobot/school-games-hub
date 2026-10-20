@@ -50,3 +50,9 @@ The `save-bot-game` server function runs exactly this code before saving a resul
   numbers, better buys). Made and marked by code; each is rebuilt from its kind and numbers
   (`buildQuestion`), with Year 4/5/6 bands and the teacher's topic switches
   (`PracticalSettings`).
+- `mine/`: Mine Runner (stages 1 to 4). `engine.ts` is the rules as a pure function (30 steps a second; the same
+  recorded inputs always give the same run, so the server replays a run to check its time), `level.ts` makes the six
+  mines from a recipe and seed (plus hard mode), `inputs.ts` stores a run as "same input for N steps" text, `bot.ts`
+  is a pretend pilot that finishes every mine, `medals.ts` has the medal times, `maths.ts` says which question belongs
+  to which door or pad, and `save.ts` is the server's replay and check (`judgeRun`). `determinism.ts` pins the rules'
+  fingerprint (`npm run mine:determinism` also checks Chromium and WebKit). See `docs/MINE-PLAN.md`.
