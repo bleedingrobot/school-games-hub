@@ -1,0 +1,184 @@
+/* ---------- Mine Runner (.mn-) ---------- */
+
+/* The picker sits in the hub's school-red page: white cards, white headings. */
+.mn-picker { display: grid; gap: 12px; max-width: 960px; }
+.mn-picker h2, .mn-subhead { color: #fff; }
+.mn-picker__top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.mn-card { display: grid; gap: 10px; padding: 14px 16px; border-radius: 18px; background: var(--surface); color: var(--ink); }
+.mn-intro, .mn-card p { margin: 0; }
+.mn-trialnote { padding: 8px 10px; border-radius: 10px; background: #fef3c7; color: #78350f; font-weight: 600; }
+.mn-hint { margin: 0; color: var(--ink-soft); font-size: 0.9rem; }
+.mn-levels { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.mn-level { display: grid; gap: 6px; align-content: start; padding: 14px 16px; border-radius: 18px; background: var(--surface); color: var(--ink); }
+.mn-level p { margin: 0; }
+.mn-level__head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.mn-level__head h3 { margin: 0; }
+.mn-level__dots { letter-spacing: 2px; color: var(--ink); }
+.mn-level__best { color: var(--ink-soft); font-size: 0.92rem; }
+.mn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.mn-btn { min-height: 44px; }
+/* The site's own buttons are full width, and the big play button is very tall: inside the game, buttons are only as wide as their words. */
+.mn-row .mn-btn, .mn-map__floors .mn-btn, .mn-hud__right .mn-btn { width: auto; }
+.mn-btn.button--play { min-height: 52px; }
+.mn-more > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
+
+.mn-settings { display: grid; gap: 4px; }
+.mn-settings h3, .mn-controls h3 { margin: 4px 0; }
+.mn-check { display: flex; gap: 10px; align-items: flex-start; min-height: 44px; padding: 6px 0; }
+.mn-check input { width: 24px; height: 24px; flex: none; margin-top: 2px; }
+.mn-check small, .mn-field small { display: block; color: var(--ink-soft); font-weight: 400; }
+.mn-field { display: grid; gap: 4px; padding: 6px 0; }
+.mn-field select, .mn-field input[type='range'] { min-height: 44px; max-width: 420px; }
+.mn-keys-list { display: grid; gap: 6px; margin: 0; }
+.mn-keys-list div { display: grid; grid-template-columns: minmax(110px, 160px) 1fr; gap: 8px; }
+.mn-keys-list dt { font-weight: 700; }
+.mn-keys-list dd { margin: 0; }
+.mn-howto ol { padding-left: 1.2rem; display: grid; gap: 6px; }
+
+/* ---------- The run: a dark game screen over the whole window ---------- */
+.mn-run {
+  --mn-ink: #f8fafc;
+  --mn-soft: #cbd5e1;
+  --mn-panel: #0f172a;
+  --mn-line: #94a3b8;
+  --mn-shield: #22c55e;
+  --mn-energy: #3b82f6;
+  --mn-reactor: #f59e0b;
+  --mn-danger: #ef4444;
+  position: fixed; inset: 0; z-index: 60; background: #05070d; color: var(--mn-ink); overflow: hidden;
+  font-family: var(--h-body, system-ui, sans-serif);
+}
+.mn-stage { position: absolute; inset: 0; touch-action: none; user-select: none; -webkit-user-select: none; }
+.mn-stage:focus-visible { outline-offset: -4px; }
+.mn-canvas { width: 100%; height: 100%; display: block; }
+.mn-loading { position: fixed; inset: 0; z-index: 61; display: grid; place-items: center; margin: 0; color: #fff; background: #05070d; }
+
+.mn-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.mn-rotate { display: none; }
+@media (orientation: portrait) and (pointer: coarse) {
+  .mn-rotate { display: block; position: absolute; left: 50%; top: 150px; transform: translateX(-50%); margin: 0; padding: 6px 14px; border-radius: 12px; background: #92400e; color: #fff; font-weight: 700; text-align: center; max-width: 90vw; }
+}
+.mn-hud { position: absolute; inset: 0; pointer-events: none; }
+.mn-hud > * { pointer-events: none; }
+.mn-hud__left { position: absolute; top: 10px; left: 10px; display: grid; gap: 6px; width: min(230px, 42vw); padding: 8px 10px; border-radius: 12px; background: rgba(15, 23, 42, 0.86); }
+.mn-bar { display: grid; grid-template-columns: 58px 1fr 34px; gap: 6px; align-items: center; font-size: 0.85rem; font-weight: 700; }
+.mn-bar--reactor { grid-template-columns: 58px 1fr; }
+.mn-bar__label { color: var(--mn-soft); }
+.mn-bar__track { display: block; height: 12px; border-radius: 6px; background: #1e293b; border: 1px solid var(--mn-line); overflow: hidden; }
+.mn-bar__fill { display: block; height: 100%; }
+.mn-bar--shield .mn-bar__fill { background: var(--mn-shield); }
+.mn-bar--energy .mn-bar__fill { background: var(--mn-energy); }
+.mn-bar--reactor .mn-bar__fill { background: var(--mn-reactor); }
+.mn-bar[data-low] .mn-bar__fill { background: var(--mn-danger); }
+.mn-bar[data-low] .mn-bar__num { color: #fecaca; }
+.mn-bar__num { text-align: right; }
+.mn-stats { display: flex; align-items: center; gap: 12px; font-weight: 700; }
+.mn-keys { display: flex; gap: 6px; }
+.mn-key { width: 24px; height: 24px; border-radius: 6px; border: 2px solid var(--mn-line); display: grid; place-items: center; font-size: 0.8rem; }
+.mn-key--blue { border-color: #60a5fa; }
+.mn-key--yellow { border-color: #facc15; }
+.mn-key--red { border-color: #f87171; }
+.mn-key--blue[data-have] { background: #1d4ed8; }
+.mn-key--yellow[data-have] { background: #a16207; }
+.mn-key--red[data-have] { background: #b91c1c; }
+
+.mn-hud__top { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: grid; justify-items: center; gap: 6px; }
+.mn-clock { padding: 4px 14px; border-radius: 12px; background: rgba(15, 23, 42, 0.86); font-size: 1.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.mn-escape { padding: 4px 12px; border-radius: 12px; background: #92400e; color: #fff; font-weight: 800; }
+.mn-escape[data-urgent] { background: #b91c1c; }
+.mn-goal { display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 8px; border-radius: 999px; background: rgba(15, 23, 42, 0.86); }
+.mn-goal__arrow { display: inline-block; width: 34px; height: 34px; line-height: 34px; text-align: center; font-size: 1.5rem; color: #fde047; }
+.mn-goal__arrow[data-here] { color: #4ade80; }
+.mn-goal__text { display: grid; line-height: 1.15; font-weight: 700; text-transform: capitalize; }
+.mn-goal__text small { font-weight: 400; color: var(--mn-soft); text-transform: none; }
+
+.mn-hud__right { position: absolute; top: 10px; right: 10px; display: flex; gap: 8px; pointer-events: none; }
+.mn-hud__right .mn-hudbtn { pointer-events: auto; min-width: 64px; }
+.mn-cross { position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%, -50%); }
+.mn-cross::before, .mn-cross::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.85); }
+.mn-cross::before { left: 12px; top: 3px; width: 2px; height: 20px; }
+.mn-cross::after { top: 12px; left: 3px; height: 2px; width: 20px; }
+.mn-hurt { position: absolute; inset: 0; box-shadow: inset 0 0 90px 24px rgba(220, 38, 38, 0.55); opacity: 0.8; }
+.mn-toast { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); margin: 0; max-width: min(520px, 90vw); text-align: center; font-weight: 700; text-shadow: 0 2px 6px #000; }
+.mn-toast:empty { display: none; }
+.mn-toast:not(:empty) { padding: 6px 14px; border-radius: 12px; background: rgba(15, 23, 42, 0.86); }
+.mn-use { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); pointer-events: auto !important; }
+.mn-use kbd { margin-left: 6px; padding: 0 6px; border: 1px solid currentColor; border-radius: 4px; font-size: 0.8em; }
+
+/* Touch controls */
+.mn-touch { position: absolute; inset: 0; display: flex; justify-content: space-between; align-items: flex-end; padding: 10px 14px; pointer-events: none; }
+.mn-touch[data-hand='left'] { flex-direction: row-reverse; }
+.mn-touch__side { display: flex; align-items: flex-end; gap: 10px; pointer-events: none; }
+.mn-touch__side--move { flex-direction: column; align-items: flex-start; }
+.mn-touch[data-hand='left'] .mn-touch__side--move { align-items: flex-end; }
+.mn-touch[data-hand='left'] .mn-touch__side--look { flex-direction: row-reverse; }
+.mn-touch__fire { display: grid; gap: 10px; justify-items: center; pointer-events: none; }
+.mn-stick { position: relative; border-radius: 50%; background: rgba(15, 23, 42, 0.55); border: 2px solid rgba(255, 255, 255, 0.6); touch-action: none; pointer-events: auto; display: grid; place-items: center; }
+.mn-stick__knob { border-radius: 50%; background: rgba(255, 255, 255, 0.85); }
+.mn-touchbtn { pointer-events: auto; touch-action: none; border: 2px solid rgba(255, 255, 255, 0.8); background: rgba(15, 23, 42, 0.7); color: #fff; font-weight: 800; border-radius: 50%; min-width: 56px; min-height: 56px; font-size: 1rem; user-select: none; -webkit-user-select: none; }
+.mn-touchbtn--fire { width: 84px; height: 84px; background: rgba(185, 28, 28, 0.85); }
+.mn-touchbtn--missile { width: 64px; height: 64px; background: rgba(180, 83, 9, 0.85); font-size: 1.4rem; }
+.mn-touchbtn--small { width: 56px; height: 56px; border-radius: 14px; }
+.mn-touchbtn--use { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: auto; padding: 0 24px; border-radius: 28px; background: #a16207; }
+
+/* Pause, map, finish */
+.mn-overlay { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 12px; background: rgba(2, 6, 23, 0.82); overflow: auto; }
+.mn-panel { display: grid; gap: 10px; width: min(520px, 100%); max-height: 100%; overflow: auto; padding: 16px 18px; border-radius: 18px; background: var(--surface); color: var(--ink); }
+.mn-panel--wide { width: min(640px, 100%); }
+.mn-panel h2 { margin: 0; color: var(--ink); }
+.mn-panel p { margin: 0; }
+.mn-bigtime { font-size: 2.4rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.mn-facts { margin: 0; padding-left: 1.2rem; color: var(--ink-soft); }
+
+.mn-map { width: min(720px, 100%); }
+.mn-map__floors { display: flex; flex-wrap: wrap; gap: 6px; }
+.mn-map__floors [aria-pressed='true'] { outline: 3px solid var(--focus); }
+.mn-map__svg { width: 100%; max-height: 52vh; background: #0b1220; border-radius: 12px; }
+.mn-map__room { fill: rgba(148, 163, 184, 0.28); stroke: #cbd5e1; stroke-width: 2; }
+.mn-map__room--here { fill: rgba(250, 204, 21, 0.3); stroke: #facc15; }
+.mn-map__link { stroke: #cbd5e1; stroke-width: 4; stroke-linecap: round; }
+.mn-map__link--faint { stroke: #64748b; stroke-dasharray: 4 6; }
+.mn-map__unknown { fill: #94a3b8; font-size: 18px; font-weight: 700; }
+.mn-map__tag { fill: #e2e8f0; font-size: 9px; font-weight: 800; }
+.mn-map__tag--reactor { fill: #fdba74; }
+.mn-map__ship { fill: #fff; stroke: #0b1220; stroke-width: 1.5; }
+.mn-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; color: var(--ink-soft); }
+.mn-legend__item { display: inline-flex; align-items: center; gap: 4px; }
+.mn-legend__dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--ink); }
+
+/* Small, wide screens (a phone on its side): tuck the HUD in and lay panels out side by side. */
+@media (max-height: 460px) {
+  .mn-overlay { padding: 6px; }
+  .mn-panel { padding: 10px 14px; gap: 6px; }
+  .mn-btn.button { min-height: 44px; padding: 4px 16px; }
+  .mn-pause { grid-template-columns: 220px 1fr; align-items: start; column-gap: 16px; }
+  .mn-pause h2 { grid-column: 1 / -1; }
+  .mn-pause__buttons { flex-direction: column; flex-wrap: nowrap; }
+  .mn-pause .mn-settings { max-height: calc(100vh - 90px); overflow: auto; }
+  .mn-map { grid-template-columns: 210px 1fr; grid-template-rows: auto auto auto auto 1fr; column-gap: 14px; align-items: start; }
+  .mn-map__svg { grid-column: 2; grid-row: 1 / span 6; max-height: calc(100vh - 40px); }
+  .mn-map h2, .mn-map .mn-hint, .mn-map__floors, .mn-map .mn-legend, .mn-map__back { grid-column: 1; }
+  .mn-map .mn-hint { display: none; }
+  .mn-hud__left { top: 6px; left: 6px; padding: 6px 8px; gap: 3px; width: min(200px, 36vw); }
+  .mn-bar { font-size: 0.78rem; }
+  .mn-clock { font-size: 1.15rem; padding: 2px 10px; }
+  .mn-goal__arrow { width: 28px; height: 28px; line-height: 28px; font-size: 1.2rem; }
+  .mn-toast { top: 37%; }
+  .mn-use { bottom: 100px; }
+  .mn-touchbtn--use { bottom: 100px; }
+  .mn-touchbtn--small { width: 52px; height: 52px; }
+  .mn-stick { transform: scale(0.9); transform-origin: bottom; }
+}
+
+/* Every bit of movement lives here, and stops for pupils who ask for less (their device, or the Less motion setting). */
+@media (prefers-reduced-motion: no-preference) {
+  .mn-bar__fill { transition: width 0.15s linear; }
+  .mn-hurt { animation: mn-hurt 0.45s ease-out forwards; }
+  .mn-toast:not(:empty) { animation: mn-pop 0.2s ease-out; }
+  @keyframes mn-hurt { from { opacity: 0.9; } to { opacity: 0; } }
+  @keyframes mn-pop { from { opacity: 0; } to { opacity: 1; } }
+  .mn-run[data-less-motion] .mn-hurt, .mn-run[data-less-motion] .mn-toast, .mn-run[data-less-motion] .mn-bar__fill { animation: none; transition: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mn-hurt { opacity: 0.35; }
+}
