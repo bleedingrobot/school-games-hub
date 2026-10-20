@@ -22,14 +22,14 @@ export interface MinePrefs {
   maths: boolean;
 }
 
-export const DEFAULT_PREFS: MinePrefs = { hand: 'right', touch: 'auto', steady: true, arrow: true, lock: false, lessMotion: null, sensitivity: 1, invertY: false, maths: true };
+export const DEFAULT_PREFS: MinePrefs = { hand: 'right', touch: 'auto', steady: true, arrow: true, lock: false, lessMotion: null, sensitivity: 2, invertY: false, maths: true };
 
 const keyFor = (player?: string) => `mine-runner-prefs-v1${player ? `:${player}` : ''}`;
 
 export function parsePrefs(raw: unknown): MinePrefs {
   const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
   const bool = (k: keyof MinePrefs, fallback: boolean) => (typeof o[k] === 'boolean' ? (o[k] as boolean) : fallback);
-  const sens = typeof o.sensitivity === 'number' && Number.isFinite(o.sensitivity) ? Math.min(2.5, Math.max(0.4, o.sensitivity)) : 1;
+  const sens = typeof o.sensitivity === 'number' && Number.isFinite(o.sensitivity) ? Math.min(2.5, Math.max(0.4, o.sensitivity)) : DEFAULT_PREFS.sensitivity;
   return {
     hand: o.hand === 'left' ? 'left' : 'right',
     touch: o.touch === 'on' || o.touch === 'off' ? o.touch : 'auto',
