@@ -78,6 +78,7 @@ export const CHOICES = 4;
 export const PLACEMENT_QUESTIONS = 10;
 /**
  * How many skills the placement check jumps up after a right, quick answer (until the first miss, then one at a time). Two was
- * enough for 19 skills; with all 31 built, ten questions at two skills each cannot reach the top, so it is three.
+ * enough for 19 skills; with all 31 built, ten questions at two skills each cannot reach the top, so it is three. With 33 (M.5's
+ * bond skills, 20 Oct 2026) a student who is right and quick throughout starts within the last 7.
  */
 export const PLACEMENT_JUMP = 3;
