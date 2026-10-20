@@ -84,6 +84,7 @@ Follows the hub's existing pattern ("make a folder next to chess/, then add it i
 
 This is the part that makes it more than a memory game.
 
+- **Rule, confirmed again by James on 20 Oct 2026: Bond Match is never evidence for the ladder.** A match may be memory or a guess, so nothing Bond Match does may write fact records, move a ladder place, count towards a maths focus or its results, or feed Auto. M.5 may only *read* the ladder and focus (to pick which bond to open on); the new bond skills are proven only by other games' real questions. A test (`handler.test.ts`, "never touches fact records") checks the server has no way to.
 - **Bond Match never writes to a student's fact record (James, 19 Oct 2026).** Many matches are guesses, so neither a match nor a mismatch counts. The game is practice and fun only. Stars, bests and points are the only things it saves.
 - **The ladder still gets the new bonds**, through the other games: new bond fact keys (`bond100:30+70`, `bond1000:400+600`, `bondd1:0.3+0.7`, `bondf1:1/3+2/3`, next to the existing `bond10:` and `bond20:`) and a question pack for them, so Monsters, Space and Dragon Maths can ask them and those answers do build the records.
 - **Ladder:** `bonds-100` and `bonds-1000` are existing stubs in `shared/maths/ladder.ts` (`built: false`). M.5 builds the question pack, adds the decimal and fraction bond skills where they belong on the ladder, and flips `built` to true. **That makes the new bonds appear in Auto for every other maths game too** (Monsters, Space, Dragon Maths), because they share the ladder. James said yes to this (19 Oct). It changes other games' behaviour once deployed, so it is still its own stage with its own go-ahead.
@@ -105,7 +106,7 @@ This is the part that makes it more than a memory game.
 | **M.2** | Screens: picker, board, finish; browser-saved bests; preview page and screenshots | Looks at screenshots |
 | **M.3** | Teaching touches: mismatch sum line, fraction pies, hundredths decks, hint, sounds, reduce-motion, keyboard play | Playtest |
 | **M.4** | Saving: server function, replay check, points, per-bond stars on the student page, teacher view of stars | **Go to apply the migration and deploy** |
-| **M.5** | Ladder and focus: bond question pack, flip the `bonds-100` / `bonds-1000` stubs, decimal and fraction bond skills, focus choices, Auto picking the bond | **Go (changes other games)** |
+| **M.5** | Ladder and focus (read only for Bond Match; never evidence): bond question pack, flip the `bonds-100` / `bonds-1000` stubs, decimal and fraction bond skills, focus choices, Auto picking the bond | **Go (changes other games)** |
 | **M.6** | M.6a pass-and-play, then M.6b bot | Playtest |
 | **M.7** | Go-live: registry switch on, teacher guide paragraph, privacy summary line (no new personal data) | **Only when he says** |
 
@@ -164,4 +165,26 @@ James said the picker was "really ugly" (the S/M/L pair counts meant nothing to 
 
 - **Step 1 done (James's yes):** `20261020000200_bond_match_switch.sql` applied to the live database. Checked: the switch is off for all 4 settings rows; `hub_games` has the switch and `bond_match_point_rules()`; `bond_match_games.mode` exists; teachers can call `teacher_set_bond_match`, signed-out users can't, pupils still can't save directly; `scored_games` still 412 rows, `bond_match_games` 0. Before applying, the live `record_bond_match_game` matched the repo's M.4 version (a copy was kept for undo).
 - **Step 2 done (James's yes):** `bond-match` function deployed (version 3, Verify JWT off, `_shared/signIn.ts`, class-switch check, any-pair rule). Checked: signed out and a fake sign-in both get 401 "Please sign in again."; the browser check (OPTIONS) gets 204.
-- **Next:** step 3, merge `bond-match` to `main` (publishes the site; Bond Match shows on the Teacher page, off).
+- **Step 3 done (James's yes):** `bond-match` pushed to `main` (fast-forward, 079b1f6); "Test and publish" green (build, db, deploy). Bond Match is on the Teacher page, switched off.
+- **Switching on:** James asked to "turn it all on" (every class, as the other games are: Riley, Everyone, Teachers and the school default). The update from Claude's session was blocked by the permission check, so James switches it on from the Teacher page (each class), or allows the update.
+
+## Stage M.5 results (20 Oct 2026)
+
+**Part B (Bond Match reads the focus and Auto): built, tested and pushed on `bond-match`. Not merged, nothing live.** Part A (new decimal and fraction bond questions for the ladder, branch `maths-bonds`) is a proposal waiting for James's pick; nothing is built for it yet.
+
+- **Read only, never evidence.** The game loads `my_ladder()` once when it opens (it already gives the facts, the class settings and the focus with the ladder info) and only reads it. No server change, no migration, nothing about saving, points or stars changed. If it can't be read, the picker is exactly as before.
+- **Map** (`src/games/bond-match/suggest.ts`, `SKILL_BONDS`): `facts-10` → To 10; `facts-20` → To 20; `bonds-100` → To 100 (tens), then To 100 (any) once `bond100:tens` is in box 2 or higher; `bonds-1000` → To 1000 (hundreds), then To 1000 (tens) once `bond1000:hundreds` is; `add-tenths` → To 1 (tenths) (its `addten:to-one` type). The decimal hundredths, decimals-to-10 and fraction sets get skills when Part A is built.
+- **A focus:** the first focus skill (in ladder order) with a bond set. A teacher's focus (class, group or student) shows **"Teacher's pick"** (said aloud as "Your teacher picked this"); a student's own focus shows **"Your focus"**. A focus with no bond set (times tables) suggests nothing, because a focus switches Auto off. An ended teacher focus is ignored (`currentFocus`).
+- **Auto** (no focus, class has auto on): the bond for the student's current ladder place, or the last bond skill below it (a student on ×3 ×4 gets To 20; someone at the top gets To 1 (tenths)). Badge **"Good for you now"**.
+- **Picker:** the suggested bond moves to the front of its shelf, with a shelf-colour ring and one small amber badge over its top edge. It never starts a game by itself; every bond can still be picked. Checked at 390 px and 1366 px.
+- **Preview:** `?suggest=teacher` (default: a class focus on Bonds to 100), `own`, `auto` (placed at Hundreds that make 1000) or `none`. Republished to James's private preview page.
+- **Tests:** `suggest.test.ts` (12: map names real skills and sets, teacher/group/student focus, moving on to the harder set, own focus, focus with no bond, ended focus, Auto at and below a bond skill, no focus no Auto, and a check that no Bond Match file names any maths-record, ladder-place or focus-result writer); picker tests (badge, first on shelf, spoken name, nothing starts by itself, no suggestion = same order and no badge); `BondMatchHub.test.tsx` (reads the ladder once; works as before when it can't be read). The server's "never touches fact records" test still passes. Full run: typecheck, `test:all` (3,879 passed) and build pass (three Space tests timed out once under load and passed on the rerun).
+- **Going live (Part B):** merge `bond-match` to `main` only. No migration, no function deploy.
+
+### Part A proposal (for James)
+
+Checked 20 Oct 2026: the ladder has no hundredths-to-1 (0.35 + 0.65), no decimals-to-10 (3.4 + 6.6) and no fractions-to-1 (⅓ + ⅔). Two ways:
+1. **New ladder skills (recommended):** "Decimals that make 1 and 10" (after Adding and taking away tenths) and "Fractions that make 1" (after A fraction of an amount). Teachers can pick them on Set focus, progress shows them, and Bond Match can open on them. Every class with Auto gets two more steps on its ladder (33 instead of 31), so progress percentages move a little.
+2. **New question types inside existing skills** (hundredths and to-10 inside Adding tenths or Fractions as decimals; fractions-to-1 inside Equivalent fractions): less changes, but teachers can't pick them on their own and Bond Match can't tell them apart from the rest of the skill.
+
+**Part A, later on 20 Oct 2026:** James picked **two new skills**. Built, tested and pushed on branch `maths-bonds` (not live): "Fractions that make 1" and "Decimals that make 1 and 10", five question types each; details in that branch's `docs/MATHS-FOCUS-PLAN.md` ("Decimal and fraction bonds") and go-live steps in `docs/prompts/maths-bonds-golive.md` (redeploy four functions, merge; no migration). Bond Match's map gets `fraction-bonds` and `decimal-bonds` only after that is on `main` (step 4 there).
