@@ -3,7 +3,8 @@
  * (until it is done or skipped) an offer of the warm-up that finds their starting place. It only appears when the class has auto
  * switched on, so a class that has not turned it on sees nothing new. Loaded on its own so the maths code stays out of the home
  * page's first download. On the home page it takes its part of the page's one request (`homePage`, null while that is on its way);
- * anywhere else it asks for itself.
+ * anywhere else it asks for itself. `folded` puts it inside the "My maths" box with the path folded away behind "Show my path"
+ * ("You moved up!" and the warm-up offer still show open).
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
@@ -33,12 +34,15 @@ const write = (key: string, value: string) => {
 
 export default function MathsPathCard({
   homePage,
+  folded = false,
 }: {
   homePage?: Promise<HomePage> | null;
+  folded?: boolean;
 }) {
   const { profile } = useAuth();
   const [data, setData] = useState<MyLadder | null>(null);
   const [passed, setPassed] = useState<string[] | null>(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (homePage === null) return;
@@ -91,11 +95,8 @@ export default function MathsPathCard({
     setPassed(null);
   }
 
-  return (
-    <section className="panel" aria-labelledby="path-title">
-      <h2 id="path-title" className="panel__title">
-        <span aria-hidden="true">🪜</span> My maths path
-      </h2>
+  const news = (
+    <>
       {passed && (
         <div className="moved-up" role="status">
           <p>
@@ -123,11 +124,49 @@ export default function MathsPathCard({
           </Link>
         </div>
       )}
-      <LadderPath
-        progress={progress}
-        facts={data.facts}
-        teacherSkills={teacherSkills}
-      />
+    </>
+  );
+  const path = (
+    <LadderPath
+      progress={progress}
+      facts={data.facts}
+      teacherSkills={teacherSkills}
+    />
+  );
+
+  if (folded)
+    return (
+      <div className="my-maths__path">
+        {news}
+        <p className="my-maths__count">
+          <span aria-hidden="true">🪜</span> My path:{" "}
+          <strong>
+            {progress.secureCount} of {progress.builtCount}
+          </strong>{" "}
+          skills secure
+        </p>
+        <button
+          type="button"
+          className="button button--light-outline my-maths__toggle"
+          aria-expanded={open}
+          aria-controls="my-maths-path"
+          onClick={() => setOpen(!open)}
+        >
+          {open ? "Hide my path" : "Show my path"}
+        </button>
+        <div id="my-maths-path" hidden={!open}>
+          {path}
+        </div>
+      </div>
+    );
+
+  return (
+    <section className="panel" aria-labelledby="path-title">
+      <h2 id="path-title" className="panel__title">
+        <span aria-hidden="true">🪜</span> My maths path
+      </h2>
+      {news}
+      {path}
     </section>
   );
 }

@@ -11,6 +11,7 @@ import { busyPupil, newPupil, sent, setWorld, type World } from './homePageFake'
 vi.mock('../lib/supabase', async () => (await import('./homePageFake')).fakeSupabase());
 
 import { Dashboard } from './Dashboard';
+import { Profile } from './Profile';
 
 const signedIn = (role = 'student') =>
   ({ status: 'signed-in', profile: { id: 'me', display_name: 'Speedy Otter 27', avatar: {}, role }, message: null }) as unknown as AuthState;
@@ -53,20 +54,16 @@ describe('the home page in one request', () => {
     await show(busyPupil());
     expect(screen.getAllByText('Level 2').length).toBeGreaterThan(0);
     expect(screen.getByText('60 points')).toBeInTheDocument();
-    // Recent games: the newest 5 of every kind, with the points and the classmate's name.
+    // Recent games: the newest 3 of every kind, with the points and the classmate's name (the rest are on the profile page).
     const recent = within(screen.getByRole('region', { name: 'Recent games' })).getAllByRole('listitem');
     expect(recent.map((li) => li.textContent)).toEqual([
       'WonChess vs Easy bot+3Today',
       'WonChess vs  Brave Kiwi 7+5Today',
       '1stWormholes & Black Holes with classmatesToday',
-      '2nd101 with classmatesToday',
-      'LostCheckers vs Medium bot (left early)Today',
     ]);
-    expect(statsRow('Against bots', 'Chess')).toBe('Chess3201');
-    // 101 and Power Clash with classmates join chess and checkers against friends.
-    expect(statsRow('Against friends', 'Chess')).toBe('Chess2101');
-    expect(statsRow('Against friends', '101')).toBe('1012110');
-    expect(screen.getByText(/Wormholes & Black Holes: 3 games, 1st place 2 times/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'See more' })).toHaveAttribute('href', '/profile#stats');
+    // The stats tables moved to the profile page.
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
     // Games still going: one of each kind with classmates, two friend games and a link to the rest.
     const going = screen.getByRole('region', { name: 'Games still going' });
     expect(within(going).getAllByRole('link', { name: 'Carry on' })).toHaveLength(5);
@@ -76,17 +73,15 @@ describe('the home page in one request', () => {
     expect(screen.getByText('1 of 2')).toBeInTheDocument();
     // The cards, from the same answer.
     expect(screen.getByRole('region', { name: 'Join your class' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /My maths focus/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /My maths$/ })).toBeInTheDocument();
     expect(screen.getByText(/You can’t change it until it ends/)).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /My maths path/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Show my path' })).not.toBeInTheDocument();
     expect(asked()).toEqual(['rpc my_home_page']);
   });
 
   it('shows a new pupil the same cards and numbers', async () => {
     await show(newPupil());
     expect(screen.getByText('No games yet. Press Play to start your first one!')).toBeInTheDocument();
-    expect(statsRow('Against bots', 'Chess')).toBe('Chess0000');
-    expect(statsRow('Against friends', '101')).toBe('1010000');
     expect(screen.queryByRole('region', { name: 'Games still going' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Join your class' })).not.toBeInTheDocument();
     expect(screen.getByText('Your teacher has set the games to pick for you.')).toBeInTheDocument();
@@ -98,7 +93,6 @@ describe('the home page in one request', () => {
     await show({ ...busyPupil(), down: true });
     expect(screen.getByText('We couldn’t load your games just now.')).toBeInTheDocument();
     expect(within(screen.getByRole('region', { name: /Achievements/ })).getByText('Loading…')).toBeInTheDocument();
-    expect(statsRow('Against bots', 'Chess')).toBe('Chess––––');
     expect(screen.queryByText(/points$/)).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Join your class' })).not.toBeInTheDocument();
     // The focus card falls back to auto, as it did when its own request failed.
@@ -117,7 +111,7 @@ describe('the home page in one request', () => {
     await show(busyPupil(), 'teacher');
     expect(asked()).toEqual(['rpc my_home_page']);
     expect(screen.queryByRole('region', { name: 'Join your class' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /My maths focus/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /My maths/ })).not.toBeInTheDocument();
   });
 
   it('asks again when the pupil comes back from a game, and the switches are still remembered', async () => {
@@ -129,5 +123,47 @@ describe('the home page in one request', () => {
     expect(asked()).toEqual(['rpc my_home_page', 'rpc my_home_page']);
     expect(sent.filter((s) => s === 'from app_settings').length).toBeLessThanOrEqual(1);
     expect(screen.getByText('60 points')).toBeInTheDocument();
+  });
+});
+
+describe('My stats on the profile page', () => {
+  async function showProfile(world: World) {
+    setWorld(world);
+    render(
+      <AuthContext.Provider value={signedIn()}>
+        <MemoryRouter>
+          <Profile />
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+    await settle();
+  }
+  const profileAsked = () => sent.filter((s) => s.startsWith('rpc'));
+
+  it('shows the stats tables that moved from the home page, from the same one request', async () => {
+    await showProfile(busyPupil());
+    const stats = screen.getByRole('region', { name: 'My stats' });
+    expect(statsRow('Against bots', 'Chess')).toBe('Chess3201');
+    // 101 and Power Clash with classmates join chess and checkers against friends.
+    expect(statsRow('Against friends', 'Chess')).toBe('Chess2101');
+    expect(statsRow('Against friends', '101')).toBe('1012110');
+    expect(within(stats).getByText(/Wormholes & Black Holes: 3 games, 1st place 2 times/)).toBeInTheDocument();
+    // More recent games than the home page's 3.
+    expect(within(stats).getAllByRole('listitem').length).toBeGreaterThan(3);
+    expect(within(stats).getByText(/Checkers vs Medium bot/)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'My progress' })).toBeInTheDocument();
+    expect(profileAsked()).toEqual(['rpc my_home_page']);
+  });
+
+  it('shows a new pupil empty tables', async () => {
+    await showProfile(newPupil());
+    expect(statsRow('Against bots', 'Chess')).toBe('Chess0000');
+    expect(statsRow('Against friends', '101')).toBe('1010000');
+  });
+
+  it('shows dashes and a kind message when the request fails', async () => {
+    await showProfile({ ...busyPupil(), down: true });
+    expect(statsRow('Against bots', 'Chess')).toBe('Chess––––');
+    expect(screen.getByText('We couldn’t load your points just now.')).toBeInTheDocument();
   });
 });
