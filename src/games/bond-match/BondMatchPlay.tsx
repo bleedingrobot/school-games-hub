@@ -69,7 +69,8 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
         setSaved(undefined);
       } else {
         setSaved({ status: 'saved', points: result.points });
-        setStars((was) => ({ ...was, [set.id]: { ...was[set.id], [size]: result.best.stars } }));
+        const best = result.best;
+        if (best) setStars((was) => ({ ...was, [set.id]: { ...was[set.id], [size]: best.stars } }));
       }
     }, () => setSaved({ status: 'later' }));
   }

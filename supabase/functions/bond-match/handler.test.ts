@@ -14,6 +14,7 @@ function services(over: Partial<Services> = {}) {
   const games: GameRow[] = [];
   const s: Services = {
     userIdFor: vi.fn(async (token: string) => (token === 'good-token' ? 'student-1' : null)),
+    isOn: vi.fn(async () => true),
     recordGame: vi.fn(async (_player: string, game: GameRow) => {
       games.push(game);
       return {
@@ -47,6 +48,33 @@ describe('the bond-match server function', () => {
     const { s } = services();
     expect((await makeHandler(s)(post({ items: [] }, null))).status).toBe(401);
     expect((await makeHandler(s)(post({ items: [] }, 'fake-token'))).status).toBe(401);
+    expect(s.recordGame).not.toHaveBeenCalled();
+  });
+
+  it('saves nothing while Bond Match is switched off for the class, so the website keeps its queue', async () => {
+    const { s } = services({ isOn: vi.fn(async () => false) });
+    const { status, body } = await send(s, [perfect()]);
+    expect(status).toBe(403);
+    expect(body.error).toMatch(/switched on/);
+    expect(s.recordGame).not.toHaveBeenCalled();
+  });
+
+  it('says "try later" when the class settings can\'t be read', async () => {
+    const { s } = services({ isOn: vi.fn(async () => null) });
+    expect((await send(s, [perfect()])).status).toBe(503);
+    expect(s.recordGame).not.toHaveBeenCalled();
+  });
+
+  it('passes on the game mode: solo when left out, two-player and computer games as sent', async () => {
+    const { s, games } = services();
+    await send(s, [perfect(), { ...perfect('whole-20'), mode: 'pass' }, { ...perfect('whole-100-tens'), mode: 'bot' }]);
+    expect(games.map((g) => g.mode)).toEqual(['solo', 'pass', 'bot']);
+  });
+
+  it('drops an unknown game mode', async () => {
+    const { s } = services();
+    const { body } = await send(s, [{ ...perfect(), mode: 'online' }]);
+    expect(body.results[0]).toEqual({ status: 'invalid', problem: 'bad mode' });
     expect(s.recordGame).not.toHaveBeenCalled();
   });
 
@@ -158,9 +186,9 @@ describe('the bond-match server function', () => {
     expect((await handler(post({ items: [] }))).status).toBe(429);
   });
 
-  it('never touches fact records: it has no way to (the only service is recordGame)', () => {
+  it('never touches fact records: it has no way to (its only services are the sign-in, the switch and recordGame)', () => {
     const { s } = services();
-    expect(Object.keys(s).sort()).toEqual(['recordGame', 'userIdFor']);
+    expect(Object.keys(s).sort()).toEqual(['isOn', 'recordGame', 'userIdFor']);
     expect(BOND_MATCH_SAVE.pointsPerGame).toBe(2);
   });
 });

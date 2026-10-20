@@ -61,15 +61,31 @@ export const BOND_MATCH_SAVE = {
   maxGamesPerDay: 100,
 } as const;
 
+/**
+ * Who played: one student alone ('solo'), two on one Chromebook ('pass') or one against the computer ('bot'). All three
+ * are replayed and earn the same small points; only solo games change bests and stars, because a shared board's flips
+ * aren't one person's memory.
+ */
+export type GameMode = 'solo' | 'pass' | 'bot';
+export const GAME_MODES: readonly GameMode[] = ['solo', 'pass', 'bot'];
+
 /** One finished game to save: the game itself plus the id of this run, so a save sent twice is kept once. */
 export interface BondMatchItem extends BondMatchSave {
   /** Made when the game starts (a UUID). */
   runId: string;
+  /** Left out by queues saved before two-player games existed: those were all solo. */
+  mode?: GameMode;
 }
 
 /** The server's answer for one game. */
 export type SaveResult =
-  | { status: 'saved' | 'duplicate'; points: number | null; stars: 1 | 2 | 3; best: { flips: number; seconds: number; stars: number } }
+  | {
+      status: 'saved' | 'duplicate';
+      points: number | null;
+      stars: 1 | 2 | 3;
+      /** The student's solo best for this bond and size; null after a two-player or computer game when they have none yet. */
+      best: { flips: number; seconds: number; stars: number } | null;
+    }
   | { status: 'invalid'; problem: string };
 
 export interface SaveResponse {
@@ -86,7 +102,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** The fewest seconds a game with this many card flips can honestly take. */
 export const minSecondsFor = (cardFlips: number): number => cardFlips * BOND_MATCH_SAVE.minSecondsPerCardFlip;
 
-export type Checked = { ok: true; item: BondMatchItem; score: Score } | { ok: false; problem: string };
+export type Checked = { ok: true; item: BondMatchItem & { mode: GameMode }; score: Score } | { ok: false; problem: string };
 
 /**
  * Checks one item from the website: the right shape, then the replay (the server's own stars, flips
@@ -99,8 +115,10 @@ export function checkItem(raw: unknown): Checked {
   if (typeof r.bondId !== 'string' || typeof r.size !== 'string') return { ok: false, problem: 'bad bond or size' };
   if (!Number.isInteger(r.seed) || !Number.isInteger(r.seconds)) return { ok: false, problem: 'bad numbers' };
   if (!Array.isArray(r.flips) || r.flips.length > 400 || !r.flips.every((n) => Number.isInteger(n))) return { ok: false, problem: 'bad flips' };
-  const item: BondMatchItem = {
+  if (r.mode !== undefined && !GAME_MODES.includes(r.mode as GameMode)) return { ok: false, problem: 'bad mode' };
+  const item: BondMatchItem & { mode: GameMode } = {
     runId: r.runId,
+    mode: (r.mode as GameMode | undefined) ?? 'solo',
     seed: r.seed as number,
     bondId: r.bondId,
     size: r.size as BoardSize,

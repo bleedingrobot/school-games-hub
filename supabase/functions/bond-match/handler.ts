@@ -7,7 +7,7 @@
  * Items are handled in order and the reply says how many from the front are dealt with, so the
  * website can drop those from its queue and keep the rest for next time.
  */
-import { checkItem, MAX_ITEMS, type SaveResponse, type SaveResult } from '../../../shared/bond-match/save';
+import { checkItem, MAX_ITEMS, type GameMode, type SaveResponse, type SaveResult } from '../../../shared/bond-match/save';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 import { RateLimiter } from '../_shared/limits';
 
@@ -20,6 +20,8 @@ export type Outcome<T> = { ok: true; value: T } | { ok: false; why: 'too-many' |
 /** What record_bond_match_game() takes: the game, with the server's own flip count and stars. */
 export interface GameRow {
   runId: string;
+  /** 'solo', or a two-player ('pass') or against-the-computer ('bot') game, which doesn't change bests. */
+  mode: GameMode;
   bondId: string;
   size: string;
   seed: number;
@@ -35,6 +37,8 @@ export type Saved = Extract<SaveResult, { status: 'saved' | 'duplicate' }>;
 export interface Services {
   /** Who owns this sign-in token? Null if it's missing, expired or fake. */
   userIdFor(token: string): Promise<string | null>;
+  /** Is Bond Match switched on for this student's class? Null if the settings couldn't be read. */
+  isOn(player: string): Promise<boolean | null>;
   recordGame(player: string, game: GameRow): Promise<Outcome<Saved>>;
 }
 
@@ -56,6 +60,11 @@ export function makeHandler(services: Services, now: () => number = () => Date.n
     const player = token ? await services.userIdFor(token) : null;
     if (!player) return reply(401, { error: 'Please sign in again.' });
     if (!limiter.allow(player, MAX_REQUESTS_PER_MINUTE)) return reply(429, { error: 'Slow down a little!' });
+
+    // Switched off for their class: nothing is saved, and the website keeps its queue in case it's switched back on.
+    const on = await services.isOn(player);
+    if (on === null) return reply(503, { error: "We couldn't save your game just now." });
+    if (!on) return reply(403, { error: 'Bond Match isn’t switched on for your class.' });
 
     const body = (await readJsonBody(request)) as { items?: unknown } | null;
     if (!body || !Array.isArray(body.items) || body.items.length > MAX_ITEMS) {

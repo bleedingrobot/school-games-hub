@@ -2,6 +2,29 @@
 // then run `npm run build:functions`. Deploy this file as the "bond-match" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+//#region supabase/functions/_shared/signIn.ts
+/**
+* Who owns this sign-in token? Null if it's missing, expired, fake or not a signed-in user's.
+*
+* With the project's newer sign-in keys, the token's signature is checked right here against the
+* project's public keys (fetched once and kept for 10 minutes), with no trip to the sign-in
+* service. With the older shared secret (or a token signed with a key we don't know), the library
+* asks the sign-in service instead, exactly as `getUser` did. So this works the same before and
+* after the keys are switched in the Supabase dashboard; it only gets cheaper after.
+*/
+function userIdFromToken(auth) {
+	return async (token) => {
+		try {
+			const { data, error } = await auth.getClaims(token);
+			const claims = error ? null : data?.claims;
+			if (!claims || claims.role !== "authenticated" || typeof claims.sub !== "string" || !claims.sub) return null;
+			return claims.sub;
+		} catch {
+			return null;
+		}
+	};
+}
+//#endregion
 //#region shared/bond-match/exact.ts
 const gcd = (a, b) => b === 0 ? Math.abs(a) : gcd(b, a % b);
 function exact(n, d = 1) {
@@ -363,6 +386,11 @@ const BOND_MATCH_SAVE = {
 	pointsGamesPerDay: 10,
 	maxGamesPerDay: 100
 };
+const GAME_MODES = [
+	"solo",
+	"pass",
+	"bot"
+];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** The fewest seconds a game with this many card flips can honestly take. */
 const minSecondsFor = (cardFlips) => cardFlips * BOND_MATCH_SAVE.minSecondsPerCardFlip;
@@ -392,8 +420,13 @@ function checkItem(raw) {
 		ok: false,
 		problem: "bad flips"
 	};
+	if (r.mode !== void 0 && !GAME_MODES.includes(r.mode)) return {
+		ok: false,
+		problem: "bad mode"
+	};
 	const item = {
 		runId: r.runId,
+		mode: r.mode ?? "solo",
 		seed: r.seed,
 		bondId: r.bondId,
 		size: r.size,
@@ -495,6 +528,9 @@ function makeHandler(services, now = () => Date.now()) {
 		const player = token ? await services.userIdFor(token) : null;
 		if (!player) return reply(401, { error: "Please sign in again." });
 		if (!limiter.allow(player, 20)) return reply(429, { error: "Slow down a little!" });
+		const on = await services.isOn(player);
+		if (on === null) return reply(503, { error: "We couldn't save your game just now." });
+		if (!on) return reply(403, { error: "Bond Match isn’t switched on for your class." });
 		const body = await readJsonBody(request);
 		if (!body || !Array.isArray(body.items) || body.items.length > 20) return reply(400, { error: "That couldn't be read." });
 		const results = [];
@@ -563,9 +599,14 @@ async function call(name, args) {
 	};
 }
 Deno.serve(makeHandler({
-	async userIdFor(token) {
-		const { data, error } = await admin.auth.getUser(token);
-		return error ? null : data.user?.id ?? null;
+	userIdFor: userIdFromToken(admin.auth),
+	async isOn(player) {
+		const { data, error } = await admin.rpc("settings_of", { player }).maybeSingle();
+		if (error || !data) {
+			console.error(`bond-match: settings failed (${error?.code ?? "none"})`);
+			return null;
+		}
+		return data.bond_match_enabled === true;
 	},
 	recordGame: (player, game) => call("record_bond_match_game", {
 		player,

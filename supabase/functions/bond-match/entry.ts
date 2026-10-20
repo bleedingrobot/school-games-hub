@@ -1,6 +1,7 @@
 // Connects the bond-match handler to Supabase. Edit handler.ts for the logic, then run
 // `node scripts/build-bond-match.mjs` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
+import { userIdFromToken } from '../_shared/signIn';
 import { makeHandler, type Outcome, type Saved } from './handler';
 
 declare const Deno: {
@@ -33,9 +34,16 @@ async function call<T>(name: string, args: Record<string, unknown>): Promise<Out
 
 Deno.serve(
   makeHandler({
-    async userIdFor(token) {
-      const { data, error } = await admin.auth.getUser(token);
-      return error ? null : (data.user?.id ?? null);
+    // Checks the sign-in token on the spot (no trip to the sign-in service), like the other games.
+    userIdFor: userIdFromToken(admin.auth),
+    async isOn(player) {
+      // The switches of this student's class (or their school's default if they have no class).
+      const { data, error } = await admin.rpc('settings_of', { player }).maybeSingle();
+      if (error || !data) {
+        console.error(`bond-match: settings failed (${error?.code ?? 'none'})`);
+        return null;
+      }
+      return (data as { bond_match_enabled?: boolean }).bond_match_enabled === true;
     },
     recordGame: (player, game) => call<Saved>('record_bond_match_game', { player, game }),
   }),
