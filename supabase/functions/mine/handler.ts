@@ -15,7 +15,9 @@
 import type { FactAnswer } from '../../../shared/maths/leitner';
 import { publicQuestion, seededRandom } from '../../../shared/maths/serverQuestions';
 import type { Question } from '../../../shared/maths/skillPack';
+import { MINE_POINTS_BEST, MINE_POINTS_FIRST } from '../../../shared/mine/config';
 import { makeLevel, recipeById } from '../../../shared/mine/level';
+import { medalFor, type Medal } from '../../../shared/mine/medals';
 import { makeRunQuestions, markQuestion, questionPlan, sameAnswer, type MathsContext, type QuestionPlan, type StartReply } from '../../../shared/mine/maths';
 import {
   isCountedLevel,
@@ -36,7 +38,8 @@ import { RateLimiter } from '../_shared/limits';
 /** 'too-many' (the daily limit), 'refused' (the database said no) and 'busy' (couldn't reach it). */
 export type Outcome<T> = { ok: true; value: T } | { ok: false; why: 'too-many' | 'refused' | 'busy' };
 
-export type SaveResult = 'best' | 'saved' | 'duplicate';
+/** 'first' is a pupil's first finish of a mine, 'best' a better time than their last, 'saved' a slower one. */
+export type SaveResult = 'first' | 'best' | 'saved' | 'duplicate';
 
 /** The question list kept for a run with maths, and the answers marked so far. */
 export interface StoredRun {
@@ -50,8 +53,8 @@ export interface Services {
   userIdFor(token: string): Promise<string | null>;
   /** Signs some text (null if the server has no secret). */
   stamp(text: string): Promise<string | null>;
-  /** The teacher's maths switch for this pupil's class (null if it can't be read). */
-  mathsSwitch(player: string): Promise<MathsSwitch | null>;
+  /** The teacher's switches for this pupil's class: is the game on, and who gets maths (null if they can't be read). */
+  settings(player: string): Promise<{ enabled: boolean; maths: MathsSwitch } | null>;
   /** The pupil's records, the class's question settings and their focus (null if they can't be read). */
   mathsContext(player: string): Promise<MathsContext | null>;
   /** How many runs this pupil has saved in the last day, or 'busy' if the database can't be reached. */
@@ -64,8 +67,12 @@ export interface Services {
   claimAnswer(player: string, seed: string, slot: number, value: number, right: boolean): Promise<boolean | 'busy'>;
   /** Adds answers to the pupil's maths records (sent twice, counted once, by `once`). The run goes on if this fails. */
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
-  /** Saves a replayed run. */
-  record(player: string, report: MineRunReport, run: JudgedRun): Promise<Outcome<SaveResult>>;
+  /** Saves a replayed run, with the medal its time earns (null if none). */
+  record(player: string, report: MineRunReport, run: JudgedRun, medal: Medal | null): Promise<Outcome<SaveResult>>;
+  /** Gives points (once per `once`, inside the hub's daily cap). The run is already saved: a failure is only logged. */
+  awardPoints(player: string, points: number, once: string): Promise<void>;
+  /** Says the pupil's counts changed, so their achievements are checked. A failure is only logged. */
+  progressChanged(player: string): Promise<void>;
   /** Milliseconds since 1970. */
   now(): number;
   /** Random bytes as hex text. */
@@ -137,9 +144,11 @@ export function makeHandler(services: Services) {
       if (!isCountedLevel(level) || (mode !== 'steady' && mode !== 'free')) return reply(400, { error: "That mine couldn't be found." });
       const wantsMaths = body.maths === true;
 
-      // The teacher's switch decides whether this run has maths. If it can't be read, nothing starts.
-      const allowed = await services.mathsSwitch(player);
-      if (!allowed) return reply(503, { error: "The mine couldn't start just now." });
+      // The teacher's switches decide whether the game is on and whether this run has maths. If they can't be read, nothing starts.
+      const settings = await services.settings(player);
+      if (!settings) return reply(503, { error: "The mine couldn't start just now." });
+      if (!settings.enabled) return reply(403, { error: 'Mine Runner is not switched on for your class.', code: 'game-off' });
+      const allowed = settings.maths;
       if (wantsMaths && allowed === 'off') {
         return reply(403, { error: 'Maths is switched off for your class. You can fly this mine without questions.', code: 'maths-off' });
       }
@@ -227,12 +236,14 @@ export function makeHandler(services: Services) {
         console.warn('mine: refused a run (doors, pads or penalties that the answers do not account for)');
         return reply(400, { error: "That run couldn't be saved." });
       }
-      const saved = await services.record(player, report, judged.run);
+      const medal = medalFor(report.level, judged.run.steps);
+      const saved = await services.record(player, report, judged.run, medal);
       if (!saved.ok) {
         if (saved.why === 'too-many') return reply(429, { error: TOO_MANY, code: 'too-many' });
         return saved.why === 'refused' ? reply(400, { error: "That run couldn't be saved." }) : reply(503, { error: "We couldn't save your run just now." });
       }
-      return reply(200, { result: saved.value, steps: judged.run.steps, deaths: judged.run.deaths });
+      if (saved.value !== 'duplicate') await rewardRun(services, player, report.level, saved.value, nowSeconds);
+      return reply(200, { result: saved.value, steps: judged.run.steps, deaths: judged.run.deaths, medal });
     }
 
     return reply(400, { error: "That couldn't be read." });
@@ -257,6 +268,23 @@ export function answersMatch(maths: boolean, stored: StoredRun | null, plan: Que
   const doorSlots = plan.targets.filter((t) => t.kind === 'door');
   const wrongAtDoors = answers.filter((a) => !a.right && doorSlots.some((t) => a.slot >= t.first && a.slot < t.first + t.count)).length;
   return run.penalties === wrongAtDoors;
+}
+
+/** The day in New Zealand (UTC+13 in summer; an hour out in winter, which only moves when "once a day" rolls over). */
+const nzDay = (nowSeconds: number) => new Date((nowSeconds + 13 * 3600) * 1000).toISOString().slice(0, 10);
+
+/**
+ * Points and achievements for a saved run: 2 for the first finish of a mine, 1 for beating your own best (once a day for
+ * each mine), nothing for right answers. Never throws: the run is already saved, so a problem here is only logged.
+ */
+async function rewardRun(services: Services, player: string, level: string, result: SaveResult, nowSeconds: number): Promise<void> {
+  try {
+    if (result === 'first') await services.awardPoints(player, MINE_POINTS_FIRST, `mine-first:${level}`);
+    else if (result === 'best') await services.awardPoints(player, MINE_POINTS_BEST, `mine-best:${level}:${nzDay(nowSeconds)}`);
+    await services.progressChanged(player);
+  } catch {
+    console.error('mine: points or achievements could not be updated');
+  }
 }
 
 /** The maths records are a bonus: if they can't be updated the game goes on (a run is never lost over them). */

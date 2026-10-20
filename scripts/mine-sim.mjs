@@ -41,7 +41,7 @@ writeFileSync(
     "export { recordMathsAnswers } from './supabase/functions/_shared/recordAnswers.ts';",
     "export { parseFocus } from './shared/maths/focus.ts';",
     "export { flyLevel } from './shared/mine/bot.ts';",
-    "export { makeWorld } from './shared/mine/engine.ts';",
+    "export { makeWorld, replay } from './shared/mine/engine.ts';",
     "export { encodeInputs, GRANT, PENALTY } from './shared/mine/inputs.ts';",
     "export { makeLevel, recipeById, RECIPES } from './shared/mine/level.ts';",
     "export { questionPlan } from './shared/mine/maths.ts';",
@@ -132,6 +132,7 @@ if (!(await one("select to_regclass('public.mine_runs')"))) {
   psql.kill();
   process.exit(2);
 }
+await sql('update public.app_settings set mine_enabled = true');
 const pupils = [];
 for (let n = 0; n < PUPILS; n++) {
   const id = (await one(`select gen_random_uuid()`)).trim();
@@ -152,9 +153,11 @@ const handler = mod.makeHandler({
   randomHex: (bytes) => Array.from({ length: bytes }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(''),
   stamp: mod.stamper(secret, 'mine-run'),
   userIdFor: async (token) => byToken.get(token) ?? null,
-  async mathsSwitch(player) {
-    const { body } = await sql(`select mine_maths from public.settings_of('${player}')`);
-    return body || null;
+  async settings(player) {
+    const { body } = await sql(`select mine_enabled || '|' || mine_maths from public.settings_of('${player}')`);
+    if (!body) return null;
+    const [enabled, maths] = body.split('|');
+    return { enabled: enabled === 'true' || enabled === 't', maths };
   },
   async mathsContext(player) {
     const { data } = await rpc('space_maths_context', { player });
@@ -180,10 +183,16 @@ const handler = mod.makeHandler({
   async recordAnswers(player, once, answers) {
     await mod.recordMathsAnswers(rpc, player, answers, once, 'mine');
   },
-  async record(player, report, run) {
+  async awardPoints(player, points, once) {
+    await rpc('add_game_points', { player, game: 'mine', points, once });
+  },
+  async progressChanged(player) {
+    await rpc('game_progress_changed', { player, game: 'mine' });
+  },
+  async record(player, report, run, medal) {
     const { data, error } = await rpc('record_mine_run', {
       player, seed: report.seed, level: report.level, mode: report.mode, maths: report.maths, steps: run.steps,
-      grants: run.grants.length, wrong: run.penalties, inputs: report.inputs, daily_limit: mod.MINE_RUNS_PER_DAY,
+      grants: run.grants.length, wrong: run.penalties, inputs: report.inputs, daily_limit: mod.MINE_RUNS_PER_DAY, medal,
     });
     if (error) return { ok: false, why: /54000|lot of mining/.test(error.message) ? 'too-many' : 'busy' };
     return { ok: true, value: data };
@@ -239,11 +248,14 @@ for (const pupil of pupils) {
       if (at < 0) continue;
       const answerBody = (slot, value) => ({ action: 'answer', seed, stamp, level, mode: 'steady', slot, value, ms: 4000 });
       let slot = door.first;
-      if (Math.random() < WRONG) {
+      // A wrong answer adds a penalty step to the flight. The pretend pilot can't dodge, so the extra damage can change how the
+      // rest of its recorded flight plays out; only use a wrong answer where the flight still reaches the exit.
+      const tried = [...runs.slice(0, at), [mod.PENALTY, 1], ...runs.slice(at)];
+      if (Math.random() < WRONG && mod.replay(world, tried).outcome === 'finished') {
         const r = await call(pupil, answerBody(slot, 99999));
         wrongAnswers++;
         if (r.status !== 200) console.error('answer problem', r.status, r.body);
-        runs = [...runs.slice(0, at), [mod.PENALTY, 1], ...runs.slice(at)];
+        runs = tried;
         slot++;
       }
       // The right answer is whatever the server stored: ask the database for it (the pupil's browser would be told the mark, not the answer).
@@ -294,7 +306,7 @@ psql.stdin.end();
 
 const handlerRequests = counts.start + counts.answer + counts.finish;
 const browserTotal = browserCalls.settings + browserCalls.my_mine + browserCalls.mine_board;
-const runsPlayed = outcomes.best + outcomes.saved + outcomes.duplicate;
+const runsPlayed = (outcomes.first ?? 0) + outcomes.best + outcomes.saved + outcomes.duplicate;
 console.log(`\nA pretend class: ${PUPILS} pupils, ${LEVELS} mines each (${runsPlayed} saved runs, ${outcomes.refused} refused), ${(WRONG * 100).toFixed(0)}% of question doors wrong first. Took ${seconds.toFixed(1)} s.`);
 console.log(`\nServer function requests (each is one function call):`);
 console.log(`  start   ${String(counts.start).padStart(6)}`);

@@ -299,7 +299,7 @@ function newStats(key) {
 }
 const nzDayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
 /** The New Zealand date of a moment, as YYYY-MM-DD. */
-const nzDay = (at) => nzDayFormat.format(new Date(at));
+const nzDay$1 = (at) => nzDayFormat.format(new Date(at));
 /** The stats after one answer. Doesn't change the stats it's given. */
 function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
 	const ms = keptMs(rawMs);
@@ -317,7 +317,7 @@ function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
 		return next;
 	}
 	if (ms > quickMs) return next;
-	const day = nzDay(at);
+	const day = nzDay$1(at);
 	if (!next.quickDays.includes(day)) next.quickDays = [...next.quickDays, day].slice(-2);
 	const canBeFluent = next.quickDays.length >= 2;
 	next.box = Math.min(stats.box + 1, canBeFluent ? 4 : 3);
@@ -8077,6 +8077,80 @@ function publicQuestion(q, slot) {
 	};
 }
 //#endregion
+//#region shared/mine/medals.ts
+const MEDALS = {
+	l1: {
+		gold: 95,
+		silver: 130,
+		bronze: 200
+	},
+	l2: {
+		gold: 100,
+		silver: 140,
+		bronze: 210
+	},
+	l3: {
+		gold: 165,
+		silver: 230,
+		bronze: 350
+	},
+	l4: {
+		gold: 230,
+		silver: 320,
+		bronze: 480
+	},
+	l5: {
+		gold: 310,
+		silver: 430,
+		bronze: 650
+	},
+	l6: {
+		gold: 450,
+		silver: 630,
+		bronze: 950
+	},
+	"l1:hard": {
+		gold: 105,
+		silver: 145,
+		bronze: 215
+	},
+	"l2:hard": {
+		gold: 125,
+		silver: 170,
+		bronze: 260
+	},
+	"l3:hard": {
+		gold: 185,
+		silver: 255,
+		bronze: 385
+	},
+	"l4:hard": {
+		gold: 250,
+		silver: 350,
+		bronze: 520
+	},
+	"l5:hard": {
+		gold: 330,
+		silver: 455,
+		bronze: 685
+	},
+	"l6:hard": {
+		gold: 475,
+		silver: 665,
+		bronze: 1e3
+	}
+};
+/** The medal for a finish time in clock steps (30 a second), or null if it's slower than bronze. */
+function medalFor(levelId, finishSteps) {
+	const m = MEDALS[levelId];
+	if (!m) return null;
+	const seconds = finishSteps / 30;
+	if (seconds <= m.gold) return "gold";
+	if (seconds <= m.silver) return "silver";
+	if (seconds <= m.bronze) return "bronze";
+	return null;
+}
+//#endregion
 //#region shared/space/mathsQuestion.ts
 /**
 * Which question Mission Control asks next: the same choice in the bot game (the browser) and
@@ -8281,8 +8355,13 @@ function makeHandler(services) {
 			const { level, mode } = body;
 			if (!isCountedLevel(level) || mode !== "steady" && mode !== "free") return reply(400, { error: "That mine couldn't be found." });
 			const wantsMaths = body.maths === true;
-			const allowed = await services.mathsSwitch(player);
-			if (!allowed) return reply(503, { error: "The mine couldn't start just now." });
+			const settings = await services.settings(player);
+			if (!settings) return reply(503, { error: "The mine couldn't start just now." });
+			if (!settings.enabled) return reply(403, {
+				error: "Mine Runner is not switched on for your class.",
+				code: "game-off"
+			});
+			const allowed = settings.maths;
 			if (wantsMaths && allowed === "off") return reply(403, {
 				error: "Maths is switched off for your class. You can fly this mine without questions.",
 				code: "maths-off"
@@ -8378,7 +8457,8 @@ function makeHandler(services) {
 				console.warn("mine: refused a run (doors, pads or penalties that the answers do not account for)");
 				return reply(400, { error: "That run couldn't be saved." });
 			}
-			const saved = await services.record(player, report, judged.run);
+			const medal = medalFor(report.level, judged.run.steps);
+			const saved = await services.record(player, report, judged.run, medal);
 			if (!saved.ok) {
 				if (saved.why === "too-many") return reply(429, {
 					error: TOO_MANY,
@@ -8386,10 +8466,12 @@ function makeHandler(services) {
 				});
 				return saved.why === "refused" ? reply(400, { error: "That run couldn't be saved." }) : reply(503, { error: "We couldn't save your run just now." });
 			}
+			if (saved.value !== "duplicate") await rewardRun(services, player, report.level, saved.value, nowSeconds);
 			return reply(200, {
 				result: saved.value,
 				steps: judged.run.steps,
-				deaths: judged.run.deaths
+				deaths: judged.run.deaths,
+				medal
 			});
 		}
 		return reply(400, { error: "That couldn't be read." });
@@ -8416,6 +8498,21 @@ function answersMatch(maths, stored, plan, run) {
 	const doorSlots = plan.targets.filter((t) => t.kind === "door");
 	const wrongAtDoors = answers.filter((a) => !a.right && doorSlots.some((t) => a.slot >= t.first && a.slot < t.first + t.count)).length;
 	return run.penalties === wrongAtDoors;
+}
+/** The day in New Zealand (UTC+13 in summer; an hour out in winter, which only moves when "once a day" rolls over). */
+const nzDay = (nowSeconds) => new Date((nowSeconds + 46800) * 1e3).toISOString().slice(0, 10);
+/**
+* Points and achievements for a saved run: 2 for the first finish of a mine, 1 for beating your own best (once a day for
+* each mine), nothing for right answers. Never throws: the run is already saved, so a problem here is only logged.
+*/
+async function rewardRun(services, player, level, result, nowSeconds) {
+	try {
+		if (result === "first") await services.awardPoints(player, 2, `mine-first:${level}`);
+		else if (result === "best") await services.awardPoints(player, 1, `mine-best:${level}:${nzDay(nowSeconds)}`);
+		await services.progressChanged(player);
+	} catch {
+		console.error("mine: points or achievements could not be updated");
+	}
 }
 /** The maths records are a bonus: if they can't be updated the game goes on (a run is never lost over them). */
 async function safeRecord(services, player, once, answers) {
@@ -8472,13 +8569,17 @@ Deno.serve(makeHandler({
 	randomHex: (bytes) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, "0")).join(""),
 	stamp: stamper(key, "mine-run"),
 	userIdFor: userIdFromToken(admin.auth),
-	async mathsSwitch(player) {
+	async settings(player) {
 		const { data, error } = await admin.rpc("settings_of", { player }).maybeSingle();
 		if (error || !data) {
 			console.error(`mine: settings failed (${error?.code ?? "none"})`);
 			return null;
 		}
-		return parseMathsSwitch(data.mine_maths);
+		const row = data;
+		return {
+			enabled: row.mine_enabled === true,
+			maths: parseMathsSwitch(row.mine_maths)
+		};
 	},
 	async mathsContext(player) {
 		const { data, error } = await admin.rpc("space_maths_context", { player });
@@ -8551,7 +8652,23 @@ Deno.serve(makeHandler({
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "mine");
 	},
-	record: (player, report, run) => call("record_mine_run", {
+	async awardPoints(player, points, once) {
+		const { error } = await admin.rpc("add_game_points", {
+			player,
+			game: "mine",
+			points,
+			once
+		});
+		if (error) console.error(`mine: points failed (${error.code ?? "unknown"})`);
+	},
+	async progressChanged(player) {
+		const { error } = await admin.rpc("game_progress_changed", {
+			player,
+			game: "mine"
+		});
+		if (error) console.error(`mine: achievements failed (${error.code ?? "unknown"})`);
+	},
+	record: (player, report, run, medal) => call("record_mine_run", {
 		player,
 		seed: report.seed,
 		level: report.level,
@@ -8561,7 +8678,8 @@ Deno.serve(makeHandler({
 		grants: run.grants.length,
 		wrong: run.penalties,
 		inputs: report.inputs,
-		daily_limit: 20
+		daily_limit: 20,
+		medal
 	})
 }));
 //#endregion

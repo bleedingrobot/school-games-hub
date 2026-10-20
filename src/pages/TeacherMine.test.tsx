@@ -8,11 +8,36 @@ vi.mock('../data/mine', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/mine')>()),
   fetchMineMaths: vi.fn(),
   saveMineMaths: vi.fn(),
+  fetchMineEnabled: vi.fn(),
+  saveMineEnabled: vi.fn(),
 }));
 
 beforeEach(() => {
   vi.mocked(mine.fetchMineMaths).mockResolvedValue('choose');
   vi.mocked(mine.saveMineMaths).mockReset().mockResolvedValue();
+  vi.mocked(mine.fetchMineEnabled).mockResolvedValue(false);
+  vi.mocked(mine.saveMineEnabled).mockReset().mockResolvedValue();
+});
+
+describe('the Mine Runner game switch on the Teacher page', () => {
+  it('shows the game is off to start with, and switches it on and off', async () => {
+    const user = userEvent.setup();
+    render(<MineTeacherPanel />);
+    await user.click(await screen.findByRole('button', { name: 'Switch Mine Runner on' }));
+    expect(mine.saveMineEnabled).toHaveBeenCalledWith(true, null);
+    expect(await screen.findByRole('status')).toHaveTextContent('Mine Runner: On.');
+    await user.click(await screen.findByRole('button', { name: 'Switch Mine Runner off' }));
+    expect(mine.saveMineEnabled).toHaveBeenLastCalledWith(false, null);
+  });
+
+  it('says why when the switch cannot be saved, and keeps the old setting', async () => {
+    vi.mocked(mine.saveMineEnabled).mockRejectedValue(new Error('nope'));
+    const user = userEvent.setup();
+    render(<MineTeacherPanel />);
+    await user.click(await screen.findByRole('button', { name: 'Switch Mine Runner on' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Something went wrong');
+    expect(screen.getByRole('button', { name: 'Switch Mine Runner on' })).toBeInTheDocument();
+  });
 });
 
 describe('the Mine Runner maths switch on the Teacher page', () => {

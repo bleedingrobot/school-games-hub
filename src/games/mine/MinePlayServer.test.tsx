@@ -175,6 +175,14 @@ describe('starting a dive', () => {
     expect(session()).toBeUndefined();
   });
 
+  it('says so, and offers nothing to count, when the teacher has switched the game off for the class', async () => {
+    mocks.startRun.mockResolvedValue({ ok: false, reason: 'game-off', message: 'Mine Runner is not switched on for your class.' });
+    await play('Otago Diggings');
+    expect(await screen.findByRole('alert')).toHaveTextContent(/not switched on/);
+    expect(screen.queryByRole('button', { name: /Fly it as practice/ })).toBeNull();
+    expect(session()).toBeUndefined();
+  });
+
   it('offers practice, which counts for nothing, when the server can’t be reached', async () => {
     mocks.startRun.mockResolvedValue({ ok: false, reason: 'offline', message: 'The school server could not be reached, so this dive won’t count.' });
     const u = await play('Otago Diggings');

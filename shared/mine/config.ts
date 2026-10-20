@@ -129,3 +129,9 @@ export const REBUILD_SHIELD = 70;
 
 /** The most doors and pads a level may have (a GRANT input names one by number). */
 export const MAX_TARGETS = 64;
+
+// ——— Points (docs/MINE-PLAN.md, section 9): small, inside the hub's daily cap, nothing for right answers ———
+/** Points for a pupil's first finish of a mine. (The wording on How points work is in the 20261021000200 migration.) */
+export const MINE_POINTS_FIRST = 2;
+/** Points for beating your own best on a mine, once a day for each mine. */
+export const MINE_POINTS_BEST = 1;

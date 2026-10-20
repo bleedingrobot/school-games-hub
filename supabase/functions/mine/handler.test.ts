@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { flyLevel } from '../../../shared/mine/bot';
 import { makeWorld } from '../../../shared/mine/engine';
 import { encodeInputs, GRANT, PENALTY } from '../../../shared/mine/inputs';
+import { medalFor } from '../../../shared/mine/medals';
 import { makeLevel, recipeById } from '../../../shared/mine/level';
 import { DOOR_QUESTIONS, PAD_QUESTIONS, questionPlan, type MathsContext } from '../../../shared/mine/maths';
 import { MAX_INPUTS_TEXT, MINE_RUNS_PER_DAY, mineStampText } from '../../../shared/mine/save';
@@ -26,7 +27,7 @@ function services(over: Partial<Services> = {}, settings: 'off' | 'choose' | 'on
     randomHex: (bytes) => 'ab'.repeat(bytes),
     stamp: fakeStamp,
     userIdFor: vi.fn(async (token: string) => (token === 'good-token' ? 'pupil-1' : token === 'other-token' ? 'pupil-2' : null)),
-    mathsSwitch: async () => settings,
+    settings: async () => ({ enabled: true, maths: settings }),
     mathsContext: async () => CONTEXT,
     runsToday: async () => 0,
     storeRun: async (_p, seed, level, questions) => {
@@ -43,7 +44,9 @@ function services(over: Partial<Services> = {}, settings: 'off' | 'choose' | 'on
     recordAnswers: vi.fn(async (_p, once, answers) => {
       recorded.push({ once, answers });
     }),
-    record: vi.fn(async () => ({ ok: true as const, value: 'best' as const })),
+    record: vi.fn(async () => ({ ok: true as const, value: 'first' as const })),
+    awardPoints: vi.fn(async () => {}),
+    progressChanged: vi.fn(async () => {}),
     ...over,
   };
   return { s, runs, clock, recorded };
@@ -201,7 +204,7 @@ describe('starting a run', () => {
   });
 
   it('does not start if the teacher’s switch, the records or the question list cannot be had', async () => {
-    expect((await send(services({ mathsSwitch: async () => null }).s, startBody())).status).toBe(503);
+    expect((await send(services({ settings: async () => null }).s, startBody())).status).toBe(503);
     expect((await send(services({ mathsContext: async () => null }).s, startBody())).status).toBe(503);
     expect((await send(services({ storeRun: async () => false }).s, startBody())).status).toBe(503);
   });
@@ -353,7 +356,7 @@ describe('finishing a run', () => {
     h.clock.now += 400_000;
     const { status, body } = await send(h.s, finishBody(b, bot.runs));
     expect(status).toBe(200);
-    expect(body.result).toBe('best');
+    expect(body.result).toBe('first');
     expect(body.steps).toBe(bot.state.finishSteps);
     const [player, report, run] = vi.mocked(h.s.record).mock.calls[0];
     expect(player).toBe('pupil-1');
@@ -578,6 +581,73 @@ describe('finishing a run', () => {
       expect(status, id).toBe(200);
       expect(vi.mocked(h.s.record).mock.calls[0][2].steps, id).toBe(bot.state.finishSteps);
     }
+  });
+});
+
+describe('the teacher’s game switch', () => {
+  it('starts nothing while the game is switched off for the class', async () => {
+    const { s, runs } = services({ settings: async () => ({ enabled: false, maths: 'choose' as const }) });
+    const { status, body } = await send(s, startBody());
+    expect(status).toBe(403);
+    expect(body.code).toBe('game-off');
+    expect(body.error).toMatch(/not switched on/);
+    expect(runs.size).toBe(0);
+    expect(s.runsToday).toBeDefined();
+  });
+});
+
+describe('points and achievements for a saved run', () => {
+  async function finishWith(value: 'first' | 'best' | 'saved' | 'duplicate', over: Partial<Services> = {}) {
+    const h = services({ record: vi.fn(async () => ({ ok: true as const, value })), ...over });
+    const { bot } = fly('l1', false);
+    const b = await begin(h, 'l1', false);
+    h.clock.now += 400_000;
+    const sent = await send(h.s, finishBody(b, bot.runs, false));
+    return { h, sent, bot };
+  }
+
+  it('gives 2 points for a first finish, and checks achievements', async () => {
+    const { h, sent } = await finishWith('first');
+    expect(sent.status).toBe(200);
+    expect(h.s.awardPoints).toHaveBeenCalledTimes(1);
+    expect(h.s.awardPoints).toHaveBeenCalledWith('pupil-1', 2, 'mine-first:l1');
+    expect(h.s.progressChanged).toHaveBeenCalledWith('pupil-1');
+  });
+
+  it('gives 1 point for a better time, once a day for each mine', async () => {
+    const { h } = await finishWith('best');
+    const [, points, once] = vi.mocked(h.s.awardPoints).mock.calls[0];
+    expect(points).toBe(1);
+    expect(once).toMatch(/^mine-best:l1:\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('gives nothing for a slower time, but still checks achievements (answers count towards some)', async () => {
+    const { h } = await finishWith('saved');
+    expect(h.s.awardPoints).not.toHaveBeenCalled();
+    expect(h.s.progressChanged).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing for a run saved before', async () => {
+    const { h, sent } = await finishWith('duplicate');
+    expect(sent.body.result).toBe('duplicate');
+    expect(h.s.awardPoints).not.toHaveBeenCalled();
+    expect(h.s.progressChanged).not.toHaveBeenCalled();
+  });
+
+  it('keeps the run even if the points or achievements cannot be updated', async () => {
+    const { sent } = await finishWith('first', {
+      awardPoints: async () => { throw new Error('down'); },
+      progressChanged: async () => { throw new Error('down'); },
+    });
+    expect(sent.status).toBe(200);
+    expect(sent.body.result).toBe('first');
+  });
+
+  it('works out the medal itself and gives it to the database and back', async () => {
+    const { h, sent, bot } = await finishWith('first');
+    const medal = vi.mocked(h.s.record).mock.calls[0][3];
+    expect(medal).toBe(medalFor('l1', bot.state.finishSteps));
+    expect(sent.body.medal).toBe(medal);
   });
 });
 

@@ -45,14 +45,15 @@ Deno.serve(
     randomHex: (bytes) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, '0')).join(''),
     stamp: stamper(key, 'mine-run'),
     userIdFor: userIdFromToken(admin.auth),
-    async mathsSwitch(player) {
-      // The switch of this pupil's class (or their school's default if they have no class).
+    async settings(player) {
+      // The switches of this pupil's class (or their school's default if they have no class).
       const { data, error } = await admin.rpc('settings_of', { player }).maybeSingle();
       if (error || !data) {
         console.error(`mine: settings failed (${error?.code ?? 'none'})`);
         return null;
       }
-      return parseMathsSwitch((data as { mine_maths?: string }).mine_maths);
+      const row = data as { mine_enabled?: boolean; mine_maths?: string };
+      return { enabled: row.mine_enabled === true, maths: parseMathsSwitch(row.mine_maths) };
     },
     async mathsContext(player): Promise<MathsContext | null> {
       const { data, error } = await admin.rpc('space_maths_context', { player });
@@ -108,7 +109,15 @@ Deno.serve(
       // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'mine');
     },
-    record: (player, report, run) =>
+    async awardPoints(player, points, once) {
+      const { error } = await admin.rpc('add_game_points', { player, game: 'mine', points, once });
+      if (error) console.error(`mine: points failed (${error.code ?? 'unknown'})`);
+    },
+    async progressChanged(player) {
+      const { error } = await admin.rpc('game_progress_changed', { player, game: 'mine' });
+      if (error) console.error(`mine: achievements failed (${error.code ?? 'unknown'})`);
+    },
+    record: (player, report, run, medal) =>
       call<SaveResult>('record_mine_run', {
         player,
         seed: report.seed,
@@ -120,6 +129,7 @@ Deno.serve(
         wrong: run.penalties,
         inputs: report.inputs,
         daily_limit: MINE_RUNS_PER_DAY,
+        medal,
       }),
   }),
 );

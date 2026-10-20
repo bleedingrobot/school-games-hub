@@ -1,5 +1,5 @@
 /** The choices a pupil can change, remembered on this device: flight, goal arrow, motion, mouse and touch. */
-import { WRONG_ANSWER_DAMAGE, WRONG_ANSWER_STEPS, STEPS_PER_SECOND, REBUILD_PENALTY_STEPS } from '../../../shared/mine/config';
+import { MINE_POINTS_BEST, MINE_POINTS_FIRST, WRONG_ANSWER_DAMAGE, WRONG_ANSWER_STEPS, STEPS_PER_SECOND, REBUILD_PENALTY_STEPS } from '../../../shared/mine/config';
 import type { MinePrefs } from './prefs';
 
 export function SettingsPanel({
@@ -100,6 +100,10 @@ export function HowToPlayBody({ questions }: { questions: boolean }) {
         <li><strong>Race back to the exit</strong> before the timer runs out.</li>
       </ol>
       <p>If your shield runs out, your ship is rebuilt in the last room you were in and {Math.round(REBUILD_PENALTY_STEPS / STEPS_PER_SECOND)} seconds are added to your time. You never lose your keys.</p>
+      <p>
+        Your best time on each mine goes on your school’s board (names and avatars only). Finish a mine for the first time for {MINE_POINTS_FIRST} points, and beat your own best for {MINE_POINTS_BEST}{' '}
+        point (once a day for each mine). Right answers earn no points, so there is no need to rush them.
+      </p>
       <p>Feeling dizzy? Turn on Steady flight and Less motion in Settings, and fly slowly.</p>
     </div>
   );

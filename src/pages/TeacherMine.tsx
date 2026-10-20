@@ -1,12 +1,11 @@
 /**
- * Mine Runner maths on the teacher page (docs/MINE-PLAN.md, section 7): who gets the questions at the question doors and
- * power-up pads. Per class, like the other game switches. The server checks it at the start of every run, so nobody can
- * start a maths run while the switch is off. (The game's own on/off switch comes with the hub fit, in stage 5. This panel
- * is not on the shared teacher page yet.)
+ * Mine Runner on the teacher page: the game's on/off switch for the class, and (docs/MINE-PLAN.md, section 7) who gets the
+ * questions at the question doors and power-up pads. Per class, like the other game switches. The server checks both at
+ * the start of every run, so nobody can start a dive while the game is off, or a maths dive while maths is off.
  */
 import { useEffect, useState } from 'react';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
-import { fetchMineMaths, saveMineMaths } from '../data/mine';
+import { fetchMineEnabled, fetchMineMaths, saveMineEnabled, saveMineMaths } from '../data/mine';
 import { FriendlyError } from '../data/profile';
 import { useTeacherClass } from '../teacher/TeacherClass';
 
@@ -21,14 +20,28 @@ const errorText = (error: unknown) => (error instanceof FriendlyError ? error.me
 export function MineTeacherPanel() {
   const { classId, ready } = useTeacherClass();
   const [mode, setMode] = useState<MathsSwitch | null>(null);
+  const [on, setOn] = useState<boolean | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ready) return;
     setMode(null);
+    setOn(null);
     setStatus(null);
     fetchMineMaths(classId).then(setMode, () => setStatus('We couldn’t load this setting.'));
+    fetchMineEnabled(classId).then(setOn, () => setStatus('We couldn’t load this setting.'));
   }, [ready, classId]);
+
+  async function changeOn(next: boolean) {
+    setStatus('Saving…');
+    try {
+      await saveMineEnabled(next, classId);
+      setOn(next);
+      setStatus(`Mine Runner: ${next ? 'On' : 'Off'}.`);
+    } catch (error) {
+      setStatus(errorText(error));
+    }
+  }
 
   async function change(next: MathsSwitch) {
     setStatus('Saving…');
@@ -44,8 +57,28 @@ export function MineTeacherPanel() {
   return (
     <section className="panel teacher__switch" aria-labelledby="mine-maths-title">
       <h2 id="mine-maths-title" className="panel__title">
-        Mine Runner maths
+        Mine Runner
       </h2>
+      <p>
+        Fly a ship through twisting mines, find keys, blow up the reactor and race to the exit. Each pupil’s best times go on a board for
+        your school only (display names and avatars, nothing else). Finishing a mine for the first time earns 2 points, and beating your own
+        best earns 1 point once a day for each mine.
+      </p>
+      {on !== null && (
+        <p>
+          <strong>Mine Runner:</strong> {on ? 'On for this class.' : 'Off for this class (pupils don’t see it).'}{' '}
+          {on ? (
+            <button type="button" className="button button--danger" onClick={() => void changeOn(false)}>
+              Switch Mine Runner off
+            </button>
+          ) : (
+            <button type="button" className="button button--primary" onClick={() => void changeOn(true)}>
+              Switch Mine Runner on
+            </button>
+          )}
+        </p>
+      )}
+      <h3>Maths</h3>
       <p>
         Question doors and power-up pads. The questions follow each student’s maths focus (the Maths focus page) and their own records, and
         what they answer goes into those records. A wrong answer at a question door costs a little shield and a few seconds, never the

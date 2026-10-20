@@ -86,7 +86,7 @@ async function readError(response: Response): Promise<{ message: string; code: s
 export type StartResult =
   | { ok: true; run: StartReply }
   /** `offline`: the server could not be reached or could not make the run (the mine can still be played as practice). */
-  | { ok: false; reason: 'offline' | 'maths-off' | 'maths-on' | 'too-many'; message: string };
+  | { ok: false; reason: 'offline' | 'maths-off' | 'maths-on' | 'too-many' | 'game-off'; message: string };
 
 /**
  * Starts a counted run: a stamped seed, and with maths the run's questions. If the server can't be reached the mine can
@@ -98,7 +98,7 @@ export async function startRun(level: string, mode: FlightMode, maths: boolean):
   if (!response) return offline;
   if (!response.ok) {
     const { message, code } = await readError(response);
-    if (code === 'maths-off' || code === 'maths-on' || code === 'too-many') return { ok: false, reason: code, message };
+    if (code === 'maths-off' || code === 'maths-on' || code === 'too-many' || code === 'game-off') return { ok: false, reason: code, message };
     return offline;
   }
   try {
@@ -216,7 +216,20 @@ export async function loadBoard(level: string, maths: boolean): Promise<Board | 
   }
 }
 
-// ---------------------------------------------------------------- the teacher's maths switch
+// ---------------------------------------------------------------- the teacher's switches
+
+/** Is Mine Runner switched on for this class? Throws a friendly error if it can't be read. */
+export async function fetchMineEnabled(classId?: string | null): Promise<boolean> {
+  const row = await readSettings(['mine_enabled'], classId);
+  if (!row) throw new FriendlyError('We couldn’t load the Mine Runner setting.');
+  return row.mine_enabled === true;
+}
+
+export async function saveMineEnabled(enabled: boolean, classId?: string | null): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_mine', { enabled, target_class: classId ?? null });
+  forgetSettings();
+  if (error) throw new FriendlyError('We couldn’t change that.');
+}
 
 /** What the teacher allows for Mine Runner maths in a class. If it can't be read, maths stays off. */
 export async function fetchMineMaths(classId?: string | null): Promise<MathsSwitch> {

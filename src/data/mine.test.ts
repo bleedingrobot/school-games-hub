@@ -10,7 +10,7 @@ vi.mock('../lib/supabase', () => ({
 
 import { forgetSettings } from './settingsMemory';
 import {
-  answerQuestion, bestKey, enqueueRun, fetchMineMaths, flushRuns, forgetOutcomes, loadBoard, loadServerBests, outcomeOf, queuedRuns, saveMineMaths, startRun,
+  answerQuestion, bestKey, enqueueRun, fetchMineEnabled, fetchMineMaths, saveMineEnabled, flushRuns, forgetOutcomes, loadBoard, loadServerBests, outcomeOf, queuedRuns, saveMineMaths, startRun,
 } from './mine';
 
 const fetchMock = vi.fn<typeof fetch>();
@@ -154,6 +154,25 @@ describe('bests, boards and the teacher’s switch', () => {
     expect(rpc).toHaveBeenCalledWith('teacher_set_mine_maths', { mode: 'on', target_class: 'class-1' });
     rpc.mockResolvedValue({ data: null, error: { code: '42501' } });
     await expect(saveMineMaths('off')).rejects.toThrow(/couldn’t change/);
+  });
+
+  it('reads and saves the game switch', async () => {
+    rpc.mockResolvedValue({ data: { mine_enabled: true }, error: null });
+    expect(await fetchMineEnabled('class-9')).toBe(true);
+    rpc.mockResolvedValue({ data: { mine_enabled: 'yes' }, error: null });
+    expect(await fetchMineEnabled('class-8')).toBe(false);
+    rpc.mockResolvedValue({ data: null, error: { code: 'x' } });
+    await expect(fetchMineEnabled('class-7')).rejects.toThrow(/couldn’t load/);
+    rpc.mockResolvedValue({ data: null, error: null });
+    await saveMineEnabled(true, 'class-9');
+    expect(rpc).toHaveBeenLastCalledWith('teacher_set_mine', { enabled: true, target_class: 'class-9' });
+    rpc.mockResolvedValue({ data: null, error: { code: '42501' } });
+    await expect(saveMineEnabled(false)).rejects.toThrow(/couldn’t change/);
+  });
+
+  it('passes on the game being switched off when a dive starts', async () => {
+    fetchMock.mockResolvedValue(json({ error: 'Mine Runner is not switched on for your class.', code: 'game-off' }, 403));
+    expect(await startRun('l1', 'steady', false)).toMatchObject({ ok: false, reason: 'game-off' });
   });
 
   it('reads the switch for a class, and counts anything odd as off', async () => {

@@ -38,7 +38,7 @@ create function pg_temp.id(who text) returns uuid language sql as $$ select ('00
 create function pg_temp.save(who text, n integer, in_steps integer, in_level text default 'l3',
   in_maths boolean default false, in_daily integer default 20, in_mode text default 'steady') returns text language sql as $$
   select public.record_mine_run(pg_temp.id(who), 'seed-for-run-' || who || '-' || n, in_level, in_mode, in_maths,
-    in_steps, 0, 0, '1x' || in_steps, in_daily)
+    in_steps, 0, 0, '1x' || in_steps, in_daily, null)
 $$;
 
 -- ---- Nobody reaches the tables or the saving functions directly ----
@@ -57,20 +57,20 @@ select pg_temp.reset();
 
 -- ---- Saving (the server only) ----
 select pg_temp.act_as_server();
-select is(pg_temp.save('0a', 1, 3000), 'best', 'a first run is a best');
+select is(pg_temp.save('0a', 1, 3000), 'first', 'a first run is the pupil''s first finish of the mine');
 select is(pg_temp.save('0a', 1, 3000), 'duplicate', 'the same seed again is not counted twice');
 select is((select count(*)::integer from public.mine_runs where player = pg_temp.id('0a')), 1, '... and adds no run');
 select is(pg_temp.save('0a', 2, 3500), 'saved', 'a slower run is saved but is not a best');
 select is((select steps from public.mine_bests where player = pg_temp.id('0a')), 3000, '... and the best stays');
-select is(pg_temp.save('0a', 3, 2900), 'best', 'a faster run is a new best');
+select is(pg_temp.save('0a', 3, 2900), 'best', 'a faster run is a new best (not a first)');
 select is((select steps from public.mine_bests where player = pg_temp.id('0a') and level = 'l3'), 2900, '... and replaces the best');
 select is((select inputs from public.mine_bests where player = pg_temp.id('0a')), '1x2900', '... with its recorded inputs');
 select is(pg_temp.save('0a', 4, 2900), 'saved', 'a tie does not replace the best');
-select is(pg_temp.save('0a', 5, 3300, 'l3:hard'), 'best', 'hard mode has its own best');
-select is(pg_temp.save('0a', 6, 4000, 'l5'), 'best', 'so does each level');
-select is(pg_temp.save('0a', 7, 2500, 'l3', true), 'best', 'so does a run with maths');
+select is(pg_temp.save('0a', 5, 3300, 'l3:hard'), 'first', 'hard mode has its own best');
+select is(pg_temp.save('0a', 6, 4000, 'l5'), 'first', 'so does each level');
+select is(pg_temp.save('0a', 7, 2500, 'l3', true), 'best', 'so does a run with maths (and it is not a first: the mine was finished already)');
 select is((select count(*)::integer from public.mine_bests where player = pg_temp.id('0a')), 4, '... four bests so far');
-select is(pg_temp.save('0b', 1, 3000), 'best', 'the same seed text for another pupil is a different seed');
+select is(pg_temp.save('0b', 1, 3000), 'first', 'the same seed text for another pupil is a different seed');
 
 select throws_ok($$ select pg_temp.save('0f', 1, 3000) $$, '22023', null, 'nothing can be saved for someone with no profile');
 select throws_ok($$ select pg_temp.save('0a', 8, 0) $$, '23514', null, 'a time of zero is refused');

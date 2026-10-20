@@ -32,6 +32,8 @@ create table public.mine_runs (
   -- Doors and pads opened by a right answer, and wrong answers at question doors.
   grants integer not null default 0 check (grants between 0 and 64),
   wrong integer not null default 0 check (wrong between 0 and 1000),
+  -- The medal this time earns (shared/mine/medals.ts), worked out by the server function.
+  medal text check (medal in ('gold', 'silver', 'bronze')),
   -- The recorded run: "codeXcount,..." (shared/mine/inputs.ts). Thrown away after 7 days.
   inputs text check (length(inputs) between 1 and 200000),
   created_at timestamptz not null default now(),
@@ -47,6 +49,7 @@ create table public.mine_bests (
   maths boolean not null default false,
   mode text not null check (mode in ('steady', 'free')),
   steps integer not null check (steps between 1 and 1000000),
+  medal text check (medal in ('gold', 'silver', 'bronze')),
   inputs text not null check (length(inputs) between 1 and 200000),
   achieved_at timestamptz not null default now(),
   primary key (player, level, maths)
@@ -76,6 +79,7 @@ $$;
 
 -- Saves one finished run (the server has already replayed it). Returns:
 --   'duplicate'  this seed was saved before (nothing changed)
+--   'first'      saved, and it is the pupil's first ever finish of this mine (either way of playing)
 --   'best'       saved, and it is the pupil's new best for the level and maths flag
 --   'saved'      saved, but not a new best
 -- Past `daily_limit` runs in a day the pupil is asked to take a break (54000).
@@ -89,7 +93,8 @@ create function public.record_mine_run(
   grants integer,
   wrong integer,
   inputs text,
-  daily_limit integer
+  daily_limit integer,
+  medal text default null
 )
 returns text
 language plpgsql
@@ -98,6 +103,7 @@ set search_path = ''
 as $$
 declare
   old_steps integer;
+  is_first boolean;
 begin
   perform public.gem_keep_check_player(player);
   if (select count(*) from public.mine_runs r
@@ -106,8 +112,8 @@ begin
   end if;
   -- Recorded inputs older than a week are not needed any more (the best run's copy is in mine_bests).
   update public.mine_runs r set inputs = null where r.inputs is not null and r.created_at < now() - interval '7 days';
-  insert into public.mine_runs (player, level, mode, maths, seed, steps, grants, wrong, inputs)
-  values (player, level, mode, maths, seed, steps, grants, wrong, inputs)
+  insert into public.mine_runs (player, level, mode, maths, seed, steps, grants, wrong, medal, inputs)
+  values (player, level, mode, maths, seed, steps, grants, wrong, medal, inputs)
   on conflict on constraint mine_runs_seed_key do nothing;
   if not found then
     return 'duplicate';
@@ -117,11 +123,12 @@ begin
   if old_steps is not null and old_steps <= steps then
     return 'saved';
   end if;
-  insert into public.mine_bests as b (player, level, maths, mode, steps, inputs)
-  values (player, level, maths, mode, steps, inputs)
+  is_first := not exists (select 1 from public.mine_bests b where b.player = record_mine_run.player and b.level = record_mine_run.level);
+  insert into public.mine_bests as b (player, level, maths, mode, steps, medal, inputs)
+  values (player, level, maths, mode, steps, medal, inputs)
   on conflict on constraint mine_bests_pkey do update set
-    mode = excluded.mode, steps = excluded.steps, inputs = excluded.inputs, achieved_at = now();
-  return 'best';
+    mode = excluded.mode, steps = excluded.steps, medal = excluded.medal, inputs = excluded.inputs, achieved_at = now();
+  return case when is_first then 'first' else 'best' end;
 end;
 $$;
 
@@ -274,7 +281,7 @@ $$;
 
 revoke execute on function
   public.mine_runs_today(uuid),
-  public.record_mine_run(uuid, text, text, text, boolean, integer, integer, integer, text, integer),
+  public.record_mine_run(uuid, text, text, text, boolean, integer, integer, integer, text, integer, text),
   public.my_mine(), public.mine_board(text, boolean),
   public.teacher_set_mine_maths(text, uuid),
   public.mine_store_run(uuid, text, text, jsonb), public.mine_load_run(uuid, text),
@@ -284,7 +291,7 @@ grant execute on function public.my_mine(), public.mine_board(text, boolean), pu
 to authenticated;
 grant execute on function
   public.mine_runs_today(uuid),
-  public.record_mine_run(uuid, text, text, text, boolean, integer, integer, integer, text, integer),
+  public.record_mine_run(uuid, text, text, text, boolean, integer, integer, integer, text, integer, text),
   public.mine_store_run(uuid, text, text, jsonb), public.mine_load_run(uuid, text),
   public.mine_claim_answer(uuid, text, integer, numeric, boolean)
 to service_role;
