@@ -13,11 +13,21 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { spokenLabel } from '../../shared/maths/banded';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { NumberPad } from './NumberPad';
+import { ScribblePad } from './ScribblePad';
 import './maths.css';
 
 /** How long the feedback shows, in milliseconds. */
 export const FEEDBACK_MS = { right: 800, wrong: 2000 };
 const MAX_DIGITS = 3;
+
+const PAD_KEY = 'sgh-scribble-open';
+const readPadOpen = () => {
+  try {
+    return localStorage.getItem(PAD_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
 
 const FRACTION = /^(?:(\d+|\?) )?(\d+|\?)\/(\d+|\?)$/;
 
@@ -71,6 +81,7 @@ export function QuestionModal({
   timeScale = 1,
   inline = false,
   secondsLeft = null,
+  scribble = true,
 }: {
   question: ShownQuestion;
   /** What the question is for, e.g. "Mana Well". */
@@ -90,11 +101,14 @@ export function QuestionModal({
   inline?: boolean;
   /** A countdown to show, when the game gives the question a time limit. */
   secondsLeft?: number | null;
+  /** A scribble pad beside the box, for working out. On by default; never shown for an inline card. */
+  scribble?: boolean;
 }) {
   const [typed, setTyped] = useState('');
   const [result, setResult] = useState<MarkedAnswer | null>(null);
   const [checking, setChecking] = useState(false);
   const [trouble, setTrouble] = useState('');
+  const [padOpen, setPadOpen] = useState(readPadOpen);
   const shownAt = useRef(performance.now());
   const box = useRef<HTMLDivElement>(null);
   const titleId = `question-${question.id}-title`;
@@ -168,6 +182,16 @@ export function QuestionModal({
     event.preventDefault();
   }
 
+  const showPad = scribble && !inline;
+  const setPad = (open: boolean) => {
+    setPadOpen(open);
+    try {
+      localStorage.setItem(PAD_KEY, open ? '1' : '0');
+    } catch {
+      // Storage blocked: the pad just won't be remembered.
+    }
+  };
+
   const blank = typed === '' ? '?' : typed;
   // Money answers are shown with cents: 4.1 → 4.10.
   const rightAnswer = result?.answer ?? question.answer ?? 0;
@@ -181,6 +205,7 @@ export function QuestionModal({
   );
   return (
     <div className={inline ? undefined : 'question-backdrop'}>
+      <div className={showPad ? 'question-wrap' : 'question-wrap question-wrap--single'} data-pad={showPad && padOpen ? 'open' : undefined}>
       <div
         ref={box}
         className={inline ? 'question question--inline' : 'question'}
@@ -252,6 +277,15 @@ export function QuestionModal({
             {closeLabel}
           </button>
         )}
+      </div>
+      {showPad &&
+        (padOpen ? (
+          <ScribblePad key={question.id} onCollapse={() => setPad(false)} />
+        ) : (
+          <button type="button" className="scribble-tab" onPointerDown={(e) => e.preventDefault()} onClick={() => setPad(true)}>
+            <span aria-hidden="true">✏️</span> Scribble
+          </button>
+        ))}
       </div>
     </div>
   );
