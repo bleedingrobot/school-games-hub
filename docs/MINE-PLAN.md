@@ -3,7 +3,7 @@
 A 3D "fly a ship through underground mine tunnels" game for the hub, in the spirit of the 1995 game *Descent*: full freedom of movement in all directions, robots to shoot, coloured keys and locked doors, a reactor to blow up, and a dash to the exit before it goes.
 Written 20 October 2026 (Stage 0: plan only, **no code yet**). Branch `mine`, folder `~/projects/school-games-hub-mine`, short id `mine`, CSS prefix `.mn-`. Next free migration number when this was written: `20261020000400` (re-check before the first migration).
 
-**Status: James answered section 12 on 20 Oct 2026. Stage 1 built 20 Oct 2026 (rules only, no screen); waiting for James before Stage 2.**
+**Status: James answered section 12 on 20 Oct 2026. Stage 1 built 20 Oct 2026 (rules only). Stage 2 built 20 Oct 2026 (the screen and a phone preview); waiting for James to try the preview before Stage 3.**
 
 **Decisions (James, 20 Oct 2026):** name **Mine Runner** (id `mine`, prefix `.mn-`); theme **New Zealand mines** (Stage 3 picks the places, carefully, as for Marble); **Chromebooks + phones/tablets**; points and achievements **as listed in section 9**; boards as section 8 but **20 counted runs a day**; shooting **classic but tougher** (read as: rebuild costs +20 s instead of +10 s, and robots hit harder and shoot back more; all numbers live in `shared/mine/config.ts` so they're easy to retune); **doors: key doors need keys, question doors need an answer, a wrong answer costs shield and time**; **start Stage 1 now**.
 
@@ -217,3 +217,36 @@ Every stage: merge `origin/main` first; own tests as I go; before saying a stage
 - Level names/places (New Zealand mines), pickups' look, sounds: Stage 2–3.
 
 **Go-live list so far:** nothing live. Next free migration number is `20261020000400` (re-check at Stage 4).
+
+### Stage 2 results (20 Oct 2026): the screen and a phone preview
+
+**Preview link (private artifact):** https://claude.ai/artifact/6VYHD91SJaZndP6ExbQbRf (rebuild with `npm run mine:single`, then publish `dist-preview-mine/mine-runner-test-page.html` with its doctype/head/body wrapper tags removed and the title set to "Mine Runner").
+
+**Built** (own folders only; the only shared edits are the `package.json` scripts `mine:preview` and `mine:single` at the end, and `dist-preview-mine/` in `.gitignore`):
+- `src/games/mine/renderer.ts` + `walls.ts` + `palette.ts`: three.js, flat colours, no textures. Walls are only the rock faces that touch open space, one mesh per room of the coarse grid (so out-of-view ones are skipped). Doors, keys, pickups, pads, reactor, exit, three robot shapes, lasers, missiles, sparks. Distance fog does the lighting. Draws smoothly between the 30-a-second steps. Lazy-loaded.
+- `MineRun.tsx` (run, HUD, pause, map, question modal, finish), `MinePlay.tsx` (picker, how to play, controls, settings), `Settings.tsx`, `MineMap.tsx`, `TouchControls.tsx`, `session.ts` (one run held outside React: the rules' state, the recorded inputs, previous step, rooms visited, events), `guide.ts` (next-goal arrow that points at the next room on the way), `mapView.ts`, `controls.ts`, `prefs.ts` (per pupil on this device), `levels.ts`, `mine.css`.
+- Controls: keyboard (WASD slide, R/F rise/sink, arrows turn, Q/E roll in free flight, Space laser, Shift/X missile, Enter use, M map, Esc/P pause), mouse (drag to look, quick tap fires, optional captured mouse with click to fire / right click missile), touch (two sticks, fire, missile, rise, sink, use; left or right handed; shown by itself on touch screens). Turning is decided 10 times a second and held for 3 steps.
+- Practice mine (no questions, two slow drones, nothing saved), the six levels with trial questions, best times on this device only, `switch.ts` (off) and the game is **not** in `registry.ts`.
+- `trialMaths.ts`: add/take-away/times questions made and marked in the browser, shown with `QuestionModal` and the note "Trial question (preview only). It is not saved." A right answer sends `GRANT + n`, a wrong one at a door `PENALTY`, a wrong one at a pad nothing (3 tries a pad). The real `MinePlay` (not the preview) only lets pupils play the practice mine until Stage 4.
+
+**Decisions**
+- Lighting is distance fog on unlit walls (a point light blew out close walls); robots and keys use a light that rides with the camera.
+- Question door and pad use keys: Enter / U. (The plan said E, but E is roll.)
+- Steady vs free flight is fixed when a run starts (the rules need it); changing it in Pause applies to the next run.
+- The screen softens the picture on its own (down to half sharpness) if frames take over 45 ms for a second.
+- Map: a slanted view of all floors, or one floor from above; rooms next to ones you have visited show as "?".
+- Add `?debug` to the address and the page exposes the running session (`window.__mineSession`) so browser scripts can fly recorded inputs. Harmless; used for the screenshots.
+- No shared rules were changed, so the pinned fingerprint is unchanged.
+
+**Measured**
+- three.js chunk: 544 kB (137 kB gzip), loaded only on starting a mine. Run screen chunk 48 kB (17 kB gzip). The site's own build is unchanged because the game isn't registered.
+- Recorded run size for three minutes of a nervous mouse plus held keys: 12.3 kB of text (1,757 runs), well inside the 200 kB cap.
+- Speed: only a software-rendered headless Chromium here (no graphics chip), so this is a worst case. Mine 1: 22 fps; Mine 6: 16 fps (4x slower CPU: 12 fps) at 1366x640, with only 27-32 draw calls and about 9,000 triangles a frame. The rules stayed at the right 30 steps a second throughout. A real Chromebook graphics chip should do far better, but this is untested on a real device.
+
+**Tests:** 79 new tests (controls, prefs, trial maths, levels incl. the practice mine finishable, walls, session, guide, map, the screen with a stand-in picture, accessibility reading the CSS). `npm run typecheck`, `npm run test:all` (217 files, 4,091 tests, 1 skipped as before) and `npm run build` all pass.
+
+**Looked at in a real browser:** 1366x640 and 844x390 (touch), picker, flying, map, pause. Fixed: blown-out lighting, full-width stacked buttons, cramped map and pause on a short screen, toast over the goal chip.
+
+**Untested / for James:** how it *feels* (speed, dizziness, difficulty), real phone touch, pointer capture on a school Chromebook, sound, a real Safari. WebKit determinism is still Stage 3. Robots still can't path-find and the bot can't dodge, so real play will differ from the bot's times.
+
+**Go-live list so far:** nothing live. Next free migration number `20261020000400` (re-check at Stage 4).
