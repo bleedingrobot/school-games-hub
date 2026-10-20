@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { flyLevel } from './bot';
 import { makeWorld, newRun } from './engine';
 import { encodeInputs, GRANT, PENALTY } from './inputs';
-import { makeLevel, RECIPES, recipeById } from './level';
-import { DOOR_QUESTIONS, PAD_QUESTIONS, questionPlan, targetOfSlot } from './maths';
+import { makeLevel, reactorTargetId, RECIPES, recipeById } from './level';
+import { DOOR_QUESTIONS, PAD_QUESTIONS, REACTOR_QUESTIONS, questionPlan, targetOfSlot } from './maths';
 import { isCountedLevel, judgeRun, makeMineSeed, mineSeedProblem, mineSeedTime, mineStampText, parseMineReport, MINE_SEED_LIFETIME_SECONDS } from './save';
 
 const NOW = 1_792_000_000;
@@ -53,7 +53,7 @@ describe('what counts as a mine and a report', () => {
 });
 
 describe('the question plan', () => {
-  it('gives every question door and pad its own block, doors first then pads', () => {
+  it('gives every question door, pad and the reactor console its own block, in that order', () => {
     for (const r of RECIPES) {
       for (const id of [r.id, `${r.id}:hard`]) {
         const level = makeLevel(recipeById(id)!);
@@ -61,7 +61,8 @@ describe('the question plan', () => {
         const doors = level.doors.filter((d) => d.kind === 'question').length;
         expect(plan.targets.filter((t) => t.kind === 'door')).toHaveLength(doors);
         expect(plan.targets.filter((t) => t.kind === 'pad')).toHaveLength(level.pads.length);
-        expect(plan.total).toBe(doors * DOOR_QUESTIONS + level.pads.length * PAD_QUESTIONS);
+        expect(plan.targets.filter((t) => t.kind === 'reactor')).toHaveLength(1);
+        expect(plan.total).toBe(doors * DOOR_QUESTIONS + level.pads.length * PAD_QUESTIONS + REACTOR_QUESTIONS);
         let at = 0;
         for (const t of plan.targets) {
           expect(t.first).toBe(at);
@@ -70,6 +71,7 @@ describe('the question plan', () => {
         // The id is the number a GRANT names.
         for (const t of plan.targets) {
           if (t.kind === 'door') expect(level.doors[t.id].kind).toBe('question');
+          else if (t.kind === 'reactor') expect(t.id).toBe(reactorTargetId(level));
           else expect(level.pads[t.id - level.doors.length].id).toBe(t.id);
         }
         expect(targetOfSlot(plan, 0)).toBe(plan.targets[0]);
@@ -89,8 +91,10 @@ describe('judging a run', () => {
     expect(judged.run.steps).toBe(bot.state.finishSteps);
     expect(judged.run.played).toBe(bot.state.steps);
     expect(judged.run.penalties).toBe(0);
-    const door = makeLevel(recipeById('l2')!).doors.find((d) => d.kind === 'question')!;
-    expect(judged.run.grants).toEqual([door.id]);
+    const level = makeLevel(recipeById('l2')!);
+    const questionDoors = level.doors.filter((d) => d.kind === 'question').map((d) => d.id);
+    // One grant for each question door, then the reactor console's three.
+    expect([...judged.run.grants].sort((a, b) => a - b)).toEqual([...questionDoors, ...Array(3).fill(reactorTargetId(level))]);
   });
 
   it('plays free flight as free flight', () => {

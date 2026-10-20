@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { flyLevel } from './bot';
 import { clockSteps, makeWorld, replay, stateKey } from './engine';
 import { GRANT, decodeInputs, encodeInputs, grantsIn } from './inputs';
-import { RECIPES, makeLevel } from './level';
+import { REACTOR_LOCK_ANSWERS } from './config';
+import { RECIPES, makeLevel, reactorTargetId } from './level';
 
 describe('the pretend pilot', () => {
   // Every level can be finished: keys in order, question doors answered, reactor destroyed, escape.
@@ -17,10 +18,11 @@ describe('the pretend pilot', () => {
     expect(s.doorsOpen.every((d) => d === 1)).toBe(true);
     expect(s.badGrants).toBe(0);
     expect(s.escapeLeft).toBeGreaterThan(0);
-    // Only question doors are ever opened with GRANT.
+    // Only question doors and the reactor's console are ever answered with GRANT.
     const granted = grantsIn(bot.runs);
-    expect(granted.length).toBe(recipe.doors.filter((d) => d === 'question').length);
-    for (const id of granted) expect(level.doors[id].kind).toBe('question');
+    expect(granted.length).toBe(recipe.doors.filter((d) => d === 'question').length + REACTOR_LOCK_ANSWERS);
+    for (const id of granted) if (id !== reactorTargetId(level)) expect(level.doors[id].kind).toBe('question');
+    expect(s.reactorLock).toBe(0);
     expect(bot.runs.every(([c]) => c < GRANT + 64)).toBe(true);
     // The server's job: replay the inputs and get the same time.
     const text = encodeInputs(bot.runs);

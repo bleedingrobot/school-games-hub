@@ -118,6 +118,10 @@ export const PAD_ENERGY = 100;
 export const PAD_MISSILES = 6;
 export const PAD_BONUS_STEPS = 5 * STEPS_PER_SECOND;
 export const MAX_PAD_BONUSES = 3;
+/** Right answers a pad needs before it pays out (wrong answers cost nothing). */
+export const PAD_ANSWERS = 2;
+/** Right answers that unlock the reactor before it can be shot. A wrong one costs the same as at a question door. */
+export const REACTOR_LOCK_ANSWERS = 3;
 
 // ——— Mistakes ———
 /** Shield lost and time added for a wrong answer at a question door (James, 20 Oct 2026). The shield never goes below 1 this way. */
@@ -127,7 +131,7 @@ export const WRONG_ANSWER_STEPS = 6 * STEPS_PER_SECOND;
 export const REBUILD_PENALTY_STEPS = 20 * STEPS_PER_SECOND;
 export const REBUILD_SHIELD = 70;
 
-/** The most doors and pads a level may have (a GRANT input names one by number). */
+/** The most doors, pads and the reactor console a level may have (a GRANT input names one by number). */
 export const MAX_TARGETS = 64;
 
 // ——— Points (docs/MINE-PLAN.md, section 9): small, inside the hub's daily cap, nothing for right answers ———

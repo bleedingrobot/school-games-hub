@@ -8,23 +8,29 @@
  * a pad has three tries and a wrong answer costs nothing.
  */
 import { isFocusKey, solveParts, type MathsFocus } from '../maths/focus';
+import { choicesFor } from '../maths/banded';
 import type { FactStats } from '../maths/leitner';
 import type { PublicQuestion } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
 import { makeSpacePack, pickSpaceQuestion, type MathsQuestionSettings } from '../space/mathsQuestion';
-import type { Level } from './level';
+import { REACTOR_LOCK_ANSWERS } from './config';
+import { reactorTargetId, type Level } from './level';
 
 /** Questions held for each question door: the most wrong answers at one door in one run is this less one. */
 export const DOOR_QUESTIONS = 6;
-/** Tries at each power-up pad in a run. */
-export const PAD_QUESTIONS = 3;
+/** Tries at each power-up pad in a run (it needs PAD_ANSWERS right; a wrong answer costs nothing). */
+export const PAD_QUESTIONS = 5;
+/** Questions held for the reactor's console: the right answers it needs plus as many wrong ones as at a door. */
+export const REACTOR_QUESTIONS = REACTOR_LOCK_ANSWERS + DOOR_QUESTIONS - 1;
 
 /** A question door or a pad, with its block of question slots. `id` is the number a `GRANT` input names. */
 export interface QuestionTarget {
   id: number;
-  kind: 'door' | 'pad';
+  kind: 'door' | 'pad' | 'reactor';
   first: number;
   count: number;
+  /** A question door drawn as a number gate: its questions carry choices to fly into (see `addGateChoices`). */
+  gate?: boolean;
 }
 
 export interface QuestionPlan {
@@ -33,20 +39,46 @@ export interface QuestionPlan {
   total: number;
 }
 
-/** Every question door (in door order) and then every pad, each with its slots. */
-export function questionPlan(level: Pick<Level, 'doors' | 'pads'>): QuestionPlan {
+/** Every question door (in door order), then every pad, then the reactor's console, each with its slots. */
+export function questionPlan(level: { doors: readonly Pick<Level['doors'][number], 'id' | 'kind' | 'gate'>[]; pads: Level['pads'] }): QuestionPlan {
   const targets: QuestionTarget[] = [];
   let at = 0;
   for (const door of level.doors) {
     if (door.kind !== 'question') continue;
-    targets.push({ id: door.id, kind: 'door', first: at, count: DOOR_QUESTIONS });
+    targets.push({ id: door.id, kind: 'door', first: at, count: DOOR_QUESTIONS, ...(door.gate ? { gate: true } : {}) });
     at += DOOR_QUESTIONS;
   }
   level.pads.forEach((pad) => {
     targets.push({ id: pad.id, kind: 'pad', first: at, count: PAD_QUESTIONS });
     at += PAD_QUESTIONS;
   });
+  targets.push({ id: reactorTargetId(level), kind: 'reactor', first: at, count: REACTOR_QUESTIONS });
+  at += REACTOR_QUESTIONS;
   return { targets, total: at };
+}
+
+/**
+ * The numbers to show on a gate's panels for a question, in the order to show them, or null if it can't be a gate (a pick-one
+ * question that shows words or fractions instead of the number, or money, which is drawn with cents). A question that
+ * already has numeric choices keeps them; any other with a whole or decimal answer gets the answer and three near misses.
+ */
+export function gateChoices(q: Question, random: () => number): number[] | null {
+  if (q.choiceLabels) return null;
+  if (q.choices) return q.choices.length >= 3 && q.choices.length <= 4 ? q.choices : null;
+  if (q.parts.includes('$') || typeof q.answer !== 'number' || !Number.isFinite(q.answer) || q.answer < 0) return null;
+  const decimal = q.input === 'decimal' && !Number.isInteger(q.answer);
+  if (!decimal && !Number.isInteger(q.answer)) return null;
+  return choicesFor(q.answer, [], decimal, random);
+}
+
+/** Gives the questions held for number gates their choices (the server does this once, before storing the run). */
+export function addGateChoices(list: Question[], plan: QuestionPlan, random: () => number): Question[] {
+  return list.map((q, slot) => {
+    const target = targetOfSlot(plan, slot);
+    if (!target?.gate) return q;
+    const choices = gateChoices(q, random);
+    return choices ? { ...q, choices } : q;
+  });
 }
 
 /** The target a slot belongs to, or undefined if it is out of range. */

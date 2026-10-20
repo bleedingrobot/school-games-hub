@@ -11,7 +11,7 @@ import { loadBests, saveBests } from './prefs';
 import type { MineSession } from './session';
 
 // There is no WebGL in the test browser: the picture is replaced by one that does nothing.
-const view = { draw: vi.fn(), resize: vi.fn(), react: vi.fn(), highlight: vi.fn(), stats: () => ({ calls: 0, triangles: 0, pixelRatio: 1 }), setQuality: (n: number) => n, dispose: vi.fn() };
+const view = { draw: vi.fn(), resize: vi.fn(), react: vi.fn(), highlight: vi.fn(), showGate: vi.fn(), stats: () => ({ calls: 0, triangles: 0, pixelRatio: 1 }), setQuality: (n: number) => n, dispose: vi.fn() };
 vi.mock('./renderer', () => ({ createView: () => view }));
 
 const pupil = {
@@ -195,6 +195,12 @@ describe('saying what to do with the reactor', () => {
       s.step(0);
     });
     await waitFor(() => expect(screen.getByLabelText(/Next goal: Destroy the reactor/)).toBeInTheDocument());
+    expect(await screen.findByText(/That is the reactor\. It is locked: fly up close and press Use to answer 3 questions/)).toBeInTheDocument();
+    // Unlocked, the words change to shooting.
+    act(() => {
+      s.state.reactorLock = 0;
+      s.step(0);
+    });
     expect(await screen.findByText(/That is the reactor\. Shoot it until it breaks/)).toBeInTheDocument();
   });
 });
@@ -301,5 +307,105 @@ describe('question doors and pads (trial questions in the preview)', () => {
     fireEvent.keyDown(dialog, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Question door' })).toBeNull());
     expect(s.state.wrongAnswers).toBe(0);
+  });
+});
+
+describe('number gates (trial questions in the preview)', () => {
+  type Panels = { x: number; y: number; z: number; value: number }[];
+  const lastPanels = (): Panels | null => {
+    const calls = view.showGate.mock.calls;
+    return calls.length ? (calls[calls.length - 1][0] as Panels | null) : null;
+  };
+
+  async function toTheGate() {
+    const u = await start('Otago Diggings');
+    const s = session();
+    const bot = flyLevel(makeWorld(s.world.level, { steady: true }));
+    // Open the first question door by answer on the way, so the next one (the gate) is the target.
+    act(() => {
+      outer: for (const [code, n] of bot.runs) for (let i = 0; i < n; i++) {
+        s.step(code);
+        const t = s.target();
+        if (t && t.kind === 'door' && s.world.level.doors[t.id].gate) break outer;
+      }
+    });
+    const t = s.target();
+    expect(t?.kind).toBe('door');
+    expect(s.world.level.doors[t!.id].gate).toBe(true);
+    return { u, s };
+  }
+
+  /** The sum on the banner, worked out. */
+  function bannerAnswer(): number {
+    const text = document.querySelector('.mn-gate__sum')?.textContent ?? '';
+    const m = /(\d+) ([+−×]) (\d+)/.exec(text)!;
+    const [a, b] = [Number(m[1]), Number(m[3])];
+    return m[2] === '+' ? a + b : m[2] === '−' ? a - b : a * b;
+  }
+
+  function flyInto(s: MineSession, panel: { x: number; y: number; z: number }) {
+    act(() => {
+      s.state.px = panel.x; s.state.py = panel.y; s.state.pz = panel.z;
+      s.state.vx = 0; s.state.vy = 0; s.state.vz = 0;
+    });
+  }
+
+  it('shows the sum and four answer panels at a gate, and says how to answer', async () => {
+    await toTheGate();
+    await waitFor(() => expect(lastPanels()).not.toBeNull());
+    expect(lastPanels()).toHaveLength(4);
+    expect(lastPanels()!.map((p) => p.value)).toContain(bannerAnswer());
+    expect(screen.getByText(/Fly into the answer/)).toBeInTheDocument();
+  });
+
+  it('flying into the right panel opens the gate, and takes the panels away', async () => {
+    const { s } = await toTheGate();
+    await waitFor(() => expect(lastPanels()).not.toBeNull());
+    const id = s.target()!.id;
+    // Give the panels a moment to arm (the ship has to be clear of them first).
+    await act(() => new Promise((r) => setTimeout(r, 120)));
+    const right = lastPanels()!.find((p) => p.value === bannerAnswer())!;
+    flyInto(s, right);
+    await waitFor(() => expect(s.state.doorsOpen[id]).toBe(1), { timeout: 3000 });
+    expect(s.state.doorsByAnswer).toBeGreaterThan(0);
+    expect(s.state.badGrants).toBe(0);
+    await waitFor(() => expect(lastPanels()).toBeNull());
+    expect(screen.queryByText(/Fly into the answer/)).toBeNull();
+  });
+
+  it('flying into a wrong panel costs shield and time, keeps the gate shut and puts up a new question', async () => {
+    const { s } = await toTheGate();
+    await waitFor(() => expect(lastPanels()).not.toBeNull());
+    const id = s.target()!.id;
+    await act(() => new Promise((r) => setTimeout(r, 120)));
+    const shield = s.state.shield;
+    const wrong = lastPanels()!.find((p) => p.value !== bannerAnswer())!;
+    const shownBefore = view.showGate.mock.calls.length;
+    flyInto(s, wrong);
+    await waitFor(() => expect(s.state.wrongAnswers).toBe(1), { timeout: 3000 });
+    expect(s.state.doorsOpen[id]).toBe(0);
+    expect(s.state.shield).toBeLessThan(shield);
+    expect(await screen.findByText(/Not quite/)).toBeInTheDocument();
+    await waitFor(() => expect(view.showGate.mock.calls.length).toBeGreaterThan(shownBefore + 1)); // taken away, then new panels
+    expect(lastPanels()).toHaveLength(4);
+  });
+
+  it('a panel the ship is sitting on when the gate appears does nothing', async () => {
+    const { s } = await toTheGate();
+    await waitFor(() => expect(lastPanels()).not.toBeNull());
+    expect(s.state.wrongAnswers).toBe(0);
+    expect(s.state.doorsOpen[s.target()!.id]).toBe(0);
+  });
+
+  it('Use still asks the same question in a pop-up, for anyone who would rather answer there', async () => {
+    const { u, s } = await toTheGate();
+    await waitFor(() => expect(lastPanels()).not.toBeNull());
+    const sum = bannerAnswer();
+    const id = s.target()!.id;
+    await u.click(await screen.findByRole('button', { name: /Answer to open the door/ }));
+    await screen.findByRole('dialog', { name: 'Question door' });
+    await u.keyboard(`${sum}{Enter}`);
+    await waitFor(() => expect(s.state.doorsOpen[id]).toBe(1), { timeout: 3000 });
+    expect(s.state.badGrants).toBe(0);
   });
 });

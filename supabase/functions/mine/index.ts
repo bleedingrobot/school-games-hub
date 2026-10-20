@@ -6567,6 +6567,10 @@ const KEY_COLOURS = [
 	"yellow",
 	"red"
 ];
+/** The number a GRANT uses for the reactor's console: after all the doors and pads. */
+function reactorTargetId(level) {
+	return level.doors.length + level.pads.length;
+}
 /** A small repeatable stream of whole numbers (exact everywhere). */
 function makeRng(seed) {
 	let s = Math.floor(Math.abs(seed)) % 2147483646 + 1;
@@ -6650,7 +6654,7 @@ function makeLevel(recipe) {
 	path.reverse();
 	const edgesOnPath = path.length - 1;
 	if (edgesOnPath < recipe.doors.length + 1) throw new Error(`level ${recipe.id}: the way to the reactor is too short for ${recipe.doors.length} doors`);
-	if (recipe.doors.length + recipe.pads.length > 64) throw new Error(`level ${recipe.id}: too many doors and pads`);
+	if (recipe.doors.length + recipe.pads.length + 1 > 64) throw new Error(`level ${recipe.id}: too many doors and pads`);
 	const doorEdges = [];
 	for (let d = 0; d < recipe.doors.length; d++) doorEdges.push(Math.max(d + 1, Math.floor((d + 1) * edgesOnPath / (recipe.doors.length + 1))));
 	for (let d = 1; d < doorEdges.length; d++) if (doorEdges[d] <= doorEdges[d - 1]) doorEdges[d] = doorEdges[d - 1] + 1;
@@ -6713,6 +6717,7 @@ function makeLevel(recipe) {
 		return {
 			id,
 			kind,
+			gate: kind === "question" && (recipe.gates ?? []).includes(id),
 			rooms: [a.index, b.index],
 			blocks,
 			x: mx + .5,
@@ -6887,7 +6892,7 @@ const RECIPES = [
 			3,
 			2
 		],
-		doors: ["blue"],
+		doors: ["blue", "question"],
 		robots: 3,
 		guards: 1,
 		mix: [
@@ -6912,7 +6917,12 @@ const RECIPES = [
 			3,
 			2
 		],
-		doors: ["blue", "question"],
+		doors: [
+			"blue",
+			"question",
+			"question"
+		],
+		gates: [2],
 		robots: 5,
 		guards: 1,
 		mix: [
@@ -6940,8 +6950,10 @@ const RECIPES = [
 		doors: [
 			"blue",
 			"question",
-			"yellow"
+			"yellow",
+			"question"
 		],
+		gates: [3],
 		robots: 10,
 		guards: 3,
 		mix: [
@@ -6972,10 +6984,12 @@ const RECIPES = [
 		],
 		doors: [
 			"blue",
+			"question",
 			"yellow",
 			"question",
 			"question"
 		],
+		gates: [3],
 		robots: 14,
 		guards: 4,
 		mix: [
@@ -7010,8 +7024,10 @@ const RECIPES = [
 			"question",
 			"yellow",
 			"question",
-			"red"
+			"red",
+			"question"
 		],
+		gates: [3, 5],
 		robots: 18,
 		guards: 5,
 		mix: [
@@ -7048,8 +7064,10 @@ const RECIPES = [
 			"yellow",
 			"question",
 			"red",
+			"question",
 			"question"
 		],
+		gates: [3, 6],
 		robots: 24,
 		guards: 6,
 		mix: [
@@ -7218,6 +7236,7 @@ function newRun(w) {
 		],
 		doorsOpen: level.doors.map((d) => w.maths || d.kind !== "question" ? 0 : 1),
 		padsUsed: level.pads.map(() => 0),
+		reactorLock: w.maths ? 3 : 0,
 		pickupsTaken: level.pickups.map(() => 0),
 		robots: level.robots.map((r) => ({
 			type: r.type,
@@ -7449,7 +7468,7 @@ function hurtRobot(s, r, dmg) {
 	}
 }
 function hurtReactor(s, w, dmg) {
-	if (s.reactorDown) return;
+	if (s.reactorDown || s.reactorLock > 0) return;
 	s.reactorHp -= dmg;
 	if (s.reactorHp <= 0) {
 		s.reactorHp = 0;
@@ -7472,7 +7491,7 @@ function explode(w, s, x, y, z) {
 * look straight down a shaft, and the reactor often sits at the bottom of one.)
 */
 function aimOf(w, s) {
-	if (s.reactorDown) return [
+	if (s.reactorDown || s.reactorLock > 0) return [
 		s.fx,
 		s.fy,
 		s.fz
@@ -7568,13 +7587,23 @@ function stepSpecial(w, s, code) {
 		s.doorsByAnswer++;
 		return;
 	}
+	if (id === reactorTargetId(L)) {
+		const R = L.reactor;
+		if (s.reactorLock <= 0 || s.reactorDown || dist(s.px, s.py, s.pz, R.x, R.y, R.z) > 5) {
+			s.badGrants++;
+			return;
+		}
+		s.reactorLock--;
+		return;
+	}
 	const n = id - L.doors.length;
 	const pad = L.pads[n];
-	if (!pad || s.padsUsed[n] === 1 || dist(s.px, s.py, s.pz, pad.x, pad.y, pad.z) > 5) {
+	if (!pad || s.padsUsed[n] >= 2 || dist(s.px, s.py, s.pz, pad.x, pad.y, pad.z) > 5) {
 		s.badGrants++;
 		return;
 	}
-	s.padsUsed[n] = 1;
+	s.padsUsed[n]++;
+	if (s.padsUsed[n] < 2) return;
 	s.padsByAnswer++;
 	if (pad.kind === "shield") s.shield = Math.max(s.shield, 100);
 	else if (pad.kind === "energy") s.energy = Math.max(s.energy, 100);
@@ -7870,8 +7899,9 @@ function judgeRun(report, nowSeconds) {
 		if (door.kind === "question" && state.doorsOpen[door.id] === 1 && world.maths) grants.push(door.id);
 	});
 	world.level.pads.forEach((pad, n) => {
-		if (state.padsUsed[n] === 1) grants.push(pad.id);
+		for (let k = 0; k < state.padsUsed[n]; k++) grants.push(pad.id);
 	});
+	if (world.maths) for (let k = state.reactorLock; k < 3; k++) grants.push(reactorTargetId(world.level));
 	return {
 		ok: true,
 		run: {
@@ -8179,7 +8209,9 @@ function pickSpaceQuestion(pack, settings = {}) {
 	}) ?? pack.nextQuestion({ level: 1 });
 	return pack.nextQuestion(ctx) ?? new TimesTables().nextQuestion({ level: 1 });
 }
-/** Every question door (in door order) and then every pad, each with its slots. */
+/** Questions held for the reactor's console: the right answers it needs plus as many wrong ones as at a door. */
+const REACTOR_QUESTIONS = 8;
+/** Every question door (in door order), then every pad, then the reactor's console, each with its slots. */
 function questionPlan(level) {
 	const targets = [];
 	let at = 0;
@@ -8189,7 +8221,8 @@ function questionPlan(level) {
 			id: door.id,
 			kind: "door",
 			first: at,
-			count: 6
+			count: 6,
+			...door.gate ? { gate: true } : {}
 		});
 		at += 6;
 	}
@@ -8198,14 +8231,49 @@ function questionPlan(level) {
 			id: pad.id,
 			kind: "pad",
 			first: at,
-			count: 3
+			count: 5
 		});
-		at += 3;
+		at += 5;
 	});
+	targets.push({
+		id: reactorTargetId(level),
+		kind: "reactor",
+		first: at,
+		count: REACTOR_QUESTIONS
+	});
+	at += REACTOR_QUESTIONS;
 	return {
 		targets,
 		total: at
 	};
+}
+/**
+* The numbers to show on a gate's panels for a question, in the order to show them, or null if it can't be a gate (a pick-one
+* question that shows words or fractions instead of the number, or money, which is drawn with cents). A question that
+* already has numeric choices keeps them; any other with a whole or decimal answer gets the answer and three near misses.
+*/
+function gateChoices(q, random) {
+	if (q.choiceLabels) return null;
+	if (q.choices) return q.choices.length >= 3 && q.choices.length <= 4 ? q.choices : null;
+	if (q.parts.includes("$") || typeof q.answer !== "number" || !Number.isFinite(q.answer) || q.answer < 0) return null;
+	const decimal = q.input === "decimal" && !Number.isInteger(q.answer);
+	if (!decimal && !Number.isInteger(q.answer)) return null;
+	return choicesFor$1(q.answer, [], decimal, random);
+}
+/** Gives the questions held for number gates their choices (the server does this once, before storing the run). */
+function addGateChoices(list, plan, random) {
+	return list.map((q, slot) => {
+		if (!targetOfSlot(plan, slot)?.gate) return q;
+		const choices = gateChoices(q, random);
+		return choices ? {
+			...q,
+			choices
+		} : q;
+	});
+}
+/** The target a slot belongs to, or undefined if it is out of range. */
+function targetOfSlot(plan, slot) {
+	return plan.targets.find((t) => slot >= t.first && slot < t.first + t.count);
 }
 /** The answer and the mastery record of a stored question. Null if it can't be marked. */
 function markQuestion(q) {
@@ -8388,7 +8456,7 @@ function makeHandler(services) {
 			if (wantsMaths) {
 				const plan = planFor(level);
 				const context = await services.mathsContext(player);
-				const list = context ? makeRunQuestions(context, plan.total, seededRandom(seed)) : [];
+				const list = addGateChoices(context ? makeRunQuestions(context, plan.total, seededRandom(seed)) : [], plan, seededRandom(`${seed}:gates`));
 				if (list.length < plan.total || !await services.storeRun(player, seed, level, list)) return reply(503, { error: "The questions couldn't be made just now." });
 				started.questions = list.map((q, slot) => publicQuestion(q, slot));
 			}
@@ -8478,10 +8546,10 @@ function makeHandler(services) {
 	};
 }
 /**
-* Do the doors and pads that opened by an answer, and the wrong-answer penalties, match the answers marked here?
-*  - every door or pad opened by an answer needs a right answer marked for that very door or pad;
-*  - the penalties in the run must be exactly the wrong answers marked at question doors (a pad costs nothing, and
-*    leaving a penalty out would be a way to cut the time);
+* Do the doors, pads and reactor unlocks that came from answers, and the wrong-answer penalties, match the answers marked here?
+*  - every right answer a run used needs a right answer marked for that very door, pad or reactor console;
+*  - the penalties in the run must be exactly the wrong answers marked at question doors and the reactor console (a pad
+*    costs nothing, and leaving a penalty out would be a way to cut the time);
 *  - a run without maths has no answers, so no grants and no penalties.
 */
 function answersMatch(maths, stored, plan, run) {
@@ -8490,14 +8558,15 @@ function answersMatch(maths, stored, plan, run) {
 		slot: Number(slot),
 		right: a.right === true
 	}));
-	for (const id of run.grants) {
-		const target = plan.targets.find((t) => t.id === id);
-		if (!target) return false;
-		if (!answers.some((a) => a.right && a.slot >= target.first && a.slot < target.first + target.count)) return false;
+	const inTarget = (t, slot) => slot >= t.first && slot < t.first + t.count;
+	for (const target of plan.targets) {
+		const used = run.grants.filter((id) => id === target.id).length;
+		if (answers.filter((a) => a.right && inTarget(target, a.slot)).length < used) return false;
 	}
-	const doorSlots = plan.targets.filter((t) => t.kind === "door");
-	const wrongAtDoors = answers.filter((a) => !a.right && doorSlots.some((t) => a.slot >= t.first && a.slot < t.first + t.count)).length;
-	return run.penalties === wrongAtDoors;
+	if (run.grants.some((id) => !plan.targets.some((t) => t.id === id))) return false;
+	const costly = plan.targets.filter((t) => t.kind !== "pad");
+	const wrongAtCosts = answers.filter((a) => !a.right && costly.some((t) => inTarget(t, a.slot))).length;
+	return run.penalties === wrongAtCosts;
 }
 /** The day in New Zealand (UTC+13 in summer; an hour out in winter, which only moves when "once a day" rolls over). */
 const nzDay = (nowSeconds) => new Date((nowSeconds + 46800) * 1e3).toISOString().slice(0, 10);

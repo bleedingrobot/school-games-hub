@@ -10,7 +10,7 @@ import { ROBOTS, TURN_MAX, USE_RANGE } from './config';
 import { MAX_RUN_STEPS } from './config';
 import { clockSteps, newRun, stepRun, type RunState, type World } from './engine';
 import { GRANT, NO_INPUT, packInput, pushInput, type PilotInput } from './inputs';
-import { KEY_COLOURS, type Level } from './level';
+import { KEY_COLOURS, reactorTargetId, type Level } from './level';
 
 export interface BotOptions {
   /** Stop after this many steps even if the level isn't finished. */
@@ -120,6 +120,15 @@ export function flyLevel(w: World, options: BotOptions = {}): BotRun {
         break;
       }
     }
+    if (!granted && w.maths && s.reactorLock > 0 && !s.reactorDown) {
+      const R = level.reactor;
+      if (Math.sqrt((R.x - s.px) ** 2 + (R.y - s.py) ** 2 + (R.z - s.pz) ** 2) < USE_RANGE - 0.5) {
+        const code = GRANT + reactorTargetId(level);
+        pushInput(runs, code);
+        stepRun(w, s, code);
+        granted = true;
+      }
+    }
     if (granted) continue;
 
     const goal = goals[goalAt];
@@ -159,7 +168,7 @@ export function flyLevel(w: World, options: BotOptions = {}): BotRun {
         }
       }
     }
-    const atReactor = now.kind === 'reactor' && Math.sqrt((level.reactor.x - s.px) ** 2 + (level.reactor.y - s.py) ** 2 + (level.reactor.z - s.pz) ** 2) < 9 && waypoints.length <= 1;
+    const atReactor = now.kind === 'reactor' && s.reactorLock === 0 && Math.sqrt((level.reactor.x - s.px) ** 2 + (level.reactor.y - s.py) ** 2 + (level.reactor.z - s.pz) ** 2) < 9 && waypoints.length <= 1;
     if (!fireAt && atReactor) {
       fireAt = [level.reactor.x, level.reactor.y, level.reactor.z];
       big = true;

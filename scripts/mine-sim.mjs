@@ -265,6 +265,16 @@ for (const pupil of pupils) {
       rightAnswers++;
       if (r.status !== 200 || r.body.correct !== true) console.error('right answer problem', r.status, r.body);
     }
+    // The reactor's console: three right answers unlock it.
+    const console_ = plan.targets.find((t) => t.kind === 'reactor');
+    if (console_) {
+      const stored = await rpc('mine_load_run', { player: pupil.id, seed });
+      for (let i = 0; i < 3; i++) {
+        const r = await call(pupil, { action: 'answer', seed, stamp, level, mode: 'steady', slot: console_.first + i, value: stored.data.questions[console_.first + i].answer, ms: 4000 });
+        rightAnswers++;
+        if (r.status !== 200 || r.body.correct !== true) console.error('reactor answer problem', r.status, r.body);
+      }
+    }
     // Two tries at a power-up pad (one wrong, one right): they cost requests but change nothing in the run.
     const pad = plan.targets.find((t) => t.kind === 'pad');
     if (pad) {

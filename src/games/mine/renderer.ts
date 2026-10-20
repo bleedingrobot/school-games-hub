@@ -7,7 +7,7 @@
  * (x, y, z) in the mine is drawn at (x, z, −y).
  */
 import * as THREE from 'three';
-import { REACTOR_RADIUS, ROBOTS, type RobotType } from '../../../shared/mine/config';
+import { PAD_ANSWERS, REACTOR_RADIUS, ROBOTS, type RobotType } from '../../../shared/mine/config';
 import { KEY_COLOURS } from '../../../shared/mine/level';
 import { DOOR_COLOURS, PICKUP_COLOURS, paletteFor } from './palette';
 import type { MineEvent, MineSession } from './session';
@@ -26,7 +26,9 @@ export interface MineView {
   /** What the pupil just did or hit, to turn into sparks and flashes. */
   react(events: readonly MineEvent[]): void;
   /** The target the pupil could use right now (a door or pad), to make it glow. */
-  highlight(kind: 'door' | 'pad' | null, id: number): void;
+  highlight(kind: 'door' | 'pad' | 'reactor' | null, id: number): void;
+  /** Shows answer panels floating in the mine (a number gate), or takes them away with null. */
+  showGate(panels: readonly { x: number; y: number; z: number; value: number }[] | null): void;
   stats(): ViewStats;
   /** Lowers or raises the picture's sharpness to keep the speed up on a slow device. Returns the pixel ratio now used. */
   setQuality(pixelRatio: number): number;
@@ -130,6 +132,33 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
     doorMeshes.push(group);
   }
 
+  // ——— Number gate panels: a number on a glowing tile, drawn on top so they can always be seen ———
+  const gateGroup = new THREE.Group();
+  scene.add(gateGroup);
+  let gateSprites: THREE.Sprite[] = [];
+  const numberTexture = (value: number): THREE.CanvasTexture => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const c = canvas.getContext('2d');
+    if (c) {
+      c.fillStyle = 'rgba(15, 32, 60, 0.85)';
+      c.beginPath();
+      c.roundRect(6, 6, 116, 116, 22);
+      c.fill();
+      c.lineWidth = 7;
+      c.strokeStyle = '#7ee8ff';
+      c.stroke();
+      c.fillStyle = '#ffffff';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      const text = String(value);
+      c.font = `bold ${text.length > 4 ? 40 : text.length > 3 ? 50 : 64}px system-ui, sans-serif`;
+      c.fillText(text, 64, 68);
+    }
+    return new THREE.CanvasTexture(canvas);
+  };
+
   // ——— Keys, pickups, pads ———
   const keyGroups = level.keys.map((key) => {
     const g = new THREE.Group();
@@ -180,7 +209,10 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
   const core = new THREE.Mesh(own(new THREE.IcosahedronGeometry(REACTOR_RADIUS, 1)), coreMat);
   const cageMat = own(new THREE.MeshBasicMaterial({ color: 0xffd9a0, wireframe: true }));
   const cage = new THREE.Mesh(own(new THREE.IcosahedronGeometry(REACTOR_RADIUS * 1.35, 0)), cageMat);
-  reactor.add(core, cage);
+  // A see-through blue shell while the reactor is locked (it goes when the last question is answered).
+  const lockMat = own(new THREE.MeshBasicMaterial({ color: 0x66e0ff, transparent: true, opacity: 0.28, depthWrite: false }));
+  const lockShell = new THREE.Mesh(own(new THREE.IcosahedronGeometry(REACTOR_RADIUS * 1.75, 1)), lockMat);
+  reactor.add(core, cage, lockShell);
   reactor.position.copy(v3(level.reactor.x, level.reactor.y, level.reactor.z));
   scene.add(reactor);
 
@@ -289,7 +321,7 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
   const tmp = new THREE.Vector3();
   const lookAtPoint = new THREE.Vector3();
   let clock = 0;
-  let highlighted: { kind: 'door' | 'pad'; id: number } | null = null;
+  let highlighted: { kind: 'door' | 'pad' | 'reactor'; id: number } | null = null;
   let lastWidth = 1;
   let lastHeight = 1;
 
@@ -333,7 +365,7 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
         }
       });
       level.pads.forEach((pad, n) => {
-        const used = s.padsUsed[n] === 1;
+        const used = s.padsUsed[n] >= PAD_ANSWERS;
         const near = highlighted && highlighted.kind === 'pad' && highlighted.id === pad.id;
         padMeshes[n].ring.visible = !used;
         padMeshes[n].disc.visible = !used;
@@ -353,6 +385,8 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
         coreMat.emissiveIntensity = 0.8 + hurt * 0.8 + (less ? 0 : 0.25 * Math.sin(t * 3));
         exitMat.opacity = 0.18;
       }
+      lockShell.visible = s.reactorLock > 0 && !s.reactorDown;
+      if (lockShell.visible) lockMat.opacity = (highlighted && highlighted.kind === 'reactor' ? 0.4 : 0.24) + (less ? 0 : 0.08 * Math.sin(t * 4));
       if (!less) {
         reactor.rotation.y = t * 0.5;
         core.rotation.x = t * 0.7;
@@ -448,6 +482,23 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
       highlighted = kind ? { kind, id } : null;
     },
 
+    showGate(panels) {
+      for (const sprite of gateSprites) {
+        gateGroup.remove(sprite);
+        sprite.material.map?.dispose();
+        sprite.material.dispose();
+      }
+      gateSprites = [];
+      for (const p of panels ?? []) {
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: numberTexture(p.value), transparent: true, depthTest: false }));
+        sprite.renderOrder = 10;
+        sprite.scale.set(1.15, 1.15, 1);
+        sprite.position.copy(v3(p.x, p.y, p.z));
+        gateGroup.add(sprite);
+        gateSprites.push(sprite);
+      }
+    },
+
     stats() {
       return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixelRatio };
     },
@@ -460,6 +511,10 @@ export function createView(canvas: HTMLCanvasElement, session: MineSession, opti
     },
 
     dispose() {
+      for (const sprite of gateSprites) {
+        sprite.material.map?.dispose();
+        sprite.material.dispose();
+      }
       for (const sp of sparks) scene.remove(sp.mesh);
       for (const thing of owned) thing.dispose();
       renderer.dispose();

@@ -6,7 +6,7 @@ import { makeWorld } from '../../../shared/mine/engine';
 import { encodeInputs, GRANT, PENALTY } from '../../../shared/mine/inputs';
 import { medalFor } from '../../../shared/mine/medals';
 import { makeLevel, recipeById } from '../../../shared/mine/level';
-import { DOOR_QUESTIONS, PAD_QUESTIONS, questionPlan, type MathsContext } from '../../../shared/mine/maths';
+import { DOOR_QUESTIONS, PAD_QUESTIONS, REACTOR_QUESTIONS, questionPlan, type MathsContext } from '../../../shared/mine/maths';
 import { MAX_INPUTS_TEXT, MINE_RUNS_PER_DAY, mineStampText } from '../../../shared/mine/save';
 import { answersMatch, makeHandler, MAX_REQUESTS_PER_MINUTE, type Services, type StoredRun } from './handler';
 
@@ -138,14 +138,33 @@ describe('starting a run', () => {
     expect(h.runs.get(body.seed)!.questions).toHaveLength(plan.total);
   });
 
-  it('gives each question door its own questions and each pad three', () => {
+  it('gives each question door its own questions and each pad five, and the reactor console its own', () => {
     const plan = questionPlan(makeLevel(recipeById('l6')!));
-    expect(plan.targets.filter((t) => t.kind === 'door')).toHaveLength(3);
+    expect(plan.targets.filter((t) => t.kind === 'door')).toHaveLength(4);
     expect(plan.targets.filter((t) => t.kind === 'pad')).toHaveLength(5);
-    expect(plan.total).toBe(3 * DOOR_QUESTIONS + 5 * PAD_QUESTIONS);
+    expect(plan.targets.filter((t) => t.kind === 'reactor')).toHaveLength(1);
+    expect(plan.total).toBe(4 * DOOR_QUESTIONS + 5 * PAD_QUESTIONS + REACTOR_QUESTIONS);
     // No two targets share a slot.
     const slots = plan.targets.flatMap((t) => Array.from({ length: t.count }, (_, i) => t.first + i));
     expect(new Set(slots).size).toBe(slots.length);
+  });
+
+  it('gives the questions held for number gates four numbers to fly into, and nobody else', async () => {
+    const h = services();
+    const { reply, stored } = await begin(h, 'l2');
+    const plan = questionPlan(makeLevel(recipeById('l2')!));
+    expect(plan.targets.some((t) => t.gate)).toBe(true);
+    for (const t of plan.targets) {
+      for (let slot = t.first; slot < t.first + t.count; slot++) {
+        const shown = reply.questions[slot] as { choices?: number[] };
+        if (t.gate) {
+          expect(shown.choices, `slot ${slot}`).toHaveLength(4);
+          expect(shown.choices).toContain(stored!.questions[slot].answer);
+        } else if (t.kind !== 'reactor') {
+          expect(shown.choices, `slot ${slot}`).toBeUndefined();
+        }
+      }
+    }
   });
 
   it('sends the browser what to show but never an answer or a record', async () => {
@@ -338,21 +357,30 @@ describe('answering a question', () => {
 });
 
 /** Answers every slot of one door or pad the way a pupil would: wrong ones first, then a right one. */
-async function answerTarget(h: ReturnType<typeof services>, b: Awaited<ReturnType<typeof begin>>, targetId: number, wrong = 0) {
+async function answerTarget(h: ReturnType<typeof services>, b: Awaited<ReturnType<typeof begin>>, targetId: number, wrong = 0, rights = 1) {
   const plan = questionPlan(makeLevel(recipeById(b.level)!));
   const target = plan.targets.find((t) => t.id === targetId)!;
   for (let i = 0; i < wrong; i++) await send(h.s, answerBody(b, target.first + i, b.stored!.questions[target.first + i].answer + 1));
-  const slot = target.first + wrong;
-  await send(h.s, answerBody(b, slot, b.stored!.questions[slot].answer));
+  for (let k = 0; k < rights; k++) {
+    const slot = target.first + wrong + k;
+    await send(h.s, answerBody(b, slot, b.stored!.questions[slot].answer));
+  }
 }
+
+/** The right answers a pretend pilot's run needs: one for each question door and the reactor's three. */
+const NEEDED = (plan: ReturnType<typeof questionPlan>) =>
+  plan.targets.filter((t) => t.kind !== 'pad').map((t) => ({ id: t.id, rights: t.kind === 'reactor' ? 3 : 1 }));
+async function answerWhatTheRunNeeds(h: ReturnType<typeof services>, b: Awaited<ReturnType<typeof begin>>, plan: ReturnType<typeof questionPlan>, wrongAt?: number) {
+  for (const n of NEEDED(plan)) await answerTarget(h, b, n.id, n.id === wrongAt ? 1 : 0, n.rights);
+}
+const GRANTS_OF = (plan: ReturnType<typeof questionPlan>) => NEEDED(plan).flatMap((n) => Array(n.rights).fill(n.id) as number[]).sort((a, b) => a - b);
 
 describe('finishing a run', () => {
   it('replays the inputs itself and saves the time it worked out', async () => {
     const h = services();
     const { bot, plan } = fly('l2', true);
     const b = await begin(h, 'l2');
-    const door = plan.targets.find((t) => t.kind === 'door')!;
-    await answerTarget(h, b, door.id);
+    await answerWhatTheRunNeeds(h, b, plan);
     h.clock.now += 400_000;
     const { status, body } = await send(h.s, finishBody(b, bot.runs));
     expect(status).toBe(200);
@@ -363,7 +391,7 @@ describe('finishing a run', () => {
     expect(report.level).toBe('l2');
     expect(report.maths).toBe(true);
     expect(run.steps).toBe(bot.state.finishSteps);
-    expect(run.grants).toEqual([door.id]);
+    expect([...run.grants].sort((a, b) => a - b)).toEqual(GRANTS_OF(plan));
     expect(run.penalties).toBe(0);
   });
 
@@ -371,7 +399,7 @@ describe('finishing a run', () => {
     const h = services();
     const { bot, plan } = fly('l2', true);
     const b = await begin(h, 'l2');
-    await answerTarget(h, b, plan.targets.find((t) => t.kind === 'door')!.id);
+    await answerWhatTheRunNeeds(h, b, plan);
     h.clock.now += 400_000;
     await send(h.s, { ...finishBody(b, bot.runs), steps: 1, time: 1, finishSteps: 1 });
     expect(vi.mocked(h.s.record).mock.calls[0][2].steps).toBe(bot.state.finishSteps);
@@ -381,7 +409,7 @@ describe('finishing a run', () => {
     const h = services();
     const { bot, plan } = fly('l2', true, false);
     const b = await begin(h, 'l2', true, 'free');
-    await answerTarget(h, b, plan.targets.find((t) => t.kind === 'door')!.id);
+    await answerWhatTheRunNeeds(h, b, plan);
     h.clock.now += 400_000;
     expect((await send(h.s, finishBody(b, bot.runs))).status).toBe(200);
   });
@@ -443,7 +471,7 @@ describe('finishing a run', () => {
     const { bot, plan } = fly('l2', true);
     const door = plan.targets.find((t) => t.kind === 'door')!;
     const b = await begin(h, 'l2');
-    await answerTarget(h, b, door.id, 1);
+    await answerWhatTheRunNeeds(h, b, plan, door.id);
     h.clock.now += 600_000;
     // Without the penalty the run does not add up.
     expect((await send(h.s, finishBody(b, bot.runs))).status).toBe(400);
@@ -454,7 +482,7 @@ describe('finishing a run', () => {
     expect(sent.status).toBe(200);
     const run = vi.mocked(h.s.record).mock.calls[0][2];
     expect(run.penalties).toBe(1);
-    expect(run.grants).toEqual([door.id]);
+    expect([...run.grants].sort((a, b) => a - b)).toEqual(GRANTS_OF(plan));
     // The wrong answer cost 6 seconds (180 steps) on the clock.
     expect(run.steps).toBe(bot.state.finishSteps + 180);
   });
@@ -480,6 +508,19 @@ describe('finishing a run', () => {
     expect(answersMatch(true, stored({ ...rightAtDoor, [pad.first + 2]: { value: 1, right: true } }), plan, run([door.id, pad.id], 0))).toBe(true);
     // Something that is not a door or pad of this mine.
     expect(answersMatch(true, stored(rightAtDoor), plan, run([door.id, 63], 0))).toBe(false);
+    // A pad pays out on two right answers, so each of its two grants needs its own right answer at that pad.
+    const onePadAnswer = { ...rightAtDoor, [pad.first + 2]: { value: 1, right: true } };
+    expect(answersMatch(true, stored(onePadAnswer), plan, run([door.id, pad.id, pad.id], 0))).toBe(false);
+    expect(answersMatch(true, stored({ ...onePadAnswer, [pad.first + 4]: { value: 1, right: true } }), plan, run([door.id, pad.id, pad.id], 0))).toBe(true);
+    // The reactor console: three right answers for three unlocks, and a wrong answer there is a penalty like at a door.
+    const reactor = plan.targets.find((t) => t.kind === 'reactor')!;
+    const two = { ...rightAtDoor, [reactor.first]: { value: 1, right: true }, [reactor.first + 1]: { value: 1, right: true } };
+    const three = { ...two, [reactor.first + 2]: { value: 1, right: true } };
+    expect(answersMatch(true, stored(two), plan, run([door.id, reactor.id, reactor.id, reactor.id], 0))).toBe(false);
+    expect(answersMatch(true, stored(three), plan, run([door.id, reactor.id, reactor.id, reactor.id], 0))).toBe(true);
+    const wrongAtReactor = { ...three, [reactor.first + 3]: { value: 1, right: false } };
+    expect(answersMatch(true, stored(wrongAtReactor), plan, run([door.id, reactor.id, reactor.id, reactor.id], 0))).toBe(false);
+    expect(answersMatch(true, stored(wrongAtReactor), plan, run([door.id, reactor.id, reactor.id, reactor.id], 1))).toBe(true);
     // No maths: no grants, no penalties.
     expect(answersMatch(false, null, plan, run([], 0))).toBe(true);
     expect(answersMatch(false, null, plan, run([door.id], 0))).toBe(false);
@@ -571,11 +612,14 @@ describe('finishing a run', () => {
   });
 
   it('every mine’s pretend pilot, answering right, is accepted (steady flight)', async () => {
-    for (const id of ['l1', 'l2', 'l3', 'l4']) {
+    for (const id of ['l1', 'l2', 'l3', 'l4', 'l5', 'l6']) {
       const h = services();
       const { bot, plan } = fly(id, true);
       const b = await begin(h, id);
-      for (const t of plan.targets) if (bot.runs.some(([code]) => code === GRANT + t.id)) await answerTarget(h, b, t.id);
+      for (const t of plan.targets) {
+        const used = bot.runs.filter(([code]) => code === GRANT + t.id).length;
+        if (used) await answerTarget(h, b, t.id, 0, used);
+      }
       h.clock.now += 1_200_000;
       const { status } = await send(h.s, finishBody(b, bot.runs));
       expect(status, id).toBe(200);

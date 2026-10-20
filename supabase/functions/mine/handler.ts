@@ -18,7 +18,7 @@ import type { Question } from '../../../shared/maths/skillPack';
 import { MINE_POINTS_BEST, MINE_POINTS_FIRST } from '../../../shared/mine/config';
 import { makeLevel, recipeById } from '../../../shared/mine/level';
 import { medalFor, type Medal } from '../../../shared/mine/medals';
-import { makeRunQuestions, markQuestion, questionPlan, sameAnswer, type MathsContext, type QuestionPlan, type StartReply } from '../../../shared/mine/maths';
+import { addGateChoices, makeRunQuestions, markQuestion, questionPlan, sameAnswer, type MathsContext, type QuestionPlan, type StartReply } from '../../../shared/mine/maths';
 import {
   isCountedLevel,
   judgeRun,
@@ -168,7 +168,8 @@ export function makeHandler(services: Services) {
       if (wantsMaths) {
         const plan = planFor(level) as QuestionPlan;
         const context = await services.mathsContext(player);
-        const list = context ? makeRunQuestions(context, plan.total, seededRandom(seed)) : [];
+        const made = context ? makeRunQuestions(context, plan.total, seededRandom(seed)) : [];
+        const list = addGateChoices(made, plan, seededRandom(`${seed}:gates`));
         if (list.length < plan.total || !(await services.storeRun(player, seed, level, list))) {
           return reply(503, { error: "The questions couldn't be made just now." });
         }
@@ -251,23 +252,25 @@ export function makeHandler(services: Services) {
 }
 
 /**
- * Do the doors and pads that opened by an answer, and the wrong-answer penalties, match the answers marked here?
- *  - every door or pad opened by an answer needs a right answer marked for that very door or pad;
- *  - the penalties in the run must be exactly the wrong answers marked at question doors (a pad costs nothing, and
- *    leaving a penalty out would be a way to cut the time);
+ * Do the doors, pads and reactor unlocks that came from answers, and the wrong-answer penalties, match the answers marked here?
+ *  - every right answer a run used needs a right answer marked for that very door, pad or reactor console;
+ *  - the penalties in the run must be exactly the wrong answers marked at question doors and the reactor console (a pad
+ *    costs nothing, and leaving a penalty out would be a way to cut the time);
  *  - a run without maths has no answers, so no grants and no penalties.
  */
 export function answersMatch(maths: boolean, stored: StoredRun | null, plan: QuestionPlan, run: JudgedRun): boolean {
   if (!maths || !stored) return !maths && run.grants.length === 0 && run.penalties === 0;
   const answers = Object.entries(stored.answered).map(([slot, a]) => ({ slot: Number(slot), right: a.right === true }));
-  for (const id of run.grants) {
-    const target = plan.targets.find((t) => t.id === id);
-    if (!target) return false;
-    if (!answers.some((a) => a.right && a.slot >= target.first && a.slot < target.first + target.count)) return false;
+  const inTarget = (t: QuestionPlan['targets'][number], slot: number) => slot >= t.first && slot < t.first + t.count;
+  // Each right answer the run used needs its own right answer marked for that very door, pad or console.
+  for (const target of plan.targets) {
+    const used = run.grants.filter((id) => id === target.id).length;
+    if (answers.filter((a) => a.right && inTarget(target, a.slot)).length < used) return false;
   }
-  const doorSlots = plan.targets.filter((t) => t.kind === 'door');
-  const wrongAtDoors = answers.filter((a) => !a.right && doorSlots.some((t) => a.slot >= t.first && a.slot < t.first + t.count)).length;
-  return run.penalties === wrongAtDoors;
+  if (run.grants.some((id) => !plan.targets.some((t) => t.id === id))) return false;
+  const costly = plan.targets.filter((t) => t.kind !== 'pad');
+  const wrongAtCosts = answers.filter((a) => !a.right && costly.some((t) => inTarget(t, a.slot))).length;
+  return run.penalties === wrongAtCosts;
 }
 
 /** The day in New Zealand (UTC+13 in summer; an hour out in winter, which only moves when "once a day" rolls over). */
