@@ -17,6 +17,7 @@ Written 21 October 2026 (Stage 0: plan only, **no code yet**). Branch `archery`,
 - **A few hub points.**
 - **More Bows** = a bow shop: bows you buy and keep.
 - **Graphics as good as we can make them**, while staying smooth on classroom Chromebooks.
+- Also (section 13): 10 coins per right answer, 8 coin-earning rounds a day, **New Season wipes coins and gear**, best-of-3 fights, the plan's names kept, classmate challenges both in the game and from the hub Lobby, City buildings only chip.
 
 ## The short version
 
@@ -67,7 +68,7 @@ The twists are in the engine (so the server replays them too), and their numbers
 
 ## 4. The Armory (our own names, mostly arrows)
 
-Prices are in **coins**. A perfect speed round earns 100 (section 5). Items come in bundles, unlock by **Armory level** (it goes up as you spend: levels 1–5), and sell back for half. You can carry at most 9 of each. The **Plain Arrow** is free and never runs out. Names are placeholders for James and the pupil to change.
+Prices are in **coins**. A perfect speed round earns 100 (section 5). Items come in bundles, unlock by **Armory level** (it goes up as you spend: levels 1–5), and sell back for half. You can carry at most 9 of each. The **Plain Arrow** is free and never runs out. James kept these names (21 Oct 2026).
 
 **Arrows** (the heart of the game):
 
@@ -101,7 +102,7 @@ Prices are in **coins**. A perfect speed round earns 100 (section 5). Items come
 | Hunter's Bow | wind shown as an exact number, not just an arrow | 200 |
 | Golden Bow | looks amazing; a little extra top power | 500 |
 
-Bows change what you can see or reach, never how hard an arrow hits, so a well-aimed Starter Bow can always win. The best gear, all together, costs about 25–30 perfect speed rounds: a goal that takes weeks, not one lesson. The simulator and James's try-out will tune all of this.
+Bows change what you can see or reach, never how hard an arrow hits, so a well-aimed Starter Bow can always win. The best gear, all together, costs about 25–30 perfect speed rounds: a goal that takes a few weeks, not one lesson, and is reachable within a season (New Season wipes coins and gear). The simulator and James's try-out will tune all of this.
 
 **Gear and fights:** before a fight you **pack your quiver** from what you own. When the fight starts, the server takes the packed gear out of your store. When it finishes, the server replays the fight, counts what was actually used, and **gives back everything unused**. A fight abandoned part-way gives back unused gear too.
 
@@ -155,7 +156,7 @@ Three levels, all pure functions using the fight's seeded random numbers:
 - **Teacher switch**: `app_settings.archery_enabled boolean not null default false` + `teacher_set_archery(enabled, target_class)` (copy `20261021000200_mine_hub.sql`). The function refuses everything while it's off.
 - **Teacher settings** (a small panel `TeacherArchery.tsx`): on/off, a **Classmate fights** on/off (default on), and **Reset coins** for a class (only if James wants it; see question 4).
 
-**Classmate fights without touching shared screens:** the hub's Lobby, join codes and presence channels are shared files and functions (`lobby()`, `Lobby.tsx`, `is_player_in()`, `waiting_code_taken()`). To stay out of them, Archery has its own **"Challenge a classmate"** list inside the game: classmates who are in the game right now, from our own `archery_online(…)` function, same school and class only. Tap a name to send a challenge, and they see it pop up. Turns go through the server (`shot`), the server plays them with the shared engine, and both screens get the new state through realtime on the fight row, with the shared `useGameChecks` polling as a backup. Turn timer 45 s (a time-out uses up the turn), and 3 time-outs in a row ends the fight (unused gear returned, nobody earns anything). A tidy-up job ends idle fights. Joining from the hub's main Lobby can come later as its own small shared branch, if James wants it.
+**Classmate fights (Stage 6; the hub Lobby joins in Stage 6b):** the hub's Lobby, join codes and presence channels are shared files and functions (`lobby()`, `Lobby.tsx`, `is_player_in()`, `waiting_code_taken()`). To stay out of them, Archery has its own **"Challenge a classmate"** list inside the game: classmates who are in the game right now, from our own `archery_online(…)` function, same school and class only. Tap a name to send a challenge, and they see it pop up. Turns go through the server (`shot`), the server plays them with the shared engine, and both screens get the new state through realtime on the fight row, with the shared `useGameChecks` polling as a backup. Turn timer 45 s (a time-out uses up the turn), and 3 time-outs in a row ends the fight (unused gear returned, nobody earns anything). A tidy-up job ends idle fights. Joining from the hub's main Lobby (James wants both) comes in Stage 6b as its own small shared branch.
 
 ## 8. Points (through the `hub_games` hooks)
 
@@ -202,22 +203,22 @@ Each stage is small and tested, ends with a "Stage N results" section here, a co
 4. **The server.** The migration (tables, switch, functions, points hooks), the `archery` function (load, speed round, buy/sell, bot fight start/finish), database tests on a scratch copy, and handler tests. Plus a trial backend in the preview so it all works there too.
 5. **The rest of the screens.** Home (the pupil's layout), the speed round, Armory, More Bows, Pack your quiver, coins, How to play. *Try it:* the whole game in the preview against bots.
 6. **Classmate fights.** Challenges, turns through the server, realtime, time-outs, tidy-up. A stand-in preview where two tabs play each other (copy `preview/power-clash/standIn.ts`).
+   - **6b. The hub Lobby** (a separate small branch, `archery-lobby`): Archery fights listed in and joinable from the main Lobby and its code box. Only after James OKs the shared-file changes.
 7. **Hub fit and polish.** Points and achievements, the teacher panel, accessibility tests (copy Clan Quest's), simpler-graphics mode, and a performance check on a slow machine.
 8. **The target challenge** (the pupil's own level screens): 10 arrows, targets at 5–50 m, high scores.
 9. **Go-live prompt** `docs/prompts/archery-golive.md`, then going live one step at a time, only on James's word.
 
-## 13. Questions for James (with my recommendation)
+## 13. Questions for James
 
-Answered on 21 Oct 2026: build first, bots/classmates, wrong answers, the timer, where speed rounds happen, fairness, worlds, hub points, More Bows (see Decisions above). Still open:
-
-1. **Names.** Arrow and bow names, the speed-round button's name, and "coins" for the money. *Recommend:* show the pupil the Armory table and let them rename anything.
-2. **Coins per right answer and prices.** *Recommend:* 10 coins per right answer, and the prices in section 4 (the best gear takes a few weeks). It's easy to change after a try-out.
-3. **Daily cap on coin-earning rounds.** *Recommend:* 8 a day. After that it's practice: maths recorded, no coins.
-4. **Does a New Season reset coins and gear?** *Recommend:* **no**. Saving up is the point, so New Season clears only Archery's hub points and best scores.
-5. **A best-of-3 fight, or one round?** *Recommend:* best of 3 (about 6–10 minutes).
-6. **Classmate fights only in the game's own "Challenge a classmate" list for now** (not the hub's Lobby)? *Recommend:* yes, which keeps this branch out of shared files.
-7. **Harder ladder questions at 1–3 seconds.** *Recommend:* keep it as decided, and add +2 s for harder skills only if it feels unfair when tried.
-8. **Blasts in the City**: buildings get chipped, not flattened. OK?
+**All answered on 21 Oct 2026:**
+1. **Names:** keep the plan's names (Giant Arrow, Arrow Rain, Longbow …) and "coins".
+2. **Coins:** 10 per right answer in time, with the prices in section 4.
+3. **Daily cap:** 8 coin-earning rounds a day, then practice (maths recorded, no coins).
+4. **New Season wipes coins and gear** (and Archery's points and best scores), so everyone starts equal each season. The `season_fn` hook resets `archery_players` to 0 coins, starter gear and the Starter Bow, and Armory level 1. Prices are tuned so the best gear is reachable well within a season.
+5. **Fights are best of 3 rounds.**
+6. **Classmate challenges: both.** The game's own "Challenge a classmate" list (Stage 6, on this branch) **and** joining from the hub's main Lobby. The Lobby part changes shared files and functions (`lobby()`, `Lobby.tsx`, `is_player_in()`, `waiting_code_taken()`), so, as the guide says, it's its own small branch with its own go-live, after Stage 6 (Stage 6b).
+7. **Harder skills:** keep 10 → 1 s for everyone; add +2 s for harder skills only if it feels unfair when tried.
+8. **City buildings only chip** when hit.
 
 ## Stage 0 results (21 Oct 2026)
 
