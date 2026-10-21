@@ -573,3 +573,12 @@ The classmate fight numbers are from the two-player preview, which runs **both**
 **Step 4, checked from outside 22 Oct 2026 (nothing changed):** signed out, every Archery table (including `archery_duels`) and every Archery function, `archery_here` and `teacher_archery_summary` included, answers 42501. As a real pupil, inside a transaction rolled back afterwards: the five server-only tables 42501; `archery_state`, `archery_note`, `archery_counts` and `archery_duel_challenge` 42501; `teacher_set_archery` and `teacher_archery_summary` refused (42501); `archery_here()` answers `{"off": true}` (the game is off); no classmate fights to see. Afterwards still no Archery rows anywhere and the switch off everywhere. **Next: step 5 (the merge-step edits and merging to `main`), only on James's word.**
 
 **Step 5, the merge (pull request, James's choice), 22 Oct 2026:** the merge-step additions: `archeryChallenge` appended to `GAMES` behind `archeryOn()` (and the registry test), `'archery'` at the end of `FUNCTIONS`, the four `archery:*` scripts at the end of `package.json`, `dist-preview-archery/` in `.gitignore`, Archery's lines in `shared/README.md` and `docs/PRIVACY-SUMMARY.md`, and **`ON = true`** in `src/games/archery/switch.ts` (the card still hides while the teacher switch is off). `origin/main` merged again (up to date). `npm run test:all` 4,683 passed, typecheck and build fine. **Next, after James merges:** watch "Test and publish" go green, then step 6 (try it as a teacher, and a classmate fight on two devices with two pupil accounts in the same class).
+
+## Went live (22 Oct 2026)
+
+All on James's word, each step asked separately:
+- **Database:** `20261021000300_archery.sql`, `20261022000100_archery_classmates.sql`, `20261022000200_archery_hub.sql` applied (steps 2 to 4 above).
+- **Function:** `archery` deployed with `--no-verify-jwt`.
+- **Merged to `main`:** pull request #13 (code switch on), merged by me at James's request. "Test and publish" green (tests, database checks, deploy); the published site's code includes Archery Challenge.
+- **Switched on** (James: "all three, like Mine Runner"): `archery_enabled = true` for his classes Everyone, Riley and Teachers; Classmate fights on.
+- **Not done yet:** step 6, the teacher try-out and a classmate fight on two real devices (needs two pupil accounts in one class). Pupils can play now. Watch the first lesson in the function logs (errors, never names) and the request count.
