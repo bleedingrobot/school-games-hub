@@ -91,7 +91,7 @@ Prices are in **coins**. A perfect speed round earns 100 (section 5). **Special 
 | Crossbow Bolt | a straight, fast shot with no drop, cuts through dirt, short range | 150 each | 4 |
 | Giant Arrow | the big one: a huge blast with a shockwave of leaves and confetti | 400 each | 5 |
 
-| **Glass Arrow** (the pupil's own arrow) | **The pupil's design (James, 21 Oct 2026, with a drawing):** "When it stabs them, shards keep hurting, like a poison effect. Should be the most powerful arrow in the game. Kills them next turn if they don't do anything in 1 turn." In the code as id `glass`, **not sold and never used by bots** until James settles what counts as "doing something", its price and its level (Stage 1 results, questions). | to come | to come |
+| **Glass Arrow** (the pupil's own arrow) | **The pupil's design (James, 21 Oct 2026, with a drawing):** "When it stabs them, shards keep hurting, like a poison effect. Should be the most powerful arrow in the game. Kills them next turn if they don't do anything in 1 turn." **James's answers (21 Oct 2026):** a direct stab **or a near miss** (inside its blast) leaves shards. The shards keep hurting, and the stabbed archer **pops at the end of their next turn unless they hit back** that turn (their shot damages whoever shot the Glass Arrow, which breaks the shards). In the code as id `glass`; not sold and never used by bots until its shards are built in Stage 3. | 500 each | 5 |
 
 (The Feather Arrow, which left a dotted path to aim from, is gone: there's no aiming help.)
 
@@ -104,7 +104,7 @@ Prices are in **coins**. A perfect speed round earns 100 (section 5). **Special 
 | Starter Bow | the normal bow | free |
 | Longbow | +10% top power (reach the far side in a strong headwind) | 300 |
 | Recurve Bow | faster arrows that drift a little less in the wind | 400 |
-| Hunter's Bow | shows what the wind will be on your next turn too | 250 |
+| Hunter's Bow | shows what the wind will be next round (James, 21 Oct 2026: the wind stays the same all round) | 250 |
 | Golden Bow | looks amazing; a little extra top power | 600 |
 
 Bows change what you can see or reach, never how hard an arrow hits, and none of them gives an aiming line, so a well-aimed Starter Bow can always win. The bows and shields together cost about 20 perfect speed rounds. Special arrows get used up, so there's always something to save for. It's reachable within a season (New Season wipes coins and gear). The simulator and James's try-out will tune all of this.
@@ -265,10 +265,11 @@ Each stage is small and tested, ends with a "Stage N results" section here, a co
 
 **Untested:** the test page on a real phone or Chromebook (James's try-out); how hard the land feels to real pupils; every arrow except Plain and Steel (Stage 3); shields beyond "soak first" (Stage 3).
 
-**Questions for James:**
-1. **Glass Arrow, "if they don't do anything in 1 turn":** what can the stabbed pupil do to get rid of the shards? Suggestions: (a) spend their turn pulling the shards out (they don't shoot that turn), (b) eat an Apple, (c) either of those. Otherwise they pop at the end of their next turn.
-2. **Glass Arrow, the stab:** must it hit the archer directly to leave shards (a near miss is just a small burst)? Suggested: yes.
-3. **Glass Arrow, price and level:** it's the most powerful arrow, so suggested 500 coins (5 perfect speed rounds), one at a time, Armory level 5. It breaks the "no arrow is a knock-out" rule on purpose, but fairly, because the other player always gets one turn to deal with it.
-4. **Hunter's Bow vs wind:** the plan has new wind each *round*, but the Hunter's Bow shows "the wind on your next turn". Either the wind changes a little each turn (then the bow makes sense), or the bow shows next *round's* wind. Suggested: a small change each turn (±2).
+**James's answers (21 Oct 2026):**
+1. **Glass Arrow, getting rid of the shards:** **hit back.** On their next turn the stabbed archer must damage whoever shot the Glass Arrow; that breaks the shards. Otherwise they pop at the end of that turn. (It breaks the "no knock-out arrow" rule on purpose, fairly, because there's always a turn to answer.)
+2. **Near misses count too:** landing inside its blast leaves shards, not only a direct stab.
+3. **500 coins, one at a time, Armory level 5.**
+4. **Wind stays the same all round.** So the **Hunter's Bow shows next round's wind** (section 4 changed to match).
+Stage 3 to settle: how much the shards hurt each turn before the pop (the "keeps hurting" part), and what happens if the Glass Arrow's shooter has already popped.
 
 **Go-live list (so far):** at the merge step add `archery:determinism` and `archery:preview` / `archery:single` to the end of `package.json`'s scripts, and `dist-preview-archery/` to `.gitignore` (both left alone on this branch, as section 11 says).

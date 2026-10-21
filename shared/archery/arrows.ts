@@ -73,9 +73,12 @@ const stage3: ArrowBehaviour = { stage: 3 };
  * The Glass Arrow: the pupil's own arrow (James, 21 Oct 2026, from the pupil's drawing).
  * The pupil's words: "When it stabs them, shards keep hurting, like a poison effect. It should be
  * the most powerful arrow in the game. It kills them next turn if they don't do anything in 1 turn."
- * TODO(glass arrow, Stage 3): the shards that keep hurting, and what counts as "doing something"
- * to get rid of them, wait for James's answers. Its price and level too. Until then it bursts
- * like a Plain Arrow, it isn't sold, and bots never pick it. Don't change the pupil's idea.
+ * James's answers (21 Oct 2026): a direct stab OR a near miss (inside its blast) leaves shards.
+ * The shards keep hurting, and the stabbed archer pops at the end of their next turn unless that
+ * turn they hit back: their shot damages the archer who shot the Glass Arrow, which breaks the
+ * shards. 500 coins, one at a time, Armory level 5.
+ * TODO(glass arrow, Stage 3): build the shards. Until then it bursts like a Plain Arrow, it isn't
+ * sold, and bots never pick it. Don't change the pupil's idea.
  */
 function glassImpact(ctx: ImpactContext): void {
   defaultImpact(ctx);
@@ -98,9 +101,9 @@ const ENTRIES: Entry[] = [
   { id: 'sneaky', name: 'Sneaky Mole', does: 'Tunnels toward the nearest archer and pops up under them.', blastRadius: 22, peakDamage: 35, price: 220, perPurchase: 1, level: 4, behaviour: stage3 },
   { id: 'bolt', name: 'Crossbow Bolt', does: 'Straight and fast, no drop, cuts through dirt, short range.', blastRadius: 12, peakDamage: 35, price: 150, perPurchase: 1, level: 4, behaviour: stage3 },
   { id: 'giant', name: 'Giant Arrow', does: 'A huge blast with a shockwave of leaves and confetti.', blastRadius: 75, peakDamage: 55, price: 400, perPurchase: 1, level: 5, behaviour: stage3 },
-  // The pupil's own arrow (see glassImpact). Not for sale until its last details are settled.
-  // Its blast numbers are the Plain Arrow's for now; price and level are blank.
-  { id: 'glass', name: 'Glass Arrow', does: 'Stabs, and its glass shards keep hurting. Deal with them in 1 turn, or you pop.', blastRadius: 18, peakDamage: 25, price: null, perPurchase: 1, level: null, forSale: false, placeholder: true, behaviour: { stage: 'pupil', impact: glassImpact } },
+  // The pupil's own arrow (see glassImpact). Not for sale until its shards are built (Stage 3).
+  // Its blast numbers are the Plain Arrow's for now.
+  { id: 'glass', name: 'Glass Arrow', does: 'Its glass shards keep hurting. Hit back on your next turn, or you pop.', blastRadius: 18, peakDamage: 25, price: 500, perPurchase: 1, level: 5, forSale: false, placeholder: true, behaviour: { stage: 'pupil', impact: glassImpact } },
 ];
 
 export const ARROWS: readonly ArrowKind[] = ENTRIES.map((e) => ({ forSale: true, unlimited: false, placeholder: false, ...e }));

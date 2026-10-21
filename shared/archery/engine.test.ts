@@ -225,7 +225,7 @@ describe('arrows', () => {
 
   it("never sells the pupil's Glass Arrow, and bots never pick it, until it's finished", () => {
     const glass = arrowKind('glass');
-    expect(glass).toMatchObject({ name: 'Glass Arrow', forSale: false, placeholder: true, price: null, level: null });
+    expect(glass).toMatchObject({ name: 'Glass Arrow', forSale: false, placeholder: true, price: 500, level: 5 });
     expect(armoryArrows().map((a) => a.id)).not.toContain('glass');
     expect(botArrows().map((a) => a.id)).not.toContain('glass');
     expect(botArrows().map((a) => a.id)).toContain('plain');
