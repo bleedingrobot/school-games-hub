@@ -101,11 +101,6 @@ export function ScribblePad({ onCollapse }: { onCollapse: () => void }) {
   }
   function move(e: React.PointerEvent<HTMLCanvasElement>) {
     if (drawing.current?.id !== e.pointerId) return;
-    // Mouse moving with no button held: the lift was missed, so the stroke is over.
-    if (e.pointerType === 'mouse' && e.buttons === 0) {
-      drawing.current = null;
-      return;
-    }
     drawing.current.stroke.points.push(place(e));
     redraw();
   }
@@ -192,7 +187,6 @@ export function ScribblePad({ onCollapse }: { onCollapse: () => void }) {
         onPointerMove={move}
         onPointerUp={up}
         onPointerCancel={up}
-        onLostPointerCapture={up}
       />
     </section>
   );
