@@ -148,3 +148,11 @@ Flash is 1000 to 1200 ms depending on the stage. Feedback is gentle: right → c
 2. Deploy the `training` function from this branch (`supabase functions deploy training`, the same way as before). Do this first: until it is deployed the old function refuses `sub:` keys and Quick looks answers would pile up in the browser queue (they are kept and sent later, nothing is lost).
 3. Merge `subitising` into `main` so the website build has the button. Training is already on (`TRAINING_ON = true`), so every student who can open Training sees "Quick looks" straight away; there is no separate switch. There is no separate Quick looks switch; if James wants one, it is a small addition (ask first).
 4. Try it as a test student: starting check, a session, reload on another device, check the facts map.
+
+## 13. Went live (21 October 2026)
+
+- **Deployed:** the `training` function only (no database change, no migration). An unsigned request answers 401 "Please sign in again."
+- **Merged to `main`** (push of `subitising`, merge commit 2419543). "Test and publish" passed: build, database tests and deploy all green.
+- **What students see:** a "Quick looks" button next to "Today's session" on the Training home, for everyone who can open Training. No separate switch. Read-aloud is off until a student switches it on.
+- **Not yet checked live:** signing in as a student and doing a session on the real site (needs a school Google account). James to try it.
+- **Turning it off:** hide the button in `src/training/TrainingApp.tsx` and publish. Answers already saved stay in `training_answers` and do not affect the times-table map.
