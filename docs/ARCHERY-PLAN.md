@@ -4,7 +4,7 @@ A Scorched Earth–style game for the hub, with **archers instead of tanks**. Tw
 
 Written 21 October 2026 (Stage 0: plan only, **no code yet**). Branch `archery`, folder `~/projects/school-games-hub-archery`, short id `archery`, CSS prefix `.ar-`. Next free migration number when this was written: `20261021000300` (re-check before the first migration).
 
-**Status: Stage 3 (the Armory's arrows, shields, helpers and bows) built 21–22 Oct 2026, on the branch only. Nothing live. Waiting for James before Stage 4.**
+**Status: Stages 3 and 4 built 22 Oct 2026 (James: "push on as far as you can"), on the branch only. Nothing live: no migration applied, no function deployed. Waiting for James before Stage 5.**
 
 **Decisions (James, 21 Oct 2026):**
 - Archers, not tanks. Big, over-the-top weapons, mostly **special arrows** (like all of Scorched Earth's weapons). Shields and bows are smaller sections of the shop.
@@ -367,3 +367,36 @@ Stage 3 to settle: how much the shards hurt each turn before the pop (the "keeps
 5. Rounds are still about 16–28 shots. Shorter still (a bigger Plain blast again, or 80 health a round)?
 
 **Go-live list (so far):** as Stage 2. Nothing new.
+
+## Stage 4 results (22 Oct 2026)
+
+James asked me to push on past Stage 3 overnight, so Stage 4 followed straight on. **Nothing is live:** the migration has only been run on a throw-away database copy, and the function hasn't been deployed.
+
+**Built** (branch `archery` only):
+- **Migration `20261021000300_archery.sql`** (the next free number, checked across `main` and every branch on 22 Oct 2026):
+  - Tables, all with RLS on and no pupil access: `archery_players` (coins ≥ 0, gear, shields, bows, coins spent in all, best score per world), `archery_requests` (a purchase or fight start sent twice gets its first reply; kept 2 days), `archery_rounds` (a speed round's questions, when each was sent, the answers marked: pupils can never read it), `archery_fights` (seed, world, bot level, the packed quiver, how it ended).
+  - Server-only functions, each doing its whole change in one go with the row locked: `archery_state`, `archery_shop` (buy or sell), `archery_round_start` / `_load` / `_answer` (a question is marked once, only after it was sent, and its coins go to the round and the pupil together), `archery_fight_start` (gives up any open fight first and gives its gear back, then takes the packed quiver out; refuses gear, a shield or a bow the pupil hasn't got), `archery_fight_load`, `archery_fight_end` (gives back what wasn't used, keeps a best score; a second end changes nothing).
+  - Fights left open for over 2 hours (the page was closed) give **all** their packed gear back the next time the pupil opens the game (the shots weren't sent, so nothing can be counted as used).
+  - The switch `app_settings.archery_enabled` (off to start) and `teacher_set_archery()`.
+  - The hooks: How points work, **New Season wipes coins, gear, bests, rounds and fights** (James, 21 Oct 2026), last played. No achievements yet (Stage 7), so no counts hook yet.
+- **Server function `archery`** (`supabase/functions/archery/`: `handler.ts`, `entry.ts`, `handler.test.ts`, built `index.ts`): `load`, `round-start`, `round-answer`, `buy`, `sell`, `fight-start`, `fight-finish` (with `left: true` for a fight given up part-way). Everything is refused while the teacher's switch is off.
+  - **Speed round** (section 5, as planned): 10 questions from the pupil's maths focus (`makeFocusPack` through the space game's helpers, seeded), made and kept by the server and sent one at a time; 10 s, then 9 s … 1 s; the timer checked by the pupil's screen (+0.2 s for the tap) **and** the server's clock (+2.5 s for slow wi-fi); 10 coins per right answer in time; a late right answer is still recorded as right (just no coins); a timed-out question isn't recorded; every answer goes to the maths records with `recordMathsAnswers`; 8 coin-earning rounds a day, then practice.
+  - **Armory:** prices and what one purchase gives come from the shop rules (`shared/archery/shop.ts`), never from the browser. **Armory levels by coins spent in all: 0, 200, 600, 1,200, 2,000** for levels 1–5 (a pupil doing 8 perfect rounds a day reaches level 5 in about 3 days). Carry at most 5 of each arrow or helper; sell one back for half.
+  - **Fights:** the server replays every shot with the engine, **and works out every bot shot itself and checks it matches** (the plan said the server would never run the bots; it turned out to cost only about 0.1 ms a turn, and it means a made-up fight against a bot that always misses is refused). The pupil's own shots are the only thing the browser decides.
+  - **Points** (through `add_game_points`, once each): finish a fight 2 (3 if you win); 5 or more right in a speed round 1.
+- **`src/data/archery.ts`:** the browser's calls (the same requests for the real server and the trial one). A finished fight that can't be sent waits on the device and is sent later.
+- **`src/games/archery/trialBackend.ts`:** the real handler running in the browser on a pretend database with the same rules as the SQL, for the preview (Stage 5's screens will use it) and for the function's tests.
+
+**Tests:** database `supabase/tests/database/archery.test.sql` **53 checks pass** on a throw-away copy (pupils get 42501 on every table and server function; the switch; coins added once per answer; a question never sent can't be answered; purchases sent twice cost once; levels, carrying, owning; fights take and give back gear; a fight ends once; best per world; New Season wipes it all). `game_hooks.test.sql` (38) and `mine_hub.test.sql` (31) still pass on the same copy. Function tests 16 (sign-in, switch, both timer checks, slow wi-fi, sent twice, practice rounds after 8, prices from the shop, levels, gear checks, honest fights saved with points once, a faked bot shot refused, an unfinished fight refused, leaving part-way, the bundle up to date). Shop and speed-round tests 8, including **every skill on the maths ladder makes 10 questions the server can mark**. Data tests 3.
+- `npm run typecheck` clean; `npm run test:all` **4,544 passed, 1 failed**: `MinePlay.test.tsx` "shows the time, the bests…" timed out with the computer busy; it passes run alone (twice). This branch doesn't touch Mine Runner. `npm run build` fine. Only `supabase/functions/archery/index.ts` was built (no other function changed).
+
+**Untested:** the real function in Deno and against the real database (it needs deploying, which is James's call); how the speed round feels with 1-second questions on a Chromebook.
+
+**Requests per lesson** are as section 9 said (a speed round is 11 requests; a bot fight 2).
+
+**Questions for James:**
+1. **Armory levels** at 0 / 200 / 600 / 1,200 / 2,000 coins spent: OK?
+2. **The server checks every bot shot** (a small change from the plan, for fairness): OK?
+3. A fight left open for 2 hours gives back all its packed gear. OK, or keep the gear (stricter, but a dropped Wi-Fi would lose arrows)?
+
+**Go-live list (so far):** as Stage 3, plus: `archery` added to the end of `FUNCTIONS` in `scripts/build-functions.mjs`; re-check the migration number; apply `20261021000300_archery.sql`; deploy `archery` with `--no-verify-jwt`; the migration note in `docs/PLAN.md`; `docs/PRIVACY-SUMMARY.md` (coins, gear, best scores, speed-round answers kept 2 days, fights).
