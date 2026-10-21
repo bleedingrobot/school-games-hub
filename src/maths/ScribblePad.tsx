@@ -186,16 +186,19 @@ export function ScribblePad({ onCollapse }: { onCollapse: () => void }) {
           Hide
         </button>
       </div>
-      <canvas
-        ref={canvas}
-        className="scribble__canvas"
-        role="img"
-        aria-label="Drawing space. Draw your working here."
-        onPointerDown={down}
-        onPointerMove={move}
-        onPointerUp={up}
-        onPointerCancel={up}
-      />
+      {/* The canvas fills this box without sizing it (its own pixel size must never push the box bigger). */}
+      <div className="scribble__surface">
+        <canvas
+          ref={canvas}
+          className="scribble__canvas"
+          role="img"
+          aria-label="Drawing space. Draw your working here."
+          onPointerDown={down}
+          onPointerMove={move}
+          onPointerUp={up}
+          onPointerCancel={up}
+        />
+      </div>
     </section>
   );
 }
