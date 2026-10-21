@@ -4,7 +4,7 @@ A Scorched Earth–style game for the hub, with **archers instead of tanks**. Tw
 
 Written 21 October 2026 (Stage 0: plan only, **no code yet**). Branch `archery`, folder `~/projects/school-games-hub-archery`, short id `archery`, CSS prefix `.ar-`. Next free migration number when this was written: `20261021000300` (re-check before the first migration).
 
-**Status: Stage 0 (this plan and a look-and-feel mock-up). Nothing built, nothing live. Waiting for James to say "start Stage 1".**
+**Status: Stage 1 (the engine) built 21 Oct 2026, on the branch only. Nothing live. Waiting for James before Stage 2.**
 
 **Decisions (James, 21 Oct 2026):**
 - Archers, not tanks. Big, over-the-top weapons, mostly **special arrows** (like all of Scorched Earth's weapons). Shields and bows are smaller sections of the shop.
@@ -91,7 +91,7 @@ Prices are in **coins**. A perfect speed round earns 100 (section 5). **Special 
 | Crossbow Bolt | a straight, fast shot with no drop, cuts through dirt, short range | 150 each | 4 |
 | Giant Arrow | the big one: a huge blast with a shockwave of leaves and confetti | 400 each | 5 |
 
-| **The pupil's arrow** (name to come) | **Placeholder (James, 21 Oct 2026):** the pupil who drew the game is inventing an arrow. Its name, what it does, its price and its level are blank until James sends them. It's reserved in the code (id `pupil`) but is not sold and bots never use it until it's filled in. | to come | to come |
+| **Glass Arrow** (the pupil's own arrow) | **The pupil's design (James, 21 Oct 2026, with a drawing):** "When it stabs them, shards keep hurting, like a poison effect. Should be the most powerful arrow in the game. Kills them next turn if they don't do anything in 1 turn." In the code as id `glass`, **not sold and never used by bots** until James settles what counts as "doing something", its price and its level (Stage 1 results, questions). | to come | to come |
 
 (The Feather Arrow, which left a dotted path to aim from, is gone: there's no aiming help.)
 
@@ -233,3 +233,42 @@ Each stage is small and tested, ends with a "Stage N results" section here, a co
 - Next free migration number: `20261021000300`.
 - Untested: everything (nothing built yet).
 - Go-live list: none yet.
+
+## Stage 1 results (21 Oct 2026)
+
+**Built** (all in `shared/archery/`, pure TypeScript, no screens, server or database):
+- `config.ts` (every number), `types.ts`, `random.ts` (seeded 32-bit integer random numbers), `aim.ts` (one direction per whole degree, written once by `scripts/archery-aim-table.mjs` and checked in), `land.ts`, `shot.ts`, `damage.ts`, `arrows.ts`, `fight.ts` (`playFight(seed, setup, shots)`), `determinism.ts`.
+- Nothing uses `Math.sin`/`cos`/`atan2`/`pow`/`hypot`/`random` or a clock while a fight runs: only + − × ÷, square root and floor.
+- A plain test page in `preview/archery/` (`vite.archery-preview.config.ts`): land as cells, archers as boxes, angle and power as numbers (buttons, sliders, keys), wind, Plain or Steel, Fire, New land, two players on one screen. No aiming line. It never calls a server (checked: 0 network requests). Built as one file with `ARCHERY_INLINE=1 npx vite build --config vite.archery-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-archery archery-test-page.html`, and published as a private Artifact for James: https://claude.ai/artifact/NW2b62yAKr8HNxfKtqxtG3
+
+**Numbers chosen (and why):**
+- Field 960 × 540, cells 3 px (320 × 180). Time step 1/240 s; a flight gives up after 20 s.
+- Gravity 300 px/s², speed = power × 6 (full power 600 px/s), as the plan says. At full power an arrow moves 2.5 px a step, under one cell, so it can't skip through thin walls.
+- Wind −10 to +10 per round, 6 px/s² a point.
+- Archer box 12 × 24 px, arrow leaves 15 px above the feet. Health 100.
+- Damage fades in a straight line to the blast's edge, measured to the nearest edge of the archer's box. Direct hit +10. **One shot can take at most 70** from one archer (shield, health and falling together), so no arrow is ever a one-shot knock-out.
+- Falls: 1 per cell, capped at 25. Falls of 1–2 cells are free (stepping off a little lip).
+- Rounds end when one archer pops (both at once is a draw), or after 60 shots, when more health wins. First to 2 round wins; draws can stretch a fight to at most 5 rounds. The first turn swaps each round.
+- Loose dirt falls only in the columns a blast touched, so a tunnel elsewhere stays open (Earth Shaker's "all floating dirt falls" still means something).
+- Arrows: Plain (blast 18 px, 25 damage), Steel (30 px, 40). Every other arrow has first-guess blast numbers and is marked "Stage 3"; until then it bursts like a plain arrow of its own size. The Giant Arrow is 75 px, 55 damage. The simulator (Stage 3) tunes all of them.
+- Land: start roughness 0.65 of the height, shrinking × 0.58 each split, no smoothing. Peaks squeezed to at most 75% of the height; **land whose highest peak is under 65% is stretched up to 75%** (added after looking at the test page: some lands were too tame next to James's screenshot). Valley floors stay at least 8% up. Archers stand in the outer 6–30% of each side, half the time slid down into a dip. The land is remade from the next seed (up to 40 times) unless there's a hill at least 40 px above the higher archer's feet **and** the archers can't see each other.
+
+**Hilliness over 1,000 seeds:** every land passed the checks (0 fell back), and the archers could see each other on **0**. On average the land rises and falls by **53% of the height** (half the lands 54% or more; 90% of them 37% or more). It takes 1.7 tries on average, and making 1,000 lands takes about 1.2 s (about 1 ms each).
+
+**Can it be won?** With no wind, over 150 lands, a typical land has about 34 direct-hit angle and power pairs out of about 7,000, and about 68 that do some damage. So it really is "try and adjust", as James wanted. **1 land in 150 has no shot that can hurt the other archer at the start**: the hill has to be blasted away first. That's fair Scorched Earth play, so I left it, but a generator check could rule it out (it would cost about 15–30 ms per round). Stage 2's bots will show whether it matters.
+
+**The pupil's Glass Arrow** arrived during this stage (James, 21 Oct 2026). It's in the table as `glass` with the pupil's description. It isn't sold, bots never pick it, and a fight refuses it (tested) until James answers the questions below. Its shards aren't in the engine yet (Stage 3). The drawing is kept privately with the pupil's other drawing, not in the repo.
+
+**Tests** (`shared/archery/engine.test.ts`, `determinism.test.ts`; 26 tests): random numbers; the aim table matches `Math.cos`/`Math.sin` to within 1e-14; 1,000 seeds properly hilly with the archers almost never in sight of each other; a real hill between them; same seed same land; carving, dirt balls and dirt falling; archers falling with capped damage; flights the same every time, wind pushes both ways, a shot straight up comes back down on its own archer; damage fading, shields first, popping; **every arrow in the table fired as a direct hit on an archer on a thin ledge over a long drop never knocks out a full-health archer**; the Glass Arrow is never sold, never a bot's choice and refused in a fight; the shot checks (angle, power, unknown arrow, none left); turns, used-arrow counts, rounds with new land and wind, round endings, a whole fight to the end, paths only when asked.
+- **Determinism:** pinned fingerprint `689ba069` (383 lines: 40 lands plus three long fights using every usable arrow). `node scripts/archery-determinism.mjs` with `PLAYWRIGHT_DIR` (and `WEBKIT_PATH=~/.cache/ms-playwright/webkit-2370/pw_run.sh`): **Node, Chromium and real WebKit give the identical report.**
+- Test page checked in headless Chromium at 1366 × 640 and 390 × 844: no errors, no sideways scroll, no network requests.
+
+**Untested:** the test page on a real phone or Chromebook (James's try-out); how hard the land feels to real pupils; every arrow except Plain and Steel (Stage 3); shields beyond "soak first" (Stage 3).
+
+**Questions for James:**
+1. **Glass Arrow, "if they don't do anything in 1 turn":** what can the stabbed pupil do to get rid of the shards? Suggestions: (a) spend their turn pulling the shards out (they don't shoot that turn), (b) eat an Apple, (c) either of those. Otherwise they pop at the end of their next turn.
+2. **Glass Arrow, the stab:** must it hit the archer directly to leave shards (a near miss is just a small burst)? Suggested: yes.
+3. **Glass Arrow, price and level:** it's the most powerful arrow, so suggested 500 coins (5 perfect speed rounds), one at a time, Armory level 5. It breaks the "no arrow is a knock-out" rule on purpose, but fairly, because the other player always gets one turn to deal with it.
+4. **Hunter's Bow vs wind:** the plan has new wind each *round*, but the Hunter's Bow shows "the wind on your next turn". Either the wind changes a little each turn (then the bow makes sense), or the bow shows next *round's* wind. Suggested: a small change each turn (±2).
+
+**Go-live list (so far):** at the merge step add `archery:determinism` and `archery:preview` / `archery:single` to the end of `package.json`'s scripts, and `dist-preview-archery/` to `.gitignore` (both left alone on this branch, as section 11 says).
