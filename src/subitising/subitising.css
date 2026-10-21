@@ -18,6 +18,10 @@
   justify-content: center;
   align-items: flex-start;
 }
+/* Inside the hub the page already has a header and its own main area: don't add a second full-height box. */
+.sb-app--hub {
+  min-height: 0;
+}
 .sb-app *,
 .sb-app *::before,
 .sb-app *::after {

@@ -195,11 +195,10 @@ describe('Quick looks inside Training', () => {
     const user = userEvent.setup();
     renderAt('/training');
     expect(await screen.findByRole('button', { name: 'Quick looks' })).toBeInTheDocument();
-    const mains = screen.getAllByRole('main').length;
     await user.click(screen.getByRole('button', { name: 'Quick looks' }));
     expect(screen.getByRole('heading', { name: 'Quick looks' })).toBeInTheDocument();
-    // Quick looks replaces Training's own page frame rather than sitting inside it (no extra main area).
-    expect(screen.getAllByRole('main')).toHaveLength(mains);
+    // Quick looks replaces Training's own page frame rather than sitting inside it: only the hub's main area is left.
+    expect(screen.getAllByRole('main')).toHaveLength(1);
     await user.click(screen.getByRole('button', { name: 'Back to Training' }));
     expect(screen.getByRole('button', { name: /Today’s session/ })).toBeInTheDocument();
   });

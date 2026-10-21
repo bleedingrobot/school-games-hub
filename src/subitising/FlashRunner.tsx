@@ -213,15 +213,17 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
           <span key={i} className={i < index || (i === index && phase === 'feedback') ? 'on' : ''} />
         ))}
       </div>
-      {readAloud && (
-        <button type="button" className="sb-btn sb-btn-quiet" aria-pressed={readAloud.on} onClick={() => readAloud.onChange(!readAloud.on)}>
-          <span aria-hidden="true">{readAloud.on ? '🔊 ' : '🔇 '}</span>
-          {readAloud.on ? 'Reading out loud: on' : 'Reading out loud: off'}
+      <div className="sb-row">
+        {readAloud && (
+          <button type="button" className="sb-btn sb-btn-quiet" aria-pressed={readAloud.on} onClick={() => readAloud.onChange(!readAloud.on)}>
+            <span aria-hidden="true">{readAloud.on ? '🔊 ' : '🔇 '}</span>
+            {readAloud.on ? 'Reading out loud: on' : 'Reading out loud: off'}
+          </button>
+        )}
+        <button type="button" className="sb-btn sb-btn-quiet" onClick={onFinish}>
+          Finish for now
         </button>
-      )}
-      <button type="button" className="sb-btn sb-btn-quiet" onClick={onFinish}>
-        Finish for now
-      </button>
+      </div>
     </section>
   );
 }

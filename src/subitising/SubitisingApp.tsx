@@ -31,7 +31,7 @@ interface Props {
   onAnswered?: (answer: QuickAnswerEvent) => void;
   /** Extra buttons only the preview shows. */
   tools?: ReactNode;
-  /** In Training: a way back to the Training home. */
+  /** In Training: a way back to the Training home. Also means the hub's own page frame is around this (no second main area, no full-height box). */
   onBack?: () => void;
   /** Called when a session or the starting check ends, so the real page can save at once. */
   onSessionEnd?: () => void;
@@ -108,8 +108,9 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
   const finishedNow = before ? STAGES.filter((s) => progress.stages[s.id - 1].finished && !before.stages[s.id - 1].finished) : [];
   const allDone = progress.stages.every((s) => s.finished);
 
+  const Frame = onBack ? 'div' : 'main';
   return (
-    <main className="sb-app">
+    <Frame className={onBack ? 'sb-app sb-app--hub' : 'sb-app'}>
       {screen === 'home' && (
         <section className="sb-screen">
           <h1>Quick looks</h1>
@@ -183,6 +184,6 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
           </button>
         </section>
       )}
-    </main>
+    </Frame>
   );
 }

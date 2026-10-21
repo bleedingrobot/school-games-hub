@@ -296,7 +296,7 @@ describe('Quick looks answers in the same queue', () => {
   });
 
   it('send the settings to the server with the student, and open with them from the typing column', async () => {
-    const settings = { placed: true, startStage: 2, finished: 1, guided: true };
+    const settings = { placed: true, startStage: 2 as const, finished: 1 as const, guided: true };
     enqueueStudent(ME, { type: 'student', typing: { 2: [900] }, autoSubmit: true, sessionsDone: 1, quick: settings });
     fetchMock.mockResolvedValueOnce(reply(1));
     expect(await flushQueue(ME)).toBe(true);
