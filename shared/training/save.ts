@@ -12,8 +12,20 @@
  * out instead: the fact must be real, the answer is marked here from the real fact (what the
  * browser says is right doesn't matter), and the times and dates must be possible.
  */
+import { isQuickKey, parseKey } from '../subitising/keys';
+import { typingWithSettings, type QuickSettings } from '../subitising/saved';
 import { TRAINING_CONFIG } from './config';
 import { FACT_BY_KEY } from './facts';
+
+/**
+ * The right answer for a saved key: a times-table fact, or a Quick looks picture (worked out from the key
+ * alone). Null if the key is neither, so nothing the browser says about the answer is ever trusted.
+ */
+export function correctAnswerFor(key: string): number | null {
+  const fact = FACT_BY_KEY.get(key);
+  if (fact) return fact.answer;
+  return parseKey(key)?.answer ?? null;
+}
 
 /** One answer, as the browser sends it. `at` is ms since 1970; `day` is the student's own date. */
 export interface AnswerInput {
@@ -46,6 +58,8 @@ export interface StudentItem {
   typing: Record<number, number[]>;
   autoSubmit: boolean;
   sessionsDone: number;
+  /** Quick looks settings (starting check, stage reached, keep-picture-on-screen). Left out = nothing to keep. */
+  quick?: QuickSettings;
 }
 
 export type SaveItem = AnswersItem | StudentItem;
@@ -68,7 +82,10 @@ export interface CheckedAnswer extends AnswerInput {
 
 export type CheckedItem =
   | { type: 'answers'; batchId: string; seed: number; answers: CheckedAnswer[] }
-  | { type: 'student'; typing: Record<string, number[]>; autoSubmit: boolean; sessionsDone: number };
+  | { type: 'student'; typing: Record<string, number[]>; autoSubmit: boolean; sessionsDone: number; quick?: QuickSettings };
+
+/** What the database stores as the student's `typing`: the typing times, with the Quick looks settings under "q". */
+export const studentTyping = (item: Extract<CheckedItem, { type: 'student' }>): Record<string, unknown> => typingWithSettings(item.typing, item.quick);
 
 /** Items per request, and answers per batch (a session is 20 to 30). */
 export const MAX_ITEMS = 40;
@@ -96,8 +113,10 @@ function checkAnswer(raw: unknown, now: number): Checked<CheckedAnswer> {
   const a = raw as Record<string, unknown>;
   const { storage } = TRAINING_CONFIG;
   if (typeof a.key !== 'string') return { ok: false, problem: 'fact' };
-  const fact = FACT_BY_KEY.get(a.key);
-  if (!fact) return { ok: false, problem: 'fact' };
+  const right = correctAnswerFor(a.key);
+  if (right === null) return { ok: false, problem: 'fact' };
+  // Quick looks answers are taps: nothing was typed.
+  if (isQuickKey(a.key) && a.typingMs !== 0) return { ok: false, problem: 'typing' };
   if (!isInt(a.given, 0, 999_999)) return { ok: false, problem: 'given' };
   if (!isInt(a.ms, 0, storage.rejectAnswerMs)) return { ok: false, problem: 'time' };
   if (!isInt(a.typingMs, 0, storage.longestTypingMs)) return { ok: false, problem: 'typing' };
@@ -108,7 +127,7 @@ function checkAnswer(raw: unknown, now: number): Checked<CheckedAnswer> {
   if (day === null || Math.abs(day - Math.floor((a.at as number) / DAY_MS)) > 1) return { ok: false, problem: 'day' };
   return {
     ok: true,
-    item: { key: a.key, given: a.given, ms: a.ms, typingMs: a.typingMs, at: a.at as number, day: a.day as string, correct: a.given === fact.answer },
+    item: { key: a.key, given: a.given, ms: a.ms, typingMs: a.typingMs, at: a.at as number, day: a.day as string, correct: a.given === right },
   };
 }
 
@@ -134,9 +153,16 @@ export function checkItem(raw: unknown, now: number): Checked<CheckedItem> {
       return { ok: false, problem: 'answers' };
     }
     const answers: CheckedAnswer[] = [];
+    const seenQuick = new Set<string>();
     for (const a of item.answers) {
       const checked = checkAnswer(a, now);
       if (!checked.ok) return checked;
+      // The same Quick looks answer twice in one batch is one answer (times-table answers are left exactly as they were).
+      if (isQuickKey(checked.item.key)) {
+        const id = `${checked.item.at}|${checked.item.key}`;
+        if (seenQuick.has(id)) continue;
+        seenQuick.add(id);
+      }
       answers.push(checked.item);
     }
     return { ok: true, item: { type: 'answers', batchId: item.batchId.toLowerCase(), seed: item.seed, answers } };
@@ -146,7 +172,17 @@ export function checkItem(raw: unknown, now: number): Checked<CheckedItem> {
     if (!typing) return { ok: false, problem: 'typing' };
     if (typeof item.autoSubmit !== 'boolean') return { ok: false, problem: 'auto-submit' };
     if (!isInt(item.sessionsDone, 0, 100_000)) return { ok: false, problem: 'sessions' };
-    return { ok: true, item: { type: 'student', typing, autoSubmit: item.autoSubmit, sessionsDone: item.sessionsDone } };
+    let quick: QuickSettings | undefined;
+    if (item.quick !== undefined) {
+      const packed = item.quick as Record<string, unknown> | null;
+      const ok =
+        typeof packed === 'object' && packed !== null &&
+        typeof packed.placed === 'boolean' && typeof packed.guided === 'boolean' &&
+        isInt(packed.startStage, 1, 4) && isInt(packed.finished, 0, 4);
+      if (!ok) return { ok: false, problem: 'quick' };
+      quick = { placed: packed.placed as boolean, startStage: packed.startStage as QuickSettings['startStage'], finished: packed.finished as QuickSettings['finished'], guided: packed.guided as boolean };
+    }
+    return { ok: true, item: { type: 'student', typing, autoSubmit: item.autoSubmit, sessionsDone: item.sessionsDone, ...(quick ? { quick } : {}) } };
   }
   return { ok: false, problem: 'type' };
 }

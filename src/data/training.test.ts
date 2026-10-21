@@ -11,7 +11,7 @@ vi.mock('../lib/supabase', () => ({
   },
 }));
 
-import { addAnswer, enqueueStudent, flushQueue, loadTraining, pendingAnswers, queuedItems, sealPending, stateFrom, unsavedAnswers } from './training';
+import { addAnswer, enqueueStudent, flushQueue, loadTraining, pendingAnswers, quickFrom, queuedItems, sealPending, stateFrom, unsavedAnswers } from './training';
 
 const fetchMock = vi.fn<typeof fetch>();
 // A new student each test, so no queue carries over (the queue is also kept in memory).
@@ -250,5 +250,65 @@ describe('loading training', () => {
     addAnswer(ME, answerEvent('mul:6x7', { given: 41 }));
     expect(unsavedAnswers(ME)[0].correct).toBe(false);
     expect(stateFrom(ME, null).records['mul:6x7'].answers[0].correct).toBe(false);
+  });
+});
+
+
+describe('Quick looks answers in the same queue', () => {
+  const quickEvent = (key: string, given: number, over: Partial<AnswerEvent> = {}): AnswerEvent => ({
+    key, given, ms: 0, typingMs: 0, at: 1_792_000_000_000 + ++clock * 5000, day: '2026-10-19', seed: 21, ...over,
+  });
+
+  it('are marked from the key while waiting to be saved', () => {
+    addAnswer(ME, quickEvent('sub:ten-8', 8));
+    addAnswer(ME, quickEvent('sub:ten-8', 7));
+    addAnswer(ME, quickEvent('gap:ten-7', 3));
+    addAnswer(ME, quickEvent('subh:line-2', 2));
+    expect(unsavedAnswers(ME).map((a) => a.correct)).toEqual([true, false, true, true]);
+  });
+
+  it('never change the times-table records, whether waiting or saved', () => {
+    addAnswer(ME, answerEvent('mul:6x7'));
+    const alone = stateFrom(ME, null);
+    addAnswer(ME, quickEvent('sub:ten-8', 8));
+    addAnswer(ME, quickEvent('gap:five-4', 1));
+    expect(stateFrom(ME, null)).toEqual(alone);
+    expect(Object.keys(stateFrom(ME, null).records)).toEqual(['mul:6x7']);
+  });
+
+  it('come back as Quick looks answers, saved and waiting together, none twice', () => {
+    const saved = { key: 'sub:line-2', correct: true, ms: 0, typingMs: 0, day: '2026-10-19', at: 1_792_000_000_000 - 99_000 };
+    addAnswer(ME, quickEvent('sub:dice-4', 4));
+    addAnswer(ME, answerEvent('mul:6x7'));
+    const { answers, settings } = quickFrom(ME, { answers: [saved], student: null });
+    expect(answers.map((a) => a.key)).toEqual(['sub:line-2', 'sub:dice-4']);
+    expect(settings).toBeNull();
+  });
+
+  it('keep the stage reached with the student, and never let it fall behind the answers', () => {
+    const data = { answers: [], student: { typing: {}, autoSubmit: true, sessionsDone: 1, quick: { placed: true, startStage: 1, finished: 2, guided: false } } } as const;
+    expect(quickFrom(ME, data as never).settings).toEqual({ placed: true, startStage: 1, finished: 2, guided: false });
+    // Eight good answers in stage 3 on top of two finished stages finish it, even if the saved number is behind.
+    const types = ['five', 'fiveplus', 'pair'];
+    const at = 1_792_000_000_000;
+    const answers = Array.from({ length: 8 }, (_, i) => ({ key: `sub:${types[i % 3]}-${types[i % 3] === 'fiveplus' ? 6 : 4}`, correct: true, ms: 0, typingMs: 0, day: '2026-10-19', at: at + i }));
+    expect(quickFrom(ME, { ...data, answers } as never).settings?.finished).toBe(3);
+  });
+
+  it('send the settings to the server with the student, and open with them from the typing column', async () => {
+    const settings = { placed: true, startStage: 2, finished: 1, guided: true };
+    enqueueStudent(ME, { type: 'student', typing: { 2: [900] }, autoSubmit: true, sessionsDone: 1, quick: settings });
+    fetchMock.mockResolvedValueOnce(reply(1));
+    expect(await flushQueue(ME)).toBe(true);
+    expect(sentItems(0)[0]).toMatchObject({ type: 'student', quick: settings, typing: { 2: [900] } });
+
+    rpc.mockResolvedValueOnce({
+      data: { answers: [], student: { typing: { 2: [900], q: { p: 1, s: 2, f: 1, g: 1 } }, autoSubmit: true, sessionsDone: 1 } },
+      error: null,
+    });
+    const loaded = await loadTraining(ME);
+    // Training only ever sees typing times, so its "first time" check isn't confused by the settings.
+    expect(loaded.state.typing).toEqual({ 2: [900] });
+    expect(loaded.quick.settings).toEqual(settings);
   });
 });

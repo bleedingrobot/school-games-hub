@@ -3,6 +3,7 @@ import { FRAME_CAPACITY, SUBITISING_CONFIG as CONFIG } from '../../shared/subiti
 import { isStruggling } from '../../shared/subitising/engine';
 import { groupSizes } from '../../shared/subitising/patterns';
 import type { Trial } from '../../shared/subitising/trials';
+import { speak } from '../speech';
 import { BlankPicture, PictureSvg } from './PictureSvg';
 
 export interface AnswerResult {
@@ -25,6 +26,8 @@ interface Props {
   next: (index: number, last: Trial | null) => Trial;
   onAnswer: (trial: Trial, result: AnswerResult) => void;
   onFinish: () => void;
+  /** Read the prompts aloud (never the answer before it has been given). Undefined = no read-aloud button at all. */
+  readAloud?: { on: boolean; onChange: (on: boolean) => void };
 }
 
 type Phase = 'ready' | 'show' | 'answer' | 'peek' | 'feedback';
@@ -35,7 +38,16 @@ function partsText(trial: Trial): string {
   return sizes.length > 1 ? sizes.join(' and ') : '';
 }
 
-export function FlashRunner({ total, guidedMode, checking = false, next, onAnswer, onFinish }: Props) {
+/** The line said after an answer. It names the answer, so it is only used once the student has answered. */
+function feedbackText(trial: Trial, result: AnswerResult): string {
+  const parts = partsText(trial);
+  if (trial.activity === 'gap') {
+    return `${trial.n} counters and ${trial.answer} empty squares make ${FRAME_CAPACITY[trial.type] ?? 0}.`;
+  }
+  return result.correct ? `Yes! ${trial.answer}${parts ? `: ${parts}` : ''}.` : `Let me show you again. It was ${trial.answer}${parts ? `: ${parts}` : ''}.`;
+}
+
+export function FlashRunner({ total, guidedMode, checking = false, next, onAnswer, onFinish, readAloud }: Props) {
   const [index, setIndex] = useState(0);
   const [trial, setTrial] = useState<Trial>(() => next(0, null));
   const [phase, setPhase] = useState<Phase>(() => (guidedMode ? 'answer' : 'ready'));
@@ -114,6 +126,18 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
     heading.current?.focus({ preventScroll: true });
   }, [index]);
 
+  // Read the words out loud for students who can't read them yet. The answer is only ever said in the
+  // feedback line, after the student has answered.
+  const reading = readAloud?.on ?? false;
+  useEffect(() => {
+    if (!reading) return;
+    if (phase === 'ready') speak('Get ready');
+    else if (phase === 'answer') speak(helped ? 'Take your time. Can you see smaller groups?' : trial.activity === 'gap' ? 'How many empty squares?' : 'How many did you see?');
+  }, [reading, phase, helped, trial]);
+  useEffect(() => {
+    if (reading && phase === 'feedback' && result) speak(feedbackText(trial, result));
+  }, [reading, phase, result, trial]);
+
   const advance = () => {
     if (index + 1 >= total) {
       onFinish();
@@ -133,21 +157,13 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
   };
 
   const gap = trial.activity === 'gap';
-  const capacity = FRAME_CAPACITY[trial.type] ?? 0;
   const prompt = gap ? 'How many empty squares?' : 'How many did you see?';
   const showing = phase === 'show' || phase === 'peek' || (phase === 'answer' && staticPicture) || phase === 'feedback';
   const mode = phase === 'feedback' ? (result?.correct ? 'right' : 'help') : helped && phase === 'answer' ? 'help' : 'plain';
   const label =
     phase === 'feedback' ? `The picture again. ${gap ? `${trial.n} counters and ${trial.answer} empty` : `${trial.answer}`}.` : phase === 'ready' ? 'Get ready' : phase === 'answer' && !staticPicture ? 'The picture has gone' : 'A picture is showing';
 
-  const parts = partsText(trial);
-  const feedback = result
-    ? gap
-      ? `${trial.n} counters and ${trial.answer} empty squares make ${capacity}.`
-      : result.correct
-        ? `Yes! ${trial.answer}${parts ? `: ${parts}` : ''}.`
-        : `Let me show you again. It was ${trial.answer}${parts ? `: ${parts}` : ''}.`
-    : '';
+  const feedback = result ? feedbackText(trial, result) : '';
 
   return (
     <section className="sb-screen" aria-label="Quick looks">
@@ -197,6 +213,12 @@ export function FlashRunner({ total, guidedMode, checking = false, next, onAnswe
           <span key={i} className={i < index || (i === index && phase === 'feedback') ? 'on' : ''} />
         ))}
       </div>
+      {readAloud && (
+        <button type="button" className="sb-btn sb-btn-quiet" aria-pressed={readAloud.on} onClick={() => readAloud.onChange(!readAloud.on)}>
+          <span aria-hidden="true">{readAloud.on ? '🔊 ' : '🔇 '}</span>
+          {readAloud.on ? 'Reading out loud: on' : 'Reading out loud: off'}
+        </button>
+      )}
       <button type="button" className="sb-btn sb-btn-quiet" onClick={onFinish}>
         Finish for now
       </button>

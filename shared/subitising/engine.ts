@@ -55,15 +55,22 @@ export function stageDone(
 /**
  * Starting stage: stages below it are counted as finished (the starting check put the student
  * higher up), though they still come back as review.
+ * `finishedBefore`: this many stages from the first are finished already (kept with the student, so a stage
+ * finished long ago stays finished even when its old answers are no longer saved).
  */
-export function progressFrom(answers: readonly SubAnswer[], startStage: StageNumber = 1, config: SubitisingConfig = SUBITISING_CONFIG): Progress {
-  const finished = new Set<StageNumber>(STAGES.filter((s) => s.id < startStage).map((s) => s.id));
+export function progressFrom(
+  answers: readonly SubAnswer[],
+  startStage: StageNumber = 1,
+  config: SubitisingConfig = SUBITISING_CONFIG,
+  finishedBefore = 0,
+): Progress {
+  const finished = new Set<StageNumber>(STAGES.filter((s) => s.id < startStage || s.id <= finishedBefore).map((s) => s.id));
   const byStage = new Map<StageNumber, { correct: boolean; type: PictureType }[]>(STAGES.map((s) => [s.id, []]));
 
   for (const a of answers) {
     if (a.helped) continue;
     const key = parseKey(a.key);
-    if (!key) continue;
+    if (!key || key.helped) continue;
     const list = byStage.get(key.stage)!;
     list.push({ correct: a.correct, type: key.type });
     if (!finished.has(key.stage) && stageDone(key.stage, list, config)) finished.add(key.stage);

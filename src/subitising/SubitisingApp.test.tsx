@@ -116,4 +116,85 @@ describe('Quick looks', () => {
     expect(t.state().startStage).toBe(4); // six right in a row climbs to the top
     expect(t.state().answers).toHaveLength(0); // the check isn't practice
   });
+
+  it('remembers the stage reached once a stage is finished, and says when a session ends', () => {
+    const types = ['line', 'clus', 'angl'] as const;
+    const answers = Array.from({ length: 7 }, (_, i) => ({ key: `sub:${types[i % 3]}-2`, correct: true, at: i }));
+    const ended: number[] = [];
+    let state: SubState = { ...emptySubState(), placed: true, answers };
+    const ui = (s: SubState) => <SubitisingApp state={s} onState={(n) => (state = n)} today="2026-10-21" onSessionEnd={() => ended.push(1)} />;
+    const view = render(ui(state));
+    fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+    advance(C.readyMs + 10);
+    const n = dotsShown();
+    advance(1400);
+    advance(C.answerLockMs);
+    fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(n))!);
+    view.rerender(ui(state));
+    expect(state.finished).toBe(1);
+    // Leaving early still ends the session (so the page saves what was done).
+    fireEvent.click(screen.getByRole('button', { name: 'Finish for now' }));
+    expect(ended).toHaveLength(1);
+  });
+
+  it('shows a way back to Training only when it is inside Training', () => {
+    const { view } = setup(emptySubState());
+    expect(screen.queryByRole('button', { name: 'Back to Training' })).toBeNull();
+    let backed = 0;
+    view.rerender(<SubitisingApp state={emptySubState()} onState={() => {}} today="2026-10-21" onBack={() => backed++} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Training' }));
+    expect(backed).toBe(1);
+  });
+
+  describe('reading out loud', () => {
+    const said: string[] = [];
+    beforeEach(() => {
+      said.length = 0;
+      localStorage.clear();
+      vi.stubGlobal('SpeechSynthesisUtterance', class { constructor(public text: string) {} });
+      vi.stubGlobal('speechSynthesis', { cancel: () => {}, speak: (u: { text: string }) => void said.push(u.text) });
+      Object.defineProperty(window, 'speechSynthesis', { value: (globalThis as { speechSynthesis: unknown }).speechSynthesis, configurable: true });
+      Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: (globalThis as { SpeechSynthesisUtterance: unknown }).SpeechSynthesisUtterance, configurable: true });
+    });
+    afterEach(() => {
+      Reflect.deleteProperty(window, 'speechSynthesis');
+      Reflect.deleteProperty(window, 'SpeechSynthesisUtterance');
+    });
+
+    it('says nothing until it is switched on', () => {
+      setup({ ...emptySubState(), placed: true });
+      fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+      advance(C.readyMs + 10);
+      advance(1400);
+      advance(C.answerLockMs);
+      expect(said).toEqual([]);
+    });
+
+    it('reads the prompts, never the answer before it has been given, and the feedback after', () => {
+      const t = setup({ ...emptySubState(), placed: true });
+      fireEvent.click(screen.getByLabelText('Read the words out loud to me'));
+      fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+      advance(C.readyMs + 10);
+      const n = dotsShown();
+      advance(1400);
+      advance(C.answerLockMs);
+      expect(said).toEqual(['Get ready', 'How many did you see?']);
+      expect(said.join(' ')).not.toMatch(/\d/);
+      fireEvent.click(screen.getAllByRole('button').find((b) => b.textContent === String(n))!);
+      t.sync();
+      expect(said.at(-1)).toMatch(new RegExp(`^Yes! ${n}`));
+    });
+
+    it('can be muted from the practice screen, and the choice is remembered on the device', () => {
+      setup({ ...emptySubState(), placed: true });
+      fireEvent.click(screen.getByLabelText('Read the words out loud to me'));
+      fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+      advance(C.readyMs + 10);
+      advance(1400);
+      const mute = screen.getByRole('button', { name: /Reading out loud: on/ });
+      fireEvent.click(mute);
+      expect(screen.getByRole('button', { name: /Reading out loud: off/ })).toBeTruthy();
+      expect(localStorage.getItem('sgh-read-aloud')).toBe('false');
+    });
+  });
 });

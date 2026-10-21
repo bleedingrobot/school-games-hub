@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { STAGES, SUBITISING_CONFIG as CONFIG } from '../../shared/subitising/config';
 import { growth, progressFrom, type SubAnswer } from '../../shared/subitising/engine';
+import { finishedInARow } from '../../shared/subitising/saved';
 import { placementTrial, startStageFrom } from '../../shared/subitising/placement';
 import { buildTrial, type Trial } from '../../shared/subitising/trials';
+import { useReadAloud } from '../speech';
 import { FlashRunner, type AnswerResult } from './FlashRunner';
 import { Garden } from './Garden';
 import type { SubState } from './store';
@@ -29,6 +31,10 @@ interface Props {
   onAnswered?: (answer: QuickAnswerEvent) => void;
   /** Extra buttons only the preview shows. */
   tools?: ReactNode;
+  /** In Training: a way back to the Training home. */
+  onBack?: () => void;
+  /** Called when a session or the starting check ends, so the real page can save at once. */
+  onSessionEnd?: () => void;
 }
 
 const seedFor = (today: string, n: number): number => {
@@ -37,7 +43,9 @@ const seedFor = (today: string, n: number): number => {
   return h * 37 + n * 101 + 7;
 };
 
-export function SubitisingApp({ state, onState, today, onAnswered, tools }: Props) {
+export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack, onSessionEnd }: Props) {
+  const reading = useReadAloud();
+  const readAloud = reading.available ? { on: reading.on, onChange: reading.setOn } : undefined;
   const [screen, setScreen] = useState<Screen>('home');
   const [seed, setSeed] = useState(1);
   const [before, setBefore] = useState<ReturnType<typeof progressFrom> | null>(null);
@@ -48,7 +56,7 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools }: Prop
   const sessionAnswers = useRef<SubAnswer[]>([]);
   const checkAnswers = useRef<boolean[]>([]);
 
-  const progress = useMemo(() => progressFrom(state.answers, state.startStage), [state.answers, state.startStage]);
+  const progress = useMemo(() => progressFrom(state.answers, state.startStage, undefined, state.finished), [state.answers, state.startStage, state.finished]);
 
   const startSession = () => {
     setSeed(seedFor(today, state.sessionsDone));
@@ -64,7 +72,7 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools }: Prop
   };
 
   const nextPractice = useCallback(
-    (i: number, last: Trial | null) => buildTrial(progressFrom(stateRef.current.answers, stateRef.current.startStage), seed, i, last),
+    (i: number, last: Trial | null) => buildTrial(progressFrom(stateRef.current.answers, stateRef.current.startStage, undefined, stateRef.current.finished), seed, i, last),
     [seed],
   );
   const nextCheck = useCallback((_i: number, _last: Trial | null) => placementTrial(checkAnswers.current, seed), [seed]);
@@ -73,19 +81,26 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools }: Prop
     const at = Date.now();
     const answer: SubAnswer = { key: trial.key, correct: r.correct, at, helped: r.helped || undefined };
     sessionAnswers.current.push(answer);
-    onState({ ...stateRef.current, answers: [...stateRef.current.answers, answer] });
+    const answers = [...stateRef.current.answers, answer];
+    const finished = Math.max(
+      stateRef.current.finished,
+      finishedInARow(progressFrom(answers, stateRef.current.startStage, undefined, stateRef.current.finished)),
+    ) as SubState['finished'];
+    onState({ ...stateRef.current, answers, finished });
     setLooked((n) => n + 1);
     onAnswered?.({ key: trial.key, given: r.given, correct: r.correct, helped: r.helped, at, day: today, seed });
   };
 
   const finishSession = () => {
     onState({ ...stateRef.current, sessionsDone: stateRef.current.sessionsDone + 1 });
+    onSessionEnd?.();
     setScreen('summary');
   };
 
   const finishCheck = () => {
     const start = startStageFrom(checkAnswers.current);
     onState({ ...stateRef.current, placed: true, startStage: start });
+    onSessionEnd?.();
     setScreen('checked');
   };
 
@@ -117,14 +132,25 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools }: Prop
               </button>
             </>
           )}
+          {reading.available && (
+            <label className="sb-toggle">
+              <input type="checkbox" checked={reading.on} onChange={(e) => reading.setOn(e.target.checked)} />
+              Read the words out loud to me
+            </label>
+          )}
           <label className="sb-toggle">
             <input type="checkbox" checked={state.guidedMode} onChange={(e) => onState({ ...state, guidedMode: e.target.checked })} />
             Keep the picture on the screen (no flashing)
           </label>
+          {onBack && (
+            <button type="button" className="sb-btn sb-btn-quiet" onClick={onBack}>
+              Back to Training
+            </button>
+          )}
           {tools}
         </section>
       )}
-      {screen === 'check' && <FlashRunner key={`check-${seed}`} checking total={CONFIG.placementTrials} guidedMode={state.guidedMode} next={nextCheck} onAnswer={(_t, r) => void checkAnswers.current.push(r.correct)} onFinish={() => (checkAnswers.current.length ? finishCheck() : setScreen('home'))} />}
+      {screen === 'check' && <FlashRunner key={`check-${seed}`} checking total={CONFIG.placementTrials} guidedMode={state.guidedMode} next={nextCheck} onAnswer={(_t, r) => void checkAnswers.current.push(r.correct)} onFinish={() => (checkAnswers.current.length ? finishCheck() : setScreen('home'))} readAloud={readAloud} />}
       {screen === 'checked' && (
         <section className="sb-screen">
           <h1>All done!</h1>
@@ -139,7 +165,7 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools }: Prop
           </button>
         </section>
       )}
-      {screen === 'session' && <FlashRunner key={`session-${seed}`} total={CONFIG.sessionTrials} guidedMode={state.guidedMode} next={nextPractice} onAnswer={onPracticeAnswer} onFinish={finishSession} />}
+      {screen === 'session' && <FlashRunner key={`session-${seed}`} total={CONFIG.sessionTrials} guidedMode={state.guidedMode} next={nextPractice} onAnswer={onPracticeAnswer} onFinish={finishSession} readAloud={readAloud} />}
       {screen === 'summary' && (
         <section className="sb-screen">
           <h1>Nice looking!</h1>
