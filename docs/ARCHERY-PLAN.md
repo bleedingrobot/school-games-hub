@@ -4,7 +4,7 @@ A Scorched Earth–style game for the hub, with **archers instead of tanks**. Tw
 
 Written 21 October 2026 (Stage 0: plan only, **no code yet**). Branch `archery`, folder `~/projects/school-games-hub-archery`, short id `archery`, CSS prefix `.ar-`. Next free migration number when this was written: `20261021000300` (re-check before the first migration).
 
-**Status: Stage 2 (the fight screen against a bot) built 21 Oct 2026, on the branch only. Nothing live. Waiting for James before Stage 3.**
+**Status: Stage 3 (the Armory's arrows, shields, helpers and bows) built 21–22 Oct 2026, on the branch only. Nothing live. Waiting for James before Stage 4.**
 
 **Decisions (James, 21 Oct 2026):**
 - Archers, not tanks. Big, over-the-top weapons, mostly **special arrows** (like all of Scorched Earth's weapons). Shields and bows are smaller sections of the shop.
@@ -320,3 +320,50 @@ Stage 3 to settle: how much the shards hurt each turn before the pop (the "keeps
 4. Starter bag in the preview: 4 Steel Arrows a fight. Bots get 1 / 2 / 3.
 
 **Go-live list (so far):** as Stage 1 (scripts and `.gitignore` at the merge step), plus `archery:sim` in `package.json`.
+
+## Stage 3 results (22 Oct 2026)
+
+**James's answers first (21 Oct 2026):** a bigger Plain Arrow blast (18 → 24 px); Glass shards sting **12** a turn; if the Glass shooter has already popped, the shards just break; **a name per bot level: Pip (Easy), Robin (Medium), Hawk (Hard)**. Not asked, kept as they were: the City's low walls beside archers; the preview's starter bag.
+
+**Built** (branch `archery` only; nothing live, no server, no database):
+- **Every arrow works in the engine** (`shared/archery/effects.ts`, one small function each; numbers in `config.ts`), so the server can replay them in Stage 4:
+  - **Steel**, **Giant**: bigger blasts. **Arrow Rain** splits at the top of its flight into 5 pieces spread sideways. **Rolling Log** lands, rolls along the land (speeding up downhill, climbing a cell at most), bursts at an archer, and if it runs out of speed on a slope it rolls back into the dip. **Skipping Arrow** hops twice: blasts of 16, 20 and 26 px. **Firework Arrow**: 5 pops around where it lands. **Owl Arrow** steers toward an archer it passes within 90 px of while coming down (the tests check it turns some near misses into hits). **Crossbow Bolt**: dead straight, no drop, no wind, cuts through up to 90 px of dirt, and pops at the end of its range (power sets the range: 60 + 3.2 × power px).
+  - **Mole Arrow** digs a 96 px hole straight down (a direct hit digs from under that archer's feet, so they drop into it). **Sneaky Mole** tunnels from where it lands toward the other archer (at most 150 px) and pops up under them. **Mud Ball** drops a big ball of dirt that settles into a heap (it can bury an archer; a buried archer's next shot digs them out and never hurts them). **Sticky Goo** splashes without a crater, runs downhill into the dip and pools there; anyone standing in it loses 8 at the end of every shot for 4 shots (two turns each).
+  - **Earth Shaker (changed from the plan):** the plan said "all floating dirt falls", but the engine already drops all loose dirt after every shot, so that would do nothing. Instead it **shakes the land 45 columns either side: cliffs crumble into slopes, and archers standing there tumble down** (the Snow's slipping, in any world). Same idea (drop someone off a ledge), and it works.
+  - **The Glass Arrow (the pupil's):** a stab, or a near miss inside its blast, leaves shards. At the end of the stabbed archer's next turn: if their shot hurt the Glass shooter, the shards break with a sting of 12; if not, they **pop**; if the Glass shooter had already popped, the shards just break. Goo hurting the shooter doesn't count as hitting back. It's now **for sale** (500 coins, level 5). **Bots never use it** (its curse is for pupils to use, not for a bot to use on a pupil).
+- **Shields:** Wooden (soaks 40), Wind Charm (soaks 30; while it holds, an arrow coming down within 70 px of the wearer is lifted and pushed away), Bubble (soaks 60; bounces away the first arrow that reaches it). **Changed after the simulator:** a shield now **lasts the whole fight and then breaks** (not full again every round). Refilled every round, a shield won 70–98% of otherwise even fights.
+- **Helpers:** Apple (+15 health when eaten with a shot, never over 100), Umbrella (opens by itself on a fall that would hurt). Both are counted as used, like arrows, so the server can give back the rest.
+- **Bows:** Longbow (+10% speed), Recurve (+5% speed, 70% wind drift), Hunter's (shows next round's wind on the screen), **Golden (changed: +10% speed and 85% drift, so it's never worse than the cheaper Longbow; the plan said "a little extra top power")**. None gives any aiming help.
+- **Bots:** names per level (Pip, Robin, Hawk). Kits: Pip 1 Steel; Robin 2 Steel + 1 Arrow Rain; Hawk 3 Steel + 1 Firework. No shields. A bot shoots its strongest special arrow left when it decides to (only ones that fly like a Plain Arrow: Giant, Firework, Rain, Steel), never the Glass Arrow.
+- **The fight screen:** your packed bag; an **arrow picker** (a button showing your arrow and how many are left, opening a list of what you packed, each with what it does); an **Apple** button (eat one with your next shot, when hurt); shield bars under the health bars; a loud **"Glass shards! Hit Robin this turn, or you pop."** warning; the Hunter's Bow's "Next:" wind; messages for goo, umbrellas, apples and shards. Fixed a Stage 2 slip: during your own shot the label said it was the bot's shot.
+- **The picture:** a shot is now a little timeline (`ShotRecord.events`): several flights at once (Arrow Rain), hops, a rolling log, digging noses, pops one after another, a goo splash and puddles that wobble and bubble, an Earth Shaker rumble, "BOING!" off a bubble, glinting glass shards stuck in an archer, an umbrella opening on a fall, the Wooden Shield on their back, Wind Charm swirls, and each bow's own colours (the Golden Bow twinkles). Words: THUD!, SPLAT!, SPLOT!, POP!, KA-BOOM!, CRASH!, SHARDS!, SHATTER!, RUMBLE!
+- **The preview:** after picking a world and a bot, **Pack your quiver** with **2,000 pretend coins** at the real prices (up to 5 of each; shield and bow too). It remembers your bag on that device. Still no server calls (checked: 0 requests).
+
+**Balance simulator** (`node scripts/archery-sim.mjs 120`; `--balance` runs just the balance part):
+
+| Bots | Forest | Desert | Snow | City | Overall (Stage 2) |
+|---|---|---|---|---|---|
+| Hard beats Easy | 87% | 92% | 95% | 84% | **89%** (86%) |
+| Medium beats Easy | 77% | 68% | 64% | 63% | **68%** (65%) |
+| Hard beats Medium | 77% | 76% | 73% | 75% | **75%** (68%) |
+
+- Shots per round (median, both archers): Hard v Hard 16 (was 19), Medium v Medium 22, Easy v Easy 28 (was 32). The bigger Plain blast helped a little; 4.5% of rounds hit the 60-shot cap (was 6%).
+- **Gear helps but aim still wins sometimes:** a good shot (Hard) with **only Plain Arrows** beats an average shot (Medium) carrying 5 each of Giant, Firework, Rain and Steel, a Bubble Shield and the Golden Bow **29%** of the time (8% before shields stopped refilling). An average shot with only Plain Arrows wins 16%.
+- **Shields** (Medium with v without, everything else the same): Wooden 51%, Wind Charm 63%, Bubble 58%.
+- **Each arrow** (Medium shooting it on every aimed shot, 5 of them, v Medium with Plain only): Giant 73%, Sneaky Mole 68% (was 73% before its range was cut from 260 to 150 px), Glass 63%, Owl 58%, Firework 57%, Log 56%, Mud 55%, Steel 53%, Rain 54%, Goo 54%, Skip 48%, Mole 43%, Shaker 43%. The last three are tricky arrows a bot uses badly; pupils who use them well should do better.
+- Bot thinking still 0.1 ms a turn, never more than 3 practice shots.
+
+**Tests:** `effects.test.ts` (29: every arrow, the Glass Arrow's four cases, shields, apples, umbrellas, bows, replays with everything), bot tests updated (kits, never Glass), screen tests (the picker, used-up arrows, the Apple button, the shield bar, the Hunter's Bow). `npm run typecheck` clean, **`npm run test:all` 4,517 passed** (241 files), `npm run build` fine.
+- **Determinism:** re-pinned fingerprint **`4d54f767`** (706 lines; now with every shield, four bows, apples and umbrellas in the long fights). **Node, Chromium and real WebKit identical.**
+- Played in headless Chromium at 1366 × 640, 844 × 390 and 390 × 844 with every arrow: no errors, no network requests.
+
+**Untested:** a real phone and a real Chromebook; how the arrows feel to pupils (are Mole, Shaker and Skip worth buying?); whether the Wind Charm's push is noticeable enough (it's gentle: arrows land about 4 px further away on average, plus its 30 soak).
+
+**Questions for James:**
+1. **Earth Shaker** now crumbles cliffs and tumbles archers on ledges (the plan's "floating dirt falls" would have done nothing). OK?
+2. **Shields last the whole fight, then break** (instead of full every round, which made them far too strong). OK?
+3. **The Golden Bow** is +10% power and a little less wind drift (so it's never worse than the cheaper Longbow). OK?
+4. **Bots never use the Glass Arrow.** OK, or should Hawk carry one?
+5. Rounds are still about 16–28 shots. Shorter still (a bigger Plain blast again, or 80 health a round)?
+
+**Go-live list (so far):** as Stage 2. Nothing new.

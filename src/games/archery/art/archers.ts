@@ -5,7 +5,7 @@
  *
  * Drawn in "units" (an archer is about 120 units tall, feet at 0); the caller scales them to the field.
  */
-import type { ArrowId } from '../../../../shared/archery/types';
+import type { ArrowId, BowId } from '../../../../shared/archery/types';
 import { D2R, OL, TAU, drawStar, rr } from './util';
 
 export type ArrowLook = 'arrow' | 'bot' | 'steel' | 'giant' | 'rain' | 'digger' | 'roll' | 'goo' | 'skip' | 'shaker' | 'bolt' | 'owl' | 'dumper' | 'firework' | 'glass';
@@ -161,12 +161,27 @@ export interface Figure {
   koT: number;
   /** > 0 while cheering. */
   cheer: number;
+  /** Which bow they carry (its colours). */
+  bow?: BowId;
 }
+
+/** Each bow's colours (the Starter Bow keeps the archer's own). */
+const BOW_LOOKS: Partial<Record<BowId, { bow: string; bowHi: string; tip: string }>> = {
+  long: { bow: '#6b3a1c', bowHi: '#c08a52', tip: '#efe6cc' },
+  recurve: { bow: '#8a1f2b', bowHi: '#ff8a7a', tip: '#2a2a33' },
+  hunter: { bow: '#3d6b2f', bowHi: '#a8d860', tip: '#e8a33a' },
+  golden: { bow: '#d9a520', bowHi: '#fff4b0', tip: '#fffbe0' },
+};
 
 /** Hands sit this many units above the feet (the arrow leaves from there). */
 export const HANDS_UNITS = 55;
 
-function armsBow(g: CanvasRenderingContext2D, a: Figure, t: number, br: number, o: typeof STYLE.hero) {
+/** Where the middle of the bow is (it bends out more as the string is pulled). */
+const bendOf = (a: Figure) => 13 + (51 + a.draw * 6) / 2;
+
+function armsBow(g: CanvasRenderingContext2D, a: Figure, t: number, br: number, base: typeof STYLE.hero) {
+  const bowLook = a.bow ? BOW_LOOKS[a.bow] : undefined;
+  const o = bowLook ? { ...base, ...bowLook } : base;
   g.save();
   g.translate(2, -HANDS_UNITS + br);
   g.rotate(-a.aim * D2R);
@@ -207,6 +222,16 @@ function armsBow(g: CanvasRenderingContext2D, a: Figure, t: number, br: number, 
     g.lineWidth = 1.5;
     g.strokeStyle = OL;
     g.stroke();
+  }
+  if (a.bow === 'golden') {
+    // A twinkle running along the Golden Bow.
+    const k = (t * 0.8) % 1;
+    const y = -40 + k * 80;
+    const x = 26 + (bendOf(a) - 26) * (1 - (y / 43) * (y / 43));
+    g.beginPath();
+    g.arc(x, y, 2.4, 0, TAU);
+    g.fillStyle = 'rgba(255,255,230,.9)';
+    g.fill();
   }
   const mid = pulled ? nock : 26 + wob;
   g.beginPath();

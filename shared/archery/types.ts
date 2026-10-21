@@ -109,7 +109,8 @@ export interface Flight {
 export type ShotEvent =
   | { k: 'fly'; t: number; path: number[]; part: 'main' | 'child' | 'hop' }
   | { k: 'roll'; t: number; path: number[] }
-  | { k: 'dig'; t: number; path: number[]; r: number }
+  /** Digging: a tunnel of radius r along the path, one point every `every` steps (PATH_EVERY if left out). `quiet`: a Crossbow Bolt cutting through (no digger to draw). */
+  | { k: 'dig'; t: number; path: number[]; r: number; every?: number; quiet?: boolean }
   | { k: 'blast'; t: number; x: number; y: number; r: number; carve: boolean }
   | { k: 'dirt'; t: number; x: number; y: number; r: number }
   | { k: 'goo'; t: number; puddle: Puddle }

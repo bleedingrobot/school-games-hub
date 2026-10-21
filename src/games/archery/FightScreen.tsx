@@ -11,20 +11,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSound } from '../../sound';
 import { playSound } from '../sounds';
-import { arrowKind } from '../../../shared/archery/arrows';
-import { BOT_KITS, type BotLevel } from '../../../shared/archery/bot';
-import { MAX_ANGLE, MAX_POWER, START_HEALTH } from '../../../shared/archery/config';
-import { startFight, takeShot, type FightRun } from '../../../shared/archery/fight';
+import { ARROWS, arrowKind } from '../../../shared/archery/arrows';
+import { BOT_NAMES, botSetup, type BotLevel } from '../../../shared/archery/bot';
+import { APPLE_HEALTH, MAX_ANGLE, MAX_POWER, START_HEALTH } from '../../../shared/archery/config';
+import { roundSeeds, startFight, takeShot, type FightRun } from '../../../shared/archery/fight';
+import { bowKind, shieldKind } from '../../../shared/archery/gear';
 import { copyLand } from '../../../shared/archery/land';
-import type { ArrowId, FightSetup, Shot, WorldId } from '../../../shared/archery/types';
+import type { Archer, ArrowId, FightSetup, PlayerSetup, Shot, ShotRecord, WorldId } from '../../../shared/archery/types';
 import { startArcheryBot } from './botThread';
 import { loadBests, loadPrefs, saveBest, savePrefs, wantsLessMotion, type ArcheryPrefs } from './prefs';
 import type { FightView, ViewInsets } from './renderer';
-import { BOT_NAME, LEVEL_NAMES, WORLD_HINTS, WORLD_NAMES, windWords } from './text';
+import { ARROW_SHORT, LEVEL_NAMES, WORLD_HINTS, WORLD_NAMES, windWords } from './text';
 import './archery.css';
 
-/** The preview's starter bag: a few Steel Arrows (Plain never runs out). */
-export const STARTER_QUIVER: Partial<Record<ArrowId, number>> = { steel: 4 };
+/** A starter bag when none is given: a few Steel Arrows (Plain never runs out), no shield, the Starter Bow. */
+export const STARTER_PACK: PlayerSetup = { quiver: { steel: 4 }, shield: null, bow: 'starter' };
 
 type Phase = 'loading' | 'aim' | 'flying' | 'bot' | 'round-over' | 'fight-over';
 
@@ -39,15 +40,18 @@ const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, 
 /** A new fight's seed. Only the screen picks it (the server will in Stage 4); the rules never use Math.random. */
 const freshSeed = () => (Math.random() * 4294967296) >>> 0;
 
-export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
+export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STARTER_PACK }: {
   world: WorldId;
   level: BotLevel;
   onExit: () => void;
+  /** What the player packed for this fight (arrows, helpers, shield, bow). */
+  pack?: PlayerSetup;
   /** A fixed seed (for tests); otherwise each fight gets a new one. */
   seed?: number;
 }) {
   const [seed, setSeed] = useState(() => fixedSeed ?? freshSeed());
-  const setup = useMemo<FightSetup>(() => ({ world, players: [{ quiver: { ...STARTER_QUIVER }, shield: 0 }, { quiver: { ...BOT_KITS[level] }, shield: 0 }] }), [world, level]);
+  const setup = useMemo<FightSetup>(() => ({ world, players: [{ ...pack, quiver: { ...pack.quiver } }, botSetup(level)] }), [world, level, pack]);
+  const BOT_NAME = BOT_NAMES[level];
   const run = useMemo<FightRun>(() => startFight(seed, setup), [seed, setup]);
   const runRef = useRef(run);
   runRef.current = run;
@@ -72,6 +76,10 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
   const aimRef = useRef(aim);
   aimRef.current = aim;
   const [arrow, setArrow] = useState<ArrowId>('plain');
+  const [eatApple, setEatApple] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  /** Who shot the arrow now flying (the rules move the turn on before the picture shows the shot). */
+  const [shooter, setShooter] = useState(0);
   const [message, setMessage] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [problem, setProblem] = useState('');
@@ -91,7 +99,15 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
   const round = run.round;
   const me = round.archers[0];
   const them = round.archers[1];
-  const steelLeft = (STARTER_QUIVER.steel ?? 0) - (run.used[0].steel ?? 0);
+  /** How many of an arrow or helper the player has left in this fight. */
+  const left = (id: ArrowId | 'apple' | 'umbrella') => Math.max(0, (setup.players[0].quiver[id] ?? 0) - (run.used[0][id] ?? 0));
+  const packed = ARROWS.filter((a) => !a.unlimited && (setup.players[0].quiver[a.id] ?? 0) > 0);
+  const specialsLeft = packed.reduce((n, a) => n + left(a.id), 0);
+  const applesLeft = left('apple');
+  const arrowLeft = arrow === 'plain' ? Infinity : left(arrow);
+  const myBow = bowKind(setup.players[0].bow);
+  const nextWind = myBow.id === 'hunter' && run.winner === null ? roundSeeds(seed, round.index + 1, world).wind : null;
+  const stabbed = (me.shardsBy ?? -1) >= 0 && !me.popped;
   const score = run.records.reduce((n, r) => n + (r.player === 0 ? r.damage[1] : 0), 0);
   const botLabel = `${BOT_NAME} (${LEVEL_NAMES[level]})`;
   const lastRound = run.rounds[run.rounds.length - 1];
@@ -116,7 +132,7 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
     void import('./renderer')
       .then((m) => {
         if (dead) return;
-        view = m.createFightView(el, { lessMotion, simple: prefs.simple, names: ['You', BOT_NAME] });
+        view = m.createFightView(el, { lessMotion, simple: prefs.simple, names: ['You', BOT_NAMES[level]] });
         viewRef.current = view;
         if (new URLSearchParams(window.location.search).has('debug')) (window as unknown as { __archeryStats?: () => unknown }).__archeryStats = () => view?.stats();
         resize();
@@ -167,8 +183,8 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
 
   // Each new dialog's heading takes the focus.
   useEffect(() => {
-    if (phase === 'round-over' || phase === 'fight-over' || settingsOpen || problem) dialogHeading.current?.focus();
-  }, [phase, settingsOpen, problem]);
+    if (phase === 'round-over' || phase === 'fight-over' || settingsOpen || pickerOpen || problem) dialogHeading.current?.focus();
+  }, [phase, settingsOpen, pickerOpen, problem]);
 
   // The player's archer shows their numbers.
   useEffect(() => {
@@ -184,6 +200,7 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
     if (turn === 0) {
       setPhase('aim');
       viewRef.current?.setAim(0, aimRef.current.angle, 0.15);
+      if ((run.round.archers[0].shardsBy ?? -1) >= 0) setMessage(`Glass shards! Hit ${BOT_NAME} this turn, or you pop.`);
     } else {
       setPhase('bot');
       void botTurn();
@@ -215,15 +232,17 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
       return;
     }
     shots.current.push(shot);
+    setShooter(player);
     setPhase('flying');
     setMessage('');
     beep('flick');
     const rec = taken.record;
-    const landAfter = copyLand(taken.ended ? taken.ended.land : run.round.land);
-    await view?.playShot({ player, record: rec, landBefore, landAfter, archersBefore });
+    const ended = taken.ended ?? run.round;
+    const landAfter = copyLand(ended.land);
+    await view?.playShot({ player, record: rec, landBefore, landAfter, archersBefore, gooAfter: ended.goo });
     if (gone.current) return;
     if (rec.damage[0] + rec.damage[1] > 0) beep('boom');
-    setMessage(describeShot(player, rec.damage, rec.hit.kind, rec.after));
+    setMessage(describeShot(player, rec));
     if (taken.ended) {
       const w = taken.ended.winner;
       if (w === 0 || w === 1) view?.celebrate(w);
@@ -241,23 +260,39 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
     startTurn();
   }
 
-  function describeShot(player: number, damage: [number, number], kind: string, after: [typeof me, typeof me]): string {
-    const who = player === 0 ? 'You' : BOT_NAME;
+  function describeShot(player: number, rec: ShotRecord): string {
+    const { damage, after } = rec;
+    const name = (i: number) => (i === 0 ? 'You' : BOT_NAME);
+    const obj = (i: number) => (i === 0 ? 'you' : BOT_NAME);
+    const who = name(player);
     const other = player === 0 ? 1 : 0;
     const parts: string[] = [];
-    if (damage[other] > 0) parts.push(`${who} hit ${other === 0 ? 'you' : BOT_NAME} for ${damage[other]}.`);
-    else parts.push(kind === 'gone' ? `${who} shot off the edge.` : `${who} missed.`);
-    if (damage[player] > 0) parts.push(`${player === 0 ? 'You' : BOT_NAME} got hurt too (${damage[player]}).`);
-    if (after[other].popped) parts.push(`${other === 0 ? 'You' : BOT_NAME} popped!`);
+    if (rec.apple > 0) parts.push(`${who} ate an Apple (+${rec.apple}).`);
+    // Damage to the other archer from the shot itself (goo is told on its own).
+    const hitThem = damage[other] - rec.goo[other];
+    if (hitThem > 0) parts.push(`${who} hit ${obj(other)} for ${hitThem}.`);
+    else parts.push(rec.hit.kind === 'gone' ? `${who} shot off the edge.` : `${who} missed.`);
+    const hurtSelf = damage[player] - rec.goo[player] - rec.sting;
+    if (hurtSelf > 0) parts.push(`${who} got hurt too (${hurtSelf}).`);
+    for (const i of [0, 1]) if (rec.goo[i] > 0) parts.push(`The goo stung ${obj(i)} (${rec.goo[i]}).`);
+    for (const i of [0, 1]) if (rec.umbrella[i]) parts.push(`${i === 0 ? 'Your' : `${BOT_NAME}'s`} Umbrella opened.`);
+    if (rec.glass === 'broke') parts.push(`${who} hit back and broke the glass shards${rec.sting ? ` (they stung for ${rec.sting})` : ''}.`);
+    if (rec.glass === 'popped') parts.push(`${who} didn't hit back, so the glass shards popped ${player === 0 ? 'you' : BOT_NAME}!`);
+    if ((after[other].shardsBy ?? -1) === player && rec.shot.arrow === 'glass') parts.push(`Glass shards stuck in ${obj(other)}! ${other === 0 ? 'Hit back next turn, or you pop.' : `${BOT_NAME} must hit back next turn, or pop.`}`);
+    if (after[other].popped && rec.glass !== 'popped') parts.push(`${name(other)} popped!`);
     return parts.join(' ');
   }
 
   function shoot() {
     if (phaseRef.current !== 'aim' || !viewRef.current) return;
     const a = aimRef.current;
-    const use: ArrowId = arrow === 'steel' && steelLeft <= 0 ? 'plain' : arrow;
-    if (use !== arrow) setArrow('plain');
-    void fire({ angle: a.angle, power: a.power, arrow: use });
+    const use: ArrowId = arrow !== 'plain' && left(arrow) <= 0 ? 'plain' : arrow;
+    const apple = eatApple && applesLeft > 0 && me.health < START_HEALTH;
+    // A special arrow that's now used up falls back to the Plain Arrow for next time.
+    if (use !== 'plain' && left(use) <= 1) setArrow('plain');
+    else if (use !== arrow) setArrow('plain');
+    setEatApple(false);
+    void fire({ angle: a.angle, power: a.power, arrow: use, ...(apple ? { apple: true } : {}) });
   }
 
   function nudge(which: keyof Aim, by: number) {
@@ -282,6 +317,7 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
     shots.current = [];
     setNewBest(false);
     setArrow('plain');
+    setEatApple(false);
     setPhase('loading');
     setMessage('');
     setSeed(freshSeed());
@@ -296,7 +332,7 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
   // Keys: ← → angle (the bow turns that way), ↑ ↓ power, Shift for steps of 5, space to shoot.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey || settingsOpen) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || settingsOpen || pickerOpen) return;
       const t = e.target;
       if (t instanceof HTMLInputElement || t instanceof HTMLSelectElement || t instanceof HTMLTextAreaElement) return;
       const step = e.shiftKey ? 5 : 1;
@@ -356,7 +392,7 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
   }
 
   const myTurn = phase === 'aim';
-  const turnWords = phase === 'loading' ? 'Getting ready…' : phase === 'aim' ? 'Your turn' : phase === 'bot' ? `${BOT_NAME}'s turn` : phase === 'flying' ? (round.turn === 0 ? 'Your shot' : `${BOT_NAME}'s shot`) : 'Round over';
+  const turnWords = phase === 'loading' ? 'Getting ready…' : phase === 'aim' ? 'Your turn' : phase === 'bot' ? `${BOT_NAME}'s turn` : phase === 'flying' ? (shooter === 0 ? 'Your shot' : `${BOT_NAME}'s shot`) : 'Round over';
   const healthPct = (h: number) => `${clamp((h / START_HEALTH) * 100, 0, 100)}%`;
   const wind = round.wind;
   const roundWinWords = lastRound?.winner === 0 ? `You win round ${lastRound.index + 1}!` : lastRound?.winner === 1 ? `${BOT_NAME} wins round ${lastRound.index + 1}` : `Round ${(lastRound?.index ?? 0) + 1} is a draw`;
@@ -379,29 +415,37 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
       </div>
 
       <div ref={top} className="ar-top">
-        <div className="ar-card" data-turn={round.turn === 0 && phase !== 'round-over' && phase !== 'fight-over' ? true : undefined}>
+        <div className="ar-card" data-turn={(phase === 'flying' ? shooter : round.turn) === 0 && phase !== 'round-over' && phase !== 'fight-over' ? true : undefined}>
           <span className="ar-card__name">You</span>
           <span className="ar-bar" role="meter" aria-label="Your health" aria-valuemin={0} aria-valuemax={START_HEALTH} aria-valuenow={me.health}>
             <span className="ar-bar__fill" style={{ width: healthPct(me.health) }} data-low={me.health < 35 || undefined} />
           </span>
           <span className="ar-card__num">{me.health}</span>
+          {me.guard && <ShieldPips archer={me} who="Your" />}
           <span className="ar-wins" aria-label={`Rounds won: ${run.roundWins[0]}`}>{'★'.repeat(run.roundWins[0])}</span>
         </div>
         <div className="ar-mid">
-          <span className="ar-turn" data-bot={round.turn === 1 || undefined} aria-live="polite">{turnWords}</span>
+          <span className="ar-turn" data-bot={(phase === 'flying' ? shooter : round.turn) === 1 || undefined} aria-live="polite">{turnWords}</span>
           <span className="ar-wind" aria-label={windWords(wind)}>
             <span aria-hidden="true">Wind</span>
             <span className="ar-wind__arrow" aria-hidden="true" data-dir={wind > 0 ? 'right' : wind < 0 ? 'left' : 'none'}>{wind > 0 ? '→' : wind < 0 ? '←' : '·'}</span>
             <b aria-hidden="true">{Math.abs(wind)}</b>
           </span>
+          {nextWind !== null && (
+            <span className="ar-nextwind" title="Hunter's Bow: next round's wind">
+              Next: {nextWind > 0 ? '→' : nextWind < 0 ? '←' : '·'} {Math.abs(nextWind)}
+              <span className="ar-sr"> ({windWords(nextWind)} next round, from your Hunter's Bow)</span>
+            </span>
+          )}
           <span className="ar-round">Round {round.index + 1}</span>
         </div>
-        <div className="ar-card ar-card--bot" data-turn={round.turn === 1 && phase !== 'round-over' && phase !== 'fight-over' ? true : undefined}>
+        <div className="ar-card ar-card--bot" data-turn={(phase === 'flying' ? shooter : round.turn) === 1 && phase !== 'round-over' && phase !== 'fight-over' ? true : undefined}>
           <span className="ar-card__name">{botLabel}</span>
           <span className="ar-bar" role="meter" aria-label={`${BOT_NAME}'s health`} aria-valuemin={0} aria-valuemax={START_HEALTH} aria-valuenow={them.health}>
             <span className="ar-bar__fill" style={{ width: healthPct(them.health) }} data-low={them.health < 35 || undefined} />
           </span>
           <span className="ar-card__num">{them.health}</span>
+          {them.guard && <ShieldPips archer={them} who={`${BOT_NAME}'s`} />}
           <span className="ar-wins" aria-label={`Rounds won: ${run.roundWins[1]}`}>{'★'.repeat(run.roundWins[1])}</span>
         </div>
         <div className="ar-topbtns">
@@ -411,11 +455,12 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
       </div>
 
       <p className="ar-toast" role="status" aria-live="polite">{message}</p>
+      {stabbed && myTurn && <p className="ar-warn" role="alert">Glass shards! Hit {BOT_NAME} this turn, or you pop.</p>}
       <p className="ar-rotate">Turn your phone sideways for a bigger view.</p>
 
       <div ref={bottom} className="ar-bottom">
         <div className="ar-stats" aria-label="Your fight">
-          <span className="ar-stat"><span>Arrows</span><b aria-label={`${steelLeft} Steel Arrows left`}>{steelLeft}</b></span>
+          <span className="ar-stat"><span>Arrows</span><b aria-label={`${specialsLeft} special arrows left`}>{specialsLeft}</b></span>
           <span className="ar-stat"><span>Score</span><b>{score}</b></span>
           <span className="ar-stat"><span>Best</span><b>{Math.max(best, phase === 'fight-over' ? score : 0)}</b></span>
         </div>
@@ -435,13 +480,15 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
           </label>
           <button type="button" className="button button--light ar-btn ar-step" aria-label="Power up" disabled={!myTurn} onClick={() => nudge('power', 1)}>+</button>
         </div>
-        <div className="ar-quiver" role="group" aria-label="Arrow">
-          <button type="button" className="button button--light ar-btn ar-pick" aria-pressed={arrow === 'plain'} aria-label={`${arrowKind('plain').name}, never runs out`} onClick={() => setArrow('plain')}>
-            <span className="ar-pick__long">{arrowKind('plain').name}</span><span className="ar-pick__short" aria-hidden="true">Plain</span> <small>∞</small>
+        <div className="ar-quiver" role="group" aria-label="Arrow and helpers">
+          <button type="button" className="button button--light ar-btn ar-pick" aria-haspopup="dialog" aria-label={`Arrow: ${arrowKind(arrow).name}, ${arrow === 'plain' ? 'never runs out' : `${arrowLeft} left`}. Choose another arrow`} onClick={() => setPickerOpen(true)}>
+            <span className="ar-pick__long">{arrowKind(arrow).name}</span><span className="ar-pick__short" aria-hidden="true">{ARROW_SHORT[arrow]}</span> <small>{arrow === 'plain' ? '∞' : arrowLeft}</small> <span aria-hidden="true">▾</span>
           </button>
-          <button type="button" className="button button--light ar-btn ar-pick" aria-pressed={arrow === 'steel'} aria-label={`${arrowKind('steel').name}, ${steelLeft} left`} disabled={steelLeft <= 0} onClick={() => setArrow('steel')}>
-            <span className="ar-pick__long">{arrowKind('steel').name}</span><span className="ar-pick__short" aria-hidden="true">Steel</span> <small>{steelLeft}</small>
-          </button>
+          {(setup.players[0].quiver.apple ?? 0) > 0 && (
+            <button type="button" className="button button--light ar-btn ar-pick" aria-pressed={eatApple} disabled={applesLeft <= 0 || me.health >= START_HEALTH} aria-label={`Eat an Apple with this shot (+${APPLE_HEALTH} health), ${applesLeft} left`} onClick={() => setEatApple((v) => !v)}>
+              <span aria-hidden="true">Apple</span> <small aria-hidden="true">{applesLeft}</small>
+            </button>
+          )}
         </div>
         <button type="button" className="button button--play ar-btn ar-shoot" disabled={!myTurn} onClick={shoot}>Shoot</button>
       </div>
@@ -483,6 +530,27 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
         </div>
       )}
 
+      {pickerOpen && (
+        <div className="ar-overlay" role="dialog" aria-modal="true" aria-labelledby="ar-picker-title" onKeyDown={(e) => e.key === 'Escape' && setPickerOpen(false)}>
+          <div className="ar-panel ar-panel--wide">
+            <h2 id="ar-picker-title" ref={dialogHeading} tabIndex={-1}>Choose an arrow</h2>
+            <div className="ar-arrows">
+              {[arrowKind('plain'), ...packed].map((a) => {
+                const n = a.unlimited ? Infinity : left(a.id);
+                return (
+                  <button key={a.id} type="button" className="button button--light ar-btn ar-arrow" aria-pressed={arrow === a.id} disabled={n <= 0} onClick={() => { setArrow(a.id); setPickerOpen(false); heading.current?.focus({ preventScroll: true }); }}>
+                    <b>{a.name}</b> <span className="ar-arrow__n">{a.unlimited ? '∞' : `${n} left`}</span>
+                    <span className="ar-arrow__does">{a.does}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {packed.length === 0 && <p className="ar-help">You didn't pack any special arrows for this fight.</p>}
+            <button type="button" className="button button--light ar-btn" onClick={() => { setPickerOpen(false); heading.current?.focus({ preventScroll: true }); }}>Back</button>
+          </div>
+        </div>
+      )}
+
       {settingsOpen && (
         <div className="ar-overlay" role="dialog" aria-modal="true" aria-labelledby="ar-settings-title" onKeyDown={(e) => e.key === 'Escape' && setSettingsOpen(false)}>
           <div className="ar-panel">
@@ -501,5 +569,15 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed }: {
         </div>
       )}
     </section>
+  );
+}
+
+/** A shield's points, next to an archer's health. */
+function ShieldPips({ archer, who }: { archer: Archer; who: string }) {
+  const kind = shieldKind(archer.guard!);
+  return (
+    <span className="ar-shield" data-kind={kind.id} role="meter" aria-label={`${who} ${kind.name}`} aria-valuemin={0} aria-valuemax={kind.soak} aria-valuenow={archer.shield}>
+      <span className="ar-shield__fill" style={{ width: `${Math.round((archer.shield / kind.soak) * 100)}%` }} />
+    </span>
   );
 }

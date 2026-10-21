@@ -7,6 +7,6 @@ describe('determinism', () => {
   });
 
   it('gives the pinned fingerprint (if this changes, the rules changed: every saved fight is affected)', () => {
-    expect(fingerprint(determinismReport())).toBe('c74ca8ad');
+    expect(fingerprint(determinismReport())).toBe('4d54f767');
   });
 });

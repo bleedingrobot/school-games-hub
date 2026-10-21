@@ -30,7 +30,7 @@ function size() {
 }
 
 function newFight() {
-  run = startFight(seed, { world, players: [{ quiver: { steel: 5 }, shield: 0 }, { quiver: { steel: 5 }, shield: 0 }] });
+  run = startFight(seed, { world, players: [{ quiver: { steel: 5 }, shield: null }, { quiver: { steel: 5 }, shield: null }] });
   view.setRound(run.round);
   view.setTurn(run.round.turn);
   ($('world') as HTMLSelectElement).value = world;

@@ -12,10 +12,12 @@
  * James's rules (21 Oct 2026): no aiming help of any kind (a flying arrow's trail fades within half a
  * second and nothing stays on screen), no blood ever, top-notch graphics that stay smooth on Chromebooks.
  */
-import { arrowKind } from '../../../shared/archery/arrows';
-import { CELL, COLS, HANDS_HEIGHT, ROWS, WORLD_WIND_MAX } from '../../../shared/archery/config';
-import { carve, copyLand, dropArcher } from '../../../shared/archery/land';
-import { AIR, BUILDING, DIRT, ICE, TREE, type Archer, type Land, type Round, type ShotRecord, type WorldId } from '../../../shared/archery/types';
+import { CELL, COLS, HANDS_HEIGHT, PATH_EVERY, ROWS, STEPS_PER_SECOND, WORLD_WIND_MAX } from '../../../shared/archery/config';
+import { addDirt, carve, copyLand, dropArcher } from '../../../shared/archery/land';
+import {
+  AIR, BUILDING, DIRT, ICE, TREE, type Archer, type Land, type Puddle, type Round, type ShieldId, type ShotEvent, type ShotRecord, type WorldId,
+} from '../../../shared/archery/types';
+import { shieldKind } from '../../../shared/archery/gear';
 import { arrowLength, arrowLook, arrowShape, drawFigure, type ArrowLook, type Figure, ARROW_STYLES } from './art/archers';
 import { PAD_TOP, PAD_X, cloudSprite, makeOverlay, makeSky, paintFar, paintMid, tumbleSprite, type Sprite } from './art/backdrop';
 import { Fx, badge } from './art/fx';
@@ -37,8 +39,10 @@ export interface FightViewOptions {
 export interface ShotShow {
   /** Who shot (0 = left archer). */
   player: number;
-  /** From takeShot(run, shot, true): has .path (x, y pairs, 60 a second of flight). */
+  /** From takeShot(run, shot, true): has .path (x, y pairs, 60 a second of flight) and .events (everything that happened). */
   record: ShotRecord;
+  /** The Sticky Goo puddles once the shot is over. */
+  gooAfter?: readonly Puddle[];
   /** The land just before the shot. */
   landBefore: Land;
   /** The land after the shot (falling dirt and sliding sand already done). */
@@ -69,6 +73,7 @@ const TRAIL_SECONDS = 0.45;
 /** Falling dirt and archers fall at this many px/s². */
 const FALL_G = 900;
 const MAX_PARTICLES = 300;
+const shieldSoak = (id: ShieldId) => shieldKind(id).soak;
 const SIMPLE_PARTICLES = 120;
 
 interface Step { x: number; y: number; fall: boolean }
@@ -86,24 +91,53 @@ interface ArcherView {
   blinkT: number;
   path: Step[] | null; seg: number; segT: number; segFrom: Step | null;
   pendingPop: boolean;
+  /** Their shield (drawn while it has points), whether the Bubble can still bounce, Glass shards in them, an Umbrella open. */
+  guard: ShieldId | null;
+  bubble: boolean;
+  bubbleFlash: number;
+  shards: boolean;
+  umbrella: boolean;
   aimAnim: { from: number; to: number; fromPull: number; toPull: number; t: number; dur: number; resolve: () => void } | null;
 }
 
 interface Strip { col: number; srcRow: number; n: number; drop: number; kind: number; y: number; vy: number; landed: boolean; px: number }
 
+/** One moving part of a shot: an arrow flying, a log rolling, or something digging. Times in seconds from the shot. */
+interface Track {
+  kind: 'fly' | 'roll' | 'dig';
+  t0: number;
+  /** Seconds per path point. */
+  every: number;
+  path: number[];
+  end: number;
+  look: ArrowLook;
+  small: boolean;
+  r: number;
+  quiet: boolean;
+  /** Dig tracks: how many points have been carved into the picture's land so far. */
+  carved: number;
+}
+
+interface Effect { t: number; e: ShotEvent; done: boolean }
+
 interface ShowState {
   rec: ShotRecord;
   player: number;
   look: ArrowLook;
-  path: number[];
-  total: number;
+  tracks: Track[];
+  effects: Effect[];
+  /** When everything has happened (seconds). */
+  end: number;
   t: number;
   pt: number;
-  bounceT: number;
-  bounced: boolean;
+  /** The timeline is over (the land settles and archers fall from here). */
   impacted: boolean;
   afterT: number;
   after: Land;
+  /** The picture's land as the shot goes (blasts, dirt and digging so far, before anything falls). */
+  work: Land;
+  gooAfter: readonly Puddle[] | null;
+  blasts: number;
   intermediate: Land | null;
   strips: Strip[];
   stripsDone: boolean;
@@ -186,6 +220,8 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
   let celebrating: number | null = null;
   let celebrateT = 0;
   let show: ShowState | null = null;
+  /** Sticky Goo puddles on the land now. */
+  let goo: readonly Puddle[] = [];
 
   const archers: [ArcherView, ArcherView] = [newArcher(0), newArcher(1)];
 
@@ -200,6 +236,7 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
       x: i === 0 ? 150 : 810, y: 400, px: 0, py: 0, lift: 0, liftV: 0, liftDelay: 0, visible: false, popped: false,
       health: 100, shield: 0, shieldMax: 1, shownHealth: 100, shownShield: 0, angle: i === 0 ? 45 : 135, blinkT: 1 + i * 1.7,
       path: null, seg: 0, segT: 0, segFrom: null, pendingPop: false, aimAnim: null,
+      guard: null, bubble: false, bubbleFlash: 0, shards: false, umbrella: false,
     };
   }
 
@@ -339,7 +376,7 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
     if (show) {
       stepShow(show, dt);
       if (show && !show.impacted) {
-        const [ax, ay] = pathAt(show, show.t);
+        const [ax, ay] = leadAt(show, show.t);
         const topField = (L.insets.top - L.oy) / L.s;
         const margin = 46 / L.s;
         if (ay < topField + margin) camTarget = ay - margin - topField;
@@ -435,6 +472,8 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
     if (f.dizzy > 0 && f.koT < 0) f.dizzy = Math.max(0, f.dizzy - dt * 0.8);
     a.shownHealth += (a.health - a.shownHealth) * (1 - Math.exp(-dt * 5));
     a.shownShield += (a.shield - a.shownShield) * (1 - Math.exp(-dt * 5));
+    a.bubbleFlash = Math.max(0, a.bubbleFlash - dt * 2);
+    if (a.umbrella && !a.path) a.umbrella = false;
     // Dropping in at the start of a round.
     if (a.lift > 0) {
       if (a.liftDelay > 0) a.liftDelay -= dt;
@@ -520,30 +559,69 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
 
   // ——— Playing a shot ———
 
-  function pathAt(s: ShowState, time: number): [number, number, number] {
-    const n = s.path.length / 2;
-    const ft = clamp(time * 60, 0, n - 1);
+  /** Where a track's head is at `time` (seconds from the shot), and which way it's heading. */
+  function trackAt(tr: Track, time: number): [number, number, number] {
+    const n = tr.path.length / 2;
+    const ft = clamp((time - tr.t0) / tr.every, 0, n - 1);
     const i = Math.min(n - 2, Math.floor(ft));
-    if (i < 0) return [s.path[0], s.path[1], 0];
+    if (i < 0) return [tr.path[0], tr.path[1], 0];
     const f = ft - i;
-    const x0 = s.path[i * 2], y0 = s.path[i * 2 + 1], x1 = s.path[i * 2 + 2], y1 = s.path[i * 2 + 3];
+    const x0 = tr.path[i * 2], y0 = tr.path[i * 2 + 1], x1 = tr.path[i * 2 + 2], y1 = tr.path[i * 2 + 3];
     return [x0 + (x1 - x0) * f, y0 + (y1 - y0) * f, Math.atan2(y1 - y0, x1 - x0)];
+  }
+
+  /** What the camera follows: the newest part of the shot that has started. */
+  function leadAt(s: ShowState, time: number): [number, number] {
+    let best: Track | null = null;
+    for (const tr of s.tracks) if (tr.t0 <= time && (!best || tr.t0 >= best.t0)) best = tr;
+    if (!best) return [s.rec.hit.x, s.rec.hit.y];
+    const [x, y] = trackAt(best, time);
+    return [x, y];
+  }
+
+  /** The tracks and effects of a shot, from its events (or, without them, its one flight and landing). */
+  function timeline(rec: ShotRecord, player: number): { tracks: Track[]; effects: Effect[]; end: number } {
+    const sec = (steps: number) => steps / STEPS_PER_SECOND;
+    const per = PATH_EVERY / STEPS_PER_SECOND;
+    const tracks: Track[] = [];
+    const effects: Effect[] = [];
+    const main = arrowLook(rec.shot.arrow, player);
+    const events: ShotEvent[] = rec.events ?? [
+      { k: 'fly', t: 0, path: rec.path && rec.path.length >= 4 ? rec.path : [rec.hit.x, rec.hit.y, rec.hit.x, rec.hit.y], part: 'main' },
+      ...(rec.hit.kind === 'gone' || rec.hit.kind === 'timeout' ? [] : [{ k: 'blast' as const, t: rec.hit.steps, x: rec.hit.x, y: rec.hit.y, r: 18, carve: true }]),
+    ];
+    for (const e of events) {
+      if (e.k === 'fly' || e.k === 'roll' || e.k === 'dig') {
+        const path = e.path.length >= 4 ? e.path : [e.path[0] ?? 0, e.path[1] ?? 0, e.path[0] ?? 0, e.path[1] ?? 0];
+        const every = e.k === 'dig' && e.every ? sec(e.every) : per;
+        const t0 = sec(e.t);
+        const look: ArrowLook = e.k === 'roll' ? 'roll' : e.k === 'dig' ? 'digger' : e.part === 'child' ? 'rain' : e.part === 'hop' ? 'skip' : main;
+        tracks.push({
+          kind: e.k, t0, every, path, end: t0 + (path.length / 2 - 1) * every, look, small: e.k === 'fly' && e.part === 'child',
+          r: e.k === 'dig' ? e.r : 0, quiet: e.k === 'dig' && !!e.quiet, carved: 0,
+        });
+      } else effects.push({ t: sec(e.t), e, done: false });
+    }
+    effects.sort((p, q) => p.t - q.t);
+    let end = 0;
+    for (const tr of tracks) end = Math.max(end, tr.end);
+    for (const ef of effects) end = Math.max(end, ef.t);
+    return { tracks, effects, end: Math.max(1 / 60, end) };
   }
 
   function stepShow(s: ShowState, dt: number) {
     s.pt = s.t;
     if (!s.impacted) {
       s.t += dt;
-      if (!s.bounced && s.bounceT >= 0 && s.t >= s.bounceT) {
-        s.bounced = true;
-        const b = s.rec.bounce!;
-        fx.sparkles(b[0], b[1], 14, '#c8f4ff', 0.8);
-        fx.sparkles(b[0], b[1], 6, '#ffffff', 0.5);
-        fx.say('PING!', b[0], b[1] - 22, 16, 'small');
+      for (const ef of s.effects) {
+        if (ef.done || ef.t > s.t) continue;
+        ef.done = true;
+        applyEffect(s, ef.e);
       }
-      if (s.t >= s.total) {
-        s.t = s.total;
-        impact(s);
+      digAlong(s);
+      if (s.t >= s.end) {
+        s.t = s.end;
+        finish(s);
       }
       return;
     }
@@ -581,15 +659,46 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
     }
   }
 
-  function hitKindWord(s: ShowState, before: Land): string {
+  /** Keeps the picture's land in step with the shot so far. */
+  function syncLand(s: ShowState) {
+    if (!land) return;
+    land.update(s.work.cells);
+    computeTops(land.cells);
+  }
+
+  /** Digging tracks carve the land as their head moves along (a few points at a time). */
+  function digAlong(s: ShowState) {
+    let changed = false;
+    for (const tr of s.tracks) {
+      if (tr.kind !== 'dig' || s.t < tr.t0) continue;
+      const n = tr.path.length / 2;
+      const upTo = s.t >= tr.end ? n : Math.min(n, Math.floor((s.t - tr.t0) / tr.every) + 1);
+      if (upTo - tr.carved < (s.t >= tr.end ? 1 : 4)) continue;
+      for (let k = tr.carved; k < upTo; k++) carve(s.work, tr.path[k * 2], tr.path[k * 2 + 1], tr.r);
+      const hx = tr.path[(upTo - 1) * 2], hy = tr.path[(upTo - 1) * 2 + 1];
+      if (!tr.quiet) fx.landingDust(hx, hy, pal.dust, 2);
+      tr.carved = upTo;
+      changed = true;
+    }
+    if (changed) syncLand(s);
+  }
+
+  /** The word for a blast, from what it hit. */
+  function hitWord(s: ShowState, x: number, y: number): string {
+    const arrow = s.rec.shot.arrow;
+    if (arrow === 'giant') return 'KA-BOOM!';
+    if (arrow === 'glass') return 'CRASH!';
+    if (arrow === 'firework') return 'POP!';
+    if (arrow === 'log') return 'THUD!';
+    if (arrow === 'sneaky') return 'SURPRISE!';
     const h = s.rec.hit;
-    if (h.kind === 'archer') return 'BONK!';
-    const c = Math.floor(h.x / CELL), r = Math.floor(h.y / CELL);
+    if (h.kind === 'archer' && Math.abs(h.x - x) < 2 && Math.abs(h.y - y) < 2) return 'BONK!';
+    const c = Math.floor(x / CELL), r = Math.floor(y / CELL);
     let kind = DIRT;
     for (const [dc, dr] of [[0, 0], [0, 1], [1, 0], [-1, 0], [0, -1]]) {
       const cc = c + dc, rr2 = r + dr;
       if (cc < 0 || cc >= COLS || rr2 < 0 || rr2 >= ROWS) continue;
-      const v = before.cells[rr2 * COLS + cc];
+      const v = s.work.cells[rr2 * COLS + cc];
       if (v !== AIR) {
         kind = v;
         break;
@@ -603,28 +712,105 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
 
   let pendingBefore: { land: Land; archers: [Archer, Archer] } | null = null;
 
-  function impact(s: ShowState) {
+  const GOO = ['#7ee06a', '#c8ff9a'] as [string, string];
+
+  /** Shows one thing that happened during the shot, at its moment. */
+  function applyEffect(s: ShowState, e: ShotEvent) {
+    const chunkCols = [pal.soil[0], pal.surf, pal.pebble[0]];
+    const shakeBy = (n: number) => {
+      if (!opts.lessMotion) shake = Math.max(shake, n);
+    };
+    switch (e.k) {
+      case 'blast': {
+        const first = s.blasts++ === 0;
+        const nearArcher = archers.some((a) => a.visible && Math.abs(a.x - e.x) < e.r + 8 && Math.abs(a.y - 12 - e.y) < e.r + 16);
+        if (!e.carve) {
+          // A goo splash: no crater.
+          fx.burst(e.x, e.y, Math.max(10, e.r * 0.7), GOO, ['#5fd35a', '#b6f59a'], false);
+          if (first) fx.say('SPLAT!', e.x, e.y - 30, 22);
+          break;
+        }
+        fx.burst(e.x, e.y, Math.max(10, e.r), pal.dust, chunkCols, nearArcher);
+        if (s.rec.shot.arrow === 'firework') {
+          fx.confetti(e.x, e.y, 10);
+          fx.sparkles(e.x, e.y, 8, ['#ff4fa3', '#ffd23f', '#36c2e0', '#9a4bd8', '#5fd35a'][s.blasts % 5], 1.1);
+        } else if (s.rec.shot.arrow === 'giant') {
+          fx.confetti(e.x, e.y - 10, 30);
+          fx.burst(e.x, e.y - 20, e.r * 0.8, ['#9ccc4a', '#e8a33a'], ['#5fd35a', '#e8a33a', '#d9672b'], true);
+        } else if (s.rec.shot.arrow === 'glass') {
+          fx.sparkles(e.x, e.y - 6, 18, '#dffaff', 1.2);
+          fx.sparkles(e.x, e.y - 6, 8, '#9fe8ff', 0.8);
+        }
+        if (first || s.rec.shot.arrow === 'firework') fx.say(hitWord(s, e.x, e.y), e.x, e.y - 26 - e.r * 0.6, first ? clamp(14 + e.r * 0.45, 16, 44) : 15);
+        shakeBy(clamp(e.r / 30, 0.4, 2));
+        if (e.r > 0) {
+          carve(s.work, e.x, e.y, e.r);
+          syncLand(s);
+        }
+        break;
+      }
+      case 'dirt':
+        addDirt(s.work, e.x, e.y, e.r);
+        syncLand(s);
+        fx.burst(e.x, e.y, e.r * 0.6, pal.dust, [pal.soil[0], pal.soil[1] ?? pal.soil[0]], false);
+        fx.say('SPLOT!', e.x, e.y - e.r - 14, 24);
+        shakeBy(0.8);
+        break;
+      case 'goo':
+        goo = [...goo, e.puddle];
+        fx.sparkles((e.puddle.c0 + e.puddle.c1 + 1) * CELL / 2, e.puddle.level * CELL, 10, '#b6f59a', 0.6);
+        break;
+      case 'shake': {
+        shakeBy(2.4);
+        fx.say('RUMBLE!', e.x, e.y - 40, 30);
+        for (let k = -4; k <= 4; k++) {
+          const x = e.x + (k * e.reach) / 4;
+          if (x < 0 || x > 959) continue;
+          fx.landingDust(x, surfaceY(x), pal.dust, 3);
+        }
+        break;
+      }
+      case 'bounce':
+        if (e.what === 'ice') {
+          fx.sparkles(e.x, e.y, 14, '#c8f4ff', 0.8);
+          fx.sparkles(e.x, e.y, 6, '#ffffff', 0.5);
+          fx.say('PING!', e.x, e.y - 22, 16, 'small');
+        } else {
+          fx.sparkles(e.x, e.y, 16, '#9ff3ff', 0.9);
+          fx.say('BOING!', e.x, e.y - 22, 20);
+          for (const a of archers) if (a.guard === 'bubble' && Math.abs(a.x - e.x) < 40) {
+            a.bubbleFlash = 1;
+            a.bubble = false;
+          }
+        }
+        break;
+      case 'shards': {
+        const a = archers[e.archer];
+        a.shards = true;
+        fx.sparkles(a.x, a.y - 16, 16, '#dffaff', 1);
+        fx.say('SHARDS!', a.x, a.y - 66, 20);
+        break;
+      }
+    }
+  }
+
+  /** The timeline is over: the land settles, and the archers take their damage, fall and maybe pop. */
+  function finish(s: ShowState) {
     s.impacted = true;
     s.afterT = 0;
-    const rec = s.rec, h = rec.hit;
+    const rec = s.rec;
     const before = pendingBefore!;
-    const arrow = arrowKind(rec.shot.arrow);
-    const blastR = arrow.blastRadius;
-    const landed = h.kind === 'land' || h.kind === 'archer' || h.kind === 'floor';
-    if (landed) {
-      const chunkCols = [pal.soil[0], pal.surf, pal.pebble[0]];
-      fx.burst(h.x, h.y, Math.max(10, blastR), pal.dust, chunkCols, h.kind === 'archer');
-      const size = clamp(14 + blastR * 0.45, 16, 40);
-      fx.say(hitKindWord(s, before.land), h.x, h.y - 26 - blastR * 0.6, size);
-      if (!opts.lessMotion) shake = Math.max(shake, clamp(blastR / 30, 0.4, 1.6));
-    } else if (h.kind === 'gone') {
-      fx.sparkles(clamp(h.x, 2, 958), h.y, 5, '#ffffff', 0.5);
+    // Anything still to show (a very short shot), then whatever digging is left.
+    for (const ef of s.effects) if (!ef.done) {
+      ef.done = true;
+      applyEffect(s, ef.e);
     }
-    // The land: blast first (what the blast removed), then the dirt that falls.
+    for (const tr of s.tracks) if (tr.kind === 'dig') tr.end = Math.min(tr.end, s.t);
+    digAlong(s);
+    if (s.rec.hit.kind === 'gone' && s.blasts === 0) fx.sparkles(clamp(s.rec.hit.x, 2, 958), s.rec.hit.y, 5, '#ffffff', 0.5);
+    // The land: what fell after everything the shot did.
     if (land) {
-      const blasted = copyLand(before.land);
-      if (landed && blastR > 0) carve(blasted, h.x, h.y, blastR);
-      const after = s.after.cells, bl = blasted.cells;
+      const after = s.after.cells, bl = s.work.cells;
       const inter = new Uint8Array(after.length);
       const strips: Strip[] = [];
       for (let c = 0; c < COLS; c++) {
@@ -660,6 +846,7 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
       }
       computeTops(land.cells);
     } else s.stripsDone = true;
+    if (s.gooAfter) goo = s.gooAfter;
 
     // The archers: damage, wobble, numbers, then falls and slides, then any pop.
     for (let i = 0; i < 2; i++) {
@@ -668,18 +855,32 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
       if (b.popped) continue;
       a.health = af.health;
       a.shield = af.shield;
+      a.bubble = !!af.bubble;
+      a.shards = (af.shardsBy ?? -1) >= 0;
       const dmg = rec.damage[i];
       if (dmg > 0) {
         a.fig.hitT = 1;
         a.fig.dizzy = 1.4;
         fx.say(`−${dmg}`, a.x, a.y - 48, 15, 'damage');
-        if (b.shield > af.shield) fx.sparkles(a.x, a.y - 14, 12, '#9ff3ff', 0.7);
+        if (b.shield > af.shield) fx.sparkles(a.x, a.y - 14, 12, a.guard === 'wood' ? '#e9c38a' : '#9ff3ff', 0.7);
+        if (rec.goo[i] > 0) fx.sparkles(a.x, a.y - 4, 8, '#b6f59a', 0.5);
+      }
+      if (rec.apple > 0 && i === rec.player) fx.say(`Apple +${rec.apple}`, a.x, a.y - 76, 15, 'small');
+      if (rec.glass && i === rec.player) {
+        if (rec.glass === 'broke') {
+          fx.sparkles(a.x, a.y - 16, 14, '#dffaff', 1.1);
+          fx.say('Shards out!', a.x, a.y - 66, 16, 'small');
+        } else fx.say('SHATTER!', a.x, a.y - 66, 26);
       }
       if (af.x !== b.x || af.y !== b.y) {
         a.path = fallPath(s.after, b, af);
         a.seg = 0;
         a.segT = -0.15;
         a.segFrom = { x: b.x, y: b.y, fall: false };
+        if (rec.umbrella[i]) {
+          a.umbrella = true;
+          fx.say('Umbrella!', a.x, a.y - 66, 15, 'small');
+        }
       }
       if (af.popped) a.pendingPop = true;
       a.popped = af.popped;
@@ -791,6 +992,7 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
     if (land && hasRound) {
       if (world === 'desert' && Ly.tumble && !opts.lessMotion) drawTumble(Ly.tumble, tt);
       drawStrips(alpha);
+      drawGoo(tt);
       drawWindsock(tt);
     }
     mark('strips+sock');
@@ -991,23 +1193,96 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
     const [x, y] = archerPos(a, alpha);
     g.save();
     g.translate(x, y);
-    // A shield bubble.
-    if (a.shield > 0 && !simpleNow()) {
-      const r = 22 + Math.sin(tt * 2) * 0.5;
+    const up = a.shield > 0.5;
+    // The Bubble Shield: a shimmering bubble (fainter once it has bounced its arrow).
+    if (a.guard === 'bubble' && up) {
+      const r = 22 + Math.sin(tt * 2) * 0.5 + a.bubbleFlash * 4;
       const cy = -16;
-      const rg = g.createRadialGradient(-r * 0.3, cy - r * 0.35, r * 0.1, 0, cy, r);
-      rg.addColorStop(0, 'rgba(255,255,255,.12)');
-      rg.addColorStop(0.72, 'rgba(150,225,255,.06)');
-      rg.addColorStop(1, 'rgba(150,225,255,.3)');
+      const strong = a.bubble ? 1 : 0.55;
+      if (!simpleNow()) {
+        const rg = g.createRadialGradient(-r * 0.3, cy - r * 0.35, r * 0.1, 0, cy, r);
+        rg.addColorStop(0, `rgba(255,255,255,${0.12 * strong})`);
+        rg.addColorStop(0.72, `rgba(150,225,255,${0.06 * strong})`);
+        rg.addColorStop(1, `rgba(150,225,255,${0.3 * strong + a.bubbleFlash * 0.4})`);
+        g.beginPath();
+        g.arc(0, cy, r, 0, TAU);
+        g.fillStyle = rg;
+        g.fill();
+      }
       g.beginPath();
       g.arc(0, cy, r, 0, TAU);
-      g.fillStyle = rg;
+      g.lineWidth = 1 + a.bubbleFlash;
+      g.strokeStyle = `rgba(255,255,255,${0.6 * strong})`;
+      g.stroke();
+    }
+    // The Wind Charm: little wind swirls circling the archer.
+    if (a.guard === 'charm' && up) {
+      g.strokeStyle = 'rgba(225,245,255,.85)';
+      g.lineWidth = 0.9;
+      g.lineCap = 'round';
+      for (let k = 0; k < 3; k++) {
+        const an = (opts.lessMotion ? 0 : tt * 2.2) + (k * TAU) / 3;
+        const cx = Math.cos(an) * 15, cy = -18 + Math.sin(an) * 6;
+        g.beginPath();
+        g.arc(cx, cy, 3.2, an, an + 4);
+        g.stroke();
+      }
+    }
+    // The Wooden Shield, on their back.
+    if (a.guard === 'wood' && up) {
+      const bx = -a.fig.dir * 6, by = -15;
+      g.beginPath();
+      g.arc(bx, by, 6.2, 0, TAU);
+      g.fillStyle = '#a8612a';
       g.fill();
+      g.lineWidth = 1.1;
+      g.strokeStyle = OL;
+      g.stroke();
+      g.beginPath();
+      g.arc(bx, by, 4.2, 0, TAU);
+      g.strokeStyle = '#e9a866';
+      g.lineWidth = 0.7;
+      g.stroke();
+      g.beginPath();
+      g.arc(bx, by, 1.4, 0, TAU);
+      g.fillStyle = '#cfd8e6';
+      g.fill();
+    }
+    // An Umbrella, open while they fall.
+    if (a.umbrella) {
+      g.beginPath();
+      g.moveTo(0, -36);
+      g.lineTo(0, -50);
+      g.strokeStyle = OL;
       g.lineWidth = 1;
-      g.strokeStyle = 'rgba(255,255,255,.6)';
+      g.stroke();
+      g.beginPath();
+      g.moveTo(-13, -48);
+      g.quadraticCurveTo(0, -64, 13, -48);
+      g.quadraticCurveTo(6.5, -51, 0, -48);
+      g.quadraticCurveTo(-6.5, -51, -13, -48);
+      g.fillStyle = '#ff4fa3';
+      g.fill();
       g.stroke();
     }
     drawFigure(g, a.fig, tt, K, simpleNow(), i * 1.7);
+    // Glass shards stuck in them: glinting, until they hit back (or pop).
+    if (a.shards) {
+      for (let k = 0; k < 4; k++) {
+        const gx = (k - 1.5) * 4, gy = -10 - (k % 2) * 7;
+        const glint = opts.lessMotion ? 0.8 : 0.55 + 0.45 * Math.sin(tt * 7 + k * 1.9);
+        g.beginPath();
+        g.moveTo(gx, gy - 3.4);
+        g.lineTo(gx + 1.6, gy + 1.4);
+        g.lineTo(gx - 1.4, gy + 1);
+        g.closePath();
+        g.fillStyle = `rgba(210,248,255,${glint.toFixed(2)})`;
+        g.fill();
+        g.lineWidth = 0.5;
+        g.strokeStyle = 'rgba(40,90,120,.9)';
+        g.stroke();
+      }
+    }
     g.restore();
   }
 
@@ -1056,42 +1331,126 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
   }
 
   function drawFlight(s: ShowState, alpha: number) {
-    const now = s.impacted ? s.total + s.afterT : lerp(s.pt, s.t, alpha);
-    const n = s.path.length / 2;
-    const head = Math.min(now, s.total);
-    // The trail: the last half second of the flight, fading (it's gone half a second after landing).
-    const from = Math.max(0, now - TRAIL_SECONDS);
-    if (from < head) {
-      const st = ARROW_STYLES[s.look] ?? ARROW_STYLES.arrow;
-      const i0 = Math.floor(from * 60), i1 = Math.min(n - 1, Math.ceil(head * 60));
-      g.lineCap = 'round';
-      let [lx, ly] = pathAt(s, from);
-      for (let i = i0 + 1; i <= i1; i++) {
-        const ti = Math.min(i / 60, head);
-        const [x, y] = i === i1 ? pathAt(s, head) : [s.path[i * 2], s.path[i * 2 + 1]];
-        const k = clamp(1 - (now - ti) / TRAIL_SECONDS, 0, 1);
-        g.strokeStyle = `rgba(${st.trail},${(k * 0.8).toFixed(3)})`;
-        g.lineWidth = 0.5 + k * (s.look === 'giant' ? 4 : 2.4);
-        g.beginPath();
-        g.moveTo(lx, ly);
-        g.lineTo(x, y);
-        g.stroke();
-        lx = x;
-        ly = y;
+    const now = s.impacted ? s.t + s.afterT : lerp(s.pt, s.t, alpha);
+    for (const tr of s.tracks) {
+      if (now < tr.t0 || tr.quiet) continue;
+      const head = Math.min(now, tr.end);
+      if (tr.kind === 'fly') {
+        // The trail: the last half second of the flight, fading (it's gone half a second after landing).
+        const from = Math.max(tr.t0, now - TRAIL_SECONDS);
+        if (from < head) {
+          const st = ARROW_STYLES[tr.look] ?? ARROW_STYLES.arrow;
+          const n = tr.path.length / 2;
+          const i0 = Math.floor((from - tr.t0) / tr.every), i1 = Math.min(n - 1, Math.ceil((head - tr.t0) / tr.every));
+          g.lineCap = 'round';
+          let [lx, ly] = trackAt(tr, from);
+          for (let i = i0 + 1; i <= i1; i++) {
+            const ti = Math.min(tr.t0 + i * tr.every, head);
+            const [x, y] = i === i1 ? trackAt(tr, head) : [tr.path[i * 2], tr.path[i * 2 + 1]];
+            const k = clamp(1 - (now - ti) / TRAIL_SECONDS, 0, 1);
+            g.strokeStyle = `rgba(${st.trail},${(k * 0.8).toFixed(3)})`;
+            g.lineWidth = 0.5 + k * (tr.look === 'giant' ? 4 : tr.small ? 1.4 : 2.4);
+            g.beginPath();
+            g.moveTo(lx, ly);
+            g.lineTo(x, y);
+            g.stroke();
+            lx = x;
+            ly = y;
+          }
+        }
+        if (now >= tr.end) continue;
+        const [x, y, ang] = trackAt(tr, now);
+        g.save();
+        g.translate(x, y);
+        g.rotate(ang);
+        g.scale(tr.small ? K * 0.7 : K, tr.small ? K * 0.7 : K);
+        arrowShape(g, -arrowLength(tr.look) + 4, tr.look);
+        g.restore();
+      } else if (tr.kind === 'roll') {
+        if (now >= tr.end) continue;
+        const [x, y] = trackAt(tr, now);
+        drawLog(x, y - 6, (now - tr.t0) * 9 * (tr.path[tr.path.length - 2] >= tr.path[0] ? 1 : -1));
+      } else if (now < tr.end) {
+        // Something digging: its drill nose, just under the ground.
+        const [x, y, ang] = trackAt(tr, now);
+        g.save();
+        g.translate(x, y);
+        g.rotate(ang);
+        g.scale(K * 0.8, K * 0.8);
+        arrowShape(g, -arrowLength('digger') + 4, 'digger');
+        g.restore();
       }
     }
-    if (s.impacted) return;
-    const [x, y, ang] = pathAt(s, now);
+  }
+
+  /** The Rolling Log: a log end-on, turning as it rolls. */
+  function drawLog(x: number, y: number, rot: number) {
     g.save();
     g.translate(x, y);
-    g.rotate(ang);
-    g.scale(K, K);
-    arrowShape(g, -arrowLength(s.look) + 4, s.look);
+    g.rotate(rot);
+    g.beginPath();
+    g.arc(0, 0, 6.5, 0, TAU);
+    g.fillStyle = '#8a5a34';
+    g.fill();
+    g.lineWidth = 1.2;
+    g.strokeStyle = OL;
+    g.stroke();
+    g.beginPath();
+    g.arc(0, 0, 4.3, 0, TAU);
+    g.fillStyle = '#e0b070';
+    g.fill();
+    g.strokeStyle = '#a8612a';
+    g.lineWidth = 0.7;
+    g.beginPath();
+    g.arc(0, 0, 2.6, 0, TAU);
+    g.moveTo(0, 0);
+    g.lineTo(3.8, 0);
+    g.stroke();
     g.restore();
   }
 
+  /** Sticky Goo puddles: from each puddle's level down to the land, wobbling, with bubbles. */
+  function drawGoo(tt: number) {
+    if (!goo.length) return;
+    for (const p of goo) {
+      const lv = p.level * CELL;
+      g.beginPath();
+      let any = false;
+      for (let c = p.c0; c <= p.c1; c++) {
+        const top = tops[c] * CELL;
+        if (top <= lv) continue;
+        any = true;
+        g.rect(c * CELL - 0.1, lv, CELL + 0.2, top - lv + 0.5);
+      }
+      if (!any) continue;
+      g.fillStyle = 'rgba(95,211,90,.78)';
+      g.fill();
+      g.beginPath();
+      for (let c = p.c0; c <= p.c1; c++) {
+        if (tops[c] * CELL <= lv) continue;
+        const w = opts.lessMotion ? 0 : Math.sin(tt * 3 + c * 0.7) * 0.6;
+        g.rect(c * CELL - 0.1, lv - 1 + w, CELL + 0.2, 1.4);
+      }
+      g.fillStyle = '#c8ff9a';
+      g.fill();
+      if (!opts.lessMotion && !simpleNow()) {
+        const span = p.c1 - p.c0 + 1;
+        for (let k = 0; k < Math.min(4, span); k++) {
+          const ph = (tt * 0.6 + k * 0.37) % 1;
+          const c = p.c0 + ((k * 7 + 3) % span);
+          if (tops[c] * CELL <= lv) continue;
+          g.beginPath();
+          g.arc(c * CELL + 1.5, lv + 3 - ph * 5, 0.8 + ph, 0, TAU);
+          g.strokeStyle = `rgba(230,255,210,${(1 - ph).toFixed(2)})`;
+          g.lineWidth = 0.6;
+          g.stroke();
+        }
+      }
+    }
+  }
+
   function offscreenMarker(s: ShowState, alpha: number, camY: number) {
-    const [x, y] = pathAt(s, lerp(s.pt, s.t, alpha));
+    const [x, y] = leadAt(s, lerp(s.pt, s.t, alpha));
     const top = (L.insets.top - L.oy) / L.s + camY;
     if (y > top + 4) return;
     const sz = Math.max(5, 9 / L.s);
@@ -1193,6 +1552,7 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
       if (worldChanged) layers = null;
       rebuildLayers();
       land = new LandArt(L, world, pal, round.land.cells, simpleNow());
+      goo = round.goo;
       computeTops(round.land.cells);
       // The windsock stands on the highest ground between the archers.
       let best = COLS >> 1;
@@ -1210,7 +1570,13 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
         a.popped = src.popped;
         a.health = a.shownHealth = src.health;
         a.shield = a.shownShield = src.shield;
-        a.shieldMax = Math.max(1, src.shield);
+        a.shieldMax = Math.max(1, src.guard ? shieldSoak(src.guard) : src.shield);
+        a.guard = src.guard ?? null;
+        a.bubble = !!src.bubble;
+        a.bubbleFlash = 0;
+        a.shards = false;
+        a.umbrella = false;
+        a.fig.bow = src.bow ?? 'starter';
         a.path = null;
         a.pendingPop = false;
         const f = a.fig;
@@ -1257,31 +1623,23 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
       finishAims();
       return new Promise<void>((resolve) => {
         const rec = sh.record;
-        const path = rec.path && rec.path.length >= 4 ? rec.path : [rec.hit.x, rec.hit.y, rec.hit.x, rec.hit.y];
         const look = arrowLook(rec.shot.arrow, sh.player);
         const shooter = archers[sh.player];
         setPose(shooter, rec.shot.angle, 0);
         shooter.fig.hasArrow = false;
         shooter.fig.arrowLook = look;
         shooter.fig.stringWob = 1;
-        let bounceT = -1;
-        if (rec.bounce) {
-          for (let i = 0; i < path.length; i += 2) {
-            if (path[i] === rec.bounce[0] && path[i + 1] === rec.bounce[1]) {
-              bounceT = i / 2 / 60;
-              break;
-            }
-          }
-        }
         pendingBefore = { land: copyLand(sh.landBefore), archers: [{ ...sh.archersBefore[0] }, { ...sh.archersBefore[1] }] };
         // Keep the picture's land in step with what the screen says it was.
         if (land) {
           land.update(sh.landBefore.cells);
           computeTops(land.cells);
         }
+        const { tracks, effects, end } = timeline(rec, sh.player);
         show = {
-          rec, player: sh.player, look, path, total: Math.max(1, path.length / 2 - 1) / 60, t: 0, pt: 0, bounceT, bounced: false,
-          impacted: false, afterT: 0, after: copyLand(sh.landAfter), intermediate: null, strips: [], stripsDone: false, poofs: 0, poofAt: -10, resolve,
+          rec, player: sh.player, look, tracks, effects, end, t: 0, pt: 0, impacted: false, afterT: 0, after: copyLand(sh.landAfter),
+          work: copyLand(sh.landBefore), gooAfter: sh.gooAfter ?? null, blasts: 0, intermediate: null, strips: [], stripsDone: false,
+          poofs: 0, poofAt: -10, resolve,
         };
       });
     },

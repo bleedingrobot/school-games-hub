@@ -305,12 +305,24 @@ describe('shields, helpers and bows', () => {
     expect(round.archers[1].bubble).toBe(false);
   });
 
-  it('a Wind Charm lifts an arrow that was coming down on its wearer', () => {
+  it('a Wind Charm pushes arrows that were coming down on its wearer further away', () => {
     const setup: FightSetup = { world: 'forest', players: [{ quiver: {}, shield: null }, { quiver: {}, shield: 'charm' }] };
-    let p = 0;
-    for (let k = 40; k <= 100 && !p; k++) if (playShot(flatRound(), 0, { angle: 60, power: k, arrow: 'plain' }).hit.kind === 'archer') p = k;
-    const rec = playShot(flatRound(undefined, setup), 0, { angle: 60, power: p, arrow: 'plain' });
-    expect(rec.hit.kind).not.toBe('archer');
+    let without = 0, withCharm = 0, n = 0, hitsWithout = 0, hitsWith = 0;
+    for (const angle of [45, 55, 65]) {
+      for (let k = 40; k <= 100; k++) {
+        const a = playShot(flatRound(), 0, { angle, power: k, arrow: 'plain' });
+        if (Math.abs(a.hit.x - 810) > 60) continue;
+        const b = playShot(flatRound(undefined, setup), 0, { angle, power: k, arrow: 'plain' });
+        without += Math.abs(a.hit.x - 810);
+        withCharm += Math.abs(b.hit.x - 810);
+        if (a.hit.kind === 'archer') hitsWithout++;
+        if (b.hit.kind === 'archer') hitsWith++;
+        n++;
+      }
+    }
+    expect(n).toBeGreaterThan(5);
+    expect(withCharm / n).toBeGreaterThan(without / n + 3);
+    expect(hitsWith).toBeLessThan(hitsWithout);
   });
 
   it('an Apple gives +15 health (never over full), and only if you packed one', () => {

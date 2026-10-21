@@ -328,10 +328,19 @@ function bolt(w: ShotWork) {
   const range = BOLT_RANGE_MIN + clampPower(w.shot.power) * BOLT_RANGE_PER;
   const start: Motion = { x: a.x + dx * LAUNCH_OFFSET, y: a.y - HANDS_HEIGHT + dy * LAUNCH_OFFSET, vx: dx * BOLT_SPEED, vy: dy * BOLT_SPEED };
   const steps = Math.floor(range / (BOLT_SPEED * DT));
+  const cuts: number[] = [];
+  let cutAt = -1;
   const f = flight(w, 0, start, {
     gravity: false, windScale: 0, maxSteps: steps, iceBounce: false, cutMost: Math.floor(BOLT_CUT_MOST / (BOLT_SPEED * DT)),
-    cut: (x, y) => touch(w, carve(w.land, x, y, BOLT_CUT_RADIUS)),
+    cut: (x, y) => {
+      touch(w, carve(w.land, x, y, BOLT_CUT_RADIUS));
+      if (w.events) {
+        if (cutAt < 0) cutAt = Math.round(Math.sqrt((x - start.x) * (x - start.x) + (y - start.y) * (y - start.y)) / (BOLT_SPEED * DT));
+        cuts.push(x, y);
+      }
+    },
   }, 'main');
+  if (cuts.length) note(w, { k: 'dig', t: cutAt, path: cuts, r: BOLT_CUT_RADIUS, every: 1, quiet: true });
   burst(w, f.hit.steps, f.hit);
 }
 

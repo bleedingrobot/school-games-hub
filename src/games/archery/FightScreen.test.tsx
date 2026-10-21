@@ -63,16 +63,35 @@ describe('the fight screen', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('uses up Steel Arrows and shows how many are left', async () => {
-    render(<FightScreen world="city" level="easy" seed={3} onExit={() => {}} />);
+  it('picks a special arrow from the picker, uses it up, and shows how many are left', async () => {
+    const pack = { quiver: { steel: 4, rain: 1 }, shield: null, bow: 'starter' as const };
+    render(<FightScreen world="city" level="easy" seed={3} pack={pack} onExit={() => {}} />);
     await screen.findByText('Your turn', {}, { timeout: 4000 });
-    fireEvent.click(screen.getByRole('button', { name: /Steel Arrow/ }));
-    expect(screen.getByRole('button', { name: /Steel Arrow/ }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByLabelText('4 Steel Arrows left')).toBeTruthy();
+    expect(screen.getByLabelText('5 special arrows left')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Choose another arrow/ }));
+    await waitFor(() => expect(document.activeElement?.id).toBe('ar-picker-title'));
+    fireEvent.click(screen.getByRole('button', { name: /Steel Arrow 4 left/ }));
+    expect(screen.getByRole('button', { name: /Arrow: Steel Arrow, 4 left/ })).toBeTruthy();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Shoot' }));
     });
-    await waitFor(() => expect(screen.getByLabelText('3 Steel Arrows left')).toBeTruthy());
+    await waitFor(() => expect(screen.getByLabelText('4 special arrows left')).toBeTruthy());
+    // Arrows not packed aren't offered.
+    await screen.findByText('Your turn', {}, { timeout: 4000 });
+    fireEvent.click(screen.getByRole('button', { name: /Choose another arrow/ }));
+    expect(screen.queryByRole('button', { name: /Giant Arrow/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /Arrow Rain 1 left/ })).toBeTruthy();
+  });
+
+  it('eats an Apple with a shot when you are hurt', async () => {
+    const pack = { quiver: { apple: 2 }, shield: 'wood' as const, bow: 'hunter' as const };
+    render(<FightScreen world="forest" level="easy" seed={5} pack={pack} onExit={() => {}} />);
+    await screen.findByText('Your turn', {}, { timeout: 4000 });
+    // Full health: no Apple yet.
+    expect(screen.getByRole('button', { name: /Eat an Apple/ }).hasAttribute('disabled')).toBe(true);
+    // The Wooden Shield shows, and the Hunter's Bow shows next round's wind.
+    expect(screen.getByRole('meter', { name: 'Your Wooden Shield' })).toBeTruthy();
+    expect(screen.getByText(/from your Hunter's Bow/)).toBeTruthy();
   });
 
   it('opens settings with simpler graphics and less motion, and remembers them', async () => {
