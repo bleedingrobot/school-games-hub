@@ -1,5 +1,7 @@
 /** A student's training records: pure functions, so the preview, the tests and (later) a server share them. */
 import { TRAINING_CONFIG, type TrainingConfig } from './config';
+import { isQuickKey } from '../subitising/keys';
+import type { QuickSettings } from '../subitising/saved';
 import { digitsOf } from './facts';
 import { factBandIndex, thinkingMs, typingMsFor, type Answer, type BandIndex } from './speed';
 
@@ -140,6 +142,8 @@ export interface SavedStudent {
   typing: Record<number, number[]>;
   autoSubmit: boolean;
   sessionsDone: number;
+  /** Quick looks settings that follow the student (null until they have used it). */
+  quick?: QuickSettings | null;
 }
 
 /** The same answer, whichever copy it came from. */
@@ -172,7 +176,8 @@ export function rebuildState(
     autoSubmit: student?.autoSubmit ?? true,
     sessionsDone: student?.sessionsDone ?? 0,
   };
-  const ordered = answers.map((a, i) => ({ a, i })).sort((p, q) => p.a.at - q.a.at || p.i - q.i);
+  // Quick looks answers are saved with these but belong to Quick looks (shared/subitising): they never touch the facts map.
+  const ordered = answers.map((a, i) => ({ a, i })).filter(({ a }) => !isQuickKey(a.key)).sort((p, q) => p.a.at - q.a.at || p.i - q.i);
   for (const { a } of ordered) state = applyAnswer(state, a.key, a.correct, a.ms, a.typingMs, a.day, config).state;
   return state;
 }

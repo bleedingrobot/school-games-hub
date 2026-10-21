@@ -187,5 +187,78 @@ describe('the Training page', () => {
   });
 });
 
+describe('Quick looks inside Training', () => {
+  const settings = { placed: true, startStage: 1 as const, finished: 0 as const, guided: false };
+
+  it('has a Quick looks button next to Today’s session, and a way back', async () => {
+    flags.on = true;
+    const user = userEvent.setup();
+    renderAt('/training');
+    expect(await screen.findByRole('button', { name: 'Quick looks' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Quick looks' }));
+    expect(screen.getByRole('heading', { name: 'Quick looks' })).toBeInTheDocument();
+    // Quick looks replaces Training's own page frame rather than sitting inside it: only the hub's main area is left.
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: 'Back to Training' }));
+    expect(screen.getByRole('button', { name: /Today’s session/ })).toBeInTheDocument();
+  });
+
+  it('is never shown when Training itself is off', () => {
+    renderAt('/training');
+    expect(screen.queryByRole('button', { name: 'Quick looks' })).toBeNull();
+  });
+
+  it('saves the starting-check result with the student, and an answer as a plain tap with the right key', async () => {
+    flags.on = true;
+    const user = userEvent.setup();
+    data.loadTraining.mockResolvedValue({ state: emptyState(), offline: false, quick: { answers: [], settings: { ...settings, placed: false } } });
+    renderAt('/training');
+    await user.click(await screen.findByRole('button', { name: 'Quick looks' }));
+    // Leave the starting check straight away: nothing was answered, so nothing is saved.
+    await user.click(screen.getByRole('button', { name: 'Start with a quick check' }));
+    await user.click(await screen.findByRole('button', { name: 'Finish for now' }));
+    expect(data.addAnswer).not.toHaveBeenCalled();
+    expect(data.enqueueStudent).not.toHaveBeenCalled();
+  });
+
+  it('saves a practice answer as a Quick looks answer, with nothing typed and no time', async () => {
+    flags.on = true;
+    const user = userEvent.setup();
+    data.loadTraining.mockResolvedValue({ state: emptyState(), offline: false, quick: { answers: [], settings } });
+    renderAt('/training');
+    await user.click(await screen.findByRole('button', { name: 'Quick looks' }));
+    await user.click(screen.getByRole('button', { name: 'Start looking' }));
+    // Get ready, the flash, then the buttons unlock; the right one is whatever the picture holds.
+    const n = await waitFor(() => {
+      const dots = document.querySelectorAll('.sb-stage svg circle:not(.sb-ghost)').length;
+      expect(dots).toBeGreaterThan(0);
+      return dots;
+    });
+    const button = await screen.findByRole('button', { name: String(n) }, { timeout: 4000 });
+    await waitFor(() => expect(button).toBeEnabled(), { timeout: 4000 });
+    await user.click(button);
+    await waitFor(() => expect(data.addAnswer).toHaveBeenCalledTimes(1));
+    const [player, saved] = data.addAnswer.mock.calls[0];
+    expect(player).toBe('u1');
+    expect(saved).toMatchObject({ given: n, ms: 0, typingMs: 0, day: dayString(new Date()), seed: expect.any(Number) });
+    expect(saved.key).toMatch(/^sub:(line|clus|angl)-[123]$/);
+    // The stage reached is unchanged by one answer, so no settings are sent yet.
+    expect(data.enqueueStudent).not.toHaveBeenCalled();
+  }, 20_000);
+
+  it('saves the settings with the student when the starting check puts them somewhere', async () => {
+    flags.on = true;
+    const user = userEvent.setup();
+    data.loadTraining.mockResolvedValue({ state: emptyState(), offline: false, quick: { answers: [], settings: { ...settings, placed: false } } });
+    renderAt('/training');
+    await user.click(await screen.findByRole('button', { name: 'Quick looks' }));
+    await user.click(screen.getByLabelText('Keep the picture on the screen (no flashing)'));
+    expect(data.enqueueStudent).toHaveBeenCalledWith(
+      'u1',
+      expect.objectContaining({ type: 'student', quick: { placed: false, startStage: 1, finished: 0, guided: true }, typing: {} }),
+    );
+  });
+});
+
 // Keeps the type checker honest about what the page is given.
 export type _Check = TrainingState;

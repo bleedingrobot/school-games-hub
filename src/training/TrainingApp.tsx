@@ -3,13 +3,15 @@ import { recordTyping, type TrainingState } from '../../shared/training/records'
 import type { AnswerEvent } from '../../shared/training/save';
 import type { SessionSummary } from '../../shared/training/summary';
 import { greenThisWeek, weekLine } from '../../shared/training/week';
+import { SubitisingApp, type QuickAnswerEvent } from '../subitising/SubitisingApp';
+import type { SubState } from '../subitising/store';
 import { FactsMap } from './FactsMap';
 import { SessionRunner } from './SessionRunner';
 import { Summary } from './Summary';
 import { TypingCheck } from './TypingCheck';
 import './training.css';
 
-type Screen = 'home' | 'typing' | 'session' | 'summary' | 'map';
+type Screen = 'home' | 'typing' | 'session' | 'summary' | 'map' | 'quick';
 
 interface Props {
   state: TrainingState;
@@ -20,6 +22,13 @@ interface Props {
   onAnswered?: (answer: AnswerEvent) => void;
   /** Extra buttons only the preview shows. */
   tools?: ReactNode;
+  /** Quick looks (the picture half of Training). Without this there is no Quick looks button. */
+  quick?: {
+    state: SubState;
+    onState: (state: SubState) => void;
+    onAnswered: (answer: QuickAnswerEvent) => void;
+    onSessionEnd: () => void;
+  };
 }
 
 function seedFor(today: string, n: number): number {
@@ -28,7 +37,7 @@ function seedFor(today: string, n: number): number {
   return h * 31 + n;
 }
 
-export function TrainingApp({ state, onState, today, onAnswered, tools }: Props) {
+export function TrainingApp({ state, onState, today, onAnswered, tools, quick }: Props) {
   const [screen, setScreen] = useState<Screen>('home');
   const [summary, setSummary] = useState<SessionSummary | null>(null);
   const [sessionState, setSessionState] = useState<TrainingState>(state);
@@ -38,6 +47,20 @@ export function TrainingApp({ state, onState, today, onAnswered, tools }: Props)
     setSeed(seedFor(today, state.sessionsDone));
     setScreen('typing');
   };
+
+  // Quick looks has its own page frame (and its own main area), so it is shown instead of this one.
+  if (screen === 'quick' && quick) {
+    return (
+      <SubitisingApp
+        state={quick.state}
+        onState={quick.onState}
+        today={today}
+        onAnswered={quick.onAnswered}
+        onSessionEnd={quick.onSessionEnd}
+        onBack={() => setScreen('home')}
+      />
+    );
+  }
 
   return (
     <main className="tr-app">
@@ -49,6 +72,11 @@ export function TrainingApp({ state, onState, today, onAnswered, tools }: Props)
           <button type="button" className="tr-btn tr-btn-primary tr-big" onClick={start}>
             Today’s session
           </button>
+          {quick && (
+            <button type="button" className="tr-btn tr-btn-primary" onClick={() => setScreen('quick')}>
+              Quick looks
+            </button>
+          )}
           <button type="button" className="tr-btn" onClick={() => setScreen('map')}>
             My facts map
           </button>
