@@ -8,19 +8,26 @@
  * one twice is safe (a fight ends once on the server).
  *
  * The same requests work with the browser-only trial server (src/games/archery/trialBackend.ts) for the preview.
+ *
+ * Classmate fights (Stage 6) go through the same function one turn at a time. Around them, a `DuelLink` says "I'm here"
+ * now and then (and hears who else is, and any challenges), reads a fight, and listens for its changes through Realtime.
  */
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
 import { readSettings } from './classSettings';
+import { fetchClockOffset, type LiveStatus } from './multiplayer';
 import { FriendlyError } from './profile';
 import { forgetSettings } from './settingsMemory';
 import type { PublicQuestion } from '../../shared/maths/serverQuestions';
 import type { BotLevel } from '../../shared/archery/bot';
 import type { ShopKind, ShopProblem } from '../../shared/archery/shop';
+import { parseDuel, parseHere, type DuelRow, type HereReply } from '../../shared/archery/duel';
 import type { PlayerSetup, Shot, WorldId } from '../../shared/archery/types';
 import type { ArmoryState } from '../../supabase/functions/archery/handler';
 
 export type { ArmoryState };
+export type { LiveStatus };
 
 /** Sends one request: the reply's status and body, or null if the server couldn't be reached. */
 export type Transport = (body: Record<string, unknown>) => Promise<{ status: number; body: Record<string, unknown> } | null>;
@@ -177,9 +184,84 @@ export function archeryApi(send: Transport, player = 'me') {
       return left.length ? 'later' : 'done';
     },
     queued: () => readQueue(player).length,
+
+    // ---- Classmate fights: every reply has the fight as it now is (also when it was refused, if there is one) ----
+    duelChallenge: (other: string, world: WorldId, request = requestId()) => duel({ action: 'duel-challenge', request, other, world }),
+    duelAnswer: (id: number, accept: boolean) => duel({ action: 'duel-answer', duel: id, accept }),
+    duelPack: (id: number, pack: PlayerSetup) => duel({ action: 'duel-pack', duel: id, pack }),
+    /** `version` is the fight the screen is looking at, so a shot sent twice is played once. */
+    duelShot: (id: number, version: number, shot: Shot) => duel({ action: 'shot', duel: id, version, shot }),
+    duelTimesUp: (id: number) => duel({ action: 'times-up', duel: id }),
+    duelLeave: (id: number) => duel({ action: 'leave', duel: id }),
   };
+
+  async function duel(body: Record<string, unknown>): Promise<DuelResult> {
+    const r = await send(body);
+    if (!r) return { ok: false, why: 'offline', message: OFFLINE, duel: null };
+    const found = parseDuel(r.body.duel);
+    const state = r.body.state && typeof r.body.state === 'object' ? (r.body.state as ArmoryState) : undefined;
+    if (r.status === 200 && found) {
+      const points = Array.isArray(r.body.points) ? (r.body.points as [number, number]) : undefined;
+      return { ok: true, duel: found, state, points };
+    }
+    const message = typeof r.body.error === 'string' ? r.body.error : "That couldn't be done.";
+    const code = typeof r.body.code === 'string' ? r.body.code : '';
+    const why = r.status >= 500 || r.status === 429 ? 'offline' : code === 'game-off' ? 'game-off' : 'refused';
+    return { ok: false, why, message, code, duel: found, state, secondsLeft: typeof r.body.secondsLeft === 'number' ? r.body.secondsLeft : undefined };
+  }
   return api;
 }
+
+/** What a classmate-fight request came to. A refusal still carries the fight if the server sent it, to show it as it is. */
+export type DuelResult =
+  | { ok: true; duel: DuelRow; state?: ArmoryState; points?: [number, number] }
+  | { ok: false; why: 'offline' | 'game-off' | 'refused'; message: string; code?: string; duel: DuelRow | null; state?: ArmoryState; secondsLeft?: number };
+
+/**
+ * Everything around a classmate fight that isn't a move: "I'm here" (and who else is, and any challenges), reading one
+ * fight, and hearing its changes as they happen. The real one is `serverDuelLink`; the preview has a stand-in.
+ */
+export interface DuelLink {
+  /** Says "I'm here". Null if the server couldn't be reached. */
+  here(): Promise<HereReply | null>;
+  /** One of my fights, or null if there's no such fight of mine; 'offline' if it couldn't be read. */
+  read(id: number): Promise<DuelRow | null | 'offline'>;
+  /** Hears every change to my fights (and new challenges to me). `onDuel` gets null for a change too big to send: read it again. */
+  watch(me: string, onDuel: (duel: DuelRow | null, id: number) => void, onLive: (status: LiveStatus) => void): () => void;
+  /** How far the server's clock is ahead of this device's (ms), for the turn timer. */
+  clockOffset(): Promise<number>;
+}
+
+/** The real school server: archery_here(), the archery_duels table (pupils read only their own) and Realtime on it. */
+export const serverDuelLink: DuelLink = {
+  async here() {
+    const { data, error } = await supabase.rpc('archery_here');
+    if (error) return null;
+    return parseHere(data);
+  },
+  async read(id) {
+    const { data, error } = await supabase.from('archery_duels').select('*').eq('id', id).maybeSingle();
+    if (error) return 'offline';
+    return data ? parseDuel(data) : null;
+  },
+  watch(me, onDuel, onLive) {
+    // One channel, two filters: fights I started and fights (and challenges) sent to me. Realtime checks the table's
+    // rule for every change, so only the two players hear it.
+    const heard = (payload: { new?: unknown }) => {
+      const raw = payload.new as { id?: unknown } | undefined;
+      const id = Number(raw?.id);
+      if (!Number.isSafeInteger(id)) return;
+      onDuel(parseDuel(raw), id);
+    };
+    const channel: RealtimeChannel = supabase
+      .channel(`archery-duels:${me}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'archery_duels', filter: `seat_a=eq.${me}` }, heard)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'archery_duels', filter: `seat_b=eq.${me}` }, heard)
+      .subscribe((status) => onLive(status === 'SUBSCRIBED' ? 'live' : status === 'CLOSED' ? 'connecting' : 'down'));
+    return () => void supabase.removeChannel(channel);
+  },
+  clockOffset: () => fetchClockOffset(),
+};
 
 export type ArcheryApi = ReturnType<typeof archeryApi>;
 

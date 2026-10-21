@@ -130,7 +130,7 @@ Deno.serve(
       return withDuel(await call<{ result: 'ok' | 'already' | 'gear' | 'late' | 'not-yours'; duel?: unknown; state?: never }>('archery_duel_pack', { player, duel, pack, turn_ms: turnMs }));
     },
     duelMove: (duel, version, turns, used, timeouts, deadlineMs, real) =>
-      duelRow('archery_duel_move', { duel, version, turns, used, timeouts, deadline_ms: deadlineMs, real }),
+      duelRow('archery_duel_move', { duel, version, turns, used, timeouts, deadline_ms: deadlineMs, played: real }),
     duelEnd: (duel, version, status, ending, winner, leaver, turns, used, timeouts) =>
       duelRow('archery_duel_end', { duel, version, status, ending, winner, leaver, turns, used, timeouts }),
     async awardPoints(player, points, once) {

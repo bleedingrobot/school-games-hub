@@ -12,7 +12,7 @@
  */
 import { makeHandler, type ArmoryState, type Services, type StoredFight, type StoredRound } from '../../../supabase/functions/archery/handler';
 import { HERE_FOR_MS } from '../../../shared/archery/config';
-import { duelOpen, type DuelRow } from '../../../shared/archery/duel';
+import { duelOpen, type DuelRow, type HereReply } from '../../../shared/archery/duel';
 import type { MathsContext } from '../../../shared/archery/speed';
 import type { ItemId, PlayerSetup } from '../../../shared/archery/types';
 
@@ -45,13 +45,6 @@ export interface TrialPupil {
   school?: number;
 }
 
-/** What "I'm here" gives back (the same shape as the database's archery_here()). */
-export interface HereReply {
-  off?: true;
-  online: { id: string; name: string; avatar: Record<string, unknown>; busy: boolean }[];
-  asks: { duel: number; from: string; world: string; deadline: string }[];
-  duel: DuelRow | null;
-}
 
 export interface TrialOptions {
   now?: () => number;

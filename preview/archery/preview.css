@@ -43,3 +43,16 @@
 .arp-tools summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
 .arp-tools[open] { display: flex; }
 .arp-tools[open] .arp-small { margin: 4px; }
+/* Two players on this screen: a switch at the top, and each pupil's whole game in its own pane (fixed screens inside a
+   pane are held in it by the transform). The hidden pane keeps running, out of sight. */
+.arp-duo { position: fixed; inset: 0; display: grid; grid-template-rows: auto 1fr; background: #0b1020; }
+.arp-duo__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px 8px; background: #1e293b; color: #ffffff; font-size: 0.9rem; position: relative; z-index: 2; }
+.arp-duo__label { font-weight: 700; }
+.arp-duo__who[aria-pressed='true'] { background: #fde047 !important; color: #1c1917 !important; }
+.arp-duo__dot { color: #dc2626; }
+.arp-duo__more { margin-left: auto; }
+.arp-duo__more[open] { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.arp-duo__more summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; padding: 0 8px; }
+.arp-duo__pane { position: relative; grid-row: 2; grid-column: 1; overflow: hidden; transform: translateZ(0); visibility: hidden; }
+.arp-duo__pane[data-showing] { visibility: visible; }
+.arp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

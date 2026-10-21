@@ -126,3 +126,42 @@ describe('the screens around the fights (Stage 5)', () => {
     expect(contrast(colourIn('.ar-pips li', 'color')!, colourIn('.ar-pips li')!)).toBeGreaterThanOrEqual(4.5);
   });
 });
+
+describe('classmate fights (Stage 6)', () => {
+  const duel = readFileSync(`${process.cwd()}/src/games/archery/DuelScreen.tsx`, 'utf8');
+  const mates = readFileSync(`${process.cwd()}/src/games/archery/Classmates.tsx`, 'utf8');
+
+  it('uses the hub\'s shared buttons for every button (the red one only to leave a fight)', () => {
+    for (const [name, text] of [['DuelScreen', duel], ['Classmates', mates]] as const) {
+      for (const m of text.matchAll(/<button[^>]*className=(?:"([^"]+)"|\{`([^`]+)`\})/g)) expect(m[1] ?? m[2], `${name}: ${m[0]}`).toMatch(/^button button--(play|light|danger) ar-btn/);
+    }
+    expect([...duel.matchAll(/button--danger/g)]).toHaveLength(1);
+  });
+
+  it('moves focus to each new screen\'s and dialog\'s heading, the challenge pop-up included', () => {
+    for (const id of ['ar-duel-title', 'ar-duel-problem', 'ar-duel-end', 'ar-duel-leave', 'ar-duel-picker', 'ar-duel-settings']) {
+      expect(duel, id).toMatch(new RegExp(`id="${id}" ref=\\{(heading|dialogHeading)\\} tabIndex=\\{-1\\}`));
+    }
+    for (const id of ['ar-mates-title', 'ar-ask-title', 'ar-wait-title', 'ar-nostart-title']) {
+      expect(mates, id).toMatch(new RegExp(`id="${id}" ref=\\{heading\\} tabIndex=\\{-1\\}`));
+    }
+    expect(mates).toMatch(/role="alertdialog" aria-modal="true"/);
+  });
+
+  it('shows the turn clock in readable colours, warm for the last 10 seconds, never flashing', () => {
+    expect(contrast(token('soft'), token('panel'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(colourIn('.ar-clock[data-warn]', 'color')!, colourIn('.ar-clock[data-warn]')!)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(colourIn('.ar-clock[data-warn] b', 'color')!, colourIn('.ar-clock[data-warn]')!)).toBeGreaterThanOrEqual(4.5);
+    expect(css).not.toMatch(/\.ar-clock[^{]*\{[^}]*animation/);
+    expect(duel).toMatch(/lessMotion/);
+  });
+
+  it('gives no aiming help against a classmate either', () => {
+    expect(duel).not.toMatch(/aimLine|aimGuide|predict|ghost|trajectory|preview(Path|Shot)/i);
+    expect(duel).not.toMatch(/flyArrow/);
+  });
+
+  it('keeps the classmate list and the pop-up\'s buttons 44px and still', () => {
+    expect(rule('.ar-shell .ar-mate .ar-btn, .ar-shell .ar-ask .ar-btn')).toMatch(/min-height: 44px;.*animation: none/);
+  });
+});

@@ -2,19 +2,28 @@
  * The whole Archery Challenge game (docs/ARCHERY-PLAN.md, section 1): home, picking a fight, packing the quiver,
  * the fight, the speed round, the Armory and How to play. Everything that counts goes through `api` (the school's
  * server, or the preview's trial one): coins, gear, every purchase, every fight's seed and result.
+ *
+ * Fights against classmates (Stage 6): with a `duels` link, the game says "I'm here" while it's open, shows the
+ * classmates who are too, pops up challenges over any screen, and plays the fight one turn at a time through `api`.
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { BotLevel } from '../../../shared/archery/bot';
+import { PACK_MS } from '../../../shared/archery/config';
+import { duelOpen, seatOf, type Classmate, type DuelRow } from '../../../shared/archery/duel';
 import { EARNING_ROUNDS_PER_DAY } from '../../../shared/archery/speed';
 import type { PlayerSetup, WorldId } from '../../../shared/archery/types';
-import type { ArcheryApi, ArmoryState, FightStart } from '../../data/archery';
+import type { ArcheryApi, ArmoryState, DuelLink, DuelResult, FightStart } from '../../data/archery';
 import { ArmoryScreen, type Shelf } from './ArmoryScreen';
+import { ChallengeAsk, ClassmatesScreen, DuelNotStarted, DuelWait } from './Classmates';
+import { DuelScreen } from './DuelScreen';
 import { PackScreen, PickScreen, trimPack } from './FightSetup';
 import { FightScreen, type FightSaved } from './FightScreen';
 import { HomeScreen } from './HomeScreen';
 import { HowToPlay } from './HowToPlay';
 import { loadChoices, loadPrefs, saveChoices, wantsLessMotion } from './prefs';
+import { WORLD_NAMES as WORLD_NAMES_FOR } from './text';
 import { SpeedRound } from './SpeedRound';
+import { useDuels } from './useDuels';
 import './archery.css';
 
 type Screen =
@@ -27,14 +36,20 @@ type Screen =
   | { kind: 'fight'; fight: FightStart }
   | { kind: 'speed'; from: 'home' | 'armory' }
   | { kind: 'armory'; shelf: Shelf }
-  | { kind: 'how' };
+  | { kind: 'how' }
+  | { kind: 'classmates' }
+  | { kind: 'duel' };
 
-export function ArcheryGame({ api, onExit, extra }: {
+export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
   api: ArcheryApi;
   /** Back to the hub (left out in the preview). */
   onExit?: () => void;
   /** Something extra on the home screen (the preview's test tools). */
   extra?: (refresh: () => void) => React.ReactNode;
+  /** Classmate fights: "I'm here", reading a fight, Realtime (left out: no classmate fights). */
+  duels?: DuelLink;
+  /** The signed-in pupil's id (for classmate fights). */
+  me?: string;
 }) {
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [state, setState] = useState<ArmoryState | null>(null);
@@ -48,6 +63,15 @@ export function ArcheryGame({ api, onExit, extra }: {
   // A speed round between rounds of a fight, shown over it.
   const [midSpeed, setMidSpeed] = useState(false);
   const lessMotion = wantsLessMotion(loadPrefs());
+  const [mateWorld, setMateWorld] = useState<WorldId>(choices.world);
+  const [duelBusy, setDuelBusy] = useState(false);
+  const [duelProblem, setDuelProblem] = useState('');
+  const [askProblem, setAskProblem] = useState('');
+  // "I'm here" rests during a classmate fight (the fight checks itself, and the pupil shows as busy anyway).
+  const [inFight, setInFight] = useState(false);
+  const duels = useDuels(link, me, inFight);
+  const duel = duels.duel;
+  useEffect(() => setInFight(screen.kind === 'duel' && duel?.status === 'playing'), [screen.kind, duel?.status]);
 
   async function load() {
     setScreen({ kind: 'loading' });
@@ -71,6 +95,76 @@ export function ArcheryGame({ api, onExit, extra }: {
   useEffect(() => saveChoices({ world, level, pack: lastPack }), [world, level, lastPack]);
 
   const setCoins = (coins: number) => setState((s) => (s ? { ...s, coins } : s));
+
+  // An open classmate fight (one I asked for, packing or playing) always takes over the screen, wherever the pupil is:
+  // accepting a challenge, a classmate saying yes, or opening the game again part-way through.
+  const openDuel = duel && duelOpen(duel) ? duel.id : null;
+  useEffect(() => {
+    if (openDuel !== null && screen.kind !== 'loading' && screen.kind !== 'off' && screen.kind !== 'offline') setScreen({ kind: 'duel' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openDuel]);
+  useEffect(() => {
+    if (duels.off) setScreen({ kind: 'off', message: 'Archery Challenge is not switched on for your class.' });
+  }, [duels.off]);
+
+  /** Shows what a classmate-fight request came to: the fight as it now is, and the Armory if it changed. */
+  const took = useCallback((r: DuelResult) => {
+    if (r.duel) duels.accept(r.duel);
+    if (r.state) setState(r.state);
+    if (!r.ok && r.why === 'game-off' && !r.duel) setScreen({ kind: 'off', message: r.message });
+  }, [duels]);
+
+  async function challenge(who: Classmate) {
+    setDuelBusy(true);
+    setDuelProblem('');
+    setWorld(mateWorld);
+    const r = await api.duelChallenge(who.id, mateWorld);
+    setDuelBusy(false);
+    took(r);
+    if (!r.ok) {
+      setDuelProblem(r.message);
+      void duels.refresh();
+    }
+  }
+
+  async function answer(id: number, accept: boolean) {
+    setDuelBusy(true);
+    setAskProblem('');
+    const r = await api.duelAnswer(id, accept);
+    setDuelBusy(false);
+    if (!accept || (!r.ok && (r.code === 'late' || r.code === 'busy'))) {
+      duels.forget(id);
+      if (!r.ok && accept) setDuelProblem(r.message);
+      return;
+    }
+    took(r);
+    if (!r.ok) setAskProblem(r.message);
+  }
+
+  async function packForDuel(d: DuelRow, pack: PlayerSetup) {
+    setStarting(true);
+    setPackProblem('');
+    setLastPack(pack);
+    const r = await api.duelPack(d.id, pack);
+    setStarting(false);
+    took(r);
+    if (!r.ok) setPackProblem(r.message);
+  }
+
+  async function leaveDuel(d: DuelRow) {
+    const r = await api.duelLeave(d.id);
+    took(r);
+  }
+
+  /** Puts an ended classmate fight away and goes home (with the gear that came back). */
+  function doneWithDuel(d: DuelRow) {
+    duels.forget(d.id);
+    setDuelProblem('');
+    setScreen({ kind: 'home' });
+    void api.load().then((r) => {
+      if (r.ok) setState(r.value.state);
+    });
+  }
 
   async function startFight(pack: PlayerSetup) {
     setStarting(true);
@@ -141,13 +235,19 @@ export function ArcheryGame({ api, onExit, extra }: {
             onSpeed={() => speed('home')}
             onHowTo={() => setScreen({ kind: 'how' })}
             onExit={onExit}
+            onClassmate={link ? () => setScreen({ kind: 'classmates' }) : undefined}
           />
           {extra?.(() => void load())}
         </>
       );
       break;
     case 'pick':
-      body = <PickScreen world={world} level={level} onWorld={setWorld} onLevel={setLevel} onBack={home} onNext={() => setScreen({ kind: 'pack' })} />;
+      body = (
+        <PickScreen
+          world={world} level={level} onWorld={setWorld} onLevel={setLevel} onBack={home} onNext={() => setScreen({ kind: 'pack' })}
+          onClassmate={link ? () => { setMateWorld(world); setScreen({ kind: 'classmates' }); } : undefined}
+        />
+      );
       break;
     case 'pack':
       body = (
@@ -192,6 +292,81 @@ export function ArcheryGame({ api, onExit, extra }: {
     case 'how':
       body = <HowToPlay onBack={home} />;
       break;
+    case 'classmates':
+      body = (
+        <ClassmatesScreen
+          online={duels.online} offline={duels.offline} world={mateWorld} sending={duelBusy} problem={duelProblem}
+          onWorld={setMateWorld} onChallenge={(c) => void challenge(c)} onRefresh={() => void duels.refresh()} onBack={home}
+        />
+      );
+      break;
+    case 'duel':
+      body = duel ? duelBody(duel) : null;
+      break;
   }
-  return <div className="ar-shell" data-screen={screen.kind}>{body}</div>;
+
+  /** The classmate fight's screen: waiting for an answer, packing, waiting for them to pack, the fight, or why it didn't happen. */
+  function duelBody(d: DuelRow): React.ReactNode {
+    const seat: number = Math.max(0, seatOf(d, me));
+    const them = seat === 0 ? d.name_b : d.name_a;
+    if (d.status === 'asked') {
+      return (
+        <DuelWait
+          title={`Waiting for ${them} to say yes…`} words={`You challenged ${them} to a fight in the ${WORLD_NAMES_FOR[d.world]}.`}
+          deadline={d.deadline} serverNow={duels.serverNow} cancelLabel="Call it off" onCancel={() => void leaveDuel(d)}
+          onTimeUp={() => void duels.refresh()}
+        />
+      );
+    }
+    if (d.status === 'packing') {
+      if (!d.packs[seat]) {
+        return (
+          <PackScreen
+            state={state!} world={d.world} vs={them} initial={trimPack(lastPack, state!)} busy={starting} problem={packProblem}
+            note={`${them} is packing too. You both have ${Math.round(PACK_MS / 60_000)} minutes.`}
+            onFight={(p) => void packForDuel(d, p)} onBack={() => void leaveDuel(d)} backLabel="Leave"
+          />
+        );
+      }
+      return (
+        <DuelWait
+          title={`Waiting for ${them} to pack…`} words="The fight starts as soon as you've both packed."
+          deadline={d.deadline} serverNow={duels.serverNow} cancelLabel="Leave" onCancel={() => void leaveDuel(d)}
+          onTimeUp={() => void duels.refresh()}
+        />
+      );
+    }
+    if (d.status === 'playing' || d.status === 'done') {
+      return (
+        <DuelScreen
+          key={d.id} duel={d} me={me} serverNow={duels.serverNow}
+          onShot={(version, shot) => api.duelShot(d.id, version, shot)}
+          onTimesUp={() => api.duelTimesUp(d.id)}
+          onLeave={() => api.duelLeave(d.id)}
+          onReply={took}
+          onDone={() => doneWithDuel(d)}
+        />
+      );
+    }
+    const [title, words] = d.status === 'declined'
+      ? seat === 0 ? [`${them} said no`, 'Maybe next time! Try another classmate, or a bot.'] : ['Challenge turned down', 'Maybe next time!']
+      : d.status === 'expired'
+        ? ['The challenge ran out', seat === 0 ? `${them} didn't answer in time.` : 'It wasn\'t answered in time.']
+        : ['The fight was called off', "It didn't start, so any arrows you packed are back in your bag."];
+    return <DuelNotStarted title={title} words={words} onBack={() => doneWithDuel(d)} />;
+  }
+
+  // A challenge pops up over any screen except a classmate fight (answered from the keyboard too).
+  const ask = screen.kind !== 'duel' ? duels.asks[0] : undefined;
+  return (
+    <div className="ar-shell" data-screen={screen.kind}>
+      {body}
+      {ask && (
+        <ChallengeAsk
+          key={ask.duel} ask={ask} serverNow={duels.serverNow} busy={duelBusy} problem={askProblem}
+          onAccept={() => void answer(ask.duel, true)} onDecline={() => void answer(ask.duel, false)} onGone={() => duels.forget(ask.duel)}
+        />
+      )}
+    </div>
+  );
 }

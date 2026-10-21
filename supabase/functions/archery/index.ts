@@ -10490,7 +10490,7 @@ Deno.serve(makeHandler({
 		used,
 		timeouts,
 		deadline_ms: deadlineMs,
-		real
+		played: real
 	}),
 	duelEnd: (duel, version, status, ending, winner, leaver, turns, used, timeouts) => duelRow("archery_duel_end", {
 		duel,

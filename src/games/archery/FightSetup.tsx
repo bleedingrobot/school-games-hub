@@ -27,13 +27,15 @@ function botKit(l: BotLevel): string {
   return `Brings ${parts.join(', ')}${sh ? ` and a ${shieldKind(sh).name}` : ''}.`;
 }
 
-export function PickScreen({ world, level, onWorld, onLevel, onNext, onBack }: {
+export function PickScreen({ world, level, onWorld, onLevel, onNext, onBack, onClassmate }: {
   world: WorldId;
   level: BotLevel;
   onWorld: (w: WorldId) => void;
   onLevel: (l: BotLevel) => void;
   onNext: () => void;
   onBack: () => void;
+  /** Against a classmate instead (left out when classmate fights aren't available). */
+  onClassmate?: () => void;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
@@ -52,7 +54,7 @@ export function PickScreen({ world, level, onWorld, onLevel, onNext, onBack }: {
           </button>
         ))}
       </div>
-      <h3>2. Against which bot?</h3>
+      <h3>2. Against which bot?{onClassmate && ' Or a classmate?'}</h3>
       <div className="ar-choices ar-choices--three">
         {BOT_LEVELS.map((l) => (
           <button key={l} type="button" className="button button--light ar-btn ar-choice" aria-pressed={level === l} onClick={() => onLevel(l)}>
@@ -62,6 +64,11 @@ export function PickScreen({ world, level, onWorld, onLevel, onNext, onBack }: {
           </button>
         ))}
       </div>
+      {onClassmate && (
+        <p className="ar-page__alt">
+          <button type="button" className="button button--light ar-btn" onClick={onClassmate}>Against a classmate instead</button>
+        </p>
+      )}
       <p className="ar-page__go">
         <button type="button" className="button button--play ar-btn ar-btn--big" onClick={onNext}>Next: pack your quiver</button>
       </p>
@@ -81,16 +88,23 @@ export function trimPack(p: PlayerSetup | null, state: ArmoryState): PlayerSetup
   return { quiver, shield, bow };
 }
 
-export function PackScreen({ state, world, level, initial, busy, problem, onFight, onArmory, onBack }: {
+export function PackScreen({ state, world, level, vs, note, initial, busy, problem, onFight, onArmory, onBack, backLabel = 'Back' }: {
   state: ArmoryState;
   world: WorldId;
-  level: BotLevel;
+  /** Against a bot … */
+  level?: BotLevel;
+  /** … or a classmate (their display name). */
+  vs?: string;
+  /** A line under the heading (a classmate fight's packing time). */
+  note?: string;
   initial: PlayerSetup;
   busy: boolean;
   problem: string;
   onFight: (pack: PlayerSetup) => void;
-  onArmory: () => void;
+  /** Left out where leaving for the Armory isn't possible (a classmate is waiting). */
+  onArmory?: () => void;
   onBack: () => void;
+  backLabel?: string;
 }) {
   const [pack, setPack] = useState<PlayerSetup>(initial);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -124,11 +138,16 @@ export function PackScreen({ state, world, level, initial, busy, problem, onFigh
     <section className="ar-page" aria-labelledby="ar-pack-title">
       <div className="ar-page__head">
         <h2 id="ar-pack-title" ref={heading} tabIndex={-1}>Pack your quiver</h2>
-        <button type="button" className="button button--light ar-btn" onClick={onBack}>Back</button>
+        <button type="button" className="button button--light ar-btn" onClick={onBack}>{backLabel}</button>
       </div>
-      <p>{WORLD_NAMES[world]}, against {BOT_NAMES[level]} ({LEVEL_NAMES[level]}). Plain Arrows are free and never run out. Anything you pack but don't use comes back after the fight.</p>
+      <p>{WORLD_NAMES[world]}, against {vs ?? (level ? `${BOT_NAMES[level]} (${LEVEL_NAMES[level]})` : 'a bot')}. Plain Arrows are free and never run out. Anything you pack but don't use comes back after the fight.</p>
+      {note && <p className="ar-help" role="status">{note}</p>}
       <h3>Special arrows</h3>
-      {arrows.length ? <ul className="ar-packlist">{arrows.map(row)}</ul> : <p className="ar-help">No special arrows yet. Earn coins in a speed round and visit the <button type="button" className="button button--light ar-btn ar-small" onClick={onArmory}>Armory</button>.</p>}
+      {arrows.length ? <ul className="ar-packlist">{arrows.map(row)}</ul> : (
+        <p className="ar-help">
+          No special arrows yet. Earn coins in a speed round and visit the {onArmory ? <button type="button" className="button button--light ar-btn ar-small" onClick={onArmory}>Armory</button> : 'Armory'}.
+        </p>
+      )}
       {helpers.length > 0 && (
         <>
           <h3>Helpers</h3>

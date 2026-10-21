@@ -34,6 +34,8 @@ export interface FightViewOptions {
   /** "Simpler graphics" forced on (fewer layers and particles, lower pixel density). */
   simple: boolean;
   names: [string, string];
+  /** How each archer looks: you, a bot (the right archer by default), or a classmate drawn like you in other colours. */
+  looks?: [Figure['kind'], Figure['kind']];
 }
 
 export interface ShotShow {
@@ -223,6 +225,7 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
   /** Sticky Goo puddles on the land now. */
   let goo: readonly Puddle[] = [];
 
+  const lookOf = (i: number): Figure['kind'] => opts.looks?.[i] ?? (i === 0 ? 'hero' : 'bot');
   const archers: [ArcherView, ArcherView] = [newArcher(0), newArcher(1)];
 
   // Speed measuring.
@@ -232,7 +235,7 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
 
   function newArcher(i: number): ArcherView {
     return {
-      fig: { kind: i === 0 ? 'hero' : 'bot', dir: i === 0 ? 1 : -1, aim: 45, draw: 0, hasArrow: true, arrowLook: i === 0 ? 'arrow' : 'bot', hitT: 0, squash: 0, stringWob: 0, blinkFor: 0, dizzy: 0, koT: -1, cheer: 0 },
+      fig: { kind: lookOf(i), dir: i === 0 ? 1 : -1, aim: 45, draw: 0, hasArrow: true, arrowLook: lookOf(i) === 'bot' ? 'bot' : 'arrow', hitT: 0, squash: 0, stringWob: 0, blinkFor: 0, dizzy: 0, koT: -1, cheer: 0 },
       x: i === 0 ? 150 : 810, y: 400, px: 0, py: 0, lift: 0, liftV: 0, liftDelay: 0, visible: false, popped: false,
       health: 100, shield: 0, shieldMax: 1, shownHealth: 100, shownShield: 0, angle: i === 0 ? 45 : 135, blinkT: 1 + i * 1.7,
       path: null, seg: 0, segT: 0, segFrom: null, pendingPop: false, aimAnim: null,
@@ -585,7 +588,7 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
     const per = PATH_EVERY / STEPS_PER_SECOND;
     const tracks: Track[] = [];
     const effects: Effect[] = [];
-    const main = arrowLook(rec.shot.arrow, player);
+    const main = arrowLook(rec.shot.arrow, player, lookOf(player) === 'bot');
     const events: ShotEvent[] = rec.events ?? [
       { k: 'fly', t: 0, path: rec.path && rec.path.length >= 4 ? rec.path : [rec.hit.x, rec.hit.y, rec.hit.x, rec.hit.y], part: 'main' },
       ...(rec.hit.kind === 'gone' || rec.hit.kind === 'timeout' ? [] : [{ k: 'blast' as const, t: rec.hit.steps, x: rec.hit.x, y: rec.hit.y, r: 18, carve: true }]),
@@ -1623,12 +1626,15 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
       finishAims();
       return new Promise<void>((resolve) => {
         const rec = sh.record;
-        const look = arrowLook(rec.shot.arrow, sh.player);
+        const look = arrowLook(rec.shot.arrow, sh.player, lookOf(sh.player) === 'bot');
         const shooter = archers[sh.player];
-        setPose(shooter, rec.shot.angle, 0);
-        shooter.fig.hasArrow = false;
-        shooter.fig.arrowLook = look;
-        shooter.fig.stringWob = 1;
+        // A turn the timer used up (classmate fights): nothing is shot, so the archer keeps their arrow and pose.
+        if (!rec.shot.pass) {
+          setPose(shooter, rec.shot.angle, 0);
+          shooter.fig.hasArrow = false;
+          shooter.fig.arrowLook = look;
+          shooter.fig.stringWob = 1;
+        }
         pendingBefore = { land: copyLand(sh.landBefore), archers: [{ ...sh.archersBefore[0] }, { ...sh.archersBefore[1] }] };
         // Keep the picture's land in step with what the screen says it was.
         if (land) {

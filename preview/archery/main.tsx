@@ -1,16 +1,19 @@
 /**
- * The Archery Challenge preview (Stage 5): the whole game, against bots, with no sign-in. It never talks to the
- * school's server: the real server function's logic runs in this browser on a pretend database
+ * The Archery Challenge preview (Stages 5 and 6): the whole game, with no sign-in. It never talks to the school's
+ * server: the real server function's logic runs in this browser on a pretend database
  * (src/games/archery/trialBackend.ts), kept on this device. The speed round asks times-table questions for a
- * pretend pupil with no maths records. Preview tools (not in the real game): add pretend coins, start again.
+ * pretend pupil with no maths records. Preview tools (not in the real game): add pretend coins, start again, and
+ * "Two players on this screen": two pretend classmates (Ana and Ben) on one shared pretend server, with a switch at
+ * the top to swap between them, so a classmate fight can be played from both sides (standIn.ts).
  * Run it: npx vite --config vite.archery-preview.config.ts. One file: see vite.archery-preview.config.ts.
  */
-import { StrictMode, useMemo, useState } from 'react';
+import { StrictMode, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { archeryApi } from '../../src/data/archery';
 import { ArcheryGame } from '../../src/games/archery/ArcheryGame';
 import { emptyTrialData, trialBackend, type TrialData } from '../../src/games/archery/trialBackend';
 import { SoundProvider } from '../../src/sound';
+import { ANA, BEN, DUO_LABELS, forgetDuoData, makeDuo } from './standIn';
 import '../../src/styles.css';
 import './preview.css';
 
@@ -78,16 +81,84 @@ function Preview() {
       >
         Start again
       </button>
+      <button type="button" className="button button--light arp-small" onClick={() => (location.hash = 'two')}>
+        Two players on this screen
+      </button>
     </details>
   );
 
   return <ArcheryGame key={key} api={api} extra={tools} />;
 }
 
+/**
+ * Two pretend classmates on one screen: both games stay open (so both say "I'm here", hear challenges and keep their
+ * turn clocks), and the switch at the top shows one at a time. A dot on the other name says something there wants you.
+ */
+function Duo() {
+  const [key, setKey] = useState(0);
+  const duo = useMemo(() => makeDuo(), [key]);
+  const [showing, setShowing] = useState(ANA);
+  const [nudge, setNudge] = useState<Record<string, string>>({});
+
+  // A dot on the hidden pupil's name when it's their turn or they've been challenged.
+  useEffect(() => {
+    const look = () => {
+      const next: Record<string, string> = {};
+      for (const id of [ANA, BEN]) {
+        if (id === showing) continue;
+        const open = Object.values(duo.hub.data.duels ?? {}).find((d) => (d.seat_a === id || d.seat_b === id) && ['asked', 'packing', 'playing'].includes(d.status));
+        if (!open) continue;
+        const seat = open.seat_a === id ? 0 : 1;
+        if (open.status === 'asked' && seat === 1) next[id] = 'has a challenge';
+        else if (open.status === 'packing' && !open.packs[seat]) next[id] = 'needs to pack';
+        else if (open.status === 'playing' && open.turns.length % 2 === seat) next[id] = "it's their turn";
+      }
+      setNudge(next);
+    };
+    look();
+    const timer = setInterval(look, 500);
+    return () => clearInterval(timer);
+  }, [duo, showing]);
+
+  return (
+    <div className="arp-duo">
+      <div className="arp-duo__bar" role="group" aria-label="Preview: which pretend pupil you are">
+        <span className="arp-duo__label">Preview, playing as:</span>
+        {[ANA, BEN].map((id) => (
+          <button key={id} type="button" className="button button--light arp-small arp-duo__who" aria-pressed={showing === id} onClick={() => setShowing(id)}>
+            {DUO_LABELS[id]}{nudge[id] && <span className="arp-duo__dot"> ● <span className="arp-sr">{DUO_LABELS[id]} {nudge[id]}</span></span>}
+          </button>
+        ))}
+        <details className="arp-duo__more">
+          <summary>More</summary>
+          <button type="button" className="button button--light arp-small" onClick={() => { duo.addCoins(showing, 500); setKey((k) => k + 1); }}>+500 pretend coins for {DUO_LABELS[showing]}</button>
+          <button type="button" className="button button--light arp-small" onClick={() => { forgetDuoData(); setKey((k) => k + 1); }}>Start again</button>
+          <button type="button" className="button button--light arp-small" onClick={() => (location.hash = '')}>One player</button>
+        </details>
+      </div>
+      {[ANA, BEN].map((id) => (
+        <div key={`${key}-${id}`} className="arp-duo__pane" data-showing={showing === id || undefined} aria-hidden={showing !== id || undefined} inert={showing !== id || undefined}>
+          <ArcheryGame api={duo.pupils[id].api} duels={duo.pupils[id].link} me={id} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Root() {
+  const [two, setTwo] = useState(() => location.hash === '#two');
+  useEffect(() => {
+    const changed = () => setTwo(location.hash === '#two');
+    window.addEventListener('hashchange', changed);
+    return () => window.removeEventListener('hashchange', changed);
+  }, []);
+  return two ? <Duo /> : <Preview />;
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <SoundProvider>
-      <Preview />
+      <Root />
     </SoundProvider>
   </StrictMode>,
 );

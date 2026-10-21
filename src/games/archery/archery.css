@@ -147,6 +147,15 @@
 .ar-arrow__n { font-size: 0.85rem; font-weight: 700; color: #92400e; }
 .ar-arrow__does { font-size: 0.85rem; color: var(--ink-soft, #475569); }
 
+/* A classmate fight's turn clock: plain numbers, a warm colour for the last 10 seconds (never flashing). */
+.ar-clock {
+  display: inline-flex; align-items: baseline; gap: 4px; padding: 2px 12px; border-radius: 99px;
+  background: var(--ar-panel); border: 2px solid var(--ar-panel-line); white-space: nowrap; font-size: 0.85rem; color: var(--ar-soft);
+}
+.ar-clock b { color: #ffffff; font-size: 1.2rem; font-variant-numeric: tabular-nums; min-width: 2ch; text-align: right; }
+.ar-clock[data-warn] { background: #7c2d12; border-color: #fdba74; color: #ffffff; }
+.ar-clock[data-warn] b { color: #fde68a; }
+
 /* ——— Smaller screens ——— */
 @media (max-width: 900px) {
   .ar-range { width: 90px; }
@@ -256,6 +265,26 @@
 .ar-shell .ar-chunky--bows { background: #7c4a1d; box-shadow: 0 5px 0 #4a2a0e; }
 .ar-shell .ar-chunky--armory { background: #44546f; box-shadow: 0 5px 0 #263042; }
 .ar-shell .ar-chunky--speed { background: #b4234a; box-shadow: 0 5px 0 #6e1229; font-size: 1.1rem; }
+.ar-home__go { align-self: end; display: flex; flex-wrap: wrap; justify-content: center; align-items: end; gap: 12px; width: min(860px, 100%); }
+.ar-home__go .ar-chunky--play { align-self: auto; }
+.ar-shell .ar-chunky--mates { width: auto; min-height: 60px; font-size: 1.2rem; background: #0f766e; box-shadow: 0 5px 0 #0b4a45; }
+
+/* Classmates: who's here, and the challenge pop-up. */
+.ar-page--narrow { width: min(560px, calc(100% - 32px)); text-align: center; }
+.ar-page__alt { display: flex; justify-content: center; margin: 12px 0 0; }
+.ar-mates { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.ar-mate { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 8px 6px 12px; border-radius: 14px; background: #ffffff; border: 2px solid #d6c3a0; }
+.ar-mate__name { font-weight: 700; }
+.ar-mate__busy { color: var(--ar-paper-soft); font-size: 0.9rem; padding: 0 8px; }
+/* The hub's play button is made for big pages: compact and still in a list row and the pop-up. */
+.ar-shell .ar-mate .ar-btn, .ar-shell .ar-ask .ar-btn { width: auto; min-height: 44px; padding: 0 18px; font-size: 1.05rem; border-radius: 14px; animation: none; }
+.ar-ask { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; background: rgba(5, 8, 20, 0.55); }
+.ar-ask__card {
+  width: min(460px, 100%); display: grid; gap: 10px; justify-items: center; text-align: center; padding: 18px 20px; border-radius: 22px;
+  background: var(--ar-paper); color: var(--ar-paper-ink); border: 4px solid #2a1c14; box-shadow: 0 8px 0 rgba(0, 0, 0, 0.3);
+}
+.ar-ask__card h2 { margin: 0; font-size: 1.6rem; }
+.ar-ask__card p { margin: 0; }
 
 /* Pages: picking, packing, How to play, closed. */
 .ar-page {
@@ -348,6 +377,10 @@
   .ar-banner { grid-column: 1 / -1; grid-row: 2; justify-self: center; }
   .ar-home__worlds { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ar-home__bottom { grid-template-columns: 1fr; }
+  /* Play and Challenge a classmate side by side, so the archer on the rock still shows. */
+  .ar-home__go { flex-wrap: nowrap; gap: 10px; }
+  .ar-shell .ar-home__go .ar-chunky--play { flex: 1 1 0; width: auto; min-height: 64px; font-size: 1.6rem; }
+  .ar-shell .ar-home__go .ar-chunky--mates { flex: 1 1 0; min-height: 64px; font-size: 1rem; line-height: 1.15; }
 }
 @media (max-height: 520px) and (min-width: 701px) {
   .ar-home__ui { gap: 8px; }
@@ -355,4 +388,5 @@
   .ar-shell .ar-chunky { min-height: 44px; padding: 4px 10px; font-size: 1.05rem; }
   .ar-shell .ar-chunky small { display: none; }
   .ar-shell .ar-chunky--play { min-height: 52px; font-size: 1.5rem; width: min(260px, 40%); }
+  .ar-shell .ar-chunky--mates { min-height: 52px; }
 }

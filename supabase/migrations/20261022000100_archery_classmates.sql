@@ -416,8 +416,8 @@ $$;
 
 -- Saves a turn the server function has played: the new turn list, what each has used, the time-outs and the next
 -- deadline. Only if the fight is still at `version` and playing; returns the row, or null if it had changed.
--- `real` is a shot (a used-up turn doesn't count as anyone playing).
-create function public.archery_duel_move(duel bigint, version integer, turns jsonb, used jsonb, timeouts integer[], deadline_ms bigint, real boolean)
+-- `played` is a real shot (a used-up turn doesn't count as anyone playing).
+create function public.archery_duel_move(duel bigint, version integer, turns jsonb, used jsonb, timeouts integer[], deadline_ms bigint, played boolean)
 returns public.archery_duels
 language plpgsql
 security definer
@@ -431,7 +431,7 @@ begin
     used = archery_duel_move.used,
     timeouts = archery_duel_move.timeouts,
     deadline = to_timestamp(deadline_ms / 1000.0),
-    last_action_at = case when real then now() else x.last_action_at end,
+    last_action_at = case when played then now() else x.last_action_at end,
     version = x.version + 1
   where x.id = archery_duel_move.duel and x.version = archery_duel_move.version and x.status = 'playing'
   returning * into d;

@@ -16,7 +16,7 @@ const WORLD_ICONS: Record<WorldId, string> = {
   city: 'M2 22V11h5V6h6v6h3V3h6v19z',
 };
 
-export function HomeScreen({ coins, world, bow, lessMotion, onPlay, onWorld, onArmory, onBows, onSpeed, onHowTo, onExit }: {
+export function HomeScreen({ coins, world, bow, lessMotion, onPlay, onWorld, onArmory, onBows, onSpeed, onHowTo, onExit, onClassmate }: {
   coins: number;
   /** The world shown behind (the last one played). */
   world: WorldId;
@@ -29,6 +29,8 @@ export function HomeScreen({ coins, world, bow, lessMotion, onPlay, onWorld, onA
   onSpeed: () => void;
   onHowTo: () => void;
   onExit?: () => void;
+  /** Challenge a classmate (left out when classmate fights aren't available). */
+  onClassmate?: () => void;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus({ preventScroll: true }), []);
@@ -57,10 +59,18 @@ export function HomeScreen({ coins, world, bow, lessMotion, onPlay, onWorld, onA
             </button>
           ))}
         </div>
-        <button type="button" className="button button--play ar-btn ar-chunky ar-chunky--play" onClick={onPlay}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h13l-3 3 1.5 1.5L21 12l-6.5-5.5L13 8l3 3H3z" fill="#fff" /></svg>
-          Play
-        </button>
+        <div className="ar-home__go">
+          <button type="button" className="button button--play ar-btn ar-chunky ar-chunky--play" onClick={onPlay}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h13l-3 3 1.5 1.5L21 12l-6.5-5.5L13 8l3 3H3z" fill="#fff" /></svg>
+            Play
+          </button>
+          {onClassmate && (
+            <button type="button" className="button button--play ar-btn ar-chunky ar-chunky--mates" onClick={onClassmate}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM1 20c0-3.5 3-6 7-6s7 2.5 7 6zm14.5 0c0-2-.7-3.8-2-5.1.8-.3 1.6-.4 2.5-.4 3.6 0 7 2.1 7 5.5z" fill="#fff" /></svg>
+              Challenge a classmate
+            </button>
+          )}
+        </div>
         <div className="ar-home__bottom">
           <button type="button" className="button button--play ar-btn ar-chunky ar-chunky--bows" onClick={onBows}>More Bows</button>
           <button type="button" className="button button--play ar-btn ar-chunky ar-chunky--armory" onClick={onArmory}>Armory</button>

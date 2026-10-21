@@ -2,8 +2,8 @@
  * How to play. Every number comes from the game's own rules, so changing a number changes this page.
  */
 import { useEffect, useRef } from 'react';
-import { APPLE_HEALTH, GLASS_STING, MAX_SHOT_DAMAGE, ROUNDS_TO_WIN, START_HEALTH } from '../../../shared/archery/config';
-import { FIGHT_POINTS, ROUND_POINTS, WIN_POINTS } from '../../../shared/archery/points';
+import { APPLE_HEALTH, DUEL_MAX_TIMEOUTS, DUEL_TURN_MS, GLASS_STING, MAX_SHOT_DAMAGE, ROUNDS_TO_WIN, START_HEALTH } from '../../../shared/archery/config';
+import { DUEL_POINTS, DUEL_WIN_POINTS, FIGHT_POINTS, ROUND_POINTS, WIN_POINTS } from '../../../shared/archery/points';
 import { CARRY_MOST, LEVEL_SPEND } from '../../../shared/archery/shop';
 import { COINS_PER_RIGHT, EARNING_ROUNDS_PER_DAY, FIRST_SECONDS, POINT_AT, ROUND_QUESTIONS } from '../../../shared/archery/speed';
 import { WORLD_IDS } from '../../../shared/archery/types';
@@ -25,6 +25,13 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
         <li>No single arrow can take more than {MAX_SHOT_DAMAGE} from you, so one lucky shot never ends a round.</li>
         <li>Keys: ← → angle, ↑ ↓ power (Shift for 5 at a time), space to shoot. On a touch screen, drag back from your archer like pulling a bowstring.</li>
       </ul>
+      <h3>Fights against classmates</h3>
+      <ul>
+        <li><b>Challenge a classmate</b> shows who in your class has the game open. Pick a world and challenge them; they can say yes or no.</li>
+        <li>You both pack your quivers, then it's <b>one round</b>: win it to win the fight. Whoever did more maths brings better gear!</li>
+        <li>Each turn has {DUEL_TURN_MS / 1000} seconds. If the time runs out, that turn is missed. Miss {DUEL_MAX_TIMEOUTS} in a row and the fight stops.</li>
+        <li>Leaving part-way lets the other player win, and nobody gets points.</li>
+      </ul>
       <h3>The worlds</h3>
       <ul>
         {WORLD_IDS.map((w) => <li key={w}><b>{WORLD_NAMES[w]}:</b> {WORLD_HINTS[w]}</li>)}
@@ -45,7 +52,8 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
       </ul>
       <h3>Points</h3>
       <ul>
-        <li>Finish a fight: {FIGHT_POINTS} points ({WIN_POINTS} if you win). Get {POINT_AT} or more right in a speed round: {ROUND_POINTS} point.</li>
+        <li>Finish a fight against a bot: {FIGHT_POINTS} points ({WIN_POINTS} if you win). Against a classmate: {DUEL_POINTS} points ({DUEL_WIN_POINTS} if you win).</li>
+        <li>Get {POINT_AT} or more right in a speed round: {ROUND_POINTS} point.</li>
         <li>A New Season starts everyone again with no coins and no gear.</li>
       </ul>
     </section>

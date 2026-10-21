@@ -618,7 +618,7 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
 }
 
 /** A shield's points, next to an archer's health. */
-function ShieldPips({ archer, who }: { archer: Archer; who: string }) {
+export function ShieldPips({ archer, who }: { archer: Archer; who: string }) {
   const kind = shieldKind(archer.guard!);
   return (
     <span className="ar-shield" data-kind={kind.id} role="meter" aria-label={`${who} ${kind.name}`} aria-valuemin={0} aria-valuemax={kind.soak} aria-valuenow={archer.shield}>

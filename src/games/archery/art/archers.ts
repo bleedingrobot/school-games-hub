@@ -31,9 +31,9 @@ export const ARROW_STYLES: Record<ArrowLook, ArrowStyle> = {
 };
 
 /** How an arrow looks, from its id and who shot it. */
-export function arrowLook(id: ArrowId, player: number): ArrowLook {
+export function arrowLook(id: ArrowId, player: number, bot = player === 1): ArrowLook {
   switch (id) {
-    case 'plain': return player === 1 ? 'bot' : 'arrow';
+    case 'plain': return bot ? 'bot' : 'arrow';
     case 'steel': return 'steel';
     case 'log': return 'roll';
     case 'mole': case 'sneaky': return 'digger';
@@ -139,11 +139,26 @@ export function arrowLength(look: ArrowLook): number {
 const STYLE = {
   hero: { sleeve: '#3f9f55', hand: '#f8cfa4', bow: '#a8612a', bowHi: '#e9a866', tip: '#ffd23f', string: '#fbf4e4', grip: '#6b3a1c' },
   bot: { sleeve: '#7d92b5', hand: '#cad8ee', bow: '#33415e', bowHi: '#7ff0ff', tip: '#7ff0ff', string: '#c8fbff', grip: '#ff9f43' },
+  // A classmate (Stage 6): the same archer as yours, in their own colours, so the two are easy to tell apart.
+  rival: { sleeve: '#3b74c9', hand: '#d9a173', bow: '#7a3b22', bowHi: '#d98a5c', tip: '#ffffff', string: '#fbf4e4', grip: '#3a2412' },
+};
+
+/** The colours of an archer drawn in the hero's style: yours, or a classmate's. */
+const BODY = {
+  hero: {
+    quiverTips: ['#e8453c', '#ffffff', '#e8453c'], tunicHi: '#55bd69', tunicLo: '#2e8646', tunicFlat: '#41a157', buckle: '#ffcf3f',
+    skin: '#f8cfa4', ear: '#f3bf91', hair: '#7a4a24', hoodHi: '#4fb565', hoodLo: '#2e8646', hoodFlat: '#3d9e55', feather: '#e8453c', cheek: 'rgba(255,130,120,.5)',
+  },
+  rival: {
+    quiverTips: ['#ffd23f', '#ffffff', '#ffd23f'], tunicHi: '#5b9cf0', tunicLo: '#2a5aa8', tunicFlat: '#3f78cf', buckle: '#e6edf7',
+    skin: '#d9a173', ear: '#c98d60', hair: '#2b1a10', hoodHi: '#4f8fe6', hoodLo: '#24508f', hoodFlat: '#3a6fbf', feather: '#ffd23f', cheek: 'rgba(230,110,90,.45)',
+  },
 };
 
 /** Everything that changes how an archer looks from moment to moment. */
 export interface Figure {
-  kind: 'hero' | 'bot';
+  /** You, a bot, or a classmate (drawn like you, in other colours). */
+  kind: 'hero' | 'bot' | 'rival';
   /** 1 facing right, −1 facing left. */
   dir: number;
   /** Bow elevation in degrees, measured from the way they face (0 straight ahead, 90 up). */
@@ -277,11 +292,12 @@ function armsBow(g: CanvasRenderingContext2D, a: Figure, t: number, br: number, 
 }
 
 function heroBody(g: CanvasRenderingContext2D, a: Figure, t: number, br: number, simple: boolean) {
+  const c = a.kind === 'rival' ? BODY.rival : BODY.hero;
   // Quiver.
   g.save();
   g.translate(-13, -50 + br * 0.5);
   g.rotate(-0.38);
-  for (const [i, c] of [[-5, '#e8453c'], [0, '#ffffff'], [5, '#e8453c']] as const) {
+  for (const [i, tip] of [[-5, c.quiverTips[0]], [0, c.quiverTips[1]], [5, c.quiverTips[2]]] as const) {
     g.strokeStyle = '#d8b07a';
     g.lineWidth = 2.5;
     g.beginPath();
@@ -294,7 +310,7 @@ function heroBody(g: CanvasRenderingContext2D, a: Figure, t: number, br: number,
     g.lineTo(i, -24.5);
     g.lineTo(i + 3.6, -22);
     g.closePath();
-    g.fillStyle = c;
+    g.fillStyle = tip;
     g.fill();
     g.lineWidth = 1.3;
     g.strokeStyle = OL;
@@ -334,11 +350,11 @@ function heroBody(g: CanvasRenderingContext2D, a: Figure, t: number, br: number,
   g.lineTo(-6, -22);
   g.lineTo(-10, -17);
   g.closePath();
-  if (simple) g.fillStyle = '#41a157';
+  if (simple) g.fillStyle = c.tunicFlat;
   else {
     const tg = g.createLinearGradient(-14, 0, 14, 0);
-    tg.addColorStop(0, '#55bd69');
-    tg.addColorStop(1, '#2e8646');
+    tg.addColorStop(0, c.tunicHi);
+    tg.addColorStop(1, c.tunicLo);
     g.fillStyle = tg;
   }
   g.fill();
@@ -348,7 +364,7 @@ function heroBody(g: CanvasRenderingContext2D, a: Figure, t: number, br: number,
   g.fillStyle = '#6b3a1c';
   g.fillRect(-14.5, -34, 29, 5);
   rr(g, -3, -35.5, 7, 8, 1.5);
-  g.fillStyle = '#ffcf3f';
+  g.fillStyle = c.buckle;
   g.fill();
   g.lineWidth = 1.5;
   g.stroke();
@@ -356,17 +372,17 @@ function heroBody(g: CanvasRenderingContext2D, a: Figure, t: number, br: number,
   const hy = -81 + br;
   g.beginPath();
   g.arc(3, hy, 21, 0, TAU);
-  g.fillStyle = '#f8cfa4';
+  g.fillStyle = c.skin;
   g.fill();
   g.lineWidth = 2.5;
   g.strokeStyle = OL;
   g.stroke();
   g.beginPath();
   g.arc(-15, hy + 2, 5, 0, TAU);
-  g.fillStyle = '#f3bf91';
+  g.fillStyle = c.ear;
   g.fill();
   g.stroke();
-  g.fillStyle = '#7a4a24';
+  g.fillStyle = c.hair;
   g.beginPath();
   g.moveTo(-18, hy - 2);
   g.quadraticCurveTo(-16, hy - 20, 4, hy - 21);
@@ -382,11 +398,11 @@ function heroBody(g: CanvasRenderingContext2D, a: Figure, t: number, br: number,
   g.quadraticCurveTo(31, hy - 12, 23, hy - 10);
   g.quadraticCurveTo(0, hy - 19, -23, hy - 5);
   g.closePath();
-  if (simple) g.fillStyle = '#3d9e55';
+  if (simple) g.fillStyle = c.hoodFlat;
   else {
     const hg = g.createLinearGradient(0, hy - 38, 0, hy - 5);
-    hg.addColorStop(0, '#4fb565');
-    hg.addColorStop(1, '#2e8646');
+    hg.addColorStop(0, c.hoodHi);
+    hg.addColorStop(1, c.hoodLo);
     g.fillStyle = hg;
   }
   g.fill();
@@ -397,7 +413,7 @@ function heroBody(g: CanvasRenderingContext2D, a: Figure, t: number, br: number,
   g.rotate(-1.05 + Math.sin(t * 3) * 0.05);
   g.beginPath();
   g.ellipse(0, -13, 4.8, 15, 0, 0, TAU);
-  g.fillStyle = '#e8453c';
+  g.fillStyle = c.feather;
   g.fill();
   g.lineWidth = 1.8;
   g.stroke();
@@ -436,7 +452,7 @@ function heroBody(g: CanvasRenderingContext2D, a: Figure, t: number, br: number,
     g.lineTo(22, hy - 8.5);
     g.stroke();
   }
-  g.fillStyle = 'rgba(255,130,120,.5)';
+  g.fillStyle = c.cheek;
   g.beginPath();
   g.arc(16, hy + 7, 4.2, 0, TAU);
   g.fill();
@@ -453,7 +469,7 @@ function heroBody(g: CanvasRenderingContext2D, a: Figure, t: number, br: number,
     g.lineTo(17, hy + 9.5);
   } else g.arc(14, hy + 7, 4.3, 0.2 * Math.PI, 0.85 * Math.PI);
   g.stroke();
-  armsBow(g, a, t, br, STYLE.hero);
+  armsBow(g, a, t, br, a.kind === 'rival' ? STYLE.rival : STYLE.hero);
 }
 
 function botBody(g: CanvasRenderingContext2D, a: Figure, t: number, br: number, simple: boolean) {
@@ -590,8 +606,8 @@ export function drawFigure(g: CanvasRenderingContext2D, a: Figure, t: number, K:
   const br = Math.sin(t * 2.4 + phase) * 1.2;
   g.lineJoin = 'round';
   g.lineCap = 'round';
-  if (a.kind === 'hero') heroBody(g, a, t, br, simple);
-  else botBody(g, a, t, br, simple);
+  if (a.kind === 'bot') botBody(g, a, t, br, simple);
+  else heroBody(g, a, t, br, simple);
   g.restore();
   if (a.dizzy > 0 || a.koT >= 0) {
     const cy = -128 * K, al = a.koT >= 0 ? 1 : Math.min(1, a.dizzy);

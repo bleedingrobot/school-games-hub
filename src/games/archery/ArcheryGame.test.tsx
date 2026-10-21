@@ -1,5 +1,6 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DuelRow } from '../../../shared/archery/duel';
 import { markQuestion } from '../../../shared/archery/speed';
 
 // The fight's picture is a stand-in (no canvas here); everything else is the real game on the trial server, with the
@@ -15,7 +16,7 @@ vi.mock('../../lib/supabase', () => ({ supabase: { auth: { getSession: async () 
 
 const { ArcheryGame } = await import('./ArcheryGame');
 const { archeryApi } = await import('../../data/archery');
-const { trialBackend } = await import('./trialBackend');
+const { trialBackend, trialHub } = await import('./trialBackend');
 
 beforeEach(() => {
   localStorage.clear();
@@ -103,5 +104,150 @@ describe('Archery Challenge', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'How to play' }));
     expect(await screen.findByRole('heading', { name: 'How to play' })).toBeTruthy();
     expect(screen.getByText(/Each right answer in time earns 10 coins/)).toBeTruthy();
+  });
+});
+
+describe('fights against classmates', () => {
+  const ANA = 'aaaaaaaa-0000-4000-8000-000000000001';
+  const BEN = 'bbbbbbbb-0000-4000-8000-000000000002';
+
+  /** Ana's and Ben's games, side by side on one pretend server. `skew` moves both the server's clock and the screens'. */
+  function two() {
+    const clock = { skew: 0 };
+    const listeners = new Set<(d: DuelRow) => void>();
+    const hub = trialHub({
+      now: () => Date.now() + clock.skew,
+      pupils: { [ANA]: { name: 'Speedy Otter 7', classId: 'room-1' }, [BEN]: { name: 'Brave Kiwi 12', classId: 'room-1' } },
+      onDuel: (d) => queueMicrotask(() => listeners.forEach((l) => l(d))),
+    });
+    for (const id of [ANA, BEN]) hub.data.pupils[id] = { coins: 0, gear: { steel: 2 }, shields: [], bows: [], spent: 0, best: {}, rounds: [] };
+    hub.here(ANA);
+    hub.here(BEN);
+    const game = (me: string) => {
+      const link = {
+        here: async () => hub.here(me),
+        read: async (id: number) => hub.readDuel(me, id),
+        watch: (who: string, onDuel: (d: DuelRow, id: number) => void, onLive: (s: 'live') => void) => {
+          const heard = (d: DuelRow) => (d.seat_a === who || d.seat_b === who) && onDuel(d, d.id);
+          listeners.add(heard);
+          onLive('live');
+          return () => void listeners.delete(heard);
+        },
+        clockOffset: async () => clock.skew,
+      };
+      const box = document.createElement('div');
+      document.body.appendChild(box);
+      render(<ArcheryGame api={archeryApi((b) => hub.sendAs(me, b), me)} duels={link} me={me} />, { container: box });
+      return within(box);
+    };
+    return { hub, clock, ana: game(ANA), ben: game(BEN) };
+  }
+
+  it('challenges a classmate, who accepts from the pop-up; both pack and take turns through the server', async () => {
+    const { hub, ana, ben } = two();
+    fireEvent.click(await ana.findByRole('button', { name: 'Challenge a classmate' }));
+    fireEvent.click(await ana.findByRole('button', { name: /^City/ }));
+    fireEvent.click(await ana.findByRole('button', { name: 'Challenge Brave Kiwi 12 in the City' }));
+    await ana.findByRole('heading', { name: 'Waiting for Brave Kiwi 12 to say yes…' });
+
+    // Ben's pop-up (its focus is checked on its own, below: here two games share one page).
+    const ask = await ben.findByRole('alertdialog', { name: 'Speedy Otter 7 challenges you!' }, { timeout: 4000 });
+    fireEvent.click(within(ask).getByRole('button', { name: 'Accept' }));
+
+    // Both pack (the gear comes out of their bags), and the fight starts on both screens.
+    fireEvent.click(await ben.findByRole('button', { name: 'One more Steel Arrow' }));
+    fireEvent.click(ben.getByRole('button', { name: 'Fight!' }));
+    await ben.findByRole('heading', { name: 'Waiting for Speedy Otter 7 to pack…' });
+    expect(hub.data.pupils[BEN].gear).toEqual({ steel: 1 });
+    fireEvent.click(await ana.findByRole('button', { name: 'Fight!' }));
+    await ana.findByText('Your turn', {}, { timeout: 4000 });
+    await ben.findByText('Speedy Otter 7 is aiming…', {}, { timeout: 4000 });
+    expect(ben.getByRole('button', { name: 'Shoot' })).toHaveProperty('disabled', true);
+    expect(ana.getByRole('timer').getAttribute('aria-label')).toMatch(/^(44|45) seconds left for your turn$/);
+
+    // Ana shoots: the server plays it, and both screens move on to Ben's turn.
+    fireEvent.click(ana.getByRole('button', { name: 'Shoot' }));
+    await ben.findByText('Your turn', {}, { timeout: 4000 });
+    await ana.findByText('Brave Kiwi 12 is aiming…', {}, { timeout: 4000 });
+    const duel = Object.values(hub.data.duels!)[0];
+    expect(duel.turns).toEqual([{ angle: 55, power: 60, arrow: 'plain' }]);
+    // Ben's archer faces left: his 55° is the engine's 125°.
+    fireEvent.click(ben.getByRole('button', { name: 'Shoot' }));
+    await ana.findByText('Your turn', {}, { timeout: 4000 });
+    expect(duel.turns[1]).toEqual({ angle: 125, power: 60, arrow: 'plain' });
+    expect(fetch).not.toHaveBeenCalled();
+  }, 20_000);
+
+  it('uses up a turn when its time runs out, and leaving asks first: the other wins, no points', async () => {
+    const { hub, clock, ana, ben } = two();
+    fireEvent.click(await ana.findByRole('button', { name: 'Challenge a classmate' }));
+    fireEvent.click(await ana.findByRole('button', { name: /Challenge Brave Kiwi 12/ }));
+    fireEvent.click(within(await ben.findByRole('alertdialog', {}, { timeout: 4000 })).getByRole('button', { name: 'Accept' }));
+    fireEvent.click(await ben.findByRole('button', { name: 'Fight!' }));
+    fireEvent.click(await ana.findByRole('button', { name: 'Fight!' }));
+    await ben.findByText('Speedy Otter 7 is aiming…', {}, { timeout: 4000 });
+
+    // Ana's 45 seconds pass (the device's clock and the pretend server's): a screen asks the server, and the turn is used up.
+    const realNow = Date.now.bind(Date);
+    const later = vi.spyOn(Date, 'now').mockImplementation(() => realNow() + 48_000);
+    try {
+      await ben.findByText('Your turn', {}, { timeout: 6000 });
+    } finally {
+      later.mockRestore();
+    }
+    clock.skew = 48_000;
+    expect(Object.values(hub.data.duels!)[0].turns).toEqual([{ angle: 0, power: 0, arrow: 'plain', pass: true }]);
+    expect(await ana.findByText(/Your time ran out/, {}, { timeout: 4000 })).toBeTruthy();
+
+    fireEvent.click(ana.getByRole('button', { name: 'Leave' }));
+    expect(await ana.findByRole('heading', { name: 'Are you sure? Brave Kiwi 12 will win.' })).toBeTruthy();
+    fireEvent.click(ana.getByRole('button', { name: 'Leave the fight' }));
+    await ana.findByRole('heading', { name: 'You left. Brave Kiwi 12 wins' }, { timeout: 4000 });
+    await ben.findByRole('heading', { name: 'Speedy Otter 7 left, so you win' }, { timeout: 4000 });
+    expect(ben.getByText("No points this time, because the fight didn't finish.")).toBeTruthy();
+    expect(hub.data.points).toEqual([]);
+    fireEvent.click(ben.getByRole('button', { name: 'Done' }));
+    await ben.findByRole('button', { name: 'Challenge a classmate' });
+  }, 20_000);
+
+  it('says so kindly when a classmate says no', async () => {
+    const { ana, ben } = two();
+    fireEvent.click(await ana.findByRole('button', { name: 'Challenge a classmate' }));
+    fireEvent.click(await ana.findByRole('button', { name: /Challenge Brave Kiwi 12/ }));
+    fireEvent.click(within(await ben.findByRole('alertdialog', {}, { timeout: 4000 })).getByRole('button', { name: 'Say no' }));
+    expect(await ana.findByRole('heading', { name: 'Brave Kiwi 12 said no' }, { timeout: 4000 })).toBeTruthy();
+    await waitFor(() => expect(ben.queryByRole('alertdialog')).toBeNull());
+  });
+
+  it('lets a challenge run out after a minute, on both screens', async () => {
+    const { ana, ben } = two();
+    fireEvent.click(await ana.findByRole('button', { name: 'Challenge a classmate' }));
+    fireEvent.click(await ana.findByRole('button', { name: /Challenge Brave Kiwi 12/ }));
+    await ben.findByRole('alertdialog', {}, { timeout: 4000 });
+    const realNow = Date.now.bind(Date);
+    const later = vi.spyOn(Date, 'now').mockImplementation(() => realNow() + 62_000);
+    try {
+      expect(await ana.findByRole('heading', { name: 'The challenge ran out' }, { timeout: 5000 })).toBeTruthy();
+      expect(ana.getByText("Brave Kiwi 12 didn't answer in time.")).toBeTruthy();
+      await waitFor(() => expect(ben.queryByRole('alertdialog')).toBeNull(), { timeout: 3000 });
+    } finally {
+      later.mockRestore();
+    }
+  }, 15_000);
+
+  it('moves the focus to a challenge as it pops up, and it can be answered from the keyboard', async () => {
+    const { ChallengeAsk } = await import('./Classmates');
+    const answered: string[] = [];
+    render(
+      <ChallengeAsk
+        ask={{ duel: 1, from: 'Speedy Otter 7', world: 'snow', deadline: new Date(Date.now() + 60_000).toISOString() }}
+        serverNow={() => Date.now()} busy={false} problem="" onAccept={() => answered.push('yes')} onDecline={() => answered.push('no')}
+      />,
+    );
+    await waitFor(() => expect(document.activeElement?.id).toBe('ar-ask-title'));
+    expect(screen.getByRole('alertdialog', { name: 'Speedy Otter 7 challenges you!' }).textContent).toMatch(/Snow: one round.*within (59|60) seconds/);
+    screen.getByRole('button', { name: 'Say no' }).focus();
+    fireEvent.click(document.activeElement!);
+    expect(answered).toEqual(['no']);
   });
 });

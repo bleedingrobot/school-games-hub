@@ -147,3 +147,45 @@ export function parseDuel(raw: unknown): DuelRow | null {
     finished_at: typeof r.finished_at === 'string' ? r.finished_at : null,
   };
 }
+
+/** A classmate who has the game open (display name and avatar only). */
+export interface Classmate {
+  id: string;
+  name: string;
+  avatar: Record<string, unknown>;
+  /** In a classmate fight already. */
+  busy: boolean;
+}
+
+/** A challenge waiting for this pupil's answer. */
+export interface Ask {
+  duel: number;
+  from: string;
+  world: WorldId;
+  deadline: string;
+}
+
+/** What "I'm here" gives back (the database's archery_here()). */
+export interface HereReply {
+  /** The game is switched off for this pupil's class. */
+  off?: true;
+  online: Classmate[];
+  asks: Ask[];
+  /** This pupil's open classmate fight (one they asked for, or packing or playing), or null. */
+  duel: DuelRow | null;
+}
+
+/** Reads what "I'm here" gave back (anything odd is left out). */
+export function parseHere(raw: unknown): HereReply | null {
+  if (!isObj(raw)) return null;
+  if (raw.off === true) return { off: true, online: [], asks: [], duel: null };
+  const online = Array.isArray(raw.online)
+    ? raw.online.filter(isObj).filter((o) => typeof o.id === 'string' && typeof o.name === 'string')
+      .map((o) => ({ id: o.id as string, name: o.name as string, avatar: isObj(o.avatar) ? o.avatar : {}, busy: o.busy === true }))
+    : [];
+  const asks = Array.isArray(raw.asks)
+    ? raw.asks.filter(isObj).filter((a) => Number.isSafeInteger(Number(a.duel)) && typeof a.deadline === 'string')
+      .map((a) => ({ duel: Number(a.duel), from: String(a.from ?? ''), world: a.world as WorldId, deadline: a.deadline as string }))
+    : [];
+  return { online, asks, duel: raw.duel ? parseDuel(raw.duel) : null };
+}

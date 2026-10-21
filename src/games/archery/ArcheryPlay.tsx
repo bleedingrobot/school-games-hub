@@ -5,12 +5,12 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../auth/AuthContext';
-import { archeryApi, serverTransport } from '../../data/archery';
+import { archeryApi, serverDuelLink, serverTransport } from '../../data/archery';
 import { ArcheryGame } from './ArcheryGame';
 
 export function ArcheryPlay() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const api = useMemo(() => archeryApi(serverTransport, profile?.id ?? 'me'), [profile?.id]);
-  return <ArcheryGame api={api} onExit={() => navigate('/')} />;
+  return <ArcheryGame api={api} duels={serverDuelLink} me={profile?.id ?? ''} onExit={() => navigate('/')} />;
 }
