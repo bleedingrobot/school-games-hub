@@ -265,6 +265,16 @@ describe("the Glass Arrow (the pupil's arrow)", () => {
     expect(rec.after[1].shardsBy).toBe(0);
   });
 
+  it('a turn the timer used up is no hit back: the shards pop them (classmate fights)', () => {
+    const make = () => flatRound(undefined, glassSetup);
+    const round = make();
+    shoot(round, 0, 45, powerToLandAt(make, 810, 'glass'), 'glass');
+    const pass = playShot(round, 1, { angle: 0, power: 0, arrow: 'plain', pass: true }, true);
+    expect(pass.glass).toBe('popped');
+    expect(round.archers[1].popped).toBe(true);
+    expect(pass.events).toEqual([]);
+  });
+
   it('just breaks if the Glass shooter has already popped', () => {
     const make = () => flatRound(undefined, glassSetup);
     const round = make();
@@ -394,5 +404,38 @@ describe('shields, helpers and bows', () => {
     const b = playFight(42, setup, shots);
     expect(b).toEqual(a);
     expect(arrowKind('glass').forSale).toBe(true);
+  });
+});
+
+describe('a turn the timer used up (classmate fights)', () => {
+  const PASS: Shot = { angle: 45, power: 70, arrow: 'giant', apple: true, pass: true };
+  const packed: FightSetup = { world: 'forest', players: [{ quiver: { apple: 1 }, shield: null }, { quiver: {}, shield: null }] };
+
+  it('shoots nothing, eats nothing and leaves the land alone', () => {
+    const round = flatRound(undefined, packed);
+    round.archers[0].health = 50;
+    const cells = round.land.cells.slice();
+    const rec = playShot(round, 0, PASS, true);
+    expect(rec.damage).toEqual([0, 0]);
+    expect(rec.apple).toBe(0);
+    expect(round.archers[0].health).toBe(50);
+    expect(round.land.cells).toEqual(cells);
+    expect(round.shots).toBe(1);
+  });
+
+  it('still ends the turn: goo stings anyone standing in it', () => {
+    const round = flatRound(undefined, packed);
+    round.goo = [{ c0: 265, c1: 275, level: GROUND - 3, shots: 2 }];
+    const rec = playShot(round, 0, PASS);
+    expect(rec.goo[1]).toBe(GOO_DAMAGE);
+    expect(round.goo[0].shots).toBe(1);
+  });
+
+  it('needs nothing packed and uses nothing up', () => {
+    expect(shotProblem(PASS, none, 0, {})).toBeNull();
+    const run = startFight(9, packed);
+    expect(takeShot(run, PASS).problem).toBeNull();
+    expect(run.used[0]).toEqual({});
+    expect(run.round.turn).toBe(1);
   });
 });

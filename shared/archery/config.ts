@@ -262,3 +262,21 @@ export const BUBBLE_KEEP = 0.7;
 
 // Helpers.
 export const APPLE_HEALTH = 15;
+
+// Fights against classmates (Stage 6; docs/ARCHERY-PLAN.md, section 7). One round only (James, 22 Oct 2026).
+/** Each turn has this long (the server's clock decides); then the turn is used up. */
+export const DUEL_TURN_MS = 45_000;
+/** The server waits this much past a deadline before it lets anyone end the turn (screens' clocks and the network differ). */
+export const DUEL_GRACE_MS = 2_000;
+/** The same player's turns used up this many times in a row end the fight: gear back to both, no points. */
+export const DUEL_MAX_TIMEOUTS = 3;
+/** A challenge waits this long for an answer. */
+export const CHALLENGE_MS = 60_000;
+/** Once a challenge is accepted, both have this long to pack their quivers. */
+export const PACK_MS = 120_000;
+/** While the game is open, the screen says "I'm here" this often (and gets the classmates who are). */
+export const HERE_EVERY_MS = 30_000;
+/** Seen within this long counts as here (a missed beat or two is fine). */
+export const HERE_FOR_MS = 75_000;
+/** The tidy-up ends a fight nobody has played a real shot in for this long (gear back to both, no points). */
+export const DUEL_IDLE_MS = 10 * 60_000;

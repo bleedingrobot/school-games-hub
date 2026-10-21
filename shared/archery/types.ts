@@ -78,6 +78,11 @@ export interface Shot {
   arrow: ArrowId;
   /** Eat an Apple first (+APPLE_HEALTH), if they packed one. */
   apple?: boolean;
+  /**
+   * The turn timer ran out (classmate fights only): nothing is shot and nothing is used up, but the turn still ends,
+   * so Sticky Goo stings and Glass shards pop (there was no hit back). Angle, power and arrow are ignored.
+   */
+  pass?: true;
 }
 
 /** What a flying arrow ran into. 'split' is Arrow Rain splitting at the top; 'spent' a Crossbow Bolt at the end of its range. */
@@ -191,6 +196,8 @@ export interface FightSetup {
   /** Where the fight happens. Each world has its own twist (trees, sliding sand, slippery snow and ice, buildings). */
   world: WorldId;
   players: [PlayerSetup, PlayerSetup];
+  /** One round only (classmate fights, James 22 Oct 2026): win the round, win the fight. Otherwise best of 3. */
+  oneRound?: boolean;
 }
 
 export interface RoundResult {

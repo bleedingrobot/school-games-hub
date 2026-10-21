@@ -10,6 +10,8 @@
  *   fight-start   takes the packed quiver out of the pupil's gear and hands out the fight's seed;
  *   fight-finish  replays the whole fight (checking every bot shot is the bot's own), gives back what wasn't used, keeps
  *                 a best score and gives points. With `left: true` it's a fight given up part-way (no points).
+ *   duel-challenge, duel-answer, duel-pack, shot, times-up, leave
+ *                 fights against classmates, one shot at a time, each played by the server's engine (duels.ts).
  *
  * Nothing that counts comes from the browser: prices are the shop's, coins come only from answers marked here, and a
  * fight's result comes from replaying it here. Everything is refused while the teacher's switch is off.
@@ -30,6 +32,7 @@ import {
 import { WORLD_IDS, type ItemId, type PlayerSetup, type WorldId } from '../../../shared/archery/types';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 import { RateLimiter } from '../_shared/limits';
+import { DUEL_ACTIONS, handleDuel, type DuelAction, type DuelServices } from './duels';
 
 /** 'refused' (the database said no) and 'busy' (couldn't reach it). */
 export type Outcome<T> = { ok: true; value: T } | { ok: false; why: 'refused' | 'busy' };
@@ -55,7 +58,7 @@ export interface StoredFight {
   status: 'playing' | 'done' | 'left' | 'abandoned';
 }
 
-export interface Services {
+export interface Services extends DuelServices {
   userIdFor(token: string): Promise<string | null>;
   /** Is the game on for this pupil's class (null if the settings can't be read)? */
   enabled(player: string): Promise<boolean | null>;
@@ -110,9 +113,15 @@ export function makeHandler(services: Services) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return reply(400, { error: "That couldn't be read." });
     const body = raw as Record<string, unknown>;
 
-    // The teacher's switch decides everything. If it can't be read, nothing happens.
+    // The teacher's switch decides everything. If it can't be read, nothing happens. While it's off, a classmate fight
+    // can still be ended fairly (duels.ts), but nothing can be played.
     const on = await services.enabled(player);
     if (on === null) return busy('The Armory');
+    const duelAction = DUEL_ACTIONS.includes(body.action as DuelAction) ? (body.action as DuelAction) : null;
+    if (duelAction && (on || duelAction === 'shot' || duelAction === 'times-up' || duelAction === 'leave')) {
+      const r = await handleDuel(services, player, duelAction, body, on, EVERYTHING);
+      return reply(r.status, r.body);
+    }
     if (!on) return reply(403, { error: 'Archery Challenge is not switched on for your class.', code: 'game-off' });
 
     switch (body.action) {

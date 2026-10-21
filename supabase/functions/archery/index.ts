@@ -6386,159 +6386,6 @@ function solveParts(parts) {
 		keys
 	} : null;
 }
-//#endregion
-//#region shared/maths/focusResults.ts
-/**
-* What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
-* results"). The database matches each answer to the focuses that were running at its time; the server works out the two
-* things only the maths code knows: which ladder skills own the answer's key, and whether it was quick.
-*/
-let owners = null;
-/** The ladder skills that own a mastery key (usually one). Empty if the key isn't on the ladder. */
-function skillsOfKey(key) {
-	if (!owners) {
-		owners = new Map();
-		for (const skill of LADDER) for (const k of skill.keys) owners.set(k, [...owners.get(k) ?? [], skill.id]);
-	}
-	return owners.get(key) ?? [];
-}
-/** The answers worth sending: those on a ladder skill. */
-function focusResultAnswers(answers, pack) {
-	const quickMs = quickMsForPack(pack);
-	const out = [];
-	for (const a of answers) {
-		const skills = skillsOfKey(a.key);
-		if (skills.length > 0) out.push({
-			skills,
-			at: a.at,
-			correct: a.correct,
-			quick: a.correct && a.ms <= quickMs
-		});
-	}
-	return out;
-}
-//#endregion
-//#region supabase/functions/_shared/focusResults.ts
-/**
-* Adds a batch of answers to the results of the maths focuses running for the student (stage F.8). Call it only for a batch the
-* records took for the first time (record_fact_answers says 0 for one it has seen), so a retry never counts twice. It never
-* throws and never blocks saving: the answers are already saved, and a problem here is only logged (the code, never who).
-*/
-async function countForFocuses(rpc, player, pack, answers, from) {
-	try {
-		const rows = focusResultAnswers(answers, pack);
-		if (rows.length === 0) return;
-		const { error } = await rpc("add_maths_focus_results", {
-			player,
-			answers: rows
-		});
-		if (error) console.error(`${from}: focus results not counted (${error.code ?? "unknown"})`);
-	} catch {
-		console.error(`${from}: focus results not counted`);
-	}
-}
-//#endregion
-//#region supabase/functions/_shared/recordAnswers.ts
-/** A UUID made from text: the same text always gives the same id, so a save sent twice is one batch. */
-async function batchIdFor(text) {
-	const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`maths-answers:${text}`))).slice(0, 16)].map((b) => b.toString(16).padStart(2, "0")).join("");
-	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
-}
-/**
-* Saves answers the server has marked, the one approved way (docs/GAME_DEVELOPMENT_GUIDE.md, section 4.1 rule 6):
-* split by the pack that keeps each record, one batch per pack with an id made from `once` (something unique to this
-* save, such as the run's seed and the question's slot), each pack's own quick time, times kept to at most two
-* minutes (`keptMs`), and the running maths focuses'
-* results counted for a batch the records took for the first time, so a retry never counts twice.
-* It never throws: a problem is logged with its code (never who) and the game goes on.
-*/
-async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`)) {
-	const result = {
-		saved: 0,
-		failed: 0
-	};
-	for (const [pack, group] of groupByPack(answers)) try {
-		const { data, error } = await rpc("record_fact_answers", {
-			player,
-			pack,
-			batch_id: await batchId(once, pack),
-			answers: group.map((a) => ({
-				...a,
-				ms: keptMs(a.ms)
-			})),
-			quick_ms: quickMsForPack(pack),
-			fluent_days: 2,
-			top_box: 4
-		});
-		if (error) {
-			result.failed++;
-			console.error(`${from}: record answers failed (${error.code ?? "unknown"})`);
-			continue;
-		}
-		const saved = typeof data === "number" ? data : 0;
-		result.saved += saved;
-		if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
-	} catch {
-		result.failed++;
-		console.error(`${from}: record answers failed`);
-	}
-	return result;
-}
-//#endregion
-//#region supabase/functions/_shared/signIn.ts
-/**
-* Who owns this sign-in token? Null if it's missing, expired, fake or not a signed-in user's.
-*
-* With the project's newer sign-in keys, the token's signature is checked right here against the
-* project's public keys (fetched once and kept for 10 minutes), with no trip to the sign-in
-* service. With the older shared secret (or a token signed with a key we don't know), the library
-* asks the sign-in service instead, exactly as `getUser` did. So this works the same before and
-* after the keys are switched in the Supabase dashboard; it only gets cheaper after.
-*/
-function userIdFromToken(auth) {
-	return async (token) => {
-		try {
-			const { data, error } = await auth.getClaims(token);
-			const claims = error ? null : data?.claims;
-			if (!claims || claims.role !== "authenticated" || typeof claims.sub !== "string" || !claims.sub) return null;
-			return claims.sub;
-		} catch {
-			return null;
-		}
-	};
-}
-//#endregion
-//#region shared/maths/serverQuestions.ts
-function hashSeed(text) {
-	let h = 2166136261;
-	for (let i = 0; i < text.length; i++) {
-		h ^= text.charCodeAt(i);
-		h = Math.imul(h, 16777619);
-	}
-	return h >>> 0;
-}
-/** A small seeded random number generator (numbers from 0 up to 1). The same text always gives the same numbers. */
-function seededRandom(text) {
-	let a = hashSeed(text);
-	return () => {
-		a = a + 1831565813 | 0;
-		let t = Math.imul(a ^ a >>> 15, 1 | a);
-		t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-		return ((t ^ t >>> 14) >>> 0) / 4294967296;
-	};
-}
-function publicQuestion(q, slot) {
-	return {
-		slot,
-		parts: q.parts,
-		spoken: q.spoken,
-		...q.prompt ? { prompt: q.prompt } : {},
-		...q.choices ? { choices: q.choices } : {},
-		...q.choiceLabels ? { choiceLabels: q.choiceLabels } : {},
-		...q.input ? { input: q.input } : {},
-		...q.maxLength ? { maxLength: q.maxLength } : {}
-	};
-}
 const DT = 1 / 240;
 /** Midpoint displacement: the first split moves the middle by up to this share of the field's height… */
 const LAND_START_ROUGHNESS = .65;
@@ -6628,386 +6475,14 @@ const FIREWORK_POPS = [
 const BOLT_RANGE_PER = 3.2;
 const BOLT_CUT_RADIUS = 4.5;
 const BUBBLE_KEEP = .7;
-//#endregion
-//#region shared/archery/aim.ts
-/**
-* Aim directions, one per whole degree from 0 (right) to 180 (left), with 90 straight up.
-* Written by scripts/archery-aim-table.mjs and checked in as plain numbers, so nothing works out
-* a sine or cosine while the game runs (aim.test.ts checks they match Math.cos and Math.sin).
-*/
-/** How far right each degree points (cos). */
-const AIM_X = [
-	1,
-	.999847695156391,
-	.999390827019096,
-	.998629534754574,
-	.997564050259824,
-	.996194698091746,
-	.994521895368273,
-	.992546151641322,
-	.99026806874157,
-	.987688340595138,
-	.984807753012208,
-	.981627183447664,
-	.978147600733806,
-	.974370064785235,
-	.970295726275996,
-	.965925826289068,
-	.961261695938319,
-	.956304755963035,
-	.951056516295154,
-	.945518575599317,
-	.939692620785908,
-	.933580426497202,
-	.927183854566787,
-	.92050485345244,
-	.913545457642601,
-	.90630778703665,
-	.898794046299167,
-	.891006524188368,
-	.882947592858927,
-	.874619707139396,
-	.866025403784439,
-	.857167300702112,
-	.848048096156426,
-	.838670567945424,
-	.829037572555042,
-	.819152044288992,
-	.809016994374947,
-	.798635510047293,
-	.788010753606722,
-	.777145961456971,
-	.766044443118978,
-	.754709580222772,
-	.743144825477394,
-	.731353701619171,
-	.719339800338651,
-	.707106781186548,
-	.694658370458997,
-	.681998360062498,
-	.669130606358858,
-	.656059028990507,
-	.642787609686539,
-	.629320391049838,
-	.615661475325658,
-	.601815023152048,
-	.587785252292473,
-	.573576436351046,
-	.559192903470747,
-	.544639035015027,
-	.529919264233205,
-	.515038074910054,
-	.5,
-	.484809620246337,
-	.469471562785891,
-	.453990499739547,
-	.438371146789077,
-	.422618261740699,
-	.4067366430758,
-	.390731128489274,
-	.374606593415912,
-	.3583679495453,
-	.342020143325669,
-	.325568154457157,
-	.309016994374947,
-	.292371704722737,
-	.275637355816999,
-	.258819045102521,
-	.241921895599668,
-	.224951054343865,
-	.207911690817759,
-	.190808995376545,
-	.17364817766693,
-	.156434465040231,
-	.139173100960066,
-	.121869343405147,
-	.104528463267653,
-	.087155742747658,
-	.069756473744125,
-	.052335956242944,
-	.034899496702501,
-	.017452406437283,
-	0,
-	-.017452406437283,
-	-.034899496702501,
-	-.052335956242944,
-	-.069756473744125,
-	-.087155742747658,
-	-.104528463267653,
-	-.121869343405147,
-	-.139173100960065,
-	-.156434465040231,
-	-.17364817766693,
-	-.190808995376545,
-	-.207911690817759,
-	-.224951054343865,
-	-.241921895599668,
-	-.258819045102521,
-	-.275637355816999,
-	-.292371704722737,
-	-.309016994374947,
-	-.325568154457156,
-	-.342020143325669,
-	-.3583679495453,
-	-.374606593415912,
-	-.390731128489274,
-	-.4067366430758,
-	-.422618261740699,
-	-.438371146789078,
-	-.453990499739547,
-	-.469471562785891,
-	-.484809620246337,
-	-.5,
-	-.515038074910054,
-	-.529919264233205,
-	-.544639035015027,
-	-.559192903470747,
-	-.573576436351046,
-	-.587785252292473,
-	-.601815023152048,
-	-.615661475325658,
-	-.629320391049837,
-	-.642787609686539,
-	-.656059028990507,
-	-.669130606358858,
-	-.681998360062498,
-	-.694658370458997,
-	-.707106781186547,
-	-.719339800338651,
-	-.73135370161917,
-	-.743144825477394,
-	-.754709580222772,
-	-.766044443118978,
-	-.777145961456971,
-	-.788010753606722,
-	-.798635510047293,
-	-.809016994374947,
-	-.819152044288992,
-	-.829037572555042,
-	-.838670567945424,
-	-.848048096156426,
-	-.857167300702112,
-	-.866025403784439,
-	-.874619707139396,
-	-.882947592858927,
-	-.891006524188368,
-	-.898794046299167,
-	-.90630778703665,
-	-.913545457642601,
-	-.92050485345244,
-	-.927183854566787,
-	-.933580426497202,
-	-.939692620785908,
-	-.945518575599317,
-	-.951056516295154,
-	-.956304755963035,
-	-.961261695938319,
-	-.965925826289068,
-	-.970295726275996,
-	-.974370064785235,
-	-.978147600733806,
-	-.981627183447664,
-	-.984807753012208,
-	-.987688340595138,
-	-.99026806874157,
-	-.992546151641322,
-	-.994521895368273,
-	-.996194698091746,
-	-.997564050259824,
-	-.998629534754574,
-	-.999390827019096,
-	-.999847695156391,
-	-1
-];
-/** How far up each degree points (sin). Screens' y grows downwards, so a shot's vy starts at −AIM_Y. */
-const AIM_Y = [
-	0,
-	.017452406437284,
-	.034899496702501,
-	.052335956242944,
-	.069756473744125,
-	.087155742747658,
-	.104528463267653,
-	.121869343405147,
-	.139173100960065,
-	.156434465040231,
-	.17364817766693,
-	.190808995376545,
-	.207911690817759,
-	.224951054343865,
-	.241921895599668,
-	.258819045102521,
-	.275637355816999,
-	.292371704722737,
-	.309016994374947,
-	.325568154457157,
-	.342020143325669,
-	.3583679495453,
-	.374606593415912,
-	.390731128489274,
-	.4067366430758,
-	.422618261740699,
-	.438371146789077,
-	.453990499739547,
-	.469471562785891,
-	.484809620246337,
-	.5,
-	.515038074910054,
-	.529919264233205,
-	.544639035015027,
-	.559192903470747,
-	.573576436351046,
-	.587785252292473,
-	.601815023152048,
-	.615661475325658,
-	.629320391049837,
-	.642787609686539,
-	.656059028990507,
-	.669130606358858,
-	.681998360062498,
-	.694658370458997,
-	.707106781186547,
-	.719339800338651,
-	.73135370161917,
-	.743144825477394,
-	.754709580222772,
-	.766044443118978,
-	.777145961456971,
-	.788010753606722,
-	.798635510047293,
-	.809016994374947,
-	.819152044288992,
-	.829037572555042,
-	.838670567945424,
-	.848048096156426,
-	.857167300702112,
-	.866025403784439,
-	.874619707139396,
-	.882947592858927,
-	.891006524188368,
-	.898794046299167,
-	.90630778703665,
-	.913545457642601,
-	.92050485345244,
-	.927183854566787,
-	.933580426497202,
-	.939692620785908,
-	.945518575599317,
-	.951056516295154,
-	.956304755963035,
-	.961261695938319,
-	.965925826289068,
-	.970295726275996,
-	.974370064785235,
-	.978147600733806,
-	.981627183447664,
-	.984807753012208,
-	.987688340595138,
-	.99026806874157,
-	.992546151641322,
-	.994521895368273,
-	.996194698091746,
-	.997564050259824,
-	.998629534754574,
-	.999390827019096,
-	.999847695156391,
-	1,
-	.999847695156391,
-	.999390827019096,
-	.998629534754574,
-	.997564050259824,
-	.996194698091746,
-	.994521895368273,
-	.992546151641322,
-	.99026806874157,
-	.987688340595138,
-	.984807753012208,
-	.981627183447664,
-	.978147600733806,
-	.974370064785235,
-	.970295726275996,
-	.965925826289068,
-	.961261695938319,
-	.956304755963036,
-	.951056516295154,
-	.945518575599317,
-	.939692620785908,
-	.933580426497202,
-	.927183854566787,
-	.92050485345244,
-	.913545457642601,
-	.90630778703665,
-	.898794046299167,
-	.891006524188368,
-	.882947592858927,
-	.874619707139396,
-	.866025403784439,
-	.857167300702112,
-	.848048096156426,
-	.838670567945424,
-	.829037572555042,
-	.819152044288992,
-	.809016994374947,
-	.798635510047293,
-	.788010753606722,
-	.777145961456971,
-	.766044443118978,
-	.754709580222772,
-	.743144825477394,
-	.731353701619171,
-	.719339800338651,
-	.707106781186548,
-	.694658370458997,
-	.681998360062499,
-	.669130606358858,
-	.656059028990507,
-	.642787609686539,
-	.629320391049838,
-	.615661475325658,
-	.601815023152048,
-	.587785252292473,
-	.573576436351046,
-	.559192903470747,
-	.544639035015027,
-	.529919264233205,
-	.515038074910054,
-	.5,
-	.484809620246337,
-	.469471562785891,
-	.453990499739547,
-	.438371146789077,
-	.422618261740699,
-	.4067366430758,
-	.390731128489274,
-	.374606593415912,
-	.3583679495453,
-	.342020143325669,
-	.325568154457157,
-	.309016994374948,
-	.292371704722737,
-	.275637355817,
-	.258819045102521,
-	.241921895599668,
-	.224951054343865,
-	.207911690817759,
-	.190808995376545,
-	.17364817766693,
-	.156434465040231,
-	.139173100960066,
-	.121869343405148,
-	.104528463267654,
-	.087155742747659,
-	.069756473744126,
-	.052335956242944,
-	.034899496702501,
-	.017452406437283,
-	0
-];
-/** A whole-degree angle kept to 0–180. */
-function clampAngle(angle) {
-	const a = Math.floor(angle);
-	return a < 0 ? 0 : a > 180 ? 180 : a;
-}
+/** Each turn has this long (the server's clock decides); then the turn is used up. */
+const DUEL_TURN_MS = 45e3;
+/** The server waits this much past a deadline before it lets anyone end the turn (screens' clocks and the network differ). */
+const DUEL_GRACE_MS = 2e3;
+/** A challenge waits this long for an answer. */
+const CHALLENGE_MS = 6e4;
+/** Once a challenge is accepted, both have this long to pack their quivers. */
+const PACK_MS = 12e4;
 const ARROWS = [
 	{
 		id: "plain",
@@ -7758,6 +7233,386 @@ function hurt(a, amount) {
 		a.popped = true;
 	}
 	return fromShield + fromHealth;
+}
+//#endregion
+//#region shared/archery/aim.ts
+/**
+* Aim directions, one per whole degree from 0 (right) to 180 (left), with 90 straight up.
+* Written by scripts/archery-aim-table.mjs and checked in as plain numbers, so nothing works out
+* a sine or cosine while the game runs (aim.test.ts checks they match Math.cos and Math.sin).
+*/
+/** How far right each degree points (cos). */
+const AIM_X = [
+	1,
+	.999847695156391,
+	.999390827019096,
+	.998629534754574,
+	.997564050259824,
+	.996194698091746,
+	.994521895368273,
+	.992546151641322,
+	.99026806874157,
+	.987688340595138,
+	.984807753012208,
+	.981627183447664,
+	.978147600733806,
+	.974370064785235,
+	.970295726275996,
+	.965925826289068,
+	.961261695938319,
+	.956304755963035,
+	.951056516295154,
+	.945518575599317,
+	.939692620785908,
+	.933580426497202,
+	.927183854566787,
+	.92050485345244,
+	.913545457642601,
+	.90630778703665,
+	.898794046299167,
+	.891006524188368,
+	.882947592858927,
+	.874619707139396,
+	.866025403784439,
+	.857167300702112,
+	.848048096156426,
+	.838670567945424,
+	.829037572555042,
+	.819152044288992,
+	.809016994374947,
+	.798635510047293,
+	.788010753606722,
+	.777145961456971,
+	.766044443118978,
+	.754709580222772,
+	.743144825477394,
+	.731353701619171,
+	.719339800338651,
+	.707106781186548,
+	.694658370458997,
+	.681998360062498,
+	.669130606358858,
+	.656059028990507,
+	.642787609686539,
+	.629320391049838,
+	.615661475325658,
+	.601815023152048,
+	.587785252292473,
+	.573576436351046,
+	.559192903470747,
+	.544639035015027,
+	.529919264233205,
+	.515038074910054,
+	.5,
+	.484809620246337,
+	.469471562785891,
+	.453990499739547,
+	.438371146789077,
+	.422618261740699,
+	.4067366430758,
+	.390731128489274,
+	.374606593415912,
+	.3583679495453,
+	.342020143325669,
+	.325568154457157,
+	.309016994374947,
+	.292371704722737,
+	.275637355816999,
+	.258819045102521,
+	.241921895599668,
+	.224951054343865,
+	.207911690817759,
+	.190808995376545,
+	.17364817766693,
+	.156434465040231,
+	.139173100960066,
+	.121869343405147,
+	.104528463267653,
+	.087155742747658,
+	.069756473744125,
+	.052335956242944,
+	.034899496702501,
+	.017452406437283,
+	0,
+	-.017452406437283,
+	-.034899496702501,
+	-.052335956242944,
+	-.069756473744125,
+	-.087155742747658,
+	-.104528463267653,
+	-.121869343405147,
+	-.139173100960065,
+	-.156434465040231,
+	-.17364817766693,
+	-.190808995376545,
+	-.207911690817759,
+	-.224951054343865,
+	-.241921895599668,
+	-.258819045102521,
+	-.275637355816999,
+	-.292371704722737,
+	-.309016994374947,
+	-.325568154457156,
+	-.342020143325669,
+	-.3583679495453,
+	-.374606593415912,
+	-.390731128489274,
+	-.4067366430758,
+	-.422618261740699,
+	-.438371146789078,
+	-.453990499739547,
+	-.469471562785891,
+	-.484809620246337,
+	-.5,
+	-.515038074910054,
+	-.529919264233205,
+	-.544639035015027,
+	-.559192903470747,
+	-.573576436351046,
+	-.587785252292473,
+	-.601815023152048,
+	-.615661475325658,
+	-.629320391049837,
+	-.642787609686539,
+	-.656059028990507,
+	-.669130606358858,
+	-.681998360062498,
+	-.694658370458997,
+	-.707106781186547,
+	-.719339800338651,
+	-.73135370161917,
+	-.743144825477394,
+	-.754709580222772,
+	-.766044443118978,
+	-.777145961456971,
+	-.788010753606722,
+	-.798635510047293,
+	-.809016994374947,
+	-.819152044288992,
+	-.829037572555042,
+	-.838670567945424,
+	-.848048096156426,
+	-.857167300702112,
+	-.866025403784439,
+	-.874619707139396,
+	-.882947592858927,
+	-.891006524188368,
+	-.898794046299167,
+	-.90630778703665,
+	-.913545457642601,
+	-.92050485345244,
+	-.927183854566787,
+	-.933580426497202,
+	-.939692620785908,
+	-.945518575599317,
+	-.951056516295154,
+	-.956304755963035,
+	-.961261695938319,
+	-.965925826289068,
+	-.970295726275996,
+	-.974370064785235,
+	-.978147600733806,
+	-.981627183447664,
+	-.984807753012208,
+	-.987688340595138,
+	-.99026806874157,
+	-.992546151641322,
+	-.994521895368273,
+	-.996194698091746,
+	-.997564050259824,
+	-.998629534754574,
+	-.999390827019096,
+	-.999847695156391,
+	-1
+];
+/** How far up each degree points (sin). Screens' y grows downwards, so a shot's vy starts at −AIM_Y. */
+const AIM_Y = [
+	0,
+	.017452406437284,
+	.034899496702501,
+	.052335956242944,
+	.069756473744125,
+	.087155742747658,
+	.104528463267653,
+	.121869343405147,
+	.139173100960065,
+	.156434465040231,
+	.17364817766693,
+	.190808995376545,
+	.207911690817759,
+	.224951054343865,
+	.241921895599668,
+	.258819045102521,
+	.275637355816999,
+	.292371704722737,
+	.309016994374947,
+	.325568154457157,
+	.342020143325669,
+	.3583679495453,
+	.374606593415912,
+	.390731128489274,
+	.4067366430758,
+	.422618261740699,
+	.438371146789077,
+	.453990499739547,
+	.469471562785891,
+	.484809620246337,
+	.5,
+	.515038074910054,
+	.529919264233205,
+	.544639035015027,
+	.559192903470747,
+	.573576436351046,
+	.587785252292473,
+	.601815023152048,
+	.615661475325658,
+	.629320391049837,
+	.642787609686539,
+	.656059028990507,
+	.669130606358858,
+	.681998360062498,
+	.694658370458997,
+	.707106781186547,
+	.719339800338651,
+	.73135370161917,
+	.743144825477394,
+	.754709580222772,
+	.766044443118978,
+	.777145961456971,
+	.788010753606722,
+	.798635510047293,
+	.809016994374947,
+	.819152044288992,
+	.829037572555042,
+	.838670567945424,
+	.848048096156426,
+	.857167300702112,
+	.866025403784439,
+	.874619707139396,
+	.882947592858927,
+	.891006524188368,
+	.898794046299167,
+	.90630778703665,
+	.913545457642601,
+	.92050485345244,
+	.927183854566787,
+	.933580426497202,
+	.939692620785908,
+	.945518575599317,
+	.951056516295154,
+	.956304755963035,
+	.961261695938319,
+	.965925826289068,
+	.970295726275996,
+	.974370064785235,
+	.978147600733806,
+	.981627183447664,
+	.984807753012208,
+	.987688340595138,
+	.99026806874157,
+	.992546151641322,
+	.994521895368273,
+	.996194698091746,
+	.997564050259824,
+	.998629534754574,
+	.999390827019096,
+	.999847695156391,
+	1,
+	.999847695156391,
+	.999390827019096,
+	.998629534754574,
+	.997564050259824,
+	.996194698091746,
+	.994521895368273,
+	.992546151641322,
+	.99026806874157,
+	.987688340595138,
+	.984807753012208,
+	.981627183447664,
+	.978147600733806,
+	.974370064785235,
+	.970295726275996,
+	.965925826289068,
+	.961261695938319,
+	.956304755963036,
+	.951056516295154,
+	.945518575599317,
+	.939692620785908,
+	.933580426497202,
+	.927183854566787,
+	.92050485345244,
+	.913545457642601,
+	.90630778703665,
+	.898794046299167,
+	.891006524188368,
+	.882947592858927,
+	.874619707139396,
+	.866025403784439,
+	.857167300702112,
+	.848048096156426,
+	.838670567945424,
+	.829037572555042,
+	.819152044288992,
+	.809016994374947,
+	.798635510047293,
+	.788010753606722,
+	.777145961456971,
+	.766044443118978,
+	.754709580222772,
+	.743144825477394,
+	.731353701619171,
+	.719339800338651,
+	.707106781186548,
+	.694658370458997,
+	.681998360062499,
+	.669130606358858,
+	.656059028990507,
+	.642787609686539,
+	.629320391049838,
+	.615661475325658,
+	.601815023152048,
+	.587785252292473,
+	.573576436351046,
+	.559192903470747,
+	.544639035015027,
+	.529919264233205,
+	.515038074910054,
+	.5,
+	.484809620246337,
+	.469471562785891,
+	.453990499739547,
+	.438371146789077,
+	.422618261740699,
+	.4067366430758,
+	.390731128489274,
+	.374606593415912,
+	.3583679495453,
+	.342020143325669,
+	.325568154457157,
+	.309016994374948,
+	.292371704722737,
+	.275637355817,
+	.258819045102521,
+	.241921895599668,
+	.224951054343865,
+	.207911690817759,
+	.190808995376545,
+	.17364817766693,
+	.156434465040231,
+	.139173100960066,
+	.121869343405148,
+	.104528463267654,
+	.087155742747659,
+	.069756473744126,
+	.052335956242944,
+	.034899496702501,
+	.017452406437283,
+	0
+];
+/** A whole-degree angle kept to 0–180. */
+function clampAngle(angle) {
+	const a = Math.floor(angle);
+	return a < 0 ? 0 : a > 180 ? 180 : a;
 }
 //#endregion
 //#region shared/archery/gear.ts
@@ -8598,7 +8453,8 @@ function inPuddle(p, a) {
 * Players take turns. Each round has fresh land and new wind from the seed (the wind stays the same
 * all round), and the first turn swaps each round (player 0 starts round 1). A round ends when one
 * archer is left (both popping at once is a draw), or after MAX_SHOTS_PER_ROUND, when more health
-* wins. First to win ROUNDS_TO_WIN rounds wins the fight.
+* wins. First to win ROUNDS_TO_WIN rounds wins the fight; a classmate fight (`setup.oneRound`) is one round only.
+* A classmate's turn the timer used up is a shot with `pass` (nothing flies, but the turn still ends).
 *
 * Screens and bots play a fight one shot at a time with `startFight` and `takeShot`, which is exactly
 * what `playFight` does, so they always agree with a replay.
@@ -8657,24 +8513,25 @@ function newRound(seed, index, setup, used = [{}, {}], carry = null) {
 function playShot(round, player, shot, keepPath = false) {
 	const { land, archers } = round;
 	const me = archers[player];
+	const pass = shot.pass === true;
 	let apple = 0;
-	if (shot.apple && !me.popped) {
+	if (!pass && shot.apple && !me.popped) {
 		apple = Math.min(15, 100 - me.health);
 		me.health += apple;
 	}
-	const w = newWork(round, player, shot, keepPath);
-	runArrow(w);
-	const raw = w.raw;
-	if (w.c1 >= w.c0) {
+	const w = pass ? null : newWork(round, player, shot, keepPath);
+	if (w) runArrow(w);
+	const raw = w ? w.raw : [0, 0];
+	if (w && w.c1 >= w.c0) {
 		settle(land, w.c0, w.c1);
 		if (round.world === "desert") slideSand(land, w.c0, w.c1, archers);
 	}
-	const tumble = shake(w);
-	if (w.shaken) settle(land, w.shaken[0], w.shaken[1]);
+	const tumble = w ? shake(w) : [false, false];
+	if (w?.shaken) settle(land, w.shaken[0], w.shaken[1]);
 	const fell = [0, 0];
 	const slid = [0, 0];
 	const umbrella = [false, false];
-	for (let i = 0; i < archers.length; i++) {
+	for (let i = 0; w && i < archers.length; i++) {
 		const a = archers[i];
 		if (a.popped) continue;
 		fell[i] = dropArcher(land, a);
@@ -8699,7 +8556,7 @@ function playShot(round, player, shot, keepPath = false) {
 	/** What the shot itself did (before goo), for "did they hit back?". */
 	const struck = [damage[0], damage[1]];
 	const goo = [0, 0];
-	const puddles = [...round.goo, ...w.puddles];
+	const puddles = [...round.goo, ...w ? w.puddles : []];
 	for (let i = 0; i < archers.length; i++) if (puddles.some((p) => inPuddle(p, archers[i]))) {
 		goo[i] = hurt(archers[i], 8);
 		damage[i] += goo[i];
@@ -8725,9 +8582,9 @@ function playShot(round, player, shot, keepPath = false) {
 		damage[player] += sting;
 		me.shardsBy = -1;
 	} else if (by >= 0) me.shardsBy = -1;
-	for (let i = 0; i < archers.length; i++) if (w.stabbed[i] && !archers[i].popped) archers[i].shardsBy = player;
+	for (let i = 0; w && i < archers.length; i++) if (w.stabbed[i] && !archers[i].popped) archers[i].shardsBy = player;
 	round.shots++;
-	const hit = w.hit ?? {
+	const hit = w?.hit ?? {
 		kind: "timeout",
 		x: me.x,
 		y: me.y,
@@ -8740,7 +8597,7 @@ function playShot(round, player, shot, keepPath = false) {
 		shot: { ...shot },
 		wind: round.wind,
 		hit,
-		bounce: w.bounce,
+		bounce: w ? w.bounce : null,
 		damage,
 		fell,
 		slid,
@@ -8752,8 +8609,8 @@ function playShot(round, player, shot, keepPath = false) {
 		sting
 	};
 	if (keepPath) {
-		record.path = w.path;
-		record.events = w.events ?? [];
+		record.path = w ? w.path : [];
+		record.events = w?.events ?? [];
 	}
 	return record;
 }
@@ -8772,6 +8629,7 @@ function roundWinner(round) {
 /** Why a shot can't be played, or null if it's fine. `used` is what the player has already used. */
 function shotProblem(shot, setup, player, used) {
 	if (!shot || typeof shot !== "object") return "not a shot";
+	if (shot.pass === true) return null;
 	if (!Number.isInteger(shot.angle) || shot.angle < 0 || shot.angle > 180) return "angle must be a whole number from 0 to 180";
 	if (!Number.isInteger(shot.power) || shot.power < 0 || shot.power > 100) return "power must be a whole number from 0 to 100";
 	if (!isArrowId(shot.arrow)) return "no such arrow";
@@ -8814,8 +8672,8 @@ function takeShot(run, shot, keepPath = false) {
 	const record = playShot(round, player, shot, keepPath);
 	run.records.push(record);
 	const used = run.used[player];
-	if (!arrowKind(shot.arrow).unlimited) used[shot.arrow] = (used[shot.arrow] ?? 0) + 1;
-	if (shot.apple) used.apple = (used.apple ?? 0) + 1;
+	if (!shot.pass && !arrowKind(shot.arrow).unlimited) used[shot.arrow] = (used[shot.arrow] ?? 0) + 1;
+	if (!shot.pass && shot.apple) used.apple = (used.apple ?? 0) + 1;
 	for (let i = 0; i < 2; i++) if (record.umbrella[i]) run.used[i].umbrella = (run.used[i].umbrella ?? 0) + 1;
 	const w = roundWinner(round);
 	if (w === null) {
@@ -8835,7 +8693,8 @@ function takeShot(run, shot, keepPath = false) {
 		shots: round.shots
 	});
 	if (w !== "draw") run.roundWins[w]++;
-	if (run.roundWins[0] >= 2) run.winner = 0;
+	if (run.setup.oneRound) run.winner = w;
+	else if (run.roundWins[0] >= 2) run.winner = 0;
 	else if (run.roundWins[1] >= 2) run.winner = 1;
 	else if (run.rounds.length >= 5) run.winner = run.roundWins[0] > run.roundWins[1] ? 0 : run.roundWins[1] > run.roundWins[0] ? 1 : "draw";
 	else run.round = newRound(run.seed, round.index + 1, run.setup, run.used, round.archers);
@@ -8848,6 +8707,404 @@ function takeShot(run, shot, keepPath = false) {
 /** Whose turn it is in a fight that's still going (null once it's over). */
 function nextPlayer(run) {
 	return run.winner === null ? run.round.turn : null;
+}
+/** Coins spent in all to reach Armory levels 1, 2, 3, 4 and 5. */
+const LEVEL_SPEND = [
+	0,
+	200,
+	600,
+	1200,
+	2e3
+];
+LEVEL_SPEND.length;
+/** Levels for the shields and helpers (arrows carry their own in arrows.ts; bows are open to everyone). */
+const SHIELD_LEVEL = {
+	wood: 1,
+	charm: 2,
+	bubble: 3
+};
+const SHOP = [
+	...ARROWS.filter((a) => a.forSale).map((a) => ({
+		id: a.id,
+		kind: "gear",
+		name: a.name,
+		does: a.does,
+		price: a.price,
+		qty: a.perPurchase ?? 1,
+		level: Math.max(1, a.level)
+	})),
+	...HELPERS.map((h) => ({
+		id: h.id,
+		kind: "gear",
+		name: h.name,
+		does: h.does,
+		price: h.price,
+		qty: 1,
+		level: h.level
+	})),
+	...SHIELDS.map((s) => ({
+		id: s.id,
+		kind: "shield",
+		name: s.name,
+		does: s.does,
+		price: s.price,
+		qty: 1,
+		level: SHIELD_LEVEL[s.id]
+	})),
+	...BOWS.filter((b) => b.price > 0).map((b) => ({
+		id: b.id,
+		kind: "bow",
+		name: b.name,
+		does: b.does,
+		price: b.price,
+		qty: 1,
+		level: 1
+	}))
+];
+const SHOP_BY = new Map(SHOP.map((s) => [`${s.kind}:${s.id}`, s]));
+/** Everything the Armory sells, in shop order. */
+function shopItems() {
+	return SHOP;
+}
+/** One shop item, or null if there's no such thing for sale. */
+function shopItem(kind, id) {
+	if (kind !== "gear" && kind !== "shield" && kind !== "bow") return null;
+	if (typeof id !== "string") return null;
+	return SHOP_BY.get(`${kind}:${id}`) ?? null;
+}
+/** What one item sells back for: half what one cost, rounded down. */
+function sellPrice(item) {
+	return Math.floor(item.price / item.qty / 2);
+}
+/** Is this an item a pupil can pack (an arrow that isn't the Plain Arrow, or a helper)? */
+function isPackable(id) {
+	if (isHelperId(id)) return true;
+	return isArrowId(id) && !arrowKind(id).unlimited;
+}
+/**
+* Reads a packed quiver from a request: arrows and helpers the pupil owns enough of, the shield and bow they own.
+* Returns the cleaned-up setup, or why it can't be packed.
+*/
+function readPack(raw, a) {
+	if (!raw || typeof raw !== "object") return { problem: "not a quiver" };
+	const r = raw;
+	const quiver = {};
+	if (r.quiver !== void 0) {
+		if (!r.quiver || typeof r.quiver !== "object" || Array.isArray(r.quiver)) return { problem: "not a quiver" };
+		for (const [id, n] of Object.entries(r.quiver)) {
+			if (!isPackable(id)) return { problem: `can't pack ${id}` };
+			if (!Number.isInteger(n) || n < 0 || n > 5) return { problem: "a count is wrong" };
+			if (n > (a.gear[id] ?? 0)) return { problem: `not enough ${id}` };
+			if (n > 0) quiver[id] = n;
+		}
+	}
+	let shield = null;
+	if (r.shield !== void 0 && r.shield !== null) {
+		if (!isShieldId(r.shield) || !a.shields.includes(r.shield)) return { problem: "not your shield" };
+		shield = r.shield;
+	}
+	let bow = "starter";
+	if (r.bow !== void 0 && r.bow !== null && r.bow !== "starter") {
+		if (!isBowId(r.bow) || !a.bows.includes(r.bow)) return { problem: "not your bow" };
+		bow = r.bow;
+	}
+	return { pack: {
+		quiver,
+		shield,
+		bow
+	} };
+}
+/** What comes back after a fight: everything packed that wasn't used. */
+function unused(pack, used) {
+	const back = {};
+	for (const [id, n] of Object.entries(pack.quiver)) {
+		const left = n - (used[id] ?? 0);
+		if (left > 0) back[id] = left;
+	}
+	return back;
+}
+//#endregion
+//#region shared/archery/duel.ts
+/**
+* Fights against classmates (docs/ARCHERY-PLAN.md, section 7, Stage 6): the rules the server function and both
+* screens share. A classmate fight is **one round** (James, 22 Oct 2026). It's kept as a seed, the world, both packed
+* quivers and the list of turns played so far, where a turn the timer used up is `PASS`. Replaying that list with the
+* engine gives the fight exactly as it is now, on the server and on both pupils' screens, so nobody's browser ever
+* decides what a shot did.
+*/
+/** A turn the timer used up. */
+const PASS = {
+	angle: 0,
+	power: 0,
+	arrow: "plain",
+	pass: true
+};
+/** The most turns a classmate fight can have (the round's shot cap). */
+const MAX_DUEL_TURNS = 60;
+/** A classmate fight's setup: the world, both packs (seat 0 is the left archer: the one who challenged), one round. */
+function duelSetup(world, packs) {
+	return {
+		world,
+		players: [copyPack(packs[0]), copyPack(packs[1])],
+		oneRound: true
+	};
+}
+const copyPack = (p) => ({
+	quiver: { ...p.quiver },
+	shield: p.shield ?? null,
+	bow: p.bow ?? "starter"
+});
+/**
+* Replays the turns so far. `problem` says if one broke the rules (it never should: the server checked each one when
+* it was played), and the run stops there.
+*/
+function replayDuel(seed, setup, turns, keepPaths = false) {
+	const run = startFight(seed, setup);
+	for (const turn of turns) {
+		const taken = takeShot(run, turn, keepPaths);
+		if (taken.problem) return {
+			run,
+			problem: taken.problem
+		};
+	}
+	return {
+		run,
+		problem: null
+	};
+}
+/** Reads one shot a pupil sent (null if it isn't one). A pass can't be sent: only the timer makes those. */
+function readShot(raw) {
+	if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+	const { angle, power, arrow, apple, pass } = raw;
+	if (pass !== void 0) return null;
+	if (typeof arrow !== "string" || typeof angle !== "number" || typeof power !== "number") return null;
+	if (apple !== void 0 && typeof apple !== "boolean") return null;
+	return {
+		angle,
+		power,
+		arrow,
+		...apple ? { apple: true } : {}
+	};
+}
+/** Reads the turn list as the database keeps it (null if it isn't one). */
+function readTurns(raw) {
+	if (!Array.isArray(raw) || raw.length > MAX_DUEL_TURNS) return null;
+	const out = [];
+	for (const t of raw) if (t && typeof t === "object" && t.pass === true) out.push({ ...PASS });
+	else {
+		const shot = readShot(t);
+		if (!shot) return null;
+		out.push(shot);
+	}
+	return out;
+}
+/** Used-up turns in a row for each seat, after `seat`'s turn: a real shot clears theirs, a pass adds one. */
+function timeoutsAfter(timeouts, seat, timedOut) {
+	const next = [timeouts[0], timeouts[1]];
+	next[seat] = timedOut ? next[seat] + 1 : 0;
+	return next;
+}
+/** Has someone let the timer use up DUEL_MAX_TIMEOUTS of their turns in a row? */
+const tooManyTimeouts = (t) => t[0] >= 3 || t[1] >= 3;
+/** Is it still going (or about to)? */
+const duelOpen = (d) => d.status === "asked" || d.status === "packing" || d.status === "playing";
+/** Which seat this player has (0 or 1), or −1 if it isn't their fight. */
+const seatOf = (d, player) => d.seat_a === player ? 0 : d.seat_b === player ? 1 : -1;
+const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+/**
+* Reads a fight row from the database, the server function or Realtime (null if it isn't one, or is missing parts: a
+* Realtime change can leave out big unchanged columns, so then the screen reads the row again).
+*/
+function parseDuel(raw) {
+	if (!isObj(raw)) return null;
+	const r = raw;
+	const id = Number(r.id);
+	const seed = Number(r.seed);
+	if (!Number.isSafeInteger(id) || !Number.isSafeInteger(seed) || typeof r.seat_a !== "string" || typeof r.seat_b !== "string") return null;
+	if (!Array.isArray(r.packs) || r.packs.length !== 2 || !Array.isArray(r.used) || r.used.length !== 2 || !Array.isArray(r.timeouts)) return null;
+	const turns = readTurns(r.turns);
+	if (!turns || typeof r.deadline !== "string" || typeof r.status !== "string" || typeof r.version !== "number") return null;
+	const pack = (p) => isObj(p) ? {
+		quiver: isObj(p.quiver) ? p.quiver : {},
+		shield: p.shield ?? null,
+		bow: p.bow ?? "starter"
+	} : null;
+	const seatNum = (v) => v === 0 || v === 1 ? v : null;
+	return {
+		id,
+		seed,
+		seat_a: r.seat_a,
+		seat_b: r.seat_b,
+		name_a: String(r.name_a ?? ""),
+		name_b: String(r.name_b ?? ""),
+		world: r.world,
+		status: r.status,
+		packs: [pack(r.packs[0]), pack(r.packs[1])],
+		turns,
+		used: [isObj(r.used[0]) ? r.used[0] : {}, isObj(r.used[1]) ? r.used[1] : {}],
+		timeouts: [Number(r.timeouts[0]) || 0, Number(r.timeouts[1]) || 0],
+		deadline: r.deadline,
+		winner: seatNum(r.winner),
+		ending: r.ending ?? null,
+		leaver: seatNum(r.leaver),
+		version: r.version,
+		created_at: String(r.created_at ?? ""),
+		last_action_at: String(r.last_action_at ?? ""),
+		finished_at: typeof r.finished_at === "string" ? r.finished_at : null
+	};
+}
+//#endregion
+//#region shared/maths/focusResults.ts
+/**
+* What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
+* results"). The database matches each answer to the focuses that were running at its time; the server works out the two
+* things only the maths code knows: which ladder skills own the answer's key, and whether it was quick.
+*/
+let owners = null;
+/** The ladder skills that own a mastery key (usually one). Empty if the key isn't on the ladder. */
+function skillsOfKey(key) {
+	if (!owners) {
+		owners = new Map();
+		for (const skill of LADDER) for (const k of skill.keys) owners.set(k, [...owners.get(k) ?? [], skill.id]);
+	}
+	return owners.get(key) ?? [];
+}
+/** The answers worth sending: those on a ladder skill. */
+function focusResultAnswers(answers, pack) {
+	const quickMs = quickMsForPack(pack);
+	const out = [];
+	for (const a of answers) {
+		const skills = skillsOfKey(a.key);
+		if (skills.length > 0) out.push({
+			skills,
+			at: a.at,
+			correct: a.correct,
+			quick: a.correct && a.ms <= quickMs
+		});
+	}
+	return out;
+}
+//#endregion
+//#region supabase/functions/_shared/focusResults.ts
+/**
+* Adds a batch of answers to the results of the maths focuses running for the student (stage F.8). Call it only for a batch the
+* records took for the first time (record_fact_answers says 0 for one it has seen), so a retry never counts twice. It never
+* throws and never blocks saving: the answers are already saved, and a problem here is only logged (the code, never who).
+*/
+async function countForFocuses(rpc, player, pack, answers, from) {
+	try {
+		const rows = focusResultAnswers(answers, pack);
+		if (rows.length === 0) return;
+		const { error } = await rpc("add_maths_focus_results", {
+			player,
+			answers: rows
+		});
+		if (error) console.error(`${from}: focus results not counted (${error.code ?? "unknown"})`);
+	} catch {
+		console.error(`${from}: focus results not counted`);
+	}
+}
+//#endregion
+//#region supabase/functions/_shared/recordAnswers.ts
+/** A UUID made from text: the same text always gives the same id, so a save sent twice is one batch. */
+async function batchIdFor(text) {
+	const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`maths-answers:${text}`))).slice(0, 16)].map((b) => b.toString(16).padStart(2, "0")).join("");
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+/**
+* Saves answers the server has marked, the one approved way (docs/GAME_DEVELOPMENT_GUIDE.md, section 4.1 rule 6):
+* split by the pack that keeps each record, one batch per pack with an id made from `once` (something unique to this
+* save, such as the run's seed and the question's slot), each pack's own quick time, times kept to at most two
+* minutes (`keptMs`), and the running maths focuses'
+* results counted for a batch the records took for the first time, so a retry never counts twice.
+* It never throws: a problem is logged with its code (never who) and the game goes on.
+*/
+async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`)) {
+	const result = {
+		saved: 0,
+		failed: 0
+	};
+	for (const [pack, group] of groupByPack(answers)) try {
+		const { data, error } = await rpc("record_fact_answers", {
+			player,
+			pack,
+			batch_id: await batchId(once, pack),
+			answers: group.map((a) => ({
+				...a,
+				ms: keptMs(a.ms)
+			})),
+			quick_ms: quickMsForPack(pack),
+			fluent_days: 2,
+			top_box: 4
+		});
+		if (error) {
+			result.failed++;
+			console.error(`${from}: record answers failed (${error.code ?? "unknown"})`);
+			continue;
+		}
+		const saved = typeof data === "number" ? data : 0;
+		result.saved += saved;
+		if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
+	} catch {
+		result.failed++;
+		console.error(`${from}: record answers failed`);
+	}
+	return result;
+}
+//#endregion
+//#region supabase/functions/_shared/signIn.ts
+/**
+* Who owns this sign-in token? Null if it's missing, expired, fake or not a signed-in user's.
+*
+* With the project's newer sign-in keys, the token's signature is checked right here against the
+* project's public keys (fetched once and kept for 10 minutes), with no trip to the sign-in
+* service. With the older shared secret (or a token signed with a key we don't know), the library
+* asks the sign-in service instead, exactly as `getUser` did. So this works the same before and
+* after the keys are switched in the Supabase dashboard; it only gets cheaper after.
+*/
+function userIdFromToken(auth) {
+	return async (token) => {
+		try {
+			const { data, error } = await auth.getClaims(token);
+			const claims = error ? null : data?.claims;
+			if (!claims || claims.role !== "authenticated" || typeof claims.sub !== "string" || !claims.sub) return null;
+			return claims.sub;
+		} catch {
+			return null;
+		}
+	};
+}
+//#endregion
+//#region shared/maths/serverQuestions.ts
+function hashSeed(text) {
+	let h = 2166136261;
+	for (let i = 0; i < text.length; i++) {
+		h ^= text.charCodeAt(i);
+		h = Math.imul(h, 16777619);
+	}
+	return h >>> 0;
+}
+/** A small seeded random number generator (numbers from 0 up to 1). The same text always gives the same numbers. */
+function seededRandom(text) {
+	let a = hashSeed(text);
+	return () => {
+		a = a + 1831565813 | 0;
+		let t = Math.imul(a ^ a >>> 15, 1 | a);
+		t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+		return ((t ^ t >>> 14) >>> 0) / 4294967296;
+	};
+}
+function publicQuestion(q, slot) {
+	return {
+		slot,
+		parts: q.parts,
+		spoken: q.spoken,
+		...q.prompt ? { prompt: q.prompt } : {},
+		...q.choices ? { choices: q.choices } : {},
+		...q.choiceLabels ? { choiceLabels: q.choiceLabels } : {},
+		...q.input ? { input: q.input } : {},
+		...q.maxLength ? { maxLength: q.maxLength } : {}
+	};
 }
 //#endregion
 //#region shared/archery/bot.ts
@@ -9424,121 +9681,6 @@ function judgeBotFight(seed, setup, level, shots, finished) {
 		}
 	};
 }
-/** Coins spent in all to reach Armory levels 1, 2, 3, 4 and 5. */
-const LEVEL_SPEND = [
-	0,
-	200,
-	600,
-	1200,
-	2e3
-];
-LEVEL_SPEND.length;
-/** Levels for the shields and helpers (arrows carry their own in arrows.ts; bows are open to everyone). */
-const SHIELD_LEVEL = {
-	wood: 1,
-	charm: 2,
-	bubble: 3
-};
-const SHOP = [
-	...ARROWS.filter((a) => a.forSale).map((a) => ({
-		id: a.id,
-		kind: "gear",
-		name: a.name,
-		does: a.does,
-		price: a.price,
-		qty: a.perPurchase ?? 1,
-		level: Math.max(1, a.level)
-	})),
-	...HELPERS.map((h) => ({
-		id: h.id,
-		kind: "gear",
-		name: h.name,
-		does: h.does,
-		price: h.price,
-		qty: 1,
-		level: h.level
-	})),
-	...SHIELDS.map((s) => ({
-		id: s.id,
-		kind: "shield",
-		name: s.name,
-		does: s.does,
-		price: s.price,
-		qty: 1,
-		level: SHIELD_LEVEL[s.id]
-	})),
-	...BOWS.filter((b) => b.price > 0).map((b) => ({
-		id: b.id,
-		kind: "bow",
-		name: b.name,
-		does: b.does,
-		price: b.price,
-		qty: 1,
-		level: 1
-	}))
-];
-const SHOP_BY = new Map(SHOP.map((s) => [`${s.kind}:${s.id}`, s]));
-/** Everything the Armory sells, in shop order. */
-function shopItems() {
-	return SHOP;
-}
-/** One shop item, or null if there's no such thing for sale. */
-function shopItem(kind, id) {
-	if (kind !== "gear" && kind !== "shield" && kind !== "bow") return null;
-	if (typeof id !== "string") return null;
-	return SHOP_BY.get(`${kind}:${id}`) ?? null;
-}
-/** What one item sells back for: half what one cost, rounded down. */
-function sellPrice(item) {
-	return Math.floor(item.price / item.qty / 2);
-}
-/** Is this an item a pupil can pack (an arrow that isn't the Plain Arrow, or a helper)? */
-function isPackable(id) {
-	if (isHelperId(id)) return true;
-	return isArrowId(id) && !arrowKind(id).unlimited;
-}
-/**
-* Reads a packed quiver from a request: arrows and helpers the pupil owns enough of, the shield and bow they own.
-* Returns the cleaned-up setup, or why it can't be packed.
-*/
-function readPack(raw, a) {
-	if (!raw || typeof raw !== "object") return { problem: "not a quiver" };
-	const r = raw;
-	const quiver = {};
-	if (r.quiver !== void 0) {
-		if (!r.quiver || typeof r.quiver !== "object" || Array.isArray(r.quiver)) return { problem: "not a quiver" };
-		for (const [id, n] of Object.entries(r.quiver)) {
-			if (!isPackable(id)) return { problem: `can't pack ${id}` };
-			if (!Number.isInteger(n) || n < 0 || n > 5) return { problem: "a count is wrong" };
-			if (n > (a.gear[id] ?? 0)) return { problem: `not enough ${id}` };
-			if (n > 0) quiver[id] = n;
-		}
-	}
-	let shield = null;
-	if (r.shield !== void 0 && r.shield !== null) {
-		if (!isShieldId(r.shield) || !a.shields.includes(r.shield)) return { problem: "not your shield" };
-		shield = r.shield;
-	}
-	let bow = "starter";
-	if (r.bow !== void 0 && r.bow !== null && r.bow !== "starter") {
-		if (!isBowId(r.bow) || !a.bows.includes(r.bow)) return { problem: "not your bow" };
-		bow = r.bow;
-	}
-	return { pack: {
-		quiver,
-		shield,
-		bow
-	} };
-}
-/** What comes back after a fight: everything packed that wasn't used. */
-function unused(pack, used) {
-	const back = {};
-	for (const [id, n] of Object.entries(pack.quiver)) {
-		const left = n - (used[id] ?? 0);
-		if (left > 0) back[id] = left;
-	}
-	return back;
-}
 //#endregion
 //#region shared/space/mathsQuestion.ts
 /**
@@ -9681,6 +9823,253 @@ var RateLimiter = class {
 		return true;
 	}
 };
+//#endregion
+//#region supabase/functions/archery/duels.ts
+/**
+* Fights against classmates, in the Archery Challenge server function (docs/ARCHERY-PLAN.md, section 7, Stage 6). The
+* same pattern as Power Clash: the browser only ever asks ("challenge Mia in the Snow", "yes", "here's my quiver",
+* "shoot at 52° and 67", "the clock ran out", "I'm leaving"); this works out who's asking from their sign-in, checks it's
+* their turn, plays the shot with the game's own engine and saves "only if nothing has changed since it looked".
+*
+*   duel-challenge  {request, other, world}   sends a challenge (same school and class only);
+*   duel-answer     {duel, accept}            the classmate says yes (both pack) or no;
+*   duel-pack       {duel, pack}              packs a quiver (the gear comes out of the bag); both packed = the fight starts;
+*   shot            {duel, version, shot}     a shot on your own turn;
+*   times-up        {duel}                    the turn's time ran out (the server checks its own clock): the turn is used up;
+*   leave           {duel}                    gives up (the other player wins, nobody gets points) or calls off a challenge.
+*
+* One round (James, 22 Oct 2026). Finishing earns DUEL_POINTS, or DUEL_WIN_POINTS for the winner; a fight someone left,
+* or that the timer ended, gives nobody points. Every reply carries the fight as it now is.
+*/
+const DUEL_ACTIONS = [
+	"duel-challenge",
+	"duel-answer",
+	"duel-pack",
+	"shot",
+	"times-up",
+	"leave"
+];
+/** Words pupils see. Kind, short, nothing technical. */
+const SAY = {
+	bad: "That couldn't be read.",
+	busy: "That couldn't be done just now. Try again in a moment.",
+	notYours: "That isn't your fight.",
+	away: "That classmate isn't in Archery Challenge right now.",
+	otherClass: "You can only challenge classmates in your own class.",
+	inFight: "One of you is already in a fight. Try again when it's over.",
+	theirsOff: "Archery Challenge isn't switched on for their class.",
+	late: "That challenge has run out.",
+	notStarted: "The fight hasn't started yet.",
+	over: "This fight has already ended.",
+	changed: "The fight changed just then. Have another look.",
+	notYourTurn: "It's not your turn yet.",
+	notYet: "There's still time on the clock.",
+	gear: "You don't have all of that in your bag.",
+	switchedOff: "Your teacher has switched Archery Challenge off, so this fight has stopped. Any arrows you didn't use are back in your bag."
+};
+const isRequestId$1 = (v) => typeof v === "string" && /^[A-Za-z0-9_-]{8,80}$/.test(v);
+const isUuid = (v) => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
+const isDuelId = (v) => Number.isSafeInteger(v) && v >= 1;
+const ok = (body) => ({
+	status: 200,
+	body
+});
+const no = (status, error, extra = {}) => ({
+	status,
+	body: {
+		error,
+		...extra
+	}
+});
+/** Plays the fight's turns so far. Null if they don't replay (which would be a bug: each was checked when played). */
+function replay(d) {
+	if (!d.packs[0] || !d.packs[1]) return null;
+	const { run, problem } = replayDuel(d.seed, duelSetup(d.world, [d.packs[0], d.packs[1]]), d.turns);
+	if (problem) {
+		console.error(`archery: a classmate fight does not replay (${problem})`);
+		return null;
+	}
+	return run;
+}
+const sameShot = (a, b) => !!a && !a.pass && a.angle === b.angle && a.power === b.power && a.arrow === b.arrow && !!a.apple === !!b.apple;
+/**
+* Handles one classmate-fight request from `player`. `on` is whether the game is switched on for their own class (the
+* handler has read it): while it's off they can only end a fight, never play one.
+*/
+async function handleDuel(services, player, action, body, on, everything) {
+	if (action === "duel-challenge") {
+		const { other, world, request } = body;
+		if (!isUuid(other) || !WORLD_IDS.includes(world) || !isRequestId$1(request)) return no(400, SAY.bad);
+		const seed = parseInt(services.randomHex(4), 16) >>> 0;
+		const r = await services.duelChallenge(player, request, other, world, seed, CHALLENGE_MS);
+		if (!r.ok) return r.why === "refused" ? no(400, SAY.bad) : no(503, SAY.busy);
+		const why = r.value.result;
+		if (why !== "ok" || r.value.duel === null) {
+			const words = why === "away" ? SAY.away : why === "class" ? SAY.otherClass : why === "busy" ? SAY.inFight : why === "off" ? SAY.theirsOff : SAY.bad;
+			return no(409, words, { code: why });
+		}
+		const loaded = await services.duelLoad(r.value.duel);
+		if (loaded === "busy" || !loaded) return no(503, SAY.busy);
+		return ok({ duel: loaded.duel });
+	}
+	if (!isDuelId(body.duel)) return no(400, SAY.bad);
+	const id = body.duel;
+	if (action === "duel-answer") {
+		if (typeof body.accept !== "boolean") return no(400, SAY.bad);
+		const r = await services.duelAnswer(player, id, body.accept, PACK_MS);
+		if (!r.ok) return r.why === "refused" ? no(400, SAY.bad) : no(503, SAY.busy);
+		const { result, duel } = r.value;
+		if (result === "not-yours") return no(403, SAY.notYours);
+		if (result === "late") return no(409, SAY.late, {
+			code: "late",
+			duel
+		});
+		if (result === "busy") return no(409, SAY.inFight, {
+			code: "busy",
+			duel
+		});
+		return ok({ duel });
+	}
+	if (action === "duel-pack") {
+		const packed = readPack(body.pack, everything);
+		if ("problem" in packed) return no(400, SAY.gear, { code: "gear" });
+		const r = await services.duelPack(player, id, packed.pack, DUEL_TURN_MS);
+		if (!r.ok) return r.why === "refused" ? no(400, SAY.bad) : no(503, SAY.busy);
+		const { result, duel, state } = r.value;
+		if (result === "not-yours") return no(403, SAY.notYours);
+		if (result === "gear") return no(400, SAY.gear, {
+			code: "gear",
+			duel,
+			state
+		});
+		if (result === "late") return no(409, duel?.status === "packing" ? SAY.late : SAY.over, {
+			code: "late",
+			duel,
+			state
+		});
+		return ok({
+			duel,
+			state
+		});
+	}
+	const loaded = await services.duelLoad(id);
+	if (loaded === "busy") return no(503, SAY.busy);
+	const seat = loaded ? seatOf(loaded.duel, player) : -1;
+	if (!loaded || seat < 0) return no(403, SAY.notYours);
+	const d = loaded.duel;
+	if ((!on || !loaded.on[0] || !loaded.on[1]) && duelOpen(d)) {
+		const run = d.status === "playing" ? replay(d) : null;
+		const ended = await services.duelEnd(d.id, d.version, d.status === "playing" ? "done" : "cancelled", d.status === "playing" ? "switched-off" : null, null, null, null, run ? run.used : null, null);
+		if (ended === "busy") return no(503, SAY.busy);
+		if (!ended) return no(409, SAY.changed, { code: "changed" });
+		return no(403, SAY.switchedOff, {
+			code: "game-off",
+			duel: ended
+		});
+	}
+	if (!on) return no(403, SAY.switchedOff, {
+		code: "game-off",
+		duel: d
+	});
+	if (action === "leave") {
+		if (!duelOpen(d)) return ok({ duel: d });
+		if (d.status !== "playing") {
+			const status = d.status === "asked" && seat === 1 ? "declined" : "cancelled";
+			const ended = await services.duelEnd(d.id, d.version, status, null, null, null, null, null, null);
+			if (ended === "busy") return no(503, SAY.busy);
+			if (!ended) return no(409, SAY.changed, { code: "changed" });
+			return ok({ duel: ended });
+		}
+		const run = replay(d);
+		if (!run) return no(500, SAY.busy);
+		const ended = await services.duelEnd(d.id, d.version, "done", "left", 1 - seat, seat, null, run.used, null);
+		if (ended === "busy") return no(503, SAY.busy);
+		if (!ended) return no(409, SAY.changed, { code: "changed" });
+		return ok({ duel: ended });
+	}
+	if (d.status === "asked" || d.status === "packing") return no(409, SAY.notStarted, {
+		code: "not-started",
+		duel: d
+	});
+	if (d.status !== "playing") {
+		if (action === "shot" && body.version === d.version - 1 && isLastMine(d, seat, body.shot)) return ok({ duel: d });
+		return no(409, SAY.over, {
+			code: "over",
+			duel: d
+		});
+	}
+	if (action === "shot") {
+		const shot = readShot(body.shot);
+		if (!shot || !Number.isInteger(body.version)) return no(400, SAY.bad);
+		if (body.version !== d.version) {
+			if (body.version === d.version - 1 && isLastMine(d, seat, shot)) return ok({ duel: d });
+			return no(409, SAY.changed, {
+				code: "changed",
+				duel: d
+			});
+		}
+		const run = replay(d);
+		if (!run) return no(500, SAY.busy);
+		if (run.round.turn !== seat) return no(409, SAY.notYourTurn, {
+			code: "not-your-turn",
+			duel: d
+		});
+		const taken = takeShot(run, shot);
+		if (taken.problem) return no(400, `That shot can't be played: ${taken.problem}.`, {
+			code: "illegal",
+			duel: d
+		});
+		return afterTurn(services, d, run, [...d.turns, shot], timeoutsAfter(d.timeouts, seat, false), true);
+	}
+	const left = Date.parse(d.deadline) + DUEL_GRACE_MS - services.now();
+	if (!(left <= 0)) return no(409, SAY.notYet, {
+		code: "not-yet",
+		secondsLeft: Number.isFinite(left) ? Math.ceil(left / 1e3) : 45,
+		duel: d
+	});
+	const run = replay(d);
+	if (!run) return no(500, SAY.busy);
+	const turnSeat = run.round.turn;
+	takeShot(run, PASS);
+	const timeouts = timeoutsAfter(d.timeouts, turnSeat, true);
+	if (tooManyTimeouts(timeouts) && run.winner === null) {
+		const ended = await services.duelEnd(d.id, d.version, "done", "timeouts", null, turnSeat, [...d.turns, PASS], run.used, timeouts);
+		if (ended === "busy") return no(503, SAY.busy);
+		if (!ended) return no(409, SAY.changed, { code: "changed" });
+		return ok({ duel: ended });
+	}
+	return afterTurn(services, d, run, [...d.turns, PASS], timeouts, false);
+}
+/** Was this player's shot the last turn played (so the same shot sent again is the same request)? */
+function isLastMine(d, seat, raw) {
+	const shot = readShot(raw);
+	if (!shot || d.turns.length === 0) return false;
+	const last = d.turns.length - 1;
+	return last % 2 === seat && sameShot(d.turns[last], shot);
+}
+/** Saves the turn just played: the fight goes on (the next player's 45 seconds start) or it's over (points to both). */
+async function afterTurn(services, d, run, turns, timeouts, real) {
+	if (run.winner === null) {
+		const saved = await services.duelMove(d.id, d.version, turns, run.used, timeouts, services.now() + DUEL_TURN_MS, real);
+		if (saved === "busy") return no(503, SAY.busy);
+		if (!saved) return no(409, SAY.changed, { code: "changed" });
+		return ok({ duel: saved });
+	}
+	const winner = run.winner === "draw" ? null : run.winner;
+	const ended = await services.duelEnd(d.id, d.version, "done", "finished", winner, null, turns, run.used, timeouts);
+	if (ended === "busy") return no(503, SAY.busy);
+	if (!ended) return no(409, SAY.changed, { code: "changed" });
+	const points = [winner === 0 ? 4 : 3, winner === 1 ? 4 : 3];
+	for (const i of [0, 1]) try {
+		await services.awardPoints(i === 0 ? d.seat_a : d.seat_b, points[i], `archery-duel:${d.id}:${i}`);
+	} catch {
+		console.error("archery: classmate fight points could not be given");
+	}
+	return ok({
+		duel: ended,
+		points
+	});
+}
 /** An Armory with everything, for checking a quiver's shape. */
 const EVERYTHING = {
 	coins: 0,
@@ -9726,6 +10115,11 @@ function makeHandler(services) {
 		const body = raw;
 		const on = await services.enabled(player);
 		if (on === null) return busy("The Armory");
+		const duelAction = DUEL_ACTIONS.includes(body.action) ? body.action : null;
+		if (duelAction && (on || duelAction === "shot" || duelAction === "times-up" || duelAction === "leave")) {
+			const r = await handleDuel(services, player, duelAction, body, on, EVERYTHING);
+			return reply(r.status, r.body);
+		}
 		if (!on) return reply(403, {
 			error: "Archery Challenge is not switched on for your class.",
 			code: "game-off"
@@ -9940,6 +10334,24 @@ async function read(name, args) {
 	const r = await call(name, args);
 	return r.ok ? r.value : "busy";
 }
+/** A classmate fight row from a database function: 'busy' if it couldn't be reached, null if it had changed. */
+async function duelRow(name, args) {
+	const r = await call(name, args);
+	if (!r.ok) return "busy";
+	return r.value && r.value.id != null ? parseDuel(r.value) : null;
+}
+/** A reply with a fight row in it ({ result, duel, … }), with the row read properly. */
+function withDuel(r) {
+	if (!r.ok) return r;
+	const duel = r.value.duel === void 0 || r.value.duel === null ? void 0 : parseDuel(r.value.duel) ?? void 0;
+	return {
+		ok: true,
+		value: {
+			...r.value,
+			duel
+		}
+	};
+}
 Deno.serve(makeHandler({
 	now: () => Date.now(),
 	randomHex: (bytes) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, "0")).join(""),
@@ -10038,6 +10450,59 @@ Deno.serve(makeHandler({
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "archery");
 	},
+	async duelLoad(duel) {
+		const r = await read("archery_duel_load", { duel });
+		if (r === "busy" || r === null) return r;
+		const row = parseDuel(r.duel);
+		return row ? {
+			duel: row,
+			on: [r.on[0] === true, r.on[1] === true]
+		} : null;
+	},
+	duelChallenge: (player, request, other, world, seed, waitMs) => call("archery_duel_challenge", {
+		player,
+		request_id: request,
+		other,
+		world,
+		seed,
+		wait_ms: waitMs
+	}),
+	async duelAnswer(player, duel, accept, packMs) {
+		return withDuel(await call("archery_duel_answer", {
+			player,
+			duel,
+			accept,
+			pack_ms: packMs
+		}));
+	},
+	async duelPack(player, duel, pack, turnMs) {
+		return withDuel(await call("archery_duel_pack", {
+			player,
+			duel,
+			pack,
+			turn_ms: turnMs
+		}));
+	},
+	duelMove: (duel, version, turns, used, timeouts, deadlineMs, real) => duelRow("archery_duel_move", {
+		duel,
+		version,
+		turns,
+		used,
+		timeouts,
+		deadline_ms: deadlineMs,
+		real
+	}),
+	duelEnd: (duel, version, status, ending, winner, leaver, turns, used, timeouts) => duelRow("archery_duel_end", {
+		duel,
+		version,
+		status,
+		ending,
+		winner,
+		leaver,
+		turns,
+		used,
+		timeouts
+	}),
 	async awardPoints(player, points, once) {
 		const { error } = await admin.rpc("add_game_points", {
 			player,

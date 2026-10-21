@@ -7,7 +7,8 @@
  * Players take turns. Each round has fresh land and new wind from the seed (the wind stays the same
  * all round), and the first turn swaps each round (player 0 starts round 1). A round ends when one
  * archer is left (both popping at once is a draw), or after MAX_SHOTS_PER_ROUND, when more health
- * wins. First to win ROUNDS_TO_WIN rounds wins the fight.
+ * wins. First to win ROUNDS_TO_WIN rounds wins the fight; a classmate fight (`setup.oneRound`) is one round only.
+ * A classmate's turn the timer used up is a shot with `pass` (nothing flies, but the turn still ends).
  *
  * Screens and bots play a fight one shot at a time with `startFight` and `takeShot`, which is exactly
  * what `playFight` does, so they always agree with a replay.
@@ -70,24 +71,26 @@ export function newRound(seed: number, index: number, setup: FightSetup, used: F
 export function playShot(round: Round, player: number, shot: Shot, keepPath = false): ShotRecord {
   const { land, archers } = round;
   const me = archers[player];
+  // A turn the timer used up (classmate fights): no Apple, no arrow, nothing falls; only the end of the turn happens.
+  const pass = shot.pass === true;
   let apple = 0;
-  if (shot.apple && !me.popped) {
+  if (!pass && shot.apple && !me.popped) {
     apple = Math.min(APPLE_HEALTH, START_HEALTH - me.health);
     me.health += apple;
   }
-  const w = newWork(round, player, shot, keepPath);
-  runArrow(w);
-  const raw = w.raw;
-  if (w.c1 >= w.c0) {
+  const w = pass ? null : newWork(round, player, shot, keepPath);
+  if (w) runArrow(w);
+  const raw = w ? w.raw : [0, 0];
+  if (w && w.c1 >= w.c0) {
     settle(land, w.c0, w.c1);
     if (round.world === 'desert') slideSand(land, w.c0, w.c1, archers);
   }
-  const tumble = shake(w);
-  if (w.shaken) settle(land, w.shaken[0], w.shaken[1]);
+  const tumble = w ? shake(w) : [false, false];
+  if (w?.shaken) settle(land, w.shaken[0], w.shaken[1]);
   const fell: [number, number] = [0, 0];
   const slid: [number, number] = [0, 0];
   const umbrella: [boolean, boolean] = [false, false];
-  for (let i = 0; i < archers.length; i++) {
+  for (let i = 0; w && i < archers.length; i++) {
     const a = archers[i];
     if (a.popped) continue;
     fell[i] = dropArcher(land, a);
@@ -114,7 +117,7 @@ export function playShot(round: Round, player: number, shot: Shot, keepPath = fa
 
   // The end of the turn. Sticky Goo: new puddles join, everyone standing in one is hurt, and each puddle has a shot less.
   const goo: [number, number] = [0, 0];
-  const puddles = [...round.goo, ...w.puddles];
+  const puddles = [...round.goo, ...(w ? w.puddles : [])];
   for (let i = 0; i < archers.length; i++) {
     if (puddles.some((p) => inPuddle(p, archers[i]))) {
       goo[i] = hurt(archers[i], GOO_DAMAGE);
@@ -143,17 +146,17 @@ export function playShot(round: Round, player: number, shot: Shot, keepPath = fa
     me.shardsBy = -1;
   } else if (by >= 0) me.shardsBy = -1;
   // New shards from this shot's Glass Arrow.
-  for (let i = 0; i < archers.length; i++) if (w.stabbed[i] && !archers[i].popped) archers[i].shardsBy = player;
+  for (let i = 0; w && i < archers.length; i++) if (w.stabbed[i] && !archers[i].popped) archers[i].shardsBy = player;
 
   round.shots++;
-  const hit = w.hit ?? { kind: 'timeout' as const, x: me.x, y: me.y, archer: null, steps: 0 };
+  const hit = w?.hit ?? { kind: 'timeout' as const, x: me.x, y: me.y, archer: null, steps: 0 };
   const record: ShotRecord = {
-    round: round.index, player, shot: { ...shot }, wind: round.wind, hit, bounce: w.bounce, damage, fell, slid,
+    round: round.index, player, shot: { ...shot }, wind: round.wind, hit, bounce: w ? w.bounce : null, damage, fell, slid,
     after: [copyArcher(archers[0]), copyArcher(archers[1])], apple, umbrella, goo, glass, sting,
   };
   if (keepPath) {
-    record.path = w.path;
-    record.events = w.events ?? [];
+    record.path = w ? w.path : [];
+    record.events = w?.events ?? [];
   }
   return record;
 }
@@ -174,6 +177,8 @@ export function roundWinner(round: Round): 0 | 1 | 'draw' | null {
 /** Why a shot can't be played, or null if it's fine. `used` is what the player has already used. */
 export function shotProblem(shot: Shot, setup: FightSetup, player: number, used: Partial<Record<ItemId, number>>): string | null {
   if (!shot || typeof shot !== 'object') return 'not a shot';
+  // A used-up turn takes nothing, so there's nothing to check.
+  if (shot.pass === true) return null;
   if (!Number.isInteger(shot.angle) || shot.angle < 0 || shot.angle > MAX_ANGLE) return 'angle must be a whole number from 0 to 180';
   if (!Number.isInteger(shot.power) || shot.power < 0 || shot.power > MAX_POWER) return 'power must be a whole number from 0 to 100';
   if (!isArrowId(shot.arrow)) return 'no such arrow';
@@ -228,8 +233,8 @@ export function takeShot(run: FightRun, shot: Shot, keepPath = false): TakenShot
   const record = playShot(round, player, shot, keepPath);
   run.records.push(record);
   const used = run.used[player];
-  if (!arrowKind(shot.arrow).unlimited) used[shot.arrow] = (used[shot.arrow] ?? 0) + 1;
-  if (shot.apple) used.apple = (used.apple ?? 0) + 1;
+  if (!shot.pass && !arrowKind(shot.arrow).unlimited) used[shot.arrow] = (used[shot.arrow] ?? 0) + 1;
+  if (!shot.pass && shot.apple) used.apple = (used.apple ?? 0) + 1;
   for (let i = 0; i < 2; i++) if (record.umbrella[i]) run.used[i].umbrella = (run.used[i].umbrella ?? 0) + 1;
 
   const w = roundWinner(round);
@@ -240,7 +245,8 @@ export function takeShot(run: FightRun, shot: Shot, keepPath = false): TakenShot
   round.winner = w;
   run.rounds.push({ index: round.index, landSeed: round.landSeed, wind: round.wind, winner: w, shots: round.shots });
   if (w !== 'draw') run.roundWins[w]++;
-  if (run.roundWins[0] >= ROUNDS_TO_WIN) run.winner = 0;
+  if (run.setup.oneRound) run.winner = w;
+  else if (run.roundWins[0] >= ROUNDS_TO_WIN) run.winner = 0;
   else if (run.roundWins[1] >= ROUNDS_TO_WIN) run.winner = 1;
   else if (run.rounds.length >= MAX_ROUNDS) run.winner = run.roundWins[0] > run.roundWins[1] ? 0 : run.roundWins[1] > run.roundWins[0] ? 1 : 'draw';
   else run.round = newRound(run.seed, round.index + 1, run.setup, run.used, round.archers);

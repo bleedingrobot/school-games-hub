@@ -2,6 +2,7 @@
 // `npm run build:functions -- archery` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
 import { parseFocus } from '../../../shared/maths/focus';
+import { parseDuel, type DuelRow } from '../../../shared/archery/duel';
 import type { MathsContext } from '../../../shared/archery/speed';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
@@ -37,6 +38,21 @@ async function call<T>(name: string, args: Record<string, unknown>): Promise<Out
 async function read<T>(name: string, args: Record<string, unknown>): Promise<T | null | 'busy'> {
   const r = await call<T | null>(name, args);
   return r.ok ? r.value : 'busy';
+}
+
+/** A classmate fight row from a database function: 'busy' if it couldn't be reached, null if it had changed. */
+async function duelRow(name: string, args: Record<string, unknown>): Promise<DuelRow | null | 'busy'> {
+  const r = await call<unknown>(name, args);
+  if (!r.ok) return 'busy';
+  // A function returning a row gives back all-null columns for "no row".
+  return r.value && (r.value as { id?: unknown }).id != null ? parseDuel(r.value) : null;
+}
+
+/** A reply with a fight row in it ({ result, duel, … }), with the row read properly. */
+function withDuel<T extends { duel?: unknown }>(r: Outcome<T>): Outcome<T & { duel?: DuelRow }> {
+  if (!r.ok) return r;
+  const duel = r.value.duel === undefined || r.value.duel === null ? undefined : (parseDuel(r.value.duel) ?? undefined);
+  return { ok: true, value: { ...r.value, duel } };
 }
 
 Deno.serve(
@@ -99,6 +115,24 @@ Deno.serve(
       // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'archery');
     },
+    async duelLoad(duel) {
+      const r = await read<{ duel: unknown; on: [boolean, boolean] }>('archery_duel_load', { duel });
+      if (r === 'busy' || r === null) return r;
+      const row = parseDuel(r.duel);
+      return row ? { duel: row, on: [r.on[0] === true, r.on[1] === true] } : null;
+    },
+    duelChallenge: (player, request, other, world, seed, waitMs) =>
+      call('archery_duel_challenge', { player, request_id: request, other, world, seed, wait_ms: waitMs }),
+    async duelAnswer(player, duel, accept, packMs) {
+      return withDuel(await call<{ result: 'ok' | 'late' | 'busy' | 'not-yours'; duel?: unknown }>('archery_duel_answer', { player, duel, accept, pack_ms: packMs }));
+    },
+    async duelPack(player, duel, pack, turnMs) {
+      return withDuel(await call<{ result: 'ok' | 'already' | 'gear' | 'late' | 'not-yours'; duel?: unknown; state?: never }>('archery_duel_pack', { player, duel, pack, turn_ms: turnMs }));
+    },
+    duelMove: (duel, version, turns, used, timeouts, deadlineMs, real) =>
+      duelRow('archery_duel_move', { duel, version, turns, used, timeouts, deadline_ms: deadlineMs, real }),
+    duelEnd: (duel, version, status, ending, winner, leaver, turns, used, timeouts) =>
+      duelRow('archery_duel_end', { duel, version, status, ending, winner, leaver, turns, used, timeouts }),
     async awardPoints(player, points, once) {
       const { error } = await admin.rpc('add_game_points', { player, game: 'archery', points, once });
       if (error) console.error(`archery: points failed (${error.code ?? 'unknown'})`);

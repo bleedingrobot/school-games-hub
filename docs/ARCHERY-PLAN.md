@@ -425,3 +425,12 @@ James asked me to push on past Stage 3 overnight, so Stage 4 followed straight o
 3. The preview's "+500 pretend coins" is only in the preview, never in the real game.
 
 **Go-live list (so far):** as Stage 4, plus: `archeryChallenge` appended to `GAMES` in `src/games/registry.ts` behind `archeryOn()`; the teacher panel (Stage 7) so teachers can switch it on.
+
+## Stage 6 results (in progress, 22 Oct 2026)
+
+**James's answers (22 Oct 2026, before building):**
+1. **A classmate fight is one round** (win the round, win the fight), about 5–10 minutes, so it fits a lesson. Bot fights stay best of 3.
+2. **A fight someone leaves gives nobody points**, not even the pupil left behind (so friends can't farm points by leaving straight away). Unused gear still goes back to both.
+3. **Keep all my earlier calls** from Stages 3–5 (shields last the whole fight, Earth Shaker crumbles cliffs, bots never use Glass, Armory levels 0/200/600/1,200/2,000, the "Earn coins: speed round" button, 2-hour open fights give gear back, the server checks every bot shot). He may change them after trying the game.
+
+Next free migration number (checked 22 Oct 2026 after merging `origin/main`): `20261022000100`.
