@@ -91,6 +91,8 @@ Prices are in **coins**. A perfect speed round earns 100 (section 5). **Special 
 | Crossbow Bolt | a straight, fast shot with no drop, cuts through dirt, short range | 150 each | 4 |
 | Giant Arrow | the big one: a huge blast with a shockwave of leaves and confetti | 400 each | 5 |
 
+| **The pupil's arrow** (name to come) | **Placeholder (James, 21 Oct 2026):** the pupil who drew the game is inventing an arrow. Its name, what it does, its price and its level are blank until James sends them. It's reserved in the code (id `pupil`) but is not sold and bots never use it until it's filled in. | to come | to come |
+
 (The Feather Arrow, which left a dotted path to aim from, is gone: there's no aiming help.)
 
 **Shields and helpers:** Wooden Shield (soaks 40, 100 coins), Wind Charm (soaks 30 and lifts arrows coming down on you, 150), Bubble Shield (soaks 60 and bounces the first arrow away, 250), Umbrella (no fall damage, 40 each), Apple (+15 health on your turn, 50 each).
