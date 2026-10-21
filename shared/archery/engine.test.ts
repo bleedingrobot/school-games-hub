@@ -12,10 +12,19 @@ import {
 } from './land';
 import { makeRandom, mixSeed } from './random';
 import { flyArrow } from './shot';
-import { AIR, DIRT, type Archer, type FightSetup, type Shot } from './types';
+import { AIR, BUILDING, DIRT, ICE, TREE, WORLD_IDS, type Archer, type FightSetup, type Land, type Shot } from './types';
+
+/** The top of the land itself in a column, leaving out trees and ice (they stand on it). */
+function groundRow(land: Land, col: number): number {
+  for (let r = 0; r < ROWS; r++) {
+    const v = land.cells[r * COLS + col];
+    if (v === DIRT || v === BUILDING) return r;
+  }
+  return ROWS;
+}
 
 const archer = (x: number, y: number, health = START_HEALTH): Archer => ({ x, y, health, shield: 0, popped: false });
-const plainOnly: FightSetup = { players: [{ quiver: {}, shield: 0 }, { quiver: {}, shield: 0 }] };
+const plainOnly: FightSetup = { world: 'forest', players: [{ quiver: {}, shield: 0 }, { quiver: {}, shield: 0 }] };
 
 describe('random', () => {
   it('gives the same numbers from the same seed, and different ones from another', () => {
@@ -60,19 +69,19 @@ describe('aim table', () => {
 });
 
 describe('land', () => {
-  it('is properly hilly, and the archers can rarely see each other (1,000 seeds)', () => {
+  it.each(WORLD_IDS)('is properly hilly in the %s, and the archers can rarely see each other (1,000 seeds)', (world) => {
     let failed = 0, see = 0, tall = 0, relief = 0;
     for (let s = 0; s < 1000; s++) {
-      const r = makeRoundLand(s);
+      const r = makeRoundLand(s, world);
       if (!r.passed) failed++;
       if (canSee(r.land, r.archers[0], r.archers[1])) see++;
       let top = ROWS, bottom = 0;
       for (let c = 0; c < COLS; c++) {
-        const row = surfaceRow(r.land, c);
+        const row = groundRow(r.land, c);
         if (row < top) top = row;
         if (row > bottom) bottom = row;
       }
-      // Peaks never go above the limit (75% of the height).
+      // Peaks (and rooftops) never go above the limit (75% of the height).
       expect(FIELD_H - top * CELL).toBeLessThanOrEqual(LAND_MAX_HEIGHT * FIELD_H + CELL);
       const rel = ((bottom - top) * CELL) / FIELD_H;
       relief += rel;
@@ -84,9 +93,9 @@ describe('land', () => {
     expect(relief / 1000).toBeGreaterThan(0.4);
   });
 
-  it('puts a real hill between the archers, the left one on the left', () => {
+  it.each(WORLD_IDS)('puts a real hill (or building) between the archers in the %s, the left one on the left', (world) => {
     for (let s = 0; s < 50; s++) {
-      const r = makeRoundLand(s);
+      const r = makeRoundLand(s, world);
       const [a, b] = r.archers;
       expect(a.x).toBeLessThan(FIELD_W / 2);
       expect(b.x).toBeGreaterThan(FIELD_W / 2);
@@ -95,11 +104,11 @@ describe('land', () => {
     }
   });
 
-  it('makes the same land from the same seed', () => {
-    const a = makeRoundLand(123), b = makeRoundLand(123);
+  it.each(WORLD_IDS)('makes the same %s land from the same seed', (world) => {
+    const a = makeRoundLand(123, world), b = makeRoundLand(123, world);
     expect(Buffer.from(a.land.cells).equals(Buffer.from(b.land.cells))).toBe(true);
     expect(a.archers).toEqual(b.archers);
-    expect(Buffer.from(makeRoundLand(124).land.cells).equals(Buffer.from(a.land.cells))).toBe(false);
+    expect(Buffer.from(makeRoundLand(124, world).land.cells).equals(Buffer.from(a.land.cells))).toBe(false);
   });
 
   it('carves a round hole, adds a ball of dirt, and lets loose dirt fall', () => {
@@ -230,7 +239,7 @@ describe('arrows', () => {
     expect(botArrows().map((a) => a.id)).not.toContain('glass');
     expect(botArrows().map((a) => a.id)).toContain('plain');
     // Nor can anyone shoot it in a fight, even with one in the quiver.
-    const setup: FightSetup = { players: [{ quiver: { glass: 3 }, shield: 0 }, { quiver: {}, shield: 0 }] };
+    const setup: FightSetup = { world: 'forest', players: [{ quiver: { glass: 3 }, shield: 0 }, { quiver: {}, shield: 0 }] };
     expect(shotProblem({ angle: 45, power: 50, arrow: 'glass' }, setup, 0, {})).toMatch(/can't be used/);
     expect(playFight(1, setup, [{ angle: 45, power: 50, arrow: 'glass' }]).status).toBe('invalid');
   });
@@ -238,7 +247,7 @@ describe('arrows', () => {
 
 describe('fights', () => {
   it('refuses shots that break the rules', () => {
-    const setup: FightSetup = { players: [{ quiver: { steel: 1 }, shield: 0 }, { quiver: {}, shield: 0 }] };
+    const setup: FightSetup = { world: 'forest', players: [{ quiver: { steel: 1 }, shield: 0 }, { quiver: {}, shield: 0 }] };
     expect(shotProblem({ angle: 45.5, power: 50, arrow: 'plain' }, setup, 0, {})).toMatch(/angle/);
     expect(shotProblem({ angle: 45, power: 101, arrow: 'plain' }, setup, 0, {})).toMatch(/power/);
     expect(shotProblem({ angle: 45, power: 50, arrow: 'nope' as never }, setup, 0, {})).toMatch(/no such/);
@@ -248,7 +257,7 @@ describe('fights', () => {
   });
 
   it('takes turns, counts the special arrows used, and stays "playing" when the shots run out', () => {
-    const setup: FightSetup = { players: [{ quiver: { steel: 2 }, shield: 0 }, { quiver: { steel: 2 }, shield: 0 }] };
+    const setup: FightSetup = { world: 'forest', players: [{ quiver: { steel: 2 }, shield: 0 }, { quiver: { steel: 2 }, shield: 0 }] };
     const shots: Shot[] = [
       { angle: 50, power: 60, arrow: 'steel' },
       { angle: 130, power: 60, arrow: 'plain' },

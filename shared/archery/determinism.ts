@@ -8,7 +8,7 @@ import { ARROWS } from './arrows';
 import { COLS, ROWS } from './config';
 import { playFight } from './fight';
 import { makeRoundLand } from './land';
-import type { Archer, FightSetup, Land, Shot } from './types';
+import { WORLD_IDS, type Archer, type FightSetup, type Land, type Shot } from './types';
 
 /** A small repeatable stream of numbers (integers only, so it is exact everywhere). */
 function lcg(seed: number): () => number {
@@ -33,16 +33,21 @@ const archerKey = (a: Archer) => `${a.x},${a.y},${a.health},${a.shield},${a.popp
 
 export function determinismReport(): string {
   const lines: string[] = [];
-  for (let seed = 1; seed <= 40; seed++) {
-    const r = makeRoundLand(seed * 7919);
-    lines.push(`land/${seed}: ${landKey(r.land)} ${r.tries} ${archerKey(r.archers[0])} ${archerKey(r.archers[1])}`);
+  // Every world's land: its own shapes, trees, ice and buildings.
+  for (const world of WORLD_IDS) {
+    for (let seed = 1; seed <= 15; seed++) {
+      const r = makeRoundLand(seed * 7919, world);
+      lines.push(`land/${world}/${seed}: ${landKey(r.land)} ${r.tries} ${archerKey(r.archers[0])} ${archerKey(r.archers[1])}`);
+    }
   }
-  // Every arrow in the table that can be used in a fight, so their numbers are covered too.
+  // Every arrow in the table that can be used in a fight, so their numbers are covered too, and a long
+  // fight in each world, so its twist (trees, sliding sand, slippery slopes and ice, buildings) is too.
   const kinds = ARROWS.filter((a) => a.forSale || a.unlimited).map((a) => a.id);
-  for (const seed of [3, 4242, 987654321]) {
+  const fights: [number, (typeof WORLD_IDS)[number]][] = [[3, 'forest'], [4242, 'desert'], [987654321, 'snow'], [77, 'city'], [31337, 'desert']];
+  for (const [seed, world] of fights) {
     const next = lcg(seed);
     const quiver = Object.fromEntries(kinds.map((k) => [k, 999]));
-    const setup: FightSetup = { players: [{ quiver, shield: 20 }, { quiver, shield: 0 }] };
+    const setup: FightSetup = { world, players: [{ quiver, shield: 20 }, { quiver, shield: 0 }] };
     const shots: Shot[] = [];
     for (let i = 0; i < 400; i++) {
       const left = i % 2 === 0;
@@ -54,9 +59,9 @@ export function determinismReport(): string {
     const full = playFight(seed, setup, shots);
     const res = full.status === 'invalid' ? playFight(seed, setup, shots.slice(0, full.shots.length)) : full;
     res.shots.forEach((s, i) => {
-      lines.push(`fight/${seed}/${i}: r${s.round} p${s.player} ${s.shot.angle},${s.shot.power},${s.shot.arrow} w${s.wind} ${s.hit.kind} ${s.hit.x},${s.hit.y},${s.hit.steps} d${s.damage.join(',')} f${s.fell.join(',')} ${archerKey(s.after[0])} ${archerKey(s.after[1])}`);
+      lines.push(`fight/${world}/${seed}/${i}: r${s.round} p${s.player} ${s.shot.angle},${s.shot.power},${s.shot.arrow} w${s.wind} ${s.hit.kind} ${s.hit.x},${s.hit.y},${s.hit.steps} b${s.bounce ? s.bounce.join(',') : '-'} d${s.damage.join(',')} f${s.fell.join(',')} s${s.slid.join(',')} ${archerKey(s.after[0])} ${archerKey(s.after[1])}`);
     });
-    lines.push(`fight/${seed}/end: ${res.status} ${res.winner} ${res.roundWins.join(',')} ${landKey(res.current.land)} ${JSON.stringify(res.used)}`);
+    lines.push(`fight/${world}/${seed}/end: ${res.status} ${res.winner} ${res.roundWins.join(',')} ${landKey(res.current.land)} ${JSON.stringify(res.used)}`);
   }
   return lines.join('\n');
 }

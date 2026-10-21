@@ -10,7 +10,7 @@ import { newRound, playFight } from '../../shared/archery/fight';
 import { AIR, type ArrowId, type FightResult, type FightSetup, type Round, type Shot } from '../../shared/archery/types';
 
 const STEEL_EACH = 6;
-const setup: FightSetup = { players: [{ quiver: { steel: STEEL_EACH }, shield: 0 }, { quiver: { steel: STEEL_EACH }, shield: 0 }] };
+const setup: FightSetup = { world: 'forest', players: [{ quiver: { steel: STEEL_EACH }, shield: 0 }, { quiver: { steel: STEEL_EACH }, shield: 0 }] };
 const NAMES = ['Left archer', 'Right archer'];
 const COLOURS = ['#2457c5', '#c53a24'];
 

@@ -10,6 +10,7 @@
  * James (21 Oct 2026): hilly land like Scorched Earth, no aiming help of any kind, and special
  * arrows that are scarce. Retune here.
  */
+import type { WorldId } from './types';
 
 // ——— The field ———
 /** The logical field, in pixels (16:9). Screens draw it scaled. */
@@ -43,7 +44,7 @@ export const LAUNCH_OFFSET = 4;
 export const SIDE_MARGIN = 0;
 
 // ——— Wind ———
-/** The wind is a whole number from −WIND_MAX to +WIND_MAX, new each round. */
+/** The wind is a whole number from −n to +n, new each round. This is the usual n; each world has its own (WORLD_WIND_MAX). */
 export const WIND_MAX = 10;
 /** Each point of wind pushes arrows sideways at this many px/s² (10 points = 20% of gravity). */
 export const WIND_ACCEL = 6;
@@ -99,3 +100,73 @@ export const ARCHER_ZONE_TO = 0.3;
 export const HILL_MIN_RISE = 40;
 /** If the land fails the checks (archers can see each other, or no real hill), try the next seed, up to this many times. */
 export const LAND_TRIES = 40;
+
+// ——— The worlds (docs/ARCHERY-PLAN.md, section 3: each plays differently from the start) ———
+/** Each world's wind runs from −n to +n (the wind stays the same all round). The Forest is calm, the Desert strong. */
+export const WORLD_WIND_MAX: Readonly<Record<WorldId, number>> = { forest: 6, desert: 14, snow: 10, city: 10 };
+
+/** How each world's land is made: the hilliness numbers above, except where a world changes them. */
+export interface LandStyle {
+  startRoughness: number;
+  roughnessDecay: number;
+  maxHeight: number;
+  minPeak: number;
+}
+export const LAND_STYLE: Readonly<Record<WorldId, LandStyle>> = {
+  forest: { startRoughness: LAND_START_ROUGHNESS, roughnessDecay: LAND_ROUGHNESS_DECAY, maxHeight: LAND_MAX_HEIGHT, minPeak: LAND_MIN_PEAK },
+  // Dunes: a little smoother than rock, still big.
+  desert: { startRoughness: LAND_START_ROUGHNESS, roughnessDecay: 0.52, maxHeight: LAND_MAX_HEIGHT, minPeak: LAND_MIN_PEAK },
+  snow: { startRoughness: LAND_START_ROUGHNESS, roughnessDecay: LAND_ROUGHNESS_DECAY, maxHeight: LAND_MAX_HEIGHT, minPeak: LAND_MIN_PEAK },
+  // The City's ground is lower and gentler: the buildings make its height.
+  city: { startRoughness: 0.4, roughnessDecay: 0.5, maxHeight: 0.4, minPeak: 0.3 },
+};
+
+// Forest: trees stand on the land and stop arrows until they're blasted away.
+/** How many trees a Forest round has. */
+export const TREES_MIN = 5;
+export const TREES_MAX = 8;
+/** A tree's height and half its width, in cells (a tree 9 cells wide has half-width 4). */
+export const TREE_HEIGHT_MIN = 12;
+export const TREE_HEIGHT_MAX = 24;
+export const TREE_HALF_MIN = 2;
+export const TREE_HALF_MAX = 4;
+/** Trees keep at least this many cells away from an archer's box. */
+export const TREE_CLEARANCE = 6;
+/** Trees are easy to blast away: a blast clears tree cells this many times further than dirt. */
+export const TREE_BLAST_SCALE = 1.4;
+
+// Desert: sand slides. After a blast, loose sand slumps sideways into slopes as well as falling.
+/** Sand slides off a column that stands more than this many cells above its neighbour. */
+export const SAND_MAX_STEP = 2;
+/** Sand can slide this many columns either side of what a blast touched. */
+export const SAND_REACH = 12;
+/** At most this many cells of sand move after one shot (so a shot always finishes quickly). */
+export const SAND_MAX_MOVES = 4000;
+
+// Snow: slippery. An archer on a slope slides downhill, and ice blocks bounce an arrow once.
+/** An archer slides at most this many cells in one go. */
+export const SNOW_SLIDE_MAX = 40;
+/** How many ice blocks a Snow round has, and their size in cells. */
+export const ICE_BLOCKS_MIN = 3;
+export const ICE_BLOCKS_MAX = 6;
+export const ICE_W_MIN = 4;
+export const ICE_W_MAX = 8;
+export const ICE_H_MIN = 3;
+export const ICE_H_MAX = 6;
+/** Ice blocks keep at least this many cells away from an archer's box. */
+export const ICE_CLEARANCE = 5;
+/** An arrow keeps this share of its speed when it bounces off ice. */
+export const ICE_BOUNCE = 0.6;
+
+// City: buildings are tough blocks. A blast only chips them (James, 21 Oct 2026).
+/** A blast clears building cells only this share of its radius from the middle. */
+export const BUILDING_CHIP = 0.3;
+/** Buildings' widths, the gaps between them (streets), and how tall they stand above the ground, in cells. */
+export const BUILDING_W_MIN = 10;
+export const BUILDING_W_MAX = 22;
+export const BUILDING_GAP_MIN = 0;
+export const BUILDING_GAP_MAX = 8;
+export const BUILDING_H_MIN = 10;
+export const BUILDING_H_MAX = 60;
+/** Roughly this share of the street gets no building at all (an open lot). */
+export const BUILDING_SKIP = 0.2;

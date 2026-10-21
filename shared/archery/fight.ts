@@ -1,44 +1,48 @@
 /**
- * Turns, rounds and fights (docs/ARCHERY-PLAN.md, section 2). A fight is a seed, what each player
- * brought, and a list of shots. `playFight` plays them all and gives the whole result: every
- * shot's landing, the damage, who won each round and the fight, and which arrows each player
- * used. The server replays fights with exactly this (Stage 4) to count the arrows used.
+ * Turns, rounds and fights (docs/ARCHERY-PLAN.md, section 2). A fight is a seed, its setup (the world
+ * and what each player brought), and a list of shots. `playFight` plays them all and gives the whole
+ * result: every shot's landing, the damage, who won each round and the fight, and which arrows each
+ * player used. The server replays fights with exactly this (Stage 4) to count the arrows used.
  *
- * Players take turns. Each round has fresh land and new wind from the seed, and the first turn
- * swaps each round (player 0 starts round 1). A round ends when one archer is left (both popping
- * at once is a draw), or after MAX_SHOTS_PER_ROUND, when more health wins. First to win
- * ROUNDS_TO_WIN rounds wins the fight.
+ * Players take turns. Each round has fresh land and new wind from the seed (the wind stays the same
+ * all round), and the first turn swaps each round (player 0 starts round 1). A round ends when one
+ * archer is left (both popping at once is a draw), or after MAX_SHOTS_PER_ROUND, when more health
+ * wins. First to win ROUNDS_TO_WIN rounds wins the fight.
+ *
+ * Screens and bots play a fight one shot at a time with `startFight` and `takeShot`, which is exactly
+ * what `playFight` does, so they always agree with a replay.
  */
 import { arrowKind, impact, isArrowId, usable, type ImpactContext } from './arrows';
-import { MAX_ANGLE, MAX_POWER, MAX_ROUNDS, MAX_SHOTS_PER_ROUND, ROUNDS_TO_WIN, WIND_MAX } from './config';
+import { MAX_ANGLE, MAX_POWER, MAX_ROUNDS, MAX_SHOTS_PER_ROUND, ROUNDS_TO_WIN, WORLD_WIND_MAX } from './config';
 import { blastDamage, capShotDamage, fallDamage, hurt } from './damage';
-import { addDirt, carve, copyLand, dropArcher, makeRoundLand, settle } from './land';
+import { addDirt, carve, copyLand, dropArcher, makeRoundLand, settle, slideArcher, slideSand } from './land';
 import { makeRandom, mixSeed } from './random';
 import { flyArrow } from './shot';
-import type { Archer, ArrowId, FightResult, FightSetup, Round, RoundResult, Shot, ShotRecord } from './types';
+import type { Archer, ArrowId, FightResult, FightSetup, Round, RoundResult, Shot, ShotRecord, WorldId } from './types';
 
 const copyArcher = (a: Archer): Archer => ({ ...a });
 
-/** The seed for a round's land, and its wind. */
-export function roundSeeds(seed: number, index: number): { landSeed: number; wind: number } {
+/** The seed for a round's land, and its wind (each world has its own wind range). */
+export function roundSeeds(seed: number, index: number, world: WorldId): { landSeed: number; wind: number } {
   const landSeed = mixSeed(seed, 1000 + index);
-  const wind = makeRandom(mixSeed(seed, 2000 + index)).range(-WIND_MAX, WIND_MAX);
+  const most = WORLD_WIND_MAX[world];
+  const wind = makeRandom(mixSeed(seed, 2000 + index)).range(-most, most);
   return { landSeed, wind };
 }
 
 /** Starts round `index` of a fight. */
 export function newRound(seed: number, index: number, setup: FightSetup): Round {
-  const { landSeed, wind } = roundSeeds(seed, index);
-  const { land, archers } = makeRoundLand(landSeed);
+  const { landSeed, wind } = roundSeeds(seed, index, setup.world);
+  const { land, archers } = makeRoundLand(landSeed, setup.world);
   archers[0].shield = setup.players[0].shield;
   archers[1].shield = setup.players[1].shield;
-  return { index, landSeed, wind, land, archers, turn: index % 2, shots: 0, winner: null };
+  return { world: setup.world, index, landSeed, wind, land, archers, turn: index % 2, shots: 0, winner: null };
 }
 
 /**
- * Plays one shot by `player` in the round (changing the round's land and archers):
- * the flight, the arrow's landing, loose dirt falling, archers falling, then the damage,
- * at most MAX_SHOT_DAMAGE per archer. Doesn't change whose turn it is.
+ * Plays one shot by `player` in the round (changing the round's land and archers): the flight, the
+ * arrow's landing, loose dirt falling (and the Desert's sand sliding), archers falling (and in the Snow
+ * sliding down slopes), then the damage, at most MAX_SHOT_DAMAGE per archer. Doesn't change whose turn it is.
  */
 export function playShot(round: Round, player: number, shot: Shot, keepPath = false): ShotRecord {
   const { land, archers } = round;
@@ -65,18 +69,29 @@ export function playShot(round: Round, player: number, shot: Shot, keepPath = fa
     },
   };
   impact(ctx);
-  if (c1 >= c0) settle(land, c0, c1);
+  if (c1 >= c0) {
+    settle(land, c0, c1);
+    if (round.world === 'desert') slideSand(land, c0, c1, archers);
+  }
   const fell: [number, number] = [0, 0];
+  const slid: [number, number] = [0, 0];
   for (let i = 0; i < archers.length; i++) {
     if (archers[i].popped) continue;
     fell[i] = dropArcher(land, archers[i]);
     raw[i] += fallDamage(fell[i]);
+    if (round.world !== 'snow') continue;
+    const slide = slideArcher(land, archers, i);
+    slid[i] = slide.slid;
+    for (const d of slide.drops) {
+      fell[i] += d;
+      raw[i] += fallDamage(d);
+    }
   }
   const damage: [number, number] = [0, 0];
   for (let i = 0; i < archers.length; i++) damage[i] = hurt(archers[i], capShotDamage(raw[i]));
   round.shots++;
   const record: ShotRecord = {
-    round: round.index, player, shot: { ...shot }, wind: round.wind, hit: flight.hit, damage, fell,
+    round: round.index, player, shot: { ...shot }, wind: round.wind, hit: flight.hit, bounce: flight.bounce, damage, fell, slid,
     after: [copyArcher(archers[0]), copyArcher(archers[1])],
   };
   if (keepPath) record.path = flight.path;
@@ -115,47 +130,78 @@ export interface PlayOptions {
   keepPaths?: boolean;
 }
 
+/** A fight being played one shot at a time (`startFight`, then `takeShot` for each shot). */
+export interface FightRun {
+  seed: number;
+  setup: FightSetup;
+  /** The round being played now (or the last one, once the fight is over). */
+  round: Round;
+  records: ShotRecord[];
+  rounds: RoundResult[];
+  roundWins: [number, number];
+  used: FightResult['used'];
+  winner: FightResult['winner'];
+}
+
+export function startFight(seed: number, setup: FightSetup): FightRun {
+  return { seed, setup, round: newRound(seed, 0, setup), records: [], rounds: [], roundWins: [0, 0], used: [{}, {}], winner: null };
+}
+
+/** What `takeShot` did. */
+export interface TakenShot {
+  /** Why the shot was refused (nothing was played), or null. */
+  problem: string | null;
+  record: ShotRecord | null;
+  /** The round this shot ended (its final land and archers), or null if it goes on. */
+  ended: Round | null;
+}
+
+/** Plays the next shot of the fight (by whoever's turn it is), and starts the next round if this one ended. */
+export function takeShot(run: FightRun, shot: Shot, keepPath = false): TakenShot {
+  if (run.winner !== null) return { problem: 'a shot after the fight ended', record: null, ended: null };
+  const round = run.round;
+  const player = round.turn;
+  const problem = shotProblem(shot, run.setup, player, run.used[player]);
+  if (problem) return { problem, record: null, ended: null };
+  const record = playShot(round, player, shot, keepPath);
+  run.records.push(record);
+  if (!arrowKind(shot.arrow).unlimited) run.used[player][shot.arrow] = (run.used[player][shot.arrow] ?? 0) + 1;
+
+  const w = roundWinner(round);
+  if (w === null) {
+    round.turn = 1 - player;
+    return { problem: null, record, ended: null };
+  }
+  round.winner = w;
+  run.rounds.push({ index: round.index, landSeed: round.landSeed, wind: round.wind, winner: w, shots: round.shots });
+  if (w !== 'draw') run.roundWins[w]++;
+  if (run.roundWins[0] >= ROUNDS_TO_WIN) run.winner = 0;
+  else if (run.roundWins[1] >= ROUNDS_TO_WIN) run.winner = 1;
+  else if (run.rounds.length >= MAX_ROUNDS) run.winner = run.roundWins[0] > run.roundWins[1] ? 0 : run.roundWins[1] > run.roundWins[0] ? 1 : 'draw';
+  else run.round = newRound(run.seed, round.index + 1, run.setup);
+  return { problem: null, record, ended: round };
+}
+
+/** Whose turn it is in a fight that's still going (null once it's over). */
+export function nextPlayer(run: FightRun): number | null {
+  return run.winner === null ? run.round.turn : null;
+}
+
 /** Plays a whole fight (or as much of it as there are shots for). */
 export function playFight(seed: number, setup: FightSetup, shots: readonly Shot[], options: PlayOptions = {}): FightResult {
-  const records: ShotRecord[] = [];
-  const rounds: RoundResult[] = [];
-  const roundWins: [number, number] = [0, 0];
-  const used: FightResult['used'] = [{}, {}];
-  let round = newRound(seed, 0, setup);
-  let winner: FightResult['winner'] = null;
+  const run = startFight(seed, setup);
   let invalid: string | null = null;
-
   for (const shot of shots) {
-    if (winner !== null) {
-      invalid = 'a shot after the fight ended';
+    const taken = takeShot(run, shot, options.keepPaths);
+    if (taken.problem) {
+      invalid = taken.problem;
       break;
     }
-    const player = round.turn;
-    const problem = shotProblem(shot, setup, player, used[player]);
-    if (problem) {
-      invalid = problem;
-      break;
-    }
-    records.push(playShot(round, player, shot, options.keepPaths));
-    if (!arrowKind(shot.arrow).unlimited) used[player][shot.arrow] = (used[player][shot.arrow] ?? 0) + 1;
-
-    const w = roundWinner(round);
-    if (w === null) {
-      round.turn = 1 - player;
-      continue;
-    }
-    round.winner = w;
-    rounds.push({ index: round.index, landSeed: round.landSeed, wind: round.wind, winner: w, shots: round.shots });
-    if (w !== 'draw') roundWins[w]++;
-    if (roundWins[0] >= ROUNDS_TO_WIN) winner = 0;
-    else if (roundWins[1] >= ROUNDS_TO_WIN) winner = 1;
-    else if (rounds.length >= MAX_ROUNDS) winner = roundWins[0] > roundWins[1] ? 0 : roundWins[1] > roundWins[0] ? 1 : 'draw';
-    else round = newRound(seed, round.index + 1, setup);
   }
-
-  const status = invalid ? 'invalid' : winner !== null ? 'done' : 'playing';
+  const status = invalid ? 'invalid' : run.winner !== null ? 'done' : 'playing';
+  const round = run.round;
   return {
-    status, invalid, winner: invalid ? null : winner, roundWins, rounds, shots: records, used,
+    status, invalid, winner: invalid ? null : run.winner, roundWins: run.roundWins, rounds: run.rounds, shots: run.records, used: run.used,
     nextPlayer: status === 'playing' ? round.turn : null,
     current: { ...round, land: copyLand(round.land), archers: [copyArcher(round.archers[0]), copyArcher(round.archers[1])] },
   };

@@ -21,9 +21,21 @@ export type ArrowId =
   | 'giant'
   | 'glass';
 
-/** What a land cell holds. Stage 2 adds the worlds' own kinds (trees, ice, buildings). */
+/** The four worlds (docs/ARCHERY-PLAN.md, section 3). Each plays differently from the start. */
+export type WorldId = 'forest' | 'desert' | 'snow' | 'city';
+export const WORLD_IDS: readonly WorldId[] = ['forest', 'desert', 'snow', 'city'];
+
+/** What a land cell holds. */
 export const AIR = 0;
+/** Earth and rock (in the Desert it's sand, which slides). Loose dirt falls. */
 export const DIRT = 1;
+/** Forest trees: they stop arrows until a blast clears them, and they fall like dirt. */
+export const TREE = 2;
+/** Snow's ice blocks: an arrow bounces off once. They stay put and hold dirt up. */
+export const ICE = 3;
+/** City buildings: tough, so a blast only chips them. They stay put and hold dirt up. */
+export const BUILDING = 4;
+export type CellKind = typeof AIR | typeof DIRT | typeof TREE | typeof ICE | typeof BUILDING;
 
 /** The land: COLS × ROWS cells, row by row from the top (`cells[row * COLS + col]`). */
 export interface Land {
@@ -61,9 +73,10 @@ export interface ShotHit {
   steps: number;
 }
 
-/** A flight: what it hit, and points along the way (x, y, x, y …) for drawing only. */
+/** A flight: what it hit, where it bounced off ice (or null), and points along the way (x, y, x, y …) for drawing only. */
 export interface Flight {
   hit: ShotHit;
+  bounce: [number, number] | null;
   path: number[];
 }
 
@@ -76,16 +89,21 @@ export interface ShotRecord {
   hit: ShotHit;
   /** Health plus shield each archer lost to this shot (falling included). */
   damage: [number, number];
-  /** How many cells each archer fell after the blast. */
+  /** Where the arrow bounced off an ice block (Snow), or null. */
+  bounce: [number, number] | null;
+  /** How many cells each archer fell after the blast (sliding drops included). */
   fell: [number, number];
+  /** How many cells each archer slid sideways down a slippery slope (Snow). */
+  slid: [number, number];
   /** Each archer after the shot. */
   after: [Archer, Archer];
   /** Only when asked for (`keepPaths`), for drawing. */
   path?: number[];
 }
 
-/** One round: its own land and wind. */
+/** One round: its own land and wind, in the fight's world. */
 export interface Round {
+  world: WorldId;
   index: number;
   landSeed: number;
   wind: number;
@@ -106,6 +124,8 @@ export interface PlayerSetup {
 }
 
 export interface FightSetup {
+  /** Where the fight happens. Each world has its own twist (trees, sliding sand, slippery snow and ice, buildings). */
+  world: WorldId;
   players: [PlayerSetup, PlayerSetup];
 }
 
