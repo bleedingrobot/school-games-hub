@@ -62,11 +62,27 @@ export interface StudentItem {
   quick?: QuickSettings;
 }
 
-export type SaveItem = AnswersItem | StudentItem;
+/**
+ * A whole session finished (Training before games): a facts session, or a Quick looks round of all 12 pictures. Sent after
+ * that session's answers, so the server can check them. Sending it twice is safe (one row per kind and seed).
+ */
+export interface SessionItem {
+  type: 'session';
+  kind: SessionKind;
+  /** The session's seed: the same one its answers carry. */
+  seed: number;
+  /** When it finished on the device, ms since 1970. */
+  at: number;
+}
+
+export type SessionKind = 'facts' | 'quick';
+
+export type SaveItem = AnswersItem | StudentItem | SessionItem;
 
 export type ItemResult =
   | { type: 'answers'; added: number }
   | { type: 'student' }
+  | { type: 'session' }
   | { type: 'invalid'; problem: string };
 
 export interface SaveResponse {
@@ -82,7 +98,8 @@ export interface CheckedAnswer extends AnswerInput {
 
 export type CheckedItem =
   | { type: 'answers'; batchId: string; seed: number; answers: CheckedAnswer[] }
-  | { type: 'student'; typing: Record<string, number[]>; autoSubmit: boolean; sessionsDone: number; quick?: QuickSettings };
+  | { type: 'student'; typing: Record<string, number[]>; autoSubmit: boolean; sessionsDone: number; quick?: QuickSettings }
+  | SessionItem;
 
 /** What the database stores as the student's `typing`: the typing times, with the Quick looks settings under "q". */
 export const studentTyping = (item: Extract<CheckedItem, { type: 'student' }>): Record<string, unknown> => typingWithSettings(item.typing, item.quick);
@@ -183,6 +200,13 @@ export function checkItem(raw: unknown, now: number): Checked<CheckedItem> {
       quick = { placed: packed.placed as boolean, startStage: packed.startStage as QuickSettings['startStage'], finished: packed.finished as QuickSettings['finished'], guided: packed.guided as boolean };
     }
     return { ok: true, item: { type: 'student', typing, autoSubmit: item.autoSubmit, sessionsDone: item.sessionsDone, ...(quick ? { quick } : {}) } };
+  }
+  if (item.type === 'session') {
+    if (item.kind !== 'facts' && item.kind !== 'quick') return { ok: false, problem: 'kind' };
+    if (!isInt(item.seed, 0, 2_147_483_647)) return { ok: false, problem: 'seed' };
+    // Half a day back covers a queue that waited for the Wi-Fi (an older one couldn't open the games any more anyway).
+    if (!isInt(item.at, now - DAY_MS / 2, now + 10 * 60_000)) return { ok: false, problem: 'when' };
+    return { ok: true, item: { type: 'session', kind: item.kind, seed: item.seed, at: item.at } };
   }
   return { ok: false, problem: 'type' };
 }

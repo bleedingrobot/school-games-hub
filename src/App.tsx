@@ -24,6 +24,7 @@ import { clanQuest } from './games/clans/game';
 import { Teacher } from './pages/Teacher';
 import { SoundProvider } from './sound';
 import { trainingOn } from './training/switch';
+import { GameGate } from './training/TrainFirst';
 
 // Training has its own screens and styles, so it loads only when someone opens it.
 const TrainingPage = lazy(() => import('./pages/TrainingPage'));
@@ -49,7 +50,15 @@ export function AppRoutes() {
           {!POWER_CLASH_ON && <Route path="power-clash" element={<GamePage game={powerClash} />} />}
           {!DRAGON_MATHS_ON && <Route path="dragon-maths" element={<GamePage game={dragonMaths} />} />}
           {!CLAN_QUEST_ON && <Route path="clan-quest" element={<GamePage game={clanQuest} />} />}
-          <Route path="lobby" element={<Lobby />} />
+          {/* Starting or joining a classmate game waits for Training too (Training before games); games already going don't. */}
+          <Route
+            path="lobby"
+            element={
+              <GameGate>
+                <Lobby />
+              </GameGate>
+            }
+          />
           <Route path="play/:id" element={<FriendGamePage />} />
           <Route path="space-game/:id" element={<SpaceGamePage />} />
           <Route path="card-game/:id" element={<CardGamePage />} />

@@ -8,7 +8,8 @@ import { SUBITISING_CONFIG } from '../../shared/subitising/config';
 import { dayString, type TrainingState } from '../../shared/training/records';
 import type { AnswerEvent } from '../../shared/training/save';
 import { useAuth } from '../auth/AuthContext';
-import { addAnswer, enqueueStudent, flushQueue, loadTraining, type QuickLoad } from '../data/training';
+import { addAnswer, enqueueSession, enqueueStudent, flushQueue, loadTraining, type QuickLoad } from '../data/training';
+import { GamesGateNote } from '../training/TrainFirst';
 import type { QuickAnswerEvent } from '../subitising/SubitisingApp';
 import { settingsOf, toTrainingAnswer } from '../subitising/saving';
 import { emptySubState, type SubState } from '../subitising/store';
@@ -156,6 +157,11 @@ function Loaded({ player, start, offline, quickStart }: { player: string; start:
         onAnswered={onAnswered}
         openQuick={openQuick}
         quick={{ state: quick, onState: onQuickState, onAnswered: onQuickAnswered, onSessionEnd: () => flush() }}
+        onSessionFinished={(kind, seed) => {
+          enqueueSession(player, kind, seed);
+          sinceSend.current = 0;
+        }}
+        gateNote={<GamesGateNote />}
       />
     </>
   );

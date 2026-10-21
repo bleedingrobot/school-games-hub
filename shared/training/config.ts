@@ -69,6 +69,13 @@ export const TRAINING_CONFIG = {
    */
   storage: { answersPerFact: 30, answersPerDay: 600, longestAnswerMs: 120_000, rejectAnswerMs: 600_000, longestTypingMs: 10_000 },
 
+  /**
+   * Training before games (James, 22 Oct 2026): in a class with the switch on, one finished session opens the games for
+   * `gamesOpenHours`. The server only counts a session it has at least this many answers for: a facts session that ran out
+   * of time can be as short as 2 (the first question, then the last), and a whole Quick looks round is 12 pictures.
+   */
+  gate: { gamesOpenHours: 6, minAnswers: { facts: 2, quick: 12 } },
+
   /** Days before a fact is due for review again, by how many green days it has. */
   reviewDays: [1, 2, 4, 7, 14],
 

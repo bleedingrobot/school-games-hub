@@ -35,6 +35,10 @@ interface Props {
   onBack?: () => void;
   /** Called when a session or the starting check ends, so the real page can save at once. */
   onSessionEnd?: () => void;
+  /** Called (before onSessionEnd) when a whole round of pictures was done, not stopped early: it counts for Training before games. */
+  onRoundFinished?: (seed: number) => void;
+  /** Shown on the home and end-of-round screens: whether the games are open (Training before games). */
+  gateNote?: ReactNode;
 }
 
 const seedFor = (today: string, n: number): number => {
@@ -43,7 +47,7 @@ const seedFor = (today: string, n: number): number => {
   return h * 37 + n * 101 + 7;
 };
 
-export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack, onSessionEnd }: Props) {
+export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack, onSessionEnd, onRoundFinished, gateNote }: Props) {
   const reading = useReadAloud();
   const readAloud = reading.available ? { on: reading.on, onChange: reading.setOn } : undefined;
   const [screen, setScreen] = useState<Screen>('home');
@@ -92,6 +96,8 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
   };
 
   const finishSession = () => {
+    // A helped answer is a second go at the same picture, so the pictures looked at are the answers without help.
+    if (sessionAnswers.current.filter((a) => !a.helped).length >= CONFIG.sessionTrials) onRoundFinished?.(seed);
     onState({ ...stateRef.current, sessionsDone: stateRef.current.sessionsDone + 1 });
     onSessionEnd?.();
     setScreen('summary');
@@ -115,6 +121,7 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
         <section className="sb-screen">
           <h1>Quick looks</h1>
           <p>A picture flashes. Tap how many you saw. No clock, no score: just you and your garden.</p>
+          {gateNote}
           <Garden progress={progress} />
           {state.placed ? (
             <>
@@ -178,6 +185,7 @@ export function SubitisingApp({ state, onState, today, onAnswered, tools, onBack
             <p key={s.id} className="sb-week">{s.name} grew!</p>
           ))}
           {allDone && <p className="sb-small">Every plant is in flower. More pictures are coming soon.</p>}
+          {gateNote}
           <Garden progress={progress} />
           <button type="button" className="sb-btn sb-btn-primary sb-big" onClick={() => setScreen('home')}>
             Back to my garden

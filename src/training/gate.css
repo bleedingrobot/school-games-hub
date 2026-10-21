@@ -1,0 +1,65 @@
+/* Training before games: the "Training first" screen, the home page's banner and the line on the Training screens. */
+
+.train-first__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.train-first__home {
+  display: inline-block;
+  margin-top: 18px;
+  font-weight: 700;
+}
+
+.train-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  background: #e8f0fb;
+  color: #0f3057;
+  border: 2px solid #9cc0ea;
+}
+.train-banner p {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.train-banner .train-first__buttons {
+  justify-content: flex-start;
+}
+
+.train-open {
+  justify-self: start;
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #e6f8e9;
+  color: #11411a;
+  font-weight: 700;
+}
+
+.train-note {
+  margin: 0;
+  padding: 0.5rem 0.9rem;
+  border-radius: 12px;
+  background: #e8f0fb;
+  color: #0f3057;
+  font-weight: 700;
+}
+.train-note--open {
+  background: #e6f8e9;
+  color: #11411a;
+}
+.train-note a {
+  color: inherit;
+}
+
+/* The home page's game cards while the games are locked: still there, but resting. */
+.game-groups--locked .game-group:not(.game-group--training) .game-grid {
+  opacity: 0.6;
+  filter: saturate(0.5);
+}

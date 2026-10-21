@@ -183,6 +183,18 @@ const TRAINING_CONFIG = {
 		rejectAnswerMs: 6e5,
 		longestTypingMs: 1e4
 	},
+	/**
+	* Training before games (James, 22 Oct 2026): in a class with the switch on, one finished session opens the games for
+	* `gamesOpenHours`. The server only counts a session it has at least this many answers for: a facts session that ran out
+	* of time can be as short as 2 (the first question, then the last), and a whole Quick looks round is 12 pictures.
+	*/
+	gate: {
+		gamesOpenHours: 6,
+		minAnswers: {
+			facts: 2,
+			quick: 12
+		}
+	},
 	/** Days before a fact is due for review again, by how many green days it has. */
 	reviewDays: [
 		1,
@@ -486,6 +498,29 @@ function checkItem(raw, now) {
 			}
 		};
 	}
+	if (item.type === "session") {
+		if (item.kind !== "facts" && item.kind !== "quick") return {
+			ok: false,
+			problem: "kind"
+		};
+		if (!isInt(item.seed, 0, 2147483647)) return {
+			ok: false,
+			problem: "seed"
+		};
+		if (!isInt(item.at, now - DAY_MS / 2, now + 6e5)) return {
+			ok: false,
+			problem: "when"
+		};
+		return {
+			ok: true,
+			item: {
+				type: "session",
+				kind: item.kind,
+				seed: item.seed,
+				at: item.at
+			}
+		};
+	}
 	return {
 		ok: false,
 		problem: "type"
@@ -619,7 +654,7 @@ function makeHandler(services) {
 	};
 }
 async function save(player, item, services) {
-	const saved = item.type === "answers" ? await services.recordAnswers(player, item) : await services.recordStudent(player, item);
+	const saved = item.type === "answers" ? await services.recordAnswers(player, item) : item.type === "student" ? await services.recordStudent(player, item) : await services.recordSession(player, item);
 	if (!saved.ok) return saved.why === "refused" ? {
 		type: "invalid",
 		problem: "refused"
@@ -627,8 +662,10 @@ async function save(player, item, services) {
 	return item.type === "answers" ? {
 		type: "answers",
 		added: saved.value
-	} : { type: "student" };
+	} : { type: item.type };
 }
+/** How many saved answers a session needs before it counts as finished (the database checks). */
+const SESSION_MIN_ANSWERS = TRAINING_CONFIG.gate.minAnswers;
 /** What the database function needs besides the answers: how many of each fact to keep, and the daily limit. */
 const SAVE_LIMITS = {
 	keepPerFact: TRAINING_CONFIG.storage.answersPerFact,
@@ -684,6 +721,13 @@ Deno.serve(makeHandler({
 		typing: studentTyping(item),
 		auto_submit: item.autoSubmit,
 		sessions_done: item.sessionsDone
+	}),
+	recordSession: (player, item) => call("record_training_session", {
+		player,
+		kind: item.kind,
+		seed: item.seed,
+		at: item.at,
+		min_answers: SESSION_MIN_ANSWERS[item.kind]
 	})
 }));
 //#endregion

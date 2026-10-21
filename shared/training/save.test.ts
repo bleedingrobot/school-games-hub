@@ -85,6 +85,25 @@ describe('checking a student item', () => {
   });
 });
 
+describe('checking a finished session (Training before games)', () => {
+  const session = (over: Record<string, unknown> = {}) => ({ type: 'session', kind: 'facts', seed: 12345, at: NOW - 1000, ...over });
+
+  it('accepts a facts session or a Quick looks round', () => {
+    expect(checkItem(session(), NOW)).toEqual({ ok: true, item: { type: 'session', kind: 'facts', seed: 12345, at: NOW - 1000 } });
+    expect(problem(session({ kind: 'quick' }))).toBe('ok');
+    expect(problem(session({ at: NOW - 11 * 3_600_000 }))).toBe('ok');
+  });
+
+  it('turns away anything else', () => {
+    expect(problem(session({ kind: 'game' }))).toBe('kind');
+    expect(problem(session({ seed: -1 }))).toBe('seed');
+    expect(problem(session({ seed: 1.5 }))).toBe('seed');
+    expect(problem(session({ at: NOW + 3_600_000 }))).toBe('when');
+    expect(problem(session({ at: NOW - 13 * 3_600_000 }))).toBe('when');
+    expect(problem(session({ at: 'now' }))).toBe('when');
+  });
+});
+
 describe('checking Quick looks answers', () => {
   const quick = (over: Record<string, unknown> = {}) => answer({ key: 'sub:ten-8', given: 8, typingMs: 0, ms: 0, ...over });
   const marked = (raw: unknown) => {
