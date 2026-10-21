@@ -11,12 +11,15 @@ import { SoundProvider } from '../sound';
 const flags = { on: false };
 vi.mock('../training/switch', () => ({ trainingOn: () => flags.on }));
 
-const data = {
+// Hoisted: the home page loads this module too (Training before games), before the test's own lines run.
+const data = vi.hoisted(() => ({
   loadTraining: vi.fn(),
   addAnswer: vi.fn(),
   enqueueStudent: vi.fn(),
+  enqueueSession: vi.fn(),
+  localFinishedAt: vi.fn(() => null),
   flushQueue: vi.fn(async () => true),
-};
+}));
 vi.mock('../data/training', () => data);
 
 // The dashboard asks for its own things; nothing here is about them.

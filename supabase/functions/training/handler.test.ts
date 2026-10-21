@@ -13,6 +13,7 @@ function services(over: Partial<Services> = {}) {
     userIdFor: vi.fn(async (token: string) => (token === 'good-token' ? 'student-1' : null)),
     recordAnswers: vi.fn(async (_p, item) => ({ ok: true as const, value: item.answers.length })),
     recordStudent: vi.fn(async () => ({ ok: true as const, value: null })),
+    recordSession: vi.fn(async () => ({ ok: true as const, value: null })),
     ...over,
   };
   return s;
@@ -62,6 +63,28 @@ describe('the training server function', () => {
     const { body } = await send(s, [student()]);
     expect(body).toEqual({ handled: 1, results: [{ type: 'student' }] });
     expect(vi.mocked(s.recordStudent).mock.calls[0][1]).toMatchObject({ typing: { 2: [900] }, autoSubmit: true, sessionsDone: 2 });
+  });
+
+  it('counts a finished session after its answers (Training before games)', async () => {
+    const s = services();
+    const session = { type: 'session', kind: 'facts', seed: 99, at: NOW - 500 };
+    const { body } = await send(s, [batch(), session]);
+    expect(body).toEqual({ handled: 2, results: [{ type: 'answers', added: 1 }, { type: 'session' }] });
+    expect(vi.mocked(s.recordSession).mock.calls[0]).toEqual(['student-1', session]);
+    expect(vi.mocked(s.recordAnswers).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(s.recordSession).mock.invocationCallOrder[0]);
+  });
+
+  it('drops a session the database says wasn’t finished, and keeps one that couldn’t be saved yet', async () => {
+    const refused = services({ recordSession: vi.fn(async () => ({ ok: false as const, why: 'refused' as const })) });
+    expect((await send(refused, [{ type: 'session', kind: 'quick', seed: 5, at: NOW }])).body).toEqual({
+      handled: 1,
+      results: [{ type: 'invalid', problem: 'refused' }],
+    });
+    const busy = services({ recordSession: vi.fn(async () => ({ ok: false as const, why: 'busy' as const })) });
+    expect((await send(busy, [batch(), { type: 'session', kind: 'facts', seed: 99, at: NOW }])).body).toEqual({
+      handled: 1,
+      results: [{ type: 'answers', added: 1 }],
+    });
   });
 
   it('drops answers for a fact that is not real, and keeps going with the rest', async () => {

@@ -19,6 +19,7 @@ export type Outcome<T> = { ok: true; value: T } | { ok: false; why: 'too-many' |
 
 type AnswersItem = Extract<CheckedItem, { type: 'answers' }>;
 type StudentItem = Extract<CheckedItem, { type: 'student' }>;
+type SessionItem = Extract<CheckedItem, { type: 'session' }>;
 
 /** Everything this needs from Supabase, passed in so the tests can stand in for it. */
 export interface Services {
@@ -27,6 +28,8 @@ export interface Services {
   /** Adds a batch of answers. 0 if this batch was counted before. */
   recordAnswers(player: string, item: AnswersItem): Promise<Outcome<number>>;
   recordStudent(player: string, item: StudentItem): Promise<Outcome<null>>;
+  /** Counts a finished session (Training before games). Refused if its answers aren't saved. */
+  recordSession(player: string, item: SessionItem): Promise<Outcome<unknown>>;
   /** Milliseconds since 1970. */
   now(): number;
 }
@@ -75,10 +78,18 @@ export function makeHandler(services: Services) {
 }
 
 async function save(player: string, item: CheckedItem, services: Services): Promise<ItemResult | 'stop'> {
-  const saved = item.type === 'answers' ? await services.recordAnswers(player, item) : await services.recordStudent(player, item);
+  const saved =
+    item.type === 'answers'
+      ? await services.recordAnswers(player, item)
+      : item.type === 'student'
+        ? await services.recordStudent(player, item)
+        : await services.recordSession(player, item);
   if (!saved.ok) return saved.why === 'refused' ? { type: 'invalid', problem: 'refused' } : 'stop';
-  return item.type === 'answers' ? { type: 'answers', added: saved.value as number } : { type: 'student' };
+  return item.type === 'answers' ? { type: 'answers', added: saved.value as number } : { type: item.type };
 }
+
+/** How many saved answers a session needs before it counts as finished (the database checks). */
+export const SESSION_MIN_ANSWERS = TRAINING_CONFIG.gate.minAnswers;
 
 /** What the database function needs besides the answers: how many of each fact to keep, and the daily limit. */
 export const SAVE_LIMITS = {

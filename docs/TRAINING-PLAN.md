@@ -208,3 +208,23 @@ Not before Clan Quest and Dragon Maths are finished, and not before F.1 of the m
 7. **T.7 Stretch and later ladder skills** (needs F.4 and F.5).
 8. **T.8 Teacher view and class settings** (needs F.2).
 9. **T.9 Comfort settings:** calm mode, read-aloud, auto-submit options.
+
+## 14. Training before games (James, 22 Oct 2026)
+
+In a class with the switch on, a student does one Training session, of their choice, before any game opens. The games then stay open for 6 hours (`TRAINING_CONFIG.gate.gamesOpenHours`), and the next session opens them for another 6.
+
+James's answers:
+
+1. **What counts:** a whole "Today's session" (it can be short if the 3 minutes run out) or a whole Quick looks round (all 12 pictures). "Finish for now" early doesn't count.
+2. **A switch per class** on the Teacher page ("Training before games"), off to start; James turns it on for his three classes. Teachers are never locked.
+3. **The lock is on the website only.** Game pages, typed addresses and the Lobby show "Training first!" instead. No game's server function was changed, so a student who knew how to fiddle with the browser could get round it.
+4. **A game already open carries on** when the time runs out, and so do classmate games already started (the home page's "still going" links). Only starting a new game waits.
+
+How it works:
+
+- `shared/training/gate.ts` decides (locked, or open until when). The finish time is the newer of the server's (`my_training_lock()`) and this device's own (so a session finished with the Wi-Fi down opens the games straight away).
+- The class's switch comes from the settings row every page already reads, so a class with it off costs no extra request. With it on, `my_training_lock()` is asked at most once a minute. **If it can't be asked, the games stay open.**
+- The training function saves a `session` item after the session's answers; `record_training_session()` only counts it when enough of its answers are saved (`gate.minAnswers`: 2 for facts, 12 for Quick looks) and it finished in the last 12 hours.
+- Migration `20261022000300_training_first.sql`: `training_sessions`, `app_settings.training_first`, `teacher_set_training_first()`, `my_training_lock()`.
+- To turn it off fast: the Teacher page switch, or `update public.app_settings set training_first = false;`
+

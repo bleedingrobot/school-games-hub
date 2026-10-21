@@ -24,7 +24,17 @@ import {
   type SavedStudent,
   type TrainingState,
 } from '../../shared/training/records';
-import { correctAnswerFor, MAX_ANSWERS_PER_BATCH, MAX_ITEMS, type AnswerEvent, type AnswerInput, type SaveItem, type SaveResponse, type StudentItem } from '../../shared/training/save';
+import {
+  correctAnswerFor,
+  MAX_ANSWERS_PER_BATCH,
+  MAX_ITEMS,
+  type AnswerEvent,
+  type AnswerInput,
+  type SaveItem,
+  type SaveResponse,
+  type SessionKind,
+  type StudentItem,
+} from '../../shared/training/save';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
 
@@ -92,6 +102,31 @@ export function addAnswer(player: string, answer: PendingAnswer) {
 export function enqueueStudent(player: string, item: StudentItem) {
   const items = queuedItems(player).filter((i) => i.type !== 'student');
   set(queueKey(player), [...items, item].slice(-MAX_QUEUE));
+}
+
+/**
+ * A whole session finished (Training before games). Its answers are sealed into the queue first, so the server has them
+ * before it checks the session. This device also remembers the time, so the games open straight away even offline.
+ */
+export function enqueueSession(player: string, kind: SessionKind, seed: number, at: number = Date.now()) {
+  sealPending(player);
+  set(queueKey(player), [...queuedItems(player), { type: 'session', kind, seed, at }].slice(-MAX_QUEUE));
+  rememberFinished(player, at);
+}
+
+const finishedKey = (player: string) => `sgh-training-finished:${player}`;
+
+function rememberFinished(player: string, at: number) {
+  if (at <= (localFinishedAt(player) ?? 0)) return;
+  write(finishedKey(player), at);
+  // Storage blocked: kept until the page closes instead.
+  if (read<number>(finishedKey(player)) !== at) memory.set(finishedKey(player), at);
+}
+
+/** When this device last saw the student finish a session, or null. */
+export function localFinishedAt(player: string): number | null {
+  const at = read<number>(finishedKey(player)) ?? (memory.get(finishedKey(player)) as number | undefined);
+  return typeof at === 'number' && Number.isFinite(at) ? at : null;
 }
 
 /** Turns the pending answers into batches with ids and puts them at the end of the queue. */

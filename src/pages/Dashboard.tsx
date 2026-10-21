@@ -15,6 +15,8 @@ import type { SeatSummary } from '../data/cardGames';
 import type { PowerGame } from '../data/powerGames';
 import { findGame, GAMES, POWER_CLASH_ON, gameLabel } from '../games/registry';
 import { trainingOn } from '../training/switch';
+import { TrainingGateBanner } from '../training/TrainFirst';
+import { useTrainingGate } from '../data/trainingGate';
 import { BOT_LEVELS, type BotLevel, type DashboardGroup, type GameDefinition } from '../games/types';
 
 // The teacher pages and older tests still find these here.
@@ -124,6 +126,9 @@ export function Dashboard() {
 
   const featuredGame = findGame(featured) ?? GAMES[0];
   const featuredLevel = BOT_LEVELS.find((l) => l.id === levelFor(featuredGame.id))!;
+  // Training before games: the cards still open (to the "Training first" screen), but look resting until a session is done.
+  const gate = useTrainingGate();
+  const gamesLocked = trainingOn() && gate.ready && gate.locked;
 
   return (
     <div className="dashboard">
@@ -157,6 +162,8 @@ export function Dashboard() {
           </p>
         </div>
       </section>
+
+      <TrainingGateBanner />
 
       {pupil && <ClassWarpCard homePage={cardsFrom} />}
 
@@ -193,7 +200,7 @@ export function Dashboard() {
         </section>
       )}
 
-      <section className="game-groups" aria-labelledby="games-title">
+      <section className={gamesLocked ? 'game-groups game-groups--locked' : 'game-groups'} aria-labelledby="games-title">
         <h2 id="games-title" className="sr-only">
           Pick a game
         </h2>

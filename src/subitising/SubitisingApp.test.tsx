@@ -137,6 +137,41 @@ describe('Quick looks', () => {
     expect(ended).toHaveLength(1);
   });
 
+  describe('a whole round counts for Training before games', () => {
+    /** Picture on screen the whole time, so each one can be answered at once. */
+    function round(answer: number) {
+      const rounds: number[] = [];
+      const ended: number[] = [];
+      let state: SubState = { ...emptySubState(), placed: true, guidedMode: true };
+      const ui = (s: SubState) => (
+        <SubitisingApp state={s} onState={(n) => (state = n)} today="2026-10-21" onSessionEnd={() => ended.push(rounds.length)} onRoundFinished={(seed) => rounds.push(seed)} />
+      );
+      const view = render(ui(state));
+      fireEvent.click(screen.getByRole('button', { name: 'Start looking' }));
+      for (let i = 0; i < answer; i++) {
+        const n = dotsShown();
+        fireEvent.click(screen.getAllByRole('button').find((b) => b.classList.contains('sb-choice') && b.textContent === String(n))!);
+        view.rerender(ui(state));
+        if (i < C.sessionTrials - 1) fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      }
+      return { rounds, ended };
+    }
+
+    it('says so after all the pictures, before the session ends', () => {
+      const { rounds, ended } = round(C.sessionTrials);
+      fireEvent.click(screen.getByRole('button', { name: 'Finish' }));
+      expect(rounds).toHaveLength(1);
+      expect(ended).toEqual([1]);
+    });
+
+    it('not when it is stopped early', () => {
+      const { rounds, ended } = round(C.sessionTrials - 1);
+      fireEvent.click(screen.getByRole('button', { name: 'Finish for now' }));
+      expect(rounds).toHaveLength(0);
+      expect(ended).toEqual([0]);
+    });
+  });
+
   it('shows a way back to Training only when it is inside Training', () => {
     const { view } = setup(emptySubState());
     expect(screen.queryByRole('button', { name: 'Back to Training' })).toBeNull();

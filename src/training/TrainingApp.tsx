@@ -31,6 +31,10 @@ interface Props {
     onAnswered: (answer: QuickAnswerEvent) => void;
     onSessionEnd: () => void;
   };
+  /** A whole session (or Quick looks round) was finished, with its seed: it counts for Training before games. */
+  onSessionFinished?: (kind: 'facts' | 'quick', seed: number) => void;
+  /** Shown on the home and end-of-session screens: whether the games are open (Training before games). */
+  gateNote?: ReactNode;
 }
 
 function seedFor(today: string, n: number): number {
@@ -39,7 +43,7 @@ function seedFor(today: string, n: number): number {
   return h * 31 + n;
 }
 
-export function TrainingApp({ state, onState, today, onAnswered, tools, quick, openQuick }: Props) {
+export function TrainingApp({ state, onState, today, onAnswered, tools, quick, openQuick, onSessionFinished, gateNote }: Props) {
   const [screen, setScreen] = useState<Screen>(openQuick && quick ? 'quick' : 'home');
   const [summary, setSummary] = useState<SessionSummary | null>(null);
   const [sessionState, setSessionState] = useState<TrainingState>(state);
@@ -59,6 +63,8 @@ export function TrainingApp({ state, onState, today, onAnswered, tools, quick, o
         today={today}
         onAnswered={quick.onAnswered}
         onSessionEnd={quick.onSessionEnd}
+        onRoundFinished={(s) => onSessionFinished?.('quick', s)}
+        gateNote={gateNote}
         onBack={() => setScreen('home')}
       />
     );
@@ -71,6 +77,7 @@ export function TrainingApp({ state, onState, today, onAnswered, tools, quick, o
           <h1>Basic facts training</h1>
           <p>A few minutes a day. No clock, no score: just you and your facts.</p>
           <p className="tr-week">{weekLine(greenThisWeek(state.records, today))}</p>
+          {gateNote}
           <button type="button" className="tr-btn tr-btn-primary tr-big" onClick={start}>
             Today’s session
           </button>
@@ -110,6 +117,8 @@ export function TrainingApp({ state, onState, today, onAnswered, tools, quick, o
           onState={onState}
           onAnswered={onAnswered}
           onFinish={(finalState, s) => {
+            // Before the sessions count goes up (which sends the queue), so the finish goes in the same send.
+            onSessionFinished?.('facts', seed);
             const done = { ...finalState, sessionsDone: finalState.sessionsDone + 1 };
             onState(done);
             setSummary(s);
@@ -117,7 +126,9 @@ export function TrainingApp({ state, onState, today, onAnswered, tools, quick, o
           }}
         />
       )}
-      {screen === 'summary' && summary && <Summary summary={summary} state={state} onHome={() => setScreen('home')} onMap={() => setScreen('map')} />}
+      {screen === 'summary' && summary && (
+        <Summary summary={summary} state={state} onHome={() => setScreen('home')} onMap={() => setScreen('map')} note={gateNote} />
+      )}
       {screen === 'map' && <FactsMap state={state} today={today} onBack={() => setScreen('home')} />}
     </main>
   );
