@@ -222,9 +222,9 @@ $$;
 -- 3. The hooks and the achievements
 -- ---------------------------------------------------------------------------
 
--- Achievements go with a New Season (keep_achievements stays false): the season wipes the coins, gear, bows and counts
--- they come from, so everyone starts equal (James, 21 Oct 2026), as Mine Runner's do.
-update public.hub_games set counts_fn = 'public.archery_counts(uuid)', players_fn = 'public.archery_progress_players()'
+-- Achievements stay through a New Season (James, 22 Oct 2026), as Maths Monsters', Dragon Maths' and Clan Quest's do,
+-- even though the season wipes the coins, gear, bows and counts: a badge earned is kept, and the counts start again.
+update public.hub_games set counts_fn = 'public.archery_counts(uuid)', players_fn = 'public.archery_progress_players()', keep_achievements = true
 where id = 'archery';
 
 insert into public.achievement_measures (measure) values

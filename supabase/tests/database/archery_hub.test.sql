@@ -47,7 +47,7 @@ select set_config('test.ana_class', (select class_id::text from public.class_mem
 -- ---- Registered, and the switch starts on ----
 select ok(exists (select 1 from public.hub_games where id = 'archery' and counts_fn is not null and players_fn is not null
   and rules_fn is not null and season_fn is not null and last_played_fn is not null), 'Archery has every hook now');
-select is((select keep_achievements from public.hub_games where id = 'archery'), false, '... and its achievements go with a New Season');
+select is((select keep_achievements from public.hub_games where id = 'archery'), true, '... and its achievements stay through a New Season');
 select is((select count(*)::integer from public.achievement_types where game = 'archery'), 10, 'ten Archery achievements');
 select is((select count(*)::integer from public.achievement_measures where measure like 'archery\_%'), 10, '... with ten measures');
 select is((select bool_and(archery_duels) from public.app_settings), true, 'classmate fights start on everywhere');
@@ -137,7 +137,7 @@ select pg_temp.eve();
 select lives_ok($$ select public.teacher_new_season('NEW SEASON') $$, 'a school admin starts a new season');
 select pg_temp.reset();
 select is((select count(*)::integer from public.archery_players), 0, 'it wipes the counts with the rest of the Armory');
-select is((select count(*)::integer from public.achievements where achievement like 'archery-%'), 0, '... and the Archery achievements');
+select is((select count(*)::integer from public.achievements where achievement like 'archery-%'), 5, '... but keeps the Archery achievements (James, 22 Oct 2026)');
 
 select * from finish();
 rollback;
