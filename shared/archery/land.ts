@@ -424,23 +424,26 @@ function inArcherCell(archers: readonly Archer[], col: number, row: number): boo
  * The Desert's sand slides: within SAND_REACH columns of what a blast touched, a column of sand that
  * stands more than SAND_MAX_STEP cells above a neighbour drops its top cell onto that neighbour, until
  * nothing more can slide (at most SAND_MAX_MOVES cells). Only sand (dirt) slides, never into an archer.
+ * The Earth Shaker uses the same crumbling with its own reach, step and limit, in every world.
  * Returns how many cells moved.
  */
-export function slideSand(land: Land, c0: number, c1: number, archers: readonly Archer[]): number {
-  const lo = c0 - SAND_REACH < 0 ? 0 : c0 - SAND_REACH;
-  const hi = c1 + SAND_REACH >= COLS ? COLS - 1 : c1 + SAND_REACH;
+export function slideSand(
+  land: Land, c0: number, c1: number, archers: readonly Archer[], reach = SAND_REACH, maxStep = SAND_MAX_STEP, maxMoves = SAND_MAX_MOVES,
+): number {
+  const lo = c0 - reach < 0 ? 0 : c0 - reach;
+  const hi = c1 + reach >= COLS ? COLS - 1 : c1 + reach;
   const top = new Int32Array(hi - lo + 1);
   for (let c = lo; c <= hi; c++) top[c - lo] = surfaceRow(land, c);
   let moves = 0;
   let moved = true;
-  while (moved && moves < SAND_MAX_MOVES) {
+  while (moved && moves < maxMoves) {
     moved = false;
-    for (let c = lo; c <= hi && moves < SAND_MAX_MOVES; c++) {
+    for (let c = lo; c <= hi && moves < maxMoves; c++) {
       const t = top[c - lo];
       if (t >= ROWS || land.cells[t * COLS + c] !== DIRT) continue;
       // Slide to the lower neighbour (the left one if they're level).
       let to = -1;
-      let toTop = t + SAND_MAX_STEP;
+      let toTop = t + maxStep;
       if (c > lo && top[c - 1 - lo] > toTop) {
         to = c - 1;
         toTop = top[c - 1 - lo];

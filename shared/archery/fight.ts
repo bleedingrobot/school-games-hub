@@ -12,15 +12,21 @@
  * Screens and bots play a fight one shot at a time with `startFight` and `takeShot`, which is exactly
  * what `playFight` does, so they always agree with a replay.
  */
-import { arrowKind, impact, isArrowId, usable, type ImpactContext } from './arrows';
-import { MAX_ANGLE, MAX_POWER, MAX_ROUNDS, MAX_SHOTS_PER_ROUND, ROUNDS_TO_WIN, WORLD_WIND_MAX } from './config';
-import { blastDamage, capShotDamage, fallDamage, hurt } from './damage';
-import { addDirt, carve, copyLand, dropArcher, makeRoundLand, settle, slideArcher, slideSand } from './land';
+import { arrowKind, isArrowId, usable } from './arrows';
+import { APPLE_HEALTH, GLASS_STING, GOO_DAMAGE, MAX_ANGLE, MAX_POWER, MAX_ROUNDS, MAX_SHOTS_PER_ROUND, ROUNDS_TO_WIN, START_HEALTH, WORLD_WIND_MAX } from './config';
+import { capShotDamage, fallDamage, hurt } from './damage';
+import { inPuddle, newWork, runArrow, shake } from './effects';
+import { isBowId, isShieldId, shieldKind } from './gear';
+import { copyLand, dropArcher, makeRoundLand, settle, slideArcher, slideSand } from './land';
 import { makeRandom, mixSeed } from './random';
-import { flyArrow } from './shot';
-import type { Archer, ArrowId, FightResult, FightSetup, Round, RoundResult, Shot, ShotRecord, WorldId } from './types';
+import type { Archer, FightResult, FightSetup, ItemId, Round, RoundResult, Shot, ShotRecord, WorldId } from './types';
 
 const copyArcher = (a: Archer): Archer => ({ ...a });
+
+/** A copy of a round that can be played on without changing the real one (bots try shots on copies). */
+export function copyRound(round: Round): Round {
+  return { ...round, land: copyLand(round.land), archers: [copyArcher(round.archers[0]), copyArcher(round.archers[1])] };
+}
 
 /** The seed for a round's land, and its wind (each world has its own wind range). */
 export function roundSeeds(seed: number, index: number, world: WorldId): { landSeed: number; wind: number } {
@@ -30,71 +36,123 @@ export function roundSeeds(seed: number, index: number, world: WorldId): { landS
   return { landSeed, wind };
 }
 
-/** Starts round `index` of a fight. */
-export function newRound(seed: number, index: number, setup: FightSetup): Round {
+/**
+ * Starts round `index` of a fight. Each archer's shield is full again, and they keep the bow they brought.
+ * `used` is what each player has used so far in the fight (for the Umbrellas they have left).
+ */
+export function newRound(seed: number, index: number, setup: FightSetup, used: FightResult['used'] = [{}, {}]): Round {
   const { landSeed, wind } = roundSeeds(seed, index, setup.world);
   const { land, archers } = makeRoundLand(landSeed, setup.world);
-  archers[0].shield = setup.players[0].shield;
-  archers[1].shield = setup.players[1].shield;
-  return { world: setup.world, index, landSeed, wind, land, archers, turn: index % 2, shots: 0, winner: null };
+  for (let i = 0; i < 2; i++) {
+    const p = setup.players[i];
+    const a = archers[i];
+    const guard = p.shield && isShieldId(p.shield) ? p.shield : null;
+    a.guard = guard;
+    a.shield = guard ? shieldKind(guard).soak : 0;
+    a.bubble = guard === 'bubble';
+    a.bow = p.bow && isBowId(p.bow) ? p.bow : 'starter';
+    a.shardsBy = -1;
+    a.umbrellas = Math.max(0, (p.quiver.umbrella ?? 0) - (used[i].umbrella ?? 0));
+  }
+  return { world: setup.world, index, landSeed, wind, land, archers, turn: index % 2, shots: 0, winner: null, goo: [] };
 }
 
 /**
- * Plays one shot by `player` in the round (changing the round's land and archers): the flight, the
- * arrow's landing, loose dirt falling (and the Desert's sand sliding), archers falling (and in the Snow
- * sliding down slopes), then the damage, at most MAX_SHOT_DAMAGE per archer. Doesn't change whose turn it is.
+ * Plays one shot by `player` in the round (changing the round's land and archers): an Apple first if they
+ * eat one, the arrow's flight and landing (each arrow's own way, in effects.ts), loose dirt falling (and the
+ * Desert's sand sliding, and an Earth Shaker's cliffs crumbling), archers falling (an Umbrella stops a fall
+ * hurting; on the Snow, or shaken loose, they slide down slopes), then the damage, at most MAX_SHOT_DAMAGE
+ * per archer. Then the end of the turn: Sticky Goo hurts anyone standing in it, and Glass shards in the
+ * shooter either break (they hit back) or pop them. Doesn't change whose turn it is.
  */
 export function playShot(round: Round, player: number, shot: Shot, keepPath = false): ShotRecord {
   const { land, archers } = round;
-  const arrow = arrowKind(shot.arrow);
-  const flight = flyArrow(land, archers, player, shot, round.wind);
-  const raw = [0, 0];
-  let c0 = Infinity;
-  let c1 = -Infinity;
-  const touched = ([a, b]: [number, number]) => {
-    if (a < c0) c0 = a;
-    if (b > c1) c1 = b;
-  };
-  const ctx: ImpactContext = {
-    land, archers, shooter: player, hit: flight.hit, arrow,
-    blast(x, y, radius, peak) {
-      for (let i = 0; i < archers.length; i++) if (!archers[i].popped) raw[i] += blastDamage(archers[i], x, y, radius, peak);
-      if (radius > 0) touched(carve(land, x, y, radius));
-    },
-    dirt(x, y, radius) {
-      if (radius > 0) touched(addDirt(land, x, y, radius));
-    },
-    bonus(i, amount) {
-      if (!archers[i].popped) raw[i] += amount;
-    },
-  };
-  impact(ctx);
-  if (c1 >= c0) {
-    settle(land, c0, c1);
-    if (round.world === 'desert') slideSand(land, c0, c1, archers);
+  const me = archers[player];
+  let apple = 0;
+  if (shot.apple && !me.popped) {
+    apple = Math.min(APPLE_HEALTH, START_HEALTH - me.health);
+    me.health += apple;
   }
+  const w = newWork(round, player, shot, keepPath);
+  runArrow(w);
+  const raw = w.raw;
+  if (w.c1 >= w.c0) {
+    settle(land, w.c0, w.c1);
+    if (round.world === 'desert') slideSand(land, w.c0, w.c1, archers);
+  }
+  const tumble = shake(w);
+  if (w.shaken) settle(land, w.shaken[0], w.shaken[1]);
   const fell: [number, number] = [0, 0];
   const slid: [number, number] = [0, 0];
+  const umbrella: [boolean, boolean] = [false, false];
   for (let i = 0; i < archers.length; i++) {
-    if (archers[i].popped) continue;
-    fell[i] = dropArcher(land, archers[i]);
-    raw[i] += fallDamage(fell[i]);
-    if (round.world !== 'snow') continue;
-    const slide = slideArcher(land, archers, i);
-    slid[i] = slide.slid;
-    for (const d of slide.drops) {
-      fell[i] += d;
-      raw[i] += fallDamage(d);
+    const a = archers[i];
+    if (a.popped) continue;
+    fell[i] = dropArcher(land, a);
+    let fall = fallDamage(fell[i]);
+    if (round.world === 'snow' || tumble[i]) {
+      const slide = slideArcher(land, archers, i);
+      slid[i] = slide.slid;
+      for (const d of slide.drops) {
+        fell[i] += d;
+        fall += fallDamage(d);
+      }
     }
+    if (fall > 0 && (a.umbrellas ?? 0) > 0) {
+      a.umbrellas = (a.umbrellas ?? 0) - 1;
+      umbrella[i] = true;
+      fall = 0;
+    }
+    raw[i] += fall;
   }
   const damage: [number, number] = [0, 0];
   for (let i = 0; i < archers.length; i++) damage[i] = hurt(archers[i], capShotDamage(raw[i]));
+  /** What the shot itself did (before goo), for "did they hit back?". */
+  const struck: [number, number] = [damage[0], damage[1]];
+
+  // The end of the turn. Sticky Goo: new puddles join, everyone standing in one is hurt, and each puddle has a shot less.
+  const goo: [number, number] = [0, 0];
+  const puddles = [...round.goo, ...w.puddles];
+  for (let i = 0; i < archers.length; i++) {
+    if (puddles.some((p) => inPuddle(p, archers[i]))) {
+      goo[i] = hurt(archers[i], GOO_DAMAGE);
+      damage[i] += goo[i];
+    }
+  }
+  round.goo = puddles.map((p) => ({ ...p, shots: p.shots - 1 })).filter((p) => p.shots > 0);
+
+  // Glass shards in the shooter (from the other archer's Glass Arrow): hit back this turn to break them (they
+  // still sting), or pop. If the Glass shooter has already popped, they just break.
+  let glass: ShotRecord['glass'] = null;
+  let sting = 0;
+  const by = me.shardsBy ?? -1;
+  if (by >= 0 && !me.popped) {
+    if (archers[by].popped) glass = 'broke';
+    else if (struck[by] > 0) {
+      glass = 'broke';
+      sting = hurt(me, GLASS_STING);
+    } else {
+      glass = 'popped';
+      sting = me.health;
+      me.health = 0;
+      me.popped = true;
+    }
+    damage[player] += sting;
+    me.shardsBy = -1;
+  } else if (by >= 0) me.shardsBy = -1;
+  // New shards from this shot's Glass Arrow.
+  for (let i = 0; i < archers.length; i++) if (w.stabbed[i] && !archers[i].popped) archers[i].shardsBy = player;
+
   round.shots++;
+  const hit = w.hit ?? { kind: 'timeout' as const, x: me.x, y: me.y, archer: null, steps: 0 };
   const record: ShotRecord = {
-    round: round.index, player, shot: { ...shot }, wind: round.wind, hit: flight.hit, bounce: flight.bounce, damage, fell, slid,
-    after: [copyArcher(archers[0]), copyArcher(archers[1])],
+    round: round.index, player, shot: { ...shot }, wind: round.wind, hit, bounce: w.bounce, damage, fell, slid,
+    after: [copyArcher(archers[0]), copyArcher(archers[1])], apple, umbrella, goo, glass, sting,
   };
-  if (keepPath) record.path = flight.path;
+  if (keepPath) {
+    record.path = w.path;
+    record.events = w.events ?? [];
+  }
   return record;
 }
 
@@ -111,14 +169,16 @@ export function roundWinner(round: Round): 0 | 1 | 'draw' | null {
   return null;
 }
 
-/** Why a shot can't be played, or null if it's fine. `used` is what the player has already shot. */
-export function shotProblem(shot: Shot, setup: FightSetup, player: number, used: Partial<Record<ArrowId, number>>): string | null {
+/** Why a shot can't be played, or null if it's fine. `used` is what the player has already used. */
+export function shotProblem(shot: Shot, setup: FightSetup, player: number, used: Partial<Record<ItemId, number>>): string | null {
   if (!shot || typeof shot !== 'object') return 'not a shot';
   if (!Number.isInteger(shot.angle) || shot.angle < 0 || shot.angle > MAX_ANGLE) return 'angle must be a whole number from 0 to 180';
   if (!Number.isInteger(shot.power) || shot.power < 0 || shot.power > MAX_POWER) return 'power must be a whole number from 0 to 100';
   if (!isArrowId(shot.arrow)) return 'no such arrow';
   const arrow = arrowKind(shot.arrow);
   if (!usable(arrow)) return `${arrow.name} can't be used yet`;
+  if (shot.apple !== undefined && typeof shot.apple !== 'boolean') return 'apple must be true or false';
+  if (shot.apple && (used.apple ?? 0) >= (setup.players[player].quiver.apple ?? 0)) return 'no Apples left';
   if (arrow.unlimited) return null;
   const have = setup.players[player].quiver[shot.arrow] ?? 0;
   if ((used[shot.arrow] ?? 0) >= have) return `no ${arrow.name} left`;
@@ -165,7 +225,10 @@ export function takeShot(run: FightRun, shot: Shot, keepPath = false): TakenShot
   if (problem) return { problem, record: null, ended: null };
   const record = playShot(round, player, shot, keepPath);
   run.records.push(record);
-  if (!arrowKind(shot.arrow).unlimited) run.used[player][shot.arrow] = (run.used[player][shot.arrow] ?? 0) + 1;
+  const used = run.used[player];
+  if (!arrowKind(shot.arrow).unlimited) used[shot.arrow] = (used[shot.arrow] ?? 0) + 1;
+  if (shot.apple) used.apple = (used.apple ?? 0) + 1;
+  for (let i = 0; i < 2; i++) if (record.umbrella[i]) run.used[i].umbrella = (run.used[i].umbrella ?? 0) + 1;
 
   const w = roundWinner(round);
   if (w === null) {
@@ -178,7 +241,7 @@ export function takeShot(run: FightRun, shot: Shot, keepPath = false): TakenShot
   if (run.roundWins[0] >= ROUNDS_TO_WIN) run.winner = 0;
   else if (run.roundWins[1] >= ROUNDS_TO_WIN) run.winner = 1;
   else if (run.rounds.length >= MAX_ROUNDS) run.winner = run.roundWins[0] > run.roundWins[1] ? 0 : run.roundWins[1] > run.roundWins[0] ? 1 : 'draw';
-  else run.round = newRound(run.seed, round.index + 1, run.setup);
+  else run.round = newRound(run.seed, round.index + 1, run.setup, run.used);
   return { problem: null, record, ended: round };
 }
 

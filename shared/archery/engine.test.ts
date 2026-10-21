@@ -24,7 +24,7 @@ function groundRow(land: Land, col: number): number {
 }
 
 const archer = (x: number, y: number, health = START_HEALTH): Archer => ({ x, y, health, shield: 0, popped: false });
-const plainOnly: FightSetup = { world: 'forest', players: [{ quiver: {}, shield: 0 }, { quiver: {}, shield: 0 }] };
+const plainOnly: FightSetup = { world: 'forest', players: [{ quiver: {}, shield: null }, { quiver: {}, shield: null }] };
 
 describe('random', () => {
   it('gives the same numbers from the same seed, and different ones from another', () => {
@@ -216,7 +216,8 @@ describe('damage', () => {
       round.archers[0] = archer(900, (ROWS - 1) * CELL);
       round.archers[1] = archer(330, 120);
       const rec = playShot(round, 1, { angle: 90, power: 30, arrow: kind.id }, false);
-      expect(rec.hit.kind).toBe('archer');
+      // Arrow Rain splits at the top, and a Crossbow Bolt flies straight on: the rest come back down on them.
+      if (kind.id !== 'rain' && kind.id !== 'bolt') expect(rec.hit.kind, kind.id).toBe('archer');
       expect(round.archers[1].popped, kind.id).toBe(false);
       expect(round.archers[1].health).toBeGreaterThanOrEqual(START_HEALTH - MAX_SHOT_DAMAGE);
     }
@@ -224,30 +225,30 @@ describe('damage', () => {
 });
 
 describe('arrows', () => {
-  it('has every arrow from the plan, with Plain and Steel working now', () => {
+  it('has every arrow from the plan, all for sale except the free Plain Arrow', () => {
     expect(ARROWS.map((a) => a.id)).toEqual(['plain', 'steel', 'log', 'mole', 'mud', 'rain', 'skip', 'goo', 'shaker', 'owl', 'firework', 'sneaky', 'bolt', 'giant', 'glass']);
-    expect(ARROWS.filter((a) => a.behaviour?.stage === 1).map((a) => a.id)).toEqual(['plain', 'steel']);
+    expect(armoryArrows().map((a) => a.id)).toEqual(ARROWS.filter((a) => a.id !== 'plain').map((a) => a.id));
     expect(arrowKind('plain').unlimited).toBe(true);
     expect(arrowKind('steel')).toMatchObject({ price: 50, perPurchase: 2, level: 1 });
     expect(arrowKind('giant')).toMatchObject({ price: 400, perPurchase: 1, level: 5 });
+    // Bigger than Stage 2's 18 px (James, 21 Oct 2026: shorter rounds).
+    expect(arrowKind('plain').blastRadius).toBe(24);
   });
 
-  it("never sells the pupil's Glass Arrow, and bots never pick it, until it's finished", () => {
+  it("sells the pupil's Glass Arrow (500 coins, level 5), but bots never pick it", () => {
     const glass = arrowKind('glass');
-    expect(glass).toMatchObject({ name: 'Glass Arrow', forSale: false, placeholder: true, price: 500, level: 5 });
-    expect(armoryArrows().map((a) => a.id)).not.toContain('glass');
+    expect(glass).toMatchObject({ name: 'Glass Arrow', forSale: true, price: 500, level: 5 });
     expect(botArrows().map((a) => a.id)).not.toContain('glass');
     expect(botArrows().map((a) => a.id)).toContain('plain');
-    // Nor can anyone shoot it in a fight, even with one in the quiver.
-    const setup: FightSetup = { world: 'forest', players: [{ quiver: { glass: 3 }, shield: 0 }, { quiver: {}, shield: 0 }] };
-    expect(shotProblem({ angle: 45, power: 50, arrow: 'glass' }, setup, 0, {})).toMatch(/can't be used/);
-    expect(playFight(1, setup, [{ angle: 45, power: 50, arrow: 'glass' }]).status).toBe('invalid');
+    const setup: FightSetup = { world: 'forest', players: [{ quiver: { glass: 3 }, shield: null }, { quiver: {}, shield: null }] };
+    expect(shotProblem({ angle: 45, power: 50, arrow: 'glass' }, setup, 0, {})).toBeNull();
+    expect(shotProblem({ angle: 45, power: 50, arrow: 'glass' }, setup, 1, {})).toMatch(/left/);
   });
 });
 
 describe('fights', () => {
   it('refuses shots that break the rules', () => {
-    const setup: FightSetup = { world: 'forest', players: [{ quiver: { steel: 1 }, shield: 0 }, { quiver: {}, shield: 0 }] };
+    const setup: FightSetup = { world: 'forest', players: [{ quiver: { steel: 1 }, shield: null }, { quiver: {}, shield: null }] };
     expect(shotProblem({ angle: 45.5, power: 50, arrow: 'plain' }, setup, 0, {})).toMatch(/angle/);
     expect(shotProblem({ angle: 45, power: 101, arrow: 'plain' }, setup, 0, {})).toMatch(/power/);
     expect(shotProblem({ angle: 45, power: 50, arrow: 'nope' as never }, setup, 0, {})).toMatch(/no such/);
@@ -257,7 +258,7 @@ describe('fights', () => {
   });
 
   it('takes turns, counts the special arrows used, and stays "playing" when the shots run out', () => {
-    const setup: FightSetup = { world: 'forest', players: [{ quiver: { steel: 2 }, shield: 0 }, { quiver: { steel: 2 }, shield: 0 }] };
+    const setup: FightSetup = { world: 'forest', players: [{ quiver: { steel: 2 }, shield: null }, { quiver: { steel: 2 }, shield: null }] };
     const shots: Shot[] = [
       { angle: 50, power: 60, arrow: 'steel' },
       { angle: 130, power: 60, arrow: 'plain' },

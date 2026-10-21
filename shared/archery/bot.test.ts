@@ -9,7 +9,7 @@ import { WORLD_IDS, type ArrowId, type FightSetup, type Shot, type WorldId } fro
 
 const kitSetup = (world: WorldId, a: BotLevel, b: BotLevel): FightSetup => ({
   world,
-  players: [{ quiver: { ...BOT_KITS[a] }, shield: 0 }, { quiver: { ...BOT_KITS[b] }, shield: 0 }],
+  players: [{ quiver: { ...BOT_KITS[a] }, shield: null }, { quiver: { ...BOT_KITS[b] }, shield: null }],
 });
 
 /** Plays a whole bot-against-bot fight, checking every shot as it goes. */
@@ -36,7 +36,7 @@ describe('archery bots', () => {
     const greedy: Partial<Record<ArrowId, number>> = { steel: 9, glass: 5, giant: 5, rain: 5, log: 5 };
     for (const world of WORLD_IDS) {
       for (const level of BOT_LEVELS) {
-        const setup: FightSetup = { world, players: [{ quiver: { ...greedy }, shield: 0 }, { quiver: { ...greedy }, shield: 0 }] };
+        const setup: FightSetup = { world, players: [{ quiver: { ...greedy }, shield: null }, { quiver: { ...greedy }, shield: null }] };
         const { run, shots } = playBots(mixSeed(11, WORLD_IDS.indexOf(world) * 10 + BOT_LEVELS.indexOf(level)), setup, [level, level]);
         for (const s of shots) {
           expect(['plain', 'steel']).toContain(s.arrow);
@@ -53,7 +53,7 @@ describe('archery bots', () => {
   });
 
   it('never shoots a Steel Arrow it does not have', () => {
-    const setup: FightSetup = { world: 'desert', players: [{ quiver: {}, shield: 0 }, { quiver: {}, shield: 0 }] };
+    const setup: FightSetup = { world: 'desert', players: [{ quiver: {}, shield: null }, { quiver: {}, shield: null }] };
     const { shots } = playBots(77, setup, ['hard', 'medium']);
     expect(shots.every((s) => s.arrow === 'plain')).toBe(true);
   });

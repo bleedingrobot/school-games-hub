@@ -8,7 +8,7 @@ import { flyArrow } from './shot';
 import { AIR, BUILDING, DIRT, ICE, TREE, WORLD_IDS, type Archer, type FightSetup, type Land, type Shot, type WorldId } from './types';
 
 const archer = (x: number, y: number): Archer => ({ x, y, health: START_HEALTH, shield: 0, popped: false });
-const setupIn = (world: WorldId): FightSetup => ({ world, players: [{ quiver: { steel: 3 }, shield: 0 }, { quiver: { steel: 3 }, shield: 0 }] });
+const setupIn = (world: WorldId): FightSetup => ({ world, players: [{ quiver: { steel: 3 }, shield: null }, { quiver: { steel: 3 }, shield: null }] });
 const count = (land: Land, kind: number) => land.cells.reduce((n, v) => n + (v === kind ? 1 : 0), 0);
 
 /** Ground from row `top` down, across the whole field. */
@@ -204,7 +204,7 @@ describe('Snow: slippery slopes and ice', () => {
       for (let s = 0; s < 6; s++) {
         const shots: Shot[] = [];
         for (let i = 0; i < 40; i++) shots.push({ angle: i % 2 === 0 ? 40 + ((i * 7 + s) % 40) : 100 + ((i * 11 + s) % 40), power: 40 + ((i * 13 + s) % 55), arrow: i % 3 === 0 ? 'steel' : 'plain' });
-        const setup = { ...setupIn(world), players: [{ quiver: { steel: 99 }, shield: 0 }, { quiver: { steel: 99 }, shield: 0 }] } as FightSetup;
+        const setup = { ...setupIn(world), players: [{ quiver: { steel: 99 }, shield: null }, { quiver: { steel: 99 }, shield: null }] } as FightSetup;
         const f = playFight(s, setup, shots);
         const slid = f.shots.reduce((n, r) => n + r.slid[0] + r.slid[1], 0);
         if (world === 'snow') snowSlides += slid;

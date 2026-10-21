@@ -29,7 +29,7 @@ function landKey(land: Land): string {
   return h.toString(16).padStart(8, '0');
 }
 
-const archerKey = (a: Archer) => `${a.x},${a.y},${a.health},${a.shield},${a.popped ? 1 : 0}`;
+const archerKey = (a: Archer) => `${a.x},${a.y},${a.health},${a.shield},${a.popped ? 1 : 0},${a.shardsBy ?? -1},${a.umbrellas ?? 0},${a.bubble ? 1 : 0}`;
 
 export function determinismReport(): string {
   const lines: string[] = [];
@@ -46,22 +46,29 @@ export function determinismReport(): string {
   const fights: [number, (typeof WORLD_IDS)[number]][] = [[3, 'forest'], [4242, 'desert'], [987654321, 'snow'], [77, 'city'], [31337, 'desert']];
   for (const [seed, world] of fights) {
     const next = lcg(seed);
-    const quiver = Object.fromEntries(kinds.map((k) => [k, 999]));
-    const setup: FightSetup = { world, players: [{ quiver, shield: 20 }, { quiver, shield: 0 }] };
+    const quiver = { ...Object.fromEntries(kinds.map((k) => [k, 999])), apple: 999, umbrella: 3 };
+    // Every shield and a few bows across the fights.
+    const shields = ['wood', 'charm', 'bubble', null] as const;
+    const bows = ['starter', 'long', 'recurve', 'golden'] as const;
+    const k = fights.findIndex(([s2]) => s2 === seed);
+    const setup: FightSetup = {
+      world,
+      players: [{ quiver, shield: shields[k % 4], bow: bows[k % 4] }, { quiver, shield: shields[(k + 1) % 4], bow: bows[(k + 2) % 4] }],
+    };
     const shots: Shot[] = [];
     for (let i = 0; i < 400; i++) {
       const left = i % 2 === 0;
       // Mostly lobs towards the other side, with some wild ones.
       const angle = next() % 5 === 0 ? next() % 181 : left ? 30 + (next() % 50) : 100 + (next() % 50);
-      shots.push({ angle, power: 35 + (next() % 66), arrow: kinds[next() % kinds.length] });
+      shots.push({ angle, power: 35 + (next() % 66), arrow: kinds[next() % kinds.length], apple: next() % 11 === 0 });
     }
     // Play until the fight ends, then cut the list there so it's always a valid fight.
     const full = playFight(seed, setup, shots);
     const res = full.status === 'invalid' ? playFight(seed, setup, shots.slice(0, full.shots.length)) : full;
     res.shots.forEach((s, i) => {
-      lines.push(`fight/${world}/${seed}/${i}: r${s.round} p${s.player} ${s.shot.angle},${s.shot.power},${s.shot.arrow} w${s.wind} ${s.hit.kind} ${s.hit.x},${s.hit.y},${s.hit.steps} b${s.bounce ? s.bounce.join(',') : '-'} d${s.damage.join(',')} f${s.fell.join(',')} s${s.slid.join(',')} ${archerKey(s.after[0])} ${archerKey(s.after[1])}`);
+      lines.push(`fight/${world}/${seed}/${i}: r${s.round} p${s.player} ${s.shot.angle},${s.shot.power},${s.shot.arrow} w${s.wind} ${s.hit.kind} ${s.hit.x},${s.hit.y},${s.hit.steps} b${s.bounce ? s.bounce.join(',') : '-'} d${s.damage.join(',')} f${s.fell.join(',')} s${s.slid.join(',')} a${s.apple} u${s.umbrella.map(Number).join(',')} g${s.goo.join(',')} ${s.glass ?? '-'}${s.sting} ${archerKey(s.after[0])} ${archerKey(s.after[1])}`);
     });
-    lines.push(`fight/${world}/${seed}/end: ${res.status} ${res.winner} ${res.roundWins.join(',')} ${landKey(res.current.land)} ${JSON.stringify(res.used)}`);
+    lines.push(`fight/${world}/${seed}/end: ${res.status} ${res.winner} ${res.roundWins.join(',')} ${landKey(res.current.land)} ${JSON.stringify(res.current.goo)} ${JSON.stringify(res.used)}`);
   }
   return lines.join('\n');
 }
