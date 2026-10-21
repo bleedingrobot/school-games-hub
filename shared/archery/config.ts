@@ -118,7 +118,7 @@ export const LAND_STYLE: Readonly<Record<WorldId, LandStyle>> = {
   desert: { startRoughness: LAND_START_ROUGHNESS, roughnessDecay: 0.52, maxHeight: LAND_MAX_HEIGHT, minPeak: LAND_MIN_PEAK },
   snow: { startRoughness: LAND_START_ROUGHNESS, roughnessDecay: LAND_ROUGHNESS_DECAY, maxHeight: LAND_MAX_HEIGHT, minPeak: LAND_MIN_PEAK },
   // The City's ground is lower and gentler: the buildings make its height.
-  city: { startRoughness: 0.4, roughnessDecay: 0.5, maxHeight: 0.4, minPeak: 0.3 },
+  city: { startRoughness: 0.45, roughnessDecay: 0.5, maxHeight: 0.5, minPeak: 0.4 },
 };
 
 // Forest: trees stand on the land and stop arrows until they're blasted away.
@@ -167,6 +167,13 @@ export const BUILDING_W_MAX = 22;
 export const BUILDING_GAP_MIN = 0;
 export const BUILDING_GAP_MAX = 8;
 export const BUILDING_H_MIN = 10;
-export const BUILDING_H_MAX = 60;
+export const BUILDING_H_MAX = 50;
 /** Roughly this share of the street gets no building at all (an open lot). */
 export const BUILDING_SKIP = 0.2;
+/**
+ * Buildings within this many cells of an archer are cut down to at most BUILDING_NEAR_RISE cells above the
+ * archer's feet (a low wall to shelter behind), so an archer is never stuck at the bottom of a tall,
+ * narrow street with no shot out (Stage 2's simulator found that on almost half the City lands).
+ */
+export const BUILDING_NEAR = 20;
+export const BUILDING_NEAR_RISE = 3;

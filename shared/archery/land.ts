@@ -11,7 +11,7 @@
  */
 import {
   ARCHER_H, ARCHER_W, ARCHER_ZONE_FROM, ARCHER_ZONE_TO, BUILDING_CHIP, BUILDING_GAP_MAX, BUILDING_GAP_MIN,
-  BUILDING_H_MAX, BUILDING_H_MIN, BUILDING_SKIP, BUILDING_W_MAX, BUILDING_W_MIN, CELL, COLS, FALL_SAFE_CELLS, FIELD_H,
+  BUILDING_H_MAX, BUILDING_H_MIN, BUILDING_NEAR, BUILDING_NEAR_RISE, BUILDING_SKIP, BUILDING_W_MAX, BUILDING_W_MIN, CELL, COLS, FALL_SAFE_CELLS, FIELD_H,
   HANDS_HEIGHT, HILL_MIN_RISE, ICE_BLOCKS_MAX, ICE_BLOCKS_MIN, ICE_CLEARANCE, ICE_H_MAX, ICE_H_MIN, ICE_W_MAX, ICE_W_MIN,
   LAND_END_HIGH, LAND_END_LOW, LAND_MAX_HEIGHT, LAND_MIN_HEIGHT, LAND_STYLE, LAND_TRIES, ROWS, SAND_MAX_MOVES,
   SAND_MAX_STEP, SAND_REACH, SNOW_SLIDE_MAX, START_HEALTH, TREE_BLAST_SCALE, TREE_CLEARANCE, TREE_HALF_MAX,
@@ -205,6 +205,7 @@ export function makeRoundLand(seed: number, world: WorldId): RoundLand {
     const land = landFromHeights(makeHeights(rng, LAND_STYLE[world]));
     if (world === 'city') addBuildings(land, rng);
     const archers = placeArchers(land, rng);
+    if (world === 'city') lowerBuildingsNear(land, archers);
     const passed = !canSee(land, archers[0], archers[1]) && hillRise(land, archers[0], archers[1]) >= HILL_MIN_RISE;
     last = { land, archers, tries: t + 1, passed };
     if (passed) break;
@@ -263,6 +264,17 @@ function addBuildings(land: Land, rng: Random) {
       for (let col = c; col <= c1; col++) fillDown(land, col, roof, BUILDING);
     }
     c = c1 + 1 + rng.range(BUILDING_GAP_MIN, BUILDING_GAP_MAX);
+  }
+}
+
+/** Cuts the buildings beside each archer down to a low wall (BUILDING_NEAR, BUILDING_NEAR_RISE). */
+function lowerBuildingsNear(land: Land, archers: readonly Archer[]) {
+  for (const a of archers) {
+    const [a0, a1] = archerCols(a.x);
+    const lowest = Math.floor(a.y / CELL) - BUILDING_NEAR_RISE;
+    for (let c = a0 - BUILDING_NEAR < 0 ? 0 : a0 - BUILDING_NEAR; c <= a1 + BUILDING_NEAR && c < COLS; c++) {
+      for (let r = 0; r < lowest; r++) if (land.cells[r * COLS + c] === BUILDING) land.cells[r * COLS + c] = AIR;
+    }
   }
 }
 
