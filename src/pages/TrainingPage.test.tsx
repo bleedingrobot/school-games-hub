@@ -203,6 +203,20 @@ describe('Quick looks inside Training', () => {
     expect(screen.getByRole('button', { name: /Today’s session/ })).toBeInTheDocument();
   });
 
+  it('opens straight into Quick looks from the dashboard card, and the card sits next to Training’s', async () => {
+    flags.on = true;
+    renderAt('/');
+    expect(screen.getByRole('link', { name: /Quick looks/ })).toHaveAttribute('href', '/training?quick=1');
+    expect(screen.getByRole('link', { name: /Multiplication and division training/ })).toBeInTheDocument();
+  });
+
+  it('opens Quick looks first when the address says so', async () => {
+    flags.on = true;
+    renderAt('/training?quick=1');
+    expect(await screen.findByRole('heading', { name: 'Quick looks' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Back to Training' })).toBeInTheDocument();
+  });
+
   it('is never shown when Training itself is off', () => {
     renderAt('/training');
     expect(screen.queryByRole('button', { name: 'Quick looks' })).toBeNull();

@@ -3,6 +3,7 @@
  * student's records saved to the database. Students and teachers (teachers have their own practice records); signed in is already checked by the router.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { SUBITISING_CONFIG } from '../../shared/subitising/config';
 import { dayString, type TrainingState } from '../../shared/training/records';
 import type { AnswerEvent } from '../../shared/training/save';
@@ -69,6 +70,9 @@ function Loaded({ player, start, offline, quickStart }: { player: string; start:
   const quickRef = useRef(quick);
   const sinceSend = useRef(0);
   const [today] = useState(() => dayString(new Date()));
+  const [search] = useSearchParams();
+  // The dashboard's Quick looks card opens Training with ?quick=1, straight into Quick looks.
+  const [openQuick] = useState(() => search.get('quick') === '1');
 
   const flush = useCallback((keepalive = false) => void flushQueue(player, keepalive), [player]);
 
@@ -150,6 +154,7 @@ function Loaded({ player, start, offline, quickStart }: { player: string; start:
         onState={onState}
         today={today}
         onAnswered={onAnswered}
+        openQuick={openQuick}
         quick={{ state: quick, onState: onQuickState, onAnswered: onQuickAnswered, onSessionEnd: () => flush() }}
       />
     </>

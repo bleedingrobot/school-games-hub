@@ -237,6 +237,15 @@ export function Dashboard() {
                         <span>A few minutes a day to build your facts</span>
                       </span>
                     </Link>
+                    <Link to="/training?quick=1" className="link-tile">
+                      <span className="link-tile__emoji" aria-hidden="true">
+                        👀
+                      </span>
+                      <span>
+                        <strong>Quick looks</strong>
+                        <span>Flash a picture, tap how many you saw</span>
+                      </span>
+                    </Link>
                   </div>
                 </div>
               )}

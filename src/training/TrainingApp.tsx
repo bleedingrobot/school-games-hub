@@ -22,6 +22,8 @@ interface Props {
   onAnswered?: (answer: AnswerEvent) => void;
   /** Extra buttons only the preview shows. */
   tools?: ReactNode;
+  /** Open straight into Quick looks (the dashboard card does this). Ignored when there is no Quick looks. */
+  openQuick?: boolean;
   /** Quick looks (the picture half of Training). Without this there is no Quick looks button. */
   quick?: {
     state: SubState;
@@ -37,8 +39,8 @@ function seedFor(today: string, n: number): number {
   return h * 31 + n;
 }
 
-export function TrainingApp({ state, onState, today, onAnswered, tools, quick }: Props) {
-  const [screen, setScreen] = useState<Screen>('home');
+export function TrainingApp({ state, onState, today, onAnswered, tools, quick, openQuick }: Props) {
+  const [screen, setScreen] = useState<Screen>(openQuick && quick ? 'quick' : 'home');
   const [summary, setSummary] = useState<SessionSummary | null>(null);
   const [sessionState, setSessionState] = useState<TrainingState>(state);
   const [seed, setSeed] = useState(1);
