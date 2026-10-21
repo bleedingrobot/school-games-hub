@@ -5,6 +5,7 @@
  *
  * Fights against classmates (Stage 6): with a `duels` link, the game says "I'm here" while it's open, shows the
  * classmates who are too, pops up challenges over any screen, and plays the fight one turn at a time through `api`.
+ * While the teacher has classmate fights switched off (Stage 7), none of that shows.
  */
 import { useCallback, useEffect, useState } from 'react';
 import type { BotLevel } from '../../../shared/archery/bot';
@@ -62,7 +63,8 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
   const [packProblem, setPackProblem] = useState('');
   // A speed round between rounds of a fight, shown over it.
   const [midSpeed, setMidSpeed] = useState(false);
-  const lessMotion = wantsLessMotion(loadPrefs());
+  const prefs = loadPrefs();
+  const lessMotion = wantsLessMotion(prefs);
   const [mateWorld, setMateWorld] = useState<WorldId>(choices.world);
   const [duelBusy, setDuelBusy] = useState(false);
   const [duelProblem, setDuelProblem] = useState('');
@@ -106,12 +108,19 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
   useEffect(() => {
     if (duels.off) setScreen({ kind: 'off', message: 'Archery Challenge is not switched on for your class.' });
   }, [duels.off]);
+  // Classmate fights switched off while the list was open: back home (an open fight shows how it ended instead).
+  const matesOn = !!link && duels.duelsOn;
+  useEffect(() => {
+    if (!matesOn && link) setScreen((s) => (s.kind === 'classmates' ? { kind: 'home' } : s));
+  }, [matesOn, link]);
 
   /** Shows what a classmate-fight request came to: the fight as it now is, and the Armory if it changed. */
   const took = useCallback((r: DuelResult) => {
     if (r.duel) duels.accept(r.duel);
     if (r.state) setState(r.state);
     if (!r.ok && r.why === 'game-off' && !r.duel) setScreen({ kind: 'off', message: r.message });
+    // Classmate fights were switched off: "I'm here" says so, and the buttons go.
+    if (!r.ok && r.code === 'duels-off') void duels.refresh();
   }, [duels]);
 
   async function challenge(who: Classmate) {
@@ -224,7 +233,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
       body = (
         <>
           <HomeScreen
-            coins={state.coins} world={world} bow={lastPack?.bow ?? 'starter'} lessMotion={lessMotion}
+            coins={state.coins} world={world} bow={lastPack?.bow ?? 'starter'} lessMotion={lessMotion} simple={prefs.simple}
             onPlay={() => setScreen({ kind: 'pick' })}
             onWorld={(w) => {
               setWorld(w);
@@ -235,7 +244,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
             onSpeed={() => speed('home')}
             onHowTo={() => setScreen({ kind: 'how' })}
             onExit={onExit}
-            onClassmate={link ? () => setScreen({ kind: 'classmates' }) : undefined}
+            onClassmate={matesOn ? () => setScreen({ kind: 'classmates' }) : undefined}
           />
           {extra?.(() => void load())}
         </>
@@ -245,7 +254,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
       body = (
         <PickScreen
           world={world} level={level} onWorld={setWorld} onLevel={setLevel} onBack={home} onNext={() => setScreen({ kind: 'pack' })}
-          onClassmate={link ? () => { setMateWorld(world); setScreen({ kind: 'classmates' }); } : undefined}
+          onClassmate={matesOn ? () => { setMateWorld(world); setScreen({ kind: 'classmates' }); } : undefined}
         />
       );
       break;
@@ -356,8 +365,9 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
     return <DuelNotStarted title={title} words={words} onBack={() => doneWithDuel(d)} />;
   }
 
-  // A challenge pops up over any screen except a classmate fight (answered from the keyboard too).
-  const ask = screen.kind !== 'duel' ? duels.asks[0] : undefined;
+  // A challenge pops up over any screen except a classmate fight (answered from the keyboard too), never while classmate
+  // fights are switched off.
+  const ask = screen.kind !== 'duel' && matesOn ? duels.asks[0] : undefined;
   return (
     <div className="ar-shell" data-screen={screen.kind}>
       {body}

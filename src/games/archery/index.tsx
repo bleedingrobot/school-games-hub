@@ -4,6 +4,7 @@ import { useArcheryEnabled } from './switch';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const ArcheryPlay = lazy(() => import('./ArcheryPlay').then((m) => ({ default: m.ArcheryPlay })));
+const ArcheryTeacherPanels = lazy(() => import('../../pages/TeacherArchery').then((m) => ({ default: m.ArcheryTeacherPanel })));
 
 /** A target with an arrow in the bull's eye. */
 function ArcheryIcon({ size = 64 }: { size?: number }) {
@@ -35,4 +36,5 @@ export const archeryChallenge: GameDefinition = {
   noBots: true,
   group: 'easy-maths',
   useTeacherSwitch: useArcheryEnabled,
+  TeacherPanels: ArcheryTeacherPanels,
 };

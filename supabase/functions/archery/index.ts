@@ -7642,7 +7642,7 @@ const SHIELDS = [
 		level: 3
 	}
 ];
-const HELPERS = [{
+const HELPERS$1 = [{
 	id: "apple",
 	name: "Apple",
 	does: "Eat it on your turn for +15 health.",
@@ -7699,7 +7699,7 @@ const BOWS = [
 ];
 const SHIELD_BY = new Map(SHIELDS.map((s) => [s.id, s]));
 const BOW_BY = new Map(BOWS.map((b) => [b.id, b]));
-const HELPER_BY = new Map(HELPERS.map((h) => [h.id, h]));
+const HELPER_BY = new Map(HELPERS$1.map((h) => [h.id, h]));
 function shieldKind(id) {
 	const s = SHIELD_BY.get(id);
 	if (!s) throw new Error(`no shield called ${id}`);
@@ -8733,7 +8733,7 @@ const SHOP = [
 		qty: a.perPurchase ?? 1,
 		level: Math.max(1, a.level)
 	})),
-	...HELPERS.map((h) => ({
+	...HELPERS$1.map((h) => ({
 		id: h.id,
 		kind: "gear",
 		name: h.name,
@@ -9764,6 +9764,33 @@ function makeRoundQuestions(context, random, count = 10) {
 	return out;
 }
 //#endregion
+//#region shared/archery/stats.ts
+const HELPERS = ["apple", "umbrella"];
+/** Did this player shoot nothing but Plain Arrows? (A Plain Arrow is never counted as used: it never runs out.) */
+const onlyPlain = (used) => Object.entries(used).every(([id, n]) => HELPERS.includes(id) || !n);
+/** What a finished bot fight adds: a win in its world, a Plain-only win, a win against Hawk. Nothing if it was lost. */
+function botFightStats(world, opponent, won, used) {
+	if (!won) return {};
+	return {
+		[`win_${world}`]: 1,
+		...onlyPlain(used) ? { plain_wins: 1 } : {},
+		...opponent === "hard" ? { hawk_wins: 1 } : {}
+	};
+}
+/** What a classmate fight played to the finish adds for one player: one more fight, and if they won it, a win too. */
+function duelStats(world, won, used) {
+	return {
+		duels: 1,
+		...won ? {
+			duel_wins: 1,
+			[`win_${world}`]: 1,
+			...onlyPlain(used) ? { plain_wins: 1 } : {}
+		} : {}
+	};
+}
+/** A speed round is perfect when every one of its questions earned its coins (right, and in time). */
+const perfectRound = (questions, earned) => questions > 0 && earned.length === questions && earned.every((c) => c > 0);
+//#endregion
 //#region supabase/functions/_shared/http.ts
 /** Websites allowed to call the server functions from a browser. */
 const ALLOWED_ORIGINS = [
@@ -9840,6 +9867,11 @@ var RateLimiter = class {
 *
 * One round (James, 22 Oct 2026). Finishing earns DUEL_POINTS, or DUEL_WIN_POINTS for the winner; a fight someone left,
 * or that the timer ended, gives nobody points. Every reply carries the fight as it now is.
+*
+* Two teacher switches matter (Stage 7): the game's own, and "Classmate fights" (on to start). While either is off for
+* either player's class, nothing can be challenged, answered or packed, and a fight that's open ends fairly the next
+* time either player asks anything (gear back to both, nobody gets points). Achievement counts for a fight played to
+* the finish go to both players through `note` (shared/archery/stats.ts).
 */
 const DUEL_ACTIONS = [
 	"duel-challenge",
@@ -9865,7 +9897,9 @@ const SAY = {
 	notYourTurn: "It's not your turn yet.",
 	notYet: "There's still time on the clock.",
 	gear: "You don't have all of that in your bag.",
-	switchedOff: "Your teacher has switched Archery Challenge off, so this fight has stopped. Any arrows you didn't use are back in your bag."
+	switchedOff: "Your teacher has switched Archery Challenge off, so this fight has stopped. Any arrows you didn't use are back in your bag.",
+	duelsOff: "Your teacher has switched classmate fights off for now. You can still fight the bots!",
+	duelsStopped: "Your teacher has switched classmate fights off, so this fight has stopped. Any arrows you didn't use are back in your bag."
 };
 const isRequestId$1 = (v) => typeof v === "string" && /^[A-Za-z0-9_-]{8,80}$/.test(v);
 const isUuid = (v) => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
@@ -9893,11 +9927,12 @@ function replay(d) {
 }
 const sameShot = (a, b) => !!a && !a.pass && a.angle === b.angle && a.power === b.power && a.arrow === b.arrow && !!a.apple === !!b.apple;
 /**
-* Handles one classmate-fight request from `player`. `on` is whether the game is switched on for their own class (the
-* handler has read it): while it's off they can only end a fight, never play one.
+* Handles one classmate-fight request from `player`. `switches` are their own class's (the handler has read them):
+* while either is off they can only end a fight, never play one.
 */
-async function handleDuel(services, player, action, body, on, everything) {
+async function handleDuel(services, player, action, body, switches, everything) {
 	if (action === "duel-challenge") {
+		if (!switches.duels) return no(403, SAY.duelsOff, { code: "duels-off" });
 		const { other, world, request } = body;
 		if (!isUuid(other) || !WORLD_IDS.includes(world) || !isRequestId$1(request)) return no(400, SAY.bad);
 		const seed = parseInt(services.randomHex(4), 16) >>> 0;
@@ -9914,6 +9949,35 @@ async function handleDuel(services, player, action, body, on, everything) {
 	}
 	if (!isDuelId(body.duel)) return no(400, SAY.bad);
 	const id = body.duel;
+	const loaded = await services.duelLoad(id);
+	if (loaded === "busy") return no(503, SAY.busy);
+	const seat = loaded ? seatOf(loaded.duel, player) : -1;
+	if (!loaded || seat < 0) return no(403, SAY.notYours);
+	const d = loaded.duel;
+	const gameOff = !switches.on || !loaded.on[0] || !loaded.on[1];
+	const duelsOff = !switches.duels || !loaded.duels[0] || !loaded.duels[1];
+	if ((gameOff || duelsOff) && duelOpen(d)) {
+		const run = d.status === "playing" ? replay(d) : null;
+		const playing = d.status === "playing";
+		const ended = await services.duelEnd(d.id, d.version, playing ? "done" : "cancelled", playing ? gameOff ? "switched-off" : "duels-off" : null, null, null, null, run ? run.used : null, null);
+		if (ended === "busy") return no(503, SAY.busy);
+		if (!ended) return no(409, SAY.changed, { code: "changed" });
+		return gameOff ? no(403, SAY.switchedOff, {
+			code: "game-off",
+			duel: ended
+		}) : no(403, SAY.duelsStopped, {
+			code: "duels-off",
+			duel: ended
+		});
+	}
+	if (!switches.on) return no(403, SAY.switchedOff, {
+		code: "game-off",
+		duel: d
+	});
+	if (duelsOff && (action === "duel-answer" || action === "duel-pack")) return no(403, SAY.duelsOff, {
+		code: "duels-off",
+		duel: d
+	});
 	if (action === "duel-answer") {
 		if (typeof body.accept !== "boolean") return no(400, SAY.bad);
 		const r = await services.duelAnswer(player, id, body.accept, PACK_MS);
@@ -9952,25 +10016,6 @@ async function handleDuel(services, player, action, body, on, everything) {
 			state
 		});
 	}
-	const loaded = await services.duelLoad(id);
-	if (loaded === "busy") return no(503, SAY.busy);
-	const seat = loaded ? seatOf(loaded.duel, player) : -1;
-	if (!loaded || seat < 0) return no(403, SAY.notYours);
-	const d = loaded.duel;
-	if ((!on || !loaded.on[0] || !loaded.on[1]) && duelOpen(d)) {
-		const run = d.status === "playing" ? replay(d) : null;
-		const ended = await services.duelEnd(d.id, d.version, d.status === "playing" ? "done" : "cancelled", d.status === "playing" ? "switched-off" : null, null, null, null, run ? run.used : null, null);
-		if (ended === "busy") return no(503, SAY.busy);
-		if (!ended) return no(409, SAY.changed, { code: "changed" });
-		return no(403, SAY.switchedOff, {
-			code: "game-off",
-			duel: ended
-		});
-	}
-	if (!on) return no(403, SAY.switchedOff, {
-		code: "game-off",
-		duel: d
-	});
 	if (action === "leave") {
 		if (!duelOpen(d)) return ok({ duel: d });
 		if (d.status !== "playing") {
@@ -10060,10 +10105,14 @@ async function afterTurn(services, d, run, turns, timeouts, real) {
 	if (ended === "busy") return no(503, SAY.busy);
 	if (!ended) return no(409, SAY.changed, { code: "changed" });
 	const points = [winner === 0 ? 4 : 3, winner === 1 ? 4 : 3];
-	for (const i of [0, 1]) try {
-		await services.awardPoints(i === 0 ? d.seat_a : d.seat_b, points[i], `archery-duel:${d.id}:${i}`);
-	} catch {
-		console.error("archery: classmate fight points could not be given");
+	for (const i of [0, 1]) {
+		const who = i === 0 ? d.seat_a : d.seat_b;
+		try {
+			await services.note(who, `stats:duel:${d.id}:${i}`, duelStats(d.world, winner === i, run.used[i]));
+			await services.awardPoints(who, points[i], `archery-duel:${d.id}:${i}`);
+		} catch {
+			console.error("archery: classmate fight points could not be given");
+		}
 	}
 	return ok({
 		duel: ended,
@@ -10113,11 +10162,15 @@ function makeHandler(services) {
 		const raw = await readJsonBody(request);
 		if (!raw || typeof raw !== "object" || Array.isArray(raw)) return reply(400, { error: "That couldn't be read." });
 		const body = raw;
-		const on = await services.enabled(player);
-		if (on === null) return busy("The Armory");
+		const switches = await services.settings(player);
+		if (switches === null) return busy("The Armory");
+		const on = switches.on;
 		const duelAction = DUEL_ACTIONS.includes(body.action) ? body.action : null;
 		if (duelAction && (on || duelAction === "shot" || duelAction === "times-up" || duelAction === "leave")) {
-			const r = await handleDuel(services, player, duelAction, body, on, EVERYTHING);
+			const r = await handleDuel(services, player, duelAction, body, {
+				on,
+				duels: on && switches.duels
+			}, EVERYTHING);
 			return reply(r.status, r.body);
 		}
 		if (!on) return reply(403, {
@@ -10187,6 +10240,10 @@ function makeHandler(services) {
 					at: now
 				}]));
 				const right = rightSoFar + (correct ? 1 : 0);
+				if (nextSlot === null) {
+					const earned = [...Object.entries(round.answered).filter(([k]) => k !== String(at)).map(([, a]) => a.coins), coins];
+					if (perfectRound(round.questions.length, earned)) await safely(() => services.note(player, `stats:round:${seed}`, { perfect_rounds: 1 }));
+				}
 				let point = false;
 				if (nextSlot === null && right >= 5) {
 					point = true;
@@ -10202,6 +10259,7 @@ function makeHandler(services) {
 				const price = action === "buy" ? item.price : sellPrice(item);
 				const done = await services.shop(player, body.request, action, item.kind, item.id, price, action === "buy" ? item.qty : 1, LEVEL_SPEND[item.level - 1] ?? 0, 5);
 				if (!done.ok) return done.why === "refused" ? reply(400, { error: "That couldn't be done." }) : busy("The Armory");
+				if (action === "buy" && item.kind === "bow" && done.value.result === "ok") await safely(() => services.note(player, `stats:buy:${body.request}`, {}));
 				return reply(200, done.value);
 			}
 			case "fight-start": {
@@ -10256,6 +10314,8 @@ function makeHandler(services) {
 				let points = 0;
 				if (!left && done.value.result === "ok") {
 					points = won ? 3 : 2;
+					const add = botFightStats(fight.world, fight.opponent, won, f.used);
+					if (Object.keys(add).length) await safely(() => services.note(player, `stats:fight:${id}`, add));
 					await safely(() => services.awardPoints(player, points, `archery-fight:${id}`));
 				}
 				return reply(200, {
@@ -10356,13 +10416,17 @@ Deno.serve(makeHandler({
 	now: () => Date.now(),
 	randomHex: (bytes) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, "0")).join(""),
 	userIdFor: userIdFromToken(admin.auth),
-	async enabled(player) {
+	async settings(player) {
 		const { data, error } = await admin.rpc("settings_of", { player }).maybeSingle();
 		if (error || !data) {
 			console.error(`archery: settings failed (${error?.code ?? "none"})`);
 			return null;
 		}
-		return data.archery_enabled === true;
+		const row = data;
+		return {
+			on: row.archery_enabled === true,
+			duels: row.archery_duels !== false
+		};
 	},
 	async mathsContext(player) {
 		const { data, error } = await admin.rpc("space_maths_context", { player });
@@ -10456,7 +10520,8 @@ Deno.serve(makeHandler({
 		const row = parseDuel(r.duel);
 		return row ? {
 			duel: row,
-			on: [r.on[0] === true, r.on[1] === true]
+			on: [r.on[0] === true, r.on[1] === true],
+			duels: [r.duels?.[0] === true, r.duels?.[1] === true]
 		} : null;
 	},
 	duelChallenge: (player, request, other, world, seed, waitMs) => call("archery_duel_challenge", {
@@ -10503,6 +10568,14 @@ Deno.serve(makeHandler({
 		used,
 		timeouts
 	}),
+	async note(player, once, add) {
+		const { error } = await admin.rpc("archery_note", {
+			player,
+			once,
+			add
+		});
+		if (error) console.error(`archery: achievement counts failed (${error.code ?? "unknown"})`);
+	},
 	async awardPoints(player, points, once) {
 		const { error } = await admin.rpc("add_game_points", {
 			player,

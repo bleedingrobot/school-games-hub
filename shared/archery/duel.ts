@@ -86,7 +86,8 @@ export function duelScores(run: FightRun): [number, number] {
 /** Where a classmate fight is up to (the archery_duels table). */
 export type DuelStatus = 'asked' | 'packing' | 'playing' | 'done' | 'declined' | 'expired' | 'cancelled';
 /** How a fight that started ended. */
-export type DuelEnding = 'finished' | 'left' | 'timeouts' | 'switched-off' | 'idle';
+/** switched-off: a teacher switched the game off; duels-off: they switched classmate fights off (Stage 7). */
+export type DuelEnding = 'finished' | 'left' | 'timeouts' | 'switched-off' | 'duels-off' | 'idle';
 
 /** One classmate fight, as the database keeps it and both players can read it. Seat 0 (`seat_a`) challenged. */
 export interface DuelRow {
@@ -169,6 +170,8 @@ export interface Ask {
 export interface HereReply {
   /** The game is switched off for this pupil's class. */
   off?: true;
+  /** Classmate fights are switched off for this pupil's class (Stage 7): nobody is listed and nothing pops up. */
+  duelsOff?: true;
   online: Classmate[];
   asks: Ask[];
   /** This pupil's open classmate fight (one they asked for, or packing or playing), or null. */
@@ -179,6 +182,7 @@ export interface HereReply {
 export function parseHere(raw: unknown): HereReply | null {
   if (!isObj(raw)) return null;
   if (raw.off === true) return { off: true, online: [], asks: [], duel: null };
+  if (raw.duels === false) return { duelsOff: true, online: [], asks: [], duel: null };
   const online = Array.isArray(raw.online)
     ? raw.online.filter(isObj).filter((o) => typeof o.id === 'string' && typeof o.name === 'string')
       .map((o) => ({ id: o.id as string, name: o.name as string, avatar: isObj(o.avatar) ? o.avatar : {}, busy: o.busy === true }))

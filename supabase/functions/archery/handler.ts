@@ -14,7 +14,9 @@
  *                 fights against classmates, one shot at a time, each played by the server's engine (duels.ts).
  *
  * Nothing that counts comes from the browser: prices are the shop's, coins come only from answers marked here, and a
- * fight's result comes from replaying it here. Everything is refused while the teacher's switch is off.
+ * fight's result comes from replaying it here. Everything is refused while the teacher's switch is off, and classmate
+ * fights while their own switch is (Stage 7). Achievement counts (shared/archery/stats.ts) come from the same replays
+ * and marks: a won fight, a perfect speed round, a bow bought.
  */
 import type { FactAnswer } from '../../../shared/maths/leitner';
 import { publicQuestion, seededRandom } from '../../../shared/maths/serverQuestions';
@@ -29,6 +31,7 @@ import {
   COINS_PER_RIGHT, EARNING_ROUNDS_PER_DAY, POINT_AT, inTime, limitMs, makeRoundQuestions, markQuestion, recordedMs, sameAnswer,
   type MathsContext,
 } from '../../../shared/archery/speed';
+import { botFightStats, perfectRound } from '../../../shared/archery/stats';
 import { WORLD_IDS, type ItemId, type PlayerSetup, type WorldId } from '../../../shared/archery/types';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 import { RateLimiter } from '../_shared/limits';
@@ -60,8 +63,8 @@ export interface StoredFight {
 
 export interface Services extends DuelServices {
   userIdFor(token: string): Promise<string | null>;
-  /** Is the game on for this pupil's class (null if the settings can't be read)? */
-  enabled(player: string): Promise<boolean | null>;
+  /** The teacher's switches for this pupil's class: the game, and classmate fights (null if they can't be read). */
+  settings(player: string): Promise<{ on: boolean; duels: boolean } | null>;
   mathsContext(player: string): Promise<MathsContext | null>;
   /** The Armory, made the first time, with coin-earning rounds played in the last day. */
   state(player: string): Promise<Outcome<ArmoryState & { roundsToday: number }>>;
@@ -114,12 +117,14 @@ export function makeHandler(services: Services) {
     const body = raw as Record<string, unknown>;
 
     // The teacher's switch decides everything. If it can't be read, nothing happens. While it's off, a classmate fight
-    // can still be ended fairly (duels.ts), but nothing can be played.
-    const on = await services.enabled(player);
-    if (on === null) return busy('The Armory');
+    // can still be ended fairly (duels.ts), but nothing can be played. The Classmate fights switch only matters while
+    // the game is on.
+    const switches = await services.settings(player);
+    if (switches === null) return busy('The Armory');
+    const on = switches.on;
     const duelAction = DUEL_ACTIONS.includes(body.action as DuelAction) ? (body.action as DuelAction) : null;
     if (duelAction && (on || duelAction === 'shot' || duelAction === 'times-up' || duelAction === 'leave')) {
-      const r = await handleDuel(services, player, duelAction, body, on, EVERYTHING);
+      const r = await handleDuel(services, player, duelAction, body, { on, duels: on && switches.duels }, EVERYTHING);
       return reply(r.status, r.body);
     }
     if (!on) return reply(403, { error: 'Archery Challenge is not switched on for your class.', code: 'game-off' });
@@ -180,6 +185,10 @@ export function makeHandler(services: Services) {
         // A late answer is still right for the maths records (with its real time); a timed-out one isn't recorded.
         if (!timedOut) await safely(() => services.recordAnswers(player, `${seed}:${at}`, [{ key: marked.key, correct, ms: recordedMs(claimedMs, ago), at: now }]));
         const right = rightSoFar + (correct ? 1 : 0);
+        if (nextSlot === null) {
+          const earned = [...Object.entries(round.answered).filter(([k]) => k !== String(at)).map(([, a]) => a.coins), coins];
+          if (perfectRound(round.questions.length, earned)) await safely(() => services.note(player, `stats:round:${seed}`, { perfect_rounds: 1 }));
+        }
         let point = false;
         if (nextSlot === null && right >= POINT_AT) {
           point = true;
@@ -196,6 +205,8 @@ export function makeHandler(services: Services) {
         const price = action === 'buy' ? item.price : sellPrice(item);
         const done = await services.shop(player, body.request, action, item.kind, item.id, price, action === 'buy' ? item.qty : 1, LEVEL_SPEND[item.level - 1] ?? 0, CARRY_MOST);
         if (!done.ok) return done.why === 'refused' ? reply(400, { error: "That couldn't be done." }) : busy('The Armory');
+        // A new bow may finish "Every bow" (its count is the Armory's own list of bows).
+        if (action === 'buy' && item.kind === 'bow' && done.value.result === 'ok') await safely(() => services.note(player, `stats:buy:${body.request}`, {}));
         return reply(200, done.value);
       }
 
@@ -239,6 +250,8 @@ export function makeHandler(services: Services) {
         let points = 0;
         if (!left && done.value.result === 'ok') {
           points = won ? WIN_POINTS : FIGHT_POINTS;
+          const add = botFightStats(fight.world, fight.opponent, won, f.used);
+          if (Object.keys(add).length) await safely(() => services.note(player, `stats:fight:${id}`, add));
           await safely(() => services.awardPoints(player, points, `archery-fight:${id}`));
         }
         return reply(200, { result: done.value.result, winner: f.winner, roundWins: f.roundWins, score: f.score, best: done.value.best, points, state: done.value.state });

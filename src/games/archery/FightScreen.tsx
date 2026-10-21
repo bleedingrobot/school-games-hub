@@ -576,7 +576,7 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
       )}
 
       {pickerOpen && (
-        <div className="ar-overlay" role="dialog" aria-modal="true" aria-labelledby="ar-picker-title" onKeyDown={(e) => e.key === 'Escape' && setPickerOpen(false)}>
+        <div className="ar-overlay" role="dialog" aria-modal="true" aria-labelledby="ar-picker-title" onKeyDown={(e) => { if (e.key === 'Escape') { setPickerOpen(false); heading.current?.focus({ preventScroll: true }); } }}>
           <div className="ar-panel ar-panel--wide">
             <h2 id="ar-picker-title" ref={dialogHeading} tabIndex={-1}>Choose an arrow</h2>
             <div className="ar-arrows">
@@ -597,7 +597,7 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
       )}
 
       {settingsOpen && (
-        <div className="ar-overlay" role="dialog" aria-modal="true" aria-labelledby="ar-settings-title" onKeyDown={(e) => e.key === 'Escape' && setSettingsOpen(false)}>
+        <div className="ar-overlay" role="dialog" aria-modal="true" aria-labelledby="ar-settings-title" onKeyDown={(e) => { if (e.key === 'Escape') { setSettingsOpen(false); heading.current?.focus({ preventScroll: true }); } }}>
           <div className="ar-panel">
             <h2 id="ar-settings-title" ref={dialogHeading} tabIndex={-1}>Settings</h2>
             <label className="ar-check">

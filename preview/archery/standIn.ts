@@ -20,6 +20,16 @@ export const DUO_PUPILS: Record<string, TrialPupil> = {
 export const DUO_LABELS: Record<string, string> = { [ANA]: 'Ana', [BEN]: 'Ben' };
 
 const DATA_KEY = 'archery-preview-duo-v1';
+const DUELS_KEY = 'archery-preview-duo-duels';
+
+/** The pretend teacher's Classmate fights switch for Ana and Ben's class (Stage 7), remembered on this device. */
+function loadDuelsOn(): boolean {
+  try {
+    return localStorage.getItem(DUELS_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
 
 function loadData(): TrialData {
   try {
@@ -55,7 +65,8 @@ export function forgetDuoData() {
 /** The shared pretend server and, for each pupil, the same calls the real game makes. */
 export function makeDuo() {
   const listeners = new Set<(d: DuelRow) => void>();
-  const hub = trialHub({ data: loadData(), pupils: DUO_PUPILS, onDuel: (d) => queueMicrotask(() => listeners.forEach((l) => l(d))) });
+  const switches = { duels: loadDuelsOn() };
+  const hub = trialHub({ data: loadData(), pupils: DUO_PUPILS, duels: () => switches.duels, onDuel: (d) => queueMicrotask(() => listeners.forEach((l) => l(d))) });
   // Both have the game open from the start, so each sees the other straight away.
   hub.here(ANA);
   hub.here(BEN);
@@ -93,6 +104,20 @@ export function makeDuo() {
   return {
     hub,
     pupils: { [ANA]: forPupil(ANA), [BEN]: forPupil(BEN) } as Record<string, ReturnType<typeof forPupil>>,
+    duelsOn: () => switches.duels,
+    /**
+     * The pretend teacher switches classmate fights on or off. Both games hear it at their next "I'm here" (asked for
+     * straight away here); a fight being played stops at its next turn, as in the real thing.
+     */
+    setDuels(on: boolean) {
+      switches.duels = on;
+      try {
+        localStorage.setItem(DUELS_KEY, on ? 'on' : 'off');
+      } catch {
+        // Not remembered, that's all.
+      }
+      document.dispatchEvent(new Event('visibilitychange'));
+    },
     addCoins(player: string, coins: number) {
       hub.data.pupils[player] ??= { coins: 0, gear: {}, shields: [], bows: [], spent: 0, best: {}, rounds: [] };
       hub.data.pupils[player].coins += coins;

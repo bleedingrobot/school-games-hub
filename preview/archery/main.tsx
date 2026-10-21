@@ -4,7 +4,8 @@
  * (src/games/archery/trialBackend.ts), kept on this device. The speed round asks times-table questions for a
  * pretend pupil with no maths records. Preview tools (not in the real game): add pretend coins, start again, and
  * "Two players on this screen": two pretend classmates (Ana and Ben) on one shared pretend server, with a switch at
- * the top to swap between them, so a classmate fight can be played from both sides (standIn.ts).
+ * the top to swap between them, so a classmate fight can be played from both sides (standIn.ts), and the pretend
+ * teacher's Classmate fights switch for their class.
  * Run it: npx vite --config vite.archery-preview.config.ts. One file: see vite.archery-preview.config.ts.
  */
 import { StrictMode, useEffect, useMemo, useState } from 'react';
@@ -99,6 +100,8 @@ function Duo() {
   const duo = useMemo(() => makeDuo(), [key]);
   const [showing, setShowing] = useState(ANA);
   const [nudge, setNudge] = useState<Record<string, string>>({});
+  const [duelsOn, setDuelsOn] = useState(() => duo.duelsOn());
+  useEffect(() => setDuelsOn(duo.duelsOn()), [duo]);
 
   // A dot on the hidden pupil's name when it's their turn or they've been challenged.
   useEffect(() => {
@@ -129,9 +132,16 @@ function Duo() {
             {DUO_LABELS[id]}{nudge[id] && <span className="arp-duo__dot"> ● <span className="arp-sr">{DUO_LABELS[id]} {nudge[id]}</span></span>}
           </button>
         ))}
+        {!duelsOn && <span className="arp-duo__label">(classmate fights off)</span>}
         <details className="arp-duo__more">
           <summary>More</summary>
           <button type="button" className="button button--light arp-small" onClick={() => { duo.addCoins(showing, 500); setKey((k) => k + 1); }}>+500 pretend coins for {DUO_LABELS[showing]}</button>
+          <button
+            type="button" className="button button--light arp-small" aria-pressed={!duelsOn}
+            onClick={() => { duo.setDuels(!duelsOn); setDuelsOn(!duelsOn); }}
+          >
+            {duelsOn ? 'Teacher: switch classmate fights off' : 'Teacher: switch classmate fights on'}
+          </button>
           <button type="button" className="button button--light arp-small" onClick={() => { forgetDuoData(); setKey((k) => k + 1); }}>Start again</button>
           <button type="button" className="button button--light arp-small" onClick={() => (location.hash = '')}>One player</button>
         </details>

@@ -135,6 +135,13 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
         if (dead) return;
         const names: [string, string] = seat === 0 ? ['You', them] : [them, 'You'];
         view = m.createFightView(el, { lessMotion, simple: prefs.simple, names, looks: seat === 0 ? ['hero', 'rival'] : ['rival', 'hero'] });
+        if (new URLSearchParams(window.location.search).has('debug')) {
+          // The two-player preview has two fights open: the numbers are the one on show.
+          const w = window as unknown as { __archeryStats?: () => unknown; __archeryDuelViews?: (() => unknown)[] };
+          const c = el as HTMLElement & { checkVisibility?: (o: Record<string, boolean>) => boolean };
+          (w.__archeryDuelViews ??= []).push(() => (c.checkVisibility?.({ visibilityProperty: true }) ?? true) ? view?.stats() : null);
+          w.__archeryStats = () => w.__archeryDuelViews!.map((f) => f()).find(Boolean);
+        }
         viewRef.current = view;
         resize();
         view.setRound(run.round);
@@ -323,8 +330,9 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
     if (!ticking) return;
     const timer = setInterval(() => {
       const t = serverNow();
-      setNow(t);
       const d = duelRef.current;
+      // Drawn again only when the seconds shown change (a slow Chromebook needn't redo the whole screen 4 times a second).
+      setNow((prev) => (secondsLeft(d.deadline, prev) === secondsLeft(d.deadline, t) ? prev : t));
       if (d.status === 'playing' && t > Date.parse(d.deadline) + DUEL_GRACE_MS && timesUpSent.current !== d.version) {
         timesUpSent.current = d.version;
         // A moment's random wait, so both screens rarely ask at the same instant.
@@ -350,6 +358,8 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
 
   async function leaveNow() {
     setLeaveOpen(false);
+    // Back to the fight while the server answers (then the end takes focus), so focus is never lost to the page.
+    heading.current?.focus({ preventScroll: true });
     const r = await onLeave();
     if (gone.current) return;
     onReply(r);
@@ -438,7 +448,7 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
     if (duel.ending === 'finished') return duel.winner === seat ? 'You won the fight!' : duel.winner === other ? `${them} won the fight` : 'The fight is a draw';
     if (duel.ending === 'left') return duel.leaver === seat ? `You left. ${them} wins` : `${them} left, so you win`;
     if (duel.ending === 'timeouts') return 'The fight has stopped';
-    if (duel.ending === 'switched-off') return 'The fight has stopped';
+    if (duel.ending === 'switched-off' || duel.ending === 'duels-off') return 'The fight has stopped';
     if (duel.ending === 'idle') return 'The fight was put away';
     return 'The fight is over';
   })();
@@ -450,6 +460,7 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
     if (duel.ending === 'left') return "No points this time, because the fight didn't finish.";
     if (duel.ending === 'timeouts') return `${duel.leaver === seat ? 'Your' : `${them}'s`} time ran out ${DUEL_MAX_TIMEOUTS} turns in a row. Nobody gets points.`;
     if (duel.ending === 'switched-off') return 'Your teacher switched Archery Challenge off. Nobody gets points.';
+    if (duel.ending === 'duels-off') return "Your teacher switched classmate fights off for now. Nobody gets points, and any arrows you didn't use are back in your bag.";
     if (duel.ending === 'idle') return 'Nobody shot for a long time. Nobody gets points.';
     return '';
   })();
@@ -482,11 +493,16 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
               <span className="ar-wind__arrow" aria-hidden="true" data-dir={wind > 0 ? 'right' : wind < 0 ? 'left' : 'none'}>{wind > 0 ? '→' : wind < 0 ? '←' : '·'}</span>
               <b aria-hidden="true">{Math.abs(wind)}</b>
             </span>
-            {showClock && (
+            {/* Kept in place (hidden) while an arrow flies, so the bar never changes height and the picture never jumps. */}
+            {duel.status === 'playing' && !over && (showClock ? (
               <span className="ar-clock" role="timer" data-warn={secs <= 10 || undefined} aria-label={`${secs} seconds left for ${round.turn === seat ? 'your' : `${them}'s`} turn`}>
                 <span aria-hidden="true">{round.turn === seat ? 'Your time' : `${them}`}</span> <b aria-hidden="true">{secs}</b><span aria-hidden="true"> s</span>
               </span>
-            )}
+            ) : (
+              <span className="ar-clock" aria-hidden="true" style={{ visibility: 'hidden' }}>
+                <span>Your time</span> <b>{secs}</b><span> s</span>
+              </span>
+            ))}
           </div>
         ), card]), [])}
         <div className="ar-topbtns">
@@ -561,7 +577,7 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
       )}
 
       {leaveOpen && (
-        <div className="ar-overlay" role="alertdialog" aria-modal="true" aria-labelledby="ar-duel-leave" onKeyDown={(e) => e.key === 'Escape' && setLeaveOpen(false)}>
+        <div className="ar-overlay" role="alertdialog" aria-modal="true" aria-labelledby="ar-duel-leave" onKeyDown={(e) => { if (e.key === 'Escape') { setLeaveOpen(false); heading.current?.focus({ preventScroll: true }); } }}>
           <div className="ar-panel">
             <h2 id="ar-duel-leave" ref={dialogHeading} tabIndex={-1}>Are you sure? {them} will win.</h2>
             <p>Nobody gets points when someone leaves. Any arrows you didn't use come back to your bag.</p>
@@ -574,7 +590,7 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
       )}
 
       {pickerOpen && (
-        <div className="ar-overlay" role="dialog" aria-modal="true" aria-labelledby="ar-duel-picker" onKeyDown={(e) => e.key === 'Escape' && setPickerOpen(false)}>
+        <div className="ar-overlay" role="dialog" aria-modal="true" aria-labelledby="ar-duel-picker" onKeyDown={(e) => { if (e.key === 'Escape') { setPickerOpen(false); heading.current?.focus({ preventScroll: true }); } }}>
           <div className="ar-panel ar-panel--wide">
             <h2 id="ar-duel-picker" ref={dialogHeading} tabIndex={-1}>Choose an arrow</h2>
             <div className="ar-arrows">
@@ -595,7 +611,7 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
       )}
 
       {settingsOpen && (
-        <div className="ar-overlay" role="dialog" aria-modal="true" aria-labelledby="ar-duel-settings" onKeyDown={(e) => e.key === 'Escape' && setSettingsOpen(false)}>
+        <div className="ar-overlay" role="dialog" aria-modal="true" aria-labelledby="ar-duel-settings" onKeyDown={(e) => { if (e.key === 'Escape') { setSettingsOpen(false); heading.current?.focus({ preventScroll: true }); } }}>
           <div className="ar-panel">
             <h2 id="ar-duel-settings" ref={dialogHeading} tabIndex={-1}>Settings</h2>
             <label className="ar-check">

@@ -27,10 +27,12 @@ function setup() {
   const clock = { now: NOW };
   let r = 0;
   const off = new Set<string>();
+  // Classes with classmate fights switched off (the game still on).
+  const duelsOff = new Set<string>();
   const heard: DuelRow[] = [];
   const hub = trialHub({
     now: () => clock.now, random: () => ((r = (r * 9301 + 49297) % 233280) / 233280), pupils: PUPILS,
-    enabled: (p) => !off.has(PUPILS[p]?.classId ?? ''), onDuel: (d) => heard.push(d),
+    enabled: (p) => !off.has(PUPILS[p]?.classId ?? ''), duels: (p) => !duelsOff.has(PUPILS[p]?.classId ?? ''), onDuel: (d) => heard.push(d),
   });
   const data = hub.data;
   for (const id of [ANA, BEN, CAT, DAN]) {
@@ -58,7 +60,7 @@ function setup() {
     return { seat: run.round.turn, shot: chooseForRun(run, 'hard').shot };
   };
   const row = (id: number) => data.duels![id];
-  return { hub, data, clock, off, heard, send, req, started, nextShot, row };
+  return { hub, data, clock, off, duelsOff, heard, send, req, started, nextShot, row };
 }
 
 describe('challenging a classmate', () => {
@@ -211,6 +213,14 @@ describe('a classmate fight', () => {
     // A shot after the end changes nothing.
     expect((await h.send(ANA, { action: 'shot', duel: id, version: d.version, shot: { angle: 45, power: 50, arrow: 'plain' } })).body.code).toBe('over');
     expect(h.data.points).toHaveLength(2);
+    // Achievement counts, once each: a classmate fight for both, a win (and a win in the Forest) for the winner.
+    const stats = (seat: 0 | 1) => h.data.stats?.[seat === 0 ? ANA : BEN] ?? {};
+    for (const seat of [0, 1] as const) {
+      expect(stats(seat).duels).toBe(1);
+      expect(stats(seat).duel_wins ?? 0).toBe(d.winner === seat ? 1 : 0);
+      expect(stats(seat).win_forest ?? 0).toBe(d.winner === seat ? 1 : 0);
+    }
+    expect(h.data.noted).toEqual([`${ANA}:stats:duel:${id}:0`, `${BEN}:stats:duel:${id}:1`]);
   });
 
   it('refuses a shot out of turn, one that breaks the rules, and one from someone else', async () => {
@@ -305,6 +315,13 @@ describe('a classmate fight', () => {
     expect(h.data.pupils[ANA].gear).toEqual({ steel: 3, apple: 2, giant: 1 });
   });
 
+  it('gives nobody achievement counts when it doesn\'t finish', async () => {
+    const h = setup();
+    const id = await h.started();
+    await h.send(ANA, { action: 'leave', duel: id });
+    expect(h.data.stats ?? {}).toEqual({});
+  });
+
   it('is ended by the tidy-up when nobody has shot for a while (gear back, no points)', async () => {
     const h = setup();
     const id = await h.started();
@@ -323,5 +340,83 @@ describe('a classmate fight', () => {
     expect(h.hub.readDuel(CAT, id)).toBeNull();
     expect(h.hub.here(CAT).online.map((o) => o.id)).toEqual([]);
     expect(Object.keys(h.hub.here(BEN).online[0])).toEqual(['id', 'name', 'avatar', 'busy']);
+  });
+});
+
+describe('the Classmate fights switch (Stage 7)', () => {
+  it('refuses a challenge while classmate fights are off for the class, but the game still works', async () => {
+    const h = setup();
+    h.duelsOff.add('room-1');
+    const r = await h.send(ANA, { action: 'duel-challenge', request: h.req(), other: BEN, world: 'snow' });
+    expect(r.status).toBe(403);
+    expect(r.body.code).toBe('duels-off');
+    expect(r.body.error).toMatch(/switched classmate fights off/);
+    expect(Object.keys(h.data.duels ?? {})).toHaveLength(0);
+    expect((await h.send(ANA, { action: 'load' })).status).toBe(200);
+    expect((await h.send(ANA, { action: 'fight-start', request: h.req(), world: 'snow', opponent: 'easy', pack: ANA_PACK })).status).toBe(200);
+  });
+
+  it('"I\'m here" lists nobody and brings no challenges while it\'s off, and the pupil can\'t be challenged', async () => {
+    const h = setup();
+    expect(h.hub.here(ANA).online.map((o) => o.id)).toEqual([BEN]);
+    h.duelsOff.add('room-1');
+    expect(h.hub.here(BEN)).toEqual({ duelsOff: true, online: [], asks: [], duel: null });
+    h.duelsOff.delete('room-1');
+    // Ben said "I'm here" while it was off, so he isn't listed until he says it again with it on.
+    expect(h.hub.here(ANA).online).toEqual([]);
+    h.hub.here(BEN);
+    expect(h.hub.here(ANA).online.map((o) => o.id)).toEqual([BEN]);
+  });
+
+  it('refuses an answer or a pack once it\'s off, calling the challenge off with any packed gear given back', async () => {
+    const h = setup();
+    const c = await h.send(ANA, { action: 'duel-challenge', request: h.req(), other: BEN, world: 'city' });
+    const id = c.body.duel.id as number;
+    h.duelsOff.add('room-1');
+    const a = await h.send(BEN, { action: 'duel-answer', duel: id, accept: true });
+    expect(a.status).toBe(403);
+    expect(a.body.code).toBe('duels-off');
+    expect(h.row(id)).toMatchObject({ status: 'cancelled', ending: null });
+
+    h.duelsOff.delete('room-1');
+    const c2 = await h.send(ANA, { action: 'duel-challenge', request: h.req(), other: BEN, world: 'city' });
+    const id2 = c2.body.duel.id as number;
+    await h.send(BEN, { action: 'duel-answer', duel: id2, accept: true });
+    expect((await h.send(ANA, { action: 'duel-pack', duel: id2, pack: ANA_PACK })).status).toBe(200);
+    expect(h.data.pupils[ANA].gear).toEqual({ steel: 1, apple: 1, giant: 1 });
+    h.duelsOff.add('room-1');
+    const p = await h.send(BEN, { action: 'duel-pack', duel: id2, pack: BEN_PACK });
+    expect(p.body.code).toBe('duels-off');
+    expect(h.row(id2).status).toBe('cancelled');
+    expect(h.data.pupils[ANA].gear).toEqual({ steel: 3, apple: 2, giant: 1 });
+    expect(h.data.pupils[BEN].gear).toEqual({ steel: 3, apple: 2, giant: 1 });
+  });
+
+  it('ends a fight being played fairly: no winner, no points, unused gear back to both', async () => {
+    const h = setup();
+    const id = await h.started();
+    const first = h.nextShot(h.row(id));
+    expect((await h.send(ANA, { action: 'shot', duel: id, version: h.row(id).version, shot: first.shot })).status).toBe(200);
+    h.duelsOff.add('room-1');
+    const r = await h.send(BEN, { action: 'shot', duel: id, version: h.row(id).version, shot: h.nextShot(h.row(id)).shot });
+    expect(r.status).toBe(403);
+    expect(r.body.code).toBe('duels-off');
+    expect(r.body.duel).toMatchObject({ status: 'done', ending: 'duels-off', winner: null });
+    expect(h.data.points).toEqual([]);
+    expect(h.data.stats ?? {}).toEqual({});
+    const used = h.row(id).used;
+    expect(h.data.pupils[ANA].gear.steel).toBe(3 - (used[0].steel ?? 0));
+    expect(h.data.pupils[BEN].gear.giant ?? 0).toBe(1);
+  });
+
+  it('"I\'m here" ends the pupil\'s open fight too, so neither screen waits for the next shot', async () => {
+    const h = setup();
+    const id = await h.started();
+    h.duelsOff.add('room-1');
+    h.hub.here(ANA);
+    expect(h.row(id)).toMatchObject({ status: 'done', ending: 'duels-off', winner: null });
+    // Both screens heard it.
+    expect(h.heard.at(-1)).toMatchObject({ id, ending: 'duels-off' });
+    expect(h.data.pupils[ANA].gear).toEqual({ steel: 3, apple: 2, giant: 1 });
   });
 });

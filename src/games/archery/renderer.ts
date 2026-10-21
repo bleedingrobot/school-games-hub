@@ -62,7 +62,7 @@ export interface FightView {
   resize(cssWidth: number, cssHeight: number, insets: ViewInsets): void;
   setOptions(o: Partial<FightViewOptions>): void;
   archerOnScreen(player: number): { x: number; y: number } | null;
-  stats(): { fps: number; frameMs: number; quality: 'full' | 'simple'; pixelRatio: number; particles: number; slowSwitches: number };
+  stats(): { fps: number; frameMs: number; quality: 'full' | 'simple'; pixelRatio: number; particles: number; slowSwitches: number; layouts?: number };
   dispose(): void;
 }
 
@@ -231,7 +231,12 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
   // Speed measuring.
   let fpsFrames = 0, fpsAt = 0, fps = 0;
   let workSum = 0, workN = 0, frameMs = 0;
-  let windowFrames = 0, windowSlow = 0;
+  let windowFrames = 0, windowSlow = 0, windowAt = 0;
+  // How many times the layers were rebuilt (debug numbers only).
+  let layouts = 0;
+  // Is the canvas on show? (Checked five times a second: a hidden one, like the other pupil's in the two-player preview,
+  // keeps playing but isn't drawn.)
+  let shown = true, shownCheckAt = 0;
 
   function newArcher(i: number): ArcherView {
     return {
@@ -288,6 +293,7 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
   const surfaceY = (x: number) => tops[clamp(Math.floor(x / CELL), 0, COLS - 1)] * CELL;
 
   function relayout() {
+    layouts++;
     L = computeLayout(cssW, cssH, insets, pixelRatio());
     const w = Math.max(1, Math.round(cssW * L.ratio)), h = Math.max(1, Math.round(cssH * L.ratio));
     if (canvas.width !== w) canvas.width = w;
@@ -317,6 +323,16 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
       n++;
     }
     if (n === 5) acc = 0;
+    if (now - shownCheckAt > 200) {
+      shownCheckAt = now;
+      const c = canvas as HTMLCanvasElement & { checkVisibility?: (o: Record<string, boolean>) => boolean };
+      shown = typeof c.checkVisibility === 'function' ? c.checkVisibility({ visibilityProperty: true, checkVisibilityCSS: true }) : true;
+    }
+    if (!shown) {
+      windowFrames = 0;
+      windowSlow = 0;
+      return;
+    }
     const t0 = performance.now();
     if (profOn) prof.step = (prof.step ?? 0) * 0.95 + (t0 - s0) * 0.05;
     try {
@@ -340,14 +356,19 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
       workN = 0;
       fpsAt = now;
     }
-    if (t < quietUntil || (typeof document !== 'undefined' && document.hidden)) {
+    if (typeof document !== 'undefined' && document.hidden) {
       windowFrames = 0;
       windowSlow = 0;
       return;
     }
+    // Just after a rebuild a few slow frames are expected: they aren't counted, but the count so far is kept, so a
+    // fight that rebuilds now and then is still helped.
+    if (t < quietUntil) return;
+    if (!windowFrames) windowAt = now;
     windowFrames++;
     if (interval > 40 || work > 28) windowSlow++;
-    if (windowFrames >= 60) {
+    // 60 frames, or 2 seconds of at least 8 (a very slow machine shouldn't wait 15 seconds to be helped).
+    if (windowFrames >= 60 || (windowFrames >= 8 && now - windowAt >= 2000)) {
       // Most frames slow for about a second or two: simpler graphics.
       if (windowSlow > windowFrames * 0.6 && autoLevel < 2) {
         autoLevel++;
@@ -1657,6 +1678,9 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
     },
     resize(w, h, ins) {
       if (disposed) return;
+      // The same size again (the bars above and below are watched, and change often): nothing to redo.
+      const same = Math.max(1, w) === cssW && Math.max(1, h) === cssH && ins.top === insets.top && ins.bottom === insets.bottom && ins.left === insets.left && ins.right === insets.right;
+      if (same && hasRound) return;
       cssW = Math.max(1, w);
       cssH = Math.max(1, h);
       insets = { ...ins };
@@ -1684,7 +1708,7 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, option
       return { x: L.ox + a.x * L.s, y: L.oy + (a.y - HANDS_HEIGHT - cam.y) * L.s };
     },
     stats() {
-      return { fps, frameMs, quality: simpleNow() ? 'simple' : 'full', pixelRatio: L.ratio, particles: fx.parts.length, slowSwitches };
+      return { fps, frameMs, quality: simpleNow() ? 'simple' : 'full', pixelRatio: L.ratio, particles: fx.parts.length, slowSwitches, layouts };
     },
     debugProfile() {
       profOn = true;

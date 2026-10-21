@@ -60,14 +60,16 @@ Deno.serve(
     now: () => Date.now(),
     randomHex: (bytes) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, '0')).join(''),
     userIdFor: userIdFromToken(admin.auth),
-    async enabled(player) {
-      // The switch of this pupil's class (or their school's default if they have no class).
+    async settings(player) {
+      // The switches of this pupil's class (or their school's default if they have no class). Classmate fights are on
+      // unless they were switched off.
       const { data, error } = await admin.rpc('settings_of', { player }).maybeSingle();
       if (error || !data) {
         console.error(`archery: settings failed (${error?.code ?? 'none'})`);
         return null;
       }
-      return (data as { archery_enabled?: boolean }).archery_enabled === true;
+      const row = data as { archery_enabled?: boolean; archery_duels?: boolean };
+      return { on: row.archery_enabled === true, duels: row.archery_duels !== false };
     },
     async mathsContext(player): Promise<MathsContext | null> {
       const { data, error } = await admin.rpc('space_maths_context', { player });
@@ -116,10 +118,10 @@ Deno.serve(
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'archery');
     },
     async duelLoad(duel) {
-      const r = await read<{ duel: unknown; on: [boolean, boolean] }>('archery_duel_load', { duel });
+      const r = await read<{ duel: unknown; on: [boolean, boolean]; duels?: [boolean, boolean] }>('archery_duel_load', { duel });
       if (r === 'busy' || r === null) return r;
       const row = parseDuel(r.duel);
-      return row ? { duel: row, on: [r.on[0] === true, r.on[1] === true] } : null;
+      return row ? { duel: row, on: [r.on[0] === true, r.on[1] === true], duels: [r.duels?.[0] === true, r.duels?.[1] === true] } : null;
     },
     duelChallenge: (player, request, other, world, seed, waitMs) =>
       call('archery_duel_challenge', { player, request_id: request, other, world, seed, wait_ms: waitMs }),
@@ -133,6 +135,10 @@ Deno.serve(
       duelRow('archery_duel_move', { duel, version, turns, used, timeouts, deadline_ms: deadlineMs, played: real }),
     duelEnd: (duel, version, status, ending, winner, leaver, turns, used, timeouts) =>
       duelRow('archery_duel_end', { duel, version, status, ending, winner, leaver, turns, used, timeouts }),
+    async note(player, once, add) {
+      const { error } = await admin.rpc('archery_note', { player, once, add });
+      if (error) console.error(`archery: achievement counts failed (${error.code ?? 'unknown'})`);
+    },
     async awardPoints(player, points, once) {
       const { error } = await admin.rpc('add_game_points', { player, game: 'archery', points, once });
       if (error) console.error(`archery: points failed (${error.code ?? 'unknown'})`);

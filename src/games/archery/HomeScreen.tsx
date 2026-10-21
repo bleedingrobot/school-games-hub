@@ -16,12 +16,14 @@ const WORLD_ICONS: Record<WorldId, string> = {
   city: 'M2 22V11h5V6h6v6h3V3h6v19z',
 };
 
-export function HomeScreen({ coins, world, bow, lessMotion, onPlay, onWorld, onArmory, onBows, onSpeed, onHowTo, onExit, onClassmate }: {
+export function HomeScreen({ coins, world, bow, lessMotion, simple = false, onPlay, onWorld, onArmory, onBows, onSpeed, onHowTo, onExit, onClassmate }: {
   coins: number;
   /** The world shown behind (the last one played). */
   world: WorldId;
   bow: BowId;
   lessMotion: boolean;
+  /** Simpler graphics (the player's setting). */
+  simple?: boolean;
   onPlay: () => void;
   onWorld: (w: WorldId) => void;
   onArmory: () => void;
@@ -36,7 +38,7 @@ export function HomeScreen({ coins, world, bow, lessMotion, onPlay, onWorld, onA
   useEffect(() => heading.current?.focus({ preventScroll: true }), []);
   return (
     <section className="ar-home" aria-labelledby="ar-home-title">
-      <HomeScene world={world} bow={bow} lessMotion={lessMotion} />
+      <HomeScene world={world} bow={bow} lessMotion={lessMotion} simple={simple} />
       <div className="ar-home__ui">
         <div className="ar-home__top">
           <div className="ar-home__corner">

@@ -13,6 +13,11 @@
  *
  * One round (James, 22 Oct 2026). Finishing earns DUEL_POINTS, or DUEL_WIN_POINTS for the winner; a fight someone left,
  * or that the timer ended, gives nobody points. Every reply carries the fight as it now is.
+ *
+ * Two teacher switches matter (Stage 7): the game's own, and "Classmate fights" (on to start). While either is off for
+ * either player's class, nothing can be challenged, answered or packed, and a fight that's open ends fairly the next
+ * time either player asks anything (gear back to both, nobody gets points). Achievement counts for a fight played to
+ * the finish go to both players through `note` (shared/archery/stats.ts).
  */
 import { CHALLENGE_MS, DUEL_GRACE_MS, DUEL_TURN_MS, PACK_MS } from '../../../shared/archery/config';
 import {
@@ -22,12 +27,13 @@ import {
 import { takeShot, type FightRun } from '../../../shared/archery/fight';
 import { DUEL_POINTS, DUEL_WIN_POINTS } from '../../../shared/archery/points';
 import { readPack, type Armory } from '../../../shared/archery/shop';
+import { duelStats, type StatsAdd } from '../../../shared/archery/stats';
 import { WORLD_IDS, type PlayerSetup, type Shot, type WorldId } from '../../../shared/archery/types';
 import type { ArmoryState, Outcome } from './handler';
 
 export interface DuelServices {
-  /** The fight and whether the game is on for each player's class, or null if there's no such fight. */
-  duelLoad(duel: number): Promise<{ duel: DuelRow; on: [boolean, boolean] } | null | 'busy'>;
+  /** The fight, whether the game is on for each player's class and whether classmate fights are, or null if there's no such fight. */
+  duelLoad(duel: number): Promise<{ duel: DuelRow; on: [boolean, boolean]; duels: [boolean, boolean] } | null | 'busy'>;
   duelChallenge(player: string, request: string, other: string, world: WorldId, seed: number, waitMs: number): Promise<Outcome<{ result: 'ok' | 'away' | 'class' | 'busy' | 'off'; duel: number | null }>>;
   duelAnswer(player: string, duel: number, accept: boolean, packMs: number): Promise<Outcome<{ result: 'ok' | 'late' | 'busy' | 'not-yours'; duel?: DuelRow }>>;
   duelPack(player: string, duel: number, pack: PlayerSetup, turnMs: number): Promise<Outcome<{ result: 'ok' | 'already' | 'gear' | 'late' | 'not-yours'; duel?: DuelRow; state?: ArmoryState }>>;
@@ -36,6 +42,8 @@ export interface DuelServices {
   /** Ends the fight (gear back to both) only if it's still at `version`; null if it had changed. */
   duelEnd(duel: number, version: number, status: 'done' | 'declined' | 'expired' | 'cancelled', ending: DuelEnding | null, winner: 0 | 1 | null, leaver: 0 | 1 | null, turns: Shot[] | null, used: DuelRow['used'] | null, timeouts: [number, number] | null): Promise<DuelRow | null | 'busy'>;
   awardPoints(player: string, points: number, once: string): Promise<void>;
+  /** Adds to a pupil's achievement counts, once per `once`, and checks their achievements. A failure is only logged. */
+  note(player: string, once: string, add: StatsAdd): Promise<void>;
   now(): number;
   randomHex(bytes: number): string;
 }
@@ -66,7 +74,15 @@ const SAY = {
   notYet: "There's still time on the clock.",
   gear: "You don't have all of that in your bag.",
   switchedOff: "Your teacher has switched Archery Challenge off, so this fight has stopped. Any arrows you didn't use are back in your bag.",
+  duelsOff: 'Your teacher has switched classmate fights off for now. You can still fight the bots!',
+  duelsStopped: "Your teacher has switched classmate fights off, so this fight has stopped. Any arrows you didn't use are back in your bag.",
 } as const;
+
+/** The teacher's switches for the player asking: the game, and classmate fights (only on while the game is). */
+export interface DuelSwitches {
+  on: boolean;
+  duels: boolean;
+}
 
 const isRequestId = (v: unknown): v is string => typeof v === 'string' && /^[A-Za-z0-9_-]{8,80}$/.test(v);
 const isUuid = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v);
@@ -89,11 +105,13 @@ function replay(d: DuelRow): FightRun | null {
 const sameShot = (a: Shot | undefined, b: Shot) => !!a && !a.pass && a.angle === b.angle && a.power === b.power && a.arrow === b.arrow && !!a.apple === !!b.apple;
 
 /**
- * Handles one classmate-fight request from `player`. `on` is whether the game is switched on for their own class (the
- * handler has read it): while it's off they can only end a fight, never play one.
+ * Handles one classmate-fight request from `player`. `switches` are their own class's (the handler has read them):
+ * while either is off they can only end a fight, never play one.
  */
-export async function handleDuel(services: DuelServices, player: string, action: DuelAction, body: Record<string, unknown>, on: boolean, everything: Armory): Promise<DuelReply> {
+export async function handleDuel(services: DuelServices, player: string, action: DuelAction, body: Record<string, unknown>, switches: DuelSwitches, everything: Armory): Promise<DuelReply> {
   if (action === 'duel-challenge') {
+    // Same class only (the database checks), so the classmate has the same switches.
+    if (!switches.duels) return no(403, SAY.duelsOff, { code: 'duels-off' });
     const { other, world, request } = body;
     if (!isUuid(other) || !WORLD_IDS.includes(world as WorldId) || !isRequestId(request)) return no(400, SAY.bad);
     const seed = parseInt(services.randomHex(4), 16) >>> 0;
@@ -111,6 +129,27 @@ export async function handleDuel(services: DuelServices, player: string, action:
 
   if (!isDuelId(body.duel)) return no(400, SAY.bad);
   const id = body.duel;
+
+  const loaded = await services.duelLoad(id);
+  if (loaded === 'busy') return no(503, SAY.busy);
+  const seat = loaded ? seatOf(loaded.duel, player) : -1;
+  if (!loaded || seat < 0) return no(403, SAY.notYours);
+  const d = loaded.duel;
+
+  // A teacher switched the game, or classmate fights, off for either class: the fight ends fairly (gear back to both,
+  // nobody gets points).
+  const gameOff = !switches.on || !loaded.on[0] || !loaded.on[1];
+  const duelsOff = !switches.duels || !loaded.duels[0] || !loaded.duels[1];
+  if ((gameOff || duelsOff) && duelOpen(d)) {
+    const run = d.status === 'playing' ? replay(d) : null;
+    const playing = d.status === 'playing';
+    const ended = await services.duelEnd(d.id, d.version, playing ? 'done' : 'cancelled', playing ? (gameOff ? 'switched-off' : 'duels-off') : null, null, null, null, run ? run.used : null, null);
+    if (ended === 'busy') return no(503, SAY.busy);
+    if (!ended) return no(409, SAY.changed, { code: 'changed' });
+    return gameOff ? no(403, SAY.switchedOff, { code: 'game-off', duel: ended }) : no(403, SAY.duelsStopped, { code: 'duels-off', duel: ended });
+  }
+  if (!switches.on) return no(403, SAY.switchedOff, { code: 'game-off', duel: d });
+  if (duelsOff && (action === 'duel-answer' || action === 'duel-pack')) return no(403, SAY.duelsOff, { code: 'duels-off', duel: d });
 
   if (action === 'duel-answer') {
     if (typeof body.accept !== 'boolean') return no(400, SAY.bad);
@@ -136,22 +175,6 @@ export async function handleDuel(services: DuelServices, player: string, action:
   }
 
   // shot, times-up and leave: on a fight the player is in.
-  const loaded = await services.duelLoad(id);
-  if (loaded === 'busy') return no(503, SAY.busy);
-  const seat = loaded ? seatOf(loaded.duel, player) : -1;
-  if (!loaded || seat < 0) return no(403, SAY.notYours);
-  const d = loaded.duel;
-
-  // A teacher switched the game off for either class: the fight ends fairly (gear back to both, nobody gets points).
-  if ((!on || !loaded.on[0] || !loaded.on[1]) && duelOpen(d)) {
-    const run = d.status === 'playing' ? replay(d) : null;
-    const ended = await services.duelEnd(d.id, d.version, d.status === 'playing' ? 'done' : 'cancelled', d.status === 'playing' ? 'switched-off' : null, null, null, null, run ? run.used : null, null);
-    if (ended === 'busy') return no(503, SAY.busy);
-    if (!ended) return no(409, SAY.changed, { code: 'changed' });
-    return no(403, SAY.switchedOff, { code: 'game-off', duel: ended });
-  }
-  if (!on) return no(403, SAY.switchedOff, { code: 'game-off', duel: d });
-
   if (action === 'leave') {
     if (!duelOpen(d)) return ok({ duel: d });
     if (d.status !== 'playing') {
@@ -233,11 +256,13 @@ async function afterTurn(services: DuelServices, d: DuelRow, run: FightRun, turn
   const ended = await services.duelEnd(d.id, d.version, 'done', 'finished', winner, null, turns, run.used, timeouts);
   if (ended === 'busy') return no(503, SAY.busy);
   if (!ended) return no(409, SAY.changed, { code: 'changed' });
-  // Points once per fight per player (the fight ends once; the `once` key makes sure).
+  // Achievement counts, then points, once per fight per player (the fight ends once; the `once` keys make sure).
   const points: [number, number] = [winner === 0 ? DUEL_WIN_POINTS : DUEL_POINTS, winner === 1 ? DUEL_WIN_POINTS : DUEL_POINTS];
   for (const i of [0, 1] as const) {
+    const who = i === 0 ? d.seat_a : d.seat_b;
     try {
-      await services.awardPoints(i === 0 ? d.seat_a : d.seat_b, points[i], `archery-duel:${d.id}:${i}`);
+      await services.note(who, `stats:duel:${d.id}:${i}`, duelStats(d.world, winner === i, run.used[i]));
+      await services.awardPoints(who, points[i], `archery-duel:${d.id}:${i}`);
     } catch {
       console.error('archery: classmate fight points could not be given');
     }

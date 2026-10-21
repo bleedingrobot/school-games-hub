@@ -1,9 +1,10 @@
 /**
  * A pretend Archery server that runs in the browser (docs/ARCHERY-PLAN.md, section 12, stage 4): the real server
  * function's logic (`makeHandler` from supabase/functions/archery/handler.ts) on a pretend database that keeps the
- * same rules as the SQL functions in migrations 20261021000300 and 20261022000100 (coins never below 0, a purchase or
- * fight start sent twice counts once, a question marked once, packed gear taken out and the unused part given back;
- * classmate fights only in the same class, one at a time, saved "only if nothing changed", gear back at the end).
+ * same rules as the SQL functions in migrations 20261021000300, 20261022000100 and 20261022000200 (coins never below 0,
+ * a purchase or fight start sent twice counts once, a question marked once, packed gear taken out and the unused part
+ * given back; classmate fights only in the same class, one at a time, saved "only if nothing changed", gear back at the
+ * end; the Classmate fights switch; achievement counts added once each).
  *
  * Several pretend pupils can share one pretend server (`trialHub`), so the preview's two players can fight each other.
  *
@@ -14,6 +15,7 @@ import { makeHandler, type ArmoryState, type Services, type StoredFight, type St
 import { HERE_FOR_MS } from '../../../shared/archery/config';
 import { duelOpen, type DuelRow, type HereReply } from '../../../shared/archery/duel';
 import type { MathsContext } from '../../../shared/archery/speed';
+import type { StatsAdd } from '../../../shared/archery/stats';
 import type { ItemId, PlayerSetup } from '../../../shared/archery/types';
 
 interface Pupil extends ArmoryState {
@@ -34,6 +36,9 @@ export interface TrialData {
   nextDuel?: number;
   /** When each pupil last said "I'm here" (ms). */
   here?: Record<string, number>;
+  /** Achievement counts per pupil (archery_players.stats), and the once-only keys already counted (Stage 7). */
+  stats?: Record<string, StatsAdd>;
+  noted?: string[];
 }
 
 export const emptyTrialData = (): TrialData => ({ pupils: {}, rounds: {}, fights: {}, requests: {}, nextFight: 1, points: [], answers: [], duels: {}, nextDuel: 1, here: {} });
@@ -51,6 +56,8 @@ export interface TrialOptions {
   random?: () => number;
   /** Is the game switched on for this pupil's class (default yes)? */
   enabled?: (player: string) => boolean;
+  /** Are classmate fights switched on for this pupil's class (default yes)? Only matters while the game is on. */
+  duels?: (player: string) => boolean;
   maths?: MathsContext;
   data?: TrialData;
   /** The pretend pupils (names, classes, schools). */
@@ -97,6 +104,7 @@ export function trialServices(opts: TrialOptions = {}) {
 
   const profile = (id: string): TrialPupil => opts.pupils?.[id] ?? { name: 'Preview Pupil 1', classId: 'c1', school: 1 };
   const on = (id: string) => (opts.enabled ? opts.enabled(id) : true);
+  const duelsOn = (id: string) => on(id) && (opts.duels ? opts.duels(id) : true);
   const duels = () => (data.duels ??= {});
   const busy = (id: string) => Object.values(duels()).some((d) => (d.status === 'packing' || d.status === 'playing') && (d.seat_a === id || d.seat_b === id));
   /** Saves a change to a fight and tells the listeners (Realtime, in the real thing). */
@@ -130,7 +138,7 @@ export function trialServices(opts: TrialOptions = {}) {
 
   const services: Services = {
     userIdFor: async (token) => (token ? token : null),
-    enabled: async (player) => on(player),
+    settings: async (player) => ({ on: on(player), duels: opts.duels ? opts.duels(player) : true }),
     mathsContext: async () => opts.maths ?? { facts: [], settings: {} },
     now,
     randomHex: (bytes) => Array.from({ length: bytes }, () => Math.floor(random() * 256).toString(16).padStart(2, '0')).join(''),
@@ -216,7 +224,7 @@ export function trialServices(opts: TrialOptions = {}) {
     },
     async duelLoad(duel) {
       const d = duels()[duel];
-      return d ? { duel: clone(d), on: [on(d.seat_a), on(d.seat_b)] } : null;
+      return d ? { duel: clone(d), on: [on(d.seat_a), on(d.seat_b)], duels: [duelsOn(d.seat_a), duelsOn(d.seat_b)] } : null;
     },
     async duelChallenge(player, request, other, world, seed, waitMs) {
       const key = `${player}:${request}`;
@@ -292,10 +300,27 @@ export function trialServices(opts: TrialOptions = {}) {
     async awardPoints(player, points, once) {
       if (!data.points.some((x) => x.player === player && x.once === once)) data.points.push({ player, points, once });
     },
+    async note(player, once, add) {
+      const noted = (data.noted ??= []);
+      if (noted.includes(`${player}:${once}`)) return;
+      noted.push(`${player}:${once}`);
+      const mine = ((data.stats ??= {})[player] ??= {});
+      for (const [k, n] of Object.entries(add) as [keyof StatsAdd, number][]) mine[k] = (mine[k] ?? 0) + n;
+    },
   };
   /** archery_here(): "I'm here", and who else is, and any challenges (the same rules as the database's). */
   function here(player: string): HereReply {
     if (!on(player)) return { off: true, online: [], asks: [], duel: null };
+    if (!duelsOn(player)) {
+      // archery_duels_end_for: this pupil's open fights end fairly, and nobody can see them to challenge.
+      delete (data.here ??= {})[player];
+      for (const d of Object.values(duels())) {
+        if (duelOpen(d) && (d.seat_a === player || d.seat_b === player)) {
+          close(d, d.status === 'playing' ? 'done' : 'cancelled', d.status === 'playing' ? 'duels-off' : null, null, null, null, null, null);
+        }
+      }
+      return { duelsOff: true, online: [], asks: [], duel: null };
+    }
     (data.here ??= {})[player] = now();
     tidyFor(player);
     const me = profile(player);

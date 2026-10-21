@@ -4,7 +4,7 @@ A Scorched Earth–style game for the hub, with **archers instead of tanks**. Tw
 
 Written 21 October 2026 (Stage 0: plan only, **no code yet**). Branch `archery`, folder `~/projects/school-games-hub-archery`, short id `archery`, CSS prefix `.ar-`. Next free migration number when this was written: `20261021000300` (re-check before the first migration).
 
-**Status: Stages 3–6 built 22 Oct 2026, on the branch only. Nothing live: no migration applied, no function deployed, not in the games list. Waiting for James before Stage 7 (Stage 6b, the hub Lobby, is its own branch).**
+**Status: Stages 3–7 built 22 Oct 2026, on the branch only. Nothing live: no migration applied, no function deployed, not in the games list. Waiting for James before Stage 8 (Stage 6b, the hub Lobby, is its own branch).**
 
 **Decisions (James, 21 Oct 2026):**
 - Archers, not tanks. Big, over-the-top weapons, mostly **special arrows** (like all of Scorched Earth's weapons). Shields and bows are smaller sections of the shop.
@@ -489,3 +489,78 @@ Next free migration number (checked 22 Oct 2026 after merging `origin/main`): `2
 **Go-live list (so far):** as Stage 5, plus: apply `20261022000100_archery_classmates.sql` after `20261021000300_archery.sql` (re-check the number first), then check the `tidy-archery-duels` job exists and `archery_duels` is in the Realtime publication; deploy `archery` again (the same function, with the classmate steps); try a classmate fight with two pupil accounts on two devices before switching on; `docs/PRIVACY-SUMMARY.md`: "who's here" (the last time each pupil had the game open, kept a day) and classmate fights (both players' display names, packs and turns, seen by those two only, kept 30 days).
 
 **James's answers (22 Oct 2026, after Stage 6):** all five as built. 1. **45 s a turn**. 2. **Packs stay visible in the row** (only with developer tools; not worth a private table). 3. **Challenges pop up anywhere**, bot fights included (accepting gives the bot fight up). 4. **Best scores stay bot-fight only.** 5. **Yes: Stage 7's teacher panel gets a "Classmate fights on/off" switch** (on by default) beside the main switch.
+
+## Stage 7 results (22 Oct 2026)
+
+Merged `origin/main` first (already up to date). Next free migration number (checked across `main` and every branch): **`20261022000200`**. No Archery migration has been applied live, so Stage 7 is one new file all the same.
+
+**Built** (branch `archery` only; nothing live):
+- **Migration `20261022000200_archery_hub.sql`:**
+  - `app_settings.archery_duels boolean not null default true` (added with `add column`), `teacher_set_archery_duels(enabled, target_class)` through `require_settings_target()`, and `archery_duels_on_for(player)` (the game on **and** classmate fights on).
+  - `archery_here()` (replaced with `create or replace`; Stage 6's isn't applied either) now says `duels: true` or `false`. While off: nobody is listed, no challenges, the pupil isn't noted as here (so nobody can challenge them), and **their open classmate fights end fairly** (`archery_duels_end_for`: a fight being played ends with nobody winning, one not started is called off, unused gear back to both from the row's `used`). `archery_duel_load()` also returns each player's `duels`. A new fight ending, `duels-off`, so the screens can say why.
+  - Achievement counts: `archery_players.stats jsonb`, added to only by `archery_note(player, once, add)` (server key only; once per fight or round through the requests table; only the nine known counts, whole numbers 0–10; then `game_progress_changed`). `archery_counts()` is the `counts_fn`; bows owned are read from the Armory itself. `archery_progress_players()` is the `players_fn`. Archery's `hub_games` row is updated with both (an `update`, nothing shared re-created).
+  - Ten measures and ten achievements (`game = 'archery'`).
+  - `teacher_archery_summary(target_class)`: counts only, the teacher's own pupils only (`my_students()`, `teaches_class()`).
+- **Server function:** `settings(player)` now reads both switches from one `settings_of` call. While classmate fights are off for the pupil's class, `duel-challenge` is refused (`code: 'duels-off'`, "Your teacher has switched classmate fights off for now. You can still fight the bots!"); `duel-answer`, `duel-pack`, `shot`, `times-up` and `leave` load the fight first and, if either player's class has the game **or** classmate fights off, end it fairly exactly as Stage 6's main switch does (gear back to both, nobody gets points). Bot fights, speed rounds and the Armory are untouched by it. Achievement counts are added from what the server replayed or marked (`shared/archery/stats.ts`): a won bot fight (its world, Plain-only, Hawk), a classmate fight played to the finish (both players; the winner's win, world and Plain-only), a perfect speed round, a bow bought (checks Every bow).
+- **Teacher panel** `src/pages/TeacherArchery.tsx` (in `index.tsx` as `TeacherPanels`, lazy, the Mine pattern): what the game is and its points (read from the rules), **Archery Challenge on/off**, **Classmate fights on/off** beside it ("This only matters while Archery Challenge is on" while the game is off), and **This week**: "18 of 26 pupils played in the last 7 days", bot fights and classmate fights finished, speed rounds in the last day. Never names, coins or maths. No `StudentPanel` (not asked for).
+- **The game:** "Challenge a classmate" (home and Pick) and the challenge pop-up show only once "I'm here" has answered that classmate fights are on, so they never flash up while off. If they're switched off with the list open, back home; a fight being played ends with "The fight has stopped. Your teacher switched classmate fights off for now. Nobody gets points, and any arrows you didn't use are back in your bag."
+- **The preview:** Two players on this screen → More → **"Teacher: switch classmate fights off / on"** (the pretend teacher's switch for Ana and Ben's class, remembered on the device; "(classmate fights off)" shows in the bar).
+
+**Achievements** (please check the names; built as suggested):
+
+| Achievement | How | Measure (goal) |
+|---|---|---|
+| 🌲 Forest champion · 🏜️ Desert champion · ❄️ Snow champion · 🏙️ City champion | win a fight in that world (bot or classmate) | `archery_win_<world>` (1) |
+| 🏹 Plain Arrows only | win a fight shooting only Plain Arrows (Apples and Umbrellas are fine) | `archery_plain_wins` (1) |
+| 🦅 Beat Hawk | win against the Hard bot | `archery_hawk_wins` (1) |
+| ⚡ Perfect speed round | all 10 right in time in a coin-earning round | `archery_perfect_rounds` (1) |
+| 🎯 Every bow | own all four bought bows | `archery_bows` (4) |
+| 🤝 Beat a classmate | win a classmate fight | `archery_duel_wins` (1) |
+| 🏅 Ten classmate fights | finish 10 classmate fights (win or lose) | `archery_duels` (10) |
+
+**Choices made (and why):**
+- **Achievements go with a New Season** (`keep_achievements` stays false): the season wipes the coins, gear, bows and counts they come from, so everyone starts equal (James, 21 Oct 2026), as Mine Runner's do.
+- **A perfect round counts only in the day's 8 coin-earning rounds:** "in time" is saved as the coins an answer earned, and practice rounds earn none. Nobody runs out of chances (8 a day).
+- **A classmate fight someone leaves, or the timer or a switch ends, counts for nothing**, like its points.
+- **Every bow** is the bows owned now. Once earned it stays, but a teacher's rebuild of achievements would take it back from someone who has since sold a bow (rare; not worth a separate count).
+- **The summary is small** (four counts). Speed rounds say "in the last day" because rounds are kept 2 days. Anything bigger waits for you.
+- Classmates must be in the same class, so they always have the same switch; the server still checks both players' classes on every step after the challenge.
+
+**Simpler graphics and slow machines.** The setting and the automatic switch-down already worked in classmate fights (same picture code). Changes:
+- **The home scene** now has simpler graphics too (the setting lowers its pixel density) and switches down by itself when frames are slow, as the fight does (a second step at a lower density and about 30 frames a second).
+- **The automatic switch-down decides within 2 seconds** on a very slow machine (it used to wait for 60 frames: 15 seconds at 4 frames a second), and a picture rebuild pauses the check instead of starting it again.
+- **Found and fixed: the classmate fight rebuilt its whole picture twice every turn.** The turn clock disappeared while an arrow flew, so the bar at the top changed height (72 ↔ 115 px) and the picture jumped and rebuilt. The clock now keeps its place (hidden) during a shot, and a resize to the same size does nothing. Rebuilds in a 20-second run: about 10 → 2 (a bot fight: 2–3).
+- The turn clock redraws the screen once a second instead of four times. A canvas that isn't on show (the other pupil's in the two-player preview) isn't drawn.
+
+**Frame times** (headless Chromium without a graphics card, 1366 × 640 at 1.5× sharpness, processor slowed by Chrome; frames a second, the middle of 14 one-second samples while shooting, then the last sample; "→ simple" = switched down by itself):
+
+| | ¼ speed, full | ¼ speed, simpler | ⅙ speed, full | ⅙ speed, simpler |
+|---|---|---|---|---|
+| Bot fight | 34 → simple, then 49 | 41 | 25 → simple, then 33 | 39 |
+| Classmate fight (two-player preview) | 30 (stayed full), then 40 | 48 | 27 → simple twice, then 29 | 27, then 42 |
+| Home scene | 47 | 60 | 30 | 52 |
+
+The classmate fight numbers are from the two-player preview, which runs **both** pupils' games in one page (the hidden one still plays, just isn't drawn), so a real pupil's device does less. Nothing stays well below 30 in simpler mode; the first second or two after a fight opens or a blast lands still dips (to about 10–20). A real Chromebook still needs trying.
+
+**Accessibility:** `Accessibility.test.tsx` widened: the teacher panel uses the Teacher page's own shared look (`button--primary` / `button--danger`, the shared panel, its own heading, a status line, no Archery styles), the summary has no names, coins or maths, the home scene keeps still with less motion and has its simpler mode, and Escape puts focus back. **A keyboard-only run** in headless Chromium (home → speed round → Armory → bot fight with arrows, Space and Settings → How to play → Shift+Tab → two-player: challenge, accept, both pack, shoot, leave, done) found two places where focus fell to the page: **closing Settings, the arrow picker or "Are you sure?" with Escape** (both fight screens), and the moment **after "Leave the fight"** while the server answers. Both fixed (focus goes back to the fight); the run now has no problems, 0 network requests.
+
+**The preview** (same test page, published again): https://claude.ai/artifact/NW2b62yAKr8HNxfKtqxtG3. Checked at 1366 × 640, 844 × 390 and 390 × 844: no errors, no sideways scroll, **0 network requests**, and the new switch hides "Challenge a classmate" and brings it back.
+
+**Tests:**
+- `shared/archery/stats.test.ts` (5): what counts as Plain-only, bot and classmate fight counts, perfect rounds, every count is one the migration keeps.
+- Server: `handler.test.ts` +4 (a won fight's world, Plain-only and Hawk counted once, a lost one nothing; a special arrow isn't Plain-only and Pip isn't Hawk; a perfect round counted once and one slow answer spoils it; buying a bow checks the achievements). `duels.test.ts` +6 (a finished fight's counts for both, once; a left fight counts nothing; challenges refused while off but the game works; "I'm here" lists nobody and the pupil can't be found; answering or packing refused with the gear given back; a fight being played ended fairly with no winner, points or counts; "I'm here" ends it too and both screens hear).
+- Screens: `ArcheryGame.test.tsx` +2 (nothing about classmates while off; a fight ended part-way on both screens, gear back, then no button), `TeacherArchery.test.tsx` (5).
+- Database: new `archery_hub.test.sql` **45 checks pass** on a throw-away copy (registered with every hook, 10 achievements and measures, the switch starts on, pupils refused on every new function, a teacher can't switch another teacher's class, "I'm here" while off ends the open fight with the unused Steel back and no points, counts added once, odd counts refused, achievements given straight away, Every bow, the summary for the school admin and for one class only, New Season wipes the counts and achievements). On the same copy **every database file**: 45 of 47 pass in full; the two left are the usual ones (`clans_fights` midnight jobs, `maths_focus_results` "the day counting began"). `security.test.sql` lists `teacher_set_archery_duels` and `teacher_archery_summary`; `progress_access.test.sql` counted 83 achievements in the hub and now counts **93** (watch this number at the merge: any other branch adding achievements changes it too).
+- `npm run typecheck` clean; `npm run test:all` **4,683 passed** (250 files, 1 skipped as before); `npm run build` fine. Only `supabase/functions/archery/index.ts` was rebuilt.
+
+**Untested:** everything live (the migration, the function in Deno, Realtime hearing a fight ended by "I'm here"); a real Chromebook's frame rate; the teacher panel on the real Teacher page with the class picker (it's not in the games list yet).
+
+**Questions for James:**
+1. **The ten achievements and their names** (table above): OK?
+2. **Achievements go with a New Season**, like the coins and gear: OK, or keep them?
+3. **A perfect speed round** counts only in the day's 8 coin rounds: OK?
+4. **The teacher summary** (pupils who played this week, fights finished, speed rounds today): enough, or anything else? (Anything per-pupil would be a bigger change.)
+5. Wins against classmates count towards the world and Plain-only achievements too: OK?
+
+**Go-live list (so far):** as Stage 6, plus: apply `20261022000200_archery_hub.sql` after the other two (re-check the number first), then check `select counts_fn, players_fn from hub_games where id = 'archery'` and that 10 Archery achievements exist; deploy `archery` again; on the Teacher page check both switches and the summary for a class; `progress_access.test.sql`'s achievement count must match `main`'s plus 10 at the merge; `docs/PRIVACY-SUMMARY.md`: **achievement counts** per pupil (fights won per world, Plain-only and Hawk wins, perfect speed rounds, classmate fights played and won; numbers only, never shown to classmates, wiped by New Season) and the **teacher's class summary** (counts only, the teacher's own pupils).
+

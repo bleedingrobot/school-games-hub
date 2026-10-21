@@ -112,11 +112,14 @@ describe('fights against classmates', () => {
   const BEN = 'bbbbbbbb-0000-4000-8000-000000000002';
 
   /** Ana's and Ben's games, side by side on one pretend server. `skew` moves both the server's clock and the screens'. */
-  function two() {
+  function two(duels = true) {
     const clock = { skew: 0 };
+    // The teacher's Classmate fights switch for their class (Stage 7).
+    const switches = { duels };
     const listeners = new Set<(d: DuelRow) => void>();
     const hub = trialHub({
       now: () => Date.now() + clock.skew,
+      duels: () => switches.duels,
       pupils: { [ANA]: { name: 'Speedy Otter 7', classId: 'room-1' }, [BEN]: { name: 'Brave Kiwi 12', classId: 'room-1' } },
       onDuel: (d) => queueMicrotask(() => listeners.forEach((l) => l(d))),
     });
@@ -140,7 +143,7 @@ describe('fights against classmates', () => {
       render(<ArcheryGame api={archeryApi((b) => hub.sendAs(me, b), me)} duels={link} me={me} />, { container: box });
       return within(box);
     };
-    return { hub, clock, ana: game(ANA), ben: game(BEN) };
+    return { hub, clock, switches, ana: game(ANA), ben: game(BEN) };
   }
 
   it('challenges a classmate, who accepts from the pop-up; both pack and take turns through the server', async () => {
@@ -282,4 +285,41 @@ describe('fights against classmates', () => {
     fireEvent.click(document.activeElement!);
     expect(answered).toEqual(['no']);
   });
+
+  it('hides everything to do with classmates while the teacher has classmate fights off', async () => {
+    const { hub, ana } = two(false);
+    await ana.findByRole('button', { name: 'Play' });
+    // "I'm here" has answered (and said classmate fights are off), so nothing about classmates shows.
+    await waitFor(() => expect(hub.data.here?.[ANA]).toBeUndefined());
+    await act(async () => {});
+    expect(ana.queryByRole('button', { name: 'Challenge a classmate' })).toBeNull();
+    fireEvent.click(ana.getByRole('button', { name: 'Play' }));
+    await ana.findByRole('heading', { name: 'Pick your fight' });
+    expect(ana.queryByRole('button', { name: 'Against a classmate instead' })).toBeNull();
+    expect(ana.queryByText(/Or a classmate\?/)).toBeNull();
+  }, 20_000);
+
+  it('ends a fight fairly when classmate fights are switched off part-way, on both screens', async () => {
+    const { hub, switches, ana, ben } = two();
+    fireEvent.click(await ana.findByRole('button', { name: 'Challenge a classmate' }));
+    fireEvent.click(await ana.findByRole('button', { name: /Challenge Brave Kiwi 12/ }));
+    fireEvent.click(within(await ben.findByRole('alertdialog', {}, { timeout: 4000 })).getByRole('button', { name: 'Accept' }));
+    fireEvent.click(await ben.findByRole('button', { name: 'One more Steel Arrow' }));
+    fireEvent.click(ben.getByRole('button', { name: 'Fight!' }));
+    fireEvent.click(await ana.findByRole('button', { name: 'Fight!' }));
+    await ana.findByText('Your turn', {}, { timeout: 4000 });
+    expect(hub.data.pupils[BEN].gear).toEqual({ steel: 1 });
+
+    switches.duels = false;
+    fireEvent.click(ana.getByRole('button', { name: 'Shoot' }));
+    for (const who of [ana, ben]) {
+      await who.findByRole('heading', { name: 'The fight has stopped' }, { timeout: 4000 });
+      expect(who.getByText(/Your teacher switched classmate fights off for now/)).toBeTruthy();
+    }
+    expect(hub.data.points).toEqual([]);
+    expect(hub.data.pupils[BEN].gear).toEqual({ steel: 2 });
+    fireEvent.click(ana.getByRole('button', { name: 'Done' }));
+    await ana.findByRole('button', { name: 'Play' });
+    await waitFor(() => expect(ana.queryByRole('button', { name: 'Challenge a classmate' })).toBeNull(), { timeout: 4000 });
+  }, 20_000);
 });

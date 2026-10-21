@@ -55,7 +55,7 @@ describe('the archery server function', () => {
     const r = await off.send({ action: 'load' });
     expect(r.status).toBe(403);
     expect(r.body.code).toBe('game-off');
-    const unknown = setup({ enabled: async () => null });
+    const unknown = setup({ settings: async () => null });
     expect((await unknown.send({ action: 'load' })).status).toBe(503);
     expect((await h.send({ action: 'nonsense' })).status).toBe(400);
   });
@@ -283,6 +283,86 @@ describe('fights against bots', () => {
     const second = await h.send({ action: 'fight-start', request: 'fight-00041', world: 'forest', opponent: 'easy', pack });
     expect(second.status).toBe(200);
     expect(Object.values(h.data.fights).map((f) => f.status)).toEqual(['abandoned', 'playing']);
+  });
+});
+
+describe('achievement counts (Stage 7)', () => {
+  const plainOnly: PlayerSetup = { quiver: {}, shield: null, bow: 'starter' };
+
+  it('a won bot fight counts a win in its world, a Plain-only win and a win against Hawk, once; a lost one counts nothing', async () => {
+    const h = setup();
+    const seen = { won: false, lost: false };
+    for (let n = 0; n < 12 && !(seen.won && seen.lost); n++) {
+      h.clock.now += 60_000;
+      const start = await h.send({ action: 'fight-start', request: `fight-1${String(n).padStart(4, '0')}`, world: 'snow', opponent: 'hard', pack: plainOnly });
+      const shots = playFight(start.body.seed, 'snow', plainOnly, 'hard');
+      const before = JSON.stringify(h.data.stats ?? {});
+      const done = await h.send({ action: 'fight-finish', fight: start.body.fight, shots });
+      if (done.body.winner === 0) {
+        if (seen.won) continue;
+        seen.won = true;
+        expect(h.data.stats?.['pupil-1']).toEqual({ win_snow: 1, plain_wins: 1, hawk_wins: 1 });
+        await h.send({ action: 'fight-finish', fight: start.body.fight, shots });
+        expect(h.data.stats?.['pupil-1']).toEqual({ win_snow: 1, plain_wins: 1, hawk_wins: 1 });
+      } else {
+        seen.lost = true;
+        expect(JSON.stringify(h.data.stats ?? {})).toBe(before);
+      }
+    }
+    expect(seen).toEqual({ won: true, lost: true });
+  });
+
+  it('a win with a special arrow isn\'t a Plain-only win, and Pip isn\'t Hawk', async () => {
+    const h = setup();
+    giveCoins(h.data, 1000);
+    h.data.pupils['pupil-1'].spent = 2000;
+    expect((await h.send({ action: 'buy', request: 'req-000200', kind: 'gear', item: 'giant' })).body.result).toBe('ok');
+    const pack: PlayerSetup = { quiver: { giant: 1 }, shield: null, bow: 'starter' };
+    for (let n = 0; n < 8 && !h.data.stats?.['pupil-1']; n++) {
+      h.clock.now += 60_000;
+      const start = await h.send({ action: 'fight-start', request: `fight-2${String(n).padStart(4, '0')}`, world: 'city', opponent: 'easy', pack });
+      // The Giant Arrow first, then Plain Arrows chosen by a Hard bot.
+      const run = startFight(start.body.seed, { world: 'city', players: [pack, botSetup('easy')] });
+      const shots: Shot[] = [];
+      while (run.winner === null) {
+        const mine = run.round.turn === 0;
+        const shot = mine && !shots.length ? { ...chooseForRun(run, 'hard').shot, arrow: 'giant' as const } : chooseForRun(run, mine ? 'hard' : 'easy').shot;
+        takeShot(run, shot);
+        shots.push(shot);
+      }
+      await h.send({ action: 'fight-finish', fight: start.body.fight, shots });
+    }
+    expect(h.data.stats?.['pupil-1']).toEqual({ win_city: 1 });
+  });
+
+  it('a perfect speed round counts once; a round with one answer too slow for coins doesn\'t', async () => {
+    const h = setup();
+    async function round(slowAt: number | null) {
+      const start = await h.send({ action: 'round-start' });
+      const seed = start.body.seed;
+      h.clock.now += 6000;
+      for (let slot = 0; slot < start.body.questions; slot++) {
+        const late = slot === slowAt;
+        h.clock.now += late ? limitMs(slot) + NETWORK_MS + 500 : 700;
+        await h.send({ action: 'round-answer', seed, slot, value: answerOf(h.data, seed, slot), ms: late ? limitMs(slot) + TAP_MS + 100 : 400 });
+      }
+      return seed;
+    }
+    await round(4);
+    expect(h.data.stats ?? {}).toEqual({});
+    const seed = await round(null);
+    expect(h.data.stats?.['pupil-1']).toEqual({ perfect_rounds: 1 });
+    expect(h.data.noted).toEqual([`pupil-1:stats:round:${seed}`]);
+  });
+
+  it('buying a bow checks the achievements (Every bow is counted from the bows you own)', async () => {
+    const h = setup();
+    giveCoins(h.data, 1000);
+    h.data.pupils['pupil-1'].spent = 2000;
+    await h.send({ action: 'buy', request: 'req-000300', kind: 'gear', item: 'steel' });
+    expect(h.data.noted ?? []).toEqual([]);
+    expect((await h.send({ action: 'buy', request: 'req-000301', kind: 'bow', item: 'long' })).body.result).toBe('ok');
+    expect(h.data.noted).toEqual(['pupil-1:stats:buy:req-000301']);
   });
 });
 

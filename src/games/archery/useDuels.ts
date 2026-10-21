@@ -9,6 +9,9 @@
  *   pattern for games with classmates).
  *
  * Newer versions of a fight always win, so a late message can never take it backwards.
+ *
+ * Classmate fights have their own teacher switch (Stage 7): "I'm here" says when it's off, and then the game hides
+ * everything to do with them (the server refuses them anyway, and ends any open fight fairly).
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { HERE_EVERY_MS } from '../../../shared/archery/config';
@@ -26,6 +29,8 @@ export interface Duels {
   live: LiveStatus;
   /** The game was switched off for the class. */
   off: boolean;
+  /** Classmate fights can be offered: "I'm here" has answered, and they're switched on for the class. */
+  duelsOn: boolean;
   /** "I'm here" couldn't reach the server last time. */
   offline: boolean;
   /** Now by the server's clock (ms). */
@@ -51,6 +56,8 @@ export function useDuels(link: DuelLink | undefined, me: string, paused: boolean
   const [duel, setDuel] = useState<DuelRow | null>(null);
   const [live, setLive] = useState<LiveStatus>('connecting');
   const [off, setOff] = useState(false);
+  // null until "I'm here" first answers, so the buttons never flash up while they're switched off.
+  const [duelsOff, setDuelsOff] = useState<boolean | null>(null);
   const [offline, setOffline] = useState(false);
   const offset = useRef(0);
   const forgotten = useRef(new Set<number>());
@@ -81,6 +88,7 @@ export function useDuels(link: DuelLink | undefined, me: string, paused: boolean
     }
     setOffline(false);
     setOff(!!r.off);
+    setDuelsOff(!!r.duelsOff);
     setOnline(r.online);
     setAsks((list) => {
       const now = Date.now() + offset.current;
@@ -145,5 +153,5 @@ export function useDuels(link: DuelLink | undefined, me: string, paused: boolean
     setDuel((d) => (d && d.id === id && !duelOpen(d) ? null : d));
   }, []);
 
-  return { online, asks, duel, live, off, offline, serverNow: () => Date.now() + offset.current, refresh, accept, forget };
+  return { online, asks, duel, live, off, duelsOn: duelsOff === false, offline, serverNow: () => Date.now() + offset.current, refresh, accept, forget };
 }

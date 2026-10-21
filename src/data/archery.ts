@@ -277,3 +277,36 @@ export async function saveArcheryEnabled(enabled: boolean, classId?: string | nu
   forgetSettings();
   if (error) throw new FriendlyError('We couldn’t change that.');
 }
+
+/** Are classmate fights switched on for this class (Stage 7)? On unless a teacher switched them off. */
+export async function fetchArcheryDuels(classId?: string | null): Promise<boolean> {
+  const row = await readSettings(['archery_duels'], classId);
+  if (!row) throw new FriendlyError('We couldn’t load the Archery Challenge setting.');
+  return row.archery_duels !== false;
+}
+
+export async function saveArcheryDuels(enabled: boolean, classId?: string | null): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_archery_duels', { enabled, target_class: classId ?? null });
+  forgetSettings();
+  if (error) throw new FriendlyError('We couldn’t change that.');
+}
+
+/** A few counts for the teacher's panel (never names, coins or maths results). */
+export interface ArcherySummary {
+  pupils: number;
+  /** Pupils who played in the last 7 days. */
+  played: number;
+  /** Bot fights and classmate fights finished in the last 7 days. */
+  botFights: number;
+  duels: number;
+  /** Speed rounds in the last day. */
+  rounds: number;
+}
+
+export async function fetchArcherySummary(classId?: string | null): Promise<ArcherySummary> {
+  const { data, error } = await supabase.rpc('teacher_archery_summary', { target_class: classId ?? null });
+  if (error || !data || typeof data !== 'object') throw new FriendlyError('We couldn’t load the Archery Challenge summary.');
+  const r = data as Record<string, unknown>;
+  const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+  return { pupils: n(r.pupils), played: n(r.played), botFights: n(r.botFights), duels: n(r.duels), rounds: n(r.rounds) };
+}

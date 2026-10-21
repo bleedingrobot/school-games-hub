@@ -165,3 +165,38 @@ describe('classmate fights (Stage 6)', () => {
     expect(rule('.ar-shell .ar-mate .ar-btn, .ar-shell .ar-ask .ar-btn')).toMatch(/min-height: 44px;.*animation: none/);
   });
 });
+
+describe('the teacher panel and the home scene (Stage 7)', () => {
+  const panel = readFileSync(`${process.cwd()}/src/pages/TeacherArchery.tsx`, 'utf8');
+  const scene = readFileSync(`${process.cwd()}/src/games/archery/HomeScene.tsx`, 'utf8');
+
+  it('the teacher panel uses the Teacher page\'s own look: shared buttons and panel, no Archery styles', () => {
+    for (const m of panel.matchAll(/<button[^>]*className="([^"]+)"/g)) expect(m[1], m[0]).toMatch(/^button button--(primary|danger)$/);
+    expect(panel).not.toMatch(/className="[^"]*\bar-/);
+    expect(panel).not.toMatch(/archery\.css/);
+    expect(panel).toMatch(/<section className="panel teacher__switch" aria-labelledby="archery-teacher-title">/);
+    expect(panel).toMatch(/<h2 id="archery-teacher-title"/);
+    expect(panel).toMatch(/role="status"/);
+  });
+
+  it('the teacher summary is counts only: no names, coins or maths', () => {
+    expect(panel).not.toMatch(/coins:|display_name|\.name\b|maths results/);
+  });
+
+  it('the home scene keeps still with less motion, and has simpler graphics (by choice or by itself)', () => {
+    expect(scene).toMatch(/if \(!lessMotion\) raf = requestAnimationFrame\(frame\)/);
+    expect(scene).toMatch(/level = simple \? 1 : 0/);
+    expect(scene).toMatch(/level\+\+/);
+    expect(scene).toMatch(/aria-hidden="true"/);
+  });
+});
+
+describe('closing a dialog with Escape (Stage 7 keyboard run)', () => {
+  it('puts focus back on the fight, as Done and Back do', () => {
+    for (const f of ['FightScreen', 'DuelScreen']) {
+      const text = readFileSync(`${process.cwd()}/src/games/archery/${f}.tsx`, 'utf8');
+      expect(text, f).not.toMatch(/e\.key === 'Escape' && set/);
+      expect([...text.matchAll(/if \(e\.key === 'Escape'\) \{ set(Picker|Settings)Open\(false\); heading\.current\?\.focus/g)], f).toHaveLength(2);
+    }
+  });
+});

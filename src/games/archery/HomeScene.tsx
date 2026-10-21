@@ -91,7 +91,11 @@ function drawTarget(g: CanvasRenderingContext2D, TARGET: { x: number; y: number 
   g.restore();
 }
 
-export function HomeScene({ world = 'forest', bow = 'starter', lessMotion }: { world?: WorldId; bow?: BowId; lessMotion: boolean }) {
+/**
+ * Simpler graphics (the player's setting, or by itself when frames are slow for a second or so, as in a fight): a
+ * lower pixel density, and at the second step a little lower still, with the loop at about 30 frames a second.
+ */
+export function HomeScene({ world = 'forest', bow = 'starter', lessMotion, simple = false }: { world?: WorldId; bow?: BowId; lessMotion: boolean; simple?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;
@@ -110,11 +114,19 @@ export function HomeScene({ world = 'forest', bow = 'starter', lessMotion }: { w
     let raf = 0;
     let gone = false;
     const start = performance.now();
+    // 0 full, 1 simple, 2 simple at a lower density and about 30 frames a second.
+    let level = simple ? 1 : 0;
+    let slowSwitches = 0;
+    let last = 0, windowAt = 0, windowFrames = 0, windowSlow = 0, fpsFrames = 0, fpsAt = start, fps = 0;
+    if (new URLSearchParams(window.location.search).has('debug')) {
+      (window as unknown as { __archeryHomeStats?: () => unknown }).__archeryHomeStats = () => ({ fps, level, slowSwitches, ratio: L?.ratio ?? 0 });
+    }
     const fig: Figure = { kind: 'hero', dir: 1, aim: 14, draw: 0, hasArrow: true, arrowLook: 'arrow', hitT: 0, squash: 0, stringWob: 0, blinkFor: 0, dizzy: 0, koT: -1, cheer: 0, bow };
 
     function build() {
       const r = canvas!.getBoundingClientRect();
-      const ratio = Math.min(1.5, window.devicePixelRatio || 1);
+      const d = window.devicePixelRatio || 1;
+      const ratio = level === 0 ? Math.min(1.5, d) : level === 1 ? Math.min(1, d) : Math.min(1, d) * 0.75;
       const cw = Math.max(1, r.width), ch = Math.max(1, r.height);
       canvas!.width = Math.round(cw * ratio);
       canvas!.height = Math.round(ch * ratio);
@@ -132,8 +144,41 @@ export function HomeScene({ world = 'forest', bow = 'starter', lessMotion }: { w
       bg.drawImage(mid, -PAD_X, -PAD_TOP, mid.width / ratio, mid.height / ratio);
     }
 
+    /** Counts slow frames (after the first second): most of 60 slow steps the graphics down, as the fight does. */
+    function measure(now: number) {
+      const interval = last ? now - last : 16;
+      last = now;
+      fpsFrames++;
+      if (now - fpsAt >= 1000) {
+        fps = Math.round((fpsFrames * 1000) / (now - fpsAt));
+        fpsFrames = 0;
+        fpsAt = now;
+      }
+      if (now - start < 1000 || document.hidden) return;
+      if (!windowFrames) windowAt = now;
+      windowFrames++;
+      if (interval > (level === 2 ? 70 : 40)) windowSlow++;
+      if (windowFrames >= 60 || (windowFrames >= 8 && now - windowAt >= 2000)) {
+        if (windowSlow > windowFrames * 0.6 && level < 2) {
+          level++;
+          slowSwitches++;
+          build();
+        }
+        windowFrames = 0;
+        windowSlow = 0;
+      }
+    }
+
     function frame(now: number) {
       if (gone || !L || !back) return;
+      if (!lessMotion) {
+        // At the lowest step, every other frame is skipped (about 30 a second).
+        if (level === 2 && last && now - last < 28) {
+          raf = requestAnimationFrame(frame);
+          return;
+        }
+        measure(now);
+      }
       const t = lessMotion ? 1.6 : (now - start) / 1000;
       const c = t % CYCLE;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -196,6 +241,6 @@ export function HomeScene({ world = 'forest', bow = 'starter', lessMotion }: { w
       cancelAnimationFrame(raf);
       observer?.disconnect();
     };
-  }, [world, bow, lessMotion]);
+  }, [world, bow, lessMotion, simple]);
   return <canvas ref={ref} className="ar-home__scene" aria-hidden="true" />;
 }
