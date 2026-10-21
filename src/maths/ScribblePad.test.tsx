@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { Question } from '../../shared/maths/skillPack';
@@ -73,6 +73,22 @@ describe('the scribble pad beside the question', () => {
     render(modal());
     await user.click(screen.getByRole('button', { name: '5' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('5');
+  });
+});
+
+describe('the pad inside a game that listens for pointers', () => {
+  it('keeps its pointers to itself, so the game cannot steal them mid-stroke', () => {
+    const gameHears = vi.fn();
+    render(
+      <div onPointerDown={gameHears} onPointerMove={gameHears} onPointerUp={gameHears}>
+        <ScribblePad onCollapse={() => {}} />
+      </div>,
+    );
+    const canvas = screen.getByRole('img', { name: /drawing space/i });
+    fireEvent.pointerDown(canvas, { pointerId: 1 });
+    fireEvent.pointerMove(canvas, { pointerId: 1 });
+    fireEvent.pointerUp(canvas, { pointerId: 1 });
+    expect(gameHears).not.toHaveBeenCalled();
   });
 });
 

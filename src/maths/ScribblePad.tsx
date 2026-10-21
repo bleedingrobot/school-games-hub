@@ -130,6 +130,8 @@ export function ScribblePad({ onCollapse }: { onCollapse: () => void }) {
     redraw();
   }
 
+  const stop = (e: React.PointerEvent) => e.stopPropagation();
+
   // Pressing a button must not steal focus from the question box.
   const keepFocus = (e: React.PointerEvent) => e.preventDefault();
 
@@ -137,6 +139,12 @@ export function ScribblePad({ onCollapse }: { onCollapse: () => void }) {
     <section
       className="scribble"
       aria-label="Scribble pad"
+      // A game behind the box may listen for pointers on a parent (Marble Rush grabs the pointer on its course). The pad is
+      // its own thing: its pointers stay here, or the game steals them mid-stroke and the pen is left as a dot.
+      onPointerDown={stop}
+      onPointerMove={stop}
+      onPointerUp={stop}
+      onPointerCancel={stop}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
           e.preventDefault();
