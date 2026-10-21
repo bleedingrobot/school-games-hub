@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react';
 import { fetchArcheryEnabled } from '../../data/archery';
 
 /**
- * Is Archery Challenge in the hub? Off: the game isn't in the build at all (docs/ARCHERY-PLAN.md, section 7).
- * Going live turns this on, only with James's word. `VITE_ARCHERY_ON=true` in .env.local shows it on your
- * own computer only. Even when this is on, the card hides itself while the teacher's switch is off for the
- * pupil's class, and the database starts with that switch off everywhere.
+ * Is Archery Challenge in the hub? On since the merge to main (James, 22 Oct 2026: going live without Stage 8).
+ * The card still hides itself while the teacher's switch is off for the pupil's class, and the database started
+ * with that switch off everywhere. Set this to false to take the game out of the build completely.
  */
-const ON = false;
+const ON = true;
 
 export const archeryOn = (): boolean => ON || import.meta.env.VITE_ARCHERY_ON === 'true';
 

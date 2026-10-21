@@ -56,3 +56,11 @@ The `save-bot-game` server function runs exactly this code before saving a resul
   is a pretend pilot that finishes every mine, `medals.ts` has the medal times, `maths.ts` says which question belongs
   to which door or pad, and `save.ts` is the server's replay and check (`judgeRun`). `determinism.ts` pins the rules'
   fingerprint (`npm run mine:determinism` also checks Chromium and WebKit). See `docs/MINE-PLAN.md`.
+- `archery/`: Archery Challenge (stages 1 to 7). `fight.ts` is a fight as pure functions (`playFight(seed, setup,
+  shots)`, or `startFight` and `takeShot` one shot at a time; only + − × ÷ and square root, aim directions from the
+  table in `aim.ts`), with `land.ts` (a grid of cells, the four worlds' twists), `shot.ts`, `damage.ts`, `effects.ts`
+  (every arrow) and `gear.ts` (shields, helpers, bows). `bot.ts` is the three bots, `judge.ts` the server's replay of a
+  bot fight (checking every bot shot), `duel.ts` a classmate fight (one round, turn by turn), `shop.ts` the Armory's
+  prices and levels, `speed.ts` the speed round (questions from the maths focus, the shrinking timer), `points.ts`
+  and `stats.ts` the hub points and achievement counts. Every number is in `config.ts`. `determinism.ts` pins the
+  rules' fingerprint (`npm run archery:determinism` also checks Chromium and WebKit). See `docs/ARCHERY-PLAN.md`.
