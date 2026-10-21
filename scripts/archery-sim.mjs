@@ -8,6 +8,8 @@ import { pathToFileURL } from 'node:url';
 import { rolldown } from 'rolldown';
 
 const FIGHTS = Number(process.argv[2]) > 0 ? Math.floor(Number(process.argv[2])) : 120;
+/** `--balance` runs only the balance section (quick tuning). */
+const ONLY_BALANCE = process.argv.includes('--balance');
 const LANDS_PER_WORLD = 150;
 
 // ——— Bundle shared/archery for Node ———
@@ -24,6 +26,7 @@ writeFileSync(
     `export * from ${JSON.stringify(join(src, 'types.ts'))};`,
     `export { mixSeed } from ${JSON.stringify(join(src, 'random.ts'))};`,
     `export { flyArrow } from ${JSON.stringify(join(src, 'shot.ts'))};`,
+    `export { ARROWS } from ${JSON.stringify(join(src, 'arrows.ts'))};`,
   ].join('\n'),
 );
 const bundle = await rolldown({ input: entry, logLevel: 'silent' });
@@ -32,7 +35,7 @@ await bundle.close();
 const A = await import(pathToFileURL(join(dir, 'sim.mjs')).href);
 rmSync(dir, { recursive: true, force: true });
 
-const { BOT_KITS, chooseForRun, chooseBotShot, startFight, takeShot, playFight, playShot, flyArrow, copyLand, mixSeed, WORLD_IDS, MAX_SHOTS_PER_ROUND, BOT_MAX_SIMS } = A;
+const { BOT_KITS, botSetup, chooseForRun, chooseBotShot, startFight, takeShot, playFight, playShot, flyArrow, copyLand, mixSeed, WORLD_IDS, MAX_SHOTS_PER_ROUND, BOT_MAX_SIMS, ARROWS } = A;
 
 const PAIRS = [['easy', 'easy'], ['easy', 'medium'], ['easy', 'hard'], ['medium', 'medium'], ['medium', 'hard'], ['hard', 'hard']];
 const pct = (a, b) => (b ? ((100 * a) / b).toFixed(0).padStart(3) + '%' : '  - ');
@@ -43,7 +46,7 @@ const stats = (xs) => {
 };
 const copyRound = (r) => ({ ...r, land: copyLand(r.land), archers: [{ ...r.archers[0] }, { ...r.archers[1] }] });
 
-let turnMs = 0, turns = 0, maxSims = 0, deliberate = 0, steelShots = 0;
+let turnMs = 0, turns = 0, maxSims = 0, deliberate = 0, specialShots = 0;
 let replayMs = 0, replayTurns = 0;
 const roundLands = Object.fromEntries(WORLD_IDS.map((w) => [w, []])); // {round copy, shots, capped}
 const roundCount = Object.fromEntries(WORLD_IDS.map((w) => [w, 0]));
@@ -52,7 +55,7 @@ const LAND_STRIDE = Math.max(1, Math.floor((PAIRS.length * FIGHTS * 2.4) / LANDS
 
 /** Plays one fight between two bot levels (levels[0] is player 0, the left archer). */
 function playOne(seed, world, levels) {
-  const setup = { world, players: [{ quiver: { ...BOT_KITS[levels[0]] }, shield: 0 }, { quiver: { ...BOT_KITS[levels[1]] }, shield: 0 }] };
+  const setup = { world, players: [botSetup(levels[0]), botSetup(levels[1])] };
   const run = startFight(seed, setup);
   const shots = [];
   const rounds = [];
@@ -65,7 +68,7 @@ function playOne(seed, world, levels) {
     turns++;
     if (c.sims > maxSims) maxSims = c.sims;
     if (c.deliberateMiss) deliberate++;
-    if (c.shot.arrow === 'steel') steelShots++;
+    if (c.shot.arrow !== 'plain') specialShots++;
     // Now and then, check the full replay path gives the same shot, and time it.
     if (shots.length % 15 === 7) {
       const r0 = performance.now();
@@ -91,6 +94,7 @@ function playOne(seed, world, levels) {
 }
 
 // ——— Bots against bots ———
+if (!ONLY_BALANCE) {
 const t0 = performance.now();
 const results = {}; // [world][pair] = {wins:[a,b], draws, roundShots:[], capped}
 for (const [wi, world] of WORLD_IDS.entries()) {
@@ -167,7 +171,7 @@ function canHurt(round, shooter, step) {
       const shot = { angle, power, arrow: 'plain' };
       const f = flyArrow(round.land, round.archers, shooter, shot, round.wind);
       const dx = f.hit.x - target.x, dy = f.hit.y - (target.y - 12);
-      if (dx * dx + dy * dy > 70 * 70) continue; // too far to hurt (blast 18 px, plus a fall)
+      if (dx * dx + dy * dy > 76 * 76) continue; // too far to hurt (blast 24 px, plus a fall)
       const copy = copyRound(round);
       if (playShot(copy, shooter, shot).damage[1 - shooter] > 0) return true;
     }
@@ -198,4 +202,54 @@ console.log(`  (checked in ${((performance.now() - l0) / 1000).toFixed(1)} s)`);
 
 console.log(`\nTiming: ${(turnMs / turns).toFixed(2)} ms per bot turn (thinking on a running fight, ${turns} turns); ` +
   `${(replayMs / replayTurns).toFixed(2)} ms per turn including the replay of the fight so far (${replayTurns} sampled turns, all matched).`);
-console.log(`Most trial flights in one turn: ${maxSims} (limit ${BOT_MAX_SIMS}). Deliberate misses: ${pct(deliberate, turns)} of shots. Steel Arrows shot: ${steelShots}.`);
+console.log(`Most trial flights in one turn: ${maxSims} (limit ${BOT_MAX_SIMS}). Deliberate misses: ${pct(deliberate, turns)} of shots. Special arrows shot: ${specialShots}.`);
+}
+
+// ——— Balance (docs/ARCHERY-PLAN.md, section 2): gear helps, but good aim can still win ———
+/** Plays one fight with custom setups and bot overrides; returns the winner (0, 1 or 'draw'). */
+function playCustom(seed, world, levels, setups, overrides) {
+  const setup = { world, players: setups };
+  const run = startFight(seed, setup);
+  while (run.winner === null) {
+    const p = run.round.turn;
+    const c = chooseForRun(run, levels[p], overrides[p]);
+    const taken = takeShot(run, c.shot);
+    if (taken.problem) throw new Error(`balance: shot refused: ${taken.problem}`);
+  }
+  return run.winner;
+}
+function versus(label, levels, setups, overrides, n = Math.max(40, Math.floor(FIGHTS / 2))) {
+  const wins = [0, 0];
+  let draws = 0;
+  for (const [wi, world] of WORLD_IDS.entries()) {
+    for (let i = 0; i < n; i++) {
+      const swap = i % 2 === 1;
+      const L = swap ? [levels[1], levels[0]] : levels;
+      const S = swap ? [setups[1], setups[0]] : setups;
+      const O = swap ? [overrides[1], overrides[0]] : overrides;
+      const w = playCustom(mixSeed(31337, wi * 100000 + i), world, L, S, O);
+      if (w === 'draw') draws++;
+      else wins[swap ? 1 - w : w]++;
+    }
+  }
+  const tot = wins[0] + wins[1] + draws;
+  console.log(`  ${label.padEnd(64)} ${pct(wins[0], tot)} ${pct(wins[1], tot)} ${pct(draws, tot)}`);
+  return wins[0] / tot;
+}
+const b0 = performance.now();
+console.log('\nBalance (first side wins / second side wins / draws, all four worlds):');
+const plainOnly = { quiver: {}, shield: null };
+const richKit = { giant: 5, firework: 5, rain: 5, steel: 5 };
+const rich = { quiver: { ...richKit }, shield: 'bubble', bow: 'golden' };
+versus('Hard, Plain Arrows only  v  Medium with a rich bag + Bubble + Golden', ['hard', 'medium'], [plainOnly, rich], [{ kit: {} }, { kit: richKit }]);
+versus('Medium, Plain Arrows only  v  Medium with a rich bag + Bubble + Golden', ['medium', 'medium'], [plainOnly, rich], [{ kit: {} }, { kit: richKit }]);
+for (const shield of ['wood', 'charm', 'bubble']) {
+  versus(`Medium + ${shield} shield  v  Medium, no shield`, ['medium', 'medium'], [{ quiver: {}, shield }, plainOnly], [{ kit: {} }, { kit: {} }]);
+}
+console.log('\n  Each arrow: Medium shooting it on every aimed shot (5 of them) v Medium with Plain only:');
+for (const a of ARROWS) {
+  if (a.id === 'plain' || a.id === 'bolt') continue;
+  const kit = { [a.id]: 5 };
+  versus(`${a.name}`, ['medium', 'medium'], [{ quiver: { ...kit }, shield: null }, plainOnly], [{ kit, specials: [a.id], always: true }, { kit: {} }], 30);
+}
+console.log(`  (balance checked in ${((performance.now() - b0) / 1000).toFixed(1)} s)`);

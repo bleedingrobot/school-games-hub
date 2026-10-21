@@ -25,7 +25,7 @@ export type ArrowId =
 export type HelperId = 'apple' | 'umbrella';
 /** Anything a player packs in their quiver and uses up: arrows and helpers. */
 export type ItemId = ArrowId | HelperId;
-/** The shields (bought once and kept; full again at the start of every round). */
+/** The shields (bought once and kept; in a fight each soaks damage until it breaks). */
 export type ShieldId = 'wood' | 'charm' | 'bubble';
 /** The bows (bought once and kept). */
 export type BowId = 'starter' | 'long' | 'recurve' | 'hunter' | 'golden';
@@ -180,7 +180,7 @@ export interface Round {
 /** What each player brings to a fight: how many of each arrow and helper (Plain is always unlimited), a shield and a bow. */
 export interface PlayerSetup {
   quiver: Partial<Record<ItemId, number>>;
-  /** The shield they brought (full at the start of every round), or null. */
+  /** The shield they brought (it lasts the whole fight, then breaks), or null. */
   shield: ShieldId | null;
   /** The bow they brought (the Starter Bow if left out). */
   bow?: BowId;

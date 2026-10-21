@@ -16,7 +16,9 @@
  *   keeps stopping it). ±3 power wobble. It shoots a Steel Arrow when its flights say it will land close.
  * - Every bot misses on purpose some of the time (BOT_TUNING.missChance), so a 9-year-old can win.
  *
- * Stage 2: Plain and Steel only, from each level's kit (BOT_KITS), and only arrows in `botArrows()`.
+ * Stage 3: each level has a small fixed kit of special arrows (BOT_KITS) and a shield (BOT_SHIELDS), and only
+ * ever picks arrows in `botArrows()` (never the pupil's Glass Arrow). When a bot decides to shoot a special
+ * arrow, it picks its strongest one left (BOT_SPECIALS: arrows that fly like a Plain Arrow, so its aim holds).
  * Directions come from the aim table (AIM_X/AIM_Y), never Math.sin/cos.
  */
 import { AIM_X, AIM_Y } from './aim';
@@ -25,17 +27,31 @@ import { ARCHER_H, CELL, GRAVITY, HANDS_HEIGHT, LAUNCH_OFFSET, MAX_ANGLE, MAX_PO
 import { nextPlayer, playShot, startFight, takeShot, type FightRun } from './fight';
 import { archerCols, copyLand, surfaceRow } from './land';
 import { makeRandom, mixSeed, type Random } from './random';
-import type { ArrowId, FightSetup, Round, Shot, ShotHit, ShotRecord } from './types';
+import type { ArrowId, FightSetup, Round, ShieldId, Shot, ShotHit, ShotRecord } from './types';
 
 export type BotLevel = 'easy' | 'medium' | 'hard';
 export const BOT_LEVELS: readonly BotLevel[] = ['easy', 'medium', 'hard'];
 
-/** Each level's fixed small kit (special arrows for the whole fight; Plain is unlimited). Stage 2: Plain and Steel only. */
+/** Each level's fixed small kit (special arrows for the whole fight; Plain is unlimited). Tuned with scripts/archery-sim.mjs. */
 export const BOT_KITS: Readonly<Record<BotLevel, Partial<Record<ArrowId, number>>>> = {
   easy: { steel: 1 },
-  medium: { steel: 2 },
-  hard: { steel: 3 },
+  medium: { steel: 2, rain: 1 },
+  hard: { steel: 3, firework: 1 },
 };
+
+/** Each level's shield (full every round). */
+export const BOT_SHIELDS: Readonly<Record<BotLevel, ShieldId | null>> = { easy: null, medium: null, hard: null };
+
+/** Each level's name (James, 21 Oct 2026: a name per level). */
+export const BOT_NAMES: Readonly<Record<BotLevel, string>> = { easy: 'Pip', medium: 'Robin', hard: 'Hawk' };
+
+/** The special arrows a bot will shoot, strongest first. They all fly like a Plain Arrow, so the bot's aim still holds. */
+export const BOT_SPECIALS: readonly ArrowId[] = ['giant', 'firework', 'rain', 'steel'];
+
+/** A bot's whole setup for a fight: its kit and its shield. */
+export function botSetup(level: BotLevel): FightSetup['players'][number] {
+  return { quiver: { ...BOT_KITS[level] }, shield: BOT_SHIELDS[level] };
+}
 
 /** A bot never flies more than this many trial shots in one turn (so it's quick on a Chromebook). */
 export const BOT_MAX_SIMS = 3;
@@ -100,11 +116,11 @@ const HARD_FROM = 40;
 const HARD_PREFER = 60;
 /** Hard: biggest power change one correction makes. */
 const HARD_STEP_MAX = 25;
-/** Hard shoots a Steel Arrow when its best flight hurts the target or lands this close (px). */
+/** Hard shoots a special arrow when its best flight hurts the target or lands this close (px). */
 const HARD_STEEL_NEAR = 30;
-/** Medium shoots a Steel Arrow (this often) when its last arrow this round hurt the target. */
+/** Medium shoots a special arrow (this often) when its last arrow this round hurt the target. */
 const MEDIUM_STEEL_CHANCE = 0.5;
-/** Easy shoots a Steel Arrow at random this often, while it has one. */
+/** Easy shoots a special arrow at random this often, while it has one. */
 const EASY_STEEL_CHANCE = 0.15;
 
 /** The bot's answer, with how it got there (for tests and the simulator). */
@@ -308,11 +324,24 @@ const limit = (n: number, most: number) => (n > most ? most : n < -most ? -most 
 /** Power change that moves the landing by `miss` px (range grows with power², so dRange/dPower ≈ 2·range/power). */
 const powerStep = (aim: Aim, power: number, miss: number) => (-miss * (power > 1 ? power : 1)) / (2 * (aim.dist > 50 ? aim.dist : 50));
 
-/** Can this player shoot a Steel Arrow now (in their setup, their level's kit and the bots' list, with one left)? */
-function steelLeft(run: FightRun, player: number, level: BotLevel): boolean {
-  if (!botArrows().some((a) => a.id === 'steel')) return false;
-  const have = Math.min(run.setup.players[player].quiver.steel ?? 0, BOT_KITS[level].steel ?? 0);
-  return (run.used[player].steel ?? 0) < have;
+/** For the balance simulator only: a different kit, a different list of specials, or a special on every aimed shot. */
+export interface BotOverride {
+  kit?: Partial<Record<ArrowId, number>>;
+  specials?: readonly ArrowId[];
+  always?: boolean;
+}
+let override: BotOverride | null = null;
+
+/** The strongest special arrow this player can shoot now (in their setup, their level's kit and the bots' list, with one left), or null. */
+function bestSpecial(run: FightRun, player: number, level: BotLevel): ArrowId | null {
+  const allowed = new Set(botArrows().map((a) => a.id));
+  const kit = override?.kit ?? BOT_KITS[level];
+  for (const id of override?.specials ?? BOT_SPECIALS) {
+    if (!override?.specials && !allowed.has(id)) continue; // the simulator may try any arrow
+    const have = Math.min(run.setup.players[player].quiver[id] ?? 0, kit[id] ?? 0);
+    if ((run.used[player][id] ?? 0) < have) return id;
+  }
+  return null;
 }
 
 /** How many shots this player has taken in the round being played. */
@@ -373,7 +402,8 @@ function planEasy(run: FightRun, aim: Aim, rng: Random): Plan {
   const t = BOT_TUNING.easy;
   const angle = toward(aim, angleBase + wobble(rng, run, p, 'easy', t.angleWobble));
   power += wobble(rng, run, p, 'easy', t.powerWobble);
-  const arrow: ArrowId = steelLeft(run, p, 'easy') && rng.fraction() < EASY_STEEL_CHANCE ? 'steel' : 'plain';
+  const special = bestSpecial(run, p, 'easy');
+  const arrow: ArrowId = special && rng.fraction() < EASY_STEEL_CHANCE ? special : 'plain';
   return { angle, power, arrow, sims: 0 };
 }
 
@@ -406,7 +436,8 @@ function planMedium(run: FightRun, aim: Aim, rng: Random): Plan {
   const t = BOT_TUNING.medium;
   power += wobble(rng, run, p, 'medium', t.powerWobble);
   const lastHurt = !!last && last.damage[1 - p] > 0;
-  const arrow: ArrowId = lastHurt && steelLeft(run, p, 'medium') && rng.fraction() < MEDIUM_STEEL_CHANCE ? 'steel' : 'plain';
+  const special = bestSpecial(run, p, 'medium');
+  const arrow: ArrowId = lastHurt && special && rng.fraction() < MEDIUM_STEEL_CHANCE ? special : 'plain';
   return { angle: toward(aim, a + wobble(rng, run, p, 'medium', t.angleWobble)), power, arrow, sims: 0 };
 }
 
@@ -465,7 +496,8 @@ function planHard(run: FightRun, aim: Aim, rng: Random): Plan {
   const chosen = best.damage > 0 || !next || Math.abs(best.miss) < 12 ? best.shot : next;
   const t = BOT_TUNING.hard;
   const close = best.damage > 0 || Math.abs(best.miss) < HARD_STEEL_NEAR;
-  const arrow: ArrowId = close && chosen === best.shot && steelLeft(run, p, 'hard') ? 'steel' : 'plain';
+  const special = close && chosen === best.shot ? bestSpecial(run, p, 'hard') : null;
+  const arrow: ArrowId = special ?? 'plain';
   const power = chosen.power + wobble(rng, run, p, 'hard', t.powerWobble);
   return { angle: chosen.angle, power, arrow, sims: trials.length };
 }
@@ -480,19 +512,28 @@ function nearGuess(guess: number, from: number): number {
  * Picks the next shot for whoever's turn it is in a fight being played (the run isn't changed).
  * `chooseBotShot` replays the fight and calls this; the simulator calls it on its own run.
  */
-export function chooseForRun(run: FightRun, level: BotLevel): BotChoice {
+export function chooseForRun(run: FightRun, level: BotLevel, simOverride: BotOverride | null = null): BotChoice {
   const player = nextPlayer(run);
   if (player === null) throw new Error('bot: the fight is over');
+  override = simOverride;
+  try {
+    return choose(run, level, player);
+  } finally {
+    override = null;
+  }
+}
+
+function choose(run: FightRun, level: BotLevel, player: number): BotChoice {
   const rng = makeRandom(mixSeed(run.seed, 7000 + run.records.length));
   const aim = aimFor(run.round, player);
   const plan = level === 'easy' ? planEasy(run, aim, rng) : level === 'medium' ? planMedium(run, aim, rng) : planHard(run, aim, rng);
   const t = BOT_TUNING[level];
   let power = plan.power;
-  let arrow = plan.arrow;
+  let arrow = override?.always ? bestSpecial(run, player, level) ?? plan.arrow : plan.arrow;
   const deliberateMiss = rng.fraction() < t.missChance;
   if (deliberateMiss) {
     power += (rng.int(2) === 0 ? -1 : 1) * rng.range(t.missMin, t.missMax);
-    arrow = 'plain'; // no need to waste a Steel Arrow on a miss
+    arrow = 'plain'; // no need to waste a special arrow on a miss
   }
   return { shot: { angle: clampA(plan.angle), power: clampP(power), arrow }, player, sims: plan.sims, deliberateMiss };
 }

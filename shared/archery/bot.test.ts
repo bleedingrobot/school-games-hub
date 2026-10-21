@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { botArrows } from './arrows';
 import {
-  BOT_KITS, BOT_LEVELS, BOT_MAX_SIMS, BOT_TUNING, chooseBotShot, chooseBotShotWithInfo, chooseForRun, type BotLevel, type BotTuning,
+  BOT_KITS, BOT_LEVELS, BOT_MAX_SIMS, BOT_SPECIALS, BOT_TUNING, botSetup, chooseBotShot, chooseBotShotWithInfo, chooseForRun, type BotLevel, type BotTuning,
 } from './bot';
 import { shotProblem, startFight, takeShot, type FightRun } from './fight';
 import { mixSeed } from './random';
@@ -9,7 +9,7 @@ import { WORLD_IDS, type ArrowId, type FightSetup, type Shot, type WorldId } fro
 
 const kitSetup = (world: WorldId, a: BotLevel, b: BotLevel): FightSetup => ({
   world,
-  players: [{ quiver: { ...BOT_KITS[a] }, shield: null }, { quiver: { ...BOT_KITS[b] }, shield: null }],
+  players: [botSetup(a), botSetup(b)],
 });
 
 /** Plays a whole bot-against-bot fight, checking every shot as it goes. */
@@ -30,22 +30,22 @@ function playBots(seed: number, setup: FightSetup, levels: [BotLevel, BotLevel],
 }
 
 describe('archery bots', () => {
-  it('only shoot Plain or Steel from the bots list, never more Steel than the kit, and every shot is legal', () => {
+  it('only shoot Plain or their own kit\'s special arrows from the bots list, never more than the kit, and every shot is legal', () => {
     const allowed = new Set(botArrows().map((a) => a.id));
     // The setup offers far more than the kits, including the Glass Arrow and Stage 3 arrows.
-    const greedy: Partial<Record<ArrowId, number>> = { steel: 9, glass: 5, giant: 5, rain: 5, log: 5 };
+    const greedy: Partial<Record<ArrowId, number>> = { steel: 9, glass: 5, giant: 5, rain: 5, log: 5, firework: 5, mole: 5 };
     for (const world of WORLD_IDS) {
       for (const level of BOT_LEVELS) {
         const setup: FightSetup = { world, players: [{ quiver: { ...greedy }, shield: null }, { quiver: { ...greedy }, shield: null }] };
         const { run, shots } = playBots(mixSeed(11, WORLD_IDS.indexOf(world) * 10 + BOT_LEVELS.indexOf(level)), setup, [level, level]);
         for (const s of shots) {
-          expect(['plain', 'steel']).toContain(s.arrow);
+          expect(['plain', ...BOT_SPECIALS]).toContain(s.arrow);
           expect(allowed.has(s.arrow)).toBe(true);
           expect(Number.isInteger(s.angle) && s.angle >= 0 && s.angle <= 180).toBe(true);
           expect(Number.isInteger(s.power) && s.power >= 0 && s.power <= 100).toBe(true);
         }
         for (const used of run.used) {
-          expect(used.steel ?? 0).toBeLessThanOrEqual(BOT_KITS[level].steel ?? 0);
+          for (const id of BOT_SPECIALS) expect(used[id] ?? 0).toBeLessThanOrEqual(BOT_KITS[level][id] ?? 0);
           expect(used.glass ?? 0).toBe(0);
         }
       }

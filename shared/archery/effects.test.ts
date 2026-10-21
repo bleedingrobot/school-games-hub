@@ -279,11 +279,15 @@ describe("the Glass Arrow (the pupil's arrow)", () => {
 });
 
 describe('shields, helpers and bows', () => {
-  it('fills each shield at the start of every round', () => {
+  it('starts each shield full, and carries what is left of it into the next round', () => {
     const setup: FightSetup = { world: 'forest', players: [{ quiver: {}, shield: 'wood' }, { quiver: {}, shield: 'bubble' }] };
     const r = newRound(1, 0, setup);
     expect([r.archers[0].shield, r.archers[1].shield]).toEqual([40, 60]);
-    expect(newRound(1, 1, setup).archers[1].shield).toBe(60);
+    r.archers[1].shield = 12;
+    r.archers[1].bubble = false;
+    const next = newRound(1, 1, setup, [{}, {}], r.archers);
+    expect(next.archers[1].shield).toBe(12);
+    expect(next.archers[1].bubble).toBe(false);
     expect(newRound(1, 0, { ...setup, players: [{ quiver: {}, shield: 'charm' }, setup.players[1]] }).archers[0].shield).toBe(30);
   });
 

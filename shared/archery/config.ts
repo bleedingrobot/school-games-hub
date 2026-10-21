@@ -200,7 +200,7 @@ export const MOLE_DEPTH = 96;
 export const MOLE_RADIUS = 7;
 
 // Sneaky Mole: tunnels from where it lands toward the other archer (at most this far, px), then pops up under them.
-export const SNEAKY_RANGE = 260;
+export const SNEAKY_RANGE = 150;
 export const SNEAKY_RADIUS = 5;
 /** It pops up this many px below the target's feet. */
 export const SNEAKY_UNDER = 4;
@@ -251,11 +251,11 @@ export const BOLT_CUT_MOST = 90;
 // archer's next turn if they hit back; if they don't, they pop.
 export const GLASS_STING = 12;
 
-// Shields (full again every round). Wind Charm: an arrow coming down within CHARM_RANGE px (sideways) of the
+// Shields (they last the whole fight, then break). Wind Charm: an arrow coming down within CHARM_RANGE px (sideways) of the
 // wearer is lifted (CHARM_LIFT px/s² against gravity) and pushed away (CHARM_PUSH px/s²) while the charm holds.
-export const CHARM_RANGE = 90;
-export const CHARM_LIFT = 600;
-export const CHARM_PUSH = 500;
+export const CHARM_RANGE = 70;
+export const CHARM_LIFT = 350;
+export const CHARM_PUSH = 250;
 /** Bubble Shield: the first arrow each round that comes within BUBBLE_R px of the wearer's middle bounces off, keeping BUBBLE_KEEP of its speed. */
 export const BUBBLE_R = 24;
 export const BUBBLE_KEEP = 0.7;

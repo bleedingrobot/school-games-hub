@@ -37,10 +37,12 @@ export function roundSeeds(seed: number, index: number, world: WorldId): { landS
 }
 
 /**
- * Starts round `index` of a fight. Each archer's shield is full again, and they keep the bow they brought.
- * `used` is what each player has used so far in the fight (for the Umbrellas they have left).
+ * Starts round `index` of a fight, with the bow each archer brought. A shield lasts the whole fight: it
+ * starts full, and later rounds carry on with what was left of it at the end of the last round (`carry`),
+ * Bubble bounce and all, so shields soak and then break. `used` is what each player has used so far in
+ * the fight (for the Umbrellas they have left).
  */
-export function newRound(seed: number, index: number, setup: FightSetup, used: FightResult['used'] = [{}, {}]): Round {
+export function newRound(seed: number, index: number, setup: FightSetup, used: FightResult['used'] = [{}, {}], carry: readonly Archer[] | null = null): Round {
   const { landSeed, wind } = roundSeeds(seed, index, setup.world);
   const { land, archers } = makeRoundLand(landSeed, setup.world);
   for (let i = 0; i < 2; i++) {
@@ -48,8 +50,8 @@ export function newRound(seed: number, index: number, setup: FightSetup, used: F
     const a = archers[i];
     const guard = p.shield && isShieldId(p.shield) ? p.shield : null;
     a.guard = guard;
-    a.shield = guard ? shieldKind(guard).soak : 0;
-    a.bubble = guard === 'bubble';
+    a.shield = !guard ? 0 : carry ? carry[i].shield : shieldKind(guard).soak;
+    a.bubble = guard === 'bubble' && (carry ? !!carry[i].bubble : true);
     a.bow = p.bow && isBowId(p.bow) ? p.bow : 'starter';
     a.shardsBy = -1;
     a.umbrellas = Math.max(0, (p.quiver.umbrella ?? 0) - (used[i].umbrella ?? 0));
@@ -241,7 +243,7 @@ export function takeShot(run: FightRun, shot: Shot, keepPath = false): TakenShot
   if (run.roundWins[0] >= ROUNDS_TO_WIN) run.winner = 0;
   else if (run.roundWins[1] >= ROUNDS_TO_WIN) run.winner = 1;
   else if (run.rounds.length >= MAX_ROUNDS) run.winner = run.roundWins[0] > run.roundWins[1] ? 0 : run.roundWins[1] > run.roundWins[0] ? 1 : 'draw';
-  else run.round = newRound(run.seed, round.index + 1, run.setup, run.used);
+  else run.round = newRound(run.seed, round.index + 1, run.setup, run.used, round.archers);
   return { problem: null, record, ended: round };
 }
 
