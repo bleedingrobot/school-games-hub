@@ -84,6 +84,8 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [shooter, setShooter] = useState(0);
+  /** The turn being shown was used up by the timer. */
+  const [passing, setPassing] = useState(false);
   const [message, setMessage] = useState('');
   const [problem, setProblem] = useState('');
   const [now, setNow] = useState(() => serverNow());
@@ -249,6 +251,7 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
     const taken = takeShot(run, turn, true);
     if (!taken.record) return;
     setShooter(player);
+    setPassing(!!turn.pass);
     setPhase('flying');
     setMessage(turn.pass ? (player === seat ? 'Your time ran out, so your turn was used up.' : `${them}'s time ran out.`) : '');
     if (!turn.pass) beep('flick');
@@ -422,7 +425,7 @@ export function DuelScreen({ duel, me, serverNow, onShot, onTimesUp, onLeave, on
   const showClock = duel.status === 'playing' && (phase === 'aim' || phase === 'wait' || phase === 'sending');
   const turnWords = phase === 'loading' ? 'Getting ready…'
     : phase === 'over' ? 'Fight over'
-      : phase === 'flying' ? (shooter === seat ? 'Your shot' : `${them}'s shot`)
+      : phase === 'flying' ? (passing ? "Time's up" : shooter === seat ? 'Your shot' : `${them}'s shot`)
         : phase === 'sending' ? 'Shooting…'
           : myTurn ? 'Your turn' : `${them} is aiming…`;
   const healthPct = (h: number) => `${clamp((h / START_HEALTH) * 100, 0, 100)}%`;

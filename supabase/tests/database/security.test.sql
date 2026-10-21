@@ -43,7 +43,7 @@ $$, 'signed-in users can only read tables, never write to them');
 select set_eq($$
   select table_name::text from information_schema.role_table_grants
   where table_schema = 'public' and grantee = 'authenticated'
-$$, array['achievement_types', 'app_settings', 'bot_games', 'card_game_seats', 'mp_games', 'name_words', 'profiles',
+$$, array['achievement_types', 'app_settings', 'archery_duels', 'bot_games', 'card_game_seats', 'mp_games', 'name_words', 'profiles',
   'power_games', 'space_game_log', 'space_games'],
   'signed-in users can read only these tables (row level security narrows them further)');
 
@@ -56,7 +56,7 @@ select set_eq($$
   select p.proname::text from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public' and has_function_privilege('authenticated', p.oid, 'execute')
 $$, array[
-  'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'clan_scoreboard', 'clear_my_maths_focus',
+  'archery_here', 'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'clan_scoreboard', 'clear_my_maths_focus',
   'gem_keep_leaderboard', 'is_player_in', 'is_school_admin', 'is_school_email', 'is_school_user', 'is_site_owner',
   'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'lord_hall', 'lord_news', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
   'monsters_leaderboard', 'my_bond_match', 'my_bot_game_stats', 'my_card_game_stats', 'my_class', 'my_friend_game_stats',
@@ -74,7 +74,7 @@ $$, array[
   'teacher_reset_clan', 'teacher_reset_lord_hero', 'teacher_reset_name', 'teacher_reset_placement', 'teacher_reset_warp_code',
   'teacher_school_teachers', 'teacher_set_clan_maths', 'teacher_set_clan_raids', 'teacher_set_clans',
   'teacher_set_gem_keep', 'teacher_set_group_member', 'teacher_set_maths_auto', 'teacher_set_hidden', 'teacher_set_lord', 'teacher_set_marble_maths', 'teacher_set_marble_rescue', 'teacher_set_maths_focus',
-  'teacher_set_bond_match', 'teacher_set_mine', 'teacher_set_mine_maths', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_students_choose_focus',
+  'teacher_set_archery', 'teacher_set_bond_match', 'teacher_set_mine', 'teacher_set_mine_maths', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_students_choose_focus',
   'teacher_set_space_reactions', 'teacher_set_warp_mode', 'teacher_student_detail', 'teacher_student_ladder', 'teacher_students',
   'teacher_training_student', 'teacher_unassigned_students', 'teacher_update_class', 'teacher_villages',
   'teacher_warp_requests', 'warp_join', 'warp_preview'
@@ -88,8 +88,8 @@ $$, 'every function has a fixed search_path');
 
 select set_eq($$
   select schemaname || '.' || tablename from pg_publication_tables where pubname = 'supabase_realtime'
-$$, array['public.card_game_seats', 'public.mp_games', 'public.power_games', 'public.space_games'],
-  'live updates are switched on for friend games, space games, Power Clash games and 101 seat rows only');
+$$, array['public.archery_duels', 'public.card_game_seats', 'public.mp_games', 'public.power_games', 'public.space_games'],
+  'live updates are switched on for friend games, space games, Power Clash games, 101 seat rows and Archery classmate fights only');
 
 -- A table made by a future migration starts locked, even if it forgets to say so.
 create table public.zz_security_test (id integer);

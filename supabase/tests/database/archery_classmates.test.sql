@@ -5,7 +5,7 @@
 --   scripts/scratch-test.sh archery supabase/tests/database/archery_classmates.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(59);
+select plan(60);
 
 -- Dan is at another school (it has no default class, so he starts with none).
 select setval(pg_get_serial_sequence('public.schools', 'id'), 1);
@@ -161,6 +161,11 @@ select pg_temp.act_as_server();
 select public.archery_duel_tidy();
 select pg_temp.reset();
 select is((pg_temp.duel(104)).status, 'expired', 'the tidy-up ends a challenge that ran out');
+update public.archery_duels set finished_at = now() - interval '31 days' where seed = 104;
+select pg_temp.act_as_server();
+select public.archery_duel_tidy();
+select pg_temp.reset();
+select is((select count(*)::integer from public.archery_duels where seed = 104), 0, '... and deletes fights that ended over 30 days ago');
 select ok((public.archery_point_rules() -> 'lines') ? 'Finish a fight against a classmate: 3 points, or 4 if you win.', 'How points work has the classmate line');
 select pg_temp.act_as_server();
 select public.archery_season(array[pg_temp.id('0a')]);

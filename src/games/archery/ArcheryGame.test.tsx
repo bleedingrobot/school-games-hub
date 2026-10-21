@@ -219,6 +219,38 @@ describe('fights against classmates', () => {
     await waitFor(() => expect(ben.queryByRole('alertdialog')).toBeNull());
   });
 
+  it('shows both pupils the end of a fight played to the finish, with the points', async () => {
+    const { chooseForRun } = await import('../../../shared/archery/bot');
+    const { duelSetup, replayDuel } = await import('../../../shared/archery/duel');
+    const { hub, ana, ben } = two();
+    fireEvent.click(await ana.findByRole('button', { name: 'Challenge a classmate' }));
+    fireEvent.click(await ana.findByRole('button', { name: /Challenge Brave Kiwi 12/ }));
+    fireEvent.click(within(await ben.findByRole('alertdialog', {}, { timeout: 4000 })).getByRole('button', { name: 'Accept' }));
+    fireEvent.click(await ben.findByRole('button', { name: 'Fight!' }));
+    fireEvent.click(await ana.findByRole('button', { name: 'Fight!' }));
+    await ana.findByText('Your turn', {}, { timeout: 4000 });
+    // Both "pupils" shoot like the Hard bot, straight to the server, while the two screens show every turn.
+    let d = Object.values(hub.data.duels!)[0];
+    while (d.status === 'playing') {
+      const { run } = replayDuel(d.seed, duelSetup(d.world, [d.packs[0]!, d.packs[1]!]), d.turns);
+      const who = run.round.turn === 0 ? ANA : BEN;
+      const r = await hub.sendAs<{ duel: DuelRow }>(who, { action: 'shot', duel: d.id, version: d.version, shot: chooseForRun(run, 'hard').shot });
+      expect(r.status).toBe(200);
+      d = r.body.duel;
+    }
+    const winner = d.winner === 0 ? ana : d.winner === 1 ? ben : null;
+    const loser = d.winner === 0 ? ben : ana;
+    if (winner) {
+      expect(await winner.findByRole('heading', { name: 'You won the fight!' }, { timeout: 15000 })).toBeTruthy();
+      expect(winner.getByText('+4 points for finishing and winning.')).toBeTruthy();
+      expect(await loser.findByRole('heading', { name: /won the fight$/ }, { timeout: 15000 })).toBeTruthy();
+      expect(loser.getByText('+3 points for finishing.')).toBeTruthy();
+    } else {
+      expect(await ana.findByRole('heading', { name: 'The fight is a draw' }, { timeout: 15000 })).toBeTruthy();
+    }
+    expect(hub.data.points.map((x) => x.points).sort()).toEqual(d.winner === null ? [3, 3] : [3, 4]);
+  }, 40_000);
+
   it('lets a challenge run out after a minute, on both screens', async () => {
     const { ana, ben } = two();
     fireEvent.click(await ana.findByRole('button', { name: 'Challenge a classmate' }));

@@ -456,6 +456,7 @@ $$;
 
 -- Every 5 minutes: challenges and packing that ran out end (packed gear comes back), and fights nobody has played a
 -- real shot in for 10 minutes end with everything unused given back and no points (DUEL_IDLE_MS in shared/archery/config.ts).
+-- "Who's here" rows older than a day, and fights that ended over 30 days ago, are deleted.
 create function public.archery_duel_tidy()
 returns void
 language plpgsql
@@ -472,6 +473,8 @@ begin
     perform public.archery_duel_close(d.id, d.version, 'done', 'idle', null, null, null, null, null);
   end loop;
   delete from public.archery_here h where h.seen_at < now() - interval '1 day';
+  -- Ended fights are kept 30 days (for "last played" and Stage 7's teacher panel), then deleted.
+  delete from public.archery_duels x where x.status not in ('asked', 'packing', 'playing') and coalesce(x.finished_at, x.created_at) < now() - interval '30 days';
 end;
 $$;
 
