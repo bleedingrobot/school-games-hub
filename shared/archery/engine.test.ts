@@ -8,11 +8,11 @@ import {
 import { blastDamage, fallDamage, hurt } from './damage';
 import { newRound, playFight, playShot, roundWinner, shotProblem } from './fight';
 import {
-  addDirt, canSee, carve, cellAt, dropArcher, emptyLand, hillRise, makeRoundLand, settle, standing, surfaceRow,
+  addDirt, canSee, carve, cellAt, dropArcher, emptyLand, hillRise, makeRoundLand, settle, standing,
 } from './land';
 import { makeRandom, mixSeed } from './random';
 import { flyArrow } from './shot';
-import { AIR, BUILDING, DIRT, ICE, TREE, WORLD_IDS, type Archer, type FightSetup, type Land, type Shot } from './types';
+import { AIR, BUILDING, DIRT, WORLD_IDS, type Archer, type FightSetup, type Land, type Shot } from './types';
 
 /** The top of the land itself in a column, leaving out trees and ice (they stand on it). */
 function groundRow(land: Land, col: number): number {
