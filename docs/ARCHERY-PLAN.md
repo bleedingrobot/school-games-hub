@@ -1,0 +1,228 @@
+# Archery Challenge: plan
+
+A Scorched Earth–style game for the hub, with **archers instead of tanks**. Two archers stand on hills that blasts can carve apart. They take turns aiming (angle and power, with wind) and shoot over-the-top arrows at each other. Money comes **only** from a **maths speed round**, and it buys arrows, shields and bows in the **Armory**. Designed by James with one of his pupils, who drew the screens.
+
+Written 21 October 2026 (Stage 0: plan only, **no code yet**). Branch `archery`, folder `~/projects/school-games-hub-archery`, short id `archery`, CSS prefix `.ar-`. Next free migration number when this was written: `20261021000300` (re-check before the first migration).
+
+**Status: Stage 0 (this plan and a look-and-feel mock-up). Nothing built, nothing live. Waiting for James to say "start Stage 1".**
+
+**Decisions (James, 21 Oct 2026):**
+- Archers, not tanks. Big, over-the-top weapons, mostly **special arrows** (like all of Scorched Earth's weapons). Shields and bows are smaller sections of the shop.
+- **Money comes only from speed rounds.** Winning a fight earns no money. Money and gear are **saved** between games, and it should take several rounds to afford the best gear.
+- **Fights are against bots or classmates.** Bots first, classmates straight after.
+- **Speed round:** 10 s for the first question, then 9, 8 … 1, then the round stops (10 questions at most). **A wrong answer doesn't end the round.** Each right answer in time earns money.
+- Speed rounds happen **between fights and from a home-screen button** (the pupil's "Times tables to get better" button, renamed to suit the focus).
+- **No gear limit** in classmate fights: whoever did more maths brings better gear.
+- **The four worlds play differently from the start.**
+- **A few hub points.**
+- **More Bows** = a bow shop: bows you buy and keep.
+- **Graphics as good as we can make them**, while staying smooth on classroom Chromebooks.
+
+## The short version
+
+- **Our own game and our own art.** Scorched Earth belongs to Wendell Hicken, and the HTML5 copy we studied has no licence. We use ideas only: no code, art, sounds, terrain files or weapon names.
+- **One rules-and-physics engine in `shared/archery/`**, pure TypeScript. The same seed and the same shots always give the same fight, on every device and on the server. It uses only + − × ÷ and square root (no `Math.sin`/`cos` while the game runs; aim directions come from a fixed table), as Mine Runner and Marble Rush do.
+- **The server owns the money and the gear.** It makes and marks the speed-round questions, checks the shrinking timer, does all buying and selling, and checks every fight. Replaying a whole fight on the server is cheap (well under 100 ms), so it can count exactly which arrows were used.
+- **Fights against bots** run in the browser, and the server replays them when they finish. **Fights against classmates** go through the server one shot at a time, with the server running the same engine (the Power Clash pattern).
+- **Drawn on a 2D canvas** with our own art made in code: layered moving backgrounds per world, textured land, animated archers, arrow trails, bursts and stars. No new libraries.
+- **Cost:** about 11 requests per speed round and 2 per bot fight. A class's lesson is roughly 1,500–2,000 requests (section 9), small against the free plan.
+
+## 1. What pupils see (following the drawing)
+
+**Home screen** (the pupil's layout): the title **Archery Challenge** at the top, the pupil's archer on a rock drawing a big bow, and a big **Play** button. Four world buttons, **Forest, Desert, Snow and City**, plus **Armory**, **More Bows** and the speed-round button. The pupil's button says "Times tables to get better". The focus decides the skill, so it needs a name that fits any maths: suggested **"Earn coins: speed round"**, with the pupil's wording kept as its little caption ("Times tables to get better" becomes "Maths to get better"). James and the pupil choose. The coin total sits top right.
+
+**Play:** pick a world, then **Against a bot** (Easy, Medium, Hard) or **Against a classmate**. Then **Pack your quiver**: choose which arrows and shields to bring from what you own. Then the fight.
+
+**The fight screen:** your archer on the left, the other archer on the right, each on blow-apart land in that world. The bottom bar has angle and power (drag on the archer, sliders, or arrow keys), the arrow picker (with how many you have left), the wind arrow with its strength, and a **Shoot** button. Each archer has a health bar and a shield bar. The pupil's HUD boxes come back as **Arrows** (left in your quiver), **Score** (damage done this fight) and **Best** (your best fight score in that world). The settings icon opens sound and simpler-graphics options. A faint ghost line shows your last shot, so pupils can adjust from it, which is the learning loop.
+
+**Between rounds of a fight** (a fight is best of 3 rounds; each round starts on fresh land with new wind): "Speed round for coins?" (optional), then a quick Armory stop before the next round.
+
+**The target challenge** (the pupil's level screens: 10 arrows, targets at 5, 10, 20, 30 and 50 m, beat your high score) is a later stage (Stage 8). It reuses the same engine, worlds, arrows and bows.
+
+## 2. The rules engine (`shared/archery/`, pure functions)
+
+Everything that decides an outcome lives here, and the browser and the server both use it. All tuning numbers live in `shared/archery/config.ts`.
+
+- **Field:** a logical 960 × 540 field (16:9), drawn scaled to the screen.
+- **Land:** a **grid of 3 px cells** (320 × 180 = 57,600 cells, one byte each). It's small enough for the server to replay cheaply, and a grid (not a single hill line) allows tunnels, overhangs and dirt balls. It's made by midpoint displacement from the fight's seed: a random hilly line with each world's own roughness. Blasts clear cells in a circle, and some arrows add cells. **Loose dirt falls:** after each shot, any run of dirt with a gap under it drops until it lands. An archer with nothing under them falls. Fall damage is 1 per cell, capped at 25, and an Umbrella cancels it.
+- **Shots:** an angle (whole degrees) and a power (whole numbers 0–100). The direction comes from a fixed table of unit vectors, one per degree, stored as numbers in the file, not worked out with trig. Gravity is about 300 px/s², and full power is about 600 px/s, so a full-power 45° shot goes about 1¼ screens: most good shots sit at 40–80 power. **Fixed time step 1/240 s.** Each step checks the arrow against the land cells and the archers' boxes. The wind is a whole number from −10 to +10 per round (about 6 px/s² per point, at most 20% of gravity), from the seeded random numbers. A "no wind" option can come later if it proves too hard.
+- **Damage:** each arrow has its own peak damage, fading in a straight line to nothing at the blast's edge. A direct hit adds a small bonus: it's **never** an instant knock-out. A shield takes damage first, and anything left over hits health. Health is 100 per round. At 0 the archer **pops**: stars, a cartoon "poof", sits out the rest of the round. No blood, ever.
+- **Turns:** players take turns. A round ends when one archer is left. A fight is best of 3 rounds.
+- **Same in, same out:** a fight is a seed plus a list of shots `(angle, power, arrow, items used)`. `playFight(seed, setup, shots)` gives the whole result. A determinism check (copy of `scripts/mine-determinism.mjs`) proves Node, Chromium and WebKit agree.
+
+**How we keep it fair without a gear limit** (James chose no limit): no arrow can knock out a full-health archer in one shot (the biggest hits about 60), shields soak but break, and good aim with plain arrows can still win. The balance simulator (`scripts/archery-sim.mjs`) checks this: a well-aimed archer with only starter arrows should still win a fair share against a richly equipped but average shooter. If they can't, the numbers change.
+
+## 3. The four worlds (they play differently from the start)
+
+Each world has one clear twist, shown on its button and in a one-line hint the first time:
+
+| World | Look | Twist |
+|---|---|---|
+| **Forest** | layered hills, pine trees, sunbeams, falling leaves | **Trees** stand on the land and stop arrows until blasted away. Calmer wind (a good first world). |
+| **Desert** | dunes, mesas, heat shimmer, a big sun | **Sand slides**: loose sand slumps sideways into slopes after a blast, not just straight down. Stronger, gustier wind. |
+| **Snow** | snowy peaks, ice blocks, falling snow | **Slippery**: an archer who lands on a slope slides downhill. **Ice blocks** bounce arrows once. |
+| **City** | skyline, rooftops, lit windows at dusk | **Buildings** are tough blocks: a blast only chips them, so archers can shelter behind them. Rooftop ledges to stand on. |
+
+The twists are in the engine (so the server replays them too), and their numbers live in the config.
+
+## 4. The Armory (our own names, mostly arrows)
+
+Prices are in **coins**. A perfect speed round earns 100 (section 5). Items come in bundles, unlock by **Armory level** (it goes up as you spend: levels 1–5), and sell back for half. You can carry at most 9 of each. The **Plain Arrow** is free and never runs out. Names are placeholders for James and the pupil to change.
+
+**Arrows** (the heart of the game):
+
+| Arrow | What it does | Coins / bundle | Unlocks |
+|---|---|---|---|
+| Plain Arrow | small blast; unlimited | free | start |
+| Steel Arrow | bigger blast | 40 / 5 | 1 |
+| Feather Arrow | no damage, leaves a dotted path to aim the next shot from | 10 / 5 | 1 |
+| Rolling Log | lands, rolls downhill, bursts in a dip or at an archer | 60 / 3 | 1 |
+| Mole Arrow | digs a tunnel straight down (knock the ground out from under someone) | 40 / 5 | 1 |
+| Mud Ball | adds a ball of dirt: bury the other archer, or build a wall in front of you | 50 / 5 | 1 |
+| Arrow Rain | splits at the top of its flight into 5 small arrows | 120 / 2 | 2 |
+| Skipping Arrow | lands, then hops forward twice, with 3 growing blasts | 120 / 2 | 2 |
+| Sticky Goo Arrow | no crater; a goo puddle pools in dips and hurts anyone standing in it | 100 / 3 | 3 |
+| Owl Arrow | gently steers toward an archer that's close to its path | 150 / 2 | 3 |
+| Earth Shaker | all floating dirt falls (drop someone off a ledge) | 80 / 3 | 3 |
+| Firework Arrow | 5 sparkly pops scattered around where it lands | 160 / 2 | 4 |
+| Sneaky Mole | tunnels toward the nearest archer and pops up under them | 180 / 2 | 4 |
+| Crossbow Bolt | a straight, fast shot with no drop, cuts through dirt, short range | 150 / 3 | 4 |
+| Giant Arrow | the big one: a huge blast with a shockwave of leaves and confetti | 300 / 1 | 5 |
+
+**Shields and helpers:** Wooden Shield (soaks 40, 80 coins), Wind Charm (soaks 30 and lifts arrows coming down on you, 100), Bubble Shield (soaks 60 and bounces the first arrow away, 200), Umbrella (no fall damage, 3 for 40), Apple (+15 health on your turn, 3 for 40).
+
+**More Bows** (buy once, keep for good; the bow shows on your archer):
+
+| Bow | What it changes | Coins |
+|---|---|---|
+| Starter Bow | the normal bow | free |
+| Longbow | +10% top power (reach the far side in a strong headwind) | 250 |
+| Recurve Bow | a longer aim guide | 300 |
+| Hunter's Bow | wind shown as an exact number, not just an arrow | 200 |
+| Golden Bow | looks amazing; a little extra top power | 500 |
+
+Bows change what you can see or reach, never how hard an arrow hits, so a well-aimed Starter Bow can always win. The best gear, all together, costs about 25–30 perfect speed rounds: a goal that takes weeks, not one lesson. The simulator and James's try-out will tune all of this.
+
+**Gear and fights:** before a fight you **pack your quiver** from what you own. When the fight starts, the server takes the packed gear out of your store. When it finishes, the server replays the fight, counts what was actually used, and **gives back everything unused**. A fight abandoned part-way gives back unused gear too.
+
+## 5. The speed round, in detail
+
+- **Questions** come only from the shared maths focus: `makeFocusPack(facts, focus, settings, seededRandom(seed))` with the server's focus (`space_maths_context`). They're made and marked by the server (the guide's way A), and every answer is recorded with `recordMathsAnswers`. The round follows the class's multiple-choice switch. Each is shown with `QuestionModal`, with `secondsLeft` for the countdown, `scribble={false}`, a shorter feedback time (`timeScale`) and no close button.
+- **Timer:** 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 seconds, then the round ends. A wrong answer moves straight on to the next question.
+- **Coins:** **10 coins per right answer in time**, so a perfect round earns 100. A round of 6 right earns 60.
+- **One question per request.** The server sends question 1 and notes the moment it sent it (`served_at`). Each answer request carries `{seed, slot, value, ms}`, and its reply carries the mark **and the next question** (with its time limit). A round is 11 requests: start, then one per answer. Sending all 10 at the start would be cheaper, but then the server couldn't know when each question appeared, so it couldn't check the timer.
+- **How the server checks the timer** (the 1-second question vs. school wi-fi): `ms` is the time the pupil's screen measured, from when the question appeared to the answer (QuestionModal measures it like this already). The server accepts an answer as **in time** when
+  1. `ms` ≤ the limit (+ 0.2 s for a key tap), **and**
+  2. its own clock agrees: (now − `served_at`) ≤ the limit + a network allowance (2.5 s).
+  So slow wi-fi never costs a pupil a 1-second question, and a pupil can't cheat by sitting on a question. The only way to cheat is to fake the `ms` with developer tools, and even then they gain at most 2.5 s per question, for coins that only buy things in this game. Every answer's time is recorded as the smaller of `ms` and the server's own measure (Mission Control live does this).
+- **A late answer only costs the coins.** An answer that's right but late is recorded as **right**, with its real time, for the maths records and the ladder. It just earns nothing. If the pupil's timer runs out without an answer, the browser sends `{timedOut: true}`: nothing is recorded, and the next question comes.
+- **Harder questions:** a ladder question (fractions, percentages) at 2 seconds is out of reach for most pupils, and that's accepted: the round's later questions are the "bonus" ones. If that feels unfair in testing, an easy fix is to give questions from the harder packs +2 s (one number in the config).
+- **Daily cap:** at most **8 coin-earning rounds a day** (the 54000 pattern from Marble and Mine). After that, the button offers a practice round: same questions, recorded for maths, no coins.
+- **Money is not hub points.**
+
+## 6. Bots
+
+Three levels, all pure functions using the fight's seeded random numbers:
+- **Easy:** aims like a beginner. Its first shot is a guess, then it walks toward you (too far → less power; too short → more), with big wobble (±8 power, ±5°), and ignores the wind.
+- **Medium:** works out a good power for a 45–60° shot (no wind), with ±4 power wobble.
+- **Hard:** as Medium, then **simulates its shot once or twice with the wind** and corrects, with ±2 wobble. It picks smarter arrows.
+- **Every bot misses on purpose some of the time**, so a 9-year-old can win. A bot never simulates more than 3 shots per turn, so it's fast on a Chromebook.
+- **Bots shop too:** each level gets a fixed, fair kit for its level (they don't have coins).
+- The bot thinks in a Web Worker (copy `src/games/space/botWorker.ts`). Its chosen shots go into the shot list, so the server replays them; the server never runs bot thinking.
+
+## 7. The server: tables, function, switches
+
+**One server function `archery`** (`supabase/functions/archery/`: `handler.ts`, `entry.ts`, `handler.test.ts`, generated `index.ts`), deployed `--no-verify-jwt`, signing in with `_shared/signIn.ts`. Actions:
+
+| Action | What it does |
+|---|---|
+| `load` | the pupil's coins, gear, bows, Armory level, best scores, rounds left today |
+| `round-start` / `round-answer` | the speed round (section 5) |
+| `buy` / `sell` | the Armory; one request each, safe if sent twice |
+| `fight-start` | takes the packed gear, makes a seed and a stamped fight row; against a bot or a classmate |
+| `fight-finish` (bots) | replays the shot list, checks it, gives unused gear back, saves the best score, gives points |
+| `shot` / `times-up` / `leave` (classmates) | one shot at a time, checked and played by the server's engine |
+
+**Tables** (all RLS on; pupils read only through `my_archery()`; written only by server-key functions):
+- `archery_players`: one row per pupil: `coins` (≥ 0), `gear` jsonb (counts per item), `bows`, `armory_level`, `best` jsonb (per world), `version`.
+- `archery_requests (player, request_id)` unique: a buy, sell or fight-start sent twice counts once (the Clan Quest pattern). Kept 2 days.
+- `archery_rounds`: speed-round questions and `served_at` per slot (no policy, no grant: pupils can never read the answers; the `mine_questions` pattern), with a claim-once per slot.
+- `archery_fights`: seed, stamp, players, world, packed gear, shot list, version, deadline, status. Bot fights are kept 2 days. Classmate fights are visible to their two players and added to the realtime publication (the Power Clash pattern).
+- All coin changes go through one server-key-only function with `for update` and an expected version: `update … set coins = coins - price where coins >= price`. You can never spend money you haven't got, and a double tap can't spend twice.
+
+**Switches:**
+- **Code switch** `src/games/archery/switch.ts`: `archeryOn()` (off; `VITE_ARCHERY_ON=true` for local work).
+- **Teacher switch**: `app_settings.archery_enabled boolean not null default false` + `teacher_set_archery(enabled, target_class)` (copy `20261021000200_mine_hub.sql`). The function refuses everything while it's off.
+- **Teacher settings** (a small panel `TeacherArchery.tsx`): on/off, a **Classmate fights** on/off (default on), and **Reset coins** for a class (only if James wants it; see question 4).
+
+**Classmate fights without touching shared screens:** the hub's Lobby, join codes and presence channels are shared files and functions (`lobby()`, `Lobby.tsx`, `is_player_in()`, `waiting_code_taken()`). To stay out of them, Archery has its own **"Challenge a classmate"** list inside the game: classmates who are in the game right now, from our own `archery_online(…)` function, same school and class only. Tap a name to send a challenge, and they see it pop up. Turns go through the server (`shot`), the server plays them with the shared engine, and both screens get the new state through realtime on the fight row, with the shared `useGameChecks` polling as a backup. Turn timer 45 s (a time-out uses up the turn), and 3 time-outs in a row ends the fight (unused gear returned, nobody earns anything). A tidy-up job ends idle fights. Joining from the hub's main Lobby can come later as its own small shared branch, if James wants it.
+
+## 8. Points (through the `hub_games` hooks)
+
+Registered in our own migration (the guide's section 5): `switch_column = 'archery_enabled'`, `counts_fn`, `rules_fn`, `season_fn`, `last_played_fn`. Points through `add_game_points(player, 'archery', n, once)`, inside the shared 40-a-day cap:
+- **Finish a fight against a bot: 2 points (3 if you win).** Small, because a determined pupil could fake a bot fight (the same reason as `save-bot-game`).
+- **Finish a fight against a classmate: 3 points (4 if you win).** The server ran every shot.
+- **Speed round: 1 point for 5 or more right.**
+- **Achievements:** first win in each world, win with only Plain Arrows, a perfect speed round, own every bow, and so on (about 10 achievements in all).
+
+## 9. Server requests per lesson (class of 28)
+
+| What | Per pupil | Class |
+|---|---|---|
+| Open the game (`load`) | 1–2 | ~50 |
+| Speed rounds (11 requests each, about 3 a lesson) | ~33 | ~920 |
+| Armory (buy/sell) | ~6 | ~170 |
+| Bot fights (start + finish, about 3) | ~6 | ~170 |
+| Classmate fights (1 per shot, ~30 shots each, about 1 fight per pair) | ~15 | ~420 |
+| **Total** | | **~1,750** |
+
+Five lessons a week is about 9,000 a week, or about 38,000 a month, against 500,000 free. The speed round is most of it. If that ever matters, the next step is to record the maths once per round at the end instead of per answer (fewer database calls inside each request, same number of requests).
+
+## 10. Graphics (as good as we can make them)
+
+- **2D canvas**, our own art drawn in code (paths, gradients, shapes): no images copied from anywhere, no new libraries.
+- **Worlds with depth:** 3–4 background layers per world that move slightly as the camera moves, a sky that suits each world, and living touches (drifting clouds, falling leaves or snow, heat shimmer, lit windows).
+- **Land that looks like land:** a textured fill with a coloured top edge (grass, sand, snow, paving), darker earth inside, and soft crater edges. It's drawn once to an off-screen canvas, and only the cells that changed are redrawn after a blast.
+- **Archers with character:** drawn in parts (body, head, bow arm, string), so they can draw the bow, hold, release, wobble when hit, cheer, and pop with stars. Their bow and shield show.
+- **Shots worth watching:** arrow trails, the camera following the arrow, and a burst for each arrow (dust, sparks, confetti, goo, fireworks). A small screen shake and shields that ripple when hit.
+- **Fast on a Chromebook:** a fixed-step loop with drawing smoothed between steps (copy `MineRun.tsx`), the canvas sized for the screen's pixel density (capped at 1.5), at most ~300 particles, and **automatic simpler graphics** if frames get slow (fewer layers and particles, lower pixel density; Mine Runner's trick). Respects reduced motion (no shake, gentle effects) and has a "simpler graphics" switch.
+- **Tested at 1366 × 640 and 844 × 390**, with touch aiming (drag back from the archer like pulling a bowstring), sliders, and keyboard (arrows, space to shoot). Every button is at least 44 px.
+
+## 11. Shared files it will touch (and when)
+
+All at the very end (the merge step), each a small addition: `src/games/registry.ts` (append behind `archeryOn()`), `scripts/build-functions.mjs` (add `archery` to the end of `FUNCTIONS`), `package.json` (scripts at the end: `archery:sim`, `archery:preview`, `archery:single`, `archery:determinism`), `shared/README.md`, `docs/PRIVACY-SUMMARY.md`, `docs/PLAN.md` (the migration note), `.gitignore` (`dist-preview-archery/`). **Nothing else shared**: no Lobby, no `src/maths/`, no `styles.css`, no shared database functions.
+
+## 12. Stages
+
+Each stage is small and tested, ends with a "Stage N results" section here, a commit, `git push origin archery`, and a stop for James. Helpers can build parts of a stage at the same time where the parts don't overlap (for example, art and engine).
+
+1. **The engine.** `shared/archery/`: seeded random numbers, the aim table, land made and carved, shots, damage, falling dirt and archers, turns and rounds, `playFight`. Tests and the determinism check. *Try it:* a plain test page to fire arrows.
+2. **The fight screen against a bot.** Canvas drawing for all four worlds and their twists, archers, aiming by touch and keyboard, the three bots. Browser only, in a **preview** James can play on his phone (no sign-in, no server).
+3. **The Armory's arrows.** Every arrow, shield, helper and bow working in the engine, with its own look. The balance simulator. *Try it:* in the preview, with a fake bag of coins.
+4. **The server.** The migration (tables, switch, functions, points hooks), the `archery` function (load, speed round, buy/sell, bot fight start/finish), database tests on a scratch copy, and handler tests. Plus a trial backend in the preview so it all works there too.
+5. **The rest of the screens.** Home (the pupil's layout), the speed round, Armory, More Bows, Pack your quiver, coins, How to play. *Try it:* the whole game in the preview against bots.
+6. **Classmate fights.** Challenges, turns through the server, realtime, time-outs, tidy-up. A stand-in preview where two tabs play each other (copy `preview/power-clash/standIn.ts`).
+7. **Hub fit and polish.** Points and achievements, the teacher panel, accessibility tests (copy Clan Quest's), simpler-graphics mode, and a performance check on a slow machine.
+8. **The target challenge** (the pupil's own level screens): 10 arrows, targets at 5–50 m, high scores.
+9. **Go-live prompt** `docs/prompts/archery-golive.md`, then going live one step at a time, only on James's word.
+
+## 13. Questions for James (with my recommendation)
+
+Answered on 21 Oct 2026: build first, bots/classmates, wrong answers, the timer, where speed rounds happen, fairness, worlds, hub points, More Bows (see Decisions above). Still open:
+
+1. **Names.** Arrow and bow names, the speed-round button's name, and "coins" for the money. *Recommend:* show the pupil the Armory table and let them rename anything.
+2. **Coins per right answer and prices.** *Recommend:* 10 coins per right answer, and the prices in section 4 (the best gear takes a few weeks). It's easy to change after a try-out.
+3. **Daily cap on coin-earning rounds.** *Recommend:* 8 a day. After that it's practice: maths recorded, no coins.
+4. **Does a New Season reset coins and gear?** *Recommend:* **no**. Saving up is the point, so New Season clears only Archery's hub points and best scores.
+5. **A best-of-3 fight, or one round?** *Recommend:* best of 3 (about 6–10 minutes).
+6. **Classmate fights only in the game's own "Challenge a classmate" list for now** (not the hub's Lobby)? *Recommend:* yes, which keeps this branch out of shared files.
+7. **Harder ladder questions at 1–3 seconds.** *Recommend:* keep it as decided, and add +2 s for harder skills only if it feels unfair when tried.
+8. **Blasts in the City**: buildings get chipped, not flattened. OK?
+
+## Stage 0 results (21 Oct 2026)
+
+- Built: this plan, and a look-and-feel mock-up (a private page for James to show the pupil). No game code.
+- Research: the Scorched Earth HTML5 copy studied for ideas only (physics, land, weapon families, shop, bots), and the hub's own patterns (Mine and Marble for server questions, Power Clash for classmate turns, Dragon Maths and Clan Quest for saved coins, Mission Control live for timed answers).
+- Next free migration number: `20261021000300`.
+- Untested: everything (nothing built yet).
+- Go-live list: none yet.
