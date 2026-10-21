@@ -1,0 +1,175 @@
+/*
+ * Archery Challenge (docs/ARCHERY-PLAN.md, section 10). Every class starts with .ar- so nothing here can
+ * change another page. The play area is the game's own art; the HUD panels around it use solid dark
+ * panels with light words (checked for 4.5:1 contrast in Accessibility.test.tsx), and the dialogs use
+ * the hub's own card colours and buttons.
+ */
+.ar-fight {
+  --ar-panel: #141c33;
+  --ar-panel-line: #3a4670;
+  --ar-ink: #ffffff;
+  --ar-soft: #cbd5e1;
+  --ar-gold: #fde047;
+  --ar-track: #0a0f1f;
+  --ar-health: #4ade80;
+  --ar-low: #fb923c;
+  --ar-paper: #fff4dc;
+  --ar-paper-ink: #3a2412;
+  --ar-turn: #fbbf24;
+  --ar-turn-ink: #1c1917;
+  --ar-botturn: #c7d2fe;
+  --ar-botturn-ink: #1e1b4b;
+  position: fixed; inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  background: #0b1020;
+  color: var(--ar-ink);
+  font-family: var(--display, 'Trebuchet MS', Verdana, sans-serif);
+}
+.ar-stage { position: absolute; inset: 0; touch-action: none; user-select: none; -webkit-user-select: none; }
+.ar-canvas { display: block; width: 100%; height: 100%; }
+.ar-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ——— Top strip: both archers' cards, whose turn, the wind ——— */
+.ar-top {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; align-items: start; gap: 8px;
+  padding: max(8px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) 0 max(10px, env(safe-area-inset-left, 0px));
+  pointer-events: none;
+}
+.ar-top > * { pointer-events: auto; }
+.ar-card {
+  display: grid; grid-template-columns: auto minmax(40px, 1fr) auto; grid-template-areas: "name name wins" "bar bar num";
+  align-items: center; gap: 2px 8px;
+  max-width: 260px; padding: 6px 10px; border-radius: 12px;
+  background: var(--ar-panel); border: 2px solid var(--ar-panel-line);
+}
+.ar-card--bot { justify-self: end; }
+.ar-card[data-turn] { border-color: var(--ar-gold); }
+.ar-card__name { grid-area: name; font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ar-card__num { grid-area: num; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 2.2em; text-align: right; }
+.ar-wins { grid-area: wins; color: var(--ar-gold); letter-spacing: 0.1em; min-width: 2em; text-align: right; }
+.ar-bar { grid-area: bar; display: block; height: 12px; border-radius: 99px; background: var(--ar-track); overflow: hidden; }
+.ar-bar__fill { display: block; height: 100%; border-radius: inherit; background: #4ade80; }
+.ar-bar__fill[data-low] { background: #fb923c; }
+.ar-mid { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ar-turn { padding: 2px 12px; border-radius: 99px; background: #fbbf24; color: #1c1917; font-weight: 700; white-space: nowrap; }
+.ar-turn[data-bot] { background: #c7d2fe; color: #1e1b4b; }
+.ar-wind, .ar-round {
+  display: inline-flex; align-items: center; gap: 6px; padding: 2px 12px; border-radius: 99px;
+  background: var(--ar-panel); border: 2px solid var(--ar-panel-line); white-space: nowrap;
+}
+.ar-wind b { color: var(--ar-gold); font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+.ar-wind__arrow { font-size: 1.2rem; font-weight: 700; }
+.ar-round { font-size: 0.85rem; color: var(--ar-soft); }
+.ar-topbtns { display: flex; gap: 6px; }
+
+/* ——— Bottom bar: Arrows / Score / Best, angle, power, the arrow picker, Shoot ——— */
+.ar-bottom {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px;
+  padding: 8px max(10px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px));
+  background: var(--ar-panel); border-top: 2px solid var(--ar-panel-line);
+}
+.ar-stats { display: flex; gap: 6px; }
+.ar-stat {
+  display: grid; justify-items: center; min-width: 3.6em; padding: 1px 8px 3px; border-radius: 8px; line-height: 1.1;
+  background: #fff4dc; color: #3a2412; border: 2px solid #2a1c14;
+}
+.ar-stat span { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.ar-stat b { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.ar-dial { display: flex; align-items: center; gap: 6px; }
+.ar-dial__label { display: grid; gap: 0; font-weight: 700; font-size: 0.85rem; min-width: 7.5em; }
+.ar-dial__label output { color: var(--ar-gold); font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.ar-range { width: 130px; min-height: 44px; margin: 0; accent-color: #fbbf24; }
+.ar-quiver { display: flex; gap: 6px; }
+.ar-pick small { font-variant-numeric: tabular-nums; }
+.ar-pick[aria-pressed='true'] { box-shadow: inset 0 0 0 3px #b45309; }
+.ar-btn { min-height: 44px; min-width: 44px; }
+/* The hub's shared buttons are made for big pages (52–84 px tall, full width on small screens): keep their look, but compact, in the HUD. */
+.ar-top .ar-btn, .ar-bottom .ar-btn { width: auto; min-height: 44px; padding: 0 14px; font-size: 1rem; border-radius: 12px; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25); }
+.ar-bottom .ar-step { padding: 0 12px; font-size: 1.3rem; }
+.ar-top .ar-iconbtn { font-size: 1.2rem; padding: 0 10px; }
+.ar-bottom .ar-shoot { min-height: 52px; min-width: 110px; padding: 0 22px; font-size: 1.3rem; border-radius: 16px; box-shadow: 0 4px 0 #9f1239; }
+.ar-pick__short { display: none; }
+
+/* ——— Messages ——— */
+.ar-toast {
+  position: absolute; left: 50%; top: 122px; transform: translateX(-50%); margin: 0;
+  max-width: min(560px, calc(100% - 32px)); padding: 6px 14px; border-radius: 12px; text-align: center;
+  background: var(--ar-panel); border: 2px solid var(--ar-panel-line); pointer-events: none;
+}
+.ar-toast:empty { display: none; }
+.ar-loading {
+  position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); margin: 0;
+  max-width: min(480px, calc(100% - 32px)); padding: 10px 16px; border-radius: 12px; text-align: center;
+  background: var(--ar-panel); border: 2px solid var(--ar-panel-line);
+}
+.ar-rotate { display: none; }
+
+/* ——— Dialogs: the hub's own card colours and buttons ——— */
+.ar-overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(5, 8, 20, 0.62); z-index: 5; }
+.ar-overlay--soft { background: rgba(5, 8, 20, 0.35); }
+.ar-panel {
+  width: min(440px, 100%); max-height: calc(100% - 16px); overflow: auto;
+  display: grid; gap: 10px; justify-items: center; text-align: center;
+  padding: 18px 20px; border-radius: var(--radius, 24px);
+  background: var(--surface, #ffffff); color: var(--ink, #0f172a); box-shadow: var(--shadow, 0 20px 45px rgba(0, 0, 0, 0.18));
+}
+.ar-panel h2 { margin: 0; font-family: var(--display, inherit); }
+.ar-panel p { margin: 0; }
+.ar-score { font-weight: 700; font-size: 1.1rem; }
+.ar-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.ar-check { display: flex; align-items: center; gap: 10px; min-height: 44px; text-align: left; cursor: pointer; }
+.ar-check input { width: 22px; height: 22px; }
+.ar-help { color: var(--ink-soft, #475569); font-size: 0.9rem; }
+
+/* ——— Smaller screens ——— */
+@media (max-width: 900px) {
+  .ar-range { width: 90px; }
+  .ar-dial__label { min-width: 6.5em; }
+}
+@media (max-height: 520px) {
+  .ar-card { padding: 3px 8px; }
+  .ar-card__name { font-size: 0.85rem; }
+  .ar-mid { flex-direction: row; }
+  .ar-round { display: none; }
+  .ar-bottom { padding-top: 4px; gap: 4px 6px; }
+  .ar-stats { gap: 4px; }
+  .ar-stat { min-width: 2.6em; padding: 0 4px 1px; }
+  .ar-dial { gap: 4px; }
+  .ar-bottom .ar-step { padding: 0 10px; }
+  .ar-bottom .ar-pick { padding: 0 10px; }
+  .ar-bottom .ar-shoot { min-width: 90px; padding: 0 16px; }
+  .ar-stat span { font-size: 0.6rem; }
+  .ar-stat b { font-size: 1rem; }
+  .ar-dial__label { font-size: 0.75rem; min-width: 4.8em; }
+  .ar-dial__label output { font-size: 1rem; }
+  .ar-range { display: none; }
+  .ar-pick__long { display: none; }
+  .ar-pick__short { display: inline; }
+  .ar-bottom .ar-shoot { min-height: 44px; font-size: 1.15rem; }
+  .ar-toast { top: 56px; }
+}
+@media (max-width: 640px) {
+  .ar-top { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .ar-mid { grid-column: 1 / -1; grid-row: 2; flex-direction: row; justify-content: center; }
+  .ar-card { max-width: none; }
+  .ar-range { display: none; }
+}
+@media (orientation: portrait) and (max-width: 640px) {
+  .ar-rotate {
+    display: block; position: absolute; left: 50%; top: 42%; transform: translateX(-50%); margin: 0; width: max-content; max-width: calc(100% - 32px);
+    padding: 4px 12px; border-radius: 99px; background: var(--ar-panel); color: var(--ar-soft); font-size: 0.85rem; pointer-events: none;
+  }
+}
+
+/* ——— Movement only when the device allows it, and never with Less motion ——— */
+@media (prefers-reduced-motion: no-preference) {
+  .ar-bar__fill { transition: width 0.4s ease; }
+  .ar-overlay--soft .ar-panel { animation: ar-pop 0.35s ease-out; }
+  .ar-card[data-turn] { animation: ar-glow 1.6s ease-in-out infinite; }
+}
+@keyframes ar-pop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes ar-glow { 50% { border-color: #ffffff; } }
+.ar-fight[data-less-motion] .ar-bar__fill, .ar-fight[data-less-motion] .ar-panel, .ar-fight[data-less-motion] .ar-card { animation: none; transition: none; }
