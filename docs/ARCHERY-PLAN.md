@@ -34,7 +34,9 @@ Written 21 October 2026 (Stage 0: plan only, **no code yet**). Branch `archery`,
 
 **Play:** pick a world, then **Against a bot** (Easy, Medium, Hard) or **Against a classmate**. Then **Pack your quiver**: choose which arrows and shields to bring from what you own. Then the fight.
 
-**The fight screen:** your archer on the left, the other archer on the right, each on blow-apart land in that world. The bottom bar has angle and power (drag on the archer, sliders, or arrow keys), the arrow picker (with how many you have left), the wind arrow with its strength, and a **Shoot** button. Each archer has a health bar and a shield bar. The pupil's HUD boxes come back as **Arrows** (left in your quiver), **Score** (damage done this fight) and **Best** (your best fight score in that world). The settings icon opens sound and simpler-graphics options. A faint ghost line shows your last shot, so pupils can adjust from it, which is the learning loop.
+**The fight screen:** your archer on the left, the other archer on the right, each on blow-apart land in that world. The bottom bar has angle and power, shown as **plain numbers** (e.g. "Angle 52°", "Power 67") and changed with buttons, sliders or arrow keys. It also has the arrow picker (with how many you have left), the wind (an arrow plus a number, like "Wind 13" in Scorched Earth), and a **Shoot** button. Each archer has a health bar and a shield bar. The pupil's HUD boxes come back as **Arrows** (left in your quiver), **Score** (damage done this fight) and **Best** (your best fight score in that world). The settings icon opens sound and simpler-graphics options.
+
+**No aiming help (James, 21 Oct 2026).** There's no aiming line, aim guide, dotted path or ghost of the last shot. Pupils **experiment** with angle and power to find the other archer, as in Scorched Earth. The numbers stay where you left them between turns, so "a bit more power" is a real choice, and that's the learning loop. A flying arrow has a short trail that fades within half a second, and nothing stays on screen.
 
 **Between rounds of a fight** (a fight is best of 3 rounds; each round starts on fresh land with new wind): "Speed round for coins?" (optional), then a quick Armory stop before the next round.
 
@@ -45,7 +47,7 @@ Written 21 October 2026 (Stage 0: plan only, **no code yet**). Branch `archery`,
 Everything that decides an outcome lives here, and the browser and the server both use it. All tuning numbers live in `shared/archery/config.ts`.
 
 - **Field:** a logical 960 × 540 field (16:9), drawn scaled to the screen.
-- **Land:** a **grid of 3 px cells** (320 × 180 = 57,600 cells, one byte each). It's small enough for the server to replay cheaply, and a grid (not a single hill line) allows tunnels, overhangs and dirt balls. It's made by midpoint displacement from the fight's seed: a random hilly line with each world's own roughness. Blasts clear cells in a circle, and some arrows add cells. **Loose dirt falls:** after each shot, any run of dirt with a gap under it drops until it lands. An archer with nothing under them falls. Fall damage is 1 per cell, capped at 25, and an Umbrella cancels it.
+- **Land:** a **grid of 3 px cells** (320 × 180 = 57,600 cells, one byte each). It's small enough for the server to replay cheaply, and a grid (not a single hill line) allows tunnels, overhangs and dirt balls. It's made by midpoint displacement from the fight's seed: a random hilly line with each world's own roughness. **The land is properly hilly, like Scorched Earth (James, 21 Oct 2026, with a screenshot):** big jagged cliffs and mountains that fill most of the screen, peaks up to about 75% of the field's height, steep rock walls and deep, narrow valleys. Shots are mostly high lobs over rock. The start roughness is about 60–70% of the field's height, shrinking by about 0.58 each split (a little more than half keeps the edges jagged), with no smoothing pass. Some fights put an archer down in a valley and the other up on a ledge. The archers are placed in different dips or ledges, and a generator check makes sure **there's usually a real hill between them**, so a flat straight shot rarely works and angle and power both matter. A "flat-ish" check rejects land where the two archers can see each other in a straight line too often (the simulator measures this). Blasts clear cells in a circle, and some arrows add cells. **Loose dirt falls:** after each shot, any run of dirt with a gap under it drops until it lands. An archer with nothing under them falls. Fall damage is 1 per cell, capped at 25, and an Umbrella cancels it.
 - **Shots:** an angle (whole degrees) and a power (whole numbers 0–100). The direction comes from a fixed table of unit vectors, one per degree, stored as numbers in the file, not worked out with trig. Gravity is about 300 px/s², and full power is about 600 px/s, so a full-power 45° shot goes about 1¼ screens: most good shots sit at 40–80 power. **Fixed time step 1/240 s.** Each step checks the arrow against the land cells and the archers' boxes. The wind is a whole number from −10 to +10 per round (about 6 px/s² per point, at most 20% of gravity), from the seeded random numbers. A "no wind" option can come later if it proves too hard.
 - **Damage:** each arrow has its own peak damage, fading in a straight line to nothing at the blast's edge. A direct hit adds a small bonus: it's **never** an instant knock-out. A shield takes damage first, and anything left over hits health. Health is 100 per round. At 0 the archer **pops**: stars, a cartoon "poof", sits out the rest of the round. No blood, ever.
 - **Turns:** players take turns. A round ends when one archer is left. A fight is best of 3 rounds.
@@ -68,41 +70,42 @@ The twists are in the engine (so the server replays them too), and their numbers
 
 ## 4. The Armory (our own names, mostly arrows)
 
-Prices are in **coins**. A perfect speed round earns 100 (section 5). Items come in bundles, unlock by **Armory level** (it goes up as you spend: levels 1–5), and sell back for half. You can carry at most 9 of each. The **Plain Arrow** is free and never runs out. James kept these names (21 Oct 2026).
+Prices are in **coins**. A perfect speed round earns 100 (section 5). **Special arrows are scarce (James, 21 Oct 2026): most are sold one at a time, and a big one costs several perfect rounds.** Items unlock by **Armory level** (it goes up as you spend: levels 1–5) and sell back for half. You can carry at most 5 of each. The **Plain Arrow** is free and never runs out, so you can always fight. James kept these names (21 Oct 2026).
 
 **Arrows** (the heart of the game):
 
-| Arrow | What it does | Coins / bundle | Unlocks |
+| Arrow | What it does | Coins | Unlocks |
 |---|---|---|---|
 | Plain Arrow | small blast; unlimited | free | start |
-| Steel Arrow | bigger blast | 40 / 5 | 1 |
-| Feather Arrow | no damage, leaves a dotted path to aim the next shot from | 10 / 5 | 1 |
-| Rolling Log | lands, rolls downhill, bursts in a dip or at an archer | 60 / 3 | 1 |
-| Mole Arrow | digs a tunnel straight down (knock the ground out from under someone) | 40 / 5 | 1 |
-| Mud Ball | adds a ball of dirt: bury the other archer, or build a wall in front of you | 50 / 5 | 1 |
-| Arrow Rain | splits at the top of its flight into 5 small arrows | 120 / 2 | 2 |
-| Skipping Arrow | lands, then hops forward twice, with 3 growing blasts | 120 / 2 | 2 |
-| Sticky Goo Arrow | no crater; a goo puddle pools in dips and hurts anyone standing in it | 100 / 3 | 3 |
-| Owl Arrow | gently steers toward an archer that's close to its path | 150 / 2 | 3 |
-| Earth Shaker | all floating dirt falls (drop someone off a ledge) | 80 / 3 | 3 |
-| Firework Arrow | 5 sparkly pops scattered around where it lands | 160 / 2 | 4 |
-| Sneaky Mole | tunnels toward the nearest archer and pops up under them | 180 / 2 | 4 |
-| Crossbow Bolt | a straight, fast shot with no drop, cuts through dirt, short range | 150 / 3 | 4 |
-| Giant Arrow | the big one: a huge blast with a shockwave of leaves and confetti | 300 / 1 | 5 |
+| Steel Arrow | bigger blast | 50 for 2 | 1 |
+| Rolling Log | lands, rolls downhill, bursts in a dip or at an archer | 60 each | 1 |
+| Mole Arrow | digs a tunnel straight down (knock the ground out from under someone) | 40 each | 1 |
+| Mud Ball | adds a ball of dirt: bury the other archer, or build a wall in front of you | 50 each | 1 |
+| Arrow Rain | splits at the top of its flight into 5 small arrows | 150 each | 2 |
+| Skipping Arrow | lands, then hops forward twice, with 3 growing blasts | 120 each | 2 |
+| Sticky Goo Arrow | no crater; a goo puddle pools in dips and hurts anyone standing in it | 120 each | 3 |
+| Earth Shaker | all floating dirt falls (drop someone off a ledge) | 100 each | 3 |
+| Owl Arrow | gently steers toward an archer that's close to its path (you still have to get it close) | 250 each | 3 |
+| Firework Arrow | 5 sparkly pops scattered around where it lands | 180 each | 4 |
+| Sneaky Mole | tunnels toward the nearest archer and pops up under them | 220 each | 4 |
+| Crossbow Bolt | a straight, fast shot with no drop, cuts through dirt, short range | 150 each | 4 |
+| Giant Arrow | the big one: a huge blast with a shockwave of leaves and confetti | 400 each | 5 |
 
-**Shields and helpers:** Wooden Shield (soaks 40, 80 coins), Wind Charm (soaks 30 and lifts arrows coming down on you, 100), Bubble Shield (soaks 60 and bounces the first arrow away, 200), Umbrella (no fall damage, 3 for 40), Apple (+15 health on your turn, 3 for 40).
+(The Feather Arrow, which left a dotted path to aim from, is gone: there's no aiming help.)
+
+**Shields and helpers:** Wooden Shield (soaks 40, 100 coins), Wind Charm (soaks 30 and lifts arrows coming down on you, 150), Bubble Shield (soaks 60 and bounces the first arrow away, 250), Umbrella (no fall damage, 40 each), Apple (+15 health on your turn, 50 each).
 
 **More Bows** (buy once, keep for good; the bow shows on your archer):
 
 | Bow | What it changes | Coins |
 |---|---|---|
 | Starter Bow | the normal bow | free |
-| Longbow | +10% top power (reach the far side in a strong headwind) | 250 |
-| Recurve Bow | a longer aim guide | 300 |
-| Hunter's Bow | wind shown as an exact number, not just an arrow | 200 |
-| Golden Bow | looks amazing; a little extra top power | 500 |
+| Longbow | +10% top power (reach the far side in a strong headwind) | 300 |
+| Recurve Bow | faster arrows that drift a little less in the wind | 400 |
+| Hunter's Bow | shows what the wind will be on your next turn too | 250 |
+| Golden Bow | looks amazing; a little extra top power | 600 |
 
-Bows change what you can see or reach, never how hard an arrow hits, so a well-aimed Starter Bow can always win. The best gear, all together, costs about 25–30 perfect speed rounds: a goal that takes a few weeks, not one lesson, and is reachable within a season (New Season wipes coins and gear). The simulator and James's try-out will tune all of this.
+Bows change what you can see or reach, never how hard an arrow hits, and none of them gives an aiming line, so a well-aimed Starter Bow can always win. The bows and shields together cost about 20 perfect speed rounds. Special arrows get used up, so there's always something to save for. It's reachable within a season (New Season wipes coins and gear). The simulator and James's try-out will tune all of this.
 
 **Gear and fights:** before a fight you **pack your quiver** from what you own. When the fight starts, the server takes the packed gear out of your store. When it finishes, the server replays the fight, counts what was actually used, and **gives back everything unused**. A fight abandoned part-way gives back unused gear too.
 
@@ -185,7 +188,8 @@ Five lessons a week is about 9,000 a week, or about 38,000 a month, against 500,
 - **Worlds with depth:** 3–4 background layers per world that move slightly as the camera moves, a sky that suits each world, and living touches (drifting clouds, falling leaves or snow, heat shimmer, lit windows).
 - **Land that looks like land:** a textured fill with a coloured top edge (grass, sand, snow, paving), darker earth inside, and soft crater edges. It's drawn once to an off-screen canvas, and only the cells that changed are redrawn after a blast.
 - **Archers with character:** drawn in parts (body, head, bow arm, string), so they can draw the bow, hold, release, wobble when hit, cheer, and pop with stars. Their bow and shield show.
-- **Shots worth watching:** arrow trails, the camera following the arrow, and a burst for each arrow (dust, sparks, confetti, goo, fireworks). A small screen shake and shields that ripple when hit.
+- **Land like the screenshot James sent:** big rocky cliffs with layered, cracked, shaded rock, each world's own top (grass, sand, snow, rooftops).
+- **Shots worth watching:** short arrow trails that fade within half a second (never a lasting path), the camera following the arrow, and a burst for each arrow (dust, sparks, confetti, goo, fireworks). A small screen shake and shields that ripple when hit.
 - **Fast on a Chromebook:** a fixed-step loop with drawing smoothed between steps (copy `MineRun.tsx`), the canvas sized for the screen's pixel density (capped at 1.5), at most ~300 particles, and **automatic simpler graphics** if frames get slow (fewer layers and particles, lower pixel density; Mine Runner's trick). Respects reduced motion (no shake, gentle effects) and has a "simpler graphics" switch.
 - **Tested at 1366 × 640 and 844 × 390**, with touch aiming (drag back from the archer like pulling a bowstring), sliders, and keyboard (arrows, space to shoot). Every button is at least 44 px.
 
