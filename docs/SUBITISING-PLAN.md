@@ -92,3 +92,23 @@ Flash is 1000 to 1200 ms depending on the stage. Feedback is gentle: right → c
 2. **Progress by stages and a growing garden**, no speed colours.
 3. **First release = stages 1 to 4**, with Flash and Identify and Missing Spots.
 4. **My number picks are fine**: stage 3 = 3 to 7, stage 4 = 5 to 10, stage 5 = 4 to 10, stage 1 starts at 1200 ms.
+
+## 11. S.1 results (21 October 2026, branch `subitising`, nothing live)
+
+**Built (browser only, no database, no server change):**
+- `shared/subitising/` (pure): `config.ts` (stages, flash times, every rule number), `keys.ts` (`sub:ten-8`, `gap:ten-7`, answer worked out from the key), `patterns.ts` (12 picture types as plain data, never touching), `engine.ts` (stage progress replayed from answers, finished stays finished, step back, struggle, garden growth), `trials.ts` (builds a picture from a seed), `placement.ts` (the starting check). 30 tests.
+- `src/subitising/`: SVG pictures, `FlashRunner` (get ready 0.7 s, flash, buttons locked 1 s, answer, gentle feedback, help view, Peek again), `Garden`, `SubitisingApp` (home, starting check, session, summary), `store.ts` (browser storage for the preview). 5 screen tests.
+- Preview: `npm run subitising:preview` and `preview/subitising/`. Private test page: https://claude.ai/artifact/MAT8CfpBRkorrmxra9KBAc (progress stays in that browser; test buttons at the bottom of the home screen).
+
+**Decisions made while building:**
+- A stage is finished at 7 right of the last 8 (85%), with each of its three picture types seen at least twice in the last 24. Finished stays finished.
+- The starting check is 6 pictures, starting at stage 3: right goes up a stage, wrong goes down. Where it ends is where practice starts. Its answers don't count as practice.
+- Struggling (two wrong in a row, or thinking over 4 s) makes the next picture stay on screen with its groups outlined and two colours. Those "helped" answers don't count towards a stage. The picture after that flashes again with a Peek again button (0.5 s, once).
+- "Keep the picture on the screen" (guided mode) never flashes, and its answers do count.
+- Stage 2 has dice, a 45-degree dice and a dot cluster. Fingers and koru cards come later (S.3).
+- Stage 3 five-frame types: a five-frame (3 to 5), a full five plus extra counters (6 to 7) and two colour groups (3 to 7). Missing Spots uses the five-frame (1 to 4 filled) and the ten-frames (3 to 9 filled).
+- Review: a fifth of pictures come from finished stages (never in the first picture of a session).
+
+**Checked in a real browser:** flash 1.0 s and 1.2 s as set, buttons locked for 1.0 s, help view and Peek again appear, fits 1366 x 640 and 844 x 390 with no scrolling, no console errors, axe clean on home, get ready, flash, locked, answering and feedback screens.
+
+**Not done yet (S.2):** saving answers, the button on the Training home, voice prompts, a teacher view. Stage progress will be worked out from the last 10 saved answers per key, so S.2 must check that a finished stage isn't forgotten when older answers drop off (it may need a small stored "furthest stage").
