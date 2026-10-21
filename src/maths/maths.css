@@ -475,10 +475,15 @@
 .scribble__swatch[aria-pressed='true'] {
   box-shadow: 0 0 0 3px #5b3cc4;
 }
+.scribble__surface {
+  position: relative;
+  min-height: 0;
+}
 .scribble__canvas {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  min-height: 0;
   border-radius: 14px;
   background: repeating-linear-gradient(#fff 0 31px, #e2e8f0 31px 32px);
   box-shadow: inset 0 0 0 2px #cbd5e1;
