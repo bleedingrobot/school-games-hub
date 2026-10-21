@@ -50,7 +50,11 @@
     "mine:single": "MINE_INLINE=1 vite build --config vite.mine-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-mine mine-runner-test-page.html",
     "mine:determinism": "node scripts/mine-determinism.mjs",
     "mine:sim": "node scripts/mine-sim.mjs",
-    "subitising:preview": "vite build --config vite.subitising-preview.config.ts"
+    "subitising:preview": "vite build --config vite.subitising-preview.config.ts",
+    "archery:sim": "node scripts/archery-sim.mjs",
+    "archery:preview": "vite build --config vite.archery-preview.config.ts",
+    "archery:single": "ARCHERY_INLINE=1 vite build --config vite.archery-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-archery archery-test-page.html",
+    "archery:determinism": "node scripts/archery-determinism.mjs"
   },
   "engines": {
     "node": ">=22"
