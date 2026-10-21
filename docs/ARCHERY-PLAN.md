@@ -4,7 +4,7 @@ A Scorched Earth–style game for the hub, with **archers instead of tanks**. Tw
 
 Written 21 October 2026 (Stage 0: plan only, **no code yet**). Branch `archery`, folder `~/projects/school-games-hub-archery`, short id `archery`, CSS prefix `.ar-`. Next free migration number when this was written: `20261021000300` (re-check before the first migration).
 
-**Status: Stage 1 (the engine) built 21 Oct 2026, on the branch only. Nothing live. Waiting for James before Stage 2.**
+**Status: Stage 2 (the fight screen against a bot) built 21 Oct 2026, on the branch only. Nothing live. Waiting for James before Stage 3.**
 
 **Decisions (James, 21 Oct 2026):**
 - Archers, not tanks. Big, over-the-top weapons, mostly **special arrows** (like all of Scorched Earth's weapons). Shields and bows are smaller sections of the shop.
@@ -273,3 +273,50 @@ Each stage is small and tested, ends with a "Stage N results" section here, a co
 Stage 3 to settle: how much the shards hurt each turn before the pop (the "keeps hurting" part), and what happens if the Glass Arrow's shooter has already popped.
 
 **Go-live list (so far):** at the merge step add `archery:determinism` and `archery:preview` / `archery:single` to the end of `package.json`'s scripts, and `dist-preview-archery/` to `.gitignore` (both left alone on this branch, as section 11 says).
+
+## Stage 2 results (21 Oct 2026)
+
+**Built** (branch `archery` only; nothing live, no server, no database):
+- **The worlds' twists, in the engine** (`shared/archery/`, numbers in `config.ts`). The world is now part of a fight's setup (`FightSetup.world`), so `playFight(seed, setup, shots)` replays the same fight everywhere. New cell kinds `TREE`, `ICE`, `BUILDING`.
+  - **Forest:** 5–8 pine-shaped trees stand on fairly level ground (never within 6 cells of an archer). They stop arrows; a blast clears tree cells 1.4× as far as dirt; an undermined tree falls like dirt. Calmer wind: up to 6.
+  - **Desert:** after a blast, sand within 12 columns slides sideways off any column standing more than 2 cells above its neighbour, until it settles (never into an archer, at most 4,000 cells a shot). Smoother dunes; stronger wind: up to 14.
+  - **Snow:** an archer left on a slope slides downhill a cell at a time (falling as they go, up to 40 cells) until level, in a dip, or against a wall; nobody slides on the flat spot they start on. 3–6 ice blocks; an arrow bounces off ice once (keeping 60% of its speed), and stops at the next ice. Wind up to 10.
+  - **City:** a street of flat-roofed buildings (rooftops are ledges archers often stand on). A blast only chips a building (30% of its radius); buildings never fall. Wind up to 10.
+  - `startFight` / `takeShot`: a fight played one shot at a time, exactly what `playFight` does (tested shot for shot), used by the screen and the bots.
+- **The bots** (`shared/archery/bot.ts`, built by a helper and checked): Easy (a guess, then walks its power towards you, big wobble that settles a little, ignores wind), Medium (works out the power for a 45–60° shot that clears the hill, corrects from its own last arrow, ±4 → ±2), Hard (allows for the wind, then flies up to 3 practice shots on a copy and corrects, ±3). Every bot misses on purpose some of the time (15–25% of shots). Plain and Steel only, from fixed kits (Easy 1 Steel, Medium 2, Hard 3), only from `botArrows()`, so never the Glass Arrow (tested). Seeded from the fight itself, never `Math.random`. They think in a Web Worker (`botWorker.ts` / `botThread.ts`, the space game's pattern), falling back to the page (the one-file preview does this: about 2 ms a turn).
+- **The fight screen** (`src/games/archery/`, `.ar-` classes): `FightScreen.tsx` (HUD, turns, rounds, fight over, keys, touch aiming, settings), `renderer.ts` + `art/` (the canvas art, built by a helper from the approved mock-up: layered backgrounds per world with parallax and weather, land drawn from the cells with smooth edges, layered cracked rock, each world's own top, trees, ice, buildings with lit windows, the archers in parts, arrow trails that fade within half a second, bursts, falling dirt, damage numbers, pops with stars, a windsock), `archery.css`, `prefs.ts` (simpler graphics, less motion, best scores on this device), `text.ts`, `switch.ts` (`archeryOn()`, off).
+- **No aiming help**: angle and power are plain numbers that stay between turns; touch aiming (drag back from your archer) only changes the numbers and the archer's pose. A test checks the screen never hands the picture anything to draw a line or guess with.
+- **The preview** (`preview/archery/`): pick a world, pick a bot, fight (best of 3, 4 Steel Arrows). It never calls a server (checked: 0 requests). Published to the same test page: https://claude.ai/artifact/NW2b62yAKr8HNxfKtqxtG3. Built with `ARCHERY_INLINE=1 npx vite build --config vite.archery-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-archery archery-test-page.html` (384 KB). The art helper's harness is `preview/archery/art.html`.
+
+**Numbers chosen (and why):** world winds 6 / 14 / 10 / 10 (calm first world, the Desert's twist is wind); sand slides off steps over 2 cells (steep but loose); ice keeps 60% of the speed (a clear bounce that doesn't fly off the screen). City buildings 10–50 cells tall, and **buildings within 20 cells of an archer are cut down to 3 cells above their feet** (a low wall to shelter behind). The simulator found that without this, 45% of City lands gave the left archer no shot that could hurt at all (tall buildings walling them into a street); with it, about 1 in 40. This is a new City rule from this stage, not a change to the Stage 1 land rules. City ground made a bit higher (up to 50%) to keep it as hilly as the rest.
+
+**Hilliness per world (1,000 seeds each, the Stage 1 test):** every world passes: at most 10 lands in 1,000 fall back or let the archers see each other, at least 900 in 1,000 rise and fall by 30% of the screen or more, average rise and fall over 40%. Every land has a hill (or building) at least 40 px above the higher archer between them.
+
+**Bot simulator** (`node scripts/archery-sim.mjs 120`: 120 fights per pairing per world, seats swapped):
+
+| Pairing | Forest | Desert | Snow | City | Overall |
+|---|---|---|---|---|---|
+| Hard beats Easy | 84% | 90% | 88% | 81% | 86% |
+| Medium beats Easy | 82% | 58% | 60% | 61% | 65% |
+| Hard beats Medium | 60% | 77% | 73% | 62% | 68% |
+| Same level | about 50% each way everywhere | | | | |
+
+- Shots per round (both archers): median 19 (Hard v Hard) to 32 (Easy v Easy); 6% of rounds reached the 60-shot cap (more health wins those), mostly Easy and Medium in the windy Desert and Snow.
+- Lands with no Plain shot that can hurt the other archer at the start (150 per world, the round's real wind): Forest 13, Desert 2, Snow 8, City 2 (was 67 before the City fix). Bots still finish nearly all of those rounds (they blast the hill away).
+- Bot thinking: 0.1 ms a turn on a running fight, about 2 ms with the replay; never more than 3 practice shots.
+
+**Frame times** (headless Chromium without a graphics card, 1366 × 640 at 1.5× sharpness): 60 fps at full quality, about 1 ms of drawing a frame. With the processor at a quarter speed: about 30 fps at full quality, and **simpler graphics switched on by themselves during the first shot** (1× sharpness, fewer layers and sparks), then about 44 fps. At a sixth of the speed: about 30 fps in simpler mode. One frame per blast is slow (the land redraw). A real Chromebook still needs trying.
+
+**Tests:** engine and worlds (`engine.test.ts` per world, `worlds.test.ts`: 20 tests on the twists), bots (`bot.test.ts`, 6), screen (`FightScreen.test.tsx` with a stand-in picture and bot: turns, keys, shooting, the bot's reply, Steel used up, settings remembered, no server calls), `Accessibility.test.tsx` (copied from Mine Runner: contrast, 44 px targets, movement only without reduced motion and never with Less motion, focus to each new heading, only `.ar-` selectors, shared buttons), `renderer.test.ts`. `npm run typecheck` clean, `npm run test:all` **4,487 passed** (240 files), `npm run build` fine.
+- **Determinism:** re-pinned fingerprint **`c74ca8ad`** (758 lines: 15 lands in each world and five long fights across all four worlds). `scripts/archery-determinism.mjs`: **Node, Chromium and real WebKit identical.**
+- Checked in headless Chromium at 1366 × 640, 844 × 390 (the bottom bar fits one row) and 390 × 844 (portrait shows a "turn your phone sideways" hint): no errors, no network requests, the one-file page plays on its own.
+
+**Untested:** a real phone and a real Chromebook (James's try-out); touch aiming by a real finger; how long rounds feel to pupils; sound (the hub's beeps are wired in but not listened to).
+
+**Questions for James:**
+1. **Rounds are long-ish.** Even the Hard bot hurts with only about half its shots, because a Plain Arrow's blast is small (18 px) next to how far one power point moves the landing (about 15 px). A round takes about 20–30 shots between both archers. Would a slightly bigger Plain blast (about 24 px) or more damage be better for pupils? Easy to change (one number), but it changes every replay, so before Stage 4.
+2. **The bot's name:** "Bolt" is still a placeholder (one name for all three levels, shown as "Bolt (Easy)").
+3. **The City's low walls** beside archers (above): OK, or would you rather a generator check that throws out lands with no hurting shot (costs up to 50 ms a round)?
+4. Starter bag in the preview: 4 Steel Arrows a fight. Bots get 1 / 2 / 3.
+
+**Go-live list (so far):** as Stage 1 (scripts and `.gitignore` at the merge step), plus `archery:sim` in `package.json`.
