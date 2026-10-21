@@ -40,10 +40,30 @@ const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, 
 /** A new fight's seed. Only the screen picks it (the server will in Stage 4); the rules never use Math.random. */
 const freshSeed = () => (Math.random() * 4294967296) >>> 0;
 
-export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STARTER_PACK }: {
+/** What the server said about a finished fight (the game shows it on the fight-over panel). */
+export interface FightSaved {
+  /** A new best score in this world. */
+  best?: boolean;
+  /** The best score in this world now. */
+  bestScore?: number;
+  /** A line to show, e.g. "Saved: +3 points." or why it couldn't be saved. */
+  line?: string;
+}
+
+export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STARTER_PACK, onFinished, onLeave, onPlayAgain, onSpeedRound, best: serverBest }: {
   world: WorldId;
   level: BotLevel;
   onExit: () => void;
+  /** The fight is over: send its shots to the server (the hub game). Without it, best scores stay on this device. */
+  onFinished?: (shots: Shot[]) => Promise<FightSaved>;
+  /** Leaving before the fight is over (with the shots so far). Without it, Leave just calls onExit. */
+  onLeave?: (shots: Shot[]) => void;
+  /** Play again starts a new fight through the game (a new seed from the server). Without it, a new seed here. */
+  onPlayAgain?: () => void;
+  /** Between rounds: a speed round for coins (the game shows it over the fight). */
+  onSpeedRound?: () => void;
+  /** The best score in this world, from the server (otherwise from this device). */
+  best?: number;
   /** What the player packed for this fight (arrows, helpers, shield, bow). */
   pack?: PlayerSetup;
   /** A fixed seed (for tests); otherwise each fight gets a new one. */
@@ -84,7 +104,8 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [problem, setProblem] = useState('');
   const [newBest, setNewBest] = useState(false);
-  const [best, setBest] = useState(() => loadBests()[world] ?? 0);
+  const [best, setBest] = useState(() => serverBest ?? loadBests()[world] ?? 0);
+  const [saveLine, setSaveLine] = useState('');
 
   const canvas = useRef<HTMLCanvasElement>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -249,10 +270,21 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
       beep(w === 0 ? 'win' : 'end');
       if (run.winner !== null) {
         const finalScore = run.records.reduce((n, r) => n + (r.player === 0 ? r.damage[1] : 0), 0);
-        const isBest = saveBest(world, finalScore);
-        setNewBest(isBest);
-        setBest(loadBests()[world] ?? finalScore);
         setPhase('fight-over');
+        if (onFinished) {
+          setSaveLine('Saving your fight…');
+          const thisRun = run;
+          void onFinished(shots.current.slice()).then((saved) => {
+            if (gone.current || runRef.current !== thisRun) return;
+            setNewBest(!!saved.best);
+            if (saved.bestScore !== undefined) setBest(saved.bestScore);
+            setSaveLine(saved.line ?? '');
+          });
+        } else {
+          const isBest = saveBest(world, finalScore);
+          setNewBest(isBest);
+          setBest(loadBests()[world] ?? finalScore);
+        }
       } else setPhase('round-over');
       bump();
       return;
@@ -313,7 +345,16 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
     return wait(lessMotion ? 150 : 1100);
   }
 
+  function leave() {
+    if (onLeave && run.winner === null && shots.current.length > 0) onLeave(shots.current.slice());
+    else onExit();
+  }
+
   function playAgain() {
+    if (onPlayAgain) {
+      onPlayAgain();
+      return;
+    }
     shots.current = [];
     setNewBest(false);
     setArrow('plain');
@@ -450,7 +491,7 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
         </div>
         <div className="ar-topbtns">
           <button type="button" className="button button--light ar-btn ar-iconbtn" aria-label="Settings" aria-expanded={settingsOpen} onClick={() => setSettingsOpen(true)}>⚙</button>
-          <button type="button" className="button button--light ar-btn" onClick={onExit}>Leave</button>
+          <button type="button" className="button button--light ar-btn" onClick={leave}>Leave</button>
         </div>
       </div>
 
@@ -511,7 +552,10 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
             <h2 id="ar-round-title" ref={dialogHeading} tabIndex={-1}>{roundWinWords}</h2>
             <p className="ar-score">Rounds: You {run.roundWins[0]} – {run.roundWins[1]} {BOT_NAME}</p>
             <p>First to win 2 rounds wins the fight. The next round has new land and new wind.</p>
-            <button type="button" className="button button--play ar-btn" onClick={nextRound}>Next round</button>
+            <div className="ar-row">
+              <button type="button" className="button button--play ar-btn" onClick={nextRound}>Next round</button>
+              {onSpeedRound && <button type="button" className="button button--light ar-btn" onClick={onSpeedRound}>Speed round for coins</button>}
+            </div>
           </div>
         </div>
       )}
@@ -522,6 +566,7 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
             <h2 id="ar-end-title" ref={dialogHeading} tabIndex={-1}>{fightWords}</h2>
             <p className="ar-score">Rounds: You {run.roundWins[0]} – {run.roundWins[1]} {BOT_NAME}</p>
             <p>Your score (damage you did): <strong>{score}</strong>{newBest ? <strong> A new best in the {WORLD_NAMES[world]}!</strong> : <> Best here: {best}</>}</p>
+            {saveLine && <p className="ar-help" role="status">{saveLine}</p>}
             <div className="ar-row">
               <button type="button" className="button button--play ar-btn" onClick={playAgain}>Play again</button>
               <button type="button" className="button button--light ar-btn" onClick={onExit}>Choose another fight</button>

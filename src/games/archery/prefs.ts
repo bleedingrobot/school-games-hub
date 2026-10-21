@@ -3,7 +3,8 @@
  * (the server keeps the best scores from Stage 4). Storage can be blocked: everything still works,
  * it just isn't remembered.
  */
-import { WORLD_IDS, type WorldId } from '../../../shared/archery/types';
+import { BOT_LEVELS, type BotLevel } from '../../../shared/archery/bot';
+import { WORLD_IDS, type PlayerSetup, type WorldId } from '../../../shared/archery/types';
 
 export interface ArcheryPrefs {
   /** Simpler graphics: fewer layers and sparks, a softer picture. Helps a slow device. */
@@ -71,4 +72,34 @@ export function saveBest(world: WorldId, score: number): boolean {
     // Storage blocked.
   }
   return true;
+}
+
+const CHOICES_KEY = 'archery-choices-v1';
+
+/** The last fight picked and the last quiver packed, so the next fight starts from them (this device only). */
+export interface Choices {
+  world: WorldId;
+  level: BotLevel;
+  pack: PlayerSetup | null;
+}
+
+export function loadChoices(): Choices {
+  try {
+    const o = JSON.parse(localStorage.getItem(CHOICES_KEY) ?? '{}') as Record<string, unknown>;
+    const world = WORLD_IDS.find((w) => w === o.world) ?? 'forest';
+    const level = BOT_LEVELS.find((l) => l === o.level) ?? 'easy';
+    const p = o.pack as PlayerSetup | null;
+    const pack = p && typeof p === 'object' && p.quiver && typeof p.quiver === 'object' ? { quiver: { ...p.quiver }, shield: p.shield ?? null, bow: p.bow ?? 'starter' } : null;
+    return { world, level, pack };
+  } catch {
+    return { world: 'forest', level: 'easy', pack: null };
+  }
+}
+
+export function saveChoices(c: Choices): void {
+  try {
+    localStorage.setItem(CHOICES_KEY, JSON.stringify(c));
+  } catch {
+    // Storage blocked: not remembered, that's all.
+  }
 }

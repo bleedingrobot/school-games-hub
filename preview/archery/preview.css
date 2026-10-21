@@ -35,3 +35,11 @@
 .arp-step { width: 44px !important; min-height: 44px !important; padding: 0 !important; font-size: 1.3rem !important; border-radius: 12px !important; }
 .arp-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .arp-small { width: auto !important; min-height: 44px !important; padding: 0 14px !important; font-size: 1rem !important; }
+/* Preview tools (only in the preview): a small strip at the bottom left of the home screen. */
+.arp-tools {
+  position: fixed; right: 8px; bottom: 8px; z-index: 41; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  padding: 4px 8px; border-radius: 12px; background: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.85rem; max-width: calc(100% - 16px);
+}
+.arp-tools summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
+.arp-tools[open] { display: flex; }
+.arp-tools[open] .arp-small { margin: 4px; }

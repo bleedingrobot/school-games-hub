@@ -4,7 +4,7 @@ A Scorched Earth–style game for the hub, with **archers instead of tanks**. Tw
 
 Written 21 October 2026 (Stage 0: plan only, **no code yet**). Branch `archery`, folder `~/projects/school-games-hub-archery`, short id `archery`, CSS prefix `.ar-`. Next free migration number when this was written: `20261021000300` (re-check before the first migration).
 
-**Status: Stages 3 and 4 built 22 Oct 2026 (James: "push on as far as you can"), on the branch only. Nothing live: no migration applied, no function deployed. Waiting for James before Stage 5.**
+**Status: Stages 3, 4 and 5 built 22 Oct 2026 (James: "push on as far as you can", then "continue"), on the branch only. Nothing live: no migration applied, no function deployed, not in the games list. Waiting for James before Stage 6.**
 
 **Decisions (James, 21 Oct 2026):**
 - Archers, not tanks. Big, over-the-top weapons, mostly **special arrows** (like all of Scorched Earth's weapons). Shields and bows are smaller sections of the shop.
@@ -400,3 +400,28 @@ James asked me to push on past Stage 3 overnight, so Stage 4 followed straight o
 3. A fight left open for 2 hours gives back all its packed gear. OK, or keep the gear (stricter, but a dropped Wi-Fi would lose arrows)?
 
 **Go-live list (so far):** as Stage 3, plus: `archery` added to the end of `FUNCTIONS` in `scripts/build-functions.mjs`; re-check the migration number; apply `20261021000300_archery.sql`; deploy `archery` with `--no-verify-jwt`; the migration note in `docs/PLAN.md`; `docs/PRIVACY-SUMMARY.md` (coins, gear, best scores, speed-round answers kept 2 days, fights).
+
+## Stage 5 results (22 Oct 2026)
+
+**Built** (branch `archery` only; the whole game now plays in the preview against bots):
+- **Home** (`HomeScreen.tsx`, `HomeScene.tsx`), in the pupil's layout: the **Archery Challenge** banner, coins top right (with a + that opens a speed round), the four world buttons, a big **Play**, and along the bottom **More Bows**, **Armory** and **"Earn coins: speed round"** with the pupil's words under it, "Maths to get better". Behind it, the world's own sky, mountains and hills from the fight art, with your archer on a rock drawing the bow and loosing an arrow into a target, over and over (a still picture with less motion). Picking a world goes straight to picking a fight.
+- **Pick your fight** and **Pack your quiver** (`FightSetup.tsx`): the world, the bot (Pip, Robin or Hawk, with what each brings), then how many of each arrow and helper to bring (up to what you own, at most 5), your shield and your bow. It remembers the last fight and pack on the device. "Fight!" asks the server for the fight's seed and takes the packed gear out of the bag.
+- **The fight** uses the server: its seed comes from the server; when it ends every shot is sent and the server replays it ("Saved: +3 points. Any arrows you didn't use are back in your bag."); Leave part-way sends the shots so far (unused gear comes back); Play again goes back to packing (the gear may be used up); between rounds there's a **"Speed round for coins"** button that opens a speed round over the fight. Best scores come from the server.
+- **Speed round** (`SpeedRound.tsx`): rules first (10 questions, 10 s down to 1 s, 10 coins each, coin rounds left today), then each question in the hub's own **QuestionModal** with its countdown, no scribble pad and a shorter feedback pause; "+10 coins" under Correct!, or "Right, but just too slow for coins". When the time runs out: "Time's up! 7 × 8 = 56", then the next question. At the end: how many right, coins earned, the hub point. Practice rounds say so.
+- **Armory** (`ArmoryScreen.tsx`): wooden shelves with tabs **Arrows** (in level groups), **Helpers**, **Shields**, **More Bows**; each item has its own little picture drawn with the game's art (`ItemIcon.tsx`), what it does, its price, how many you have, Buy and Sell (half back); locked items say which level opens them; the Armory level with a bar and "Spend N more coins to reach level 2". The + by the coins goes to a speed round and back.
+- **How to play** (`HowToPlay.tsx`), every number read from the rules.
+- **The hub's entry** (`index.tsx`, `ArcheryPlay.tsx`, `switch.ts` with `useArcheryEnabled`): the game card definition, the page talking to the real server, and the teacher's switch read through `readSettings`. **Not added to `src/games/registry.ts`** (that's the merge step), and the code switch stays off.
+- **The preview** is now the whole game on the trial server (the real server function's logic in the browser), remembered on the device, with **Preview tools** (folded away bottom right): "+500 pretend coins" and "Start again". It never calls a server (checked: 0 requests).
+
+**Checked in headless Chromium** at 1366 × 640, 844 × 390 and 390 × 844: a speed round answered 10 of 10 (100 coins, the point), buying a Steel Arrow, a Rolling Log and a Wooden Shield, More Bows, packing, starting a fight, shooting, leaving (coins and gear add up exactly): no errors, no network requests. The home screen needed a fix on a sideways phone (the archer was hidden behind Play) and now has room.
+
+**Tests:** `ArcheryGame.test.tsx` (5: home buttons and focus, switched off, a speed round earning coins, Armory → pick → pack → fight from the server's seed → leave with gear back, How to play), `maths.test.tsx` (every built ladder skill, typed and tapped, shows in the speed round's question box and takes the right answer), the accessibility test widened to every new screen (shared buttons, focus to each heading, white words on every home button and paper words at least 4.5 : 1). `npm run typecheck` clean, **`npm run test:all` 4,619 passed** (246 files), `npm run build` fine.
+
+**Not done yet (later stages, as planned):** classmate fights (Stage 6), the teacher panel with the switch, achievements, the simpler-graphics check on a slow machine (Stage 7), the target challenge (Stage 8). **Untested:** a real phone and Chromebook, real pupils.
+
+**Questions for James:**
+1. The speed-round button says **"Earn coins: speed round"** with "Maths to get better" under it (the plan's suggestion). OK, or the pupil's own words?
+2. Home has no "target" button yet (the pupil's target challenge is Stage 8).
+3. The preview's "+500 pretend coins" is only in the preview, never in the real game.
+
+**Go-live list (so far):** as Stage 4, plus: `archeryChallenge` appended to `GAMES` in `src/games/registry.ts` behind `archeryOn()`; the teacher panel (Stage 7) so teachers can switch it on.

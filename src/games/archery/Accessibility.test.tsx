@@ -101,3 +101,28 @@ describe('no aiming help (James, 21 Oct 2026)', () => {
     expect(screen).not.toMatch(/flyArrow/);
   });
 });
+
+describe('the screens around the fights (Stage 5)', () => {
+  const files = ['ArcheryGame', 'HomeScreen', 'FightSetup', 'SpeedRound', 'ArmoryScreen', 'HowToPlay', 'CoinCount'].map((f) => [f, readFileSync(`${process.cwd()}/src/games/archery/${f}.tsx`, 'utf8')] as const);
+
+  it('uses the hub\'s shared buttons for every button', () => {
+    for (const [name, text] of files) {
+      for (const m of text.matchAll(/<button[^>]*className=(?:"([^"]+)"|\{`([^`]+)`\})/g)) expect(m[1] ?? m[2], `${name}: ${m[0]}`).toMatch(/^button button--(play|light) ar-btn/);
+    }
+  });
+
+  it('moves focus to each screen\'s heading', () => {
+    for (const [name, text] of files) {
+      if (name === 'CoinCount' || name === 'ArcheryGame') continue;
+      expect(text, name).toMatch(/<h2 id="ar-[a-z-]+-title" ref=\{heading\} tabIndex=\{-1\}/);
+    }
+  });
+
+  it('gives white words at least 4.5 to 1 on every chunky home button, and the paper words on paper', () => {
+    for (const m of css.matchAll(/\.ar-shell \.ar-chunky(--[a-z]+)? \{[^}]*background: (#[0-9a-f]{6})/g)) expect(contrast('#ffffff', m[2]), `.ar-chunky${m[1] ?? ''}`).toBeGreaterThanOrEqual(4.5);
+    const paper = css.match(/--ar-paper: (#[0-9a-f]{6})/)![1];
+    for (const ink of ['--ar-paper-ink', '--ar-paper-soft']) expect(contrast(css.match(new RegExp(`${ink}: (#[0-9a-f]{6})`))![1], paper), ink).toBeGreaterThanOrEqual(4.5);
+    expect(contrast('#ffffff', colourIn(".ar-pips li[data-state='now']")!)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(colourIn('.ar-pips li', 'color')!, colourIn('.ar-pips li')!)).toBeGreaterThanOrEqual(4.5);
+  });
+});

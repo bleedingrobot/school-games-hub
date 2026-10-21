@@ -11,6 +11,9 @@
  */
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
+import { readSettings } from './classSettings';
+import { FriendlyError } from './profile';
+import { forgetSettings } from './settingsMemory';
 import type { PublicQuestion } from '../../shared/maths/serverQuestions';
 import type { BotLevel } from '../../shared/archery/bot';
 import type { ShopKind, ShopProblem } from '../../shared/archery/shop';
@@ -179,3 +182,16 @@ export function archeryApi(send: Transport, player = 'me') {
 }
 
 export type ArcheryApi = ReturnType<typeof archeryApi>;
+
+/** Is Archery Challenge switched on for this pupil's class (or, for a teacher, the class picked)? */
+export async function fetchArcheryEnabled(classId?: string | null): Promise<boolean> {
+  const row = await readSettings(['archery_enabled'], classId);
+  if (!row) throw new FriendlyError('We couldn’t load the Archery Challenge setting.');
+  return row.archery_enabled === true;
+}
+
+export async function saveArcheryEnabled(enabled: boolean, classId?: string | null): Promise<void> {
+  const { error } = await supabase.rpc('teacher_set_archery', { enabled, target_class: classId ?? null });
+  forgetSettings();
+  if (error) throw new FriendlyError('We couldn’t change that.');
+}
