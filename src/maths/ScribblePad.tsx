@@ -87,7 +87,9 @@ export function ScribblePad({ onCollapse }: { onCollapse: () => void }) {
   };
 
   function down(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (drawing.current || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    // A stroke still "open" (its pointer-up was missed) is over: this press starts a new one.
+    drawing.current = null;
     // Keep focus where it was, so the keyboard still types the answer.
     e.preventDefault();
     e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -99,6 +101,11 @@ export function ScribblePad({ onCollapse }: { onCollapse: () => void }) {
   }
   function move(e: React.PointerEvent<HTMLCanvasElement>) {
     if (drawing.current?.id !== e.pointerId) return;
+    // Mouse moving with no button held: the lift was missed, so the stroke is over.
+    if (e.pointerType === 'mouse' && e.buttons === 0) {
+      drawing.current = null;
+      return;
+    }
     drawing.current.stroke.points.push(place(e));
     redraw();
   }
@@ -106,6 +113,21 @@ export function ScribblePad({ onCollapse }: { onCollapse: () => void }) {
     if (drawing.current?.id !== e.pointerId) return;
     drawing.current = null;
   }
+
+  // However the button comes up (even over the game behind, or if the game swallows the event), the stroke ends.
+  useEffect(() => {
+    const end = () => {
+      drawing.current = null;
+    };
+    window.addEventListener('pointerup', end, true);
+    window.addEventListener('pointercancel', end, true);
+    window.addEventListener('blur', end);
+    return () => {
+      window.removeEventListener('pointerup', end, true);
+      window.removeEventListener('pointercancel', end, true);
+      window.removeEventListener('blur', end);
+    };
+  }, []);
 
   function clear() {
     strokes.current = [];
@@ -170,6 +192,7 @@ export function ScribblePad({ onCollapse }: { onCollapse: () => void }) {
         onPointerMove={move}
         onPointerUp={up}
         onPointerCancel={up}
+        onLostPointerCapture={up}
       />
     </section>
   );
