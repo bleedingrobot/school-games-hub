@@ -66,23 +66,61 @@ describe('Star Trader screen', () => {
     });
   });
 
-  it('plans a jump on the star chart, shows the working for the fuel sum, and jumps with a warp', async () => {
+  /** Every planet's chart coordinates, read from the buttons' names. */
+  function planetsOnChart() {
+    return screen.getAllByRole('button', { name: /, x -?\d+, y -?\d+/ }).map((button) => {
+      const m = /^(\w+), x (-?\d+), y (-?\d+)/.exec(button.getAttribute('aria-label') ?? '') as RegExpExecArray;
+      return { name: m[1], x: m[2], y: m[3], here: /you are here/.test(button.getAttribute('aria-label') ?? ''), button };
+    });
+  }
+  const type = (label: RegExp, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
+
+  it('jumps by typing the coordinates of a planet; the game works out the fuel and the chart shows where the point lands', async () => {
     play();
     fireEvent.click(screen.getByRole('tab', { name: 'Star chart' }));
-    const planets = screen.getAllByRole('button', { name: /x -?\d+, y -?\d+, \d+ fuel away$/ });
-    fireEvent.click(planets[0]);
-    fireEvent.click(screen.getByRole('button', { name: 'Show me' }));
-    expect(screen.getByText(/Across: x goes from/)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /^Jump!/ }));
+    expect(screen.queryByText('Show me')).toBeNull();
+    let jumped = false;
+    for (const p of planetsOnChart().filter((q) => !q.here)) {
+      type(/^x \(across\)/, p.x);
+      type(/^y \(up\)/, p.y);
+      if (!(screen.getByRole('button', { name: /^Jump!/ }) as HTMLButtonElement).disabled) {
+        expect(screen.getByText(/It needs/)).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: /^Jump!/ }));
+        jumped = true;
+        break;
+      }
+    }
+    expect(jumped).toBe(true);
     await waitFor(() => expect(calls.warps).toBe(1));
     await waitFor(() => expect(screen.getByLabelText(/jumps left today/).getAttribute('aria-label')).toMatch(/^9 of 10/));
   });
 
-  it('a wrong fuel sum never blocks the jump', () => {
+  it('an empty spot, or a wrong number, says so and never jumps; it says which number to check once a planet has been read', () => {
     play();
     fireEvent.click(screen.getByRole('tab', { name: 'Star chart' }));
-    fireEvent.click(screen.getAllByRole('button', { name: /fuel away$/ })[0]);
-    fireEvent.change(screen.getByLabelText(/How much fuel/), { target: { value: '1' } });
-    expect((screen.getByRole('button', { name: /^Jump!/ }) as HTMLButtonElement).disabled).toBe(false);
+    const planets = planetsOnChart();
+    const there = new Set(planets.map((p) => `${p.x},${p.y}`));
+    const jump = () => screen.getByRole('button', { name: /^Jump!/ }) as HTMLButtonElement;
+    expect(jump().disabled).toBe(true);
+    const p = planets.find((q) => !q.here) as (typeof planets)[number];
+    fireEvent.click(p.button);
+    const wrongY = [-10, -9, -8, 1, 2, 3, 4].map(String).find((y) => !there.has(`${p.x},${y}`) && y !== p.y) as string;
+    type(/^x \(across\)/, p.x);
+    type(/^y \(up\)/, wrongY);
+    expect(screen.getByText(/nothing at that spot/i)).toBeTruthy();
+    expect(screen.getByText(new RegExp(`Check y for ${p.name}`))).toBeTruthy();
+    expect(jump().disabled).toBe(true);
+    type(/^x \(across\)/, '99');
+    expect(screen.getByText(/whole numbers from/i)).toBeTruthy();
+  });
+
+  it('the plus/minus button flips a number, so a phone with no minus key can still type a negative', () => {
+    play();
+    fireEvent.click(screen.getByRole('tab', { name: 'Star chart' }));
+    type(/^x \(across\)/, '4');
+    fireEvent.click(screen.getByRole('button', { name: /Make x \(across\) negative or positive/ }));
+    expect((screen.getByLabelText(/^x \(across\)/) as HTMLInputElement).value).toBe('-4');
+    fireEvent.click(screen.getByRole('button', { name: /Make x \(across\) negative or positive/ }));
+    expect((screen.getByLabelText(/^x \(across\)/) as HTMLInputElement).value).toBe('4');
   });
 });

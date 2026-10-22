@@ -170,9 +170,13 @@
 .st-planet--far img { opacity: 0.45; }
 .st-card { background: rgba(27, 38, 80, 0.55); border-radius: 12px; padding: 10px 12px; }
 .st-card .st-h3 { margin-top: 0; font-size: 1.25rem; }
-.st-fuel { margin: 8px 0; }
-.st-fuel label { display: block; margin-bottom: 4px; font-weight: 700; }
-.st-fuelrow { display: flex; gap: 8px; }
+.st-coords { display: flex; gap: 14px; flex-wrap: wrap; margin: 8px 0; }
+.st-coord label { display: block; margin-bottom: 4px; font-weight: 700; }
+.st-coord__row { display: flex; gap: 6px; align-items: center; }
+.st-jumpbox { margin-bottom: 10px; }
+.st-jumpbox .st-h3 { font-size: 1.15rem; }
+.st-jumpinfo { min-height: 2.6em; }
+.st-planet--aimed { border-color: #fde047; box-shadow: 0 0 14px #fde047; }
 .st-input {
   font: inherit; font-size: 1.2rem; font-weight: 800; width: 90px; min-height: 44px; text-align: center;
   color: var(--st-ink); background: #0b1230; border: 2px solid var(--st-line); border-radius: 12px;

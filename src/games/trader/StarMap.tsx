@@ -1,8 +1,9 @@
 /**
  * The star chart: a grid from -10 to +10 each way, with 0, 0 in the middle and the planets on the crossing points,
- * drawn with the same pictures as the game. Every planet has coordinates (x across, y up). Pick one to see a route along
- * the grid lines (across, then up). Fuel for a jump is across + up, worked out from the two sets of coordinates. The pupil
- * can count the squares or subtract, and check their sum; either way the jump goes ahead (docs/TRADER-PLAN.md, section 5).
+ * drawn with the same pictures as the game. Every planet has coordinates (x across, y up). To jump, the pupil TYPES the
+ * coordinates of where they want to go (reading a point off the chart, with its sign); the chart shows where the typed
+ * point lands, the game works out the fuel, and nothing is counted by hand. A wrong or empty spot just says so and
+ * helps (which of x and y to check). (docs/TRADER-PLAN.md, section 5.)
  */
 import { useMemo, useState } from 'react';
 import { EVENTS, GOODS, GOOD_RULES, GOVERNMENTS, GRID_HALF, GRID_SIZE, RESOURCES, SIZE_NAMES, SHIPS } from '../../../shared/trader/config';
@@ -44,21 +45,23 @@ export function MapPanel({ galaxy, t, busy, onJump, onRefuel }: {
   onRefuel: (units: number) => void;
 }) {
   const [picked, setPicked] = useState<number | null>(null);
-  const [guess, setGuess] = useState('');
-  const [shown, setShown] = useState(false);
+  const [xs, setXs] = useState('');
+  const [ys, setYs] = useState('');
   const here = galaxy.planets[t.location];
-  const dest = picked !== null ? galaxy.planets[picked] : null;
+  const px = parseCoord(xs);
+  const py = parseCoord(ys);
+  const aimed = px !== null && py !== null;
+  const target = aimed ? galaxy.planets.find((p) => chartPoint(p).x === px && chartPoint(p).y === py) ?? null : null;
+  const pickedPlanet = picked !== null ? galaxy.planets[picked] : null;
+  const dest = target ?? null;
   const need = dest ? fuelNeeded(galaxy, t, dest.id) : 0;
-  const across = dest ? Math.abs(dest.x - here.x) : 0;
-  const up = dest ? Math.abs(dest.y - here.y) : 0;
   const tank = SHIPS[t.ship].fuelTank;
   const short = Math.max(0, need - t.fuel);
   const tooFar = need > tank;
+  const here0 = chartPoint(here);
 
   function pick(id: number) {
     setPicked(id === t.location ? null : id);
-    setGuess('');
-    setShown(false);
   }
   const reach = t.fuel;
   const diamond = useMemo(() => {
@@ -68,12 +71,13 @@ export function MapPanel({ galaxy, t, busy, onJump, onRefuel }: {
     return `${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`;
   }, [here.x, here.y, reach]);
 
-  const guessNum = Number(guess);
-  const checked = shown || guess !== '';
+  // Where the typed point lands on the grid (if both numbers make sense).
+  const aim = aimed ? { x: (px as number) + GRID_HALF, y: GRID_HALF - (py as number) } : null;
+
   return (
     <section className="st-panel st-panel--map" aria-labelledby="st-map-h">
       <h2 id="st-map-h" className="st-h">Star chart</h2>
-      <p className="st-sub">Every planet has a place on the grid: <strong>x</strong> says how far across and <strong>y</strong> says how far up, with (0, 0) in the middle. You are ringed in blue. The glowing diamond shows how far your fuel can take you. The planets sit in made-up places on our map.</p>
+      <p className="st-sub">Every planet has a place on the grid: <strong>x</strong> says how far across and <strong>y</strong> says how far up, with (0, 0) in the middle. To jump, type the coordinates of where you want to go. You are ringed in blue and the glowing diamond shows how far your fuel can take you. The planets sit in made-up places on our map.</p>
       <div className="st-mapwrap">
         <div className="st-map">
           <svg viewBox={`-1.5 -1.5 ${VIEW} ${VIEW}`} className="st-mapsvg" aria-hidden="true">
@@ -96,15 +100,13 @@ export function MapPanel({ galaxy, t, busy, onJump, onRefuel }: {
             <text x={GRID_HALF + 0.3} y="0.7" fill="#fde047" fontSize="0.65" fontWeight="700">y</text>
             <clipPath id="st-gridclip"><rect x="0" y="0" width={GRID_SIZE - 1} height={GRID_SIZE - 1} /></clipPath>
             <polygon points={diamond} clipPath="url(#st-gridclip)" fill="rgba(56,189,248,0.12)" stroke="#38bdf8" strokeWidth="0.09" strokeDasharray="0.35 0.25" />
-            {dest && (
-              <g clipPath="url(#st-gridclip)">
-                <path d={`M ${here.x} ${here.y} H ${dest.x} V ${dest.y}`} fill="none" stroke="#fde047" strokeWidth="0.18" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="0.01 0.42" />
-                {checked && (
-                  <g fill="#fde047" fontSize="0.8" fontWeight="700" textAnchor="middle" stroke="#0b1020" strokeWidth="0.12" paintOrder="stroke">
-                    <text x={(here.x + dest.x) / 2} y={here.y - 0.4}>{across} across</text>
-                    <text x={dest.x + (dest.x >= here.x ? 0.5 : -0.5)} y={(here.y + dest.y) / 2} textAnchor={dest.x >= here.x ? 'start' : 'end'}>{up} up</text>
-                  </g>
-                )}
+            {aim && (
+              <g>
+                {/* Where the typed numbers land: lines in from the x and y axes and a crosshair. */}
+                <line x1={aim.x} y1={GRID_HALF} x2={aim.x} y2={aim.y} stroke="#fde047" strokeWidth="0.1" strokeDasharray="0.3 0.2" />
+                <line x1={GRID_HALF} y1={aim.y} x2={aim.x} y2={aim.y} stroke="#fde047" strokeWidth="0.1" strokeDasharray="0.3 0.2" />
+                <circle cx={aim.x} cy={aim.y} r="0.7" fill="none" stroke="#fde047" strokeWidth="0.12" />
+                <path d={`M ${aim.x - 1.1} ${aim.y} H ${aim.x - 0.4} M ${aim.x + 0.4} ${aim.y} H ${aim.x + 1.1} M ${aim.x} ${aim.y - 1.1} V ${aim.y - 0.4} M ${aim.x} ${aim.y + 0.4} V ${aim.y + 1.1}`} stroke="#fde047" strokeWidth="0.12" />
               </g>
             )}
           </svg>
@@ -115,11 +117,11 @@ export function MapPanel({ galaxy, t, busy, onJump, onRefuel }: {
               <button
                 key={p.id}
                 type="button"
-                className={`st-planet ${p.id === t.location ? 'st-planet--here' : ''} ${picked === p.id ? 'st-planet--picked' : ''} ${far ? 'st-planet--far' : ''}`}
+                className={`st-planet ${p.id === t.location ? 'st-planet--here' : ''} ${picked === p.id ? 'st-planet--picked' : ''} ${dest?.id === p.id ? 'st-planet--aimed' : ''} ${far ? 'st-planet--far' : ''}`}
                 style={{ left: `${pos(p.x)}%`, top: `${pos(p.y)}%` }}
                 onClick={() => pick(p.id)}
                 aria-pressed={picked === p.id}
-                aria-label={`${p.name}, x ${chartPoint(p).x}, y ${chartPoint(p).y}${p.id === t.location ? ', you are here' : `, ${d} fuel away${far ? ', too far for your fuel' : ''}`}`}
+                aria-label={`${p.name}, x ${chartPoint(p).x}, y ${chartPoint(p).y}${p.id === t.location ? ', you are here' : ''}. Tap to read about it.`}
               >
                 <img src={planetIcon(p.name)} alt="" draggable={false} />
                 <span className="st-planet__name">{p.name}<span className="st-planet__xy">{coordText(p)}</span></span>
@@ -128,44 +130,122 @@ export function MapPanel({ galaxy, t, busy, onJump, onRefuel }: {
           })}
         </div>
         <div className="st-mapinfo">
-          {!dest ? (
-            <p className="st-sub">Pick a planet to plan a jump. Fuel is <strong>across + up</strong>.</p>
-          ) : (
-            <PlanetCard
-              galaxy={galaxy}
-              t={t}
-              here={here}
-              dest={dest}
-              need={need}
-              across={across}
-              up={up}
-              guess={guess}
-              setGuess={(v) => setGuess(v.replace(/\D/g, '').slice(0, 2))}
-              reveal={() => setShown(true)}
-              checked={checked}
-              right={guess !== '' && guessNum === need}
-              short={short}
-              tooFar={tooFar}
-              busy={busy}
-              onRefuel={() => onRefuel(short)}
-              refuelCost={fuelCost(t.ship, short)}
-              canPay={fuelCost(t.ship, short) <= t.credits}
-              onJump={() => onJump(dest.id)}
-              jumpsLeft={t.jumpsLeft}
-            />
-          )}
+          <JumpBox
+            t={t}
+            here={here}
+            xs={xs}
+            ys={ys}
+            setXs={setXs}
+            setYs={setYs}
+            px={px}
+            py={py}
+            target={target}
+            pickedPlanet={pickedPlanet}
+            need={need}
+            short={short}
+            tooFar={tooFar}
+            busy={busy}
+            canPay={fuelCost(t.ship, short) <= t.credits}
+            refuelCost={fuelCost(t.ship, short)}
+            onRefuel={() => onRefuel(short)}
+            onJump={() => target && onJump(target.id)}
+            here0={here0}
+          />
+          {pickedPlanet ? <PlanetCard galaxy={galaxy} t={t} dest={pickedPlanet} /> : <p className="st-sub">Tap a planet to read about it and see its coordinates.</p>}
         </div>
       </div>
     </section>
   );
 }
 
-function PlanetCard(props: {
-  galaxy: Galaxy; t: Trader; here: Planet; dest: Planet; need: number; across: number; up: number; guess: string; setGuess: (v: string) => void;
-  reveal: () => void; checked: boolean; right: boolean; short: number; tooFar: boolean; busy: boolean; onRefuel: () => void;
-  refuelCost: number; canPay: boolean; onJump: () => void; jumpsLeft: number;
+/** "-3" or "7" within -10 to 10, or null while it is blank or wrong. */
+export function parseCoord(text: string): number | null {
+  if (!/^-?\d{1,2}$/.test(text)) return null;
+  const n = Number(text);
+  return n >= -GRID_HALF && n <= GRID_HALF ? n : null;
+}
+
+/** One number box with a plus/minus button (a phone's number keypad often has no minus). */
+function CoordField({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (v: string) => void }) {
+  const flip = () => onChange(value.startsWith('-') ? value.slice(1) : `-${value}`);
+  return (
+    <div className="st-coord">
+      <label htmlFor={id}>{label}</label>
+      <div className="st-coord__row">
+        <button type="button" className="st-btn st-btn--round" onClick={flip} aria-label={`Make ${label} negative or positive`}>±</button>
+        <input
+          id={id}
+          className="st-input"
+          inputMode="numeric"
+          autoComplete="off"
+          value={value}
+          onChange={(e) => onChange(e.target.value.replace(/[^\d-]/g, '').replace(/(?!^)-/g, '').slice(0, 3))}
+          placeholder="0"
+          aria-describedby="st-coord-help"
+        />
+      </div>
+    </div>
+  );
+}
+
+function JumpBox(props: {
+  t: Trader; here: Planet; here0: { x: number; y: number }; xs: string; ys: string; setXs: (v: string) => void; setYs: (v: string) => void;
+  px: number | null; py: number | null; target: Planet | null; pickedPlanet: Planet | null; need: number; short: number; tooFar: boolean;
+  busy: boolean; canPay: boolean; refuelCost: number; onRefuel: () => void; onJump: () => void;
 }) {
-  const { galaxy, t, here, dest, need, across, up, guess, setGuess, reveal, checked, right, short, tooFar, busy, onRefuel, refuelCost, canPay, onJump, jumpsLeft } = props;
+  const { t, here, here0, xs, ys, setXs, setYs, px, py, target, pickedPlanet, need, short, tooFar, busy, canPay, refuelCost, onRefuel, onJump } = props;
+  const aimed = px !== null && py !== null;
+  const typedSomething = xs !== '' || ys !== '';
+  const bad = (text: string) => text !== '' && text !== '-' && parseCoord(text) === null;
+  // Gentle help: say which number to check, once a planet has been looked at and the typed point is not it.
+  let help = '';
+  if (bad(xs) || bad(ys)) help = 'Use whole numbers from −10 to 10.';
+  else if (aimed && !target) {
+    help = 'There is nothing at that spot, just empty space.';
+    if (pickedPlanet) {
+      const c = chartPoint(pickedPlanet);
+      if (px !== c.x && py === c.y) help += ` Check x for ${pickedPlanet.name}.`;
+      else if (px === c.x && py !== c.y) help += ` Check y for ${pickedPlanet.name}.`;
+      else help += ` Check both numbers for ${pickedPlanet.name}.`;
+    }
+  } else if (target && target.id === here.id) help = 'You are already there!';
+  return (
+    <div className="st-card st-jumpbox">
+      <h3 className="st-h3">Jump to…</h3>
+      <p id="st-coord-help" className="st-soft">You are at <strong>{coordText(here)}</strong>. Type the x and y of the planet you want to visit.</p>
+      <div className="st-coords">
+        <CoordField id="st-x" label="x (across)" value={xs} onChange={setXs} />
+        <CoordField id="st-y" label="y (up)" value={ys} onChange={setYs} />
+      </div>
+      <div className="st-jumpinfo" aria-live="polite">
+        {target && target.id !== here.id ? (
+          <p className="st-good-note">
+            <strong>{target.name}</strong> is at {coordText(target)}. It needs <strong>{need} fuel</strong>; you have {t.fuel}.
+          </p>
+        ) : typedSomething && help ? (
+          <p className="st-warn">{help}</p>
+        ) : (
+          <p className="st-soft">Fuel is worked out for you.</p>
+        )}
+        {target && tooFar && <p className="st-warn">Your tank is too small to jump that far in one go. Plan a stop on the way.</p>}
+        {target && !tooFar && short > 0 && (
+          <div className="st-actions">
+            <button type="button" className="st-btn" disabled={busy || !canPay} onClick={onRefuel}>Buy {short} fuel ({refuelCost} cr)</button>
+          </div>
+        )}
+      </div>
+      <div className="st-actions">
+        <button type="button" className="st-btn st-btn--primary st-btn--big" disabled={busy || !target || target.id === here.id || tooFar || short > 0 || t.jumpsLeft < 1} onClick={onJump}>
+          Jump!{target && target.id !== here.id ? ` (${need} fuel)` : ''}
+        </button>
+        {t.jumpsLeft < 1 && <span className="st-soft">No jumps left today.</span>}
+      </div>
+      <span className="st-sr">You are at x {here0.x}, y {here0.y}.</span>
+    </div>
+  );
+}
+
+function PlanetCard({ galaxy, t, dest }: { galaxy: Galaxy; t: Trader; dest: Planet }) {
   const gov = GOVERNMENTS[dest.government];
   const event = eventOn(galaxy, dest, t.day);
   const eventGood = event > 0 ? GOODS[GOOD_RULES.findIndex((r) => r.event === event)] : '';
@@ -184,31 +264,6 @@ function PlanetCard(props: {
       <p className="st-soft">{GOVERNMENT_LINES[gov.name]}</p>
       {banned.length > 0 && <p className="st-warn">🚫 Banned here: {banned.join(' and ')}. Customs will take them.</p>}
       {event > 0 && <p className="st-news">📰 {EVENT_NEWS[EVENTS[event]](eventGood)}</p>}
-      <div className="st-fuel">
-        <label htmlFor="st-fuelguess">How much fuel? You are at {coordText(here)} and {dest.name} is at {coordText(dest)}. Work out how far across, then how far up.</label>
-        <div className="st-fuelrow">
-          <input id="st-fuelguess" inputMode="numeric" autoComplete="off" value={guess} onChange={(e) => setGuess(e.target.value)} placeholder="?" className="st-input" />
-          <button type="button" className="st-btn" onClick={reveal}>Show me</button>
-        </div>
-        {checked && (
-          <p className={right ? 'st-good-note' : 'st-note'} role="status">
-            {right ? '✓ Yes! ' : ''}Across: x goes from {signed(chartPoint(here).x)} to {signed(chartPoint(dest).x)}, which is {across}. Up: y goes from {signed(chartPoint(here).y)} to {signed(chartPoint(dest).y)}, which is {up}. {across} + {up} = <strong>{need} fuel</strong>.
-          </p>
-        )}
-      </div>
-      {tooFar && <p className="st-warn">Your tank is too small to jump that far in one go. Plan a stop on the way.</p>}
-      {!tooFar && short > 0 && (
-        <div className="st-actions">
-          <p className="st-warn">You have {t.fuel} fuel and need {need}.</p>
-          <button type="button" className="st-btn" disabled={busy || !canPay} onClick={onRefuel}>Buy {short} fuel ({refuelCost} cr)</button>
-        </div>
-      )}
-      <div className="st-actions">
-        <button type="button" className="st-btn st-btn--primary st-btn--big" disabled={busy || tooFar || short > 0 || jumpsLeft < 1} onClick={onJump}>
-          Jump! ({need} fuel)
-        </button>
-        {jumpsLeft < 1 && <span className="st-soft">No jumps left today.</span>}
-      </div>
     </div>
   );
 }
