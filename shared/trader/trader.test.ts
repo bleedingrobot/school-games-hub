@@ -5,7 +5,7 @@ import {
 } from './config';
 import { acceptDeal, encounterChance, encounterFor, isGoodDeal, settleCustoms, settleJunk } from './encounter';
 import { fightRound, settleFight, startFight } from './fight';
-import { distance, isPlayable, makeGalaxy } from './galaxy';
+import { chartPoint, coordText, distance, isPlayable, makeGalaxy } from './galaxy';
 import { isBanned, marketFor, standardPrice } from './market';
 import { borrow, buy, buyMoon, buyShip, freeHolds, fuelNeeded, newTrader, reachable, refuel, repay, sell, startDay, travel } from './state';
 
@@ -17,7 +17,7 @@ describe('galaxy', () => {
     expect(makeGalaxy('another-season').planets.map((p) => p.x)).not.toEqual(galaxy.planets.map((p) => p.x));
   });
 
-  it('has 24 real-named planets at least 3 apart, on a 20 x 20 grid, with tech inside the government range', () => {
+  it('has 24 real-named planets at least 3 apart, on a grid from -10 to +10, with tech inside the government range', () => {
     for (const seed of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {
       const g = makeGalaxy(seed);
       expect(g.planets).toHaveLength(PLANET_COUNT);
@@ -25,12 +25,21 @@ describe('galaxy', () => {
       expect(isPlayable(g)).toBe(true);
       for (const p of g.planets) {
         expect(p.x).toBeGreaterThanOrEqual(0);
-        expect(p.x).toBeLessThan(20);
+        expect(p.x).toBeLessThan(21);
         expect(p.tech).toBeGreaterThanOrEqual(GOVERNMENTS[p.government].minTech);
         expect(p.tech).toBeLessThanOrEqual(GOVERNMENTS[p.government].maxTech);
         for (const q of g.planets) if (q.id !== p.id) expect(distance(p, q)).toBeGreaterThanOrEqual(3);
       }
     }
+  });
+});
+
+describe('chart coordinates', () => {
+  it('puts 0, 0 in the middle, y up, and shows a proper minus sign', () => {
+    expect(chartPoint({ x: 10, y: 10 })).toEqual({ x: 0, y: 0 });
+    expect(chartPoint({ x: 0, y: 20 })).toEqual({ x: -10, y: -10 });
+    expect(chartPoint({ x: 20, y: 0 })).toEqual({ x: 10, y: 10 });
+    expect(coordText({ x: 7, y: 15 })).toBe('(\u22123, \u22125)');
   });
 });
 

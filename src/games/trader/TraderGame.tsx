@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { ASK_EVERY, BIG_TRADE_CREDITS, DISCOUNT_BIG_BP, DISCOUNT_BP, GOVERNMENTS, JUMPS_PER_DAY, MOON_PRICE, PIRATE_TIERS, SHIPS } from '../../../shared/trader/config';
 import { acceptDeal, encounterFor, settleCustoms, settleJunk, type Encounter } from '../../../shared/trader/encounter';
 import { fightRound, laserPower, settleFight, startFight, type Fight, type FightAction } from '../../../shared/trader/fight';
-import { makeGalaxy } from '../../../shared/trader/galaxy';
+import { coordText, makeGalaxy } from '../../../shared/trader/galaxy';
 import { newTrader, refuel, startDay, travel, type Trader } from '../../../shared/trader/state';
 import { useAsk } from './Ask';
 import type { TraderApi } from './api';
@@ -262,7 +262,7 @@ export function TraderGame({ api, onExit, galaxySeed = 'preview-season', extra, 
         />
       ) : (
         <>
-          <Hud t={t} planet={here.name} government={gov.name} onExit={onExit} />
+          <Hud t={t} planet={`${here.name} ${coordText(here)}`} government={gov.name} onExit={onExit} />
           <div className={`st-main ${phase.k === 'planet' && tab === 'map' ? 'st-main--wide' : ''}`}>
             {phase.k === 'planet' && (
               <>

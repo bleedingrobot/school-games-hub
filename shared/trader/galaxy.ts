@@ -1,9 +1,9 @@
 /**
- * The galaxy: 24 planets on a 20 x 20 grid, made from a seed. The same seed always gives the same galaxy.
+ * The galaxy: 24 planets on a grid from -10 to +10 each way, made from a seed. The same seed always gives the same galaxy.
  * Distance is across + up (docs/TRADER-PLAN.md, section 5), so fuel for a jump is a sum a pupil can work out.
  */
 import { seededRandom } from '../maths/serverQuestions';
-import { GOVERNMENTS, GRID_SIZE, MIN_PLANET_GAP, PLANET_COUNT, PLANET_NAMES, RESOURCES, RESOURCE_CHANCE_PCT, SHIPS, SHIPYARD_TECH } from './config';
+import { GOVERNMENTS, GRID_HALF, GRID_SIZE, MIN_PLANET_GAP, PLANET_COUNT, PLANET_NAMES, RESOURCES, RESOURCE_CHANCE_PCT, SHIPS, SHIPYARD_TECH } from './config';
 
 export interface Planet {
   id: number;
@@ -23,6 +23,21 @@ export interface Galaxy {
   seed: string;
   planets: Planet[];
 }
+
+/** A planet's place on the chart the pupils see: x across and y up, each from -10 to +10, with 0, 0 in the middle. */
+export function chartPoint(p: { x: number; y: number }): { x: number; y: number } {
+  return { x: p.x - GRID_HALF, y: GRID_HALF - p.y };
+}
+
+/** "(3, -4)" with a proper minus sign, for screens. */
+export function coordText(p: { x: number; y: number }): string {
+  const c = chartPoint(p);
+  const f = (n: number) => (n < 0 ? `\u2212${-n}` : `${n}`);
+  return `(${f(c.x)}, ${f(c.y)})`;
+}
+
+/** A number with a proper minus sign. */
+export const signed = (n: number): string => (n < 0 ? `\u2212${-n}` : `${n}`);
 
 /** Across + up: the fuel a jump needs. */
 export function distance(a: { x: number; y: number }, b: { x: number; y: number }): number {

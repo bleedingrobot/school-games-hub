@@ -162,6 +162,9 @@
   position: absolute; left: 50%; top: 100%; transform: translateX(-50%); white-space: nowrap; font-size: 0.7rem; font-weight: 700;
   text-shadow: 0 0 4px #000, 0 0 4px #000, 0 0 2px #000; pointer-events: none;
 }
+.st-planet__xy { display: none; margin-left: 4px; color: #fde68a; }
+.st-planet--here .st-planet__xy, .st-planet--picked .st-planet__xy, .st-planet:hover .st-planet__xy, .st-planet:focus-visible .st-planet__xy { display: inline; }
+.st-xy { font-size: 0.85em; color: var(--st-cyan); font-weight: 700; margin-left: 4px; }
 .st-planet--here { border-color: var(--st-cyan); box-shadow: 0 0 14px var(--st-cyan); }
 .st-planet--picked { border-color: var(--st-gold); box-shadow: 0 0 14px var(--st-gold); }
 .st-planet--far img { opacity: 0.45; }

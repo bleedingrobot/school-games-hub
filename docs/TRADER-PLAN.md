@@ -475,3 +475,6 @@ Preview for James (private, one page): https://claude.ai/artifact/HmwsFd6Eph9D7Y
 
 ### Next
 James tries the preview. Then T.3 (saving: migration, the `trader` function, loans, daily jumps, questions kept on the server). Nothing is applied or deployed without his words.
+
+### Change after James tried the chart (22 Oct 2026): real coordinates, origin in the middle
+James asked for the destination's coordinates and for 0, 0 in the middle with x and y from −10 to +10. Done: the grid is now **21 lines each way** (−10 to +10) with planets on the crossing points (`GRID_SIZE` 21, `GRID_HALF` 10; `chartPoint()` and `coordText()` in `shared/trader/galaxy.ts`; y points up). Every planet shows its coordinates on the chart (always for the one you pick and the one you are at), in the top strip, and in screen-reader names. The fuel sum is now worked from the two sets of coordinates ("x goes from 2 to 4, which is 2. y goes from −6 to 1, which is 7. 2 + 7 = 9 fuel"), which brings in negative numbers; the answer is still just across + up, a wrong guess still never blocks the jump, and it is still not recorded to the maths ladder. The simulator is unchanged in feel (careful bot: moon on day 13 median; sloppy 40%: 15; sloppy 70%: 17). 30 tests pass.

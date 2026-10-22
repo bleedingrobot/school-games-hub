@@ -69,10 +69,10 @@ describe('Star Trader screen', () => {
   it('plans a jump on the star chart, shows the working for the fuel sum, and jumps with a warp', async () => {
     play();
     fireEvent.click(screen.getByRole('tab', { name: 'Star chart' }));
-    const planets = screen.getAllByRole('button', { name: /across, .* up, \d+ fuel away$/ });
+    const planets = screen.getAllByRole('button', { name: /x -?\d+, y -?\d+, \d+ fuel away$/ });
     fireEvent.click(planets[0]);
     fireEvent.click(screen.getByRole('button', { name: 'Show me' }));
-    expect(screen.getByText(/across \+ .* up =/)).toBeTruthy();
+    expect(screen.getByText(/Across: x goes from/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /^Jump!/ }));
     await waitFor(() => expect(calls.warps).toBe(1));
     await waitFor(() => expect(screen.getByLabelText(/jumps left today/).getAttribute('aria-label')).toMatch(/^9 of 10/));

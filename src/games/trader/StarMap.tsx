@@ -1,11 +1,12 @@
 /**
- * The star chart: a 20 x 20 grid with the planets on it, drawn with the same planet pictures as the game. Pick a planet
- * to see a route along the grid lines (across, then up). Fuel for a jump is across + up. The pupil can count the squares
- * and check their sum; either way the jump goes ahead (docs/TRADER-PLAN.md, section 5).
+ * The star chart: a grid from -10 to +10 each way, with 0, 0 in the middle and the planets on the crossing points,
+ * drawn with the same pictures as the game. Every planet has coordinates (x across, y up). Pick one to see a route along
+ * the grid lines (across, then up). Fuel for a jump is across + up, worked out from the two sets of coordinates. The pupil
+ * can count the squares or subtract, and check their sum; either way the jump goes ahead (docs/TRADER-PLAN.md, section 5).
  */
 import { useMemo, useState } from 'react';
-import { EVENTS, GOODS, GOOD_RULES, GOVERNMENTS, GRID_SIZE, RESOURCES, SIZE_NAMES, SHIPS } from '../../../shared/trader/config';
-import { distance, type Galaxy, type Planet } from '../../../shared/trader/galaxy';
+import { EVENTS, GOODS, GOOD_RULES, GOVERNMENTS, GRID_HALF, GRID_SIZE, RESOURCES, SIZE_NAMES, SHIPS } from '../../../shared/trader/config';
+import { chartPoint, coordText, distance, signed, type Galaxy, type Planet } from '../../../shared/trader/galaxy';
 import { eventOn, isBanned } from '../../../shared/trader/market';
 import { fuelCost, fuelNeeded, type Trader } from '../../../shared/trader/state';
 import { drawPlanet, lookOf } from './art/planets';
@@ -31,7 +32,9 @@ export function planetIcon(name: string): string {
   return url;
 }
 
-const pos = (n: number): number => ((n + 1.5) / (GRID_SIZE + 2)) * 100;
+/** Where a planet sits in the picture, as a percentage (the picture has a 1.5-line border all round for the numbers). */
+const VIEW = GRID_SIZE - 1 + 3;
+const pos = (n: number): number => ((n + 1.5) / VIEW) * 100;
 
 export function MapPanel({ galaxy, t, busy, onJump, onRefuel }: {
   galaxy: Galaxy;
@@ -59,9 +62,9 @@ export function MapPanel({ galaxy, t, busy, onJump, onRefuel }: {
   }
   const reach = t.fuel;
   const diamond = useMemo(() => {
-    const cx = here.x + 0.5;
-    const cy = here.y + 0.5;
-    const r = reach + 0.5;
+    const cx = here.x;
+    const cy = here.y;
+    const r = reach;
     return `${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`;
   }, [here.x, here.y, reach]);
 
@@ -70,32 +73,36 @@ export function MapPanel({ galaxy, t, busy, onJump, onRefuel }: {
   return (
     <section className="st-panel st-panel--map" aria-labelledby="st-map-h">
       <h2 id="st-map-h" className="st-h">Star chart</h2>
-      <p className="st-sub">Where you are is ringed. The glowing diamond is how far your fuel can take you. The planets sit in made-up places on our map.</p>
+      <p className="st-sub">Every planet has a place on the grid: <strong>x</strong> says how far across and <strong>y</strong> says how far up, with (0, 0) in the middle. You are ringed in blue. The glowing diamond shows how far your fuel can take you. The planets sit in made-up places on our map.</p>
       <div className="st-mapwrap">
         <div className="st-map">
-          <svg viewBox={`-1 -1 ${GRID_SIZE + 2} ${GRID_SIZE + 2}`} className="st-mapsvg" aria-hidden="true">
-            <rect x="0" y="0" width={GRID_SIZE} height={GRID_SIZE} fill="rgba(8,14,34,0.72)" stroke="#5b6aa8" strokeWidth="0.06" />
-            {Array.from({ length: GRID_SIZE + 1 }, (_, i) => (
-              <g key={i}>
-                <line x1={i} y1="0" x2={i} y2={GRID_SIZE} stroke="#33407a" strokeWidth={i % 5 === 0 ? 0.07 : 0.03} />
-                <line x1="0" y1={i} x2={GRID_SIZE} y2={i} stroke="#33407a" strokeWidth={i % 5 === 0 ? 0.07 : 0.03} />
-              </g>
-            ))}
+          <svg viewBox={`-1.5 -1.5 ${VIEW} ${VIEW}`} className="st-mapsvg" aria-hidden="true">
+            <rect x="0" y="0" width={GRID_SIZE - 1} height={GRID_SIZE - 1} fill="rgba(8,14,34,0.72)" stroke="#5b6aa8" strokeWidth="0.06" />
             {Array.from({ length: GRID_SIZE }, (_, i) => (
-              <g key={`n${i}`} fill="#a9b6e8" fontSize="0.55" textAnchor="middle">
-                <text x={i + 0.5} y="-0.3">{i}</text>
-                <text x="-0.5" y={i + 0.72}>{i}</text>
+              <g key={i}>
+                <line x1={i} y1="0" x2={i} y2={GRID_SIZE - 1} stroke="#33407a" strokeWidth={i === GRID_HALF ? 0.13 : i % 5 === 0 ? 0.07 : 0.03} />
+                <line x1="0" y1={i} x2={GRID_SIZE - 1} y2={i} stroke="#33407a" strokeWidth={i === GRID_HALF ? 0.13 : i % 5 === 0 ? 0.07 : 0.03} />
               </g>
             ))}
-            <clipPath id="st-gridclip"><rect x="0" y="0" width={GRID_SIZE} height={GRID_SIZE} /></clipPath>
+            <line x1="0" y1={GRID_HALF} x2={GRID_SIZE - 1} y2={GRID_HALF} stroke="#8aa0ff" strokeWidth="0.1" />
+            <line x1={GRID_HALF} y1="0" x2={GRID_HALF} y2={GRID_SIZE - 1} stroke="#8aa0ff" strokeWidth="0.1" />
+            {Array.from({ length: GRID_SIZE }, (_, i) => (
+              <g key={`n${i}`} fill={i === GRID_HALF ? '#fde047' : '#a9b6e8'} fontSize="0.5" textAnchor="middle" fontWeight={i === GRID_HALF ? 700 : 400}>
+                <text x={i} y="-0.5">{signed(i - GRID_HALF)}</text>
+                <text x="-0.75" y={i + 0.18}>{signed(GRID_HALF - i)}</text>
+              </g>
+            ))}
+            <text x={GRID_SIZE - 0.2} y={GRID_HALF - 0.25} fill="#fde047" fontSize="0.65" fontWeight="700" textAnchor="end">x</text>
+            <text x={GRID_HALF + 0.3} y="0.7" fill="#fde047" fontSize="0.65" fontWeight="700">y</text>
+            <clipPath id="st-gridclip"><rect x="0" y="0" width={GRID_SIZE - 1} height={GRID_SIZE - 1} /></clipPath>
             <polygon points={diamond} clipPath="url(#st-gridclip)" fill="rgba(56,189,248,0.12)" stroke="#38bdf8" strokeWidth="0.09" strokeDasharray="0.35 0.25" />
             {dest && (
               <g clipPath="url(#st-gridclip)">
-                <path d={`M ${here.x + 0.5} ${here.y + 0.5} H ${dest.x + 0.5} V ${dest.y + 0.5}`} fill="none" stroke="#fde047" strokeWidth="0.18" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="0.01 0.42" />
+                <path d={`M ${here.x} ${here.y} H ${dest.x} V ${dest.y}`} fill="none" stroke="#fde047" strokeWidth="0.18" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="0.01 0.42" />
                 {checked && (
                   <g fill="#fde047" fontSize="0.8" fontWeight="700" textAnchor="middle" stroke="#0b1020" strokeWidth="0.12" paintOrder="stroke">
-                    <text x={(here.x + dest.x) / 2 + 0.5} y={here.y + 0.5 - 0.35}>{across} across</text>
-                    <text x={dest.x + 0.5 + (dest.x >= here.x ? 0.4 : -0.4)} y={(here.y + dest.y) / 2 + 0.5} textAnchor={dest.x >= here.x ? 'start' : 'end'}>{up} up</text>
+                    <text x={(here.x + dest.x) / 2} y={here.y - 0.4}>{across} across</text>
+                    <text x={dest.x + (dest.x >= here.x ? 0.5 : -0.5)} y={(here.y + dest.y) / 2} textAnchor={dest.x >= here.x ? 'start' : 'end'}>{up} up</text>
                   </g>
                 )}
               </g>
@@ -112,10 +119,10 @@ export function MapPanel({ galaxy, t, busy, onJump, onRefuel }: {
                 style={{ left: `${pos(p.x)}%`, top: `${pos(p.y)}%` }}
                 onClick={() => pick(p.id)}
                 aria-pressed={picked === p.id}
-                aria-label={`${p.name}, ${p.x} across, ${p.y} up${p.id === t.location ? ', you are here' : `, ${d} fuel away${far ? ', too far for your fuel' : ''}`}`}
+                aria-label={`${p.name}, x ${chartPoint(p).x}, y ${chartPoint(p).y}${p.id === t.location ? ', you are here' : `, ${d} fuel away${far ? ', too far for your fuel' : ''}`}`}
               >
                 <img src={planetIcon(p.name)} alt="" draggable={false} />
-                <span className="st-planet__name">{p.name}</span>
+                <span className="st-planet__name">{p.name}<span className="st-planet__xy">{coordText(p)}</span></span>
               </button>
             );
           })}
@@ -127,6 +134,7 @@ export function MapPanel({ galaxy, t, busy, onJump, onRefuel }: {
             <PlanetCard
               galaxy={galaxy}
               t={t}
+              here={here}
               dest={dest}
               need={need}
               across={across}
@@ -153,18 +161,18 @@ export function MapPanel({ galaxy, t, busy, onJump, onRefuel }: {
 }
 
 function PlanetCard(props: {
-  galaxy: Galaxy; t: Trader; dest: Planet; need: number; across: number; up: number; guess: string; setGuess: (v: string) => void;
+  galaxy: Galaxy; t: Trader; here: Planet; dest: Planet; need: number; across: number; up: number; guess: string; setGuess: (v: string) => void;
   reveal: () => void; checked: boolean; right: boolean; short: number; tooFar: boolean; busy: boolean; onRefuel: () => void;
   refuelCost: number; canPay: boolean; onJump: () => void; jumpsLeft: number;
 }) {
-  const { galaxy, t, dest, need, across, up, guess, setGuess, reveal, checked, right, short, tooFar, busy, onRefuel, refuelCost, canPay, onJump, jumpsLeft } = props;
+  const { galaxy, t, here, dest, need, across, up, guess, setGuess, reveal, checked, right, short, tooFar, busy, onRefuel, refuelCost, canPay, onJump, jumpsLeft } = props;
   const gov = GOVERNMENTS[dest.government];
   const event = eventOn(galaxy, dest, t.day);
   const eventGood = event > 0 ? GOODS[GOOD_RULES.findIndex((r) => r.event === event)] : '';
   const banned = GOODS.filter((_, i) => isBanned(dest, i));
   return (
     <div className="st-card">
-      <h3 className="st-h3">{dest.name}</h3>
+      <h3 className="st-h3">{dest.name} <span className="st-xy">{coordText(dest)}</span></h3>
       <p className="st-soft">{PLANET_FACTS[dest.name]}</p>
       <ul className="st-stats st-stats--tight">
         <li><span className="st-soft">Government</span> <strong>{gov.name}</strong></li>
@@ -177,14 +185,14 @@ function PlanetCard(props: {
       {banned.length > 0 && <p className="st-warn">🚫 Banned here: {banned.join(' and ')}. Customs will take them.</p>}
       {event > 0 && <p className="st-news">📰 {EVENT_NEWS[EVENTS[event]](eventGood)}</p>}
       <div className="st-fuel">
-        <label htmlFor="st-fuelguess">How much fuel? Count across, then up.</label>
+        <label htmlFor="st-fuelguess">How much fuel? You are at {coordText(here)} and {dest.name} is at {coordText(dest)}. Work out how far across, then how far up.</label>
         <div className="st-fuelrow">
           <input id="st-fuelguess" inputMode="numeric" autoComplete="off" value={guess} onChange={(e) => setGuess(e.target.value)} placeholder="?" className="st-input" />
           <button type="button" className="st-btn" onClick={reveal}>Show me</button>
         </div>
         {checked && (
           <p className={right ? 'st-good-note' : 'st-note'} role="status">
-            {right ? '✓ Yes! ' : ''}{across} across + {up} up = <strong>{need} fuel</strong>.
+            {right ? '✓ Yes! ' : ''}Across: x goes from {signed(chartPoint(here).x)} to {signed(chartPoint(dest).x)}, which is {across}. Up: y goes from {signed(chartPoint(here).y)} to {signed(chartPoint(dest).y)}, which is {up}. {across} + {up} = <strong>{need} fuel</strong>.
           </p>
         )}
       </div>

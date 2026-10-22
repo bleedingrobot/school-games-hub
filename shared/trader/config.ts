@@ -10,7 +10,9 @@
 // ---------------------------------------------------------------------------------------------
 // The galaxy
 // ---------------------------------------------------------------------------------------------
-export const GRID_SIZE = 20;
+/** Planets sit on the crossing points of a grid from -10 to +10 each way (21 lines), with 0, 0 in the middle. */
+export const GRID_SIZE = 21;
+export const GRID_HALF = 10;
 export const PLANET_COUNT = 24;
 /** Planets are at least this far apart (across + up). */
 export const MIN_PLANET_GAP = 3;
