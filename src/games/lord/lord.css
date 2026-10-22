@@ -166,6 +166,8 @@
 /* Painted pictures standing in the stage */
 .lord-art { display: block; width: auto; max-width: 100%; object-fit: contain; filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.55)); user-select: none; }
 .lord-portrait { position: absolute; right: 14px; bottom: 0; z-index: 1; height: calc(100% - 6px); max-width: 40%; width: auto; object-fit: contain; object-position: bottom; filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6)); -webkit-mask-image: linear-gradient(180deg, #000 85%, transparent); mask-image: linear-gradient(180deg, #000 85%, transparent); }
+/* Painted heroes and people are waist-up, so their bottom edge fades out instead of stopping in a hard line. */
+.lord-art--hero { -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent); mask-image: linear-gradient(180deg, #000 82%, transparent); }
 .lord-sprite--figure { filter: drop-shadow(0 0 2px #000) drop-shadow(0 6px 8px rgba(0, 0, 0, 0.6)); }
 .lord-stage__foe { position: relative; z-index: 1; display: flex; justify-content: center; }
 .lord-stage__hero { position: absolute; right: 18px; bottom: 8px; z-index: 1; }
