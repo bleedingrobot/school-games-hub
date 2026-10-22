@@ -143,6 +143,12 @@
 .cq-troops { list-style: none; margin: 0 0 4px; padding: 0; }
 .cq-sides { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 4px; }
 .cq-sides .cq-btn { min-height: 44px; min-width: 44px; padding: 2px 10px; }
+.cq-goal small { display: block; font-size: 0.75em; opacity: 0.8; }
+.cq-preview { display: flex; gap: 12px; align-items: center; margin: 6px 0; }
+.cq-plotgrid { display: grid; gap: 2px; flex: none; }
+.cq-plotgrid span { width: 1.2em; height: 1.2em; background: #4a8; border-radius: 2px; }
+.cq-ok { color: #8f8; }
+.cq-sides .cq-btn small { display: block; font-size: 0.75em; opacity: 0.8; }
 .cq-buildings { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 4px; max-height: 13em; overflow-y: auto; }
 .cq-buildings li { display: flex; align-items: center; gap: 8px; }
 .cq-buildings .cq-btn { min-height: 44px; min-width: 130px; padding: 2px 8px; }

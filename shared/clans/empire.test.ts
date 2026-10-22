@@ -3,7 +3,7 @@ import { DEFAULT_PRACTICAL_SETTINGS, TROOP_COST } from '../maths/practical';
 import { CONFIG } from './config';
 import {
   KINGDOMS, area, barracksFor, battle, build, buildingTotal, buyTroops, canBuild, capacity, claimCost, claimLand, cleanPlan, countBuildings, deposit, developPlot, draft, draftMax, draftWanted, emptyLand, empireNewDay,
-  empireOf, energyLeft, fence, friendlyWar, kingdomSide, lootGold, might, newEmpire, noTroops, plotCost, raidClassmate, raidKingdom, raidNews, raidRefusal, room, setDraft, sideOf, withdraw, type Party, type Side,
+  buildingsThatFit, shapesFor, smallestBuildingSize, empireOf, energyLeft, fence, friendlyWar, kingdomSide, lootGold, might, newEmpire, noTroops, plotCost, raidClassmate, raidKingdom, raidNews, raidRefusal, room, setDraft, sideOf, withdraw, type Party, type Side,
 } from './empire';
 import { barracksNeeded, draftJoin, energyLeft as energyLeftMoment, landPlot, lootShare, troopBill } from './moments';
 import { newClan, simulate } from './sim';
@@ -640,5 +640,20 @@ describe('land questions use the real numbers', () => {
     const e = newEmpire(3);
     expect(JSON.parse(JSON.stringify(e))).toEqual(e);
     expect(sideOf(e).troops).toEqual(noTroops());
+  });
+});
+
+describe('what a plot will fit', () => {
+  it('says which buildings a number of squares has room for', () => {
+    expect(smallestBuildingSize()).toBe(5);
+    expect(buildingsThatFit(4)).toEqual([]);
+    expect(buildingsThatFit(5)).toEqual(['tower']);
+    expect(buildingsThatFit(6)).toEqual(['walls', 'tower']);
+    expect(buildingsThatFit(15)).toContain('barracks');
+  });
+  it('suggests plot shapes with the least waste', () => {
+    expect(shapesFor(15)[0]).toEqual({ width: 3, length: 5 });
+    expect(shapesFor(5)[0]).toEqual({ width: 2, length: 3 });
+    for (const k of Object.values(E.buildings)) for (const s of shapesFor(k.size)) expect(s.width * s.length).toBeGreaterThanOrEqual(k.size);
   });
 });
