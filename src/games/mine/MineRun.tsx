@@ -9,7 +9,7 @@ import { useSound } from '../../sound';
 import { playSound } from '../sounds';
 import { DT, MAX_ENERGY, MAX_SHIELD, REACTOR_HP } from '../../../shared/mine/config';
 import { encodeInputs, packInput } from '../../../shared/mine/inputs';
-import { questionPlan } from '../../../shared/mine/maths';
+import { gateChoices, questionPlan } from '../../../shared/mine/maths';
 import { Controls } from './controls';
 import { factText } from './factText';
 import { nextGoal } from './guide';
@@ -21,6 +21,7 @@ import { MEDALS, medalFor } from '../../../shared/mine/medals';
 import { loadBests, saveBests, showTouchControls, withFinish, wantsLessMotion, type MinePrefs } from './prefs';
 import type { MineView } from './renderer';
 import { MineSession, type MineEvent, type UseTarget } from './session';
+import { gateSum, layoutGate, panelTouched, type GateLayout } from './gate';
 import { TRIAL_NOTE, trialFact, trialQuestion } from './trialMaths';
 
 export interface FinishedRun {
@@ -29,6 +30,16 @@ export interface FinishedRun {
   deaths: number;
   robotsKilled: number;
   wrongAnswers: number;
+}
+
+/** The number gate the pilot is at: its panels, the question they answer and when it appeared. */
+interface GateState {
+  layout: GateLayout;
+  slot: number;
+  q: ShownQuestion;
+  trialQ?: ReturnType<typeof trialQuestion>;
+  armed: boolean[];
+  shownAt: number;
 }
 
 interface Hud {
@@ -40,6 +51,7 @@ interface Hud {
   escapeLeft: number;
   reactorDown: boolean;
   reactorHp: number;
+  reactorLocked: boolean;
   goal: { label: string; angle: number; ahead: boolean; behind: boolean; metres: number; final: boolean };
   canUse: boolean;
   useLabel: string;
@@ -56,6 +68,8 @@ function describeEvent(e: MineEvent): string | null {
     case 'door': return e.byKey ? 'The door is open.' : 'Right! The door is open.';
     case 'pickup': return e.what === 'shield' ? 'Shield +30' : e.what === 'energy' ? 'Energy +40' : 'Missiles +3';
     case 'pad': return `Right! ${PAD_WORDS[e.padKind][0].toUpperCase()}${PAD_WORDS[e.padKind].slice(1)} filled up.`;
+    case 'pad-step': return `Right! One more right answer fills the ${PAD_WORDS[e.padKind]} pad.`;
+    case 'reactor-step': return e.left === 0 ? 'Right! The reactor is unlocked. Shoot it!' : `Right! ${e.left} more to unlock the reactor.`;
     case 'reactor-down': return 'The reactor is down! Fly back to the exit before time runs out.';
     case 'rebuilt': return 'Your ship was rebuilt. 20 seconds added.';
     case 'wrong': return 'Not quite. Shield −20 and 6 seconds added.';
@@ -89,10 +103,10 @@ function readHud(session: MineSession): Hud {
   const target = session.target();
   return {
     shield: s.shield, energy: s.energy, missiles: s.missiles, keys: [...s.keys] as [number, number, number], clock: session.clock,
-    escapeLeft: s.escapeLeft, reactorDown: s.reactorDown === 1, reactorHp: s.reactorHp,
+    escapeLeft: s.escapeLeft, reactorDown: s.reactorDown === 1, reactorHp: s.reactorHp, reactorLocked: s.reactorLock > 0,
     goal: goalInfo(session),
     canUse: target !== null,
-    useLabel: target ? (target.kind === 'door' ? 'Answer to open the door' : `Answer for ${PAD_WORDS[target.padKind]}`) : '',
+    useLabel: target ? (target.kind === 'door' ? 'Answer to open the door' : target.kind === 'reactor' ? `Answer to unlock the reactor (${target.left} to go)` : `Answer for ${PAD_WORDS[target.padKind]} (${target.left} to go)`) : '',
   };
 }
 
@@ -156,6 +170,12 @@ export function MineRun({
   prefsRef.current = prefs;
   const blocked = useRef(true);
   blocked.current = paused || mapOpen || question !== null || finished !== null || needsStart;
+  // A number gate is being checked by the server: the mine waits, like when a question shows.
+  const gateHold = useRef(false);
+  const isBlocked = () => blocked.current || gateHold.current;
+  const gate = useRef<GateState | null>(null);
+  const [gateText, setGateText] = useState<string | null>(null);
+  const woundFact = useRef('');
   const heading = useRef<HTMLHeadingElement>(null);
   const runHeading = useRef<HTMLHeadingElement>(null);
   const messageTimer = useRef<number | undefined>(undefined);
@@ -180,9 +200,16 @@ export function MineRun({
   }, []);
 
   const openQuestion = useCallback(() => {
-    if (blocked.current || (!trial && !started?.maths)) return;
+    if (isBlocked() || (!trial && !started?.maths)) return;
     const target = session.target();
     if (!target) return;
+    // At a number gate, pressing Use asks the very question the panels answer.
+    const atGate = gate.current && target.kind === 'door' && gate.current.layout.doorId === target.id ? gate.current : null;
+    if (atGate) {
+      controls.clear();
+      setQuestion({ target, q: atGate.q, slot: atGate.slot, ...(atGate.trialQ ? { trialQ: atGate.trialQ } : {}) });
+      return;
+    }
     if (trial) {
       const q = trialQuestion();
       controls.clear();
@@ -194,12 +221,94 @@ export function MineRun({
     const used = slotsUsed.current.get(target.id) ?? 0;
     const shown = spot && used < spot.count ? started?.questions[spot.first + used] : undefined;
     if (!spot || !shown) {
-      say('That door has no more questions in this run. Start the mine again to get new ones.');
+      say(target.kind === 'door' ? 'That door has no more questions in this run. Start the mine again to get new ones.' : 'No more questions here in this run. Start the mine again to get new ones.');
       return;
     }
     controls.clear();
     setQuestion({ target, q: { ...shown, id: shown.slot }, slot: shown.slot });
   }, [controls, session, trial, started, plan, say]);
+
+  /** Takes the answer panels away. */
+  const clearGate = useCallback(() => {
+    if (!gate.current) return;
+    gate.current = null;
+    viewRef.current?.showGate(null);
+    setGateText(null);
+  }, []);
+
+  /** The next question for a door or pad, and for a trial a new one. Null when this door has none left. */
+  const questionFor = useCallback((target: { id: number }): { q: ShownQuestion; slot: number; trialQ?: ReturnType<typeof trialQuestion> } | null => {
+    if (trial) {
+      const q = trialQuestion();
+      return { q: { ...q }, slot: -1, trialQ: q };
+    }
+    const spot = plan.targets.find((x) => x.id === target.id);
+    const used = slotsUsed.current.get(target.id) ?? 0;
+    const shown = spot && used < spot.count ? started?.questions[spot.first + used] : undefined;
+    return shown ? { q: { ...shown, id: shown.slot }, slot: shown.slot } : null;
+  }, [trial, plan, started]);
+
+  /** The pilot flew into a panel: that number is their answer. */
+  const chooseGate = useCallback(async (g: GateState, which: number) => {
+    if (gateHold.current) return;
+    gateHold.current = true;
+    controls.clear();
+    const door = session.world.level.doors[g.layout.doorId];
+    const target: UseTarget = { kind: 'door', id: door.id, x: door.x, y: door.y, z: door.z, distance: 0 };
+    const value = g.layout.panels[which].value;
+    let result: { correct: boolean; answer: number };
+    try {
+      if (g.trialQ) result = { correct: value === g.trialQ.answer, answer: g.trialQ.answer };
+      else {
+        // If the answer went off and the reply was lost, the same answer goes again (it counts once).
+        const sendValue = pending.current.get(g.slot) ?? value;
+        pending.current.set(g.slot, sendValue);
+        result = await answerQuestion(started!, level.id, flight, g.slot, sendValue, Math.max(0, Math.round(performance.now() - g.shownAt)));
+        pending.current.delete(g.slot);
+      }
+    } catch (error) {
+      g.armed[which] = false;
+      gateHold.current = false;
+      say(error instanceof Error && error.message ? error.message : 'We couldn’t check that answer. Fly into a panel to try again.');
+      return;
+    }
+    if (!g.trialQ) slotsUsed.current.set(door.id, (slotsUsed.current.get(door.id) ?? 0) + 1);
+    clearGate();
+    woundFact.current = result.correct ? '' : factText(g.q, result.answer);
+    session.answered(target, result.correct);
+    gateHold.current = false;
+  }, [controls, session, started, level.id, flight, say, clearGate]);
+
+  /** Every frame: show answer panels when the pilot is at a gate, and notice a panel being flown into. */
+  const updateGate = useCallback(() => {
+    const view = viewRef.current;
+    if (!view || gateHold.current || blocked.current) return;
+    const mine = session.world.level;
+    const target = session.target();
+    const door = target && target.kind === 'door' ? mine.doors[target.id] : null;
+    if (!door || !door.gate) {
+      clearGate();
+      return;
+    }
+    let g = gate.current;
+    if (!g || g.layout.doorId !== door.id) {
+      const next = questionFor(door);
+      const values = next ? (next.trialQ ? gateChoices(next.trialQ, Math.random) : next.q.choices && !next.q.choiceLabels ? next.q.choices : null) : null;
+      if (!next || !values) {
+        clearGate();
+        return;
+      }
+      const layout = layoutGate(mine, door, session.state, values);
+      g = { layout, slot: next.slot, q: next.q, ...(next.trialQ ? { trialQ: next.trialQ } : {}), armed: layout.panels.map(() => false), shownAt: performance.now() };
+      gate.current = g;
+      view.showGate(layout.panels);
+      setGateText(gateSum(next.q.parts));
+    }
+    const hit = panelTouched(g.layout.panels, g.armed, session.state);
+    if (hit >= 0) void chooseGate(g, hit);
+  }, [session, questionFor, clearGate, chooseGate]);
+  const gateTick = useRef(updateGate);
+  gateTick.current = updateGate;
 
   const pause = useCallback(() => {
     controls.clear();
@@ -250,13 +359,15 @@ export function MineRun({
       view?.react(events);
       for (const e of events) {
         const text = describeEvent(e);
-        if (text) say(text);
+        if (text) say(e.kind === 'wrong' && woundFact.current ? `${text} ${woundFact.current}` : text);
+        if (e.kind === 'wrong') woundFact.current = '';
         if (e.kind === 'laser') beep('zap', 120);
         else if (e.kind === 'missile') beep('boom', 200);
         else if (e.kind === 'robot-down' || e.kind === 'boom') beep('boom', 120);
         else if (e.kind === 'key' || e.kind === 'pickup') beep('item');
         else if (e.kind === 'door') beep('door');
         else if (e.kind === 'pad') beep('shield');
+        else if (e.kind === 'pad-step' || e.kind === 'reactor-step') beep('item');
         else if (e.kind === 'hurt') {
           beep('alert', 400);
           setHit((n) => n + 1);
@@ -276,7 +387,7 @@ export function MineRun({
       raf = requestAnimationFrame(frame);
       const seconds = Math.min(0.1, (now - last) / 1000);
       last = now;
-      if (!blocked.current && session.running) {
+      if (!isBlocked() && session.running) {
         acc += seconds;
         let n = 0;
         while (acc >= DT && n < 5 && session.running) {
@@ -291,16 +402,17 @@ export function MineRun({
         session.events = [];
         handle(events);
       }
+      gateTick.current();
       const t = session.target();
       view?.highlight(t ? t.kind : null, t ? t.id : -1);
-      view?.draw(blocked.current ? 1 : Math.min(1, acc / DT), blocked.current ? 0 : seconds);
+      view?.draw(isBlocked() ? 1 : Math.min(1, acc / DT), isBlocked() ? 0 : seconds);
       if (now - hudAt > 100) {
         hudAt = now;
         setHud(readHud(session));
       }
       // A slow device gets a softer picture to keep the speed up.
       frames++;
-      if (seconds > 0.045 && !blocked.current) slow++;
+      if (seconds > 0.045 && !isBlocked()) slow++;
       if (frames >= 60) {
         if (slow > 25 && ratioNow > 0.55) ratioNow = view?.setQuality(ratioNow - 0.25) ?? ratioNow;
         frames = 0;
@@ -344,7 +456,7 @@ export function MineRun({
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (blocked.current) return;
+      if (isBlocked()) return;
       if (e.code === 'Escape' || e.code === 'KeyP') {
         e.preventDefault();
         pause();
@@ -366,13 +478,13 @@ export function MineRun({
     const onKeyUp = (e: KeyboardEvent) => controls.keyUp(e.code);
     const onBlur = () => {
       controls.clear();
-      if (!blocked.current) pause();
+      if (!isBlocked()) pause();
     };
     const onLock = () => {
-      if (!document.pointerLockElement && prefsRef.current.lock && !blocked.current) pause();
+      if (!document.pointerLockElement && prefsRef.current.lock && !isBlocked()) pause();
     };
     const onMouseMove = (e: MouseEvent) => {
-      if (document.pointerLockElement === el && !blocked.current) controls.mouseMoved(e.movementX, e.movementY);
+      if (document.pointerLockElement === el && !isBlocked()) controls.mouseMoved(e.movementX, e.movementY);
     };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
@@ -407,7 +519,7 @@ export function MineRun({
   // Mouse: drag to look (or captured look), click to fire.
   const drag = useRef<{ id: number; x: number; y: number; moved: number; at: number } | null>(null);
   function pointerDown(e: React.PointerEvent) {
-    if (blocked.current || e.pointerType === 'touch') return;
+    if (isBlocked() || e.pointerType === 'touch') return;
     const el = canvas.current;
     if (prefs.lock && document.pointerLockElement !== el) {
       try {
@@ -429,7 +541,7 @@ export function MineRun({
   }
   function pointerMove(e: React.PointerEvent) {
     const d = drag.current;
-    if (!d || d.id !== e.pointerId || blocked.current) return;
+    if (!d || d.id !== e.pointerId || isBlocked()) return;
     const dx = e.clientX - d.x;
     const dy = e.clientY - d.y;
     d.x = e.clientX;
@@ -567,8 +679,19 @@ export function MineRun({
           )}
         </div>
 
+        {gateText && (
+          <div className="mn-gate" role="status">
+            <span className="mn-gate__sum">{gateText}</span>
+            <span className="mn-gate__how">Fly into the answer{target ? ', or press Use' : ''}.</span>
+          </div>
+        )}
+
         {goal.label === 'reactor' && goal.metres < 30 && hud.reactorHp === REACTOR_HP && !hud.reactorDown && (
-          <p className="mn-reactorhint" role="status">That is the reactor. Shoot it until it breaks. Missiles hit hardest.</p>
+          <p className="mn-reactorhint" role="status">
+            {hud.reactorLocked
+              ? 'That is the reactor. It is locked: fly up close and press Use to answer 3 questions. Then shoot it until it breaks.'
+              : 'That is the reactor. Shoot it until it breaks. Missiles hit hardest.'}
+          </p>
         )}
 
         <div className="mn-hud__right">
@@ -580,7 +703,7 @@ export function MineRun({
         {hit > 0 && <div key={hit} className="mn-hurt" aria-hidden="true" />}
         <p className="mn-toast" role="status" aria-live="polite">{message}</p>
         {target && mathsRun && (
-          <button type="button" className="button button--play mn-btn mn-use" onClick={openQuestion}>
+          <button type="button" className={`button button--play mn-btn mn-use${gateText ? ' mn-use--gate' : ''}`} onClick={openQuestion}>
             {hud.useLabel} <kbd>Enter</kbd>
           </button>
         )}
@@ -621,8 +744,8 @@ export function MineRun({
       {question && (
         <QuestionModal
           question={question.q}
-          title={question.target.kind === 'door' ? 'Question door' : `Power-up pad: ${PAD_WORDS[question.target.padKind]}`}
-          note={`${trial ? `${TRIAL_NOTE} ` : ''}${question.target.kind === 'door' ? 'A wrong answer costs 20 shield and 6 seconds.' : 'A wrong answer costs nothing.'}`}
+          title={question.target.kind === 'door' ? 'Question door' : question.target.kind === 'reactor' ? 'Reactor lock' : `Power-up pad: ${PAD_WORDS[question.target.padKind]}`}
+          note={`${trial ? `${TRIAL_NOTE} ` : ''}${question.target.kind === 'pad' ? `Two right answers fill the pad (${question.target.left} to go). A wrong answer costs nothing.` : question.target.kind === 'reactor' ? `Three right answers unlock the reactor (${question.target.left} to go). A wrong answer costs 20 shield and 6 seconds.` : 'A wrong answer costs 20 shield and 6 seconds.'}`}
           onSubmit={onSubmit}
           onDone={onAnswered}
           onClose={() => { setQuestion(null); runHeading.current?.focus({ preventScroll: true }); }}

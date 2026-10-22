@@ -11,13 +11,28 @@ import { SoundProvider } from '../sound';
 const flags = { on: false };
 vi.mock('../training/switch', () => ({ trainingOn: () => flags.on }));
 
-const data = {
+// Hoisted: the home page loads this module too (Training before games), before the test's own lines run.
+const data = vi.hoisted(() => ({
   loadTraining: vi.fn(),
   addAnswer: vi.fn(),
   enqueueStudent: vi.fn(),
+  enqueueSession: vi.fn(),
+  localFinishedAt: vi.fn(() => null),
   flushQueue: vi.fn(async () => true),
-};
+}));
 vi.mock('../data/training', () => data);
+
+// Where the student is on the maths ladder (the warm-up decides where Training starts).
+const ladder = vi.hoisted(() => ({ fetchMyLadder: vi.fn() }));
+vi.mock('../data/ladder', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../data/ladder')>()),
+  fetchMyLadder: ladder.fetchMyLadder,
+}));
+const ladderSays = (more: Record<string, unknown>) => ({
+  facts: [],
+  settings: {},
+  focus: { source: 'auto', skills: [], onlyThese: false, endsAt: null, canChoose: true, own: null, ladder: { on: true, placed: null, placement: null, furthest: null, ...more } },
+});
 
 // The dashboard asks for its own things; nothing here is about them.
 vi.mock('../data/botGames', () => ({
@@ -75,6 +90,7 @@ beforeEach(() => {
   Object.values(data).forEach((f) => f.mockClear());
   data.loadTraining.mockResolvedValue({ state: emptyState(), offline: false });
   data.flushQueue.mockResolvedValue(true);
+  ladder.fetchMyLadder.mockReset().mockRejectedValue(new Error('no ladder'));
 });
 
 describe('Training is hidden until it is switched on', () => {
@@ -152,9 +168,10 @@ describe('the Training page', () => {
     const user = userEvent.setup();
     renderAt('/training');
     await user.click(await screen.findByRole('button', { name: /Today’s session/ }));
-    // The typing check: three numbers to type. Each step is a new question element.
+    // The typing check: the first time, a practice number (not timed), then three numbers to type. Each step is a new question element.
+    expect(await screen.findByText(/This one is just for practice/)).toBeInTheDocument();
     let previous: Element | null = null;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       const node = await waitFor(() => {
         const q = document.querySelector('.tr-question');
         expect(q).not.toBeNull();
@@ -169,6 +186,8 @@ describe('the Training page', () => {
     expect(data.enqueueStudent).toHaveBeenCalledWith('u1', expect.objectContaining({ type: 'student', autoSubmit: true }));
     const typing = data.enqueueStudent.mock.calls.at(-1)![1].typing;
     expect(Object.keys(typing).sort()).toEqual(['1', '2', '3']);
+    // The practice number isn't one of them: one time for each length.
+    expect(Object.values(typing).map((t) => (t as number[]).length)).toEqual([1, 1, 1]);
 
     // The first real question: answer it right.
     const question = await screen.findByText(/= \?$/);
@@ -187,5 +206,149 @@ describe('the Training page', () => {
   });
 });
 
+describe('Quick looks inside Training', () => {
+  const settings = { placed: true, startStage: 1 as const, finished: 0 as const, guided: false };
+
+  it('has a Quick looks button next to Today’s session, and a way back', async () => {
+    flags.on = true;
+    const user = userEvent.setup();
+    renderAt('/training');
+    expect(await screen.findByRole('button', { name: 'Quick looks' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Quick looks' }));
+    expect(screen.getByRole('heading', { name: 'Quick looks' })).toBeInTheDocument();
+    // Quick looks replaces Training's own page frame rather than sitting inside it: only the hub's main area is left.
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: 'Back to Training' }));
+    expect(screen.getByRole('button', { name: /Today’s session/ })).toBeInTheDocument();
+  });
+
+  it('opens straight into Quick looks from the dashboard card, and the card sits next to Training’s', async () => {
+    flags.on = true;
+    renderAt('/');
+    expect(screen.getByRole('link', { name: /Quick looks/ })).toHaveAttribute('href', '/training?quick=1');
+    expect(screen.getByRole('link', { name: /Multiplication and division training/ })).toBeInTheDocument();
+  });
+
+  it('opens Quick looks first when the address says so', async () => {
+    flags.on = true;
+    renderAt('/training?quick=1');
+    expect(await screen.findByRole('heading', { name: 'Quick looks' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Back to Training' })).toBeInTheDocument();
+  });
+
+  it('is never shown when Training itself is off', () => {
+    renderAt('/training');
+    expect(screen.queryByRole('button', { name: 'Quick looks' })).toBeNull();
+  });
+
+  it('saves the starting-check result with the student, and an answer as a plain tap with the right key', async () => {
+    flags.on = true;
+    const user = userEvent.setup();
+    data.loadTraining.mockResolvedValue({ state: emptyState(), offline: false, quick: { answers: [], settings: { ...settings, placed: false } } });
+    renderAt('/training');
+    await user.click(await screen.findByRole('button', { name: 'Quick looks' }));
+    // Leave the starting check straight away: nothing was answered, so nothing is saved.
+    await user.click(screen.getByRole('button', { name: 'Start with a quick check' }));
+    await user.click(await screen.findByRole('button', { name: 'Finish for now' }));
+    expect(data.addAnswer).not.toHaveBeenCalled();
+    expect(data.enqueueStudent).not.toHaveBeenCalled();
+  });
+
+  it('saves a practice answer as a Quick looks answer, with nothing typed and no time', async () => {
+    flags.on = true;
+    const user = userEvent.setup();
+    data.loadTraining.mockResolvedValue({ state: emptyState(), offline: false, quick: { answers: [], settings } });
+    renderAt('/training');
+    await user.click(await screen.findByRole('button', { name: 'Quick looks' }));
+    await user.click(screen.getByRole('button', { name: 'Start looking' }));
+    // Get ready, the flash, then the buttons unlock; the right one is whatever the picture holds.
+    const n = await waitFor(() => {
+      const dots = document.querySelectorAll('.sb-stage svg circle:not(.sb-ghost)').length;
+      expect(dots).toBeGreaterThan(0);
+      return dots;
+    });
+    const button = await screen.findByRole('button', { name: String(n) }, { timeout: 4000 });
+    await waitFor(() => expect(button).toBeEnabled(), { timeout: 4000 });
+    await user.click(button);
+    await waitFor(() => expect(data.addAnswer).toHaveBeenCalledTimes(1));
+    const [player, saved] = data.addAnswer.mock.calls[0];
+    expect(player).toBe('u1');
+    expect(saved).toMatchObject({ given: n, ms: 0, typingMs: 0, day: dayString(new Date()), seed: expect.any(Number) });
+    expect(saved.key).toMatch(/^sub:(line|clus|angl)-[123]$/);
+    // The stage reached is unchanged by one answer, so no settings are sent yet.
+    expect(data.enqueueStudent).not.toHaveBeenCalled();
+  }, 20_000);
+
+  it('saves the settings with the student when the starting check puts them somewhere', async () => {
+    flags.on = true;
+    const user = userEvent.setup();
+    data.loadTraining.mockResolvedValue({ state: emptyState(), offline: false, quick: { answers: [], settings: { ...settings, placed: false } } });
+    renderAt('/training');
+    await user.click(await screen.findByRole('button', { name: 'Quick looks' }));
+    await user.click(screen.getByLabelText('Keep the picture on the screen (no flashing)'));
+    expect(data.enqueueStudent).toHaveBeenCalledWith(
+      'u1',
+      expect.objectContaining({ type: 'student', quick: { placed: false, startStage: 1, finished: 0, guided: true }, typing: {} }),
+    );
+  });
+});
+
 // Keeps the type checker honest about what the page is given.
 export type _Check = TrainingState;
+
+describe('Where Training starts (22 Oct 2026)', () => {
+  /** Types the typing check's numbers (a practice one first, the first time). */
+  async function typingCheck(user: ReturnType<typeof userEvent.setup>) {
+    let previous: Element | null = null;
+    for (let i = 0; i < 4; i++) {
+      const node = await waitFor(() => {
+        const q = document.querySelector('.tr-question');
+        expect(q).not.toBeNull();
+        expect(q).not.toBe(previous);
+        expect(q!.textContent).toMatch(/^\d+$/);
+        return q!;
+      });
+      await shown();
+      await user.keyboard(node.textContent!);
+      previous = node;
+    }
+  }
+
+  it('asks for the maths warm-up first when the class uses the ladder and it isn’t done', async () => {
+    flags.on = true;
+    ladder.fetchMyLadder.mockResolvedValue(ladderSays({}));
+    renderAt('/training');
+    const link = await screen.findByRole('link', { name: 'Find my starting place' });
+    expect(link).toHaveAttribute('href', '/placement?back=%2Ftraining');
+    expect(screen.queryByRole('button', { name: /Today’s session/ })).toBeNull();
+  });
+
+  it('never asks a teacher for the warm-up', async () => {
+    flags.on = true;
+    ladder.fetchMyLadder.mockResolvedValue(ladderSays({}));
+    renderAt('/training', { profile: { ...student.profile!, role: 'teacher' } });
+    expect(await screen.findByRole('button', { name: /Today’s session/ })).toBeInTheDocument();
+  });
+
+  it('starts at the step the warm-up put them on, not at ×2', async () => {
+    flags.on = true;
+    ladder.fetchMyLadder.mockResolvedValue(ladderSays({ placed: 'done', placement: 'tables-6-9' }));
+    const user = userEvent.setup();
+    renderAt('/training');
+    await user.click(await screen.findByRole('button', { name: /Today’s session/ }));
+    await typingCheck(user);
+    const question = await screen.findByText(/= \?$/);
+    const [a, , b] = question.textContent!.replace(' = ?', '').split(' ');
+    // Step 3 is ×6 and ×9: every fact there has a 6 or a 9, and none comes from an earlier table.
+    const factors = [Number(a), Number(b)];
+    expect(factors.some((n) => n === 6 || n === 9)).toBe(true);
+    expect(factors.every((n) => ![1, 2, 3, 4, 5, 8, 10].includes(n))).toBe(true);
+  }, 15_000);
+
+  it('says kindly when it is a practice fortnight', async () => {
+    flags.on = true;
+    data.loadTraining.mockResolvedValue({ state: { ...emptyState(), restUntil: '2999-01-01' }, offline: false });
+    renderAt('/training');
+    expect(await screen.findByText(/practise facts you’ve already met/)).toBeInTheDocument();
+  });
+});

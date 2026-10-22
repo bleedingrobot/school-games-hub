@@ -128,7 +128,11 @@ describe('progress with a floor', () => {
     const lastBefore = built.findIndex((s) => s.id === 'tables-2-5-10');
     const before = secure(built.slice(0, lastBefore).flatMap((s) => s.keys));
     expect(ladderProgress([...before, ...mulOnly], { division: false }).current?.id).not.toBe('tables-2-5-10');
-    expect(ladderProgress([...before, ...mulOnly]).current?.id).toBe('tables-2-5-10');
+    // With division on, the skill isn't secure without its division facts, but its times facts being secure jumps the student
+    // past it anyway (22 Oct 2026): it counts as passed over, not secure.
+    const on = ladderProgress([...before, ...mulOnly]);
+    expect(on.current?.id).not.toBe('tables-2-5-10');
+    expect(on.skills.find((p) => p.skill.id === 'tables-2-5-10')).toMatchObject({ status: 'secure', passedOver: true });
     expect(autoPools(ladderProgress([], { division: false }), { division: false }).focus.some((k) => k.startsWith('div:'))).toBe(false);
   });
 });

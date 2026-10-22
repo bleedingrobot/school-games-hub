@@ -127,6 +127,8 @@
 .cq-real p { margin: 0 0 2px; }
 .cq-train { width: 100%; border-collapse: collapse; }
 .cq-train th, .cq-train td { padding: 2px 8px; border-bottom: 1px dotted #2a2a50; text-align: left; font-weight: 400; }
+.cq-rec { color: #ffd166; font-weight: 700; cursor: help; }
+.cq-train th[title], .cq-headline > div[title], .cq-stats > div[title], .cq-bar[title] { cursor: help; }
 .cq-train caption { text-align: left; padding-bottom: 4px; }
 .cq-train .cq-btn { min-height: 44px; padding: 2px 10px; }
 .cq-church { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; }

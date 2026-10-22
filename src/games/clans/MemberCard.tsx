@@ -4,7 +4,7 @@ import type { Member } from '../../../shared/clans/types';
 import { Bar } from './Bars';
 import { Portrait } from './Sprite';
 import { headline } from './session';
-import { CLASS_TEXT, RACE_TEXT } from './text';
+import { CARD_HELP, CLASS_TEXT, RACE_TEXT, TRAIN_HELP } from './text';
 
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
@@ -30,10 +30,10 @@ export function MemberCard({ member, leader = false, children }: { member: Membe
         </div>
       </header>
       <dl className="cq-headline">
-        <div><dt>HP</dt><dd>{h.hp}</dd></div>
-        <div><dt>Attack</dt><dd>{h.attack}</dd></div>
-        <div><dt>Defence</dt><dd>{h.defence}</dd></div>
-        <div><dt>★ Best</dt><dd>{cap(h.star.name)} {h.star.value}</dd></div>
+        <div title={CARD_HELP.hp}><dt>HP</dt><dd>{h.hp}</dd></div>
+        <div title={CARD_HELP.attack}><dt>Attack</dt><dd>{h.attack}</dd></div>
+        <div title={CARD_HELP.defence}><dt>Defence</dt><dd>{h.defence}</dd></div>
+        <div title={CARD_HELP.star}><dt>★ Best</dt><dd>{cap(h.star.name)} {h.star.value}</dd></div>
       </dl>
       <p className="cq-gear">
         {([['weapon', 'Weapon'], ['armor', 'Armour'], ['shield', 'Shield']] as const).map(([k, label]) => (
@@ -49,9 +49,9 @@ export function MemberCard({ member, leader = false, children }: { member: Membe
           <p className="cq-soft">{RACE_TEXT[member.race]} {CLASS_TEXT[member.cls]}</p>
           <dl className="cq-stats">
             {Object.entries(member.stats).map(([k, v]) => (
-              <div key={k}><dt>{cap(k)}</dt><dd>{v}</dd></div>
+              <div key={k} title={TRAIN_HELP[k]}><dt>{cap(k)}</dt><dd>{v}</dd></div>
             ))}
-            <div><dt>Skill points</dt><dd>{member.maxSp}</dd></div>
+            <div title={CARD_HELP.sp}><dt>Skill points</dt><dd>{member.maxSp}</dd></div>
           </dl>
           <p className="cq-soft">Spells: {spells.length ? spells.map((s) => s.name).join(', ') : 'none'}</p>
           <Bar label="HP" value={member.hp} max={member.maxHp} kind="hp" />

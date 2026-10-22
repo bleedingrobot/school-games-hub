@@ -13,6 +13,7 @@ function services(over: Partial<Services> = {}) {
     userIdFor: vi.fn(async (token: string) => (token === 'good-token' ? 'student-1' : null)),
     recordAnswers: vi.fn(async (_p, item) => ({ ok: true as const, value: item.answers.length })),
     recordStudent: vi.fn(async () => ({ ok: true as const, value: null })),
+    recordSession: vi.fn(async () => ({ ok: true as const, value: null })),
     ...over,
   };
   return s;
@@ -62,6 +63,28 @@ describe('the training server function', () => {
     const { body } = await send(s, [student()]);
     expect(body).toEqual({ handled: 1, results: [{ type: 'student' }] });
     expect(vi.mocked(s.recordStudent).mock.calls[0][1]).toMatchObject({ typing: { 2: [900] }, autoSubmit: true, sessionsDone: 2 });
+  });
+
+  it('counts a finished session after its answers (Training before games)', async () => {
+    const s = services();
+    const session = { type: 'session', kind: 'facts', seed: 99, at: NOW - 500 };
+    const { body } = await send(s, [batch(), session]);
+    expect(body).toEqual({ handled: 2, results: [{ type: 'answers', added: 1 }, { type: 'session' }] });
+    expect(vi.mocked(s.recordSession).mock.calls[0]).toEqual(['student-1', session]);
+    expect(vi.mocked(s.recordAnswers).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(s.recordSession).mock.invocationCallOrder[0]);
+  });
+
+  it('drops a session the database says wasn’t finished, and keeps one that couldn’t be saved yet', async () => {
+    const refused = services({ recordSession: vi.fn(async () => ({ ok: false as const, why: 'refused' as const })) });
+    expect((await send(refused, [{ type: 'session', kind: 'quick', seed: 5, at: NOW }])).body).toEqual({
+      handled: 1,
+      results: [{ type: 'invalid', problem: 'refused' }],
+    });
+    const busy = services({ recordSession: vi.fn(async () => ({ ok: false as const, why: 'busy' as const })) });
+    expect((await send(busy, [batch(), { type: 'session', kind: 'facts', seed: 99, at: NOW }])).body).toEqual({
+      handled: 1,
+      results: [{ type: 'answers', added: 1 }],
+    });
   });
 
   it('drops answers for a fact that is not real, and keeps going with the rest', async () => {
@@ -120,6 +143,71 @@ describe('the training server function', () => {
 
   it('keeps the numbers the database uses in the shared settings', () => {
     expect(SAVE_LIMITS).toEqual({ keepPerFact: 30, dailyLimit: 600 });
+  });
+});
+
+describe('Quick looks answers through the training server function', () => {
+  const quick = (over: Record<string, unknown> = {}) => answer({ key: 'sub:ten-8', given: 8, ms: 0, typingMs: 0, ...over });
+
+  it('saves them for the signed-in student, marked from the key', async () => {
+    const s = services();
+    const { status, body } = await send(s, [batch([quick(), quick({ at: NOW - 900, given: 7 }), quick({ at: NOW - 800, key: 'gap:ten-7', given: 3 }), quick({ at: NOW - 700, key: 'subh:line-2', given: 2 })])]);
+    expect(status).toBe(200);
+    expect(body).toEqual({ handled: 1, results: [{ type: 'answers', added: 4 }] });
+    const [player, item] = vi.mocked(s.recordAnswers).mock.calls[0];
+    expect(player).toBe('student-1');
+    expect(item.answers.map((a) => [a.key, a.correct])).toEqual([['sub:ten-8', true], ['sub:ten-8', false], ['gap:ten-7', true], ['subh:line-2', true]]);
+  });
+
+  it('drops a bad Quick looks key or a full gap and keeps going with the rest', async () => {
+    const s = services();
+    const { body } = await send(s, [
+      batch([quick({ key: 'gap:five-5', given: 0 })]),
+      batch([quick({ key: 'sub:cube-3', given: 3 })], '5a2d9b11-0b7d-4c1e-9d3a-6a1f2b9c8e11'),
+      batch([quick({ key: 'sub:line-99', given: 99 })], '5a2d9b11-0b7d-4c1e-9d3a-6a1f2b9c8e12'),
+      batch([quick()], '5a2d9b11-0b7d-4c1e-9d3a-6a1f2b9c8e13'),
+    ]);
+    expect(body).toEqual({
+      handled: 4,
+      results: [{ type: 'invalid', problem: 'fact' }, { type: 'invalid', problem: 'fact' }, { type: 'invalid', problem: 'fact' }, { type: 'answers', added: 1 }],
+    });
+    expect(s.recordAnswers).toHaveBeenCalledTimes(1);
+  });
+
+  it('counts an answer sent twice once: the same batch again adds nothing, and a repeat inside a batch is dropped', async () => {
+    const seen = new Set<string>();
+    const s = services({
+      recordAnswers: vi.fn(async (_p, item) => {
+        if (seen.has(item.batchId)) return { ok: true as const, value: 0 };
+        seen.add(item.batchId);
+        return { ok: true as const, value: item.answers.length };
+      }),
+    });
+    const same = batch([quick(), quick()]);
+    const first = await send(s, [same]);
+    const again = await send(s, [same]);
+    expect(first.body.results).toEqual([{ type: 'answers', added: 1 }]);
+    expect(again.body.results).toEqual([{ type: 'answers', added: 0 }]);
+  });
+
+  it('turns away typed time on a tap answer', async () => {
+    const { body } = await send(services(), [batch([quick({ typingMs: 700 })])]);
+    expect(body.results).toEqual([{ type: 'invalid', problem: 'typing' }]);
+  });
+
+  it('saves the Quick looks settings with the student, and turns away nonsense ones', async () => {
+    const s = services();
+    const settings = { placed: true, startStage: 2, finished: 1, guided: false };
+    const { body } = await send(s, [{ ...student(), quick: settings }, { ...student(), quick: { ...settings, finished: 9 } }]);
+    expect(body.results).toEqual([{ type: 'student' }, { type: 'invalid', problem: 'quick' }]);
+    expect(vi.mocked(s.recordStudent).mock.calls[0][1]).toMatchObject({ quick: settings });
+  });
+
+  it('is fine with a busy day of both kinds of practice: the limits cover a 12-picture session several times a day', () => {
+    // The database keeps 30 answers of each picture and takes 600 answers a day for each student.
+    // A day of 10 Quick looks sessions (120) + 10 times-table sessions (about 300) fits with room to spare.
+    expect(SAVE_LIMITS.dailyLimit).toBeGreaterThanOrEqual(10 * 12 + 10 * 30);
+    expect(MAX_REQUESTS_PER_MINUTE).toBeGreaterThanOrEqual(10);
   });
 });
 

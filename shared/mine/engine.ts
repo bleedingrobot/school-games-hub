@@ -11,13 +11,13 @@
 import {
   AIM_ASSIST_COS, AIM_ASSIST_RANGE, CALM_RADIUS, DRAG, DT, ENERGY_PICKUP, ENERGY_REGEN, EXIT_RADIUS, KEY_DOOR_RANGE, KEY_RADIUS, LASER_COOLDOWN, LASER_COST, LASER_DAMAGE,
   LASER_LIFE, LASER_SPEED, LOSE_SIGHT_STEPS, MAX_ENERGY, MAX_MISSILES, MAX_PAD_BONUSES, MAX_RUN_STEPS, MAX_SHIELD, MAX_SPEED, MISSILE_COOLDOWN,
-  MISSILE_DAMAGE, MISSILE_LIFE, MISSILE_PICKUP, MISSILE_SPEED, MISSILE_SPLASH, PAD_BONUS_STEPS, PAD_ENERGY, PAD_MISSILES, PAD_SHIELD,
-  PICKUP_RADIUS, PROJECTILE_SUBSTEPS, REACTOR_HP, REACTOR_RADIUS, REBUILD_PENALTY_STEPS, REBUILD_SHIELD, ROBOTS, ROBOT_SHOT_LIFE, ACCEL,
+  MISSILE_DAMAGE, MISSILE_LIFE, MISSILE_PICKUP, MISSILE_SPEED, MISSILE_SPLASH, PAD_ANSWERS, PAD_BONUS_STEPS, PAD_ENERGY, PAD_MISSILES, PAD_SHIELD,
+  PICKUP_RADIUS, PROJECTILE_SUBSTEPS, REACTOR_HP, REACTOR_LOCK_ANSWERS, REACTOR_RADIUS, REBUILD_PENALTY_STEPS, REBUILD_SHIELD, ROBOTS, ROBOT_SHOT_LIFE, ACCEL,
   ROLL_UNIT, SHIELD_PICKUP, SHIP_RADIUS, SIGHT_EVERY, START_MISSILES, STEADY_PITCH_LIMIT, TURN_UNIT, USE_RANGE, WRONG_ANSWER_DAMAGE,
   WRONG_ANSWER_STEPS, type RobotType,
 } from './config';
 import { GRANT, HOLD, MAX_CODE, PENALTY, isSpecial, unpackInput, type InputRuns } from './inputs';
-import { KEY_COLOURS, roomAt, type Level } from './level';
+import { KEY_COLOURS, reactorTargetId, roomAt, type Level } from './level';
 
 export interface World {
   level: Level;
@@ -84,7 +84,10 @@ export interface RunState {
   /** Key colours held: blue, yellow, red. */
   keys: [number, number, number];
   doorsOpen: number[];
+  /** Right answers given at each pad (it pays out at PAD_ANSWERS). */
   padsUsed: number[];
+  /** Right answers still needed to unlock the reactor (0 = unlocked; always 0 in a run without maths). */
+  reactorLock: number;
   pickupsTaken: number[];
   robots: RobotState[];
   shots: Shot[];
@@ -152,6 +155,7 @@ export function newRun(w: World): RunState {
     keys: [0, 0, 0],
     doorsOpen: level.doors.map((d) => (w.maths || d.kind !== 'question' ? 0 : 1)),
     padsUsed: level.pads.map(() => 0),
+    reactorLock: w.maths ? REACTOR_LOCK_ANSWERS : 0,
     pickupsTaken: level.pickups.map(() => 0),
     robots: level.robots.map((r) => ({ type: r.type, x: r.x, y: r.y, z: r.z, hp: ROBOTS[r.type].hp, alive: 1, alert: 0, seen: 0, cool: 0, lost: 0 })),
     shots: [],
@@ -357,7 +361,7 @@ function hurtRobot(s: RunState, r: RobotState, dmg: number): void {
 }
 
 function hurtReactor(s: RunState, w: World, dmg: number): void {
-  if (s.reactorDown) return;
+  if (s.reactorDown || s.reactorLock > 0) return;
   s.reactorHp -= dmg;
   if (s.reactorHp <= 0) {
     s.reactorHp = 0;
@@ -382,7 +386,7 @@ function explode(w: World, s: RunState, x: number, y: number, z: number): void {
  * look straight down a shaft, and the reactor often sits at the bottom of one.)
  */
 function aimOf(w: World, s: RunState): [number, number, number] {
-  if (s.reactorDown) return [s.fx, s.fy, s.fz];
+  if (s.reactorDown || s.reactorLock > 0) return [s.fx, s.fy, s.fz];
   const R = w.level.reactor;
   const dx = R.x - s.px;
   const dy = R.y - s.py;
@@ -450,13 +454,23 @@ function stepSpecial(w: World, s: RunState, code: number): void {
     s.doorsByAnswer++;
     return;
   }
+  if (id === reactorTargetId(L)) {
+    const R = L.reactor;
+    if (s.reactorLock <= 0 || s.reactorDown || dist(s.px, s.py, s.pz, R.x, R.y, R.z) > USE_RANGE) {
+      s.badGrants++;
+      return;
+    }
+    s.reactorLock--;
+    return;
+  }
   const n = id - L.doors.length;
   const pad = L.pads[n];
-  if (!pad || s.padsUsed[n] === 1 || dist(s.px, s.py, s.pz, pad.x, pad.y, pad.z) > USE_RANGE) {
+  if (!pad || s.padsUsed[n] >= PAD_ANSWERS || dist(s.px, s.py, s.pz, pad.x, pad.y, pad.z) > USE_RANGE) {
     s.badGrants++;
     return;
   }
-  s.padsUsed[n] = 1;
+  s.padsUsed[n]++;
+  if (s.padsUsed[n] < PAD_ANSWERS) return;
   s.padsByAnswer++;
   if (pad.kind === 'shield') s.shield = Math.max(s.shield, PAD_SHIELD);
   else if (pad.kind === 'energy') s.energy = Math.max(s.energy, PAD_ENERGY);
@@ -651,7 +665,7 @@ export function stateKey(s: RunState): string {
   const parts: (string | number)[] = [
     s.px, s.py, s.pz, s.vx, s.vy, s.vz, s.fx, s.fy, s.fz, s.ux, s.uy, s.uz, s.rx, s.ry, s.rz,
     s.shield, s.energy, s.missiles, s.steps, s.held, s.penalty, s.bonus, s.keys.join(''), s.doorsOpen.join(''), s.padsUsed.join(''), s.pickupsTaken.join(''),
-    s.reactorHp, s.escapeLeft, s.lastRoom, s.rng, s.deaths, s.wrongAnswers, s.robotsKilled, s.outcome, s.finishSteps,
+    s.reactorLock, s.reactorHp, s.escapeLeft, s.lastRoom, s.rng, s.deaths, s.wrongAnswers, s.robotsKilled, s.outcome, s.finishSteps,
   ];
   for (const r of s.robots) parts.push(`${r.x},${r.y},${r.z},${r.hp},${r.alert},${r.cool}`);
   for (const t of s.shots) parts.push(`${t.k},${t.x},${t.y},${t.z},${t.life}`);

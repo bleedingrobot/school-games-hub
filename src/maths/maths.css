@@ -386,3 +386,162 @@
 .question--practical .question__fact {
   display: none;
 }
+
+/* ---- Scribble pad: a freehand space beside the question box ---- */
+
+.question-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 400px);
+}
+.question-wrap--single {
+  display: contents;
+}
+.question-wrap > .question {
+  flex: none;
+}
+
+.scribble-tab {
+  min-height: 44px;
+  padding: 6px 16px;
+  border: 2px solid #cbd5e1;
+  border-radius: 14px;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.scribble-tab:focus-visible,
+.scribble__btn:focus-visible,
+.scribble__swatch:focus-visible {
+  outline: 3px solid #5b3cc4;
+  outline-offset: 2px;
+}
+
+.scribble {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  height: 300px;
+  padding: 10px;
+  border-radius: 24px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.3);
+}
+.scribble__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.scribble__tools {
+  display: flex;
+  gap: 6px;
+}
+.scribble__hide {
+  margin-left: auto;
+}
+.scribble__btn {
+  min-height: 44px;
+  padding: 4px 12px;
+  border: 2px solid #cbd5e1;
+  border-radius: 12px;
+  background: #eef2f7;
+  color: #0f172a;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.scribble__btn[aria-pressed='true'] {
+  border-color: #5b3cc4;
+  background: #ede9fe;
+}
+.scribble__swatch {
+  width: 44px;
+  height: 44px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #cbd5e1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.scribble__swatch[aria-pressed='true'] {
+  box-shadow: 0 0 0 3px #5b3cc4;
+}
+.scribble__surface {
+  position: relative;
+  min-height: 0;
+}
+.scribble__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  background: repeating-linear-gradient(#fff 0 31px, #e2e8f0 31px 32px);
+  box-shadow: inset 0 0 0 2px #cbd5e1;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+/* Wide screens (Chromebooks): the pad sits to the right of the box, as tall as the box. */
+@media (min-width: 880px) and (min-height: 461px) {
+  .question-wrap {
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+    width: auto;
+  }
+  .question-wrap > .scribble-tab {
+    align-self: center;
+    writing-mode: vertical-rl;
+    padding: 16px 8px;
+  }
+  .question-wrap > .scribble {
+    width: min(420px, calc(100vw - 480px));
+    height: auto;
+    min-height: 420px;
+  }
+}
+
+/* Short wide screens (phones on their side): the pad slides over the right of the screen. */
+@media (max-height: 460px) and (min-width: 600px) {
+  .question-wrap {
+    width: min(100%, 720px);
+  }
+  .question-wrap > .scribble-tab {
+    position: fixed;
+    right: 8px;
+    bottom: 8px;
+    z-index: 51;
+  }
+  .question-wrap > .scribble {
+    position: fixed;
+    inset: 8px 8px 8px auto;
+    z-index: 51;
+    width: min(380px, 55vw);
+    height: auto;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scribble {
+    animation: scribble-in 0.15s ease-out;
+  }
+  @keyframes scribble-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}

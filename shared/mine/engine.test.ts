@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ESCAPE_EXTRA_SECONDS, MAX_ENERGY, MAX_MISSILES, MAX_PAD_BONUSES, MAX_SHIELD, PAD_BONUS_STEPS, REBUILD_PENALTY_STEPS, REBUILD_SHIELD, ROBOTS, STEPS_PER_SECOND, USE_RANGE, WRONG_ANSWER_DAMAGE,
+  ESCAPE_EXTRA_SECONDS, MAX_ENERGY, MAX_MISSILES, MAX_PAD_BONUSES, MAX_SHIELD, PAD_ANSWERS, PAD_BONUS_STEPS, REACTOR_LOCK_ANSWERS, REBUILD_PENALTY_STEPS, REBUILD_SHIELD, ROBOTS, STEPS_PER_SECOND, USE_RANGE, WRONG_ANSWER_DAMAGE,
   WRONG_ANSWER_STEPS,
 } from './config';
 import { clockSteps, makeWorld, newRun, replay, stateKey, stepRun, type RunState, type World } from './engine';
 import { GRANT, HOLD, IDLE, NO_INPUT, PENALTY, packInput, pushInput, type PilotInput } from './inputs';
-import { RECIPES, hardRecipe, makeLevel, roomAt } from './level';
+import { RECIPES, hardRecipe, makeLevel, reactorTargetId, roomAt } from './level';
 
 const level1 = makeLevel(RECIPES[0]);
 const level3 = makeLevel(RECIPES[2]);
@@ -36,6 +36,7 @@ describe('aim assist on the reactor', () => {
   it('bends a shot at the reactor from above, when the nose is a little off, and leaves other shots alone', () => {
     const { w, s } = setup();
     const R = w.level.reactor;
+    s.reactorLock = 0;
     // 17 metres straight above the reactor, nose pointing 15 degrees off straight down (steady flight can't look further).
     placeAt(s, R.x, R.y, R.z + 8);
     const tilt = 0.26;
@@ -48,6 +49,7 @@ describe('aim assist on the reactor', () => {
     expect(shot.vz).toBeLessThan(0);
     // Pointing well away from the reactor, it flies where the nose points.
     const other = setup();
+    other.s.reactorLock = 0;
     placeAt(other.s, R.x, R.y, R.z + 8);
     other.s.fx = 1; other.s.fy = 0; other.s.fz = 0;
     stepRun(other.w, other.s, press({ fire: true }));
@@ -220,16 +222,20 @@ describe('doors', () => {
 });
 
 describe('pads and pickups', () => {
-  it('a pad gives its refill once, and the time bonus at most three times a run', () => {
+  it('a pad pays out on its second right answer, once, and the time bonus at most three times a run', () => {
     const L = makeLevel(RECIPES[5]);
     const { w, s } = setup(L);
     s.shield = 10; s.energy = 5; s.missiles = 0;
-    const clock0 = clockSteps(s);
     let bonuses = 0;
     for (const pad of L.pads) {
       placeAt(s, pad.x, pad.y, pad.z);
+      for (let k = 1; k < PAD_ANSWERS; k++) {
+        stepRun(w, s, GRANT + pad.id);
+        expect(s.padsUsed[pad.id - L.doors.length]).toBe(k);
+        expect(s.padsByAnswer).toBeLessThan(L.pads.indexOf(pad) + 1); // nothing paid out yet
+      }
       stepRun(w, s, GRANT + pad.id);
-      expect(s.padsUsed[pad.id - L.doors.length]).toBe(1);
+      expect(s.padsUsed[pad.id - L.doors.length]).toBe(PAD_ANSWERS);
       stepRun(w, s, GRANT + pad.id);
       bonuses = s.padBonuses;
     }
@@ -238,9 +244,20 @@ describe('pads and pickups', () => {
     expect(s.missiles).toBeGreaterThan(0);
     expect(s.missiles).toBeLessThanOrEqual(MAX_MISSILES);
     expect(bonuses).toBe(MAX_PAD_BONUSES);
-    expect(clock0 - 0).toBe(0);
     expect(s.bonus).toBe(MAX_PAD_BONUSES * PAD_BONUS_STEPS);
-    expect(s.badGrants).toBe(L.pads.length); // each second grant on a used pad
+    expect(s.padsByAnswer).toBe(L.pads.length);
+    expect(s.badGrants).toBe(L.pads.length); // each extra grant on a finished pad
+  });
+
+  it('a pad gives nothing after one right answer', () => {
+    const pad = level3.pads[0];
+    const { w, s } = setup(level3);
+    s.shield = 10;
+    placeAt(s, pad.x, pad.y, pad.z);
+    stepRun(w, s, GRANT + pad.id);
+    expect(s.padsUsed[0]).toBe(1);
+    expect(s.shield).toBe(10);
+    expect(s.bonus).toBe(0);
   });
 
   it('picks up what helps and leaves what does not', () => {
@@ -369,10 +386,49 @@ describe('rebuilding', () => {
   });
 });
 
+describe('the reactor lock', () => {
+  const id = reactorTargetId(level1);
+
+  it('starts locked in a run with maths, unlocked without it', () => {
+    expect(setup().s.reactorLock).toBe(REACTOR_LOCK_ANSWERS);
+    expect(newRun(makeWorld(level1, { maths: false })).reactorLock).toBe(0);
+  });
+
+  it('shots do not hurt a locked reactor', () => {
+    const { w, s } = setup(level1);
+    aloneWith(s, -1);
+    const R = level1.reactor;
+    const room = level1.rooms[level1.reactorRoom];
+    placeAt(s, R.x, R.y - room.hy, R.z);
+    s.missiles = 12;
+    for (let i = 0; i < 200; i++) stepRun(w, s, press({ fire: true, missile: true }));
+    expect(s.reactorHp).toBe(160);
+    expect(s.reactorDown).toBe(0);
+  });
+
+  it('three right answers close to the reactor unlock it; further ones are not allowed', () => {
+    const { w, s } = setup(level1);
+    const R = level1.reactor;
+    placeAt(s, R.x + USE_RANGE + 2, R.y, R.z);
+    stepRun(w, s, GRANT + id);
+    expect(s.reactorLock).toBe(REACTOR_LOCK_ANSWERS);
+    expect(s.badGrants).toBe(1);
+    placeAt(s, R.x + 2, R.y, R.z);
+    for (let k = 1; k <= REACTOR_LOCK_ANSWERS; k++) {
+      stepRun(w, s, GRANT + id);
+      expect(s.reactorLock).toBe(REACTOR_LOCK_ANSWERS - k);
+    }
+    expect(s.badGrants).toBe(1);
+    stepRun(w, s, GRANT + id);
+    expect(s.badGrants).toBe(2);
+  });
+});
+
 describe('the reactor and the way out', () => {
   function atReactor() {
     const { w, s } = setup(level1);
     aloneWith(s, -1);
+    s.reactorLock = 0;
     const R = level1.reactor;
     const room = level1.rooms[level1.reactorRoom];
     placeAt(s, R.x, R.y - room.hy, R.z);

@@ -22,6 +22,8 @@ import {
 } from '../data/teacher';
 import { ALL_GAMES, gameLabel } from '../games/registry';
 import { TeacherClassPicker, TeacherClassProvider, useTeacherClass } from '../teacher/TeacherClass';
+import { TrainingFirstSwitch } from '../training/TeacherTrainingFirst';
+import { trainingOn } from '../training/switch';
 import { BOT_LEVELS, type BotLevel } from '../games/types';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
@@ -102,6 +104,7 @@ function TeacherView({ me, isAdmin }: { me: string; isAdmin: boolean }) {
         <FriendGamesSwitch />
         <ReactionsSwitch />
         <MathsSwitchPanel />
+        {trainingOn() && <TrainingFirstSwitch />}
         <Suspense fallback={null}>
           {ALL_GAMES.map((game) => game.TeacherPanels && <game.TeacherPanels key={game.id} />)}
         </Suspense>
