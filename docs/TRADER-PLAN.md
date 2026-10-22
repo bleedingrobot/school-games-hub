@@ -276,8 +276,8 @@ This plan was written on 18 Oct, two days before `docs/GAME_DEVELOPMENT_GUIDE.md
 | **T.6** | `HowToPlay.tsx` reading its numbers from config, `Accessibility.test.tsx` (copy Clan Quest's), slow-Chromebook check, the one-line shared edits (`registry.ts` behind `traderOn()`, `build-functions.mjs`, `package.json` scripts at the end, `.gitignore`, `shared/README.md`, `docs/PRIVACY-SUMMARY.md`, `docs/PLAN.md` migration note) |
 | **T.7** | `docs/prompts/trader-golive.md` (copy `clans-golive.md`). Then, each only on James's words: pre-flight → apply migration → deploy `trader` → check from outside → merge to `main` → try as teacher with the pupil switch off → switch on. Auto mode blocks live deploys, so James leaves it first |
 
-### Questions for James (my pick first)
+### James's answers (22 Oct 2026)
 
-1. **Season end.** Use the hub's one New Season button (pick) or keep a separate teacher start date for Star Trader?
-2. **Order.** Keep "after Clan Quest", or start whenever a session is free (pick: whenever, games are independent branches now)?
-3. **Marking cost.** One request per answered question like Marble (simple), or batch answers into the jump request (cheaper)? Decide after the T.0 estimate.
+1. **Season end:** the hub's one New Season button. No separate Star Trader start date.
+2. **Order:** whenever a session is free. No need to wait for Clan Quest.
+3. **Marking cost:** decide after the T.0 request estimate.
