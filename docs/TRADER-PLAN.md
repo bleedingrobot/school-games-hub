@@ -281,3 +281,102 @@ This plan was written on 18 Oct, two days before `docs/GAME_DEVELOPMENT_GUIDE.md
 1. **Season end:** the hub's one New Season button. No separate Star Trader start date.
 2. **Order:** whenever a session is free. No need to wait for Clan Quest.
 3. **Marking cost:** decide after the T.0 request estimate.
+
+## 15. Stage T.0 results (22 Oct 2026): rule sheet, config list, request estimate
+
+Plan only. Nothing built. Numbers below are **provisional**: T.1's simulator (`npm run trader:sim`) settles them. Source for every "original" number: the 1.2.2 C source (`Global.c`, `Traveler.c`, `Fuel.c`, `DataTypes.h`), used as a rule book only (GPL-2: no code, text or names copied).
+
+### 15.1 The one thing T.0 found that changes the numbers
+
+The plan said goods ÷ 10 and a 10,000-credit moon. If ships were also ÷ 10 (Hornet 100,000 → 10,000) the best ship would cost as much as the moon. In the original the moon (500,000) is 5× the *second-dearest* ship (Wasp, 300,000) and 500× the start money. So:
+
+- **Goods ÷ 10** (as planned): prices of about 3 to 500 credits.
+- **Ships and gear ÷ 50**, so every upgrade is a real saving goal but the moon is still the biggest: Gnat 200, Firefly 500, Bumblebee 1,200, Beetle 1,600, Termite 4,500.
+- **Moon 10,000, start 100 credits and a Flea.** The ratio moon : start is 100 here against 500 in the original. T.1 checks whether that is too quick for a 5-week season, and moves the moon price, not the formulas.
+
+### 15.2 Goods (original, then ours)
+
+Original price at a planet: `base = low-tech price + tech level × step`; ×4/3 if the government wants it; × (100 − 2 × trader strength)%; × (100 − size)%; × ¾ if the planet's special resource makes it cheap, × 4/3 if it makes it dear; 0 if the planet's tech is below the good's usage level or the good is banned there; × 3/2 during the matching event; then ± a random variance. **We keep this formula exactly**, with prices ÷ 10 (rounded to the nearest credit, minimum 1).
+
+| Good | Low-tech price | Step per tech | Variance | Event that doubles it | Cheap with | Dear with | Made at tech | Used at tech |
+|---|---|---|---|---|---|---|---|---|
+| Water | 30 | +3 | 4 | Drought | Lots of water | Desert | 0 | 0 |
+| Furs | 250 | +10 | 10 | Cold | Rich animals | Lifeless | 0 | 0 |
+| Food | 100 | +5 | 5 | Crop failure | Rich soil | Poor soil | 1 | 0 |
+| Ore | 350 | +20 | 10 | War | Rich in minerals | Poor in minerals | 2 | 2 |
+| Games | 250 | −10 | 5 | Boredom | Artistic | none | 3 | 1 |
+| Fireworks (Firearms) | 1250 | −75 | 100 | War | Warlike | none | 3 | 1 |
+| Medicine | 650 | −20 | 10 | Plague | Lots of herbs | none | 4 | 1 |
+| Machines | 900 | −30 | 5 | Lack of workers | none | none | 4 | 3 |
+| Lollies (Narcotics) | 3500 | −125 | 150 | Boredom | Weird mushrooms | none | 5 | 0 |
+| Robots | 5000 | −150 | 100 | Lack of workers | none | none | 6 | 4 |
+
+(Original columns shown; our price column = value ÷ 10. Variance ÷ 10 too, minimum 1. The best trade routes are the dear goods, so Lollies and Robots are capped in supply: stock × (5 − difficulty) ÷ (6 − difficulty) + 1, exactly as in the original, to stop one lucky load winning the season.)
+
+The event-name list is the original's 7 (war, plague, drought, boredom, cold, crop failure, lack of workers). Each raises the matching good by half and cuts its stock to a fifth. Our wording and "% rise" are shown to pupils as a game fact, never asked as a question.
+
+### 15.3 Governments (9 of the original 17, kid-worded)
+
+Strengths run 0–7. "Customs" is the original's police. Fireworks / Lollies are the original's firearms / narcotics. Tech range is where the planet type is found.
+
+| Our name (original) | Customs | Pirates | Traders | Tech | Fireworks | Lollies | Wants |
+|---|---|---|---|---|---|---|---|
+| Pirate haven (Anarchy) | 0 | 7 | 1 | 0–5 | ok | ok | Food |
+| Merchant guild (Capitalist) | 3 | 2 | 7 | 4–7 | ok | ok | Ore |
+| Class vote (Democracy) | 3 | 2 | 5 | 3–7 | ok | ok | Games |
+| Scientists' council (Technocracy) | 6 | 3 | 6 | 4–7 | ok | ok | Water |
+| Temple (Theocracy) | 6 | 1 | 4 | 0–4 | ok | ok | Lollies |
+| Peace garden (Pacifist) | 2 | 1 | 5 | 0–3 | **banned** | ok | none |
+| Star navy (Military) | 7 | 0 | 6 | 2–7 | ok | **banned** | Robots |
+| Robot council (Cybernetic) | 7 | 7 | 5 | 6–7 | **banned** | **banned** | Ore |
+| Farming co-op (Feudal) | 1 | 6 | 2 | 0–3 | ok | ok | Fireworks |
+
+Dropped: communist, confederacy, corporate, dictatorship, fascist, monarchy, socialist, satori (too alike for a 24-planet map).
+
+### 15.4 Ships (6 of the original 10; prices ÷ 50)
+
+| Ship | Holds | Weapon / shield slots | Fuel range | Hull | Price (original → ours) | Fuel per unit (ours) |
+|---|---|---|---|---|---|---|
+| Flea | 10 | 0 / 0 | 20 | 25 | free (start) | 1 |
+| Gnat | 15 | 1 / 0 | 14 | 100 | 10,000 → **200** | 1 |
+| Firefly | 20 | 1 / 1 | 17 | 100 | 25,000 → **500** | 1 |
+| Bumblebee | 25 | 1 / 2 | 15 | 100 | 60,000 → **1,200** | 1 |
+| Beetle | 50 | 0 / 0 | 14 | 50 | 80,000 → **1,600** | 2 |
+| Termite | 60 | 1 / 3 | 13 | 200 | 225,000 → **4,500** | 3 |
+
+**A change from the plan:** it listed the Hornet as the sixth ship, but a Hornet has only 20 holds, so the "10 to 60 holds" range needs the Termite. **My pick: swap Hornet for Termite.** Fuel range is the original's number of parsecs; on our grid it is **grid squares**. The plan's "tanks of 8–14" is too tight for a Flea to cross a 20 × 20 map, so we keep the original ranges and check in T.1 that every planet can be reached from the start. Gear (÷ 50): pulse laser 40, beam laser 250, military laser 700; energy shield 100, reflective shield 400; 5 extra holds 50; hull repair 1 credit a point (Flea) up to 4. Weapon power 15 / 25 / 35; shield strength 100 / 200.
+
+### 15.5 Encounters and planet count
+
+- Original: every "click" of a trip rolls `random(44 − 2×difficulty)`; below pirate strength = pirates, below pirate+customs = customs, below pirate+customs+traders = a trader. That is many rolls per trip. **Ours: one roll per jump**, chance = `(pirates + customs + traders) ÷ 30` capped at 60%, which gives about 1 jump in 3 on an average planet (the plan's target). Which kind is picked in the same proportions as the original. Decided in T.1 with the simulator.
+- **Planets: 24** on a 20 × 20 grid, minimum 2 apart, built from a seed, each with a tech level inside its government's range, a size (Tiny to Huge, price cut 0–4% ÷ 10 per size as the original), and 0 or 1 special resource. A galaxy that has any planet out of reach of a Flea is thrown away and re-made.
+- **24 planet names (ours, not the original's):** Kauri, Tui, Kiwi, Pohutu, Rimu, Kea, Manuka, Weka, Pukeko, Totara, Kakapo, Huia, Takahe, Ponga, Mamaku, Rata, Titi, Kowhai, Harakeke, Pounamu, Tuatara, Moa, Karaka, Hoiho. (James to approve or change in T.1.)
+
+### 15.6 `shared/trader/config.ts`: every tuning number in one file
+
+Moon price; start credits and ship; jumps a day (10); practice jumps; grid size (20 × 20) and planet count (24) and minimum gap; goods table (15.2); governments (15.3); ships and gear (15.4); price rounding and sizes; supply caps; event chance per planet per day and its size; encounter chance divisor and cap; pirate and customs strengths, laser and shield power, flee chance; fine and bounty sizes; sharp-trader discount (1–2%) and how often a question is asked; loan limit (500), rate (10% a week), repay share of each sale; market drift back per day, per-pupil and per-day price limits (20% / 50%); contract and beacon limits and timings (T.5); station stage sizes (T.5); points table (T.5); questions stored per day. How to play reads these.
+
+### 15.7 Server request estimate
+
+A pupil's day is 10 jumps. Questions asked (focus questions, never typed trade sums): about 1 per planet visit (10), about 1.3 fights × 4 laser rounds (5), about 1 steering question: **about 17 a day**. Trade buys and sells ride on the jump request, a fight is played in the browser and replayed in the next request.
+
+| | Requests per pupil per day | Class of 28 in one 12-minute lesson | 100 pupils, 20 school days |
+|---|---|---|---|
+| **A. One request per answered question** (Marble Rush, the guide's way A) | 1 start + 10 jumps + 17 answers + 1 end ≈ **29** | ≈ **810**, about 1 a second class-wide | ≈ **58,000** a month |
+| **B. Answers batched with the jump** | 1 start (also makes the day's questions) + 10 jumps carrying their answers + 1 end ≈ **12** | ≈ **340** | ≈ **24,000** a month |
+
+- Both fit the 500,000 free limit by themselves. The earlier "265,000 of 500,000 for the other games" cannot be checked from here; the live total goes in at T.4 from the request records (`pg_stat_statements`, as `SERVER-LOAD-PLAN.md` does).
+- **The real risk is the burst, not the month** (`SERVER-LOAD-PLAN.md`: a class doing the same thing at once). Both options start with 28 pupils pressing Start at the same second, which is the same as the lobby (28 every 20 seconds, which was fine after S.4). Market writes are the other hot spot: one database step per trade batch per planet; T.4 tests a busy lunchtime.
+- **Trade-off:** B is less than half the load and works with the plan's "one request per jump". Its cost is that a pupil learns "right / wrong, here's the working" **after** the jump, not straight after answering. A shows it instantly. A middle road: B for steering and shop checks, A only for the laser rounds, where instant feedback matters most (about 5 extra requests a day, ≈ 17 total).
+- **My pick: B for everything except laser rounds** (≈ 17 a day, ≈ 480 per class lesson, ≈ 34,000 a month). Your call (question 3 in section 14).
+
+### 15.8 Migration, shared files and checks
+
+- **Migration number:** next free across `main` and every branch on 22 Oct 2026 is `20261022000400` (`node scripts/migration-numbers.mjs`). Likely two files: `…000400_trader.sql` (tables, functions, `hub_games` registration, `app_settings` columns) and later a market/contracts one. **Re-check before each is written, and again at go-live.** Our function name is `trader`; not in `FUNCTIONS` yet.
+- **Shared files we will touch, at the end only (T.6), one line each:** `src/games/registry.ts` (append behind `traderOn()`), `scripts/build-functions.mjs` (add `'trader'` to the end of `FUNCTIONS`), `package.json` (`trader:sim`, `trader:preview` at the end of `scripts`), `.gitignore` (`dist-preview-trader/`), `shared/README.md`, `docs/PRIVACY-SUMMARY.md`, `docs/PLAN.md` (migration note). Nothing else shared; no new dependencies.
+- **Reuse checked present:** `shared/seededRandom.ts`, `shared/maths/serverQuestions.ts`, `shared/space/mathsSwitch.ts`, `shared/space/facts.ts`, `src/training/switch.ts` (code switch), `src/games/clans/switch.ts` (teacher-switch hook), `supabase/functions/_shared/{http,limits,recordAnswers,signIn,stamp}.ts`, `marble_board()` in `20261019000900_marble.sql` (leaderboard pattern).
+- **Licence:** the original is GPL-2 (re-confirmed from `License.txt`): rules and numbers used, no code or text. **Pictures:** nothing downloaded yet. Kenney's space packs (CC0) are the plan; **re-check the licence page and write it here at the start of T.2** before using any file. Anything not CC0 is drawn by us in SVG.
+- **Not yet decided (James):** the Hornet → Termite swap (15.4), the planet names (15.5), and the marking option (15.7).
+
+### Next
+Stage T.1 (the engine and simulator) starts when James says. It needs his answer on 15.4 and 15.7 first, or it will build with my picks and say so.
