@@ -94,3 +94,5 @@ streak, Marble labels.
 (`--no-verify-jwt --use-api`), check each answers 401 signed out, merge the PR. No database change. Deploy the functions just
 before merging: a game started on the old site and saved after the deploy is judged with +2 (a solo space game played with
 +1 charges would be refused). Best done outside school hours.
+
+**Went live 22 Oct 2026 evening (James: "go").** `save-bot-game`, `space-game` and `lord` deployed (each answers 401 JSON signed out); site published by merging the PR.
