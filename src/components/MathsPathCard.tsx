@@ -116,8 +116,8 @@ export default function MathsPathCard({
       {!ladder!.placed && (
         <div className="placement-offer">
           <p>
-            Want the games to start in the right place? Answer about 10 quick
-            questions. You can skip them.
+            Find your starting place before you play: about 10 quick
+            questions, once only.
           </p>
           <Link to="/placement" className="button button--primary">
             Find my starting place

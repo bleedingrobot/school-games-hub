@@ -8,6 +8,10 @@ import { SUBITISING_CONFIG } from '../../shared/subitising/config';
 import { dayString, type TrainingState } from '../../shared/training/records';
 import type { AnswerEvent } from '../../shared/training/save';
 import { useAuth } from '../auth/AuthContext';
+import { fetchMyLadder } from '../data/ladder';
+import { NO_LADDER, type LadderInfo } from '../../shared/maths/place';
+import { needsPlacement, trainingPassedSteps } from '../../shared/training/start';
+import { PlacementFirstCard } from '../training/PlacementFirst';
 import { addAnswer, enqueueSession, enqueueStudent, flushQueue, loadTraining, type QuickLoad } from '../data/training';
 import { GamesGateNote } from '../training/TrainFirst';
 import type { QuickAnswerEvent } from '../subitising/SubitisingApp';
@@ -21,22 +25,29 @@ const FLUSH_EVERY = 8;
 export default function TrainingPage() {
   const { profile } = useAuth();
   if (!profile) return null;
-  return <StudentTraining player={profile.id} />;
+  return <StudentTraining player={profile.id} role={profile.role} />;
 }
 
-function StudentTraining({ player }: { player: string }) {
-  const [loaded, setLoaded] = useState<{ state: TrainingState; offline: boolean; quick?: QuickLoad } | null>(null);
+/** The student's place on the maths ladder; without it (offline, no school) Training starts from the records alone. */
+const ladderInfo = (): Promise<LadderInfo> => fetchMyLadder().then((d) => d.focus.ladder ?? NO_LADDER, () => NO_LADDER);
+
+function StudentTraining({ player, role }: { player: string; role: string }) {
+  const [loaded, setLoaded] = useState<{ state: TrainingState; offline: boolean; quick?: QuickLoad; placeFirst: boolean } | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let current = true;
-    loadTraining(player)
-      .then((result) => current && setLoaded(result))
+    // The starting place (the maths warm-up) decides which steps are already behind the student (22 Oct 2026).
+    Promise.all([loadTraining(player), ladderInfo()])
+      .then(([result, ladder]) => {
+        if (!current) return;
+        setLoaded({ ...result, state: { ...result.state, passedSteps: trainingPassedSteps(ladder) }, placeFirst: needsPlacement(ladder, role) });
+      })
       .catch(() => current && setFailed(true));
     return () => {
       current = false;
     };
-  }, [player]);
+  }, [player, role]);
 
   if (failed) return <p role="alert" className="panel__empty">We couldn’t open Training just now. Please try again in a moment.</p>;
   if (!loaded) {
@@ -46,7 +57,7 @@ function StudentTraining({ player }: { player: string }) {
       </div>
     );
   }
-  return <Loaded player={player} start={loaded.state} offline={loaded.offline} quickStart={loaded.quick} />;
+  return <Loaded player={player} start={loaded.state} offline={loaded.offline} quickStart={loaded.quick} placeFirst={loaded.placeFirst} />;
 }
 
 /** Quick looks as the page keeps it: the saved answers and settings, with the session count worked out from the answers. */
@@ -64,7 +75,7 @@ function subStateFrom(quick: QuickLoad | undefined): SubState {
   };
 }
 
-function Loaded({ player, start, offline, quickStart }: { player: string; start: TrainingState; offline: boolean; quickStart?: QuickLoad }) {
+function Loaded({ player, start, offline, quickStart, placeFirst }: { player: string; start: TrainingState; offline: boolean; quickStart?: QuickLoad; placeFirst: boolean }) {
   const [state, setState] = useState(start);
   const stateRef = useRef(start);
   const [quick, setQuick] = useState(() => subStateFrom(quickStart));
@@ -162,6 +173,7 @@ function Loaded({ player, start, offline, quickStart }: { player: string; start:
           sinceSend.current = 0;
         }}
         gateNote={<GamesGateNote />}
+        placementFirst={placeFirst ? <PlacementFirstCard back="/training" /> : undefined}
       />
     </>
   );

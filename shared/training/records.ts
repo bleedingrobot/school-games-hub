@@ -2,8 +2,8 @@
 import { TRAINING_CONFIG, type TrainingConfig } from './config';
 import { isQuickKey } from '../subitising/keys';
 import type { QuickSettings } from '../subitising/saved';
-import { digitsOf } from './facts';
-import { factBandIndex, thinkingMs, typingMsFor, type Answer, type BandIndex } from './speed';
+import { digitsOf, FACT_BY_KEY } from './facts';
+import { answerBandIndex, factBandIndex, NEW_TO_ME, thinkingMs, typingCeilingMs, typingMsFor, type Answer, type BandIndex } from './speed';
 
 export interface FactRecord {
   /** Latest answers, oldest first. */
@@ -19,16 +19,31 @@ export interface TrainingState {
   typing: Record<number, number[]>;
   /** The latest answers across all facts (true = right), for spotting a student who is struggling. */
   recent: boolean[];
+  /** The bands of the latest answers across all facts (wrong = "New to me"), for spotting a student who is flying. */
+  recentBands?: BandIndex[];
+  /**
+   * Ladder steps already behind the student because of their starting place (the maths warm-up, or the furthest place the games
+   * have reached). Worked out when Training opens, never saved: the facts on those steps are simply not taught again.
+   */
+  passedSteps?: number;
+  /** The practice fortnight runs up to (not including) this day, "YYYY-MM-DD": no new facts before then. */
+  restUntil?: string | null;
   sessionsDone: number;
   autoSubmit: boolean;
 }
 
-export const emptyState = (): TrainingState => ({ records: {}, typing: {}, recent: [], sessionsDone: 0, autoSubmit: true });
+export const emptyState = (): TrainingState => ({ records: {}, typing: {}, recent: [], recentBands: [], passedSteps: 0, restUntil: null, sessionsDone: 0, autoSubmit: true });
 
 /** "YYYY-MM-DD" for a Date, in the device's own time zone. */
 export function dayString(d: Date): string {
   const p = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+/** The day `n` days after a "YYYY-MM-DD" day. */
+export function addDays(day: string, n: number): string {
+  const [y, m, d] = day.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 }
 
 /** Whole days from one "YYYY-MM-DD" to another (b minus a). */
@@ -67,6 +82,22 @@ export function overdueDays(r: FactRecord, today: string, config: TrainingConfig
 
 export const isDue = (r: FactRecord, today: string, config: TrainingConfig = TRAINING_CONFIG) => overdueDays(r, today, config) >= 0;
 
+/** True while the practice fortnight runs on `today`: no new facts. */
+export const isResting = (state: TrainingState, today: string) => !!state.restUntil && today < state.restUntil;
+
+/**
+ * Flying: over the last `window` answers (it needs that many), nearly all right and most at "Quick thinking" or faster.
+ * A struggling student is never flying.
+ */
+export function isFlying(state: TrainingState, config: TrainingConfig = TRAINING_CONFIG): boolean {
+  const { window, minRight, minQuick } = config.session.flying;
+  const bands = (state.recentBands ?? []).slice(-window);
+  if (bands.length < window || isStruggling(state, config)) return false;
+  const right = bands.filter((b) => b < NEW_TO_ME).length;
+  const quick = bands.filter((b) => b <= secureBandIndex(config)).length;
+  return right / bands.length >= minRight && quick / bands.length >= minQuick;
+}
+
 export function isStruggling(state: TrainingState, config: TrainingConfig = TRAINING_CONFIG): boolean {
   const { window, minAnswers, belowCorrect } = config.struggling;
   const recent = state.recent.slice(-window);
@@ -88,19 +119,23 @@ function applyAnswer(
   day: string,
   config: TrainingConfig,
 ): { state: TrainingState; answer: Answer } {
-  const entry: Answer = { correct, thinkMs: correct ? thinkingMs(answerMs, typedMs) : null, day };
+  // Never more than the ceiling is taken off, whatever was saved with the answer: old answers are scored again with it too.
+  const fact = FACT_BY_KEY.get(factKey);
+  const typed = fact ? Math.min(typedMs, typingCeilingMs(digitsOf(fact.answer), config)) : typedMs;
+  const entry: Answer = { correct, thinkMs: correct ? thinkingMs(answerMs, typed) : null, day };
   const old = state.records[factKey];
   const answers = [...(old?.answers ?? []), entry].slice(-config.historyLength);
   const greenDays = [...(old?.greenDays ?? [])];
   if (factBandIndex(answers, config) === 0 && !greenDays.includes(day)) greenDays.push(day);
-  return {
-    answer: entry,
-    state: {
-      ...state,
-      records: { ...state.records, [factKey]: { answers, greenDays, lastDay: day } },
-      recent: [...state.recent, correct].slice(-config.struggling.window),
-    },
+  const next: TrainingState = {
+    ...state,
+    records: { ...state.records, [factKey]: { answers, greenDays, lastDay: day } },
+    recent: [...state.recent, correct].slice(-config.struggling.window),
+    recentBands: [...(state.recentBands ?? []), answerBandIndex(entry)].slice(-config.session.flying.window),
   };
+  // Starting to struggle starts a practice fortnight, unless one is already running.
+  if (!isResting(state, day) && isStruggling(next, config)) next.restUntil = addDays(day, config.rest.days);
+  return { answer: entry, state: next };
 }
 
 /**

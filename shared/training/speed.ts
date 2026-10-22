@@ -49,8 +49,19 @@ export function middle(values: readonly number[]): number | null {
   return sorted[Math.floor(sorted.length / 2)];
 }
 
-/** Typing time for an answer with this many digits: the middle of the last several checks. */
+/** The most typing time that can be taken off an answer this many digits long. */
+export function typingCeilingMs(digits: number, config: TrainingConfig = TRAINING_CONFIG): number {
+  const d = Math.min(Math.max(digits, 1), 3);
+  return config.typing.ceilingMs[d];
+}
+
+/**
+ * Typing time for an answer with this many digits: the fastest of the last several checks (a slow check is a child reading or
+ * slipping, not typing), and never more than the ceiling.
+ */
 export function typingMsFor(digits: number, samples: Record<number, number[]>, config: TrainingConfig = TRAINING_CONFIG): number {
   const d = Math.min(Math.max(digits, 1), 3);
-  return middle((samples[d] ?? []).slice(-config.typing.keep)) ?? config.typing.defaultMs[d];
+  const recent = (samples[d] ?? []).slice(-config.typing.keep);
+  const fastest = recent.length ? Math.min(...recent) : config.typing.defaultMs[d];
+  return Math.min(fastest, typingCeilingMs(d, config));
 }

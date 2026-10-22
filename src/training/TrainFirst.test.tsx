@@ -12,6 +12,7 @@ const server = vi.hoisted(() => ({
   settings: { training_first: false } as Record<string, unknown> | null,
   lock: { on: true, lastFinishedAt: null } as unknown,
   lockError: false,
+  ladder: null as unknown,
 }));
 
 vi.mock('../lib/supabase', () => {
@@ -28,6 +29,7 @@ vi.mock('../lib/supabase', () => {
     supabase: {
       rpc: (name: string) => {
         server.sent.push(`rpc ${name}`);
+        if (name === 'my_ladder') return answer(server.ladder);
         if (name !== 'my_training_lock') return answer(null);
         return server.lockError ? answer(null, { code: '500' }) : answer(server.lock);
       },
@@ -64,6 +66,68 @@ beforeEach(() => {
   server.settings = { training_first: true };
   server.lock = { on: true, lastFinishedAt: null };
   server.lockError = false;
+  server.ladder = null;
+});
+
+/** What my_ladder says: the class uses the ladder, and the warm-up is or isn't done. */
+const ladderSays = (placed: 'done' | 'skipped' | null) => ({
+  facts: [],
+  settings: {},
+  focus: {
+    source: 'auto', skills: [], onlyThese: false, endsAt: null, canChoose: true, own: null,
+    ladder: { on: true, placed, placement: placed === 'done' ? 'facts-20' : null, furthest: null },
+  },
+});
+
+describe('The maths warm-up comes first', () => {
+  it('asks nothing more when the class doesn’t use the ladder', async () => {
+    server.settings = { training_first: false, maths_auto: false };
+    show(game);
+    expect(await screen.findByText('The game')).toBeInTheDocument();
+    expect(server.sent).not.toContain('rpc my_ladder');
+  });
+
+  it('shows "Find your starting place first" instead of the game, with a way to come back to it', async () => {
+    server.settings = { training_first: true, maths_auto: true };
+    server.ladder = ladderSays(null);
+    render(
+      <AuthContext.Provider value={pupil}>
+        <MemoryRouter initialEntries={['/game/gem-keep']}>{game}</MemoryRouter>
+      </AuthContext.Provider>,
+    );
+    expect(await screen.findByRole('heading', { name: 'Find your starting place first!' })).toBeInTheDocument();
+    expect(screen.queryByText('The game')).toBeNull();
+    // Before Training first: the warm-up also decides where Training starts.
+    expect(screen.queryByRole('heading', { name: 'Training first!' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Find my starting place' })).toHaveAttribute('href', '/placement?back=%2Fgame%2Fgem-keep');
+  });
+
+  it('opens the game once it is done, and then remembers that on the device', async () => {
+    server.settings = { training_first: false, maths_auto: true };
+    server.ladder = ladderSays('done');
+    const { unmount } = show(game);
+    expect(await screen.findByText('The game')).toBeInTheDocument();
+    unmount();
+    server.sent.length = 0;
+    show(game);
+    expect(await screen.findByText('The game')).toBeInTheDocument();
+    expect(server.sent).not.toContain('rpc my_ladder');
+  });
+
+  it('never stops a teacher', async () => {
+    server.settings = { training_first: false, maths_auto: true };
+    server.ladder = ladderSays(null);
+    show(game, teacher);
+    expect(await screen.findByText('The game')).toBeInTheDocument();
+    expect(server.sent).not.toContain('rpc my_ladder');
+  });
+
+  it('leaves the game open when the ladder can’t be read', async () => {
+    server.settings = { training_first: false, maths_auto: true };
+    server.ladder = null;
+    show(game);
+    expect(await screen.findByText('The game')).toBeInTheDocument();
+  });
 });
 
 describe('Training before games', () => {
