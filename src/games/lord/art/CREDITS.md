@@ -7,7 +7,7 @@ cut out with `scripts/lord-art.py` (figures on painted backgrounds were cut out 
 | Folder | What | Made | Tool |
 |---|---|---|---|
 | scenes/ | Places and the kingdom map | 22 Oct 2026 (village, forests 1-3, lair, inn, shop, map) | ChatGPT / Gemini |
-| people/ | Village people and the three hero classes | 22 Oct 2026 (innkeeper, knight, mage) | ChatGPT / Gemini |
+| people/ | Village people and the three hero classes | 22 Oct 2026 (innkeeper, knight, mage, trickster) | ChatGPT / Gemini |
 | masters/ | The eleven masters | | |
 | monsters/ | 120 forest monsters | 22 Oct 2026 (level 1) | ChatGPT / Gemini |
 | dragon/ | Scorchtail | 22 Oct 2026 | ChatGPT / Gemini |
