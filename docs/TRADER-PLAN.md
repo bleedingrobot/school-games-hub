@@ -425,3 +425,14 @@ First tries bought the moon on **day 4** (perfect bot). Fixes, in order:
 ### Questions for James
 1. **Moon at 20,000** (was 10,000 in the plan): OK? The simulator needed ships and the moon to be dearer; the moon is still the biggest thing to save for.
 2. **Start T.2** (the screens and a phone preview for you to try)?
+
+## 17. Graphics bar for T.2 (James, 22 Oct 2026: "on par with the Archery game")
+
+Same approach as Archery Challenge (`docs/ARCHERY-PLAN.md` section 10): **2D canvas, all art drawn in code, no pictures from anywhere, no new libraries** (so no Kenney download and no licence question).
+
+- **Space with depth:** 3 starfield layers that drift with the camera, twinkling, and a nebula sky tinted per planet, drawn once to off-screen canvases.
+- **Planets that look like planets:** drawn from a planet's tech, government and resource: rocky, ocean, ice, desert, lava and gas giants (banded), with continents or bands that slowly turn, clouds, an atmosphere glow, a day/night edge, city lights on high-tech worlds and rings on some. Real names are used; the look is ours.
+- **Ships with character:** the six player ships and three pirate kinds drawn in parts (hull, wings, cockpit, engines) with an engine flame, damage smoke, and a docked/flying/warp pose.
+- **Effects worth watching:** a warp jump with streaking stars and a flash, laser bolts, shield ripples, hit sparks, explosions, escape-pod flash, cargo crates tumbling when pirates grab them.
+- **Chromebook-safe:** fixed-step loop with drawing blended between steps, canvas sized for the screen's pixel density (capped at 1.5), a particle cap, **automatic simpler graphics** when frames are slow, and a reduced-motion mode (still stars, no shake, gentle effects), as in Archery.
+- **Screens:** a full-screen "cockpit" with the animated scene behind dark, high-contrast panels (4.5:1), 44 px targets, keyboard and touch, checked at 1366 × 640 and 844 × 390.
