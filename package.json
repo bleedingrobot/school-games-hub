@@ -52,6 +52,7 @@
     "mine:sim": "node scripts/mine-sim.mjs",
     "subitising:preview": "vite build --config vite.subitising-preview.config.ts",
     "archery:sim": "node scripts/archery-sim.mjs",
+    "trader:sim": "node scripts/trader-sim.mjs",
     "archery:preview": "vite build --config vite.archery-preview.config.ts",
     "archery:single": "ARCHERY_INLINE=1 vite build --config vite.archery-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-archery archery-test-page.html",
     "archery:determinism": "node scripts/archery-determinism.mjs"

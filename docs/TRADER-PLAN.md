@@ -63,7 +63,7 @@ Written 18 October 2026 for James, from his pasted plan ("Math Trader", section 
 | Price | Base price + tech level × a step; ×4/3 if the planet wants it; less with lots of traders; less on big planets; ×3/4 or ×4/3 for special resources; 0 if the planet can't use it | **Same formula**, prices divided by 10. The formula is itself good maths: "Robots cost a third more here" |
 | Events | Drought, plague, war, crop failure, boredom... raise one good's price | Same, kid-worded ("A water pipe burst on Juno!") |
 | Fuel | 1 fuel per parsec, straight-line distance, tanks of 13–17 | Grid-line distance, tanks of 8–14 |
-| Ships | 10 to buy (Flea to Wasp), cargo 10–60 holds | **6 ships** (Flea, Gnat, Firefly, Bumblebee, Beetle, Hornet), our own pictures |
+| Ships | 10 to buy (Flea to Wasp), cargo 10–60 holds | **6 ships** (Flea, Gnat, Firefly, Bumblebee, Beetle, Termite), our own pictures |
 | Encounters | Police, pirates and traders, chance set by the planet's government | **Pirates, customs and friendly traders**, chance set by the planet (section 7) |
 | Police record, bribes, criminal record | Yes | **Out.** Customs just take banned Lollies and Fireworks and charge a small fine |
 | Bank loans with interest, debt | Yes, 10% a day, police trouble if you owe too much | **In, with gentle limits** (James, question 7): section 9 |
@@ -292,7 +292,7 @@ The plan said goods ÷ 10 and a 10,000-credit moon. If ships were also ÷ 10 (Ho
 
 - **Goods ÷ 10** (as planned): prices of about 3 to 500 credits.
 - **Ships and gear ÷ 50**, so every upgrade is a real saving goal but the moon is still the biggest: Gnat 200, Firefly 500, Bumblebee 1,200, Beetle 1,600, Termite 4,500.
-- **Moon 10,000, start 100 credits and a Flea.** The ratio moon : start is 100 here against 500 in the original. T.1 checks whether that is too quick for a 5-week season, and moves the moon price, not the formulas.
+- **Moon 10,000 (raised to 20,000 by the simulator, see section 16), start 100 credits and a Flea.** The ratio moon : start is 100 here against 500 in the original. T.1 checks whether that is too quick for a 5-week season, and moves the moon price, not the formulas.
 
 ### 15.2 Goods (original, then ours)
 
@@ -344,13 +344,13 @@ Dropped: communist, confederacy, corporate, dictatorship, fascist, monarchy, soc
 | Beetle | 50 | 0 / 0 | 14 | 50 | 80,000 → **1,600** | 2 |
 | Termite | 60 | 1 / 3 | 13 | 200 | 225,000 → **4,500** | 3 |
 
-**A change from the plan:** it listed the Hornet as the sixth ship, but a Hornet has only 20 holds, so the "10 to 60 holds" range needs the Termite. **My pick: swap Hornet for Termite.** Fuel range is the original's number of parsecs; on our grid it is **grid squares**. The plan's "tanks of 8–14" is too tight for a Flea to cross a 20 × 20 map, so we keep the original ranges and check in T.1 that every planet can be reached from the start. Gear (÷ 50): pulse laser 40, beam laser 250, military laser 700; energy shield 100, reflective shield 400; 5 extra holds 50; hull repair 1 credit a point (Flea) up to 4. Weapon power 15 / 25 / 35; shield strength 100 / 200.
+**A change from the plan:** it listed the Hornet as the sixth ship, but a Hornet has only 20 holds, so the "10 to 60 holds" range needs the Termite. **James chose the swap on 22 Oct: Termite replaces Hornet.** Fuel range is the original's number of parsecs; on our grid it is **grid squares**. The plan's "tanks of 8–14" is too tight for a Flea to cross a 20 × 20 map, so we keep the original ranges and check in T.1 that every planet can be reached from the start. Gear (÷ 50): pulse laser 40, beam laser 250, military laser 700; energy shield 100, reflective shield 400; 5 extra holds 50; hull repair 1 credit a point (Flea) up to 4. Weapon power 15 / 25 / 35; shield strength 100 / 200.
 
 ### 15.5 Encounters and planet count
 
 - Original: every "click" of a trip rolls `random(44 − 2×difficulty)`; below pirate strength = pirates, below pirate+customs = customs, below pirate+customs+traders = a trader. That is many rolls per trip. **Ours: one roll per jump**, chance = `(pirates + customs + traders) ÷ 30` capped at 60%, which gives about 1 jump in 3 on an average planet (the plan's target). Which kind is picked in the same proportions as the original. Decided in T.1 with the simulator.
 - **Planets: 24** on a 20 × 20 grid, minimum 2 apart, built from a seed, each with a tech level inside its government's range, a size (Tiny to Huge, price cut 0–4% ÷ 10 per size as the original), and 0 or 1 special resource. A galaxy that has any planet out of reach of a Flea is thrown away and re-made.
-- **24 planet names (ours, not the original's):** Kauri, Tui, Kiwi, Pohutu, Rimu, Kea, Manuka, Weka, Pukeko, Totara, Kakapo, Huia, Takahe, Ponga, Mamaku, Rata, Titi, Kowhai, Harakeke, Pounamu, Tuatara, Moa, Karaka, Hoiho. (James to approve or change in T.1.)
+- **24 planet names: real ones (James, 22 Oct).** Planets and dwarf planets: Mercury, Venus, Earth, Mars, Ceres, Jupiter, Saturn, Uranus, Neptune, Pluto, Eris, Haumea, Makemake, Vesta. Moons: Europa, Io, Ganymede, Callisto, Titan, Enceladus, Triton, Charon, Titania, Phobos. (Earth's Moon is left out because "buy your moon" is the goal.) Their places on our 20 × 20 grid are made up; the game says so on the Star chart. Facts for each come from `shared/space/facts.ts` where it has them.
 
 ### 15.6 `shared/trader/config.ts`: every tuning number in one file
 
@@ -376,7 +376,52 @@ A pupil's day is 10 jumps. Questions asked (focus questions, never typed trade s
 - **Shared files we will touch, at the end only (T.6), one line each:** `src/games/registry.ts` (append behind `traderOn()`), `scripts/build-functions.mjs` (add `'trader'` to the end of `FUNCTIONS`), `package.json` (`trader:sim`, `trader:preview` at the end of `scripts`), `.gitignore` (`dist-preview-trader/`), `shared/README.md`, `docs/PRIVACY-SUMMARY.md`, `docs/PLAN.md` (migration note). Nothing else shared; no new dependencies.
 - **Reuse checked present:** `shared/seededRandom.ts`, `shared/maths/serverQuestions.ts`, `shared/space/mathsSwitch.ts`, `shared/space/facts.ts`, `src/training/switch.ts` (code switch), `src/games/clans/switch.ts` (teacher-switch hook), `supabase/functions/_shared/{http,limits,recordAnswers,signIn,stamp}.ts`, `marble_board()` in `20261019000900_marble.sql` (leaderboard pattern).
 - **Licence:** the original is GPL-2 (re-confirmed from `License.txt`): rules and numbers used, no code or text. **Pictures:** nothing downloaded yet. Kenney's space packs (CC0) are the plan; **re-check the licence page and write it here at the start of T.2** before using any file. Anything not CC0 is drawn by us in SVG.
-- **Not yet decided (James):** the Hornet → Termite swap (15.4), the planet names (15.5), and the marking option (15.7).
+- **Decided by James, 22 Oct 2026:** Termite replaces Hornet (15.4); real planet names (15.5); **marking = batched with the jump, laser rounds answered one at a time for instant feedback** (15.7, about 17 requests a pupil a day).
 
 ### Next
-Stage T.1 (the engine and simulator) starts when James says. It needs his answer on 15.4 and 15.7 first, or it will build with my picks and say so.
+Stage T.1 (the engine and simulator): James said start (22 Oct).
+
+## 16. Stage T.1 results (22 Oct 2026): the engine and the simulator
+
+Built on branch `trader`, in `shared/trader/` (pure rules, whole numbers only, no outside code), plus `scripts/trader-sim.mjs` and one line in `package.json` (`npm run trader:sim`). **Nothing is live, nothing is saved, no database, function or screen yet.**
+
+### What's there
+| File | What it does |
+|---|---|
+| `config.ts` | Every tuning number (goods, 9 governments, 6 ships, gear, encounters, loans, discounts) |
+| `galaxy.ts` | 24 real-named planets on a 20 × 20 grid from a seed; "across + up" distance; throws away a galaxy where a planet is out of reach of a Flea or there are too few shipyards |
+| `market.ts` | The original's price rule, events, stock; same answer for the same seed, planet and day |
+| `state.ts` | The trader (ship, cargo, fuel, hull, loan) and every action: buy, sell, refuel, repair, ships, lasers, shields, pods, moon, borrow, repay, new day, jump |
+| `encounter.ts` | One roll per jump (junk, customs, pirates, friendly trader), customs and junk results |
+| `fight.ts` | Turn-based pirate fight (charge / shield / flee), escape pod after a wreck |
+| `bot.ts`, `sim.ts` | A bot trader that sees tomorrow's prices (so it is a ceiling) and a "sloppy" setting to act like a pupil learning |
+| `trader.test.ts` | 19 tests: galaxy, prices, trading, bank, encounters, fights, a whole repeatable game |
+
+### Numbers changed by the simulator (provisional; replaces 15.1 and 15.4 where they differ)
+First tries bought the moon on **day 4** (perfect bot). Fixes, in order:
+1. **Rarer supply of dear goods:** stock per medium planet Water 60, Furs 30, Food 40, Ore 25, Games 20, Fireworks 6, Medicine 8, Machines 6, Lollies 3, Robots 2 (the original caps Robots and Narcotics the same way, so one lucky load can't win the season).
+2. **Ships and gear ÷ 25, not ÷ 50:** Gnat 400, Firefly 1,000, Bumblebee 2,400, Beetle 3,200, Termite 9,000; pulse / beam / military laser 80 / 500 / 1,400; energy / reflective shield 200 / 800; cargo pod 100.
+3. **Moon 20,000** (2.2 × the Termite, the same ratio as the original's moon to its 225,000 ship). 
+4. **Gentler price swings than the original:** a wanted good +20% (was +33%), a cheap resource −15% (was −25%), a dear resource +18% (was +33%), an event +30% (was +50%), buying costs 9% more than selling (was 3 to 13%). Fuel is in tenths of a credit per square (Flea 0.5 up to Termite 1.5).
+
+### Results (100 bot games each, 60 days, 10 jumps a day, 70% of focus answers right)
+| Bot | Moon bought | Moon day (10th / median / 90th) | Credits at end of day 1 / 3 / 8 |
+|---|---|---|---|
+| Careful (sees every price) | 100% | 10 / **14** / 19 | 547 / 1,524 / 6,953 |
+| Sloppy 40% of trips | 100% | 13 / **15** / 20 | 426 / 1,233 / 5,979 |
+| Sloppy 70% of trips | 100% | 14 / **17** / 23 | 433 / 1,233 / 5,154 |
+
+- A pupil is slower than any of these (they can't see tomorrow's prices, they skip days, they make mistakes), so the target of "most pupils buy the moon in week 4 or 5 (day 16–25)" looks about right, and **the careful bot is at day 14, a ceiling, not a typical pupil**. Real data from the class trial (stage T.3) is the real test; the moon price is one number in `config.ts`.
+- A run is about 136 to 175 jumps; 96 to 98% of jumps make money (as an average bot would); pirate fights are about 1 jump in 7, won 55 to 62% by the bot; **about 0.4 to 0.5 wrecks per whole game** (you lose cargo and ship, keep money, get a free Flea). That feels about right for a "bad luck" moment and not a season-ender. Customs fines are 0 because a bot never carries banned goods; a pupil will.
+- Credits at the end of day 1: about 430 to 550 from 100. That is fast for the first day. If the first day should end nearer 250, cut the early stock or raise the Flea's fuel price; **my pick is to leave it and let the first day feel rewarding.**
+- Tests: 19 for Star Trader, all pass; whole-project typecheck is clean. Full `test:all`, build and database tests are for T.3 when there is something to build or a database.
+
+### Not built yet / untested
+- Nothing in the browser: no screens, no maths questions wired in (the engine takes "was the answer right?" as a yes/no), no preview. That is T.2.
+- No shared market pressure from other pupils' trades, no events beyond the per-planet daily ones, no contracts, beacons or station (T.4, T.5).
+- Weapon and shield effects in fights are simple (laser power and shield points). The pupil-facing balance of fights, and whether the first Flea (no lasers, flee only) is fun, needs a human to try it in T.2's preview.
+- The bot never uses the bank, never buys cargo pods, and never meets a customs fine. Those paths are covered by the unit tests, not the simulator.
+
+### Questions for James
+1. **Moon at 20,000** (was 10,000 in the plan): OK? The simulator needed ships and the moon to be dearer; the moon is still the biggest thing to save for.
+2. **Start T.2** (the screens and a phone preview for you to try)?
