@@ -24,6 +24,7 @@ import { HeroSprite, Icon, MonsterSprite } from './Sprite';
 import { withArticle } from './text';
 import { Stage } from './Stage';
 import { forestScene } from './art';
+import { KingdomMap, hasMap } from './KingdomMap';
 import { useAsk, type Answer } from './useAsk';
 import './lord.css';
 
@@ -615,10 +616,17 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
   const fight = state.openFight;
   return (
     <section className="lord-village" aria-label="The village">
-      <Stage scene="village" size="normal">
-        <div className="lord-stage__hero"><HeroSprite heroClass={hero.heroClass} scale={9} /></div>
-        <header className="lord-place__head"><h2 className="lord-sign">The village of Hollowbrook</h2></header>
-      </Stage>
+      {hasMap() ? (
+        <KingdomMap
+          heroClass={hero.heroClass} busy={busy} dragonReady={dragonReady} forestOpen={!!fight || !!state.pendingEvent || hero.forestLeft > 0}
+          onGo={(spot) => (spot === 'forest' ? onForest() : spot === 'dragon' ? onDragon() : onPlace(spot))}
+        />
+      ) : (
+        <Stage scene="village" size="normal">
+          <div className="lord-stage__hero"><HeroSprite heroClass={hero.heroClass} scale={9} /></div>
+          <header className="lord-place__head"><h2 className="lord-sign">The village of Hollowbrook</h2></header>
+        </Stage>
+      )}
       <div className="lord-panel">
       <div className="lord-village__intro">
         <div>

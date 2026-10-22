@@ -315,3 +315,30 @@
 .lord-howto li { margin: 4px 0; line-height: 1.45; }
 .lord-fold { margin: 12px 0; }
 .lord-fold summary { cursor: pointer; font-weight: 700; }
+
+/* ---------------------------------------------------------------- the kingdom map (village) */
+.lord-map { position: relative; display: flex; flex-direction: column-reverse; align-items: center; gap: 6px; }
+.lord-map__paper { position: relative; width: min(100%, calc((100dvh - 210px) * 1.78)); min-width: min(100%, 520px); filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.55)); }
+.lord-map__paper img { display: block; width: 100%; height: auto; user-select: none; }
+.lord .lord-map__sign:not(.question__title) { align-self: flex-start; }
+.lord-map__spot {
+  position: absolute; z-index: 2; transform: translate(-50%, -50%); width: 17%; aspect-ratio: 1.6; min-width: 64px;
+  display: flex; align-items: flex-end; justify-content: center; padding: 0 0 4px;
+  background: radial-gradient(closest-side, rgba(255, 236, 170, 0), rgba(255, 236, 170, 0) 70%, transparent);
+  border: 0; border-radius: 50%; cursor: pointer; font: inherit;
+}
+.lord-map__spot span {
+  transform: translateY(70%); white-space: nowrap; padding: 1px 10px; font-family: var(--lord-display); font-size: clamp(0.85rem, 1.6vw, 1.1rem);
+  color: var(--lord-cream); background: var(--lord-shade); border: 1px solid var(--lord-gold); border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.lord-map__spot:hover:not(:disabled) { background: radial-gradient(closest-side, rgba(255, 236, 170, 0.55), rgba(255, 236, 170, 0.2) 70%, transparent); }
+.lord-map__spot:hover:not(:disabled) span { background: var(--lord-yellow); }
+.lord-map__spot:disabled { cursor: not-allowed; }
+.lord-map__spot:disabled span { opacity: 0.7; font-style: italic; }
+.lord-map__spot--dragon:not(:disabled) span { background: #7a1c0e; animation: lord-pulse 1.6s ease-in-out infinite; }
+.lord-map__hero { position: absolute; z-index: 1; transform: translate(-50%, -95%); pointer-events: none; }
+.lord-map__hero .lord-art { height: 64px !important; }
+@media (max-width: 640px) {
+  .lord-map__spot span { font-size: 0.78rem; padding: 0 6px; }
+}
+@media (prefers-reduced-motion: reduce) { .lord-map__spot--dragon span { animation: none !important; } }

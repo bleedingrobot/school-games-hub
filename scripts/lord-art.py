@@ -94,6 +94,44 @@ def remove_background(img: Image.Image, tol=40.0, soft=34.0) -> Image.Image:
     return Image.fromarray(out, 'RGBA')
 
 
+def remove_soft_background(img: Image.Image, step=9.0, far=95.0) -> Image.Image:
+    """
+    For backgrounds that are not one flat colour (a glow, painted clouds): grows from the edges into any pixel that is
+    nearly the same colour as the background pixel next to it (`step`), so gentle colour changes are followed but the
+    figure's outline stops it. `far` stops it wandering into colours very unlike the edge colour.
+    """
+    from PIL import ImageFilter
+    rgb = np.asarray(img.convert('RGB')).astype(np.float32)
+    rgb = np.asarray(Image.fromarray(rgb.astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.2))).astype(np.float32)
+    h, w, _ = rgb.shape
+    edge = np.concatenate([rgb[0], rgb[-1], rgb[:, 0], rgb[:, -1]])
+    bg = np.median(edge, axis=0)
+    allowed = np.sqrt(((rgb - bg) ** 2).sum(axis=2)) < far
+    # How alike each pixel is to its neighbour in each direction.
+    def alike(dy, dx):
+        shifted = np.roll(np.roll(rgb, dy, 0), dx, 1)
+        return np.sqrt(((rgb - shifted) ** 2).sum(axis=2)) < step
+    links = {d: alike(*d) for d in ((1, 0), (-1, 0), (0, 1), (0, -1))}
+    region = np.zeros((h, w), bool)
+    region[0, :] = region[-1, :] = True
+    region[:, 0] = region[:, -1] = True
+    region &= allowed
+    while True:
+        grown = region.copy()
+        for (dy, dx), ok in links.items():
+            grown |= np.roll(np.roll(region, dy, 0), dx, 1) & ok
+        grown &= allowed
+        if (grown == region).all():
+            break
+        region = grown
+    # Close little holes in the background (specks) and feather the outline by 1 px.
+    mask = Image.fromarray((~region * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(3)).filter(ImageFilter.MaxFilter(3))
+    mask = mask.filter(ImageFilter.GaussianBlur(0.8))
+    out = img.convert('RGBA')
+    out.putalpha(mask)
+    return out
+
+
 def trim(img: Image.Image, pad=6, min_alpha=40) -> Image.Image | None:
     a = np.asarray(img)[..., 3] > min_alpha
     if a.sum() < 400:
