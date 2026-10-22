@@ -104,7 +104,7 @@
 @media (max-width: 900px) { .lord-stage.has-art { background-image: var(--stage-small); } }
 /* Where to look in each painting when the window is wider than the picture (the ground and the action sit low). */
 .lord-stage--village.has-art { background-position: center 64%; }
-.lord-stage:is(.lord-stage--forest-1, .lord-stage--forest-2, .lord-stage--forest-3).has-art { background-position: center 62%; }
+.lord-stage:is(.lord-stage--forest-1, .lord-stage--forest-2, .lord-stage--forest-3, .lord-stage--training).has-art { background-position: center 62%; }
 .lord-stage--short { min-height: clamp(130px, 24vh, 190px); }
 .lord-stage--normal { min-height: clamp(160px, 32vh, 270px); }
 .lord-stage--tall { min-height: clamp(210px, 42vh, 350px); }
