@@ -7,6 +7,8 @@ import { isFocusKey, type MathsFocus } from '../../../shared/maths/focus';
 import { judgeSpaceGame, type SpaceGameReport } from '../../../shared/space/save';
 import { SoundProvider } from '../../sound';
 import { SpaceSolo, type SpaceMaths, type SpaceSaving } from './SpaceSolo';
+import { setSkipMode } from '../../maths/questionLog';
+import { ANSWER_FIRST_BUTTON } from './text';
 import type { Question } from '../../../shared/maths/skillPack';
 
 /** The latest question the game's pack made, so a test can answer questions whose spoken text it can't read (rounding, order of operations). */
@@ -379,6 +381,49 @@ describe('Mission Control maths on the game screen', () => {
     expect(skipped).toBe(true);
     // Rolling past it closes the card: the button is a plain Roll again.
     await waitFor(() => expect(screen.queryByRole('button', { name: /without the/ })).not.toBeInTheDocument());
+    localStorage.clear();
+  }, 40_000);
+
+  it('with the class’s skip switch off, Roll waits until the Mission Control question is answered', async () => {
+    setSkipMode('off');
+    const user = userEvent.setup();
+    localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', bots: 1, maths: true }));
+    renderGame(undefined, maths('choose'));
+    await user.click(screen.getByRole('button', { name: /Launch/ }));
+    let waited = false;
+    for (let guard = 0; guard < 4000 && !waited; guard++) {
+      const waiting = screen.queryByRole('button', { name: ANSWER_FIRST_BUTTON });
+      if (waiting) {
+        expect(waiting).toBeDisabled();
+        const card = screen.getByRole('group', { name: 'Mission Control' });
+        expect(within(card).queryByRole('button', { name: 'Skip' })).not.toBeInTheDocument();
+        // Space doesn't roll past it either.
+        await user.keyboard(' ');
+        expect(screen.getByRole('button', { name: ANSWER_FIRST_BUTTON })).toBeInTheDocument();
+        const answer = solve(within(card).getByLabelText(/equals/).getAttribute('aria-label')!);
+        const choices = within(card).queryByRole('group', { name: 'Choose an answer' });
+        if (choices) await user.click(within(choices).getByRole('button', { name: String(answer) }));
+        else {
+          for (const digit of String(answer)) await user.click(within(card).getByRole('button', { name: digit }));
+          await user.click(within(card).getByRole('button', { name: 'Check my answer' }));
+        }
+        waited = true;
+        break;
+      }
+      const dialog = anyDialog();
+      const choice = choiceGroup();
+      const roll = rollButton();
+      if (dialog) {
+        const fact = within(dialog as HTMLElement).queryByLabelText(/equals/);
+        if (fact) await user.keyboard(`${solve(fact.getAttribute('aria-label')!)}{Enter}`);
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      } else if (choice) await user.click(within(choice).getAllByRole('button')[0]);
+      else if (roll && !roll.hasAttribute('disabled')) await user.click(roll);
+      else await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+    expect(waited).toBe(true);
+    // Answered: Roll is back.
+    await waitFor(() => expect(rollButton()).toBeEnabled(), { timeout: 5000 });
     localStorage.clear();
   }, 40_000);
 

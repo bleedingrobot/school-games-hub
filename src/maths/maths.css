@@ -135,6 +135,14 @@
   opacity: 0.5;
 }
 
+/* "Skips left: 2" under the skip button, when the class allows 3 per game. */
+.question__skips {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--q-ink);
+}
+
 .numpad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
