@@ -3,7 +3,7 @@
 A space trading game for the hub, in the spirit of the 2002 Palm game *Space Trader* by Pieter Spronck. Fly a small ship between planets, buy cargo cheap and sell it dear, upgrade your ship, dodge pirates, and save up to buy your own moon. **Maths is how a trader stays rich**: working out the bill, the change, the profit on a trip, the fuel for a jump and the price after a market event.
 
 Written 18 October 2026 for James, from his pasted plan ("Math Trader", section 1), the original game's source code (section 2) and the hub's other plans on `origin/main`.
-**Status: ANSWERED 18 Oct 2026 (section 13), not started.** Nothing is built. Comes **after Clan Quest**.
+**Status: ANSWERED 18 Oct 2026 (section 13). REVISED 22 Oct 2026 against `docs/GAME_DEVELOPMENT_GUIDE.md` (section 14, which wins wherever it disagrees with sections 1–12). Not started, nothing built.** Branch `trader`, id `trader`, CSS prefix `.st-`. Next free migration number when revised: `20261022000400` (re-check before the first migration).
 
 ## The short version
 
@@ -12,7 +12,7 @@ Written 18 October 2026 for James, from his pasted plan ("Math Trader", section 
 - **What makes it different from the other maths games:** it's the hub's **money game**. No fighting for experience, no levels. You get better by making good trades, and every trade is real arithmetic with a reason to get it right. It's also the natural home for **coordinates**, **profit and loss**, **percentages** and **budgeting**.
 - **One galaxy for the whole school, with a shared market** (James, 18 Oct). When students sell lots of Water on one planet, its price drops for everyone there, and it drifts back overnight. This is the pasted plan's best idea and it works on the hub without live sockets: prices are read when you land. Contracts, distress beacons and the space station are whole-school too.
 - **Saved on the server, server is the boss**, the same way as Dragon Maths: each jump is one server request that checks your trades, moves your ship and hands out the next encounter.
-- **Maths is short, never timed, and a wrong answer never blocks you.** The shop just shows the working and charges the right amount.
+- **Maths is short, never timed, and a wrong answer never blocks you.** The shop just shows the working and charges the right amount. **(Revised 22 Oct: the questions come from each pupil's shared maths focus, not from year bands; see section 14.)**
 - **Size:** similar to Dragon Maths. Eight stages (section 12), with a test page for James after the single-player stage. It's built after Dragon Maths and Clan Quest, so it reuses their engine pieces and maths packs.
 
 ## 1. Review of the pasted plan
@@ -111,6 +111,8 @@ Everything resets on first play each NZ day, like Dragon Maths (nothing needs to
 
 ## 6. Maths moments (the heart of the game)
 
+> **Revised 22 Oct 2026 (section 14, change 1–3):** the table below says what the game *does* with numbers at each moment. The game now does that arithmetic itself and shows the working. The *questions* a pupil answers are their own shared-focus questions, and the year-band columns, the "new question kinds" paragraph and the per-moment teacher switches no longer apply. Coordinates stay as a game puzzle that isn't recorded to the ladder.
+
 | Place | Original rule | Maths moment | Topic (Y4–6) |
 |---|---|---|---|
 | **Buying** | Price × quantity | "12 Food at 15 each. What's the total?" About 1 trade in 3, always on the biggest trade of the visit | multiplication |
@@ -204,6 +206,8 @@ The server decides everything that matters (credits, cargo, fuel, ship, position
 
 ## 12. Stages (when picked up)
 
+> **Superseded by section 14.** The old T.2 (new question kinds) is dropped; the stage list in section 14 is the one to follow.
+
 | Stage | What | Rough size |
 |---|---|---|
 | **T.0** | Rule sheet: every number taken from the original, the rescaled economy, renamed goods, the planet list. Licence and art checks | Small |
@@ -237,3 +241,43 @@ Each stage ends with tests passing and a results section here, and stops for Jam
 
 - Game structure, rules and numbers adapted from *Space Trader* by Pieter Spronck (2002), released under GPL-2; no code or text copied.
 - Planet and ship pictures from Kenney (CC0), if used.
+
+## 14. Revision against the Game Development Guide (22 Oct 2026)
+
+This plan was written on 18 Oct, two days before `docs/GAME_DEVELOPMENT_GUIDE.md`. Read against the guide, these things change. **James chose on 22 Oct: maths = shared focus questions, plus coordinates as a game mechanic.** Everything else James decided on 18 Oct (section 13) stands.
+
+| # | Plan said | Guide says | Now |
+|---|---|---|---|
+| 1 | Own trade questions by Y4/Y5/Y6 band; teacher topic/band switches | Maths only from `makeFocusPack`, marked on the server, recorded with `recordMathsAnswers`; no focus controls of our own | **Focus questions only.** Totals, change, profit, % events and fuel price are done by the game and shown as working. "Sharp trader" moments (about 1 trade in 3, always the biggest of a visit; laser charge in a fight; steering past junk) ask the pupil's focus question in `QuestionModal`. Right = 1–2% discount or a full laser shot; wrong = nothing lost. Drop the band/topic switches; keep one `trader_maths` switch (`off/choose/on`, `parseMathsSwitch`) |
+| 2 | Stage T.2 adds question kinds to `shared/maths/skillPacks/` | `shared/maths/` and `src/maths/` are off limits from a game branch; changing shared code makes other functions' `index.ts` stale and needs redeploying | **Dropped.** Trading-style packs, if ever wanted, are their own later branch |
+| 3 | Fuel = across + up, typed by band | Server checks everything that counts; non-ladder maths isn't recorded as ladder facts | Coordinates are a **game puzzle**: the server works out the fuel from the rules and the jump goes ahead either way (a wrong count shows the working). Not recorded to `record_fact_answers`. Count-the-squares vs typed follows the pupil's focus level, never a shown year level |
+| 4 | Questions rebuilt from `params` | Way A (Marble Rush): server makes and stores questions, sends `publicQuestion` | **Way A.** `trader_questions` (RLS on, no policy, no grant) and `trader_claim_answer` once per slot |
+| 5 | Points in the 40 cap; achievements; New Season line | `hub_games` hooks; points via `add_game_points`; never re-create shared functions | Register in `hub_games` (`switch_column`, `counts_fn`, `rules_fn`, `season_fn`, `last_played_fn`), measures and achievements in our own migration. Copy `supabase/tests/database/game_hooks.test.sql` |
+| 6 | Own 5-week seasons with a teacher start date | New Season is the teacher's button; it calls each game's `season_fn` | 5 weeks stays the **pace target**; the rollover is the hub's New Season through our `season_fn`. Moon Owners kept (`keep_achievements` / a table the hook doesn't clear) |
+| 7 | One market for the whole school | Pupils only see their own school (`my_school()`); boards follow `marble_board()` | "Whole school" means **the pupil's school**. Market, contracts, beacons, station, news and board all carry `school_id` |
+| 8 | Reuse Dragon Maths / Clan Quest engine pieces | Don't import other games' folders | Only shared pieces (`shared/seededRandom.ts`, `serverQuestions.seededRandom`) are reused; small bits (daily reset, news, seasons) are **copied** into `shared/trader/`. "A third already exists" was optimistic |
+| 9 | One big teacher page of switches | `TeacherTrader.tsx` named in `GameDefinition.TeacherPanels`; settings = `app_settings` columns + `teacher_set_trader(…, target_class default null)` with `require_settings_target()` | Settings: on/off, jumps a day, Practice Mode, loans, contracts/beacons (T.5), maths switch, reset a ship. Code switch `traderOn()` plus teacher switch; **the server refuses while off** |
+| 10 | Request estimate 12–15/pupil/day against ~265,000 | More games exist now; way A adds a request per answered question | Re-estimate at T.0 from `docs/SERVER-LOAD-PLAN.md`. Decide per-answer marking (like Marble) or batching answers into the jump request once the number is known |
+| 11 | Names | Tables prefixed with the game | id `trader`; tables `trader_ships / markets / contracts / beacons / station / news / questions`; function `trader`; prefix `.st-` |
+| 12 | Branch, preview, go-live prompt, privacy lines not mentioned | Guide sections 2, 6–9 | Added to the stages below |
+
+### Stages (each ends with tests, a results section here, a commit, and a stop for James)
+
+**Every stage:** merge `origin/main` first; `node scripts/migration-numbers.mjs` and write the number here; never `supabase db reset`; build only our function (`npm run build:functions -- trader`); no new dependencies; no edits to `shared/maths/`, `src/maths/`, `src/styles.css`, `src/components/`, `_shared/`, other games or CLAUDE.md.
+
+| Stage | What |
+|---|---|
+| **T.0** | Plan only. Rule sheet from the original (numbers, rescaled economy, planet list, licence and art check); `shared/trader/config.ts` listing every tuning number; request-cost estimate; migration number; list of shared files touched; James's answers to the questions below |
+| **T.1** | `shared/trader/` engine (pure; seed + inputs = result): galaxy, prices, events, fuel, ships, encounters, pirate fight, daily reset. `scripts/trader-sim.mjs` (`npm run trader:sim`) tunes the 10,000-credit moon target |
+| **T.2** | Screens in `src/games/trader/` (own `trader.css`, shared colour tokens and buttons, `QuestionModal`, 44 px targets, 1366 × 640 and 844 × 390). `preview/trader/` + `vite.trader-preview.config.ts` with a trial backend (fake focus, never calls the live server), published as a private Artifact for James. Nothing saved. A test that every `LADDER` skill shows in the game |
+| **T.3** | Saving: migration (own tables, RLS, server-only functions revoked from `public, anon`, switches start off, `app_settings` columns added only), `trader` function (`handler.ts`, `entry.ts`, `handler.test.ts`, generated `index.ts`; `userIdFromToken`; `_shared/limits.ts`; `recordMathsAnswers` for focus answers; fights replayed; a repeated request counts once), loans, daily jumps, `trader_questions`. pgTAP `trader.test.sql` on a scratch copy. Class trial possible from here |
+| **T.4** | School-scoped market and news; price limits tuned by simulating a busy lunchtime; measure requests and update the estimate |
+| **T.5** | Contracts, beacons (computer tow after 10 minutes), school station, 6 quests. `hub_games` registration, 8 achievements, `GameDefinition` (`group`, `useTeacherSwitch`, `TeacherPanels`, `ranked: false`), `TeacherTrader.tsx`, net-worth board on the `marble_board()` pattern |
+| **T.6** | `HowToPlay.tsx` reading its numbers from config, `Accessibility.test.tsx` (copy Clan Quest's), slow-Chromebook check, the one-line shared edits (`registry.ts` behind `traderOn()`, `build-functions.mjs`, `package.json` scripts at the end, `.gitignore`, `shared/README.md`, `docs/PRIVACY-SUMMARY.md`, `docs/PLAN.md` migration note) |
+| **T.7** | `docs/prompts/trader-golive.md` (copy `clans-golive.md`). Then, each only on James's words: pre-flight → apply migration → deploy `trader` → check from outside → merge to `main` → try as teacher with the pupil switch off → switch on. Auto mode blocks live deploys, so James leaves it first |
+
+### Questions for James (my pick first)
+
+1. **Season end.** Use the hub's one New Season button (pick) or keep a separate teacher start date for Star Trader?
+2. **Order.** Keep "after Clan Quest", or start whenever a session is free (pick: whenever, games are independent branches now)?
+3. **Marking cost.** One request per answered question like Marble (simple), or batch answers into the jump request (cheaper)? Decide after the T.0 estimate.
