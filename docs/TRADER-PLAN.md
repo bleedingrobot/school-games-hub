@@ -3,7 +3,7 @@
 A space trading game for the hub, in the spirit of the 2002 Palm game *Space Trader* by Pieter Spronck. Fly a small ship between planets, buy cargo cheap and sell it dear, upgrade your ship, dodge pirates, and save up to buy your own moon. **Maths is how a trader stays rich**: working out the bill, the change, the profit on a trip, the fuel for a jump and the price after a market event.
 
 Written 18 October 2026 for James, from his pasted plan ("Math Trader", section 1), the original game's source code (section 2) and the hub's other plans on `origin/main`.
-**Status: T.0 and T.1 done 22 Oct 2026 (sections 15, 16); T.2 built 22 Oct 2026 (section 18), waiting for James's try-out. ANSWERED 18 Oct 2026 (section 13). REVISED 22 Oct 2026 against `docs/GAME_DEVELOPMENT_GUIDE.md` (section 14, which wins wherever it disagrees with sections 1–12). Not started, nothing built.** Branch `trader`, id `trader`, CSS prefix `.st-`. Next free migration number when revised: `20261022000400` (re-check before the first migration).
+**Status: T.0 and T.1 done 22 Oct 2026 (sections 15, 16); T.2 built 22 Oct 2026 (section 18); T.3 built 22 Oct 2026, not applied or deployed (section 19). ANSWERED 18 Oct 2026 (section 13). REVISED 22 Oct 2026 against `docs/GAME_DEVELOPMENT_GUIDE.md` (section 14, which wins wherever it disagrees with sections 1–12). Not started, nothing built.** Branch `trader`, id `trader`, CSS prefix `.st-`. Next free migration number when revised: `20261022000400` (re-check before the first migration).
 
 ## The short version
 
@@ -486,3 +486,37 @@ James: kids should not count squares; they should type the coordinates of where 
 - An empty spot, or a number outside −10 to 10, says so in plain words and does not jump. If the pupil has tapped a planet to read about it, the message says whether to **check x or check y** for that planet.
 - The learning: reading and plotting coordinates in all four quarters (negatives), x before y, and matching a point on the chart to a pair of numbers. Not recorded to the maths ladder (no ladder skill covers it); a record of how often a pupil needs a second try could be kept privately later if James wants it.
 - Tests: 31 pass (typing coordinates jumps; an empty spot, a wrong number and which-number-to-check; the ± button).
+
+## 19. Stage T.3 results (22 Oct 2026): saving and fairness
+
+Built on branch `trader`. **Nothing is applied, deployed, merged or switched on.** The code switch (`src/games/trader/switch.ts`) is `false`, so the hub shows no Star Trader card; the card line in `registry.ts` is in, behind that switch. Migration number used: **`20261022001000`** (re-check with `node scripts/migration-numbers.mjs` at go-live).
+
+### How it works (the server is the boss)
+- **The server keeps each pupil's game** (`trader_games`: ship, cargo, money, fuel, loan, jumps left, and any one thing in progress: space junk, a trader's offer, or a pirate fight) with a **version number**. Every request carries the version it was made from and a request id: sent twice it counts once (the first reply is sent again); made from an old version (another tab or device) it is refused with a hint to reload. A pirate fight in progress is kept on the server, so a reload or a new device picks it up.
+- **The server works out every move** with the shared rules (`shared/trader/server.ts`): trades (selling first), fuel, repairs, shipyard, bank, the moon, jumps, the encounter for each jump (the same seed gives the same encounter), fight rounds, space junk, friendly traders. A batch of moves is **all or nothing**, and a refused request never uses up a question.
+- **Maths** (way A, from the pupil's own focus): the server makes today's 40 questions the first time the pupil plays that day (`trader_days`, which pupils can't read), sends them without answers, and they are used **strictly in order**; each answer is marked by the server, recorded for the maths ladder with `recordMathsAnswers` (once per question), and a right answer gives the 1% / 2% discount. The pupil can say "No thanks" and lose nothing. With maths off for the class there are no questions and lasers always fire at full power.
+- **Requests** (the plan's pick, 22 Oct): quiet moves (fuel, repairs, the shipyard, the bank, a trade with no check) wait in a queue on the screen, shown at once using the same shared rules, and are sent together with the next trade that has a check, the next jump, the moon, after 30 seconds, or when the page is hidden or closed. Each laser round, junk steer and trader's offer is its own request (instant feedback where it matters). About **15 to 20 requests a pupil a day**.
+- **A new day** (New Zealand midnight) brings the jumps back (the teacher's number, 1 to 30, default 10), reads the prices again, adds any weekly loan interest, gives a new question list, and drops a half-finished event.
+- **The school's galaxy:** `trader_schools` gives each school one seed (so the whole school talks about the same galaxy); a New Season gives it a new one and clears the games, **keeping the Moon Owners list** (`trader_moons`).
+
+### What was added
+| Where | What |
+|---|---|
+| `shared/trader/server.ts`, `plan.ts`, `questions.ts` | The server's rules (also run by the screens), the trade plan (moved here from the screens), the day's questions |
+| `supabase/migrations/20261022001000_trader.sql` | Teacher switches on `app_settings` (`trader_enabled` OFF, `trader_jumps`, `trader_loans`, `trader_maths`) with `teacher_set_trader()`, `teacher_reset_trader()`; tables `trader_schools`, `trader_games`, `trader_days`, `trader_requests`, `trader_moons` (all closed to pupils: row security on, no policy, no grant); the server's functions (`trader_save` with the version check and the answers saved in the same step); the `hub_games` hooks (switch, New Season, last played). No shared function re-created. No points or achievements yet (T.5) |
+| `supabase/functions/trader/` | `handler.ts` (load, act, fight, junk, deal), `entry.ts`, `index.ts` (generated), `handler.test.ts` |
+| `src/data/trader.ts` | The transport, `traderApi` (one retry with the same request id), settings reads and saves |
+| `src/games/trader/trialBackend.ts` | The preview's pretend database: runs the REAL server function logic in the browser, so the preview behaves exactly like the real game |
+| `src/games/trader/TraderGame.tsx` and panels | The game now plays through the server: queue and flush, the fight and junk and deal as server requests, loading and "not switched on" screens |
+| `src/games/trader/index.tsx`, `switch.ts`, `TraderPlay.tsx`, `src/pages/TeacherTrader.tsx` | The hub card (off), the page, the teacher panel (on/off, jumps a day, bank, maths) and a per-student "reset this ship" |
+| `supabase/tests/database/trader.test.sql`, `security.test.sql` | 35 database checks; the two teacher functions added to the security list |
+
+### Tests
+- `shared/trader`: 40 (rules, plan, the server's moves). `supabase/functions/trader/handler.test.ts`: 14 (sign-in, switch off, opening a game, a trade applied once, refused moves keep nothing and use no question, marking and recording, old versions refused, a new day, parsing, the New Zealand day, the built file up to date). `src/games/trader`: 13 (screens against the real server logic). Database: 35 pass on a scratch copy built from `main`'s migrations plus this one; `game_hooks`, `progress_access`, `archery_hub`, `security` also pass there (security's one remaining error, "no partition of relation messages", is the known copy-only one).
+- **Whole project:** `npm run test:all` 262 files, 4,821 tests pass (1 skipped as before); typecheck clean; build succeeds.
+
+### Not done / untested
+- Not tried with the real school server, a real sign-in, or two devices at once (the version check is tested, not tried live).
+- The Flea-with-no-laser fight, balance on real pupils, and how the 30-second queue feels on a flaky connection need a human.
+- Points, achievements, the board, the Moon Owners screen, contracts, beacons, the station: T.4 and T.5. How to play, sound, the accessibility test: T.6.
+- **Go-live list (T.7, each step only on James's word):** apply migration `20261022001000` (check the number first); deploy `trader` (`--no-verify-jwt --use-api`; unsigned curl must answer a 401 message); check from outside (pupils get 42501 on every `trader_` table and function); set the code switch `ON = true`; merge; try as a teacher with the class switch off, then on.
