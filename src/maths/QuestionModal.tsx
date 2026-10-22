@@ -13,7 +13,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { spokenLabel } from '../../shared/maths/banded';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { NumberPad } from './NumberPad';
-import { countAnswer, noteQuestion, spotFromTitle, STREAK_FROM } from './questionLog';
+import { countAnswer, noteQuestion, spendSkip, spotFromTitle, STREAK_FROM, useSkipRule } from './questionLog';
 import { ScribblePad } from './ScribblePad';
 import './maths.css';
 
@@ -62,6 +62,11 @@ function spokenTyped(typed: string): string {
 const choiceText = (label: string) => (FRACTION.test(label) ? <Part text={label} blank={null} /> : label);
 
 
+/** Under the skip button when the class has 3 skips per game. */
+export function SkipsLeft({ left }: { left: number }) {
+  return <p className="question__skips">{left > 0 ? `Skips left: ${left}` : 'No skips left in this game'}</p>;
+}
+
 /** What the box needs of a question. `answer` is missing when the game's server keeps it secret until marked. */
 export type ShownQuestion = Pick<Question, 'id' | 'parts' | 'spoken' | 'prompt' | 'choices' | 'choiceLabels' | 'maxLength' | 'input'> & { answer?: number };
 
@@ -84,6 +89,7 @@ export function QuestionModal({
   secondsLeft = null,
   scribble = true,
   spot,
+  closeIsSkip = true,
 }: {
   question: ShownQuestion;
   /** What the question is for, e.g. "Mana Well". */
@@ -94,7 +100,7 @@ export function QuestionModal({
   onSubmit: (answer: number, ms: number) => MarkedAnswer | Promise<MarkedAnswer>;
   /** Called after the feedback has been shown. */
   onDone: (result: MarkedAnswer) => void;
-  /** If given, the student may stop (a button, and Escape) before answering. */
+  /** If given, the student may stop (a button, and Escape) before answering. The class's skip switch can take it away. */
   onClose?: () => void;
   closeLabel?: string;
   /** Tests set 0 to skip the feedback pause. */
@@ -107,6 +113,11 @@ export function QuestionModal({
   scribble?: boolean;
   /** The kind of question, for the teacher's skip counts (questionLog.ts). Taken from the title if not given. */
   spot?: string;
+  /**
+   * False when the close button isn't a way past a question (Gem Keep's "Well done", Maths Monsters' "Back"): the class's
+   * "Skip button" switch then leaves it alone.
+   */
+  closeIsSkip?: boolean;
 }) {
   const [typed, setTyped] = useState('');
   const [result, setResult] = useState<MarkedAnswer | null>(null);
@@ -117,6 +128,13 @@ export function QuestionModal({
   const shownAt = useRef(performance.now());
   const box = useRef<HTMLDivElement>(null);
   const titleId = `question-${question.id}-title`;
+  // The class's "Skip button" switch (questionLog.ts): off, or no skips left, means no close button and no Escape.
+  const skips = useSkipRule();
+  const canClose = !!onClose && (!closeIsSkip || skips.canSkip);
+  const close = () => {
+    if (!onClose || (closeIsSkip && !spendSkip())) return;
+    onClose();
+  };
 
   // A new question: clear the answer and start the clock. A layout effect, so it runs before the box can be pressed:
   // a plain effect could run just after a quick first tap and wipe it, leaving the box waiting on "?".
@@ -194,9 +212,9 @@ export function QuestionModal({
   const enter = () => typed !== '' && submit(Number(typed));
 
   function keys(event: React.KeyboardEvent) {
-    if (event.key === 'Escape' && onClose && !result) {
+    if (event.key === 'Escape' && canClose && !result && !checking) {
       event.preventDefault();
-      onClose();
+      close();
       return;
     }
     if (result || checking || question.choices) return;
@@ -300,11 +318,12 @@ export function QuestionModal({
             <NumberPad onDigit={addDigit} onBack={back} onEnter={enter} canEnter={typed !== '' && typed !== '0.'} disabled={!!result || checking} decimal={decimal} />
           </>
         )}
-        {onClose && (
-          <button type="button" className="question__close" disabled={!!result || checking} onClick={onClose}>
+        {canClose && (
+          <button type="button" className="question__close" disabled={!!result || checking} onClick={close}>
             {closeLabel}
           </button>
         )}
+        {onClose && closeIsSkip && skips.left !== null && <SkipsLeft left={skips.left} />}
       </div>
       {showPad &&
         (padOpen ? (

@@ -96,3 +96,52 @@ before merging: a game started on the old site and saved after the deploy is jud
 +1 charges would be refused). Best done outside school hours.
 
 **Went live 22 Oct 2026 evening (James: "go").** `save-bot-game`, `space-game` and `lord` deployed (each answers 401 JSON signed out); site published by merging the PR.
+
+## 5. Stage S.3 results (22 Oct 2026, branch `question-skips-3`, NOT live)
+
+**Numbers first (step 0, read-only, 22 Oct afternoon).** Too early to judge S.2: `question_log` had only 20 notes, all one
+person on the warm-up (looks like a test), because no class had played since S.1 went live. Dragon Maths "Size it up" over
+the 3 days before S.2: 174 offered, 58 skipped (33%; section 1 said 43%). James said build S.3 anyway; suggestion: leave
+every class On until a school day of numbers is in.
+
+**James's decisions (22 Oct, "all yes" to every suggestion):**
+
+| Where | With the switch Off |
+|---|---|
+| Mission Control charge card | Roll waits until the card is answered (button says "🎲 Answer first, then roll"; Space doesn't roll either). With "3 per game", rolling past the card uses a skip. |
+| Dragon Maths | "Size it up" stays a choice. Its question boxes lose "Skip, just fight", "No thanks, pay full price", "Walk on", "Not today", "Skip this one", "Skip". |
+| Gem Keep "Well done" / "Cancel" | Stay (opt-in rounds). |
+| Maths Monsters "Back" | Stays (no turn passes). |
+| Mine Runner "Not now" | Counts as a skip: hidden. |
+| Clan Quest "Show me how" | Stays (it's for learning). Battle Cry's "No thanks" is a plain skip: hidden. |
+| Timers (Mission Control wormholes and classmates card, Archery) | Still run out. |
+
+**How it works.**
+- Migration `20261022001100_question_skips_switch.sql`: `app_settings.question_skips text not null default 'on'`
+  (`on` / `limited` / `off`) and `teacher_set_question_skips(mode, target_class)`, copied from `teacher_set_training_first`.
+  Columns only; no shared function re-created.
+- `src/maths/questionLog.ts`: the rule (`setSkipMode`, `resetSkips`, `spendSkip`, `skipRule`, `useSkipRule`,
+  `SKIPS_PER_GAME = 3`). Nothing sets it in tests or previews, so the box behaves as before there.
+- `src/data/questionSkips.ts`: `useSkipRuleSync()` (mounted once in `App`) reads `question_skips` from the shared settings
+  row (`readSettings`, no extra request) for a student, never for a teacher, and resets the skips used on every new page
+  address (so "per game" = per visit to a game page; a new Mission Control game is a new address). If the row can't be read,
+  the rule stays as it was (On to start). `fetchSkipMode` / `saveSkipMode` for the teacher page.
+- The box (`QuestionModal`, `PracticalAsk`): Off or 0 left = no skip button and no Escape. "3 per game" shows "Skips left: N"
+  under the button ("No skips left in this game" at 0). New props `closeIsSkip={false}` / `noThanksIsSkip={false}` keep
+  Gem Keep's, Monsters' and Clan Quest's buttons.
+- Teacher page: the three-way "Skip button" choice at the top of the Skipped questions panel, for the picked class, in the
+  Mission Control switch's `level-picker` look, with a line saying which buttons stay.
+- **No server function changed.** Skipping was never scored, so there's nothing for a server to check. A student who
+  edits the page could still skip; that only hides their own learning, and the skip record still shows it.
+
+**Tests.** New: `src/maths/skipRule.test.tsx` (rule, box, PracticalAsk; 11), `src/data/questionSkips.test.tsx` (6), 2
+panel tests, a Mission Control screen test (Roll waits with skips off). `question_skips_switch.test.sql` 14/14 on a scratch
+copy; `security.test.sql` "who can call what" passes (its realtime check can't run on a copy, as before);
+`training_first` and `question_log` tests still pass. `npm run test:all` 4,787 pass, typecheck and build clean.
+**Not yet done:** a real browser run.
+
+**Go-live (each step needs James's yes).** Recheck the migration number, apply `20261022001100_question_skips_switch.sql`
+with `db query --linked`, check every row is `on` and signed-out callers are refused on `teacher_set_question_skips`, add
+1100 to the repair note in `docs/PLAN.md`, open and merge the PR, watch "Test and publish" go green, check the live JS has
+"Skips left". No functions to deploy. The site can safely go out before or after the migration: with no column, the
+switch reads as On.

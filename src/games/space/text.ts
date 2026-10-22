@@ -342,3 +342,7 @@ export function describe(event: SpaceEvent, names: readonly string[]): string | 
 }
 
 export { ORDINAL } from '../../../shared/space/names';
+
+/** The class's "Skip button" switch is off (or its 3 skips are used): the Mission Control card must be answered before rolling. */
+export const ANSWER_FIRST = 'Answer the Mission Control question first, then roll.';
+export const ANSWER_FIRST_BUTTON = '🎲 Answer first, then roll';

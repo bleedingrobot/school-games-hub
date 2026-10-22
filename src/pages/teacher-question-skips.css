@@ -45,3 +45,7 @@
   font-size: 0.85rem;
   color: var(--ink-soft);
 }
+.qs-teacher__switch-note {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
