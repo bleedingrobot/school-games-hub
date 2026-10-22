@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { recordTyping, type TrainingState } from '../../shared/training/records';
+import { isResting, recordTyping, type TrainingState } from '../../shared/training/records';
 import type { AnswerEvent } from '../../shared/training/save';
 import type { SessionSummary } from '../../shared/training/summary';
 import { greenThisWeek, weekLine } from '../../shared/training/week';
@@ -35,6 +35,8 @@ interface Props {
   onSessionFinished?: (kind: 'facts' | 'quick', seed: number) => void;
   /** Shown on the home and end-of-session screens: whether the games are open (Training before games). */
   gateNote?: ReactNode;
+  /** The maths warm-up comes first (the class uses the ladder and it isn't done): shown instead of Today's session. */
+  placementFirst?: ReactNode;
 }
 
 function seedFor(today: string, n: number): number {
@@ -43,7 +45,7 @@ function seedFor(today: string, n: number): number {
   return h * 31 + n;
 }
 
-export function TrainingApp({ state, onState, today, onAnswered, tools, quick, openQuick, onSessionFinished, gateNote }: Props) {
+export function TrainingApp({ state, onState, today, onAnswered, tools, quick, openQuick, onSessionFinished, gateNote, placementFirst }: Props) {
   const [screen, setScreen] = useState<Screen>(openQuick && quick ? 'quick' : 'home');
   const [summary, setSummary] = useState<SessionSummary | null>(null);
   const [sessionState, setSessionState] = useState<TrainingState>(state);
@@ -78,9 +80,16 @@ export function TrainingApp({ state, onState, today, onAnswered, tools, quick, o
           <p>A few minutes a day. No clock, no score: just you and your facts.</p>
           <p className="tr-week">{weekLine(greenThisWeek(state.records, today))}</p>
           {gateNote}
-          <button type="button" className="tr-btn tr-btn-primary tr-big" onClick={start}>
-            Today’s session
-          </button>
+          {isResting(state, today) && (
+            <p className="tr-note" role="status">
+              For now, your sessions practise facts you’ve already met, to make them really strong. New facts come back soon.
+            </p>
+          )}
+          {placementFirst ?? (
+            <button type="button" className="tr-btn tr-btn-primary tr-big" onClick={start}>
+              Today’s session
+            </button>
+          )}
           {quick && (
             <button type="button" className="tr-btn tr-btn-primary" onClick={() => setScreen('quick')}>
               Quick looks

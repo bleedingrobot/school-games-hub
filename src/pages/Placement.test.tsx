@@ -8,7 +8,9 @@ import { AUTO_FOCUS, type MathsFocus } from '../../shared/maths/focus';
 import { PLACEMENT_QUESTIONS } from '../../shared/maths/config';
 import { checkPlacement } from '../../shared/maths/placementCheck';
 import type { Question } from '../../shared/maths/skillPack';
-import Placement from './Placement';
+import Placement, { safeBack } from './Placement';
+import { AuthContext, type AuthState } from '../auth/AuthContext';
+import { rememberedPlaced } from '../data/placementGate';
 import { FEEDBACK_MS } from '../maths/QuestionModal';
 
 // The warm-up is 10 questions, and the right/wrong message stays up for up to 2 seconds after each one. These tests are
@@ -41,11 +43,21 @@ const focus = (over: Partial<NonNullable<MathsFocus['ladder']>> = {}): MathsFocu
   ...AUTO_FOCUS,
   ladder: { on: true, placed: null, placement: null, furthest: null, ...over },
 });
-const show = () =>
+const auth: AuthState = {
+  status: 'signed-in',
+  profile: { id: 'u1', display_name: 'Speedy Otter 27', avatar: {}, role: 'student' },
+  message: null,
+  signIn: vi.fn(async () => {}),
+  signOut: vi.fn(async () => {}),
+  refreshProfile: vi.fn(async () => {}),
+};
+const show = (path = '/placement') =>
   render(
-    <MemoryRouter>
-      <Placement />
-    </MemoryRouter>,
+    <AuthContext.Provider value={auth}>
+      <MemoryRouter initialEntries={[path]}>
+        <Placement />
+      </MemoryRouter>
+    </AuthContext.Provider>,
   );
 
 beforeEach(() => {
@@ -76,15 +88,32 @@ async function answer(user: ReturnType<typeof userEvent.setup>, n: number, right
 }
 
 describe('the warm-up that finds a starting place', () => {
-  it('explains itself kindly, is not called a test, and can be skipped', async () => {
-    const user = userEvent.setup();
+  it('explains itself kindly, is not called a test, and has no skip (a must-do since 22 Oct 2026)', async () => {
     show();
     expect(await screen.findByText(/quick questions/)).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/\btest\b/i);
     expect(document.body.textContent).not.toMatch(/Year \d/);
-    await user.click(screen.getByRole('button', { name: 'Skip it' }));
-    expect(ladderData.sendPlacement).toHaveBeenCalledWith({ skip: true });
-    expect(await screen.findByText(/All done/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Let’s go' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Skip it' })).not.toBeInTheDocument();
+  });
+
+  it('goes back to the game or Training it came from, and remembers on the device that it is done', async () => {
+    const user = userEvent.setup();
+    show('/placement?back=%2Fgame%2Fgem-keep');
+    await user.click(await screen.findByRole('button', { name: 'Let’s go' }));
+    for (let n = 1; n <= PLACEMENT_QUESTIONS; n++) await answer(user, n, true);
+    await screen.findByText(/All done/);
+    expect(screen.getByRole('link', { name: 'Carry on' })).toHaveAttribute('href', '/game/gem-keep');
+    expect(rememberedPlaced('u1')).toBe(true);
+  }, 30_000);
+
+  it('only goes back to a page on this site', () => {
+    expect(safeBack('/training')).toBe('/training');
+    expect(safeBack('/game/space?x=1')).toBe('/game/space?x=1');
+    expect(safeBack('https://example.com')).toBeNull();
+    expect(safeBack('//example.com')).toBeNull();
+    expect(safeBack('/placement?back=/x')).toBeNull();
+    expect(safeBack(null)).toBeNull();
   });
 
   it('asks the questions one at a time, then sends them to be checked', async () => {
@@ -137,14 +166,5 @@ describe('the warm-up that finds a starting place', () => {
     show();
     expect(await screen.findByText(/nothing to do here/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Let’s go' })).not.toBeInTheDocument();
-  });
-
-  it('keeps the skip button on screen with the message if skipping fails', async () => {
-    const user = userEvent.setup();
-    vi.mocked(ladderData.sendPlacement).mockRejectedValue(new Error('offline'));
-    show();
-    await user.click(await screen.findByRole('button', { name: 'Skip it' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(/Something went wrong/);
-    expect(screen.getByRole('button', { name: 'Skip it' })).toBeInTheDocument();
   });
 });

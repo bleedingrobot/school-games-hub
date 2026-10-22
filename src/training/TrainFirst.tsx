@@ -8,10 +8,12 @@
  * - GamesGateNote is the line on the Training screens.
  */
 import type { ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { TRAINING_CONFIG } from '../../shared/training/config';
 import { clockTime } from '../../shared/training/gate';
+import { usePlacementGate } from '../data/placementGate';
 import { useTrainingGate } from '../data/trainingGate';
+import { PlacementFirstScreen } from './PlacementFirst';
 import { trainingOn } from './switch';
 import './gate.css';
 
@@ -50,9 +52,22 @@ export function TrainFirstScreen() {
 
 const hoursText = () => `${TRAINING_CONFIG.gate.gamesOpenHours} hours`;
 
-/** Shows the page only if the games are open for this student. */
+/**
+ * Shows the page only if the games are open for this student: the maths warm-up done (in a class whose games pick the maths),
+ * then Training before games.
+ */
 export function GameGate({ children }: { children: ReactNode }) {
   const gate = useTrainingGate({ live: false });
+  const placement = usePlacementGate();
+  const location = useLocation();
+  if (!placement.ready) {
+    return (
+      <p className="loading" role="status">
+        Loading…
+      </p>
+    );
+  }
+  if (placement.needed) return <PlacementFirstScreen back={location.pathname + location.search} />;
   if (!trainingOn()) return <>{children}</>;
   if (!gate.ready) {
     return (

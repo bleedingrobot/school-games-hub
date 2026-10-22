@@ -174,6 +174,25 @@ export function activeKeys(skill: LadderSkill, enabledTables: readonly number[],
 }
 
 /**
+ * Jumping ahead (James, 22 Oct 2026): a student whose records show a times-table skill secure (70% of its times facts in box 2
+ * or higher) is past every easier skill below it, even ones they have never been asked: someone who knows ×3, ×4 and ×8 isn't
+ * kept on bonds to 10. Only times-table skills count, as they are big (30 to 60 facts) so a lucky run can't do it, and only their
+ * times facts, so a class with division off (or a student who hasn't met it yet) jumps all the same. Returns the index just
+ * after the highest such skill, or 0.
+ */
+export function tablesJumpFloor(byKey: ReadonlyMap<string, FactStats>, enabled: readonly number[] = TABLES): number {
+  let jump = 0;
+  LADDER.forEach((skill, index) => {
+    if (!skill.built || skill.stage !== 'times-tables') return;
+    const times = activeKeys(skill, enabled, false).filter((k) => k.startsWith('mul:'));
+    if (times.length === 0) return;
+    const share = times.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / times.length;
+    if (share >= STEP_SECURE_SHARE) jump = index + 1;
+  });
+  return jump;
+}
+
+/**
  * Where a student is on the ladder, worked out from their records: the first built skill that
  * isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
  * campaign) is the one they're on. A skill with all its tables switched off is left out: it never becomes the
@@ -187,7 +206,7 @@ export function ladderProgress(stats: Iterable<FactStats>, opts: LadderOptions =
   let current: LadderSkill | null = null;
   let secureCount = 0;
   let builtCount = 0;
-  const floor = opts.floor ?? 0;
+  const floor = Math.max(opts.floor ?? 0, tablesJumpFloor(byKey, enabled));
   const skills: SkillProgress[] = LADDER.map((skill, index) => {
     if (!skill.built) return { skill, status: 'later' as const, share: 0 };
     const keys = activeKeys(skill, enabled, opts.division !== false);
