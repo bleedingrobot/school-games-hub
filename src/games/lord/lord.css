@@ -123,7 +123,8 @@
 .lord-stage--forest-3 .lord-stage__mist { opacity: 0.3; background: radial-gradient(40% 30% at 30% 80%, rgba(255, 150, 80, 0.35), transparent 70%), radial-gradient(30% 25% at 80% 70%, rgba(200, 200, 200, 0.4), transparent 70%); animation: lord-mist 16s ease-in-out infinite alternate; }
 .lord-stage--inn .lord-stage__mist { inset: 0; opacity: 0.45; background: radial-gradient(35% 60% at 80% 72%, rgba(255, 170, 70, 0.5), transparent 70%); animation: lord-flicker 2.6s ease-in-out infinite; }
 .lord-stage--shop .lord-stage__mist { inset: 0; opacity: 0.4; background: radial-gradient(30% 55% at 84% 62%, rgba(255, 120, 40, 0.5), transparent 70%); animation: lord-flicker 1.9s ease-in-out infinite; }
-.lord-stage:not(:is(.lord-stage--forest-1, .lord-stage--forest-2, .lord-stage--forest-3, .lord-stage--lair, .lord-stage--inn, .lord-stage--shop)) .lord-stage__mist { display: none; }
+.lord-stage--healer .lord-stage__mist { inset: 0; opacity: 0.35; background: radial-gradient(18% 35% at 63% 68%, rgba(255, 150, 60, 0.6), transparent 70%); animation: lord-flicker 2.3s ease-in-out infinite; }
+.lord-stage:not(:is(.lord-stage--forest-1, .lord-stage--forest-2, .lord-stage--forest-3, .lord-stage--lair, .lord-stage--inn, .lord-stage--shop, .lord-stage--healer)) .lord-stage__mist { display: none; }
 @keyframes lord-mist { from { transform: translateX(-6%); } to { transform: translateX(6%); } }
 @keyframes lord-flicker { 0%, 100% { opacity: 0.38; } 30% { opacity: 0.5; } 55% { opacity: 0.33; } 80% { opacity: 0.47; } }
 
