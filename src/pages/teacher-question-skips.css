@@ -1,0 +1,47 @@
+/* "Skipped questions" on the teacher page. */
+.qs-teacher {
+  display: grid;
+  gap: 12px;
+}
+.qs-teacher > p {
+  margin: 0;
+}
+.qs-teacher fieldset {
+  min-width: 0;
+}
+.qs-teacher__scroll {
+  display: grid;
+  gap: 16px;
+  overflow-x: auto;
+}
+.qs-teacher__table caption {
+  text-align: left;
+  font-weight: 800;
+  padding-bottom: 4px;
+}
+.qs-teacher__table td {
+  font-size: 1rem;
+}
+.qs-teacher__real {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+.qs-teacher__share {
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+.qs-teacher__where {
+  font-weight: 400;
+  font-size: 0.9rem;
+  text-align: left;
+}
+.qs-teacher__table tr[data-high] th,
+.qs-teacher__table tr[data-high] td {
+  background: #fde2e2;
+}
+.qs-teacher__key {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}

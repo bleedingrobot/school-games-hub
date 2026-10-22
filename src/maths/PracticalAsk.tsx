@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PracticalQuestion } from '../../shared/maths/practical';
 import { NumberPad } from './NumberPad';
+import { noteQuestion, spotFromTitle } from './questionLog';
 import './maths.css';
 
 const MAX_CHARS = 6;
@@ -15,8 +16,8 @@ export function PracticalAsk({
   question,
   title,
   note,
-  onSubmit,
-  onNoThanks,
+  onSubmit: submitAnswer,
+  onNoThanks: noThanksGiven,
   noThanksLabel = 'No thanks',
 }: {
   question: PracticalQuestion;
@@ -37,6 +38,35 @@ export function PracticalAsk({
     setTyped('');
     box.current?.focus();
   }, [question]);
+
+  // Each question shown is noted once for the teacher (questionLog.ts): answered, or skipped ("No thanks", or the box going away
+  // without an answer).
+  const noted = useRef<PracticalQuestion | null>(null);
+  const spot = useRef('');
+  spot.current = spotFromTitle(title);
+  useEffect(() => {
+    const started = performance.now();
+    return () => {
+      if (noted.current !== question) noteQuestion({ spot: spot.current, skipped: true, ms: performance.now() - started });
+    };
+  }, [question]);
+  const shownAt = useRef(performance.now());
+  useEffect(() => {
+    shownAt.current = performance.now();
+  }, [question]);
+  const record = (skipped: boolean) => {
+    if (noted.current === question) return;
+    noted.current = question;
+    noteQuestion({ spot: spot.current, skipped, ms: performance.now() - shownAt.current });
+  };
+  const onSubmit = (answer: number) => {
+    record(false);
+    submitAnswer(answer);
+  };
+  const onNoThanks = noThanksGiven && (() => {
+    record(true);
+    noThanksGiven();
+  });
 
   const addDigit = (d: string) => setTyped((t) => (t.replace('-', '').length >= MAX_CHARS || (t.replace('-', '') === '0' && d === '0') ? t : t.replace('-', '') === '0' ? t.replace('0', d) : t + d));
   const back = () => setTyped((t) => t.slice(0, -1));
