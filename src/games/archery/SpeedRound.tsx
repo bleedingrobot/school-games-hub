@@ -210,6 +210,7 @@ export function SpeedRound({ api, coins, roundsLeft, onCoins, onRoundsLeft, onEx
         <QuestionModal
           question={{ ...phase.q.question, id: phase.q.question.slot }}
           title={`Question ${slot + 1} of ${total}`}
+          spot="Speed round"
           note={earns ? `${COINS_PER_RIGHT} coins if you're quick!` : 'Practice round'}
           secondsLeft={secondsLeft}
           scribble={false}

@@ -13,6 +13,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { spokenLabel } from '../../shared/maths/banded';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { NumberPad } from './NumberPad';
+import { noteQuestion, spotFromTitle } from './questionLog';
 import { ScribblePad } from './ScribblePad';
 import './maths.css';
 
@@ -82,6 +83,7 @@ export function QuestionModal({
   inline = false,
   secondsLeft = null,
   scribble = true,
+  spot,
 }: {
   question: ShownQuestion;
   /** What the question is for, e.g. "Mana Well". */
@@ -103,6 +105,8 @@ export function QuestionModal({
   secondsLeft?: number | null;
   /** A scribble pad beside the box, for working out. On by default; never shown for an inline card. */
   scribble?: boolean;
+  /** The kind of question, for the teacher's skip counts (questionLog.ts). Taken from the title if not given. */
+  spot?: string;
 }) {
   const [typed, setTyped] = useState('');
   const [result, setResult] = useState<MarkedAnswer | null>(null);
@@ -124,6 +128,19 @@ export function QuestionModal({
     if (!inline) box.current?.focus();
   }, [question.id, inline]);
 
+  // Each question shown is noted once for the teacher: answered at the first try, or skipped if the box closes (or moves on
+  // to another question) without one. Escape, a skip button, a timer running out and the game rolling past it all count.
+  const answeredId = useRef<ShownQuestion['id'] | null>(null);
+  const spotName = useRef('');
+  spotName.current = spot ?? spotFromTitle(title);
+  useEffect(() => {
+    const id = question.id;
+    const started = performance.now();
+    return () => {
+      if (answeredId.current !== id) noteQuestion({ spot: spotName.current, skipped: true, ms: performance.now() - started });
+    };
+  }, [question.id]);
+
   // Each answer is reported exactly once, however often the parent re-renders.
   const reportDone = useRef(onDone);
   reportDone.current = onDone;
@@ -135,7 +152,12 @@ export function QuestionModal({
 
   function submit(answer: number) {
     if (result || checking) return;
-    const marked = onSubmit(answer, Math.round(performance.now() - shownAt.current));
+    const ms = Math.round(performance.now() - shownAt.current);
+    if (answeredId.current !== question.id) {
+      answeredId.current = question.id;
+      noteQuestion({ spot: spotName.current, skipped: false, ms });
+    }
+    const marked = onSubmit(answer, ms);
     if (!('then' in marked)) {
       setResult(marked);
       return;

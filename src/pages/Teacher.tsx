@@ -31,6 +31,7 @@ import { whenPlayed } from './Dashboard';
 
 // Each game's own teacher panels come from its GameDefinition (TeacherPanels, StudentPanel), loaded separately.
 // The warm-up reset brings the maths ladder with it, so it loads with the student's panel, not with the page.
+const QuestionSkipsPanel = lazy(() => import('./TeacherQuestionSkips').then((m) => ({ default: m.QuestionSkipsPanel })));
 const PlacementReset = lazy(() => import('../maths/PlacementReset').then((m) => ({ default: m.PlacementReset })));
 
 /** The words a teacher types to start a new season. The server checks them too. */
@@ -106,6 +107,7 @@ function TeacherView({ me, isAdmin }: { me: string; isAdmin: boolean }) {
         <MathsSwitchPanel />
         {trainingOn() && <TrainingFirstSwitch />}
         <Suspense fallback={null}>
+          <QuestionSkipsPanel />
           {ALL_GAMES.map((game) => game.TeacherPanels && <game.TeacherPanels key={game.id} />)}
         </Suspense>
       </TeacherClassProvider>
