@@ -61,3 +61,5 @@ as one skip. Questions answered on one device and sent later arrive late (up to 
 `20261022000900_question_log.sql` with `db query --linked`, check `question_log` exists and is empty and `log_questions`
 refuses signed-out callers, add 900 to the repair note in `docs/PLAN.md`, then merge the PR. No functions to deploy.
 After a school day: open the panel, and compare with section 1.
+
+**Went live 22 Oct 2026 (James: "Go").** Migration applied to the live database with `db query --linked`; checked: `question_log` empty with row security on, students can't read it, signed-out callers refused on `log_questions` and the table (42501), cron `tidy-question-log` scheduled. PLAN.md repair note now includes 900. Site published by merging the PR.
