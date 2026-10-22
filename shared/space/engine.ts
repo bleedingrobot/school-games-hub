@@ -83,7 +83,7 @@ export const RESCUE_JUMP = 10;
 /** Mission Control maths: a right answer at a wormhole flies this much further. */
 export const WORMHOLE_BONUS = 3;
 /** A right answer to the question after your turn adds this to your next roll. */
-export const MATHS_CHARGE_STEPS = 1;
+export const MATHS_CHARGE_STEPS = 2;
 export const METEORS = 5;
 /** Where the mystery station can send you, and how likely each is. */
 export const MYSTERY_OFFSETS: readonly (readonly [number, number])[] = [
@@ -211,7 +211,7 @@ export type SpaceEvent =
   | { kind: 'asteroid'; seat: number; square: number }
   | { kind: 'supernova-spent'; square: number }
   | { kind: 'question'; seat: number; correct: boolean; from: number; to: number; moment?: MathsMoment }
-  /** The answer to the question after the last turn: right adds +1 to this roll. */
+  /** The answer to the question after the last turn: right adds +MATHS_CHARGE_STEPS to this roll. */
   | { kind: 'charge'; seat: number; right: boolean }
   | { kind: 'chain-cap'; seat: number; square: number }
   | { kind: 'choice'; seat: number; pending: Pending }
@@ -227,7 +227,7 @@ export type SpaceEvent =
  * gate 0 stay / 1 jump; mystery 0–2 (the card); inventory 0–2 drop that item / 3 keep what
  * you have; binary 0 or 1 (which die); question 0 wrong / 1 right.
  * `charge`: the answer to the question asked after your last turn, sent before rolling
- * (maths on, once a turn). Right adds +1 to this roll; wrong changes nothing.
+ * (maths on, once a turn). Right adds +MATHS_CHARGE_STEPS to this roll; wrong changes nothing.
  */
 export type SpaceAction =
   | { kind: 'use-item'; item: ItemKind; target?: number; value?: number }

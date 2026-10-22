@@ -99,3 +99,15 @@ describe('maths moments', () => {
 function startFightFor(h: Hero) {
   return startFight(h, { id: 'x', name: 'x', level: 1, hp: 500, strength: 1, gold: 1, exp: 1, intro: '' }, 3);
 }
+
+describe('Size it up gold', () => {
+  it('a right answer adds 20% (rounded up, at least 1); anything else, or no gold, adds nothing', async () => {
+    const { sizeItUpGold } = await import('./maths');
+    expect(sizeItUpGold(10, 'right')).toBe(12);
+    expect(sizeItUpGold(3, 'right')).toBe(4);
+    expect(sizeItUpGold(0, 'right')).toBe(0);
+    expect(sizeItUpGold(10, 'hint')).toBe(10);
+    expect(sizeItUpGold(10, 'wrong')).toBe(10);
+    expect(sizeItUpGold(10, null)).toBe(10);
+  });
+});

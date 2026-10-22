@@ -7052,7 +7052,7 @@ function stepsFor(r, t, die) {
 		changes.push("booster");
 	}
 	if (t.mathsCharge) {
-		steps += 1;
+		steps += 2;
 		changes.push("maths-charge");
 	}
 	if (r.gravity?.kind === "low") {
