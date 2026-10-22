@@ -31,7 +31,7 @@ import {
 } from './engine';
 import {
   NUMBER_GUESS_TRIES, addMasterTrialBonus, dragonStageOptions, interestFor, numberGuessPrize, offersSizeItUp, priceDiscount, riddleGold,
-  sizeItUpBonus, type MomentId, type Result,
+  sizeItUpBonus, sizeItUpGold, type MomentId, type Result,
 } from './maths';
 import { arenaWonLine, dailyNews, dragonWonLine, flattenedLine, masterWonLine, type NewsLine } from './news';
 import { markProof, type Proof } from './proof';
@@ -410,9 +410,12 @@ function fightFinish(c: Ctx): Done | Refuse {
   if (isRefuse(played)) return played;
   const { fight, actions, open: was } = played;
   const crossed = was.info.day !== c.today;
-  const hero = keepToday(applyForestResult(c.w.hero, fight), c.w.hero, crossed);
-  const rewards = fight.outcome === 'won' ? { gold: fight.monster.gold + fight.goldPinched, exp: fight.monster.exp } : { gold: 0, exp: 0 };
   const won = fight.outcome === 'won';
+  // A right Size it up pays extra gold for a win, on top of what the fight itself gives.
+  const extraGold = won ? sizeItUpGold(fight.monster.gold, sizeUp) - fight.monster.gold : 0;
+  const applied = applyForestResult(c.w.hero, fight);
+  const hero = keepToday(extraGold ? { ...applied, gold: applied.gold + extraGold } : applied, c.w.hero, crossed);
+  const rewards = won ? { gold: fight.monster.gold + extraGold + fight.goldPinched, exp: fight.monster.exp } : { gold: 0, exp: 0 };
   return {
     hero, answers, notes,
     gain: won ? { forestWins: 1 } : undefined,

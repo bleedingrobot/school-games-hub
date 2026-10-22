@@ -13,7 +13,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { spokenLabel } from '../../shared/maths/banded';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { NumberPad } from './NumberPad';
-import { noteQuestion, spotFromTitle } from './questionLog';
+import { countAnswer, noteQuestion, spotFromTitle, STREAK_FROM } from './questionLog';
 import { ScribblePad } from './ScribblePad';
 import './maths.css';
 
@@ -112,6 +112,7 @@ export function QuestionModal({
   const [result, setResult] = useState<MarkedAnswer | null>(null);
   const [checking, setChecking] = useState(false);
   const [trouble, setTrouble] = useState('');
+  const [streak, setStreak] = useState(0);
   const [padOpen, setPadOpen] = useState(readPadOpen);
   const shownAt = useRef(performance.now());
   const box = useRef<HTMLDivElement>(null);
@@ -158,8 +159,12 @@ export function QuestionModal({
       noteQuestion({ spot: spotName.current, skipped: false, ms });
     }
     const marked = onSubmit(answer, ms);
+    const show = (done: MarkedAnswer) => {
+      setStreak(countAnswer(done.correct));
+      setResult(done);
+    };
     if (!('then' in marked)) {
-      setResult(marked);
+      show(marked);
       return;
     }
     // The server is marking it: wait for it, and let the student try again if it didn't answer.
@@ -168,7 +173,7 @@ export function QuestionModal({
     marked.then(
       (done) => {
         setChecking(false);
-        setResult(done);
+        show(done);
       },
       (error: unknown) => {
         setChecking(false);
@@ -266,6 +271,7 @@ export function QuestionModal({
                 ✦
               </span>{' '}
               Correct!{result.reward && <span className="question__reward"> {result.reward}</span>}
+              {streak >= STREAK_FROM && <span className="question__streak"> 🔥 {streak} in a row!</span>}
             </>
           )}
           {result && !result.correct && <>{result.fact}</>}

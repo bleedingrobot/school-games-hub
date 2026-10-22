@@ -134,3 +134,30 @@ describe('PracticalAsk notes its questions too', () => {
     expect(seen()).toEqual(['Battle Cry!:answered', 'Battle Cry!:skipped', 'How many barracks?:skipped']);
   });
 });
+
+describe('right answers in a row', () => {
+  const answerRight = async (id: number) => {
+    const { unmount } = render(<QuestionModal question={question(id)} title="Rescue" onSubmit={marked} onDone={() => {}} timeScale={0} />);
+    now += 1000;
+    await userEvent.keyboard('56{Enter}');
+    const shown = screen.queryByText(/in a row!/)?.textContent ?? null;
+    unmount();
+    return shown;
+  };
+
+  it('cheers from the third right answer, and a wrong answer or a skip starts again', async () => {
+    // Earlier tests may have left a run going: a wrong answer clears it.
+    const first = render(<QuestionModal question={question(90)} title="Rescue" onSubmit={marked} onDone={() => {}} timeScale={0} />);
+    await userEvent.keyboard('1{Enter}');
+    first.unmount();
+    expect(await answerRight(91)).toBeNull();
+    expect(await answerRight(92)).toBeNull();
+    expect(await answerRight(93)).toBe(' 🔥 3 in a row!');
+    expect(await answerRight(94)).toBe(' 🔥 4 in a row!');
+    // A skip (the box taken away after a while, no answer).
+    const skipped = render(<QuestionModal question={question(95)} title="Rescue" onSubmit={marked} onDone={() => {}} />);
+    now += 2000;
+    skipped.unmount();
+    expect(await answerRight(96)).toBeNull();
+  });
+});

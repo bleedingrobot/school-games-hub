@@ -113,6 +113,13 @@
   color: #5b3cc4;
 }
 
+/* Right answers in a row (questionLog.ts): dark orange on the white box, 4.5:1 or better. */
+.question__streak {
+  display: inline-block;
+  color: #a33a00;
+  white-space: nowrap;
+}
+
 .question__close {
   min-height: 44px;
   padding: 6px 18px;

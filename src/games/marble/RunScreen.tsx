@@ -619,7 +619,7 @@ export function RunScreen({
             onSubmit={mark}
             onDone={(result) => closeAskRef.current(result.correct)}
             onClose={() => closeAskRef.current(false)}
-            closeLabel="Skip"
+            closeLabel={ask.kind === 'rescue' ? 'Skip (no time back)' : 'Skip (no time off)'}
           />
         )}
 

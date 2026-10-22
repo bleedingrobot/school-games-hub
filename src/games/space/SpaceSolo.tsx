@@ -25,6 +25,7 @@ import { BOT_NAMES } from '../../../shared/space/bot';
 import {
   canCharge,
   itemProblem,
+  MATHS_CHARGE_STEPS,
   SpaceRuleError,
   usableItems,
   validTargets,
@@ -568,6 +569,8 @@ export function SpaceSolo({
   const myTurn = phase === 'student';
   const pending = myTurn && view.phase === 'choice' ? view.pending : null;
   const canRoll = myTurn && view.phase === 'ready' && !picking;
+  // The question card is still open: rolling now skips it, and the Roll button says what that costs.
+  const chargeWaiting = canRoll && !!charge && !charge.done && !view.turnInfo.rolled;
   const usable = myTurn && view.phase === 'ready' ? usableItems(view, studentSeat) : [];
   const targets = myTurn && picking?.kind === 'target' ? validTargets(view, picking.item, studentSeat) : [];
   const positions = rockets.map((r) => r.pos);
@@ -680,6 +683,7 @@ export function SpaceSolo({
                 aria-keyshortcuts="Space"
               >
                 🎲 {view.turnInfo.rollAgainUsed && myTurn && !view.turnInfo.rolled ? 'Roll again' : 'Roll'}
+                {chargeWaiting && ` without the +${MATHS_CHARGE_STEPS}`}
               </button>
             )}
           </div>
@@ -711,14 +715,14 @@ export function SpaceSolo({
         {view.settings.maths && !pass && !over && (view.turnInfo.mathsCharge && myTurn ? (
           <section className="space-panel space-charge" aria-label="Mission Control charge">
             <p className="space-charge__note" role="status">
-              ⚡ +1 charged from your answer
+              ⚡ +{MATHS_CHARGE_STEPS} charged from your answer
             </p>
           </section>
         ) : (
           charge?.done?.right ? (
             <section className="space-panel space-charge" aria-label="Mission Control charge">
               <p className="space-charge__note" role="status">
-                ⚡ Right! +1 is ready for your next roll
+                ⚡ Right! +{MATHS_CHARGE_STEPS} is ready for your next roll
               </p>
             </section>
           ) : (
@@ -729,7 +733,7 @@ export function SpaceSolo({
                 key={charge.question.id}
                 question={charge.question}
                 title="Mission Control"
-                note="Answer for +1 on your next roll. It’s up to you."
+                note={`Answer for +${MATHS_CHARGE_STEPS} on your next roll. It’s up to you.`}
                 onSubmit={(answer, ms) => {
                   answered.current = { answer, ms };
                   return pack.recordAnswer(charge.question, answer, ms);
