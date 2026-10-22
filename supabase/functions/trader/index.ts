@@ -6415,233 +6415,6 @@ function parseMathsSwitch(value) {
 	return MATHS_SWITCHES.includes(value) ? value : "off";
 }
 //#endregion
-//#region shared/maths/focusResults.ts
-/**
-* What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
-* results"). The database matches each answer to the focuses that were running at its time; the server works out the two
-* things only the maths code knows: which ladder skills own the answer's key, and whether it was quick.
-*/
-let owners = null;
-/** The ladder skills that own a mastery key (usually one). Empty if the key isn't on the ladder. */
-function skillsOfKey(key) {
-	if (!owners) {
-		owners = new Map();
-		for (const skill of LADDER) for (const k of skill.keys) owners.set(k, [...owners.get(k) ?? [], skill.id]);
-	}
-	return owners.get(key) ?? [];
-}
-/** The answers worth sending: those on a ladder skill. */
-function focusResultAnswers(answers, pack) {
-	const quickMs = quickMsForPack(pack);
-	const out = [];
-	for (const a of answers) {
-		const skills = skillsOfKey(a.key);
-		if (skills.length > 0) out.push({
-			skills,
-			at: a.at,
-			correct: a.correct,
-			quick: a.correct && a.ms <= quickMs
-		});
-	}
-	return out;
-}
-//#endregion
-//#region supabase/functions/_shared/focusResults.ts
-/**
-* Adds a batch of answers to the results of the maths focuses running for the student (stage F.8). Call it only for a batch the
-* records took for the first time (record_fact_answers says 0 for one it has seen), so a retry never counts twice. It never
-* throws and never blocks saving: the answers are already saved, and a problem here is only logged (the code, never who).
-*/
-async function countForFocuses(rpc, player, pack, answers, from) {
-	try {
-		const rows = focusResultAnswers(answers, pack);
-		if (rows.length === 0) return;
-		const { error } = await rpc("add_maths_focus_results", {
-			player,
-			answers: rows
-		});
-		if (error) console.error(`${from}: focus results not counted (${error.code ?? "unknown"})`);
-	} catch {
-		console.error(`${from}: focus results not counted`);
-	}
-}
-//#endregion
-//#region supabase/functions/_shared/recordAnswers.ts
-/** A UUID made from text: the same text always gives the same id, so a save sent twice is one batch. */
-async function batchIdFor(text) {
-	const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`maths-answers:${text}`))).slice(0, 16)].map((b) => b.toString(16).padStart(2, "0")).join("");
-	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
-}
-/**
-* Saves answers the server has marked, the one approved way (docs/GAME_DEVELOPMENT_GUIDE.md, section 4.1 rule 6):
-* split by the pack that keeps each record, one batch per pack with an id made from `once` (something unique to this
-* save, such as the run's seed and the question's slot), each pack's own quick time, times kept to at most two
-* minutes (`keptMs`), and the running maths focuses'
-* results counted for a batch the records took for the first time, so a retry never counts twice.
-* It never throws: a problem is logged with its code (never who) and the game goes on.
-*/
-async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`)) {
-	const result = {
-		saved: 0,
-		failed: 0
-	};
-	for (const [pack, group] of groupByPack(answers)) try {
-		const { data, error } = await rpc("record_fact_answers", {
-			player,
-			pack,
-			batch_id: await batchId(once, pack),
-			answers: group.map((a) => ({
-				...a,
-				ms: keptMs(a.ms)
-			})),
-			quick_ms: quickMsForPack(pack),
-			fluent_days: 2,
-			top_box: 4
-		});
-		if (error) {
-			result.failed++;
-			console.error(`${from}: record answers failed (${error.code ?? "unknown"})`);
-			continue;
-		}
-		const saved = typeof data === "number" ? data : 0;
-		result.saved += saved;
-		if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
-	} catch {
-		result.failed++;
-		console.error(`${from}: record answers failed`);
-	}
-	return result;
-}
-//#endregion
-//#region supabase/functions/_shared/signIn.ts
-/**
-* Who owns this sign-in token? Null if it's missing, expired, fake or not a signed-in user's.
-*
-* With the project's newer sign-in keys, the token's signature is checked right here against the
-* project's public keys (fetched once and kept for 10 minutes), with no trip to the sign-in
-* service. With the older shared secret (or a token signed with a key we don't know), the library
-* asks the sign-in service instead, exactly as `getUser` did. So this works the same before and
-* after the keys are switched in the Supabase dashboard; it only gets cheaper after.
-*/
-function userIdFromToken(auth) {
-	return async (token) => {
-		try {
-			const { data, error } = await auth.getClaims(token);
-			const claims = error ? null : data?.claims;
-			if (!claims || claims.role !== "authenticated" || typeof claims.sub !== "string" || !claims.sub) return null;
-			return claims.sub;
-		} catch {
-			return null;
-		}
-	};
-}
-//#endregion
-//#region shared/maths/serverQuestions.ts
-function hashSeed(text) {
-	let h = 2166136261;
-	for (let i = 0; i < text.length; i++) {
-		h ^= text.charCodeAt(i);
-		h = Math.imul(h, 16777619);
-	}
-	return h >>> 0;
-}
-/** A small seeded random number generator (numbers from 0 up to 1). The same text always gives the same numbers. */
-function seededRandom(text) {
-	let a = hashSeed(text);
-	return () => {
-		a = a + 1831565813 | 0;
-		let t = Math.imul(a ^ a >>> 15, 1 | a);
-		t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-		return ((t ^ t >>> 14) >>> 0) / 4294967296;
-	};
-}
-function publicQuestion(q, slot) {
-	return {
-		slot,
-		parts: q.parts,
-		spoken: q.spoken,
-		...q.prompt ? { prompt: q.prompt } : {},
-		...q.choices ? { choices: q.choices } : {},
-		...q.choiceLabels ? { choiceLabels: q.choiceLabels } : {},
-		...q.input ? { input: q.input } : {},
-		...q.maxLength ? { maxLength: q.maxLength } : {}
-	};
-}
-//#endregion
-//#region shared/space/mathsQuestion.ts
-/**
-* Which question Mission Control asks next: the same choice in the bot game (the browser) and
-* with classmates (the server), from a student's records.
-*
-* With no maths focus it is the times-table step the student is ready for, as it has always been.
-* With a focus (a teacher's, or the student's own: shared/maths/focus.ts) it is that focus.
-*/
-/** The pack a game keeps for a visit: all the student's records, asking the focus if there is one. */
-function makeSpacePack(facts, focus, settings = {}, random, now) {
-	return makeFocusPack(facts, focus, {
-		enabledTables: settings.enabledTables,
-		division: settings.division
-	}, random, now);
-}
-function pickSpaceQuestion(pack, settings = {}) {
-	const ctx = {
-		enabledTables: settings.enabledTables,
-		division: settings.division,
-		missingFactor: settings.missingFactor,
-		multipleChoice: settings.multipleChoice
-	};
-	if (pack instanceof TimesTables) return pack.nextQuestion({
-		level: readyLevel(pack.stats(), settings.enabledTables),
-		...ctx
-	}) ?? pack.nextQuestion({ level: 1 });
-	return pack.nextQuestion(ctx) ?? new TimesTables().nextQuestion({ level: 1 });
-}
-//#endregion
-//#region shared/trader/questions.ts
-/**
-* Star Trader's maths questions (docs/TRADER-PLAN.md, sections 6 and 14). Every question comes from the pupil's shared
-* focus (`makeFocusPack` through `makeSpacePack`). The server makes a day's list when the pupil first plays that day, keeps
-* it where pupils can't read it, hands out one at a time in order, and marks each answer against the list.
-*/
-/** The answer and the mastery record of a stored question. Null if it can't be marked. */
-function markQuestion(q) {
-	if (q && typeof q.answer === "number" && Number.isFinite(q.answer) && typeof q.factKey === "string" && isFocusKey(q.factKey)) return {
-		answer: q.answer,
-		key: q.factKey
-	};
-	const solved = solveParts(q?.parts);
-	return solved ? {
-		answer: solved.answer,
-		key: solved.keys[0]
-	} : null;
-}
-/** Decimal answers are typed as text, so compare with a hair of room. */
-const sameAnswer = (typed, answer) => Math.abs(typed - answer) < 1e-9;
-/** `count` questions for one day, different from each other where the focus allows. Every one can be marked. */
-function makeDayQuestions(context, count, random) {
-	const pack = makeSpacePack(context.facts, context.focus, context.settings, random);
-	const out = [];
-	const seen = new Set();
-	const spare = [];
-	for (let tries = 0; tries < count * 8 && out.length < count; tries++) {
-		const q = pickSpaceQuestion(pack, context.settings);
-		if (!q || !markQuestion(q)) continue;
-		if (seen.has(q.factKey)) spare.push(q);
-		else {
-			seen.add(q.factKey);
-			out.push({
-				...q,
-				id: out.length
-			});
-		}
-	}
-	while (out.length < count && spare.length) out.push({
-		...spare.shift(),
-		id: out.length
-	});
-	return out;
-}
-//#endregion
 //#region shared/trader/config.ts
 const GOODS = [
 	"Water",
@@ -7067,6 +6840,347 @@ const PIRATE_TIERS = [
 		minStrength: 6
 	}
 ];
+/** Selling a whole normal day's stock of a good (its `stock` above) pushes that planet's price down this much; buying pushes it up. */
+const MARKET_FULL_STOCK_BP = 2500;
+/** One pupil's trades can move a price at one planet by at most this much in a day (before the depth divides it). */
+const MARKET_PUPIL_CAP_BP = 2e3;
+/** However many pupils trade, a price stays within this much above or below that day's normal price. */
+const MARKET_CAP_BP = 5e3;
+/**
+* A quiet zone: the first this-much of a push doesn't change the price at all, so ordinary trading spread across the
+* galaxy leaves prices alone and only a real pile-up moves them (a push of 25% with a 10% quiet zone moves the price 15%).
+*/
+const MARKET_QUIET_BP = 1200;
+/** A price that has moved this much in a day makes the school news. */
+const MARKET_NEWS_BP = 1500;
+//#endregion
+//#region shared/trader/schoolMarket.ts
+/**
+* The school's shared market (docs/TRADER-PLAN.md, sections 8 and 20). One market per school: when pupils sell lots of a
+* good on a planet its price there drops for everyone, and when they buy lots it rises. Overnight it drifts back.
+*
+* A "push" is how far a price is moved from that day's normal price, in hundredths of a percent (-1000 = 10% cheaper).
+* The database keeps one push per school, planet and good, with the day it was last changed; everything else is worked
+* out from that, so nothing has to run at midnight.
+*
+* Guard rails (numbers in config.ts):
+*  - one pupil's trades move a price at one planet by at most MARKET_PUPIL_CAP_BP a day (kept in the pupil's own game);
+*  - the market is as deep as the school is big: each push is divided by the pupils who played in the last week (at
+*    least MARKET_MIN_DEPTH), so a whole school moves a price about as much as one pupil alone would;
+*  - however many pupils trade, a push stays within MARKET_CAP_BP of normal (the database applies this in one step);
+*  - a pupil's prices are fixed when they land, so the market only moves for those who land after.
+*
+* `SchoolMarket` is the same rules as the database functions trader_push_market / trader_market, for the preview and the
+* simulator. The database tests check the SQL gives the same numbers.
+*/
+const EMPTY_VIEW = {
+	pushes: [],
+	news: []
+};
+const MARKET_RULES = {
+	cap: MARKET_CAP_BP,
+	keep: 25,
+	news: MARKET_NEWS_BP,
+	depth: 5,
+	quiet: MARKET_QUIET_BP
+};
+/** How much a stored push moves the price: nothing inside the quiet zone, then the rest. */
+const priceMove = (push, quiet = MARKET_QUIET_BP) => Math.sign(push) * Math.max(0, Math.abs(push) - quiet) || 0;
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+/** A market line moved by a push. Prices never go below 1 credit, and buying always costs more than selling. */
+function pushedLine(line, bp) {
+	if (!bp || line.sell <= 0 && line.buy <= 0) return line;
+	const move = (price) => Math.max(1, Math.floor(price * (1e4 + bp) / 1e4));
+	const sell = line.sell > 0 ? move(line.sell) : 0;
+	const buy = line.buy > 0 ? Math.max(sell + 1, move(line.buy)) : 0;
+	return {
+		...line,
+		sell,
+		buy
+	};
+}
+const PUPIL_LIMITS = {
+	full: MARKET_FULL_STOCK_BP,
+	pupilCap: MARKET_PUPIL_CAP_BP
+};
+/** How far one unit moves a price: a whole normal day's stock moves it `full`. */
+const pushPerUnit = (good, full = MARKET_FULL_STOCK_BP) => Math.max(1, Math.round(full / GOOD_RULES[good].stock));
+/**
+* A pupil trades `qty` of a good at a planet (positive = bought, negative = sold). Gives the push that reaches the
+* school's market, after the pupil's own daily limit, and their updated record. Nothing is refused: once a pupil has
+* moved a price as far as they can, it just stops moving.
+*/
+function pupilPush(rec, day, planet, good, qty, limits = PUPIL_LIMITS) {
+	const next = rec && rec.day === day ? {
+		day,
+		bp: { ...rec.bp }
+	} : {
+		day,
+		bp: {}
+	};
+	const key = `${planet}:${good}`;
+	const before = next.bp[key] ?? 0;
+	const raw = limits.pupilCap * 5;
+	const after = clamp(before + qty * pushPerUnit(good, limits.full), -raw, raw);
+	if (after !== 0) next.bp[key] = after;
+	else delete next.bp[key];
+	return {
+		rec: next,
+		bp: after - before
+	};
+}
+/** Adds up pushes on the same planet and good, drops zeros, and sorts them (so every request locks rows in the same order). */
+function tidyPushes(list) {
+	const sums = new Map();
+	for (const [planet, good, bp] of list) {
+		const key = `${planet}:${good}`;
+		const cur = sums.get(key);
+		sums.set(key, [
+			planet,
+			good,
+			(cur?.[2] ?? 0) + bp
+		]);
+	}
+	return [...sums.values()].filter((p) => p[2] !== 0).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+}
+/** Turns what was read from the database into "the pushes at a planet". */
+function pushesFrom(view, quiet = MARKET_QUIET_BP) {
+	const byPlanet = new Map();
+	for (const [planet, good, push] of view.pushes) {
+		if (!Number.isInteger(planet) || !Number.isInteger(good) || good < 0 || good >= GOODS.length) continue;
+		let row = byPlanet.get(planet);
+		if (!row) byPlanet.set(planet, row = GOODS.map(() => 0));
+		row[good] = priceMove(clamp(Math.trunc(push), -5e3, MARKET_CAP_BP), quiet);
+	}
+	return (planet) => byPlanet.get(planet) ?? null;
+}
+//#endregion
+//#region shared/maths/focusResults.ts
+/**
+* What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
+* results"). The database matches each answer to the focuses that were running at its time; the server works out the two
+* things only the maths code knows: which ladder skills own the answer's key, and whether it was quick.
+*/
+let owners = null;
+/** The ladder skills that own a mastery key (usually one). Empty if the key isn't on the ladder. */
+function skillsOfKey(key) {
+	if (!owners) {
+		owners = new Map();
+		for (const skill of LADDER) for (const k of skill.keys) owners.set(k, [...owners.get(k) ?? [], skill.id]);
+	}
+	return owners.get(key) ?? [];
+}
+/** The answers worth sending: those on a ladder skill. */
+function focusResultAnswers(answers, pack) {
+	const quickMs = quickMsForPack(pack);
+	const out = [];
+	for (const a of answers) {
+		const skills = skillsOfKey(a.key);
+		if (skills.length > 0) out.push({
+			skills,
+			at: a.at,
+			correct: a.correct,
+			quick: a.correct && a.ms <= quickMs
+		});
+	}
+	return out;
+}
+//#endregion
+//#region supabase/functions/_shared/focusResults.ts
+/**
+* Adds a batch of answers to the results of the maths focuses running for the student (stage F.8). Call it only for a batch the
+* records took for the first time (record_fact_answers says 0 for one it has seen), so a retry never counts twice. It never
+* throws and never blocks saving: the answers are already saved, and a problem here is only logged (the code, never who).
+*/
+async function countForFocuses(rpc, player, pack, answers, from) {
+	try {
+		const rows = focusResultAnswers(answers, pack);
+		if (rows.length === 0) return;
+		const { error } = await rpc("add_maths_focus_results", {
+			player,
+			answers: rows
+		});
+		if (error) console.error(`${from}: focus results not counted (${error.code ?? "unknown"})`);
+	} catch {
+		console.error(`${from}: focus results not counted`);
+	}
+}
+//#endregion
+//#region supabase/functions/_shared/recordAnswers.ts
+/** A UUID made from text: the same text always gives the same id, so a save sent twice is one batch. */
+async function batchIdFor(text) {
+	const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`maths-answers:${text}`))).slice(0, 16)].map((b) => b.toString(16).padStart(2, "0")).join("");
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+/**
+* Saves answers the server has marked, the one approved way (docs/GAME_DEVELOPMENT_GUIDE.md, section 4.1 rule 6):
+* split by the pack that keeps each record, one batch per pack with an id made from `once` (something unique to this
+* save, such as the run's seed and the question's slot), each pack's own quick time, times kept to at most two
+* minutes (`keptMs`), and the running maths focuses'
+* results counted for a batch the records took for the first time, so a retry never counts twice.
+* It never throws: a problem is logged with its code (never who) and the game goes on.
+*/
+async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor(`${from}:${o}:${pack}`)) {
+	const result = {
+		saved: 0,
+		failed: 0
+	};
+	for (const [pack, group] of groupByPack(answers)) try {
+		const { data, error } = await rpc("record_fact_answers", {
+			player,
+			pack,
+			batch_id: await batchId(once, pack),
+			answers: group.map((a) => ({
+				...a,
+				ms: keptMs(a.ms)
+			})),
+			quick_ms: quickMsForPack(pack),
+			fluent_days: 2,
+			top_box: 4
+		});
+		if (error) {
+			result.failed++;
+			console.error(`${from}: record answers failed (${error.code ?? "unknown"})`);
+			continue;
+		}
+		const saved = typeof data === "number" ? data : 0;
+		result.saved += saved;
+		if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
+	} catch {
+		result.failed++;
+		console.error(`${from}: record answers failed`);
+	}
+	return result;
+}
+//#endregion
+//#region supabase/functions/_shared/signIn.ts
+/**
+* Who owns this sign-in token? Null if it's missing, expired, fake or not a signed-in user's.
+*
+* With the project's newer sign-in keys, the token's signature is checked right here against the
+* project's public keys (fetched once and kept for 10 minutes), with no trip to the sign-in
+* service. With the older shared secret (or a token signed with a key we don't know), the library
+* asks the sign-in service instead, exactly as `getUser` did. So this works the same before and
+* after the keys are switched in the Supabase dashboard; it only gets cheaper after.
+*/
+function userIdFromToken(auth) {
+	return async (token) => {
+		try {
+			const { data, error } = await auth.getClaims(token);
+			const claims = error ? null : data?.claims;
+			if (!claims || claims.role !== "authenticated" || typeof claims.sub !== "string" || !claims.sub) return null;
+			return claims.sub;
+		} catch {
+			return null;
+		}
+	};
+}
+//#endregion
+//#region shared/maths/serverQuestions.ts
+function hashSeed(text) {
+	let h = 2166136261;
+	for (let i = 0; i < text.length; i++) {
+		h ^= text.charCodeAt(i);
+		h = Math.imul(h, 16777619);
+	}
+	return h >>> 0;
+}
+/** A small seeded random number generator (numbers from 0 up to 1). The same text always gives the same numbers. */
+function seededRandom(text) {
+	let a = hashSeed(text);
+	return () => {
+		a = a + 1831565813 | 0;
+		let t = Math.imul(a ^ a >>> 15, 1 | a);
+		t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+		return ((t ^ t >>> 14) >>> 0) / 4294967296;
+	};
+}
+function publicQuestion(q, slot) {
+	return {
+		slot,
+		parts: q.parts,
+		spoken: q.spoken,
+		...q.prompt ? { prompt: q.prompt } : {},
+		...q.choices ? { choices: q.choices } : {},
+		...q.choiceLabels ? { choiceLabels: q.choiceLabels } : {},
+		...q.input ? { input: q.input } : {},
+		...q.maxLength ? { maxLength: q.maxLength } : {}
+	};
+}
+//#endregion
+//#region shared/space/mathsQuestion.ts
+/**
+* Which question Mission Control asks next: the same choice in the bot game (the browser) and
+* with classmates (the server), from a student's records.
+*
+* With no maths focus it is the times-table step the student is ready for, as it has always been.
+* With a focus (a teacher's, or the student's own: shared/maths/focus.ts) it is that focus.
+*/
+/** The pack a game keeps for a visit: all the student's records, asking the focus if there is one. */
+function makeSpacePack(facts, focus, settings = {}, random, now) {
+	return makeFocusPack(facts, focus, {
+		enabledTables: settings.enabledTables,
+		division: settings.division
+	}, random, now);
+}
+function pickSpaceQuestion(pack, settings = {}) {
+	const ctx = {
+		enabledTables: settings.enabledTables,
+		division: settings.division,
+		missingFactor: settings.missingFactor,
+		multipleChoice: settings.multipleChoice
+	};
+	if (pack instanceof TimesTables) return pack.nextQuestion({
+		level: readyLevel(pack.stats(), settings.enabledTables),
+		...ctx
+	}) ?? pack.nextQuestion({ level: 1 });
+	return pack.nextQuestion(ctx) ?? new TimesTables().nextQuestion({ level: 1 });
+}
+//#endregion
+//#region shared/trader/questions.ts
+/**
+* Star Trader's maths questions (docs/TRADER-PLAN.md, sections 6 and 14). Every question comes from the pupil's shared
+* focus (`makeFocusPack` through `makeSpacePack`). The server makes a day's list when the pupil first plays that day, keeps
+* it where pupils can't read it, hands out one at a time in order, and marks each answer against the list.
+*/
+/** The answer and the mastery record of a stored question. Null if it can't be marked. */
+function markQuestion(q) {
+	if (q && typeof q.answer === "number" && Number.isFinite(q.answer) && typeof q.factKey === "string" && isFocusKey(q.factKey)) return {
+		answer: q.answer,
+		key: q.factKey
+	};
+	const solved = solveParts(q?.parts);
+	return solved ? {
+		answer: solved.answer,
+		key: solved.keys[0]
+	} : null;
+}
+/** Decimal answers are typed as text, so compare with a hair of room. */
+const sameAnswer = (typed, answer) => Math.abs(typed - answer) < 1e-9;
+/** `count` questions for one day, different from each other where the focus allows. Every one can be marked. */
+function makeDayQuestions(context, count, random) {
+	const pack = makeSpacePack(context.facts, context.focus, context.settings, random);
+	const out = [];
+	const seen = new Set();
+	const spare = [];
+	for (let tries = 0; tries < count * 8 && out.length < count; tries++) {
+		const q = pickSpaceQuestion(pack, context.settings);
+		if (!q || !markQuestion(q)) continue;
+		if (seen.has(q.factKey)) spare.push(q);
+		else {
+			seen.add(q.factKey);
+			out.push({
+				...q,
+				id: out.length
+			});
+		}
+	}
+	while (out.length < count && spare.length) out.push({
+		...spare.shift(),
+		id: out.length
+	});
+	return out;
+}
 //#endregion
 //#region shared/trader/galaxy.ts
 /**
@@ -7150,7 +7264,8 @@ function startPlanet(galaxy) {
 //#region shared/trader/market.ts
 /**
 * Prices and stock. Everything here is worked out from the galaxy, the day and the planet, so nothing needs to be
-* stored: ask again and you get the same answer. (The shared, school-wide push on prices is stage T.4.)
+* stored: ask again and you get the same answer. The school's shared market (schoolMarket.ts) can then push a price up
+* or down; a pupil's prices are worked out once, when they land, and kept for the visit.
 *
 * The price rule is the original's: base by tech level, a third more if the planet wants it, less with lots of
 * traders, less on big planets, a quarter off or a third more for special resources, nothing if the planet can't
@@ -7184,8 +7299,8 @@ function standardPrice(planet, good) {
 	}
 	return price < 0 ? 0 : price;
 }
-/** The whole market on a planet on a given day. */
-function marketFor(galaxy, planetId, day) {
+/** The whole market on a planet on a given day, moved by the school's push on each good (if any). */
+function marketFor(galaxy, planetId, day, push) {
 	const planet = galaxy.planets[planetId];
 	const event = eventOn(galaxy, planet, day);
 	const random = seededRandom(`trader-market:${galaxy.seed}:${planetId}:${day}`);
@@ -7211,12 +7326,13 @@ function marketFor(galaxy, planetId, day) {
 			if (rule.event > 0 && event === rule.event) stock = Math.floor(stock / 5);
 			stock = Math.max(0, stock + stockWobble);
 		}
-		return {
+		const line = {
 			good,
 			sell,
 			buy,
 			stock
 		};
+		return push?.[good] ? pushedLine(line, push[good]) : line;
 	});
 }
 //#endregion
@@ -7241,8 +7357,8 @@ const holdsOf = (t) => SHIPS[t.ship].holds + t.pods * 5;
 const usedHolds = (t) => t.cargo.reduce((a, b) => a + b, 0);
 const freeHolds = (t) => holdsOf(t) - usedHolds(t);
 const fuelCost = (ship, units) => Math.ceil(units * SHIPS[ship].fuelTenths / 10);
-/** A new trader at the start of a season. */
-function newTrader(galaxy, day) {
+/** A new trader at the start of a season. `pushes` is the school's market today (none in the simulator's solo games). */
+function newTrader(galaxy, day, pushes) {
 	const location = startPlanet(galaxy);
 	return {
 		day,
@@ -7263,15 +7379,15 @@ function newTrader(galaxy, day) {
 		jumpsLeft: 10,
 		jumpNo: 0,
 		moon: false,
-		market: marketFor(galaxy, location, day)
+		market: marketFor(galaxy, location, day, pushes?.(location))
 	};
 }
 /** The first thing on a new day: jumps back to ten, prices re-read, and a week's interest on any loan. */
-function startDay(galaxy, t, day) {
+function startDay(galaxy, t, day, pushes) {
 	const next = clone(t);
 	next.day = day;
 	next.jumpsLeft = 10;
-	next.market = marketFor(galaxy, next.location, day);
+	next.market = marketFor(galaxy, next.location, day, pushes?.(next.location));
 	if (next.loan.principal > 0) {
 		const before = Math.floor((t.day - next.loan.since) / 7);
 		const after = Math.floor((day - next.loan.since) / 7);
@@ -7484,8 +7600,8 @@ function netWorth(_galaxy, t) {
 function fuelNeeded(galaxy, t, to) {
 	return distance(galaxy.planets[t.location], galaxy.planets[to]);
 }
-/** Go to another planet. The encounter (if any) is rolled by `encounterFor` and settled before trading. */
-function travel(galaxy, t, to) {
+/** Go to another planet. Its prices are read now, with the school's push, and fixed for the visit. The encounter (if any) is rolled by `encounterFor` and settled before trading. */
+function travel(galaxy, t, to, pushes) {
 	if (!galaxy.planets[to] || to === t.location) return no("Pick another planet.");
 	if (t.jumpsLeft < 1) return no("No jumps left today.");
 	const need = fuelNeeded(galaxy, t, to);
@@ -7495,7 +7611,7 @@ function travel(galaxy, t, to) {
 	next.jumpsLeft -= 1;
 	next.jumpNo += 1;
 	next.location = to;
-	next.market = marketFor(galaxy, to, t.day);
+	next.market = marketFor(galaxy, to, t.day, pushes?.(to));
 	return {
 		ok: true,
 		state: next,
@@ -7766,8 +7882,8 @@ const refuse = (reason) => {
 const must = (r) => r.ok ? r.state : refuse(r.reason);
 const int = (n, lo, hi) => typeof n === "number" && Number.isInteger(n) && n >= lo && n <= hi ? n : refuse("That could not be read.");
 const copy = (g) => structuredClone(g);
-function newGame(galaxy, day, settings) {
-	const t = newTrader(galaxy, day);
+function newGame(galaxy, day, settings, pushes) {
+	const t = newTrader(galaxy, day, pushes);
 	t.jumpsLeft = settings.jumpsPerDay;
 	return {
 		t,
@@ -7782,9 +7898,9 @@ function newGame(galaxy, day, settings) {
 	};
 }
 /** The first thing on a new day: jumps back, prices read again, interest, new questions. A half-finished event is dropped. */
-function rollDay(galaxy, game, day, settings) {
+function rollDay(galaxy, game, day, settings, pushes) {
 	if (game.t.day >= day) return game;
-	const t = startDay(galaxy, game.t, day);
+	const t = startDay(galaxy, game.t, day, pushes);
 	t.jumpsLeft = settings.jumpsPerDay;
 	return {
 		...copy(game),
@@ -7810,18 +7926,23 @@ function takeAsk(g, ask, settings, mark, answers) {
 	});
 	return { right: r.right };
 }
-/** Apply the moves in order. If any one is refused, none are kept and the reason is given. */
-function applyBatch(galaxy, galaxySeed, game, actions, settings, mark) {
+/**
+* Apply the moves in order. If any one is refused, none are kept and the reason is given. `pushes` is the school's
+* market today, read when a jump lands (none: normal prices).
+*/
+function applyBatch(galaxy, galaxySeed, game, actions, settings, mark, pushes) {
 	try {
 		const g = copy(game);
 		const out = {
 			game: g,
 			answers: []
 		};
+		const market = [];
 		for (const action of actions) {
 			if (g.pending) refuse("Finish what is happening first.");
-			step(galaxy, galaxySeed, g, action, settings, mark, out);
+			step(galaxy, galaxySeed, g, action, settings, mark, out, market, pushes);
 		}
+		if (market.length) out.pushes = tidyPushes(market);
 		return {
 			ok: true,
 			...out
@@ -7834,7 +7955,21 @@ function applyBatch(galaxy, galaxySeed, game, actions, settings, mark) {
 		throw e;
 	}
 }
-function step(galaxy, seed, g, action, settings, mark, out) {
+/** A trade moves the school's prices at this planet: selling pushes down, buying pushes up, within the pupil's daily limit. */
+function recordPushes(g, plan, market) {
+	const t = g.t;
+	for (let good = 0; good < plan.length; good++) {
+		if (!plan[good]) continue;
+		const r = pupilPush(g.pushed, t.day, t.location, good, plan[good]);
+		g.pushed = r.rec;
+		if (r.bp) market.push([
+			t.location,
+			good,
+			r.bp
+		]);
+	}
+}
+function step(galaxy, seed, g, action, settings, mark, out, market, pushes) {
 	const t = g.t;
 	switch (action.type) {
 		case "trade": {
@@ -7854,6 +7989,7 @@ function step(galaxy, seed, g, action, settings, mark, out) {
 				earned: done.out.earned,
 				sharp
 			};
+			recordPushes(g, plan, market);
 			return;
 		}
 		case "refuel":
@@ -7886,7 +8022,7 @@ function step(galaxy, seed, g, action, settings, mark, out) {
 			return;
 		case "jump": {
 			const worthBefore = netWorth(galaxy, t);
-			g.t = must(travel(galaxy, t, int(action.dest, 0, galaxy.planets.length - 1)));
+			g.t = must(travel(galaxy, t, int(action.dest, 0, galaxy.planets.length - 1), pushes));
 			g.stats.jumps += 1;
 			const e = encounterFor(galaxy, g.t, seed);
 			out.encounter = e;
@@ -8003,6 +8139,99 @@ function applyDeal(game, take) {
 		answers: [],
 		deal: { took }
 	};
+}
+/** What made a price jump (kid-worded). `goods` is already joined: "Water" or "Ore and Fireworks". */
+const EVENT_WORDS = {
+	war: (g, d) => `There is a war on, so ${g} ${d} dear.`,
+	plague: (g, d) => `A sickness is going round, so ${g} ${d} dear.`,
+	drought: (g, d) => `A drought has dried things up, so ${g} ${d} dear.`,
+	boredom: (g, d) => `Everyone is bored, so ${g} ${d} dear.`,
+	cold: (g, d) => `A big freeze has hit, so ${g} ${d} dear.`,
+	"crop failure": (g, d) => `The crops failed, so ${g} ${d} dear.`,
+	"lack of workers": (g, d) => `There are not enough workers, so ${g} ${d} dear.`
+};
+/** Goods whose names are plural ("Robots are dear", "Water is dear"). */
+const PLURAL = new Set([
+	"Furs",
+	"Games",
+	"Fireworks",
+	"Machines",
+	"Lollies",
+	"Robots"
+]);
+const isAre = (good) => PLURAL.has(GOODS[good]) ? "are" : "is";
+const itThey = (good) => PLURAL.has(GOODS[good]) ? "they're" : "it's";
+/** The goods an event makes dear at a planet (only ones traded there). */
+function eventGoods(galaxy, planet, day) {
+	const p = galaxy.planets[planet];
+	const event = eventOn(galaxy, p, day);
+	if (!event) return [];
+	return GOOD_RULES.map((r, good) => r.event === event && standardPrice(p, good) > 0 ? good : -1).filter((g) => g >= 0);
+}
+/** "There is a war on, so Ore and Fireworks are dear." (without the planet's name) */
+function eventLine(galaxy, planet, day) {
+	const goods = eventGoods(galaxy, planet, day);
+	if (!goods.length) return null;
+	const event = EVENTS[eventOn(galaxy, galaxy.planets[planet], day)];
+	const names = goods.map((g) => GOODS[g]).join(" and ");
+	return EVENT_WORDS[event](names, goods.length > 1 ? "are" : isAre(goods[0]));
+}
+/**
+* Today's news for the school, biggest first: today's big moves, then prices still far from normal after yesterday's
+* trading, then events. At most `max` lines (the screens show the first NEWS_MAX as headlines, and a planet's own lines
+* on its card).
+*/
+function newsFor(galaxy, day, view, max = 30) {
+	const name = (planet) => galaxy.planets[planet]?.name ?? "";
+	const moves = [];
+	const seen = new Set();
+	const pushAt = new Map(view.pushes.map(([p, g, push, moved]) => [`${p}:${g}`, {
+		push,
+		moved
+	}]));
+	for (const [d, planet, good, direction] of view.news) {
+		const key = `${planet}:${good}`;
+		if (seen.has(key) || !galaxy.planets[planet] || !GOODS[good]) continue;
+		const now = pushAt.get(key);
+		const push = priceMove(now?.push ?? 0);
+		if (d === day) {
+			const sold = direction < 0;
+			seen.add(key);
+			moves.push({
+				size: Math.abs(now?.moved ?? 1500) + 1e5,
+				item: {
+					planet,
+					good,
+					kind: sold ? "sold" : "bought",
+					text: `Lots of traders ${sold ? "sold" : "bought"} ${GOODS[good]} on ${name(planet)}, so ${itThey(good)} ${sold ? "cheap" : "dear"} there today.`
+				}
+			});
+		} else if (d === day - 1 && Math.abs(push) * 2 >= 1500 && Math.sign(push) === Math.sign(direction)) {
+			const cheap = push < 0;
+			seen.add(key);
+			moves.push({
+				size: Math.abs(push),
+				item: {
+					planet,
+					good,
+					kind: cheap ? "still-cheap" : "still-dear",
+					text: `${GOODS[good]} ${isAre(good)} still ${cheap ? "cheap" : "dear"} on ${name(planet)} after lots of ${cheap ? "selling" : "buying"} yesterday.`
+				}
+			});
+		}
+	}
+	moves.sort((a, b) => b.size - a.size || a.item.planet - b.item.planet || a.item.good - b.item.good);
+	const out = moves.map((m) => m.item);
+	for (const p of galaxy.planets) {
+		const line = eventLine(galaxy, p.id, day);
+		if (line) out.push({
+			planet: p.id,
+			good: eventGoods(galaxy, p.id, day)[0],
+			kind: "event",
+			text: `${p.name}: ${line}`
+		});
+	}
+	return out.slice(0, max);
 }
 //#endregion
 //#region supabase/functions/_shared/http.ts
@@ -8207,6 +8436,9 @@ function makeHandler(services) {
 			loans: settings.loans,
 			maths: settings.maths
 		};
+		/** The school's market today. If it can't be read, prices are normal and there is no news (the game goes on). */
+		const readMarket = async () => await services.market(player, today) ?? EMPTY_VIEW;
+		const news = (view) => newsFor(galaxy, today, view);
 		/** Today's question list, made on first use. Null when maths is off or can't be made. */
 		const dayQuestions = async () => {
 			if (!settings.maths) return null;
@@ -8222,11 +8454,13 @@ function makeHandler(services) {
 			return stored;
 		};
 		if (body.action === "load") {
+			const view = await readMarket();
+			const pushes = pushesFrom(view);
 			for (let attempt = 0; attempt < 2; attempt++) {
 				const saved = await services.loadGame(player);
 				if (saved === "busy") return reply(503, { error: "We couldn't load your game just now." });
-				let game = saved?.game ?? newGame(galaxy, today, classSettings);
-				const rolled = rollDay(galaxy, game, today, classSettings);
+				let game = saved?.game ?? newGame(galaxy, today, classSettings, pushes);
+				const rolled = rollDay(galaxy, game, today, classSettings, pushes);
 				let version = saved?.version ?? 0;
 				if (!saved || rolled !== game) {
 					game = rolled;
@@ -8238,7 +8472,8 @@ function makeHandler(services) {
 						season: school.season,
 						requestId: `load-${services.randomHex(8)}`,
 						reply: { loaded: true },
-						claims: {}
+						claims: {},
+						market: []
 					});
 					if (newVersion === "busy") return reply(503, { error: "We couldn't load your game just now." });
 					if (newVersion === null) continue;
@@ -8258,7 +8493,8 @@ function makeHandler(services) {
 						jumpsPerDay: settings.jumpsPerDay,
 						loans: settings.loans,
 						maths: settings.maths
-					}
+					},
+					news: news(view)
 				});
 			}
 			return reply(409, { error: "Your game changed on another screen. Please try again." });
@@ -8306,10 +8542,12 @@ function makeHandler(services) {
 			};
 		};
 		let result;
+		let landed = null;
 		if (wanted === "act") {
 			const actions = parseActions(body.actions);
 			if (!actions) return reply(400, { error: "That couldn't be read." });
-			result = applyBatch(galaxy, school.seed, saved.game, actions, classSettings, mark);
+			if (actions.some((a) => a.type === "jump")) landed = await readMarket();
+			result = applyBatch(galaxy, school.seed, saved.game, actions, classSettings, mark, landed ? pushesFrom(landed) : void 0);
 		} else if (wanted === "fight") {
 			const ask = parseAsk(body.ask);
 			if (ask === "bad") return reply(400, { error: "That couldn't be read." });
@@ -8328,10 +8566,11 @@ function makeHandler(services) {
 			const m = marked.find((x) => x.slot === a.slot);
 			if (m) m.ms = a.ms;
 		}
-		const { ok: _ok, ...outcome } = result;
+		const { ok: _ok, pushes: market = [], ...outcome } = result;
 		const finalReply = {
 			...outcome,
-			version: saved.version + 1
+			version: saved.version + 1,
+			...landed ? { news: news(landed) } : {}
 		};
 		const newVersion = await services.save(player, {
 			expectedVersion: saved.version,
@@ -8341,7 +8580,8 @@ function makeHandler(services) {
 			season: saved.season,
 			requestId,
 			reply: finalReply,
-			claims
+			claims,
+			market
 		});
 		if (newVersion === "busy") return reply(503, { error: "We couldn't save that just now." });
 		if (newVersion === null) return reply(409, {
@@ -8483,6 +8723,22 @@ Deno.serve(makeHandler({
 			}
 		};
 	},
+	async market(player, day) {
+		const { data, error } = await admin.rpc("trader_market", {
+			player,
+			today: day,
+			keep_pct: MARKET_RULES.keep
+		});
+		if (error || !data) {
+			fail("trader_market", error?.code);
+			return null;
+		}
+		const row = data;
+		return {
+			pushes: Array.isArray(row.pushes) ? row.pushes : [],
+			news: Array.isArray(row.news) ? row.news : []
+		};
+	},
 	async save(player, a) {
 		const { data, error } = await admin.rpc("trader_save", {
 			player,
@@ -8494,7 +8750,12 @@ Deno.serve(makeHandler({
 			new_season: a.season,
 			request_id: a.requestId,
 			reply: a.reply,
-			claims: a.claims
+			claims: a.claims,
+			market: a.market.length ? {
+				pushes: a.market,
+				...MARKET_RULES,
+				days: 7
+			} : null
 		});
 		if (error) {
 			fail("trader_save", error.code);

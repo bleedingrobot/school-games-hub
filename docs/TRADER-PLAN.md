@@ -3,7 +3,7 @@
 A space trading game for the hub, in the spirit of the 2002 Palm game *Space Trader* by Pieter Spronck. Fly a small ship between planets, buy cargo cheap and sell it dear, upgrade your ship, dodge pirates, and save up to buy your own moon. **Maths is how a trader stays rich**: working out the bill, the change, the profit on a trip, the fuel for a jump and the price after a market event.
 
 Written 18 October 2026 for James, from his pasted plan ("Math Trader", section 1), the original game's source code (section 2) and the hub's other plans on `origin/main`.
-**Status: T.0 and T.1 done 22 Oct 2026 (sections 15, 16); T.2 built 22 Oct 2026 (section 18); T.3 built 22 Oct 2026, not applied or deployed (section 19). ANSWERED 18 Oct 2026 (section 13). REVISED 22 Oct 2026 against `docs/GAME_DEVELOPMENT_GUIDE.md` (section 14, which wins wherever it disagrees with sections 1–12). Not started, nothing built.** Branch `trader`, id `trader`, CSS prefix `.st-`. Next free migration number when revised: `20261022000400` (re-check before the first migration).
+**Status: T.0 and T.1 done 22 Oct 2026 (sections 15, 16); T.2 built 22 Oct 2026 (section 18); T.3 built 22 Oct 2026, not applied or deployed (section 19); T.4 shared market built 22 Oct 2026, not applied or deployed (section 20). ANSWERED 18 Oct 2026 (section 13). REVISED 22 Oct 2026 against `docs/GAME_DEVELOPMENT_GUIDE.md` (section 14, which wins wherever it disagrees with sections 1–12). Not started, nothing built.** Branch `trader`, id `trader`, CSS prefix `.st-`. Next free migration number when revised: `20261022000400` (re-check before the first migration).
 
 ## The short version
 
@@ -520,3 +520,47 @@ Built on branch `trader`. **Nothing is applied, deployed, merged or switched on.
 - The Flea-with-no-laser fight, balance on real pupils, and how the 30-second queue feels on a flaky connection need a human.
 - Points, achievements, the board, the Moon Owners screen, contracts, beacons, the station: T.4 and T.5. How to play, sound, the accessibility test: T.6.
 - **Go-live list (T.7, each step only on James's word):** apply migration `20261022001000` (check the number first); deploy `trader` (`--no-verify-jwt --use-api`; unsigned curl must answer a 401 message); check from outside (pupils get 42501 on every `trader_` table and function); set the code switch `ON = true`; merge; try as a teacher with the class switch off, then on.
+
+## 20. Stage T.4 results (22 Oct 2026): the school's shared market and news
+
+Built on branch `trader`. **Nothing is applied, deployed, merged or switched on.** New migration: **`20261022001100_trader_market.sql`** (next free number on 22 Oct; re-check at go-live). Comes after T.3's `20261022001000`, which is not edited.
+
+### How it works
+- **One market per school** (`trader_markets`: school, planet, good → how far the price is pushed, how far it moved today, the day it last changed). Selling pushes a price down and buying pushes it up. A normal day's stock of a good is a "full" push (`MARKET_FULL_STOCK_BP`, 25%), so dear goods with small stock move more per unit.
+- **The market is as deep as the school is big** (new; found by the simulator, see below): each pupil's push is divided by the number of pupils who played in the last 7 days (at least 5). A whole school moves a price about as much as one pupil alone would, so school size doesn't decide how rich pupils get, and a price only moves a lot when a big share of the school piles into the same trade.
+- **A quiet zone** (new; `MARKET_QUIET_BP`, 12%): the first 12% of a push doesn't change the price. Ordinary trading spread over the galaxy leaves prices alone; only pile-ups move them.
+- **Guard rails, as James decided:** one pupil moves a price at one planet by at most 20% a day (kept in the pupil's own saved game as `pushed`, saved in the same step as the trade; with the depth this is 20% in a school of 5 or fewer and less in bigger ones); a price stays within 50% of normal however many trade (applied in the database in one step).
+- **Drift back overnight is worked out on read** from the day a row last changed: a push keeps 25% each night (`MARKET_KEEP_PCT`), i.e. three quarters of the way back. **Changed from "halfway"**: with halfway, a crowded price stayed low for days and a herd of pupils lost much more (only 42% reached the moon by day 30).
+- **Your price is fixed when you land** (already true from T.3): the landing prices are read with the school's push on load (new game, new day) and on each jump, and kept in the game for the visit.
+- **Busy moments:** each push is one `insert … on conflict do update` per row, inside `trader_save` (the same step as the game save, and only after the version check passes), rows locked in the same order (planet, good) every time so two requests can't block each other. A request sent twice is answered from `trader_requests` and never pushes twice. Numbers are stored in hundredths of a hundredth of a percent so small pushes in a big school aren't rounded away.
+- **News** (`trader_news`, plus `shared/trader/news.ts`): a row is written when a price moves 15% or more in a day. The lines say "Lots of traders sold Water on Mars, so it's cheap there today", "Robots are still dear on Io after lots of buying yesterday", and the planets' events ("Mars: A drought has dried things up, so Water is dear."). Nobody is ever named: the database only knows how far a price moved. Shown on the market screen (this planet's lines, plus a "School news" list) and on a planet's star chart card. Goods whose price the school has moved get a "📉 lots sold" / "📈 lots bought" tag.
+- **New Season** clears the school's market and news (`trader_season` re-made with `create or replace` in the new migration; the `hub_games` row is unchanged).
+- **Stock stays per pupil per visit** (James's open question about shared stock: not built).
+
+### Numbers chosen (simulator, `npm run trader:sim -- --school 28,60,100 --info none|news|all --play 0.85 --seeds 4`)
+Bots now have their own tastes (so a class doesn't all pick the very same trip) and three levels of knowledge: `none` (only normal prices: a herd), `news` (normal prices plus the moves the news reports), `all` (every school price). Pupils play 85% of days. Moon day median / share by day 30:
+
+| | alone (no shared market) | 28 pupils | 60 | 100 |
+|---|---|---|---|---|
+| herd (`none`) | 17.5 / 99% | 22.0 / 92% | 22.0 / 93% | 21.8 / 91% |
+| reads the news | 17.5 / 99% | 20.5 / 97% | 20.0 / 98% | 19.8 / 96% |
+| knows every price | 17.5 / 99% | 19.5 / 97% | 19.8 / 98% | 19.5 / 97% |
+
+- About 7 news lines a day; no price reached the 50% limit; the biggest moves were 32 to 38%. School size makes no difference (the depth). Reading the news pays, which is the lesson.
+- **What didn't work first**, so nobody tries it again: with the plan's straight numbers (no depth, no quiet zone), 28 herding pupils all went broke and well-informed ones bought the moon by day 6 to 8 by selling into prices other pupils had pushed up; even very gentle pushes either did nothing or ate half of every pupil's profit. Profit in this economy lives in thin gaps between planets, so many traders close them; the depth and quiet zone keep that gentle.
+- **Solo numbers from T.1 unchanged** (`npm run trader:sim -- --games 100 --days 60`): careful bot moon day 13, sloppy 30% day 14, sloppy 60% day 17.
+
+### Requests (`docs/SERVER-LOAD-PLAN.md`: fewer requests, and beware a whole class pressing the same button)
+- **No new pupil requests.** The news and landing prices ride on the load and jump replies; a trade's push rides on the save it already made. Still about **15 to 20 requests a pupil a day** (T.3's count).
+- **Database work inside them:** one extra small read (`trader_market`, at most 240 rows for the school) on each load and jump that is about 11 a pupil a day; a trade's save adds one count of the school's games this week (indexed) and one row update per good traded. A class all opening the game at once costs one extra read each; a class all selling the same good on the same planet waits on one row for well under a millisecond each.
+
+### Tests
+- `shared/trader`: 45 (15 new: drift, quiet zone, pupil limit, depth, cap, news rows, landing prices fixed, news wording, a busy lunchtime, the school simulator). `supabase/functions/trader`: 18 (4 new: a trade pushes once even when sent twice, refused requests push nothing, a jump lands at the school's prices with the news, a new day reads drifted prices, the market can't be read → normal prices). `src/games/trader`: 14 (1 new: the news and the moved-price tag on screen).
+- Database (scratch copy, then dropped): new `trader_market.test.sql` 26 pass (pupils get 42501 on both tables and all three functions; one push per save, none for a refused or repeated one; depth; cap; news; drift numbers match the browser's; each school separate; New Season clears it). `trader.test.sql` 35, `game_hooks` 38 pass; `security` has its known copy-only error only.
+- Whole project: `npm run test:all` 263 files, 4,844 pass (1 skipped as before); typecheck clean; build succeeds. `trader/index.ts` rebuilt.
+- Preview: "Busy lunchtime (30 classmates)" in Preview tools runs 30 pretend classmates through a day on the school market; checked in Chromium (news appears, no errors). Published to the same private Artifact.
+
+### Not done / untested
+- Not tried with the real database under a real class (row locking is reasoned, not load-tested).
+- **Found while James tried the preview (22 Oct):** a pupil can't see what other planets pay, so they can't find a profitable trip (the bots could). Needs a decision before T.5; see below.
+- Go-live additions for T.7: apply `20261022001100` after `20261022001000`; deploy `trader`; check pupils get 42501 on `trader_markets`, `trader_news`, `trader_market()`.

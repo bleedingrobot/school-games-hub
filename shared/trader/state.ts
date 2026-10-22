@@ -24,6 +24,7 @@ import {
 } from './config';
 import { distance, startPlanet, type Galaxy } from './galaxy';
 import { marketFor, type MarketLine } from './market';
+import type { Pushes } from './schoolMarket';
 
 export interface Loan {
   /** What was borrowed and not yet paid back. */
@@ -66,8 +67,8 @@ export const usedHolds = (t: Trader): number => t.cargo.reduce((a, b) => a + b, 
 export const freeHolds = (t: Trader): number => holdsOf(t) - usedHolds(t);
 export const fuelCost = (ship: number, units: number): number => Math.ceil((units * SHIPS[ship].fuelTenths) / 10);
 
-/** A new trader at the start of a season. */
-export function newTrader(galaxy: Galaxy, day: number): Trader {
+/** A new trader at the start of a season. `pushes` is the school's market today (none in the simulator's solo games). */
+export function newTrader(galaxy: Galaxy, day: number, pushes?: Pushes): Trader {
   const location = startPlanet(galaxy);
   return {
     day,
@@ -84,16 +85,16 @@ export function newTrader(galaxy: Galaxy, day: number): Trader {
     jumpsLeft: JUMPS_PER_DAY,
     jumpNo: 0,
     moon: false,
-    market: marketFor(galaxy, location, day),
+    market: marketFor(galaxy, location, day, pushes?.(location)),
   };
 }
 
 /** The first thing on a new day: jumps back to ten, prices re-read, and a week's interest on any loan. */
-export function startDay(galaxy: Galaxy, t: Trader, day: number): Trader {
+export function startDay(galaxy: Galaxy, t: Trader, day: number, pushes?: Pushes): Trader {
   const next = clone(t);
   next.day = day;
   next.jumpsLeft = JUMPS_PER_DAY;
-  next.market = marketFor(galaxy, next.location, day);
+  next.market = marketFor(galaxy, next.location, day, pushes?.(next.location));
   if (next.loan.principal > 0) {
     // One 10% charge for every week boundary crossed since the last day looked at, on what was borrowed (never on interest).
     const before = Math.floor((t.day - next.loan.since) / LOAN_WEEK_DAYS);
@@ -289,8 +290,8 @@ export function reachable(galaxy: Galaxy, t: Trader): number[] {
   return galaxy.planets.filter((p) => p.id !== t.location && fuelNeeded(galaxy, t, p.id) <= t.fuel).map((p) => p.id);
 }
 
-/** Go to another planet. The encounter (if any) is rolled by `encounterFor` and settled before trading. */
-export function travel(galaxy: Galaxy, t: Trader, to: number): Result<Trader> {
+/** Go to another planet. Its prices are read now, with the school's push, and fixed for the visit. The encounter (if any) is rolled by `encounterFor` and settled before trading. */
+export function travel(galaxy: Galaxy, t: Trader, to: number, pushes?: Pushes): Result<Trader> {
   if (!galaxy.planets[to] || to === t.location) return no('Pick another planet.');
   if (t.jumpsLeft < 1) return no('No jumps left today.');
   const need = fuelNeeded(galaxy, t, to);
@@ -300,6 +301,6 @@ export function travel(galaxy: Galaxy, t: Trader, to: number): Result<Trader> {
   next.jumpsLeft -= 1;
   next.jumpNo += 1;
   next.location = to;
-  next.market = marketFor(galaxy, to, t.day);
+  next.market = marketFor(galaxy, to, t.day, pushes?.(to));
   return { ok: true, state: next, info: need };
 }

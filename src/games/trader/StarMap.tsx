@@ -6,12 +6,13 @@
  * helps (which of x and y to check). (docs/TRADER-PLAN.md, section 5.)
  */
 import { useMemo, useState } from 'react';
-import { EVENTS, GOODS, GOOD_RULES, GOVERNMENTS, GRID_HALF, GRID_SIZE, RESOURCES, SIZE_NAMES, SHIPS } from '../../../shared/trader/config';
+import { eventLine, newsAbout, type NewsItem } from '../../../shared/trader/news';
+import { GOODS, GOVERNMENTS, GRID_HALF, GRID_SIZE, RESOURCES, SIZE_NAMES, SHIPS } from '../../../shared/trader/config';
 import { chartPoint, coordText, distance, signed, type Galaxy, type Planet } from '../../../shared/trader/galaxy';
-import { eventOn, isBanned } from '../../../shared/trader/market';
+import { isBanned } from '../../../shared/trader/market';
 import { fuelCost, fuelNeeded, type Trader } from '../../../shared/trader/state';
 import { drawPlanet, lookOf } from './art/planets';
-import { EVENT_NEWS, GOVERNMENT_LINES, PLANET_FACTS, goodIcon } from './text';
+import { GOVERNMENT_LINES, PLANET_FACTS, goodIcon } from './text';
 
 const icons = new Map<string, string>();
 /** A small picture of a planet for the map (drawn once and kept). */
@@ -37,10 +38,12 @@ export function planetIcon(name: string): string {
 const VIEW = GRID_SIZE - 1 + 3;
 const pos = (n: number): number => ((n + 1.5) / VIEW) * 100;
 
-export function MapPanel({ galaxy, t, busy, onJump, onRefuel }: {
+export function MapPanel({ galaxy, t, busy, news = [], onJump, onRefuel }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
+  /** The school news today (a planet's own lines go on its card). */
+  news?: readonly NewsItem[];
   onJump: (dest: number) => void;
   onRefuel: (units: number) => void;
 }) {
@@ -151,7 +154,7 @@ export function MapPanel({ galaxy, t, busy, onJump, onRefuel }: {
             onJump={() => target && onJump(target.id)}
             here0={here0}
           />
-          {pickedPlanet ? <PlanetCard galaxy={galaxy} t={t} dest={pickedPlanet} /> : <p className="st-sub">Tap a planet to read about it and see its coordinates.</p>}
+          {pickedPlanet ? <PlanetCard galaxy={galaxy} t={t} dest={pickedPlanet} news={newsAbout(news, pickedPlanet.id).filter((n) => n.kind !== 'event')} /> : <p className="st-sub">Tap a planet to read about it and see its coordinates.</p>}
         </div>
       </div>
     </section>
@@ -245,10 +248,9 @@ function JumpBox(props: {
   );
 }
 
-function PlanetCard({ galaxy, t, dest }: { galaxy: Galaxy; t: Trader; dest: Planet }) {
+function PlanetCard({ galaxy, t, dest, news }: { galaxy: Galaxy; t: Trader; dest: Planet; news: readonly NewsItem[] }) {
   const gov = GOVERNMENTS[dest.government];
-  const event = eventOn(galaxy, dest, t.day);
-  const eventGood = event > 0 ? GOODS[GOOD_RULES.findIndex((r) => r.event === event)] : '';
+  const eventText = eventLine(galaxy, dest.id, t.day);
   const banned = GOODS.filter((_, i) => isBanned(dest, i));
   return (
     <div className="st-card">
@@ -263,7 +265,8 @@ function PlanetCard({ galaxy, t, dest }: { galaxy: Galaxy; t: Trader; dest: Plan
       </ul>
       <p className="st-soft">{GOVERNMENT_LINES[gov.name]}</p>
       {banned.length > 0 && <p className="st-warn">🚫 Banned here: {banned.join(' and ')}. Customs will take them.</p>}
-      {event > 0 && <p className="st-news">📰 {EVENT_NEWS[EVENTS[event]](eventGood)}</p>}
+      {eventText && <p className="st-news">📰 {eventText}</p>}
+      {news.map((n) => <p key={`${n.good}-${n.kind}`} className="st-news">📰 {n.text}</p>)}
     </div>
   );
 }

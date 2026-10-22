@@ -1,11 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { WATER } from '../../../shared/trader/config';
+import { MARKET_CAP_BP, MARKET_KEEP_PCT, MARKET_MIN_DEPTH, MARKET_QUIET_BP, WATER } from '../../../shared/trader/config';
+import { marketFor } from '../../../shared/trader/market';
+import { priceMove, pushPerUnit, pushedLine } from '../../../shared/trader/schoolMarket';
+import { reachable } from '../../../shared/trader/state';
 import { makeGalaxy } from '../../../shared/trader/galaxy';
 import { emptyPlan } from '../../../shared/trader/plan';
 import { DEFAULT_SETTINGS, newGame, type Game } from '../../../shared/trader/server';
 import type { MathsContext } from '../../../shared/trader/questions';
+import { SchoolMarket } from '../../../shared/trader/schoolMarket';
 import { nzDay, makeHandler, parseActions, type ClassSettings, type Saved, type SaveArgs, type Services, type StoredDay } from './handler';
 
 const SEED = 'handler-test';
@@ -23,6 +27,8 @@ function world(opts: { settings?: Partial<ClassSettings>; now?: () => number } =
     saves: 0,
     settings: { enabled: true, ...DEFAULT_SETTINGS, ...opts.settings } as ClassSettings,
     busy: false,
+    market: new SchoolMarket(),
+    marketReads: 0,
   };
   const context: MathsContext = { facts: [], settings: {} };
   const services: Services = {
@@ -43,6 +49,10 @@ function world(opts: { settings?: Partial<ClassSettings>; now?: () => number } =
       return true;
     },
     mathsContext: async () => context,
+    market: async (_p, day) => {
+      state.marketReads++;
+      return state.market.view(day);
+    },
     save: async (p, a: SaveArgs) => {
       const cur = state.games.get(p);
       if ((cur?.version ?? 0) !== a.expectedVersion) return null;
@@ -51,6 +61,7 @@ function world(opts: { settings?: Partial<ClassSettings>; now?: () => number } =
       const day = state.days.get(`${p}:${a.day}`);
       if (day) Object.assign(day.answered, a.claims);
       state.requests.set(`${p}:${a.requestId}`, a.reply);
+      if (a.market.length) state.market.apply(a.day, a.market, state.games.size);
       state.saves++;
       return version;
     },
@@ -216,6 +227,70 @@ describe('the Star Trader server function', () => {
   it('a game that has a new game for a new pupil is the same one the shared rules make', async () => {
     const w = world();
     const r = await w.call({ action: 'load' });
+    expect(r.body.game.t.market).toEqual(newGame(galaxy, TODAY, DEFAULT_SETTINGS).t.market);
+  });
+});
+
+describe('the school\'s shared market (stage T.4)', () => {
+  it('a trade pushes the school\'s price once, even when the request is sent twice', async () => {
+    const w = world();
+    const first = await w.call({ action: 'load' });
+    const g = first.body.game as Game;
+    const plan = emptyPlan();
+    plan[WATER] = 5;
+    const sent = { action: 'act', requestId: w.id(), version: 1, actions: [{ type: 'trade', plan }] };
+    const r1 = await w.call(sent);
+    expect(r1.status).toBe(200);
+    expect(r1.body.pushes).toBeUndefined(); // the pupil is never sent the market changes themselves
+    const once = w.state.market.pushOf(g.t.location, WATER, TODAY);
+    expect(once).toBe(Math.trunc((5 * pushPerUnit(WATER) * 100) / MARKET_MIN_DEPTH) / 100);
+    await w.call(sent);
+    expect(w.state.market.pushOf(g.t.location, WATER, TODAY)).toBe(once);
+    // A refused request moves nothing.
+    const greedy = emptyPlan();
+    greedy[WATER] = 400;
+    await w.call({ action: 'act', requestId: w.id(), version: 2, actions: [{ type: 'trade', plan: greedy }] });
+    expect(w.state.market.pushOf(g.t.location, WATER, TODAY)).toBe(once);
+  });
+
+  it('a jump lands at the school\'s prices, and the news comes back with it and with the load', async () => {
+    const w = world({ settings: { maths: false } });
+    const first = await w.call({ action: 'load' });
+    expect(Array.isArray(first.body.news)).toBe(true);
+    const g = first.body.game as Game;
+    const dest = reachable(galaxy, g.t)[0];
+    // The whole school sold lots of Water there today.
+    for (let i = 0; i < 40; i++) w.state.market.apply(TODAY, [[dest, WATER, -10_000]], 5);
+    const reads = w.state.marketReads;
+    const r = await w.call({ action: 'act', requestId: w.id(), version: 1, actions: [{ type: 'jump', dest }] });
+    expect(r.status).toBe(200);
+    expect(w.state.marketReads).toBe(reads + 1);
+    const normal = marketFor(galaxy, dest, TODAY)[WATER];
+    expect(r.body.game.t.market[WATER].sell).toBe(pushedLine(normal, -(MARKET_CAP_BP - MARKET_QUIET_BP)).sell);
+    expect(r.body.news[0]).toMatchObject({ planet: dest, good: WATER, kind: 'sold' });
+    expect(JSON.stringify(r.body.news)).not.toMatch(/ana|ben/);
+    // Moves without a jump don't read the market.
+    await w.call({ action: 'act', requestId: w.id(), version: r.body.version, actions: [] });
+    expect(w.state.marketReads).toBe(reads + 1);
+  });
+
+  it('a new day reads the school\'s prices for where the pupil is, drifted back overnight', async () => {
+    let now = NOW;
+    const w = world({ now: () => now });
+    const first = await w.call({ action: 'load' });
+    const here = (first.body.game as Game).t.location;
+    for (let i = 0; i < 40; i++) w.state.market.apply(TODAY, [[here, WATER, 10_000]], 5);
+    now += 24 * 3_600_000;
+    const r = await w.call({ action: 'load' });
+    const drifted = Math.trunc((MARKET_CAP_BP * MARKET_KEEP_PCT) / 100);
+    expect(r.body.game.t.market[WATER].sell).toBe(pushedLine(marketFor(galaxy, here, TODAY + 1)[WATER], priceMove(drifted)).sell);
+  });
+
+  it('if the market can\'t be read, prices are normal and the game goes on', async () => {
+    const w = world();
+    (w as unknown as { state: { market: { view: () => null } } }).state.market.view = () => null;
+    const r = await w.call({ action: 'load' });
+    expect(r.status).toBe(200);
     expect(r.body.game.t.market).toEqual(newGame(galaxy, TODAY, DEFAULT_SETTINGS).t.market);
   });
 });

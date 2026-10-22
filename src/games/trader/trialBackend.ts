@@ -8,6 +8,9 @@ import { DEFAULT_SETTINGS, type Game } from '../../../shared/trader/server';
 import { startFight } from '../../../shared/trader/fight';
 import type { MathsContext } from '../../../shared/trader/questions';
 import { SHIPS } from '../../../shared/trader/config';
+import { makeGalaxy } from '../../../shared/trader/galaxy';
+import { SchoolMarket } from '../../../shared/trader/schoolMarket';
+import { busyLunchtime } from '../../../shared/trader/sim';
 import { makeHandler, type ClassSettings, type Saved, type SaveArgs, type Services, type StoredDay } from '../../../supabase/functions/trader/handler';
 import type { Transport } from '../../data/trader';
 
@@ -24,13 +27,15 @@ export interface TrialOptions {
 export interface Trial {
   transport: Transport;
   /** The pretend database. */
-  data: { game: Saved | null; days: Map<number, StoredDay>; requests: Map<string, unknown>; records: { once: string }[]; settings: ClassSettings; skippedDays: number };
+  data: { game: Saved | null; days: Map<number, StoredDay>; requests: Map<string, unknown>; records: { once: string }[]; settings: ClassSettings; skippedDays: number; market: SchoolMarket };
   /** Test tools for the preview (never in the real game). Each changes the pretend database; reload the game after. */
   tools: {
     give(credits: number): void;
     setShip(ship: number): void;
     forcePirates(tier: number): void;
     nextDay(): void;
+    /** Pretend classmates trade all day on the school's market, so the news and moved prices can be seen. */
+    busySchool(pupils?: number): void;
     restart(): void;
   };
 }
@@ -43,7 +48,10 @@ export function trialBackend(options: TrialOptions = {}): Trial {
     records: [],
     settings: { enabled: true, ...DEFAULT_SETTINGS, ...options.settings },
     skippedDays: 0,
+    market: new SchoolMarket(),
   };
+  /** The preview's pretend school: the pupil plus this many classmates (the market's depth). */
+  const SCHOOL_SIZE = 30;
   const seed = options.seed ?? 'preview-season';
   const context: MathsContext = options.maths ?? { facts: [], settings: {} };
   const clock = options.now ?? (() => Date.now());
@@ -62,6 +70,7 @@ export function trialBackend(options: TrialOptions = {}): Trial {
       return true;
     },
     mathsContext: async () => context,
+    market: async (_p, day) => data.market.view(day),
     save: async (_p, a: SaveArgs) => {
       if ((data.game?.version ?? 0) !== a.expectedVersion) return null;
       const version = a.expectedVersion + 1;
@@ -69,6 +78,7 @@ export function trialBackend(options: TrialOptions = {}): Trial {
       const day = data.days.get(a.day);
       if (day) Object.assign(day.answered, a.claims);
       data.requests.set(a.requestId, a.reply);
+      if (a.market.length) data.market.apply(a.day, a.market, SCHOOL_SIZE);
       return version;
     },
     recordAnswers: async (_p, once) => {
@@ -115,7 +125,12 @@ export function trialBackend(options: TrialOptions = {}): Trial {
       nextDay: () => {
         data.skippedDays += 1;
       },
+      busySchool: (pupils = SCHOOL_SIZE) => {
+        const day = data.game?.game.t.day;
+        if (day !== undefined) busyLunchtime(makeGalaxy(seed), data.market, day, pupils, `busy-${data.skippedDays}`);
+      },
       restart: () => {
+        data.market.clear();
         data.game = null;
         data.requests.clear();
         data.days.clear();

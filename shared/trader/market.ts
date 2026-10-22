@@ -1,6 +1,7 @@
 /**
  * Prices and stock. Everything here is worked out from the galaxy, the day and the planet, so nothing needs to be
- * stored: ask again and you get the same answer. (The shared, school-wide push on prices is stage T.4.)
+ * stored: ask again and you get the same answer. The school's shared market (schoolMarket.ts) can then push a price up
+ * or down; a pupil's prices are worked out once, when they land, and kept for the visit.
  *
  * The price rule is the original's: base by tech level, a third more if the planet wants it, less with lots of
  * traders, less on big planets, a quarter off or a third more for special resources, nothing if the planet can't
@@ -26,6 +27,7 @@ import {
   WANTED_PCT,
 } from './config';
 import type { Galaxy, Planet } from './galaxy';
+import { pushedLine } from './schoolMarket';
 
 export interface MarketLine {
   good: number;
@@ -68,8 +70,8 @@ export function standardPrice(planet: Planet, good: number): number {
   return price < 0 ? 0 : price;
 }
 
-/** The whole market on a planet on a given day. */
-export function marketFor(galaxy: Galaxy, planetId: number, day: number): MarketLine[] {
+/** The whole market on a planet on a given day, moved by the school's push on each good (if any). */
+export function marketFor(galaxy: Galaxy, planetId: number, day: number, push?: readonly number[] | null): MarketLine[] {
   const planet = galaxy.planets[planetId];
   const event = eventOn(galaxy, planet, day);
   const random = seededRandom(`trader-market:${galaxy.seed}:${planetId}:${day}`);
@@ -91,6 +93,7 @@ export function marketFor(galaxy: Galaxy, planetId: number, day: number): Market
       if (rule.event > 0 && event === rule.event) stock = Math.floor(stock / EVENT_STOCK_DIVISOR);
       stock = Math.max(0, stock + stockWobble);
     }
-    return { good, sell, buy, stock };
+    const line = { good, sell, buy, stock };
+    return push?.[good] ? pushedLine(line, push[good]) : line;
   });
 }

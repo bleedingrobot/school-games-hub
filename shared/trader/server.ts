@@ -12,6 +12,7 @@ import { acceptDeal, encounterFor, settleCustoms, settleJunk, type Encounter } f
 import { fightRound, laserPower, settleFight, startFight, type Fight, type FightAction } from './fight';
 import type { Galaxy } from './galaxy';
 import { discountFor, runPlan } from './plan';
+import { pupilPush, tidyPushes, type MarketPush, type PupilPushes, type Pushes } from './schoolMarket';
 import {
   borrow,
   buyMoon,
@@ -48,6 +49,8 @@ export interface Game {
   /** How many of today's questions have been used. The next question is number `asked`. */
   asked: number;
   stats: Stats;
+  /** How far this pupil has pushed each price today (their 20% a day limit). Missing in a game that has not traded yet. */
+  pushed?: PupilPushes;
 }
 
 /** The teacher's settings for the pupil's class, and whether maths is on for them. */
@@ -107,6 +110,8 @@ export interface Outcome {
   junk?: { steeredWell: boolean };
   /** A friendly trader's deal taken or not. */
   deal?: { took: boolean };
+  /** What this request's trades do to the school's market (after the pupil's daily limit). Saved with the game, never sent to the pupil. */
+  pushes?: MarketPush[];
 }
 
 export type Reply = ({ ok: true } & Outcome) | { ok: false; reason: string };
@@ -120,16 +125,16 @@ const int = (n: unknown, lo: number, hi: number): number => (typeof n === 'numbe
 
 const copy = (g: Game): Game => structuredClone(g);
 
-export function newGame(galaxy: Galaxy, day: number, settings: Settings): Game {
-  const t = newTrader(galaxy, day);
+export function newGame(galaxy: Galaxy, day: number, settings: Settings, pushes?: Pushes): Game {
+  const t = newTrader(galaxy, day, pushes);
   t.jumpsLeft = settings.jumpsPerDay;
   return { t, pending: null, asked: 0, stats: { jumps: 0, profitableJumps: 0, piratesBeaten: 0, wrecks: 0 } };
 }
 
 /** The first thing on a new day: jumps back, prices read again, interest, new questions. A half-finished event is dropped. */
-export function rollDay(galaxy: Galaxy, game: Game, day: number, settings: Settings): Game {
+export function rollDay(galaxy: Galaxy, game: Game, day: number, settings: Settings, pushes?: Pushes): Game {
   if (game.t.day >= day) return game;
-  const t = startDay(galaxy, game.t, day);
+  const t = startDay(galaxy, game.t, day, pushes);
   t.jumpsLeft = settings.jumpsPerDay;
   return { ...copy(game), t, pending: null, asked: 0 };
 }
@@ -151,15 +156,20 @@ function takeAsk(g: Game, ask: Ask | undefined, settings: Settings, mark: Mark, 
   return { right: r.right };
 }
 
-/** Apply the moves in order. If any one is refused, none are kept and the reason is given. */
-export function applyBatch(galaxy: Galaxy, galaxySeed: string, game: Game, actions: readonly Action[], settings: Settings, mark: Mark): Reply {
+/**
+ * Apply the moves in order. If any one is refused, none are kept and the reason is given. `pushes` is the school's
+ * market today, read when a jump lands (none: normal prices).
+ */
+export function applyBatch(galaxy: Galaxy, galaxySeed: string, game: Game, actions: readonly Action[], settings: Settings, mark: Mark, pushes?: Pushes): Reply {
   try {
     const g = copy(game);
     const out: Outcome = { game: g, answers: [] };
+    const market: MarketPush[] = [];
     for (const action of actions) {
       if (g.pending) refuse('Finish what is happening first.');
-      step(galaxy, galaxySeed, g, action, settings, mark, out);
+      step(galaxy, galaxySeed, g, action, settings, mark, out, market, pushes);
     }
+    if (market.length) out.pushes = tidyPushes(market);
     return { ok: true, ...out };
   } catch (e) {
     if (e instanceof Refused) return { ok: false, reason: e.message };
@@ -167,7 +177,18 @@ export function applyBatch(galaxy: Galaxy, galaxySeed: string, game: Game, actio
   }
 }
 
-function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: Settings, mark: Mark, out: Outcome): void {
+/** A trade moves the school's prices at this planet: selling pushes down, buying pushes up, within the pupil's daily limit. */
+function recordPushes(g: Game, plan: readonly number[], market: MarketPush[]): void {
+  const t = g.t;
+  for (let good = 0; good < plan.length; good++) {
+    if (!plan[good]) continue;
+    const r = pupilPush(g.pushed, t.day, t.location, good, plan[good]);
+    g.pushed = r.rec;
+    if (r.bp) market.push([t.location, good, r.bp]);
+  }
+}
+
+function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: Settings, mark: Mark, out: Outcome, market: MarketPush[], pushes?: Pushes): void {
   const t = g.t;
   switch (action.type) {
     case 'trade': {
@@ -184,6 +205,7 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       if (!done.ok) return refuse(done.reason);
       g.t = done.out.state;
       out.trade = { spent: done.out.spent, earned: done.out.earned, sharp };
+      recordPushes(g, plan, market);
       return;
     }
     case 'refuel':
@@ -216,7 +238,7 @@ function step(galaxy: Galaxy, seed: string, g: Game, action: Action, settings: S
       return;
     case 'jump': {
       const worthBefore = netWorth(galaxy, t);
-      g.t = must(travel(galaxy, t, int(action.dest, 0, galaxy.planets.length - 1)));
+      g.t = must(travel(galaxy, t, int(action.dest, 0, galaxy.planets.length - 1), pushes));
       g.stats.jumps += 1;
       const e = encounterFor(galaxy, g.t, seed);
       out.encounter = e;

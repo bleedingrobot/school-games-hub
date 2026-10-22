@@ -9,6 +9,10 @@
  *   junk   steering through space junk (a maths answer);
  *   deal   a friendly trader's offer, taken or left.
  *
+ * The school's shared market (stage T.4): prices are read with the school's push when a pupil lands (load and jump) and
+ * fixed for the visit; a trade's push on the school's prices is saved in the same database step as the game, so it counts
+ * once. The news comes back in the load and jump replies the pupil already gets, never as a request of its own.
+ *
  * Every request carries the game version it was worked out from and a request id: a request sent twice counts once (the
  * first reply is sent again), and one made from an old version (another tab or device moved the game on) is refused with
  * the current game, so nothing is lost or counted twice. A refused request never uses up a question.
@@ -34,6 +38,8 @@ import {
   type Settings,
 } from '../../../shared/trader/server';
 import type { FightAction } from '../../../shared/trader/fight';
+import { newsFor, type NewsItem } from '../../../shared/trader/news';
+import { EMPTY_VIEW, pushesFrom, type MarketPush, type SchoolView } from '../../../shared/trader/schoolMarket';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 import { RateLimiter } from '../_shared/limits';
 
@@ -62,6 +68,8 @@ export interface SaveArgs {
   requestId: string;
   reply: unknown;
   claims: Record<string, { value: number; right: boolean }>;
+  /** What the trades do to the school's market, applied in the same database step as the save. */
+  market: MarketPush[];
 }
 
 export interface Services {
@@ -81,6 +89,8 @@ export interface Services {
   loadDay(player: string, day: number): Promise<StoredDay | null | 'busy'>;
   storeDay(player: string, day: number, questions: Question[]): Promise<boolean>;
   mathsContext(player: string): Promise<MathsContext | null>;
+  /** The school's market today (pushes and recent news rows). Null if it can't be read: prices are then normal. */
+  market(player: string, day: number): Promise<SchoolView | null>;
   /** Saves; gives the new version, null if the saved game has moved on, 'busy' if the database could not be reached. */
   save(player: string, args: SaveArgs): Promise<number | null | 'busy'>;
   /** Adds answers to the pupil's maths records (counted once by `once`). The game goes on if this fails. */
@@ -196,6 +206,9 @@ export function makeHandler(services: Services) {
     if (!school) return reply(503, { error: "We couldn't load Star Trader just now." });
     const galaxy = galaxyFor(school.seed);
     const classSettings: Settings = { jumpsPerDay: settings.jumpsPerDay, loans: settings.loans, maths: settings.maths };
+    /** The school's market today. If it can't be read, prices are normal and there is no news (the game goes on). */
+    const readMarket = async (): Promise<SchoolView> => (await services.market(player, today)) ?? EMPTY_VIEW;
+    const news = (view: SchoolView): NewsItem[] => newsFor(galaxy, today, view);
 
     /** Today's question list, made on first use. Null when maths is off or can't be made. */
     const dayQuestions = async (): Promise<StoredDay | null | 'busy'> => {
@@ -213,11 +226,13 @@ export function makeHandler(services: Services) {
     };
 
     if (body.action === 'load') {
+      const view = await readMarket();
+      const pushes = pushesFrom(view);
       for (let attempt = 0; attempt < 2; attempt++) {
         const saved = await services.loadGame(player);
         if (saved === 'busy') return reply(503, { error: "We couldn't load your game just now." });
-        let game = saved?.game ?? newGame(galaxy, today, classSettings);
-        const rolled = rollDay(galaxy, game, today, classSettings);
+        let game = saved?.game ?? newGame(galaxy, today, classSettings, pushes);
+        const rolled = rollDay(galaxy, game, today, classSettings, pushes);
         let version = saved?.version ?? 0;
         if (!saved || rolled !== game) {
           game = rolled;
@@ -230,6 +245,7 @@ export function makeHandler(services: Services) {
             requestId: `load-${services.randomHex(8)}`,
             reply: { loaded: true },
             claims: {},
+            market: [],
           });
           if (newVersion === 'busy') return reply(503, { error: "We couldn't load your game just now." });
           if (newVersion === null) continue;
@@ -246,6 +262,7 @@ export function makeHandler(services: Services) {
           day: today,
           questions,
           settings: { jumpsPerDay: settings.jumpsPerDay, loans: settings.loans, maths: settings.maths },
+          news: news(view),
         });
       }
       return reply(409, { error: 'Your game changed on another screen. Please try again.' });
@@ -286,10 +303,13 @@ export function makeHandler(services: Services) {
     };
 
     let result: Reply;
+    let landed: SchoolView | null = null;
     if (wanted === 'act') {
       const actions = parseActions(body.actions);
       if (!actions) return reply(400, { error: "That couldn't be read." });
-      result = applyBatch(galaxy, school.seed, saved.game, actions, classSettings, mark);
+      // Only a jump needs the school's prices (for the planet it lands on).
+      if (actions.some((a) => a.type === 'jump')) landed = await readMarket();
+      result = applyBatch(galaxy, school.seed, saved.game, actions, classSettings, mark, landed ? pushesFrom(landed) : undefined);
     } else if (wanted === 'fight') {
       const ask = parseAsk(body.ask);
       if (ask === 'bad') return reply(400, { error: "That couldn't be read." });
@@ -309,9 +329,9 @@ export function makeHandler(services: Services) {
       if (m) m.ms = a.ms;
     }
     // A save always makes the next version, so the reply kept for a repeated request already has the right one.
-    const { ok: _ok, ...outcome } = result;
+    const { ok: _ok, pushes: market = [], ...outcome } = result;
     void _ok;
-    const finalReply = { ...outcome, version: saved.version + 1 };
+    const finalReply = { ...outcome, version: saved.version + 1, ...(landed ? { news: news(landed) } : {}) };
     const newVersion = await services.save(player, {
       expectedVersion: saved.version,
       game: result.game,
@@ -321,6 +341,7 @@ export function makeHandler(services: Services) {
       requestId,
       reply: finalReply,
       claims,
+      market,
     });
     if (newVersion === 'busy') return reply(503, { error: "We couldn't save that just now." });
     if (newVersion === null) return reply(409, { error: 'Your game has moved on. Reloading it.', stale: true });

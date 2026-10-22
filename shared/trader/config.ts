@@ -254,3 +254,32 @@ export const TRADER_BAD_PCT = 8;
 // ---------------------------------------------------------------------------------------------
 /** The chance a pupil's focus answer is right, for the simulator. */
 export const SIM_MATHS_RATE = 0.7;
+
+// ---------------------------------------------------------------------------------------------
+// The school's shared market (stage T.4; docs/TRADER-PLAN.md, section 8). Pushes are in hundredths of a percent.
+// ---------------------------------------------------------------------------------------------
+/** Selling a whole normal day's stock of a good (its `stock` above) pushes that planet's price down this much; buying pushes it up. */
+export const MARKET_FULL_STOCK_BP = 2500;
+/**
+ * The market is as deep as the school is big: each pupil's push is divided by the number of pupils who played in the last
+ * week (at least this many), so a whole school moves a price about as much as one pupil would on their own. School size
+ * then doesn't decide how rich pupils get, and a price only moves a lot when a big share of the school piles in.
+ */
+export const MARKET_MIN_DEPTH = 5;
+/** Days that count towards "played in the last week" for the depth. */
+export const MARKET_DEPTH_DAYS = 7;
+/** One pupil's trades can move a price at one planet by at most this much in a day (before the depth divides it). */
+export const MARKET_PUPIL_CAP_BP = 2000;
+/** However many pupils trade, a price stays within this much above or below that day's normal price. */
+export const MARKET_CAP_BP = 5000;
+/** Each day a push keeps this percent of itself (25 = three quarters of the way back to normal overnight; the simulator found halfway let a crowded price stay low for days). */
+export const MARKET_KEEP_PCT = 25;
+/**
+ * A quiet zone: the first this-much of a push doesn't change the price at all, so ordinary trading spread across the
+ * galaxy leaves prices alone and only a real pile-up moves them (a push of 25% with a 10% quiet zone moves the price 15%).
+ */
+export const MARKET_QUIET_BP = 1200;
+/** A price that has moved this much in a day makes the school news. */
+export const MARKET_NEWS_BP = 1500;
+/** The most news lines shown at once. */
+export const NEWS_MAX = 5;

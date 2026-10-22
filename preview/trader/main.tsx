@@ -28,6 +28,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
           <button type="button" onClick={() => { trial.tools.give(1000); h.reload(); }}>+1,000 credits</button>
           <button type="button" onClick={() => { trial.tools.give(20000); h.reload(); }}>+20,000 credits</button>
           <button type="button" onClick={() => { trial.tools.nextDay(); h.reload(); }}>Pretend it is tomorrow</button>
+          <button type="button" onClick={() => { trial.tools.busySchool(); h.reload(); }} title="30 pretend classmates trade all day on the school market; jump somewhere to see the moved prices">Busy lunchtime (30 classmates)</button>
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <button key={i} type="button" onClick={() => { trial.tools.setShip(i); h.reload(); }}>Ship {i + 1}</button>
           ))}

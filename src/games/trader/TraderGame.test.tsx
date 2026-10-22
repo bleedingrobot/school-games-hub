@@ -21,6 +21,9 @@ vi.mock('./renderer', () => ({
 }));
 
 import { traderApi } from '../../data/trader';
+import { WATER } from '../../../shared/trader/config';
+import { makeGalaxy, startPlanet } from '../../../shared/trader/galaxy';
+import { nzDay } from '../../../supabase/functions/trader/handler';
 import { TraderGame } from './TraderGame';
 import { trialBackend, type Trial } from './trialBackend';
 
@@ -169,5 +172,17 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
     await waitFor(() => expect(sent.some((b) => b.action === 'fight' && b.move === 'shield')).toBe(true));
     await act(async () => {});
     await waitFor(() => expect(screen.getByRole('meter', { name: /Your hull/ })).toBeTruthy());
+  });
+
+  it('shows the school news and which prices the school has moved when you land', async () => {
+    const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
+    const here = startPlanet(makeGalaxy('screen-test'));
+    // The whole school sold lots of Water here today.
+    for (let i = 0; i < 40; i++) trial.data.market.apply(nzDay(NOW), [[here, WATER, -10_000]], 5);
+    play(trial);
+    await market();
+    expect(await screen.findByText(/Lots of traders sold Water on .*, so it's cheap there today\./, { selector: '.st-news' })).toBeTruthy();
+    expect(screen.getByText('📉 lots sold')).toBeTruthy();
+    expect(screen.getByText(/School news \(\d+\)/)).toBeTruthy();
   });
 });

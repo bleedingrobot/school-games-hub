@@ -13,6 +13,7 @@ import { FriendlyError } from './profile';
 import { forgetSettings } from './settingsMemory';
 import type { PublicQuestion } from '../../shared/maths/serverQuestions';
 import type { Encounter } from '../../shared/trader/encounter';
+import type { NewsItem } from '../../shared/trader/news';
 import type { Fight, FightAction } from '../../shared/trader/fight';
 import type { Action, Ask, Game, Marked } from '../../shared/trader/server';
 
@@ -53,6 +54,8 @@ export interface Loaded {
   /** Today's questions, in the order they are used, without their answers. */
   questions: PublicQuestion[];
   settings: { jumpsPerDay: number; loans: boolean; maths: boolean };
+  /** The school news today (biggest first). */
+  news?: NewsItem[];
 }
 
 /** What a move came to. */
@@ -66,6 +69,8 @@ export interface MoveReply {
   fight?: { fight: Fight; tier: number; over: boolean };
   junk?: { steeredWell: boolean };
   deal?: { took: boolean };
+  /** After a jump: the school news, read as the ship landed. */
+  news?: NewsItem[];
 }
 
 export type ApiResult<T> =

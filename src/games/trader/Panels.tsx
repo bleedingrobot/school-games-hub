@@ -6,6 +6,8 @@ import {
 import type { Galaxy } from '../../../shared/trader/galaxy';
 import { marketFor } from '../../../shared/trader/market';
 import type { Action } from '../../../shared/trader/server';
+import { NEWS_MAX } from '../../../shared/trader/config';
+import { newsAbout, type NewsItem } from '../../../shared/trader/news';
 import { fuelCost, hasShipyard, holdsOf, tradeInValue, usedHolds, type Trader } from '../../../shared/trader/state';
 import { drawShip } from './art/ships';
 import { goodIcon } from './text';
@@ -27,16 +29,22 @@ function averages(galaxy: Galaxy, day: number): number[] {
   return sums.map((s) => (s.n ? s.total / s.n : 0));
 }
 
-export function TradePanel({ galaxy, t, busy, onTrade }: {
+export function TradePanel({ galaxy, t, busy, news = [], onTrade }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
+  /** The school news today. */
+  news?: readonly NewsItem[];
   /** Carry out the plan (the game may ask a maths check first). Gives a message to show, or null. */
   onTrade: (plan: number[]) => Promise<string | null>;
 }) {
   const [plan, setPlan] = useState<number[]>(emptyPlan);
   const [message, setMessage] = useState('');
   const avg = useMemo(() => averages(galaxy, t.day), [galaxy, t.day]);
+  // Prices with no school push, to show which ones the school's trading has moved.
+  const normal = useMemo(() => marketFor(galaxy, t.location, t.day), [galaxy, t.location, t.day]);
+  const local = newsAbout(news, t.location).filter((n) => n.kind !== 'event');
+  const headlines = news.slice(0, NEWS_MAX);
   // A new planet (or a finished trade) starts a fresh plan.
   useEffect(() => setPlan(emptyPlan()), [t.location, t.day, t.jumpNo]);
   const here = runPlan(t, plan);
@@ -71,6 +79,14 @@ export function TradePanel({ galaxy, t, busy, onTrade }: {
     <section className="st-panel" aria-labelledby="st-trade-h">
       <h2 id="st-trade-h" className="st-h">Market</h2>
       <p className="st-sub">Pick how many to buy (+) or sell (−), then press Trade. Holds: {usedHolds(t)} of {holdsOf(t)} full.</p>
+      {local.map((n) => <p key={`${n.good}-${n.kind}`} className="st-news">📰 {n.text}</p>)}
+      {headlines.length > 0 && (
+        <details className="st-newsbox">
+          <summary>📰 School news ({headlines.length})</summary>
+          <ul>{headlines.map((n) => <li key={`${n.planet}-${n.good}-${n.kind}`}>{n.text}</li>)}</ul>
+          <p className="st-soft">Prices here were fixed when you landed. When lots of traders sell something on a planet it gets cheaper there; when lots buy, it gets dearer. Prices drift back overnight.</p>
+        </details>
+      )}
       <div className="st-table" role="table" aria-label="Goods for sale and for sale to this planet">
         <div className="st-row st-row--head" role="row">
           <span role="columnheader">Good</span>
@@ -85,9 +101,12 @@ export function TradePanel({ galaxy, t, busy, onTrade }: {
           const q = plan[line.good];
           const can = line.buy > 0 || line.sell > 0;
           const tag = line.sell > 0 && avg[line.good] > 0 ? (line.sell <= avg[line.good] * 0.88 ? 'cheap' : line.sell >= avg[line.good] * 1.12 ? 'dear' : '') : '';
+          const base = normal[line.good]?.sell ?? 0;
+          // The school's trading moved this price (by 3% or more).
+          const moved = base > 0 && line.sell > 0 && Math.abs(line.sell - base) * 100 >= base * 3 ? (line.sell < base ? 'down' : 'up') : '';
           return (
             <div key={name} className={`st-row ${can ? '' : 'st-row--off'}`} role="row">
-              <span role="cell" className="st-good"><span aria-hidden="true">{goodIcon(line.good)}</span> {name}{tag && <em className={`st-tag st-tag--${tag}`}>{tag}</em>}</span>
+              <span role="cell" className="st-good"><span aria-hidden="true">{goodIcon(line.good)}</span> {name}{tag && <em className={`st-tag st-tag--${tag}`}>{tag}</em>}{moved && <em className={`st-tag st-tag--${moved}`} title={moved === 'down' ? 'Lots of traders sold this here, so the price went down' : 'Lots of traders bought this here, so the price went up'}>{moved === 'down' ? '📉 lots sold' : '📈 lots bought'}</em>}</span>
               <span role="cell" className="st-num" data-label="Buy at">{line.buy > 0 ? line.buy : '—'}</span>
               <span role="cell" className="st-num" data-label="Sell at">{line.sell > 0 ? line.sell : '—'}</span>
               <span role="cell" className="st-num" data-label="Stock">{line.buy > 0 ? line.stock : '—'}</span>

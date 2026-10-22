@@ -6,6 +6,8 @@ import type { FactAnswer } from '../../../shared/maths/leitner';
 import type { Question } from '../../../shared/maths/skillPack';
 import type { MathsContext } from '../../../shared/trader/questions';
 import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
+import { MARKET_DEPTH_DAYS } from '../../../shared/trader/config';
+import { MARKET_RULES, type SchoolView } from '../../../shared/trader/schoolMarket';
 import { recordMathsAnswers } from '../_shared/recordAnswers';
 import { userIdFromToken } from '../_shared/signIn';
 import { makeHandler, type ClassSettings, type Saved, type StoredDay } from './handler';
@@ -111,6 +113,15 @@ Deno.serve(
         settings: { enabledTables, division, multipleChoice, ...(typeof missingFactor === 'boolean' ? { missingFactor } : {}) },
       };
     },
+    async market(player, day): Promise<SchoolView | null> {
+      const { data, error } = await admin.rpc('trader_market', { player, today: day, keep_pct: MARKET_RULES.keep });
+      if (error || !data) {
+        fail('trader_market', error?.code);
+        return null;
+      }
+      const row = data as Partial<SchoolView>;
+      return { pushes: Array.isArray(row.pushes) ? row.pushes : [], news: Array.isArray(row.news) ? row.news : [] };
+    },
     async save(player, a) {
       const { data, error } = await admin.rpc('trader_save', {
         player,
@@ -123,6 +134,7 @@ Deno.serve(
         request_id: a.requestId,
         reply: a.reply,
         claims: a.claims,
+        market: a.market.length ? { pushes: a.market, ...MARKET_RULES, days: MARKET_DEPTH_DAYS } : null,
       });
       if (error) {
         fail('trader_save', error.code);

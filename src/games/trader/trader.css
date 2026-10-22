@@ -119,6 +119,12 @@
 .st-tag { font-style: normal; font-size: 0.72rem; font-weight: 700; border-radius: 999px; padding: 1px 8px; }
 .st-tag--cheap { background: #14532d; color: #bbf7d0; }
 .st-tag--dear { background: #78350f; color: #fde68a; }
+.st-tag--down { background: #1e3a8a; color: #dbeafe; margin-left: 4px; }
+.st-tag--up { background: #701a75; color: #fae8ff; margin-left: 4px; }
+.st-newsbox { margin: 4px 0 8px; color: #dbeafe; }
+.st-newsbox summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; color: #93c5fd; }
+.st-newsbox ul { margin: 0 0 6px; padding-left: 20px; }
+.st-newsbox li { margin: 2px 0; }
 .st-step { display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
 .st-qty { min-width: 38px; text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; }
 .st-qty--buy { color: var(--st-good); }

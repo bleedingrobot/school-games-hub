@@ -9,6 +9,7 @@ import { acceptDeal, encounterFor, isGoodDeal, settleCustoms, settleJunk } from 
 import { fightRound, settleFight, startFight } from './fight';
 import type { Galaxy } from './galaxy';
 import { marketFor } from './market';
+import type { Pushes } from './schoolMarket';
 import {
   buy,
   buyMoon,
@@ -35,6 +36,24 @@ export interface BotOptions {
   mathsRate: number;
   /** Chance (0 to 1) of picking a worse trip than the best one. */
   sloppy: number;
+  /** A school's shared market (the busy-lunchtime simulation). Without it, prices are never pushed. */
+  market?: BotMarket;
+  /**
+   * Each pupil's own taste (0 to 1, with `tasteSeed`): how much a trip's profit is nudged up or down by what this pupil
+   * happens to like or know, so a class doesn't all pick the very same trip. 0 = none (the solo simulator).
+   */
+  taste?: number;
+  tasteSeed?: string;
+}
+
+/** How a bot meets the school's shared market. */
+export interface BotMarket {
+  /** The school's pushes right now (landing prices). */
+  pushes: Pushes;
+  /** What the bot believes prices elsewhere are when it plans a trip: the real pushes, or none (it only knows normal prices, like a pupil who heard a tip in the playground). */
+  planning: Pushes | undefined;
+  /** The bot bought (positive) or sold (negative) some of a good where it is. */
+  traded(t: Trader, good: number, qty: number): void;
 }
 
 export interface BotStats {
@@ -68,7 +87,10 @@ function sellAll(t: Trader, random: () => number, options: BotOptions): Trader {
     if (qty > 0 && state.market[good].sell > 0) {
       const bp = discountFor(random, options, qty * state.market[good].sell);
       const r = sell(state, good, qty, bp);
-      if (r.ok) state = r.state;
+      if (r.ok) {
+        options.market?.traded(state, good, -qty);
+        state = r.state;
+      }
     }
   }
   return state;
@@ -84,7 +106,7 @@ function plan(galaxy: Galaxy, t: Trader, options: BotOptions, random: () => numb
     const topUp = Math.max(0, need - t.fuel);
     let budget = t.credits - fuelCost(t.ship, topUp);
     if (budget < 0) continue;
-    const there = marketFor(galaxy, dest.id, t.day);
+    const there = marketFor(galaxy, dest.id, t.day, options.market?.planning?.(dest.id));
     const options2 = t.market
       .map((line) => ({ good: line.good, gain: there[line.good].sell - line.buy, line }))
       .filter((o) => o.line.buy > 0 && o.gain > 0 && o.line.stock > 0)
@@ -103,6 +125,11 @@ function plan(galaxy: Galaxy, t: Trader, options: BotOptions, random: () => numb
     plans.push({ dest: dest.id, buys, profit });
   }
   if (!plans.length) return null;
+  if (options.taste) {
+    const nudge = seededRandom(`${options.tasteSeed}:${t.day}:${t.location}`);
+    const by = galaxy.planets.map(() => 1 + options.taste! * (2 * nudge() - 1));
+    for (const p of plans) p.profit = p.profit > 0 ? p.profit * by[p.dest] : p.profit;
+  }
   plans.sort((a, b) => b.profit - a.profit);
   if (random() < options.sloppy) return plans[Math.floor(random() * Math.min(plans.length, 6))];
   return plans[0];
@@ -168,14 +195,17 @@ export function botJump(galaxy: Galaxy, t: Trader, seed: string, options: BotOpt
   for (const b of target.buys) {
     const bp = discountFor(random, options, b.qty * state.market[b.good].buy);
     const r = buy(state, b.good, b.qty, -bp);
-    if (r.ok) state = r.state;
+    if (r.ok) {
+      options.market?.traded(state, b.good, b.qty);
+      state = r.state;
+    }
   }
   const need = fuelNeeded(galaxy, state, target.dest);
   if (need > state.fuel) {
     const r = refuel(state, need - state.fuel);
     if (r.ok) state = r.state;
   }
-  const moved = travel(galaxy, state, target.dest);
+  const moved = travel(galaxy, state, target.dest, options.market?.pushes);
   if (!moved.ok) return { ...state, jumpsLeft: Math.max(0, state.jumpsLeft - 1) };
   state = moved.state;
   stats.jumps += 1;
@@ -208,6 +238,11 @@ export function botJump(galaxy: Galaxy, t: Trader, seed: string, options: BotOpt
   }
   if (netWorth(galaxy, state) > worthBefore) stats.profitableJumps += 1;
   return state;
+}
+
+/** The end of a bot's day: sell up and go shopping (which can buy the moon). */
+export function botEndDay(galaxy: Galaxy, t: Trader, options: BotOptions, random: () => number): Trader {
+  return shop(galaxy, sellAll(t, random, options));
 }
 
 export interface SimResult {

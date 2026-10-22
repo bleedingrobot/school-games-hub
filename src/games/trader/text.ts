@@ -46,17 +46,6 @@ export const GOVERNMENT_LINES: Record<string, string> = {
   'Farming co-op': 'Farmers. They want Fireworks for festivals.',
 };
 
-/** What made a price jump today (kid-worded). */
-export const EVENT_NEWS: Record<string, (good: string) => string> = {
-  war: (g) => `There is a war on, so ${g} is dear.`,
-  plague: (g) => `A sickness is going round, so ${g} is dear.`,
-  drought: (g) => `A drought has dried things up, so ${g} is dear.`,
-  boredom: (g) => `Everyone is bored, so ${g} is dear.`,
-  cold: (g) => `A big freeze has hit, so ${g} is dear.`,
-  'crop failure': (g) => `The crops failed, so ${g} is dear.`,
-  'lack of workers': (g) => `There are not enough workers, so ${g} is dear.`,
-};
-
 export const SHIP_BLURBS = [
   'A tiny starter pod. Cute, quick and cramped.',
   'A sleek little dart with room for a laser.',
