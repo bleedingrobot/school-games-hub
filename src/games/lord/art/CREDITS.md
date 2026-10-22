@@ -9,7 +9,7 @@ cut out with `scripts/lord-art.py` (figures on painted backgrounds were cut out 
 | scenes/ | Places and the kingdom map | 22 Oct 2026 (village, forest 1, forest 2, lair, inn, map) | ChatGPT / Gemini |
 | people/ | Village people and the three hero classes | 22 Oct 2026 (innkeeper) | ChatGPT / Gemini |
 | masters/ | The eleven masters | | |
-| monsters/ | 120 forest monsters | | |
+| monsters/ | 120 forest monsters | 22 Oct 2026 (level 1) | ChatGPT / Gemini |
 | dragon/ | Scorchtail | 22 Oct 2026 | ChatGPT / Gemini |
 
 Older pictures still in the game (until each painted one arrives) are Kenney's 1-Bit Pack (CC0, see ../KENNEY-LICENSE.txt).
