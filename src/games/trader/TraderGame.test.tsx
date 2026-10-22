@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // A stand-in picture (the real one draws on a canvas, which this test browser doesn't have).
@@ -20,8 +20,11 @@ vi.mock('./renderer', () => ({
   }),
 }));
 
-import { trialApi } from './api';
+import { traderApi } from '../../data/trader';
 import { TraderGame } from './TraderGame';
+import { trialBackend, type Trial } from './trialBackend';
+
+const NOW = Date.UTC(2026, 9, 22, 1, 0, 0);
 
 beforeEach(() => {
   calls.warps = 0;
@@ -32,38 +35,61 @@ beforeEach(() => {
 });
 afterEach(() => cleanup());
 
-const play = () => render(<TraderGame api={trialApi('test')} startAt="planet" />);
+function play(trial: Trial = trialBackend({ seed: 'screen-test', now: () => NOW }), startAt: 'title' | 'planet' = 'planet') {
+  const api = traderApi(trial.transport);
+  const sent: Record<string, unknown>[] = [];
+  const spy: typeof trial.transport = async (body, o) => {
+    sent.push(body);
+    return trial.transport(body, o);
+  };
+  render(<TraderGame api={traderApi(spy)} startAt={startAt} />);
+  void api;
+  return { trial, sent };
+}
+const market = () => screen.findByRole('heading', { name: 'Market' });
 
-describe('Star Trader screen', () => {
-  it('opens on a title, then lands on a planet with the market, tabs and the top strip', () => {
-    render(<TraderGame api={trialApi('test')} />);
-    expect(screen.getByRole('heading', { name: 'Star Trader' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Start trading' }));
-    expect(screen.getByRole('heading', { name: 'Market' })).toBeTruthy();
+describe('Star Trader screen (talking to the real server logic on a pretend database)', () => {
+  it('opens on a title, then lands on a planet with the market, tabs and the top strip', async () => {
+    play(undefined, 'title');
+    expect(await screen.findByRole('heading', { name: 'Star Trader' })).toBeTruthy();
+    fireEvent.click(await screen.findByRole('button', { name: 'Start trading' }));
+    await market();
     for (const tab of ['Trade', 'Ship', 'Bank', 'Star chart']) expect(screen.getByRole('tab', { name: tab })).toBeTruthy();
     expect(screen.getByLabelText(/jumps left today/)).toBeTruthy();
-    expect(calls.scenes[0]).toMatch(/^planet:/);
+    expect(calls.scenes.some((s) => s.startsWith('planet:'))).toBe(true);
   });
 
-  it('every button and tab has a name a screen reader can say', () => {
+  it('says so when the teacher has not switched the game on', async () => {
+    play(trialBackend({ settings: { enabled: false }, now: () => NOW }));
+    expect(await screen.findByText(/not switched on/i)).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Market' })).toBeNull();
+  });
+
+  it('every button and tab has a name a screen reader can say', async () => {
     play();
+    await market();
     for (const b of screen.getAllByRole('button')) expect((b.textContent ?? '').trim() || b.getAttribute('aria-label')).toBeTruthy();
   });
 
-  it('buys one of something, takes the right money, and puts it in the hold', async () => {
-    play();
+  it('a trade is sent with the next jump, not on its own, and the server saves it', async () => {
+    const { trial, sent } = play();
+    await market();
     const hud = screen.getByTitle('Your credits');
     const before = Number(within(hud).getByText(/\d/).textContent?.replace(/,/g, ''));
     const row = screen.getAllByRole('row').find((r) => within(r).queryByLabelText(/^Buy one Water$/));
     if (!row) throw new Error('no water row');
     fireEvent.click(within(row).getByLabelText('Buy one Water'));
     fireEvent.click(screen.getByRole('button', { name: 'Trade' }));
-    const no = await screen.findByText(/Trade done|No thanks/);
-    if (no.textContent === 'No thanks') fireEvent.click(no);
+    // A maths check can come up; skip it.
+    const skip = screen.queryByText('No thanks');
+    if (skip) fireEvent.click(skip);
     await waitFor(() => {
       const after = Number(within(screen.getByTitle('Your credits')).getByText(/\d/).textContent?.replace(/,/g, ''));
       expect(after).toBeLessThan(before);
     });
+    // Nothing but the opening request has gone to the server yet.
+    expect(sent.filter((b) => b.action === 'act')).toHaveLength(0);
+    expect(trial.data.game?.game.t.credits).toBe(100);
   });
 
   /** Every planet's chart coordinates, read from the buttons' names. */
@@ -75,8 +101,9 @@ describe('Star Trader screen', () => {
   }
   const type = (label: RegExp, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
-  it('jumps by typing the coordinates of a planet; the game works out the fuel and the chart shows where the point lands', async () => {
-    play();
+  it('jumps by typing the coordinates of a planet; the server works out the fuel and the jump', async () => {
+    const { trial, sent } = play();
+    await market();
     fireEvent.click(screen.getByRole('tab', { name: 'Star chart' }));
     expect(screen.queryByText('Show me')).toBeNull();
     let jumped = false;
@@ -92,11 +119,14 @@ describe('Star Trader screen', () => {
     }
     expect(jumped).toBe(true);
     await waitFor(() => expect(calls.warps).toBe(1));
-    await waitFor(() => expect(screen.getByLabelText(/jumps left today/).getAttribute('aria-label')).toMatch(/^9 of 10/));
+    await waitFor(() => expect(trial.data.game?.game.t.jumpsLeft).toBe(9));
+    expect(sent.filter((b) => b.action === 'act')).toHaveLength(1);
+    await waitFor(() => expect(screen.getByLabelText(/jumps left today/).getAttribute('aria-label')).toMatch(/^[0-9] of 10/));
   });
 
-  it('an empty spot, or a wrong number, says so and never jumps; it says which number to check once a planet has been read', () => {
+  it('an empty spot, or a wrong number, says so and never jumps; it says which number to check once a planet has been read', async () => {
     play();
+    await market();
     fireEvent.click(screen.getByRole('tab', { name: 'Star chart' }));
     const planets = planetsOnChart();
     const there = new Set(planets.map((p) => `${p.x},${p.y}`));
@@ -114,13 +144,30 @@ describe('Star Trader screen', () => {
     expect(screen.getByText(/whole numbers from/i)).toBeTruthy();
   });
 
-  it('the plus/minus button flips a number, so a phone with no minus key can still type a negative', () => {
+  it('the plus/minus button flips a number, so a phone with no minus key can still type a negative', async () => {
     play();
+    await market();
     fireEvent.click(screen.getByRole('tab', { name: 'Star chart' }));
     type(/^x \(across\)/, '4');
     fireEvent.click(screen.getByRole('button', { name: /Make x \(across\) negative or positive/ }));
     expect((screen.getByLabelText(/^x \(across\)/) as HTMLInputElement).value).toBe('-4');
     fireEvent.click(screen.getByRole('button', { name: /Make x \(across\) negative or positive/ }));
     expect((screen.getByLabelText(/^x \(across\)/) as HTMLInputElement).value).toBe('4');
+  });
+
+  it('a pirate fight in progress is shown on opening (so a reload keeps it) and a round goes to the server', async () => {
+    const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
+    const api = traderApi(trial.transport);
+    // Make a game and put it in a fight, as the server would have kept it.
+    await api.load();
+    trial.tools.setShip(3);
+    trial.tools.forcePirates(0);
+    const sent: Record<string, unknown>[] = [];
+    render(<TraderGame api={traderApi(async (b, o) => (sent.push(b), trial.transport(b, o)))} startAt="planet" />);
+    expect(await screen.findByRole('heading', { name: /attack/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Raise shields/ }));
+    await waitFor(() => expect(sent.some((b) => b.action === 'fight' && b.move === 'shield')).toBe(true));
+    await act(async () => {});
+    await waitFor(() => expect(screen.getByRole('meter', { name: /Your hull/ })).toBeTruthy());
   });
 });

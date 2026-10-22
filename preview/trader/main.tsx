@@ -7,33 +7,34 @@
  */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { trialApi } from '../../src/games/trader/api';
+import { traderApi } from '../../src/data/trader';
 import { TraderGame } from '../../src/games/trader/TraderGame';
+import { trialBackend } from '../../src/games/trader/trialBackend';
 import '../../src/styles.css';
 import './preview.css';
 
 const params = new URLSearchParams(location.search);
-const api = trialApi();
+const trial = trialBackend({ seed: params.get('seed') ?? 'preview-season' });
+const api = traderApi(trial.transport);
 
 createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>
     <TraderGame
       api={api}
       startAt={params.has('play') ? 'planet' : 'title'}
-      galaxySeed={params.get('seed') ?? 'preview-season'}
       extra={(h) => (
         <details className="trp-tools">
           <summary>Preview tools</summary>
-          <button type="button" onClick={() => h.give(1000)}>+1,000 credits</button>
-          <button type="button" onClick={() => h.give(20000)}>+20,000 credits</button>
-          <button type="button" onClick={h.nextDay}>Pretend it is tomorrow</button>
+          <button type="button" onClick={() => { trial.tools.give(1000); h.reload(); }}>+1,000 credits</button>
+          <button type="button" onClick={() => { trial.tools.give(20000); h.reload(); }}>+20,000 credits</button>
+          <button type="button" onClick={() => { trial.tools.nextDay(); h.reload(); }}>Pretend it is tomorrow</button>
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <button key={i} type="button" onClick={() => h.setShip(i)}>Ship {i + 1}</button>
+            <button key={i} type="button" onClick={() => { trial.tools.setShip(i); h.reload(); }}>Ship {i + 1}</button>
           ))}
           {[0, 1, 2].map((i) => (
-            <button key={i} type="button" onClick={() => h.forcePirates(i)}>Pirates {i + 1}</button>
+            <button key={i} type="button" onClick={() => { trial.tools.forcePirates(i); h.reload(); }}>Pirates {i + 1}</button>
           ))}
-          <button type="button" onClick={h.restart}>Start again</button>
+          <button type="button" onClick={() => { trial.tools.restart(); h.reload(); }}>Start again</button>
         </details>
       )}
     />
