@@ -48,6 +48,11 @@ export const offersSizeItUp = (seed: number) => (Math.imul(seed >>> 0, 265443576
 /** Size it up: a right answer finds the monster's weak spot. */
 export const sizeItUpBonus = (result: Result): number => (result === 'right' ? 1.5 : result === 'hint' ? 1.25 : 1);
 
+/** Size it up, a right answer: this much more gold for winning the fight (question skips, James 22 Oct 2026: answering should beat skipping). */
+export const SIZE_IT_UP_GOLD = 0.2;
+/** The gold a won forest fight pays: a right Size it up adds SIZE_IT_UP_GOLD (rounded up, so at least 1). */
+export const sizeItUpGold = (gold: number, result: Result | null): number => (result === 'right' && gold > 0 ? gold + Math.ceil(gold * SIZE_IT_UP_GOLD) : gold);
+
 /** Shop and healer: a right answer is 10% off (a hint earns 5%); wrong is full price. */
 export const priceDiscount = (result: Result): number => (result === 'right' ? 0.1 : result === 'hint' ? 0.05 : 0);
 

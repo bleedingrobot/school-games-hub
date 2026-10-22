@@ -115,7 +115,7 @@ A day's turns take about 5-10 minutes. Turns don't pile up if you miss a day (li
 1. A monster appears with its name, picture, HP and a cheeky line ("A goblin who says the treasure is for tax purposes").
 2. About 1 fight in 3 offers **Size it up** (never forced; you can just fight):
    - a question from the topic the teacher has on, at the student's own level (the shared engine's Leitner boxes pick it);
-   - **right**: the monster's weak spot, your first hit does ×1.5;
+   - **right**: the monster's weak spot, your first hit does ×1.5, and a win pays 20% more gold (added 22 Oct 2026 so answering beats skipping: docs/QUESTION-SKIPS-PLAN.md);
    - **right after a hint**: ×1.25;
    - **wrong**: the worked answer is shown and the fight carries on normally. Nothing is lost.
 3. Then LORD fighting: **A**ttack, **R**un, or your class skill. Damage is LORD's formula. Running away sometimes fails.
@@ -146,7 +146,7 @@ LORD's numbers get huge: a level-12 monster drops 336,643 gold and the best armo
 
 | Moment | Topic (shared packs) | Right answer | Wrong answer |
 |---|---|---|---|
-| Size it up (1 fight in 3) | Whichever topics the teacher has on | ×1.5 first hit | Worked answer, normal fight |
+| Size it up (1 fight in 3) | Whichever topics the teacher has on | ×1.5 first hit, +20% gold for a win | Worked answer, normal fight |
 | Shop | Decimals and money / adding and taking away | Small discount or a free potion | Worked answer, normal price |
 | Healer | Times tables / multiplying | 10% off | Worked answer, normal price |
 | Bank interest (optional, off for younger) | Decimals | A little interest | Worked answer, no interest that day |

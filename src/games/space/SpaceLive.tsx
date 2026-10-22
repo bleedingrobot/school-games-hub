@@ -11,7 +11,7 @@ import { Link } from 'react-router';
 import { randomAvatar } from '../../avatar/avatarParts';
 import { useSound } from '../../sound';
 import { BOT_NAMES } from '../../../shared/space/bot';
-import { itemProblem, usableItems, validTargets } from '../../../shared/space/engine';
+import { itemProblem, MATHS_CHARGE_STEPS, usableItems, validTargets } from '../../../shared/space/engine';
 import { ITEMS, type ItemKind } from '../../../shared/space/items';
 import { LIVE_BOT_CALLSIGNS, LIVE_BOT_LEVEL, REACTIONS, REACTION_GAP_SECONDS, MAX_REACTIONS, timesUpDelayMs, type Reaction } from '../../../shared/space/live';
 import { randomFromSeed } from '../../../shared/space/random';
@@ -412,6 +412,8 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
   const me = mySeat >= 0 ? view.rockets[mySeat] : null;
   const pending = myTurn && view.phase === 'choice' ? view.pending : null;
   const canRoll = myTurn && view.phase === 'ready' && !picking && !busy;
+  // The question card is still open: rolling now skips it, and the Roll button says what that costs.
+  const chargeWaiting = canRoll && mathsOn && !!charge && charge.turns === myTurns && charge.right === undefined && !view.turnInfo.rolled;
   const usable = myTurn && view.phase === 'ready' ? usableItems(view, mySeat) : [];
   const targets = myTurn && picking?.kind === 'target' ? validTargets(view, picking.item, mySeat) : [];
   const positions = rockets.map((r) => r.pos);
@@ -550,6 +552,7 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
             ) : (
               <button type="button" className="button button--play space-roll" disabled={!canRoll} onClick={roll} aria-keyshortcuts="Space">
                 🎲 {view.turnInfo.rollAgainUsed && myTurn && !view.turnInfo.rolled ? 'Roll again' : 'Roll'}
+                {chargeWaiting && ` without the +${MATHS_CHARGE_STEPS}`}
               </button>
             )}
           </div>
@@ -583,14 +586,14 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
           view.turnInfo.mathsCharge && myTurn ? (
             <section className="space-panel space-charge" aria-label="Mission Control charge">
               <p className="space-charge__note" role="status">
-                ⚡ +1 charged from your answer
+                ⚡ +{MATHS_CHARGE_STEPS} charged from your answer
               </p>
             </section>
           ) : charge && charge.turns === myTurns && !(myTurn && view.turnInfo.rolled) ? (
             charge.right ? (
               <section className="space-panel space-charge" aria-label="Mission Control charge">
                 <p className="space-charge__note" role="status">
-                  ⚡ Right! +1 is ready for your next roll
+                  ⚡ Right! +{MATHS_CHARGE_STEPS} is ready for your next roll
                 </p>
               </section>
             ) : charge.right === undefined ? (
@@ -600,7 +603,7 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
                   key={`${charge.turns}-${charge.question.id}`}
                   question={charge.question}
                   title="Mission Control"
-                  note="Answer for +1 on your next roll. It’s up to you."
+                  note={`Answer for +${MATHS_CHARGE_STEPS} on your next roll. It’s up to you.`}
                   onSubmit={(answer, ms) =>
                     markWith({ action: 'answer', gameId: game.id, kind: 'charge', answer, ms }, charge.question)
                   }

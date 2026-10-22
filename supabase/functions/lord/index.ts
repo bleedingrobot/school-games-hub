@@ -1312,6 +1312,10 @@ const defaultBand = (level) => Math.min(4, Math.max(1, Math.ceil(level / 3)));
 const offersSizeItUp = (seed) => (Math.imul(seed >>> 0, 2654435761) >>> 0) % 3 === 0;
 /** Size it up: a right answer finds the monster's weak spot. */
 const sizeItUpBonus = (result) => result === "right" ? 1.5 : result === "hint" ? 1.25 : 1;
+/** Size it up, a right answer: this much more gold for winning the fight (question skips, James 22 Oct 2026: answering should beat skipping). */
+const SIZE_IT_UP_GOLD = .2;
+/** The gold a won forest fight pays: a right Size it up adds SIZE_IT_UP_GOLD (rounded up, so at least 1). */
+const sizeItUpGold = (gold, result) => result === "right" && gold > 0 ? gold + Math.ceil(gold * SIZE_IT_UP_GOLD) : gold;
 /** Shop and healer: a right answer is 10% off (a hint earns 5%); wrong is full price. */
 const priceDiscount = (result) => result === "right" ? .1 : result === "hint" ? .05 : 0;
 /** Master's trial: each right answer adds a little strength when you level up (a tenth of the usual gain, at least 1). */
@@ -4796,15 +4800,20 @@ function fightFinish(c) {
 	if (isRefuse(played)) return played;
 	const { fight, actions, open: was } = played;
 	const crossed = was.info.day !== c.today;
-	const hero = keepToday(applyForestResult(c.w.hero, fight), c.w.hero, crossed);
-	const rewards = fight.outcome === "won" ? {
-		gold: fight.monster.gold + fight.goldPinched,
+	const won = fight.outcome === "won";
+	const extraGold = won ? sizeItUpGold(fight.monster.gold, sizeUp) - fight.monster.gold : 0;
+	const applied = applyForestResult(c.w.hero, fight);
+	const hero = keepToday(extraGold ? {
+		...applied,
+		gold: applied.gold + extraGold
+	} : applied, c.w.hero, crossed);
+	const rewards = won ? {
+		gold: fight.monster.gold + extraGold + fight.goldPinched,
 		exp: fight.monster.exp
 	} : {
 		gold: 0,
 		exp: 0
 	};
-	const won = fight.outcome === "won";
 	return {
 		hero,
 		answers,

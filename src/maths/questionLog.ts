@@ -29,7 +29,20 @@ export function setQuestionSink(next: QuestionSink | null): void {
   sink = next;
 }
 
+// Right answers in a row, in any game, since the page opened. A wrong answer or a skip starts it again.
+let inARow = 0;
+
+/** Counts a marked answer; returns how many right answers in a row there now are. */
+export function countAnswer(correct: boolean): number {
+  inARow = correct ? inARow + 1 : 0;
+  return inARow;
+}
+
+/** From this many right answers in a row the question box cheers. */
+export const STREAK_FROM = 3;
+
 export function noteQuestion(note: QuestionNote): void {
+  if (note.skipped && note.ms >= MIN_SHOWN_MS) inARow = 0;
   if (!sink || (note.skipped && note.ms < MIN_SHOWN_MS)) return;
   try {
     sink({ spot: note.spot, skipped: note.skipped, ms: Math.round(note.ms), at: Date.now() });

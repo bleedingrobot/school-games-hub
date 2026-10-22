@@ -1,3 +1,4 @@
+import { MATHS_CHARGE_STEPS } from '../../../shared/space/engine';
 import { spokenLabel } from '../../../shared/maths/banded';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -348,6 +349,38 @@ describe('Mission Control maths on the game screen', () => {
     expect(screen.queryByRole('group', { name: /Mission Control/ })).not.toBeInTheDocument();
     localStorage.clear();
   });
+
+  it('the Roll button says what rolling past an open question costs, and rolling past it skips it', async () => {
+    const user = userEvent.setup();
+    localStorage.setItem('sgh-space-settings', JSON.stringify({ board: 'asteroid-belt', bots: 1, maths: true }));
+    renderGame(undefined, maths('choose'));
+    await user.click(screen.getByRole('button', { name: /Launch/ }));
+    // Play on (answering any wormhole question, taking any choice) until my turn comes with the card still open.
+    let skipped = false;
+    for (let guard = 0; guard < 4000 && !skipped; guard++) {
+      const waiting = screen.queryByRole('button', { name: `🎲 Roll without the +${MATHS_CHARGE_STEPS}` });
+      if (waiting && !waiting.hasAttribute('disabled')) {
+        expect(screen.getByRole('group', { name: 'Mission Control' })).toBeInTheDocument();
+        await user.click(waiting);
+        skipped = true;
+        break;
+      }
+      const dialog = anyDialog();
+      const choice = choiceGroup();
+      const roll = rollButton();
+      if (dialog) {
+        const fact = within(dialog as HTMLElement).queryByLabelText(/equals/);
+        if (fact) await user.keyboard(`${solve(fact.getAttribute('aria-label')!)}{Enter}`);
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      } else if (choice) await user.click(within(choice).getAllByRole('button')[0]);
+      else if (roll && !roll.hasAttribute('disabled')) await user.click(roll);
+      else await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+    expect(skipped).toBe(true);
+    // Rolling past it closes the card: the button is a plain Roll again.
+    await waitFor(() => expect(screen.queryByRole('button', { name: /without the/ })).not.toBeInTheDocument());
+    localStorage.clear();
+  }, 40_000);
 
   it('asks questions, applies the answers, and saves them with the game so the server can check each one', async () => {
     const user = userEvent.setup();

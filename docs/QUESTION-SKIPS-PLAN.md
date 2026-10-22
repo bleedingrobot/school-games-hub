@@ -63,3 +63,34 @@ refuses signed-out callers, add 900 to the repair note in `docs/PLAN.md`, then m
 After a school day: open the panel, and compare with section 1.
 
 **Went live 22 Oct 2026 (James: "Go").** Migration applied to the live database with `db query --linked`; checked: `question_log` empty with row security on, students can't read it, signed-out callers refused on `log_questions` and the table (42501), cron `tidy-question-log` scheduled. PLAN.md repair note now includes 900. Site published by merging the PR.
+
+## 4. Stage S.2 results (22 Oct 2026, branch `question-skips-2`, NOT live)
+
+- **Mission Control:** `MATHS_CHARGE_STEPS` 1 → 2 (`shared/space/engine.ts`); every "+1" about the charge now reads the constant
+  (cards, log line, How to play). The Roll button says "Roll without the +2" while the card is open and unanswered (solo and
+  classmates). Sim, Nebula cosmic, 1,000 games each:
+
+  | | +1 | +2 |
+  |---|---|---|
+  | 4 rockets, student always right: wins | 29% | 37% |
+  | 4 rockets, student never answers: wins | 15% | 11% |
+  | 2 rockets, always right / never | 55% / 33% | 60% / 28% |
+  | 4 rockets, rounds (always right) | 12.6 | 10.8 |
+
+  Bots get +2 too, so games are about 12% shorter. Needs `save-bot-game` and `space-game` redeployed (one constant).
+- **Dragon Maths:** a right Size it up also pays 20% more gold for a win (`SIZE_IT_UP_GOLD`, rounded up), added to the hero on
+  the server; the button says "Size it up: a right answer = first hit ×1.5 and +20% gold". Needs `lord` redeployed.
+- **Marble Rush:** Skip buttons say "Skip (no time off)" / "Skip (no time back)".
+- **Every game:** the question box cheers "🔥 3 in a row!" from 3 right answers in a row (any game, this page visit); a wrong
+  answer or a skip starts again. Website only.
+- **Not changed, on purpose:** Mine Runner's wrong-answer cost (James set −20 shield on 20 Oct, and saved runs replay with
+  the engine, so a change could break old runs; Mine Runner had 1 saved run); Gem Keep's Mana Well (a wrong answer only loses
+  a 5-mana streak bonus).
+
+**Tests:** test:all 4,767 pass, typecheck and build clean; new tests for the Roll button, the gold (server + unit), the
+streak, Marble labels.
+
+**Go-live (James's yes):** merge `origin/main`, redeploy `save-bot-game`, `space-game`, `lord`
+(`--no-verify-jwt --use-api`), check each answers 401 signed out, merge the PR. No database change. Deploy the functions just
+before merging: a game started on the old site and saved after the deploy is judged with +2 (a solo space game played with
++1 charges would be refused). Best done outside school hours.
