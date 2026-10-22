@@ -17,7 +17,7 @@ import {
 } from './config';
 import type { Galaxy } from './galaxy';
 import { isBanned } from './market';
-import type { Trader } from './state';
+import { freeHolds, type Trader } from './state';
 
 export type Encounter =
   | { kind: 'none' }
@@ -92,7 +92,7 @@ export function acceptDeal(t: Trader, e: Extract<Encounter, { kind: 'trader' }>)
   const state: Trader = { ...t, cargo: [...t.cargo] };
   if (e.sells) {
     const cost = e.price * e.qty;
-    if (cost > state.credits) return null;
+    if (cost > state.credits || e.qty > freeHolds(t)) return null;
     state.credits -= cost;
     state.cargo[e.good] += e.qty;
   } else {

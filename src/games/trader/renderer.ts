@@ -157,10 +157,11 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, initia
   function placeCraft(now: number) {
     const { s } = layout();
     if (scene.kind === 'fight') {
-      you.x = cw * 0.25 + you.dx;
-      you.y = ch * 0.6 + you.dy + (opts.lessMotion ? 0 : Math.sin(now * 1.3) * 5 * s);
-      pirate.x = cw * 0.74 + pirate.dx;
-      pirate.y = ch * 0.37 + pirate.dy + (opts.lessMotion ? 0 : Math.sin(now * 1.1 + 2) * 6 * s);
+      // The fight panel sits along the bottom, so the ships fly in the top part of the picture.
+      you.x = cw * 0.27 + you.dx;
+      you.y = ch * 0.3 + you.dy + (opts.lessMotion ? 0 : Math.sin(now * 1.3) * 5 * s);
+      pirate.x = cw * 0.72 + pirate.dx;
+      pirate.y = ch * 0.25 + pirate.dy + (opts.lessMotion ? 0 : Math.sin(now * 1.1 + 2) * 6 * s);
     } else {
       you.x = cw * 0.56 + you.dx;
       you.y = ch * 0.2 + you.dy + (opts.lessMotion ? 0 : Math.sin(now * 0.9) * 6 * s);

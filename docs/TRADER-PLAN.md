@@ -3,7 +3,7 @@
 A space trading game for the hub, in the spirit of the 2002 Palm game *Space Trader* by Pieter Spronck. Fly a small ship between planets, buy cargo cheap and sell it dear, upgrade your ship, dodge pirates, and save up to buy your own moon. **Maths is how a trader stays rich**: working out the bill, the change, the profit on a trip, the fuel for a jump and the price after a market event.
 
 Written 18 October 2026 for James, from his pasted plan ("Math Trader", section 1), the original game's source code (section 2) and the hub's other plans on `origin/main`.
-**Status: ANSWERED 18 Oct 2026 (section 13). REVISED 22 Oct 2026 against `docs/GAME_DEVELOPMENT_GUIDE.md` (section 14, which wins wherever it disagrees with sections 1–12). Not started, nothing built.** Branch `trader`, id `trader`, CSS prefix `.st-`. Next free migration number when revised: `20261022000400` (re-check before the first migration).
+**Status: T.0 and T.1 done 22 Oct 2026 (sections 15, 16); T.2 built 22 Oct 2026 (section 18), waiting for James's try-out. ANSWERED 18 Oct 2026 (section 13). REVISED 22 Oct 2026 against `docs/GAME_DEVELOPMENT_GUIDE.md` (section 14, which wins wherever it disagrees with sections 1–12). Not started, nothing built.** Branch `trader`, id `trader`, CSS prefix `.st-`. Next free migration number when revised: `20261022000400` (re-check before the first migration).
 
 ## The short version
 
@@ -436,3 +436,42 @@ Same approach as Archery Challenge (`docs/ARCHERY-PLAN.md` section 10): **2D can
 - **Effects worth watching:** a warp jump with streaking stars and a flash, laser bolts, shield ripples, hit sparks, explosions, escape-pod flash, cargo crates tumbling when pirates grab them.
 - **Chromebook-safe:** fixed-step loop with drawing blended between steps, canvas sized for the screen's pixel density (capped at 1.5), a particle cap, **automatic simpler graphics** when frames are slow, and a reduced-motion mode (still stars, no shake, gentle effects), as in Archery.
 - **Screens:** a full-screen "cockpit" with the animated scene behind dark, high-contrast panels (4.5:1), 44 px targets, keyboard and touch, checked at 1366 × 640 and 844 × 390.
+
+## 18. Stage T.2 results (22 Oct 2026): the screens and a phone preview
+
+Built on branch `trader`. **Nothing is live, nothing is saved, no database or server function yet.** The game runs entirely in the browser on the shared rules; its maths questions are made and marked in the browser for a pretend pupil.
+
+### What's there (all in the game's own folders)
+| Where | What |
+|---|---|
+| `src/games/trader/art/` | `space.ts` (nebula + 3 twinkling, drifting star layers), `planets.ts` (24 planets drawn to look like their real namesakes: bands, rings, craters, ice, volcanoes, clouds, polar caps, city lights, atmosphere glow, slowly turning), `ships.ts` (6 trader ships and 3 pirates; lit hulls, engine pods, flames, windows, panel lines; pirates have glowing red eyes, fangs, horns, a skull prow, a dark aura; no blood), `fx.ts` (sparks, smoke, explosions, laser bolts, shield ripples, tumbling crates) |
+| `renderer.ts`, `SpaceCanvas.tsx` | One full-screen canvas: planet scene, warp jump, pirate fight (shots, shields, wrecks, fleeing, robbery). Automatic simpler graphics when slow, "less movement" mode |
+| `TraderGame.tsx` | The cockpit: top strip (credits, fuel, hull, jumps left), tabs, title screen, jump flow, junk, customs, friendly traders, the fight, the moon |
+| `Panels.tsx` | Market (buy/sell steppers, "cheap/dear here" tags from the galaxy average, running totals), Ship (fuel, repair, 5 ships with pictures, lasers, shields, pods, the moon), Bank |
+| `StarMap.tsx` | The star chart: 20 × 20 grid, diamond showing how far your fuel reaches, planet pictures, an across-then-up route, a fuel sum the pupil can count and check ("Show me"); a wrong sum never blocks the jump |
+| `Encounter.tsx`, `Ask.tsx`, `api.ts` | Encounter panels; every maths check opens the hub's own question box (`QuestionModal`) from the pupil's focus via `makeFocusPack`. Right = small discount (1% / 2% on big trades) or a full laser shot; wrong or "No thanks" = nothing lost |
+| `tradePlan.ts` | A trade plan (sells first, then buys) run through the shared rules, so the screen shows what the server will work out |
+| `trader.css`, `prefs.ts`, `text.ts` | Styles (`.st-` prefix, shared dark panels at 4.5:1 or better, 44 px targets), the pupil's picture settings, true planet facts and kid-worded text |
+| `preview/trader/`, `vite.trader-preview.config.ts` | The preview (`npm run trader:preview`), with test tools (pretend credits, pretend tomorrow, any ship fitted, any pirates) and two picture pages (`art.html`, `ships.html`). Never calls the live server |
+
+Preview for James (private, one page): https://claude.ai/artifact/HmwsFd6Eph9D7YDPLZMtYo . One-file build: `TRADER_INLINE=1 npx vite build --config vite.trader-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-trader star-trader-test-page.html`.
+
+### Decisions this stage
+- Fight and warp are drawn on the canvas; the maths box is the hub's, so every kind of ladder question already shows and is spoken.
+- A trade asks a question when it is 150 credits or more, or on about 1 trade in 3. Config numbers, not code.
+- `acceptDeal` now refuses a friendly trader's load that doesn't fit the hold (found while wiring the screen).
+- The preview's maths is the ladder's first (times-table) questions for a pretend pupil; the real game uses the pupil's own focus (T.3).
+- Still on the dashboard? No: not in `registry.ts` yet (T.6).
+
+### Tests
+`npx vitest run src/games/trader shared/trader`: 29 pass (19 rules, 5 trade plan, 5 screen: title to market, button names, buying with the right money, star chart jump with a warp and the working shown, a wrong fuel sum not blocking). `tsc --noEmit` is clean. Checked by eye in Chromium at 1366 × 640 and 844 × 390 (title, market, star chart, fight with the maths box). Full `test:all`, build and the accessibility test are for T.6.
+
+### Not done / untested
+- No sound yet (T.6). No How to play (T.6). No Accessibility test file or contrast check by code yet (T.6).
+- Only checked in Chromium; WebKit (iPad/Safari) and a real Chromebook not yet.
+- The fight panel is squeezed on short screens; the ships stay in view, but the 844 × 390 phone fight screen wants a human look.
+- Market table scrolls on short screens (10 rows).
+- Pirate fights, shields and shots are tuned only by the T.1 simulator; whether the Flea (no laser: shield or run) is fun needs a human.
+
+### Next
+James tries the preview. Then T.3 (saving: migration, the `trader` function, loans, daily jumps, questions kept on the server). Nothing is applied or deployed without his words.

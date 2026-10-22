@@ -2,6 +2,7 @@ node_modules/
 dist/
 dist-preview/
 dist-preview-101/
+dist-preview-trader/
 .env
 .env.*
 !.env.example

@@ -63,6 +63,7 @@ export const LOOKS: Record<string, PlanetLook> = {
   Triton: L('Triton', 'ice', ['#f2cfd2', '#d3a4ab', '#9b6a73'], '#f2c2ca', { craters: 0.2, cap: true, size: 0.65 }),
   Charon: L('Charon', 'ice', ['#bfbfc4', '#8e8e96', '#5e5e68'], '#aaaab4', { craters: 0.5, size: 0.55 }),
   Titania: L('Titania', 'rocky', ['#aaa5a8', '#7a7578', '#4e4a4e'], '#9b969a', { craters: 0.8, size: 0.6 }),
+  'Your moon': L('Your moon', 'rocky', ['#d4d0c8', '#a09a90', '#6b665e'], '#e8e4da', { craters: 1, size: 0.9 }),
   Phobos: L('Phobos', 'rocky', ['#8c8279', '#615950', '#3a342e'], '#7c746b', { craters: 1, size: 0.45 }),
 };
 
