@@ -22,6 +22,8 @@ import { Bank, ClassPick, Healer, HeroPage, Inn, Shop, Training, type PlaceProps
 import { Arena, HallOfHeroes, NewsPage, Warriors } from './Social';
 import { HeroSprite, Icon, MonsterSprite } from './Sprite';
 import { withArticle } from './text';
+import { Stage } from './Stage';
+import { forestScene } from './art';
 import { useAsk, type Answer } from './useAsk';
 import './lord.css';
 
@@ -227,7 +229,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
   if (load.kind === 'closed') {
     return (
       <Frame backend={backend}>
-        <section className="lord-place" aria-label="Closed">
+        <section className="lord-place lord-panel" aria-label="Closed">
           <h2>The village gates are closed</h2>
           <p className="lord-lead">Dragon Maths is switched off for now. Ask your teacher when it will open. Your hero is safe.</p>
         </section>
@@ -237,7 +239,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
   if (load.kind === 'not-started') {
     return (
       <Frame backend={backend}>
-        <section className="lord-place" aria-label="Not open yet">
+        <section className="lord-place lord-panel" aria-label="Not open yet">
           <h2>The season has not started yet</h2>
           <p className="lord-lead">{load.message}</p>
         </section>
@@ -247,7 +249,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
   if (load.kind === 'offline' || !state) {
     return (
       <Frame backend={backend}>
-        <section className="lord-place" aria-label="Cannot connect">
+        <section className="lord-place lord-panel" aria-label="Cannot connect">
           <h2>Can’t connect</h2>
           <p className="lord-lead">{OFFLINE}</p>
           {waiting > 0 && <p className="lord-note">Your last fight is saved on this Chromebook and will be sent as soon as you are back online.</p>}
@@ -453,12 +455,16 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
       const event = EVENT_BY_ID[screen.eventId];
       body = event ? (
         <section className="lord-place" aria-label={event.title}>
-          <h2>{event.title}</h2>
-          <p className="lord-lead">{event.text}</p>
-          <p className="lord-soft">Events do not use up a forest fight.</p>
-          <button type="button" className="lord-btn lord-btn--hot" autoFocus disabled={busy} onClick={() => void resolveEvent(event.id)}>
-            {event.maths ? 'Have a go' : 'Continue'}
-          </button>
+          <Stage scene={forestScene(hero.level)} size="short">
+            <header className="lord-place__head"><h2 className="lord-sign">{event.title}</h2></header>
+          </Stage>
+          <div className="lord-panel">
+            <p className="lord-lead">{event.text}</p>
+            <p className="lord-soft">Events do not use up a forest fight.</p>
+            <button type="button" className="lord-btn lord-btn--hot" autoFocus disabled={busy} onClick={() => void resolveEvent(event.id)}>
+              {event.maths ? 'Have a go' : 'Continue'}
+            </button>
+          </div>
         </section>
       ) : null;
       break;
@@ -472,12 +478,16 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
       const sizeUp = fight.sizeUp && fight.kind === 'forest';
       body = (
         <section className="lord-place lord-encounter" aria-label="A monster appears">
-          <MonsterSprite monster={fight.start.monster} scale={9} />
+          <Stage scene={fight.kind === 'master' ? 'training' : forestScene(fight.start.monster.level)} size="tall">
+            <div className="lord-stage__foe lord-enter"><MonsterSprite monster={fight.start.monster} scale={11} /></div>
+          </Stage>
+          <div className="lord-panel">
           <h2>{withArticle(fight.start.monster.name).replace(/^a/, 'A')} appears!</h2>
           <p className="lord-lead">{fight.start.monster.intro}</p>
           <div className="lord-actions">
             {sizeUp && <button type="button" className="lord-btn lord-btn--hot" onClick={() => void beginFight(true)}>Size it up: a right answer = first hit ×{sizeItUpBonus('right')} and +{Math.round(SIZE_IT_UP_GOLD * 100)}% gold</button>}
             <button type="button" className={`lord-btn${sizeUp ? '' : ' lord-btn--hot'}`} autoFocus={!sizeUp} onClick={() => void beginFight(false)}>Fight!</button>
+          </div>
           </div>
         </section>
       );
@@ -497,7 +507,10 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
       const next = state.dragon?.next ?? 1;
       body = (
         <section className="lord-place lord-encounter" aria-label="The Red Dragon">
-          <MonsterSprite monster={{ id: 'dragon-1', name: 'Scorchtail, the Red Dragon', level: 13 }} scale={10} />
+          <Stage scene="lair" size="tall">
+            <div className="lord-stage__foe lord-breathe"><MonsterSprite monster={{ id: 'dragon-1', name: 'Scorchtail, the Red Dragon', level: 13 }} scale={13} /></div>
+          </Stage>
+          <div className="lord-panel">
           <h2>The Red Dragon’s lair</h2>
           <p className="lord-lead">
             The dragon has the village’s treasure, food and light. There are three fights, with a riddle before each one and a short rest between. You can’t run. If it goes badly, you wake at the healer and lose nothing but today’s try.
@@ -508,6 +521,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
               {next === 1 ? 'Go in' : `Carry on: fight ${next} of 3`}
             </button>
             <button type="button" className="lord-btn" onClick={toVillage}>Not yet</button>
+          </div>
           </div>
         </section>
       );
@@ -571,7 +585,7 @@ function Frame({ children, hero, hideStatus, backend, state }: { children: React
       </header>
       {hero && !hideStatus && <StatusBar hero={hero} />}
       {children}
-      <footer className="lord-credits">Based on the rules of Legend of the Red Dragon. Pictures: Kenney 1-Bit Pack (CC0).</footer>
+      <footer className="lord-credits">Based on the rules of Legend of the Red Dragon. Pictures: made for this game (see CREDITS) and Kenney 1-Bit Pack (CC0).</footer>
     </div>
   );
 }
@@ -601,10 +615,13 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
   const fight = state.openFight;
   return (
     <section className="lord-village" aria-label="The village">
+      <Stage scene="village" size="normal">
+        <div className="lord-stage__hero"><HeroSprite heroClass={hero.heroClass} scale={9} /></div>
+        <header className="lord-place__head"><h2 className="lord-sign">The village of Hollowbrook</h2></header>
+      </Stage>
+      <div className="lord-panel">
       <div className="lord-village__intro">
-        <HeroSprite heroClass={hero.heroClass} scale={6} />
         <div>
-          <h2>The village of Hollowbrook</h2>
           <p className="lord-soft">{today}. {hero.forestLeft > 0 ? `You have ${hero.forestLeft} forest fights left today.` : 'No forest fights left today. The village is still open!'}</p>
           {note && <p className="lord-note" role="status">{note}</p>}
           {waiting > 0 && (
@@ -650,6 +667,7 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
       </div>
       <p className="lord-soft">Your weapon: {WEAPONS[hero.weapon].name}.</p>
       <KeysSwitch />
+      </div>
     </section>
   );
 }

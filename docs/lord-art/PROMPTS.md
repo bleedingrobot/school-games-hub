@@ -127,55 +127,54 @@ on top of it.
 
 ## People (portrait)
 
-Each person is shown from the knees or waist up, facing us a little, on a plain softly-blurred background in the
-place they work (Claude puts the place picture behind them anyway).
+Each person is shown from the knees or waist up, facing us a little, on a plain flat dark-teal background with
+nothing else, so Claude can cut them out and stand them in the place picture.
 
 **P15 – Bryn the innkeeper**
 > Painted storybook fantasy art, warm light, soft mist, rich deep colours, detailed but clear, friendly for children
 > aged 8 to 11, nothing gory, no writing, letters or numbers anywhere in the picture. Same style as the earlier pictures. A painted portrait of a friendly middle-aged innkeeper: bald with
 > a big moustache, quilted padded vest over a green shirt, a white apron, polishing a wooden tankard with a cloth,
-> a warm smile. Background: blurred inn interior. Portrait.
+> a warm smile. On a plain flat dark-teal background with nothing else. Portrait.
 
 **P16 – Greta the blacksmith**
 > Painted storybook fantasy art, warm light, soft mist, rich deep colours, detailed but clear, friendly for children
 > aged 8 to 11, nothing gory, no writing, letters or numbers anywhere in the picture. Same style as the earlier pictures. A painted portrait of a strong, cheerful blacksmith woman with
-> rolled-up sleeves, a leather apron, a hammer over her shoulder, soot on her cheek, braided hair. Background:
-> blurred forge glow. Portrait.
+> rolled-up sleeves, a leather apron, a hammer over her shoulder, soot on her cheek, braided hair.
+> On a plain flat dark-teal background with nothing else. Portrait.
 
 **P17 – Old Fern the healer**
 > Painted storybook fantasy art, warm light, soft mist, rich deep colours, detailed but clear, friendly for children
 > aged 8 to 11, nothing gory, no writing, letters or numbers anywhere in the picture. Same style as the earlier pictures. A painted portrait of a kind old healer with long grey hair,
-> green robes, a satchel of herbs and a small glowing potion bottle in her hands, gentle smile. Background: blurred
-> herb shelves. Portrait.
+> green robes, a satchel of herbs and a small glowing potion bottle in her hands, gentle smile.
+> On a plain flat dark-teal background with nothing else. Portrait.
 
 **P18 – Mr Penny the banker**
 > Painted storybook fantasy art, warm light, soft mist, rich deep colours, detailed but clear, friendly for children
 > aged 8 to 11, nothing gory, no writing, letters or numbers anywhere in the picture. Same style as the earlier pictures. A painted portrait of a neat, slightly fussy banker with round
-> spectacles, a waistcoat with a watch chain, holding a small bag of coins and a quill. Background: blurred vault
-> door. Portrait.
+> spectacles, a waistcoat with a watch chain, holding a small bag of coins and a quill. On a plain flat dark-teal background with nothing else. Portrait.
 
 **P19 – The bard**
 > Painted storybook fantasy art, warm light, soft mist, rich deep colours, detailed but clear, friendly for children
 > aged 8 to 11, nothing gory, no writing, letters or numbers anywhere in the picture. Same style as the earlier pictures. A painted portrait of a cheerful young bard with a feathered cap,
-> a colourful patched cloak and a lute, mid-song with a big grin. Background: blurred inn fireplace. Portrait.
+> a colourful patched cloak and a lute, mid-song with a big grin. On a plain flat dark-teal background with nothing else. Portrait.
 
 **P20 – Knight hero**
 > Painted storybook fantasy art, warm light, soft mist, rich deep colours, detailed but clear, friendly for children
 > aged 8 to 11, nothing gory, no writing, letters or numbers anywhere in the picture. Same style as the earlier pictures. A painted portrait of a young hero (could be a boy or a girl) in
-> simple silver armour with a blue cloak, holding a sword and a round shield, brave and kind. Plain dark background.
-> Portrait.
+> simple silver armour with a blue cloak, holding a sword and a round shield, brave and kind.
+> On a plain flat dark-teal background with nothing else. Portrait.
 
 **P21 – Mage hero**
 > Painted storybook fantasy art, warm light, soft mist, rich deep colours, detailed but clear, friendly for children
 > aged 8 to 11, nothing gory, no writing, letters or numbers anywhere in the picture. Same style as the earlier pictures. A painted portrait of a young mage (could be a boy or a girl) in
 > purple robes with stars on the hem, holding a wooden staff with a softly glowing crystal, a small spark of magic in
-> the other hand. Plain dark background. Portrait.
+> the other hand. On a plain flat dark-teal background with nothing else. Portrait.
 
 **P22 – Trickster hero**
 > Painted storybook fantasy art, warm light, soft mist, rich deep colours, detailed but clear, friendly for children
 > aged 8 to 11, nothing gory, no writing, letters or numbers anywhere in the picture. Same style as the earlier pictures. A painted portrait of a young trickster (could be a boy or a
 > girl) in a green hooded cloak and leather jerkin, a cheeky grin, flipping a gold coin, a short dagger on the belt.
-> Plain dark background. Portrait.
+> On a plain flat dark-teal background with nothing else. Portrait.
 
 ## Masters (square)
 

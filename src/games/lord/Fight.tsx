@@ -5,6 +5,8 @@ import type { FightAction, FightState } from '../../../shared/lord/types';
 import { shortcutsOn } from './shortcuts';
 import { HeroSprite, Icon, MonsterSprite } from './Sprite';
 import { SKILL_HELP, narrate } from './text';
+import { Stage } from './Stage';
+import { forestScene } from './art';
 
 function Bar({ value, max, label, colour }: { value: number; max: number; label: string; colour: string }) {
   const share = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
@@ -31,11 +33,15 @@ export function FightScreen({ fight, onChange, onContinue, heroName = 'You' }: {
   const [lines, setLines] = useState<string[]>(() => [fight.monster.intro]);
   const skills = skillsFor(fight.heroClass);
   const busy = useRef(false);
+  // Which side was hit last, so its picture can give a little shake (off when the device asks for less motion).
+  const [hit, setHit] = useState<{ side: 'foe' | 'me'; n: number } | null>(null);
 
   function act(action: FightAction) {
     if (fight.over || busy.current) return;
     busy.current = true;
     const next = stepFight(fight, action);
+    if (next.monsterHp < fight.monsterHp) setHit((h) => ({ side: 'foe', n: (h?.n ?? 0) + 1 }));
+    else if (next.heroHp < fight.heroHp) setHit((h) => ({ side: 'me', n: (h?.n ?? 0) + 1 }));
     setLines((old) => [...old, ...narrate(next.log, fight.monster.name, dragon)].slice(-40));
     onChange(next, action);
     busy.current = false;
@@ -72,20 +78,25 @@ export function FightScreen({ fight, onChange, onContinue, heroName = 'You' }: {
 
   return (
     <section className="lord-fight" aria-label={`Fight: ${fight.monster.name}`}>
-      <div className="lord-fight__arena">
-        <div className="lord-fight__foe">
-          <MonsterSprite monster={fight.monster} scale={dragon ? 9 : 7} decorative />
-          <h2>{fight.monster.name}</h2>
-          <Bar value={fight.monsterHp} max={fight.monster.hp} label="Monster" colour="var(--lord-red)" />
-        </div>
+      <Stage scene={dragon ? 'lair' : fight.kind === 'master' ? 'training' : forestScene(fight.monster.level)} size="tall" className="lord-fight__arena">
         <div className="lord-fight__me">
-          <HeroSprite heroClass={fight.heroClass} scale={5} />
-          <h2>{heroName}</h2>
+          <div key={hit?.side === 'me' ? hit.n : 'me'} className={`lord-fight__figure${hit?.side === 'me' ? ' lord-hit' : ''}`}>
+            <HeroSprite heroClass={fight.heroClass} scale={8} />
+          </div>
+          <h2 className="lord-nameplate">{heroName}</h2>
           <Bar value={fight.heroHp} max={fight.heroMaxHp} label="Your health" colour="var(--lord-green)" />
           {fight.shield > 0 && <p className="lord-chip">Shield {fight.shield}</p>}
           {fight.round === 0 && fight.firstHitBonus > 1 && <p className="lord-chip">Weak spot found: first hit ×{fight.firstHitBonus}</p>}
         </div>
-      </div>
+        <div className="lord-fight__foe">
+          <div key={hit?.side === 'foe' ? hit.n : 'foe'} className={`lord-fight__figure${hit?.side === 'foe' ? ' lord-hit' : ''}${dragon ? ' lord-breathe' : ''}`}>
+            <MonsterSprite monster={fight.monster} scale={dragon ? 12 : 10} decorative />
+          </div>
+          <h2 className="lord-nameplate">{fight.monster.name}</h2>
+          <Bar value={fight.monsterHp} max={fight.monster.hp} label="Monster" colour="var(--lord-red)" />
+        </div>
+      </Stage>
+      <div className="lord-panel lord-fight__panel">
 
       <ul className="lord-log" ref={logRef} aria-live="polite" aria-label="What happened">
         {lines.map((l, i) => (
@@ -122,6 +133,7 @@ export function FightScreen({ fight, onChange, onContinue, heroName = 'You' }: {
           )}
         </div>
       )}
+      </div>
     </section>
   );
 }

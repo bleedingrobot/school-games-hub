@@ -12,17 +12,21 @@ import type { HallRow, LordBackend, NewsItem, WarriorRow } from '../../data/lord
 import type { Reply } from './Places';
 import { HeroSprite } from './Sprite';
 import { dayLabel, narrateDuel } from './text';
+import { Stage } from './Stage';
+import type { SceneId } from './art';
 
-function Page({ title, back, children }: { title: string; back: () => void; children: ReactNode }) {
+function Page({ title, back, children, scene }: { title: string; back: () => void; children: ReactNode; scene: SceneId }) {
   return (
     <section className="lord-place" aria-label={title}>
-      <header className="lord-place__head">
-        <h2>{title}</h2>
-        <button type="button" className="lord-btn" onClick={back}>
-          <kbd>Esc</kbd> Back to the village
-        </button>
-      </header>
-      {children}
+      <Stage scene={scene} size="short">
+        <header className="lord-place__head">
+          <h2 className="lord-sign">{title}</h2>
+          <button type="button" className="lord-btn" onClick={back}>
+            <kbd>Esc</kbd> Back to the village
+          </button>
+        </header>
+      </Stage>
+      <div className="lord-panel">{children}</div>
     </section>
   );
 }
@@ -77,7 +81,7 @@ export function Arena({ hero, act, say, back, busy }: {
   }
 
   return (
-    <Page title="The Arena" back={back}>
+    <Page title="The Arena" scene="arena" back={back}>
       <p className="lord-lead">
         Fight a copy of a classmate’s hero, or one of the village’s computer heroes, near your level. The computer plays it for you.
         Winning gives a little experience. <strong>Losing costs you nothing</strong>, and a classmate’s real hero is never hurt.
@@ -120,7 +124,7 @@ export function NewsPage({ backend, today, deeds, back }: { backend: LordBackend
   const days = new Map<string, NewsItem[]>();
   if (Array.isArray(rows)) for (const r of rows) days.set(r.day, [...(days.get(r.day) ?? []), r]);
   return (
-    <Page title="The Daily News" back={back}>
+    <Page title="The Daily News" scene="news" back={back}>
       <p className="lord-soft">Everything here is written by the village scribe from what really happened. Nobody can write into it.</p>
       {rows === null && <p className="lord-soft" role="status">Fetching the news…</p>}
       {rows === 'failed' && <Failed retry={retry} />}
@@ -145,7 +149,7 @@ export function Warriors({ backend, back }: { backend: LordBackend; back: () => 
   const fetcher = useCallback(() => backend.fetchWarriors(), [backend]);
   const { rows, retry } = useList<WarriorRow>(fetcher);
   return (
-    <Page title="The Warriors list" back={back}>
+    <Page title="The Warriors list" scene="arena" back={back}>
       <p className="lord-soft">
         This season’s best heroes: first whoever beat the Red Dragon most this season, then the highest level. Only levels and stars are shown, never maths.
       </p>
@@ -178,7 +182,7 @@ export function HallOfHeroes({ backend, back }: { backend: LordBackend; back: ()
   const seasons = new Map<number, HallRow[]>();
   if (Array.isArray(rows)) for (const r of rows) seasons.set(r.season, [...(seasons.get(r.season) ?? []), r]);
   return (
-    <Page title="The Hall of Heroes" back={back}>
+    <Page title="The Hall of Heroes" scene="hall" back={back}>
       <p className="lord-soft">Everyone who has beaten the Red Dragon, season by season. Heroes start again every season, but the Hall remembers.</p>
       {rows === null && <p className="lord-soft" role="status">Opening the Hall…</p>}
       {rows === 'failed' && <Failed retry={retry} />}

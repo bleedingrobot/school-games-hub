@@ -57,7 +57,7 @@ export function HowToPlayBody() {
 
 export function HowToPlay({ back }: { back: () => void }) {
   return (
-    <Place title="How to play" back={back}>
+    <Place title="How to play" scene="map" back={back}>
       <HowToPlayBody />
     </Place>
   );

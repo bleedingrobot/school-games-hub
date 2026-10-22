@@ -187,7 +187,7 @@ A game in the style of the old door game *Legend of the Red Dragon*: a few fores
 - **Hint:** every question has one hint button (two wrong choices greyed out, or "between 40 and 60"). A right answer after a hint earns about half the bonus. The hint is added in the shared question box, off unless a game asks for it, so other games are unchanged.
 - **How to play** is in the game: the `?` key, a button in the village, or a fold-out on the class choice.
 - **Keyboard and screen readers:** everything works with Tab, Enter and Escape. The letter keys (F, S, A…) are extras and can be switched off in the village. Fights and questions are read out; the pictures are decorative or named. It respects reduced motion.
-- **Pictures:** Kenney's 1-Bit Pack (CC0, [licence copy](src/games/lord/KENNEY-LICENSE.txt)). Headings use VT323 (SIL Open Font Licence, [licence copy](src/games/lord/VT323-OFL.txt)), a small file kept in this repo; nothing comes from outside.
+- **Pictures:** Kenney's 1-Bit Pack (CC0, [licence copy](src/games/lord/KENNEY-LICENSE.txt)). Painted pictures made for this game (see [src/games/lord/art/CREDITS.md](src/games/lord/art/CREDITS.md)). Headings use IM Fell English SC (SIL Open Font Licence, [licence copy](src/games/lord/IMFELL-OFL.txt)), a file kept in this repo; nothing comes from outside.
 
 ## Maths Monsters (the adventure game)
 
@@ -414,7 +414,7 @@ Then add its number to the `migration repair` note at the bottom of [docs/PLAN.m
 ## Licences
 
 - **Stockfish** (the chess engine) is GPL version 3. Its licence and a link to its source code sit next to it in [public/stockfish/](public/stockfish/NOTICE.md). Keep them there if Stockfish is updated.
-- **Dragon Maths** pictures are Kenney's 1-Bit Pack (CC0) and its headings use **VT323** (SIL Open Font Licence 1.1). Both licence copies sit next to the files in [src/games/lord/](src/games/lord/). The rules are adapted from *Legend of the Red Dragon* (Seth Able Robinson), as ported in *LORD.ts* (talisto, GPL-3); no code or text was copied.
+- **Dragon Maths** pictures are Kenney's 1-Bit Pack (CC0) and its headings use **IM Fell English SC** (SIL Open Font Licence 1.1); its painted pictures were made for it by James with an image AI (src/games/lord/art/CREDITS.md). Both licence copies sit next to the files in [src/games/lord/](src/games/lord/). The rules are adapted from *Legend of the Red Dragon* (Seth Able Robinson), as ported in *LORD.ts* (talisto, GPL-3); no code or text was copied.
 - **chess.js** is BSD-2-Clause. The checkers rules and bots are our own code. **Chess piece pictures** are Colin M.L. Burnett's "cburnett" set, GPL ([notice](src/games/chess/pieces/NOTICE.md)).
 
 ## Privacy and safety

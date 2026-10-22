@@ -12,6 +12,8 @@ import type { Asked, AskOptions } from './useAsk';
 import { ArmourSprite, HeroSprite, Icon, MonsterSprite, WeaponSprite } from './Sprite';
 import { ICON_TILES } from './tileMap';
 import { BARD_SONGS, dayHash } from './text';
+import { Portrait, Stage } from './Stage';
+import type { PersonId, SceneId } from './art';
 import type { MomentId } from '../../../shared/lord/maths';
 
 export type Ask = (moment: MomentId, options: AskOptions) => Promise<Asked>;
@@ -29,18 +31,27 @@ export interface PlaceProps {
   busy: boolean;
 }
 
-export function Place({ title, children, back, tile }: { title: string; children: ReactNode; back: () => void; tile?: keyof typeof ICON_TILES }) {
+/**
+ * One place in the village: its painting at the top with the person who works there standing in it, the name on a
+ * sign, and what you can do there on a parchment panel below.
+ */
+export function Place({ title, children, back, tile, scene = 'village', person }: {
+  title: string; children: ReactNode; back: () => void; tile?: keyof typeof ICON_TILES; scene?: SceneId; person?: PersonId;
+}) {
   return (
     <section className="lord-place" aria-label={title}>
-      <header className="lord-place__head">
-        <h2>
-          {tile && <Icon name={tile} scale={3} />} {title}
-        </h2>
-        <button type="button" className="lord-btn" onClick={back}>
-          <kbd>Esc</kbd> Back to the village
-        </button>
-      </header>
-      {children}
+      <Stage scene={scene} size="short">
+        {person && <Portrait who={person} />}
+        <header className="lord-place__head">
+          <h2 className="lord-sign">
+            {tile && <Icon name={tile} scale={2} />} {title}
+          </h2>
+          <button type="button" className="lord-btn" onClick={back}>
+            <kbd>Esc</kbd> Back to the village
+          </button>
+        </header>
+      </Stage>
+      <div className="lord-panel">{children}</div>
     </section>
   );
 }
@@ -68,7 +79,7 @@ export function Shop({ hero, act, ask, say, back, busy }: PlaceProps) {
   }
 
   return (
-    <Place title="The Blacksmith and Armourer" tile="sword" back={back}>
+    <Place title="The Blacksmith and Armourer" tile="sword" scene="shop" person="shop" back={back}>
       <p className="lord-lead">
         Your old gear sells back for half price. The best gear needs enough base {stat}: you get that by beating your masters.
         {kindnessDiscount(hero) > 0 && ` Your kindness gives ${Math.round(kindnessDiscount(hero) * 100)}% off.`}
@@ -133,7 +144,7 @@ export function Healer({ hero, act, ask, say, back, busy }: PlaceProps) {
   }
 
   return (
-    <Place title="The Healer’s Hut" tile="heart" back={back}>
+    <Place title="The Healer’s Hut" tile="heart" scene="healer" person="healer" back={back}>
       <p className="lord-lead">
         Health: <strong>{hero.hp} / {hero.maxHp}</strong>. Every point costs <strong>{price}</strong> gold. All your health comes back free tomorrow.
       </p>
@@ -172,7 +183,7 @@ export function Bank({ hero, state, act, ask, say, back, busy }: PlaceProps) {
   }
 
   return (
-    <Place title="The Bank" tile="coin" back={back}>
+    <Place title="The Bank" tile="coin" scene="bank" person="bank" back={back}>
       <p className="lord-lead">Gold in the bank is safe. If you lose a fight, only the gold you are carrying is lost.</p>
       <p className="lord-big">
         <Icon name="gold" /> Carrying <strong>{hero.gold}</strong> · In the bank <strong>{hero.bank}</strong>
@@ -231,8 +242,8 @@ export function Inn({ state, act, ask, say, back, busy, today }: PlaceProps & { 
   }
 
   return (
-    <Place title="The Inn" tile="potion" back={back}>
-      <blockquote className="lord-song"><p>The bard sings:</p>{song.split(' / ').map((l) => <p key={l}>{l}</p>)}</blockquote>
+    <Place title="The Inn" tile="potion" scene="inn" person="inn" back={back}>
+      <blockquote className="lord-song"><Portrait who="bard" /><p>The bard sings:</p>{song.split(' / ').map((l) => <p key={l}>{l}</p>)}</blockquote>
       <div className="lord-actions">
         <button type="button" className="lord-btn lord-btn--hot" disabled={state.riddleDone || busy} onClick={() => void riddle()}>
           Riddle of the day {state.riddleDone && '(done today)'}
@@ -279,7 +290,7 @@ export function Training({ hero, back, onChallenge, onDragon }: Pick<PlaceProps,
   const share = Number.isFinite(need) ? Math.max(0, Math.min(1, (hero.exp - prev) / (need - prev))) : 1;
 
   return (
-    <Place title="The Training Grounds" tile="shield" back={back}>
+    <Place title="The Training Grounds" tile="shield" scene="training" back={back}>
       {master ? (
         <div className="lord-master">
           <MonsterSprite monster={{ id: `master-${master.level}`, name: master.name, level: master.level }} scale={7} />
@@ -318,7 +329,7 @@ export function Training({ hero, back, onChallenge, onDragon }: Pick<PlaceProps,
 export function HeroPage({ hero, stats, back }: { hero: Hero; stats?: Stats; back: () => void }) {
   const need = expNeeded(hero.level);
   return (
-    <Place title="Your hero" back={back}>
+    <Place title="Your hero" scene="map" back={back}>
       <div className="lord-hero">
         <HeroSprite heroClass={hero.heroClass} scale={8} />
         <dl className="lord-stats">
@@ -354,7 +365,12 @@ export function HeroPage({ hero, stats, back }: { hero: Hero; stats?: Stats; bac
 export function ClassPick({ onPick }: { onPick: (c: HeroClass) => void }) {
   return (
     <section className="lord-place" aria-label="Choose your class">
-      <h2>Welcome, hero!</h2>
+      <Stage scene="village" size="short">
+        <header className="lord-place__head">
+          <h2 className="lord-sign">Welcome, hero!</h2>
+        </header>
+      </Stage>
+      <div className="lord-panel">
       <p className="lord-lead">
         The Red Dragon has stolen the village’s treasure, its food and its light. Someone has to get them back. Pick the kind of hero you want to be. You can change next season.
       </p>
@@ -366,6 +382,7 @@ export function ClassPick({ onPick }: { onPick: (c: HeroClass) => void }) {
             <span>{CLASSES[c].blurb}</span>
           </button>
         ))}
+      </div>
       </div>
     </section>
   );
