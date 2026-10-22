@@ -97,7 +97,7 @@ before merging: a game started on the old site and saved after the deploy is jud
 
 **Went live 22 Oct 2026 evening (James: "go").** `save-bot-game`, `space-game` and `lord` deployed (each answers 401 JSON signed out); site published by merging the PR.
 
-## 5. Stage S.3 results (22 Oct 2026, branch `question-skips-3`, NOT live)
+## 5. Stage S.3 results (22 Oct 2026, branch `question-skips-3`)
 
 **Numbers first (step 0, read-only, 22 Oct afternoon).** Too early to judge S.2: `question_log` had only 20 notes, all one
 person on the warm-up (looks like a test), because no class had played since S.1 went live. Dragon Maths "Size it up" over
@@ -145,3 +145,7 @@ with `db query --linked`, check every row is `on` and signed-out callers are ref
 1100 to the repair note in `docs/PLAN.md`, open and merge the PR, watch "Test and publish" go green, check the live JS has
 "Skips left". No functions to deploy. The site can safely go out before or after the migration: with no column, the
 switch reads as On.
+
+**Went live 22 Oct 2026 (James: "all yes, proceed").** Migration applied to the live database with `db query --linked`;
+checked: all 4 settings rows `on`, `teacher_set_question_skips` refused signed out (42501; anon has no execute, signed-in
+users do). PLAN.md repair note now includes 1100. Site published by merging the PR. No functions deployed.
