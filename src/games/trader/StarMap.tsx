@@ -7,6 +7,8 @@
  */
 import { useMemo, useState } from 'react';
 import { eventLine, newsAbout, type NewsItem } from '../../../shared/trader/news';
+import { pricesAt } from '../../../shared/trader/priceGuide';
+import type { Pushes } from '../../../shared/trader/schoolMarket';
 import { GOODS, GOVERNMENTS, GRID_HALF, GRID_SIZE, RESOURCES, SIZE_NAMES, SHIPS } from '../../../shared/trader/config';
 import { chartPoint, coordText, distance, signed, type Galaxy, type Planet } from '../../../shared/trader/galaxy';
 import { isBanned } from '../../../shared/trader/market';
@@ -38,12 +40,14 @@ export function planetIcon(name: string): string {
 const VIEW = GRID_SIZE - 1 + 3;
 const pos = (n: number): number => ((n + 1.5) / VIEW) * 100;
 
-export function MapPanel({ galaxy, t, busy, news = [], onJump, onRefuel }: {
+export function MapPanel({ galaxy, t, busy, news = [], pushes, onJump, onRefuel }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
   /** The school news today (a planet's own lines go on its card). */
   news?: readonly NewsItem[];
+  /** The school's pushes on prices now (for a planet's price list). */
+  pushes?: Pushes;
   onJump: (dest: number) => void;
   onRefuel: (units: number) => void;
 }) {
@@ -154,7 +158,7 @@ export function MapPanel({ galaxy, t, busy, news = [], onJump, onRefuel }: {
             onJump={() => target && onJump(target.id)}
             here0={here0}
           />
-          {pickedPlanet ? <PlanetCard galaxy={galaxy} t={t} dest={pickedPlanet} news={newsAbout(news, pickedPlanet.id).filter((n) => n.kind !== 'event')} /> : <p className="st-sub">Tap a planet to read about it and see its coordinates.</p>}
+          {pickedPlanet ? <PlanetCard galaxy={galaxy} t={t} dest={pickedPlanet} news={newsAbout(news, pickedPlanet.id).filter((n) => n.kind !== 'event')} pushes={pushes} /> : <p className="st-sub">Tap a planet to read about it and see its coordinates.</p>}
         </div>
       </div>
     </section>
@@ -248,7 +252,7 @@ function JumpBox(props: {
   );
 }
 
-function PlanetCard({ galaxy, t, dest, news }: { galaxy: Galaxy; t: Trader; dest: Planet; news: readonly NewsItem[] }) {
+function PlanetCard({ galaxy, t, dest, news, pushes }: { galaxy: Galaxy; t: Trader; dest: Planet; news: readonly NewsItem[]; pushes?: Pushes }) {
   const gov = GOVERNMENTS[dest.government];
   const eventText = eventLine(galaxy, dest.id, t.day);
   const banned = GOODS.filter((_, i) => isBanned(dest, i));
@@ -267,6 +271,38 @@ function PlanetCard({ galaxy, t, dest, news }: { galaxy: Galaxy; t: Trader; dest
       {banned.length > 0 && <p className="st-warn">🚫 Banned here: {banned.join(' and ')}. Customs will take them.</p>}
       {eventText && <p className="st-news">📰 {eventText}</p>}
       {news.map((n) => <p key={`${n.good}-${n.kind}`} className="st-news">📰 {n.text}</p>)}
+      <PriceList galaxy={galaxy} t={t} dest={dest} pushes={pushes} />
+    </div>
+  );
+}
+
+/** A planet's prices today, and the profit on each good if you buy it where you are now and sell it there. */
+function PriceList({ galaxy, t, dest, pushes }: { galaxy: Galaxy; t: Trader; dest: Planet; pushes?: Pushes }) {
+  const lines = useMemo(() => pricesAt(galaxy, dest.id, t.day, pushes), [galaxy, dest.id, t.day, pushes]);
+  if (dest.id === t.location) return null;
+  return (
+    <div className="st-prices">
+      <h4 className="st-h4">Prices on {dest.name} today</h4>
+      <table>
+        <thead>
+          <tr><th scope="col">Good</th><th scope="col">They pay</th><th scope="col">Buy here</th><th scope="col">Profit each</th></tr>
+        </thead>
+        <tbody>
+          {lines.map((line) => {
+            const hereBuy = t.market[line.good]?.buy ?? 0;
+            const profit = line.sell > 0 && hereBuy > 0 ? line.sell - hereBuy : null;
+            return (
+              <tr key={line.good} className={line.sell > 0 ? '' : 'st-prices__off'}>
+                <th scope="row"><span aria-hidden="true">{goodIcon(line.good)}</span> {GOODS[line.good]}</th>
+                <td>{line.sell > 0 ? line.sell : '—'}</td>
+                <td>{hereBuy > 0 ? hereBuy : '—'}</td>
+                <td className={profit === null ? '' : profit > 0 ? 'st-prices__win' : 'st-prices__lose'}>{profit === null ? '—' : profit > 0 ? `+${profit}` : profit}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p className="st-soft st-prices__note">Today's prices. They can change before you land if lots of traders buy or sell there.</p>
     </div>
   );
 }

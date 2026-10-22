@@ -8,6 +8,8 @@ import { marketFor } from '../../../shared/trader/market';
 import type { Action } from '../../../shared/trader/server';
 import { NEWS_MAX } from '../../../shared/trader/config';
 import { newsAbout, type NewsItem } from '../../../shared/trader/news';
+import { bestSales } from '../../../shared/trader/priceGuide';
+import type { Pushes } from '../../../shared/trader/schoolMarket';
 import { fuelCost, hasShipyard, holdsOf, tradeInValue, usedHolds, type Trader } from '../../../shared/trader/state';
 import { drawShip } from './art/ships';
 import { goodIcon } from './text';
@@ -29,12 +31,14 @@ function averages(galaxy: Galaxy, day: number): number[] {
   return sums.map((s) => (s.n ? s.total / s.n : 0));
 }
 
-export function TradePanel({ galaxy, t, busy, news = [], onTrade }: {
+export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
   /** The school news today. */
   news?: readonly NewsItem[];
+  /** The school's pushes on prices now (for "sells best at"). */
+  pushes?: Pushes;
   /** Carry out the plan (the game may ask a maths check first). Gives a message to show, or null. */
   onTrade: (plan: number[]) => Promise<string | null>;
 }) {
@@ -45,6 +49,8 @@ export function TradePanel({ galaxy, t, busy, news = [], onTrade }: {
   const normal = useMemo(() => marketFor(galaxy, t.location, t.day), [galaxy, t.location, t.day]);
   const local = newsAbout(news, t.location).filter((n) => n.kind !== 'event');
   const headlines = news.slice(0, NEWS_MAX);
+  // Where each good sells best within a full tank's reach (today's prices; they can change before you land).
+  const best = useMemo(() => bestSales(galaxy, t, pushes), [galaxy, t, pushes]);
   // A new planet (or a finished trade) starts a fresh plan.
   useEffect(() => setPlan(emptyPlan()), [t.location, t.day, t.jumpNo]);
   const here = runPlan(t, plan);
@@ -106,7 +112,11 @@ export function TradePanel({ galaxy, t, busy, news = [], onTrade }: {
           const moved = base > 0 && line.sell > 0 && Math.abs(line.sell - base) * 100 >= base * 3 ? (line.sell < base ? 'down' : 'up') : '';
           return (
             <div key={name} className={`st-row ${can ? '' : 'st-row--off'}`} role="row">
-              <span role="cell" className="st-good"><span aria-hidden="true">{goodIcon(line.good)}</span> {name}{tag && <em className={`st-tag st-tag--${tag}`}>{tag}</em>}{moved && <em className={`st-tag st-tag--${moved}`} title={moved === 'down' ? 'Lots of traders sold this here, so the price went down' : 'Lots of traders bought this here, so the price went up'}>{moved === 'down' ? '📉 lots sold' : '📈 lots bought'}</em>}</span>
+              <span role="cell" className="st-good"><span aria-hidden="true">{goodIcon(line.good)}</span> {name}{tag && <em className={`st-tag st-tag--${tag}`}>{tag}</em>}{moved && <em className={`st-tag st-tag--${moved}`} title={moved === 'down' ? 'Lots of traders sold this here, so the price went down' : 'Lots of traders bought this here, so the price went up'}>{moved === 'down' ? '📉 lots sold' : '📈 lots bought'}</em>}
+                {best[line.good] && best[line.good]!.sell > Math.max(line.sell, 0) && (line.buy > 0 || t.cargo[line.good] > 0) && (
+                  <small className="st-best">Sells best: {galaxy.planets[best[line.good]!.planet].name} {best[line.good]!.sell}{line.buy > 0 && best[line.good]!.sell > line.buy ? ` (+${best[line.good]!.sell - line.buy} each)` : ''}</small>
+                )}
+              </span>
               <span role="cell" className="st-num" data-label="Buy at">{line.buy > 0 ? line.buy : '—'}</span>
               <span role="cell" className="st-num" data-label="Sell at">{line.sell > 0 ? line.sell : '—'}</span>
               <span role="cell" className="st-num" data-label="Stock">{line.buy > 0 ? line.stock : '—'}</span>

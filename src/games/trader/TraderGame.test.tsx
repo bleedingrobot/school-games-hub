@@ -185,4 +185,17 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
     expect(screen.getByText('📉 lots sold')).toBeTruthy();
     expect(screen.getByText(/School news \(\d+\)/)).toBeTruthy();
   });
+
+  it('shows where each good sells best, and a planet\'s prices with the profit on its star chart card', async () => {
+    play();
+    await market();
+    expect((await screen.findAllByText(/^Sells best: \w+ \d+/)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/\(\+\d+ each\)/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('tab', { name: 'Star chart' }));
+    const planets = await screen.findAllByRole('button', { pressed: false });
+    fireEvent.click(planets.find((b) => b.className.includes('st-planet') && !b.className.includes('st-planet--here'))!);
+    const table = await screen.findByRole('table');
+    expect(within(table).getByRole('columnheader', { name: 'Profit each' })).toBeTruthy();
+    expect(within(table).getAllByRole('row')).toHaveLength(11);
+  });
 });

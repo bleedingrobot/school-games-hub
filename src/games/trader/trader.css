@@ -241,3 +241,20 @@
 @media (prefers-reduced-motion: reduce) {
   .st-btn, .st-meter__fill { transition: none; }
 }
+
+/* What other planets pay: the market hint and the planet card's price list */
+.st-best { flex-basis: 100%; font-weight: 600; font-size: 0.78rem; color: #a7f3d0; }
+.st-prices { margin-top: 10px; }
+.st-h4 { margin: 0 0 4px; font-size: 1rem; color: var(--st-gold); }
+.st-prices table { width: 100%; border-collapse: collapse; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.st-prices th, .st-prices td { padding: 3px 6px; text-align: right; border-bottom: 1px solid #26305a; }
+.st-prices th[scope='row'], .st-prices thead th:first-child { text-align: left; }
+.st-prices thead th { color: var(--st-soft); font-size: 0.78rem; font-weight: 700; }
+.st-prices__off { opacity: 0.55; }
+.st-prices__win { color: var(--st-good); font-weight: 800; }
+.st-prices__lose { color: var(--st-bad); }
+.st-prices__note { margin: 6px 0 0; font-size: 0.8rem; }
+/* On a narrow phone the top strip wraps onto two rows; start the panels below it so the tabs aren't covered. */
+@media (max-width: 560px) {
+  .st-main { top: 104px; }
+}

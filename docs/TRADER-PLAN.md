@@ -564,3 +564,9 @@ Bots now have their own tastes (so a class doesn't all pick the very same trip) 
 - Not tried with the real database under a real class (row locking is reasoned, not load-tested).
 - **Found while James tried the preview (22 Oct):** a pupil can't see what other planets pay, so they can't find a profitable trip (the bots could). Needs a decision before T.5; see below.
 - Go-live additions for T.7: apply `20261022001100` after `20261022001000`; deploy `trader`; check pupils get 42501 on `trader_markets`, `trader_news`, `trader_market()`.
+
+### Change after James tried T.4 (22 Oct 2026): what other planets pay
+James couldn't find a profit: nothing showed what other planets pay (the simulator's bots could see every price). **He chose two fixes**, both built:
+1. **A planet's prices on its star chart card**: "They pay", "Buy here" and "Profit each" for every good (`shared/trader/priceGuide.ts`, `PriceList` in `StarMap.tsx`).
+2. **"Sells best" on each good in the market**: the planet within a full tank's reach that pays most today, and "+N each" when that beats the price here.
+Both use today's prices with the school's market, so the server now also sends the school's pushes (`prices`: [planet, good, push]) in the load and jump replies it already sends; still no new requests. A note on the card says prices can change before you land. Also fixed an older phone bug: the top strip wrapped onto two rows and covered the tabs at phone width. Tests: 3 new (best price within reach and at least one profitable trade from the start; school pushes included; the screen shows the hint and the card's price list); 80 Star Trader tests and the whole project pass (two space-game screen tests timed out once under load and pass alone).

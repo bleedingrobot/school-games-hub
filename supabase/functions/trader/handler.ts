@@ -209,6 +209,8 @@ export function makeHandler(services: Services) {
     /** The school's market today. If it can't be read, prices are normal and there is no news (the game goes on). */
     const readMarket = async (): Promise<SchoolView> => (await services.market(player, today)) ?? EMPTY_VIEW;
     const news = (view: SchoolView): NewsItem[] => newsFor(galaxy, today, view);
+    /** The school's pushes right now, so the star chart and the market can show what other planets pay (they can still change before you land). */
+    const prices = (view: SchoolView): [number, number, number][] => view.pushes.map(([p, g, push]) => [p, g, push]);
 
     /** Today's question list, made on first use. Null when maths is off or can't be made. */
     const dayQuestions = async (): Promise<StoredDay | null | 'busy'> => {
@@ -263,6 +265,7 @@ export function makeHandler(services: Services) {
           questions,
           settings: { jumpsPerDay: settings.jumpsPerDay, loans: settings.loans, maths: settings.maths },
           news: news(view),
+          prices: prices(view),
         });
       }
       return reply(409, { error: 'Your game changed on another screen. Please try again.' });
@@ -331,7 +334,7 @@ export function makeHandler(services: Services) {
     // A save always makes the next version, so the reply kept for a repeated request already has the right one.
     const { ok: _ok, pushes: market = [], ...outcome } = result;
     void _ok;
-    const finalReply = { ...outcome, version: saved.version + 1, ...(landed ? { news: news(landed) } : {}) };
+    const finalReply = { ...outcome, version: saved.version + 1, ...(landed ? { news: news(landed), prices: prices(landed) } : {}) };
     const newVersion = await services.save(player, {
       expectedVersion: saved.version,
       game: result.game,

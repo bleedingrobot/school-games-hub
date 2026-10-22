@@ -56,6 +56,8 @@ export interface Loaded {
   settings: { jumpsPerDay: number; loans: boolean; maths: boolean };
   /** The school news today (biggest first). */
   news?: NewsItem[];
+  /** The school's pushes on prices right now: [planet, good, push]. */
+  prices?: [number, number, number][];
 }
 
 /** What a move came to. */
@@ -69,8 +71,9 @@ export interface MoveReply {
   fight?: { fight: Fight; tier: number; over: boolean };
   junk?: { steeredWell: boolean };
   deal?: { took: boolean };
-  /** After a jump: the school news, read as the ship landed. */
+  /** After a jump: the school news and pushes, read as the ship landed. */
   news?: NewsItem[];
+  prices?: [number, number, number][];
 }
 
 export type ApiResult<T> =

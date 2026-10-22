@@ -268,6 +268,7 @@ describe('the school\'s shared market (stage T.4)', () => {
     const normal = marketFor(galaxy, dest, TODAY)[WATER];
     expect(r.body.game.t.market[WATER].sell).toBe(pushedLine(normal, -(MARKET_CAP_BP - MARKET_QUIET_BP)).sell);
     expect(r.body.news[0]).toMatchObject({ planet: dest, good: WATER, kind: 'sold' });
+    expect(r.body.prices).toContainEqual([dest, WATER, -MARKET_CAP_BP]);
     expect(JSON.stringify(r.body.news)).not.toMatch(/ana|ben/);
     // Moves without a jump don't read the market.
     await w.call({ action: 'act', requestId: w.id(), version: r.body.version, actions: [] });

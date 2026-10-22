@@ -10,6 +10,7 @@ import { ASK_EVERY, BIG_TRADE_CREDITS, GOVERNMENTS, MOON_PRICE, PIRATE_TIERS, SH
 import type { FightAction } from '../../../shared/trader/fight';
 import { coordText, makeGalaxy, type Galaxy } from '../../../shared/trader/galaxy';
 import type { NewsItem } from '../../../shared/trader/news';
+import { schoolPushes } from '../../../shared/trader/priceGuide';
 import { runPlan } from '../../../shared/trader/plan';
 import { applyBatch, type Action, type Game, type Mark, type Settings } from '../../../shared/trader/server';
 import { type ApiResult, type Loaded, type MoveReply, type TraderApi } from '../../data/trader';
@@ -52,6 +53,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   const [fightLog, setFightLog] = useState<string[]>([]);
   const [fightBusy, setFightBusy] = useState(false);
   const [news, setNews] = useState<NewsItem[]>([]);
+  const [prices, setPrices] = useState<[number, number, number][]>([]);
+  const pushes = useMemo(() => schoolPushes(prices), [prices]);
   const view = useRef<SpaceView | null>(null);
   const heading = useRef<HTMLDivElement>(null);
   const lock = useRef(false);
@@ -65,6 +68,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
     if (r.ok) {
       setLoaded(r.value);
       setNews(r.value.news ?? []);
+      setPrices(r.value.prices ?? []);
       setQueue([]);
       setProblem(null);
     } else setProblem({ kind: r.kind, message: r.message });
@@ -117,6 +121,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
     if (r.ok) {
       setLoaded((L) => (L ? { ...L, game: r.value.game, version: r.value.version } : L));
       if (r.value.news) setNews(r.value.news);
+      if (r.value.prices) setPrices(r.value.prices);
       setQueue([]);
       return r;
     }
@@ -370,10 +375,10 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
                   ))}
                 </div>
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
-                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} onTrade={doTrade} />}
+                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} onTrade={doTrade} />}
                 {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} onAct={act} onMoon={() => void buyMoon()} />}
                 {tab === 'bank' && <BankPanel t={t} busy={panelBusy} loans={settings.loans} onAct={act} />}
-                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} news={news} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
+                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
                 {note && <p className="st-note st-note--float" role="status">{note}</p>}
                 {t.jumpsLeft < 1 && <p className="st-note st-note--float">That is all your jumps for today. You can still trade here. Come back tomorrow!</p>}
               </>

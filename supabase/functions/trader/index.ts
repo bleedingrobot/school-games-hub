@@ -8439,6 +8439,12 @@ function makeHandler(services) {
 		/** The school's market today. If it can't be read, prices are normal and there is no news (the game goes on). */
 		const readMarket = async () => await services.market(player, today) ?? EMPTY_VIEW;
 		const news = (view) => newsFor(galaxy, today, view);
+		/** The school's pushes right now, so the star chart and the market can show what other planets pay (they can still change before you land). */
+		const prices = (view) => view.pushes.map(([p, g, push]) => [
+			p,
+			g,
+			push
+		]);
 		/** Today's question list, made on first use. Null when maths is off or can't be made. */
 		const dayQuestions = async () => {
 			if (!settings.maths) return null;
@@ -8494,7 +8500,8 @@ function makeHandler(services) {
 						loans: settings.loans,
 						maths: settings.maths
 					},
-					news: news(view)
+					news: news(view),
+					prices: prices(view)
 				});
 			}
 			return reply(409, { error: "Your game changed on another screen. Please try again." });
@@ -8570,7 +8577,10 @@ function makeHandler(services) {
 		const finalReply = {
 			...outcome,
 			version: saved.version + 1,
-			...landed ? { news: news(landed) } : {}
+			...landed ? {
+				news: news(landed),
+				prices: prices(landed)
+			} : {}
 		};
 		const newVersion = await services.save(player, {
 			expectedVersion: saved.version,
