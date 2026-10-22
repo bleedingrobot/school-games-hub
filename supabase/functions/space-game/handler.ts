@@ -11,7 +11,9 @@
  */
 import { makeCode, normaliseCode } from '../../../shared/multiplayer';
 import type { FactAnswer, FactStats } from '../../../shared/maths/leitner';
+import { sameAnswer } from '../../../shared/maths/banded';
 import type { Question } from '../../../shared/maths/skillPack';
+import { keptMs } from '../../../shared/maths/config';
 import { isFocusKey, solveParts, type MathsFocus } from '../../../shared/maths/focus';
 import { canCharge, MAX_PLAYERS, MIN_PLAYERS, placesFor, SpaceRuleError, type SpaceAction, type SpaceEvent, type SpaceState } from '../../../shared/space/engine';
 import { makeSpacePack, pickSpaceQuestion, type MathsQuestionSettings } from '../../../shared/space/mathsQuestion';
@@ -551,8 +553,8 @@ async function playerTurn({ services, me, body }: Context, action: SpaceAction |
 
 /** What a student sees of a question: everything but the answer. */
 function publicQuestion(q: Question) {
-  const { id, skill, kind, parts, spoken, choices } = q;
-  return { id, skill, kind, parts, spoken, ...(choices ? { choices } : {}) };
+  const { id, skill, kind, parts, spoken, choices, choiceLabels, input, maxLength } = q;
+  return { id, skill, kind, parts, spoken, ...(choices ? { choices } : {}), ...(choiceLabels ? { choiceLabels } : {}), ...(input === 'decimal' ? { input } : {}), ...(maxLength ? { maxLength } : {}) };
 }
 
 /**
@@ -560,7 +562,7 @@ function publicQuestion(q: Question) {
  * saved before the maths focus existed is checked the old way: worked out from how it was shown.
  */
 function markStored(q: Question): { answer: number; key: string } | null {
-  if (q && Number.isInteger(q.answer) && typeof q.factKey === 'string' && isFocusKey(q.factKey)) return { answer: q.answer, key: q.factKey };
+  if (q && Number.isFinite(q.answer) && typeof q.factKey === 'string' && isFocusKey(q.factKey)) return { answer: q.answer, key: q.factKey };
   const solved = solveParts(q?.parts);
   return solved ? { answer: solved.answer, key: solved.keys[0] } : null;
 }
@@ -609,7 +611,7 @@ async function askQuestion({ services, me, body }: Context): Promise<SpaceGameRo
 /** The student's typed answer, marked here. */
 async function answerQuestion({ services, me, body }: Context): Promise<SpaceGameRow | WithGame> {
   const typed = body.answer;
-  if (!isKind(body.kind) || !Number.isInteger(typed) || (typed as number) < 0 || (typed as number) > 1000) throw new Refused('bad-request');
+  if (!isKind(body.kind) || typeof typed !== 'number' || !Number.isFinite(typed) || typed < 0 || typed > 1e9) throw new Refused('bad-request');
   const { game, seat } = await loadMyGame(services, me, body.gameId);
   mustBePlaying(game);
   await mustBeAllowed(services, me, true, otherPlayers(game, me));
@@ -620,11 +622,11 @@ async function answerQuestion({ services, me, body }: Context): Promise<SpaceGam
   if (stored.answered) throw new Refused('illegal', { error: 'You’ve already answered that one.' });
   const solved = markStored(stored.question);
   if (!solved) throw new Refused('failed');
-  const right = typed === solved.answer;
+  const right = sameAnswer(typed, solved.answer);
   const now = services.now();
-  // How long it took, as far as the server can tell: never more than the time since it was asked.
+  // How long it took, as far as the server can tell: never more than the time since it was asked (nor the longest kept).
   const claimed = typeof body.ms === 'number' && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : Infinity;
-  const ms = Math.round(Math.min(claimed, now - stored.askedAt));
+  const ms = keptMs(Math.min(claimed, now - stored.askedAt));
   const answer: FactAnswer = { key: solved.key, correct: right, ms, at: now };
   const once = `${game.id}:${seat}:${kind}:${stamp}`;
   const reply = { right, answer: solved.answer };

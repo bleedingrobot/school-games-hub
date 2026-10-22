@@ -22,13 +22,17 @@ import { ClassWarp } from './pages/ClassWarp';
 import { MyClasses } from './pages/MyClasses';
 import { clanQuest } from './games/clans/game';
 import { Teacher } from './pages/Teacher';
+import { useSkipRuleSync } from './data/questionSkips';
 import { SoundProvider } from './sound';
 import { trainingOn } from './training/switch';
+import { GameGate } from './training/TrainFirst';
 
 // Training has its own screens and styles, so it loads only when someone opens it.
 const TrainingPage = lazy(() => import('./pages/TrainingPage'));
 // The maths focus screen brings the whole maths ladder with it, so it loads only when a teacher opens it.
 const SetFocus = lazy(() => import('./pages/SetFocus'));
+// The skill map does too (it colours cells with the same maths the games use).
+const SkillMap = lazy(() => import('./pages/SkillMap'));
 // So does the warm-up that finds a student's starting place.
 const Placement = lazy(() => import('./pages/Placement'));
 
@@ -47,7 +51,15 @@ export function AppRoutes() {
           {!POWER_CLASH_ON && <Route path="power-clash" element={<GamePage game={powerClash} />} />}
           {!DRAGON_MATHS_ON && <Route path="dragon-maths" element={<GamePage game={dragonMaths} />} />}
           {!CLAN_QUEST_ON && <Route path="clan-quest" element={<GamePage game={clanQuest} />} />}
-          <Route path="lobby" element={<Lobby />} />
+          {/* Starting or joining a classmate game waits for Training too (Training before games); games already going don't. */}
+          <Route
+            path="lobby"
+            element={
+              <GameGate>
+                <Lobby />
+              </GameGate>
+            }
+          />
           <Route path="play/:id" element={<FriendGamePage />} />
           <Route path="space-game/:id" element={<SpaceGamePage />} />
           <Route path="card-game/:id" element={<CardGamePage />} />
@@ -75,6 +87,14 @@ export function AppRoutes() {
               </Suspense>
             }
           />
+          <Route
+            path="skills"
+            element={
+              <Suspense fallback={<div className="loading" role="status">Loading…</div>}>
+                <SkillMap />
+              </Suspense>
+            }
+          />
           <Route path="warp" element={<ClassWarp />} />
           <Route
             path="placement"
@@ -92,11 +112,18 @@ export function AppRoutes() {
   );
 }
 
+/** Hands the class's "Skip button" switch to the question box (src/data/questionSkips.ts). */
+function SkipRuleSync() {
+  useSkipRuleSync();
+  return null;
+}
+
 export function App() {
   return (
     <SoundProvider>
       <AuthProvider>
         <HashRouter>
+          <SkipRuleSync />
           <AppRoutes />
         </HashRouter>
       </AuthProvider>

@@ -1,0 +1,58 @@
+{
+ "boulder-beach": {
+  "gold": 22,
+  "goldMaths": 18,
+  "silver": 33,
+  "bronze": 51,
+  "hard": 44
+ },
+ "crown-range": {
+  "gold": 52,
+  "goldMaths": 47,
+  "silver": 77,
+  "bronze": 120,
+  "hard": 104
+ },
+ "geyser-valley": {
+  "gold": 28,
+  "goldMaths": 24,
+  "silver": 43,
+  "bronze": 64,
+  "hard": 56
+ },
+ "glacier-run": {
+  "gold": 27,
+  "goldMaths": 23,
+  "silver": 42,
+  "bronze": 62,
+  "hard": 54
+ },
+ "windy-welly": {
+  "gold": 49,
+  "goldMaths": 43,
+  "silver": 73,
+  "bronze": 113,
+  "hard": 98
+ },
+ "alpine-crossing": {
+  "gold": 35,
+  "goldMaths": 30,
+  "silver": 57,
+  "bronze": 83,
+  "hard": 70
+ },
+ "wide-hill": {
+  "gold": 23,
+  "goldMaths": 19,
+  "silver": 34,
+  "bronze": 53,
+  "hard": 46
+ },
+ "gap-and-ice": {
+  "gold": 23,
+  "goldMaths": 19,
+  "silver": 34,
+  "bronze": 53,
+  "hard": 46
+ }
+}

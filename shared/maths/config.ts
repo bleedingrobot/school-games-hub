@@ -40,8 +40,25 @@ export const MISSING_FACTOR_SHARE = 0.3;
 /** When division is switched on, this share of questions are division. */
 export const DIVISION_SHARE = 0.3;
 
+/**
+ * The longest an answer is kept as taking. A student who looks away for ten minutes mid-question has not spent ten minutes on
+ * the sum: kept as it is, one such answer would swamp the average time teachers see for that fact. Longer answers still count,
+ * as this long (right or wrong is untouched, and anything this slow is far from quick).
+ */
+export const LONGEST_ANSWER_MS = 120_000;
+/** An answer's time as it is kept: whole milliseconds, 0 to `LONGEST_ANSWER_MS`. */
+export const keptMs = (ms: number) => Math.min(LONGEST_ANSWER_MS, Math.max(0, Math.round(ms)));
+
 /** Answering correctly within this many milliseconds counts as quick. */
 export const QUICK_MS = 5000;
+/**
+ * Packs whose questions take longer to think through have a longer quick time (James can change these): the generated
+ * skills (rounding a 7-digit number, 2 + 3 × 4 − 1 with four choices) can't be answered in 5 seconds by a student who knows
+ * them well, and a box only moves up on a quick answer, so with 5 seconds those skills would never be secure.
+ */
+export const QUICK_MS_BY_PACK: Readonly<Record<string, number>> = { generated: 8000 };
+/** The quick time for the records of a pack ("times-tables", "generated"...). */
+export const quickMsForPack = (pack: string | null | undefined): number => (pack && Object.hasOwn(QUICK_MS_BY_PACK, pack) ? QUICK_MS_BY_PACK[pack] : QUICK_MS);
 
 /** Mastery boxes 0–4 (Leitner). How likely each box is to be picked: lower boxes come up more. */
 export const BOX_WEIGHTS = [6, 5, 3, 2, 1];
@@ -57,11 +74,11 @@ export const AVOID_RECENT = 3;
 /** How many choices in multiple-choice mode. */
 export const CHOICES = 4;
 
-/**
- * Auto's starting point from a class's year level, until a student has done the placement check: the first built skill whose
- * teaching year (from its NZ Curriculum tag) is this many years below the class. One year behind, because earlier skills
- * come back as review and a student should meet work they can mostly do.
- */
-export const START_YEARS_BEHIND = 1;
 /** The placement check asks this many questions. */
 export const PLACEMENT_QUESTIONS = 10;
+/**
+ * How many skills the placement check jumps up after a right, quick answer (until the first miss, then one at a time). Two was
+ * enough for 19 skills; with all 31 built, ten questions at two skills each cannot reach the top, so it is three. With 33 (M.5's
+ * bond skills, 20 Oct 2026) a student who is right and quick throughout starts within the last 7.
+ */
+export const PLACEMENT_JUMP = 3;

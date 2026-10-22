@@ -273,12 +273,12 @@ describe('Mission Control maths with classmates', () => {
     expect(screen.queryByText(/charged/i)).not.toBeInTheDocument();
   });
 
-  it('says "+1 charged" on my turn when the server has added it', async () => {
+  it('says "+2 charged" on my turn when the server has added it', async () => {
     const { first } = mathsTurn();
     const state = structuredClone(first.state!);
     state.turnInfo.mathsCharge = true;
     render(wrap(<SpaceLive session={session({ ...first, state })} timeScale={0} />));
-    expect(await screen.findByText('⚡ +1 charged from your answer')).toBeInTheDocument();
+    expect(await screen.findByText('⚡ +2 charged from your answer')).toBeInTheDocument();
   });
 
   it('asks nothing when maths is off', async () => {

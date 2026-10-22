@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TRAINING_CONFIG } from './config';
 import { FACTS } from './facts';
 import { buildSession, currentStep, learningFacts, nextQuestionIndex } from './session';
-import { emptyState, isKnown, recordAnswer, type TrainingState } from './records';
+import { emptyState, isFlying, isKnown, isResting, recordAnswer, type TrainingState } from './records';
 
 const TODAY = '2026-10-20';
 
@@ -121,17 +121,73 @@ describe('session builder', () => {
     expect(currentStep(knows([1, 2, 3, 4, 5]))).toBe(5);
   });
 
-  it('a struggling student gets 2 new facts among about 4 known ones', () => {
+  it('a student who starts struggling gets a practice fortnight: no new facts, best known first', () => {
     let s = midway();
     for (let i = 0; i < 10; i++) s = recordAnswer(s, 'mul:3x4', 5, 12, 5000, '2026-10-19').state;
+    expect(s.restUntil).toBe('2026-11-02');
+    expect(isResting(s, TODAY)).toBe(true);
     const session = buildSession(s, TODAY, 3);
-    expect(session.struggling).toBe(true);
-    const learning = new Set(session.questions.filter((q) => q.role === 'learning').map((q) => q.factKey));
-    const known = new Set(session.questions.filter((q) => q.role === 'known').map((q) => q.factKey));
-    expect(learning.size).toBe(2);
-    expect(known.size).toBeGreaterThanOrEqual(3);
-    expect(known.size).toBeLessThanOrEqual(5);
-    expect(session.questions.filter((q) => q.role === 'known').length / session.questions.length).toBeGreaterThan(0.3);
+    expect(session.resting).toBe(true);
+    expect(session.flying).toBe(false);
+    expect(session.questions.filter((q) => q.role === 'learning')).toHaveLength(0);
+    // Only facts already met.
+    for (const q of session.questions) expect(s.records[q.factKey]).toBeDefined();
+    // Mostly facts they know well (bright green), not the ones they are getting wrong.
+    const strong = session.questions.filter((q) => isKnown(s.records[q.factKey])).length;
+    expect(strong / session.questions.length).toBeGreaterThan(0.6);
+    expect(session.questions.some((q) => q.factKey === 'mul:3x4')).toBe(false);
+  });
+
+  it('the practice fortnight is not stretched while it runs, and ends after 14 days', () => {
+    let s = midway();
+    for (let i = 0; i < 10; i++) s = recordAnswer(s, 'mul:3x4', 5, 12, 5000, '2026-10-19').state;
+    // More wrong answers a few days later don't move the end.
+    for (let i = 0; i < 5; i++) s = recordAnswer(s, 'mul:3x4', 5, 12, 5000, '2026-10-25').state;
+    expect(s.restUntil).toBe('2026-11-02');
+    expect(isResting(s, '2026-11-01')).toBe(true);
+    expect(isResting(s, '2026-11-02')).toBe(false);
+    // Over, but still struggling: the gentle mix of 2 new facts among known ones until the next answer.
+    const after = buildSession(s, '2026-11-02', 3);
+    expect(after.resting).toBe(false);
+    expect(after.struggling).toBe(true);
+    expect(new Set(after.questions.filter((q) => q.role === 'learning').map((q) => q.factKey)).size).toBe(2);
+    // Still getting lots wrong after it: another fortnight starts.
+    s = recordAnswer(s, 'mul:3x4', 5, 12, 5000, '2026-11-02').state;
+    expect(s.restUntil).toBe('2026-11-16');
+  });
+
+  it('a brand-new student who struggles straight away still gets facts to learn (there is nothing to practise yet)', () => {
+    const s: TrainingState = { ...emptyState(), restUntil: '2026-11-02' };
+    expect(buildSession(s, TODAY, 1).questions.filter((q) => q.role === 'learning').length).toBeGreaterThan(0);
+  });
+
+  it('a student who is flying learns 12 new facts at once instead of 6', () => {
+    let s = knows([1], emptyState(), true);
+    expect(isFlying(s)).toBe(true);
+    const flying = buildSession(s, TODAY, 5);
+    expect(flying.flying).toBe(true);
+    expect(new Set(flying.questions.filter((q) => q.role === 'learning').map((q) => q.factKey)).size).toBe(12);
+    // Slow answers lately: back to 6.
+    for (const f of FACTS.filter((f) => f.step === 1 && f.kind === 'mul').slice(0, 24)) s = recordAnswer(s, f.key, f.answer, f.answer, 7000, '2026-10-19').state;
+    expect(isFlying(s)).toBe(false);
+    expect(new Set(buildSession(s, TODAY, 5).questions.filter((q) => q.role === 'learning').map((q) => q.factKey)).size).toBe(6);
+  });
+
+  it('needs a full run of answers before it calls anyone flying', () => {
+    let s = emptyState();
+    for (const f of FACTS.filter((f) => f.kind === 'mul').slice(0, 20)) s = recordAnswer(s, f.key, f.answer, f.answer, 900, '2026-10-19').state;
+    expect(isFlying(s)).toBe(false);
+  });
+
+  it('skips the steps a starting place has already put behind the student', () => {
+    const s: TrainingState = { ...emptyState(), passedSteps: 2 };
+    expect(currentStep(s)).toBe(3);
+    const learning = learningFacts(s, 6);
+    expect(learning.every((f) => f.step === 3)).toBe(true);
+    // Never past the last step.
+    expect(currentStep({ ...emptyState(), passedSteps: 9 })).toBe(TRAINING_CONFIG.tableFamilies.length);
+    // Moving on from the start step works as before.
+    expect(currentStep(knows([3], { ...emptyState(), passedSteps: 2 }))).toBe(4);
   });
 
   it('puts weak and overdue facts into review first', () => {

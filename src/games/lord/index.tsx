@@ -1,8 +1,11 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
+import { useLordEnabled } from './switch';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const LordPlay = lazy(() => import('./LordPlay').then((m) => ({ default: m.LordPlay })));
+const LordTeacherPanels = lazy(() => import('../../pages/TeacherLord').then((m) => ({ default: m.LordTeacherPanels })));
+const LordStudentPanel = lazy(() => import('../../pages/TeacherLord').then((m) => ({ default: m.LordStudentPanel })));
 
 /** A red dragon in profile, wings up, breathing fire. Drawn in its own colours so it stands out on the card. */
 function DragonIcon({ size = 64 }: { size?: number }) {
@@ -51,4 +54,8 @@ export const dragonMaths: GameDefinition = {
   Play: LordPlay,
   ranked: false,
   noBots: true,
+  group: 'complex-maths',
+  useTeacherSwitch: useLordEnabled,
+  TeacherPanels: LordTeacherPanels,
+  StudentPanel: LordStudentPanel,
 };

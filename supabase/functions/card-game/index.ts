@@ -2,6 +2,29 @@
 // then run `npm run build:functions`. Deploy this file as the "card-game" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+//#region supabase/functions/_shared/signIn.ts
+/**
+* Who owns this sign-in token? Null if it's missing, expired, fake or not a signed-in user's.
+*
+* With the project's newer sign-in keys, the token's signature is checked right here against the
+* project's public keys (fetched once and kept for 10 minutes), with no trip to the sign-in
+* service. With the older shared secret (or a token signed with a key we don't know), the library
+* asks the sign-in service instead, exactly as `getUser` did. So this works the same before and
+* after the keys are switched in the Supabase dashboard; it only gets cheaper after.
+*/
+function userIdFromToken(auth) {
+	return async (token) => {
+		try {
+			const { data, error } = await auth.getClaims(token);
+			const claims = error ? null : data?.claims;
+			if (!claims || claims.role !== "authenticated" || typeof claims.sub !== "string" || !claims.sub) return null;
+			return claims.sub;
+		} catch {
+			return null;
+		}
+	};
+}
+//#endregion
 //#region shared/space/random.ts
 /** A shuffled copy (Fisher–Yates), using the dice. */
 function shuffled(dice, list) {
@@ -1263,10 +1286,7 @@ Deno.serve(cardGameHandler({
 	random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
 	dice: secureDice,
 	newId: () => crypto.randomUUID(),
-	async userIdFor(token) {
-		const { data, error } = await admin.auth.getUser(token);
-		return error ? null : data.user?.id ?? null;
-	},
+	userIdFor: userIdFromToken(admin.auth),
 	async playerStatus(player, others = []) {
 		const { data, error } = await admin.rpc("card_player_status", {
 			player,

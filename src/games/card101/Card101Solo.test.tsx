@@ -39,19 +39,27 @@ function fakeSaving(seed: string | null = 's1-1792000000-0123456789abcdef0123456
   return { saving, saved, left };
 }
 
+// The play-through loop looks for the same things getByRole would, with plain look-ups: asking by role is slow on the
+// game page, and the loop asks several times every few milliseconds, which was most of each game's time.
+const nameOf = (el: Element) =>
+  el.getAttribute('aria-label') ?? (el.getAttribute('aria-labelledby') ? document.getElementById(el.getAttribute('aria-labelledby')!)?.textContent : el.textContent) ?? '';
+const buttons = (name: RegExp) => [...document.querySelectorAll('button')].filter((b) => name.test(nameOf(b).trim()));
+const dialogShown = (name: RegExp) => [...document.querySelectorAll('[role="dialog"]')].some((d) => name.test(nameOf(d)));
+
 /** Plays (as a not-very-careful student) until the podium shows. Returns the number of scoring shows. */
-async function playToTheEnd(user: ReturnType<typeof userEvent.setup>) {
+async function playToTheEnd(user: ReturnType<typeof userEvent.setup>, onScores: () => void = () => {}) {
   let rounds = 0;
   for (let guard = 0; guard < 3000; guard++) {
-    if (screen.queryByRole('dialog', { name: /You (won|came|shared)/ })) break;
-    const see = screen.queryByRole('button', { name: /See who won/ });
-    const next = screen.queryByRole('button', { name: /Next round/ });
-    const peek = screen.queryByRole('button', { name: /remembered them/ });
-    const pick = screen.queryAllByRole('button', { name: /^Swap with/ });
-    const throwIt = screen.queryByRole('button', { name: /Throw it away/ });
-    const stack = screen.queryByRole('button', { name: /^Stack:/ });
+    if (dialogShown(/You (won|came|shared)/)) break;
+    const [see] = buttons(/See who won/);
+    const [next] = buttons(/Next round/);
+    const [peek] = buttons(/remembered them/);
+    const pick = buttons(/^Swap with/);
+    const [throwIt] = buttons(/Throw it away/);
+    const [stack] = buttons(/^Stack:/);
     if (see || next) {
       expect(screen.getByRole('dialog', { name: /Round \d+ scores/ })).toBeInTheDocument();
+      onScores();
       rounds++;
       await user.click((see ?? next)!);
     } else if (peek) await user.click(peek);
@@ -149,27 +157,7 @@ describe('101 against bots', () => {
     localStorage.setItem('sgh-101-prefs', JSON.stringify({ bots: 1, target: 50 }));
     renderGame();
     await user.click(screen.getByRole('button', { name: /Deal the cards/ }));
-    let rounds = 0;
-    for (let guard = 0; guard < 3000; guard++) {
-      if (screen.queryByRole('dialog', { name: /You (won|came|shared)/ })) break;
-      const see = screen.queryByRole('button', { name: /See who won/ });
-      const next = screen.queryByRole('button', { name: /Next round/ });
-      const peek = screen.queryByRole('button', { name: /remembered them/ });
-      const pick = screen.queryAllByRole('button', { name: /^Swap with/ });
-      const throwIt = screen.queryByRole('button', { name: /Throw it away/ });
-      const stack = screen.queryByRole('button', { name: /^Stack:/ });
-      if (see || next) {
-        expect(screen.getByRole('dialog', { name: /Round \d+ scores/ })).toBeInTheDocument();
-        expect(screen.getAllByText(/^Hand: /).length).toBe(2);
-        rounds++;
-        await user.click((see ?? next)!);
-      } else if (peek) await user.click(peek);
-      else if (pick.length) await user.click(pick[pick.length - 1]);
-      else if (throwIt) await user.click(throwIt);
-      else if (stack && !stack.hasAttribute('disabled')) await user.click(stack);
-      else await tick();
-    }
-    const podium = await screen.findByRole('dialog', { name: /You (won|came|shared)/ });
+    const { podium, rounds } = await playToTheEnd(user, () => expect(screen.getAllByText(/^Hand: /).length).toBe(2));
     expect(rounds).toBeGreaterThan(1);
     expect(within(podium).getAllByRole('listitem')).toHaveLength(2);
     expect(within(podium).getByRole('button', { name: 'Play again' })).toBeInTheDocument();

@@ -58,6 +58,17 @@ vi.mock('../data/progress', async (importOriginal) => ({
   })),
 }));
 
+// The profile takes its points and achievements from the home page's one request: made here from the answer above.
+vi.mock('../data/homePage', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../data/homePage')>()),
+  fetchMyHomePage: vi.fn(async () => ({
+    progress: await (await import('../data/progress')).fetchMyProgress(),
+    botRecent: [], botStats: [], friendRecent: [], friendStats: [], friendOpen: [], players: new Map(),
+    spaceRecent: [], spaceOpen: [], spaceStats: null, cardRecent: [], cardOpen: [], cardStats: null,
+    powerRecent: [], powerOpen: [], powerStats: null, moves: {}, parts: {},
+  })),
+}));
+
 const people: Person[] = [
   { id: 't1', display_name: 'Wise Owl 1', real_name: 'mr.owl', avatar: {}, role: 'teacher', hidden: false, bot_games: 0, friend_games: 0, points: 0, last_played: null, joined: '2026-10-01T00:00:00Z' },
   { id: 's1', display_name: 'Brave Kiwi 7', real_name: 'jane.smith', avatar: {}, role: 'student', hidden: false, bot_games: 4, friend_games: 2, points: 50, last_played: new Date().toISOString(), joined: '2026-10-01T00:00:00Z' },
@@ -110,6 +121,12 @@ vi.mock('../data/gemKeep', () => ({
     ],
     lastPlayed: null,
   })),
+}));
+
+vi.mock('../data/skillMap', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../data/skillMap')>()),
+  fetchStudentLadder: vi.fn(async () => ({ on: true, yearLevel: 5, placed: 'done', placement: 'tables-6-9', furthest: 'tables-6-9' })),
+  resetPlacement: vi.fn(async () => true),
 }));
 
 vi.mock('../data/multiplayer', async (importOriginal) => ({
@@ -317,6 +334,17 @@ describe('teacher view', () => {
     expect(setHidden).toHaveBeenCalledWith('s1', true);
   });
 
+  it('shows where a student\'s maths warm-up stands, and offers it again only after a confirm step', async () => {
+    const { resetPlacement } = await import('../data/skillMap');
+    const { user, panel } = await openKiwi();
+    expect(await within(panel).findByText(/warm-up done, started at ×6, ×9/)).toBeInTheDocument();
+    await user.click(within(panel).getByRole('button', { name: 'Offer the warm-up again' }));
+    expect(resetPlacement).not.toHaveBeenCalled();
+    await user.click(within(panel).getByRole('button', { name: 'Yes, offer it again' }));
+    expect(resetPlacement).toHaveBeenCalledWith('s1');
+    expect(await within(panel).findByText(/will be offered the warm-up again/)).toBeInTheDocument();
+  });
+
   it('makes someone a teacher only after a warning', async () => {
     const { setRole } = await import('../data/teacher');
     const { user, panel } = await openKiwi();
@@ -339,6 +367,7 @@ describe('teacher view', () => {
     expect(within(panel).getByRole('button', { name: /New name/ })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'End of year: start a new season' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /My classes: class codes/ })).toHaveAttribute('href', '/classes');
+    expect(screen.getByRole('link', { name: /Skill map: how each student/ })).toHaveAttribute('href', '/skills');
   });
 
   it('can’t change their own role or delete a teacher', async () => {

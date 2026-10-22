@@ -9,7 +9,7 @@
  */
 import { CONFIG } from './config';
 import { roll } from './rng';
-import { TROOP_KINDS, type BuildingKind, type Clan, type Empire, type Plot, type TroopKind, type Troops } from './types';
+import { BUILDING_KINDS, TROOP_KINDS, type BuildingKind, type Clan, type Empire, type Plot, type TroopKind, type Troops } from './types';
 
 const E = CONFIG.empire;
 
@@ -74,6 +74,19 @@ export const effect = (e: Empire, kind: BuildingKind) => countBuildings(e, kind)
 export function plotCost(e: Empire, width: number, length: number): number {
   const base = area(width, length) * E.landPerSquare + fence(width, length) * E.fencePerUnit;
   return Math.ceil((base * (100 - effect(e, 'developersHall'))) / 100);
+}
+
+/** Every building a plot of this many squares has room for. */
+export const buildingsThatFit = (squares: number): BuildingKind[] => BUILDING_KINDS.filter((k) => E.buildings[k].size <= squares);
+/** Squares in the smallest building: a plot under this holds nothing. */
+export const smallestBuildingSize = () => Math.min(...BUILDING_KINDS.map((k) => E.buildings[k].size));
+/** Plot shapes (width up to length) with room for a building of this size, the least wasted squares first. */
+export function shapesFor(size: number, count = 4): { width: number; length: number }[] {
+  const shapes: { width: number; length: number }[] = [];
+  for (let width = E.plotSide.min; width <= E.plotSide.max; width++) {
+    for (let length = width; length <= E.plotSide.max; length++) if (width * length >= size) shapes.push({ width, length });
+  }
+  return shapes.sort((a, b) => a.width * a.length - b.width * b.length || a.length - a.width - (b.length - b.width)).slice(0, count);
 }
 
 export const validSide = (n: number) => Number.isInteger(n) && n >= E.plotSide.min && n <= E.plotSide.max;

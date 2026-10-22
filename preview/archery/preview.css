@@ -1,0 +1,58 @@
+/* The preview's picker uses the site's own page (school red) and cards, like the real game page will. */
+.arp-page { max-width: 980px; margin: 0 auto; padding: 12px 16px 32px; display: grid; gap: 14px; }
+.arp-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.arp-head h1 { color: #fff; margin: 0; }
+.arp-head h1 small { font-size: 0.9rem; font-weight: 600; opacity: 0.9; }
+.arp-card { background: var(--surface); color: var(--ink); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 16px; display: grid; gap: 10px; }
+.arp-card h2 { margin: 0; font-size: 1.15rem; }
+.arp-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.arp-grid--three { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.arp-choice {
+  display: grid; gap: 4px; text-align: left; min-height: 44px; padding: 10px 12px; border-radius: 14px; cursor: pointer;
+  background: var(--tint); color: var(--ink); border: 3px solid var(--line); font: inherit;
+}
+.arp-choice b { font-size: 1.1rem; }
+.arp-choice span, .arp-choice small { color: var(--ink-soft); font-size: 0.9rem; }
+.arp-choice[aria-pressed='true'] { border-color: var(--brand); background: #fff; box-shadow: inset 0 0 0 2px var(--brand); }
+.arp-choice--forest b { color: #166534; }
+.arp-choice--desert b { color: #9a3412; }
+.arp-choice--snow b { color: #1d4ed8; }
+.arp-choice--city b { color: #6d28d9; }
+.arp-go { display: grid; gap: 8px; justify-items: center; text-align: center; color: #fff; }
+.arp-go p { margin: 0; max-width: 640px; }
+.arp-fight { min-height: 56px; min-width: 200px; font-size: 1.3rem; }
+/* Pack your quiver (pretend coins). */
+.arp-card h3 { margin: 4px 0 0; font-size: 1rem; }
+.arp-card h3 small, .arp-coins small { font-weight: 400; color: var(--ink-soft); }
+.arp-coins { margin: 0; }
+.arp-coins b { font-size: 1.2rem; color: #92400e; }
+.arp-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.arp-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; border-radius: 12px; background: var(--tint); border: 2px solid var(--line); }
+.arp-item__text { font-size: 0.9rem; }
+.arp-item__text span, .arp-item__text small { color: var(--ink-soft); }
+.arp-item__count { display: flex; align-items: center; gap: 6px; }
+.arp-item__count output { min-width: 1.4em; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.arp-step { width: 44px !important; min-height: 44px !important; padding: 0 !important; font-size: 1.3rem !important; border-radius: 12px !important; }
+.arp-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.arp-small { width: auto !important; min-height: 44px !important; padding: 0 14px !important; font-size: 1rem !important; }
+/* Preview tools (only in the preview): a small strip at the bottom left of the home screen. */
+.arp-tools {
+  position: fixed; right: 8px; bottom: 8px; z-index: 41; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  padding: 4px 8px; border-radius: 12px; background: rgba(15, 23, 42, 0.85); color: #ffffff; font-size: 0.85rem; max-width: calc(100% - 16px);
+}
+.arp-tools summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
+.arp-tools[open] { display: flex; }
+.arp-tools[open] .arp-small { margin: 4px; }
+/* Two players on this screen: a switch at the top, and each pupil's whole game in its own pane (fixed screens inside a
+   pane are held in it by the transform). The hidden pane keeps running, out of sight. */
+.arp-duo { position: fixed; inset: 0; display: grid; grid-template-rows: auto 1fr; background: #0b1020; }
+.arp-duo__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px 8px; background: #1e293b; color: #ffffff; font-size: 0.9rem; position: relative; z-index: 2; }
+.arp-duo__label { font-weight: 700; }
+.arp-duo__who[aria-pressed='true'] { background: #fde047 !important; color: #1c1917 !important; }
+.arp-duo__dot { color: #dc2626; }
+.arp-duo__more { margin-left: auto; }
+.arp-duo__more[open] { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.arp-duo__more summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; padding: 0 8px; }
+.arp-duo__pane { position: relative; grid-row: 2; grid-column: 1; overflow: hidden; transform: translateZ(0); visibility: hidden; }
+.arp-duo__pane[data-showing] { visibility: visible; }
+.arp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

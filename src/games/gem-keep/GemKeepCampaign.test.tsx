@@ -1,13 +1,42 @@
+import { spokenLabel } from '../../../shared/maths/banded';
+import { checkItem, type AnswersItem } from '../../../shared/gem-keep/save';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CAMPAIGN } from '../../../shared/gem-keep/levels';
-import { AUTO_FOCUS, type MathsFocus } from '../../../shared/maths/focus';
+import { AUTO_FOCUS, isFocusKey, packIdOfKey, type MathsFocus } from '../../../shared/maths/focus';
+import type { Question } from '../../../shared/maths/skillPack';
 import type { GameEngine } from './engine/GameEngine';
 import { isUnlocked, loadProgress, totalStars, withKey, withWin } from './progress';
 import { GemKeepCampaign, type FinishedLevel } from './ui/GemKeepCampaign';
+import { FEEDBACK_MS } from '../../maths/QuestionModal';
 
 const IDS = CAMPAIGN.map((l) => l.id);
+
+// Each Level Key is 10 questions, and the right/wrong message stays up for most of a second after each one. These tests
+// are about which questions are asked and what is reported, not that pause (QuestionModal.test covers it), so skip it.
+const SHOWN = { ...FEEDBACK_MS };
+beforeAll(() => Object.assign(FEEDBACK_MS, { right: 0, wrong: 0 }));
+afterAll(() => Object.assign(FEEDBACK_MS, SHOWN));
+
+/** The latest question the game's pack made, so a test can answer ones whose spoken text it can't read (rounding, order of operations). */
+const latest: { question: Question | null } = { question: null };
+vi.mock('../../../shared/maths/focus', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../../../shared/maths/focus')>();
+  return {
+    ...real,
+    makeFocusPack: (...args: Parameters<typeof real.makeFocusPack>) => {
+      const pack = real.makeFocusPack(...args);
+      const next = pack.nextQuestion.bind(pack);
+      pack.nextQuestion = (ctx) => {
+        const q = next(ctx);
+        if (q) latest.question = q;
+        return q;
+      };
+      return pack;
+    },
+  };
+});
 
 function solve(spoken: string): number {
   const [a, op, b, , c] = spoken.replace('?', '').replace('times', '×').replace('equals', '=').split(' ');
@@ -112,6 +141,12 @@ describe('campaign map', () => {
     expect(answers).toHaveLength(10);
     expect(answers.every((a) => a.correct)).toBe(true);
     expect(onAnswers.mock.calls.flatMap((c) => c[0])).toHaveLength(10);
+    // Each carries the question as shown and what was typed, so the server marks it itself.
+    // (A test types faster than any person, so it is given a person's time: the server leaves out impossibly quick answers.)
+    const sent = { type: 'answers', pack: 'times-tables', batchId: '6f1c2a54-1d3e-4b5a-9c7d-0e1f2a3b4c5d', answers: answers.map((a) => ({ ...a, ms: 2000 })) };
+    const checked = checkItem(sent, (answers[0] as unknown as { at: number }).at + 1000);
+    expect(checked.ok && (checked.item as AnswersItem).answers.map((a) => a.correct)).toEqual(Array(10).fill(true));
+    expect(answers.every((a) => Array.isArray((a as unknown as { parts: unknown }).parts))).toBe(true);
     expect(facts.reduce((n, f) => n + f.attempts, 0)).toBe(19);
     // Nothing goes to this browser's own storage when the progress is saved elsewhere.
     expect(localStorage.getItem('sgh-gem-keep-progress')).toBeNull();
@@ -193,6 +228,68 @@ describe('Gem Keep with a maths focus', () => {
     expect(asked.every((a) => /^(Double|Half of|\d+ plus \d+ equals what|\d+ divided by 2 equals what)/.test(a))).toBe(true);
   }, 30_000);
 
+  it('asks the generated skills in the Level Key: choices to tap for order of operations, a point key for tenths, and records them under their question type', async () => {
+    const user = userEvent.setup();
+    let engine!: GameEngine;
+    const onAnswers = vi.fn();
+    render(<GemKeepCampaign focus={teacherFocus(['round-big', 'bedmas', 'bonds-100'])} onEngine={(e) => (engine = e)} onProgress={vi.fn()} onAnswers={onAnswers} />);
+    await user.click(screen.getByRole('button', { name: /Level 1: Crystal Valley/ }));
+    engine.state.phase = 'won';
+    engine.state.stars = 3;
+    engine.setPaused(false);
+    await user.click(await screen.findByRole('button', { name: 'Try the Level Key' }));
+    const kinds = new Set<string>();
+    for (let i = 0; i < 10; i++) {
+      await screen.findByText(new RegExp(`Question ${i + 1} of 10`));
+      await waitFor(() => expect(document.querySelector('.question__fact')).not.toBeNull());
+      const q = latest.question!;
+      kinds.add(q.factKey.split(':')[0]);
+      if (q.choices) {
+        await user.click(screen.getByRole('button', { name: String(q.answer) }));
+      } else {
+        expect(Boolean(screen.queryByRole('button', { name: 'Point' }))).toBe(q.input === 'decimal');
+        await user.keyboard(`${q.answer}{Enter}`);
+      }
+      await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 8000 });
+    }
+    expect([...kinds].every((k) => ['round', 'bedmas', 'bond100'].includes(k))).toBe(true);
+    // Each answer is reported under its question type, ready for the generated pack.
+    await waitFor(() => expect(onAnswers).toHaveBeenCalled());
+    const keys = onAnswers.mock.calls.flatMap(([answers]) => (answers as { key: string }[]).map((a) => a.key));
+    expect(keys.length).toBe(10);
+    expect(keys.every((k) => isFocusKey(k) && packIdOfKey(k) === 'generated')).toBe(true);
+  }, 60_000);
+
+  it('asks the fraction, decimal and percentage skills in the Level Key: fractions to tap, a point key for decimals, all recorded under their question type', async () => {
+    const user = userEvent.setup();
+    let engine!: GameEngine;
+    const onAnswers = vi.fn();
+    const skills = ['unit-fraction-of', 'tenths', 'add-tenths', 'decimal-equivalents', 'percent-basic', 'fraction-of', 'times-decimals', 'equivalent-fractions', 'fdp-equivalents', 'percent-of', 'whole-from-fraction'];
+    render(<GemKeepCampaign focus={teacherFocus(skills)} onEngine={(e) => (engine = e)} onProgress={vi.fn()} onAnswers={onAnswers} />);
+    await user.click(screen.getByRole('button', { name: /Level 1: Crystal Valley/ }));
+    engine.state.phase = 'won';
+    engine.state.stars = 3;
+    engine.setPaused(false);
+    await user.click(await screen.findByRole('button', { name: 'Try the Level Key' }));
+    for (let i = 0; i < 10; i++) {
+      await screen.findByText(new RegExp(`Question ${i + 1} of 10`));
+      await waitFor(() => expect(document.querySelector('.question__fact')).not.toBeNull());
+      const q = latest.question!;
+      if (q.choices) {
+        const label = q.choiceLabels ? spokenLabel(q.choiceLabels[q.answer]) : String(q.answer);
+        await user.click(screen.getByRole('button', { name: label }));
+      } else {
+        expect(Boolean(screen.queryByRole('button', { name: 'Point' }))).toBe(q.input === 'decimal');
+        await user.keyboard(`${q.answer}{Enter}`);
+      }
+      await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 8000 });
+    }
+    await waitFor(() => expect(onAnswers).toHaveBeenCalled());
+    const answers = onAnswers.mock.calls.flatMap(([a]) => a as { key: string; correct: boolean }[]);
+    expect(answers.length).toBe(10);
+    expect(answers.every((a) => isFocusKey(a.key) && packIdOfKey(a.key) === 'generated' && a.correct)).toBe(true);
+  }, 60_000);
+
   it('keeps the focus it has when the lookup fails', async () => {
     const user = userEvent.setup();
     let engine!: GameEngine;
@@ -218,7 +315,7 @@ describe('Gem Keep with a maths focus', () => {
   describe('on auto (the class has the switch on)', () => {
     const autoFocus = (furthest: string | null, extra: Partial<MathsFocus> = {}): MathsFocus => ({
       ...AUTO_FOCUS,
-      ladder: { on: true, yearLevel: null, placed: null, placement: null, furthest },
+      ladder: { on: true, placed: null, placement: null, furthest },
       ...extra,
     });
 

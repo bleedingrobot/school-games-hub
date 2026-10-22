@@ -2,6 +2,29 @@
 // then run `npm run build:functions`. Deploy this file as the "lord" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+//#region supabase/functions/_shared/signIn.ts
+/**
+* Who owns this sign-in token? Null if it's missing, expired, fake or not a signed-in user's.
+*
+* With the project's newer sign-in keys, the token's signature is checked right here against the
+* project's public keys (fetched once and kept for 10 minutes), with no trip to the sign-in
+* service. With the older shared secret (or a token signed with a key we don't know), the library
+* asks the sign-in service instead, exactly as `getUser` did. So this works the same before and
+* after the keys are switched in the Supabase dashboard; it only gets cheaper after.
+*/
+function userIdFromToken(auth) {
+	return async (token) => {
+		try {
+			const { data, error } = await auth.getClaims(token);
+			const claims = error ? null : data?.claims;
+			if (!claims || claims.role !== "authenticated" || typeof claims.sub !== "string" || !claims.sub) return null;
+			return claims.sub;
+		} catch {
+			return null;
+		}
+	};
+}
+//#endregion
 //#region shared/maths/config.ts
 /**
 * Tuning numbers for the maths engine, in one place. Nothing here knows about any game.
@@ -70,6 +93,14 @@ const MIX = {
 	review: .3,
 	stretch: .1
 };
+/**
+* The longest an answer is kept as taking. A student who looks away for ten minutes mid-question has not spent ten minutes on
+* the sum: kept as it is, one such answer would swamp the average time teachers see for that fact. Longer answers still count,
+* as this long (right or wrong is untouched, and anything this slow is far from quick).
+*/
+const LONGEST_ANSWER_MS = 12e4;
+/** An answer's time as it is kept: whole milliseconds, 0 to `LONGEST_ANSWER_MS`. */
+const keptMs = (ms) => Math.min(LONGEST_ANSWER_MS, Math.max(0, Math.round(ms)));
 /** Answering correctly within this many milliseconds counts as quick. */
 const QUICK_MS = 5e3;
 /** Mastery boxes 0–4 (Leitner). How likely each box is to be picked: lower boxes come up more. */
@@ -1312,6 +1343,10 @@ const defaultBand = (level) => Math.min(4, Math.max(1, Math.ceil(level / 3)));
 const offersSizeItUp = (seed) => (Math.imul(seed >>> 0, 2654435761) >>> 0) % 3 === 0;
 /** Size it up: a right answer finds the monster's weak spot. */
 const sizeItUpBonus = (result) => result === "right" ? 1.5 : result === "hint" ? 1.25 : 1;
+/** Size it up, a right answer: this much more gold for winning the fight (question skips, James 22 Oct 2026: answering should beat skipping). */
+const SIZE_IT_UP_GOLD = .2;
+/** The gold a won forest fight pays: a right Size it up adds SIZE_IT_UP_GOLD (rounded up, so at least 1). */
+const sizeItUpGold = (gold, result) => result === "right" && gold > 0 ? gold + Math.ceil(gold * SIZE_IT_UP_GOLD) : gold;
 /** Shop and healer: a right answer is 10% off (a hint earns 5%); wrong is full price. */
 const priceDiscount = (result) => result === "right" ? .1 : result === "hint" ? .05 : 0;
 /** Master's trial: each right answer adds a little strength when you level up (a tenth of the usual gain, at least 1). */
@@ -1742,7 +1777,8 @@ const nzDayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckla
 /** The New Zealand date of a moment, as YYYY-MM-DD. */
 const nzDay = (at) => nzDayFormat.format(new Date(at));
 /** The stats after one answer. Doesn't change the stats it's given. */
-function afterAnswer(stats, correct, ms, at) {
+function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
+	const ms = keptMs(rawMs);
 	const attempts = stats.attempts + 1;
 	const next = {
 		...stats,
@@ -1756,7 +1792,7 @@ function afterAnswer(stats, correct, ms, at) {
 		next.box = 1;
 		return next;
 	}
-	if (ms > 5e3) return next;
+	if (ms > quickMs) return next;
 	const day = nzDay(at);
 	if (!next.quickDays.includes(day)) next.quickDays = [...next.quickDays, day].slice(-2);
 	const canBeFluent = next.quickDays.length >= 2;
@@ -1951,7 +1987,8 @@ const SPOKEN_WORDS = {
 	"÷": "divided by",
 	"=": "equals",
 	"?": "what",
-	r: "remainder"
+	r: "remainder",
+	"%": "percent"
 };
 const ORDINAL = {
 	2: ["half", "halves"],
@@ -1979,9 +2016,22 @@ function spokenFraction(part) {
 	if (top === "?") return `what ${names[1]}`;
 	return `${top} ${top === "1" ? names[0] : names[1]}`;
 }
+/**
+* One part or choice in words for a screen reader: "3/4" is "3 quarters", "25%" is "25 percent", "0.25" is "0 point 2 5".
+* Anything else is read as it is.
+*/
+function spokenLabel(part) {
+	const percent = /^(\d+(?:\.\d+)?)%$/.exec(part);
+	if (percent) return `${spokenLabel(percent[1])} percent`;
+	if (/^\d+\.\d+$/.test(part)) {
+		const [whole, frac] = part.split(".");
+		return `${whole} point ${frac.split("").join(" ")}`;
+	}
+	return part.includes("/") ? spokenFraction(part) : part;
+}
 /** The spoken version of a question's parts, for screen readers. */
 function speak(parts) {
-	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
+	const text = parts.map((p) => SPOKEN_WORDS[p] ?? (/^\d+(?:\.\d+)?%$/.test(p) ? spokenLabel(p) : p.includes("/") ? spokenFraction(p) : p.replace(/^\$/, "$"))).join(" ").replace(/\s+/g, " ").trim();
 	return /[?.!:]$/.test(text) ? text : text + "?";
 }
 /** The parts with the blank filled in: "7 + 8 = ?" → "7 + 8 = 15", "1/2 = ?/8" → "1/2 = 4/8". */
@@ -2102,13 +2152,14 @@ var BandedPack = class {
 		if (made.pick) {
 			choices = made.pick.map((_, i) => i);
 			choiceLabels = made.pick;
-		} else if (multipleChoice) choices = choicesFor(answer, made.wrong ?? [], decimal, random);
+		} else if (multipleChoice || made.choose) choices = choicesFor(answer, made.wrong ?? [], decimal, random);
 		return {
 			skill: this.id,
 			factKey: key,
 			kind: key,
 			parts: made.parts,
 			spoken: made.spoken,
+			...made.prompt ? { prompt: made.prompt } : {},
 			answer,
 			choices,
 			choiceLabels,
@@ -2147,7 +2198,7 @@ var BandedPack = class {
 		const correct = sameAnswer(answer, q.answer);
 		const before = this.records.get(q.factKey) ?? newStats$1(q.factKey);
 		const at = this.now();
-		const after = afterAnswer(before, correct, ms, at);
+		const after = afterAnswer(before, correct, ms, at, this.definition.quickMs);
 		this.records.set(q.factKey, after);
 		for (const listener of this.listeners) listener({
 			key: q.factKey,
@@ -2490,6 +2541,10 @@ const ADD_SUB = {
 	]
 };
 //#endregion
+//#region shared/maths/skillPacks/generatedKit.ts
+/** Shown above a typed "3/4 = ?" or "35% = ?", which on its own could want any kind of answer. */
+const AS_DECIMAL = "Write it as a decimal.";
+//#endregion
 //#region shared/maths/skillPacks/decimals.ts
 /**
 * Decimals and money (the Stone topic in Maths Monsters). Every question here has a decimal
@@ -2596,6 +2651,7 @@ const DECIMALS = {
 				return decimal({
 					parts,
 					spoken: speak(parts),
+					prompt: AS_DECIMAL,
 					answer: n / 10,
 					wrong: [
 						n,
@@ -4823,15 +4879,20 @@ function fightFinish(c) {
 	if (isRefuse(played)) return played;
 	const { fight, actions, open: was } = played;
 	const crossed = was.info.day !== c.today;
-	const hero = keepToday(applyForestResult(c.w.hero, fight), c.w.hero, crossed);
-	const rewards = fight.outcome === "won" ? {
-		gold: fight.monster.gold + fight.goldPinched,
+	const won = fight.outcome === "won";
+	const extraGold = won ? sizeItUpGold(fight.monster.gold, sizeUp) - fight.monster.gold : 0;
+	const applied = applyForestResult(c.w.hero, fight);
+	const hero = keepToday(extraGold ? {
+		...applied,
+		gold: applied.gold + extraGold
+	} : applied, c.w.hero, crossed);
+	const rewards = won ? {
+		gold: fight.monster.gold + extraGold + fight.goldPinched,
 		exp: fight.monster.exp
 	} : {
 		gold: 0,
 		exp: 0
 	};
-	const won = fight.outcome === "won";
 	return {
 		hero,
 		answers,
@@ -6040,10 +6101,7 @@ Deno.serve(makeHandler({
 	now: () => Date.now(),
 	seed: () => crypto.getRandomValues(new Uint32Array(1))[0],
 	newId: () => crypto.randomUUID(),
-	async userIdFor(token) {
-		const { data, error } = await admin.auth.getUser(token);
-		return error ? null : data.user?.id ?? null;
-	},
+	userIdFor: userIdFromToken(admin.auth),
 	async isTeacher(player) {
 		const { data, error } = await admin.from("profiles").select("role").eq("id", player).maybeSingle();
 		if (error || !data) return {

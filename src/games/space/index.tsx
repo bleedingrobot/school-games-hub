@@ -25,4 +25,5 @@ export const space: GameDefinition = {
   Icon: SpaceIcon,
   Play: SpacePlay,
   ranked: false,
+  group: 'easy-maths',
 };

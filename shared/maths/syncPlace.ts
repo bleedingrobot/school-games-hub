@@ -70,7 +70,7 @@ export async function savePlacement(
     return { outcome: stored ? "saved" : "already" };
   }
   const answers = parsePlacementAnswers(body.answers);
-  const start = answers ? checkPlacement(info.yearLevel, answers) : null;
+  const start = answers ? checkPlacement(answers) : null;
   if (!start) return { outcome: "refused" };
   const stored = await ports.savePlacementRow(player, start, false);
   return { outcome: stored ? "saved" : "already", start };

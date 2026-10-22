@@ -1,11 +1,13 @@
 // Connects the space-game handler to Supabase. Edit handler.ts for the logic, then run
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
-import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import { userIdFromToken } from '../_shared/signIn';
+import { FLUENT_DAYS, quickMsForPack, TOP_BOX } from '../../../shared/maths/config';
 import type { FactStats } from '../../../shared/maths/leitner';
 import { packIdOfKey, parseFocus } from '../../../shared/maths/focus';
 import { makePlaceSyncer } from '../../../shared/maths/syncPlace';
 import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
+import { countForFocuses } from '../_shared/focusResults';
 import { spaceGameHandler, type SpaceGameRow } from './handler';
 
 declare const Deno: {
@@ -62,10 +64,7 @@ Deno.serve(
   spaceGameHandler({
     now: () => Date.now(),
     random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
-    async userIdFor(token) {
-      const { data, error } = await admin.auth.getUser(token);
-      return error ? null : (data.user?.id ?? null);
-    },
+    userIdFor: userIdFromToken(admin.auth),
     async playerStatus(player, others = []) {
       const { data, error } = await admin.rpc('space_player_status', { player, others }).maybeSingle();
       if (error || !data) {
@@ -201,18 +200,23 @@ Deno.serve(
       if (error) logProblem('drop question', error.code);
     },
     async recordAnswer(player, once, answer) {
-      const { error } = await admin.rpc('record_fact_answers', {
+      const pack = packIdOfKey(answer.key) ?? 'times-tables';
+      const { data, error } = await admin.rpc('record_fact_answers', {
         player,
-        pack: packIdOfKey(answer.key) ?? 'times-tables',
+        pack,
         batch_id: await batchIdFor(once),
         answers: [answer],
-        quick_ms: QUICK_MS,
+        quick_ms: quickMsForPack(pack),
         fluent_days: FLUENT_DAYS,
         top_box: TOP_BOX,
       });
       // The game goes on if the records can't be updated.
       if (error) logProblem('record answer', error.code);
-      else await syncPlace(player);
+      else {
+        // Only an answer the records took for the first time counts for a focus, so a retry never counts twice.
+        if (typeof data === 'number' && data > 0) await countForFocuses((name, args) => admin.rpc(name, args), player, pack, [answer], 'space-game');
+        await syncPlace(player);
+      }
     },
   }),
 );

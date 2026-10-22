@@ -42,8 +42,8 @@ function errorText(error: unknown) {
   return error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.';
 }
 
-/** How often the "who has joined" list and the requests look again, in milliseconds. */
-export const LIVE_MS = 8000;
+/** How often the "who has joined" list and the requests look again, in milliseconds (and straight away when the tab comes back). */
+export const LIVE_MS = 30_000;
 
 /** "just now", "3 minutes ago", "2 hours ago", or the day. */
 export function ago(iso: string, now = Date.now()): string {
@@ -330,12 +330,20 @@ function ClassPanel({
     void refreshLists();
   }, [refresh, refreshLists]);
 
-  // The "joined" list and the requests are live: look again every few seconds while the page is showing.
+  // The "joined" list and the requests are live: look again every 30 seconds while the page is showing,
+  // and straight away when the tab comes back.
   useEffect(() => {
     const timer = window.setInterval(() => {
       if (document.visibilityState !== 'hidden') void refresh();
     }, LIVE_MS);
-    return () => window.clearInterval(timer);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [refresh]);
 
   async function act(work: () => Promise<string>) {
@@ -403,9 +411,10 @@ function ClassPanel({
             </button>
           </form>
           <p className="class-panel__hint">
-            Your students see this name after they type the class code, so make it one they will recognise. The year level is never shown to
-            students: auto uses it to choose where the games start (a student can do a short warm-up to find a better place).{' '}
-            <Link to={`/focus?class=${id}`}>🎯 Choose the maths for this class</Link>
+            Your students see this name after they type the class code, so make it one they will recognise. The year level is just a label for you:
+            students never see it, and it doesn&rsquo;t change the maths.{' '}
+            <Link to={`/focus?class=${id}`}>🎯 Choose the maths for this class</Link> ·{' '}
+            <Link to={`/skills?class=${id}`}>🗺️ See the skill map</Link>
           </p>
         </section>
       )}

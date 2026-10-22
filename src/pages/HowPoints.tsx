@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchRules, RANKS, type Rules } from '../data/progress';
-import { POWER_CLASH_ON } from '../games/registry';
+import { gameLabel, POWER_CLASH_ON } from '../games/registry';
 
 /**
  * "How points work", for students. The numbers come from the database, so this page
@@ -274,6 +274,20 @@ export function HowPoints() {
           </ul>
         </section>
       )}
+
+      {/* New games describe their own points in plain sentences (hub_games in the database), so this page needs no change for them. */}
+      {Object.entries(rules.hubGames ?? {}).map(([id, part]) => (
+        <section key={id} className="panel" aria-labelledby={`${id}-points-title`}>
+          <h2 id={`${id}-points-title`} className="panel__title">
+            {gameLabel(id) ?? id}
+          </h2>
+          <ul className="how-points__list">
+            {part.lines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </section>
+      ))}
 
       <section className="panel" aria-labelledby="levels-title">
         <h2 id="levels-title" className="panel__title">

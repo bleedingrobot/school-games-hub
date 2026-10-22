@@ -6,7 +6,7 @@ import { randomFromSeed } from '../space/random';
 import { CAMPAIGN_STEPS } from './config';
 import { parseFactKey } from './facts';
 import { afterAnswer, newStats, type FactStats } from './leitner';
-import { AutoPack, autoPools, LADDER, ladderProgress } from './ladder';
+import { AutoPack, autoPools, LADDER, ladderProgress, tablesJumpFloor } from './ladder';
 import { BandedPack, sameAnswer } from './banded';
 import { BANDED_PACKS } from './skillPacks';
 import { earlyFactsPack, EARLY_FACTS } from './skillPacks/earlyFacts';
@@ -166,7 +166,7 @@ describe('ladder progress', () => {
     expect(p.secureCount).toBe(0);
     expect(p.percent).toBe(0);
     expect(p.skills.find((s) => s.skill.id === 'facts-10')?.status).toBe('current');
-    expect(p.skills.find((s) => s.skill.id === 'ten-and')?.status).toBe('later');
+    expect(p.skills.find((s) => s.skill.id === 'ten-and')?.status).toBe('upcoming'); // built in F.6; every skill is built now
   });
 
   it('moves on at 70% in box 2 or higher, and holds back just under it', () => {
@@ -198,7 +198,7 @@ describe('ladder progress', () => {
     const through = built.findIndex((s) => s.id === 'tables-6-9');
     const done = secure(built.slice(0, through + 1).flatMap((s) => s.keys));
     expect(ladderProgress(done).current?.id).toBe('tables-7');
-    expect(ladderProgress(done, { enabledTables: [6, 9] }).current).toBeNull();
+    expect(ladderProgress(done, { enabledTables: [6, 9] }).current?.id).toBe('times-tens'); // ×7 is skipped, the next skill is not
   });
 
   it('builds pools of focus, review and stretch around the current skill', () => {
@@ -299,5 +299,53 @@ describe('auto', () => {
       }
     }
     expect(BANDED_PACKS['add-sub']).toBeDefined();
+  });
+});
+
+describe('times-table curriculum codes', () => {
+  it('the times-table pack carries the codes the ladder gives its times-table skills', async () => {
+    const { TIMES_TABLES_TAGS, TimesTables } = await import('./skillPacks/timesTables');
+    const ladder = [...new Set(LADDER.filter((s) => s.stage === 'times-tables').flatMap((s) => s.curriculumTags))];
+    expect([...TIMES_TABLES_TAGS].sort()).toEqual(ladder.sort());
+    expect(new TimesTables().curriculumTags.some((t) => t.startsWith('TODO'))).toBe(false);
+  });
+});
+
+describe('jumping ahead on secure times tables (22 Oct 2026)', () => {
+  const at = (id: string) => LADDER.findIndex((s) => s.id === id);
+  const times = (id: string) => LADDER[at(id)].keys.filter((k) => k.startsWith('mul:'));
+  const byKey = (stats: FactStats[]) => new Map(stats.map((s) => [s.key, s]));
+
+  it('moves a student who knows ×3, ×4 and ×8 past everything easier, even skills never asked', () => {
+    const progress = ladderProgress(secure(times('tables-3-4-8')));
+    expect(at(progress.current!.id)).toBeGreaterThan(at('tables-3-4-8'));
+    // Bonds to 10 was never asked: passed over, not secure.
+    expect(progress.skills[at('facts-10')]).toMatchObject({ status: 'secure', passedOver: true });
+    expect(progress.skills[at('tables-3-4-8')]).toMatchObject({ status: 'secure' });
+  });
+
+  it('needs 70% of the skill’s times facts', () => {
+    const keys = times('tables-2-5-10');
+    const enough = Math.ceil(keys.length * 0.7);
+    expect(tablesJumpFloor(byKey(secure(keys.slice(0, enough))))).toBe(at('tables-2-5-10') + 1);
+    expect(tablesJumpFloor(byKey(secure(keys.slice(0, enough - 1))))).toBe(0);
+    // Box 1 (still learning) doesn't count.
+    expect(tablesJumpFloor(byKey(keys.map((k) => rec(k, 1))))).toBe(0);
+  });
+
+  it('only times-table skills can do it, so a small skill can’t jump anyone by luck', () => {
+    expect(tablesJumpFloor(byKey(secure(LADDER[at('bonds-100')].keys)))).toBe(0);
+    expect(tablesJumpFloor(byKey(secure(LADDER[at('facts-20')].keys)))).toBe(0);
+    expect(ladderProgress(secure(LADDER[at('bonds-100')].keys)).current?.id).toBe('facts-10');
+  });
+
+  it('jumps from the highest secure times-table skill', () => {
+    const stats = secure([...times('tables-2-5-10'), ...times('tables-7')]);
+    expect(tablesJumpFloor(byKey(stats))).toBe(at('tables-7') + 1);
+  });
+
+  it('never lowers a floor that is already higher', () => {
+    const progress = ladderProgress(secure(times('tables-2-5-10')), { floor: at('tables-7') });
+    expect(at(progress.current!.id)).toBeGreaterThanOrEqual(at('tables-7'));
   });
 });

@@ -420,3 +420,6 @@ enabled = true
 # live project: Edge Functions → save-bot-game → Details → "Verify JWT" off.
 [functions.save-bot-game]
 verify_jwt = false
+
+[functions.marble]
+verify_jwt = false

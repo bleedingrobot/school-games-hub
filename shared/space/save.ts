@@ -12,7 +12,10 @@ import { isBotLevelId, isClaimedEnding, type BotLevel, type ClaimedEnding, type 
 import { STAR_KINDS, type StarKind } from './board';
 import { isDesignedBoardId, type BoardChoice } from './boards';
 import type { FactAnswer } from '../maths/leitner';
-import { keyForAnswer, solveParts } from '../maths/focus';
+import { sameAnswer } from '../maths/banded';
+import { keyForAnswer } from '../maths/focus';
+import { cleanParams, solveClaim } from '../maths/claim';
+import { keptMs } from '../maths/config';
 import type { SpaceAction, SpaceEvent, SpaceState, Settings } from './engine';
 import { parseGalaxyCode } from './galaxy';
 import { isItemKind } from './items';
@@ -79,7 +82,18 @@ export interface SpaceMathsAnswer {
    * than one record, and the browser knows which it meant. The server uses it only if the question really fits that record.
    */
   key?: string;
+  /**
+   * The numbers the question was made from (`Question.params`). With `key`, the server makes the question again from them and
+   * checks it comes out exactly as `parts` shows it (maths/claim.ts). Needed for pick-one questions; older browsers leave it out.
+   */
+  params?: number[];
 }
+
+/** The most parts a question can have (the order-of-operations ones are the longest) and the longest part ('Biggest number that goes into'). */
+export const MAX_QUESTION_PARTS = 12;
+const MAX_PART_LENGTH = 40;
+/** The biggest answer a student can give. */
+const MAX_GIVEN = 1e9;
 
 const RECORD_KEY = /^[a-z][a-z0-9]{0,9}:[a-z0-9:+/-]{1,40}$/;
 
@@ -92,11 +106,18 @@ function parseAnswers(input: unknown): SpaceMathsAnswer[] | null {
   const answers: SpaceMathsAnswer[] = [];
   for (const raw of input) {
     const a = (raw ?? {}) as Record<string, unknown>;
-    if (!Array.isArray(a.parts) || a.parts.length < 4 || a.parts.length > 5 || !a.parts.every((p) => typeof p === 'string' && p.length <= 6)) return null;
+    if (!Array.isArray(a.parts) || a.parts.length < 1 || a.parts.length > MAX_QUESTION_PARTS || !a.parts.every((p) => typeof p === 'string' && p.length <= MAX_PART_LENGTH)) return null;
     if (a.key !== undefined && (typeof a.key !== 'string' || !RECORD_KEY.test(a.key))) return null;
     const whole = (n: unknown, max: number): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= max;
-    if (!whole(a.given, 1000) || !whole(a.ms, 3_600_000) || !whole(a.at, 4_102_444_800_000)) return null;
-    answers.push({ parts: a.parts as string[], given: a.given, ms: a.ms, at: a.at, ...(typeof a.key === 'string' ? { key: a.key } : {}) });
+    // An answer can be a decimal (4.3) or big (3 000 000) since the rounding skills: any number from 0 up to a billion.
+    if (typeof a.given !== 'number' || !Number.isFinite(a.given) || a.given < 0 || a.given > MAX_GIVEN || !whole(a.ms, 3_600_000) || !whole(a.at, 4_102_444_800_000)) return null;
+    let params: number[] | undefined;
+    if (a.params !== undefined) {
+      const clean = cleanParams(a.params);
+      if (!clean) return null;
+      params = clean;
+    }
+    answers.push({ parts: a.parts as string[], given: a.given, ms: a.ms, at: a.at, ...(typeof a.key === 'string' ? { key: a.key } : {}), ...(params ? { params } : {}) });
   }
   return answers;
 }
@@ -231,10 +252,10 @@ export function judgeSpaceGame(report: SpaceGameReport): SpaceJudgement {
     if (mathsProblem || (!asked && action.kind !== 'charge')) return;
     const claimedRight = action.kind === 'charge' ? action.right : action.kind === 'choose' && action.option === 1;
     const a = given[answers.length];
-    const solved = a ? solveParts(a.parts) : null;
+    const solved = a ? solveClaim(a) : null;
     if (!a || !solved) mathsProblem = 'missing maths answer';
-    else if ((a.given === solved.answer) !== claimedRight) mathsProblem = 'maths answer does not match';
-    else answers.push({ key: keyForAnswer(solved, a.key), correct: claimedRight, ms: a.ms, at: a.at });
+    else if (sameAnswer(a.given, solved.answer) !== claimedRight) mathsProblem = 'maths answer does not match';
+    else answers.push({ key: keyForAnswer(solved, a.key), correct: claimedRight, ms: keptMs(a.ms), at: a.at });
   };
   let replayed: ReturnType<typeof replaySolo>;
   try {

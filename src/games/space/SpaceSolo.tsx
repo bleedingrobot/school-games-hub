@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { randomAvatar } from '../../avatar/avatarParts';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
+import { skipRule, spendSkip, useSkipRule } from '../../maths/questionLog';
 import { useSound } from '../../sound';
 import type { BotLevel } from '../../../shared/botGame';
 import type { FactStats } from '../../../shared/maths/leitner';
@@ -25,6 +26,7 @@ import { BOT_NAMES } from '../../../shared/space/bot';
 import {
   canCharge,
   itemProblem,
+  MATHS_CHARGE_STEPS,
   SpaceRuleError,
   usableItems,
   validTargets,
@@ -43,7 +45,7 @@ import { loadLessMotion, loadPrefs, mathsOn, passNames, saveLessMotion, savePref
 import { SpaceBoard, type Seat } from './SpaceBoard';
 import { SpaceSettings } from './SpaceSettings';
 import { botPlay, botQuestion, decideBot, isStudentsTurn, newSeed, startPassRun, startRun, studentPlay, type SoloRun } from './soloRun';
-import { choiceQuestion, itemName, ORDINAL, SEAT_COLOURS, SEAT_SHAPES, squareInfo, type SquareInfo } from './text';
+import { ANSWER_FIRST, ANSWER_FIRST_BUTTON, choiceQuestion, itemName, ORDINAL, SEAT_COLOURS, SEAT_SHAPES, squareInfo, type SquareInfo } from './text';
 import { useEventPlayer, type Batch } from './useEventPlayer';
 import './space.css';
 
@@ -171,6 +173,7 @@ export function SpaceSolo({
   const passPack = useRef<SkillPack | null>(null);
   const [question, setQuestion] = useState<Question | null>(null);
   const [charge, setCharge] = useState<ChargeCard | null>(null);
+  const skips = useSkipRule();
   const mathsMode: MathsMode = maths?.mode ?? 'off';
 
   const runRef = useRef<SoloRun | null>(null);
@@ -402,6 +405,12 @@ export function SpaceSolo({
     const run = runRef.current;
     if (!run || phaseRef.current !== 'student') return;
     const seat = run.state.turn;
+    // Rolling past an unanswered Mission Control card skips it, so the class's skip switch decides (questionLog.ts).
+    const pastCard = action.kind === 'roll' && !!charge && !charge.done && !run.state.turnInfo.rolled;
+    if (pastCard && !skipRule().canSkip) {
+      setHint(ANSWER_FIRST);
+      return;
+    }
     let events: SpaceEvent[];
     try {
       events = studentPlay(run, action);
@@ -412,6 +421,7 @@ export function SpaceSolo({
       }
       throw error;
     }
+    if (pastCard) spendSkip();
     setPhase('animating');
     setHint('');
     setPicking(null);
@@ -520,7 +530,7 @@ export function SpaceSolo({
     const run = runRef.current;
     const done = charge?.done;
     if (!run || !charge || !done || phase !== 'student' || run.passAndPlay || !canCharge(run.state)) return;
-    run.mathsAnswers.push({ parts: charge.question.parts, given: done.answer, ms: done.ms, at: done.at, key: charge.question.factKey });
+    run.mathsAnswers.push({ parts: charge.question.parts, given: done.answer, ms: done.ms, at: done.at, key: charge.question.factKey, ...(charge.question.params?.length ? { params: charge.question.params } : {}) });
     setCharge(null);
     act({ kind: 'charge', right: done.right });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -568,6 +578,10 @@ export function SpaceSolo({
   const myTurn = phase === 'student';
   const pending = myTurn && view.phase === 'choice' ? view.pending : null;
   const canRoll = myTurn && view.phase === 'ready' && !picking;
+  // The question card is still open: rolling now skips it, and the Roll button says what that costs.
+  const chargeWaiting = canRoll && !!charge && !charge.done && !view.turnInfo.rolled;
+  // The class's skip switch is off (or no skips are left): Roll waits for an answer.
+  const answerFirst = chargeWaiting && !skips.canSkip;
   const usable = myTurn && view.phase === 'ready' ? usableItems(view, studentSeat) : [];
   const targets = myTurn && picking?.kind === 'target' ? validTargets(view, picking.item, studentSeat) : [];
   const positions = rockets.map((r) => r.pos);
@@ -675,11 +689,18 @@ export function SpaceSolo({
               <button
                 type="button"
                 className="button button--play space-roll"
-                disabled={!canRoll}
+                disabled={!canRoll || answerFirst}
                 onClick={() => act({ kind: 'roll' })}
                 aria-keyshortcuts="Space"
               >
-                🎲 {view.turnInfo.rollAgainUsed && myTurn && !view.turnInfo.rolled ? 'Roll again' : 'Roll'}
+                {answerFirst ? (
+                  ANSWER_FIRST_BUTTON
+                ) : (
+                  <>
+                    🎲 {view.turnInfo.rollAgainUsed && myTurn && !view.turnInfo.rolled ? 'Roll again' : 'Roll'}
+                    {chargeWaiting && ` without the +${MATHS_CHARGE_STEPS}`}
+                  </>
+                )}
               </button>
             )}
           </div>
@@ -711,14 +732,14 @@ export function SpaceSolo({
         {view.settings.maths && !pass && !over && (view.turnInfo.mathsCharge && myTurn ? (
           <section className="space-panel space-charge" aria-label="Mission Control charge">
             <p className="space-charge__note" role="status">
-              ⚡ +1 charged from your answer
+              ⚡ +{MATHS_CHARGE_STEPS} charged from your answer
             </p>
           </section>
         ) : (
           charge?.done?.right ? (
             <section className="space-panel space-charge" aria-label="Mission Control charge">
               <p className="space-charge__note" role="status">
-                ⚡ Right! +1 is ready for your next roll
+                ⚡ Right! +{MATHS_CHARGE_STEPS} is ready for your next roll
               </p>
             </section>
           ) : (
@@ -729,7 +750,7 @@ export function SpaceSolo({
                 key={charge.question.id}
                 question={charge.question}
                 title="Mission Control"
-                note="Answer for +1 on your next roll. It’s up to you."
+                note={`Answer for +${MATHS_CHARGE_STEPS} on your next roll. It’s up to you.`}
                 onSubmit={(answer, ms) => {
                   answered.current = { answer, ms };
                   return pack.recordAnswer(charge.question, answer, ms);
@@ -807,7 +828,7 @@ export function SpaceSolo({
             const run = runRef.current;
             // The server checks every answer against the question shown (shared/space/save.ts).
             if (given && run && !run.passAndPlay) {
-              run.mathsAnswers.push({ parts: question.parts, given: given.answer, ms: Math.round(given.ms), at: Date.now(), key: question.factKey });
+              run.mathsAnswers.push({ parts: question.parts, given: given.answer, ms: Math.round(given.ms), at: Date.now(), key: question.factKey, ...(question.params?.length ? { params: question.params } : {}) });
             }
             setQuestion(null);
             act({ kind: 'choose', option: result.correct ? 1 : 0 });

@@ -69,23 +69,23 @@ describe('the Quest screen', () => {
     expect(btn('Quest (done for today)')).toBeTruthy();
   });
 
-  it('can be finished by every route, with the prize on the clan and the day used up', async () => {
-    for (const q of QUESTS) {
-      for (let i = 0; i < q.choices.length; i++) {
-        for (const right of q.choices[i].puzzle ? [true, false] : [null]) {
-          const { unmount } = render(<div />);
-          unmount();
-          const u = await takeRoute(q, i, right);
-          const outcome = right === false ? (q.choices[i].lose ?? q.choices[i].win) : q.choices[i].win;
-          expect(screen.getByText(new RegExp(outcome.text.slice(0, 30).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))), `${q.title} ${i} ${right}`).toBeTruthy();
-          expect(screen.getByText(/You got: /)).toBeTruthy();
-          await u.click(btn('Carry on'));
-          expect(btn('Quest (done for today)')).toBeTruthy();
-          document.body.innerHTML = '';
-        }
-      }
+  // Every route, right and wrong, is played through the rules in shared/clans/quests.test.ts. Here each quest is played
+  // once on screen, taking a different choice each time and answering its puzzles right and wrong in turn.
+  it('can be finished on screen for every quest, with the prize on the clan and the day used up', async () => {
+    let puzzles = 0;
+    for (const [n, q] of QUESTS.entries()) {
+      const i = n % q.choices.length;
+      const right = q.choices[i].puzzle ? puzzles++ % 2 === 0 : null;
+      const u = await takeRoute(q, i, right);
+      const outcome = right === false ? (q.choices[i].lose ?? q.choices[i].win) : q.choices[i].win;
+      expect(screen.getByText(new RegExp(outcome.text.slice(0, 30).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))), `${q.title} ${i} ${right}`).toBeTruthy();
+      expect(screen.getByText(/You got: /)).toBeTruthy();
+      await u.click(btn('Carry on'));
+      expect(btn('Quest (done for today)')).toBeTruthy();
+      document.body.innerHTML = '';
     }
-  }, 120000);
+    expect(puzzles).toBeGreaterThanOrEqual(2); // so both a right and a wrong puzzle answer were played
+  }, 60_000);
 
   it('says kindly that the quest is done, and cannot be done twice; a new day brings a new one', async () => {
     const u = user();

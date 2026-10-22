@@ -1,11 +1,13 @@
 /**
  * The warm-up that finds a student's starting place on the maths ladder (docs/MATHS-FOCUS-PLAN.md section 5). About 10 questions that
- * jump up while the answers are right and quick and step back when they aren't. Friendly and skippable; never called a test, and
+ * jump up while the answers are right and quick and step back when they aren't. Friendly, and a must-do once in a class whose games pick the maths (no skip since 22 Oct 2026); never called a test, and
  * it shows no score. The server checks the questions and stores only where to start.
  */
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
-import { fetchMyLadder, sendPlacement, type MyLadder } from "../data/ladder";
+import { Link, useSearchParams } from "react-router";
+import { useAuth } from "../auth/AuthContext";
+import { rememberPlaced } from "../data/placementGate";
+import { fetchMyLadder, sendPlacement } from "../data/ladder";
 import { FriendlyError } from "../data/profile";
 import { PLACEMENT_QUESTIONS } from "../../shared/maths/config";
 import type { PlacementAnswer } from "../../shared/maths/placementCheck";
@@ -17,6 +19,7 @@ import {
 } from "../../shared/maths/place";
 import type { Question } from "../../shared/maths/skillPack";
 import { QuestionModal, type MarkedAnswer } from "../maths/QuestionModal";
+import { sameAnswer } from "../../shared/maths/banded";
 import "../maths/ladderPath.css";
 
 type Step =
@@ -33,9 +36,16 @@ const errorText = (error: unknown) =>
     ? error.message
     : "Something went wrong. Please try again.";
 
+/** Where to go after the warm-up: a page on this site only (the games and Training send students here and back). */
+export function safeBack(raw: string | null): string | null {
+  return raw && raw.startsWith("/") && !raw.startsWith("//") && !raw.startsWith("/placement") ? raw : null;
+}
+
 export default function Placement() {
-  const [ladder, setLadder] = useState<MyLadder | null>(null);
   const [step, setStep] = useState<Step>("loading");
+  const { profile } = useAuth();
+  const [search] = useSearchParams();
+  const back = safeBack(search.get("back"));
   /** The questions asked so far (the last one is on screen) and what was answered, side by side. */
   const [asked, setAsked] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<PlacementAnswer[]>([]);
@@ -43,7 +53,6 @@ export default function Placement() {
   const [message, setMessage] = useState<string | null>(null);
   /** What the student typed for the question on screen, and how long it took. */
   const given = useRef({ answer: 0, ms: 0 });
-  const yearLevel = ladder?.focus.ladder?.yearLevel ?? null;
   const question = step === "asking" ? (asked[steps.length] ?? null) : null;
 
   useEffect(() => {
@@ -51,7 +60,6 @@ export default function Placement() {
     fetchMyLadder().then(
       (d) => {
         if (!current) return;
-        setLadder(d);
         setStep(
           d.focus.ladder?.on && !d.focus.ladder.placed
             ? "intro"
@@ -70,7 +78,7 @@ export default function Placement() {
     done: readonly PlacementStep[],
     before: readonly Question[],
   ): Question | null {
-    const skill = placementNext(yearLevel, done);
+    const skill = placementNext(done);
     if (!skill) return null;
     const used = before
       .filter((_, i) => done[i]?.skill === skill.id)
@@ -91,10 +99,10 @@ export default function Placement() {
   /** Marks it here for the feedback box; the server marks it again for real. */
   function mark(q: Question, answer: number, ms: number): MarkedAnswer {
     given.current = { answer, ms };
-    const fact = q.parts
-      .map((part) => (part === "?" ? String(q.answer) : part))
-      .join(" ");
-    return { correct: answer === q.answer, fact, boxBefore: 0, boxAfter: 0 };
+    // A pick-one question's answer is the number of the choice, so say the choice instead.
+    const right = q.choiceLabels ? q.choiceLabels[q.answer] : String(q.answer);
+    const fact = q.parts.map((part) => (part === "?" ? right : part)).join(" ");
+    return { correct: sameAnswer(answer, q.answer), fact, boxBefore: 0, boxAfter: 0 };
   }
 
   async function finish(all: PlacementAnswer[]) {
@@ -102,6 +110,7 @@ export default function Placement() {
     setMessage(null);
     try {
       await sendPlacement({ answers: all });
+      if (profile) rememberPlaced(profile.id);
       setStep("done");
     } catch (error) {
       setMessage(errorText(error));
@@ -109,31 +118,27 @@ export default function Placement() {
     }
   }
 
-  async function skip() {
-    setStep("saving");
-    try {
-      await sendPlacement({ skip: true });
-      setStep("done");
-    } catch (error) {
-      setMessage(errorText(error));
-      setStep("intro");
-    }
-  }
-
   function onDone(q: Question, result: MarkedAnswer) {
-    const skill = placementNext(yearLevel, steps)!;
+    const skill = placementNext(steps)!;
     const { answer, ms } = given.current;
     const nextSteps = [
       ...steps,
       {
         skill: skill.id,
         correct: result.correct,
-        quick: result.correct && isQuick(ms),
+        quick: result.correct && isQuick(ms, skill),
       },
     ];
     const nextAnswers = [
       ...answers,
-      { skill: skill.id, parts: q.parts, answer, ms },
+      {
+        skill: skill.id,
+        parts: q.parts,
+        answer,
+        ms,
+        key: q.factKey,
+        ...(q.params?.length ? { params: q.params } : {}),
+      },
     ];
     setSteps(nextSteps);
     setAnswers(nextAnswers);
@@ -154,8 +159,8 @@ export default function Placement() {
         {step === "unavailable" && (
           <>
             <p>There’s nothing to do here right now.</p>
-            <Link to="/" className="button button--primary">
-              Back to home
+            <Link to={back ?? "/"} className="button button--primary">
+              {back ? "Carry on" : "Back to home"}
             </Link>
           </>
         )}
@@ -163,8 +168,9 @@ export default function Placement() {
           <>
             <p>
               Here are about {PLACEMENT_QUESTIONS} quick questions. They help
-              the games start in a good place for you. There are no marks and no
-              one sees how you did. If a question is tricky, just have a go.
+              the games and Training start in a good place for you. There are no
+              marks and no one sees how you did. If a question is tricky, just
+              have a go.
             </p>
             <div className="focus-card__actions">
               <button
@@ -174,18 +180,7 @@ export default function Placement() {
               >
                 Let’s go
               </button>
-              <button
-                type="button"
-                className="button button--light-outline"
-                onClick={() => void skip()}
-              >
-                Skip it
-              </button>
             </div>
-            <p className="focus-card__small">
-              If you skip, the games start from your class’s usual place, and
-              you can’t do this later.
-            </p>
             {message && <p role="alert">{message}</p>}
           </>
         )}
@@ -212,8 +207,8 @@ export default function Placement() {
               <span aria-hidden="true">🎉</span> All done! The games are ready
               for you.
             </p>
-            <Link to="/" className="button button--primary">
-              Back to home
+            <Link to={back ?? "/"} className="button button--primary">
+              {back ? "Carry on" : "Back to home"}
             </Link>
           </>
         )}

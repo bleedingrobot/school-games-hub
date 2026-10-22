@@ -1,7 +1,10 @@
-import { NavLink, Outlet } from 'react-router';
+import { NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
+import { themeOf } from '../avatar/avatarParts';
+import { pageTheme, ThemeTrialProvider, useThemeTrial } from '../theme/hubTheme';
 import { trainingOn } from '../training/switch';
+import { CrashScreen } from './CrashScreen';
 import { MuteButton } from './MuteButton';
 import banner from '../assets/dps-banner.png';
 
@@ -12,9 +15,20 @@ const NAV = [
 ];
 
 export function Layout() {
-  const { profile } = useAuth();
   return (
-    <>
+    <ThemeTrialProvider>
+      <ThemedLayout />
+    </ThemeTrialProvider>
+  );
+}
+
+function ThemedLayout() {
+  const { profile } = useAuth();
+  const { pathname } = useLocation();
+  const { trial } = useThemeTrial();
+  const theme = pageTheme(pathname, trial ?? themeOf(profile?.avatar));
+  return (
+    <div className="hub-page" data-hub-theme={theme}>
       <a className="skip-link" href="#main">
         Skip to main content
       </a>
@@ -42,8 +56,11 @@ export function Layout() {
         </div>
       </header>
       <main id="main" tabIndex={-1}>
-        <Outlet />
+        {/* A new page starts with a clean slate, so one broken page doesn't stay broken after you leave it. */}
+        <CrashScreen key={pathname}>
+          <Outlet />
+        </CrashScreen>
       </main>
-    </>
+    </div>
   );
 }

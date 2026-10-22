@@ -1,8 +1,10 @@
 // Connects the gem-keep handler to Supabase. Edit handler.ts for the logic, then run
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
-import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import { userIdFromToken } from '../_shared/signIn';
+import { FLUENT_DAYS, quickMsForPack, TOP_BOX } from '../../../shared/maths/config';
 import { makePlaceSyncer, savePlacement, type PlacePorts } from '../../../shared/maths/syncPlace';
+import { countForFocuses } from '../_shared/focusResults';
 import { makeHandler, type Outcome } from './handler';
 
 declare const Deno: {
@@ -56,19 +58,20 @@ Deno.serve(
     syncPlace: makePlaceSyncer(placePorts),
     savePlacement: (player, raw) => savePlacement(placePorts, player, raw),
     now: () => Date.now(),
-    async userIdFor(token) {
-      const { data, error } = await admin.auth.getUser(token);
-      return error ? null : (data.user?.id ?? null);
-    },
+    userIdFor: userIdFromToken(admin.auth),
     recordRun: (player, run) => call('record_gem_keep_run', { player, run }),
     recordKey: (player, levelId, right) =>
       call('record_gem_keep_key', { player, level_id: levelId, right_answers: right }),
     recordFacts: (player, pack, facts) => call('record_gem_keep_facts', { player, pack, facts }),
     // The rules' numbers come from the shared maths settings, so they live in one place.
-    recordAnswers: (player, pack, batchId, answers) =>
-      call('record_fact_answers', {
-        player, pack, batch_id: batchId, answers, quick_ms: QUICK_MS, fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
-      }),
+    recordAnswers: async (player, pack, batchId, answers) => {
+      const saved = await call<number>('record_fact_answers', {
+        player, pack, batch_id: batchId, answers, quick_ms: quickMsForPack(pack), fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
+      });
+      // Only a batch the records took for the first time counts for a focus, so a retry never counts twice.
+      if (saved.ok && saved.value > 0) await countForFocuses((name, args) => admin.rpc(name, args), player, pack, answers, 'gem-keep');
+      return saved;
+    },
     importProgress: (player, levels) => call('import_gem_keep_progress', { player, levels }),
   }),
 );

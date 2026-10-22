@@ -1,15 +1,17 @@
 import { useState, type ReactNode } from 'react';
-import { recordTyping, type TrainingState } from '../../shared/training/records';
+import { isResting, recordTyping, type TrainingState } from '../../shared/training/records';
 import type { AnswerEvent } from '../../shared/training/save';
 import type { SessionSummary } from '../../shared/training/summary';
 import { greenThisWeek, weekLine } from '../../shared/training/week';
+import { SubitisingApp, type QuickAnswerEvent } from '../subitising/SubitisingApp';
+import type { SubState } from '../subitising/store';
 import { FactsMap } from './FactsMap';
 import { SessionRunner } from './SessionRunner';
 import { Summary } from './Summary';
 import { TypingCheck } from './TypingCheck';
 import './training.css';
 
-type Screen = 'home' | 'typing' | 'session' | 'summary' | 'map';
+type Screen = 'home' | 'typing' | 'session' | 'summary' | 'map' | 'quick';
 
 interface Props {
   state: TrainingState;
@@ -20,6 +22,21 @@ interface Props {
   onAnswered?: (answer: AnswerEvent) => void;
   /** Extra buttons only the preview shows. */
   tools?: ReactNode;
+  /** Open straight into Quick looks (the dashboard card does this). Ignored when there is no Quick looks. */
+  openQuick?: boolean;
+  /** Quick looks (the picture half of Training). Without this there is no Quick looks button. */
+  quick?: {
+    state: SubState;
+    onState: (state: SubState) => void;
+    onAnswered: (answer: QuickAnswerEvent) => void;
+    onSessionEnd: () => void;
+  };
+  /** A whole session (or Quick looks round) was finished, with its seed: it counts for Training before games. */
+  onSessionFinished?: (kind: 'facts' | 'quick', seed: number) => void;
+  /** Shown on the home and end-of-session screens: whether the games are open (Training before games). */
+  gateNote?: ReactNode;
+  /** The maths warm-up comes first (the class uses the ladder and it isn't done): shown instead of Today's session. */
+  placementFirst?: ReactNode;
 }
 
 function seedFor(today: string, n: number): number {
@@ -28,8 +45,8 @@ function seedFor(today: string, n: number): number {
   return h * 31 + n;
 }
 
-export function TrainingApp({ state, onState, today, onAnswered, tools }: Props) {
-  const [screen, setScreen] = useState<Screen>('home');
+export function TrainingApp({ state, onState, today, onAnswered, tools, quick, openQuick, onSessionFinished, gateNote, placementFirst }: Props) {
+  const [screen, setScreen] = useState<Screen>(openQuick && quick ? 'quick' : 'home');
   const [summary, setSummary] = useState<SessionSummary | null>(null);
   const [sessionState, setSessionState] = useState<TrainingState>(state);
   const [seed, setSeed] = useState(1);
@@ -39,6 +56,22 @@ export function TrainingApp({ state, onState, today, onAnswered, tools }: Props)
     setScreen('typing');
   };
 
+  // Quick looks has its own page frame (and its own main area), so it is shown instead of this one.
+  if (screen === 'quick' && quick) {
+    return (
+      <SubitisingApp
+        state={quick.state}
+        onState={quick.onState}
+        today={today}
+        onAnswered={quick.onAnswered}
+        onSessionEnd={quick.onSessionEnd}
+        onRoundFinished={(s) => onSessionFinished?.('quick', s)}
+        gateNote={gateNote}
+        onBack={() => setScreen('home')}
+      />
+    );
+  }
+
   return (
     <main className="tr-app">
       {screen === 'home' && (
@@ -46,9 +79,22 @@ export function TrainingApp({ state, onState, today, onAnswered, tools }: Props)
           <h1>Basic facts training</h1>
           <p>A few minutes a day. No clock, no score: just you and your facts.</p>
           <p className="tr-week">{weekLine(greenThisWeek(state.records, today))}</p>
-          <button type="button" className="tr-btn tr-btn-primary tr-big" onClick={start}>
-            Today’s session
-          </button>
+          {gateNote}
+          {isResting(state, today) && (
+            <p className="tr-note" role="status">
+              For now, your sessions practise facts you’ve already met, to make them really strong. New facts come back soon.
+            </p>
+          )}
+          {placementFirst ?? (
+            <button type="button" className="tr-btn tr-btn-primary tr-big" onClick={start}>
+              Today’s session
+            </button>
+          )}
+          {quick && (
+            <button type="button" className="tr-btn tr-btn-primary" onClick={() => setScreen('quick')}>
+              Quick looks
+            </button>
+          )}
           <button type="button" className="tr-btn" onClick={() => setScreen('map')}>
             My facts map
           </button>
@@ -80,6 +126,8 @@ export function TrainingApp({ state, onState, today, onAnswered, tools }: Props)
           onState={onState}
           onAnswered={onAnswered}
           onFinish={(finalState, s) => {
+            // Before the sessions count goes up (which sends the queue), so the finish goes in the same send.
+            onSessionFinished?.('facts', seed);
             const done = { ...finalState, sessionsDone: finalState.sessionsDone + 1 };
             onState(done);
             setSummary(s);
@@ -87,7 +135,9 @@ export function TrainingApp({ state, onState, today, onAnswered, tools }: Props)
           }}
         />
       )}
-      {screen === 'summary' && summary && <Summary summary={summary} state={state} onHome={() => setScreen('home')} onMap={() => setScreen('map')} />}
+      {screen === 'summary' && summary && (
+        <Summary summary={summary} state={state} onHome={() => setScreen('home')} onMap={() => setScreen('map')} note={gateNote} />
+      )}
       {screen === 'map' && <FactsMap state={state} today={today} onBack={() => setScreen('home')} />}
     </main>
   );

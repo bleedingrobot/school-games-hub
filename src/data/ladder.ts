@@ -20,8 +20,14 @@ export interface MyLadder {
 
 export async function fetchMyLadder(): Promise<MyLadder> {
   const { data, error } = await supabase.rpc("my_ladder");
-  if (error || !data || typeof data !== "object")
-    throw new FriendlyError("We couldn’t load your maths path.");
+  const ladder = error ? null : ladderFrom(data);
+  if (!ladder) throw new FriendlyError("We couldn’t load your maths path.");
+  return ladder;
+}
+
+/** What my_ladder() said, or null if it said nothing usable (someone outside a school). */
+export function ladderFrom(data: unknown): MyLadder | null {
+  if (!data || typeof data !== "object") return null;
   const raw = data as {
     facts?: unknown;
     settings?: { enabledTables?: number[]; division?: boolean } | null;

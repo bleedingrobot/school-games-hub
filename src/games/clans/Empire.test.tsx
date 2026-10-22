@@ -45,6 +45,22 @@ async function toPrice(u: ReturnType<typeof user>, right: boolean) {
   await u.click(btn('Work out the price'));
 }
 
+describe('the land preview', () => {
+  it('warns about a plot too small for any building, and suggests shapes for a chosen building', async () => {
+    const u = user();
+    show(session());
+    await toLand(u);
+    await u.click(btn('Width 2'));
+    await u.click(btn('Length 2'));
+    expect(screen.getByText(/Too small! The smallest building needs 5 squares/)).toBeTruthy();
+    expect((btn('Work out the price') as HTMLButtonElement).disabled).toBe(true);
+    await u.click(btn(/^Barracks\s*15 squares/));
+    expect(screen.getByText(/Barracks needs 15 squares. Plots that fit/)).toBeTruthy();
+    expect(screen.getByText(/Room for: .*Barracks/)).toBeTruthy();
+    expect((btn('Work out the price') as HTMLButtonElement).disabled).toBe(false);
+  });
+});
+
 describe('the Empire home', () => {
   it('starts with 10 plots of wild land, an empty vault and a link from the clan page', async () => {
     const u = user();

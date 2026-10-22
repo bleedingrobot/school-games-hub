@@ -1,13 +1,24 @@
+import { spokenLabel } from '../../shared/maths/banded';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as ladderData from '../data/ladder';
 import { AUTO_FOCUS, type MathsFocus } from '../../shared/maths/focus';
 import { PLACEMENT_QUESTIONS } from '../../shared/maths/config';
 import { checkPlacement } from '../../shared/maths/placementCheck';
 import type { Question } from '../../shared/maths/skillPack';
-import Placement from './Placement';
+import Placement, { safeBack } from './Placement';
+import { AuthContext, type AuthState } from '../auth/AuthContext';
+import { rememberedPlaced } from '../data/placementGate';
+import { FEEDBACK_MS } from '../maths/QuestionModal';
+
+// The warm-up is 10 questions, and the right/wrong message stays up for up to 2 seconds after each one. These tests are
+// about which question comes next and what is sent, not that pause (QuestionModal.test covers it), so shorten it; it stays
+// long enough for the tests to see the message come and go.
+const SHOWN = { ...FEEDBACK_MS };
+beforeAll(() => Object.assign(FEEDBACK_MS, { right: 150, wrong: 150 }));
+afterAll(() => Object.assign(FEEDBACK_MS, SHOWN));
 
 /** Every question the page asked, in order, so the test can answer them. */
 const asked: Question[] = [];
@@ -30,13 +41,23 @@ vi.mock('../data/ladder', async (importOriginal) => ({
 
 const focus = (over: Partial<NonNullable<MathsFocus['ladder']>> = {}): MathsFocus => ({
   ...AUTO_FOCUS,
-  ladder: { on: true, yearLevel: 5, placed: null, placement: null, furthest: null, ...over },
+  ladder: { on: true, placed: null, placement: null, furthest: null, ...over },
 });
-const show = () =>
+const auth: AuthState = {
+  status: 'signed-in',
+  profile: { id: 'u1', display_name: 'Speedy Otter 27', avatar: {}, role: 'student' },
+  message: null,
+  signIn: vi.fn(async () => {}),
+  signOut: vi.fn(async () => {}),
+  refreshProfile: vi.fn(async () => {}),
+};
+const show = (path = '/placement') =>
   render(
-    <MemoryRouter>
-      <Placement />
-    </MemoryRouter>,
+    <AuthContext.Provider value={auth}>
+      <MemoryRouter initialEntries={[path]}>
+        <Placement />
+      </MemoryRouter>
+    </AuthContext.Provider>,
   );
 
 beforeEach(() => {
@@ -49,23 +70,50 @@ beforeEach(() => {
 async function answer(user: ReturnType<typeof userEvent.setup>, n: number, right: boolean) {
   await screen.findByText(`Question ${n} of ${PLACEMENT_QUESTIONS}`, undefined, { timeout: 4000 });
   const q = asked[n - 1];
-  for (const digit of String(right ? q.answer : q.answer + 1)) await user.click(screen.getByRole('button', { name: digit }));
-  await user.click(screen.getByRole('button', { name: 'Check my answer' }));
+  if (q.choices) {
+    // Four choices to tap (order of operations): the right one, or a wrong one.
+    const target = right ? q.answer : q.choices.find((c) => c !== q.answer)!;
+    // A pick-one question names its buttons by the choice (spoken: "3 tenths"), not by its number.
+    const name = q.choiceLabels ? spokenLabel(q.choiceLabels[target]) : String(target);
+    await user.click(screen.getByRole('button', { name }));
+  } else {
+    // Typed on the pad; a decimal has a point key.
+    const typed = String(right ? q.answer : Number((q.answer + 1).toFixed(3)));
+    for (const char of typed) await user.click(screen.getByRole('button', { name: char === '.' ? 'Point' : char }));
+    await user.click(screen.getByRole('button', { name: 'Check my answer' }));
+  }
   // The feedback shows for a moment, then the next question (or the saving) comes up.
   await waitFor(() => expect(document.querySelector('.question[data-result]')).not.toBeNull());
   await waitFor(() => expect(document.querySelector('.question[data-result]')).toBeNull(), { timeout: 4000 });
 }
 
 describe('the warm-up that finds a starting place', () => {
-  it('explains itself kindly, is not called a test, and can be skipped', async () => {
-    const user = userEvent.setup();
+  it('explains itself kindly, is not called a test, and has no skip (a must-do since 22 Oct 2026)', async () => {
     show();
     expect(await screen.findByText(/quick questions/)).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/\btest\b/i);
     expect(document.body.textContent).not.toMatch(/Year \d/);
-    await user.click(screen.getByRole('button', { name: 'Skip it' }));
-    expect(ladderData.sendPlacement).toHaveBeenCalledWith({ skip: true });
-    expect(await screen.findByText(/All done/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Let’s go' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Skip it' })).not.toBeInTheDocument();
+  });
+
+  it('goes back to the game or Training it came from, and remembers on the device that it is done', async () => {
+    const user = userEvent.setup();
+    show('/placement?back=%2Fgame%2Fgem-keep');
+    await user.click(await screen.findByRole('button', { name: 'Let’s go' }));
+    for (let n = 1; n <= PLACEMENT_QUESTIONS; n++) await answer(user, n, true);
+    await screen.findByText(/All done/);
+    expect(screen.getByRole('link', { name: 'Carry on' })).toHaveAttribute('href', '/game/gem-keep');
+    expect(rememberedPlaced('u1')).toBe(true);
+  }, 30_000);
+
+  it('only goes back to a page on this site', () => {
+    expect(safeBack('/training')).toBe('/training');
+    expect(safeBack('/game/space?x=1')).toBe('/game/space?x=1');
+    expect(safeBack('https://example.com')).toBeNull();
+    expect(safeBack('//example.com')).toBeNull();
+    expect(safeBack('/placement?back=/x')).toBeNull();
+    expect(safeBack(null)).toBeNull();
   });
 
   it('asks the questions one at a time, then sends them to be checked', async () => {
@@ -75,10 +123,10 @@ describe('the warm-up that finds a starting place', () => {
     for (let n = 1; n <= PLACEMENT_QUESTIONS; n++) await answer(user, n, true);
     await screen.findByText(/All done/);
     expect(ladderData.sendPlacement).toHaveBeenCalledTimes(1);
-    const sent = vi.mocked(ladderData.sendPlacement).mock.calls[0][0] as { answers: Parameters<typeof checkPlacement>[1] };
+    const sent = vi.mocked(ladderData.sendPlacement).mock.calls[0][0] as { answers: Parameters<typeof checkPlacement>[0] };
     expect(sent.answers).toHaveLength(PLACEMENT_QUESTIONS);
-    // What it sends is exactly what the server will accept for this class.
-    expect(checkPlacement(5, sent.answers)).not.toBeNull();
+    // What it sends is exactly what the server will accept.
+    expect(checkPlacement(sent.answers)).not.toBeNull();
     // Shows no score.
     expect(document.body.textContent).not.toMatch(/\d+ (out )?of \d+ (right|correct)/i);
   }, 30_000);
@@ -118,14 +166,5 @@ describe('the warm-up that finds a starting place', () => {
     show();
     expect(await screen.findByText(/nothing to do here/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Let’s go' })).not.toBeInTheDocument();
-  });
-
-  it('keeps the skip button on screen with the message if skipping fails', async () => {
-    const user = userEvent.setup();
-    vi.mocked(ladderData.sendPlacement).mockRejectedValue(new Error('offline'));
-    show();
-    await user.click(await screen.findByRole('button', { name: 'Skip it' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(/Something went wrong/);
-    expect(screen.getByRole('button', { name: 'Skip it' })).toBeInTheDocument();
   });
 });

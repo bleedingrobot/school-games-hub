@@ -146,3 +146,15 @@ describe('a times-table proof', () => {
     expect(mark(tt('missing-factor', ['48', '÷', '8', '=', '?'], 6))).toEqual({ ok: false, problem: 'proof-kind' });
   });
 });
+
+describe('Size it up gold', () => {
+  it('a right answer adds 20% (rounded up, at least 1); anything else, or no gold, adds nothing', async () => {
+    const { sizeItUpGold } = await import('./maths');
+    expect(sizeItUpGold(10, 'right')).toBe(12);
+    expect(sizeItUpGold(3, 'right')).toBe(4);
+    expect(sizeItUpGold(0, 'right')).toBe(0);
+    expect(sizeItUpGold(10, 'hint')).toBe(10);
+    expect(sizeItUpGold(10, 'wrong')).toBe(10);
+    expect(sizeItUpGold(10, null)).toBe(10);
+  });
+});

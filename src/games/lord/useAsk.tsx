@@ -24,9 +24,12 @@ export interface AskOptions {
 }
 
 interface Pending {
+  /** New for every question, so the box starts fresh even when one question follows straight on from another. */
+  id: number;
   question: Question;
   pack: SkillPack;
   packId: TopicId | ExtraTopicId;
+  moment: MomentId;
   level: number;
   given: { value: number; ms: number } | null;
   hinted: boolean;
@@ -47,6 +50,7 @@ export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[
   // The topics the teacher has left on. A ref, so a change never makes a question box in use start again.
   const on = useRef(topicsOn);
   on.current = topicsOn;
+  const nextId = useRef(0);
 
   const packOf = (id: TopicId | ExtraTopicId): SkillPack => {
     let pack = packs.current.get(id);
@@ -67,7 +71,7 @@ export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[
       const level = questionLevel(chosen, heroLevel);
       const question = pack.nextQuestion({ level });
       if (!question) return Promise.resolve(null);
-      return new Promise<Asked>((resolve) => setPending({ question, pack, packId: chosen, level, given: null, hinted: false, options, resolve }));
+      return new Promise<Asked>((resolve) => setPending({ id: ++nextId.current, question, pack, packId: chosen, moment, level, given: null, hinted: false, options, resolve }));
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [heroLevel, facts],
@@ -80,8 +84,10 @@ export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[
 
   const modal: ReactNode = pending && (
     <QuestionModal
+      key={pending.id}
       question={pending.question as ShownQuestion & { answer: number }}
       title={pending.options.title}
+      spot={pending.moment}
       note={pending.options.note}
       closeLabel={pending.options.closeLabel}
       onHint={() => {

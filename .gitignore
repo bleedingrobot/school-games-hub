@@ -11,9 +11,15 @@ supabase/.branches/
 .claude/settings.local.json
 .space-sim-entry-*.ts
 dist-preview-gem-keep/
+dist-preview-bond-match/
 dist-preview-clans/
 dist-preview-maths/
 dist-preview-training/
+dist-preview-subitising/
 dist-preview-monsters/
 dist-preview-power-clash/
 dist-preview-lord/
+dist-preview-marble/
+dist-preview-mine/
+dist-preview-home/
+dist-preview-archery/

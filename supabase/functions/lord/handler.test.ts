@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { DRAGON_STAGES, MAX_LEVEL, WEAPONS, expNeeded } from '../../../shared/lord/data';
 import { EVENT_BY_ID } from '../../../shared/lord/events';
 import { forestTrip, newHero } from '../../../shared/lord/engine';
-import { offersSizeItUp } from '../../../shared/lord/maths';
+import { offersSizeItUp, SIZE_IT_UP_GOLD } from '../../../shared/lord/maths';
 import type { FightAction } from '../../../shared/lord/types';
 import { batchIdFor, MAX_REQUESTS_PER_MINUTE } from './handler';
 import { DRAGON_SLAYER, Game, NZ_MIDNIGHT, STRONG, SEASON_START, play, proof } from './testKit';
@@ -204,10 +204,16 @@ describe('size it up', () => {
     // The browser plays with the 1.5 bonus after a right answer.
     const right = proof('add-sub', 1, true);
     const { actions, fight } = play({ ...open.start, firstHitBonus: 1.5 });
+    const goldBefore = g.hero().gold;
     const out = await g.send({ action: 'fight-finish', fightId: open.id, actions, sizeUp: right });
     expect(out.body.ok).toBe(true);
     expect(out.body.result.sizeUp).toBe('right');
     expect(out.body.result.outcome).toBe(fight.outcome);
+    // A win pays 20% more gold (rounded up), and the hero really gets it.
+    expect(fight.outcome).toBe('won');
+    const gold = fight.monster.gold + Math.ceil(fight.monster.gold * SIZE_IT_UP_GOLD) + fight.goldPinched;
+    expect(out.body.result.gold).toBe(gold);
+    expect(g.hero().gold).toBe(goldBefore + gold);
     // And the answer went into the maths records.
     expect(Object.values(g.db.batches).some((b) => b.pack === 'add-sub' && b.answers[0].correct)).toBe(true);
   });

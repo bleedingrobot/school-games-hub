@@ -6,7 +6,7 @@
  */
 import { TRAINING_CONFIG, type TrainingConfig } from './config';
 import { digitsOf, FACTS, FACT_BY_KEY, FAMILY_BY_KEY, promptText, tableStep, type Fact } from './facts';
-import { isKnown, isSecure, isStruggling, overdueDays, recordBand, type TrainingState } from './records';
+import { isFlying, isKnown, isResting, isSecure, isStruggling, overdueDays, recordBand, type TrainingState } from './records';
 import { seeded } from '../seededRandom';
 
 export type QuestionRole = 'learning' | 'review' | 'known';
@@ -24,6 +24,10 @@ export interface SessionQuestion {
 export interface Session {
   seed: number;
   struggling: boolean;
+  /** Learning more new facts at once because nearly everything lately was right and quick. */
+  flying: boolean;
+  /** The practice fortnight: no new facts, only facts already met, best known first. */
+  resting: boolean;
   /** The ladder step the student is working on. */
   step: number;
   questions: SessionQuestion[];
@@ -40,10 +44,14 @@ function ladderOrder(fact: Fact, config: TrainingConfig): number {
   return (fact.kind === 'div' ? 100000 : 0) + own * 1000 + other;
 }
 
-/** The ladder step this student is on: the first step with a times or division fact that isn't secure yet. */
+/**
+ * The ladder step this student is on: the first step with a times or division fact that isn't secure yet. Steps their starting
+ * place has already put behind them (`passedSteps`) are skipped.
+ */
 export function currentStep(state: TrainingState, config: TrainingConfig = TRAINING_CONFIG): number {
   const last = config.tableFamilies.length;
-  for (let step = 1; step <= last; step++) {
+  const first = Math.min(Math.max((state.passedSteps ?? 0) + 1, 1), last);
+  for (let step = first; step <= last; step++) {
     if (FACTS.some((f) => f.step === step && !isSecure(state.records[f.key], config))) return step;
   }
   return last;
@@ -104,11 +112,19 @@ export function buildSession(state: TrainingState, today: string, seed: number, 
   for (let i = 0; i < 6; i++) rng(); // small seeds start out too alike
   const s = config.session;
   const struggling = isStruggling(state, config);
-  const mix = struggling ? s.struggling : { learningFacts: s.learningFacts, reviewShare: s.reviewShare, knownShare: s.knownShare, knownFacts: s.knownFacts };
+  // A practice fortnight needs facts to practise; a student with none yet carries on as usual.
+  const resting = isResting(state, today) && FACTS.some((f) => state.records[f.key]);
+  const flying = !resting && !struggling && isFlying(state, config);
+  const r = config.rest;
+  const mix = resting
+    ? { learningFacts: 0, reviewShare: r.reviewShare, knownShare: r.knownShare, knownFacts: r.knownFacts }
+    : struggling
+    ? s.struggling
+    : { learningFacts: flying ? s.flying.learningFacts : s.learningFacts, reviewShare: s.reviewShare, knownShare: s.knownShare, knownFacts: s.knownFacts };
   const total = Math.min(Math.max(s.questions, s.minQuestions), s.maxQuestions);
   const step = currentStep(state, config);
 
-  const learning = learningFacts(state, mix.learningFacts, config);
+  const learning = mix.learningFacts > 0 ? learningFacts(state, mix.learningFacts, config) : [];
   const learningKeys = new Set(learning.map((f) => f.key));
   const started = FACTS.filter((f) => state.records[f.key] && !learningKeys.has(f.key));
 
@@ -117,8 +133,9 @@ export function buildSession(state: TrainingState, today: string, seed: number, 
   if (knownPool.length === 0) knownPool = started.filter((f) => isSecure(state.records[f.key], config));
   knownPool = shuffle(knownPool, rng).slice(0, mix.knownFacts);
 
-  // Review: weakest first, then the most overdue.
-  const reviewPool = [...started].sort((p, q) => (recordBand(state.records[q.key]) ?? 0) - (recordBand(state.records[p.key]) ?? 0)
+  // Review: weakest first, then the most overdue. In a practice fortnight, best known first instead, for the wins.
+  const weakness = (f: Fact) => (recordBand(state.records[f.key]) ?? 0) * (resting ? -1 : 1);
+  const reviewPool = [...started].sort((p, q) => weakness(q) - weakness(p)
       || overdueDays(state.records[q.key], today, config) - overdueDays(state.records[p.key], today, config)
       || p.key.localeCompare(q.key));
 
@@ -172,7 +189,7 @@ export function buildSession(state: TrainingState, today: string, seed: number, 
     digits: digitsOf(fact.answer),
     role,
   }));
-  return { seed, struggling, step, questions };
+  return { seed, struggling, flying, resting, step, questions };
 }
 
 /**

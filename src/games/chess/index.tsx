@@ -24,4 +24,5 @@ export const chess: GameDefinition = {
   Icon: ChessIcon,
   Play: ChessPlay,
   Live: ChessFriendGame,
+  group: 'no-maths',
 };

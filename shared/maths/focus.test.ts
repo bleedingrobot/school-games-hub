@@ -1,3 +1,4 @@
+import { solveClaim } from './claim';
 import { describe, expect, it } from 'vitest';
 import { randomFromSeed } from '../space/random';
 import { afterAnswer, newStats, type FactStats } from './leitner';
@@ -57,7 +58,8 @@ describe('reading a focus from the server', () => {
 
   it('hasFocus ignores skills the games can not ask yet', () => {
     expect(hasFocus(focus(['facts-10']))).toBe(true);
-    expect(hasFocus(focus(['bedmas']))).toBe(false); // not built yet
+    expect(hasFocus(focus(['percent-of']))).toBe(true); // built in F.6
+    expect(hasFocus(focus(['not-built-yet']))).toBe(false);
     expect(hasFocus(focus(['no-such-skill']))).toBe(false);
     expect(hasFocus(AUTO_FOCUS)).toBe(false);
     expect(hasFocus(null)).toBe(false);
@@ -184,7 +186,7 @@ describe('the keys a focus draws from', () => {
   });
 
   it('ignores skills that are not built', () => {
-    expect(focusPools({ skills: ['bedmas', 'nonsense'], onlyThese: false })).toEqual({ focus: [], review: [], stretch: [] });
+    expect(focusPools({ skills: ['not-built-yet', 'nonsense'], onlyThese: false })).toEqual({ focus: [], review: [], stretch: [] });
   });
 
   it('puts chosen skills from different places on the ladder together', () => {
@@ -202,7 +204,7 @@ describe('the pack a game asks from', () => {
   it('is the times-table pack with no focus, as before', () => {
     expect(makeFocusPack([], null).id).toBe('times-tables');
     expect(makeFocusPack([], AUTO_FOCUS).id).toBe('times-tables');
-    expect(makeFocusPack([], focus(['bedmas'])).id).toBe('times-tables');
+    expect(makeFocusPack([], focus(['not-built-yet'])).id).toBe('times-tables');
   });
 
   it('keeps only times-table records in the times-table pack', () => {
@@ -318,7 +320,8 @@ describe('marking a question from the screen', () => {
       const pack = makeFocusPack([], focus([skill.id], { onlyThese: true }), { division: true }, randomFromSeed(`solve-${skill.id}`));
       for (let i = 0; i < 400; i++) {
         const q = pack.nextQuestion({ division: true, missingFactor: true })!;
-        const solved = solveParts(q.parts);
+        // A browser sends the record and the numbers with the answer; the server makes the question again from them.
+        const solved = solveClaim({ parts: q.parts, key: q.factKey, params: q.params });
         expect(solved, `${skill.id}: ${q.parts.join(' ')}`).not.toBeNull();
         expect(solved!.answer, `${skill.id}: ${q.parts.join(' ')}`).toBe(q.answer);
         expect(solved!.keys, `${skill.id}: ${q.parts.join(' ')} should count towards ${q.factKey}`).toContain(q.factKey);

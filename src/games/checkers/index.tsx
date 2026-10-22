@@ -25,4 +25,5 @@ export const checkers: GameDefinition = {
   Icon: CheckersIcon,
   Play: CheckersPlay,
   Live: CheckersFriendGame,
+  group: 'no-maths',
 };

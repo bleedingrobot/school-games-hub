@@ -11,7 +11,9 @@
  * a free server function), so these are plausibility checks: the level exists, the numbers
  * fit it, and nothing is impossibly fast. Points are small and capped, so a faked run gains little.
  */
-import { FLUENT_DAYS, TOP_BOX } from '../maths/config';
+import { sameAnswer } from '../maths/banded';
+import { cleanParams, solveClaim, type ShownAnswer } from '../maths/claim';
+import { FLUENT_DAYS, keptMs, TOP_BOX } from '../maths/config';
 import { parseFactKey } from '../maths/facts';
 import { FOCUS_PACKS, isFocusKey, packIdOfKey, type FocusPackId } from '../maths/focus';
 import type { FactAnswer, FactStats } from '../maths/leitner';
@@ -47,7 +49,11 @@ export interface FactsItem {
   facts: FactStats[];
 }
 
-/** Answers since the last save, oldest first. The server adds each to the student's records. */
+/**
+ * Answers since the last save, oldest first. Each carries the question as it was shown and what the student gave, and the
+ * server marks it itself (`solveClaim`): the browser's own "right" or "wrong" is never taken. The server adds each to the
+ * student's records.
+ */
 export interface AnswersItem {
   type: 'answers';
   /**
@@ -57,7 +63,8 @@ export interface AnswersItem {
   pack: FocusPackId;
   /** Made by the browser, so the same answers are only counted once. */
   batchId: string;
-  answers: FactAnswer[];
+  /** As sent: `ShownAnswer`s (older browsers sent plain `FactAnswer`s). After checking: the answers as marked here. */
+  answers: FactAnswer[] | ShownAnswer[];
 }
 
 export interface ImportItem {
@@ -66,8 +73,9 @@ export interface ImportItem {
 }
 
 /**
- * `facts` (whole records) is how Gem Keep saved before 17 Oct 2026. It's still accepted, for
- * saves waiting on a device, but the website now sends `answers`.
+ * `facts` (whole records) is how Gem Keep saved before 17 Oct 2026, and answers without the question shown are how it saved
+ * before 20 Oct 2026. Both are only accepted until `OLD_SAVES_UNTIL`, for saves still waiting on a device or a tab left open
+ * with the old page: they take the browser's word, so after that they are refused.
  */
 export type SaveItem = RunItem | KeyItem | FactsItem | AnswersItem | ImportItem;
 
@@ -98,6 +106,15 @@ export const MAX_FACTS = 200;
 export const MAX_ANSWERS = 500;
 /** An average answer quicker than this, over a few answers, isn't a person typing. */
 export const MIN_AVG_MS = 250;
+
+/**
+ * Old-style saves (see `SaveItem`) are accepted until this moment (by the server's clock), then refused. 15 Nov 2026, midnight
+ * in New Zealand: a few weeks after the change goes live, long enough for every Chromebook to have reloaded the page.
+ */
+export const OLD_SAVES_UNTIL = Date.parse('2026-11-15T00:00:00+13:00');
+/** The most parts a question is shown in (order of operations is the longest), and the longest part. */
+const MAX_PARTS = 12;
+const MAX_PART_LENGTH = 40;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -170,6 +187,7 @@ function checkFact(f: unknown, nowMs: number): FactStats | null {
 }
 
 function checkFacts(x: Record<string, unknown>, nowMs: number): Checked<FactsItem> {
+  if (nowMs >= OLD_SAVES_UNTIL) return { ok: false, problem: 'old-save' };
   if (x.pack !== 'times-tables') return { ok: false, problem: 'pack' };
   if (!Array.isArray(x.facts) || x.facts.length > MAX_FACTS) return { ok: false, problem: 'facts' };
   // A bad record is left out; the good ones still save.
@@ -190,15 +208,34 @@ function checkAnswers(x: Record<string, unknown>, nowMs: number): Checked<Answer
   if (!pack) return { ok: false, problem: 'pack' };
   if (typeof x.batchId !== 'string' || !UUID.test(x.batchId)) return { ok: false, problem: 'batch-id' };
   if (!Array.isArray(x.answers) || x.answers.length > MAX_ANSWERS) return { ok: false, problem: 'answers' };
-  // A bad answer is left out (an impossibly quick one too); the good ones still count.
+  // A bad answer is left out (an impossibly quick one too, or one whose question doesn't hold up); the good ones still count.
   const answers: FactAnswer[] = [];
   for (const raw of x.answers) {
     const a = (raw ?? {}) as Record<string, unknown>;
-    if (typeof a.key !== 'string' || !isFocusKey(a.key) || packIdOfKey(a.key) !== pack || typeof a.correct !== 'boolean') continue;
+    if (typeof a.key !== 'string' || !isFocusKey(a.key) || packIdOfKey(a.key) !== pack) continue;
     if (!isInt(a.ms, MIN_AVG_MS, 3_600_000) || !isInt(a.at, nowMs - 60 * 86_400_000, nowMs + 86_400_000)) continue;
-    answers.push({ key: a.key, correct: a.correct, ms: a.ms, at: a.at });
+    const correct = a.parts === undefined ? oldStyleCorrect(a, nowMs) : markShown(a, a.key);
+    if (correct === null) continue;
+    answers.push({ key: a.key, correct, ms: keptMs(a.ms), at: a.at });
   }
   return { ok: true, item: { type: 'answers', pack, batchId: x.batchId, answers } };
+}
+
+/** Marks an answer from the question as it was shown: right, wrong, or null when that question can't be this record's. */
+function markShown(a: Record<string, unknown>, key: string): boolean | null {
+  const { parts, given, params } = a;
+  if (!Array.isArray(parts) || parts.length === 0 || parts.length > MAX_PARTS) return null;
+  if (!parts.every((p) => typeof p === 'string' && p.length <= MAX_PART_LENGTH)) return null;
+  if (typeof given !== 'number' || !Number.isFinite(given)) return null;
+  if (params !== undefined && !cleanParams(params)) return null;
+  const solved = solveClaim({ parts, key, params });
+  if (!solved || !solved.keys.includes(key)) return null;
+  return sameAnswer(given, solved.answer);
+}
+
+/** An answer from a browser older than 20 Oct 2026 (no question shown): its own word, until `OLD_SAVES_UNTIL`. */
+function oldStyleCorrect(a: Record<string, unknown>, nowMs: number): boolean | null {
+  return nowMs < OLD_SAVES_UNTIL && typeof a.correct === 'boolean' ? a.correct : null;
 }
 
 /** Trial progress: stars must be 0–3 and Level Keys only in campaign order, as the game allows. */

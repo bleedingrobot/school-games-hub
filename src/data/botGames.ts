@@ -142,9 +142,14 @@ export async function fetchRecentGames(limit = 5): Promise<SavedGame[]> {
     .order('finished_at', { ascending: false })
     .limit(limit);
   if (error || !data) throw new FriendlyError("We couldn't load your games.");
-  return (data as (SavedGame & { card101Place?: number | null })[]).map(({ card101Place, ...game }) =>
-    game.game === '101' ? { ...game, place: card101Place ?? null } : game,
-  );
+  return tidyRecentGames(data as RecentGameRow[]);
+}
+
+/** A recent bot game as the database sends it: 101 keeps its place in a column of its own. */
+export type RecentGameRow = SavedGame & { card101Place?: number | null };
+
+export function tidyRecentGames(rows: RecentGameRow[]): SavedGame[] {
+  return rows.map(({ card101Place, ...game }) => (game.game === '101' ? { ...game, place: card101Place ?? null } : game));
 }
 
 export async function fetchMyStats(): Promise<GameStats[]> {

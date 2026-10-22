@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { bandAt, bandIndexForMs, factBandIndex, middle, thinkingMs, typingMsFor, type Answer } from './speed';
-import { dayString, daysBetween, emptyState, isKnown, recordAnswer, recordTyping } from './records';
+import { bandAt, bandIndexForMs, factBandIndex, middle, thinkingMs, typingCeilingMs, typingMsFor, type Answer } from './speed';
+import { dayString, daysBetween, emptyState, isKnown, rebuildState, recordAnswer, recordTyping } from './records';
 
 const right = (thinkMs: number, day = '2026-10-19'): Answer => ({ correct: true, thinkMs, day });
 const wrong = (day = '2026-10-19'): Answer => ({ correct: false, thinkMs: null, day });
@@ -14,17 +14,39 @@ describe('thinking time', () => {
 
   it('uses the typing time for the answer length', () => {
     const samples = { 1: [500, 600, 700], 2: [1000, 1200, 1100], 3: [] };
-    expect(typingMsFor(1, samples)).toBe(600);
-    expect(typingMsFor(2, samples)).toBe(1100);
+    expect(typingMsFor(1, samples)).toBe(500);
+    expect(typingMsFor(2, samples)).toBe(1000);
     // No checks yet for 3 digits: use the default.
     expect(typingMsFor(3, samples)).toBe(1500);
   });
 
-  it('uses the middle of the last several checks, so one slow check does not change it', () => {
+  it('uses the fastest of the last several checks, so a slow check (reading, a slip) does not count', () => {
     const samples = { 1: [500, 520, 480, 510, 9000] };
-    expect(typingMsFor(1, samples)).toBe(510);
+    expect(typingMsFor(1, samples)).toBe(480);
+    // Only the last 5 count.
+    expect(typingMsFor(1, { 1: [100, 900, 900, 900, 900, 900] })).toBe(900);
     expect(middle([3, 1, 2])).toBe(2);
     expect(middle([])).toBeNull();
+  });
+
+  it('never takes off more than the ceiling for the answer length', () => {
+    expect(typingCeilingMs(1)).toBe(1000);
+    expect(typingCeilingMs(2)).toBe(1500);
+    expect(typingCeilingMs(3)).toBe(2000);
+    expect(typingMsFor(1, { 1: [10000, 4000] })).toBe(1000);
+    expect(typingMsFor(2, { 2: [2600] })).toBe(1500);
+    expect(typingMsFor(3, { 3: [5000] })).toBe(2000);
+  });
+
+  it('scores a saved answer with the ceiling, whatever typing time was saved with it', () => {
+    // Saved before the ceiling: a 6 s answer with a 10 s warm-up taken off came out as no thinking time ("Just know it!").
+    const saved = [{ key: 'mul:2x3', correct: true, ms: 6000, typingMs: 10000, day: '2026-10-19', at: 1 }];
+    const record = rebuildState(saved).records['mul:2x3'];
+    expect(record.answers[0].thinkMs).toBe(5000); // 6000 - the 1-digit ceiling of 1000
+    expect(bandAt(factBandIndex(record.answers)!).id).toBe('orange');
+    // A saved typing time under the ceiling is used as it was.
+    const quick = rebuildState([{ ...saved[0], ms: 1400, typingMs: 600 }]).records['mul:2x3'];
+    expect(quick.answers[0].thinkMs).toBe(800);
   });
 
   it('subtracts the typing time in a recorded answer', () => {

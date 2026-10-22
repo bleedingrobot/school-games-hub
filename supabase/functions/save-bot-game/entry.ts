@@ -1,9 +1,11 @@
 // Connects the save-bot-game handler to Supabase. Edit handler.ts for the logic, then run
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
-import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import { userIdFromToken } from '../_shared/signIn';
+import { FLUENT_DAYS, quickMsForPack, TOP_BOX } from '../../../shared/maths/config';
 import { makePlaceSyncer } from '../../../shared/maths/syncPlace';
 import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
+import { countForFocuses } from '../_shared/focusResults';
 import { stamper } from '../_shared/stamp';
 import { handleSaveBotGame } from './handler';
 
@@ -43,10 +45,7 @@ const syncPlace = makePlaceSyncer({
 
 Deno.serve((request) =>
   handleSaveBotGame(request, {
-    async userIdFor(token) {
-      const { data, error } = await admin.auth.getUser(token);
-      return error ? null : (data.user?.id ?? null);
-    },
+    userIdFor: userIdFromToken(admin.auth),
     async record(row) {
       const { error } = await admin.rpc('record_bot_game', row);
       if (!error) return 'saved';
@@ -82,10 +81,12 @@ Deno.serve((request) =>
       return parseMathsSwitch((data as { space_maths?: string } | null)?.space_maths);
     },
     async recordAnswers(player, batchId, answers, pack = 'times-tables') {
-      const { error } = await admin.rpc('record_fact_answers', {
-        player, pack, batch_id: batchId, answers, quick_ms: QUICK_MS, fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
+      const { data, error } = await admin.rpc('record_fact_answers', {
+        player, pack, batch_id: batchId, answers, quick_ms: quickMsForPack(pack), fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
       });
       if (error) throw new Error(error.code ?? 'unknown');
+      // Only a batch the records took for the first time counts for a focus, so a retry never counts twice.
+      if (typeof data === 'number' && data > 0) await countForFocuses((name, args) => admin.rpc(name, args), player, pack, answers, 'save-bot-game');
       await syncPlace(player);
     },
     // One key for all the seeded games; the stamped text says which game (and student) it's for.

@@ -14,7 +14,8 @@
  * The records on screen are always the saved answers plus anything not saved yet, played back
  * through shared/training/records.ts, so a session done offline shows up straight away.
  */
-import { FACT_BY_KEY } from '../../shared/training/facts';
+import { finishedInARow, quickAnswersFrom, splitTyping, type QuickSettings } from '../../shared/subitising/saved';
+import { progressFrom, type SubAnswer } from '../../shared/subitising/engine';
 import {
   emptyState,
   rebuildState,
@@ -23,7 +24,17 @@ import {
   type SavedStudent,
   type TrainingState,
 } from '../../shared/training/records';
-import { MAX_ANSWERS_PER_BATCH, MAX_ITEMS, type AnswerEvent, type AnswerInput, type SaveItem, type SaveResponse, type StudentItem } from '../../shared/training/save';
+import {
+  correctAnswerFor,
+  MAX_ANSWERS_PER_BATCH,
+  MAX_ITEMS,
+  type AnswerEvent,
+  type AnswerInput,
+  type SaveItem,
+  type SaveResponse,
+  type SessionKind,
+  type StudentItem,
+} from '../../shared/training/save';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
 
@@ -93,6 +104,31 @@ export function enqueueStudent(player: string, item: StudentItem) {
   set(queueKey(player), [...items, item].slice(-MAX_QUEUE));
 }
 
+/**
+ * A whole session finished (Training before games). Its answers are sealed into the queue first, so the server has them
+ * before it checks the session. This device also remembers the time, so the games open straight away even offline.
+ */
+export function enqueueSession(player: string, kind: SessionKind, seed: number, at: number = Date.now()) {
+  sealPending(player);
+  set(queueKey(player), [...queuedItems(player), { type: 'session', kind, seed, at }].slice(-MAX_QUEUE));
+  rememberFinished(player, at);
+}
+
+const finishedKey = (player: string) => `sgh-training-finished:${player}`;
+
+function rememberFinished(player: string, at: number) {
+  if (at <= (localFinishedAt(player) ?? 0)) return;
+  write(finishedKey(player), at);
+  // Storage blocked: kept until the page closes instead.
+  if (read<number>(finishedKey(player)) !== at) memory.set(finishedKey(player), at);
+}
+
+/** When this device last saw the student finish a session, or null. */
+export function localFinishedAt(player: string): number | null {
+  const at = read<number>(finishedKey(player)) ?? (memory.get(finishedKey(player)) as number | undefined);
+  return typeof at === 'number' && Number.isFinite(at) ? at : null;
+}
+
 /** Turns the pending answers into batches with ids and puts them at the end of the queue. */
 export function sealPending(player: string) {
   const pending = pendingAnswers(player);
@@ -111,7 +147,7 @@ export function sealPending(player: string) {
 
 const toSaved = (a: AnswerInput): SavedAnswer => ({
   key: a.key,
-  correct: a.given === FACT_BY_KEY.get(a.key)?.answer,
+  correct: a.given === correctAnswerFor(a.key),
   ms: a.ms,
   typingMs: a.typingMs,
   day: a.day,
@@ -127,7 +163,7 @@ export function unsavedAnswers(player: string): SavedAnswer[] {
 /** Typing times and settings still waiting to be saved (newer than the server's). */
 export function unsavedStudent(player: string): SavedStudent | null {
   const item = queuedItems(player).find((i): i is StudentItem => i.type === 'student');
-  return item ? { typing: item.typing, autoSubmit: item.autoSubmit, sessionsDone: item.sessionsDone } : null;
+  return item ? { typing: item.typing, autoSubmit: item.autoSubmit, sessionsDone: item.sessionsDone, quick: item.quick ?? null } : null;
 }
 
 /**
@@ -140,7 +176,9 @@ function keepInCopy(player: string, done: SaveItem[]) {
   const student = [...done].reverse().find((i): i is StudentItem => i.type === 'student');
   write(copyKey(player), {
     answers: withUnsaved(copy.answers, answers),
-    student: student ? { typing: student.typing, autoSubmit: student.autoSubmit, sessionsDone: student.sessionsDone } : copy.student,
+    student: student
+      ? { typing: student.typing, autoSubmit: student.autoSubmit, sessionsDone: student.sessionsDone, quick: student.quick ?? copy.student?.quick ?? null }
+      : copy.student,
   });
 }
 
@@ -210,16 +248,42 @@ export function stateFrom(player: string, data: TrainingData | null): TrainingSt
  * anything still queued), else the copy kept in this browser, else a fresh start.
  * `offline` says the server couldn't be reached.
  */
-export async function loadTraining(player: string): Promise<{ state: TrainingState; offline: boolean }> {
+export async function loadTraining(player: string): Promise<{ state: TrainingState; offline: boolean; quick: QuickLoad }> {
   await flushQueue(player);
   try {
     const { data, error } = await supabase.rpc('my_training');
     if (error || !data) throw error ?? new Error('no data');
     const loaded = data as TrainingData;
-    const kept: TrainingData = { answers: loaded.answers ?? [], student: loaded.student ?? null };
+    // The database keeps Quick looks settings inside the typing column: pull them out so Training only sees typing times.
+    const split = splitTyping(loaded.student?.typing as Record<string, unknown> | undefined);
+    const kept: TrainingData = {
+      answers: loaded.answers ?? [],
+      student: loaded.student ? { ...loaded.student, typing: split.typing, quick: split.quick } : null,
+    };
     write(copyKey(player), kept);
-    return { state: stateFrom(player, kept), offline: false };
+    return { state: stateFrom(player, kept), offline: false, quick: quickFrom(player, kept) };
   } catch {
-    return { state: stateFrom(player, read<TrainingData>(copyKey(player))), offline: true };
+    const kept = read<TrainingData>(copyKey(player));
+    return { state: stateFrom(player, kept), offline: true, quick: quickFrom(player, kept) };
   }
+}
+
+/** Everything Quick looks needs to open: the student's Quick looks answers (saved and not yet saved) and settings. */
+export interface QuickLoad {
+  answers: SubAnswer[];
+  settings: QuickSettings | null;
+}
+
+/**
+ * Quick looks answers come out of the same saved answers as the facts map, but never go into it
+ * (rebuildState leaves them out). The stage reached is kept with the student, so a stage finished
+ * long ago stays finished even after its oldest answers have been trimmed from the database.
+ */
+export function quickFrom(player: string, data: TrainingData | null): QuickLoad {
+  const answers = quickAnswersFrom(withUnsaved(data?.answers ?? [], unsavedAnswers(player)));
+  const settings = unsavedStudent(player)?.quick ?? data?.student?.quick ?? null;
+  if (!settings) return { answers, settings: null };
+  // Never behind what the answers themselves show.
+  const shown = finishedInARow(progressFrom(answers, settings.startStage, undefined, settings.finished));
+  return { answers, settings: { ...settings, finished: Math.max(settings.finished, shown) as QuickSettings['finished'] } };
 }

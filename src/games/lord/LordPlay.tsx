@@ -10,6 +10,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type
 import { SKILL_USES_PER_DAY, WEAPONS, expNeeded, masterFor } from '../../../shared/lord/data';
 import { canChallengeMaster, canFaceDragon } from '../../../shared/lord/engine';
 import { EVENT_BY_ID } from '../../../shared/lord/events';
+import { SIZE_IT_UP_GOLD, sizeItUpBonus } from '../../../shared/lord/maths';
 import type { LordAction, LordState } from '../../../shared/lord/server';
 import type { FightAction, FightState, Hero, HeroClass } from '../../../shared/lord/types';
 import { useAuth } from '../../auth/AuthContext';
@@ -313,7 +314,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     if (!fight) return toVillage();
     let answer: Answer | null = null;
     if (sizeUp) {
-      answer = await ask('size-it-up', { title: `Size up the ${fight.start.monster.name}`, note: 'A right answer finds its weak spot: your first hit is bigger.', closeLabel: 'Skip, just fight' });
+      answer = await ask('size-it-up', { title: `Size up the ${fight.start.monster.name}`, note: `A right answer finds its weak spot: your first hit is ×${sizeItUpBonus('right')}, and you get ${Math.round(SIZE_IT_UP_GOLD * 100)}% more gold if you win.`, closeLabel: 'Skip, just fight' });
     }
     playFight(fight, answer);
   }
@@ -475,7 +476,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
           <h2>{withArticle(fight.start.monster.name).replace(/^a/, 'A')} appears!</h2>
           <p className="lord-lead">{fight.start.monster.intro}</p>
           <div className="lord-actions">
-            {sizeUp && <button type="button" className="lord-btn lord-btn--hot" onClick={() => void beginFight(true)}>Size it up (a maths question)</button>}
+            {sizeUp && <button type="button" className="lord-btn lord-btn--hot" onClick={() => void beginFight(true)}>Size it up: a right answer = first hit ×{sizeItUpBonus('right')} and +{Math.round(SIZE_IT_UP_GOLD * 100)}% gold</button>}
             <button type="button" className={`lord-btn${sizeUp ? '' : ' lord-btn--hot'}`} autoFocus={!sizeUp} onClick={() => void beginFight(false)}>Fight!</button>
           </div>
         </section>

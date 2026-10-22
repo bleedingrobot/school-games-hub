@@ -16,6 +16,7 @@ import type { FactAnswer } from './leitner';
 import type { AnswerResult, Question, SkillPack } from './skillPack';
 import { BANDED_PACKS } from './skillPacks';
 import { EARLY_FACTS, earlyFactsPack } from './skillPacks/earlyFacts';
+import { GENERATED_SKILL_KEYS, generatedPack, isGeneratedKey } from './skillPacks/generated';
 import { BandedPack } from './banded';
 import { TimesTables } from './skillPacks/timesTables';
 
@@ -72,42 +73,45 @@ function tablesSkills(): LadderSkill[] {
   });
 }
 
-const stub = (id: string, label: string, stage: LadderStage, ...curriculumTags: string[]): LadderSkill => ({ id, label, stage, curriculumTags, keys: [], built: false });
+/** A skill made of generated question types (kept per type, not per fact). */
+const generated = (id: string, label: string, stage: LadderStage, keys: readonly string[], ...curriculumTags: string[]): LadderSkill => ({ id, label, stage, curriculumTags, keys: [...keys], built: true });
 const tables = tablesSkills();
 
 /** Easiest first. Table skills are in the order of `CAMPAIGN_STEPS`. */
 export const LADDER: LadderSkill[] = [
   { id: 'facts-10', label: 'Number facts to 10', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P1'], keys: [...earlyKeys('bond10'), ...addKeys((s) => s <= 10)], built: true },
   { id: 'dbl-half-10', label: 'Doubles and halves to 10', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P2'], keys: earlyKeys('dblHalf10'), built: true },
-  stub('ten-and', 'Ten and a number (10 + 4)', 'early-facts', 'MS.Y1.NUM.OP.P6'),
+  { id: 'ten-and', label: 'Ten and a number (10 + 4)', stage: 'early-facts', curriculumTags: ['MS.Y1.NUM.OP.P6'], keys: earlyKeys('tenAnd'), built: true },
   { id: 'facts-20', label: 'Number facts to 20', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P1'], keys: [...earlyKeys('bond20'), ...addKeys((s) => s > 10)], built: true },
   { id: 'dbl-half-20', label: 'Doubles and halves to 20', stage: 'early-facts', curriculumTags: ['MS.Y2.NUM.OP.P2'], keys: earlyKeys('dblHalf20'), built: true },
   tables[0],
-  stub('bonds-100', 'Pairs that make 100', 'place-value', 'MS.Y3.NUM.OP.P1'),
+  generated('bonds-100', 'Pairs that make 100', 'place-value', GENERATED_SKILL_KEYS['bonds-100'], 'MS.Y3.NUM.OP.P1'),
   tables[1],
-  stub('round-10-100', 'Rounding to the nearest 10 and 100', 'rounding', 'MS.Y3.NUM.NS.P5'),
-  stub('bonds-1000', 'Hundreds that make 1000', 'place-value'),
-  stub('unit-fraction-of', 'A fraction of an amount (⅓ of 15)', 'fractions-decimals-percentages', 'MS.Y3.NUM.RN.P7'),
+  generated('round-10-100', 'Rounding to the nearest 10 and 100', 'rounding', GENERATED_SKILL_KEYS['round-10-100'], 'MS.Y3.NUM.NS.P5'),
+  generated('bonds-1000', 'Hundreds that make 1000', 'place-value', GENERATED_SKILL_KEYS['bonds-1000']),
+  generated('unit-fraction-of', 'A fraction of an amount (⅓ of 15)', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['unit-fraction-of'], 'MS.Y3.NUM.RN.P7'),
+  generated('fraction-bonds', 'Fractions that make 1 (⅜ + ⅝)', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['fraction-bonds'], 'MS.Y3.NUM.RN.P6', 'MS.Y3.NUM.RN.K6'),
   tables[2],
   tables[3],
-  stub('times-tens', 'Times with tens and hundreds (30 × 4)', 'place-value', 'MS.Y4.NUM.OP.P3'),
-  stub('tenths', 'Tenths and decimals of a half', 'fractions-decimals-percentages', 'MS.Y4.NUM.RN.P3', 'MS.Y4.NUM.RN.P5'),
-  stub('add-tenths', 'Adding and taking away tenths', 'fractions-decimals-percentages', 'MS.Y4.NUM.RN.P10'),
-  stub('round-1000', 'Rounding to the nearest 1000', 'rounding', 'MS.Y4.NUM.NS.K4'),
+  generated('times-tens', 'Times with tens and hundreds (30 × 4)', 'place-value', GENERATED_SKILL_KEYS['times-tens'], 'MS.Y4.NUM.OP.P3'),
+  generated('tenths', 'Tenths and decimals of a half', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['tenths'], 'MS.Y4.NUM.RN.P3', 'MS.Y4.NUM.RN.P5'),
+  generated('add-tenths', 'Adding and taking away tenths', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['add-tenths'], 'MS.Y4.NUM.RN.P10'),
+  generated('round-1000', 'Rounding to the nearest 1000', 'rounding', GENERATED_SKILL_KEYS['round-1000'], 'MS.Y4.NUM.NS.K4'),
   tables[4],
-  stub('factor-pairs', 'Factor pairs', 'place-value', 'MS.Y5.NUM.NS.P2'),
-  stub('round-big', 'Rounding bigger numbers and decimals', 'rounding', 'MS.Y5.NUM.NS.P3', 'MS.Y5.NUM.NS.P4'),
-  stub('decimal-equivalents', 'Fractions as decimals', 'fractions-decimals-percentages', 'MS.Y5.NUM.RN.P4'),
-  stub('percent-basic', '10%, 25% and 50%', 'fractions-decimals-percentages', 'MS.Y5.NUM.RN.P5', 'MS.Y5.NUM.RN.P15'),
-  stub('fraction-of', 'Fractions of an amount (⅔ of 24)', 'fractions-decimals-percentages', 'MS.Y5.NUM.RN.P13'),
-  stub('times-decimals', 'Times 10 and 100 with decimals', 'fractions-decimals-percentages', 'MS.Y5.NUM.RN.P7'),
-  stub('equivalent-fractions', 'Equivalent fractions and simplifying', 'fractions-decimals-percentages', 'MS.Y5.NUM.RN.P9', 'MS.Y6.NUM.RN.P6'),
-  stub('squares-cubes', 'Square and cube numbers', 'place-value', 'MS.Y6.NUM.NS.P6'),
-  stub('round-million', 'Rounding to the nearest million', 'rounding', 'MS.Y6.NUM.NS.P3', 'MS.Y6.NUM.NS.P4'),
-  stub('fdp-equivalents', 'Fractions, decimals and percentages', 'fractions-decimals-percentages', 'MS.Y6.NUM.RN.P3', 'MS.Y6.NUM.RN.P4'),
-  stub('percent-of', 'Percentages of an amount', 'fractions-decimals-percentages', 'MS.Y6.NUM.RN.P13', 'MS.Y6.NUM.RN.P14'),
-  stub('whole-from-fraction', 'Finding the whole from a fraction', 'fractions-decimals-percentages', 'MS.Y6.NUM.RN.P12'),
-  stub('bedmas', 'Order of operations', 'order-of-operations', 'MS.Y6.NUM.OP.P1'),
+  generated('factor-pairs', 'Factor pairs', 'place-value', GENERATED_SKILL_KEYS['factor-pairs'], 'MS.Y5.NUM.NS.P2'),
+  generated('round-big', 'Rounding bigger numbers and decimals', 'rounding', GENERATED_SKILL_KEYS['round-big'], 'MS.Y5.NUM.NS.P3', 'MS.Y5.NUM.NS.P4'),
+  generated('decimal-equivalents', 'Fractions as decimals', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['decimal-equivalents'], 'MS.Y5.NUM.RN.P4'),
+  generated('decimal-bonds', 'Decimals that make 1 and 10 (0.35 + 0.65)', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['decimal-bonds'], 'MS.Y4.NUM.RN.P10', 'MS.Y5.NUM.RN.P12'),
+  generated('percent-basic', '10%, 25% and 50%', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['percent-basic'], 'MS.Y5.NUM.RN.P5', 'MS.Y5.NUM.RN.P15'),
+  generated('fraction-of', 'Fractions of an amount (⅔ of 24)', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['fraction-of'], 'MS.Y5.NUM.RN.P13'),
+  generated('times-decimals', 'Times 10 and 100 with decimals', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['times-decimals'], 'MS.Y5.NUM.RN.P7'),
+  generated('equivalent-fractions', 'Equivalent fractions and simplifying', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['equivalent-fractions'], 'MS.Y5.NUM.RN.P9', 'MS.Y6.NUM.RN.P6'),
+  generated('squares-cubes', 'Square and cube numbers', 'place-value', GENERATED_SKILL_KEYS['squares-cubes'], 'MS.Y6.NUM.NS.P6'),
+  generated('round-million', 'Rounding to the nearest million', 'rounding', GENERATED_SKILL_KEYS['round-million'], 'MS.Y6.NUM.NS.P3', 'MS.Y6.NUM.NS.P4'),
+  generated('fdp-equivalents', 'Fractions, decimals and percentages', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['fdp-equivalents'], 'MS.Y6.NUM.RN.P3', 'MS.Y6.NUM.RN.P4'),
+  generated('percent-of', 'Percentages of an amount', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['percent-of'], 'MS.Y6.NUM.RN.P13', 'MS.Y6.NUM.RN.P14'),
+  generated('whole-from-fraction', 'Finding the whole from a fraction', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['whole-from-fraction'], 'MS.Y6.NUM.RN.P12'),
+  generated('bedmas', 'Order of operations', 'order-of-operations', GENERATED_SKILL_KEYS.bedmas, 'MS.Y6.NUM.OP.P1'),
 ];
 
 // ---------------------------------------------------------------- progress
@@ -121,7 +125,7 @@ export interface SkillProgress {
   /** Share of the skill's facts in box 2 or higher (0–1). */
   share: number;
   /**
-   * True for a skill the student's starting point (placement, year level or furthest place) is past, but whose facts are not
+   * True for a skill the student's starting point (placement or furthest place) is past, but whose facts are not
    * secure in their records. It counts as behind them (never the current skill) but not as secure, so the numbers stay honest.
    */
   passedOver?: boolean;
@@ -144,7 +148,7 @@ export interface LadderOptions {
   /** Division facts (56 ÷ 8) are asked, and counted towards progress, only when this isn't false. Not set = included. */
   division?: boolean;
   /**
-   * Where the student starts on the whole ladder (an index into `LADDER`): their placement, their class's year level, or the
+   * Where the student starts on the whole ladder (an index into `LADDER`): their placement or the
    * furthest place they have reached. Built skills before it count as passed, so a place never drops below it.
    */
   floor?: number;
@@ -159,7 +163,7 @@ export interface FocusSpec {
 }
 
 /** The skill's keys once switched-off tables are taken out. */
-function activeKeys(skill: LadderSkill, enabledTables: readonly number[], division = true): string[] {
+export function activeKeys(skill: LadderSkill, enabledTables: readonly number[], division = true): string[] {
   const on = new Set(enabledTables);
   return skill.keys.filter((k) => {
     const mul = parseFactKey(k);
@@ -170,10 +174,29 @@ function activeKeys(skill: LadderSkill, enabledTables: readonly number[], divisi
 }
 
 /**
+ * Jumping ahead (James, 22 Oct 2026): a student whose records show a times-table skill secure (70% of its times facts in box 2
+ * or higher) is past every easier skill below it, even ones they have never been asked: someone who knows ×3, ×4 and ×8 isn't
+ * kept on bonds to 10. Only times-table skills count, as they are big (30 to 60 facts) so a lucky run can't do it, and only their
+ * times facts, so a class with division off (or a student who hasn't met it yet) jumps all the same. Returns the index just
+ * after the highest such skill, or 0.
+ */
+export function tablesJumpFloor(byKey: ReadonlyMap<string, FactStats>, enabled: readonly number[] = TABLES): number {
+  let jump = 0;
+  LADDER.forEach((skill, index) => {
+    if (!skill.built || skill.stage !== 'times-tables') return;
+    const times = activeKeys(skill, enabled, false).filter((k) => k.startsWith('mul:'));
+    if (times.length === 0) return;
+    const share = times.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / times.length;
+    if (share >= STEP_SECURE_SHARE) jump = index + 1;
+  });
+  return jump;
+}
+
+/**
  * Where a student is on the ladder, worked out from their records: the first built skill that
  * isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
- * campaign) is the one they're on. Skipped skills (all their tables switched off) are secure
- * for free. With a `floor` (placement, year level or the furthest place reached, see place.ts) the
+ * campaign) is the one they're on. A skill with all its tables switched off is left out: it never becomes the
+ * current skill and doesn't count towards progress (it shows as 'upcoming' with a share of 1). With a `floor` (placement or the furthest place reached, see place.ts) the
  * built skills before it are behind the student (passed over, and secure only if their records say so), so forgetting a fact brings more review but never
  * drops the student's place below the floor.
  */
@@ -183,7 +206,7 @@ export function ladderProgress(stats: Iterable<FactStats>, opts: LadderOptions =
   let current: LadderSkill | null = null;
   let secureCount = 0;
   let builtCount = 0;
-  const floor = opts.floor ?? 0;
+  const floor = Math.max(opts.floor ?? 0, tablesJumpFloor(byKey, enabled));
   const skills: SkillProgress[] = LADDER.map((skill, index) => {
     if (!skill.built) return { skill, status: 'later' as const, share: 0 };
     const keys = activeKeys(skill, enabled, opts.division !== false);
@@ -238,9 +261,10 @@ export function focusPools(spec: FocusSpec, opts: LadderOptions = {}): Pools {
 }
 
 /** Which skill pack records a mastery key ("mul:7x8" → "times-tables"), or null if it isn't a ladder key. */
-export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-sub' | 'division' | null {
+export function packIdOfKey(key: string): 'times-tables' | 'early-facts' | 'add-sub' | 'division' | 'generated' | null {
   if (/^mul:\d+x\d+$/.test(key)) return 'times-tables';
-  if (/^(bond10|bond20|dbl|half):/.test(key)) return 'early-facts';
+  if (isGeneratedKey(key)) return 'generated';
+  if (/^(bond10|bond20|dbl|half|tenand):/.test(key)) return 'early-facts';
   if (key.startsWith('add:')) return 'add-sub';
   if (key.startsWith('div:')) return 'division';
   return null;
@@ -256,6 +280,7 @@ export function questionForKey(key: string, id: number, random: () => number = M
     new BandedPack(BANDED_PACKS['add-sub'], [], random),
     new TimesTables([], random),
     new BandedPack(BANDED_PACKS.division, [], random),
+    generatedPack([], random),
   ];
   const pack = packs.find((p) => p.owns(key));
   if (!pack) return null;
@@ -264,7 +289,7 @@ export function questionForKey(key: string, id: number, random: () => number = M
 }
 
 /** The packs a game keeps records for under a focus (everything the built ladder uses). */
-export const FOCUS_PACKS = ['times-tables', 'early-facts', 'add-sub', 'division'] as const;
+export const FOCUS_PACKS = ['times-tables', 'early-facts', 'add-sub', 'division', 'generated'] as const;
 export type FocusPackId = (typeof FOCUS_PACKS)[number];
 
 /** Every mastery key the built ladder asks, with the pack that keeps its record. */
@@ -304,12 +329,13 @@ export class AutoPack implements SkillPack {
     private opts: LadderOptions = {},
   ) {
     const only = (pack: { owns(key: string): boolean }) => saved.filter((s) => pack.owns(s.key));
-    const shells = [earlyFactsPack(), new BandedPack(BANDED_PACKS['add-sub']), new TimesTables(), new BandedPack(BANDED_PACKS.division)];
+    const shells = [earlyFactsPack(), new BandedPack(BANDED_PACKS['add-sub']), new TimesTables(), new BandedPack(BANDED_PACKS.division), generatedPack()];
     this.packs = [
       earlyFactsPack(only(shells[0]), random, now),
       new BandedPack(BANDED_PACKS['add-sub'], only(shells[1]), random, now),
       new TimesTables(only(shells[2]), random, now),
       new BandedPack(BANDED_PACKS.division, only(shells[3]), random, now),
+      generatedPack(only(shells[4]), random, now),
     ];
     for (const pack of this.packs) pack.onAnswer((a) => this.listeners.forEach((l) => l(a)));
   }

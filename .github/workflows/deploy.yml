@@ -1,5 +1,6 @@
 # Checks the site and publishes it to GitHub Pages every time main is pushed.
 # If any check fails, nothing is published and the live site stays as it was.
+# Two sets of checks run side by side: the site's (build) and the database rules (db, in db-tests.yml).
 name: Test and publish
 
 on:
@@ -26,6 +27,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # The same three steps as `npm run check`. Always the full set of tests (test:all), never the quick one.
       - run: npm run typecheck
       - run: npm run test:all
       - run: npm run build
@@ -33,8 +35,11 @@ jobs:
         with:
           path: dist
 
+  db:
+    uses: ./.github/workflows/db-tests.yml
+
   deploy:
-    needs: build
+    needs: [build, db]
     runs-on: ubuntu-latest
     environment:
       name: github-pages

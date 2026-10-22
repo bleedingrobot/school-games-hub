@@ -9,16 +9,27 @@
  * Parts like '3/4' are drawn as fractions ('?/8' has the blank on top), parts with words are
  * drawn smaller, and decimal questions get a point key.
  */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { spokenFraction } from '../../shared/maths/banded';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { spokenLabel } from '../../shared/maths/banded';
 import { hintFor } from '../../shared/maths/hint';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { NumberPad } from './NumberPad';
+import { countAnswer, noteQuestion, spendSkip, spotFromTitle, STREAK_FROM, useSkipRule } from './questionLog';
+import { ScribblePad } from './ScribblePad';
 import './maths.css';
 
 /** How long the feedback shows, in milliseconds. */
 export const FEEDBACK_MS = { right: 800, wrong: 2000 };
 const MAX_DIGITS = 3;
+
+const PAD_KEY = 'sgh-scribble-open';
+const readPadOpen = () => {
+  try {
+    return localStorage.getItem(PAD_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
 
 const FRACTION = /^(?:(\d+|\?) )?(\d+|\?)\/(\d+|\?)$/;
 
@@ -42,12 +53,23 @@ function Part({ text, blank }: { text: string; blank: ReactNode }) {
   return <span>{text}</span>;
 }
 
+/** What a screen reader says for the digits typed so far: "4.15" is "4 point 1 5", "4." is "4 point". */
+function spokenTyped(typed: string): string {
+  const [whole, fraction] = typed.split('.');
+  return typed.includes('.') ? `${whole} point ${fraction.split('').join(' ')}`.trim() : whole;
+}
+
 /** A choice button's text: fractions drawn as fractions. */
 const choiceText = (label: string) => (FRACTION.test(label) ? <Part text={label} blank={null} /> : label);
 
 
+/** Under the skip button when the class has 3 skips per game. */
+export function SkipsLeft({ left }: { left: number }) {
+  return <p className="question__skips">{left > 0 ? `Skips left: ${left}` : 'No skips left in this game'}</p>;
+}
+
 /** What the box needs of a question. `answer` is missing when the game's server keeps it secret until marked. */
-export type ShownQuestion = Pick<Question, 'id' | 'parts' | 'spoken' | 'choices' | 'choiceLabels' | 'maxLength' | 'input'> & { answer?: number };
+export type ShownQuestion = Pick<Question, 'id' | 'parts' | 'spoken' | 'prompt' | 'choices' | 'choiceLabels' | 'maxLength' | 'input'> & { answer?: number };
 
 /**
  * A marked answer, plus what it earned, e.g. "+15 mana" (shown under "Correct!"). `answer` is
@@ -67,6 +89,9 @@ export function QuestionModal({
   inline = false,
   secondsLeft = null,
   onHint,
+  scribble = true,
+  spot,
+  closeIsSkip = true,
 }: {
   question: ShownQuestion;
   /** What the question is for, e.g. "Mana Well". */
@@ -77,7 +102,7 @@ export function QuestionModal({
   onSubmit: (answer: number, ms: number) => MarkedAnswer | Promise<MarkedAnswer>;
   /** Called after the feedback has been shown. */
   onDone: (result: MarkedAnswer) => void;
-  /** If given, the student may stop (a button, and Escape) before answering. */
+  /** If given, the student may stop (a button, and Escape) before answering. The class's skip switch can take it away. */
   onClose?: () => void;
   closeLabel?: string;
   /** Tests set 0 to skip the feedback pause. */
@@ -91,18 +116,37 @@ export function QuestionModal({
    * a right answer after a hint earns. The box only knows the answer if the game gave it (`question.answer`).
    */
   onHint?: () => void;
+  /** A scribble pad beside the box, for working out. On by default; never shown for an inline card. */
+  scribble?: boolean;
+  /** The kind of question, for the teacher's skip counts (questionLog.ts). Taken from the title if not given. */
+  spot?: string;
+  /**
+   * False when the close button isn't a way past a question (Gem Keep's "Well done", Maths Monsters' "Back"): the class's
+   * "Skip button" switch then leaves it alone.
+   */
+  closeIsSkip?: boolean;
 }) {
   const [typed, setTyped] = useState('');
   const [result, setResult] = useState<MarkedAnswer | null>(null);
   const [checking, setChecking] = useState(false);
   const [trouble, setTrouble] = useState('');
   const [hint, setHint] = useState<ReturnType<typeof hintFor> | null>(null);
+  const [streak, setStreak] = useState(0);
+  const [padOpen, setPadOpen] = useState(readPadOpen);
   const shownAt = useRef(performance.now());
   const box = useRef<HTMLDivElement>(null);
   const titleId = `question-${question.id}-title`;
+  // The class's "Skip button" switch (questionLog.ts): off, or no skips left, means no close button and no Escape.
+  const skips = useSkipRule();
+  const canClose = !!onClose && (!closeIsSkip || skips.canSkip);
+  const close = () => {
+    if (!onClose || (closeIsSkip && !spendSkip())) return;
+    onClose();
+  };
 
-  // A new question: clear the answer and start the clock.
-  useEffect(() => {
+  // A new question: clear the answer and start the clock. A layout effect, so it runs before the box can be pressed:
+  // a plain effect could run just after a quick first tap and wipe it, leaving the box waiting on "?".
+  useLayoutEffect(() => {
     setTyped('');
     setResult(null);
     setChecking(false);
@@ -111,6 +155,19 @@ export function QuestionModal({
     shownAt.current = performance.now();
     if (!inline) box.current?.focus();
   }, [question.id, inline]);
+
+  // Each question shown is noted once for the teacher: answered at the first try, or skipped if the box closes (or moves on
+  // to another question) without one. Escape, a skip button, a timer running out and the game rolling past it all count.
+  const answeredId = useRef<ShownQuestion['id'] | null>(null);
+  const spotName = useRef('');
+  spotName.current = spot ?? spotFromTitle(title);
+  useEffect(() => {
+    const id = question.id;
+    const started = performance.now();
+    return () => {
+      if (answeredId.current !== id) noteQuestion({ spot: spotName.current, skipped: true, ms: performance.now() - started });
+    };
+  }, [question.id]);
 
   // Each answer is reported exactly once, however often the parent re-renders.
   const reportDone = useRef(onDone);
@@ -123,9 +180,18 @@ export function QuestionModal({
 
   function submit(answer: number) {
     if (result || checking) return;
-    const marked = onSubmit(answer, Math.round(performance.now() - shownAt.current));
+    const ms = Math.round(performance.now() - shownAt.current);
+    if (answeredId.current !== question.id) {
+      answeredId.current = question.id;
+      noteQuestion({ spot: spotName.current, skipped: false, ms });
+    }
+    const marked = onSubmit(answer, ms);
+    const show = (done: MarkedAnswer) => {
+      setStreak(countAnswer(done.correct));
+      setResult(done);
+    };
     if (!('then' in marked)) {
-      setResult(marked);
+      show(marked);
       return;
     }
     // The server is marking it: wait for it, and let the student try again if it didn't answer.
@@ -134,7 +200,7 @@ export function QuestionModal({
     marked.then(
       (done) => {
         setChecking(false);
-        setResult(done);
+        show(done);
       },
       (error: unknown) => {
         setChecking(false);
@@ -162,9 +228,9 @@ export function QuestionModal({
   const enter = () => typed !== '' && submit(Number(typed));
 
   function keys(event: React.KeyboardEvent) {
-    if (event.key === 'Escape' && onClose && !result) {
+    if (event.key === 'Escape' && canClose && !result && !checking) {
       event.preventDefault();
-      onClose();
+      close();
       return;
     }
     if (result || checking || question.choices) return;
@@ -177,17 +243,30 @@ export function QuestionModal({
     event.preventDefault();
   }
 
+  const showPad = scribble && !inline;
+  const setPad = (open: boolean) => {
+    setPadOpen(open);
+    try {
+      localStorage.setItem(PAD_KEY, open ? '1' : '0');
+    } catch {
+      // Storage blocked: the pad just won't be remembered.
+    }
+  };
+
   const blank = typed === '' ? '?' : typed;
   // Money answers are shown with cents: 4.1 → 4.10.
   const rightAnswer = result?.answer ?? question.answer ?? 0;
-  const answerText = question.parts.includes('$') ? rightAnswer.toFixed(2) : String(rightAnswer);
+  // A pick-one question's answer is the number of the choice: show the choice itself in the blank.
+  const pickedLabel = question.choiceLabels?.[rightAnswer];
+  const answerText = pickedLabel ?? (question.parts.includes('$') ? rightAnswer.toFixed(2) : String(rightAnswer));
   const blankBox = (
     <span className="question__blank" data-empty={typed === '' || undefined}>
-      {result ? (result.correct ? blank : answerText) : blank}
+      {result ? (result.correct && !pickedLabel ? blank : pickedLabel ? choiceText(answerText) : answerText) : blank}
     </span>
   );
   return (
     <div className={inline ? undefined : 'question-backdrop'}>
+      <div className={showPad ? 'question-wrap' : 'question-wrap question-wrap--single'} data-pad={showPad && padOpen ? 'open' : undefined}>
       <div
         ref={box}
         className={inline ? 'question question--inline' : 'question'}
@@ -202,6 +281,7 @@ export function QuestionModal({
           {title}
         </h2>
         {note && <p className="question__note">{note}</p>}
+        {question.prompt && <p className="question__prompt">{question.prompt}</p>}
         <p className="question__fact" aria-label={question.spoken} data-long={question.parts.join('').length > 12 || undefined}>
           {question.parts.map((part, i) => (
             <Part key={i} text={part} blank={blankBox} />
@@ -235,6 +315,7 @@ export function QuestionModal({
                 ✦
               </span>{' '}
               Correct!{result.reward && <span className="question__reward"> {result.reward}</span>}
+              {streak >= STREAK_FROM && <span className="question__streak"> 🔥 {streak} in a row!</span>}
             </>
           )}
           {result && !result.correct && <>{result.fact}</>}
@@ -246,7 +327,7 @@ export function QuestionModal({
                 key={choice}
                 type="button"
                 className="question__choice"
-                aria-label={question.choiceLabels ? spokenFraction(question.choiceLabels[i]) : undefined}
+                aria-label={question.choiceLabels ? spokenLabel(question.choiceLabels[i]) : undefined}
                 disabled={!!result || checking || hint?.remove.includes(choice)}
                 data-answer={result && choice === (result.answer ?? question.answer) ? true : undefined}
                 onClick={() => submit(choice)}
@@ -258,16 +339,26 @@ export function QuestionModal({
         ) : (
           <>
             <p className="sr-only" aria-live="polite">
-              {typed ? `Your answer: ${typed}` : ''}
+              {typed ? `Your answer: ${spokenTyped(typed)}` : ''}
             </p>
             <NumberPad onDigit={addDigit} onBack={back} onEnter={enter} canEnter={typed !== '' && typed !== '0.'} disabled={!!result || checking} decimal={decimal} />
           </>
         )}
-        {onClose && (
-          <button type="button" className="question__close" disabled={!!result || checking} onClick={onClose}>
+        {canClose && (
+          <button type="button" className="question__close" disabled={!!result || checking} onClick={close}>
             {closeLabel}
           </button>
         )}
+        {onClose && closeIsSkip && skips.left !== null && <SkipsLeft left={skips.left} />}
+      </div>
+      {showPad &&
+        (padOpen ? (
+          <ScribblePad key={question.id} onCollapse={() => setPad(false)} />
+        ) : (
+          <button type="button" className="scribble-tab" onPointerDown={(e) => e.preventDefault()} onClick={() => setPad(true)}>
+            <span aria-hidden="true">✏️</span> Scribble
+          </button>
+        ))}
       </div>
     </div>
   );

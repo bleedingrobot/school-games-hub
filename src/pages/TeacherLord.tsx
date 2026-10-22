@@ -15,11 +15,11 @@ import {
 import { FriendlyError } from '../data/profile';
 import { useTeacherClass } from '../teacher/TeacherClass';
 import { whenPlayed } from './Dashboard';
-import { keyLabel } from './TeacherMonsters';
+import { keyLabel, TOPIC_LABEL as LADDER_LABELS } from './TeacherMonsters';
 import './teacher-gem-keep.css';
 
 const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
-const TOPIC_LABEL: Record<string, string> = { ...Object.fromEntries(TOPICS.map((t) => [t.id, t.label])), money: 'Gold and shopping', patterns: 'Number patterns' };
+const TOPIC_LABEL: Record<string, string> = { ...Object.fromEntries(TOPICS.map((t) => [t.id, t.label])), ...LADDER_LABELS, money: 'Gold and shopping', patterns: 'Number patterns' };
 const topicLabel = (pack: string) => TOPIC_LABEL[pack] ?? pack;
 const share = (right: number, asked: number) => (asked ? `${Math.round((right / asked) * 100)}%` : '–');
 

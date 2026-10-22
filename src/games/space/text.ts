@@ -3,7 +3,7 @@
  * what each square does, and the mission log line for every engine event.
  */
 import type { Square, StarKind, GravityKind } from '../../../shared/space/board';
-import { COSMIC_EVENT_EVERY, type CosmicEvent, type Pending, type SpaceEvent, type SpaceState } from '../../../shared/space/engine';
+import { COSMIC_EVENT_EVERY, MATHS_CHARGE_STEPS, type CosmicEvent, type Pending, type SpaceEvent, type SpaceState } from '../../../shared/space/engine';
 import { FACT_BY_ID, type FactId } from '../../../shared/space/facts';
 import { ITEMS, type ItemKind } from '../../../shared/space/items';
 
@@ -324,7 +324,7 @@ export function describe(event: SpaceEvent, names: readonly string[]): string | 
         : `${who(event.seat)} rode a wormhole from ${event.from} up to ${event.to}!`;
     }
     // Only good news: a wrong answer says nothing, to anyone.
-    case 'charge': return event.right ? `${who(event.seat)} is charged up: +1 on this roll!` : null;
+    case 'charge': return event.right ? `${who(event.seat)} is charged up: +${MATHS_CHARGE_STEPS} on this roll!` : null;
     case 'chain-cap': return `That’s enough for one turn: square ${event.square} will have to wait.`;
     case 'choice': return null;
     case 'timeout': return null;
@@ -342,3 +342,7 @@ export function describe(event: SpaceEvent, names: readonly string[]): string | 
 }
 
 export { ORDINAL } from '../../../shared/space/names';
+
+/** The class's "Skip button" switch is off (or its 3 skips are used): the Mission Control card must be answered before rolling. */
+export const ANSWER_FIRST = 'Answer the Mission Control question first, then roll.';
+export const ANSWER_FIRST_BUTTON = '🎲 Answer first, then roll';

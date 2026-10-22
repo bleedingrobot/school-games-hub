@@ -18,6 +18,7 @@ import { FINISH_ACTIONS } from '../../shared/lord/server';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { readSettings } from './classSettings';
 import { supabase } from '../lib/supabase';
+import { forgetSettings } from './settingsMemory';
 import { FriendlyError } from './profile';
 
 export type { LordAction, LordReply, LordRequest, LordState };
@@ -262,6 +263,7 @@ export async function fetchLordEnabled(): Promise<boolean> {
 
 export async function saveLordSettings(settings: Partial<LordSettings> & { enabled: boolean }, classId?: string | null): Promise<LordSettings> {
   const { data, error } = await supabase.rpc('teacher_set_lord', { settings, target_class: classId ?? null });
+  forgetSettings();
   if (error || !data) {
     if (error?.code === '22023' && error.message) throw new FriendlyError(error.message);
     throw new FriendlyError('We couldn’t save the Dragon Maths settings.');

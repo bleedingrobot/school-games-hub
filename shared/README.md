@@ -39,8 +39,28 @@ The `save-bot-game` server function runs exactly this code before saving a resul
   Stage C.6 part A adds `village.ts`: the class village (the chest, the three buildings and their costs, the weekly vote and what closing a week does, the class goal and its maths question) and raids on classmates (`raidTargetList` says who a clan may raid and why not; `raidClassmateNz` does a raid using New Zealand day numbers). The server actions are `chestGive`, `vote`, `raidTargets` and `raidClass` in `actions.ts`; a raid also hands back the raided clan's new empire, saved with the raiders' clan in one transaction (`save_raid`, in the `20261018002000` migration). The Church level now gives one more free wake-up a day (`freeWakes` in `character.ts`).
   Stage C.6 part B adds `rewards.ts`: what a request earns (`Earned`, counts only: mine wins, bosses, Friendly War wins, raids won, right Battle Cry answers), the fame and points for them (`fameFor`, `pointsFor`, numbers in `CONFIG.rewards`), and the eight achievements with the lifetime counts they are measured by. The rules put `earned` inside the result they save; a trigger in the `20261018002100` migration turns it into fame, points and achievements in the same transaction, so a request earns once. `actions.ts` also hands back the maths answers a request produced (`effects.answers`, kinds and year bands only) for the teacher's private records, and takes the teacher's mine fights a day (`ctx.fightsPerDay`).
   Stage C.7 adds no rules. It adds the How to play screen (`src/games/clans/HowToPlay.tsx`, whose numbers are read from `CONFIG` and `CONFIG.rewards`, so changing a tuning number changes the page), an accessibility pass (44px targets, contrast, focus moved to each new screen's heading, named fight panels) and tests that keep it so (`Accessibility.test.tsx` reads the CSS and checks the contrast ratios, the target sizes and the reduced-motion rules). Going live: `docs/prompts/clans-golive.md`.
+- `marble/`: Marble Rush. `engine.ts` is the physics as a pure step function (fixed steps, no
+  randomness, so a run replays the same everywhere), `inputs.ts` the recorded inputs (including
+  `HOLD`, `REFUND` and `BONUS`), `course.ts`, `courses.ts` and `nzCourses.ts` the courses,
+  `config.ts` every tuning number, `maths.ts` which tunnel and gem is right from the seed and the
+  question list, `questions.ts` the run's questions, `save.ts` the server's replay check, `bot.ts`
+  the bot for medal times and `determinism.ts` the cross-browser check. See `docs/MARBLE-PLAN.md`.
 - `maths/practical.ts`: the question kinds Clan Quest needs (percent of, price with tax,
   change, area and perimeter, remainders, rounding up, troop costs, budgets, ratios, negative
   numbers, better buys). Made and marked by code; each is rebuilt from its kind and numbers
   (`buildQuestion`), with Year 4/5/6 bands and the teacher's topic switches
   (`PracticalSettings`).
+- `mine/`: Mine Runner (stages 1 to 4). `engine.ts` is the rules as a pure function (30 steps a second; the same
+  recorded inputs always give the same run, so the server replays a run to check its time), `level.ts` makes the six
+  mines from a recipe and seed (plus hard mode), `inputs.ts` stores a run as "same input for N steps" text, `bot.ts`
+  is a pretend pilot that finishes every mine, `medals.ts` has the medal times, `maths.ts` says which question belongs
+  to which door or pad, and `save.ts` is the server's replay and check (`judgeRun`). `determinism.ts` pins the rules'
+  fingerprint (`npm run mine:determinism` also checks Chromium and WebKit). See `docs/MINE-PLAN.md`.
+- `archery/`: Archery Challenge (stages 1 to 7). `fight.ts` is a fight as pure functions (`playFight(seed, setup,
+  shots)`, or `startFight` and `takeShot` one shot at a time; only + − × ÷ and square root, aim directions from the
+  table in `aim.ts`), with `land.ts` (a grid of cells, the four worlds' twists), `shot.ts`, `damage.ts`, `effects.ts`
+  (every arrow) and `gear.ts` (shields, helpers, bows). `bot.ts` is the three bots, `judge.ts` the server's replay of a
+  bot fight (checking every bot shot), `duel.ts` a classmate fight (one round, turn by turn), `shop.ts` the Armory's
+  prices and levels, `speed.ts` the speed round (questions from the maths focus, the shrinking timer), `points.ts`
+  and `stats.ts` the hub points and achievement counts. Every number is in `config.ts`. `determinism.ts` pins the
+  rules' fingerprint (`npm run archery:determinism` also checks Chromium and WebKit). See `docs/ARCHERY-PLAN.md`.
