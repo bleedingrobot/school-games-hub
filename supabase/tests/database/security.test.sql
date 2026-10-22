@@ -58,7 +58,7 @@ select set_eq($$
 $$, array[
   'archery_here', 'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'clan_scoreboard', 'clear_my_maths_focus',
   'gem_keep_leaderboard', 'is_player_in', 'is_school_admin', 'is_school_email', 'is_school_user', 'is_site_owner',
-  'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'lord_hall', 'lord_news', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
+  'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'log_questions', 'lord_hall', 'lord_news', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
   'monsters_leaderboard', 'my_bond_match', 'my_bot_game_stats', 'my_card_game_stats', 'my_class', 'my_friend_game_stats',
   'my_gem_keep', 'my_home_page', 'my_ladder', 'my_lord', 'my_marble', 'my_maths_focus', 'my_mine', 'my_monsters', 'my_moves_left', 'my_power_game_stats', 'my_progress', 'my_school', 'my_school_info',
   'my_settings_id', 'my_space_game_stats', 'my_training', 'my_training_lock', 'owner_add_school', 'owner_add_school_domain',
@@ -70,7 +70,7 @@ $$, array[
   'teacher_create_village', 'teacher_delete_group', 'teacher_delete_student', 'teacher_delete_village', 'teacher_end_maths_focus', 'teacher_extend_maths_focus',
   'teacher_gem_keep_class', 'teacher_gem_keep_student', 'teacher_lord_class', 'teacher_lord_student',
   'teacher_maths_focus_history', 'teacher_maths_focus_results', 'teacher_maths_focuses', 'teacher_monster_class', 'teacher_monster_student', 'teacher_move_pupil', 'teacher_move_student',
-  'teacher_new_season', 'teacher_remove_co_teacher', 'teacher_remove_from_class', 'teacher_rename_group', 'teacher_rename_village',
+  'teacher_new_season', 'teacher_question_skips', 'teacher_remove_co_teacher', 'teacher_remove_from_class', 'teacher_rename_group', 'teacher_rename_village',
   'teacher_reset_clan', 'teacher_reset_lord_hero', 'teacher_reset_name', 'teacher_reset_placement', 'teacher_reset_warp_code',
   'teacher_school_teachers', 'teacher_set_clan_maths', 'teacher_set_clan_raids', 'teacher_set_clans',
   'teacher_set_gem_keep', 'teacher_set_group_member', 'teacher_set_maths_auto', 'teacher_set_hidden', 'teacher_set_lord', 'teacher_set_marble_maths', 'teacher_set_marble_rescue', 'teacher_set_maths_focus',

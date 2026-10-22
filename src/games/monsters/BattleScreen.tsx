@@ -574,6 +574,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
         <QuestionModal
           question={asking.question}
           title={asking.title}
+          spot={asking.action.kind === 'fight' ? 'Fight' : 'Catch'}
           note={asking.note}
           timeScale={timeScale}
           onClose={() => {

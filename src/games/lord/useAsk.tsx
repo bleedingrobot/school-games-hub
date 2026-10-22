@@ -29,6 +29,7 @@ interface Pending {
   question: Question;
   pack: SkillPack;
   packId: TopicId | ExtraTopicId;
+  moment: MomentId;
   level: number;
   given: { value: number; ms: number } | null;
   options: AskOptions;
@@ -66,7 +67,7 @@ export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[
       const level = questionLevel(chosen, heroLevel);
       const question = pack.nextQuestion({ level });
       if (!question) return Promise.resolve(null);
-      return new Promise<Asked>((resolve) => setPending({ id: ++nextId.current, question, pack, packId: chosen, level, given: null, options, resolve }));
+      return new Promise<Asked>((resolve) => setPending({ id: ++nextId.current, question, pack, packId: chosen, moment, level, given: null, options, resolve }));
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [heroLevel, facts],
@@ -82,6 +83,7 @@ export function useAsk(heroLevel: number, facts: (FactStats & { pack: string })[
       key={pending.id}
       question={pending.question as ShownQuestion & { answer: number }}
       title={pending.options.title}
+      spot={pending.moment}
       note={pending.options.note}
       closeLabel={pending.options.closeLabel}
       onClose={pending.options.closeLabel ? () => finish(null) : undefined}
