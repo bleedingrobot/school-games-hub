@@ -3,7 +3,7 @@
 How Clan Quest gets its painted pictures, from the 656 pictures in `~/dragon-art-inbox/clans-art` to a live game. It follows the way Dragon Maths was done (`docs/lord-art/`, `scripts/lord-art.py`, `src/games/lord/art.ts`), so most of the tools already exist.
 
 Written 26 October 2026 for James.
-**Status: WAITING FOR JAMES's answers (section 3).** Nothing is built yet. The plan is on the `clans-art` branch.
+**Status: James answered section 3 on 26 Oct (all four recommended choices). A.0 done; A.1 (picking page) is next.** The plan is on the `clans-art` branch.
 
 ## The short version
 
@@ -62,6 +62,8 @@ The same three parts as Dragon Maths:
    - **(b) choose them itself** and show you the result.
 4. **Horse Archer:** commit the rename now as its own small pull request (recommended, so it can go live before the pictures), or fold it into this branch?
 
+**James's answers (26 Oct 2026):** 1 (a) the dark painted frame, shown first at A.2; 2 pupils choose one of the 4 looks, with "Change look" later; 3 (a) a picking page; 4 its own pull request first.
+
 ## 4. What changes for pupils
 
 - **Every place has a painting** across the top (the market, training hall, church, mines, empire, village and so on), with a smaller one on phones.
@@ -112,3 +114,10 @@ If a picture needs remaking (a new monster, a wrong picture, a new item):
 - Paintings made by James with Z-Image Turbo in ComfyUI, October 2026.
 - Fallback pictures: Kenney's 1-Bit Pack (CC0), already credited in `src/games/clans/KENNEY-LICENSE.txt`.
 - The game itself: see `docs/CLANS-PLAN.md`.
+
+## Stage A.0 results (26 Oct 2026)
+
+- Horse Archer rename committed on `clans-horse-archer` and opened as PR #22 (https://github.com/bleedingrobot/school-games-hub/pull/22). Clans tests pass (446). Not merged; needs the `clans` function redeployed when it is.
+- The same commit cherry-picked onto `clans-art`, so the art test can expect `horse-archer`.
+- The raw pictures are also in the private repo https://github.com/bleedingrobot/clans-art-source, for working on another machine. The script still reads `~/dragon-art-inbox/clans-art`.
+- Unused tries not deleted yet: that waits until after A.3, as the A.1 prompt says.
