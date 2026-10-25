@@ -67,8 +67,8 @@ export function HeroSprite({ heroClass, look, scale = 6, label = 'Your hero' }: 
   if (painted) return <Painted src={painted} scale={scale * 1.8} label={label} kind="hero" />;
   return <Sprite tile={heroClass ? CLASS_TILES[heroClass] : HERO_TILE} scale={scale} colour={ANSI.white} label={label} className="lord-sprite--figure" />;
 }
-export const WeaponSprite = ({ index, scale = 3 }: { index: number; scale?: number }) => <Sprite tile={WEAPON_TILES[index]} scale={scale} colour={ANSI.cyan} />;
-export const ArmourSprite = ({ index, scale = 3 }: { index: number; scale?: number }) => <Sprite tile={ARMOUR_TILES[index]} scale={scale} colour={ANSI.yellow} />;
+export const WeaponSprite = ({ index, scale = 3 }: { index: number; scale?: number }) => <Sprite tile={WEAPON_TILES[index]} scale={scale} colour={ANSI.cyan} className="lord-sprite--weapon" />;
+export const ArmourSprite = ({ index, scale = 3 }: { index: number; scale?: number }) => <Sprite tile={ARMOUR_TILES[index]} scale={scale} colour={ANSI.yellow} className="lord-sprite--armour" />;
 export const Icon = ({ name, scale = 2, colour = ANSI.yellow }: { name: keyof typeof ICON_TILES; scale?: number; colour?: string }) => (
-  <Sprite tile={ICON_TILES[name]} scale={scale} colour={colour} />
+  <Sprite tile={ICON_TILES[name]} scale={scale} colour={colour} className={`lord-sprite--${name}`} />
 );

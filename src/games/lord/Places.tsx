@@ -313,7 +313,7 @@ export function Training({ hero, back, onChallenge, onDragon }: Pick<PlaceProps,
         </div>
       ) : (
         <div className="lord-master">
-          <p className="lord-lead">You have beaten every master. {canFaceDragon(hero) ? 'The Red Dragon waits in the forest.' : 'Earn a little more experience to face the dragon.'}</p>
+          <p className="lord-lead">You have beaten every master. {canFaceDragon(hero) ? 'The Red Dragon waits in the mountains.' : 'Earn a little more experience to face the dragon.'}</p>
           {canFaceDragon(hero) && (
             <button type="button" className="lord-btn lord-btn--hot" onClick={onDragon}>
               Face the Red Dragon

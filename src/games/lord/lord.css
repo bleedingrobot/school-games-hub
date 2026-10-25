@@ -230,6 +230,10 @@
 .lord-shop li.is-locked .lord-sprite { opacity: 0.5; }
 .lord-shop__name { color: var(--lord-yellow); font-weight: 700; }
 .lord-shop li > :last-child { white-space: nowrap; }
+/* The bright old colours vanish on parchment, so gear and gold are drawn in darker inks there (they stay bright on the wood). */
+.lord-panel .lord-sprite--weapon { background-color: #1d5f73 !important; }
+.lord-panel .lord-sprite--armour { background-color: #8a5512 !important; }
+.lord-panel .lord-sprite--gold { background-color: #9a6a00 !important; }
 .lord-shop .lord-sprite, .lord-stats .lord-sprite, .lord-reward .lord-sprite, .lord-big .lord-sprite { filter: drop-shadow(0 0 1px rgba(40, 20, 5, 0.9)) drop-shadow(0 0 1px rgba(40, 20, 5, 0.9)); }
 .lord-master { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
 .lord-master > .lord-art, .lord-master > .lord-sprite { border-radius: 6px; background: radial-gradient(circle at 50% 60%, rgba(60, 40, 20, 0.35), transparent 70%); }
