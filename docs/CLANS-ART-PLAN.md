@@ -3,7 +3,7 @@
 How Clan Quest gets its painted pictures, from the 656 pictures in `~/dragon-art-inbox/clans-art` to a live game. It follows the way Dragon Maths was done (`docs/lord-art/`, `scripts/lord-art.py`, `src/games/lord/art.ts`), so most of the tools already exist.
 
 Written 26 October 2026 for James.
-**Status: James answered section 3 on 26 Oct (all four recommended choices). A.0 done; A.1 (picking page) is next.** The plan is on the `clans-art` branch.
+**Status: James answered section 3 on 26 Oct (all four recommended choices). A.0–A.2 done; waiting for James to pick the pictures and the frame.** The plan is on the `clans-art` branch.
 
 ## The short version
 
@@ -121,3 +121,18 @@ If a picture needs remaking (a new monster, a wrong picture, a new item):
 - The same commit cherry-picked onto `clans-art`, so the art test can expect `horse-archer`.
 - The raw pictures are also in the private repo https://github.com/bleedingrobot/clans-art-source, for working on another machine. The script still reads `~/dragon-art-inbox/clans-art`.
 - Unused tries not deleted yet: that waits until after A.3, as the A.1 prompt says.
+
+## Stage A.1 results (26 Oct 2026)
+
+- The picking page: https://claude.ai/artifact/EbGN13X2A7VhvojCULieKf. 130 pairs in 8 groups, small copies built in. Claude's pick is already chosen in each pair; James taps to change one, or "Keep the rest" to accept a group. Choices save to the page's `picks` collection (one document per picture, `{choice: 1|2}`); A.3 reads them back, and any pair James didn't touch uses Claude's pick.
+- Claude's picks and notes are in `docs/clans-art/default-picks.json`.
+- **Clearly wrong:** Moon Blade copy 1 and Staff copy 2 are men (the other copies are fine). Both copies of Wizard's Staff (a wizard), Wooden Armor (a knight in metal) and Giant Rat (looks like a pig) are wrong. These three could be remade.
+- **Worth a look:** scythe (looks like a pickaxe), wand (club-like), rags (a sack), leather armour (looks metal), knobbly club (mallets), boomerang copy 1, cave minotaur (on four legs), green slime (an armoured figure), the wishing well (smoking), two banners with a cross on the pole. Skeleton, mummy, fire spirit and moon wolf have dark backgrounds, so their cut-outs need checking in A.3.
+
+## Stage A.2 results (26 Oct 2026)
+
+- The try-out: https://claude.ai/artifact/Kenwp9gEFvqFMLjPMcrbMr (add `#iron-home`, `#iron-market`, `#oak-home` or `#oak-market`). Locally: `npm run clans:frame`, then serve `dist-preview-clans-frame/`.
+- Real Market and member cards with a pretend clan. `preview/clans-frame/Sprite.tsx` stands in for the game's Sprite (via a plugin in `vite.clans-frame.config.ts`) so the screens show paintings; `preview/clans-frame/art/` has the few cut-outs it needs (made with rembg from Claude's picks).
+- Two frames, both dark: **Stone and iron** (cold grey stone, iron edges, parchment text, ember for the main button) and **Oak and brass** (dark wood, brass edges, warm cream, a serif for all text). Both use an engraved serif for headings and a painting across the top of each place. The old pixel icon beside a place's name is hidden.
+- Checked at 1366 px and 390 px wide: no sideways scrolling. On phones the shoppers in the Market sit two to a row.
+- rembg lives in `~/.cache/rembg-venv` (the scratch folder ran out of space).

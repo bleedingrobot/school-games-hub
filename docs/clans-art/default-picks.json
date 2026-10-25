@@ -1,0 +1,414 @@
+{
+ "banner-banner": {
+  "copy": 2,
+  "look": "Copy 1 has a cross on top of the pole."
+ },
+ "banner-bears": {
+  "copy": 1,
+  "look": "Copy 2 has a cross on top of the pole."
+ },
+ "banner-falcons": {
+  "copy": 1
+ },
+ "banner-foxes": {
+  "copy": 2
+ },
+ "banner-hammers": {
+  "copy": 1
+ },
+ "banner-lanterns": {
+  "copy": 2
+ },
+ "banner-owls": {
+  "copy": 1
+ },
+ "banner-pennants": {
+  "copy": 1
+ },
+ "banner-rangers": {
+  "copy": 2
+ },
+ "banner-shields": {
+  "copy": 1
+ },
+ "banner-stars": {
+  "copy": 2
+ },
+ "banner-wolves": {
+  "copy": 1
+ },
+ "building-barracks": {
+  "copy": 1
+ },
+ "building-developershall": {
+  "copy": 1
+ },
+ "building-gymnasium": {
+  "copy": 2
+ },
+ "building-stables": {
+  "copy": 1
+ },
+ "building-steelmill": {
+  "copy": 1
+ },
+ "building-tower": {
+  "copy": 1
+ },
+ "building-walls": {
+  "copy": 1
+ },
+ "item-axe": {
+  "copy": 1
+ },
+ "item-battle-axe": {
+  "copy": 1
+ },
+ "item-boomerang": {
+  "copy": 2,
+  "look": "Copy 1 looks like two separate curved pieces."
+ },
+ "item-broadsword": {
+  "copy": 1
+ },
+ "item-chainmail-armor": {
+  "copy": 1
+ },
+ "item-cloth-robe": {
+  "copy": 1
+ },
+ "item-cloth-tunic": {
+  "copy": 1
+ },
+ "item-crystal-shield": {
+  "copy": 2
+ },
+ "item-dagger": {
+  "copy": 1
+ },
+ "item-falcon-s-sword": {
+  "copy": 1
+ },
+ "item-great-axe": {
+  "copy": 1
+ },
+ "item-hero-s-armor": {
+  "copy": 1,
+  "look": "Shown as a whole suit of armour standing up, same as Platemail."
+ },
+ "item-hero-s-shield": {
+  "copy": 1
+ },
+ "item-iron-shield": {
+  "copy": 2
+ },
+ "item-kai-tunic": {
+  "copy": 1
+ },
+ "item-knobbly-club": {
+  "copy": 2,
+  "look": "Both are wooden mallets rather than a knobbly club."
+ },
+ "item-leather-armor": {
+  "copy": 1,
+  "look": "Both look like metal plates rather than leather."
+ },
+ "item-lion-s-shield": {
+  "copy": 1
+ },
+ "item-mace": {
+  "copy": 1
+ },
+ "item-moon-blade": {
+  "copy": 2,
+  "wrong": "Copy 1 is a man holding the blade, not the blade. Copy 2 is fine."
+ },
+ "item-morning-star": {
+  "copy": 2
+ },
+ "item-platemail-armor": {
+  "copy": 1,
+  "look": "Shown as a whole suit of armour standing up, same as Hero's Armor."
+ },
+ "item-platinum-shield": {
+  "copy": 1
+ },
+ "item-rags": {
+  "copy": 1,
+  "look": "Both are a sack rather than rags."
+ },
+ "item-scythe": {
+  "copy": 1,
+  "look": "Both look more like a pickaxe than a scythe. Copy 2 has a grey background."
+ },
+ "item-shortsword": {
+  "copy": 1
+ },
+ "item-silver-mace": {
+  "copy": 1
+ },
+ "item-sky-sword": {
+  "copy": 2
+ },
+ "item-staff": {
+  "copy": 1,
+  "wrong": "Copy 2 is a man holding the staff. Copy 1 is fine."
+ },
+ "item-thunder-axe": {
+  "copy": 1
+ },
+ "item-wand": {
+  "copy": 1,
+  "look": "Both are chunky, more like a club than a wand."
+ },
+ "item-wizard-s-staff": {
+  "copy": 1,
+  "wrong": "Both copies show a wizard, not just the staff. Could be remade."
+ },
+ "item-wooden-armor": {
+  "copy": 1,
+  "wrong": "Both copies are a knight in metal plate, not wooden armour. Could be remade."
+ },
+ "item-wooden-shield": {
+  "copy": 1
+ },
+ "kingdom-bunny-hollow": {
+  "copy": 2
+ },
+ "kingdom-dragons-rest": {
+  "copy": 1
+ },
+ "kingdom-hilltop-hold": {
+  "copy": 1
+ },
+ "kingdom-ironwood": {
+  "copy": 1
+ },
+ "kingdom-pebble-bridge": {
+  "copy": 1
+ },
+ "kingdom-stormcrag": {
+  "copy": 2
+ },
+ "monster-baby-dragon": {
+  "copy": 1
+ },
+ "monster-bandaged-mummy": {
+  "copy": 1,
+  "look": "Dark background: the cut-out will need checking."
+ },
+ "monster-baron-moonbat": {
+  "copy": 1
+ },
+ "monster-cave-minotaur": {
+  "copy": 2,
+  "look": "Both are a four-legged bull-lion beast rather than a minotaur on two legs."
+ },
+ "monster-cyclops": {
+  "copy": 1
+ },
+ "monster-dusk-mage": {
+  "copy": 1
+ },
+ "monster-ember-hound": {
+  "copy": 2
+ },
+ "monster-ember-lord": {
+  "copy": 1
+ },
+ "monster-emerald-dragon": {
+  "copy": 1
+ },
+ "monster-emerald-wizard": {
+  "copy": 1
+ },
+ "monster-fire-spirit": {
+  "copy": 2,
+  "look": "Dark background: the cut-out will need checking."
+ },
+ "monster-gargoyle": {
+  "copy": 1
+ },
+ "monster-giant": {
+  "copy": 1
+ },
+ "monster-giant-rat": {
+  "copy": 2,
+  "wrong": "Both look more like a pig than a rat (pig snout). Copy 2 has the longer rat tail. Could be remade."
+ },
+ "monster-giant-spider": {
+  "copy": 1
+ },
+ "monster-goblin": {
+  "copy": 1
+ },
+ "monster-green-slime": {
+  "copy": 1,
+  "look": "An armoured figure covered in slime rather than a blob of slime."
+ },
+ "monster-grumpy-orc": {
+  "copy": 1
+ },
+ "monster-hedge-witch": {
+  "copy": 2
+ },
+ "monster-hobgoblin": {
+  "copy": 1
+ },
+ "monster-horse-archer": {
+  "copy": 1
+ },
+ "monster-large-spider": {
+  "copy": 1
+ },
+ "monster-lizard-warrior": {
+  "copy": 1
+ },
+ "monster-marsh-snake": {
+  "copy": 1
+ },
+ "monster-moon-wolf": {
+  "copy": 1,
+  "look": "Dark background: the cut-out will need checking."
+ },
+ "monster-rock-beast": {
+  "copy": 1
+ },
+ "monster-rock-pal": {
+  "copy": 1
+ },
+ "monster-ruin-sorcerer": {
+  "copy": 1
+ },
+ "monster-satyr": {
+  "copy": 1
+ },
+ "monster-scruffy-dog": {
+  "copy": 1
+ },
+ "monster-skeleton": {
+  "copy": 1,
+  "look": "Dark background: the cut-out will need checking."
+ },
+ "monster-stone-golem": {
+  "copy": 1
+ },
+ "monster-stone-warden": {
+  "copy": 1
+ },
+ "monster-storm-knight": {
+  "copy": 2
+ },
+ "monster-storm-wizard": {
+  "copy": 1
+ },
+ "monster-swamp-ogre": {
+  "copy": 1
+ },
+ "monster-wyvern": {
+  "copy": 2
+ },
+ "monster-young-dragon": {
+  "copy": 1
+ },
+ "quest-the-frozen-cave": {
+  "copy": 1
+ },
+ "quest-the-pattern-door": {
+  "copy": 1
+ },
+ "quest-the-pie-cart-puzzle": {
+  "copy": 1
+ },
+ "quest-the-riddling-troll": {
+  "copy": 1
+ },
+ "quest-the-sleepy-giant": {
+  "copy": 1
+ },
+ "quest-the-stepping-stones": {
+  "copy": 2
+ },
+ "quest-the-three-guards": {
+  "copy": 1
+ },
+ "quest-the-village-fair": {
+  "copy": 1
+ },
+ "quest-the-wandering-goat": {
+  "copy": 1
+ },
+ "quest-the-wishing-well": {
+  "copy": 2,
+  "look": "The well is smoking like a fire pit. Copy 2 is a little calmer."
+ },
+ "scene-barracks": {
+  "copy": 1
+ },
+ "scene-battlefield": {
+  "copy": 2
+ },
+ "scene-church": {
+  "copy": 1
+ },
+ "scene-creator": {
+  "copy": 1
+ },
+ "scene-empire": {
+  "copy": 1
+ },
+ "scene-market": {
+  "copy": 1
+ },
+ "scene-mines": {
+  "copy": 1
+ },
+ "scene-news": {
+  "copy": 1
+ },
+ "scene-quests": {
+  "copy": 1
+ },
+ "scene-raid": {
+  "copy": 1
+ },
+ "scene-rest": {
+  "copy": 1
+ },
+ "scene-scoreboard": {
+  "copy": 1
+ },
+ "scene-training": {
+  "copy": 1
+ },
+ "scene-victory": {
+  "copy": 2
+ },
+ "scene-village": {
+  "copy": 1
+ },
+ "scene-zone-caves": {
+  "copy": 1
+ },
+ "scene-zone-meadow": {
+  "copy": 2
+ },
+ "scene-zone-mountain": {
+  "copy": 2
+ },
+ "scene-zone-ruins": {
+  "copy": 1
+ },
+ "scene-zone-swamp": {
+  "copy": 1
+ },
+ "troop-axeman": {
+  "copy": 1
+ },
+ "troop-footman": {
+  "copy": 1
+ },
+ "troop-knight": {
+  "copy": 1
+ }
+}
