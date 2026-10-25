@@ -147,12 +147,14 @@
 /* The sign with the place's name, and the way back, in the top-left of the stage */
 .lord-stage .lord-place__head { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 2; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 0; pointer-events: none; }
 .lord-stage .lord-place__head > * { pointer-events: auto; }
+/* On wide screens the way back sits beside the sign, so less of the painting (the shop's forge) is covered. */
+@media (min-width: 901px) { .lord-stage .lord-place__head { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; } }
 .lord .lord-sign:not(.question__title) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   margin: 0;
-  max-width: min(100%, 30ch);
+  max-width: min(100%, 40ch);
   padding: 6px 14px 4px;
   color: var(--lord-cream);
   background: linear-gradient(180deg, rgba(58, 38, 21, 0.92), var(--lord-shade));
@@ -263,9 +265,12 @@
 .lord-encounter .lord-actions { justify-content: center; }
 
 /* ---------------------------------------------------------------- fights */
-.lord-fight__arena { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: end; justify-items: center; }
-.lord-fight__foe, .lord-fight__me { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; width: 100%; text-align: center; }
-.lord-fight__figure { display: flex; align-items: flex-end; justify-content: center; min-height: 64px; }
+/* The two sides share rows (figure, name, bar, chips), so a name that wraps onto two lines makes both name plates
+   the same height and the bars stay level. */
+.lord-fight__arena { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr repeat(4, auto); column-gap: 16px; align-items: end; justify-items: center; }
+.lord-fight__foe, .lord-fight__me { position: relative; z-index: 1; display: grid; grid-row: 1 / -1; grid-template-rows: subgrid; row-gap: 6px; justify-items: center; align-items: start; min-width: 0; width: 100%; text-align: center; }
+.lord-fight__figure { display: flex; align-items: flex-end; justify-content: center; min-height: 64px; align-self: end; }
+.lord-fight__arena .lord-nameplate { align-self: stretch; display: flex; align-items: center; justify-content: center; }
 .lord-fight__figure .lord-art { max-height: calc(42vh - 70px); }
 .lord .lord-nameplate:not(.question__title) { margin: 0; padding: 2px 12px; font-size: 1.15rem; color: var(--lord-cream); background: var(--lord-shade); border: 1px solid var(--lord-gold); border-radius: 4px; text-shadow: 0 1px 2px #000; max-width: 100%; overflow-wrap: anywhere; }
 .lord-bar { position: relative; width: 100%; max-width: 280px; height: 24px; border: 2px solid var(--lord-gold); border-radius: 4px; background: #1a0f08; overflow: hidden; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); }
@@ -319,7 +324,9 @@
   .lord-portrait { max-width: 36%; right: 6px; }
   .lord-shop li { grid-template-columns: 40px 1fr auto; }
   .lord-shop li > :nth-child(n + 4) { grid-column: 2 / -1; }
-  .lord-fight__arena { gap: 8px; padding: 8px; }
+  .lord-fight__arena { column-gap: 8px; padding: 8px; }
+  .lord .lord-nameplate:not(.question__title) { font-size: 0.95rem; padding: 2px 8px; text-wrap: balance; }
+  .lord-sign__long { display: none; }
   .lord-stage__hero { right: 8px; }
   .lord-stage__hero .lord-art, .lord-stage__hero .lord-sprite { max-height: 110px; }
 }

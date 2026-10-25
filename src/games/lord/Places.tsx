@@ -33,18 +33,19 @@ export interface PlaceProps {
 
 /**
  * One place in the village: its painting at the top with the person who works there standing in it, the name on a
- * sign, and what you can do there on a parchment panel below.
+ * sign, and what you can do there on a parchment panel below. `more` is the end of a long title, left off on phones
+ * so the sign stays on one line (the shop's forge shows).
  */
-export function Place({ title, children, back, tile, scene = 'village', person }: {
-  title: string; children: ReactNode; back: () => void; tile?: keyof typeof ICON_TILES; scene?: SceneId; person?: PersonId;
+export function Place({ title, more, children, back, tile, scene = 'village', person }: {
+  title: string; more?: string; children: ReactNode; back: () => void; tile?: keyof typeof ICON_TILES; scene?: SceneId; person?: PersonId;
 }) {
   return (
-    <section className="lord-place" aria-label={title}>
+    <section className="lord-place" aria-label={title + (more ?? '')}>
       <Stage scene={scene} size="short">
         {person && <Portrait who={person} />}
         <header className="lord-place__head">
           <h2 className="lord-sign">
-            {tile && <Icon name={tile} scale={2} />} {title}
+            {tile && <Icon name={tile} scale={2} />} <span>{title}{more && <span className="lord-sign__long">{more}</span>}</span>
           </h2>
           <button type="button" className="lord-btn" onClick={back}>
             <kbd>Esc</kbd> Back to the village
@@ -79,7 +80,7 @@ export function Shop({ hero, act, ask, say, back, busy }: PlaceProps) {
   }
 
   return (
-    <Place title="The Blacksmith and Armourer" tile="sword" scene="shop" person="shop" back={back}>
+    <Place title="The Blacksmith" more=" and Armourer" tile="sword" scene="shop" person="shop" back={back}>
       <p className="lord-lead">
         Your old gear sells back for half price. The best gear needs enough base {stat}: you get that by beating your masters.
         {kindnessDiscount(hero) > 0 && ` Your kindness gives ${Math.round(kindnessDiscount(hero) * 100)}% off.`}
