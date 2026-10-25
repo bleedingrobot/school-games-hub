@@ -277,7 +277,7 @@ Stats are the original's (they already run up to about 54, so they fit our 0-60 
 | 9 | Swamp | Swamp Ogre | Ogre (d8) | 31 | 15 | 9 | 21 | 2 | 5 | |
 | 9 | Swamp | Large Spider | Large Spider | 34 | 12 | 11 | 24 | 3 | 3 | |
 | 10 | Swamp | Satyr | Satyr | 34 | 13 | 12 | 23 | 5 | 5 | |
-| 11 | Swamp | Centaur | Centaur | 32 | 12 | 12 | 26 | 10 | 5 | 4, 5 (10 SP) |
+| 11 | Swamp | Horse Archer | Centaur | 32 | 12 | 12 | 26 | 10 | 5 | 4, 5 (10 SP) |
 | 12 | Ruins | Stone Golem | Golem | 40 | 14 | 13 | 29 | 4 | 6 | |
 | 12 | Ruins | Cyclops | Cyclops | 43 | 12 | 12 | 27 | 5 | 5 | |
 | 13 | Ruins | Giant | Giant | 41 | 13 | 12 | 27 | 4 | 5 | |
