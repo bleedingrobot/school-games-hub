@@ -2,6 +2,9 @@
 
 Reply to James in plain, simple words. **Every live step needs James's yes in this session, one step at a time** (guide section 8).
 
+## Status (26 Oct 2026)
+Done: the subitising test fix (PR #20, merged; main published green), pre-flight, **step 1 (migration applied)** and **step 2 (`lord` deployed)**, and the branch pushed with a pull request open. Left: James merges the pull request (step 3), then step 4 (try it live) and step 5.
+
 ## What goes out (checked 26 Oct 2026)
 Branch `dragon-art` (worktree `~/projects/school-games-hub-dragon-art`, not pushed) is 29 commits ahead of `origin/main` and already has all of `main` in it. It holds:
 - Everything from `dragon-maths` that never went live: **L.6** (How to play, Hint button, letter-key switch) and the **teacher topic switches** (migration `20261019001100_lord_topics.sql`, the tick-list on the teacher page).
@@ -12,7 +15,7 @@ Read-only checks of the live project on 26 Oct 2026:
 - The deployed `lord` function has **no hints, topics or looks**, so it needs redeploying.
 - The live `lord_settings(player uuid)` and `teacher_set_lord(settings jsonb, target_class uuid)` have the same arguments as the migration's versions, and no later migration on `main` touches them, so `create or replace` is safe. The migration already uses `settings_to_change(target_class)` (one settings row per class).
 
-## Blocker to settle first
+## Blocker (fixed: PR #20, merged 26 Oct 2026)
 `src/subitising/saving.test.ts` ("is something the server accepts") fixes `day: '2026-10-21'` but sets `at: Date.now()`. The server rightly refuses a day more than 1 from `at`, so the test has failed since about 23 Oct, **on `main` too**. "Test and publish" runs every test, so the next publish fails whoever merges. Fix: work out `day` from `at` in the test. It belongs to Quick looks, so ask James where it goes (its own little branch/PR to `main` first, or a commit on `dragon-art`).
 
 ## Order: migration, then function, then website

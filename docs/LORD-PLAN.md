@@ -459,6 +459,10 @@ That is comfortable: clicks answer in well under a tenth of a second even on the
 
 The hint is in the website and in the shared rules. **The live `lord` function does not know about hints yet**, because `shared/lord/server.ts` and `proof.ts` changed. Until the function is redeployed, a pupil's hinted right answer is marked as a plain right answer and earns the full bonus (nothing breaks, nobody is hurt, and a wrong answer is still wrong). To fix it: rebuild with `node scripts/build-lord.mjs` (already done, `supabase/functions/lord/index.ts`), then `npx supabase functions deploy lord --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api`. No database change is needed for the hint. I have not deployed anything, merged to `main` or applied anything.
 
+## L.6, topic switches, painted art and hero looks: server part live (26 Oct 2026)
+
+The topics migration (`20261019001100`) was applied to the live database and the `lord` function was redeployed from branch `dragon-art` (hints, topics and the `look` action). Checked: all 4 settings rows have the eight topics on and Dragon Maths still on, `lord_settings` hands a pupil all eight, there is one `teacher_set_lord`, 52 heroes before and after, and the function answers 401 without a sign-in. The old website keeps working with the new function. The website part (How to play, Hint, the topic tick-list, the painted art and the look picker) goes out when the `dragon-art` pull request is merged; steps in `docs/prompts/lord-art-golive.md`.
+
 ## To do (added 19 Oct 2026)
 
 - [ ] **Shop: show what a locked item needs.** Locked weapons and armour should say "Needs level X" (and the strength or defence number), not only "Beat your next master first" after a failed buy. (`src/games/lord/Places.tsx`; the need is `baseStats(tier)` in `shared/lord/data.ts`.)
