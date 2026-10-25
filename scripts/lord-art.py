@@ -9,6 +9,7 @@ Runs on the server only, never in the site build. Needs Python with Pillow and n
   python3 scripts/lord-art.py sheet    IN.png monsters 5 2 "Mud Slug" "Hungry Hedgehog" ...   # a grid sheet, left to right, top to bottom
   python3 scripts/lord-art.py preview  IN.png 5 2              # show where a sheet would be cut (writes IN-cuts.png)
   python3 scripts/lord-art.py hero     IN.png ...               # hero looks (avatar-knight-girl-05-2.png), cut out with rembg
+  python3 scripts/lord-art.py paper    masters "Master Pip=IN.png" ...   # figures on painted paper, cut out with rembg
 
 Names become file names with the same rule as art.ts (slug). A name of "-" skips that cell.
 """
@@ -154,23 +155,36 @@ def cutout(src: str, group: str, name: str):
     save(fit_height(img, SIZES.get(group, 600)), group, slug(name), 80)
 
 
-def hero(src: str):
+def on_paper(src: str) -> Image.Image:
     """
-    One of the 120 hero looks (avatar-knight-girl-05-2.png → heroes/knight-girl-05-2.webp and a -small copy for the
-    picker). They stand on soft painted paper, not a flat colour, so rembg cuts them out (pip install "rembg[cpu]").
+    Cuts out a figure standing on soft painted paper (not a flat colour) with rembg (pip install "rembg[cpu]"), and
+    trims it to the figure.
     """
     from rembg import new_session, remove
     global _session
     if '_session' not in globals():
         _session = new_session('isnet-general-use')
-    name = re.sub(r'^avatar-', '', Path(src).stem)
-    if not re.fullmatch(r'(knight|mage|trickster)-(girl|boy)-(0[1-9]|10)-[12]', name):
-        sys.exit(f'{src}: expected a name like avatar-knight-girl-05-2.png')
     img = trim(remove(Image.open(src).convert('RGB'), session=_session, alpha_matting=True))
     if img is None:
         sys.exit(f'{src}: nothing left after cutting out')
+    return img
+
+
+def hero(src: str):
+    """One of the 120 hero looks: avatar-knight-girl-05-2.png → heroes/knight-girl-05-2.webp and a -small copy for the picker."""
+    name = re.sub(r'^avatar-', '', Path(src).stem)
+    if not re.fullmatch(r'(knight|mage|trickster)-(girl|boy)-(0[1-9]|10)-[12]', name):
+        sys.exit(f'{src}: expected a name like avatar-knight-girl-05-2.png')
+    img = on_paper(src)
     save(fit_height(img, 640), 'heroes', name, 80)
     save(fit_height(img, 280), 'heroes', f'{name}-small', 78)
+
+
+def paper(group: str, pairs: list[str]):
+    """Figures on painted paper, as NAME=IN.png pairs: masters, monsters, village people, the dragon."""
+    for pair in pairs:
+        name, src = pair.split('=', 1)
+        save(fit_height(on_paper(src), SIZES.get(group, 600)), group, slug(name), 80)
 
 
 def cells(w, h, cols, rows):
@@ -218,6 +232,8 @@ if __name__ == '__main__':
     elif kind == 'hero':
         for one in [src, *rest]:
             hero(one)
+    elif kind == 'paper':
+        paper(src, rest)
     elif kind == 'preview':
         preview(src, int(rest[0]), int(rest[1]))
     else:

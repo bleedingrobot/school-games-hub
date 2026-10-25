@@ -30,9 +30,11 @@ export const forestScene = (level: number): SceneId => (level <= 4 ? 'forest-1' 
 export const monsterArt = (name: string) => file('monsters', slug(name));
 export const masterArt = (name: string) => file('masters', slug(name));
 export const dragonArt = () => file('dragon', 'scorchtail');
-export const heroArt = (heroClass: HeroClass) => file('people', heroClass);
 /** A look the pupil can pick (LOOKS in data.ts): a whole painted hero, and a small copy for the picker. */
 export const lookArt = (look: string) => file('heroes', look);
+/** How each class looks before a look is picked: on the class choice, and for heroes made before there were looks. */
+export const CLASS_LOOKS: Record<HeroClass, string> = { knight: 'knight-girl-03-1', mage: 'mage-boy-01-1', trickster: 'trickster-girl-07-1' };
+export const heroArt = (heroClass: HeroClass) => lookArt(CLASS_LOOKS[heroClass]);
 export const lookThumb = (look: string) => file('heroes', `${look}-small`) ?? lookArt(look);
 
 /** The people who work in the village, by the place they work. */

@@ -121,9 +121,9 @@
 .lord-stage--forest-2 .lord-stage__mist, .lord-stage--lair .lord-stage__mist { opacity: 0.5; animation: lord-mist 18s ease-in-out infinite alternate; }
 .lord-stage--forest-1 .lord-stage__mist { opacity: 0.25; animation: lord-mist 22s ease-in-out infinite alternate; }
 .lord-stage--forest-3 .lord-stage__mist { opacity: 0.3; background: radial-gradient(40% 30% at 30% 80%, rgba(255, 150, 80, 0.35), transparent 70%), radial-gradient(30% 25% at 80% 70%, rgba(200, 200, 200, 0.4), transparent 70%); animation: lord-mist 16s ease-in-out infinite alternate; }
-.lord-stage--inn .lord-stage__mist { inset: 0; opacity: 0.45; background: radial-gradient(35% 60% at 80% 72%, rgba(255, 170, 70, 0.5), transparent 70%); animation: lord-flicker 2.6s ease-in-out infinite; }
-.lord-stage--shop .lord-stage__mist { inset: 0; opacity: 0.4; background: radial-gradient(30% 55% at 84% 62%, rgba(255, 120, 40, 0.5), transparent 70%); animation: lord-flicker 1.9s ease-in-out infinite; }
-.lord-stage--healer .lord-stage__mist { inset: 0; opacity: 0.35; background: radial-gradient(18% 35% at 63% 68%, rgba(255, 150, 60, 0.6), transparent 70%); animation: lord-flicker 2.3s ease-in-out infinite; }
+.lord-stage--inn .lord-stage__mist { inset: 0; opacity: 0.45; background: radial-gradient(30% 55% at 30% 62%, rgba(255, 170, 70, 0.5), transparent 70%); animation: lord-flicker 2.6s ease-in-out infinite; }
+.lord-stage--shop .lord-stage__mist { inset: 0; opacity: 0.4; background: radial-gradient(26% 50% at 18% 58%, rgba(255, 120, 40, 0.5), transparent 70%); animation: lord-flicker 1.9s ease-in-out infinite; }
+.lord-stage--healer .lord-stage__mist { inset: 0; opacity: 0.35; background: radial-gradient(16% 30% at 46% 80%, rgba(255, 150, 60, 0.6), transparent 70%); animation: lord-flicker 2.3s ease-in-out infinite; }
 .lord-stage:not(:is(.lord-stage--forest-1, .lord-stage--forest-2, .lord-stage--forest-3, .lord-stage--lair, .lord-stage--inn, .lord-stage--shop, .lord-stage--healer)) .lord-stage__mist { display: none; }
 @keyframes lord-mist { from { transform: translateX(-6%); } to { transform: translateX(6%); } }
 @keyframes lord-flicker { 0%, 100% { opacity: 0.38; } 30% { opacity: 0.5; } 55% { opacity: 0.33; } 80% { opacity: 0.47; } }
@@ -167,8 +167,9 @@
 /* Painted pictures standing in the stage */
 .lord-art { display: block; width: auto; max-width: 100%; object-fit: contain; filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.55)); user-select: none; }
 .lord-portrait { position: absolute; right: 14px; bottom: 0; z-index: 1; height: calc(100% - 6px); max-width: 40%; width: auto; object-fit: contain; object-position: bottom; filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6)); -webkit-mask-image: linear-gradient(180deg, #000 85%, transparent); mask-image: linear-gradient(180deg, #000 85%, transparent); }
-/* Painted heroes and people are waist-up, so their bottom edge fades out instead of stopping in a hard line. */
-.lord-art--hero { -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent); mask-image: linear-gradient(180deg, #000 82%, transparent); }
+/* Painted heroes stop at the shins, so their bottom edge fades out instead of stopping in a hard line. No drop shadow:
+   the mask would clip it to a pale box around the picture. */
+.lord-art--hero { filter: none; -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent); mask-image: linear-gradient(180deg, #000 82%, transparent); }
 .lord-sprite--figure { filter: drop-shadow(0 0 2px #000) drop-shadow(0 6px 8px rgba(0, 0, 0, 0.6)); }
 .lord-stage__foe { position: relative; z-index: 1; display: flex; justify-content: center; }
 .lord-stage__hero { position: absolute; right: 18px; bottom: 8px; z-index: 1; }
@@ -341,18 +342,19 @@
   background: radial-gradient(closest-side, rgba(255, 236, 170, 0), rgba(255, 236, 170, 0) 70%, transparent);
   border: 0; border-radius: 50%; cursor: pointer; font: inherit;
 }
-.lord-map__spot span {
+.lord-map__spot > span {
   transform: translateY(70%); white-space: nowrap; padding: 1px 10px; font-family: var(--lord-display); font-size: clamp(0.85rem, 1.6vw, 1.1rem);
   color: var(--lord-cream); background: var(--lord-shade); border: 1px solid var(--lord-gold); border-radius: 4px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 .lord-map__spot:hover:not(:disabled) { background: radial-gradient(closest-side, rgba(255, 236, 170, 0.55), rgba(255, 236, 170, 0.2) 70%, transparent); }
-.lord-map__spot:hover:not(:disabled) span { background: var(--lord-yellow); }
+.lord-map__spot:hover:not(:disabled) > span { background: var(--lord-yellow); }
 .lord-map__spot:disabled { cursor: not-allowed; }
-.lord-map__spot:disabled span { opacity: 0.7; font-style: italic; }
-.lord-map__spot--dragon:not(:disabled) span { background: #7a1c0e; animation: lord-pulse 1.6s ease-in-out infinite; }
+.lord-map__spot:disabled > span { opacity: 0.7; font-style: italic; }
+.lord-map__spot--dragon:not(:disabled) > span { background: #7a1c0e; animation: lord-pulse 1.6s ease-in-out infinite; }
 .lord-map__hero { position: absolute; z-index: 1; transform: translate(-50%, -95%); pointer-events: none; }
 .lord-map__hero .lord-art { height: 64px !important; }
 @media (max-width: 640px) {
-  .lord-map__spot span { font-size: 0.78rem; padding: 0 6px; }
+  .lord-map__spot > span { font-size: 0.78rem; padding: 0 6px; }
+  .lord-map__spot .lord-map__long { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .lord-map__spot--dragon span { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .lord-map__spot--dragon > span { animation: none !important; } }

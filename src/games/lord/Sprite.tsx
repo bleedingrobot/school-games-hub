@@ -62,12 +62,9 @@ export function MonsterSprite({ monster, scale = 6, decorative = false }: { mons
 }
 
 export function HeroSprite({ heroClass, look, scale = 6, label = 'Your hero' }: { heroClass?: HeroClass; look?: string; scale?: number; label?: string }) {
-  // A picked look is the whole hero, head to boots, so it is drawn taller than the old whole-body tile to look the same
-  // size; a class portrait is waist-up, so a little taller.
-  const whole = look ? lookArt(look) : undefined;
-  if (whole) return <Painted src={whole} scale={scale * 1.8} label={label} kind="hero" />;
-  const painted = heroClass && heroArt(heroClass);
-  if (painted) return <Painted src={painted} scale={scale * 1.4} label={label} kind="hero" />;
+  // A painted hero is the whole hero, head to boots, so it is drawn taller than the old whole-body tile to look the same size.
+  const painted = (look && lookArt(look)) || (heroClass && heroArt(heroClass));
+  if (painted) return <Painted src={painted} scale={scale * 1.8} label={label} kind="hero" />;
   return <Sprite tile={heroClass ? CLASS_TILES[heroClass] : HERO_TILE} scale={scale} colour={ANSI.white} label={label} className="lord-sprite--figure" />;
 }
 export const WeaponSprite = ({ index, scale = 3 }: { index: number; scale?: number }) => <Sprite tile={WEAPON_TILES[index]} scale={scale} colour={ANSI.cyan} />;

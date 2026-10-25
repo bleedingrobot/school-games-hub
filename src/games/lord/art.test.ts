@@ -18,7 +18,7 @@ const KNOWN: Record<string, { names: Set<string>; maxKb: number }> = {
   scenes: { names: new Set(SCENES.flatMap((s) => [s, `${s}-800`])), maxKb: 260 },
   monsters: { names: new Set(MONSTERS.flat().map((m) => slug(m.name))), maxKb: 60 },
   masters: { names: new Set(MASTERS.map((m) => slug(m.name))), maxKb: 80 },
-  people: { names: new Set([...Object.values(PEOPLE).map((p) => p.id), 'knight', 'mage', 'trickster']), maxKb: 160 },
+  people: { names: new Set(Object.values(PEOPLE).map((p) => p.id)), maxKb: 160 },
   dragon: { names: new Set(['scorchtail']), maxKb: 200 },
   heroes: { names: new Set(Object.values(LOOKS).flat().flatMap((l) => [l, `${l}-small`])), maxKb: 90 },
 };
