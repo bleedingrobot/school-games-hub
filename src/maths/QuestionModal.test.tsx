@@ -168,6 +168,54 @@ describe('question box', () => {
   });
 });
 
+describe('the hint button', () => {
+  const marked = (): AnswerResult => ({ correct: true, fact: '', boxBefore: 0, boxAfter: 1 });
+
+  it('is not there unless the game asks for it, so other games are unchanged', () => {
+    render(<QuestionModal question={question()} title="Mana Well" onSubmit={marked} onDone={() => {}} />);
+    expect(screen.queryByRole('button', { name: /hint/i })).not.toBeInTheDocument();
+  });
+
+  it('gives one hint, tells the game once, and shows the clue for screen readers', async () => {
+    const onHint = vi.fn();
+    const user = userEvent.setup();
+    render(<QuestionModal question={question()} title="Mana Well" onSubmit={marked} onDone={() => {}} onHint={onHint} />);
+    await user.click(screen.getByRole('button', { name: 'Hint' }));
+    expect(screen.getByText('The answer is between 40 and 60.')).toBeInTheDocument();
+    expect(onHint).toHaveBeenCalledTimes(1);
+    const used = screen.getByRole('button', { name: 'Hint used' });
+    expect(used).toBeDisabled();
+    await user.click(used);
+    expect(onHint).toHaveBeenCalledTimes(1);
+  });
+
+  it('greys out two wrong choices on a pick-one question', async () => {
+    const user = userEvent.setup();
+    const q = question({ choices: [56, 54, 48, 63], answer: 56 });
+    render(<QuestionModal question={q} title="Mana Well" onSubmit={marked} onDone={() => {}} onHint={() => {}} />);
+    await user.click(screen.getByRole('button', { name: 'Hint' }));
+    const choices = screen.getAllByRole('button').filter((b) => b.classList.contains('question__choice'));
+    expect(choices.filter((b) => (b as HTMLButtonElement).disabled)).toHaveLength(2);
+    expect(screen.getByRole('button', { name: '56' })).toBeEnabled();
+  });
+
+  it('is gone when the box does not know the answer (the server keeps it secret)', () => {
+    const { answer: _gone, ...secret } = question();
+    render(<QuestionModal question={secret} title="Mana Well" onSubmit={marked} onDone={() => {}} onHint={() => {}} />);
+    expect(screen.queryByRole('button', { name: /hint/i })).not.toBeInTheDocument();
+  });
+
+  it('is fresh for the next question', async () => {
+    const user = userEvent.setup();
+    const props = { title: 'Mana Well', onSubmit: marked, onDone: () => {}, onHint: () => {} };
+    const { rerender } = render(<QuestionModal question={question()} {...props} />);
+    await user.click(screen.getByRole('button', { name: 'Hint' }));
+    rerender(<QuestionModal question={question({ id: 2, answer: 12 })} {...props} />);
+    expect(screen.getByRole('button', { name: 'Hint' })).toBeEnabled();
+    expect(screen.queryByText(/between/)).not.toBeInTheDocument();
+  });
+});
+
 describe('the generated skills (rounding, order of operations)', () => {
   const ask = (key: string, multipleChoice = false) => generatedPack([], randomFromSeed(`modal:${key}`)).questionFor(key, 'focus', { multipleChoice });
 

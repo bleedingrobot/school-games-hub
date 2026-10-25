@@ -33,7 +33,7 @@ const pick = <T,>(rand: () => number, list: readonly T[]): T => list[Math.min(li
 
 // ---------- Heroes ----------
 
-export function newHero(heroClass: HeroClass, today: string, previous?: Pick<Hero, 'dragonKills'>): Hero {
+export function newHero(heroClass: HeroClass, today: string, previous?: Pick<Hero, 'dragonKills' | 'look'>): Hero {
   const base = baseStats(1);
   return {
     level: 1, exp: 0, hp: base.maxHp, maxHp: base.maxHp, strength: base.strength, defence: base.defence,
@@ -41,6 +41,7 @@ export function newHero(heroClass: HeroClass, today: string, previous?: Pick<Her
     dragonKills: previous?.dragonKills ?? 0,
     day: today, forestLeft: FOREST_FIGHTS_PER_DAY, arenaLeft: ARENA_FIGHTS_PER_DAY, skillLeft: SKILL_USES_PER_DAY,
     masterTried: false, forestWins: 0, arenaWins: 0, masterWins: 0,
+    ...(previous?.look ? { look: previous.look } : {}),
   };
 }
 

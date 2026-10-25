@@ -7,9 +7,10 @@
 import { BandedPack, sameAnswer } from '../maths/banded';
 import type { FactAnswer } from '../maths/leitner';
 import { parseFactKey } from '../maths/facts';
+import { solveQuestion } from '../maths/skillPacks/timesTables';
 import { poolsFor } from '../maths/selector';
 import { BANDED_PACKS, EXTRA_PACKS, type ExtraTopicId, type TopicId } from '../maths/skillPacks';
-import { MOMENT_TOPICS, defaultBand, type MomentId } from './maths';
+import { ALL_TOPICS, defaultBand, momentTopics, type MomentId } from './maths';
 
 /** A maths answer, as the browser reports it. */
 export interface Proof {
@@ -21,12 +22,19 @@ export interface Proof {
   kind?: string;
   /** The numbers the question was made from (every pack except times tables). */
   params?: number[];
+  /**
+   * Times tables only: the question as it was shown (['?', '×', '8', '=', '56']). The key can't say which number was the blank
+   * in "? × 8 = 56" or "56 ÷ 8 = ?", so the answer is worked out from this.
+   */
+  parts?: string[];
   /** The level the question was asked at: a band (1-4), or a campaign level for times tables. */
   level: number;
   /** What the pupil typed or tapped. */
   given: number;
   /** Milliseconds to answer. */
   ms: number;
+  /** The pupil used the hint. Only ever lowers what a right answer earns, so it is safe to believe. */
+  hinted?: boolean;
 }
 
 type PackId = TopicId | ExtraTopicId;
@@ -51,18 +59,20 @@ function bandedPack(id: string): BandedPack | null {
 const isNumber = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
 
 export type Marked =
-  | { ok: true; correct: boolean; answer: FactAnswer & { pack: string } }
+  | { ok: true; correct: boolean; hinted: boolean; answer: FactAnswer & { pack: string } }
   | { ok: false; problem: string };
 
 /**
  * Is this a question the game could have asked a hero of this level at this moment, and was it right?
- * `only` forces one pack (a forest event's own topic); otherwise the moment's packs are allowed.
+ * `only` forces one pack (a forest event's own topic); otherwise the moment's packs are allowed. `on` is the list of
+ * topics the teacher has left on: a question from any other topic is refused.
  */
-export function markProof(raw: unknown, moment: MomentId, heroLevel: number, now: number, only?: string): Marked {
+export function markProof(raw: unknown, moment: MomentId, heroLevel: number, now: number, only?: string, on: readonly string[] = ALL_TOPICS): Marked {
   if (!raw || typeof raw !== 'object') return { ok: false, problem: 'proof' };
   const p = raw as Record<string, unknown>;
   if (typeof p.pack !== 'string') return { ok: false, problem: 'proof-pack' };
-  const allowed: string[] = only ? [only] : (MOMENT_TOPICS[moment] as PackId[]);
+  // A topic the teacher has switched off is never allowed, even for a forest event's own question.
+  const allowed: string[] = only ? (on.includes(only) ? [only] : []) : momentTopics(moment, on as PackId[]);
   if (!allowed.includes(p.pack)) return { ok: false, problem: 'proof-pack' };
   if (typeof p.key !== 'string' || p.key.length > 60) return { ok: false, problem: 'proof-key' };
   if (!isNumber(p.given)) return { ok: false, problem: 'proof-answer' };
@@ -77,7 +87,13 @@ export function markProof(raw: unknown, moment: MomentId, heroLevel: number, now
     const pools = poolsFor({ level });
     if (![...pools.focus, ...pools.review, ...pools.stretch].includes(p.key)) return { ok: false, problem: 'proof-level' };
     if (typeof p.kind !== 'string' || !KINDS.includes(p.kind)) return { ok: false, problem: 'proof-kind' };
-    correct = p.kind === 'multiply' ? p.given === fact.a * fact.b : p.given === fact.a || p.given === fact.b;
+    // Worked out from how it was shown: the shown question must be this fact, asked the way the kind says.
+    const parts = Array.isArray(p.parts) && p.parts.length === 5 && p.parts.every((x) => typeof x === 'string') ? (p.parts as string[]) : null;
+    const solved = parts ? solveQuestion(parts) : null;
+    if (!parts || !solved || solved.key !== p.key) return { ok: false, problem: 'proof-parts' };
+    const shape = parts[1] === '÷' ? 'divide' : parts[4] === '?' ? 'multiply' : 'missing-factor';
+    if (shape !== p.kind) return { ok: false, problem: 'proof-kind' };
+    correct = p.given === solved.answer;
   } else {
     const pack = bandedPack(p.pack);
     if (!pack) return { ok: false, problem: 'proof-pack' };
@@ -89,5 +105,5 @@ export function markProof(raw: unknown, moment: MomentId, heroLevel: number, now
     if (!made) return { ok: false, problem: 'proof-params' };
     correct = sameAnswer(p.given, made.answer);
   }
-  return { ok: true, correct, answer: { pack: p.pack, key: p.key, correct, ms, at: now } };
+  return { ok: true, correct, hinted: p.hinted === true, answer: { pack: p.pack, key: p.key, correct, ms, at: now } };
 }
