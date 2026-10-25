@@ -1,5 +1,5 @@
 import { HeroSprite } from './Sprite';
-import { heroArt, sceneArt } from './art';
+import { heroArt, lookArt, sceneArt } from './art';
 import type { HeroClass } from '../../../shared/lord/types';
 
 /** Where each place is on James's map (P14), as a share of the picture's width and height. */
@@ -18,8 +18,8 @@ export const hasMap = () => !!sceneArt('map').wide;
  * The kingdom map at the top of the village: tap a place to go there. It is a shortcut for a mouse or a finger; the
  * list of places under it does the same for the keyboard and screen readers, so the map itself is hidden from them.
  */
-export function KingdomMap({ onGo, dragonReady, forestOpen, heroClass, busy }: {
-  onGo: (spot: MapSpot) => void; dragonReady: boolean; forestOpen: boolean; heroClass: HeroClass; busy: boolean;
+export function KingdomMap({ onGo, dragonReady, forestOpen, heroClass, look, busy }: {
+  onGo: (spot: MapSpot) => void; dragonReady: boolean; forestOpen: boolean; heroClass: HeroClass; look?: string; busy: boolean;
 }) {
   const art = sceneArt('map');
   if (!art.wide) return null;
@@ -41,7 +41,7 @@ export function KingdomMap({ onGo, dragonReady, forestOpen, heroClass, busy }: {
             </button>
           );
         })}
-        {heroArt(heroClass) && <div className="lord-map__hero" style={{ left: '49%', top: '44%' }}><HeroSprite heroClass={heroClass} scale={4} /></div>}
+        {(heroArt(heroClass) || (look && lookArt(look))) && <div className="lord-map__hero" style={{ left: '49%', top: '44%' }}><HeroSprite heroClass={heroClass} look={look} scale={4} /></div>}
       </div>
       <h2 className="lord-sign lord-map__sign">The village of Hollowbrook</h2>
     </div>

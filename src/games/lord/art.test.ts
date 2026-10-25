@@ -1,7 +1,7 @@
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { MASTERS, MONSTERS } from '../../../shared/lord/data';
+import { LOOKS, MASTERS, MONSTERS } from '../../../shared/lord/data';
 import { PEOPLE, SCENES, slug } from './art';
 
 const DIR = join(__dirname, 'art');
@@ -20,6 +20,7 @@ const KNOWN: Record<string, { names: Set<string>; maxKb: number }> = {
   masters: { names: new Set(MASTERS.map((m) => slug(m.name))), maxKb: 80 },
   people: { names: new Set([...Object.values(PEOPLE).map((p) => p.id), 'knight', 'mage', 'trickster']), maxKb: 160 },
   dragon: { names: new Set(['scorchtail']), maxKb: 200 },
+  heroes: { names: new Set(Object.values(LOOKS).flat().flatMap((l) => [l, `${l}-small`])), maxKb: 90 },
 };
 
 describe('the painted pictures', () => {
@@ -31,6 +32,14 @@ describe('the painted pictures', () => {
       }
     });
   }
+
+  it('every look has its picture and a small copy for the picker', () => {
+    const have = new Set(files('heroes'));
+    for (const look of Object.values(LOOKS).flat()) {
+      expect(have, look).toContain(`${look}.webp`);
+      expect(have, look).toContain(`${look}-small.webp`);
+    }
+  });
 
   it('no two monsters share a file name', () => {
     const all = MONSTERS.flat().map((m) => slug(m.name));

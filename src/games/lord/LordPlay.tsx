@@ -18,7 +18,7 @@ import { createServerBackend, type LordBackend, type LordLoad, type PackFact } f
 import { FightScreen } from './Fight';
 import { setShortcuts, shortcutsOn } from './shortcuts';
 import { HowToPlay, HowToPlayBody } from './HowToPlay';
-import { Bank, ClassPick, Healer, HeroPage, Inn, Shop, Training, type PlaceProps, type Reply } from './Places';
+import { Bank, ClassPick, Healer, HeroPage, Inn, LookPage, Shop, Training, type PlaceProps, type Reply } from './Places';
 import { Arena, HallOfHeroes, NewsPage, Warriors } from './Social';
 import { HeroSprite, Icon, MonsterSprite } from './Sprite';
 import { withArticle } from './text';
@@ -38,7 +38,7 @@ type FightContext =
 
 type Screen =
   | { name: 'village' }
-  | { name: 'shop' | 'healer' | 'bank' | 'inn' | 'training' | 'hero' | 'news' | 'tools' | 'class' | 'dragon' | 'arena' | 'warriors' | 'hall' | 'howto' }
+  | { name: 'shop' | 'healer' | 'bank' | 'inn' | 'training' | 'hero' | 'news' | 'tools' | 'class' | 'look' | 'dragon' | 'arena' | 'warriors' | 'hall' | 'howto' }
   | { name: 'event'; eventId: string }
   | { name: 'encounter' }
   | { name: 'fight'; fight: FightState; actions: FightAction[]; fightId: string; ctx: FightContext };
@@ -265,8 +265,8 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     return (
       <Frame backend={backend} state={state}>
         <ClassPick
-          onPick={async (c: HeroClass) => {
-            const reply = await act({ action: 'start-hero', heroClass: c });
+          onPick={async (c: HeroClass, look: string) => {
+            const reply = await act({ action: 'start-hero', heroClass: c, look });
             if (reply) {
               setScreen({ name: 'village' });
               if (choosing) addDeed('Your adventure begins!');
@@ -435,7 +435,8 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
     case 'bank': body = <Bank {...placeProps} />; break;
     case 'inn': body = <Inn {...placeProps} today={today} />; break;
     case 'training': body = <Training hero={hero} back={toVillage} onChallenge={() => void challengeMaster()} onDragon={() => setScreen({ name: 'dragon' })} />; break;
-    case 'hero': body = <HeroPage hero={hero} stats={state.stats} back={toVillage} />; break;
+    case 'hero': body = <HeroPage hero={hero} stats={state.stats} back={toVillage} onLook={() => setScreen({ name: 'look' })} />; break;
+    case 'look': body = <LookPage hero={hero} act={act} back={toVillage} busy={busy} />; break;
     case 'arena': body = <Arena hero={hero} act={act} say={say} back={toVillage} busy={busy} />; break;
     case 'news': body = <NewsPage backend={backend} deeds={deeds} today={today} back={toVillage} />; break;
     case 'warriors': body = <Warriors backend={backend} back={toVillage} />; break;
@@ -498,6 +499,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
       const { fight, actions, fightId, ctx } = screen;
       body = (
         <FightScreen
+          look={hero.look}
           key={fightId + (ctx.kind === 'dragon' ? ctx.stage : '')} fight={fight} heroName={heroName}
           onChange={onFightChange} onContinue={() => void finishFight(fight, actions, fightId, ctx)}
         />
@@ -533,7 +535,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
         <Village
           state={state} hero={hero} note={note} waiting={waiting} busy={busy} onRetry={() => void retry()}
           onPlace={(n) => { setNote(''); setScreen({ name: n } as Screen); }} onForest={() => void goForest()}
-          onDragon={() => setScreen({ name: 'dragon' })} onClass={() => setScreen({ name: 'class' })} today={today} tools={backend.trial}
+          onDragon={() => setScreen({ name: 'dragon' })} onClass={() => setScreen({ name: 'class' })} onLook={() => setScreen({ name: 'look' })} today={today} tools={backend.trial}
         />
       );
   }
@@ -607,9 +609,9 @@ function StatusBar({ hero }: { hero: Hero }) {
   );
 }
 
-function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest, onDragon, onClass, today, tools }: {
+function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest, onDragon, onClass, onLook, today, tools }: {
   state: LordState; hero: Hero; note: string; waiting: number; busy: boolean; onRetry: () => void;
-  onPlace: (n: Place | 'tools' | 'howto') => void; onForest: () => void; onDragon: () => void; onClass: () => void; today: string; tools: boolean;
+  onPlace: (n: Place | 'tools' | 'howto') => void; onForest: () => void; onDragon: () => void; onClass: () => void; onLook: () => void; today: string; tools: boolean;
 }) {
   const check = canChallengeMaster(hero);
   const dragonReady = canFaceDragon(hero) || !!state.dragon;
@@ -618,12 +620,12 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
     <section className="lord-village" aria-label="The village">
       {hasMap() ? (
         <KingdomMap
-          heroClass={hero.heroClass} busy={busy} dragonReady={dragonReady} forestOpen={!!fight || !!state.pendingEvent || hero.forestLeft > 0}
+          heroClass={hero.heroClass} look={hero.look} busy={busy} dragonReady={dragonReady} forestOpen={!!fight || !!state.pendingEvent || hero.forestLeft > 0}
           onGo={(spot) => (spot === 'forest' ? onForest() : spot === 'dragon' ? onDragon() : onPlace(spot))}
         />
       ) : (
         <Stage scene="village" size="normal">
-          <div className="lord-stage__hero"><HeroSprite heroClass={hero.heroClass} scale={9} /></div>
+          <div className="lord-stage__hero"><HeroSprite heroClass={hero.heroClass} look={hero.look} scale={9} /></div>
           <header className="lord-place__head"><h2 className="lord-sign">The village of Hollowbrook</h2></header>
         </Stage>
       )}
@@ -645,6 +647,12 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
             <p className="lord-note">
               A new season has begun, and everyone starts again.{' '}
               <button type="button" className="lord-btn" onClick={onClass}>Pick a class</button>
+            </p>
+          )}
+          {!hero.look && (
+            <p className="lord-note">
+              New: you can choose how your hero looks!{' '}
+              <button type="button" className="lord-btn" onClick={onLook}>Choose my look</button>
             </p>
           )}
           {state.season.daysLeft <= 4 && <p className="lord-soft">{state.season.daysLeft === 0 ? 'Last day of the season!' : `${state.season.daysLeft} days left in this season.`}</p>}

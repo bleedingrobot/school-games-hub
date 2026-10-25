@@ -21,7 +21,7 @@
  *  6. One atomic save (`Services.commit`): the hero, the fight and a note of what happened, or nothing.
  */
 import type { FactAnswer } from '../maths/leitner';
-import { CLASSES, FOREST_FIGHTS_PER_DAY, MAX_LEVEL, SEASON_DAYS, WEAPONS, ARMOURS, baseStats, expNeeded, masterFor } from './data';
+import { CLASSES, FOREST_FIGHTS_PER_DAY, isLook, MAX_LEVEL, SEASON_DAYS, WEAPONS, ARMOURS, baseStats, expNeeded, masterFor } from './data';
 import { computerHeroes } from './computer';
 import { EVENT_BY_ID, eventsOn } from './events';
 import {
@@ -230,7 +230,8 @@ export type ToolId = 'jump' | 'gold' | 'exp' | 'refill' | 'hurt' | 'best-gear' |
 export type LordAction =
   | { action: 'load' }
   | { action: 'rollover' }
-  | { action: 'start-hero'; heroClass: HeroClass }
+  | { action: 'start-hero'; heroClass: HeroClass; look?: string }
+  | { action: 'look'; look: string }
   | { action: 'forest' }
   | { action: 'event'; proof?: Proof | null; walkOn?: boolean }
   | { action: 'fight-finish'; fightId: string; actions: FightAction[]; sizeUp?: Proof | null }
@@ -257,7 +258,7 @@ export const MAX_FIGHT_ACTIONS = 300;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const SKILLS: SkillId[] = ['power-strike', 'zap', 'mend', 'dodge', 'pinch'];
 const ACTIONS = [
-  'load', 'rollover', 'start-hero', 'forest', 'event', 'fight-finish', 'master-start', 'master-finish', 'dragon-stage', 'dragon-finish',
+  'load', 'rollover', 'start-hero', 'look', 'forest', 'event', 'fight-finish', 'master-start', 'master-finish', 'dragon-stage', 'dragon-finish',
   'shop-buy', 'heal', 'bank', 'inn', 'arena', 'tools',
 ];
 
@@ -339,7 +340,15 @@ function startHero(c: Ctx, existing: boolean): Done | Refuse {
   }
   const next = newHero(cls as HeroClass, c.today, existing ? { dragonKills: hero.dragonKills } : undefined);
   next.forestLeft = c.settings.forestPerDay;
-  return { hero: next, extra: newExtra(extra.stats), summary: { heroClass: cls }, result: {} };
+  if (isLook(next.heroClass, c.req.look)) next.look = c.req.look;
+  return { hero: next, extra: newExtra(extra.stats), summary: { heroClass: cls, look: next.look }, result: {} };
+}
+
+/** Picks which painted hero you look like: any of your class's, as often as you like. It changes nothing else. */
+function setLook(c: Ctx): Done | Refuse {
+  const { hero } = c.w;
+  if (!isLook(hero.heroClass, c.req.look)) return { refuse: 'bad-request' };
+  return { hero: { ...hero, look: c.req.look }, summary: { look: c.req.look }, result: {} };
 }
 
 function forest(c: Ctx): Done | Refuse {
@@ -618,6 +627,7 @@ interface Opponent {
   id: string;
   name: string;
   duelist: Duelist;
+  look?: string;
 }
 
 const sane = (h: unknown): h is Hero => {
@@ -639,11 +649,11 @@ async function arena(c: Ctx): Promise<Done | Refuse> {
   if (classmates.ok) {
     for (const k of classmates.value) {
       if (k && typeof k.player === 'string' && k.player !== c.player && typeof k.name === 'string' && sane(k.hero)) {
-        pool.push({ kind: 'pupil', id: k.player, name: k.name, duelist: duelistOf(k.hero, k.name) });
+        pool.push({ kind: 'pupil', id: k.player, name: k.name, duelist: duelistOf(k.hero, k.name), look: isLook(k.hero.heroClass, k.hero.look) ? k.hero.look : undefined });
       }
     }
   }
-  for (const k of computerHeroes(season.number, season.dayOfSeason)) pool.push({ kind: 'computer', id: k.id, name: k.name, duelist: k.duelist });
+  for (const k of computerHeroes(season.number, season.dayOfSeason)) pool.push({ kind: 'computer', id: k.id, name: k.name, duelist: k.duelist, look: k.hero.look });
   // Near your level: within one, or else the three closest.
   const gap = (o: Opponent) => Math.abs(o.duelist.level - hero.level);
   const near = pool.filter((o) => gap(o) <= 1);
@@ -669,8 +679,8 @@ async function arena(c: Ctx): Promise<Done | Refuse> {
     summary: { arena: won ? 'won' : 'lost', against: slug, rounds: duel.rounds, exp },
     result: {
       ...result,
-      you: { name: you.name, heroClass: you.heroClass, level: you.level, maxHp: you.maxHp },
-      opponent: { name: opponent.name, heroClass: opponent.duelist.heroClass, level: opponent.duelist.level, maxHp: opponent.duelist.maxHp, computer: opponent.kind === 'computer' },
+      you: { name: you.name, heroClass: you.heroClass, look: hero.look, level: you.level, maxHp: you.maxHp },
+      opponent: { name: opponent.name, heroClass: opponent.duelist.heroClass, look: opponent.look, level: opponent.duelist.level, maxHp: opponent.duelist.maxHp, computer: opponent.kind === 'computer' },
     },
   };
 }
@@ -706,7 +716,7 @@ async function tools(c: Ctx): Promise<Done | Refuse> {
       if (typeof value !== 'string' || !EVENT_BY_ID[value]) return { refuse: 'bad-request' };
       return { extra: { ...extra, pendingEvent: value }, summary: { tool, event: value }, result: {} };
     }
-    case 'reset': return { hero: newHero(hero.heroClass, c.today), extra: { ...newExtra(extra.stats), classOpen: true }, summary: { tool }, result: {} };
+    case 'reset': return { hero: newHero(hero.heroClass, c.today, { dragonKills: 0, look: hero.look }), extra: { ...newExtra(extra.stats), classOpen: true }, summary: { tool }, result: {} };
     default: return { refuse: 'bad-request' };
   }
 }
@@ -833,7 +843,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
     let rowSeason = row.season;
     // A new season starts the hero again, once any fight in progress is finished.
     if (rowSeason < season.number && !stored) {
-      hero = newHero(hero.heroClass, today, { dragonKills: hero.dragonKills });
+      hero = newHero(hero.heroClass, today, { dragonKills: hero.dragonKills, look: hero.look });
       extra = { ...newExtra(extra.stats), classOpen: true };
       rowSeason = season.number;
       rolled = true;
@@ -905,6 +915,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
   let done: Done | Refuse;
   switch (action) {
     case 'start-hero': done = startHero(ctx, !!row); break;
+    case 'look': done = setLook(ctx); break;
     case 'forest': done = forest(ctx); break;
     case 'event': done = event(ctx); break;
     case 'fight-finish': done = fightFinish(ctx); break;

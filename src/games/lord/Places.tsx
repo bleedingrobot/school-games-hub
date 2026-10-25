@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import {
-  ARMOURS, CLASSES, EXP_TO_CHALLENGE, MAX_LEVEL, WEAPONS, expNeeded, masterFor,
+  ARMOURS, CLASSES, EXP_TO_CHALLENGE, LOOKS, MAX_LEVEL, WEAPONS, expNeeded, masterFor,
 } from '../../../shared/lord/data';
 import {
   buyGear, canChallengeMaster, canFaceDragon, healCost, healPrice, heroAttack, heroDefence, kindnessDiscount, shopPrice,
@@ -13,7 +13,7 @@ import { ArmourSprite, HeroSprite, Icon, MonsterSprite, WeaponSprite } from './S
 import { ICON_TILES } from './tileMap';
 import { BARD_SONGS, dayHash } from './text';
 import { Portrait, Stage } from './Stage';
-import type { PersonId, SceneId } from './art';
+import { lookThumb, type PersonId, type SceneId } from './art';
 import type { MomentId } from '../../../shared/lord/maths';
 
 export type Ask = (moment: MomentId, options: AskOptions) => Promise<Asked>;
@@ -326,12 +326,15 @@ export function Training({ hero, back, onChallenge, onDragon }: Pick<PlaceProps,
 
 // ---------------------------------------------------------------- hero page, news, class pick
 
-export function HeroPage({ hero, stats, back }: { hero: Hero; stats?: Stats; back: () => void }) {
+export function HeroPage({ hero, stats, back, onLook }: { hero: Hero; stats?: Stats; back: () => void; onLook: () => void }) {
   const need = expNeeded(hero.level);
   return (
     <Place title="Your hero" scene="map" back={back}>
       <div className="lord-hero">
-        <HeroSprite heroClass={hero.heroClass} scale={8} />
+        <div className="lord-hero__look">
+          <HeroSprite heroClass={hero.heroClass} look={hero.look} scale={8} />
+          <button type="button" className="lord-btn" onClick={onLook}>{hero.look ? 'Change my look' : 'Choose my look'}</button>
+        </div>
         <dl className="lord-stats">
           <div><dt>Class</dt><dd>{CLASSES[hero.heroClass].name}</dd></div>
           <div><dt>Level</dt><dd>{hero.level} / {MAX_LEVEL}</dd></div>
@@ -362,7 +365,56 @@ export function HeroPage({ hero, stats, back }: { hero: Hero; stats?: Stats; bac
   );
 }
 
-export function ClassPick({ onPick }: { onPick: (c: HeroClass) => void }) {
+/** "knight-girl-05-2" → "Knight girl 5, painting 2", for screen readers. */
+const lookName = (look: string) => {
+  const [cls, kid, n, v] = look.split('-');
+  return `${CLASSES[cls as HeroClass].name} ${kid} ${Number(n)}, painting ${v}`;
+};
+
+/** Every painted hero of one class, to pick the one you look like. The one you have now is marked. */
+export function LookPick({ heroClass, current, onPick, busy }: { heroClass: HeroClass; current?: string; onPick: (look: string) => void; busy?: boolean }) {
+  return (
+    <div className="lord-looks" role="group" aria-label={`${CLASSES[heroClass].name} looks`}>
+      {LOOKS[heroClass].map((look) => (
+        <button
+          key={look} type="button" className="lord-look" aria-pressed={look === current} aria-label={lookName(look)}
+          disabled={busy} onClick={() => onPick(look)}
+        >
+          <img src={lookThumb(look)} alt="" loading="lazy" decoding="async" draggable={false} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Changing your look, any time: from Your hero, or the village's nudge for heroes made before there were looks. */
+export function LookPage({ hero, act, back, busy }: Pick<PlaceProps, 'hero' | 'act' | 'back' | 'busy'>) {
+  return (
+    <Place title="Choose your look" scene="village" back={back}>
+      <p className="lord-lead">Pick the {CLASSES[hero.heroClass].name.toLowerCase()} you want to be. You can change it whenever you like. It changes how you look, nothing else.</p>
+      <LookPick heroClass={hero.heroClass} current={hero.look} busy={busy} onPick={async (look) => (await act({ action: 'look', look })) && back()} />
+    </Place>
+  );
+}
+
+export function ClassPick({ onPick }: { onPick: (c: HeroClass, look: string) => void }) {
+  const [chosen, setChosen] = useState<HeroClass | null>(null);
+  if (chosen) {
+    return (
+      <section className="lord-place" aria-label="Choose your look">
+        <Stage scene="village" size="short">
+          <header className="lord-place__head">
+            <h2 className="lord-sign">Choose your look</h2>
+            <button type="button" className="lord-btn" onClick={() => setChosen(null)}>Pick a different class</button>
+          </header>
+        </Stage>
+        <div className="lord-panel">
+          <p className="lord-lead">Which {CLASSES[chosen].name.toLowerCase()} are you? You can change your look later, on Your hero.</p>
+          <LookPick heroClass={chosen} onPick={(look) => onPick(chosen, look)} />
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="lord-place" aria-label="Choose your class">
       <Stage scene="village" size="short">
@@ -376,7 +428,7 @@ export function ClassPick({ onPick }: { onPick: (c: HeroClass) => void }) {
       </p>
       <div className="lord-classes">
         {(Object.keys(CLASSES) as HeroClass[]).map((c) => (
-          <button key={c} type="button" className="lord-class" onClick={() => onPick(c)}>
+          <button key={c} type="button" className="lord-class" onClick={() => setChosen(c)}>
             <HeroSprite heroClass={c} scale={8} />
             <strong>{CLASSES[c].name}</strong>
             <span>{CLASSES[c].blurb}</span>

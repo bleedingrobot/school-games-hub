@@ -46,6 +46,12 @@ function tripSeed(kind: 'fight' | 'event') {
 
 const village = () => screen.findByRole('region', { name: 'The village' });
 
+/** Makes a hero the way a pupil does: a class, then the first look of it. */
+async function pickHero(user: ReturnType<typeof userEvent.setup>, heroClass: RegExp) {
+  await user.click(await screen.findByRole('button', { name: heroClass }));
+  await user.click((await screen.findAllByRole('button', { name: /painting 1/ }))[0]);
+}
+
 describe('Dragon Maths with a server keeping the hero', () => {
   afterEach(cleanup);
 
@@ -58,18 +64,40 @@ describe('Dragon Maths with a server keeping the hero', () => {
     const { db, backend } = newGame();
     renderGame(backend);
     expect(await screen.findByText(/Pick the kind of hero/i)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     expect(screen.getByText(/You have 10 forest fights left today/)).toBeInTheDocument();
     expect(screen.getByRole('list', { name: /at a glance/i })).toHaveTextContent('Level 1');
-    expect(db.row?.hero.heroClass).toBe('knight');
+    expect(db.row?.hero).toMatchObject({ heroClass: 'knight', look: 'knight-girl-01-1' });
+  });
+
+  it('lets a hero change their look from Your hero, and nudges a hero made before there were looks', async () => {
+    const user = userEvent.setup();
+    const { db, backend } = newGame();
+    const first = renderGame(backend);
+    await pickHero(user, /Trickster/);
+    await village();
+    expect(screen.queryByText(/choose how your hero looks/)).not.toBeInTheDocument();
+    first.unmount();
+    delete db.row!.hero.look; // as if made before this
+    renderGame(backend);
+    await village();
+    await user.click(screen.getByRole('button', { name: 'Choose my look' }));
+    expect(screen.getByRole('button', { name: 'Trickster boy 1, painting 1' })).toHaveAttribute('aria-pressed', 'false');
+    await user.click(screen.getByRole('button', { name: 'Trickster boy 1, painting 2' }));
+    await village();
+    expect(db.row?.hero.look).toBe('trickster-boy-01-2');
+    await user.keyboard('y');
+    await user.click(screen.getByRole('button', { name: 'Change my look' }));
+    expect(screen.getByRole('button', { name: 'Trickster boy 1, painting 2' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('button', { name: /Knight/ })).not.toBeInTheDocument();
   });
 
   it('keeps the hero between visits, as the server has it', async () => {
     const user = userEvent.setup();
     const { backend } = newGame();
     const first = renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Mage/ }));
+    await pickHero(user, /Mage/);
     await village();
     first.unmount();
     renderGame(backend);
@@ -83,7 +111,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
     const user = userEvent.setup();
     const { backend } = newGame();
     renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     await user.keyboard('s');
     expect(screen.getByRole('region', { name: /Blacksmith/ })).toBeInTheDocument();
@@ -95,7 +123,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
     const user = userEvent.setup();
     const { db, seeds, backend } = newGame();
     renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     seeds.push(tripSeed('event'));
     await user.keyboard('f');
@@ -116,7 +144,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
     const user = userEvent.setup();
     const { db, seeds, backend } = newGame();
     renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     db.row!.hero = { ...db.row!.hero, strength: 900, hp: 400, maxHp: 400 };
     seeds.push(tripSeed('fight'));
@@ -136,7 +164,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
     const user = userEvent.setup();
     const { db, seeds, backend } = newGame();
     const first = renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     seeds.push(tripSeed('fight'));
     await user.keyboard('f');
@@ -159,7 +187,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
     await screen.findByText(/Pick the kind of hero/i);
     await user.click(screen.getByText('How to play')); // the fold-out on the class screen
     expect(screen.getByText(/The Red Dragon stole the village/)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     await user.keyboard('?');
     expect(screen.getByRole('region', { name: 'How to play' })).toBeInTheDocument();
@@ -174,7 +202,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
     const user = userEvent.setup();
     const { backend } = newGame();
     renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     await user.click(screen.getByRole('checkbox', { name: /Letter-key shortcuts/ }));
     await user.keyboard('s');
@@ -191,7 +219,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
     const user = userEvent.setup();
     const { backend } = newGame();
     renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     await user.click(screen.getByRole('button', { name: /Healer/ }));
     await waitFor(() => expect(document.activeElement?.tagName).toBe('H2'));
@@ -201,7 +229,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
     const user = userEvent.setup();
     const { db, backend } = newGame();
     renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     await user.keyboard('i');
     await user.click(screen.getByRole('button', { name: /riddle/i }));
@@ -223,7 +251,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
     const user = userEvent.setup();
     const { db, backend } = newGame({ topics: ['money'] });
     renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     await user.keyboard('i');
     await user.click(screen.getByRole('button', { name: /riddle/i })); // the riddle usually asks about patterns or place value
@@ -243,7 +271,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
     const user = userEvent.setup();
     const { backend } = newGame();
     renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     await user.keyboard('s');
     expect(screen.getByText(/Rusty Dagger/)).toBeInTheDocument();
@@ -254,7 +282,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
     const user = userEvent.setup();
     const { db, backend } = newGame();
     renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     await user.keyboard('b');
     await user.click(screen.getByRole('button', { name: 'Deposit all' }));
@@ -266,7 +294,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
     const user = userEvent.setup();
     const { backend } = newGame();
     renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     await user.keyboard('x');
     await user.click(await screen.findByRole('button', { name: /Straight to the dragon/ }));
@@ -278,7 +306,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
     const user = userEvent.setup();
     const { backend } = newGame({}, false, true);
     renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     expect(screen.queryByRole('button', { name: /Test tools/ })).not.toBeInTheDocument();
     await user.keyboard('x');
@@ -323,7 +351,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
       },
     };
     renderGame(flaky);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     db.row!.hero = { ...db.row!.hero, strength: 900, hp: 400, maxHp: 400 };
     seeds.push(tripSeed('fight'));
@@ -346,7 +374,7 @@ describe('the arena, the news, the Warriors list and the Hall of Heroes', () => 
     const user = userEvent.setup();
     const game = newGame(over, trial);
     renderGame(game.backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     return { user, ...game };
   }
@@ -394,7 +422,7 @@ describe('the arena, the news, the Warriors list and the Hall of Heroes', () => 
     const { backend } = newGame({}, false);
     let tries = 0;
     renderGame({ ...backend, fetchNews: async () => (tries++ === 0 ? null : [{ day: '2026-10-19', kind: 'village', line: 'A quiet day.' }]) });
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     await user.keyboard('n');
     expect(await screen.findByText(/couldn’t fetch that just now/)).toBeInTheDocument();
@@ -413,7 +441,7 @@ describe('the arena, the news, the Warriors list and the Hall of Heroes', () => 
         { place: 11, display_name: 'Quiet Moa', avatar: null, level: 1, stars: 0, dragons: 0, is_me: false },
       ],
     });
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     await user.keyboard('w');
     const list = await screen.findByRole('list', { name: 'Warriors this season' });
@@ -429,7 +457,7 @@ describe('the arena, the news, the Warriors list and the Hall of Heroes', () => 
     const user = userEvent.setup();
     const { backend } = newGame({}, false);
     renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     await user.keyboard('g');
     expect(await screen.findByText(/The Hall is empty/)).toBeInTheDocument();
@@ -442,7 +470,7 @@ describe('the arena, the news, the Warriors list and the Hall of Heroes', () => 
         { season: 1, display_name: 'Brave Tui', avatar: null, kills: 1, is_me: false },
       ],
     });
-    await user.click(await screen.findByRole('button', { name: /Mage/ }));
+    await pickHero(user, /Mage/);
     await village();
     await user.keyboard('g');
     const hall = await screen.findByRole('region', { name: 'The Hall of Heroes' });
@@ -456,7 +484,7 @@ describe('the arena, the news, the Warriors list and the Hall of Heroes', () => 
     const db = emptyDb({ enabled: true, seasonStart: '2026-09-19' });
     const backend = createLocalBackend(db, { trial: false, now: () => Date.parse('2026-10-19T00:00:00Z') });
     renderGame(backend);
-    await user.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(user, /Knight/);
     await village();
     expect(screen.getAllByText(/4 days left/).length).toBeGreaterThan(0);
   });
@@ -464,7 +492,7 @@ describe('the arena, the news, the Warriors list and the Hall of Heroes', () => 
   it('says when a fight left alone for a whole day counted as a loss', async () => {
     const { backend } = newGame({}, false);
     renderGame({ ...backend, load: async () => ({ ...(await backend.load()), abandoned: 'forest' }) as never });
-    await userEvent.click(await screen.findByRole('button', { name: /Knight/ }));
+    await pickHero(userEvent.setup(), /Knight/);
     await village();
     expect(screen.getByText(/left unfinished counted as a loss after a day/)).toBeInTheDocument();
   });

@@ -62,8 +62,8 @@ export interface DuelResult {
   rounds: number;
   exp: number;
   log: DuelEvent[];
-  you: { name: string; heroClass: HeroClass; level: number; maxHp: number };
-  opponent: { name: string; heroClass: HeroClass; level: number; maxHp: number; computer: boolean };
+  you: { name: string; heroClass: HeroClass; look?: string; level: number; maxHp: number };
+  opponent: { name: string; heroClass: HeroClass; look?: string; level: number; maxHp: number; computer: boolean };
 }
 
 export function Arena({ hero, act, say, back, busy }: {
@@ -96,12 +96,12 @@ export function Arena({ hero, act, say, back, busy }: {
         <div className="lord-duel" aria-live="polite">
           <div className="lord-duel__heroes">
             <div>
-              <HeroSprite heroClass={last.you.heroClass} scale={5} />
+              <HeroSprite heroClass={last.you.heroClass} look={last.you.look} scale={5} />
               <p><strong>You</strong><br />{CLASSES[last.you.heroClass].name}, level {last.you.level}</p>
             </div>
             <span aria-hidden="true">vs</span>
             <div>
-              <HeroSprite heroClass={last.opponent.heroClass} scale={5} />
+              <HeroSprite heroClass={last.opponent.heroClass} look={last.opponent.look} scale={5} label={last.opponent.name} />
               <p><strong>{last.opponent.name}</strong><br />{CLASSES[last.opponent.heroClass].name}, level {last.opponent.level}
                 {last.opponent.computer && <><br /><span className="lord-badge">computer hero</span></>}</p>
             </div>

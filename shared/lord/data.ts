@@ -354,6 +354,20 @@ export const CLASSES: Record<HeroClass, { name: string; blurb: string; skills: S
   trickster: { name: 'Trickster', blurb: 'Dodge the next hit, or pinch a little gold from the monster.', skills: ['dodge', 'pinch'] },
 };
 
+/**
+ * The painted heroes a pupil can pick to look like (src/games/lord/art/heroes/), 40 for each class: ten girls and ten
+ * boys, each painted twice. "knight-girl-05-2" is the second painting of knight girl 5. Girls and boys take turns.
+ */
+export const LOOKS: Record<HeroClass, string[]> = Object.fromEntries(
+  (Object.keys(CLASSES) as HeroClass[]).map((c) => [
+    c,
+    Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, '0')).flatMap((n) =>
+      ['girl', 'boy'].flatMap((kid) => [1, 2].map((v) => `${c}-${kid}-${n}-${v}`))),
+  ]),
+) as Record<HeroClass, string[]>;
+
+export const isLook = (heroClass: HeroClass, look: unknown): look is string => typeof look === 'string' && LOOKS[heroClass].includes(look);
+
 export const SKILL_NAMES: Record<SkillId, string> = {
   'power-strike': 'Power strike',
   zap: 'Zap',

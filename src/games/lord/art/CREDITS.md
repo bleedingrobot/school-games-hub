@@ -2,12 +2,13 @@
 
 The painted pictures in this folder were made for this game by James (the teacher who runs School Games Hub) with an
 image AI, from the prompts in [docs/lord-art/PROMPTS.md](../../../../docs/lord-art/PROMPTS.md), then cropped, shrunk and
-cut out with `scripts/lord-art.py` (figures on painted backgrounds were cut out with the open-source rembg tool, run on the server only). They were not copied from any game, artist or art pack.
+cut out with `scripts/lord-art.py` (figures on painted backgrounds, and the hero looks, were cut out with the open-source rembg tool, run on the server only). They were not copied from any game, artist or art pack.
 
 | Folder | What | Made | Tool |
 |---|---|---|---|
 | scenes/ | Places and the kingdom map | 22 Oct 2026 (village, forests 1-3, lair, inn, shop, healer, bank, training, map) | ChatGPT / Gemini |
 | people/ | Village people and the three hero classes | 22 Oct 2026 (innkeeper, knight, mage, trickster) | ChatGPT / Gemini |
+| heroes/ | 120 looks a pupil can pick (40 per class: 10 girls and 10 boys, each painted twice), each with a -small copy for the picker | 26 Oct 2026 | Image AI |
 | masters/ | The eleven masters | | |
 | monsters/ | 120 forest monsters | 22 Oct 2026 (level 1) | ChatGPT / Gemini |
 | dragon/ | Scorchtail | 22 Oct 2026 | ChatGPT / Gemini |

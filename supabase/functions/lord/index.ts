@@ -448,6 +448,12 @@ const CLASSES = {
 		skills: ["dodge", "pinch"]
 	}
 };
+/**
+* The painted heroes a pupil can pick to look like (src/games/lord/art/heroes/), 40 for each class: ten girls and ten
+* boys, each painted twice. "knight-girl-05-2" is the second painting of knight girl 5. Girls and boys take turns.
+*/
+const LOOKS = Object.fromEntries(Object.keys(CLASSES).map((c) => [c, Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, "0")).flatMap((n) => ["girl", "boy"].flatMap((kid) => [1, 2].map((v) => `${c}-${kid}-${n}-${v}`)))]));
+const isLook = (heroClass, look) => typeof look === "string" && LOOKS[heroClass].includes(look);
 const DRAGON_STAGES = (() => {
 	const p = tierPower(12);
 	const stage = (n, name, intro, hpMul, strMul) => ({
@@ -749,7 +755,8 @@ function newHero(heroClass, today, previous) {
 		masterTried: false,
 		forestWins: 0,
 		arenaWins: 0,
-		masterWins: 0
+		masterWins: 0,
+		...previous?.look ? { look: previous.look } : {}
 	};
 }
 const heroAttack = (h) => h.strength + WEAPONS[h.weapon].power;
@@ -1570,48 +1577,56 @@ const COMPUTER_HEROES = [
 		id: "gareth",
 		name: "Sir Gareth",
 		heroClass: "knight",
+		look: "knight-boy-03-1",
 		plays: days(0, 1, 2, 3, 4)
 	},
 	{
 		id: "maple",
 		name: "Dame Maple",
 		heroClass: "mage",
+		look: "mage-girl-01-1",
 		plays: days(0, 1, 2, 3)
 	},
 	{
 		id: "bram",
 		name: "Old Bram",
 		heroClass: "knight",
+		look: "knight-boy-10-1",
 		plays: days(0, 2, 4)
 	},
 	{
 		id: "wren",
 		name: "Lady Wren",
 		heroClass: "trickster",
+		look: "trickster-girl-03-1",
 		plays: days(0, 1, 2, 3, 4, 5, 6)
 	},
 	{
 		id: "flint",
 		name: "Captain Flint",
 		heroClass: "trickster",
+		look: "trickster-boy-05-1",
 		plays: days(1, 2, 3, 4)
 	},
 	{
 		id: "orrin",
 		name: "Wizard Pim",
 		heroClass: "mage",
+		look: "mage-boy-02-1",
 		plays: days(0, 1, 3, 4)
 	},
 	{
 		id: "hazel",
 		name: "Sister Hazel",
 		heroClass: "mage",
+		look: "mage-girl-04-1",
 		plays: days(1, 3, 5)
 	},
 	{
 		id: "mort",
 		name: "Big Mort",
 		heroClass: "knight",
+		look: "knight-boy-07-1",
 		plays: days(0, 1, 2, 3, 4, 5)
 	}
 ];
@@ -1645,7 +1660,10 @@ function computerHeroes(seasonNumber, dayOfSeason) {
 		return {
 			id: spec.id,
 			name: spec.name,
-			hero,
+			hero: {
+				...hero,
+				look: spec.look
+			},
 			duelist: duelistOf(hero, spec.name)
 		};
 	});
@@ -4666,6 +4684,7 @@ const ACTIONS = [
 	"load",
 	"rollover",
 	"start-hero",
+	"look",
 	"forest",
 	"event",
 	"fight-finish",
@@ -4731,10 +4750,27 @@ function startHero(c, existing) {
 	}
 	const next = newHero(cls, c.today, existing ? { dragonKills: hero.dragonKills } : void 0);
 	next.forestLeft = c.settings.forestPerDay;
+	if (isLook(next.heroClass, c.req.look)) next.look = c.req.look;
 	return {
 		hero: next,
 		extra: newExtra(extra.stats),
-		summary: { heroClass: cls },
+		summary: {
+			heroClass: cls,
+			look: next.look
+		},
+		result: {}
+	};
+}
+/** Picks which painted hero you look like: any of your class's, as often as you like. It changes nothing else. */
+function setLook(c) {
+	const { hero } = c.w;
+	if (!isLook(hero.heroClass, c.req.look)) return { refuse: "bad-request" };
+	return {
+		hero: {
+			...hero,
+			look: c.req.look
+		},
+		summary: { look: c.req.look },
 		result: {}
 	};
 }
@@ -5300,14 +5336,16 @@ async function arena(c) {
 			kind: "pupil",
 			id: k.player,
 			name: k.name,
-			duelist: duelistOf(k.hero, k.name)
+			duelist: duelistOf(k.hero, k.name),
+			look: isLook(k.hero.heroClass, k.hero.look) ? k.hero.look : void 0
 		});
 	}
 	for (const k of computerHeroes(season.number, season.dayOfSeason)) pool.push({
 		kind: "computer",
 		id: k.id,
 		name: k.name,
-		duelist: k.duelist
+		duelist: k.duelist,
+		look: k.hero.look
 	});
 	const gap = (o) => Math.abs(o.duelist.level - hero.level);
 	const near = pool.filter((o) => gap(o) <= 1);
@@ -5368,12 +5406,14 @@ async function arena(c) {
 			you: {
 				name: you.name,
 				heroClass: you.heroClass,
+				look: hero.look,
 				level: you.level,
 				maxHp: you.maxHp
 			},
 			opponent: {
 				name: opponent.name,
 				heroClass: opponent.duelist.heroClass,
+				look: opponent.look,
 				level: opponent.duelist.level,
 				maxHp: opponent.duelist.maxHp,
 				computer: opponent.kind === "computer"
@@ -5509,7 +5549,10 @@ async function tools(c) {
 				result: {}
 			};
 		case "reset": return {
-			hero: newHero(hero.heroClass, c.today),
+			hero: newHero(hero.heroClass, c.today, {
+				dragonKills: 0,
+				look: hero.look
+			}),
 			extra: {
 				...newExtra(extra.stats),
 				classOpen: true
@@ -5691,7 +5734,10 @@ async function runLord(s, player, raw) {
 		let extra = readExtra(row.extra);
 		let rowSeason = row.season;
 		if (rowSeason < season.number && !stored) {
-			hero = newHero(hero.heroClass, today, { dragonKills: hero.dragonKills });
+			hero = newHero(hero.heroClass, today, {
+				dragonKills: hero.dragonKills,
+				look: hero.look
+			});
 			extra = {
 				...newExtra(extra.stats),
 				classOpen: true
@@ -5836,6 +5882,9 @@ async function runLord(s, player, raw) {
 	switch (action) {
 		case "start-hero":
 			done = startHero(ctx, !!row);
+			break;
+		case "look":
+			done = setLook(ctx);
 			break;
 		case "forest":
 			done = forest(ctx);

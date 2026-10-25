@@ -31,6 +31,9 @@ export const monsterArt = (name: string) => file('monsters', slug(name));
 export const masterArt = (name: string) => file('masters', slug(name));
 export const dragonArt = () => file('dragon', 'scorchtail');
 export const heroArt = (heroClass: HeroClass) => file('people', heroClass);
+/** A look the pupil can pick (LOOKS in data.ts): a whole painted hero, and a small copy for the picker. */
+export const lookArt = (look: string) => file('heroes', look);
+export const lookThumb = (look: string) => file('heroes', `${look}-small`) ?? lookArt(look);
 
 /** The people who work in the village, by the place they work. */
 export const PEOPLE = {

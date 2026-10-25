@@ -5,7 +5,7 @@ import {
   SHEET_ROWS, TILE, WEAPON_TILES, type Tile,
 } from './tileMap';
 import type { HeroClass, Monster } from '../../../shared/lord/types';
-import { dragonArt, heroArt, masterArt, monsterArt } from './art';
+import { dragonArt, heroArt, lookArt, masterArt, monsterArt } from './art';
 
 /** The old 16 ANSI colours, used to colour the one-colour pictures. */
 export const ANSI = {
@@ -61,11 +61,14 @@ export function MonsterSprite({ monster, scale = 6, decorative = false }: { mons
   return <Sprite tile={monsterTile(monster)} scale={scale} colour={dragon ? ANSI.red : colourForLevel(monster.level)} label={label} className="lord-sprite--figure" />;
 }
 
-export function HeroSprite({ heroClass, scale = 6 }: { heroClass?: HeroClass; scale?: number }) {
+export function HeroSprite({ heroClass, look, scale = 6, label = 'Your hero' }: { heroClass?: HeroClass; look?: string; scale?: number; label?: string }) {
+  // A picked look is the whole hero, head to boots, so it is drawn taller than the old whole-body tile to look the same
+  // size; a class portrait is waist-up, so a little taller.
+  const whole = look ? lookArt(look) : undefined;
+  if (whole) return <Painted src={whole} scale={scale * 1.8} label={label} kind="hero" />;
   const painted = heroClass && heroArt(heroClass);
-  // A painted hero is a waist-up portrait, so it is drawn a little taller than the old whole-body tile to look the same size.
-  if (painted) return <Painted src={painted} scale={scale * 1.4} label="Your hero" kind="hero" />;
-  return <Sprite tile={heroClass ? CLASS_TILES[heroClass] : HERO_TILE} scale={scale} colour={ANSI.white} label="Your hero" className="lord-sprite--figure" />;
+  if (painted) return <Painted src={painted} scale={scale * 1.4} label={label} kind="hero" />;
+  return <Sprite tile={heroClass ? CLASS_TILES[heroClass] : HERO_TILE} scale={scale} colour={ANSI.white} label={label} className="lord-sprite--figure" />;
 }
 export const WeaponSprite = ({ index, scale = 3 }: { index: number; scale?: number }) => <Sprite tile={WEAPON_TILES[index]} scale={scale} colour={ANSI.cyan} />;
 export const ArmourSprite = ({ index, scale = 3 }: { index: number; scale?: number }) => <Sprite tile={ARMOUR_TILES[index]} scale={scale} colour={ANSI.yellow} />;

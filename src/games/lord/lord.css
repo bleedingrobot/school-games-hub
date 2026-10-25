@@ -247,6 +247,17 @@
 .lord-class .lord-sprite { background-color: var(--lord-cyan) !important; }
 .lord-class strong { color: var(--lord-yellow); font-family: var(--lord-display); font-size: 1.4rem; font-weight: 400; }
 .lord-class span:last-child { color: var(--lord-soft); font-size: 0.92rem; }
+.lord-looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; margin-top: 12px; }
+.lord-look {
+  display: flex; align-items: flex-end; justify-content: center; height: 150px; padding: 6px; cursor: pointer;
+  background: radial-gradient(ellipse at 50% 85%, #fffaf0, #e9d6aa); border: 2px solid #8b6a3a; border-radius: 6px; box-shadow: 0 2px 0 #8b6a3a;
+}
+.lord-look img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(60, 40, 20, 0.35)); }
+.lord-look:hover:not(:disabled) { border-color: var(--lord-yellow); transform: translateY(-2px); }
+.lord-look:focus-visible { outline: 3px solid var(--lord-focus); outline-offset: 2px; }
+.lord-look[aria-pressed='true'] { border-color: var(--lord-yellow); box-shadow: 0 0 0 3px var(--lord-yellow), 0 2px 0 #8b6a3a; }
+.lord-look:disabled { opacity: 0.6; cursor: wait; }
+.lord-hero__look { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 10px; }
 .lord-encounter .lord-panel { text-align: center; }
 .lord-encounter .lord-actions { justify-content: center; }
 

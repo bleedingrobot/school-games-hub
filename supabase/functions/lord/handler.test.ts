@@ -60,6 +60,29 @@ describe('load and start-hero', () => {
     expect(g.hero().heroClass).toBe('knight');
   });
 
+  it('starts a hero with the look picked, and lets it be changed any time to another of the same class', async () => {
+    const g = new Game();
+    await g.send({ action: 'load' });
+    const out = await g.send({ action: 'start-hero', heroClass: 'mage', look: 'mage-girl-06-1' });
+    expect(out.body.state.hero).toMatchObject({ heroClass: 'mage', look: 'mage-girl-06-1' });
+    expect((await g.send({ action: 'look', look: 'mage-boy-10-2' })).body.ok).toBe(true);
+    expect(g.hero().look).toBe('mage-boy-10-2');
+    for (const look of ['knight-girl-01-1', 'mage-girl-11-1', 'mage-girl-01-3', '', 7, null]) {
+      expect((await g.send({ action: 'look', look })).body).toMatchObject({ ok: false, reason: 'bad-request' });
+    }
+    expect(g.hero().look).toBe('mage-boy-10-2');
+  });
+
+  it('lets a hero made before there were looks pick one, and ignores a look of the wrong class at the start', async () => {
+    const g = new Game();
+    await g.send({ action: 'load' });
+    await g.send({ action: 'start-hero', heroClass: 'knight', look: 'trickster-boy-01-1' });
+    expect(g.hero().look).toBeUndefined();
+    g.patch({ level: 4, gold: 300 });
+    expect((await g.send({ action: 'look', look: 'knight-girl-03-2' })).body.ok).toBe(true);
+    expect(g.hero()).toMatchObject({ look: 'knight-girl-03-2', level: 4, gold: 300 });
+  });
+
   it('asks a pupil without a hero to pick a class before anything else', async () => {
     const g = new Game();
     await g.send({ action: 'load' });
@@ -800,17 +823,17 @@ describe('the day rolling over, and the season ending', () => {
   it('starts everyone again when a new 5-week season begins, keeping stars, and lets the class be changed', async () => {
     const g = new Game();
     await g.start('knight');
-    g.patch({ level: 7, exp: 4000, gold: 900, bank: 100, dragonKills: 2, weapon: 5, armour: 5 });
+    g.patch({ level: 7, exp: 4000, gold: 900, bank: 100, dragonKills: 2, weapon: 5, armour: 5, look: 'knight-boy-02-1' });
     g.clock = Date.parse('2026-11-22T00:00:00Z'); // still season 1 (day 35)
     expect((await g.refresh()).season).toMatchObject({ number: 1, dayOfSeason: 35, daysLeft: 0 });
     expect(g.hero().level).toBe(7);
     g.clock = Date.parse('2026-11-23T00:00:00Z'); // season 2, day 1
     const s2 = await g.refresh();
     expect(s2.season).toMatchObject({ number: 2, dayOfSeason: 1 });
-    expect(s2.hero).toMatchObject({ level: 1, exp: 0, gold: 50, bank: 0, weapon: 0, dragonKills: 2, heroClass: 'knight' });
+    expect(s2.hero).toMatchObject({ level: 1, exp: 0, gold: 50, bank: 0, weapon: 0, dragonKills: 2, heroClass: 'knight', look: 'knight-boy-02-1' });
     expect(s2.classOpen).toBe(true);
-    const mage = await g.send({ action: 'start-hero', heroClass: 'mage' });
-    expect(mage.body.state.hero).toMatchObject({ heroClass: 'mage', dragonKills: 2, level: 1 });
+    const mage = await g.send({ action: 'start-hero', heroClass: 'mage', look: 'mage-girl-02-2' });
+    expect(mage.body.state.hero).toMatchObject({ heroClass: 'mage', dragonKills: 2, level: 1, look: 'mage-girl-02-2' });
     expect(mage.body.state.classOpen).toBe(false);
     expect((await g.send({ action: 'start-hero', heroClass: 'knight' })).body.reason).toBe('rule');
   });

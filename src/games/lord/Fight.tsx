@@ -23,11 +23,12 @@ function Bar({ value, max, label, colour }: { value: number; max: number; label:
  * save the actions (the server will replay them in L.4). When the fight ends the player reads the
  * result and presses Continue.
  */
-export function FightScreen({ fight, onChange, onContinue, heroName = 'You' }: {
+export function FightScreen({ fight, onChange, onContinue, heroName = 'You', look }: {
   fight: FightState;
   onChange: (next: FightState, action: FightAction) => void;
   onContinue: () => void;
   heroName?: string;
+  look?: string;
 }) {
   const dragon = fight.kind === 'dragon';
   const [lines, setLines] = useState<string[]>(() => [fight.monster.intro]);
@@ -81,7 +82,7 @@ export function FightScreen({ fight, onChange, onContinue, heroName = 'You' }: {
       <Stage scene={dragon ? 'lair' : fight.kind === 'master' ? 'training' : forestScene(fight.monster.level)} size="tall" className="lord-fight__arena">
         <div className="lord-fight__me">
           <div key={hit?.side === 'me' ? hit.n : 'me'} className={`lord-fight__figure${hit?.side === 'me' ? ' lord-hit' : ''}`}>
-            <HeroSprite heroClass={fight.heroClass} scale={8} />
+            <HeroSprite heroClass={fight.heroClass} look={look} scale={8} />
           </div>
           <h2 className="lord-nameplate">{heroName}</h2>
           <Bar value={fight.heroHp} max={fight.heroMaxHp} label="Your health" colour="var(--lord-green)" />
