@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { checkItem } from '../../shared/training/save';
 import { toTrainingAnswer } from './saving';
 
-const base = { key: 'sub:ten-8', given: 8, correct: true, helped: false, at: Date.now(), day: '2026-10-21', seed: 5 };
+const base = { key: 'sub:ten-8', given: 8, correct: true, helped: false, at: Date.parse('2026-10-21T12:00:00Z'), day: '2026-10-21', seed: 5 };
 
 describe('saving a Quick looks answer', () => {
   it('saves a plain answer under its own key with no time and nothing typed', () => {
