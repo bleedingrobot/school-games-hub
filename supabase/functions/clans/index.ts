@@ -2222,7 +2222,7 @@ const MONSTERS = [
 		"spells": []
 	},
 	{
-		"name": "Centaur",
+		"name": "Horse Archer",
 		"zone": "Swamp",
 		"mine": 11,
 		"boss": false,
