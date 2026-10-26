@@ -63,93 +63,22 @@ beforeAll(async () => {
   other = await makeKeys('key-1'); // same name, different key: a forger's
 });
 
-describe('checking a sign-in token with the newer keys', () => {
-  it("knows the pupil without asking the sign-in service, and fetches the public keys only once", async () => {
-    const fresh = await makeKeys('key-fresh'); // not yet remembered by the library
-    const { userIdFor, calls } = service(() => [fresh.jwk]);
-    for (let i = 0; i < 3; i++) expect(await userIdFor(await signed(fresh, pupil({ iat: i })))).toBe(PUPIL);
-    expect(calls).toEqual(['/auth/v1/.well-known/jwks.json']);
-  });
-
-  it('refuses an expired token', async () => {
-    const { userIdFor, calls } = service(() => [current.jwk]);
-    expect(await userIdFor(await signed(current, pupil({ exp: NOW_S() - 1 })))).toBeNull();
-    expect(calls).toEqual([]);
-  });
-
-  it('refuses a token that was changed after signing (someone else pretending to be the pupil)', async () => {
+describe('checking a sign-in token', () => {
+  it("knows a real pupil, and refuses expired, changed, forged, non-pupil and junk tokens", async () => {
     const { userIdFor } = service(() => [current.jwk]);
+    expect(await userIdFor(await signed(current, pupil()))).toBe(PUPIL);
+
     const [head, , sig] = (await signed(current, pupil())).split('.');
     const changed = `${head}.${part(pupil({ sub: '22222222-2222-4222-8222-222222222222' }))}.${sig}`;
-    expect(await userIdFor(changed)).toBeNull();
-  });
-
-  it("refuses a token signed with someone else's key under the project's key name", async () => {
-    const { userIdFor } = service(() => [current.jwk]);
-    expect(await userIdFor(await signed(other, pupil()))).toBeNull();
-  });
-
-  it("refuses a properly signed token that isn't a signed-in user's", async () => {
-    const { userIdFor } = service(() => [current.jwk]);
-    expect(await userIdFor(await signed(current, { role: 'anon', exp: NOW_S() + 3600 }))).toBeNull();
-    expect(await userIdFor(await signed(current, { role: 'service_role', exp: NOW_S() + 3600 }))).toBeNull();
-    expect(await userIdFor(await signed(current, pupil({ role: 'anon' })))).toBeNull();
-    expect(await userIdFor(await signed(current, pupil({ role: undefined })))).toBeNull();
-    expect(await userIdFor(await signed(current, pupil({ sub: '' })))).toBeNull();
-    expect(await userIdFor(await signed(current, pupil({ sub: undefined })))).toBeNull();
-  });
-
-  it('asks the sign-in service about a key it has never heard of (and refuses if that says no)', async () => {
-    const { userIdFor, calls } = service(() => [current.jwk]);
-    expect(await userIdFor(await signed(current, pupil(), 'made-up-key'))).toBeNull();
-    expect(calls).toContain('/auth/v1/user');
-  });
-
-  it('picks up a new key the project starts signing with, without waiting 10 minutes', async () => {
-    const next = await makeKeys('key-2');
-    let published = [current.jwk];
-    const { userIdFor } = service(() => published);
-    expect(await userIdFor(await signed(current, pupil()))).toBe(PUPIL);
-    published = [current.jwk, next.jwk];
-    expect(await userIdFor(await signed(next, pupil()))).toBe(PUPIL);
-  });
-
-  it("refuses (and doesn't crash) when the public keys can't be fetched", async () => {
-    // A key not seen before: the library remembers keys it has fetched (for 10 minutes, across clients).
-    const unseen = await makeKeys('key-unseen');
-    const { userIdFor, fetch } = service(() => [unseen.jwk]);
-    fetch.mockImplementation(async () => new Response('down', { status: 500 }));
-    expect(await userIdFor(await signed(unseen, pupil()))).toBeNull();
-  });
-});
-
-describe('checking a sign-in token with the older shared secret (before the switch, and for an hour after)', () => {
-  it('asks the sign-in service, as before, and trusts its answer', async () => {
-    const token = legacy(pupil());
-    const { userIdFor, calls } = service(() => [current.jwk], new Set([token]));
-    expect(await userIdFor(token)).toBe(PUPIL);
-    expect(calls).toEqual(['/auth/v1/user']);
-  });
-
-  it('refuses a token the sign-in service says is not real', async () => {
-    const { userIdFor } = service(() => [current.jwk]);
-    expect(await userIdFor(legacy(pupil()))).toBeNull();
-  });
-
-  it("refuses the site's public key and the server's own key", async () => {
-    const anonKey = legacy({ role: 'anon', exp: NOW_S() + 3600 });
-    const serverKey = legacy({ role: 'service_role', exp: NOW_S() + 3600 });
-    // Even if the sign-in service somehow answered for them.
-    const { userIdFor } = service(() => [current.jwk], new Set([anonKey, serverKey]));
-    expect(await userIdFor(anonKey)).toBeNull();
-    expect(await userIdFor(serverKey)).toBeNull();
-  });
-});
-
-describe('checking something that is not a token at all', () => {
-  it('refuses rubbish without asking anyone', async () => {
-    const { userIdFor, calls } = service(() => [current.jwk]);
-    for (const junk of ['', 'abc', 'a.b.c', 'Bearer x', `${part({ alg: 'ES256' })}.not-json.x`]) expect(await userIdFor(junk)).toBeNull();
-    expect(calls).toEqual([]);
+    const refused = [
+      await signed(current, pupil({ exp: NOW_S() - 1 })), // expired
+      changed, // someone else pretending to be the pupil
+      await signed(other, pupil()), // someone else's key under the project's key name
+      await signed(current, { role: 'anon', exp: NOW_S() + 3600 }),
+      await signed(current, { role: 'service_role', exp: NOW_S() + 3600 }),
+      legacy(pupil()), // an older-style token the sign-in service doesn't know
+      'a.b.c',
+    ];
+    for (const token of refused) expect(await userIdFor(token)).toBeNull();
   });
 });

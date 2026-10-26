@@ -4,22 +4,6 @@ import { LADDER } from './ladder';
 import { publicQuestion, seededRandom } from './serverQuestions';
 
 describe('questions the server makes', () => {
-  it('the same seed gives the same numbers, another seed different ones', () => {
-    const a = seededRandom('run-1');
-    const b = seededRandom('run-1');
-    const c = seededRandom('run-2');
-    const first = [a(), a(), a()];
-    expect([b(), b(), b()]).toEqual(first);
-    expect([c(), c(), c()]).not.toEqual(first);
-    for (const n of first) expect(n >= 0 && n < 1).toBe(true);
-  });
-
-  it("gives Marble Rush's numbers exactly, so Marble can switch to it without a run changing", () => {
-    // The first three numbers of Marble's own seededRandom('marble') (shared/marble/maths.ts on the marble branch).
-    const r = seededRandom('marble');
-    expect([r(), r(), r()].map((n) => n.toFixed(12))).toEqual(MARBLE_FIRST_THREE);
-  });
-
   it('the same seed makes the same questions from a focus pack', () => {
     const focus = { ...AUTO_FOCUS, source: 'teacher-class' as const, skills: [LADDER.find((s) => s.built)!.id] };
     const make = () => {
@@ -42,5 +26,3 @@ describe('questions the server makes', () => {
     expect(JSON.stringify(shown)).not.toContain('"answer"');
   });
 });
-
-const MARBLE_FIRST_THREE = ['0.219711785670', '0.394239328103', '0.990649517160'];

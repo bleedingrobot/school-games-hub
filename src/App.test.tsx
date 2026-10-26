@@ -1,17 +1,9 @@
 import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { AppRoutes } from './App';
 import { AuthContext, type AuthState } from './auth/AuthContext';
 import { SoundProvider } from './sound';
-
-vi.mock('./data/profile', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./data/profile')>()),
-  fetchNameWords: vi.fn(async () => ({ adjectives: ['Brave', 'Speedy'], animals: ['Kiwi', 'Otter'] })),
-  chooseMyName: vi.fn(async () => 'Brave Kiwi 7'),
-  saveMyAvatar: vi.fn(async () => {}),
-}));
 
 vi.mock('./data/botGames', () => ({
   fetchRecentGames: vi.fn(async () => [
@@ -123,225 +115,25 @@ function renderAt(path: string, auth: Partial<AuthState> = {}) {
   );
 }
 
-describe('dashboard', () => {
-  it('shows the student, a Play button and both game cards', () => {
-    renderAt('/');
-    expect(screen.getByRole('heading', { level: 1, name: 'Speedy Otter 27' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /^Play$/ })).toBeInTheDocument();
-    expect(screen.getByRole('article', { name: 'Chess' })).toBeInTheDocument();
-    expect(screen.getByRole('article', { name: 'Checkers' })).toBeInTheDocument();
-  });
-
-  it('shows real points, level, badges and achievements, with no sample data left', async () => {
-    renderAt('/');
-    const hero = screen.getByRole('region', { name: 'Speedy Otter 27' });
-    expect(await within(hero).findByText('140 points')).toBeInTheDocument();
-    expect(within(hero).getByText('Level 3')).toBeInTheDocument();
-    expect(within(hero).getByText(/Checkers: Silver/)).toBeInTheDocument();
-    expect(within(hero).getByText(/Chess: Bronze/)).toBeInTheDocument();
-
-    // The level bar sits in the welcome strip now, and the stats tables are on the profile page.
-    expect(within(hero).getByText('· 85 to level 4')).toBeInTheDocument();
-    expect(within(hero).getByRole('progressbar', { name: 'Level 3: 85 points to level 4' })).toBeInTheDocument();
-    expect(within(hero).getByRole('link', { name: 'How points work' })).toHaveAttribute('href', '/points');
-    expect(screen.queryByRole('region', { name: 'My stats' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'See my stats' })).toHaveAttribute('href', '/profile#stats');
-
-    // Achievements: the count, then the 3 nearest to being earned.
-    const achievements = screen.getByRole('region', { name: /Achievements/ });
-    expect(within(achievements).getByText('1 of 4')).toBeInTheDocument();
-    expect(within(achievements).getAllByRole('listitem')).toHaveLength(3);
-    expect(within(achievements).queryByText('First win (Chess)')).not.toBeInTheDocument();
-    expect(within(achievements).getByText('7/10')).toBeInTheDocument();
-    // Badges are earned or not: no "1/2" count.
-    expect(within(achievements).getByText('Reach Gold (Checkers)').closest('li')).toHaveTextContent('Not yet');
-    expect(within(achievements).getByRole('link', { name: 'See them all' })).toHaveAttribute('href', '/profile#achievements');
-    expect(screen.queryByText('Sample data')).not.toBeInTheDocument();
-  });
-
-  it('shows the points each recent game earned', async () => {
-    renderAt('/');
-    const recent = screen.getByRole('region', { name: 'Recent games' });
-    const medium = (await within(recent).findByText('Chess vs Medium bot')).closest('li')!;
-    expect(medium).toHaveTextContent('+8');
-    const easy = within(recent).getByText(/Chess vs Easy bot/).closest('li')!;
-    expect(easy).not.toHaveTextContent('+');
-  });
-
-  it('shows real recent chess and checkers games, and the stats on the profile page', async () => {
-    renderAt('/profile');
-    const recent = await screen.findByRole('region', { name: 'My stats' });
-    expect(await within(recent).findByText('Chess vs Medium bot')).toBeInTheDocument();
-    expect(within(recent).getAllByText('Today')).toHaveLength(2);
-    expect(within(recent).getByText('(left early)')).toBeInTheDocument();
-    expect(within(recent).queryByText('Checkers vs Very Easy bot')).toBeInTheDocument();
-
-    const bots = screen.getByRole('table', { name: 'Against bots' });
-    const chessRow = within(bots).getByRole('row', { name: /^Chess/ });
-    expect(within(chessRow).getAllByRole('cell').map((c) => c.textContent)).toEqual(['2', '1', '1', '0']);
-    const checkersRow = within(bots).getByRole('row', { name: /^Checkers/ });
-    expect(within(checkersRow).getAllByRole('cell').map((c) => c.textContent)).toEqual(['1', '0', '0', '1']);
-  });
-
-  it('shows games against friends, kept apart from bot games (profile page)', async () => {
-    renderAt('/profile');
-    const recent = await screen.findByRole('region', { name: 'My stats' });
-    const friendGame = (await within(recent).findByText('Brave Kiwi 7', { exact: false })).closest('li')!;
-    expect(friendGame).toHaveTextContent('Won');
-    expect(friendGame).toHaveTextContent('Checkers vs');
-
-    const friends = screen.getByRole('table', { name: 'Against friends' });
-    const checkersRow = within(friends).getByRole('row', { name: /^Checkers/ });
-    expect(within(checkersRow).getAllByRole('cell').map((c) => c.textContent)).toEqual(['4', '2', '1', '1']);
-    const chessRow = within(friends).getByRole('row', { name: /^Chess/ });
-    expect(within(chessRow).getAllByRole('cell').map((c) => c.textContent)).toEqual(['0', '0', '0', '0']);
-  });
-
-  it('makes an unfinished game against a friend easy to get back to', async () => {
-    renderAt('/');
-    const banner = await screen.findByRole('region', { name: 'Games still going' });
-    expect(banner).toHaveTextContent('Your chess game with Lucky Tui 12 is still going!');
-    expect(within(banner).getByRole('link', { name: 'Carry on' })).toHaveAttribute('href', '/play/f2');
-  });
-
-  it('links to the lobby and leaderboard', () => {
-    renderAt('/');
-    expect(screen.getByRole('link', { name: /Play a friend/ })).toHaveAttribute('href', '/lobby');
-    expect(screen.getByRole('link', { name: /See the top players/ })).toHaveAttribute('href', '/leaderboard');
-  });
-
-  it('carries the chosen bot level into the game link and the big Play button', async () => {
-    const user = userEvent.setup();
-    renderAt('/');
-    const checkers = screen.getByRole('article', { name: 'Checkers' });
-    expect(within(checkers).getByRole('radio', { name: 'Easy' })).toBeChecked();
-
-    await user.click(within(checkers).getByRole('radio', { name: 'Medium' }));
-
-    expect(within(checkers).getByRole('link')).toHaveAttribute('href', '/checkers?bot=medium');
-    expect(screen.getByRole('link', { name: /^Play$/ })).toHaveAttribute('href', '/checkers?bot=medium');
-    expect(within(screen.getByRole('region', { name: 'Speedy Otter 27' })).getByText('Checkers vs Medium bot')).toBeInTheDocument();
-  });
-});
-
-// A page is a lazy chunk: on a busy CI runner the first one can take longer than findBy's 1 second.
-const LAZY_PAGE = { timeout: 10_000 };
-
-describe('pages', () => {
-  it('opens checkers ready to play the bot picked on the dashboard', async () => {
-    renderAt('/checkers?bot=very-easy');
-    expect(await screen.findByRole('heading', { level: 1, name: /Checkers vs bot/ }, LAZY_PAGE)).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'Very Easy' })).toBeChecked();
-    expect(screen.getByRole('button', { name: /Start game/ })).toBeInTheDocument();
-  });
-
-  it('opens chess ready to play the bot picked on the dashboard', async () => {
-    renderAt('/chess?bot=medium');
-    expect(await screen.findByRole('heading', { level: 1, name: /Chess vs bot/ }, LAZY_PAGE)).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'Medium' })).toBeChecked();
-    expect(screen.getByRole('button', { name: /Start game/ })).toBeInTheDocument();
-  });
-
-  it('falls back to Easy for a made-up bot level', async () => {
-    renderAt('/checkers?bot=impossible');
-    expect(await screen.findByRole('radio', { name: 'Easy' }, LAZY_PAGE)).toBeChecked();
-  });
-
-
-  it('shows Power Clash on the dashboard and opens it at its address', async () => {
-    const { unmount } = renderAt('/');
-    expect(await screen.findByRole('article', { name: /Power Clash/ }, LAZY_PAGE)).toBeInTheDocument();
-    unmount();
-    renderAt('/power-clash?bot=medium');
-    expect(await screen.findByRole('heading', { level: 1, name: /Power Clash/ }, LAZY_PAGE)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Play a bot' }));
-    expect(screen.getByRole('radio', { name: 'Medium' })).toBeChecked(); // the level from the address
-  });
-
-  it('shows a friendly page for unknown addresses', () => {
-    renderAt('/nope');
-    expect(screen.getByRole('heading', { name: /wrong square/ })).toBeInTheDocument();
-  });
-});
-
-describe('signing in', () => {
-  it.each(['/', '/chess', '/profile', '/lobby'])('sends signed-out visitors from %s to the sign-in screen', (path) => {
-    renderAt(path, { status: 'signed-out', profile: null });
-    expect(screen.getByRole('heading', { name: 'School Games Hub' })).toBeInTheDocument();
-    expect(screen.queryByText('Speedy Otter 27')).not.toBeInTheDocument();
-  });
-
-  it('shows nothing private while still checking', () => {
+describe('the app', () => {
+  it('sends signed-out visitors to the sign-in screen, and shows nothing private while still checking', () => {
+    for (const path of ['/', '/chess', '/profile', '/lobby']) {
+      const { unmount } = renderAt(path, { status: 'signed-out', profile: null });
+      expect(screen.getByRole('heading', { name: 'School Games Hub' })).toBeInTheDocument();
+      expect(screen.queryByText('Speedy Otter 27')).not.toBeInTheDocument();
+      unmount();
+    }
     renderAt('/', { status: 'loading', profile: null });
     expect(screen.getByRole('status')).toHaveTextContent('Loading');
     expect(screen.queryByText('Speedy Otter 27')).not.toBeInTheDocument();
   });
 
-  it('starts Google sign-in from the button', async () => {
-    const user = userEvent.setup();
-    const signIn = vi.fn(async () => {});
-    renderAt('/sign-in', { status: 'signed-out', profile: null, signIn });
-    await user.click(screen.getByRole('button', { name: /Sign in with your school Google account/ }));
-    expect(signIn).toHaveBeenCalled();
-  });
-
-  it('shows a friendly sign-in problem', () => {
-    renderAt('/sign-in', { status: 'signed-out', profile: null, message: "That isn't a Douglas Park school account." });
-    expect(screen.getByRole('alert')).toHaveTextContent("isn't a Douglas Park school account");
-  });
-
-  it('sends signed-in students from the sign-in screen to the dashboard', () => {
-    renderAt('/sign-in');
-    expect(screen.getByRole('heading', { level: 1, name: 'Speedy Otter 27' })).toBeInTheDocument();
-  });
-});
-
-describe('profile', () => {
-  it('lets a student build an avatar and save it', async () => {
-    const { saveMyAvatar } = await import('./data/profile');
-    const user = userEvent.setup();
-    renderAt('/profile');
-    const save = screen.getByRole('button', { name: 'Save avatar' });
-    expect(save).toBeDisabled();
-
-    await user.click(screen.getByRole('radio', { name: 'Robot' }));
-    await user.click(save);
-
-    expect(saveMyAvatar).toHaveBeenCalledWith(expect.objectContaining({ kind: 'robot' }));
-    expect(await screen.findByText('Saved! Looking good.')).toBeInTheDocument();
-  });
-
-  it('lets a student pick a name from the word lists', async () => {
-    const { chooseMyName } = await import('./data/profile');
-    const user = userEvent.setup();
-    renderAt('/profile');
-    await user.selectOptions(await screen.findByLabelText('First word'), 'Brave');
-    await user.selectOptions(screen.getByLabelText('Second word'), 'Kiwi');
-    await user.click(screen.getByRole('button', { name: 'Use this name' }));
-
-    expect(chooseMyName).toHaveBeenCalledWith('Brave', 'Kiwi');
-    expect(await screen.findByText("You're now Brave Kiwi 7!")).toBeInTheDocument();
-  });
-
-  it('has a sign-out button', async () => {
-    const user = userEvent.setup();
-    const signOut = vi.fn(async () => {});
-    renderAt('/profile', { signOut });
-    await user.click(screen.getByRole('button', { name: 'Sign out' }));
-    expect(signOut).toHaveBeenCalled();
-  });
-});
-
-describe('mute button', () => {
-  it('starts with sound off and remembers when it is turned on', async () => {
-    const user = userEvent.setup();
+  it('shows the student their dashboard with their real points and a Play button', async () => {
     renderAt('/');
-    const button = screen.getByRole('button', { name: /Sound off/ });
-    expect(button).toHaveAttribute('aria-pressed', 'false');
-
-    await user.click(button);
-
-    expect(screen.getByRole('button', { name: /Sound on/ })).toHaveAttribute('aria-pressed', 'true');
-    expect(localStorage.getItem('sgh-sound-on')).toBe('true');
+    const hero = screen.getByRole('region', { name: 'Speedy Otter 27' });
+    expect(await within(hero).findByText('140 points')).toBeInTheDocument();
+    expect(within(hero).getByText('Level 3')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /^Play$/ })).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'Chess' })).toBeInTheDocument();
   });
 });

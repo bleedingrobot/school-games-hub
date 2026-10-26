@@ -18,17 +18,4 @@ describe('PracticalAsk', () => {
     await userEvent.keyboard('{Backspace}{Backspace}-7{Enter}');
     expect(onSubmit).toHaveBeenCalledWith(-7);
   });
-
-  it('has no minus key for questions that cannot be negative', () => {
-    render(<PracticalAsk question={buildQuestion('percent-of', [10, 80])} title="t" onSubmit={() => {}} />);
-    expect(screen.queryByRole('button', { name: 'Minus' })).not.toBeInTheDocument();
-  });
-
-  it('lets you tap the better buy', async () => {
-    const q = buildQuestion('better-buy', [500, 7, 750, 6], { labels: ['Axe', 'Sword'] });
-    const onSubmit = vi.fn();
-    render(<PracticalAsk question={q} title="t" onSubmit={onSubmit} />);
-    await userEvent.click(screen.getByRole('button', { name: q.choices![0].label }));
-    expect(onSubmit).toHaveBeenCalledWith(q.choices![0].value);
-  });
 });

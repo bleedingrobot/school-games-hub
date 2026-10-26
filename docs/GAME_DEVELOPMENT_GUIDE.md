@@ -16,6 +16,7 @@
 8. **Never** `supabase db reset` (other sessions share the local database), and never a bare `git push` from a worktree whose upstream might be `origin/main`. Push your branch by name: `git push origin <branch>`.
 9. **Write it down as you go.** Keep a plan in `docs/<GAME>-PLAN.md` with a "Stage X results" section after each stage (what you built, decisions you made, tests, what is untested, the go-live list). The next session starts from it.
 10. **Stop after each stage** and tell James what's ready and what he needs to decide.
+11. **Tests are capped** ([docs/TESTING.md](TESTING.md)). About 200 for the whole site, at most 8 for a new game, normally none for a change. A test fails above the limit; never raise it without James's yes.
 
 The best example to copy is **Marble Rush** (on `main`). It is almost entirely in its own folders, gets its maths from the focus system, and has the server make and mark every question. **Clan Quest** and **Dragon Maths** are good for go-live routines, How to play screens and accessibility tests. Dragon Maths' maths and Clan Quest's quest and shop maths are the older year-band kind, so don't copy that part (Clan Quest's Battle Cry is way A, like Marble).
 
@@ -124,7 +125,7 @@ Maths is the most important shared system. A student has **one maths focus** at 
    - `choices` (numbers) with optional `choiceLabels` (`'2/3'`, `'0.25'`, `'25%'`). **When `choiceLabels` is set, the question can only be answered by picking**, whatever the multiple-choice switch says. There can be 2 or 4 choices.
    - `input: 'decimal'` means show a point key; `maxLength` is the longest answer (default 3).
    - `spoken`: what a screen reader says. Use it as the question's accessible name.
-   A test should run every skill in `LADDER` through your display (Marble's `maths.test.ts` and F.6's browser check did this).
+   A test should run every skill in `LADDER` through your display (Mine's `src/games/mine/maths.test.tsx` and F.6's browser check did this).
 5. **The server marks, never the browser.** Two safe ways (section 4.2). Either way the right answer comes from a question the server made or rebuilt, never from what the browser says.
 6. **Record every marked answer** so it counts towards the student's records, their place on the ladder, the teacher's skill map and the focus results:
    - **Use `recordMathsAnswers(rpc, player, answers, once, '<name>')`** from `_shared/recordAnswers.ts`. `once` is something unique to this save (the run's seed and the question's slot), so a save sent twice counts once. It does everything below, and never throws.
@@ -195,7 +196,7 @@ const { seed, questions } = await startRound();          // src/data/<game>.ts â
 />
 ```
 
-Tests to copy: Marble's `handler.test.ts` (right, wrong, sent twice, a slot that doesn't exist, another student's seed) and `maths.test.ts` (every ladder skill comes through and shows).
+Tests to copy (they count towards your 8): Marble's `handler.test.ts` (right, wrong, sent twice, a slot that doesn't exist, another student's seed) and Mine's `src/games/mine/maths.test.tsx` (every ladder skill comes through and shows).
 
 ---
 
@@ -241,9 +242,9 @@ git push -u origin <game>            # first push sets the upstream to origin/<g
 
 ## 7. Running and testing the game on its own
 
-- **Your tests:** `npx vitest run shared/<game> src/games/<game> src/data/<game>.test.ts supabase/functions/<name>` while you work. Before saying a stage is done: `npm run typecheck`, `npm run test:all` (about 2Â¾ minutes; a few busy-computer timeouts pass when run alone with `--testTimeout=30000`: say so, don't hide it) and `npm run build`. Mark slow screen tests the way `vitest.slow.ts` expects.
+- **Your tests:** at most 8 for the whole game, chosen as [docs/TESTING.md](TESTING.md) says (the server's refusals first, then the maths a pupil sees, then the main rule). No slow tests and no simulations in the tests. Run them with `npx vitest run shared/<game> src/games/<game> supabase/functions/<name>` while you work. Before saying a stage is done: `npm run check` (type check, every test, build).
 - **Database:** write `supabase/tests/database/<game>.test.sql` (pgTAP). Check: pupils can't read the server-only tables (42501), can't call the server-only functions, see only their school, and a save sent twice counts once. Run it on a throw-away copy: `scripts/scratch-db.sh <game>` then `scripts/scratch-test.sh <game> supabase/tests/database/<game>.test.sql`, then drop the copy. CI's "Database checks" runs every file on a fresh copy when `main` is pushed, so a duplicate migration number fails there.
-- **Server function:** keep logic in `handler.ts` with the database passed in, so `handler.test.ts` runs without Deno or a database (every function does this). Rebuild only your `index.ts` (section 3) and keep the "index.ts is up to date" test.
+- **Server function:** keep logic in `handler.ts` with the database passed in, so `handler.test.ts` runs without Deno or a database (every function does this). Rebuild only your `index.ts` (section 3). `scripts/functions-built.test.ts` checks every function's `index.ts` is up to date, so don't write your own copy of that check.
 - **In the real site, locally:** `npm run dev` with your code switch on only on your computer: `const ON = false; export const myGameOn = () => ON || import.meta.env.VITE_<GAME>_ON === 'true'` (copy `src/training/switch.ts`), and put `VITE_<GAME>_ON=true` in `.env.local`. It talks to the **live** project unless pointed at the local one, so don't save test data there without James's OK.
 - **Preview for James (no sign-in):** `preview/<game>/main.tsx` with a fake signed-in pupil and a trial backend that runs your `shared/` rules in the browser (copy `preview/lord/main.tsx` and `src/games/lord/trialBackend.ts`), built with `npx vite build --config vite.<game>-preview.config.ts`. A preview must never call the live server (Marble's first preview did, by accident, for the maths focus). Give it a fixed fake focus and facts. James tries it on his phone; publishing it as a private Artifact has worked well.
 - **Simulator:** for games with balance numbers, `scripts/<game>-sim.mjs` plays thousands of games using the shared rules.

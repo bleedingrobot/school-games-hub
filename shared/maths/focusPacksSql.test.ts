@@ -6,7 +6,7 @@
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import { FOCUS_PACKS } from './ladder';
 
 const DIR = resolve('supabase/migrations');
@@ -27,19 +27,14 @@ const PACK_LIST = /\bpack\s+in\s*\(([^)]*)\)/gi;
 const HAS_PACK_LIST = /\bpack\s+in\s*\(/i;
 const packsIn = (list: string) => [...list.matchAll(/'([^']+)'/g)].map((m) => m[1]);
 
-describe('the packs the database reads', () => {
-  const defs = definitions();
+
+it('every database function that lists packs reads exactly the packs the games keep records in', () => {
   const latest = new Map<string, { file: string; body: string }>();
-  for (const d of defs) latest.set(d.name, d);
+  for (const d of definitions()) latest.set(d.name, d);
   const listed = [...latest].filter(([, d]) => HAS_PACK_LIST.test(d.body));
-
-  it('finds the functions that list them', () => {
-    expect(listed.map(([name]) => name).sort()).toEqual(expect.arrayContaining(['my_gem_keep', 'space_maths_context']));
-  });
-
-  for (const [name, d] of listed) {
-    it(`${name} (${d.file}) reads exactly the packs the games keep records in`, () => {
-      for (const m of d.body.matchAll(PACK_LIST)) expect([...packsIn(m[1])].sort()).toEqual([...FOCUS_PACKS].sort());
-    });
-  }
+  expect(listed.map(([name]) => name)).toEqual(expect.arrayContaining(['my_gem_keep', 'space_maths_context']));
+  const wrong = listed.flatMap(([name, d]) =>
+    [...d.body.matchAll(PACK_LIST)].filter((m) => [...packsIn(m[1])].sort().join() !== [...FOCUS_PACKS].sort().join()).map(() => `${name} (${d.file})`),
+  );
+  expect(wrong).toEqual([]);
 });

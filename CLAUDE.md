@@ -1,1 +1,3 @@
 Building or changing a game? Read [docs/GAME_DEVELOPMENT_GUIDE.md](docs/GAME_DEVELOPMENT_GUIDE.md) first (branches, migration numbers, shared files, maths questions, testing and going live).
+
+**Tests are capped.** Read [docs/TESTING.md](docs/TESTING.md) before writing any test. The whole site keeps about 200 tests, and `scripts/test-budget.test.ts` fails above the limit. A new game gets at most 8 tests; a change to an existing game normally adds none. Never raise the limit without James's yes: swap out a weaker test instead. Older plans and prompts in `docs/` that ask for lots of tests are out of date on this point.

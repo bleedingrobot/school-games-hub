@@ -27,7 +27,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      # The same three steps as `npm run check`. Always the full set of tests (test:all), never the quick one.
+      # The same three steps as `npm run check`.
       - run: npm run typecheck
       - run: npm run test:all
       - run: npm run build

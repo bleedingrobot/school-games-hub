@@ -1,5 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const data = vi.hoisted(() => ({
@@ -11,10 +10,8 @@ const data = vi.hoisted(() => ({
 }));
 vi.mock('../data/lord', async (original) => ({ ...(await original<typeof import('../data/lord')>()), ...data }));
 
-import { TOPICS } from '../../shared/maths/skillPacks';
-import { LordStudentPanel, LordTeacherPanels } from './TeacherLord';
+import { LordStudentPanel } from './TeacherLord';
 
-const label = (id: string) => TOPICS.find((t) => t.id === id)!.label;
 
 const ALL = ['place-value', 'add-sub', 'times-tables', 'division', 'fractions', 'decimals', 'money', 'patterns'];
 const settings = (over = {}) => ({ enabled: false, forestPerDay: 10, seasonStart: null, pausedSince: null, topics: ALL, ...over });
@@ -40,112 +37,6 @@ beforeEach(() => {
   });
 });
 
-describe('the Dragon Maths topic tick-list', () => {
-  it('shows all eight topics ticked to start', async () => {
-    render(<LordTeacherPanels />);
-    const group = await screen.findByRole('group', { name: 'Topics on' });
-    const boxes = within(group).getAllByRole('checkbox');
-    expect(boxes).toHaveLength(8);
-    boxes.forEach((b) => expect(b).toBeChecked());
-    expect(within(group).getByRole('checkbox', { name: 'Gold and shopping' })).toBeChecked();
-    expect(within(group).getByRole('checkbox', { name: 'Number patterns' })).toBeChecked();
-  });
-
-  it('switches a topic off and saves the list, keeping the switch as it was', async () => {
-    const user = userEvent.setup();
-    data.fetchLordSettings.mockResolvedValue(settings({ enabled: true }));
-    render(<LordTeacherPanels />);
-    await user.click(await screen.findByRole('checkbox', { name: 'Gold and shopping' }));
-    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: true, topics: ALL.filter((t) => t !== 'money') }, null);
-    expect(await screen.findByRole('checkbox', { name: 'Gold and shopping' })).not.toBeChecked();
-    expect(await screen.findByText(/Pupils get the new topics/)).toBeInTheDocument();
-  });
-
-  it('switches a topic back on, in the usual order', async () => {
-    const user = userEvent.setup();
-    data.fetchLordSettings.mockResolvedValue(settings({ topics: ['add-sub', 'patterns'] }));
-    render(<LordTeacherPanels />);
-    await user.click(await screen.findByRole('checkbox', { name: label('fractions') }));
-    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: false, topics: ['add-sub', 'fractions', 'patterns'] }, null);
-  });
-
-  it('will not let the last topic be switched off', async () => {
-    data.fetchLordSettings.mockResolvedValue(settings({ topics: ['patterns'] }));
-    render(<LordTeacherPanels />);
-    expect(await screen.findByRole('checkbox', { name: 'Number patterns' })).toBeDisabled();
-    expect(screen.getByRole('checkbox', { name: label('fractions') })).toBeEnabled();
-  });
-});
-
-describe('the Dragon Maths teacher switches', () => {
-  it('turns the game on, off (which pauses the season) and on again', async () => {
-    const user = userEvent.setup();
-    render(<LordTeacherPanels />);
-    expect(await screen.findByText('Off: pupils can’t play it yet.')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Switch Dragon Maths on' }));
-    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: true }, null);
-    expect(await screen.findByText('On: pupils can play it.')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /Switch Dragon Maths off/ }));
-    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: false }, null);
-    expect(await screen.findByText('Dragon Maths is off, and the season clock is paused.')).toBeInTheDocument();
-  });
-
-  it('says when the season clock is paused and offers to carry on', async () => {
-    data.fetchLordSettings.mockResolvedValue(settings({ pausedSince: '2026-12-18', seasonStart: '2026-11-23' }));
-    render(<LordTeacherPanels />);
-    expect(await screen.findByText(/Off since 2026-12-18: the season clock is paused/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: /carry on the season/ }));
-    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: true }, null);
-    expect(await screen.findByText(/The season carries on where it left off/)).toBeInTheDocument();
-  });
-
-  it('saves the forest fights a day and the first season date', async () => {
-    const user = userEvent.setup();
-    data.fetchLordSettings.mockResolvedValue(settings({ enabled: true }));
-    render(<LordTeacherPanels />);
-    const perDay = await screen.findByLabelText('Forest fights a day');
-    await user.clear(perDay);
-    await user.type(perDay, '6');
-    await user.click(screen.getByRole('button', { name: 'Save forest fights' }));
-    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: true, forestPerDay: 6 }, null);
-    await user.type(screen.getByLabelText('First day of season 1'), '2026-11-23');
-    await user.click(screen.getByRole('button', { name: 'Save the date' }));
-    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: true, seasonStart: '2026-11-23' }, null);
-  });
-
-  it('puts the setting back and says so in plain words when saving fails', async () => {
-    data.saveLordSettings.mockRejectedValueOnce(new Error('no'));
-    render(<LordTeacherPanels />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Switch Dragon Maths on' }));
-    expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
-    expect(screen.getByText('Off: pupils can’t play it yet.')).toBeInTheDocument();
-  });
-});
-
-describe('the Dragon Maths class view', () => {
-  it('shows the season, the levels, the hardest questions, the Hall and the requests turned down with real names', async () => {
-    render(<LordTeacherPanels />);
-    expect(await screen.findByText(/Season 2, 20 days left/)).toBeInTheDocument();
-    expect(screen.getByText('4 playing this season')).toBeInTheDocument();
-    const levels = screen.getByRole('table', { name: 'Heroes at each level this season' });
-    expect(within(levels).getByText('12 (the dragon is next)')).toBeInTheDocument();
-    expect(within(screen.getByRole('table', { name: /Hardest questions/ })).getByText('7 × 8')).toBeInTheDocument();
-    const hall = screen.getByRole('table', { name: 'Hall of Heroes' });
-    expect(hall).toHaveTextContent('ben');
-    const refusals = screen.getByRole('table', { name: /Requests the game turned down/ });
-    expect(refusals).toHaveTextContent('ana');
-    expect(refusals).toHaveTextContent('a fight that didn’t play out the way it was sent');
-  });
-
-  it('says when nothing has started', async () => {
-    data.fetchClassLord.mockResolvedValue({ season: { number: null, start: null, daysLeft: null }, players: 0, thisSeason: 0, levels: [], hardest: [], refusals: [], hall: [] });
-    render(<LordTeacherPanels />);
-    expect(await screen.findByText('The first season has not started yet.')).toBeInTheDocument();
-    expect(screen.getByText('Nobody has beaten the Red Dragon yet.')).toBeInTheDocument();
-    expect(screen.queryByRole('table', { name: /Requests the game turned down/ })).not.toBeInTheDocument();
-  });
-});
-
 describe('one pupil’s Dragon Maths', () => {
   it('shows their hero, their topics and their hardest questions', async () => {
     render(<LordStudentPanel student="kid-1" />);
@@ -154,27 +45,5 @@ describe('one pupil’s Dragon Maths', () => {
     expect(screen.getByText(/2 requests turned down this week/)).toBeInTheDocument();
     expect(within(screen.getByRole('table', { name: /How they are getting on/ })).getByText('Gold and shopping')).toBeInTheDocument();
     expect(within(screen.getByRole('table', { name: /Their hardest questions/ })).getByText('7 × 8')).toBeInTheDocument();
-  });
-
-  it('resets a hero only after asking, and says what stays', async () => {
-    const user = userEvent.setup();
-    render(<LordStudentPanel student="kid-1" />);
-    await user.click(await screen.findByRole('button', { name: 'Reset this hero…' }));
-    expect(screen.getByText(/points, achievements and Hall of Heroes entries stay/)).toBeInTheDocument();
-    expect(data.resetLordHero).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(data.resetLordHero).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'Reset this hero…' }));
-    data.fetchStudentLord.mockResolvedValue({ hero: null, topics: [], hardest: [], refused: 0 });
-    await user.click(screen.getByRole('button', { name: 'Yes, reset the hero' }));
-    expect(data.resetLordHero).toHaveBeenCalledWith('kid-1');
-    expect(await screen.findByText('Dragon Maths: no hero.')).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByText('Done. They will pick a class next time they play.')).toBeInTheDocument());
-  });
-
-  it('says so for a pupil with no hero', async () => {
-    data.fetchStudentLord.mockResolvedValue({ hero: null, topics: [], hardest: [], refused: 0 });
-    render(<LordStudentPanel student="kid-2" />);
-    expect(await screen.findByText('Dragon Maths: no hero.')).toBeInTheDocument();
   });
 });

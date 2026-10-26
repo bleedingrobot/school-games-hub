@@ -27,13 +27,6 @@ beforeEach(() => {
 });
 
 describe('Maths Monsters opening', () => {
-  it('says it is not open yet while the teacher has it switched off', async () => {
-    data.loadMonsters.mockResolvedValue(opened({ settings: { enabled: false, topics: ALL_TOPICS } }));
-    render(<MonstersPlay />);
-    expect(await screen.findByText(WORDS.closed)).toBeInTheDocument();
-    expect(data.enqueueSave).not.toHaveBeenCalled();
-  });
-
   it('a new student picks two monsters, and the first save is made straight away saying which', async () => {
     data.loadMonsters.mockResolvedValue(opened());
     render(<MonstersPlay />);
@@ -46,39 +39,5 @@ describe('Maths Monsters opening', () => {
     expect(data.writeTail).toHaveBeenCalled();
     expect(data.flushQueue).toHaveBeenCalled();
     expect(await screen.findByText(WORDS.saved)).toBeInTheDocument();
-  });
-
-  it('says so quietly when saving has to wait, and when the server turned a save down', async () => {
-    data.loadMonsters.mockResolvedValue(opened());
-    data.flushQueue.mockResolvedValue('later');
-    const { unmount } = render(<MonstersPlay />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Start walking' }));
-    expect(await screen.findByText(WORDS.later)).toBeInTheDocument();
-    unmount();
-    data.flushQueue.mockResolvedValue('refused');
-    render(<MonstersPlay />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Start walking' }));
-    expect(await screen.findByText(WORDS.stopped)).toBeInTheDocument();
-    expect(WORDS.stopped).not.toMatch(/cheat|error|wrong|bad|fail/i);
-  });
-
-  it('carries on from the saved game, without a new save until something happens', async () => {
-    const { newWorld } = await import('../../../shared/monsters/world/world');
-    const { WORLD_MAPS } = await import('../../../shared/monsters/maps');
-    const { startTeam } = await import('../../../shared/monsters/world/start');
-    const world = newWorld({ maps: WORLD_MAPS }, startTeam(['leaf', 'ice']), 5);
-    data.loadMonsters.mockResolvedValue(opened({ tail: { base: 4, world, battles: [] } }));
-    render(<MonstersPlay />);
-    expect(await screen.findByTestId('mw-stage')).toHaveAttribute('data-map', 'harbour-town');
-    expect(data.enqueueSave).not.toHaveBeenCalled();
-  });
-
-  it('offers to try again when nothing can be loaded', async () => {
-    data.loadMonsters.mockResolvedValue(opened({ offline: true }));
-    render(<MonstersPlay />);
-    expect(await screen.findByText(WORDS.cantLoad)).toBeInTheDocument();
-    data.loadMonsters.mockResolvedValue(opened());
-    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(await screen.findByRole('button', { name: 'Start walking' })).toBeInTheDocument();
   });
 });

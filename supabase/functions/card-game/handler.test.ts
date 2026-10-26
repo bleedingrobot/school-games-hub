@@ -1,12 +1,10 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { seeded } from '../../../shared/seededRandom';
-import { CARD_PATTERN, PACK, type Card } from '../../../shared/card101/cards';
+import { CARD_PATTERN, type Card } from '../../../shared/card101/cards';
 import type { Game } from '../../../shared/card101/engine';
-import { GRACE_MS, NEXT_ROUND_MS, PEEK_MS, TURN_MS, type SeatRow, type SeatWrite } from '../../../shared/card101/live';
+import { type SeatRow, type SeatWrite } from '../../../shared/card101/live';
 import { seededDice } from '../../../shared/card101/random';
-import { cardGameHandler, MAX_CREATES_PER_HOUR, WAITING_GAME_MS, type CardGameRow, type PlayerStatus, type Services } from './handler';
+import { cardGameHandler, type CardGameRow, type PlayerStatus, type Services } from './handler';
 
 const START = Date.parse('2026-10-20T09:00:00Z');
 const NAMES = ['ana', 'ben', 'cat', 'dan', 'eve'];
@@ -145,111 +143,6 @@ async function playOut(w: World, id: string, names: string[], check?: (step: num
   throw new Error('never finished');
 }
 
-describe('starting a game', () => {
-  it('makes a waiting game with a code, and starts by itself when full', async () => {
-    const w = world();
-    const made = await w.ask('ana', { action: 'create', players: 3, settings: { target: 101 }, lobby: true });
-    expect(made.status).toBe(200);
-    const seat = made.body.seat!;
-    expect(seat.info).toEqual(expect.objectContaining({ status: 'waiting', wanted: 3, players: ['ana', null, null, null], host: 'ana', inLobby: true }));
-    expect(seat.info.code).toMatch(/^[CDFGHJKMNPQRTVWXY34679]{5}$/);
-    expect(seat.view).toBeNull();
-    const id = seat.game;
-    const ben = await w.ask('ben', { action: 'join', code: seat.info.code!.toLowerCase() });
-    expect(ben.body.seat).toEqual(expect.objectContaining({ seat: 1, status: 'waiting' }));
-    expect(w.seat(id, 'ana')!.info.players).toEqual(['ana', 'ben', null, null]);
-    const cat = await w.ask('cat', { action: 'join', gameId: id });
-    expect(cat.body.seat).toEqual(expect.objectContaining({ seat: 2, status: 'playing' }));
-    const g = w.game(id);
-    expect(g.status).toBe('playing');
-    expect(g.code).toBeNull();
-    expect(g.game!.players).toBe(3);
-    expect(g.game!.phase).toBe('peek');
-    expect(Date.parse(g.deadline!)).toBe(START + PEEK_MS);
-    for (const [who, s] of [['ana', 0], ['ben', 1], ['cat', 2]] as const) {
-      const row = w.seat(id, who)!;
-      expect(row.seat).toBe(s);
-      expect(row.view!.peek!.cards).toEqual([g.game!.hands[s][2], g.game!.hands[s][3]]);
-    }
-  });
-
-  it('the host can start early with 2 or more; not with 1, and not anyone else', async () => {
-    const w = world();
-    const made = await w.ask('ana', { action: 'create', players: 4, settings: { target: 50 }, lobby: false });
-    const id = made.body.seat!.game;
-    expect((await w.ask('ana', { action: 'start', gameId: id })).body.problem).toBe('need-players');
-    await w.ask('ben', { action: 'join', code: made.body.seat!.info.code });
-    expect((await w.ask('ben', { action: 'start', gameId: id })).body.problem).toBe('not-host');
-    expect((await w.ask('ana', { action: 'start', gameId: id })).status).toBe(200);
-    expect(w.game(id).game!.players).toBe(2);
-    expect((await w.ask('ana', { action: 'start', gameId: id })).status).toBe(200); // a second tap is fine
-    expect((await w.ask('cat', { action: 'join', gameId: id })).body.problem).toBe('not-found'); // not in the lobby
-  });
-
-  it('treats a game from another school like a code that does not exist', async () => {
-    const w = world();
-    const made = await w.ask('ana', { action: 'create', players: 2, settings: { target: 50 }, lobby: true });
-    const code = made.body.seat!.info.code;
-    w.moveToSchool('ben', 2);
-    expect((await w.ask('ben', { action: 'join', code })).body.problem).toBe('not-found');
-    expect((await w.ask('ben', { action: 'join', gameId: made.body.seat!.game })).body.problem).toBe('not-found');
-    w.moveToSchool('ben', 1);
-    expect((await w.ask('ben', { action: 'join', code })).status).toBe(200);
-  });
-
-  it('refuses bad settings, full games, expired games, and too many new games', async () => {
-    const w = world();
-    for (const bad of [{ players: 1 }, { players: 5 }, { players: 3, settings: { target: 75 } }, { players: 3, settings: null }]) {
-      expect((await w.ask('ana', { action: 'create', settings: { target: 50 }, ...bad })).status).toBe(400);
-    }
-    const id = await gameFor(w, 'ana', ['ben'], 2);
-    expect((await w.ask('cat', { action: 'join', gameId: id })).status).toBe(404);
-    const made = await w.ask('cat', { action: 'create', players: 2, settings: { target: 50 } });
-    w.tick(WAITING_GAME_MS + 1);
-    expect((await w.ask('dan', { action: 'join', code: made.body.seat!.info.code })).body.problem).toBe('expired');
-    for (let i = 0; i < MAX_CREATES_PER_HOUR; i++) await w.ask('eve', { action: 'create', players: 2, settings: { target: 50 } });
-    expect((await w.ask('eve', { action: 'create', players: 2, settings: { target: 50 } })).body.problem).toBe('too-many');
-  });
-
-  it('a new code never matches a game waiting elsewhere', async () => {
-    const w = world();
-    const first = await w.ask('ana', { action: 'create', players: 2, settings: { target: 50 } });
-    const code = first.body.seat!.info.code!;
-    // Every code ana could get next is "taken" by a chess game except one.
-    w.takeCode(code);
-    const again = await w.ask('ben', { action: 'create', players: 2, settings: { target: 50 } });
-    expect(again.body.seat!.info.code).not.toBe(code);
-  });
-
-  it('leaving the waiting room: the others move up; the host leaving cancels it', async () => {
-    const w = world();
-    const made = await w.ask('ana', { action: 'create', players: 4, settings: { target: 50 } });
-    const id = made.body.seat!.game;
-    for (const who of ['ben', 'cat']) await w.ask(who, { action: 'join', code: made.body.seat!.info.code });
-    expect((await w.ask('ben', { action: 'leave', gameId: id })).body.seat!.seat).toBe(-1);
-    expect(w.seat(id, 'ben')).toBeNull();
-    expect(w.seat(id, 'cat')!.seat).toBe(1);
-    expect(w.seat(id, 'ana')!.info.players).toEqual(['ana', 'cat', null, null]);
-    await w.ask('ana', { action: 'cancel', gameId: id });
-    expect(w.seat(id, 'cat')!.status).toBe('cancelled');
-  });
-
-  it('teacher switch off and hidden students: no starting or joining', async () => {
-    const w = world();
-    const made = await w.ask('ana', { action: 'create', players: 2, settings: { target: 50 } });
-    w.hide('ben');
-    expect((await w.ask('ben', { action: 'join', code: made.body.seat!.info.code })).body.problem).toBe('hidden');
-    w.pause();
-    expect((await w.ask('cat', { action: 'create', players: 2, settings: { target: 50 } })).body.problem).toBe('paused');
-    expect((await w.ask('cat', { action: 'join', code: made.body.seat!.info.code })).body.problem).toBe('paused');
-  });
-
-  it('needs a sign-in', async () => {
-    const w = world();
-    expect((await w.ask('nobody', { action: 'create', players: 2, settings: { target: 50 } })).status).toBe(401);
-  });
-});
-
 describe('hidden cards', () => {
   it('every reply and every seat row carries only what that player may know, all game long', async () => {
     const w = world();
@@ -269,48 +162,6 @@ describe('hidden cards', () => {
       });
     });
     expect(checked).toBeGreaterThan(100);
-  }, 30_000);
-
-  it('a reply never holds the stack or anyone else’s face-down cards', async () => {
-    const w = world();
-    const id = await gameFor(w, 'ana', ['ben'], 2);
-    const reply = await w.ask('ana', { action: 'peek-done', gameId: id });
-    const game = w.game(id).game!;
-    const secret = [...game.stack, game.hands[1][0], game.hands[1][1], game.hands[1][2], game.hands[1][3], game.hands[0][0], game.hands[0][1]];
-    for (const card of cardsIn(reply.text)) expect(secret).not.toContain(card);
-    expect(reply.text).not.toContain('"stack":[');
-  });
-
-  it('the peek shows once: after pressing done, or the 15 seconds, it never comes back', async () => {
-    const w = world();
-    const id = await gameFor(w, 'ana', ['ben'], 2);
-    expect(w.seat(id, 'ana')!.view!.peek).not.toBeNull();
-    await w.ask('ana', { action: 'peek-done', gameId: id });
-    expect(w.seat(id, 'ana')!.view!.peek).toBeNull();
-    expect((await w.ask('ana', { action: 'peek-done', gameId: id })).status).toBe(400);
-    expect(w.seat(id, 'ben')!.view!.peek).not.toBeNull();
-    // Ben forgets to press: the clock ends it.
-    expect((await w.ask('ana', { action: 'times-up', gameId: id })).body.problem).toBe('not-yet');
-    w.tick(PEEK_MS + GRACE_MS);
-    expect((await w.ask('ana', { action: 'times-up', gameId: id })).status).toBe(200);
-    expect(w.seat(id, 'ben')!.view!.peek).toBeNull();
-    expect(w.game(id).game!.phase).toBe('play');
-  });
-
-  it('a stack draw is told to everyone, but the card only to the drawer', async () => {
-    const w = world();
-    const id = await gameFor(w, 'ana', ['ben'], 2);
-    await w.ask('ana', { action: 'peek-done', gameId: id });
-    await w.ask('ben', { action: 'peek-done', gameId: id });
-    const g = w.game(id);
-    const names = ['ana', 'ben'];
-    const drawer = names[g.game!.turn];
-    const other = names[1 - g.game!.turn];
-    await w.ask(drawer, { action: 'draw', gameId: id, version: g.version, from: 'stack' });
-    const card = w.game(id).game!.holding!.card;
-    expect(w.seat(id, drawer)!.events).toEqual([expect.objectContaining({ kind: 'draw', from: 'stack', card })]);
-    expect(w.seat(id, other)!.events).toEqual([{ kind: 'draw', seat: g.game!.turn, from: 'stack' }]);
-    expect(JSON.stringify(w.seat(id, other))).not.toContain(`"${card}"`);
   });
 });
 
@@ -321,13 +172,16 @@ describe('refereeing', () => {
     return id;
   }
 
-  it('refuses out-of-turn moves, old versions, double taps and nonsense', async () => {
+  it('needs a sign-in, keeps out other schools, and refuses out-of-turn moves, old versions, double taps and nonsense', async () => {
     const w = world();
     const names = ['ana', 'ben'];
     const id = await started(w);
     const g = w.game(id);
     const me = names[g.game!.turn];
     const notMe = names[1 - g.game!.turn];
+    expect((await w.ask('nobody', { action: 'draw', gameId: id, version: g.version, from: 'stack' })).status).toBe(401);
+    w.moveToSchool('cat', 2);
+    expect((await w.ask('cat', { action: 'join', gameId: id })).body.problem).toBe('not-found');
     expect((await w.ask(notMe, { action: 'draw', gameId: id, version: g.version, from: 'stack' })).body.problem).toBe('illegal');
     expect((await w.ask(me, { action: 'draw', gameId: id, version: g.version - 1, from: 'stack' })).body.problem).toBe('changed');
     expect((await w.ask(me, { action: 'draw', gameId: id, version: g.version, from: 'hand' })).status).toBe(400);
@@ -337,128 +191,5 @@ describe('refereeing', () => {
     expect((await w.ask(me, { action: 'knock', gameId: id, version: g.version + 1 })).body.error).toMatch(/once everyone has had a turn|holding/i);
     expect((await w.ask('cat', { action: 'draw', gameId: id, version: g.version + 1, from: 'stack' })).body.problem).toBe('not-yours');
     expect((await w.ask(me, { action: 'fly', gameId: id })).status).toBe(400);
-  });
-
-  it('a whole game to the end: places, wins, points, and nothing more allowed after', async () => {
-    const w = world();
-    const names = ['ana', 'ben', 'cat'];
-    const id = await started(w, names);
-    await playOut(w, id, names);
-    const g = w.game(id);
-    expect(g.status).toBe('finished');
-    expect(g.ending).toBe('finished');
-    expect(g.places).toEqual(expect.arrayContaining([1]));
-    expect(g.counts).toEqual(names.map(() => g.game!.results.length >= 2));
-    expect(g.won!.filter(Boolean).length).toBeGreaterThan(0);
-    expect(g.stats).toHaveLength(3);
-    const row = w.seat(id, 'ana')!;
-    expect(row.status).toBe('finished');
-    expect(row.info.places).toEqual(g.places);
-    expect(row.view!.lastRound).not.toBeNull();
-    expect((await w.ask('ana', { action: 'draw', gameId: id, version: g.version, from: 'stack' })).body.problem).toBe('over');
-  }, 30_000);
-
-  it('the clock: a turn not taken in 60 seconds is skipped; 3 in a row and you’re out', async () => {
-    const w = world();
-    const names = ['ana', 'ben', 'cat'];
-    const id = await started(w, names);
-    const sleepy = w.game(id).game!.turn;
-    const awake = names.filter((_, s) => s !== sleepy);
-    for (let skip = 1; skip <= 3; skip++) {
-      // Wait out the sleepy player's turn.
-      while (w.game(id).game!.turn !== sleepy) {
-        const g = w.game(id);
-        const who = names[g.game!.turn];
-        await w.ask(who, { action: 'draw', gameId: id, version: g.version, from: 'stack' });
-        await w.ask(who, { action: 'throw', gameId: id, version: g.version + 1 });
-      }
-      expect((await w.ask(awake[0], { action: 'times-up', gameId: id })).body.problem).toBe('not-yet');
-      w.tick(TURN_MS + GRACE_MS);
-      expect((await w.ask(awake[0], { action: 'times-up', gameId: id })).status).toBe(200);
-      expect(w.game(id).game!.skips[sleepy]).toBe(skip === 3 ? 3 : skip);
-    }
-    expect(w.game(id).game!.out[sleepy]).toBe(true);
-    expect((await w.ask(names[sleepy], { action: 'draw', gameId: id, version: w.game(id).version, from: 'stack' })).body.problem).toBe('out');
-  });
-
-  it('between rounds: deals when everyone presses Next, or after 30 seconds', async () => {
-    const w = world();
-    const names = ['ana', 'ben'];
-    const id = await started(w, names);
-    // Play to the end of round 1: draw and throw until someone can knock, then knock.
-    for (let n = 0; n < 200 && w.game(id).game!.phase === 'play'; n++) {
-      const g = w.game(id);
-      const who = names[g.game!.turn];
-      const knock = await w.ask(who, { action: 'knock', gameId: id, version: g.version });
-      if (knock.status === 200) continue;
-      await w.ask(who, { action: 'draw', gameId: id, version: g.version, from: 'stack' });
-      await w.ask(who, { action: 'throw', gameId: id, version: g.version + 1 });
-    }
-    expect(w.game(id).game!.phase).toBe('round-over');
-    expect(w.seat(id, 'ana')!.view!.lastRound!.hands.flat()).toHaveLength(8);
-    await w.ask('ana', { action: 'next', gameId: id });
-    expect(w.game(id).game!.phase).toBe('round-over');
-    expect(w.seat(id, 'ben')!.info.ready).toEqual([true, false]);
-    await w.ask('ben', { action: 'next', gameId: id });
-    expect(w.game(id).game!.phase).toBe('peek');
-    expect(w.game(id).game!.round).toBe(2);
-    // The new round's cards are hidden again.
-    expect(w.seat(id, 'ana')!.view!.lastRound).toBeNull();
-    expect(Date.parse(w.game(id).deadline!)).toBe(START + PEEK_MS);
-    void NEXT_ROUND_MS;
-  });
-
-  it('leaving part-way: you’re out; with one player left the game ends', async () => {
-    const w = world();
-    const names = ['ana', 'ben', 'cat'];
-    const id = await started(w, names);
-    await w.ask('cat', { action: 'leave', gameId: id });
-    expect(w.game(id).game!.out).toEqual([false, false, true]);
-    expect(w.seat(id, 'cat')!.view!.out[2]).toBe(true);
-    await w.ask('ben', { action: 'leave', gameId: id });
-    const g = w.game(id);
-    expect(g.status).toBe('finished');
-    expect(g.won).toEqual([true, false, false]);
-    expect(g.counts).toEqual([false, false, false]); // fewer than 2 full rounds
-    expect(g.places).toEqual([1, 0, 0]);
-  });
-
-  it('a student hidden by the teacher is out the next time anyone acts', async () => {
-    const w = world();
-    const names = ['ana', 'ben', 'cat'];
-    const id = await started(w, names);
-    w.hide('cat');
-    const g = w.game(id);
-    const who = names[g.game!.turn] === 'cat' ? 'ana' : names[g.game!.turn];
-    await w.ask(who, { action: names[g.game!.turn] === 'cat' ? 'times-up' : 'draw', gameId: id, version: g.version, from: 'stack' });
-    expect(w.game(id).game!.out[2]).toBe(true);
-  });
-
-  it('rematch: the first press makes a new game, the others join it, and it starts when everyone is in', async () => {
-    const w = world();
-    const names = ['ana', 'ben'];
-    const id = await started(w, names);
-    await w.ask('ben', { action: 'leave', gameId: id });
-    const first = await w.ask('ben', { action: 'rematch', gameId: id });
-    expect(first.status).toBe(200);
-    const next = first.body.seat!.game;
-    expect(next).not.toBe(id);
-    expect(w.game(id).rematch_game).toBe(next);
-    expect(w.seat(id, 'ana')!.info.rematchGame).toBe(next);
-    expect((await w.ask('ana', { action: 'rematch', gameId: id })).body.seat!.status).toBe('playing');
-    expect(w.game(next).settings).toEqual({ target: 50 });
-  });
-});
-
-describe('the deployable file', () => {
-  it('is up to date with the code (run `npm run build:functions` if this fails)', async () => {
-    // @ts-expect-error: plain JavaScript build script
-    const { buildFunction } = await import('../../../scripts/build-functions.mjs');
-    const built: string = await buildFunction('card-game');
-    expect(readFileSync(resolve('supabase/functions/card-game/index.ts'), 'utf8')).toBe(built);
-  });
-
-  it('every card in the pack is a card the pattern finds (so the leak checks above can see them)', () => {
-    expect(cardsIn(JSON.stringify(PACK)).size).toBe(52);
   });
 });

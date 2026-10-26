@@ -24,7 +24,7 @@ Write `docs/[ID]-PLAN.md`:
 - the tables, the server function, the switches (code switch + teacher switch), any teacher settings
 - how many server requests a class makes per lesson
 - every shared file it will touch (the guide's section 3) and when
-- stages (small, each tested, each ending with a "results" section), then a go-live stage
+- stages (small, each checked, each ending with a "results" section), then a go-live stage
 - questions for James, with your recommended answer for each
 
 Then **stop** and show James the short version. Don't start Stage 1 until he says so.
@@ -32,7 +32,7 @@ Then **stop** and show James the short version. Don't start Stage 1 until he say
 ## Every stage after that
 - Merge `origin/main` into your branch first.
 - Build only in your own folders. Shared files get their one-line edits at the end, as the guide says.
-- Tests: your own as you go; before saying a stage is done, `npm run typecheck`, `npm run test:all`, `npm run build`, and your database tests on a scratch copy (`scripts/scratch-db.sh`). Say plainly about any failure.
+- Tests: few. At most 8 for the whole game, picked as `docs/TESTING.md` says (a test fails if the site goes over its limit). Before saying a stage is done, `npm run check`, and your database tests on a scratch copy (`scripts/scratch-db.sh`). Say plainly about any failure.
 - Write the stage's results in the plan (built, decisions, tests, untested, go-live list), commit, `git push origin [id]`, and stop for James.
 - Nothing live (migration, function deploy, merge to `main`, switch on) unless James says so in words in this session, one step at a time.
 
