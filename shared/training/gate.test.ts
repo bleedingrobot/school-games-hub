@@ -15,21 +15,21 @@ describe('trainingGate', () => {
     expect(trainingGate({ on: true, lastFinishedAt: null, localFinishedAt: null, now }).locked).toBe(true);
   });
 
-  it('stays open for 6 hours after a session, then locks', () => {
+  it('stays open for 2 hours after a session, then locks', () => {
     const at = (ago: number) => trainingGate({ on: true, lastFinishedAt: now - ago, localFinishedAt: null, now });
-    expect(at(5 * HOUR + 59 * 60_000)).toEqual({ locked: false, openUntil: now + 60_000 });
-    expect(at(6 * HOUR).locked).toBe(true);
-    expect(at(6 * HOUR + 60_000).locked).toBe(true);
+    expect(at(HOUR + 59 * 60_000)).toEqual({ locked: false, openUntil: now + 60_000 });
+    expect(at(2 * HOUR).locked).toBe(true);
+    expect(at(2 * HOUR + 60_000).locked).toBe(true);
   });
 
   it('uses the newer of the server and device times', () => {
     const g = trainingGate({ on: true, lastFinishedAt: now - 7 * HOUR, localFinishedAt: now - HOUR, now });
-    expect(g).toEqual({ locked: false, openUntil: now + 5 * HOUR });
-    expect(trainingGate({ on: true, lastFinishedAt: now - HOUR, localFinishedAt: now - 7 * HOUR, now }).openUntil).toBe(now + 5 * HOUR);
+    expect(g).toEqual({ locked: false, openUntil: now + HOUR });
+    expect(trainingGate({ on: true, lastFinishedAt: now - HOUR, localFinishedAt: now - 7 * HOUR, now }).openUntil).toBe(now + HOUR);
   });
 
   it("doesn't let a clock set ahead buy extra time", () => {
-    expect(trainingGate({ on: true, lastFinishedAt: null, localFinishedAt: now + 10 * HOUR, now }).openUntil).toBe(now + 6 * HOUR);
+    expect(trainingGate({ on: true, lastFinishedAt: null, localFinishedAt: now + 10 * HOUR, now }).openUntil).toBe(now + 2 * HOUR);
   });
 
   it('a whole Quick looks round is what the server asks for', () => {

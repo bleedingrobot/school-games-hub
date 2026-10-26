@@ -87,7 +87,7 @@ export const TRAINING_CONFIG = {
    * `gamesOpenHours`. The server only counts a session it has at least this many answers for: a facts session that ran out
    * of time can be as short as 2 (the first question, then the last), and a whole Quick looks round is 12 pictures.
    */
-  gate: { gamesOpenHours: 6, minAnswers: { facts: 2, quick: 12 } },
+  gate: { gamesOpenHours: 2, minAnswers: { facts: 2, quick: 12 } },
 
   /** Days before a fact is due for review again, by how many green days it has. */
   reviewDays: [1, 2, 4, 7, 14],

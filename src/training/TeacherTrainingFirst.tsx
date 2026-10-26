@@ -1,6 +1,6 @@
 /**
  * The Teacher page's switch for Training before games (James, 22 Oct 2026), per class, off to start. With it on, a student in
- * the class does one Training session before the games open, and they stay open for 6 hours. Teachers are never locked.
+ * the class does one Training session before the games open, and they stay open for 2 hours. Teachers are never locked.
  */
 import { useEffect, useState } from 'react';
 import { TRAINING_CONFIG } from '../../shared/training/config';

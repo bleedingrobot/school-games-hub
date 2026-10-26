@@ -20,7 +20,7 @@ describe('the Training before games switch on the Teacher page', () => {
     const user = userEvent.setup();
     render(<TrainingFirstSwitch />);
     expect(await screen.findByText(/Off for this class/)).toBeInTheDocument();
-    expect(screen.getByText(/stay open for 6 hours/)).toBeInTheDocument();
+    expect(screen.getByText(/stay open for 2 hours/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Switch Training before games on' }));
     expect(gate.saveTrainingFirst).toHaveBeenCalledWith(true, null);
     expect(await screen.findByRole('status')).toHaveTextContent('Training before games: On.');
