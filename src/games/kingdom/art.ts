@@ -46,11 +46,11 @@ export const PEOPLE: Record<Person, { name: string; title: string }> = {
  * read off the chosen painting).
  */
 export const MAP_SPOTS: Record<'council' | 'market' | 'granary' | 'fields' | 'gate', [number, number]> = {
-  council: [57, 57],
-  market: [37, 73],
-  granary: [84, 70],
-  fields: [22, 57],
-  gate: [80, 79],
+  council: [50, 54],
+  market: [33, 66],
+  granary: [63, 44],
+  fields: [27, 37],
+  gate: [66, 78],
 };
 
 /** Every picture file the game has, for checking against the list. */
