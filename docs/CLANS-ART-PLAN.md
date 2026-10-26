@@ -3,7 +3,7 @@
 How Clan Quest gets its painted pictures, from the 656 pictures in `~/dragon-art-inbox/clans-art` to a live game. It follows the way Dragon Maths was done (`docs/lord-art/`, `scripts/lord-art.py`, `src/games/lord/art.ts`), so most of the tools already exist.
 
 Written 26 October 2026 for James.
-**Status: A.0–A.4 done (26 Oct). James kept Claude's picks for every picture; the frame is stone and iron. Next: A.5 (members).** The plan is on the `clans-art` branch.
+**Status: A.0–A.5 done (26 Oct). James kept Claude's picks for every picture; the frame is stone and iron. Next: A.6 (fights).** The plan is on the `clans-art` branch.
 
 ## The short version
 
@@ -152,3 +152,12 @@ If a picture needs remaking (a new monster, a wrong picture, a new item):
 - The old pixel icon beside a place's name is hidden only while a painting shows, so it comes back if a picture is ever missing.
 - Checked at 1366 px and 390 px: no sideways scrolling, and the fight's question box still reads clearly. Members, monsters and items are still the bright pixel tiles until A.5–A.7.
 - 2 new tests (each place shows its painting; none in a fight yet). Clans tests: 468 pass.
+
+## Stage A.5 results (26 Oct 2026)
+
+- Each member has one of four looks (`shared/clans/looks.ts`): Girl 1, Girl 2, Boy 1, Boy 2. The creator shows the four paintings on each card; on the clan home, "Change look" opens them. Free, any time except during a fight (like every other action).
+- **Server:** a new `look` action (`shared/clans/actions.ts`), and the creator's choices carry the look; the server checks it is one of the four. **No database change.** Clans saved before this get a look worked out from each member's name, so it never changes by itself. The `clans` bundle (`supabase/functions/clans/index.ts`) is rebuilt; it needs deploying with the rest at A.9.
+- Painted portraits on the member cards, the Market, the Training Hall and the Church. The fight keeps the old figures until A.6.
+- Tests: 7 for the rules (`looks.test.ts`), 3 on screen (creator picker; "Change look" saved on a pretend server; an old clan still shows paintings). Clans: 475 pass; the server function's 55 pass.
+- The pale splash is cleaned off `imp-barbarian-female-1` and `imp-necromancer-female-2` (cut out again, then pale grey paper faded out). The necromancer's right wing was lost in the original cut-out and still is; a remake would fix it.
+- Checked at 1366 px and 390 px: no sideways scrolling.
