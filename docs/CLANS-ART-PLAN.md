@@ -83,7 +83,7 @@ Each stage ends with tests passing, screenshots for James (laptop and phone widt
 
 **A.2 Decide the look (James).** Claude makes the market screen in the chosen frame (question 1) as a try-out page with one or two alternatives, and James picks.
 
-**A.3 The tidy-up script and loader (Claude).** `scripts/clans-art.py`, `art.ts`, `art.test.ts`, the cut-outs and sizes from section 2, and `art/CREDITS.md`. All files are generated at once (the cut-outs take about an hour on this server, started in the background so it survives restarts). Nothing shows on screen yet. The inbox's test folders are deleted after this.
+**A.3 The tidy-up script and loader (Claude).** `scripts/clans-art.py`, `art.ts`, `art.test.ts`, the cut-outs and sizes from section 2, and `art/CREDITS.md`. All files are generated at once (the cut-outs take about an hour on this server, started in the background so it survives restarts). Nothing shows on screen yet. The inbox's test folders are kept (James, 26 Oct).
 
 **A.4 The frame and the places (Claude).** The new frame from A.2 in `clans.css`, and a painted picture at the top of each place: village, news, scoreboard, market, training, church, mines, empire, barracks, raid, quests and creator each have their own. There's no picture made for the clan home screen or the land screen, so home uses the village and land uses the empire (or James can have two more made). Buttons, text sizes and the keyboard shortcuts stay where they are.
 
@@ -143,4 +143,4 @@ If a picture needs remaking (a new monster, a wrong picture, a new item):
 - `scripts/clans-art.py`, `src/games/clans/art.ts`, `art.test.ts` and `art/CREDITS.md` are in. All 959 files made (34 MB): 396 member looks with small copies, 38 monsters, 34 items, 3 troops, 7 buildings, 12 banners, and 20 scenes, 10 quests and 6 kingdoms with -800 copies. Clans tests pass (160), including the new art test.
 - Cut-outs checked by eye on contact sheets (`scripts/clans-art.py --sheets`). The dark-background ones (skeleton, mummy, fire spirit, moon wolf) came out clean.
 - **Still to fix later:** a few members keep a pale painted splash by their feet, which shows on the dark frame. Worst are `imp-barbarian-female-1` and `imp-necromancer-female-2`; fix in A.5 (touch up or remake). Wizard's Staff, Wooden Armour and Giant Rat are still the wrong-looking ones from A.1 and could be remade.
-- The inbox's test folders (`clans-test`, `clans-test2`, `clans-superseded`) are not deleted yet; waiting for James to say yes.
+- The inbox's test folders (`clans-test`, `clans-test2`, `clans-superseded`) are kept: James chose to leave them where they are.
