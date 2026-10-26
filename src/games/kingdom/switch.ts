@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { fetchKingdomEnabled } from '../../data/kingdom';
 
 /**
- * Is Kingdom Keeper in the hub? Off until James says go (docs/KINGDOM-PLAN.md, K.7): the migration must be applied and
- * the `kingdom` function deployed first. Try it locally with VITE_KINGDOM_ON=true in .env.local. While it is on, the
- * card still hides itself until the teacher switches the game on for the pupil's class (the database starts with it off).
+ * Is Kingdom Keeper in the hub? On since 27 Oct 2026 (James: "you do it all and switch it on"), after the migration and
+ * the `kingdom` function went live (docs/KINGDOM-PLAN.md). The card still hides itself until the teacher switches the
+ * game on for the pupil's class (the database started with it off everywhere). Set this to false to take the game out of
+ * the build completely.
  */
-const ON = false;
+const ON = true;
 
 export const kingdomOn = (): boolean => ON || import.meta.env.VITE_KINGDOM_ON === 'true';
 
