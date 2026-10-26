@@ -6,7 +6,9 @@
 import { GRID_COLUMNS, GRID_ROWS, MATHS, STEP, TILE } from '../../../../shared/gem-keep/config';
 import { act, newGame, step, type Action, type ActResult, type GameEvent, type GameState } from '../../../../shared/gem-keep/engine';
 import type { LevelData } from '../../../../shared/gem-keep/level';
-import { drawFrame, drawGround, HEIGHT, particleColour, WIDTH, type Particle, type View } from '../render/draw';
+import { hasBoard, onPictureLoaded, preloadLevel } from '../art';
+import { clearSprites, drawFrame, drawGround, HEIGHT, newFx, WIDTH, type Fx, type Particle, type View } from '../render/draw';
+import { GEM_COLOURS } from '../render/shapes';
 
 export interface EngineEvents {
   /** Something the page shows changed (mana, health, wave, towers, gems, pause). */
@@ -36,6 +38,8 @@ export class GameEngine {
   view: View = { selectedTile: null, hoverTile: null, cursor: null, glowTowers: [], ghost: false };
   /** Frames drawn in the last second, for the stress test. */
   fps = 0;
+  /** Draw a painted night board lighter (projectors, bright rooms). */
+  brighter = false;
 
   private canvas: HTMLCanvasElement | null = null;
   private ctx: CanvasRenderingContext2D | null = null;
@@ -56,6 +60,7 @@ export class GameEngine {
   private secondStarted = 0;
   private lastChange = 0;
   private reducedMotion = false;
+  private fx: Fx = newFx();
 
   constructor(
     private level: LevelData,
@@ -106,6 +111,13 @@ export class GameEngine {
     this.changed();
   }
 
+  /** Lighter or normal painted board. */
+  setBrighter(brighter: boolean) {
+    this.brighter = brighter;
+    this.renderGround();
+    this.changed();
+  }
+
   /** A question opened (in this mode) or closed (null). */
   setQuestion(mode: 'calm' | 'challenge' | null) {
     this.question = mode;
@@ -120,6 +132,8 @@ export class GameEngine {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    this.fx.reducedMotion = this.reducedMotion;
+    this.fx.night = hasBoard(this.level.id);
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -130,6 +144,12 @@ export class GameEngine {
       this.renderGround();
     };
     resize();
+    preloadLevel(this.level.id, this.smallBoard());
+    // A painted picture arrived: redraw the kept ground and forget sprites drawn without it.
+    const stopPictures = onPictureLoaded(() => {
+      clearSprites();
+      this.renderGround();
+    });
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(resize);
     observer?.observe(canvas);
 
@@ -198,6 +218,7 @@ export class GameEngine {
     this.frame = requestAnimationFrame(loop);
 
     this.cleanups = [
+      stopPictures,
       () => cancelAnimationFrame(this.frame),
       () => observer?.disconnect(),
       () => canvas.removeEventListener('pointerdown', down),
@@ -226,8 +247,13 @@ export class GameEngine {
     const ctx = ground.getContext('2d');
     if (!ctx) return;
     ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
-    drawGround(ctx, this.state);
+    drawGround(ctx, this.state, this.smallBoard(), this.brighter);
     this.ground = ground;
+  }
+
+  /** Small screens use the 800-wide board. */
+  private smallBoard() {
+    return (this.canvas?.width ?? WIDTH * 2) <= 900;
   }
 
   /** One animation frame: run the steps that are due, then draw. */
@@ -271,16 +297,28 @@ export class GameEngine {
     let important = false;
     for (const event of this.state.events) {
       switch (event.type) {
-        case 'hit':
-          this.burst(event.x * TILE, event.y * TILE, particleColour(event.colours), event.crit ? 8 : 3, event.crit ? 3.5 : 2.5);
-          if (event.crit) this.floatText(event.x * TILE, event.y * TILE - 14, '!', '#ffd23f', 22);
+        case 'hit': {
+          // Sparks in every colour of the gem, a white flash on the enemy hit, and a gold ring for a critical hit.
+          const sparks = event.colours.map((c) => GEM_COLOURS[c].light);
+          this.burst(event.x * TILE, event.y * TILE, sparks, event.crit ? 10 : 4, event.crit ? 3.5 : 2.5);
+          const target = this.state.enemies.find((e) => e.x === event.x && e.y === event.y);
+          if (target) this.fx.flashes.set(target.id, this.fx.now + 0.08);
+          if (event.crit) {
+            this.ring(event.x * TILE, event.y * TILE, '#ffd23f', 26);
+            this.floatText(event.x * TILE, event.y * TILE - 14, '!', '#ffd23f', 22);
+          }
           break;
+        }
         case 'kill':
           this.burst(event.x * TILE, event.y * TILE, '#ffffff', event.kind === 'boss' ? 24 : 8, 3);
           this.floatText(event.x * TILE, event.y * TILE - 10, `+${event.mana}`, '#c8b6ff', 16);
           important = true;
           break;
         case 'shot':
+          break;
+        case 'leak':
+          if (!this.reducedMotion) this.fx.shakeUntil = this.fx.now + 0.35;
+          important = true;
           break;
         default:
           important = true;
@@ -300,17 +338,24 @@ export class GameEngine {
     const p = this.particles[this.nextParticle];
     this.nextParticle = (this.nextParticle + 1) % MAX_PARTICLES;
     p.text = undefined;
+    p.ring = undefined;
     return p;
   }
 
-  private burst(x: number, y: number, colour: string, count: number, size: number) {
+  private burst(x: number, y: number, colour: string | string[], count: number, size: number) {
     if (this.reducedMotion) count = Math.min(count, 2);
+    const colours = typeof colour === 'string' ? [colour] : colour;
     for (let i = 0; i < count; i++) {
       const p = this.particle();
       const angle = Math.random() * Math.PI * 2;
       const speed = 40 + Math.random() * 90;
-      Object.assign(p, { x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 0.45, max: 0.45, colour, size });
+      Object.assign(p, { x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 0.45, max: 0.45, colour: colours[i % colours.length], size });
     }
+  }
+
+  private ring(x: number, y: number, colour: string, size: number) {
+    const p = this.particle();
+    Object.assign(p, { x, y, vx: 0, vy: 0, life: 0.35, max: 0.35, colour, size, ring: true });
   }
 
   private floatText(x: number, y: number, text: string, colour: string, size: number) {
@@ -333,6 +378,7 @@ export class GameEngine {
     const { ctx, ground } = this;
     if (!ctx || !ground) return;
     ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
-    drawFrame(ctx, this.state, ground, this.view, this.particles, this.scale);
+    this.fx.now = performance.now() / 1000;
+    drawFrame(ctx, this.state, ground, this.view, this.particles, this.scale, this.fx);
   }
 }

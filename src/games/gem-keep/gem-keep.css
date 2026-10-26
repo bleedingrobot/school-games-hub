@@ -727,3 +727,329 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Crystal Night ----------
+   Used when the level (or the campaign) has its painted night picture: night panels with gold edges
+   around the board. Only Gem Keep's own parts change. The maths question box keeps the hub's plain,
+   high-contrast look, so nothing gets in the way of the fact. */
+
+.gk-bright {
+  display: inline-grid;
+  place-items: center;
+  min-width: 46px;
+  min-height: 46px;
+  padding: 0;
+  font-size: 1.3rem;
+  border: 2px solid var(--gk-line);
+  border-radius: 14px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.gk-bright[aria-pressed='true'] {
+  border-color: var(--gk-gold);
+  background: var(--gk-gold);
+  color: #24123f;
+}
+
+.gk[data-night],
+.gk-campaign[data-night] {
+  --gk-surface: #1a1833;
+  --gk-tint: #24214a;
+  --gk-line: #3d3878;
+  --gk-night-ink: #ece9ff;
+  --gk-night-soft: #b7b0e0;
+  --gk-night-edge: rgba(255, 210, 63, 0.45);
+}
+
+.gk[data-night] .gk-title__name,
+.gk[data-night] .gk-map-button,
+.gk[data-night] .gk-hud,
+.gk[data-night] .gk-panel {
+  color: var(--gk-night-ink);
+  border: 1px solid var(--gk-night-edge);
+  box-shadow: 0 6px 18px rgba(8, 6, 30, 0.35);
+}
+.gk[data-night] .gk-hud,
+.gk[data-night] .gk-panel {
+  background: linear-gradient(180deg, #221f45, #17152e);
+}
+.gk[data-night] .gk-stat__label,
+.gk[data-night] .gk-wave-running,
+.gk[data-night] .gk-cost,
+.gk[data-night] .gk-stats,
+.gk[data-night] .gk-hint,
+.gk[data-night] .gk-forge__button small,
+.gk[data-night] .gk-gem-line small {
+  color: var(--gk-night-soft);
+}
+.gk[data-night] .gk-mana {
+  color: #c8b6ff;
+}
+.gk[data-night] .gk-bar {
+  background: #0e0c22;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.12);
+}
+.gk[data-night] .gk-well:disabled {
+  background: #2c2858;
+  box-shadow: 0 4px 0 #15132c;
+  color: var(--gk-night-soft);
+}
+.gk[data-night] .gk-speed__button,
+.gk[data-night] .gk-forge__button,
+.gk[data-night] .gk-toggle,
+.gk[data-night] .button:not(.button--primary):not(.button--play).gk-small {
+  color: var(--gk-night-ink);
+}
+.gk[data-night] .gk-speed__button[aria-pressed='true'],
+.gk[data-night] .gk-toggle[aria-checked='true'] {
+  border-color: var(--gk-gold);
+  background: var(--gk-gold);
+  color: #24123f;
+}
+.gk[data-night] .gk-forge__button:hover:not(:disabled) {
+  border-color: var(--gk-gold);
+}
+.gk[data-night] .gk-slot:has(svg) {
+  background: #0e0c22;
+}
+.gk[data-night] .gk-message {
+  color: #ffb4a8;
+}
+.gk[data-night] .gk-chosen {
+  background: #2a2552;
+  color: var(--gk-night-ink);
+}
+.gk[data-night] .gk-max {
+  color: #7ee2a8;
+}
+.gk[data-night] .gk-canvas {
+  background: #141a33;
+  box-shadow: 0 0 0 1px var(--gk-night-edge), 0 10px 30px rgba(8, 6, 30, 0.5);
+}
+
+/* Win and lose card. */
+.gk[data-night] .gk-end {
+  background: rgba(8, 6, 30, 0.55);
+}
+.gk[data-night] .gk-end__card {
+  background: linear-gradient(180deg, #26225a, #17152e);
+  color: var(--gk-night-ink);
+  border: 1px solid var(--gk-night-edge);
+  box-shadow: 0 0 40px rgba(140, 110, 255, 0.35), 0 20px 45px rgba(0, 0, 0, 0.4);
+}
+.gk[data-night] .gk-stars {
+  color: #3d3878;
+}
+.gk[data-night] .gk-stars [data-on] {
+  color: var(--gk-gold);
+  text-shadow: 0 0 14px rgba(255, 210, 63, 0.7);
+}
+.gk[data-night] .gk-key {
+  background: #2a2552;
+  color: var(--gk-night-ink);
+}
+.gk[data-night] .gk-key[data-passed] {
+  background: #173b2c;
+  color: #c6f6d9;
+}
+
+/* Campaign map: the painting with the ten stops on its trail. */
+.gk-campaign[data-night] .gk-campaign__head {
+  background: linear-gradient(135deg, #2a1f66, #10284a);
+  border: 1px solid var(--gk-night-edge);
+}
+.gk-campaign[data-night] .gk-campaign__note {
+  color: var(--gk-night-soft);
+}
+.gk-trail[data-painted] {
+  container-type: inline-size;
+  padding: 14px;
+  border-radius: 20px;
+  background: #141a33 var(--gk-map-small) center / cover no-repeat;
+}
+.gk-trail[data-painted] .gk-stop {
+  background: rgba(20, 18, 48, 0.86);
+  color: var(--gk-night-ink);
+  border: 1px solid var(--gk-night-edge);
+  box-shadow: 0 6px 16px rgba(5, 4, 20, 0.45);
+}
+.gk-trail[data-painted] .gk-stop:disabled {
+  background: rgba(20, 18, 48, 0.82);
+  color: var(--gk-night-soft);
+}
+.gk-trail[data-painted] .gk-stop[data-next] {
+  box-shadow: 0 0 0 3px var(--gk-gold), 0 0 24px rgba(255, 210, 63, 0.55);
+}
+.gk-trail[data-painted] .gk-stop__number {
+  background: radial-gradient(circle at 35% 30%, #b9a6ff, #5b3cc4 60%, #2a1866);
+  box-shadow: 0 0 14px rgba(185, 166, 255, 0.7);
+}
+.gk-trail[data-painted] .gk-stop:disabled .gk-stop__number {
+  background: #3d3878;
+  box-shadow: none;
+}
+.gk-trail[data-painted] .gk-stop__stars {
+  color: #3d3878;
+}
+.gk-trail[data-painted] .gk-stop__stars [data-on] {
+  color: var(--gk-gold);
+}
+
+/* Wide enough: the painting itself, with a gem button per level on its trail and one card about the level. */
+.gk-world {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 20px;
+  background: #141a33 center / cover no-repeat;
+  border: 1px solid var(--gk-night-edge);
+  overflow: hidden;
+}
+.gk-world__route {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.gk-world__route polyline {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.gk-world__route-glow {
+  stroke: rgba(255, 210, 63, 0.18);
+  stroke-width: 10;
+}
+.gk-world__route-dots {
+  stroke: rgba(255, 228, 140, 0.9);
+  stroke-width: 4;
+  stroke-dasharray: 0 11;
+}
+.gk-world__stops {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gk-world__stops li {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  transform: translate(-50%, -22px);
+}
+.gk-gemstop {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d6c9ff, #6a46e0 55%, #2a1866);
+  color: #fff;
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 900;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 14px rgba(185, 166, 255, 0.75), 0 3px 6px rgba(5, 4, 20, 0.6);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.gk-gemstop:hover,
+.gk-gemstop:focus-visible {
+  transform: scale(1.12);
+}
+.gk-gemstop:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+.gk-gemstop[aria-pressed='true'] {
+  border-color: #fff;
+}
+.gk-gemstop[data-next] {
+  box-shadow: 0 0 0 3px var(--gk-gold), 0 0 22px 4px rgba(255, 210, 63, 0.75);
+}
+.gk-gemstop[data-locked] {
+  background: radial-gradient(circle at 35% 30%, #6d6890, #2c2850 60%, #17152e);
+  border-color: rgba(255, 255, 255, 0.3);
+  font-size: 0.85rem;
+  box-shadow: 0 3px 6px rgba(5, 4, 20, 0.6);
+  opacity: 0.85;
+}
+.gk-gemstop__pips {
+  display: flex;
+  gap: 3px;
+}
+.gk-gemstop__pips i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(20, 18, 48, 0.85);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+.gk-gemstop__pips i[data-on] {
+  background: var(--gk-gold);
+  box-shadow: 0 0 6px rgba(255, 210, 63, 0.9);
+}
+.gk-world__card {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: grid;
+  gap: 6px;
+  width: min(300px, 40%);
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(18, 16, 44, 0.9);
+  border: 1px solid var(--gk-night-edge);
+  color: var(--gk-night-ink);
+  box-shadow: 0 10px 30px rgba(5, 4, 20, 0.55);
+}
+.gk-world__card h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+.gk-world__card p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+.gk-world__level {
+  color: var(--gk-gold);
+  font-weight: 800;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.gk-world__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gk-world__stars {
+  color: #3d3878;
+  letter-spacing: 2px;
+}
+.gk-world__stars [data-on] {
+  color: var(--gk-gold);
+}
+.gk-world__lock {
+  color: var(--gk-night-soft);
+}
+.gk-campaign .gk-world__play {
+  justify-self: start;
+  min-height: 44px;
+  padding: 8px 20px;
+  font-size: 1.05rem;
+  white-space: nowrap;
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gk-gemstop {
+    transition: none;
+  }
+}
+
