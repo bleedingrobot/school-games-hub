@@ -5,7 +5,8 @@ import { WORLD_MAPS } from '../../../../shared/monsters/maps';
 import { MONSTER_BOOK } from '../../../../shared/monsters/monsterBook';
 import { AREAS } from '../../../../shared/monsters/world/areas';
 import { ITEM_ORDER } from '../../../../shared/monsters/world/rewards';
-import { allPaintedFiles, badgePic, itemPic, LOOKS, lookPic, monsterPic, personPic, sceneFor, scenePic, slug } from './painted';
+import { LOOKS } from '../../../../shared/monsters/world/start';
+import { allPaintedFiles, badgePic, itemPic, lookPic, monsterPic, personPic, sceneFor, scenePic, slug } from './painted';
 
 const DIR = join(__dirname, 'painted');
 const files = (group: string): string[] => {

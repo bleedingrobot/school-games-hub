@@ -36,7 +36,7 @@ import { BADGE_ORDER } from '../world/areas';
 import { ENCOUNTERS, wildLevels, wildSpecies } from '../world/encounters';
 import { isBlocked } from '../world/walking';
 import { addToBag, ITEM_ORDER, LOOT } from '../world/rewards';
-import { startTeam } from '../world/start';
+import { LOOKS, startTeam } from '../world/start';
 import type { GameMap, Thing, WorldState } from '../world/types';
 import { newWorld, refreshBook } from '../world/world';
 import { markQuestion, type QuestionReport } from './verify';
@@ -215,6 +215,7 @@ function worldShape(w: unknown): string | null {
   if (!world.seen.every(speciesKnown) || !world.owned.every(speciesKnown)) return 'book';
   if (!world.chests.every((c) => CHEST_IDS.has(c)) || new Set(world.chests).size !== world.chests.length) return 'chests';
   if (!world.paid.every((p) => PAYING_TRAINERS.has(p)) || new Set(world.paid).size !== world.paid.length) return 'paid';
+  if (world.look !== undefined && !LOOKS.includes(world.look)) return 'look';
   const here = MAPS[world.map];
   if (!world.beaten.every((b) => TRAINER_MAP.get(b) === here.id)) return 'beaten';
   // You can only be in an area you have opened, standing on a tile you can stand on.

@@ -8,6 +8,7 @@
  * picture when a screen shows it.
  */
 import type { ItemId } from '../../../../shared/monsters/engine';
+import { LOOKS } from '../../../../shared/monsters/world/start';
 
 const FILES = import.meta.glob('./painted/**/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
@@ -24,9 +25,10 @@ export const monsterPic = (species: string, shiny?: boolean, small?: boolean) =>
 /** Someone on a map, by the name the talk box shows. `small` is the head-and-shoulders copy for the talk box. */
 export const personPic = (name: string, small?: boolean) => sized('people', slug(name), small);
 
-/** The looks a pupil can pick: boy-01 … boy-12, girl-01 … girl-12. `small` is the copy for the picker. */
-export const LOOKS = (['boy', 'girl'] as const).flatMap((k) => Array.from({ length: 12 }, (_, i) => `${k}-${String(i + 1).padStart(2, '0')}`));
+/** A trainer look (LOOKS in shared/monsters/world/start.ts). `small` is the copy for the picker. */
 export const lookPic = (look: string, small?: boolean) => sized('looks', look, small);
+/** The picture for a game saved before there were looks. */
+export const DEFAULT_LOOK = LOOKS[0];
 
 /** Which landscape a map's battles are in: its own for the places, one per Topic Tower for both its rooms. */
 export const sceneFor = (map: string) => map.match(/^(tower-\d+)-/)?.[1] ?? map;

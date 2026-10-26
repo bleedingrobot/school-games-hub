@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { BattleSetup } from '../../../shared/monsters/engine';
@@ -7,11 +7,12 @@ import { makeMonster } from '../../../shared/monsters/rules';
 import { newWorld } from '../../../shared/monsters/world/world';
 import { BattleScreen } from './BattleScreen';
 import { DEFAULT_MONSTER_SETTINGS } from './settings';
+import { StartScreen } from './StartScreen';
 import { BagList } from './ui';
 import { MapMenu } from './world/MapMenu';
 import { WorldGame } from './world/WorldGame';
 
-// Pretend every person, place, badge and item has its picture (monsters keep their drawings), so these tests don't depend on which files have arrived.
+// Pretend every person, place, badge, item and look has its picture (monsters keep their drawings), so these tests don't depend on which files have arrived.
 vi.mock('./art/painted', async (actual) => {
   const real = await actual<typeof import('./art/painted')>();
   return {
@@ -21,6 +22,7 @@ vi.mock('./art/painted', async (actual) => {
     scenePic: (map: string) => ({ wide: `/scenes/${real.sceneFor(map)}.webp`, small: `/scenes/${real.sceneFor(map)}-800.webp` }),
     badgePic: (badge: string) => `/badges/${badge}.webp`,
     itemPic: (id: string) => `/items/${id}.webp`,
+    lookPic: (look: string, small?: boolean) => `/looks/${look}${small ? '-small' : ''}.webp`,
     preload: vi.fn(),
   };
 });
@@ -97,5 +99,50 @@ describe('painted pictures on the screens', () => {
     });
     await waitFor(() => expect(document.querySelector('.mw-talk__face')?.getAttribute('src')).toBe('/people/teacher-small.webp'));
     expect(document.querySelector('.mw-talk__face')!.getAttribute('alt')).toBe('');
+  });
+});
+
+describe('choosing a look', () => {
+  it('the start screen has the 24 looks as radio buttons the arrow keys move through, and starts with the one chosen', async () => {
+    const user = userEvent.setup();
+    const onStart = vi.fn();
+    render(<StartScreen onStart={onStart} />);
+    const group = screen.getByRole('group', { name: 'Choose your look' });
+    const radios = within(group).getAllByRole('radio');
+    expect(radios).toHaveLength(24);
+    expect(radios.some((r) => (r as HTMLInputElement).checked)).toBe(false);
+    await user.click(screen.getByRole('radio', { name: 'Girl 3' }));
+    expect(screen.getByRole('radio', { name: 'Girl 3' })).toBeChecked();
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('radio', { name: 'Girl 4' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Girl 4' })).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Start walking' }));
+    expect(onStart).toHaveBeenCalledWith(['water', 'fire'], expect.any(Array), 'girl-04');
+  });
+
+  it('starting without choosing is fine (no look)', async () => {
+    const user = userEvent.setup();
+    const onStart = vi.fn();
+    render(<StartScreen onStart={onStart} />);
+    await user.click(screen.getByRole('button', { name: 'Start walking' }));
+    expect(onStart.mock.calls[0][2]).toBeUndefined();
+  });
+
+  it('the Menu has "Change my look", which changes the look in the game', async () => {
+    const user = userEvent.setup();
+    const world = newWorld({ maps: WORLD_MAPS }, [makeMonster('plusplash-1', 8)], 3);
+    const onGo = vi.fn();
+    const onChange = vi.fn();
+    const menu = (page: 'main' | 'look', w = world) => (
+      <MapMenu page={page} from="menu" world={w} settings={{ ...DEFAULT_MONSTER_SETTINGS, dpad: false }} onSettingsChange={() => {}} onGo={onGo} onClose={() => {}} onChange={onChange} />
+    );
+    const { rerender } = render(menu('main'));
+    await user.click(screen.getByRole('button', { name: /^Change my look/ }));
+    expect(onGo).toHaveBeenCalledWith('look');
+    rerender(menu('look', { ...world, look: 'boy-02' }));
+    expect(screen.getByRole('radio', { name: 'Boy 2' })).toBeChecked();
+    await user.click(screen.getByRole('radio', { name: 'Boy 7' }));
+    expect(onChange).toHaveBeenCalledWith({ ...world, look: 'boy-07' });
+    expect(screen.getByRole('status')).toHaveTextContent('Your look is now Boy 7.');
   });
 });

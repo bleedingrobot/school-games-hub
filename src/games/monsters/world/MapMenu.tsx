@@ -1,6 +1,6 @@
 /**
  * The menu on the map (Menu button, or M / Escape): Team, Bag, Monster book, Badges, Settings,
- * and the Monster box (also opened by the box in Harbour Town). All normal HTML in the same
+ * Change my look (once the painted looks are there), and the Monster box (also opened by the box in Harbour Town). All normal HTML in the same
  * Sheet look as the battle screens; walking is locked while one is open. Every change goes
  * through the pure rules in shared/monsters/world/menu.ts.
  */
@@ -15,12 +15,13 @@ import { TYPE_LABEL, TYPE_TOPIC } from '../../../../shared/monsters/types';
 import { badgePic } from '../art/painted';
 import { BoxScreen } from '../BoxScreen';
 import { HowToPlayBody } from '../HowToPlay';
+import { hasLooks, LookPicker, lookName } from '../LookPicker';
 import { MonsterBookScreen } from '../MonsterBookScreen';
 import { ITEM_LABEL } from '../text';
 import { BagList, Sheet, TeamList } from '../ui';
 import type { WorldSettings } from './settings';
 
-export type MenuPage = 'main' | 'team' | 'bag' | 'book' | 'badges' | 'settings' | 'box' | 'howto';
+export type MenuPage = 'main' | 'team' | 'bag' | 'book' | 'badges' | 'settings' | 'box' | 'howto' | 'look';
 
 export interface MapMenuProps {
   page: MenuPage;
@@ -34,7 +35,7 @@ export interface MapMenuProps {
   onChange: (next: WorldState) => void;
 }
 
-const TITLES: Record<MenuPage, string> = { main: 'Menu', team: 'Team', bag: 'Bag', book: 'Monster book', badges: 'Badges', settings: 'Settings', box: 'Monster box', howto: 'How to play' };
+const TITLES: Record<MenuPage, string> = { main: 'Menu', team: 'Team', bag: 'Bag', book: 'Monster book', badges: 'Badges', settings: 'Settings', box: 'Monster box', howto: 'How to play', look: 'Change my look' };
 const topicLabel = (id: string) => TOPICS.find((t) => t.id === id)?.label ?? id;
 
 export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, onClose, onChange }: MapMenuProps) {
@@ -74,11 +75,12 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
       <Sheet title={TITLES[page]} reading={page === 'howto' || page === 'badges'} onBack={back} backLabel={page === 'main' || from === 'object' ? 'Close' : 'Back'}>
         {page === 'main' && (
           <nav aria-label="Menu" className="mm-main">
-            {(['team', 'bag', 'book', 'badges', 'settings', 'howto'] as const).map((p) => (
+            {(['team', 'bag', 'book', 'badges', 'settings', 'howto', ...(hasLooks() ? ['look' as const] : [])] as const).map((p) => (
               <button key={p} type="button" className={`mb-btn mm-main__btn mm-main__btn--${p}`} onClick={() => onGo(p)}>
                 {TITLES[p]}
                 {p === 'book' && <small>{bookCounts(world).owned} owned · {bookCounts(world).seen} met</small>}
                 {p === 'badges' && <small>{world.badges.length} of {AREAS.length}</small>}
+                {p === 'look' && <small>{world.look ? lookName(world.look) : 'Not chosen yet'}</small>}
                 {p === 'team' && <small>{world.team.length} of 6{world.box.length ? `, ${world.box.length} in the box` : ''}</small>}
               </button>
             ))}
@@ -90,6 +92,15 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
         {page === 'book' && <MonsterBookScreen seen={world.seen} owned={world.owned} />}
         {page === 'badges' && <BadgesPage world={world} />}
         {page === 'howto' && <HowToPlayBody />}
+        {page === 'look' && (
+          <LookPicker
+            value={world.look}
+            onChange={(look) => {
+              onChange({ ...world, look });
+              setMessage(`Your look is now ${lookName(look)}.`);
+            }}
+          />
+        )}
         {page === 'box' && (
           <BoxScreen
             team={world.team}

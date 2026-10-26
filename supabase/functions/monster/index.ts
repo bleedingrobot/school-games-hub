@@ -93,6 +93,14 @@ const MIX = {
 	review: .3,
 	stretch: .1
 };
+/**
+* The longest an answer is kept as taking. A student who looks away for ten minutes mid-question has not spent ten minutes on
+* the sum: kept as it is, one such answer would swamp the average time teachers see for that fact. Longer answers still count,
+* as this long (right or wrong is untouched, and anything this slow is far from quick).
+*/
+const LONGEST_ANSWER_MS = 12e4;
+/** An answer's time as it is kept: whole milliseconds, 0 to `LONGEST_ANSWER_MS`. */
+const keptMs = (ms) => Math.min(LONGEST_ANSWER_MS, Math.max(0, Math.round(ms)));
 /** Answering correctly within this many milliseconds counts as quick. */
 const QUICK_MS = 5e3;
 /** Mastery boxes 0–4 (Leitner). How likely each box is to be picked: lower boxes come up more. */
@@ -23835,6 +23843,8 @@ function wildLevels(area, far) {
 }
 /** The species a wild list entry gives at a level: a family grows with the level, a fixed species stays. */
 const wildSpecies = (entry, level) => FAMILIES[entry] ? formAt(entry, level) : entry;
+/** The looks a pupil can choose for their trainer (James's painted pictures boy-01 … girl-12). A save may have one of these, or none. */
+const LOOKS = ["boy", "girl"].flatMap((k) => Array.from({ length: 12 }, (_, i) => `${k}-${String(i + 1).padStart(2, "0")}`));
 function starterFor(type, nth) {
 	const family = Object.entries(FAMILIES).filter(([, f]) => f.type === type)[nth]?.[0];
 	if (!family) throw new Error(`There is no family number ${nth} for type ${type}`);
@@ -23948,7 +23958,8 @@ const nzDayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckla
 /** The New Zealand date of a moment, as YYYY-MM-DD. */
 const nzDay = (at) => nzDayFormat.format(new Date(at));
 /** The stats after one answer. Doesn't change the stats it's given. */
-function afterAnswer(stats, correct, ms, at, quickMs = QUICK_MS) {
+function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
+	const ms = keptMs(rawMs);
 	const attempts = stats.attempts + 1;
 	const next = {
 		...stats,
@@ -26264,6 +26275,7 @@ function worldShape(w) {
 	if (!world.seen.every(speciesKnown) || !world.owned.every(speciesKnown)) return "book";
 	if (!world.chests.every((c) => CHEST_IDS.has(c)) || new Set(world.chests).size !== world.chests.length) return "chests";
 	if (!world.paid.every((p) => PAYING_TRAINERS.has(p)) || new Set(world.paid).size !== world.paid.length) return "paid";
+	if (world.look !== void 0 && !LOOKS.includes(world.look)) return "look";
 	const here = MAPS[world.map];
 	if (!world.beaten.every((b) => TRAINER_MAP.get(b) === here.id)) return "beaten";
 	if (here.area > maxAreaFor(world.badges)) return "area-locked";
