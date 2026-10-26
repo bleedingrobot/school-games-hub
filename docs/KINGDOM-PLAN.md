@@ -112,13 +112,13 @@ On/off switch per class (`TeacherKingdom.tsx`, copied from the Archery panel). T
 
 | Stage | What | Status |
 |---|---|---|
-| K.1 | Rules engine (`shared/kingdom/`: config, engine, advisers, rating, points), tests, simulator `scripts/kingdom-sim.mjs` | |
-| K.2 | Art: prompts, paint 2–3 tries of each, pick, safety check, tidy to WebP, CREDITS | |
-| K.3 | Screens (`src/games/kingdom/`), trial backend running the same server rules in the browser, preview `preview/kingdom/` | |
-| K.4 | Server: migration, `kingdom` function, `src/data/kingdom.ts`, handler tests, database tests on a scratch copy | |
-| K.5 | Hub: code switch (off), teacher switch, GameDefinition, teacher panel, How to play, accessibility test, registry line | |
-| K.6 | Checks: browser screenshots at 1366 × 640 and 844 × 390, typecheck, tests, build; private preview Artifact for James | |
-| K.7 | Go-live prompt `docs/prompts/kingdom-golive.md`. **Then stop: going live is James's call, one step at a time.** | |
+| K.1 | Rules engine (`shared/kingdom/`: config, engine, advisers, rating, points), tests, simulator `scripts/kingdom-sim.mjs` | Done |
+| K.2 | Art: prompts, paint 2–3 tries of each, pick, safety check, tidy to WebP, CREDITS | Done |
+| K.3 | Screens (`src/games/kingdom/`), trial backend running the same server rules in the browser, preview `preview/kingdom/` | Done |
+| K.4 | Server: migration, `kingdom` function, `src/data/kingdom.ts`, handler tests, database tests on a scratch copy | Done (not live) |
+| K.5 | Hub: code switch (off), teacher switch, GameDefinition, teacher panel, How to play, accessibility test, registry line | Done |
+| K.6 | Checks: browser screenshots at 1366 × 640 and 844 × 390, typecheck, tests, build; private preview Artifact for James | Done |
+| K.7 | Go-live prompt `docs/prompts/kingdom-golive.md`. **Then stop: going live is James's call, one step at a time.** | Prompt written; waiting for James |
 
 ## 9. Decisions made for James (easy to change)
 
@@ -151,4 +151,20 @@ On/off switch per class (`TeacherKingdom.tsx`, copied from the Archery panel). T
 ### K.4 results (server) so far
 
 - Migration `20261026000100_kingdom.sql` (one table, four server-only functions, switch, hooks, 6 achievements), function `kingdom` built (`npm run build:functions -- kingdom`), database test `supabase/tests/database/kingdom.test.sql` (27 checks) written; **not yet run on a scratch copy** (the local database was stopped and the machine is short of memory).
+- Later the same night: run on a scratch copy (`npx supabase db start` only, then `scripts/scratch-db.sh kingdom`): `kingdom.test.sql` 27/27. Every other database test file passes too, apart from the two that fail on any scratch copy (`clans_fights` midnight, `maths_focus_results` day counting). `security.test.sql` (signed-in list gains `teacher_set_kingdom`) and `progress_access.test.sql` (achievements 93 → 99) updated, as every new game does.
+
+### K.2 results (art), 27 Oct 2026
+
+- 34 pictures painted on James's ComfyUI in the Dragon Maths gritty style (same opening sentence, same model and sizes, made from a Dragon Maths picture's own settings), 2–5 tries each, picks in `docs/kingdom-art/picks.json`, prompts in `docs/kingdom-art/PROMPTS.md`. 3.2 MB in the game.
+- Safety check of every pick (ages 8–11): all fully clothed, collars closed, no writing, nothing scary, no lookalikes. Repainted: the poor harvest and the leaving family (modern streets and a skyline crept in), the builder, reeve and trader (open shirts), ruler girl 2 (barcode-like marks on her map; now a telescope). Rejected: a map with fake handwriting, a cross-shaped candlestick, a grave-like post, a palm tree.
+- Known: the model always drew the leaving family walking *towards* a gate; the card's words say they leave. Could be repainted later.
+- Map label spots in `docs/kingdom-art/map-spots.json`, used by `MAP_SPOTS` in `src/games/kingdom/art.ts`. Raw tries in `~/dragon-art-inbox/kingdom-art/` (not in the repo).
+
+### K.3, K.5, K.6 results (screens, hub, checks), 27 Oct 2026
+
+- Screens: start (pick a ruler), steward's report, council (each adviser in the hall; QuestionModal; "Not this year" skips), Market → Granary → Fields → Check (the valley map with labels), the year's painted cards (harvest, rats, newcomers, hungry families, sickness, the people's warning), the end (rating, ten-year summary, points, Rule again). How to play reads `config.ts`.
+- Hub: `kingdomOn()` (code switch, **off**), `useKingdomEnabled`, the definition (`complex-maths`), `TeacherKingdom.tsx`, registry line behind the switch, `kingdom:sim` and `kingdom:preview` scripts. `kingdom` is **not yet** in `FUNCTIONS` in `scripts/build-functions.mjs` (the merge step).
+- Tests: 8 in all (3 rules, 3 server, 2 screens: a play-through smoke test and an accessibility test reading `kingdom.css`). Type check clean; `shared/kingdom`, `src/games/kingdom`, `supabase/functions/kingdom`, `scripts`, `src/pages` and `App.test.tsx` all pass; `npm run build` clean. `test:all` in one go wasn't run (the machine runs short of memory; folder by folder instead).
+- Browser: played whole reigns in the preview at 1366 × 640, 844 × 390 and 390 × 844 with no page errors.
+- **Preview for James (private Artifact): https://claude.ai/artifact/Cvvd8FmJS7jbHXG7Lzv7ta** (saves in that browser only, never calls the school's server).
 
