@@ -35,6 +35,8 @@ export interface YearReport {
   ratsAte: number;
   /** The boons the council won last year, as they were used. */
   boons: Adviser[];
+  /** Too many went hungry last year, for the first time: the people warned the ruler (next time the reign ends). */
+  warning: boolean;
 }
 
 export interface City {
@@ -50,7 +52,9 @@ export interface City {
   hungryPct: number[];
   /** People who went hungry and left, over the whole reign. */
   hungryTotal: number;
-  /** 'ended': more than 45% went hungry in a year (the people asked for a new ruler), or the city emptied. */
+  /** Have the people warned the ruler already? */
+  warned: boolean;
+  /** 'ended': more than 45% went hungry in a year for the second time (the people asked for a new ruler), or the city emptied. */
   status: 'playing' | 'done' | 'ended';
 }
 
@@ -103,10 +107,11 @@ export function startCity(random: Random): City {
     price: rollPrice(random),
     report: {
       year: 1, hungry: 0, newcomers: START.newcomers, sickness: false, sickLeft: 0,
-      harvestPerAcre: START.harvestPerAcre, harvested: START.harvestPerAcre * START.land, ratsAte: START.ratsAte, boons: [],
+      harvestPerAcre: START.harvestPerAcre, harvested: START.harvestPerAcre * START.land, ratsAte: START.ratsAte, boons: [], warning: false,
     },
     hungryPct: [],
     hungryTotal: 0,
+    warned: false,
     status: 'playing',
   };
 }
@@ -233,15 +238,18 @@ export function turnYear(city: City, d: Decisions, boons: readonly Adviser[], ra
   const hungry = p.hungry;
   const hungryPct = [...city.hungryPct, Math.round((hungry * 100) / city.people)];
   const hungryTotal = city.hungryTotal + hungry;
+  // The first time too many go hungry the people warn the ruler; the second time they ask for a new one.
   const tooHungry = hungry > HUNGRY_LIMIT * city.people;
+  const warning = tooHungry && !city.warned;
+  const asked = tooHungry && city.warned;
 
   let people = city.people - hungry + newcomers;
-  const sickness = !tooHungry && sicknessRoll < SICKNESS_CHANCE && !boons.includes('healer');
+  const sickness = !asked && sicknessRoll < SICKNESS_CHANCE && !boons.includes('healer');
   const sickLeft = sickness ? people - Math.floor(people / 2) : 0;
   people -= sickLeft;
 
-  const report: YearReport = { year: city.year + 1, hungry, newcomers, sickness, sickLeft, harvestPerAcre, harvested, ratsAte, boons: used };
-  const status: City['status'] = tooHungry || people <= 0 ? 'ended' : city.year >= YEARS ? 'done' : 'playing';
+  const report: YearReport = { year: city.year + 1, hungry, newcomers, sickness, sickLeft, harvestPerAcre, harvested, ratsAte, boons: used, warning };
+  const status: City['status'] = asked || people <= 0 ? 'ended' : city.year >= YEARS ? 'done' : 'playing';
   return {
     year: status === 'playing' ? city.year + 1 : city.year,
     people: Math.max(0, people),
@@ -251,6 +259,7 @@ export function turnYear(city: City, d: Decisions, boons: readonly Adviser[], ra
     report,
     hungryPct,
     hungryTotal,
+    warned: city.warned || warning,
     status,
   };
 }
@@ -260,15 +269,11 @@ export function averageHungry(city: City): number {
   return city.hungryPct.length ? city.hungryPct.reduce((a, b) => a + b, 0) / city.hungryPct.length : 0;
 }
 
-/** Acres for each person now. */
-export const acresEach = (city: City) => (city.people > 0 ? city.land / city.people : 0);
-
 /** How the reign is remembered. A reign that ended early is always Hard times. */
 export function ratingOf(city: City): RatingId {
   if (city.status === 'ended') return HARD_TIMES.id;
   const hungry = averageHungry(city);
-  const acres = acresEach(city);
-  return RATINGS.find((r) => hungry <= r.hungryAtMost && acres >= r.acresAtLeast)?.id ?? HARD_TIMES.id;
+  return RATINGS.find((r) => hungry <= r.hungryAtMost && city.people >= r.peopleAtLeast)?.id ?? HARD_TIMES.id;
 }
 
 export const ratingName = (id: RatingId): string => RATINGS.find((r) => r.id === id)?.name ?? HARD_TIMES.name;

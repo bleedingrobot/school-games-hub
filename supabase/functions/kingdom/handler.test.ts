@@ -90,10 +90,13 @@ it('turns each year once, with only the boons the server marked, and gives point
   expect(log.points).toEqual([{ player: 'pupil-a', points: reign.points, once: `kingdom:${reign.id}` }]);
   expect(services.data.reigns[0]).toMatchObject({ status: 'done', turned: YEARS });
 
-  // Only the first few reigns a day give points (early endings count): starve the city to end each one quickly.
+  // Only the first few reigns a day give points (early endings count): starve the city twice to end each one quickly.
   for (let i = 1; i <= POINT_REIGNS_PER_DAY; i++) {
     const r = (await send('pupil-a', { action: 'start', look: 'ruler-boy-2' })).body.reign;
-    const end = (await send('pupil-a', { action: 'decide', reign: r.id, year: 1, decisions: { buy: 0, sell: 0, feed: 0, plant: 0 } })).body.reign;
+    const starve = { buy: 0, sell: 0, feed: 0, plant: 0 };
+    const warned = (await send('pupil-a', { action: 'decide', reign: r.id, year: 1, decisions: starve })).body.reign;
+    expect(warned.city.report.warning).toBe(true);
+    const end = (await send('pupil-a', { action: 'decide', reign: r.id, year: 2, decisions: starve })).body.reign;
     expect(end).toMatchObject({ city: { status: 'ended' }, rating: 'hard', points: i < POINT_REIGNS_PER_DAY ? 1 : 0 });
   }
 });

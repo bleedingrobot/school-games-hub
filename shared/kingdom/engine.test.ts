@@ -29,9 +29,12 @@ it("turns a year by Hamurabi's rules, with the boons only the council won", () =
   // The same random numbers always give the same year (the server turns years again to check them).
   expect(turnYear(city(), d, ['reeve'], seededRandom('a'))).toEqual(turnYear(city(), d, ['reeve'], seededRandom('a')));
 
-  // More than 45% hungry ends the reign early; 45% doesn't.
-  expect(turnYear(city(), { buy: 0, sell: 0, feed: 20 * 54, plant: 0 }, [], seq(roll(1), roll(1), roll(1), 0.9)).status).toBe('ended');
-  expect(turnYear(city(), { buy: 0, sell: 0, feed: 20 * 55, plant: 0 }, [], seq(roll(1), roll(1), roll(1), 0.9)).status).toBe('playing');
+  // More than 45% hungry brings a warning the first time and ends the reign the second; 45% doesn't.
+  const starve = { buy: 0, sell: 0, feed: 20 * 54, plant: 0 };
+  const warned = turnYear(city(), starve, [], seq(roll(1), roll(1), roll(1), 0.9));
+  expect(warned).toMatchObject({ status: 'playing', warned: true, report: { warning: true } });
+  expect(turnYear({ ...warned, people: 100, grain: 2800 }, starve, [], seq(roll(1), roll(1), roll(1), 0.9)).status).toBe('ended');
+  expect(turnYear(city({ warned: true }), { ...starve, feed: 20 * 55 }, [], seq(roll(1), roll(1), roll(1), 0.9)).status).toBe('playing');
 });
 
 it('refuses decisions the city cannot carry out', () => {
@@ -61,9 +64,10 @@ it('lasts ten years, then rates the reign and gives points', () => {
   }
   expect(c).toMatchObject({ status: 'done', year: YEARS, report: { year: YEARS + 1 } });
 
-  const done = (hungryPct: number[], land: number): City => city({ status: 'done', hungryPct, people: 100, land });
-  expect([done([0, 3], 1000), done([0, 3], 999), done([11], 900), done([33], 700), done([34], 700)].map(ratingOf))
-    .toEqual(['legendary', 'good', 'fair', 'fair', 'hard']);
+  // Rated by the people fed and the city's size (not Hamurabi's acres a person: see RATINGS in config.ts).
+  const done = (hungryPct: number[], people: number): City => city({ status: 'done', hungryPct, people });
+  expect([done([0, 3], 150), done([0, 3], 149), done([11], 150), done([33], 60), done([34], 200), done([0], 59)].map(ratingOf))
+    .toEqual(['legendary', 'good', 'fair', 'fair', 'hard', 'hard']);
   expect(ratingOf(city({ status: 'ended' }))).toBe('hard');
-  expect([city(), city({ status: 'ended' }), done([20], 800), done([5], 900), done([0], 1000)].map(pointsFor)).toEqual([0, 1, 3, 4, 5]);
+  expect([city(), city({ status: 'ended' }), done([20], 80), done([5], 100), done([0], 150)].map(pointsFor)).toEqual([0, 1, 3, 4, 5]);
 });

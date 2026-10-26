@@ -26,11 +26,11 @@ Every number lives in `shared/kingdom/config.ts`, so How to play and the simulat
 | Seed | 1 bushel plants 2 acres | Same |
 | Workers | 1 person can farm 10 acres | Same |
 | Harvest | 1–5 bushels an acre | Same, +1 with the reeve's boon |
-| Rats | 40% of years they eat a fifth to half of the store (shown in the original as 1/C of the store, C = 1–5 even) | Same, none with the rat catcher's boon |
+| Rats | 40% of years they eat a half or a quarter of the store (1/C of the store when a roll C of 1–5 is even) | Same, none with the rat catcher's boon |
 | Newcomers | `int(C × (20 × land + store) / people / 100 + 1)`, C = 1–5 | Same, ×1.5 with the builder's boon |
 | Plague | 15% of years, half the people | **"Sickness":** same chance; half the people **leave to stay with family until it passes** (they don't come back in the count). None with the healer's boon. |
-| Starving | People not fed die. Over 45% in one year: impeached | People not fed **go hungry and leave the city**. Over 45% in one year: **the people ask for a new ruler**, and the reign ends early (kindly worded). |
-| End rating | Uses the average % starved a year (P) and acres a person (L): fantastic (P ≤ 3, L ≥ 10), not too bad (P ≤ 10, L ≥ 9), heavy-handed (P ≤ 33, L ≥ 7), impeached (else) | **Legendary ruler**, **Good ruler**, **Fair ruler**, **Hard times**, with the same lines, kind words and a painted ending each |
+| Starving | People not fed die. Over 45% in one year: impeached | People not fed **go hungry and leave the city**. Over 45% in one year: the first time **the people warn the ruler**; the second time **they ask for a new ruler**, and the reign ends early (kindly worded). |
+| End rating | Uses the average % starved a year (P) and acres a person (L): fantastic (P ≤ 3, L ≥ 10), not too bad (P ≤ 10, L ≥ 9), heavy-handed (P ≤ 33, L ≥ 7), impeached (else) | Same P thresholds, but the second test is **people at the end** (Legendary 150+, Good 100+, Fair 60+), with kind words and a painted ending each. Changed because the simulator showed acres a person punishing the council's boons (section 10). |
 
 Kid-friendly words throughout: nobody dies on screen; people "go hungry and leave", "leave until the sickness passes", "come to live here". The original's rude end lines are gone.
 
@@ -132,4 +132,23 @@ On/off switch per class (`TeacherKingdom.tsx`, copied from the Archery panel). T
 
 ## 10. Stage results
 
-*(filled in after each stage)*
+### K.1 results (rules engine), 26–27 Oct 2026
+
+- `shared/kingdom/`: `config.ts` (every number), `engine.ts` (start, council, prices, plan sums, checks, turning a year, rating, points), `reign.ts` (looks, seeds, councils), `server.ts` (the four actions, shared by the function and the preview), `memoryServices.ts` (the database jobs in memory, for the preview and tests).
+- **Test budget** (`docs/TESTING.md` on branch `test-trim`, PR #30, not yet merged: a new game gets at most 8 tests): 3 rule tests, 3 server tests; 2 left for the screens.
+- **Simulator** `scripts/kingdom-sim.mjs` (2,000 reigns per line; three pretend rulers × council right 0/50/80/100%). Two findings changed the rules:
+  1. **Hamurabi's rating (acres a person) made right answers count against you**: the careful ruler was Legendary 29% of the time with no right answers and 10% with all right, because the healer's and builder's boons grow the city. Now rated by people at the end: Legendary rises from 7% (no right answers) to 42% (all right). Maths clearly helps.
+  2. **Early endings**: a ruler who feeds everyone and plants every last bushel (nothing kept in store) ended early in about 70% of reigns. Rats eating less barely helped; a **first warning** before the reign ends helped a little (to 47–68%), and the careful ruler never ends early. The rest is Hamurabi's real lesson (keep a reserve), so the steward says so on the planting step. **For James:** if pupils find it too hard, the next lever is a smaller hungry limit penalty or a starting reserve.
+- Final simulator table (Legendary / Good / Fair / Hard / ended early):
+  | Ruler | Right | Leg. | Good | Fair | Hard | Early |
+  |---|---|---|---|---|---|---|
+  | careful | 0% | 7% | 29% | 44% | 20% | 0% |
+  | careful | 100% | 42% | 35% | 20% | 3% | 0% |
+  | simple (no reserve) | 0% | 2% | 12% | 11% | 75% | 68% |
+  | simple (no reserve) | 100% | 28% | 17% | 6% | 49% | 47% |
+  | thrifty (feeds 80%) | 100% | 0% | 0% | 81% | 19% | 4% |
+
+### K.4 results (server) so far
+
+- Migration `20261026000100_kingdom.sql` (one table, four server-only functions, switch, hooks, 6 achievements), function `kingdom` built (`npm run build:functions -- kingdom`), database test `supabase/tests/database/kingdom.test.sql` (27 checks) written; **not yet run on a scratch copy** (the local database was stopped and the machine is short of memory).
+

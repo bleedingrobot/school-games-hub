@@ -6648,32 +6648,34 @@ const START = {
 	harvestPerAcre: 3,
 	ratsAte: 200
 };
-/** More than this share of the people going hungry in one year ends the reign. */
+/** More than this share of the people going hungry in one year brings a warning; the second time it ends the reign. */
 const HUNGRY_LIMIT = .45;
 /** The builder's boon: newcomers are multiplied by this. */
 const BUILD_BOON = 1.5;
 /**
-* The end-of-reign rating, from the average share of people who went hungry each year (as a percent) and the acres
-* each person has at the end. Hamurabi's own thresholds. The first rating whose two tests both pass is given.
+* The end-of-reign rating, from the average share of people who went hungry each year (as a percent, Hamurabi's own
+* thresholds) and the people in the city at the end. Hamurabi used acres a person instead, but then every council boon
+* that grows the city (fewer leave to sickness, more newcomers) made the rating worse: the simulator showed more right
+* answers giving fewer Legendary reigns. The first rating whose two tests both pass is given.
 */
 const RATINGS = [
 	{
 		id: "legendary",
 		name: "Legendary ruler",
 		hungryAtMost: 3,
-		acresAtLeast: 10
+		peopleAtLeast: 150
 	},
 	{
 		id: "good",
 		name: "Good ruler",
 		hungryAtMost: 10,
-		acresAtLeast: 9
+		peopleAtLeast: 100
 	},
 	{
 		id: "fair",
 		name: "Fair ruler",
 		hungryAtMost: 33,
-		acresAtLeast: 7
+		peopleAtLeast: 60
 	}
 ];
 const HARD_TIMES = {
@@ -6738,10 +6740,12 @@ function startCity(random) {
 			harvestPerAcre: START.harvestPerAcre,
 			harvested: START.harvestPerAcre * START.land,
 			ratsAte: START.ratsAte,
-			boons: []
+			boons: [],
+			warning: false
 		},
 		hungryPct: [],
 		hungryTotal: 0,
+		warned: false,
 		status: "playing"
 	};
 }
@@ -6844,8 +6848,10 @@ function turnYear(city, d, boons, random) {
 	const hungryPct = [...city.hungryPct, Math.round(hungry * 100 / city.people)];
 	const hungryTotal = city.hungryTotal + hungry;
 	const tooHungry = hungry > HUNGRY_LIMIT * city.people;
+	const warning = tooHungry && !city.warned;
+	const asked = tooHungry && city.warned;
 	let people = city.people - hungry + newcomers;
-	const sickness = !tooHungry && sicknessRoll < .15 && !boons.includes("healer");
+	const sickness = !asked && sicknessRoll < .15 && !boons.includes("healer");
 	const sickLeft = sickness ? people - Math.floor(people / 2) : 0;
 	people -= sickLeft;
 	const report = {
@@ -6857,9 +6863,10 @@ function turnYear(city, d, boons, random) {
 		harvestPerAcre,
 		harvested,
 		ratsAte,
-		boons: used
+		boons: used,
+		warning
 	};
-	const status = tooHungry || people <= 0 ? "ended" : city.year >= 10 ? "done" : "playing";
+	const status = asked || people <= 0 ? "ended" : city.year >= 10 ? "done" : "playing";
 	return {
 		year: status === "playing" ? city.year + 1 : city.year,
 		people: Math.max(0, people),
@@ -6869,6 +6876,7 @@ function turnYear(city, d, boons, random) {
 		report,
 		hungryPct,
 		hungryTotal,
+		warned: city.warned || warning,
 		status
 	};
 }
@@ -6876,14 +6884,11 @@ function turnYear(city, d, boons, random) {
 function averageHungry(city) {
 	return city.hungryPct.length ? city.hungryPct.reduce((a, b) => a + b, 0) / city.hungryPct.length : 0;
 }
-/** Acres for each person now. */
-const acresEach = (city) => city.people > 0 ? city.land / city.people : 0;
 /** How the reign is remembered. A reign that ended early is always Hard times. */
 function ratingOf(city) {
 	if (city.status === "ended") return HARD_TIMES.id;
 	const hungry = averageHungry(city);
-	const acres = acresEach(city);
-	return RATINGS.find((r) => hungry <= r.hungryAtMost && acres >= r.acresAtLeast)?.id ?? HARD_TIMES.id;
+	return RATINGS.find((r) => hungry <= r.hungryAtMost && city.people >= r.peopleAtLeast)?.id ?? HARD_TIMES.id;
 }
 /** Points for a reign that is over (0 while it's still being played). */
 function pointsFor(city) {

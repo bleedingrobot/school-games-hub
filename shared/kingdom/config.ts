@@ -23,7 +23,7 @@ export const PRICE_SPREAD = 10;
 export const HARVEST_MOST = 5;
 /** Chance of sickness in a year. Half the people leave until it passes. */
 export const SICKNESS_CHANCE = 0.15;
-/** More than this share of the people going hungry in one year ends the reign. */
+/** More than this share of the people going hungry in one year brings a warning; the second time it ends the reign. */
 export const HUNGRY_LIMIT = 0.45;
 
 /** Council questions a year, each asked by a different adviser. */
@@ -39,13 +39,15 @@ export const BUILD_BOON = 1.5;
 export const MOST_TYPED = 1_000_000;
 
 /**
- * The end-of-reign rating, from the average share of people who went hungry each year (as a percent) and the acres
- * each person has at the end. Hamurabi's own thresholds. The first rating whose two tests both pass is given.
+ * The end-of-reign rating, from the average share of people who went hungry each year (as a percent, Hamurabi's own
+ * thresholds) and the people in the city at the end. Hamurabi used acres a person instead, but then every council boon
+ * that grows the city (fewer leave to sickness, more newcomers) made the rating worse: the simulator showed more right
+ * answers giving fewer Legendary reigns. The first rating whose two tests both pass is given.
  */
 export const RATINGS = [
-  { id: 'legendary', name: 'Legendary ruler', hungryAtMost: 3, acresAtLeast: 10 },
-  { id: 'good', name: 'Good ruler', hungryAtMost: 10, acresAtLeast: 9 },
-  { id: 'fair', name: 'Fair ruler', hungryAtMost: 33, acresAtLeast: 7 },
+  { id: 'legendary', name: 'Legendary ruler', hungryAtMost: 3, peopleAtLeast: 150 },
+  { id: 'good', name: 'Good ruler', hungryAtMost: 10, peopleAtLeast: 100 },
+  { id: 'fair', name: 'Fair ruler', hungryAtMost: 33, peopleAtLeast: 60 },
 ] as const;
 export const HARD_TIMES = { id: 'hard', name: 'Hard times' } as const;
 
