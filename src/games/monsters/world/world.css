@@ -50,6 +50,7 @@
 .mw-talk__text { flex: 1; font-size: 1.05rem; line-height: 1.35; font-weight: 600; }
 .mw-talk__text:empty { flex: 0; }
 .mw-talk__who { font-weight: 900; }
+.mw-talk__face { flex: none; width: 64px; height: 64px; margin: -4px 0; border: 3px solid var(--mw-ink); border-radius: 50%; background: #e0f2fe; object-fit: cover; object-position: top; }
 .mw-talk__hint { flex: 1; margin: 0; color: #475569; font-size: 0.9rem; }
 .mw-talk__next { flex: none; }
 .mw-hint-touch { display: none; }
@@ -77,6 +78,7 @@
   .mw-dpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); }
   .mw-talk { min-height: 60px; padding: 6px 12px; }
   .mw-talk__text { font-size: 0.95rem; }
+  .mw-talk__face { width: 48px; height: 48px; }
 }
 
 /* ---------- The map menu: pages inside the Sheet look from the battle screens ---------- */
@@ -91,6 +93,7 @@
 .mm-main__btn--badges { background: #fbcfe8; }
 .mm-main__btn--settings { background: #e2e8f0; }
 .mm-main__btn--howto { background: #ddd6fe; }
+.mm-main__btn--look { grid-column: 1 / -1; background: #fed7aa; }
 .mm-main__go { grid-column: 1 / -1; justify-self: center; min-width: 260px; }
 .mm-help { margin: 0 0 8px; font-weight: 600; }
 .mm-msg { margin: 8px 0 0; font-weight: 700; color: #1d4ed8; }
@@ -113,6 +116,8 @@
 .mm-badge.is-earned .mm-badge__medal--ice { background: #0891b2; }
 .mm-badge.is-earned .mm-badge__medal--spark { background: #ca8a04; }
 .mm-badge.is-earned .mm-badge__medal--stone { background: #78716c; }
+.mm-badge__pic { flex: none; width: 88px; height: 88px; object-fit: contain; }
+.mm-badge:not(.is-earned) .mm-badge__pic { filter: grayscale(1); opacity: 0.45; }
 .mm-badge__text { display: grid; }
 .mm-badge__text small { color: var(--mb-soft); font-weight: 600; font-size: 0.8rem; }
 
@@ -154,6 +159,7 @@
   .mm-badges { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .mm-badge { padding: 4px 10px; }
   .mm-badge__medal { width: 34px; height: 34px; }
+  .mm-badge__pic { width: 52px; height: 52px; }
 }
 
 /* How to play (in the Menu, and on the new-game screen). */

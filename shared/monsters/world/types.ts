@@ -145,4 +145,6 @@ export interface WorldState {
   chests: string[];
   /** Trainers who have already given their prize (they can battle again, but pay once). */
   paid: string[];
+  /** The trainer's look, one of LOOKS in start.ts. Games saved before there were looks have none (and get a default picture). */
+  look?: string;
 }
