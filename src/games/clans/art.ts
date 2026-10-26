@@ -6,6 +6,7 @@
  * picture when a screen shows it.
  */
 import type { BuildingKind, TroopKind } from '../../../shared/clans/types';
+import { LOOKS, type Look } from '../../../shared/clans/looks';
 
 const FILES = import.meta.glob('./art/**/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
@@ -30,9 +31,8 @@ export function sceneArt(id: SceneId): { wide?: string; small?: string } {
 /** The mine zone a fight happens in (Meadow, Caves, Swamp, Ruins, Mountain). */
 export const zoneScene = (zone: string): SceneId => `zone-${slug(zone)}` as SceneId;
 
-/** Each race and class has four looks, all painted once. */
-export const LOOKS = ['female-1', 'female-2', 'male-1', 'male-2'] as const;
-export type Look = (typeof LOOKS)[number];
+/** Each race and class has four looks (shared/clans/looks.ts), all painted once. */
+export { LOOKS, type Look };
 const lookName = (race: string, cls: string, look: Look) => `${slug(race)}-${slug(cls)}-${look}`;
 export const memberArt = (race: string, cls: string, look: Look) => file('members', lookName(race, cls, look));
 export const memberThumb = (race: string, cls: string, look: Look) => file('members', `${lookName(race, cls, look)}-small`) ?? memberArt(race, cls, look);

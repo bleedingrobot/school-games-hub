@@ -2556,7 +2556,6 @@ function roll(holder, n) {
 }
 //#endregion
 //#region shared/clans/types.ts
-/** Plain data shapes for Clan Quest. Everything here is JSON-safe so the server can save it. */
 const STATS = [
 	"agility",
 	"dexterity",
@@ -3913,9 +3912,43 @@ const CLAN_NOUNS = [
 	"Stars",
 	"Rangers"
 ];
+//#endregion
+//#region shared/clans/looks.ts
+const LOOKS = [
+	"female-1",
+	"female-2",
+	"male-1",
+	"male-2"
+];
+const isLook = (v) => typeof v === "string" && LOOKS.includes(v);
+/** The same name always gives the same look. */
+function lookFromName(name) {
+	let h = 0;
+	for (const ch of name) h = Math.imul(h, 31) + ch.charCodeAt(0) | 0;
+	return LOOKS[Math.abs(h) % LOOKS.length];
+}
+/** "Change look" for one member. Allowed any time, free. */
+function setLook(clan, memberIndex, look) {
+	const m = clan.members[memberIndex];
+	if (!m) return {
+		ok: false,
+		why: "member",
+		say: "Pick one of your clan."
+	};
+	if (!isLook(look)) return {
+		ok: false,
+		why: "look",
+		say: "Pick one of the four looks."
+	};
+	m.look = look;
+	return { ok: true };
+}
 /** The member a draft shows right now. Slot 0 is the clan leader. */
 function draftMember(d, slot) {
-	return rollMember({ rng: Math.imul(d.seed | 0, 2654435761) + d.rolls * 7919 }, d.name, d.race, d.cls, slot === 0);
+	return {
+		...rollMember({ rng: Math.imul(d.seed | 0, 2654435761) + d.rolls * 7919 }, d.name, d.race, d.cls, slot === 0),
+		look: d.look ?? lookFromName(d.name)
+	};
 }
 /** The seed of slot `slot` of a clan with this seed. */
 const slotSeed = (seed, slot) => seed + slot * 1013;
@@ -3972,12 +4005,17 @@ function clanFromChoices(seed, name, drafts) {
 			ok: false,
 			say: `You can roll again 3 times for each member.`
 		};
+		if (d.look !== void 0 && !isLook(d.look)) return {
+			ok: false,
+			say: "Pick one of the four looks."
+		};
 		built.push({
 			race: d.race,
 			cls: d.cls,
 			name: d.name,
 			rolls: d.rolls,
-			seed: slotSeed(seed, slot)
+			seed: slotSeed(seed, slot),
+			...d.look ? { look: d.look } : {}
 		});
 	}
 	return {
@@ -4908,6 +4946,11 @@ function parseAction(raw) {
 			type: "wake",
 			member
 		} : null;
+		case "look": return member !== null && isLook(raw.look) ? {
+			type: "look",
+			member,
+			look: raw.look
+		} : null;
 		case "deposit":
 		case "withdraw": {
 			const gold = int(raw.gold, 1, 1e6);
@@ -5090,6 +5133,7 @@ function applyAction(saved, action, ctx) {
 		}
 		case "train": return settle(trainMember(clan, action.member, action.key, action.count), { type: "train" });
 		case "wake": return settle(wakeOne(clan, action.member), { type: "wake" });
+		case "look": return settle(setLook(clan, action.member, action.look), { type: "look" });
 		case "wakeAll": return settle(wakeEveryone(clan), { type: "wakeAll" });
 		case "deposit": return settle(deposit(clan, action.gold), { type: "deposit" });
 		case "withdraw": return settle(withdraw(clan, action.gold), { type: "withdraw" });

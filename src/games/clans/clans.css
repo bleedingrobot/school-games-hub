@@ -244,3 +244,15 @@
 @media (max-width: 760px) {
   .cq-scene { height: 110px; }
 }
+
+/* Clans art Stage A.5: members' paintings, and picking one of the four looks. --cq-portrait is the height (Sprite.tsx). */
+.cq-portrait--painted { --cq-portrait: 112px; display: grid; place-items: end center; width: calc(var(--cq-portrait) * 0.82); height: var(--cq-portrait); overflow: hidden; border-radius: 3px; background: radial-gradient(70% 60% at 50% 70%, rgba(255, 220, 160, 0.10), transparent 70%), var(--f-deep); box-shadow: inset 0 0 0 1px var(--cq-line); }
+.cq-portrait--painted img { display: block; max-width: 100%; max-height: calc(var(--cq-portrait) - 4px); }
+.cq-card__head { align-items: flex-end; }
+.cq-looks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cq-look { display: grid; place-items: end center; height: 76px; padding: 2px; text-align: center; overflow: hidden; }
+.cq-look img { max-height: 70px; max-width: 100%; }
+.cq .cq-look[aria-pressed='true'] { border: 2px solid var(--cq-yellow); }
+@media (max-width: 760px) {
+  .cq-card .cq-portrait--painted { --cq-portrait: 88px !important; }
+}

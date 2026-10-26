@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CLASS_NAMES, draftMember, MAX_ROLLS, RACE_NAMES, rollAgain, startingDrafts, makeClan, type Draft } from './session';
-import { MemberCard } from './MemberCard';
+import { LookPicker, MemberCard } from './MemberCard';
+import { lookOf } from '../../../shared/clans/looks';
 import { HowToPlayBody } from './HowToPlay';
 import { CLAN_ADJECTIVES, CLAN_NOUNS, MEMBER_NAMES, clanNameFrom } from './words';
 import type { Clan } from '../../../shared/clans/types';
@@ -16,7 +17,7 @@ export function Creator({ seed, onDone }: { seed: number; onDone: (clan: Clan, c
   return (
     <section className="cq-creator" aria-label="Make your clan">
       <h2>Make your clan</h2>
-      <p className="cq-soft">Pick a race and a class for each of your four adventurers. Don't like the numbers? Roll again (up to {MAX_ROLLS} times each). The first one is your clan leader, with a little extra.</p>
+      <p className="cq-soft">Pick a race, a class and a look for each of your four adventurers. Don't like the numbers? Roll again (up to {MAX_ROLLS} times each). The first one is your clan leader, with a little extra.</p>
       <details className="cq-panel cq-creator__help">
         <summary>How to play</summary>
         <HowToPlayBody />
@@ -24,6 +25,7 @@ export function Creator({ seed, onDone }: { seed: number; onDone: (clan: Clan, c
       <div className="cq-cards">
         {drafts.map((d, i) => (
           <MemberCard key={i} member={draftMember(d, i)} leader={i === 0}>
+            <LookPicker race={d.race} cls={d.cls} value={lookOf(draftMember(d, i))} onPick={(look) => set(i, { look })} />
             <div className="cq-pickers">
               <label>
                 Race

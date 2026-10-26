@@ -222,3 +222,18 @@ describe('the place paintings (Clans art Stage A.4)', () => {
     expect(sceneShown()).toBeUndefined();
   });
 });
+
+describe('picking a look in the creator (Clans art Stage A.5)', () => {
+  it('each member shows the four looks; the pick changes the portrait and goes with the clan', async () => {
+    const u = user();
+    render(<ClanQuest seed={SEED} />);
+    const first = screen.getAllByRole('article')[0];
+    const picker = within(first).getByRole('group', { name: 'Look' });
+    expect(within(picker).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Girl 1', 'Girl 2', 'Boy 1', 'Boy 2']);
+    await u.click(within(picker).getByRole('button', { name: 'Girl 2' }));
+    expect(within(picker).getByRole('button', { name: 'Girl 2' })).toHaveAttribute('aria-pressed', 'true');
+    expect(first.querySelector('.cq-portrait--painted img')?.getAttribute('src')).toContain('female-2');
+    await u.click(screen.getByRole('button', { name: 'Start the adventure' }));
+    expect(screen.getAllByRole('article')[0].querySelector('.cq-portrait--painted img')?.getAttribute('src')).toContain('female-2');
+  });
+});

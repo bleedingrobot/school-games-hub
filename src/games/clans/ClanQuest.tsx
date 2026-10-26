@@ -14,7 +14,7 @@ import { MemberCard } from './MemberCard';
 import { Church } from './Church';
 import { Market } from './Market';
 import { Mines, Results } from './Mines';
-import { armyToLose, armyToWin, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveVault, knockOutSome, pretendGifts, pretendWeekEnd } from './places';
+import { armyToLose, armyToWin, changeLook, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveVault, knockOutSome, pretendGifts, pretendWeekEnd } from './places';
 import { ClassRaid } from './ClassRaid';
 import { Village } from './Village';
 import { VillageNews } from './VillageNews';
@@ -358,7 +358,9 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
               <h2>{session.clan.name}</h2>
               <p className="cq-soft">Practising: {session.settings.enabledTopics.length ? session.settings.enabledTopics.map((t) => TOPIC_LABELS[t].toLowerCase()).join(', ') : 'nothing today'}</p>
               <div className="cq-cards">
-                {session.clan.members.map((m, i) => <MemberCard key={m.name} member={m} leader={i === 0} />)}
+                {session.clan.members.map((m, i) => (
+                  <MemberCard key={m.name} member={m} leader={i === 0} onLook={(look) => { const next = changeLook(session, i, look); if (next) change(next, { type: 'look', member: i, look }); }} />
+                ))}
               </div>
               {session.news && session.news.length > 0 && (
                 <ul className="cq-soft" aria-label="Village news">
