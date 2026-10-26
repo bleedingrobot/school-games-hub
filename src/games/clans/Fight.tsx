@@ -21,6 +21,8 @@ import { castable, choosingOrder, defaultOrder, describe, fightsLabel, isAlive, 
 import { MonsterSprite, Portrait } from './Sprite';
 import { zoneColour } from './Sprite';
 import { MONSTERS_BY_NAME } from './monsters';
+import { sceneArt, zoneScene } from './art';
+import { lookOf } from '../../../shared/clans/looks';
 import { nextSeed, type Session } from './session';
 
 type Phase = 'ask' | 'reward' | 'working' | 'orders' | 'over';
@@ -230,13 +232,16 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   }
 
   const upNext = phase === 'orders' && who ? who.index : -1;
+  // The mine zone the monsters come from, painted dimly behind them (Clans art Stage A.6).
+  const zone = MONSTERS_BY_NAME[fight.enemies[0]?.name.replace(/ [A-D]$/, '') ?? '']?.zone ?? 'Meadow';
+  const zoneArt = sceneArt(zoneScene(zone)).small;
   return (
     <section className="cq-fight" aria-label="The fight">
       <p className="cq-fight__top">
         <strong>Depth {fight.depth}</strong> · Round {Math.min(fight.round + (fight.result ? 0 : 1), 8)} · Fights today: {fightsLabel(session.fightsLeft, session.fightsPerDay)}
       </p>
       <div className="cq-arena">
-        <ul className="cq-side cq-side--enemies" aria-label="Enemies">
+        <ul className="cq-side cq-side--enemies" aria-label="Enemies" data-zone={zone} style={zoneArt ? ({ '--cq-zone': `url(${zoneArt})` } as React.CSSProperties) : undefined}>
           {fight.enemies.map((e) => (
             <li key={e.index} className={isAlive(e) ? '' : 'is-down'}>
               <MonsterSprite name={e.name.replace(/ [A-D]$/, '')} zone={MONSTERS_BY_NAME[e.name.replace(/ [A-D]$/, '')]?.zone ?? 'Meadow'} scale={3} />
@@ -251,7 +256,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
         <ul className="cq-side cq-side--clan" aria-label="Your clan">
           {fight.clan.map((f, i) => (
             <li key={f.index} className={`${isAlive(f) ? '' : 'is-down'} ${upNext === f.index ? 'is-up' : ''}`} aria-current={upNext === f.index ? 'true' : undefined}>
-              <Portrait race={members[i].race} cls={members[i].cls} scale={3} />
+              <Portrait race={members[i].race} cls={members[i].cls} look={lookOf(members[i])} scale={3} />
               <span className="cq-name">{f.name}</span>
               <Bar label="HP" value={f.hp} max={f.maxHp} kind="hp" />
               {f.maxSp > 0 && <Bar label="SP" value={f.sp} max={f.maxSp} kind="sp" />}

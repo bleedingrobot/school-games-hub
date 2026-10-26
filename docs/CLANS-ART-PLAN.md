@@ -3,7 +3,7 @@
 How Clan Quest gets its painted pictures, from the 656 pictures in `~/dragon-art-inbox/clans-art` to a live game. It follows the way Dragon Maths was done (`docs/lord-art/`, `scripts/lord-art.py`, `src/games/lord/art.ts`), so most of the tools already exist.
 
 Written 26 October 2026 for James.
-**Status: A.0–A.5, A.7 and A.8 done (26 Oct). A.6 (fights) waits until the `clans-ladder` branch is live (James, 26 Oct), since both change the fight files. Then A.9: try-out page and going live (James decides).** The plan is on the `clans-art` branch.
+**Status: A.0–A.8 done (26 Oct). Live on 26 Oct except A.6 (fights), which goes live right after the `clans-ladder` branch.** The plan is on the `clans-art` branch.
 
 ## The short version
 
@@ -194,3 +194,14 @@ Made in ComfyUI on James's gaming PC (3 tries each, more for the armour), checke
 - **Imp necromancer, girl 2**: remade with both wings inside the picture (the old cut-out lost one). The old picture is in `clans-superseded/member-imp-necromancer-female-2-old-wing-lost.png`.
 - Every try is kept in `~/dragon-art-inbox/clans-remakes/`. The try-out page has the new pictures.
 - Second round (James: "Remake please"): knobbly club, leather armour, rags, scythe, wand, cave minotaur (now on two legs, in a leather tunic), green slime (now a jelly blob) and the wishing well quest, all copy 3. The well still has two light wisps of mist: the quest style wording itself asks for "smoke, fog and drifting ash", so a fully clear well would need that wording changed for this one picture.
+
+## Stage A.6 results (26 Oct 2026)
+
+Done on branch `clans-fight-art`, made from `clans-ladder` (the ladder changes the same fight files), so it goes live right after the ladder.
+
+- **Monsters** are painted in the fight (`MonsterSprite` shows the painting, or the old tile if there isn't one), and greyed out when beaten. Their names take the frame's heading colour.
+- **The mine zone** (meadow, caves, swamp, ruins, mountain) is painted dimly behind the monsters, from the first monster's zone.
+- **Members** show their chosen look in the fight.
+- **After the fight:** the victory painting for a win, the rest painting when the clan was knocked out, the Mines picture otherwise, each cropped on its subject.
+- The fight keeps to one screen: no painting across the top, and fight paintings are 60 px tall, so the whole fight fits a 1366 x 640 Chromebook with nothing to scroll (measured without the test strip). Phones stack it as before, with no sideways scrolling.
+- Tests: the fight shows every monster and member painted, the zone behind, and a painting after it.

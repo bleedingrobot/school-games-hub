@@ -215,11 +215,29 @@ describe('the place paintings (Clans art Stage A.4)', () => {
     }
   });
 
-  it('no painting in a fight yet (Stage A.6)', async () => {
+  it('a fight keeps to one screen: no painting across the top (Stage A.6)', async () => {
     const u = user();
     await makeClanOnScreen(u);
     await intoFight(u);
     expect(sceneShown()).toBeUndefined();
+  });
+});
+
+describe('the fight, painted (Clans art Stage A.6)', () => {
+  it('shows each monster and member painted, the mine zone behind the monsters, and a painting for how it went', async () => {
+    const u = user();
+    await makeClanOnScreen(u);
+    await intoFight(u);
+    const enemies = screen.getByRole('list', { name: 'Enemies' });
+    const monsters = enemies.querySelectorAll('img.cq-monster-art');
+    expect(monsters.length).toBe(within(enemies).getAllByRole('listitem').length);
+    for (const m of monsters) expect(m.getAttribute('src')).toMatch(/\/monsters\//);
+    expect(enemies.dataset.zone).toBe('Meadow');
+    expect(enemies.style.getPropertyValue('--cq-zone')).toMatch(/zone-meadow/);
+    const clan = screen.getByRole('list', { name: 'Your clan' });
+    expect(clan.querySelectorAll('.cq-portrait--painted img')).toHaveLength(4);
+    await u.click((await playOut(u))!);
+    expect(['victory', 'rest', 'mines']).toContain(document.querySelector<HTMLImageElement>('.cq-scene')?.dataset.scene);
   });
 });
 
