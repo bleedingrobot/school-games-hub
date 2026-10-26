@@ -3,7 +3,7 @@
 How Clan Quest gets its painted pictures, from the 656 pictures in `~/dragon-art-inbox/clans-art` to a live game. It follows the way Dragon Maths was done (`docs/lord-art/`, `scripts/lord-art.py`, `src/games/lord/art.ts`), so most of the tools already exist.
 
 Written 26 October 2026 for James.
-**Status: James answered section 3 on 26 Oct (all four recommended choices). A.0–A.2 done; waiting for James to pick the pictures and the frame.** The plan is on the `clans-art` branch.
+**Status: A.0–A.3 done (26 Oct). James kept Claude's picks for every picture; the frame is stone and iron (the recommended one, easy to swap for oak in A.4). Next: A.4.** The plan is on the `clans-art` branch.
 
 ## The short version
 
@@ -136,3 +136,11 @@ If a picture needs remaking (a new monster, a wrong picture, a new item):
 - Two frames, both dark: **Stone and iron** (cold grey stone, iron edges, parchment text, ember for the main button) and **Oak and brass** (dark wood, brass edges, warm cream, a serif for all text). Both use an engraved serif for headings and a painting across the top of each place. The old pixel icon beside a place's name is hidden.
 - Checked at 1366 px and 390 px wide: no sideways scrolling. On phones the shoppers in the Market sit two to a row.
 - rembg lives in `~/.cache/rembg-venv` (the scratch folder ran out of space).
+
+## Stage A.3 results (26 Oct 2026)
+
+- **James's choices:** Claude's pick for all 130 pairs (nothing changed on the picking page), and the **stone and iron** frame.
+- `scripts/clans-art.py`, `src/games/clans/art.ts`, `art.test.ts` and `art/CREDITS.md` are in. All 959 files made (34 MB): 396 member looks with small copies, 38 monsters, 34 items, 3 troops, 7 buildings, 12 banners, and 20 scenes, 10 quests and 6 kingdoms with -800 copies. Clans tests pass (160), including the new art test.
+- Cut-outs checked by eye on contact sheets (`scripts/clans-art.py --sheets`). The dark-background ones (skeleton, mummy, fire spirit, moon wolf) came out clean.
+- **Still to fix later:** a few members keep a pale painted splash by their feet, which shows on the dark frame. Worst are `imp-barbarian-female-1` and `imp-necromancer-female-2`; fix in A.5 (touch up or remake). Wizard's Staff, Wooden Armour and Giant Rat are still the wrong-looking ones from A.1 and could be remade.
+- The inbox's test folders (`clans-test`, `clans-test2`, `clans-superseded`) are not deleted yet; waiting for James to say yes.
