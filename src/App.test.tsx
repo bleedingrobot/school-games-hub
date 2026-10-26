@@ -224,33 +224,36 @@ describe('dashboard', () => {
   });
 });
 
+// A page is a lazy chunk: on a busy CI runner the first one can take longer than findBy's 1 second.
+const LAZY_PAGE = { timeout: 10_000 };
+
 describe('pages', () => {
   it('opens checkers ready to play the bot picked on the dashboard', async () => {
     renderAt('/checkers?bot=very-easy');
-    expect(await screen.findByRole('heading', { level: 1, name: /Checkers vs bot/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: /Checkers vs bot/ }, LAZY_PAGE)).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Very Easy' })).toBeChecked();
     expect(screen.getByRole('button', { name: /Start game/ })).toBeInTheDocument();
   });
 
   it('opens chess ready to play the bot picked on the dashboard', async () => {
     renderAt('/chess?bot=medium');
-    expect(await screen.findByRole('heading', { level: 1, name: /Chess vs bot/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: /Chess vs bot/ }, LAZY_PAGE)).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Medium' })).toBeChecked();
     expect(screen.getByRole('button', { name: /Start game/ })).toBeInTheDocument();
   });
 
   it('falls back to Easy for a made-up bot level', async () => {
     renderAt('/checkers?bot=impossible');
-    expect(await screen.findByRole('radio', { name: 'Easy' })).toBeChecked();
+    expect(await screen.findByRole('radio', { name: 'Easy' }, LAZY_PAGE)).toBeChecked();
   });
 
 
   it('shows Power Clash on the dashboard and opens it at its address', async () => {
     const { unmount } = renderAt('/');
-    expect(await screen.findByRole('article', { name: /Power Clash/ })).toBeInTheDocument();
+    expect(await screen.findByRole('article', { name: /Power Clash/ }, LAZY_PAGE)).toBeInTheDocument();
     unmount();
     renderAt('/power-clash?bot=medium');
-    expect(await screen.findByRole('heading', { level: 1, name: /Power Clash/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: /Power Clash/ }, LAZY_PAGE)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Play a bot' }));
     expect(screen.getByRole('radio', { name: 'Medium' })).toBeChecked(); // the level from the address
   });
