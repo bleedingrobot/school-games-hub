@@ -1,6 +1,8 @@
 import type { CSSProperties } from 'react';
 import { SHEET_COLUMNS, SHEET_ROWS, TILE, MONSTER_TILES, DEFAULT_MONSTER_TILE, CLASS_TILES, DEFAULT_CLASS_TILE, ITEM_TILES, KIND_TILES, PLACE_TILES, type Tile } from './tileMap';
 import tiles from './tiles.png';
+import { itemArt, memberThumb } from './art';
+import type { Look } from '../../../shared/clans/looks';
 
 /** The old terminal colours, used to colour the one-colour pictures. */
 export const ANSI = {
@@ -32,8 +34,20 @@ export const MonsterSprite = ({ name, zone, scale = 4 }: { name: string; zone: s
   <Sprite tile={MONSTER_TILES[name] ?? DEFAULT_MONSTER_TILE} scale={scale} colour={zoneColour(zone)} />
 );
 
-/** A member's portrait, put together from parts: the class's figure, coloured by race, on a race-lettered badge. */
-export function Portrait({ race, cls, scale = 4 }: { race: string; cls: string; scale?: number }) {
+/**
+ * A member's portrait. With a `look` it is their painting (Clans art Stage A.5), 28 pixels tall for each step of `scale`;
+ * without one, or if the painting is missing, it is put together from parts: the class's figure, coloured by race, on a
+ * race-lettered badge.
+ */
+export function Portrait({ race, cls, look, scale = 4 }: { race: string; cls: string; look?: Look; scale?: number }) {
+  const painted = look && memberThumb(race, cls, look);
+  if (painted) {
+    return (
+      <span className="cq-portrait cq-portrait--painted" title={`${race} ${cls}`} style={{ '--cq-portrait': `${scale * 28}px` } as CSSProperties}>
+        <img src={painted} alt="" />
+      </span>
+    );
+  }
   return (
     <span className="cq-portrait" title={`${race} ${cls}`}>
       <Sprite tile={CLASS_TILES[cls] ?? DEFAULT_CLASS_TILE} scale={scale} colour={raceColour(race)} />
@@ -46,10 +60,15 @@ export function Portrait({ race, cls, scale = 4 }: { race: string; cls: string; 
 
 const KIND_COLOURS: Record<string, string> = { weapon: ANSI.yellow, armor: ANSI.cyan, shield: ANSI.orange };
 
-/** A shop item's picture, coloured by what it is (weapons yellow, armour cyan, shields orange). */
-export const ItemSprite = ({ name, kind, scale = 3 }: { name: string; kind: string; scale?: number }) => (
-  <Sprite tile={ITEM_TILES[name] ?? KIND_TILES[kind] ?? DEFAULT_MONSTER_TILE} scale={scale} colour={KIND_COLOURS[kind] ?? ANSI.white} />
-);
+/**
+ * A shop item's picture: its painting (Clans art Stage A.7), 20 pixels tall for each step of `scale`, or else the old
+ * tile, coloured by what it is (weapons yellow, armour cyan, shields orange).
+ */
+export function ItemSprite({ name, kind, scale = 3 }: { name: string; kind: string; scale?: number }) {
+  const painted = itemArt(name);
+  if (painted) return <img className="cq-item-art" src={painted} alt="" style={{ height: scale * 20 }} />;
+  return <Sprite tile={ITEM_TILES[name] ?? KIND_TILES[kind] ?? DEFAULT_MONSTER_TILE} scale={scale} colour={KIND_COLOURS[kind] ?? ANSI.white} />;
+}
 
 /** The picture beside a place's heading. */
 export const PlaceSprite = ({ place, scale = 3 }: { place: 'market' | 'training' | 'church' | 'mines'; scale?: number }) => (

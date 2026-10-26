@@ -1,0 +1,82 @@
+/* Clans art Stage A.2 try-out: two painted frames over the real Clan Quest screens. Both stay dark.
+   Iron: cold stone, riveted iron edges, parchment text, ember for "do this". Oak: dark wood, brass edges, warm cream. */
+.frame--iron .cq {
+  --cq-bg: #18191b; --cq-panel: #222326; --cq-ink: #e6ddc8; --cq-soft: #a39b8b; --cq-line: #4a4e55;
+  --cq-green: #9cc47a; --cq-cyan: #c9b88f; --cq-red: #e06a5c; --cq-yellow: #e39a4a; --cq-mag: #c99ad6;
+  --f-deep: #101113; --f-raise: #2b2d31; --f-dot: #34373c; --f-head: #ecdcb8; --f-edge: #6a6f78;
+  background: radial-gradient(120% 80% at 50% 0%, #222428 0%, var(--cq-bg) 60%), var(--cq-bg);
+  border: 2px solid #000;
+  box-shadow: 0 0 0 3px var(--f-edge), 0 0 0 5px #000, inset 0 0 0 1px #2e3136, inset 0 0 40px rgba(0, 0, 0, 0.6);
+}
+.frame--oak .cq {
+  --cq-bg: #1d150f; --cq-panel: #2a1e15; --cq-ink: #f0e2c4; --cq-soft: #b6a07d; --cq-line: #6b4f2c;
+  --cq-green: #a9c27a; --cq-cyan: #d8b46a; --cq-red: #e0725c; --cq-yellow: #e8b450; --cq-mag: #d29ac0;
+  --f-deep: #140e09; --f-raise: #35261a; --f-dot: #46331f; --f-head: #f3d9a0; --f-edge: #b08a48;
+  background: repeating-linear-gradient(92deg, rgba(255, 255, 255, 0.015) 0 3px, transparent 3px 11px), linear-gradient(#21180f, var(--cq-bg));
+  border: 2px solid #000;
+  box-shadow: 0 0 0 3px var(--f-edge), 0 0 0 4px #5a4320, 0 0 0 6px #000, inset 0 0 50px rgba(0, 0, 0, 0.55);
+}
+.frame .cq { max-width: 1100px; border-radius: 3px; font-family: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem; }
+.frame--oak .cq { font-family: 'Alegreya', Georgia, serif; }
+
+/* Headings: an old engraved serif instead of the terminal font. */
+.frame .cq :is(h1, h2, h3):not(.question__title) { font-family: 'IM Fell English SC', 'Iowan Old Style', Georgia, serif; color: var(--f-head); letter-spacing: 0.01em; }
+.frame .cq h1 { font-size: 1.9rem; }
+.frame .cq h2:not(.question__title) { font-size: 1.6rem; }
+.frame .cq h3:not(.question__title) { font-size: 1.2rem; color: var(--f-head); }
+.frame .cq-top { border-bottom-color: var(--cq-line); padding-bottom: 2px; }
+
+/* The place's painting across the top. */
+.cq-scene { margin: 0 0 10px; height: 190px; border-radius: 2px; background: center 45% / cover no-repeat; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8), inset 0 -40px 50px -20px rgba(0, 0, 0, 0.7); }
+.frame--iron .cq-scene { outline: 2px solid var(--f-edge); outline-offset: 2px; }
+.frame--oak .cq-scene { outline: 2px solid var(--f-edge); outline-offset: 2px; }
+
+/* Buttons: iron plates or leather with a brass edge. Still at least 44px tall. */
+.frame .cq-btn { background: linear-gradient(#2c2e33, #222327); border: 1px solid var(--cq-line); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 0 #000; border-radius: 3px; }
+.frame--oak .cq-btn { background: linear-gradient(#3a2a1c, #2a1e14); }
+.frame .cq-btn:hover:not(:disabled) { border-color: var(--f-edge); background: var(--f-raise); }
+.frame .cq-btn--hot { border-color: var(--cq-yellow); color: var(--cq-yellow); }
+.frame .cq .cq-btn[aria-pressed='true'] { border-color: var(--cq-yellow); background: var(--f-raise); }
+.frame .cq :is(.cq-btn, .cq-link, input, select, .cq-panel):focus-visible { outline-color: var(--cq-yellow); }
+.frame .cq :is(input, select) { background: var(--f-deep); border-color: var(--cq-line); }
+
+/* Panels and cards: a slightly raised slab with a thin edge. */
+.frame :is(.cq-card, .cq-panel, .cq-side) { background: var(--cq-panel); border-color: var(--cq-line); border-radius: 3px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04); }
+.frame :is(.cq-headline div, .cq-stats div, .cq-train th, .cq-train td) { border-bottom-color: var(--f-dot); }
+.frame .cq-credits { border-top-color: var(--f-dot); }
+.frame .cq-tag { font-family: inherit; }
+
+/* Painted portraits and items. */
+.cq-portrait--painted { width: 92px; height: 112px; display: grid; place-items: end center; border-radius: 3px; background: radial-gradient(70% 60% at 50% 70%, rgba(255, 220, 160, 0.10), transparent 70%), var(--f-deep); box-shadow: inset 0 0 0 1px var(--cq-line); overflow: hidden; }
+.cq-portrait--painted img { max-width: 100%; max-height: 108px; display: block; }
+.cq-item-art { width: auto; max-width: 64px; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.6)); }
+.frame .cq-card__head { align-items: flex-end; }
+
+/* The clan home: banner beside the name. */
+.cq-clanhead { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.cq-clanbanner { height: 84px; width: auto; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.7)); }
+.cq-clanhead p { margin: 0; }
+.cq-sums { margin-top: 10px; }
+
+/* The try-out's own switcher, outside the game. */
+.tryout-bar { max-width: 1100px; margin: 0 auto 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font: 14px system-ui, sans-serif; color: #cfc6b4; }
+.tryout-bar button { font: inherit; color: #e8e0cf; background: #26231f; border: 1px solid #514a40; border-radius: 999px; padding: 6px 12px; min-height: 36px; cursor: pointer; }
+.tryout-bar button[aria-pressed='true'] { background: #e39a4a; color: #1a1410; border-color: #e39a4a; }
+.tryout-gap { width: 12px; }
+
+@media (max-width: 760px) {
+  .cq-scene { height: 110px; }
+  .cq-portrait--painted { width: 72px; height: 88px; }
+  .cq-portrait--painted img { max-height: 84px; }
+  .cq-clanbanner { height: 64px; }
+}
+
+/* The place's painting replaces the old pixel icon beside its name; the shelf shows its items bigger. */
+.frame .cq-place h2 > .cq-sprite { display: none; }
+.frame .cq-shelf .cq-item-art { height: 40px !important; max-width: 40px; }
+.frame .cq-shelf__item { min-height: 52px; }
+@media (max-width: 760px) {
+  .frame .cq-pick { grid-template-columns: 1fr 1fr; }
+  .frame .cq-pick .cq-portrait--painted { width: 52px; height: 64px; }
+  .frame .cq-pick .cq-portrait--painted img { max-height: 60px; }
+}

@@ -44,6 +44,8 @@
     "lord:sim": "node scripts/lord-sim.mjs",
     "lord:preview": "vite build --config vite.lord-preview.config.ts",
     "clans:preview": "vite build --config vite.clans-preview.config.ts",
+    "clans:frame": "vite build --config vite.clans-frame.config.ts",
+    "clans:tryout": "vite build --config vite.clans-tryout.config.ts",
     "home:preview": "vite build --config vite.home-preview.config.ts",
     "home:single": "HOME_INLINE=1 vite build --config vite.home-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-home home-themes-test-page.html",
     "mine:preview": "vite build --config vite.mine-preview.config.ts",
