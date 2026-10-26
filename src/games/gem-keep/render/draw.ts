@@ -30,7 +30,7 @@ const ART = {
   enemy: 2.6,
 };
 /** Enemy pictures painted facing left (the rest face right). Flipped so every enemy faces where it walks. */
-const ART_FACES_LEFT = new Set<EnemyKind>([]);
+const ART_FACES_LEFT = new Set<EnemyKind>(['runner', 'boss']);
 
 export interface Particle {
   x: number;
@@ -569,11 +569,11 @@ function drawEnemy(ctx: CanvasRenderingContext2D, e: Enemy, state: GameState, fx
     const d = r * ART.enemy;
     const size = Math.ceil(d + 6);
     drawSprite(ctx, `enemy:art:${e.kind}:${face}`, size, cx, cy, (k, mid) => paintEnemyArt(k, img, e.kind, face, mid, d));
-    if (flashing) drawSprite(ctx, `enemy:flash:${e.kind}:${face}`, size, cx, cy, (k, mid) => flashOf(k, sprite(`enemy:art:${e.kind}:${face}`, size, () => {}), mid, size));
+    if (flashing) drawFlash(ctx, `enemy:flash:${e.kind}:${face}`, `enemy:art:${e.kind}:${face}`, size, cx, cy);
   } else {
     const size = Math.ceil(r * 2.8);
     drawSprite(ctx, `enemy:${e.kind}`, size, cx, cy, (c, mid) => paintEnemyBody(c, e.kind, mid, mid));
-    if (flashing) drawSprite(ctx, `enemy:flash:${e.kind}`, size, cx, cy, (k, mid) => flashOf(k, sprite(`enemy:${e.kind}`, size, () => {}), mid, size));
+    if (flashing) drawFlash(ctx, `enemy:flash:${e.kind}`, `enemy:${e.kind}`, size, cx, cy);
   }
 
   // Slowed: frost shimmer. Poisoned: green bubbles.
@@ -622,9 +622,16 @@ function drawEnemy(ctx: CanvasRenderingContext2D, e: Enemy, state: GameState, fx
   }
 }
 
-/** The white hit flash: the enemy's own sprite, filled white. */
-function flashOf(ctx: CanvasRenderingContext2D, body: HTMLCanvasElement, mid: number, size: number) {
-  ctx.drawImage(silhouette(body, body.width, body.height, '#ffffff'), mid - size / 2, mid - size / 2, size, size);
+/** The hit flash: a quick light tint added over the enemy's own shape (not a solid white blob). */
+function drawFlash(ctx: CanvasRenderingContext2D, key: string, bodyKey: string, size: number, x: number, y: number) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.4;
+  drawSprite(ctx, key, size, x, y, (k, mid) => {
+    const body = sprite(bodyKey, size, () => {});
+    k.drawImage(silhouette(body, body.width, body.height, '#ffffff'), mid - size / 2, mid - size / 2, size, size);
+  });
+  ctx.restore();
 }
 
 // ---------- The sprite cache ----------

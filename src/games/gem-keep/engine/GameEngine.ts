@@ -302,7 +302,7 @@ export class GameEngine {
           const sparks = event.colours.map((c) => GEM_COLOURS[c].light);
           this.burst(event.x * TILE, event.y * TILE, sparks, event.crit ? 10 : 4, event.crit ? 3.5 : 2.5);
           const target = this.state.enemies.find((e) => e.x === event.x && e.y === event.y);
-          if (target) this.fx.flashes.set(target.id, this.fx.now + 0.1);
+          if (target) this.fx.flashes.set(target.id, this.fx.now + 0.08);
           if (event.crit) {
             this.ring(event.x * TILE, event.y * TILE, '#ffd23f', 26);
             this.floatText(event.x * TILE, event.y * TILE - 14, '!', '#ffd23f', 22);

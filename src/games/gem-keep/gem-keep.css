@@ -898,39 +898,158 @@
   color: var(--gk-gold);
 }
 
-/* Wide enough: the stops sit on the painting itself, at their places on the trail. */
-@media (min-width: 761px) {
-  .gk-trail[data-painted] {
-    display: block;
-    aspect-ratio: 16 / 9;
-    padding: 0;
-    background-image: var(--gk-map);
-  }
-  .gk-trail[data-painted] li {
-    position: absolute;
-    left: var(--x);
-    top: var(--y);
-    width: clamp(84px, 10cqw, 128px);
-    transform: translate(-50%, -50%);
-  }
-  .gk-trail[data-painted] .gk-stop {
-    padding: 8px 6px;
-    gap: 2px;
-    border-radius: 16px;
-  }
-  .gk-trail[data-painted] .gk-stop__number {
-    width: 40px;
-    height: 40px;
-    font-size: 1.15rem;
-  }
-  .gk-trail[data-painted] .gk-stop__name {
-    font-size: 0.85rem;
-  }
-  .gk-trail[data-painted] .gk-stop__tables,
-  .gk-trail[data-painted] .gk-stop__lock {
-    display: none;
-  }
-  .gk-trail[data-painted] .gk-stop__stars {
-    font-size: 0.95rem;
+/* Wide enough: the painting itself, with a gem button per level on its trail and one card about the level. */
+.gk-world {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 20px;
+  background: #141a33 center / cover no-repeat;
+  border: 1px solid var(--gk-night-edge);
+  overflow: hidden;
+}
+.gk-world__route {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.gk-world__route polyline {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.gk-world__route-glow {
+  stroke: rgba(255, 210, 63, 0.18);
+  stroke-width: 10;
+}
+.gk-world__route-dots {
+  stroke: rgba(255, 228, 140, 0.9);
+  stroke-width: 4;
+  stroke-dasharray: 0 11;
+}
+.gk-world__stops {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gk-world__stops li {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  transform: translate(-50%, -22px);
+}
+.gk-gemstop {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d6c9ff, #6a46e0 55%, #2a1866);
+  color: #fff;
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 900;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 14px rgba(185, 166, 255, 0.75), 0 3px 6px rgba(5, 4, 20, 0.6);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.gk-gemstop:hover,
+.gk-gemstop:focus-visible {
+  transform: scale(1.12);
+}
+.gk-gemstop:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+.gk-gemstop[aria-pressed='true'] {
+  border-color: #fff;
+}
+.gk-gemstop[data-next] {
+  box-shadow: 0 0 0 3px var(--gk-gold), 0 0 22px 4px rgba(255, 210, 63, 0.75);
+}
+.gk-gemstop[data-locked] {
+  background: radial-gradient(circle at 35% 30%, #6d6890, #2c2850 60%, #17152e);
+  border-color: rgba(255, 255, 255, 0.3);
+  font-size: 0.85rem;
+  box-shadow: 0 3px 6px rgba(5, 4, 20, 0.6);
+  opacity: 0.85;
+}
+.gk-gemstop__pips {
+  display: flex;
+  gap: 3px;
+}
+.gk-gemstop__pips i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(20, 18, 48, 0.85);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+.gk-gemstop__pips i[data-on] {
+  background: var(--gk-gold);
+  box-shadow: 0 0 6px rgba(255, 210, 63, 0.9);
+}
+.gk-world__card {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: grid;
+  gap: 6px;
+  width: min(300px, 40%);
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(18, 16, 44, 0.9);
+  border: 1px solid var(--gk-night-edge);
+  color: var(--gk-night-ink);
+  box-shadow: 0 10px 30px rgba(5, 4, 20, 0.55);
+}
+.gk-world__card h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+.gk-world__card p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+.gk-world__level {
+  color: var(--gk-gold);
+  font-weight: 800;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.gk-world__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gk-world__stars {
+  color: #3d3878;
+  letter-spacing: 2px;
+}
+.gk-world__stars [data-on] {
+  color: var(--gk-gold);
+}
+.gk-world__lock {
+  color: var(--gk-night-soft);
+}
+.gk-campaign .gk-world__play {
+  justify-self: start;
+  min-height: 44px;
+  padding: 8px 20px;
+  font-size: 1.05rem;
+  white-space: nowrap;
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gk-gemstop {
+    transition: none;
   }
 }
+

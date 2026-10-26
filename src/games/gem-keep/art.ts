@@ -50,19 +50,20 @@ export const campaignUrl = (small: boolean) => (small ? (file('campaign', 'campa
 
 /**
  * Where each level's marker sits on the campaign painting, as a share of its width and height (0–1).
- * A gentle wave from the dusk forest on the left to the crystal castle on the right. Tune to the painting.
+ * Levels 1–9 follow the painted trail from the top of the map down and along to the right; level 10 is at the
+ * crystal castle's gate.
  */
 export const CAMPAIGN_MARKERS: [number, number][] = [
-  [0.07, 0.62],
-  [0.17, 0.4],
-  [0.27, 0.6],
-  [0.37, 0.38],
-  [0.47, 0.58],
-  [0.56, 0.36],
-  [0.65, 0.56],
-  [0.74, 0.34],
-  [0.83, 0.54],
-  [0.93, 0.36],
+  [0.369, 0.194],
+  [0.313, 0.322],
+  [0.35, 0.406],
+  [0.378, 0.522],
+  [0.438, 0.622],
+  [0.538, 0.656],
+  [0.631, 0.683],
+  [0.694, 0.767],
+  [0.741, 0.856],
+  [0.797, 0.467],
 ];
 
 // ---------- Loading pictures for the canvas ----------

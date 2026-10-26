@@ -66,6 +66,9 @@ export const TEXT = {
   levelLabel: (n: number, name: string) => `Level ${n}: ${name}`,
   levelStars: (n: number) => (n === 1 ? '1 star' : `${n} stars`),
   locked: (n: number) => `Pass level ${n}'s Level Key to open this`,
+  stopLabel: (n: number, name: string, stars: number, locked: boolean) =>
+    `Level ${n}, ${name}, ${stars === 1 ? '1 star' : `${stars} stars`}${locked ? ', locked' : ''}`,
+  playLevel: (n: number) => `Play level ${n}`,
   tables: (tables: number[]) => tables.map((t) => `×${t}`).join(' '),
   tablesLabel: (tables: number[]) => `Times tables: ${tables.join(', ')}`,
   savedHere: 'Your progress is saved on this device.',
