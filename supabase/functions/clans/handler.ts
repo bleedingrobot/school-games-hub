@@ -15,8 +15,12 @@
  * request and sent with the clan, so the browser and the server always use the same ones. Fame, points and achievements are added by the
  * database in the same save (from the counts the rules put in the result); this only asks for the new fame and achievements afterwards.
  * The maths answers a request produced go in the teacher's private records once the save is kept (a retry reuses the same batch id).
+ *
+ * Ladder fights (20 Oct 2026): a `fightStart` that asks for one loads the child's maths (records, class settings, focus) so the rules
+ * can make the fight's Battle Cry questions; `publicState` sends the browser only what to show of them, never an answer. Each
+ * `cryCheck` answer goes in the child's own maths records (ladder place, skill map, focus results) once its save is kept.
  */
-import { applyAction, parseAction, type Applied, type Effects, type Result, type ServerState } from '../../../shared/clans/actions';
+import { applyAction, parseAction, type Applied, type Effects, type Result, type ServerState, type ShownFight } from '../../../shared/clans/actions';
 import type { Empire } from '../../../shared/clans/types';
 import type { RaidTarget, Sketch, VillageKind, VillageView } from '../../../shared/clans/village';
 import { nzDayNumber } from '../../../shared/clans/clock';
@@ -24,6 +28,7 @@ import { UNTIMED_MS } from '../../../shared/clans/battleCry';
 import { CONFIG } from '../../../shared/clans/config';
 import type { FactAnswer } from '../../../shared/maths/leitner';
 import { readPracticalSettings, type PracticalSettings } from '../../../shared/maths/practical';
+import { publicQuestion, type MathsContext } from '../../../shared/maths/serverQuestions';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 import { RateLimiter } from '../_shared/limits';
 
@@ -91,6 +96,10 @@ export interface Services {
   extras(player: string): Promise<Outcome<Extras>>;
   /** Adds answers to the teacher's private maths records. `batchKey` makes a retry count once. */
   recordAnswers(player: string, batchKey: string, answers: FactAnswer[]): Promise<Outcome<number>>;
+  /** The child's maths records, class question settings and focus, to make a ladder fight's questions. Null if they couldn't be read. */
+  mathsContext(player: string): Promise<MathsContext | null>;
+  /** Adds ladder answers to the child's own maths records, the shared way (recordMathsAnswers). `once` makes a resend count once. Never throws. */
+  recordLadderAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** Milliseconds since 1970. */
   now(): number;
 }
@@ -111,11 +120,17 @@ export const MAX_TRIES = 4;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** The fight in progress as the browser may see it: a ladder fight's questions with no answers (the marks so far are its own). */
+export function publicFight(fight: NonNullable<ServerState['fight']>): ShownFight {
+  const { questions, ...rest } = fight;
+  return questions ? { ...rest, questions: questions.map((q, i) => publicQuestion(q, i)) } : rest;
+}
+
 /** What the browser is told about a clan: everything it shows, nothing it could use to cheat. */
 export function publicState(state: ServerState, settings: PracticalSettings, loaded: Pick<Loaded, 'news' | 'village' | 'raidsOn' | 'notes'>, extras?: Extras) {
   const { clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight } = state;
   return {
-    clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight: fight ?? null, settings, news: loaded.news,
+    clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight: fight ? publicFight(fight) : null, settings, news: loaded.news,
     village: loaded.village ?? null, raidsOn: loaded.raidsOn ?? false, notes: loaded.notes ?? [],
     fame: extras?.fame ?? 0, season: extras?.settings.season ?? 1, fightsPerDay: extras?.settings.fightsPerDay ?? CONFIG.fightsPerDay,
     achievements: extras?.achievements ?? [],
@@ -152,6 +167,8 @@ export function makeHandler(services: Services) {
     // The teacher's settings, read fresh for this request. A fight that is already open keeps the ones it started with.
     const settings = readPracticalSettings(extras.value.settings);
     const fightsPerDay = Number.isInteger(extras.value.settings.fightsPerDay) ? extras.value.settings.fightsPerDay : CONFIG.fightsPerDay;
+    // Only a ladder fight's start needs the child's maths. If it can't be read the fight is an old-style one (the rules decide).
+    const maths = action.type === 'fightStart' && action.ladder ? await services.mathsContext(player) : undefined;
 
     for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
       const loaded = await services.load(player, requestId);
@@ -166,7 +183,7 @@ export function makeHandler(services: Services) {
       if (replay) return reply(200, { ok: true, replayed: true, seed, state: state && shown(state), result: replay });
 
       const village = loaded.value.village ?? null;
-      const ctx = { seed, today, settings, fightsPerDay, village, self: loaded.value.self ?? undefined, raidsOn: loaded.value.raidsOn ?? false };
+      const ctx = { seed, today, settings, maths, fightsPerDay, village, self: loaded.value.self ?? undefined, raidsOn: loaded.value.raidsOn ?? false };
       let target: LoadedTarget = null;
       if (state && action.type === 'raidTargets') {
         const mates = await services.mates(player);
@@ -217,6 +234,10 @@ export function makeHandler(services: Services) {
           const at = services.now();
           const answers = effects.answers.map((a): FactAnswer => ({ key: a.key, correct: a.correct, ms: UNTIMED_MS, at }));
           await services.recordAnswers(player, requestId, answers);
+        }
+        if (effects.ladder?.answers.length) {
+          const at = services.now();
+          await services.recordLadderAnswers(player, effects.ladder.once, effects.ladder.answers.map((a): FactAnswer => ({ ...a, at })));
         }
         // The database has added any fame, points and achievements in the same save: ask again for the new ones.
         const fresh = await services.extras(player);

@@ -691,3 +691,15 @@ Built, tested and **not applied, not deployed, not merged**. Branch `clans`. No 
 - Merged `clans` into `main` and pushed; the website deploy succeeded.
 - Switched **Clan Quest on** for pupils the same day at James's word. The **raids** switch is still off.
 - Not done: the signed-out table-access check (step 4) and the teacher try-out (step 6) were skipped. James chose to go straight to pupils.
+
+## Battle Cry from the ladder (20 Oct 2026, branch `clans-ladder`, not live)
+
+James asked for easier Clan Quest maths, then for the Battle Cry to come from each child's own maths. Plan: /home/james/.claude/plans/can-you-carefully-plan-starry-catmull.md. His decisions: the answers **count** (ladder place, skill map, focus results), and **only the Battle Cry** changes (quests, shop, Church and troop costs keep their story questions and the teacher's topic settings).
+
+- **Rules** (`shared/clans/actions.ts`, `battleCry.ts`): `fightStart { ladder: true }` with the child's maths makes 8 questions (`makeRunQuestions`, seeded `clans:<fight seed>:<fight no>`) and keeps them in the open fight with `marks: []`. A new action `cryCheck { round, answer, ms }` marks the next round's question once (asking again gives the first mark back) and hands the answer on for the child's records. A round's bonus counts only when its mark is right and the round's answer is the marked one. Fights without `questions` (old-style: an older page, or the child's maths couldn't be read) play exactly as before, so fights open at the changeover are fine.
+- **Server** (`supabase/functions/clans/`): loads `space_maths_context` only for a ladder fight start; `publicFight` sends the browser only what to show (no `answer`, `factKey` or `params`); ladder answers are recorded with `recordMathsAnswers(…, 'clans')` after the save is kept. One `cryCheck` request per Battle Cry answered ("No thanks" sends none).
+- **Database** (`20261020000300_clans_ladder.sql`): `clan_fights.questions` and `marks` (jsonb, at most 8), with `load_clan` and `save_clan` re-created from 20261018002600 (checked equal to live on 20 Oct) and changed only where they read and write the fight.
+- **Screens**: the Battle Cry uses the hub's `QuestionModal` ("No thanks" closes it; a wrong answer shows the right one). The test page keeps the practical questions. How to play and the Teacher page say where the questions come from.
+- **Marble**: the moved helpers are re-exported from `shared/marble/questions.ts`; `marble/index.ts` was rebuilt and differs only in a comment, so Marble needs no deploy.
+- **Tests**: `shared/clans/ladderFights.test.ts` (rules), new handler tests (no answers sent, maths loaded only on a ladder start, answers recorded once), `Server.test.tsx` ladder fights (right, wrong, "No thanks", refresh), `LadderCry.test.tsx` (every built ladder skill, typed and multiple choice, through the Battle Cry), `supabase/tests/database/clans_ladder.test.sql` (13 checks on a scratch copy). Go-live: `docs/prompts/clans-ladder-golive.md`.
+
