@@ -53,13 +53,15 @@ const contrast = (a: string, b: string) => {
 const colour = (name: string) => css.match(new RegExp(`--kk-${name}:\\s*(#[0-9a-f]{6})`, 'i'))![1];
 
 it('reads well, has big enough targets and keeps still when asked', () => {
-  // Text on parchment (its lightest and darkest), and on the wood.
+  // Text on the panels (white, their pale tint, and see-through white over the pale sky).
   for (const text of ['ink', 'soft', 'red', 'blue', 'green', 'warn']) {
-    for (const bg of [colour('panel'), '#efdcb6', '#e6d2a6']) expect(contrast(colour(text), bg), `${text} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+    for (const bg of [colour('panel'), colour('panel-alt'), '#e3f3d9']) expect(contrast(colour(text), bg), `${text} on ${bg}`).toBeGreaterThanOrEqual(4.5);
   }
-  for (const text of ['cream', 'gold']) {
-    for (const bg of [colour('bg'), colour('wood')]) expect(contrast(colour(text), bg), `${text} on ${bg}`).toBeGreaterThanOrEqual(4.5);
-  }
+  // On the frame: white on the deep sky at the top, dark ink on the pale sky and meadow at the bottom.
+  for (const bg of [colour('sky'), colour('sky-2')]) expect(contrast(colour('on-sky'), bg), `on-sky on ${bg}`).toBeGreaterThanOrEqual(4.5);
+  for (const bg of [colour('sky-pale'), colour('meadow')]) expect(contrast(colour('frame-ink'), bg), `frame-ink on ${bg}`).toBeGreaterThanOrEqual(4.5);
+  // White words on the orange buttons and on the chosen step.
+  for (const bg of [colour('hot'), colour('hot-deep'), colour('blue')]) expect(contrast('#ffffff', bg), `white on ${bg}`).toBeGreaterThanOrEqual(4.5);
   // Buttons, fields, the map's labels and the fold-outs are at least 44px high.
   for (const m of css.matchAll(/([^{}]+)\{[^}]*?min-height:\s*(\d+)px/g)) {
     if (/(btn|input|summary|look|spot)/.test(m[1])) expect(Number(m[2]), m[1].trim()).toBeGreaterThanOrEqual(44);
