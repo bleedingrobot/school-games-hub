@@ -39,8 +39,11 @@ GROUPS = {'monster': 'monsters', 'person': 'people', 'avatar': 'looks', 'scene':
 #   'flat'  the plain flood-fill from the edges (remove_background), which keeps white inside the outline
 #   'union' rembg, plus anything the flood-fill says is not background (rembg ate a white belly or white antlers)
 #   'plain' rembg without alpha matting (the matting blurred a thin outline away)
+#   'glow'  rembg, plus see-through by how far each pixel is from white, so a flame's glow fades out instead of
+#           ending in a hard pale disc
 OVERRIDES: dict[str, str] = {
     'monster-remaindeer-2': 'union',  # rembg faded the icy tip of the right antler
+    'person-wee-hana': 'glow',  # rembg dropped the whole torch flame
 }
 
 
@@ -144,6 +147,15 @@ def cut(img: Image.Image, how: str) -> Image.Image:
         a = np.maximum(np.asarray(out)[..., 3], np.asarray(keep))
         out = img.convert('RGBA')
         out.putalpha(Image.fromarray(a))
+    elif how == 'glow':
+        rgb = np.asarray(img.convert('RGB')).astype(np.float32)
+        _, dist, bg = flat_background(rgb)
+        glow = np.clip((dist - 12) / 90, 0, 1)
+        a = np.maximum(np.asarray(out)[..., 3] / 255, glow)
+        # Where the glow decides, unmix the white so it doesn't look milky on a dark background.
+        a3 = a[..., None]
+        unmixed = np.where((glow > np.asarray(out)[..., 3] / 255)[..., None], (rgb - (1 - a3) * bg) / np.maximum(a3, 1e-3), rgb)
+        out = Image.fromarray(np.dstack([np.clip(unmixed, 0, 255), a * 255]).astype(np.uint8), 'RGBA')
     return out
 
 
