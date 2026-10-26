@@ -341,3 +341,15 @@ Each stage ends with tests passing and a results section here, and stops for Jam
 
 - Battle flow, catch chance, exp curve and grid walking ideas adapted from *Monster Tamer* by Dev Share Academy (MIT, © 2024).
 - Tiles from Kenney (CC0).
+- Painted pictures (monsters, people, looks, places, badges, items) made by James with Z-Image Turbo in ComfyUI, Oct 2026 (`src/games/monsters/art/painted/CREDITS.md`).
+
+## Painted art: went live 26 Oct 2026
+
+Plan: `docs/prompts/maths-monsters-art.md`. Website PR #27, published by the run for PR #28 (the run for #27 hit the flaky checkers page test, now given 10 seconds).
+
+- **Live:** 403 WebP pictures (9.4 MB): all 108 monsters, 50 people, 24 looks, 14 battle backgrounds, 6 badges and 5 items. Battles show the place's painting, trainers say hello with their picture and the pupil's look facing them, the talk box has portraits, the Badges page and Bag have pictures.
+- **Choose your look (C4):** the `monster` function was deployed from `monsters-art` first (POST without sign-in gives 401). That bundle also brought `monster` up to the 2-minute answer-time cap the other games already had.
+- **Checks:** monsters 117 tests, shared/monsters + function 140; axe 0 problems on every screen at 1366x640 and 844x390; reduced motion; no late frames at battle start with a 4x slower CPU.
+- **Small things left:** a faint painted shadow beside the ball and potion pictures; Wee Hana's torch glow is soft; looks boy-08 and girl-11 fade out at the knees; a tiny made-up word on Ranger Kiri's name badge; the Harbour Town and Healing Centre backgrounds are made but no battles happen there.
+- **Still to do:** James tries it as the teacher on a phone and a laptop.
+- **Turning it off:** the Maths Monsters switch on the Teacher page, or revert the #27 merge and redeploy `monster` from main.
