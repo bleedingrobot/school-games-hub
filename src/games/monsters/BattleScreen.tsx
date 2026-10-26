@@ -26,7 +26,7 @@ import { useSound } from '../../sound';
 import { playSound, type GameSound } from '../sounds';
 import { AttackEffect, CriticalPop, DamageNumber, EFFECT_MS, HitFlash } from './art/Effects';
 import { MonsterArt, type MonsterState } from './art/MonsterArt';
-import { personPic, scenePic } from './art/painted';
+import { monsterPic, personPic, preload, scenePic } from './art/painted';
 import { loadMonsterSettings, saveMonsterSettings, type MonsterSettings } from './settings';
 import { beatsFor, ITEM_LABEL, nameOf, type Beat } from './text';
 import { BagList, NameCard, Sheet, summarise, TeamList } from './ui';
@@ -239,6 +239,8 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
         play_('item');
         break;
       case 'evolved':
+        // "What? Digibud is changing!": fetch the grown form's picture while it flashes.
+        if (beat.sub === 'evolving') preload(monsterPic(e.to, next.team[memberOf(e.to)]?.shiny));
         if (beat.sub === 'evolved') {
           setShown((s) => {
             const n = clone(s);
@@ -289,6 +291,8 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
       opening.splice(0, 1, { ...first, text: `${trainer} wants to battle!` }, { ...first, text: `${trainer} sends out ${nameOf(start.state.foes[0].species)}!` });
     }
     startBeats(opening);
+    // A trainer's other monsters come out later: fetch their pictures now, so they don't pop in.
+    preload(...start.state.foes.slice(1).map((m) => monsterPic(m.species, m.shiny)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
