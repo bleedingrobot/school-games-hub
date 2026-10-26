@@ -43,7 +43,14 @@ What we learned in the try-outs: at night the painter drifts off the road when t
 - The ogre king came out bare-chested. Now he wears "a long royal purple tunic with gold trim that covers his chest and belly".
 - Letter-like runes appeared on tower 3. "Swirl patterns" avoids them.
 
-## Stage B: make the rest and tidy into WebP (`scripts/gem-keep-art.py`)
+James approved all the first-round picks (27 Oct 2026).
+
+**Second round done (27 Oct 2026).** All 10 boards painted at 0.74 with per-level words (no "boulders"), two tries each, chosen by road check (`~/dragon-art-inbox/tools/gem-keep-roadcheck.py`). Water is drawn bright in every base (`gem-keep-base.py`), so ponds stay on their tiles. Rocks come from a `rock` sprite the game draws on every rock tile, because the painter leaves rock tiles empty once boulders aren't named. The campaign map is painted with an empty trail; the game places the 10 markers (`CAMPAIGN_MARKERS` in `art.ts`). All picks are in `docs/gem-keep-art/picks.json`.
+- Tower 1 and the rock are painted on pale lavender (`LIGHT_BACKGROUND` in the inbox script), because dark stone melts into a dark background.
+- Cutting out: rembg gives the outline only (it blackens what it removes), stone sprites get their inside holes filled (`SOLID`), and stray specks are dropped so the trim is tight.
+- The tiny figure still appears in glowing bowls and holes. The gem covers it on towers.
+
+## Stage B: make the rest and tidy into WebP (`scripts/gem-keep-art.py`) — done
 
 1. Boards 2–10: draw each night base (levels 6, 8, 9 and 10 have two paths; the base draws both), paint with the level's own words (frost for Frost Ridge, lightning clouds for Storm Peaks, castle walls for Gem Keep Castle), one try each, remake only the bad ones.
 2. **Road check.** For each board, draw the real path and the rock and water tiles over the painting in a contact sheet. Repaint any board where the road, a rock or the water is off its tiles: building is allowed only on grass, so a painted rock on a grass tile would confuse students.
