@@ -106,12 +106,12 @@
   "copy": 1
  },
  "item-knobbly-club": {
-  "copy": 2,
-  "look": "Both are wooden mallets rather than a knobbly club."
+  "copy": 3,
+  "look": "Remade 26 Oct as copy 3: copies 1 and 2 were wooden mallets."
  },
  "item-leather-armor": {
-  "copy": 1,
-  "look": "Both look like metal plates rather than leather."
+  "copy": 3,
+  "look": "Remade 26 Oct as copy 3: copies 1 and 2 looked like metal plates."
  },
  "item-lion-s-shield": {
   "copy": 1
@@ -134,12 +134,12 @@
   "copy": 1
  },
  "item-rags": {
-  "copy": 1,
-  "look": "Both are a sack rather than rags."
+  "copy": 3,
+  "look": "Remade 26 Oct as copy 3: copies 1 and 2 were a sack."
  },
  "item-scythe": {
-  "copy": 1,
-  "look": "Both look more like a pickaxe than a scythe. Copy 2 has a grey background."
+  "copy": 3,
+  "look": "Remade 26 Oct as copy 3: copies 1 and 2 looked like a pickaxe."
  },
  "item-shortsword": {
   "copy": 1
@@ -158,8 +158,8 @@
   "copy": 1
  },
  "item-wand": {
-  "copy": 1,
-  "look": "Both are chunky, more like a club than a wand."
+  "copy": 3,
+  "look": "Remade 26 Oct as copy 3: copies 1 and 2 were chunky, like a club."
  },
  "item-wizard-s-staff": {
   "copy": 3,
@@ -201,8 +201,8 @@
   "copy": 1
  },
  "monster-cave-minotaur": {
-  "copy": 2,
-  "look": "Both are a four-legged bull-lion beast rather than a minotaur on two legs."
+  "copy": 3,
+  "look": "Remade 26 Oct as copy 3: copies 1 and 2 were a four-legged beast."
  },
  "monster-cyclops": {
   "copy": 1
@@ -243,8 +243,8 @@
   "copy": 1
  },
  "monster-green-slime": {
-  "copy": 1,
-  "look": "An armoured figure covered in slime rather than a blob of slime."
+  "copy": 3,
+  "look": "Remade 26 Oct as copy 3: copies 1 and 2 were an armoured figure, not a slime."
  },
  "monster-grumpy-orc": {
   "copy": 1
@@ -339,8 +339,8 @@
   "copy": 1
  },
  "quest-the-wishing-well": {
-  "copy": 2,
-  "look": "The well is smoking like a fire pit. Copy 2 is a little calmer."
+  "copy": 3,
+  "look": "Remade 26 Oct as copy 3: copies 1 and 2 had the well smoking like a fire pit."
  },
  "scene-barracks": {
   "copy": 1
