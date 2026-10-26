@@ -45,6 +45,10 @@ OVERRIDES: dict[str, str] = {
     'monster-remaindeer-2': 'union',  # rembg faded the icy tip of the right antler
     'person-wee-hana': 'glow',  # rembg dropped the whole torch flame
 }
+# Pictures with a second, smaller figure beside the real one: keep only the biggest piece.
+ONE_FIGURE = {'monster-digibud-2-shiny'}  # a baby digibud stands beside it
+# Where the second figure touches the real one: cut this share off the left of the picture first.
+TRIM_LEFT = {'monster-digibud-2': 0.37}  # a baby digibud leans on its tail
 
 
 def slug(name: str) -> str:
@@ -159,7 +163,7 @@ def cut(img: Image.Image, how: str) -> Image.Image:
     return out
 
 
-def tidy(img: Image.Image, min_alpha=40, pad=6) -> Image.Image | None:
+def tidy(img: Image.Image, min_alpha=40, pad=6, biggest_only=False) -> Image.Image | None:
     """Drops loose specks (anything much smaller than the biggest piece) and trims to the figure."""
     from scipy import ndimage
     rgba = np.asarray(img).copy()
@@ -168,7 +172,7 @@ def tidy(img: Image.Image, min_alpha=40, pad=6) -> Image.Image | None:
     if n == 0:
         return None
     sizes = ndimage.sum(solid, labels, range(1, n + 1))
-    keep = np.isin(labels, 1 + np.flatnonzero(sizes >= sizes.max() * 0.02))
+    keep = np.isin(labels, 1 + np.flatnonzero(sizes >= sizes.max() * (1 if biggest_only else 0.02)))
     # Grow the kept pieces a little so their soft edges stay, then clear everything else.
     keep = ndimage.binary_dilation(keep, iterations=3)
     rgba[..., 3] = np.where(keep, rgba[..., 3], 0)
@@ -216,8 +220,10 @@ def make(src: Path):
     img = img.convert('RGB')
     # Work at about 1024 px: plenty for the biggest copy (640), and rembg's matting is much quicker and lighter.
     img.thumbnail((1024, 1024), Image.LANCZOS)
+    if slot in TRIM_LEFT:
+        img = img.crop((round(img.width * TRIM_LEFT[slot]), 0, img.width, img.height))
     how = OVERRIDES.get(slot, 'rembg')
-    fig = tidy(cut(img, how))
+    fig = tidy(cut(img, how), biggest_only=slot in ONE_FIGURE)
     if fig is None:
         print(f'  ! nothing left after cutting out ({how})', flush=True)
         return
