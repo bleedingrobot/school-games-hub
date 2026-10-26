@@ -1,8 +1,8 @@
 # Kingdom Keeper pictures
 
-The painted pictures in this folder were made for this game on 26–27 October 2026 with an image AI on James's own computer
+The painted pictures in this folder were made for this game on 27 October 2026 with an image AI on James's own computer
 (James is the teacher who runs School Games Hub), from the prompts in
-[docs/kingdom-art/PROMPTS.md](../../../../docs/kingdom-art/PROMPTS.md), in the same painted style as Dragon Maths. They were
+[docs/kingdom-art/PROMPTS.md](../../../../docs/kingdom-art/PROMPTS.md), in a bright hand-painted animated-film style James chose from five try-outs (the first, darker set in the Dragon Maths style is in git history). They were
 then cropped, shrunk and cut out with `scripts/kingdom-art.py` (figures were cut off their white paper with the open-source
 rembg tool, run on James's computer only). They were not copied from any game, artist or art pack.
 

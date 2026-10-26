@@ -10,7 +10,7 @@
 
 - You rule **Riverstone**, a small river city, for **10 years**. Each year your steward reports what happened, three advisers ask you a maths question each, and then you decide: buy or sell land, how much grain to feed the people, and how many acres to plant.
 - **The maths:** every council question comes from the pupil's own maths focus, made and marked by the server (way A, like Marble Rush). A right answer gives a **boon** for the year (a better harvest, no rats, cheaper land, no sickness, more newcomers). A wrong answer just means no boon. The planning (grain × price, people × 20, acres ÷ 2) is real maths too, and the screen shows the sums as you go.
-- **The look:** the same gritty painted style as Dragon Maths, painted with the same prompt style on the same image AI: a parchment map of the valley with labelled places, painted scenes for every place and event, six painted advisers, eight rulers to pick from, and four painted endings. Same dark-wood frame, parchment panels and IM Fell heading font.
+- **The look:** the same gritty painted style as Dragon Maths, painted with the same prompt style on the same image AI: a parchment map of the valley with labelled places, painted scenes for every place and event, six painted advisers, eight rulers to pick from, and four painted endings. **Look changed 27 Oct 2026 (James chose "animated-film painting" from five mock-ups):** a bright hand-painted animated-film style, sky-blue frame, white rounded panels, Baloo 2 and Mulish fonts (bundled, OFL).
 - **The server is in charge:** the whole reign lives on the server. The browser sends the year's decisions; the server checks them, rolls the year from the reign's seed and sends back the next year.
 - Points through the hub hooks (3 to 5 a finished reign), 6 achievements, a teacher on/off switch (off to start), a code switch (off to start), a preview James can try without signing in.
 
@@ -55,7 +55,7 @@ Within a year, in this order (same as the original): report → **council** (new
 
 ## 4. Screens and pictures
 
-Same frame as Dragon Maths, with the game's own CSS (`.kk-`) and its own copy of IM Fell English SC (OFL).
+The game's own CSS (`.kk-`), in the animated-film look (see section 1); the first gritty Dragon Maths-style set is in git history.
 
 | Screen | Picture |
 |---|---|
@@ -168,3 +168,9 @@ On/off switch per class (`TeacherKingdom.tsx`, copied from the Archery panel). T
 - Browser: played whole reigns in the preview at 1366 × 640, 844 × 390 and 390 × 844 with no page errors.
 - **Preview for James (private Artifact): https://claude.ai/artifact/Cvvd8FmJS7jbHXG7Lzv7ta** (saves in that browser only, never calls the school's server).
 
+
+### Look changed to animated-film painting, 27 Oct 2026
+
+- James asked to move away from the gritty look (too like Dragon Maths and Clan Quest). Five non-gritty looks were mocked up (watercolour, toy-town miniature, animated-film painting, papercut, mid-century gouache: https://claude.ai/artifact/PdBtTjynXRctAhpXwSkHmY) and James chose **animated-film painting**.
+- All 34 pictures repainted in that style (one try each, James's call; one repaint round for six rulers, which first came with a grown-up beside the child, and the map). Safety checked; the leaving family now walk out through the gate. Weak spots: the map is a bright bird's-eye view rather than a flat map; the sickness street is sunny. Picks and prompts in `docs/kingdom-art/`, raw tries in `~/dragon-art-inbox/kingdom-anim/`, generator `~/dragon-art-inbox/tools/kingdom-anim.py`.
+- Screens restyled to match (sky frame, white panels, orange buttons, Baloo 2 + Mulish bundled with their OFL licences; IM Fell removed). The accessibility test checks the new colours at 4.5:1. 8 tests pass, type check clean, a whole reign played in the preview with no errors. The preview link above shows the new look.
