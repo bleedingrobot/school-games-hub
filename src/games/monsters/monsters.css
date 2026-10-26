@@ -25,8 +25,29 @@
   position: relative;
   min-height: 0;
   container-type: size;
-  background:
-    linear-gradient(to bottom, var(--sky-a) 0, var(--sky-b) 48%, var(--ground) 48.2%, color-mix(in srgb, var(--ground) 70%, #166534) 100%);
+  --wash: linear-gradient(to bottom, var(--sky-a) 0, var(--sky-b) 48%, var(--ground) 48.2%, color-mix(in srgb, var(--ground) 70%, #166534) 100%);
+  background: var(--wash);
+}
+/* The painted landscape of the place or Tower (art/painted.ts), anchored to the ground, with the wash under it until it loads. The smaller copy on phones. */
+.mb-arena.has-art {
+  background-image: var(--arena-wide), var(--wash);
+  background-size: cover, auto;
+  background-position: center bottom, center;
+  background-repeat: no-repeat;
+}
+@media (max-width: 900px) {
+  .mb-arena.has-art { background-image: var(--arena-small), var(--wash); }
+}
+/* A trainer's picture, saying hello before their first monster comes out. */
+.mb-trainer {
+  position: absolute;
+  right: 12%;
+  bottom: 4%;
+  height: 92cqh;
+  max-width: 34cqw;
+  object-fit: contain;
+  object-position: bottom;
+  filter: drop-shadow(0 6px 6px rgba(15, 23, 42, 0.35));
 }
 .mb--area2 .mb-arena { --sky-a: #7dd3fc; --sky-b: #e0f2fe; --ground: #fde68a; }
 .mb--area3 .mb-arena { --sky-a: #fdba74; --sky-b: #fee2e2; --ground: #d6a37c; }
@@ -103,7 +124,7 @@
 .mb-ball--caught { animation: none; box-shadow: 0 0 18px 6px #fde047; }
 @keyframes mb-shake { 0%, 100% { rotate: 0deg; } 25% { rotate: -22deg; } 75% { rotate: 22deg; } }
 
-.mb-me.is-evolving .mon-art svg { animation: mb-evolve 0.9s ease-in-out infinite !important; }
+.mb-me.is-evolving .mon-art__pic { animation: mb-evolve 0.9s ease-in-out infinite !important; }
 @keyframes mb-evolve { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(0) invert(1) drop-shadow(0 0 10px #fff); } }
 
 .mb-gear {
@@ -242,6 +263,7 @@
 .mb-bag__icon--ball { background: linear-gradient(#ef4444 0 46%, #0f172a 46% 54%, #fff 54%); }
 .mb-bag__icon--great-ball { background: linear-gradient(#3b82f6 0 46%, #0f172a 46% 54%, #fff 54%); }
 .mb-bag__icon--repel { background: #86efac; border-radius: 50% 50% 8px 8px; }
+.mb-bag__pic { width: 40px; height: 40px; margin: -5px; flex: none; object-fit: contain; }
 .mb-empty { color: var(--mb-soft); }
 
 .mb-end { display: grid; justify-items: start; gap: 10px; max-width: 640px; margin: 0 auto; padding-top: 6px; font-size: 1.05rem; }
@@ -338,5 +360,5 @@
   .mb-foe, .mb-bar > span { transition: none; }
   .mb-foe.has-ball > .mon-art { animation: none; opacity: 0; }
   .mb-ball { animation: none; }
-  .mb-me.is-evolving .mon-art svg { animation: none !important; filter: brightness(1.4); }
+  .mb-me.is-evolving .mon-art__pic { animation: none !important; filter: brightness(1.4); }
 }

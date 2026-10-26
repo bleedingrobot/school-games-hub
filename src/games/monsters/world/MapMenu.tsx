@@ -12,6 +12,7 @@ import { applyItem, bookCounts, canHeal, moveToBox, moveToTeam, swapTeam, type M
 import { ITEM_ORDER } from '../../../../shared/monsters/world/rewards';
 import type { WorldState } from '../../../../shared/monsters/world/types';
 import { TYPE_LABEL, TYPE_TOPIC } from '../../../../shared/monsters/types';
+import { badgePic } from '../art/painted';
 import { BoxScreen } from '../BoxScreen';
 import { HowToPlayBody } from '../HowToPlay';
 import { MonsterBookScreen } from '../MonsterBookScreen';
@@ -183,9 +184,15 @@ function BadgesPage({ world }: { world: WorldState }) {
     <ul className="mm-badges" aria-label="Badges">
       {AREAS.map((a) => {
         const has = world.badges.includes(a.badge);
+        const pic = badgePic(a.badge);
         return (
           <li key={a.badge} className={`mm-badge${has ? ' is-earned' : ''}`}>
-            <span className={`mm-badge__medal mm-badge__medal--${a.type}`} aria-hidden="true">{has ? '★' : ''}</span>
+            {/* The painted badge, greyed out until it is won; decorative, since the words say which badge and whether you have it. */}
+            {pic ? (
+              <img className="mm-badge__pic" src={pic} alt="" decoding="async" draggable={false} />
+            ) : (
+              <span className={`mm-badge__medal mm-badge__medal--${a.type}`} aria-hidden="true">{has ? '★' : ''}</span>
+            )}
             <span className="mm-badge__text">
               <strong>{TYPE_LABEL[a.type]} badge</strong>
               <small>{topicLabel(TYPE_TOPIC[a.type])}</small>

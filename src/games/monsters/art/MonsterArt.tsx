@@ -7,13 +7,17 @@
  *
  * The picture is 120 × 120 with the ground at y = 108. Idle bob, hurt wobble and the faint
  * (sink and fade) are CSS animations on the wrapper, switched off for reduced motion.
+ *
+ * When James's painted picture of a monster is there (art/painted.ts), it is drawn instead, in
+ * the same wrapper with the same animations; the drawings stay as the fallback.
  */
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { speciesOf } from '../../../../shared/monsters/monsterBook';
 import {
   Bolt, Cheeks, Crystal, Eyes, Flame, Leaf, Mouth, OUTLINE, PALETTES, SHINY_PALETTES, Shadow, Sparkle, Spike,
   type Palette,
 } from './parts';
+import { monsterPic } from './painted';
 import './monster-art.css';
 
 type Stage = 1 | 2 | 3;
@@ -379,33 +383,58 @@ export interface MonsterArtProps {
   nameless?: boolean;
 }
 
-/** Draws one monster. The drawing is labelled with the monster's name for screen readers. */
+/** Draws one monster. The picture is labelled with the monster's name for screen readers. */
 export function MonsterArt({ species, shiny, size, state = 'idle', flip, still, className, nameless }: MonsterArtProps) {
   const sp = speciesOf(species);
-  const draw = DRAWINGS[sp.family];
-  const c = (shiny ? SHINY_PALETTES : PALETTES)[sp.type];
   const label = `${sp.name}${shiny ? ' (shiny)' : ''}`;
   const scale = STAGE_SCALE[sp.stage - 1];
+  // The small painted copy for lists, the book grid and the team strip; a picture that fails to load falls back to the drawing.
+  const pic = monsterPic(species, shiny, size !== undefined && size <= 64);
+  const [broken, setBroken] = useState<string>();
+  const painted = pic && pic !== broken;
   return (
     <span
-      className={`mon-art mon-art--${state}${still ? ' mon-art--still' : ''}${className ? ` ${className}` : ''}`}
+      className={`mon-art mon-art--${state}${still ? ' mon-art--still' : ''}${nameless ? ' mon-art--nameless' : ''}${className ? ` ${className}` : ''}`}
       data-species={species}
       style={size ? { width: size, height: size } : undefined}
     >
-      <svg viewBox="0 0 120 120" {...(nameless ? { 'aria-hidden': true } : { role: 'img', 'aria-label': label })} focusable="false">
-        {!nameless && <title>{label}</title>}
-        <Shadow rx={30 + sp.stage * 4} />
-        <g className="mon-art__body" transform={`translate(60 108) scale(${flip ? -scale : scale} ${scale}) translate(-60 -108)`}>
-          {draw(sp.stage, c)}
-          {shiny && (
-            <>
-              <Sparkle x={104} y={26} r={7} fill="#fde047" />
-              <Sparkle x={16} y={40} r={5} fill="#fff" />
-              <Sparkle x={96} y={64} r={4} fill="#fff" />
-            </>
-          )}
-        </g>
-      </svg>
+      {painted ? (
+        // A painted shiny is already a different colour, so it needs no sparkles. Flip and stage size use `scale`, so the animations' `transform` still works.
+        <img
+          className="mon-art__pic"
+          src={pic}
+          alt={nameless ? '' : label}
+          style={{ scale: `${flip ? -scale : scale} ${scale}` }}
+          decoding="async"
+          draggable={false}
+          onError={() => setBroken(pic)}
+        />
+      ) : (
+        <Drawing species={species} shiny={shiny} flip={flip} label={label} nameless={nameless} />
+      )}
     </span>
+  );
+}
+
+function Drawing({ species, shiny, flip, label, nameless }: { species: string; shiny?: boolean; flip?: boolean; label: string; nameless?: boolean }) {
+  const sp = speciesOf(species);
+  const draw = DRAWINGS[sp.family];
+  const c = (shiny ? SHINY_PALETTES : PALETTES)[sp.type];
+  const scale = STAGE_SCALE[sp.stage - 1];
+  return (
+    <svg className="mon-art__pic" viewBox="0 0 120 120" {...(nameless ? { 'aria-hidden': true } : { role: 'img', 'aria-label': label })} focusable="false">
+      {!nameless && <title>{label}</title>}
+      <Shadow rx={30 + sp.stage * 4} />
+      <g className="mon-art__body" transform={`translate(60 108) scale(${flip ? -scale : scale} ${scale}) translate(-60 -108)`}>
+        {draw(sp.stage, c)}
+        {shiny && (
+          <>
+            <Sparkle x={104} y={26} r={7} fill="#fde047" />
+            <Sparkle x={16} y={40} r={5} fill="#fff" />
+            <Sparkle x={96} y={64} r={4} fill="#fff" />
+          </>
+        )}
+      </g>
+    </svg>
   );
 }

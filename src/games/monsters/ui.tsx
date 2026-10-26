@@ -5,6 +5,7 @@ import { speciesOf } from '../../../shared/monsters/monsterBook';
 import { expForLevel, maxHpOf, type Monster } from '../../../shared/monsters/rules';
 import { TYPE_LABEL } from '../../../shared/monsters/types';
 import { MonsterArt } from './art/MonsterArt';
+import { itemPic } from './art/painted';
 import { earlierName, ITEM_LABEL, ITEM_NOTE, nameOf } from './text';
 
 export function HealthBar({ monster }: { monster: Monster }) {
@@ -150,10 +151,11 @@ export function BagList({ bag, wild, onPick, items = BATTLE_ITEMS, ballNote = 'C
         const count = bag[item] ?? 0;
         const isBall = item === 'ball' || item === 'great-ball';
         const blocked = isBall && !wild;
+        const pic = itemPic(item);
         return (
           <li key={item}>
             <button type="button" className="mb-btn mb-bag__item" disabled={count < 1 || blocked} onClick={() => onPick(item)}>
-              <span className={`mb-bag__icon mb-bag__icon--${item}`} aria-hidden="true" />
+              {pic ? <img className="mb-bag__pic" src={pic} alt="" decoding="async" draggable={false} /> : <span className={`mb-bag__icon mb-bag__icon--${item}`} aria-hidden="true" />}
               <span className="mb-bag__text">
                 <strong>{ITEM_LABEL[item]}</strong>
                 <small>{blocked ? ballNote : ITEM_NOTE[item]}</small>
