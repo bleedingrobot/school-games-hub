@@ -37,7 +37,8 @@ import './clans.css';
 
 type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid' | 'quest' | 'village' | 'news' | 'classraid' | 'scoreboard' | 'achievements' | 'howto';
 
-/** The painting across the top of each screen. Home and Land have none of their own, so they borrow the village and the empire; the fight and its results get theirs in Stage A.6. */
+/** The painting across the top of each screen. Home and Land have none of their own, so they borrow the village and the empire. The fight has none across the top (its mine zone is painted behind the
+ * monsters, to keep the fight on one screen); its results get one from how it went (`afterFight`). */
 const SCENE_FOR: Partial<Record<Screen, SceneId>> = {
   home: 'village', mines: 'mines', market: 'market', training: 'training', church: 'church', empire: 'empire', land: 'empire', barracks: 'barracks',
   raid: 'raid', classraid: 'raid', quest: 'quests', village: 'village', news: 'news', scoreboard: 'scoreboard',
@@ -341,7 +342,9 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
     setScreen('results');
   };
 
-  const scene = loading !== null ? undefined : session ? SCENE_FOR[screen] : 'creator';
+  // After a fight: the victory painting for a win, the rest painting when the clan was knocked out, the Mines otherwise.
+  const afterFight: SceneId | undefined = screen === 'results' && summary ? (summary.result === 'won' ? 'victory' : summary.result === 'lost' ? 'rest' : 'mines') : undefined;
+  const scene = loading !== null ? undefined : session ? afterFight ?? SCENE_FOR[screen] : 'creator';
   // Today's quest has its own painting (all day, done or not); the general one is only for a day with no quest.
   const quest = screen === 'quest' && session ? questToday(session) : null;
 

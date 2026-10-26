@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import { SHEET_COLUMNS, SHEET_ROWS, TILE, MONSTER_TILES, DEFAULT_MONSTER_TILE, CLASS_TILES, DEFAULT_CLASS_TILE, ITEM_TILES, KIND_TILES, PLACE_TILES, type Tile } from './tileMap';
 import tiles from './tiles.png';
-import { itemArt, memberThumb } from './art';
+import { itemArt, memberThumb, monsterArt } from './art';
 import type { Look } from '../../../shared/clans/looks';
 
 /** The old terminal colours, used to colour the one-colour pictures. */
@@ -30,9 +30,15 @@ export function Sprite({ tile, scale = 4, colour = ANSI.green, label }: { tile: 
   return <span className="cq-sprite" style={style} role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : true} />;
 }
 
-export const MonsterSprite = ({ name, zone, scale = 4 }: { name: string; zone: string; scale?: number }) => (
-  <Sprite tile={MONSTER_TILES[name] ?? DEFAULT_MONSTER_TILE} scale={scale} colour={zoneColour(zone)} />
-);
+/**
+ * A monster: its painting (Clans art Stage A.6), 28 pixels tall for each step of `scale`, or else the old tile coloured by
+ * the mine zone it lives in.
+ */
+export function MonsterSprite({ name, zone, scale = 4 }: { name: string; zone: string; scale?: number }) {
+  const painted = monsterArt(name);
+  if (painted) return <img className="cq-monster-art" src={painted} alt="" style={{ height: scale * 28 }} />;
+  return <Sprite tile={MONSTER_TILES[name] ?? DEFAULT_MONSTER_TILE} scale={scale} colour={zoneColour(zone)} />;
+}
 
 /**
  * A member's portrait. With a `look` it is their painting (Clans art Stage A.5), 28 pixels tall for each step of `scale`;

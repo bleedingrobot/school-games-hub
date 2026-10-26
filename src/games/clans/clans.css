@@ -289,3 +289,17 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 @media (max-width: 760px) {
   .cq-clanbanner { height: 64px; }
 }
+
+/* Clans art Stage A.6: the fight. Monsters and members painted; the mine zone painted dimly behind the monsters. */
+.cq-side--enemies { background: linear-gradient(rgba(16, 17, 19, 0.55), rgba(16, 17, 19, 0.82)), var(--cq-zone, none) center 55% / cover no-repeat, var(--cq-panel); }
+.cq-monster-art { display: block; width: auto; max-width: 100%; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.7)); }
+.cq-side li.is-down .cq-monster-art { filter: grayscale(1) drop-shadow(0 3px 4px rgba(0, 0, 0, 0.7)); }
+.cq-side .cq-portrait--painted { margin-bottom: 2px; }
+/* Fight paintings stay small so the whole fight fits a 1366 x 640 Chromebook; the buttons never move. */
+.cq-side .cq-monster-art { height: 60px !important; }
+.cq-side .cq-portrait--painted { --cq-portrait: 60px !important; }
+/* The after-fight paintings have their subject high (victory: the banner and sun) or low (rest: the campfire). */
+.cq-scene[data-scene='victory'] { object-position: center 28%; }
+.cq-scene[data-scene='rest'] { object-position: center 75%; }
+/* Monster names were coloured by zone for the old tiles; on the painted zone they take the frame's heading colour. */
+.cq-side--enemies .cq-name { color: var(--f-head) !important; text-shadow: 0 1px 2px #000; }
