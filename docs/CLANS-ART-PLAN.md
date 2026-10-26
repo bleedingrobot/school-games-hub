@@ -3,7 +3,7 @@
 How Clan Quest gets its painted pictures, from the 656 pictures in `~/dragon-art-inbox/clans-art` to a live game. It follows the way Dragon Maths was done (`docs/lord-art/`, `scripts/lord-art.py`, `src/games/lord/art.ts`), so most of the tools already exist.
 
 Written 26 October 2026 for James.
-**Status: A.0–A.3 done (26 Oct). James kept Claude's picks for every picture; the frame is stone and iron (the recommended one, easy to swap for oak in A.4). Next: A.4.** The plan is on the `clans-art` branch.
+**Status: A.0–A.4 done (26 Oct). James kept Claude's picks for every picture; the frame is stone and iron. Next: A.5 (members).** The plan is on the `clans-art` branch.
 
 ## The short version
 
@@ -144,3 +144,11 @@ If a picture needs remaking (a new monster, a wrong picture, a new item):
 - Cut-outs checked by eye on contact sheets (`scripts/clans-art.py --sheets`). The dark-background ones (skeleton, mummy, fire spirit, moon wolf) came out clean.
 - **Still to fix later:** a few members keep a pale painted splash by their feet, which shows on the dark frame. Worst are `imp-barbarian-female-1` and `imp-necromancer-female-2`; fix in A.5 (touch up or remake). Wizard's Staff, Wooden Armour and Giant Rat are still the wrong-looking ones from A.1 and could be remade.
 - The inbox's test folders (`clans-test`, `clans-test2`, `clans-superseded`) are kept: James chose to leave them where they are.
+
+## Stage A.4 results (26 Oct 2026)
+
+- The stone and iron frame is now the game's own look, at the end of `clans.css` (the old terminal rules above it still do the layout). Fonts are bundled, not fetched from Google: IM Fell English SC for headings (the same file as Dragon Maths) and Alegreya Sans for text, each with its licence file.
+- A painting across the top of every place, chosen in `ClanQuest.tsx` (`SCENE_FOR`): creator, home (village), mines, market, training, church, empire, land (empire), barracks, raid, classmate raid (raid), quest, village, news and scoreboard. Phones get the 800 copy and a shorter strip. How to Play, Achievements, the fight and the results have none yet (the fight's come in A.6).
+- The old pixel icon beside a place's name is hidden only while a painting shows, so it comes back if a picture is ever missing.
+- Checked at 1366 px and 390 px: no sideways scrolling, and the fight's question box still reads clearly. Members, monsters and items are still the bright pixel tiles until A.5–A.7.
+- 2 new tests (each place shows its painting; none in a fight yet). Clans tests: 468 pass.

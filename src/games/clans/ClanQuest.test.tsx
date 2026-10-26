@@ -197,3 +197,28 @@ describe('a fight', () => {
     expect(screen.getByText('Day 2')).toBeInTheDocument();
   });
 });
+
+describe('the place paintings (Clans art Stage A.4)', () => {
+  const sceneShown = () => document.querySelector<HTMLImageElement>('.cq-scene')?.dataset.scene;
+
+  it('the creator, then each place, shows its own painting, hidden from screen readers', async () => {
+    const u = user();
+    render(<ClanQuest seed={SEED} />);
+    expect(sceneShown()).toBe('creator');
+    await u.click(screen.getByRole('button', { name: 'Start the adventure' }));
+    expect(sceneShown()).toBe('village');
+    expect(document.querySelector('.cq-scene')?.getAttribute('alt')).toBe('');
+    for (const [place, scene] of [['The Market', 'market'], ['The Training Hall', 'training'], ['The Church', 'church'], ['Scoreboard', 'scoreboard']]) {
+      await u.click(screen.getByRole('button', { name: place }));
+      expect(sceneShown(), place).toBe(scene);
+      await u.click(screen.getByRole('button', { name: /^Back/ }));
+    }
+  });
+
+  it('no painting in a fight yet (Stage A.6)', async () => {
+    const u = user();
+    await makeClanOnScreen(u);
+    await intoFight(u);
+    expect(sceneShown()).toBeUndefined();
+  });
+});

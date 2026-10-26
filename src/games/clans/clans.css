@@ -1,5 +1,5 @@
-/* Clan Quest: the dark terminal look. The old 16 colours, VT323 for headings (if it is there), box borders.
-   Fits 1366 x 640 and a phone. */
+/* Clan Quest. This first part is the old dark terminal look (the 16 colours, VT323, box borders); the stone and iron
+   frame at the end of the file paints over it (Clans art Stage A.4). Fits 1366 x 640 and a phone. */
 .cq {
   --cq-bg: #0b0b17; --cq-panel: #12122a; --cq-ink: #e4e4f0; --cq-soft: #a6a6c4; --cq-line: #5a5ae0;
   --cq-green: #55ff55; --cq-cyan: #55ffff; --cq-red: #ff5555; --cq-yellow: #ffff55; --cq-mag: #ff55ff;
@@ -197,3 +197,50 @@
 .cq .numpad[data-decimal] .numpad__key, .cq .numpad[data-decimal] .numpad__key--enter { min-height: 44px; }
 .cq [tabindex='-1']:focus { outline: none; }
 .cq h2[tabindex='-1']:focus-visible { outline: 3px solid var(--cq-yellow); outline-offset: 2px; }
+
+/* Clans art Stage A.4: the stone and iron frame, chosen by James from the A.2 try-out. Cold stone, iron edges,
+   parchment text, ember for "do this". The rules above still lay everything out; this only changes how it looks. */
+@font-face { font-family: 'IM Fell English SC'; font-style: normal; font-weight: 400; font-display: swap; src: url('./imfell-sc.woff2') format('woff2'); }
+@font-face { font-family: 'Alegreya Sans'; font-style: normal; font-weight: 400; font-display: swap; src: url('./alegreya-sans-400.woff2') format('woff2'); }
+@font-face { font-family: 'Alegreya Sans'; font-style: normal; font-weight: 700; font-display: swap; src: url('./alegreya-sans-700.woff2') format('woff2'); }
+.cq {
+  --cq-bg: #18191b; --cq-panel: #222326; --cq-ink: #e6ddc8; --cq-soft: #a39b8b; --cq-line: #4a4e55;
+  --cq-green: #9cc47a; --cq-cyan: #c9b88f; --cq-red: #e06a5c; --cq-yellow: #e39a4a; --cq-mag: #c99ad6;
+  --f-deep: #101113; --f-raise: #2b2d31; --f-dot: #34373c; --f-head: #ecdcb8; --f-edge: #6a6f78;
+  background: radial-gradient(120% 80% at 50% 0%, #222428 0%, var(--cq-bg) 60%), var(--cq-bg);
+  border: 2px solid #000; border-radius: 3px;
+  box-shadow: 0 0 0 3px var(--f-edge), 0 0 0 5px #000, inset 0 0 0 1px #2e3136, inset 0 0 40px rgba(0, 0, 0, 0.6);
+  font-family: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem;
+}
+.cq :is(h1, h2, h3):not(.question__title) { font-family: 'IM Fell English SC', 'Iowan Old Style', Georgia, serif; color: var(--f-head); letter-spacing: 0.01em; }
+.cq h1 { font-size: 1.9rem; }
+.cq h2:not(.question__title) { font-size: 1.6rem; }
+.cq h3:not(.question__title) { font-size: 1.2rem; color: var(--f-head); }
+.cq .question__title { font-family: 'IM Fell English SC', Georgia, serif; }
+.cq-top { padding-bottom: 2px; }
+.cq-credits, .cq :is(.cq-headline div, .cq-stats div, .cq-train th, .cq-train td) { border-color: var(--f-dot); }
+.cq-tag { font-family: inherit; }
+
+/* The place's painting across the top (art.ts). Phones get the 800 copy. */
+.cq-scene { display: block; width: 100%; height: 190px; margin: 0 0 10px; object-fit: cover; object-position: center 45%; border-radius: 2px; outline: 2px solid var(--f-edge); outline-offset: 2px; background: var(--f-deep); }
+/* With a painting showing, the old pixel icon beside the place's name isn't needed. */
+.cq-scene ~ * .cq-place h2 > .cq-sprite, .cq-scene ~ .cq-place h2 > .cq-sprite { display: none; }
+
+/* Buttons: iron plates. Still at least 44px tall. */
+.cq-btn { background: linear-gradient(#2c2e33, #222327); border: 1px solid var(--cq-line); border-radius: 3px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 0 #000; }
+.cq-btn:hover:not(:disabled) { border-color: var(--f-edge); background: var(--f-raise); }
+.cq-btn--hot { border-color: var(--cq-yellow); color: var(--cq-yellow); }
+.cq .cq-btn[aria-pressed='true'] { border-color: var(--cq-yellow); background: var(--f-raise); }
+.cq :is(input, select) { background: var(--f-deep); }
+
+/* Panels and cards: a slightly raised slab with a thin edge. The old navy highlights become raised stone. */
+.cq :is(.cq-card, .cq-panel, .cq-side, .cq-achievement, .cq-celebrate) { border-radius: 3px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04); }
+.cq :is(.cq-side li.is-up, .cq-table .cq-me) { background: var(--f-raise); }
+.cq :is(.cq-bar, .cq-log) { background: var(--f-deep); }
+.cq-log { border-color: var(--f-dot); }
+.cq .question { --q-ink: var(--cq-ink); --q-soft: var(--cq-soft); --q-key: var(--f-raise); border-radius: 3px; }
+.cq .question__blank { background: var(--f-raise); }
+.cq .numpad__key, .cq .question__choice, .cq .question__close { border-radius: 3px; }
+@media (max-width: 760px) {
+  .cq-scene { height: 110px; }
+}

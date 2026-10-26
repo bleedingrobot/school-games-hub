@@ -32,9 +32,23 @@ import { awardNext, giveFame, newSeason, type ScoreRow } from './fame';
 import { ACHIEVEMENTS, fameFor, type AchievementDef } from '../../../shared/clans/rewards';
 import { averageLevel, earn, finishFight, newSession, skipDay, type FightSummary, type Session } from './session';
 import { sessionFrom, type ClanServer, type ServerReply } from './remote';
+import { sceneArt, type SceneId } from './art';
 import './clans.css';
 
 type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid' | 'quest' | 'village' | 'news' | 'classraid' | 'scoreboard' | 'achievements' | 'howto';
+
+/** The painting across the top of each screen. Home and Land have none of their own, so they borrow the village and the empire; the fight and its results get theirs in Stage A.6. */
+const SCENE_FOR: Partial<Record<Screen, SceneId>> = {
+  home: 'village', mines: 'mines', market: 'market', training: 'training', church: 'church', empire: 'empire', land: 'empire', barracks: 'barracks',
+  raid: 'raid', classraid: 'raid', quest: 'quests', village: 'village', news: 'news', scoreboard: 'scoreboard',
+};
+
+/** A wide painting, the 800 copy on phones. Only decoration, so screen readers skip it. */
+function Scene({ id }: { id: SceneId }) {
+  const { wide, small } = sceneArt(id);
+  if (!wide) return null;
+  return <img className="cq-scene" src={wide} srcSet={small && small !== wide ? `${small} 800w, ${wide} 1600w` : undefined} sizes="(max-width: 1100px) 100vw, 1100px" alt="" data-scene={id} />;
+}
 
 /** For James's test only: stands in for the Teacher page, which comes later. */
 function SettingsStrip({ session, onChange, open }: { session: Session; onChange: (s: Session) => void; open: boolean }) {
@@ -314,12 +328,15 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
     setScreen('results');
   };
 
+  const scene = loading !== null ? undefined : session ? SCENE_FOR[screen] : 'creator';
+
   return (
     <div className="cq" ref={root}>
       <header className="cq-top">
         <h1>Clan Quest</h1>
         <span className="cq-soft">{session ? `${session.clan.name} · ${session.clan.gold} gold · ${session.clan.followers} followers · ${session.fame ?? 0} fame` : 'Test version: nothing is saved'}</span>
       </header>
+      {scene && <Scene key={scene} id={scene} />}
       <Celebration fresh={celebrate} onClose={() => setCelebrate([])} />
       {notice && <p className="cq-note" role="alert">{notice}</p>}
       {loading === 'loading' ? (
@@ -394,7 +411,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'results' && summary && <Results summary={summary} members={session.clan.members} fame={fameEarned.current} onDone={() => setScreen('home')} />}
         </>
       )}
-      <footer className="cq-credits">Game rules adapted from The Clans by Allen Ussher (1997). Pictures: Kenney's 1-Bit Pack (CC0).</footer>
+      <footer className="cq-credits">Game rules adapted from The Clans by Allen Ussher (1997). Paintings made for School Games Hub; small pictures from Kenney's 1-Bit Pack (CC0).</footer>
     </div>
   );
 }
