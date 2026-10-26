@@ -3,7 +3,7 @@
 How Clan Quest gets its painted pictures, from the 656 pictures in `~/dragon-art-inbox/clans-art` to a live game. It follows the way Dragon Maths was done (`docs/lord-art/`, `scripts/lord-art.py`, `src/games/lord/art.ts`), so most of the tools already exist.
 
 Written 26 October 2026 for James.
-**Status: A.0–A.8 done (26 Oct). Live on 26 Oct except A.6 (fights), which goes live right after the `clans-ladder` branch.** The plan is on the `clans-art` branch.
+**Status: finished. Every stage (A.0–A.9) is done and live (26 Oct 2026): the pictures and frame in PR #23, the painted fight in PR #25, after the `clans-ladder` change.**
 
 ## The short version
 

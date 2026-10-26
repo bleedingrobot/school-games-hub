@@ -692,7 +692,7 @@ Built, tested and **not applied, not deployed, not merged**. Branch `clans`. No 
 - Switched **Clan Quest on** for pupils the same day at James's word. The **raids** switch is still off.
 - Not done: the signed-out table-access check (step 4) and the teacher try-out (step 6) were skipped. James chose to go straight to pupils.
 
-## Battle Cry from the ladder (20 Oct 2026, branch `clans-ladder`, not live)
+## Battle Cry from the ladder (20 Oct 2026, live 26 Oct 2026)
 
 James asked for easier Clan Quest maths, then for the Battle Cry to come from each child's own maths. Plan: /home/james/.claude/plans/can-you-carefully-plan-starry-catmull.md. His decisions: the answers **count** (ladder place, skill map, focus results), and **only the Battle Cry** changes (quests, shop, Church and troop costs keep their story questions and the teacher's topic settings).
 
@@ -702,4 +702,5 @@ James asked for easier Clan Quest maths, then for the Battle Cry to come from ea
 - **Screens**: the Battle Cry uses the hub's `QuestionModal` ("No thanks" closes it; a wrong answer shows the right one). The test page keeps the practical questions. How to play and the Teacher page say where the questions come from.
 - **Marble**: the moved helpers are re-exported from `shared/marble/questions.ts`; `marble/index.ts` was rebuilt and differs only in a comment, so Marble needs no deploy.
 - **Tests**: `shared/clans/ladderFights.test.ts` (rules), new handler tests (no answers sent, maths loaded only on a ladder start, answers recorded once), `Server.test.tsx` ladder fights (right, wrong, "No thanks", refresh), `LadderCry.test.tsx` (every built ladder skill, typed and multiple choice, through the Battle Cry), `supabase/tests/database/clans_ladder.test.sql` (13 checks on a scratch copy). Go-live: `docs/prompts/clans-ladder-golive.md`.
+- **Went live 26 Oct 2026 (evening, NZ time).** Pre-flight after merging that day's `main`: all 4,965 tests, the site build, and the `clans*` database tests on a scratch copy passed (only the two "scheduled for midnight" checks failed, as always on a scratch copy); live `load_clan` and `save_clan` matched what the migration starts from. Then, in order: migration `20261020000300` applied (both columns there, `save_clan` and `load_clan` keep them, the 5 saved fights still there, no errors in the `clans` logs); the `clans` function deployed (the live copy equals the branch build); PR #24 merged and published. The archery and mine bundles were rebuilt in the merge with the same code (only reordered), so they were not redeployed. **Still to do:** James tries a ladder fight as his teacher account (step 5 of the go-live prompt), and the logs and records are checked after a school day (step 6).
 
