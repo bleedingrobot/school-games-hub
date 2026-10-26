@@ -6,6 +6,7 @@ import { Moment } from './Moment';
 import { knockedOut, wakeAll, wakeAllCost, wakeAllPayers, wakeCost, wakeMember } from './places';
 import type { Session, Change } from './session';
 import { PlaceSprite, Portrait } from './Sprite';
+import { lookOf } from '../../../shared/clans/looks';
 
 type Phase = { t: 'idle' } | { t: 'one'; index: number } | { t: 'all' } | { t: 'done'; text: string };
 
@@ -62,7 +63,7 @@ export function Church({ session, onChange, onBack }: { session: Session; onChan
             const cost = wakeCost(clan, m);
             return (
               <li key={m.name}>
-                <Portrait race={m.race} cls={m.cls} scale={2} />
+                <Portrait race={m.race} cls={m.cls} look={lookOf(m)} scale={2} />
                 <span><strong>{m.name}</strong> · level {m.level} · {cost === 0 ? 'free (first wake-up)' : `${cost} gold`}{cost > clan.gold && <span className="cq-warn"> You need {cost - clan.gold} more gold. Fights in the Mines earn more.</span>}</span>
                 <button type="button" className="cq-btn" disabled={cost > clan.gold} onClick={() => startOne(i)}>Wake {m.name}</button>
               </li>

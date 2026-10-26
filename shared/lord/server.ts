@@ -21,17 +21,17 @@
  *  6. One atomic save (`Services.commit`): the hero, the fight and a note of what happened, or nothing.
  */
 import type { FactAnswer } from '../maths/leitner';
-import { CLASSES, FOREST_FIGHTS_PER_DAY, MAX_LEVEL, SEASON_DAYS, WEAPONS, ARMOURS, baseStats, expNeeded, masterFor } from './data';
+import { CLASSES, FOREST_FIGHTS_PER_DAY, isLook, MAX_LEVEL, SEASON_DAYS, WEAPONS, ARMOURS, baseStats, expNeeded, masterFor } from './data';
 import { computerHeroes } from './computer';
-import { EVENT_BY_ID } from './events';
+import { EVENT_BY_ID, eventsOn } from './events';
 import {
   applyEvent, applyForestResult, applyMasterResult, arenaExp, buyGear, canChallengeMaster, canFaceDragon, deposit, dragonBreather, duelistOf,
   FOREST_PILE_UP_DAYS, finishDragon, forestTrip, heal, loseToDragon, makeRandom, newHero, nzDate, playDuel, replayFight, rollDay, seasonOf, startDragonStage,
   startFight, startMasterFight, useForestTurn, withdraw, type Duelist,
 } from './engine';
 import {
-  NUMBER_GUESS_TRIES, addMasterTrialBonus, dragonStageOptions, interestFor, numberGuessPrize, offersSizeItUp, priceDiscount, riddleGold,
-  sizeItUpBonus, sizeItUpGold, type MomentId, type Result,
+  ALL_TOPICS, NUMBER_GUESS_TRIES, addMasterTrialBonus, dragonStageOptions, interestFor, numberGuessPrize, offersSizeItUp, priceDiscount, riddleGold,
+  sizeItUpBonus, sizeItUpGold, topicsOn, type MomentId, type Result,
 } from './maths';
 import { arenaWonLine, dailyNews, dragonWonLine, flattenedLine, masterWonLine, type NewsLine } from './news';
 import { markProof, type Proof } from './proof';
@@ -111,6 +111,8 @@ export interface Settings {
   forestPerDay: number;
   /** The first day of season 1 (YYYY-MM-DD). Null: the season starts today. */
   seasonStart: string | null;
+  /** The maths topics the teacher has left on (a missing or empty list means all of them). */
+  topics?: string[];
 }
 
 export interface Commit {
@@ -187,6 +189,8 @@ export interface LordState {
   today: string;
   season: { number: number; dayOfSeason: number; daysLeft: number };
   forestPerDay: number;
+  /** The maths topics the teacher has left on. */
+  topics: string[];
   classOpen: boolean;
   openFight: { id: string; kind: OpenFight['kind']; seed: number; start: FightState; sizeUp: boolean; stage?: 1 | 2 | 3; trial?: Result[] } | null;
   pendingEvent: string | null;
@@ -226,7 +230,8 @@ export type ToolId = 'jump' | 'gold' | 'exp' | 'refill' | 'hurt' | 'best-gear' |
 export type LordAction =
   | { action: 'load' }
   | { action: 'rollover' }
-  | { action: 'start-hero'; heroClass: HeroClass }
+  | { action: 'start-hero'; heroClass: HeroClass; look?: string }
+  | { action: 'look'; look: string }
   | { action: 'forest' }
   | { action: 'event'; proof?: Proof | null; walkOn?: boolean }
   | { action: 'fight-finish'; fightId: string; actions: FightAction[]; sizeUp?: Proof | null }
@@ -253,7 +258,7 @@ export const MAX_FIGHT_ACTIONS = 300;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const SKILLS: SkillId[] = ['power-strike', 'zap', 'mend', 'dodge', 'pinch'];
 const ACTIONS = [
-  'load', 'rollover', 'start-hero', 'forest', 'event', 'fight-finish', 'master-start', 'master-finish', 'dragon-stage', 'dragon-finish',
+  'load', 'rollover', 'start-hero', 'look', 'forest', 'event', 'fight-finish', 'master-start', 'master-finish', 'dragon-stage', 'dragon-finish',
   'shop-buy', 'heal', 'bank', 'inn', 'arena', 'tools',
 ];
 
@@ -318,9 +323,9 @@ interface Ctx {
 /** Marks a proof and gathers what is needed to record it. A proof that cannot be checked is just wrong. */
 function mark(c: Ctx, raw: unknown, moment: MomentId, only?: string) {
   if (raw === undefined || raw === null) return { result: 'wrong' as Result, skipped: true, answers: [] as (FactAnswer & { pack: string })[], notes: [] as string[] };
-  const m = markProof(raw, moment, c.w.hero.level, c.now, only);
+  const m = markProof(raw, moment, c.w.hero.level, c.now, only, topicsOn(c.settings.topics));
   if (!m.ok) return { result: 'wrong' as Result, skipped: false, answers: [], notes: [m.problem] };
-  return { result: (m.correct ? 'right' : 'wrong') as Result, skipped: false, answers: [m.answer], notes: [] as string[] };
+  return { result: (m.correct ? (m.hinted ? 'hint' : 'right') : 'wrong') as Result, skipped: false, answers: [m.answer], notes: [] as string[] };
 }
 
 // ---------- The actions ----------
@@ -335,7 +340,15 @@ function startHero(c: Ctx, existing: boolean): Done | Refuse {
   }
   const next = newHero(cls as HeroClass, c.today, existing ? { dragonKills: hero.dragonKills } : undefined);
   next.forestLeft = c.settings.forestPerDay;
-  return { hero: next, extra: newExtra(extra.stats), summary: { heroClass: cls }, result: {} };
+  if (isLook(next.heroClass, c.req.look)) next.look = c.req.look;
+  return { hero: next, extra: newExtra(extra.stats), summary: { heroClass: cls, look: next.look }, result: {} };
+}
+
+/** Picks which painted hero you look like: any of your class's, as often as you like. It changes nothing else. */
+function setLook(c: Ctx): Done | Refuse {
+  const { hero } = c.w;
+  if (!isLook(hero.heroClass, c.req.look)) return { refuse: 'bad-request' };
+  return { hero: { ...hero, look: c.req.look }, summary: { look: c.req.look }, result: {} };
 }
 
 function forest(c: Ctx): Done | Refuse {
@@ -343,7 +356,7 @@ function forest(c: Ctx): Done | Refuse {
   if (extra.pendingEvent) return { summary: { kind: 'event', again: true }, result: { kind: 'event', eventId: extra.pendingEvent } };
   if (hero.forestLeft <= 0) return { refuse: 'no-turns', message: 'You have used all your forest fights today. Come back tomorrow, or visit the village.' };
   if (hero.hp <= 0) return rule('You are too hurt to go into the forest. See the healer.');
-  const trip = forestTrip(hero, c.s.seed());
+  const trip = forestTrip(hero, c.s.seed(), eventsOn(topicsOn(c.settings.topics)));
   if (trip.kind === 'event') {
     return { extra: { ...extra, pendingEvent: trip.event.id }, summary: { kind: 'event', id: trip.event.id }, result: { kind: 'event', eventId: trip.event.id } };
   }
@@ -361,9 +374,10 @@ function event(c: Ctx): Done | Refuse {
   let right = false;
   let answers: Done['answers'] = [];
   let notes: string[] = [];
-  if (e.maths && !c.req.walkOn) {
+  // An event about a topic the teacher has since switched off is just walked past: no question, no maths reward.
+  if (e.maths && !c.req.walkOn && topicsOn(c.settings.topics).includes(e.maths.topic)) {
     const m = mark(c, c.req.proof, 'treasure', e.maths.topic);
-    right = m.result === 'right';
+    right = m.result !== 'wrong';
     answers = m.answers;
     notes = m.notes;
   }
@@ -565,7 +579,7 @@ function bank(c: Ctx): Done | Refuse {
   const extraGold = interestFor(hero.bank, m.result);
   return {
     hero: { ...hero, bank: hero.bank + extraGold }, extra: { ...extra, interestDay: c.today }, answers: m.answers, notes: m.notes,
-    summary: { interest: extraGold }, result: { interest: extraGold, right: m.result === 'right' },
+    summary: { interest: extraGold }, result: { interest: extraGold, right: m.result !== 'wrong' },
   };
 }
 
@@ -579,7 +593,7 @@ function inn(c: Ctx): Done | Refuse {
     const gold = riddleGold(hero.level, m.result);
     return {
       hero: { ...hero, gold: hero.gold + gold }, extra: { ...extra, riddleDay: c.today }, answers: m.answers, notes: m.notes,
-      summary: { riddle: m.result, gold }, result: { gold, right: m.result === 'right' },
+      summary: { riddle: m.result, gold }, result: { gold, right: m.result !== 'wrong' },
     };
   }
   if (game === 'guess-start') {
@@ -613,6 +627,7 @@ interface Opponent {
   id: string;
   name: string;
   duelist: Duelist;
+  look?: string;
 }
 
 const sane = (h: unknown): h is Hero => {
@@ -634,11 +649,11 @@ async function arena(c: Ctx): Promise<Done | Refuse> {
   if (classmates.ok) {
     for (const k of classmates.value) {
       if (k && typeof k.player === 'string' && k.player !== c.player && typeof k.name === 'string' && sane(k.hero)) {
-        pool.push({ kind: 'pupil', id: k.player, name: k.name, duelist: duelistOf(k.hero, k.name) });
+        pool.push({ kind: 'pupil', id: k.player, name: k.name, duelist: duelistOf(k.hero, k.name), look: isLook(k.hero.heroClass, k.hero.look) ? k.hero.look : undefined });
       }
     }
   }
-  for (const k of computerHeroes(season.number, season.dayOfSeason)) pool.push({ kind: 'computer', id: k.id, name: k.name, duelist: k.duelist });
+  for (const k of computerHeroes(season.number, season.dayOfSeason)) pool.push({ kind: 'computer', id: k.id, name: k.name, duelist: k.duelist, look: k.hero.look });
   // Near your level: within one, or else the three closest.
   const gap = (o: Opponent) => Math.abs(o.duelist.level - hero.level);
   const near = pool.filter((o) => gap(o) <= 1);
@@ -664,8 +679,8 @@ async function arena(c: Ctx): Promise<Done | Refuse> {
     summary: { arena: won ? 'won' : 'lost', against: slug, rounds: duel.rounds, exp },
     result: {
       ...result,
-      you: { name: you.name, heroClass: you.heroClass, level: you.level, maxHp: you.maxHp },
-      opponent: { name: opponent.name, heroClass: opponent.duelist.heroClass, level: opponent.duelist.level, maxHp: opponent.duelist.maxHp, computer: opponent.kind === 'computer' },
+      you: { name: you.name, heroClass: you.heroClass, look: hero.look, level: you.level, maxHp: you.maxHp },
+      opponent: { name: opponent.name, heroClass: opponent.duelist.heroClass, look: opponent.look, level: opponent.duelist.level, maxHp: opponent.duelist.maxHp, computer: opponent.kind === 'computer' },
     },
   };
 }
@@ -701,7 +716,7 @@ async function tools(c: Ctx): Promise<Done | Refuse> {
       if (typeof value !== 'string' || !EVENT_BY_ID[value]) return { refuse: 'bad-request' };
       return { extra: { ...extra, pendingEvent: value }, summary: { tool, event: value }, result: {} };
     }
-    case 'reset': return { hero: newHero(hero.heroClass, c.today), extra: { ...newExtra(extra.stats), classOpen: true }, summary: { tool }, result: {} };
+    case 'reset': return { hero: newHero(hero.heroClass, c.today, { dragonKills: 0, look: hero.look }), extra: { ...newExtra(extra.stats), classOpen: true }, summary: { tool }, result: {} };
     default: return { refuse: 'bad-request' };
   }
 }
@@ -714,6 +729,7 @@ export const viewOf = (w: Pick<Work, 'hero' | 'extra' | 'open'> | null, version:
   today,
   season: { number: season.number, dayOfSeason: season.dayOfSeason, daysLeft: season.daysLeft },
   forestPerDay: settings.forestPerDay,
+  topics: topicsOn(settings.topics),
   classOpen: w?.extra.classOpen ?? false,
   openFight: w?.open ? { id: w.open.id, kind: w.open.kind, seed: w.open.seed, start: w.open.start, sizeUp: w.open.info.sizeUp, stage: w.open.info.stage, trial: w.open.info.trial } : null,
   pendingEvent: w?.extra.pendingEvent ?? null,
@@ -725,7 +741,7 @@ export const viewOf = (w: Pick<Work, 'hero' | 'extra' | 'open'> | null, version:
   stats: w?.extra.stats ?? newStats(),
 });
 
-export const DEFAULT_SETTINGS: Settings = { enabled: false, forestPerDay: FOREST_FIGHTS_PER_DAY, seasonStart: null };
+export const DEFAULT_SETTINGS: Settings = { enabled: false, forestPerDay: FOREST_FIGHTS_PER_DAY, seasonStart: null, topics: [...ALL_TOPICS] };
 
 /** The season a day falls in. With no start date set, the first season starts today. */
 export function seasonFor(settings: Settings, today: string) {
@@ -827,7 +843,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
     let rowSeason = row.season;
     // A new season starts the hero again, once any fight in progress is finished.
     if (rowSeason < season.number && !stored) {
-      hero = newHero(hero.heroClass, today, { dragonKills: hero.dragonKills });
+      hero = newHero(hero.heroClass, today, { dragonKills: hero.dragonKills, look: hero.look });
       extra = { ...newExtra(extra.stats), classOpen: true };
       rowSeason = season.number;
       rolled = true;
@@ -899,6 +915,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
   let done: Done | Refuse;
   switch (action) {
     case 'start-hero': done = startHero(ctx, !!row); break;
+    case 'look': done = setLook(ctx); break;
     case 'forest': done = forest(ctx); break;
     case 'event': done = event(ctx); break;
     case 'fight-finish': done = fightFinish(ctx); break;

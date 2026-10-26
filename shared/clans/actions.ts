@@ -14,16 +14,21 @@
  * `replayFight`, marks the answer by rebuilding the question, keeps the round, and when the fight is over pays out
  * (gold, followers, experience, knocked-out members) in the same save that closes the fight, so it can only pay once.
  * While a fight is open nothing else about the clan can change (that is what keeps the replay honest), and the night's
- * rest waits until the fight is over. Stage C.6 part A adds the village chest, the weekly vote and raids on classmates (which also change the raided clan, saved in the same transaction).
+ * rest waits until the fight is over. A ladder fight (the browser asks for one with `ladder: true`) also keeps the questions the
+ * server made from the child's maths focus, and `cryCheck` marks each Battle Cry answer as it is given (battleCry.ts).
+ * Stage C.6 part A adds the village chest, the weekly vote and raids on classmates (which also change the raided clan, saved in the same transaction).
  */
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../maths/practical';
-import { factKey, replayFight, type CryAnswer, type RecordedRound } from './battleCry';
+import { makeRunQuestions, markQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
+import type { Question } from '../maths/skillPack';
+import { factKey, replayFight, type CryAnswer, type CryMark, type RecordedRound } from './battleCry';
 import { CONFIG } from './config';
 import { dayReset } from './character';
 import { clanFromChoices, type Draft } from './create';
 import { build, claimLand, deposit, developPlot, empireNewDay, empireOf, PUSHES, setDraft, withdraw, type BattlePlan, type BattleResult, type Push, type Take } from './empire';
 import { bossAt, newFight, type Order } from './fight';
 import { ITEMS } from './gamedata';
+import { isLook, setLook, type Look } from './looks';
 import { earnedOrNone, type Earned } from './rewards';
 import { buyItem, buyTroopMix, draftFollowers, examineItemFor, fightSeed, payFight, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type FightSummary, type TrainKey } from './play';
 import { buildPuzzle, finishQuest, puzzleFor, todaysQuest, type QuestPrize } from './quests';
@@ -36,7 +41,7 @@ import { isVillageKind, raidClassmateNz, raidTargetList, voteOptions, type RaidT
  * browser has played so far, so the fight can be rebuilt (by a refresh, or another Chromebook) exactly where it was.
  * The clan's members cannot change while it is open, so they are not copied here.
  */
-export interface OpenFight {
+export interface OpenFight<Q = Question> {
   depth: number;
   boss: boolean;
   seed: number;
@@ -45,7 +50,17 @@ export interface OpenFight {
   /** The maths settings the fight's Battle Cry questions were made with, kept so a teacher's change cannot alter an open fight. */
   settings: PracticalSettings;
   rounds: RecordedRound[];
+  /**
+   * A ladder fight's Battle Cry questions, one a round, made by the server from the child's maths when the fight began.
+   * The server keeps the whole questions; the browser is only given what to show (`publicQuestion`). Missing: an old-style fight.
+   */
+  questions?: Q[];
+  /** A ladder fight's marks, by round (index 0 is round 1): set by `cryCheck`, so each question is answered once. */
+  marks?: (CryMark | null)[];
 }
+
+/** The fight in progress as the browser is given it: a ladder fight's questions without their answers. */
+export type ShownFight = OpenFight<PublicQuestion>;
 
 /** Everything the server keeps about one clan, besides the clan itself. */
 export interface ServerState {
@@ -73,6 +88,8 @@ export interface Context {
   today: number;
   /** The teacher's maths settings (the Teacher page comes in stage C.6; until then, the defaults). */
   settings?: PracticalSettings;
+  /** The child's maths records, class settings and focus, loaded only to start a ladder fight. */
+  maths?: MathsContext | null;
   /** Mine fights a day (the teacher's setting). The default is `CONFIG.fightsPerDay`. */
   fightsPerDay?: number;
   /** The clan's village, as the server loaded it. Without one (the test page) the chest and the vote are not checked here. */
@@ -94,6 +111,7 @@ export type Action =
   | { type: 'examine'; member: number; item: string }
   | { type: 'train'; member: number; key: TrainKey; count: number }
   | { type: 'wake'; member: number }
+  | { type: 'look'; member: number; look: Look }
   | { type: 'wakeAll' }
   | { type: 'deposit'; gold: number }
   | { type: 'withdraw'; gold: number }
@@ -106,7 +124,10 @@ export type Action =
   | { type: 'raid'; kingdom: string; plan: BattlePlan }
   | { type: 'war'; kingdom: string; plan: BattlePlan }
   | { type: 'quest'; choice: number; answer: number | null }
-  | { type: 'fightStart'; depth: number; boss: boolean }
+  /** `ladder`: this browser can show ladder questions (an older one that is still open does not say so, and gets an old-style fight). */
+  | { type: 'fightStart'; depth: number; boss: boolean; ladder?: boolean }
+  /** A ladder fight's Battle Cry answer for the round about to be played, marked by the server. `ms`: how long it took. */
+  | { type: 'cryCheck'; round: number; answer: number; ms: number }
   | { type: 'fightRound'; round: number; orders: (Order | undefined)[]; cry: CryAnswer | null }
   | { type: 'chestGive'; gold: number }
   | { type: 'vote'; kind: VillageKind }
@@ -116,12 +137,14 @@ export type Action =
 export type ActionType = Action['type'];
 
 export type Result =
-  | { type: Exclude<ActionType, 'draft' | 'raid' | 'war' | 'quest' | 'fightStart' | 'fightRound' | 'raidTargets' | 'raidClass' | 'chestGive'> }
+  | { type: Exclude<ActionType, 'draft' | 'raid' | 'war' | 'quest' | 'fightStart' | 'cryCheck' | 'fightRound' | 'raidTargets' | 'raidClass' | 'chestGive'> }
   | { type: 'draft'; wanted: number; joined: number; followers: number }
   | { type: 'raid' | 'war'; friendly: boolean; result: BattleResult; gold: number; earned?: Earned }
   | { type: 'quest'; questId: number; text: string; right: boolean | null; prize: QuestPrize }
   /** `resumed`: a fight was already open, so this is it again and no fight was used. */
   | { type: 'fightStart'; resumed: boolean }
+  /** `answer`: the right answer, to show when it was wrong. `given`: the answer that was marked (the first one sent for this question). */
+  | { type: 'cryCheck'; round: number; correct: boolean; answer: number; given: number }
   /** `summary` is there when the round ended the fight and it has been paid. */
   | { type: 'fightRound'; round: number; over: boolean; summary: FightSummary | null; earned?: Earned }
   /** `gold` left the clan purse and went into the village chest. */
@@ -137,6 +160,8 @@ export interface Effects {
   raid?: { targetId: string; empire: Empire; news: string; note: string };
   /** Maths answers to keep in the teacher's private records: the question's kind and year band (never the numbers), and whether it was right. */
   answers?: { key: string; correct: boolean }[];
+  /** Ladder answers, for the child's own maths records (ladder place, skill map, focus results). `once` makes a resend count once. */
+  ladder?: { once: string; answers: { key: string; correct: boolean; ms: number }[] };
 }
 
 export type Applied =
@@ -210,6 +235,7 @@ export function parseAction(raw: unknown): Action | null {
       return member !== null && count !== null && typeof raw.key === 'string' && TRAIN_KEYS.includes(raw.key as TrainKey) ? { type: 'train', member, key: raw.key as TrainKey, count } : null;
     }
     case 'wake': return member !== null ? { type: 'wake', member } : null;
+    case 'look': return member !== null && isLook(raw.look) ? { type: 'look', member, look: raw.look } : null;
     case 'deposit':
     case 'withdraw': {
       const gold = int(raw.gold, 1, 1_000_000);
@@ -250,7 +276,14 @@ export function parseAction(raw: unknown): Action | null {
     }
     case 'fightStart': {
       const depth = int(raw.depth, 0, CONFIG.maxLevel);
-      return depth !== null && typeof raw.boss === 'boolean' ? { type: 'fightStart', depth, boss: raw.boss } : null;
+      if (depth === null || typeof raw.boss !== 'boolean') return null;
+      return raw.ladder === true ? { type: 'fightStart', depth, boss: raw.boss, ladder: true } : { type: 'fightStart', depth, boss: raw.boss };
+    }
+    case 'cryCheck': {
+      const round = int(raw.round, 1, CONFIG.maxRounds);
+      const ok = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+      if (round === null || !ok(raw.answer) || Math.abs(raw.answer) > 1_000_000_000 || !ok(raw.ms) || raw.ms < 0) return null;
+      return { type: 'cryCheck', round, answer: raw.answer, ms: Math.min(Math.round(raw.ms), 3_600_000) };
     }
     case 'fightRound': {
       const round = int(raw.round, 1, CONFIG.maxRounds);
@@ -329,7 +362,7 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
   const state = structuredClone(saved);
   // The night's rest waits until a fight in progress is over: it would heal the members the fight is being replayed with.
   const rested = state.fight ? false : catchUp(state, ctx.today, ctx.fightsPerDay);
-  if (state.fight && action.type !== 'load' && action.type !== 'fightStart' && action.type !== 'fightRound' && action.type !== 'vote' && action.type !== 'raidTargets') {
+  if (state.fight && action.type !== 'load' && action.type !== 'fightStart' && action.type !== 'cryCheck' && action.type !== 'fightRound' && action.type !== 'vote' && action.type !== 'raidTargets') {
     return refuse('fight-open', 'You are in the middle of a fight. Finish it first!');
   }
   const { clan } = state;
@@ -349,6 +382,7 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
     }
     case 'train': return settle(trainMember(clan, action.member, action.key, action.count), { type: 'train' });
     case 'wake': return settle(wakeOne(clan, action.member), { type: 'wake' });
+    case 'look': return settle(setLook(clan, action.member, action.look), { type: 'look' });
     case 'wakeAll': return settle(wakeEveryone(clan), { type: 'wakeAll' });
     case 'deposit': return settle(deposit(clan, action.gold), { type: 'deposit' });
     case 'withdraw': return settle(withdraw(clan, action.gold), { type: 'withdraw' });
@@ -418,16 +452,39 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
       const seed = fightSeed(state.seed, state.fightNo);
       if (newFight(clan.members, action.depth, seed, action.boss).result) return refuse('resting', 'Everyone is resting. They wake up tomorrow.');
       state.fight = { depth: action.depth, boss: action.boss, seed, no: state.fightNo + 1, settings, rounds: [] };
+      // A ladder fight: the questions come from the child's own maths, made now from the fight's seed and kept with it.
+      // Without the child's maths (it couldn't be loaded) the fight is an old-style one, so the fight still goes ahead.
+      if (action.ladder && ctx.maths) {
+        state.fight.questions = makeRunQuestions(ctx.maths, CONFIG.maxRounds, seededRandom(`clans:${seed}:${state.fightNo + 1}`));
+        state.fight.marks = [];
+      }
       state.fightsLeft--;
       state.fightNo++;
       return done(state, { type: 'fightStart', resumed: false });
+    }
+    case 'cryCheck': {
+      const open = state.fight;
+      if (!open) return refuse('no-fight', 'That fight is already over.');
+      if (!open.questions || !open.marks) return refuse('no-question', 'There is no question to answer.');
+      if (action.round !== open.rounds.length + 1) return refuse('stale-round', 'That round was already played.');
+      // Each question is answered once: asking again gives the first mark back, and nothing changes.
+      const marked = markQuestion(open.questions[action.round - 1]);
+      if (!marked) return refuse('no-question', 'There is no question to answer.');
+      const before = open.marks[action.round - 1];
+      if (before) return done(state, { type: 'cryCheck', round: action.round, correct: before.correct, answer: marked.answer, given: before.answer }, false);
+      const correct = sameAnswer(action.answer, marked.answer);
+      while (open.marks.length < action.round - 1) open.marks.push(null);
+      open.marks[action.round - 1] = { answer: action.answer, correct };
+      return done(state, { type: 'cryCheck', round: action.round, correct, answer: marked.answer, given: action.answer }, true, {
+        ladder: { once: `clans:${open.seed}:${open.no}:${action.round}`, answers: [{ key: marked.key, correct, ms: action.ms }] },
+      });
     }
     case 'fightRound': {
       const open = state.fight;
       if (!open) return refuse('no-fight', 'That fight is already over.');
       if (action.round !== open.rounds.length + 1) return refuse('stale-round', 'That round was already played.');
       const played: RecordedRound = { orders: action.orders, cry: action.cry };
-      const { state: replayed, cries } = replayFight(clan.members, open.depth, open.seed, open.boss, [...open.rounds, played], open.settings);
+      const { state: replayed, cries } = replayFight(clan.members, open.depth, open.seed, open.boss, [...open.rounds, played], open);
       // The replay stops once the fight is over, so a round that was sent after the end has no result.
       if (cries.length !== open.rounds.length + 1) return refuse('no-fight', 'That fight is already over.');
       // The question was marked by the server's own replay. A question that was taken goes in the teacher's private records.

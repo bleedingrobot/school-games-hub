@@ -1,5 +1,5 @@
-/* Clan Quest: the dark terminal look. The old 16 colours, VT323 for headings (if it is there), box borders.
-   Fits 1366 x 640 and a phone. */
+/* Clan Quest. This first part is the old dark terminal look (the 16 colours, VT323, box borders); the stone and iron
+   frame at the end of the file paints over it (Clans art Stage A.4). Fits 1366 x 640 and a phone. */
 .cq {
   --cq-bg: #0b0b17; --cq-panel: #12122a; --cq-ink: #e4e4f0; --cq-soft: #a6a6c4; --cq-line: #5a5ae0;
   --cq-green: #55ff55; --cq-cyan: #55ffff; --cq-red: #ff5555; --cq-yellow: #ffff55; --cq-mag: #ff55ff;
@@ -197,3 +197,109 @@
 .cq .numpad[data-decimal] .numpad__key, .cq .numpad[data-decimal] .numpad__key--enter { min-height: 44px; }
 .cq [tabindex='-1']:focus { outline: none; }
 .cq h2[tabindex='-1']:focus-visible { outline: 3px solid var(--cq-yellow); outline-offset: 2px; }
+
+/* Clans art Stage A.4: the stone and iron frame, chosen by James from the A.2 try-out. Cold stone, iron edges,
+   parchment text, ember for "do this". The rules above still lay everything out; this only changes how it looks. */
+@font-face { font-family: 'IM Fell English SC'; font-style: normal; font-weight: 400; font-display: swap; src: url('./imfell-sc.woff2') format('woff2'); }
+@font-face { font-family: 'Alegreya Sans'; font-style: normal; font-weight: 400; font-display: swap; src: url('./alegreya-sans-400.woff2') format('woff2'); }
+@font-face { font-family: 'Alegreya Sans'; font-style: normal; font-weight: 700; font-display: swap; src: url('./alegreya-sans-700.woff2') format('woff2'); }
+.cq {
+  --cq-bg: #18191b; --cq-panel: #222326; --cq-ink: #e6ddc8; --cq-soft: #a39b8b; --cq-line: #4a4e55;
+  --cq-green: #9cc47a; --cq-cyan: #c9b88f; --cq-red: #e06a5c; --cq-yellow: #e39a4a; --cq-mag: #c99ad6;
+  --f-deep: #101113; --f-raise: #2b2d31; --f-dot: #34373c; --f-head: #ecdcb8; --f-edge: #6a6f78;
+  background: radial-gradient(120% 80% at 50% 0%, #222428 0%, var(--cq-bg) 60%), var(--cq-bg);
+  border: 2px solid #000; border-radius: 3px;
+  box-shadow: 0 0 0 3px var(--f-edge), 0 0 0 5px #000, inset 0 0 0 1px #2e3136, inset 0 0 40px rgba(0, 0, 0, 0.6);
+  font-family: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif; font-size: 1.02rem;
+}
+.cq :is(h1, h2, h3):not(.question__title) { font-family: 'IM Fell English SC', 'Iowan Old Style', Georgia, serif; color: var(--f-head); letter-spacing: 0.01em; }
+.cq h1 { font-size: 1.9rem; }
+.cq h2:not(.question__title) { font-size: 1.6rem; }
+.cq h3:not(.question__title) { font-size: 1.2rem; color: var(--f-head); }
+.cq .question__title { font-family: 'IM Fell English SC', Georgia, serif; }
+.cq-top { padding-bottom: 2px; }
+.cq-credits, .cq :is(.cq-headline div, .cq-stats div, .cq-train th, .cq-train td) { border-color: var(--f-dot); }
+.cq-tag { font-family: inherit; }
+
+/* The place's painting across the top (art.ts). Phones get the 800 copy. */
+.cq-scene { display: block; width: 100%; height: 190px; margin: 0 0 10px; object-fit: cover; object-position: center 45%; border-radius: 2px; outline: 2px solid var(--f-edge); outline-offset: 2px; background: var(--f-deep); }
+/* With a painting showing, the old pixel icon beside the place's name isn't needed. */
+.cq-scene ~ * .cq-place h2 > .cq-sprite, .cq-scene ~ .cq-place h2 > .cq-sprite { display: none; }
+
+/* Buttons: iron plates. Still at least 44px tall. */
+.cq-btn { background: linear-gradient(#2c2e33, #222327); border: 1px solid var(--cq-line); border-radius: 3px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 0 #000; }
+.cq-btn:hover:not(:disabled) { border-color: var(--f-edge); background: var(--f-raise); }
+.cq-btn--hot { border-color: var(--cq-yellow); color: var(--cq-yellow); }
+.cq .cq-btn[aria-pressed='true'] { border-color: var(--cq-yellow); background: var(--f-raise); }
+.cq :is(input, select) { background: var(--f-deep); }
+
+/* Panels and cards: a slightly raised slab with a thin edge. The old navy highlights become raised stone. */
+.cq :is(.cq-card, .cq-panel, .cq-side, .cq-achievement, .cq-celebrate) { border-radius: 3px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04); }
+.cq :is(.cq-side li.is-up, .cq-table .cq-me) { background: var(--f-raise); }
+.cq :is(.cq-bar, .cq-log) { background: var(--f-deep); }
+.cq-log { border-color: var(--f-dot); }
+.cq .question { --q-ink: var(--cq-ink); --q-soft: var(--cq-soft); --q-key: var(--f-raise); border-radius: 3px; }
+.cq .question__blank { background: var(--f-raise); }
+.cq .numpad__key, .cq .question__choice, .cq .question__close { border-radius: 3px; }
+@media (max-width: 760px) {
+  .cq-scene { height: 110px; }
+}
+
+/* Clans art Stage A.5: members' paintings, and picking one of the four looks. --cq-portrait is the height (Sprite.tsx). */
+.cq-portrait--painted { --cq-portrait: 112px; display: grid; place-items: end center; width: calc(var(--cq-portrait) * 0.82); height: var(--cq-portrait); overflow: hidden; border-radius: 3px; background: radial-gradient(70% 60% at 50% 70%, rgba(255, 220, 160, 0.10), transparent 70%), var(--f-deep); box-shadow: inset 0 0 0 1px var(--cq-line); }
+.cq-portrait--painted img { display: block; max-width: 100%; max-height: calc(var(--cq-portrait) - 4px); }
+.cq-card__head { align-items: flex-end; }
+.cq-looks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cq-look { display: grid; place-items: end center; height: 76px; padding: 2px; text-align: center; overflow: hidden; }
+.cq-look img { max-height: 70px; max-width: 100%; }
+.cq .cq-look[aria-pressed='true'] { border: 2px solid var(--cq-yellow); }
+@media (max-width: 760px) {
+  .cq-card .cq-portrait--painted { --cq-portrait: 88px !important; }
+}
+
+/* Clans art Stage A.7: the Empire's buildings, troops and kingdoms. */
+.cq-estate { list-style: none; margin: 4px 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.cq-estate li { display: grid; justify-items: center; gap: 2px; padding: 4px; border-radius: 3px; background: var(--f-deep); box-shadow: inset 0 0 0 1px var(--cq-line); }
+.cq-estate img { display: block; width: 88px; height: 72px; object-fit: contain; }
+.cq-estate span { font-size: 0.8rem; color: var(--cq-soft); }
+.cq-building-art { flex: none; width: 52px; height: 44px; object-fit: contain; }
+.cq-troops li { display: flex; align-items: center; gap: 8px; }
+.cq-troop-art { flex: none; width: 40px; height: 52px; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.6)); }
+.cq-wide-art { display: block; width: 100%; height: 150px; margin: 0 0 8px; object-fit: cover; border-radius: 2px; outline: 1px solid var(--f-edge); outline-offset: 2px; background: var(--f-deep); }
+@media (max-width: 760px) {
+  .cq-wide-art { height: 110px; }
+  .cq-estate img { width: 64px; height: 52px; }
+}
+
+/* Clans art Stage A.7: items in the Market and on a member's gear (height set in Sprite.tsx). */
+.cq-item-art { width: auto; max-width: calc(100% - 4px); object-fit: contain; vertical-align: middle; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.6)); }
+.cq-shelf__item { min-height: 52px; }
+.cq-shelf__item .cq-item-art { flex: none; width: 40px; }
+.cq-detail__art { float: right; display: grid; place-items: center; min-width: 90px; margin: 0 0 8px 12px; padding: 6px; border-radius: 3px; background: radial-gradient(70% 60% at 50% 60%, rgba(255, 220, 160, 0.08), transparent 70%), var(--f-deep); box-shadow: inset 0 0 0 1px var(--cq-line); }
+.cq-detail .cq-actions { clear: both; }
+@media (max-width: 760px) { .cq-detail__art .cq-item-art { height: 80px !important; } .cq-detail__art { min-width: 64px; } }
+.cq-gear .cq-item-art { margin-right: 2px; }
+
+/* Clans art Stage A.8: the clan's banner (the second word of its name) on the home screen and the Scoreboard. */
+.cq-clanhead { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.cq-clanhead p { margin: 0; }
+.cq-clanbanner { height: 84px; width: auto; flex: none; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.7)); }
+span.cq-rowbanner { display: inline-block; width: 25px; }
+.cq-rowbanner { height: 36px; width: auto; margin-right: 8px; vertical-align: middle; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.6)); }
+@media (max-width: 760px) {
+  .cq-clanbanner { height: 64px; }
+}
+
+/* Clans art Stage A.6: the fight. Monsters and members painted; the mine zone painted dimly behind the monsters. */
+.cq-side--enemies { background: linear-gradient(rgba(16, 17, 19, 0.55), rgba(16, 17, 19, 0.82)), var(--cq-zone, none) center 55% / cover no-repeat, var(--cq-panel); }
+.cq-monster-art { display: block; width: auto; max-width: 100%; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.7)); }
+.cq-side li.is-down .cq-monster-art { filter: grayscale(1) drop-shadow(0 3px 4px rgba(0, 0, 0, 0.7)); }
+.cq-side .cq-portrait--painted { margin-bottom: 2px; }
+/* Fight paintings stay small so the whole fight fits a 1366 x 640 Chromebook; the buttons never move. */
+.cq-side .cq-monster-art { height: 60px !important; }
+.cq-side .cq-portrait--painted { --cq-portrait: 60px !important; }
+/* The after-fight paintings have their subject high (victory: the banner and sun) or low (rest: the campfire). */
+.cq-scene[data-scene='victory'] { object-position: center 28%; }
+.cq-scene[data-scene='rest'] { object-position: center 75%; }
+/* Monster names were coloured by zone for the old tiles; on the painted zone they take the frame's heading colour. */
+.cq-side--enemies .cq-name { color: var(--f-head) !important; text-shadow: 0 1px 2px #000; }

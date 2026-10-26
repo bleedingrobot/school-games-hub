@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from 'react';
 import { MAX_LEVEL } from '../../shared/lord/data';
+import { ALL_TOPICS } from '../../shared/lord/maths';
 import { TOPICS } from '../../shared/maths/skillPacks';
 import {
   fetchClassLord, fetchLordSettings, fetchStudentLord, resetLordHero, saveLordSettings,
@@ -137,6 +138,33 @@ function LordSettingsPanel() {
               Save the date
             </button>
           </div>
+          <fieldset className="choice-group">
+            <legend>Topics on</legend>
+            <div className="choice-group__chips">
+              {ALL_TOPICS.map((t) => {
+                const on = settings.topics.includes(t);
+                return (
+                  <label key={t} className="chip">
+                    <input
+                      type="checkbox"
+                      checked={on}
+                      disabled={on && settings.topics.length === 1}
+                      onChange={() =>
+                        void save(
+                          { enabled: settings.enabled, topics: on ? settings.topics.filter((x) => x !== t) : ALL_TOPICS.filter((x) => x === t || settings.topics.includes(x)) },
+                          'Saved. Pupils get the new topics the next time they open Dragon Maths.',
+                        )
+                      }
+                    />
+                    <span>{topicLabel(t)}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+          <p>
+            A topic switched off is never asked: a question comes from a topic that is still on, and forest events about it stay out of the forest. Leave at least one on.
+          </p>
           <p>
             Seasons run 35 days, one after the other, and everyone starts again at level 1 (dragon stars, achievements and the Hall of Heroes stay).
             Switch the game off for the school holidays and on again after: the season carries on where it left off.

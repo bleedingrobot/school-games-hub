@@ -131,6 +131,34 @@
   font-weight: 700;
   cursor: pointer;
 }
+.question__hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.question__hintbtn {
+  min-height: 40px;
+  padding: 4px 16px;
+  border: 2px dashed var(--q-key-edge);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--q-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.question__hintbtn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+.question__hinttext {
+  margin: 0;
+  min-height: 1.2em;
+  color: var(--q-soft);
+  font-size: 0.95rem;
+  text-align: center;
+}
 .question__close:disabled {
   opacity: 0.5;
 }

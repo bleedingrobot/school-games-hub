@@ -2,7 +2,7 @@
  * The clan's state in the browser for this test stage (nothing is saved; a refresh starts again).
  * Plain functions on plain data, so the screens only draw and the rules stay in shared/clans.
  */
-import type { Action, OpenFight } from '../../../shared/clans/actions';
+import type { Action, ShownFight } from '../../../shared/clans/actions';
 import { CONFIG } from '../../../shared/clans/config';
 import { empireNewDay } from '../../../shared/clans/empire';
 import { MAX_ROLLS, draftMember, makeClan, rollAgain, startingDrafts, type Draft } from '../../../shared/clans/create';
@@ -39,7 +39,7 @@ export interface Session {
   /** For James's testing only: try this quest number instead of today's. */
   questPick?: number;
   /** With a server: the mine fight in progress, and the village news. */
-  fight?: OpenFight | null;
+  fight?: ShownFight | null;
   news?: string[];
   /** The class village: chest, building levels, this week's votes. On the test page it is a pretend one. */
   village?: VillageView | null;

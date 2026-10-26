@@ -1,7 +1,7 @@
 /** Clan Quest, test version: clan creator, the Mines and fights. Nothing is saved; a refresh starts again. */
 import { useEffect, useRef, useState } from 'react';
 import type { Action } from '../../../shared/clans/actions';
-import type { OpenFight } from '../../../shared/clans/actions';
+import type { ShownFight } from '../../../shared/clans/actions';
 import type { RecordedRound } from '../../../shared/clans/battleCry';
 import type { FightState } from '../../../shared/clans/fight';
 import type { Clan } from '../../../shared/clans/types';
@@ -9,12 +9,12 @@ import type { Draft } from '../../../shared/clans/create';
 import { TOPIC_LABELS, TOPICS, YEAR_BANDS, type PracticalTopic, type YearBand } from '../../../shared/maths/practical';
 import { CONFIG } from '../../../shared/clans/config';
 import { Creator } from './Creator';
-import { Fight } from './Fight';
+import { Fight, type CryChecked } from './Fight';
 import { MemberCard } from './MemberCard';
 import { Church } from './Church';
 import { Market } from './Market';
 import { Mines, Results } from './Mines';
-import { armyToLose, armyToWin, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveVault, knockOutSome, pretendGifts, pretendWeekEnd } from './places';
+import { armyToLose, armyToWin, changeLook, questToday, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveVault, knockOutSome, pretendGifts, pretendWeekEnd } from './places';
 import { ClassRaid } from './ClassRaid';
 import { Village } from './Village';
 import { VillageNews } from './VillageNews';
@@ -32,9 +32,23 @@ import { awardNext, giveFame, newSeason, type ScoreRow } from './fame';
 import { ACHIEVEMENTS, fameFor, type AchievementDef } from '../../../shared/clans/rewards';
 import { averageLevel, earn, finishFight, newSession, skipDay, type FightSummary, type Session } from './session';
 import { sessionFrom, type ClanServer, type ServerReply } from './remote';
+import { bannerArt, questArt, sceneArt, type SceneId } from './art';
 import './clans.css';
 
 type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid' | 'quest' | 'village' | 'news' | 'classraid' | 'scoreboard' | 'achievements' | 'howto';
+
+/** The painting across the top of each screen. Home and Land have none of their own, so they borrow the village and the empire. The fight has none across the top (its mine zone is painted behind the
+ * monsters, to keep the fight on one screen); its results get one from how it went (`afterFight`). */
+const SCENE_FOR: Partial<Record<Screen, SceneId>> = {
+  home: 'village', mines: 'mines', market: 'market', training: 'training', church: 'church', empire: 'empire', land: 'empire', barracks: 'barracks',
+  raid: 'raid', classraid: 'raid', quest: 'quests', village: 'village', news: 'news', scoreboard: 'scoreboard',
+};
+
+/** A wide painting, the 800 copy on phones. Only decoration, so screen readers skip it. */
+function Scene({ name, art: { wide, small } }: { name: string; art: { wide?: string; small?: string } }) {
+  if (!wide) return null;
+  return <img className="cq-scene" src={wide} srcSet={small && small !== wide ? `${small} 800w, ${wide} 1600w` : undefined} sizes="(max-width: 1100px) 100vw, 1100px" alt="" data-scene={name} />;
+}
 
 /** For James's test only: stands in for the Teacher page, which comes later. */
 function SettingsStrip({ session, onChange, open }: { session: Session; onChange: (s: Session) => void; open: boolean }) {
@@ -107,9 +121,9 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   const [summary, setSummary] = useState<FightSummary | null>(null);
   const [loading, setLoading] = useState<'loading' | 'failed' | 'off' | null>(server ? 'loading' : null);
   /** With a server: the fight being played, as the server has it. */
-  const [activeFight, setActiveFight] = useState<OpenFight | null>(null);
+  const [activeFight, setActiveFight] = useState<ShownFight | null>(null);
   const [fightKey, setFightKey] = useState(0);
-  const activeRef = useRef<OpenFight | null>(null);
+  const activeRef = useRef<ShownFight | null>(null);
   /** What the server said when the last round ended the fight (it has been paid). */
   const outcome = useRef<FightSummary | null>(null);
   const [serverSeed, setServerSeed] = useState(seed);
@@ -173,7 +187,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
     else if (waiting.current === 0) setNotice('');
   };
   /** The server's copy of the fight is the truth: show the fight again from it, or leave if it is over. */
-  const resyncFight = (fight: OpenFight | null | undefined) => {
+  const resyncFight = (fight: ShownFight | null | undefined) => {
     activeRef.current = fight ?? null;
     setActiveFight(fight ?? null);
     setFightKey((k) => k + 1);
@@ -246,7 +260,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
     waiting.current++;
     line.current = line.current.then(async () => {
       try {
-        const reply = await server.send({ type: 'fightStart', depth: session.depth, boss: b });
+        // `ladder`: this screen can show Battle Cry questions from the child's own maths.
+        const reply = await server.send({ type: 'fightStart', depth: session.depth, boss: b, ladder: true });
         waiting.current--;
         take(reply);
         if (reply.ok && reply.state?.fight) {
@@ -273,6 +288,9 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           outcome.current = reply.result.summary;
           fameEarned.current = reply.result.earned ? fameFor(reply.result.earned) : 0;
           activeRef.current = null;
+        } else if (reply.ok && reply.state?.fight) {
+          // The server's copy, with this round in it, in case the fight has to be shown again.
+          activeRef.current = reply.state.fight;
         } else if (!reply.ok) {
           resyncFight(reply.state?.fight);
         }
@@ -288,6 +306,16 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
         setNotice("We couldn't reach the server, so that round wasn't saved. Please try again.");
       }
     });
+  };
+  /** A ladder fight's Battle Cry answer, marked by the server (in the same line as the rounds, so they stay in order). */
+  const checkCry = async (round: number, answer: number, ms: number): Promise<CryChecked> => {
+    const reply = await ask!({ type: 'cryCheck', round, answer, ms }).catch(() => {
+      throw new Error('We couldn’t reach the server to check that. Try again.');
+    });
+    if (!reply.ok || reply.result.type !== 'cryCheck') throw new Error(reply.ok ? 'We couldn’t check that one. Try again.' : reply.say);
+    // Keep the server's copy with this mark, so showing the fight again replays it the same way.
+    if (reply.state?.fight) activeRef.current = reply.state.fight;
+    return { correct: reply.result.correct, answer: reply.result.answer, given: reply.result.given };
   };
   /** The fight screen is done. With a server, wait for the answer to the last round, then show how it went. */
   const finishServer = () => {
@@ -314,12 +342,19 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
     setScreen('results');
   };
 
+  // After a fight: the victory painting for a win, the rest painting when the clan was knocked out, the Mines otherwise.
+  const afterFight: SceneId | undefined = screen === 'results' && summary ? (summary.result === 'won' ? 'victory' : summary.result === 'lost' ? 'rest' : 'mines') : undefined;
+  const scene = loading !== null ? undefined : session ? afterFight ?? SCENE_FOR[screen] : 'creator';
+  // Today's quest has its own painting (all day, done or not); the general one is only for a day with no quest.
+  const quest = screen === 'quest' && session ? questToday(session) : null;
+
   return (
     <div className="cq" ref={root}>
       <header className="cq-top">
         <h1>Clan Quest</h1>
         <span className="cq-soft">{session ? `${session.clan.name} · ${session.clan.gold} gold · ${session.clan.followers} followers · ${session.fame ?? 0} fame` : 'Test version: nothing is saved'}</span>
       </header>
+      {quest ? <Scene key={`quest-${quest.id}`} name={`quest-${quest.id}`} art={questArt(quest.title)} /> : scene && <Scene key={scene} name={scene} art={sceneArt(scene)} />}
       <Celebration fresh={celebrate} onClose={() => setCelebrate([])} />
       {notice && <p className="cq-note" role="alert">{notice}</p>}
       {loading === 'loading' ? (
@@ -338,10 +373,17 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {!server && <SettingsStrip session={session} onChange={setSession} open={screen === 'home'} />}
           {screen === 'home' && (
             <section aria-label="Your clan">
-              <h2>{session.clan.name}</h2>
-              <p className="cq-soft">Practising: {session.settings.enabledTopics.length ? session.settings.enabledTopics.map((t) => TOPIC_LABELS[t].toLowerCase()).join(', ') : 'nothing today'}</p>
+              <div className="cq-clanhead">
+                {bannerArt(session.clan.name) && <img className="cq-clanbanner" src={bannerArt(session.clan.name)} alt="" />}
+                <div>
+                  <h2>{session.clan.name}</h2>
+                  <p className="cq-soft">Practising: {session.settings.enabledTopics.length ? session.settings.enabledTopics.map((t) => TOPIC_LABELS[t].toLowerCase()).join(', ') : 'nothing today'}</p>
+                </div>
+              </div>
               <div className="cq-cards">
-                {session.clan.members.map((m, i) => <MemberCard key={m.name} member={m} leader={i === 0} />)}
+                {session.clan.members.map((m, i) => (
+                  <MemberCard key={m.name} member={m} leader={i === 0} onLook={(look) => { const next = changeLook(session, i, look); if (next) change(next, { type: 'look', member: i, look }); }} />
+                ))}
               </div>
               {session.news && session.news.length > 0 && (
                 <ul className="cq-soft" aria-label="Village news">
@@ -389,12 +431,12 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'land' && <Land session={session} onChange={change} onBack={() => setScreen('empire')} />}
           {screen === 'fight' && !server && <Fight key={session.fightNo} session={session} boss={boss} onFinish={finish} />}
           {screen === 'fight' && server && activeFight && (
-            <Fight key={`${activeFight.no}-${fightKey}`} session={session} open={activeFight} boss={activeFight.boss} onRound={sendRound} onFinish={finishServer} />
+            <Fight key={`${activeFight.no}-${fightKey}`} session={session} open={activeFight} boss={activeFight.boss} onRound={sendRound} onCheck={checkCry} onFinish={finishServer} />
           )}
           {screen === 'results' && summary && <Results summary={summary} members={session.clan.members} fame={fameEarned.current} onDone={() => setScreen('home')} />}
         </>
       )}
-      <footer className="cq-credits">Game rules adapted from The Clans by Allen Ussher (1997). Pictures: Kenney's 1-Bit Pack (CC0).</footer>
+      <footer className="cq-credits">Game rules adapted from The Clans by Allen Ussher (1997). Paintings made for School Games Hub; small pictures from Kenney's 1-Bit Pack (CC0).</footer>
     </div>
   );
 }

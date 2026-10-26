@@ -21,7 +21,7 @@ export function Tools({ state, act, showEvent, close, busy, resetAll }: {
   const tool = (id: ToolId, value?: number | string) => () => void act({ action: 'tools', tool: id, value });
 
   return (
-    <section className="lord-place" aria-label="Test tools">
+    <section className="lord-place lord-panel" aria-label="Test tools">
       <header className="lord-place__head">
         <h2>Test tools</h2>
         <button type="button" className="lord-btn" onClick={close}>Back to the village</button>

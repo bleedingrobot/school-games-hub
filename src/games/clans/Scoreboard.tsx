@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { pretendBoard, type ScoreRow } from './fame';
 import type { Session } from './session';
+import { bannerArt } from './art';
 
 /**
  * The Scoreboard: the top ten clans by fame, and your own clan. Clan names and fame only: no pupil's name, and never anything about maths.
@@ -45,7 +46,7 @@ export function Scoreboard({ session, load, onBack }: { session: Session; load?:
             {rows.map((r) => (
               <tr key={`${r.place}-${r.name}-${r.isMe}`} className={r.isMe ? 'cq-me' : undefined} aria-current={r.isMe ? 'true' : undefined}>
                 <td>{r.place}</td>
-                <th scope="row">{r.name}{r.isMe && <span className="cq-soft"> (you)</span>}</th>
+                <th scope="row">{bannerArt(r.name) ? <img className="cq-rowbanner" src={bannerArt(r.name)} alt="" /> : <span className="cq-rowbanner" aria-hidden="true" />}{r.name}{r.isMe && <span className="cq-soft"> (you)</span>}</th>
                 <td>{r.fame}</td>
               </tr>
             ))}

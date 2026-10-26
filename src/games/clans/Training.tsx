@@ -6,6 +6,7 @@ import { train, trainOptions, type TrainKey, type TrainOption } from './places';
 import type { Session, Change } from './session';
 import { PlaceSprite, Portrait } from './Sprite';
 import { TRAIN_HELP, isRecommended } from './text';
+import { lookOf } from '../../../shared/clans/looks';
 
 type Phase = { t: 'idle' } | { t: 'many'; opt: TrainOption } | { t: 'left'; opt: TrainOption } | { t: 'choose'; opt: TrainOption } | { t: 'done'; text: string };
 
@@ -81,7 +82,7 @@ export function Training({ session, onChange, onBack }: { session: Session; onCh
       <div className="cq-pick" role="group" aria-label="Who is training?">
         {clan.members.map((m, i) => (
           <button key={m.name} type="button" className="cq-btn cq-pick__btn" aria-pressed={i === mi} onClick={() => { setMi(i); idle(); }}>
-            <Portrait race={m.race} cls={m.cls} scale={2} />
+            <Portrait race={m.race} cls={m.cls} look={lookOf(m)} scale={2} />
             <span><strong>{m.name}</strong><br /><small>{m.points} points to spend</small></span>
           </button>
         ))}

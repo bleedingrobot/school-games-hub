@@ -14,6 +14,8 @@ export interface ComputerHeroSpec {
   id: string;
   name: string;
   heroClass: HeroClass;
+  /** Which painted hero they look like (LOOKS in data.ts). */
+  look: string;
   /** Which days of the week this hero goes adventuring (Monday first). */
   plays: boolean[];
 }
@@ -21,14 +23,14 @@ export interface ComputerHeroSpec {
 const days = (...on: number[]) => Array.from({ length: 7 }, (_, d) => on.includes(d));
 
 export const COMPUTER_HEROES: ComputerHeroSpec[] = [
-  { id: 'gareth', name: 'Sir Gareth', heroClass: 'knight', plays: days(0, 1, 2, 3, 4) },
-  { id: 'maple', name: 'Dame Maple', heroClass: 'mage', plays: days(0, 1, 2, 3) },
-  { id: 'bram', name: 'Old Bram', heroClass: 'knight', plays: days(0, 2, 4) },
-  { id: 'wren', name: 'Lady Wren', heroClass: 'trickster', plays: days(0, 1, 2, 3, 4, 5, 6) },
-  { id: 'flint', name: 'Captain Flint', heroClass: 'trickster', plays: days(1, 2, 3, 4) },
-  { id: 'orrin', name: 'Wizard Pim', heroClass: 'mage', plays: days(0, 1, 3, 4) },
-  { id: 'hazel', name: 'Sister Hazel', heroClass: 'mage', plays: days(1, 3, 5) },
-  { id: 'mort', name: 'Big Mort', heroClass: 'knight', plays: days(0, 1, 2, 3, 4, 5) },
+  { id: 'gareth', name: 'Sir Gareth', heroClass: 'knight', look: 'knight-boy-03-1', plays: days(0, 1, 2, 3, 4) },
+  { id: 'maple', name: 'Dame Maple', heroClass: 'mage', look: 'mage-girl-01-1', plays: days(0, 1, 2, 3) },
+  { id: 'bram', name: 'Old Bram', heroClass: 'knight', look: 'knight-boy-10-1', plays: days(0, 2, 4) },
+  { id: 'wren', name: 'Lady Wren', heroClass: 'trickster', look: 'trickster-girl-03-1', plays: days(0, 1, 2, 3, 4, 5, 6) },
+  { id: 'flint', name: 'Captain Flint', heroClass: 'trickster', look: 'trickster-boy-05-1', plays: days(1, 2, 3, 4) },
+  { id: 'orrin', name: 'Wizard Pim', heroClass: 'mage', look: 'mage-boy-02-1', plays: days(0, 1, 3, 4) },
+  { id: 'hazel', name: 'Sister Hazel', heroClass: 'mage', look: 'mage-girl-04-1', plays: days(1, 3, 5) },
+  { id: 'mort', name: 'Big Mort', heroClass: 'knight', look: 'knight-boy-07-1', plays: days(0, 1, 2, 3, 4, 5) },
 ];
 
 const hashOf = (text: string) => {
@@ -65,7 +67,7 @@ export function computerHeroes(seasonNumber: number, dayOfSeason: number): Compu
   const index = Math.max(0, Math.min(SEASON_DAYS, dayOfSeason) - 1);
   return COMPUTER_HEROES.map((spec) => {
     const hero = seasonOfHero(spec, seasonNumber)[index];
-    return { id: spec.id, name: spec.name, hero, duelist: duelistOf(hero, spec.name) };
+    return { id: spec.id, name: spec.name, hero: { ...hero, look: spec.look }, duelist: duelistOf(hero, spec.name) };
   });
 }
 

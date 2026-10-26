@@ -8,6 +8,7 @@ import { Bar } from './Bars';
 import { pretendRaid, pretendTargets } from './places';
 import type { ServerReply } from './remote';
 import type { Session } from './session';
+import { bannerArt } from './art';
 
 const B = CONFIG.empire.battle;
 const LOOTS = B.lootChoices.filter((n) => n <= CONFIG.empire.raids.classmateLootMax);
@@ -148,7 +149,7 @@ export function ClassRaid({ session, ask, onSession, onBack }: {
               {targets.map((t) => (
                 <li key={t.id}>
                   <button type="button" className="cq-btn" disabled={!t.allowed} aria-pressed={chosen?.id === t.id} onClick={() => setPick(t.id)}>
-                    {t.name}{t.allowed ? ': a fair match' : ''}
+                    {bannerArt(t.name) && <img className="cq-rowbanner" src={bannerArt(t.name)} alt="" />}{t.name}{t.allowed ? ': a fair match' : ''}
                   </button>
                   {!t.allowed && <span className="cq-soft"> {t.say}</span>}
                 </li>
