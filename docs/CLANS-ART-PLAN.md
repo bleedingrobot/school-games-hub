@@ -185,3 +185,12 @@ James chose to do A.7 before A.6, so the fight files stay untouched until `clans
 
 - **Try-out page:** https://claude.ai/artifact/HpSZN7KVceHsiN8eSxWkxN (private to James). The whole game on a pretend clan with the test strip, every picture built in (the small copies only, so it fits; about 9.5 MB). Fights still have the old figures (A.6). Rebuild with `npm run clans:tryout` (`vite.clans-tryout.config.ts`).
 - **Not done (James decides):** the pull request to `main`, redeploying the `clans` function, and going live.
+
+## Remakes (26 Oct 2026)
+
+Made in ComfyUI on James's gaming PC (3 tries each, more for the armour), checked for children by Claude, and approved by James ("All looks great, push on!"):
+
+- **Wizard's Staff** and **Wooden Armour** (items) and **Giant Rat** (monster): now copy 3 of each (`item-…-3.png` in the inbox, `"copy": 3` in `default-picks.json`). Copies 1 and 2 stay in the inbox.
+- **Imp necromancer, girl 2**: remade with both wings inside the picture (the old cut-out lost one). The old picture is in `clans-superseded/member-imp-necromancer-female-2-old-wing-lost.png`.
+- Every try is kept in `~/dragon-art-inbox/clans-remakes/`. The try-out page has the new pictures.
+- Still "worth a look" from A.1, not remade: scythe, wand, rags, leather armour, knobbly club, cave minotaur (four legs), green slime.
