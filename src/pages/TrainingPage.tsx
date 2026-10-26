@@ -3,10 +3,20 @@
  * student's records saved to the database. Students and teachers (teachers have their own practice records); signed in is already checked by the router.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router';
+import { SUBITISING_CONFIG } from '../../shared/subitising/config';
 import { dayString, type TrainingState } from '../../shared/training/records';
 import type { AnswerEvent } from '../../shared/training/save';
 import { useAuth } from '../auth/AuthContext';
-import { addAnswer, enqueueStudent, flushQueue, loadTraining } from '../data/training';
+import { fetchMyLadder } from '../data/ladder';
+import { NO_LADDER, type LadderInfo } from '../../shared/maths/place';
+import { needsPlacement, trainingPassedSteps } from '../../shared/training/start';
+import { PlacementFirstCard } from '../training/PlacementFirst';
+import { addAnswer, enqueueSession, enqueueStudent, flushQueue, loadTraining, type QuickLoad } from '../data/training';
+import { GamesGateNote } from '../training/TrainFirst';
+import type { QuickAnswerEvent } from '../subitising/SubitisingApp';
+import { settingsOf, toTrainingAnswer } from '../subitising/saving';
+import { emptySubState, type SubState } from '../subitising/store';
 import { TrainingApp } from '../training/TrainingApp';
 
 /** Send what's waiting after this many answers, as well as at the end of a session and on leaving. */
@@ -15,22 +25,29 @@ const FLUSH_EVERY = 8;
 export default function TrainingPage() {
   const { profile } = useAuth();
   if (!profile) return null;
-  return <StudentTraining player={profile.id} />;
+  return <StudentTraining player={profile.id} role={profile.role} />;
 }
 
-function StudentTraining({ player }: { player: string }) {
-  const [loaded, setLoaded] = useState<{ state: TrainingState; offline: boolean } | null>(null);
+/** The student's place on the maths ladder; without it (offline, no school) Training starts from the records alone. */
+const ladderInfo = (): Promise<LadderInfo> => fetchMyLadder().then((d) => d.focus.ladder ?? NO_LADDER, () => NO_LADDER);
+
+function StudentTraining({ player, role }: { player: string; role: string }) {
+  const [loaded, setLoaded] = useState<{ state: TrainingState; offline: boolean; quick?: QuickLoad; placeFirst: boolean } | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let current = true;
-    loadTraining(player)
-      .then((result) => current && setLoaded(result))
+    // The starting place (the maths warm-up) decides which steps are already behind the student (22 Oct 2026).
+    Promise.all([loadTraining(player), ladderInfo()])
+      .then(([result, ladder]) => {
+        if (!current) return;
+        setLoaded({ ...result, state: { ...result.state, passedSteps: trainingPassedSteps(ladder) }, placeFirst: needsPlacement(ladder, role) });
+      })
       .catch(() => current && setFailed(true));
     return () => {
       current = false;
     };
-  }, [player]);
+  }, [player, role]);
 
   if (failed) return <p role="alert" className="panel__empty">We couldn’t open Training just now. Please try again in a moment.</p>;
   if (!loaded) {
@@ -40,14 +57,34 @@ function StudentTraining({ player }: { player: string }) {
       </div>
     );
   }
-  return <Loaded player={player} start={loaded.state} offline={loaded.offline} />;
+  return <Loaded player={player} start={loaded.state} offline={loaded.offline} quickStart={loaded.quick} placeFirst={loaded.placeFirst} />;
 }
 
-function Loaded({ player, start, offline }: { player: string; start: TrainingState; offline: boolean }) {
+/** Quick looks as the page keeps it: the saved answers and settings, with the session count worked out from the answers. */
+function subStateFrom(quick: QuickLoad | undefined): SubState {
+  if (!quick) return emptySubState();
+  const q = quick.settings;
+  return {
+    ...emptySubState(),
+    answers: quick.answers,
+    placed: q?.placed ?? false,
+    startStage: q?.startStage ?? 1,
+    finished: q?.finished ?? 0,
+    guidedMode: q?.guided ?? false,
+    sessionsDone: Math.floor(quick.answers.length / SUBITISING_CONFIG.sessionTrials),
+  };
+}
+
+function Loaded({ player, start, offline, quickStart, placeFirst }: { player: string; start: TrainingState; offline: boolean; quickStart?: QuickLoad; placeFirst: boolean }) {
   const [state, setState] = useState(start);
   const stateRef = useRef(start);
+  const [quick, setQuick] = useState(() => subStateFrom(quickStart));
+  const quickRef = useRef(quick);
   const sinceSend = useRef(0);
   const [today] = useState(() => dayString(new Date()));
+  const [search] = useSearchParams();
+  // The dashboard's Quick looks card opens Training with ?quick=1, straight into Quick looks.
+  const [openQuick] = useState(() => search.get('quick') === '1');
 
   const flush = useCallback((keepalive = false) => void flushQueue(player, keepalive), [player]);
 
@@ -68,16 +105,46 @@ function Loaded({ player, start, offline }: { player: string; start: TrainingSta
     };
   }, [flush]);
 
+  // Quick looks settings only go with the student once they have used Quick looks (so nothing new is saved for anyone else).
+  const [usedQuick, setUsedQuick] = useState(() => !!quickStart?.settings);
+  const usedQuickRef = useRef(usedQuick);
+
+  /** The typing times, settings and (once used) Quick looks settings, saved together: the newest replaces the older. */
+  const saveStudent = () => {
+    const t = stateRef.current;
+    const q = quickRef.current;
+    enqueueStudent(player, {
+      type: 'student',
+      typing: t.typing,
+      autoSubmit: t.autoSubmit,
+      sessionsDone: t.sessionsDone,
+      ...(usedQuickRef.current ? { quick: settingsOf(q) } : {}),
+    });
+  };
+
   const onState = (next: TrainingState) => {
     const before = stateRef.current;
     stateRef.current = next;
     setState(next);
     // Typing check times, the auto-submit choice and the sessions count are saved when they change.
     if (next.typing !== before.typing || next.autoSubmit !== before.autoSubmit || next.sessionsDone !== before.sessionsDone) {
-      enqueueStudent(player, { type: 'student', typing: next.typing, autoSubmit: next.autoSubmit, sessionsDone: next.sessionsDone });
+      saveStudent();
       if (next.sessionsDone !== before.sessionsDone) flush();
     }
   };
+
+  const onQuickState = (next: SubState) => {
+    const before = quickRef.current;
+    quickRef.current = next;
+    setQuick(next);
+    if (next.placed !== before.placed || next.startStage !== before.startStage || next.finished !== before.finished || next.guidedMode !== before.guidedMode) {
+      usedQuickRef.current = true;
+      setUsedQuick(true);
+      saveStudent();
+    }
+  };
+
+  const onQuickAnswered = (a: QuickAnswerEvent) => onAnswered(toTrainingAnswer(a));
 
   const onAnswered = (answer: AnswerEvent) => {
     addAnswer(player, answer);
@@ -94,7 +161,20 @@ function Loaded({ player, start, offline }: { player: string; start: TrainingSta
           We can’t reach the internet right now. You can still practise: your answers will be saved when it’s back.
         </p>
       )}
-      <TrainingApp state={state} onState={onState} today={today} onAnswered={onAnswered} />
+      <TrainingApp
+        state={state}
+        onState={onState}
+        today={today}
+        onAnswered={onAnswered}
+        openQuick={openQuick}
+        quick={{ state: quick, onState: onQuickState, onAnswered: onQuickAnswered, onSessionEnd: () => flush() }}
+        onSessionFinished={(kind, seed) => {
+          enqueueSession(player, kind, seed);
+          sinceSend.current = 0;
+        }}
+        gateNote={<GamesGateNote />}
+        placementFirst={placeFirst ? <PlacementFirstCard back="/training" /> : undefined}
+      />
     </>
   );
 }

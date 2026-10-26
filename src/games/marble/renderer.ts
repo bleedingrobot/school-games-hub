@@ -119,9 +119,12 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
   // The fixed layout. Timed things (trapdoors, gates, geysers) are drawn separately below and move with the clock.
   const WALL_TILE: Tile = { ch: '=', level: 0, surface: 'normal', slope: null, door: -1 };
   const VOID_TILE: Tile = { ch: '.', level: 0, surface: 'normal', slope: null, door: -1 };
+  const hideGateDoors = new Set<number>(stopSigns ? course.gates.flatMap((g) => g.tunnels.map((t) => t.door)) : []);
   const tile = (x: number, y: number): Tile => {
     if (x < 0 || y < 0 || x >= W || y >= H) return VOID_TILE;
     const t = course.tiles[y * W + x];
+    // With maths on, the doors at the ends of the answer tunnels are drawn as plain floor, shut or open, so the wall gives nothing away.
+    if (t.door >= 0 && hideGateDoors.has(t.door)) return { ...t, ch: '#', door: -1 };
     if (t.door >= 0) return world.open.has(t.door) ? { ...t, ch: '#' } : WALL_TILE;
     return t.ch === 'q' ? { ...t, ch: '#' } : t;
   };

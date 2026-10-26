@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import {
-  ARMOURS, CLASSES, EXP_TO_CHALLENGE, MAX_LEVEL, WEAPONS, expNeeded, masterFor,
+  ARMOURS, CLASSES, EXP_TO_CHALLENGE, LOOKS, MAX_LEVEL, WEAPONS, expNeeded, masterFor,
 } from '../../../shared/lord/data';
 import {
   buyGear, canChallengeMaster, canFaceDragon, healCost, healPrice, heroAttack, heroDefence, kindnessDiscount, shopPrice,
@@ -12,6 +12,8 @@ import type { Asked, AskOptions } from './useAsk';
 import { ArmourSprite, HeroSprite, Icon, MonsterSprite, WeaponSprite } from './Sprite';
 import { ICON_TILES } from './tileMap';
 import { BARD_SONGS, dayHash } from './text';
+import { Portrait, Stage } from './Stage';
+import { lookThumb, type PersonId, type SceneId } from './art';
 import type { MomentId } from '../../../shared/lord/maths';
 
 export type Ask = (moment: MomentId, options: AskOptions) => Promise<Asked>;
@@ -29,18 +31,28 @@ export interface PlaceProps {
   busy: boolean;
 }
 
-function Place({ title, children, back, tile }: { title: string; children: ReactNode; back: () => void; tile?: keyof typeof ICON_TILES }) {
+/**
+ * One place in the village: its painting at the top with the person who works there standing in it, the name on a
+ * sign, and what you can do there on a parchment panel below. `more` is the end of a long title, left off on phones
+ * so the sign stays on one line (the shop's forge shows).
+ */
+export function Place({ title, more, children, back, tile, scene = 'village', person }: {
+  title: string; more?: string; children: ReactNode; back: () => void; tile?: keyof typeof ICON_TILES; scene?: SceneId; person?: PersonId;
+}) {
   return (
-    <section className="lord-place" aria-label={title}>
-      <header className="lord-place__head">
-        <h2>
-          {tile && <Icon name={tile} scale={3} />} {title}
-        </h2>
-        <button type="button" className="lord-btn" onClick={back}>
-          <kbd>Esc</kbd> Back to the village
-        </button>
-      </header>
-      {children}
+    <section className="lord-place" aria-label={title + (more ?? '')}>
+      <Stage scene={scene} size="short">
+        {person && <Portrait who={person} />}
+        <header className="lord-place__head">
+          <h2 className="lord-sign">
+            {tile && <Icon name={tile} scale={2} />} <span>{title}{more && <span className="lord-sign__long">{more}</span>}</span>
+          </h2>
+          <button type="button" className="lord-btn" onClick={back}>
+            <kbd>Esc</kbd> Back to the village
+          </button>
+        </header>
+      </Stage>
+      <div className="lord-panel">{children}</div>
     </section>
   );
 }
@@ -68,7 +80,7 @@ export function Shop({ hero, act, ask, say, back, busy }: PlaceProps) {
   }
 
   return (
-    <Place title="The Blacksmith and Armourer" tile="sword" back={back}>
+    <Place title="The Blacksmith" more=" and Armourer" tile="sword" scene="shop" person="shop" back={back}>
       <p className="lord-lead">
         Your old gear sells back for half price. The best gear needs enough base {stat}: you get that by beating your masters.
         {kindnessDiscount(hero) > 0 && ` Your kindness gives ${Math.round(kindnessDiscount(hero) * 100)}% off.`}
@@ -133,7 +145,7 @@ export function Healer({ hero, act, ask, say, back, busy }: PlaceProps) {
   }
 
   return (
-    <Place title="The Healer’s Hut" tile="heart" back={back}>
+    <Place title="The Healer’s Hut" tile="heart" scene="healer" person="healer" back={back}>
       <p className="lord-lead">
         Health: <strong>{hero.hp} / {hero.maxHp}</strong>. Every point costs <strong>{price}</strong> gold. All your health comes back free tomorrow.
       </p>
@@ -172,7 +184,7 @@ export function Bank({ hero, state, act, ask, say, back, busy }: PlaceProps) {
   }
 
   return (
-    <Place title="The Bank" tile="coin" back={back}>
+    <Place title="The Bank" tile="coin" scene="bank" person="bank" back={back}>
       <p className="lord-lead">Gold in the bank is safe. If you lose a fight, only the gold you are carrying is lost.</p>
       <p className="lord-big">
         <Icon name="gold" /> Carrying <strong>{hero.gold}</strong> · In the bank <strong>{hero.bank}</strong>
@@ -231,8 +243,8 @@ export function Inn({ state, act, ask, say, back, busy, today }: PlaceProps & { 
   }
 
   return (
-    <Place title="The Inn" tile="potion" back={back}>
-      <blockquote className="lord-song"><p>The bard sings:</p>{song.split(' / ').map((l) => <p key={l}>{l}</p>)}</blockquote>
+    <Place title="The Inn" tile="potion" scene="inn" person="inn" back={back}>
+      <blockquote className="lord-song"><Portrait who="bard" /><p>The bard sings:</p>{song.split(' / ').map((l) => <p key={l}>{l}</p>)}</blockquote>
       <div className="lord-actions">
         <button type="button" className="lord-btn lord-btn--hot" disabled={state.riddleDone || busy} onClick={() => void riddle()}>
           Riddle of the day {state.riddleDone && '(done today)'}
@@ -279,7 +291,7 @@ export function Training({ hero, back, onChallenge, onDragon }: Pick<PlaceProps,
   const share = Number.isFinite(need) ? Math.max(0, Math.min(1, (hero.exp - prev) / (need - prev))) : 1;
 
   return (
-    <Place title="The Training Grounds" tile="shield" back={back}>
+    <Place title="The Training Grounds" tile="shield" scene="training" back={back}>
       {master ? (
         <div className="lord-master">
           <MonsterSprite monster={{ id: `master-${master.level}`, name: master.name, level: master.level }} scale={7} />
@@ -301,7 +313,7 @@ export function Training({ hero, back, onChallenge, onDragon }: Pick<PlaceProps,
         </div>
       ) : (
         <div className="lord-master">
-          <p className="lord-lead">You have beaten every master. {canFaceDragon(hero) ? 'The Red Dragon waits in the forest.' : 'Earn a little more experience to face the dragon.'}</p>
+          <p className="lord-lead">You have beaten every master. {canFaceDragon(hero) ? 'The Red Dragon waits in the mountains.' : 'Earn a little more experience to face the dragon.'}</p>
           {canFaceDragon(hero) && (
             <button type="button" className="lord-btn lord-btn--hot" onClick={onDragon}>
               Face the Red Dragon
@@ -315,12 +327,15 @@ export function Training({ hero, back, onChallenge, onDragon }: Pick<PlaceProps,
 
 // ---------------------------------------------------------------- hero page, news, class pick
 
-export function HeroPage({ hero, stats, back }: { hero: Hero; stats?: Stats; back: () => void }) {
+export function HeroPage({ hero, stats, back, onLook }: { hero: Hero; stats?: Stats; back: () => void; onLook: () => void }) {
   const need = expNeeded(hero.level);
   return (
-    <Place title="Your hero" back={back}>
+    <Place title="Your hero" scene="map" back={back}>
       <div className="lord-hero">
-        <HeroSprite heroClass={hero.heroClass} scale={8} />
+        <div className="lord-hero__look">
+          <HeroSprite heroClass={hero.heroClass} look={hero.look} scale={8} />
+          <button type="button" className="lord-btn" onClick={onLook}>{hero.look ? 'Change my look' : 'Choose my look'}</button>
+        </div>
         <dl className="lord-stats">
           <div><dt>Class</dt><dd>{CLASSES[hero.heroClass].name}</dd></div>
           <div><dt>Level</dt><dd>{hero.level} / {MAX_LEVEL}</dd></div>
@@ -351,21 +366,76 @@ export function HeroPage({ hero, stats, back }: { hero: Hero; stats?: Stats; bac
   );
 }
 
-export function ClassPick({ onPick }: { onPick: (c: HeroClass) => void }) {
+/** "knight-girl-05-2" → "Knight girl 5, painting 2", for screen readers. */
+const lookName = (look: string) => {
+  const [cls, kid, n, v] = look.split('-');
+  return `${CLASSES[cls as HeroClass].name} ${kid} ${Number(n)}, painting ${v}`;
+};
+
+/** Every painted hero of one class, to pick the one you look like. The one you have now is marked. */
+export function LookPick({ heroClass, current, onPick, busy }: { heroClass: HeroClass; current?: string; onPick: (look: string) => void; busy?: boolean }) {
+  return (
+    <div className="lord-looks" role="group" aria-label={`${CLASSES[heroClass].name} looks`}>
+      {LOOKS[heroClass].map((look) => (
+        <button
+          key={look} type="button" className="lord-look" aria-pressed={look === current} aria-label={lookName(look)}
+          disabled={busy} onClick={() => onPick(look)}
+        >
+          <img src={lookThumb(look)} alt="" loading="lazy" decoding="async" draggable={false} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Changing your look, any time: from Your hero, or the village's nudge for heroes made before there were looks. */
+export function LookPage({ hero, act, back, busy }: Pick<PlaceProps, 'hero' | 'act' | 'back' | 'busy'>) {
+  return (
+    <Place title="Choose your look" scene="village" back={back}>
+      <p className="lord-lead">Pick the {CLASSES[hero.heroClass].name.toLowerCase()} you want to be. You can change it whenever you like. It changes how you look, nothing else.</p>
+      <LookPick heroClass={hero.heroClass} current={hero.look} busy={busy} onPick={async (look) => (await act({ action: 'look', look })) && back()} />
+    </Place>
+  );
+}
+
+export function ClassPick({ onPick }: { onPick: (c: HeroClass, look: string) => void }) {
+  const [chosen, setChosen] = useState<HeroClass | null>(null);
+  if (chosen) {
+    return (
+      <section className="lord-place" aria-label="Choose your look">
+        <Stage scene="village" size="short">
+          <header className="lord-place__head">
+            <h2 className="lord-sign">Choose your look</h2>
+            <button type="button" className="lord-btn" onClick={() => setChosen(null)}>Pick a different class</button>
+          </header>
+        </Stage>
+        <div className="lord-panel">
+          <p className="lord-lead">Which {CLASSES[chosen].name.toLowerCase()} are you? You can change your look later, on Your hero.</p>
+          <LookPick heroClass={chosen} onPick={(look) => onPick(chosen, look)} />
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="lord-place" aria-label="Choose your class">
-      <h2>Welcome, hero!</h2>
+      <Stage scene="village" size="short">
+        <header className="lord-place__head">
+          <h2 className="lord-sign">Welcome, hero!</h2>
+        </header>
+      </Stage>
+      <div className="lord-panel">
       <p className="lord-lead">
         The Red Dragon has stolen the village’s treasure, its food and its light. Someone has to get them back. Pick the kind of hero you want to be. You can change next season.
       </p>
       <div className="lord-classes">
         {(Object.keys(CLASSES) as HeroClass[]).map((c) => (
-          <button key={c} type="button" className="lord-class" onClick={() => onPick(c)}>
+          <button key={c} type="button" className="lord-class" onClick={() => setChosen(c)}>
             <HeroSprite heroClass={c} scale={8} />
             <strong>{CLASSES[c].name}</strong>
             <span>{CLASSES[c].blurb}</span>
           </button>
         ))}
+      </div>
       </div>
     </section>
   );

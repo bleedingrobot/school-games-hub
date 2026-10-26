@@ -448,6 +448,12 @@ const CLASSES = {
 		skills: ["dodge", "pinch"]
 	}
 };
+/**
+* The painted heroes a pupil can pick to look like (src/games/lord/art/heroes/), 40 for each class: ten girls and ten
+* boys, each painted twice. "knight-girl-05-2" is the second painting of knight girl 5. Girls and boys take turns.
+*/
+const LOOKS = Object.fromEntries(Object.keys(CLASSES).map((c) => [c, Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, "0")).flatMap((n) => ["girl", "boy"].flatMap((kid) => [1, 2].map((v) => `${c}-${kid}-${n}-${v}`)))]));
+const isLook = (heroClass, look) => typeof look === "string" && LOOKS[heroClass].includes(look);
 const DRAGON_STAGES = (() => {
 	const p = tierPower(12);
 	const stage = (n, name, intro, hpMul, strMul) => ({
@@ -699,6 +705,11 @@ const EVENTS = [
 		}
 	}
 ];
+/**
+* The events the forest may find when the teacher has some topics off: a maths event about a switched-off topic is
+* left out (the rest of the forest is unchanged, and there are always events with no maths in them).
+*/
+const eventsOn = (on) => EVENTS.filter((e) => !e.maths || on.includes(e.maths.topic));
 const EVENT_BY_ID = Object.fromEntries(EVENTS.map((e) => [e.id, e]));
 //#endregion
 //#region shared/lord/engine.ts
@@ -744,7 +755,8 @@ function newHero(heroClass, today, previous) {
 		masterTried: false,
 		forestWins: 0,
 		arenaWins: 0,
-		masterWins: 0
+		masterWins: 0,
+		...previous?.look ? { look: previous.look } : {}
 	};
 }
 const heroAttack = (h) => h.strength + WEAPONS[h.weapon].power;
@@ -1306,12 +1318,42 @@ const MOMENT_TOPICS = {
 		"patterns"
 	]
 };
+/** Every topic Dragon Maths can ask about (the teacher's tick-list, all on to start). */
+const ALL_TOPICS = [
+	"place-value",
+	"add-sub",
+	"times-tables",
+	"division",
+	"fractions",
+	"decimals",
+	"money",
+	"patterns"
+];
+/** The topics to use from a settings list: the known ones only, and never none (an empty or unreadable list means all). */
+function topicsOn(list) {
+	const on = Array.isArray(list) ? ALL_TOPICS.filter((t) => list.includes(t)) : [];
+	return on.length ? on : ALL_TOPICS;
+}
+/**
+* The packs a moment may draw from when the teacher has some topics off: its own packs that are on. If all of
+* its own are off, any topic that is on, so no moment is ever without a question (the number-guess game has none).
+*/
+function momentTopics(moment, on = ALL_TOPICS) {
+	const own = MOMENT_TOPICS[moment];
+	if (own.length === 0) return [];
+	const kept = own.filter((t) => on.includes(t));
+	return kept.length ? kept : [...on];
+}
 /** The difficulty band (1 easiest, 4 hardest) that suits a hero's level when nothing better is known. */
 const defaultBand = (level) => Math.min(4, Math.max(1, Math.ceil(level / 3)));
 /** Does this fight offer a "size it up" question? A pure function of the seed so a replay agrees. */
 const offersSizeItUp = (seed) => (Math.imul(seed >>> 0, 2654435761) >>> 0) % 3 === 0;
 /** Size it up: a right answer finds the monster's weak spot. */
 const sizeItUpBonus = (result) => result === "right" ? 1.5 : result === "hint" ? 1.25 : 1;
+/** Size it up, a right answer: this much more gold for winning the fight (question skips, James 22 Oct 2026: answering should beat skipping). */
+const SIZE_IT_UP_GOLD = .2;
+/** The gold a won forest fight pays: a right Size it up adds SIZE_IT_UP_GOLD (rounded up, so at least 1). */
+const sizeItUpGold = (gold, result) => result === "right" && gold > 0 ? gold + Math.ceil(gold * SIZE_IT_UP_GOLD) : gold;
 /** Shop and healer: a right answer is 10% off (a hint earns 5%); wrong is full price. */
 const priceDiscount = (result) => result === "right" ? .1 : result === "hint" ? .05 : 0;
 /** Master's trial: each right answer adds a little strength when you level up (a tenth of the usual gain, at least 1). */
@@ -1346,7 +1388,7 @@ function dragonStageOptions(result) {
 const interestFor = (bank, result) => result === "right" ? Math.floor(bank * .05) : result === "hint" ? Math.floor(bank * .025) : 0;
 const numberGuessPrize = (level, won) => Math.round(tierPower(level) * (won ? 1 : .2));
 /** The inn's riddle of the day: a right answer pays well, a wrong one pays a little for trying. */
-const riddleGold = (level, result) => friendly(tierPower(level) * (result === "right" ? 1.5 : .3));
+const riddleGold = (level, result) => friendly(tierPower(level) * (result === "right" ? 1.5 : result === "hint" ? .75 : .3));
 //#endregion
 //#region shared/lord/sim.ts
 /** How often the simulated pupil answers a maths question right. */
@@ -1535,48 +1577,56 @@ const COMPUTER_HEROES = [
 		id: "gareth",
 		name: "Sir Gareth",
 		heroClass: "knight",
+		look: "knight-boy-03-1",
 		plays: days(0, 1, 2, 3, 4)
 	},
 	{
 		id: "maple",
 		name: "Dame Maple",
 		heroClass: "mage",
+		look: "mage-girl-01-1",
 		plays: days(0, 1, 2, 3)
 	},
 	{
 		id: "bram",
 		name: "Old Bram",
 		heroClass: "knight",
+		look: "knight-boy-10-1",
 		plays: days(0, 2, 4)
 	},
 	{
 		id: "wren",
 		name: "Lady Wren",
 		heroClass: "trickster",
+		look: "trickster-girl-03-1",
 		plays: days(0, 1, 2, 3, 4, 5, 6)
 	},
 	{
 		id: "flint",
 		name: "Captain Flint",
 		heroClass: "trickster",
+		look: "trickster-boy-05-1",
 		plays: days(1, 2, 3, 4)
 	},
 	{
 		id: "orrin",
 		name: "Wizard Pim",
 		heroClass: "mage",
+		look: "mage-boy-02-1",
 		plays: days(0, 1, 3, 4)
 	},
 	{
 		id: "hazel",
 		name: "Sister Hazel",
 		heroClass: "mage",
+		look: "mage-girl-04-1",
 		plays: days(1, 3, 5)
 	},
 	{
 		id: "mort",
 		name: "Big Mort",
 		heroClass: "knight",
+		look: "knight-boy-07-1",
 		plays: days(0, 1, 2, 3, 4, 5)
 	}
 ];
@@ -1610,7 +1660,10 @@ function computerHeroes(seasonNumber, dayOfSeason) {
 		return {
 			id: spec.id,
 			name: spec.name,
-			hero,
+			hero: {
+				...hero,
+				look: spec.look
+			},
 			duelist: duelistOf(hero, spec.name)
 		};
 	});
@@ -2184,6 +2237,43 @@ var BandedPack = class {
 		return (q.params ? this.familyOfKey.get(q.factKey)?.make(q.factKey, q.params) : null)?.fact ?? fillBlank(q.parts, q.answer);
 	}
 };
+//#endregion
+//#region shared/maths/skillPacks/timesTables.ts
+/**
+* Works out a question from how it was shown (e.g. ['?', '×', '8', '=', '56']): its answer and
+* the fact it belongs to. Null if it isn't a times-tables question this pack could ask. The
+* server uses this to check answers it didn't see being given.
+*/
+function solveQuestion(parts) {
+	if (!Array.isArray(parts) || parts.length !== 5 || parts[3] !== "=" || !parts.every((p) => typeof p === "string")) return null;
+	const [a, op, b, , c] = parts;
+	if (op !== "×" && op !== "÷" || parts.filter((p) => p === "?").length !== 1) return null;
+	const num = (text) => /^\d{1,3}$/.test(text) ? Number(text) : NaN;
+	const inTables = (n) => Number.isInteger(n) && n >= 1 && n <= 12;
+	let x;
+	let y;
+	let answer;
+	if (op === "×" && c === "?") {
+		[x, y] = [num(a), num(b)];
+		answer = x * y;
+	} else if (op === "×" && a === "?") {
+		y = num(b);
+		x = answer = num(c) / y;
+		if (num(c) !== x * y) return null;
+	} else if (op === "×" && b === "?") {
+		x = num(a);
+		y = answer = num(c) / x;
+		if (num(c) !== x * y) return null;
+	} else if (op === "÷" && c === "?") {
+		y = num(b);
+		x = answer = num(a) / y;
+	} else return null;
+	if (!inTables(x) || !inTables(y)) return null;
+	return {
+		answer,
+		key: factKey(x, y)
+	};
+}
 //#endregion
 //#region shared/maths/skillPacks/addSub.ts
 /**
@@ -4452,9 +4542,10 @@ function bandedPack(id) {
 const isNumber = (n) => typeof n === "number" && Number.isFinite(n);
 /**
 * Is this a question the game could have asked a hero of this level at this moment, and was it right?
-* `only` forces one pack (a forest event's own topic); otherwise the moment's packs are allowed.
+* `only` forces one pack (a forest event's own topic); otherwise the moment's packs are allowed. `on` is the list of
+* topics the teacher has left on: a question from any other topic is refused.
 */
-function markProof(raw, moment, heroLevel, now, only) {
+function markProof(raw, moment, heroLevel, now, only, on = ALL_TOPICS) {
 	if (!raw || typeof raw !== "object") return {
 		ok: false,
 		problem: "proof"
@@ -4464,7 +4555,7 @@ function markProof(raw, moment, heroLevel, now, only) {
 		ok: false,
 		problem: "proof-pack"
 	};
-	if (!(only ? [only] : MOMENT_TOPICS[moment]).includes(p.pack)) return {
+	if (!(only ? on.includes(only) ? [only] : [] : momentTopics(moment, on)).includes(p.pack)) return {
 		ok: false,
 		problem: "proof-pack"
 	};
@@ -4484,8 +4575,7 @@ function markProof(raw, moment, heroLevel, now, only) {
 	const ms = isNumber(p.ms) ? Math.max(0, Math.min(12e4, Math.round(p.ms))) : 6e4;
 	let correct;
 	if (p.pack === "times-tables") {
-		const fact = parseFactKey(p.key);
-		if (!fact) return {
+		if (!parseFactKey(p.key)) return {
 			ok: false,
 			problem: "proof-key"
 		};
@@ -4502,7 +4592,17 @@ function markProof(raw, moment, heroLevel, now, only) {
 			ok: false,
 			problem: "proof-kind"
 		};
-		correct = p.kind === "multiply" ? p.given === fact.a * fact.b : p.given === fact.a || p.given === fact.b;
+		const parts = Array.isArray(p.parts) && p.parts.length === 5 && p.parts.every((x) => typeof x === "string") ? p.parts : null;
+		const solved = parts ? solveQuestion(parts) : null;
+		if (!parts || !solved || solved.key !== p.key) return {
+			ok: false,
+			problem: "proof-parts"
+		};
+		if ((parts[1] === "÷" ? "divide" : parts[4] === "?" ? "multiply" : "missing-factor") !== p.kind) return {
+			ok: false,
+			problem: "proof-kind"
+		};
+		correct = p.given === solved.answer;
 	} else {
 		const pack = bandedPack(p.pack);
 		if (!pack) return {
@@ -4528,6 +4628,7 @@ function markProof(raw, moment, heroLevel, now, only) {
 	return {
 		ok: true,
 		correct,
+		hinted: p.hinted === true,
 		answer: {
 			pack: p.pack,
 			key: p.key,
@@ -4583,6 +4684,7 @@ const ACTIONS = [
 	"load",
 	"rollover",
 	"start-hero",
+	"look",
 	"forest",
 	"event",
 	"fight-finish",
@@ -4625,7 +4727,7 @@ function mark(c, raw, moment, only) {
 		answers: [],
 		notes: []
 	};
-	const m = markProof(raw, moment, c.w.hero.level, c.now, only);
+	const m = markProof(raw, moment, c.w.hero.level, c.now, only, topicsOn(c.settings.topics));
 	if (!m.ok) return {
 		result: "wrong",
 		skipped: false,
@@ -4633,7 +4735,7 @@ function mark(c, raw, moment, only) {
 		notes: [m.problem]
 	};
 	return {
-		result: m.correct ? "right" : "wrong",
+		result: m.correct ? m.hinted ? "hint" : "right" : "wrong",
 		skipped: false,
 		answers: [m.answer],
 		notes: []
@@ -4648,10 +4750,27 @@ function startHero(c, existing) {
 	}
 	const next = newHero(cls, c.today, existing ? { dragonKills: hero.dragonKills } : void 0);
 	next.forestLeft = c.settings.forestPerDay;
+	if (isLook(next.heroClass, c.req.look)) next.look = c.req.look;
 	return {
 		hero: next,
 		extra: newExtra(extra.stats),
-		summary: { heroClass: cls },
+		summary: {
+			heroClass: cls,
+			look: next.look
+		},
+		result: {}
+	};
+}
+/** Picks which painted hero you look like: any of your class's, as often as you like. It changes nothing else. */
+function setLook(c) {
+	const { hero } = c.w;
+	if (!isLook(hero.heroClass, c.req.look)) return { refuse: "bad-request" };
+	return {
+		hero: {
+			...hero,
+			look: c.req.look
+		},
+		summary: { look: c.req.look },
 		result: {}
 	};
 }
@@ -4672,7 +4791,7 @@ function forest(c) {
 		message: "You have used all your forest fights today. Come back tomorrow, or visit the village."
 	};
 	if (hero.hp <= 0) return rule("You are too hurt to go into the forest. See the healer.");
-	const trip = forestTrip(hero, c.s.seed());
+	const trip = forestTrip(hero, c.s.seed(), eventsOn(topicsOn(c.settings.topics)));
 	if (trip.kind === "event") return {
 		extra: {
 			...extra,
@@ -4715,9 +4834,9 @@ function event(c) {
 	let right = false;
 	let answers = [];
 	let notes = [];
-	if (e.maths && !c.req.walkOn) {
+	if (e.maths && !c.req.walkOn && topicsOn(c.settings.topics).includes(e.maths.topic)) {
 		const m = mark(c, c.req.proof, "treasure", e.maths.topic);
-		right = m.result === "right";
+		right = m.result !== "wrong";
 		answers = m.answers;
 		notes = m.notes;
 	}
@@ -4796,15 +4915,20 @@ function fightFinish(c) {
 	if (isRefuse(played)) return played;
 	const { fight, actions, open: was } = played;
 	const crossed = was.info.day !== c.today;
-	const hero = keepToday(applyForestResult(c.w.hero, fight), c.w.hero, crossed);
-	const rewards = fight.outcome === "won" ? {
-		gold: fight.monster.gold + fight.goldPinched,
+	const won = fight.outcome === "won";
+	const extraGold = won ? sizeItUpGold(fight.monster.gold, sizeUp) - fight.monster.gold : 0;
+	const applied = applyForestResult(c.w.hero, fight);
+	const hero = keepToday(extraGold ? {
+		...applied,
+		gold: applied.gold + extraGold
+	} : applied, c.w.hero, crossed);
+	const rewards = won ? {
+		gold: fight.monster.gold + extraGold + fight.goldPinched,
 		exp: fight.monster.exp
 	} : {
 		gold: 0,
 		exp: 0
 	};
-	const won = fight.outcome === "won";
 	return {
 		hero,
 		answers,
@@ -5098,7 +5222,7 @@ function bank(c) {
 		summary: { interest: extraGold },
 		result: {
 			interest: extraGold,
-			right: m.result === "right"
+			right: m.result !== "wrong"
 		}
 	};
 }
@@ -5127,7 +5251,7 @@ function inn(c) {
 			},
 			result: {
 				gold,
-				right: m.result === "right"
+				right: m.result !== "wrong"
 			}
 		};
 	}
@@ -5212,14 +5336,16 @@ async function arena(c) {
 			kind: "pupil",
 			id: k.player,
 			name: k.name,
-			duelist: duelistOf(k.hero, k.name)
+			duelist: duelistOf(k.hero, k.name),
+			look: isLook(k.hero.heroClass, k.hero.look) ? k.hero.look : void 0
 		});
 	}
 	for (const k of computerHeroes(season.number, season.dayOfSeason)) pool.push({
 		kind: "computer",
 		id: k.id,
 		name: k.name,
-		duelist: k.duelist
+		duelist: k.duelist,
+		look: k.hero.look
 	});
 	const gap = (o) => Math.abs(o.duelist.level - hero.level);
 	const near = pool.filter((o) => gap(o) <= 1);
@@ -5280,12 +5406,14 @@ async function arena(c) {
 			you: {
 				name: you.name,
 				heroClass: you.heroClass,
+				look: hero.look,
 				level: you.level,
 				maxHp: you.maxHp
 			},
 			opponent: {
 				name: opponent.name,
 				heroClass: opponent.duelist.heroClass,
+				look: opponent.look,
 				level: opponent.duelist.level,
 				maxHp: opponent.duelist.maxHp,
 				computer: opponent.kind === "computer"
@@ -5421,7 +5549,10 @@ async function tools(c) {
 				result: {}
 			};
 		case "reset": return {
-			hero: newHero(hero.heroClass, c.today),
+			hero: newHero(hero.heroClass, c.today, {
+				dragonKills: 0,
+				look: hero.look
+			}),
 			extra: {
 				...newExtra(extra.stats),
 				classOpen: true
@@ -5442,6 +5573,7 @@ const viewOf = (w, version, today, season, settings) => ({
 		daysLeft: season.daysLeft
 	},
 	forestPerDay: settings.forestPerDay,
+	topics: topicsOn(settings.topics),
 	classOpen: w?.extra.classOpen ?? false,
 	openFight: w?.open ? {
 		id: w.open.id,
@@ -5463,6 +5595,7 @@ const viewOf = (w, version, today, season, settings) => ({
 	} : null,
 	stats: w?.extra.stats ?? newStats()
 });
+[...ALL_TOPICS];
 /** The season a day falls in. With no start date set, the first season starts today. */
 function seasonFor(settings, today) {
 	return settings.seasonStart ? seasonOf(settings.seasonStart, today) : {
@@ -5601,7 +5734,10 @@ async function runLord(s, player, raw) {
 		let extra = readExtra(row.extra);
 		let rowSeason = row.season;
 		if (rowSeason < season.number && !stored) {
-			hero = newHero(hero.heroClass, today, { dragonKills: hero.dragonKills });
+			hero = newHero(hero.heroClass, today, {
+				dragonKills: hero.dragonKills,
+				look: hero.look
+			});
 			extra = {
 				...newExtra(extra.stats),
 				classOpen: true
@@ -5746,6 +5882,9 @@ async function runLord(s, player, raw) {
 	switch (action) {
 		case "start-hero":
 			done = startHero(ctx, !!row);
+			break;
+		case "look":
+			done = setLook(ctx);
 			break;
 		case "forest":
 			done = forest(ctx);

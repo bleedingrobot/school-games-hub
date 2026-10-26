@@ -8,6 +8,7 @@ import { BondPicker, type StarsBySet } from './BondPicker';
 import { recordGame, type RecordedGame } from './bests';
 import { Finish, VersusFinish, type SaveState } from './Finish';
 import { TEXT, type Players } from './strings';
+import type { BondSuggestion } from './suggest';
 import './bond-match.css';
 
 /** A new seed for each game. It is picked here, in the screen: the engine in shared/ never picks one. */
@@ -28,6 +29,8 @@ interface Props {
   random?: () => number;
   botMs?: number;
   botAfterMismatchMs?: number;
+  /** The bond the student's maths focus or ladder place points to (suggest.ts). Left out or null: no suggestion. */
+  suggested?: BondSuggestion | null;
 }
 
 const newRunId = (): string => crypto.randomUUID();
@@ -44,7 +47,7 @@ type Screen =
   | { name: 'done'; set: BondSet; size: BoardSize; game: FinishedGame; recorded: RecordedGame | null; players: Players };
 
 /** Picker, board and finish. With a saver, finished games go to the server; bests are also kept in this browser. */
-export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, saver, makeRunId = newRunId, random, botMs, botAfterMismatchMs }: Props) {
+export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, saver, makeRunId = newRunId, random, botMs, botAfterMismatchMs, suggested }: Props) {
   const [screen, setScreen] = useState<Screen>({ name: 'pick' });
   const [players, setPlayers] = useState<Players>({ mode: 'solo' });
   // The board size last played, so the picker opens on it again.
@@ -86,7 +89,7 @@ export function BondMatchPlay({ makeSeed = randomSeed, mismatchMs, finishMs, sav
   return (
     <div className="bm">
       <h1 className="bm-title">{TEXT.name}</h1>
-      {screen.name === 'pick' && <BondPicker initialSize={lastSize} onPick={start} stars={saver ? stars : undefined} players={players} onPlayers={setPlayers} />}
+      {screen.name === 'pick' && <BondPicker initialSize={lastSize} onPick={start} stars={saver ? stars : undefined} players={players} onPlayers={setPlayers} suggested={suggested} />}
       {screen.name === 'play' && (
         <BondMatchGame
           set={screen.set}

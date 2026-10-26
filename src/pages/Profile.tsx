@@ -4,15 +4,25 @@ import { AvatarImage } from '../avatar/AvatarImage';
 import {
   AVATAR_OPTIONS,
   PART_LABELS,
+  THEMES,
+  avatarToSave,
   normaliseAvatar,
   randomAvatar,
+  themeOf,
   type Avatar,
   type AvatarPart,
+  type HubTheme,
 } from '../avatar/avatarParts';
+import { RecentList, recentGamesFrom, SpaceStatsLine, StatsTable, statsFrom, type MyStats, type RecentGame } from '../components/MyGames';
 import { AchievementList, LevelBar, RankBadge } from '../components/Progress';
+import { fetchMyHomePage } from '../data/homePage';
 import { chooseMyName, fetchNameWords, FriendlyError, saveMyAvatar, type NameWords } from '../data/profile';
-import { fetchMyProgress, nextRankText, type MyProgress } from '../data/progress';
+import { nextRankText, type MyProgress } from '../data/progress';
 import { ALL_GAMES, gameLabel } from '../games/registry';
+import { useThemeTrial } from '../theme/hubTheme';
+
+/** How many recent games the profile's My stats shows. */
+const RECENT_SHOWN = 10;
 
 const PARTS = Object.keys(AVATAR_OPTIONS) as AvatarPart[];
 const COLOUR_PARTS: AvatarPart[] = ['colour', 'topColour', 'bg'];
@@ -36,15 +46,37 @@ export function Profile() {
   const [avatarStatus, setAvatarStatus] = useState<string | null>(null);
   const savedAvatar = normaliseAvatar(profile?.avatar);
   const avatarChanged = JSON.stringify(avatar) !== JSON.stringify(savedAvatar);
+  // The theme: picking one shows it straight away (a trial); Save keeps it. Leaving without saving goes back to the saved one.
+  const savedTheme = themeOf(profile?.avatar);
+  const [theme, setTheme] = useState<HubTheme>(savedTheme);
+  const [themeStatus, setThemeStatus] = useState<string | null>(null);
+  const { setTrial } = useThemeTrial();
+  useEffect(() => {
+    return () => {
+      setTrial(null);
+    };
+  }, [setTrial]);
 
+  // Saving replaces the whole avatar, so the avatar's save keeps the saved theme and the theme's save keeps the saved avatar.
   async function handleSaveAvatar() {
     setAvatarStatus('Saving…');
     try {
-      await saveMyAvatar(avatar);
+      await saveMyAvatar(avatarToSave(avatar, savedTheme));
       await refreshProfile();
       setAvatarStatus('Saved! Looking good.');
     } catch (error) {
       setAvatarStatus(errorText(error));
+    }
+  }
+
+  async function handleSaveTheme() {
+    setThemeStatus('Saving…');
+    try {
+      await saveMyAvatar(avatarToSave(savedAvatar, theme));
+      await refreshProfile();
+      setThemeStatus('Saved! Enjoy your new look.');
+    } catch (error) {
+      setThemeStatus(errorText(error));
     }
   }
 
@@ -104,6 +136,49 @@ export function Profile() {
               </div>
             </fieldset>
           ))}
+          <fieldset className="choice-group theme-picker">
+            <legend>My theme</legend>
+            <p className="theme-picker__help">How the home page and your other hub pages look. Games keep their own look.</p>
+            <div className="theme-picker__tiles">
+              {THEMES.map((t) => (
+                <label key={t.id} className="theme-tile">
+                  <input
+                    type="radio"
+                    name="hub-theme"
+                    value={t.id}
+                    checked={theme === t.id}
+                    onChange={() => {
+                      setTheme(t.id);
+                      setTrial(t.id);
+                      setThemeStatus(null);
+                    }}
+                  />
+                  <span className="theme-tile__body">
+                    <span className="theme-tile__preview" data-hub-theme={t.id} aria-hidden="true">
+                      <span className="theme-tile__bar" />
+                      <span className="theme-tile__card" />
+                      <span className="theme-tile__card" />
+                      <span className="theme-tile__box" />
+                    </span>
+                    <span className="theme-tile__name">{t.label}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            <div className="theme-picker__save">
+              <button
+                type="button"
+                className="button button--primary"
+                onClick={() => void handleSaveTheme()}
+                disabled={theme === savedTheme}
+              >
+                Save theme
+              </button>
+              <p className="avatar-maker__status" role="status">
+                {themeStatus}
+              </p>
+            </div>
+          </fieldset>
         </div>
       </section>
 
@@ -206,22 +281,69 @@ function NamePicker() {
   );
 }
 
+/**
+ * My progress, My stats and My achievements, from the home page's one request (my_home_page): it has the points and achievements
+ * the profile used to ask for on their own, and the stats tables that moved here from the home page.
+ */
 function MyProgressPanels() {
+  const { profile } = useAuth();
+  const me = profile?.id;
   const [progress, setProgress] = useState<MyProgress | null>(null);
+  const [stats, setStats] = useState<MyStats | null>(null);
+  const [recent, setRecent] = useState<RecentGame[] | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (!me) return;
     let current = true;
-    fetchMyProgress()
-      .then((p) => current && setProgress(p))
-      .catch(() => current && setFailed(true));
+    fetchMyHomePage().then(
+      (home) => {
+        if (!current) return;
+        if (home.progress) setProgress(home.progress);
+        else setFailed(true);
+        setStats(statsFrom(home));
+        setRecent(recentGamesFrom(home, me).slice(0, RECENT_SHOWN));
+      },
+      () => current && setFailed(true),
+    );
     return () => {
       current = false;
     };
-  }, []);
+  }, [me]);
 
-  if (failed) return <p className="panel__empty">We couldn’t load your points just now.</p>;
-  if (!progress) return null;
+  const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
+  const myStats = (
+    <section className="panel my-stats" id="stats" aria-labelledby="stats-title">
+      <h2 id="stats-title" className="panel__title">
+        My stats
+      </h2>
+      <div className="my-stats__columns">
+        <div>
+          <h3>Recent games</h3>
+          {!recent ? (
+            <p className="panel__empty">{failed ? 'We couldn’t load your games just now.' : 'Loading…'}</p>
+          ) : recent.length === 0 ? (
+            <p className="panel__empty">No games yet.</p>
+          ) : (
+            <RecentList games={recent} pointsFor={pointsFor} />
+          )}
+        </div>
+        <div>
+          <StatsTable caption="Against bots" stats={stats?.bots ?? null} />
+          <StatsTable caption="Against friends" stats={stats?.friends ?? null} />
+          <SpaceStatsLine stats={stats?.bots ?? null} classmates={stats?.spaceClassmates ?? null} />
+        </div>
+      </div>
+    </section>
+  );
+
+  if (!progress)
+    return (
+      <>
+        {failed && <p className="panel__empty">We couldn’t load your points just now.</p>}
+        {myStats}
+      </>
+    );
 
   return (
     <>
@@ -249,6 +371,8 @@ function MyProgressPanels() {
           ))}
         </ul>
       </section>
+
+      {myStats}
 
       <section className="panel" id="achievements" aria-labelledby="all-achievements-title">
         <h2 id="all-achievements-title" className="panel__title">

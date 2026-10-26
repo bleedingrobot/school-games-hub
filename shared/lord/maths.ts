@@ -32,6 +32,26 @@ export const MOMENT_TOPICS: Record<MomentId, PackId[]> = {
   'dragon-trial': ['add-sub', 'times-tables', 'place-value', 'division', 'fractions', 'decimals', 'money', 'patterns'],
 };
 
+/** Every topic Dragon Maths can ask about (the teacher's tick-list, all on to start). */
+export const ALL_TOPICS: PackId[] = ['place-value', 'add-sub', 'times-tables', 'division', 'fractions', 'decimals', 'money', 'patterns'];
+
+/** The topics to use from a settings list: the known ones only, and never none (an empty or unreadable list means all). */
+export function topicsOn(list: unknown): PackId[] {
+  const on = Array.isArray(list) ? ALL_TOPICS.filter((t) => list.includes(t)) : [];
+  return on.length ? on : ALL_TOPICS;
+}
+
+/**
+ * The packs a moment may draw from when the teacher has some topics off: its own packs that are on. If all of
+ * its own are off, any topic that is on, so no moment is ever without a question (the number-guess game has none).
+ */
+export function momentTopics(moment: MomentId, on: readonly PackId[] = ALL_TOPICS): PackId[] {
+  const own = MOMENT_TOPICS[moment];
+  if (own.length === 0) return [];
+  const kept = own.filter((t) => on.includes(t));
+  return kept.length ? kept : [...on];
+}
+
 /** Questions in a master's trial. */
 export const MASTER_TRIAL_QUESTIONS = 3;
 /** About one fight in this many offers "size it up". */
@@ -47,6 +67,11 @@ export const offersSizeItUp = (seed: number) => (Math.imul(seed >>> 0, 265443576
 
 /** Size it up: a right answer finds the monster's weak spot. */
 export const sizeItUpBonus = (result: Result): number => (result === 'right' ? 1.5 : result === 'hint' ? 1.25 : 1);
+
+/** Size it up, a right answer: this much more gold for winning the fight (question skips, James 22 Oct 2026: answering should beat skipping). */
+export const SIZE_IT_UP_GOLD = 0.2;
+/** The gold a won forest fight pays: a right Size it up adds SIZE_IT_UP_GOLD (rounded up, so at least 1). */
+export const sizeItUpGold = (gold: number, result: Result | null): number => (result === 'right' && gold > 0 ? gold + Math.ceil(gold * SIZE_IT_UP_GOLD) : gold);
 
 /** Shop and healer: a right answer is 10% off (a hint earns 5%); wrong is full price. */
 export const priceDiscount = (result: Result): number => (result === 'right' ? 0.1 : result === 'hint' ? 0.05 : 0);
@@ -81,4 +106,4 @@ export const NUMBER_GUESS_TRIES = 7;
 export const numberGuessPrize = (level: number, won: boolean): number => Math.round(tierPower(level) * (won ? 1 : 0.2));
 
 /** The inn's riddle of the day: a right answer pays well, a wrong one pays a little for trying. */
-export const riddleGold = (level: number, result: Result): number => friendly(tierPower(level) * (result === 'right' ? 1.5 : 0.3));
+export const riddleGold = (level: number, result: Result): number => friendly(tierPower(level) * (result === 'right' ? 1.5 : result === 'hint' ? 0.75 : 0.3));

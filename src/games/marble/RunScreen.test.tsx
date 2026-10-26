@@ -350,7 +350,7 @@ describe('RunScreen with maths', () => {
     await start();
     await runFrames(1500);
     await screen.findByRole('dialog');
-    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skip (no time off)' }));
     await runFrames(200);
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(onAnswer).not.toHaveBeenCalled();
@@ -368,7 +368,7 @@ describe('RunScreen with maths', () => {
     fireEvent.keyDown(dialog, { key: 'Enter' });
     await runFrames(100);
     expect(await screen.findByText(/couldn’t check that one/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /^Skip/ })).toBeEnabled();
   });
 
   it('plays a ghost with the doors that ghost ran with, not the student\'s', async () => {
@@ -445,7 +445,7 @@ describe('RunScreen: rescue questions and number gems', () => {
     await runFrames(3000);
     await screen.findByRole('dialog');
     const during = screen.getByLabelText('Time').textContent!;
-    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skip (no time back)' }));
     await runFrames(100);
     expect(screen.queryByText(/No time lost/)).toBeNull();
     expect(screen.getByLabelText('Time').textContent!.localeCompare(during)).toBeGreaterThanOrEqual(0);
@@ -462,7 +462,7 @@ describe('RunScreen: rescue questions and number gems', () => {
     setup({ course: GAP, setup: rescueSetup, onAnswer: (async () => ({ right: false, answer: 12 })) as never });
     await go();
     await runFrames(3000);
-    fireEvent.click(await screen.findByRole('button', { name: 'Skip' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Skip (no time back)' }));
     await runFrames(200);
     // Rolling east again falls again within seconds: no second question yet.
     fireEvent.keyDown(window, { code: 'ArrowRight' });

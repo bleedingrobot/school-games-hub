@@ -1,8 +1,9 @@
 // Connects the training handler to Supabase. Edit handler.ts for the logic, then run
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
+import { studentTyping } from '../../../shared/training/save';
 import { userIdFromToken } from '../_shared/signIn';
-import { makeHandler, SAVE_LIMITS, type Outcome } from './handler';
+import { makeHandler, SAVE_LIMITS, SESSION_MIN_ANSWERS, type Outcome } from './handler';
 
 declare const Deno: {
   env: { get(name: string): string | undefined };
@@ -48,9 +49,17 @@ Deno.serve(
     recordStudent: (player, item) =>
       call('record_training_student', {
         player,
-        typing: item.typing,
+        typing: studentTyping(item),
         auto_submit: item.autoSubmit,
         sessions_done: item.sessionsDone,
+      }),
+    recordSession: (player, item) =>
+      call('record_training_session', {
+        player,
+        kind: item.kind,
+        seed: item.seed,
+        at: item.at,
+        min_answers: SESSION_MIN_ANSWERS[item.kind],
       }),
   }),
 );

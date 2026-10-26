@@ -75,3 +75,39 @@ export const ITEM_TEXT: Record<string, string> = {
 };
 export const KIND_WORD: Record<string, string> = { weapon: 'Weapon', armor: 'Armour', shield: 'Shield' };
 export const STAT_WORD: Record<string, string> = { agility: 'Agility', dexterity: 'Dexterity', strength: 'Strength', wisdom: 'Wisdom', armor: 'Armour', charisma: 'Charisma' };
+
+/** What each thing you can train actually does in a fight. Keys match the Training Hall options. */
+export const TRAIN_HELP: Record<string, string> = {
+  agility: 'Agility: who goes first in a fight, and how hard you are to hit. Enemies need to beat your agility to land a blow.',
+  dexterity: 'Dexterity: your aim. The higher it is above the enemy\'s agility, the more of your hits land.',
+  strength: 'Strength: how hard you hit. Damage is about half your strength, so every 2 points adds 1 damage.',
+  wisdom: 'Wisdom: makes your spells stronger and more likely to work, and gives you skill points back faster in a fight.',
+  armor: 'Armour: every point takes 1 damage off each hit you take (an enemy hit always does at least 1).',
+  charisma: 'Charisma: not used in fights. The most charming member of the clan opens the talking choices in quests.',
+  hp: 'Health: more HP means you can take more hits before being knocked out.',
+  sp: 'Skill points: the fuel for spells. More SP means more spells before you run dry.',
+};
+/** Plain labels for the stats shown on a member card. */
+export const CARD_HELP: Record<string, string> = {
+  hp: TRAIN_HELP.hp,
+  attack: 'Attack is your strength: how hard you hit.',
+  defence: 'Defence is your armour: how much damage you shrug off from each hit.',
+  star: 'Your best stat. This is what this member is most about.',
+  sp: TRAIN_HELP.sp,
+};
+
+/** What is worth training for each class (R = recommended). Armour and health are for the ones who stand at the front. */
+export const CLASS_FOCUS: Record<string, string[]> = {
+  Barbarian: ['strength', 'armor', 'hp'],
+  Warrior: ['strength', 'agility', 'dexterity'],
+  'Martial Artist': ['agility', 'dexterity'],
+  Knight: ['strength', 'armor', 'hp', 'charisma'],
+  Assassin: ['dexterity', 'agility'],
+  Healer: ['wisdom', 'sp'],
+  Sorcerer: ['wisdom', 'sp'],
+  Necromancer: ['wisdom', 'sp'],
+  Wizard: ['wisdom', 'sp', 'hp'],
+  Pirate: ['agility', 'charisma', 'hp'],
+  Samurai: ['agility', 'dexterity', 'strength'],
+};
+export const isRecommended = (cls: string, key: string) => (CLASS_FOCUS[cls] ?? []).includes(key);

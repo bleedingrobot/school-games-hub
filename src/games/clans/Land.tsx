@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { CONFIG } from '../../../shared/clans/config';
-import { BUILDING_BLURBS, BUILDING_NAMES, area, claimCost, empireOf, energyLeft as energyPercentLeft, fence, plotCost } from '../../../shared/clans/empire';
+import { BUILDING_BLURBS, BUILDING_NAMES, area, buildingsThatFit, claimCost, empireOf, energyLeft as energyPercentLeft, fence, plotCost, shapesFor, smallestBuildingSize } from '../../../shared/clans/empire';
 import { energyLeft, landPlot } from '../../../shared/clans/moments';
 import { BUILDING_KINDS, type BuildingKind } from '../../../shared/clans/types';
 import { Moment } from './Moment';
+import { buildingArt } from './art';
 import { buildOn, canBuildOn, canClaim, canDevelop, claimMoreLand, developLand, whyNot } from './places';
 import type { Session, Change } from './session';
 
 const E = CONFIG.empire;
+const SMALLEST = smallestBuildingSize();
 const SIDES = Array.from({ length: E.plotSide.max - E.plotSide.min + 1 }, (_, i) => E.plotSide.min + i);
 
 type Phase =
@@ -22,11 +24,16 @@ export function Land({ session, onChange, onBack }: { session: Session; onChange
   const e = empireOf(clan);
   const [w, setW] = useState(4);
   const [l, setL] = useState(5);
+  const [goal, setGoal] = useState<BuildingKind | null>(null);
   const [plot, setPlot] = useState<number | null>(null);
   const [phase, setPhase] = useState<Phase>({ t: 'idle' });
   const idle = () => setPhase({ t: 'idle' });
   const q = landPlot(settings, w, l);
   const developCheck = canDevelop(session, w, l);
+  const squares = area(w, l);
+  const fits = buildingsThatFit(squares);
+  const tooSmall = squares < SMALLEST;
+  const pick = (pw: number, pl: number) => { setW(pw); setL(pl); };
   const freeBuildPlots = e.plots.map((p, i) => ({ p, i })).filter(({ p }) => !p.building);
 
   const develop = (pw: number, pl: number) => {
@@ -91,11 +98,34 @@ export function Land({ session, onChange, onBack }: { session: Session; onChange
       <div className="cq-land">
         <div className="cq-panel">
           <h3>Develop wild land</h3>
-          <p className="cq-soft">You have {e.wild} {e.wild === 1 ? 'plot' : 'plots'} of wild land. Pick the sides of the plot ({E.plotSide.min} to {E.plotSide.max} squares).</p>
+          <p className="cq-soft">You have {e.wild} {e.wild === 1 ? 'plot' : 'plots'} of wild land. What do you want to build on it?</p>
+          <div className="cq-sides" role="group" aria-label="What to build">
+            {BUILDING_KINDS.map((k) => <button key={k} type="button" className="cq-btn cq-goal" aria-pressed={goal === k} onClick={() => { setGoal(k); const s0 = shapesFor(E.buildings[k].size)[0]; if (s0) pick(s0.width, s0.length); }}>{BUILDING_NAMES[k]}<small>{E.buildings[k].size} squares</small></button>)}
+          </div>
+          {goal && (
+            <div className="cq-sides" role="group" aria-label="Plots that fit">
+              {BUILDING_NAMES[goal]} needs {E.buildings[goal].size} squares. Plots that fit:
+              {shapesFor(E.buildings[goal].size).map(({ width, length }) => <button key={`${width}x${length}`} type="button" className="cq-btn" aria-pressed={w === width && l === length} onClick={() => pick(width, length)}>{width}×{length}</button>)}
+            </div>
+          )}
+          <p className="cq-soft">Or pick the sides yourself ({E.plotSide.min} to {E.plotSide.max} squares).</p>
           <div className="cq-sides" role="group" aria-label="Width">Width {SIDES.map((n) => <button key={n} type="button" className="cq-btn" aria-pressed={w === n} aria-label={`Width ${n}`} onClick={() => setW(n)}>{n}</button>)}</div>
           <div className="cq-sides" role="group" aria-label="Length">Length {SIDES.map((n) => <button key={n} type="button" className="cq-btn" aria-pressed={l === n} aria-label={`Length ${n}`} onClick={() => setL(n)}>{n}</button>)}</div>
+          <div className="cq-preview" role="group" aria-label="Your plot">
+            <div className="cq-plotgrid" aria-hidden="true" style={{ gridTemplateColumns: `repeat(${w}, 1.2em)` }}>
+              {Array.from({ length: squares }, (_, i) => <span key={i} />)}
+            </div>
+            <div>
+              <p><strong>{w} by {l} plot</strong>{!q && <> = {squares} squares</>}</p>
+              <p className="cq-soft">It will cost {plotCost(e, w, l)} gold.</p>
+              {tooSmall
+                ? <p className="cq-warn">Too small! The smallest building needs {SMALLEST} squares. Make the plot bigger.</p>
+                : <p className="cq-ok">Room for: {fits.map((k) => BUILDING_NAMES[k]).join(', ')}.</p>}
+              {!tooSmall && fits.length < BUILDING_KINDS.length && <p className="cq-soft">Too small for: {BUILDING_KINDS.filter((k) => !fits.includes(k)).map((k) => `${BUILDING_NAMES[k]} (needs ${E.buildings[k].size})`).join(', ')}.</p>}
+            </div>
+          </div>
           <div className="cq-actions">
-            <button type="button" className="cq-btn cq-btn--hot" disabled={!developCheck.ok && developCheck.why === 'land'} onClick={() => setPhase(q ? { t: 'area', w, l } : { t: 'price', w, l })}>Work out the price</button>
+            <button type="button" className="cq-btn cq-btn--hot" disabled={tooSmall || (!developCheck.ok && developCheck.why === 'land')} onClick={() => setPhase(q ? { t: 'area', w, l } : { t: 'price', w, l })}>Work out the price</button>
           </div>
           {!developCheck.ok && developCheck.why === 'land' && <p className="cq-warn">{developCheck.say} You can claim more below.</p>}
           {e.wild === 0 && (
@@ -115,7 +145,7 @@ export function Land({ session, onChange, onBack }: { session: Session; onChange
           {freeBuildPlots.length === 0 ? <p>Develop a plot first, then you can build on it.</p> : (
             <>
               <div className="cq-sides" role="group" aria-label="Which plot?">
-                {freeBuildPlots.map(({ p, i }) => <button key={i} type="button" className="cq-btn" aria-pressed={plot === i} onClick={() => setPlot(i)}>Plot {i + 1}: {p.width}×{p.length} ({area(p.width, p.length)} squares)</button>)}
+                {freeBuildPlots.map(({ p, i }) => <button key={i} type="button" className="cq-btn" aria-pressed={plot === i} onClick={() => setPlot(i)}>Plot {i + 1}: {p.width}×{p.length} ({area(p.width, p.length)} squares){(() => { const f = buildingsThatFit(area(p.width, p.length)); return <small>{f.length ? `Fits: ${f.map((k) => BUILDING_NAMES[k]).join(', ')}` : 'Too small for any building'}</small>; })()}</button>)}
               </div>
               {plot !== null && e.plots[plot] && !e.plots[plot].building && (
                 <ul className="cq-buildings">
@@ -124,6 +154,7 @@ export function Land({ session, onChange, onBack }: { session: Session; onChange
                     const d = E.buildings[k];
                     return (
                       <li key={k}>
+                        {buildingArt(k) && <img className="cq-building-art" src={buildingArt(k)} alt="" />}
                         <button type="button" className="cq-btn" disabled={!c.ok} aria-label={`Build ${BUILDING_NAMES[k]}`} onClick={() => startBuild(plot, k)}>{BUILDING_NAMES[k]}</button>
                         <span><small className="cq-soft">{d.size} squares · {d.energy}% work · {d.gold} gold. {BUILDING_BLURBS[k]}</small>{!c.ok && <small className="cq-warn"> {c.say}</small>}</span>
                       </li>
@@ -133,7 +164,16 @@ export function Land({ session, onChange, onBack }: { session: Session; onChange
               )}
             </>
           )}
-          {e.plots.some((p) => p.building) && <p className="cq-soft">Built: {e.plots.filter((p) => p.building).map((p) => BUILDING_NAMES[p.building!]).join(', ')}</p>}
+          {e.plots.some((p) => p.building) && (
+            <>
+              <p className="cq-soft">Built: {e.plots.filter((p) => p.building).map((p) => BUILDING_NAMES[p.building!]).join(', ')}</p>
+              <ul className="cq-estate" aria-hidden="true">
+                {e.plots.map((p, i) => p.building && buildingArt(p.building) && (
+                  <li key={i}><img src={buildingArt(p.building)} alt="" /><span>Plot {i + 1}</span></li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
       </div>
     );

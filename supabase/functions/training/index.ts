@@ -2,27 +2,133 @@
 // then run `npm run build:functions`. Deploy this file as the "training" function.
 
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
-//#region supabase/functions/_shared/signIn.ts
+//#region shared/subitising/config.ts
+const STAGES = [
+	{
+		id: 1,
+		name: "A few dots",
+		types: [
+			"line",
+			"clus",
+			"angl"
+		],
+		min: 1,
+		max: 3,
+		flashStartMs: 1200,
+		flashGoodMs: 800,
+		gaps: false
+	},
+	{
+		id: 2,
+		name: "Dice and dots",
+		types: [
+			"dice",
+			"dicet",
+			"dots"
+		],
+		min: 4,
+		max: 5,
+		flashStartMs: 1e3,
+		flashGoodMs: 1e3,
+		gaps: false
+	},
+	{
+		id: 3,
+		name: "Five-frames",
+		types: [
+			"five",
+			"fiveplus",
+			"pair"
+		],
+		min: 3,
+		max: 7,
+		flashStartMs: 1e3,
+		flashGoodMs: 600,
+		gaps: true
+	},
+	{
+		id: 4,
+		name: "Ten-frames",
+		types: [
+			"ten",
+			"tenpair",
+			"tenmix"
+		],
+		min: 5,
+		max: 10,
+		flashStartMs: 1e3,
+		flashGoodMs: 800,
+		gaps: true
+	}
+];
+const stageOf = (id) => STAGES[id - 1];
+const STAGE_OF_TYPE = new Map(STAGES.flatMap((s) => s.types.map((t) => [t, s.id])));
+/** How many counters a frame holds (only frame pictures can have Missing Spots). */
+const FRAME_CAPACITY = {
+	five: 5,
+	ten: 10,
+	tenpair: 10,
+	tenmix: 10
+};
+//#endregion
+//#region shared/subitising/keys.ts
 /**
-* Who owns this sign-in token? Null if it's missing, expired, fake or not a signed-in user's.
+* The saved key for a picture. `sub:<type>-<n>` is Flash and Identify (the answer is n), and
+* `gap:<type>-<n>` is Missing Spots (n counters are showing, the answer is how many are missing).
+* The server can work out the right answer from the key alone, so it needs no seed.
 *
-* With the project's newer sign-in keys, the token's signature is checked right here against the
-* project's public keys (fetched once and kept for 10 minutes), with no trip to the sign-in
-* service. With the older shared secret (or a token signed with a key we don't know), the library
-* asks the sign-in service instead, exactly as `getUser` did. So this works the same before and
-* after the keys are switched in the Supabase dashboard; it only gets cheaper after.
+* An answer given with help (the picture stayed on screen after a struggle) is saved under
+* `subh:` / `gaph:` instead, so it never counts towards a stage, and never uses up the room kept
+* for the answers that do. The database keeps no spare column for it, and the key is the place
+* the server already reads.
 */
-function userIdFromToken(auth) {
-	return async (token) => {
-		try {
-			const { data, error } = await auth.getClaims(token);
-			const claims = error ? null : data?.claims;
-			if (!claims || claims.role !== "authenticated" || typeof claims.sub !== "string" || !claims.sub) return null;
-			return claims.sub;
-		} catch {
-			return null;
-		}
+/** Is this one of ours (helped or not), by its start alone? */
+const isQuickKey = (key) => /^(sub|gap)h?:/.test(key);
+const KEY = /^(sub|gap)(h?):([a-z]{3,8})-(0|[1-9]\d?)$/;
+/** Reads a key, or returns null if it isn't one of ours. */
+function parseKey(key) {
+	const m = KEY.exec(key);
+	if (!m) return null;
+	const type = m[3];
+	const stage = STAGE_OF_TYPE.get(type);
+	if (!stage) return null;
+	const n = Number(m[4]);
+	const helped = m[2] === "h";
+	const def = stageOf(stage);
+	if (m[1] === "sub" && (n < def.min || n > def.max)) return null;
+	if (m[1] === "sub") return {
+		activity: "flash",
+		type,
+		n,
+		stage,
+		helped,
+		answer: n
 	};
+	const capacity = FRAME_CAPACITY[type];
+	if (!capacity || n < 1 || n >= capacity) return null;
+	return {
+		activity: "gap",
+		type,
+		n,
+		stage,
+		helped,
+		answer: capacity - n
+	};
+}
+//#endregion
+//#region shared/subitising/saved.ts
+const packSettings = (q) => ({
+	p: q.placed ? 1 : 0,
+	s: q.startStage,
+	f: q.finished,
+	g: q.guided ? 1 : 0
+});
+/** The student's typing column with the Quick looks settings added (or left out when there are none). */
+function typingWithSettings(typing, quick) {
+	return quick ? {
+		...typing,
+		q: packSettings(quick)
+	} : typing;
 }
 //#endregion
 //#region shared/training/config.ts
@@ -56,13 +162,35 @@ const TRAINING_CONFIG = {
 			knownShare: .4
 		},
 		/** Nobody sees the same fact twice in a row, and no fact is asked more than this often in one session. */
-		maxAsksPerFact: 5
+		maxAsksPerFact: 5,
+		/**
+		* Flying (22 Oct 2026): a student who is getting nearly everything right and quickly learns more new facts at once, so a
+		* child who already knows a step isn't held on it for weeks. Measured over the last `window` answers.
+		*/
+		flying: {
+			learningFacts: 12,
+			window: 24,
+			minRight: .9,
+			minQuick: .75
+		}
 	},
 	/** Struggling = fewer than this share right over the last `window` answers (needs at least `minAnswers`). */
 	struggling: {
 		window: 12,
 		minAnswers: 8,
 		belowCorrect: .6
+	},
+	/**
+	* A practice fortnight (James, 22 Oct 2026): when a student starts struggling, Training stops pushing them on. For `days`
+	* days there are no new facts at all; every session is facts they have already met, best known first, so they get wins and
+	* make what they have strong. It starts on the day they begin struggling and is not stretched while it runs; if they are
+	* still struggling after it, the next wrong-heavy run starts another. Worked out from the saved answers, so nothing new is stored.
+	*/
+	rest: {
+		days: 14,
+		reviewShare: .5,
+		knownShare: .5,
+		knownFacts: 8
 	},
 	/**
 	* Saving answers (stage T.2). The newest `answersPerFact` answers of each fact are kept in the
@@ -76,6 +204,18 @@ const TRAINING_CONFIG = {
 		longestAnswerMs: 12e4,
 		rejectAnswerMs: 6e5,
 		longestTypingMs: 1e4
+	},
+	/**
+	* Training before games (James, 22 Oct 2026): in a class with the switch on, one finished session opens the games for
+	* `gamesOpenHours`. The server only counts a session it has at least this many answers for: a facts session that ran out
+	* of time can be as short as 2 (the first question, then the last), and a whole Quick looks round is 12 pictures.
+	*/
+	gate: {
+		gamesOpenHours: 6,
+		minAnswers: {
+			facts: 2,
+			quick: 12
+		}
 	},
 	/** Days before a fact is due for review again, by how many green days it has. */
 	reviewDays: [
@@ -92,6 +232,17 @@ const TRAINING_CONFIG = {
 			1: 700,
 			2: 1100,
 			3: 1500
+		},
+		/**
+		* The most that is ever taken off an answer for typing, by answer length (22 Oct 2026). The warm-up is slower than real
+		* answers (the first one includes reading what to do, and a slip used to keep the clock running), so without a ceiling most
+		* right answers came out as no thinking time at all and every fact went bright green. Applied when an answer is scored, so
+		* saved answers are scored again with it when the records are rebuilt.
+		*/
+		ceilingMs: {
+			1: 1e3,
+			2: 1500,
+			3: 2e3
 		}
 	},
 	/** The ladder: the NZC order times tables are taught in (plan section 8). The order inside a step is the order facts are introduced. */
@@ -193,6 +344,33 @@ const FAMILIES = buildFamilies();
 const FACTS = buildFacts();
 const FACT_BY_KEY = new Map(FACTS.map((f) => [f.key, f]));
 new Map(FAMILIES.map((f) => [f.key, f]));
+//#endregion
+//#region shared/training/save.ts
+/**
+* Saving training: what the website sends the training server function, and the checks the
+* function makes before saving any of it. Shared, so the website and the server agree.
+*
+* The browser keeps a queue of things to save and sends it whenever it can, so a dropped
+* Wi-Fi connection never loses a session. Every item can safely be sent twice: a batch of
+* answers carries an id made by the browser (the database counts it once), and the student's
+* settings are simply replaced by the newest.
+*
+* Training sessions are not replayed on the server (a student's records depend on every earlier
+* session, which may still be waiting in the queue on another device). The checks keep rubbish
+* out instead: the fact must be real, the answer is marked here from the real fact (what the
+* browser says is right doesn't matter), and the times and dates must be possible.
+*/
+/**
+* The right answer for a saved key: a times-table fact, or a Quick looks picture (worked out from the key
+* alone). Null if the key is neither, so nothing the browser says about the answer is ever trusted.
+*/
+function correctAnswerFor(key) {
+	const fact = FACT_BY_KEY.get(key);
+	if (fact) return fact.answer;
+	return parseKey(key)?.answer ?? null;
+}
+/** What the database stores as the student's `typing`: the typing times, with the Quick looks settings under "q". */
+const studentTyping = (item) => typingWithSettings(item.typing, item.quick);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_MS = 864e5;
@@ -215,10 +393,14 @@ function checkAnswer(raw, now) {
 		ok: false,
 		problem: "fact"
 	};
-	const fact = FACT_BY_KEY.get(a.key);
-	if (!fact) return {
+	const right = correctAnswerFor(a.key);
+	if (right === null) return {
 		ok: false,
 		problem: "fact"
+	};
+	if (isQuickKey(a.key) && a.typingMs !== 0) return {
+		ok: false,
+		problem: "typing"
 	};
 	if (!isInt(a.given, 0, 999999)) return {
 		ok: false,
@@ -250,7 +432,7 @@ function checkAnswer(raw, now) {
 			typingMs: a.typingMs,
 			at: a.at,
 			day: a.day,
-			correct: a.given === fact.answer
+			correct: a.given === right
 		}
 	};
 }
@@ -289,9 +471,15 @@ function checkItem(raw, now) {
 			problem: "answers"
 		};
 		const answers = [];
+		const seenQuick = new Set();
 		for (const a of item.answers) {
 			const checked = checkAnswer(a, now);
 			if (!checked.ok) return checked;
+			if (isQuickKey(checked.item.key)) {
+				const id = `${checked.item.at}|${checked.item.key}`;
+				if (seenQuick.has(id)) continue;
+				seenQuick.add(id);
+			}
 			answers.push(checked.item);
 		}
 		return {
@@ -318,19 +506,80 @@ function checkItem(raw, now) {
 			ok: false,
 			problem: "sessions"
 		};
+		let quick;
+		if (item.quick !== void 0) {
+			const packed = item.quick;
+			if (!(typeof packed === "object" && packed !== null && typeof packed.placed === "boolean" && typeof packed.guided === "boolean" && isInt(packed.startStage, 1, 4) && isInt(packed.finished, 0, 4))) return {
+				ok: false,
+				problem: "quick"
+			};
+			quick = {
+				placed: packed.placed,
+				startStage: packed.startStage,
+				finished: packed.finished,
+				guided: packed.guided
+			};
+		}
 		return {
 			ok: true,
 			item: {
 				type: "student",
 				typing,
 				autoSubmit: item.autoSubmit,
-				sessionsDone: item.sessionsDone
+				sessionsDone: item.sessionsDone,
+				...quick ? { quick } : {}
+			}
+		};
+	}
+	if (item.type === "session") {
+		if (item.kind !== "facts" && item.kind !== "quick") return {
+			ok: false,
+			problem: "kind"
+		};
+		if (!isInt(item.seed, 0, 2147483647)) return {
+			ok: false,
+			problem: "seed"
+		};
+		if (!isInt(item.at, now - DAY_MS / 2, now + 6e5)) return {
+			ok: false,
+			problem: "when"
+		};
+		return {
+			ok: true,
+			item: {
+				type: "session",
+				kind: item.kind,
+				seed: item.seed,
+				at: item.at
 			}
 		};
 	}
 	return {
 		ok: false,
 		problem: "type"
+	};
+}
+//#endregion
+//#region supabase/functions/_shared/signIn.ts
+/**
+* Who owns this sign-in token? Null if it's missing, expired, fake or not a signed-in user's.
+*
+* With the project's newer sign-in keys, the token's signature is checked right here against the
+* project's public keys (fetched once and kept for 10 minutes), with no trip to the sign-in
+* service. With the older shared secret (or a token signed with a key we don't know), the library
+* asks the sign-in service instead, exactly as `getUser` did. So this works the same before and
+* after the keys are switched in the Supabase dashboard; it only gets cheaper after.
+*/
+function userIdFromToken(auth) {
+	return async (token) => {
+		try {
+			const { data, error } = await auth.getClaims(token);
+			const claims = error ? null : data?.claims;
+			if (!claims || claims.role !== "authenticated" || typeof claims.sub !== "string" || !claims.sub) return null;
+			return claims.sub;
+		} catch {
+			return null;
+		}
 	};
 }
 //#endregion
@@ -438,7 +687,7 @@ function makeHandler(services) {
 	};
 }
 async function save(player, item, services) {
-	const saved = item.type === "answers" ? await services.recordAnswers(player, item) : await services.recordStudent(player, item);
+	const saved = item.type === "answers" ? await services.recordAnswers(player, item) : item.type === "student" ? await services.recordStudent(player, item) : await services.recordSession(player, item);
 	if (!saved.ok) return saved.why === "refused" ? {
 		type: "invalid",
 		problem: "refused"
@@ -446,8 +695,10 @@ async function save(player, item, services) {
 	return item.type === "answers" ? {
 		type: "answers",
 		added: saved.value
-	} : { type: "student" };
+	} : { type: item.type };
 }
+/** How many saved answers a session needs before it counts as finished (the database checks). */
+const SESSION_MIN_ANSWERS = TRAINING_CONFIG.gate.minAnswers;
 /** What the database function needs besides the answers: how many of each fact to keep, and the daily limit. */
 const SAVE_LIMITS = {
 	keepPerFact: TRAINING_CONFIG.storage.answersPerFact,
@@ -500,9 +751,16 @@ Deno.serve(makeHandler({
 	}),
 	recordStudent: (player, item) => call("record_training_student", {
 		player,
-		typing: item.typing,
+		typing: studentTyping(item),
 		auto_submit: item.autoSubmit,
 		sessions_done: item.sessionsDone
+	}),
+	recordSession: (player, item) => call("record_training_session", {
+		player,
+		kind: item.kind,
+		seed: item.seed,
+		at: item.at,
+		min_answers: SESSION_MIN_ANSWERS[item.kind]
 	})
 }));
 //#endregion

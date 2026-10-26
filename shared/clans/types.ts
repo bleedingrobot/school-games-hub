@@ -1,4 +1,5 @@
 /** Plain data shapes for Clan Quest. Everything here is JSON-safe so the server can save it. */
+import type { Look } from './looks';
 
 export const STATS = ['agility', 'dexterity', 'strength', 'wisdom', 'armor', 'charisma'] as const;
 export type Stat = (typeof STATS)[number];
@@ -63,6 +64,8 @@ export interface Member {
   points: number;
   /** Knocked out: out of fights until the Church wakes them (or tomorrow). */
   knockedOut: boolean;
+  /** Which of the four paintings shows them (looks.ts). Missing on members saved before looks existed. */
+  look?: Look;
 }
 
 export interface Village {

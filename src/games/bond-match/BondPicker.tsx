@@ -5,6 +5,7 @@ import { sideText } from '../../../shared/bond-match/exact';
 import { BOT_LEVEL_IDS } from '../../../shared/botGame';
 import { BOT_LEVEL_NAMES, SHELVES, SIZE_NAMES, TEXT, type Players } from './strings';
 import { Value } from './Value';
+import type { BondSuggestion } from './suggest';
 
 /** Best stars the student has on each bond set and board size: { 'whole-10': { small: 3 } }. */
 export type StarsBySet = Record<string, Partial<Record<BoardSize, number>>>;
@@ -17,6 +18,8 @@ interface Props {
   /** Who is playing, kept by the caller so it stays the same for the next game. Left out: solo only, no choice shown. */
   players?: Players;
   onPlayers?: (players: Players) => void;
+  /** The bond the student's maths focus or ladder place points to (suggest.ts): first on its shelf, with a badge. Any bond can still be picked. */
+  suggested?: BondSuggestion | null;
 }
 
 /** What a set's pairs add up to, as a card would show it: "10", "1", "1000". */
@@ -45,7 +48,7 @@ const PLAYER_CHOICES = [
 ] as const;
 
 /** "What are you practising?": who's playing and the board size, then the bond sets on three shelves. Picking a bond starts the game. */
-export function BondPicker({ onPick, initialSize = 'medium', stars, players, onPlayers }: Props) {
+export function BondPicker({ onPick, initialSize = 'medium', stars, players, onPlayers, suggested }: Props) {
   const [size, setSize] = useState<BoardSize>(initialSize);
   return (
     <section className="bm-picker" aria-labelledby="bm-pick-title">
@@ -115,7 +118,8 @@ export function BondPicker({ onPick, initialSize = 'medium', stars, players, onP
       </div>
 
       {SHELVES.map((shelf) => {
-        const sets = BOND_SETS.filter((b) => b.shelf === shelf.id);
+        const onShelf = BOND_SETS.filter((b) => b.shelf === shelf.id);
+        const sets = [...onShelf.filter((b) => b.id === suggested?.bondId), ...onShelf.filter((b) => b.id !== suggested?.bondId)];
         if (sets.length === 0) return null;
         return (
           <div key={shelf.id} className={`bm-shelf bm-shelf--${shelf.id}`} role="group" aria-label={shelf.name}>
@@ -126,14 +130,17 @@ export function BondPicker({ onPick, initialSize = 'medium', stars, players, onP
                 const best = mine ? BOARD_SIZES.filter((s) => mine[s]).map((s) => TEXT.bestStarsLine(SIZE_NAMES[s], mine[s])).join(', ') : '';
                 const here = mine?.[size] ?? 0;
                 const [a, b] = examplePair(set);
+                const why = suggested?.bondId === set.id ? suggested.why : null;
+                const badge = why ? TEXT.suggest[why] : null;
                 return (
                   <button
                     key={set.id}
                     type="button"
-                    className="bm-bond"
-                    aria-label={TEXT.bondButton(set.label, size, pairsOnBoard(set, size)) + (best ? `. ${TEXT.bestStarsLabel}: ${best}` : '')}
+                    className={badge ? 'bm-bond bm-bond--suggested' : 'bm-bond'}
+                    aria-label={(why ? `${TEXT.suggestSpoken[why]}: ` : '') + TEXT.bondButton(set.label, size, pairsOnBoard(set, size)) + (best ? `. ${TEXT.bestStarsLabel}: ${best}` : '')}
                     onClick={() => onPick(set, size)}
                   >
+                    {badge && <span className="bm-bond__badge" aria-hidden="true" data-testid="bond-suggested">{badge}</span>}
                     <span className={`bm-bond__target${targetText(set).length >= 4 ? ' bm-bond__target--long' : ''}`} aria-hidden="true">{targetText(set)}</span>
                     <span className="bm-bond__body" aria-hidden="true">
                       <span className="bm-bond__label">{set.label}</span>

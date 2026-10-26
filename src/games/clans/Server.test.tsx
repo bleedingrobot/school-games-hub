@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { applyAction, type Action, type Context, type OpenFight, type ServerState } from '../../../shared/clans/actions';
@@ -406,5 +406,31 @@ describe('Clan Quest with a server', () => {
       expect(btn('Into the Mines!')).toBeDisabled();
       expect(box.sent.filter((a) => a.type === 'fightStart')).toHaveLength(0);
     });
+  });
+});
+
+describe('member looks with a server (Clans art Stage A.5)', () => {
+  it('"Change look" shows the four paintings, and the pick is saved on the server', async () => {
+    const { server, box } = fakeServer(madeState());
+    const u = user();
+    render(<ClanQuest server={server} />);
+    await screen.findByRole('heading', { name: 'Red Banner' });
+    const card = screen.getByRole('article', { name: box.saved!.clan.members[1].name });
+    await u.click(within(card).getByRole('button', { name: 'Change look' }));
+    const picker = within(card).getByRole('group', { name: 'Look' });
+    expect(within(picker).getAllByRole('button')).toHaveLength(4);
+    const other = box.saved!.clan.members[1].look === 'male-2' ? 'Boy 1' : 'Boy 2';
+    await u.click(within(picker).getByRole('button', { name: other }));
+    expect(within(picker).getByRole('button', { name: other })).toHaveAttribute('aria-pressed', 'true');
+    const look = other === 'Boy 1' ? 'male-1' : 'male-2';
+    expect(box.sent.filter((x) => x.type === 'look')).toEqual([{ type: 'look', member: 1, look }]);
+    await waitFor(() => expect(box.saved!.clan.members[1].look).toBe(look));
+  });
+
+  it('a clan saved before looks existed still shows a painting for every member', async () => {
+    const { server } = fakeServer(madeState((s) => { for (const m of s.clan.members) delete m.look; }));
+    render(<ClanQuest server={server} />);
+    await screen.findByRole('heading', { name: 'Red Banner' });
+    expect(document.querySelectorAll('.cq-card .cq-portrait--painted img')).toHaveLength(4);
   });
 });

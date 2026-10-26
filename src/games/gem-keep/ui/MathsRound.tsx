@@ -73,6 +73,8 @@ export function MathsRound({
       onDone={done}
       onClose={onClose && (() => onClose(tally))}
       closeLabel={closeLabel}
+      // Gem Keep's rounds are ones the player chose to start, so "Well done" and "Cancel" stay with the skip switch off (James).
+      closeIsSkip={false}
       timeScale={timeScale}
     />
   );

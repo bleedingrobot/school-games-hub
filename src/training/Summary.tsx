@@ -1,9 +1,23 @@
+import type { ReactNode } from 'react';
 import { FACT_BY_KEY, promptText } from '../../shared/training/facts';
 import { recordBand, type TrainingState } from '../../shared/training/records';
 import { summaryMessage, type SessionSummary } from '../../shared/training/summary';
 import { BandChip } from './BandChip';
 
-export function Summary({ summary, state, onHome, onMap }: { summary: SessionSummary; state: TrainingState; onHome: () => void; onMap: () => void }) {
+export function Summary({
+  summary,
+  state,
+  onHome,
+  onMap,
+  note,
+}: {
+  summary: SessionSummary;
+  state: TrainingState;
+  onHome: () => void;
+  onMap: () => void;
+  /** Whether the games are open now (Training before games). */
+  note?: ReactNode;
+}) {
   const changed = summary.improved.slice(0, 12);
   return (
     <section className="tr-screen tr-summary">
@@ -19,6 +33,7 @@ export function Summary({ summary, state, onHome, onMap }: { summary: SessionSum
           ))}
         </ul>
       )}
+      {note}
       <div className="tr-row">
         <button type="button" className="tr-btn" onClick={onMap}>
           My facts map

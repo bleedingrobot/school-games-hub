@@ -4,6 +4,7 @@ import type { BotLevel, GameDefinition } from '../games/types';
 import type { CardMoves } from '../data/movesLeft';
 import { BotLevelPicker } from './BotLevelPicker';
 
+/** A game on the home page: a slim card with its picture, name and one-line tagline, then its bot levels and Play. */
 export function GameCard({
   game,
   level,
@@ -25,11 +26,11 @@ export function GameCard({
     >
       <div className="game-card__top">
         <div className="game-card__icon">
-          <Icon size={72} />
+          <Icon size={36} />
         </div>
-        <div>
+        <div className="game-card__text">
           <h3 id={`game-${game.id}-title`}>{game.name}</h3>
-          <p>{game.tagline}</p>
+          <p title={game.tagline}>{game.tagline}</p>
         </div>
       </div>
       {moves && (
@@ -50,23 +51,20 @@ export function GameCard({
           )}
         </div>
       )}
-      {game.noBots ? (
-        <Link className="button button--light" to={`/${game.id}`}>
-          Play {game.name}
-        </Link>
-      ) : (
-        <>
-          <BotLevelPicker
-            name={`level-${game.id}`}
-            legend="Bot level"
-            value={level}
-            onChange={onLevelChange}
-          />
-          <Link className="button button--light" to={`/${game.id}?bot=${level}`}>
-            Play {game.name} vs bot
+      <div className="game-card__do">
+        {game.noBots ? (
+          <Link className="game-card__go game-card__go--wide" to={`/${game.id}`}>
+            Play {game.name}
           </Link>
-        </>
-      )}
+        ) : (
+          <>
+            <BotLevelPicker name={`level-${game.id}`} legend="Bot level" value={level} onChange={onLevelChange} joined />
+            <Link className="game-card__go" to={`/${game.id}?bot=${level}`}>
+              Play<span className="sr-only"> {game.name} vs bot</span>
+            </Link>
+          </>
+        )}
+      </div>
     </article>
   );
 }

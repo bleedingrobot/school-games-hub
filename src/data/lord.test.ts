@@ -15,7 +15,7 @@ const fetchMock = vi.fn<typeof fetch>();
 let ME = '';
 
 const state = (version: number, over: Partial<LordState> = {}): LordState => ({
-  hero: null, version, today: '2026-10-19', season: { number: 1, dayOfSeason: 1, daysLeft: 34 }, forestPerDay: 10, classOpen: false,
+  hero: null, version, today: '2026-10-19', season: { number: 1, dayOfSeason: 1, daysLeft: 34 }, forestPerDay: 10, topics: ['add-sub'], classOpen: false,
   openFight: null, pendingEvent: null, dragon: null, dragonTried: false, riddleDone: false, interestDone: false, guess: null,
   stats: { forestWins: 0, masterWins: 0, arenaWins: 0, riddles: 0, dragons: 0, bestLevel: 1 }, ...over,
 });

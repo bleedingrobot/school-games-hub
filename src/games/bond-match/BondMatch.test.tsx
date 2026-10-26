@@ -14,18 +14,19 @@ import type { SaveResult } from '../../../shared/bond-match/save';
 import { SoundProvider } from '../../sound';
 import { GAMES, findGame } from '../registry';
 import { BondMatchPlay } from './BondMatchPlay';
+import type { BondSuggestion } from './suggest';
 import { bondMatch } from './index';
 
 const SEED = 7;
 
 afterEach(() => vi.unstubAllGlobals());
 
-function setup(props: { makeSeed?: () => number; mismatchMs?: number; saver?: BondMatchSaver; makeRunId?: () => string } = {}) {
+function setup(props: { makeSeed?: () => number; mismatchMs?: number; saver?: BondMatchSaver; makeRunId?: () => string; suggested?: BondSuggestion | null } = {}) {
   const user = userEvent.setup();
   const makeSeed = props.makeSeed ?? vi.fn(() => SEED);
   render(
     <SoundProvider>
-      <BondMatchPlay makeSeed={makeSeed} finishMs={0} mismatchMs={props.mismatchMs ?? 60_000} saver={props.saver} makeRunId={props.makeRunId} />
+      <BondMatchPlay makeSeed={makeSeed} finishMs={0} mismatchMs={props.mismatchMs ?? 60_000} saver={props.saver} makeRunId={props.makeRunId} suggested={props.suggested} />
     </SoundProvider>,
   );
   return { user, makeSeed };
@@ -81,6 +82,42 @@ describe('the picker', () => {
     await user.click(screen.getByRole('button', { name: /Pick another bond/ }));
     await pick(user, 'To 10', 'Small');
     expect(screen.getAllByRole('button', { name: /^card \d+,/ })).toHaveLength(12);
+  });
+});
+
+describe('a suggested bond (maths focus or auto, stage M.5)', () => {
+  const tiles = (shelf: string) => within(screen.getByRole('group', { name: shelf })).getAllByRole('button');
+
+  it("puts the teacher's bond first on its shelf with one badge, said aloud too", () => {
+    setup({ suggested: { bondId: 'whole-100-any', why: 'teacher' } });
+    expect(screen.getAllByTestId('bond-suggested')).toHaveLength(1);
+    expect(screen.getByTestId('bond-suggested')).toHaveTextContent('Teacher’s pick');
+    expect(tiles('Whole numbers')[0]).toHaveAccessibleName(/^Your teacher picked this: To 100 \(any\), Medium board/);
+    expect(tiles('Whole numbers')).toHaveLength(6);
+    expect(tiles('Whole numbers')[1]).toHaveAccessibleName(/^To 10, /);
+  });
+
+  it('marks the bond for the ladder place "Good for you now", and a student\'s own focus "Your focus"', () => {
+    const { unmount } = render(<SoundProvider><BondMatchPlay suggested={{ bondId: 'decimal-1-tenths', why: 'auto' }} /></SoundProvider>);
+    expect(screen.getByTestId('bond-suggested')).toHaveTextContent('Good for you now');
+    expect(tiles('Decimals')[0]).toHaveAccessibleName(/^Good for you now: To 1 \(tenths\)/);
+    unmount();
+    render(<SoundProvider><BondMatchPlay suggested={{ bondId: 'fraction-thirds', why: 'own' }} /></SoundProvider>);
+    expect(screen.getByTestId('bond-suggested')).toHaveTextContent('Your focus');
+    expect(tiles('Fractions')[0]).toHaveAccessibleName(/^Your focus: Thirds/);
+  });
+
+  it('never starts a game by itself, and any bond can still be picked', async () => {
+    const { user } = setup({ suggested: { bondId: 'whole-100-tens', why: 'teacher' } });
+    expect(screen.getByRole('heading', { name: 'What are you practising?' })).toBeInTheDocument();
+    await pick(user, 'Halves');
+    expect(screen.getByRole('group', { name: 'Halves board' })).toBeInTheDocument();
+  });
+
+  it('changes nothing with no suggestion: same order, no badge', () => {
+    setup({ suggested: null });
+    expect(screen.queryByTestId('bond-suggested')).toBeNull();
+    expect(tiles('Whole numbers').map((b) => b.getAttribute('aria-label')!.split(',')[0])).toEqual(BOND_SETS.filter((b) => b.shelf === 'whole').map((b) => b.label));
   });
 });
 

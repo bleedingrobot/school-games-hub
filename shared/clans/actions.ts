@@ -28,6 +28,7 @@ import { clanFromChoices, type Draft } from './create';
 import { build, claimLand, deposit, developPlot, empireNewDay, empireOf, PUSHES, setDraft, withdraw, type BattlePlan, type BattleResult, type Push, type Take } from './empire';
 import { bossAt, newFight, type Order } from './fight';
 import { ITEMS } from './gamedata';
+import { isLook, setLook, type Look } from './looks';
 import { earnedOrNone, type Earned } from './rewards';
 import { buyItem, buyTroopMix, draftFollowers, examineItemFor, fightSeed, payFight, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type FightSummary, type TrainKey } from './play';
 import { buildPuzzle, finishQuest, puzzleFor, todaysQuest, type QuestPrize } from './quests';
@@ -110,6 +111,7 @@ export type Action =
   | { type: 'examine'; member: number; item: string }
   | { type: 'train'; member: number; key: TrainKey; count: number }
   | { type: 'wake'; member: number }
+  | { type: 'look'; member: number; look: Look }
   | { type: 'wakeAll' }
   | { type: 'deposit'; gold: number }
   | { type: 'withdraw'; gold: number }
@@ -233,6 +235,7 @@ export function parseAction(raw: unknown): Action | null {
       return member !== null && count !== null && typeof raw.key === 'string' && TRAIN_KEYS.includes(raw.key as TrainKey) ? { type: 'train', member, key: raw.key as TrainKey, count } : null;
     }
     case 'wake': return member !== null ? { type: 'wake', member } : null;
+    case 'look': return member !== null && isLook(raw.look) ? { type: 'look', member, look: raw.look } : null;
     case 'deposit':
     case 'withdraw': {
       const gold = int(raw.gold, 1, 1_000_000);
@@ -379,6 +382,7 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
     }
     case 'train': return settle(trainMember(clan, action.member, action.key, action.count), { type: 'train' });
     case 'wake': return settle(wakeOne(clan, action.member), { type: 'wake' });
+    case 'look': return settle(setLook(clan, action.member, action.look), { type: 'look' });
     case 'wakeAll': return settle(wakeEveryone(clan), { type: 'wakeAll' });
     case 'deposit': return settle(deposit(clan, action.gold), { type: 'deposit' });
     case 'withdraw': return settle(withdraw(clan, action.gold), { type: 'withdraw' });

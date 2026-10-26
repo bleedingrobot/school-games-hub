@@ -13,8 +13,8 @@ You are starting a new game for James's **School Games Hub** (games for his Year
 ## Before anything else
 1. Read `docs/GAME_DEVELOPMENT_GUIDE.md` all the way through, then follow it. Where this prompt and the guide disagree, ask James.
 2. Set up your own branch and worktree as in the guide's section 6 (branch `[id]`, folder `~/projects/school-games-hub-[id]`). Work only there. Never commit to `main`, never `supabase db reset`, never a bare `git push`.
-3. Run `git fetch`, then list every migration number on `main` and on every branch. Pick the next free number for your first migration and write it in your plan.
-4. Read Marble Rush on branch `marble` (`docs/MARBLE-PLAN.md`, `shared/marble/`, `supabase/functions/marble/`). It's the closest example of a game built the approved way. If the game has classmates or turns, read 101 or Power Clash too.
+3. Run `git fetch`, then `node scripts/migration-numbers.mjs` (it checks `main` and every branch). Pick the next free number for your first migration and write it in your plan.
+4. Read Marble Rush (on `main`: `docs/MARBLE-PLAN.md`, `shared/marble/`, `supabase/functions/marble/`). It's the closest example of a game built the approved way. If the game has classmates or turns, read 101 or Power Clash too.
 
 ## Stage 0: the plan (no code yet)
 Write `docs/[ID]-PLAN.md`:

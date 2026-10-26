@@ -574,6 +574,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
         <QuestionModal
           question={asking.question}
           title={asking.title}
+          spot={asking.action.kind === 'fight' ? 'Fight' : 'Catch'}
           note={asking.note}
           timeScale={timeScale}
           onClose={() => {
@@ -581,6 +582,8 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
             setMode(asking.back);
           }}
           closeLabel="Back"
+          // Back goes to choosing another move and no turn passes, so the skip switch leaves it alone (James).
+          closeIsSkip={false}
           onSubmit={(answer, ms): MarkedAnswer => {
             const marked = packOf(asking.topic).recordAnswer(asking.question, answer, ms);
             answered.current = {

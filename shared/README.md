@@ -50,3 +50,17 @@ The `save-bot-game` server function runs exactly this code before saving a resul
   numbers, better buys). Made and marked by code; each is rebuilt from its kind and numbers
   (`buildQuestion`), with Year 4/5/6 bands and the teacher's topic switches
   (`PracticalSettings`).
+- `mine/`: Mine Runner (stages 1 to 4). `engine.ts` is the rules as a pure function (30 steps a second; the same
+  recorded inputs always give the same run, so the server replays a run to check its time), `level.ts` makes the six
+  mines from a recipe and seed (plus hard mode), `inputs.ts` stores a run as "same input for N steps" text, `bot.ts`
+  is a pretend pilot that finishes every mine, `medals.ts` has the medal times, `maths.ts` says which question belongs
+  to which door or pad, and `save.ts` is the server's replay and check (`judgeRun`). `determinism.ts` pins the rules'
+  fingerprint (`npm run mine:determinism` also checks Chromium and WebKit). See `docs/MINE-PLAN.md`.
+- `archery/`: Archery Challenge (stages 1 to 7). `fight.ts` is a fight as pure functions (`playFight(seed, setup,
+  shots)`, or `startFight` and `takeShot` one shot at a time; only + − × ÷ and square root, aim directions from the
+  table in `aim.ts`), with `land.ts` (a grid of cells, the four worlds' twists), `shot.ts`, `damage.ts`, `effects.ts`
+  (every arrow) and `gear.ts` (shields, helpers, bows). `bot.ts` is the three bots, `judge.ts` the server's replay of a
+  bot fight (checking every bot shot), `duel.ts` a classmate fight (one round, turn by turn), `shop.ts` the Armory's
+  prices and levels, `speed.ts` the speed round (questions from the maths focus, the shrinking timer), `points.ts`
+  and `stats.ts` the hub points and achievement counts. Every number is in `config.ts`. `determinism.ts` pins the
+  rules' fingerprint (`npm run archery:determinism` also checks Chromium and WebKit). See `docs/ARCHERY-PLAN.md`.
