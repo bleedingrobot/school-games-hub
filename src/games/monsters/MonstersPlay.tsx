@@ -144,8 +144,8 @@ export function MonstersPlay() {
     [player],
   );
 
-  function begin(picks: [TypeId, TypeId], team: ReturnType<typeof import('../../../shared/monsters/world/start').startTeam>) {
-    const world = newWorld({ maps: WORLD_MAPS }, team, Math.floor(Math.random() * 2 ** 31));
+  function begin(picks: [TypeId, TypeId], team: ReturnType<typeof import('../../../shared/monsters/world/start').startTeam>, look?: string) {
+    const world = { ...newWorld({ maps: WORLD_MAPS }, team, Math.floor(Math.random() * 2 ** 31)), ...(look ? { look } : {}) };
     tail.current = { base: 0, world, battles: [], start: picks };
     latest.current = world;
     heal.current = healKey(world);

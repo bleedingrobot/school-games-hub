@@ -7076,6 +7076,35 @@ function userIdFromToken(auth) {
 	};
 }
 //#endregion
+//#region shared/space/mathsQuestion.ts
+/**
+* Which question Mission Control asks next: the same choice in the bot game (the browser) and
+* with classmates (the server), from a student's records.
+*
+* With no maths focus it is the times-table step the student is ready for, as it has always been.
+* With a focus (a teacher's, or the student's own: shared/maths/focus.ts) it is that focus.
+*/
+/** The pack a game keeps for a visit: all the student's records, asking the focus if there is one. */
+function makeSpacePack(facts, focus, settings = {}, random, now) {
+	return makeFocusPack(facts, focus, {
+		enabledTables: settings.enabledTables,
+		division: settings.division
+	}, random, now);
+}
+function pickSpaceQuestion(pack, settings = {}) {
+	const ctx = {
+		enabledTables: settings.enabledTables,
+		division: settings.division,
+		missingFactor: settings.missingFactor,
+		multipleChoice: settings.multipleChoice
+	};
+	if (pack instanceof TimesTables) return pack.nextQuestion({
+		level: readyLevel(pack.stats(), settings.enabledTables),
+		...ctx
+	}) ?? pack.nextQuestion({ level: 1 });
+	return pack.nextQuestion(ctx) ?? new TimesTables().nextQuestion({ level: 1 });
+}
+//#endregion
 //#region shared/maths/serverQuestions.ts
 function hashSeed(text) {
 	let h = 2166136261;
@@ -7106,35 +7135,6 @@ function publicQuestion(q, slot) {
 		...q.input ? { input: q.input } : {},
 		...q.maxLength ? { maxLength: q.maxLength } : {}
 	};
-}
-//#endregion
-//#region shared/space/mathsQuestion.ts
-/**
-* Which question Mission Control asks next: the same choice in the bot game (the browser) and
-* with classmates (the server), from a student's records.
-*
-* With no maths focus it is the times-table step the student is ready for, as it has always been.
-* With a focus (a teacher's, or the student's own: shared/maths/focus.ts) it is that focus.
-*/
-/** The pack a game keeps for a visit: all the student's records, asking the focus if there is one. */
-function makeSpacePack(facts, focus, settings = {}, random, now) {
-	return makeFocusPack(facts, focus, {
-		enabledTables: settings.enabledTables,
-		division: settings.division
-	}, random, now);
-}
-function pickSpaceQuestion(pack, settings = {}) {
-	const ctx = {
-		enabledTables: settings.enabledTables,
-		division: settings.division,
-		missingFactor: settings.missingFactor,
-		multipleChoice: settings.multipleChoice
-	};
-	if (pack instanceof TimesTables) return pack.nextQuestion({
-		level: readyLevel(pack.stats(), settings.enabledTables),
-		...ctx
-	}) ?? pack.nextQuestion({ level: 1 });
-	return pack.nextQuestion(ctx) ?? new TimesTables().nextQuestion({ level: 1 });
 }
 //#endregion
 //#region shared/trader/questions.ts

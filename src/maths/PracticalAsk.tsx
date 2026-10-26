@@ -7,7 +7,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PracticalQuestion } from '../../shared/maths/practical';
 import { NumberPad } from './NumberPad';
-import { noteQuestion, spotFromTitle } from './questionLog';
+import { SkipsLeft } from './QuestionModal';
+import { noteQuestion, spendSkip, spotFromTitle, useSkipRule } from './questionLog';
 import './maths.css';
 
 const MAX_CHARS = 6;
@@ -19,15 +20,18 @@ export function PracticalAsk({
   onSubmit: submitAnswer,
   onNoThanks: noThanksGiven,
   noThanksLabel = 'No thanks',
+  noThanksIsSkip = true,
 }: {
   question: PracticalQuestion;
   title: string;
   note?: string;
   /** The number typed or the choice tapped. */
   onSubmit: (answer: number) => void;
-  /** If given, a button to skip the question without answering. */
+  /** If given, a button to skip the question without answering. The class's skip switch can take it away. */
   onNoThanks?: () => void;
   noThanksLabel?: string;
+  /** False when the button isn't a way past the question (Clan Quest's "Show me how"): the skip switch leaves it alone. */
+  noThanksIsSkip?: boolean;
 }) {
   const [typed, setTyped] = useState('');
   const box = useRef<HTMLDivElement>(null);
@@ -63,7 +67,10 @@ export function PracticalAsk({
     record(false);
     submitAnswer(answer);
   };
-  const onNoThanks = noThanksGiven && (() => {
+  // The class's "Skip button" switch (questionLog.ts): off, or no skips left, means no "No thanks".
+  const skips = useSkipRule();
+  const onNoThanks = noThanksGiven && (!noThanksIsSkip || skips.canSkip) && (() => {
+    if (noThanksIsSkip && !spendSkip()) return;
     record(true);
     noThanksGiven();
   });
@@ -118,6 +125,7 @@ export function PracticalAsk({
           {noThanksLabel}
         </button>
       )}
+      {noThanksGiven && noThanksIsSkip && skips.left !== null && <SkipsLeft left={skips.left} />}
     </div>
   );
 }

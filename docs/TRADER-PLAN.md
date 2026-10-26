@@ -523,7 +523,7 @@ Built on branch `trader`. **Nothing is applied, deployed, merged or switched on.
 
 ## 20. Stage T.4 results (22 Oct 2026): the school's shared market and news
 
-Built on branch `trader`. **Nothing is applied, deployed, merged or switched on.** New migration: **`20261022001100_trader_market.sql`** (next free number on 22 Oct; re-check at go-live). Comes after T.3's `20261022001000`, which is not edited.
+Built on branch `trader`. **Nothing is applied, deployed, merged or switched on.** New migration: **`20261027000100_trader_market.sql`** (was `20261022001100`, renumbered 27 Oct 2026 because main's question-skips switch took that number; re-check at go-live). Comes after T.3's `20261022001000`, which is not edited.
 
 ### How it works
 - **One market per school** (`trader_markets`: school, planet, good → how far the price is pushed, how far it moved today, the day it last changed). Selling pushes a price down and buying pushes it up. A normal day's stock of a good is a "full" push (`MARKET_FULL_STOCK_BP`, 25%), so dear goods with small stock move more per unit.
@@ -563,7 +563,7 @@ Bots now have their own tastes (so a class doesn't all pick the very same trip) 
 ### Not done / untested
 - Not tried with the real database under a real class (row locking is reasoned, not load-tested).
 - **Found while James tried the preview (22 Oct):** a pupil can't see what other planets pay, so they can't find a profitable trip (the bots could). Needs a decision before T.5; see below.
-- Go-live additions for T.7: apply `20261022001100` after `20261022001000`; deploy `trader`; check pupils get 42501 on `trader_markets`, `trader_news`, `trader_market()`.
+- Go-live additions for T.7: apply `20261027000100` after `20261022001000`; deploy `trader`; check pupils get 42501 on `trader_markets`, `trader_news`, `trader_market()`.
 
 ### Change after James tried T.4 (22 Oct 2026): what other planets pay
 James couldn't find a profit: nothing showed what other planets pay (the simulator's bots could see every price). **He chose two fixes**, both built:

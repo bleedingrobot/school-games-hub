@@ -6,6 +6,7 @@
  */
 import type { FactAnswer } from '../maths/leitner';
 import { nzDate } from './engine';
+import { ALL_TOPICS } from './maths';
 import type { ArenaCandidate, Commit, LordRow, OpenFight, Outcome, Services, Settings } from './server';
 import type { NewsLine } from './news';
 
@@ -31,7 +32,7 @@ export interface MemoryDb {
 }
 
 export const emptyDb = (settings: Partial<Settings> = {}): MemoryDb => ({
-  settings: { enabled: true, forestPerDay: 10, seasonStart: null, ...settings },
+  settings: { enabled: true, forestPerDay: 10, seasonStart: null, topics: [...ALL_TOPICS], ...settings },
   teacher: false,
   row: null,
   openFight: null,

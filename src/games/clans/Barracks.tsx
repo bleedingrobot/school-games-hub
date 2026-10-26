@@ -4,6 +4,7 @@ import { TROOP_NAMES, barracksFor, capacity, countBuildings, draftMax, draftWant
 import { barracksNeeded, draftJoin, troopBill } from '../../../shared/clans/moments';
 import { TROOP_KINDS, type Troops } from '../../../shared/clans/types';
 import { Moment } from './Moment';
+import { troopArt } from './art';
 import { buyTroopMix, canBuyMix, draftFollowers, setDraftTo } from './places';
 import type { Session, Change } from './session';
 
@@ -76,7 +77,7 @@ export function Barracks({ session, onChange, onBack }: { session: Session; onCh
           <h3>The barracks</h3>
           <p>You have <strong>{barracks}</strong> barracks. Each holds {CONFIG.empire.troopCap.footman} footmen, {CONFIG.empire.troopCap.axeman} axemen and {CONFIG.empire.troopCap.knight} knights.</p>
           <ul className="cq-troops">
-            {TROOP_KINDS.map((k) => <li key={k}>{e.troops[k]} {nameOf(k, e.troops[k])} · room for {room(e, k)} more (holds {capacity(e, k)})</li>)}
+            {TROOP_KINDS.map((k) => <li key={k}>{troopArt(k) && <img className="cq-troop-art" src={troopArt(k)} alt="" />}{e.troops[k]} {nameOf(k, e.troops[k])} · room for {room(e, k)} more (holds {capacity(e, k)})</li>)}
           </ul>
           <p>Army strength: <strong>{might(e.troops)}</strong></p>
           <div className="cq-actions">

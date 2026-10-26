@@ -2,9 +2,14 @@
  * "Skipped questions" on the teacher page (docs/QUESTION-SKIPS-PLAN.md, stage S.1): for the picked class, how many maths
  * questions each student was shown in the games and how many they closed without answering, and which kinds of question get
  * skipped most. Counted by the question box itself (src/maths/questionLog.ts), so every game is included.
+ *
+ * At the top, stage S.3's "Skip button" switch for the class: On, 3 per game, or Off.
  */
 import { useEffect, useState } from 'react';
+import { FriendlyError } from '../data/profile';
 import { fetchQuestionSkips, type QuestionSkips } from '../data/questionLog';
+import { fetchSkipMode, saveSkipMode } from '../data/questionSkips';
+import { SKIPS_PER_GAME, type SkipMode } from '../maths/questionLog';
 import { gameLabel } from '../games/registry';
 import { useTeacherClass } from '../teacher/TeacherClass';
 import './teacher-question-skips.css';
@@ -32,6 +37,79 @@ export const spotName = (spot: string) => (/^[a-z]+(-[a-z]+)*$/.test(spot) ? (sp
 
 export const share = (part: number, whole: number) => (whole > 0 ? `${Math.round((100 * part) / whole)}%` : '–');
 const high = (part: number, whole: number) => whole >= 5 && part / whole >= HIGH_SKIP_SHARE;
+
+export const SKIP_CHOICES: { value: SkipMode; label: string; detail: string }[] = [
+  { value: 'on', label: 'On', detail: 'Students may skip any question, as before.' },
+  {
+    value: 'limited',
+    label: `${SKIPS_PER_GAME} per game`,
+    detail: `Each student has ${SKIPS_PER_GAME} skips each time they open a game, and sees how many are left. After that, every question needs an answer.`,
+  },
+  {
+    value: 'off',
+    label: 'Off',
+    detail:
+      'No skip button: every question needs an answer (a wrong answer still costs nothing). In Mission Control, Roll waits for the question.',
+  },
+];
+
+/** The class's "Skip button" switch. Teachers are never limited. */
+function SkipSwitch({ classId, ready }: { classId: string | null; ready: boolean }) {
+  const [mode, setMode] = useState<SkipMode | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!ready) return;
+    let current = true;
+    setMode(null);
+    setStatus(null);
+    fetchSkipMode(classId).then(
+      (m) => current && setMode(m),
+      () => current && setStatus('We couldn’t load this setting.'),
+    );
+    return () => {
+      current = false;
+    };
+  }, [ready, classId]);
+
+  async function change(next: SkipMode) {
+    setStatus('Saving…');
+    try {
+      await saveSkipMode(next, classId);
+      setMode(next);
+      setStatus(`Skip button: ${SKIP_CHOICES.find((c) => c.value === next)?.label}.`);
+    } catch (error) {
+      setStatus(error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
+    }
+  }
+
+  return (
+    <>
+      {mode !== null && (
+        <fieldset className="level-picker">
+          <legend>Skip button</legend>
+          <div className="level-picker__options">
+            {SKIP_CHOICES.map((choice) => (
+              <label key={choice.value} className="level-picker__option">
+                <input type="radio" name="question-skips-switch" checked={mode === choice.value} onChange={() => void change(choice.value)} />
+                <span>
+                  <strong>{choice.label}:</strong> {choice.detail}
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
+      <p className="qs-teacher__switch-note">
+        Some buttons stay whatever this says: Gem Keep’s “Well done” and “Cancel”, Maths Monsters’ “Back”, Clan Quest’s “Show me
+        how”, and Dragon Maths’ choice to size up a monster. Timers still run out. Teachers can always skip.
+      </p>
+      <p role="status" className="teacher__status">
+        {status}
+      </p>
+    </>
+  );
+}
 
 export function QuestionSkipsPanel() {
   const { classId, ready } = useTeacherClass();
@@ -61,6 +139,7 @@ export function QuestionSkipsPanel() {
       <h2 id="qs-title" className="panel__title">
         Skipped questions
       </h2>
+      <SkipSwitch classId={classId} ready={ready} />
       <p>
         Every maths question the games show, and how many each student closed without answering (a skip button, running out of
         time, or carrying on without it). Stopping a Mana Well round early counts as one skip.

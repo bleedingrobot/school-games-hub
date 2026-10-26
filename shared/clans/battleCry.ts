@@ -7,6 +7,11 @@
  * teacher's topics and year band), not from the fight's own dice. So the server can rebuild
  * exactly the question the child saw, mark the recorded answer itself, and replay the fight
  * to the same result, and asking questions never changes how a fight plays out.
+ *
+ * A **ladder fight** (from 20 Oct 2026) asks each child a question from their own maths focus or ladder place instead.
+ * The server makes the fight's questions when it starts and keeps their answers to itself; each answer is marked by the
+ * server as it is given (`cryCheck`), and the mark is kept with the fight. A round's bonus then comes from that mark,
+ * so the replay still needs nothing the browser could change. A fight without `questions` is an old-style one, as above.
  */
 import type { FactAnswer } from '../maths/leitner';
 import { markAnswer, pickQuestion, type PracticalQuestion, type PracticalSettings, type YearBand } from '../maths/practical';
@@ -17,6 +22,28 @@ import type { Member } from './types';
 
 /** What a right answer is spent on. */
 export type CryReward = Exclude<Cry, null>;
+
+/** The server's mark of a ladder fight's Battle Cry: the answer given, and whether it was right. */
+export interface CryMark {
+  answer: number;
+  correct: boolean;
+}
+
+/** What a fight's Battle Cries are made and marked from (the parts of an open fight that matter here). */
+export interface FightMaths {
+  /** The teacher's settings the old-style questions are made with. */
+  settings: PracticalSettings;
+  /** A ladder fight's questions, one a round (the server keeps the whole questions; the browser is given what to show). Missing: an old-style fight. */
+  questions?: readonly unknown[];
+  /** A ladder fight's marks, by round (index 0 is round 1). */
+  marks?: readonly (CryMark | null | undefined)[];
+}
+
+/** Does this fight ask ladder questions? */
+export const isLadderFight = (maths: FightMaths) => Array.isArray(maths.questions);
+
+/** Plain settings mean an old-style fight. */
+const asMaths = (maths: FightMaths | PracticalSettings): FightMaths => ('enabledTopics' in maths ? { settings: maths } : maths);
 
 /** The question the clan faces before `round` of a fight started from `seed`. Null if the teacher has every topic off. */
 export function cryQuestion(seed: number, round: number, settings: PracticalSettings): PracticalQuestion | null {
@@ -44,8 +71,20 @@ export interface CryResult {
   correct: boolean;
   /** The bonus played this round: null for a wrong answer or "No thanks". */
   cry: Cry;
-  /** The right answer and the worked steps, to show when the answer was wrong or skipped. */
+  /** The right answer and the worked steps, to show when the answer was wrong or skipped. Null in a ladder fight (the server marked it). */
   question: PracticalQuestion | null;
+}
+
+/**
+ * A ladder fight's Battle Cry for `round`: the bonus counts only if the server marked an answer for this round, it was
+ * right, and it is the answer the round says was given. "No thanks" (or no question that round) is a normal round.
+ */
+export function markLadderCry(maths: FightMaths, round: number, given: CryAnswer | null): CryResult {
+  const asked = !!maths.questions?.[round - 1];
+  if (!asked || !given) return { answered: false, correct: false, cry: null, question: null };
+  const mark = maths.marks?.[round - 1];
+  const correct = !!mark && mark.correct && given.answer === mark.answer;
+  return { answered: true, correct, cry: correct ? given.reward : null, question: null };
 }
 
 /** Mark the player's Battle Cry answer. */
@@ -63,9 +102,10 @@ export interface RecordedRound {
 }
 
 /** Play a round with the Battle Cry marked: the one place a round and its question meet. */
-export function playCryRound(state: FightState, settings: PracticalSettings, orders: (Order | undefined)[], given: CryAnswer | null): CryResult {
+export function playCryRound(state: FightState, fightMaths: FightMaths | PracticalSettings, orders: (Order | undefined)[], given: CryAnswer | null): CryResult {
   if (state.result) return { answered: false, correct: false, cry: null, question: null };
-  const result = markCry(nextCryQuestion(state, settings), given);
+  const maths = asMaths(fightMaths);
+  const result = isLadderFight(maths) ? markLadderCry(maths, state.round + 1, given) : markCry(nextCryQuestion(state, maths.settings), given);
   playRound(state, orders, result.cry);
   return result;
 }
@@ -77,13 +117,13 @@ export function replayFight(
   seed: number,
   boss: boolean,
   rounds: RecordedRound[],
-  settings: PracticalSettings,
+  maths: FightMaths | PracticalSettings,
 ): { state: FightState; cries: CryResult[] } {
   const state = newFight(members, depth, seed, boss);
   const cries: CryResult[] = [];
   for (const r of rounds) {
     if (state.result) break;
-    cries.push(playCryRound(state, settings, r.orders, r.cry));
+    cries.push(playCryRound(state, maths, r.orders, r.cry));
   }
   return { state, cries };
 }

@@ -22,6 +22,7 @@ import { ClassWarp } from './pages/ClassWarp';
 import { MyClasses } from './pages/MyClasses';
 import { clanQuest } from './games/clans/game';
 import { Teacher } from './pages/Teacher';
+import { useSkipRuleSync } from './data/questionSkips';
 import { SoundProvider } from './sound';
 import { trainingOn } from './training/switch';
 import { GameGate } from './training/TrainFirst';
@@ -111,11 +112,18 @@ export function AppRoutes() {
   );
 }
 
+/** Hands the class's "Skip button" switch to the question box (src/data/questionSkips.ts). */
+function SkipRuleSync() {
+  useSkipRuleSync();
+  return null;
+}
+
 export function App() {
   return (
     <SoundProvider>
       <AuthProvider>
         <HashRouter>
+          <SkipRuleSync />
           <AppRoutes />
         </HashRouter>
       </AuthProvider>

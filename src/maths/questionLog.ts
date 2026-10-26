@@ -4,7 +4,10 @@
  *
  * The box only notes; where the notes go is set once by the website (src/data/questionLog.ts sends them to the server). In
  * tests and previews nothing is set, so nothing is sent.
+ *
+ * It also keeps the class's skip rule (stage S.3), which the website sets the same way.
  */
+import { useSyncExternalStore } from 'react';
 
 export interface QuestionNote {
   /** The kind of question, e.g. "Pit stop", "Mana Well". */
@@ -49,6 +52,73 @@ export function noteQuestion(note: QuestionNote): void {
   } catch {
     // A note is never worth breaking a game.
   }
+}
+
+// ---------------------------------------------------------------------------
+// The class's "Skip button" switch (stage S.3): on, 3 per game, or off
+// ---------------------------------------------------------------------------
+// Set by the website (src/data/questionSkips.ts) from the class's settings, and never for a teacher. In tests and previews
+// nothing sets it, so the skip button is always there, as before.
+
+export type SkipMode = 'on' | 'limited' | 'off';
+
+/** With the switch on "3 per game": skips allowed per visit to a game page. */
+export const SKIPS_PER_GAME = 3;
+
+/** `canSkip`: a skip button may show. `left`: how many skips are left, when they are limited (null when they aren't). */
+export interface SkipRule {
+  canSkip: boolean;
+  left: number | null;
+}
+
+let skipMode: SkipMode = 'on';
+let skipsUsed = 0;
+let rule: SkipRule = { canSkip: true, left: null };
+const ruleWatchers = new Set<() => void>();
+
+function ruleChanged() {
+  const left = skipMode === 'limited' ? Math.max(0, SKIPS_PER_GAME - skipsUsed) : null;
+  const canSkip = skipMode === 'on' || (skipMode === 'limited' && left! > 0);
+  if (rule.canSkip === canSkip && rule.left === left) return;
+  rule = { canSkip, left };
+  ruleWatchers.forEach((watcher) => watcher());
+}
+
+export function setSkipMode(mode: SkipMode): void {
+  skipMode = mode;
+  ruleChanged();
+}
+
+/** A new game page: the skips used start again. */
+export function resetSkips(): void {
+  skipsUsed = 0;
+  ruleChanged();
+}
+
+/** Uses one skip, if one may be used now. False means "answer it first". */
+export function spendSkip(): boolean {
+  if (!rule.canSkip) return false;
+  if (skipMode === 'limited') {
+    skipsUsed += 1;
+    ruleChanged();
+  }
+  return true;
+}
+
+export function skipRule(): SkipRule {
+  return rule;
+}
+
+/** The rule, kept up to date in a component. */
+export function useSkipRule(): SkipRule {
+  return useSyncExternalStore(
+    (watcher) => {
+      ruleWatchers.add(watcher);
+      return () => ruleWatchers.delete(watcher);
+    },
+    skipRule,
+    skipRule,
+  );
 }
 
 /** The kind of question from a box's title: "Power-up pad: Shield" → "Power-up pad"; numbers left out. */

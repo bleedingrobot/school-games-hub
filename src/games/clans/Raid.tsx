@@ -5,6 +5,7 @@ import { lootShare } from '../../../shared/clans/moments';
 import { TROOP_KINDS, type Troops } from '../../../shared/clans/types';
 import { Bar } from './Bars';
 import { Moment } from './Moment';
+import { kingdomScene, sceneArt } from './art';
 import { canRaid, sendArmy, type WarDone } from './places';
 import type { Session, Change } from './session';
 
@@ -25,6 +26,12 @@ const ENDING = {
   lost: { title: 'Your army falls back', text: 'The defenders held, so your army heads home to try again.' },
   stalemate: { title: 'A stalemate', text: 'Neither side gave way, so nobody won.' },
 } as const;
+
+/** A wide painting (a kingdom, or the battlefield), the 800 copy on phones. Decoration: the words say the same. */
+function Wide({ art, id, sizes = '(max-width: 760px) 100vw, 360px' }: { art: { wide?: string; small?: string }; id: string; sizes?: string }) {
+  if (!art.wide) return null;
+  return <img className="cq-wide-art" src={art.wide} srcSet={art.small && art.small !== art.wide ? `${art.small} 800w, ${art.wide} 1600w` : undefined} sizes={sizes} alt="" data-art={id} />;
+}
 
 /** Raid a kingdom, or have a Friendly War with it: pick the kingdom, make the battle plan, see how it went. */
 export function Raid({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
@@ -58,6 +65,7 @@ export function Raid({ session, onChange, onBack }: { session: Session; onChange
     const end = ENDING[r.outcome];
     body = (
       <div className="cq-panel cq-war" role="group" aria-label="How it went">
+        <Wide art={war.friendly ? sceneArt('battlefield') : kingdomScene(k.id)} id={war.friendly ? 'battlefield' : k.id} sizes="(max-width: 1100px) 100vw, 1100px" />
         <h3>{war.friendly ? 'Friendly War' : 'Raid'} on {k.name}: {end.title}</h3>
         <p>{end.text}</p>
         {war.friendly ? (
@@ -92,6 +100,7 @@ export function Raid({ session, onChange, onBack }: { session: Session; onChange
               </li>
             ))}
           </ul>
+          <Wide key={kingdom.id} art={kingdomScene(kingdom.id)} id={kingdom.id} />
           <p><strong>{kingdom.name}</strong> is {kingdom.feel}. {kingdom.blurb} It keeps about {kingdom.treasury} gold in its treasury.</p>
         </div>
         <div className="cq-panel">

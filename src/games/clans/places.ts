@@ -12,6 +12,7 @@ import { closeWeek, raidClassmateNz, raidTargetList, voteOptions, type TargetEnt
 import { STATS, TROOP_KINDS, type BuildingKind, type Clan, type Empire, type ItemDef, type Member, type Stat, type Troops } from '../../../shared/clans/types';
 import { finishQuest, puzzleFor, questById, questDoneToday, todaysQuest, type PuzzleSpec, type QuestDef, type QuestDone } from '../../../shared/clans/quests';
 import { earn, type Session } from './session';
+import { setLook, type Look } from '../../../shared/clans/looks';
 
 const withClan = (s: Session, change: (clan: Clan) => boolean): Session | null => {
   const clan = structuredClone(s.clan);
@@ -70,6 +71,9 @@ export const train = (s: Session, memberIndex: number, key: TrainKey, count: num
 export const wakeMember = (s: Session, memberIndex: number): Session | null => withClan(s, (clan) => wakeOne(clan, memberIndex).ok);
 
 export const knockedOut = knockedOutMembers;
+
+/** "Change look": only the picture changes. Null if there is no such member. */
+export const changeLook = (s: Session, memberIndex: number, look: Look): Session | null => withClan(s, (clan) => setLook(clan, memberIndex, look).ok);
 export { wakeOrder, wakeAllPayers, wakeAllCost };
 
 /** Wake everyone, dearest first. Null if the clan can't afford the lot (nobody is woken). */

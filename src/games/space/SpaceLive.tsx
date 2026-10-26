@@ -17,6 +17,7 @@ import { LIVE_BOT_CALLSIGNS, LIVE_BOT_LEVEL, REACTIONS, REACTION_GAP_SECONDS, MA
 import { randomFromSeed } from '../../../shared/space/random';
 import { fetchReactionsEnabled, fetchSpaceLog, seatsOf, type SpaceAction, type SpaceGame, type SpaceMathsReply } from '../../data/spaceGames';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
+import { skipRule, spendSkip, useSkipRule } from '../../maths/questionLog';
 import type { PlayerCard } from '../../data/multiplayer';
 import type { SpaceSession } from '../../space/useSpaceGame';
 import { Dice, DieFace } from './Dice';
@@ -24,7 +25,7 @@ import { arrowKeys, BoardOverlays, Choice, ItemPicker, ItemTiles, MissionLog, Po
 import { SpaceGuide, type GuideTab } from './Guide';
 import { loadLessMotion, loadPrefs, saveLessMotion, SPEED_SCALE } from './prefs';
 import { SpaceBoard, type Seat } from './SpaceBoard';
-import { choiceQuestion, itemName, ORDINAL, SEAT_COLOURS, SEAT_SHAPES, squareInfo, type SquareInfo } from './text';
+import { ANSWER_FIRST, ANSWER_FIRST_BUTTON, choiceQuestion, itemName, ORDINAL, SEAT_COLOURS, SEAT_SHAPES, squareInfo, type SquareInfo } from './text';
 import { useEventPlayer, type Batch } from './useEventPlayer';
 import './space.css';
 
@@ -112,6 +113,7 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
   const [timesUpTry, setTimesUpTry] = useState(0);
   const [moment, setMoment] = useState<MomentCard | null>(null);
   const [charge, setCharge] = useState<ChargeCard | null>(null);
+  const skips = useSkipRule();
   /** The "turns finished" count I last asked (or skipped) the after-turn question for. */
   const chargeAsked = useRef<number | null>(null);
 
@@ -314,7 +316,15 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
     void act(request);
   }
   function roll() {
-    if (myTurn && view?.phase === 'ready') send({ action: 'roll', gameId: game.id, version: game.version });
+    if (!myTurn || view?.phase !== 'ready') return;
+    // Rolling past an unanswered Mission Control card skips it, so the class's skip switch decides (questionLog.ts).
+    const pastCard = mathsOn && !!charge && charge.turns === myTurns && charge.right === undefined && !view.turnInfo.rolled;
+    if (pastCard && !skipRule().canSkip) {
+      setHint(ANSWER_FIRST);
+      return;
+    }
+    if (pastCard) spendSkip();
+    send({ action: 'roll', gameId: game.id, version: game.version });
   }
   function choose(option: number) {
     if (myTurn && view?.phase === 'choice') send({ action: 'choose', gameId: game.id, version: game.version, option });
@@ -414,6 +424,8 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
   const canRoll = myTurn && view.phase === 'ready' && !picking && !busy;
   // The question card is still open: rolling now skips it, and the Roll button says what that costs.
   const chargeWaiting = canRoll && mathsOn && !!charge && charge.turns === myTurns && charge.right === undefined && !view.turnInfo.rolled;
+  // The class's skip switch is off (or no skips are left): Roll waits for an answer. The turn timer still runs (James).
+  const answerFirst = chargeWaiting && !skips.canSkip;
   const usable = myTurn && view.phase === 'ready' ? usableItems(view, mySeat) : [];
   const targets = myTurn && picking?.kind === 'target' ? validTargets(view, picking.item, mySeat) : [];
   const positions = rockets.map((r) => r.pos);
@@ -550,9 +562,15 @@ export function SpaceLive({ session, timeScale = 1 }: { session: SpaceSession; t
                 🕹️ Take the controls
               </button>
             ) : (
-              <button type="button" className="button button--play space-roll" disabled={!canRoll} onClick={roll} aria-keyshortcuts="Space">
-                🎲 {view.turnInfo.rollAgainUsed && myTurn && !view.turnInfo.rolled ? 'Roll again' : 'Roll'}
-                {chargeWaiting && ` without the +${MATHS_CHARGE_STEPS}`}
+              <button type="button" className="button button--play space-roll" disabled={!canRoll || answerFirst} onClick={roll} aria-keyshortcuts="Space">
+                {answerFirst ? (
+                  ANSWER_FIRST_BUTTON
+                ) : (
+                  <>
+                    🎲 {view.turnInfo.rollAgainUsed && myTurn && !view.turnInfo.rolled ? 'Roll again' : 'Roll'}
+                    {chargeWaiting && ` without the +${MATHS_CHARGE_STEPS}`}
+                  </>
+                )}
               </button>
             )}
           </div>

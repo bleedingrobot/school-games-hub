@@ -205,9 +205,12 @@ export function ClansMathsPanel() {
         Clan Quest maths
       </h2>
       <p>
-        One Battle Cry question comes before each round of a mine fight, and
-        the quests, the shop and the village have short questions too. Wrong
-        answers never stop anything. These settings are for the whole school.
+        One Battle Cry question comes before each round of a mine fight. It
+        comes from each pupil&apos;s own maths focus or place on the ladder, and
+        the answers count on the skill map, like the other maths games. The
+        quests, the shop and the village have short story questions too: the
+        settings below choose those. Wrong answers never stop anything. These
+        settings are for the whole school.
       </p>
       <fieldset>
         <legend>Year band</legend>

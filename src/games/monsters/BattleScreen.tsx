@@ -6,7 +6,7 @@
  * Flow: menu (Fight / Team / Bag / Run) → question → events play (tap to go on, or Skip) →
  * back to the menu, a forced "choose your next monster", or the results sheet.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Question, SkillPack } from '../../../shared/maths/skillPack';
 import { makePack, type TopicId } from '../../../shared/maths/skillPacks';
 import {
@@ -20,11 +20,13 @@ import type { QuestionReport } from '../../../shared/monsters/save/verify';
 import { effectiveTopic } from '../../../shared/monsters/topics';
 import { maxHpOf, type AnswerResult, type Monster } from '../../../shared/monsters/rules';
 import { TYPE_LABEL } from '../../../shared/monsters/types';
+import { areaInfo } from '../../../shared/monsters/world/areas';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { useSound } from '../../sound';
 import { playSound, type GameSound } from '../sounds';
 import { AttackEffect, CriticalPop, DamageNumber, EFFECT_MS, HitFlash } from './art/Effects';
 import { MonsterArt, type MonsterState } from './art/MonsterArt';
+import { lookPic, monsterPic, personPic, preload, scenePic } from './art/painted';
 import { loadMonsterSettings, saveMonsterSettings, type MonsterSettings } from './settings';
 import { beatsFor, ITEM_LABEL, nameOf, type Beat } from './text';
 import { BagList, NameCard, Sheet, summarise, TeamList } from './ui';
@@ -57,6 +59,12 @@ export interface BattleScreenProps {
   timeScale?: number;
   /** The topics the teacher left on: a switched-off topic's questions come from the nearest topic that is on. */
   enabledTopics?: readonly TopicId[];
+  /** The map the battle is on, for its painted background (a Tower's rooms share one). Leave out to use the area's outdoor map. */
+  place?: string;
+  /** A trainer battle: the trainer's name, so their picture can say hello before their first monster comes out. */
+  trainer?: string;
+  /** The player's chosen look, shown opposite the trainer while they say hello. */
+  look?: string;
 }
 
 type Mode = 'playing' | 'menu' | 'fight' | 'team' | 'replace' | 'bag' | 'target' | 'question' | 'end';
@@ -91,7 +99,7 @@ interface Pop {
 const clone = <T,>(v: T): T => structuredClone(v);
 const shownFrom = (s: BattleState): Shown => ({ team: clone(s.team), foes: clone(s.foes), active: s.active, foeActive: s.foeActive });
 
-export function BattleScreen({ setup, settings: given, onSettingsChange, onFinish, random = Math.random, packFor, timeScale = 1, enabledTopics }: BattleScreenProps) {
+export function BattleScreen({ setup, settings: given, onSettingsChange, onFinish, random = Math.random, packFor, timeScale = 1, enabledTopics, place, trainer, look }: BattleScreenProps) {
   const { soundOn } = useSound();
   const [ownSettings, setOwnSettings] = useState(loadMonsterSettings);
   const settings = given ?? ownSettings;
@@ -233,6 +241,8 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
         play_('item');
         break;
       case 'evolved':
+        // "What? Digibud is changing!": fetch the grown form's picture while it flashes.
+        if (beat.sub === 'evolving') preload(monsterPic(e.to, next.team[memberOf(e.to)]?.shiny));
         if (beat.sub === 'evolved') {
           setShown((s) => {
             const n = clone(s);
@@ -271,19 +281,33 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
     if (list.length) showBeat(list[0]);
   }, [showBeat]);
 
+  // A trainer with a painted picture says hello first ("Ranger Kiri wants to battle!"), then sends out their monster.
+  const trainerPic = setup.kind === 'trainer' && trainer ? personPic(trainer) : undefined;
+  const [intro, setIntro] = useState(!!trainerPic);
+  const playerPic = trainerPic && look ? lookPic(look) : undefined;
+
   // The opening message ("A wild Digibud appeared!").
   useEffect(() => {
-    startBeats(beatsFor(start.events, setup.kind));
+    const opening = beatsFor(start.events, setup.kind);
+    if (trainerPic && opening.length) {
+      const first = opening[0];
+      opening.splice(0, 1, { ...first, text: `${trainer} wants to battle!` }, { ...first, text: `${trainer} sends out ${nameOf(start.state.foes[0].species)}!` });
+    }
+    startBeats(opening);
+    // A trainer's other monsters come out later: fetch their pictures now, so they don't pop in.
+    preload(...start.state.foes.slice(1).map((m) => monsterPic(m.species, m.shiny)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function advance() {
+    setIntro(false);
     if (beatIdx + 1 < beats.length) {
       setBeatIdx(beatIdx + 1);
       showBeat(beats[beatIdx + 1]);
     } else finishMove();
   }
   function skip() {
+    setIntro(false);
     timers.current.forEach(clearTimeout);
     timers.current = [];
     setMyLook('idle');
@@ -419,21 +443,29 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
   const attacks = speciesOf(activeMonster(battle).species).attacks;
   const sum = mode === 'end' ? summarise(log.current) : null;
   const bagCount = (battle.bag.potion ?? 0) + (battle.bag['super-potion'] ?? 0) + (battle.bag.ball ?? 0) + (battle.bag['great-ball'] ?? 0);
+  // The painted landscape of the place or Tower, over the colour wash (which stays as the fallback). Decoration only, so a CSS background.
+  const scene = scenePic(place ?? areaInfo(battle.area)?.map ?? '');
+  const sceneStyle = (scene.wide ? { '--arena-wide': `url("${scene.wide}")`, '--arena-small': `url("${scene.small}")` } : undefined) as CSSProperties | undefined;
 
   return (
     <section className={`mb mb--area${battle.area}`} aria-label="Battle">
-      <div className="mb-arena">
-        <div className="mb-foe-card">
-          <NameCard monster={foe} side="foe" />
-        </div>
-        <div className={`mb-foe${foeLook === 'gone' ? ' is-gone' : ''}${ball ? ' has-ball' : ''}`}>
+      <div className={`mb-arena${scene.wide ? ' has-art' : ''}`} style={sceneStyle}>
+        {!intro && (
+          <div className="mb-foe-card">
+            <NameCard monster={foe} side="foe" />
+          </div>
+        )}
+        {/* Decorative: the message already names the trainer. */}
+        {intro && <img className="mb-trainer" src={trainerPic} alt="" decoding="async" draggable={false} />}
+        {intro && playerPic && <img className="mb-trainer mb-trainer--you" src={playerPic} alt="" decoding="async" draggable={false} />}
+        <div className={`mb-foe${foeLook === 'gone' || intro ? ' is-gone' : ''}${ball ? ' has-ball' : ''}`}>
           <MonsterArt species={foe.species} shiny={foe.shiny} state={foeLook === 'gone' ? 'idle' : foeLook} flip />
           {ball && <span className={`mb-ball mb-ball--${ball}`} aria-hidden="true" />}
           {fx?.side === 'foe' && <AttackEffect key={fx.id} anim={fx.anim} />}
           {popsFor('foe').map((p) => (p.kind === 'crit' ? <CriticalPop key={p.id} /> : <DamageNumber key={p.id} amount={p.amount ?? 0} effect={p.effect} heal={p.kind === 'heal'} />))}
           {pops.some((p) => p.side === 'foe' && p.kind === 'num') && <HitFlash key={pops.filter((p) => p.side === 'foe').at(-1)!.id} />}
         </div>
-        <div className={`mb-me${evolving ? ' is-evolving' : ''}`}>
+        <div className={`mb-me${evolving ? ' is-evolving' : ''}${playerPic && intro ? ' is-gone' : ''}`}>
           <MonsterArt species={mine.species} shiny={mine.shiny} state={myLook} />
           {fx?.side === 'you' && <AttackEffect key={fx.id} anim={fx.anim} />}
           {popsFor('you').map((p) => (p.kind === 'crit' ? <CriticalPop key={p.id} /> : <DamageNumber key={p.id} amount={p.amount ?? 0} effect={p.effect} heal={p.kind === 'heal'} />))}
@@ -582,6 +614,8 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
             setMode(asking.back);
           }}
           closeLabel="Back"
+          // Back goes to choosing another move and no turn passes, so the skip switch leaves it alone (James).
+          closeIsSkip={false}
           onSubmit={(answer, ms): MarkedAnswer => {
             const marked = packOf(asking.topic).recordAnswer(asking.question, answer, ms);
             answered.current = {

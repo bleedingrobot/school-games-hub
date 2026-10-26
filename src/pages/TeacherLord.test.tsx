@@ -11,9 +11,13 @@ const data = vi.hoisted(() => ({
 }));
 vi.mock('../data/lord', async (original) => ({ ...(await original<typeof import('../data/lord')>()), ...data }));
 
+import { TOPICS } from '../../shared/maths/skillPacks';
 import { LordStudentPanel, LordTeacherPanels } from './TeacherLord';
 
-const settings = (over = {}) => ({ enabled: false, forestPerDay: 10, seasonStart: null, pausedSince: null, ...over });
+const label = (id: string) => TOPICS.find((t) => t.id === id)!.label;
+
+const ALL = ['place-value', 'add-sub', 'times-tables', 'division', 'fractions', 'decimals', 'money', 'patterns'];
+const settings = (over = {}) => ({ enabled: false, forestPerDay: 10, seasonStart: null, pausedSince: null, topics: ALL, ...over });
 
 beforeEach(() => {
   Object.values(data).forEach((f) => f.mockClear());
@@ -33,6 +37,43 @@ beforeEach(() => {
     topics: [{ pack: 'times-tables', facts: 20, attempts: 30, correct: 24, fluent: 8 }, { pack: 'money', facts: 5, attempts: 9, correct: 6, fluent: 1 }],
     hardest: [{ pack: 'times-tables', key: 'mul:7x8', attempts: 5, correct: 1 }],
     refused: 2,
+  });
+});
+
+describe('the Dragon Maths topic tick-list', () => {
+  it('shows all eight topics ticked to start', async () => {
+    render(<LordTeacherPanels />);
+    const group = await screen.findByRole('group', { name: 'Topics on' });
+    const boxes = within(group).getAllByRole('checkbox');
+    expect(boxes).toHaveLength(8);
+    boxes.forEach((b) => expect(b).toBeChecked());
+    expect(within(group).getByRole('checkbox', { name: 'Gold and shopping' })).toBeChecked();
+    expect(within(group).getByRole('checkbox', { name: 'Number patterns' })).toBeChecked();
+  });
+
+  it('switches a topic off and saves the list, keeping the switch as it was', async () => {
+    const user = userEvent.setup();
+    data.fetchLordSettings.mockResolvedValue(settings({ enabled: true }));
+    render(<LordTeacherPanels />);
+    await user.click(await screen.findByRole('checkbox', { name: 'Gold and shopping' }));
+    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: true, topics: ALL.filter((t) => t !== 'money') }, null);
+    expect(await screen.findByRole('checkbox', { name: 'Gold and shopping' })).not.toBeChecked();
+    expect(await screen.findByText(/Pupils get the new topics/)).toBeInTheDocument();
+  });
+
+  it('switches a topic back on, in the usual order', async () => {
+    const user = userEvent.setup();
+    data.fetchLordSettings.mockResolvedValue(settings({ topics: ['add-sub', 'patterns'] }));
+    render(<LordTeacherPanels />);
+    await user.click(await screen.findByRole('checkbox', { name: label('fractions') }));
+    expect(data.saveLordSettings).toHaveBeenLastCalledWith({ enabled: false, topics: ['add-sub', 'fractions', 'patterns'] }, null);
+  });
+
+  it('will not let the last topic be switched off', async () => {
+    data.fetchLordSettings.mockResolvedValue(settings({ topics: ['patterns'] }));
+    render(<LordTeacherPanels />);
+    expect(await screen.findByRole('checkbox', { name: 'Number patterns' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: label('fractions') })).toBeEnabled();
   });
 });
 

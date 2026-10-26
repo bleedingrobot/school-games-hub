@@ -60,6 +60,29 @@ describe('load and start-hero', () => {
     expect(g.hero().heroClass).toBe('knight');
   });
 
+  it('starts a hero with the look picked, and lets it be changed any time to another of the same class', async () => {
+    const g = new Game();
+    await g.send({ action: 'load' });
+    const out = await g.send({ action: 'start-hero', heroClass: 'mage', look: 'mage-girl-06-1' });
+    expect(out.body.state.hero).toMatchObject({ heroClass: 'mage', look: 'mage-girl-06-1' });
+    expect((await g.send({ action: 'look', look: 'mage-boy-10-2' })).body.ok).toBe(true);
+    expect(g.hero().look).toBe('mage-boy-10-2');
+    for (const look of ['knight-girl-01-1', 'mage-girl-11-1', 'mage-girl-01-3', '', 7, null]) {
+      expect((await g.send({ action: 'look', look })).body).toMatchObject({ ok: false, reason: 'bad-request' });
+    }
+    expect(g.hero().look).toBe('mage-boy-10-2');
+  });
+
+  it('lets a hero made before there were looks pick one, and ignores a look of the wrong class at the start', async () => {
+    const g = new Game();
+    await g.send({ action: 'load' });
+    await g.send({ action: 'start-hero', heroClass: 'knight', look: 'trickster-boy-01-1' });
+    expect(g.hero().look).toBeUndefined();
+    g.patch({ level: 4, gold: 300 });
+    expect((await g.send({ action: 'look', look: 'knight-girl-03-2' })).body.ok).toBe(true);
+    expect(g.hero()).toMatchObject({ look: 'knight-girl-03-2', level: 4, gold: 300 });
+  });
+
   it('asks a pupil without a hero to pick a class before anything else', async () => {
     const g = new Game();
     await g.send({ action: 'load' });
@@ -800,17 +823,17 @@ describe('the day rolling over, and the season ending', () => {
   it('starts everyone again when a new 5-week season begins, keeping stars, and lets the class be changed', async () => {
     const g = new Game();
     await g.start('knight');
-    g.patch({ level: 7, exp: 4000, gold: 900, bank: 100, dragonKills: 2, weapon: 5, armour: 5 });
+    g.patch({ level: 7, exp: 4000, gold: 900, bank: 100, dragonKills: 2, weapon: 5, armour: 5, look: 'knight-boy-02-1' });
     g.clock = Date.parse('2026-11-22T00:00:00Z'); // still season 1 (day 35)
     expect((await g.refresh()).season).toMatchObject({ number: 1, dayOfSeason: 35, daysLeft: 0 });
     expect(g.hero().level).toBe(7);
     g.clock = Date.parse('2026-11-23T00:00:00Z'); // season 2, day 1
     const s2 = await g.refresh();
     expect(s2.season).toMatchObject({ number: 2, dayOfSeason: 1 });
-    expect(s2.hero).toMatchObject({ level: 1, exp: 0, gold: 50, bank: 0, weapon: 0, dragonKills: 2, heroClass: 'knight' });
+    expect(s2.hero).toMatchObject({ level: 1, exp: 0, gold: 50, bank: 0, weapon: 0, dragonKills: 2, heroClass: 'knight', look: 'knight-boy-02-1' });
     expect(s2.classOpen).toBe(true);
-    const mage = await g.send({ action: 'start-hero', heroClass: 'mage' });
-    expect(mage.body.state.hero).toMatchObject({ heroClass: 'mage', dragonKills: 2, level: 1 });
+    const mage = await g.send({ action: 'start-hero', heroClass: 'mage', look: 'mage-girl-02-2' });
+    expect(mage.body.state.hero).toMatchObject({ heroClass: 'mage', dragonKills: 2, level: 1, look: 'mage-girl-02-2' });
     expect(mage.body.state.classOpen).toBe(false);
     expect((await g.send({ action: 'start-hero', heroClass: 'knight' })).body.reason).toBe('rule');
   });
@@ -1003,5 +1026,92 @@ describe('test helpers', () => {
       if (trip.kind === 'fight') expect(trip.monster.hp).toBeGreaterThan(0);
     }
     expect(weak.hp).toBe(2);
+  });
+});
+
+describe('the teacher’s topic switches', () => {
+  const only = (...topics: string[]) => new Game({ seasonStart: SEASON_START, topics });
+
+  it('shows the topics that are on in the pupil’s state, and all of them when the teacher never chose', async () => {
+    const g = only('patterns', 'money');
+    await g.start();
+    expect(g.state!.topics).toEqual(['money', 'patterns']);
+    const all = new Game();
+    await all.start();
+    expect(all.state!.topics).toHaveLength(8);
+  });
+
+  it('treats a missing or empty list from an older database as all topics on', async () => {
+    const g = new Game();
+    delete (g.db.settings as { topics?: string[] }).topics;
+    await g.start();
+    expect(g.state!.topics).toHaveLength(8);
+    g.db.settings.topics = [];
+    expect((await g.refresh()).topics).toHaveLength(8);
+  });
+
+  it('counts an answer from a switched-off topic as wrong, and tells the teacher’s page why', async () => {
+    const g = only('patterns');
+    await g.start();
+    g.patch({ level: 4 });
+    await g.refresh();
+    const out = await g.send({ action: 'inn', game: 'riddle', proof: proof('place-value', 4, true) }); // the riddle's own topics are patterns and place-value
+    expect(out.body.result.right).toBe(false);
+    expect(g.db.refusals).toEqual([{ reason: 'proof-pack', action: 'inn' }]); // so the teacher's page can say what happened
+    g.clock = NZ_MIDNIGHT + 1000; // the riddle is once a day
+    await g.refresh();
+    const fine = await g.send({ action: 'inn', game: 'riddle', proof: proof('patterns', 4, true) });
+    expect(fine.body.ok).toBe(true);
+  });
+
+  it('accepts a topic from the fallback when a moment’s own topics are all off', async () => {
+    const g = only('fractions');
+    await g.start();
+    g.patch({ level: 4 });
+    await g.refresh();
+    const ok = await g.send({ action: 'inn', game: 'riddle', proof: proof('fractions', 4, true) });
+    expect(ok.body.result.right).toBe(true);
+  });
+
+  it('never hands out a maths event about a topic that is off', async () => {
+    const g = only('add-sub');
+    await g.start();
+    for (let i = 0; i < 12; i++) {
+      g.clock += 70_000; // stay under the requests-a-minute limit
+      g.patch({ forestLeft: 10, hp: g.hero().maxHp });
+      g.db.row!.extra = { ...g.db.row!.extra, pendingEvent: null };
+      await g.refresh();
+      g.forceTrip('event');
+      const out = await g.send({ action: 'forest' });
+      expect(out.body.ok, JSON.stringify(out.body)).toBe(true);
+      const event = EVENT_BY_ID[out.body.result.eventId as string];
+      expect(!event.maths || event.maths.topic === 'add-sub').toBe(true);
+      await g.send({ action: 'event', walkOn: true });
+    }
+  });
+
+  it('pays the plain reward, with no question, for an event whose topic was switched off after it turned up', async () => {
+    const g = new Game();
+    await g.start();
+    g.services.isTeacher = async () => ({ ok: true, value: true });
+    await g.send({ action: 'tools', tool: 'event', value: 'bridge-toll' }); // money, 25 gold
+    g.db.settings.topics = ['add-sub'];
+    const out = await g.send({ action: 'event', proof: proof('money', 1, true) });
+    expect(out.body.ok).toBe(true);
+    expect(out.body.result.right).toBe(false);
+    expect(g.hero().gold).toBe(50);
+    expect(g.state!.pendingEvent).toBeNull();
+  });
+
+  it('the dragon’s riddles work with a single topic, and refuse another', async () => {
+    for (const [pack, expected] of [['decimals', 'right'], ['fractions', 'wrong']] as const) {
+      const g = only('decimals');
+      await g.start();
+      g.patch(DRAGON_SLAYER);
+      await g.refresh();
+      const out = await g.send({ action: 'dragon-stage', stage: 1, riddle: proof(pack, MAX_LEVEL, true) });
+      expect(out.body.ok).toBe(true);
+      expect(out.body.result.riddle).toBe(expected);
+    }
   });
 });

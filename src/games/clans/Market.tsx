@@ -8,6 +8,7 @@ import { buyItem, examineCost, examineItem, hasExamined, shopPrice } from './pla
 import type { Session, Change } from './session';
 import { ItemSprite, PlaceSprite, Portrait } from './Sprite';
 import { ITEM_TEXT, KIND_WORD, STAT_WORD } from './text';
+import { lookOf } from '../../../shared/clans/looks';
 
 type Kind = ItemDef['kind'];
 const TABS: [Kind, string][] = [['weapon', 'Weapons'], ['armor', 'Armour'], ['shield', 'Shields']];
@@ -108,7 +109,8 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
     const taxed = !marketTotal(settings, item.price, CONFIG.shopTax, item.name);
     detail = (
       <div className="cq-detail">
-        <h3><ItemSprite name={item.name} kind={item.kind} scale={3} /> {item.name}</h3>
+        <span className="cq-detail__art"><ItemSprite name={item.name} kind={item.kind} scale={6} /></span>
+        <h3>{item.name}</h3>
         <p className="cq-soft">{KIND_WORD[item.kind]} · {ITEM_TEXT[item.name]}</p>
         <p>{taxed ? <>Price: <strong>{price} gold</strong> (with {CONFIG.shopTax}% village tax)</> : <>Price: <strong>{item.price} gold</strong>, plus {CONFIG.shopTax}% village tax</>}</p>
         <p className="cq-soft">{old ? `${member.name} has: ${old}. Buying this swaps it.` : `${member.name} has no ${KIND_WORD[item.kind].toLowerCase()} yet.`}</p>
@@ -140,7 +142,7 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
       <div className="cq-pick" role="group" aria-label="Who is shopping?">
         {clan.members.map((m, i) => (
           <button key={m.name} type="button" className="cq-btn cq-pick__btn" aria-pressed={i === mi} onClick={() => { setMi(i); idle(); }}>
-            <Portrait race={m.race} cls={m.cls} scale={2} />
+            <Portrait race={m.race} cls={m.cls} look={lookOf(m)} scale={2} />
             <span><strong>{m.name}</strong><br /><small>{[m.gear.weapon, m.gear.armor, m.gear.shield].filter(Boolean).join(', ') || 'no gear yet'}</small></span>
           </button>
         ))}

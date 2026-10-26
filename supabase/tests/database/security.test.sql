@@ -74,7 +74,7 @@ $$, array[
   'teacher_reset_clan', 'teacher_reset_lord_hero', 'teacher_reset_name', 'teacher_reset_placement', 'teacher_reset_warp_code',
   'teacher_school_teachers', 'teacher_set_clan_maths', 'teacher_set_clan_raids', 'teacher_set_clans',
   'teacher_set_gem_keep', 'teacher_set_group_member', 'teacher_set_maths_auto', 'teacher_set_hidden', 'teacher_set_lord', 'teacher_set_marble_maths', 'teacher_set_marble_rescue', 'teacher_set_maths_focus',
-  'teacher_archery_summary', 'teacher_set_archery', 'teacher_set_archery_duels', 'teacher_set_bond_match', 'teacher_set_mine', 'teacher_set_mine_maths', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_students_choose_focus', 'teacher_set_trader', 'teacher_reset_trader',
+  'teacher_archery_summary', 'teacher_set_archery', 'teacher_set_archery_duels', 'teacher_set_bond_match', 'teacher_set_mine', 'teacher_set_mine_maths', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_question_skips', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_students_choose_focus', 'teacher_set_trader', 'teacher_reset_trader',
   'teacher_set_space_reactions', 'teacher_set_training_first', 'teacher_set_warp_mode', 'teacher_student_detail', 'teacher_student_ladder', 'teacher_students',
   'teacher_training_student', 'teacher_unassigned_students', 'teacher_update_class', 'teacher_villages',
   'teacher_warp_requests', 'warp_join', 'warp_preview'

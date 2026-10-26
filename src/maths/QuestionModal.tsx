@@ -11,9 +11,10 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { spokenLabel } from '../../shared/maths/banded';
+import { hintFor } from '../../shared/maths/hint';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { NumberPad } from './NumberPad';
-import { countAnswer, noteQuestion, spotFromTitle, STREAK_FROM } from './questionLog';
+import { countAnswer, noteQuestion, spendSkip, spotFromTitle, STREAK_FROM, useSkipRule } from './questionLog';
 import { ScribblePad } from './ScribblePad';
 import './maths.css';
 
@@ -62,6 +63,11 @@ function spokenTyped(typed: string): string {
 const choiceText = (label: string) => (FRACTION.test(label) ? <Part text={label} blank={null} /> : label);
 
 
+/** Under the skip button when the class has 3 skips per game. */
+export function SkipsLeft({ left }: { left: number }) {
+  return <p className="question__skips">{left > 0 ? `Skips left: ${left}` : 'No skips left in this game'}</p>;
+}
+
 /** What the box needs of a question. `answer` is missing when the game's server keeps it secret until marked. */
 export type ShownQuestion = Pick<Question, 'id' | 'parts' | 'spoken' | 'prompt' | 'choices' | 'choiceLabels' | 'maxLength' | 'input'> & { answer?: number };
 
@@ -82,8 +88,10 @@ export function QuestionModal({
   timeScale = 1,
   inline = false,
   secondsLeft = null,
+  onHint,
   scribble = true,
   spot,
+  closeIsSkip = true,
 }: {
   question: ShownQuestion;
   /** What the question is for, e.g. "Mana Well". */
@@ -94,7 +102,7 @@ export function QuestionModal({
   onSubmit: (answer: number, ms: number) => MarkedAnswer | Promise<MarkedAnswer>;
   /** Called after the feedback has been shown. */
   onDone: (result: MarkedAnswer) => void;
-  /** If given, the student may stop (a button, and Escape) before answering. */
+  /** If given, the student may stop (a button, and Escape) before answering. The class's skip switch can take it away. */
   onClose?: () => void;
   closeLabel?: string;
   /** Tests set 0 to skip the feedback pause. */
@@ -103,20 +111,38 @@ export function QuestionModal({
   inline?: boolean;
   /** A countdown to show, when the game gives the question a time limit. */
   secondsLeft?: number | null;
+  /**
+   * Adds a "Hint" button, once per question (off unless given). Called the first time it is pressed; the game decides what
+   * a right answer after a hint earns. The box only knows the answer if the game gave it (`question.answer`).
+   */
+  onHint?: () => void;
   /** A scribble pad beside the box, for working out. On by default; never shown for an inline card. */
   scribble?: boolean;
   /** The kind of question, for the teacher's skip counts (questionLog.ts). Taken from the title if not given. */
   spot?: string;
+  /**
+   * False when the close button isn't a way past a question (Gem Keep's "Well done", Maths Monsters' "Back"): the class's
+   * "Skip button" switch then leaves it alone.
+   */
+  closeIsSkip?: boolean;
 }) {
   const [typed, setTyped] = useState('');
   const [result, setResult] = useState<MarkedAnswer | null>(null);
   const [checking, setChecking] = useState(false);
   const [trouble, setTrouble] = useState('');
+  const [hint, setHint] = useState<ReturnType<typeof hintFor> | null>(null);
   const [streak, setStreak] = useState(0);
   const [padOpen, setPadOpen] = useState(readPadOpen);
   const shownAt = useRef(performance.now());
   const box = useRef<HTMLDivElement>(null);
   const titleId = `question-${question.id}-title`;
+  // The class's "Skip button" switch (questionLog.ts): off, or no skips left, means no close button and no Escape.
+  const skips = useSkipRule();
+  const canClose = !!onClose && (!closeIsSkip || skips.canSkip);
+  const close = () => {
+    if (!onClose || (closeIsSkip && !spendSkip())) return;
+    onClose();
+  };
 
   // A new question: clear the answer and start the clock. A layout effect, so it runs before the box can be pressed:
   // a plain effect could run just after a quick first tap and wipe it, leaving the box waiting on "?".
@@ -125,6 +151,7 @@ export function QuestionModal({
     setResult(null);
     setChecking(false);
     setTrouble('');
+    setHint(null);
     shownAt.current = performance.now();
     if (!inline) box.current?.focus();
   }, [question.id, inline]);
@@ -182,6 +209,13 @@ export function QuestionModal({
     );
   }
 
+  const canHint = !!onHint && question.answer !== undefined && !result;
+  function showHint() {
+    if (hint || !canHint) return;
+    setHint(hintFor({ answer: question.answer ?? 0, choices: question.choices, parts: question.parts }));
+    onHint?.();
+  }
+
   const maxLength = question.maxLength ?? MAX_DIGITS;
   const decimal = question.input === 'decimal';
   const addDigit = (d: string) =>
@@ -194,9 +228,9 @@ export function QuestionModal({
   const enter = () => typed !== '' && submit(Number(typed));
 
   function keys(event: React.KeyboardEvent) {
-    if (event.key === 'Escape' && onClose && !result) {
+    if (event.key === 'Escape' && canClose && !result && !checking) {
       event.preventDefault();
-      onClose();
+      close();
       return;
     }
     if (result || checking || question.choices) return;
@@ -262,6 +296,16 @@ export function QuestionModal({
         <p className="sr-only" aria-live="polite">
           {secondsLeft !== null && !result && (secondsLeft === 10 || secondsLeft === 5) ? `${secondsLeft} seconds left` : ''}
         </p>
+        {onHint && question.answer !== undefined && (
+          <div className="question__hint">
+            <button type="button" className="question__hintbtn" disabled={!!hint || !!result || checking} onClick={showHint}>
+              {hint ? 'Hint used' : 'Hint'}
+            </button>
+            <p className="question__hinttext" role="status">
+              {hint?.text}
+            </p>
+          </div>
+        )}
         <p className="question__feedback" role="status">
           {checking && 'Checking…'}
           {trouble && !checking && !result && trouble}
@@ -284,7 +328,7 @@ export function QuestionModal({
                 type="button"
                 className="question__choice"
                 aria-label={question.choiceLabels ? spokenLabel(question.choiceLabels[i]) : undefined}
-                disabled={!!result || checking}
+                disabled={!!result || checking || hint?.remove.includes(choice)}
                 data-answer={result && choice === (result.answer ?? question.answer) ? true : undefined}
                 onClick={() => submit(choice)}
               >
@@ -300,11 +344,12 @@ export function QuestionModal({
             <NumberPad onDigit={addDigit} onBack={back} onEnter={enter} canEnter={typed !== '' && typed !== '0.'} disabled={!!result || checking} decimal={decimal} />
           </>
         )}
-        {onClose && (
-          <button type="button" className="question__close" disabled={!!result || checking} onClick={onClose}>
+        {canClose && (
+          <button type="button" className="question__close" disabled={!!result || checking} onClick={close}>
             {closeLabel}
           </button>
         )}
+        {onClose && closeIsSkip && skips.left !== null && <SkipsLeft left={skips.left} />}
       </div>
       {showPad &&
         (padOpen ? (
