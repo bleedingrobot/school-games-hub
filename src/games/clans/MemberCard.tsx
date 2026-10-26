@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { SPELLS } from '../../../shared/clans/spells';
 import type { Member } from '../../../shared/clans/types';
 import { Bar } from './Bars';
-import { Portrait } from './Sprite';
+import { ItemSprite, Portrait } from './Sprite';
 import { headline } from './session';
 import { CARD_HELP, CLASS_TEXT, RACE_TEXT, TRAIN_HELP } from './text';
 import { LOOKS, lookOf, type Look } from '../../../shared/clans/looks';
@@ -61,7 +61,7 @@ export function MemberCard({ member, leader = false, onLook, children }: { membe
       </dl>
       <p className="cq-gear">
         {([['weapon', 'Weapon'], ['armor', 'Armour'], ['shield', 'Shield']] as const).map(([k, label]) => (
-          <span key={k}>{label}: {member.gear[k] ?? 'none'}</span>
+          <span key={k}>{label}: {member.gear[k] ? <><ItemSprite name={member.gear[k]!} kind={k} scale={1.3} /> {member.gear[k]}</> : 'none'}</span>
         ))}
       </p>
       {children}

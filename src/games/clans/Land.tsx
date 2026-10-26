@@ -4,6 +4,7 @@ import { BUILDING_BLURBS, BUILDING_NAMES, area, buildingsThatFit, claimCost, emp
 import { energyLeft, landPlot } from '../../../shared/clans/moments';
 import { BUILDING_KINDS, type BuildingKind } from '../../../shared/clans/types';
 import { Moment } from './Moment';
+import { buildingArt } from './art';
 import { buildOn, canBuildOn, canClaim, canDevelop, claimMoreLand, developLand, whyNot } from './places';
 import type { Session, Change } from './session';
 
@@ -153,6 +154,7 @@ export function Land({ session, onChange, onBack }: { session: Session; onChange
                     const d = E.buildings[k];
                     return (
                       <li key={k}>
+                        {buildingArt(k) && <img className="cq-building-art" src={buildingArt(k)} alt="" />}
                         <button type="button" className="cq-btn" disabled={!c.ok} aria-label={`Build ${BUILDING_NAMES[k]}`} onClick={() => startBuild(plot, k)}>{BUILDING_NAMES[k]}</button>
                         <span><small className="cq-soft">{d.size} squares · {d.energy}% work · {d.gold} gold. {BUILDING_BLURBS[k]}</small>{!c.ok && <small className="cq-warn"> {c.say}</small>}</span>
                       </li>
@@ -162,7 +164,16 @@ export function Land({ session, onChange, onBack }: { session: Session; onChange
               )}
             </>
           )}
-          {e.plots.some((p) => p.building) && <p className="cq-soft">Built: {e.plots.filter((p) => p.building).map((p) => BUILDING_NAMES[p.building!]).join(', ')}</p>}
+          {e.plots.some((p) => p.building) && (
+            <>
+              <p className="cq-soft">Built: {e.plots.filter((p) => p.building).map((p) => BUILDING_NAMES[p.building!]).join(', ')}</p>
+              <ul className="cq-estate" aria-hidden="true">
+                {e.plots.map((p, i) => p.building && buildingArt(p.building) && (
+                  <li key={i}><img src={buildingArt(p.building)} alt="" /><span>Plot {i + 1}</span></li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
       </div>
     );

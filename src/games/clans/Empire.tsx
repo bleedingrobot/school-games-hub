@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CONFIG } from '../../../shared/clans/config';
 import { BUILDING_NAMES, deposit, withdraw, TROOP_NAMES, capacity, countBuildings, draftMax, empireOf, energyLeft as energyPercentLeft, might } from '../../../shared/clans/empire';
 import { BUILDING_KINDS, TROOP_KINDS } from '../../../shared/clans/types';
+import { buildingArt, troopArt } from './art';
 import { putInVault, takeFromVault, whyNot } from './places';
 import type { Session, Change } from './session';
 
@@ -45,6 +46,11 @@ export function EmpireHome({ session, onChange, onBack, onLand, onBarracks, onRa
           <h3>Land and buildings</h3>
           <p>Wild land: <strong>{e.wild}</strong> {e.wild === 1 ? 'plot' : 'plots'} · Developed plots: <strong>{e.plots.length}</strong> · Empty ones: <strong>{e.plots.filter((p) => !p.building).length}</strong></p>
           <p>{built.length === 0 ? 'No buildings yet.' : built.map((k) => `${BUILDING_NAMES[k]} ${countBuildings(e, k)}`).join(' · ')}</p>
+          {built.some((k) => buildingArt(k)) && (
+            <ul className="cq-estate" aria-hidden="true">
+              {built.map((k) => buildingArt(k) && <li key={k}><img src={buildingArt(k)} alt="" /></li>)}
+            </ul>
+          )}
           <p>Workers: <strong>{energyPercentLeft(e)}%</strong> of today's work left.</p>
           <div className="cq-actions"><button type="button" className="cq-btn cq-btn--hot" onClick={onLand}>Land and buildings</button></div>
         </div>
@@ -52,7 +58,7 @@ export function EmpireHome({ session, onChange, onBack, onLand, onBarracks, onRa
           <h3>Troops</h3>
           <ul className="cq-troops">
             {TROOP_KINDS.map((k) => (
-              <li key={k}>{e.troops[k]} {e.troops[k] === 1 ? TROOP_NAMES[k].one : TROOP_NAMES[k].many} <span className="cq-soft">(room for {capacity(e, k)}, costs {CONFIG.empire.troopCost[k]} each)</span></li>
+              <li key={k}>{troopArt(k) && <img className="cq-troop-art" src={troopArt(k)} alt="" />}{e.troops[k]} {e.troops[k] === 1 ? TROOP_NAMES[k].one : TROOP_NAMES[k].many} <span className="cq-soft">(room for {capacity(e, k)}, costs {CONFIG.empire.troopCost[k]} each)</span></li>
             ))}
           </ul>
           <p>Army strength: <strong>{army}</strong></p>

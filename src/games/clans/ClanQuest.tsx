@@ -14,7 +14,7 @@ import { MemberCard } from './MemberCard';
 import { Church } from './Church';
 import { Market } from './Market';
 import { Mines, Results } from './Mines';
-import { armyToLose, armyToWin, changeLook, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveVault, knockOutSome, pretendGifts, pretendWeekEnd } from './places';
+import { armyToLose, armyToWin, changeLook, questToday, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveVault, knockOutSome, pretendGifts, pretendWeekEnd } from './places';
 import { ClassRaid } from './ClassRaid';
 import { Village } from './Village';
 import { VillageNews } from './VillageNews';
@@ -32,7 +32,7 @@ import { awardNext, giveFame, newSeason, type ScoreRow } from './fame';
 import { ACHIEVEMENTS, fameFor, type AchievementDef } from '../../../shared/clans/rewards';
 import { averageLevel, earn, finishFight, newSession, skipDay, type FightSummary, type Session } from './session';
 import { sessionFrom, type ClanServer, type ServerReply } from './remote';
-import { sceneArt, type SceneId } from './art';
+import { bannerArt, questArt, sceneArt, type SceneId } from './art';
 import './clans.css';
 
 type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid' | 'quest' | 'village' | 'news' | 'classraid' | 'scoreboard' | 'achievements' | 'howto';
@@ -44,10 +44,9 @@ const SCENE_FOR: Partial<Record<Screen, SceneId>> = {
 };
 
 /** A wide painting, the 800 copy on phones. Only decoration, so screen readers skip it. */
-function Scene({ id }: { id: SceneId }) {
-  const { wide, small } = sceneArt(id);
+function Scene({ name, art: { wide, small } }: { name: string; art: { wide?: string; small?: string } }) {
   if (!wide) return null;
-  return <img className="cq-scene" src={wide} srcSet={small && small !== wide ? `${small} 800w, ${wide} 1600w` : undefined} sizes="(max-width: 1100px) 100vw, 1100px" alt="" data-scene={id} />;
+  return <img className="cq-scene" src={wide} srcSet={small && small !== wide ? `${small} 800w, ${wide} 1600w` : undefined} sizes="(max-width: 1100px) 100vw, 1100px" alt="" data-scene={name} />;
 }
 
 /** For James's test only: stands in for the Teacher page, which comes later. */
@@ -329,6 +328,8 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   };
 
   const scene = loading !== null ? undefined : session ? SCENE_FOR[screen] : 'creator';
+  // Today's quest has its own painting (all day, done or not); the general one is only for a day with no quest.
+  const quest = screen === 'quest' && session ? questToday(session) : null;
 
   return (
     <div className="cq" ref={root}>
@@ -336,7 +337,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
         <h1>Clan Quest</h1>
         <span className="cq-soft">{session ? `${session.clan.name} · ${session.clan.gold} gold · ${session.clan.followers} followers · ${session.fame ?? 0} fame` : 'Test version: nothing is saved'}</span>
       </header>
-      {scene && <Scene key={scene} id={scene} />}
+      {quest ? <Scene key={`quest-${quest.id}`} name={`quest-${quest.id}`} art={questArt(quest.title)} /> : scene && <Scene key={scene} name={scene} art={sceneArt(scene)} />}
       <Celebration fresh={celebrate} onClose={() => setCelebrate([])} />
       {notice && <p className="cq-note" role="alert">{notice}</p>}
       {loading === 'loading' ? (
@@ -355,8 +356,13 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {!server && <SettingsStrip session={session} onChange={setSession} open={screen === 'home'} />}
           {screen === 'home' && (
             <section aria-label="Your clan">
-              <h2>{session.clan.name}</h2>
-              <p className="cq-soft">Practising: {session.settings.enabledTopics.length ? session.settings.enabledTopics.map((t) => TOPIC_LABELS[t].toLowerCase()).join(', ') : 'nothing today'}</p>
+              <div className="cq-clanhead">
+                {bannerArt(session.clan.name) && <img className="cq-clanbanner" src={bannerArt(session.clan.name)} alt="" />}
+                <div>
+                  <h2>{session.clan.name}</h2>
+                  <p className="cq-soft">Practising: {session.settings.enabledTopics.length ? session.settings.enabledTopics.map((t) => TOPIC_LABELS[t].toLowerCase()).join(', ') : 'nothing today'}</p>
+                </div>
+              </div>
               <div className="cq-cards">
                 {session.clan.members.map((m, i) => (
                   <MemberCard key={m.name} member={m} leader={i === 0} onLook={(look) => { const next = changeLook(session, i, look); if (next) change(next, { type: 'look', member: i, look }); }} />

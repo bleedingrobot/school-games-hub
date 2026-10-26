@@ -17,6 +17,7 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         <section aria-labelledby="htp-clan">
           <h3 id="htp-clan">Your clan</h3>
           <p>You pick a race and a class for each hero. Don't like the numbers? Roll again. The first hero is your leader. You start with {CONFIG.startGold} gold. Heroes can reach level {CONFIG.maxLevel}.</p>
+          <p>Each hero has four looks to pick from. It only changes the picture, and you can change it any time with “Change look”.</p>
         </section>
         <section aria-labelledby="htp-mines">
           <h3 id="htp-mines">The Mines</h3>

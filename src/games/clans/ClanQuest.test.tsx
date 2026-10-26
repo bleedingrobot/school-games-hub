@@ -237,3 +237,32 @@ describe('picking a look in the creator (Clans art Stage A.5)', () => {
     expect(screen.getAllByRole('article')[0].querySelector('.cq-portrait--painted img')?.getAttribute('src')).toContain('female-2');
   });
 });
+
+describe('items and quests (Clans art Stage A.7)', () => {
+  it('the Market shelf shows each item painted, and the quest shows its own painting', async () => {
+    const u = user();
+    await makeClanOnScreen(u);
+    await u.click(screen.getByRole('button', { name: 'The Market' }));
+    const shelf = screen.getByRole('list', { name: 'On the shelf' });
+    const items = within(shelf).getAllByRole('button');
+    expect(items.length).toBeGreaterThan(0);
+    for (const b of items) expect(b.querySelector('img.cq-item-art')?.getAttribute('src')).toMatch(/\/items\//);
+    await u.click(screen.getByRole('button', { name: /^Back/ }));
+    await u.click(screen.getByRole('button', { name: /^Quest/ }));
+    expect(document.querySelector<HTMLImageElement>('.cq-scene')?.dataset.scene).toMatch(/^quest-\d+$/);
+    expect(document.querySelector('.cq-scene')?.getAttribute('src')).toMatch(/\/quests\//);
+  });
+});
+
+describe('clan banners (Clans art Stage A.8)', () => {
+  it('the clan home shows the banner that matches the second word of the clan name, and so does the Scoreboard', async () => {
+    const u = user();
+    await makeClanOnScreen(u);
+    const name = screen.getByRole('heading', { level: 2 }).textContent!;
+    const noun = name.split(' ').pop()!.toLowerCase();
+    expect(document.querySelector('.cq-clanbanner')?.getAttribute('src')).toContain(`/banners/${noun}`);
+    await u.click(screen.getByRole('button', { name: 'Scoreboard' }));
+    const mine = screen.getByRole('rowheader', { name: new RegExp(name) });
+    expect(mine.querySelector('img.cq-rowbanner')?.getAttribute('src')).toContain(`/banners/${noun}`);
+  });
+});

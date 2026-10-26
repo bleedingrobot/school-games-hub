@@ -3,7 +3,7 @@
 How Clan Quest gets its painted pictures, from the 656 pictures in `~/dragon-art-inbox/clans-art` to a live game. It follows the way Dragon Maths was done (`docs/lord-art/`, `scripts/lord-art.py`, `src/games/lord/art.ts`), so most of the tools already exist.
 
 Written 26 October 2026 for James.
-**Status: A.0–A.5 done (26 Oct). James kept Claude's picks for every picture; the frame is stone and iron. Next: A.6 (fights).** The plan is on the `clans-art` branch.
+**Status: A.0–A.5, A.7 and A.8 done (26 Oct). A.6 (fights) waits until the `clans-ladder` branch is live (James, 26 Oct), since both change the fight files. Then A.9: try-out page and going live (James decides).** The plan is on the `clans-art` branch.
 
 ## The short version
 
@@ -161,3 +161,22 @@ If a picture needs remaking (a new monster, a wrong picture, a new item):
 - Tests: 7 for the rules (`looks.test.ts`), 3 on screen (creator picker; "Change look" saved on a pretend server; an old clan still shows paintings). Clans: 475 pass; the server function's 55 pass.
 - The pale splash is cleaned off `imp-barbarian-female-1` and `imp-necromancer-female-2` (cut out again, then pale grey paper faded out). The necromancer's right wing was lost in the original cut-out and still is; a remake would fix it.
 - Checked at 1366 px and 390 px: no sideways scrolling.
+
+## Stage A.7 results (26 Oct 2026)
+
+James chose to do A.7 before A.6, so the fight files stay untouched until `clans-ladder` is live.
+
+- **Items:** painted in the Market shelf, larger in the item's detail panel, and small beside each worn item on a member card (`ItemSprite` in `Sprite.tsx` shows the painting, or the old tile if there isn't one).
+- **Quests:** the painting across the top of the Quest screen is today's quest (all day, done or not); the general quests picture is only for a day with no quest.
+- **Empire** (done in parallel by a second Claude session): buildings on the Empire home and on each built plot in Land, with small ones in the "build on this plot" list; troops beside each line in the Barracks and on the Empire home; the picked kingdom's painting on the Raid screen; after a battle, the kingdom (raid) or the battlefield (Friendly War). New test file `EmpireArt.test.tsx`.
+- Every painting is decoration (`alt=""`): the words beside it already say what it is, so a screen reader doesn't read things twice.
+- Still the wrong-looking ones from A.1: Wizard's Staff (a wizard) and Wooden Armour (a knight in metal) show in the Market.
+
+## Stage A.8 results (26 Oct 2026)
+
+- **Banners:** the clan's banner (from the second word of its name) beside its name on the clan home, beside every clan on the Scoreboard, and in the list on "Raid a classmate". The Village has no list of clans, so nothing there.
+- **How to Play:** one new line about looks and "Change look". It had no pictures to update.
+- **Weight** (production build, measured in the browser): the creator downloads about 223 KB of pictures, 79 KB of fonts and 554 KB of code (156 KB compressed), so well under the 2 MB goal; the clan home adds about 85 KB more. Phones load the small copies (about 176 KB of pictures for the creator).
+- **Phone width and keyboard:** no sideways scrolling at 390 px on any screen checked (creator, home, Market, Training, Church, Mines, Quest, Scoreboard, Empire, Land, Barracks, Raid, Friendly War). Every new control is an ordinary button, and the accessibility tests pass.
+- Clans tests: 483 pass.
+- **Not checked here:** a real slow Chromebook (the Stage C.7 check). Worth a click-through at school before A.9.
