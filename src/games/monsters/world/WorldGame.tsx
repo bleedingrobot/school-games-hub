@@ -433,6 +433,7 @@ export function WorldGame({
           enabledTopics={enabledTopics}
           place={world.map}
           trainer={scene.trainer?.name}
+          look={world.look}
         />
       </div>
     );

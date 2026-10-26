@@ -26,7 +26,7 @@ import { useSound } from '../../sound';
 import { playSound, type GameSound } from '../sounds';
 import { AttackEffect, CriticalPop, DamageNumber, EFFECT_MS, HitFlash } from './art/Effects';
 import { MonsterArt, type MonsterState } from './art/MonsterArt';
-import { monsterPic, personPic, preload, scenePic } from './art/painted';
+import { lookPic, monsterPic, personPic, preload, scenePic } from './art/painted';
 import { loadMonsterSettings, saveMonsterSettings, type MonsterSettings } from './settings';
 import { beatsFor, ITEM_LABEL, nameOf, type Beat } from './text';
 import { BagList, NameCard, Sheet, summarise, TeamList } from './ui';
@@ -63,6 +63,8 @@ export interface BattleScreenProps {
   place?: string;
   /** A trainer battle: the trainer's name, so their picture can say hello before their first monster comes out. */
   trainer?: string;
+  /** The player's chosen look, shown opposite the trainer while they say hello. */
+  look?: string;
 }
 
 type Mode = 'playing' | 'menu' | 'fight' | 'team' | 'replace' | 'bag' | 'target' | 'question' | 'end';
@@ -97,7 +99,7 @@ interface Pop {
 const clone = <T,>(v: T): T => structuredClone(v);
 const shownFrom = (s: BattleState): Shown => ({ team: clone(s.team), foes: clone(s.foes), active: s.active, foeActive: s.foeActive });
 
-export function BattleScreen({ setup, settings: given, onSettingsChange, onFinish, random = Math.random, packFor, timeScale = 1, enabledTopics, place, trainer }: BattleScreenProps) {
+export function BattleScreen({ setup, settings: given, onSettingsChange, onFinish, random = Math.random, packFor, timeScale = 1, enabledTopics, place, trainer, look }: BattleScreenProps) {
   const { soundOn } = useSound();
   const [ownSettings, setOwnSettings] = useState(loadMonsterSettings);
   const settings = given ?? ownSettings;
@@ -282,6 +284,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
   // A trainer with a painted picture says hello first ("Ranger Kiri wants to battle!"), then sends out their monster.
   const trainerPic = setup.kind === 'trainer' && trainer ? personPic(trainer) : undefined;
   const [intro, setIntro] = useState(!!trainerPic);
+  const playerPic = trainerPic && look ? lookPic(look) : undefined;
 
   // The opening message ("A wild Digibud appeared!").
   useEffect(() => {
@@ -454,6 +457,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
         )}
         {/* Decorative: the message already names the trainer. */}
         {intro && <img className="mb-trainer" src={trainerPic} alt="" decoding="async" draggable={false} />}
+        {intro && playerPic && <img className="mb-trainer mb-trainer--you" src={playerPic} alt="" decoding="async" draggable={false} />}
         <div className={`mb-foe${foeLook === 'gone' || intro ? ' is-gone' : ''}${ball ? ' has-ball' : ''}`}>
           <MonsterArt species={foe.species} shiny={foe.shiny} state={foeLook === 'gone' ? 'idle' : foeLook} flip />
           {ball && <span className={`mb-ball mb-ball--${ball}`} aria-hidden="true" />}
@@ -461,7 +465,7 @@ export function BattleScreen({ setup, settings: given, onSettingsChange, onFinis
           {popsFor('foe').map((p) => (p.kind === 'crit' ? <CriticalPop key={p.id} /> : <DamageNumber key={p.id} amount={p.amount ?? 0} effect={p.effect} heal={p.kind === 'heal'} />))}
           {pops.some((p) => p.side === 'foe' && p.kind === 'num') && <HitFlash key={pops.filter((p) => p.side === 'foe').at(-1)!.id} />}
         </div>
-        <div className={`mb-me${evolving ? ' is-evolving' : ''}`}>
+        <div className={`mb-me${evolving ? ' is-evolving' : ''}${playerPic && intro ? ' is-gone' : ''}`}>
           <MonsterArt species={mine.species} shiny={mine.shiny} state={myLook} />
           {fx?.side === 'you' && <AttackEffect key={fx.id} anim={fx.anim} />}
           {popsFor('you').map((p) => (p.kind === 'crit' ? <CriticalPop key={p.id} /> : <DamageNumber key={p.id} amount={p.amount ?? 0} effect={p.effect} heal={p.kind === 'heal'} />))}

@@ -49,6 +49,8 @@
   object-position: bottom;
   filter: drop-shadow(0 6px 6px rgba(15, 23, 42, 0.35));
 }
+/* The player's look, facing the trainer from the other side. */
+.mb-trainer--you { right: auto; left: 12%; }
 .mb--area2 .mb-arena { --sky-a: #7dd3fc; --sky-b: #e0f2fe; --ground: #fde68a; }
 .mb--area3 .mb-arena { --sky-a: #fdba74; --sky-b: #fee2e2; --ground: #d6a37c; }
 .mb--area4 .mb-arena { --sky-a: #bfdbfe; --sky-b: #f1f5f9; --ground: #e2e8f0; }
@@ -62,8 +64,9 @@
   aspect-ratio: 1;
 }
 .mb-foe { right: 8%; top: 0; transition: transform 0.4s, opacity 0.4s; }
-.mb-me { left: 7%; bottom: -2%; }
-.mb-foe.is-gone { opacity: 0; transform: scale(0.3); }
+.mb-me { left: 7%; bottom: -2%; transition: transform 0.4s, opacity 0.4s; }
+.mb-foe.is-gone,
+.mb-me.is-gone { opacity: 0; transform: scale(0.3); }
 .mb-foe-card { position: absolute; left: 3%; top: 6%; }
 .mb-me-card { position: absolute; right: 3%; bottom: 6%; }
 
@@ -335,6 +338,8 @@
 .mp-looks { min-width: 0; margin: 0; padding: 0; border: 0; }
 .mp-looks legend { margin-bottom: 6px; padding: 0; font-weight: 800; }
 .mp-looks__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
+/* On the start screen, smaller faces so Start walking stays near the top. */
+.mp-start .mp-looks__grid { grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 4px; }
 .mp-look { position: relative; display: grid; place-items: center; aspect-ratio: 1; overflow: hidden; border: 2px solid #cbd5e1; border-radius: 12px; background: #f1f5f9; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
 .mp-look input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
 .mp-look img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
@@ -365,7 +370,7 @@
 
 /* Reduced motion: nothing shakes, flashes, shrinks or slides. The messages still say what happened. */
 @media (prefers-reduced-motion: reduce) {
-  .mb-foe, .mb-bar > span { transition: none; }
+  .mb-foe, .mb-me, .mb-bar > span { transition: none; }
   .mb-foe.has-ball > .mon-art { animation: none; opacity: 0; }
   .mb-ball { animation: none; }
   .mb-me.is-evolving .mon-art__pic { animation: none !important; filter: brightness(1.4); }

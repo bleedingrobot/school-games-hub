@@ -27,7 +27,7 @@ vi.mock('./art/painted', async (actual) => {
   };
 });
 
-const battle = (setup: Partial<BattleSetup>, props: { place?: string; trainer?: string } = {}) =>
+const battle = (setup: Partial<BattleSetup>, props: { place?: string; trainer?: string; look?: string } = {}) =>
   render(
     <BattleScreen
       setup={{ kind: 'wild', area: 1, team: [makeMonster('plusplash-1', 10)], foes: [makeMonster('digibud-1', 5)], ...setup }}
@@ -64,6 +64,16 @@ describe('painted pictures on the screens', () => {
     expect(message()).toBe('Ranger Kiri sends out Digibud!');
     expect(document.querySelector('.mb-trainer')).toBeNull();
     expect(document.querySelector('.mb-foe')).not.toHaveClass('is-gone');
+  });
+
+  it('the player’s chosen look faces the trainer while they say hello', async () => {
+    const user = userEvent.setup();
+    battle({ kind: 'trainer' }, { trainer: 'Ranger Kiri', look: 'girl-04' });
+    expect(document.querySelector('.mb-trainer--you')!.getAttribute('src')).toBe('/looks/girl-04.webp');
+    expect(document.querySelector('.mb-me')).toHaveClass('is-gone');
+    await user.click(screen.getByRole('button', { name: /Next/ }));
+    expect(document.querySelector('.mb-trainer--you')).toBeNull();
+    expect(document.querySelector('.mb-me')).not.toHaveClass('is-gone');
   });
 
   it('a wild battle has no trainer hello', () => {

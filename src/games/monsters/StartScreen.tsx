@@ -16,8 +16,6 @@ export function StartScreen({ onStart }: { onStart: (picks: [TypeId, TypeId], te
     <section className="mp-start" aria-labelledby="mm-start-title">
       <h1 id="mm-start-title">Maths Monsters</h1>
       <p>Welcome to Harbour Town! Pick the two monsters you start with. Every attack and every catch is a maths question, and each type asks its own kind.</p>
-      {/* Only once the painted looks are there; you can change it later in the Menu. */}
-      {hasLooks() && <LookPicker value={look} onChange={setLook} />}
       <div className="mp-start__picks">
         {[0, 1].map((i) => (
           <label key={i}>
@@ -37,6 +35,8 @@ export function StartScreen({ onStart }: { onStart: (picks: [TypeId, TypeId], te
           <MonsterArt key={i} species={m.species} size={72} still />
         ))}
       </p>
+      {/* Only once the painted looks are there; optional, and you can change it later in the Menu. */}
+      {hasLooks() && <LookPicker value={look} onChange={setLook} />}
       <p>
         <button type="button" className="button button--primary" onClick={() => onStart(picks, team, look)}>
           Start walking
