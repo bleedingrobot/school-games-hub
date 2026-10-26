@@ -180,3 +180,8 @@ James chose to do A.7 before A.6, so the fight files stay untouched until `clans
 - **Phone width and keyboard:** no sideways scrolling at 390 px on any screen checked (creator, home, Market, Training, Church, Mines, Quest, Scoreboard, Empire, Land, Barracks, Raid, Friendly War). Every new control is an ordinary button, and the accessibility tests pass.
 - Clans tests: 483 pass.
 - **Not checked here:** a real slow Chromebook (the Stage C.7 check). Worth a click-through at school before A.9.
+
+## Stage A.9 so far (26 Oct 2026)
+
+- **Try-out page:** https://claude.ai/artifact/HpSZN7KVceHsiN8eSxWkxN (private to James). The whole game on a pretend clan with the test strip, every picture built in (the small copies only, so it fits; about 9.5 MB). Fights still have the old figures (A.6). Rebuild with `npm run clans:tryout` (`vite.clans-tryout.config.ts`).
+- **Not done (James decides):** the pull request to `main`, redeploying the `clans` function, and going live.
