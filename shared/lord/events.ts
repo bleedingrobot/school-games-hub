@@ -81,4 +81,10 @@ export const EVENTS: ForestEvent[] = [
   },
 ];
 
+/**
+ * The events the forest may find when the teacher has some topics off: a maths event about a switched-off topic is
+ * left out (the rest of the forest is unchanged, and there are always events with no maths in them).
+ */
+export const eventsOn = (on: readonly string[]): ForestEvent[] => EVENTS.filter((e) => !e.maths || on.includes(e.maths.topic));
+
 export const EVENT_BY_ID: Record<string, ForestEvent> = Object.fromEntries(EVENTS.map((e) => [e.id, e]));

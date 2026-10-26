@@ -20,6 +20,8 @@ export interface Hero {
   weapon: number; // index into WEAPONS, 0 = bare fists... see data.ts
   armour: number; // index into ARMOURS
   heroClass: HeroClass;
+  /** The painted hero the pupil picked (LOOKS in data.ts), always one of their class's. Missing = the plain class picture. */
+  look?: string;
   dragonKills: number; // stars, kept across runs
   // Today's allowances (the server rolls these over on the first play of a new NZ day)
   day: string; // 'YYYY-MM-DD' in New Zealand, of the last rollover

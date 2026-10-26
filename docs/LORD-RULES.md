@@ -50,6 +50,20 @@ No LORD.ts code or text is copied (it is GPL-3). Rules and numbers are not owned
 - **Saved-up turns:** unused forest fights pile up for missed days (two days' worth at most); a missed day saves up an extra master try (two at most). See Pace.
 - **The season pause:** switching the game off pauses the season clock; switching it on moves the start date forward by the days it was closed.
 
+## The hint (L.6, 19 Oct 2026)
+
+Every question in Dragon Maths has one **Hint** button. It never says the answer. A pick-one question greys out two wrong choices (the two furthest from the answer). A typed question says what numbers the answer is between ("between 40 and 60"; the stretch is 5, 10, 20 or 50 wide depending on how big the answer is; decimals and money use 1 or 5). The same question always gets the same hint.
+
+A **right answer after a hint** earns about half: size it up ×1.25 (not ×1.5), 5% off at the shop or healer (not 10%), half the interest, the riddle gold ×0.75 (not ×1.5; wrong is ×0.3), half the master-trial strength, half the dragon riddle's bonus. A forest event counts a hinted right answer as right (the reward there is all or nothing, and the hint costs nothing else). A hint can only ever lower what you earn, so the server believes the browser's word that it was used (`hinted` in the proof); a wrong answer is wrong either way.
+
+## The teacher's topic switches (19 Oct 2026)
+
+The teacher page has a tick-list of the eight maths topics (place value, add and take away, times tables, division, fractions, decimals, money, patterns), per class, all on to start, at least one always on. A topic that is off is never asked:
+
+- Each place keeps its own topics when any of them is on (the shop: money and add and take away). If all of a place's own topics are off, it asks about whichever topics are on, so no place is ever without a question.
+- A forest event about a topic that is off is left out of the forest. The rest of the forest (fights, luck and joke events) is unchanged, and with every topic on nothing changes at all, down to the seed. An event that was already waiting when the topic was switched off is walked past: no question, no maths reward, nothing lost.
+- The server refuses an answer from a topic that is off (it counts as wrong, and the teacher page lists it as "a question from the wrong topic"). A pupil who had a question open when the teacher ticked the box can get one wrong this way; they lose nothing.
+
 ## Kept out for good
 
 Romance, marriage, children, orphans, drinking, gambling, student-written text, killing sleeping players, gory death lines, and free-text anything. LORD's backstory (the dragon eats the village's children) is replaced: ours steals the treasure, the food and the light.

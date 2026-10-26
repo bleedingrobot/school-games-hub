@@ -4,8 +4,10 @@ import { MAX_LEVEL, baseStats, expNeeded } from './data';
 import { buyGear, dragonBreather, heal, newHero, startDragonStage, startFight, stepFight } from './engine';
 import {
   MOMENT_TOPICS, addMasterTrialBonus, dragonStageOptions, defaultBand, interestFor, masterTrialStrength, numberGuessPrize,
-  offersSizeItUp, priceDiscount, sizeItUpBonus,
+  offersSizeItUp, priceDiscount, riddleGold, sizeItUpBonus,
 } from './maths';
+import { markProof, questionLevel } from './proof';
+import { makePack } from '../maths/skillPacks';
 import type { Hero } from './types';
 
 const hero = (patch: Partial<Hero> = {}): Hero => ({ ...newHero('knight', '2026-10-19'), ...patch });
@@ -99,6 +101,51 @@ describe('maths moments', () => {
 function startFightFor(h: Hero) {
   return startFight(h, { id: 'x', name: 'x', level: 1, hp: 500, strength: 1, gold: 1, exp: 1, intro: '' }, 3);
 }
+
+describe('a hint on a proof', () => {
+  const proofFor = (hinted?: boolean, wrong = false) => {
+    const pack = makePack('place-value', []);
+    const q = pack.nextQuestion({ level: questionLevel('place-value', 1) })!;
+    return { pack: 'place-value', key: q.factKey, kind: q.kind, params: q.params, level: questionLevel('place-value', 1), given: wrong ? q.answer + 1 : q.answer, ms: 1000, ...(hinted === undefined ? {} : { hinted }) };
+  };
+  it('is marked right when no hint was used, and hinted when it was', () => {
+    const plain = markProof(proofFor(), 'riddle', 1, 0);
+    const used = markProof(proofFor(true), 'riddle', 1, 0);
+    expect(plain).toMatchObject({ ok: true, correct: true, hinted: false });
+    expect(used).toMatchObject({ ok: true, correct: true, hinted: true });
+  });
+  it('is still wrong when the answer is wrong, hint or not', () => {
+    expect(markProof(proofFor(true, true), 'riddle', 1, 0)).toMatchObject({ ok: true, correct: false });
+  });
+  it('only ever lowers what is earned: a hint is worth less than a right answer and more than a wrong one', () => {
+    expect(riddleGold(5, 'right')).toBeGreaterThan(riddleGold(5, 'hint'));
+    expect(riddleGold(5, 'hint')).toBeGreaterThan(riddleGold(5, 'wrong'));
+  });
+});
+
+describe('a times-table proof', () => {
+  // Hero level 7 asks times tables at campaign level 6 (×6 and ×9, with ×2 to ×10 as review).
+  const tt = (kind: string, parts: string[] | undefined, given: number) => ({
+    pack: 'times-tables', key: 'mul:6x8', kind, ...(parts ? { parts } : {}), level: questionLevel('times-tables', 7), given, ms: 2000,
+  });
+  const mark = (proof: object) => markProof(proof, 'healer', 7, 0);
+
+  it('is right only with the missing number, never the one on screen', () => {
+    expect(mark(tt('missing-factor', ['?', '×', '8', '=', '48'], 6))).toMatchObject({ ok: true, correct: true });
+    expect(mark(tt('missing-factor', ['?', '×', '8', '=', '48'], 8))).toMatchObject({ ok: true, correct: false });
+    expect(mark(tt('missing-factor', ['6', '×', '?', '=', '48'], 8))).toMatchObject({ ok: true, correct: true });
+    expect(mark(tt('divide', ['48', '÷', '8', '=', '?'], 6))).toMatchObject({ ok: true, correct: true });
+    expect(mark(tt('divide', ['48', '÷', '8', '=', '?'], 8))).toMatchObject({ ok: true, correct: false });
+    expect(mark(tt('multiply', ['8', '×', '6', '=', '?'], 48))).toMatchObject({ ok: true, correct: true });
+  });
+
+  it('is refused when the question shown is missing, another fact, or not the kind it says', () => {
+    expect(mark(tt('missing-factor', undefined, 6))).toEqual({ ok: false, problem: 'proof-parts' });
+    expect(mark(tt('missing-factor', ['?', '×', '7', '=', '42'], 6))).toEqual({ ok: false, problem: 'proof-parts' });
+    expect(mark(tt('multiply', ['?', '×', '8', '=', '48'], 6))).toEqual({ ok: false, problem: 'proof-kind' });
+    expect(mark(tt('missing-factor', ['48', '÷', '8', '=', '?'], 6))).toEqual({ ok: false, problem: 'proof-kind' });
+  });
+});
 
 describe('Size it up gold', () => {
   it('a right answer adds 20% (rounded up, at least 1); anything else, or no gold, adds nothing', async () => {

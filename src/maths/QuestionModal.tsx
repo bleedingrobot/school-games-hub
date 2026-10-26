@@ -11,6 +11,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { spokenLabel } from '../../shared/maths/banded';
+import { hintFor } from '../../shared/maths/hint';
 import type { AnswerResult, Question } from '../../shared/maths/skillPack';
 import { NumberPad } from './NumberPad';
 import { countAnswer, noteQuestion, spendSkip, spotFromTitle, STREAK_FROM, useSkipRule } from './questionLog';
@@ -87,6 +88,7 @@ export function QuestionModal({
   timeScale = 1,
   inline = false,
   secondsLeft = null,
+  onHint,
   scribble = true,
   spot,
   closeIsSkip = true,
@@ -109,6 +111,11 @@ export function QuestionModal({
   inline?: boolean;
   /** A countdown to show, when the game gives the question a time limit. */
   secondsLeft?: number | null;
+  /**
+   * Adds a "Hint" button, once per question (off unless given). Called the first time it is pressed; the game decides what
+   * a right answer after a hint earns. The box only knows the answer if the game gave it (`question.answer`).
+   */
+  onHint?: () => void;
   /** A scribble pad beside the box, for working out. On by default; never shown for an inline card. */
   scribble?: boolean;
   /** The kind of question, for the teacher's skip counts (questionLog.ts). Taken from the title if not given. */
@@ -123,6 +130,7 @@ export function QuestionModal({
   const [result, setResult] = useState<MarkedAnswer | null>(null);
   const [checking, setChecking] = useState(false);
   const [trouble, setTrouble] = useState('');
+  const [hint, setHint] = useState<ReturnType<typeof hintFor> | null>(null);
   const [streak, setStreak] = useState(0);
   const [padOpen, setPadOpen] = useState(readPadOpen);
   const shownAt = useRef(performance.now());
@@ -143,6 +151,7 @@ export function QuestionModal({
     setResult(null);
     setChecking(false);
     setTrouble('');
+    setHint(null);
     shownAt.current = performance.now();
     if (!inline) box.current?.focus();
   }, [question.id, inline]);
@@ -198,6 +207,13 @@ export function QuestionModal({
         setTrouble(error instanceof Error && error.message ? error.message : 'We couldn’t check that one. Try again.');
       },
     );
+  }
+
+  const canHint = !!onHint && question.answer !== undefined && !result;
+  function showHint() {
+    if (hint || !canHint) return;
+    setHint(hintFor({ answer: question.answer ?? 0, choices: question.choices, parts: question.parts }));
+    onHint?.();
   }
 
   const maxLength = question.maxLength ?? MAX_DIGITS;
@@ -280,6 +296,16 @@ export function QuestionModal({
         <p className="sr-only" aria-live="polite">
           {secondsLeft !== null && !result && (secondsLeft === 10 || secondsLeft === 5) ? `${secondsLeft} seconds left` : ''}
         </p>
+        {onHint && question.answer !== undefined && (
+          <div className="question__hint">
+            <button type="button" className="question__hintbtn" disabled={!!hint || !!result || checking} onClick={showHint}>
+              {hint ? 'Hint used' : 'Hint'}
+            </button>
+            <p className="question__hinttext" role="status">
+              {hint?.text}
+            </p>
+          </div>
+        )}
         <p className="question__feedback" role="status">
           {checking && 'Checking…'}
           {trouble && !checking && !result && trouble}
@@ -302,7 +328,7 @@ export function QuestionModal({
                 type="button"
                 className="question__choice"
                 aria-label={question.choiceLabels ? spokenLabel(question.choiceLabels[i]) : undefined}
-                disabled={!!result || checking}
+                disabled={!!result || checking || hint?.remove.includes(choice)}
                 data-answer={result && choice === (result.answer ?? question.answer) ? true : undefined}
                 onClick={() => submit(choice)}
               >
