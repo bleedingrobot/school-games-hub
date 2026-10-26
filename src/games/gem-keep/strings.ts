@@ -19,6 +19,7 @@ export const TEXT = {
   pause: 'Pause',
   resume: 'Keep going',
   speed: (n: number) => `${n}× speed`,
+  brighter: 'Brighter map',
   paused: 'Paused',
   pausedHint: 'You can still build and forge gems while the game is paused.',
   forge: 'Forge a gem',

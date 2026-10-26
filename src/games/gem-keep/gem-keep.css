@@ -727,3 +727,210 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Crystal Night ----------
+   Used when the level (or the campaign) has its painted night picture: night panels with gold edges
+   around the board. Only Gem Keep's own parts change. The maths question box keeps the hub's plain,
+   high-contrast look, so nothing gets in the way of the fact. */
+
+.gk-bright {
+  display: inline-grid;
+  place-items: center;
+  min-width: 46px;
+  min-height: 46px;
+  padding: 0;
+  font-size: 1.3rem;
+  border: 2px solid var(--gk-line);
+  border-radius: 14px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.gk-bright[aria-pressed='true'] {
+  border-color: var(--gk-gold);
+  background: var(--gk-gold);
+  color: #24123f;
+}
+
+.gk[data-night],
+.gk-campaign[data-night] {
+  --gk-surface: #1a1833;
+  --gk-tint: #24214a;
+  --gk-line: #3d3878;
+  --gk-night-ink: #ece9ff;
+  --gk-night-soft: #b7b0e0;
+  --gk-night-edge: rgba(255, 210, 63, 0.45);
+}
+
+.gk[data-night] .gk-title__name,
+.gk[data-night] .gk-map-button,
+.gk[data-night] .gk-hud,
+.gk[data-night] .gk-panel {
+  color: var(--gk-night-ink);
+  border: 1px solid var(--gk-night-edge);
+  box-shadow: 0 6px 18px rgba(8, 6, 30, 0.35);
+}
+.gk[data-night] .gk-hud,
+.gk[data-night] .gk-panel {
+  background: linear-gradient(180deg, #221f45, #17152e);
+}
+.gk[data-night] .gk-stat__label,
+.gk[data-night] .gk-wave-running,
+.gk[data-night] .gk-cost,
+.gk[data-night] .gk-stats,
+.gk[data-night] .gk-hint,
+.gk[data-night] .gk-forge__button small,
+.gk[data-night] .gk-gem-line small {
+  color: var(--gk-night-soft);
+}
+.gk[data-night] .gk-mana {
+  color: #c8b6ff;
+}
+.gk[data-night] .gk-bar {
+  background: #0e0c22;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.12);
+}
+.gk[data-night] .gk-well:disabled {
+  background: #2c2858;
+  box-shadow: 0 4px 0 #15132c;
+  color: var(--gk-night-soft);
+}
+.gk[data-night] .gk-speed__button,
+.gk[data-night] .gk-forge__button,
+.gk[data-night] .gk-toggle,
+.gk[data-night] .button:not(.button--primary):not(.button--play).gk-small {
+  color: var(--gk-night-ink);
+}
+.gk[data-night] .gk-speed__button[aria-pressed='true'],
+.gk[data-night] .gk-toggle[aria-checked='true'] {
+  border-color: var(--gk-gold);
+  background: var(--gk-gold);
+  color: #24123f;
+}
+.gk[data-night] .gk-forge__button:hover:not(:disabled) {
+  border-color: var(--gk-gold);
+}
+.gk[data-night] .gk-slot:has(svg) {
+  background: #0e0c22;
+}
+.gk[data-night] .gk-message {
+  color: #ffb4a8;
+}
+.gk[data-night] .gk-chosen {
+  background: #2a2552;
+  color: var(--gk-night-ink);
+}
+.gk[data-night] .gk-max {
+  color: #7ee2a8;
+}
+.gk[data-night] .gk-canvas {
+  background: #141a33;
+  box-shadow: 0 0 0 1px var(--gk-night-edge), 0 10px 30px rgba(8, 6, 30, 0.5);
+}
+
+/* Win and lose card. */
+.gk[data-night] .gk-end {
+  background: rgba(8, 6, 30, 0.55);
+}
+.gk[data-night] .gk-end__card {
+  background: linear-gradient(180deg, #26225a, #17152e);
+  color: var(--gk-night-ink);
+  border: 1px solid var(--gk-night-edge);
+  box-shadow: 0 0 40px rgba(140, 110, 255, 0.35), 0 20px 45px rgba(0, 0, 0, 0.4);
+}
+.gk[data-night] .gk-stars {
+  color: #3d3878;
+}
+.gk[data-night] .gk-stars [data-on] {
+  color: var(--gk-gold);
+  text-shadow: 0 0 14px rgba(255, 210, 63, 0.7);
+}
+.gk[data-night] .gk-key {
+  background: #2a2552;
+  color: var(--gk-night-ink);
+}
+.gk[data-night] .gk-key[data-passed] {
+  background: #173b2c;
+  color: #c6f6d9;
+}
+
+/* Campaign map: the painting with the ten stops on its trail. */
+.gk-campaign[data-night] .gk-campaign__head {
+  background: linear-gradient(135deg, #2a1f66, #10284a);
+  border: 1px solid var(--gk-night-edge);
+}
+.gk-campaign[data-night] .gk-campaign__note {
+  color: var(--gk-night-soft);
+}
+.gk-trail[data-painted] {
+  container-type: inline-size;
+  padding: 14px;
+  border-radius: 20px;
+  background: #141a33 var(--gk-map-small) center / cover no-repeat;
+}
+.gk-trail[data-painted] .gk-stop {
+  background: rgba(20, 18, 48, 0.86);
+  color: var(--gk-night-ink);
+  border: 1px solid var(--gk-night-edge);
+  box-shadow: 0 6px 16px rgba(5, 4, 20, 0.45);
+}
+.gk-trail[data-painted] .gk-stop:disabled {
+  background: rgba(20, 18, 48, 0.82);
+  color: var(--gk-night-soft);
+}
+.gk-trail[data-painted] .gk-stop[data-next] {
+  box-shadow: 0 0 0 3px var(--gk-gold), 0 0 24px rgba(255, 210, 63, 0.55);
+}
+.gk-trail[data-painted] .gk-stop__number {
+  background: radial-gradient(circle at 35% 30%, #b9a6ff, #5b3cc4 60%, #2a1866);
+  box-shadow: 0 0 14px rgba(185, 166, 255, 0.7);
+}
+.gk-trail[data-painted] .gk-stop:disabled .gk-stop__number {
+  background: #3d3878;
+  box-shadow: none;
+}
+.gk-trail[data-painted] .gk-stop__stars {
+  color: #3d3878;
+}
+.gk-trail[data-painted] .gk-stop__stars [data-on] {
+  color: var(--gk-gold);
+}
+
+/* Wide enough: the stops sit on the painting itself, at their places on the trail. */
+@media (min-width: 761px) {
+  .gk-trail[data-painted] {
+    display: block;
+    aspect-ratio: 16 / 9;
+    padding: 0;
+    background-image: var(--gk-map);
+  }
+  .gk-trail[data-painted] li {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: clamp(84px, 10cqw, 128px);
+    transform: translate(-50%, -50%);
+  }
+  .gk-trail[data-painted] .gk-stop {
+    padding: 8px 6px;
+    gap: 2px;
+    border-radius: 16px;
+  }
+  .gk-trail[data-painted] .gk-stop__number {
+    width: 40px;
+    height: 40px;
+    font-size: 1.15rem;
+  }
+  .gk-trail[data-painted] .gk-stop__name {
+    font-size: 0.85rem;
+  }
+  .gk-trail[data-painted] .gk-stop__tables,
+  .gk-trail[data-painted] .gk-stop__lock {
+    display: none;
+  }
+  .gk-trail[data-painted] .gk-stop__stars {
+    font-size: 0.95rem;
+  }
+}

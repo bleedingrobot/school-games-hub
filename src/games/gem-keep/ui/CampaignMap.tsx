@@ -4,6 +4,7 @@
  */
 import { CAMPAIGN } from '../../../../shared/gem-keep/levels';
 import { campaignTables } from '../../../../shared/maths/selector';
+import { CAMPAIGN_MARKERS, campaignUrl } from '../art';
 import { isUnlocked, totalStars, type CampaignProgress } from '../progress';
 import { TEXT } from '../strings';
 
@@ -25,8 +26,13 @@ export function CampaignMap({
   const open = CAMPAIGN.map((_, i) => isUnlocked(progress, IDS, i));
   // The furthest open level that hasn't been won yet glows.
   const next = open.lastIndexOf(true);
+  // The painted night map, when there is one: the stops sit on its trail (wide screens) or below it (phones).
+  const painting = campaignUrl(false);
+  const trailStyle = painting
+    ? ({ '--gk-map': `url(${painting})`, '--gk-map-small': `url(${campaignUrl(true)})` } as React.CSSProperties)
+    : undefined;
   return (
-    <section className="gk-campaign" aria-labelledby="gk-map-title">
+    <section className="gk-campaign" data-night={painting ? true : undefined} aria-labelledby="gk-map-title">
       <header className="gk-campaign__head">
         <div>
           <h1 id="gk-map-title">{TEXT.mapTitle}</h1>
@@ -39,12 +45,13 @@ export function CampaignMap({
           <span aria-hidden="true">🎯</span> {focusNote}. {TEXT.focusAllLevels}
         </p>
       )}
-      <ol className="gk-trail">
+      <ol className="gk-trail" data-painted={painting ? true : undefined} style={trailStyle}>
         {CAMPAIGN.map((level, i) => {
           const stars = progress[level.id]?.stars ?? 0;
           const tables = campaignTables(i + 1);
+          const [mx, my] = CAMPAIGN_MARKERS[i] ?? [0.5, 0.5];
           return (
-            <li key={level.id}>
+            <li key={level.id} style={painting ? ({ '--x': `${mx * 100}%`, '--y': `${my * 100}%` } as React.CSSProperties) : undefined}>
               <button
                 type="button"
                 className="gk-stop"
