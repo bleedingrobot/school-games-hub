@@ -354,7 +354,7 @@ Plan: `docs/prompts/maths-monsters-art.md`. Website PR #27, published by the run
 - **Still to do:** James tries it as the teacher on a phone and a laptop.
 - **Turning it off:** the Maths Monsters switch on the Teacher page, or revert the #27 merge and redeploy `monster` from main.
 
-## Daily battle limit: built 27 Oct 2026 (branch `monsters-battle-cap`; NOT live)
+## Daily battle limit: built 27 Oct 2026 (branch `monsters-battle-cap`, PR #37)
 
 James asked for **12 battles a day**. Live data from 17-27 Oct (211 battles, 27 students): a typical day was 3 battles, 1 day in 10 had about 10 or more, the most was 30. A wild battle is about 2-3 questions, a trainer about 6, and students fight roughly one battle every 2 minutes, so 12 is about 25 minutes and 40 questions.
 
@@ -365,3 +365,5 @@ James asked for **12 battles a day**. Live data from 17-27 Oct (211 battles, 27 
 - **Checked:** 5,022 tests pass (new: `battleCap.test.ts`, resting in `world.test.ts`, the page's resting note, the loader's count), typecheck, build. The migration was rehearsed on the live database inside a transaction that was rolled back (nothing kept): old saves filled in (143 counted battles in 82 saves); a student with 7 battles today sending 14 wild wins, a run-away and a Tower win had 14 counted, kept all 14 wins on the save, and was paid 4 points (5 wins under the limit = 1 point, plus 3 for the Tower) instead of 7.
 - **Not checked:** no pgTAP file (no local database on this computer); not played in a browser against a database with the migration.
 - **Going live:** 1) apply the migration; 2) merge to `main` (the website). Either order works: the old website ignores the new `battles` field, and the new website without the migration falls back to 12 counted on the device.
+
+**Migration LIVE 27 Oct 2026 (James said go):** applied to the live database in one transaction. Checked afterwards: the limit reads 12; old saves filled in (143 counted battles in 300 saves); `record_monster_save` and `my_monsters` carry the change; pupils can still load (`my_monsters`) and can't call the new functions or save directly; the server can save; `scored_games` untouched (1,292 rows). One student was already over 12 today (20). **The website is not live until PR #37 is merged.**
