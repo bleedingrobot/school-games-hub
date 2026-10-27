@@ -10,7 +10,8 @@ vi.mock('../lib/supabase', () => ({
   },
 }));
 
-import { enqueueSave, flushQueue, loadMonsters, queuedSaves, readTail, savingStopped, writeTail } from './monsters';
+import { nzDay } from '../../shared/monsters/world/battleCap';
+import { enqueueSave, flushQueue, loadMonsters, queuedSaves, readTail, savingStopped, writeBattleCount, writeTail } from './monsters';
 
 const fetchMock = vi.fn<typeof fetch>();
 let ME = '';
@@ -149,5 +150,22 @@ describe('opening the game', () => {
     rpc.mockResolvedValueOnce(server(1));
     await loadMonsters(ME);
     expect(queuedSaves(ME).map((i) => i.seq)).toEqual([2]);
+  });
+
+  it('counts today’s battles: the server’s, plus the unsaved ones on this device, never fewer than this device counted', async () => {
+    const today = nzDay(Date.now());
+    const fought = { map: 'kauri-bush', steps: [{ action: { kind: 'fight' }, q: { at: Date.now() }, randoms: [] }] };
+    writeTail(ME, { base: 3, world, battles: [fought, { ...fought, map: 'tower-1-top' }] as never });
+    rpc.mockResolvedValueOnce({ ...server(3), data: { ...server(3).data, battles: { today: 5, perDay: 12 } } });
+    expect((await loadMonsters(ME)).battles).toEqual({ day: today, today: 6, perDay: 12 });
+    // Before the database knows about the limit: the game's own number, and nothing counted on the server.
+    rpc.mockResolvedValueOnce(server(9));
+    expect((await loadMonsters(ME)).battles).toEqual({ day: today, today: 0, perDay: 12 });
+    writeBattleCount(ME, today, 10);
+    rpc.mockResolvedValueOnce(server(9));
+    expect((await loadMonsters(ME)).battles.today).toBe(10);
+    writeBattleCount(ME, '2000-01-01', 50);
+    rpc.mockRejectedValueOnce(new Error('offline'));
+    expect((await loadMonsters(ME)).battles).toEqual({ day: today, today: 0, perDay: 12 });
   });
 });

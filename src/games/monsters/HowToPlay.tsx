@@ -6,6 +6,7 @@
  */
 import { TOPICS } from '../../../shared/maths/skillPacks';
 import { AREAS } from '../../../shared/monsters/world/areas';
+import { BATTLES_PER_DAY } from '../../../shared/monsters/world/battleCap';
 import { REPEL_STEPS } from '../../../shared/monsters/world/rewards';
 import { MAX_TEAM } from '../../../shared/monsters/engine';
 import { TYPE_LABEL, TYPE_TOPIC, TYPES, strongAgainst } from '../../../shared/monsters/types';
@@ -41,6 +42,9 @@ export function HowToPlayBody() {
           <strong> Get it wrong</strong> and the attack is only a small hit, and the game shows you the right answer. There is no losing a turn for being slow.
         </p>
         <p>Enemy monsters hit back without asking you anything. If all your monsters get tired, you hurry back to your last healing spot and keep everything.</p>
+        <p>
+          Your monsters can have <strong>{BATTLES_PER_DAY} battles a day</strong>. After that they rest until tomorrow: no wild monsters and no trainers, but you can still explore and battle in the Towers. Running away before a question doesn’t count.
+        </p>
       </section>
 
       <section aria-labelledby="mht-catch">

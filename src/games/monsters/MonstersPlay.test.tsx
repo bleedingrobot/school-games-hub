@@ -15,10 +15,12 @@ const data = vi.hoisted(() => ({
 vi.mock('../../data/monsters', async (original) => ({ ...(await original<typeof import('../../data/monsters')>()), ...data }));
 vi.mock('../../auth/AuthContext', () => ({ useAuth: () => ({ profile: { id: 'ana' } }) }));
 
+import { nzDay } from '../../../shared/monsters/world/battleCap';
 import { MonstersPlay, WORDS } from './MonstersPlay';
 
 const opened = (over: Partial<MonstersData> = {}): MonstersData => ({
-  tail: null, settings: { enabled: true, topics: ALL_TOPICS }, facts: [], offline: false, ...over,
+  tail: null, settings: { enabled: true, topics: ALL_TOPICS }, facts: [], offline: false,
+  battles: { day: nzDay(Date.now()), today: 0, perDay: 12 }, ...over,
 });
 
 beforeEach(() => {
@@ -60,6 +62,22 @@ describe('Maths Monsters opening', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Start walking' }));
     expect(await screen.findByText(WORDS.stopped)).toBeInTheDocument();
     expect(WORDS.stopped).not.toMatch(/cheat|error|wrong|bad|fail/i);
+  });
+
+  it('says the monsters are resting once today’s battles are used up, and not before', async () => {
+    const { newWorld } = await import('../../../shared/monsters/world/world');
+    const { WORLD_MAPS } = await import('../../../shared/monsters/maps');
+    const { startTeam } = await import('../../../shared/monsters/world/start');
+    const world = newWorld({ maps: WORLD_MAPS }, startTeam(['leaf', 'ice']), 5);
+    data.loadMonsters.mockResolvedValue(opened({ tail: { base: 4, world, battles: [] }, battles: { day: nzDay(Date.now()), today: 11, perDay: 12 } }));
+    const { unmount } = render(<MonstersPlay />);
+    await screen.findByTestId('mw-stage');
+    expect(screen.queryByText(WORDS.resting(12))).not.toBeInTheDocument();
+    unmount();
+    data.loadMonsters.mockResolvedValue(opened({ tail: { base: 4, world, battles: [] }, battles: { day: nzDay(Date.now()), today: 12, perDay: 12 } }));
+    render(<MonstersPlay />);
+    expect(await screen.findByText(WORDS.resting(12))).toBeInTheDocument();
+    expect(WORDS.resting(12)).toMatch(/Towers/);
   });
 
   it('carries on from the saved game, without a new save until something happens', async () => {

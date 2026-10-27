@@ -38,6 +38,8 @@ export interface WorldGameProps {
   rawMaps?: Record<string, TiledMap>;
   /** The test page's "More battles" switch. */
   fast?: boolean;
+  /** Today's battle limit is reached: no wild battles and no trainers until tomorrow (Towers stay open). */
+  resting?: boolean;
   /** Change `nonce` to move the player: the test page's "Teleport to". */
   teleport?: { nonce: number; map: string; x: number; y: number; facing?: Dir };
   /** Change `nonce` to change the game state: the test page's "Give me all badges" and "Give me a full team and bag". */
@@ -73,7 +75,7 @@ const KEYS: Record<string, Dir> = {
 const TALK_KEYS = new Set([' ', 'Enter', 'e', 'E']);
 
 export function WorldGame({
-  initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, teleport, cheat, onBattling, onState, onBattle, onMoment, enabledTopics, random, packFor, timeScale = 1,
+  initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, resting = false, teleport, cheat, onBattling, onState, onBattle, onMoment, enabledTopics, random, packFor, timeScale = 1,
 }: WorldGameProps) {
   const [world, setWorld] = useState<WorldState>(initial);
   const [scene, setScene] = useState<Scene2>({ kind: 'walk' });
@@ -88,7 +90,7 @@ export function WorldGame({
   const scenes = useRef(new Map<string, Scene>());
   const fade = useRef({ at: -1e9 });
   const battleKey = useRef(0);
-  const opts = useMemo<WorldOptions>(() => ({ maps, fast }), [maps, fast]);
+  const opts = useMemo<WorldOptions>(() => ({ maps, fast, resting }), [maps, fast, resting]);
 
   // Always-current copies, so the controller's callbacks never use an old one.
   const { soundOn } = useSound();
