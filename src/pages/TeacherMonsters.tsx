@@ -163,7 +163,7 @@ function MonstersClassPanel() {
   return (
     <section className="panel gk-teacher" aria-labelledby="mm-class-title">
       <h2 id="mm-class-title" className="panel__title">
-        Maths Monsters: the class
+        Maths Monsters: the whole school
         {data && <span className="panel__count">{data.players} playing</span>}
       </h2>
       {failed ? (

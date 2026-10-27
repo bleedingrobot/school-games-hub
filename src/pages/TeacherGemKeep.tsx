@@ -44,7 +44,7 @@ export const MASTERY: Record<Mastery, { label: string; mark: string; about: stri
   fluent: { label: 'Fluent', mark: 'F', about: 'right and quick on two different days' },
 };
 
-/** The school-wide Gem Keep settings and the class view. */
+/** The class's Gem Keep settings, and the whole school's levels and hardest facts. */
 export function GemKeepTeacherPanels() {
   return (
     <>
@@ -86,7 +86,7 @@ function GemKeepSettingsPanel() {
       <h2 id="gk-settings-title" className="panel__title">
         Gem Keep settings
       </h2>
-      <p>For every student. The levels decide which times tables come up; here you can switch tables off.</p>
+      <p>For the class picked at the top. The levels decide which times tables come up; here you can switch tables off.</p>
       {settings && (
         <div className="gk-teacher__settings">
           <fieldset className="choice-group">
@@ -207,7 +207,7 @@ function GemKeepClassPanel() {
   return (
     <section className="panel gk-teacher" aria-labelledby="gk-class-title">
       <h2 id="gk-class-title" className="panel__title">
-        Gem Keep: the class
+        Gem Keep: the whole school
         {data && <span className="panel__count">{data.players} playing</span>}
       </h2>
       {failed ? (

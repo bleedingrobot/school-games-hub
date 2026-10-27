@@ -202,7 +202,7 @@ describe('the teacher’s views', () => {
 
   it('turns a failure into a friendly sentence', async () => {
     rpc.mockResolvedValue({ data: null, error: { code: 'XX000', message: 'boom' } });
-    await expect(fetchClassLord()).rejects.toThrow('We couldn’t load Dragon Maths for the class.');
+    await expect(fetchClassLord()).rejects.toThrow('We couldn’t load Dragon Maths for the school.');
     await expect(resetLordHero('kid-1')).rejects.toThrow('We couldn’t reset that hero.');
   });
 });

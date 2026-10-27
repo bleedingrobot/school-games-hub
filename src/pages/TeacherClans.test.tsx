@@ -25,7 +25,18 @@ const data = vi.hoisted(() => ({
 }));
 vi.mock('../data/clans', async (original) => ({ ...(await original<typeof import('../data/clans')>()), ...data }));
 
-import { ClansStudentPanel, ClansTeacherPanels } from './TeacherClans';
+import { AuthContext, type AuthState } from '../auth/AuthContext';
+import { ClansSeasonPanel, ClansStudentPanel, ClansTeacherPanels } from './TeacherClans';
+
+/** The fame season panel says whose fame it resets, so it needs to know who is signed in. */
+function renderSeason(schoolAdmin = false) {
+  const auth = { profile: { id: 't1', display_name: 'Wise Owl 1', avatar: {}, role: 'teacher', school_admin: schoolAdmin } } as unknown as AuthState;
+  return render(
+    <AuthContext.Provider value={auth}>
+      <ClansSeasonPanel />
+    </AuthContext.Provider>,
+  );
+}
 
 const info = (over = {}) => ({ name: 'Red Banner', day: 4, gold: 220, followers: 12, fightsLeft: 6, averageLevel: 3.5, inFight: false, lastPlayed: new Date().toISOString(), ...over });
 
@@ -224,8 +235,9 @@ describe('the Clan Quest maths settings on the teacher page', () => {
 describe('the Clan Quest fame season on the teacher page', () => {
   it('asks for NEW SEASON to be typed before it starts one, and says what stays', async () => {
     const user = userEvent.setup();
-    render(<ClansTeacherPanels />);
+    renderSeason();
     expect(await screen.findByText(/It is season 1/)).toBeInTheDocument();
+    expect(screen.getByText(/for the pupils in the classes you teach/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Start a new season…' }));
     const go = screen.getByRole('button', { name: 'Start season 2' });
     expect(go).toBeDisabled();
@@ -238,11 +250,22 @@ describe('the Clan Quest fame season on the teacher page', () => {
 
   it('can be cancelled without starting anything', async () => {
     const user = userEvent.setup();
-    render(<ClansTeacherPanels />);
+    renderSeason();
     await user.click(await screen.findByRole('button', { name: 'Start a new season…' }));
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(data.startClansNewSeason).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Start a new season…' })).toBeInTheDocument();
+  });
+
+  it('tells a school admin it resets every pupil at the school', async () => {
+    renderSeason(true);
+    expect(await screen.findByText(/for every pupil at the school/)).toBeInTheDocument();
+  });
+
+  it('is not one of the everyday Clan Quest panels any more', async () => {
+    render(<ClansTeacherPanels />);
+    expect(await screen.findByRole('heading', { name: 'Clan Quest maths' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Start a new season…' })).not.toBeInTheDocument();
   });
 });
 

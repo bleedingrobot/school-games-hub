@@ -236,7 +236,7 @@ export async function fetchStudentGemKeep(student: string): Promise<StudentGemKe
 
 export async function fetchClassGemKeep(): Promise<ClassGemKeep> {
   const { data, error } = await supabase.rpc('teacher_gem_keep_class');
-  if (error || !data) fail(error, 'We couldn’t load Gem Keep for the class.');
+  if (error || !data) fail(error, 'We couldn’t load Gem Keep for the school.');
   return data as ClassGemKeep;
 }
 

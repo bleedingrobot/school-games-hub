@@ -321,7 +321,7 @@ export async function saveMonstersSettings(settings: MonstersSettings, classId?:
 
 export async function fetchClassMonsters(): Promise<ClassMonsters> {
   const { data, error } = await supabase.rpc('teacher_monster_class');
-  if (error || !data) fail(error, 'We couldn’t load Maths Monsters for the class.');
+  if (error || !data) fail(error, 'We couldn’t load Maths Monsters for the school.');
   return data as ClassMonsters;
 }
 

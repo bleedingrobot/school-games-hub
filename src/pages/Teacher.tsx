@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
@@ -22,12 +22,14 @@ import {
 } from '../data/teacher';
 import { ALL_GAMES, gameLabel } from '../games/registry';
 import { TeacherClassPicker, TeacherClassProvider, useTeacherClass } from '../teacher/TeacherClass';
+import { WaitingToJoin } from '../teacher/WaitingToJoin';
 import { TrainingFirstSwitch } from '../training/TeacherTrainingFirst';
 import { trainingOn } from '../training/switch';
-import { BOT_LEVELS, type BotLevel } from '../games/types';
+import { BOT_LEVELS, type BotLevel, type GameDefinition } from '../games/types';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
 import { whenPlayed } from './Dashboard';
+import './teacher-page.css';
 
 // Each game's own teacher panels come from its GameDefinition (TeacherPanels, StudentPanel), loaded separately.
 // The warm-up reset brings the maths ladder with it, so it loads with the student's panel, not with the page.
@@ -88,90 +90,142 @@ function TeacherView({ me, isAdmin }: { me: string; isAdmin: boolean }) {
   return (
     <div className="teacher">
       <h1 className="page-title">Teacher view</h1>
-      <p className="teacher__classes-link">
-        <Link to="/classes">🏫 My classes: class codes, who is in each class, and students who don’t have a class yet</Link>
-      </p>
+      <nav className="teacher-tools" aria-label="Teacher tools">
+        <Link to="/classes" className="teacher-tools__link">
+          <span>
+            <span aria-hidden="true">🏫</span> My classes
+          </span>
+          <span className="teacher-tools__about">Class codes, who is in each class, groups</span>
+        </Link>
+        <Link to="/focus" className="teacher-tools__link">
+          <span>
+            <span aria-hidden="true">🎯</span> Maths focus
+          </span>
+          <span className="teacher-tools__about">What maths the games ask a class, group or student</span>
+        </Link>
+        <Link to="/skills" className="teacher-tools__link">
+          <span>
+            <span aria-hidden="true">🗺️</span> Skill map
+          </span>
+          <span className="teacher-tools__about">How each student is getting on across the maths ladder</span>
+        </Link>
+      </nav>
 
-      <p className="teacher__classes-link">
-        <Link to="/focus">🎯 Maths focus: choose what maths the games ask for a class, a group or some students</Link>
-      </p>
-
-      <p className="teacher__classes-link">
-        <Link to="/skills">🗺️ Skill map: how each student in a class is getting on across the maths ladder</Link>
-      </p>
+      <WaitingToJoin />
 
       <TeacherClassProvider>
         <TeacherClassPicker />
         <FriendGamesSwitch />
         <ReactionsSwitch />
-        <MathsSwitchPanel />
         {trainingOn() && <TrainingFirstSwitch />}
         <Suspense fallback={null}>
           <QuestionSkipsPanel />
-          {ALL_GAMES.map((game) => game.TeacherPanels && <game.TeacherPanels key={game.id} />)}
         </Suspense>
-      </TeacherClassProvider>
 
-      <section className="panel" aria-labelledby="people-title">
-        <h2 id="people-title" className="panel__title">
-          Players
-          {people && <span className="panel__count">{people.length}</span>}
-        </h2>
-        <label className="teacher__filter">
-          <span>Find a player</span>
-          <input type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Player name or real name" />
-        </label>
-        {failed ? (
-          <p className="panel__empty">{failed}</p>
-        ) : !people ? (
-          <p className="panel__empty">Loading…</p>
-        ) : shown.length === 0 ? (
-          <p className="panel__empty">No players match.</p>
-        ) : (
-          <ul className="people-list">
-            {shown.map((person) => (
-              <li key={person.id} className={person.hidden ? 'is-hidden' : undefined}>
-                <button
-                  type="button"
-                  className="people-list__row"
-                  aria-expanded={open === person.id}
-                  onClick={() => setOpen(open === person.id ? null : person.id)}
-                >
-                  <AvatarImage avatar={person.avatar} size={40} />
-                  <span className="people-list__name">
-                    {person.display_name}
-                    {person.id === me && <span className="tag">You</span>}
-                    {person.role === 'teacher' && <span className="tag tag--teacher">Teacher</span>}
-                    {person.hidden && <span className="tag tag--hidden">Hidden</span>}
-                    {person.real_name && <span className="people-list__real">{person.real_name}</span>}
-                  </span>
-                  <span className="people-list__games">
-                    {person.bot_games + person.friend_games} game{person.bot_games + person.friend_games === 1 ? '' : 's'}
-                  </span>
-                  <span className="people-list__when">
-                    {person.last_played ? `Last played ${whenPlayed(person.last_played).toLowerCase()}` : 'Not played yet'}
-                  </span>
-                </button>
-                {open === person.id && (
-                  <PersonPanel
-                    person={person}
-                    isMe={person.id === me}
-                    canChangeRoles={isAdmin}
-                    onChanged={() => void load()}
-                    onDeleted={() => {
-                      setOpen(null);
-                      void load();
-                    }}
-                  />
-                )}
-              </li>
-            ))}
-          </ul>
+        <h2 className="teacher__group-title">Game settings</h2>
+        <p className="teacher__group-note">For the class picked above. Open a game to see and change its settings.</p>
+        {ALL_GAMES.map((game) => {
+          const Panels = game.id === 'space' ? MathsSwitchPanel : game.TeacherPanels;
+          return (
+            Panels && (
+              <GameSection key={game.id} game={game}>
+                <Panels />
+              </GameSection>
+            )
+          );
+        })}
+
+        <section className="panel" aria-labelledby="people-title">
+          <h2 id="people-title" className="panel__title">
+            Players (whole school)
+            {people && <span className="panel__count">{people.length}</span>}
+          </h2>
+          <label className="teacher__filter">
+            <span>Find a player</span>
+            <input type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Player name or real name" />
+          </label>
+          {failed ? (
+            <p className="panel__empty">{failed}</p>
+          ) : !people ? (
+            <p className="panel__empty">Loading…</p>
+          ) : shown.length === 0 ? (
+            <p className="panel__empty">No players match.</p>
+          ) : (
+            <ul className="people-list">
+              {shown.map((person) => (
+                <li key={person.id} className={person.hidden ? 'is-hidden' : undefined}>
+                  <button
+                    type="button"
+                    className="people-list__row"
+                    aria-expanded={open === person.id}
+                    onClick={() => setOpen(open === person.id ? null : person.id)}
+                  >
+                    <AvatarImage avatar={person.avatar} size={40} />
+                    <span className="people-list__name">
+                      {person.display_name}
+                      {person.id === me && <span className="tag">You</span>}
+                      {person.role === 'teacher' && <span className="tag tag--teacher">Teacher</span>}
+                      {person.hidden && <span className="tag tag--hidden">Hidden</span>}
+                      {person.real_name && <span className="people-list__real">{person.real_name}</span>}
+                    </span>
+                    <span className="people-list__games">
+                      {person.bot_games + person.friend_games} game{person.bot_games + person.friend_games === 1 ? '' : 's'}
+                    </span>
+                    <span className="people-list__when">
+                      {person.last_played ? `Last played ${whenPlayed(person.last_played).toLowerCase()}` : 'Not played yet'}
+                    </span>
+                  </button>
+                  {open === person.id && (
+                    <PersonPanel
+                      person={person}
+                      isMe={person.id === me}
+                      canChangeRoles={isAdmin}
+                      onChanged={() => void load()}
+                      onDeleted={() => {
+                        setOpen(null);
+                        void load();
+                      }}
+                    />
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {(isAdmin || ALL_GAMES.some((game) => game.SeasonPanels)) && (
+          <>
+            <h2 className="teacher__group-title">Seasons and end of year</h2>
+            <p className="teacher__group-note">Resets that can’t be undone. Most are for the start of a new year.</p>
+            <Suspense fallback={null}>
+              {ALL_GAMES.map((game) => game.SeasonPanels && <game.SeasonPanels key={game.id} />)}
+            </Suspense>
+            {isAdmin && <NewSeason onDone={() => void load()} />}
+          </>
         )}
-      </section>
-
-      {isAdmin && <NewSeason onDone={() => void load()} />}
+      </TeacherClassProvider>
     </div>
+  );
+}
+
+/**
+ * One game's settings, folded away until the teacher opens it. The panels inside only mount (and ask the server for anything)
+ * once opened, so the page no longer loads every game's settings and class tables on arrival.
+ */
+function GameSection({ game, children }: { game: GameDefinition; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <details className="teacher-game" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary className="teacher-game__summary">
+        <game.Icon size={32} />
+        <span>{game.name}</span>
+      </summary>
+      {open && (
+        <div className="teacher-game__body">
+          <Suspense fallback={<p className="panel__empty">Loading…</p>}>{children}</Suspense>
+        </div>
+      )}
+    </details>
   );
 }
 
@@ -293,7 +347,7 @@ const MATHS_CHOICES: { value: MathsSwitch; label: string; detail: string }[] = [
 ];
 
 /**
- * Mission Control maths in Wormholes & Black Holes (docs/SPACE-MATHS-PLAN.md): school-wide.
+ * Mission Control maths in Wormholes & Black Holes (docs/SPACE-MATHS-PLAN.md), for the picked class.
  * The server checks this too, so nobody can start or save a maths game while it's off.
  */
 export function MathsSwitchPanel() {

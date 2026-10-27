@@ -312,7 +312,7 @@ function fail(error: { code?: string; message?: string } | null, text: string): 
 
 export async function fetchClassLord(): Promise<ClassLord> {
   const { data, error } = await supabase.rpc('teacher_lord_class');
-  if (error || !data) fail(error, 'We couldn’t load Dragon Maths for the class.');
+  if (error || !data) fail(error, 'We couldn’t load Dragon Maths for the school.');
   return data as ClassLord;
 }
 

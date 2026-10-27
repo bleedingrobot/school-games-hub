@@ -44,6 +44,8 @@ export interface GameDefinition {
   TeacherPanels?: ComponentType;
   /** The game's part of one student's panel on the Teacher page. Lazy too. */
   StudentPanel?: ComponentType<{ student: string }>;
+  /** Season resets for the "Seasons and end of year" part at the bottom of the Teacher page, away from the everyday switches. Lazy too. */
+  SeasonPanels?: ComponentType;
 }
 
 export type DashboardGroup = 'no-maths' | 'easy-maths' | 'complex-maths';

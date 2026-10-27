@@ -6,6 +6,7 @@ import { useClansEnabled } from './switch';
 const ClanPlay = lazy(() => import('./ClanPlay').then((m) => ({ default: m.ClanPlay })));
 const ClansTeacherPanels = lazy(() => import('../../pages/TeacherClans').then((m) => ({ default: m.ClansTeacherPanels })));
 const ClansStudentPanel = lazy(() => import('../../pages/TeacherClans').then((m) => ({ default: m.ClansStudentPanel })));
+const ClansSeasonPanel = lazy(() => import('../../pages/TeacherClans').then((m) => ({ default: m.ClansSeasonPanel })));
 
 function ClanIcon({ size = 64 }: { size?: number }) {
   return (
@@ -33,4 +34,5 @@ export const clanQuest: GameDefinition = {
   useTeacherSwitch: useClansEnabled,
   TeacherPanels: ClansTeacherPanels,
   StudentPanel: ClansStudentPanel,
+  SeasonPanels: ClansSeasonPanel,
 };

@@ -191,7 +191,7 @@ function LordClassPanel() {
   return (
     <section className="panel gk-teacher" aria-labelledby="dm-class-title">
       <h2 id="dm-class-title" className="panel__title">
-        Dragon Maths: the class
+        Dragon Maths: the whole school
         {data && <span className="panel__count">{data.thisSeason} playing this season</span>}
       </h2>
       {failed ? (

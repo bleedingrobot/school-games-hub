@@ -366,8 +366,10 @@ describe('teacher view', () => {
     expect(within(panel).queryByRole('button', { name: /Make teacher|Remove teacher/ })).not.toBeInTheDocument();
     expect(within(panel).getByRole('button', { name: /New name/ })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'End of year: start a new season' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /My classes: class codes/ })).toHaveAttribute('href', '/classes');
-    expect(screen.getByRole('link', { name: /Skill map: how each student/ })).toHaveAttribute('href', '/skills');
+    const tools = screen.getByRole('navigation', { name: 'Teacher tools' });
+    expect(within(tools).getByRole('link', { name: /^My classes/ })).toHaveAttribute('href', '/classes');
+    expect(within(tools).getByRole('link', { name: /^Maths focus/ })).toHaveAttribute('href', '/focus');
+    expect(within(tools).getByRole('link', { name: /^Skill map/ })).toHaveAttribute('href', '/skills');
   });
 
   it('can’t change their own role or delete a teacher', async () => {
@@ -425,10 +427,23 @@ describe('teacher view', () => {
     ).toBeInTheDocument();
   });
 
-  it('changes the Gem Keep settings for the whole school', async () => {
+  it('keeps each game folded away, asking the server nothing for it until it is opened', async () => {
+    const { fetchGemKeepSettings } = await import('../data/gemKeep');
+    const user = userEvent.setup();
+    renderAt('/teacher', teacher);
+    await screen.findByText('Gem Keep', { selector: 'summary span' });
+    expect(screen.queryByRole('region', { name: 'Gem Keep settings' })).not.toBeInTheDocument();
+    expect(fetchGemKeepSettings).not.toHaveBeenCalled();
+    await user.click(screen.getByText('Gem Keep', { selector: 'summary span' }));
+    expect(await screen.findByRole('region', { name: 'Gem Keep settings' })).toBeInTheDocument();
+    expect(fetchGemKeepSettings).toHaveBeenCalled();
+  });
+
+  it('changes the Gem Keep settings for the class', async () => {
     const { saveGemKeepSettings } = await import('../data/gemKeep');
     const user = userEvent.setup();
     renderAt('/teacher', teacher);
+    await user.click(await screen.findByText('Gem Keep', { selector: 'summary span' }));
     const section = await screen.findByRole('region', { name: 'Gem Keep settings' });
     await user.click(await within(section).findByRole('checkbox', { name: '×12' }));
     expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ enabledTables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }), null);
@@ -437,9 +452,11 @@ describe('teacher view', () => {
     expect(await within(section).findByText(/Saved/)).toBeInTheDocument();
   });
 
-  it('shows the class’s hardest facts', async () => {
+  it('shows the whole school’s hardest facts, saying it is the whole school', async () => {
+    const user = userEvent.setup();
     renderAt('/teacher', teacher);
-    const section = await screen.findByRole('region', { name: /Gem Keep: the class/ });
+    await user.click(await screen.findByText('Gem Keep', { selector: 'summary span' }));
+    const section = await screen.findByRole('region', { name: /^Gem Keep: the whole school/ });
     const hardest = await within(section).findByRole('table', { name: 'Hardest facts (most often wrong)' });
     expect(within(hardest).getByRole('rowheader', { name: '7 × 8' })).toBeInTheDocument();
     expect(within(hardest).getByText('55%')).toBeInTheDocument();

@@ -39,6 +39,7 @@ import {
   type PracticalTopic,
   type YearBand,
 } from "../../shared/maths/practical";
+import { useAuth } from "../auth/AuthContext";
 import { FriendlyError } from "../data/profile";
 import { useTeacherClass } from "../teacher/TeacherClass";
 import { whenPlayed } from "./Dashboard";
@@ -180,7 +181,6 @@ export function ClansTeacherPanels() {
       </section>
       <ClansMathsPanel />
       <ClansVillagePanel />
-      <ClansSeasonPanel />
     </>
   );
 }
@@ -264,7 +264,7 @@ export function ClansMathsPanel() {
         the answers count on the skill map, like the other maths games. The
         quests, the shop and the village have short story questions too: the
         settings below choose those. Wrong answers never stop anything. These
-        settings are for the whole school.
+        settings are for the class picked at the top.
       </p>
       <fieldset>
         <legend>Year band</legend>
@@ -392,8 +392,14 @@ export function ClansMathsPanel() {
   );
 }
 
-/** A new fame season: every clan's fame goes back to 0; clans, gold, levels and achievements stay. */
+/**
+ * A new fame season: every clan's fame goes back to 0; clans, gold, levels and achievements stay. It sits with the other
+ * seasons at the bottom of the teacher page (the game's SeasonPanels). The database only touches the pupils in the classes
+ * this teacher teaches, or every pupil at the school for a school admin.
+ */
 export function ClansSeasonPanel() {
+  const { profile } = useAuth();
+  const isAdmin = profile?.school_admin === true;
   const [season, setSeason] = useState<number | null>(null);
   const [asking, setAsking] = useState(false);
   const [typed, setTyped] = useState("");
@@ -432,8 +438,11 @@ export function ClansSeasonPanel() {
       </h2>
       <p>
         It is season {season}. Fame is what the scoreboard ranks clans by. A new
-        season sets every clan’s fame back to 0 and keeps everything else. (The
-        school-wide “new points season” on this page only clears Clan Quest’s
+        season sets fame back to 0 and keeps everything else, for{" "}
+        {isAdmin
+          ? "every pupil at the school."
+          : "the pupils in the classes you teach."}{" "}
+        (The school-wide “new points season” below only clears Clan Quest’s
         points, not fame.)
       </p>
       {asking ? (
@@ -522,14 +531,15 @@ export function ClansVillagePanel() {
       aria-labelledby="cq-village-title"
     >
       <h2 id="cq-village-title" className="panel__title">
-        Clan Quest villages
+        Clan Quest villages (whole school)
       </h2>
       <p>
         Each group of pupils builds a village together: they give gold to a
         shared chest and vote each week on a building (Training Hall, Smithy,
         Church) that helps the whole group. Pupils you have not put in a group
         are all together in “Everyone else”. Raids on classmates only happen
-        inside a group.
+        inside a group. The groups are for the whole school; the raids switch
+        is for the class picked at the top.
       </p>
       {raids !== null && (
         <p>
