@@ -479,6 +479,18 @@ changed.*
 - *The maths hook is in `src/games/marble/teacher.ts`. `src/pages/TeacherMarble.tsx` now holds only
   `MarbleTeacherSettings`. Its tests keep the old checks, now for a named class, plus one for the note shown with maths off.*
 
+*Archery Challenge moved 28 Oct 2026 on `teacher-games-archery` (from `teacher-games-load-failed`). No database change;
+nothing it saves changed.*
+- *Its row has the on/off switch (the game's description behind its "?"). As in the 4.5 sketch, the Maths column sums up
+  classmate fights ("Classmate fights on"), because its maths, the speed rounds, is always there and has no switch. The
+  first game to use `useSummary`. It says "Couldn't load" if the setting can't be read.*
+- *Its Settings: classmate fights as a switch (the old description behind its "?"), the note that it only matters while the
+  game is on, the points, and This week (counts only, for the class, as before). Both red buttons are gone.*
+- *The points stay in the Settings rather than behind the row's "?", because they need the speed-round rules
+  (`shared/archery/speed.ts`), which would pull the maths-question code onto the dashboard.*
+- *The hooks are in `src/games/archery/teacher.ts`. `src/pages/TeacherArchery.tsx` now holds only `ArcherySettings`. Its
+  tests keep the old checks, now for a named class, plus the summary line and the note being hidden while the game is on.*
+
 **Stage 4: Students roster and student page,** with `teacher_class_overview` and class-scoped `teacher_students`.
 
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.
