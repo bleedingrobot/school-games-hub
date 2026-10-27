@@ -98,6 +98,8 @@ export interface Context {
   self?: string;
   /** The teacher's switch for raids on classmates. Off unless it is given. */
   raidsOn?: boolean;
+  /** The teacher's switch for made-up hero names. Off unless it is given: names come from the list. */
+  typedNames?: boolean;
   /** The other clans in the village, for the list of who can be raided. */
   mates?: Sketch[];
   /** The clan a raid on a classmate is aimed at, loaded by the server (null if it is not in this village). */
@@ -350,7 +352,7 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
 
   if (action.type === 'create') {
     if (saved) return refuse('exists', 'You already have a clan.');
-    const made = clanFromChoices(ctx.seed, action.name, action.drafts);
+    const made = clanFromChoices(ctx.seed, action.name, action.drafts, ctx.typedNames === true);
     if (!made.ok) return refuse('create', made.say);
     const state: ServerState = { clan: made.clan, seed: ctx.seed, day: 1, createdNzDay: ctx.today, fightsLeft: ctx.fightsPerDay ?? CONFIG.fightsPerDay, fightNo: 0, raidNo: 0, examined: [] };
     return done(state, { type: 'create' });

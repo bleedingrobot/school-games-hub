@@ -44,6 +44,8 @@ export interface ClanInfo {
   averageLevel: number;
   inFight: boolean;
   lastPlayed: string;
+  /** The heroes' names, so a teacher can see any made-up ones (missing from an older database). */
+  heroes?: string[];
 }
 
 export async function fetchClanInfo(student: string): Promise<ClanInfo | null> {
@@ -74,6 +76,31 @@ export async function saveClanRaidsEnabled(enabled: boolean, classId?: string | 
   const { data, error } = await supabase.rpc('teacher_set_clan_raids', { enabled, target_class: classId ?? null });
   forgetSettings();
   if (error || typeof data !== 'boolean') throw new FriendlyError('We couldn’t save the raids setting.');
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Made-up hero names (27 Oct 2026)
+// ---------------------------------------------------------------------------
+
+/** May pupils make up their heroes' names? Off until a teacher turns it on: names come from the list. */
+export async function fetchClanTypedNames(classId?: string | null): Promise<boolean> {
+  const data = await readSettings(['clan_typed_names'], classId);
+  if (!data) throw new FriendlyError('We couldn’t load the hero names setting.');
+  return data.clan_typed_names === true;
+}
+
+export async function saveClanTypedNames(enabled: boolean, classId?: string | null): Promise<boolean> {
+  const { data, error } = await supabase.rpc('teacher_set_clan_typed_names', { enabled, target_class: classId ?? null });
+  forgetSettings();
+  if (error || typeof data !== 'boolean') throw new FriendlyError('We couldn’t save the hero names setting.');
+  return data;
+}
+
+/** Swaps a pupil's made-up hero names for names from the list. Gives how many were changed. */
+export async function listHeroNames(student: string): Promise<number> {
+  const { data, error } = await supabase.rpc('teacher_list_hero_names', { student });
+  if (error || typeof data !== 'number') throw new FriendlyError('We couldn’t change those names.');
   return data;
 }
 

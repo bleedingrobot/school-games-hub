@@ -293,3 +293,53 @@ describe('clan banners (Clans art Stage A.8)', () => {
     expect(mine.querySelector('img.cq-rowbanner')?.getAttribute('src')).toContain(`/banners/${noun}`);
   });
 });
+
+describe('made-up hero names', () => {
+  it('only offers them when the teacher has switched them on', () => {
+    render(<ClanQuest seed={SEED} />);
+    expect(screen.queryByRole('button', { name: 'Make up my own name' })).toBeNull();
+  });
+
+  it('keeps the list as the default, takes a typed name, and holds back a rude or repeated one', async () => {
+    const u = user();
+    render(<ClanQuest seed={SEED} typedNames />);
+    const start = screen.getByRole('button', { name: 'Start the adventure' });
+    expect(screen.getAllByRole('combobox', { name: 'Name' })).toHaveLength(4);
+    await u.click(screen.getAllByRole('button', { name: 'Make up my own name' })[0]);
+    const box = screen.getByRole('textbox', { name: 'Name' });
+    expect(start).toBeDisabled();
+    await u.type(box, 'poop');
+    expect(screen.getByText('Please pick a kinder name.')).toBeInTheDocument();
+    expect(start).toBeDisabled();
+    await u.clear(box);
+    await u.type(box, startingDrafts(SEED)[1].name.toLowerCase());
+    expect(screen.getByText('Another member has this name.')).toBeInTheDocument();
+    await u.clear(box);
+    await u.type(box, 'te ahi');
+    expect(start).toBeEnabled();
+    await u.click(start);
+    expect(await screen.findByText(/Te Ahi/)).toBeInTheDocument();
+  });
+
+  it("keeps the member's look while a name is typed", async () => {
+    const u = user();
+    render(<ClanQuest seed={SEED} typedNames />);
+    const looks = () => screen.getAllByRole('group', { name: 'Look' })[1];
+    const shown = () => within(looks()).getAllByRole('button').find((b) => b.getAttribute('aria-pressed') === 'true')!.getAttribute('aria-label');
+    const before = shown();
+    await u.click(screen.getAllByRole('button', { name: 'Make up my own name' })[1]);
+    for (const letter of 'kaia') {
+      await u.type(screen.getByRole('textbox', { name: 'Name' }), letter);
+      expect(shown()).toBe(before);
+    }
+  });
+
+  it('can go back to the list', async () => {
+    const u = user();
+    render(<ClanQuest seed={SEED} typedNames />);
+    await u.click(screen.getAllByRole('button', { name: 'Make up my own name' })[2]);
+    await u.click(screen.getByRole('button', { name: 'Pick from the list instead' }));
+    expect(screen.getAllByRole('combobox', { name: 'Name' })).toHaveLength(4);
+    expect(screen.getByRole('button', { name: 'Start the adventure' })).toBeEnabled();
+  });
+});

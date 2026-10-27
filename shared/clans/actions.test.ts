@@ -117,6 +117,32 @@ describe('making a clan', () => {
     expect(out.ok).toBe(false);
   });
 
+  it('refuses made-up names while the teacher switch is off, and takes checked ones (tidied) when it is on', () => {
+    const typed = startingDrafts(SEED).map((d, i) => (i === 0 ? { ...d, name: '  te ahi ' } : d));
+    expect(applyAction(null, { type: 'create', ...choices(), drafts: typed } as Action, ctx()).ok).toBe(false);
+    const out = applyAction(null, { type: 'create', ...choices(), drafts: typed } as Action, ctx({ typedNames: true }));
+    expect(out.ok && out.state!.clan.members[0].name).toBe('Te Ahi');
+    // Every member is saved with its look, so it stays the same if a teacher later swaps the name for a list name.
+    expect(out.ok && out.state!.clan.members[0].look).toBeDefined();
+  });
+
+  it.each([
+    ['a rude made-up name', 'Fuuuck'],
+    ['numbers in a name', 'Bob99'],
+    ['a name that is too long', 'Abcdefghijklm'],
+    ['a name that is too short', 'A'],
+  ])('refuses %s even with the switch on', (_why, name) => {
+    const drafts = startingDrafts(SEED).map((d, i) => (i === 0 ? { ...d, name } : d));
+    expect(applyAction(null, { type: 'create', ...choices(), drafts } as Action, ctx({ typedNames: true })).ok).toBe(false);
+  });
+
+  it('refuses two members with the same name, whatever the capitals', () => {
+    const first = startingDrafts(SEED)[0].name;
+    const drafts = startingDrafts(SEED).map((d, i) => (i === 1 ? { ...d, name: first.toUpperCase() } : d));
+    const out = applyAction(null, { type: 'create', ...choices(), drafts } as Action, ctx({ typedNames: true }));
+    expect(out.ok).toBe(false);
+  });
+
   it('refuses a second clan', () => {
     expect(refused(created(), { type: 'create', ...choices() }).why).toBe('exists');
   });

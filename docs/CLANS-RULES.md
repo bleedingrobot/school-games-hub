@@ -136,7 +136,7 @@ Armour runs Rags (+1 armour, 50) to Hero's Armor (+4, 2250); shields run Wooden 
 2. **No ruler, no taxes, no overthrow.** Replaced by the class Village Chest and votes. The "sales tax" in the market becomes a **fixed village tax** that the class can lower by building (so tax percentages still appear in maths questions).
 3. **Positive fame only.**
 4. **Demon race → Imp**, grim monsters and items renamed, no gore text.
-5. **No free text:** names and clan names come from word lists.
+5. **No free text:** names and clan names come from word lists. *Since 27 Oct 2026:* a teacher can switch on made-up hero names for their class (letters only, up to 12, rude words refused, seen only by the pupil and their teachers). Clan names always come from the lists.
 6. **Raids on classmates stay in**, with the guard rails in plan section 8.
 7. **Prices ÷10, levels 20 not 100, stats 0-60.**
 8. **Fights are 3-8 rounds, not up to 50.**

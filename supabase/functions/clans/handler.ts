@@ -70,7 +70,7 @@ export interface RaidSave {
 
 /** What the database says besides the clan, on every request (clan_extras): the teacher's settings, this clan's fame and its achievements. */
 export interface Extras {
-  settings: { enabledTopics: unknown; yearBand: unknown; enabledTables: unknown; fightsPerDay: number; season: number };
+  settings: { enabledTopics: unknown; yearBand: unknown; enabledTables: unknown; fightsPerDay: number; season: number; typedNames?: unknown };
   fame: number;
   /** The ids of the achievements earned so far. */
   achievements: string[];
@@ -167,6 +167,8 @@ export function makeHandler(services: Services) {
     // The teacher's settings, read fresh for this request. A fight that is already open keeps the ones it started with.
     const settings = readPracticalSettings(extras.value.settings);
     const fightsPerDay = Number.isInteger(extras.value.settings.fightsPerDay) ? extras.value.settings.fightsPerDay : CONFIG.fightsPerDay;
+    // Made-up hero names only when the teacher has switched them on (an older database without the switch means off).
+    const typedNames = extras.value.settings.typedNames === true;
     // Only a ladder fight's start needs the child's maths. If it can't be read the fight is an old-style one (the rules decide).
     const maths = action.type === 'fightStart' && action.ladder ? await services.mathsContext(player) : undefined;
 
@@ -183,7 +185,7 @@ export function makeHandler(services: Services) {
       if (replay) return reply(200, { ok: true, replayed: true, seed, state: state && shown(state), result: replay });
 
       const village = loaded.value.village ?? null;
-      const ctx = { seed, today, settings, maths, fightsPerDay, village, self: loaded.value.self ?? undefined, raidsOn: loaded.value.raidsOn ?? false };
+      const ctx = { seed, today, settings, maths, fightsPerDay, village, self: loaded.value.self ?? undefined, raidsOn: loaded.value.raidsOn ?? false, typedNames };
       let target: LoadedTarget = null;
       if (state && action.type === 'raidTargets') {
         const mates = await services.mates(player);
