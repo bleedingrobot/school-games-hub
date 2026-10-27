@@ -368,6 +368,8 @@ James asked for **12 battles a day**. Live data from 17-27 Oct (211 battles, 27 
 
 **Migration LIVE 27 Oct 2026 (James said go):** applied to the live database in one transaction. Checked afterwards: the limit reads 12; old saves filled in (143 counted battles in 300 saves); `record_monster_save` and `my_monsters` carry the change; pupils can still load (`my_monsters`) and can't call the new functions or save directly; the server can save; `scored_games` untouched (1,292 rows). One student was already over 12 today (20). **The website is not live until PR #37 is merged.**
 
-## Battles left on the dashboard card: built 27 Oct 2026 (branch `monsters-moves-left`; NOT live)
+## Battles left on the dashboard card: built 27 Oct 2026 (PR #39; LIVE 27 Oct 2026)
 
 The Maths Monsters card shows "Left today ⚔️ 8 of 12 battles", like Clan Quest's mine fights. Migration `20261027000300_monsters_moves_left.sql` re-creates `my_moves_left()` (only its own migration had made it) with a `monsters` field, `{ today, perDay }`, from `monster_battles_today()` and `monster_battle_rules()`; `my_home_page()` already calls it. A pupil with no save gets no line. The card counts saved battles only, so it can lag the game by the battles not yet saved. `movesFromRaw` in `src/data/movesLeft.ts` makes the chip (never below 0). **Going live:** apply the migration, then merge; either order is safe (the old site ignores the field, the new site shows no line without it).
+
+**LIVE 27 Oct 2026 (James said go):** the migration was applied to the live database in one transaction; the live `my_moves_left()` had matched the repo's copy beforehand. Checked afterwards: it carries `monsters`, anon can't call it, signed-in users can; as a real pupil (rolled back) it returned `{ today: 7, perDay: 12 }` with `lord` and `clans` still there, and `my_home_page()` passes it through; `scored_games` untouched (1,292 rows). PR #39 merged the same day.
