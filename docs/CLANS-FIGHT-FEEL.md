@@ -1,0 +1,93 @@
+# Clan Quest: making fights feel better (plan, 27 October 2026)
+
+*A session builds it a stage at a time, on branch `clans-fight-feel`, and merges only on James's word.*
+
+**James decided (27 Oct 2026):**
+- After a round plays out, it **waits for Enter**. The point is that children **see clearly what happened**, so they feel part of the fight.
+- About **3 seconds** of playback per round (Enter or a tap skips).
+- **"BIG HIT!"** at **30%** of the target's full HP.
+- **Sound later**, off by default.
+- **Art: a mix.** Bigger effects (spell bursts, a victory banner, the "Beaten!" stamp) are painted in ComfyUI on James's PC in the game's painted style (process in `docs/CLANS-ART-PLAN.md`, "If a picture needs remaking"); small things (numbers, shakes, glows) are CSS.
+
+## What happens now
+
+A round plays **all at once**. When you press Enter on the plan, `playRound` in `shared/clans/fight.ts` runs every hit, miss, spell and knock-out in one go. The fight log fills with eight or so lines, the HP bars jump (a quarter-second slide), and **straight away** the next Battle Cry question appears. In a ladder fight it's a box that covers the screen. So:
+
+- you never *see* a hit land: it's a line of text in a scrolling log;
+- a big hit and a tiny one look the same;
+- a monster being beaten is just its picture going grey;
+- the question arrives before you've taken in what happened.
+
+The good news: the engine already records everything we need, in order, in `fight.log` (who hit whom, for how much, spells, knock-outs, the Battle Cry). The screen can **replay that list** with effects. That's display only: the rules, the server and the maths don't change, so it can't make fights easier or harder.
+
+## Suggestions
+
+### 1. Play the round out, one action at a time (the big one)
+
+After Enter, the screen steps through the round's log, about **a third of a second per action**:
+
+- the attacker steps forward (a small nudge towards the other side);
+- the target **flashes and shakes**, and a **damage number floats up** above it ("-7");
+- its HP bar drains;
+- the matching log line lights up as it happens.
+
+A round of 8 actions takes about **3 seconds**. **Press Enter or tap to skip** to the end, so impatient players lose nothing. A whole round is capped at about 4 seconds however much happens.
+
+### 2. A breath before the question
+
+When the round has played out, show a one-line **round summary** in the panel for a moment:
+
+> **Round 2:** you did 34 damage and took 9. **Goblin A is beaten!**
+
+Then the Battle Cry question appears **in the panel**, with the fighters still visible above it. In ladder fights the question box opens only *after* the playback, never on top of it.
+
+**Decided:** it waits for Enter ("Next round").
+
+### 3. Make big moments big
+
+Every effect is driven by numbers the engine already has:
+
+| Moment | How we spot it | What you see |
+|---|---|---|
+| **Big hit** | damage is 30% or more of the target's full HP | bigger, gold number with "BIG HIT!", a stronger shake, a tiny screen bump |
+| **Knock-out blow** | the target drops to 0 | the monster topples and fades; a "Beaten!" stamp; the gold it drops pops up |
+| **Battle Cry** | the round's `cry` event | the whole clan glows; damage numbers have a little flame for that round; healing shows green "+N" on everyone |
+| **Spells** | `cast` events, by spell kind | a coloured burst: orange for fire, blue-white for lightning, green sparkles for heals, a rope for Ropes and Magic Chains |
+| **Miss** | `miss` event | a grey "miss!" and the target leans aside |
+| **Close call** | a clan member left under 20% HP | their card pulses red for a moment |
+| **Clan member knocked out** | `down` on our side | they sit down gently ("resting"): soft, not scary |
+| **Win** | `result = 'won'` | a short victory flourish over the arena before "See how everyone did" |
+
+Keep it gentle and short. No blood or gore (the game's rule); stars, sparkles and bonks.
+
+### 4. Numbers you can follow
+
+- Floating numbers in **colours with words or signs**, never colour alone: "-12" for damage, "+8" for healing, "miss!".
+- The HP bar shows a pale "ghost" of what was just lost before it drains, so you can see how big the chunk was.
+- A **"Your best hit today"** line on the fight-over screen, which children love to beat. It's display only: work it out from the fight's log.
+
+### 5. Sound (later, optional)
+
+A soft bonk, a whoosh for spells and a chime for a win, **off by default**. Classrooms! A speaker button on the fight screen would turn it on. Only worth doing if James wants it.
+
+## Must-haves for every stage
+
+- **Reduced motion:** with `prefers-reduced-motion` on, nothing moves or shakes. The numbers still appear and the log line still lights up, and the round summary still shows.
+- **Screen readers:** the log stays the polite live region. The summary line is read out, and the floating numbers are hidden from screen readers (the log already says it).
+- **Keyboard:** Enter/tap skips playback; focus moves to the question or plan exactly as now.
+- **Slow Chromebooks:** CSS animations only (transform and opacity), no canvas. Check it stays smooth at 1366 x 640 with the CPU slowed.
+- **Nothing changes in the rules or on the server.** The orders and Battle Cry answers sent are exactly the same; tests check this.
+- Fights must not feel *slower* overall: skipping playback is always one key.
+
+## Suggested stages
+
+1. **Stage 1: pacing.** Round playback (suggestion 1, with floating numbers and shake for every hit), the round summary, and the question waiting until playback ends (suggestion 2). This is the biggest change in how a fight feels.
+2. **Stage 2: big moments.** Big hits, knock-out topple and "Beaten!", Battle Cry glow, spell bursts, close calls, the win flourish (suggestion 3).
+3. **Stage 3: polish.** Ghost HP chunk, best hit of the day, any tuning from what James and the class say (suggestion 4).
+4. **Maybe later:** sound (suggestion 5).
+
+Each stage: build on its own branch, try it in the Clans preview, share a test page with James, and merge only on his word.
+
+## Questions for James
+
+All answered (see the top).
