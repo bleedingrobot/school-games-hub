@@ -25,6 +25,7 @@
 .cq-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .cq-btn--hot { border-color: var(--cq-yellow); color: var(--cq-yellow); }
 .cq-btn small { color: var(--cq-soft); }
+.cq-btn .cq-btn__help { display: block; font-size: 0.85em; margin-top: 2px; }
 .cq-link { font: inherit; color: var(--cq-cyan); background: none; border: 0; padding: 6px 0; min-height: 44px; text-decoration: underline; cursor: pointer; }
 .cq :is(.cq-btn, .cq-link, input, select, .cq-panel):focus-visible { outline: 3px solid var(--cq-yellow); outline-offset: 2px; }
 .cq :is(input, select) { font: inherit; color: var(--cq-ink); background: var(--cq-bg); border: 2px solid var(--cq-line); border-radius: 4px; padding: 4px 6px; min-height: 44px; }
@@ -52,6 +53,8 @@
 .cq-headline dt, .cq-stats dt { color: var(--cq-soft); }
 .cq-headline dd, .cq-stats dd { margin: 0; }
 .cq-more { display: grid; gap: 4px; }
+.cq-spells { margin: 0; padding-left: 1.2em; font-size: 0.9rem; }
+.cq-spells li { margin: 0 0 2px; }
 .cq-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; margin: 0; }
 .cq-pickers { display: grid; gap: 4px; }
 .cq-pickers label { display: grid; grid-template-columns: 4.5em 1fr; align-items: center; gap: 6px; }

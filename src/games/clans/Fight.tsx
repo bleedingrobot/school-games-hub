@@ -16,6 +16,7 @@ import type { PracticalQuestion } from '../../../shared/maths/practical';
 import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import { PracticalAsk, Working } from '../../maths/PracticalAsk';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
+import { ACTION_HELP, spellHelp } from './abilities';
 import { Bar } from './Bars';
 import { castable, choosingOrder, defaultOrder, describe, fightsLabel, isAlive, labelDuplicates } from './fightView';
 import { MonsterSprite, Portrait } from './Sprite';
@@ -195,6 +196,9 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     else choose({ action: 'attack', target: index });
   };
   const spells = who ? castable(who) : [];
+  const knowsSpells = !!who && who.spells.some((id) => SPELLS[id] && !SPELLS[id].notYet);
+  const spellNote = spells.length ? ACTION_HELP.spell : knowsSpells ? 'Not enough SP right now.' : 'Knows no spells.';
+  const help = (text: string) => <small className="cq-btn__help">{text}</small>;
   const targets = spell !== null && SPELLS[spell].friendly ? fight.clan.filter(isAlive) : alive;
 
   function keys(event: React.KeyboardEvent) {
@@ -305,18 +309,23 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
                 <div className="cq-actions">
                   <button type="button" className="cq-btn" onClick={pickAttack}>
                     <kbd>A</kbd> Attack
+                    {help(ACTION_HELP.attack)}
                   </button>
                   <button type="button" className="cq-btn" disabled={!spells.length} onClick={() => setMode('spell')}>
                     <kbd>S</kbd> Spell
+                    {help(spellNote)}
                   </button>
                   <button type="button" className="cq-btn" onClick={() => choose({ action: 'guard' })}>
                     <kbd>G</kbd> Guard
+                    {help(ACTION_HELP.guard)}
                   </button>
                   <button type="button" className="cq-btn" onClick={() => choose({ action: 'run' })}>
                     <kbd>R</kbd> Run
+                    {help(ACTION_HELP.run)}
                   </button>
                   <button type="button" className="cq-btn cq-btn--hot" onClick={() => choose(defaultOrder(fight))}>
                     <kbd>Enter</kbd> Default action
+                    {help(ACTION_HELP.default)}
                   </button>
                 </div>
               )}
@@ -325,6 +334,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
                   {spells.map((s, i) => (
                     <button type="button" key={s.id} className="cq-btn" onClick={() => { setSpell(s.id); setMode('target'); }}>
                       <kbd>{i + 1}</kbd> {s.name} <small>({s.sp} SP)</small>
+                      {help(spellHelp(s, { level: who.level, wisdom: who.stats.wisdom }))}
                     </button>
                   ))}
                   <button type="button" className="cq-btn" onClick={() => setMode('action')}>
