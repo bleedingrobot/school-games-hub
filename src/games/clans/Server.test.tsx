@@ -190,9 +190,9 @@ describe('Clan Quest with a server', () => {
   });
 
   describe('mine fights', () => {
-    const dflt = () => screen.queryAllByRole('button', { name: /Default action/ })[0];
+    const dflt = () => screen.queryAllByRole('button', { name: /Fight with this plan/ })[0];
 
-    /** Click through one or more rounds with the default orders. */
+    /** Click through one or more rounds with the suggested plan. */
     async function playRounds(u: ReturnType<typeof user>, box: { sent: Action[] }, count: number) {
       const rounds = () => box.sent.filter((a) => a.type === 'fightRound').length;
       const target = rounds() + count;

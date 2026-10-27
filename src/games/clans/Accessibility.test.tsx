@@ -93,10 +93,12 @@ describe('keyboard and screen readers', () => {
     expect(log).toHaveAttribute('aria-live', 'polite');
     await u.click(screen.getByRole('button', { name: 'No thanks' }));
     await u.keyboard('{Enter}'); // "Carry on" has focus
-    const orders = await screen.findByRole('group', { name: /^Orders for / });
-    expect(orders).toHaveFocus();
-    await u.keyboard('a'); // attack with the first member
-    expect(screen.getAllByRole('group', { name: /^Orders for / }).length).toBe(1);
+    const plan = await screen.findByRole('group', { name: 'The plan for this round' });
+    expect(plan).toHaveFocus();
+    await u.keyboard('1'); // change the first member's order
+    expect(screen.getByRole('group', { name: /^Orders for / })).toHaveFocus();
+    await u.keyboard('{Escape}'); // keep the plan
+    expect(screen.getByRole('group', { name: 'The plan for this round' })).toHaveFocus();
     // Every bar says what it is in words, never by colour alone.
     for (const bar of screen.getAllByRole('img', { name: /^HP \d+ of \d+$/ })) expect(bar).toBeInTheDocument();
   });

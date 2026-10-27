@@ -32,7 +32,8 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         </section>
         <section aria-labelledby="htp-keys">
           <h3 id="htp-keys">Using the keyboard</h3>
-          <p>In a fight you can press <kbd>A</kbd> to attack, <kbd>S</kbd> for a spell, <kbd>G</kbd> to guard and <kbd>R</kbd> to run. <kbd>Enter</kbd> does the default action. <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd> pick from a list. <kbd>Esc</kbd> goes back.</p>
+          <p>Each round your clan gets a plan: what every hero will do. Press <kbd>Enter</kbd> to fight with it, or <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd> to change one hero's order first.</p>
+          <p>Changing an order: <kbd>A</kbd> to attack, <kbd>S</kbd> for a spell, <kbd>G</kbd> to guard and <kbd>R</kbd> to run. <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd> pick from a list. <kbd>Esc</kbd> goes back to the plan.</p>
         </section>
         <section aria-labelledby="htp-shop">
           <h3 id="htp-shop">The Market</h3>
