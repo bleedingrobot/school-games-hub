@@ -431,8 +431,9 @@ in parallel), class-scoped class reports, then remove `TeacherPanels`.
    from the shared controls in `src/teacher/Settings.tsx`. Don't repeat the switches already in the row. A longer
    description goes behind an `about` "?" rather than in a paragraph.*
 5. *Move `StudentPanel` under `teacher` (lazy), and add `studentSummary(student)` if there is a one-line summary.*
-6. *Delete `useTeacherSwitch`, `TeacherPanels` and the top-level `StudentPanel` from the definition, and the old panel
-   code they used. Once `teacher` is set the table ignores them.*
+6. *Delete `TeacherPanels` and the top-level `StudentPanel` from the definition, and the old panel code they used. Once
+   `teacher` is set the table ignores them. Keep `useTeacherSwitch`: it isn't for the teacher page, it's how the pupils'
+   dashboard hides the game's card while the class has it off.*
 7. *Tests: keep the old panel tests' checks on what each control saves, pointed at the new component. Update
    `registry.test.ts` if it lists the game's teacher parts. Add a row check in `src/teacher/Games.test.tsx` (the row shows
    the switch or maths choice and saves it for the header's class).*
