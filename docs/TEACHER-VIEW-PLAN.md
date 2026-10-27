@@ -462,6 +462,15 @@ database change.*
 - *Not done: no class-scoped class reports and no migrations. Gem Keep's, Maths Monsters', Dragon Maths' and Clan Quest's
   class reports are still whole school. No other game is converted.*
 
+*Mine Runner moved 28 Oct 2026 on `teacher-games-mine` (from `teacher-games-table`). No database change; nothing it saves
+changed.*
+- *Its row has the on/off switch and the maths switch, and nothing to open (as in the 4.5 sketch). The game's description
+  and the question-door details sit behind each one's "?". The old panel, with its red "Switch Mine Runner off" button, is
+  gone, and so is its file (`src/pages/TeacherMine.tsx`).*
+- *The hooks are in `src/games/mine/teacher.ts`. The old panel's tests moved to `src/games/mine/teacher.test.tsx`, with the
+  same checks, now for a named class. The Games tab exports `GameSwitchSetting` beside `MathsSwitchSetting`, so a game can
+  test its own row.*
+
 **Stage 4: Students roster and student page,** with `teacher_class_overview` and class-scoped `teacher_students`.
 
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.

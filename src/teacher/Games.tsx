@@ -10,7 +10,7 @@
 import { Suspense, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import { ALL_GAMES } from '../games/registry';
-import type { DashboardGroup, GameDefinition, TeacherContract } from '../games/types';
+import type { DashboardGroup, GameDefinition } from '../games/types';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
 import { SettingChoice, SettingToggle, type Choice } from './Settings';
 import { useTeacherClass } from './TeacherClass';
@@ -170,7 +170,7 @@ function GameRow({ game, classId, linkRef }: { game: GameDefinition; classId: st
       </th>
       <td role="cell" className="games-table__on" data-label="On">
         {t?.switch ? (
-          <SwitchCell game={game} switchOf={t.switch} classId={classId} />
+          <GameSwitchSetting game={game} classId={classId} />
         ) : !t && game.useTeacherSwitch ? (
           <span className="games-table__quiet">in Settings</span>
         ) : (
@@ -209,7 +209,9 @@ function GameRow({ game, classId, linkRef }: { game: GameDefinition; classId: st
   );
 }
 
-function SwitchCell({ game, switchOf, classId }: { game: GameDefinition; switchOf: NonNullable<TeacherContract['switch']>; classId: string }) {
+/** A game's on/off switch for the class, as it sits in its row of the Games table. */
+export function GameSwitchSetting({ game, classId }: { game: GameDefinition; classId: string }) {
+  const switchOf = game.teacher!.switch!;
   const value = switchOf.useValue(classId);
   return (
     <SettingToggle
