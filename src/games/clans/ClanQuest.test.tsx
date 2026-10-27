@@ -45,7 +45,7 @@ async function playOut(u: ReturnType<typeof user>) {
   for (let i = 0; i < 120; i++) {
     const done = button('See how everyone did');
     if (done) return done;
-    const next = button('No thanks') ?? button('Carry on') ?? button(/Fight with this plan/);
+    const next = button('No thanks') ?? button('Carry on') ?? button(/Skip\s*Show the whole round/) ?? button(/Next round/) ?? button(/Fight with this plan/);
     if (!next) throw new Error('No button to press in the fight');
     await u.click(next);
   }
@@ -101,6 +101,10 @@ describe('a fight', () => {
     expect(screen.getByText(/Fights today: 8 of 8/)).toBeInTheDocument();
     const done = await playOut(u);
     expect(screen.getByText(/enemies are beaten/)).toBeInTheDocument();
+    // The clan's best hit, and (the first fight of the day) a new best, remembered on this device.
+    expect(screen.getByText(/^Best hit: .+ for \d+\./)).toBeInTheDocument();
+    expect(screen.getByText('★ Your best hit today!')).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('clans-best-hit')!).amount).toBeGreaterThan(0);
     await u.click(done);
     expect(screen.getByRole('heading', { name: 'Victory!' })).toBeInTheDocument();
     expect(screen.getAllByText(/experience/)).toHaveLength(4);

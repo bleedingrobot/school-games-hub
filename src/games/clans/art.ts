@@ -56,6 +56,14 @@ export function questArt(title: string): { wide?: string; small?: string } {
 /** A clan's banner, from the last word of its name ("Brave Owls" → owls). */
 export const bannerArt = (clanName: string) => file('banners', slug(clanName.trim().split(/\s+/).pop() ?? ''));
 
+/**
+ * The fight's painted effects (scripts/clans-fx-art.py, docs/CLANS-FIGHT-FEEL.md stage 2): glowing light painted on black,
+ * with the black made see-through, so only the light shows. Without a picture the effect is a CSS glow.
+ */
+export const FX = ['fire', 'lightning', 'heal', 'magic', 'impact', 'victory'] as const;
+export type FxId = (typeof FX)[number];
+export const fxArt = (id: FxId) => file('fx', id);
+
 /** Every file the game would use, for the art test. */
 export function allArtFiles(): string[] {
   return Object.keys(FILES);

@@ -34,8 +34,8 @@ export function choosingOrder(state: FightState): number[] {
 }
 
 /**
- * The round's suggested plan: what the simulator's bot would do (heal anyone badly hurt, a damage spell when it beats a
- * swing, otherwise everyone hits the weakest enemy). One order per clan slot; the player can change any of them.
+ * The round's suggested plan: what the simulator's bot would do (heal first, spread the hits, swing when a swing will do,
+ * a spell when it beats a swing). One order per clan slot; the player can change any of them.
  */
 export const suggestedPlan = (state: FightState): Order[] => botOrders(state);
 
