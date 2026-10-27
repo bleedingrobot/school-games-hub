@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { fightStats } from '../../../shared/clans/character';
 import { SPELLS } from '../../../shared/clans/spells';
 import type { Member } from '../../../shared/clans/types';
+import { spellHelp } from './abilities';
 import { Bar } from './Bars';
 import { ItemSprite, Portrait } from './Sprite';
 import { headline } from './session';
@@ -37,6 +39,7 @@ export function MemberCard({ member, leader = false, onLook, children }: { membe
   const [picking, setPicking] = useState(false);
   const h = headline(member);
   const spells = member.spells.map((id) => SPELLS[id]).filter((s) => s && !s.notYet);
+  const caster = { level: member.level, wisdom: fightStats(member).wisdom };
   return (
     <article className="cq-card" aria-label={member.name}>
       <header className="cq-card__head">
@@ -85,7 +88,17 @@ export function MemberCard({ member, leader = false, onLook, children }: { membe
             ))}
             <div title={CARD_HELP.sp}><dt>Skill points</dt><dd>{member.maxSp}</dd></div>
           </dl>
-          <p className="cq-soft">Spells: {spells.length ? spells.map((s) => s.name).join(', ') : 'none'}</p>
+          {spells.length ? (
+            <ul className="cq-spells" aria-label="Spells">
+              {spells.map((s) => (
+                <li key={s.id}>
+                  <strong>{s.name}</strong> <span className="cq-soft">({s.sp} SP)</span>: {spellHelp(s, caster)}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="cq-soft">Spells: none</p>
+          )}
           <Bar label="HP" value={member.hp} max={member.maxHp} kind="hp" />
           {member.maxSp > 0 && <Bar label="SP" value={member.sp} max={member.maxSp} kind="sp" />}
         </div>
