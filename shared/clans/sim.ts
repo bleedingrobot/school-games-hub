@@ -9,6 +9,7 @@ import { botEmpire, type EmpireDay } from './empireBot';
 import { buildingTotal, empireNewDay, empireOf, might } from './empire';
 import { nextFloat } from './rng';
 import { bossAt, newFight, playRound, settle, type FightResult } from './fight';
+import { SPELLS } from './spells';
 import type { Clan } from './types';
 
 export type Lineup = 'balanced' | 'fighters';
@@ -52,6 +53,8 @@ export interface DayReport {
   wins: number;
   knockOuts: number;
   rounds: number;
+  /** Skill points the clan spent on spells, over all of the day's fights. */
+  spSpent: number;
   gold: number;
   /** Empire figures at the end of the day (only when the empire is on). */
   empire?: EmpireDay & { vault: number; might: number; buildings: number; barracks: number };
@@ -82,7 +85,7 @@ export function simulate(opts: SimOptions): SimReport {
   for (let day = 1; day <= opts.days; day++) {
     dayReset(clan);
     if (opts.empire && day > 1) empireNewDay(clan);
-    const report: DayReport = { day, avgLevel: 0, depth: 0, fights: 0, wins: 0, knockOuts: 0, rounds: 0, gold: 0 };
+    const report: DayReport = { day, avgLevel: 0, depth: 0, fights: 0, wins: 0, knockOuts: 0, rounds: 0, spSpent: 0, gold: 0 };
     for (let n = 0; n < CONFIG.fightsPerDay; n++) {
       botChores(clan);
       const fit = clan.members.filter((m) => !m.knockedOut);
@@ -90,9 +93,15 @@ export function simulate(opts: SimOptions): SimReport {
       const depth = Math.max(0, Math.min(20, Math.floor(averageLevel(clan)) - 1 + opts.depthOffset));
       const boss = !!bossAt(depth) && !bossesBeaten.has(depth) && averageLevel(clan) >= depth + 1;
       const state = newFight(clan.members, depth, ++seedCounter, boss);
+      const ours = new Set(state.clan.map((f) => f.name));
       while (!state.result) {
         const cry = nextFloat(dice) < opts.mathsRate ? 'damage' : null;
+        const from = state.log.length;
         playRound(state, botOrders(state), cry);
+        // Each member acts once a round; a "hits every enemy" spell logs once per enemy but is paid for once.
+        const cast = new Map<string, string>();
+        for (const e of state.log.slice(from)) if (e.type === 'cast' && ours.has(e.who)) cast.set(e.who, e.spell);
+        for (const name of cast.values()) report.spSpent += Object.values(SPELLS).find((sp) => sp.name === name)?.sp ?? 0;
       }
       const before = clan.members.filter((m) => m.knockedOut).length;
       settle(clan.members, state, gainXp);
