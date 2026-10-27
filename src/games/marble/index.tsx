@@ -1,9 +1,11 @@
 import { lazy } from 'react';
+import { saveMarbleMaths } from '../../data/marble';
 import type { GameDefinition } from '../types';
+import { MARBLE_MATHS_ABOUT, useMarbleMaths } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const MarblePlay = lazy(() => import('./MarblePlay').then((m) => ({ default: m.MarblePlay })));
-const MarbleTeacherPanel = lazy(() => import('../../pages/TeacherMarble').then((m) => ({ default: m.MarbleTeacherPanel })));
+const MarbleTeacherSettings = lazy(() => import('../../pages/TeacherMarble').then((m) => ({ default: m.MarbleTeacherSettings })));
 
 function MarbleIcon({ size = 64 }: { size?: number }) {
   return (
@@ -30,5 +32,9 @@ export const marbleRush: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'complex-maths',
-  TeacherPanels: MarbleTeacherPanel,
+  // The teacher's Games table: the maths switch in the row, and the rescue questions in its Settings.
+  teacher: {
+    maths: { useValue: useMarbleMaths, save: (mode, classId) => saveMarbleMaths(mode, classId), about: MARBLE_MATHS_ABOUT },
+    Settings: MarbleTeacherSettings,
+  },
 };

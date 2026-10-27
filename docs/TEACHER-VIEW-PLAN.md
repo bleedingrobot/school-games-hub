@@ -471,6 +471,14 @@ changed.*
   same checks, now for a named class. The Games tab exports `GameSwitchSetting` beside `MathsSwitchSetting`, so a game can
   test its own row.*
 
+*Marble Rush moved 28 Oct 2026 on `teacher-games-marble` (from `teacher-games-mine`). No database change; nothing it saves
+changed.*
+- *Its row says "always" for On (it has no on/off switch) and has the 3-way maths switch, with the gates and pit stops
+  explained behind its "?". Its Settings hold the rescue questions as a switch. While maths is off they say why there's
+  nothing to switch, as the old panel did by hiding the button. The red "Switch rescue questions off" button is gone.*
+- *The maths hook is in `src/games/marble/teacher.ts`. `src/pages/TeacherMarble.tsx` now holds only
+  `MarbleTeacherSettings`. Its tests keep the old checks, now for a named class, plus one for the note shown with maths off.*
+
 **Stage 4: Students roster and student page,** with `teacher_class_overview` and class-scoped `teacher_students`.
 
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.
