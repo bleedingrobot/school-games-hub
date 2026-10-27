@@ -835,7 +835,7 @@ const CONFIG = {
 		for (let l = 1; l < level; l++) total += Math.min(CONFIG.xpLevelCap, 30 + 10 * (l - 1));
 		return total;
 	},
-	/** Mine depth hints, as depth minus the clan's average level (from the simulator: 100% wins up to -1, 99% to +1, about 90% to +3, under 80% from +4). */
+	/** Mine depth hints, as depth minus the clan's average level (simulator, 27 Oct 2026, the smarter fight plan: a mixed clan wins 99% at -1, 94% at +1, 87% at +3, 84% at +4; an all-fighters clan 15-25 points fewer). */
 	depthHint: {
 		easyUpTo: -1,
 		justRightUpTo: 1,
