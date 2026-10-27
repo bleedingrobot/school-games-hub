@@ -11,14 +11,17 @@ import {
   fetchClanMathsSettings,
   fetchClanMathsStudent,
   fetchClanRaidsEnabled,
+  fetchClanTypedNames,
   fetchClansEnabled,
   fetchVillages,
   kindLabel,
+  listHeroNames,
   movePupil,
   renameVillage,
   resetClan,
   saveClanMathsSettings,
   saveClanRaidsEnabled,
+  saveClanTypedNames,
   saveClansEnabled,
   startClansNewSeason,
   type ClanInfo,
@@ -28,6 +31,7 @@ import {
   type MathsKind,
   type Villages,
 } from "../data/clans";
+import { MEMBER_NAMES } from "../../shared/clans/words";
 import {
   TOPIC_LABELS,
   TOPICS,
@@ -48,16 +52,31 @@ const errorText = (error: unknown) =>
 export function ClansTeacherPanels() {
   const { classId, ready } = useTeacherClass();
   const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [typedNames, setTypedNames] = useState<boolean | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ready) return;
     setEnabled(null);
+    setTypedNames(null);
     setStatus(null);
     fetchClansEnabled(classId).then(setEnabled, (error) =>
       setStatus(errorText(error)),
     );
+    fetchClanTypedNames(classId).then(setTypedNames, (error) =>
+      setStatus(errorText(error)),
+    );
   }, [ready, classId]);
+
+  async function saveTypedNames(next: boolean, message: string) {
+    setStatus("Saving…");
+    try {
+      setTypedNames(await saveClanTypedNames(next, classId));
+      setStatus(message);
+    } catch (error) {
+      setStatus(errorText(error));
+    }
+  }
 
   async function save(next: boolean, message: string) {
     setStatus("Saving…");
@@ -117,6 +136,41 @@ export function ClansTeacherPanels() {
               </button>
             )}
           </>
+        )}
+        {typedNames !== null && (
+          <p>
+            <strong>Made-up hero names:</strong>{" "}
+            {typedNames
+              ? "On. Pupils can pick a name from the list or type their own (letters only, up to 12, rude words refused). Only the pupil and you see hero names."
+              : "Off. Pupils pick hero names from a list."}{" "}
+            {typedNames ? (
+              <button
+                type="button"
+                className="button button--danger"
+                onClick={() =>
+                  void saveTypedNames(
+                    false,
+                    "Made-up hero names are off. Names already made are kept.",
+                  )
+                }
+              >
+                Switch made-up names off
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="button button--primary"
+                onClick={() =>
+                  void saveTypedNames(
+                    true,
+                    "Made-up hero names are on for new clans.",
+                  )
+                }
+              >
+                Switch made-up names on
+              </button>
+            )}
+          </p>
         )}
         {status && (
           <p role="status" className="gk-teacher__status">
@@ -654,6 +708,21 @@ export function ClansStudentPanel({ student }: { student: string }) {
     };
   }, [student]);
 
+  async function listNames() {
+    setStatus("Changing the names…");
+    try {
+      const changed = await listHeroNames(student);
+      setInfo(await fetchClanInfo(student));
+      setStatus(
+        changed === 0
+          ? "There were no made-up names to change."
+          : `Done. ${changed === 1 ? "One name was" : `${changed} names were`} swapped for names from the list.`,
+      );
+    } catch (error) {
+      setStatus(errorText(error));
+    }
+  }
+
   async function reset() {
     setStatus("Resetting…");
     try {
@@ -683,6 +752,20 @@ export function ClansStudentPanel({ student }: { student: string }) {
             {whenPlayed(info.lastPlayed)}.
             {maths?.fame != null && ` Fame ${maths.fame}.`}
           </p>
+          {info.heroes && info.heroes.length > 0 && (
+            <p>
+              Heroes: {info.heroes.join(", ")}.{" "}
+              {info.heroes.some((h) => !MEMBER_NAMES.includes(h)) && (
+                <button
+                  type="button"
+                  className="button button--light-outline"
+                  onClick={() => void listNames()}
+                >
+                  Swap made-up names for list names
+                </button>
+              )}
+            </p>
+          )}
           {maths && maths.kinds.length > 0 && (
             <>
               <p>Maths in Clan Quest (hardest first; only you see this):</p>

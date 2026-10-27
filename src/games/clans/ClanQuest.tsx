@@ -114,7 +114,7 @@ function SettingsStrip({ session, onChange, open }: { session: Session; onChange
  * With a `server`, the clan lives on the server: it is loaded when this opens, every change is sent as an action, and
  * what the server answers replaces the browser's copy. With none (the test page), everything stays in the browser.
  */
-export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board }: { seed?: number; initial?: Session | null; server?: ClanServer; board?: () => Promise<ScoreRow[]> }) {
+export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board, typedNames = false }: { seed?: number; initial?: Session | null; server?: ClanServer; board?: () => Promise<ScoreRow[]>; typedNames?: boolean }) {
   const [session, setSession] = useState<Session | null>(initial);
   const [screen, setScreen] = useState<Screen>('home');
   const [boss, setBoss] = useState(false);
@@ -367,7 +367,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
       ) : loading === 'off' ? (
         <p className="cq-panel" role="status">Clan Quest isn't switched on yet. Ask your teacher when it will be ready!</p>
       ) : !session ? (
-        <Creator seed={serverSeed} onDone={(clan, choices) => { create(clan, choices); setScreen('home'); }} />
+        <Creator seed={serverSeed} typedNames={typedNames} onDone={(clan, choices) => { create(clan, choices); setScreen('home'); }} />
       ) : (
         <>
           {!server && <SettingsStrip session={session} onChange={setSession} open={screen === 'home'} />}

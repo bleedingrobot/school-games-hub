@@ -740,3 +740,14 @@ Wins stay within 3 points everywhere except an all-fighters clan deep in the min
 **Ideas for later**: Guard when badly hurt and no healer can reach you; tie-up spells (Ropes, Magic Chains) on the hardest hitter; a heal kept in hand only in long fights.
 
 - **Went live 27 Oct 2026** (afternoon, NZ time). Brought up to date with that day's `main`, then the type check, all 5,033 tests and the site build passed again. PR #42 merged; the "Test and publish" run passed and published the site. No migration, and the `clans` function was not redeployed (its built copy differs only in the depth hint comment).
+
+## Made-up hero names (27 Oct 2026, branch `clans-typed-names`)
+
+James asked for pupils to be able to name their own heroes, with the list kept as the default. This changes the hub's "nobody types a name" rule for hero names only, behind a teacher switch.
+
+- **What was built:** `checkTypedName` / `memberNameFrom` in `shared/clans/words.ts` (letters only with one space, dash or apostrophe; 2 to 12 long; tidied to capitals; a rude-word list matched with repeated letters allowed, some words only as a whole name or part so ordinary names like Cassius or Grape pass). `clanFromChoices` takes a made-up name only when the switch is on, and now refuses two heroes with the same name (any capitals). The Creator keeps the list as each hero's default, with a "Make up my own name" button per hero. The `clans` function reads the switch from `clan_extras()` on every request. Hero names are never shown to classmates (only the clan name is).
+- **Migration `20261027000400_clans_typed_names.sql`:** `app_settings.clan_typed_names` (off), `typedNames` in `clans_settings()`, `teacher_set_clan_typed_names()`, `heroes` in `teacher_clan_info()`, `clan_member_names()` (a copy of the list; `shared/clans/words.test.ts` checks it matches) and `teacher_list_hero_names()`, which swaps made-up names for unused list names and bumps the clan's version.
+- **Teacher page:** the switch in the Clan Quest panel; each pupil's hero names, with "Swap made-up names for list names" when one is made up.
+- **Tests:** shared rules, the server function, the Creator screen and the teacher page (vitest, all passing). `supabase/tests/database/clans_typed_names.test.sql` is written but **not yet run** (no local database on the machine it was written on).
+- **Not done:** renaming heroes of an existing clan (a pupil would need a new clan, or a later `rename` action).
+- **Go-live, one step at a time with James:** run `npm run test:db`; check the migration number is still free; apply the migration; deploy the `clans` function; merge to `main`. The switch stays off until a teacher turns it on.

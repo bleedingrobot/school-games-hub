@@ -3,7 +3,9 @@
 For the teacher. About two minutes to read.
 
 ## What it is
-Each pupil makes a clan of four heroes, goes down the Mines to fight monsters (with a maths question before each round that can help), spends gold in the market, trains their heroes, visits the Church, does one short quest a day and builds a small empire. Each pupil has their own clan, kept on the school's server, so it is the same on any Chromebook. There is no chat and no free text: the clan name and hero names are picked from lists.
+Each pupil makes a clan of four heroes, goes down the Mines to fight monsters (with a maths question before each round that can help), spends gold in the market, trains their heroes, visits the Church, does one short quest a day and builds a small empire. Each pupil has their own clan, kept on the school's server, so it is the same on any Chromebook. There is no chat. The clan name is always picked from lists, and so are hero names unless you switch on **made-up hero names**.
+
+**Made-up hero names** (off until you switch them on, in the Clan Quest panel): pupils making a new clan can type their own name for any hero instead of picking from the list. The list is still the starting choice. Names are letters only (one space, dash or apostrophe allowed), up to 12 long, and the server refuses rude words. Only the pupil and you see hero names; classmates never do. On each pupil's page you can see their heroes' names and, if one slips through, press **Swap made-up names for list names**. Switching it off later keeps names already made. Remind pupils not to use their own or a classmate's real name.
 
 ## Switching it on
 1. Open the **Teacher view**. Find the **Clan Quest** panel.

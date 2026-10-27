@@ -19,6 +19,9 @@ const data = vi.hoisted(() => ({
   startClansNewSeason: vi.fn(),
   fetchClanMathsClass: vi.fn(),
   fetchClanMathsStudent: vi.fn(),
+  fetchClanTypedNames: vi.fn(),
+  saveClanTypedNames: vi.fn(),
+  listHeroNames: vi.fn(),
 }));
 vi.mock('../data/clans', async (original) => ({ ...(await original<typeof import('../data/clans')>()), ...data }));
 
@@ -39,6 +42,9 @@ beforeEach(() => {
   data.fetchClanInfo.mockResolvedValue(info());
   data.fetchClanRaidsEnabled.mockResolvedValue(false);
   data.saveClanRaidsEnabled.mockImplementation(async (on: boolean) => on);
+  data.fetchClanTypedNames.mockResolvedValue(false);
+  data.saveClanTypedNames.mockImplementation(async (on: boolean) => on);
+  data.listHeroNames.mockResolvedValue(1);
   data.fetchVillages.mockResolvedValue({
     villages: [
       { id: 1, name: 'Everyone else', isDefault: true, chest: 30, levels: { trainingHall: 0, smithy: 0, church: 0 }, pupils: 2 },
@@ -250,5 +256,35 @@ describe('a pupil\'s Clan Quest maths on the teacher page', () => {
     expect(await screen.findByText(/Fame 33\./)).toBeInTheDocument();
     expect(screen.getByText('Ratio (Year 5): 1 of 5 right')).toBeInTheDocument();
     expect(screen.getByText('Quest puzzle: pattern (Year 5): 2 of 2 right')).toBeInTheDocument();
+  });
+});
+
+describe('made-up hero names', () => {
+  it('start off, and a teacher switches them on and off for the class', async () => {
+    const user = userEvent.setup();
+    render(<ClansTeacherPanels />);
+    await user.click(await screen.findByRole('button', { name: 'Switch made-up names on' }));
+    expect(data.saveClanTypedNames).toHaveBeenLastCalledWith(true, null);
+    await user.click(await screen.findByRole('button', { name: 'Switch made-up names off' }));
+    expect(data.saveClanTypedNames).toHaveBeenLastCalledWith(false, null);
+  });
+
+  it("shows a pupil's hero names and swaps made-up ones for list names", async () => {
+    const user = userEvent.setup();
+    data.fetchClanInfo.mockResolvedValueOnce(info({ heroes: ['Zoe', 'Wren', 'Finn', 'Pip'] }));
+    data.fetchClanInfo.mockResolvedValueOnce(info({ heroes: ['Aria', 'Wren', 'Finn', 'Pip'] }));
+    render(<ClansStudentPanel student="p1" />);
+    expect(await screen.findByText(/Heroes: Zoe, Wren, Finn, Pip/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Swap made-up names for list names' }));
+    expect(data.listHeroNames).toHaveBeenCalledWith('p1');
+    expect(await screen.findByText(/Heroes: Aria, Wren/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Swap made-up names for list names' })).toBeNull();
+  });
+
+  it('offers no swap when every name is from the list', async () => {
+    data.fetchClanInfo.mockResolvedValueOnce(info({ heroes: ['Aria', 'Wren', 'Finn', 'Pip'] }));
+    render(<ClansStudentPanel student="p1" />);
+    expect(await screen.findByText(/Heroes: Aria/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Swap made-up names for list names' })).toBeNull();
   });
 });
