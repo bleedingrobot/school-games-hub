@@ -53,17 +53,17 @@ describe('the map menu', () => {
     await waitFor(() => expect(stage().dataset.y).toBe('17'));
   });
 
-  it('Team: swap two monsters to change who goes first', async () => {
+  it('Team: one tap on Go first sends that monster out first', async () => {
     const user = userEvent.setup();
     const g = game();
     await user.click(screen.getByRole('button', { name: 'Menu' }));
     await user.click(screen.getByRole('button', { name: /^Team/ }));
     const team = screen.getByRole('dialog', { name: 'Team' });
-    await user.click(within(team).getByRole('button', { name: 'Swap Plusplash' }));
-    expect(within(team).getByRole('button', { name: 'Cancel Plusplash' })).toBeInTheDocument();
-    await user.click(within(team).getByRole('button', { name: 'Swap with Divvy' }));
-    expect(g.state().team.map((m) => m.species)).toEqual(['divvy-1', 'multipup-1', 'plusplash-1']);
-    expect(document.querySelector('.mm-msg')?.textContent).toBe('Swapped.');
+    expect(within(team).getByRole('button', { name: 'Goes first Plusplash' })).toBeDisabled();
+    await user.click(within(team).getByRole('button', { name: 'Go first Divvy' }));
+    expect(g.state().team.map((m) => m.species)).toEqual(['divvy-1', 'plusplash-1', 'multipup-1']);
+    expect(document.querySelector('.mm-msg')?.textContent).toBe('Divvy goes first in the next battle.');
+    expect(within(team).getByRole('button', { name: 'Goes first Divvy' })).toBeDisabled();
     await user.click(within(team).getByRole('button', { name: 'Back' }));
     expect(screen.getByRole('dialog', { name: 'Menu' })).toBeInTheDocument();
   });
