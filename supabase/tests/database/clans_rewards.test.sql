@@ -85,7 +85,7 @@ select pg_temp.reset();
 create function pg_temp.cs() returns jsonb language sql security definer as $$ select public.clans_settings(pg_temp.id('a')) $$;
 create function pg_temp.rules() returns jsonb language sql security definer as $$ select public.clan_reward_rules() $$;
 create function pg_temp.fpd() returns integer language sql security definer as $$ select public.clan_fights_per_day(pg_temp.id('a')) $$;
-select is(pg_temp.cs(), '{"season": 1, "yearBand": 5, "fightsPerDay": 8, "enabledTables": [2,3,4,5,6,7,8,9,10], "enabledTopics": ["percentages","money","area","division","ratios","rates"]}'::jsonb,
+select is(pg_temp.cs(), '{"season": 1, "yearBand": 5, "fightsPerDay": 8, "typedNames": false, "enabledTables": [2,3,4,5,6,7,8,9,10], "enabledTopics": ["percentages","money","area","division","ratios","rates"]}'::jsonb,
   'the settings start as the Year 5 defaults, 8 fights a day, season 1');
 select is(pg_temp.fpd(), 8, 'the night''s rest gives back 8 fights by default');
 select pg_temp.teacher();
