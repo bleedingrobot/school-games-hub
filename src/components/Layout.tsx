@@ -47,7 +47,8 @@ function ThemedLayout() {
             ...(trainingOn() ? [{ to: '/training', label: 'Training', emoji: '🧮' }] : []),
             ...(profile?.role === 'teacher' ? [{ to: '/teacher', label: 'Teacher', emoji: '🧑‍🏫' }] : []),
           ].map((item) => (
-            <NavLink key={item.to} to={item.to} end className="topnav__link">
+            // The Teacher link stays lit on every teacher page (/teacher/:classId/…).
+            <NavLink key={item.to} to={item.to} end={item.to !== '/teacher'} className="topnav__link">
               <span aria-hidden="true">{item.emoji}</span> {item.label}
               {item.to === '/teacher' && <WaitingCount />}
             </NavLink>

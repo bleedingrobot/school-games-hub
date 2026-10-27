@@ -129,6 +129,15 @@ vi.mock('../data/skillMap', async (importOriginal) => ({
   resetPlacement: vi.fn(async () => true),
 }));
 
+// The teacher pages open on a class (src/teacher/TeacherShell.tsx).
+vi.mock('../data/classes', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../data/classes')>()),
+  fetchClasses: vi.fn(async () => [
+    { id: 'c12', name: 'Room 12', school_year: 2026, year_level: 5, archived: false, warp_code: 'KM4TP', warp_mode: 'on', members: 2, teaching: true, groups: 0, waiting: 0 },
+  ]),
+  fetchWarpRequests: vi.fn(async () => []),
+}));
+
 vi.mock('../data/multiplayer', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/multiplayer')>()),
   fetchMultiplayerEnabled: vi.fn(async () => true),
@@ -270,7 +279,7 @@ describe('teacher view', () => {
   });
 
   it('lists everyone with their games, and a link in the top bar', async () => {
-    renderAt('/teacher', teacher);
+    renderAt('/teacher/c12/students', teacher);
     expect(screen.getByRole('link', { name: /Teacher/ })).toHaveAttribute('href', '/teacher');
     const kiwi = (await screen.findByText('Brave Kiwi 7')).closest('li')!;
     expect(kiwi).toHaveTextContent('6 games');
@@ -282,7 +291,7 @@ describe('teacher view', () => {
 
   it('filters the list by name', async () => {
     const user = userEvent.setup();
-    renderAt('/teacher', teacher);
+    renderAt('/teacher/c12/students', teacher);
     await screen.findByText('Brave Kiwi 7');
     await user.type(screen.getByLabelText('Find a player'), 'tui');
     expect(screen.queryByText('Brave Kiwi 7')).not.toBeInTheDocument();
@@ -291,7 +300,7 @@ describe('teacher view', () => {
 
   it('filters the list by real name too', async () => {
     const user = userEvent.setup();
-    renderAt('/teacher', teacher);
+    renderAt('/teacher/c12/students', teacher);
     await screen.findByText('Brave Kiwi 7');
     await user.type(screen.getByLabelText('Find a player'), 'smith');
     expect(screen.getByText('Brave Kiwi 7')).toBeInTheDocument();
@@ -300,7 +309,7 @@ describe('teacher view', () => {
 
   async function openKiwi() {
     const user = userEvent.setup();
-    renderAt('/teacher', teacher);
+    renderAt('/teacher/c12/students', teacher);
     await user.click(await screen.findByRole('button', { name: /Brave Kiwi 7/ }));
     const panel = screen.getByRole('button', { name: /Brave Kiwi 7/ }).closest('li')!;
     await within(panel).findByText('Level 2 · 50 points');
@@ -359,22 +368,22 @@ describe('teacher view', () => {
 
   it('shows a plain teacher no way to make teachers or start a new season (only a school admin does)', async () => {
     const user = userEvent.setup();
-    renderAt('/teacher', plainTeacher);
+    renderAt('/teacher/c12/students', plainTeacher);
     await user.click(await screen.findByRole('button', { name: /Brave Kiwi 7/ }));
     const panel = screen.getByRole('button', { name: /Brave Kiwi 7/ }).closest('li')!;
     await within(panel).findByText('Level 2 · 50 points');
     expect(within(panel).queryByRole('button', { name: /Make teacher|Remove teacher/ })).not.toBeInTheDocument();
     expect(within(panel).getByRole('button', { name: /New name/ })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'End of year: start a new season' })).not.toBeInTheDocument();
-    const tools = screen.getByRole('navigation', { name: 'Teacher tools' });
-    expect(within(tools).getByRole('link', { name: /^My classes/ })).toHaveAttribute('href', '/classes');
-    expect(within(tools).getByRole('link', { name: /^Maths focus/ })).toHaveAttribute('href', '/focus');
-    expect(within(tools).getByRole('link', { name: /^Skill map/ })).toHaveAttribute('href', '/skills');
+    const tabs = screen.getByRole('navigation', { name: 'Teacher pages' });
+    expect(within(tabs).getByRole('link', { name: 'Class set-up' })).toHaveAttribute('href', '/teacher/c12/setup');
+    expect(within(tabs).getByRole('link', { name: 'Maths' })).toHaveAttribute('href', '/teacher/c12/maths');
+    expect(within(tabs).queryByRole('link', { name: 'Admin' })).not.toBeInTheDocument();
   });
 
   it('can’t change their own role or delete a teacher', async () => {
     const user = userEvent.setup();
-    renderAt('/teacher', teacher);
+    renderAt('/teacher/c12/students', teacher);
     await user.click(await screen.findByRole('button', { name: /Wise Owl 1/ }));
     const panel = screen.getByRole('button', { name: /Wise Owl 1/ }).closest('li')!;
     await within(panel).findByText('Level 2 · 50 points');
@@ -399,20 +408,23 @@ describe('teacher view', () => {
     expect(fetchPeople).toHaveBeenCalledTimes(2);
   });
 
-  it('pauses games against friends', async () => {
+  it('pauses games against friends from Today', async () => {
     const { setMultiplayer } = await import('../data/teacher');
     const user = userEvent.setup();
     renderAt('/teacher', teacher);
-    await user.click(await screen.findByRole('button', { name: 'Pause games against friends' }, { timeout: 5000 }));
-    expect(setMultiplayer).toHaveBeenCalledWith(false, null);
-    expect(await screen.findByRole('button', { name: 'Switch games against friends back on' })).toBeInTheDocument();
-    expect(screen.getByText('Games against friends are paused for this class.')).toBeInTheDocument();
+    const toggle = await screen.findByRole('switch', { name: 'Games against friends' }, { timeout: 5000 });
+    await vi.waitFor(() => expect(toggle).toBeEnabled());
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await user.click(toggle);
+    expect(setMultiplayer).toHaveBeenCalledWith(false, 'c12');
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    expect(await screen.findByText('Saved ✓')).toBeInTheDocument();
   });
 
   it('starts a new season only after NEW SEASON is typed', async () => {
     const { startNewSeason } = await import('../data/teacher');
     const user = userEvent.setup();
-    renderAt('/teacher', teacher);
+    renderAt('/teacher/c12/students', teacher);
     const section = await screen.findByRole('region', { name: 'End of year: start a new season' });
     const button = within(section).getByRole('button', { name: 'Start a new season' });
     expect(button).toBeDisabled();
@@ -430,7 +442,7 @@ describe('teacher view', () => {
   it('keeps each game folded away, asking the server nothing for it until it is opened', async () => {
     const { fetchGemKeepSettings } = await import('../data/gemKeep');
     const user = userEvent.setup();
-    renderAt('/teacher', teacher);
+    renderAt('/teacher/c12/games', teacher);
     await screen.findByText('Gem Keep', { selector: 'summary span' });
     expect(screen.queryByRole('region', { name: 'Gem Keep settings' })).not.toBeInTheDocument();
     expect(fetchGemKeepSettings).not.toHaveBeenCalled();
@@ -442,19 +454,19 @@ describe('teacher view', () => {
   it('changes the Gem Keep settings for the class', async () => {
     const { saveGemKeepSettings } = await import('../data/gemKeep');
     const user = userEvent.setup();
-    renderAt('/teacher', teacher);
+    renderAt('/teacher/c12/games', teacher);
     await user.click(await screen.findByText('Gem Keep', { selector: 'summary span' }));
     const section = await screen.findByRole('region', { name: 'Gem Keep settings' });
     await user.click(await within(section).findByRole('checkbox', { name: '×12' }));
-    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ enabledTables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }), null);
+    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ enabledTables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }), 'c12');
     await user.selectOptions(within(section).getByLabelText('Level Key pass mark'), '7');
-    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ keyPassMark: 7 }), null);
+    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ keyPassMark: 7 }), 'c12');
     expect(await within(section).findByText(/Saved/)).toBeInTheDocument();
   });
 
   it('shows the whole school’s hardest facts, saying it is the whole school', async () => {
     const user = userEvent.setup();
-    renderAt('/teacher', teacher);
+    renderAt('/teacher/c12/games', teacher);
     await user.click(await screen.findByText('Gem Keep', { selector: 'summary span' }));
     const section = await screen.findByRole('region', { name: /^Gem Keep: the whole school/ });
     const hardest = await within(section).findByRole('table', { name: 'Hardest facts (most often wrong)' });

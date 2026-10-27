@@ -5,9 +5,8 @@
  * (shared/maths/skillMap.ts), and the database only hands over the records of classes this teacher teaches.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
-import { fetchClasses, type ClassSummary } from '../data/classes';
 import { FriendlyError } from '../data/profile';
 import { fetchClassMap, type ClassMap, type MapStudent } from '../data/skillMap';
 import { mastery, type FactStats } from '../../shared/maths/leitner';
@@ -27,6 +26,7 @@ import {
 } from '../../shared/maths/skillMap';
 import { FactGrid } from './TeacherGemKeep';
 import { keyLabel } from './TeacherMonsters';
+import { useTeacherClass } from '../teacher/TeacherClass';
 import './classes.css';
 import './skill-map.css';
 
@@ -48,62 +48,16 @@ export default function SkillMap() {
   return <SkillMapView />;
 }
 
+/** The Maths tab's Skill map page, for the class in the teacher header (src/teacher/TeacherShell.tsx). */
 function SkillMapView() {
-  const [params, setParams] = useSearchParams();
-  const [classes, setClasses] = useState<ClassSummary[] | null>(null);
-  const [failed, setFailed] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchClasses()
-      .then(setClasses)
-      .catch((error) => {
-        setFailed(errorText(error));
-        setClasses([]);
-      });
-  }, []);
-
-  const mine = (classes ?? []).filter((c) => !c.archived);
-  const wanted = params.get('class');
-  const chosen = mine.find((c) => c.id === wanted) ?? mine.find((c) => c.teaching) ?? mine[0] ?? null;
+  const { current } = useTeacherClass();
 
   return (
-    <div className="teacher classes skill-map-page">
-      <h1 className="page-title">Skill map</h1>
-      <p className="classes__back">
-        <Link to="/teacher">← Back to the teacher view</Link>
-      </p>
+    <div className="classes skill-map-page">
       <p className="teacher__classes-link">
         How each student is getting on across the maths ladder. Open a stage to see its skills, and a cell to see the facts behind it.
       </p>
-
-      {classes === null ? (
-        <p className="teacher__classes-link">Loading…</p>
-      ) : mine.length === 0 ? (
-        <section className="panel">
-          <p className="panel__empty">
-            {failed ?? 'You don’t teach a class yet.'} <Link to="/classes">Make one on the My classes page</Link> first.
-          </p>
-        </section>
-      ) : (
-        <>
-          {mine.length > 1 && (
-            <div className="teacher__picker">
-              <label>
-                <span>Class</span>{' '}
-                <select value={chosen?.id ?? ''} onChange={(e) => setParams({ class: e.target.value }, { replace: true })}>
-                  {mine.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                      {c.teaching ? '' : ' (not mine)'}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          )}
-          {chosen && <ClassMapPanel key={chosen.id} classId={chosen.id} name={chosen.name} />}
-        </>
-      )}
+      {current && <ClassMapPanel key={current.id} classId={current.id} name={current.name} />}
     </div>
   );
 }
@@ -196,12 +150,12 @@ function ClassMapPanel({ classId, name }: { classId: string; name: string }) {
         {!data.auto && (
           <p className="class-panel__hint" role="note">
             Auto is off for this class, so the games ask the times tables and don’t follow the ladder. The map still shows what each student
-            has practised. Turn auto on from <Link to={`/focus?class=${classId}`}>Maths focus</Link>.
+            has practised. Turn auto on from <Link to={`/teacher/${classId}/maths`}>Maths focus</Link>.
           </p>
         )}
         {students.length === 0 ? (
           <p className="panel__empty">
-            No students in this class yet. <Link to="/classes">Add some on the My classes page.</Link>
+            No students in this class yet. <Link to={`/teacher/${classId}/setup`}>Add some on Class set-up.</Link>
           </p>
         ) : (
           <>
@@ -295,7 +249,7 @@ function MapHead({ open, onToggle, classId }: { open: Set<LadderStage>; onToggle
           stageSkills(stage.id).map((skill) => (
             <th key={skill.id} scope="col" className="skill-map__skill">
               <span className="skill-map__skill-name">{skillShortLabel(skill.id)}</span>
-              <Link className="skill-map__focus" to={`/focus?class=${classId}&skill=${skill.id}`}>
+              <Link className="skill-map__focus" to={`/teacher/${classId}/maths?skill=${skill.id}`}>
                 Set focus <span className="sr-only">on {skill.label}</span>
               </Link>
             </th>
@@ -327,7 +281,7 @@ function MapRow({
       <th scope="row" className="skill-map__who">
         <span className="skill-map__name">{student.name}</span>
         {student.realName && <span className="skill-map__real">{student.realName}</span>}
-        <Link className="skill-map__focus" to={`/focus?class=${classId}&student=${student.id}`}>
+        <Link className="skill-map__focus" to={`/teacher/${classId}/maths?student=${student.id}`}>
           Set focus <span className="sr-only">for {student.name}</span>
         </Link>
       </th>
@@ -481,7 +435,7 @@ function CellDetail({
         <KeyTable keys={tables ? others : cell.skill.keys} byKey={byKey} tables={tables} />
       )}
       <div className="skill-map__detail-actions">
-        <Link className="button button--light-outline" to={`/focus?class=${classId}&student=${student.id}&skill=${cell.skill.id}`}>
+        <Link className="button button--light-outline" to={`/teacher/${classId}/maths?student=${student.id}&skill=${cell.skill.id}`}>
           🎯 Set a focus on this for {student.name}
         </Link>
         <button type="button" className="button button--light-outline" onClick={onClose}>

@@ -375,6 +375,25 @@ Each stage ships on its own and leaves the site working.
 **Stage 1: the teacher shell.** Shared header, class in the URL, sub-nav, redirects. Focus, Skill map and My classes move in
 as Maths and Class set-up with almost no change. Today page with Needs you + Lesson controls.
 
+*Done 28 Oct 2026 on `teacher-shell`. Decided by James: no "Pause every game" button for now (no database change), and real
+names stay shown. What changed and what didn't:*
+- *Routes as in 4.1, plus `/teacher/:classId/maths/skills` and `/maths/skips` as the Maths sub-tabs (Focus, Skill map,
+  Skipped questions; the skip tables would otherwise have had no home). `/teacher`, `/classes`, `/focus?class=` and
+  `/skills?class=` open the class named, else the one this visit last used, else the first, on the right tab; a skill map's
+  `?student=` and `?skill=` come along. A class not in the list opens the first one on the same tab.*
+- *The header (`src/teacher/TeacherShell.tsx`) feeds the existing `useTeacherClass()`, so every game panel, the skip panel,
+  SetFocus and SkillMap read the header's class with almost no change (their own pickers are gone).*
+- *Today: Needs you (this class's warp requests with Yes/No, a count and link for other classes; one quiet line when
+  nothing waits), Lesson controls (friends, reactions, Training before games, skip button as real switches that save at once
+  and flip back on failure), This week (running focuses as counts with Extend and End, and last 7 days' questions and skip
+  rate from `teacher_question_skips`; no names). No "6 playing now", "haven't played" or hardest facts yet: they need
+  `teacher_class_overview` (stage 4) and the merged hardest list (stage 5).*
+- *Students is today's Players list (still whole school) with the season resets under it. Class set-up is My classes' panel
+  for the header's class, then Make a class, then (admins) archived classes. A teacher with no class sees today's My classes
+  page. `/teacher/admin` is a placeholder.*
+- *Not done: the old `TrainingFirstSwitch` panel is no longer on any page (Today has the switch) but is kept with its test
+  until stage 2 replaces it.*
+
 **Stage 2: shared setting components** (section 5), then convert the four lesson switches and the space maths switch.
 
 **Stage 3: Games table + new game contract** (section 6). Convert one game per PR (each game's file is its own, so these can run

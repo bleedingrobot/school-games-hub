@@ -9,10 +9,11 @@ const data = vi.hoisted(() => ({
 }));
 vi.mock('../data/classes', async (original) => ({ ...(await original<typeof import('../data/classes')>()), ...data }));
 
-import { WaitingCount, WaitingToJoin, WaitingToJoinProvider } from './WaitingToJoin';
+import { NeedsYou, WaitingCount, WaitingToJoinProvider } from './WaitingToJoin';
 
 const kiwi = { id: 'r1', class_id: 'c1', class_name: 'Room 12', group_name: null, student_name: 'Brave Kiwi 7', asked_at: new Date().toISOString() };
 const kea = { id: 'r2', class_id: 'c1', class_name: 'Room 12', group_name: 'Kahu', student_name: 'Kind Kea 5', asked_at: new Date().toISOString() };
+const tui = { id: 'r3', class_id: 'c9', class_name: 'Room 9', group_name: null, student_name: 'Lucky Tui 12', asked_at: new Date().toISOString() };
 
 function renderBoth(teacher = true) {
   return render(
@@ -24,7 +25,7 @@ function renderBoth(teacher = true) {
             <WaitingCount />
           </a>
         </nav>
-        <WaitingToJoin />
+        <NeedsYou classId="c1" />
       </WaitingToJoinProvider>
     </MemoryRouter>,
   );
@@ -35,11 +36,12 @@ beforeEach(() => {
 });
 
 describe('students waiting to join a class', () => {
-  it('lists them at the top of the teacher page, and counts them in the nav', async () => {
+  it('lists them under Needs you on Today, and counts them in the nav', async () => {
     data.fetchWarpRequests.mockResolvedValue([kiwi, kea]);
     renderBoth();
-    expect(await screen.findByRole('region', { name: /Waiting to join a class/ })).toBeInTheDocument();
-    expect(screen.getByText(/would like to join Room 12 \(Kahu\)/)).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: /Needs you/ })).toBeInTheDocument();
+    expect(screen.getByText('2 students want to join Room 12:')).toBeInTheDocument();
+    expect(screen.getByText(/\(Kahu\)/).closest('li')).toHaveTextContent('Kind Kea 5');
     expect(screen.getByRole('link', { name: 'Teacher, 2 waiting to join a class' })).toBeInTheDocument();
   });
 
@@ -63,12 +65,23 @@ describe('students waiting to join a class', () => {
     expect(screen.getByRole('link', { name: 'Teacher' })).toBeInTheDocument();
   });
 
-  it('shows nothing while nobody is waiting', async () => {
+  it('shows only a quiet line while nobody is waiting', async () => {
     data.fetchWarpRequests.mockResolvedValue([]);
     renderBoth();
     await vi.waitFor(() => expect(data.fetchWarpRequests).toHaveBeenCalled());
-    expect(screen.queryByRole('region', { name: /Waiting to join/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /Needs you/ })).not.toBeInTheDocument();
+    expect(screen.getByText('Nothing needs you right now.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Teacher' })).toBeInTheDocument();
+  });
+
+  it('points to my other classes with someone waiting, without their names', async () => {
+    data.fetchWarpRequests.mockResolvedValue([tui]);
+    renderBoth();
+    const needs = await screen.findByRole('region', { name: /Needs you/ });
+    expect(needs).toHaveTextContent('1 student waiting to join Room 9');
+    expect(needs).not.toHaveTextContent('Lucky Tui 12');
+    expect(screen.getByRole('link', { name: 'Room 9' })).toHaveAttribute('href', '/teacher/c9');
+    expect(screen.queryByRole('button', { name: /Yes/ })).not.toBeInTheDocument();
   });
 
   it('never asks the server for a student', async () => {

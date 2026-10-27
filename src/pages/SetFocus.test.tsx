@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, Routes } from 'react-router';
+import { teacherRoutes } from '../App';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
 import * as classes from '../data/classes';
@@ -8,7 +9,7 @@ import * as settings from '../data/classSettings';
 import * as focus from '../data/focus';
 import * as skillMap from '../data/skillMap';
 import { FriendlyError } from '../data/profile';
-import SetFocus, { REFRESH_MS, whoFor } from './SetFocus';
+import { REFRESH_MS, whoFor } from './SetFocus';
 
 vi.mock('../data/classes', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/classes')>()),
@@ -75,13 +76,14 @@ function show(auth: AuthState = base, url = '/focus') {
   return render(
     <AuthContext.Provider value={auth}>
       <MemoryRouter initialEntries={[url]}>
-        <SetFocus />
+        <Routes>{teacherRoutes()}</Routes>
       </MemoryRouter>
     </AuthContext.Provider>,
   );
 }
 
 beforeEach(() => {
+  sessionStorage.clear(); // the teacher pages remember the last class for the visit
   vi.mocked(classes.fetchClasses).mockResolvedValue([room12, room14]);
   vi.mocked(classes.fetchClassDetail).mockResolvedValue(detail);
   vi.mocked(settings.fetchStudentsChooseFocus).mockResolvedValue(true);
@@ -108,7 +110,7 @@ describe('the Set focus screen', () => {
     vi.mocked(classes.fetchClasses).mockResolvedValue([]);
     show();
     expect(await screen.findByText(/You don’t teach a class yet/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /My classes page/ })).toHaveAttribute('href', '/classes');
+    expect(screen.getByRole('region', { name: 'Make a class' })).toBeInTheDocument();
   });
 
   it('opens on the first class, or the class in the address', async () => {
@@ -272,7 +274,7 @@ describe('the Set focus screen', () => {
     show();
     await screen.findByRole('heading', { name: 'Set a focus' });
     expect(screen.getByRole('radio', { name: /A group/ })).toBeDisabled();
-    expect(screen.getByText(/make a group on the My classes page first/)).toBeInTheDocument();
+    expect(screen.getByText(/make a group on Class set-up first/)).toBeInTheDocument();
   });
 
   it('turns auto (the whole ladder for students with no focus) on and off, for this class only', async () => {

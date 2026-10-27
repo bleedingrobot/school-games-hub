@@ -1,34 +1,5 @@
 /* The Teacher page's own layout (docs/TEACHER-VIEW-PLAN.md, stage 0). The page is coloured, so loose text on it is white. */
 
-/* My classes, Maths focus and Skill map: three cards at the top instead of three long links. */
-.teacher-tools {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-}
-.teacher-tools__link {
-  display: grid;
-  gap: 4px;
-  padding: 14px 18px;
-  border: 2px solid transparent;
-  border-radius: var(--radius);
-  background: var(--card);
-  box-shadow: var(--shadow);
-  color: var(--ink);
-  font-size: 1.15rem;
-  font-weight: 800;
-  text-decoration: none;
-}
-.teacher-tools__link:hover,
-.teacher-tools__link:focus-visible {
-  border-color: var(--brand);
-}
-.teacher-tools__about {
-  color: var(--ink-soft);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
 /* Students waiting for a yes: the one thing on the page that is waiting on the teacher. */
 .teacher-waiting {
   border: 3px solid #f5c400;

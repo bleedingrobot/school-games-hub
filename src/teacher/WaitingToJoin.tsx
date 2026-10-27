@@ -1,7 +1,7 @@
 /**
  * Students waiting for a teacher's yes to join a class (Class Warp set to "asks you first"). Before this, they only showed on
  * My classes, inside the right class, so a teacher on any other page never knew. Now the nav's Teacher link shows how many
- * are waiting, and the top of the Teacher page lists them with Yes and No (docs/TEACHER-VIEW-PLAN.md, stage 0).
+ * are waiting, and Today's "Needs you" lists them with Yes and No (docs/TEACHER-VIEW-PLAN.md, stages 0 and 1).
  *
  * The list is fetched once for the whole site (the Layout, teachers only) and shared, so answering on the Teacher page
  * updates the nav count at once. Students never fetch it.
@@ -79,8 +79,11 @@ export function WaitingCount() {
   );
 }
 
-/** The top of the Teacher page: each student waiting, with Yes and No. Nothing at all while nobody is waiting. */
-export function WaitingToJoin() {
+/**
+ * Today's "Needs you" (docs/TEACHER-VIEW-PLAN.md, section 4.2): each student waiting to join this class, with Yes and No, and a
+ * line for each of my other classes with someone waiting. Only there when something is waiting; otherwise one quiet line.
+ */
+export function NeedsYou({ classId }: { classId: string }) {
   const { requests, refresh } = useWaitingToJoin();
   const [status, setStatus] = useState<string | null>(null);
 
@@ -95,41 +98,66 @@ export function WaitingToJoin() {
     }
   }
 
-  if (requests.length === 0 && !status) return null;
+  const here = requests.filter((r) => r.class_id === classId);
+  const elsewhere = new Map<string, { name: string; count: number }>();
+  for (const r of requests) {
+    if (r.class_id === classId) continue;
+    const now = elsewhere.get(r.class_id) ?? { name: r.class_name, count: 0 };
+    elsewhere.set(r.class_id, { ...now, count: now.count + 1 });
+  }
+
+  if (requests.length === 0) {
+    return (
+      <p className="today__quiet" role="status">
+        {status ?? 'Nothing needs you right now.'}
+      </p>
+    );
+  }
   return (
-    <section className="panel teacher-waiting" aria-labelledby="waiting-title">
-      <h2 id="waiting-title" className="panel__title">
-        Waiting to join a class
-        {requests.length > 0 && <span className="panel__count">{requests.length}</span>}
+    <section className="panel teacher-waiting" aria-labelledby="needs-you-title">
+      <h2 id="needs-you-title" className="panel__title">
+        Needs you
+        <span className="panel__count">{requests.length}</span>
       </h2>
-      {requests.length > 0 && (
-        <ul className="teacher-waiting__list">
-          {requests.map((r) => (
-            <li key={r.id}>
-              <span>
-                <strong>{r.student_name}</strong> would like to join {r.class_name}
-                {r.group_name ? ` (${r.group_name})` : ''} · {ago(r.asked_at)}
-              </span>
-              <span className="person-panel__actions">
-                <button type="button" className="button button--primary" aria-label={`Yes, let ${r.student_name} in`} onClick={() => void answer(r, true)}>
-                  Yes
-                </button>
-                <button
-                  type="button"
-                  className="button button--light-outline"
-                  aria-label={`No, keep ${r.student_name} out`}
-                  onClick={() => void answer(r, false)}
-                >
-                  No
-                </button>
-              </span>
+      {here.length > 0 && (
+        <>
+          <p className="teacher-waiting__lead">
+            {here.length} student{here.length === 1 ? ' wants' : 's want'} to join {here[0].class_name}:
+          </p>
+          <ul className="teacher-waiting__list">
+            {here.map((r) => (
+              <li key={r.id}>
+                <span>
+                  <strong>{r.student_name}</strong>
+                  {r.group_name ? ` (${r.group_name})` : ''} · {ago(r.asked_at)}
+                </span>
+                <span className="person-panel__actions">
+                  <button type="button" className="button button--primary" aria-label={`Yes, let ${r.student_name} in`} onClick={() => void answer(r, true)}>
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    className="button button--light-outline"
+                    aria-label={`No, keep ${r.student_name} out`}
+                    onClick={() => void answer(r, false)}
+                  >
+                    No
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {elsewhere.size > 0 && (
+        <ul className="teacher-waiting__elsewhere">
+          {[...elsewhere].map(([id, c]) => (
+            <li key={id}>
+              {c.count} student{c.count === 1 ? '' : 's'} waiting to join <Link to={`/teacher/${id}`}>{c.name}</Link>
             </li>
           ))}
         </ul>
       )}
-      <p className="teacher-waiting__more">
-        <Link to="/classes">See the class on My classes</Link>
-      </p>
       <p role="status" className="teacher__status">
         {status}
       </p>

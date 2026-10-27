@@ -1,10 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
-import { fetchMultiplayerEnabled } from '../data/multiplayer';
-import { fetchMathsSwitch, fetchReactionsEnabled } from '../data/spaceGames';
+import { fetchMathsSwitch } from '../data/spaceGames';
 import { FriendlyError } from '../data/profile';
 import {
   deletePerson,
@@ -12,19 +10,14 @@ import {
   fetchPersonDetail,
   renamePerson,
   setHidden,
-  setMultiplayer,
   setSpaceMaths,
-  setSpaceReactions,
   setRole,
   startNewSeason,
   type Person,
   type PersonDetail,
 } from '../data/teacher';
 import { ALL_GAMES, gameLabel } from '../games/registry';
-import { TeacherClassPicker, TeacherClassProvider, useTeacherClass } from '../teacher/TeacherClass';
-import { WaitingToJoin } from '../teacher/WaitingToJoin';
-import { TrainingFirstSwitch } from '../training/TeacherTrainingFirst';
-import { trainingOn } from '../training/switch';
+import { useTeacherClass } from '../teacher/TeacherClass';
 import { BOT_LEVELS, type BotLevel, type GameDefinition } from '../games/types';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
@@ -33,7 +26,6 @@ import './teacher-page.css';
 
 // Each game's own teacher panels come from its GameDefinition (TeacherPanels, StudentPanel), loaded separately.
 // The warm-up reset brings the maths ladder with it, so it loads with the student's panel, not with the page.
-const QuestionSkipsPanel = lazy(() => import('./TeacherQuestionSkips').then((m) => ({ default: m.QuestionSkipsPanel })));
 const PlacementReset = lazy(() => import('../maths/PlacementReset').then((m) => ({ default: m.PlacementReset })));
 
 /** The words a teacher types to start a new season. The server checks them too. */
@@ -44,26 +36,38 @@ function errorText(error: unknown) {
 }
 
 /**
- * The teacher view. The page hides itself from students, but that's only for tidiness:
- * every action is checked by the database, which refuses anyone who isn't a teacher.
+ * The Games tab (/teacher/:classId/games): each game's own panels for the header's class, folded away until opened. The class
+ * comes from the teacher shell (src/teacher/TeacherShell.tsx) through useTeacherClass().
  */
-export function Teacher() {
-  const { profile } = useAuth();
-  if (profile?.role !== 'teacher') {
-    return (
-      <section className="coming-soon">
-        <div className="coming-soon__emoji" aria-hidden="true">
-          🔒
-        </div>
-        <h1>Teachers only</h1>
-        <p className="coming-soon__text">This page is for teachers.</p>
-      </section>
-    );
-  }
-  return <TeacherView me={profile.id} isAdmin={profile.school_admin === true} />;
+export function TeacherGames() {
+  return (
+    <>
+      <p className="teacher__group-note">Open a game to see and change its settings for this class.</p>
+      {ALL_GAMES.map((game) => {
+        const Panels = game.id === 'space' ? MathsSwitchPanel : game.TeacherPanels;
+        return (
+          Panels && (
+            <GameSection key={game.id} game={game}>
+              <Panels />
+            </GameSection>
+          )
+        );
+      })}
+    </>
+  );
 }
 
-function TeacherView({ me, isAdmin }: { me: string; isAdmin: boolean }) {
+/**
+ * The Students tab (/teacher/:classId/students): today's Players list (still the whole school until stage 4), then the season
+ * resets. Every action is checked by the database, which refuses anyone who isn't a teacher.
+ */
+export function TeacherStudents() {
+  const { profile } = useAuth();
+  if (!profile) return null;
+  return <StudentsView me={profile.id} isAdmin={profile.school_admin === true} />;
+}
+
+function StudentsView({ me, isAdmin }: { me: string; isAdmin: boolean }) {
   const [people, setPeople] = useState<Person[] | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
@@ -88,123 +92,76 @@ function TeacherView({ me, isAdmin }: { me: string; isAdmin: boolean }) {
   );
 
   return (
-    <div className="teacher">
-      <h1 className="page-title">Teacher view</h1>
-      <nav className="teacher-tools" aria-label="Teacher tools">
-        <Link to="/classes" className="teacher-tools__link">
-          <span>
-            <span aria-hidden="true">🏫</span> My classes
-          </span>
-          <span className="teacher-tools__about">Class codes, who is in each class, groups</span>
-        </Link>
-        <Link to="/focus" className="teacher-tools__link">
-          <span>
-            <span aria-hidden="true">🎯</span> Maths focus
-          </span>
-          <span className="teacher-tools__about">What maths the games ask a class, group or student</span>
-        </Link>
-        <Link to="/skills" className="teacher-tools__link">
-          <span>
-            <span aria-hidden="true">🗺️</span> Skill map
-          </span>
-          <span className="teacher-tools__about">How each student is getting on across the maths ladder</span>
-        </Link>
-      </nav>
-
-      <WaitingToJoin />
-
-      <TeacherClassProvider>
-        <TeacherClassPicker />
-        <FriendGamesSwitch />
-        <ReactionsSwitch />
-        {trainingOn() && <TrainingFirstSwitch />}
-        <Suspense fallback={null}>
-          <QuestionSkipsPanel />
-        </Suspense>
-
-        <h2 className="teacher__group-title">Game settings</h2>
-        <p className="teacher__group-note">For the class picked above. Open a game to see and change its settings.</p>
-        {ALL_GAMES.map((game) => {
-          const Panels = game.id === 'space' ? MathsSwitchPanel : game.TeacherPanels;
-          return (
-            Panels && (
-              <GameSection key={game.id} game={game}>
-                <Panels />
-              </GameSection>
-            )
-          );
-        })}
-
-        <section className="panel" aria-labelledby="people-title">
-          <h2 id="people-title" className="panel__title">
-            Players (whole school)
-            {people && <span className="panel__count">{people.length}</span>}
-          </h2>
-          <label className="teacher__filter">
-            <span>Find a player</span>
-            <input type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Player name or real name" />
-          </label>
-          {failed ? (
-            <p className="panel__empty">{failed}</p>
-          ) : !people ? (
-            <p className="panel__empty">Loading…</p>
-          ) : shown.length === 0 ? (
-            <p className="panel__empty">No players match.</p>
-          ) : (
-            <ul className="people-list">
-              {shown.map((person) => (
-                <li key={person.id} className={person.hidden ? 'is-hidden' : undefined}>
-                  <button
-                    type="button"
-                    className="people-list__row"
-                    aria-expanded={open === person.id}
-                    onClick={() => setOpen(open === person.id ? null : person.id)}
-                  >
-                    <AvatarImage avatar={person.avatar} size={40} />
-                    <span className="people-list__name">
-                      {person.display_name}
-                      {person.id === me && <span className="tag">You</span>}
-                      {person.role === 'teacher' && <span className="tag tag--teacher">Teacher</span>}
-                      {person.hidden && <span className="tag tag--hidden">Hidden</span>}
-                      {person.real_name && <span className="people-list__real">{person.real_name}</span>}
-                    </span>
-                    <span className="people-list__games">
-                      {person.bot_games + person.friend_games} game{person.bot_games + person.friend_games === 1 ? '' : 's'}
-                    </span>
-                    <span className="people-list__when">
-                      {person.last_played ? `Last played ${whenPlayed(person.last_played).toLowerCase()}` : 'Not played yet'}
-                    </span>
-                  </button>
-                  {open === person.id && (
-                    <PersonPanel
-                      person={person}
-                      isMe={person.id === me}
-                      canChangeRoles={isAdmin}
-                      onChanged={() => void load()}
-                      onDeleted={() => {
-                        setOpen(null);
-                        void load();
-                      }}
-                    />
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        {(isAdmin || ALL_GAMES.some((game) => game.SeasonPanels)) && (
-          <>
-            <h2 className="teacher__group-title">Seasons and end of year</h2>
-            <p className="teacher__group-note">Resets that can’t be undone. Most are for the start of a new year.</p>
-            <Suspense fallback={null}>
-              {ALL_GAMES.map((game) => game.SeasonPanels && <game.SeasonPanels key={game.id} />)}
-            </Suspense>
-            {isAdmin && <NewSeason onDone={() => void load()} />}
-          </>
+    <>
+      <section className="panel" aria-labelledby="people-title">
+        <h2 id="people-title" className="panel__title">
+          Players (whole school)
+          {people && <span className="panel__count">{people.length}</span>}
+        </h2>
+        <label className="teacher__filter">
+          <span>Find a player</span>
+          <input type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Player name or real name" />
+        </label>
+        {failed ? (
+          <p className="panel__empty">{failed}</p>
+        ) : !people ? (
+          <p className="panel__empty">Loading…</p>
+        ) : shown.length === 0 ? (
+          <p className="panel__empty">No players match.</p>
+        ) : (
+          <ul className="people-list">
+            {shown.map((person) => (
+              <li key={person.id} className={person.hidden ? 'is-hidden' : undefined}>
+                <button
+                  type="button"
+                  className="people-list__row"
+                  aria-expanded={open === person.id}
+                  onClick={() => setOpen(open === person.id ? null : person.id)}
+                >
+                  <AvatarImage avatar={person.avatar} size={40} />
+                  <span className="people-list__name">
+                    {person.display_name}
+                    {person.id === me && <span className="tag">You</span>}
+                    {person.role === 'teacher' && <span className="tag tag--teacher">Teacher</span>}
+                    {person.hidden && <span className="tag tag--hidden">Hidden</span>}
+                    {person.real_name && <span className="people-list__real">{person.real_name}</span>}
+                  </span>
+                  <span className="people-list__games">
+                    {person.bot_games + person.friend_games} game{person.bot_games + person.friend_games === 1 ? '' : 's'}
+                  </span>
+                  <span className="people-list__when">
+                    {person.last_played ? `Last played ${whenPlayed(person.last_played).toLowerCase()}` : 'Not played yet'}
+                  </span>
+                </button>
+                {open === person.id && (
+                  <PersonPanel
+                    person={person}
+                    isMe={person.id === me}
+                    canChangeRoles={isAdmin}
+                    onChanged={() => void load()}
+                    onDeleted={() => {
+                      setOpen(null);
+                      void load();
+                    }}
+                  />
+                )}
+              </li>
+            ))}
+          </ul>
         )}
-      </TeacherClassProvider>
-    </div>
+      </section>
+
+      {(isAdmin || ALL_GAMES.some((game) => game.SeasonPanels)) && (
+        <>
+          <h2 className="teacher__group-title">Seasons and end of year</h2>
+          <p className="teacher__group-note">Resets that can’t be undone. Most are for the start of a new year.</p>
+          <Suspense fallback={null}>
+            {ALL_GAMES.map((game) => game.SeasonPanels && <game.SeasonPanels key={game.id} />)}
+          </Suspense>
+          {isAdmin && <NewSeason onDone={() => void load()} />}
+        </>
+      )}
+    </>
   );
 }
 
@@ -226,117 +183,6 @@ function GameSection({ game, children }: { game: GameDefinition; children: React
         </div>
       )}
     </details>
-  );
-}
-
-function FriendGamesSwitch() {
-  const { classId, ready } = useTeacherClass();
-  const [enabled, setEnabled] = useState<boolean | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!ready) return;
-    setEnabled(null);
-    setStatus(null);
-    fetchMultiplayerEnabled(classId)
-      .then(setEnabled)
-      .catch(() => setStatus('We couldn’t load this setting.'));
-  }, [ready, classId]);
-
-  async function change(on: boolean) {
-    setStatus('Saving…');
-    try {
-      await setMultiplayer(on, classId);
-      setEnabled(on);
-      setStatus(on ? 'Games against friends are on.' : 'Games against friends are paused for this class.');
-    } catch (error) {
-      setStatus(errorText(error));
-    }
-  }
-
-  return (
-    <section className="panel teacher__switch" aria-labelledby="switch-title">
-      <h2 id="switch-title" className="panel__title">
-        Games against friends
-      </h2>
-      {enabled !== null && (
-        <>
-          <p>
-            {enabled
-              ? 'On: students can start and join games against each other.'
-              : 'Paused: students can’t start or join games against each other. Chess and checkers games already going can still be finished by resigning; Wormholes & Black Holes games stop where they are and end after 10 minutes. Bot games carry on as normal.'}
-          </p>
-          {enabled ? (
-            <button type="button" className="button button--danger" onClick={() => void change(false)}>
-              Pause games against friends
-            </button>
-          ) : (
-            <button type="button" className="button button--primary" onClick={() => void change(true)}>
-              Switch games against friends back on
-            </button>
-          )}
-        </>
-      )}
-      <p role="status" className="teacher__status">
-        {status}
-      </p>
-    </section>
-  );
-}
-
-/** Emoji reactions in Wormholes & Black Holes games with classmates: off until a teacher switches them on. */
-function ReactionsSwitch() {
-  const { classId, ready } = useTeacherClass();
-  const [enabled, setEnabled] = useState<boolean | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!ready) return;
-    setEnabled(null);
-    setStatus(null);
-    fetchReactionsEnabled(classId)
-      .then(setEnabled)
-      .catch(() => setStatus('We couldn’t load this setting.'));
-  }, [ready, classId]);
-
-  async function change(on: boolean) {
-    setStatus('Saving…');
-    try {
-      await setSpaceReactions(on, classId);
-      setEnabled(on);
-      setStatus(on ? 'Emoji reactions are on.' : 'Emoji reactions are off.');
-    } catch (error) {
-      setStatus(errorText(error));
-    }
-  }
-
-  return (
-    <section className="panel teacher__switch" aria-labelledby="reactions-title">
-      <h2 id="reactions-title" className="panel__title">
-        Emoji reactions in space games
-      </h2>
-      {enabled !== null && (
-        <>
-          <p>
-            {enabled
-              ? 'On: in Wormholes & Black Holes with classmates, students can send 🚀 👏 😮 🎉 😂 👍 (no other emoji, no text). At most one every 5 seconds and 20 a game. Each student can hide them on their own screen.'
-              : 'Off: students can’t send reactions. Nothing else changes.'}
-          </p>
-          {enabled ? (
-            <button type="button" className="button button--danger" onClick={() => void change(false)}>
-              Switch reactions off
-            </button>
-          ) : (
-            <button type="button" className="button button--primary" onClick={() => void change(true)}>
-              Switch reactions on
-            </button>
-          )}
-        </>
-      )}
-      <p role="status" className="teacher__status">
-        {status}
-      </p>
-    </section>
   );
 }
 
