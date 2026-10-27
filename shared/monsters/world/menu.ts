@@ -4,7 +4,7 @@
  * Every function gives back a new `WorldState` and never changes the one it is given.
  */
 import { MAX_TEAM, type ItemId } from '../engine';
-import { MONSTER_BOOK } from '../monsterBook';
+import { MONSTER_BOOK, speciesOf } from '../monsterBook';
 import { maxHpOf, TUNING } from '../rules';
 import { REPEL_STEPS } from './rewards';
 import type { WorldState } from './types';
@@ -21,6 +21,15 @@ export function swapTeam(state: WorldState, a: number, b: number): MenuResult {
   const team = t.slice();
   [team[a], team[b]] = [team[b], team[a]];
   return { ok: true, state: { ...state, team }, message: 'Swapped.' };
+}
+
+/** Moves one monster to the top of the team, so it goes out first in a battle. The rest keep their order. */
+export function moveToFront(state: WorldState, i: number): MenuResult {
+  const m = state.team[i];
+  if (!m) return no('No such monster');
+  if (i === 0) return no('Already goes first');
+  const team = [m, ...state.team.filter((_, k) => k !== i)];
+  return { ok: true, state: { ...state, team }, message: `${speciesOf(m.species).name} goes first in the next battle.` };
 }
 
 /** Moves a monster from the team to the box. The team can never be empty. */
