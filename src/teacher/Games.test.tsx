@@ -23,7 +23,9 @@ const data = vi.hoisted(() => ({
   fetchMonstersEnabled: vi.fn(),
   fetchClassMonsters: vi.fn(),
   fetchLordSettings: vi.fn(),
+  fetchLordEnabled: vi.fn(),
   fetchClassLord: vi.fn(),
+  fetchClansEnabled: vi.fn(),
 }));
 vi.mock('../data/classes', async (original) => ({
   ...(await original<typeof import('../data/classes')>()),
@@ -58,7 +60,12 @@ vi.mock('../data/monsters', async (original) => ({
 vi.mock('../data/lord', async (original) => ({
   ...(await original<typeof import('../data/lord')>()),
   fetchLordSettings: data.fetchLordSettings,
+  fetchLordEnabled: data.fetchLordEnabled,
   fetchClassLord: data.fetchClassLord,
+}));
+vi.mock('../data/clans', async (original) => ({
+  ...(await original<typeof import('../data/clans')>()),
+  fetchClansEnabled: data.fetchClansEnabled,
 }));
 vi.mock('../data/gemKeep', async (original) => ({
   ...(await original<typeof import('../data/gemKeep')>()),
@@ -146,8 +153,12 @@ beforeEach(() => {
   data.fetchMonstersSettings.mockResolvedValue({ enabled: true, topics: ['add-sub', 'times-tables', 'division', 'fractions'] });
   data.fetchMonstersEnabled.mockResolvedValue(true);
   data.fetchClassMonsters.mockResolvedValue({ players: 0, badges: [], topics: [], hardest: [], refusals: [], wholeSchool: false });
-  data.fetchLordSettings.mockRejectedValue(new Error('not needed'));
-  data.fetchClassLord.mockRejectedValue(new Error('not needed'));
+  data.fetchLordSettings.mockResolvedValue({ enabled: true, forestPerDay: 10, seasonStart: '2026-09-01', pausedSince: null, topics: ['add-sub'] });
+  data.fetchLordEnabled.mockResolvedValue(true);
+  data.fetchClassLord.mockResolvedValue({
+    season: { number: 2, start: '2026-09-01', daysLeft: 12 }, players: 0, thisSeason: 0, levels: [], hardest: [], refusals: [], hall: [], wholeSchool: false,
+  });
+  data.fetchClansEnabled.mockRejectedValue(new Error('not needed'));
 });
 afterEach(() => {
   window.matchMedia = realMatchMedia;
@@ -260,12 +271,32 @@ describe('the Games table', () => {
   it('opens a game that hasn’t moved yet: its old panels, in the same drawer, for the header’s class', async () => {
     const user = userEvent.setup();
     show('/teacher/c14/games');
-    const dragon = row(await table(), 'Dragon Maths');
-    expect(data.fetchLordSettings).not.toHaveBeenCalled();
-    await user.click(within(dragon).getByRole('link', { name: 'Dragon Maths settings' }));
-    const drawer = await screen.findByRole('dialog', { name: 'Dragon Maths' });
-    expect(await within(drawer).findByRole('region', { name: 'Dragon Maths' })).toBeInTheDocument();
-    expect(data.fetchLordSettings).toHaveBeenCalledWith('c14');
+    const clans = row(await table(), 'Clan Quest');
+    expect(data.fetchClansEnabled).not.toHaveBeenCalled();
+    await user.click(within(clans).getByRole('link', { name: 'Clan Quest settings' }));
+    const drawer = await screen.findByRole('dialog', { name: 'Clan Quest' });
+    expect(await within(drawer).findByRole('region', { name: 'Clan Quest' })).toBeInTheDocument();
+    expect(data.fetchClansEnabled).toHaveBeenCalledWith('c14');
+  });
+
+  it('shows Dragon Maths’ switch and season for the header’s class, and opens its settings for that class', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-28T00:00:00Z') });
+    try {
+      const user = userEvent.setup();
+      show('/teacher/c14/games');
+      const dragon = row(await table(), 'Dragon Maths');
+      const on = await within(dragon).findByRole('switch', { name: 'Dragon Maths' });
+      await waitFor(() => expect(on).toHaveAttribute('aria-checked', 'true'));
+      expect(await within(dragon).findByText('Season 2, 12 days left')).toBeInTheDocument();
+      expect(data.fetchLordEnabled).toHaveBeenCalledWith('c14');
+      await user.click(within(dragon).getByRole('link', { name: 'Dragon Maths settings' }));
+      const drawer = await screen.findByRole('dialog', { name: 'Dragon Maths' });
+      expect(await within(drawer).findByRole('region', { name: 'Dragon Maths settings' })).toBeInTheDocument();
+      expect(await within(drawer).findByRole('region', { name: /^Dragon Maths: this class/ })).toBeInTheDocument();
+      expect(data.fetchClassLord).toHaveBeenCalledWith('c14');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('shows Maths Monsters’ switch and topics for the header’s class, and opens its settings for that class', async () => {
@@ -307,9 +338,9 @@ describe('the Games table', () => {
 
   it('says where an unmoved game’s switch is, rather than showing one it can’t read', async () => {
     show('/teacher/c12/games');
-    const dragon = row(await table(), 'Dragon Maths');
-    expect(within(dragon).queryByRole('switch')).not.toBeInTheDocument();
-    expect(within(dragon).getAllByText('in Settings')).toHaveLength(2);
+    const clans = row(await table(), 'Clan Quest');
+    expect(within(clans).queryByRole('switch')).not.toBeInTheDocument();
+    expect(within(clans).getAllByText('in Settings')).toHaveLength(2);
   });
 
   it('never makes a reversible control red', async () => {

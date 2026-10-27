@@ -9,7 +9,9 @@ vi.mock('../lib/supabase', () => ({
   },
 }));
 
-import { createServerBackend, enqueueFinish, fetchClassLord, fetchStudentLord, queuedFinishes, resetLordHero } from './lord';
+import {
+  createServerBackend, enqueueFinish, fetchClassLord, fetchStudentLord, queuedFinishes, resetLordHero, saveLordChange, saveLordEnabled,
+} from './lord';
 
 const fetchMock = vi.fn<typeof fetch>();
 let ME = '';
@@ -191,8 +193,8 @@ describe('the news, the Warriors list and the Hall of Heroes', () => {
 describe('the teacher’s views', () => {
   it('asks for the class, one pupil, and a reset', async () => {
     rpc.mockResolvedValue({ data: { players: 2 }, error: null });
-    expect((await fetchClassLord()).players).toBe(2);
-    expect(rpc).toHaveBeenLastCalledWith('teacher_lord_class');
+    expect(await fetchClassLord('c12')).toEqual({ players: 2, wholeSchool: false });
+    expect(rpc).toHaveBeenLastCalledWith('teacher_lord_class', { target_class: 'c12' });
     await fetchStudentLord('kid-1');
     expect(rpc).toHaveBeenLastCalledWith('teacher_lord_student', { student: 'kid-1' });
     rpc.mockResolvedValue({ data: { reset: true }, error: null });
@@ -202,7 +204,49 @@ describe('the teacher’s views', () => {
 
   it('turns a failure into a friendly sentence', async () => {
     rpc.mockResolvedValue({ data: null, error: { code: 'XX000', message: 'boom' } });
-    await expect(fetchClassLord()).rejects.toThrow('We couldn’t load Dragon Maths for the school.');
+    await expect(fetchClassLord('c12')).rejects.toThrow('We couldn’t load Dragon Maths for this class.');
     await expect(resetLordHero('kid-1')).rejects.toThrow('We couldn’t reset that hero.');
+  });
+
+  it('falls back to the whole-school report, and says so, while the database has only the old one', async () => {
+    rpc
+      .mockResolvedValueOnce({ data: null, error: { code: 'PGRST202', message: 'Could not find the function' } })
+      .mockResolvedValueOnce({ data: { players: 9 }, error: null });
+    expect(await fetchClassLord('c12')).toEqual({ players: 9, wholeSchool: true });
+    expect(rpc).toHaveBeenLastCalledWith('teacher_lord_class');
+  });
+
+  it('doesn’t fall back for any other error (a class the teacher doesn’t teach)', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'That isn’t one of your classes.' } });
+    await expect(fetchClassLord('c99')).rejects.toThrow('We couldn’t load Dragon Maths for this class.');
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the teacher’s settings', () => {
+  const ROW = { lord_enabled: true, lord_forest_per_day: 10, lord_season_start: '2026-11-23', lord_paused_since: null, lord_topics: ['add-sub'] };
+  const saved = { data: { enabled: true }, error: null };
+
+  it('switches the game on or off for the class, and nothing else', async () => {
+    rpc.mockResolvedValueOnce(saved);
+    await saveLordEnabled(false, 'c12');
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenLastCalledWith('teacher_set_lord', { settings: { enabled: false }, target_class: 'c12' });
+  });
+
+  it('saves one change for the class, keeping its switch as it is now', async () => {
+    rpc.mockResolvedValueOnce({ data: ROW, error: null }).mockResolvedValueOnce(saved);
+    await saveLordChange({ forestPerDay: 6 }, 'c12');
+    expect(rpc).toHaveBeenNthCalledWith(1, 'teacher_class_settings', { target_class: 'c12' });
+    expect(rpc).toHaveBeenLastCalledWith('teacher_set_lord', { settings: { forestPerDay: 6, enabled: true }, target_class: 'c12' });
+    rpc.mockResolvedValueOnce({ data: { ...ROW, lord_enabled: false }, error: null }).mockResolvedValueOnce(saved);
+    await saveLordChange({ seasonStart: '2027-02-01' }, 'c14');
+    expect(rpc).toHaveBeenLastCalledWith('teacher_set_lord', { settings: { seasonStart: '2027-02-01', enabled: false }, target_class: 'c14' });
+  });
+
+  it('saves nothing if the current settings can’t be read', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { code: 'x', message: 'no' } });
+    await expect(saveLordChange({ topics: ['money'] }, 'c12')).rejects.toThrow();
+    expect(rpc).toHaveBeenCalledTimes(1);
   });
 });

@@ -541,6 +541,35 @@ one class. One migration, `20261028000200_monsters_class_report.sql` (not live y
   a failed save goes back, the class report, the student panel), now for a named class; the switch is tested through its
   Games table row. In `Games.test.tsx` the "game that hasn't moved" tests now use Dragon Maths, and Monsters has a row check.*
 
+*Dragon Maths moved 28 Oct 2026 on `teacher-games-dragon` (from `teacher-games-monsters`), with its class report now for
+one class. One migration, `20261028000300_lord_class_report.sql` (not live yet). Nothing it saves changed, and its season
+dates still work exactly as before (one date per class; the one school date of section 9 is the next step).*
+- *Server: `teacher_lord_class(target_class uuid)`, the same pattern as Gem Keep's and Monsters': the old report (the season,
+  heroes at each level this season, hardest questions, requests turned down in the last 2 weeks, and the Hall of Heroes) for
+  the teacher's students in that class only, 42501 unless `teaches_class`, 22023 for no class, and the old no-argument
+  function left beside it. One difference: the season is the class's own (its settings row, which its pupils play by). The
+  old call used the teacher's own row, which for a teacher with two classes was the other class's season. Checked by
+  `supabase/tests/database/lord_class_report.test.sql` (23 checks, including two classes with different seasons).*
+- *The same fallback as Gem Keep and Monsters: until the migration is live, the report is the whole school's and says so.*
+- *Its row has the on/off switch and where the class's season is in the Maths column ("Season 2, 12 days left"; "Season 2
+  paused, 30 days left" while the game is off and its clock waits; "Season 1 starts in 5 days"; "Starts when switched
+  on"), as in the 4.5 sketch. The "?" says switching off pauses the season clock and switching on again carries the season
+  on where it left off. The red "Switch Dragon Maths off (pause the season)" button is gone.*
+- *Its Settings: a note while the game is off (if its clock is paused: since when, and that switching on in the Games table
+  carries on the season where it left off), Forest fights a day (a number, 1–30, saved on Enter or leaving the box; it had a
+  Save button), First day of season 1 (a date, likewise), Topics on (shared chips), then the class report. The longer
+  descriptions moved behind each one's "?".*
+- *`teacher_set_lord` needs the switch with every save, so the Settings' saves (`saveLordChange` in `src/data/lord.ts`) read
+  the class's current switch first and send it back unchanged: a stale one would switch the game, and its season clock, on or
+  off. The row's switch (`saveLordEnabled`) sends only the switch. No server change was needed.*
+- *On a phone the hardest-questions table scrolls sideways inside its card, as Monsters' does.*
+- *Its student panel is under `teacher`, with a summary line ("Level 5 mage, season 2, 1 dragon star").*
+- *Tests: `TeacherLord.test.tsx` keeps every check (on, off and on again; the pause and carrying on; forest fights and the
+  date save; each topic, the order, the last topic stays on; a failed save goes back; the class report; the student panel),
+  now for a named class; the switch is tested through its Games table row. The old "the season clock is paused" status line
+  after switching off is now in the switch's "?". In `Games.test.tsx` the "game that hasn't moved" tests now use Clan Quest,
+  and Dragon Maths has a row check.*
+
 **Stage 4: Students roster and student page,** with `teacher_class_overview` and class-scoped `teacher_students`.
 
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.
@@ -563,7 +592,22 @@ resets into an admin-only section, so nothing waits on this stage to be safe.
 
 1. Is a one-tap "Pause every game for this class" wanted, or is pausing friend games enough?
 2. Villages and Dragon Maths seasons: school-wide or per class?
+
+   *Decided by James, 28 Oct 2026:*
+   - *Dragon Maths season dates: **one for the whole school**, set by a school admin. (Today each class saves its own
+     `lord_season_start` in its settings row, and switching a class off pauses its season clock with `lord_paused_since`.)
+     Dragon Maths moves to the Games table first with its dates working exactly as today; the one school date is then
+     designed and shown to James before it is built, because it changes how seasons are worked out.*
+   - *Clan Quest villages: **whole school, and any teacher can manage them** (as today). Raids stay per class. So the admin
+     check on the village functions in section 6 is **not** added.*
 3. Should non-admin teachers see the whole-school student list at all, or only their classes plus students in no class?
 4. Is the Teacher page ever projected? (Decides whether real names start hidden.)
 5. Admin page: are "defaults for new classes" and "copy settings to classes" wanted now, or later?
 6. Should there be more than one school admin, and who can make one?
+
+*Also decided by James, 28 Oct 2026:*
+- *The PR that removes `TeacherPanels` also drops the four old no-argument class report functions
+  (`teacher_gem_keep_class()`, `teacher_monster_class()`, `teacher_lord_class()`, `teacher_clan_maths_class()`) and the
+  website's fallbacks to them. That migration is applied only after all four new class report migrations are live.*
+- *`scripts/scratch-db.sh` is fixed in its own small PR, based on `main`: its copies leave out the `hub_games` rows and the
+  achievement list (and what that list depends on), so about 20 unrelated database test files fail on them.*

@@ -256,9 +256,9 @@ export async function fetchLordSettings(classId?: string | null): Promise<LordSe
   };
 }
 
-/** Is the game switched on? (The dashboard hides it when it isn't.) */
-export async function fetchLordEnabled(): Promise<boolean> {
-  return (await fetchLordSettings()).enabled;
+/** Is the game switched on? (The dashboard hides it when it isn't.) For the pupil's class, or a teacher's class when given. */
+export async function fetchLordEnabled(classId?: string | null): Promise<boolean> {
+  return (await fetchLordSettings(classId)).enabled;
 }
 
 export async function saveLordSettings(settings: Partial<LordSettings> & { enabled: boolean }, classId?: string | null): Promise<LordSettings> {
@@ -269,6 +269,24 @@ export async function saveLordSettings(settings: Partial<LordSettings> & { enabl
     throw new FriendlyError('We couldn’t save the Dragon Maths settings.');
   }
   return data as LordSettings;
+}
+
+/**
+ * The Games table's switch. Switching off pauses the class's season clock and switching on again carries the season on
+ * where it left off (the server moves the start date forward by the days it was off).
+ */
+export async function saveLordEnabled(enabled: boolean, classId: string): Promise<void> {
+  await saveLordSettings({ enabled }, classId);
+}
+
+/**
+ * One change from the Settings drawer (forest fights, the season date or the topics). The server needs the switch with every
+ * save, so this reads the class's current switch first and sends it back unchanged: a stale one would switch the game (and
+ * the season clock) on or off by accident.
+ */
+export async function saveLordChange(change: Pick<Partial<LordSettings>, 'forestPerDay' | 'seasonStart' | 'topics'>, classId: string): Promise<void> {
+  const { enabled } = await fetchLordSettings(classId);
+  await saveLordSettings({ ...change, enabled }, classId);
 }
 
 export type { LordAction as LordActionRequest };
@@ -310,10 +328,23 @@ function fail(error: { code?: string; message?: string } | null, text: string): 
   throw new FriendlyError(text);
 }
 
-export async function fetchClassLord(): Promise<ClassLord> {
-  const { data, error } = await supabase.rpc('teacher_lord_class');
-  if (error || !data) fail(error, 'We couldn’t load Dragon Maths for the school.');
-  return data as ClassLord;
+/** PostgREST's answer when the database has no function with these arguments. */
+const NO_SUCH_FUNCTION = 'PGRST202';
+
+/**
+ * Dragon Maths' report for one class, with that class's own season (migration 20261028000300). Until that migration is on
+ * the live database, the server has only the old whole-school report: then that one is loaded instead, with `wholeSchool`
+ * set, so the page can say so.
+ */
+export async function fetchClassLord(classId: string): Promise<ClassLord & { wholeSchool: boolean }> {
+  const { data, error } = await supabase.rpc('teacher_lord_class', { target_class: classId });
+  if (error?.code === NO_SUCH_FUNCTION) {
+    const old = await supabase.rpc('teacher_lord_class');
+    if (old.error || !old.data) fail(old.error, 'We couldn’t load Dragon Maths for the school.');
+    return { ...(old.data as ClassLord), wholeSchool: true };
+  }
+  if (error || !data) fail(error, 'We couldn’t load Dragon Maths for this class.');
+  return { ...(data as ClassLord), wholeSchool: false };
 }
 
 export async function fetchStudentLord(student: string): Promise<StudentLord> {
