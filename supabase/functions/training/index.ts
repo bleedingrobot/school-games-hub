@@ -211,7 +211,7 @@ const TRAINING_CONFIG = {
 	* of time can be as short as 2 (the first question, then the last), and a whole Quick looks round is 12 pictures.
 	*/
 	gate: {
-		gamesOpenHours: 6,
+		gamesOpenHours: 2,
 		minAnswers: {
 			facts: 2,
 			quick: 12
