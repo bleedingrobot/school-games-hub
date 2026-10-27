@@ -20,12 +20,12 @@ import { PracticalAsk, Working } from '../../maths/PracticalAsk';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
 import { ACTION_HELP, spellHelp } from './abilities';
 import { Bar } from './Bars';
-import { castable, choosingOrder, describe, fightsLabel, isAlive, labelDuplicates, orderText, suggestedPlan } from './fightView';
+import { castable, choosingOrder, fightsLabel, isAlive, labelDuplicates, orderText, suggestedPlan } from './fightView';
 import { MonsterSprite, Portrait } from './Sprite';
-import { inOrder, roundSteps, roundSummary, stepMs, type Step, type Who } from './playback';
+import { roundSteps, roundSummary, stepMs, type Step, type Who } from './playback';
 import { zoneColour } from './Sprite';
 import { MONSTERS_BY_NAME } from './monsters';
-import { sceneArt, zoneScene } from './art';
+import { fxArt, sceneArt, zoneScene, type FxId } from './art';
 import { lookOf } from '../../../shared/clans/looks';
 import { nextSeed, type Session } from './session';
 
@@ -37,6 +37,8 @@ interface Replay {
   at: number;
   after: FightState;
   summary: string;
+  /** The Battle Cry this round, if one was earned: the clan glows while it plays. */
+  cry: 'damage' | 'heal' | null;
 }
 
 /** The server's answer to a ladder Battle Cry: was it right, the right answer (to show when it wasn't), and the answer it marked. */
@@ -75,12 +77,16 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const [boot] = useState(() => {
     if (!open) return { fight: labelDuplicates(newFight(members, session.depth, nextSeed(session), boss)), lines: ['A fight begins!'] };
     // Rebuild the fight the server has, by playing back the rounds it has kept.
-    const fight = labelDuplicates(newFight(members, open.depth, open.seed, open.boss));
+    const start = labelDuplicates(newFight(members, open.depth, open.seed, open.boss));
     const lines = ['A fight begins!'];
+    let fight = start;
     for (const r of open.rounds) {
-      const before = fight.log.length;
-      playCryRound(fight, { settings: open.settings, questions: open.questions, marks: open.marks }, r.orders, r.cry);
-      lines.push(...inOrder(fight.log.slice(before)).map((e) => describe(e, clanNames)));
+      const next = structuredClone(fight);
+      const before = next.log.length;
+      playCryRound(next, { settings: open.settings, questions: open.questions, marks: open.marks }, r.orders, r.cry);
+      // The same lines the round showed when it was played.
+      lines.push(`Round ${next.round}`, ...roundSteps(fight, next, before, clanNames).map((st) => st.line));
+      fight = next;
     }
     return { fight, lines };
   });
@@ -194,7 +200,8 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     onRound?.(next.round, { orders: all, cry: given });
     // Show it one action at a time; the log gets each line as it happens.
     setLog((l) => [...l, `Round ${next.round}`]);
-    setReplay({ steps: roundSteps(fight, next, before, clanNames), at: 0, after: next, summary: roundSummary(next, before, clanNames).text });
+    const cry = next.log.slice(before).find((e) => e.type === 'cry');
+    setReplay({ steps: roundSteps(fight, next, before, clanNames), at: 0, after: next, summary: roundSummary(next, before, clanNames).text, cry: cry?.type === 'cry' ? cry.kind : null });
     setPhase('replay');
   }
   // Every action shown (or skipped): the fight moves on, and the summary waits for Enter.
@@ -203,7 +210,15 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     setReplay({ ...r, at: r.steps.length });
     setFight(r.after);
     setPhase(r.after.result ? 'over' : 'summary');
+    if (r.after.result === 'won') setFlourish(true);
   }
+  // The win flourish shows for a moment over the fighters, then gets out of the way.
+  const [flourish, setFlourish] = useState(false);
+  useEffect(() => {
+    if (!flourish) return;
+    const timer = setTimeout(() => setFlourish(false), 1800);
+    return () => clearTimeout(timer);
+  }, [flourish]);
   useEffect(() => {
     if (phase !== 'replay' || !replay) return;
     if (replay.at >= replay.steps.length) return endReplay(replay);
@@ -292,17 +307,26 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const shownStep = phase === 'replay' && replay && replay.at > 0 ? replay.steps[replay.at - 1] : undefined;
   const hpOf = (w: Who, hp: number) => (phase === 'replay' ? (shownStep?.hp[w] ?? hp) : hp);
   const effect = (w: Who) => {
-    if (!replay || replay.at === 0) return { cls: '', float: null };
+    if (!replay || replay.at === 0) return { cls: '', float: null, burst: null };
     const hit = shownStep?.targets.find((t) => t.who === w);
-    const cls = shownStep ? `${shownStep.actor === w ? 'is-acting' : ''} ${hit ? 'is-hit' : ''}` : '';
-    // A number takes about a second to float away, longer than an action, so the last few actions' numbers stay.
-    const float = replay.steps.slice(Math.max(0, replay.at - FLOAT_STEPS), replay.at).flatMap((st, n) => {
-      const f = st.targets.find((t) => t.who === w)?.float;
-      const step = Math.max(0, replay.at - FLOAT_STEPS) + n;
-      return f ? [<span key={step} className={`cq-float cq-float--${f.kind}`}>{f.text}</span>] : [];
-    });
-    return { cls, float: float.length ? <span className="cq-floats" aria-hidden="true">{float}</span> : null };
+    const struck = hit ? (hit.dodge ? 'is-dodge' : hit.big ? 'is-hit is-big-hit' : 'is-hit') : '';
+    let cls = shownStep ? `${shownStep.actor === w ? 'is-acting' : ''} ${struck} ${hit?.down ? 'is-toppling' : ''}` : '';
+    // A number or a burst takes about a second to fade, longer than an action, so the last few actions' stay.
+    const from = Math.max(0, replay.at - FLOAT_STEPS);
+    const recent = replay.steps.slice(from, replay.at).map((st, n) => ({ st, key: from + n, t: st.targets.find((t) => t.who === w) }));
+    if (recent.some((r) => r.t?.close)) cls += ' is-close';
+    const fiery = (st: Step) => replay.cry === 'damage' && st.actor?.startsWith('c');
+    const float = recent.flatMap(({ st, key, t }) =>
+      t?.float ? [<span key={key} className={`cq-float cq-float--${t.float.kind} ${fiery(st) && t.float.kind !== 'miss' ? 'is-fiery' : ''}`}>{t.float.text}</span>] : [],
+    );
+    const burst = recent.flatMap(({ key, t }) => (t?.burst ? [<Burst key={key} id={t.burst} />] : []));
+    return {
+      cls,
+      float: float.length ? <span className="cq-floats" aria-hidden="true">{float}</span> : null,
+      burst: burst.length ? <span className="cq-bursts" aria-hidden="true">{burst}</span> : null,
+    };
   };
+  const bump = shownStep?.targets.some((t) => t.big);
   const upNext = phase === 'orders' && who ? who.index : -1;
   const planning = phase === 'orders' && !who;
   // The mine zone the monsters come from, painted dimly behind them (Clans art Stage A.6).
@@ -313,30 +337,33 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
       <p className="cq-fight__top">
         <strong>Depth {fight.depth}</strong> · Round {Math.min(fight.round + (fight.result || phase === 'summary' ? 0 : 1), 8)} · Fights today: {fightsLabel(session.fightsLeft, session.fightsPerDay)}
       </p>
-      <div className="cq-arena" onClick={skip}>
+      <div className={`cq-arena ${bump ? 'is-bump' : ''}`} onClick={skip}>
+        {flourish && <Victory />}
         <ul className="cq-side cq-side--enemies" aria-label="Enemies" data-zone={zone} style={zoneArt ? ({ '--cq-zone': `url(${zoneArt})` } as React.CSSProperties) : undefined}>
           {fight.enemies.map((e) => {
             const hp = hpOf(`e${e.index}`, e.hp);
             const fx = effect(`e${e.index}`);
             return (
-            <li key={e.index} className={`${hp > 0 ? '' : 'is-down'} ${fx.cls}`} data-step={fx.cls.includes('is-hit') ? replay?.at : undefined}>
+            <li key={e.index} className={`${hp > 0 ? '' : 'is-down'} ${fx.cls}`}>
+              {fx.burst}
               {fx.float}
               <MonsterSprite name={e.name.replace(/ [A-D]$/, '')} zone={MONSTERS_BY_NAME[e.name.replace(/ [A-D]$/, '')]?.zone ?? 'Meadow'} scale={3} />
               <span className="cq-name" style={{ color: zoneColour(MONSTERS_BY_NAME[e.name.replace(/ [A-D]$/, '')]?.zone ?? 'Meadow') }}>
                 {e.name}
               </span>
               <Bar label="HP" value={hp} max={e.maxHp} kind="hp" />
-              {hp <= 0 && <span className="cq-tag">gone</span>}
+              {hp <= 0 && <span className="cq-stamp">Beaten!</span>}
             </li>
             );
           })}
         </ul>
-        <ul className="cq-side cq-side--clan" aria-label="Your clan">
+        <ul className={`cq-side cq-side--clan ${phase === 'replay' && replay?.cry ? `is-cry is-cry--${replay.cry}` : ''}`} aria-label="Your clan">
           {fight.clan.map((f, i) => {
             const hp = hpOf(`c${f.index}`, f.hp);
             const fx = effect(`c${f.index}`);
             return (
             <li key={f.index} className={`${hp > 0 ? '' : 'is-down'} ${upNext === f.index ? 'is-up' : ''} ${fx.cls}`} aria-current={upNext === f.index ? 'true' : undefined}>
+              {fx.burst}
               {fx.float}
               <Portrait race={members[i].race} cls={members[i].cls} look={lookOf(members[i])} scale={3} />
               <span className="cq-name">{f.name}</span>
@@ -481,6 +508,23 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
         </ol>
       </div>
     </section>
+  );
+}
+
+/** A spell's light or a big hit's gold burst over a fighter: the painting, or a CSS glow without one. */
+function Burst({ id }: { id: FxId }) {
+  const art = fxArt(id);
+  return <span className={`cq-burst cq-burst--${id} ${art ? 'is-painted' : ''}`} style={art ? ({ backgroundImage: `url(${art})` } as React.CSSProperties) : undefined} />;
+}
+
+/** The win flourish: the gold crest and "Victory!" over the fighters for a moment. */
+function Victory() {
+  const art = fxArt('victory');
+  return (
+    <div className="cq-victory" aria-hidden="true">
+      {art && <img src={art} alt="" />}
+      <strong>Victory!</strong>
+    </div>
   );
 }
 

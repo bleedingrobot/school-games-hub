@@ -6,7 +6,7 @@ import { KINGDOMS } from '../../../shared/clans/empire';
 import { QUESTS } from '../../../shared/clans/quests';
 import { BUILDING_KINDS, TROOP_KINDS } from '../../../shared/clans/types';
 import { CLAN_NOUNS } from '../../../shared/clans/words';
-import { LOOKS, SCENES, slug } from './art';
+import { FX, LOOKS, SCENES, slug } from './art';
 
 const DIR = join(__dirname, 'art');
 const files = (group: string): string[] => {
@@ -30,6 +30,7 @@ const NEEDED: Record<string, { names: string[]; maxKb: number }> = {
   troops: { names: [...TROOP_KINDS], maxKb: 30 },
   buildings: { names: BUILDING_KINDS.map((b) => b.toLowerCase()), maxKb: 40 },
   banners: { names: CLAN_NOUNS.map(slug), maxKb: 30 },
+  fx: { names: [...FX], maxKb: 60 },
 };
 
 describe('the painted pictures', () => {

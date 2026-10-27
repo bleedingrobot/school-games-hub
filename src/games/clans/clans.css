@@ -74,7 +74,8 @@
 .cq-arena { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .cq-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; list-style: none; margin: 0; padding: 6px; border: 1px solid var(--cq-line); border-radius: 4px; background: var(--cq-panel); }
 .cq-side li { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; padding: 2px; border: 1px solid transparent; border-radius: 4px; text-align: center; }
-.cq-side li.is-down { opacity: 0.45; }
+/* Fade the fighter, not the moment: the burst, the number and the stamp over them stay bright. */
+.cq-side li.is-down > :not(.cq-floats, .cq-bursts, .cq-stamp) { opacity: 0.45; }
 .cq-side li.is-up { border-color: var(--cq-yellow); background: #1d1d40; }
 .cq-name { font-size: 0.9rem; overflow-wrap: anywhere; }
 .cq-bar { position: relative; width: 100%; max-width: 150px; height: 18px; border: 2px solid var(--cq-soft); border-radius: 3px; background: #05050c; overflow: hidden; }
@@ -338,4 +339,54 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   @keyframes cq-nudge-left { 50% { transform: translateX(-8px); } }
   @keyframes cq-nudge-down { 50% { transform: translateY(6px); } }
   @keyframes cq-nudge-up { 50% { transform: translateY(-6px); } }
+}
+
+/* Big moments (docs/CLANS-FIGHT-FEEL.md, stage 2). Painted bursts are light on see-through (scripts/clans-fx-art.py);
+   without a painting each burst is a CSS glow. Transform and opacity only. Reduced motion: nothing moves, the
+   newest burst and number just show. */
+.cq-arena { position: relative; }
+.cq-side { position: relative; }
+.cq-side li::after { content: ''; position: absolute; inset: -1px; border: 2px solid var(--cq-red); border-radius: 4px; opacity: 0; pointer-events: none; }
+.cq-bursts { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.cq-burst { position: absolute; top: -18px; left: 50%; width: 112px; height: 112px; margin-left: -56px; opacity: 0; background: center / contain no-repeat; }
+.cq-burst:not(.is-painted) { border-radius: 50%; }
+.cq-burst--fire:not(.is-painted) { background-image: radial-gradient(circle, #fff3c4 0%, #ff9a2e 35%, rgba(200, 40, 0, 0.5) 60%, transparent 72%); }
+.cq-burst--lightning:not(.is-painted) { background-image: radial-gradient(circle, #ffffff 0%, #9fd4ff 30%, rgba(60, 110, 255, 0.5) 58%, transparent 72%); }
+.cq-burst--heal:not(.is-painted) { background-image: radial-gradient(circle, #f4ffd8 0%, #8ee69f 35%, rgba(40, 160, 80, 0.45) 60%, transparent 72%); }
+.cq-burst--magic:not(.is-painted) { background-image: radial-gradient(circle, #f3e8ff 0%, #b98cff 35%, rgba(60, 200, 200, 0.4) 60%, transparent 72%); }
+.cq-burst--impact:not(.is-painted) { background-image: radial-gradient(circle, #ffffff 0%, #ffd75e 30%, rgba(255, 160, 30, 0.5) 55%, transparent 70%); }
+.cq-float--big { color: #ffd75e; font-size: 1.5rem; text-shadow: 0 0 6px rgba(255, 170, 0, 0.8), 0 1px 0 #000; z-index: 3; }
+.cq-float.is-fiery { text-shadow: 0 0 8px rgba(255, 110, 0, 0.95), 0 1px 0 #000; }
+.cq-stamp { padding: 0 8px; border: 2px solid #d9a441; border-radius: 3px; color: #ffd75e; background: rgba(0, 0, 0, 0.55); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; transform: rotate(-6deg); }
+.cq-side--enemies li.is-down .cq-monster-art { transform: rotate(-10deg) translateY(6px); }
+.cq-side--clan li.is-down :is(.cq-portrait, .cq-sprite) { transform: translateY(6px) scale(0.94); }
+.cq-side--clan.is-cry::before { content: ''; position: absolute; inset: 0; border-radius: 4px; pointer-events: none; box-shadow: inset 0 0 22px 4px rgba(255, 190, 60, 0.55); }
+.cq-side--clan.is-cry--heal::before { box-shadow: inset 0 0 22px 4px rgba(120, 230, 140, 0.5); }
+.cq-victory { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; align-content: center; gap: 0; pointer-events: none; }
+.cq-victory img { width: 190px; height: 190px; }
+.cq-victory strong { margin-top: -28px; color: #ffd75e; font-size: 2.2rem; letter-spacing: 0.04em; text-shadow: 0 0 10px rgba(255, 170, 0, 0.8), 0 2px 0 #000, 0 0 2px #000; }
+@media (prefers-reduced-motion: reduce) {
+  .cq-bursts > :last-child { opacity: 0.85; }
+  .cq-side li.is-close::after { opacity: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cq-burst { animation: cq-burst 0.9s ease-out forwards; }
+  .cq-side li.is-big-hit { animation: cq-big-shake 0.4s ease-in-out; }
+  .cq-side li.is-dodge { animation: cq-dodge 0.35s ease-in-out; }
+  .cq-arena.is-bump { animation: cq-bump 0.25s ease-out; }
+  .cq-side--enemies li.is-toppling .cq-monster-art { animation: cq-topple 0.6s ease-in forwards; }
+  .cq-side li.is-down :is(.cq-monster-art, .cq-portrait, .cq-sprite) { transition: transform 0.5s ease-in; }
+  .cq-stamp { animation: cq-stamp 0.35s ease-out; }
+  .cq-side li.is-close::after { animation: cq-close 0.9s ease-in-out 2; }
+  .cq-side--clan.is-cry::before { animation: cq-glow 1.2s ease-in-out infinite alternate; }
+  .cq-victory { animation: cq-victory 1.8s ease-out forwards; }
+  @keyframes cq-burst { from { opacity: 0; transform: scale(0.4); } 25% { opacity: 1; } to { opacity: 0; transform: scale(1.25); } }
+  @keyframes cq-big-shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-8px) rotate(-2deg); } 40% { transform: translateX(7px) rotate(2deg); } 60% { transform: translateX(-5px); } 80% { transform: translateX(3px); } }
+  @keyframes cq-dodge { 50% { transform: translateX(-10px) rotate(-5deg); } }
+  @keyframes cq-bump { 30% { transform: translate(2px, 2px); } 60% { transform: translate(-2px, -1px); } }
+  @keyframes cq-topple { from { transform: none; } 60% { transform: rotate(-18deg) translateY(4px); } to { transform: rotate(-10deg) translateY(6px); } }
+  @keyframes cq-stamp { from { opacity: 0; transform: rotate(-6deg) scale(1.9); } to { opacity: 1; transform: rotate(-6deg) scale(1); } }
+  @keyframes cq-close { 50% { opacity: 1; } }
+  @keyframes cq-glow { from { opacity: 0.45; } to { opacity: 1; } }
+  @keyframes cq-victory { from { opacity: 0; transform: scale(0.6); } 18% { opacity: 1; transform: scale(1.06); } 28% { transform: scale(1); } 80% { opacity: 1; } to { opacity: 0; } }
 }

@@ -7,7 +7,7 @@ import { botOrders } from '../../../shared/clans/bot';
 import { newFight, playRound, type FightState } from '../../../shared/clans/fight';
 import { newClan } from '../../../shared/clans/sim';
 import { labelDuplicates } from './fightView';
-import { inOrder, roundSteps, roundSummary, stepMs, type Who } from './playback';
+import { BIG_HIT, inOrder, roundSteps, roundSummary, spellBurst, stepMs, type Who } from './playback';
 
 const hpNow = (f: FightState) => {
   const hp: Record<string, number> = {};
@@ -43,7 +43,7 @@ describe('round playback', () => {
     playRound(next, botOrders(next), 'heal');
     const steps = roundSteps(f, next, f.log.length, new Set(f.clan.map((c) => c.name)));
     for (const st of steps) {
-      if (/ hits .* for \d+\.$/.test(st.line)) expect(st.targets[0].float?.kind).toBe('damage');
+      if (/ hits .* for \d+\./.test(st.line)) expect(['damage', 'big']).toContain(st.targets[0].float?.kind);
       if (/ and misses\.$/.test(st.line)) expect(st.targets[0].float).toEqual({ text: 'miss!', kind: 'miss' });
     }
     const cry = steps.find((st) => st.line.includes('Battle Cry'))!;
@@ -83,6 +83,47 @@ describe('round playback', () => {
       { type: 'miss', who: 'Rat', target: 'Ash' },
     ]);
     expect(events.map((e) => e.type)).toEqual(['hit', 'down', 'miss']);
+  });
+
+  it('marks big hits, knock-outs and close calls, round after round', () => {
+    let big = 0;
+    let downs = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const clan = newClan('balanced', seed);
+      let f = labelDuplicates(newFight(clan.members, 3 + (seed % 4), seed * 17));
+      const names = new Set(f.clan.map((c) => c.name));
+      for (let round = 0; !f.result && round < 10; round++) {
+        const next = structuredClone(f);
+        const from = next.log.length;
+        playRound(next, botOrders(next), null);
+        const max = new Map<string, number>([...next.clan.map((c) => [`c${c.index}`, c.maxHp] as const), ...next.enemies.map((e) => [`e${e.index}`, e.maxHp] as const)]);
+        const steps = roundSteps(f, next, from, names);
+        for (const st of steps) {
+          for (const t of st.targets) {
+            const amount = Number(t.float?.text.match(/-(\d+)$/)?.[1] ?? 0);
+            if (t.float?.kind === 'damage' || t.float?.kind === 'big') expect(t.big).toBe(amount >= max.get(t.who)! * BIG_HIT);
+            if (t.big) (big++, expect(t.float?.text).toMatch(/^BIG HIT! -\d+$/));
+            if (t.down) (downs++, expect(st.hp[t.who]).toBe(0));
+            if (t.close) expect(st.hp[t.who] / max.get(t.who)!).toBeLessThan(0.2);
+          }
+        }
+        // Every knock-out the engine logged is on a step.
+        expect(steps.flatMap((st) => st.targets.filter((t) => t.down)).length).toBe(next.log.slice(from).filter((e) => e.type === 'down').length);
+        f = next;
+      }
+    }
+    expect(big).toBeGreaterThan(0);
+    expect(downs).toBeGreaterThan(0);
+  });
+
+  it('gives each spell its own light', () => {
+    expect(spellBurst('Fireball')).toBe('fire');
+    expect(spellBurst('Lightning Bolt')).toBe('lightning');
+    expect(spellBurst('Thunder Rain')).toBe('lightning');
+    expect(spellBurst('Little Heal')).toBe('heal');
+    expect(spellBurst('Heavy Blow')).toBe('impact');
+    expect(spellBurst('Ropes')).toBe('magic');
+    expect(spellBurst('Wither')).toBe('magic');
   });
 
   it('takes about a third of a second an action, and never much more than 4 seconds a round', () => {

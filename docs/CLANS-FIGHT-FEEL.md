@@ -104,3 +104,20 @@ Built on `clans-fight-feel`. Display only: the orders and Battle Cry answers sen
 - **Tests**: `playback.test.ts` (the steps end on exactly the engine's HP for every round of 80 fights, with heals, spells and both Battle Cries; numbers, attacker and target; the summary; knock-out order; the timing), and two screen tests in `FightPlan.test.tsx` (plays out, Skip, the summary waits, Enter goes on; the log ends the same). Tests that click through fights now also press Skip and Next round. All 5,041 tests, the type check and the build pass.
 - **Checked in the preview** at 1366 x 640 and phone width: numbers sit on the right fighter, no sideways scrolling.
 - **Not done yet** (stage 2): big hits, the knock-out topple and "Beaten!" stamp, Battle Cry glow, spell bursts, close calls and the win flourish. The painted pictures for those come from ComfyUI (reachable on 27 Oct).
+
+## Stage 2 results (27 Oct 2026): big moments
+
+Built on `clans-fight-feel`, on top of stage 1. Still display only: nothing sent to the server changes.
+
+- **Big hits** (30% or more of the target's full HP): a gold "BIG HIT! -12", a painted gold burst, a stronger shake, and a small bump of the whole arena. In the first mines, where monsters have about 10 HP, most killing blows are big hits; raise `BIG_HIT` in `playback.ts` if that feels like too many.
+- **Knock-outs**: a beaten monster topples over and greys out, and a gold **"Beaten!"** stamp lands on it (it replaces the old "gone" tag). The knock-out is part of the hit that caused it, in the log line too ("… for 11. Rock Pal crumbles away!"), and the log rebuilt after a refresh matches. A knocked-out member sits down gently ("resting", as before).
+- **Spells**: a painted burst over the target: fire (Fireball, Fire Breath, Dragon's Uppercut), lightning (Lightning Bolt, Thunder Rain), healing (every heal, and the Battle Cry's heal), a gold impact (Light Blow, Heavy Blow and the other single-target strikes), and arcane magic (Wither, Ropes, buffs and the rest).
+- **Battle Cry**: the clan's side glows gold (more damage) or green (healing) while the round plays, and the clan's damage numbers glow orange.
+- **Misses** lean aside instead of shaking. **Close calls**: a member left under 20% HP gets a red pulse.
+- **Winning**: the painted gold crest and "Victory!" over the fighters for about 2 seconds, above "The enemies are beaten".
+- A beaten fighter's picture, name and bar fade; its burst, number and stamp stay bright.
+- **Not done**: the gold each monster drops (the engine only keeps the fight's total, which the end screen already shows).
+
+**The paintings** (`src/games/clans/art/fx/`, 6 files, about 190 KB in all, each optional: without one, the burst is a CSS glow). Made with `scripts/clans-fx-art.py` in ComfyUI on James's PC (the same Z-Image Turbo graph as every Clans painting), painted glowing on plain black; tidying turns the black see-through (brightness becomes solidness) with a soft round edge, so they sit cleanly on any background. Three tries each; picks in `docs/clans-art/fx-picks.json`: fire 1, lightning 3, impact 3, victory 1, heal 5 and magic 6. The first heals looked like a mushroom cloud, so heal was reworded as a gentle swirl of fireflies; the first magic had letter-like runes, so "runes" became "swirl patterns" (tries 4 and 5 of magic and try 4 of heal came out with a white border). Seeds are fixed, so any try can be painted again exactly. All six checked for children.
+
+**Tests**: `playback.test.ts` (big hits match the 30% rule; every knock-out the engine logged is on a step; close calls are under 20%; each spell's light), the art test now knows the `fx` folder (every effect there, each under 60 KB), and the round test checks beaten enemies show "Beaten!". All 5,045 tests, the type check and the build pass. Checked in the preview at 1366 x 640 and phone width (no sideways scrolling).

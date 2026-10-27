@@ -95,6 +95,8 @@ describe('the round plays out (stage 1 of making fights feel better)', () => {
     const summary = await screen.findByRole('status');
     expect(summary.textContent).toMatch(/^Round 1: you did \d+ damage and took \d+\./);
     expect(document.querySelector('.cq-fight__top')!.textContent).toMatch(/Round 1 /);
+    // Every enemy beaten this round gets the "Beaten!" stamp.
+    for (const li of screen.getByRole('list', { name: 'Enemies' }).querySelectorAll('li.is-down')) expect(li.textContent).toContain('Beaten!');
     if (screen.queryByRole('button', { name: 'See how everyone did' })) return; // won in one round
     await new Promise((r) => setTimeout(r, 600));
     expect(screen.queryByRole('group', { name: 'The plan for this round' })).toBeNull();

@@ -5,6 +5,7 @@
 import { CONFIG } from '../../../shared/clans/config';
 import type { FightEvent, FightState } from '../../../shared/clans/fight';
 import { SPELLS } from '../../../shared/clans/spells';
+import type { FxId } from './art';
 import { describe } from './fightView';
 
 /** A fighter on the screen: `c2` is clan slot 2, `e0` the first enemy. */
@@ -12,7 +13,23 @@ export type Who = `c${number}` | `e${number}`;
 
 export interface Float {
   text: string;
-  kind: 'damage' | 'heal' | 'miss';
+  kind: 'damage' | 'heal' | 'miss' | 'big';
+}
+
+/** What happens to one fighter in an action. */
+export interface Hit {
+  who: Who;
+  float?: Float;
+  /** A painted burst over them: a spell's light, or the gold impact of a big hit. */
+  burst?: FxId;
+  /** A big hit: 30% or more of their full HP in one go. */
+  big?: boolean;
+  /** Missed: they lean aside instead of shaking. */
+  dodge?: boolean;
+  /** Knocked out by this action. */
+  down?: boolean;
+  /** A clan member left under 20% of their HP. */
+  close?: boolean;
 }
 
 export interface Step {
@@ -20,9 +37,25 @@ export interface Step {
   line: string;
   /** Who acts (nudges forward) and who it lands on (flashes, shakes, gets a floating number). */
   actor?: Who;
-  targets: { who: Who; float?: Float }[];
+  targets: Hit[];
   /** Everyone's HP once this action is done. */
   hp: Record<Who, number>;
+}
+
+/** A hit this big a share of the target's full HP is a BIG HIT (James, 27 Oct 2026). */
+export const BIG_HIT = 0.3;
+/** A clan member under this share of their HP is a close call. */
+const CLOSE_CALL = 0.2;
+
+/** The light a spell makes when it lands. */
+export function spellBurst(spell: string): FxId {
+  const sp = Object.values(SPELLS).find((s) => s.name === spell);
+  if (!sp) return 'magic';
+  if (sp.kind === 'heal') return 'heal';
+  if (/fire|dragon/i.test(spell)) return 'fire';
+  if (/lightning|thunder/i.test(spell)) return 'lightning';
+  if (sp.kind === 'damage' && !sp.all) return 'impact';
+  return 'magic';
 }
 
 export interface Summary {
@@ -72,6 +105,12 @@ export function roundSteps(before: FightState, after: FightState, from: number, 
   const change = (w: Who | undefined, by: number) => {
     if (w) hp[w] = Math.max(0, Math.min(max.get(w) ?? 0, hp[w] + by));
   };
+  const damage = (w: Who, amount: number): Hit => {
+    change(w, -amount);
+    const big = amount >= (max.get(w) ?? Infinity) * BIG_HIT;
+    const close = w.startsWith('c') && hp[w] > 0 && hp[w] < (max.get(w) ?? 0) * CLOSE_CALL;
+    return { who: w, float: { text: big ? `BIG HIT! -${amount}` : `-${amount}`, kind: big ? 'big' : 'damage' }, big, burst: big ? 'impact' : undefined, close };
+  };
 
   const steps: Step[] = [];
   for (const e of inOrder(after.log.slice(from))) {
@@ -79,21 +118,19 @@ export function roundSteps(before: FightState, after: FightState, from: number, 
     const step: Step = { line: describe(e, clanNames), targets: [], hp };
     if (e.type === 'hit') {
       step.actor = who.get(e.who);
-      change(who.get(e.target), -e.damage);
-      step.targets.push({ who: who.get(e.target)!, float: { text: `-${e.damage}`, kind: 'damage' } });
+      step.targets.push(damage(who.get(e.target)!, e.damage));
     } else if (e.type === 'miss') {
       step.actor = who.get(e.who);
-      step.targets.push({ who: who.get(e.target)!, float: { text: 'miss!', kind: 'miss' } });
+      step.targets.push({ who: who.get(e.target)!, float: { text: 'miss!', kind: 'miss' }, dodge: true });
     } else if (e.type === 'cast') {
       step.actor = who.get(e.who);
       const t = who.get(e.target)!;
       if (HEALS.has(e.spell)) {
         change(t, e.amount);
-        step.targets.push({ who: t, float: { text: `+${e.amount}`, kind: 'heal' } });
+        step.targets.push({ who: t, float: { text: `+${e.amount}`, kind: 'heal' }, burst: 'heal' });
       } else if (DAMAGES.has(e.spell)) {
-        change(t, -e.amount);
-        step.targets.push({ who: t, float: { text: `-${e.amount}`, kind: 'damage' } });
-      } else step.targets.push({ who: t });
+        step.targets.push({ ...damage(t, e.amount), burst: spellBurst(e.spell) });
+      } else step.targets.push({ who: t, burst: spellBurst(e.spell) });
       // "Hits every enemy" logs one cast per enemy: show them as one action.
       const last = steps[steps.length - 1];
       if (last && last.actor === step.actor && last.line.startsWith(`${e.who}'s ${e.spell} `) && DAMAGES.has(e.spell)) {
@@ -104,20 +141,29 @@ export function roundSteps(before: FightState, after: FightState, from: number, 
       }
     } else if (e.type === 'resist') {
       step.actor = who.get(e.who);
-      step.targets.push({ who: who.get(e.target)!, float: { text: 'shrugs it off', kind: 'miss' } });
+      step.targets.push({ who: who.get(e.target)!, float: { text: 'shrugs it off', kind: 'miss' }, dodge: true });
     } else if (e.type === 'cry' && e.kind === 'heal') {
       for (const f of before.clan) {
         if (hp[`c${f.index}`] <= 0) continue;
         const add = Math.min(Math.ceil(f.maxHp * CONFIG.battleCryHeal), f.maxHp - hp[`c${f.index}`]);
         change(`c${f.index}`, add);
-        step.targets.push({ who: `c${f.index}`, float: { text: `+${add}`, kind: 'heal' } });
+        step.targets.push({ who: `c${f.index}`, float: { text: `+${add}`, kind: 'heal' }, burst: 'heal' });
       }
     } else if (e.type === 'cry') {
       for (const f of before.clan) if (hp[`c${f.index}`] > 0) step.targets.push({ who: `c${f.index}` });
     } else if (e.type === 'guard' || e.type === 'tied') {
       step.actor = who.get(e.who);
     } else if (e.type === 'down') {
-      step.targets.push({ who: who.get(e.who)! });
+      // The knock-out belongs to the hit just before it (inOrder put it there): mark that hit, not a step of its own.
+      const last = steps[steps.length - 1];
+      const t = who.get(e.who)!;
+      const hit = last?.targets.find((x) => x.who === t);
+      if (hit) {
+        hit.down = true;
+        last.line += ` ${step.line}`;
+        continue;
+      }
+      step.targets.push({ who: t, down: true });
     }
     step.hp = { ...hp };
     steps.push(step);
