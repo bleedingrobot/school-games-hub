@@ -37,7 +37,7 @@ for (const lineup of ['balanced', 'fighters']) {
   const runs = [];
   for (let seed = 1; seed <= SEEDS; seed++) runs.push(simulate({ days: DAYS, seed, lineup, mathsRate: MATHS, depthOffset: OFFSET, empire: EMPIRE }));
   console.log(`\n${lineup}: ${SEEDS} clans, ${DAYS} days, maths ${pct(MATHS)}, depth offset ${OFFSET}`);
-  console.log(`win rate ${pct(mean(runs.map((r) => r.wins / r.fights)))} | knocked out per day ${mean(runs.map((r) => mean(r.days.map((d) => d.knockOuts)))).toFixed(2)} | rounds per fight ${mean(runs.map((r) => mean(r.days.map((d) => d.rounds / Math.max(1, d.fights))))).toFixed(1)}`);
+  console.log(`win rate ${pct(mean(runs.map((r) => r.wins / r.fights)))} | knocked out per day ${mean(runs.map((r) => mean(r.days.map((d) => d.knockOuts)))).toFixed(2)} | rounds per fight ${mean(runs.map((r) => mean(r.days.map((d) => d.rounds / Math.max(1, d.fights))))).toFixed(1)} | SP spent per fight ${mean(runs.map((r) => mean(r.days.map((d) => d.spSpent / Math.max(1, d.fights))))).toFixed(1)}`);
   const maxed = runs.filter((r) => r.dayAtMax !== null);
   console.log(`reached level 20: ${maxed.length}/${SEEDS}${maxed.length ? ` (day ${mean(maxed.map((r) => r.dayAtMax)).toFixed(0)} on average)` : ''} | boss wins per clan ${mean(runs.map((r) => r.bossWins)).toFixed(1)}`);
   console.log('day | avg level | depth | win rate | gold');

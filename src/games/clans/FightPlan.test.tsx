@@ -12,7 +12,7 @@ import { newFight, type Order } from '../../../shared/clans/fight';
 import type { RecordedRound } from '../../../shared/clans/battleCry';
 import { publicFight } from '../../../supabase/functions/clans/handler';
 import { Fight } from './Fight';
-import { choosingOrder, orderText } from './fightView';
+import { choosingOrder, labelDuplicates, orderText } from './fightView';
 import { newSession } from './session';
 
 const SEED = 4242;
@@ -25,7 +25,7 @@ function started(): ServerState {
   return go.state;
 }
 
-/** Render the fight, skip the Battle Cry, and land on the plan. Returns the rounds sent and the fight as it starts. */
+/** Render the fight, skip the Battle Cry, and land on the plan. Returns the rounds sent and the fight as it starts (enemy names lettered, as on screen). */
 async function toPlan() {
   const state = started();
   const open = publicFight(state.fight as OpenFight);
@@ -38,7 +38,7 @@ async function toPlan() {
     await u.keyboard('{Enter}'); // "Carry on" has focus
   }
   await screen.findByRole('group', { name: 'The plan for this round' });
-  return { u, sent, fight: newFight(state.clan.members, open.depth, open.seed, open.boss) };
+  return { u, sent, fight: labelDuplicates(newFight(state.clan.members, open.depth, open.seed, open.boss)) };
 }
 
 afterEach(cleanup);
