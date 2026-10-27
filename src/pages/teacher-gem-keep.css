@@ -42,6 +42,12 @@
 .gk-teacher__class .stats-table + .stats-table {
   margin-top: 0;
 }
+/* A table too wide for a phone scrolls sideways inside its card instead of poking out of it. */
+.gk-teacher__wide {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
 
 /* One student. */
 .gk-teacher__none {

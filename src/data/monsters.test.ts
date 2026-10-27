@@ -11,7 +11,10 @@ vi.mock('../lib/supabase', () => ({
 }));
 
 import { nzDay } from '../../shared/monsters/world/battleCap';
-import { enqueueSave, flushQueue, loadMonsters, queuedSaves, readTail, savingStopped, writeBattleCount, writeTail } from './monsters';
+import {
+  enqueueSave, fetchClassMonsters, flushQueue, loadMonsters, queuedSaves, readTail, saveMonstersEnabled, saveMonstersTopics, savingStopped,
+  writeBattleCount, writeTail,
+} from './monsters';
 
 const fetchMock = vi.fn<typeof fetch>();
 let ME = '';
@@ -167,5 +170,49 @@ describe('opening the game', () => {
     writeBattleCount(ME, '2000-01-01', 50);
     rpc.mockRejectedValueOnce(new Error('offline'));
     expect((await loadMonsters(ME)).battles).toEqual({ day: today, today: 0, perDay: 12 });
+  });
+});
+
+describe('the teacher’s parts', () => {
+  const REPORT = { players: 3, badges: [], topics: [], hardest: [], refusals: [] };
+  const ROW = { monsters_enabled: false, monsters_topics: ['add-sub', 'fractions'] };
+
+  it('asks for the class report for the class', async () => {
+    rpc.mockResolvedValueOnce({ data: REPORT, error: null });
+    expect(await fetchClassMonsters('c12')).toEqual({ ...REPORT, wholeSchool: false });
+    expect(rpc).toHaveBeenCalledWith('teacher_monster_class', { target_class: 'c12' });
+  });
+
+  it('falls back to the whole-school report, and says so, while the database has only the old one', async () => {
+    rpc
+      .mockResolvedValueOnce({ data: null, error: { code: 'PGRST202', message: 'Could not find the function' } })
+      .mockResolvedValueOnce({ data: REPORT, error: null });
+    expect(await fetchClassMonsters('c12')).toEqual({ ...REPORT, wholeSchool: true });
+    expect(rpc).toHaveBeenLastCalledWith('teacher_monster_class');
+  });
+
+  it('doesn’t fall back for any other error (a class the teacher doesn’t teach)', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'That isn’t one of your classes.' } });
+    await expect(fetchClassMonsters('c99')).rejects.toThrow('We couldn’t load Maths Monsters for this class.');
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('switches the game on for the class, keeping its topics', async () => {
+    rpc.mockResolvedValueOnce({ data: ROW, error: null }).mockResolvedValueOnce({ data: null, error: null });
+    await saveMonstersEnabled(true, 'c12');
+    expect(rpc).toHaveBeenNthCalledWith(1, 'teacher_class_settings', { target_class: 'c12' });
+    expect(rpc).toHaveBeenLastCalledWith('teacher_set_monsters', { settings: { enabled: true, topics: ['add-sub', 'fractions'] }, target_class: 'c12' });
+  });
+
+  it('changes the topics for the class, keeping the switch', async () => {
+    rpc.mockResolvedValueOnce({ data: { ...ROW, monsters_enabled: true }, error: null }).mockResolvedValueOnce({ data: null, error: null });
+    await saveMonstersTopics(['decimals'], 'c14');
+    expect(rpc).toHaveBeenLastCalledWith('teacher_set_monsters', { settings: { enabled: true, topics: ['decimals'] }, target_class: 'c14' });
+  });
+
+  it('saves nothing if the current settings can’t be read', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { code: 'x', message: 'no' } });
+    await expect(saveMonstersEnabled(true, 'c12')).rejects.toThrow();
+    expect(rpc).toHaveBeenCalledTimes(1);
   });
 });

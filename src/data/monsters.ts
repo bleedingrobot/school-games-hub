@@ -248,9 +248,9 @@ export function writeBattleCount(player: string, day: string, n: number) {
 // The game switch, leaderboard and teachers
 // ---------------------------------------------------------------------------
 
-/** Is the game switched on? (The dashboard hides it when it isn't.) */
-export async function fetchMonstersEnabled(): Promise<boolean> {
-  const data = await readSettings(['monsters_enabled']);
+/** Is the game switched on? (The dashboard hides it when it isn't.) For the pupil's class, or a teacher's class when given. */
+export async function fetchMonstersEnabled(classId?: string | null): Promise<boolean> {
+  const data = await readSettings(['monsters_enabled'], classId);
   if (!data) throw new FriendlyError('We couldn’t load this setting.');
   return data.monsters_enabled === true;
 }
@@ -319,10 +319,36 @@ export async function saveMonstersSettings(settings: MonstersSettings, classId?:
   if (error) fail(error, 'We couldn’t save the Maths Monsters settings.');
 }
 
-export async function fetchClassMonsters(): Promise<ClassMonsters> {
-  const { data, error } = await supabase.rpc('teacher_monster_class');
-  if (error || !data) fail(error, 'We couldn’t load Maths Monsters for the school.');
-  return data as ClassMonsters;
+/**
+ * The server saves the switch and the topics together, so each of these reads the class's current settings and saves them
+ * with the one change. (The Games table's switch and the topics in its Settings are never on screen to change at once.)
+ */
+export async function saveMonstersEnabled(enabled: boolean, classId: string): Promise<void> {
+  const current = await fetchMonstersSettings(classId);
+  await saveMonstersSettings({ ...current, enabled }, classId);
+}
+
+export async function saveMonstersTopics(topics: TopicId[], classId: string): Promise<void> {
+  const current = await fetchMonstersSettings(classId);
+  await saveMonstersSettings({ ...current, topics }, classId);
+}
+
+/** PostgREST's answer when the database has no function with these arguments. */
+const NO_SUCH_FUNCTION = 'PGRST202';
+
+/**
+ * Maths Monsters' report for one class (migration 20261028000200). Until that migration is on the live database, the server
+ * has only the old whole-school report: then that one is loaded instead, with `wholeSchool` set, so the page can say so.
+ */
+export async function fetchClassMonsters(classId: string): Promise<ClassMonsters & { wholeSchool: boolean }> {
+  const { data, error } = await supabase.rpc('teacher_monster_class', { target_class: classId });
+  if (error?.code === NO_SUCH_FUNCTION) {
+    const old = await supabase.rpc('teacher_monster_class');
+    if (old.error || !old.data) fail(old.error, 'We couldn’t load Maths Monsters for the school.');
+    return { ...(old.data as ClassMonsters), wholeSchool: true };
+  }
+  if (error || !data) fail(error, 'We couldn’t load Maths Monsters for this class.');
+  return { ...(data as ClassMonsters), wholeSchool: false };
 }
 
 export async function fetchStudentMonsters(student: string): Promise<StudentMonsters> {

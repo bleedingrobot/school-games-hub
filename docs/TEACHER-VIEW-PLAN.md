@@ -522,6 +522,25 @@ one class. One migration, `20261028000100_gem_keep_class_report.sql` (not live y
   the hardest facts), now for the header's class, plus a save from every other control and the whole-school fallback. In
   `Games.test.tsx` the "game that hasn't moved" test now uses Maths Monsters, and Gem Keep has a row check.*
 
+*Maths Monsters moved 28 Oct 2026 on `teacher-games-monsters` (from `teacher-games-gem-keep`), with its class report now for
+one class. One migration, `20261028000200_monsters_class_report.sql` (not live yet); nothing it saves changed.*
+- *Server: `teacher_monster_class(target_class uuid)`, the same pattern as Gem Keep's: the old report (players, badges, each
+  topic, hardest questions, and refused saves from the last 2 weeks) for the teacher's students in that class only, 42501
+  unless `teaches_class`, 22023 for no class, and the old no-argument function left beside it. Checked by
+  `supabase/tests/database/monsters_class_report.test.sql` (17 checks, including a teacher with two classes and refused
+  saves kept to their class).*
+- *The same fallback as Gem Keep: until the migration is live, the report is the whole school's and says so.*
+- *Its row has the on/off switch (the game behind its "?") and "4 of 6 topics" (or "All 6 topics") in the Maths column, as
+  in the 4.5 sketch. The old red "Switch Maths Monsters off" button is gone. Its Settings: Topics on (shared chips, at least
+  one stays ticked, the "nearest topic" rule behind the "?"), a note while the game is off, then the class report.*
+- *`teacher_set_monsters` saves the switch and the topics together, so `saveMonstersEnabled` and `saveMonstersTopics` read
+  the class's current settings and save them with the one change. No server change was needed.*
+- *On a phone the hardest-questions table (five columns) was wider than its card; it now scrolls sideways inside it.*
+- *Its student panel is under `teacher`, with a summary line ("12 of 54 monsters, 2 of 6 badges").*
+- *Tests: `TeacherMonsters.test.tsx` keeps every check (switch on and off, each topic on and off, the last topic stays on,
+  a failed save goes back, the class report, the student panel), now for a named class; the switch is tested through its
+  Games table row. In `Games.test.tsx` the "game that hasn't moved" tests now use Dragon Maths, and Monsters has a row check.*
+
 **Stage 4: Students roster and student page,** with `teacher_class_overview` and class-scoped `teacher_students`.
 
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.

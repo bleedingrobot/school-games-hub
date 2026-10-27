@@ -20,7 +20,10 @@ const data = vi.hoisted(() => ({
   fetchClassGemKeep: vi.fn(),
   readSettings: vi.fn(),
   fetchMonstersSettings: vi.fn(),
+  fetchMonstersEnabled: vi.fn(),
   fetchClassMonsters: vi.fn(),
+  fetchLordSettings: vi.fn(),
+  fetchClassLord: vi.fn(),
 }));
 vi.mock('../data/classes', async (original) => ({
   ...(await original<typeof import('../data/classes')>()),
@@ -49,7 +52,13 @@ vi.mock('../data/classSettings', async (original) => ({
 vi.mock('../data/monsters', async (original) => ({
   ...(await original<typeof import('../data/monsters')>()),
   fetchMonstersSettings: data.fetchMonstersSettings,
+  fetchMonstersEnabled: data.fetchMonstersEnabled,
   fetchClassMonsters: data.fetchClassMonsters,
+}));
+vi.mock('../data/lord', async (original) => ({
+  ...(await original<typeof import('../data/lord')>()),
+  fetchLordSettings: data.fetchLordSettings,
+  fetchClassLord: data.fetchClassLord,
 }));
 vi.mock('../data/gemKeep', async (original) => ({
   ...(await original<typeof import('../data/gemKeep')>()),
@@ -134,8 +143,11 @@ beforeEach(() => {
   });
   data.fetchClassGemKeep.mockResolvedValue({ players: 0, levels: [], hardest: [], wholeSchool: false });
   data.readSettings.mockResolvedValue({ gem_keep_mode: 'calm', gem_keep_tables: [2, 3, 4, 5, 6, 7, 8, 9, 10], gem_keep_multiple_choice: false });
-  data.fetchMonstersSettings.mockRejectedValue(new Error('not needed'));
-  data.fetchClassMonsters.mockResolvedValue({ players: 0, badges: [], topics: [], hardest: [] });
+  data.fetchMonstersSettings.mockResolvedValue({ enabled: true, topics: ['add-sub', 'times-tables', 'division', 'fractions'] });
+  data.fetchMonstersEnabled.mockResolvedValue(true);
+  data.fetchClassMonsters.mockResolvedValue({ players: 0, badges: [], topics: [], hardest: [], refusals: [], wholeSchool: false });
+  data.fetchLordSettings.mockRejectedValue(new Error('not needed'));
+  data.fetchClassLord.mockRejectedValue(new Error('not needed'));
 });
 afterEach(() => {
   window.matchMedia = realMatchMedia;
@@ -248,12 +260,27 @@ describe('the Games table', () => {
   it('opens a game that hasn’t moved yet: its old panels, in the same drawer, for the header’s class', async () => {
     const user = userEvent.setup();
     show('/teacher/c14/games');
+    const dragon = row(await table(), 'Dragon Maths');
+    expect(data.fetchLordSettings).not.toHaveBeenCalled();
+    await user.click(within(dragon).getByRole('link', { name: 'Dragon Maths settings' }));
+    const drawer = await screen.findByRole('dialog', { name: 'Dragon Maths' });
+    expect(await within(drawer).findByRole('region', { name: 'Dragon Maths' })).toBeInTheDocument();
+    expect(data.fetchLordSettings).toHaveBeenCalledWith('c14');
+  });
+
+  it('shows Maths Monsters’ switch and topics for the header’s class, and opens its settings for that class', async () => {
+    const user = userEvent.setup();
+    show('/teacher/c14/games');
     const monsters = row(await table(), 'Maths Monsters');
-    expect(data.fetchMonstersSettings).not.toHaveBeenCalled();
+    const on = await within(monsters).findByRole('switch', { name: 'Maths Monsters' });
+    await waitFor(() => expect(on).toHaveAttribute('aria-checked', 'true'));
+    expect(await within(monsters).findByText('4 of 6 topics')).toBeInTheDocument();
+    expect(data.fetchMonstersEnabled).toHaveBeenCalledWith('c14');
     await user.click(within(monsters).getByRole('link', { name: 'Maths Monsters settings' }));
     const drawer = await screen.findByRole('dialog', { name: 'Maths Monsters' });
-    expect(await within(drawer).findByRole('region', { name: 'Maths Monsters' })).toBeInTheDocument();
-    expect(data.fetchMonstersSettings).toHaveBeenCalledWith('c14');
+    expect(await within(drawer).findByRole('region', { name: 'Maths Monsters settings' })).toBeInTheDocument();
+    expect(await within(drawer).findByRole('region', { name: /^Maths Monsters: this class/ })).toBeInTheDocument();
+    expect(data.fetchClassMonsters).toHaveBeenCalledWith('c14');
   });
 
   it('shows Gem Keep as always on, sums up its settings for the header’s class, and opens them for that class', async () => {
@@ -280,9 +307,9 @@ describe('the Games table', () => {
 
   it('says where an unmoved game’s switch is, rather than showing one it can’t read', async () => {
     show('/teacher/c12/games');
-    const monsters = row(await table(), 'Maths Monsters');
-    expect(within(monsters).queryByRole('switch')).not.toBeInTheDocument();
-    expect(within(monsters).getAllByText('in Settings')).toHaveLength(2);
+    const dragon = row(await table(), 'Dragon Maths');
+    expect(within(dragon).queryByRole('switch')).not.toBeInTheDocument();
+    expect(within(dragon).getAllByText('in Settings')).toHaveLength(2);
   });
 
   it('never makes a reversible control red', async () => {
