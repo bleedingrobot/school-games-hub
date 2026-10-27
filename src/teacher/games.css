@@ -67,6 +67,35 @@
   outline-offset: 2px;
 }
 
+/*
+ * A wide screen: an open "?" floats in a box under its control, so a long description doesn't stretch the row (or squash the
+ * switch) inside a narrow column. It opens rightwards in the On column and leftwards in the Maths column, to stay on the page.
+ * The "?" closes it again. On a narrow screen each row is a card with room for it, so it stays in the card.
+ */
+@media (min-width: 800px) {
+  .games-table .setting--compact {
+    position: relative;
+  }
+  .games-table .setting--compact .setting__about {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 5;
+    width: max-content;
+    max-width: min(24rem, calc(100vw - 4rem));
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: var(--shadow);
+  }
+  .games-table__maths .setting--compact .setting__about {
+    right: 0;
+    left: auto;
+  }
+}
+
 /* A narrow screen: each game is a small card. The explicit roles (the table's own) keep it a table for screen readers. */
 @media (max-width: 799px) {
   .games-table {
