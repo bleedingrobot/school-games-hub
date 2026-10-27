@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as classes from '../data/classes';
 import * as space from '../data/spaceGames';
 import * as teacher from '../data/teacher';
-import { MathsSwitchPanel } from '../pages/Teacher';
+import { MATHS_CHOICES } from './Games';
+import { SettingChoice, useSetting } from './Settings';
 import { TeacherClassPicker, TeacherClassProvider, useTeacherClass } from './TeacherClass';
 
 vi.mock('../data/classes', async (importOriginal) => ({ ...(await importOriginal<typeof import('../data/classes')>()), fetchClasses: vi.fn() }));
@@ -18,6 +19,21 @@ vi.mock('../data/teacher', async (importOriginal) => ({ ...(await importOriginal
 const room = (id: string, name: string, teaching = true): classes.ClassSummary => ({
   id, name, school_year: 2026, year_level: 5, archived: false, warp_code: 'KM4TP', warp_mode: 'on', members: 2, teaching, groups: 0, waiting: 0,
 });
+
+/** A switch that reads the header's class, the way every old game panel does (it was the Teacher page's space maths panel). */
+function MathsSwitchPanel() {
+  const { classId, ready } = useTeacherClass();
+  const mode = useSetting(() => space.fetchMathsSwitch(classId), [classId], ready);
+  return (
+    <SettingChoice
+      label="Mission Control maths"
+      options={MATHS_CHOICES}
+      value={mode.value}
+      loadFailed={mode.failed}
+      save={(next) => teacher.setSpaceMaths(next, classId)}
+    />
+  );
+}
 
 function show(ui = <MathsSwitchPanel />) {
   return render(

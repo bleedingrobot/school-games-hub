@@ -5,7 +5,7 @@
  *   /teacher/:classId            Today
  *   /teacher/:classId/students   Students (today's Players list)
  *   /teacher/:classId/maths      Maths: Focus, Skill map, Skipped questions
- *   /teacher/:classId/games      Games (each game's panels, folded)
+ *   /teacher/:classId/games      Games (the Games table; /games/:gameId is a game's settings on a narrow screen)
  *   /teacher/:classId/setup      Class set-up (the class's My classes panel)
  *   /teacher/admin               Admin (school admins only; a placeholder for now)
  *

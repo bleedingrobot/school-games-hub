@@ -21,7 +21,8 @@ import { dragonMaths } from './games/lord';
 import { ClassWarp } from './pages/ClassWarp';
 import { ClassSetup } from './pages/MyClasses';
 import { clanQuest } from './games/clans/game';
-import { TeacherGames, TeacherStudents } from './pages/Teacher';
+import { TeacherStudents } from './pages/Teacher';
+import { TeacherGames } from './teacher/Games';
 import { TeacherAdmin, TeacherEntry, TeacherMaths, TeacherShell } from './teacher/TeacherShell';
 import { Today } from './teacher/Today';
 import { useSkipRuleSync } from './data/questionSkips';
@@ -64,7 +65,10 @@ export function teacherRoutes() {
           <Route path="skills" element={<Suspense fallback={loading}><SkillMap /></Suspense>} />
           <Route path="skips" element={<Suspense fallback={loading}><QuestionSkipsPanel /></Suspense>} />
         </Route>
-        <Route path="games" element={<TeacherGames />} />
+        <Route path="games" element={<TeacherGames />}>
+          {/* A game's settings: a drawer over the table on a wide screen, its own page on a narrow one. */}
+          <Route path=":gameId" element={null} />
+        </Route>
         <Route path="setup" element={<ClassSetup />} />
         <Route path="*" element={<Navigate to=".." relative="path" replace />} />
       </Route>

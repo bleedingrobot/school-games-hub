@@ -417,6 +417,50 @@ names stay shown. What changed and what didn't:*
 **Stage 3: Games table + new game contract** (section 6). Convert one game per PR (each game's file is its own, so these can run
 in parallel), class-scoped class reports, then remove `TeacherPanels`.
 
+*How a game moves to the new contract (one game per PR, on its own branch; only that game's files change):*
+1. *Read what the game gives today in its `index.tsx`: `useTeacherSwitch`, `TeacherPanels`, `StudentPanel`, and the panels
+   themselves (usually `src/pages/Teacher<Game>.tsx`). Note which settings are an on/off switch, which is a 3-way maths
+   switch, and what is left (topics, modes, the class report).*
+2. *On/off switch: give `teacher.switch` with `useValue(classId)`, `save(on, classId)` and an optional one-line `about`.
+   `useValue` returns `{ value, failed }` (what `useSetting` from `src/teacher/useSetting.ts` gives, `value` null while
+   loading), so the row can say when it couldn't load. Put the hook in the game's own folder (Bond Match: `switch.ts`), and
+   import `useSetting` from `useSetting.ts`, not `Settings.tsx`, so the dashboard doesn't load the settings CSS.*
+3. *Maths switch: the same, as `teacher.maths` (Wormholes: `src/games/space/teacher.ts`). A game with a maths setting that
+   isn't a 3-way switch gives `useSummary(classId)` instead, one short line for the Maths column.*
+4. *Everything else goes in one `teacher.Settings` component that takes `classId` and is loaded with `lazy()`. Build it
+   from the shared controls in `src/teacher/Settings.tsx`. Don't repeat the switches already in the row. A longer
+   description goes behind an `about` "?" rather than in a paragraph.*
+5. *Move `StudentPanel` under `teacher` (lazy), and add `studentSummary(student)` if there is a one-line summary.*
+6. *Delete `useTeacherSwitch`, `TeacherPanels` and the top-level `StudentPanel` from the definition, and the old panel
+   code they used. Once `teacher` is set the table ignores them.*
+7. *Tests: keep the old panel tests' checks on what each control saves, pointed at the new component. Update
+   `registry.test.ts` if it lists the game's teacher parts. Add a row check in `src/teacher/Games.test.tsx` (the row shows
+   the switch or maths choice and saves it for the header's class).*
+8. *Check the row and the drawer at 1366 × 640 and 390 × 844, then run typecheck, test:all and build.*
+
+*Stage 3a (the table and the contract) done 28 Oct 2026 on `teacher-games-table` (branched from `teacher-settings`). No
+database change.*
+- *`teacher?: TeacherContract` in `GameDefinition` (`src/games/types.ts`): `switch`, `maths`, `useSummary`, `Settings`,
+  `StudentPanel` and `studentSummary`. No `alerts` or `hardest` yet (stage 5). Two changes from section 6: `useValue`
+  returns `{ value, failed }` instead of `boolean | null`, so a row can say "We couldn't load this setting", and `switch`
+  and `maths` have an optional `about` line. `TeacherPanels` and the old `StudentPanel` still work beside it.*
+- *The Games tab (`src/teacher/Games.tsx`) is the table from 4.5: a real table (Game, On, Maths, Settings) grouped like
+  the dashboard, with `SettingToggle` and `SettingChoice` inline (a new `compact` look). A game with no switch says
+  "always". "Settings ›" opens a drawer at 800 px and wider (focus stays inside it, Escape or the backdrop closes it, and
+  focus goes back to the link) and its own page, `/teacher/:classId/games/:gameId`, on a narrower screen. On a phone each row
+  becomes a small card and the maths choice drops under its label. Games that haven't moved still get a row, and their
+  old `TeacherPanels` open in the same drawer. Because the table can't read their switches yet, their On and Maths say "in
+  Settings".*
+- *Wormholes & Black Holes: the maths switch is in the Maths column and Emoji reactions is its Settings.*
+- *Bond Match is fully moved: an on/off switch and nothing to open. Its description now sits behind the switch's "?", and
+  the old panel (with its red button) is gone. Its student panel is under `teacher`, with a summary line ("5 games, 6
+  stars"). Nothing reads `studentSummary` until the student page (stage 4).*
+- *The old Games section, `GameSection` and `MathsSwitchPanel` are gone from `src/pages/Teacher.tsx`.*
+- *Focus going back to "Settings ›" survives the page being rebuilt on every address change (Layout keys its CrashScreen
+  by the path), including the browser's Back button. Arriving from another tab doesn't move focus.*
+- *Not done: no class-scoped class reports and no migrations. Gem Keep's, Maths Monsters', Dragon Maths' and Clan Quest's
+  class reports are still whole school. No other game is converted.*
+
 **Stage 4: Students roster and student page,** with `teacher_class_overview` and class-scoped `teacher_students`.
 
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.

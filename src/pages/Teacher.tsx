@@ -1,8 +1,7 @@
-import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { RankBadge } from '../components/Progress';
-import { fetchMathsSwitch } from '../data/spaceGames';
 import { FriendlyError } from '../data/profile';
 import {
   deletePerson,
@@ -10,22 +9,19 @@ import {
   fetchPersonDetail,
   renamePerson,
   setHidden,
-  setSpaceMaths,
   setRole,
   startNewSeason,
   type Person,
   type PersonDetail,
 } from '../data/teacher';
 import { ALL_GAMES, gameLabel } from '../games/registry';
-import { useTeacherClass } from '../teacher/TeacherClass';
-import { DangerAction, SettingChoice, useSetting, type Choice } from '../teacher/Settings';
-import { BOT_LEVELS, type BotLevel, type GameDefinition } from '../games/types';
-import type { MathsSwitch } from '../../shared/space/mathsSwitch';
+import { DangerAction } from '../teacher/Settings';
+import { BOT_LEVELS, type BotLevel } from '../games/types';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
 import { whenPlayed } from './Dashboard';
 import './teacher-page.css';
 
-// Each game's own teacher panels come from its GameDefinition (TeacherPanels, StudentPanel), loaded separately.
+// Each game's part of a student's panel comes from its GameDefinition (teacher.StudentPanel, or the old StudentPanel), loaded separately.
 // The warm-up reset brings the maths ladder with it, so it loads with the student's panel, not with the page.
 const PlacementReset = lazy(() => import('../maths/PlacementReset').then((m) => ({ default: m.PlacementReset })));
 
@@ -34,28 +30,6 @@ export const NEW_SEASON_WORDS = 'NEW SEASON';
 
 function errorText(error: unknown) {
   return error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.';
-}
-
-/**
- * The Games tab (/teacher/:classId/games): each game's own panels for the header's class, folded away until opened. The class
- * comes from the teacher shell (src/teacher/TeacherShell.tsx) through useTeacherClass().
- */
-export function TeacherGames() {
-  return (
-    <>
-      <p className="teacher__group-note">Open a game to see and change its settings for this class.</p>
-      {ALL_GAMES.map((game) => {
-        const Panels = game.id === 'space' ? MathsSwitchPanel : game.TeacherPanels;
-        return (
-          Panels && (
-            <GameSection key={game.id} game={game}>
-              <Panels />
-            </GameSection>
-          )
-        );
-      })}
-    </>
-  );
 }
 
 /**
@@ -163,54 +137,6 @@ function StudentsView({ me, isAdmin }: { me: string; isAdmin: boolean }) {
         </>
       )}
     </>
-  );
-}
-
-/**
- * One game's settings, folded away until the teacher opens it. The panels inside only mount (and ask the server for anything)
- * once opened, so the page no longer loads every game's settings and class tables on arrival.
- */
-function GameSection({ game, children }: { game: GameDefinition; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <details className="teacher-game" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
-      <summary className="teacher-game__summary">
-        <game.Icon size={32} />
-        <span>{game.name}</span>
-      </summary>
-      {open && (
-        <div className="teacher-game__body">
-          <Suspense fallback={<p className="panel__empty">Loading…</p>}>{children}</Suspense>
-        </div>
-      )}
-    </details>
-  );
-}
-
-const MATHS_CHOICES: Choice<MathsSwitch>[] = [
-  { value: 'off', label: 'Off', detail: 'No maths questions in space games. Nothing else changes.' },
-  { value: 'choose', label: 'Students choose', detail: 'Each student picks maths on or off when they set up a game.' },
-  { value: 'on', label: 'On for everyone', detail: 'Every space game has maths questions, with no way to turn them off.' },
-];
-
-/**
- * Mission Control maths in Wormholes & Black Holes (docs/SPACE-MATHS-PLAN.md), for the picked class.
- * The server checks this too, so nobody can start or save a maths game while it's off.
- */
-export function MathsSwitchPanel() {
-  const { classId, ready } = useTeacherClass();
-  const mode = useSetting(() => fetchMathsSwitch(classId), [classId], ready);
-  return (
-    <div className="panel teacher__switch">
-      <SettingChoice
-        label="Mission Control maths"
-        about="Times-table questions at wormholes and black holes, and a question after each turn. They use each student’s own times-table records, and what they answer goes into those records. A wrong answer never costs a student anything."
-        options={MATHS_CHOICES}
-        value={mode.value}
-        loadFailed={mode.failed}
-        save={(next) => setSpaceMaths(next, classId)}
-      />
-    </div>
   );
 }
 
@@ -328,7 +254,10 @@ function PersonPanel({
           )}
           <Suspense fallback={null}>
             {person.role === 'student' && <PlacementReset student={person.id} name={person.display_name} />}
-            {ALL_GAMES.map((game) => game.StudentPanel && <game.StudentPanel key={game.id} student={person.id} />)}
+            {ALL_GAMES.map((game) => {
+              const Panel = game.teacher ? game.teacher.StudentPanel : game.StudentPanel;
+              return Panel && <Panel key={game.id} student={person.id} />;
+            })}
           </Suspense>
         </>
       ) : (

@@ -439,14 +439,14 @@ describe('teacher view', () => {
     ).toBeInTheDocument();
   });
 
-  it('keeps each game folded away, asking the server nothing for it until it is opened', async () => {
+  it('keeps each game’s settings closed, asking the server nothing for them until they are opened', async () => {
     const { fetchGemKeepSettings } = await import('../data/gemKeep');
     const user = userEvent.setup();
     renderAt('/teacher/c12/games', teacher);
-    await screen.findByText('Gem Keep', { selector: 'summary span' });
+    await screen.findByRole('link', { name: 'Gem Keep settings' });
     expect(screen.queryByRole('region', { name: 'Gem Keep settings' })).not.toBeInTheDocument();
     expect(fetchGemKeepSettings).not.toHaveBeenCalled();
-    await user.click(screen.getByText('Gem Keep', { selector: 'summary span' }));
+    await user.click(screen.getByRole('link', { name: 'Gem Keep settings' }));
     expect(await screen.findByRole('region', { name: 'Gem Keep settings' })).toBeInTheDocument();
     expect(fetchGemKeepSettings).toHaveBeenCalled();
   });
@@ -455,7 +455,7 @@ describe('teacher view', () => {
     const { saveGemKeepSettings } = await import('../data/gemKeep');
     const user = userEvent.setup();
     renderAt('/teacher/c12/games', teacher);
-    await user.click(await screen.findByText('Gem Keep', { selector: 'summary span' }));
+    await user.click(await screen.findByRole('link', { name: 'Gem Keep settings' }));
     const section = await screen.findByRole('region', { name: 'Gem Keep settings' });
     await user.click(await within(section).findByRole('checkbox', { name: '×12' }));
     expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ enabledTables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }), 'c12');
@@ -467,7 +467,7 @@ describe('teacher view', () => {
   it('shows the whole school’s hardest facts, saying it is the whole school', async () => {
     const user = userEvent.setup();
     renderAt('/teacher/c12/games', teacher);
-    await user.click(await screen.findByText('Gem Keep', { selector: 'summary span' }));
+    await user.click(await screen.findByRole('link', { name: 'Gem Keep settings' }));
     const section = await screen.findByRole('region', { name: /^Gem Keep: the whole school/ });
     const hardest = await within(section).findByRole('table', { name: 'Hardest facts (most often wrong)' });
     expect(within(hardest).getByRole('rowheader', { name: '7 × 8' })).toBeInTheDocument();

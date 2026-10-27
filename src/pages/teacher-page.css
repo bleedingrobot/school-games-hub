@@ -29,57 +29,6 @@
   color: #fff;
 }
 
-/* One folded row per game; its panels only appear (and load) when opened. */
-.teacher-game {
-  border-radius: var(--radius);
-  background: var(--card);
-  box-shadow: var(--shadow);
-}
-.teacher-game + .teacher-game {
-  margin-top: -10px;
-}
-.teacher-game__summary {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 56px;
-  padding: 10px 18px;
-  color: var(--ink);
-  font-size: 1.15rem;
-  font-weight: 800;
-  cursor: pointer;
-  list-style: none;
-}
-.teacher-game__summary::-webkit-details-marker {
-  display: none;
-}
-.teacher-game__summary::after {
-  content: '›';
-  margin-left: auto;
-  font-size: 1.6rem;
-  line-height: 1;
-  transition: transform 0.15s;
-}
-.teacher-game[open] > .teacher-game__summary::after {
-  transform: rotate(90deg);
-}
-.teacher-game__summary:focus-visible {
-  outline: 3px solid var(--brand);
-  outline-offset: 2px;
-  border-radius: var(--radius);
-}
-.teacher-game__body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
-  padding: 0 8px 8px;
-}
-/* The game's own panels sit inside the white row, so they lose their shadow and get a thin edge instead. */
-.teacher-game__body .panel {
-  box-shadow: none;
-  border: 1px solid var(--line);
-}
-
 /* How many are waiting, beside "Teacher" in the nav. Yellow so it reads on the plain and the active link. */
 .topnav__count {
   display: inline-block;
@@ -92,15 +41,4 @@
   font-size: 0.8rem;
   font-weight: 800;
   text-align: center;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .teacher-game__summary::after {
-    transition: none;
-  }
-}
-
-/* "Loading…" while a game's panels arrive. */
-.teacher-game__body > .panel__empty {
-  padding: 0 12px 10px;
 }

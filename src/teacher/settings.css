@@ -197,3 +197,20 @@
     transition: none;
   }
 }
+
+/* In a table cell (the Games table): the control, then its "?" beside it; the status goes underneath. The label is for screen readers. */
+.setting--compact {
+  grid-template-columns: minmax(0, auto) auto;
+  justify-content: start;
+  gap: 2px 4px;
+}
+.setting--compact .setting__name {
+  order: 2;
+}
+.setting--compact .setting__about,
+.setting--compact .setting__status {
+  order: 3;
+}
+.setting--compact .setting-choice__option {
+  padding: 4px 10px;
+}

@@ -9,36 +9,13 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode 
 import { FriendlyError } from '../data/profile';
 import './settings.css';
 
+// useSetting has its own file (no CSS), so a game's GameDefinition can load a class's value without bringing these controls along.
+export { useSetting } from './useSetting';
+
 const SAVED_MS = 2000;
 
 export const settingErrorText = (error: unknown) =>
   error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.';
-
-/**
- * Loads a setting: null until it arrives, and again whenever `deps` change (a new class). Waits while `enabled` is false (the
- * class isn't known yet). `failed` is set if it couldn't be read.
- */
-export function useSetting<T>(load: () => Promise<T>, deps: readonly unknown[], enabled = true): { value: T | null; failed: boolean } {
-  const [state, setState] = useState<{ value: T | null; failed: boolean }>({
-    value: null,
-    failed: false,
-  });
-  useEffect(() => {
-    if (!enabled) return;
-    let current = true;
-    setState({ value: null, failed: false });
-    load().then(
-      (value) => current && setState({ value, failed: false }),
-      () => current && setState({ value: null, failed: true }),
-    );
-    return () => {
-      current = false;
-    };
-    // `load` is made fresh on each render; `deps` say when it means something new.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, ...deps]);
-  return state;
-}
 
 type Status = { kind: 'saving' | 'saved' | 'error'; text: string } | null;
 
@@ -94,6 +71,11 @@ interface Common {
   about?: ReactNode;
   /** The setting couldn't be loaded. */
   loadFailed?: boolean;
+  /**
+   * For a table cell (the Games table): the label is kept for screen readers but not shown, since the row and column already
+   * say what it is, and the "?" and status sit beside or under the control.
+   */
+  compact?: boolean;
 }
 
 /** The label row: the name and, if there is one, the "?" that opens the about line. */
@@ -104,6 +86,7 @@ function Label({
   aboutId,
   open,
   onToggle,
+  hidden = false,
 }: {
   id: string;
   label: string;
@@ -111,10 +94,12 @@ function Label({
   aboutId: string;
   open: boolean;
   onToggle: () => void;
+  /** Kept for screen readers only. */
+  hidden?: boolean;
 }) {
   return (
     <span className="setting__name">
-      <span id={id} className="setting__label">
+      <span id={id} className={hidden ? 'setting__label sr-only' : 'setting__label'}>
         {label}
       </span>
       {about && (
@@ -139,6 +124,7 @@ function Shell({
   about,
   detail,
   status,
+  compact = false,
   children,
 }: {
   className: string;
@@ -146,6 +132,7 @@ function Shell({
   about?: ReactNode;
   detail?: ReactNode;
   status: Status;
+  compact?: boolean;
   children: (ids: { label: string; about: string | undefined }) => ReactNode;
 }) {
   const id = useId();
@@ -153,10 +140,10 @@ function Shell({
   const labelId = `${id}-label`;
   const aboutId = `${id}-about`;
   return (
-    <div className={`setting ${className}`}>
-      <Label id={labelId} label={label} about={about} aboutId={aboutId} open={open} onToggle={() => setOpen((o) => !o)} />
+    <div className={`setting ${className}${compact ? ' setting--compact' : ''}`}>
+      <Label id={labelId} label={label} about={about} aboutId={aboutId} open={open} onToggle={() => setOpen((o) => !o)} hidden={compact} />
       {children({ label: labelId, about: about && open ? aboutId : undefined })}
-      {detail && <span className="setting__detail">{detail}</span>}
+      {detail && !compact && <span className="setting__detail">{detail}</span>}
       {about && (
         <span id={aboutId} className="setting__about" hidden={!open}>
           {about}
@@ -175,6 +162,7 @@ export function SettingToggle({
   about,
   value,
   loadFailed = false,
+  compact,
   save,
   onSaved,
 }: Common & {
@@ -184,7 +172,7 @@ export function SettingToggle({
 }) {
   const s = useSaving(value, loadFailed);
   return (
-    <Shell className="setting--toggle" label={label} about={about} status={s.status}>
+    <Shell className="setting--toggle" label={label} about={about} status={s.status} compact={compact}>
       {(ids) => (
         <button
           type="button"
@@ -225,6 +213,7 @@ export function SettingChoice<T extends string>({
   options,
   value,
   loadFailed = false,
+  compact,
   save,
   onSaved,
 }: Common & {
@@ -254,6 +243,7 @@ export function SettingChoice<T extends string>({
       label={label}
       about={about}
       status={s.status}
+      compact={compact}
       detail={picked >= 0 ? options[picked].detail : undefined}
     >
       {(ids) =>
