@@ -1384,8 +1384,12 @@ function dragonStageOptions(result) {
 	};
 	return {};
 }
-/** Bank interest question (optional, older pupils): a right answer adds a little interest, once a day. */
-const interestFor = (bank, result) => result === "right" ? Math.floor(bank * .05) : result === "hint" ? Math.floor(bank * .025) : 0;
+/** The interest on these savings: the answer to the banker's question. */
+const interestDue = (bank) => Math.floor(Math.max(0, bank) / 20);
+const interestFor = (bank, result) => {
+	const due = interestDue(bank);
+	return result === "right" ? due : result === "hint" ? Math.ceil(due / 2) : 0;
+};
 const numberGuessPrize = (level, won) => Math.round(tierPower(level) * (won ? 1 : .2));
 /** The inn's riddle of the day: a right answer pays well, a wrong one pays a little for trying. */
 const riddleGold = (level, result) => friendly(tierPower(level) * (result === "right" ? 1.5 : result === "hint" ? .75 : .3));
@@ -5203,11 +5207,14 @@ function bank(c) {
 	}
 	if (op !== "interest") return { refuse: "bad-request" };
 	if (hero.level < 4) return rule("The banker only talks interest with heroes of level 4 and up.");
-	if (hero.bank <= 0) return rule("Save some gold in the bank first.");
+	if (hero.bank < 20) return rule(`Save at least 20 gold in the bank first.`);
 	if (extra.interestDay === c.today) return rule("You have already asked about interest today.");
-	if (c.req.proof === void 0 || c.req.proof === null) return rule("Answer the banker’s question to earn interest.");
-	const m = mark(c, c.req.proof, "bank");
-	const extraGold = interestFor(hero.bank, m.result);
+	const answer = c.req.answer;
+	if (answer === void 0 || answer === null) return rule("Answer the banker’s question to earn interest.");
+	if (typeof answer !== "number" || !Number.isFinite(answer)) return { refuse: "bad-request" };
+	const due = interestDue(hero.bank);
+	const result = answer !== due ? "wrong" : c.req.hinted === true ? "hint" : "right";
+	const extraGold = interestFor(hero.bank, result);
 	return {
 		hero: {
 			...hero,
@@ -5217,12 +5224,11 @@ function bank(c) {
 			...extra,
 			interestDay: c.today
 		},
-		answers: m.answers,
-		notes: m.notes,
 		summary: { interest: extraGold },
 		result: {
 			interest: extraGold,
-			right: m.result !== "wrong"
+			due,
+			right: result !== "wrong"
 		}
 	};
 }

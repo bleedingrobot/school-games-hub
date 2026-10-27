@@ -3,7 +3,7 @@ import { EXTRA_PACKS, BANDED_PACKS } from '../maths/skillPacks';
 import { MAX_LEVEL, baseStats, expNeeded } from './data';
 import { buyGear, dragonBreather, heal, newHero, startDragonStage, startFight, stepFight } from './engine';
 import {
-  MOMENT_TOPICS, addMasterTrialBonus, dragonStageOptions, defaultBand, interestFor, masterTrialStrength, numberGuessPrize,
+  MOMENT_TOPICS, addMasterTrialBonus, dragonStageOptions, defaultBand, interestDue, interestFor, masterTrialStrength, numberGuessPrize,
   offersSizeItUp, priceDiscount, riddleGold, sizeItUpBonus,
 } from './maths';
 import { markProof, questionLevel } from './proof';
@@ -26,6 +26,12 @@ describe('maths moments', () => {
     expect(priceDiscount('wrong')).toBe(0);
     expect(interestFor(1000, 'wrong')).toBe(0);
     expect(interestFor(1000, 'right')).toBeGreaterThan(interestFor(1000, 'hint'));
+    // 1 gold for every 20 saved, whole gold only; a hint halves it (rounded up).
+    expect(interestDue(1000)).toBe(50);
+    expect(interestDue(259)).toBe(12);
+    expect(interestDue(19)).toBe(0);
+    expect(interestFor(259, 'right')).toBe(12);
+    expect(interestFor(270, 'hint')).toBe(7); // 13 due, half rounded up
   });
   it('offers size it up to about one fight in three, from the seed alone', () => {
     let offered = 0;

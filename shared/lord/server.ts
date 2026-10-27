@@ -30,7 +30,7 @@ import {
   startFight, startMasterFight, useForestTurn, withdraw, type Duelist,
 } from './engine';
 import {
-  ALL_TOPICS, NUMBER_GUESS_TRIES, addMasterTrialBonus, dragonStageOptions, interestFor, numberGuessPrize, offersSizeItUp, priceDiscount, riddleGold,
+  ALL_TOPICS, INTEREST_EVERY, NUMBER_GUESS_TRIES, addMasterTrialBonus, dragonStageOptions, interestDue, interestFor, numberGuessPrize, offersSizeItUp, priceDiscount, riddleGold,
   sizeItUpBonus, sizeItUpGold, topicsOn, type MomentId, type Result,
 } from './maths';
 import { arenaWonLine, dailyNews, dragonWonLine, flattenedLine, masterWonLine, type NewsLine } from './news';
@@ -241,7 +241,8 @@ export type LordAction =
   | { action: 'dragon-finish'; fightId: string; actions: FightAction[] }
   | { action: 'shop-buy'; slot: 'weapon' | 'armour'; index: number; proof?: Proof | null }
   | { action: 'heal'; hp: number; proof?: Proof | null }
-  | { action: 'bank'; op: 'deposit' | 'withdraw' | 'interest'; amount?: number; proof?: Proof | null }
+  /** Interest: `answer` is the pupil's answer to "how much interest is that?" for their own savings; `hinted` if they used the hint. */
+  | { action: 'bank'; op: 'deposit' | 'withdraw' | 'interest'; amount?: number; answer?: number | null; hinted?: boolean }
   | { action: 'inn'; game: 'riddle'; proof?: Proof | null }
   | { action: 'inn'; game: 'guess-start' }
   | { action: 'inn'; game: 'guess'; n: number }
@@ -572,14 +573,18 @@ function bank(c: Ctx): Done | Refuse {
   }
   if (op !== 'interest') return { refuse: 'bad-request' };
   if (hero.level < 4) return rule('The banker only talks interest with heroes of level 4 and up.');
-  if (hero.bank <= 0) return rule('Save some gold in the bank first.');
+  if (hero.bank < INTEREST_EVERY) return rule(`Save at least ${INTEREST_EVERY} gold in the bank first.`);
   if (extra.interestDay === c.today) return rule('You have already asked about interest today.');
-  if (c.req.proof === undefined || c.req.proof === null) return rule('Answer the banker’s question to earn interest.');
-  const m = mark(c, c.req.proof, 'bank');
-  const extraGold = interestFor(hero.bank, m.result);
+  const answer = c.req.answer;
+  if (answer === undefined || answer === null) return rule('Answer the banker’s question to earn interest.');
+  if (typeof answer !== 'number' || !Number.isFinite(answer)) return { refuse: 'bad-request' };
+  // The question is about the pupil's own savings, so the server works out the answer itself.
+  const due = interestDue(hero.bank);
+  const result: Result = answer !== due ? 'wrong' : c.req.hinted === true ? 'hint' : 'right';
+  const extraGold = interestFor(hero.bank, result);
   return {
-    hero: { ...hero, bank: hero.bank + extraGold }, extra: { ...extra, interestDay: c.today }, answers: m.answers, notes: m.notes,
-    summary: { interest: extraGold }, result: { interest: extraGold, right: m.result !== 'wrong' },
+    hero: { ...hero, bank: hero.bank + extraGold }, extra: { ...extra, interestDay: c.today },
+    summary: { interest: extraGold }, result: { interest: extraGold, due, right: result !== 'wrong' },
   };
 }
 

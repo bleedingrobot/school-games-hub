@@ -284,7 +284,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
   }
 
   const toVillage = () => setScreen({ name: 'village' });
-  const placeProps: PlaceProps = { state, hero, act, ask, say, back: toVillage, busy };
+  const placeProps: PlaceProps = { state, hero, act, ask, say, note, back: toVillage, busy };
 
   // ---------------------------------------------------------------- forest
 
