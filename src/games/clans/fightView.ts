@@ -1,4 +1,5 @@
 /** Display helpers for a fight: who picks next, what the log says. Pure; no rules (those are in shared/clans). */
+import { botOrders } from '../../../shared/clans/bot';
 import { CONFIG } from '../../../shared/clans/config';
 import { canCast, type Fighter, type FightEvent, type FightState, type Order } from '../../../shared/clans/fight';
 import { SPELLS } from '../../../shared/clans/spells';
@@ -32,8 +33,22 @@ export function choosingOrder(state: FightState): number[] {
     .map((x) => x.i);
 }
 
-/** "Default action": attack the first enemy still standing. */
-export const defaultOrder = (state: FightState): Order => ({ action: 'attack', target: Math.max(0, state.enemies.findIndex(isAlive)) });
+/**
+ * The round's suggested plan: what the simulator's bot would do (heal anyone badly hurt, a damage spell when it beats a
+ * swing, otherwise everyone hits the weakest enemy). One order per clan slot; the player can change any of them.
+ */
+export const suggestedPlan = (state: FightState): Order[] => botOrders(state);
+
+/** One order in a few words, for the plan list ("Attack Goblin A", "Heal on Ash"). */
+export function orderText(order: Order | undefined, state: FightState): string {
+  if (!order || order.action === 'skip') return 'Rest';
+  if (order.action === 'guard') return 'Guard';
+  if (order.action === 'run') return 'Run for the exit';
+  if (order.action === 'attack') return `Attack ${state.enemies[order.target]?.name ?? 'an enemy'}`;
+  const spell = SPELLS[order.spell];
+  const target = (spell?.friendly ? state.clan : state.enemies)[order.target];
+  return `${spell?.name ?? 'A spell'} on ${target?.name ?? 'someone'}`;
+}
 
 /** The spells a member can cast right now (known, enough SP, and in the game). */
 export const castable = (f: Fighter) => f.spells.filter((id) => canCast(f, id)).map((id) => SPELLS[id]);
