@@ -36,4 +36,15 @@ describe('movesFromRaw', () => {
     expect(m.chips[0]).toEqual({ emoji: '⛏️', text: '5 of 8 mine fights', empty: false });
     expect(movesFromRaw({ lord: null, clans: { fightsLeft: 0, perDay: 8 } })['clan-quest'].allDone).toBe(true);
   });
+
+  it('shows Maths Monsters battles left', () => {
+    const m = movesFromRaw({ lord: null, clans: null, monsters: { today: 5, perDay: 12 } }).monsters;
+    expect(m.chips[0]).toEqual({ emoji: '⚔️', text: '7 of 12 battles', empty: false });
+    expect(m.allDone).toBe(false);
+    // Past the limit (two Chromebooks offline) still reads 0, not a negative number.
+    const over = movesFromRaw({ lord: null, clans: null, monsters: { today: 20, perDay: 12 } }).monsters;
+    expect(over.chips[0]).toEqual({ emoji: '⚔️', text: '0 of 12 battles', empty: true });
+    expect(over.allDone).toBe(true);
+    expect(movesFromRaw({ lord: null, clans: null, monsters: null })).toEqual({});
+  });
 });
