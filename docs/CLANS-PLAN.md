@@ -738,3 +738,5 @@ The orders keep the same shape, so the fight screen and the server replay are un
 Wins stay within 3 points everywhere except an all-fighters clan deep in the mine (+4 and +5), which wins 4-5 points more. That clan is also knocked out less and so levels much faster (19.1 instead of 17.1 by day 21): the plan is smarter, not the game easier for a careful player. The depth hint bands are unchanged; only their comment in `config.ts` was re-measured. (Run the simulator one at a time: two runs at once can mix up their results.)
 
 **Ideas for later**: Guard when badly hurt and no healer can reach you; tie-up spells (Ropes, Magic Chains) on the hardest hitter; a heal kept in hand only in long fights.
+
+- **Went live 27 Oct 2026** (afternoon, NZ time). Brought up to date with that day's `main`, then the type check, all 5,033 tests and the site build passed again. PR #42 merged; the "Test and publish" run passed and published the site. No migration, and the `clans` function was not redeployed (its built copy differs only in the depth hint comment).
