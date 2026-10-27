@@ -9,7 +9,7 @@ import { AREAS, BADGE_ORDER } from './areas';
 import { checkWorld } from './checkWorld';
 import { wildLevels, wildSpecies } from './encounters';
 import { BADGES } from './mapLoader';
-import { bookCounts, bookStatus, canHeal, moveToBox, moveToTeam, swapTeam, applyItem } from './menu';
+import { bookCounts, bookStatus, canHeal, moveToBox, moveToFront, moveToTeam, swapTeam, applyItem } from './menu';
 import { addToBag, describeLoot, LOOT, REPEL_STEPS } from './rewards';
 import type { GameMap, Thing, WorldState } from './types';
 import { findPath, isBlocked } from './walking';
@@ -354,6 +354,15 @@ describe('the map menu: team, box, bag', () => {
     expect(r.ok && r.state.team.map((m) => m.species)).toEqual(['divvy-1', 'plusplash-1', 'factorch-1', 'digibud-1', 'fractopus-1', 'pebblepoint-1']);
     expect(swapTeam(s, 1, 1).ok).toBe(false);
     expect(swapTeam(s, 0, 9).ok).toBe(false);
+    expect(s.team[0].species).toBe('digibud-1');
+  });
+
+  it('moves one monster to the front, the rest keeping their order', () => {
+    const s = at('kauri-bush', 'entrance', { team: six() });
+    const r = moveToFront(s, 3);
+    expect(r.ok && r.state.team.map((m) => m.species)).toEqual(['divvy-1', 'digibud-1', 'plusplash-1', 'factorch-1', 'fractopus-1', 'pebblepoint-1']);
+    expect(moveToFront(s, 0).ok).toBe(false);
+    expect(moveToFront(s, 9).ok).toBe(false);
     expect(s.team[0].species).toBe('digibud-1');
   });
 
