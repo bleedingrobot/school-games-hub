@@ -3,6 +3,7 @@
  * is up, takes the orders and the Battle Cry answer, and writes the log in plain gentle words.
  * Each round starts with a suggested plan (one order per member, the bot's choice). Enter fights with it; 1-9 changes
  * one member's order first. Changing an order: A attack, S spell, G guard, R run, 1-9 to pick, Esc back to the plan.
+ * The round then plays out one action at a time (Enter or a tap skips), and a one-line summary waits for Enter.
  *
  * In a ladder fight (the server gave it questions) the Battle Cry is the child's own maths, shown in the hub's question
  * box and marked by the server (`onCheck`); the marks it gives back decide each round's bonus, just as on the server.
@@ -21,13 +22,22 @@ import { ACTION_HELP, spellHelp } from './abilities';
 import { Bar } from './Bars';
 import { castable, choosingOrder, describe, fightsLabel, isAlive, labelDuplicates, orderText, suggestedPlan } from './fightView';
 import { MonsterSprite, Portrait } from './Sprite';
+import { inOrder, roundSteps, roundSummary, stepMs, type Step, type Who } from './playback';
 import { zoneColour } from './Sprite';
 import { MONSTERS_BY_NAME } from './monsters';
 import { sceneArt, zoneScene } from './art';
 import { lookOf } from '../../../shared/clans/looks';
 import { nextSeed, type Session } from './session';
 
-type Phase = 'ask' | 'reward' | 'working' | 'orders' | 'over';
+type Phase = 'ask' | 'reward' | 'working' | 'orders' | 'replay' | 'summary' | 'over';
+
+/** A round being shown: its steps, how many are shown, the fight after it, and its summary line. */
+interface Replay {
+  steps: Step[];
+  at: number;
+  after: FightState;
+  summary: string;
+}
 
 /** The server's answer to a ladder Battle Cry: was it right, the right answer (to show when it wasn't), and the answer it marked. */
 export interface CryChecked {
@@ -36,6 +46,9 @@ export interface CryChecked {
   /** The first answer sent for this question: a second try (after a refresh or a dropped connection) is marked as the first. */
   given: number;
 }
+
+/** How many actions a floating number stays for (it floats away in about 0.9 seconds). */
+const FLOAT_STEPS = 3;
 
 const BATTLE_CRY_NOTE = 'A right answer powers up the whole clan. No timer, nothing lost.';
 
@@ -67,7 +80,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     for (const r of open.rounds) {
       const before = fight.log.length;
       playCryRound(fight, { settings: open.settings, questions: open.questions, marks: open.marks }, r.orders, r.cry);
-      lines.push(...fight.log.slice(before).map((e) => describe(e, clanNames)));
+      lines.push(...inOrder(fight.log.slice(before)).map((e) => describe(e, clanNames)));
     }
     return { fight, lines };
   });
@@ -90,6 +103,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const [mode, setMode] = useState<Mode>('action');
   const [spell, setSpell] = useState<number | null>(null);
   const [log, setLog] = useState<string[]>(boot.lines);
+  const [replay, setReplay] = useState<Replay | null>(null);
   const panel = useRef<HTMLDivElement>(null);
   const logEnd = useRef<HTMLLIElement>(null);
 
@@ -122,7 +136,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
 
   useEffect(() => {
     // The orders and the reward are answered with letter keys, so the panel takes focus. The question, "how it works" and "over" have their own focus (the box or an autofocused button).
-    if (phase === 'orders' || phase === 'reward') panel.current?.focus();
+    if (phase === 'orders' || phase === 'reward' || phase === 'replay' || phase === 'summary') panel.current?.focus();
   }, [phase, editing, mode]);
   // Braces matter: newer Chrome's scrollIntoView gives back a promise, and React would try to call it as the clean-up.
   useEffect(() => {
@@ -178,10 +192,34 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     const before = next.log.length;
     playCryRound(next, maths(), all, given);
     onRound?.(next.round, { orders: all, cry: given });
-    setLog((l) => [...l, ...next.log.slice(before).map((e) => describe(e, clanNames))]);
-    setFight(next);
-    startRound(next);
+    // Show it one action at a time; the log gets each line as it happens.
+    setLog((l) => [...l, `Round ${next.round}`]);
+    setReplay({ steps: roundSteps(fight, next, before, clanNames), at: 0, after: next, summary: roundSummary(next, before, clanNames).text });
+    setPhase('replay');
   }
+  // Every action shown (or skipped): the fight moves on, and the summary waits for Enter.
+  function endReplay(r: Replay) {
+    setLog((l) => [...l, ...r.steps.slice(r.at).map((st) => st.line)]);
+    setReplay({ ...r, at: r.steps.length });
+    setFight(r.after);
+    setPhase(r.after.result ? 'over' : 'summary');
+  }
+  useEffect(() => {
+    if (phase !== 'replay' || !replay) return;
+    if (replay.at >= replay.steps.length) return endReplay(replay);
+    const timer = setTimeout(() => {
+      setLog((l) => [...l, replay.steps[replay.at].line]);
+      setReplay({ ...replay, at: replay.at + 1 });
+    }, replay.at === 0 ? 150 : stepMs(replay.steps.length));
+    return () => clearTimeout(timer);
+  }, [phase, replay]); // eslint-disable-line react-hooks/exhaustive-deps
+  const skip = () => {
+    if (phase === 'replay' && replay) endReplay(replay);
+  };
+  const nextRound = () => {
+    setReplay(null);
+    startRound(fight);
+  };
   // Back to the plan, with or without a changed order.
   function backToPlan() {
     setEditing(null);
@@ -207,6 +245,11 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const targets = spell !== null && SPELLS[spell].friendly ? fight.clan.filter(isAlive) : alive;
 
   function keys(event: React.KeyboardEvent) {
+    if ((phase === 'replay' || phase === 'summary') && (event.key === 'Enter' || event.key === ' ') && !(event.target instanceof HTMLButtonElement)) {
+      if (phase === 'replay') skip();
+      else nextRound();
+      return event.preventDefault();
+    }
     if (phase === 'reward') {
       if (event.key === 'd') chooseReward('damage');
       else if (event.key === 'h') chooseReward('heal');
@@ -245,6 +288,21 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     event.preventDefault();
   }
 
+  // While a round plays out: everyone's HP as of the last action shown, who is acting, and who it lands on.
+  const shownStep = phase === 'replay' && replay && replay.at > 0 ? replay.steps[replay.at - 1] : undefined;
+  const hpOf = (w: Who, hp: number) => (phase === 'replay' ? (shownStep?.hp[w] ?? hp) : hp);
+  const effect = (w: Who) => {
+    if (!replay || replay.at === 0) return { cls: '', float: null };
+    const hit = shownStep?.targets.find((t) => t.who === w);
+    const cls = shownStep ? `${shownStep.actor === w ? 'is-acting' : ''} ${hit ? 'is-hit' : ''}` : '';
+    // A number takes about a second to float away, longer than an action, so the last few actions' numbers stay.
+    const float = replay.steps.slice(Math.max(0, replay.at - FLOAT_STEPS), replay.at).flatMap((st, n) => {
+      const f = st.targets.find((t) => t.who === w)?.float;
+      const step = Math.max(0, replay.at - FLOAT_STEPS) + n;
+      return f ? [<span key={step} className={`cq-float cq-float--${f.kind}`}>{f.text}</span>] : [];
+    });
+    return { cls, float: float.length ? <span className="cq-floats" aria-hidden="true">{float}</span> : null };
+  };
   const upNext = phase === 'orders' && who ? who.index : -1;
   const planning = phase === 'orders' && !who;
   // The mine zone the monsters come from, painted dimly behind them (Clans art Stage A.6).
@@ -253,36 +311,63 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   return (
     <section className="cq-fight" aria-label="The fight">
       <p className="cq-fight__top">
-        <strong>Depth {fight.depth}</strong> · Round {Math.min(fight.round + (fight.result ? 0 : 1), 8)} · Fights today: {fightsLabel(session.fightsLeft, session.fightsPerDay)}
+        <strong>Depth {fight.depth}</strong> · Round {Math.min(fight.round + (fight.result || phase === 'summary' ? 0 : 1), 8)} · Fights today: {fightsLabel(session.fightsLeft, session.fightsPerDay)}
       </p>
-      <div className="cq-arena">
+      <div className="cq-arena" onClick={skip}>
         <ul className="cq-side cq-side--enemies" aria-label="Enemies" data-zone={zone} style={zoneArt ? ({ '--cq-zone': `url(${zoneArt})` } as React.CSSProperties) : undefined}>
-          {fight.enemies.map((e) => (
-            <li key={e.index} className={isAlive(e) ? '' : 'is-down'}>
+          {fight.enemies.map((e) => {
+            const hp = hpOf(`e${e.index}`, e.hp);
+            const fx = effect(`e${e.index}`);
+            return (
+            <li key={e.index} className={`${hp > 0 ? '' : 'is-down'} ${fx.cls}`} data-step={fx.cls.includes('is-hit') ? replay?.at : undefined}>
+              {fx.float}
               <MonsterSprite name={e.name.replace(/ [A-D]$/, '')} zone={MONSTERS_BY_NAME[e.name.replace(/ [A-D]$/, '')]?.zone ?? 'Meadow'} scale={3} />
               <span className="cq-name" style={{ color: zoneColour(MONSTERS_BY_NAME[e.name.replace(/ [A-D]$/, '')]?.zone ?? 'Meadow') }}>
                 {e.name}
               </span>
-              <Bar label="HP" value={e.hp} max={e.maxHp} kind="hp" />
-              {!isAlive(e) && <span className="cq-tag">gone</span>}
+              <Bar label="HP" value={hp} max={e.maxHp} kind="hp" />
+              {hp <= 0 && <span className="cq-tag">gone</span>}
             </li>
-          ))}
+            );
+          })}
         </ul>
         <ul className="cq-side cq-side--clan" aria-label="Your clan">
-          {fight.clan.map((f, i) => (
-            <li key={f.index} className={`${isAlive(f) ? '' : 'is-down'} ${upNext === f.index ? 'is-up' : ''}`} aria-current={upNext === f.index ? 'true' : undefined}>
+          {fight.clan.map((f, i) => {
+            const hp = hpOf(`c${f.index}`, f.hp);
+            const fx = effect(`c${f.index}`);
+            return (
+            <li key={f.index} className={`${hp > 0 ? '' : 'is-down'} ${upNext === f.index ? 'is-up' : ''} ${fx.cls}`} aria-current={upNext === f.index ? 'true' : undefined}>
+              {fx.float}
               <Portrait race={members[i].race} cls={members[i].cls} look={lookOf(members[i])} scale={3} />
               <span className="cq-name">{f.name}</span>
-              <Bar label="HP" value={f.hp} max={f.maxHp} kind="hp" />
+              <Bar label="HP" value={hp} max={f.maxHp} kind="hp" />
               {f.maxSp > 0 && <Bar label="SP" value={f.sp} max={f.maxSp} kind="sp" />}
               {upNext === f.index && <span className="cq-tag cq-tag--up">Up next</span>}
-              {!isAlive(f) && <span className="cq-tag">resting</span>}
+              {hp <= 0 && <span className="cq-tag">resting</span>}
             </li>
-          ))}
+            );
+          })}
         </ul>
       </div>
       <div className="cq-lower">
-        <div className="cq-panel" ref={panel} tabIndex={-1} onKeyDown={keys} role="group" aria-label={phase === 'ask' ? 'Battle Cry question' : phase === 'reward' ? 'Battle Cry reward' : phase === 'working' ? 'How the answer works' : phase === 'orders' && who ? `Orders for ${who.name}` : planning ? 'The plan for this round' : 'The fight is over'}>
+        <div className="cq-panel" ref={panel} tabIndex={-1} onKeyDown={keys} role="group" aria-label={phase === 'ask' ? 'Battle Cry question' : phase === 'reward' ? 'Battle Cry reward' : phase === 'working' ? 'How the answer works' : phase === 'orders' && who ? `Orders for ${who.name}` : planning ? 'The plan for this round' : phase === 'replay' ? `Round ${replay?.after.round ?? ''}` : phase === 'summary' ? 'What happened' : 'The fight is over'}>
+          {phase === 'replay' && (
+            <div className="cq-choice">
+              <h3>Round {replay?.after.round}…</h3>
+              <button type="button" className="cq-btn" onClick={skip}>
+                <kbd>Enter</kbd> Skip
+                {help('Show the whole round now.')}
+              </button>
+            </div>
+          )}
+          {phase === 'summary' && replay && (
+            <div className="cq-choice">
+              <p className="cq-summary" role="status">{replay.summary}</p>
+              <button type="button" className="cq-btn cq-btn--hot" onClick={nextRound}>
+                <kbd>Enter</kbd> Next round
+              </button>
+            </div>
+          )}
           {phase === 'ask' && question && (
             <PracticalAsk question={question} title="Battle Cry!" note={BATTLE_CRY_NOTE} onSubmit={submitCry} onNoThanks={noThanks} />
           )}
@@ -384,11 +469,11 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
               )}
             </div>
           )}
-          {phase === 'over' && <FightOver fight={fight} onFinish={() => onFinish(fight)} />}
+          {phase === 'over' && <FightOver fight={fight} summary={replay?.summary} onFinish={() => onFinish(fight)} />}
         </div>
         <ol className="cq-log" aria-label="Fight log" aria-live="polite" aria-relevant="additions">
           {log.map((line, i) => (
-            <li key={i} className={line.startsWith('Round') ? 'cq-log__round' : undefined}>
+            <li key={i} className={`${/^Round \d+$/.test(line) ? 'cq-log__round' : ''} ${phase === 'replay' && i === log.length - 1 && replay && replay.at > 0 ? 'is-now' : ''}`.trim() || undefined}>
               {line}
             </li>
           ))}
@@ -399,7 +484,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   );
 }
 
-function FightOver({ fight, onFinish }: { fight: FightState; onFinish: () => void }) {
+function FightOver({ fight, summary, onFinish }: { fight: FightState; summary?: string; onFinish: () => void }) {
   const text =
     fight.result === 'won'
       ? 'The enemies are beaten. Well done, clan!'
@@ -410,6 +495,7 @@ function FightOver({ fight, onFinish }: { fight: FightState; onFinish: () => voi
           : 'The fight fizzles out. Everyone heads home.';
   return (
     <div className="cq-choice">
+      {summary && <p className="cq-summary" role="status">{summary}</p>}
       <h3>{text}</h3>
       <p>
         Gold found: <strong>{fight.gold}</strong>

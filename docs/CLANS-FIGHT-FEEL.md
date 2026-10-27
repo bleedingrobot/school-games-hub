@@ -91,3 +91,16 @@ Each stage: build on its own branch, try it in the Clans preview, share a test p
 ## Questions for James
 
 All answered (see the top).
+
+## Stage 1 results (27 Oct 2026): pacing
+
+Built on `clans-fight-feel`. Display only: the orders and Battle Cry answers sent are exactly as before, and the server is untouched.
+
+- **Each round plays out one action at a time** (`src/games/clans/playback.ts` turns the round's log into steps; `Fight.tsx` shows them). The one acting is outlined and steps towards the other side (sideways on wide screens, up and down on phones); whoever it lands on is outlined, shakes and flashes, and a number floats up over them: "-7" (pink), "+8" (green), "miss!" or "shrugs it off" (grey). HP bars drain as it happens, the log gets each line as it happens, and the newest line is lit. About a third of a second an action, never much more than 4 seconds a round. A number stays for its whole rise (about 1 second), even as the next actions start.
+- **Enter, Space, the Skip button or a tap on the fighters** shows the rest of the round at once.
+- **A summary waits for Enter**: "Round 2: you did 34 damage and took 9. You healed 8. Goblin A is beaten! Ash is resting." with a **Next round** button. Only then does the next Battle Cry question (or ladder question box) come. When a round ends the fight, the summary sits above "The enemies are beaten".
+- **Knock-outs come after the hit that caused them** (the engine logs them just before). The log rebuilt after a refresh uses the same order.
+- **Reduced motion**: nothing moves, shakes or flashes; the newest number just appears. **Screen readers**: the log is still the polite live region, the summary is a status line, and the numbers are hidden from them.
+- **Tests**: `playback.test.ts` (the steps end on exactly the engine's HP for every round of 80 fights, with heals, spells and both Battle Cries; numbers, attacker and target; the summary; knock-out order; the timing), and two screen tests in `FightPlan.test.tsx` (plays out, Skip, the summary waits, Enter goes on; the log ends the same). Tests that click through fights now also press Skip and Next round. All 5,041 tests, the type check and the build pass.
+- **Checked in the preview** at 1366 x 640 and phone width: numbers sit on the right fighter, no sideways scrolling.
+- **Not done yet** (stage 2): big hits, the knock-out topple and "Beaten!" stamp, Battle Cry glow, spell bursts, close calls and the win flourish. The painted pictures for those come from ComfyUI (reachable on 27 Oct).

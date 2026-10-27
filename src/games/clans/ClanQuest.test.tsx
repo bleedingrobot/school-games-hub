@@ -45,7 +45,7 @@ async function playOut(u: ReturnType<typeof user>) {
   for (let i = 0; i < 120; i++) {
     const done = button('See how everyone did');
     if (done) return done;
-    const next = button('No thanks') ?? button('Carry on') ?? button(/Fight with this plan/);
+    const next = button('No thanks') ?? button('Carry on') ?? button(/Skip\s*Show the whole round/) ?? button(/Next round/) ?? button(/Fight with this plan/);
     if (!next) throw new Error('No button to press in the fight');
     await u.click(next);
   }

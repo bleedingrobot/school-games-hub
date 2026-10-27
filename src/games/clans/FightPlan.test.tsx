@@ -2,13 +2,13 @@
  * The round plan: each round starts with the bot's orders for every member, Enter fights with them, and the player can
  * change any one member's order first. The orders sent are plain orders, so the server replays them as before.
  */
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { applyAction, type OpenFight, type ServerState } from '../../../shared/clans/actions';
 import { botOrders } from '../../../shared/clans/bot';
 import { startingDrafts } from '../../../shared/clans/create';
-import { newFight, type Order } from '../../../shared/clans/fight';
+import { newFight, playRound, type Order } from '../../../shared/clans/fight';
 import type { RecordedRound } from '../../../shared/clans/battleCry';
 import { publicFight } from '../../../supabase/functions/clans/handler';
 import { Fight } from './Fight';
@@ -75,5 +75,43 @@ describe('the round plan', () => {
     expect(screen.getByRole('group', { name: 'The plan for this round' })).toHaveFocus();
     await u.click(screen.getByRole('button', { name: /Fight with this plan/ }));
     expect(sent[0].orders).toEqual(botOrders(fight));
+  });
+});
+
+describe('the round plays out (stage 1 of making fights feel better)', () => {
+  it('shows the round one action at a time, then a summary that waits for Enter before the next round', async () => {
+    const { u, sent } = await toPlan();
+    await u.keyboard('{Enter}');
+    expect(sent).toHaveLength(1);
+    // Playing out: a Skip button, and the log fills in step by step.
+    expect(await screen.findByRole('button', { name: /Skip\s*Show the whole round/ })).toBeInTheDocument();
+    const log = screen.getByRole('list', { name: 'Fight log' });
+    await waitFor(() => expect(log.querySelector('.is-now')).not.toBeNull(), { timeout: 2000 });
+    // A floating number or "miss!" shows on whoever was hit, hidden from screen readers (the log says it).
+    await waitFor(() => expect(document.querySelector('.cq-float')).not.toBeNull(), { timeout: 2000 });
+    expect(document.querySelector('.cq-float')!.closest('[aria-hidden="true"]')).not.toBeNull();
+    // Enter skips to the end; the summary waits.
+    await u.keyboard('{Enter}');
+    const summary = await screen.findByRole('status');
+    expect(summary.textContent).toMatch(/^Round 1: you did \d+ damage and took \d+\./);
+    expect(document.querySelector('.cq-fight__top')!.textContent).toMatch(/Round 1 /);
+    if (screen.queryByRole('button', { name: 'See how everyone did' })) return; // won in one round
+    await new Promise((r) => setTimeout(r, 600));
+    expect(screen.queryByRole('group', { name: 'The plan for this round' })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'No thanks' })).toBeNull();
+    // Enter moves on to round 2.
+    await u.keyboard('{Enter}');
+    expect(await screen.findByText(/Round 2/, { selector: '.cq-fight__top' })).toBeInTheDocument();
+  });
+
+  it('plays out by itself to the summary without a key press, and the log ends the same as before', async () => {
+    const { u, fight } = await toPlan();
+    const before = structuredClone(fight);
+    await u.keyboard('{Enter}');
+    await screen.findByRole('status', {}, { timeout: 6000 });
+    playRound(before, botOrders(before), null);
+    const lines = [...screen.getByRole('list', { name: 'Fight log' }).querySelectorAll('li')].map((li) => li.textContent).filter(Boolean);
+    for (const e of before.log.filter((x) => x.type === 'hit')) expect(lines.some((l) => l!.includes(`hits ${e.target} for ${e.damage}`))).toBe(true);
   });
 });

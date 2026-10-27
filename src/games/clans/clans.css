@@ -306,3 +306,36 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 .cq-scene[data-scene='rest'] { object-position: center 75%; }
 /* Monster names were coloured by zone for the old tiles; on the painted zone they take the frame's heading colour. */
 .cq-side--enemies .cq-name { color: var(--f-head) !important; text-shadow: 0 1px 2px #000; }
+
+/* Round playback (docs/CLANS-FIGHT-FEEL.md, stage 1): the attacker nudges forward, the target flashes and shakes,
+   and a number floats up. Transform and opacity only, for slow Chromebooks. With reduced motion nothing moves:
+   the numbers just appear. */
+.cq-side li { position: relative; }
+.cq-float { position: absolute; top: 18px; left: 50%; z-index: 2; transform: translateX(-50%); padding: 0 6px; border-radius: 4px; background: rgba(0, 0, 0, 0.7); font-weight: 700; font-size: 1.6rem; line-height: 1.2; pointer-events: none; white-space: nowrap; }
+.cq-float--damage { color: #ffb4a8; }
+.cq-float--heal { color: #8ee69f; }
+.cq-float--miss { color: var(--cq-soft); font-size: 1.15rem; font-style: italic; }
+@media (prefers-reduced-motion: reduce) { .cq-floats > :not(:last-child) { display: none; } }
+.cq-side li.is-hit { border-color: var(--cq-red, #e05a5a); }
+.cq-side li.is-acting { border-color: var(--cq-yellow); }
+.cq-log li.is-now { color: var(--cq-yellow); }
+.cq-summary { margin: 0 0 8px; font-size: 1.05rem; font-weight: 600; }
+@media (prefers-reduced-motion: no-preference) {
+  .cq-float { animation: cq-float-up 1s ease-out forwards; }
+  .cq-side li.is-hit { animation: cq-shake 0.3s ease-in-out; }
+  .cq-side li.is-hit :is(.cq-monster-art, .cq-portrait) { animation: cq-flash 0.3s ease-out; }
+  /* Side by side, enemies on the left: each side steps towards the other. Stacked on phones: up and down. */
+  .cq-side--enemies li.is-acting { animation: cq-nudge-right 0.3s ease-out; }
+  .cq-side--clan li.is-acting { animation: cq-nudge-left 0.3s ease-out; }
+  @media (max-width: 760px) {
+    .cq-side--enemies li.is-acting { animation-name: cq-nudge-down; }
+    .cq-side--clan li.is-acting { animation-name: cq-nudge-up; }
+  }
+  @keyframes cq-float-up { from { opacity: 0; transform: translate(-50%, 6px); } 12%, 70% { opacity: 1; } to { opacity: 0; transform: translate(-50%, -26px); } }
+  @keyframes cq-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  @keyframes cq-flash { 0% { filter: brightness(2.2); } 100% { filter: none; } }
+  @keyframes cq-nudge-right { 50% { transform: translateX(8px); } }
+  @keyframes cq-nudge-left { 50% { transform: translateX(-8px); } }
+  @keyframes cq-nudge-down { 50% { transform: translateY(6px); } }
+  @keyframes cq-nudge-up { 50% { transform: translateY(-6px); } }
+}
