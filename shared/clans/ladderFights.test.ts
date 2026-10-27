@@ -36,6 +36,8 @@ const localFight = (s: ServerState) => {
   return replayFight(s.clan.members, f.depth, f.seed, f.boss, f.rounds, f).state;
 };
 const round = (s: ServerState, cry: CryAnswer | null): Action => ({ type: 'fightRound', round: fightOf(s).rounds.length + 1, orders: botOrders(localFight(s)), cry });
+/** A round where everyone guards, so the fight is still open afterwards (the bot can win in one round). */
+const guardRound = (s: ServerState, cry: CryAnswer | null): Action => ({ type: 'fightRound', round: fightOf(s).rounds.length + 1, orders: localFight(s).clan.map(() => ({ action: 'guard' }) as const), cry });
 
 describe('ladder fights: starting', () => {
   it('keeps one question a round, made from the child\'s maths, when the browser asks for a ladder fight', () => {
@@ -115,7 +117,7 @@ describe('ladder fights: playing rounds', () => {
   it('plays the bonus for a right, checked answer and counts it for fame', () => {
     let s = ladderStart(created());
     s = check(s, 1, answerOf(s, 1)).state;
-    const out = ok(s, round(s, { answer: answerOf(s, 1), reward: 'damage' }));
+    const out = ok(s, guardRound(s, { answer: answerOf(s, 1), reward: 'damage' }));
     expect(out.result).toMatchObject({ type: 'fightRound', round: 1 });
     expect('earned' in out.result && out.result.earned?.cries).toBe(1);
     expect(out.effects).toBeUndefined();
@@ -127,7 +129,7 @@ describe('ladder fights: playing rounds', () => {
   it('gives no bonus for an answer the server never checked, a wrong one, or one that differs from the checked one', () => {
     const fresh = ladderStart(created());
     const noBonus = (s: ServerState, cry: CryAnswer) => {
-      const out = ok(s, round(s, cry));
+      const out = ok(s, guardRound(s, cry));
       expect('earned' in out.result ? out.result.earned?.cries : undefined).toBeUndefined();
       const f = fightOf(out.state);
       expect(replayFight(out.state.clan.members, f.depth, f.seed, f.boss, f.rounds, f).cries[0].cry).toBeNull();

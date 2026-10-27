@@ -183,7 +183,8 @@ describe('playing a fight through the server', () => {
 
   it('uses the maths settings the fight began with, even if the teacher changes them', () => {
     const open = ok(created(), { type: 'fightStart', depth: 1, boss: false }, { settings: { ...DEFAULT_PRACTICAL_SETTINGS, enabledTopics: [] } }).state;
-    const played: RecordedRound = { orders: botOrders(rebuild(open)), cry: null };
+    // Everyone guards, so the fight is still open after the round (the bot can win in one).
+    const played: RecordedRound = { orders: rebuild(open).clan.map(() => ({ action: 'guard' })), cry: null };
     const later = ok(open, roundAction(open, played), { settings: DEFAULT_PRACTICAL_SETTINGS }).state;
     expect(later.fight!.settings.enabledTopics).toEqual([]);
   });
