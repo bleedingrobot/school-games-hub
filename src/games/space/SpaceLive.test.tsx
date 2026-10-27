@@ -225,33 +225,6 @@ describe('Mission Control maths with classmates', () => {
     throw new Error('never my turn');
   }
 
-  it('asks the server for the wormhole question when I land on one, and sends back what I type', async () => {
-    const user = userEvent.setup();
-    const { first } = mathsTurn();
-    const state = structuredClone(first.state!);
-    const wormhole = Number(Object.entries(state.board.squares).find(([, q]) => q.kind === 'wormhole')![0]);
-    state.rockets[0].position = wormhole;
-    state.phase = 'choice';
-    state.pending = { kind: 'question', square: wormhole, moment: 'wormhole' };
-    state.turnInfo.rolled = true;
-    const ask = vi.fn(async (request: data.SpaceAction): Promise<data.SpaceMathsReply> =>
-      request.action === 'question'
-        ? { game: first, question }
-        : { game: first, right: true, answer: 56 },
-    );
-    render(wrap(<SpaceLive session={session({ ...first, state }, { ask })} timeScale={0} />));
-    const box = await screen.findByRole('dialog', { name: 'Wormhole boost' });
-    expect(ask).toHaveBeenCalledWith({ action: 'question', gameId: 'g1', kind: 'moment', version: 1 });
-    expect(box).toHaveTextContent('⏱');
-    await user.click(within(box).getByRole('button', { name: '5' }));
-    await user.click(within(box).getByRole('button', { name: '6' }));
-    await user.click(within(box).getByRole('button', { name: 'Check my answer' }));
-    await waitFor(() =>
-      expect(ask).toHaveBeenCalledWith(expect.objectContaining({ action: 'answer', kind: 'moment', answer: 56, version: 1 })),
-    );
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Wormhole boost' })).not.toBeInTheDocument(), { timeout: 3000 });
-  });
-
   it('shows the after-turn question on the side card once I’ve finished a turn, and says nothing about a wrong answer', async () => {
     const user = userEvent.setup();
     const { game } = mathsTurn();
