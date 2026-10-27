@@ -597,7 +597,8 @@ resets into an admin-only section, so nothing waits on this stage to be safe.
    - *Dragon Maths season dates: **one for the whole school**, set by a school admin. (Today each class saves its own
      `lord_season_start` in its settings row, and switching a class off pauses its season clock with `lord_paused_since`.)
      Dragon Maths moves to the Games table first with its dates working exactly as today; the one school date is then
-     designed and shown to James before it is built, because it changes how seasons are worked out.*
+     designed and shown to James before it is built, because it changes how seasons are worked out. Designed and agreed
+     28 Oct: docs/DRAGON-SCHOOL-SEASON.md.*
    - *Clan Quest villages: **whole school, and any teacher can manage them** (as today). Raids stay per class. So the admin
      check on the village functions in section 6 is **not** added.*
 3. Should non-admin teachers see the whole-school student list at all, or only their classes plus students in no class?
