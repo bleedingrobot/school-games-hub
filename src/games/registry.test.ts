@@ -39,10 +39,10 @@ describe('game registry', () => {
 
   it('the games with a teacher switch and teacher panels say so themselves', () => {
     expect(ALL_GAMES.filter((g) => g.useTeacherSwitch).map((g) => g.id)).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'bond-match', 'mine', 'archery', 'kingdom']);
-    expect(ALL_GAMES.filter((g) => g.TeacherPanels).map((g) => g.id)).toEqual(['gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'kingdom']);
+    expect(ALL_GAMES.filter((g) => g.TeacherPanels).map((g) => g.id)).toEqual(['gem-keep', 'monsters', 'dragon-maths', 'clan-quest']);
     expect(ALL_GAMES.filter((g) => g.StudentPanel).map((g) => g.id)).toEqual(['gem-keep', 'monsters', 'dragon-maths', 'clan-quest']);
     // Moved to the new teacher contract (docs/TEACHER-VIEW-PLAN.md, stage 3), which replaces TeacherPanels and StudentPanel.
-    expect(ALL_GAMES.filter((g) => g.teacher).map((g) => g.id)).toEqual(['space', 'marble', 'bond-match', 'mine', 'archery']);
+    expect(ALL_GAMES.filter((g) => g.teacher).map((g) => g.id)).toEqual(['space', 'marble', 'bond-match', 'mine', 'archery', 'kingdom']);
     expect(ALL_GAMES.filter((g) => g.teacher && (g.TeacherPanels || g.StudentPanel))).toEqual([]);
   });
 

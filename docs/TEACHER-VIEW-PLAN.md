@@ -491,6 +491,16 @@ nothing it saves changed.*
 - *The hooks are in `src/games/archery/teacher.ts`. `src/pages/TeacherArchery.tsx` now holds only `ArcherySettings`. Its
   tests keep the old checks, now for a named class, plus the summary line and the note being hidden while the game is on.*
 
+*Kingdom Keeper moved 28 Oct 2026 on `teacher-games-kingdom` (from `teacher-games-archery`). No database change; nothing
+it saves changed.*
+- *Its row has the on/off switch, with the game and its points behind the "?", and "Follows focus" in the Maths column (as
+  in the 4.5 sketch: each adviser's question follows the student's own focus, and there is no switch). Nothing to open. The
+  old panel, with its red "Switch Kingdom Keeper off" button, is gone, and so is its file (`src/pages/TeacherKingdom.tsx`).*
+- *The hook, the summary and the "about" line are in `src/games/kingdom/teacher.ts`. The old panel had no tests; the row's
+  are new in `src/games/kingdom/teacher.test.tsx`.*
+- *Every game in the table with no class report has now moved. Left: Gem Keep, Maths Monsters, Dragon Maths and Clan
+  Quest, which each have a class report and a student panel, and need the class-scoped reports first (section 6).*
+
 **Stage 4: Students roster and student page,** with `teacher_class_overview` and class-scoped `teacher_students`.
 
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.
