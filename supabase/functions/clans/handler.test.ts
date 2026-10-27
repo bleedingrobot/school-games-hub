@@ -40,7 +40,7 @@ function fakeDb() {
   const answers: { player: string; batch: string; list: FactAnswer[] }[] = [];
   // The child's own maths (space_maths_context) and the answers kept in it (recordMathsAnswers), for ladder fights.
   const ladder = { context: { facts: [], settings: { enabledTables: [2, 3, 4, 5, 10] }, focus: parseFocus(null) } as MathsContext | null, loads: [] as string[], kept: [] as { player: string; once: string; list: FactAnswer[] }[] };
-  const teacher = { enabledTopics: [...DEFAULT_PRACTICAL_SETTINGS.enabledTopics] as string[], yearBand: 5, enabledTables: [...DEFAULT_PRACTICAL_SETTINGS.enabledTables], fightsPerDay: 8, season: 1 };
+  const teacher = { enabledTopics: [...DEFAULT_PRACTICAL_SETTINGS.enabledTopics] as string[], yearBand: 5, enabledTables: [...DEFAULT_PRACTICAL_SETTINGS.enabledTables], fightsPerDay: 8, season: 1, typedNames: false };
   const earn = (player: string, result: Result) => {
     const earned = 'earned' in result ? (result.earned as Earned | undefined) : undefined;
     if (!earned) return;
@@ -207,6 +207,16 @@ describe('the clans server function', () => {
     const { status } = await send(null, { raw });
     expect(status).toBe(400);
     expect(clans.size).toBe(0);
+  });
+
+  it('takes made-up hero names only while the teacher\'s switch is on', async () => {
+    const typed = () => ({ ...create(), drafts: startingDrafts(SEED).map((d, i) => (i === 0 ? { ...d, name: 'zoe' } : d)) });
+    const t = setup();
+    expect((await t.send(typed())).body).toMatchObject({ ok: false });
+    expect(t.clans.size).toBe(0);
+    t.teacher.typedNames = true;
+    const made = await t.send(typed());
+    expect(made.body.state.clan.members[0].name).toBe('Zoe');
   });
 
   it('says there is no clan yet, and gives the seed the server chose', async () => {

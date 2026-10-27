@@ -6177,7 +6177,7 @@ const TEMPLATES = [
 	}))
 ];
 const BEDMAS_KEYS = [...new Set(TEMPLATES.map((t) => t.key))];
-const lettersOf = (src) => (src.match(/[a-d]/g) ?? []).length;
+const lettersOf$1 = (src) => (src.match(/[a-d]/g) ?? []).length;
 /** The template with its numbers put in, as tokens. */
 function tokensOf(src, nums) {
 	let next = 0;
@@ -6294,7 +6294,7 @@ const MAX_NUMBER = 30;
 const MAX_ANSWER = 300;
 function build$1(templateIndex, nums) {
 	const template = TEMPLATES[templateIndex];
-	if (!template || nums.length !== lettersOf(template.src) || !nums.every((n) => isInt(n, 2, MAX_NUMBER))) return null;
+	if (!template || nums.length !== lettersOf$1(template.src) || !nums.every((n) => isInt(n, 2, MAX_NUMBER))) return null;
 	const tokens = tokensOf(template.src, nums);
 	const answer = evaluate(tokens, RIGHT);
 	if (!Number.isInteger(answer) || answer < 1 || answer > MAX_ANSWER) return null;
@@ -6311,7 +6311,7 @@ function bedmasFamily(key, label) {
 	return oneKey(key, label, ["MS.Y6.NUM.OP.P1"], null, (_k, r) => {
 		for (;;) {
 			const t = pickOne(r, mine);
-			const nums = Array.from({ length: lettersOf(t.src) }, (_, n) => int$2(r, 2, n === 0 && /^a [+−]/.test(t.src) ? 30 : 12));
+			const nums = Array.from({ length: lettersOf$1(t.src) }, (_, n) => int$2(r, 2, n === 0 && /^a [+−]/.test(t.src) ? 30 : 12));
 			const made = build$1(t.i, nums);
 			if (made && withMistakes({
 				parts: [],
@@ -10546,6 +10546,143 @@ const CLAN_NOUNS = [
 	"Stars",
 	"Rangers"
 ];
+/** Letters, with at most one space, hyphen or apostrophe between two parts ("Te Ahi", "Jo-Jo", "O'Neil"). No numbers. */
+const NAME_SHAPE = /^[A-Za-z]+(?:[ '-][A-Za-z]+)?$/;
+const NEVER_INSIDE = [
+	"fuck",
+	"fuk",
+	"fck",
+	"shit",
+	"cunt",
+	"bitch",
+	"bastard",
+	"wank",
+	"twat",
+	"bollock",
+	"nigg",
+	"fagot",
+	"faggot",
+	"retard",
+	"slut",
+	"whore",
+	"porn",
+	"penis",
+	"vagina",
+	"boob",
+	"dildo",
+	"hitler",
+	"pedo",
+	"sexy",
+	"horny",
+	"poop",
+	"pussy",
+	"skank",
+	"tits",
+	"arsehole",
+	"asshole",
+	"dickhead",
+	"killyourself"
+];
+const NEVER_ALONE = [
+	"ass",
+	"arse",
+	"butt",
+	"bum",
+	"poo",
+	"pee",
+	"piss",
+	"cock",
+	"dick",
+	"tit",
+	"hell",
+	"damn",
+	"crap",
+	"sex",
+	"fag",
+	"hoe",
+	"nob",
+	"knob",
+	"prick",
+	"wee",
+	"weewee",
+	"willy",
+	"fart",
+	"stupid",
+	"dumb",
+	"idiot",
+	"loser",
+	"ugly",
+	"fat",
+	"kill",
+	"die",
+	"dead",
+	"gay",
+	"homo",
+	"nude",
+	"naked",
+	"drug",
+	"drugs",
+	"weed",
+	"beer",
+	"vape",
+	"rape",
+	"kys",
+	"kkk",
+	"shag",
+	"puta",
+	"nazi"
+];
+/** "boob" becomes b+o+o+b+: the same letters in order, each typed one or more times. */
+const stretchy = (word) => [...word].map((ch) => `${ch}+`).join("");
+const insideRule = new RegExp(NEVER_INSIDE.map(stretchy).join("|"));
+const aloneRule = new RegExp(`^(?:${NEVER_ALONE.map(stretchy).join("|")})$`);
+const lettersOf = (s) => s.toLowerCase().replace(/[^a-z]/g, "");
+/** A made-up name, tidied (spaces trimmed, each part starting with a capital), or why it can't be used. */
+function checkTypedName(raw) {
+	if (typeof raw !== "string") return {
+		ok: false,
+		say: "Type a name."
+	};
+	const trimmed = raw.trim().replace(/\s+/g, " ");
+	if (trimmed === "") return {
+		ok: false,
+		say: "Type a name."
+	};
+	if (trimmed.length < 2) return {
+		ok: false,
+		say: `A name needs at least 2 letters.`
+	};
+	if (trimmed.length > 12) return {
+		ok: false,
+		say: `A name can be up to 12 letters long.`
+	};
+	if (!NAME_SHAPE.test(trimmed)) return {
+		ok: false,
+		say: "Use letters only (one space, dash or apostrophe is fine)."
+	};
+	const whole = lettersOf(trimmed);
+	const parts = trimmed.split(/[ '-]/).map(lettersOf);
+	if (insideRule.test(whole) || aloneRule.test(whole) || parts.some((p) => aloneRule.test(p))) return {
+		ok: false,
+		say: "Please pick a kinder name."
+	};
+	return {
+		ok: true,
+		name: trimmed.replace(/(^|[ '-])([a-z])/g, (_, sep, ch) => sep + ch.toUpperCase())
+	};
+}
+/** The name a hero will have: a name from the list as it is, or (when the teacher allows it) a made-up name, tidied. */
+function memberNameFrom(raw, typedNames) {
+	if (typeof raw === "string" && MEMBER_NAMES.includes(raw)) return {
+		ok: true,
+		name: raw
+	};
+	if (!typedNames) return {
+		ok: false,
+		say: "Pick member names from the list."
+	};
+	return checkTypedName(raw);
+}
 //#endregion
 //#region shared/clans/looks.ts
 const LOOKS = [
@@ -10609,9 +10746,10 @@ function isClanName(name) {
 }
 /**
 * Check what the creator sent and build the clan from it. Only the choices matter (race, class, name,
-* how many rolls); the stats are always rebuilt here from the clan's seed.
+* how many rolls); the stats are always rebuilt here from the clan's seed. `typedNames` is the teacher's switch:
+* when it is on a hero may have a made-up name (checked and tidied here) as well as one from the list.
 */
-function clanFromChoices(seed, name, drafts) {
+function clanFromChoices(seed, name, drafts, typedNames = false) {
 	if (!isClanName(name)) return {
 		ok: false,
 		say: "Pick a clan name from the lists."
@@ -10631,9 +10769,14 @@ function clanFromChoices(seed, name, drafts) {
 			ok: false,
 			say: "Pick a race and a class from the lists."
 		};
-		if (typeof d.name !== "string" || !MEMBER_NAMES.includes(d.name)) return {
+		const named = memberNameFrom(d.name, typedNames);
+		if (!named.ok) return {
 			ok: false,
-			say: "Pick member names from the list."
+			say: named.say
+		};
+		if (built.some((b) => b.name.toLowerCase() === named.name.toLowerCase())) return {
+			ok: false,
+			say: "Give each member a different name."
 		};
 		if (!Number.isInteger(d.rolls) || d.rolls < 0 || d.rolls > 3) return {
 			ok: false,
@@ -10646,7 +10789,7 @@ function clanFromChoices(seed, name, drafts) {
 		built.push({
 			race: d.race,
 			cls: d.cls,
-			name: d.name,
+			name: named.name,
 			rolls: d.rolls,
 			seed: slotSeed(seed, slot),
 			...d.look ? { look: d.look } : {}
@@ -11749,7 +11892,7 @@ function applyAction(saved, action, ctx) {
 	const settings = ctx.settings ?? DEFAULT_PRACTICAL_SETTINGS;
 	if (action.type === "create") {
 		if (saved) return refuse("exists", "You already have a clan.");
-		const made = clanFromChoices(ctx.seed, action.name, action.drafts);
+		const made = clanFromChoices(ctx.seed, action.name, action.drafts, ctx.typedNames === true);
 		if (!made.ok) return refuse("create", made.say);
 		const state = {
 			clan: made.clan,
@@ -12172,6 +12315,7 @@ function makeHandler(services) {
 		if (!extras.ok) return extras.why === "busy" ? reply(503, { error: "We couldn't reach your clan just now." }) : reply(400, { error: "That couldn't be read." });
 		const settings = readPracticalSettings(extras.value.settings);
 		const fightsPerDay = Number.isInteger(extras.value.settings.fightsPerDay) ? extras.value.settings.fightsPerDay : CONFIG.fightsPerDay;
+		const typedNames = extras.value.settings.typedNames === true;
 		const maths = action.type === "fightStart" && action.ladder ? await services.mathsContext(player) : void 0;
 		for (let attempt = 0; attempt < 4; attempt++) {
 			const loaded = await services.load(player, requestId);
@@ -12198,7 +12342,8 @@ function makeHandler(services) {
 				fightsPerDay,
 				village: loaded.value.village ?? null,
 				self: loaded.value.self ?? void 0,
-				raidsOn: loaded.value.raidsOn ?? false
+				raidsOn: loaded.value.raidsOn ?? false,
+				typedNames
 			};
 			let target = null;
 			if (state && action.type === "raidTargets") {
