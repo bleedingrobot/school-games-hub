@@ -175,12 +175,13 @@ describe('bests, boards and the teacher’s switch', () => {
     expect(await startRun('l1', 'steady', false)).toMatchObject({ ok: false, reason: 'game-off' });
   });
 
-  it('reads the switch for a class, and counts anything odd as off', async () => {
+  it('reads the switch for a class, counts anything odd as off, and says so when it can’t be read', async () => {
     rpc.mockResolvedValue({ data: { mine_maths: 'choose' }, error: null });
     expect(await fetchMineMaths('class-1')).toBe('choose');
     rpc.mockResolvedValue({ data: { mine_maths: 'banana' }, error: null });
     expect(await fetchMineMaths('class-2')).toBe('off');
+    // A teacher's read that fails says so, rather than showing Off (src/data/teacherReads.test.ts has the student side).
     rpc.mockResolvedValue({ data: null, error: { code: 'x' } });
-    expect(await fetchMineMaths('class-3')).toBe('off');
+    await expect(fetchMineMaths('class-3')).rejects.toThrow('We couldn’t load this setting.');
   });
 });

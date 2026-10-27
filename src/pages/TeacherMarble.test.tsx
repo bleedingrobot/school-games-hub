@@ -67,4 +67,11 @@ describe('Marble Rush’s Settings: the rescue questions', () => {
     expect(await screen.findByText(/Rescue questions are off while Marble Rush maths is off/)).toBeInTheDocument();
     expect(screen.queryByRole('switch')).toBeNull();
   });
+
+  it('says it couldn’t load, rather than blaming maths being off, when the settings can’t be read', async () => {
+    vi.mocked(marble.fetchMarbleSwitches).mockRejectedValue(new Error('We couldn’t load this setting.'));
+    render(<MarbleTeacherSettings classId="c12" />);
+    expect(await screen.findByRole('status')).toHaveTextContent('couldn’t load');
+    expect(screen.queryByText(/maths is off/)).toBeNull();
+  });
 });
