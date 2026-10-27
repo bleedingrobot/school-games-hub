@@ -14,6 +14,9 @@ const data = vi.hoisted(() => ({
   setMultiplayer: vi.fn(),
   fetchReactionsEnabled: vi.fn(),
   fetchSkipMode: vi.fn(),
+  saveSkipMode: vi.fn(),
+  fetchTrainingFirst: vi.fn(),
+  saveTrainingFirst: vi.fn(),
   fetchFocuses: vi.fn(),
   fetchQuestionSkips: vi.fn(),
   fetchClassMap: vi.fn(),
@@ -32,7 +35,16 @@ vi.mock('../data/spaceGames', async (original) => ({
   ...(await original<typeof import('../data/spaceGames')>()),
   fetchReactionsEnabled: data.fetchReactionsEnabled,
 }));
-vi.mock('../data/questionSkips', async (original) => ({ ...(await original<typeof import('../data/questionSkips')>()), fetchSkipMode: data.fetchSkipMode }));
+vi.mock('../data/questionSkips', async (original) => ({
+  ...(await original<typeof import('../data/questionSkips')>()),
+  fetchSkipMode: data.fetchSkipMode,
+  saveSkipMode: data.saveSkipMode,
+}));
+vi.mock('../data/trainingGate', async (original) => ({
+  ...(await original<typeof import('../data/trainingGate')>()),
+  fetchTrainingFirst: data.fetchTrainingFirst,
+  saveTrainingFirst: data.saveTrainingFirst,
+}));
 vi.mock('../data/focus', async (original) => ({ ...(await original<typeof import('../data/focus')>()), fetchFocuses: data.fetchFocuses }));
 vi.mock('../data/questionLog', async (original) => ({
   ...(await original<typeof import('../data/questionLog')>()),
@@ -87,6 +99,9 @@ beforeEach(() => {
   data.setMultiplayer.mockResolvedValue(undefined);
   data.fetchReactionsEnabled.mockResolvedValue(false);
   data.fetchSkipMode.mockResolvedValue('limited');
+  data.saveSkipMode.mockResolvedValue(undefined);
+  data.fetchTrainingFirst.mockResolvedValue(false);
+  data.saveTrainingFirst.mockResolvedValue(undefined);
   data.fetchFocuses.mockResolvedValue([]);
   data.fetchQuestionSkips.mockResolvedValue({ students: [], spots: [] });
   data.fetchClassMap.mockResolvedValue({ classId: 'c14', className: 'Room 14', yearLevel: 5, auto: true, students: [] });
@@ -249,6 +264,38 @@ describe('Today', () => {
     expect(data.setMultiplayer).toHaveBeenCalledWith(false, 'c12');
     expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
     expect(friends).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('switches Training before games for this class, and says what it does behind the "?"', async () => {
+    const user = userEvent.setup();
+    show('/teacher/c12');
+    const training = await screen.findByRole('switch', { name: 'Training before games' });
+    await waitFor(() => expect(training).toHaveAttribute('aria-checked', 'false'));
+    expect(data.fetchTrainingFirst).toHaveBeenCalledWith('c12');
+    await user.click(screen.getByRole('button', { name: 'About Training before games' }));
+    expect(screen.getByText(/stay open for 2 hours/)).toBeVisible();
+    await user.click(training);
+    expect(data.saveTrainingFirst).toHaveBeenCalledWith(true, 'c12');
+    expect(training).toHaveAttribute('aria-checked', 'true');
+    await user.click(training);
+    expect(data.saveTrainingFirst).toHaveBeenLastCalledWith(false, 'c12');
+  });
+
+  it('says when a lesson switch can’t be loaded', async () => {
+    data.fetchTrainingFirst.mockRejectedValue(new Error('offline'));
+    show('/teacher/c12');
+    await screen.findByRole('switch', { name: 'Training before games' });
+    expect(await screen.findByText('We couldn’t load this setting.')).toBeInTheDocument();
+  });
+
+  it('saves the Skip button choice for this class at once', async () => {
+    const user = userEvent.setup();
+    show('/teacher/c12');
+    const off = await screen.findByRole('radio', { name: 'Off' });
+    await user.click(off);
+    expect(data.saveSkipMode).toHaveBeenCalledWith('off', 'c12');
+    expect(off).toHaveAttribute('aria-checked', 'true');
+    expect(await screen.findByText('Saved ✓')).toBeInTheDocument();
   });
 
   it('shows this week as counts, with no student names', async () => {

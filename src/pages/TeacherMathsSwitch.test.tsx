@@ -34,7 +34,7 @@ describe('the Mission Control maths switch on the Teacher page', () => {
     render(<MathsSwitchPanel />);
     await user.click(await screen.findByRole('radio', { name: /^Off/ }));
     expect(teacher.setSpaceMaths).toHaveBeenCalledWith('off', null);
-    expect(await screen.findByRole('status')).toHaveTextContent('Mission Control maths: Off.');
+    expect(await screen.findByRole('status')).toHaveTextContent('Saved ✓');
     expect(screen.getByRole('radio', { name: /^Off/ })).toBeChecked();
   });
 

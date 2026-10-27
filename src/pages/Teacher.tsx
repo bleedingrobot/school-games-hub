@@ -18,6 +18,7 @@ import {
 } from '../data/teacher';
 import { ALL_GAMES, gameLabel } from '../games/registry';
 import { useTeacherClass } from '../teacher/TeacherClass';
+import { DangerAction, SettingChoice, useSetting, type Choice } from '../teacher/Settings';
 import { BOT_LEVELS, type BotLevel, type GameDefinition } from '../games/types';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
 import { BOT_NAMES, placeLabel } from '../../shared/space/names';
@@ -186,7 +187,7 @@ function GameSection({ game, children }: { game: GameDefinition; children: React
   );
 }
 
-const MATHS_CHOICES: { value: MathsSwitch; label: string; detail: string }[] = [
+const MATHS_CHOICES: Choice<MathsSwitch>[] = [
   { value: 'off', label: 'Off', detail: 'No maths questions in space games. Nothing else changes.' },
   { value: 'choose', label: 'Students choose', detail: 'Each student picks maths on or off when they set up a game.' },
   { value: 'on', label: 'On for everyone', detail: 'Every space game has maths questions, with no way to turn them off.' },
@@ -198,57 +199,18 @@ const MATHS_CHOICES: { value: MathsSwitch; label: string; detail: string }[] = [
  */
 export function MathsSwitchPanel() {
   const { classId, ready } = useTeacherClass();
-  const [mode, setMode] = useState<MathsSwitch | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!ready) return;
-    setMode(null);
-    setStatus(null);
-    fetchMathsSwitch(classId)
-      .then(setMode)
-      .catch(() => setStatus('We couldn’t load this setting.'));
-  }, [ready, classId]);
-
-  async function change(next: MathsSwitch) {
-    setStatus('Saving…');
-    try {
-      await setSpaceMaths(next, classId);
-      setMode(next);
-      setStatus(`Mission Control maths: ${MATHS_CHOICES.find((c) => c.value === next)?.label}.`);
-    } catch (error) {
-      setStatus(errorText(error));
-    }
-  }
-
+  const mode = useSetting(() => fetchMathsSwitch(classId), [classId], ready);
   return (
-    <section className="panel teacher__switch" aria-labelledby="maths-title">
-      <h2 id="maths-title" className="panel__title">
-        Mission Control maths in space games
-      </h2>
-      <p>
-        Times-table questions at wormholes and black holes, and a question after each turn. They use each student’s own
-        times-table records, and what they answer goes into those records. A wrong answer never costs a student anything.
-      </p>
-      {mode !== null && (
-        <fieldset className="level-picker">
-          <legend>Who gets the questions</legend>
-          <div className="level-picker__options">
-            {MATHS_CHOICES.map((choice) => (
-              <label key={choice.value} className="level-picker__option">
-                <input type="radio" name="space-maths-switch" checked={mode === choice.value} onChange={() => void change(choice.value)} />
-                <span>
-                  <strong>{choice.label}:</strong> {choice.detail}
-                </span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      )}
-      <p role="status" className="teacher__status">
-        {status}
-      </p>
-    </section>
+    <div className="panel teacher__switch">
+      <SettingChoice
+        label="Mission Control maths"
+        about="Times-table questions at wormholes and black holes, and a question after each turn. They use each student’s own times-table records, and what they answer goes into those records. A wrong answer never costs a student anything."
+        options={MATHS_CHOICES}
+        value={mode.value}
+        loadFailed={mode.failed}
+        save={(next) => setSpaceMaths(next, classId)}
+      />
+    </div>
   );
 }
 
@@ -271,7 +233,6 @@ function PersonPanel({
   const [detail, setDetail] = useState<PersonDetail | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<Confirming>(null);
-  const [typed, setTyped] = useState('');
 
   useEffect(() => {
     let current = true;
@@ -295,7 +256,6 @@ function PersonPanel({
   }
 
   const makingTeacher = person.role !== 'teacher';
-  const nameMatches = typed.trim().toLowerCase() === person.display_name.toLowerCase();
 
   return (
     <div className="person-panel">
@@ -402,10 +362,7 @@ function PersonPanel({
           <button
             type="button"
             className="button button--danger"
-            onClick={() => {
-              setTyped('');
-              setConfirming('delete');
-            }}
+            onClick={() => setConfirming('delete')}
           >
             🗑️ Delete
           </button>
@@ -465,28 +422,19 @@ function PersonPanel({
             This deletes {person.display_name}’s account and all their games, points and achievements. It can’t be
             undone. Friends they played keep those games, without their name. If they sign in again, they start fresh.
           </p>
-          <label className="teacher__type">
-            <span>Type their player name to confirm</span>
-            <input value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" />
-          </label>
-          <div className="person-panel__actions">
-            <button
-              type="button"
-              className="button button--danger"
-              disabled={!nameMatches}
-              onClick={() =>
-                void act(async () => {
-                  await deletePerson(person.id);
-                  return `${person.display_name} has been deleted.`;
-                }, onDeleted)
-              }
-            >
-              Delete forever
-            </button>
-            <button type="button" className="button button--light-outline" onClick={() => setConfirming(null)}>
-              Cancel
-            </button>
-          </div>
+          <DangerAction
+            label="Delete forever"
+            words={person.display_name}
+            prompt="Type their player name to confirm"
+            ignoreCase
+            onConfirm={() =>
+              act(async () => {
+                await deletePerson(person.id);
+                return `${person.display_name} has been deleted.`;
+              }, onDeleted)
+            }
+            onCancel={() => setConfirming(null)}
+          />
         </div>
       )}
 
@@ -498,21 +446,19 @@ function PersonPanel({
 }
 
 function NewSeason({ onDone }: { onDone: () => void }) {
-  const [typed, setTyped] = useState('');
   const [status, setStatus] = useState<string | null>(null);
-  const ready = typed.trim() === NEW_SEASON_WORDS;
 
-  async function go() {
+  async function go(typed: string) {
     setStatus('Starting a new season…');
     try {
-      const done = await startNewSeason(typed.trim());
-      setTyped('');
+      const done = await startNewSeason(typed);
       setStatus(
         `Done. ${done.botGames} bot games, ${done.friendGames} games between students and ${done.gemKeepLevels ?? 0} Gem Keep levels were deleted, and everyone starts again from 0 points.`,
       );
       onDone();
     } catch (error) {
       setStatus(errorText(error));
+      throw error;
     }
   }
 
@@ -536,13 +482,7 @@ function NewSeason({ onDone }: { onDone: () => void }) {
         It can’t be undone. Delete students who have left the school first (above), one by one. To go ahead, type{' '}
         <strong>{NEW_SEASON_WORDS}</strong> in capitals.
       </p>
-      <label className="teacher__type">
-        <span>Type {NEW_SEASON_WORDS}</span>
-        <input value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" />
-      </label>
-      <button type="button" className="button button--danger" disabled={!ready} onClick={() => void go()}>
-        Start a new season
-      </button>
+      <DangerAction label="Start a new season" words={NEW_SEASON_WORDS} onConfirm={go} />
       <p role="status" className="teacher__status">
         {status}
       </p>

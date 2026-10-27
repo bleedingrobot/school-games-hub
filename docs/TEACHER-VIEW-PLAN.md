@@ -396,6 +396,24 @@ names stay shown. What changed and what didn't:*
 
 **Stage 2: shared setting components** (section 5), then convert the four lesson switches and the space maths switch.
 
+*Done 28 Oct 2026 on `teacher-settings` (branched from `teacher-shell`). No database change; nothing any switch saves changed.*
+- *`src/teacher/Settings.tsx` (+ `settings.css`): `SettingToggle`, `SettingChoice`, `SettingChips`, `SettingNumber`,
+  `SettingDate` and `DangerAction`, plus `useSetting(load, deps, enabled)` to load a value. Each control is given the value
+  (null while loading) and a save function; it changes at once, says "Saved ✓" for 2 s, and on failure goes back and shows
+  the error. "About" text sits behind a "?" (`aria-expanded`). In `SettingChoice` the arrow keys move along and Space or Enter
+  picks, so moving never saves a choice by accident; it shows nothing until it has loaded. `SettingChips` refuses to untick
+  the last chip ("Leave at least one ticked"). Number and date fields save on Enter or blur, refuse out-of-range values, and
+  Escape puts the saved value back. `DangerAction` is the only red control: the button wakes once the words are typed.
+  Every target is 44 px, focus rings show inside the segmented control, and the switch doesn't slide with reduced motion.*
+- *Today's four lesson controls and the Mission Control maths switch use them. The Training panel's longer description and
+  the Skip button's "which buttons stay" note moved behind their "?".*
+- *Skipped questions tab: its own radio list is gone; one line links to Today, where the switch lives (section 4.4).*
+- *`TrainingFirstSwitch` (`src/training/TeacherTrainingFirst.tsx`) is removed; its checks (saves for the class, the 2-hour
+  note, says when it can't load) are now in `TeacherShell.test.tsx` and `Settings.test.tsx`.*
+- *Delete student and Start a new season use `DangerAction`, in the same places. The "🗑️ Delete" button that opens the
+  delete box stays red (it leads to the can't-undo step) and is not inside `DangerAction`.*
+- *Not done: the single page-level status area from section 5 (each control still has its own status line).*
+
 **Stage 3: Games table + new game contract** (section 6). Convert one game per PR (each game's file is its own, so these can run
 in parallel), class-scoped class reports, then remove `TeacherPanels`.
 

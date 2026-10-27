@@ -14,10 +14,11 @@ import { setMultiplayer, setSpaceReactions } from '../data/teacher';
 import { fetchTrainingFirst, saveTrainingFirst } from '../data/trainingGate';
 import { endFocus, extendFocus, fetchFocuses, type FocusBatch, type FocusLength } from '../data/focus';
 import { LengthPicker } from '../maths/LengthPicker';
-import type { SkipMode } from '../maths/questionLog';
-import { SKIP_CHOICES, share } from '../pages/TeacherQuestionSkips';
+import { SKIP_CHOICES, SKIP_NOTE, share } from '../pages/TeacherQuestionSkips';
 import { trainingOn } from '../training/switch';
+import { TRAINING_CONFIG } from '../../shared/training/config';
 import { describeEnd, nzLocalToIso, skillList, timeLeft } from '../../shared/maths/focus';
+import { SettingChoice, SettingToggle, useSetting } from './Settings';
 import { useTeacherClass } from './TeacherClass';
 import { NeedsYou } from './WaitingToJoin';
 import '../maths/focus.css';
@@ -36,163 +37,48 @@ export function Today() {
   );
 }
 
-/** One on/off switch: shows its state, saves at once, and goes back (with the reason) if the save fails. */
-function LessonSwitch({
-  label,
-  about,
-  load,
-  save,
-}: {
-  label: string;
-  about: string;
-  load: () => Promise<boolean>;
-  save: (on: boolean) => Promise<void>;
-}) {
-  const [on, setOn] = useState<boolean | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    let current = true;
-    load().then(
-      (v) => current && setOn(v),
-      () => current && setStatus('We couldn’t load this setting.'),
-    );
-    return () => {
-      current = false;
-    };
-    // load is made fresh on each render; the class is in the key of the whole panel, so this runs once per class.
-  }, []);
-
-  async function flip() {
-    if (on === null) return;
-    const next = !on;
-    setOn(next);
-    setStatus('Saving…');
-    try {
-      await save(next);
-      setStatus('Saved ✓');
-    } catch (error) {
-      setOn(!next);
-      setStatus(errorText(error));
-    }
-  }
-
-  const id = `lesson-${label.toLowerCase().replace(/[^a-z]+/g, '-')}`;
-  return (
-    <div className="lesson-control">
-      <span className="lesson-control__label" id={`${id}-label`}>
-        {label}
-      </span>
-      <button
-        type="button"
-        role="switch"
-        className="lesson-switch"
-        aria-checked={on ?? false}
-        aria-labelledby={`${id}-label`}
-        aria-describedby={`${id}-about`}
-        disabled={on === null}
-        onClick={() => void flip()}
-      >
-        <span className="lesson-switch__track" aria-hidden="true">
-          <span className="lesson-switch__knob" />
-        </span>
-        <span className="lesson-switch__state">{on === null ? '…' : on ? 'On' : 'Off'}</span>
-      </button>
-      <span className="lesson-control__about" id={`${id}-about`}>
-        {about}
-      </span>
-      <span className="lesson-control__status" role="status">
-        {status}
-      </span>
-    </div>
-  );
-}
-
-/** The class's skip button: On, a few per game, or Off. */
-function SkipChoice({ classId }: { classId: string }) {
-  const [mode, setMode] = useState<SkipMode | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    let current = true;
-    fetchSkipMode(classId).then(
-      (m) => current && setMode(m),
-      () => current && setStatus('We couldn’t load this setting.'),
-    );
-    return () => {
-      current = false;
-    };
-  }, [classId]);
-
-  async function change(next: SkipMode) {
-    const before = mode;
-    setMode(next);
-    setStatus('Saving…');
-    try {
-      await saveSkipMode(next, classId);
-      setStatus('Saved ✓');
-    } catch (error) {
-      setMode(before);
-      setStatus(errorText(error));
-    }
-  }
-
-  return (
-    <div className="lesson-control">
-      <span className="lesson-control__label" id="lesson-skip-label">
-        Skip button
-      </span>
-      <div className="lesson-choice" role="radiogroup" aria-labelledby="lesson-skip-label">
-        {SKIP_CHOICES.map((c) => (
-          <button
-            key={c.value}
-            type="button"
-            role="radio"
-            aria-checked={mode === c.value}
-            className="lesson-choice__option"
-            disabled={mode === null}
-            onClick={() => void change(c.value)}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
-      <span className="lesson-control__about">{mode ? SKIP_CHOICES.find((c) => c.value === mode)?.detail : ''}</span>
-      <span className="lesson-control__status" role="status">
-        {status}
-      </span>
-    </div>
-  );
-}
-
 function LessonControls({ classId, name }: { classId: string; name: string }) {
+  const friends = useSetting(() => fetchMultiplayerEnabled(classId), [classId]);
+  const reactions = useSetting(() => fetchReactionsEnabled(classId), [classId]);
+  const training = useSetting(() => fetchTrainingFirst(classId), [classId], trainingOn());
+  const skip = useSetting(() => fetchSkipMode(classId), [classId]);
   return (
     <section className="panel lesson-controls" aria-labelledby="lesson-title">
       <h2 id="lesson-title" className="panel__title">
         Lesson controls <span className="today__for">({name})</span>
       </h2>
       <div className="lesson-controls__grid">
-        <LessonSwitch
+        <SettingToggle
           label="Games against friends"
           about="Off stops new games between students. Bot games carry on."
-          load={() => fetchMultiplayerEnabled(classId)}
+          value={friends.value}
+          loadFailed={friends.failed}
           save={(on) => setMultiplayer(on, classId)}
         />
-        <LessonSwitch
+        <SettingToggle
           label="Emoji reactions"
           about="In Wormholes & Black Holes games with classmates."
-          load={() => fetchReactionsEnabled(classId)}
+          value={reactions.value}
+          loadFailed={reactions.failed}
           save={(on) => setSpaceReactions(on, classId)}
         />
         {trainingOn() && (
-          <LessonSwitch
+          <SettingToggle
             label="Training before games"
-            about="One Training session before any game opens."
-            load={() => fetchTrainingFirst(classId)}
+            about={`One Basic facts training session (a whole “Today’s session” or a whole round of Quick looks) before any game opens. The games then stay open for ${TRAINING_CONFIG.gate.gamesOpenHours} hours; a game already open carries on. Teachers are never asked.`}
+            value={training.value}
+            loadFailed={training.failed}
             save={(on) => saveTrainingFirst(on, classId)}
           />
         )}
-        <SkipChoice classId={classId} />
+        <SettingChoice
+          label="Skip button"
+          about={SKIP_NOTE}
+          options={SKIP_CHOICES}
+          value={skip.value}
+          loadFailed={skip.failed}
+          save={(mode) => saveSkipMode(mode, classId)}
+        />
       </div>
     </section>
   );
