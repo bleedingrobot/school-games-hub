@@ -18,6 +18,9 @@ const data = vi.hoisted(() => ({
   setSpaceReactions: vi.fn(),
   fetchGemKeepSettings: vi.fn(),
   fetchClassGemKeep: vi.fn(),
+  readSettings: vi.fn(),
+  fetchMonstersSettings: vi.fn(),
+  fetchClassMonsters: vi.fn(),
 }));
 vi.mock('../data/classes', async (original) => ({
   ...(await original<typeof import('../data/classes')>()),
@@ -38,6 +41,15 @@ vi.mock('../data/teacher', async (original) => ({
   ...(await original<typeof import('../data/teacher')>()),
   setSpaceMaths: data.setSpaceMaths,
   setSpaceReactions: data.setSpaceReactions,
+}));
+vi.mock('../data/classSettings', async (original) => ({
+  ...(await original<typeof import('../data/classSettings')>()),
+  readSettings: data.readSettings,
+}));
+vi.mock('../data/monsters', async (original) => ({
+  ...(await original<typeof import('../data/monsters')>()),
+  fetchMonstersSettings: data.fetchMonstersSettings,
+  fetchClassMonsters: data.fetchClassMonsters,
 }));
 vi.mock('../data/gemKeep', async (original) => ({
   ...(await original<typeof import('../data/gemKeep')>()),
@@ -120,7 +132,10 @@ beforeEach(() => {
   data.fetchGemKeepSettings.mockResolvedValue({
     mode: 'calm', enabledTables: [2, 3, 4, 5, 6, 7, 8, 9, 10], division: false, multipleChoice: false, keyPassMark: 8,
   });
-  data.fetchClassGemKeep.mockResolvedValue({ players: 0, levels: [], hardest: [] });
+  data.fetchClassGemKeep.mockResolvedValue({ players: 0, levels: [], hardest: [], wholeSchool: false });
+  data.readSettings.mockResolvedValue({ gem_keep_mode: 'calm', gem_keep_tables: [2, 3, 4, 5, 6, 7, 8, 9, 10], gem_keep_multiple_choice: false });
+  data.fetchMonstersSettings.mockRejectedValue(new Error('not needed'));
+  data.fetchClassMonsters.mockResolvedValue({ players: 0, badges: [], topics: [], hardest: [] });
 });
 afterEach(() => {
   window.matchMedia = realMatchMedia;
@@ -233,13 +248,34 @@ describe('the Games table', () => {
   it('opens a game that hasn’t moved yet: its old panels, in the same drawer, for the header’s class', async () => {
     const user = userEvent.setup();
     show('/teacher/c14/games');
+    const monsters = row(await table(), 'Maths Monsters');
+    expect(data.fetchMonstersSettings).not.toHaveBeenCalled();
+    await user.click(within(monsters).getByRole('link', { name: 'Maths Monsters settings' }));
+    const drawer = await screen.findByRole('dialog', { name: 'Maths Monsters' });
+    expect(await within(drawer).findByRole('region', { name: 'Maths Monsters' })).toBeInTheDocument();
+    expect(data.fetchMonstersSettings).toHaveBeenCalledWith('c14');
+  });
+
+  it('shows Gem Keep as always on, sums up its settings for the header’s class, and opens them for that class', async () => {
+    const user = userEvent.setup();
+    show('/teacher/c14/games');
     const gem = row(await table(), 'Gem Keep');
     expect(within(gem).getByText('always')).toBeInTheDocument();
+    expect(await within(gem).findByText('Calm · ×2–×10 · typing')).toBeInTheDocument();
+    expect(data.readSettings).toHaveBeenCalledWith(expect.arrayContaining(['gem_keep_mode']), 'c14');
     expect(data.fetchGemKeepSettings).not.toHaveBeenCalled();
     await user.click(within(gem).getByRole('link', { name: 'Gem Keep settings' }));
     const drawer = await screen.findByRole('dialog', { name: 'Gem Keep' });
     expect(await within(drawer).findByRole('region', { name: 'Gem Keep settings' })).toBeInTheDocument();
+    expect(await within(drawer).findByRole('region', { name: /^Gem Keep: this class/ })).toBeInTheDocument();
     expect(data.fetchGemKeepSettings).toHaveBeenCalledWith('c14');
+    expect(data.fetchClassGemKeep).toHaveBeenCalledWith('c14');
+  });
+
+  it('says when Gem Keep’s settings couldn’t load, in its row', async () => {
+    data.readSettings.mockResolvedValue(null);
+    show('/teacher/c12/games');
+    expect(await within(row(await table(), 'Gem Keep')).findByText('Couldn’t load')).toBeInTheDocument();
   });
 
   it('says where an unmoved game’s switch is, rather than showing one it can’t read', async () => {

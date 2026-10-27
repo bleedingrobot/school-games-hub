@@ -501,6 +501,27 @@ it saves changed.*
 - *Every game in the table with no class report has now moved. Left: Gem Keep, Maths Monsters, Dragon Maths and Clan
   Quest, which each have a class report and a student panel, and need the class-scoped reports first (section 6).*
 
+*Gem Keep moved 28 Oct 2026 on `teacher-games-gem-keep` (from `teacher-games-about-popover`), with its class report now for
+one class. One migration, `20261028000100_gem_keep_class_report.sql` (not live yet); nothing it saves changed.*
+- *Server: `teacher_gem_keep_class(target_class uuid)` gives the old report for one class: the teacher's students in that
+  class (`class_members`), refused with 42501 unless `teaches_class` (a school admin teaches every class), and 22023 for no
+  class. The argument has no default, so the old `teacher_gem_keep_class()` beside it still answers a call with no arguments
+  (with a default, PostgREST couldn't choose). Drop the old one in the PR that removes `TeacherPanels`. Checked by
+  `supabase/tests/database/gem_keep_class_report.test.sql`.*
+- *The site doesn't break before the migration is live: `fetchClassGemKeep(classId)` falls back to the old call when the
+  server says the function doesn't exist (PGRST202), and the report is then headed "Gem Keep: the whole school" with a line
+  saying so. Once the migration is applied it says "Gem Keep: this class" with no change to the site.*
+- *Its row says "always" for On and sums up its settings in the Maths column ("Calm · ×2–×10 · typing", from
+  `src/games/gem-keep/teacher.ts`, which reads only three columns). Its Settings (`GemKeepTeacherSettings` in
+  `src/pages/TeacherGemKeep.tsx`) use the shared controls: Questions (Calm/Challenge), Times tables on (chips, at least one),
+  Missing numbers, Division questions, How students answer (Typing/Multiple choice) and the Level Key pass mark (a number,
+  5–10; it was a dropdown), then the class report. Gem Keep saves all its settings at once, so the saves go one at a time,
+  each from the newest settings, and two quick changes can't undo each other.*
+- *Its student panel is under `teacher`, with a summary line ("12 of 30 stars, 4 Level Keys passed").*
+- *Tests: the old checks in `ProgressPages.test.tsx` stay (closed until opened; a table and the pass mark save for the class;
+  the hardest facts), now for the header's class, plus a save from every other control and the whole-school fallback. In
+  `Games.test.tsx` the "game that hasn't moved" test now uses Maths Monsters, and Gem Keep has a row check.*
+
 **Stage 4: Students roster and student page,** with `teacher_class_overview` and class-scoped `teacher_students`.
 
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.

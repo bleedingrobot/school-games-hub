@@ -9,7 +9,7 @@ vi.mock('../lib/supabase', () => ({
   },
 }));
 
-import { enqueue, flushQueue, loadGemKeep, queuedItems, TRIAL_KEY } from './gemKeep';
+import { enqueue, fetchClassGemKeep, flushQueue, loadGemKeep, queuedItems, TRIAL_KEY } from './gemKeep';
 
 const fetchMock = vi.fn<typeof fetch>();
 // A new student each test, so no queue carries over (the queue is also kept in memory).
@@ -118,5 +118,29 @@ describe('opening Gem Keep', () => {
     const loaded = await loadGemKeep(ME);
     expect(loaded.offline).toBe(true);
     expect(loaded.progress).toEqual({ 'level-1': { stars: 2, keyPassed: true } });
+  });
+});
+
+describe('the teacher’s class report', () => {
+  const REPORT = { players: 3, levels: [], hardest: [] };
+
+  it('asks for the class', async () => {
+    rpc.mockResolvedValueOnce({ data: REPORT, error: null });
+    expect(await fetchClassGemKeep('c12')).toEqual({ ...REPORT, wholeSchool: false });
+    expect(rpc).toHaveBeenCalledWith('teacher_gem_keep_class', { target_class: 'c12' });
+  });
+
+  it('falls back to the whole-school report, and says so, while the database has only the old one', async () => {
+    rpc
+      .mockResolvedValueOnce({ data: null, error: { code: 'PGRST202', message: 'Could not find the function' } })
+      .mockResolvedValueOnce({ data: REPORT, error: null });
+    expect(await fetchClassGemKeep('c12')).toEqual({ ...REPORT, wholeSchool: true });
+    expect(rpc).toHaveBeenLastCalledWith('teacher_gem_keep_class');
+  });
+
+  it('doesn’t fall back for any other error (a class the teacher doesn’t teach)', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'That isn’t one of your classes.' } });
+    await expect(fetchClassGemKeep('c99')).rejects.toThrow('We couldn’t load Gem Keep for this class.');
+    expect(rpc).toHaveBeenCalledTimes(1);
   });
 });

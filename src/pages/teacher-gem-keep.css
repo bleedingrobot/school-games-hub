@@ -6,10 +6,6 @@
 .gk-teacher > p {
   margin: 0;
 }
-.gk-teacher__settings {
-  display: grid;
-  gap: 14px;
-}
 /* Fieldsets don't shrink below their content unless told to; long chips wrap on phones. */
 .gk-teacher fieldset {
   min-width: 0;

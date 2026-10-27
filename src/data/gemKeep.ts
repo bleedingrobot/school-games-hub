@@ -234,10 +234,22 @@ export async function fetchStudentGemKeep(student: string): Promise<StudentGemKe
   return data as StudentGemKeep;
 }
 
-export async function fetchClassGemKeep(): Promise<ClassGemKeep> {
-  const { data, error } = await supabase.rpc('teacher_gem_keep_class');
-  if (error || !data) fail(error, 'We couldn’t load Gem Keep for the school.');
-  return data as ClassGemKeep;
+/** PostgREST's answer when the database has no function with these arguments. */
+const NO_SUCH_FUNCTION = 'PGRST202';
+
+/**
+ * Gem Keep's report for one class (migration 20261028000100). Until that migration is on the live database, the server has
+ * only the old whole-school report: then that one is loaded instead, with `wholeSchool` set, so the page can say so.
+ */
+export async function fetchClassGemKeep(classId: string): Promise<ClassGemKeep & { wholeSchool: boolean }> {
+  const { data, error } = await supabase.rpc('teacher_gem_keep_class', { target_class: classId });
+  if (error?.code === NO_SUCH_FUNCTION) {
+    const old = await supabase.rpc('teacher_gem_keep_class');
+    if (old.error || !old.data) fail(old.error, 'We couldn’t load Gem Keep for the school.');
+    return { ...(old.data as ClassGemKeep), wholeSchool: true };
+  }
+  if (error || !data) fail(error, 'We couldn’t load Gem Keep for this class.');
+  return { ...(data as ClassGemKeep), wholeSchool: false };
 }
 
 export async function fetchGemKeepSettings(classId?: string | null): Promise<GemKeepSettings> {

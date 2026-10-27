@@ -112,6 +112,7 @@ vi.mock('../data/gemKeep', () => ({
     players: 14,
     levels: [{ levelId: 'level-1', won: 14, keys: 12 }],
     hardest: [{ key: 'mul:7x8', students: 9, attempts: 40, correct: 22 }],
+    wholeSchool: false,
   })),
   fetchStudentGemKeep: vi.fn(async () => ({
     levels: [{ levelId: 'level-1', stars: 3, keyPassed: true, plays: 2, wins: 2 }],
@@ -459,19 +460,45 @@ describe('teacher view', () => {
     const section = await screen.findByRole('region', { name: 'Gem Keep settings' });
     await user.click(await within(section).findByRole('checkbox', { name: '×12' }));
     expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ enabledTables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }), 'c12');
-    await user.selectOptions(within(section).getByLabelText('Level Key pass mark'), '7');
-    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ keyPassMark: 7 }), 'c12');
-    expect(await within(section).findByText(/Saved/)).toBeInTheDocument();
+    const pass = within(section).getByLabelText('Level Key pass mark');
+    await user.clear(pass);
+    await user.type(pass, '7{Enter}');
+    // Each save starts from the newest settings, so the table switched off a moment ago stays off.
+    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({ keyPassMark: 7, enabledTables: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }),
+      'c12',
+    );
+    expect((await within(section).findAllByText(/Saved/)).length).toBeGreaterThan(0);
+    await user.click(within(section).getByRole('radio', { name: 'Challenge' }));
+    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ mode: 'challenge', keyPassMark: 7 }), 'c12');
+    await user.click(within(section).getByRole('radio', { name: 'Never' }));
+    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ missingFactor: false }), 'c12');
+    await user.click(within(section).getByRole('switch', { name: 'Division questions' }));
+    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ division: true }), 'c12');
+    await user.click(within(section).getByRole('radio', { name: 'Multiple choice' }));
+    expect(saveGemKeepSettings).toHaveBeenLastCalledWith(expect.objectContaining({ multipleChoice: true, division: true }), 'c12');
   });
 
-  it('shows the whole school’s hardest facts, saying it is the whole school', async () => {
+  it('shows the class’s hardest facts, for the class in the header', async () => {
+    const { fetchClassGemKeep } = await import('../data/gemKeep');
+    const user = userEvent.setup();
+    renderAt('/teacher/c12/games', teacher);
+    await user.click(await screen.findByRole('link', { name: 'Gem Keep settings' }));
+    const section = await screen.findByRole('region', { name: /^Gem Keep: this class/ });
+    const hardest = await within(section).findByRole('table', { name: 'Hardest facts (most often wrong)' });
+    expect(within(hardest).getByRole('rowheader', { name: '7 × 8' })).toBeInTheDocument();
+    expect(within(hardest).getByText('55%')).toBeInTheDocument();
+    expect(fetchClassGemKeep).toHaveBeenLastCalledWith('c12');
+  });
+
+  it('says it is the whole school while the database only has the whole-school report', async () => {
+    const { fetchClassGemKeep } = await import('../data/gemKeep');
+    vi.mocked(fetchClassGemKeep).mockResolvedValueOnce({ players: 14, levels: [], hardest: [], wholeSchool: true });
     const user = userEvent.setup();
     renderAt('/teacher/c12/games', teacher);
     await user.click(await screen.findByRole('link', { name: 'Gem Keep settings' }));
     const section = await screen.findByRole('region', { name: /^Gem Keep: the whole school/ });
-    const hardest = await within(section).findByRole('table', { name: 'Hardest facts (most often wrong)' });
-    expect(within(hardest).getByRole('rowheader', { name: '7 × 8' })).toBeInTheDocument();
-    expect(within(hardest).getByText('55%')).toBeInTheDocument();
+    expect(within(section).getByText(/shows every class for now/)).toBeInTheDocument();
   });
 
   it('shows a student’s Gem Keep levels and times-table grid', async () => {
