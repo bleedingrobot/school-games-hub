@@ -433,7 +433,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'fight' && server && activeFight && (
             <Fight key={`${activeFight.no}-${fightKey}`} session={session} open={activeFight} boss={activeFight.boss} onRound={sendRound} onCheck={checkCry} onFinish={finishServer} />
           )}
-          {screen === 'results' && summary && <Results summary={summary} members={session.clan.members} fame={fameEarned.current} onDone={() => setScreen('home')} />}
+          {screen === 'results' && summary && <Results summary={summary} members={session.clan.members} fame={fameEarned.current} onDone={() => setScreen('home')} onMines={session.fightsLeft > 0 && session.clan.members.some((m) => !m.knockedOut) ? () => setScreen('mines') : undefined} />}
         </>
       )}
       <footer className="cq-credits">Game rules adapted from The Clans by Allen Ussher (1997). Paintings made for School Games Hub; small pictures from Kenney's 1-Bit Pack (CC0).</footer>
