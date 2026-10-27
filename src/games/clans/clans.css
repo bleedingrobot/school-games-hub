@@ -390,3 +390,12 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   @keyframes cq-glow { from { opacity: 0.45; } to { opacity: 1; } }
   @keyframes cq-victory { from { opacity: 0; transform: scale(0.6); } 18% { opacity: 1; transform: scale(1.06); } 28% { transform: scale(1); } 80% { opacity: 1; } to { opacity: 0; } }
 }
+
+/* Polish (docs/CLANS-FIGHT-FEEL.md, stage 3): the ghost of HP just lost drains a moment after the bar; the best hit. */
+.cq-bar__ghost { position: absolute; inset: 0 auto 0 0; height: 100%; background: rgba(255, 220, 160, 0.55); }
+.cq-bar__fill { position: relative; }
+.cq-best { margin: 0 0 6px; }
+.cq-best__new { color: #ffd75e; }
+@media (prefers-reduced-motion: no-preference) {
+  .cq-bar__ghost { transition: width 0.45s ease-in 0.4s; }
+}

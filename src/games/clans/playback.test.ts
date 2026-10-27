@@ -7,7 +7,7 @@ import { botOrders } from '../../../shared/clans/bot';
 import { newFight, playRound, type FightState } from '../../../shared/clans/fight';
 import { newClan } from '../../../shared/clans/sim';
 import { labelDuplicates } from './fightView';
-import { BIG_HIT, inOrder, roundSteps, roundSummary, spellBurst, stepMs, type Who } from './playback';
+import { BIG_HIT, bestHit, inOrder, roundSteps, roundSummary, spellBurst, stepMs, type Who } from './playback';
 
 const hpNow = (f: FightState) => {
   const hp: Record<string, number> = {};
@@ -114,6 +114,18 @@ describe('round playback', () => {
     }
     expect(big).toBeGreaterThan(0);
     expect(downs).toBeGreaterThan(0);
+  });
+
+  it("finds the clan's best hit of the fight, from hits and damage spells, never the enemies'", () => {
+    const f = labelDuplicates(newFight(newClan('balanced', 4).members, 2, 77));
+    f.log.push(
+      { type: 'hit', who: f.clan[0].name, target: 'Rat', damage: 6 },
+      { type: 'cast', who: f.clan[1].name, spell: 'Fireball', target: 'Rat', amount: 9 },
+      { type: 'cast', who: f.clan[1].name, spell: 'Little Heal', target: f.clan[0].name, amount: 20 },
+      { type: 'hit', who: 'Rat', target: f.clan[0].name, damage: 30 },
+    );
+    expect(bestHit(f, new Set(f.clan.map((c) => c.name)))).toEqual({ amount: 9, text: `${f.clan[1].name}'s Fireball hit Rat for 9` });
+    expect(bestHit(labelDuplicates(newFight(newClan('balanced', 4).members, 2, 77)), new Set())).toBeNull();
   });
 
   it('gives each spell its own light', () => {

@@ -22,7 +22,7 @@ import { ACTION_HELP, spellHelp } from './abilities';
 import { Bar } from './Bars';
 import { castable, choosingOrder, fightsLabel, isAlive, labelDuplicates, orderText, suggestedPlan } from './fightView';
 import { MonsterSprite, Portrait } from './Sprite';
-import { roundSteps, roundSummary, stepMs, type Step, type Who } from './playback';
+import { bestHit, roundSteps, roundSummary, stepMs, type BestHit, type Step, type Who } from './playback';
 import { zoneColour } from './Sprite';
 import { MONSTERS_BY_NAME } from './monsters';
 import { fxArt, sceneArt, zoneScene, type FxId } from './art';
@@ -351,7 +351,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
               <span className="cq-name" style={{ color: zoneColour(MONSTERS_BY_NAME[e.name.replace(/ [A-D]$/, '')]?.zone ?? 'Meadow') }}>
                 {e.name}
               </span>
-              <Bar label="HP" value={hp} max={e.maxHp} kind="hp" />
+              <Bar label="HP" value={hp} max={e.maxHp} kind="hp" ghost />
               {hp <= 0 && <span className="cq-stamp">Beaten!</span>}
             </li>
             );
@@ -367,7 +367,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
               {fx.float}
               <Portrait race={members[i].race} cls={members[i].cls} look={lookOf(members[i])} scale={3} />
               <span className="cq-name">{f.name}</span>
-              <Bar label="HP" value={hp} max={f.maxHp} kind="hp" />
+              <Bar label="HP" value={hp} max={f.maxHp} kind="hp" ghost />
               {f.maxSp > 0 && <Bar label="SP" value={f.sp} max={f.maxSp} kind="sp" />}
               {upNext === f.index && <span className="cq-tag cq-tag--up">Up next</span>}
               {hp <= 0 && <span className="cq-tag">resting</span>}
@@ -496,7 +496,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
               )}
             </div>
           )}
-          {phase === 'over' && <FightOver fight={fight} summary={replay?.summary} onFinish={() => onFinish(fight)} />}
+          {phase === 'over' && <FightOver fight={fight} summary={replay?.summary} best={bestHit(fight, clanNames)} today={`${session.clan.name}|${session.day}`} onFinish={() => onFinish(fight)} />}
         </div>
         <ol className="cq-log" aria-label="Fight log" aria-live="polite" aria-relevant="additions">
           {log.map((line, i) => (
@@ -528,7 +528,32 @@ function Victory() {
   );
 }
 
-function FightOver({ fight, summary, onFinish }: { fight: FightState; summary?: string; onFinish: () => void }) {
+/**
+ * The clan's best hit today, kept on this device only (it's just for fun: nothing counts it). `today` is the clan and
+ * the game day, so a new day starts fresh.
+ */
+const BEST_KEY = 'clans-best-hit';
+function readBest(today: string): BestHit | null {
+  try {
+    const saved = JSON.parse(localStorage.getItem(BEST_KEY) ?? 'null') as (BestHit & { today: string }) | null;
+    return saved?.today === today ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+function FightOver({ fight, summary, best, today, onFinish }: { fight: FightState; summary?: string; best: BestHit | null; today: string; onFinish: () => void }) {
+  // Read once, before this fight is saved, so "a new best" compares with the fights before it.
+  const [before] = useState(() => readBest(today));
+  const isNew = !!best && (!before || best.amount > before.amount);
+  useEffect(() => {
+    if (!isNew || !best) return;
+    try {
+      localStorage.setItem(BEST_KEY, JSON.stringify({ ...best, today }));
+    } catch {
+      // Storage blocked: the best hit just isn't remembered.
+    }
+  }, [isNew, best?.amount, today]); // eslint-disable-line react-hooks/exhaustive-deps
   const text =
     fight.result === 'won'
       ? 'The enemies are beaten. Well done, clan!'
@@ -541,6 +566,12 @@ function FightOver({ fight, summary, onFinish }: { fight: FightState; summary?: 
     <div className="cq-choice">
       {summary && <p className="cq-summary" role="status">{summary}</p>}
       <h3>{text}</h3>
+      {best && (
+        <p className="cq-best">
+          Best hit: {best.text}.{' '}
+          {isNew ? <strong className="cq-best__new">★ Your best hit today!</strong> : before && <>Your best today is still {before.amount} ({before.text}).</>}
+        </p>
+      )}
       <p>
         Gold found: <strong>{fight.gold}</strong>
         {fight.followers > 0 && (

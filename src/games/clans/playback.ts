@@ -193,3 +193,20 @@ export function roundSummary(after: FightState, from: number, clanNames: Readonl
   if (resting.length) parts.push(`${list(resting)} ${resting.length > 1 ? 'are' : 'is'} resting.`);
   return { dealt, taken, healed, beaten, resting, text: parts.join(' ') };
 }
+
+/** The clan's biggest hit in a fight: who, how ("Mira's Lightning Bolt" or "Mira"), on whom, and how much. */
+export interface BestHit {
+  amount: number;
+  text: string;
+}
+
+export function bestHit(fight: FightState, clanNames: ReadonlySet<string>): BestHit | null {
+  let best: BestHit | null = null;
+  for (const e of fight.log) {
+    if (e.type !== 'hit' && !(e.type === 'cast' && DAMAGES.has(e.spell))) continue;
+    const amount = e.type === 'hit' ? e.damage : e.amount;
+    if (!clanNames.has(e.who) || (best && amount <= best.amount)) continue;
+    best = { amount, text: e.type === 'hit' ? `${e.who} hit ${e.target} for ${amount}` : `${e.who}'s ${e.spell} hit ${e.target} for ${amount}` };
+  }
+  return best;
+}
