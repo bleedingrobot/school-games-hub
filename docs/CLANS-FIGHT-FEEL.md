@@ -131,3 +131,7 @@ Built on `clans-fight-feel`, on top of stages 1 and 2 (same pull request). Still
 - **Tests**: `bestHit` (hits and damage spells, never heals or the enemies'), and the won-fight test checks the line, the new best and that it's remembered. All 5,046 tests, the type check and the build pass.
 - **Checked in the preview**: the best-hit line, and the ghost's look (set by hand mid-drain). The drain timing couldn't be watched there because the browser pane was hidden, which pauses transitions; it's a plain CSS transition.
 - **Not done**: sound (later, off by default, per James).
+
+## Went live (27 Oct 2026)
+
+Stages 1 to 3 went live on 27 Oct 2026 (afternoon, NZ time). Brought up to date with that day's `main` (which had the typed hero names, PR #45), then the type check, all 5,099 tests and the site build passed again. PR #44 merged. Its own "Test and publish" run failed before publishing: the database tests couldn't download their Docker images ("Data limit exceeded" from Docker Hub), and a rerun hit the same limit. The next run, for PR #46, passed every step and published the site with the fight upgrade in it; the live Clan Quest code was checked for the new fight screen. No migration and no function deploy. **Still to do:** James tries a fight on a real screen (the playback timing couldn't be watched in Claude's hidden browser pane), and sound, later and off by default.
