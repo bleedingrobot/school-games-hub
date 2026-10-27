@@ -1,7 +1,8 @@
 /**
  * A mine fight. Pure display on top of shared/clans: the engine plays each round, this shows who
  * is up, takes the orders and the Battle Cry answer, and writes the log in plain gentle words.
- * Keyboard: A attack, S spell, G guard, R run, 1-9 to pick, Enter for the default action, Esc to go back.
+ * Each round starts with a suggested plan (one order per member, the bot's choice). Enter fights with it; 1-9 changes
+ * one member's order first. Changing an order: A attack, S spell, G guard, R run, 1-9 to pick, Esc back to the plan.
  *
  * In a ladder fight (the server gave it questions) the Battle Cry is the child's own maths, shown in the hub's question
  * box and marked by the server (`onCheck`); the marks it gives back decide each round's bonus, just as on the server.
@@ -18,7 +19,7 @@ import { PracticalAsk, Working } from '../../maths/PracticalAsk';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
 import { ACTION_HELP, spellHelp } from './abilities';
 import { Bar } from './Bars';
-import { castable, choosingOrder, defaultOrder, describe, fightsLabel, isAlive, labelDuplicates } from './fightView';
+import { castable, choosingOrder, describe, fightsLabel, isAlive, labelDuplicates, orderText, suggestedPlan } from './fightView';
 import { MonsterSprite, Portrait } from './Sprite';
 import { zoneColour } from './Sprite';
 import { MONSTERS_BY_NAME } from './monsters';
@@ -82,9 +83,10 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     pendingAnswerRef.current = answer;
     setPendingAnswerState(answer);
   };
-  const [orders, setOrders] = useState<Order[]>([]);
+  // This round's plan (one order per clan slot), the members in choosing order, and whose order is being changed.
+  const [plan, setPlan] = useState<Order[]>([]);
   const [seq, setSeq] = useState<number[]>([]);
-  const [seat, setSeat] = useState(0);
+  const [editing, setEditing] = useState<number | null>(null);
   const [mode, setMode] = useState<Mode>('action');
   const [spell, setSpell] = useState<number | null>(null);
   const [log, setLog] = useState<string[]>(boot.lines);
@@ -98,8 +100,8 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     const lq = ladder ? ladder[f.round] ?? null : null;
     const q = ladder ? null : nextCryQuestion(f, settings);
     setSeq(choosingOrder(f));
-    setSeat(0);
-    setOrders([]);
+    setPlan(suggestedPlan(f));
+    setEditing(null);
     setMode('action');
     setGiven(null);
     setQuestion(q);
@@ -121,7 +123,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   useEffect(() => {
     // The orders and the reward are answered with letter keys, so the panel takes focus. The question, "how it works" and "over" have their own focus (the box or an autofocused button).
     if (phase === 'orders' || phase === 'reward') panel.current?.focus();
-  }, [phase, seat, mode]);
+  }, [phase, editing, mode]);
   // Braces matter: newer Chrome's scrollIntoView gives back a promise, and React would try to call it as the clean-up.
   useEffect(() => {
     logEnd.current?.scrollIntoView?.({ block: 'nearest' });
@@ -168,7 +170,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   };
 
   // ---- the orders
-  const who = fight.clan[seq[seat]];
+  const who = editing !== null ? fight.clan[editing] : undefined;
   const alive = fight.enemies.filter(isAlive);
 
   function play(all: Order[]) {
@@ -180,15 +182,18 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     setFight(next);
     startRound(next);
   }
+  // Back to the plan, with or without a changed order.
+  function backToPlan() {
+    setEditing(null);
+    setMode('action');
+    setSpell(null);
+  }
   function choose(order: Order) {
-    const all = [...orders];
-    all[seq[seat]] = order;
-    setOrders(all);
-    if (seat + 1 < seq.length) {
-      setSeat(seat + 1);
-      setMode('action');
-      setSpell(null);
-    } else play(all);
+    if (editing === null) return;
+    const all = [...plan];
+    all[editing] = order;
+    setPlan(all);
+    backToPlan();
   }
   const pickAttack = () => (alive.length === 1 ? choose({ action: 'attack', target: alive[0].index }) : setMode('target'));
   const goTarget = (index: number) => {
@@ -208,14 +213,19 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
       else return;
       return event.preventDefault();
     }
-    if (phase !== 'orders' || !who) return;
+    if (phase !== 'orders') return;
     const k = event.key.toLowerCase();
-    if (mode === 'action') {
+    if (!who) {
+      const change = seq[Number(k) - 1];
+      if (change !== undefined) setEditing(change);
+      else if (event.key === 'Enter' && !(event.target instanceof HTMLButtonElement)) play(plan);
+      else return;
+    } else if (mode === 'action') {
       if (k === 'a') pickAttack();
       else if (k === 's' && spells.length) setMode('spell');
       else if (k === 'g') choose({ action: 'guard' });
       else if (k === 'r') choose({ action: 'run' });
-      else if (event.key === 'Enter' && !(event.target instanceof HTMLButtonElement)) choose(defaultOrder(fight));
+      else if (event.key === 'Escape') backToPlan();
       else return;
     } else if (mode === 'spell') {
       const s = spells[Number(k) - 1];
@@ -236,6 +246,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   }
 
   const upNext = phase === 'orders' && who ? who.index : -1;
+  const planning = phase === 'orders' && !who;
   // The mine zone the monsters come from, painted dimly behind them (Clans art Stage A.6).
   const zone = MONSTERS_BY_NAME[fight.enemies[0]?.name.replace(/ [A-D]$/, '') ?? '']?.zone ?? 'Meadow';
   const zoneArt = sceneArt(zoneScene(zone)).small;
@@ -271,7 +282,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
         </ul>
       </div>
       <div className="cq-lower">
-        <div className="cq-panel" ref={panel} tabIndex={-1} onKeyDown={keys} role="group" aria-label={phase === 'ask' ? 'Battle Cry question' : phase === 'reward' ? 'Battle Cry reward' : phase === 'working' ? 'How the answer works' : phase === 'orders' && who ? `Orders for ${who.name}` : 'The fight is over'}>
+        <div className="cq-panel" ref={panel} tabIndex={-1} onKeyDown={keys} role="group" aria-label={phase === 'ask' ? 'Battle Cry question' : phase === 'reward' ? 'Battle Cry reward' : phase === 'working' ? 'How the answer works' : phase === 'orders' && who ? `Orders for ${who.name}` : planning ? 'The plan for this round' : 'The fight is over'}>
           {phase === 'ask' && question && (
             <PracticalAsk question={question} title="Battle Cry!" note={BATTLE_CRY_NOTE} onSubmit={submitCry} onNoThanks={noThanks} />
           )}
@@ -300,6 +311,23 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
               </button>
             </div>
           )}
+          {planning && (
+            <div className="cq-choice">
+              <h3>The plan for this round</h3>
+              <div className="cq-actions">
+                {seq.map((i, n) => (
+                  <button type="button" key={i} className="cq-btn" aria-label={`Change ${fight.clan[i].name}: ${orderText(plan[i], fight)}`} onClick={() => setEditing(i)}>
+                    <kbd>{n + 1}</kbd> {fight.clan[i].name}: {orderText(plan[i], fight)}
+                    {help('Change')}
+                  </button>
+                ))}
+                <button type="button" className="cq-btn cq-btn--hot" onClick={() => play(plan)}>
+                  <kbd>Enter</kbd> Fight with this plan
+                  {help(ACTION_HELP.plan)}
+                </button>
+              </div>
+            </div>
+          )}
           {phase === 'orders' && who && (
             <div className="cq-choice">
               <h3>
@@ -323,9 +351,9 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
                     <kbd>R</kbd> Run
                     {help(ACTION_HELP.run)}
                   </button>
-                  <button type="button" className="cq-btn cq-btn--hot" onClick={() => choose(defaultOrder(fight))}>
-                    <kbd>Enter</kbd> Default action
-                    {help(ACTION_HELP.default)}
+                  <button type="button" className="cq-btn" onClick={backToPlan}>
+                    <kbd>Esc</kbd> Keep the plan
+                    {help(ACTION_HELP.keep)}
                   </button>
                 </div>
               )}

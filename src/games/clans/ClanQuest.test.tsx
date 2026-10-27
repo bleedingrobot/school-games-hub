@@ -40,12 +40,12 @@ const button = (name: string | RegExp) =>
     return typeof name === 'string' ? label === name : name.test(label);
   });
 
-/** Click through a whole fight with the default action. */
+/** Click through a whole fight with the suggested plan. */
 async function playOut(u: ReturnType<typeof user>) {
   for (let i = 0; i < 120; i++) {
     const done = button('See how everyone did');
     if (done) return done;
-    const next = button('No thanks') ?? button('Carry on') ?? button(/Default action/);
+    const next = button('No thanks') ?? button('Carry on') ?? button(/Fight with this plan/);
     if (!next) throw new Error('No button to press in the fight');
     await u.click(next);
   }
@@ -137,7 +137,7 @@ describe('a fight', () => {
     await answer(u, q, q.answer);
     expect(screen.getByText(/Right! Spend your Battle Cry on/)).toBeInTheDocument();
     await u.keyboard('d');
-    expect(screen.getByText(/what will they do\?/)).toBeInTheDocument();
+    expect(screen.getByText('The plan for this round')).toBeInTheDocument();
   });
 
   it('a wrong Battle Cry answer shows the working and carries on, with nothing lost', async () => {
@@ -150,7 +150,7 @@ describe('a fight', () => {
     expect(screen.getByText(/Not quite/)).toBeInTheDocument();
     expect(screen.getByText(q.working[0])).toBeInTheDocument();
     await u.click(screen.getByRole('button', { name: 'Carry on' }));
-    expect(screen.getByText(/what will they do\?/)).toBeInTheDocument();
+    expect(screen.getByText('The plan for this round')).toBeInTheDocument();
   });
 
   it('"No thanks" skips the question and still shows how it works', async () => {
@@ -160,7 +160,7 @@ describe('a fight', () => {
     await u.click(screen.getByRole('button', { name: 'No thanks' }));
     expect(screen.getByText(/No problem/)).toBeInTheDocument();
     await u.click(screen.getByRole('button', { name: 'Carry on' }));
-    expect(screen.getByText(/what will they do\?/)).toBeInTheDocument();
+    expect(screen.getByText('The plan for this round')).toBeInTheDocument();
   });
 
   it('can be played with the keyboard alone', async () => {
@@ -170,10 +170,15 @@ describe('a fight', () => {
     await u.click(screen.getByRole('button', { name: 'Start the adventure' }));
     for (const box of screen.getAllByRole('checkbox')) if ((box as HTMLInputElement).checked) await u.click(box);
     await intoFight(u);
-    // from here: keys only. Enter = default action for each member; a, then 1 = attack the first enemy.
+    // from here: keys only. Every other round: 1 to change the first member, a to attack (then 1 for the first enemy
+    // if asked); Enter fights with the plan.
     for (let i = 0; i < 60 && !button('See how everyone did'); i++) {
-      await u.keyboard(i % 3 === 0 ? 'a' : '{Enter}');
-      if (screen.queryByText(/Which enemy|attack…/)) await u.keyboard('1');
+      if (i % 2 === 0) {
+        await u.keyboard('1');
+        await u.keyboard('a');
+        if (screen.queryByText(/attack…/)) await u.keyboard('1');
+      }
+      await u.keyboard('{Enter}');
     }
     expect(screen.getByRole('button', { name: 'See how everyone did' })).toBeInTheDocument();
   });

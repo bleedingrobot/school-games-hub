@@ -10,7 +10,8 @@ export const ACTION_HELP = {
   spell: 'Use skill points (SP) to cast one of your spells.',
   guard: 'Take half damage from every hit this round.',
   run: 'The whole clan tries to escape. Harder against quick enemies.',
-  default: 'Attack the first enemy still standing.',
+  plan: 'Everyone does what the plan says. Change anyone first if you like.',
+  keep: 'Leave this member on the plan.',
 } as const;
 
 /** Who is casting: a member's level and wisdom (gear and spells included). */
