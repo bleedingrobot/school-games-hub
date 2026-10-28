@@ -16,7 +16,8 @@
  * While a fight is open nothing else about the clan can change (that is what keeps the replay honest), and the night's
  * rest waits until the fight is over. A ladder fight (the browser asks for one with `ladder: true`) also keeps the questions the
  * server made from the child's maths focus, and `cryCheck` marks each Battle Cry answer as it is given (battleCry.ts).
- * Stage C.6 part A adds the village chest, the weekly vote and raids on classmates (which also change the raided clan, saved in the same transaction).
+ * "My Village" gives every clan its own buildings (`upgrade`, paid from the purse) and raids on classmates (which also change the raided clan,
+ * saved in the same transaction). A save from before My Village is converted by `upgradeSave` when it loads.
  */
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../maths/practical';
 import { makeRunQuestions, markQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
@@ -25,15 +26,15 @@ import { factKey, replayFight, type CryAnswer, type CryMark, type RecordedRound 
 import { CONFIG } from './config';
 import { dayReset } from './character';
 import { clanFromChoices, type Draft } from './create';
-import { build, claimLand, deposit, developPlot, empireNewDay, empireOf, PUSHES, setDraft, withdraw, type BattlePlan, type BattleResult, type Push, type Take } from './empire';
+import { empireNewDay, empireOf, needsUpgrade, PUSHES, syncVillage, TAKES, upgrade, upgradeSave, type BattleResult, type Push, type Take } from './empire';
 import { bossAt, newFight, type Order } from './fight';
 import { ITEMS } from './gamedata';
 import { isLook, setLook, type Look } from './looks';
 import { earnedOrNone, type Earned } from './rewards';
-import { buyItem, buyTroopMix, draftFollowers, examineItemFor, fightSeed, payFight, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type FightSummary, type TrainKey } from './play';
+import { buyItem, buyTroopMix, examineItemFor, fightSeed, payFight, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type FightSummary, type TrainKey } from './play';
 import { buildPuzzle, finishQuest, puzzleFor, todaysQuest, type QuestPrize } from './quests';
-import { BUILDING_KINDS, TROOP_KINDS, type BuildingKind, type Clan, type Empire, type Troops } from './types';
-import { isVillageKind, raidClassmateNz, raidTargetList, voteOptions, type RaidTarget, type Sketch, type TargetEntry, type VillageKind, type VillageView } from './village';
+import { TROOP_KINDS, VILLAGE_BUILDINGS, type Clan, type Empire, type Troops, type Village, type VillageBuilding } from './types';
+import { raidClassmateNz, raidTargetList, type RaidTarget, type Sketch, type TargetEntry } from './village';
 
 
 /**
@@ -92,17 +93,20 @@ export interface Context {
   maths?: MathsContext | null;
   /** Mine fights a day (the teacher's setting). The default is `CONFIG.fightsPerDay`. */
   fightsPerDay?: number;
-  /** The clan's village, as the server loaded it. Without one (the test page) the chest and the vote are not checked here. */
-  village?: VillageView | null;
+  /**
+   * The levels of the class (group) village this clan belonged to, for converting an old save the first time it loads.
+   * Without it the clan's own `village` is used. Ignored once the save is converted.
+   */
+  groupVillage?: Village | null;
   /** This clan's hidden public id (never the account id), used to tell clans apart in raids. */
   self?: string;
   /** The teacher's switch for raids on classmates. Off unless it is given. */
   raidsOn?: boolean;
   /** The teacher's switch for made-up hero names. Off unless it is given: names come from the list. */
   typedNames?: boolean;
-  /** The other clans in the village, for the list of who can be raided. */
+  /** The other clans in the class, for the list of who can be raided. */
   mates?: Sketch[];
-  /** The clan a raid on a classmate is aimed at, loaded by the server (null if it is not in this village). */
+  /** The clan a raid on a classmate is aimed at, loaded by the server (null if it is not in this class). */
   target?: RaidTarget | null;
 }
 
@@ -115,32 +119,26 @@ export type Action =
   | { type: 'wake'; member: number }
   | { type: 'look'; member: number; look: Look }
   | { type: 'wakeAll' }
-  | { type: 'deposit'; gold: number }
-  | { type: 'withdraw'; gold: number }
-  | { type: 'develop'; width: number; length: number }
-  | { type: 'claim' }
-  | { type: 'build'; plot: number; kind: BuildingKind }
+  /** Take a building up one level, paid from the purse (2 a day). */
+  | { type: 'upgrade'; building: VillageBuilding }
   | { type: 'buyTroops'; mix: Troops }
-  | { type: 'setDraft'; percent: number }
-  | { type: 'draft' }
-  | { type: 'raid'; kingdom: string; plan: BattlePlan }
-  | { type: 'war'; kingdom: string; plan: BattlePlan }
+  /** A battle plan is just the push: 3 rounds and 10% loot are fixed. */
+  | { type: 'raid'; kingdom: string; push: Push }
+  | { type: 'war'; kingdom: string; push: Push }
   | { type: 'quest'; choice: number; answer: number | null }
   /** `ladder`: this browser can show ladder questions (an older one that is still open does not say so, and gets an old-style fight). */
   | { type: 'fightStart'; depth: number; boss: boolean; ladder?: boolean }
   /** A ladder fight's Battle Cry answer for the round about to be played, marked by the server. `ms`: how long it took. */
   | { type: 'cryCheck'; round: number; answer: number; ms: number }
   | { type: 'fightRound'; round: number; orders: (Order | undefined)[]; cry: CryAnswer | null }
-  | { type: 'chestGive'; gold: number }
-  | { type: 'vote'; kind: VillageKind }
   | { type: 'raidTargets' }
-  | { type: 'raidClass'; target: string; take: Take; plan: BattlePlan };
+  | { type: 'raidClass'; target: string; take: Take; push: Push };
 
 export type ActionType = Action['type'];
 
 export type Result =
-  | { type: Exclude<ActionType, 'draft' | 'raid' | 'war' | 'quest' | 'fightStart' | 'cryCheck' | 'fightRound' | 'raidTargets' | 'raidClass' | 'chestGive'> }
-  | { type: 'draft'; wanted: number; joined: number; followers: number }
+  | { type: Exclude<ActionType, 'upgrade' | 'raid' | 'war' | 'quest' | 'fightStart' | 'cryCheck' | 'fightRound' | 'raidTargets' | 'raidClass'> }
+  | { type: 'upgrade'; building: VillageBuilding; level: number }
   | { type: 'raid' | 'war'; friendly: boolean; result: BattleResult; gold: number; earned?: Earned }
   | { type: 'quest'; questId: number; text: string; right: boolean | null; prize: QuestPrize }
   /** `resumed`: a fight was already open, so this is it again and no fight was used. */
@@ -149,17 +147,13 @@ export type Result =
   | { type: 'cryCheck'; round: number; correct: boolean; answer: number; given: number }
   /** `summary` is there when the round ended the fight and it has been paid. */
   | { type: 'fightRound'; round: number; over: boolean; summary: FightSummary | null; earned?: Earned }
-  /** `gold` left the clan purse and went into the village chest. */
-  | { type: 'chestGive'; gold: number }
   | { type: 'raidTargets'; targets: TargetEntry[] }
-  | { type: 'raidClass'; take: Take; result: BattleResult; gold: number; land: number; destroyed: BuildingKind[]; earned?: Earned };
+  | { type: 'raidClass'; take: Take; result: BattleResult; gold: number; destroyed: VillageBuilding[]; earned?: Earned };
 
 /** What else the server must do in the same save as a changed clan. Nothing in here is sent to the browser. */
 export interface Effects {
-  /** The pupil's vote for this week (the database keeps one per pupil). */
-  vote?: VillageKind;
-  /** A raid on a classmate: the raided clan's new empire and the lines to write. */
-  raid?: { targetId: string; empire: Empire; news: string; note: string };
+  /** A raid on a classmate: the raided clan's new empire and purse (gold) and the lines to write. */
+  raid?: { targetId: string; empire: Empire; gold: number; news: string; note: string };
   /** Maths answers to keep in the teacher's private records: the question's kind and year band (never the numbers), and whether it was right. */
   answers?: { key: string; correct: boolean }[];
   /** Ladder answers, for the child's own maths records (ladder place, skill map, focus results). `once` makes a resend count once. */
@@ -181,13 +175,7 @@ type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
 const int = (v: unknown, lo: number, hi: number): number | null => (typeof v === 'number' && Number.isInteger(v) && v >= lo && v <= hi ? v : null);
 
-function parsePlan(v: unknown): BattlePlan | null {
-  if (!isObj(v)) return null;
-  const rounds = int(v.rounds, 1, CONFIG.empire.battle.maxRounds);
-  const loot = int(v.loot, 0, 100);
-  if (rounds === null || loot === null || typeof v.push !== 'string' || !PUSHES.includes(v.push as Push)) return null;
-  return { rounds, push: v.push as Push, loot };
-}
+const parsePush = (v: unknown): Push | null => (typeof v === 'string' && PUSHES.includes(v as Push) ? (v as Push) : null);
 
 const ORDER_ACTIONS = ['attack', 'spell', 'guard', 'run', 'skip'];
 
@@ -222,9 +210,7 @@ export function parseAction(raw: unknown): Action | null {
   const member = int(raw.member, 0, CONFIG.maxMembers - 1);
   switch (raw.type) {
     case 'load': return { type: 'load' };
-    case 'claim': return { type: 'claim' };
     case 'wakeAll': return { type: 'wakeAll' };
-    case 'draft': return { type: 'draft' };
     case 'create': {
       if (typeof raw.name !== 'string' || !Array.isArray(raw.drafts) || raw.drafts.length > CONFIG.maxMembers) return null;
       return { type: 'create', name: raw.name, drafts: raw.drafts as Draft[] };
@@ -238,20 +224,7 @@ export function parseAction(raw: unknown): Action | null {
     }
     case 'wake': return member !== null ? { type: 'wake', member } : null;
     case 'look': return member !== null && isLook(raw.look) ? { type: 'look', member, look: raw.look } : null;
-    case 'deposit':
-    case 'withdraw': {
-      const gold = int(raw.gold, 1, 1_000_000);
-      return gold !== null ? { type: raw.type, gold } : null;
-    }
-    case 'develop': {
-      const width = int(raw.width, 0, 100);
-      const length = int(raw.length, 0, 100);
-      return width !== null && length !== null ? { type: 'develop', width, length } : null;
-    }
-    case 'build': {
-      const plot = int(raw.plot, 0, 1000);
-      return plot !== null && typeof raw.kind === 'string' && BUILDING_KINDS.includes(raw.kind as BuildingKind) ? { type: 'build', plot, kind: raw.kind as BuildingKind } : null;
-    }
+    case 'upgrade': return typeof raw.building === 'string' && VILLAGE_BUILDINGS.includes(raw.building as VillageBuilding) ? { type: 'upgrade', building: raw.building as VillageBuilding } : null;
     case 'buyTroops': {
       if (!isObj(raw.mix)) return null;
       const mix = {} as Troops;
@@ -262,14 +235,10 @@ export function parseAction(raw: unknown): Action | null {
       }
       return { type: 'buyTroops', mix };
     }
-    case 'setDraft': {
-      const percent = int(raw.percent, 0, 100);
-      return percent !== null ? { type: 'setDraft', percent } : null;
-    }
     case 'raid':
     case 'war': {
-      const plan = parsePlan(raw.plan);
-      return plan && typeof raw.kingdom === 'string' && raw.kingdom.length <= 40 ? { type: raw.type, kingdom: raw.kingdom, plan } : null;
+      const push = parsePush(raw.push);
+      return push && typeof raw.kingdom === 'string' && raw.kingdom.length <= 40 ? { type: raw.type, kingdom: raw.kingdom, push } : null;
     }
     case 'quest': {
       const choice = int(raw.choice, 0, 5);
@@ -299,16 +268,11 @@ export function parseAction(raw: unknown): Action | null {
       const cry = parseCry(raw.cry);
       return cry === undefined ? null : { type: 'fightRound', round, orders, cry };
     }
-    case 'chestGive': {
-      const gold = int(raw.gold, 1, CONFIG.village.giveMax);
-      return gold !== null ? { type: 'chestGive', gold } : null;
-    }
-    case 'vote': return isVillageKind(raw.kind) ? { type: 'vote', kind: raw.kind } : null;
     case 'raidTargets': return { type: 'raidTargets' };
     case 'raidClass': {
-      const plan = parsePlan(raw.plan);
-      const take = raw.take === 'gold' || raw.take === 'land' || raw.take === 'buildings' ? raw.take : null;
-      return plan && take && typeof raw.target === 'string' && raw.target.length >= 1 && raw.target.length <= 40 ? { type: 'raidClass', target: raw.target, take, plan } : null;
+      const push = parsePush(raw.push);
+      const take = TAKES.includes(raw.take as Take) ? (raw.take as Take) : null;
+      return push && take && typeof raw.target === 'string' && raw.target.length >= 1 && raw.target.length <= 40 ? { type: 'raidClass', target: raw.target, take, push } : null;
     }
     default: return null;
   }
@@ -323,7 +287,7 @@ export const clanDay = (createdNzDay: number, today: number) => Math.max(1, toda
 
 /**
  * If a new day has started since the clan was last saved, give it the night's rest: everyone heals, the Church's
- * free wake-up comes back, the empire's energy and raids reset and the fights come back. A clan that was away for
+ * free wake-up comes back, the day's builds and raids reset and the fights come back. A clan that was away for
  * a week gets one night's rest and moves to today's number. Returns true if anything changed.
  */
 export function catchUp(state: ServerState, today: number, fightsPerDay: number = CONFIG.fightsPerDay): boolean {
@@ -362,18 +326,22 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
   }
 
   const state = structuredClone(saved);
+  // A save from before My Village is converted once, here (the class village's levels come from the server).
+  const upgraded = needsUpgrade(state.clan);
+  if (upgraded) state.clan = upgradeSave(state.clan, ctx.groupVillage ?? null);
   // The night's rest waits until a fight in progress is over: it would heal the members the fight is being replayed with.
   const rested = state.fight ? false : catchUp(state, ctx.today, ctx.fightsPerDay);
-  if (state.fight && action.type !== 'load' && action.type !== 'fightStart' && action.type !== 'cryCheck' && action.type !== 'fightRound' && action.type !== 'vote' && action.type !== 'raidTargets') {
+  if (state.fight && action.type !== 'load' && action.type !== 'fightStart' && action.type !== 'cryCheck' && action.type !== 'fightRound' && action.type !== 'raidTargets') {
     return refuse('fight-open', 'You are in the middle of a fight. Finish it first!');
   }
   const { clan } = state;
+  syncVillage(clan);
   const settle = (r: { ok: boolean } & Partial<{ why: string; say: string }>, result: Result): Applied =>
     r.ok ? done(state, result) : refuse(r.why ?? 'no', r.say ?? 'That cannot be done right now.');
 
   switch (action.type) {
     case 'load':
-      return done(state, { type: 'load' }, rested);
+      return done(state, { type: 'load' }, rested || upgraded);
     case 'buy': {
       const item = ITEMS.find((i) => i.name === action.item);
       return item ? settle(buyItem(clan, action.member, item), { type: 'buy' }) : refuse('item', 'The shop does not have that.');
@@ -386,21 +354,15 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
     case 'wake': return settle(wakeOne(clan, action.member), { type: 'wake' });
     case 'look': return settle(setLook(clan, action.member, action.look), { type: 'look' });
     case 'wakeAll': return settle(wakeEveryone(clan), { type: 'wakeAll' });
-    case 'deposit': return settle(deposit(clan, action.gold), { type: 'deposit' });
-    case 'withdraw': return settle(withdraw(clan, action.gold), { type: 'withdraw' });
-    case 'develop': return settle(developPlot(empireOf(clan), action.width, action.length), { type: 'develop' });
-    case 'claim': return settle(claimLand(empireOf(clan)), { type: 'claim' });
-    case 'build': return settle(build(empireOf(clan), action.plot, action.kind), { type: 'build' });
-    case 'buyTroops': return settle(buyTroopMix(clan, action.mix), { type: 'buyTroops' });
-    case 'setDraft': return settle(setDraft(empireOf(clan), action.percent), { type: 'setDraft' });
-    case 'draft': {
-      const out = draftFollowers(clan);
-      return done(state, { type: 'draft', ...out });
+    case 'upgrade': {
+      const out = upgrade(clan, action.building);
+      return out.ok ? done(state, { type: 'upgrade', building: action.building, level: empireOf(clan).levels[action.building] }) : refuse(out.why, out.say);
     }
+    case 'buyTroops': return settle(buyTroopMix(clan, action.mix), { type: 'buyTroops' });
     case 'raid':
     case 'war': {
       const friendly = action.type === 'war';
-      const out = sendArmyTo(clan, action.kingdom, action.plan, friendly, raidSeed(state.seed, state.raidNo));
+      const out = sendArmyTo(clan, action.kingdom, action.push, friendly, raidSeed(state.seed, state.raidNo));
       if (!out.ok) return refuse(out.why, out.say);
       state.raidNo++;
       const won = out.result.outcome === 'won';
@@ -418,31 +380,20 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
       const answers = spec && finished.ok ? [{ key: factKey(settings.yearBand, buildPuzzle(spec).kind), correct: right === true }] : undefined;
       return finished.ok ? done(state, { type: 'quest', questId: q.id, text: finished.text, right: finished.right, prize: finished.prize }, true, answers ? { answers } : undefined) : refuse('quest', finished.say);
     }
-    case 'chestGive': {
-      if (ctx.village && voteOptions(ctx.village.levels).length === 0) return refuse('full', 'The village has built everything already!');
-      if (action.gold > clan.gold) return refuse('gold', `The clan purse has ${clan.gold} gold.`);
-      clan.gold -= action.gold;
-      return done(state, { type: 'chestGive', gold: action.gold });
-    }
-    case 'vote': {
-      if (!ctx.village) return refuse('village', 'There is no village to vote in.');
-      if (!voteOptions(ctx.village.levels).some((o) => o.kind === action.kind)) return refuse('built', 'That building is already as big as it can be.');
-      return { ok: true, state, result: { type: 'vote' }, changed: rested, effects: { vote: action.kind } };
-    }
     case 'raidTargets': {
       const targets = raidTargetList(state, ctx.today, ctx.self ?? '', ctx.raidsOn ?? false, ctx.mates ?? []);
-      return done(state, { type: 'raidTargets', targets }, rested);
+      return done(state, { type: 'raidTargets', targets }, rested || upgraded);
     }
     case 'raidClass': {
-      if (!ctx.target || !ctx.self) return refuse('target', 'That clan is not in your village.');
-      const out = raidClassmateNz(state, ctx.self, ctx.target, action.take, action.plan, raidSeed(state.seed, state.raidNo), ctx.today, ctx.raidsOn ?? false);
+      if (!ctx.target || !ctx.self) return refuse('target', 'That clan is not in your class.');
+      const out = raidClassmateNz(state, ctx.self, ctx.target, action.take, action.push, raidSeed(state.seed, state.raidNo), ctx.today, ctx.raidsOn ?? false);
       if (!out.ok) return refuse(out.why, out.say);
       state.raidNo++;
-      const { gold, land, destroyed } = out.raid;
+      const { gold, destroyed } = out.raid;
       return {
         ok: true, state, changed: true,
-        result: { type: 'raidClass', take: action.take, result: out.raid.result, gold, land, destroyed, ...earnedPart(earnedOrNone({ classRaids: out.raid.result.outcome === 'won' ? 1 : 0 })) },
-        effects: { raid: { targetId: ctx.target.id, empire: out.defenderEmpire, news: out.news, note: out.note } },
+        result: { type: 'raidClass', take: action.take, result: out.raid.result, gold, destroyed, ...earnedPart(earnedOrNone({ classRaids: out.raid.result.outcome === 'won' ? 1 : 0 })) },
+        effects: { raid: { targetId: ctx.target.id, empire: out.defenderEmpire, gold: out.defenderGold, news: out.news, note: out.note } },
       };
     }
     case 'fightStart': {

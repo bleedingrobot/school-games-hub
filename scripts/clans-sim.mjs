@@ -46,10 +46,15 @@ for (const lineup of ['balanced', 'fighters']) {
     console.log(`${String(day).padStart(3)} | ${mean(ds.map((d) => d.avgLevel)).toFixed(1).padStart(9)} | ${mean(ds.map((d) => d.depth)).toFixed(1).padStart(5)} | ${pct(mean(ds.map((d) => d.wins / Math.max(1, d.fights)))).padStart(8)} | ${mean(ds.map((d) => d.gold)).toFixed(0)}`);
   }
   if (EMPIRE) {
-    console.log('empire: day | clan purse (lowest) | vault | barracks | buildings | army strength | raid gold | strength lost');
+    // "All max" = all eight buildings at their top level (39 levels in total).
+    const allMaxDays = runs.map((r) => (r.days.find((d) => d.empire?.allMax)?.day ?? null));
+    const done = allMaxDays.filter((d) => d !== null);
+    const sorted = [...done].sort((a, b) => a - b);
+    console.log(`village all-max: ${done.length}/${SEEDS} clans by day ${DAYS}${done.length ? ` | day ${mean(done).toFixed(0)} on average (earliest ${sorted[0]}, median ${sorted[Math.floor(sorted.length / 2)]}, latest ${sorted[sorted.length - 1]}) = ${(mean(done) / 7).toFixed(1)} weeks` : ''}`);
+    console.log('village: day | purse (lowest) | purse (avg) | barracks lvl | building levels (of 39) | army strength | raid gold | strength lost');
     for (const day of [3, 5, 7, 10, 14, 21, 28, 35, 42, 56, 70].filter((d) => d <= DAYS)) {
       const ds = runs.map((r) => r.days[day - 1]);
-      console.log(`${String(day).padStart(11)} | ${String(Math.min(...ds.map((d) => d.gold))).padStart(18)} | ${mean(ds.map((d) => d.empire.vault)).toFixed(0).padStart(5)} | ${mean(ds.map((d) => d.empire.barracks)).toFixed(1).padStart(8)} | ${mean(ds.map((d) => d.empire.buildings)).toFixed(1).padStart(9)} | ${mean(ds.map((d) => d.empire.might)).toFixed(0).padStart(14)} | ${mean(ds.map((d) => d.empire.raidGold)).toFixed(0).padStart(9)} | ${mean(ds.map((d) => d.empire.lostMight)).toFixed(1)}`);
+      console.log(`${String(day).padStart(12)} | ${String(Math.min(...ds.map((d) => d.gold))).padStart(14)} | ${mean(ds.map((d) => d.gold)).toFixed(0).padStart(11)} | ${mean(ds.map((d) => d.empire.barracks)).toFixed(1).padStart(12)} | ${mean(ds.map((d) => d.empire.levels)).toFixed(1).padStart(23)} | ${mean(ds.map((d) => d.empire.might)).toFixed(0).padStart(13)} | ${mean(ds.map((d) => d.empire.raidGold)).toFixed(0).padStart(9)} | ${mean(ds.map((d) => d.empire.lostMight)).toFixed(1)}`);
     }
   }
 }

@@ -1,6 +1,6 @@
 /** Every tuning number for Clan Quest in one place, so the game can be balanced without hunting through code. */
 import { TROOP_COST } from '../maths/practical';
-import type { BuildingKind, Stat, TroopKind } from './types';
+import type { BuildingKind, Stat, TroopKind, VillageBuilding } from './types';
 
 export const CONFIG = {
   maxLevel: 20,
@@ -39,39 +39,39 @@ export const CONFIG = {
   },
   /** Mine depth hints, as depth minus the clan's average level (simulator, 27 Oct 2026, the smarter fight plan: a mixed clan wins 99% at -1, 94% at +1, 87% at +3, 84% at +4; an all-fighters clan 15-25 points fewer). */
   depthHint: { easyUpTo: -1, justRightUpTo: 1, toughUpTo: 3 },
-  /** The empire (stage C.4). Every number is in the rule sheet's section 12. */
+  /** The empire and "My Village". Every number is here. */
   empire: {
-    /** Wild land plots a new empire starts with. */
-    startWild: 10,
-    /** Claiming one more plot of wild land costs `base` gold plus `step` for each one claimed before it, up to `max` claims. */
-    claim: { base: 50, step: 25, max: 24 },
-    /** A plot is between this many and this many squares along each side. */
-    plotSide: { min: 2, max: 6 },
-    /** Gold to develop a plot: this much a square of area, plus this much for each unit of fence round it. */
-    landPerSquare: 2,
-    fencePerUnit: 1,
-    /** Worker energy a day, in percent. */
-    energyPerDay: 100,
+    /** Upgrades a clan may make a day, in total, across all its buildings. */
+    buildsPerDay: 2,
+    /**
+     * The eight buildings. `max` is the top level; going up to level n costs `base` times n gold, from the clan purse.
+     * `per` is what each level does, in percent (or gold for the strongroom). The Training Hall, Smithy and Church keep their
+     * old effects (trainCost, the shop and churchPerLevel/freeWakes read the level), so they have no `per`.
+     */
+    buildings: {
+      trainingHall: { max: 5, base: 150, per: 0 },
+      smithy: { max: 6, base: 150, per: 0 },
+      church: { max: 3, base: 150, per: 0 },
+      barracks: { max: 5, base: 150, per: 0 },
+      walls: { max: 5, base: 150, per: 10 },
+      tower: { max: 5, base: 150, per: 10 },
+      forge: { max: 5, base: 150, per: 10 },
+      strongroom: { max: 5, base: 150, per: 200 },
+    } satisfies Record<VillageBuilding, { max: number; base: number; per: number }>,
+    /** The width of each building's plan; its length is the level plus `planLengthExtra` (the area and fence moment). */
+    planWidth: { trainingHall: 4, smithy: 3, church: 4, barracks: 3, walls: 2, tower: 2, forge: 3, strongroom: 2 } satisfies Record<VillageBuilding, number>,
+    planLengthExtra: 2,
     /** Gold for one troop (the same numbers the troop-cost question uses). */
     troopCost: TROOP_COST satisfies Record<TroopKind, number>,
-    /** How many of each troop one barracks holds. */
+    /** How many of each troop one level of Barracks holds. */
     troopCap: { footman: 20, axeman: 10, knight: 5 } satisfies Record<TroopKind, number>,
     /** How much each troop counts for in a battle (a knight is worth four footmen, like its price). */
     troopMight: { footman: 1, axeman: 2, knight: 4 } satisfies Record<TroopKind, number>,
-    /** The most followers a village will send, as a percent. */
-    draftMax: 20,
-    draftStep: 5,
-    /** Size in squares, worker energy in percent, gold, and how many you can have. `per` is the effect of each one, in percent (or points). */
-    buildings: {
-      barracks: { size: 15, energy: 30, gold: 100, max: 12, per: 0 },
-      walls: { size: 6, energy: 7, gold: 40, max: 5, per: 10 },
-      tower: { size: 5, energy: 12, gold: 60, max: 5, per: 10 },
-      steelMill: { size: 12, energy: 25, gold: 120, max: 3, per: 10 },
-      stables: { size: 10, energy: 20, gold: 100, max: 3, per: 20 },
-      gymnasium: { size: 10, energy: 20, gold: 100, max: 2, per: 5 },
-      developersHall: { size: 15, energy: 35, gold: 150, max: 3, per: 10 },
-    } satisfies Record<BuildingKind, { size: number; energy: number; gold: number; max: number; per: number }>,
     battle: {
+      /** Every battle is this many rounds and asks for this much loot (a percent); the only choice is the push. */
+      rounds: 3,
+      loot: 10,
+      /** The most rounds `battle()` itself will play (a test or a sum may ask for more than the fixed 3). */
       maxRounds: 5,
       /** A side loses about this share of its strength each round. */
       roundDamage: 0.25,
@@ -96,6 +96,22 @@ export const CONFIG = {
       /** Most you may take from a classmate, in percent. */
       classmateLootMax: 10,
     },
+    /** What the old (pre-village) empire cost, so `upgradeSave` can give the right gold back. Nothing else reads this. */
+    legacy: {
+      plotSide: { min: 2, max: 6 },
+      landPerSquare: 2,
+      fencePerUnit: 1,
+      /** Old building prices in gold, and the most of each a clan could have. */
+      buildings: {
+        barracks: { gold: 100, max: 12 },
+        walls: { gold: 40, max: 5 },
+        tower: { gold: 60, max: 5 },
+        steelMill: { gold: 120, max: 3 },
+        stables: { gold: 100, max: 3 },
+        gymnasium: { gold: 100, max: 2 },
+        developersHall: { gold: 150, max: 3 },
+      } satisfies Record<BuildingKind, { gold: number; max: number }>,
+    },
   },
   /** Quests (stage C.4 part C): one a day, small rewards next to the Mines (a fight earns about 50 gold and 4-13 followers). */
   quests: {
@@ -113,7 +129,7 @@ export const CONFIG = {
     /** A wrong puzzle answer keeps the story going; the prize is just the smaller one. */
   },
   /**
-   * The class village (stage C.6 part A). The class builds these with the village chest; building to level n costs
+   * The OLD class village (stage C.6 part A; no longer used by the game, kept so the SQL parity test and the old night job still have these numbers). The class built these with the village chest; building to level n costs
    * `base` times n gold. Training Hall and Smithy already work in the rules; each Church level gives one more free wake-up a day.
    * The same costs are in the SQL function clan_village_cost (a test keeps them equal). `order` breaks a tie in the vote.
    */

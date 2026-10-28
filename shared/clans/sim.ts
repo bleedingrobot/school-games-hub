@@ -6,11 +6,11 @@ import { averageLevel, botChores, botOrders } from './bot';
 import { CONFIG } from './config';
 import { dayReset, gainXp, rollMember } from './character';
 import { botEmpire, type EmpireDay } from './empireBot';
-import { buildingTotal, empireNewDay, empireOf, might } from './empire';
+import { empireNewDay, empireOf, joinFollowers, levelTotal, maxLevel, might, newEmpire } from './empire';
 import { nextFloat } from './rng';
 import { bossAt, newFight, playRound, settle, type FightResult } from './fight';
 import { SPELLS } from './spells';
-import type { Clan } from './types';
+import { VILLAGE_BUILDINGS, type Clan } from './types';
 
 export type Lineup = 'balanced' | 'fighters';
 
@@ -28,6 +28,7 @@ export function newClan(lineup: Lineup, seed: number): Clan {
     gold: CONFIG.startGold,
     followers: 0,
     village: { trainingHall: 0, smithy: 0, church: 0 },
+    empire: newEmpire(),
   };
 }
 
@@ -57,7 +58,7 @@ export interface DayReport {
   spSpent: number;
   gold: number;
   /** Empire figures at the end of the day (only when the empire is on). */
-  empire?: EmpireDay & { vault: number; might: number; buildings: number; barracks: number };
+  empire?: EmpireDay & { might: number; levels: number; barracks: number; allMax: boolean };
 }
 
 export interface SimReport {
@@ -109,6 +110,7 @@ export function simulate(opts: SimOptions): SimReport {
       if (state.result === 'won') {
         clan.gold += state.gold;
         clan.followers += state.followers;
+        if (opts.empire) joinFollowers(clan);
         if (boss) {
           bossesBeaten.add(depth);
           bossWins++;
@@ -125,7 +127,7 @@ export function simulate(opts: SimOptions): SimReport {
     if (opts.empire) {
       const e = empireOf(clan);
       const today = botEmpire(clan, opts.seed * 1000 + day);
-      report.empire = { ...today, vault: e.vault, might: might(e.troops), buildings: buildingTotal(e), barracks: e.plots.filter((p) => p.building === 'barracks').length };
+      report.empire = { ...today, might: might(e.troops), levels: levelTotal(e), barracks: e.levels.barracks, allMax: VILLAGE_BUILDINGS.every((b) => e.levels[b] >= maxLevel(b)) };
     }
     report.avgLevel = averageLevel(clan);
     report.gold = clan.gold;

@@ -282,10 +282,10 @@ describe('while a fight is open', () => {
     { type: 'buy', member: 0, item: 'Dagger' },
     { type: 'train', member: 0, key: 'strength', count: 1 },
     { type: 'wakeAll' },
-    { type: 'deposit', gold: 10 },
+    { type: 'upgrade', building: 'walls' },
     { type: 'quest', choice: 0, answer: null },
-    { type: 'raid', kingdom: 'bunny-hollow', plan: { rounds: 3, push: 'steady', loot: 10 } },
-    { type: 'draft' },
+    { type: 'raid', kingdom: 'bunny-hollow', push: 'steady' },
+    { type: 'buyTroops', mix: { footman: 1, axeman: 0, knight: 0 } },
   ];
   it.each(things.map((a) => [a.type, a] as const))('refuses %s, because it would change the clan the fight is being replayed with', (_n, action) => {
     const open = start(created()).state;
@@ -386,13 +386,13 @@ describe('the midnight job agrees with the night\'s rest the server gives', () =
     s.clan.wakesToday = 2;
     for (const m of s.clan.members) { m.knockedOut = true; m.hp = 0; m.sp = 0; }
     const e = s.clan.empire!;
-    Object.assign(e, { energyUsed: 50, raidsToday: 1, kingdomRaidsToday: 1, raidedToday: ['x'] });
+    Object.assign(e, { buildsToday: 2, raidsToday: 1, kingdomRaidsToday: 1, raidedToday: ['x'] });
     const day = ok(s, { type: 'load' }, { today: DAY0 + 3 }).state;
     expect(day.day).toBe(4);
     expect(day.fightsLeft).toBe(CONFIG.fightsPerDay);
     expect(day.clan.wakesToday).toBe(0);
     expect(day.clan.members.every((m) => !m.knockedOut && m.hp === m.maxHp && m.sp === m.maxSp)).toBe(true);
-    expect(day.clan.empire).toMatchObject({ day: 4, energyUsed: 0, raidsToday: 0, kingdomRaidsToday: 0, raidedToday: [] });
+    expect(day.clan.empire).toMatchObject({ day: 4, buildsToday: 0, raidsToday: 0, kingdomRaidsToday: 0, raidedToday: [] });
     // Once the job (or the first visit) has moved the clan to today, the server finds nothing more to do.
     const again = applyAction(day, { type: 'load' }, ctx({ today: DAY0 + 3 }));
     expect(again.ok && again.changed).toBe(false);
