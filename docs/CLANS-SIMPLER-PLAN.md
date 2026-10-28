@@ -86,5 +86,5 @@ James to OK the migration before it runs on the live database.
 ## Questions for James
 
 1. Option B as recommended, or the smaller A or the bigger C?
-2. With one purse, should raiders be able to take any gold at all (with the Strongroom keeping some safe), or should classmate raids only knock down buildings and take land?
+2. ~~With one purse, can raiders take gold?~~ **Answered 28 Oct 2026:** yes, up to 10% of the purse, and a Strongroom keeps some of it safe.
 3. Is "1 build a day" right, or should it be 2?
