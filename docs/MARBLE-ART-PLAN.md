@@ -2,7 +2,7 @@
 
 How to make Marble Rush look much better, without making it slower on school Chromebooks or changing how it plays.
 Written 28 October 2026 for James, after reading the drawing code (`src/games/marble/renderer.ts`, `palette.ts`) and taking screenshots of the live preview.
-**Status: plan only, nothing built.** Questions for James are in section 5.
+**Status: plan agreed 28 Oct 2026 (answers in section 5), nothing built.** Next: a Boulder Beach try-out page with G.1 and G.2.
 
 ## The short version
 
@@ -93,7 +93,7 @@ Rough order of effect: G.1 and G.2 change the feel the most; G.3 and G.4 give ea
 
 Asked as question cards on 28 Oct 2026. Answers go here.
 
-**James's answers:** 1 toy diorama; 2 yes, ComfyUI backdrops and course pictures (28 Oct).
+**James's answers (28 Oct 2026):** 1 toy diorama; 2 yes, ComfyUI backdrops and course pictures; 3 start with a try-out page of Boulder Beach (G.1 + G.2 on that one course), then the rest.
 
 1. **Overall look:** toy diorama (recommended) / keep the plain blocks and only add light and effects / a painted look to match Dragon Maths and Clan Quest.
 2. **Painted backdrops and course pictures from ComfyUI:** yes, made on the gaming PC like Clan Quest (recommended) / no, code and free packs only.
