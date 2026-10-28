@@ -29,7 +29,7 @@ Dragon Maths ([LORD-PLAN.md](LORD-PLAN.md) sections 9 and 11, [DRAGON-SCHOOL-SEA
 
 **James chose 5 weeks (35 days), like Dragon Maths (28 Oct 2026)**, running back to back from a start date.
 
-- **Recommended: use Dragon Maths' school season date itself** ([DRAGON-SCHOOL-SEASON.md](DRAGON-SCHOOL-SEASON.md)): one date for the whole school, set by a school admin, with the same holiday pause. Then both games' seasons start and end on the same day, there is one date to set, and teachers see one "Season 3, 12 days left" line. Clan Quest reads it through `lord_school_season_row` (or a shared `school_season()` wrapper), so no second date or admin box is needed. (If James later wants them apart, a Clan Quest column on the same row is easy.)
+- **James chose to share Dragon Maths' school season date (28 Oct 2026)** ([DRAGON-SCHOOL-SEASON.md](DRAGON-SCHOOL-SEASON.md)): one date for the whole school, set by a school admin, with the same holiday pause. Then both games' seasons start and end on the same day, there is one date to set, and teachers see one "Season 3, 12 days left" line. Clan Quest reads it through `lord_school_season_row` (or a shared `school_season()` wrapper), so no second date or admin box is needed. (If James later wants them apart, a Clan Quest column on the same row is easy.)
 - **The shape of a season:**
 
   | Days | What happens |
@@ -164,9 +164,9 @@ Members' levels: the simulator has a daily clan at level 20 by week 3 to 4, and 
 
 ## 9. Questions for James
 
-1. ~~Season length?~~ **Answered 28 Oct 2026: 5 weeks, like Dragon Maths.** Follow-up: share Dragon Maths' school date (Recommended)?
+1. ~~Season length?~~ **Answered 28 Oct 2026: 5 weeks, like Dragon Maths.** **Also answered: Clan Quest shares Dragon Maths' school season date.**
 2. At a new season: **the village starts again, members kept (Recommended)**, or keep everything, or every building drops 2 levels?
 3. ~~Giant tries?~~ **Answered 28 Oct 2026: one a day in monster week, and the monster gets tired.**
 4. ~~Classmate raids?~~ **Answered 28 Oct 2026: off in the last 2 weeks** (days 22 to 35 of a 5-week season).
 5. ~~Which monster?~~ **Answered 28 Oct 2026: a new monster each season** (giant, golem, troll in turn; section 5.1).
-6. When to start: **at the next Dragon Maths season start after the build, with the village bar live now (Recommended)**, or a test season straight away?
+6. When to start: follows from sharing the date: the first Clan Quest season begins at the next Dragon Maths season start after PR 1 is live.
