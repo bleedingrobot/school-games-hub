@@ -10,7 +10,8 @@ vi.mock('../lib/supabase', () => ({
 }));
 
 import {
-  createServerBackend, enqueueFinish, fetchClassLord, fetchStudentLord, queuedFinishes, resetLordHero, saveLordChange, saveLordEnabled,
+  createServerBackend, enqueueFinish, fetchClassLord, fetchLordSchoolSeason, fetchStudentLord, forgetSchoolSeason, queuedFinishes,
+  resetLordHero, saveLordChange, saveLordEnabled, saveLordHoliday, saveLordSchoolSeason,
 } from './lord';
 
 const fetchMock = vi.fn<typeof fetch>();
@@ -32,6 +33,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
   fetchMock.mockReset();
   rpc.mockReset();
+  forgetSchoolSeason();
   ME = crypto.randomUUID();
 });
 
@@ -248,5 +250,44 @@ describe('the teacher’s settings', () => {
     rpc.mockResolvedValueOnce({ data: null, error: { code: 'x', message: 'no' } });
     await expect(saveLordChange({ topics: ['money'] }, 'c12')).rejects.toThrow();
     expect(rpc).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the school’s one season date (migration 20261028000400)', () => {
+  const SEASON = { start: '2026-08-31', pausedSince: null, number: 3, dayOfSeason: 23, daysLeft: 12, startsIn: null, canChange: true };
+
+  it('loads the school’s season once, and again after a save', async () => {
+    rpc.mockResolvedValue({ data: SEASON, error: null });
+    expect(await fetchLordSchoolSeason()).toEqual({ live: true, season: SEASON });
+    await fetchLordSchoolSeason();
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith('lord_school_season');
+    await saveLordHoliday(true);
+    expect(rpc).toHaveBeenLastCalledWith('admin_set_lord_holiday', { paused: true });
+    await fetchLordSchoolSeason();
+    expect(rpc).toHaveBeenCalledTimes(3);
+  });
+
+  it('says it isn’t live yet while the database doesn’t have it (each class keeps its own date)', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { code: 'PGRST202', message: 'Could not find the function' } });
+    expect(await fetchLordSchoolSeason()).toEqual({ live: false });
+  });
+
+  it('asks again after a load fails', async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: { code: '500', message: 'down' } }).mockResolvedValueOnce({ data: SEASON, error: null });
+    await expect(fetchLordSchoolSeason()).rejects.toThrow('We couldn’t load the school’s Dragon Maths seasons.');
+    expect(await fetchLordSchoolSeason()).toEqual({ live: true, season: SEASON });
+  });
+
+  it('saves the date, and passes on the server’s words when it is refused', async () => {
+    rpc.mockResolvedValueOnce({ data: SEASON, error: null });
+    expect(await saveLordSchoolSeason('2026-08-31')).toEqual(SEASON);
+    expect(rpc).toHaveBeenLastCalledWith('admin_set_lord_season', { start: '2026-08-31' });
+    rpc.mockResolvedValueOnce({ data: null, error: { code: '22023', message: 'That would take the school back to season 2. Pick a day on or before 31 Aug.' } });
+    await expect(saveLordSchoolSeason('2026-09-20')).rejects.toThrow('That would take the school back to season 2. Pick a day on or before 31 Aug.');
+    rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'Only a school admin can change the season date.' } });
+    await expect(saveLordSchoolSeason('2026-08-01')).rejects.toThrow('Only a school admin can change the season date.');
+    rpc.mockResolvedValueOnce({ data: null, error: { code: '500', message: 'boom' } });
+    await expect(saveLordHoliday(false)).rejects.toThrow('We couldn’t save the holiday pause.');
   });
 });

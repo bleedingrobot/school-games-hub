@@ -5,7 +5,9 @@ import { dragonMaths } from '../games/lord';
 import { GameSwitchSetting } from '../teacher/Games';
 
 // Dragon Maths on the teacher's Games table (these checks were the old panels'): the switch in its row, and forest fights, the
-// season date, the topics and the class report in its Settings, all for a named class.
+// season date, the topics and the class report in its Settings, all for a named class. Until the school season migration is
+// live (`fetchLordSchoolSeason` gives `live: false`, the default here) each class keeps its own date; the checks at the end
+// cover the one season date for the whole school.
 const data = vi.hoisted(() => ({
   fetchLordSettings: vi.fn(),
   fetchLordEnabled: vi.fn(),
@@ -14,6 +16,9 @@ const data = vi.hoisted(() => ({
   fetchClassLord: vi.fn(),
   fetchStudentLord: vi.fn(),
   resetLordHero: vi.fn(async () => {}),
+  fetchLordSchoolSeason: vi.fn(),
+  saveLordSchoolSeason: vi.fn(),
+  saveLordHoliday: vi.fn(),
 }));
 vi.mock('../data/lord', async (original) => ({ ...(await original<typeof import('../data/lord')>()), ...data }));
 
@@ -35,8 +40,15 @@ const CLASS = {
   wholeSchool: false,
 };
 
+const SCHOOL = { start: '2026-08-31', pausedSince: null, number: 3, dayOfSeason: 23, daysLeft: 12, startsIn: null, canChange: true };
+const school = (over = {}) => ({ live: true, season: { ...SCHOOL, ...over } });
+
 beforeEach(() => {
-  Object.values(data).forEach((f) => f.mockClear());
+  Object.values(data).forEach((f) => f.mockReset());
+  data.saveLordEnabled.mockResolvedValue(undefined);
+  data.saveLordChange.mockResolvedValue(undefined);
+  data.resetLordHero.mockResolvedValue(undefined);
+  data.fetchLordSchoolSeason.mockResolvedValue({ live: false });
   data.fetchLordSettings.mockResolvedValue(settings());
   data.fetchLordEnabled.mockResolvedValue(false);
   data.fetchClassLord.mockResolvedValue(CLASS);
@@ -274,5 +286,88 @@ describe('one pupil’s Dragon Maths', () => {
     expect(await lordStudentSummary('kid-1')).toBe('Level 5 mage, season 2, 1 dragon star, 2 requests turned down');
     data.fetchStudentLord.mockResolvedValue({ hero: null, topics: [], hardest: [], refused: 0 });
     expect(await lordStudentSummary('kid-2')).toBeNull();
+  });
+});
+
+describe('one season date for the whole school (once its migration is live)', () => {
+  const schoolBox = () => screen.findByRole('region', { name: 'Seasons (whole school)' });
+
+  it('lets a school admin set the date for the whole school, and the class settings lose their own date', async () => {
+    const user = userEvent.setup();
+    data.fetchLordSchoolSeason.mockResolvedValue(school());
+    data.fetchLordSettings.mockResolvedValue(settings({ enabled: true, seasonStart: '2026-11-02' }));
+    data.saveLordSchoolSeason.mockResolvedValue({ ...SCHOOL, start: '2026-07-27', number: 4, daysLeft: 12 });
+    render(<LordTeacherSettings classId="c12" />);
+    const box = await schoolBox();
+    expect(within(box).getByText('Season 3 for the whole school, 12 days left.')).toBeInTheDocument();
+    await topics();
+    expect(screen.queryByLabelText('First day of season 1')).not.toBeInTheDocument();
+    const date = within(box).getByLabelText('First day of season 1 (whole school)');
+    expect(date).toHaveValue('2026-08-31');
+    await user.clear(date);
+    await user.type(date, '2026-07-27');
+    await user.tab();
+    expect(data.saveLordSchoolSeason).toHaveBeenLastCalledWith('2026-07-27');
+    expect(data.saveLordChange).not.toHaveBeenCalled();
+    expect(await within(box).findByText('Season 4 for the whole school, 12 days left.')).toBeInTheDocument();
+  });
+
+  it('says in words when a date would take the school back a season, and puts the date back', async () => {
+    const user = userEvent.setup();
+    const { FriendlyError } = await import('../data/profile');
+    data.fetchLordSchoolSeason.mockResolvedValue(school());
+    data.saveLordSchoolSeason.mockRejectedValueOnce(new FriendlyError('That would take the school back to season 2. Pick a day on or before 31 Aug.'));
+    render(<LordTeacherSettings classId="c12" />);
+    const date = within(await schoolBox()).getByLabelText('First day of season 1 (whole school)');
+    await user.clear(date);
+    await user.type(date, '2026-09-20');
+    await user.tab();
+    expect(await screen.findByText('That would take the school back to season 2. Pick a day on or before 31 Aug.')).toBeInTheDocument();
+    expect(date).toHaveValue('2026-08-31');
+  });
+
+  it('lets a school admin pause the seasons for the holidays, and end the pause', async () => {
+    const user = userEvent.setup();
+    data.fetchLordSchoolSeason.mockResolvedValue(school());
+    data.saveLordHoliday.mockResolvedValueOnce({ ...SCHOOL, pausedSince: '2026-12-18' }).mockResolvedValueOnce(SCHOOL);
+    render(<LordTeacherSettings classId="c12" />);
+    const box = await schoolBox();
+    const pause = within(box).getByRole('switch', { name: 'Holiday pause (whole school)' });
+    expect(pause).toHaveAttribute('aria-checked', 'false');
+    await user.click(pause);
+    expect(data.saveLordHoliday).toHaveBeenLastCalledWith(true);
+    expect(await within(box).findByText(/Paused for the holidays since 18 Dec/)).toBeInTheDocument();
+    await user.click(pause);
+    expect(data.saveLordHoliday).toHaveBeenLastCalledWith(false);
+    expect(await within(box).findByText('Season 3 for the whole school, 12 days left.')).toBeInTheDocument();
+    expect(box.querySelector('.button--danger')).toBeNull();
+  });
+
+  it('shows any other teacher where the season is, read-only', async () => {
+    data.fetchLordSchoolSeason.mockResolvedValue(school({ canChange: false, pausedSince: '2026-12-18' }));
+    render(<LordTeacherSettings classId="c12" />);
+    const box = await schoolBox();
+    expect(within(box).getByText(/Paused for the holidays since 18 Dec\. Season 3 for the whole school/)).toBeInTheDocument();
+    expect(within(box).getByText('Set by a school admin.')).toBeInTheDocument();
+    expect(within(box).queryByRole('textbox')).toBeNull();
+    expect(within(box).queryByRole('switch')).toBeNull();
+    expect(within(box).queryByLabelText(/First day of season 1/)).toBeNull();
+  });
+
+  it('says switching a class off leaves the school’s seasons running', async () => {
+    data.fetchLordSchoolSeason.mockResolvedValue(school());
+    data.fetchLordSettings.mockResolvedValue(settings({ pausedSince: '2026-12-18' }));
+    render(<LordTeacherSettings classId="c12" />);
+    expect(await screen.findByText(/off for this class, so this only matters once it’s on\. The school’s seasons carry on/)).toBeInTheDocument();
+    expect(screen.queryByText(/season clock is paused/)).not.toBeInTheDocument();
+  });
+
+  it('says behind the switch’s "?" that off is for this class only', async () => {
+    const user = userEvent.setup();
+    data.fetchLordSchoolSeason.mockResolvedValue(school());
+    render(<GameSwitchSetting game={dragonMaths} classId="c12" />);
+    await loadedSwitch();
+    await user.click(screen.getByRole('button', { name: 'About Dragon Maths' }));
+    expect(await screen.findByText(/Off hides Dragon Maths from this class only; the school's seasons carry on/)).toBeVisible();
   });
 });

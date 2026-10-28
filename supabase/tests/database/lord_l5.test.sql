@@ -5,7 +5,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(119);
+select plan(121);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -204,28 +204,31 @@ select is((select kills from public.lord_hall() where season = 1), 2, 'with how 
 select is((select count(*)::integer from public.lord_hall() where is_me), 2, 'and which are yours');
 select pg_temp.reset();
 
--- ---- The season pause ----
+-- ---- The season clock (one date for the whole school since 20261028000400) ----
+-- Switching a class off no longer pauses the season; a school admin's holiday pause does, for the whole school.
 update public.app_settings set lord_enabled = true, lord_season_start = pg_temp.today() - 10, lord_paused_since = null;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select is(public.teacher_set_lord('{"enabled":false}') ->> 'pausedSince', pg_temp.today()::text, 'switching the game off starts the pause');
+select is(public.teacher_set_lord('{"enabled":false}') ->> 'pausedSince', null, 'switching the game off no longer pauses the season clock');
+select is(public.lord_school_season() ->> 'start', (pg_temp.today() - 10)::text, 'the school''s seasons carry on');
+select is(public.admin_set_lord_holiday(true) ->> 'pausedSince', pg_temp.today()::text, 'a school admin''s holiday pause starts the pause');
 select pg_temp.reset();
-update public.app_settings set lord_paused_since = pg_temp.today() - 7;
+update public.app_settings set lord_paused_since = pg_temp.today() - 7 where class_id is null;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select is(public.teacher_set_lord('{"enabled":true}') ->> 'seasonStart', (pg_temp.today() - 3)::text, 'switching it back on moves the start forward by the days it was closed');
+select is(public.admin_set_lord_holiday(false) ->> 'start', (pg_temp.today() - 3)::text, 'ending it moves the start forward by the days it was paused');
 select pg_temp.reset();
-select is((select lord_paused_since from public.app_settings order by class_id nulls last limit 1), null, 'and the pause is over');
+select is((select lord_paused_since from public.app_settings where class_id is null), null, 'and the pause is over');
 select is(public.lord_current_season(pg_temp.id('a')), 1, 'the season carries on where it left off');
-update public.app_settings set lord_enabled = false, lord_season_start = pg_temp.today() + 5, lord_paused_since = pg_temp.today() - 2;
+update public.app_settings set lord_season_start = pg_temp.today() + 5, lord_paused_since = pg_temp.today() - 2 where class_id is null;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select is(public.teacher_set_lord('{"enabled":true}') ->> 'seasonStart', (pg_temp.today() + 5)::text, 'a pause before the first season starts moves nothing');
+select is(public.admin_set_lord_holiday(false) ->> 'start', (pg_temp.today() + 5)::text, 'a pause before the first season starts moves nothing');
 select pg_temp.reset();
 select is(public.lord_current_season(pg_temp.id('a')), null::integer, 'and the season is not under way yet');
-update public.app_settings set lord_enabled = false, lord_season_start = pg_temp.today() - 10, lord_paused_since = pg_temp.today() - 7;
+update public.app_settings set lord_season_start = pg_temp.today() - 10, lord_paused_since = pg_temp.today() - 7 where class_id is null;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select is(public.teacher_set_lord(jsonb_build_object('enabled', true, 'seasonStart', (pg_temp.today() - 40)::text)) ->> 'seasonStart', (pg_temp.today() - 40)::text, 'a start date the teacher types wins over the pause');
+select is(public.admin_set_lord_season(pg_temp.today() - 40) ->> 'start', (pg_temp.today() - 40)::text, 'a start date the admin types wins over the days paused');
 select pg_temp.reset();
 select is(public.lord_current_season(pg_temp.id('a')), 2, 'forty days in is the second season');
-select is((select lord_paused_since from public.app_settings order by class_id nulls last limit 1), null, 'and clears the pause');
+select is((select lord_paused_since from public.app_settings where class_id is null), pg_temp.today(), 'and the pause carries on from today');
 update public.app_settings set lord_enabled = true, lord_season_start = pg_temp.today(), lord_paused_since = null;
 
 -- ---- The teacher's views ----

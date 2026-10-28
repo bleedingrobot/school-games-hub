@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { BotLevel } from '../../shared/botGame';
 import type { FriendSession } from '../multiplayer/useFriendGame';
 import type { MathsSwitch } from '../../shared/space/mathsSwitch';
@@ -70,8 +70,8 @@ export interface TeacherContract {
   switch?: {
     useValue(classId: string): Loaded<boolean>;
     save(on: boolean, classId: string): Promise<void>;
-    /** One line on what On means, behind the switch's "?". */
-    about?: string;
+    /** One line on what On means, behind the switch's "?". May be an element that loads what it says (Dragon Maths). */
+    about?: ReactNode;
   };
   /** The 3-way maths switch for the class (the Maths column). */
   maths?: {

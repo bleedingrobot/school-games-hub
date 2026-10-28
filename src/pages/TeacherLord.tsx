@@ -1,5 +1,6 @@
 /**
- * Dragon Maths on the teacher pages: forest fights a day, the first season date, the topics and the class report (where the
+ * Dragon Maths on the teacher pages: the school's seasons (one date for the whole school, set by a school admin), forest
+ * fights a day, the topics and the class report (where the
  * class's season is, how many heroes at each level, the hardest questions, the requests the game turned down, and the Hall
  * of Heroes) in the Games table's drawer, for the header's class; and each pupil's hero, with a button to start their hero
  * again. Loaded only when opened. The on/off switch, which pauses the season clock, is in the Games table row
@@ -10,11 +11,11 @@ import { MAX_LEVEL } from '../../shared/lord/data';
 import { ALL_TOPICS } from '../../shared/lord/maths';
 import { TOPICS } from '../../shared/maths/skillPacks';
 import {
-  fetchClassLord, fetchLordSettings, fetchStudentLord, resetLordHero, saveLordChange,
-  type ClassLord, type StudentLord,
+  fetchClassLord, fetchLordSchoolSeason, fetchLordSettings, fetchStudentLord, resetLordHero, saveLordChange, saveLordHoliday,
+  saveLordSchoolSeason, type ClassLord, type LordSchoolSeason, type StudentLord,
 } from '../data/lord';
 import { FriendlyError } from '../data/profile';
-import { SettingChips, SettingDate, SettingNumber, useSetting } from '../teacher/Settings';
+import { SettingChips, SettingDate, SettingNumber, SettingToggle, useSetting } from '../teacher/Settings';
 import { whenPlayed } from './Dashboard';
 import { keyLabel, TOPIC_LABEL as LADDER_LABELS } from './TeacherMonsters';
 import './teacher-gem-keep.css';
@@ -56,43 +57,105 @@ const TOPIC_CHIPS = ALL_TOPICS.map((t) => ({ value: t, label: topicLabel(t) }));
 
 function LordSettingsPanel({ classId }: { classId: string }) {
   const settings = useSetting(() => fetchLordSettings(classId), [classId]);
+  const school = useSetting(() => fetchLordSchoolSeason(), []);
   const s = settings.value;
+  // Before the school season is live (or while it loads), the class keeps its own date, as before.
+  const schoolSeason = school.value?.live ? school.value.season : null;
+  const live = schoolSeason !== null;
   return (
-    <section className="panel gk-teacher teacher__switch" aria-labelledby="dm-settings-title">
-      <h2 id="dm-settings-title" className="panel__title">
-        Dragon Maths settings
+    <>
+      {schoolSeason && <SchoolSeasonBox first={schoolSeason} />}
+      <section className="panel gk-teacher teacher__switch" aria-labelledby="dm-settings-title">
+        <h2 id="dm-settings-title" className="panel__title">
+          {live ? 'Dragon Maths for this class' : 'Dragon Maths settings'}
+        </h2>
+        {s && !s.enabled && (
+          <p className="panel__empty">
+            {live
+              ? 'Dragon Maths is off for this class, so this only matters once it’s on. The school’s seasons carry on while it’s off.'
+              : s.pausedSince
+                ? `Dragon Maths has been off for this class since ${s.pausedSince}, so its season clock is paused. Switch it on in the Games table to carry on the season where it left off.`
+                : 'Dragon Maths is off for this class, so this only matters once it’s on.'}
+          </p>
+        )}
+        <SettingNumber
+          label="Forest fights a day"
+          about="Pupils get the new number from their next day. Unused fights pile up for a missed day or two."
+          min={1}
+          max={30}
+          value={s?.forestPerDay ?? null}
+          loadFailed={settings.failed}
+          save={(forestPerDay) => saveLordChange({ forestPerDay }, classId)}
+        />
+        {!live && (
+          <SettingDate
+            label="First day of season 1"
+            about="Seasons run 35 days, one after the other, from this day. Each new season everyone starts again at level 1 (dragon stars, achievements and the Hall of Heroes stay). Saving a date also ends a pause: the seasons count from the new date."
+            value={school.value ? (s?.seasonStart ?? null) : null}
+            loadFailed={settings.failed || school.failed}
+            save={(seasonStart) => saveLordChange({ seasonStart }, classId)}
+          />
+        )}
+        <SettingChips
+          label="Topics on"
+          about="A topic switched off is never asked: a question comes from a topic that is still on, and forest events about it stay out of the forest. Pupils get the new topics the next time they open Dragon Maths."
+          options={TOPIC_CHIPS}
+          value={s?.topics ?? null}
+          loadFailed={settings.failed}
+          save={(topics) => saveLordChange({ topics }, classId)}
+        />
+      </section>
+    </>
+  );
+}
+
+const longDate = (day: string) =>
+  new Date(`${day}T00:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+/** "Season 3 for the whole school, 12 days left." and, while paused, since when. */
+function schoolSeasonLine(season: LordSchoolSeason): string {
+  if (season.pausedSince) {
+    const where = season.number ? `Season ${season.number} for the whole school, ${season.daysLeft === 0 ? 'on its last day' : `${season.daysLeft} days left`}.` : '';
+    return `Paused for the holidays since ${longDate(season.pausedSince)}. ${where}`.trim();
+  }
+  if (season.number) {
+    return `Season ${season.number} for the whole school, ${season.daysLeft === 0 ? 'last day' : `${season.daysLeft} ${season.daysLeft === 1 ? 'day' : 'days'} left`}.`;
+  }
+  if (season.startsIn !== null) return `Season 1 starts in ${season.startsIn} ${season.startsIn === 1 ? 'day' : 'days'} for the whole school.`;
+  return 'Season 1 starts for the whole school when a class switches Dragon Maths on.';
+}
+
+/**
+ * The school's one season date and holiday pause (docs/DRAGON-SCHOOL-SEASON.md, 2.5). A school admin sets them here until the
+ * Admin page (stage 6); every other teacher sees where the season is, read-only.
+ */
+function SchoolSeasonBox({ first }: { first: LordSchoolSeason }) {
+  const [season, setSeason] = useState(first);
+  useEffect(() => setSeason(first), [first]);
+  return (
+    <section className="panel gk-teacher teacher__switch" aria-labelledby="dm-school-title">
+      <h2 id="dm-school-title" className="panel__title">
+        Seasons (whole school)
       </h2>
-      {s && !s.enabled && (
-        <p className="panel__empty">
-          {s.pausedSince
-            ? `Dragon Maths has been off for this class since ${s.pausedSince}, so its season clock is paused. Switch it on in the Games table to carry on the season where it left off.`
-            : 'Dragon Maths is off for this class, so this only matters once it’s on.'}
-        </p>
+      <p role="status">{schoolSeasonLine(season)}</p>
+      {season.canChange ? (
+        <>
+          <SettingDate
+            label="First day of season 1 (whole school)"
+            about="Every class's seasons run 35 days, one after the other, from this day. Each new season everyone starts again at level 1 (dragon stars, achievements, points and the Hall of Heroes stay). You can move it earlier (the next season starts sooner) but not so late that the season number would go down."
+            value={season.start ?? ''}
+            save={async (start) => setSeason(await saveLordSchoolSeason(start))}
+          />
+          <SettingToggle
+            label="Holiday pause (whole school)"
+            about="On closes Dragon Maths for every class and stops the season clock. Off opens it again for every class that has it on, and the season carries on where it left off."
+            value={season.pausedSince !== null}
+            save={async (on) => setSeason(await saveLordHoliday(on))}
+          />
+        </>
+      ) : (
+        <p>Set by a school admin.</p>
       )}
-      <SettingNumber
-        label="Forest fights a day"
-        about="Pupils get the new number from their next day. Unused fights pile up for a missed day or two."
-        min={1}
-        max={30}
-        value={s?.forestPerDay ?? null}
-        loadFailed={settings.failed}
-        save={(forestPerDay) => saveLordChange({ forestPerDay }, classId)}
-      />
-      <SettingDate
-        label="First day of season 1"
-        about="Seasons run 35 days, one after the other, from this day. Each new season everyone starts again at level 1 (dragon stars, achievements and the Hall of Heroes stay). Saving a date also ends a pause: the seasons count from the new date."
-        value={s?.seasonStart ?? null}
-        loadFailed={settings.failed}
-        save={(seasonStart) => saveLordChange({ seasonStart }, classId)}
-      />
-      <SettingChips
-        label="Topics on"
-        about="A topic switched off is never asked: a question comes from a topic that is still on, and forest events about it stay out of the forest. Pupils get the new topics the next time they open Dragon Maths."
-        options={TOPIC_CHIPS}
-        value={s?.topics ?? null}
-        loadFailed={settings.failed}
-        save={(topics) => saveLordChange({ topics }, classId)}
-      />
     </section>
   );
 }

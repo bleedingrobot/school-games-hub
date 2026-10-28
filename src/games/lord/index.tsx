@@ -58,8 +58,8 @@ export const dragonMaths: GameDefinition = {
   noBots: true,
   group: 'complex-maths',
   useTeacherSwitch: useLordEnabled,
-  // The teacher's Games table: the on/off switch (which pauses the season clock) in the row, where the season is as its
-  // summary, and forest fights, the season date, the topics and the class report in its Settings.
+  // The teacher's Games table: the on/off switch in the row, where the season is as its summary, and the school's season
+  // box, forest fights, the topics and the class report in its Settings.
   teacher: {
     switch: { useValue: useLordClassSwitch, save: (on, classId) => saveLordEnabled(on, classId), about: LORD_ABOUT },
     useSummary: useLordSummary,

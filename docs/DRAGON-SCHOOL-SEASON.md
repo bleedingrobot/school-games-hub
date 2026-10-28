@@ -1,7 +1,7 @@
 # Dragon Maths: one season date for the whole school (design)
 
-Written 28 Oct 2026 on `teacher-games-dragon-season` (from `teacher-games-dragon`, PR #60). **Design only: nothing is
-built.** James decided (docs/TEACHER-VIEW-PLAN.md, section 9, question 2) that Dragon Maths has one season date for the
+Written 28 Oct 2026 on `teacher-games-dragon-season` (from `teacher-games-dragon`, PR #60). **Built 28 Oct 2026** on the
+same branch (migration `20261028000400_lord_school_season.sql`, not live): see section 5 for what changed from this design. James decided (docs/TEACHER-VIEW-PLAN.md, section 9, question 2) that Dragon Maths has one season date for the
 whole school, set by a school admin. This page says how it works today and what has to change.
 
 **James's answers (28 Oct 2026), all as recommended below:** the date lives on the school's default settings row (2.1);
@@ -84,7 +84,7 @@ through a season loses that half. So:
   James knows which classes will jump and by how much:
 
   ```sql
-  select sc.name as school, coalesce(c.name, '(school default)') as class, s.lord_enabled, s.lord_season_start,
+  select sc.name as school, coalesce(c.name, '(school default)') as class, c.archived, s.lord_enabled, s.lord_season_start,
          s.lord_paused_since,
          (select count(*) from public.lord_heroes h join public.class_members m on m.student_id = h.player
           where m.class_id = s.class_id) as heroes
@@ -166,3 +166,36 @@ function** (it gets the date through `lord_settings`).
 4. Merge the website PR.
 5. Undo, if needed: a migration that puts `lord_settings` back to reading the class row (the class rows still hold their old
    dates; heroes that started a new season stay in it).
+
+## 5. As built (28 Oct 2026), and what changed from the design
+
+Built as section 3 says, with no change to the `lord` server function. Differences, and why:
+
+- **While the holiday pause is on, the date handed out moves forward a day for every day paused.** `lord_settings`,
+  `lord_current_season`, `lord_school_season` and the class reports all read the school's start through
+  `lord_school_season_row(school)`, which adds the days paused so far (only days the season was already running), exactly
+  as ending the pause will. So the season number and day stand still during the holidays. The design only said the clock
+  waits; without this, a teacher trying the game during the pause (teachers can play while it's closed) would have jumped
+  their hero into a season that resuming then takes back.
+- **Typing a date while the pause is on keeps the pause, counted from today.** The new date is what the school's start
+  is right now, and the days before today don't move it. (The old per-class rule was "typing a date ends a pause"; with an
+  admin-only switch for the pause it seemed clearer for the switch alone to end it.)
+- **The date can't be cleared** once set (22023, "Pick a date for the first day of season 1."): clearing it would take the
+  season back to "not started".
+- **`teacher_set_lord` with a `seasonStart`:** refused with 42501 for a plain teacher, as designed; for a school admin it does
+  what `admin_set_lord_season` does, with the same "can't go down" check. That keeps the old teacher page's date box (the
+  live site until the website PR merges) working for admins.
+- **The data step is a locked function**, `lord_school_season_step()` (nobody signed in can call it), called once by the
+  migration, so the database test can run it on rows it sets up. Also new and locked: `lord_season_number(date)`, the
+  35-day sum with 0 for "not started", so "goes down" is a plain comparison.
+- **The read-only query in 2.3 now shows whether each class is archived.** The data step counts every row, archived classes
+  included (as designed), so an old archived class's date can move the whole school several seasons forward. Look for that
+  before going live.
+- **During the holiday pause the pupils' dashboard card stays.** The card reads the class's own switch; opening the game
+  says it is closed (`lord_settings` says `enabled: false`), as for a class that is off.
+- **The switch's "?" in the Games table changes with the database.** `about` on a game's switch may now be an element as well
+  as text (`src/games/types.ts`); Dragon Maths gives one that says "Off hides Dragon Maths from this class only…" once
+  `lord_school_season` answers, and the old wording before.
+- **Older database tests changed with it:** `lord_l5.test.sql`'s pause checks now test the school's holiday pause (switching
+  a class off no longer pauses anything), and `lord_class_report.test.sql` now expects the school's season in every class's
+  report.

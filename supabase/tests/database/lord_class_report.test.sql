@@ -1,6 +1,6 @@
 -- Dragon Maths' class report for one class (migration 20261028000300): teacher_lord_class(target_class).
 -- A teacher sees only the class asked for (heroes, levels, hardest questions, refused requests and the Hall of Heroes), with
--- that class's own season, can't read a class they don't teach, a pupil can't call it, and the old call with no class still
+-- the school's season (one date for the whole school since 20261028000400), can't read a class they don't teach, a pupil can't call it, and the old call with no class still
 -- works.
 -- Run on a throw-away copy: scripts/scratch-db.sh lordclass, then
 --   scripts/scratch-test.sh lordclass supabase/tests/database/lord_class_report.test.sql
@@ -51,23 +51,24 @@ select set_config('test.room_three', (select id::text from public.classes where 
 select set_config('test.everyone', (select class_id::text from public.class_members where student_id = pg_temp.id('0a')), true);
 select public.give_class_settings(id) from public.classes where name in ('Room Two', 'Room Three');
 
--- Each class has its own season: Room Two started 40 days ago (season 2, day 6, 29 days left), Room Three 10 days ago
--- (season 1, day 11, 24 days left), and the Everyone class hasn't started.
+-- The school's season started 40 days ago (season 2, day 6, 29 days left). The classes' own old dates (Room Two 40 days ago,
+-- Room Three 10 days ago, the Everyone class none) are no longer read (migration 20261028000400).
+update public.app_settings set lord_season_start = public.nz_day(now()) - 40, lord_paused_since = null
+where class_id is null and school_id = (select school_id from public.profiles where id = pg_temp.id('0a'));
 update public.app_settings set lord_season_start = public.nz_day(now()) - 40 where class_id = current_setting('test.room_two')::uuid;
 update public.app_settings set lord_season_start = public.nz_day(now()) - 10 where class_id = current_setting('test.room_three')::uuid;
 update public.app_settings set lord_season_start = null where class_id = current_setting('test.everyone')::uuid;
 select set_config('test.two_start', to_char(public.nz_day(now()) - 40, 'YYYY-MM-DD'), true);
-select set_config('test.three_start', to_char(public.nz_day(now()) - 10, 'YYYY-MM-DD'), true);
 
 -- Room Two: Cat is level 3 this season (2); Dan's hero is from season 1. Both get 7 x 8 wrong; Cat had a fight turned down
 -- and beat the dragon in season 1.
--- Room Three: Gus is level 7 in season 1 (his class's current one), gets 7 x 8 wrong too, had a request turned down and beat
+-- Room Three: Gus is level 7 in season 2 (the school's current one), gets 7 x 8 wrong too, had a request turned down and beat
 -- the dragon twice in season 1 (so a leak would show in Room Two).
 -- Everyone: Ana and Bea have heroes and both get 6 x 7 wrong.
 insert into public.lord_heroes (player, hero, version, season, day) values
   (pg_temp.id('0c'), '{"level": 3}', 1, 2, '2026-01-01'),
   (pg_temp.id('0d'), '{"level": 5}', 1, 1, '2026-01-01'),
-  (pg_temp.id('10'), '{"level": 7}', 1, 1, '2026-01-01'),
+  (pg_temp.id('10'), '{"level": 7}', 1, 2, '2026-01-01'),
   (pg_temp.id('0a'), '{"level": 2}', 1, 1, '2026-01-01'),
   (pg_temp.id('0b'), '{"level": 2}', 1, 1, '2026-01-01');
 insert into public.gem_keep_facts (player, pack, fact_key, attempts, correct, avg_ms, box) values
@@ -89,11 +90,11 @@ select throws_ok(format('select public.teacher_lord_class(%L::uuid)', current_se
   'signed-out visitors cannot read it');
 select pg_temp.reset();
 
--- ---- A teacher sees only the class asked for, with its own season ----
+-- ---- A teacher sees only the class asked for, with the school's season ----
 select pg_temp.fin();
 select set_config('test.report', public.teacher_lord_class(current_setting('test.room_two')::uuid)::text, true);
 select is((pg_temp.report() ->> 'players')::integer, 2, 'Fin sees Room Two''s two heroes, not Room Three''s');
-select is((pg_temp.report() -> 'season' ->> 'number')::integer, 2, '... Room Two''s own season');
+select is((pg_temp.report() -> 'season' ->> 'number')::integer, 2, '... the school''s season');
 select is((pg_temp.report() -> 'season' ->> 'daysLeft')::integer, 29, '... and its days left');
 select is(pg_temp.report() -> 'season' ->> 'start', current_setting('test.two_start'), '... and its first day');
 select is((pg_temp.report() ->> 'thisSeason')::integer, 1, '... one hero in this season (Dan''s is last season''s)');
@@ -104,8 +105,8 @@ select is(pg_temp.keys(pg_temp.report(), 'hall', 'realName'), '["cat"]'::jsonb, 
 
 select set_config('test.report', public.teacher_lord_class(current_setting('test.room_three')::uuid)::text, true);
 select is((pg_temp.report() ->> 'players')::integer, 1, 'Room Three on its own has one hero');
-select is(pg_temp.report() -> 'season', jsonb_build_object('number', 1, 'start', current_setting('test.three_start'), 'daysLeft', 24),
-  '... in its own season 1, with 24 days left');
+select is(pg_temp.report() -> 'season', jsonb_build_object('number', 2, 'start', current_setting('test.two_start'), 'daysLeft', 29),
+  '... in the school''s season 2 with 29 days left, not its old date''s season 1');
 select is(pg_temp.report() -> 'levels' -> 6, '1'::jsonb, '... at level 7, counted in this season');
 
 -- ---- A class they don't teach ----
@@ -118,7 +119,7 @@ select pg_temp.reset();
 select pg_temp.eve();
 select set_config('test.report', public.teacher_lord_class(current_setting('test.everyone')::uuid)::text, true);
 select is((pg_temp.report() ->> 'players')::integer, 2, 'Eve (school admin) sees the Everyone class''s two heroes');
-select is(pg_temp.report() -> 'season' -> 'number', 'null'::jsonb, '... whose season hasn''t started');
+select is(pg_temp.report() -> 'season' -> 'number', '2'::jsonb, '... in the school''s season, though the class has no date of its own');
 select is(pg_temp.keys(pg_temp.report(), 'hardest', 'key'), '["mul:6x7"]'::jsonb, '... only its hardest question');
 select is((pg_temp.report() -> 'refusals') || (pg_temp.report() -> 'hall'), '[]'::jsonb,
   '... and none of the other classes'' refused requests or Hall of Heroes');

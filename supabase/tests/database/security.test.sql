@@ -56,9 +56,9 @@ select set_eq($$
   select p.proname::text from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public' and has_function_privilege('authenticated', p.oid, 'execute')
 $$, array[
-  'archery_here', 'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'clan_scoreboard', 'clear_my_maths_focus',
+  'admin_set_lord_holiday', 'admin_set_lord_season', 'archery_here', 'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'clan_scoreboard', 'clear_my_maths_focus',
   'gem_keep_leaderboard', 'is_player_in', 'is_school_admin', 'is_school_email', 'is_school_user', 'is_site_owner',
-  'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'log_questions', 'lord_hall', 'lord_news', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
+  'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'log_questions', 'lord_hall', 'lord_news', 'lord_school_season', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
   'monsters_leaderboard', 'my_bond_match', 'my_bot_game_stats', 'my_card_game_stats', 'my_class', 'my_friend_game_stats',
   'my_gem_keep', 'my_home_page', 'my_ladder', 'my_lord', 'my_marble', 'my_maths_focus', 'my_mine', 'my_monsters', 'my_moves_left', 'my_power_game_stats', 'my_progress', 'my_school', 'my_school_info',
   'my_settings_id', 'my_space_game_stats', 'my_training', 'my_training_lock', 'owner_add_school', 'owner_add_school_domain',

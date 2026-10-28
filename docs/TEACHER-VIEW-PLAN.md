@@ -570,6 +570,24 @@ dates still work exactly as before (one date per class; the one school date of s
   after switching off is now in the switch's "?". In `Games.test.tsx` the "game that hasn't moved" tests now use Clan Quest,
   and Dragon Maths has a row check.*
 
+*Dragon Maths school season built 28 Oct 2026 on `teacher-games-dragon-season` (from `teacher-games-dragon`), as designed in
+docs/DRAGON-SCHOOL-SEASON.md (section 5 lists the small differences). One migration, `20261028000400_lord_school_season.sql`
+(not live yet). No change to the `lord` server function.*
+- *Server: the season date and the holiday pause live on the school's default settings row. `lord_settings`,
+  `lord_current_season` (the Warriors list) and both class reports read them from there; the class rows keep their old dates,
+  unread. `teacher_set_lord`'s switch only switches (and starts season 1 today if the school has no date). New:
+  `lord_school_season()` for any teacher, and `admin_set_lord_season(date)` and `admin_set_lord_holiday(paused)` for school
+  admins (42501 for anyone else; 22023 for a date that would take the season number down). The one-off step gives each school
+  the earliest date any of its rows has. Checked by `supabase/tests/database/lord_school_season.test.sql` (44 checks, two
+  classes mid-season on different dates), plus a `handler.test.ts` case for a hero jumping three seasons.*
+- *Site: the Dragon Maths drawer opens with "Seasons (whole school)": for a school admin the date and a "Holiday pause (whole
+  school)" switch, for any other teacher the same line read-only with "Set by a school admin". The class part keeps forest
+  fights and topics. The row's Maths column shows the school's season ("Season 3, holiday pause" while paused) and its "?"
+  says off is for this class only. Until the migration is live, `lord_school_season` answers PGRST202 and the drawer, the row
+  and the "?" stay exactly as #60 left them (each class's own date and pause).*
+- *Before it goes live: James runs the read-only query in DRAGON-SCHOOL-SEASON.md 2.3 (with his OK) to see which classes jump
+  forward, then it's applied at a quiet time with teachers told the day before.*
+
 **Stage 4: Students roster and student page,** with `teacher_class_overview` and class-scoped `teacher_students`.
 
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.

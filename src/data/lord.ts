@@ -264,15 +264,81 @@ export async function fetchLordEnabled(classId?: string | null): Promise<boolean
 export async function saveLordSettings(settings: Partial<LordSettings> & { enabled: boolean }, classId?: string | null): Promise<LordSettings> {
   const { data, error } = await supabase.rpc('teacher_set_lord', { settings, target_class: classId ?? null });
   forgetSettings();
+  forgetSchoolSeason();
   if (error || !data) {
-    if (error?.code === '22023' && error.message) throw new FriendlyError(error.message);
+    if ((error?.code === '22023' || error?.code === '42501') && error.message) throw new FriendlyError(error.message);
     throw new FriendlyError('We couldn’t save the Dragon Maths settings.');
   }
   return data as LordSettings;
 }
 
 /**
- * The Games table's switch. Switching off pauses the class's season clock and switching on again carries the season on
+ * The school's season (one date for the whole school, migration 20261028000400). `number`, `dayOfSeason` and `daysLeft` are
+ * null before season 1 starts; `startsIn` is the days until it does. `canChange` is true for a school admin.
+ */
+export interface LordSchoolSeason {
+  start: string | null;
+  pausedSince: string | null;
+  number: number | null;
+  dayOfSeason: number | null;
+  daysLeft: number | null;
+  startsIn: number | null;
+  canChange: boolean;
+}
+
+/** `live: false` until migration 20261028000400 is on the database: each class still has its own date then. */
+export type SchoolSeasonState = { live: true; season: LordSchoolSeason } | { live: false };
+
+let schoolSeason: Promise<SchoolSeasonState> | null = null;
+
+/** Forget the remembered school season, after anything that may change it. */
+export function forgetSchoolSeason() {
+  schoolSeason = null;
+}
+
+/**
+ * The school's season, remembered so the Games table's row, its "?" and the drawer ask once. Before the migration is live the
+ * server has no `lord_school_season` (PGRST202): then `{ live: false }`, and the teacher pages keep each class's own date.
+ */
+export function fetchLordSchoolSeason(): Promise<SchoolSeasonState> {
+  if (!schoolSeason) {
+    const asking: Promise<SchoolSeasonState> = Promise.resolve(supabase.rpc('lord_school_season')).then(({ data, error }) => {
+      if (error?.code === NO_SUCH_FUNCTION) return { live: false };
+      if (error || !data) throw new FriendlyError('We couldn’t load the school’s Dragon Maths seasons.');
+      return { live: true, season: data as LordSchoolSeason };
+    });
+    schoolSeason = asking;
+    asking.catch(() => {
+      if (schoolSeason === asking) schoolSeason = null;
+    });
+  }
+  return schoolSeason;
+}
+
+async function saveSchool(name: string, args: Record<string, unknown>, text: string): Promise<LordSchoolSeason> {
+  const { data, error } = await supabase.rpc(name, args);
+  forgetSettings();
+  forgetSchoolSeason();
+  if (error || !data) {
+    if ((error?.code === '22023' || error?.code === '42501') && error.message) throw new FriendlyError(error.message);
+    throw new FriendlyError(text);
+  }
+  return data as LordSchoolSeason;
+}
+
+/** A school admin sets the first day of season 1 for the whole school. The server refuses a date that takes the season back. */
+export function saveLordSchoolSeason(start: string): Promise<LordSchoolSeason> {
+  return saveSchool('admin_set_lord_season', { start }, 'We couldn’t save the season date.');
+}
+
+/** A school admin's holiday pause: on closes Dragon Maths for every class and stops the clock; off carries the season on. */
+export function saveLordHoliday(paused: boolean): Promise<LordSchoolSeason> {
+  return saveSchool('admin_set_lord_holiday', { paused }, 'We couldn’t save the holiday pause.');
+}
+
+/**
+ * The Games table's switch. Once the school season is live, off closes Dragon Maths for this class only and the school's
+ * seasons carry on. Before that, switching off pauses the class's season clock and switching on again carries the season on
  * where it left off (the server moves the start date forward by the days it was off).
  */
 export async function saveLordEnabled(enabled: boolean, classId: string): Promise<void> {
