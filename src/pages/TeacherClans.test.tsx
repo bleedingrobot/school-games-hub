@@ -5,7 +5,7 @@ import { clanQuest } from '../games/clans/game';
 import { GameSwitchSetting } from '../teacher/Games';
 
 // Clan Quest on the teacher's Games table (these checks were the old panels'): the switch in its row, and made-up hero names,
-// the maths settings, raids, the class report and the villages (whole school) in its Settings, all for a named class. The fame
+// the maths settings, raids and the class report in its Settings, all for a named class. The fame
 // season and each pupil's clan are under Students.
 const data = vi.hoisted(() => ({
   fetchClansEnabled: vi.fn(),
@@ -14,11 +14,6 @@ const data = vi.hoisted(() => ({
   resetClan: vi.fn(async () => true),
   fetchClanRaidsEnabled: vi.fn(),
   saveClanRaidsEnabled: vi.fn(),
-  fetchVillages: vi.fn(),
-  createVillage: vi.fn(async () => 2),
-  renameVillage: vi.fn(async () => undefined),
-  deleteVillage: vi.fn(async () => true),
-  movePupil: vi.fn(async () => undefined),
   fetchClanMathsSettings: vi.fn(),
   saveClanMathsSettings: vi.fn(),
   startClansNewSeason: vi.fn(),
@@ -50,10 +45,6 @@ const mathsSettings = (over = {}) => ({ yearBand: 5, enabledTopics: ['percentage
 beforeEach(() => {
   Object.values(data).forEach((f) => f.mockReset());
   data.resetClan.mockResolvedValue(true);
-  data.createVillage.mockResolvedValue(2);
-  data.renameVillage.mockResolvedValue(undefined);
-  data.deleteVillage.mockResolvedValue(true);
-  data.movePupil.mockResolvedValue(undefined);
   data.saveClanMathsSettings.mockResolvedValue(undefined);
   data.fetchClanMathsSettings.mockResolvedValue(mathsSettings());
   data.fetchClassClanMaths.mockResolvedValue({ players: 0, kinds: [], hardest: [] });
@@ -67,13 +58,6 @@ beforeEach(() => {
   data.fetchClanTypedNames.mockResolvedValue(false);
   data.saveClanTypedNames.mockImplementation(async (on: boolean) => on);
   data.listHeroNames.mockResolvedValue(1);
-  data.fetchVillages.mockResolvedValue({
-    villages: [
-      { id: 1, name: 'Everyone else', isDefault: true, chest: 30, levels: { trainingHall: 0, smithy: 0, church: 0 }, pupils: 2 },
-      { id: 2, name: 'Room 12', isDefault: false, chest: 750, levels: { trainingHall: 1, smithy: 2, church: 0 }, pupils: 1 },
-    ],
-    pupils: [{ id: 'p1', name: 'Brave Otter 12', village: 2 }, { id: 'p2', name: 'Calm Heron 3', village: 1 }],
-  });
 });
 
 /** A switch once it has loaded. */
@@ -159,43 +143,14 @@ describe('a pupil\'s clan on the teacher page', () => {
   });
 });
 
-describe('the village groups in the drawer (whole school)', () => {
-  it('shows the groups with their chest and buildings, and who is in which, labelled whole school', async () => {
+describe('the village groups are gone', () => {
+  it('shows no group, chest or move-pupil controls in the drawer', async () => {
     render(<ClansTeacherSettings classId="c12" />);
-    expect(await screen.findByText(/750 gold in the chest, Training Hall 1, Smithy 2, Church 0/)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Clan Quest villages (whole school)' })).toBeInTheDocument();
-    expect(screen.getByRole('table', { name: 'Who is in which group (whole school)' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Group for Brave Otter 12')).toHaveValue('2');
-    expect(screen.getByLabelText('Group for Calm Heron 3')).toHaveValue('1');
-  });
-
-  it('makes a group, moves a pupil, and asks before deleting a group', async () => {
-    const user = userEvent.setup();
-    render(<ClansTeacherSettings classId="c12" />);
-    await user.type(await screen.findByLabelText('Group name'), 'Room 14');
-    await user.click(screen.getByRole('button', { name: 'Make a group' }));
-    expect(data.createVillage).toHaveBeenCalledWith('Room 14');
-    await user.selectOptions(await screen.findByLabelText('Group for Calm Heron 3'), '2');
-    expect(data.movePupil).toHaveBeenCalledWith('p2', 2);
-    await user.click(screen.getByRole('button', { name: 'Delete…' }));
-    expect(data.deleteVillage).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'Yes, delete Room 12' }));
-    expect(data.deleteVillage).toHaveBeenCalledWith(2);
-  });
-
-  it('cannot delete the default group', async () => {
-    render(<ClansTeacherSettings classId="c12" />);
-    await screen.findByText(/Everyone else/);
-    expect(screen.getAllByRole('button', { name: 'Delete…' })).toHaveLength(1);
-  });
-
-  it('says what went wrong in plain words', async () => {
-    data.createVillage.mockRejectedValue(new Error('x'));
-    const user = userEvent.setup();
-    render(<ClansTeacherSettings classId="c12" />);
-    await user.type(await screen.findByLabelText('Group name'), 'Room 14');
-    await user.click(screen.getByRole('button', { name: 'Make a group' }));
-    expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
+    await loaded('Raids on classmates');
+    expect(screen.queryByText(/villages \(whole school\)/i)).toBeNull();
+    expect(screen.queryByLabelText('Group name')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Make a group' })).toBeNull();
+    expect(screen.queryByRole('table', { name: /Who is in which group/ })).toBeNull();
   });
 });
 
@@ -206,6 +161,7 @@ describe('raids on classmates in the drawer (per class)', () => {
     const raids = await loaded('Raids on classmates');
     expect(data.fetchClanRaidsEnabled).toHaveBeenCalledWith('c12');
     expect(raids).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByText(/Clans can raid other clans in the same class, once a day, and a raided clan is safe the next day\./)).toBeInTheDocument();
     await user.click(raids);
     expect(data.saveClanRaidsEnabled).toHaveBeenLastCalledWith(true, 'c12');
     expect(raids).toHaveAttribute('aria-checked', 'true');

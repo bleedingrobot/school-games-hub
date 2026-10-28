@@ -403,3 +403,12 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 /* "What to do next" line on the Empire home */
 .cq-nextstep { border: 2px solid var(--cq-yellow); color: var(--cq-yellow); margin-bottom: 8px; }
 .cq-nextstep p { margin: 4px 0; }
+
+/* My Village: one card for each building, with its picture, level, what it does and the Upgrade button. */
+.cq-village { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px; }
+.cq-bcard { display: flex; gap: 10px; align-items: flex-start; margin: 0; }
+.cq-bcard__art { width: 96px; height: 80px; }
+.cq-bcard__art--unbuilt { opacity: 0.4; filter: grayscale(1); }
+.cq-bcard__text { display: grid; gap: 4px; min-width: 0; }
+.cq-bcard__text h3, .cq-bcard__text p { margin: 0; }
+.cq-bcard__level { font-weight: 700; }

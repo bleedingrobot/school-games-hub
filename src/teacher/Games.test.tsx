@@ -291,7 +291,7 @@ describe('the Games table', () => {
     const drawer = await screen.findByRole('dialog', { name: 'Clan Quest' });
     expect(await within(drawer).findByRole('region', { name: 'Clan Quest settings' })).toBeInTheDocument();
     expect(await within(drawer).findByRole('region', { name: /^Clan Quest maths: this class/ })).toBeInTheDocument();
-    expect(within(drawer).getByRole('region', { name: 'Clan Quest villages (whole school)' })).toBeInTheDocument();
+    expect(within(drawer).queryByRole('region', { name: 'Clan Quest villages (whole school)' })).not.toBeInTheDocument();
     expect(data.fetchClassClanMaths).toHaveBeenCalledWith('c14');
   });
 

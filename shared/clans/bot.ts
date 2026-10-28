@@ -11,6 +11,7 @@
  */
 import { buy, inShop, shopPrice, trainHp, trainSp, trainStat, usableBonus, wake } from './character';
 import { CONFIG } from './config';
+import { levelOf } from './empire';
 import { canCast, type FightState, type Fighter, type Order } from './fight';
 import { SPELLS, type SpellDef } from './spells';
 import type { Clan, ItemDef, Member, Stat } from './types';
@@ -140,7 +141,7 @@ export function botShop(clan: Clan): void {
     for (const kind of ['weapon', 'armor', 'shield'] as const) {
       const have = m.gear[kind] ? inShop(6).find((i) => i.name === m.gear[kind]) : undefined;
       const mine = have ? worth(m, have) : 0;
-      const best = inShop(clan.village.smithy)
+      const best = inShop(levelOf(clan, 'smithy'))
         .filter((i) => i.kind === kind && shopPrice(i) <= clan.gold && worth(m, i) > mine)
         .sort((a, b) => worth(m, b) - worth(m, a) || a.price - b.price)[0];
       if (best) buy(clan, m, best);
@@ -151,7 +152,7 @@ export function botShop(clan: Clan): void {
 /** The between-fights chores: wake the knocked out (cheapest first), spend points, shop. */
 export function botChores(clan: Clan): void {
   for (const m of [...clan.members].filter((x) => x.knockedOut).sort((a, b) => b.level - a.level)) wake(clan, m);
-  for (const m of clan.members) botTrain(m, clan.village.trainingHall);
+  for (const m of clan.members) botTrain(m, levelOf(clan, 'trainingHall'));
   botShop(clan);
 }
 

@@ -1,5 +1,5 @@
 /**
- * The maths moments in the shop, the Training Hall, the Church, on the land and at the barracks.
+ * The maths moments in the shop, the Training Hall, the Church, on a building plan and at the barracks.
  * Each takes the real numbers (the actual price, tax, level, member count) and makes the
  * question from them, or returns null when the teacher has that topic switched off.
  *
@@ -10,7 +10,8 @@
 import { buildQuestion, topicAvailable, topicOf, type PracticalKind, type PracticalQuestion, type PracticalSettings } from '../maths/practical';
 import { CONFIG } from './config';
 import { usableBonus } from './character';
-import type { ItemDef, Member } from './types';
+import { planOf } from './empire';
+import type { ItemDef, Member, VillageBuilding } from './types';
 
 function moment(settings: PracticalSettings, kind: PracticalKind, nums: number[], labels?: [string, string], item?: string, about?: 'followers' | 'loot'): PracticalQuestion | null {
   if (!topicAvailable(settings, topicOf(kind))) return null;
@@ -52,11 +53,12 @@ export function trainingBuy(settings: PracticalSettings, points: number, cost: n
 /** Church: the bill for waking the members who have to pay (levels of those after any free wake-up). Null if nobody pays. */
 export const churchBill = (settings: PracticalSettings, levels: number[]) => (levels.length === 0 || levels.length > 7 ? null : moment(settings, 'church-bill', [CONFIG.churchPerLevel, ...levels]));
 
-/** Land: area of a plot, and the fence round it. */
-export function landPlot(settings: PracticalSettings, width: number, length: number): { area: PracticalQuestion; fence: PracticalQuestion } | null {
+/** Upgrade: the area of a building's plan, and the fence round it. The plan grows with the level it is being taken up to (`planOf`). */
+export function landPlot(settings: PracticalSettings, building: VillageBuilding, level: number): { width: number; length: number; area: PracticalQuestion; fence: PracticalQuestion } | null {
+  const { width, length } = planOf(building, level);
   const area = moment(settings, 'area', [width, length]);
   const fence = moment(settings, 'perimeter', [width, length]);
-  return area && fence ? { area, fence } : null;
+  return area && fence ? { width, length, area, fence } : null;
 }
 
 /** Barracks: how many do you need for this many troops? */
@@ -65,10 +67,10 @@ export const barracksNeeded = (settings: PracticalSettings, troops: number, capa
 /** Troop costs: what a mixed bunch of troops costs. */
 export const troopBill = (settings: PracticalSettings, footmen: number, axemen: number, knights: number) => moment(settings, 'troop-cost', [footmen, axemen, knights]);
 
-/** Worker energy: how much of today's 100% is left after these buildings. */
+/** Worker energy: how much of today's 100% is left after these buildings. (No longer used by the game: there is no worker energy in My Village.) */
 export const energyLeft = (settings: PracticalSettings, ...used: number[]) => moment(settings, 'budget-left', [1, 100, ...used]);
 
-/** Followers and the draft: "50 followers, 20% are drafted: how many join?" */
+/** Followers and the draft: "50 followers, 20% are drafted: how many join?" (No longer used by the game: followers join by themselves.) */
 export const draftJoin = (settings: PracticalSettings, followers: number, percent: number) => (followers >= 1 && followers <= 5000 ? moment(settings, 'percent-of', [percent, followers], undefined, undefined, 'followers') : null);
 
 /** Raids: "the treasury holds 600 gold and you ask for 10%: how much do you take?" The answer is what the raid really takes. */

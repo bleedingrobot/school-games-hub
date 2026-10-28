@@ -75,13 +75,12 @@ Deno.serve(
     load: (player, requestId) => call<Loaded>('load_clan', { player, request_id: requestId }),
     save: (player, expectedVersion, requestId, action, state: ServerState, result: Result) =>
       call<SaveStatus>('save_clan', { player, expected_version: expectedVersion, request_id: requestId, action, state, result }),
-    vote: (player, kind) => call<{ ok: boolean }>('clan_vote', { player, kind }),
     mates: (player) => call<Sketch[]>('clan_village_mates', { player }),
     target: (player, targetId) => call<LoadedTarget>('clan_raid_target', { player, target: targetId }),
     saveRaid: (player, expectedVersion, raid, requestId, state, result) =>
       call<SaveStatus>('save_raid', {
         player, expected_version: expectedVersion, target: raid.targetId, target_version: raid.targetVersion, request_id: requestId,
-        state, defender_empire: raid.empire, result, news: raid.news, note: raid.note,
+        state, defender_empire: raid.empire, defender_gold: raid.gold, result, news: raid.news, note: raid.note,
       }),
   }),
 );

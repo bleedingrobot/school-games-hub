@@ -192,3 +192,11 @@ This replaces steps 2 and 3 above:
 - Engine and screen tests are updated. The SQL tests run on a scratch copy.
 - The simulator checks the pace, and `test:all` and the build must pass.
 - **The live database migration and the save conversion need James's OK first**, because they change every pupil's save.
+
+### Pictures (James chose 3 sizes per building, 28 Oct 2026)
+- There is a small, medium and big picture for each of the 8 buildings, so the village visibly grows:
+  - small for levels 1 and 2;
+  - medium for levels 3 and 4;
+  - big for level 5 and above.
+- That is 24 pictures in `src/games/clans/art/buildings/<kind>-<size>.webp`. The barracks, walls, tower and steel mill (Forge) pictures already there are kept as the medium size.
+- They are made with `scripts/clans-art.py` on James's gaming computer, in the same style as the others (docs/CLANS-ART-PLAN.md). If a picture is missing, the game falls back to the one-size picture, so nothing breaks.

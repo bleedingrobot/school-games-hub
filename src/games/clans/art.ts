@@ -5,7 +5,7 @@
  * Files live in ./art/<group>/<name>.webp. Vite turns each one into its own URL, and the browser only downloads a
  * picture when a screen shows it.
  */
-import type { BuildingKind, TroopKind } from '../../../shared/clans/types';
+import type { TroopKind, VillageBuilding } from '../../../shared/clans/types';
 import { LOOKS, type Look } from '../../../shared/clans/looks';
 
 const FILES = import.meta.glob('./art/**/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
@@ -40,8 +40,21 @@ export const memberThumb = (race: string, cls: string, look: Look) => file('memb
 export const monsterArt = (name: string) => file('monsters', slug(name));
 export const itemArt = (name: string) => file('items', slug(name));
 export const troopArt = (kind: TroopKind) => file('troops', kind);
-/** steelMill → steelmill, developersHall → developershall. */
-export const buildingArt = (kind: BuildingKind) => file('buildings', kind.toLowerCase());
+/** A building's picture grows with its level: small for levels 0-2, medium for 3-4, big for 5 and up. */
+export type BuildingSize = 'small' | 'medium' | 'big';
+export const buildingSize = (level: number): BuildingSize => (level >= 5 ? 'big' : level >= 3 ? 'medium' : 'small');
+/** The one-size pictures that were made first. The Forge was the Steel Mill. */
+const OLD_BUILDING_FILE: Partial<Record<VillageBuilding, string>> = { forge: 'steelmill' };
+/**
+ * The picture for a building at a level: buildings/<kind>-small|medium|big.webp (kind in lower case: trainingHall → traininghall),
+ * then the old one-size buildings/<kind>.webp. Undefined when neither is there, and the screen simply shows no picture.
+ */
+export function pickBuildingArt(kind: VillageBuilding, level: number, find: (name: string) => string | undefined): string | undefined {
+  const name = kind.toLowerCase();
+  const old = OLD_BUILDING_FILE[kind];
+  return find(`${name}-${buildingSize(level)}`) ?? find(name) ?? (old ? find(old) : undefined);
+}
+export const buildingArt = (kind: VillageBuilding, level = 1): string | undefined => pickBuildingArt(kind, level, (name) => file('buildings', name));
 /** A kingdom you can raid, by its id (bunny-hollow). */
 export const kingdomArt = (id: string) => file('kingdoms', id);
 export function kingdomScene(id: string): { wide?: string; small?: string } {

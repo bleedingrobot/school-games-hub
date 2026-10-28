@@ -90,7 +90,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'cq-first-boss', name: 'Boss beaten', emoji: '👹', measure: 'clan_bosses', goal: 1, how: 'Beat a boss deep in the Mines.' },
   { id: 'cq-level-10', name: 'Level 10', emoji: '🛡️', measure: 'clan_level', goal: 10, how: 'Get a clan member to level 10.' },
   { id: 'cq-level-20', name: 'Level 20', emoji: '🏅', measure: 'clan_level', goal: 20, how: 'Get a clan member to level 20.' },
-  { id: 'cq-buildings-5', name: 'Five buildings', emoji: '🏰', measure: 'clan_buildings', goal: 5, how: 'Have five buildings in your empire.' },
+  { id: 'cq-buildings-5', name: 'Five buildings', emoji: '🏰', measure: 'clan_buildings', goal: 5, how: 'Have five different buildings in your village.' },
   { id: 'cq-first-war', name: 'Friendly War win', emoji: '🤝', measure: 'clan_wars', goal: 1, how: 'Win a Friendly War.' },
   { id: 'cq-village', name: 'Village builders', emoji: '🔨', measure: 'clan_village', goal: 1, how: 'Vote in a week when the class builds something in the village.' },
   { id: 'cq-cries-50', name: 'Loud and right', emoji: '📣', measure: 'clan_cries', goal: 50, how: 'Get 50 Battle Cry questions right.' },
@@ -98,12 +98,12 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
 
 /** How far along each measure is, from the clan and its lifetime counts. */
 export function measures(clan: Clan, stats: ClanStats): Record<AchievementMeasure, number> {
-  const plots = clan.empire?.plots ?? [];
+  const levels = clan.empire?.version === 2 ? Object.values(clan.empire.levels) : [];
   return {
     clan_wins: stats.mineWins + stats.bossWins,
     clan_bosses: stats.bossWins,
     clan_level: clan.members.reduce((best, m) => Math.max(best, m.level), 0),
-    clan_buildings: plots.filter((p) => p.building).length,
+    clan_buildings: levels.filter((n) => n > 0).length,
     clan_wars: stats.warWins,
     clan_village: stats.villageBuilt,
     clan_cries: stats.cries,

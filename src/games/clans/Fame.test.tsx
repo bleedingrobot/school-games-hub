@@ -111,10 +111,10 @@ describe('achievements from the server', () => {
 
   it('does not celebrate the ones already earned when the game opens, but celebrates a new one and shows fame', async () => {
     const box = stateWith({ fame: 7, achievements: ['cq-first-win'] });
-    const shown = (s: typeof box) => structuredClone(publicState(s, DEFAULT_PRACTICAL_SETTINGS, { news: [], village: { name: 'Room 12', chest: 100, levels: { trainingHall: 0, smithy: 0, church: 0 }, week: 1, votes: {}, myVote: null, clans: 3 } }, { settings: { enabledTopics: [], yearBand: 5, enabledTables: [], fightsPerDay: 6, season: 2 }, ...s.extra }));
+    const shown = (s: typeof box) => structuredClone(publicState(s, DEFAULT_PRACTICAL_SETTINGS, { news: [] }, { settings: { enabledTopics: [], yearBand: 5, enabledTables: [], fightsPerDay: 6, season: 2 }, ...s.extra }));
     const server: ClanServer = {
       async send(action: Action): Promise<ServerReply> {
-        if (action.type === 'chestGive') box.extra = { fame: 12, achievements: ['cq-first-win', 'cq-village'] };
+        if (action.type === 'upgrade') box.extra = { fame: 12, achievements: ['cq-first-win', 'cq-village'] };
         return { ok: true, replayed: false, seed: SEED, state: shown(box), result: { type: 'load' } };
       },
     };
@@ -125,8 +125,12 @@ describe('achievements from the server', () => {
     expect(screen.getByText(/Fame:/).textContent).toMatch(/Fame:\s*7\s*\(season 2\)/);
     expect(btn(/Achievements \(1 of 8\)/)).toBeInTheDocument();
     // Something happens on the server that earns one more.
-    await u.click(btn('The Village'));
-    await u.click(btn('Give 10'));
+    await u.click(btn('My Village'));
+    await u.click(btn(/^Upgrade Barracks/));
+    await u.click(btn('Show me how'));
+    await u.click(btn('Next question'));
+    await u.click(btn('Show me how'));
+    await u.click(btn(/^Upgrade for/));
     expect(await screen.findByText(/New achievement!/)).toBeInTheDocument();
     expect(screen.getByText(/Village builders/)).toBeInTheDocument();
   });

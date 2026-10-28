@@ -187,7 +187,7 @@ select is(public.points_total(pg_temp.id('c')), 20, 'each achievement is worth 1
 select is(public.clan_extras(pg_temp.id('c')) -> 'achievements', '["cq-buildings-5","cq-cries-50"]'::jsonb, 'the server is handed the ids earned');
 select is(public.clan_extras(pg_temp.id('c')) ->> 'fame', '0', '... and the fame');
 
--- ---- The class village rewards everyone who voted ----
+-- ---- The class village rewards everyone who voted (clan_village_close stays, unused; the midnight job no longer calls it) ----
 create function pg_temp.monday() returns integer language sql as $$ select public.clan_nz_week() * 7 - 3 $$;
 update public.clan_villages set chest = 1000 where id = 1;
 update public.clans set fame = 0;
@@ -196,8 +196,9 @@ delete from public.achievements where achievement = 'cq-village';
 insert into public.clan_votes (village_id, week, player, kind) values
   (1, public.clan_nz_week(), pg_temp.id('a'), 'smithy'), (1, public.clan_nz_week(), pg_temp.id('b'), 'church');
 select public.clan_nightly(pg_temp.monday() + 6);
-select is((public.clan_nightly(pg_temp.monday() + 7) ->> 'villagesClosed')::integer, 1, 'the week closes');
-select is((select levels ->> 'smithy' from public.clan_villages where id = 1), '1', '... and the Smithy was built');
+select is((public.clan_nightly(pg_temp.monday() + 7) ->> 'villagesClosed')::integer, 0, 'the midnight job closes no weeks any more');
+select public.clan_village_close(1, public.clan_nz_week(), current_date);
+select is((select levels ->> 'smithy' from public.clan_villages where id = 1), '1', 'closing the week by hand builds the Smithy');
 select is(pg_temp.fame('a'), 10, 'a pupil who voted for it gets 10 fame');
 select is(pg_temp.fame('b'), 10, '... and so does one who voted for something else (they took part)');
 select is(pg_temp.fame('c'), 0, 'a pupil who did not vote gets nothing');
@@ -211,7 +212,7 @@ select is(pg_temp.fame('a'), 10, 'later nights do not pay the same week again');
 select is(pg_temp.pts('a'), 5, '... in points either');
 update public.clan_villages set chest = 10 where id = 1;
 insert into public.clan_votes (village_id, week, player, kind) values (1, public.clan_nz_week() + 1, pg_temp.id('a'), 'church');
-select public.clan_nightly(pg_temp.monday() + 14);
+select public.clan_village_close(1, public.clan_nz_week() + 1, current_date);
 select is(pg_temp.fame('a'), 10, 'a chest too small to build pays nothing');
 
 -- ---- The scoreboard ----
