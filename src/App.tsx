@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { HashRouter, Route, Routes } from 'react-router';
+import { HashRouter, Navigate, Route, Routes } from 'react-router';
 import { AuthProvider } from './auth/AuthContext';
 import { RequireAuth } from './auth/RequireAuth';
 import { Layout } from './components/Layout';
@@ -19,9 +19,13 @@ import { PowerGamePage } from './pages/PowerGamePage';
 import { powerClash } from './games/power-clash';
 import { dragonMaths } from './games/lord';
 import { ClassWarp } from './pages/ClassWarp';
-import { MyClasses } from './pages/MyClasses';
+import { ClassSetup } from './pages/MyClasses';
 import { clanQuest } from './games/clans/game';
-import { Teacher } from './pages/Teacher';
+import { TeacherStudents } from './teacher/Students';
+import { StudentPage } from './teacher/StudentPage';
+import { TeacherGames } from './teacher/Games';
+import { TeacherAdmin, TeacherEntry, TeacherMaths, TeacherShell } from './teacher/TeacherShell';
+import { Today } from './teacher/Today';
 import { useSkipRuleSync } from './data/questionSkips';
 import { SoundProvider } from './sound';
 import { trainingOn } from './training/switch';
@@ -35,6 +39,44 @@ const SetFocus = lazy(() => import('./pages/SetFocus'));
 const SkillMap = lazy(() => import('./pages/SkillMap'));
 // So does the warm-up that finds a student's starting place.
 const Placement = lazy(() => import('./pages/Placement'));
+// The skipped-questions tables, on the teacher's Maths tab.
+const QuestionSkipsPanel = lazy(() => import('./pages/TeacherQuestionSkips').then((m) => ({ default: m.QuestionSkipsPanel })));
+
+const loading = <div className="loading" role="status">Loading…</div>;
+
+/**
+ * The teacher area (src/teacher/TeacherShell.tsx): the class is in the address, and every page shares one header. The old
+ * addresses (/teacher, /classes, /focus?class=, /skills?class=) still work: they open the remembered class on the right tab.
+ */
+export function teacherRoutes() {
+  return (
+    <>
+      <Route path="teacher" element={<TeacherEntry />} />
+      <Route path="classes" element={<TeacherEntry section="setup" />} />
+      <Route path="focus" element={<TeacherEntry section="maths" />} />
+      <Route path="skills" element={<TeacherEntry section="maths/skills" />} />
+      <Route path="teacher/admin" element={<TeacherShell />}>
+        <Route index element={<TeacherAdmin />} />
+      </Route>
+      <Route path="teacher/:classId" element={<TeacherShell />}>
+        <Route index element={<Today />} />
+        <Route path="students" element={<TeacherStudents />} />
+        <Route path="students/:studentId" element={<StudentPage />} />
+        <Route path="maths" element={<TeacherMaths />}>
+          <Route index element={<Suspense fallback={loading}><SetFocus /></Suspense>} />
+          <Route path="skills" element={<Suspense fallback={loading}><SkillMap /></Suspense>} />
+          <Route path="skips" element={<Suspense fallback={loading}><QuestionSkipsPanel /></Suspense>} />
+        </Route>
+        <Route path="games" element={<TeacherGames />}>
+          {/* A game's settings: a drawer over the table on a wide screen, its own page on a narrow one. */}
+          <Route path=":gameId" element={null} />
+        </Route>
+        <Route path="setup" element={<ClassSetup />} />
+        <Route path="*" element={<Navigate to=".." relative="path" replace />} />
+      </Route>
+    </>
+  );
+}
 
 /** All the pages. Links look like /#/chess so GitHub Pages needs no extra setup. */
 export function AppRoutes() {
@@ -77,24 +119,7 @@ export function AppRoutes() {
             />
           )}
           <Route path="points" element={<HowPoints />} />
-          <Route path="teacher" element={<Teacher />} />
-          <Route path="classes" element={<MyClasses />} />
-          <Route
-            path="focus"
-            element={
-              <Suspense fallback={<div className="loading" role="status">Loading…</div>}>
-                <SetFocus />
-              </Suspense>
-            }
-          />
-          <Route
-            path="skills"
-            element={
-              <Suspense fallback={<div className="loading" role="status">Loading…</div>}>
-                <SkillMap />
-              </Suspense>
-            }
-          />
+          {teacherRoutes()}
           <Route path="warp" element={<ClassWarp />} />
           <Route
             path="placement"

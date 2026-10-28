@@ -1,10 +1,11 @@
 import { lazy } from 'react';
+import { saveKingdomEnabled } from '../../data/kingdom';
 import type { GameDefinition } from '../types';
 import { useKingdomEnabled } from './switch';
+import { KINGDOM_ABOUT, kingdomSummary, useKingdomClassSwitch } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const KingdomPlay = lazy(() => import('./KingdomPlay').then((m) => ({ default: m.KingdomPlay })));
-const KingdomTeacherPanels = lazy(() => import('../../pages/TeacherKingdom').then((m) => ({ default: m.KingdomTeacherPanel })));
 
 /** A golden crown over a sheaf of wheat. */
 function CrownIcon({ size = 64 }: { size?: number }) {
@@ -42,5 +43,10 @@ export const kingdomKeeper: GameDefinition = {
   noBots: true,
   group: 'complex-maths',
   useTeacherSwitch: useKingdomEnabled,
-  TeacherPanels: KingdomTeacherPanels,
+  // The teacher's Games table: the on/off switch in the row (the game and its points behind its "?"), "Follows focus" for its
+  // maths, and nothing to open.
+  teacher: {
+    switch: { useValue: useKingdomClassSwitch, save: (on, classId) => saveKingdomEnabled(on, classId), about: KINGDOM_ABOUT },
+    useSummary: kingdomSummary,
+  },
 };

@@ -1,6 +1,7 @@
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { BotLevel } from '../../shared/botGame';
 import type { FriendSession } from '../multiplayer/useFriendGame';
+import type { MathsSwitch } from '../../shared/space/mathsSwitch';
 
 export type { BotLevel };
 
@@ -40,10 +41,45 @@ export interface GameDefinition {
    * loading) hides it. Leave it out for a game that is always on. The dashboard calls it for every game in GAMES.
    */
   useTeacherSwitch?: () => boolean | null;
-  /** The game's panels on the Teacher page (its switch, settings, class views). Make it lazy so the page stays quick. */
-  TeacherPanels?: ComponentType;
-  /** The game's part of one student's panel on the Teacher page. Lazy too. */
+  /** The game on the teacher's Games table and student page (docs/TEACHER-VIEW-PLAN.md, section 6). */
+  teacher?: TeacherContract;
+  /** Season resets for the "Seasons and end of year" part at the bottom of the Teacher page, away from the everyday switches. Lazy too. */
+  SeasonPanels?: ComponentType;
+}
+
+/** A class's value as a teacher control needs it: null while loading, and whether it couldn't be read. */
+export interface Loaded<T> {
+  value: T | null;
+  failed: boolean;
+}
+
+/**
+ * How a game plugs into the teacher area. The hub draws the row and the drawer; the game's own files say what is in them. Every
+ * part is given the class from the teacher header. The `use…` parts are React hooks, called on every Games table row, so keep
+ * them light (one request); `Settings` and `StudentPanel` should be lazy.
+ */
+export interface TeacherContract {
+  /** The on/off switch for the class (the On column). Leave it out for a game that is always on. */
+  switch?: {
+    useValue(classId: string): Loaded<boolean>;
+    save(on: boolean, classId: string): Promise<void>;
+    /** One line on what On means, behind the switch's "?". May be an element that loads what it says (Dragon Maths). */
+    about?: ReactNode;
+  };
+  /** The 3-way maths switch for the class (the Maths column). */
+  maths?: {
+    useValue(classId: string): Loaded<MathsSwitch>;
+    save(mode: MathsSwitch, classId: string): Promise<void>;
+    about?: string;
+  };
+  /** One line for the Maths column when there is no maths switch ("4 of 6 topics"). Null while loading. */
+  useSummary?(classId: string): string | null;
+  /** The drawer (or, on a narrow screen, the sub-page): the game's settings and class report for this class. Lazy. */
+  Settings?: ComponentType<{ classId: string }>;
+  /** The student page, Games section. Lazy, loaded only when opened. */
   StudentPanel?: ComponentType<{ student: string }>;
+  /** One line for the student's folded Games row ("14 of 30 stars"), or null for nothing to say. */
+  studentSummary?(student: string): Promise<string | null>;
 }
 
 export type DashboardGroup = 'no-maths' | 'easy-maths' | 'complex-maths';

@@ -183,7 +183,11 @@ export async function fetchClanMathsSettings(classId?: string | null): Promise<C
   };
 }
 
-/** Saves the maths settings (any of year band, topics, times tables, fights a day). Pupils get them next time they open the game; a fight already open keeps its own. */
+/**
+ * Saves some of the maths settings (any of year band, topics, times tables, fights a day). The server changes only the ones
+ * sent and keeps the rest, so a save never sends an old value back. Pupils get them next time they open the game; a fight
+ * already open keeps its own.
+ */
 export async function saveClanMathsSettings(
   settings: Partial<Pick<ClanMathsSettings, 'yearBand' | 'enabledTopics' | 'enabledTables' | 'fightsPerDay'>>,
   classId?: string | null,
@@ -219,9 +223,12 @@ export interface ClanMathsStudent {
   kinds: MathsKind[];
 }
 
-export async function fetchClanMathsClass(): Promise<ClanMathsClass> {
-  const { data, error } = await supabase.rpc('teacher_clan_maths_class');
-  if (error || !data) throw new FriendlyError('We couldn’t load the Clan Quest maths records.');
+/** Clan Quest's maths report for one class, for a teacher who teaches it (migration 20261028000500). */
+export async function fetchClassClanMaths(classId: string): Promise<ClanMathsClass> {
+  const { data, error } = await supabase.rpc('teacher_clan_maths_class', { target_class: classId });
+  if (error || !data) {
+    throw new FriendlyError(error?.code === '22023' && error.message ? error.message : 'We couldn’t load the Clan Quest maths records for this class.');
+  }
   return data as ClanMathsClass;
 }
 

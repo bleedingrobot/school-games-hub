@@ -211,9 +211,11 @@ export async function loadBoard(course: string, mode: ClockMode, maths = false):
 
 // ---------------------------------------------------------------- maths (stage M.6)
 
-/** What the teacher allows for Marble Rush maths in a class. If it can't be read, maths stays off. */
+/** What the teacher allows for Marble Rush maths in a class. If a student's game can't read it, maths stays off. */
 export async function fetchMarbleSwitches(classId?: string | null): Promise<{ maths: MathsSwitch; rescue: boolean }> {
   const row = await readSettings(['marble_maths', 'marble_rescue'], classId);
+  // A teacher reading a named class is told when it fails, so the Games table never shows Off for a setting it couldn't read.
+  if (!row && classId) throw new FriendlyError('We couldn’t load this setting.');
   return { maths: parseMathsSwitch(row?.marble_maths), rescue: row ? row.marble_rescue !== false : true };
 }
 

@@ -1,10 +1,12 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
+import { saveLordEnabled } from '../../data/lord';
 import { useLordEnabled } from './switch';
+import { LORD_ABOUT, useLordClassSwitch, useLordSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const LordPlay = lazy(() => import('./LordPlay').then((m) => ({ default: m.LordPlay })));
-const LordTeacherPanels = lazy(() => import('../../pages/TeacherLord').then((m) => ({ default: m.LordTeacherPanels })));
+const LordTeacherSettings = lazy(() => import('../../pages/TeacherLord').then((m) => ({ default: m.LordTeacherSettings })));
 const LordStudentPanel = lazy(() => import('../../pages/TeacherLord').then((m) => ({ default: m.LordStudentPanel })));
 
 /** A red dragon in profile, wings up, breathing fire. Drawn in its own colours so it stands out on the card. */
@@ -56,6 +58,13 @@ export const dragonMaths: GameDefinition = {
   noBots: true,
   group: 'complex-maths',
   useTeacherSwitch: useLordEnabled,
-  TeacherPanels: LordTeacherPanels,
-  StudentPanel: LordStudentPanel,
+  // The teacher's Games table: the on/off switch in the row, where the season is as its summary, and the school's season
+  // box, forest fights, the topics and the class report in its Settings.
+  teacher: {
+    switch: { useValue: useLordClassSwitch, save: (on, classId) => saveLordEnabled(on, classId), about: LORD_ABOUT },
+    useSummary: useLordSummary,
+    Settings: LordTeacherSettings,
+    StudentPanel: LordStudentPanel,
+    studentSummary: (student) => import('../../pages/TeacherLord').then((m) => m.lordStudentSummary(student)),
+  },
 };

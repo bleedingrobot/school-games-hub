@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { themeOf } from '../avatar/avatarParts';
+import { WaitingCount, WaitingToJoinProvider } from '../teacher/WaitingToJoin';
 import { pageTheme, ThemeTrialProvider, useThemeTrial } from '../theme/hubTheme';
 import { trainingOn } from '../training/switch';
 import { CrashScreen } from './CrashScreen';
@@ -15,9 +16,12 @@ const NAV = [
 ];
 
 export function Layout() {
+  const { profile } = useAuth();
   return (
     <ThemeTrialProvider>
-      <ThemedLayout />
+      <WaitingToJoinProvider teacher={profile?.role === 'teacher'}>
+        <ThemedLayout />
+      </WaitingToJoinProvider>
     </ThemeTrialProvider>
   );
 }
@@ -43,8 +47,10 @@ function ThemedLayout() {
             ...(trainingOn() ? [{ to: '/training', label: 'Training', emoji: '🧮' }] : []),
             ...(profile?.role === 'teacher' ? [{ to: '/teacher', label: 'Teacher', emoji: '🧑‍🏫' }] : []),
           ].map((item) => (
-            <NavLink key={item.to} to={item.to} end className="topnav__link">
+            // The Teacher link stays lit on every teacher page (/teacher/:classId/…).
+            <NavLink key={item.to} to={item.to} end={item.to !== '/teacher'} className="topnav__link">
               <span aria-hidden="true">{item.emoji}</span> {item.label}
+              {item.to === '/teacher' && <WaitingCount />}
             </NavLink>
           ))}
         </nav>

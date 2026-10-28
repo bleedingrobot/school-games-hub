@@ -1,0 +1,231 @@
+/* The Students tab and a student's page (docs/TEACHER-VIEW-PLAN.md, section 4.3, stage 4). The page is coloured, so loose
+   text on it is white; everything else sits in cards. */
+
+/* Which list, and Hide real names: a card-coloured bar above the list. */
+.students-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 20px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--card);
+}
+.students-show {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--tint);
+}
+.students-show__choice {
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.students-show__choice[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.15);
+}
+.students-show__choice:focus-visible {
+  outline: 3px solid var(--brand-dark);
+  outline-offset: -3px;
+}
+.students-hide {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--ink);
+  font-weight: 800;
+  cursor: pointer;
+}
+.students-hide input {
+  width: 22px;
+  height: 22px;
+}
+.students__note {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+/* The roster: a real table that scrolls sideways inside its card on a phone, never the page. */
+.roster__scroll {
+  overflow-x: auto;
+}
+.roster {
+  min-width: 720px;
+}
+.roster th,
+.roster td {
+  text-align: left;
+  vertical-align: middle;
+}
+.roster thead th {
+  padding: 0;
+}
+.roster__sort {
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+.roster__sort:hover {
+  background: var(--tint-hover);
+}
+.roster tbody th {
+  white-space: nowrap;
+}
+.roster tr.is-hidden {
+  background: #ecebf2;
+}
+.roster__student {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+/* A student's page */
+.student-page {
+  display: grid;
+  gap: 20px;
+}
+.student-page__back {
+  margin: 0;
+  font-weight: 800;
+}
+.student-page__back a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #fff;
+}
+.teacher .panel.student-page__head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.student-page__name {
+  margin: 0;
+  font-size: 1.6rem;
+  color: var(--ink);
+}
+.student-page__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.student-page__facts-list {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 16px;
+  margin: 0;
+}
+.student-page__facts-list dt {
+  font-weight: 800;
+}
+.student-page__facts-list dd {
+  margin: 0;
+}
+
+/* One folded line per game; the game's own panel loads when it opens. */
+.game-lines {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.game-line {
+  border-radius: 16px;
+  background: var(--tint);
+}
+.game-line__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-height: 44px;
+  padding: 6px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+}
+.game-line__summary:hover {
+  background: var(--tint-hover);
+}
+.game-line__name {
+  font-weight: 800;
+}
+.game-line__what {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.game-line__body {
+  display: grid;
+  gap: 12px;
+  padding: 4px 14px 14px;
+}
+
+/* Manage: everyday changes first; the one that can't be undone sits apart, in red. */
+.student-manage__move {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px 12px;
+}
+.student-manage__move select {
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--surface);
+}
+.student-manage__danger {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  padding: 14px;
+  border: 2px solid var(--lost);
+  border-radius: 18px;
+}
+.student-manage__danger > .chess-confirm {
+  justify-self: stretch;
+}
+.student-manage__danger-title {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+
+@media (max-width: 520px) {
+  .student-page__head {
+    flex-wrap: wrap;
+  }
+}
+
+/* "… has been deleted.", after coming back from a student's page. */
+.students__notice {
+  font-weight: 800;
+}

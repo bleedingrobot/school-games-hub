@@ -1,75 +1,18 @@
 import { useEffect, useState } from 'react';
 import { BOND_SETS } from '../../shared/bond-match/bonds';
-import { fetchBondMatchEnabled, fetchStudentBondMatch, saveBondMatchEnabled, type StudentBondMatch } from '../data/bondMatch';
-import { FriendlyError } from '../data/profile';
-import { useTeacherClass } from '../teacher/TeacherClass';
+import { fetchStudentBondMatch, type StudentBondMatch } from '../data/bondMatch';
 import './teacher-bond-match.css';
 
 const SIZES = ['small', 'medium', 'large'] as const;
-const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
-
-/** Bond Match on the teacher page: the switch for the picked class. */
-export function BondMatchTeacherPanels() {
-  const { classId, ready } = useTeacherClass();
-  const [on, setOn] = useState<boolean | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!ready) return;
-    let current = true;
-    setOn(null);
-    setStatus(null);
-    fetchBondMatchEnabled(classId)
-      .then((v) => current && setOn(v))
-      .catch((error) => current && setStatus(errorText(error)));
-    return () => {
-      current = false;
-    };
-  }, [ready, classId]);
-
-  async function change(next: boolean) {
-    const before = on;
-    setOn(next);
-    setStatus('Saving…');
-    try {
-      await saveBondMatchEnabled(next, classId);
-      setStatus(next ? 'Bond Match is on.' : 'Bond Match is off.');
-    } catch (error) {
-      setOn(before);
-      setStatus(errorText(error));
-    }
-  }
-
-  return (
-    <section className="panel gk-teacher teacher__switch" aria-labelledby="bm-settings-title">
-      <h2 id="bm-settings-title" className="panel__title">
-        Bond Match
-      </h2>
-      <p>
-        A memory card game where two cards match when they make a number together (to 10, 100, 1, and more). Alone, with a
-        partner on one Chromebook, or against the computer. Switched off, it is hidden from students and nothing is saved.
-      </p>
-      {on !== null && (
-        <>
-          <p>{on ? 'On: students can play it from the dashboard.' : 'Off: students can’t see it yet.'}</p>
-          {on ? (
-            <button type="button" className="button button--danger" onClick={() => void change(false)}>
-              Switch Bond Match off
-            </button>
-          ) : (
-            <button type="button" className="button button--primary" onClick={() => void change(true)}>
-              Switch Bond Match on
-            </button>
-          )}
-        </>
-      )}
-      <p role="status" className="teacher__status">
-        {status}
-      </p>
-    </section>
-  );
-}
 const SIZE_LETTER = { small: 'S', medium: 'M', large: 'L' } as const;
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/** One line for the student's folded Games row: "5 games, 6 stars", or null before their first game. */
+export async function bondMatchSummary(student: string): Promise<string | null> {
+  const data = await fetchStudentBondMatch(student);
+  if (data.games === 0) return null;
+  return `${plural(data.games, 'game')}, ${plural(data.bests.reduce((n, b) => n + b.stars, 0), 'star')}`;
+}
 
 /**
  * A student's Bond Match stars, per bond set and board size. Shows nothing at all until the student has played

@@ -56,9 +56,9 @@ select set_eq($$
   select p.proname::text from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public' and has_function_privilege('authenticated', p.oid, 'execute')
 $$, array[
-  'archery_here', 'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'clan_scoreboard', 'clear_my_maths_focus',
+  'admin_set_lord_holiday', 'admin_set_lord_season', 'archery_here', 'can_manage_student', 'cancel_warp_request', 'card_lobby_games', 'choose_my_name', 'clan_scoreboard', 'clear_my_maths_focus',
   'gem_keep_leaderboard', 'is_player_in', 'is_school_admin', 'is_school_email', 'is_school_user', 'is_site_owner',
-  'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'log_questions', 'lord_hall', 'lord_news', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
+  'is_teacher', 'is_valid_avatar', 'leaderboard', 'lobby', 'lobby_games', 'log_questions', 'lord_hall', 'lord_news', 'lord_school_season', 'lord_warriors', 'marble_board', 'marble_ghost', 'mine_board',
   'monsters_leaderboard', 'my_bond_match', 'my_bot_game_stats', 'my_card_game_stats', 'my_class', 'my_friend_game_stats',
   'my_gem_keep', 'my_home_page', 'my_ladder', 'my_lord', 'my_marble', 'my_maths_focus', 'my_mine', 'my_monsters', 'my_moves_left', 'my_power_game_stats', 'my_progress', 'my_school', 'my_school_info',
   'my_settings_id', 'my_space_game_stats', 'my_training', 'my_training_lock', 'owner_add_school', 'owner_add_school_domain',
@@ -66,7 +66,7 @@ $$, array[
   'save_my_avatar', 'school_set_admin', 'school_set_default_class', 'server_time', 'set_my_maths_focus', 'space_lobby_games',
   'teacher_add_co_teacher', 'teacher_add_to_class', 'teacher_answer_warp', 'teacher_archive_class', 'teacher_bond_match_student',
   'teacher_clan_info', 'teacher_clan_maths_class', 'teacher_clan_maths_student', 'teacher_clans_new_season',
-  'teacher_class_detail', 'teacher_class_events', 'teacher_class_settings', 'teacher_class_skill_map', 'teacher_classes', 'teacher_create_class', 'teacher_create_group',
+  'teacher_class_detail', 'teacher_class_events', 'teacher_class_overview', 'teacher_class_settings', 'teacher_class_skill_map', 'teacher_classes', 'teacher_create_class', 'teacher_create_group',
   'teacher_create_village', 'teacher_delete_group', 'teacher_delete_student', 'teacher_delete_village', 'teacher_end_maths_focus', 'teacher_extend_maths_focus',
   'teacher_gem_keep_class', 'teacher_gem_keep_student', 'teacher_lord_class', 'teacher_lord_student',
   'teacher_maths_focus_history', 'teacher_maths_focus_results', 'teacher_maths_focuses', 'teacher_monster_class', 'teacher_monster_student', 'teacher_move_pupil', 'teacher_move_student',
@@ -75,7 +75,7 @@ $$, array[
   'teacher_school_teachers', 'teacher_set_clan_maths', 'teacher_set_clan_raids', 'teacher_set_clan_typed_names', 'teacher_set_clans',
   'teacher_set_gem_keep', 'teacher_set_group_member', 'teacher_set_kingdom', 'teacher_set_maths_auto', 'teacher_set_hidden', 'teacher_set_lord', 'teacher_set_marble_maths', 'teacher_set_marble_rescue', 'teacher_set_maths_focus',
   'teacher_archery_summary', 'teacher_set_archery', 'teacher_set_archery_duels', 'teacher_set_bond_match', 'teacher_set_mine', 'teacher_set_mine_maths', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_question_skips', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_students_choose_focus',
-  'teacher_set_space_reactions', 'teacher_set_training_first', 'teacher_set_warp_mode', 'teacher_student_detail', 'teacher_student_ladder', 'teacher_students',
+  'teacher_set_space_reactions', 'teacher_set_training_first', 'teacher_set_warp_mode', 'teacher_student_card', 'teacher_student_detail', 'teacher_student_ladder', 'teacher_students',
   'teacher_training_student', 'teacher_unassigned_students', 'teacher_update_class', 'teacher_villages',
   'teacher_warp_requests', 'warp_join', 'warp_preview'
 ], 'signed-in users can call only this list of functions (each checks who is asking)');

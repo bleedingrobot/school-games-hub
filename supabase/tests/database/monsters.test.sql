@@ -14,6 +14,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000d', 'dan@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+-- The school's Everyone class, which every pupil here is in (the class reports need a class since 20261028000600).
+select set_config('test.everyone', (select class_id::text from public.class_members where student_id = '00000000-0000-0000-0000-00000000000a'), true);
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -57,7 +59,7 @@ select throws_ok($$ select * from public.monster_refusals $$, '42501', null, 'st
 select throws_ok($$ insert into public.monster_saves (player, world, version, last_save_id, client_at)
   values (pg_temp.id('a'), '{}', 1, gen_random_uuid(), 0) $$, '42501', null, 'students cannot write a save');
 select throws_ok($$ update public.monster_saves set owned_count = 54 $$, '42501', null, 'students cannot change a save');
-select throws_ok($$ select public.teacher_monster_class() $$, '42501', null, 'students cannot see the class view');
+select throws_ok($$ select public.teacher_monster_class(current_setting('test.everyone')::uuid) $$, '42501', null, 'students cannot see the class view');
 select throws_ok($$ select public.teacher_monster_student(pg_temp.id('b')) $$, '42501', null,
   'students cannot see another student''s Maths Monsters');
 select throws_ok($$ select public.teacher_set_monsters('{"enabled":true,"topics":["add-sub"]}') $$, '42501', null,
@@ -198,10 +200,10 @@ select public.record_fact_answers(pg_temp.id('c'), 'add-sub', gen_random_uuid(),
   '[{"key":"add:7+8","correct":false,"ms":4000,"at":1792101600000},{"key":"add:7+8","correct":false,"ms":4000,"at":1792101600001}]', 5000, 2, 4);
 select public.record_monster_refusal(pg_temp.id('c'), 'badge', 3);
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select is((public.teacher_monster_class() ->> 'players')::integer, 16, 'the class view counts the players (16)');
-select is(public.teacher_monster_class() -> 'hardest' -> 0 ->> 'key', 'add:7+8', 'the hardest question is the one most often wrong');
-select is(public.teacher_monster_class() -> 'refusals' -> 0 ->> 'reason', 'badge', 'refused saves are listed for the teacher');
-select is(jsonb_array_length(public.teacher_monster_class() -> 'topics'), 6, 'there is a line for each topic');
+select is((public.teacher_monster_class(current_setting('test.everyone')::uuid) ->> 'players')::integer, 16, 'the class view counts the players (16)');
+select is(public.teacher_monster_class(current_setting('test.everyone')::uuid) -> 'hardest' -> 0 ->> 'key', 'add:7+8', 'the hardest question is the one most often wrong');
+select is(public.teacher_monster_class(current_setting('test.everyone')::uuid) -> 'refusals' -> 0 ->> 'reason', 'badge', 'refused saves are listed for the teacher');
+select is(jsonb_array_length(public.teacher_monster_class(current_setting('test.everyone')::uuid) -> 'topics'), 6, 'there is a line for each topic');
 select is((public.teacher_monster_student(pg_temp.id('d')) -> 'save' ->> 'owned')::integer, 54, 'a student''s game at a glance');
 select is((public.teacher_monster_student(pg_temp.id('c')) ->> 'refused')::integer, 1, '... and how many of their saves were refused lately');
 select pg_temp.reset();

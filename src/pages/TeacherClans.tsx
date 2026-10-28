@@ -1,18 +1,20 @@
 /**
- * Clan Quest on the teacher page: the switch for the class, and on each pupil's page their clan at a glance with a
- * button to reset it. Loaded only when the teacher page opens.
+ * Clan Quest on the teacher pages. In the Games table's drawer, for the header's class: made-up hero names, the maths
+ * settings, raids on classmates and the class report; then the village groups, which are for the whole school and any teacher
+ * can manage. Under Students: the fame season (with the other seasons) and each pupil's clan, with a button to reset it.
+ * Loaded only when opened. The on/off switch is in the Games table row (src/games/clans/teacher.ts).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   createVillage,
   deleteVillage,
   fetchClanInfo,
-  fetchClanMathsClass,
   fetchClanMathsSettings,
   fetchClanMathsStudent,
   fetchClanRaidsEnabled,
   fetchClanTypedNames,
   fetchClansEnabled,
+  fetchClassClanMaths,
   fetchVillages,
   kindLabel,
   listHeroNames,
@@ -22,7 +24,6 @@ import {
   saveClanMathsSettings,
   saveClanRaidsEnabled,
   saveClanTypedNames,
-  saveClansEnabled,
   startClansNewSeason,
   type ClanInfo,
   type ClanMathsClass,
@@ -39,361 +40,247 @@ import {
   type PracticalTopic,
   type YearBand,
 } from "../../shared/maths/practical";
+import { useAuth } from "../auth/AuthContext";
 import { FriendlyError } from "../data/profile";
-import { useTeacherClass } from "../teacher/TeacherClass";
+import {
+  SettingChips,
+  SettingChoice,
+  SettingNumber,
+  SettingToggle,
+  useSetting,
+} from "../teacher/Settings";
 import { whenPlayed } from "./Dashboard";
 import "./teacher-gem-keep.css";
+import "./teacher-clans.css";
 
 const errorText = (error: unknown) =>
   error instanceof FriendlyError
     ? error.message
     : "Something went wrong. Please try again.";
 
-export function ClansTeacherPanels() {
-  const { classId, ready } = useTeacherClass();
-  const [enabled, setEnabled] = useState<boolean | null>(null);
-  const [typedNames, setTypedNames] = useState<boolean | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!ready) return;
-    setEnabled(null);
-    setTypedNames(null);
-    setStatus(null);
-    fetchClansEnabled(classId).then(setEnabled, (error) =>
-      setStatus(errorText(error)),
-    );
-    fetchClanTypedNames(classId).then(setTypedNames, (error) =>
-      setStatus(errorText(error)),
-    );
-  }, [ready, classId]);
-
-  async function saveTypedNames(next: boolean, message: string) {
-    setStatus("Saving…");
-    try {
-      setTypedNames(await saveClanTypedNames(next, classId));
-      setStatus(message);
-    } catch (error) {
-      setStatus(errorText(error));
-    }
-  }
-
-  async function save(next: boolean, message: string) {
-    setStatus("Saving…");
-    try {
-      setEnabled(await saveClansEnabled(next, classId));
-      setStatus(message);
-    } catch (error) {
-      setStatus(errorText(error));
-    }
-  }
-
+/**
+ * The drawer on the Games table (docs/TEACHER-VIEW-PLAN.md, 4.5): the class's settings and report, then the villages (whole
+ * school).
+ */
+export function ClansTeacherSettings({ classId }: { classId: string }) {
   return (
     <>
-      <section
-        className="panel gk-teacher teacher__switch"
-        aria-labelledby="cq-settings-title"
-      >
-        <h2 id="cq-settings-title" className="panel__title">
-          Clan Quest
-        </h2>
-        <p>
-          Pupils make a clan of four, fight in the Mines (maths helps), shop,
-          train and build an empire. Each pupil has their own clan, kept on the
-          school’s server. Switched off, the card is hidden from the pupils and
-          nothing can be played; you can still open it yourself to try it.
-          Everyone’s mine fights come back at midnight.
-        </p>
-        {enabled !== null && (
-          <>
-            <p>
-              {enabled
-                ? "On: pupils can play it."
-                : "Off: pupils can’t see it yet."}
-            </p>
-            {enabled ? (
-              <button
-                type="button"
-                className="button button--danger"
-                onClick={() =>
-                  void save(
-                    false,
-                    "Clan Quest is off. Clans are kept for when you switch it on.",
-                  )
-                }
-              >
-                Switch Clan Quest off
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="button button--primary"
-                onClick={() =>
-                  void save(true, "Clan Quest is on. Pupils will see the card.")
-                }
-              >
-                Switch Clan Quest on
-              </button>
-            )}
-          </>
-        )}
-        {typedNames !== null && (
-          <p>
-            <strong>Made-up hero names:</strong>{" "}
-            {typedNames
-              ? "On. Pupils can pick a name from the list or type their own (letters only, up to 12, rude words refused). Only the pupil and you see hero names."
-              : "Off. Pupils pick hero names from a list."}{" "}
-            {typedNames ? (
-              <button
-                type="button"
-                className="button button--danger"
-                onClick={() =>
-                  void saveTypedNames(
-                    false,
-                    "Made-up hero names are off. Names already made are kept.",
-                  )
-                }
-              >
-                Switch made-up names off
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="button button--primary"
-                onClick={() =>
-                  void saveTypedNames(
-                    true,
-                    "Made-up hero names are on for new clans.",
-                  )
-                }
-              >
-                Switch made-up names on
-              </button>
-            )}
-          </p>
-        )}
-        {status && (
-          <p role="status" className="gk-teacher__status">
-            {status}
-          </p>
-        )}
-      </section>
-      <ClansMathsPanel />
+      <ClansSettingsPanel classId={classId} />
+      <ClansClassReport classId={classId} />
       <ClansVillagePanel />
-      <ClansSeasonPanel />
     </>
   );
 }
 
-const rate = (k: MathsKind) =>
-  k.attempts > 0 ? `${Math.round((100 * k.correct) / k.attempts)}% right` : "";
+const BANDS = YEAR_BANDS.map((b) => ({ value: String(b), label: `Year ${b}` }));
+const TOPIC_CHIPS = TOPICS.map((t) => ({ value: t, label: TOPIC_LABELS[t] }));
+const TABLE_CHIPS = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: String(i + 1) }));
 
-/** What the maths in Clan Quest asks (year band, topics, times tables), how many mine fights a day, and how the school is getting on. */
-export function ClansMathsPanel() {
-  const { classId, ready } = useTeacherClass();
-  const [saved, setSaved] = useState<ClanMathsSettings | null>(null);
-  const [draft, setDraft] = useState<ClanMathsSettings | null>(null);
-  const [records, setRecords] = useState<ClanMathsClass | null>(null);
-  const [fightsText, setFightsText] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
+type MathsKey = "yearBand" | "enabledTopics" | "enabledTables" | "fightsPerDay";
 
+/** Made-up hero names, the maths settings and raids on classmates, for one class. Each saves at once. */
+function ClansSettingsPanel({ classId }: { classId: string }) {
+  const enabled = useSetting(() => fetchClansEnabled(classId), [classId]);
+  const typedNames = useSetting(() => fetchClanTypedNames(classId), [classId]);
+  const raids = useSetting(() => fetchClanRaidsEnabled(classId), [classId]);
+  const maths = useSetting(() => fetchClanMathsSettings(classId), [classId]);
+  const m = maths.value;
+  // Which topics are on decides whether the times tables show; it follows the chips once they save.
+  const [topics, setTopics] = useState<readonly PracticalTopic[] | null>(null);
+  useEffect(() => setTopics(m?.enabledTopics ?? null), [m]);
+
+  // The server keeps whatever isn't sent, so each control sends only its own setting. The saves still go one at a time, in
+  // the order they were made, so a slow one can never land after a newer one.
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
   useEffect(() => {
-    if (!ready) return;
-    setSaved(null);
-    setDraft(null);
-    setStatus(null);
-    fetchClanMathsSettings(classId).then(
-      (s) => {
-        setSaved(s);
-        setDraft(s);
-      },
-      (error) => setStatus(errorText(error)),
-    );
-    fetchClanMathsClass().then(setRecords, () => undefined);
-  }, [ready, classId]);
-
-  if (!draft) {
-    return status ? <p className="panel__empty">{status}</p> : null;
-  }
-  const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
-  const toggleTopic = (t: PracticalTopic) =>
-    setDraft({
-      ...draft,
-      enabledTopics: draft.enabledTopics.includes(t)
-        ? draft.enabledTopics.filter((x) => x !== t)
-        : TOPICS.filter((x) => x === t || draft.enabledTopics.includes(x)),
-    });
-  const toggleTable = (n: number) =>
-    setDraft({
-      ...draft,
-      enabledTables: draft.enabledTables.includes(n)
-        ? draft.enabledTables.filter((x) => x !== n)
-        : [...draft.enabledTables, n].sort((a, b) => a - b),
-    });
-
-  async function save() {
-    if (!draft) return;
-    setStatus("Saving…");
-    try {
-      await saveClanMathsSettings({
-        yearBand: draft.yearBand,
-        enabledTopics: draft.enabledTopics,
-        enabledTables: draft.enabledTables,
-        fightsPerDay: draft.fightsPerDay,
-      }, classId);
-      setSaved(draft);
-      setStatus(
-        "Saved. Pupils get these next time they open Clan Quest. A fight that is already open keeps the questions it started with.",
-      );
-    } catch (error) {
-      setStatus(errorText(error));
-    }
+    queue.current = Promise.resolve();
+  }, [classId]);
+  function saver<K extends MathsKey>(key: K) {
+    return (value: ClanMathsSettings[K]) => {
+      const run = queue.current.then(() => saveClanMathsSettings({ [key]: value }, classId));
+      queue.current = run.catch(() => undefined);
+      return run;
+    };
   }
 
   return (
-    <section
-      className="panel gk-teacher teacher__switch"
-      aria-labelledby="cq-maths-title"
-    >
-      <h2 id="cq-maths-title" className="panel__title">
-        Clan Quest maths
+    <section className="panel gk-teacher teacher__switch" aria-labelledby="cq-settings-title">
+      <h2 id="cq-settings-title" className="panel__title">
+        Clan Quest settings
       </h2>
-      <p>
-        One Battle Cry question comes before each round of a mine fight. It
-        comes from each pupil&apos;s own maths focus or place on the ladder, and
-        the answers count on the skill map, like the other maths games. The
-        quests, the shop and the village have short story questions too: the
-        settings below choose those. Wrong answers never stop anything. These
-        settings are for the whole school.
-      </p>
-      <fieldset>
-        <legend>Year band</legend>
-        {YEAR_BANDS.map((b: YearBand) => (
-          <label key={b}>
-            <input
-              type="radio"
-              name="cq-band"
-              checked={draft.yearBand === b}
-              onChange={() => setDraft({ ...draft, yearBand: b })}
-            />{" "}
-            Year {b}{" "}
-          </label>
-        ))}
-      </fieldset>
-      <fieldset>
-        <legend>Topics (leave at least one on)</legend>
-        {TOPICS.map((t) => {
-          const on = draft.enabledTopics.includes(t);
-          return (
-            <label key={t}>
-              <input
-                type="checkbox"
-                checked={on}
-                disabled={on && draft.enabledTopics.length === 1}
-                onChange={() => toggleTopic(t)}
-              />{" "}
-              {TOPIC_LABELS[t]}{" "}
-            </label>
-          );
-        })}
-      </fieldset>
-      {draft.enabledTopics.includes("times") && (
-        <fieldset>
-          <legend>Times tables for the times-tables topic</legend>
-          {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
-            const on = draft.enabledTables.includes(n);
-            return (
-              <label key={n}>
-                <input
-                  type="checkbox"
-                  checked={on}
-                  disabled={on && draft.enabledTables.length === 1}
-                  onChange={() => toggleTable(n)}
-                />{" "}
-                {n}{" "}
-              </label>
-            );
-          })}
-        </fieldset>
-      )}
-      <p>
-        <label>
-          Mine fights a day{" "}
-          <input
-            type="number"
-            min={1}
-            max={30}
-            value={fightsText ?? draft.fightsPerDay}
-            onChange={(e) => {
-              const n = Math.round(Number(e.target.value));
-              // Typing is free; the box only takes a whole number from 1 to 30 (more is made 30), and goes back to the last good one when left.
-              setFightsText(n > 30 ? "30" : e.target.value);
-              if (e.target.value !== "" && n >= 1)
-                setDraft({ ...draft, fightsPerDay: Math.min(30, n) });
-            }}
-            onBlur={() => setFightsText(null)}
-          />
-        </label>{" "}
-        <button
-          type="button"
-          className="button button--primary"
-          disabled={!dirty}
-          onClick={() => void save()}
-        >
-          Save settings
-        </button>
-      </p>
-      <p className="panel__empty">
-        There is no Practice Mode: nothing in Clan Quest is a test.
-      </p>
-      {status && (
-        <p role="status" className="gk-teacher__status">
-          {status}
+      {enabled.value === false && (
+        <p className="panel__empty">
+          Clan Quest is off for this class, so these only matter once it’s on.
         </p>
       )}
-      {records && records.players > 0 && (
-        <>
-          <h3>How the school is getting on</h3>
+      <SettingToggle
+        label="Made-up hero names"
+        about="On: pupils can pick a hero name from the list or type their own (letters only, up to 12, rude words refused). Only the pupil and you see hero names. Off: names come from the list; names already made are kept."
+        value={typedNames.value}
+        loadFailed={typedNames.failed}
+        save={async (on) => {
+          await saveClanTypedNames(on, classId);
+        }}
+      />
+      <h3>Maths</h3>
+      <p>
+        One Battle Cry question comes before each round of a mine fight, from each pupil’s own maths focus or place on the
+        ladder. The quests, the shop and the village have short story questions too: these choose them. Wrong answers never stop
+        anything. Pupils get changes the next time they open Clan Quest; a fight already open keeps its questions.
+      </p>
+      <SettingChoice
+        label="Year band"
+        about="How hard the story questions are."
+        options={BANDS}
+        value={m ? String(m.yearBand) : null}
+        loadFailed={maths.failed}
+        save={(band) => saver("yearBand")(Number(band) as YearBand)}
+      />
+      <SettingChips
+        label="Topics on"
+        about="The story questions come only from topics that are on."
+        options={TOPIC_CHIPS}
+        value={m?.enabledTopics ?? null}
+        loadFailed={maths.failed}
+        save={saver("enabledTopics")}
+        onSaved={setTopics}
+      />
+      {topics?.includes("times") && (
+        <SettingChips
+          label="Times tables for the times-tables topic"
+          options={TABLE_CHIPS}
+          value={m?.enabledTables ?? null}
+          loadFailed={maths.failed}
+          save={saver("enabledTables")}
+        />
+      )}
+      <SettingNumber
+        label="Mine fights a day"
+        about="Everyone’s mine fights come back at midnight."
+        min={1}
+        max={30}
+        value={m?.fightsPerDay ?? null}
+        loadFailed={maths.failed}
+        save={saver("fightsPerDay")}
+      />
+      <p className="panel__empty">There is no Practice Mode: nothing in Clan Quest is a test.</p>
+      <h3>Raids</h3>
+      <SettingToggle
+        label="Raids on classmates"
+        about="Pupils can raid the clans of classmates in the same village group (see the villages below). Off until you turn it on."
+        value={raids.value}
+        loadFailed={raids.failed}
+        save={async (on) => {
+          await saveClanRaidsEnabled(on, classId);
+        }}
+      />
+    </section>
+  );
+}
+
+const share = (k: MathsKind) => (k.attempts > 0 ? `${Math.round((100 * k.correct) / k.attempts)}%` : "–");
+
+/** How the class is getting on with Clan Quest's story questions: no pupil names. */
+function ClansClassReport({ classId }: { classId: string }) {
+  const [data, setData] = useState<ClanMathsClass | null>(null);
+  const [failed, setFailed] = useState<string | null>(null);
+
+  useEffect(() => {
+    let current = true;
+    setData(null);
+    setFailed(null);
+    fetchClassClanMaths(classId)
+      .then((d) => current && setData(d))
+      .catch((error) => current && setFailed(errorText(error)));
+    return () => {
+      current = false;
+    };
+  }, [classId]);
+
+  return (
+    <section className="panel gk-teacher" aria-labelledby="cq-class-title">
+      <h2 id="cq-class-title" className="panel__title">
+        Clan Quest maths: this class
+      </h2>
+      {failed ? (
+        <p className="panel__empty">{failed}</p>
+      ) : !data ? (
+        <p className="panel__empty">Loading…</p>
+      ) : data.players === 0 ? (
+        <p className="panel__empty">Nobody has answered a Clan Quest question yet.</p>
+      ) : (
+        <div className="gk-teacher__class">
           <p>
-            {records.players} {records.players === 1 ? "pupil has" : "pupils have"}{" "}
-            answered Clan Quest questions. Only you can see this.
+            {data.players} {data.players === 1 ? "pupil has" : "pupils have"} answered Clan Quest questions. Only you can see
+            this.
           </p>
-          {records.hardest.length > 0 ? (
-            <>
-              <p>Questions most often wrong:</p>
-              <ul>
-                {records.hardest.map((k) => (
-                  <li key={k.key}>
-                    {kindLabel(k.key)}: {k.correct} of {k.attempts} right (
-                    {k.students} pupils)
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <p className="panel__empty">
-              Nothing has been wrong often enough to list yet.
-            </p>
-          )}
+          <div className="gk-teacher__wide" tabIndex={0} role="group" aria-label="Questions most often wrong">
+            <table className="stats-table">
+              <caption>Questions most often wrong</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Question</th>
+                  <th scope="col">Right</th>
+                  <th scope="col">Asked</th>
+                  <th scope="col">Pupils</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.hardest.length === 0 ? (
+                  <tr>
+                    <td colSpan={4}>Nothing has been wrong often enough to list yet.</td>
+                  </tr>
+                ) : (
+                  data.hardest.map((k) => (
+                    <tr key={k.key}>
+                      <th scope="row">{kindLabel(k.key)}</th>
+                      <td>{share(k)}</td>
+                      <td>{k.attempts}</td>
+                      <td>{k.students}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
           <details>
             <summary>Every kind of question</summary>
-            <ul>
-              {records.kinds.map((k) => (
-                <li key={k.key}>
-                  {kindLabel(k.key)}: {k.correct} of {k.attempts} right (
-                  {rate(k)})
-                </li>
-              ))}
-            </ul>
+            <div className="gk-teacher__wide" tabIndex={0} role="group" aria-label="Every kind of question">
+              <table className="stats-table">
+                <caption>Every kind of question</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Question</th>
+                    <th scope="col">Right</th>
+                    <th scope="col">Asked</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.kinds.map((k) => (
+                    <tr key={k.key}>
+                      <th scope="row">{kindLabel(k.key)}</th>
+                      <td>{share(k)}</td>
+                      <td>{k.attempts}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </details>
-        </>
+        </div>
       )}
     </section>
   );
 }
 
-/** A new fame season: every clan's fame goes back to 0; clans, gold, levels and achievements stay. */
+/**
+ * A new fame season: every clan's fame goes back to 0; clans, gold, levels and achievements stay. It sits with the other
+ * seasons at the bottom of the teacher page (the game's SeasonPanels). The database only touches the pupils in the classes
+ * this teacher teaches, or every pupil at the school for a school admin.
+ */
 export function ClansSeasonPanel() {
+  const { profile } = useAuth();
+  const isAdmin = profile?.school_admin === true;
   const [season, setSeason] = useState<number | null>(null);
   const [asking, setAsking] = useState(false);
   const [typed, setTyped] = useState("");
@@ -432,8 +319,11 @@ export function ClansSeasonPanel() {
       </h2>
       <p>
         It is season {season}. Fame is what the scoreboard ranks clans by. A new
-        season sets every clan’s fame back to 0 and keeps everything else. (The
-        school-wide “new points season” on this page only clears Clan Quest’s
+        season sets fame back to 0 and keeps everything else, for{" "}
+        {isAdmin
+          ? "every pupil at the school."
+          : "the pupils in the classes you teach."}{" "}
+        (The school-wide “new points season” below only clears Clan Quest’s
         points, not fame.)
       </p>
       {asking ? (
@@ -483,10 +373,11 @@ export function ClansSeasonPanel() {
   );
 }
 
-/** Raids on classmates (a switch, off until a teacher turns it on) and the village groups: who builds the village together. */
+/**
+ * The village groups: who builds a village together. They are for the whole school, and any teacher can manage them (James,
+ * 28 Oct 2026). Raids on classmates, which are per class, are in the class's settings above.
+ */
 export function ClansVillagePanel() {
-  const { classId, ready } = useTeacherClass();
-  const [raids, setRaids] = useState<boolean | null>(null);
   const [data, setData] = useState<Villages | null>(null);
   const [name, setName] = useState("");
   const [confirming, setConfirming] = useState<number | null>(null);
@@ -495,14 +386,8 @@ export function ClansVillagePanel() {
   const load = () =>
     fetchVillages().then(setData, (error) => setStatus(errorText(error)));
   useEffect(() => {
-    if (!ready) return;
-    setRaids(null);
-    fetchClanRaidsEnabled(classId).then(setRaids, (error) =>
-      setStatus(errorText(error)),
-    );
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, classId]);
+  }, []);
 
   async function run(job: () => Promise<unknown>, message: string) {
     setStatus("Saving…");
@@ -518,52 +403,21 @@ export function ClansVillagePanel() {
   const groups = data?.villages ?? [];
   return (
     <section
-      className="panel gk-teacher teacher__switch"
+      className="panel gk-teacher teacher__switch cq-teacher__villages"
       aria-labelledby="cq-village-title"
     >
       <h2 id="cq-village-title" className="panel__title">
-        Clan Quest villages
+        Clan Quest villages (whole school)
       </h2>
       <p>
         Each group of pupils builds a village together: they give gold to a
         shared chest and vote each week on a building (Training Hall, Smithy,
         Church) that helps the whole group. Pupils you have not put in a group
         are all together in “Everyone else”. Raids on classmates only happen
-        inside a group.
+        inside a group. These groups are for the whole school, and any teacher
+        can change them.
       </p>
-      {raids !== null && (
-        <p>
-          <strong>Raids on classmates:</strong> {raids ? "On." : "Off."}{" "}
-          {raids ? (
-            <button
-              type="button"
-              className="button button--danger"
-              onClick={() =>
-                void run(
-                  async () => setRaids(await saveClanRaidsEnabled(false, classId)),
-                  "Raids on classmates are off.",
-                )
-              }
-            >
-              Switch raids off
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="button button--primary"
-              onClick={() =>
-                void run(
-                  async () => setRaids(await saveClanRaidsEnabled(true, classId)),
-                  "Raids on classmates are on.",
-                )
-              }
-            >
-              Switch raids on
-            </button>
-          )}
-        </p>
-      )}
-      <h3>Groups</h3>
+      <h3>Groups (whole school)</h3>
       <ul>
         {groups.map((g) => (
           <li key={g.id}>
@@ -647,8 +501,14 @@ export function ClansVillagePanel() {
           Make a group
         </button>
       </p>
-      <h3>Who is in which group</h3>
-      <table>
+      <table className="stats-table">
+        <caption>Who is in which group (whole school)</caption>
+        <thead>
+          <tr>
+            <th scope="col">Pupil</th>
+            <th scope="col">Group</th>
+          </tr>
+        </thead>
         <tbody>
           {(data?.pupils ?? []).map((p) => (
             <tr key={p.id}>
@@ -682,6 +542,13 @@ export function ClansVillagePanel() {
       )}
     </section>
   );
+}
+
+/** One line for the student's folded Games row: "Red Banner, day 4, average level 3.5", or nothing without a clan. */
+export async function clansStudentSummary(student: string): Promise<string | null> {
+  const info = await fetchClanInfo(student);
+  if (!info) return null;
+  return `${info.name}, day ${info.day}, average level ${info.averageLevel}`;
 }
 
 export function ClansStudentPanel({ student }: { student: string }) {

@@ -3,12 +3,12 @@
  * questions each student was shown in the games and how many they closed without answering, and which kinds of question get
  * skipped most. Counted by the question box itself (src/maths/questionLog.ts), so every game is included.
  *
- * At the top, stage S.3's "Skip button" switch for the class: On, 3 per game, or Off.
+ * The class's "Skip button" switch (stage S.3: On, 3 per game, or Off) lives on Today with the other lesson controls; this
+ * page links to it.
  */
 import { useEffect, useState } from 'react';
-import { FriendlyError } from '../data/profile';
+import { Link } from 'react-router';
 import { fetchQuestionSkips, type QuestionSkips } from '../data/questionLog';
-import { fetchSkipMode, saveSkipMode } from '../data/questionSkips';
 import { SKIPS_PER_GAME, type SkipMode } from '../maths/questionLog';
 import { gameLabel } from '../games/registry';
 import { useTeacherClass } from '../teacher/TeacherClass';
@@ -53,63 +53,9 @@ export const SKIP_CHOICES: { value: SkipMode; label: string; detail: string }[] 
   },
 ];
 
-/** The class's "Skip button" switch. Teachers are never limited. */
-function SkipSwitch({ classId, ready }: { classId: string | null; ready: boolean }) {
-  const [mode, setMode] = useState<SkipMode | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!ready) return;
-    let current = true;
-    setMode(null);
-    setStatus(null);
-    fetchSkipMode(classId).then(
-      (m) => current && setMode(m),
-      () => current && setStatus('We couldn’t load this setting.'),
-    );
-    return () => {
-      current = false;
-    };
-  }, [ready, classId]);
-
-  async function change(next: SkipMode) {
-    setStatus('Saving…');
-    try {
-      await saveSkipMode(next, classId);
-      setMode(next);
-      setStatus(`Skip button: ${SKIP_CHOICES.find((c) => c.value === next)?.label}.`);
-    } catch (error) {
-      setStatus(error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
-    }
-  }
-
-  return (
-    <>
-      {mode !== null && (
-        <fieldset className="level-picker">
-          <legend>Skip button</legend>
-          <div className="level-picker__options">
-            {SKIP_CHOICES.map((choice) => (
-              <label key={choice.value} className="level-picker__option">
-                <input type="radio" name="question-skips-switch" checked={mode === choice.value} onChange={() => void change(choice.value)} />
-                <span>
-                  <strong>{choice.label}:</strong> {choice.detail}
-                </span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      )}
-      <p className="qs-teacher__switch-note">
-        Some buttons stay whatever this says: Gem Keep’s “Well done” and “Cancel”, Maths Monsters’ “Back”, Clan Quest’s “Show me
-        how”, and Dragon Maths’ choice to size up a monster. Timers still run out. Teachers can always skip.
-      </p>
-      <p role="status" className="teacher__status">
-        {status}
-      </p>
-    </>
-  );
-}
+/** Which buttons the Skip button switch leaves alone. Shown behind the switch's "?" on Today. */
+export const SKIP_NOTE =
+  'Some buttons stay whatever this says: Gem Keep’s “Well done” and “Cancel”, Maths Monsters’ “Back”, Clan Quest’s “Show me how”, and Dragon Maths’ choice to size up a monster. Timers still run out. Teachers can always skip.';
 
 export function QuestionSkipsPanel() {
   const { classId, ready } = useTeacherClass();
@@ -139,7 +85,11 @@ export function QuestionSkipsPanel() {
       <h2 id="qs-title" className="panel__title">
         Skipped questions
       </h2>
-      <SkipSwitch classId={classId} ready={ready} />
+      {classId && (
+        <p className="qs-teacher__switch-note">
+          The Skip button switch for this class is on <Link to={`/teacher/${classId}`}>Today</Link>, with the other lesson controls.
+        </p>
+      )}
       <p>
         Every maths question the games show, and how many each student closed without answering (a skip button, running out of
         time, or carrying on without it). Stopping a Mana Well round early counts as one skip.

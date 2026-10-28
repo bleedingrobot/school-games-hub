@@ -11,6 +11,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000c', 'cat@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+-- The school's Everyone class, which every pupil here is in (the class reports need a class since 20261028000600).
+select set_config('test.everyone', (select class_id::text from public.class_members where student_id = '00000000-0000-0000-0000-00000000000a'), true);
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -54,7 +56,7 @@ select throws_ok($$ select public.import_gem_keep_progress(pg_temp.id('a'), '[]'
   'a student cannot import progress directly');
 select throws_ok($$ select * from public.gem_keep_progress $$, '42501', null, 'students cannot read campaign progress tables');
 select throws_ok($$ select * from public.gem_keep_facts $$, '42501', null, 'students cannot read fact records tables');
-select throws_ok($$ select public.teacher_gem_keep_class() $$, '42501', null, 'students cannot see the class view');
+select throws_ok($$ select public.teacher_gem_keep_class(current_setting('test.everyone')::uuid) $$, '42501', null, 'students cannot see the class view');
 select throws_ok($$ select public.teacher_gem_keep_student(pg_temp.id('b')) $$, '42501', null,
   'students cannot see another student''s grid');
 select throws_ok($$ select public.teacher_set_gem_keep('{}') $$, '42501', null, 'students cannot change the settings');
@@ -166,8 +168,8 @@ select is(pg_temp.run('e', 2) ->> 'status', 'saved', 'an imported Key opens the 
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 select is(jsonb_array_length(public.teacher_gem_keep_student(pg_temp.id('a')) -> 'facts'), 2,
   'a teacher sees a student''s fact records');
-select is(public.teacher_gem_keep_class() -> 'hardest' -> 0 ->> 'key', 'mul:7x8', '7 x 8 is the class''s hardest fact');
-select is(jsonb_array_length(public.teacher_gem_keep_class() -> 'hardest'), 1, 'facts nobody gets wrong are not listed');
+select is(public.teacher_gem_keep_class(current_setting('test.everyone')::uuid) -> 'hardest' -> 0 ->> 'key', 'mul:7x8', '7 x 8 is the class''s hardest fact');
+select is(jsonb_array_length(public.teacher_gem_keep_class(current_setting('test.everyone')::uuid) -> 'hardest'), 1, 'facts nobody gets wrong are not listed');
 select is(public.teacher_set_gem_keep('{"mode":"challenge","enabledTables":[2,5,10],"division":true,"missingFactor":null,"multipleChoice":false,"keyPassMark":7}')
   -> 'enabledTables', '[2, 5, 10]', 'a teacher changes the settings');
 select throws_ok($$ select public.teacher_set_gem_keep('{"mode":"calm","enabledTables":[],"division":false,"missingFactor":null,"multipleChoice":false,"keyPassMark":8}') $$,
