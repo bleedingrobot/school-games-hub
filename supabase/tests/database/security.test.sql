@@ -66,7 +66,7 @@ $$, array[
   'save_my_avatar', 'school_set_admin', 'school_set_default_class', 'server_time', 'set_my_maths_focus', 'space_lobby_games',
   'teacher_add_co_teacher', 'teacher_add_to_class', 'teacher_answer_warp', 'teacher_archive_class', 'teacher_bond_match_student',
   'teacher_clan_info', 'teacher_clan_maths_class', 'teacher_clan_maths_student', 'teacher_clans_new_season',
-  'teacher_class_detail', 'teacher_class_events', 'teacher_class_settings', 'teacher_class_skill_map', 'teacher_classes', 'teacher_create_class', 'teacher_create_group',
+  'teacher_class_detail', 'teacher_class_events', 'teacher_class_overview', 'teacher_class_settings', 'teacher_class_skill_map', 'teacher_classes', 'teacher_create_class', 'teacher_create_group',
   'teacher_create_village', 'teacher_delete_group', 'teacher_delete_student', 'teacher_delete_village', 'teacher_end_maths_focus', 'teacher_extend_maths_focus',
   'teacher_gem_keep_class', 'teacher_gem_keep_student', 'teacher_lord_class', 'teacher_lord_student',
   'teacher_maths_focus_history', 'teacher_maths_focus_results', 'teacher_maths_focuses', 'teacher_monster_class', 'teacher_monster_student', 'teacher_move_pupil', 'teacher_move_student',
@@ -75,7 +75,7 @@ $$, array[
   'teacher_school_teachers', 'teacher_set_clan_maths', 'teacher_set_clan_raids', 'teacher_set_clan_typed_names', 'teacher_set_clans',
   'teacher_set_gem_keep', 'teacher_set_group_member', 'teacher_set_kingdom', 'teacher_set_maths_auto', 'teacher_set_hidden', 'teacher_set_lord', 'teacher_set_marble_maths', 'teacher_set_marble_rescue', 'teacher_set_maths_focus',
   'teacher_archery_summary', 'teacher_set_archery', 'teacher_set_archery_duels', 'teacher_set_bond_match', 'teacher_set_mine', 'teacher_set_mine_maths', 'teacher_set_monsters', 'teacher_set_multiplayer', 'teacher_set_question_skips', 'teacher_set_role', 'teacher_set_space_maths', 'teacher_set_students_choose_focus',
-  'teacher_set_space_reactions', 'teacher_set_training_first', 'teacher_set_warp_mode', 'teacher_student_detail', 'teacher_student_ladder', 'teacher_students',
+  'teacher_set_space_reactions', 'teacher_set_training_first', 'teacher_set_warp_mode', 'teacher_student_card', 'teacher_student_detail', 'teacher_student_ladder', 'teacher_students',
   'teacher_training_student', 'teacher_unassigned_students', 'teacher_update_class', 'teacher_villages',
   'teacher_warp_requests', 'warp_join', 'warp_preview'
 ], 'signed-in users can call only this list of functions (each checks who is asking)');

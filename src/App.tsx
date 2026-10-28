@@ -21,7 +21,8 @@ import { dragonMaths } from './games/lord';
 import { ClassWarp } from './pages/ClassWarp';
 import { ClassSetup } from './pages/MyClasses';
 import { clanQuest } from './games/clans/game';
-import { TeacherStudents } from './pages/Teacher';
+import { TeacherStudents } from './teacher/Students';
+import { StudentPage } from './teacher/StudentPage';
 import { TeacherGames } from './teacher/Games';
 import { TeacherAdmin, TeacherEntry, TeacherMaths, TeacherShell } from './teacher/TeacherShell';
 import { Today } from './teacher/Today';
@@ -60,6 +61,7 @@ export function teacherRoutes() {
       <Route path="teacher/:classId" element={<TeacherShell />}>
         <Route index element={<Today />} />
         <Route path="students" element={<TeacherStudents />} />
+        <Route path="students/:studentId" element={<StudentPage />} />
         <Route path="maths" element={<TeacherMaths />}>
           <Route index element={<Suspense fallback={loading}><SetFocus /></Suspense>} />
           <Route path="skills" element={<Suspense fallback={loading}><SkillMap /></Suspense>} />

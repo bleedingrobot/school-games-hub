@@ -637,6 +637,36 @@ has now moved.*
 
 **Stage 4: Students roster and student page,** with `teacher_class_overview` and class-scoped `teacher_students`.
 
+*Done 28 Oct 2026 on `claude/project-thread-4t7spr` (from `teacher-games-remove-panels`). One migration,
+`20261028000700_teacher_class_overview.sql` (not live yet). Nothing is written by it; nothing any button saves changed.*
+- *Server: `teacher_students(target_class uuid)` reads the shared `teacher_students()` (so the games' "last played" hooks keep
+  working) and keeps the students in that class; the old no-argument call is unchanged. `teacher_class_overview(target_class)`
+  gives each student in the class their list row, the last 7 days' questions shown and skipped (`question_log`), when they
+  were last active (a finished game or a question shown) and their focus with their ladder place (`maths_focus_of`).
+  `teacher_student_card(student)` is the top of the student page, so a link to it works on its own. All three: 42501 unless
+  the teacher teaches the class or student (a school admin: anyone in the school; the card also opens the school's teachers,
+  as the old list did), 22023 for no class. Checked by `supabase/tests/database/teacher_class_overview.test.sql` (31 checks,
+  a teacher with two classes); `security.test.sql` lists the two new names. Every database test file passes on a fresh copy.*
+- *Students tab (`src/teacher/Students.tsx`): a real table for the class (Student, Real name, Last active, Questions (7
+  days), Skipped, Ladder, Focus), sortable by any column (kept in the address: `?sort=…&way=…`), with "Find a student".
+  "Hide real names" hides the column (and stops the filter matching real names), remembered per teacher on that computer.
+  A second button shows the old list ("All my students"; for a school admin "Whole school", teachers too), for finding
+  someone outside this class. The season resets stay underneath. On a phone the table scrolls sideways inside its card.*
+- *Student page (`src/teacher/StudentPage.tsx`, `/teacher/:classId/students/:studentId`): Overview (level and points,
+  ladder place, focus, last 7 days, the warm-up reset), Games (wins and losses, then one folded line per game with its
+  `studentSummary`; the game's `StudentPanel` loads only when its line is opened; games with nothing to say are listed as
+  "Not played yet"), Recent games, Manage (New name, Hide/Show, Move to another class, Make/Remove teacher for school
+  admins, then Delete in a red "Can't be undone" box). Switching class from a student page lands on the new class's list.*
+- *Today: This week adds "Right now: N active in the last 15 minutes · M haven't played for 7 days (Who ›)", counts only;
+  "Who ›" opens the roster with the quietest first (`?sort=quiet`).*
+- *`src/pages/Teacher.tsx` is gone (its parts moved to the two files above).*
+- *Not done: the plan's "Show: not in a class" (Class set-up already adds students who aren't in a class); Reset Dragon
+  hero, Reset clan and the hero-name swap stay inside each game's own panel; Make/Remove teacher moves to Admin in stage 6;
+  `teacher_class_overview` doesn't yet carry the lesson switches, game switches or warp requests (Today still asks for those
+  separately, as in stage 1).*
+- *Order on the live site: apply this migration before publishing the website (before it, the class roster and the student
+  page can't load; "All my students" still works).*
+
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.
 
 **Stage 6: the Admin page.** In this order, each its own PR: Overview + Students + Teachers (moving what exists, plus

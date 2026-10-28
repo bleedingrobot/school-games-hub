@@ -5,6 +5,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
+import { fetchClassOverview } from '../data/classOverview';
 import { fetchMultiplayerEnabled } from '../data/multiplayer';
 import { FriendlyError } from '../data/profile';
 import { fetchQuestionSkips } from '../data/questionLog';
@@ -92,9 +93,13 @@ function whoCount(b: FocusBatch): string {
   return `${n} student${n === 1 ? '' : 's'}`;
 }
 
+/** "Active now" means a finished game or a question shown in the last this many minutes. */
+const ACTIVE_NOW_MINUTES = 15;
+
 function ThisWeek({ classId, name, members }: { classId: string; name: string; members: number }) {
   const [batches, setBatches] = useState<FocusBatch[] | null>(null);
   const [counts, setCounts] = useState<{ played: number; shown: number; skipped: number } | null>(null);
+  const [activity, setActivity] = useState<{ now: number; quiet: number } | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -118,6 +123,19 @@ function ThisWeek({ classId, name, members }: { classId: string; name: string; m
           skipped: d.students.reduce((n, s) => n + s.skipped, 0),
         }),
       () => current && setCounts(null),
+    );
+    // Counts only, no names: this screen may be on a projector. Names are one click away on the Students tab.
+    fetchClassOverview(classId).then(
+      (students) => {
+        if (!current) return;
+        const since = (minutes: number) => Date.now() - minutes * 60_000;
+        const at = (iso: string | null) => (iso ? Date.parse(iso) : 0);
+        setActivity({
+          now: students.filter((s) => at(s.lastActive) > since(ACTIVE_NOW_MINUTES)).length,
+          quiet: students.filter((s) => at(s.lastActive) <= since(7 * 24 * 60)).length,
+        });
+      },
+      () => current && setActivity(null),
     );
     return () => {
       current = false;
@@ -156,6 +174,19 @@ function ThisWeek({ classId, name, members }: { classId: string; name: string; m
           Last 7 days: <strong>{counts.played}</strong> of {members} student{members === 1 ? '' : 's'} answered maths questions ·{' '}
           <strong>{counts.shown.toLocaleString('en-NZ')}</strong> question{counts.shown === 1 ? '' : 's'} ·{' '}
           <strong>{share(counts.skipped, counts.shown)}</strong> skipped
+        </p>
+      )}
+      {activity && (
+        <p className="this-week__line">
+          Right now: <strong>{activity.now}</strong> active in the last {ACTIVE_NOW_MINUTES} minutes ·{' '}
+          {activity.quiet === 0 ? (
+            'everyone has played this week'
+          ) : (
+            <>
+              <strong>{activity.quiet}</strong> haven’t played for 7 days{' '}
+              <Link to={`/teacher/${classId}/students?sort=quiet`}>Who ›</Link>
+            </>
+          )}
         </p>
       )}
       <p className="this-week__links">

@@ -23,6 +23,8 @@ const data = vi.hoisted(() => ({
   fetchMonstersEnabled: vi.fn(),
   fetchClassMonsters: vi.fn(),
   fetchLordSettings: vi.fn(),
+  // Before the school season migration: each class keeps its own date (the row reads it from the class).
+  fetchLordSchoolSeason: vi.fn(async () => ({ live: false as const })),
   fetchLordEnabled: vi.fn(),
   fetchClassLord: vi.fn(),
   fetchClansEnabled: vi.fn(),
@@ -61,6 +63,7 @@ vi.mock('../data/monsters', async (original) => ({
 vi.mock('../data/lord', async (original) => ({
   ...(await original<typeof import('../data/lord')>()),
   fetchLordSettings: data.fetchLordSettings,
+  fetchLordSchoolSeason: data.fetchLordSchoolSeason,
   fetchLordEnabled: data.fetchLordEnabled,
   fetchClassLord: data.fetchClassLord,
 }));

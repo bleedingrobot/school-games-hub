@@ -3,7 +3,7 @@
  * class in the address so links and the back button keep it.
  *
  *   /teacher/:classId            Today
- *   /teacher/:classId/students   Students (today's Players list)
+ *   /teacher/:classId/students   Students (the class roster; /students/:studentId is one student's page)
  *   /teacher/:classId/maths      Maths: Focus, Skill map, Skipped questions
  *   /teacher/:classId/games      Games (the Games table; /games/:gameId is a game's settings on a narrow screen)
  *   /teacher/:classId/setup      Class set-up (the class's My classes panel)
@@ -33,9 +33,13 @@ function TeachersOnly() {
   );
 }
 
-/** The part of the address after the class ("", "maths/skills", "setup"…), so switching class keeps the tab. */
+/**
+ * The part of the address after the class ("", "maths/skills", "setup"…), so switching class keeps the tab. A student's page
+ * goes back to the Students list: the student is in the class being left.
+ */
 function sectionOf(pathname: string): string {
   const parts = pathname.replace(/\/+$/, '').split('/').slice(3);
+  if (parts[0] === 'students') return 'students';
   return parts.join('/');
 }
 
@@ -239,7 +243,7 @@ export function TeacherAdmin() {
       </h2>
       <p>
         Jobs for the whole school will live here: every class and student, teachers and school admins, school game settings, safety,
-        and the end of year. For now, the whole-school Players list and the new points season are on the Students tab.
+        and the end of year. For now, the whole-school list (“Whole school”) and the new points season are on the Students tab.
       </p>
     </section>
   );
