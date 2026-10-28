@@ -47,3 +47,40 @@
 .admin__confirm p {
   margin: 0 0 8px;
 }
+
+.admin__table--wide {
+  min-width: 820px;
+}
+.admin__teachers {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+.admin__teacher {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.button.admin__small {
+  min-height: 36px;
+  padding: 4px 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+.admin__add {
+  max-width: 100%;
+  min-height: 40px;
+  padding: 4px 10px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--surface);
+}
+/* The roster's headings have no padding (its sort buttons pad them); these tables have plain headings. */
+.admin__table thead th {
+  padding: 6px 10px;
+}

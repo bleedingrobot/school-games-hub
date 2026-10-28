@@ -6,6 +6,7 @@ import { WaitingCount, WaitingToJoinProvider } from '../teacher/WaitingToJoin';
 import { pageTheme, ThemeTrialProvider, useThemeTrial } from '../theme/hubTheme';
 import { trainingOn } from '../training/switch';
 import { CrashScreen } from './CrashScreen';
+import { FullScreenButton } from './FullScreenButton';
 import { MuteButton } from './MuteButton';
 import banner from '../assets/dps-banner.png';
 
@@ -55,6 +56,7 @@ function ThemedLayout() {
           ))}
         </nav>
         <div className="topbar__right">
+          <FullScreenButton />
           <MuteButton />
           <NavLink to="/profile" className="topbar__profile" aria-label="My profile">
             <AvatarImage avatar={profile?.avatar} size={44} />

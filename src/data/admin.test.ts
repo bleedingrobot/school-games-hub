@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const rpc = vi.hoisted(() => vi.fn());
 vi.mock('../lib/supabase', () => ({ supabase: { rpc } }));
-const { fetchAdminOverview, fetchAdminStudents, fetchAdminTeachers, setSchoolAdmin, parseAdminOverview, parseAdminStudents, parseAdminTeachers } =
+const { createClassFor, fetchAdminClasses, parseAdminClasses, fetchAdminOverview, fetchAdminStudents, fetchAdminTeachers, setSchoolAdmin, parseAdminOverview, parseAdminStudents, parseAdminTeachers } =
   await import('./admin');
 const { FriendlyError } = await import('./profile');
 
@@ -56,6 +56,28 @@ describe('parseAdminStudents and parseAdminTeachers', () => {
   });
 });
 
+describe('parseAdminClasses', () => {
+  it('tidies each class and drops a row without an id', () => {
+    const list = parseAdminClasses({
+      classes: [
+        {
+          id: 'c1', name: 'Room 1', schoolYear: 2026, yearLevel: 5, archived: true, archivedAt: '2026-10-01T00:00:00Z', warpCode: 'KM4TP',
+          warpMode: 'ask', students: 24.6, teachers: [{ id: 't1', name: 'Wise Owl 1', realName: 'a.b' }, { name: 'No id' }], lastActive: '2026-10-27T01:00:00Z',
+        },
+        { name: 'No id' },
+        { id: 'c2', name: 'Room 2', warpMode: 'weird', students: -1, lastActive: 'lately' },
+      ],
+    });
+    expect(list.map((c) => c.id)).toEqual(['c1', 'c2']);
+    expect(list[0]).toMatchObject({ archived: true, warpMode: 'ask', students: 24, teachers: [{ id: 't1', name: 'Wise Owl 1', realName: 'a.b' }] });
+    expect(list[1]).toEqual({
+      id: 'c2', name: 'Room 2', schoolYear: null, yearLevel: null, archived: false, archivedAt: null, warpCode: null, warpMode: 'on', students: 0,
+      teachers: [], lastActive: null,
+    });
+    expect(parseAdminClasses(null)).toEqual([]);
+  });
+});
+
 describe('the calls', () => {
   it('ask the right functions', async () => {
     rpc.mockResolvedValue({ data: { students: [], teachers: [], counts: {} }, error: null });
@@ -66,6 +88,19 @@ describe('the calls', () => {
     rpc.mockResolvedValue({ error: null });
     await setSchoolAdmin('t2', true);
     expect(rpc).toHaveBeenLastCalledWith('school_set_admin', { person: 't2', make_admin: true });
+  });
+
+  it('load the classes and make one for a teacher', async () => {
+    rpc.mockResolvedValue({ data: { classes: [] }, error: null });
+    expect(await fetchAdminClasses()).toEqual([]);
+    expect(rpc).toHaveBeenLastCalledWith('admin_classes');
+    rpc.mockResolvedValue({ data: 'c9', error: null });
+    expect(await createClassFor('Room 9', 2026, null, 't2')).toBe('c9');
+    expect(rpc).toHaveBeenLastCalledWith('admin_create_class', { class_name: 'Room 9', in_year: 2026, level: null, teacher: 't2' });
+    rpc.mockResolvedValue({ data: null, error: { code: '22023', message: 'That person isn’t a teacher at your school.' } });
+    await expect(createClassFor('', 2026, 5, 'x')).rejects.toThrow('That person isn’t a teacher at your school.');
+    rpc.mockResolvedValue({ data: null, error: { code: '42P01', message: 'boom' } });
+    await expect(fetchAdminClasses()).rejects.toThrow('We couldn’t load the classes.');
   });
 
   it('shows the server’s own message for 42501 and 22023', async () => {

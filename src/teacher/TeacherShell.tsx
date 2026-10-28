@@ -7,7 +7,7 @@
  *   /teacher/:classId/maths      Maths: Focus, Skill map, Skipped questions
  *   /teacher/:classId/games      Games (the Games table; /games/:gameId is a game's settings on a narrow screen)
  *   /teacher/:classId/setup      Class set-up (the class's My classes panel)
- *   /teacher/admin               Admin (school admins only: Overview, Students, Teachers)
+ *   /teacher/admin               Admin (school admins only: Overview, Classes, Students, Teachers)
  *
  * The old addresses (/teacher, /classes, /focus?class=, /skills?class=) land on the remembered class through TeacherEntry.
  * The pages hide themselves from students, but that's only for tidiness: the database checks every action.
@@ -228,7 +228,7 @@ export function TeacherMaths() {
   );
 }
 
-/** /teacher/admin: school admins only (section 4.7). Its own tabs: Overview, Students, Teachers. */
+/** /teacher/admin: school admins only (section 4.7). Its own tabs: Overview, Classes, Students, Teachers. */
 export function TeacherAdmin() {
   const { profile } = useAuth();
   if (profile?.school_admin !== true) {
@@ -244,6 +244,9 @@ export function TeacherAdmin() {
       <nav className="teacher-subtabs" aria-label="Admin">
         <NavLink to="/teacher/admin" end className="teacher-subtabs__tab">
           Overview
+        </NavLink>
+        <NavLink to="/teacher/admin/classes" className="teacher-subtabs__tab">
+          Classes
         </NavLink>
         <NavLink to="/teacher/admin/students" className="teacher-subtabs__tab">
           Students
