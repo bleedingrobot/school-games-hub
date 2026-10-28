@@ -148,10 +148,10 @@ export function makeHandler(services: Services) {
       case 'round-start': {
         const kind: SetKind = body.kind === undefined ? 'speed' : (body.kind as SetKind);
         if (!SET_KINDS.includes(kind)) return reply(400, { error: "That couldn't be read." });
-        const what = kind === 'chest' ? 'The loot chest' : kind === 'restock' ? 'The restock' : 'The speed round';
+        const what = kind === 'chest' ? 'The loot chest' : kind === 'restock' ? 'The restock' : kind === 'supply' ? 'The supply chest' : 'The speed round';
         let after: string | null = null;
         let perRight = COINS_PER_RIGHT;
-        if (kind !== 'speed') {
+        if (kind === 'chest' || kind === 'restock') {
           const fight = Number.isSafeInteger(body.fight) && (body.fight as number) > 0 ? (body.fight as number) : null;
           const duel = kind === 'chest' && fight === null && Number.isSafeInteger(body.duel) && (body.duel as number) > 0 ? (body.duel as number) : null;
           const step = body.step;

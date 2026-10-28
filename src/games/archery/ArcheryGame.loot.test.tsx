@@ -56,6 +56,9 @@ async function inFight() {
   fireEvent.click(await screen.findByRole('button', { name: 'Forest' }));
   fireEvent.click(await screen.findByRole('button', { name: /Hawk/ }));
   fireEvent.click(screen.getByRole('button', { name: 'Next: pack your quiver' }));
+  // The supply chest comes first: skip it straight to packing.
+  await screen.findByRole('heading', { name: 'Supply chest' });
+  fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
   fireEvent.click(await screen.findByRole('button', { name: 'Fight!' }));
   await screen.findByRole('button', { name: 'End the fight' });
   return trial;
@@ -137,5 +140,20 @@ describe('the loot chest and the restock over a bot fight', () => {
     const trial = trialBackend();
     render(<ArcheryGame api={archeryApi((b) => trial.send(b))} />);
     expect(await screen.findByText(/25 more coins for the Hunter's Bow/)).toBeTruthy();
+  });
+});
+
+describe('the supply chest before a bot fight', () => {
+  it('comes after picking the fight, pays 10 a right answer, then goes on to packing', async () => {
+    const trial = trialBackend();
+    render(<ArcheryGame api={archeryApi((b) => trial.send(b))} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Forest' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Hawk/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next: pack your quiver' }));
+    await screen.findByRole('heading', { name: 'Supply chest' });
+    fireEvent.click(screen.getByRole('button', { name: 'Open the chest' }));
+    await screen.findByRole('dialog', { name: /^Question 1 of 3$/ });
+    const round = Object.values(trial.data.rounds)[0];
+    expect(round).toMatchObject({ kind: 'supply', perRight: 10 });
   });
 });

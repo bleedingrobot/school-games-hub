@@ -3,7 +3,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh archery, then scripts/scratch-test.sh archery supabase/tests/database/archery.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(71);
+select plan(72);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -87,6 +87,8 @@ select is(public.archery_round_start(pg_temp.id('0a'), 'chest-seed-0002', '[{"q"
   '... but the second chest for the same fight (the same after) does not');
 select is(public.archery_round_load(pg_temp.id('0a'), 'chest-seed-0001') ->> 'kind', 'chest', 'a stored set remembers it is a chest');
 select is((public.archery_round_load(pg_temp.id('0a'), 'chest-seed-0001') ->> 'perRight')::integer, 20, '... and its coins for each right answer');
+select is(public.archery_round_start(pg_temp.id('0a'), 'supply-seed-001', '[{"q":1},{"q":2},{"q":3}]', true, 1000, 'supply', null, 10), true,
+  'a supply chest before a fight starts (it has no after, so any number can)');
 
 -- ---- The Armory ----
 select is(public.archery_shop(pg_temp.id('0a'), 'buy-req-0001', 'buy', 'gear', 'steel', 200, 2, 0, 5) ->> 'result', 'coins', 'not enough coins: nothing bought');

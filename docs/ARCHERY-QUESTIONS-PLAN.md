@@ -56,3 +56,8 @@ Option B as above, plus pictures: a loot chest that opens wider and fills with c
 - Migration `20261029000200_archery_more_maths.sql` (adds columns and functions, a second `archery_round_start` beside the old one, tops players up to 100 coins).
 - Tests: all 5,397 pass. The pgTAP checks (71) run in CI's database checks.
 - Go live order: the migration (pasted by James), then the `archery` function, then the site.
+
+## Fix and supply chest (28 Oct 2026, evening)
+
+- **Chests didn't work:** the site update never published (CI's database check failed), and the 8-argument `archery_round_start` failed on every call ("column reference player is ambiguous" in `on conflict`). Migration `20261029000300_archery_supply_chest.sql` fixes it with `#variable_conflict use_column`.
+- **Supply chest** (James): before every bot fight, after picking the fight and before packing, 3 questions for 10 coins each (`kind: 'supply'`, no once-only key: the daily coin cap covers it). Play again goes through it too.

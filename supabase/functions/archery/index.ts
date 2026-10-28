@@ -9736,6 +9736,7 @@ function judgeBotFight(seed, setup, level, shots, finished) {
 * - speed:   the speed round on Home. 10 questions; the first has 10 seconds, the next 9 … down to 5 (never less).
 * - chest:   the loot chest after a fight. 3 questions, 10 seconds each; more coins if you won.
 * - restock: between rounds of a bot fight. 3 questions, 10 seconds each.
+* - supply:  a supply chest before a bot fight, before packing. 3 questions, 10 seconds each.
 *
 * Each right answer in time earns coins, plus a streak bonus from the third right in a row. Coins from maths stop for
 * the day at DAILY_COINS (sets after that are practice: the maths still counts).
@@ -9747,7 +9748,8 @@ function judgeBotFight(seed, setup, level, shots, finished) {
 const SET_KINDS = [
 	"speed",
 	"chest",
-	"restock"
+	"restock",
+	"supply"
 ];
 /** How many questions a set of this kind has. */
 function setSize(kind) {
@@ -10246,10 +10248,10 @@ function makeHandler(services) {
 			case "round-start": {
 				const kind = body.kind === void 0 ? "speed" : body.kind;
 				if (!SET_KINDS.includes(kind)) return reply(400, { error: "That couldn't be read." });
-				const what = kind === "chest" ? "The loot chest" : kind === "restock" ? "The restock" : "The speed round";
+				const what = kind === "chest" ? "The loot chest" : kind === "restock" ? "The restock" : kind === "supply" ? "The supply chest" : "The speed round";
 				let after = null;
 				let perRight = 10;
-				if (kind !== "speed") {
+				if (kind === "chest" || kind === "restock") {
 					const fight = Number.isSafeInteger(body.fight) && body.fight > 0 ? body.fight : null;
 					const duel = kind === "chest" && fight === null && Number.isSafeInteger(body.duel) && body.duel > 0 ? body.duel : null;
 					const step = body.step;

@@ -58,7 +58,8 @@ export function SpeedRound({ api, coins, coinsLeft, set = { kind: 'speed' }, won
   const [secondsLeft, setSecondsLeft] = useState(FIRST_SECONDS);
   const kind = set.kind;
   const speed = kind === 'speed';
-  const title = kind === 'chest' ? 'Loot chest' : kind === 'restock' ? 'Restock' : 'Speed round';
+  const title = kind === 'chest' ? 'Loot chest' : kind === 'supply' ? 'Supply chest' : kind === 'restock' ? 'Restock' : 'Speed round';
+  const isChest = kind === 'chest' || kind === 'supply';
   const { soundOn } = useSound();
   const heading = useRef<HTMLHeadingElement>(null);
   const shownAt = useRef(0);
@@ -177,7 +178,7 @@ export function SpeedRound({ api, coins, coinsLeft, set = { kind: 'speed' }, won
           <h2 id="ar-speed-title" ref={heading} tabIndex={-1}>{title}</h2>
           <CoinCount coins={coins} />
         </div>
-        {!speed && (kind === 'chest'
+        {!speed && (isChest
           ? <LootChest filled={phase.kind === 'done' ? phase.right : right} of={total} />
           : <RestockQuiver filled={phase.kind === 'done' ? phase.right : right} of={total} />)}
         {phase.kind === 'intro' && speed && (
@@ -196,12 +197,14 @@ export function SpeedRound({ api, coins, coinsLeft, set = { kind: 'speed' }, won
             <p className="ar-speed__big">
               {kind === 'chest'
                 ? `${won ? 'You won! ' : ''}Fill your chest: ${SHORT_QUESTIONS} questions, ${perRight} coins for each one right!`
-                : `Restock before the next round: ${SHORT_QUESTIONS} quick questions, ${perRight} coins each!`}
+                : kind === 'supply'
+                  ? `Grab supplies before the battle: ${SHORT_QUESTIONS} questions, ${perRight} coins each. Spend them as you pack!`
+                  : `Restock before the next round: ${SHORT_QUESTIONS} quick questions, ${perRight} coins each!`}
             </p>
             <p>{SHORT_SECONDS} seconds for each. Get all {SHORT_QUESTIONS} right for a {STREAK_BONUS}-coin streak bonus.</p>
             {coinsLeft <= 0 && <p className="ar-speed__note">{leftToday}</p>}
             <div className="ar-row">
-              <button type="button" className="button button--play ar-btn ar-btn--big" onClick={() => void start()}>{kind === 'chest' ? 'Open the chest' : 'Start'}</button>
+              <button type="button" className="button button--play ar-btn ar-btn--big" onClick={() => void start()}>{isChest ? 'Open the chest' : 'Start'}</button>
               <button type="button" className="button button--light ar-btn ar-btn--small" onClick={onExit}>Skip</button>
             </div>
           </>

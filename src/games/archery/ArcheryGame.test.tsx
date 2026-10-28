@@ -83,6 +83,9 @@ describe('Archery Challenge', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Snow' }));
     fireEvent.click(await screen.findByRole('button', { name: /Hawk/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Next: pack your quiver' }));
+    // The supply chest comes first: skip it straight to packing.
+    await screen.findByRole('heading', { name: 'Supply chest' });
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
     fireEvent.click(await screen.findByRole('button', { name: 'One more Steel Arrow' }));
     fireEvent.click(screen.getByRole('button', { name: /Wooden Shield/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Fight!' }));
