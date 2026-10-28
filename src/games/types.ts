@@ -80,6 +80,30 @@ export interface TeacherContract {
   StudentPanel?: ComponentType<{ student: string }>;
   /** One line for the student's folded Games row ("14 of 30 stars"), or null for nothing to say. */
   studentSummary?(student: string): Promise<string | null>;
+  /** The class's hardest questions in this game, for the Maths tab's merged table and Today's "Hardest right now". */
+  hardest?(classId: string): Promise<HardestRow[]>;
+  /** Things the teacher should look at, for Today's "Needs you" (saves or requests the game turned down this week). */
+  alerts?(classId: string): Promise<TeacherAlert[]>;
+}
+
+/** One question on the merged hardest-questions table. The hub adds the game's name. */
+export interface HardestRow {
+  /** The question in words a teacher can read ("7 × 8"). */
+  question: string;
+  /** The topic it is from, if the game has topics. */
+  topic: string | null;
+  attempts: number;
+  correct: number;
+  students: number;
+}
+
+/** One line for Today's "Needs you". Shown on a screen that may be projected, so made-up names only, never real names. */
+export interface TeacherAlert {
+  /** Unique within the game, for React keys. */
+  id: string;
+  text: string;
+  /** Where "See" goes, after `/teacher/:classId/` ("games/monsters"). */
+  section?: string;
 }
 
 export type DashboardGroup = 'no-maths' | 'easy-maths' | 'complex-maths';

@@ -18,6 +18,9 @@ import {
 import { FriendlyError } from '../data/profile';
 import { SettingChips, useSetting } from '../teacher/Settings';
 import { whenPlayed } from './Dashboard';
+import type { HardestRow, TeacherAlert } from '../games/types';
+import { refusalAlerts } from '../teacher/alerts';
+import { shortCache } from '../teacher/shortCache';
 import './teacher-gem-keep.css';
 
 const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
@@ -290,4 +293,24 @@ export function MonstersStudentPanel({ student }: { student: string }) {
       )}
     </div>
   );
+}
+
+const classReport = (classId: string) => shortCache(`monsters:${classId}`, () => fetchClassMonsters(classId));
+
+/** The class's hardest questions, for the merged table on the Maths tab (stage 5). */
+export async function monstersHardest(classId: string): Promise<HardestRow[]> {
+  const data = await classReport(classId);
+  return data.hardest.map((f) => ({
+    question: keyLabel(f.pack, f.key),
+    topic: TOPIC_LABEL[f.pack] ?? f.pack,
+    attempts: f.attempts,
+    correct: f.correct,
+    students: f.students,
+  }));
+}
+
+/** Saves the game turned down this week, for Today's "Needs you" (stage 5). */
+export async function monstersAlerts(classId: string): Promise<TeacherAlert[]> {
+  const data = await classReport(classId);
+  return refusalAlerts(data.refusals, { id: 'monsters', name: 'Maths Monsters' }, 'save');
 }

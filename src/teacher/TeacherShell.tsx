@@ -219,6 +219,9 @@ export function TeacherMaths() {
         <NavLink to={pathFor(classId, 'maths/skips')} className="teacher-subtabs__tab">
           Skipped questions
         </NavLink>
+        <NavLink to={pathFor(classId, 'maths/hardest')} className="teacher-subtabs__tab">
+          Hardest questions
+        </NavLink>
       </nav>
       <Outlet />
     </>
