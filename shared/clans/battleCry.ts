@@ -118,8 +118,10 @@ export function replayFight(
   boss: boolean,
   rounds: RecordedRound[],
   maths: FightMaths | PracticalSettings,
+  /** A monster fight's starting state (monster.ts, `newMonsterFight`); a mine fight is started here from the depth. */
+  first?: FightState,
 ): { state: FightState; cries: CryResult[] } {
-  const state = newFight(members, depth, seed, boss);
+  const state = first ? structuredClone(first) : newFight(members, depth, seed, boss);
   const cries: CryResult[] = [];
   for (const r of rounds) {
     if (state.result) break;

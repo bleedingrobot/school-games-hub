@@ -10,7 +10,8 @@ import { empireNewDay, empireOf, joinFollowers, levelTotal, maxLevel, might, new
 import { nextFloat } from './rng';
 import { bossAt, newFight, playRound, settle, type FightResult } from './fight';
 import { SPELLS } from './spells';
-import { VILLAGE_BUILDINGS, type Clan } from './types';
+import { VILLAGE_BUILDINGS, type Clan, type MonsterKind } from './types';
+import { newMonsterFight, playSiege } from './monster';
 
 export type Lineup = 'balanced' | 'fighters';
 
@@ -71,6 +72,8 @@ export interface SimReport {
   /** The day the average level reached 20, or null. */
   dayAtMax: number | null;
   bossWins: number;
+  /** The clan at the end (for the monster check). */
+  clan: Clan;
 }
 
 export function simulate(opts: SimOptions): SimReport {
@@ -146,5 +149,26 @@ export function simulate(opts: SimOptions): SimReport {
     days.push(report);
     if (dayAtMax === null && clan.members.every((m) => m.level >= CONFIG.maxLevel)) dayAtMax = day;
   }
-  return { days, fights: totalFights, wins: totalWins, results, dayAtMax, bossWins };
+  return { days, fights: totalFights, wins: totalWins, results, dayAtMax, bossWins, clan };
+}
+
+/**
+ * One monster try by the bot: the clan rested and woken, the siege (the maths right `mathsRate` of the time), then the clan fight with
+ * the bot's orders and a Battle Cry like the Mines. `losses` = tries lost before (the monster is that much more tired). True if won.
+ */
+export function monsterTry(clanIn: Clan, kind: MonsterKind, losses: number, seed: number, mathsRate: number, supplies = { arrows: 0, potions: 0, net: 0 }): { won: boolean; rounds: number; left: number } {
+  const clan = structuredClone(clanIn);
+  dayReset(clan);
+  for (const m of clan.members) {
+    m.knockedOut = false;
+    m.hp = m.maxHp;
+    m.sp = m.maxSp;
+  }
+  const dice = { rng: (seed * 2654435761) | 0 };
+  const right = nextFloat(dice) < mathsRate;
+  const siege = playSiege(clan, supplies.arrows, right, seed);
+  const e = empireOf(clan);
+  const state = newMonsterFight(clan.members, { kind, losses, siege: siege.share, potions: supplies.potions, net: supplies.net > 0, walls: e.levels.walls }, seed);
+  while (!state.result) playRound(state, botOrders(state), nextFloat(dice) < mathsRate ? 'damage' : null);
+  return { won: state.result === 'won', rounds: state.round, left: state.enemies[0].hp / state.enemies[0].maxHp };
 }

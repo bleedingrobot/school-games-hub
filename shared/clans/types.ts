@@ -39,6 +39,30 @@ export interface MonsterDef {
   spells: number[];
 }
 
+/** The season monsters, in turn (season 1 the giant, 2 the golem, 3 the troll, then round again). */
+export const MONSTER_KINDS = ['giant', 'golem', 'troll'] as const;
+export type MonsterKind = (typeof MONSTER_KINDS)[number];
+
+/** Monster supplies a clan holds (bought at the market from day 22, used up in a monster try). */
+export interface Supplies {
+  arrows: number;
+  potions: number;
+  net: number;
+}
+
+/** The clan's monster week, for one season. Missing, or from another season: no tries yet. */
+export interface MonsterSave {
+  season: number;
+  /** Tries so far this season, and how many of them were lost before the first win (the monster is that much more tired). */
+  tries: number;
+  losses: number;
+  /** The New Zealand day number of the last try (one a day). */
+  lastDay: number;
+  /** The season day of the first win, if the clan has won. */
+  wonDay?: number;
+  supplies: Supplies;
+}
+
 export interface Gear {
   weapon?: string;
   armor?: string;
@@ -154,4 +178,8 @@ export interface Clan {
   empire?: Empire;
   /** The season number this save belongs to. Missing means it has not been stamped yet. */
   season?: number;
+  /** This season's monster tries and supplies. Missing until the clan buys a supply or tries the monster. */
+  monster?: MonsterSave;
+  /** Set to the season number by a new season's reset: until the clan says "keep" or picks again, it may re-pick each member's race and class. */
+  repick?: number;
 }

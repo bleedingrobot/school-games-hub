@@ -12,7 +12,7 @@ import { fightStats } from './character';
 import { MONSTERS } from './gamedata';
 import { roll } from './rng';
 import { SPELLS, type SpellDef } from './spells';
-import { STATS, type Member, type MonsterDef, type Stat, type Stats } from './types';
+import { STATS, type Member, type MonsterDef, type MonsterKind, type Stat, type Stats } from './types';
 
 export interface Mod {
   stat: Stat;
@@ -46,7 +46,9 @@ export type Order =
   | { action: 'spell'; spell: number; target: number }
   | { action: 'guard' }
   | { action: 'run' }
-  | { action: 'skip' };
+  | { action: 'skip' }
+  /** Monster fights only: give a member (`target`, their place in the clan) a healing potion. */
+  | { action: 'potion'; target: number };
 
 /** What a right Battle Cry answer was spent on this round. */
 export type Cry = 'damage' | 'heal' | null;
@@ -61,9 +63,28 @@ export type FightEvent =
   | { type: 'guard'; who: string }
   | { type: 'run'; ok: boolean }
   | { type: 'cry'; kind: Exclude<Cry, null> }
-  | { type: 'round'; round: number };
+  | { type: 'round'; round: number }
+  /** Monster fights: the monster gets ready for its big move next round (you see it coming). */
+  | { type: 'warn'; who: string; move: MonsterKind }
+  /** Monster fights: the big move itself (the hits it does follow as 'hit' events). */
+  | { type: 'big'; who: string; move: MonsterKind }
+  /** Monster fights: the giant net holds the monster, and its big move misses. */
+  | { type: 'net'; who: string }
+  | { type: 'potion'; who: string; target: string; amount: number };
 
 export type FightResult = 'won' | 'lost' | 'fled' | 'timeout';
+
+/** What makes a fight a monster fight (monster.ts sets it up). */
+export interface MonsterInFight {
+  kind: MonsterKind;
+  /** Healing potions the clan brought, and whether the giant net is still unused. */
+  potions: number;
+  net: boolean;
+  /** Percent the Walls cut off every hit the monster does. */
+  wallsCut: number;
+  /** The most rounds this fight lasts. */
+  rounds: number;
+}
 
 export interface FightState {
   /** Random state (see rng.ts). */
@@ -80,6 +101,8 @@ export interface FightState {
   gold: number;
   followers: number;
   log: FightEvent[];
+  /** Only in a monster fight. */
+  monster?: MonsterInFight;
 }
 
 const stat = (f: Fighter, s: Stat): number => {
@@ -134,6 +157,9 @@ export function newFight(members: Member[], depth: number, seed: number, boss = 
   return state;
 }
 
+/** The most rounds a fight lasts: a monster fight has its own. */
+export const maxRoundsOf = (s: Pick<FightState, 'monster'>) => s.monster?.rounds ?? CONFIG.maxRounds;
+
 const team = (s: FightState, side: 'clan' | 'enemy') => (side === 'clan' ? s.clan : s.enemies);
 const foes = (s: FightState, f: Fighter) => team(s, f.side === 'clan' ? 'enemy' : 'clan');
 const friends = (s: FightState, f: Fighter) => team(s, f.side);
@@ -150,6 +176,10 @@ function hurt(s: FightState, attacker: Fighter, target: Fighter, damage: number)
   return damage;
 }
 
+/** In a monster fight the Walls take a share off every hit the monster does. */
+const cutByWalls = (s: FightState, who: Fighter, dmg: number) =>
+  s.monster && who.side === 'enemy' ? Math.max(1, Math.ceil((dmg * (100 - s.monster.wallsCut)) / 100)) : dmg;
+
 function attack(s: FightState, who: Fighter, target: Fighter, cry: Cry): void {
   if (stat(who, 'dexterity') + roll(s, 4) + roll(s, 4) + 2 < stat(target, 'agility') + roll(s, 4)) {
     s.log.push({ type: 'miss', who: who.name, target: target.name });
@@ -157,7 +187,9 @@ function attack(s: FightState, who: Fighter, target: Fighter, cry: Cry): void {
   }
   let dmg = Math.floor((Math.floor(stat(who, 'strength') / 2) * (80 + roll(s, 40))) / 100);
   if (who.side === 'clan' && cry === 'damage') dmg = Math.floor(dmg * CONFIG.battleCryDamage);
-  dmg = Math.max(1, dmg - stat(target, 'armor'));
+  // A monster's strength is above the stat cap: its hits are multiplied instead.
+  if (s.monster && who.side === 'enemy') dmg = Math.floor(dmg * CONFIG.monster.power);
+  dmg = cutByWalls(s, who, Math.max(1, dmg - stat(target, 'armor')));
   const done = hurt(s, who, target, dmg);
   s.log.push({ type: 'hit', who: who.name, target: target.name, damage: done });
 }
@@ -203,8 +235,50 @@ function pick(s: FightState, list: Fighter[]): Fighter | undefined {
   return live.length ? live[roll(s, live.length)] : undefined;
 }
 
+/** A hit that cannot miss, `times` a normal hit (a monster's big move). */
+function smash(s: FightState, who: Fighter, target: Fighter, times: number): void {
+  const dmg = Math.floor((Math.floor(stat(who, 'strength') / 2) * (80 + roll(s, 40)) * times * CONFIG.monster.power) / 100);
+  const done = hurt(s, who, target, cutByWalls(s, who, Math.max(1, dmg - stat(target, 'armor'))));
+  s.log.push({ type: 'hit', who: who.name, target: target.name, damage: done });
+}
+
+/** Is round `round` a monster fight's big-move round? */
+export const bigMoveRound = (round: number) => round > 0 && round % CONFIG.monster.bigEvery === 0;
+
+/** The monster's turn: a stomp on two members, or every third round its big move (which the giant net stops once). */
+function monsterTurn(s: FightState, who: Fighter, m: MonsterInFight, cry: Cry): void {
+  const M = CONFIG.monster;
+  if (bigMoveRound(s.round)) {
+    if (m.net) {
+      m.net = false;
+      s.log.push({ type: 'net', who: who.name });
+      return;
+    }
+    s.log.push({ type: 'big', who: who.name, move: m.kind });
+    if (m.kind === 'golem') {
+      for (const t of s.clan.filter(alive)) smash(s, who, t, M.slam);
+      return;
+    }
+    const target = pick(s, s.clan);
+    if (!target) return;
+    smash(s, who, target, m.kind === 'giant' ? M.boulder : M.breath);
+    if (m.kind === 'troll' && alive(target)) {
+      target.tied = 1;
+      s.log.push({ type: 'tied', who: target.name });
+    }
+    return;
+  }
+  // A stomp: two different members (or the one left standing).
+  const first = pick(s, s.clan);
+  if (!first) return;
+  attack(s, who, first, cry);
+  const rest = s.clan.filter((f) => alive(f) && f !== first);
+  if (rest.length) attack(s, who, rest[roll(s, rest.length)], cry);
+}
+
 /** What an enemy does with its turn. */
 function enemyTurn(s: FightState, who: Fighter, cry: Cry): void {
+  if (s.monster) return monsterTurn(s, who, s.monster, cry);
   const spells = who.spells.map((id) => SPELLS[id]).filter((sp): sp is SpellDef => !!sp && canCast(who, sp.id));
   if (spells.length && roll(s, 3) === 0) {
     const spell = spells[roll(s, spells.length)];
@@ -229,6 +303,17 @@ function clanTurn(s: FightState, who: Fighter, order: Order | undefined, cry: Cr
     return;
   }
   if (o.action === 'skip') return;
+  if (o.action === 'potion') {
+    const target = s.clan[o.target];
+    if (s.monster && s.monster.potions > 0 && target && alive(target)) {
+      s.monster.potions--;
+      const amount = Math.min(target.maxHp - target.hp, Math.ceil(target.maxHp * CONFIG.monster.potionHeal));
+      target.hp += amount;
+      s.log.push({ type: 'potion', who: who.name, target: target.name, amount });
+      return;
+    }
+    o = fallback();
+  }
   if (o.action === 'guard') {
     who.guarding = true;
     s.log.push({ type: 'guard', who: who.name });
@@ -298,7 +383,11 @@ export function playRound(s: FightState, orders: (Order | undefined)[], cry: Cry
     checkEnd(s);
   }
   if (s.result === 'won') s.followers = followersFor(s);
-  else if (!s.result && s.round >= CONFIG.maxRounds) s.result = 'timeout';
+  else if (!s.result && s.round >= maxRoundsOf(s)) s.result = 'timeout';
+  // The monster gets ready for its big move: the clan sees it coming before it gives its orders.
+  if (!s.result && s.monster && bigMoveRound(s.round + 1) && s.enemies[0] && alive(s.enemies[0])) {
+    s.log.push({ type: 'warn', who: s.enemies[0].name, move: s.monster.kind });
+  }
 }
 
 /**

@@ -66,7 +66,7 @@ describe('ladder fights: starting', () => {
     expect(parseAction({ type: 'cryCheck', round: 1, answer: 2.5, ms: 1234.6 })).toEqual({ type: 'cryCheck', round: 1, answer: 2.5, ms: 1235 });
     for (const bad of [
       { type: 'cryCheck', round: 0, answer: 1, ms: 1 },
-      { type: 'cryCheck', round: CONFIG.maxRounds + 1, answer: 1, ms: 1 },
+      { type: 'cryCheck', round: Math.max(CONFIG.maxRounds, CONFIG.monster.rounds) + 1, answer: 1, ms: 1 },
       { type: 'cryCheck', round: 1, answer: 'twelve', ms: 1 },
       { type: 'cryCheck', round: 1, answer: Infinity, ms: 1 },
       { type: 'cryCheck', round: 1, answer: 1, ms: -5 },

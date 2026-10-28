@@ -95,9 +95,9 @@ So every building matters, and a full village is the best way to beat the giant.
 
 | Clan | Win chance per try |
 |---|---|
-| Members about level 15 or more, village complete, full army, good gear | about **65%** |
-| Members about level 12, village about 25 / 39 | about **30%** |
-| Members about level 8, village about 10 / 39 | about **5%** (a stretch, with the "tired giant" rule below) |
+| Members about level 15 or more, village complete, full army, good gear | about **40%** (James chose harder, 28 Oct 2026; was 65%) |
+| Members about level 12, village about 25 / 39 | about **18%** |
+| Members about level 8, village about 10 / 39 | about **3%** (a stretch, with the "tired giant" rule below) |
 | Every Battle Cry answered right versus none | about +15 points, a nudge, not a test |
 
 Tuned with `npm run clans:sim` and a new `--monster` option. The giant's numbers live in `CONFIG.monster` like everything else.
@@ -121,7 +121,7 @@ From day 22 the market sells three one-off supplies, each limited (so a rich cla
 - **Healing potions** (heal a member mid-fight), up to 4;
 - **Giant net** (the giant misses its first boulder), 1.
 
-Each has a maths moment ("3 fire arrows at 250 gold each, plus 10% tax?"). Prices are high (about 1,000 to 2,000 gold) so the gold that piles up after a full village has a job. Optional: it can be left out of the first build.
+Each has a maths moment ("3 fire arrows at 250 gold each, plus 10% tax?"). Prices are high (about 1,000 to 2,000 gold) so the gold that piles up after a full village has a job. **James chose to include it in the first monster build (28 Oct 2026).**
 
 ## 6. Remembering winners: the Hall of Legends
 
@@ -137,7 +137,7 @@ Names are hub names; hidden profiles aren't shown. Never maths scores.
 
 - **Starts again:** every member goes back to level 1 with starting stats, HP and training points; gear and scrolls go; every building goes back to 0; troops go home; the purse goes back to the starting 200 gold; builds saved and daily counts reset; fame goes to 0 (this replaces the teacher's New fame season button).
 - **Kept:** the clan's name and look, its members' names, races and classes (so nobody has to make a clan again), and, for good: trophies, achievements, the Hall of Legends, mine boss badges and hub points already earned.
-- **Optional:** on the first visit of a season, the pupil may re-pick each member's race and class (like a Dragon Maths hero picking a new class), or keep them with one tap.
+- **Yes (James, 28 Oct 2026):** on the first visit of a season, the pupil may re-pick each member's race and class (like a Dragon Maths hero picking a new class), or keep them with one tap.
 - **No surprises:** from day 22 the home screen says "New season in 9 days: your clan starts fresh, your trophies stay forever." Fights already open finish first.
 - **The save change is the same kind as My Village's:** a pure, tested `newSeasonSave(clan)` run by the server on the first load of a new season (never by the browser), recorded once per season. Nothing is deleted from the database; the old season's numbers can be kept in the Hall row.
 

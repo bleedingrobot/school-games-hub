@@ -332,7 +332,7 @@ describe('reading fight requests', () => {
 
   it.each([
     ['round 0', { ...good, round: 0 }],
-    ['a round past the last', { ...good, round: CONFIG.maxRounds + 1 }],
+    ['a round past the last', { ...good, round: Math.max(CONFIG.maxRounds, CONFIG.monster.rounds) + 1 }],
     ['orders that are not a list', { ...good, orders: 'attack' }],
     ['more orders than members', { ...good, orders: Array(CONFIG.maxMembers + 1).fill({ action: 'guard' }) }],
     ['an order that does not exist', { ...good, orders: [{ action: 'surrender' }] }],
