@@ -132,6 +132,10 @@ This replaces steps 2 and 3 above:
 2. "My Village": merge the village and empire into one screen with one purse, building levels and 2 builds a day, plus the save move.
 3. Raids across the class, without groups, and the teacher page tidy-up.
 
+## Live (28 Oct 2026)
+
+My Village went live on 28 Oct 2026 (PR #72): migration `20261028001000` pasted in the SQL Editor, `clans` deployed, site published, and the old group chests shared out with `clan_my_village_share_chests()`.
+
 ## Step 2 build plan: "My Village" (agreed by James 28 Oct 2026; how it is built)
 
 **Branch `clans-my-village`.** It goes live in one go, because the engine, screens and server must change together.
