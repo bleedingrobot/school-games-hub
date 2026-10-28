@@ -46,3 +46,13 @@ Before each turn, one question. Right: you can fire a special arrow this shot fo
 4. **Preview and try-out**, then live: the existing players get topped up to 100 coins if below.
 
 Bots and classmate fights work as now. Classmate fights are one round, so they get the chest only (each player their own).
+
+## Built (28 Oct 2026)
+
+Option B as above, plus pictures: a loot chest that opens wider and fills with coins for each right answer, and a quiver that fills with arrows for a restock (`src/games/archery/LootArt.tsx`).
+
+- Numbers in `shared/archery/speed.ts` (kinds, limits, streak, `DAILY_COINS`) and `shop.ts` (halved prices, levels 0/100/300/600/1,000, `START_COINS`, `nextGoal` for Home's "25 more coins for the Hunter's Bow").
+- Server: `round-start` takes `kind` (`speed` / `chest` with `fight` or `duel` / `restock` with `fight` and `step`); `archery_bonus_for` decides whether it may open; `archery_rounds.after` makes each chest and restock open once. A chest is open for an hour after a finished bot fight, or a classmate fight the pupil didn't leave.
+- Migration `20261029000200_archery_more_maths.sql` (adds columns and functions, a second `archery_round_start` beside the old one, tops players up to 100 coins).
+- Tests: all 5,397 pass. The pgTAP checks (71) run in CI's database checks.
+- Go live order: the migration (pasted by James), then the `archery` function, then the site.
