@@ -710,6 +710,7 @@ schools). The actions use the existing `school_set_admin` (refuses your own row,
   admin and Remove teacher (with a confirm step), never on your own row.*
 - *Not done yet: Make/Remove teacher also stays on the student page; ticked bulk actions (move, delete leavers) come with End
   of year. Next: Classes.*
+- *Live 28 Oct 2026: the migration applied by hand and checked as a school admin, then the site published (PR #71).*
 
 ## 8. Tests to carry over / add
 
