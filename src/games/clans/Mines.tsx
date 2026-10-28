@@ -40,8 +40,8 @@ export function Mines({ session, onDepth, onGo, onBack, locked }: { session: Ses
   );
 }
 
-/** How the fight went, member by member. */
-export function Results({ summary, members, fame = 0, onDone }: { summary: FightSummary; members: Member[]; fame?: number; onDone: () => void }) {
+/** How the fight went, member by member. `onMines` is given only when the clan can fight again today. */
+export function Results({ summary, members, fame = 0, onDone, onMines }: { summary: FightSummary; members: Member[]; fame?: number; onDone: () => void; onMines?: () => void }) {
   return (
     <section className="cq-results" aria-label="Fight results">
       <h2>{summary.result === 'won' ? 'Victory!' : summary.result === 'lost' ? 'A rest is needed' : 'Back safe'}</h2>
@@ -53,7 +53,10 @@ export function Results({ summary, members, fame = 0, onDone }: { summary: Fight
           </li>
         ))}
       </ul>
-      <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onDone}>Back to the clan</button>
+      <div className="cq-actions">
+        {onMines && <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={onMines}>Back to the Mines</button>}
+        <button type="button" className={onMines ? 'cq-btn' : 'cq-btn cq-btn--hot'} autoFocus={!onMines} onClick={onDone}>Back to the clan</button>
+      </div>
     </section>
   );
 }
