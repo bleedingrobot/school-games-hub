@@ -93,6 +93,8 @@ Rough order of effect: G.1 and G.2 change the feel the most; G.3 and G.4 give ea
 
 Asked as question cards on 28 Oct 2026. Answers go here.
 
+**James's answers:** 1 toy diorama (28 Oct).
+
 1. **Overall look:** toy diorama (recommended) / keep the plain blocks and only add light and effects / a painted look to match Dragon Maths and Clan Quest.
 2. **Painted backdrops and course pictures from ComfyUI:** yes, made on the gaming PC like Clan Quest (recommended) / no, code and free packs only.
 3. **Where to start:** G.1 + G.2 on Boulder Beach first as a try-out page, then the rest (recommended) / all six stages planned in full first.
