@@ -23,6 +23,7 @@ import { ClassSetup } from './pages/MyClasses';
 import { clanQuest } from './games/clans/game';
 import { TeacherStudents } from './teacher/Students';
 import { StudentPage } from './teacher/StudentPage';
+import { HardestQuestions } from './teacher/Hardest'; // Today shows its top three, so it's in the teacher bundle anyway
 import { TeacherGames } from './teacher/Games';
 import { TeacherAdmin, TeacherEntry, TeacherMaths, TeacherShell } from './teacher/TeacherShell';
 import { Today } from './teacher/Today';
@@ -66,6 +67,7 @@ export function teacherRoutes() {
           <Route index element={<Suspense fallback={loading}><SetFocus /></Suspense>} />
           <Route path="skills" element={<Suspense fallback={loading}><SkillMap /></Suspense>} />
           <Route path="skips" element={<Suspense fallback={loading}><QuestionSkipsPanel /></Suspense>} />
+          <Route path="hardest" element={<HardestQuestions />} />
         </Route>
         <Route path="games" element={<TeacherGames />}>
           {/* A game's settings: a drawer over the table on a wide screen, its own page on a narrow one. */}

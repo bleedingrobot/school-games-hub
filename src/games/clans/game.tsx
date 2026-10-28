@@ -49,6 +49,7 @@ export const clanQuest: GameDefinition = {
     Settings: ClansTeacherSettings,
     StudentPanel: ClansStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherClans').then((m) => m.clansStudentSummary(student)),
+    hardest: (classId) => import('../../pages/TeacherClans').then((m) => m.clansHardest(classId)),
   },
   SeasonPanels: ClansSeasonPanel,
 };

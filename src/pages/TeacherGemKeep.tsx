@@ -19,6 +19,8 @@ import {
 import { FriendlyError } from '../data/profile';
 import { SettingChips, SettingChoice, SettingNumber, SettingToggle, useSetting, type Choice } from '../teacher/Settings';
 import type { GemKeepSettings } from '../games/gem-keep/settings';
+import type { HardestRow } from '../games/types';
+import { shortCache } from '../teacher/shortCache';
 import './teacher-gem-keep.css';
 
 function errorText(error: unknown) {
@@ -352,4 +354,10 @@ export function FactGrid({ facts }: { facts: FactStats[] }) {
       </ul>
     </div>
   );
+}
+
+/** The class's hardest times-tables facts, for the merged table on the Maths tab (stage 5). */
+export async function gemKeepHardest(classId: string): Promise<HardestRow[]> {
+  const data = await shortCache(`gem-keep:${classId}`, () => fetchClassGemKeep(classId));
+  return data.hardest.map((f) => ({ question: factLabel(f.key), topic: 'Times tables', attempts: f.attempts, correct: f.correct, students: f.students }));
 }

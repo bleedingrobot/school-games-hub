@@ -47,5 +47,7 @@ export const monsters: GameDefinition = {
     Settings: MonstersTeacherSettings,
     StudentPanel: MonstersStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherMonsters').then((m) => m.monstersStudentSummary(student)),
+    hardest: (classId) => import('../../pages/TeacherMonsters').then((m) => m.monstersHardest(classId)),
+    alerts: (classId) => import('../../pages/TeacherMonsters').then((m) => m.monstersAlerts(classId)),
   },
 };

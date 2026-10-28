@@ -5,7 +5,6 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { fetchClassOverview } from '../data/classOverview';
 import { fetchMultiplayerEnabled } from '../data/multiplayer';
 import { FriendlyError } from '../data/profile';
 import { fetchQuestionSkips } from '../data/questionLog';
@@ -22,6 +21,8 @@ import { describeEnd, nzLocalToIso, skillList, timeLeft } from '../../shared/mat
 import { SettingChoice, SettingToggle, useSetting } from './Settings';
 import { useTeacherClass } from './TeacherClass';
 import { NeedsYou } from './WaitingToJoin';
+import { percentRight, useHardest } from './Hardest';
+import { classOverview, useClassAlerts } from './useClassAlerts';
 import '../maths/focus.css';
 
 const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
@@ -31,11 +32,16 @@ export function Today() {
   if (!classId || !current) return null;
   return (
     <div className="today">
-      <NeedsYou classId={classId} />
+      <ClassNeedsYou key={`needs-${classId}`} classId={classId} />
       <LessonControls key={`controls-${classId}`} classId={classId} name={current.name} />
       <ThisWeek key={`week-${classId}`} classId={classId} name={current.name} members={current.members} />
     </div>
   );
+}
+
+function ClassNeedsYou({ classId }: { classId: string }) {
+  const alerts = useClassAlerts(classId);
+  return <NeedsYou classId={classId} alerts={alerts} />;
 }
 
 function LessonControls({ classId, name }: { classId: string; name: string }) {
@@ -125,7 +131,7 @@ function ThisWeek({ classId, name, members }: { classId: string; name: string; m
       () => current && setCounts(null),
     );
     // Counts only, no names: this screen may be on a projector. Names are one click away on the Students tab.
-    fetchClassOverview(classId).then(
+    classOverview(classId).then(
       (students) => {
         if (!current) return;
         const since = (minutes: number) => Date.now() - minutes * 60_000;
@@ -143,6 +149,8 @@ function ThisWeek({ classId, name, members }: { classId: string; name: string; m
   }, [classId, refresh]);
 
   const maths = `/teacher/${classId}/maths`;
+  const hardest = useHardest(classId);
+  const top = hardest?.rows.slice(0, 3) ?? [];
   return (
     <section className="panel this-week" aria-labelledby="week-title">
       <h2 id="week-title" className="panel__title">
@@ -187,6 +195,12 @@ function ThisWeek({ classId, name, members }: { classId: string; name: string; m
               <Link to={`/teacher/${classId}/students?sort=quiet`}>Who ›</Link>
             </>
           )}
+        </p>
+      )}
+      {top.length > 0 && (
+        <p className="this-week__line">
+          Hardest right now: {top.map((r) => `${r.question} (${percentRight(r)})`).join(', ')}{' '}
+          <Link to={`${maths}/hardest`}>Maths ›</Link>
         </p>
       )}
       <p className="this-week__links">

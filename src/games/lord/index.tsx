@@ -66,5 +66,7 @@ export const dragonMaths: GameDefinition = {
     Settings: LordTeacherSettings,
     StudentPanel: LordStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherLord').then((m) => m.lordStudentSummary(student)),
+    hardest: (classId) => import('../../pages/TeacherLord').then((m) => m.lordHardest(classId)),
+    alerts: (classId) => import('../../pages/TeacherLord').then((m) => m.lordAlerts(classId)),
   },
 };

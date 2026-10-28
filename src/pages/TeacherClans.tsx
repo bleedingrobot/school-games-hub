@@ -50,6 +50,8 @@ import {
   useSetting,
 } from "../teacher/Settings";
 import { whenPlayed } from "./Dashboard";
+import type { HardestRow } from "../games/types";
+import { shortCache } from "../teacher/shortCache";
 import "./teacher-gem-keep.css";
 import "./teacher-clans.css";
 
@@ -684,4 +686,10 @@ export function ClansStudentPanel({ student }: { student: string }) {
       )}
     </section>
   );
+}
+
+/** The class's hardest kinds of question, for the merged table on the Maths tab (stage 5). */
+export async function clansHardest(classId: string): Promise<HardestRow[]> {
+  const data = await shortCache(`clan-quest:${classId}`, () => fetchClassClanMaths(classId));
+  return data.hardest.map((k) => ({ question: kindLabel(k.key), topic: null, attempts: k.attempts, correct: k.correct, students: k.students ?? 0 }));
 }

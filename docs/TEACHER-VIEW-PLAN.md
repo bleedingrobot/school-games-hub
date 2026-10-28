@@ -678,6 +678,21 @@ live: the new functions exist, `anon` can't call them, and a teacher's class gav
 
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.
 
+*Done 28 Oct 2026 on `claude/project-thread-4t7spr`. No migration: it reads the class reports that went live with stage 3.*
+- *Contract: `teacher.hardest(classId)` gives `HardestRow`s (question in words, topic, asked, right, students) and
+  `teacher.alerts(classId)` gives `TeacherAlert`s (one line, and where "See ›" goes). Gem Keep, Maths Monsters, Dragon Maths
+  and Clan Quest give `hardest`; Maths Monsters and Dragon Maths give `alerts`. Each reads its own class report, and
+  `src/teacher/shortCache.ts` shares one request when Today asks for both within a few seconds.*
+- *Maths → Hardest questions (`/teacher/:classId/maths/hardest`, `src/teacher/Hardest.tsx`): every game's rows in one table,
+  hardest first (lowest share right, then most asked), with a Game column and a Game filter. A game that can't load is named
+  under the table. The old per-game tables stay in each game's Settings for now.*
+- *Today: Needs you adds a line per student whose saves or requests a game turned down in the last 7 days ("Maths Monsters
+  turned down 2 saves from Speedy Otter 27 this week", made-up names only), and "N students skipped 30% or more of their
+  questions this week" (at least 5 questions; opens the roster sorted by Skipped). This week adds "Hardest right now" (the top
+  three, with Maths ›).*
+- *Not done: "students in no class" (admin) waits for the Admin page (stage 6). Alerts can't be dismissed; they drop off after
+  7 days.*
+
 **Stage 6: the Admin page.** In this order, each its own PR: Overview + Students + Teachers (moving what exists, plus
 school-admin role); Classes; End of year checklist + `admin_log`; Safety (alerts across the school, player lookup);
 School game settings (villages, Dragon dates, then the new defaults and copy-to-classes). Stage 0 already moves the
