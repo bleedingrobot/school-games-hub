@@ -35,7 +35,7 @@ Keep the shape (build a castle, raise an army, raid, help the class) and cut it 
 **Empire**
 1. **One clan purse.** The vault is gone. Raiders take a small share of the purse but never more than 10%, and **gold kept in a "Strongroom" building is safe**, so walls still matter. (Or keep it simpler still: raiders take only kingdom-style loot and never touch your gold.)
 2. **No developing land.** You have building spaces instead of wild plots and fences. Tap an empty space, tap a building, tap Build. The area and fence maths stays as an optional maths moment ("This barracks needs a 3 × 5 space: how many squares?"). It isn't a gate any more.
-3. **No worker energy.** Swap it for a simple **1 build a day** (2 with a Developer's Hall). That rule is easy to see and hard to get wrong.
+3. **No worker energy.** Swap it for a simple **2 builds or upgrades a day** (James, 28 Oct). That rule is easy to see and hard to get wrong.
 4. **Four buildings, each with levels 1 to 5**, instead of seven with max counts:
    - **Barracks** (more room for troops);
    - **Walls** (defenders take less damage, and fewer buildings are lost);
@@ -66,7 +66,7 @@ Remove land and buildings altogether. The empire becomes a "Clan Camp" with four
 3. **Empire:**
    - one purse;
    - building spaces with levels;
-   - 1 build a day;
+   - 2 builds a day;
    - automatic footmen;
    - the one-tap battle plan with traffic lights.
    This needs a save migration (below).
@@ -87,4 +87,4 @@ James to OK the migration before it runs on the live database.
 
 1. Option B as recommended, or the smaller A or the bigger C?
 2. ~~With one purse, can raiders take gold?~~ **Answered 28 Oct 2026:** yes, up to 10% of the purse, and a Strongroom keeps some of it safe.
-3. Is "1 build a day" right, or should it be 2?
+3. ~~1 or 2 builds a day?~~ **Answered 28 Oct 2026:** 2 a day.
