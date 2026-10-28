@@ -3,6 +3,7 @@
 **Marble Rush** (name picked by James, 18 Oct 2026): a marble-rolling game for the hub, in the spirit of the 1984 arcade game *Marble Madness*: steer a marble down tilted, blocky, isometric tracks against the clock, without falling off the edge.
 Written 16 October 2026 after searching GitHub for existing versions and reading the code on `main` (Stages 1–10 live, Stage 11 Gem Keep under way).
 **Status: idea saved, not scheduled.** Nothing is built. Maths added to the plan 18 Oct 2026 (section 7, James picked all six ideas). **All questions in section 12 answered 18 Oct 2026**: Marble Rush; count-up clock plus a countdown hard mode; New Zealand landscapes inspired by real places (section 3); two boards per course; rescue questions on. James asked whether it can be built **alongside** Maths Monsters (section 10).
+**Graphics upgrade (28 Oct 2026):** planned in [MARBLE-ART-PLAN.md](MARBLE-ART-PLAN.md).
 
 ## The short version
 
