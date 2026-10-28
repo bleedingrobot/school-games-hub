@@ -182,7 +182,7 @@ const share = (k: MathsKind) => (k.attempts > 0 ? `${Math.round((100 * k.correct
 
 /** How the class is getting on with Clan Quest's story questions: no pupil names. */
 function ClansClassReport({ classId }: { classId: string }) {
-  const [data, setData] = useState<(ClanMathsClass & { wholeSchool: boolean }) | null>(null);
+  const [data, setData] = useState<ClanMathsClass | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
   useEffect(() => {
@@ -200,9 +200,8 @@ function ClansClassReport({ classId }: { classId: string }) {
   return (
     <section className="panel gk-teacher" aria-labelledby="cq-class-title">
       <h2 id="cq-class-title" className="panel__title">
-        {data?.wholeSchool ? "Clan Quest maths: the whole school" : "Clan Quest maths: this class"}
+        Clan Quest maths: this class
       </h2>
-      {data?.wholeSchool && <p>This shows every class for now. It will show just this class after the next database update.</p>}
       {failed ? (
         <p className="panel__empty">{failed}</p>
       ) : !data ? (

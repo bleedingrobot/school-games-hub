@@ -41,15 +41,8 @@ export interface GameDefinition {
    * loading) hides it. Leave it out for a game that is always on. The dashboard calls it for every game in GAMES.
    */
   useTeacherSwitch?: () => boolean | null;
-  /**
-   * The game on the teacher's Games table and student page (docs/TEACHER-VIEW-PLAN.md, section 6). A game that has moved to
-   * this leaves out TeacherPanels and StudentPanel below.
-   */
+  /** The game on the teacher's Games table and student page (docs/TEACHER-VIEW-PLAN.md, section 6). */
   teacher?: TeacherContract;
-  /** Old way, until every game has moved to `teacher`: the game's panels, shown in the Games table's drawer. Lazy. */
-  TeacherPanels?: ComponentType;
-  /** Old way too: the game's part of one student's panel on the Teacher page. Lazy too. */
-  StudentPanel?: ComponentType<{ student: string }>;
   /** Season resets for the "Seasons and end of year" part at the bottom of the Teacher page, away from the everyday switches. Lazy too. */
   SeasonPanels?: ComponentType;
 }

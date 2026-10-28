@@ -1,12 +1,12 @@
 -- Dragon Maths' class report for one class (migration 20261028000300): teacher_lord_class(target_class).
 -- A teacher sees only the class asked for (heroes, levels, hardest questions, refused requests and the Hall of Heroes), with
--- the school's season (one date for the whole school since 20261028000400), can't read a class they don't teach, a pupil can't call it, and the old call with no class still
--- works.
+-- the school's season (one date for the whole school since 20261028000400), can't read a class they don't teach, and a pupil can't call it.
+-- The old call with no class is gone (migration 20261028000600).
 -- Run on a throw-away copy: scripts/scratch-db.sh lordclass, then
 --   scripts/scratch-test.sh lordclass supabase/tests/database/lord_class_report.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(23);
+select plan(21);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -124,15 +124,9 @@ select is(pg_temp.keys(pg_temp.report(), 'hardest', 'key'), '["mul:6x7"]'::jsonb
 select is((pg_temp.report() -> 'refusals') || (pg_temp.report() -> 'hall'), '[]'::jsonb,
   '... and none of the other classes'' refused requests or Hall of Heroes');
 
--- ---- The old call with no class still works, as before ----
-select is((public.teacher_lord_class() ->> 'players')::integer, 5, 'the old call still gives Eve every hero in the school');
+-- ---- The old call with no class, which read the whole school, is gone (migration 20261028000600) ----
 select pg_temp.reset();
-select pg_temp.fin();
-select is(jsonb_array_length(public.teacher_lord_class() -> 'refusals'), 2, 'the old call still gives Fin both his classes'' refused requests');
-select pg_temp.reset();
-select pg_temp.ana();
-select throws_ok('select public.teacher_lord_class()', '42501', null, 'a pupil still cannot make the old call');
-select pg_temp.reset();
+select hasnt_function('public', 'teacher_lord_class', '{}'::name[], 'the old teacher_lord_class() with no class is gone');
 
 select * from finish();
 rollback;

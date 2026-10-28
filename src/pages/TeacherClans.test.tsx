@@ -56,7 +56,7 @@ beforeEach(() => {
   data.movePupil.mockResolvedValue(undefined);
   data.saveClanMathsSettings.mockResolvedValue(undefined);
   data.fetchClanMathsSettings.mockResolvedValue(mathsSettings());
-  data.fetchClassClanMaths.mockResolvedValue({ players: 0, kinds: [], hardest: [], wholeSchool: false });
+  data.fetchClassClanMaths.mockResolvedValue({ players: 0, kinds: [], hardest: [] });
   data.fetchClanMathsStudent.mockResolvedValue({ fame: null, kinds: [] });
   data.startClansNewSeason.mockResolvedValue({ season: 2, clans: 20 });
   data.fetchClansEnabled.mockResolvedValue(false);
@@ -323,7 +323,6 @@ describe('the Clan Quest class report in the drawer', () => {
       players: 14,
       kinds: [{ key: 'clan:y5:ratio', attempts: 20, correct: 8 }, { key: 'clan:y5:percent-of', attempts: 30, correct: 27 }],
       hardest: [{ key: 'clan:y5:ratio', attempts: 20, correct: 8, students: 9 }],
-      wholeSchool: false,
     });
     render(<ClansTeacherSettings classId="c12" />);
     expect(await screen.findByRole('heading', { name: 'Clan Quest maths: this class' })).toBeInTheDocument();
@@ -335,13 +334,6 @@ describe('the Clan Quest class report in the drawer', () => {
     const every = screen.getByRole('table', { name: 'Every kind of question' });
     const percent = within(every).getByRole('rowheader', { name: 'Percent of (Year 5)' }).closest('tr')!;
     expect(within(percent).getAllByRole('cell').map((c) => c.textContent)).toEqual(['90%', '30']);
-  });
-
-  it('says so while it can only show the whole school (before the database update)', async () => {
-    data.fetchClassClanMaths.mockResolvedValue({ players: 3, kinds: [], hardest: [], wholeSchool: true });
-    render(<ClansTeacherSettings classId="c12" />);
-    expect(await screen.findByRole('heading', { name: 'Clan Quest maths: the whole school' })).toBeInTheDocument();
-    expect(screen.getByText(/This shows every class for now/)).toBeInTheDocument();
   });
 
   it('says when nobody has answered yet, and when it can’t load', async () => {

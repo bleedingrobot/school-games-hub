@@ -179,19 +179,11 @@ describe('the teacher’s parts', () => {
 
   it('asks for the class report for the class', async () => {
     rpc.mockResolvedValueOnce({ data: REPORT, error: null });
-    expect(await fetchClassMonsters('c12')).toEqual({ ...REPORT, wholeSchool: false });
+    expect(await fetchClassMonsters('c12')).toEqual({ ...REPORT});
     expect(rpc).toHaveBeenCalledWith('teacher_monster_class', { target_class: 'c12' });
   });
 
-  it('falls back to the whole-school report, and says so, while the database has only the old one', async () => {
-    rpc
-      .mockResolvedValueOnce({ data: null, error: { code: 'PGRST202', message: 'Could not find the function' } })
-      .mockResolvedValueOnce({ data: REPORT, error: null });
-    expect(await fetchClassMonsters('c12')).toEqual({ ...REPORT, wholeSchool: true });
-    expect(rpc).toHaveBeenLastCalledWith('teacher_monster_class');
-  });
-
-  it('doesn’t fall back for any other error (a class the teacher doesn’t teach)', async () => {
+  it('says so when the server refuses (a class the teacher doesn’t teach), and asks nothing else', async () => {
     rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'That isn’t one of your classes.' } });
     await expect(fetchClassMonsters('c99')).rejects.toThrow('We couldn’t load Maths Monsters for this class.');
     expect(rpc).toHaveBeenCalledTimes(1);

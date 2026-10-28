@@ -16,6 +16,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-000000000010', 'gus@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+-- The school's Everyone class, which every pupil here is in (the class reports need a class since 20261028000600).
+select set_config('test.everyone', (select class_id::text from public.class_members where student_id = '00000000-0000-0000-0000-00000000000a'), true);
 update public.profiles set hidden = true where id = '00000000-0000-0000-0000-00000000000d';
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
@@ -73,7 +75,7 @@ select throws_ok($$ insert into public.lord_hall (player, season, kills) values 
 select throws_ok($$ select public.lord_daily_news(pg_temp.id('a'), current_date, '[]') $$, '42501', null, 'students cannot write the day''s news');
 select throws_ok($$ select public.lord_arena_candidates(pg_temp.id('a'), 1, 5) $$, '42501', null, 'students cannot ask for classmates'' heroes');
 select throws_ok($$ select public.record_lord_score(pg_temp.id('a'), 0, 0, 100) $$, '42501', null, 'students cannot give themselves points');
-select throws_ok($$ select public.teacher_lord_class() $$, '42501', null, 'students cannot see the class view');
+select throws_ok($$ select public.teacher_lord_class(current_setting('test.everyone')::uuid) $$, '42501', null, 'students cannot see the class view');
 select throws_ok($$ select public.teacher_lord_student(pg_temp.id('b')) $$, '42501', null, 'students cannot see another pupil''s view');
 select throws_ok($$ select public.teacher_reset_lord_hero(pg_temp.id('b')) $$, '42501', null, 'students cannot reset a hero');
 select pg_temp.reset();
@@ -235,12 +237,12 @@ update public.app_settings set lord_enabled = true, lord_season_start = pg_temp.
 select pg_temp.reset();
 select public.record_lord_refusal(pg_temp.id('a'), 'tampered', 'fight-finish');
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
-select is(public.teacher_lord_class() -> 'season' ->> 'number', '1', 'the class view says which season it is');
-select is(public.teacher_lord_class() ->> 'players', '17', 'how many pupils have a hero');
-select is((public.teacher_lord_class() -> 'levels' ->> 3), '1', 'and how many are at each level this season');
-select is(public.teacher_lord_class() -> 'refusals' -> 0 ->> 'realName', 'ana', 'a turned-down request is listed with the real name');
-select is(public.teacher_lord_class() -> 'refusals' -> 0 ->> 'reason', 'tampered', 'and why');
-select is(jsonb_array_length(public.teacher_lord_class() -> 'hall'), 2, 'the Hall is listed');
+select is(public.teacher_lord_class(current_setting('test.everyone')::uuid) -> 'season' ->> 'number', '1', 'the class view says which season it is');
+select is(public.teacher_lord_class(current_setting('test.everyone')::uuid) ->> 'players', '17', 'how many pupils have a hero');
+select is((public.teacher_lord_class(current_setting('test.everyone')::uuid) -> 'levels' ->> 3), '1', 'and how many are at each level this season');
+select is(public.teacher_lord_class(current_setting('test.everyone')::uuid) -> 'refusals' -> 0 ->> 'realName', 'ana', 'a turned-down request is listed with the real name');
+select is(public.teacher_lord_class(current_setting('test.everyone')::uuid) -> 'refusals' -> 0 ->> 'reason', 'tampered', 'and why');
+select is(jsonb_array_length(public.teacher_lord_class(current_setting('test.everyone')::uuid) -> 'hall'), 2, 'the Hall is listed');
 select is(public.teacher_lord_student(pg_temp.id('a')) -> 'hero' ->> 'level', '5', 'one pupil''s hero at a glance');
 select is(public.teacher_lord_student(pg_temp.id('a')) -> 'hero' -> 'stats' ->> 'masterWins', '5', 'with everything they have done');
 select is(public.teacher_lord_student(pg_temp.id('a')) ->> 'refused', '1', 'and the requests turned down this week');

@@ -32,7 +32,6 @@ beforeEach(() => {
       { pack: 'fractions', key: 'frac:half', students: 2, attempts: 7, correct: 2 },
     ],
     refusals: [{ name: 'Lucky Tui 21', realName: 'ana', reason: 'badge', at: new Date().toISOString() }],
-    wholeSchool: false,
   });
 });
 
@@ -120,13 +119,6 @@ describe('Maths Monsters’ Settings', () => {
     const refused = screen.getByRole('table', { name: /Saves the game turned down/ });
     expect(within(refused).getByRole('rowheader', { name: 'ana' })).toBeInTheDocument();
     expect(within(refused).getByText('a badge without a won Tower battle')).toBeInTheDocument();
-  });
-
-  it('says it is the whole school while the database only has the whole-school report', async () => {
-    data.fetchClassMonsters.mockResolvedValueOnce({ players: 0, badges: [], topics: [], hardest: [], refusals: [], wholeSchool: true });
-    render(<MonstersTeacherSettings classId="c12" />);
-    expect(await screen.findByRole('region', { name: /^Maths Monsters: the whole school/ })).toBeInTheDocument();
-    expect(screen.getByText(/shows every class for now/)).toBeInTheDocument();
   });
 
   it('has no red buttons', async () => {

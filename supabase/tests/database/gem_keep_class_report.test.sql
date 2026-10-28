@@ -1,11 +1,11 @@
 -- Gem Keep's class report for one class (migration 20261028000100): teacher_gem_keep_class(target_class).
--- A teacher sees only the class asked for, can't read a class they don't teach, a pupil can't call it, and the old call
--- with no class still works.
+-- A teacher sees only the class asked for, can't read a class they don't teach, and a pupil can't call it.
+-- The old call with no class is gone (migration 20261028000600).
 -- Run on a throw-away copy: scripts/scratch-db.sh gemclass, then
 --   scripts/scratch-test.sh gemclass supabase/tests/database/gem_keep_class_report.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(12);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -99,16 +99,9 @@ select is((select jsonb_agg(h ->> 'key') from jsonb_array_elements(public.teache
 select is(public.teacher_gem_keep_class(current_setting('test.everyone')::uuid) -> 'levels',
   '[{"levelId": "level-01", "won": 2, "keys": 2}, {"levelId": "level-02", "won": 2, "keys": 1}]'::jsonb, '... and only its levels');
 
--- ---- The old call with no class still works, as before ----
-select is((public.teacher_gem_keep_class() ->> 'players')::integer, 5, 'the old call still gives Eve every player in the school');
-select is(jsonb_array_length(public.teacher_gem_keep_class() -> 'hardest'), 2, '... and the school''s hardest facts');
+-- ---- The old call with no class, which read the whole school, is gone (migration 20261028000600) ----
 select pg_temp.reset();
-select pg_temp.fin();
-select is((public.teacher_gem_keep_class() ->> 'players')::integer, 3, 'the old call still gives Fin all his students');
-select pg_temp.reset();
-select pg_temp.ana();
-select throws_ok('select public.teacher_gem_keep_class()', '42501', null, 'a pupil still cannot make the old call');
-select pg_temp.reset();
+select hasnt_function('public', 'teacher_gem_keep_class', '{}'::name[], 'the old teacher_gem_keep_class() with no class is gone');
 
 select * from finish();
 rollback;

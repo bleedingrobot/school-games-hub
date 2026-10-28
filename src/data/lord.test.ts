@@ -195,7 +195,7 @@ describe('the news, the Warriors list and the Hall of Heroes', () => {
 describe('the teacher’s views', () => {
   it('asks for the class, one pupil, and a reset', async () => {
     rpc.mockResolvedValue({ data: { players: 2 }, error: null });
-    expect(await fetchClassLord('c12')).toEqual({ players: 2, wholeSchool: false });
+    expect(await fetchClassLord('c12')).toEqual({ players: 2 });
     expect(rpc).toHaveBeenLastCalledWith('teacher_lord_class', { target_class: 'c12' });
     await fetchStudentLord('kid-1');
     expect(rpc).toHaveBeenLastCalledWith('teacher_lord_student', { student: 'kid-1' });
@@ -210,15 +210,7 @@ describe('the teacher’s views', () => {
     await expect(resetLordHero('kid-1')).rejects.toThrow('We couldn’t reset that hero.');
   });
 
-  it('falls back to the whole-school report, and says so, while the database has only the old one', async () => {
-    rpc
-      .mockResolvedValueOnce({ data: null, error: { code: 'PGRST202', message: 'Could not find the function' } })
-      .mockResolvedValueOnce({ data: { players: 9 }, error: null });
-    expect(await fetchClassLord('c12')).toEqual({ players: 9, wholeSchool: true });
-    expect(rpc).toHaveBeenLastCalledWith('teacher_lord_class');
-  });
-
-  it('doesn’t fall back for any other error (a class the teacher doesn’t teach)', async () => {
+  it('says so when the server refuses (a class the teacher doesn’t teach), and asks nothing else', async () => {
     rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'That isn’t one of your classes.' } });
     await expect(fetchClassLord('c99')).rejects.toThrow('We couldn’t load Dragon Maths for this class.');
     expect(rpc).toHaveBeenCalledTimes(1);

@@ -37,7 +37,6 @@ const CLASS = {
   hardest: [{ pack: 'times-tables', key: 'mul:7x8', students: 3, attempts: 12, correct: 4 }],
   refusals: [{ name: 'Lucky Tui 21', realName: 'ana', reason: 'tampered', action: 'fight-finish', at: new Date().toISOString() }],
   hall: [{ season: 1, name: 'Brave Kiwi', realName: 'ben', kills: 2 }],
-  wholeSchool: false,
 };
 
 const SCHOOL = { start: '2026-08-31', pausedSince: null, number: 3, dayOfSeason: 23, daysLeft: 12, startsIn: null, canChange: true };
@@ -228,18 +227,11 @@ describe('the Dragon Maths class view', () => {
   });
 
   it('says when nothing has started', async () => {
-    data.fetchClassLord.mockResolvedValue({ season: { number: null, start: null, daysLeft: null }, players: 0, thisSeason: 0, levels: [], hardest: [], refusals: [], hall: [], wholeSchool: false });
+    data.fetchClassLord.mockResolvedValue({ season: { number: null, start: null, daysLeft: null }, players: 0, thisSeason: 0, levels: [], hardest: [], refusals: [], hall: [] });
     render(<LordTeacherSettings classId="c12" />);
     expect(await screen.findByText('The first season has not started yet.')).toBeInTheDocument();
     expect(screen.getByText('Nobody has beaten the Red Dragon yet.')).toBeInTheDocument();
     expect(screen.queryByRole('table', { name: /Requests the game turned down/ })).not.toBeInTheDocument();
-  });
-
-  it('says it is the whole school while the database only has the whole-school report', async () => {
-    data.fetchClassLord.mockResolvedValueOnce({ ...CLASS, wholeSchool: true });
-    render(<LordTeacherSettings classId="c12" />);
-    expect(await screen.findByRole('region', { name: /^Dragon Maths: the whole school/ })).toBeInTheDocument();
-    expect(screen.getByText(/shows every class for now/)).toBeInTheDocument();
   });
 
   it('has no red buttons', async () => {

@@ -333,22 +333,11 @@ export async function saveMonstersTopics(topics: TopicId[], classId: string): Pr
   await saveMonstersSettings({ ...current, topics }, classId);
 }
 
-/** PostgREST's answer when the database has no function with these arguments. */
-const NO_SUCH_FUNCTION = 'PGRST202';
-
-/**
- * Maths Monsters' report for one class (migration 20261028000200). Until that migration is on the live database, the server
- * has only the old whole-school report: then that one is loaded instead, with `wholeSchool` set, so the page can say so.
- */
-export async function fetchClassMonsters(classId: string): Promise<ClassMonsters & { wholeSchool: boolean }> {
+/** Maths Monsters' report for one class, for a teacher who teaches it (migration 20261028000200). */
+export async function fetchClassMonsters(classId: string): Promise<ClassMonsters> {
   const { data, error } = await supabase.rpc('teacher_monster_class', { target_class: classId });
-  if (error?.code === NO_SUCH_FUNCTION) {
-    const old = await supabase.rpc('teacher_monster_class');
-    if (old.error || !old.data) fail(old.error, 'We couldn’t load Maths Monsters for the school.');
-    return { ...(old.data as ClassMonsters), wholeSchool: true };
-  }
   if (error || !data) fail(error, 'We couldn’t load Maths Monsters for this class.');
-  return { ...(data as ClassMonsters), wholeSchool: false };
+  return data as ClassMonsters;
 }
 
 export async function fetchStudentMonsters(student: string): Promise<StudentMonsters> {

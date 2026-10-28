@@ -15,19 +15,11 @@ beforeEach(() => rpc.mockReset());
 describe('Clan Quest’s class report', () => {
   it('asks for the class', async () => {
     rpc.mockResolvedValueOnce({ data: { players: 3, kinds: [], hardest: [] }, error: null });
-    expect(await fetchClassClanMaths('c12')).toEqual({ players: 3, kinds: [], hardest: [], wholeSchool: false });
+    expect(await fetchClassClanMaths('c12')).toEqual({ players: 3, kinds: [], hardest: [] });
     expect(rpc).toHaveBeenCalledWith('teacher_clan_maths_class', { target_class: 'c12' });
   });
 
-  it('falls back to the whole-school report, and says so, while the database has only the old one', async () => {
-    rpc
-      .mockResolvedValueOnce({ data: null, error: { code: 'PGRST202', message: 'Could not find the function' } })
-      .mockResolvedValueOnce({ data: { players: 9, kinds: [], hardest: [] }, error: null });
-    expect(await fetchClassClanMaths('c12')).toEqual({ players: 9, kinds: [], hardest: [], wholeSchool: true });
-    expect(rpc).toHaveBeenLastCalledWith('teacher_clan_maths_class');
-  });
-
-  it('doesn’t fall back for any other error (a class the teacher doesn’t teach)', async () => {
+  it('says so when the server refuses (a class the teacher doesn’t teach), and asks nothing else', async () => {
     rpc.mockResolvedValueOnce({ data: null, error: { code: '42501', message: 'That isn’t one of your classes.' } });
     await expect(fetchClassClanMaths('c99')).rejects.toThrow('We couldn’t load the Clan Quest maths records for this class.');
     expect(rpc).toHaveBeenCalledTimes(1);

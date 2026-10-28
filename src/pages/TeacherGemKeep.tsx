@@ -157,7 +157,7 @@ function GemKeepSettingsPanel({ classId }: { classId: string }) {
 
 /** How the class is getting on: its hardest facts and how far its students have got. */
 function GemKeepClassReport({ classId }: { classId: string }) {
-  const [data, setData] = useState<(ClassGemKeep & { wholeSchool: boolean }) | null>(null);
+  const [data, setData] = useState<ClassGemKeep | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
   useEffect(() => {
@@ -175,17 +175,16 @@ function GemKeepClassReport({ classId }: { classId: string }) {
   return (
     <section className="panel gk-teacher" aria-labelledby="gk-class-title">
       <h2 id="gk-class-title" className="panel__title">
-        {data?.wholeSchool ? 'Gem Keep: the whole school' : 'Gem Keep: this class'}
+        Gem Keep: this class
         {data && <span className="panel__count">{data.players} playing</span>}
       </h2>
-      {data?.wholeSchool && <p>This shows every class for now. It will show just this class after the next database update.</p>}
       {failed ? (
         <p className="panel__empty">{failed}</p>
       ) : !data ? (
         <p className="panel__empty">Loading…</p>
       ) : data.players === 0 ? (
         <p className="panel__empty">
-          {data.wholeSchool ? 'No students' : 'No students in this class'} have played Gem Keep since the new season started.
+          No students in this class have played Gem Keep since the new season started.
         </p>
       ) : (
         <div className="gk-teacher__class">

@@ -223,24 +223,13 @@ export interface ClanMathsStudent {
   kinds: MathsKind[];
 }
 
-/** PostgREST's answer when the database has no function with these arguments. */
-const NO_SUCH_FUNCTION = 'PGRST202';
-
-/**
- * Clan Quest's maths report for one class (migration 20261028000500). Until that migration is on the live database, the
- * server has only the old whole-school report: then that one is loaded instead, with `wholeSchool` set, so the page can say so.
- */
-export async function fetchClassClanMaths(classId: string): Promise<ClanMathsClass & { wholeSchool: boolean }> {
+/** Clan Quest's maths report for one class, for a teacher who teaches it (migration 20261028000500). */
+export async function fetchClassClanMaths(classId: string): Promise<ClanMathsClass> {
   const { data, error } = await supabase.rpc('teacher_clan_maths_class', { target_class: classId });
-  if (error?.code === NO_SUCH_FUNCTION) {
-    const old = await supabase.rpc('teacher_clan_maths_class');
-    if (old.error || !old.data) throw new FriendlyError('We couldn’t load the Clan Quest maths records for the school.');
-    return { ...(old.data as ClanMathsClass), wholeSchool: true };
-  }
   if (error || !data) {
     throw new FriendlyError(error?.code === '22023' && error.message ? error.message : 'We couldn’t load the Clan Quest maths records for this class.');
   }
-  return { ...(data as ClanMathsClass), wholeSchool: false };
+  return data as ClanMathsClass;
 }
 
 export async function fetchClanMathsStudent(student: string): Promise<ClanMathsStudent> {

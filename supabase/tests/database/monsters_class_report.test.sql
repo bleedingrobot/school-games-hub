@@ -1,11 +1,12 @@
 -- Maths Monsters' class report for one class (migration 20261028000200): teacher_monster_class(target_class).
 -- A teacher sees only the class asked for (players, badges, topics, hardest questions and refused saves), can't read a class
--- they don't teach, a pupil can't call it, and the old call with no class still works.
+-- they don't teach, and a pupil can't call it.
+-- The old call with no class is gone (migration 20261028000600).
 -- Run on a throw-away copy: scripts/scratch-db.sh monclass, then
 --   scripts/scratch-test.sh monclass supabase/tests/database/monsters_class_report.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(14);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -101,16 +102,9 @@ select is((current_setting('test.report')::jsonb ->> 'players')::integer, 2, 'Ev
 select is(pg_temp.keys(current_setting('test.report')::jsonb, 'hardest', 'key'), '["mul:6x7"]'::jsonb, '... and only its hardest question');
 select is(current_setting('test.report')::jsonb -> 'refusals', '[]'::jsonb, '... and none of the other classes'' refused saves');
 
--- ---- The old call with no class still works, as before ----
-select is((public.teacher_monster_class() ->> 'players')::integer, 5, 'the old call still gives Eve every player in the school');
+-- ---- The old call with no class, which read the whole school, is gone (migration 20261028000600) ----
 select pg_temp.reset();
-select pg_temp.fin();
-select is((public.teacher_monster_class() ->> 'players')::integer, 3, 'the old call still gives Fin all his students');
-select is(jsonb_array_length(public.teacher_monster_class() -> 'refusals'), 2, '... and both his classes'' refused saves');
-select pg_temp.reset();
-select pg_temp.ana();
-select throws_ok('select public.teacher_monster_class()', '42501', null, 'a pupil still cannot make the old call');
-select pg_temp.reset();
+select hasnt_function('public', 'teacher_monster_class', '{}'::name[], 'the old teacher_monster_class() with no class is gone');
 
 select * from finish();
 rollback;

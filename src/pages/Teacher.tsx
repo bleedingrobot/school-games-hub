@@ -21,7 +21,7 @@ import { BOT_NAMES, placeLabel } from '../../shared/space/names';
 import { whenPlayed } from './Dashboard';
 import './teacher-page.css';
 
-// Each game's part of a student's panel comes from its GameDefinition (teacher.StudentPanel, or the old StudentPanel), loaded separately.
+// Each game's part of a student's panel comes from its GameDefinition (teacher.StudentPanel), loaded separately.
 // The warm-up reset brings the maths ladder with it, so it loads with the student's panel, not with the page.
 const PlacementReset = lazy(() => import('../maths/PlacementReset').then((m) => ({ default: m.PlacementReset })));
 
@@ -255,7 +255,7 @@ function PersonPanel({
           <Suspense fallback={null}>
             {person.role === 'student' && <PlacementReset student={person.id} name={person.display_name} />}
             {ALL_GAMES.map((game) => {
-              const Panel = game.teacher ? game.teacher.StudentPanel : game.StudentPanel;
+              const Panel = game.teacher?.StudentPanel;
               return Panel && <Panel key={game.id} student={person.id} />;
             })}
           </Suspense>

@@ -169,7 +169,7 @@ select pg_temp.reset();
 select pg_temp.fin();
 select is(public.teacher_lord_class(current_setting('test.room_three')::uuid) -> 'season',
   jsonb_build_object('number', 6, 'start', pg_temp.txt(-180), 'daysLeft', 29), 'Room Three''s report shows the school''s season');
-select is(public.teacher_lord_class() -> 'season' ->> 'number', '6', 'so does the old whole-school report');
+select is(public.teacher_lord_class(current_setting('test.room_two')::uuid) -> 'season' ->> 'number', '6', 'so does Room Two''s, on its own older date before');
 select pg_temp.reset();
 
 -- ---- Switching on with no school date starts season 1 today for the whole school ----

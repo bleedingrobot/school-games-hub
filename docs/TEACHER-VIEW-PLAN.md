@@ -615,6 +615,26 @@ has now moved.*
   class report and its fallback, and `src/data/clans.test.ts`. In `Games.test.tsx` the "game that hasn't moved" tests now use
   a made-up game, and Clan Quest has a row check.*
 
+*`TeacherPanels` removed 28 Oct 2026 on `teacher-games-remove-panels` (from `teacher-games-clans`). One migration,
+`20261028000600_drop_school_class_reports.sql` (not live yet), which drops the four old class reports that had no class:
+`teacher_gem_keep_class()`, `teacher_monster_class()`, `teacher_lord_class()` and `teacher_clan_maths_class()`.*
+- *Order on the live site: apply the four class report migrations (20261028000100, 0200, 0300, 0500), then publish this
+  website, then apply this one. Before the four are live, this website's class reports fail to load; before the website is
+  published, the live site still calls the old reports.*
+- *`GameDefinition` no longer has `TeacherPanels` or the top-level `StudentPanel`; `teacher` is the only way in. The Games
+  table lost its "in Settings" placeholders and the old-panel drawer; the Students page reads `teacher.StudentPanel` only.
+  `SeasonPanels` stays (Clan Quest's fame season).*
+- *The four class reports call only the class version: no PGRST202 fallback and no "the whole school" heading. Dragon Maths'
+  school-season fallback (`fetchLordSchoolSeason`'s `live: false`) stays: its migration (20261028000400) isn't needed before
+  this one.*
+- *Database tests: each class report test's "old call still works" checks are replaced by one check that the old call is
+  gone. `gem_keep.test.sql`, `monsters.test.sql`, `lord_l5.test.sql` and `clans_rewards.test.sql` called the old reports as a
+  school admin; they now ask for the school's Everyone class (every pupil in them is in it), with the same numbers.
+  `lord_school_season.test.sql`'s "old whole-school report" check now asks for Room Two. `security.test.sql` lists functions
+  by name, so it needed no change.*
+- *Site tests: the fallback tests are gone (data and pages), and so are the two "game that hasn't moved yet" tests in
+  `Games.test.tsx`.*
+
 **Stage 4: Students roster and student page,** with `teacher_class_overview` and class-scoped `teacher_students`.
 
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.

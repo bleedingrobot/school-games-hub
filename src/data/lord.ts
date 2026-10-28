@@ -296,6 +296,9 @@ export function forgetSchoolSeason() {
   schoolSeason = null;
 }
 
+/** PostgREST's answer when the database has no function with these arguments. */
+const NO_SUCH_FUNCTION = 'PGRST202';
+
 /**
  * The school's season, remembered so the Games table's row, its "?" and the drawer ask once. Before the migration is live the
  * server has no `lord_school_season` (PGRST202): then `{ live: false }`, and the teacher pages keep each class's own date.
@@ -394,23 +397,11 @@ function fail(error: { code?: string; message?: string } | null, text: string): 
   throw new FriendlyError(text);
 }
 
-/** PostgREST's answer when the database has no function with these arguments. */
-const NO_SUCH_FUNCTION = 'PGRST202';
-
-/**
- * Dragon Maths' report for one class, with that class's own season (migration 20261028000300). Until that migration is on
- * the live database, the server has only the old whole-school report: then that one is loaded instead, with `wholeSchool`
- * set, so the page can say so.
- */
-export async function fetchClassLord(classId: string): Promise<ClassLord & { wholeSchool: boolean }> {
+/** Dragon Maths' report for one class, for a teacher who teaches it (migration 20261028000300). */
+export async function fetchClassLord(classId: string): Promise<ClassLord> {
   const { data, error } = await supabase.rpc('teacher_lord_class', { target_class: classId });
-  if (error?.code === NO_SUCH_FUNCTION) {
-    const old = await supabase.rpc('teacher_lord_class');
-    if (old.error || !old.data) fail(old.error, 'We couldn’t load Dragon Maths for the school.');
-    return { ...(old.data as ClassLord), wholeSchool: true };
-  }
   if (error || !data) fail(error, 'We couldn’t load Dragon Maths for this class.');
-  return { ...(data as ClassLord), wholeSchool: false };
+  return data as ClassLord;
 }
 
 export async function fetchStudentLord(student: string): Promise<StudentLord> {

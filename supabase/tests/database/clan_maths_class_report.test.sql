@@ -1,11 +1,12 @@
 -- Clan Quest's class report for one class (migration 20261028000500): teacher_clan_maths_class(target_class).
 -- A teacher sees only the class asked for (how many answered, every kind of question, the hardest kinds), can't read a class
--- they don't teach, a pupil and a signed-out visitor can't call it, and the old call with no class still works.
+-- they don't teach, and a pupil and a signed-out visitor can't call it.
+-- The old call with no class is gone (migration 20261028000600).
 -- Run on a throw-away copy: scripts/scratch-db.sh clanclass, then
 --   scripts/scratch-test.sh clanclass supabase/tests/database/clan_maths_class_report.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(19);
+select plan(17);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -103,16 +104,9 @@ select is(pg_temp.keys(pg_temp.report(), 'kinds'), '["clan:y4:money"]'::jsonb, '
 select is((public.teacher_clan_maths_class(current_setting('test.room_three')::uuid) ->> 'players')::integer, 1,
   '... and Room Three on its own, without the others');
 
--- ---- The old call with no class still works, as before ----
-select is((public.teacher_clan_maths_class() ->> 'players')::integer, 5, 'the old call still gives Eve every pupil in the school');
+-- ---- The old call with no class, which read the whole school, is gone (migration 20261028000600) ----
 select pg_temp.reset();
-select pg_temp.fin();
-select is((public.teacher_clan_maths_class() -> 'hardest' -> 0 ->> 'students')::integer, 3,
-  'the old call still gives Fin both his classes together');
-select pg_temp.reset();
-select pg_temp.ana();
-select throws_ok('select public.teacher_clan_maths_class()', '42501', null, 'a pupil still cannot make the old call');
-select pg_temp.reset();
+select hasnt_function('public', 'teacher_clan_maths_class', '{}'::name[], 'the old teacher_clan_maths_class() with no class is gone');
 
 select * from finish();
 rollback;

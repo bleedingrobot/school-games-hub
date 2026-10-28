@@ -112,7 +112,6 @@ vi.mock('../data/gemKeep', () => ({
     players: 14,
     levels: [{ levelId: 'level-1', won: 14, keys: 12 }],
     hardest: [{ key: 'mul:7x8', students: 9, attempts: 40, correct: 22 }],
-    wholeSchool: false,
   })),
   fetchStudentGemKeep: vi.fn(async () => ({
     levels: [{ levelId: 'level-1', stars: 3, keyPassed: true, plays: 2, wins: 2 }],
@@ -489,16 +488,6 @@ describe('teacher view', () => {
     expect(within(hardest).getByRole('rowheader', { name: '7 × 8' })).toBeInTheDocument();
     expect(within(hardest).getByText('55%')).toBeInTheDocument();
     expect(fetchClassGemKeep).toHaveBeenLastCalledWith('c12');
-  });
-
-  it('says it is the whole school while the database only has the whole-school report', async () => {
-    const { fetchClassGemKeep } = await import('../data/gemKeep');
-    vi.mocked(fetchClassGemKeep).mockResolvedValueOnce({ players: 14, levels: [], hardest: [], wholeSchool: true });
-    const user = userEvent.setup();
-    renderAt('/teacher/c12/games', teacher);
-    await user.click(await screen.findByRole('link', { name: 'Gem Keep settings' }));
-    const section = await screen.findByRole('region', { name: /^Gem Keep: the whole school/ });
-    expect(within(section).getByText(/shows every class for now/)).toBeInTheDocument();
   });
 
   it('shows a student’s Gem Keep levels and times-table grid', async () => {

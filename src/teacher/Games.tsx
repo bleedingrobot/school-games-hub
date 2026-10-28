@@ -4,8 +4,7 @@
  * own settings in a drawer on a wide screen, or on its own page (/teacher/:classId/games/:gameId) on a narrow one, so the back
  * button works either way.
  *
- * Each game says what goes in its row through `teacher` in its GameDefinition (section 6). A game that hasn't moved to that yet
- * still gets a row, and its old TeacherPanels open in the same drawer.
+ * Each game says what goes in its row through `teacher` in its GameDefinition (section 6).
  */
 import { Suspense, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
@@ -40,7 +39,7 @@ function useWide(): boolean {
 }
 
 /** Does the game have anything to open from its row? */
-const hasSettings = (game: GameDefinition) => Boolean(game.teacher ? game.teacher.Settings : game.TeacherPanels);
+const hasSettings = (game: GameDefinition) => Boolean(game.teacher?.Settings);
 
 const gamesPath = (classId: string) => `/teacher/${classId}/games`;
 
@@ -171,8 +170,6 @@ function GameRow({ game, classId, linkRef }: { game: GameDefinition; classId: st
       <td role="cell" className="games-table__on" data-label="On">
         {t?.switch ? (
           <GameSwitchSetting game={game} classId={classId} />
-        ) : !t && game.useTeacherSwitch ? (
-          <span className="games-table__quiet">in Settings</span>
         ) : (
           <span className="games-table__quiet">always</span>
         )}
@@ -182,8 +179,6 @@ function GameRow({ game, classId, linkRef }: { game: GameDefinition; classId: st
           <MathsSwitchSetting game={game} classId={classId} />
         ) : t?.useSummary ? (
           <SummaryCell use={t.useSummary} classId={classId} />
-        ) : !t && game.TeacherPanels && game.group !== 'no-maths' ? (
-          <span className="games-table__quiet">in Settings</span>
         ) : (
           <span className="games-table__quiet">
             <span aria-hidden="true">–</span>
@@ -254,14 +249,13 @@ export function MathsSwitchSetting({ game, classId }: { game: GameDefinition; cl
   );
 }
 
-/** What opens from a row: the game's Settings, or (until it moves) its old panels, which read the class themselves. */
+/** What opens from a row: the game's Settings, for the header's class. */
 function GameSettings({ game, classId }: { game: GameDefinition; classId: string }) {
   const Settings = game.teacher?.Settings;
-  const Old = game.teacher ? undefined : game.TeacherPanels;
   return (
     <div className="games-settings">
       <Suspense fallback={<p className="panel__empty">Loading…</p>}>
-        {Settings ? <Settings classId={classId} /> : Old ? <Old /> : null}
+        {Settings && <Settings classId={classId} />}
       </Suspense>
     </div>
   );

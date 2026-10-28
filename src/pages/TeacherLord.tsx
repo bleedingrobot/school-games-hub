@@ -162,7 +162,7 @@ function SchoolSeasonBox({ first }: { first: LordSchoolSeason }) {
 
 /** How the class is getting on: its season, heroes at each level, the hardest questions, the Hall of Heroes and refused requests. */
 function LordClassReport({ classId }: { classId: string }) {
-  const [data, setData] = useState<(ClassLord & { wholeSchool: boolean }) | null>(null);
+  const [data, setData] = useState<ClassLord | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
   useEffect(() => {
@@ -180,10 +180,9 @@ function LordClassReport({ classId }: { classId: string }) {
   return (
     <section className="panel gk-teacher" aria-labelledby="dm-class-title">
       <h2 id="dm-class-title" className="panel__title">
-        {data?.wholeSchool ? 'Dragon Maths: the whole school' : 'Dragon Maths: this class'}
+        Dragon Maths: this class
         {data && <span className="panel__count">{data.thisSeason} playing this season</span>}
       </h2>
-      {data?.wholeSchool && <p>This shows every class for now. It will show just this class after the next database update.</p>}
       {failed ? (
         <p className="panel__empty">{failed}</p>
       ) : !data ? (

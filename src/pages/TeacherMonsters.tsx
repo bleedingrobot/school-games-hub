@@ -97,7 +97,7 @@ function MonstersTopicsPanel({ classId }: { classId: string }) {
 
 /** How the class is getting on: each topic, the hardest questions, badges, and saves the server check turned down. */
 function MonstersClassReport({ classId }: { classId: string }) {
-  const [data, setData] = useState<(ClassMonsters & { wholeSchool: boolean }) | null>(null);
+  const [data, setData] = useState<ClassMonsters | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
   useEffect(() => {
@@ -115,16 +115,15 @@ function MonstersClassReport({ classId }: { classId: string }) {
   return (
     <section className="panel gk-teacher" aria-labelledby="mm-class-title">
       <h2 id="mm-class-title" className="panel__title">
-        {data?.wholeSchool ? 'Maths Monsters: the whole school' : 'Maths Monsters: this class'}
+        Maths Monsters: this class
         {data && <span className="panel__count">{data.players} playing</span>}
       </h2>
-      {data?.wholeSchool && <p>This shows every class for now. It will show just this class after the next database update.</p>}
       {failed ? (
         <p className="panel__empty">{failed}</p>
       ) : !data ? (
         <p className="panel__empty">Loading…</p>
       ) : data.players === 0 ? (
-        <p className="panel__empty">{data.wholeSchool ? 'No students have' : 'No students in this class have'} started Maths Monsters yet.</p>
+        <p className="panel__empty">No students in this class have started Maths Monsters yet.</p>
       ) : (
         <div className="gk-teacher__class">
           <table className="stats-table">
