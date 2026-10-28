@@ -671,8 +671,8 @@ has now moved.*
 `20261028000700_teacher_class_overview.sql` were applied to the live database by hand. The code was merged into `main`
 (PR #68), and the site was published by the "Test and publish" run (build, database tests and deploy all passed). Checked
 live: the new functions exist, `anon` can't call them, and a teacher's class gave 16 on the roster and 16 on the list.
-- *Still to do: `20261028000600_drop_school_class_reports.sql` (drops the 4 old whole-school reports; the site no longer
-  calls them). Not applied yet.*
+- *After the site was published, James ran `20261028000600_drop_school_class_reports.sql` in the SQL Editor. It dropped the
+  4 old whole-school reports, which the site no longer calls. Checked afterwards: only the class versions are left.*
 - *Not live on purpose: `20261028000400` (Dragon Maths one season for the school). It waits for James's read-only check
   (DRAGON-SCHOOL-SEASON.md 2.3) and for teachers to be told the day before.*
 
