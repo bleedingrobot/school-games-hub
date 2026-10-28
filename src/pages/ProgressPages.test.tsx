@@ -475,22 +475,13 @@ describe('teacher view', () => {
     expect(await screen.findByText('Saved ✓')).toBeInTheDocument();
   });
 
-  it('starts a new season only after NEW SEASON is typed', async () => {
+  it('points an admin to Admin → End of year for the new points season', async () => {
     const { startNewSeason } = await import('../data/teacher');
-    const user = userEvent.setup();
     renderAt('/teacher/c12/students', teacher);
-    const section = await screen.findByRole('region', { name: 'End of year: start a new season' });
-    const button = within(section).getByRole('button', { name: 'Start a new season' });
-    expect(button).toBeDisabled();
-    await user.type(within(section).getByLabelText('Type NEW SEASON'), 'new season');
-    expect(button).toBeDisabled();
-    await user.clear(within(section).getByLabelText('Type NEW SEASON'));
-    await user.type(within(section).getByLabelText('Type NEW SEASON'), 'NEW SEASON');
-    await user.click(button);
-    expect(startNewSeason).toHaveBeenCalledWith('NEW SEASON');
-    expect(
-      await within(section).findByText(/120 bot games, 30 games between students and 12 Gem Keep levels were deleted/),
-    ).toBeInTheDocument();
+    const link = await screen.findByRole('link', { name: /End of year/ });
+    expect(link).toHaveAttribute('href', '/teacher/admin/year');
+    expect(screen.queryByRole('button', { name: 'Start a new season' })).not.toBeInTheDocument();
+    expect(startNewSeason).not.toHaveBeenCalled();
   });
 
   it('keeps each game’s settings closed, asking the server nothing for them until they are opened', async () => {

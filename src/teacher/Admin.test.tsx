@@ -127,10 +127,10 @@ describe('the admin pages', () => {
     expect(data.fetchAdminStudents).not.toHaveBeenCalled();
   });
 
-  it('have Overview, Classes, Students and Teachers tabs', async () => {
+  it('have Overview, Classes, Students, Teachers and End of year tabs', async () => {
     show('/teacher/admin');
     const nav = await screen.findByRole('navigation', { name: 'Admin' });
-    expect(within(nav).getAllByRole('link').map((l) => l.textContent)).toEqual(['Overview', 'Classes', 'Students', 'Teachers']);
+    expect(within(nav).getAllByRole('link').map((l) => l.textContent)).toEqual(['Overview', 'Classes', 'Students', 'Teachers', 'End of year']);
     expect(within(nav).getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
     await userEvent.click(within(nav).getByRole('link', { name: 'Teachers' }));
     expect(await screen.findByRole('heading', { name: /Teachers/, level: 2 })).toBeInTheDocument();

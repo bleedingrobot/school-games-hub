@@ -84,3 +84,46 @@
 .admin__table thead th {
   padding: 6px 10px;
 }
+
+/* Admin → End of year */
+.admin-year__year {
+  max-width: 200px;
+}
+.admin-year__last {
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.admin-year__list,
+.admin-year__history {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-year__history li {
+  overflow-wrap: anywhere;
+}
+.admin-year__check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.admin-year__check input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+.admin-year__danger {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+}
+.admin-year__step .button {
+  min-height: 44px;
+}

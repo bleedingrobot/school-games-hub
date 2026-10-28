@@ -12,11 +12,10 @@ import { AvatarImage } from '../avatar/AvatarImage';
 import { whenPlayed } from '../components/MyGames';
 import { fetchClassOverview, type RosterStudent } from '../data/classOverview';
 import { FriendlyError } from '../data/profile';
-import { fetchPeople, startNewSeason, type Person } from '../data/teacher';
+import { fetchPeople, type Person } from '../data/teacher';
 import { ALL_GAMES } from '../games/registry';
 import { share } from '../pages/TeacherQuestionSkips';
 import { isTeacherFocus, skillList, skillShortLabel, type MathsFocus } from '../../shared/maths/focus';
-import { DangerAction } from './Settings';
 import { useTeacherClass } from './TeacherClass';
 import '../pages/teacher-page.css';
 import './students.css';
@@ -368,51 +367,11 @@ function Seasons({ isAdmin }: { isAdmin: boolean }) {
       <h2 className="teacher__group-title">Seasons and end of year</h2>
       <p className="teacher__group-note">Resets that can’t be undone. Most are for the start of a new year.</p>
       <Suspense fallback={null}>{ALL_GAMES.map((game) => game.SeasonPanels && <game.SeasonPanels key={game.id} />)}</Suspense>
-      {isAdmin && <NewSeason />}
+      {isAdmin && (
+        <p className="teacher__group-note">
+          The new points season is now on <Link to="/teacher/admin/year">Admin → End of year</Link>.
+        </p>
+      )}
     </>
-  );
-}
-
-function NewSeason() {
-  const [status, setStatus] = useState<string | null>(null);
-
-  async function go(typed: string) {
-    setStatus('Starting a new season…');
-    try {
-      const done = await startNewSeason(typed);
-      setStatus(
-        `Done. ${done.botGames} bot games, ${done.friendGames} games between students and ${done.gemKeepLevels ?? 0} Gem Keep levels were deleted, and everyone starts again from 0 points.`,
-      );
-    } catch (error) {
-      setStatus(errorText(error));
-      throw error;
-    }
-  }
-
-  return (
-    <section className="panel teacher__season" aria-labelledby="season-title">
-      <h2 id="season-title" className="panel__title">
-        End of year: start a new season
-      </h2>
-      <p>For the start of a new school year. It:</p>
-      <ul>
-        <li>
-          <strong>deletes</strong> every finished game, and every point, level, badge, achievement and leaderboard place,
-          and everyone’s Gem Keep progress and times-table records
-        </li>
-        <li>
-          <strong>keeps</strong> every account, player name and avatar, the teachers, who is hidden, and games still being
-          played
-        </li>
-      </ul>
-      <p>
-        It can’t be undone. Delete students who have left the school first (each one’s page, under Manage). To go ahead, type{' '}
-        <strong>{NEW_SEASON_WORDS}</strong> in capitals.
-      </p>
-      <DangerAction label="Start a new season" words={NEW_SEASON_WORDS} onConfirm={go} />
-      <p role="status" className="teacher__status">
-        {status}
-      </p>
-    </section>
   );
 }

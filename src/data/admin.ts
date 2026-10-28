@@ -4,6 +4,7 @@
  */
 import { supabase } from '../lib/supabase';
 import { FriendlyError } from './profile';
+import { forgetSettings } from './settingsMemory';
 
 /** Messages we wrote in the database are safe to show; anything else gets the fallback. */
 function fail(error: { code?: string; message?: string } | null, fallback: string): never {
@@ -166,4 +167,85 @@ export async function createClassFor(name: string, year: number, level: number |
   const { data, error } = await supabase.rpc('admin_create_class', { class_name: name, in_year: year, level, teacher });
   if (error || !data) fail(error, 'We couldn’t make that class.');
   return data as string;
+}
+
+// ---------------------------------------------------------------- End of year
+
+export type YearAction = 'classes' | 'archive' | 'leavers' | 'points' | 'fame' | 'dragon';
+export const YEAR_ACTIONS: YearAction[] = ['classes', 'archive', 'leavers', 'points', 'fame', 'dragon'];
+
+export interface YearStep {
+  at: string;
+  by: string | null;
+  /** The part of the person's school email before the @. */
+  byRealName: string | null;
+  detail: Record<string, unknown>;
+}
+
+export interface AdminYear {
+  steps: Record<YearAction, YearStep | null>;
+  /** The latest rows, newest first. */
+  log: (YearStep & { action: YearAction })[];
+}
+
+const yearStep = (v: unknown): YearStep | null => {
+  const r = v && typeof v === 'object' ? (v as Record<string, unknown>) : null;
+  const at = r ? time(r.at) : null;
+  if (!r || !at) return null;
+  const detail = r.detail && typeof r.detail === 'object' && !Array.isArray(r.detail) ? (r.detail as Record<string, unknown>) : {};
+  return { at, by: text(r.by), byRealName: text(r.byRealName), detail };
+};
+
+export function parseAdminYear(raw: unknown): AdminYear {
+  const r = (raw ?? {}) as { steps?: unknown; log?: unknown };
+  const steps = (r.steps ?? {}) as Record<string, unknown>;
+  const log: AdminYear['log'] = [];
+  for (const row of Array.isArray(r.log) ? r.log : []) {
+    const step = yearStep(row);
+    const action = (row as { action?: unknown } | null)?.action;
+    if (step && YEAR_ACTIONS.includes(action as YearAction)) log.push({ ...step, action: action as YearAction });
+  }
+  return {
+    steps: Object.fromEntries(YEAR_ACTIONS.map((a) => [a, yearStep(steps[a])])) as AdminYear['steps'],
+    log,
+  };
+}
+
+export async function fetchAdminYear(): Promise<AdminYear> {
+  const { data, error } = await supabase.rpc('admin_year');
+  if (error || !data) fail(error, 'We couldn’t load the end of year steps.');
+  return parseAdminYear(data);
+}
+
+/** Say that a step done on another page (next year's classes, or the Dragon Maths season) is done. */
+export async function markYearStep(step: 'classes' | 'dragon'): Promise<void> {
+  const { error } = await supabase.rpc('admin_mark_step', { step });
+  if (error) fail(error, 'We couldn’t save that.');
+}
+
+/** Archive these classes (they can be unarchived on the Classes tab). Returns how many. */
+export async function archiveClasses(classes: string[]): Promise<number> {
+  const { data, error } = await supabase.rpc('admin_archive_classes', { classes });
+  if (error) fail(error, 'We couldn’t archive those classes.');
+  return count(data);
+}
+
+/** Delete these students for good. `confirm` is how many, as text. Returns how many. */
+export async function deleteLeavers(students: string[], confirm: string): Promise<number> {
+  const { data, error } = await supabase.rpc('admin_delete_leavers', { students, confirm });
+  if (error) fail(error, 'We couldn’t delete those students.');
+  return count(data);
+}
+
+export async function adminNewPointsSeason(confirm: string): Promise<{ botGames: number; friendGames: number; gemKeepLevels?: number }> {
+  const { data, error } = await supabase.rpc('admin_new_points_season', { confirm });
+  if (error || !data) fail(error, 'We couldn’t start a new season.');
+  return data as { botGames: number; friendGames: number; gemKeepLevels?: number };
+}
+
+export async function adminClansNewSeason(confirm: string): Promise<{ season: number; clans: number }> {
+  const { data, error } = await supabase.rpc('admin_clans_new_season', { confirm });
+  forgetSettings();
+  if (error || !data) fail(error, 'We couldn’t start a new season.');
+  return data as { season: number; clans: number };
 }
