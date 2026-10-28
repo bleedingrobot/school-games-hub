@@ -187,3 +187,16 @@ Branch `claude/project-thread-kcfeml`, migration `20261029000400_clans_season_go
 - **Hall of Legends:** `clan_hall_of_legends()`, from the Scoreboard. Rows are by season; monster slayers will appear when part 2 fills `monster_done_on`.
 - **Rehearsed** on the live database inside a rolled-back transaction (28 Oct): the trigger paid once (fame +50, one 10-point score, the badge, the news line, the Hall row) and a second full save paid nothing. The midnight job's season block was not exercised (it had already run that day); it is covered by the pgTAP file.
 - **Still to decide:** when the clock goes on (James's card: recommended once the monster is live).
+
+## 11. Part 2 built: the monster (28 Oct 2026)
+
+James's answers (28 Oct): harder (a strong clan wins about 40% of first tries), the supplies shop in the first build, an optional race and class re-pick at each new season, build now with placeholder art.
+
+- **Rules:** `shared/clans/monster.ts` (looks, siege, tiredness, supplies), the monster's turn in `fight.ts`, the actions in `actions.ts` (`monsterStart`, `buySupply`, `repick`, `repickDone`; the rounds go through `fightRound` like a mine fight and are replayed by the server). Numbers in `CONFIG.monster`.
+- **The try:** one a day in monster week (clock on, day 29 to 35). The siege question (Battle Cry kind) is answered first; the siege knocks a share off the monster (army up to 22%, more with the Forge; Tower 3% a level; fire arrows 2.5% each; a right answer × 1.2; at most 60%). Then up to 12 rounds against the monster: a stomp on two members each round, a big move every third round with a warning the round before (boulder on one member, slam on everyone, icy breath that freezes one member for a round), the giant net stops the first big move, potions heal half a member's HP, each Walls level cuts its hits by 4%. Running out of rounds is a loss ("stomps off for the night").
+- **Tired:** each lost try before the first win leaves it 10% weaker in HP and strength, up to 40%. After a win the clan can fight it again for fun (a fresh monster, no reward).
+- **Balance** (simulator, `npm run clans:sim -- --days 28 --empire 1 --monster 1 --play N`, first try / after 2 losses / after 4): plays 4 days a week (about level 15, village about 35 / 39): about 40% / 85% / 98%; every day (level 18 to 20, whole village): nearly always on the first try; 3 days a week (about level 9): 0% / 0% / about 5%. The bot does not use guard, potions or arrows, so children who do will do a little better.
+- **Reward** (first win each season, given by the database from the saved result): +100 fame, 10 points, the Giant Slayer achievement, a news line, the Hall of Legends row (`monster_done_on`, tries).
+- **Supplies** (market, from day 22): fire arrows (990 gold with tax, up to 3), healing potions (1,210, up to 4), giant net (1,980, 1). Used up in a try.
+- **Re-pick:** a new season's reset lets the clan pick each member's race and class again until it presses "Keep going".
+- **Art still to make** (placeholders until James's gaming PC): for each of Grimmor the Storm Giant, Old Craghold the Stone Golem and Frostjaw the Frost Troll, a portrait for the fight and a "village under attack" scene for the siege (6 pictures), same style as CLANS-ART-PLAN.md.
