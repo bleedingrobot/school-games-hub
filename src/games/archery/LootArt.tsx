@@ -8,10 +8,10 @@ const OL = '#2a1c14';
 /** A loot chest. `filled` right answers so far (0 = shut), out of `of`. */
 export function LootChest({ filled, of }: { filled: number; of: number }) {
   const open = Math.min(1, filled / Math.max(1, of));
-  const lid = -55 * open; // degrees: the lid swings back as answers come in
+  const lid = 32 * open; // degrees: the lid tips up from its back hinge as answers come in
   const coins = Array.from({ length: Math.min(filled * 3, 9) }, (_, i) => i);
   return (
-    <svg className="ar-loot" viewBox="0 0 120 100" width="120" height="100" aria-hidden="true">
+    <svg className="ar-loot" viewBox="0 -12 120 112" width="120" height="112" aria-hidden="true">
       {/* glow when it's open */}
       {filled > 0 && <ellipse cx="60" cy="52" rx={30 + 14 * open} ry={14 + 8 * open} fill="#fff3a6" opacity={0.35 + 0.4 * open} />}
       {/* coins spilling over the top */}
@@ -33,34 +33,45 @@ export function LootChest({ filled, of }: { filled: number; of: number }) {
       <rect x="53" y="62" width="14" height="14" rx="3" fill="#ffd23f" stroke={OL} strokeWidth="2.5" />
       <circle cx="60" cy="69" r="2.3" fill={OL} />
       {/* the lid, hinged at the back */}
-      <g transform={`rotate(${lid} 98 56)`}>
+      <g transform={`translate(0 ${-6 * open}) rotate(${lid} 98 56)`}>
         <path d="M22 56 V44 Q60 26 98 44 V56 Z" fill="#c07a3a" stroke={OL} strokeWidth="3.5" strokeLinejoin="round" />
         <path d="M34 54 V38.5 M86 54 V38.5" stroke="#d9a520" strokeWidth="8" />
-        <path d="M34 54 V38.5 M86 54 V38.5" stroke={OL} strokeWidth="1.5" strokeDasharray="0" opacity="0.4" />
       </g>
     </svg>
   );
 }
 
-/** A quiver for a restock, with one more arrow for each right answer (`filled` of `of`). */
+/** A quiver for a restock, with one more arrow for each right answer (`filled` of `of`). Arrows sit point-down, so
+ * their feathers stick out of the top. */
 export function RestockQuiver({ filled, of }: { filled: number; of: number }) {
-  const arrows = Array.from({ length: Math.max(0, Math.min(filled, of)) }, (_, i) => i);
+  const n = Math.max(0, Math.min(filled, of));
+  const feathers = ['#e8453c', '#ffd23f', '#4aa3df', '#a8d860', '#c86bd8'];
   return (
     <svg className="ar-loot" viewBox="0 0 120 100" width="120" height="100" aria-hidden="true">
-      {arrows.map((i) => {
-        const x = 50 + i * 10;
-        return (
-          <g key={i} transform={`rotate(${(i - (of - 1) / 2) * 8} ${x} 70)`}>
-            <line x1={x} y1="70" x2={x} y2="16" stroke={OL} strokeWidth="4" strokeLinecap="round" />
-            <line x1={x} y1="70" x2={x} y2="16" stroke="#e9a866" strokeWidth="2" strokeLinecap="round" />
-            <path d={`M${x - 5} 20 L${x} 8 L${x + 5} 20 Z`} fill="#c8d0d8" stroke={OL} strokeWidth="2" strokeLinejoin="round" />
-          </g>
-        );
-      })}
-      <path d="M40 40 L80 40 L74 94 L46 94 Z" fill="#3d6b2f" stroke={OL} strokeWidth="3.5" strokeLinejoin="round" />
-      <path d="M42 50 L78 50" stroke="#a8d860" strokeWidth="4" />
-      <path d="M44 82 L76 82" stroke="#a8d860" strokeWidth="4" />
-      <rect x="38" y="36" width="44" height="8" rx="3" fill="#a8612a" stroke={OL} strokeWidth="3" />
+      {filled > 0 && <ellipse cx="60" cy="40" rx={20 + 6 * n} ry={12 + 3 * n} fill="#fff3a6" opacity="0.6" />}
+      <g transform="rotate(14 60 60)">
+        {/* the strap */}
+        <path d="M44 44 Q20 60 46 92" fill="none" stroke={OL} strokeWidth="7" strokeLinecap="round" />
+        <path d="M44 44 Q20 60 46 92" fill="none" stroke="#7a3f17" strokeWidth="4" strokeLinecap="round" />
+        {/* arrows: shafts and feathers above the rim */}
+        {Array.from({ length: n }, (_, i) => {
+          const x = 52 + (i - (n - 1) / 2) * 9;
+          const top = 14 + (i % 2) * 5;
+          const c = feathers[i % feathers.length];
+          return (
+            <g key={i}>
+              <line x1={x} y1={top + 4} x2={x} y2="44" stroke={OL} strokeWidth="4" strokeLinecap="round" />
+              <line x1={x} y1={top + 4} x2={x} y2="44" stroke="#e9a866" strokeWidth="2" strokeLinecap="round" />
+              <path d={`M${x} ${top + 2} L${x - 6} ${top - 4} L${x - 6} ${top + 10} L${x} ${top + 16} Z`} fill={c} stroke={OL} strokeWidth="2" strokeLinejoin="round" />
+              <path d={`M${x} ${top + 2} L${x + 6} ${top - 4} L${x + 6} ${top + 10} L${x} ${top + 16} Z`} fill={c} stroke={OL} strokeWidth="2" strokeLinejoin="round" />
+            </g>
+          );
+        })}
+        {/* the quiver */}
+        <path d="M36 40 H70 L66 96 H40 Z" fill="#3d6b2f" stroke={OL} strokeWidth="3.5" strokeLinejoin="round" />
+        <path d="M38 54 H68 M40 84 H66" stroke="#a8d860" strokeWidth="4" />
+        <rect x="33" y="35" width="40" height="9" rx="3" fill="#a8612a" stroke={OL} strokeWidth="3" />
+      </g>
     </svg>
   );
 }
