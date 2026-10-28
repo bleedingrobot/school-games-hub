@@ -734,6 +734,8 @@ writes the log in the same transaction, wrapping the existing functions. Tested 
   lists the last 20 steps.*
 - *The points-season reset moved here from the Students page (James, 28 Oct 2026), which now links to it. The Clan Quest fame
   panel stays on Students for ordinary teachers' own classes.*
+- *Live 28 Oct 2026: the migration pasted into the SQL Editor by James and checked as a school admin, then the site published
+  (PR #77). Next: Safety.*
 
 ## 8. Tests to carry over / add
 
