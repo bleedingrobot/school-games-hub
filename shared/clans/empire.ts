@@ -143,7 +143,15 @@ export const upgradeCost = (b: VillageBuilding, toLevel: number) => E.buildings[
 /** The most gold every building could ever cost, for the simulator and "how far along am I". */
 export const totalCostToMax = () => VILLAGE_BUILDINGS.reduce((t, b) => t + E.buildings[b].base * ((maxLevel(b) * (maxLevel(b) + 1)) / 2), 0);
 
-export const buildsLeft = (e: Empire) => Math.max(0, E.buildsPerDay - e.buildsToday);
+/** Builds left to use: today's that are not done yet, plus the saved ones. */
+export const buildsLeft = (e: Empire) => Math.max(0, E.buildsPerDay - e.buildsToday) + (e.buildsSaved ?? 0);
+
+/** All the levels the village could ever have (39). */
+export const VILLAGE_TOTAL = VILLAGE_BUILDINGS.reduce((t, b) => t + E.buildings[b].max, 0);
+/** The levels built so far, added up (the "Village 23 / 39" number). Same as `levelTotal`. */
+export const villageLevels = (e: Empire): number => levelTotal(e);
+/** True when every building is at its top level. */
+export const villageComplete = (e: Empire): boolean => VILLAGE_BUILDINGS.every((b) => e.levels[b] >= maxLevel(b));
 
 /** The building plan for taking `b` up to `level`: the shape the area and fence questions are asked about. Grows with the level. */
 export const planOf = (b: VillageBuilding, level: number): { width: number; length: number } => ({ width: E.planWidth[b], length: level + E.planLengthExtra });
@@ -156,20 +164,21 @@ export function canUpgrade(clan: Clan, b: VillageBuilding): Done {
   if (!VILLAGE_BUILDINGS.includes(b)) return no('building', 'Pick one of the buildings in your village.');
   const level = e.levels[b];
   if (level >= maxLevel(b)) return no('max', `The ${BUILDING_NAMES[b]} is already as big as it can be.`);
-  if (e.buildsToday >= E.buildsPerDay) return no('builds', `Your builders have done ${E.buildsPerDay} jobs today. They start again tomorrow!`);
+  if (buildsLeft(e) <= 0) return no('builds', 'Your builders have done every job they can. They start again tomorrow!');
   const cost = upgradeCost(b, level + 1);
   if (clan.gold < cost) return no('gold', `The ${BUILDING_NAMES[b]} (level ${level + 1}) costs ${cost} gold and the clan has ${clan.gold}.`);
   return ok;
 }
 
-/** Pay for one level of a building from the purse. Uses up one of today's builds. */
+/** Pay for one level of a building from the purse. Uses one of today's builds first, a saved one only when today's are gone. */
 export function upgrade(clan: Clan, b: VillageBuilding): Done {
   const can = canUpgrade(clan, b);
   if (!can.ok) return can;
   const e = empireOf(clan);
   clan.gold -= upgradeCost(b, e.levels[b] + 1);
   e.levels[b]++;
-  e.buildsToday++;
+  if (e.buildsToday < E.buildsPerDay) e.buildsToday++;
+  else e.buildsSaved = Math.max(0, (e.buildsSaved ?? 0) - 1);
   syncVillage(clan);
   if (b === 'barracks') joinFollowers(clan);
   return ok;
@@ -221,10 +230,15 @@ export function joinFollowers(clan: Clan): number {
   return joined;
 }
 
-/** A new day for the empire: fresh builds and raids. (A shield ends by itself when the day number passes it.) */
-export function empireNewDay(clan: Clan): void {
+/**
+ * A new day for the empire: fresh builds and raids. Builds not used (today's, and a full set for each day `missedDays` skipped)
+ * are saved, up to `buildsSavedMax`. (A shield ends by itself when the day number passes it.)
+ */
+export function empireNewDay(clan: Clan, missedDays = 0): void {
   const e = empireOf(clan);
   e.day++;
+  const unused = Math.max(0, E.buildsPerDay - e.buildsToday) + Math.max(0, missedDays) * E.buildsPerDay;
+  e.buildsSaved = Math.min(E.buildsSavedMax, (e.buildsSaved ?? 0) + unused);
   e.buildsToday = 0;
   e.raidsToday = 0;
   e.kingdomRaidsToday = 0;

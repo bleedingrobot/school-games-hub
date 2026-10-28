@@ -44,6 +44,8 @@ export interface SimOptions {
   askEvery?: number;
   /** Also run the bot's empire each evening (stage C.4). */
   empire?: boolean;
+  /** Days a week the clan plays (1 to 7, default 7). The other days pass with no play; they still save builds. */
+  playDays?: number;
 }
 
 export interface DayReport {
@@ -83,9 +85,19 @@ export function simulate(opts: SimOptions): SimReport {
   let bossWins = 0;
   const bossesBeaten = new Set<number>();
 
+  const play = Math.max(1, Math.min(7, opts.playDays ?? 7));
+  let lastPlayed = 0;
   for (let day = 1; day <= opts.days; day++) {
+    // Play days are spread through the week: day d is played when it is the first day of a new "slot" of 7/play days.
+    const plays = day === 1 || Math.floor((day * play) / 7) > Math.floor(((day - 1) * play) / 7);
+    if (!plays) {
+      const prev = days[days.length - 1];
+      days.push({ ...prev, day, fights: 0, wins: 0, knockOuts: 0, rounds: 0, spSpent: 0 });
+      continue;
+    }
     dayReset(clan);
-    if (opts.empire && day > 1) empireNewDay(clan);
+    if (opts.empire && day > 1) empireNewDay(clan, day - lastPlayed - 1);
+    lastPlayed = day;
     const report: DayReport = { day, avgLevel: 0, depth: 0, fights: 0, wins: 0, knockOuts: 0, rounds: 0, spSpent: 0, gold: 0 };
     for (let n = 0; n < CONFIG.fightsPerDay; n++) {
       botChores(clan);

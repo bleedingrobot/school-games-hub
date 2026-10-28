@@ -105,6 +105,8 @@ export interface Empire {
   levels: Levels;
   /** Upgrades made today (at most CONFIG.empire.buildsPerDay). */
   buildsToday: number;
+  /** Builds from earlier days that were not used, up to CONFIG.empire.buildsSavedMax. Missing means 0. */
+  buildsSaved?: number;
   troops: Troops;
   /** Today's day number. */
   day: number;
@@ -150,4 +152,6 @@ export interface Clan {
   questDay?: number;
   /** Missing until the clan opens its empire. A save without `version: 2` is converted by `upgradeSave` when it loads. */
   empire?: Empire;
+  /** The season number this save belongs to. Missing means it has not been stamped yet. */
+  season?: number;
 }

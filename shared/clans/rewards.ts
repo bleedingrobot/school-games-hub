@@ -84,7 +84,7 @@ export interface AchievementDef {
   how: string;
 }
 
-/** The eight achievements. The same ids, names, measures and goals are in the migration (a test keeps them equal). */
+/** The achievements. The same ids, names, measures and goals are in the migration (a test keeps them equal). */
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'cq-first-win', name: 'First win', emoji: '⚔️', measure: 'clan_wins', goal: 1, how: 'Win a fight in the Mines.' },
   { id: 'cq-first-boss', name: 'Boss beaten', emoji: '👹', measure: 'clan_bosses', goal: 1, how: 'Beat a boss deep in the Mines.' },
@@ -92,8 +92,10 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'cq-level-20', name: 'Level 20', emoji: '🏅', measure: 'clan_level', goal: 20, how: 'Get a clan member to level 20.' },
   { id: 'cq-buildings-5', name: 'Five buildings', emoji: '🏰', measure: 'clan_buildings', goal: 5, how: 'Have five different buildings in your village.' },
   { id: 'cq-first-war', name: 'Friendly War win', emoji: '🤝', measure: 'clan_wars', goal: 1, how: 'Win a Friendly War.' },
-  { id: 'cq-village', name: 'Village builders', emoji: '🔨', measure: 'clan_village', goal: 1, how: 'Vote in a week when the class builds something in the village.' },
+  { id: 'cq-village', name: 'Village builders', emoji: '🔨', measure: 'clan_village', goal: 1, how: 'Take a building to level 3.' },
   { id: 'cq-cries-50', name: 'Loud and right', emoji: '📣', measure: 'clan_cries', goal: 50, how: 'Get 50 Battle Cry questions right.' },
+  // The database sets stats.villageBuilt to 2 when a clan's whole village is at top level (cq-village needs 1, which a level-3 building gives).
+  { id: 'cq-master-builder', name: 'Master Builder', emoji: '🏰', measure: 'clan_village', goal: 2, how: 'Take every building in your village to its top level.' },
 ];
 
 /** How far along each measure is, from the clan and its lifetime counts. */

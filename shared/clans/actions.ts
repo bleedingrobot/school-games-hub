@@ -32,6 +32,7 @@ import { ITEMS } from './gamedata';
 import { isLook, setLook, type Look } from './looks';
 import { earnedOrNone, type Earned } from './rewards';
 import { buyItem, buyTroopMix, examineItemFor, fightSeed, payFight, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type FightSummary, type TrainKey } from './play';
+import { classRaidsResting, newSeasonSave, type SeasonClock } from './season';
 import { buildPuzzle, finishQuest, puzzleFor, todaysQuest, type QuestPrize } from './quests';
 import { TROOP_KINDS, VILLAGE_BUILDINGS, type Clan, type Empire, type Troops, type Village, type VillageBuilding } from './types';
 import { raidClassmateNz, raidTargetList, type RaidTarget, type Sketch, type TargetEntry } from './village';
@@ -108,6 +109,8 @@ export interface Context {
   mates?: Sketch[];
   /** The clan a raid on a classmate is aimed at, loaded by the server (null if it is not in this class). */
   target?: RaidTarget | null;
+  /** The season clock from the database. Missing or null: no season rules (stamping, resets and resting raids all wait for it). */
+  clock?: SeasonClock | null;
 }
 
 export type Action =
@@ -147,7 +150,8 @@ export type Result =
   | { type: 'cryCheck'; round: number; correct: boolean; answer: number; given: number }
   /** `summary` is there when the round ended the fight and it has been paid. */
   | { type: 'fightRound'; round: number; over: boolean; summary: FightSummary | null; earned?: Earned }
-  | { type: 'raidTargets'; targets: TargetEntry[] }
+  /** `resting`: raids on classmates are resting for the last two weeks of the season, so `targets` is empty. */
+  | { type: 'raidTargets'; targets: TargetEntry[]; resting?: true }
   | { type: 'raidClass'; take: Take; result: BattleResult; gold: number; destroyed: VillageBuilding[]; earned?: Earned };
 
 /** What else the server must do in the same save as a changed clan. Nothing in here is sent to the browser. */
@@ -161,7 +165,8 @@ export interface Effects {
 }
 
 export type Applied =
-  | { ok: true; state: ServerState | null; result: Result; changed: boolean; effects?: Effects }
+  /** `newSeason`: this request began a new season (the save was reset first), so the browser can say so. */
+  | { ok: true; state: ServerState | null; result: Result; changed: boolean; effects?: Effects; newSeason?: true }
   | { ok: false; why: string; say: string };
 
 const refuse = (why: string, say: string): Applied => ({ ok: false, why, say });
@@ -288,13 +293,13 @@ export const clanDay = (createdNzDay: number, today: number) => Math.max(1, toda
 /**
  * If a new day has started since the clan was last saved, give it the night's rest: everyone heals, the Church's
  * free wake-up comes back, the day's builds and raids reset and the fights come back. A clan that was away for
- * a week gets one night's rest and moves to today's number. Returns true if anything changed.
+ * a week gets one night's rest and moves to today's number (the days it skipped still save their builds). Returns true if anything changed.
  */
 export function catchUp(state: ServerState, today: number, fightsPerDay: number = CONFIG.fightsPerDay): boolean {
   const day = clanDay(state.createdNzDay, today);
   if (day <= state.day) return false;
   dayReset(state.clan);
-  empireNewDay(state.clan);
+  empireNewDay(state.clan, Math.max(0, day - state.day - 1));
   empireOf(state.clan).day = day;
   state.fightsLeft = fightsPerDay;
   state.day = day;
@@ -312,6 +317,12 @@ const done = (state: ServerState, result: Result, changed = true, effects?: Effe
  * comes in is never changed, so a refusal leaves everything as it was.
  */
 export function applyAction(saved: ServerState | null, action: Action, ctx: Context): Applied {
+  const flags = { newSeason: false };
+  const out = applyInner(saved, action, ctx, flags);
+  return out.ok && flags.newSeason ? { ...out, newSeason: true } : out;
+}
+
+function applyInner(saved: ServerState | null, action: Action, ctx: Context, flags: { newSeason: boolean }): Applied {
   const settings = ctx.settings ?? DEFAULT_PRACTICAL_SETTINGS;
 
   if (action.type === 'create') {
@@ -325,12 +336,24 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
     return action.type === 'load' ? { ok: true, state: null, result: { type: 'load' }, changed: false } : refuse('no-clan', 'Make a clan first.');
   }
 
-  const state = structuredClone(saved);
+  let state = structuredClone(saved);
   // A save from before My Village is converted once, here (the class village's levels come from the server).
   const upgraded = needsUpgrade(state.clan);
   if (upgraded) state.clan = upgradeSave(state.clan, ctx.groupVillage ?? null);
   // The night's rest waits until a fight in progress is over: it would heal the members the fight is being replayed with.
-  const rested = state.fight ? false : catchUp(state, ctx.today, ctx.fightsPerDay);
+  let rested = state.fight ? false : catchUp(state, ctx.today, ctx.fightsPerDay);
+  // The season: a save with no season yet is stamped with the current one (no reset); one from an earlier season starts again, but never in the middle of a fight.
+  const clock = ctx.clock;
+  if (clock && clock.number > 0) {
+    if (state.clan.season === undefined) {
+      state.clan.season = clock.number;
+      rested = true;
+    } else if (clock.clockOn && state.clan.season < clock.number && !state.fight) {
+      state = newSeasonSave(state, clock.number);
+      flags.newSeason = true;
+      rested = true;
+    }
+  }
   if (state.fight && action.type !== 'load' && action.type !== 'fightStart' && action.type !== 'cryCheck' && action.type !== 'fightRound' && action.type !== 'raidTargets') {
     return refuse('fight-open', 'You are in the middle of a fight. Finish it first!');
   }
@@ -381,10 +404,12 @@ export function applyAction(saved: ServerState | null, action: Action, ctx: Cont
       return finished.ok ? done(state, { type: 'quest', questId: q.id, text: finished.text, right: finished.right, prize: finished.prize }, true, answers ? { answers } : undefined) : refuse('quest', finished.say);
     }
     case 'raidTargets': {
+      if (classRaidsResting(clock)) return done(state, { type: 'raidTargets', targets: [], resting: true }, rested || upgraded);
       const targets = raidTargetList(state, ctx.today, ctx.self ?? '', ctx.raidsOn ?? false, ctx.mates ?? []);
       return done(state, { type: 'raidTargets', targets }, rested || upgraded);
     }
     case 'raidClass': {
+      if (classRaidsResting(clock)) return refuse('resting-season', 'Raids on classmates rest for the last two weeks of the season. Computer kingdoms are still open!');
       if (!ctx.target || !ctx.self) return refuse('target', 'That clan is not in your class.');
       const out = raidClassmateNz(state, ctx.self, ctx.target, action.take, action.push, raidSeed(state.seed, state.raidNo), ctx.today, ctx.raidsOn ?? false);
       if (!out.ok) return refuse(out.why, out.say);
