@@ -240,6 +240,20 @@ describe('the class roster', () => {
     expect(await screen.findByRole('heading', { name: /^Whole school/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Whole school' })).toHaveAttribute('aria-pressed', 'true');
   });
+
+  it('points a school admin to Admin → End of year for the new points season', async () => {
+    show('/teacher/c12/students', admin);
+    await roster();
+    expect(screen.getByRole('link', { name: 'Admin → End of year' })).toHaveAttribute('href', '/teacher/admin/year');
+    expect(screen.queryByRole('button', { name: 'Start a new season' })).not.toBeInTheDocument();
+  });
+
+  it('shows an ordinary teacher no season panel for points', async () => {
+    show('/teacher/c12/students');
+    await roster();
+    expect(screen.queryByRole('link', { name: 'Admin → End of year' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Seasons and end of year')).not.toBeInTheDocument();
+  });
 });
 
 describe('a student’s page', () => {

@@ -723,6 +723,18 @@ with teachers, students, code and mode, last active) and `admin_create_class(nam
 - *Live 28 Oct 2026: the migration pasted into the SQL Editor by James and checked as a school admin, then the site published
   (PR #75). Next: End of year checklist + `admin_log`.*
 
+*Part 3 done 28 Oct 2026: End of year. One migration, `20261028001000_admin_end_of_year.sql`: an `admin_log` table (no client
+access) and `admin_year()`, `admin_mark_step()`, `admin_archive_classes()`, `admin_delete_leavers()` (only students in no class
+or an archived class; type the number), `admin_new_points_season()` and `admin_clans_new_season()`. Each does its step and
+writes the log in the same transaction, wrapping the existing functions. Tested by
+`supabase/tests/database/admin_end_of_year.test.sql` (74 checks, two schools).*
+- *Admin → End of year (`src/teacher/AdminYear.tsx`): a "New school year" box and six steps, each with "Last done … by …":
+  next year's classes (mark done), archive last year's classes (ticked list), students who have left (tick, type the number,
+  delete), new points season, Clan Quest fame season, Dragon Maths (a reminder until the one school date is live). History
+  lists the last 20 steps.*
+- *The points-season reset moved here from the Students page (James, 28 Oct 2026), which now links to it. The Clan Quest fame
+  panel stays on Students for ordinary teachers' own classes.*
+
 ## 8. Tests to carry over / add
 
 - Existing `Teacher*.test.tsx` files keep their assertions about what each switch saves; they move with the panels.

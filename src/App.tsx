@@ -26,6 +26,7 @@ import { StudentPage } from './teacher/StudentPage';
 import { HardestQuestions } from './teacher/Hardest'; // Today shows its top three, so it's in the teacher bundle anyway
 import { TeacherGames } from './teacher/Games';
 import { AdminClasses, AdminOverview, AdminStudents, AdminTeachers } from './teacher/Admin';
+import { AdminYear } from './teacher/AdminYear';
 import { TeacherAdmin, TeacherEntry, TeacherMaths, TeacherShell } from './teacher/TeacherShell';
 import { Today } from './teacher/Today';
 import { useSkipRuleSync } from './data/questionSkips';
@@ -63,6 +64,7 @@ export function teacherRoutes() {
           <Route path="classes" element={<AdminClasses />} />
           <Route path="students" element={<AdminStudents />} />
           <Route path="teachers" element={<AdminTeachers />} />
+          <Route path="year" element={<AdminYear />} />
         </Route>
       </Route>
       <Route path="teacher/:classId" element={<TeacherShell />}>

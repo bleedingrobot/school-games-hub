@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const rpc = vi.hoisted(() => vi.fn());
 vi.mock('../lib/supabase', () => ({ supabase: { rpc } }));
-const { createClassFor, fetchAdminClasses, parseAdminClasses, fetchAdminOverview, fetchAdminStudents, fetchAdminTeachers, setSchoolAdmin, parseAdminOverview, parseAdminStudents, parseAdminTeachers } =
+const { adminClansNewSeason, adminNewPointsSeason, archiveClasses, deleteLeavers, fetchAdminYear, markYearStep, parseAdminYear, createClassFor, fetchAdminClasses, parseAdminClasses, fetchAdminOverview, fetchAdminStudents, fetchAdminTeachers, setSchoolAdmin, parseAdminOverview, parseAdminStudents, parseAdminTeachers } =
   await import('./admin');
 const { FriendlyError } = await import('./profile');
 
@@ -116,5 +116,52 @@ describe('the calls', () => {
     await expect(fetchAdminStudents()).rejects.toThrow('We couldn’t load the students.');
     rpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'permission denied for function x' } });
     await expect(fetchAdminTeachers()).rejects.toThrow('We couldn’t load the teachers.');
+  });
+});
+
+describe('End of year', () => {
+  const step = { at: '2026-10-28T01:00:00Z', by: 'Calm Fox 2', byRealName: 'jriley', detail: { count: 3 } };
+
+  it('tidies the steps and the log', () => {
+    const y = parseAdminYear({
+      steps: { archive: step, points: { at: 'never' }, fame: null },
+      log: [{ ...step, action: 'archive' }, { ...step, action: 'bogus' }, { at: 'x', action: 'fame' }, null],
+    });
+    expect(Object.keys(y.steps)).toEqual(['classes', 'archive', 'leavers', 'points', 'fame', 'dragon']);
+    expect(y.steps.archive).toEqual(step);
+    expect(y.steps.points).toBeNull();
+    expect(y.steps.classes).toBeNull();
+    expect(y.log).toEqual([{ ...step, action: 'archive' }]);
+    expect(parseAdminYear(null).log).toEqual([]);
+  });
+
+  it('ask the right functions with the right arguments', async () => {
+    rpc.mockResolvedValue({ data: { steps: {}, log: [] }, error: null });
+    await fetchAdminYear();
+    expect(rpc).toHaveBeenLastCalledWith('admin_year');
+    rpc.mockResolvedValue({ data: null, error: null });
+    await markYearStep('dragon');
+    expect(rpc).toHaveBeenLastCalledWith('admin_mark_step', { step: 'dragon' });
+    rpc.mockResolvedValue({ data: 2, error: null });
+    expect(await archiveClasses(['c1', 'c2'])).toBe(2);
+    expect(rpc).toHaveBeenLastCalledWith('admin_archive_classes', { classes: ['c1', 'c2'] });
+    expect(await deleteLeavers(['s1', 's2'], '2')).toBe(2);
+    expect(rpc).toHaveBeenLastCalledWith('admin_delete_leavers', { students: ['s1', 's2'], confirm: '2' });
+    rpc.mockResolvedValue({ data: { botGames: 1, friendGames: 2 }, error: null });
+    expect(await adminNewPointsSeason('NEW SEASON')).toEqual({ botGames: 1, friendGames: 2 });
+    expect(rpc).toHaveBeenLastCalledWith('admin_new_points_season', { confirm: 'NEW SEASON' });
+    rpc.mockResolvedValue({ data: { season: 3, clans: 4 }, error: null });
+    expect(await adminClansNewSeason('NEW SEASON')).toEqual({ season: 3, clans: 4 });
+    expect(rpc).toHaveBeenLastCalledWith('admin_clans_new_season', { confirm: 'NEW SEASON' });
+  });
+
+  it('show the server’s message for 22023 and a fallback otherwise', async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: '22023', message: 'Tick at least one class.' } });
+    await expect(archiveClasses([])).rejects.toThrow('Tick at least one class.');
+    rpc.mockResolvedValue({ data: null, error: { code: '22023', message: 'Type the number of students to confirm.' } });
+    await expect(deleteLeavers(['s1'], '2')).rejects.toThrow('Type the number of students to confirm.');
+    rpc.mockResolvedValue({ data: null, error: { code: 'XX000', message: 'boom' } });
+    await expect(adminClansNewSeason('x')).rejects.toThrow('We couldn’t start a new season.');
+    await expect(fetchAdminYear()).rejects.toThrow('We couldn’t load the end of year steps.');
   });
 });
