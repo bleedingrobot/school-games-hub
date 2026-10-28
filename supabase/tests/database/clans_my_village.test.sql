@@ -5,7 +5,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 -- Sequences aren't rolled back, so say where the group numbers start (the default village is 1, the first new one 2).
 select setval(pg_get_serial_sequence('public.clan_villages', 'id'), 1);
-select plan(1);
+select plan(104);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
