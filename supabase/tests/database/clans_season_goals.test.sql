@@ -5,7 +5,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select setval(pg_get_serial_sequence('public.schools', 'id'), 1);
 select setval(pg_get_serial_sequence('public.clan_villages', 'id'), 1);
-select plan(68);
+select plan(69);
 
 -- School 1 is Douglas Park (made by the migration). School 2 is made here.
 insert into public.schools (name) values ('Other School');
@@ -138,7 +138,10 @@ select is(pg_temp.village_scores('a'), 1, '... and one score');
 -- ---- ... but again in the next season ----
 select pg_temp.clock(-35);
 select pg_temp.build('a', pg_temp.full());
-select is(pg_temp.fame('a'), 100, 'the next season pays again');
+select is(pg_temp.fame('a'), 50, 'a village that was already whole earns nothing just because the season moved on');
+select pg_temp.build('a', '{"trainingHall":5,"smithy":6,"church":3,"barracks":5,"walls":5,"tower":5,"forge":4,"strongroom":5}');
+select pg_temp.build('a', pg_temp.full());
+select is(pg_temp.fame('a'), 100, 'finishing it again in the next season pays again');
 select is((select count(*)::integer from public.clan_hall where player = pg_temp.id('a') and season = 2), 1, '... with a Hall row for season 2');
 select is(pg_temp.village_scores('a'), 2, '... and a second score');
 
