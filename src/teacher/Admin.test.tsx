@@ -4,12 +4,17 @@ import { MemoryRouter, Routes, useLocation } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { teacherRoutes } from '../App';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
-import type { AdminOverview, AdminStudent, AdminTeacher } from '../data/admin';
+import type { AdminClass, AdminOverview, AdminStudent, AdminTeacher } from '../data/admin';
 import type { ClassSummary } from '../data/classes';
 
 const data = vi.hoisted(() => ({
   fetchClasses: vi.fn(),
   fetchAdminOverview: vi.fn(),
+  fetchAdminClasses: vi.fn(),
+  createClassFor: vi.fn(),
+  archiveClass: vi.fn(),
+  addCoTeacher: vi.fn(),
+  removeCoTeacher: vi.fn(),
   fetchAdminStudents: vi.fn(),
   fetchAdminTeachers: vi.fn(),
   setSchoolAdmin: vi.fn(),
@@ -19,11 +24,16 @@ vi.mock('../data/classes', async (original) => ({
   ...(await original<typeof import('../data/classes')>()),
   fetchClasses: data.fetchClasses,
   fetchWarpRequests: vi.fn(async () => []),
+  archiveClass: data.archiveClass,
+  addCoTeacher: data.addCoTeacher,
+  removeCoTeacher: data.removeCoTeacher,
 }));
 vi.mock('../data/admin', async (original) => ({
   ...(await original<typeof import('../data/admin')>()),
   fetchAdminOverview: data.fetchAdminOverview,
   fetchAdminStudents: data.fetchAdminStudents,
+  fetchAdminClasses: data.fetchAdminClasses,
+  createClassFor: data.createClassFor,
   fetchAdminTeachers: data.fetchAdminTeachers,
   setSchoolAdmin: data.setSchoolAdmin,
 }));
@@ -57,6 +67,16 @@ const teachers: AdminTeacher[] = [
   teacher({ id: 't9', name: 'Calm Fox 2', realName: 'me.admin', admin: true, me: true, classes: [{ id: 'c12', name: 'Room 12' }] }),
   teacher({ id: 't2', name: 'Wise Owl 1', realName: 'sam.jones', classes: [{ id: 'c3', name: 'Room 3' }, { id: 'c4', name: 'Room 4' }] }),
   teacher({ id: 't3', name: 'Quick Kea 5', realName: 'pat.lee', admin: true }),
+];
+
+const adminClass = (over: Partial<AdminClass> & { id: string; name: string }): AdminClass => ({
+  schoolYear: 2026, yearLevel: 5, archived: false, archivedAt: null, warpCode: 'KM4TP', warpMode: 'on', students: 24, teachers: [], lastActive: daysAgo(1), ...over,
+});
+const classes: AdminClass[] = [
+  adminClass({ id: 'c12', name: 'Room 12', teachers: [{ id: 't9', name: 'Calm Fox 2', realName: 'me.admin' }] }),
+  adminClass({ id: 'c3', name: 'Room 3', yearLevel: null, warpMode: 'ask', students: 0, lastActive: null, teachers: [{ id: 't2', name: 'Wise Owl 1', realName: 'sam.jones' }, { id: 't3', name: 'Quick Kea 5', realName: 'pat.lee' }] }),
+  adminClass({ id: 'c9', name: 'Room 9', warpMode: 'off' }),
+  adminClass({ id: 'c1', name: 'Room 1', archived: true, teachers: [{ id: 't2', name: 'Wise Owl 1', realName: 'sam.jones' }] }),
 ];
 
 const auth = (extra: object): AuthState => ({
@@ -93,6 +113,8 @@ beforeEach(() => {
   data.fetchClasses.mockResolvedValue([room('c12', 'Room 12')]);
   data.fetchAdminOverview.mockResolvedValue(base);
   data.fetchAdminStudents.mockResolvedValue(students);
+  data.fetchAdminClasses.mockResolvedValue(classes);
+  for (const f of [data.createClassFor, data.archiveClass, data.addCoTeacher, data.removeCoTeacher]) f.mockResolvedValue(undefined);
   data.fetchAdminTeachers.mockResolvedValue(teachers);
   data.setSchoolAdmin.mockResolvedValue(undefined);
   data.setRole.mockResolvedValue(undefined);
@@ -105,10 +127,10 @@ describe('the admin pages', () => {
     expect(data.fetchAdminStudents).not.toHaveBeenCalled();
   });
 
-  it('have Overview, Students and Teachers tabs', async () => {
+  it('have Overview, Classes, Students and Teachers tabs', async () => {
     show('/teacher/admin');
     const nav = await screen.findByRole('navigation', { name: 'Admin' });
-    expect(within(nav).getAllByRole('link').map((l) => l.textContent)).toEqual(['Overview', 'Students', 'Teachers']);
+    expect(within(nav).getAllByRole('link').map((l) => l.textContent)).toEqual(['Overview', 'Classes', 'Students', 'Teachers']);
     expect(within(nav).getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
     await userEvent.click(within(nav).getByRole('link', { name: 'Teachers' }));
     expect(await screen.findByRole('heading', { name: /Teachers/, level: 2 })).toBeInTheDocument();
@@ -130,7 +152,7 @@ describe('Overview', () => {
     show('/teacher/admin');
     const link = await screen.findByRole('link', { name: '4 students aren’t in a class' });
     expect(link).toHaveAttribute('href', '/teacher/admin/students?show=noclass');
-    expect(screen.getByText('Classes with no teacher: Room 3, Room 9')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Classes with no teacher: Room 3, Room 9' })).toHaveAttribute('href', '/teacher/admin/classes?show=noteacher');
     expect(screen.queryByText(/waited more than a day/)).not.toBeInTheDocument();
     expect(screen.queryByText('Nothing needs an admin right now.')).not.toBeInTheDocument();
   });
@@ -145,6 +167,111 @@ describe('Overview', () => {
     data.fetchAdminOverview.mockRejectedValue(new Error('x'));
     show('/teacher/admin');
     expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
+  });
+});
+
+describe('Classes', () => {
+  const classRow = (name: string) => screen.getAllByRole('row').find((r) => within(r).queryByText(new RegExp(`^${name}`), { selector: 'th *, th' }))!;
+
+  it('lists the current classes, with years, teachers, codes and last active', async () => {
+    show('/teacher/admin/classes');
+    await screen.findByRole('link', { name: 'Room 12' });
+    expect(rowNames()).toEqual(['Room 12', 'Room 3', 'Room 9']);
+    expect(screen.getByRole('button', { name: 'Current' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('link', { name: 'Room 12' })).toHaveAttribute('href', '/teacher/c12');
+    const row = classRow('Room 3');
+    expect(within(row).getByText('2026')).toBeInTheDocument();
+    expect(within(row).getByText('KM4TP (asks first)')).toBeInTheDocument();
+    expect(within(row).getByText('Not yet')).toBeInTheDocument();
+    expect(within(classRow('Room 12')).getByText('2026 · Year 5')).toBeInTheDocument();
+    expect(within(classRow('Room 12')).getByText('Yesterday')).toBeInTheDocument();
+    expect(within(classRow('Room 9')).getByText('KM4TP (off)')).toBeInTheDocument();
+  });
+
+  it('filters by ?show= and by the buttons', async () => {
+    const user = userEvent.setup();
+    show('/teacher/admin/classes?show=noteacher');
+    await screen.findByText('Room 9');
+    expect(rowNames()).toEqual(['Room 9']);
+    expect(screen.getByRole('button', { name: 'No teacher' })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(screen.getByRole('button', { name: 'Archived' }));
+    expect(rowNames()).toEqual(['Room 1 (archived)']);
+    expect(screen.queryByRole('link', { name: /Room 1/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'address' })).toHaveTextContent('?show=archived');
+    await user.click(screen.getByRole('button', { name: 'Current' }));
+    expect(rowNames()).toHaveLength(3);
+    expect(screen.getByRole('status', { name: 'address' })).not.toHaveTextContent('show=');
+  });
+
+  it('archives and unarchives, then reloads', async () => {
+    const user = userEvent.setup();
+    show('/teacher/admin/classes');
+    await screen.findByText('Room 9');
+    await user.click(within(classRow('Room 9')).getByRole('button', { name: 'Archive' }));
+    expect(data.archiveClass).toHaveBeenCalledWith('c9', true);
+    expect(await screen.findByText('Room 9 is archived.')).toBeInTheDocument();
+    expect(data.fetchAdminClasses).toHaveBeenCalledTimes(2);
+    await user.click(screen.getByRole('button', { name: 'Archived' }));
+    await user.click(screen.getByRole('button', { name: 'Unarchive' }));
+    expect(data.archiveClass).toHaveBeenLastCalledWith('c1', false);
+    expect(await screen.findByText('Room 1 is back.')).toBeInTheDocument();
+  });
+
+  it('adds and removes a teacher', async () => {
+    const user = userEvent.setup();
+    show('/teacher/admin/classes');
+    await screen.findByText('Room 9');
+    const add = screen.getByRole('combobox', { name: 'Add a teacher to Room 9' });
+    expect(within(add).getAllByRole('option').map((o) => o.textContent)).toEqual(['Add a teacher', 'Calm Fox 2', 'Wise Owl 1', 'Quick Kea 5']);
+    await user.selectOptions(add, 't2');
+    expect(data.addCoTeacher).toHaveBeenCalledWith('c9', 't2');
+    expect(await screen.findByText('Wise Owl 1 teaches Room 9 now.')).toBeInTheDocument();
+    // Room 3 already has both of the others, so only Calm Fox 2 is left to add.
+    const room3 = screen.getByRole('combobox', { name: 'Add a teacher to Room 3' });
+    expect(within(room3).getAllByRole('option').map((o) => o.textContent)).toEqual(['Add a teacher', 'Calm Fox 2']);
+    await user.click(screen.getByRole('button', { name: 'Take Quick Kea 5 off Room 3' }));
+    expect(data.removeCoTeacher).toHaveBeenCalledWith('c3', 't3');
+    expect(await screen.findByText('Quick Kea 5 no longer teaches Room 3.')).toBeInTheDocument();
+  });
+
+  it('shows the server’s message when it refuses', async () => {
+    const { FriendlyError } = await import('../data/profile');
+    data.archiveClass.mockRejectedValue(new FriendlyError('Only a school admin can do that.'));
+    const user = userEvent.setup();
+    show('/teacher/admin/classes');
+    await screen.findByText('Room 9');
+    await user.click(within(classRow('Room 9')).getByRole('button', { name: 'Archive' }));
+    expect(await screen.findByText('Only a school admin can do that.')).toBeInTheDocument();
+  });
+
+  it('makes a class for me by default, and for another teacher when chosen', async () => {
+    const user = userEvent.setup();
+    show('/teacher/admin/classes');
+    await screen.findByText('Room 9');
+    const thisYear = new Date().getFullYear();
+    expect(screen.getByRole('spinbutton', { name: 'School year' })).toHaveValue(thisYear);
+    await user.click(screen.getByRole('button', { name: 'Make the class' }));
+    expect(data.createClassFor).toHaveBeenLastCalledWith('', thisYear, null, 't9');
+    expect(await screen.findByText('Class made.')).toBeInTheDocument();
+    expect(data.fetchAdminClasses).toHaveBeenCalledTimes(2);
+
+    const make = screen.getByRole('region', { name: 'Make a class' });
+    expect(within(within(make).getByRole('combobox', { name: 'Year level (optional)' })).getAllByRole('option')).toHaveLength(15);
+    await user.type(within(make).getByRole('textbox', { name: 'Class name (optional)' }), ' Room 20 ');
+    await user.selectOptions(within(make).getByRole('combobox', { name: 'Year level (optional)' }), '0');
+    await user.selectOptions(within(make).getByRole('combobox', { name: 'Teacher' }), 't2');
+    await user.click(screen.getByRole('button', { name: 'Make the class' }));
+    expect(data.createClassFor).toHaveBeenLastCalledWith('Room 20', thisYear, 0, 't2');
+  });
+
+  it('shows why a class could not be made', async () => {
+    const { FriendlyError } = await import('../data/profile');
+    data.createClassFor.mockRejectedValue(new FriendlyError('That person isn’t a teacher at your school.'));
+    const user = userEvent.setup();
+    show('/teacher/admin/classes');
+    await screen.findByText('Room 9');
+    await user.click(screen.getByRole('button', { name: 'Make the class' }));
+    expect(await screen.findByText('That person isn’t a teacher at your school.')).toBeInTheDocument();
   });
 });
 

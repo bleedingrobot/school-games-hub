@@ -123,3 +123,47 @@ export async function setSchoolAdmin(person: string, on: boolean): Promise<void>
   const { error } = await supabase.rpc('school_set_admin', { person, make_admin: on });
   if (error) fail(error, 'We couldn’t change that.');
 }
+
+export interface AdminClass {
+  id: string;
+  name: string;
+  schoolYear: number | null;
+  yearLevel: number | null;
+  archived: boolean;
+  archivedAt: string | null;
+  warpCode: string | null;
+  warpMode: 'on' | 'ask' | 'off';
+  students: number;
+  teachers: { id: string; name: string; realName: string | null }[];
+  lastActive: string | null;
+}
+
+export function parseAdminClasses(raw: unknown): AdminClass[] {
+  const r = (raw ?? {}) as { classes?: unknown };
+  return rows(r.classes).map((c) => ({
+    id: c.id as string,
+    name: String(c.name ?? ''),
+    schoolYear: typeof c.schoolYear === 'number' && Number.isFinite(c.schoolYear) ? Math.floor(c.schoolYear) : null,
+    yearLevel: typeof c.yearLevel === 'number' && Number.isFinite(c.yearLevel) ? Math.floor(c.yearLevel) : null,
+    archived: c.archived === true,
+    archivedAt: time(c.archivedAt),
+    warpCode: text(c.warpCode),
+    warpMode: c.warpMode === 'ask' || c.warpMode === 'off' ? c.warpMode : 'on',
+    students: count(c.students),
+    teachers: rows(c.teachers).map((t) => ({ id: t.id as string, name: String(t.name ?? ''), realName: text(t.realName) })),
+    lastActive: time(c.lastActive),
+  }));
+}
+
+export async function fetchAdminClasses(): Promise<AdminClass[]> {
+  const { data, error } = await supabase.rpc('admin_classes');
+  if (error || !data) fail(error, 'We couldn’t load the classes.');
+  return parseAdminClasses(data);
+}
+
+/** Make a class that belongs to the chosen teacher (yourself or someone else). A blank name uses the default. */
+export async function createClassFor(name: string, year: number, level: number | null, teacher: string): Promise<string> {
+  const { data, error } = await supabase.rpc('admin_create_class', { class_name: name, in_year: year, level, teacher });
+  if (error || !data) fail(error, 'We couldn’t make that class.');
+  return data as string;
+}

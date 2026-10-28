@@ -712,6 +712,15 @@ schools). The actions use the existing `school_set_admin` (refuses your own row,
   of year. Next: Classes.*
 - *Live 28 Oct 2026: the migration applied by hand and checked as a school admin, then the site published (PR #71).*
 
+*Part 2 done 28 Oct 2026: Classes. One migration, `20261028000900_admin_classes.sql`: `admin_classes()` (read only: every class
+with teachers, students, code and mode, last active) and `admin_create_class(name, year, level, teacher)` (wraps
+`teacher_create_class`, then hands the class to the chosen teacher; a blank name is named after that teacher). Tested by
+`supabase/tests/database/admin_classes.test.sql` (32 checks, two schools).*
+- *Admin → Classes: Current / No teacher / Archived; each class links to its teacher area; add or take off teachers
+  (`teacher_add_co_teacher`, `teacher_remove_co_teacher`), Archive / Unarchive (`teacher_archive_class`); "Make a class" for any
+  teacher. Overview's "Classes with no teacher" links to it. Archived classes can't have their teachers changed until
+  unarchived.*
+
 ## 8. Tests to carry over / add
 
 - Existing `Teacher*.test.tsx` files keep their assertions about what each switch saves; they move with the panels.
