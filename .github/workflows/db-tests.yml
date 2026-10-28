@@ -1,10 +1,12 @@
 # The database rules: each school's and each pupil's data kept apart, scoring, the games' server checks.
 # Starts a throwaway database on GitHub's machine, applies every migration to it, and runs supabase/tests/database.
-# The publish (deploy.yml) waits for this, so a failing check stops it. Same as `npm run test:db` on your own copy.
+# Runs on every pull request (so a failure shows before merging) and again inside "Test and publish" on main,
+# where a failing check stops the publish. Same as `npm run test:db` on your own copy.
 name: Database checks
 
 on:
   workflow_call:
+  pull_request:
 
 permissions:
   contents: read

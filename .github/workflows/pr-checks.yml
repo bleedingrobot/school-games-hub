@@ -1,0 +1,23 @@
+# The site's checks on every pull request (typecheck, every test, build), so a failure shows before merging
+# instead of skipping a publish. The database checks run on pull requests from db-tests.yml.
+name: Site checks
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:all
+      - run: npm run build
