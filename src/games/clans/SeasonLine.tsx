@@ -1,11 +1,11 @@
 import { CONFIG } from '../../../shared/clans/config';
 import { phaseOf, type SeasonClock } from '../../../shared/clans/season';
 
-/** "Season 2 · day 12 of 35", and a kind heads-up before the season ends. Nothing shows until the school has set a season. */
+/** "Season 2 · day 12 of 35", and a kind heads-up before the season ends. Nothing shows until the season clock is on. */
 export function SeasonLine({ clock }: { clock?: SeasonClock | null }) {
-  if (!clock || clock.number <= 0) return null;
+  if (!clock || clock.number <= 0 || !clock.clockOn) return null;
   const phase = phaseOf(clock.day);
-  const warn = clock.clockOn && (phase === 'warning' || phase === 'monster');
+  const warn = (phase === 'warning' || phase === 'monster');
   const total = CONFIG.season.length;
   return (
     <div aria-label="Season">

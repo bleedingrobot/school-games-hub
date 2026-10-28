@@ -174,3 +174,16 @@ Names are hub names; hidden profiles aren't shown. Never maths scores.
 4. ~~Classmate raids?~~ **Answered 28 Oct 2026: off in the last 2 weeks** (days 22 to 35 of a 5-week season).
 5. ~~Which monster?~~ **Answered 28 Oct 2026: a new monster each season** (giant, golem, troll in turn; section 5.1).
 6. When to start: follows from sharing the date: the first Clan Quest season begins at the next Dragon Maths season start after PR 1 is live.
+
+## 10. Part 1 built (28 Oct 2026)
+
+Branch `claude/project-thread-kcfeml`, migration `20261029000400_clans_season_goals.sql`.
+
+- **Prices:** every building costs 50 × level (James chose half price, 28 Oct). Simulator (`npm run clans:sim -- --days 35 --seeds 8 --empire 1 --play N`): a daily clan finishes around day 20, a 4-days-a-week clan around day 31; a 3-days clan gets about 28 / 39 by day 28 and about 31 by day 35; a 2-days clan about 18 by day 28. Gold, not builds, is the limit for part-time clans.
+- **Saved builds:** unused builds are saved, up to 4 extra (so at most 6 on a day). Both the browser rules (`empireNewDay`) and the midnight job (`clan_nightly`) save them, with the numbers in `clan_season_rules()`.
+- **Season clock:** `clan_season(player)` reads Dragon Maths' date on the school's default settings row (35-day seasons). `app_settings.clans_clock_from` (school default row) switches the clock on: null = off. While off, nothing resets, no countdown or season line shows, and raids never rest; the Hall still records the season number.
+- **With the clock on:** a save from an earlier season is reset in full on its next load (`newSeasonSave`: members back to level 1 with the same names, races, classes and looks; 200 gold; village, troops and saved builds gone), never in the middle of a fight; fame goes to 0 at the midnight job; classmate raids rest from day 22; a countdown shows from day 22.
+- **Village goal:** when every building is at its top level, a database trigger gives +50 fame, 10 points (inside the daily cap), the Master Builder badge (`stats.villageBuilt` = 2, measured by `clan_village` goal 2), a news line and a Hall of Legends row, once a season. The screen shows "Village 23 / 39", a "Village complete!" ribbon and a one-off celebration.
+- **Hall of Legends:** `clan_hall_of_legends()`, from the Scoreboard. Rows are by season; monster slayers will appear when part 2 fills `monster_done_on`.
+- **Rehearsed** on the live database inside a rolled-back transaction (28 Oct): the trigger paid once (fame +50, one 10-point score, the badge, the news line, the Hall row) and a second full save paid nothing. The midnight job's season block was not exercised (it had already run that day); it is covered by the pgTAP file.
+- **Still to decide:** when the clock goes on (James's card: recommended once the monster is live).

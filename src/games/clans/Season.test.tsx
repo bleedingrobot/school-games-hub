@@ -110,9 +110,10 @@ describe('the season on the clan screen', () => {
     expect(await screen.findByText('New season in 6 days: your clan starts fresh, your trophies stay forever.')).toBeInTheDocument();
   });
 
-  it('gives no countdown when the clock is off', async () => {
+  it('shows no season line or countdown while the clock is off', async () => {
     render(<ClanQuest server={stillServer(clock(30, { clockOn: false }))} />);
-    await screen.findByText('Season 2 · day 30 of 35');
+    await screen.findByRole('region', { name: 'Your clan' });
+    expect(screen.queryByText(/Season \d+ ·/)).toBeNull();
     expect(screen.queryByText(/New season in/)).toBeNull();
   });
 
