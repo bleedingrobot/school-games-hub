@@ -399,3 +399,7 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 @media (prefers-reduced-motion: no-preference) {
   .cq-bar__ghost { transition: width 0.45s ease-in 0.4s; }
 }
+
+/* "What to do next" line on the Empire home */
+.cq-nextstep { border: 2px solid var(--cq-yellow); color: var(--cq-yellow); margin-bottom: 8px; }
+.cq-nextstep p { margin: 4px 0; }

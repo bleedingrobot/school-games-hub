@@ -6,6 +6,7 @@ import { TROOP_KINDS, type Troops } from '../../../shared/clans/types';
 import { Bar } from './Bars';
 import { Moment } from './Moment';
 import { kingdomScene, sceneArt } from './art';
+import { LIGHT_WORDS, kingdomLight } from './nextStep';
 import { canRaid, sendArmy, type WarDone } from './places';
 import type { Session, Change } from './session';
 
@@ -96,7 +97,7 @@ export function Raid({ session, onChange, onBack }: { session: Session; onChange
           <ul className="cq-kingdoms">
             {KINGDOMS.map((k) => (
               <li key={k.id}>
-                <button type="button" className="cq-btn" aria-pressed={kingdomId === k.id} onClick={() => setKingdomId(k.id)}>{k.name}: {k.feel}</button>
+                <button type="button" className="cq-btn" aria-pressed={kingdomId === k.id} onClick={() => setKingdomId(k.id)}>{k.name}: {k.feel} <span className="cq-soft">({LIGHT_WORDS[kingdomLight(army, k)]})</span></button>
               </li>
             ))}
           </ul>

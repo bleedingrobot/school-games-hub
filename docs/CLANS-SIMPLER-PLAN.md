@@ -102,7 +102,7 @@ Groups are hard for the teacher to manage. Instead, each clan builds **its own v
   - area and fence when a building grows;
   - "how much more gold do I need?";
   - the troop bill.
-- **Raids on other clans.** You can raid any clan **in your class**, with the same guard rails as now:
+- **Raids on other clans** (James chose the class, not the whole school, 28 Oct). You can raid any clan **in your class**, with the same guard rails as now:
   - a fair match only (half to double your army);
   - 1 raid a day;
   - a new clan is safe for its first 3 days;
@@ -131,3 +131,64 @@ This replaces steps 2 and 3 above:
 1. Quick fixes (step A).
 2. "My Village": merge the village and empire into one screen with one purse, building levels and 2 builds a day, plus the save move.
 3. Raids across the class, without groups, and the teacher page tidy-up.
+
+## Step 2 build plan: "My Village" (agreed by James 28 Oct 2026; how it is built)
+
+**Branch `clans-my-village`.** It goes live in one go, because the engine, screens and server must change together.
+
+### Engine (`shared/clans/`)
+- The `Empire` save gets:
+  - `levels`: trainingHall, smithy, church, barracks, walls, tower, forge, strongroom, each 0 to 5. Smithy keeps its max of 6 and Church its max of 3.
+  - `buildsToday`.
+- `vault`, `wild`, `claimed`, `plots`, `energyUsed` and `draftPercent` go.
+- `upgradeSave(old)` converts an old save when it loads. It is pure and tested.
+  - Vault gold goes into the purse.
+  - Group village levels are copied in.
+  - Each old building becomes a level: its count, capped at 5. 2 Steel Mills become Forge level 2.
+  - Spare plots become a one-off gold refund of their develop price.
+  - Stables, Gymnasium and Developer's Hall are refunded at their gold price.
+  - Troops are kept, and a save is converted only once.
+- **Costs.** Level n costs `base × n` gold, with 2 builds a day. Bases are tuned with the simulator so a clan fills its village in about 4 to 5 weeks, the pace James set. The class village prices were for a whole class, so per-clan prices will be lower.
+- **What each building does:**
+
+  | Building | What it does |
+  |---|---|
+  | Training Hall | Training costs 1 less a level, as now |
+  | Smithy | More items in the shop, as now |
+  | Church | One more free wake-up a level, as now |
+  | Barracks | Room for 20 footmen, 10 axemen and 5 knights a level |
+  | Walls | Raiders do 10% less damage a level, and walls stop building losses |
+  | Tower | Defenders hit back 10% harder a level |
+  | Forge | Your raiders hit 10% harder a level |
+  | Strongroom | Keeps 200 gold a level safe from raiders |
+
+- **Area and fence moment.** Each building's plan grows with its level, for example barracks level n is 3 × (n + 2) squares. The area and fence questions are asked on Upgrade, as optional maths.
+- **Troops join by themselves.** New followers from mine wins join as footmen while the barracks have room. The draft screen goes. Axemen and knights are still bought, with the troop-bill moment.
+- **Classmate raids:**
+  - Take gold: up to 10% of (purse minus strongroom-safe gold).
+  - Take buildings: knocks one level off a building, never Walls or Strongroom, with one fewer loss for each Walls level.
+  - "Land" goes, because there are no plots now.
+- The battle, kingdoms and Friendly War are unchanged. The battle plan is cut to one choice (Careful, Steady or Bold), with 3 rounds and 10% loot.
+
+### Screens (`src/games/clans/`)
+- One **My Village** screen replaces Village, Empire, Land and Barracks. It shows a picture of the village, then each building as a card with its level, what it does, the price and an Upgrade button. A "What to do next" line sits on top, and "Builds left today: 2" is shown.
+- Raid screens get the one-choice plan and the traffic lights.
+- How to play is rewritten for the new screens.
+
+### Server (`supabase/`)
+- One new migration:
+  - `save_raid` checks against the purse and levels instead of the vault and plots.
+  - Raid targets and checks use "same class" (`current_class_of`) instead of `clan_village_of`.
+  - The nightly job resets `buildsToday`.
+  - `load_clan` stops overlaying group village levels, once a save is converted.
+  - Chest gold is shared equally among each group's clans, added to their purses one time.
+- The village tables and the teacher's village functions stay, unused. Nothing is dropped.
+- Rebuild only the `clans` function (`npm run build:functions -- clans`).
+
+### Teacher page
+- The village groups panel goes. The classmate raid switch stays.
+
+### Tests and going live
+- Engine and screen tests are updated. The SQL tests run on a scratch copy.
+- The simulator checks the pace, and `test:all` and the build must pass.
+- **The live database migration and the save conversion need James's OK first**, because they change every pupil's save.
