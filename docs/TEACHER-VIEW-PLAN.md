@@ -638,7 +638,7 @@ has now moved.*
 **Stage 4: Students roster and student page,** with `teacher_class_overview` and class-scoped `teacher_students`.
 
 *Done 28 Oct 2026 on `claude/project-thread-4t7spr` (from `teacher-games-remove-panels`). One migration,
-`20261028000700_teacher_class_overview.sql` (not live yet). Nothing is written by it; nothing any button saves changed.*
+`20261028000700_teacher_class_overview.sql`. Nothing is written by it; nothing any button saves changed.*
 - *Server: `teacher_students(target_class uuid)` reads the shared `teacher_students()` (so the games' "last played" hooks keep
   working) and keeps the students in that class; the old no-argument call is unchanged. `teacher_class_overview(target_class)`
   gives each student in the class their list row, the last 7 days' questions shown and skipped (`question_log`), when they
@@ -666,6 +666,15 @@ has now moved.*
   separately, as in stage 1).*
 - *Order on the live site: apply this migration before publishing the website (before it, the class roster and the student
   page can't load; "All my students" still works).*
+
+**Live, 28 Oct 2026: stages 0–4.** In this order: the class reports (`20261028000100`, `0200`, `0300`, `0500`) and
+`20261028000700_teacher_class_overview.sql` were applied to the live database by hand. The code was merged into `main`
+(PR #68), and the site was published by the "Test and publish" run (build, database tests and deploy all passed). Checked
+live: the new functions exist, `anon` can't call them, and a teacher's class gave 16 on the roster and 16 on the list.
+- *Still to do: `20261028000600_drop_school_class_reports.sql` (drops the 4 old whole-school reports; the site no longer
+  calls them). Not applied yet.*
+- *Not live on purpose: `20261028000400` (Dragon Maths one season for the school). It waits for James's read-only check
+  (DRAGON-SCHOOL-SEASON.md 2.3) and for teachers to be told the day before.*
 
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.
 
