@@ -234,9 +234,10 @@ export async function fetchStudentGemKeep(student: string): Promise<StudentGemKe
   return data as StudentGemKeep;
 }
 
-export async function fetchClassGemKeep(): Promise<ClassGemKeep> {
-  const { data, error } = await supabase.rpc('teacher_gem_keep_class');
-  if (error || !data) fail(error, 'We couldn’t load Gem Keep for the class.');
+/** Gem Keep's report for one class, for a teacher who teaches it (migration 20261028000100). */
+export async function fetchClassGemKeep(classId: string): Promise<ClassGemKeep> {
+  const { data, error } = await supabase.rpc('teacher_gem_keep_class', { target_class: classId });
+  if (error || !data) fail(error, 'We couldn’t load Gem Keep for this class.');
   return data as ClassGemKeep;
 }
 

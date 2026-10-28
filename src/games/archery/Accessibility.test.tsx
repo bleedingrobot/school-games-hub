@@ -174,9 +174,10 @@ describe('the teacher panel and the home scene (Stage 7)', () => {
     for (const m of panel.matchAll(/<button[^>]*className="([^"]+)"/g)) expect(m[1], m[0]).toMatch(/^button button--(primary|danger)$/);
     expect(panel).not.toMatch(/className="[^"]*\bar-/);
     expect(panel).not.toMatch(/archery\.css/);
-    expect(panel).toMatch(/<section className="panel teacher__switch" aria-labelledby="archery-teacher-title">/);
-    expect(panel).toMatch(/<h2 id="archery-teacher-title"/);
-    expect(panel).toMatch(/role="status"/);
+    // Its Settings on the Games table: the drawer gives the heading, and the shared switch its status line.
+    expect(panel).toMatch(/<div className="panel teacher__switch">/);
+    expect(panel).toMatch(/<SettingToggle\b/);
+    expect(panel).toMatch(/from '\.\.\/teacher\/Settings'/);
   });
 
   it('the teacher summary is counts only: no names, coins or maths', () => {

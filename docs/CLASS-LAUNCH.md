@@ -56,7 +56,7 @@ Wormholes & Black Holes is a dice race, so it suits a younger group, a quick fin
 
 ## If something goes wrong in class
 
-- **Friend games causing trouble?** **Teacher** page → **Pause games against friends**. Everyone's lobby says *"Your teacher has paused games against friends for now."* Games already going can still be resigned or claimed. Bot games carry on. Press **Switch games against friends back on** to undo.
+- **Friend games causing trouble?** **Teacher** → **Today** → **Lesson controls**: switch **Games against friends** to Off (for the class shown in the header). Everyone's lobby says *"Your teacher has paused games against friends for now."* Games already going can still be resigned or claimed. Bot games carry on. Switch it back On to undo.
 - **Can't open the Teacher page?** In supabase.com: **SQL Editor**, paste `update public.app_settings set multiplayer_enabled = false where id;` and click **Run** (`true` switches it back on).
 - **Reloading the page is always safe.** Games against friends carry on where they were, and so do games after a Chromebook lid is closed and opened (unfinished games are at the top of the dashboard with **Carry on**).
 - **Lots of students see errors at once:** it's probably Supabase or the school Wi-Fi. Check status.supabase.com. Switch everyone to bot games (they keep working while the internet is patchy, and save at the end).
@@ -152,7 +152,7 @@ where who.id in (c.seat1, c.seat2, c.seat3, c.seat4, c.host)
 order by 1;
 ```
 
-How to read it: `reason` says how each game ended (`checkmate`, `resigned`, `abandoned` = left or walked away, `agreed-draw`...). `counted` is false for games that were too short or abandoned (they earn nothing). A friend game with `status` = `playing` is still going. Space games say `place 1`, `place 2`... and end `docked` (someone reached the station), `mission-clock` (out of fuel) or `abandoned` (everyone left). 101 games with classmates say `place 1`, `place 2`... or `out` (they left or missed 3 turns), and end `finished` or `abandoned` (nobody played for 10 minutes); 101 bot games show as `bot` games with `game` = `101`. If the student changed their name since, use **Find a player** on the Teacher page to see their new one (a teacher's **New name** shows the new name straight away).
+How to read it: `reason` says how each game ended (`checkmate`, `resigned`, `abandoned` = left or walked away, `agreed-draw`...). `counted` is false for games that were too short or abandoned (they earn nothing). A friend game with `status` = `playing` is still going. Space games say `place 1`, `place 2`... and end `docked` (someone reached the station), `mission-clock` (out of fuel) or `abandoned` (everyone left). 101 games with classmates say `place 1`, `place 2`... or `out` (they left or missed 3 turns), and end `finished` or `abandoned` (nobody played for 10 minutes); 101 bot games show as `bot` games with `game` = `101`. If the student changed their name since, use **Find a player** on the Teacher **Students** tab to see their new one (a teacher's **New name** shows the new name straight away).
 
 Server problems are in Supabase under **Edge Functions → (function) → Logs**, kept for one day. They never contain names, only what went wrong.
 

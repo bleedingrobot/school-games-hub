@@ -1,10 +1,12 @@
 import { lazy } from 'react';
+import { saveArcheryEnabled } from '../../data/archery';
 import type { GameDefinition } from '../types';
 import { useArcheryEnabled } from './switch';
+import { ARCHERY_ABOUT, useArcheryClassSwitch, useArcherySummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const ArcheryPlay = lazy(() => import('./ArcheryPlay').then((m) => ({ default: m.ArcheryPlay })));
-const ArcheryTeacherPanels = lazy(() => import('../../pages/TeacherArchery').then((m) => ({ default: m.ArcheryTeacherPanel })));
+const ArcherySettings = lazy(() => import('../../pages/TeacherArchery').then((m) => ({ default: m.ArcherySettings })));
 
 /** A target with an arrow in the bull's eye. */
 function ArcheryIcon({ size = 64 }: { size?: number }) {
@@ -36,5 +38,11 @@ export const archeryChallenge: GameDefinition = {
   noBots: true,
   group: 'easy-maths',
   useTeacherSwitch: useArcheryEnabled,
-  TeacherPanels: ArcheryTeacherPanels,
+  // The teacher's Games table: the on/off switch in the row, whether classmate fights are on as its summary, and classmate
+  // fights, the points and the class's week in its Settings.
+  teacher: {
+    switch: { useValue: useArcheryClassSwitch, save: (on, classId) => saveArcheryEnabled(on, classId), about: ARCHERY_ABOUT },
+    useSummary: useArcherySummary,
+    Settings: ArcherySettings,
+  },
 };

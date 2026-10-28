@@ -1,10 +1,12 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
+import { saveMonstersEnabled } from '../../data/monsters';
 import { useMonstersEnabled } from './switch';
+import { MONSTERS_ABOUT, useMonstersClassSwitch, useMonstersSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const MonstersPlay = lazy(() => import('./MonstersPlay').then((m) => ({ default: m.MonstersPlay })));
-const MonstersTeacherPanels = lazy(() => import('../../pages/TeacherMonsters').then((m) => ({ default: m.MonstersTeacherPanels })));
+const MonstersTeacherSettings = lazy(() => import('../../pages/TeacherMonsters').then((m) => ({ default: m.MonstersTeacherSettings })));
 const MonstersStudentPanel = lazy(() => import('../../pages/TeacherMonsters').then((m) => ({ default: m.MonstersStudentPanel })));
 
 function MonstersIcon({ size = 64 }: { size?: number }) {
@@ -37,6 +39,13 @@ export const monsters: GameDefinition = {
   noBots: true,
   group: 'complex-maths',
   useTeacherSwitch: useMonstersEnabled,
-  TeacherPanels: MonstersTeacherPanels,
-  StudentPanel: MonstersStudentPanel,
+  // The teacher's Games table: the on/off switch in the row, how many topics are on as its summary, and the topics and the
+  // class report in its Settings.
+  teacher: {
+    switch: { useValue: useMonstersClassSwitch, save: (on, classId) => saveMonstersEnabled(on, classId), about: MONSTERS_ABOUT },
+    useSummary: useMonstersSummary,
+    Settings: MonstersTeacherSettings,
+    StudentPanel: MonstersStudentPanel,
+    studentSummary: (student) => import('../../pages/TeacherMonsters').then((m) => m.monstersStudentSummary(student)),
+  },
 };

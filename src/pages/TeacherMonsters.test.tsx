@@ -2,20 +2,27 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ALL_TOPICS } from '../data/monsters';
+import { monsters } from '../games/monsters';
+import { GameSwitchSetting } from '../teacher/Games';
 
+// Maths Monsters on the teacher's Games table (these checks were the old panels'): the switch in its row, and the topics and
+// class report in its Settings, all for a named class.
 const data = vi.hoisted(() => ({
   fetchMonstersSettings: vi.fn(),
-  saveMonstersSettings: vi.fn(async () => {}),
+  fetchMonstersEnabled: vi.fn(),
+  saveMonstersEnabled: vi.fn(async () => {}),
+  saveMonstersTopics: vi.fn(async () => {}),
   fetchClassMonsters: vi.fn(),
   fetchStudentMonsters: vi.fn(),
 }));
 vi.mock('../data/monsters', async (original) => ({ ...(await original<typeof import('../data/monsters')>()), ...data }));
 
-import { keyLabel, MonstersStudentPanel, MonstersTeacherPanels } from './TeacherMonsters';
+import { keyLabel, MonstersStudentPanel, MonstersTeacherSettings, monstersStudentSummary } from './TeacherMonsters';
 
 beforeEach(() => {
   Object.values(data).forEach((f) => f.mockClear());
   data.fetchMonstersSettings.mockResolvedValue({ enabled: false, topics: ALL_TOPICS });
+  data.fetchMonstersEnabled.mockResolvedValue(false);
   data.fetchClassMonsters.mockResolvedValue({
     players: 3,
     badges: [3, 1, 0, 0, 0, 0],
@@ -28,38 +35,82 @@ beforeEach(() => {
   });
 });
 
-describe('the Maths Monsters teacher switches', () => {
-  it('turns the game on, and each topic on or off, one change at a time', async () => {
+const loadedSwitch = async () => {
+  const on = await screen.findByRole('switch', { name: 'Maths Monsters' });
+  await waitFor(() => expect(on).toBeEnabled());
+  return on;
+};
+
+describe('the Maths Monsters switch on the Games table', () => {
+  it('turns the game on and off for the class', async () => {
     const user = userEvent.setup();
-    render(<MonstersTeacherPanels />);
-    expect(await screen.findByText('Off: students can’t see it yet.')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Switch Maths Monsters on' }));
-    expect(data.saveMonstersSettings).toHaveBeenLastCalledWith({ enabled: true, topics: ALL_TOPICS }, null);
-    expect(await screen.findByText('On: students can play it from the dashboard.')).toBeInTheDocument();
-    await user.click(screen.getByRole('checkbox', { name: 'Fractions' }));
-    expect(data.saveMonstersSettings).toHaveBeenLastCalledWith({ enabled: true, topics: ALL_TOPICS.filter((t) => t !== 'fractions') }, null);
-    await user.click(screen.getByRole('checkbox', { name: 'Fractions' }));
-    expect(data.saveMonstersSettings).toHaveBeenLastCalledWith({ enabled: true, topics: ALL_TOPICS }, null);
-    await user.click(screen.getByRole('button', { name: 'Switch Maths Monsters off' }));
-    expect(data.saveMonstersSettings).toHaveBeenLastCalledWith({ enabled: false, topics: ALL_TOPICS }, null);
+    render(<GameSwitchSetting game={monsters} classId="c12" />);
+    const on = await loadedSwitch();
+    expect(data.fetchMonstersEnabled).toHaveBeenCalledWith('c12');
+    expect(on).toHaveAttribute('aria-checked', 'false');
+    await user.click(on);
+    expect(data.saveMonstersEnabled).toHaveBeenLastCalledWith(true, 'c12');
+    expect(on).toHaveAttribute('aria-checked', 'true');
+    await user.click(on);
+    expect(data.saveMonstersEnabled).toHaveBeenLastCalledWith(false, 'c12');
+  });
+
+  it('puts the setting back and says so when saving fails', async () => {
+    data.saveMonstersEnabled.mockRejectedValueOnce(new Error('no'));
+    render(<GameSwitchSetting game={monsters} classId="c12" />);
+    const on = await loadedSwitch();
+    await userEvent.click(on);
+    expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
+    expect(on).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('is never a red button', async () => {
+    const { container } = render(<GameSwitchSetting game={monsters} classId="c12" />);
+    await loadedSwitch();
+    expect(container.querySelector('.button--danger')).toBeNull();
+  });
+});
+
+describe('Maths Monsters’ Settings', () => {
+  it('turns each topic on or off for the class, one change at a time', async () => {
+    const user = userEvent.setup();
+    render(<MonstersTeacherSettings classId="c14" />);
+    const fractions = await screen.findByRole('checkbox', { name: 'Fractions' });
+    await waitFor(() => expect(fractions).toBeEnabled());
+    expect(data.fetchMonstersSettings).toHaveBeenCalledWith('c14');
+    await user.click(fractions);
+    expect(data.saveMonstersTopics).toHaveBeenLastCalledWith(ALL_TOPICS.filter((t) => t !== 'fractions'), 'c14');
+    await user.click(fractions);
+    expect(data.saveMonstersTopics).toHaveBeenLastCalledWith(ALL_TOPICS, 'c14');
   });
 
   it('never lets the last topic go off', async () => {
     data.fetchMonstersSettings.mockResolvedValue({ enabled: true, topics: ['decimals'] });
-    render(<MonstersTeacherPanels />);
-    expect(await screen.findByRole('checkbox', { name: 'Decimals and money' })).toBeDisabled();
+    const user = userEvent.setup();
+    render(<MonstersTeacherSettings classId="c12" />);
+    const last = await screen.findByRole('checkbox', { name: 'Decimals and money' });
+    await waitFor(() => expect(last).toBeChecked());
+    await user.click(last);
+    expect(await screen.findByText('Leave at least one ticked.')).toBeInTheDocument();
+    expect(last).toBeChecked();
+    expect(data.saveMonstersTopics).not.toHaveBeenCalled();
   });
 
-  it('puts the setting back and says so when saving fails', async () => {
-    data.saveMonstersSettings.mockRejectedValueOnce(new Error('no'));
-    render(<MonstersTeacherPanels />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Switch Maths Monsters on' }));
-    expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
-    expect(screen.getByText('Off: students can’t see it yet.')).toBeInTheDocument();
+  it('says the topics only matter once the game is on, and not while it is on', async () => {
+    const { unmount } = render(<MonstersTeacherSettings classId="c12" />);
+    expect(await screen.findByText(/off for this class/)).toBeInTheDocument();
+    unmount();
+    data.fetchMonstersSettings.mockResolvedValue({ enabled: true, topics: ALL_TOPICS });
+    render(<MonstersTeacherSettings classId="c12" />);
+    await screen.findByRole('checkbox', { name: 'Fractions' });
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Fractions' })).toBeEnabled());
+    expect(screen.queryByText(/off for this class/)).not.toBeInTheDocument();
   });
 
   it('shows the class: each topic, the hardest questions in words, badges and refused saves', async () => {
-    render(<MonstersTeacherPanels />);
+    render(<MonstersTeacherSettings classId="c12" />);
+    expect(await screen.findByRole('region', { name: /^Maths Monsters: this class/ })).toBeInTheDocument();
+    expect(data.fetchClassMonsters).toHaveBeenCalledWith('c12');
     const hardest = await screen.findByRole('table', { name: /Hardest questions/ });
     expect(within(hardest).getByRole('rowheader', { name: '7 + 8' })).toBeInTheDocument();
     expect(within(hardest).getByText('33%')).toBeInTheDocument();
@@ -70,6 +121,14 @@ describe('the Maths Monsters teacher switches', () => {
     expect(within(refused).getByText('a badge without a won Tower battle')).toBeInTheDocument();
   });
 
+  it('has no red buttons', async () => {
+    const { container } = render(<MonstersTeacherSettings classId="c12" />);
+    await screen.findByRole('table', { name: /Hardest questions/ });
+    expect(container.querySelector('.button--danger')).toBeNull();
+  });
+});
+
+describe('a student’s Maths Monsters', () => {
   it('says what a student has, and what they are working on', async () => {
     data.fetchStudentMonsters.mockResolvedValue({
       save: { owned: 12, seen: 20, badges: 2, catches: 5, savedAt: new Date().toISOString(), map: 'kauri-bush', team: [{ species: 'plusplash-1', level: 9 }], badgeList: ['leaf', 'water'] },
@@ -84,6 +143,17 @@ describe('the Maths Monsters teacher switches', () => {
     data.fetchStudentMonsters.mockResolvedValue({ save: null, topics: [], refused: 0 });
     render(<MonstersStudentPanel student="s2" />);
     await waitFor(() => expect(screen.getByText('Maths Monsters: not played yet.')).toBeInTheDocument());
+  });
+
+  it('sums a student up in one line, or says nothing before they have played', async () => {
+    data.fetchStudentMonsters.mockResolvedValue({
+      save: { owned: 12, seen: 20, badges: 2, catches: 5, savedAt: new Date().toISOString(), map: 'kauri-bush', team: [], badgeList: [] },
+      topics: [],
+      refused: 1,
+    });
+    expect(await monstersStudentSummary('s1')).toBe('12 of 54 monsters, 2 of 6 badges, 1 save turned down');
+    data.fetchStudentMonsters.mockResolvedValue({ save: null, topics: [], refused: 0 });
+    expect(await monstersStudentSummary('s2')).toBeNull();
   });
 });
 

@@ -1,0 +1,216 @@
+/* The shared teacher setting controls (src/teacher/Settings.tsx). Every target is at least 44 px; only DangerAction is red. */
+
+.setting {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.setting__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+}
+.setting__label {
+  font-weight: 800;
+}
+.setting__about-button {
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -8px 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.setting__about-button[aria-expanded='true'] {
+  color: var(--brand);
+}
+.setting__detail,
+.setting__about,
+.setting__status {
+  grid-column: 1 / -1;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+.setting__about[hidden] {
+  display: none;
+}
+.setting__status {
+  font-weight: 700;
+}
+.setting__status--error {
+  color: var(--ink);
+}
+.setting__status:empty {
+  display: none;
+}
+
+/* Chips sit under their name. A fieldset can't be a grid in every browser, so it is a column. */
+.setting--chips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.setting--chips legend {
+  margin-bottom: 6px;
+}
+
+/* A real switch: the knob and the word both show the state. */
+.setting-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.setting-switch:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.setting-switch__track {
+  position: relative;
+  width: 52px;
+  height: 30px;
+  border-radius: 999px;
+  background: #64748b;
+  transition: background 0.15s;
+}
+.setting-switch__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s;
+}
+.setting-switch[aria-checked='true'] .setting-switch__track {
+  background: #15803d;
+}
+.setting-switch[aria-checked='true'] .setting-switch__knob {
+  transform: translateX(22px);
+}
+.setting-switch__state {
+  min-width: 2.2em;
+  text-align: left;
+}
+
+.setting-choice {
+  justify-self: start;
+  display: inline-flex;
+  max-width: 100%;
+  border: 2px solid var(--brand);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.setting-choice__option {
+  flex: 0 1 auto;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 4px 12px;
+  line-height: 1.2;
+  border: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.setting-choice__option + .setting-choice__option {
+  border-left: 2px solid var(--brand);
+}
+.setting-choice__option[aria-checked='true'] {
+  background: var(--brand);
+  color: #fff;
+}
+.setting-choice__option:disabled {
+  cursor: default;
+}
+/* Inside the box the outline would be clipped, so draw it inside. */
+.setting-choice__option:focus-visible {
+  outline: 4px solid var(--focus);
+  outline-offset: -4px;
+}
+
+.setting-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.setting-field__input {
+  min-height: 44px;
+  max-width: 11em;
+  padding: 6px 10px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+}
+.setting-field__input[type='number'] {
+  width: 6em;
+}
+
+.danger-action {
+  display: grid;
+  gap: 12px;
+}
+.danger-action__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+/* A choice too wide for a phone goes under its name. */
+@media (max-width: 480px) {
+  .setting--choice {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .setting-switch__track,
+  .setting-switch__knob {
+    transition: none;
+  }
+}
+
+/* In a table cell (the Games table): the control, then its "?" beside it; the status goes underneath. The label is for screen readers. */
+.setting--compact {
+  grid-template-columns: minmax(0, auto) auto;
+  justify-content: start;
+  gap: 2px 4px;
+}
+.setting--compact .setting__name {
+  order: 2;
+}
+.setting--compact .setting__about,
+.setting--compact .setting__status {
+  order: 3;
+}
+.setting--compact .setting-choice__option {
+  padding: 4px 10px;
+}

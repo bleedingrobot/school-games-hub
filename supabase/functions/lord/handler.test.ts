@@ -857,6 +857,24 @@ describe('the day rolling over, and the season ending', () => {
     expect((await g.send({ action: 'start-hero', heroClass: 'knight' })).body.reason).toBe('rule');
   });
 
+  it('starts the hero again once when the season jumps forward several seasons (a class moved onto the school date)', async () => {
+    const g = new Game();
+    await g.start('knight');
+    g.patch({ level: 6, exp: 3000, gold: 500, dragonKills: 1, look: 'knight-boy-02-1' });
+    expect(g.db.row!.season).toBe(1);
+    // The school's date is earlier than the class's was: today is now day 6 of season 4.
+    g.db.settings.seasonStart = '2026-07-01';
+    const s4 = await g.refresh();
+    expect(s4.season).toMatchObject({ number: 4, dayOfSeason: 6 });
+    expect(s4.hero).toMatchObject({ level: 1, exp: 0, gold: 50, dragonKills: 1, heroClass: 'knight', look: 'knight-boy-02-1' });
+    expect(s4.classOpen).toBe(true);
+    expect(g.db.row!.season).toBe(4);
+    // The next request in the same season doesn't start it again.
+    g.patch({ level: 2 });
+    expect((await g.refresh()).hero).toMatchObject({ level: 2 });
+    expect(g.db.row!.season).toBe(4);
+  });
+
   it('lets a fight in progress finish before the season resets the hero', async () => {
     const g = new Game();
     await g.start();

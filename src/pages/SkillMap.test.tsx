@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, Routes } from 'react-router';
+import { teacherRoutes } from '../App';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
 import * as classes from '../data/classes';
@@ -9,7 +10,6 @@ import * as skillMap from '../data/skillMap';
 import { LADDER } from '../../shared/maths/ladder';
 import { newStats, type FactStats } from '../../shared/maths/leitner';
 import { NO_LADDER } from '../../shared/maths/place';
-import SkillMap from './SkillMap';
 
 vi.mock('../data/classes', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../data/classes')>()),
@@ -108,13 +108,14 @@ function show(auth: AuthState = teacher, url = '/skills') {
   return render(
     <AuthContext.Provider value={auth}>
       <MemoryRouter initialEntries={[url]}>
-        <SkillMap />
+        <Routes>{teacherRoutes()}</Routes>
       </MemoryRouter>
     </AuthContext.Provider>,
   );
 }
 
 beforeEach(() => {
+  sessionStorage.clear(); // the teacher pages remember the last class for the visit
   vi.mocked(classes.fetchClasses).mockResolvedValue([room12, room14]);
   vi.mocked(skillMap.fetchClassMap).mockReset();
   vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ana(), ben()]));
@@ -147,7 +148,7 @@ describe('the skill map', () => {
     expect(within(table).getAllByRole('columnheader')).toHaveLength(8);
     expect(within(table).getByRole('rowheader', { name: /Speedy Otter 27/ })).toBeInTheDocument();
     expect(within(table).getByRole('rowheader', { name: /Brave Kiwi 7/ })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Room 12/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /Room 12/ })).toBeInTheDocument();
     expect(skillMap.fetchClassMap).toHaveBeenCalledWith('c12');
   });
 
@@ -364,11 +365,11 @@ describe('the skill map', () => {
     const user = userEvent.setup();
     show();
     await screen.findByRole('table');
-    expect(screen.getByRole('link', { name: 'Set focus for Speedy Otter 27' })).toHaveAttribute('href', '/focus?class=c12&student=s1');
+    expect(screen.getByRole('link', { name: 'Set focus for Speedy Otter 27' })).toHaveAttribute('href', '/teacher/c12/maths?student=s1');
     await user.click(screen.getByRole('button', { name: /^Early number facts/ }));
     expect(screen.getByRole('link', { name: 'Set focus on Number facts to 10' })).toHaveAttribute(
       'href',
-      '/focus?class=c12&skill=facts-10',
+      '/teacher/c12/maths?skill=facts-10',
     );
     await user.click(
       screen.getByRole('button', {
@@ -379,7 +380,7 @@ describe('the skill map', () => {
       screen.getByRole('link', {
         name: /Set a focus on this for Speedy Otter 27/,
       }),
-    ).toHaveAttribute('href', '/focus?class=c12&student=s1&skill=facts-10');
+    ).toHaveAttribute('href', '/teacher/c12/maths?student=s1&skill=facts-10');
   });
 
   it('counts how many students are secure at the foot of each column', async () => {
@@ -410,7 +411,7 @@ describe('the skill map', () => {
     await screen.findByRole('table');
     vi.mocked(skillMap.fetchClassMap).mockResolvedValue(map([ben()], { classId: 'c14', className: 'Room 14' }));
     await user.selectOptions(screen.getByRole('combobox', { name: 'Class' }), 'c14');
-    expect(await screen.findByRole('heading', { name: /Room 14/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: /Room 14/ })).toBeInTheDocument();
     expect(skillMap.fetchClassMap).toHaveBeenLastCalledWith('c14');
     expect(screen.queryByRole('rowheader', { name: /Speedy Otter 27/ })).toBeNull();
   });
@@ -444,7 +445,8 @@ describe('the skill map', () => {
     show();
     await screen.findByRole('table');
     await user.click(screen.getByRole('button', { name: /^Early number facts/ }));
-    expect(set).not.toHaveBeenCalled();
+    // Only the teacher pages' remembered class (TeacherClass.tsx), never anything from the map.
+    expect(set.mock.calls.filter(([key]) => key !== 'sgh-teacher-class')).toEqual([]);
     set.mockRestore();
   });
 });

@@ -1,11 +1,14 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
+import { saveClansEnabled } from '../../data/clans';
 import { useClansEnabled } from './switch';
+import { CLANS_ABOUT, useClansClassSwitch, useClansSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const ClanPlay = lazy(() => import('./ClanPlay').then((m) => ({ default: m.ClanPlay })));
-const ClansTeacherPanels = lazy(() => import('../../pages/TeacherClans').then((m) => ({ default: m.ClansTeacherPanels })));
+const ClansTeacherSettings = lazy(() => import('../../pages/TeacherClans').then((m) => ({ default: m.ClansTeacherSettings })));
 const ClansStudentPanel = lazy(() => import('../../pages/TeacherClans').then((m) => ({ default: m.ClansStudentPanel })));
+const ClansSeasonPanel = lazy(() => import('../../pages/TeacherClans').then((m) => ({ default: m.ClansSeasonPanel })));
 
 function ClanIcon({ size = 64 }: { size?: number }) {
   return (
@@ -31,6 +34,21 @@ export const clanQuest: GameDefinition = {
   noBots: true,
   group: 'complex-maths',
   useTeacherSwitch: useClansEnabled,
-  TeacherPanels: ClansTeacherPanels,
-  StudentPanel: ClansStudentPanel,
+  // The teacher's Games table: the on/off switch in the row, the maths settings summed up as its summary, and made-up hero
+  // names, the maths settings, raids, the class report and the villages (whole school) in its Settings. The fame season stays
+  // with the other seasons under Students.
+  teacher: {
+    switch: {
+      useValue: useClansClassSwitch,
+      save: async (on, classId) => {
+        await saveClansEnabled(on, classId);
+      },
+      about: CLANS_ABOUT,
+    },
+    useSummary: useClansSummary,
+    Settings: ClansTeacherSettings,
+    StudentPanel: ClansStudentPanel,
+    studentSummary: (student) => import('../../pages/TeacherClans').then((m) => m.clansStudentSummary(student)),
+  },
+  SeasonPanels: ClansSeasonPanel,
 };

@@ -168,7 +168,7 @@ describe('My classes', () => {
   it('links to the maths focus screen for the class', async () => {
     show();
     const link = await screen.findByRole('link', { name: /Choose the maths for this class/ });
-    expect(link).toHaveAttribute('href', '/focus?class=c12');
+    expect(link).toHaveAttribute('href', '/teacher/c12/maths');
   });
 
   it('makes, renames and deletes groups, and moves a student between them', async () => {
