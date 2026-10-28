@@ -3,6 +3,7 @@ import { CONFIG } from '../../../shared/clans/config';
 import { BUILDING_NAMES, deposit, withdraw, TROOP_NAMES, capacity, countBuildings, draftMax, empireOf, energyLeft as energyPercentLeft, might } from '../../../shared/clans/empire';
 import { BUILDING_KINDS, TROOP_KINDS } from '../../../shared/clans/types';
 import { buildingArt, troopArt } from './art';
+import { nextEmpireStep, strengthKey } from './nextStep';
 import { putInVault, takeFromVault, whyNot } from './places';
 import type { Session, Change } from './session';
 
@@ -12,14 +13,15 @@ export function EmpireHome({ session, onChange, onBack, onLand, onBarracks, onRa
   const e = empireOf(clan);
   const [amount, setAmount] = useState(100);
   const [said, setSaid] = useState('');
-  const move = (dir: 'in' | 'out') => {
-    const next = dir === 'in' ? putInVault(session, amount) : takeFromVault(session, amount);
+  const step = nextEmpireStep(e, clan);
+  const move = (dir: 'in' | 'out', gold = amount) => {
+    const next = dir === 'in' ? putInVault(session, gold) : takeFromVault(session, gold);
     if (next) {
-      onChange(next, dir === 'in' ? { type: 'deposit', gold: amount } : { type: 'withdraw', gold: amount });
-      setSaid(dir === 'in' ? `${amount} gold went into the vault.` : `${amount} gold came out of the vault.`);
+      onChange(next, dir === 'in' ? { type: 'deposit', gold } : { type: 'withdraw', gold });
+      setSaid(dir === 'in' ? `${gold} gold went into the vault.` : `${gold} gold came out of the vault.`);
     } else {
       const probe = structuredClone(clan);
-      setSaid(whyNot(dir === 'in' ? deposit(probe, amount) : withdraw(probe, amount)));
+      setSaid(whyNot(dir === 'in' ? deposit(probe, gold) : withdraw(probe, gold)));
     }
   };
   const built = BUILDING_KINDS.filter((k) => countBuildings(e, k) > 0);
@@ -29,6 +31,10 @@ export function EmpireHome({ session, onChange, onBack, onLand, onBarracks, onRa
       <div className="cq-place__head">
         <h2>The Empire</h2>
         <button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
+      </div>
+      <div className="cq-panel cq-nextstep">
+        <p><strong>What to do next:</strong> {step.say}</p>
+        {step.putIn !== undefined && <div className="cq-actions"><button type="button" className="cq-btn cq-btn--hot" onClick={() => move('in', step.putIn)}>Put in {step.putIn} gold</button></div>}
       </div>
       <div className="cq-empire">
         <div className="cq-panel">
@@ -61,7 +67,7 @@ export function EmpireHome({ session, onChange, onBack, onLand, onBarracks, onRa
               <li key={k}>{troopArt(k) && <img className="cq-troop-art" src={troopArt(k)} alt="" />}{e.troops[k]} {e.troops[k] === 1 ? TROOP_NAMES[k].one : TROOP_NAMES[k].many} <span className="cq-soft">(room for {capacity(e, k)}, costs {CONFIG.empire.troopCost[k]} each)</span></li>
             ))}
           </ul>
-          <p>Army strength: <strong>{army}</strong></p>
+          <p>Army strength: <strong>{army}</strong> <span className="cq-soft">{strengthKey()}</span></p>
           <p>The draft: <strong>{e.draftPercent}%</strong> of new followers join (up to {draftMax(e)}%). You have {clan.followers} followers.</p>
           <div className="cq-actions">
             <button type="button" className="cq-btn cq-btn--hot" onClick={onBarracks}>Barracks and troops</button>

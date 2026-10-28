@@ -131,15 +131,13 @@ describe('Barracks and troops', () => {
     expect(screen.getByText(/10 footmen · room for 10 more/)).toBeInTheDocument();
   });
 
-  it('the draft with no room: nobody joins and everyone goes home', async () => {
+  it('the draft with no room: the button is off and says why (no followers wasted)', async () => {
     const u = user();
     show(session((s) => { s.clan.followers = 40; }));
     await toBarracks(u);
     await u.click(btn('Draft 20 percent'));
-    await u.click(btn('Draft my followers'));
-    await answer(u, draftJoin(S, 40, 20)!, 8);
-    await u.click(btn('Draft my followers'));
-    expect(screen.getByRole('status')).toHaveTextContent('All 40 followers are used up: 0 joined as footmen. The barracks had no room for the other 8');
+    expect(screen.getByText('Build a Barracks first.')).toBeInTheDocument();
+    expect((btn('Draft my followers') as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('the draft can be set with the keyboard only', async () => {
@@ -272,5 +270,43 @@ describe('Raid and Friendly War', () => {
     btn(/Friendly War with Bunny Hollow/).focus();
     await u.keyboard('{Enter}');
     expect(screen.getByText(/Friendly War on Bunny Hollow/)).toBeInTheDocument();
+  });
+});
+
+describe('plain-words helpers on the screens', () => {
+  it('shows the draft preview, and disables the button at 0%', async () => {
+    const u = user();
+    show(session((s) => { withBarracks(s); s.clan.followers = 50; }));
+    await toBarracks(u);
+    expect(screen.getByText(/of your 50 followers will join as/)).toHaveTextContent('0 of your 50 followers will join as footmen. The rest go home.');
+    expect(screen.getByText('Pick a bigger draft first.')).toBeInTheDocument();
+    expect((btn('Draft my followers') as HTMLButtonElement).disabled).toBe(true);
+    await u.click(btn('Draft 20 percent'));
+    expect(screen.getByText(/of your 50 followers will join as/)).toHaveTextContent('10 of your 50 followers');
+    expect((btn('Draft my followers') as HTMLButtonElement).disabled).toBe(false);
+  });
+  it('says build a Barracks first when there is none', async () => {
+    const u = user();
+    show(session((s) => { s.clan.followers = 50; empireOf(s.clan).draftPercent = 20; }));
+    await toBarracks(u);
+    expect(screen.getByText('Build a Barracks first.')).toBeInTheDocument();
+    expect((btn('Draft my followers') as HTMLButtonElement).disabled).toBe(true);
+  });
+  it('explains army strength and shows a traffic light on each kingdom', async () => {
+    const u = user();
+    show(session((s) => { withBarracks(s); empireOf(s.clan).troops.footman = 40; }));
+    await toRaid(u);
+    expect(screen.getByRole('button', { name: /Bunny Hollow.*You should win/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Pebble Bridge.*A close fight/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Dragon's Rest.*Too strong for now/ })).toBeInTheDocument();
+  });
+  it('shows What to do next on the Empire home', async () => {
+    const u = user();
+    show(session((s) => { empireOf(s.clan).vault = 0; s.clan.gold = 250; }));
+    await u.click(btn('The Empire'));
+    expect(screen.getByText(/What to do next:/).closest('p')!).toHaveTextContent('Put some gold in your vault so you can build.');
+    await u.click(btn('Put in 100 gold'));
+    expect(screen.getByText(/Vault:/)).toHaveTextContent('Vault: 100 gold');
+    expect(screen.getByText(/What to do next:/).closest('p')!).toHaveTextContent('Get a plot of land ready');
   });
 });

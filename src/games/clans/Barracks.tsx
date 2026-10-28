@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { CONFIG } from '../../../shared/clans/config';
-import { TROOP_NAMES, barracksFor, capacity, countBuildings, draftMax, draftWanted, empireOf, might, room, troopBillOf } from '../../../shared/clans/empire';
+import { TROOP_NAMES, barracksFor, capacity, countBuildings, draftMax, empireOf, might, room, troopBillOf } from '../../../shared/clans/empire';
 import { barracksNeeded, draftJoin, troopBill } from '../../../shared/clans/moments';
 import { TROOP_KINDS, type Troops } from '../../../shared/clans/types';
 import { Moment } from './Moment';
+import { draftPreview, strengthKey } from './nextStep';
 import { troopArt } from './art';
 import { buyTroopMix, canBuyMix, draftFollowers, setDraftTo } from './places';
 import type { Session, Change } from './session';
@@ -30,6 +31,7 @@ export function Barracks({ session, onChange, onBack }: { session: Session; onCh
   const total = TROOP_KINDS.reduce((t, k) => t + mix[k], 0);
   const mixCheck = canBuyMix(session, mix);
   const bill = troopBillOf(mix);
+  const preview = draftPreview(e, clan.followers);
   const draftPercents = Array.from({ length: draftMax(e) / CONFIG.empire.draftStep + 1 }, (_, i) => i * CONFIG.empire.draftStep);
 
   const buy = (m: Troops) => {
@@ -79,7 +81,7 @@ export function Barracks({ session, onChange, onBack }: { session: Session; onCh
           <ul className="cq-troops">
             {TROOP_KINDS.map((k) => <li key={k}>{troopArt(k) && <img className="cq-troop-art" src={troopArt(k)} alt="" />}{e.troops[k]} {nameOf(k, e.troops[k])} · room for {room(e, k)} more (holds {capacity(e, k)})</li>)}
           </ul>
-          <p>Army strength: <strong>{might(e.troops)}</strong></p>
+          <p>Army strength: <strong>{might(e.troops)}</strong> <span className="cq-soft">{strengthKey()}</span></p>
           <div className="cq-actions">
             <button type="button" className="cq-btn" disabled={need.count < 1} onClick={() => setPhase({ t: 'needed' })}>How many barracks do my troops need?</button>
           </div>
@@ -110,9 +112,10 @@ export function Barracks({ session, onChange, onBack }: { session: Session; onCh
               <button key={p} type="button" className="cq-btn" aria-pressed={e.draftPercent === p} aria-label={`Draft ${p} percent`} onClick={() => { const next = setDraftTo(session, p); if (next) onChange(next, { type: 'setDraft', percent: p }); }}>{p}%</button>
             ))}
           </div>
-          <p className="cq-soft">At {e.draftPercent}%, {draftWanted(clan.followers, e.draftPercent)} of {clan.followers} would join. Followers are used up when you draft: the ones who don't join go home.</p>
+          <p><strong>{preview.joined}</strong> of your {preview.followers} {preview.followers === 1 ? 'follower' : 'followers'} will join as {nameOf('footman', preview.joined)}. The rest go home.</p>
+          {preview.why && <p className="cq-warn">{preview.why}.</p>}
           <div className="cq-actions">
-            <button type="button" className="cq-btn cq-btn--hot" disabled={clan.followers < 1} onClick={startDraft}>Draft my followers</button>
+            <button type="button" className="cq-btn cq-btn--hot" disabled={preview.joined < 1} onClick={startDraft}>Draft my followers</button>
           </div>
         </div>
       </div>
