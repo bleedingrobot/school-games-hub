@@ -35,7 +35,7 @@ export const clanQuest: GameDefinition = {
   group: 'complex-maths',
   useTeacherSwitch: useClansEnabled,
   // The teacher's Games table: the on/off switch in the row, the maths settings summed up as its summary, and made-up hero
-  // names, the maths settings, raids, the class report and the villages (whole school) in its Settings. The fame season stays
+  // names, the maths settings, raids and the class report in its Settings. The fame season stays
   // with the other seasons under Students.
   teacher: {
     switch: {

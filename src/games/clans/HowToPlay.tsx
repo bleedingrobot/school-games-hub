@@ -1,6 +1,6 @@
 import { CONFIG } from '../../../shared/clans/config';
 import { ACHIEVEMENTS } from '../../../shared/clans/rewards';
-import { VILLAGE_KINDS, VILLAGE_NAMES } from '../../../shared/clans/village';
+import { VILLAGE_BUILDINGS } from '../../../shared/clans/types';
 
 const R = CONFIG.rewards;
 const percent = (x: number) => Math.round((x - 1) * 100);
@@ -12,7 +12,7 @@ const percent = (x: number) => Math.round((x - 1) * 100);
 export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPerDay?: number }) {
   return (
     <>
-      <p>Make a clan of {CONFIG.minMembers} heroes. Fight monsters in the Mines, spend your gold, train your heroes and build an empire. Everyone in your class has their own clan.</p>
+      <p>Make a clan of {CONFIG.minMembers} heroes. Fight monsters in the Mines, spend your gold, train your heroes and build your own village. Everyone in your class has their own clan.</p>
       <div className="cq-howto">
         <section aria-labelledby="htp-clan">
           <h3 id="htp-clan">Your clan</h3>
@@ -47,28 +47,33 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
           <h3 id="htp-church">The Church</h3>
           <p>Wakes up knocked-out heroes. The first {CONFIG.freeWakesPerDay === 1 ? 'one' : CONFIG.freeWakesPerDay} each day {CONFIG.freeWakesPerDay === 1 ? 'is' : 'are'} free. After that it costs a little gold.</p>
         </section>
-        <section aria-labelledby="htp-empire">
-          <h3 id="htp-empire">The Empire</h3>
-          <p>Use your gold to claim land and build on it: barracks for troops, walls, towers and more. Troops make your clan strong for a Friendly War and for raids on the computer kingdoms.</p>
-          <p>You can raid <strong>{CONFIG.empire.raids.kingdomPerDay} computer {CONFIG.empire.raids.kingdomPerDay === 1 ? 'kingdom' : 'kingdoms'} a day</strong>.</p>
+        <section aria-labelledby="htp-village">
+          <h3 id="htp-village">My Village</h3>
+          <p>Your clan has its own village with {VILLAGE_BUILDINGS.length} buildings. You pay for them with your gold. Press <strong>Upgrade</strong> to make a building one level bigger. Each level costs more than the last.</p>
+          <p>Your builders can do <strong>{CONFIG.empire.buildsPerDay} upgrades a day</strong>. Before an upgrade you may get a quick maths question about the building's space. Not sure? No harm done: the upgrade still happens.</p>
+        </section>
+        <section aria-labelledby="htp-troops">
+          <h3 id="htp-troops">Troops</h3>
+          <p>Build a Barracks so troops have somewhere to live. Followers you win in the Mines join as footmen by themselves while there is room. You can also buy axemen and knights.</p>
+          <p>Your army strength adds them up: a footman counts {CONFIG.empire.troopMight.footman}, an axeman {CONFIG.empire.troopMight.axeman} and a knight {CONFIG.empire.troopMight.knight}.</p>
+        </section>
+        <section aria-labelledby="htp-kingdoms">
+          <h3 id="htp-kingdoms">Raids on kingdoms</h3>
+          <p>Pick a computer kingdom, then pick <strong>Careful</strong>, <strong>Steady</strong> or <strong>Bold</strong>. A colour tells you if you should win. A win brings gold home, but some troops may not come back.</p>
+          <p>You can raid <strong>{CONFIG.empire.raids.kingdomPerDay} computer {CONFIG.empire.raids.kingdomPerDay === 1 ? 'kingdom' : 'kingdoms'} a day</strong>. A practice battle costs nothing and does not use up your raid.</p>
         </section>
         <section aria-labelledby="htp-quests">
           <h3 id="htp-quests">Quests</h3>
           <p>{CONFIG.quests.perDay === 1 ? 'One' : CONFIG.quests.perDay} short story a day. You choose what to do, and sometimes there is a puzzle. A very charming clan gets extra choices.</p>
         </section>
-        <section aria-labelledby="htp-village">
-          <h3 id="htp-village">The Village</h3>
-          <p>Your class shares a village. Give gold to the village chest. Nobody has to, and nobody can take it out. Each week everyone votes for what to build: {VILLAGE_KINDS.map((k) => VILLAGE_NAMES[k]).join(', ')}.</p>
-          <p>When the class builds something, everyone who voted gets <strong>{R.fame.villageBuilt} fame</strong> and a prize.</p>
-        </section>
         <section aria-labelledby="htp-raids">
           <h3 id="htp-raids">Raids on classmates</h3>
-          <p>Your teacher can switch these on or off. When they are on, you can raid a classmate in your village whose army is about as big as yours, <strong>{CONFIG.empire.raids.perDay} a day</strong>. You can only take a small part of what they have, never more than {CONFIG.empire.raids.classmateLootMax}%.</p>
-          <p>A new clan is safe for {CONFIG.empire.raids.newClanDays} days. A clan that was just raided is safe for {CONFIG.empire.raids.shieldDays} {CONFIG.empire.raids.shieldDays === 1 ? 'day' : 'days'}.</p>
+          <p>Your teacher can switch these on or off. When they are on, you can raid <strong>{CONFIG.empire.raids.perDay} classmate a day</strong> whose army is about as big as yours. Pick gold, or knock a level or two off their buildings. You take at most {CONFIG.empire.raids.classmateLootMax}%.</p>
+          <p>Gold kept in a Strongroom is safe, and Walls protect buildings. A new clan is safe for {CONFIG.empire.raids.newClanDays} days. A clan that was raided rests behind a shield the next {CONFIG.empire.raids.shieldDays === 1 ? 'day' : `${CONFIG.empire.raids.shieldDays} days`} too.</p>
         </section>
         <section aria-labelledby="htp-fame">
           <h3 id="htp-fame">Fame and the Scoreboard</h3>
-          <p>Fame goes up when you win: <strong>{R.fame.mineWin}</strong> for a fight in the Mines, <strong>{R.fame.bossWin}</strong> for a boss, <strong>{R.fame.warWin}</strong> for a Friendly War, <strong>{R.fame.kingdomRaidWin}</strong> for a raid on a kingdom and <strong>{R.fame.classRaidWin}</strong> for a raid on a classmate.</p>
+          <p>Fame goes up when you win: <strong>{R.fame.mineWin}</strong> for a fight in the Mines, <strong>{R.fame.bossWin}</strong> for a boss, <strong>{R.fame.warWin}</strong> for a practice battle, <strong>{R.fame.kingdomRaidWin}</strong> for a raid on a kingdom and <strong>{R.fame.classRaidWin}</strong> for a raid on a classmate.</p>
           <p>Fame never goes down, and it never comes from maths scores. The Scoreboard shows clan names and fame only.</p>
         </section>
         <section aria-labelledby="htp-ach">

@@ -121,10 +121,10 @@ describe('what the rules say each action earned', () => {
     expect(earned).toMatchObject({ bosses: 1, wins: 0 });
   });
 
-  it('pays a gift to the chest, a vote and everything else in the shop nothing', () => {
+  it('pays an upgrade and everything else in the shop nothing', () => {
     const s = created();
-    const gift = ok(s, { type: 'chestGive', gold: 10 });
-    expect('earned' in gift.result).toBe(false);
+    const built = ok(s, { type: 'upgrade', building: 'walls' });
+    expect('earned' in built.result).toBe(false);
     const train = applyAction(s, { type: 'wake', member: 0 }, ctx());
     if (train.ok) expect('earned' in train.result).toBe(false);
   });
@@ -133,21 +133,21 @@ describe('what the rules say each action earned', () => {
     const s = created();
     const e = empireOf(s.clan);
     e.troops.footman = 60;
-    const plan = { rounds: 3, push: 'steady' as const, loot: 10 };
-    const war = ok(s, { type: 'war', kingdom: 'bunny-hollow', plan });
+    const plan = 'steady' as const;
+    const war = ok(s, { type: 'war', kingdom: 'bunny-hollow', push: plan });
     expect(war.result).toMatchObject({ type: 'war' });
     expect((war.result as { earned?: unknown }).earned).toMatchObject({ wars: 1 });
-    const raid = ok(s, { type: 'raid', kingdom: 'bunny-hollow', plan });
+    const raid = ok(s, { type: 'raid', kingdom: 'bunny-hollow', push: plan });
     expect((raid.result as { earned?: unknown }).earned).toMatchObject({ kingdomRaids: 1 });
     const weak = created();
     empireOf(weak.clan).troops.footman = 1;
-    const lostWar = applyAction(weak, { type: 'war', kingdom: 'dragons-rest', plan }, ctx());
+    const lostWar = applyAction(weak, { type: 'war', kingdom: 'dragons-rest', push: plan }, ctx());
     if (lostWar.ok && lostWar.result.type === 'war') expect(lostWar.result.earned).toBeUndefined();
   });
 
   it('can never be given by a browser: an action has no place for it', () => {
-    const wanted = parseAction({ type: 'chestGive', gold: 5, earned: { wins: 50 }, fame: 99, points: 99 });
-    expect(wanted).toEqual({ type: 'chestGive', gold: 5 });
+    const wanted = parseAction({ type: 'upgrade', building: 'walls', earned: { wins: 50 }, fame: 99, points: 99 });
+    expect(wanted).toEqual({ type: 'upgrade', building: 'walls' });
     const round = parseAction({ type: 'fightRound', round: 1, orders: [], cry: null, earned: { bosses: 9 }, result: 'won' });
     expect(round).toEqual({ type: 'fightRound', round: 1, orders: [], cry: null });
   });
@@ -194,9 +194,9 @@ describe('achievements', () => {
     s.clan.members[2].level = 20;
     expect(reached(measures(s.clan, NO_STATS))).toEqual(['cq-level-10', 'cq-level-20']);
     const e = empireOf(s.clan);
-    e.plots = Array.from({ length: 5 }, () => ({ width: 3, length: 3, building: 'barracks' as const }));
+    Object.assign(e.levels, { barracks: 1, walls: 1, tower: 1, forge: 1, strongroom: 1 });
     expect(reached(measures(s.clan, NO_STATS))).toContain('cq-buildings-5');
-    e.plots = e.plots.slice(0, 4);
+    e.levels.strongroom = 0;
     expect(reached(measures(s.clan, NO_STATS))).not.toContain('cq-buildings-5');
   });
 });

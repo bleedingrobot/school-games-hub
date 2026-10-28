@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CONFIG } from '../../../shared/clans/config';
-import { KINGDOMS, PUSHES, PUSH_NAMES, TROOP_NAMES, empireOf, kingdomById, might, type BattlePlan, type Kingdom } from '../../../shared/clans/empire';
+import { KINGDOMS, PUSHES, PUSH_NAMES, TROOP_NAMES, empireOf, kingdomById, might, type Kingdom, type Push } from '../../../shared/clans/empire';
 import { lootShare } from '../../../shared/clans/moments';
 import { TROOP_KINDS, type Troops } from '../../../shared/clans/types';
 import { Bar } from './Bars';
@@ -11,8 +11,11 @@ import { canRaid, sendArmy, type WarDone } from './places';
 import type { Session, Change } from './session';
 
 const B = CONFIG.empire.battle;
-const ROUNDS = Array.from({ length: B.maxRounds }, (_, i) => i + 1);
-const PUSH_HELP = { careful: 'hits softer, but takes less', steady: 'in the middle', bold: 'hits harder, but takes more' } as const;
+export const PUSH_HELP = {
+  careful: 'Your troops hit softer, but fewer of them are hurt.',
+  steady: 'A bit of both. A good choice to start with.',
+  bold: 'Your troops hit harder, but more of them are hurt.',
+} as const;
 
 type Phase = { t: 'plan' } | { t: 'loot'; kingdom: Kingdom } | { t: 'result'; kingdom: Kingdom; war: WarDone };
 
@@ -34,32 +37,32 @@ function Wide({ art, id, sizes = '(max-width: 760px) 100vw, 360px' }: { art: { w
   return <img className="cq-wide-art" src={art.wide} srcSet={art.small && art.small !== art.wide ? `${art.small} 800w, ${art.wide} 1600w` : undefined} sizes={sizes} alt="" data-art={id} />;
 }
 
-/** Raid a kingdom, or have a Friendly War with it: pick the kingdom, make the battle plan, see how it went. */
+/** Raid a kingdom, or have a Practice battle with it: pick the kingdom, make the battle plan, see how it went. */
 export function Raid({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
   const { clan, settings } = session;
   const e = empireOf(clan);
   const [phase, setPhase] = useState<Phase>({ t: 'plan' });
   const [kingdomId, setKingdomId] = useState(KINGDOMS[0].id);
-  const [plan, setPlan] = useState<BattlePlan>({ rounds: 3, push: 'steady', loot: B.lootChoices[1] });
+  const [push, setPush] = useState<Push>('steady');
   const kingdom = kingdomById(kingdomId)!;
   const noRaid = canRaid(session);
   const army = might(e.troops);
 
   const go = (k: Kingdom, friendly: boolean) => {
-    const war = sendArmy(session, k.id, plan, friendly);
+    const war = sendArmy(session, k.id, push, friendly);
     if ('ok' in war) return;
-    onChange(war.session, { type: friendly ? 'war' : 'raid', kingdom: k.id, plan });
+    onChange(war.session, { type: friendly ? 'war' : 'raid', kingdom: k.id, push });
     setPhase({ t: 'result', kingdom: k, war });
   };
   const startRaid = () => {
-    if (lootShare(settings, kingdom.treasury, plan.loot)) setPhase({ t: 'loot', kingdom });
+    if (lootShare(settings, kingdom.treasury, B.loot)) setPhase({ t: 'loot', kingdom });
     else go(kingdom, false);
   };
 
   let body: React.ReactNode;
   if (phase.t === 'loot') {
-    const q = lootShare(settings, phase.kingdom.treasury, plan.loot)!;
-    body = <Moment key="loot" question={q} title="How much loot?" note={`${phase.kingdom.name} has ${phase.kingdom.treasury} gold in its treasury. You asked for ${plan.loot}%.`} doneLabel="Send the army!" onDone={() => go(phase.kingdom, false)} />;
+    const q = lootShare(settings, phase.kingdom.treasury, B.loot)!;
+    body = <Moment key="loot" question={q} title="How much loot?" note={`${phase.kingdom.name} has ${phase.kingdom.treasury} gold in its treasury. A win takes ${B.loot}%.`} doneLabel="Send the army!" onDone={() => go(phase.kingdom, false)} />;
   } else if (phase.t === 'result') {
     const { war, kingdom: k } = phase;
     const r = war.result;
@@ -67,13 +70,13 @@ export function Raid({ session, onChange, onBack }: { session: Session; onChange
     body = (
       <div className="cq-panel cq-war" role="group" aria-label="How it went">
         <Wide art={war.friendly ? sceneArt('battlefield') : kingdomScene(k.id)} id={war.friendly ? 'battlefield' : k.id} sizes="(max-width: 1100px) 100vw, 1100px" />
-        <h3>{war.friendly ? 'Friendly War' : 'Raid'} on {k.name}: {end.title}</h3>
+        <h3>{war.friendly ? 'Practice battle' : 'Raid'} on {k.name}: {end.title}</h3>
         <p>{end.text}</p>
         {war.friendly ? (
           <p className="cq-note">This was only practice. Nobody lost anything and nobody won anything, and it did not use up today's raid.</p>
         ) : (
           <>
-            <p role="status">{r.outcome === 'won' ? <>You won <strong>{war.gold} gold</strong> of loot. It is in the vault.</> : 'You did not win any loot this time.'}</p>
+            <p role="status">{r.outcome === 'won' ? <>You won <strong>{war.gold} gold</strong> of loot. It is in your purse.</> : 'You did not win any loot this time.'}</p>
             <p>Troops that did not come home: {troopList(r.attackerLost)}.</p>
           </>
         )}
@@ -106,31 +109,28 @@ export function Raid({ session, onChange, onBack }: { session: Session; onChange
         </div>
         <div className="cq-panel">
           <h3>The battle plan</h3>
-          <p className="cq-soft">Your army: {troopList(e.troops)} (strength {army}).</p>
-          <div className="cq-sides" role="group" aria-label="Rounds">Rounds {ROUNDS.map((n) => <button key={n} type="button" className="cq-btn" aria-pressed={plan.rounds === n} aria-label={`${n} ${n === 1 ? 'round' : 'rounds'}`} onClick={() => setPlan({ ...plan, rounds: n })}>{n}</button>)}</div>
-          <div className="cq-sides" role="group" aria-label="How hard">How hard {PUSHES.map((p) => <button key={p} type="button" className="cq-btn" aria-pressed={plan.push === p} onClick={() => setPlan({ ...plan, push: p })}>{PUSH_NAMES[p]}</button>)}</div>
-          <p className="cq-soft">{PUSH_NAMES[plan.push]}: {PUSH_HELP[plan.push]}. More rounds means more troops tire.</p>
-          <div className="cq-sides" role="group" aria-label="Loot">Loot you ask for {B.lootChoices.map((n) => <button key={n} type="button" className="cq-btn" aria-pressed={plan.loot === n} aria-label={`Ask for ${n} percent`} onClick={() => setPlan({ ...plan, loot: n })}>{n}%</button>)}</div>
-          <p className="cq-soft">Asking for more loot makes the defenders fight harder.</p>
+          <p className="cq-soft">Your army: {troopList(e.troops)} (strength {army}). The battle is {B.rounds} rounds. A win takes {B.loot}% of what the kingdom keeps in its treasury.</p>
+          <div className="cq-sides" role="group" aria-label="How hard">{PUSHES.map((p) => <button key={p} type="button" className="cq-btn" aria-pressed={push === p} onClick={() => setPush(p)}>{PUSH_NAMES[p]}</button>)}</div>
+          <p className="cq-soft">{PUSH_NAMES[push]}: {PUSH_HELP[push]}</p>
         </div>
         <div className="cq-panel">
           <h3>Send the army</h3>
           <div className="cq-actions">
             <button type="button" className="cq-btn cq-btn--hot" disabled={noRaid !== null} onClick={startRaid}>Raid {kingdom.name}</button>
-            <button type="button" className="cq-btn" disabled={army === 0} onClick={() => go(kingdom, true)}>Friendly War with {kingdom.name}</button>
+            <button type="button" className="cq-btn" disabled={army === 0} onClick={() => go(kingdom, true)}>Practice battle with {kingdom.name}</button>
           </div>
           {noRaid && <p className="cq-warn">{noRaid}</p>}
-          <p className="cq-soft">A raid can win gold, but some troops don't come home. You can raid once a day. A Friendly War is just practice: nothing is won or lost, and it doesn't use up your raid.</p>
+          <p className="cq-soft">A raid can win gold, but some troops don't come home. You can raid once a day. A practice battle is only for practice: nothing is won or lost, and it doesn't use up your raid.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <section className="cq-place" aria-label="Raid and Friendly War">
+    <section className="cq-place" aria-label="Raid a kingdom">
       <div className="cq-place__head">
-        <h2>Raid and Friendly War</h2>
-        <button type="button" className="cq-btn" onClick={onBack}>Back to the empire</button>
+        <h2>Raid a kingdom</h2>
+        <button type="button" className="cq-btn" onClick={onBack}>Back to My Village</button>
       </div>
       {body}
     </section>

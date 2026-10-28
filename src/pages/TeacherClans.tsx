@@ -1,13 +1,10 @@
 /**
  * Clan Quest on the teacher pages. In the Games table's drawer, for the header's class: made-up hero names, the maths
- * settings, raids on classmates and the class report; then the village groups, which are for the whole school and any teacher
- * can manage. Under Students: the fame season (with the other seasons) and each pupil's clan, with a button to reset it.
+ * settings, raids on classmates and the class report. Under Students: the fame season (with the other seasons) and each pupil's clan, with a button to reset it.
  * Loaded only when opened. The on/off switch is in the Games table row (src/games/clans/teacher.ts).
  */
 import { useEffect, useRef, useState } from "react";
 import {
-  createVillage,
-  deleteVillage,
   fetchClanInfo,
   fetchClanMathsSettings,
   fetchClanMathsStudent,
@@ -15,11 +12,8 @@ import {
   fetchClanTypedNames,
   fetchClansEnabled,
   fetchClassClanMaths,
-  fetchVillages,
   kindLabel,
   listHeroNames,
-  movePupil,
-  renameVillage,
   resetClan,
   saveClanMathsSettings,
   saveClanRaidsEnabled,
@@ -30,7 +24,6 @@ import {
   type ClanMathsSettings,
   type ClanMathsStudent,
   type MathsKind,
-  type Villages,
 } from "../data/clans";
 import { MEMBER_NAMES } from "../../shared/clans/words";
 import {
@@ -61,15 +54,14 @@ const errorText = (error: unknown) =>
     : "Something went wrong. Please try again.";
 
 /**
- * The drawer on the Games table (docs/TEACHER-VIEW-PLAN.md, 4.5): the class's settings and report, then the villages (whole
- * school).
+ * The drawer on the Games table (docs/TEACHER-VIEW-PLAN.md, 4.5): the class's settings and report. (The village groups went with
+ * "My Village" on 28 Oct 2026: every clan builds its own village, so there is nothing for a teacher to set up.)
  */
 export function ClansTeacherSettings({ classId }: { classId: string }) {
   return (
     <>
       <ClansSettingsPanel classId={classId} />
       <ClansClassReport classId={classId} />
-      <ClansVillagePanel />
     </>
   );
 }
@@ -169,7 +161,7 @@ function ClansSettingsPanel({ classId }: { classId: string }) {
       <h3>Raids</h3>
       <SettingToggle
         label="Raids on classmates"
-        about="Pupils can raid the clans of classmates in the same village group (see the villages below). Off until you turn it on."
+        about="Clans can raid other clans in the same class, once a day, and a raided clan is safe the next day. Off until you turn it on."
         value={raids.value}
         loadFailed={raids.failed}
         save={async (on) => {
@@ -366,177 +358,6 @@ export function ClansSeasonPanel() {
           Start a new season…
         </button>
       )}
-      {status && (
-        <p role="status" className="gk-teacher__status">
-          {status}
-        </p>
-      )}
-    </section>
-  );
-}
-
-/**
- * The village groups: who builds a village together. They are for the whole school, and any teacher can manage them (James,
- * 28 Oct 2026). Raids on classmates, which are per class, are in the class's settings above.
- */
-export function ClansVillagePanel() {
-  const [data, setData] = useState<Villages | null>(null);
-  const [name, setName] = useState("");
-  const [confirming, setConfirming] = useState<number | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-
-  const load = () =>
-    fetchVillages().then(setData, (error) => setStatus(errorText(error)));
-  useEffect(() => {
-    void load();
-  }, []);
-
-  async function run(job: () => Promise<unknown>, message: string) {
-    setStatus("Saving…");
-    try {
-      await job();
-      await load();
-      setStatus(message);
-    } catch (error) {
-      setStatus(errorText(error));
-    }
-  }
-
-  const groups = data?.villages ?? [];
-  return (
-    <section
-      className="panel gk-teacher teacher__switch cq-teacher__villages"
-      aria-labelledby="cq-village-title"
-    >
-      <h2 id="cq-village-title" className="panel__title">
-        Clan Quest villages (whole school)
-      </h2>
-      <p>
-        Each group of pupils builds a village together: they give gold to a
-        shared chest and vote each week on a building (Training Hall, Smithy,
-        Church) that helps the whole group. Pupils you have not put in a group
-        are all together in “Everyone else”. Raids on classmates only happen
-        inside a group. These groups are for the whole school, and any teacher
-        can change them.
-      </p>
-      <h3>Groups (whole school)</h3>
-      <ul>
-        {groups.map((g) => (
-          <li key={g.id}>
-            <strong>{g.name}</strong>: {g.pupils}{" "}
-            {g.pupils === 1 ? "pupil" : "pupils"}, {g.chest} gold in the chest,
-            Training Hall {g.levels.trainingHall}, Smithy {g.levels.smithy},
-            Church {g.levels.church}.{" "}
-            {!g.isDefault &&
-              (confirming === g.id ? (
-                <>
-                  Delete it? Its pupils go back to “Everyone else” and its chest
-                  is lost.{" "}
-                  <button
-                    type="button"
-                    className="button button--danger"
-                    onClick={() =>
-                      void run(async () => {
-                        await deleteVillage(g.id);
-                        setConfirming(null);
-                      }, `Deleted ${g.name}.`)
-                    }
-                  >
-                    Yes, delete {g.name}
-                  </button>{" "}
-                  <button
-                    type="button"
-                    className="button button--light-outline"
-                    onClick={() => setConfirming(null)}
-                  >
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className="button button--light-outline"
-                    onClick={() => {
-                      if (name.trim())
-                        void run(
-                          () => renameVillage(g.id, name.trim()),
-                          `Renamed to ${name.trim()}.`,
-                        );
-                      else setStatus("Type the new name in the box first.");
-                    }}
-                  >
-                    Rename to the name below
-                  </button>{" "}
-                  <button
-                    type="button"
-                    className="button button--light-outline"
-                    onClick={() => setConfirming(g.id)}
-                  >
-                    Delete…
-                  </button>
-                </>
-              ))}
-          </li>
-        ))}
-      </ul>
-      <p>
-        <label>
-          Group name{" "}
-          <input
-            type="text"
-            value={name}
-            maxLength={30}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </label>{" "}
-        <button
-          type="button"
-          className="button button--primary"
-          onClick={() =>
-            void run(async () => {
-              await createVillage(name.trim());
-              setName("");
-            }, "Group made. Now move pupils into it.")
-          }
-        >
-          Make a group
-        </button>
-      </p>
-      <table className="stats-table">
-        <caption>Who is in which group (whole school)</caption>
-        <thead>
-          <tr>
-            <th scope="col">Pupil</th>
-            <th scope="col">Group</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(data?.pupils ?? []).map((p) => (
-            <tr key={p.id}>
-              <th scope="row">{p.name}</th>
-              <td>
-                <select
-                  aria-label={`Group for ${p.name}`}
-                  value={p.village}
-                  onChange={(e) =>
-                    void run(
-                      () => movePupil(p.id, Number(e.target.value)),
-                      `Moved ${p.name}.`,
-                    )
-                  }
-                >
-                  {groups.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name}
-                    </option>
-                  ))}
-                </select>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
       {status && (
         <p role="status" className="gk-teacher__status">
           {status}

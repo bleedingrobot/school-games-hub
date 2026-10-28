@@ -1,50 +1,43 @@
 import { CONFIG } from '../../../shared/clans/config';
-import { TROOP_NAMES, countBuildings, draftWanted, might, room, type Kingdom } from '../../../shared/clans/empire';
-import { BUILDING_KINDS, TROOP_KINDS, type Clan, type Empire, type TroopKind } from '../../../shared/clans/types';
+import { TROOP_NAMES, buildsLeft, empireOf, maxLevel, might, upgradeCost, type Kingdom } from '../../../shared/clans/empire';
+import { TROOP_KINDS, type Clan, type TroopKind, type VillageBuilding } from '../../../shared/clans/types';
 
 // Small, screen-only helpers that turn the engine's numbers into plain words for children.
 // Nothing here changes a rule: each one reads the engine's own functions and config.
 
-/** What the draft would do right now. Mirrors `draft()` in shared/clans/empire.ts: wanted = share rounded up, joined = as far as the footmen's room goes. */
-export interface DraftPreview {
-  followers: number;
-  wanted: number;
-  joined: number;
-  /** Why nobody would join, or null when somebody would. */
-  why: string | null;
-}
-
-export function draftPreview(e: Empire, followers: number): DraftPreview {
-  const wanted = draftWanted(followers, e.draftPercent);
-  const joined = Math.min(wanted, room(e, 'footman'));
-  let why: string | null = null;
-  if (joined < 1) {
-    if (followers < 1) why = 'You have no followers to draft';
-    else if (e.draftPercent < 1) why = 'Pick a bigger draft first';
-    else if (countBuildings(e, 'barracks') < 1) why = 'Build a Barracks first';
-    else why = 'Your barracks are full';
-  }
-  return { followers, wanted, joined, why };
-}
-
-/** The cheapest building costs this much gold. */
-const cheapestBuilding = () => Math.min(...BUILDING_KINDS.map((k) => CONFIG.empire.buildings[k].gold));
-
 export interface NextStep {
   say: string;
-  /** A quick button: put this much of the purse into the vault. */
-  putIn?: number;
 }
 
-/** The one thing a child should do next in the empire. */
-export function nextEmpireStep(e: Empire, clan: Pick<Clan, 'gold'>): NextStep {
-  if (e.vault < cheapestBuilding() && clan.gold > 0) {
-    return { say: 'Put some gold in your vault so you can build.', putIn: Math.min(clan.gold, 100) };
+/** The order a child is nudged to upgrade in, and why each one is worth it. */
+const UPGRADE_HINTS: [VillageBuilding, string][] = [
+  ['smithy', 'Upgrade your Smithy for better weapons.'],
+  ['forge', 'Upgrade your Forge so your raiders hit harder.'],
+  ['walls', 'Upgrade your Walls so raiders do less damage.'],
+  ['tower', 'Upgrade your Tower so your defenders hit back harder.'],
+  ['strongroom', 'Upgrade your Strongroom to keep more gold safe.'],
+  ['trainingHall', 'Upgrade your Training Hall so training costs less.'],
+  ['church', 'Upgrade your Church for another free wake-up.'],
+  ['barracks', 'Upgrade your Barracks to make room for more troops.'],
+];
+
+/** The one thing a child should do next in My Village. */
+export function nextVillageStep(clan: Clan): NextStep {
+  const e = empireOf(clan);
+  const left = buildsLeft(e);
+  if (e.levels.barracks < 1) {
+    const cost = upgradeCost('barracks', 1);
+    if (left < 1) return { say: 'Your builders are resting. Come back tomorrow to build your first Barracks.' };
+    if (clan.gold < cost) return { say: `Win ${cost} gold in the Mines, then build your first Barracks so troops can join you.` };
+    return { say: 'Build your first Barracks so troops can join you.' };
   }
-  if (e.plots.length < 1) return { say: 'Get a plot of land ready in Land and buildings.' };
-  if (countBuildings(e, 'barracks') < 1) return { say: 'Build a Barracks so your troops have somewhere to live.' };
-  if (might(e.troops) < 1) return { say: 'Buy some troops, or draft your followers, in Barracks and troops.' };
+  if (might(e.troops) < 1) return { say: 'Buy some troops, or win fights in the Mines so followers join you.' };
   if (e.kingdomRaidsToday < CONFIG.empire.raids.kingdomPerDay) return { say: 'Try a raid! Bunny Hollow is a good first one.' };
+  if (left > 0) {
+    const hint = UPGRADE_HINTS.find(([b]) => e.levels[b] < maxLevel(b) && clan.gold >= upgradeCost(b, e.levels[b] + 1));
+    if (hint) return { say: hint[1] };
+    if (UPGRADE_HINTS.some(([b]) => e.levels[b] < maxLevel(b))) return { say: 'Win more gold in the Mines to upgrade your village.' };
+  }
   return { say: 'All done for today. Come back tomorrow.' };
 }
 

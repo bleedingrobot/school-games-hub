@@ -14,13 +14,10 @@ import { MemberCard } from './MemberCard';
 import { Church } from './Church';
 import { Market } from './Market';
 import { Mines, Results } from './Mines';
-import { armyToLose, armyToWin, changeLook, questToday, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, giveVault, knockOutSome, pretendGifts, pretendWeekEnd } from './places';
+import { armyToLose, armyToWin, changeLook, questToday, questUsed, barracksAndFill, freshQuest, freshRaid, giveFollowers, giveGold, givePoints, knockOutSome } from './places';
 import { ClassRaid } from './ClassRaid';
-import { Village } from './Village';
-import { VillageNews } from './VillageNews';
-import { EmpireHome } from './Empire';
-import { Land } from './Land';
-import { Barracks } from './Barracks';
+import { News } from './News';
+import { MyVillage } from './MyVillage';
 import { Raid } from './Raid';
 import { Quest } from './Quest';
 import { QUESTS } from '../../../shared/clans/quests';
@@ -35,13 +32,13 @@ import { sessionFrom, type ClanServer, type ServerReply } from './remote';
 import { bannerArt, questArt, sceneArt, type SceneId } from './art';
 import './clans.css';
 
-type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'empire' | 'land' | 'barracks' | 'raid' | 'quest' | 'village' | 'news' | 'classraid' | 'scoreboard' | 'achievements' | 'howto';
+type Screen = 'home' | 'mines' | 'fight' | 'results' | 'market' | 'training' | 'church' | 'myvillage' | 'raid' | 'quest' | 'news' | 'classraid' | 'scoreboard' | 'achievements' | 'howto';
 
-/** The painting across the top of each screen. Home and Land have none of their own, so they borrow the village and the empire. The fight has none across the top (its mine zone is painted behind the
+/** The painting across the top of each screen. Home has none of its own, so it borrows the village. The fight has none across the top (its mine zone is painted behind the
  * monsters, to keep the fight on one screen); its results get one from how it went (`afterFight`). */
 const SCENE_FOR: Partial<Record<Screen, SceneId>> = {
-  home: 'village', mines: 'mines', market: 'market', training: 'training', church: 'church', empire: 'empire', land: 'empire', barracks: 'barracks',
-  raid: 'raid', classraid: 'raid', quest: 'quests', village: 'village', news: 'news', scoreboard: 'scoreboard',
+  home: 'village', mines: 'mines', market: 'market', training: 'training', church: 'church', myvillage: 'village',
+  raid: 'raid', classraid: 'raid', quest: 'quests', news: 'news', scoreboard: 'scoreboard',
 };
 
 /** A wide painting, the 800 copy on phones. Only decoration, so screen readers skip it. */
@@ -77,14 +74,11 @@ function SettingsStrip({ session, onChange, open }: { session: Session; onChange
         <button type="button" className="cq-btn" onClick={() => onChange(givePoints(session, 12))}>Give 12 training points to everyone (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(knockOutSome(session, 2))}>Knock out two members (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(giveFollowers(session, 100))}>Give 100 followers (test only)</button>
-        <button type="button" className="cq-btn" onClick={() => onChange(giveVault(session, 1000))}>Put 1,000 gold in the vault (test only)</button>
-        <button type="button" className="cq-btn" onClick={() => onChange(barracksAndFill(session))}>Build a barracks and fill it (test only)</button>
+        <button type="button" className="cq-btn" onClick={() => onChange(barracksAndFill(session))}>Build the Barracks and fill it (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(armyToWin(session))}>Win the next raid (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(armyToLose(session))}>Lose the next raid (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(freshRaid(session))}>Allow another raid today (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(freshQuest(session))}>Allow another quest today (test only)</button>
-        <button type="button" className="cq-btn" onClick={() => onChange(pretendGifts(session, 200))}>Pretend classmates give 200 gold (test only)</button>
-        <button type="button" className="cq-btn" onClick={() => onChange(pretendWeekEnd(session))}>End the village week now (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(giveFame(session, 10))}>Give 10 fame (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(earn(session, { bosses: 1 }))}>Beat a boss: 5 fame and an achievement (test only)</button>
         <button type="button" className="cq-btn" onClick={() => onChange(awardNext(session))}>Earn the next achievement (test only)</button>
@@ -386,7 +380,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
                 ))}
               </div>
               {session.news && session.news.length > 0 && (
-                <ul className="cq-soft" aria-label="Village news">
+                <ul className="cq-soft" aria-label="News">
                   {session.news.slice(0, 5).map((line, i) => <li key={`${i}-${line}`}>{line}</li>)}
                 </ul>
               )}
@@ -402,10 +396,9 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
                 <button type="button" className="cq-btn" onClick={() => setScreen('market')}>The Market</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('training')}>The Training Hall</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('church')}>The Church</button>
-                <button type="button" className="cq-btn" onClick={() => setScreen('empire')}>The Empire</button>
+                <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('myvillage')}>My Village</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('quest')}>{questUsed(session) ? 'Quest (done for today)' : 'Quest'}</button>
-                <button type="button" className="cq-btn" onClick={() => setScreen('village')}>The Village</button>
-                <button type="button" className="cq-btn" onClick={() => setScreen('news')}>Village news</button>
+                <button type="button" className="cq-btn" onClick={() => setScreen('news')}>News</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('scoreboard')}>Scoreboard</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('howto')}>How to play</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('achievements')}>Achievements ({(session.achievements ?? []).length} of {ACHIEVEMENTS.length})</button>
@@ -418,17 +411,14 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'market' && <Market session={session} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'training' && <Training session={session} onChange={change} onBack={() => setScreen('home')} />}
           {screen === 'church' && <Church session={session} onChange={change} onBack={() => setScreen('home')} />}
-          {screen === 'empire' && <EmpireHome session={session} onChange={change} onBack={() => setScreen('home')} onLand={() => setScreen('land')} onBarracks={() => setScreen('barracks')} onRaid={() => setScreen('raid')} onClassRaid={() => setScreen('classraid')} />}
-          {screen === 'barracks' && <Barracks session={session} onChange={change} onBack={() => setScreen('empire')} />}
-          {screen === 'raid' && <Raid session={session} onChange={change} onBack={() => setScreen('empire')} />}
-          {screen === 'village' && <Village session={session} onChange={change} onBack={() => setScreen('home')} onNews={() => setScreen('news')} />}
-          {screen === 'news' && <VillageNews session={session} onBack={() => setScreen('home')} />}
+          {screen === 'myvillage' && <MyVillage session={session} onChange={change} onBack={() => setScreen('home')} onRaid={() => setScreen('raid')} onClassRaid={() => setScreen('classraid')} />}
+          {screen === 'raid' && <Raid session={session} onChange={change} onBack={() => setScreen('myvillage')} />}
+          {screen === 'news' && <News session={session} onBack={() => setScreen('home')} />}
           {screen === 'scoreboard' && <Scoreboard session={session} load={board} onBack={() => setScreen('home')} />}
           {screen === 'howto' && <HowToPlay fightsPerDay={session.fightsPerDay} onBack={() => setScreen('home')} />}
           {screen === 'achievements' && <Achievements session={session} onBack={() => setScreen('home')} />}
-          {screen === 'classraid' && <ClassRaid session={session} ask={ask} onSession={setSession} onBack={() => setScreen('empire')} />}
+          {screen === 'classraid' && <ClassRaid session={session} ask={ask} onSession={setSession} onBack={() => setScreen('myvillage')} />}
           {screen === 'quest' && <Quest key={`${session.day}-${session.questPick ?? 0}`} session={session} onChange={change} onBack={() => setScreen('home')} />}
-          {screen === 'land' && <Land session={session} onChange={change} onBack={() => setScreen('empire')} />}
           {screen === 'fight' && !server && <Fight key={session.fightNo} session={session} boss={boss} onFinish={finish} />}
           {screen === 'fight' && server && activeFight && (
             <Fight key={`${activeFight.no}-${fightKey}`} session={session} open={activeFight} boss={activeFight.boss} onRound={sendRound} onCheck={checkCry} onFinish={finishServer} />

@@ -132,6 +132,10 @@ This replaces steps 2 and 3 above:
 2. "My Village": merge the village and empire into one screen with one purse, building levels and 2 builds a day, plus the save move.
 3. Raids across the class, without groups, and the teacher page tidy-up.
 
+## Live (28 Oct 2026)
+
+My Village went live on 28 Oct 2026 (PR #72): migration `20261028001000` pasted in the SQL Editor, `clans` deployed, site published, and the old group chests shared out with `clan_my_village_share_chests()`.
+
 ## Step 2 build plan: "My Village" (agreed by James 28 Oct 2026; how it is built)
 
 **Branch `clans-my-village`.** It goes live in one go, because the engine, screens and server must change together.
@@ -192,3 +196,11 @@ This replaces steps 2 and 3 above:
 - Engine and screen tests are updated. The SQL tests run on a scratch copy.
 - The simulator checks the pace, and `test:all` and the build must pass.
 - **The live database migration and the save conversion need James's OK first**, because they change every pupil's save.
+
+### Pictures (James chose 3 sizes per building, 28 Oct 2026)
+- There is a small, medium and big picture for each of the 8 buildings, so the village visibly grows:
+  - small for levels 1 and 2;
+  - medium for levels 3 and 4;
+  - big for level 5 and above.
+- That is 24 pictures in `src/games/clans/art/buildings/<kind>-<size>.webp`. The barracks, walls, tower and steel mill (Forge) pictures already there are kept as the medium size.
+- They are made with `scripts/clans-art.py` on James's gaming computer, in the same style as the others (docs/CLANS-ART-PLAN.md). If a picture is missing, the game falls back to the one-size picture, so nothing breaks.

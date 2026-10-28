@@ -723,7 +723,7 @@ with teachers, students, code and mode, last active) and `admin_create_class(nam
 - *Live 28 Oct 2026: the migration pasted into the SQL Editor by James and checked as a school admin, then the site published
   (PR #75). Next: End of year checklist + `admin_log`.*
 
-*Part 3 done 28 Oct 2026: End of year. One migration, `20261028001000_admin_end_of_year.sql`: an `admin_log` table (no client
+*Part 3 done 28 Oct 2026: End of year. One migration, `20261028001100_admin_end_of_year.sql`: an `admin_log` table (no client
 access) and `admin_year()`, `admin_mark_step()`, `admin_archive_classes()`, `admin_delete_leavers()` (only students in no class
 or an archived class; type the number), `admin_new_points_season()` and `admin_clans_new_season()`. Each does its step and
 writes the log in the same transaction, wrapping the existing functions. Tested by

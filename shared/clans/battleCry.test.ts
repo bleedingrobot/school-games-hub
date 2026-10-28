@@ -202,10 +202,11 @@ describe('shop and church moments use the real numbers', () => {
     expect(trainingBuy(s, 5, 7)).toBeNull();
   });
 
-  it('land, barracks, troops, energy, the draft and fame', () => {
-    const plot = landPlot(s, 4, 5)!;
-    expect(plot.area.answer).toBe(20);
-    expect(plot.fence.answer).toBe(18);
+  it('building plans, barracks, troops, energy, the draft and fame', () => {
+    const plot = landPlot(s, 'barracks', 3)!;
+    expect([plot.width, plot.length]).toEqual([3, 5]);
+    expect(plot.area.answer).toBe(15);
+    expect(plot.fence.answer).toBe(16);
     expect(barracksNeeded(s, 85, 20)!.answer).toBe(5);
     expect(troopBill(s, 12, 4, 0)!.answer).toBe(300);
     expect(energyLeft(s, 30, 7, 12)!.answer).toBe(51);
@@ -232,7 +233,7 @@ describe('shop and church moments use the real numbers', () => {
   it('gives nothing when the teacher has the topic off, or the band is too young', () => {
     expect(marketTotal(settings({ enabledTopics: ['area'] }), 240)).toBeNull();
     expect(churchBill(settings({ enabledTopics: ['percentages'] }), [3])).toBeNull();
-    expect(landPlot(settings({ enabledTopics: ['percentages'] }), 4, 5)).toBeNull();
+    expect(landPlot(settings({ enabledTopics: ['percentages'] }), 'barracks', 3)).toBeNull();
     expect(fameChange(settings({ yearBand: 5 }), 4, -9)).toBeNull();
     expect(fameChange(settings({ yearBand: 6, enabledTopics: ['area'] }), 4, -9)).toBeNull();
   });

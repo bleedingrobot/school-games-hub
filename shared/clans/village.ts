@@ -1,9 +1,9 @@
 /**
  * The class village (Clan Quest stage C.6 part A), as plain rules the server and the screens share.
  *
- * - The village: a chest of gold the class gives to, three buildings to level up (Training Hall, Smithy, Church), and a
- *   vote each week on which one to build next. `closeWeek` decides what the week's vote does. The midnight job
- *   does the same in SQL (`clan_village_close`); a test keeps the two equal.
+ * - The OLD class village (chest, weekly vote, `closeWeek`): no longer used by the game ("My Village" gives every clan its own
+ *   buildings, see empire.ts). It is kept only because the SQL function `clan_village_close` and its parity test still read
+ *   these functions and CONFIG.village; nothing in actions.ts calls them any more.
  * - Raids on classmates: `raidTargetList` says who a clan may raid (and why not, in kind words), and `raidClassmateNz`
  *   does a raid. Clans count their days from their own first day, so classmate raids use New Zealand day numbers.
  *
@@ -11,9 +11,9 @@
  * hidden `public_id` made for the purpose.
  */
 import { CONFIG } from './config';
-import { empireOf, newEmpire, raidClassmate, raidNews, raidRefusal, type BattlePlan, type ClassmateRaid, type Fail, type Party, type Take } from './empire';
+import { empireOf, needsUpgrade, newEmpire, raidClassmate, raidNews, raidRefusal, upgradeSave, type ClassmateRaid, type Fail, type Party, type Push, type Take } from './empire';
 import type { ServerState } from './actions';
-import type { Empire, Troops, Village } from './types';
+import type { Clan, Empire, OldEmpire, Troops, Village } from './types';
 
 const V = CONFIG.village;
 
@@ -169,27 +169,35 @@ export interface TargetEntry {
   allowed: boolean;
   /** Why not, in kind words; empty when allowed. */
   say: string;
+  /** The last New Zealand day it is shielded, when that is today or later. */
+  shieldUntil?: number;
 }
 
-const partyOf = (id: string, empire: Empire, createdNzDay: number): Party => ({ id, empire: { ...empire, createdDay: createdNzDay } });
+const partyOf = (id: string, empire: Empire, createdNzDay: number, gold = 0): Party => ({ id, empire: { ...empire, createdDay: createdNzDay }, gold });
 
 /** Who this clan may raid, and why not for the rest. Allowed ones come first. */
 export function raidTargetList(state: ServerState, today: number, self: string, raidsOn: boolean, sketches: Sketch[]): TargetEntry[] {
-  const attacker = partyOf(self, empireOf(state.clan), state.createdNzDay);
+  const attacker = partyOf(self, empireOf(state.clan), state.createdNzDay, state.clan.gold);
   const list = sketches.map((s): TargetEntry => {
     const defender = partyOf(s.id, { ...newEmpire(), troops: s.troops, shieldUntil: s.shieldUntil }, s.createdNzDay);
     const refused = raidRefusal(attacker, defender, today, raidsOn);
-    return { id: s.id, name: s.name, allowed: !refused, say: refused ? refused.say : '' };
+    return { id: s.id, name: s.name, allowed: !refused, say: refused ? refused.say : '', ...(s.shieldUntil >= today ? { shieldUntil: s.shieldUntil } : {}) };
   });
   return [...list.filter((t) => t.allowed), ...list.filter((t) => !t.allowed)];
 }
 
-/** A classmate clan as the server loads it to be raided. */
+/**
+ * A classmate clan as the server loads it to be raided. `empire` may still be an old-shape save: then `gold` is the clan
+ * purse (the old vault is added to it by the conversion) and `village` is the class village's levels, if the server has them.
+ */
 export interface RaidTarget {
   id: string;
   name: string;
   createdNzDay: number;
-  empire: Empire;
+  empire: Empire | OldEmpire;
+  /** The raided clan's purse. */
+  gold: number;
+  village?: Partial<Village>;
 }
 
 export interface ClassmateDone {
@@ -197,6 +205,8 @@ export interface ClassmateDone {
   raid: ClassmateRaid;
   /** The raided clan's empire after the raid, for the server to save in the same transaction. */
   defenderEmpire: Empire;
+  /** The raided clan's purse after the raid (gold may have been taken), saved in the same transaction. */
+  defenderGold: number;
   /** The line for the village news (the raiders' clan name only). */
   news: string;
   /** The raided clan's own note, read next time they open the game. */
@@ -206,26 +216,38 @@ export interface ClassmateDone {
 /** What the raided clan reads next time. The raiders' clan name only. */
 export function raidNote(raiderClan: string, raid: ClassmateRaid): string {
   if (raid.result.outcome !== 'won') return `A raider from the ${raiderClan} clan attacked, and your defenders drove them off!`;
-  if (raid.take === 'gold') return `A raider from the ${raiderClan} clan beat your defenders and took ${raid.gold} gold from your vault.`;
-  if (raid.take === 'land') return `A raider from the ${raiderClan} clan beat your defenders and took ${raid.land} ${raid.land === 1 ? 'plot' : 'plots'} of your land.`;
-  return `A raider from the ${raiderClan} clan beat your defenders and knocked down ${raid.destroyed.length} ${raid.destroyed.length === 1 ? 'building' : 'buildings'}.`;
+  if (raid.take === 'gold') return `A raider from the ${raiderClan} clan beat your defenders and took ${raid.gold} gold from your purse.`;
+  return `A raider from the ${raiderClan} clan beat your defenders and knocked ${raid.destroyed.length} ${raid.destroyed.length === 1 ? 'level' : 'levels'} off your buildings.`;
 }
 
 /**
  * Raid a classmate with the attacker's saved state (which is changed: the caller passes a copy). The rules are
- * `raidClassmate`, with day numbers turned into New Zealand days. The defender's empire comes back changed; the caller
- * saves both clans in one go. The attacker's own empire is changed in `state`.
+ * `raidClassmate`, with day numbers turned into New Zealand days. The defender's empire and purse come back changed; the
+ * caller saves both clans in one go. The attacker's own empire and purse are changed in `state`.
  */
-export function raidClassmateNz(state: ServerState, self: string, target: RaidTarget, take: Take, plan: Partial<BattlePlan>, seed: number, today: number, raidsOn: boolean): Fail | ClassmateDone {
+export function raidClassmateNz(state: ServerState, self: string, target: RaidTarget, take: Take, push: Push, seed: number, today: number, raidsOn: boolean): Fail | ClassmateDone {
   const mine = empireOf(state.clan);
   const keep = mine.createdDay;
   mine.createdDay = state.createdNzDay;
-  const defenderEmpire = structuredClone(target.empire);
+  // An old-shape defender is converted first (in a scratch clan), so the raid is played on the new rules.
+  let defenderEmpire: Empire;
+  let defenderGold = target.gold;
+  if (target.empire.version === 2) defenderEmpire = structuredClone(target.empire);
+  else {
+    const scratch = { name: target.name, members: [], gold: target.gold, followers: 0, village: { trainingHall: 0, smithy: 0, church: 0 }, empire: target.empire } as unknown as Clan;
+    const up = needsUpgrade(scratch) ? upgradeSave(scratch, target.village) : scratch;
+    defenderEmpire = up.empire as Empire;
+    defenderGold = up.gold;
+  }
+  const originalCreated = target.empire.createdDay;
   defenderEmpire.createdDay = target.createdNzDay;
-  const out = raidClassmate({ id: self, empire: mine }, { id: target.id, empire: defenderEmpire }, take, plan, seed, today, raidsOn);
+  const attacker: Party = { id: self, empire: mine, gold: state.clan.gold };
+  const defender: Party = { id: target.id, empire: defenderEmpire, gold: defenderGold };
+  const out = raidClassmate(attacker, defender, take, push, seed, today, raidsOn);
   mine.createdDay = keep;
   if (!out.ok) return out;
-  defenderEmpire.createdDay = target.empire.createdDay;
+  state.clan.gold = attacker.gold;
+  defenderEmpire.createdDay = originalCreated;
   const { ok: _ok, ...raid } = out;
-  return { ok: true, raid, defenderEmpire, news: raidNews(state.clan.name, raid), note: raidNote(state.clan.name, raid) };
+  return { ok: true, raid, defenderEmpire, defenderGold: defender.gold, news: raidNews(state.clan.name, raid), note: raidNote(state.clan.name, raid) };
 }
