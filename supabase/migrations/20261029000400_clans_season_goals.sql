@@ -29,7 +29,7 @@ comment on column public.app_settings.clans_clock_from is
 -- Must equal CONFIG.season and CONFIG.empire.buildings[b].max in shared/clans/config.ts (shared/clans/seasonRules.test.ts checks it).
 create function public.clan_season_rules() returns jsonb language sql immutable set search_path = ''
 as $$ select jsonb_build_object(
-  'length', 35, 'warnFrom', 22, 'monsterFrom', 29,
+  'length', 35, 'warnFrom', 22, 'monsterFrom', 29, 'buildsPerDay', 2, 'buildsSavedMax', 4,
   'villageReward', jsonb_build_object('fame', 50, 'points', 10),
   'maxLevels', jsonb_build_object('trainingHall', 5, 'smithy', 6, 'church', 3, 'barracks', 5, 'walls', 5, 'tower', 5, 'forge', 5, 'strongroom', 5)) $$;
 
@@ -240,7 +240,7 @@ $$;
 -- 8. The midnight job
 -- ---------------------------------------------------------------------------
 
--- Changed from 20261028001000: after the Mines news, a school whose clock is on and whose season number has gone past the last one
+-- Changed from 20261028001000: the night's rest also saves unused builds (buildsSaved, as empireNewDay in shared/clans/empire.ts does), and after the Mines news, a school whose clock is on and whose season number has gone past the last one
 -- recorded for it has its clans' fame set to 0 and its clans_season bumped (as teacher_clans_new_season does). A school seen for the
 -- first time is only recorded. A school with the clock off is left alone. Everything else is as it was.
 create or replace function public.clan_nightly(for_day integer default null)
@@ -267,7 +267,7 @@ begin
   end if;
 
   with due as (
-    select c.player, greatest(1, today - c.created_nz_day + 1) as new_day
+    select c.player, c.day as old_day, greatest(1, today - c.created_nz_day + 1) as new_day
     from public.clans c
     where c.day < greatest(1, today - c.created_nz_day + 1)
       and not exists (select 1 from public.clan_fights f where f.player = c.player)
@@ -277,7 +277,7 @@ begin
       day = due.new_day, fights_left = public.clan_fights_per_day(c.player), wakes_today = 0,
       version = c.version + 1, updated_at = now()
     from due where c.player = due.player
-    returning c.player, c.day
+    returning c.player, c.day, due.old_day
   ), healed as (
     update public.clan_members m set
       member = m.member || jsonb_build_object('knockedOut', false, 'hp', m.member -> 'maxHp', 'sp', m.member -> 'maxSp')
@@ -287,7 +287,11 @@ begin
     update public.clan_empires e set
       empire = case
         when e.empire ->> 'version' = '2' then
-          e.empire || jsonb_build_object('day', moved.day, 'buildsToday', 0, 'raidsToday', 0, 'kingdomRaidsToday', 0, 'raidedToday', '[]'::jsonb)
+          -- Unused builds are saved (as empireNewDay does): today's left over plus 2 for each day missed, up to 4.
+          e.empire || jsonb_build_object('day', moved.day, 'buildsToday', 0, 'raidsToday', 0, 'kingdomRaidsToday', 0, 'raidedToday', '[]'::jsonb,
+            'buildsSaved', least((public.clan_season_rules() ->> 'buildsSavedMax')::integer, coalesce((e.empire ->> 'buildsSaved')::integer, 0)
+              + greatest(0, (public.clan_season_rules() ->> 'buildsPerDay')::integer - coalesce((e.empire ->> 'buildsToday')::integer, 0))
+              + (public.clan_season_rules() ->> 'buildsPerDay')::integer * greatest(0, moved.day - moved.old_day - 1)))
         else
           e.empire || jsonb_build_object('day', moved.day, 'energyUsed', 0, 'raidsToday', 0, 'kingdomRaidsToday', 0, 'raidedToday', '[]'::jsonb)
       end

@@ -51,14 +51,14 @@ export const CONFIG = {
      * old effects (trainCost, the shop and churchPerLevel/freeWakes read the level), so they have no `per`.
      */
     buildings: {
-      trainingHall: { max: 5, base: 100, per: 0 },
-      smithy: { max: 6, base: 100, per: 0 },
-      church: { max: 3, base: 100, per: 0 },
-      barracks: { max: 5, base: 100, per: 0 },
-      walls: { max: 5, base: 100, per: 10 },
-      tower: { max: 5, base: 100, per: 10 },
-      forge: { max: 5, base: 100, per: 10 },
-      strongroom: { max: 5, base: 100, per: 200 },
+      trainingHall: { max: 5, base: 50, per: 0 },
+      smithy: { max: 6, base: 50, per: 0 },
+      church: { max: 3, base: 50, per: 0 },
+      barracks: { max: 5, base: 50, per: 0 },
+      walls: { max: 5, base: 50, per: 10 },
+      tower: { max: 5, base: 50, per: 10 },
+      forge: { max: 5, base: 50, per: 10 },
+      strongroom: { max: 5, base: 50, per: 200 },
     } satisfies Record<VillageBuilding, { max: number; base: number; per: number }>,
     /** The width of each building's plan; its length is the level plus `planLengthExtra` (the area and fence moment). */
     planWidth: { trainingHall: 4, smithy: 3, church: 4, barracks: 3, walls: 2, tower: 2, forge: 3, strongroom: 2 } satisfies Record<VillageBuilding, number>,

@@ -855,42 +855,42 @@ const CONFIG = {
 		buildings: {
 			trainingHall: {
 				max: 5,
-				base: 100,
+				base: 50,
 				per: 0
 			},
 			smithy: {
 				max: 6,
-				base: 100,
+				base: 50,
 				per: 0
 			},
 			church: {
 				max: 3,
-				base: 100,
+				base: 50,
 				per: 0
 			},
 			barracks: {
 				max: 5,
-				base: 100,
+				base: 50,
 				per: 0
 			},
 			walls: {
 				max: 5,
-				base: 100,
+				base: 50,
 				per: 10
 			},
 			tower: {
 				max: 5,
-				base: 100,
+				base: 50,
 				per: 10
 			},
 			forge: {
 				max: 5,
-				base: 100,
+				base: 50,
 				per: 10
 			},
 			strongroom: {
 				max: 5,
-				base: 100,
+				base: 50,
 				per: 200
 			}
 		},

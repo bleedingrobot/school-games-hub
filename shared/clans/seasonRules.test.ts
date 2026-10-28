@@ -11,6 +11,7 @@ describe('the season rules in the database and in the game agree', () => {
   it('has the same season length, warning day, monster day and village reward', () => {
     const s = CONFIG.season;
     expect(rules).toContain(`'length', ${s.length}, 'warnFrom', ${s.warnFrom}, 'monsterFrom', ${s.monsterFrom}`);
+    expect(rules).toContain(`'buildsPerDay', ${CONFIG.empire.buildsPerDay}, 'buildsSavedMax', ${CONFIG.empire.buildsSavedMax}`);
     expect(rules).toContain(`'villageReward', jsonb_build_object('fame', ${s.villageReward.fame}, 'points', ${s.villageReward.points})`);
   });
 
