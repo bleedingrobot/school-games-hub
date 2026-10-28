@@ -35,8 +35,8 @@ Dragon Maths ([LORD-PLAN.md](LORD-PLAN.md) sections 9 and 11, [DRAGON-SCHOOL-SEA
   | Days | What happens |
   |---|---|
   | 1 to 28 | Mines, building, raids, as now. A progress bar on the home screen: "Village 23 / 39". |
-  | 22 to 28 | Warnings: news lines ("Giant footprints were found by the river"), a home-screen countdown "The Storm Giant arrives in 5 days". The **Monster supplies** shop opens (section 5.6). |
-  | 29 to 35 | **Monster week.** The giant attacks every clan's village. One try each day (section 5.4). Classmate raids are off. |
+  | 22 to 28 | Warnings: news lines ("Giant footprints were found by the river"), a home-screen countdown "The Storm Giant arrives in 5 days". The **Monster supplies** shop opens (section 5.6). Classmate raids stop from here to the end of the season. |
+  | 29 to 35 | **Monster week.** The giant attacks every clan's village. One try each day (section 5.4). |
   | Day 35 | Season ends. The Hall is written. A new season starts the next day. |
 
 - **5 weeks means the village must fill faster** (section 4): today 39 builds at 2 a day need 20 play days, and a 3 to 4 days a week pupil gets only about 12 to 16 play days before monster week.
@@ -67,7 +67,15 @@ Dragon Maths ([LORD-PLAN.md](LORD-PLAN.md) sections 9 and 11, [DRAGON-SCHOOL-SEA
 
 **Recommended: "Grimmor the Storm Giant"**, a huge mountain giant who comes down from the hills, throwing boulders and stamping. Not a dragon, because Dragon Maths has one and the Emerald Dragon is already the depth-20 mine boss. Gentle wording, like the rest of the game: buildings are "flattened", members are "knocked out", and the giant "stomps off back to the mountains" when beaten. Picture made in ComfyUI on James's gaming PC (one big giant, one "village under attack" scene), same style as the rest ([CLANS-ART-PLAN.md](CLANS-ART-PLAN.md)). Other options: a frost troll, a stone golem, a sea serpent.
 
-A different monster each season could come later (giant, then golem, then serpent), picked from the season number, with the same numbers.
+**James chose a new monster each season (28 Oct 2026).** Three monsters take turns, picked from the season number (season 1 the giant, 2 the golem, 3 the troll, then round again):
+
+| Monster | Look | Its big move (every third round, you see it coming) |
+|---|---|---|
+| Grimmor the Storm Giant | A huge mountain giant | Throws a boulder at one member |
+| Old Craghold the Stone Golem | A slow walking hill of rock | Slams the ground: everyone takes a little damage |
+| Frostjaw the Frost Troll | A shaggy wintry brute | Icy breath: one member is frozen for a round |
+
+All three share the same HP and strength, so the balance and the simulator only need doing once; only the name, picture, words and big move change. The art is 3 monsters, each with a portrait and a "village under attack" scene (6 pictures). More monsters can join the turn later. "The giant" below means whichever monster it is that season.
 
 ### 5.2 The fight: two parts, like the dragon's stages
 
@@ -104,7 +112,7 @@ Tuned with `npm run clans:sim` and a new `--monster` option. The giant's numbers
 ### 5.5 Mines and raids in monster week
 
 - **Mines stay open** (to level up and earn gold for supplies), at the usual fights a day.
-- **Classmate raids are off in monster week** (Recommended), so a raid can't flatten someone's walls on the eve of the fight, and everyone faces the same giant. Raids on computer kingdoms stay.
+- **Classmate raids are off in the last 2 weeks (days 22 to 35)** (James, 28 Oct 2026), so a raid can't flatten someone's walls on the eve of the fight, and everyone faces the same giant. Raids on computer kingdoms stay.
 
 ### 5.6 Monster supplies (a use for spare gold)
 
@@ -145,7 +153,7 @@ Members' levels: the simulator has a daily clan at level 20 by week 3 to 4, and 
 
 **PR 2: goal 2 (the giant)**
 - Engine: `CONFIG.monster`, the siege (reusing `battle()` with fixed giant numbers), the giant as a boss in `fight.ts` (two-target stomp, boulder every third round), the tired rule, monster supplies.
-- Server: the `clans` function hands out one giant fight a day in monster week, replays it like a mine fight and records the win. Raids off in monster week.
+- Server: the `clans` function hands out one giant fight a day in monster week, replays it like a mine fight and records the win. Raids off from day 22.
 - Screens: the siege, the giant fight, the trophy, news lines, warnings from day 22.
 - Art: the giant and the siege scene.
 - Simulator: `--monster` to check the table in 5.3.
@@ -158,7 +166,7 @@ Members' levels: the simulator has a daily clan at level 20 by week 3 to 4, and 
 
 1. ~~Season length?~~ **Answered 28 Oct 2026: 5 weeks, like Dragon Maths.** Follow-up: share Dragon Maths' school date (Recommended)?
 2. At a new season: **the village starts again, members kept (Recommended)**, or keep everything, or every building drops 2 levels?
-3. Giant tries: **one a day in monster week (the last 7 days), and the giant gets tired (Recommended)**, or one try only, or as many as you like?
-4. Classmate raids in monster week: **off (Recommended)** or on as usual?
-5. The monster: **Grimmor the Storm Giant (Recommended)**, or a stone golem, a frost troll or a sea serpent?
+3. ~~Giant tries?~~ **Answered 28 Oct 2026: one a day in monster week, and the monster gets tired.**
+4. ~~Classmate raids?~~ **Answered 28 Oct 2026: off in the last 2 weeks** (days 22 to 35 of a 5-week season).
+5. ~~Which monster?~~ **Answered 28 Oct 2026: a new monster each season** (giant, golem, troll in turn; section 5.1).
 6. When to start: **at the next Dragon Maths season start after the build, with the village bar live now (Recommended)**, or a test season straight away?
