@@ -1,65 +1,43 @@
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../../../shared/clans/config';
-import { KINGDOMS, draft, empireOf } from '../../../shared/clans/empire';
-import { draftPreview, kingdomLight, nextEmpireStep, strengthKey, trafficLight } from './nextStep';
+import { KINGDOMS, empireOf } from '../../../shared/clans/empire';
+import { kingdomLight, nextVillageStep, strengthKey, trafficLight } from './nextStep';
 import { makeClan, startingDrafts } from './session';
 
-const clanWith = (followers: number, percent: number, barracks: number, footmen: number) => {
-  const clan = makeClan('Test Clan', startingDrafts(1));
-  const e = empireOf(clan);
-  clan.followers = followers;
-  e.draftPercent = percent;
-  for (let i = 0; i < barracks; i++) e.plots.push({ width: 4, length: 4, building: 'barracks' });
-  e.troops.footman = footmen;
-  return clan;
-};
-
-describe('draftPreview matches the engine', () => {
-  const cases: [number, number, number, number][] = [
-    [50, 20, 1, 0], [50, 0, 1, 0], [50, 20, 0, 0], [50, 20, 1, 20], [50, 20, 1, 15], [7, 5, 2, 0], [1, 5, 1, 0], [0, 20, 1, 0], [33, 15, 1, 12], [100, 25, 3, 59],
-  ];
-  it.each(cases)('%i followers at %i%%, %i barracks, %i footmen', (followers, percent, barracks, footmen) => {
-    const clan = clanWith(followers, percent, barracks, footmen);
-    const p = draftPreview(empireOf(clan), clan.followers);
-    const real = draft(clan);
-    expect(p.joined).toBe(real.joined);
-    expect(p.wanted).toBe(real.wanted);
-    expect(p.followers).toBe(real.followers);
-    expect(p.why === null).toBe(real.joined > 0);
-  });
-  it('says why nobody would join', () => {
-    const why = (f: number, pc: number, b: number, ft: number) => { const c = clanWith(f, pc, b, ft); return draftPreview(empireOf(c), c.followers).why; };
-    expect(why(50, 0, 1, 0)).toBe('Pick a bigger draft first');
-    expect(why(50, 20, 0, 0)).toBe('Build a Barracks first');
-    expect(why(50, 20, 1, 20)).toBe('Your barracks are full');
-  });
-});
-
-describe('nextEmpireStep', () => {
-  const fresh = () => { const c = makeClan('T', startingDrafts(1)); return c; };
+describe('nextVillageStep', () => {
+  const fresh = () => makeClan('T', startingDrafts(1));
   it('goes down the list in order', () => {
     const c = fresh();
     const e = empireOf(c);
-    e.vault = 0; c.gold = 250;
-    expect(nextEmpireStep(e, c)).toEqual({ say: 'Put some gold in your vault so you can build.', putIn: 100 });
-    c.gold = 30;
-    expect(nextEmpireStep(e, c).putIn).toBe(30);
-    c.gold = 0; e.vault = 500;
-    expect(nextEmpireStep(e, c).say).toBe('Get a plot of land ready in Land and buildings.');
-    e.plots.push({ width: 4, length: 4 });
-    expect(nextEmpireStep(e, c).say).toBe('Build a Barracks so your troops have somewhere to live.');
-    e.plots[0].building = 'barracks';
-    expect(nextEmpireStep(e, c).say).toBe('Buy some troops, or draft your followers, in Barracks and troops.');
+    c.gold = 500;
+    expect(nextVillageStep(c).say).toBe('Build your first Barracks so troops can join you.');
+    c.gold = 20;
+    expect(nextVillageStep(c).say).toBe('Win 150 gold in the Mines, then build your first Barracks so troops can join you.');
+    c.gold = 500;
+    e.buildsToday = CONFIG.empire.buildsPerDay;
+    expect(nextVillageStep(c).say).toBe('Your builders are resting. Come back tomorrow to build your first Barracks.');
+    e.buildsToday = 0;
+    e.levels.barracks = 1;
+    expect(nextVillageStep(c).say).toBe('Buy some troops, or win fights in the Mines so followers join you.');
     e.troops.footman = 3;
     e.kingdomRaidsToday = 0;
-    expect(nextEmpireStep(e, c).say).toBe('Try a raid! Bunny Hollow is a good first one.');
+    expect(nextVillageStep(c).say).toBe('Try a raid! Bunny Hollow is a good first one.');
     e.kingdomRaidsToday = CONFIG.empire.raids.kingdomPerDay;
-    expect(nextEmpireStep(e, c).say).toBe('All done for today. Come back tomorrow.');
+    expect(nextVillageStep(c).say).toBe('Upgrade your Smithy for better weapons.');
+    e.levels.smithy = CONFIG.empire.buildings.smithy.max;
+    expect(nextVillageStep(c).say).toBe('Upgrade your Forge so your raiders hit harder.');
+    c.gold = 10;
+    expect(nextVillageStep(c).say).toBe('Win more gold in the Mines to upgrade your village.');
+    c.gold = 500;
+    e.buildsToday = CONFIG.empire.buildsPerDay;
+    expect(nextVillageStep(c).say).toBe('All done for today. Come back tomorrow.');
   });
-  it('does not ask for gold when the purse is empty', () => {
-    const c = fresh(); const e = empireOf(c);
-    e.vault = 0; c.gold = 0;
-    expect(nextEmpireStep(e, c).putIn).toBeUndefined();
+  it('never uses the old words', () => {
+    const c = fresh();
+    for (const gold of [0, 500]) {
+      c.gold = gold;
+      expect(nextVillageStep(c).say).not.toMatch(/vault|develop|draft|energy|land/i);
+    }
   });
 });
 

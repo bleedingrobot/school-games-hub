@@ -169,6 +169,8 @@ export interface TargetEntry {
   allowed: boolean;
   /** Why not, in kind words; empty when allowed. */
   say: string;
+  /** The last New Zealand day it is shielded, when that is today or later. */
+  shieldUntil?: number;
 }
 
 const partyOf = (id: string, empire: Empire, createdNzDay: number, gold = 0): Party => ({ id, empire: { ...empire, createdDay: createdNzDay }, gold });
@@ -179,7 +181,7 @@ export function raidTargetList(state: ServerState, today: number, self: string, 
   const list = sketches.map((s): TargetEntry => {
     const defender = partyOf(s.id, { ...newEmpire(), troops: s.troops, shieldUntil: s.shieldUntil }, s.createdNzDay);
     const refused = raidRefusal(attacker, defender, today, raidsOn);
-    return { id: s.id, name: s.name, allowed: !refused, say: refused ? refused.say : '' };
+    return { id: s.id, name: s.name, allowed: !refused, say: refused ? refused.say : '', ...(s.shieldUntil >= today ? { shieldUntil: s.shieldUntil } : {}) };
   });
   return [...list.filter((t) => t.allowed), ...list.filter((t) => !t.allowed)];
 }
