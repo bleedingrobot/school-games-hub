@@ -41,6 +41,7 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
       </ul>
       <h3>Coins come from maths</h3>
       <ul>
+        <li><b>Supply chest:</b> before every bot fight, {SHORT_QUESTIONS} questions for {COINS_PER_RIGHT} coins each, to spend as you pack.</li>
         <li><b>Loot chest:</b> after every fight, {SHORT_QUESTIONS} questions ({SHORT_SECONDS} seconds each). Each right answer earns {CHEST_WIN_COINS} coins if you won, {CHEST_LOSS_COINS} if you didn't.</li>
         <li><b>Restock:</b> between rounds of a bot fight, {SHORT_QUESTIONS} quick questions for {COINS_PER_RIGHT} coins each.</li>
         <li><b>Speed round:</b> {ROUND_QUESTIONS} questions from your maths. The first has {FIRST_SECONDS} seconds, the next 9, and so on down to {LAST_SECONDS}. {COINS_PER_RIGHT} coins for each one right in time.</li>

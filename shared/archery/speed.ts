@@ -5,6 +5,7 @@
  * - speed:   the speed round on Home. 10 questions; the first has 10 seconds, the next 9 … down to 5 (never less).
  * - chest:   the loot chest after a fight. 3 questions, 10 seconds each; more coins if you won.
  * - restock: between rounds of a bot fight. 3 questions, 10 seconds each.
+ * - supply:  a supply chest before a bot fight, before packing. 3 questions, 10 seconds each.
  *
  * Each right answer in time earns coins, plus a streak bonus from the third right in a row. Coins from maths stop for
  * the day at DAILY_COINS (sets after that are practice: the maths still counts).
@@ -18,8 +19,8 @@ import type { FactStats } from '../maths/leitner';
 import type { Question } from '../maths/skillPack';
 import { makeSpacePack, pickSpaceQuestion, type MathsQuestionSettings } from '../space/mathsQuestion';
 
-export type SetKind = 'speed' | 'chest' | 'restock';
-export const SET_KINDS: readonly SetKind[] = ['speed', 'chest', 'restock'];
+export type SetKind = 'speed' | 'chest' | 'restock' | 'supply';
+export const SET_KINDS: readonly SetKind[] = ['speed', 'chest', 'restock', 'supply'];
 
 /** Questions in a speed round, the seconds for the first (each next one has a second less), and the least. */
 export const ROUND_QUESTIONS = 10;

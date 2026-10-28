@@ -35,6 +35,8 @@ type Screen =
   | { kind: 'home' }
   | { kind: 'pick' }
   | { kind: 'pack' }
+  /** The supply chest before a bot fight (then packing). */
+  | { kind: 'supply' }
   | { kind: 'fight'; fight: FightStart }
   | { kind: 'speed'; from: 'home' | 'armory' }
   /** The loot chest after a classmate fight. */
@@ -261,8 +263,16 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
     case 'pick':
       body = (
         <PickScreen
-          world={world} level={level} onWorld={setWorld} onLevel={setLevel} onBack={home} onNext={() => setScreen({ kind: 'pack' })}
+          world={world} level={level} onWorld={setWorld} onLevel={setLevel} onBack={home} onNext={() => setScreen({ kind: 'supply' })}
           onClassmate={matesOn ? () => { setMateWorld(world); setScreen({ kind: 'classmates' }); } : undefined}
+        />
+      );
+      break;
+    case 'supply':
+      body = (
+        <SpeedRound
+          key="supply" api={api} coins={state.coins} coinsLeft={coinsLeft} set={{ kind: 'supply' }}
+          onCoins={setCoins} onCoinsLeft={setCoinsLeft} onExit={() => setScreen({ kind: 'pack' })} exitLabel="Pack your quiver"
         />
       );
       break;
@@ -283,7 +293,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
             onExit={home}
             onFinished={(shots) => finished(f, shots)}
             onLeave={(shots) => void leaveFight(f, shots)}
-            onPlayAgain={() => setScreen({ kind: 'pack' })}
+            onPlayAgain={() => setScreen({ kind: 'supply' })}
             onRoundOver={(played) => setOverFight({ set: { kind: 'restock', fight: f.fight, step: played } })}
           />
           {overFight && (

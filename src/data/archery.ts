@@ -68,6 +68,7 @@ export interface RoundQuestion {
 /** Which question set to start: a speed round, the loot chest after a fight, or a restock between rounds. */
 export type SetRequest =
   | { kind: 'speed' }
+  | { kind: 'supply' }
   | { kind: 'chest'; fight: number }
   | { kind: 'chest'; duel: number }
   | { kind: 'restock'; fight: number; step: number };
