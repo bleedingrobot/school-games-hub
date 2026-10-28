@@ -53,7 +53,7 @@ export function botEmpire(clan: Clan, seed: number, reserve = 0): EmpireDay {
   joinFollowers(clan);
 
   // Build the next things in the order, as far as gold and the day's builds go; save up when the next one is too dear.
-  for (let n = 0; n < E.buildsPerDay; n++) {
+  for (let n = 0; n < E.buildsPerDay + E.buildsSavedMax; n++) {
     const next = nextToBuild(e);
     if (!next) break;
     if (clan.gold - reserve < upgradeCost(next, e.levels[next] + 1)) break;

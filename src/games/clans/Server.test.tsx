@@ -118,16 +118,16 @@ describe('Clan Quest with a server', () => {
     render(<ClanQuest server={server} />);
     await screen.findByRole('heading', { name: 'Red Banner' });
     await u.click(btn('My Village'));
-    await u.click(btn('Upgrade Barracks to level 1 for 150 gold'));
+    await u.click(btn('Upgrade Barracks to level 1 for 50 gold'));
     await u.click(btn('Show me how'));
     await u.click(btn('Next question'));
     await u.click(btn('Show me how'));
-    await u.click(btn('Upgrade for 150 gold'));
+    await u.click(btn('Upgrade for 50 gold'));
     expect(box.sent).toContainEqual({ type: 'upgrade', building: 'barracks' });
     await waitFor(() => expect(empireOf(box.saved!.clan).levels.barracks).toBe(1));
-    expect(box.saved!.clan.gold).toBe(50);
+    expect(box.saved!.clan.gold).toBe(150);
     await u.click(btn('Carry on'));
-    expect(screen.getByText(/Builds left today/)).toHaveTextContent('Builds left today: 1 of 2');
+    expect(screen.getByText(/Builds left:/)).toHaveTextContent('Builds left: 1');
   });
 
   it('shows the kind reason from the server when an upgrade is refused', async () => {
@@ -138,12 +138,12 @@ describe('Clan Quest with a server', () => {
     await u.click(btn('My Village'));
     // Somebody else (another Chromebook) used both builds today: the server refuses and its answer replaces the screen.
     empireOf(box.saved!.clan).buildsToday = 2;
-    await u.click(btn('Upgrade Smithy to level 1 for 150 gold'));
+    await u.click(btn('Upgrade Smithy to level 1 for 50 gold'));
     await u.click(btn('Show me how'));
     await u.click(btn('Next question'));
     await u.click(btn('Show me how'));
-    await u.click(btn('Upgrade for 150 gold'));
-    expect(await screen.findByText(/Your builders have done 2 jobs today/)).toBeInTheDocument();
+    await u.click(btn('Upgrade for 50 gold'));
+    expect(await screen.findByText(/Your builders have done every job they can/)).toBeInTheDocument();
   });
 
   it('does the quest with the typed answer, and shows what the server paid', async () => {

@@ -292,16 +292,16 @@ describe('My Village with a server', () => {
     const { server, t } = box();
     render(<ClanQuest server={server} />);
     await u.click(await screen.findByRole('button', { name: 'My Village' }));
-    await u.click(btn('Upgrade Smithy to level 1 for 150 gold'));
+    await u.click(btn('Upgrade Smithy to level 1 for 50 gold'));
     await u.click(btn('Show me how'));
     await u.click(btn('Next question'));
     await u.click(btn('Show me how'));
-    await u.click(btn('Upgrade for 150 gold'));
+    await u.click(btn('Upgrade for 50 gold'));
     await u.click(btn('Carry on'));
     await screen.findByText('Level 1 of 6');
     expect(t.sent).toEqual([{ type: 'load' }, { type: 'upgrade', building: 'smithy' }]);
     expect(empireOf(t.saved.clan).levels.smithy).toBe(1);
-    expect(t.saved.clan.gold).toBe(CONFIG.startGold - 150);
+    expect(t.saved.clan.gold).toBe(CONFIG.startGold - 50);
   });
 
   it('sends a kingdom raid with just the push', async () => {

@@ -6,6 +6,7 @@
 import type { Action, Result, ShownFight } from '../../../shared/clans/actions';
 import type { Clan } from '../../../shared/clans/types';
 import type { PracticalSettings } from '../../../shared/maths/practical';
+import type { SeasonClock } from '../../../shared/clans/season';
 import type { Session } from './session';
 
 /** The clan as the server describes it (the same as `publicState` in the server function). */
@@ -31,11 +32,13 @@ export interface ServerClan {
   season: number;
   fightsPerDay: number;
   achievements: string[];
+  /** The season clock (null when the server does not know it yet, or an older server). */
+  clock?: SeasonClock | null;
 }
 
 export type ServerReply =
-  | { ok: true; replayed: boolean; seed: number; state: ServerClan | null; result: Result }
-  | { ok: false; why: string; say: string; seed: number; state: ServerClan | null };
+  | { ok: true; replayed: boolean; seed: number; state: ServerClan | null; result: Result; newSeason?: true }
+  | { ok: false; why: string; say: string; seed: number; state: ServerClan | null; newSeason?: true };
 
 /** Sends one action and gives the server's answer. Rejects if the server cannot be reached. */
 export interface ClanServer {
@@ -49,6 +52,7 @@ export function sessionFrom(state: ServerClan, previous?: Session | null): Sessi
     examined: state.examined, settings: state.settings, depth: previous?.depth ?? 0, fight: state.fight, news: state.news,
     notes: state.notes, raidsOn: state.raidsOn,
     fame: state.fame, season: state.season, fightsPerDay: state.fightsPerDay, achievements: state.achievements,
+    clock: state.clock ?? null,
   };
 }
 

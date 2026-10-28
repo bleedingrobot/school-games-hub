@@ -23,8 +23,11 @@ import { Quest } from './Quest';
 import { QUESTS } from '../../../shared/clans/quests';
 import { Training } from './Training';
 import { Scoreboard } from './Scoreboard';
+import type { HallRow } from '../../data/clans';
 import { HowToPlay } from './HowToPlay';
-import { Achievements, Celebration } from './Achievements';
+import { Achievements, Celebration, VillageDone } from './Achievements';
+import { SeasonLine } from './SeasonLine';
+import { empireOf, villageComplete } from '../../../shared/clans/empire';
 import { awardNext, giveFame, newSeason, type ScoreRow } from './fame';
 import { ACHIEVEMENTS, fameFor, type AchievementDef } from '../../../shared/clans/rewards';
 import { averageLevel, earn, finishFight, newSession, skipDay, type FightSummary, type Session } from './session';
@@ -108,7 +111,7 @@ function SettingsStrip({ session, onChange, open }: { session: Session; onChange
  * With a `server`, the clan lives on the server: it is loaded when this opens, every change is sent as an action, and
  * what the server answers replaces the browser's copy. With none (the test page), everything stays in the browser.
  */
-export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board, typedNames = false }: { seed?: number; initial?: Session | null; server?: ClanServer; board?: () => Promise<ScoreRow[]>; typedNames?: boolean }) {
+export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board, hall, typedNames = false }: { seed?: number; initial?: Session | null; server?: ClanServer; board?: () => Promise<ScoreRow[]>; hall?: () => Promise<HallRow[] | null>; typedNames?: boolean }) {
   const [session, setSession] = useState<Session | null>(initial);
   const [screen, setScreen] = useState<Screen>('home');
   const [boss, setBoss] = useState(false);
@@ -125,6 +128,11 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   /** Achievements just earned, shown with a small celebration. The first clan the screen sees is not celebrated: those were earned before. */
   const [celebrate, setCelebrate] = useState<AchievementDef[]>([]);
   const knownAchievements = useRef<string[] | null>(null);
+  /** Was the village complete the last time we looked? (null until the first clan is seen: that one is not celebrated.) */
+  const knownComplete = useRef<boolean | null>(null);
+  const [villageDone, setVillageDone] = useState(false);
+  /** The reply said a new season has just begun. */
+  const [newSeasonNotice, setNewSeasonNotice] = useState(false);
   /** The fame the last fight earned (the server's word), for the results screen. */
   const fameEarned = useRef(0);
   /** When a new screen opens, focus its heading so a keyboard or screen-reader user starts at the top of it (not on a button that is gone). */
@@ -157,8 +165,17 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
     }
     const before = knownAchievements.current;
     knownAchievements.current = now;
-    const fresh = ACHIEVEMENTS.filter((a) => now.includes(a.id) && !before.includes(a.id));
+    // The Master Builder badge has its own dialog (below), so it is left out of the small celebration.
+    const fresh = ACHIEVEMENTS.filter((a) => now.includes(a.id) && !before.includes(a.id) && a.id !== 'cq-master-builder');
     if (fresh.length) setCelebrate(fresh);
+  }, [session]);
+
+  useEffect(() => {
+    if (!session) return;
+    const complete = villageComplete(empireOf(session.clan));
+    const before = knownComplete.current;
+    knownComplete.current = complete;
+    if (before === false && complete) setVillageDone(true);
   }, [session]);
 
   /** How many actions have been sent and not answered yet. */
@@ -167,6 +184,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
   /** Take the server's word. While more actions are still on their way, only the last answer is shown, so the screen does not flicker back. */
   const take = (reply: ServerReply) => {
     setServerSeed(reply.seed);
+    if (reply.newSeason) setNewSeasonNotice(true);
     if (waiting.current === 0) {
       setSession((previous) => (reply.state ? sessionFrom(reply.state, previous) : previous));
       // A fight is open on the server (this was opened after a refresh, or on another Chromebook): go straight back to it.
@@ -350,6 +368,13 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
       </header>
       {quest ? <Scene key={`quest-${quest.id}`} name={`quest-${quest.id}`} art={questArt(quest.title)} /> : scene && <Scene key={scene} name={scene} art={sceneArt(scene)} />}
       <Celebration fresh={celebrate} onClose={() => setCelebrate([])} />
+      {villageDone && <VillageDone onClose={() => setVillageDone(false)} />}
+      {newSeasonNotice && (
+        <div className="cq-celebrate" role="status">
+          <p>A new season has begun! Your clan starts fresh. Your badges and the Hall of Legends stay forever.</p>
+          <button type="button" className="cq-btn" onClick={() => setNewSeasonNotice(false)}>OK</button>
+        </div>
+      )}
       {notice && <p className="cq-note" role="alert">{notice}</p>}
       {loading === 'loading' ? (
         <p role="status">Opening your clan…</p>
@@ -391,6 +416,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
                 </div>
               )}
               <p>Gold: <strong>{session.clan.gold}</strong> · Followers: <strong>{session.clan.followers}</strong> · Average level: <strong>{Math.round(averageLevel(session.clan) * 10) / 10}</strong> · Fame: <strong>{session.fame ?? 0}</strong> (season {session.season ?? 1})</p>
+              <SeasonLine clock={session.clock} />
               <div className="cq-actions">
                 <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('mines')}>Go to the Mines</button>
                 <button type="button" className="cq-btn" onClick={() => setScreen('market')}>The Market</button>
@@ -414,7 +440,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
           {screen === 'myvillage' && <MyVillage session={session} onChange={change} onBack={() => setScreen('home')} onRaid={() => setScreen('raid')} onClassRaid={() => setScreen('classraid')} />}
           {screen === 'raid' && <Raid session={session} onChange={change} onBack={() => setScreen('myvillage')} />}
           {screen === 'news' && <News session={session} onBack={() => setScreen('home')} />}
-          {screen === 'scoreboard' && <Scoreboard session={session} load={board} onBack={() => setScreen('home')} />}
+          {screen === 'scoreboard' && <Scoreboard session={session} load={board} hall={hall} onBack={() => setScreen('home')} />}
           {screen === 'howto' && <HowToPlay fightsPerDay={session.fightsPerDay} onBack={() => setScreen('home')} />}
           {screen === 'achievements' && <Achievements session={session} onBack={() => setScreen('home')} />}
           {screen === 'classraid' && <ClassRaid session={session} ask={ask} onSession={setSession} onBack={() => setScreen('myvillage')} />}

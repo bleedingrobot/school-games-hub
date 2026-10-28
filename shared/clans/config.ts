@@ -43,20 +43,22 @@ export const CONFIG = {
   empire: {
     /** Upgrades a clan may make a day, in total, across all its buildings. */
     buildsPerDay: 2,
+    /** Builds not used pile up, up to this many extra (so at most buildsPerDay + this are available on one day). */
+    buildsSavedMax: 4,
     /**
      * The eight buildings. `max` is the top level; going up to level n costs `base` times n gold, from the clan purse.
      * `per` is what each level does, in percent (or gold for the strongroom). The Training Hall, Smithy and Church keep their
      * old effects (trainCost, the shop and churchPerLevel/freeWakes read the level), so they have no `per`.
      */
     buildings: {
-      trainingHall: { max: 5, base: 150, per: 0 },
-      smithy: { max: 6, base: 150, per: 0 },
-      church: { max: 3, base: 150, per: 0 },
-      barracks: { max: 5, base: 150, per: 0 },
-      walls: { max: 5, base: 150, per: 10 },
-      tower: { max: 5, base: 150, per: 10 },
-      forge: { max: 5, base: 150, per: 10 },
-      strongroom: { max: 5, base: 150, per: 200 },
+      trainingHall: { max: 5, base: 50, per: 0 },
+      smithy: { max: 6, base: 50, per: 0 },
+      church: { max: 3, base: 50, per: 0 },
+      barracks: { max: 5, base: 50, per: 0 },
+      walls: { max: 5, base: 50, per: 10 },
+      tower: { max: 5, base: 50, per: 10 },
+      forge: { max: 5, base: 50, per: 10 },
+      strongroom: { max: 5, base: 50, per: 200 },
     } satisfies Record<VillageBuilding, { max: number; base: number; per: number }>,
     /** The width of each building's plan; its length is the level plus `planLengthExtra` (the area and fence moment). */
     planWidth: { trainingHall: 4, smithy: 3, church: 4, barracks: 3, walls: 2, tower: 2, forge: 3, strongroom: 2 } satisfies Record<VillageBuilding, number>,
@@ -153,6 +155,11 @@ export const CONFIG = {
     /** Mine fights a day a teacher may choose (the default is `fightsPerDay`). */
     fightsPerDayRange: { min: 1, max: 30 },
   },
+  /**
+   * The season (5 weeks, days are 1-based: day 1 to `length`). From day `warnFrom` to the end (the "last two weeks")
+   * raids on classmates rest. From day `monsterFrom` it is monster week (used later). Finishing the village earns `villageReward`.
+   */
+  season: { length: 35, warnFrom: 22, monsterFrom: 29, villageReward: { fame: 50, points: 10 } },
   /** How much a Battle Cry answer adds. */
   battleCryDamage: 1.25,
   battleCryHeal: 0.2,

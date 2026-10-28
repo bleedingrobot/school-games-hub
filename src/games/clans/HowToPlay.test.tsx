@@ -37,7 +37,7 @@ describe('How to play', () => {
     }
     for (const section of screen.getAllByRole('region')) {
       const words = (section.textContent ?? '').split(/\s+/).length;
-      expect(words, section.getAttribute('aria-labelledby') ?? 'page').toBeLessThan(section.classList.contains('cq-howtoplay') ? 700 : 80);
+      expect(words, section.getAttribute('aria-labelledby') ?? 'page').toBeLessThan(section.classList.contains('cq-howtoplay') ? 900 : 80);
     }
   });
 

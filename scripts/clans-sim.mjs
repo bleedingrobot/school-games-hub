@@ -1,5 +1,5 @@
 // Plays bot clans through many days of Clan Quest and prints how fast they grow and how often they win.
-// Run from the project folder with: npm run clans:sim  [-- --days 60] [-- --seeds 20] [-- --maths 0.7] [-- --offset 0] [-- --empire 1]
+// Run from the project folder with: npm run clans:sim  [-- --days 60] [-- --seeds 20] [-- --maths 0.7] [-- --offset 0] [-- --empire 1] [-- --play 7]  (--play = days a week the clan plays)
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -16,6 +16,7 @@ const SEEDS = Number(option('seeds', 20));
 const MATHS = Number(option('maths', 0.7));
 const OFFSET = Number(option('offset', 0));
 const EMPIRE = option('empire', '0') !== '0';
+const PLAY = Math.max(1, Math.min(7, Number(option('play', 7))));
 
 const dir = mkdtempSync(join(tmpdir(), 'clans-sim-'));
 const entryFile = join(process.cwd(), `.clans-sim-entry-${process.pid}.ts`);
@@ -35,8 +36,8 @@ const pct = (n) => `${(n * 100).toFixed(0)}%`;
 const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
 for (const lineup of ['balanced', 'fighters']) {
   const runs = [];
-  for (let seed = 1; seed <= SEEDS; seed++) runs.push(simulate({ days: DAYS, seed, lineup, mathsRate: MATHS, depthOffset: OFFSET, empire: EMPIRE }));
-  console.log(`\n${lineup}: ${SEEDS} clans, ${DAYS} days, maths ${pct(MATHS)}, depth offset ${OFFSET}`);
+  for (let seed = 1; seed <= SEEDS; seed++) runs.push(simulate({ days: DAYS, seed, lineup, mathsRate: MATHS, depthOffset: OFFSET, empire: EMPIRE, playDays: PLAY }));
+  console.log(`\n${lineup}: ${SEEDS} clans, ${DAYS} days, maths ${pct(MATHS)}, depth offset ${OFFSET}, plays ${PLAY} days a week`);
   console.log(`win rate ${pct(mean(runs.map((r) => r.wins / r.fights)))} | knocked out per day ${mean(runs.map((r) => mean(r.days.map((d) => d.knockOuts)))).toFixed(2)} | rounds per fight ${mean(runs.map((r) => mean(r.days.map((d) => d.rounds / Math.max(1, d.fights))))).toFixed(1)} | SP spent per fight ${mean(runs.map((r) => mean(r.days.map((d) => d.spSpent / Math.max(1, d.fights))))).toFixed(1)}`);
   const maxed = runs.filter((r) => r.dayAtMax !== null);
   console.log(`reached level 20: ${maxed.length}/${SEEDS}${maxed.length ? ` (day ${mean(maxed.map((r) => r.dayAtMax)).toFixed(0)} on average)` : ''} | boss wins per clan ${mean(runs.map((r) => r.bossWins)).toFixed(1)}`);
@@ -51,6 +52,8 @@ for (const lineup of ['balanced', 'fighters']) {
     const done = allMaxDays.filter((d) => d !== null);
     const sorted = [...done].sort((a, b) => a - b);
     console.log(`village all-max: ${done.length}/${SEEDS} clans by day ${DAYS}${done.length ? ` | day ${mean(done).toFixed(0)} on average (earliest ${sorted[0]}, median ${sorted[Math.floor(sorted.length / 2)]}, latest ${sorted[sorted.length - 1]}) = ${(mean(done) / 7).toFixed(1)} weeks` : ''}`);
+    const levelsAt = (d) => (d <= DAYS ? mean(runs.map((r) => r.days[d - 1].empire.levels)).toFixed(1) : 'n/a');
+    console.log(`village complete (play ${PLAY} days a week): ${done.length ? `day ${mean(done).toFixed(0)} on average` : 'none'}, ${done.length}/${SEEDS} clans | levels of 39 at day 21: ${levelsAt(21)}, day 28: ${levelsAt(28)}, day 35: ${levelsAt(35)}`);
     console.log('village: day | purse (lowest) | purse (avg) | barracks lvl | building levels (of 39) | army strength | raid gold | strength lost');
     for (const day of [3, 5, 7, 10, 14, 21, 28, 35, 42, 56, 70].filter((d) => d <= DAYS)) {
       const ds = runs.map((r) => r.days[day - 1]);

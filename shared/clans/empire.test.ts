@@ -4,7 +4,7 @@ import { CONFIG } from './config';
 import {
   KINGDOMS, area, barracksFor, battle, buildsLeft, buyTroops, canUpgrade, capacity, cleanPlan, empireNewDay, empireOf, fence, fixedPlan, friendlyWar, joinFollowers, kingdomSide, levelOf, levelTotal, lootGold,
   maxLevel, might, needsUpgrade, newEmpire, noTroops, planOf, RAIDABLE, raidClassmate, raidKingdom, raidNews, raidRefusal, room, safeGold, sideOf, syncVillage, totalCostToMax, upgrade, upgradeCost, upgradeSave,
-  type Party, type Side,
+  VILLAGE_TOTAL, villageComplete, villageLevels, type Party, type Side,
 } from './empire';
 import { barracksNeeded, landPlot, lootShare, troopBill } from './moments';
 import { botOrders } from './bot';
@@ -634,12 +634,12 @@ describe('the whole thing with the simulator', () => {
   const run = (lineup: 'balanced' | 'fighters', empire: boolean, days = 35, seeds = 6) => Array.from({ length: seeds }, (_, i) => simulate({ days, seed: i + 1, lineup, mathsRate: 0.7, depthOffset: 0, empire }));
   const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
-  it('a clan fills its whole village in about 4 to 5 weeks, and the purse never goes below nothing', () => {
+  it('a clan fills its whole village within 3 to 4 weeks, and the purse never goes below nothing', () => {
     for (const lineup of ['balanced', 'fighters'] as const) {
       const runs = run(lineup, true, 45);
       const first = runs.map((r) => r.days.find((d) => d.empire!.allMax)?.day ?? Infinity);
-      expect(mean(first), lineup).toBeGreaterThanOrEqual(24);
-      expect(mean(first), lineup).toBeLessThanOrEqual(35);
+      expect(mean(first), lineup).toBeGreaterThanOrEqual(17);
+      expect(mean(first), lineup).toBeLessThanOrEqual(28);
       for (const r of runs) for (const d of r.days) expect(d.gold).toBeGreaterThanOrEqual(0);
     }
   });
@@ -673,5 +673,62 @@ describe('the whole thing with the simulator', () => {
     const e = newEmpire(3);
     expect(JSON.parse(JSON.stringify(e))).toEqual(e);
     expect(sideOf(e).troops).toEqual(noTroops());
+  });
+});
+
+describe('saved builds', () => {
+  it('every building costs 50 a level at base, and the village is 39 levels', () => {
+    for (const b of VILLAGE_BUILDINGS) expect(E.buildings[b].base).toBe(50);
+    expect(E.buildsSavedMax).toBe(4);
+    expect(VILLAGE_TOTAL).toBe(39);
+  });
+
+  it('banks unused builds when a day ends, and keeps at most buildsSavedMax', () => {
+    const clan = clanWith();
+    const e = empireOf(clan);
+    empireNewDay(clan);
+    expect(e.buildsSaved).toBe(2);
+    expect(buildsLeft(e)).toBe(4);
+    empireNewDay(clan);
+    expect(e.buildsSaved).toBe(4);
+    empireNewDay(clan);
+    expect(e.buildsSaved).toBe(E.buildsSavedMax);
+    expect(buildsLeft(e)).toBe(E.buildsPerDay + E.buildsSavedMax);
+  });
+
+  it('banks only the builds that were not used, and a missed day gives a full set', () => {
+    const clan = clanWith();
+    const e = empireOf(clan);
+    e.buildsToday = 1;
+    empireNewDay(clan);
+    expect(e.buildsSaved).toBe(1);
+    empireNewDay(clan, 1);
+    expect(e.buildsSaved).toBe(4);
+  });
+
+  it('uses today\'s builds first and a saved one only when they are gone', () => {
+    const clan = clanWith();
+    const e = empireOf(clan);
+    e.buildsSaved = 3;
+    expect(upgrade(clan, 'tower').ok).toBe(true);
+    expect(upgrade(clan, 'forge').ok).toBe(true);
+    expect([e.buildsToday, e.buildsSaved]).toEqual([2, 3]);
+    expect(upgrade(clan, 'walls').ok).toBe(true);
+    expect([e.buildsToday, e.buildsSaved]).toEqual([2, 2]);
+    expect(buildsLeft(e)).toBe(2);
+    e.buildsSaved = 0;
+    expect(upgrade(clan, 'church')).toMatchObject({ ok: false, why: 'builds', say: 'Your builders have done every job they can. They start again tomorrow!' });
+  });
+
+  it('counts a village as complete only when every building is at its top level', () => {
+    const clan = clanWith(0);
+    const e = empireOf(clan);
+    expect(villageLevels(e)).toBe(0);
+    expect(villageComplete(e)).toBe(false);
+    for (const b of VILLAGE_BUILDINGS) e.levels[b] = maxLevel(b);
+    expect(villageLevels(e)).toBe(VILLAGE_TOTAL);
+    expect(villageComplete(e)).toBe(true);
+    e.levels.walls--;
+    expect(villageComplete(e)).toBe(false);
   });
 });

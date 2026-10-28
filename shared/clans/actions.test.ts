@@ -7,6 +7,7 @@ import { battle, empireOf, fixedPlan, kingdomById, kingdomSide, needsUpgrade, si
 import { ITEMS } from './gamedata';
 import { raidSeed } from './play';
 import { QUESTS, buildPuzzle, puzzleFor, todaysQuest } from './quests';
+import type { SeasonClock } from './season';
 import { DEFAULT_PRACTICAL_SETTINGS } from '../maths/practical';
 
 const SEED = 123456;
@@ -515,5 +516,100 @@ describe('whatever is sent, the clan stays sensible', () => {
       const e = empireOf(s.clan);
       expect([s.clan.gold, s.clan.followers, e.buildsToday, ...Object.values(e.levels), e.troops.footman, e.troops.axeman, e.troops.knight, ...s.clan.members.map((m) => m.points)].every((n) => n >= 0 && Number.isFinite(n))).toBe(true);
     }
+  });
+});
+
+describe('saved builds across days', () => {
+  it('a clan away for three days saves builds for the days it missed (up to the cap)', () => {
+    const s = created();
+    const out = ok(s, { type: 'load' }, { today: DAY0 + 3 });
+    // Day 1's two builds were unused, plus two missed days: 6, capped at 4.
+    expect(empireOf(out.state.clan).buildsSaved).toBe(CONFIG.empire.buildsSavedMax);
+    const short = ok(s, { type: 'load' }, { today: DAY0 + 2 });
+    // Day 1's two unused builds and one missed day: 4.
+    expect(empireOf(short.state.clan).buildsSaved).toBe(4);
+  });
+
+  it('catchUp passes the missed days on', () => {
+    const s = created();
+    expect(catchUp(s, DAY0 + 1)).toBe(true);
+    expect(empireOf(s.clan).buildsSaved).toBe(2);
+  });
+});
+
+describe('the season', () => {
+  const clock = (over: Partial<SeasonClock> = {}): SeasonClock => ({ number: 2, day: 5, daysLeft: 31, clockOn: true, ...over });
+
+  it('stamps a save with no season with the current one, without resetting', () => {
+    const s = rich(created());
+    const out = ok(s, { type: 'load' }, { clock: clock() });
+    expect(out.changed).toBe(true);
+    expect(out.newSeason).toBeUndefined();
+    expect(out.state.clan.season).toBe(2);
+    expect(out.state.clan.gold).toBe(5000);
+    expect(ok(out.state, { type: 'load' }, { clock: clock() }).changed).toBe(false);
+  });
+
+  it('does not stamp when there is no season date yet (number 0) or no clock', () => {
+    const s = created();
+    expect(ok(s, { type: 'load' }, { clock: clock({ number: 0, clockOn: false }) }).state.clan.season).toBeUndefined();
+    expect(ok(s, { type: 'load' }).state.clan.season).toBeUndefined();
+  });
+
+  it('starts the clan again when the clock is on and its season is older', () => {
+    const s = rich(created());
+    s.clan.season = 1;
+    s.clan.members[0].level = 7;
+    const out = ok(s, { type: 'load' }, { clock: clock() });
+    expect(out.changed).toBe(true);
+    expect(out.newSeason).toBe(true);
+    expect(out.state.clan).toMatchObject({ season: 2, gold: CONFIG.startGold });
+    expect(out.state.clan.members[0].level).toBe(1);
+  });
+
+  it('does the action on the fresh save, and a refused action is not a reset in disguise', () => {
+    const s = rich(created());
+    s.clan.season = 1;
+    const out = ok(s, { type: 'upgrade', building: 'smithy' }, { clock: clock() });
+    expect(out.newSeason).toBe(true);
+    expect(out.state.clan.gold).toBe(CONFIG.startGold - CONFIG.empire.buildings.smithy.base);
+    expect(empireOf(out.state.clan).levels.smithy).toBe(1);
+  });
+
+  it('waits when the clock is off, when the season is current, or while a fight is open', () => {
+    const s = rich(created());
+    s.clan.season = 1;
+    expect(ok(s, { type: 'load' }, { clock: clock({ clockOn: false }) }).state.clan.gold).toBe(5000);
+    const current = structuredClone(s);
+    current.clan.season = 2;
+    expect(ok(current, { type: 'load' }, { clock: clock() }).newSeason).toBeUndefined();
+    const fighting = ok(s, { type: 'fightStart', depth: 0, boss: false }).state;
+    fighting.clan.season = 1;
+    const out = ok(fighting, { type: 'load' }, { clock: clock() });
+    expect(out.newSeason).toBeUndefined();
+    expect(out.state.clan.season).toBe(1);
+    expect(out.state.fight).toBeTruthy();
+  });
+
+  it('rests raids on classmates from day 22 and still lists nothing, with a flag', () => {
+    const s = created();
+    const target = { id: 'pid-2', name: 'Blue Flag', createdNzDay: DAY0 - 20, empire: empireOf(created().clan), gold: 500 };
+    const early = ok(s, { type: 'raidTargets' }, { clock: clock({ day: 21 }), self: 'pid-1', raidsOn: true, mates: [] });
+    expect(early.result).toEqual({ type: 'raidTargets', targets: [] });
+    const late = ok(s, { type: 'raidTargets' }, { clock: clock({ day: 22 }), self: 'pid-1', raidsOn: true, mates: [] });
+    expect(late.result).toEqual({ type: 'raidTargets', targets: [], resting: true });
+    const raid = refused(s, { type: 'raidClass', target: 'pid-2', take: 'gold', push: 'steady' }, { clock: clock({ day: 30 }), self: 'pid-1', raidsOn: true, target: target as never });
+    expect(raid.why).toBe('resting-season');
+    expect(raid.say).toBe('Raids on classmates rest for the last two weeks of the season. Computer kingdoms are still open!');
+    // Computer kingdoms stay open.
+    const withTroops = rich(created());
+    empireOf(withTroops.clan).troops.footman = 10;
+    expect(applyAction(withTroops, { type: 'raid', kingdom: 'bunny-hollow', push: 'steady' }, ctx({ clock: clock({ day: 30 }) })).ok).toBe(true);
+  });
+
+  it('does not rest raids when the clock is off', () => {
+    const s = created();
+    const late = ok(s, { type: 'raidTargets' }, { clock: clock({ day: 30, clockOn: false }), self: 'pid-1', raidsOn: true, mates: [] });
+    expect(late.result).toEqual({ type: 'raidTargets', targets: [] });
   });
 });

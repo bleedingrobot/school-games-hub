@@ -412,3 +412,12 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 .cq-bcard__text { display: grid; gap: 4px; min-width: 0; }
 .cq-bcard__text h3, .cq-bcard__text p { margin: 0; }
 .cq-bcard__level { font-weight: 700; }
+
+/* Season goals: the village bar, the golden ribbon, the Hall of Legends and the village-complete dialog. */
+.cq-goal { margin: 8px 0; }
+.cq-goal__bar { height: 14px; border: 2px solid var(--cq-soft); border-radius: 3px; background: var(--f-deep, #05050c); overflow: hidden; }
+.cq-goal__fill { display: block; height: 100%; background: #c9a227; }
+.cq-goal--done .cq-goal__fill { background: #e6b800; }
+.cq-ribbon { margin: 8px 0; padding: 8px 12px; text-align: center; font-weight: bold; color: #2b1d00; background: #e6b800; border: 2px solid #fff3b0; border-radius: 3px; }
+.cq-hall li.cq-me { color: var(--cq-yellow); }
+.cq-celebrate--village { flex-direction: column; align-items: flex-start; }

@@ -59,7 +59,7 @@ describe('My Village', () => {
     show(session());
     await toVillage(u);
     expect(screen.getByText(/What to do next:/).closest('p')!).toHaveTextContent('Build your first Barracks so troops can join you.');
-    expect(screen.getByText(/Builds left today/)).toHaveTextContent(`Builds left today: 2 of ${CONFIG.empire.buildsPerDay}`);
+    expect(screen.getByText(/Builds left:/)).toHaveTextContent(`Builds left: 2`);
     expect(screen.getByText(/Clan purse/).closest('p')!).toHaveTextContent(`Clan purse: ${CONFIG.startGold} gold`);
   });
 
@@ -80,41 +80,41 @@ describe('My Village', () => {
     const u = user();
     show(session());
     await toVillage(u);
-    await u.click(btn('Upgrade Barracks to level 1 for 150 gold'));
+    await u.click(btn('Upgrade Barracks to level 1 for 50 gold'));
     const q = landPlot(S, 'barracks', 1)!;
     expect(q.area.answer).toBe(q.width * q.length);
     await answer(u, q.area, q.area.answer);
     await u.click(btn('Next question'));
     await answer(u, q.fence, q.fence.answer);
-    await u.click(btn('Upgrade for 150 gold'));
-    expect(screen.getByRole('status')).toHaveTextContent('The Barracks is now level 1. That cost 150 gold. Builds left today: 1 of 2.');
+    await u.click(btn('Upgrade for 50 gold'));
+    expect(screen.getByRole('status')).toHaveTextContent('The Barracks is now level 1. That cost 50 gold. Builds left: 1.');
     await u.click(btn('Carry on'));
     expect(within(card('Barracks')).getByText('Level 1 of 5')).toBeInTheDocument();
-    expect(screen.getByText(/Clan purse/).closest('p')!).toHaveTextContent('Clan purse: 50 gold');
-    expect(screen.getByText(/Builds left today/)).toHaveTextContent('Builds left today: 1 of 2');
+    expect(screen.getByText(/Clan purse/).closest('p')!).toHaveTextContent('Clan purse: 150 gold');
+    expect(screen.getByText(/Builds left:/)).toHaveTextContent('Builds left: 1');
   });
 
   it('wrong answers and skipping still upgrade, and the working is shown', async () => {
     const u = user();
     show(session(rich));
     await toVillage(u);
-    await u.click(btn('Upgrade Smithy to level 1 for 150 gold'));
+    await u.click(btn('Upgrade Smithy to level 1 for 50 gold'));
     const q = landPlot(S, 'smithy', 1)!;
     await answer(u, q.area, wrongFor(q.area));
     expect(screen.getAllByRole('status')[0]).toHaveTextContent('Not quite');
     await u.click(btn('Next question'));
     await u.click(btn('Show me how'));
-    await u.click(btn('Upgrade for 150 gold'));
+    await u.click(btn('Upgrade for 50 gold'));
     await u.click(btn('Carry on'));
     expect(within(card('Smithy')).getByText('Level 1 of 6')).toBeInTheDocument();
-    expect(screen.getByText(/Clan purse/).closest('p')!).toHaveTextContent('Clan purse: 4850 gold');
+    expect(screen.getByText(/Clan purse/).closest('p')!).toHaveTextContent('Clan purse: 4950 gold');
   });
 
   it('the plan grows with the level (the area is asked about the new level)', async () => {
     const u = user();
     show(session((s) => { rich(s); empireOf(s.clan).levels.walls = 2; }));
     await toVillage(u);
-    await u.click(btn('Upgrade Walls to level 3 for 450 gold'));
+    await u.click(btn('Upgrade Walls to level 3 for 150 gold'));
     const q = landPlot(S, 'walls', 3)!;
     expect(screen.getByText(`Level 3 needs a space ${q.width} squares by ${q.length} squares.`)).toBeInTheDocument();
     expect(q.length).toBeGreaterThan(landPlot(S, 'walls', 2)!.length);
@@ -124,20 +124,20 @@ describe('My Village', () => {
     const u = user();
     show(session((s) => { rich(s); s.settings = { ...s.settings, enabledTopics: [] }; }));
     await toVillage(u);
-    await u.click(btn('Upgrade Tower to level 1 for 150 gold'));
+    await u.click(btn('Upgrade Tower to level 1 for 50 gold'));
     expect(screen.getByRole('status')).toHaveTextContent('The Tower is now level 1.');
   });
 
   it('turns an upgrade button off with the engine\'s kind reason when the gold is short', async () => {
     const u = user();
-    show(session((s) => { s.clan.gold = 100; }));
+    show(session((s) => { s.clan.gold = 30; }));
     await toVillage(u);
-    const b = btn('Upgrade Barracks to level 1 for 150 gold');
+    const b = btn('Upgrade Barracks to level 1 for 50 gold');
     expect(b).toBeDisabled();
-    expect(within(card('Barracks')).getByText('The Barracks (level 1) costs 150 gold and the clan has 100.')).toBeInTheDocument();
+    expect(within(card('Barracks')).getByText('The Barracks (level 1) costs 50 gold and the clan has 30.')).toBeInTheDocument();
     // The reason is tied to the button for screen readers.
     expect(b.getAttribute('aria-describedby')).toBeTruthy();
-    expect(document.getElementById(b.getAttribute('aria-describedby')!)).toHaveTextContent('costs 150 gold and the clan has 100');
+    expect(document.getElementById(b.getAttribute('aria-describedby')!)).toHaveTextContent('costs 50 gold and the clan has 30');
   });
 
   it('turns every upgrade off after 2 builds a day, and a new day brings them back', async () => {
@@ -148,16 +148,16 @@ describe('My Village', () => {
       await u.click(btn(new RegExp(`^Upgrade ${name} to level 1`)));
       await u.click(btn('Carry on'));
     }
-    expect(screen.getByText(/Builds left today/)).toHaveTextContent('Builds left today: 0 of 2');
+    expect(screen.getByText(/Builds left:/)).toHaveTextContent('Builds left: 0');
     const b = btn(/^Upgrade Church to level 1/);
     expect(b).toBeDisabled();
-    expect(within(card('Church')).getByText(/Your builders have done 2 jobs today/)).toBeInTheDocument();
+    expect(within(card('Church')).getByText(/Your builders have done every job they can/)).toBeInTheDocument();
     expect(screen.getByText(/What to do next:/).closest('p')!).not.toHaveTextContent(/Barracks so troops/);
     await u.click(btn('Back to the clan'));
     await u.click(btn('Skip a day'));
     await toVillage(u);
     expect(btn(/^Upgrade Church to level 1/)).toBeEnabled();
-    expect(screen.getByText(/Builds left today/)).toHaveTextContent('Builds left today: 2 of 2');
+    expect(screen.getByText(/Builds left:/)).toHaveTextContent('Builds left: 2');
   });
 
   it('says a top-level building is fully built and cannot be upgraded', async () => {

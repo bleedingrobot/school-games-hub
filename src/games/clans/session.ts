@@ -10,6 +10,7 @@ import { dayReset, depthHint, type DepthHint } from '../../../shared/clans/chara
 import type { FightState } from '../../../shared/clans/fight';
 import { fightSeed, payFight, type FightSummary } from '../../../shared/clans/play';
 import { CLASSES, RACES } from '../../../shared/clans/gamedata';
+import type { SeasonClock } from '../../../shared/clans/season';
 import type { Clan, Member } from '../../../shared/clans/types';
 import { addEarned, fameFor, measures, NO_STATS, reached, type ClanStats, type Earned } from '../../../shared/clans/rewards';
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../../../shared/maths/practical';
@@ -52,6 +53,8 @@ export interface Session {
   fame?: number;
   season?: number;
   fightsPerDay?: number;
+  /** The season clock from the server (missing on the test page, null when the server does not know it). */
+  clock?: SeasonClock | null;
   /** The ids of the achievements earned so far. */
   achievements?: string[];
   /** Test page only: the lifetime counts the achievements are measured by (the server keeps them with the clan). */

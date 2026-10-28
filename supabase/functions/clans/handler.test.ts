@@ -15,10 +15,12 @@ import type { FactAnswer } from '../../../shared/maths/leitner';
 import { parseFocus } from '../../../shared/maths/focus';
 import { DEFAULT_PRACTICAL_SETTINGS } from '../../../shared/maths/practical';
 import type { MathsContext } from '../../../shared/maths/serverQuestions';
+import { CONFIG } from '../../../shared/clans/config';
 import { makeHandler, MAX_REQUESTS_PER_MINUTE, type Extras, type Loaded, type LoadedTarget, type Outcome, type SaveStatus, type Services } from './handler';
 
 const NOW = Date.UTC(2026, 9, 19, 2, 0, 0);
 const SEED = 424242;
+const TH_COST = CONFIG.empire.buildings.trainingHall.base;
 const json = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
 /**
@@ -29,7 +31,7 @@ function fakeDb() {
   const clans = new Map<string, { version: number; state: ServerState; requests: Map<string, Result> }>();
   const seeds = new Map<string, number>();
   const log: string[] = [];
-  const flags = { enabled: true, raidsOn: false, news: ['One fight was won in the Mines yesterday.'] };
+  const flags = { enabled: true, raidsOn: false, news: ['One fight was won in the Mines yesterday.'] as string[], clock: undefined as unknown };
   const village = { news: [] as string[] };
   const group: { levels: Village | null } = { levels: null };
   const notes = new Map<string, string[]>();
@@ -85,7 +87,7 @@ function fakeDb() {
     async extras(player): Promise<Outcome<Extras>> {
       const row = clans.get(player);
       const achievements = row ? reached(measures(row.state.clan, stats.get(player) ?? NO_STATS)) : [];
-      return { ok: true, value: { settings: json(teacher), fame: fame.get(player) ?? 0, achievements } };
+      return { ok: true, value: { settings: json(teacher), fame: fame.get(player) ?? 0, achievements, ...(flags.clock !== undefined ? { clock: flags.clock } : {}) } };
     },
     async recordAnswers(player, batch, list) {
       // Like record_fact_answers: a batch seen before adds nothing.
@@ -248,11 +250,11 @@ describe('the clans server function', () => {
     const id = '00000000-0000-4000-8000-0000000000aa';
     const first = await send({ type: 'upgrade', building: 'trainingHall' }, { requestId: id });
     expect(first.body).toMatchObject({ ok: true, replayed: false });
-    // Another upgrade would be refused (the purse now has 50), but the repeat never reaches the rules.
+    // Another upgrade would be refused (the purse is short), but the repeat never reaches the rules.
     const second = await send({ type: 'upgrade', building: 'trainingHall' }, { requestId: id });
     expect(second.body).toMatchObject({ ok: true, replayed: true, result: { type: 'upgrade' } });
-    expect(second.body.state.clan.gold).toBe(50);
-    expect(clans.get('student-1')!.state.clan.gold).toBe(50);
+    expect(second.body.state.clan.gold).toBe(CONFIG.startGold - TH_COST);
+    expect(clans.get('student-1')!.state.clan.gold).toBe(CONFIG.startGold - TH_COST);
     expect(log.filter((l) => l.endsWith('upgrade'))).toHaveLength(1);
   });
 
@@ -262,7 +264,7 @@ describe('the clans server function', () => {
     const id = '00000000-0000-4000-8000-0000000000bb';
     const [a, b] = await Promise.all([send({ type: 'upgrade', building: 'trainingHall' }, { requestId: id }), send({ type: 'upgrade', building: 'trainingHall' }, { requestId: id })]);
     expect([a.status, b.status]).toEqual([200, 200]);
-    expect(clans.get('student-1')!.state.clan.gold).toBe(50);
+    expect(clans.get('student-1')!.state.clan.gold).toBe(CONFIG.startGold - TH_COST);
     expect(log.filter((l) => l.endsWith('upgrade'))).toHaveLength(1);
   });
 
@@ -278,7 +280,7 @@ describe('the clans server function', () => {
         injected = true;
         await original('student-1', 1, '00000000-0000-4000-8000-0000000000cc', 'upgrade', (() => {
           const s = json(raced.clans.get('student-1')!.state);
-          s.clan.gold -= 150;
+          s.clan.gold -= TH_COST;
           const e = empireOf(s.clan);
           e.levels.trainingHall = 1;
           e.buildsToday = 1;
@@ -294,8 +296,8 @@ describe('the clans server function', () => {
     }));
     const body = await response.json();
     expect(body.ok).toBe(true);
-    // 1000 - 150 (the request that got in first) - 150 = 700: both were paid, neither twice.
-    expect(raced.clans.get('student-1')!.state.clan.gold).toBe(700);
+    // 1000 - one training hall (the request that got in first) - one smithy: both were paid, neither twice.
+    expect(raced.clans.get('student-1')!.state.clan.gold).toBe(1000 - TH_COST - CONFIG.empire.buildings.smithy.base);
     expect(empireOf(raced.clans.get('student-1')!.state.clan).levels).toMatchObject({ trainingHall: 1, smithy: 1 });
     expect(empireOf(raced.clans.get('student-1')!.state.clan).buildsToday).toBe(2);
     expect(raced.clans.size).toBe(1);
@@ -312,12 +314,12 @@ describe('the clans server function', () => {
     const { send, clans, log } = setup();
     await send(create());
     const before = structuredClone(clans.get('student-1'));
-    clans.get('student-1')!.state.clan.gold = 100;
+    clans.get('student-1')!.state.clan.gold = TH_COST - 50;
     const { status, body } = await send({ type: 'upgrade', building: 'trainingHall' });
     expect(status).toBe(200);
     expect(body).toMatchObject({ ok: false, why: 'gold' });
-    expect(body.say).toMatch(/costs 150 gold and the clan has 100/);
-    expect(body.state.clan.gold).toBe(100);
+    expect(body.say).toMatch(new RegExp(`costs ${TH_COST} gold and the clan has ${TH_COST - 50}`));
+    expect(body.state.clan.gold).toBe(TH_COST - 50);
     expect(clans.get('student-1')!.version).toBe(before!.version);
     expect(log).toEqual(['student-1:create']);
   });
@@ -333,7 +335,7 @@ describe('the clans server function', () => {
     const { send, clans } = setup();
     await send(create());
     await send(null, { raw: { requestId: '00000000-0000-4000-8000-0000000000ee', action: { type: 'upgrade', building: 'trainingHall', clan: { gold: 99999 }, state: { day: 99 } }, gold: 99999 } });
-    expect(clans.get('student-1')!.state.clan.gold).toBe(50);
+    expect(clans.get('student-1')!.state.clan.gold).toBe(CONFIG.startGold - TH_COST);
     expect(clans.get('student-1')!.state.day).toBe(1);
   });
 
@@ -367,7 +369,7 @@ describe('the clans server function', () => {
   it('tells the browser the settings the server used, and never anything private', async () => {
     const { send } = setup();
     const { body } = await send(create());
-    expect(Object.keys(body.state).sort()).toEqual(['achievements', 'clan', 'day', 'examined', 'fame', 'fight', 'fightNo', 'fightsLeft', 'fightsPerDay', 'news', 'notes', 'raidNo', 'raidsOn', 'season', 'seed', 'settings']);
+    expect(Object.keys(body.state).sort()).toEqual(['achievements', 'clan', 'clock', 'day', 'examined', 'fame', 'fight', 'fightNo', 'fightsLeft', 'fightsPerDay', 'news', 'notes', 'raidNo', 'raidsOn', 'season', 'seed', 'settings']);
     expect(body.state.settings.yearBand).toBeDefined();
   });
 
@@ -979,5 +981,57 @@ describe('the deployed file', () => {
     const { buildFunction } = await import('../../../scripts/build-functions.mjs');
     const built: string = await buildFunction('clans');
     expect(readFileSync(resolve('supabase/functions/clans/index.ts'), 'utf8')).toBe(built);
+  });
+});
+
+describe('the season clock', () => {
+  const create = () => ({ type: 'create', name: 'Red Banner', drafts: startingDrafts(SEED) });
+  const CLOCK = { number: 2, day: 24, daysLeft: 12, clockOn: true };
+
+  it('sends the clock to the browser, and null when the database has none or sends something odd', async () => {
+    const none = setup();
+    expect((await none.send(create())).body.state.clock).toBeNull();
+    const odd = setup();
+    await odd.send(create());
+    odd.flags.clock = { number: 'two' };
+    expect((await odd.send({ type: 'load' })).body.state.clock).toBeNull();
+    const on = setup();
+    on.flags.clock = CLOCK;
+    expect((await on.send(create())).body.state.clock).toEqual(CLOCK);
+  });
+
+  it('stamps an old save with the season without resetting, and saves it', async () => {
+    const t = setup();
+    await t.send(create());
+    t.clans.get('student-1')!.state.clan.gold = 777;
+    t.flags.clock = CLOCK;
+    const out = await t.send({ type: 'load' });
+    expect(out.body.newSeason).toBeUndefined();
+    expect(t.clans.get('student-1')!.state.clan).toMatchObject({ season: 2, gold: 777 });
+  });
+
+  it('starts a new season on the first load after the clock moves on, and says so', async () => {
+    const t = setup();
+    t.flags.clock = { ...CLOCK, number: 1, day: 3 };
+    await t.send(create());
+    await t.send({ type: 'load' });
+    expect(t.clans.get('student-1')!.state.clan.season).toBe(1);
+    t.clans.get('student-1')!.state.clan.gold = 777;
+    t.flags.clock = { number: 2, day: 1, daysLeft: 34, clockOn: true };
+    const out = await t.send({ type: 'load' });
+    expect(out.body.newSeason).toBe(true);
+    expect(out.body.state.clan).toMatchObject({ season: 2, gold: CONFIG.startGold });
+    expect(t.clans.get('student-1')!.state.clan).toMatchObject({ season: 2, gold: CONFIG.startGold });
+    // Only once.
+    expect((await t.send({ type: 'load' })).body.newSeason).toBeUndefined();
+  });
+
+  it('rests classmate raids in the last two weeks', async () => {
+    const t = setup();
+    await t.send(create());
+    t.flags.clock = CLOCK;
+    t.flags.raidsOn = true;
+    const out = await t.send({ type: 'raidTargets' });
+    expect(out.body.result).toEqual({ type: 'raidTargets', targets: [], resting: true });
   });
 });

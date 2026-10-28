@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchClanTypedNames, fetchScoreboard, liveClanServer } from '../../data/clans';
+import { fetchClanTypedNames, fetchHallOfLegends, fetchScoreboard, liveClanServer } from '../../data/clans';
 import { ClanQuest } from './ClanQuest';
 
 /** Clan Quest on the hub: the clan lives on the school's server (the `clans` function), not in the browser. */
@@ -14,5 +14,5 @@ export function ClanPlay() {
       current = false;
     };
   }, []);
-  return <ClanQuest server={server} board={fetchScoreboard} typedNames={typedNames} />;
+  return <ClanQuest server={server} board={fetchScoreboard} hall={fetchHallOfLegends} typedNames={typedNames} />;
 }

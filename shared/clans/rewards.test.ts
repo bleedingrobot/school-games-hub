@@ -177,8 +177,8 @@ describe('the mine fights a day and the settings', () => {
 });
 
 describe('achievements', () => {
-  it('has eight, with the plan\'s measures', () => {
-    expect(ACHIEVEMENTS.map((a) => a.id)).toEqual(['cq-first-win', 'cq-first-boss', 'cq-level-10', 'cq-level-20', 'cq-buildings-5', 'cq-first-war', 'cq-village', 'cq-cries-50']);
+  it('has nine, with the plan\'s measures', () => {
+    expect(ACHIEVEMENTS.map((a) => a.id)).toEqual(['cq-first-win', 'cq-first-boss', 'cq-level-10', 'cq-level-20', 'cq-buildings-5', 'cq-first-war', 'cq-village', 'cq-cries-50', 'cq-master-builder']);
   });
 
   it('reaches each at its goal and not before', () => {
@@ -211,11 +211,12 @@ describe('the database and the rules agree', () => {
     expect(rules).toContain(`'points', jsonb_build_object('minesPerPoint', ${p.minesPerPoint}, 'boss', ${p.boss}, 'war', ${p.war}, 'villageBuilt', ${p.villageBuilt})`);
   });
 
-  it('has the same eight achievements', () => {
-    for (const [i, a] of ACHIEVEMENTS.entries()) {
+  it('has the same achievements', () => {
+    // Master Builder is in the season migration (seasonRules.test.ts checks it).
+    for (const [i, a] of ACHIEVEMENTS.filter((x) => x.id !== 'cq-master-builder').entries()) {
       expect(sql).toContain(`('${a.id}', 'clan-quest', '${a.name}', '${a.emoji}', '${a.measure}', ${a.goal}, ${i + 1})`);
     }
-    expect((sql.match(/'clan-quest', '/g) ?? []).length).toBeGreaterThanOrEqual(ACHIEVEMENTS.length);
+    expect((sql.match(/'clan-quest', '/g) ?? []).length).toBeGreaterThanOrEqual(ACHIEVEMENTS.length - 1);
   });
 
   it('starts the settings as the Year 5 defaults with the default number of fights', () => {

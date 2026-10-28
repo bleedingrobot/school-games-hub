@@ -21,6 +21,7 @@
  * `cryCheck` answer goes in the child's own maths records (ladder place, skill map, focus results) once its save is kept.
  */
 import { applyAction, parseAction, type Applied, type Effects, type Result, type ServerState, type ShownFight } from '../../../shared/clans/actions';
+import { readClock, type SeasonClock } from '../../../shared/clans/season';
 import type { Empire, Village } from '../../../shared/clans/types';
 import type { RaidTarget, Sketch } from '../../../shared/clans/village';
 import { nzDayNumber } from '../../../shared/clans/clock';
@@ -76,6 +77,8 @@ export interface Extras {
   fame: number;
   /** The ids of the achievements earned so far. */
   achievements: string[];
+  /** The season clock (clan_extras). Missing or odd before the migration is live: `readClock` turns it into null. */
+  clock?: unknown;
 }
 
 export type SaveStatus = { status: 'saved'; version: number } | { status: 'duplicate'; result: Result } | { status: 'stale' };
@@ -134,6 +137,7 @@ export function publicState(state: ServerState, settings: PracticalSettings, loa
     raidsOn: loaded.raidsOn ?? false, notes: loaded.notes ?? [],
     fame: extras?.fame ?? 0, season: extras?.settings.season ?? 1, fightsPerDay: extras?.settings.fightsPerDay ?? CONFIG.fightsPerDay,
     achievements: extras?.achievements ?? [],
+    clock: readClock(extras?.clock),
   };
 }
 
@@ -170,6 +174,7 @@ export function makeHandler(services: Services) {
     // Made-up hero names only when the teacher has switched them on (an older database without the switch means off).
     const typedNames = extras.value.settings.typedNames === true;
     // Only a ladder fight's start needs the child's maths. If it can't be read the fight is an old-style one (the rules decide).
+    const clock: SeasonClock | null = readClock(extras.value.clock);
     const maths = action.type === 'fightStart' && action.ladder ? await services.mathsContext(player) : undefined;
 
     for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
@@ -183,7 +188,7 @@ export function makeHandler(services: Services) {
       if (replay) return reply(200, { ok: true, replayed: true, seed, state: state && shown(state), result: replay });
 
       // groupVillage is only read the first time an old save is converted to "My Village".
-      const ctx = { seed, today, settings, maths, fightsPerDay, groupVillage: loaded.value.groupVillage ?? null, self: loaded.value.self ?? undefined, raidsOn: loaded.value.raidsOn ?? false, typedNames };
+      const ctx = { seed, today, settings, maths, fightsPerDay, groupVillage: loaded.value.groupVillage ?? null, self: loaded.value.self ?? undefined, raidsOn: loaded.value.raidsOn ?? false, typedNames, clock };
       let target: LoadedTarget = null;
       if (state && action.type === 'raidTargets') {
         const mates = await services.mates(player);
@@ -207,7 +212,7 @@ export function makeHandler(services: Services) {
 
       if (!applied.changed || !applied.state) {
         // Nothing to save.
-        return reply(200, { ok: true, replayed: false, seed, state: applied.state && shown(applied.state), result: applied.result });
+        return reply(200, { ok: true, replayed: false, seed, state: applied.state && shown(applied.state), result: applied.result, ...(applied.newSeason ? { newSeason: true } : {}) });
       }
 
       const saved = effects.raid
@@ -236,7 +241,7 @@ export function makeHandler(services: Services) {
           const again = await services.load(player, '00000000-0000-4000-8000-000000000000');
           if (again.ok) latest = again.value;
         }
-        return reply(200, { ok: true, replayed: false, seed, state: shown(applied.state, latest), result: applied.result });
+        return reply(200, { ok: true, replayed: false, seed, state: shown(applied.state, latest), result: applied.result, ...(applied.newSeason ? { newSeason: true } : {}) });
       }
       // 'duplicate' or 'stale': another copy of this request, or another request, saved first. Load again.
     }

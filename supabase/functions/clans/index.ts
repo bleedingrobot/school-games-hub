@@ -75,8 +75,8 @@ const variant = (nums, count) => Math.abs(Math.round(nums.reduce((t, x, i) => t 
 const int$3 = (random, lo, hi) => lo + Math.floor(random() * (hi - lo + 1));
 const choose = (random, list) => list[Math.floor(random() * list.length)];
 const stepped = (random, lo, hi, step) => lo + step * Math.floor(random() * ((hi - lo) / step + 1));
-const whole$1 = (n, lo, hi) => Number.isInteger(n) && n >= lo && n <= hi;
-const allWhole = (nums, lo, hi) => nums.every((n) => whole$1(n, lo, hi));
+const whole$2 = (n, lo, hi) => Number.isInteger(n) && n >= lo && n <= hi;
+const allWhole = (nums, lo, hi) => nums.every((n) => whole$2(n, lo, hi));
 /** A total that is not an exact multiple of `per`, between lo and hi. */
 function withRemainder(random, per, lo, hi) {
 	for (let tries = 0; tries < 200; tries++) {
@@ -111,7 +111,7 @@ const KIND_DEFS = {
 	"percent-of": {
 		topic: "percentages",
 		bands: YEAR_BANDS,
-		valid: (n) => n.length === 2 && n[0] > 0 && n[0] <= 100 && Math.round(n[0] * 10) === n[0] * 10 && whole$1(n[1], 1, 5e3),
+		valid: (n) => n.length === 2 && n[0] > 0 && n[0] <= 100 && Math.round(n[0] * 10) === n[0] * 10 && whole$2(n[1], 1, 5e3),
 		build([pct, amount], options) {
 			const exact = amount * pct / 100;
 			const answer = ceil(exact);
@@ -174,7 +174,7 @@ const KIND_DEFS = {
 	"price-with-tax": {
 		topic: "percentages",
 		bands: YEAR_BANDS,
-		valid: (n) => n.length === 2 && whole$1(n[0], 1, 5e3) && n[1] >= 0 && n[1] <= 100 && Math.round(n[1] * 10) === n[1] * 10,
+		valid: (n) => n.length === 2 && whole$2(n[0], 1, 5e3) && n[1] >= 0 && n[1] <= 100 && Math.round(n[1] * 10) === n[1] * 10,
 		build([price, tax], options) {
 			const taxAmount = price * tax / 100;
 			const exact = price + taxAmount;
@@ -273,7 +273,7 @@ const KIND_DEFS = {
 	"share-whole": {
 		topic: "division",
 		bands: YEAR_BANDS,
-		valid: (n) => n.length === 2 && whole$1(n[0], 0, 5e3) && whole$1(n[1], 1, 500),
+		valid: (n) => n.length === 2 && whole$2(n[0], 0, 5e3) && whole$2(n[1], 1, 500),
 		build([total, per]) {
 			const answer = Math.floor(total / per);
 			const left = total - answer * per;
@@ -309,7 +309,7 @@ const KIND_DEFS = {
 	"share-left": {
 		topic: "division",
 		bands: YEAR_BANDS,
-		valid: (n) => n.length === 2 && whole$1(n[0], 0, 5e3) && whole$1(n[1], 1, 500),
+		valid: (n) => n.length === 2 && whole$2(n[0], 0, 5e3) && whole$2(n[1], 1, 500),
 		build([total, per]) {
 			const bought = Math.floor(total / per);
 			const answer = total - bought * per;
@@ -324,7 +324,7 @@ const KIND_DEFS = {
 	"round-up": {
 		topic: "division",
 		bands: YEAR_BANDS,
-		valid: (n) => n.length === 2 && whole$1(n[0], 1, 5e3) && whole$1(n[1], 1, 500),
+		valid: (n) => n.length === 2 && whole$2(n[0], 1, 5e3) && whole$2(n[1], 1, 500),
 		build([count, cap]) {
 			const answer = ceil(count / cap);
 			const exact = count % cap === 0;
@@ -653,7 +653,7 @@ const KIND_DEFS = {
 	"church-bill": {
 		topic: "money",
 		bands: YEAR_BANDS,
-		valid: (n) => n.length >= 2 && n.length <= 8 && whole$1(n[0], 1, 1e3) && allWhole(n.slice(1), 1, 100),
+		valid: (n) => n.length >= 2 && n.length <= 8 && whole$2(n[0], 1, 1e3) && allWhole(n.slice(1), 1, 100),
 		build([per, ...levels]) {
 			const bills = levels.map((l) => (l + 1) * per);
 			const answer = bills.reduce((t, b) => t + b, 0);
@@ -845,6 +845,8 @@ const CONFIG = {
 	empire: {
 		/** Upgrades a clan may make a day, in total, across all its buildings. */
 		buildsPerDay: 2,
+		/** Builds not used pile up, up to this many extra (so at most buildsPerDay + this are available on one day). */
+		buildsSavedMax: 4,
 		/**
 		* The eight buildings. `max` is the top level; going up to level n costs `base` times n gold, from the clan purse.
 		* `per` is what each level does, in percent (or gold for the strongroom). The Training Hall, Smithy and Church keep their
@@ -853,42 +855,42 @@ const CONFIG = {
 		buildings: {
 			trainingHall: {
 				max: 5,
-				base: 150,
+				base: 50,
 				per: 0
 			},
 			smithy: {
 				max: 6,
-				base: 150,
+				base: 50,
 				per: 0
 			},
 			church: {
 				max: 3,
-				base: 150,
+				base: 50,
 				per: 0
 			},
 			barracks: {
 				max: 5,
-				base: 150,
+				base: 50,
 				per: 0
 			},
 			walls: {
 				max: 5,
-				base: 150,
+				base: 50,
 				per: 10
 			},
 			tower: {
 				max: 5,
-				base: 150,
+				base: 50,
 				per: 10
 			},
 			forge: {
 				max: 5,
-				base: 150,
+				base: 50,
 				per: 10
 			},
 			strongroom: {
 				max: 5,
-				base: 150,
+				base: 50,
 				per: 200
 			}
 		},
@@ -1089,6 +1091,19 @@ const CONFIG = {
 		fightsPerDayRange: {
 			min: 1,
 			max: 30
+		}
+	},
+	/**
+	* The season (5 weeks, days are 1-based: day 1 to `length`). From day `warnFrom` to the end (the "last two weeks")
+	* raids on classmates rest. From day `monsterFrom` it is monster week (used later). Finishing the village earns `villageReward`.
+	*/
+	season: {
+		length: 35,
+		warnFrom: 22,
+		monsterFrom: 29,
+		villageReward: {
+			fame: 50,
+			points: 10
 		}
 	},
 	/** How much a Battle Cry answer adds. */
@@ -1297,25 +1312,29 @@ function syncVillage(clan) {
 }
 /** Gold to take `b` up to level `toLevel`: the base price times the level. */
 const upgradeCost = (b, toLevel) => E.buildings[b].base * toLevel;
+/** Builds left to use: today's that are not done yet, plus the saved ones. */
+const buildsLeft = (e) => Math.max(0, E.buildsPerDay - e.buildsToday) + (e.buildsSaved ?? 0);
+VILLAGE_BUILDINGS.reduce((t, b) => t + E.buildings[b].max, 0);
 /** Can this building go up a level now, and what stops it? */
 function canUpgrade(clan, b) {
 	const e = empireOf(clan);
 	if (!VILLAGE_BUILDINGS.includes(b)) return no$1("building", "Pick one of the buildings in your village.");
 	const level = e.levels[b];
 	if (level >= maxLevel(b)) return no$1("max", `The ${BUILDING_NAMES[b]} is already as big as it can be.`);
-	if (e.buildsToday >= E.buildsPerDay) return no$1("builds", `Your builders have done ${E.buildsPerDay} jobs today. They start again tomorrow!`);
+	if (buildsLeft(e) <= 0) return no$1("builds", "Your builders have done every job they can. They start again tomorrow!");
 	const cost = upgradeCost(b, level + 1);
 	if (clan.gold < cost) return no$1("gold", `The ${BUILDING_NAMES[b]} (level ${level + 1}) costs ${cost} gold and the clan has ${clan.gold}.`);
 	return ok$1;
 }
-/** Pay for one level of a building from the purse. Uses up one of today's builds. */
+/** Pay for one level of a building from the purse. Uses one of today's builds first, a saved one only when today's are gone. */
 function upgrade(clan, b) {
 	const can = canUpgrade(clan, b);
 	if (!can.ok) return can;
 	const e = empireOf(clan);
 	clan.gold -= upgradeCost(b, e.levels[b] + 1);
 	e.levels[b]++;
-	e.buildsToday++;
+	if (e.buildsToday < E.buildsPerDay) e.buildsToday++;
+	else e.buildsSaved = Math.max(0, (e.buildsSaved ?? 0) - 1);
 	syncVillage(clan);
 	if (b === "barracks") joinFollowers(clan);
 	return ok$1;
@@ -1346,10 +1365,15 @@ function joinFollowers(clan) {
 	clan.followers -= joined;
 	return joined;
 }
-/** A new day for the empire: fresh builds and raids. (A shield ends by itself when the day number passes it.) */
-function empireNewDay(clan) {
+/**
+* A new day for the empire: fresh builds and raids. Builds not used (today's, and a full set for each day `missedDays` skipped)
+* are saved, up to `buildsSavedMax`. (A shield ends by itself when the day number passes it.)
+*/
+function empireNewDay(clan, missedDays = 0) {
 	const e = empireOf(clan);
 	e.day++;
+	const unused = Math.max(0, E.buildsPerDay - e.buildsToday) + Math.max(0, missedDays) * E.buildsPerDay;
+	e.buildsSaved = Math.min(E.buildsSavedMax, (e.buildsSaved ?? 0) + unused);
 	e.buildsToday = 0;
 	e.raidsToday = 0;
 	e.kingdomRaidsToday = 0;
@@ -10226,7 +10250,7 @@ for (let a = 1; a <= 12; a++) for (let b = a; b <= 12; b++) ladderKeys.set(`mul:
 const isFocusKey = (key) => ladderKeys.has(key);
 const NUMBER = /^\d{1,4}$/;
 const num = (text) => NUMBER.test(text) ? Number(text) : NaN;
-const whole = (n) => Number.isInteger(n) && n >= 0;
+const whole$1 = (n) => Number.isInteger(n) && n >= 0;
 /** The adding and pairs-that-make-N records for two numbers that add to `total`. */
 function sumKeys(p, q, total) {
 	const keys = [];
@@ -10294,14 +10318,14 @@ function solveParts(parts) {
 				c
 			];
 			answer = z === "?" ? total : x === "?" ? addendA : addendB;
-			if (whole(addendA) && whole(addendB)) keys = sumKeys(addendA, addendB, total);
+			if (whole$1(addendA) && whole$1(addendB)) keys = sumKeys(addendA, addendB, total);
 		} else if (op === "−") {
 			if (z === "?") {
 				answer = a - b;
-				if (whole(answer)) keys = sumKeys(b, answer, a);
+				if (whole$1(answer)) keys = sumKeys(b, answer, a);
 			} else if (y === "?") {
 				answer = a - c;
-				if (whole(answer)) keys = sumKeys(c, answer, a);
+				if (whole$1(answer)) keys = sumKeys(c, answer, a);
 			}
 		} else if (op === "×") {
 			const [f, g, product] = z === "?" ? [
@@ -10322,14 +10346,14 @@ function solveParts(parts) {
 		} else if (op === "÷") {
 			if (z === "?") {
 				answer = a / b;
-				if (whole(answer) && b > 0) keys = divKeys(a, b, answer);
+				if (whole$1(answer) && b > 0) keys = divKeys(a, b, answer);
 			} else if (y === "?") {
 				answer = a / c;
-				if (whole(answer) && c > 0) keys = divKeys(a, answer, c);
+				if (whole$1(answer) && c > 0) keys = divKeys(a, answer, c);
 			}
 		}
 	}
-	if (!whole(answer) || answer > 1e3) return null;
+	if (!whole$1(answer) || answer > 1e3) return null;
 	keys = keys.filter(isFocusKey);
 	return keys.length ? {
 		answer,
@@ -11028,6 +11052,58 @@ function payFight(clan, fight) {
 		xp: fight.xp,
 		levels
 	};
+}
+//#endregion
+//#region shared/clans/season.ts
+const S = CONFIG.season;
+const whole = (v) => typeof v === "number" && Number.isInteger(v) && v >= 0;
+/** Read the clock the database sends. Anything odd (missing, wrong types) gives null. */
+function readClock(raw) {
+	if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
+	const r = raw;
+	if (!whole(r.number) || !whole(r.day) || !whole(r.daysLeft) || typeof r.clockOn !== "boolean") return null;
+	return {
+		number: r.number,
+		day: r.day,
+		daysLeft: r.daysLeft,
+		clockOn: r.clockOn
+	};
+}
+/** Raids on classmates rest from day `warnFrom` to the end of the season (computer kingdoms stay open). */
+const classRaidsResting = (clock) => clock?.clockOn === true && clock.day >= S.warnFrom;
+/**
+* The full reset for a new season. Returns a copy. Every member starts again at level 1 (same name, race, class and look; slot 0 leads),
+* the purse goes back to the starting gold, followers, buildings, saved builds and the day's counts go, and the examined list clears.
+* Name, seed, day, fight numbers and the fights left are kept. The caller only does this when no fight is open.
+*/
+function newSeasonSave(state, season) {
+	const copy = structuredClone(state);
+	const members = copy.clan.members.map((m, slot) => {
+		return {
+			...rollMember({ rng: Math.imul(slotSeed(state.seed, slot) | 0, 2654435761) + season * 7919 }, m.name, m.race, m.cls, slot === 0),
+			...m.look ? { look: m.look } : {}
+		};
+	});
+	const { questDay: _q, ...rest } = copy.clan;
+	copy.clan = {
+		...rest,
+		members,
+		gold: CONFIG.startGold,
+		followers: 0,
+		village: {
+			trainingHall: 0,
+			smithy: 0,
+			church: 0
+		},
+		wakesToday: 0,
+		empire: {
+			...newEmpire(state.day),
+			buildsSaved: 0
+		},
+		season
+	};
+	copy.examined = [];
+	return copy;
 }
 //#endregion
 //#region shared/clans/quests.ts
@@ -11885,13 +11961,13 @@ const clanDay = (createdNzDay, today) => Math.max(1, today - createdNzDay + 1);
 /**
 * If a new day has started since the clan was last saved, give it the night's rest: everyone heals, the Church's
 * free wake-up comes back, the day's builds and raids reset and the fights come back. A clan that was away for
-* a week gets one night's rest and moves to today's number. Returns true if anything changed.
+* a week gets one night's rest and moves to today's number (the days it skipped still save their builds). Returns true if anything changed.
 */
 function catchUp(state, today, fightsPerDay = CONFIG.fightsPerDay) {
 	const day = clanDay(state.createdNzDay, today);
 	if (day <= state.day) return false;
 	dayReset(state.clan);
-	empireNewDay(state.clan);
+	empireNewDay(state.clan, Math.max(0, day - state.day - 1));
 	empireOf(state.clan).day = day;
 	state.fightsLeft = fightsPerDay;
 	state.day = day;
@@ -11909,6 +11985,14 @@ const done = (state, result, changed = true, effects) => ({
 * comes in is never changed, so a refusal leaves everything as it was.
 */
 function applyAction(saved, action, ctx) {
+	const flags = { newSeason: false };
+	const out = applyInner(saved, action, ctx, flags);
+	return out.ok && flags.newSeason ? {
+		...out,
+		newSeason: true
+	} : out;
+}
+function applyInner(saved, action, ctx, flags) {
 	const settings = ctx.settings ?? DEFAULT_PRACTICAL_SETTINGS;
 	if (action.type === "create") {
 		if (saved) return refuse("exists", "You already have a clan.");
@@ -11932,10 +12016,21 @@ function applyAction(saved, action, ctx) {
 		result: { type: "load" },
 		changed: false
 	} : refuse("no-clan", "Make a clan first.");
-	const state = structuredClone(saved);
+	let state = structuredClone(saved);
 	const upgraded = needsUpgrade(state.clan);
 	if (upgraded) state.clan = upgradeSave(state.clan, ctx.groupVillage ?? null);
-	const rested = state.fight ? false : catchUp(state, ctx.today, ctx.fightsPerDay);
+	let rested = state.fight ? false : catchUp(state, ctx.today, ctx.fightsPerDay);
+	const clock = ctx.clock;
+	if (clock && clock.number > 0) {
+		if (state.clan.season === void 0) {
+			state.clan.season = clock.number;
+			rested = true;
+		} else if (clock.clockOn && state.clan.season < clock.number && !state.fight) {
+			state = newSeasonSave(state, clock.number);
+			flags.newSeason = true;
+			rested = true;
+		}
+	}
 	if (state.fight && action.type !== "load" && action.type !== "fightStart" && action.type !== "cryCheck" && action.type !== "fightRound" && action.type !== "raidTargets") return refuse("fight-open", "You are in the middle of a fight. Finish it first!");
 	const { clan } = state;
 	syncVillage(clan);
@@ -12002,6 +12097,11 @@ function applyAction(saved, action, ctx) {
 			}, true, answers ? { answers } : void 0) : refuse("quest", finished.say);
 		}
 		case "raidTargets": {
+			if (classRaidsResting(clock)) return done(state, {
+				type: "raidTargets",
+				targets: [],
+				resting: true
+			}, rested || upgraded);
 			const targets = raidTargetList(state, ctx.today, ctx.self ?? "", ctx.raidsOn ?? false, ctx.mates ?? []);
 			return done(state, {
 				type: "raidTargets",
@@ -12009,6 +12109,7 @@ function applyAction(saved, action, ctx) {
 			}, rested || upgraded);
 		}
 		case "raidClass": {
+			if (classRaidsResting(clock)) return refuse("resting-season", "Raids on classmates rest for the last two weeks of the season. Computer kingdoms are still open!");
 			if (!ctx.target || !ctx.self) return refuse("target", "That clan is not in your class.");
 			const out = raidClassmateNz(state, ctx.self, ctx.target, action.take, action.push, raidSeed(state.seed, state.raidNo), ctx.today, ctx.raidsOn ?? false);
 			if (!out.ok) return refuse(out.why, out.say);
@@ -12279,7 +12380,8 @@ function publicState(state, settings, loaded, extras) {
 		fame: extras?.fame ?? 0,
 		season: extras?.settings.season ?? 1,
 		fightsPerDay: extras?.settings.fightsPerDay ?? CONFIG.fightsPerDay,
-		achievements: extras?.achievements ?? []
+		achievements: extras?.achievements ?? [],
+		clock: readClock(extras?.clock)
 	};
 }
 function makeHandler(services) {
@@ -12315,6 +12417,7 @@ function makeHandler(services) {
 		const settings = readPracticalSettings(extras.value.settings);
 		const fightsPerDay = Number.isInteger(extras.value.settings.fightsPerDay) ? extras.value.settings.fightsPerDay : CONFIG.fightsPerDay;
 		const typedNames = extras.value.settings.typedNames === true;
+		const clock = readClock(extras.value.clock);
 		const maths = action.type === "fightStart" && action.ladder ? await services.mathsContext(player) : void 0;
 		for (let attempt = 0; attempt < 4; attempt++) {
 			const loaded = await services.load(player, requestId);
@@ -12341,7 +12444,8 @@ function makeHandler(services) {
 				groupVillage: loaded.value.groupVillage ?? null,
 				self: loaded.value.self ?? void 0,
 				raidsOn: loaded.value.raidsOn ?? false,
-				typedNames
+				typedNames,
+				clock
 			};
 			let target = null;
 			if (state && action.type === "raidTargets") {
@@ -12372,7 +12476,8 @@ function makeHandler(services) {
 				replayed: false,
 				seed,
 				state: applied.state && shown(applied.state),
-				result: applied.result
+				result: applied.result,
+				...applied.newSeason ? { newSeason: true } : {}
 			});
 			const saved = effects.raid ? target ? await services.saveRaid(player, version, {
 				targetId: target.id,
@@ -12416,7 +12521,8 @@ function makeHandler(services) {
 					replayed: false,
 					seed,
 					state: shown(applied.state, latest),
-					result: applied.result
+					result: applied.result,
+					...applied.newSeason ? { newSeason: true } : {}
 				});
 			}
 		}
