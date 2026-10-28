@@ -1,8 +1,8 @@
 /**
  * The Armory's rules (docs/ARCHERY-PLAN.md, section 4): what everything costs, what one purchase gives, the
  * Armory levels, how much you can carry, and what selling gives back. Pure functions, used by the server
- * function (which does every purchase) and by the screens (to show prices). Coins only ever come from speed
- * rounds (speed.ts).
+ * function (which does every purchase) and by the screens (to show prices). Coins only ever come from maths
+ * (speed.ts). Prices and levels about halved on 28 Oct 2026 (docs/ARCHERY-QUESTIONS-PLAN.md).
  *
  * - Arrows and helpers are used up in fights; you carry at most CARRY_MOST of each.
  * - Shields and bows are bought once and kept (the Starter Bow is free and always yours).
@@ -14,10 +14,12 @@ import { ARROWS, arrowKind, isArrowId } from './arrows';
 import { BOWS, HELPERS, SHIELDS, isBowId, isHelperId, isShieldId } from './gear';
 import type { ArrowId, BowId, ItemId, PlayerSetup, ShieldId } from './types';
 
+/** Coins everyone starts a season with, so the first trip to the Armory buys something (the database's default too). */
+export const START_COINS = 100;
 /** At most this many of each arrow or helper. */
 export const CARRY_MOST = 5;
 /** Coins spent in all to reach Armory levels 1, 2, 3, 4 and 5. */
-export const LEVEL_SPEND: readonly number[] = [0, 200, 600, 1200, 2000];
+export const LEVEL_SPEND: readonly number[] = [0, 100, 300, 600, 1000];
 export const TOP_LEVEL = LEVEL_SPEND.length;
 /** Levels for the shields and helpers (arrows carry their own in arrows.ts; bows are open to everyone). */
 const SHIELD_LEVEL: Record<ShieldId, number> = { wood: 1, charm: 2, bubble: 3 };
@@ -182,4 +184,17 @@ export function parseArmory(raw: unknown): Armory {
   const list = <T extends string>(v: unknown, ok: (x: unknown) => x is T): T[] => (Array.isArray(v) ? v.filter(ok) : []);
   const num = (v: unknown) => (Number.isInteger(v) && (v as number) >= 0 ? (v as number) : 0);
   return { coins: num(r.coins), gear, shields: list(r.shields, isShieldId), bows: list(r.bows, isBowId), spent: num(r.spent) };
+}
+
+/**
+ * Something to save up for, shown on Home: the cheapest bow not owned yet, then the cheapest shield, with the coins
+ * still needed (0 if it can be bought now). Null when there's nothing left to aim for.
+ */
+export function nextGoal(a: Armory): { item: ShopItem; need: number } | null {
+  const level = armoryLevel(a.spent);
+  const wanted = (kind: ShopKind) => SHOP
+    .filter((i) => i.kind === kind && i.level <= level && !(kind === 'bow' ? a.bows.includes(i.id as BowId) : a.shields.includes(i.id as ShieldId)))
+    .sort((x, y) => x.price - y.price)[0];
+  const item = wanted('bow') ?? wanted('shield');
+  return item ? { item, need: Math.max(0, item.price - a.coins) } : null;
 }

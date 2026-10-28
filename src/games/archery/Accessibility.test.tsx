@@ -107,7 +107,11 @@ describe('the screens around the fights (Stage 5)', () => {
 
   it('uses the hub\'s shared buttons for every button', () => {
     for (const [name, text] of files) {
-      for (const m of text.matchAll(/<button[^>]*className=(?:"([^"]+)"|\{`([^`]+)`\})/g)) expect(m[1] ?? m[2], `${name}: ${m[0]}`).toMatch(/^button button--(play|light) ar-btn/);
+      for (const m of text.matchAll(/<button[^>]*className=(?:"([^"]+)"|\{`([^`]+)`\})/g)) {
+        // A choice between the two shared looks, like `${speed ? 'button--light' : 'button--play'}`, counts as a shared look.
+        const classes = (m[1] ?? m[2]).replace(/\$\{[^}]*?'(button--(?:play|light))'[^}]*\}/, '$1');
+        expect(classes, `${name}: ${m[0]}`).toMatch(/^button button--(play|light) ar-btn/);
+      }
     }
   });
 

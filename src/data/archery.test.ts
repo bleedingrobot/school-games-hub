@@ -15,7 +15,7 @@ describe('archery data', () => {
     const trial = trialBackend();
     const api = archeryApi((b) => trial.send(b));
     const load = await api.load();
-    expect(load.ok && load.value.roundsLeft).toBe(8);
+    expect(load.ok && load.value.coinsLeft).toBe(600);
     const start = await api.roundStart();
     if (!start.ok) throw new Error(start.message);
     let q: { slot: number } | null = start.value.question;
@@ -25,9 +25,9 @@ describe('archery data', () => {
       if (!r.ok) throw new Error(r.message);
       q = r.value.next ? r.value.next.question : null;
     }
-    expect(trial.data.pupils['preview-pupil'].coins).toBe(100);
+    expect(trial.data.pupils['preview-pupil'].coins).toBe(240);
     const bought = await api.shop('buy', 'gear', 'steel');
-    expect(bought.ok && bought.value.state).toMatchObject({ coins: 50, gear: { steel: 2 } });
+    expect(bought.ok && bought.value.state).toMatchObject({ coins: 215, gear: { steel: 2 } });
     const pack = { quiver: { steel: 2 }, shield: null, bow: 'starter' as const };
     const fight = await api.fightStart('forest', 'easy', pack);
     if (!fight.ok) throw new Error(fight.message);

@@ -1,7 +1,8 @@
 /**
  * The home screen, in the pupil's own layout (docs/ARCHERY-PLAN.md, section 1): the title banner at the top, the coins
  * top right, the four world buttons around the archer on a rock, a big Play button, and along the bottom More Bows,
- * Armory and the speed round ("Earn coins: speed round", with the pupil's words under it: "Maths to get better").
+ * Armory and the speed round ("Earn coins: speed round", with something to save up for under it, or the pupil's words:
+ * "Maths to get better").
  */
 import { useEffect, useRef } from 'react';
 import { WORLD_IDS, type BowId, type WorldId } from '../../../shared/archery/types';
@@ -16,8 +17,10 @@ const WORLD_ICONS: Record<WorldId, string> = {
   city: 'M2 22V11h5V6h6v6h3V3h6v19z',
 };
 
-export function HomeScreen({ coins, world, bow, lessMotion, simple = false, onPlay, onWorld, onArmory, onBows, onSpeed, onHowTo, onExit, onClassmate }: {
+export function HomeScreen({ coins, goal, world, bow, lessMotion, simple = false, onPlay, onWorld, onArmory, onBows, onSpeed, onHowTo, onExit, onClassmate }: {
   coins: number;
+  /** Something to save up for, under the speed-round button ("60 more coins for a Longbow"). */
+  goal?: string;
   /** The world shown behind (the last one played). */
   world: WorldId;
   bow: BowId;
@@ -77,7 +80,7 @@ export function HomeScreen({ coins, world, bow, lessMotion, simple = false, onPl
           <button type="button" className="button button--play ar-btn ar-chunky ar-chunky--bows" onClick={onBows}>More Bows</button>
           <button type="button" className="button button--play ar-btn ar-chunky ar-chunky--armory" onClick={onArmory}>Armory</button>
           <button type="button" className="button button--play ar-btn ar-chunky ar-chunky--speed" onClick={onSpeed}>
-            <span>Earn coins: speed round<small>Maths to get better</small></span>
+            <span>Earn coins: speed round<small>{goal ?? 'Maths to get better'}</small></span>
           </button>
         </div>
       </div>

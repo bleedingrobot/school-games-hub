@@ -93,9 +93,14 @@ Deno.serve(
     state: (player) => call('archery_state', { player }),
     shop: (player, request, action, kind, item, price, qty, needSpent, carry) =>
       call('archery_shop', { player, request_id: request, action, kind, item, price, qty, need_spent: needSpent, carry }),
-    async roundStart(player, seed, questions, earns, servedMs) {
-      const r = await call('archery_round_start', { player, seed, questions, earns, served_ms: servedMs });
-      return r.ok;
+    async roundStart(player, seed, questions, earns, servedMs, kind, after, perRight) {
+      const r = await call<boolean>('archery_round_start', { player, seed, questions, earns, served_ms: servedMs, kind, after, per_right: perRight });
+      return r.ok ? (r.value === false ? 'taken' : true) : false;
+    },
+    async bonusFor(player, kind, fight, duel) {
+      const r = await call<{ won?: unknown } | null>('archery_bonus_for', { player, kind, fight, duel });
+      if (!r.ok) return 'busy';
+      return r.value && typeof r.value === 'object' ? { won: r.value.won === true } : null;
     },
     roundLoad: (player, seed) => read('archery_round_load', { player, seed }),
     async roundAnswer(player, seed, slot, value, right, coins, nextMs) {

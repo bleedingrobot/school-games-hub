@@ -25,4 +25,4 @@ export function useArcherySummary(classId: string): string | null {
 
 /** Behind the switch's "?". The points are in its Settings, which load only when opened (they need the speed-round rules). */
 export const ARCHERY_ABOUT =
-  'Two archers on hills take turns aiming (angle and power, with wind) and shooting over-the-top arrows. Coins come only from maths speed rounds, which follow each student’s maths focus, and buy arrows, shields and bows in the Armory. There’s no aiming help: students try and adjust. A New Season wipes everyone’s coins and gear. Off hides it from students.';
+  'Two archers on hills take turns aiming (angle and power, with wind) and shooting over-the-top arrows. Coins come only from maths (a 3-question loot chest after every fight, quick restocks between rounds, and speed rounds), which follows each student’s maths focus, and buy arrows, shields and bows in the Armory. There’s no aiming help: students try and adjust. A New Season starts everyone again with 100 coins and no gear. Off hides it from students.';
