@@ -88,3 +88,46 @@ James to OK the migration before it runs on the live database.
 1. Option B as recommended, or the smaller A or the bigger C?
 2. ~~With one purse, can raiders take gold?~~ **Answered 28 Oct 2026:** yes, up to 10% of the purse, and a Strongroom keeps some of it safe.
 3. ~~1 or 2 builds a day?~~ **Answered 28 Oct 2026:** 2 a day.
+
+## New idea (James, 28 Oct 2026): every clan has its own village, no class groups
+
+Groups are hard for the teacher to manage. Instead, each clan builds **its own village**, and raids other clans.
+
+### How it would work
+- **One place: "My Village".** The village and the empire become one screen. It holds all the clan's buildings:
+  - the old class buildings: Training Hall, Smithy and Church;
+  - the empire ones: Barracks, Walls, Tower, Forge and Strongroom.
+  Each building has levels 1 to 5. You pay for them from the **clan purse**, the same gold you earn in the mines. There is no vault, no chest and no vote.
+- **Building.** Tap a building, then tap Upgrade, up to **2 builds a day**. Each building says in one line what it does for *your* clan, for example "Smithy: weapons cost 5% less". The maths moments stay as optional questions:
+  - area and fence when a building grows;
+  - "how much more gold do I need?";
+  - the troop bill.
+- **Raids on other clans.** You can raid any clan **in your class**, with the same guard rails as now:
+  - a fair match only (half to double your army);
+  - 1 raid a day;
+  - a new clan is safe for its first 3 days;
+  - a 1-day shield after being raided;
+  - at most 10% of their gold, and gold in the Strongroom is safe;
+  - the teacher switch.
+  Computer kingdoms and Practice battles stay.
+- **Teacher page.** The village groups panel goes. The raid switch stays.
+
+### Why it's simpler
+- One place to build instead of three (Village, Empire, Land).
+- One kind of gold instead of three.
+- No weekly vote to wait for, and nothing for the teacher to set up.
+- What a kid builds is theirs, so the reason to save up is clear.
+
+### What we'd lose
+The "whole class builds together" feeling. If you miss it later, a light version could come back without groups: a class banner that grows as everyone's clans level up, with nothing to give or vote on.
+
+### Moving saves (nothing deleted)
+- Each clan's village starts at the levels its group village had reached, so nobody goes backwards.
+- Gold still in a chest goes to the clans in that group: shared equally, or by what each one gave if the server kept a record.
+- The old village tables are left in place but no longer used. Removing them can wait, and you would be asked first.
+
+### Order of work
+This replaces steps 2 and 3 above:
+1. Quick fixes (step A).
+2. "My Village": merge the village and empire into one screen with one purse, building levels and 2 builds a day, plus the save move.
+3. Raids across the class, without groups, and the teacher page tidy-up.
