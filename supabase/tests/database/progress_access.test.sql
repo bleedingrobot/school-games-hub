@@ -69,7 +69,7 @@ select throws_ok($$ select public.score_bot_game(b) from public.bot_games b limi
 select throws_ok($$ select public.award_achievements(auth.uid(), 'chess', now()) $$, '42501', null,
   'a student can''t hand out achievements');
 select throws_ok($$ update public.bot_games set result = 'won' $$, '42501', null, 'a student can''t change a saved game');
-select is((select count(*)::int from public.achievement_types), 99, 'students can read the achievement list');  -- 83 + Archery's 10 + Kingdom Keeper's 6
+select is((select count(*)::int from public.achievement_types), 100, 'students can read the achievement list');  -- 83 + Archery's 10 + Kingdom Keeper's 6 + Clan Quest's Master Builder
 
 -- ---- Signed-out visitors and outsiders see nothing ----
 select pg_temp.act_as_anon();
