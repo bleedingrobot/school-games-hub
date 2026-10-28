@@ -493,7 +493,7 @@ describe('teacher view', () => {
     expect(fetchGemKeepSettings).not.toHaveBeenCalled();
     await user.click(screen.getByRole('link', { name: 'Gem Keep settings' }));
     expect(await screen.findByRole('region', { name: 'Gem Keep settings' })).toBeInTheDocument();
-    expect(fetchGemKeepSettings).toHaveBeenCalled();
+    await vi.waitFor(() => expect(fetchGemKeepSettings).toHaveBeenCalled());
   });
 
   it('changes the Gem Keep settings for the class', async () => {
