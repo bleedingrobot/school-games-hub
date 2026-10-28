@@ -294,7 +294,7 @@ select pg_temp.reset();
 update public.app_settings set clans_enabled = true;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
 select is(public.progress_rules() -> 'clanQuest', pg_temp.rules(), 'switched on, the rules are shown');
-select is((select count(*)::integer from jsonb_array_elements(public.my_progress() -> 'achievements') a where a ->> 'game' = 'clan-quest'), 9, '... and the nine achievements (Master Builder too)');
+select is((select count(*)::integer from jsonb_array_elements(public.my_progress() -> 'achievements') a where a ->> 'game' = 'clan-quest'), 10, '... and the ten achievements (Master Builder and Giant Slayer too)');
 select is((select count(*)::integer from jsonb_array_elements(public.my_progress() -> 'achievements') a where a ->> 'game' = 'clan-quest' and a ->> 'earnedAt' is not null), 4, '... with the earned ones marked (first win, boss, war, village)');
 select pg_temp.reset();
 

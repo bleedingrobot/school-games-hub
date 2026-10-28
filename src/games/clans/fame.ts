@@ -60,6 +60,7 @@ export function awardNext(s: Session): Session {
     case 'clan_wars': stats.warWins = Math.max(stats.warWins, next.goal); break;
     case 'clan_village': stats.villageBuilt = Math.max(stats.villageBuilt, next.goal); break;
     case 'clan_cries': stats.cries = Math.max(stats.cries, next.goal); break;
+    case 'clan_monster': stats.monsterSlain = Math.max(stats.monsterSlain ?? 0, next.goal); break;
     case 'clan_level': clan.members[0] = { ...clan.members[0], level: Math.max(clan.members[0].level, next.goal) }; break;
     case 'clan_buildings': {
       const levels = empireOf(clan).levels;

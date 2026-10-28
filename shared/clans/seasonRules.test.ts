@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { CONFIG } from './config';
 import { ACHIEVEMENTS } from './rewards';
 
+const monsterSql = readFileSync(resolve('supabase/migrations/20261029000600_clans_monster.sql'), 'utf8');
+
 const sql = readFileSync(resolve('supabase/migrations/20261029000400_clans_season_goals.sql'), 'utf8');
 const rules = /function public\.clan_season_rules\(\)[^$]*\$\$ select jsonb_build_object\(([\s\S]*?)\) \$\$;/.exec(sql)?.[1] ?? '';
 
@@ -30,5 +32,15 @@ describe('the season rules in the database and in the game agree', () => {
     const a = ACHIEVEMENTS.find((x) => x.id === 'cq-master-builder');
     expect(a).toBeDefined();
     if (a) expect(sql).toContain(`('${a.id}', 'clan-quest', '${a.name}', '${a.emoji}', '${a.measure}', ${a.goal}, 9)`);
+  });
+
+  // The live rules are the monster migration's (it replaces the season goals one with one more key).
+  it('has the same monster reward, and the Giant Slayer achievement the game lists', () => {
+    const r = CONFIG.monster.reward;
+    expect(monsterSql).toContain(`'monsterReward', jsonb_build_object('fame', ${r.fame}, 'points', ${r.points})`);
+    expect(monsterSql).toContain(`'villageReward', jsonb_build_object('fame', ${CONFIG.season.villageReward.fame}, 'points', ${CONFIG.season.villageReward.points})`);
+    const a = ACHIEVEMENTS.find((x) => x.id === 'cq-giant-slayer');
+    expect(a).toBeDefined();
+    if (a) expect(monsterSql).toContain(`('${a.id}', 'clan-quest', '${a.name}', '${a.emoji}', '${a.measure}', ${a.goal}, 10)`);
   });
 });
