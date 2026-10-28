@@ -1,4 +1,4 @@
--- Clan Quest "My Village" (28 Oct 2026, migration 20261028000800): one purse, building levels, raids inside a class,
+-- Clan Quest "My Village" (28 Oct 2026, migration 20261028000900): one purse, building levels, raids inside a class,
 -- the midnight reset of buildsToday, the "Village builders" achievement and the one-time sharing of the old chests.
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
