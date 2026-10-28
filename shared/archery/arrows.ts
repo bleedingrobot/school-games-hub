@@ -32,23 +32,23 @@ type Entry = Omit<ArrowKind, 'forSale' | 'unlimited'> & Partial<Pick<ArrowKind, 
 
 const ENTRIES: Entry[] = [
   { id: 'plain', name: 'Plain Arrow', does: 'A small blast. You never run out.', blastRadius: 24, peakDamage: 25, price: 0, perPurchase: null, level: 0, forSale: false, unlimited: true },
-  { id: 'steel', name: 'Steel Arrow', does: 'A bigger blast.', blastRadius: 34, peakDamage: 40, price: 50, perPurchase: 2, level: 1 },
-  { id: 'log', name: 'Rolling Log', does: 'Lands, rolls downhill, bursts in a dip or at an archer.', blastRadius: 28, peakDamage: 35, price: 60, perPurchase: 1, level: 1 },
-  { id: 'mole', name: 'Mole Arrow', does: 'Digs a deep hole straight down. Knock the ground out from under someone.', blastRadius: 12, peakDamage: 10, price: 40, perPurchase: 1, level: 1 },
-  { id: 'mud', name: 'Mud Ball', does: 'Drops a big ball of dirt: bury someone, or build a wall.', blastRadius: 36, peakDamage: 0, price: 50, perPurchase: 1, level: 1 },
-  { id: 'rain', name: 'Arrow Rain', does: 'Splits at the top of its flight into 5 small arrows.', blastRadius: 16, peakDamage: 15, price: 150, perPurchase: 1, level: 2 },
-  { id: 'skip', name: 'Skipping Arrow', does: 'Hops forward twice, with 3 growing blasts.', blastRadius: 26, peakDamage: 24, price: 120, perPurchase: 1, level: 2 },
-  { id: 'goo', name: 'Sticky Goo Arrow', does: 'A goo puddle runs into the dip and hurts anyone standing in it.', blastRadius: 30, peakDamage: 12, price: 120, perPurchase: 1, level: 3 },
-  { id: 'shaker', name: 'Earth Shaker', does: 'Shakes the ground: cliffs crumble and anyone on a ledge tumbles down.', blastRadius: 14, peakDamage: 10, price: 100, perPurchase: 1, level: 3 },
-  { id: 'owl', name: 'Owl Arrow', does: 'Steers itself toward an archer it passes close to.', blastRadius: 24, peakDamage: 30, price: 250, perPurchase: 1, level: 3 },
-  { id: 'firework', name: 'Firework Arrow', does: '5 sparkly pops around where it lands.', blastRadius: 18, peakDamage: 16, price: 180, perPurchase: 1, level: 4 },
-  { id: 'sneaky', name: 'Sneaky Mole', does: 'Tunnels toward the other archer and pops up under them.', blastRadius: 22, peakDamage: 35, price: 220, perPurchase: 1, level: 4 },
-  { id: 'bolt', name: 'Crossbow Bolt', does: 'Flies dead straight through dirt. Power sets how far it goes.', blastRadius: 14, peakDamage: 35, price: 150, perPurchase: 1, level: 4 },
-  { id: 'giant', name: 'Giant Arrow', does: 'A huge blast with a shockwave of leaves and confetti.', blastRadius: 75, peakDamage: 55, price: 400, perPurchase: 1, level: 5 },
+  { id: 'steel', name: 'Steel Arrow', does: 'A bigger blast.', blastRadius: 34, peakDamage: 40, price: 25, perPurchase: 2, level: 1 },
+  { id: 'log', name: 'Rolling Log', does: 'Lands, rolls downhill, bursts in a dip or at an archer.', blastRadius: 28, peakDamage: 35, price: 30, perPurchase: 1, level: 1 },
+  { id: 'mole', name: 'Mole Arrow', does: 'Digs a deep hole straight down. Knock the ground out from under someone.', blastRadius: 12, peakDamage: 10, price: 20, perPurchase: 1, level: 1 },
+  { id: 'mud', name: 'Mud Ball', does: 'Drops a big ball of dirt: bury someone, or build a wall.', blastRadius: 36, peakDamage: 0, price: 25, perPurchase: 1, level: 1 },
+  { id: 'rain', name: 'Arrow Rain', does: 'Splits at the top of its flight into 5 small arrows.', blastRadius: 16, peakDamage: 15, price: 75, perPurchase: 1, level: 2 },
+  { id: 'skip', name: 'Skipping Arrow', does: 'Hops forward twice, with 3 growing blasts.', blastRadius: 26, peakDamage: 24, price: 60, perPurchase: 1, level: 2 },
+  { id: 'goo', name: 'Sticky Goo Arrow', does: 'A goo puddle runs into the dip and hurts anyone standing in it.', blastRadius: 30, peakDamage: 12, price: 60, perPurchase: 1, level: 3 },
+  { id: 'shaker', name: 'Earth Shaker', does: 'Shakes the ground: cliffs crumble and anyone on a ledge tumbles down.', blastRadius: 14, peakDamage: 10, price: 50, perPurchase: 1, level: 3 },
+  { id: 'owl', name: 'Owl Arrow', does: 'Steers itself toward an archer it passes close to.', blastRadius: 24, peakDamage: 30, price: 120, perPurchase: 1, level: 3 },
+  { id: 'firework', name: 'Firework Arrow', does: '5 sparkly pops around where it lands.', blastRadius: 18, peakDamage: 16, price: 90, perPurchase: 1, level: 4 },
+  { id: 'sneaky', name: 'Sneaky Mole', does: 'Tunnels toward the other archer and pops up under them.', blastRadius: 22, peakDamage: 35, price: 110, perPurchase: 1, level: 4 },
+  { id: 'bolt', name: 'Crossbow Bolt', does: 'Flies dead straight through dirt. Power sets how far it goes.', blastRadius: 14, peakDamage: 35, price: 75, perPurchase: 1, level: 4 },
+  { id: 'giant', name: 'Giant Arrow', does: 'A huge blast with a shockwave of leaves and confetti.', blastRadius: 75, peakDamage: 55, price: 200, perPurchase: 1, level: 5 },
   // The pupil's own arrow (James, 21 Oct 2026, from the pupil's drawing): "When it stabs them, shards keep
   // hurting, like a poison effect. It should be the most powerful arrow in the game. It kills them next turn
   // if they don't do anything in 1 turn." A stab or a near miss leaves shards; see effects.ts and fight.ts.
-  { id: 'glass', name: 'Glass Arrow', does: 'Its glass shards stick in them. They must hit you back next turn, or they pop.', blastRadius: 26, peakDamage: 30, price: 500, perPurchase: 1, level: 5 },
+  { id: 'glass', name: 'Glass Arrow', does: 'Its glass shards stick in them. They must hit you back next turn, or they pop.', blastRadius: 26, peakDamage: 30, price: 250, perPurchase: 1, level: 5 },
 ];
 
 export const ARROWS: readonly ArrowKind[] = ENTRIES.map((e) => ({ forSale: true, unlimited: false, ...e }));

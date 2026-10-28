@@ -15,18 +15,20 @@ import { makeHandler, type ArmoryState, type Services, type StoredFight, type St
 import { HERE_FOR_MS } from '../../../shared/archery/config';
 import { duelOpen, type DuelRow, type HereReply } from '../../../shared/archery/duel';
 import type { MathsContext } from '../../../shared/archery/speed';
+import { START_COINS } from '../../../shared/archery/shop';
 import type { StatsAdd } from '../../../shared/archery/stats';
 import type { ItemId, PlayerSetup } from '../../../shared/archery/types';
 
 interface Pupil extends ArmoryState {
-  rounds: { at: number; earns: boolean }[];
+  /** Question sets: when, coin-earning or not, coins earned, and the chest or restock it was (`after`). */
+  rounds: { at: number; earns: boolean; seed?: string; coins?: number; after?: string | null }[];
 }
 
 /** What the pretend server keeps (so the preview can save it to the device and tests can look inside). */
 export interface TrialData {
   pupils: Record<string, Pupil>;
   rounds: Record<string, StoredRound & { player: string }>;
-  fights: Record<number, StoredFight & { player: string }>;
+  fights: Record<number, StoredFight & { player: string; won?: boolean; finishedAt?: number }>;
   requests: Record<string, unknown>;
   nextFight: number;
   points: { player: string; points: number; once: string }[];
@@ -67,6 +69,7 @@ export interface TrialOptions {
 }
 
 const DAY = 24 * 3600 * 1000;
+const HOUR = 3600 * 1000;
 
 function plusGear(gear: Partial<Record<ItemId, number>>, delta: Partial<Record<ItemId, number>>, sign: 1 | -1) {
   const out: Partial<Record<ItemId, number>> = { ...gear };
@@ -88,7 +91,7 @@ export function trialServices(opts: TrialOptions = {}) {
   const data = opts.data ?? emptyTrialData();
   const now = opts.now ?? (() => Date.now());
   const random = opts.random ?? Math.random;
-  const pupil = (id: string): Pupil => (data.pupils[id] ??= { coins: 0, gear: {}, shields: [], bows: [], spent: 0, best: {}, rounds: [] });
+  const pupil = (id: string): Pupil => (data.pupils[id] ??= { coins: START_COINS, gear: {}, shields: [], bows: [], spent: 0, best: {}, rounds: [] });
   const remember = (player: string, request: string, reply: unknown) => {
     data.requests[`${player}:${request}`] = reply;
     return reply;
@@ -145,7 +148,7 @@ export function trialServices(opts: TrialOptions = {}) {
     async state(player) {
       const p = pupil(player);
       const t = now();
-      return { ok: true, value: { ...view(p), roundsToday: p.rounds.filter((r) => r.earns && t - r.at < DAY).length } };
+      return { ok: true, value: { ...view(p), coinsToday: p.rounds.filter((r) => t - r.at < DAY).reduce((n, r) => n + (r.coins ?? 0), 0) } };
     },
     async shop(player, request, action, kind, item, price, qty, needSpent, carry) {
       const key = `${player}:${request}`;
@@ -176,14 +179,30 @@ export function trialServices(opts: TrialOptions = {}) {
       }
       return { ok: true, value: remember(player, request, { result, state: view(p) }) as never };
     },
-    async roundStart(player, seed, questions, earns, servedMs) {
-      data.rounds[seed] = { player, questions, served: { 0: servedMs }, answered: {}, earns };
-      pupil(player).rounds.push({ at: now(), earns });
+    async roundStart(player, seed, questions, earns, servedMs, kind, after, perRight) {
+      const p = pupil(player);
+      if (after !== null && p.rounds.some((r) => r.after === after)) return 'taken';
+      data.rounds[seed] = { player, questions, served: { 0: servedMs }, answered: {}, earns, kind, perRight };
+      p.rounds.push({ at: now(), earns, seed, coins: 0, after });
       return true;
+    },
+    async bonusFor(player, kind, fight, duel) {
+      if (fight !== null) {
+        const f = data.fights[fight];
+        if (!f || f.player !== player) return null;
+        if (kind === 'restock') return f.status === 'playing' ? { won: false } : null;
+        return f.status === 'done' && now() - (f.finishedAt ?? 0) < HOUR ? { won: f.won === true } : null;
+      }
+      const d = duel === null || kind !== 'chest' ? undefined : duels()[duel];
+      if (!d) return null;
+      const seat = d.seat_a === player ? 0 : d.seat_b === player ? 1 : null;
+      if (seat === null || d.status !== 'done' || !['finished', 'left', 'timeouts'].includes(d.ending ?? '') || d.leaver === seat) return null;
+      if (!d.finished_at || now() - Date.parse(d.finished_at) > HOUR) return null;
+      return { won: d.winner === seat };
     },
     async roundLoad(player, seed) {
       const r = data.rounds[seed];
-      return r && r.player === player ? { questions: r.questions, served: { ...r.served }, answered: { ...r.answered }, earns: r.earns } : null;
+      return r && r.player === player ? { questions: r.questions, served: { ...r.served }, answered: { ...r.answered }, earns: r.earns, kind: r.kind, perRight: r.perRight } : null;
     },
     async roundAnswer(player, seed, slot, value, right, coins, nextMs) {
       const r = data.rounds[seed];
@@ -192,6 +211,8 @@ export function trialServices(opts: TrialOptions = {}) {
       if (nextMs !== null) r.served[String(slot + 1)] = nextMs;
       const p = pupil(player);
       p.coins += coins;
+      const kept = p.rounds.find((x) => x.seed === seed);
+      if (kept) kept.coins = (kept.coins ?? 0) + coins;
       return { claimed: true, coins: p.coins };
     },
     async fightStart(player, request, seed, world, opponent, pack) {
@@ -212,11 +233,13 @@ export function trialServices(opts: TrialOptions = {}) {
       const f = data.fights[fight];
       return f && f.player === player ? { seed: f.seed, world: f.world, opponent: f.opponent, pack: f.pack, status: f.status } : null;
     },
-    async fightEnd(player, fight, status, back, score) {
+    async fightEnd(player, fight, status, back, score, won) {
       const f = data.fights[fight];
       const p = pupil(player);
       if (!f || f.player !== player || f.status !== 'playing') return { ok: true, value: { result: 'duplicate', best: false, state: view(p) } };
       f.status = status;
+      f.won = won;
+      f.finishedAt = now();
       p.gear = plusGear(p.gear, back, 1);
       const best = status === 'done' && score > (p.best[f.world] ?? -1);
       if (best) p.best[f.world] = score;

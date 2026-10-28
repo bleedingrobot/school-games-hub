@@ -220,6 +220,7 @@
 .ar-over { position: fixed; inset: 0; z-index: 45; overflow-y: auto; }
 .ar-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .ar-btn--big { min-height: 56px; font-size: 1.3rem; padding: 0 28px; }
+.ar-btn--small { font-size: 0.95rem; padding: 0 14px; opacity: 0.9; }
 .ar-shell .ar-btn { width: auto; min-height: 44px; }
 .ar-shell .ar-small { min-height: 44px; padding: 0 12px; font-size: 0.95rem; border-radius: 12px; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2); }
 
@@ -331,6 +332,11 @@
 .ar-speed__head h2 { margin: 0; color: #9a3412; font-size: 1.9rem; }
 .ar-speed__big { font-size: 1.25rem; font-weight: 700; margin: 4px 0; }
 .ar-speed__note { color: var(--ar-paper-soft); margin: 0; }
+.ar-loot { justify-self: center; display: block; }
+@media (prefers-reduced-motion: no-preference) {
+  .ar-loot { animation: ar-loot-pop 0.5s ease-out; }
+  @keyframes ar-loot-pop { from { transform: scale(0.6) rotate(-6deg); } 70% { transform: scale(1.08); } to { transform: none; } }
+}
 .ar-speed__timeout { font-size: 1.3rem; font-weight: 700; color: #9a1a1a; margin: 0; }
 .ar-pips { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0; padding: 0; }
 .ar-pips li { min-width: 2.6em; padding: 2px 6px; border-radius: 8px; background: #efe1c3; color: #5d4128; font-size: 0.85rem; font-variant-numeric: tabular-nums; }

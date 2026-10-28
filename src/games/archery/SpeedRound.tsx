@@ -1,17 +1,26 @@
 /**
- * The speed round (docs/ARCHERY-PLAN.md, section 5): the only way to earn coins. The server sends one question at a
- * time from the pupil's maths focus; the first has 10 seconds, the next 9 … down to 1. Each right answer in time
- * earns 10 coins. A wrong answer moves straight on; so does running out of time. Every question is shown with the
- * hub's own question box (QuestionModal) and marked by the server.
+ * A question set, the only way to earn coins (docs/ARCHERY-PLAN.md, section 5, and docs/ARCHERY-QUESTIONS-PLAN.md):
+ *
+ * - the speed round (Home or the Armory): 10 questions, the first has 10 seconds, the next 9 … down to 5;
+ * - the loot chest after a fight: 3 questions, 10 seconds each, more coins for a win;
+ * - a restock between rounds of a bot fight: 3 questions, 10 seconds each.
+ *
+ * The server sends one question at a time from the pupil's maths focus and marks it. Each right answer in time earns
+ * coins (plus a streak bonus from the third in a row). A wrong answer moves straight on; so does running out of time.
+ * Every question is shown with the hub's own question box (QuestionModal).
  */
 import { useEffect, useRef, useState } from 'react';
-import { COINS_PER_RIGHT, EARNING_ROUNDS_PER_DAY, FIRST_SECONDS, POINT_AT, ROUND_QUESTIONS } from '../../../shared/archery/speed';
-import type { ArcheryApi, RoundQuestion } from '../../data/archery';
+import {
+  CHEST_LOSS_COINS, CHEST_WIN_COINS, COINS_PER_RIGHT, DAILY_COINS, FIRST_SECONDS, LAST_SECONDS, POINT_AT, ROUND_QUESTIONS, SHORT_QUESTIONS,
+  SHORT_SECONDS, STREAK_AT, STREAK_BONUS, limitMs, setSize,
+} from '../../../shared/archery/speed';
+import type { ArcheryApi, RoundQuestion, SetRequest } from '../../data/archery';
 import { QuestionModal, type MarkedAnswer } from '../../maths/QuestionModal';
 import { useSound } from '../../sound';
 import { playSound } from '../sounds';
 import { CoinCount } from './CoinCount';
 import { factText } from './factText';
+import { LootChest, RestockQuiver } from './LootArt';
 
 /** The question box's feedback pause, shortened: a speed round keeps moving (×0.6 of the usual). */
 const FEEDBACK_SCALE = 0.6;
@@ -21,18 +30,23 @@ const TIMEOUT_PAUSE = 1400;
 type Phase =
   | { kind: 'intro' }
   | { kind: 'starting' }
-  | { kind: 'question'; seed: string; earns: boolean; total: number; q: RoundQuestion }
+  | { kind: 'question'; seed: string; earns: boolean; total: number; perRight: number; q: RoundQuestion }
   | { kind: 'timed-out'; seed: string; earns: boolean; total: number; fact: string; next: RoundQuestion | null }
   | { kind: 'done'; earns: boolean; right: number; total: number; point: boolean }
   | { kind: 'problem'; message: string };
 
-export function SpeedRound({ api, coins, roundsLeft, onCoins, onRoundsLeft, onExit, exitLabel = 'Back', timeScale = 1 }: {
+export function SpeedRound({ api, coins, coinsLeft, set = { kind: 'speed' }, won, onCoins, onCoinsLeft, onExit, exitLabel = 'Back', timeScale = 1 }: {
   api: ArcheryApi;
   coins: number;
-  roundsLeft: number;
+  /** Coins maths can still earn today. */
+  coinsLeft: number;
+  /** Which set: a speed round (the default), a loot chest or a restock. */
+  set?: SetRequest;
+  /** A loot chest: was the fight won (for the words before it starts)? */
+  won?: boolean;
   /** The pupil's coins changed (the server's total). */
   onCoins: (total: number) => void;
-  onRoundsLeft: (left: number) => void;
+  onCoinsLeft: (left: number) => void;
   onExit: () => void;
   exitLabel?: string;
   /** Tests set 0 to skip the pauses. */
@@ -42,6 +56,9 @@ export function SpeedRound({ api, coins, roundsLeft, onCoins, onRoundsLeft, onEx
   const [earned, setEarned] = useState(0);
   const [right, setRight] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(FIRST_SECONDS);
+  const kind = set.kind;
+  const speed = kind === 'speed';
+  const title = kind === 'chest' ? 'Loot chest' : kind === 'restock' ? 'Restock' : 'Speed round';
   const { soundOn } = useSound();
   const heading = useRef<HTMLHeadingElement>(null);
   const shownAt = useRef(0);
@@ -59,27 +76,27 @@ export function SpeedRound({ api, coins, roundsLeft, onCoins, onRoundsLeft, onEx
     setPhase({ kind: 'starting' });
     setEarned(0);
     setRight(0);
-    const r = await api.roundStart();
+    const r = await api.roundStart(set);
     if (gone.current) return;
     if (!r.ok) {
       setPhase({ kind: 'problem', message: r.message });
       return;
     }
-    onRoundsLeft(r.value.roundsLeft);
-    ask(r.value.seed, r.value.earns, r.value.questions, { question: r.value.question, limitMs: r.value.limitMs });
+    onCoinsLeft(r.value.coinsLeft);
+    ask(r.value.seed, r.value.earns, r.value.questions, r.value.perRight, { question: r.value.question, limitMs: r.value.limitMs });
   }
 
-  function ask(seed: string, earns: boolean, total: number, q: RoundQuestion) {
+  function ask(seed: string, earns: boolean, total: number, perRight: number, q: RoundQuestion) {
     answered.current = false;
     shownAt.current = performance.now();
     setSecondsLeft(Math.ceil(q.limitMs / 1000));
-    setPhase({ kind: 'question', seed, earns, total, q });
+    setPhase({ kind: 'question', seed, earns, total, perRight, q });
   }
 
   // The countdown. When it runs out, the server is told and the next question comes.
   useEffect(() => {
     if (phase.kind !== 'question') return;
-    const { seed, earns, total, q } = phase;
+    const { seed, earns, total, perRight, q } = phase;
     const tick = window.setInterval(() => {
       const left = q.limitMs - (performance.now() - shownAt.current);
       setSecondsLeft(Math.max(0, Math.ceil(left / 1000)));
@@ -97,7 +114,7 @@ export function SpeedRound({ api, coins, roundsLeft, onCoins, onRoundsLeft, onEx
         setPhase({ kind: 'timed-out', seed, earns, total, fact: factText(q.question, r.value.answer), next: r.value.next });
         window.setTimeout(() => {
           if (gone.current) return;
-          if (r.value.next) ask(seed, earns, total, r.value.next);
+          if (r.value.next) ask(seed, earns, total, perRight, r.value.next);
           else finish(earns, r.value.right, total, !!r.value.point);
         }, TIMEOUT_PAUSE * timeScale);
       })();
@@ -141,33 +158,51 @@ export function SpeedRound({ api, coins, roundsLeft, onCoins, onRoundsLeft, onEx
     const a = after.current;
     after.current = null;
     if (!a) return;
-    if (a.next) ask(phase.seed, phase.earns, phase.total, a.next);
+    if (a.next) ask(phase.seed, phase.earns, phase.total, phase.perRight, a.next);
     else finish(phase.earns, a.right, phase.total, a.point);
   }
 
   const slot = phase.kind === 'question' ? phase.q.question.slot : 0;
-  const total = phase.kind === 'question' || phase.kind === 'timed-out' ? phase.total : ROUND_QUESTIONS;
-  const earns = phase.kind === 'question' || phase.kind === 'timed-out' ? phase.earns : roundsLeft > 0;
+  const total = phase.kind === 'question' || phase.kind === 'timed-out' ? phase.total : setSize(kind);
+  const earns = phase.kind === 'question' || phase.kind === 'timed-out' ? phase.earns : coinsLeft > 0;
+  const perRight = phase.kind === 'question' ? phase.perRight : kind === 'chest' ? (won ? CHEST_WIN_COINS : CHEST_LOSS_COINS) : COINS_PER_RIGHT;
+  const leftToday = coinsLeft > 0
+    ? `Coins from maths left today: ${coinsLeft} of ${DAILY_COINS}.`
+    : `You've earned today's ${DAILY_COINS} coins from maths. You can still practise (no coins), and your maths still counts.`;
 
   return (
     <section className="ar-speed" aria-labelledby="ar-speed-title">
       <div className="ar-speed__card">
         <div className="ar-speed__head">
-          <h2 id="ar-speed-title" ref={heading} tabIndex={-1}>Speed round</h2>
+          <h2 id="ar-speed-title" ref={heading} tabIndex={-1}>{title}</h2>
           <CoinCount coins={coins} />
         </div>
-        {phase.kind === 'intro' && (
+        {!speed && (kind === 'chest'
+          ? <LootChest filled={phase.kind === 'done' ? phase.right : right} of={total} />
+          : <RestockQuiver filled={phase.kind === 'done' ? phase.right : right} of={total} />)}
+        {phase.kind === 'intro' && speed && (
           <>
-            <p className="ar-speed__big">{ROUND_QUESTIONS} questions. The first has {FIRST_SECONDS} seconds, the next 9, then 8 … down to 1!</p>
-            <p>Each right answer in time earns <strong>{COINS_PER_RIGHT} coins</strong>. A wrong answer just moves on to the next one. Get {POINT_AT} or more right for a hub point.</p>
-            <p className="ar-speed__note">
-              {roundsLeft > 0
-                ? `Coin rounds left today: ${roundsLeft} of ${EARNING_ROUNDS_PER_DAY}.`
-                : `You've used today's ${EARNING_ROUNDS_PER_DAY} coin rounds. You can still practise (no coins), and your maths still counts.`}
-            </p>
+            <p className="ar-speed__big">{ROUND_QUESTIONS} questions. The first has {FIRST_SECONDS} seconds, the next 9, then 8 … down to {LAST_SECONDS}!</p>
+            <p>Each right answer in time earns <strong>{COINS_PER_RIGHT} coins</strong>, and {STREAK_AT} or more in a row earn {STREAK_BONUS} extra each. A wrong answer just moves on to the next one. Get {POINT_AT} or more right for a hub point.</p>
+            <p className="ar-speed__note">{leftToday}</p>
             <div className="ar-row">
               <button type="button" className="button button--play ar-btn ar-btn--big" onClick={() => void start()}>Start</button>
               <button type="button" className="button button--light ar-btn" onClick={onExit}>{exitLabel}</button>
+            </div>
+          </>
+        )}
+        {phase.kind === 'intro' && !speed && (
+          <>
+            <p className="ar-speed__big">
+              {kind === 'chest'
+                ? `${won ? 'You won! ' : ''}Fill your chest: ${SHORT_QUESTIONS} questions, ${perRight} coins for each one right!`
+                : `Restock before the next round: ${SHORT_QUESTIONS} quick questions, ${perRight} coins each!`}
+            </p>
+            <p>{SHORT_SECONDS} seconds for each. Get all {SHORT_QUESTIONS} right for a {STREAK_BONUS}-coin streak bonus.</p>
+            {coinsLeft <= 0 && <p className="ar-speed__note">{leftToday}</p>}
+            <div className="ar-row">
+              <button type="button" className="button button--play ar-btn ar-btn--big" onClick={() => void start()}>{kind === 'chest' ? 'Open the chest' : 'Start'}</button>
+              <button type="button" className="button button--light ar-btn ar-btn--small" onClick={onExit}>Skip</button>
             </div>
           </>
         )}
@@ -176,10 +211,10 @@ export function SpeedRound({ api, coins, roundsLeft, onCoins, onRoundsLeft, onEx
           <>
             <ol className="ar-pips" aria-label={`Question ${slot + 1} of ${total}`}>
               {Array.from({ length: total }, (_, i) => (
-                <li key={i} data-state={i < slot ? 'done' : i === slot ? 'now' : undefined}>{FIRST_SECONDS - i}s</li>
+                <li key={i} data-state={i < slot ? 'done' : i === slot ? 'now' : undefined}>{limitMs(i, kind) / 1000}s</li>
               ))}
             </ol>
-            <p className="ar-speed__note">Right so far: {right}. Coins this round: {earned}.{earns ? '' : ' (Practice: no coins.)'}</p>
+            <p className="ar-speed__note">Right so far: {right}. Coins {speed ? 'this round' : 'so far'}: {earned}.{earns ? '' : ' (Practice: no coins.)'}</p>
           </>
         )}
         {phase.kind === 'timed-out' && (
@@ -189,10 +224,10 @@ export function SpeedRound({ api, coins, roundsLeft, onCoins, onRoundsLeft, onEx
           <>
             <p className="ar-speed__big">You got {phase.right} of {phase.total} right{phase.earns ? ` and earned ${earned} coins` : ''}!</p>
             {phase.point && <p>+1 hub point for {POINT_AT} or more right.</p>}
-            {!phase.earns && <p className="ar-speed__note">That was a practice round: no coins, but your maths still counts.</p>}
+            {!phase.earns && <p className="ar-speed__note">That was practice: no coins, but your maths still counts.</p>}
             <div className="ar-row">
-              <button type="button" className="button button--play ar-btn" onClick={() => void start()}>Another round</button>
-              <button type="button" className="button button--light ar-btn" onClick={onExit}>{exitLabel}</button>
+              {speed && <button type="button" className="button button--play ar-btn" onClick={() => void start()}>Another round</button>}
+              <button type="button" className={`button ${speed ? 'button--light' : 'button--play'} ar-btn`} onClick={onExit}>{exitLabel}</button>
             </div>
           </>
         )}
@@ -210,8 +245,8 @@ export function SpeedRound({ api, coins, roundsLeft, onCoins, onRoundsLeft, onEx
         <QuestionModal
           question={{ ...phase.q.question, id: phase.q.question.slot }}
           title={`Question ${slot + 1} of ${total}`}
-          spot="Speed round"
-          note={earns ? `${COINS_PER_RIGHT} coins if you're quick!` : 'Practice round'}
+          spot={title}
+          note={earns ? `${phase.perRight} coins if you're quick!` : 'Practice: no coins'}
           secondsLeft={secondsLeft}
           scribble={false}
           timeScale={FEEDBACK_SCALE * timeScale}
