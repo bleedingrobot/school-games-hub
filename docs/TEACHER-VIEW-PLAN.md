@@ -720,6 +720,8 @@ with teachers, students, code and mode, last active) and `admin_create_class(nam
   (`teacher_add_co_teacher`, `teacher_remove_co_teacher`), Archive / Unarchive (`teacher_archive_class`); "Make a class" for any
   teacher. Overview's "Classes with no teacher" links to it. Archived classes can't have their teachers changed until
   unarchived.*
+- *Live 28 Oct 2026: the migration pasted into the SQL Editor by James and checked as a school admin, then the site published
+  (PR #75). Next: End of year checklist + `admin_log`.*
 
 ## 8. Tests to carry over / add
 
