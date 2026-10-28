@@ -224,7 +224,7 @@ const int = (v: unknown, lo: number, hi: number): number | null => (typeof v ===
 
 const parsePush = (v: unknown): Push | null => (typeof v === 'string' && PUSHES.includes(v as Push) ? (v as Push) : null);
 
-const ORDER_ACTIONS = ['attack', 'spell', 'guard', 'run', 'skip'];
+const ORDER_ACTIONS = ['attack', 'spell', 'guard', 'run', 'skip', 'potion'];
 
 /** One member's order for a round. `undefined` for "none" (sent as null). Null if it is not an order. */
 function parseOrder(v: unknown): Order | undefined | null {
@@ -239,6 +239,10 @@ function parseOrder(v: unknown): Order | undefined | null {
       const spell = int(v.spell, 0, 500);
       const target = int(v.target, -1, 20);
       return spell === null || target === null ? null : { action: 'spell', spell, target };
+    }
+    case 'potion': {
+      const target = int(v.target, 0, CONFIG.maxMembers - 1);
+      return target === null ? null : { action: 'potion', target };
     }
     default: return { action: v.action } as Order;
   }
