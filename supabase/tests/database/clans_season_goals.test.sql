@@ -152,7 +152,7 @@ select is((select array_agg(season || ':' || clan_name order by season desc, cla
   'ana sees her school''s finished villages, newest season first');
 select ok(not exists (select 1 from public.clan_hall_of_legends() where clan_name in ('Green Owl', 'Gold Hawk')), '... not a hidden profile''s clan, nor another school''s');
 select is((select array_agg(is_me order by season desc, clan_name) from public.clan_hall_of_legends()), array[false, true, true], '... and which rows are hers');
-select is((select village_done_on from public.clan_hall_of_legends() where clan_name = 'Blue Fox'), public.nz_day(now()), '... with the day');
+select is((select village_done_on from public.clan_hall_of_legends() where clan_name = 'Blue Fox'), (now() at time zone 'Pacific/Auckland')::date, '... with the day');
 select ok((select monster_done_on is null from public.clan_hall_of_legends() where clan_name = 'Blue Fox'), '... and no monster day yet');
 select pg_temp.as_d();
 select is((select array_agg(clan_name) from public.clan_hall_of_legends()), array['Gold Hawk'], 'dee, at the other school, sees only her own school''s');
