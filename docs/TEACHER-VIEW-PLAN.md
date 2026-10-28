@@ -698,6 +698,19 @@ school-admin role); Classes; End of year checklist + `admin_log`; Safety (alerts
 School game settings (villages, Dragon dates, then the new defaults and copy-to-classes). Stage 0 already moves the
 resets into an admin-only section, so nothing waits on this stage to be safe.
 
+*Part 1 done 28 Oct 2026 on `claude/project-thread-4t7spr`: Overview, Students, Teachers. One migration,
+`20261028000800_admin_pages.sql` (read only): `admin_overview()`, `admin_students()` and `admin_teachers()`, each
+`require_school_admin()` and the admin's own school only (`supabase/tests/database/admin_pages.test.sql`, 33 checks, two
+schools). The actions use the existing `school_set_admin` (refuses your own row, so the last admin can't remove themself),
+`teacher_set_role` and the student page.*
+- *`/teacher/admin` has sub-tabs Overview, Students, Teachers (`src/teacher/Admin.tsx`). Overview: "Needs an admin" (students
+  not in a class, classes with no teacher, join requests waiting over a day) and the school's numbers, no names. Students:
+  every student with class, last played and hidden, filters Everyone / Not in a class / Hidden / Not played for 30 days, Find,
+  Hide real names; a name opens the student page in their own class. Teachers: classes, school admin, Make/Remove school
+  admin and Remove teacher (with a confirm step), never on your own row.*
+- *Not done yet: Make/Remove teacher also stays on the student page; ticked bulk actions (move, delete leavers) come with End
+  of year. Next: Classes.*
+
 ## 8. Tests to carry over / add
 
 - Existing `Teacher*.test.tsx` files keep their assertions about what each switch saves; they move with the panels.
