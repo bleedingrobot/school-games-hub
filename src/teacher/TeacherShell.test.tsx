@@ -20,6 +20,11 @@ const data = vi.hoisted(() => ({
   fetchFocuses: vi.fn(),
   fetchQuestionSkips: vi.fn(),
   fetchClassMap: vi.fn(),
+  fetchAdminOverview: vi.fn(),
+}));
+vi.mock('../data/admin', async (original) => ({
+  ...(await original<typeof import('../data/admin')>()),
+  fetchAdminOverview: data.fetchAdminOverview,
 }));
 vi.mock('../data/classes', async (original) => ({
   ...(await original<typeof import('../data/classes')>()),
@@ -104,6 +109,10 @@ beforeEach(() => {
   data.saveTrainingFirst.mockResolvedValue(undefined);
   data.fetchFocuses.mockResolvedValue([]);
   data.fetchQuestionSkips.mockResolvedValue({ students: [], spots: [] });
+  data.fetchAdminOverview.mockResolvedValue({
+    counts: { classes: 2, students: 53, teachers: 3, admins: 1, activeWeek: 40, shownWeek: 100, skippedWeek: 10 },
+    noClass: 0, classesNoTeacher: [], oldWarp: 0,
+  });
   data.fetchClassMap.mockResolvedValue({ classId: 'c14', className: 'Room 14', yearLevel: 5, auto: true, students: [] });
 });
 
@@ -139,7 +148,8 @@ describe('the teacher header', () => {
 
   it('keeps the admin page for school admins', async () => {
     const { unmount } = show('/teacher/admin', admin);
-    expect(await screen.findByRole('heading', { name: 'Admin', level: 2 })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'The school', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Admin' })).toBeInTheDocument();
     expect(screen.queryByText('This page is for school admins.')).not.toBeInTheDocument();
     unmount();
     show('/teacher/admin');

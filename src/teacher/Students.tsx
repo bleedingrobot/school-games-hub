@@ -48,7 +48,7 @@ export function focusText(focus: MathsFocus): string {
 
 const hideKey = (me: string) => `sgh-hide-real-names:${me}`;
 
-function useHideRealNames(me: string): [boolean, (hide: boolean) => void] {
+export function useHideRealNames(me: string): [boolean, (hide: boolean) => void] {
   const [hide, setHide] = useState(() => {
     try {
       return localStorage.getItem(hideKey(me)) === '1';
