@@ -27,19 +27,19 @@ Dragon Maths ([LORD-PLAN.md](LORD-PLAN.md) sections 9 and 11, [DRAGON-SCHOOL-SEA
 
 ## 3. The season clock
 
-**Recommended: a Clan Quest season is 10 weeks (70 days), one school term**, running back to back from a start date.
+**James chose 5 weeks (35 days), like Dragon Maths (28 Oct 2026)**, running back to back from a start date.
 
-- Why 10, not Dragon Maths' 5: the village alone takes a steady pupil 6 to 8 weeks. In 5 weeks only daily players would finish it.
-- **One date for the whole school**, set the same way as Dragon Maths ([DRAGON-SCHOOL-SEASON.md](DRAGON-SCHOOL-SEASON.md)): a school admin sets "First day of season 1" and can switch on a holiday pause. Until the Admin page exists, it sits in the Clan Quest teacher drawer. A teacher with no admin sees it read-only. Built with the same pattern (`clans_school_season()`, `admin_set_clans_season(date)`, `admin_set_clans_holiday(on)`).
+- **Recommended: use Dragon Maths' school season date itself** ([DRAGON-SCHOOL-SEASON.md](DRAGON-SCHOOL-SEASON.md)): one date for the whole school, set by a school admin, with the same holiday pause. Then both games' seasons start and end on the same day, there is one date to set, and teachers see one "Season 3, 12 days left" line. Clan Quest reads it through `lord_school_season_row` (or a shared `school_season()` wrapper), so no second date or admin box is needed. (If James later wants them apart, a Clan Quest column on the same row is easy.)
 - **The shape of a season:**
 
-  | Weeks | What happens |
+  | Days | What happens |
   |---|---|
-  | 1 to 8 | Mines, building, raids, as now. A progress bar on the home screen: "Village 23 / 39". |
-  | 7 and 8 | Warnings: news lines ("Giant footprints were found by the river"), a home-screen countdown "The Storm Giant arrives in 12 days". |
-  | 9 | "Get ready week": the monster is seen in the hills. Classmate raids stop (so nobody's walls are knocked down right before the fight). A one-off **Monster supplies** shop opens (section 5.6). |
-  | 10 | **Monster week.** The monster attacks every clan's village. One try each day (section 5.4). |
-  | Day 70 | Season ends. The Hall is written. A new season starts the next day. |
+  | 1 to 28 | Mines, building, raids, as now. A progress bar on the home screen: "Village 23 / 39". |
+  | 22 to 28 | Warnings: news lines ("Giant footprints were found by the river"), a home-screen countdown "The Storm Giant arrives in 5 days". The **Monster supplies** shop opens (section 5.6). |
+  | 29 to 35 | **Monster week.** The giant attacks every clan's village. One try each day (section 5.4). Classmate raids are off. |
+  | Day 35 | Season ends. The Hall is written. A new season starts the next day. |
+
+- **5 weeks means the village must fill faster** (section 4): today 39 builds at 2 a day need 20 play days, and a 3 to 4 days a week pupil gets only about 12 to 16 play days before monster week.
 
 - The teacher's **New fame season** button goes; fame resets with the clock instead. (Kept in place, unused, until the clock is live.)
 
@@ -57,9 +57,9 @@ Dragon Maths ([LORD-PLAN.md](LORD-PLAN.md) sections 9 and 11, [DRAGON-SCHOOL-SEA
 - It also makes the monster fight easier (section 5), which is the main reward.
 
 **Fairness**
-- **Saved-up builds (Recommended):** builds you didn't use pile up, up to 4 (like Dragon Maths' saved-up turns). A pupil who plays 3 days a week can then still finish. Without it, 39 builds take 20 play days however much gold you have.
+- **Faster building for a 5-week season (Recommended):** keep "2 builds a day" as the rule kids see, but **builds you didn't use pile up, up to 6** (like Dragon Maths' saved-up turns, so a 3-days-a-week pupil gets about 4 builds each time they play), and **cut the bases from 150 to about 100 gold**. Target, checked with the simulator: a daily clan finishes in week 3, a 3 to 4 days a week clan by the end of week 4 (just before the giant), and a 2 days a week clan gets about 30 / 39. Without this, 39 builds take 20 play days however much gold you have, and most pupils couldn't finish in 5 weeks.
 - **Raids can knock a level off** (never Walls or Strongroom). A clan at 39 / 39 that gets raided drops to 38 and must rebuild. **Recommended: once complete, the village is "complete for the season"** for the goal: the badge and Hall place are kept even if a raid knocks a level off later. The level still has to be rebuilt to get its effect back.
-- Price check: the bases (150 gold × level) were tuned for 4 to 5 weeks of daily play, which fits a 10 week season with room to spare. Re-run the simulator with a "3 days a week" bot once saved-up builds exist, aiming for a 3-days-a-week clan to finish in week 7 or 8.
+- The simulator needs a "3 days a week" and "2 days a week" bot to check the targets above.
 
 ## 5. Goal 2: the monster
 
@@ -96,7 +96,7 @@ Tuned with `npm run clans:sim` and a new `--monster` option. The giant's numbers
 
 ### 5.4 Tries and losing
 
-- **Recommended: one try each school day of monster week (5 tries)**, and **the giant gets tired**: each failed try leaves it 10% weaker for that clan the next day (up to 40% weaker on day 5). So a clan that keeps going will very likely win by Friday, and a strong clan can win on Monday. That's the catch-up the Dragon Maths pace notes asked for.
+- **Recommended: one try each school day of monster week (5 tries)**, and **the giant gets tired**: each failed try leaves it 10% weaker for that clan the next day (up to 40% weaker on day 5). So a clan that keeps going will very likely win by the end of the week, and a strong clan can win on Monday. That's the catch-up the Dragon Maths pace notes asked for.
 - **Losing costs nothing real.** Members are knocked out until tomorrow (free wake-up), and the village is not damaged. "Grimmor stomps off for the night. He'll be back tomorrow."
 - A pupil who doesn't play in monster week just misses it. A pupil who was away can still try every day they're in.
 - **A clan that wins** gets a **trophy on its village** (the giant's club, kept for good), +100 fame, **10 points**, the achievement **Giant Slayer**, a news story, and a place in the Hall. After winning, the clan can still fight the giant again for fun (fame only), so the class can keep playing in week 10.
@@ -104,11 +104,11 @@ Tuned with `npm run clans:sim` and a new `--monster` option. The giant's numbers
 ### 5.5 Mines and raids in monster week
 
 - **Mines stay open** (to level up and earn gold for supplies), at the usual fights a day.
-- **Classmate raids are off in weeks 9 and 10** (Recommended), so a raid can't flatten someone's walls on the eve of the fight, and everyone faces the same giant. Raids on computer kingdoms stay.
+- **Classmate raids are off in monster week** (Recommended), so a raid can't flatten someone's walls on the eve of the fight, and everyone faces the same giant. Raids on computer kingdoms stay.
 
 ### 5.6 Monster supplies (a use for spare gold)
 
-In weeks 9 and 10 the market sells three one-off supplies, each limited (so a rich clan can't buy a guaranteed win):
+From day 22 the market sells three one-off supplies, each limited (so a rich clan can't buy a guaranteed win):
 - **Fire arrows** (the tower hits harder in the siege), up to 3;
 - **Healing potions** (heal a member mid-fight), up to 4;
 - **Giant net** (the giant misses its first boulder), 1.
@@ -127,11 +127,11 @@ Names are hub names; hidden profiles aren't shown. Never maths scores.
 
 This is James's call (question 2). The options:
 
-1. **Recommended: the village starts again; the clan keeps its members.** Every building goes back to level 0 and the troops go home. Members keep their levels, gear and training. The purse keeps up to 500 gold (the rest is "spent on the giant's feast"). Kept for good: trophies, achievements, the Hall. *Why:* both goals can be won again each term, and a new or slow clan isn't hopelessly behind a clan with a full village. *Bad:* pupils lose their buildings, so it must be clear from week 7 ("Your village is rebuilt fresh next term; your trophy stays forever").
-2. **Keep everything.** The village goal can only be won once ever; after that, only the giant matters (and a new, stronger giant each season). Kind to pupils, but in term 2 the goal is already done for most.
+1. **Recommended: the village starts again; the clan keeps its members.** Every building goes back to level 0 and the troops go home. Members keep their levels, gear and training. The purse keeps up to 500 gold (the rest is "spent on the giant's feast"). Kept for good: trophies, achievements, the Hall. *Why:* both goals can be won again each season, and a new or slow clan isn't hopelessly behind a clan with a full village. *Bad:* pupils lose their buildings, so it must be clear from day 22 ("Your village is rebuilt fresh next season; your trophy stays forever").
+2. **Keep everything.** The village goal can only be won once ever; after that, only the giant matters (and a new, stronger giant each season). Kind to pupils, but from season 2 or 3 the goal is already done for most.
 3. **Halfway:** every building drops 2 levels. A middle path, but harder to explain.
 
-Members' levels: the simulator has a daily clan at level 20 by week 3 to 4, and the rules sheet says about 7 weeks for a mixed clan. So by term 2 most clans' members are maxed. Resetting members too is possible (like Dragon Maths heroes), but they are what pupils care about most, so not recommended.
+Members' levels: the simulator has a daily clan at level 20 by week 3 to 4, and the rules sheet says about 7 weeks for a mixed clan. So after two or three seasons most clans' members are maxed. Resetting members too is possible (like Dragon Maths heroes), but they are what pupils care about most, so not recommended.
 
 ## 8. What the build changes (for later)
 
@@ -139,26 +139,26 @@ Members' levels: the simulator has a daily clan at level 20 by week 3 to 4, and 
 
 **PR 1: the season clock and goal 1 (the village)**
 - Engine (`shared/clans/`): `seasonOf(start, today)` with day, week and phase ("build", "warning", "ready", "monster"); `villageComplete(levels)`; saved-up builds (`buildsSaved`, up to 4); the new-season reset (`newSeasonSave`, pure and tested).
-- Server: one migration with the school season date and holiday pause on the school's default `app_settings` row (copying Dragon Maths), `clans_school_season()`, the admin functions, `clan_hall` (clan, season, village_done_on, giant_done_on, giant_tries), and the season roll-over in the nightly job. The `clans` function sends the season with the clan and records the village goal.
-- Screens: the village bar, golden banner, celebration, countdown line, Hall of Legends, the teacher drawer's season box. How to play updated.
+- Server: one migration that reads Dragon Maths' school season date and pause, `clans_school_season()`, `clan_hall` (clan, season, village_done_on, giant_done_on, giant_tries), and the season roll-over in the nightly job. The `clans` function sends the season with the clan and records the village goal.
+- Screens: the village bar, golden banner, celebration, countdown line, Hall of Legends, the season line in the teacher drawer (read-only; the date is set in Dragon Maths). How to play updated.
 - Fame, points (`CONFIG.rewards`), the Master Builder achievement.
 
 **PR 2: goal 2 (the giant)**
 - Engine: `CONFIG.monster`, the siege (reusing `battle()` with fixed giant numbers), the giant as a boss in `fight.ts` (two-target stomp, boulder every third round), the tired rule, monster supplies.
-- Server: the `clans` function hands out one giant fight a day in monster week, replays it like a mine fight and records the win. Raids off in weeks 9 and 10.
-- Screens: the siege, the giant fight, the trophy, news lines, warnings in weeks 7 to 9.
+- Server: the `clans` function hands out one giant fight a day in monster week, replays it like a mine fight and records the win. Raids off in monster week.
+- Screens: the siege, the giant fight, the trophy, news lines, warnings from day 22.
 - Art: the giant and the siege scene.
 - Simulator: `--monster` to check the table in 5.3.
 
 **Shared files.** Both PRs touch `shared/clans/config.ts`, `empire.ts` and `MyVillage.tsx`, which the My Village work also changes. Check with that thread (and the migration number, GAME_DEVELOPMENT_GUIDE) before starting.
 
-**Going live.** The first season's start date: **Recommended: the first day of term 1 2027**, so the first giant comes in the last week of term 1. Nothing resets mid-term this year. Until then the bar and Hall can be live with no clock (the village goal works without a season; the giant waits for one).
+**Going live.** If Clan Quest shares Dragon Maths' date, its first season starts at the next Dragon Maths season start after PR 1 is live, so nothing resets mid-season. Until then the bar and Hall can be live with no clock (the village goal works without a season; the giant waits for one).
 
 ## 9. Questions for James
 
-1. Season length: **10 weeks, one term (Recommended)**, or 5 weeks like Dragon Maths, or the teacher picks the end date?
+1. ~~Season length?~~ **Answered 28 Oct 2026: 5 weeks, like Dragon Maths.** Follow-up: share Dragon Maths' school date (Recommended)?
 2. At a new season: **the village starts again, members kept (Recommended)**, or keep everything, or every building drops 2 levels?
-3. Giant tries: **one a day in monster week, and the giant gets tired (Recommended)**, or one try only, or as many as you like?
-4. Classmate raids in the last 2 weeks: **off (Recommended)** or on as usual?
+3. Giant tries: **one a day in monster week (the last 7 days), and the giant gets tired (Recommended)**, or one try only, or as many as you like?
+4. Classmate raids in monster week: **off (Recommended)** or on as usual?
 5. The monster: **Grimmor the Storm Giant (Recommended)**, or a stone golem, a frost troll or a sea serpent?
-6. When to start: **the first season starts on the first day of term 1 2027, with the village bar live now (Recommended)**, or a short test season this term?
+6. When to start: **at the next Dragon Maths season start after the build, with the village bar live now (Recommended)**, or a test season straight away?
