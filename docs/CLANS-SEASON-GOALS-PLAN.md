@@ -95,9 +95,9 @@ So every building matters, and a full village is the best way to beat the giant.
 
 | Clan | Win chance per try |
 |---|---|
-| Members level 18 to 20, village complete, full army, good gear | about **65%** |
-| Members about level 15, village about 25 / 39 | about **30%** |
-| Members about level 10, village about 10 / 39 | about **5%** (a stretch, with the "tired giant" rule below) |
+| Members about level 15 or more, village complete, full army, good gear | about **65%** |
+| Members about level 12, village about 25 / 39 | about **30%** |
+| Members about level 8, village about 10 / 39 | about **5%** (a stretch, with the "tired giant" rule below) |
 | Every Battle Cry answered right versus none | about +15 points, a nudge, not a test |
 
 Tuned with `npm run clans:sim` and a new `--monster` option. The giant's numbers live in `CONFIG.monster` like everything else.
@@ -133,13 +133,17 @@ Names are hub names; hidden profiles aren't shown. Never maths scores.
 
 ## 7. What starts again at a new season
 
-This is James's call (question 2). The options:
+**James chose a full reset (28 Oct 2026)**, like Dragon Maths' heroes. On the first day of a new season:
 
-1. **Recommended: the village starts again; the clan keeps its members.** Every building goes back to level 0 and the troops go home. Members keep their levels, gear and training. The purse keeps up to 500 gold (the rest is "spent on the giant's feast"). Kept for good: trophies, achievements, the Hall. *Why:* both goals can be won again each season, and a new or slow clan isn't hopelessly behind a clan with a full village. *Bad:* pupils lose their buildings, so it must be clear from day 22 ("Your village is rebuilt fresh next season; your trophy stays forever").
-2. **Keep everything.** The village goal can only be won once ever; after that, only the giant matters (and a new, stronger giant each season). Kind to pupils, but from season 2 or 3 the goal is already done for most.
-3. **Halfway:** every building drops 2 levels. A middle path, but harder to explain.
+- **Starts again:** every member goes back to level 1 with starting stats, HP and training points; gear and scrolls go; every building goes back to 0; troops go home; the purse goes back to the starting 200 gold; builds saved and daily counts reset; fame goes to 0 (this replaces the teacher's New fame season button).
+- **Kept:** the clan's name and look, its members' names, races and classes (so nobody has to make a clan again), and, for good: trophies, achievements, the Hall of Legends, mine boss badges and hub points already earned.
+- **Optional:** on the first visit of a season, the pupil may re-pick each member's race and class (like a Dragon Maths hero picking a new class), or keep them with one tap.
+- **No surprises:** from day 22 the home screen says "New season in 9 days: your clan starts fresh, your trophies stay forever." Fights already open finish first.
+- **The save change is the same kind as My Village's:** a pure, tested `newSeasonSave(clan)` run by the server on the first load of a new season (never by the browser), recorded once per season. Nothing is deleted from the database; the old season's numbers can be kept in the Hall row.
 
-Members' levels: the simulator has a daily clan at level 20 by week 3 to 4, and the rules sheet says about 7 weeks for a mixed clan. So after two or three seasons most clans' members are maxed. Resetting members too is possible (like Dragon Maths heroes), but they are what pupils care about most, so not recommended.
+**What a full reset changes in the plan:**
+- **Levelling has to fit in 5 weeks too.** The rules sheet has a mixed clan at level 20 in about 7 weeks; the simulator's every-day bot in about 3. The monster is tuned for where clans really are by day 29 (table in 5.3, updated), and the mine pace may need a small speed-up so a 3 to 4 days a week clan reaches about level 12 to 15 by monster week. Checked with the simulator before the build.
+- **Members, gold and village grow together each season,** so a new pupil who joins in week 2 is only a week behind, not a term.
 
 ## 8. What the build changes (for later)
 
@@ -165,7 +169,7 @@ Members' levels: the simulator has a daily clan at level 20 by week 3 to 4, and 
 ## 9. Questions for James
 
 1. ~~Season length?~~ **Answered 28 Oct 2026: 5 weeks, like Dragon Maths.** **Also answered: Clan Quest shares Dragon Maths' school season date.**
-2. At a new season: **the village starts again, members kept (Recommended)**, or keep everything, or every building drops 2 levels?
+2. ~~What resets?~~ **Answered 28 Oct 2026: a full reset** (members, village, gold and troops; trophies, achievements and the Hall kept). Section 7.
 3. ~~Giant tries?~~ **Answered 28 Oct 2026: one a day in monster week, and the monster gets tired.**
 4. ~~Classmate raids?~~ **Answered 28 Oct 2026: off in the last 2 weeks** (days 22 to 35 of a 5-week season).
 5. ~~Which monster?~~ **Answered 28 Oct 2026: a new monster each season** (giant, golem, troll in turn; section 5.1).
