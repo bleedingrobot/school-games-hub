@@ -7,6 +7,7 @@ import { teacherRoutes } from '../App';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
 import type { ClassSummary } from '../data/classes';
 import { ALL_GAMES } from '../games/registry';
+import type { GameDefinition } from '../games/types';
 
 const data = vi.hoisted(() => ({
   fetchClasses: vi.fn(),
@@ -26,6 +27,8 @@ const data = vi.hoisted(() => ({
   fetchLordEnabled: vi.fn(),
   fetchClassLord: vi.fn(),
   fetchClansEnabled: vi.fn(),
+  fetchClassClanMaths: vi.fn(),
+  oldPanels: vi.fn(),
 }));
 vi.mock('../data/classes', async (original) => ({
   ...(await original<typeof import('../data/classes')>()),
@@ -66,7 +69,21 @@ vi.mock('../data/lord', async (original) => ({
 vi.mock('../data/clans', async (original) => ({
   ...(await original<typeof import('../data/clans')>()),
   fetchClansEnabled: data.fetchClansEnabled,
+  fetchClassClanMaths: data.fetchClassClanMaths,
 }));
+// Every game has moved to the new contract, so a made-up one stands in for "a game that hasn't moved yet" (its old
+// TeacherPanels) until those go (docs/TEACHER-VIEW-PLAN.md, stage 3).
+vi.mock('../games/registry', async (original) => {
+  const real = await original<typeof import('../games/registry')>();
+  const { useTeacherClass } = await import('./TeacherClass');
+  function OldPanels() {
+    const { classId } = useTeacherClass();
+    data.oldPanels(classId);
+    return <section aria-label="Old Game">Old panels for {classId}</section>;
+  }
+  const old: GameDefinition = { ...real.ALL_GAMES.find((g) => g.id === 'kingdom')!, id: 'old-game', name: 'Old Game', teacher: undefined, TeacherPanels: OldPanels };
+  return { ...real, ALL_GAMES: [...real.ALL_GAMES, old] };
+});
 vi.mock('../data/gemKeep', async (original) => ({
   ...(await original<typeof import('../data/gemKeep')>()),
   fetchGemKeepSettings: data.fetchGemKeepSettings,
@@ -149,7 +166,6 @@ beforeEach(() => {
     mode: 'calm', enabledTables: [2, 3, 4, 5, 6, 7, 8, 9, 10], division: false, multipleChoice: false, keyPassMark: 8,
   });
   data.fetchClassGemKeep.mockResolvedValue({ players: 0, levels: [], hardest: [], wholeSchool: false });
-  data.readSettings.mockResolvedValue({ gem_keep_mode: 'calm', gem_keep_tables: [2, 3, 4, 5, 6, 7, 8, 9, 10], gem_keep_multiple_choice: false });
   data.fetchMonstersSettings.mockResolvedValue({ enabled: true, topics: ['add-sub', 'times-tables', 'division', 'fractions'] });
   data.fetchMonstersEnabled.mockResolvedValue(true);
   data.fetchClassMonsters.mockResolvedValue({ players: 0, badges: [], topics: [], hardest: [], refusals: [], wholeSchool: false });
@@ -158,7 +174,13 @@ beforeEach(() => {
   data.fetchClassLord.mockResolvedValue({
     season: { number: 2, start: '2026-09-01', daysLeft: 12 }, players: 0, thisSeason: 0, levels: [], hardest: [], refusals: [], hall: [], wholeSchool: false,
   });
-  data.fetchClansEnabled.mockRejectedValue(new Error('not needed'));
+  data.readSettings.mockImplementation(async (columns: string[]) =>
+    columns.includes('clans_year_band')
+      ? { clans_year_band: 4, clans_topics: ['percentages', 'money', 'area', 'division', 'ratios'], clans_fights_per_day: 10 }
+      : { gem_keep_mode: 'calm', gem_keep_tables: [2, 3, 4, 5, 6, 7, 8, 9, 10], gem_keep_multiple_choice: false },
+  );
+  data.fetchClansEnabled.mockResolvedValue(true);
+  data.fetchClassClanMaths.mockResolvedValue({ players: 0, kinds: [], hardest: [], wholeSchool: false });
 });
 afterEach(() => {
   window.matchMedia = realMatchMedia;
@@ -271,12 +293,35 @@ describe('the Games table', () => {
   it('opens a game that hasn’t moved yet: its old panels, in the same drawer, for the header’s class', async () => {
     const user = userEvent.setup();
     show('/teacher/c14/games');
+    const old = row(await table(), 'Old Game');
+    expect(data.oldPanels).not.toHaveBeenCalled();
+    await user.click(within(old).getByRole('link', { name: 'Old Game settings' }));
+    const drawer = await screen.findByRole('dialog', { name: 'Old Game' });
+    expect(await within(drawer).findByRole('region', { name: 'Old Game' })).toBeInTheDocument();
+    expect(data.oldPanels).toHaveBeenCalledWith('c14');
+  });
+
+  it('shows Clan Quest’s switch and maths for the header’s class, and opens its settings for that class', async () => {
+    const user = userEvent.setup();
+    show('/teacher/c14/games');
     const clans = row(await table(), 'Clan Quest');
-    expect(data.fetchClansEnabled).not.toHaveBeenCalled();
+    const on = await within(clans).findByRole('switch', { name: 'Clan Quest' });
+    await waitFor(() => expect(on).toHaveAttribute('aria-checked', 'true'));
+    expect(await within(clans).findByText('Year 4 · 5 topics · 10/day')).toBeInTheDocument();
+    expect(data.fetchClansEnabled).toHaveBeenCalledWith('c14');
+    expect(data.readSettings).toHaveBeenCalledWith(expect.arrayContaining(['clans_year_band']), 'c14');
     await user.click(within(clans).getByRole('link', { name: 'Clan Quest settings' }));
     const drawer = await screen.findByRole('dialog', { name: 'Clan Quest' });
-    expect(await within(drawer).findByRole('region', { name: 'Clan Quest' })).toBeInTheDocument();
-    expect(data.fetchClansEnabled).toHaveBeenCalledWith('c14');
+    expect(await within(drawer).findByRole('region', { name: 'Clan Quest settings' })).toBeInTheDocument();
+    expect(await within(drawer).findByRole('region', { name: /^Clan Quest maths: this class/ })).toBeInTheDocument();
+    expect(within(drawer).getByRole('region', { name: 'Clan Quest villages (whole school)' })).toBeInTheDocument();
+    expect(data.fetchClassClanMaths).toHaveBeenCalledWith('c14');
+  });
+
+  it('says when Clan Quest’s maths settings couldn’t load, in its row', async () => {
+    data.readSettings.mockResolvedValue(null);
+    show('/teacher/c12/games');
+    expect(await within(row(await table(), 'Clan Quest')).findByText('Couldn’t load')).toBeInTheDocument();
   });
 
   it('shows Dragon Maths’ switch and season for the header’s class, and opens its settings for that class', async () => {
@@ -338,9 +383,9 @@ describe('the Games table', () => {
 
   it('says where an unmoved game’s switch is, rather than showing one it can’t read', async () => {
     show('/teacher/c12/games');
-    const clans = row(await table(), 'Clan Quest');
-    expect(within(clans).queryByRole('switch')).not.toBeInTheDocument();
-    expect(within(clans).getAllByText('in Settings')).toHaveLength(2);
+    const old = row(await table(), 'Old Game');
+    expect(within(old).queryByRole('switch')).not.toBeInTheDocument();
+    expect(within(old).getAllByText('in Settings')).toHaveLength(2);
   });
 
   it('never makes a reversible control red', async () => {

@@ -183,7 +183,11 @@ export async function fetchClanMathsSettings(classId?: string | null): Promise<C
   };
 }
 
-/** Saves the maths settings (any of year band, topics, times tables, fights a day). Pupils get them next time they open the game; a fight already open keeps its own. */
+/**
+ * Saves some of the maths settings (any of year band, topics, times tables, fights a day). The server changes only the ones
+ * sent and keeps the rest, so a save never sends an old value back. Pupils get them next time they open the game; a fight
+ * already open keeps its own.
+ */
 export async function saveClanMathsSettings(
   settings: Partial<Pick<ClanMathsSettings, 'yearBand' | 'enabledTopics' | 'enabledTables' | 'fightsPerDay'>>,
   classId?: string | null,
@@ -219,10 +223,24 @@ export interface ClanMathsStudent {
   kinds: MathsKind[];
 }
 
-export async function fetchClanMathsClass(): Promise<ClanMathsClass> {
-  const { data, error } = await supabase.rpc('teacher_clan_maths_class');
-  if (error || !data) throw new FriendlyError('We couldn’t load the Clan Quest maths records.');
-  return data as ClanMathsClass;
+/** PostgREST's answer when the database has no function with these arguments. */
+const NO_SUCH_FUNCTION = 'PGRST202';
+
+/**
+ * Clan Quest's maths report for one class (migration 20261028000500). Until that migration is on the live database, the
+ * server has only the old whole-school report: then that one is loaded instead, with `wholeSchool` set, so the page can say so.
+ */
+export async function fetchClassClanMaths(classId: string): Promise<ClanMathsClass & { wholeSchool: boolean }> {
+  const { data, error } = await supabase.rpc('teacher_clan_maths_class', { target_class: classId });
+  if (error?.code === NO_SUCH_FUNCTION) {
+    const old = await supabase.rpc('teacher_clan_maths_class');
+    if (old.error || !old.data) throw new FriendlyError('We couldn’t load the Clan Quest maths records for the school.');
+    return { ...(old.data as ClanMathsClass), wholeSchool: true };
+  }
+  if (error || !data) {
+    throw new FriendlyError(error?.code === '22023' && error.message ? error.message : 'We couldn’t load the Clan Quest maths records for this class.');
+  }
+  return { ...(data as ClanMathsClass), wholeSchool: false };
 }
 
 export async function fetchClanMathsStudent(student: string): Promise<ClanMathsStudent> {

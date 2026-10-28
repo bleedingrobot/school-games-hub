@@ -588,6 +588,33 @@ docs/DRAGON-SCHOOL-SEASON.md (section 5 lists the small differences). One migrat
 - *Before it goes live: James runs the read-only query in DRAGON-SCHOOL-SEASON.md 2.3 (with his OK) to see which classes jump
   forward, then it's applied at a quiet time with teachers told the day before.*
 
+*Clan Quest moved 28 Oct 2026 on `teacher-games-clans` (from `teacher-games-dragon-season`), with its class report now for
+one class. One migration, `20261028000500_clan_maths_class_report.sql` (not live yet); nothing it saves changed. Every game
+has now moved.*
+- *Server: `teacher_clan_maths_class(target_class uuid)`, the same pattern as Gem Keep's: the old report (how many answered,
+  every kind of story question, the kinds most often wrong) for the teacher's students in that class only, 42501 unless
+  `teaches_class`, 22023 for no class, and the old no-argument function left beside it. Checked by
+  `supabase/tests/database/clan_maths_class_report.test.sql` (19 checks, a teacher with two classes). The village functions
+  are unchanged: villages stay whole school and any teacher can manage them (section 9).*
+- *The same fallback as the others: until the migration is live, the report is the whole school's and says so.*
+- *Its row has the on/off switch (the game behind its "?") and "Year 4 · 5 topics · 10/day" in the Maths column, read
+  straight from the settings row (`src/games/clans/teacher.ts`). The red "Switch Clan Quest off" button is gone.*
+- *Its Settings: a note while the game is off, Made-up hero names (a switch), the maths (Year band as a choice, Topics on and
+  the times tables as chips, Mine fights a day as a number; no Save button), Raids on classmates (a switch, per class), the
+  class report, then "Clan Quest villages (whole school)", unchanged apart from a real table for who is in which group and
+  44 px controls. The red buttons for names and raids are gone; deleting a village (can't be undone) stays red.*
+- *`teacher_set_clan_maths` saves only the settings it is sent and keeps the rest, so each control sends only its own
+  setting; the saves still go one at a time, in order. Mine fights a day out of range is now refused with a word (it was
+  quietly made 30), as Dragon Maths' forest fights are.*
+- *The fame season stays where it is (Students, with the other seasons): it is already in the right place, and Stage 6's
+  End of year page is its eventual home.*
+- *Its student panel is under `teacher`, with a summary line ("Red Banner, day 4, average level 3.5").*
+- *Tests: `TeacherClans.test.tsx` keeps every check (switch on and off, a failed save, hero names, raids, each maths setting,
+  the last topic stays on, fights a day kept to 1–30, the times tables only with that topic, the villages, the fame season,
+  the student panel), now for a named class; the switch is tested through its Games table row. New: saves go in order, the
+  class report and its fallback, and `src/data/clans.test.ts`. In `Games.test.tsx` the "game that hasn't moved" tests now use
+  a made-up game, and Clan Quest has a row check.*
+
 **Stage 4: Students roster and student page,** with `teacher_class_overview` and class-scoped `teacher_students`.
 
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.

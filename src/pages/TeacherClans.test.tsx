@@ -1,7 +1,12 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { clanQuest } from '../games/clans/game';
+import { GameSwitchSetting } from '../teacher/Games';
 
+// Clan Quest on the teacher's Games table (these checks were the old panels'): the switch in its row, and made-up hero names,
+// the maths settings, raids, the class report and the villages (whole school) in its Settings, all for a named class. The fame
+// season and each pupil's clan are under Students.
 const data = vi.hoisted(() => ({
   fetchClansEnabled: vi.fn(),
   saveClansEnabled: vi.fn(),
@@ -15,9 +20,9 @@ const data = vi.hoisted(() => ({
   deleteVillage: vi.fn(async () => true),
   movePupil: vi.fn(async () => undefined),
   fetchClanMathsSettings: vi.fn(),
-  saveClanMathsSettings: vi.fn(async () => undefined),
+  saveClanMathsSettings: vi.fn(),
   startClansNewSeason: vi.fn(),
-  fetchClanMathsClass: vi.fn(),
+  fetchClassClanMaths: vi.fn(),
   fetchClanMathsStudent: vi.fn(),
   fetchClanTypedNames: vi.fn(),
   saveClanTypedNames: vi.fn(),
@@ -26,7 +31,7 @@ const data = vi.hoisted(() => ({
 vi.mock('../data/clans', async (original) => ({ ...(await original<typeof import('../data/clans')>()), ...data }));
 
 import { AuthContext, type AuthState } from '../auth/AuthContext';
-import { ClansSeasonPanel, ClansStudentPanel, ClansTeacherPanels } from './TeacherClans';
+import { ClansSeasonPanel, ClansStudentPanel, ClansTeacherSettings, clansStudentSummary } from './TeacherClans';
 
 /** The fame season panel says whose fame it resets, so it needs to know who is signed in. */
 function renderSeason(schoolAdmin = false) {
@@ -43,9 +48,15 @@ const info = (over = {}) => ({ name: 'Red Banner', day: 4, gold: 220, followers:
 const mathsSettings = (over = {}) => ({ yearBand: 5, enabledTopics: ['percentages', 'money'], enabledTables: [2, 3], fightsPerDay: 8, season: 1, ...over });
 
 beforeEach(() => {
-  Object.values(data).forEach((f) => f.mockClear());
+  Object.values(data).forEach((f) => f.mockReset());
+  data.resetClan.mockResolvedValue(true);
+  data.createVillage.mockResolvedValue(2);
+  data.renameVillage.mockResolvedValue(undefined);
+  data.deleteVillage.mockResolvedValue(true);
+  data.movePupil.mockResolvedValue(undefined);
+  data.saveClanMathsSettings.mockResolvedValue(undefined);
   data.fetchClanMathsSettings.mockResolvedValue(mathsSettings());
-  data.fetchClanMathsClass.mockResolvedValue({ players: 0, kinds: [], hardest: [] });
+  data.fetchClassClanMaths.mockResolvedValue({ players: 0, kinds: [], hardest: [], wholeSchool: false });
   data.fetchClanMathsStudent.mockResolvedValue({ fame: null, kinds: [] });
   data.startClansNewSeason.mockResolvedValue({ season: 2, clans: 20 });
   data.fetchClansEnabled.mockResolvedValue(false);
@@ -65,25 +76,51 @@ beforeEach(() => {
   });
 });
 
-describe('the Clan Quest teacher switch', () => {
+/** A switch once it has loaded. */
+const loaded = async (name: string) => {
+  const sw = await screen.findByRole('switch', { name });
+  await waitFor(() => expect(sw).toBeEnabled());
+  return sw;
+};
+/** The maths settings once they have loaded. */
+const mathsLoaded = async () => {
+  const band = await screen.findByRole('radiogroup', { name: 'Year band' });
+  const topics = screen.getByRole('group', { name: 'Topics on' });
+  await waitFor(() => expect(within(topics).getAllByRole('checkbox')[0]).toBeEnabled());
+  return { band, topics };
+};
+
+describe('the Clan Quest switch on the Games table', () => {
   it('starts off, turns the game on for the class and off again', async () => {
     const user = userEvent.setup();
-    render(<ClansTeacherPanels />);
-    expect(await screen.findByText('Off: pupils can’t see it yet.')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Switch Clan Quest on' }));
-    expect(data.saveClansEnabled).toHaveBeenLastCalledWith(true, null);
-    expect(await screen.findByText('On: pupils can play it.')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Switch Clan Quest off' }));
-    expect(data.saveClansEnabled).toHaveBeenLastCalledWith(false, null);
-    expect(await screen.findByText(/Clan Quest is off/)).toBeInTheDocument();
+    render(<GameSwitchSetting game={clanQuest} classId="c12" />);
+    const on = await loaded('Clan Quest');
+    expect(data.fetchClansEnabled).toHaveBeenCalledWith('c12');
+    expect(on).toHaveAttribute('aria-checked', 'false');
+    await user.click(on);
+    expect(data.saveClansEnabled).toHaveBeenLastCalledWith(true, 'c12');
+    expect(on).toHaveAttribute('aria-checked', 'true');
+    expect(await screen.findByText('Saved ✓')).toBeInTheDocument();
+    await user.click(on);
+    expect(data.saveClansEnabled).toHaveBeenLastCalledWith(false, 'c12');
+    expect(on).toHaveAttribute('aria-checked', 'false');
   });
 
-  it('says so if it cannot be saved', async () => {
+  it('says so if it cannot be saved, and goes back', async () => {
     data.saveClansEnabled.mockRejectedValue(new Error('x'));
     const user = userEvent.setup();
-    render(<ClansTeacherPanels />);
-    await user.click(await screen.findByRole('button', { name: 'Switch Clan Quest on' }));
+    render(<GameSwitchSetting game={clanQuest} classId="c12" />);
+    const on = await loaded('Clan Quest');
+    await user.click(on);
     expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
+    expect(on).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('says what the game is behind its "?", not in a paragraph', async () => {
+    const user = userEvent.setup();
+    render(<GameSwitchSetting game={clanQuest} classId="c12" />);
+    await user.click(await screen.findByRole('button', { name: 'About Clan Quest' }));
+    expect(screen.getByText(/Pupils make a clan of four/)).toBeVisible();
   });
 });
 
@@ -122,28 +159,19 @@ describe('a pupil\'s clan on the teacher page', () => {
   });
 });
 
-describe('the village groups on the teacher page', () => {
-  it('shows the groups with their chest and buildings, and who is in which', async () => {
-    render(<ClansTeacherPanels />);
+describe('the village groups in the drawer (whole school)', () => {
+  it('shows the groups with their chest and buildings, and who is in which, labelled whole school', async () => {
+    render(<ClansTeacherSettings classId="c12" />);
     expect(await screen.findByText(/750 gold in the chest, Training Hall 1, Smithy 2, Church 0/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Clan Quest villages (whole school)' })).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: 'Who is in which group (whole school)' })).toBeInTheDocument();
     expect(screen.getByLabelText('Group for Brave Otter 12')).toHaveValue('2');
     expect(screen.getByLabelText('Group for Calm Heron 3')).toHaveValue('1');
   });
 
-  it('raids on classmates start off, and a teacher switches them on and off', async () => {
-    const user = userEvent.setup();
-    render(<ClansTeacherPanels />);
-    expect(await screen.findByText('Off.')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Switch raids on' }));
-    expect(data.saveClanRaidsEnabled).toHaveBeenLastCalledWith(true, null);
-    expect(await screen.findByText('On.')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Switch raids off' }));
-    expect(data.saveClanRaidsEnabled).toHaveBeenLastCalledWith(false, null);
-  });
-
   it('makes a group, moves a pupil, and asks before deleting a group', async () => {
     const user = userEvent.setup();
-    render(<ClansTeacherPanels />);
+    render(<ClansTeacherSettings classId="c12" />);
     await user.type(await screen.findByLabelText('Group name'), 'Room 14');
     await user.click(screen.getByRole('button', { name: 'Make a group' }));
     expect(data.createVillage).toHaveBeenCalledWith('Room 14');
@@ -156,7 +184,7 @@ describe('the village groups on the teacher page', () => {
   });
 
   it('cannot delete the default group', async () => {
-    render(<ClansTeacherPanels />);
+    render(<ClansTeacherSettings classId="c12" />);
     await screen.findByText(/Everyone else/);
     expect(screen.getAllByRole('button', { name: 'Delete…' })).toHaveLength(1);
   });
@@ -164,71 +192,173 @@ describe('the village groups on the teacher page', () => {
   it('says what went wrong in plain words', async () => {
     data.createVillage.mockRejectedValue(new Error('x'));
     const user = userEvent.setup();
-    render(<ClansTeacherPanels />);
+    render(<ClansTeacherSettings classId="c12" />);
     await user.type(await screen.findByLabelText('Group name'), 'Room 14');
     await user.click(screen.getByRole('button', { name: 'Make a group' }));
     expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
   });
 });
 
-describe('the Clan Quest maths settings on the teacher page', () => {
-  it('shows the settings and saves a change in year band, topics and fights a day', async () => {
+describe('raids on classmates in the drawer (per class)', () => {
+  it('start off, and a teacher switches them on and off for the class', async () => {
     const user = userEvent.setup();
-    render(<ClansTeacherPanels />);
-    expect(await screen.findByRole('heading', { name: 'Clan Quest maths' })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /Year 5/ })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: /Percentages/ })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: /Ratios/ })).not.toBeChecked();
-    expect(screen.getByRole('spinbutton', { name: /Mine fights a day/ })).toHaveValue(8);
-    expect(screen.getByRole('button', { name: 'Save settings' })).toBeDisabled();
-    await user.click(screen.getByRole('radio', { name: /Year 6/ }));
-    await user.click(screen.getByRole('checkbox', { name: /Ratios/ }));
-    const fights = screen.getByRole('spinbutton', { name: /Mine fights a day/ });
+    render(<ClansTeacherSettings classId="c12" />);
+    const raids = await loaded('Raids on classmates');
+    expect(data.fetchClanRaidsEnabled).toHaveBeenCalledWith('c12');
+    expect(raids).toHaveAttribute('aria-checked', 'false');
+    await user.click(raids);
+    expect(data.saveClanRaidsEnabled).toHaveBeenLastCalledWith(true, 'c12');
+    expect(raids).toHaveAttribute('aria-checked', 'true');
+    await waitFor(() => expect(raids).toBeEnabled());
+    await user.click(raids);
+    expect(data.saveClanRaidsEnabled).toHaveBeenLastCalledWith(false, 'c12');
+  });
+});
+
+describe('the Clan Quest maths settings in the drawer', () => {
+  it('shows the settings for the class and saves each change at once, with no Save button', async () => {
+    const user = userEvent.setup();
+    render(<ClansTeacherSettings classId="c12" />);
+    const { band, topics } = await mathsLoaded();
+    expect(data.fetchClanMathsSettings).toHaveBeenCalledWith('c12');
+    expect(within(band).getByRole('radio', { name: 'Year 5' })).toBeChecked();
+    expect(within(topics).getByRole('checkbox', { name: /Percentages/ })).toBeChecked();
+    expect(within(topics).getByRole('checkbox', { name: /Ratios/ })).not.toBeChecked();
+    expect(screen.getByLabelText('Mine fights a day')).toHaveValue(8);
+    expect(screen.queryByRole('button', { name: /Save/ })).not.toBeInTheDocument();
+
+    await user.click(within(band).getByRole('radio', { name: 'Year 6' }));
+    expect(data.saveClanMathsSettings).toHaveBeenLastCalledWith({ yearBand: 6 }, 'c12');
+    await user.click(within(topics).getByRole('checkbox', { name: /Ratios/ }));
+    await waitFor(() => expect(data.saveClanMathsSettings).toHaveBeenLastCalledWith({ enabledTopics: ['percentages', 'money', 'ratios'] }, 'c12'));
+    const fights = screen.getByLabelText('Mine fights a day');
     await user.clear(fights);
-    await user.type(fights, '5');
-    await user.click(screen.getByRole('button', { name: 'Save settings' }));
-    expect(data.saveClanMathsSettings).toHaveBeenCalledWith({ yearBand: 6, enabledTopics: ['percentages', 'money', 'ratios'].sort((a, b) => ['times', 'percentages', 'money', 'area', 'division', 'ratios', 'rates', 'integers'].indexOf(a) - ['times', 'percentages', 'money', 'area', 'division', 'ratios', 'rates', 'integers'].indexOf(b)), enabledTables: [2, 3], fightsPerDay: 5 }, null);
-    expect(await screen.findByText(/A fight that is already open keeps the questions it started with/)).toBeInTheDocument();
+    await user.type(fights, '5{Enter}');
+    await waitFor(() => expect(data.saveClanMathsSettings).toHaveBeenLastCalledWith({ fightsPerDay: 5 }, 'c12'));
+    expect(data.saveClanMathsSettings).toHaveBeenCalledTimes(3);
+  });
+
+  it('saves one at a time, in order, so a slow save can’t land after a newer one', async () => {
+    let finishFirst = () => {};
+    data.saveClanMathsSettings.mockImplementationOnce(() => new Promise<void>((done) => (finishFirst = done)));
+    const user = userEvent.setup();
+    render(<ClansTeacherSettings classId="c12" />);
+    const { band, topics } = await mathsLoaded();
+    await user.click(within(band).getByRole('radio', { name: 'Year 6' }));
+    await user.click(within(topics).getByRole('checkbox', { name: /Ratios/ }));
+    expect(data.saveClanMathsSettings).toHaveBeenCalledTimes(1);
+    expect(data.saveClanMathsSettings).toHaveBeenLastCalledWith({ yearBand: 6 }, 'c12');
+    finishFirst();
+    await waitFor(() => expect(data.saveClanMathsSettings).toHaveBeenCalledTimes(2));
+    expect(data.saveClanMathsSettings).toHaveBeenLastCalledWith({ enabledTopics: ['percentages', 'money', 'ratios'] }, 'c12');
   });
 
   it('never lets the last topic be switched off, and keeps fights a day between 1 and 30', async () => {
     data.fetchClanMathsSettings.mockResolvedValue(mathsSettings({ enabledTopics: ['area'] }));
     const user = userEvent.setup();
-    render(<ClansTeacherPanels />);
-    expect(await screen.findByRole('checkbox', { name: /Area and perimeter/ })).toBeDisabled();
-    const fights = screen.getByRole('spinbutton', { name: /Mine fights a day/ });
+    render(<ClansTeacherSettings classId="c12" />);
+    const { topics } = await mathsLoaded();
+    const area = within(topics).getByRole('checkbox', { name: /Area and perimeter/ });
+    await user.click(area);
+    expect(area).toBeChecked();
+    expect(await within(topics).findByText('Leave at least one ticked.')).toBeInTheDocument();
+    const fights = screen.getByLabelText('Mine fights a day');
     await user.clear(fights);
-    await user.type(fights, '99');
-    expect(fights).toHaveValue(30);
+    await user.type(fights, '99{Enter}');
+    expect(await screen.findByText('Pick a whole number from 1 to 30.')).toBeInTheDocument();
+    expect(fights).toHaveValue(8);
+    expect(data.saveClanMathsSettings).not.toHaveBeenCalled();
   });
 
   it('shows the times tables only when that topic is on', async () => {
     data.fetchClanMathsSettings.mockResolvedValue(mathsSettings({ enabledTopics: ['times'], enabledTables: [3] }));
-    render(<ClansTeacherPanels />);
-    expect(await screen.findByText('Times tables for the times-tables topic')).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: '3' })).toBeDisabled();
-    expect(screen.getByRole('checkbox', { name: '4' })).not.toBeChecked();
+    const user = userEvent.setup();
+    render(<ClansTeacherSettings classId="c12" />);
+    await mathsLoaded();
+    const tables = screen.getByRole('group', { name: 'Times tables for the times-tables topic' });
+    expect(within(tables).getByRole('checkbox', { name: '3' })).toBeChecked();
+    expect(within(tables).getByRole('checkbox', { name: '4' })).not.toBeChecked();
+    await user.click(within(tables).getByRole('checkbox', { name: '3' }));
+    expect(await within(tables).findByText('Leave at least one ticked.')).toBeInTheDocument();
+    await user.click(within(tables).getByRole('checkbox', { name: '4' }));
+    await waitFor(() => expect(data.saveClanMathsSettings).toHaveBeenLastCalledWith({ enabledTables: [3, 4] }, 'c12'));
   });
 
-  it('says what went wrong in plain words when it cannot save', async () => {
+  it('shows the times tables once that topic is switched on', async () => {
+    const user = userEvent.setup();
+    render(<ClansTeacherSettings classId="c12" />);
+    const { topics } = await mathsLoaded();
+    expect(screen.queryByRole('group', { name: 'Times tables for the times-tables topic' })).not.toBeInTheDocument();
+    await user.click(within(topics).getByRole('checkbox', { name: /Times tables/ }));
+    expect(await screen.findByRole('group', { name: 'Times tables for the times-tables topic' })).toBeInTheDocument();
+  });
+
+  it('says what went wrong in plain words when it cannot save, and goes back', async () => {
     data.saveClanMathsSettings.mockRejectedValue(new Error('x'));
     const user = userEvent.setup();
-    render(<ClansTeacherPanels />);
-    await user.click(await screen.findByRole('radio', { name: /Year 4/ }));
-    await user.click(screen.getByRole('button', { name: 'Save settings' }));
+    render(<ClansTeacherSettings classId="c12" />);
+    const { band } = await mathsLoaded();
+    await user.click(within(band).getByRole('radio', { name: 'Year 4' }));
     expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
+    expect(within(band).getByRole('radio', { name: 'Year 5' })).toBeChecked();
   });
 
-  it('shows how the school is getting on, hardest first, without any pupil\'s name', async () => {
-    data.fetchClanMathsClass.mockResolvedValue({
+  it('says when Clan Quest is off for the class', async () => {
+    render(<ClansTeacherSettings classId="c12" />);
+    expect(await screen.findByText(/Clan Quest is off for this class/)).toBeInTheDocument();
+  });
+
+  it('says nothing about being off while it is on', async () => {
+    data.fetchClansEnabled.mockResolvedValue(true);
+    render(<ClansTeacherSettings classId="c12" />);
+    await mathsLoaded();
+    await waitFor(() => expect(data.fetchClansEnabled).toHaveBeenCalledWith('c12'));
+    expect(screen.queryByText(/Clan Quest is off for this class/)).not.toBeInTheDocument();
+  });
+});
+
+describe('the Clan Quest class report in the drawer', () => {
+  it('shows how the class is getting on, hardest first, without any pupil’s name', async () => {
+    data.fetchClassClanMaths.mockResolvedValue({
       players: 14,
       kinds: [{ key: 'clan:y5:ratio', attempts: 20, correct: 8 }, { key: 'clan:y5:percent-of', attempts: 30, correct: 27 }],
       hardest: [{ key: 'clan:y5:ratio', attempts: 20, correct: 8, students: 9 }],
+      wholeSchool: false,
     });
-    render(<ClansTeacherPanels />);
+    render(<ClansTeacherSettings classId="c12" />);
+    expect(await screen.findByRole('heading', { name: 'Clan Quest maths: this class' })).toBeInTheDocument();
     expect(await screen.findByText(/14 pupils have answered Clan Quest questions/)).toBeInTheDocument();
-    expect(screen.getByText('Ratio (Year 5): 8 of 20 right (9 pupils)')).toBeInTheDocument();
-    expect(screen.getByText('Percent of (Year 5): 27 of 30 right (90% right)')).toBeInTheDocument();
+    expect(data.fetchClassClanMaths).toHaveBeenCalledWith('c12');
+    const hardest = screen.getByRole('table', { name: 'Questions most often wrong' });
+    const ratio = within(hardest).getByRole('rowheader', { name: 'Ratio (Year 5)' }).closest('tr')!;
+    expect(within(ratio).getAllByRole('cell').map((c) => c.textContent)).toEqual(['40%', '20', '9']);
+    const every = screen.getByRole('table', { name: 'Every kind of question' });
+    const percent = within(every).getByRole('rowheader', { name: 'Percent of (Year 5)' }).closest('tr')!;
+    expect(within(percent).getAllByRole('cell').map((c) => c.textContent)).toEqual(['90%', '30']);
+  });
+
+  it('says so while it can only show the whole school (before the database update)', async () => {
+    data.fetchClassClanMaths.mockResolvedValue({ players: 3, kinds: [], hardest: [], wholeSchool: true });
+    render(<ClansTeacherSettings classId="c12" />);
+    expect(await screen.findByRole('heading', { name: 'Clan Quest maths: the whole school' })).toBeInTheDocument();
+    expect(screen.getByText(/This shows every class for now/)).toBeInTheDocument();
+  });
+
+  it('says when nobody has answered yet, and when it can’t load', async () => {
+    const { unmount } = render(<ClansTeacherSettings classId="c12" />);
+    expect(await screen.findByText('Nobody has answered a Clan Quest question yet.')).toBeInTheDocument();
+    unmount();
+    data.fetchClassClanMaths.mockRejectedValue(new Error('x'));
+    render(<ClansTeacherSettings classId="c12" />);
+    expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
+  });
+});
+
+describe('a pupil’s clan in one line', () => {
+  it('sums up the clan, or says nothing without one', async () => {
+    expect(await clansStudentSummary('s1')).toBe('Red Banner, day 4, average level 3.5');
+    data.fetchClanInfo.mockResolvedValue(null);
+    expect(await clansStudentSummary('s1')).toBeNull();
   });
 });
 
@@ -262,9 +392,9 @@ describe('the Clan Quest fame season on the teacher page', () => {
     expect(await screen.findByText(/for every pupil at the school/)).toBeInTheDocument();
   });
 
-  it('is not one of the everyday Clan Quest panels any more', async () => {
-    render(<ClansTeacherPanels />);
-    expect(await screen.findByRole('heading', { name: 'Clan Quest maths' })).toBeInTheDocument();
+  it('is not in the Games table’s drawer: it stays with the other seasons', async () => {
+    render(<ClansTeacherSettings classId="c12" />);
+    expect(await screen.findByRole('heading', { name: 'Maths' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Start a new season…' })).not.toBeInTheDocument();
   });
 });
@@ -285,11 +415,16 @@ describe('a pupil\'s Clan Quest maths on the teacher page', () => {
 describe('made-up hero names', () => {
   it('start off, and a teacher switches them on and off for the class', async () => {
     const user = userEvent.setup();
-    render(<ClansTeacherPanels />);
-    await user.click(await screen.findByRole('button', { name: 'Switch made-up names on' }));
-    expect(data.saveClanTypedNames).toHaveBeenLastCalledWith(true, null);
-    await user.click(await screen.findByRole('button', { name: 'Switch made-up names off' }));
-    expect(data.saveClanTypedNames).toHaveBeenLastCalledWith(false, null);
+    render(<ClansTeacherSettings classId="c12" />);
+    const names = await loaded('Made-up hero names');
+    expect(data.fetchClanTypedNames).toHaveBeenCalledWith('c12');
+    expect(names).toHaveAttribute('aria-checked', 'false');
+    await user.click(names);
+    expect(data.saveClanTypedNames).toHaveBeenLastCalledWith(true, 'c12');
+    await waitFor(() => expect(names).toBeEnabled());
+    await user.click(names);
+    expect(data.saveClanTypedNames).toHaveBeenLastCalledWith(false, 'c12');
+    expect(names).toHaveAttribute('aria-checked', 'false');
   });
 
   it("shows a pupil's hero names and swaps made-up ones for list names", async () => {
