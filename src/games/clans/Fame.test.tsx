@@ -35,7 +35,7 @@ describe('fame, the scoreboard and achievements on the test page', () => {
     expect(within(mine).getAllByRole('cell').map((c) => c.textContent)).toEqual(['10', '10']);
   });
 
-  it('celebrates an achievement, lists all eight, and does not celebrate again', async () => {
+  it('celebrates an achievement, lists all nine, and does not celebrate again', async () => {
     const u = user();
     render(<ClanQuest initial={fresh()} />);
     expect(screen.queryByText(/New achievement/)).toBeNull();
@@ -45,9 +45,9 @@ describe('fame, the scoreboard and achievements on the test page', () => {
     expect(note).toHaveTextContent('+10 points each');
     await u.click(btn('Great!'));
     expect(screen.queryByText(/New achievement/)).toBeNull();
-    await u.click(btn(/Achievements \(1 of 8\)/));
+    await u.click(btn(/Achievements \(1 of 9\)/));
     const list = screen.getByRole('list');
-    expect(within(list).getAllByRole('listitem')).toHaveLength(8);
+    expect(within(list).getAllByRole('listitem')).toHaveLength(9);
     expect(within(list).getByText(/First win/).closest('li')).toHaveTextContent('Earned!');
     expect(within(list).getByText(/Boss beaten/).closest('li')).toHaveTextContent('Not yet');
   });
@@ -60,7 +60,7 @@ describe('fame, the scoreboard and achievements on the test page', () => {
     await u.click(btn('Start a new season: fame back to 0 (test only)'));
     expect(screen.getByText(/Fame:/).textContent).toMatch(/Fame:\s*0\s*\(season 2\)/);
     expect(screen.getByRole('heading', { name: 'Red Banner' })).toBeInTheDocument();
-    expect(btn(/Achievements \(\d+ of 8\)/).textContent).not.toContain('(0 of 8)');
+    expect(btn(/Achievements \(\d+ of 9\)/).textContent).not.toContain('(0 of 9)');
   });
 });
 
@@ -123,7 +123,7 @@ describe('achievements from the server', () => {
     await screen.findByRole('heading', { name: 'Red Banner' });
     expect(screen.queryByText(/New achievement/)).toBeNull();
     expect(screen.getByText(/Fame:/).textContent).toMatch(/Fame:\s*7\s*\(season 2\)/);
-    expect(btn(/Achievements \(1 of 8\)/)).toBeInTheDocument();
+    expect(btn(/Achievements \(1 of 9\)/)).toBeInTheDocument();
     // Something happens on the server that earns one more.
     await u.click(btn('My Village'));
     await u.click(btn(/^Upgrade Barracks/));

@@ -12,7 +12,7 @@ describe('nextVillageStep', () => {
     c.gold = 500;
     expect(nextVillageStep(c).say).toBe('Build your first Barracks so troops can join you.');
     c.gold = 20;
-    expect(nextVillageStep(c).say).toBe('Win 150 gold in the Mines, then build your first Barracks so troops can join you.');
+    expect(nextVillageStep(c).say).toBe('Win 50 gold in the Mines, then build your first Barracks so troops can join you.');
     c.gold = 500;
     e.buildsToday = CONFIG.empire.buildsPerDay;
     expect(nextVillageStep(c).say).toBe('Your builders are resting. Come back tomorrow to build your first Barracks.');

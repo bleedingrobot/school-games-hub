@@ -115,6 +115,38 @@ export async function fetchScoreboard(): Promise<ScoreRow[]> {
   return ((data ?? []) as ScoreRowRaw[]).map(toScoreRow);
 }
 
+/** One line of the Hall of Legends: a clan that finished a season goal. Dates are "YYYY-MM-DD" (or null). */
+export interface HallRow {
+  season: number;
+  clanName: string;
+  villageDoneOn: string | null;
+  monsterDoneOn: string | null;
+  isMe: boolean;
+}
+
+interface HallRowRaw {
+  season: number;
+  clan_name: string;
+  village_done_on: string | null;
+  monster_done_on: string | null;
+  is_me: boolean;
+}
+
+/**
+ * The Hall of Legends. Gives null when the database does not have `clan_hall_of_legends` yet (PostgREST code PGRST202),
+ * so the screen can hide the button quietly. Any other problem is an error.
+ */
+export async function fetchHallOfLegends(): Promise<HallRow[] | null> {
+  const { data, error } = await supabase.rpc('clan_hall_of_legends');
+  if (error) {
+    if (error.code === 'PGRST202') return null;
+    throw new FriendlyError('We couldn’t load the Hall of Legends.');
+  }
+  return ((data ?? []) as HallRowRaw[]).map((r) => ({
+    season: r.season, clanName: r.clan_name, villageDoneOn: r.village_done_on, monsterDoneOn: r.monster_done_on, isMe: r.is_me,
+  }));
+}
+
 /** What the teacher sets for Clan Quest's maths and mine fights. The same shape the server sends with each clan. */
 export interface ClanMathsSettings extends PracticalSettings {
   /** Mine fights a day, 1 to 30. */

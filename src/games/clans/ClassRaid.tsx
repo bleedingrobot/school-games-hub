@@ -48,6 +48,8 @@ export function ClassRaid({ session, ask, onSession, onBack }: {
   const [done, setDone] = useState<Done | null>(null);
   const [say, setSay] = useState('');
   const [busy, setBusy] = useState(false);
+  /** The last two weeks of the season: raids on classmates rest. */
+  const [resting, setResting] = useState(false);
   const army = might(empireOf(session.clan).troops);
   const raidsOn = session.raidsOn !== false;
 
@@ -59,7 +61,10 @@ export function ClassRaid({ session, ask, onSession, onBack }: {
     }
     ask({ type: 'raidTargets' }).then(
       (reply) => {
-        if (reply.ok && reply.result.type === 'raidTargets') setTargets(reply.result.targets);
+        if (reply.ok && reply.result.type === 'raidTargets') {
+          setResting(reply.result.resting === true);
+          setTargets(reply.result.targets);
+        }
         else setFailed(reply.ok ? 'We could not get the list.' : reply.say);
       },
       () => setFailed("We couldn't reach the server for the list. Please try again."),
@@ -90,6 +95,8 @@ export function ClassRaid({ session, ask, onSession, onBack }: {
           const r = reply.result;
           setDone({ name: chosen.name, take: r.take, result: r.result, gold: r.gold, destroyed: r.destroyed });
           setTargets(null);
+        } else if (!reply.ok && reply.why === 'resting-season') {
+          setResting(true);
         } else if (!reply.ok) {
           setSay(reply.say);
           load();
@@ -127,6 +134,8 @@ export function ClassRaid({ session, ask, onSession, onBack }: {
     );
   } else if (!raidsOn) {
     body = <p className="cq-panel" role="status">Your teacher has switched raids on classmates off for now. You can still raid the computer kingdoms.</p>;
+  } else if (resting) {
+    body = <p className="cq-panel" role="status">Raids on classmates rest for the last two weeks of the season. Computer kingdoms are still open!</p>;
   } else if (failed) {
     body = (
       <div className="cq-panel" role="alert">

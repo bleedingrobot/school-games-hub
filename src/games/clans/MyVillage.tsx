@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CONFIG } from '../../../shared/clans/config';
-import { BUILDING_BLURBS, BUILDING_NAMES, TROOP_NAMES, buildsLeft, capacity, empireOf, maxLevel, might, room, troopBillOf, upgradeCost } from '../../../shared/clans/empire';
+import { BUILDING_BLURBS, BUILDING_NAMES, TROOP_NAMES, VILLAGE_TOTAL, buildsLeft, capacity, empireOf, maxLevel, might, room, troopBillOf, upgradeCost, villageComplete, villageLevels } from '../../../shared/clans/empire';
 import { landPlot, troopBill } from '../../../shared/clans/moments';
 import { TROOP_KINDS, VILLAGE_BUILDINGS, type Troops, type VillageBuilding } from '../../../shared/clans/types';
 import { Moment } from './Moment';
@@ -32,6 +32,10 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid }: { 
   const idle = () => setPhase({ t: 'idle' });
   const step = nextVillageStep(clan);
   const left = buildsLeft(e);
+  const saved = e.buildsSaved ?? 0;
+  const today = Math.max(0, BUILDS - e.buildsToday);
+  const levels = villageLevels(e);
+  const complete = villageComplete(e);
   const army = might(e.troops);
   const total = TROOP_KINDS.reduce((t, k) => t + mix[k], 0);
   const mixCheck = canBuyMix(session, mix);
@@ -51,7 +55,7 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid }: { 
     const joined = after.troops.footman - before.troops.footman;
     setPhase({
       t: 'done',
-      text: `The ${BUILDING_NAMES[b]} is now level ${level}. That cost ${cost} gold. Builds left today: ${buildsLeft(after)} of ${BUILDS}.${joined > 0 ? ` ${joined} ${nameOf('footman', joined)} joined your army.` : ''}`,
+      text: `The ${BUILDING_NAMES[b]} is now level ${level}. That cost ${cost} gold. Builds left: ${buildsLeft(after)}.${joined > 0 ? ` ${joined} ${nameOf('footman', joined)} joined your army.` : ''}`,
     });
   };
   const startUpgrade = (b: VillageBuilding) => {
@@ -156,9 +160,17 @@ export function MyVillage({ session, onChange, onBack, onRaid, onClassRaid }: { 
       <div className="cq-panel cq-nextstep">
         <p><strong>What to do next:</strong> {step.say}</p>
       </div>
+      <div className={`cq-goal${complete ? ' cq-goal--done' : ''}`}>
+        {complete && <p className="cq-ribbon" role="status">Village complete!</p>}
+        <p><strong>Village {levels} / {VILLAGE_TOTAL}</strong> <span className="cq-soft">{complete ? 'Every building is at its top level!' : `${VILLAGE_TOTAL - levels} ${VILLAGE_TOTAL - levels === 1 ? 'level' : 'levels'} to go`}</span></p>
+        <div className="cq-goal__bar" role="progressbar" aria-label="Village progress" aria-valuemin={0} aria-valuemax={VILLAGE_TOTAL} aria-valuenow={levels} aria-valuetext={`${levels} of ${VILLAGE_TOTAL} levels built`}>
+          <span className="cq-goal__fill" style={{ width: `${(levels / VILLAGE_TOTAL) * 100}%` }} />
+        </div>
+      </div>
       <p>
-        <strong>Builds left today: {left} of {BUILDS}</strong> · Clan purse: <strong>{clan.gold} gold</strong>
+        <strong>Builds left: {left}{saved > 0 && ` (${today} today + ${saved} saved)`}</strong> · Clan purse: <strong>{clan.gold} gold</strong>
       </p>
+      <p className="cq-soft">Builds you don't use are saved for later, up to {CONFIG.empire.buildsSavedMax}.</p>
       {shielded(e.shieldUntil) && <p className="cq-ok" role="status">You are safe from raids until {shieldEnds(e.shieldUntil)}.</p>}
       {body}
     </section>

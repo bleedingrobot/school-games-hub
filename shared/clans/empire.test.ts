@@ -634,12 +634,12 @@ describe('the whole thing with the simulator', () => {
   const run = (lineup: 'balanced' | 'fighters', empire: boolean, days = 35, seeds = 6) => Array.from({ length: seeds }, (_, i) => simulate({ days, seed: i + 1, lineup, mathsRate: 0.7, depthOffset: 0, empire }));
   const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
-  it('a clan fills its whole village in about 4 to 5 weeks, and the purse never goes below nothing', () => {
+  it('a clan fills its whole village within 3 to 4 weeks, and the purse never goes below nothing', () => {
     for (const lineup of ['balanced', 'fighters'] as const) {
       const runs = run(lineup, true, 45);
       const first = runs.map((r) => r.days.find((d) => d.empire!.allMax)?.day ?? Infinity);
-      expect(mean(first), lineup).toBeGreaterThanOrEqual(24);
-      expect(mean(first), lineup).toBeLessThanOrEqual(35);
+      expect(mean(first), lineup).toBeGreaterThanOrEqual(17);
+      expect(mean(first), lineup).toBeLessThanOrEqual(28);
       for (const r of runs) for (const d of r.days) expect(d.gold).toBeGreaterThanOrEqual(0);
     }
   });
@@ -677,8 +677,8 @@ describe('the whole thing with the simulator', () => {
 });
 
 describe('saved builds', () => {
-  it('every building costs 100 a level at base, and the village is 39 levels', () => {
-    for (const b of VILLAGE_BUILDINGS) expect(E.buildings[b].base).toBe(100);
+  it('every building costs 50 a level at base, and the village is 39 levels', () => {
+    for (const b of VILLAGE_BUILDINGS) expect(E.buildings[b].base).toBe(50);
     expect(E.buildsSavedMax).toBe(4);
     expect(VILLAGE_TOTAL).toBe(39);
   });

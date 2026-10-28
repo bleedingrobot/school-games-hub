@@ -320,6 +320,11 @@ export function ClansSeasonPanel() {
         (The school-wide “new points season” below only clears Clan Quest’s
         points, not fame.)
       </p>
+      <p>
+        Clan Quest seasons follow the Dragon Maths season dates (5 weeks). When
+        the season clock is on, every clan starts fresh at each new season;
+        badges and the Hall of Legends stay.
+      </p>
       {asking ? (
         <p>
           <label>

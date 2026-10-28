@@ -71,6 +71,11 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
           <p>Your teacher can switch these on or off. When they are on, you can raid <strong>{CONFIG.empire.raids.perDay} classmate a day</strong> whose army is about as big as yours. Pick gold, or knock a level or two off their buildings. You take at most {CONFIG.empire.raids.classmateLootMax}%.</p>
           <p>Gold kept in a Strongroom is safe, and Walls protect buildings. A new clan is safe for {CONFIG.empire.raids.newClanDays} days. A clan that was raided rests behind a shield the next {CONFIG.empire.raids.shieldDays === 1 ? 'day' : `${CONFIG.empire.raids.shieldDays} days`} too.</p>
         </section>
+        <section aria-labelledby="htp-season">
+          <h3 id="htp-season">Seasons and the village goal</h3>
+          <p>A season lasts 5 weeks, on the same dates as Dragon Maths. Finish every building to earn the <strong>Master Builder</strong> badge, {CONFIG.season.villageReward.fame} fame and a place in the Hall of Legends.</p>
+          <p>Builds you don't use are saved, up to {CONFIG.empire.buildsSavedMax}. In the last two weeks, raids on classmates rest. A new season starts every clan fresh, but badges and the Hall stay.</p>
+        </section>
         <section aria-labelledby="htp-fame">
           <h3 id="htp-fame">Fame and the Scoreboard</h3>
           <p>Fame goes up when you win: <strong>{R.fame.mineWin}</strong> for a fight in the Mines, <strong>{R.fame.bossWin}</strong> for a boss, <strong>{R.fame.warWin}</strong> for a practice battle, <strong>{R.fame.kingdomRaidWin}</strong> for a raid on a kingdom and <strong>{R.fame.classRaidWin}</strong> for a raid on a classmate.</p>
