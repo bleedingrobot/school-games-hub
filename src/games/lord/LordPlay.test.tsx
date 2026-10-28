@@ -160,6 +160,43 @@ describe('Dragon Maths with a server keeping the hero', () => {
     expect(screen.getByText(/You beat the/)).toBeInTheDocument();
   });
 
+  it('the banker asks how much interest your own savings earn, and adds it for a right answer', async () => {
+    const user = userEvent.setup();
+    const { db, backend } = newGame();
+    const first = renderGame(backend);
+    await pickHero(user, /Knight/);
+    await village();
+    db.row!.hero = { ...db.row!.hero, level: 4, bank: 259 };
+    first.unmount();
+    renderGame(backend);
+    await user.click(await screen.findByRole('button', { name: /Bank/ }));
+    expect(await screen.findByText(/1 gold for every 20 gold/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Ask about interest/ }));
+    const box = await screen.findByRole('dialog');
+    expect(within(box).getByText(/You have 259 gold saved/)).toBeInTheDocument();
+    await user.keyboard('12{Enter}');
+    await waitFor(() => expect(db.row!.hero.bank).toBe(271));
+    expect(await screen.findByText(/adds 12 gold of interest. You now have 271 gold saved/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Ask about interest/ })).toBeDisabled();
+  });
+
+  it('a wrong interest answer adds nothing and says what it was', async () => {
+    const user = userEvent.setup();
+    const { db, backend } = newGame();
+    const first = renderGame(backend);
+    await pickHero(user, /Knight/);
+    await village();
+    db.row!.hero = { ...db.row!.hero, level: 4, bank: 259 };
+    first.unmount();
+    renderGame(backend);
+    await user.click(await screen.findByRole('button', { name: /Bank/ }));
+    await user.click(await screen.findByRole('button', { name: /Ask about interest/ }));
+    await screen.findByRole('dialog');
+    await user.keyboard('13{Enter}');
+    expect(await screen.findByText(/the interest was 12 gold/, undefined, { timeout: 4000 })).toBeInTheDocument();
+    expect(db.row!.hero.bank).toBe(259);
+  });
+
   it('offers a half-finished fight again after a reload, with no extra fight used', async () => {
     const user = userEvent.setup();
     const { db, seeds, backend } = newGame();

@@ -684,23 +684,42 @@ describe('shop, healer and bank', () => {
     expect((await g.send({ action: 'bank', op: 'steal', amount: 1 })).body.reason).toBe('bad-request');
   });
 
-  it('interest: level 4 and up, something in the bank, a question, once a day', async () => {
+  it('interest: level 4 and up, at least 20 saved, a question about your own savings, once a day', async () => {
     const g = new Game();
     await g.start();
     g.patch({ level: 3, bank: 1000 });
     await g.refresh();
-    expect((await g.send({ action: 'bank', op: 'interest', proof: proof('decimals', 3, true) })).body.reason).toBe('rule');
-    g.patch({ level: 4 });
+    expect((await g.send({ action: 'bank', op: 'interest', answer: 50 })).body.reason).toBe('rule');
+    g.patch({ level: 4, bank: 19 });
+    await g.refresh();
+    expect((await g.send({ action: 'bank', op: 'interest', answer: 0 })).body.reason).toBe('rule'); // under 20 saved
+    g.patch({ bank: 1000 });
     await g.refresh();
     expect((await g.send({ action: 'bank', op: 'interest' })).body.reason).toBe('rule'); // no question answered
-    const out = await g.send({ action: 'bank', op: 'interest', proof: proof('decimals', 4, true) });
-    expect(out.body.result).toMatchObject({ interest: 50, right: true });
+    const out = await g.send({ action: 'bank', op: 'interest', answer: 50 });
+    expect(out.body.result).toMatchObject({ interest: 50, due: 50, right: true });
     expect(g.hero().bank).toBe(1050);
     expect(g.state!.interestDone).toBe(true);
-    expect((await g.send({ action: 'bank', op: 'interest', proof: proof('decimals', 4, true) })).body.reason).toBe('rule');
+    expect((await g.send({ action: 'bank', op: 'interest', answer: 52 })).body.reason).toBe('rule');
     g.clock = NZ_MIDNIGHT + 1000;
     await g.refresh();
     expect(g.state!.interestDone).toBe(false);
+  });
+
+  it('interest: a hint earns half, a wrong answer earns nothing and is told the right amount', async () => {
+    const g = new Game();
+    await g.start();
+    g.patch({ level: 4, bank: 259 });
+    await g.refresh();
+    const wrong = await g.send({ action: 'bank', op: 'interest', answer: 13 });
+    expect(wrong.body.result).toMatchObject({ interest: 0, due: 12, right: false });
+    expect(g.hero().bank).toBe(259);
+    expect(g.state!.interestDone).toBe(true);
+    g.clock = NZ_MIDNIGHT + 1000;
+    await g.refresh();
+    const hinted = await g.send({ action: 'bank', op: 'interest', answer: 12, hinted: true });
+    expect(hinted.body.result).toMatchObject({ interest: 6, due: 12, right: true });
+    expect(g.hero().bank).toBe(265);
   });
 });
 

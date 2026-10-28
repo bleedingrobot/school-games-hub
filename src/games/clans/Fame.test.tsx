@@ -93,6 +93,13 @@ describe('the results screen', () => {
     render(<Results summary={{ ...summary, result: 'lost' }} members={fresh().clan.members} onDone={() => {}} />);
     expect(screen.queryByText(/Fame:/)).toBeNull();
   });
+  it('offers Back to the Mines only when another fight is possible', () => {
+    render(<Results summary={summary} members={fresh().clan.members} onDone={() => {}} onMines={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Back to the Mines' })).toBeTruthy();
+    cleanup();
+    render(<Results summary={summary} members={fresh().clan.members} onDone={() => {}} />);
+    expect(screen.queryByRole('button', { name: 'Back to the Mines' })).toBeNull();
+  });
 });
 
 describe('achievements from the server', () => {
