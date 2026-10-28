@@ -1,27 +1,32 @@
 /**
- * The Admin pages (/teacher/admin; docs/TEACHER-VIEW-PLAN.md, section 4.7, stage 6): the school at a glance, every student, and
- * the teachers. For school admins only. The database checks every call and only reads the admin's own school.
+ * The Admin pages (/teacher/admin; docs/TEACHER-VIEW-PLAN.md, section 4.7, stage 6): the school at a glance, every class, every
+ * student, and the teachers. For school admins only. The database checks every call and only reads the admin's own school.
  */
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { whenPlayed } from '../components/MyGames';
 import {
+  createClassFor,
+  fetchAdminClasses,
   fetchAdminOverview,
   fetchAdminStudents,
   fetchAdminTeachers,
   setSchoolAdmin,
+  type AdminClass,
   type AdminOverview as Overview,
   type AdminStudent,
   type AdminTeacher,
 } from '../data/admin';
+import { addCoTeacher, archiveClass, removeCoTeacher } from '../data/classes';
 import { FriendlyError } from '../data/profile';
 import { setRole } from '../data/teacher';
 import { share } from '../pages/TeacherQuestionSkips';
 import { useHideRealNames } from './Students';
 import { useTeacherClass } from './TeacherClass';
 import '../pages/teacher-page.css';
+import '../pages/classes.css';
 import './students.css';
 import './admin.css';
 
@@ -70,7 +75,9 @@ function NeedsAdmin({ o }: { o: Overview }) {
     );
   }
   if (o.classesNoTeacher.length > 0) {
-    lines.push(<span key="noteacher">Classes with no teacher: {o.classesNoTeacher.map((c) => c.name).join(', ')}</span>);
+    lines.push(<Link key="noteacher" to="/teacher/admin/classes?show=noteacher">
+        Classes with no teacher: {o.classesNoTeacher.map((c) => c.name).join(', ')}
+      </Link>);
   }
   if (o.oldWarp > 0) {
     lines.push(
@@ -120,6 +127,268 @@ function TheSchool({ o }: { o: Overview }) {
           </div>
         ))}
       </dl>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------- Classes
+
+type ClassShow = 'current' | 'noteacher' | 'archived';
+const CLASS_SHOWS: { id: ClassShow; label: string }[] = [
+  { id: 'current', label: 'Current' },
+  { id: 'noteacher', label: 'No teacher' },
+  { id: 'archived', label: 'Archived' },
+];
+const CLASS_FILTERS: Record<ClassShow, (c: AdminClass) => boolean> = {
+  current: (c) => !c.archived,
+  noteacher: (c) => !c.archived && c.teachers.length === 0,
+  archived: (c) => c.archived,
+};
+const CODE_MODES = { on: '(on)', ask: '(asks first)', off: '(off)' };
+
+export function AdminClasses() {
+  const { data, failed, reload } = useLoaded(fetchAdminClasses);
+  const people = useLoaded(fetchAdminTeachers);
+  const [params, setParams] = useSearchParams();
+  const [status, setStatus] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const asked = params.get('show');
+  const show: ClassShow = CLASS_SHOWS.find((s) => s.id === asked)?.id ?? 'current';
+  const teachers = people.data ?? [];
+
+  const choose = (next: ClassShow) =>
+    setParams(
+      (p) => {
+        const out = new URLSearchParams(p);
+        if (next === 'current') out.delete('show');
+        else out.set('show', next);
+        return out;
+      },
+      { replace: true },
+    );
+
+  async function act(task: () => Promise<void>, done: string) {
+    setBusy(true);
+    setStatus(null);
+    try {
+      await task();
+      setStatus(done);
+      await reload();
+    } catch (error) {
+      setStatus(errorText(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const shown = (data ?? []).filter(CLASS_FILTERS[show]);
+  return (
+    <>
+      <div className="students-bar">
+        <div className="students-show" role="group" aria-label="Show">
+          {CLASS_SHOWS.map((s) => (
+            <button key={s.id} type="button" className="students-show__choice" aria-pressed={show === s.id} onClick={() => choose(s.id)}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <section className="panel" aria-labelledby="admin-classes-title">
+        <h2 id="admin-classes-title" className="panel__title">
+          Classes
+          {data && <span className="panel__count">{shown.length}</span>}
+        </h2>
+        {failed ? (
+          <p className="panel__empty">{failed}</p>
+        ) : !data ? (
+          <p className="panel__empty">Loading…</p>
+        ) : shown.length === 0 ? (
+          <p className="panel__empty">{data.length === 0 ? 'There are no classes yet.' : 'No classes match.'}</p>
+        ) : (
+          <div className="roster__scroll">
+            <table className="stats-table roster admin__table admin__table--wide">
+              <caption className="sr-only">Every class in the school.</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Class</th>
+                  <th scope="col">Year</th>
+                  <th scope="col">Teachers</th>
+                  <th scope="col">Students</th>
+                  <th scope="col">Code</th>
+                  <th scope="col">Last active</th>
+                  <th scope="col">Change</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((c) => (
+                  <tr key={c.id} className={c.archived ? 'is-hidden' : undefined}>
+                    <th scope="row">{c.archived ? <span>{c.name} (archived)</span> : <Link to={`/teacher/${c.id}`}>{c.name}</Link>}</th>
+                    <td>{c.schoolYear ? `${c.schoolYear}${c.yearLevel !== null ? ` · Year ${c.yearLevel}` : ''}` : c.yearLevel !== null ? `Year ${c.yearLevel}` : '–'}</td>
+                    <td>
+                      <ClassTeachers
+                        c={c}
+                        options={teachers}
+                        busy={busy}
+                        onAdd={(t) => act(() => addCoTeacher(c.id, t.id), `${t.name} teaches ${c.name} now.`)}
+                        onRemove={(t) => act(() => removeCoTeacher(c.id, t.id), `${t.name} no longer teaches ${c.name}.`)}
+                      />
+                    </td>
+                    <td>{c.students}</td>
+                    <td>{c.warpCode ? `${c.warpCode} ${CODE_MODES[c.warpMode]}` : '–'}</td>
+                    <td>{c.lastActive ? whenPlayed(c.lastActive) : 'Not yet'}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="button button--light-outline"
+                        disabled={busy}
+                        onClick={() => act(() => archiveClass(c.id, !c.archived), c.archived ? `${c.name} is back.` : `${c.name} is archived.`)}
+                      >
+                        {c.archived ? 'Unarchive' : 'Archive'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p role="status" className="teacher__status">
+          {status}
+        </p>
+      </section>
+      <MakeClassFor teachers={teachers} onMade={reload} />
+    </>
+  );
+}
+
+function ClassTeachers({
+  c,
+  options,
+  busy,
+  onAdd,
+  onRemove,
+}: {
+  c: AdminClass;
+  options: AdminTeacher[];
+  busy: boolean;
+  onAdd: (t: { id: string; name: string }) => void;
+  onRemove: (t: { id: string; name: string }) => void;
+}) {
+  const free = options.filter((t) => !c.teachers.some((x) => x.id === t.id));
+  return (
+    <div className="admin__teachers">
+      {c.teachers.length === 0 && <span>No teacher</span>}
+      {c.teachers.map((t) => (
+        <span key={t.id} className="admin__teacher">
+          {t.name}
+          {!c.archived && (
+            <button type="button" className="button button--light-outline admin__small" disabled={busy} aria-label={`Take ${t.name} off ${c.name}`} onClick={() => onRemove(t)}>
+              Remove
+            </button>
+          )}
+        </span>
+      ))}
+      {!c.archived && free.length > 0 && (
+        <select
+          className="admin__add"
+          aria-label={`Add a teacher to ${c.name}`}
+          disabled={busy}
+          value=""
+          onChange={(e) => {
+            const t = free.find((x) => x.id === e.target.value);
+            if (t) onAdd(t);
+          }}
+        >
+          <option value="">Add a teacher</option>
+          {free.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
+}
+
+function MakeClassFor({ teachers, onMade }: { teachers: AdminTeacher[]; onMade: () => Promise<void> }) {
+  const { profile } = useAuth();
+  const thisYear = new Date().getFullYear();
+  const me = profile?.id ?? '';
+  const [name, setName] = useState('');
+  const [year, setYear] = useState(String(thisYear));
+  const [level, setLevel] = useState('');
+  const [teacher, setTeacher] = useState(me);
+  const [status, setStatus] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    const inYear = Number(year);
+    if (!Number.isInteger(inYear)) {
+      setStatus('Enter the school year, like ' + thisYear + '.');
+      return;
+    }
+    setBusy(true);
+    setStatus('Saving…');
+    try {
+      await createClassFor(name.trim(), inYear, level === '' ? null : Number(level), teacher || me);
+      setName('');
+      setStatus('Class made.');
+      await onMade();
+    } catch (error) {
+      setStatus(errorText(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="panel" aria-labelledby="admin-make-class-title">
+      <h2 id="admin-make-class-title" className="panel__title">
+        Make a class
+      </h2>
+      <form className="classes__form" onSubmit={(e) => void submit(e)}>
+        <label className="teacher__type">
+          <span>Class name (optional)</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={30} placeholder="Room 12" />
+        </label>
+        <label className="teacher__type">
+          <span>School year</span>
+          <input type="number" value={year} onChange={(e) => setYear(e.target.value)} min={2000} max={2100} />
+        </label>
+        <label className="teacher__type">
+          <span>Year level (optional)</span>
+          <select value={level} onChange={(e) => setLevel(e.target.value)}>
+            <option value="">Not set</option>
+            {Array.from({ length: 14 }, (_, l) => (
+              <option key={l} value={l}>
+                Year {l}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="teacher__type">
+          <span>Teacher</span>
+          <select value={teacher} onChange={(e) => setTeacher(e.target.value)}>
+            <option value={me}>Me</option>
+            {teachers
+              .filter((t) => t.id !== me)
+              .map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+          </select>
+        </label>
+        <button type="submit" className="button button--primary" disabled={busy}>
+          Make the class
+        </button>
+      </form>
+      <p className="class-panel__hint">Leave the name blank and the class is named after the teacher’s email (the part before the @).</p>
+      <p role="status" className="teacher__status">
+        {status}
+      </p>
     </section>
   );
 }
