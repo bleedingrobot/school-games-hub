@@ -1,0 +1,32 @@
+/* The merged hardest-questions table (Maths tab). On a phone it scrolls sideways inside its card, never the page. */
+.hardest__scroll {
+  overflow-x: auto;
+}
+.hardest__table {
+  min-width: 560px;
+}
+.hardest__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+.hardest__filter select {
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--surface);
+}
+/* Words read better on the left and in plain weight; the numbers stay centred. */
+.hardest__table th:nth-child(-n + 3),
+.hardest__table td:nth-child(-n + 3) {
+  text-align: left;
+}
+.hardest__table td:nth-child(2),
+.hardest__table td:nth-child(3) {
+  font-weight: 600;
+}

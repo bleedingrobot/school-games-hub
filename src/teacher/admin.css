@@ -1,0 +1,49 @@
+/* The Admin pages (docs/TEACHER-VIEW-PLAN.md, section 4.7, stage 6). Tables reuse the roster styles in students.css. */
+
+.admin__needs {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+  font-weight: 700;
+}
+.admin__needs a {
+  color: var(--brand-dark);
+}
+
+.admin__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+.admin__facts div {
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--tint);
+}
+.admin__facts dt {
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.admin__facts dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.admin__table {
+  min-width: 640px;
+}
+.admin__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.admin__confirm {
+  max-width: 320px;
+}
+.admin__confirm p {
+  margin: 0 0 8px;
+}

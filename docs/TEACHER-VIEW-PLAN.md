@@ -638,7 +638,7 @@ has now moved.*
 **Stage 4: Students roster and student page,** with `teacher_class_overview` and class-scoped `teacher_students`.
 
 *Done 28 Oct 2026 on `claude/project-thread-4t7spr` (from `teacher-games-remove-panels`). One migration,
-`20261028000700_teacher_class_overview.sql` (not live yet). Nothing is written by it; nothing any button saves changed.*
+`20261028000700_teacher_class_overview.sql`. Nothing is written by it; nothing any button saves changed.*
 - *Server: `teacher_students(target_class uuid)` reads the shared `teacher_students()` (so the games' "last played" hooks keep
   working) and keeps the students in that class; the old no-argument call is unchanged. `teacher_class_overview(target_class)`
   gives each student in the class their list row, the last 7 days' questions shown and skipped (`question_log`), when they
@@ -667,12 +667,49 @@ has now moved.*
 - *Order on the live site: apply this migration before publishing the website (before it, the class roster and the student
   page can't load; "All my students" still works).*
 
+**Live, 28 Oct 2026: stages 0–4.** In this order: the class reports (`20261028000100`, `0200`, `0300`, `0500`) and
+`20261028000700_teacher_class_overview.sql` were applied to the live database by hand. The code was merged into `main`
+(PR #68), and the site was published by the "Test and publish" run (build, database tests and deploy all passed). Checked
+live: the new functions exist, `anon` can't call them, and a teacher's class gave 16 on the roster and 16 on the list.
+- *After the site was published, James ran `20261028000600_drop_school_class_reports.sql` in the SQL Editor. It dropped the
+  4 old whole-school reports, which the site no longer calls. Checked afterwards: only the class versions are left.*
+- *Not live on purpose: `20261028000400` (Dragon Maths one season for the school). It waits for James's read-only check
+  (DRAGON-SCHOOL-SEASON.md 2.3) and for teachers to be told the day before.*
+
 **Stage 5: Merged hardest questions and alerts** on the class Maths and Today pages.
+
+*Done 28 Oct 2026 on `claude/project-thread-4t7spr`. No migration: it reads the class reports that went live with stage 3.*
+- *Contract: `teacher.hardest(classId)` gives `HardestRow`s (question in words, topic, asked, right, students) and
+  `teacher.alerts(classId)` gives `TeacherAlert`s (one line, and where "See ›" goes). Gem Keep, Maths Monsters, Dragon Maths
+  and Clan Quest give `hardest`; Maths Monsters and Dragon Maths give `alerts`. Each reads its own class report, and
+  `src/teacher/shortCache.ts` shares one request when Today asks for both within a few seconds.*
+- *Maths → Hardest questions (`/teacher/:classId/maths/hardest`, `src/teacher/Hardest.tsx`): every game's rows in one table,
+  hardest first (lowest share right, then most asked), with a Game column and a Game filter. A game that can't load is named
+  under the table. The old per-game tables stay in each game's Settings for now.*
+- *Today: Needs you adds a line per student whose saves or requests a game turned down in the last 7 days ("Maths Monsters
+  turned down 2 saves from Speedy Otter 27 this week", made-up names only), and "N students skipped 30% or more of their
+  questions this week" (at least 5 questions; opens the roster sorted by Skipped). This week adds "Hardest right now" (the top
+  three, with Maths ›).*
+- *Not done: "students in no class" (admin) waits for the Admin page (stage 6). Alerts can't be dismissed; they drop off after
+  7 days.*
 
 **Stage 6: the Admin page.** In this order, each its own PR: Overview + Students + Teachers (moving what exists, plus
 school-admin role); Classes; End of year checklist + `admin_log`; Safety (alerts across the school, player lookup);
 School game settings (villages, Dragon dates, then the new defaults and copy-to-classes). Stage 0 already moves the
 resets into an admin-only section, so nothing waits on this stage to be safe.
+
+*Part 1 done 28 Oct 2026 on `claude/project-thread-4t7spr`: Overview, Students, Teachers. One migration,
+`20261028000800_admin_pages.sql` (read only): `admin_overview()`, `admin_students()` and `admin_teachers()`, each
+`require_school_admin()` and the admin's own school only (`supabase/tests/database/admin_pages.test.sql`, 33 checks, two
+schools). The actions use the existing `school_set_admin` (refuses your own row, so the last admin can't remove themself),
+`teacher_set_role` and the student page.*
+- *`/teacher/admin` has sub-tabs Overview, Students, Teachers (`src/teacher/Admin.tsx`). Overview: "Needs an admin" (students
+  not in a class, classes with no teacher, join requests waiting over a day) and the school's numbers, no names. Students:
+  every student with class, last played and hidden, filters Everyone / Not in a class / Hidden / Not played for 30 days, Find,
+  Hide real names; a name opens the student page in their own class. Teachers: classes, school admin, Make/Remove school
+  admin and Remove teacher (with a confirm step), never on your own row.*
+- *Not done yet: Make/Remove teacher also stays on the student page; ticked bulk actions (move, delete leavers) come with End
+  of year. Next: Classes.*
 
 ## 8. Tests to carry over / add
 

@@ -40,5 +40,6 @@ export const gemKeep: GameDefinition = {
     Settings: GemKeepTeacherSettings,
     StudentPanel: GemKeepStudentPanel,
     studentSummary: (student) => import('../../pages/TeacherGemKeep').then((m) => m.gemKeepStudentSummary(student)),
+    hardest: (classId) => import('../../pages/TeacherGemKeep').then((m) => m.gemKeepHardest(classId)),
   },
 };

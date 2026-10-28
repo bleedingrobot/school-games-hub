@@ -17,6 +17,9 @@ import {
 import { FriendlyError } from '../data/profile';
 import { SettingChips, SettingDate, SettingNumber, SettingToggle, useSetting } from '../teacher/Settings';
 import { whenPlayed } from './Dashboard';
+import type { HardestRow, TeacherAlert } from '../games/types';
+import { refusalAlerts } from '../teacher/alerts';
+import { shortCache } from '../teacher/shortCache';
 import { keyLabel, TOPIC_LABEL as LADDER_LABELS } from './TeacherMonsters';
 import './teacher-gem-keep.css';
 
@@ -431,4 +434,18 @@ export function LordStudentPanel({ student }: { student: string }) {
       )}
     </div>
   );
+}
+
+const classReport = (classId: string) => shortCache(`dragon-maths:${classId}`, () => fetchClassLord(classId));
+
+/** The class's hardest questions, for the merged table on the Maths tab (stage 5). */
+export async function lordHardest(classId: string): Promise<HardestRow[]> {
+  const data = await classReport(classId);
+  return data.hardest.map((f) => ({ question: keyLabel(f.pack, f.key), topic: topicLabel(f.pack), attempts: f.attempts, correct: f.correct, students: f.students }));
+}
+
+/** Requests the game turned down this week, for Today's "Needs you" (stage 5). */
+export async function lordAlerts(classId: string): Promise<TeacherAlert[]> {
+  const data = await classReport(classId);
+  return refusalAlerts(data.refusals, { id: 'dragon-maths', name: 'Dragon Maths' }, 'request');
 }

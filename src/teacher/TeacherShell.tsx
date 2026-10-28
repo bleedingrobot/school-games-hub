@@ -7,7 +7,7 @@
  *   /teacher/:classId/maths      Maths: Focus, Skill map, Skipped questions
  *   /teacher/:classId/games      Games (the Games table; /games/:gameId is a game's settings on a narrow screen)
  *   /teacher/:classId/setup      Class set-up (the class's My classes panel)
- *   /teacher/admin               Admin (school admins only; a placeholder for now)
+ *   /teacher/admin               Admin (school admins only: Overview, Students, Teachers)
  *
  * The old addresses (/teacher, /classes, /focus?class=, /skills?class=) land on the remembered class through TeacherEntry.
  * The pages hide themselves from students, but that's only for tidiness: the database checks every action.
@@ -219,13 +219,16 @@ export function TeacherMaths() {
         <NavLink to={pathFor(classId, 'maths/skips')} className="teacher-subtabs__tab">
           Skipped questions
         </NavLink>
+        <NavLink to={pathFor(classId, 'maths/hardest')} className="teacher-subtabs__tab">
+          Hardest questions
+        </NavLink>
       </nav>
       <Outlet />
     </>
   );
 }
 
-/** /teacher/admin: school admins only (section 4.7). Stage 6 fills it in. */
+/** /teacher/admin: school admins only (section 4.7). Its own tabs: Overview, Students, Teachers. */
 export function TeacherAdmin() {
   const { profile } = useAuth();
   if (profile?.school_admin !== true) {
@@ -237,14 +240,19 @@ export function TeacherAdmin() {
     );
   }
   return (
-    <section className="panel" aria-labelledby="admin-title">
-      <h2 id="admin-title" className="panel__title">
-        Admin
-      </h2>
-      <p>
-        Jobs for the whole school will live here: every class and student, teachers and school admins, school game settings, safety,
-        and the end of year. For now, the whole-school list (“Whole school”) and the new points season are on the Students tab.
-      </p>
-    </section>
+    <>
+      <nav className="teacher-subtabs" aria-label="Admin">
+        <NavLink to="/teacher/admin" end className="teacher-subtabs__tab">
+          Overview
+        </NavLink>
+        <NavLink to="/teacher/admin/students" className="teacher-subtabs__tab">
+          Students
+        </NavLink>
+        <NavLink to="/teacher/admin/teachers" className="teacher-subtabs__tab">
+          Teachers
+        </NavLink>
+      </nav>
+      <Outlet />
+    </>
   );
 }

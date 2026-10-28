@@ -10,6 +10,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { Link } from 'react-router';
 import { answerWarp, fetchWarpRequests, type WarpRequest } from '../data/classes';
 import { FriendlyError } from '../data/profile';
+import type { TeacherAlert } from '../games/types';
 import { ago, LIVE_MS } from '../pages/MyClasses';
 import '../pages/teacher-page.css';
 
@@ -81,9 +82,10 @@ export function WaitingCount() {
 
 /**
  * Today's "Needs you" (docs/TEACHER-VIEW-PLAN.md, section 4.2): each student waiting to join this class, with Yes and No, and a
- * line for each of my other classes with someone waiting. Only there when something is waiting; otherwise one quiet line.
+ * line for each of my other classes with someone waiting, then the class's other alerts (stage 5: saves a game turned down, a
+ * lot of skipping), each with a link to look. Only there when something is waiting; otherwise one quiet line.
  */
-export function NeedsYou({ classId }: { classId: string }) {
+export function NeedsYou({ classId, alerts = [] }: { classId: string; alerts?: TeacherAlert[] }) {
   const { requests, refresh } = useWaitingToJoin();
   const [status, setStatus] = useState<string | null>(null);
 
@@ -106,7 +108,8 @@ export function NeedsYou({ classId }: { classId: string }) {
     elsewhere.set(r.class_id, { ...now, count: now.count + 1 });
   }
 
-  if (requests.length === 0) {
+  const count = requests.length + alerts.length;
+  if (count === 0) {
     return (
       <p className="today__quiet" role="status">
         {status ?? 'Nothing needs you right now.'}
@@ -117,7 +120,7 @@ export function NeedsYou({ classId }: { classId: string }) {
     <section className="panel teacher-waiting" aria-labelledby="needs-you-title">
       <h2 id="needs-you-title" className="panel__title">
         Needs you
-        <span className="panel__count">{requests.length}</span>
+        <span className="panel__count">{count}</span>
       </h2>
       {here.length > 0 && (
         <>
@@ -154,6 +157,23 @@ export function NeedsYou({ classId }: { classId: string }) {
           {[...elsewhere].map(([id, c]) => (
             <li key={id}>
               {c.count} student{c.count === 1 ? '' : 's'} waiting to join <Link to={`/teacher/${id}`}>{c.name}</Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      {alerts.length > 0 && (
+        <ul className="teacher-waiting__elsewhere">
+          {alerts.map((a) => (
+            <li key={a.id}>
+              {a.text}
+              {a.section && (
+                <>
+                  {' '}
+                  <Link to={`/teacher/${classId}/${a.section}`} aria-label={`See: ${a.text}`}>
+                    See ›
+                  </Link>
+                </>
+              )}
             </li>
           ))}
         </ul>
