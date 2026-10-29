@@ -5,7 +5,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(40);
+select plan(44);
 
 create function pg_temp.uid(n integer) returns uuid language sql immutable as $$
   select ('00000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid
@@ -231,6 +231,14 @@ select pg_temp.as(1);
 select is(pg_temp.home(), pg_temp.separate(), 'with every game switched off, Ana still gets the same answer');
 select pg_temp.as(2);
 select is(pg_temp.home(), pg_temp.separate(), 'and so does Ben');
+
+-- ---- The season clock (my_moves_left gives the school's Clan Quest season to every signed-in pupil) ----
+select pg_temp.as(1);
+select ok((pg_temp.home() -> 'movesLeft') ? 'season', 'Ana: moves left has a season');
+select ok((pg_temp.home() -> 'movesLeft' -> 'season') ?& array['number', 'day', 'daysLeft', 'clockOn'], 'the season has number, day, daysLeft and clockOn');
+select is(jsonb_typeof(pg_temp.home() -> 'movesLeft' -> 'season' -> 'clockOn'), 'boolean', 'clockOn is true or false');
+select pg_temp.as(4);
+select ok((public.my_moves_left() -> 'season') ?& array['number', 'day', 'daysLeft', 'clockOn'], 'Dan (no clan, no games): still gets the season');
 
 -- ---- Who can call it ----
 select pg_temp.reset();

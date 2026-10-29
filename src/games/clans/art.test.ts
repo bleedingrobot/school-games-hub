@@ -36,6 +36,7 @@ const NEEDED: Record<string, { names: string[]; maxKb: number; allowed?: string[
   buildings: { names: ['barracks', 'walls', 'tower', 'steelmill'], allowed: BUILDING_ALLOWED, maxKb: 40 },
   banners: { names: CLAN_NOUNS.map(slug), maxKb: 30 },
   fx: { names: [...FX], maxKb: 60 },
+  timeline: { names: ['stage-build', 'stage-ready', 'stage-new-season'], maxKb: 40 },
   // The season monsters are painted one at a time (giant first), so each is optional.
   'season-monsters': { names: [], allowed: MONSTER_KINDS.flatMap((k) => [k, ...wide([`siege-${k}`])]), maxKb: 320 },
 };

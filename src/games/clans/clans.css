@@ -294,6 +294,48 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   .cq-clanbanner { height: 64px; }
 }
 
+/* The season road (docs/CLANS-SEASON-TIMELINE-PLAN.md): four round stops, a bar that fills as the days pass. */
+.cq-road { margin: 4px 0 12px; padding: 10px 14px 12px; border: 1px solid var(--f-dot); border-radius: 3px; background: linear-gradient(#1c1d20, var(--f-deep)); box-shadow: inset 0 0 0 1px #000, 0 0 0 1px #000; }
+.cq-road__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; }
+.cq-road__head h3 { margin: 0 !important; }
+.cq-road__head p { margin: 0; color: var(--cq-ink); }
+.cq-road__head strong { color: var(--cq-yellow); }
+.cq-road__track { position: relative; margin-top: 8px; }
+.cq-road__bar { position: absolute; left: 12.5%; right: 12.5%; top: 34px; height: 8px; border-radius: 4px; background: #000; box-shadow: inset 0 0 0 1px var(--f-dot); }
+.cq-road__fill { width: var(--cq-road-fill, 0%); height: 100%; border-radius: 4px; background: linear-gradient(90deg, #8a5a22, var(--cq-yellow)); box-shadow: 0 0 8px rgba(227, 154, 74, 0.5); }
+.cq-road__stops { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); margin: 0; padding: 0; list-style: none; text-align: center; }
+.cq-road__stops li { display: grid; opacity: 0.8; }
+.cq-road__stops button { display: grid; justify-items: center; align-content: start; gap: 1px; min-height: 44px; margin: 0; padding: 0 2px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.cq-road__stops button:focus-visible { outline: 3px solid var(--cq-yellow); outline-offset: 2px; }
+.cq-road__medal { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; overflow: hidden; border: 3px solid var(--f-edge); box-shadow: 0 0 0 2px #000, 0 3px 6px #000; background: var(--f-deep); }
+.cq-road__medal img { width: 100%; height: 100%; object-fit: cover; }
+.cq-road__emoji { font-size: 2rem; line-height: 1; }
+.cq-road__name { margin-top: 4px; font-family: 'IM Fell English SC', Georgia, serif; font-size: 1.1rem; color: var(--f-head); }
+.cq-road__stops small { color: var(--cq-soft); font-size: 0.82rem; line-height: 1.2; }
+.cq-road__stops li.is-done { opacity: 0.55; }
+.cq-road__stops li.is-done .cq-road__medal img { filter: grayscale(0.8); }
+.cq-road__stops li.is-now { opacity: 1; }
+.cq-road__stops li.is-now .cq-road__medal { width: 88px; height: 88px; margin-top: -6px; border-color: var(--cq-yellow); box-shadow: 0 0 0 2px #000, 0 0 16px rgba(227, 154, 74, 0.75); }
+.cq-road__stops li.is-now .cq-road__name { color: var(--cq-yellow); }
+.cq-road__stops li[data-stage='monster'] .cq-road__medal { border-color: #8b2b22; }
+.cq-road__stops li[data-stage='monster'].is-now .cq-road__medal { border-color: #e06a5c; box-shadow: 0 0 0 2px #000, 0 0 18px rgba(224, 106, 92, 0.85); }
+.cq-road__note { margin: 10px 0 0; padding: 8px 10px; border-radius: 3px; background: #000; box-shadow: inset 0 0 0 1px var(--f-dot); color: var(--cq-ink); }
+.cq-road__note strong { color: var(--f-head); }
+@media (max-width: 760px) {
+  .cq-road__medal { width: 56px; height: 56px; }
+  .cq-road__stops li.is-now .cq-road__medal { width: 64px; height: 64px; }
+  .cq-road__bar { top: 25px; }
+  .cq-road__say { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cq-road__stops li.is-now .cq-road__medal { animation: cq-road-glow 1.6s ease-out 1; }
+}
+@keyframes cq-road-glow {
+  0% { box-shadow: 0 0 0 2px #000, 0 0 0 rgba(227, 154, 74, 0); }
+  40% { box-shadow: 0 0 0 2px #000, 0 0 30px rgba(227, 154, 74, 1); }
+  100% { box-shadow: 0 0 0 2px #000, 0 0 16px rgba(227, 154, 74, 0.75); }
+}
+
 /* Clans art Stage A.6: the fight. Monsters and members painted; the mine zone painted dimly behind the monsters. */
 .cq-side--enemies { background: linear-gradient(rgba(16, 17, 19, 0.55), rgba(16, 17, 19, 0.82)), var(--cq-zone, none) center 55% / cover no-repeat, var(--cq-panel); }
 .cq-monster-art { display: block; width: auto; max-width: 100%; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.7)); }

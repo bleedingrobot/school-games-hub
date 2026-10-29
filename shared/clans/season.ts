@@ -67,3 +67,65 @@ export function newSeasonSave(state: ServerState, season: number): ServerState {
   copy.examined = [];
   return copy;
 }
+
+// ---------------------------------------------------------------------------
+// The season road (the four stages on the Clan Quest home screen)
+// ---------------------------------------------------------------------------
+
+export type StageId = 'build' | 'ready' | 'monster' | 'new';
+export interface SeasonStage { id: StageId; name: string; from: number; to: number; when: string; say: string; state: 'done' | 'now' | 'next' }
+export interface SeasonRoad {
+  stages: SeasonStage[];
+  headline: { before: string; strong: string; after: string };
+  /** 0 to 1 along the whole road, from the first medallion to the last. */
+  fill: number;
+  /** One sentence for screen readers. */
+  label: string;
+}
+
+/** Did this clan beat this season's monster? (The first win is kept in the monster save as `wonDay`.) */
+export const beatenThisSeason = (clan: Clan | null | undefined, season: number): boolean => clan?.monster?.season === season && clan.monster.wonDay !== undefined;
+
+const plural = (n: number) => `${n} ${n === 1 ? 'day' : 'days'}`;
+
+/** The four stages of a season, the headline sentence, how far along the road today is, and the screen reader sentence. Built only from CONFIG.season. */
+export function seasonRoad(clock: SeasonClock, monster: { name: string; short: string }, beaten: boolean): SeasonRoad {
+  const { length, warnFrom, monsterFrom } = S;
+  const d = clock.day;
+  const { short } = monster;
+  const defs: Omit<SeasonStage, 'state'>[] = [
+    { id: 'build', name: 'Build', from: 1, to: warnFrom - 1, when: `Days 1–${warnFrom - 1}`, say: 'Grow your clan and village' },
+    { id: 'ready', name: 'Get ready', from: warnFrom, to: monsterFrom - 1, when: `Days ${warnFrom}–${monsterFrom - 1}`, say: 'Supplies on sale · raids rest' },
+    { id: 'monster', name: 'Monster week', from: monsterFrom, to: length, when: `Days ${monsterFrom}–${length}`, say: `${short} attacks! One try a day` },
+    { id: 'new', name: 'New season', from: length + 1, to: length + 1, when: 'Day 1 again', say: 'Fresh start · trophies stay' },
+  ];
+  const nowIndex = d >= monsterFrom ? 2 : d >= warnFrom ? 1 : 0;
+  const stages: SeasonStage[] = defs.map((s, i) => ({ ...s, state: i < nowIndex ? 'done' : i === nowIndex ? 'now' : 'next' }));
+
+  const toMonster = monsterFrom - d;
+  const left = length - d + 1;
+  let headline: SeasonRoad['headline'];
+  if (d >= length) {
+    headline = {
+      before: '', strong: 'Last day of the season!',
+      after: beaten ? ` You beat ${short}. Tomorrow your clan starts fresh. Your trophies stay forever.` : ` Last chance to beat ${short}. Tomorrow your clan starts fresh. Your trophies stay forever.`,
+    };
+  } else if (d >= monsterFrom) {
+    headline = beaten
+      ? { before: `You beat ${short}! `, strong: `New season in ${plural(left)}.`, after: '' }
+      : { before: '', strong: 'Monster week!', after: ` ${plural(left)} left to beat ${short}. One try a day.` };
+  } else if (d >= warnFrom) {
+    headline = toMonster === 1
+      ? { before: `${short} comes `, strong: 'tomorrow', after: '! Buy supplies in the Market and get strong.' }
+      : { before: `${short} comes in `, strong: plural(toMonster), after: '! Buy supplies in the Market and get strong.' };
+  } else {
+    headline = { before: '', strong: plural(toMonster), after: ` until ${monster.name} comes. ${plural(warnFrom - d)} to build before supplies go on sale.` };
+  }
+
+  const stageFrom = [1, warnFrom, monsterFrom, length + 1];
+  const span = stageFrom[nowIndex + 1] - stageFrom[nowIndex];
+  const fill = Math.max(0, Math.min(nowIndex === 2 ? 0.97 : 1, (nowIndex + (d - stageFrom[nowIndex]) / span) / 3));
+  const next = stages[nowIndex + 1];
+  const label = `Season ${clock.number}, day ${d} of ${length}. Now: ${stages[nowIndex].name}. Next: ${next.name} in ${plural(next.from - d)}.`;
+  return { stages, headline, fill, label };
+}

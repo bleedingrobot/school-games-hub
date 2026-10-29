@@ -28,7 +28,7 @@ import { Scoreboard } from './Scoreboard';
 import type { HallRow } from '../../data/clans';
 import { HowToPlay } from './HowToPlay';
 import { Achievements, Celebration, VillageDone } from './Achievements';
-import { SeasonLine } from './SeasonLine';
+import { SeasonRoad } from './SeasonRoad';
 import { empireOf, villageComplete } from '../../../shared/clans/empire';
 import { awardNext, giveFame, newSeason, type ScoreRow } from './fame';
 import { ACHIEVEMENTS, fameFor, type AchievementDef } from '../../../shared/clans/rewards';
@@ -462,6 +462,7 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
                   <p className="cq-soft">Practising: {session.settings.enabledTopics.length ? session.settings.enabledTopics.map((t) => TOPIC_LABELS[t].toLowerCase()).join(', ') : 'nothing today'}</p>
                 </div>
               </div>
+              <SeasonRoad clock={session.clock} clan={session.clan} />
               <div className="cq-cards">
                 {session.clan.members.map((m, i) => (
                   <MemberCard key={m.name} member={m} leader={i === 0} onLook={(look) => { const next = changeLook(session, i, look); if (next) change(next, { type: 'look', member: i, look }); }} />
@@ -479,7 +480,6 @@ export function ClanQuest({ seed = Date.now() | 0, initial = null, server, board
                 </div>
               )}
               <p>Gold: <strong>{session.clan.gold}</strong> · Followers: <strong>{session.clan.followers}</strong> · Average level: <strong>{Math.round(averageLevel(session.clan) * 10) / 10}</strong> · Fame: <strong>{session.fame ?? 0}</strong> (season {session.season ?? 1})</p>
-              <SeasonLine clock={session.clock} />
               {suppliesOnSale(session.clock) && !monsterWeek(session.clock) && <MonsterWarning clock={session.clock} />}
               <div className="cq-actions">
                 <button type="button" className="cq-btn cq-btn--hot" onClick={() => setScreen('mines')}>Go to the Mines</button>

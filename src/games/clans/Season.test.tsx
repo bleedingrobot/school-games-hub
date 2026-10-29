@@ -103,11 +103,13 @@ describe('the season on the clan screen', () => {
     render(<ClanQuest server={stillServer(clock(12))} />);
     expect(await screen.findByText('Season 2 · day 12 of 35')).toBeInTheDocument();
     expect(screen.queryByText(/New season in/)).toBeNull();
+    expect(screen.getByText(/17 days/)).toBeInTheDocument();
   });
 
   it('counts down kindly in the last two weeks when the clock is on', async () => {
     render(<ClanQuest server={stillServer(clock(30))} />);
-    expect(await screen.findByText('New season in 6 days: your clan starts fresh, your trophies stay forever.')).toBeInTheDocument();
+    expect(await screen.findByText('Season 2 · day 30 of 35')).toBeInTheDocument();
+    expect(screen.getByText('Monster week!')).toBeInTheDocument();
   });
 
   it('shows no season line or countdown while the clock is off', async () => {

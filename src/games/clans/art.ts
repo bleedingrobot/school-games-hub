@@ -79,6 +79,9 @@ export function siegeArt(kind: MonsterKind): { wide?: string; small?: string } {
   return { wide, small: file('season-monsters', `siege-${kind}-800`) ?? wide };
 }
 
+/** The round medallions on the season road: Build, Get ready and New season (Monster week uses the monster's portrait). */
+export const stageArt = (id: 'build' | 'ready' | 'new') => file('timeline', id === 'new' ? 'stage-new-season' : `stage-${id}`);
+
 /**
  * The fight's painted effects (scripts/clans-fx-art.py, docs/CLANS-FIGHT-FEEL.md stage 2): glowing light painted on black,
  * with the black made see-through, so only the light shows. Without a picture the effect is a CSS glow.
