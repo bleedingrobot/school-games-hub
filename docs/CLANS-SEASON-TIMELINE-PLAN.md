@@ -62,5 +62,6 @@ No server or database change: the clock already comes with the clan. About half 
 
 ## 5. Questions for James
 
-1. **Which front page?** The Clan Quest home (this plan), the whole site's home page (PR #91), or both.
+1. **Which front page?** James, 29 Oct 2026: **both**. The Clan Quest road is built first, then the site home strip (PR #91); both read one
+   shared list of season days (section 4, step 1).
 2. **Pictures:** use the paintings the game already has, or paint 3 new medallions.
