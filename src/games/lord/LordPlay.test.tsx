@@ -160,7 +160,7 @@ describe('Dragon Maths with a server keeping the hero', () => {
     expect(screen.getByText(/You beat the/)).toBeInTheDocument();
   });
 
-  it('the banker asks how much interest your own savings earn, and adds it for a right answer', async () => {
+  it('the banker asks a question from the maths ladder, and adds the interest for a right answer', async () => {
     const user = userEvent.setup();
     const { db, backend } = newGame();
     const first = renderGame(backend);
@@ -173,14 +173,16 @@ describe('Dragon Maths with a server keeping the hero', () => {
     expect(await screen.findByText(/1 gold for every 20 gold/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Ask about interest/ }));
     const box = await screen.findByRole('dialog');
-    expect(within(box).getByText(/You have 259 gold saved/)).toBeInTheDocument();
-    await user.keyboard('12{Enter}');
+    expect(within(box).getByText(/adds your interest: 12 gold/)).toBeInTheDocument();
+    const asked = db.row!.extra.interestAsk!.question;
+    expect(within(box).getByLabelText(asked.spoken)).toBeInTheDocument();
+    await user.keyboard(`${asked.answer}{Enter}`);
     await waitFor(() => expect(db.row!.hero.bank).toBe(271));
     expect(await screen.findByText(/adds 12 gold of interest. You now have 271 gold saved/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Ask about interest/ })).toBeDisabled();
   });
 
-  it('a wrong interest answer adds nothing and says what it was', async () => {
+  it('a wrong answer to the banker adds nothing', async () => {
     const user = userEvent.setup();
     const { db, backend } = newGame();
     const first = renderGame(backend);
@@ -192,8 +194,8 @@ describe('Dragon Maths with a server keeping the hero', () => {
     await user.click(await screen.findByRole('button', { name: /Bank/ }));
     await user.click(await screen.findByRole('button', { name: /Ask about interest/ }));
     await screen.findByRole('dialog');
-    await user.keyboard('13{Enter}');
-    expect(await screen.findByText(/the interest was 12 gold/, undefined, { timeout: 4000 })).toBeInTheDocument();
+    await user.keyboard(`${db.row!.extra.interestAsk!.question.answer + 1}{Enter}`);
+    expect(await screen.findByText(/the banker adds nothing today/, undefined, { timeout: 4000 })).toBeInTheDocument();
     expect(db.row!.hero.bank).toBe(259);
   });
 
