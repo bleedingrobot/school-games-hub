@@ -733,7 +733,7 @@ describe('shop, healer and bank', () => {
 
   it('interest: the question follows the pupil\'s maths focus', async () => {
     const g = new Game();
-    g.db.maths = { facts: [], settings: {}, focus: { source: 'teacher', skills: ['facts-10'], onlyThese: true, endsAt: null, canChoose: false, own: null } };
+    g.db.maths = { facts: [], settings: {}, focus: { source: 'teacher-class', skills: ['facts-10'], onlyThese: true, endsAt: null, canChoose: false, own: null } };
     await g.start();
     g.patch({ level: 4, bank: 100 });
     await g.refresh();
