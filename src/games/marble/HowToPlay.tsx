@@ -52,7 +52,7 @@ export function HowToPlayBody({ mathsAllowed }: { mathsAllowed: boolean }) {
       <section aria-labelledby="mh-ghost">
         <h3 id="mh-ghost">Ghosts and two players</h3>
         <p>
-          Race a ghost: a see-through marble that replays your best run, the classmate just ahead of you, or the fastest in your class. Nobody has to be online.
+          Pick <strong>Race a ghost</strong> above the courses. A ghost is a see-through marble that plays back a recorded run: <strong>My best</strong> is your own best run, <strong>Just ahead</strong> is the classmate just ahead of you, and <strong>Fastest</strong> is the fastest in your class. Nobody has to be online.
           On a computer you can also play <strong>two players</strong> on one keyboard. That one isn’t saved.
         </p>
       </section>
@@ -61,7 +61,8 @@ export function HowToPlayBody({ mathsAllowed }: { mathsAllowed: boolean }) {
           <h3 className="marble-howto__big">Maths</h3>
           <p>
             Your teacher decides if there are questions. The questions are the maths your class is working on, and a wrong answer <strong>never costs you</strong> anything
-            except a longer way round.
+            except a longer way round. Each gate asks a question and the right tunnel is the shortcut. Pit stops take 2 seconds off for a right answer, and the
+            purple question stops take 1 second or half a second off.
           </p>
           <section aria-labelledby="mh-gate">
             <h3 id="mh-gate">Answer gates</h3>
@@ -70,7 +71,7 @@ export function HowToPlayBody({ mathsAllowed }: { mathsAllowed: boolean }) {
               A wrong tunnel is a dead end, so you have to back out and try another.
             </p>
             <p>
-              With <strong>Read time</strong> on, the game stops when a question comes into view and waits (up to 10 seconds) until you press Go. The clock stops too.
+              When a question comes into view the game stops and waits (up to 10 seconds) until you press Go, so you can read it. The clock stops too.
             </p>
           </section>
           <section aria-labelledby="mh-pit">
@@ -109,6 +110,9 @@ export function HowToPlayBody({ mathsAllowed }: { mathsAllowed: boolean }) {
             </p>
           </section>
         </>
+      )}
+      {!mathsAllowed && (
+        <p>Without maths, an arrow at each gate shows you the shortcut.</p>
       )}
       <section aria-labelledby="mh-saved">
         <h3 id="mh-saved">What is saved</h3>

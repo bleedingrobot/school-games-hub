@@ -13,7 +13,7 @@ import { RunScreen, type FinishedRun } from './RunScreen';
 // three.js can't run in a test, so the picture is a stand-in that just counts draws.
 const draws = vi.fn();
 vi.mock('./renderer', () => ({
-  createView: () => ({ draw: draws, resize: vi.fn(), setLowQuality: vi.fn(), dispose: vi.fn() }),
+  createView: () => ({ draw: draws, resize: vi.fn(), setLowQuality: vi.fn(), setQuality: vi.fn(), dispose: vi.fn() }),
 }));
 
 let frameCallbacks: FrameRequestCallback[] = [];

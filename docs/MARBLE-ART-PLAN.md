@@ -107,3 +107,15 @@ Asked as question cards on 28 Oct 2026. Answers go here.
 - Shadows: one directional light shadow map that follows the camera (1024 px on Normal, 2048 on Best, off on Simple).
 - The art goes through a tidy-up script like `scripts/clans-art.py` (resize, `.webp`), with an `art.test.ts` checking every course has what it needs and nothing is spare.
 - Credits: Kenney and Quaternius are CC0, but add a thank-you line on the How to play screen, as Clan Quest does.
+
+## 7. Results
+
+**Boulder Beach try-out (G.1 + G.2, plus its G.3 backdrop), built 29 Oct 2026, not live yet.** Only Boulder Beach has the new look (`lookFor` in `src/games/marble/look.ts`); every other course draws exactly as before.
+
+- **G.1:** warm sun with real shadows that follow the marble (`PCFSoftShadowMap`), corner darkening in the vertex colours, a sand texture drawn in code (`trackTextures.ts`) instead of the checkerboard, light edge strips where the track drops away, downhill chevrons on slopes, lower driftwood rails (0.45 high, same footprint as the physics walls), and a red-and-white buoy for bumpers.
+- **Quality levels** (`quality.ts`): Simple / Normal / Best. ChromeOS or a low-density screen starts on Normal, iPads and iMacs on Best. The slow-frame check can drop a level twice (Best to Simple in about 5 s); skipping every other frame only happens on Simple.
+- **G.2** (`fx/`): glassy swirl marble whose highlight doesn't roll, an orange one for player 2 and a glowing ghost, a trail at speed, and effects from `runEvents` (landing dust, fall splash, respawn sparkle, gem sparkle, finish confetti, door puff). One particle pool, capped per level. Reduced motion: fewer and gentler particles, no parallax.
+- **Backdrop:** painted in ComfyUI on James's PC (6 tries; James picked "bay, softer"), `src/games/marble/art/boulder-beach.webp` (53 KB) and a small copy for Simple. Fitted without stretching, slightly softened so the track reads in front, with a small parallax.
+- **Untouched:** nothing in `shared/` changed; `npm run marble:determinism` gives the same fingerprint (`47774b85`). All 5,498 tests pass.
+- **Still to check on real devices:** the size and colour of the effects (software rendering here was too slow to catch the splash and confetti in a screenshot) and the frame rate on a school Chromebook.
+- **Try-out page:** `npm run marble:single`, published for James.
