@@ -18,7 +18,16 @@ world.tables.app_settings = [{ ...world.tables.app_settings[0], bond_match_enabl
 world.tables.profiles = [...(world.tables.profiles ?? []), ME];
 // The "This season" strip: Clan Quest season 1. Change the day with ?day=N in the address (1 to 35).
 const day = Math.min(35, Math.max(1, Number(new URLSearchParams(window.location.search).get('day')) || 24));
-world.jobs.my_moves_left = { ...(world.jobs.my_moves_left as object), season: { number: 1, day, daysLeft: 36 - day, clockOn: true } };
+// The Dragon Maths strip: the same school date, and a level 7 hero (?level=N to change it).
+const lordStart = new Date(Date.now() + 13 * 3_600_000 - (day - 1) * 86_400_000).toISOString().slice(0, 10);
+const lordLevel = Math.min(12, Math.max(1, Number(new URLSearchParams(window.location.search).get('level')) || 7));
+const moves = world.jobs.my_moves_left as { lord?: object | null };
+world.jobs.my_moves_left = {
+  ...moves,
+  lord: { day: lordStart, forestLeft: 5, arenaLeft: 3, masterTried: false, masterExtra: 0, forestPerDay: 10, ...moves.lord, level: lordLevel, exp: 0 },
+  season: { number: 1, day, daysLeft: 36 - day, clockOn: true },
+  lordSeason: { start: lordStart, on: true },
+};
 /** A change to my profile: a new row each time, as the database would send, so the page sees it changed. */
 function updateMe(avatar: Record<string, string>) {
   ME = { ...ME, avatar };

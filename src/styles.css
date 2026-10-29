@@ -3207,3 +3207,24 @@ main:focus {
 [data-hub-theme='menu'] .swatch span {
   border-color: rgba(255, 255, 255, 0.4);
 }
+
+/* The Dragon Maths season strip uses the same look; its dragon stop has a red rim, like Clan Quest's monster. */
+.season-strip__stops li[data-stage='dragon'] .season-strip__medal {
+  border-color: #b3261e;
+}
+.season-strip__stops li[data-stage='dragon'].is-now .season-strip__medal {
+  box-shadow: 0 0 0 3px var(--h-box), 0 0 0 5px #b3261e;
+}
+/* Clan Quest's and Dragon Maths' season strips: one above the other on small screens, side by side on wide ones. */
+.season-strips {
+  display: grid;
+  gap: 10px;
+}
+.season-strips > .panel {
+  margin: 0;
+}
+@media (min-width: 1000px) {
+  .season-strips--two {
+    grid-template-columns: 1fr 1fr;
+  }
+}

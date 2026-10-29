@@ -14,7 +14,7 @@ const STAGE_FILE: Record<Exclude<StageId, 'monster'>, string> = { build: 'stage-
  * "This season" on the home page: the same four stops as the Clan Quest season road (Build, Get ready, Monster week, New season),
  * small and in the home page's colours. The caller only shows it when the season clock is on.
  */
-export default function SeasonStrip({ clock }: { clock: SeasonClock }) {
+export default function SeasonStrip({ clock, title = 'This season' }: { clock: SeasonClock; title?: string }) {
   const kind = monsterOf(clock.number);
   const look = MONSTER_LOOKS[kind];
   const road = seasonRoad(clock, look, false);
@@ -22,7 +22,7 @@ export default function SeasonStrip({ clock }: { clock: SeasonClock }) {
   return (
     <section className="panel season-strip" aria-label={road.label}>
       <div className="panel__head season-strip__head">
-        <h2 className="panel__title">This season</h2>
+        <h2 className="panel__title">{title}</h2>
         <p className="season-strip__count">
           Season {clock.number} · day {clock.day} of {CONFIG.season.length}
         </p>

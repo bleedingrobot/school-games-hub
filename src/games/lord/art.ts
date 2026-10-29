@@ -30,6 +30,8 @@ export const forestScene = (level: number): SceneId => (level <= 4 ? 'forest-1' 
 export const monsterArt = (name: string) => file('monsters', slug(name));
 export const masterArt = (name: string) => file('masters', slug(name));
 export const dragonArt = () => file('dragon', 'scorchtail');
+/** The round pictures on the season road (scripts/lord-timeline-art.py). */
+export const stageArt = (stage: 'forest' | 'masters' | 'dragon' | 'new') => file('timeline', stage === 'new' ? 'stage-new-season' : `stage-${stage}`);
 /** A look the pupil can pick (LOOKS in data.ts): a whole painted hero, and a small copy for the picker. */
 export const lookArt = (look: string) => file('heroes', look);
 /** How each class looks before a look is picked: on the class choice, and for heroes made before there were looks. */

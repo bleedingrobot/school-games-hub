@@ -76,6 +76,8 @@ export type Sent = { kind: 'reply'; reply: LordReply } | { kind: 'offline' } | {
 export interface LordBackend {
   /** True for the browser-only trial, which has the test tools. The live game never shows them. */
   trial: boolean;
+  /** The trial's season is pretend (always day 1) unless it was given a start date: then this is true and the season road shows. The live game always shows it. */
+  seasonDated?: boolean;
   load(): Promise<LordLoad>;
   send(request: LordRequest): Promise<Sent>;
   /** Sends the queued finishes. 'later' if some are still waiting. */

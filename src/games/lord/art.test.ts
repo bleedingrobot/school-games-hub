@@ -20,6 +20,7 @@ const KNOWN: Record<string, { names: Set<string>; maxKb: number }> = {
   masters: { names: new Set(MASTERS.map((m) => slug(m.name))), maxKb: 80 },
   people: { names: new Set(Object.values(PEOPLE).map((p) => p.id)), maxKb: 160 },
   dragon: { names: new Set(['scorchtail']), maxKb: 200 },
+  timeline: { names: new Set(['stage-forest', 'stage-masters', 'stage-dragon', 'stage-new-season']), maxKb: 20 },
   heroes: { names: new Set(Object.values(LOOKS).flat().flatMap((l) => [l, `${l}-small`])), maxKb: 90 },
 };
 

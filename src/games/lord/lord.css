@@ -369,3 +369,48 @@
   .lord-map__spot .lord-map__long { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .lord-map__spot--dragon > span { animation: none !important; } }
+
+/* ---------------------------------------------------------------- the season road (docs/DRAGON-SEASON-TIMELINE-PLAN.md) */
+/* Four round stops on the parchment, joined by a gold bar that fills as the days pass. Today's stop is bigger with a gold rim. */
+.lord-road { margin: 0 0 10px; padding: 10px 12px 12px; border: 1px solid var(--lord-line); border-radius: 6px; background: rgba(230, 210, 166, 0.55); box-shadow: inset 0 0 0 2px rgba(247, 235, 207, 0.8); }
+.lord-road__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; }
+.lord .lord-road__head h3 { margin: 0; font-family: var(--lord-display); font-weight: 400; font-size: 1.2rem; color: var(--lord-yellow); }
+.lord-road__head p { margin: 0; color: var(--lord-ink); }
+.lord-road__head strong { color: var(--lord-red); }
+.lord-road__track { position: relative; margin-top: 8px; }
+.lord-road__bar { position: absolute; left: 12.5%; right: 12.5%; top: 34px; height: 8px; border-radius: 4px; background: rgba(92, 70, 48, 0.35); box-shadow: inset 0 0 0 1px rgba(92, 70, 48, 0.5); }
+.lord-road__fill { width: var(--lord-road-fill, 0%); height: 100%; border-radius: 4px; background: linear-gradient(90deg, #8a5a22, var(--lord-gold)); box-shadow: 0 0 6px rgba(224, 178, 90, 0.7); }
+.lord-road__stops { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; text-align: center; }
+.lord-road__stops li { display: grid; opacity: 0.85; }
+.lord-road__stops button { display: grid; justify-items: center; align-content: start; gap: 1px; min-height: 44px; margin: 0; padding: 0 2px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.lord-road__stops button:focus-visible { outline: 3px solid var(--lord-focus); outline-offset: 2px; border-radius: 4px; }
+.lord-road__medal { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; overflow: hidden; border: 3px solid var(--lord-line); box-shadow: 0 0 0 2px var(--lord-wood), 0 3px 6px rgba(0, 0, 0, 0.35); background: var(--lord-wood); }
+.lord-road__medal img { width: 100%; height: 100%; object-fit: cover; }
+.lord-road__emoji { font-size: 2rem; line-height: 1; }
+.lord-road__name { margin-top: 4px; font-family: var(--lord-display); font-size: 1.1rem; color: var(--lord-ink); }
+.lord-road__stops small { color: var(--lord-soft); font-size: 0.82rem; line-height: 1.2; }
+.lord-road__stops li.is-done { opacity: 0.55; }
+.lord-road__stops li.is-done .lord-road__medal img { filter: grayscale(0.8); }
+.lord-road__stops li.is-now { opacity: 1; }
+.lord-road__stops li.is-now .lord-road__medal { width: 88px; height: 88px; margin-top: -6px; border-color: var(--lord-gold); box-shadow: 0 0 0 2px var(--lord-wood), 0 0 14px rgba(224, 178, 90, 0.95); }
+.lord-road__stops li.is-now .lord-road__name { color: var(--lord-yellow); font-weight: 700; }
+.lord-road__stops li[data-stage='dragon'] .lord-road__medal { border-color: var(--lord-red); }
+.lord-road__stops li[data-stage='dragon'].is-now .lord-road__medal { border-color: #e0623f; box-shadow: 0 0 0 2px var(--lord-wood), 0 0 18px rgba(224, 98, 63, 0.9); }
+.lord-road__note { margin: 10px 0 0; padding: 8px 10px; border-radius: 4px; background: rgba(247, 235, 207, 0.9); box-shadow: inset 0 0 0 1px var(--lord-line); color: var(--lord-ink); }
+.lord-road__note strong { color: var(--lord-yellow); }
+.lord-road__mine { margin: 8px 0 0; color: var(--lord-green); font-weight: 700; }
+@media (max-width: 760px) {
+  .lord-road__medal { width: 56px; height: 56px; }
+  .lord-road__stops li.is-now .lord-road__medal { width: 64px; height: 64px; }
+  .lord-road__bar { top: 25px; }
+  .lord-road__say { display: none; }
+  .lord-road__name { font-size: 0.95rem; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lord-road__stops li.is-now .lord-road__medal { animation: lord-road-glow 1.6s ease-out 1; }
+}
+@keyframes lord-road-glow {
+  0% { box-shadow: 0 0 0 2px var(--lord-wood), 0 0 0 rgba(224, 178, 90, 0); }
+  40% { box-shadow: 0 0 0 2px var(--lord-wood), 0 0 28px rgba(224, 178, 90, 1); }
+  100% { box-shadow: 0 0 0 2px var(--lord-wood), 0 0 14px rgba(224, 178, 90, 0.95); }
+}
