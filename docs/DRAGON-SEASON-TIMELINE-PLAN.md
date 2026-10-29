@@ -10,7 +10,7 @@ season is, what comes next and how long they have. Asked for by James, 29 Oct 20
   four round stops on a gold road that fills as the days pass, and the pupil's own line in green. Tap a stop for a short note.
 - **On the site home page**, in "Complex maths games": the same four stops, small, in the home page's colours, with an
   "Open Dragon Maths" button. When Clan Quest's strip is showing too, the two sit side by side on wide screens (one above the other
-  on phones) and are titled "Clan Quest this season" and "Dragon Maths this season". Pupils only, while Dragon Maths is on for
+  on phones) and are titled "Clan Quest this season" and "Dragon Maths this season". Pupils and teachers (teachers from 30 Oct, so James can see what classes see), while Dragon Maths is on for
   their class, the school has a season date and season 1 has started.
 
 The four stops (35-day season, from `SEASON_DAYS`):
