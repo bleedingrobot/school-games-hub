@@ -4,6 +4,7 @@
  * Maths (stage M.6): when the teacher allows it, a run starts by asking the server for its questions and which
  * shortcut doors are open; pit-stop answers are marked by the server. Runs with maths have their own best times and boards.
  */
+import type { CSSProperties } from 'react';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import { courseById } from '../../../shared/marble/courses';
@@ -21,6 +22,7 @@ import { formatSteps, loadBests, mergeBests, saveBests, withFinish, type Bests }
 import { HowToPlayBody } from './HowToPlay';
 import { loadPrefs, savePrefs, type MarblePrefs } from './prefs';
 import { COURSE_INFO } from './courseInfo';
+import { courseAccent, courseArt, courseGradient } from './courseArt';
 import type { FinishedRun } from './RunScreen';
 import './marble.css';
 
@@ -248,8 +250,16 @@ function CoursePicker({
     const best = bests[c.id]?.up ?? (c.playable ? bests[c.playable]?.up : undefined);
     const bestHard = c.playable ? bests[c.playable]?.down : undefined;
     const medal = course && best !== undefined ? medalFor(course, best, wantMaths) : null;
+    const art = courseArt(c.id);
+    const style = {
+      '--course-grad': courseGradient(c.id),
+      '--course-accent': courseAccent(c.id),
+      ...(art ? { '--course-art': `url("${art.small}")`, '--course-focus': art.focus ?? 'center 65%' } : {}),
+    } as CSSProperties;
     return (
-      <li key={c.id} className="marble-course">
+      <li key={c.id} className={`marble-course${art ? ' marble-course--art' : ''}`} style={style}>
+        {art && <img className="marble-course__pic" src={art.small} alt="" loading="lazy" decoding="async" />}
+        <div className="marble-course__body">
         <div className="marble-course__head">
           <h3>{c.name}</h3>
           <span className="marble-course__level" aria-label={`Difficulty ${c.difficulty} out of 6`}>
@@ -287,6 +297,7 @@ function CoursePicker({
         ) : (
           <p className="marble-course__soon">Coming soon</p>
         )}
+        </div>
       </li>
     );
   };
