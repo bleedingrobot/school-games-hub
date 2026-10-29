@@ -13,15 +13,18 @@ import { lookFor } from './look';
 import type { Palette } from './palette';
 import { settingsFor, type Quality, type QualitySettings } from './quality';
 import type { GateSign, GemSprite } from './signs';
-import { driftwoodTexture, sandTexture, SAND_TILES, skyTexture, WOOD_HEIGHT, WOOD_TILES } from './trackTextures';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { logTexture, plankTexture, PLANK_HEIGHT, PLANK_TILES, sandTexture, SAND_TILES, skyTexture } from './trackTextures';
 
 /** How thick a block looks where nothing is beside it, in tiles. */
 const THICK = 1.2;
 /** Walls stand this far above the floor beside them. */
 const WALL_HEIGHT = 0.7;
 /** The diorama look: rails are lower, and bevelled this much at the top. */
-const RAIL_HEIGHT = 0.45;
-const RAIL_BEVEL = 0.05;
+const RAIL_HEIGHT = 0.5; // the wall's whole height: a plank base, a log on top
+const BASE_HEIGHT = 0.26;
+const RAIL_BEVEL = 0.04;
+const LOG_RADIUS = 0.16;
 /** How wide the light strip along a drop-off is, in tiles. */
 const EDGE_STRIP = 0.1;
 
@@ -251,6 +254,7 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
 
   // ---- the blocks ----
   const soup = new Soup();
+  const bank = dio ? mix(palette.side, 0xf2e2b8, 0.5) : palette.side; // the soft sand-coloured sides under the track (diorama look)
   const sandSoup = new Soup(); // sand tops (diorama look): textured
   const woodSoup = new Soup(); // driftwood rails (diorama look): textured
   const { width: W, height: H } = course;
@@ -398,7 +402,7 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
           soup.quad(a, a2, b2, b, palette.side);
         } else {
           // The lower part of a side is darker.
-          soup.quad(a, a2, b2, b, palette.side, [0.95, 0.58, 0.58, 0.95]);
+          soup.quad(a, a2, b2, b, bank, [0.95, 0.7, 0.7, 0.95]);
           // A thin light strip along the top edge of a drop, so the edge is easy to see.
           const inward = side === 'N' ? [0, 1] : side === 'S' ? [0, -1] : side === 'E' ? [-1, 0] : [1, 0];
           const lift = (px: number, py: number) => [x + px, surface(px, py) + 0.012, y + py];
@@ -445,12 +449,22 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
   }
   const trackMeshes: THREE.Mesh[] = []; // the track catches shadows but doesn't cast them, so flat tops stay clean
   /** A low driftwood rail (or a door in its own colour) on a wall tile: same footprint, bevelled top, planks. */
+  /** The floor height a wall tile stands on (the highest floor beside it), or null if it's buried in other walls. */
+  function wallBase(x: number, y: number): number | null {
+    if (tile(x, y).ch !== '=') return null;
+    let b = -Infinity;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+      const n = tile(x + dx, y + dy);
+      if (isFloor(n)) b = Math.max(b, Math.max(...corners(n)));
+    }
+    return b === -Infinity ? null : b;
+  }
   function addRail(x: number, y: number, base: number, isDoor: boolean) {
-    const top = base + RAIL_HEIGHT;
+    const top = base + BASE_HEIGHT;
     const out = isDoor ? soup : woodSoup;
     const colour = isDoor ? palette.door : 0xffffff;
-    const wood: UvOf | undefined = isDoor ? undefined : (p) => [(p[0] + p[2]) / WOOD_TILES, p[1] / WOOD_HEIGHT];
-    const woodTop: UvOf | undefined = isDoor ? undefined : (p) => [p[0] / WOOD_TILES, p[2] / WOOD_HEIGHT];
+    const wood: UvOf | undefined = isDoor ? undefined : (p) => [(p[0] + p[2]) / PLANK_TILES, p[1] / PLANK_HEIGHT];
+    const woodTop: UvOf | undefined = isDoor ? undefined : (p) => [p[0] / PLANK_TILES, p[2] / PLANK_HEIGHT];
     const sides: Array<[number, number, number[], number[]]> = [
       [0, -1, [x, y], [x + 1, y]],
       [1, 0, [x + 1, y], [x + 1, y + 1]],
@@ -458,6 +472,12 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
       [-1, 0, [x, y + 1], [x, y]],
     ];
     const exposed = sides.map(([dx, dy]) => tile(x + dx, y + dy).ch !== '=');
+    // Below the rail on its open sides: down past the lowest floor beside it, so no gap shows under it.
+    let lowest = base;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+      const n = tile(x + dx, y + dy);
+      if (isFloor(n)) lowest = Math.min(lowest, Math.min(...corners(n)));
+    }
     // The top is pulled in a little on every open side, with a slanted strip down to the side.
     const x0 = x + (exposed[3] ? RAIL_BEVEL : 0);
     const x1 = x + 1 - (exposed[1] ? RAIL_BEVEL : 0);
@@ -466,21 +486,84 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
     out.quad([x0, top, y0], [x0, top, y1], [x1, top, y1], [x1, top, y0], colour, [1, 1, 1, 1], woodTop);
     sides.forEach(([dx, dy, p, q], i) => {
       const n = tile(x + dx, y + dy);
-      if (!exposed[i]) return;
-      const bottom = isFloor(n) ? Math.min(...corners(n)) : base - THICK;
+      if (!exposed[i]) {
+        // A rail beside a lower rail (they step down a slope): fill the step, so there's no see-through notch.
+        const below = wallBase(x + dx, y + dy);
+        const theirTop = below === null ? -Infinity : below + BASE_HEIGHT;
+        if (theirTop < top - 1e-9) {
+          const to = below === null ? lowest - THICK : theirTop;
+          out.quad([p[0], top, p[1]], [p[0], to, p[1]], [q[0], to, q[1]], [q[0], top, q[1]], colour, [1, 0.86, 0.86, 1], wood);
+        }
+        return;
+      }
+      const bottom = isFloor(n) ? Math.min(...corners(n)) : lowest - THICK;
       const sideTop = top - RAIL_BEVEL;
       const inner = (pt: number[]) => [pt[0] === x ? x0 : x1, top, pt[1] === y ? y0 : y1];
       out.quad(inner(p), [p[0], sideTop, p[1]], [q[0], sideTop, q[1]], inner(q), isDoor ? mix(palette.door, 0xffffff, 0.15) : colour, [1, 1, 1, 1], wood);
-      out.quad([p[0], sideTop, p[1]], [p[0], bottom, p[1]], [q[0], bottom, q[1]], [q[0], sideTop, q[1]], colour, [0.92, 0.6, 0.6, 0.92], wood);
+      // Planks down to the floor; where the wall stands over a drop, sand-coloured ground below that (like the track's own sides), so the wall isn't a tall plank slab.
+      const planks = isFloor(n) ? bottom : Math.max(bottom, base);
+      out.quad([p[0], sideTop, p[1]], [p[0], planks, p[1]], [q[0], planks, q[1]], [q[0], sideTop, q[1]], colour, [0.95, 0.82, 0.82, 0.95], wood);
+      if (planks > bottom + 1e-9) soup.quad([p[0], planks, p[1]], [p[0], bottom, p[1]], [q[0], bottom, q[1]], [q[0], planks, q[1]], bank, [0.95, 0.72, 0.72, 0.95]);
     });
   }
 
-  const soupMesh = soup.mesh();
+  // Logs along every wall run, and round posts at corners, ends and now and then along a run. All merged into one mesh (two with the door colour).
+  const woodLogs: THREE.BufferGeometry[] = [];
+  const doorLogs: THREE.BufferGeometry[] = [];
+  if (dio) {
+    const isWall = (x: number, y: number) => wallBase(x, y) !== null;
+    const centre = (x: number, y: number) => new THREE.Vector3(x + 0.5, (wallBase(x, y) ?? 0) + BASE_HEIGHT + LOG_RADIUS * 0.8, y + 0.5);
+    const doorAt = (x: number, y: number) => course.tiles[y * W + x].door >= 0;
+    const up = new THREE.Vector3(0, 1, 0);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        if (!isWall(x, y)) continue;
+        const a = centre(x, y);
+        const list = doorAt(x, y) ? doorLogs : woodLogs;
+        for (const [dx, dy] of [[1, 0], [0, 1]]) {
+          if (!isWall(x + dx, y + dy)) continue;
+          const b = centre(x + dx, y + dy);
+          if (Math.abs(b.y - a.y) > 0.01) continue; // a step: the logs stop, with a post each side
+          const dir = new THREE.Vector3().subVectors(b, a);
+          const len = dir.length();
+          const geo = new THREE.CylinderGeometry(LOG_RADIUS, LOG_RADIUS, len, 12, 1);
+          geo.applyMatrix4(new THREE.Matrix4().compose(a.clone().add(b).multiplyScalar(0.5), new THREE.Quaternion().setFromUnitVectors(up, dir.normalize()), new THREE.Vector3(1, 1, 1)));
+          (doorAt(x + dx, y + dy) ? doorLogs : list).push(geo);
+        }
+        // A round joint where logs meet, so tilted logs join smoothly.
+        const joint = new THREE.SphereGeometry(LOG_RADIUS, 12, 8);
+        joint.translate(a.x, a.y, a.z);
+        list.push(joint);
+        const east = isWall(x + 1, y);
+        const west = isWall(x - 1, y);
+        const north = isWall(x, y - 1);
+        const south = isWall(x, y + 1);
+        const alongX = east && west && !north && !south;
+        const alongY = north && south && !east && !west;
+        const stepNear = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => isWall(x + dx, y + dy) && Math.abs(centre(x + dx, y + dy).y - a.y) > 0.01);
+        const post = stepNear || !(alongX || alongY) || (alongX && x % 3 === 0) || (alongY && y % 3 === 0);
+        if (post) {
+          const h = 0.36;
+          const baseTop = a.y - LOG_RADIUS * 0.8;
+          const body = new THREE.CylinderGeometry(0.18, 0.21, h, 14);
+          body.translate(a.x, baseTop + h / 2, a.z);
+          const cap = new THREE.SphereGeometry(0.18, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+          cap.translate(a.x, baseTop + h, a.z);
+          list.push(body, cap);
+        }
+      }
+    }
+  }
+
+  // Some wall faces come out the wrong way round, so on the diorama look every block is drawn from both sides: no see-through gaps, whatever way a face points.
+  const soupMesh = soup.mesh(dio ? new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }) : undefined);
   scene.add(soupMesh);
   if (dio) {
     const sandMesh = sandSoup.mesh(new THREE.MeshLambertMaterial({ map: sandTexture(anisotropy), vertexColors: true }));
-    const woodMesh = woodSoup.mesh(new THREE.MeshLambertMaterial({ map: driftwoodTexture(anisotropy), vertexColors: true }));
+    const woodMesh = woodSoup.mesh(new THREE.MeshLambertMaterial({ map: plankTexture(anisotropy), vertexColors: true, side: THREE.DoubleSide }));
     scene.add(sandMesh, woodMesh);
+    if (woodLogs.length) scene.add(new THREE.Mesh(mergeGeometries(woodLogs), new THREE.MeshLambertMaterial({ map: logTexture(anisotropy) })));
+    if (doorLogs.length) scene.add(new THREE.Mesh(mergeGeometries(doorLogs), new THREE.MeshLambertMaterial({ color: palette.door })));
     trackMeshes.push(soupMesh, sandMesh);
   }
 
