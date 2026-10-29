@@ -130,8 +130,9 @@ export function Dashboard() {
   const cardsFrom = meId ? homePage : undefined;
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
   const shownGames = useShownGames();
-  const seasonShown = pupil && season && season.clockOn && season.number > 0 && shownGames.some((g) => g.id === 'clan-quest') ? season : null;
-  const lordSeasonShown = pupil && lordSeason && shownGames.some((g) => g.id === 'dragon-maths') ? lordSeason : null;
+  // Teachers see the season strips too, so they know what their class sees (James, 30 Oct 2026).
+  const seasonShown = season && season.clockOn && season.number > 0 && shownGames.some((g) => g.id === 'clan-quest') ? season : null;
+  const lordSeasonShown = lordSeason && shownGames.some((g) => g.id === 'dragon-maths') ? lordSeason : null;
   // With both strips showing, each says which game it is.
   const bothSeasons = !!seasonShown && !!lordSeasonShown;
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
