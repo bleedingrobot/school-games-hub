@@ -12,6 +12,9 @@ import { raidClassmateNz, raidTargetList, type TargetEntry } from '../../../shar
 import { STATS, TROOP_KINDS, type Clan, type Empire, type ItemDef, type Member, type Stat, type Troops, type VillageBuilding } from '../../../shared/clans/types';
 import { finishQuest, puzzleFor, questById, questDoneToday, todaysQuest, type PuzzleSpec, type QuestDef, type QuestDone } from '../../../shared/clans/quests';
 import { earn, type Session } from './session';
+import { classByName, raceByName, rollMember } from '../../../shared/clans/character';
+import { slotSeed } from '../../../shared/clans/create';
+import { buySupply, monsterSave, type SupplyKind } from '../../../shared/clans/monster';
 import { setLook, type Look } from '../../../shared/clans/looks';
 
 const withClan = (s: Session, change: (clan: Clan) => boolean): Session | null => {
@@ -265,3 +268,34 @@ export function pretendTargets(s: Session): RaidChoice[] {
   const shields = new Map(sketches.filter((m) => m.shieldUntil >= today).map((m) => [m.id, m.shieldUntil]));
   return raidTargetList(state, today, 'you', s.raidsOn !== false, sketches).map((t) => (shields.has(t.id) ? { ...t, shieldUntil: shields.get(t.id) } : t));
 }
+
+/**
+ * A new season: pick a member's race and class again, before they have played. The same sum the server does (same dice), so the answer
+ * agrees. Null if the member has started this season, or the race or class is not a real one.
+ */
+export function repickMember(s: Session, memberIndex: number, race: string, cls: string): Session | null {
+  const m = s.clan.members[memberIndex];
+  if (!m || m.level !== 1 || m.xp !== 0 || !raceByName(race) || !classByName(cls)) return null;
+  const clan = structuredClone(s.clan);
+  const fresh = rollMember({ rng: Math.imul(slotSeed(s.baseSeed, memberIndex) | 0, 2654435761) + (clan.season ?? 0) * 7919 }, m.name, race, cls, memberIndex === 0);
+  clan.members[memberIndex] = { ...fresh, ...(m.look ? { look: m.look } : {}) };
+  return { ...s, clan };
+}
+
+/** "Keep going" on the re-pick screen. */
+export function repickDone(s: Session): Session {
+  const { repick: _repick, ...clan } = structuredClone(s.clan);
+  return { ...s, clan };
+}
+
+/** Test page only: a full set of monster supplies, so the potions and the net can be seen in a practice fight. */
+export function giveSupplies(s: Session): Session {
+  const clan = structuredClone(s.clan);
+  const season = s.season ?? 1;
+  const save = monsterSave(clan, season);
+  clan.monster = { ...save, supplies: { arrows: CONFIG.monster.supplies.arrows.max, potions: CONFIG.monster.supplies.potions.max, net: CONFIG.monster.supplies.net.max } };
+  return { ...s, clan };
+}
+
+/** Buy monster supplies at the Market (paid from the purse, never more than the most a clan may hold). Null if it can't be done. */
+export const buySupplies = (s: Session, season: number, kind: SupplyKind, count: number): Session | null => withClan(s, (clan) => buySupply(clan, season, kind, count).ok);

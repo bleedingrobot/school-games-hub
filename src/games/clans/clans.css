@@ -421,3 +421,17 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 .cq-ribbon { margin: 8px 0; padding: 8px 12px; text-align: center; font-weight: bold; color: #2b1d00; background: #e6b800; border: 2px solid #fff3b0; border-radius: 3px; }
 .cq-hall li.cq-me { color: var(--cq-yellow); }
 .cq-celebrate--village { flex-direction: column; align-items: flex-start; }
+
+/* The season monster. The framed emoji and the siege panel are stand-ins: the painted portrait and the "village under attack" scene replace them. */
+.cq-monster-top { display: grid; grid-template-columns: minmax(140px, 220px) 1fr; gap: 12px; align-items: start; margin: 8px 0; }
+.cq-monster-art { display: grid; place-items: center; gap: 4px; padding: 10px; border: 3px double var(--cq-yellow); border-radius: 6px; background: #05050c; text-align: center; }
+.cq-monster-art span { font-size: 5rem; line-height: 1; }
+.cq-monster-art--small span { font-size: 3rem; }
+.cq-monster-art--small { padding: 4px 10px; }
+.cq-monster-facts { margin: 6px 0; padding-left: 1.2em; }
+.cq-monster-helpers { margin: 6px 0 0; padding-left: 1.2em; }
+.cq-monster-warning, .cq-monster-result { margin: 8px 0; }
+.cq-warning { margin: 6px 0; padding: 6px 10px; border: 3px solid var(--cq-yellow); border-radius: 4px; background: #2a2208; color: var(--cq-yellow); }
+.cq-siege-scene { display: flex; flex-wrap: wrap; justify-content: space-around; align-items: center; gap: 8px; padding: 14px; margin: 8px 0; font-size: 3rem; border: 2px solid var(--cq-line); border-radius: 6px; background: linear-gradient(#2a1410, #0b0b17); }
+.cq-siege-rounds { margin: 6px 0; padding-left: 1.4em; }
+@media (max-width: 760px) { .cq-monster-top { grid-template-columns: 1fr; } }
