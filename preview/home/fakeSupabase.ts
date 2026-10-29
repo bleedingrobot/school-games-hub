@@ -16,6 +16,9 @@ const focus = { source: 'auto', skills: [], onlyThese: false, endsAt: null, canC
 const world = busyPupil();
 world.tables.app_settings = [{ ...world.tables.app_settings[0], bond_match_enabled: true, marble_enabled: true, gem_keep_enabled: true }];
 world.tables.profiles = [...(world.tables.profiles ?? []), ME];
+// The "This season" strip: Clan Quest season 1. Change the day with ?day=N in the address (1 to 35).
+const day = Math.min(35, Math.max(1, Number(new URLSearchParams(window.location.search).get('day')) || 24));
+world.jobs.my_moves_left = { ...(world.jobs.my_moves_left as object), season: { number: 1, day, daysLeft: 36 - day, clockOn: true } };
 /** A change to my profile: a new row each time, as the database would send, so the page sees it changed. */
 function updateMe(avatar: Record<string, string>) {
   ME = { ...ME, avatar };

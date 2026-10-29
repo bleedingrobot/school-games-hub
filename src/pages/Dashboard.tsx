@@ -6,6 +6,7 @@ import { ClassWarpCard } from '../components/ClassWarpCard';
 import { GameCard } from '../components/GameCard';
 import { recentGamesFrom, RecentList, type RecentGame } from '../components/MyGames';
 import { AchievementList, HeroLevel, nextAchievements, RankBadge } from '../components/Progress';
+import type { SeasonClock } from '../../shared/clans/season';
 import { fetchMyHomePage, type HomePage } from '../data/homePage';
 import type { FriendGame, PlayerCard } from '../data/multiplayer';
 import type { MovesByGame } from '../data/movesLeft';
@@ -25,6 +26,7 @@ export { cardRecentGame, friendRecentGame, powerRecentGame, spaceRecentGame, whe
 // The maths box brings the whole maths ladder with it, so it loads on its own.
 const MathsFocusCard = lazy(() => import('../components/MathsFocusCard'));
 const MathsPathCard = lazy(() => import('../components/MathsPathCard'));
+const SeasonStrip = lazy(() => import('../components/SeasonStrip'));
 
 /** How many games Recent games shows here (the profile page shows more). */
 const RECENT_SHOWN = 3;
@@ -62,6 +64,8 @@ function useMyGames(me: string | undefined) {
   const [progress, setProgress] = useState<MyProgress | null>(null);
   // Daily moves left (Dragon Maths, Clan Quest) are only a nicety: no line on the card if they can't be read.
   const [moves, setMoves] = useState<MovesByGame>({});
+  // The school's Clan Quest season, for the "This season" strip.
+  const [season, setSeason] = useState<SeasonClock | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     if (!me) return;
@@ -73,6 +77,7 @@ function useMyGames(me: string | undefined) {
         if (!current) return;
         setProgress(home.progress);
         setMoves(home.moves);
+        setSeason(home.season);
         // Space and 101 games with classmates, and Power Clash with a classmate (nothing of it shows before it is switched on).
         setSpaceGoing(home.spaceOpen.filter((g) => g.status === 'playing'));
         setCardGoing(home.cardOpen.filter((g) => g.status === 'playing'));
@@ -93,7 +98,7 @@ function useMyGames(me: string | undefined) {
       current = false;
     };
   }, [me]);
-  return { homePage, recent, inProgress, spaceGoing, cardGoing, powerGoing, progress, moves, failed };
+  return { homePage, recent, inProgress, spaceGoing, cardGoing, powerGoing, progress, moves, season, failed };
 }
 
 /** A "still going" line: what it is, and a Carry on button. */
@@ -115,11 +120,12 @@ export function Dashboard() {
   const { profile } = useAuth();
   const meId = profile?.id;
   const pupil = profile?.role !== 'teacher';
-  const { homePage, recent, inProgress, spaceGoing, cardGoing, powerGoing, progress, moves, failed } = useMyGames(meId);
+  const { homePage, recent, inProgress, spaceGoing, cardGoing, powerGoing, progress, moves, season, failed } = useMyGames(meId);
   // The cards wait for the home page's answer, or ask for themselves if there is nobody to ask it for.
   const cardsFrom = meId ? homePage : undefined;
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
   const shownGames = useShownGames();
+  const seasonShown = pupil && season && season.clockOn && season.number > 0 && shownGames.some((g) => g.id === 'clan-quest') ? season : null;
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
@@ -162,6 +168,12 @@ export function Dashboard() {
           </p>
         </div>
       </section>
+
+      {seasonShown && (
+        <Suspense fallback={null}>
+          <SeasonStrip clock={seasonShown} />
+        </Suspense>
+      )}
 
       <TrainingGateBanner />
 

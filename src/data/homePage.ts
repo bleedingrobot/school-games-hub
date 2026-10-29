@@ -4,6 +4,7 @@
  * points, recent games and moves left are always up to date after a game. The game switches are not in it: they come from the
  * remembered settings read (settingsMemory.ts).
  */
+import { readClock, type SeasonClock } from '../../shared/clans/season';
 import { supabase } from '../lib/supabase';
 import { tidyRecentGames, type GameStats, type RecentGameRow, type SavedGame } from './botGames';
 import type { SeatSummary } from './cardGames';
@@ -35,6 +36,8 @@ export interface HomePage {
   powerOpen: PowerGame[];
   powerStats: { played: number; won: number } | null;
   moves: MovesByGame;
+  /** The school's Clan Quest season (for the "This season" strip), or null if the answer has none. */
+  season: SeasonClock | null;
   /**
    * The cards' parts as the database sent them, each read by its own card (so the maths code stays in the maths cards' download).
    * A part the answer doesn't have is left out, and that card asks for itself.
@@ -72,6 +75,7 @@ export async function fetchMyHomePage(): Promise<HomePage> {
     powerOpen: list<PowerGame>(raw, 'powerOpen'),
     powerStats: row(raw, 'powerStats'),
     moves: movesFromRaw(row<RawMovesLeft>(raw, 'movesLeft')),
+    season: readClock(row<RawMovesLeft>(raw, 'movesLeft')?.season),
     parts: Object.fromEntries(CARD_PARTS.filter((part) => part in raw).map((part) => [part, raw[part]])),
   };
 }
