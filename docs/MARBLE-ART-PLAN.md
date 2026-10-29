@@ -2,7 +2,7 @@
 
 How to make Marble Rush look much better, without making it slower on school Chromebooks or changing how it plays.
 Written 28 October 2026 for James, after reading the drawing code (`src/games/marble/renderer.ts`, `palette.ts`) and taking screenshots of the live preview.
-**Status: plan agreed 28 Oct 2026 (answers in section 5), nothing built.** Next: a Boulder Beach try-out page with G.1 and G.2.
+**Status: Boulder Beach look and new course cards LIVE 29 Oct 2026 (PR #90).** Next: the same look for the other 7 courses (their backdrops are painted already, in `src/games/marble/art/`), then scenery (G.4).
 
 ## The short version
 
@@ -119,3 +119,5 @@ Asked as question cards on 28 Oct 2026. Answers go here.
 - **Untouched:** nothing in `shared/` changed; `npm run marble:determinism` gives the same fingerprint (`47774b85`). All 5,498 tests pass.
 - **Still to check on real devices:** the size and colour of the effects (software rendering here was too slow to catch the splash and confetti in a screenshot) and the frame rate on a school Chromebook.
 - **Try-out page:** `npm run marble:single`, published for James.
+
+**Went live 29 Oct 2026 (PR #90, Test and publish run 170 green).** Also in it, from James's feedback on the try-out: driftwood fence walls with log rails and posts (no see-through gaps), course cards with a painting for every course (picks: try 1 each, Windy Welly try 2; tries on branch `marble-art-inbox`), and a simpler picker: maths and Read time always on (the teacher's "Students choose" now works as On; only Off turns maths off), instructions moved to How to play, and a compact "Race a ghost" bar. No database or function change.
