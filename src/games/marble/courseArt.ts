@@ -7,9 +7,20 @@
 import { paletteFor } from './palette';
 import boulderBeach from './art/boulder-beach.webp';
 import boulderBeachSmall from './art/boulder-beach-small.webp';
-// import crownRange from './art/crown-range.webp';
-// import crownRangeSmall from './art/crown-range-small.webp';
-// (also: geyser-valley, glacier-run, windy-welly, alpine-crossing, wide-hill, gap-and-ice)
+import crownRange from './art/crown-range.webp';
+import crownRangeSmall from './art/crown-range-small.webp';
+import geyserValley from './art/geyser-valley.webp';
+import geyserValleySmall from './art/geyser-valley-small.webp';
+import glacierRun from './art/glacier-run.webp';
+import glacierRunSmall from './art/glacier-run-small.webp';
+import windyWelly from './art/windy-welly.webp';
+import windyWellySmall from './art/windy-welly-small.webp';
+import alpineCrossing from './art/alpine-crossing.webp';
+import alpineCrossingSmall from './art/alpine-crossing-small.webp';
+import wideHill from './art/wide-hill.webp';
+import wideHillSmall from './art/wide-hill-small.webp';
+import gapAndIce from './art/gap-and-ice.webp';
+import gapAndIceSmall from './art/gap-and-ice-small.webp';
 
 export interface CourseArt {
   /** The big picture. */
@@ -23,7 +34,13 @@ export interface CourseArt {
 /** One line per course that has a picture. */
 const ART: Record<string, CourseArt> = {
   'boulder-beach': { card: boulderBeach, small: boulderBeachSmall, focus: 'center 75%' },
-  // 'crown-range': { card: crownRange, small: crownRangeSmall },
+  'crown-range': { card: crownRange, small: crownRangeSmall },
+  'geyser-valley': { card: geyserValley, small: geyserValleySmall },
+  'glacier-run': { card: glacierRun, small: glacierRunSmall },
+  'windy-welly': { card: windyWelly, small: windyWellySmall },
+  'alpine-crossing': { card: alpineCrossing, small: alpineCrossingSmall },
+  'wide-hill': { card: wideHill, small: wideHillSmall },
+  'gap-and-ice': { card: gapAndIce, small: gapAndIceSmall },
 };
 
 /** The pictures for a course, or null if it has none yet. */

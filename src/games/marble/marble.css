@@ -404,19 +404,29 @@
   box-shadow: 0 10px 22px rgba(15, 23, 42, 0.24);
 }
 .marble-course__pic {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: center;
+}
+/* A faint, soft copy of the picture behind the panel, so the whole card feels like the place. */
+.marble-course--art::before {
+  content: '';
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
   z-index: -1;
+  background: var(--course-art) center bottom / cover no-repeat;
+  filter: blur(10px) saturate(1.1);
+  opacity: 0.55;
+  transform: scale(1.1);
 }
 .marble-course__body {
   display: grid;
   gap: 6px;
   align-content: start;
-  margin: 130px 8px 8px;
+  margin: -26px 8px 8px;
+  position: relative;
   padding: 12px 14px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.94);
