@@ -5,6 +5,7 @@ Runs on a computer that can reach ComfyUI on Tailscale (docs/CLANS-ART-PLAN.md, 
 Standard library only.
 
   python3 scripts/clans-monster-art.py paint OUT_DIR [names] [--tries 3]   # OUT_DIR/<name>-<try>.png
+  python3 scripts/clans-monster-art.py paint /tmp/timeline-art stage-build stage-ready stage-new-season   # the timeline medallions
 
 The graph is the one saved inside every Clans painting (Z-Image Turbo, 8 steps, a 1.5x second pass); only the words, sizes
 and seeds change. Seeds are fixed, so a try can be painted again exactly. Use only positive wording: this model draws whatever
@@ -37,6 +38,19 @@ PICTURES = {
         'Behind the hills a huge storm giant looms over the village, about to throw a big boulder, lightning in the clouds. '
         'Archers on the watchtower fire arrows at the giant and soldiers with spears stand ready on the wall. Wide landscape view.',
         (1344, 768)),
+    # The season timeline's medallions (docs/CLANS-SEASON-TIMELINE-PLAN.md). Shown in a circle, so the subject sits in the middle.
+    'stage-build': (
+        'A half-built timber hall in a fantasy village, wooden scaffolding and fresh beams, a big hammer and a saw resting on a stack of logs '
+        'in the front, warm morning sunlight, a small banner on a pole. Centred subject, simple background.',
+        (1024, 1024)),
+    'stage-ready': (
+        'A small wooden supply cart in a village square, loaded with a bundle of arrows with glowing orange tips, a round bottle of red potion '
+        'and a rolled-up rope net, stormy grey sky with distant mountains behind. Centred subject, simple background.',
+        (1024, 1024)),
+    'stage-new-season': (
+        'A golden sunrise over a peaceful wooden fantasy village on a green hill, a shelf of shining trophies and a sword hung on a wall '
+        'in the front, fresh spring leaves, hopeful and calm. Centred subject, simple background.',
+        (1024, 1024)),
 }
 
 
