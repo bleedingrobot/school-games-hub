@@ -3,6 +3,7 @@
 How to make Marble Rush look much better, without making it slower on school Chromebooks or changing how it plays.
 Written 28 October 2026 for James, after reading the drawing code (`src/games/marble/renderer.ts`, `palette.ts`) and taking screenshots of the live preview.
 **Status: plan agreed 28 Oct 2026 (answers in section 5), nothing built.** Next: a Boulder Beach try-out page with G.1 and G.2.
+**29 Oct 2026: G.5 course pictures built early, at James's request.** Every course card has its painted picture across the top and faintly behind the text, and the Play button has a small copy (`src/games/marble/cardArt.ts`, files in `src/games/marble/art/cards/<course id>.webp`, 800 px, under 25 KB each). Picks (Claude's, swap any): Boulder Beach try a3, gap-and-ice try 2, every other course try 1. The tries are on the `marble-art-inbox` branch (`art-inbox/marble/`). The medal-times part of G.5 is still to do.
 
 ## The short version
 

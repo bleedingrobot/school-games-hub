@@ -4,7 +4,7 @@
  * Maths (stage M.6): when the teacher allows it, a run starts by asking the server for its questions and which
  * shortcut doors are open; pit-stop answers are marked by the server. Runs with maths have their own best times and boards.
  */
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import { courseById } from '../../../shared/marble/courses';
 import { medalFor, type ClockMode } from '../../../shared/marble/engine';
@@ -17,6 +17,7 @@ import type { MathsFocus } from '../../../shared/maths/focus';
 import type { Question } from '../../../shared/maths/skillPack';
 import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
 import { FocusNote } from '../../maths/FocusNote';
+import { cardArt } from './cardArt';
 import { formatSteps, loadBests, mergeBests, saveBests, withFinish, type Bests } from './bests';
 import { HowToPlayBody } from './HowToPlay';
 import { loadPrefs, savePrefs, type MarblePrefs } from './prefs';
@@ -248,8 +249,10 @@ function CoursePicker({
     const best = bests[c.id]?.up ?? (c.playable ? bests[c.playable]?.up : undefined);
     const bestHard = c.playable ? bests[c.playable]?.down : undefined;
     const medal = course && best !== undefined ? medalFor(course, best, wantMaths) : null;
+    const art = cardArt(c.id);
     return (
-      <li key={c.id} className="marble-course">
+      <li key={c.id} className={art ? 'marble-course marble-course--art' : 'marble-course'} style={art ? ({ '--course-art': `url(${art})` } as CSSProperties) : undefined}>
+        {art && <div className="marble-course__scene" aria-hidden="true" />}
         <div className="marble-course__head">
           <h3>{c.name}</h3>
           <span className="marble-course__level" aria-label={`Difficulty ${c.difficulty} out of 6`}>
@@ -276,7 +279,10 @@ function CoursePicker({
               {bestHard !== undefined && <span> · 🔥 {formatSteps(bestHard)}</span>}
             </div>
             <div className="marble-course__buttons">
-              <button type="button" className="button button--play" disabled={busy} onClick={() => onPlay(course.def.id, 'up')}>Play {c.name}</button>
+              <button type="button" className="button button--play" disabled={busy} onClick={() => onPlay(course.def.id, 'up')}>
+                {art && <img className="marble-course__thumb" src={art} alt="" />}
+                <span>Play {c.name}</span>
+              </button>
               {hasFinished(course.def.id) && (
                 <button type="button" className="button button--light" disabled={busy} onClick={() => onPlay(course.def.id, 'down')}>Hard mode 🔥</button>
               )}

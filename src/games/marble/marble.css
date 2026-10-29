@@ -387,3 +387,43 @@
   border-radius: 6px;
   font-size: 0.9em;
 }
+
+/* Course cards with a painted picture (art plan G.5): the picture across the top, and faintly behind the text. */
+.marble-course--art {
+  padding-top: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(color-mix(in srgb, var(--surface) 88%, transparent), color-mix(in srgb, var(--surface) 88%, transparent)),
+    var(--course-art) center bottom / cover no-repeat,
+    var(--surface);
+}
+.marble-course__scene {
+  aspect-ratio: 16 / 9;
+  margin: 0 -16px 4px;
+  background: var(--course-art) center / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent);
+}
+.marble-course .button--play {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 68px;
+  padding: 8px 18px;
+  font-size: 1.4rem;
+  line-height: 1.15;
+  text-align: left;
+}
+.marble-course .button--play:has(.marble-course__thumb) {
+  padding-left: 8px;
+}
+.marble-course__thumb {
+  width: 64px;
+  height: 52px;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 2px solid rgb(255 255 255 / 0.9);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  flex: none;
+}
