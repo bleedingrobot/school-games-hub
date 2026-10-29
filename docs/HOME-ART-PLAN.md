@@ -1,7 +1,7 @@
 # Home page: graphics upgrade plan
 
 How to make the pupils' home page (`src/pages/Dashboard.tsx`, `src/components/GameCard.tsx`) look like a games hub, in the same style as the Marble Rush course cards.
-Written 29 October 2026 for James. **Status: LIVE 29 Oct 2026.** All 14 games have a painted card scene (painted on James's gaming PC, best of 2 tries each; the tries are on branch `home-art-inbox`). Possible later: repaint Wormholes & Black Holes and Mine Runner with a space/mine sky, since the shared style gives every scene a soft blue sky.
+Written 29 October 2026 for James. **Status: LIVE 29 Oct 2026.** All 14 games have a painted card scene (painted on James's gaming PC, best of 2 tries each; the tries are on branch `home-art-inbox`). Wormholes & Black Holes and Mine Runner were repainted the same day with a starry space sky and a crystal cave.
 
 ## What James chose
 
