@@ -3,7 +3,8 @@ import { applyAction, type ServerState } from './actions';
 import { CONFIG } from './config';
 import { startingDrafts } from './create';
 import { empireOf, upgrade } from './empire';
-import { classRaidsResting, newSeasonSave, phaseOf, readClock } from './season';
+import { beatenThisSeason, classRaidsResting, newSeasonSave, phaseOf, readClock, seasonRoad, type SeasonClock } from './season';
+import type { Clan } from './types';
 
 const SEED = 4242;
 function created(): ServerState {
@@ -87,5 +88,82 @@ describe('newSeasonSave', () => {
     const before = played();
     expect(newSeasonSave(before, 2)).toEqual(newSeasonSave(before, 2));
     expect(newSeasonSave(before, 3).clan.members.map((m) => m.stats)).not.toEqual(newSeasonSave(before, 2).clan.members.map((m) => m.stats));
+  });
+});
+
+describe('the season road', () => {
+  const G = { name: 'Grimmor the Storm Giant', short: 'Grimmor' };
+  const at = (day: number, beaten = false) => {
+    const clock: SeasonClock = { number: 1, day, daysLeft: CONFIG.season.length - day, clockOn: true };
+    return seasonRoad(clock, G, beaten);
+  };
+  const said = (day: number, beaten = false) => { const h = at(day, beaten).headline; return `${h.before}${h.strong}${h.after}`; };
+
+  it('has four stages built from the rules', () => {
+    const { stages } = at(1);
+    expect(stages.map((s) => [s.id, s.name, s.when])).toEqual([
+      ['build', 'Build', 'Days 1–21'], ['ready', 'Get ready', 'Days 22–28'], ['monster', 'Monster week', 'Days 29–35'], ['new', 'New season', 'Day 1 again'],
+    ]);
+    expect(stages.map((s) => [s.from, s.to])).toEqual([[1, 21], [22, 28], [29, 35], [36, 36]]);
+    expect(stages[2].say).toBe('Grimmor attacks! One try a day');
+  });
+
+  it('marks done, now and next', () => {
+    const states = (d: number) => at(d).stages.map((s) => s.state);
+    expect(states(1)).toEqual(['now', 'next', 'next', 'next']);
+    expect(states(21)).toEqual(['now', 'next', 'next', 'next']);
+    expect(states(22)).toEqual(['done', 'now', 'next', 'next']);
+    expect(states(28)).toEqual(['done', 'now', 'next', 'next']);
+    expect(states(29)).toEqual(['done', 'done', 'now', 'next']);
+    expect(states(35)).toEqual(['done', 'done', 'now', 'next']);
+  });
+
+  it('says the right thing each day', () => {
+    expect(said(1)).toBe('28 days until Grimmor the Storm Giant comes. 21 days to build before supplies go on sale.');
+    expect(at(1).headline.strong).toBe('28 days');
+    expect(said(21)).toBe('8 days until Grimmor the Storm Giant comes. 1 day to build before supplies go on sale.');
+    expect(said(22)).toBe('Grimmor comes in 7 days! Buy supplies in the Market and get strong.');
+    expect(said(27)).toBe('Grimmor comes in 2 days! Buy supplies in the Market and get strong.');
+    expect(said(28)).toBe('Grimmor comes tomorrow! Buy supplies in the Market and get strong.');
+    expect(at(28).headline.strong).toBe('tomorrow');
+    expect(said(29)).toBe('Monster week! 7 days left to beat Grimmor. One try a day.');
+    expect(said(34)).toBe('Monster week! 2 days left to beat Grimmor. One try a day.');
+    expect(said(35)).toBe('Last day of the season! Last chance to beat Grimmor. Tomorrow your clan starts fresh. Your trophies stay forever.');
+  });
+
+  it('changes after a win', () => {
+    expect(said(31, true)).toBe('You beat Grimmor! New season in 5 days.');
+    expect(at(31, true).headline.strong).toBe('New season in 5 days.');
+    expect(said(34, true)).toBe('You beat Grimmor! New season in 2 days.');
+    expect(said(35, true)).toBe('Last day of the season! You beat Grimmor. Tomorrow your clan starts fresh. Your trophies stay forever.');
+  });
+
+  it('fills the road evenly, reaching each stop as its stage starts', () => {
+    expect(at(1).fill).toBe(0);
+    expect(at(22).fill).toBeCloseTo(1 / 3, 10);
+    expect(at(29).fill).toBeCloseTo(2 / 3, 10);
+    for (let d = 1; d <= CONFIG.season.length; d++) {
+      const f = at(d).fill;
+      expect(f).toBeGreaterThanOrEqual(0);
+      expect(f).toBeLessThan(1);
+      if (d > 1) expect(f).toBeGreaterThan(at(d - 1).fill);
+    }
+  });
+
+  it('writes the screen reader sentence', () => {
+    expect(at(24).label).toBe('Season 1, day 24 of 35. Now: Get ready. Next: Monster week in 5 days.');
+    expect(at(1).label).toBe('Season 1, day 1 of 35. Now: Build. Next: Get ready in 21 days.');
+    expect(at(30).label).toBe('Season 1, day 30 of 35. Now: Monster week. Next: New season in 6 days.');
+    expect(at(35).label).toBe('Season 1, day 35 of 35. Now: Monster week. Next: New season in 1 day.');
+  });
+
+  it('knows whether this season\'s monster was beaten', () => {
+    const clan = (monster?: Clan['monster']) => ({ monster }) as Clan;
+    const save = { season: 2, tries: 1, losses: 0, lastDay: 1, supplies: { arrows: 0, potions: 0, net: 0 } };
+    expect(beatenThisSeason(clan(), 2)).toBe(false);
+    expect(beatenThisSeason(clan(save), 2)).toBe(false);
+    expect(beatenThisSeason(clan({ ...save, wonDay: 31 }), 2)).toBe(true);
+    expect(beatenThisSeason(clan({ ...save, wonDay: 31 }), 3)).toBe(false);
+    expect(beatenThisSeason(null, 2)).toBe(false);
   });
 });
