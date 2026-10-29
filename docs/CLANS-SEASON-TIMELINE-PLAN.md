@@ -7,7 +7,8 @@ Mock-ups (made from a quick prototype with the game's own paintings, not the fin
 (day 16, day 24, day 31, and a phone on day 24).
 
 Related: the whole-site home page timeline (docs/HOME-TIMELINE-PLAN.md, PR #91) is a separate plan for the hub's front page. The two
-can share the same day list (section 4) so they never disagree.
+can share the same day list (section 4) so they never disagree. Built 29 Oct 2026 (PR #92): the site strip sits inside the
+"Complex maths games" group, above the Clan Quest card's row (James moved it there from under the hero).
 
 ## 1. What kids see
 

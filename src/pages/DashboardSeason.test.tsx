@@ -38,15 +38,13 @@ async function show(seasonPart: unknown, opts: { clansOn?: boolean; role?: strin
 describe('the season strip on the home page', () => {
   beforeEach(() => forgetSettings());
 
-  it('shows under the hero when there is a season and the clock is on', async () => {
+  it('shows in the complex maths games when there is a season and the clock is on', async () => {
     await show(season());
     const strip = screen.getByRole('region', { name: /Season 1, day 24 of 35/ });
     expect(strip).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open Clan Quest' })).toHaveAttribute('href', '/clan-quest');
-    const hero = screen.getByRole('region', { name: 'Speedy Otter 27' });
-    expect(hero.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    const going = screen.getByRole('region', { name: 'Games still going' });
-    expect(strip.compareDocumentPosition(going) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // It sits inside the "Complex maths games" group, with Clan Quest (James, 29 Oct 2026).
+    expect(strip.closest('.game-group--complex-maths')).not.toBeNull();
   });
 
   it('is hidden when the clock is off', async () => {

@@ -169,12 +169,6 @@ export function Dashboard() {
         </div>
       </section>
 
-      {seasonShown && (
-        <Suspense fallback={null}>
-          <SeasonStrip clock={seasonShown} />
-        </Suspense>
-      )}
-
       <TrainingGateBanner />
 
       {pupil && <ClassWarpCard homePage={cardsFrom} />}
@@ -225,6 +219,12 @@ export function Dashboard() {
                 <h3 className="game-group__label">
                   <span>{group.title}</span>
                 </h3>
+                {/* The season timeline sits with Clan Quest, in the complex maths games (James, 29 Oct 2026). */}
+                {group.group === 'complex-maths' && seasonShown && (
+                  <Suspense fallback={null}>
+                    <SeasonStrip clock={seasonShown} />
+                  </Suspense>
+                )}
                 <div className="game-grid">
                   {groupGames.map((game) => (
                     <GameCard
