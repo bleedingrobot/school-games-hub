@@ -5,7 +5,7 @@
  * Files live in ./art/<group>/<name>.webp. Vite turns each one into its own URL, and the browser only downloads a
  * picture when a screen shows it.
  */
-import type { TroopKind, VillageBuilding } from '../../../shared/clans/types';
+import type { MonsterKind, TroopKind, VillageBuilding } from '../../../shared/clans/types';
 import { LOOKS, type Look } from '../../../shared/clans/looks';
 
 const FILES = import.meta.glob('./art/**/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
@@ -68,6 +68,16 @@ export function questArt(title: string): { wide?: string; small?: string } {
 }
 /** A clan's banner, from the last word of its name ("Brave Owls" → owls). */
 export const bannerArt = (clanName: string) => file('banners', slug(clanName.trim().split(/\s+/).pop() ?? ''));
+
+/**
+ * The season monster (docs/CLANS-SEASON-GOALS-PLAN.md): a portrait (season-monsters/<kind>) and a "village under attack" scene
+ * (season-monsters/siege-<kind>, plus a -800 copy). Optional: without them the Monster screen shows the framed emoji.
+ */
+export const seasonMonsterArt = (kind: MonsterKind) => file('season-monsters', kind);
+export function siegeArt(kind: MonsterKind): { wide?: string; small?: string } {
+  const wide = file('season-monsters', `siege-${kind}`);
+  return { wide, small: file('season-monsters', `siege-${kind}-800`) ?? wide };
+}
 
 /**
  * The fight's painted effects (scripts/clans-fx-art.py, docs/CLANS-FIGHT-FEEL.md stage 2): glowing light painted on black,

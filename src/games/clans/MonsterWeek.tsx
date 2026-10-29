@@ -14,6 +14,7 @@ import type { SeasonClock } from '../../../shared/clans/season';
 import type { PracticalQuestion } from '../../../shared/maths/practical';
 import { PracticalAsk } from '../../maths/PracticalAsk';
 import { MonsterArt } from './MonsterArt';
+import { siegeArt } from './art';
 import type { Session } from './session';
 
 const pct = (share: number) => Math.round(share * 100);
@@ -147,24 +148,29 @@ export function MonsterWeek({ session, practice, onTry, onFight, onBack }: {
 }
 
 /**
- * The siege, one round at a time (tap for the next). The "village under attack" scene is a plain panel for now: the painting
- * (docs/CLANS-ART-PLAN.md) takes its place later.
+ * The siege, one round at a time (tap for the next). The "village under attack" scene is the painting
+ * (art/season-monsters/siege-<kind>) when there is one, otherwise a plain panel.
  */
 function SiegeScene({ name, kind, go, at, skipped, onNext, onFight }: { name: string; kind: Parameters<typeof MonsterArt>[0]['kind']; go: Extract<MonsterTry, { ok: true }>; at: number; skipped: boolean; onNext: () => void; onFight: () => void }) {
   const siege = go.siege!;
   const shown = siege.rounds.slice(0, at + 1);
   const total = pct(siege.rounds.slice(0, at + 1).reduce((t, r) => t + r.army + r.tower, 0));
   const last = at >= siege.rounds.length - 1;
+  const scene = siegeArt(kind);
   const army = (x: number) => (pct(x) >= 1 ? `Your army knocks off ${pct(x)}% of ${name}'s strength` : 'Your army is too small to make a dent yet');
   const tower = (x: number) => (pct(x) >= 1 ? `your tower knocks off ${pct(x)}% more` : 'your tower is too small to reach');
   return (
     <section className="cq-monster" aria-label="The siege">
       <h2>The siege!</h2>
-      <div className="cq-siege-scene" role="img" aria-label="The village under attack">
-        <span aria-hidden="true">🏘️🔥</span>
-        <span aria-hidden="true">{MONSTER_LOOKS[kind].emoji}</span>
-        <span aria-hidden="true">🏹⚔️</span>
-      </div>
+      {scene.wide ? (
+        <img className="cq-siege-scene cq-siege-scene--painted" src={scene.wide} srcSet={scene.small && scene.small !== scene.wide ? `${scene.small} 800w, ${scene.wide} 1600w` : undefined} sizes="(max-width: 1100px) 100vw, 1100px" alt={`${MONSTER_LOOKS[kind].short} attacks the village`} data-monster={kind} />
+      ) : (
+        <div className="cq-siege-scene" role="img" aria-label="The village under attack">
+          <span aria-hidden="true">🏘️🔥</span>
+          <span aria-hidden="true">{MONSTER_LOOKS[kind].emoji}</span>
+          <span aria-hidden="true">🏹⚔️</span>
+        </div>
+      )}
       <ol className="cq-siege-rounds" aria-live="polite" aria-label="The siege, round by round">
         {shown.map((r, i) => (
           <li key={i}>

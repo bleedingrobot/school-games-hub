@@ -433,5 +433,9 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 .cq-monster-warning, .cq-monster-result { margin: 8px 0; }
 .cq-warning { margin: 6px 0; padding: 6px 10px; border: 3px solid var(--cq-yellow); border-radius: 4px; background: #2a2208; color: var(--cq-yellow); }
 .cq-siege-scene { display: flex; flex-wrap: wrap; justify-content: space-around; align-items: center; gap: 8px; padding: 14px; margin: 8px 0; font-size: 3rem; border: 2px solid var(--cq-line); border-radius: 6px; background: linear-gradient(#2a1410, #0b0b17); }
+/* The painted monster: a framed square portrait, and a wide "village under attack" painting for the siege. */
+.cq-monster-art--painted { display: block; width: 100%; height: auto; aspect-ratio: 1; padding: 0; object-fit: cover; }
+.cq-side .cq-monster-art--painted { width: 60px; border-width: 2px; }
+.cq-siege-scene--painted { display: block; width: 100%; height: auto; max-height: 340px; padding: 0; object-fit: cover; object-position: center 40%; }
 .cq-siege-rounds { margin: 6px 0; padding-left: 1.4em; }
 @media (max-width: 760px) { .cq-monster-top { grid-template-columns: 1fr; } }
