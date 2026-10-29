@@ -7,6 +7,7 @@ import {
 } from '../../../shared/lord/engine';
 import { INTEREST_EVERY, NUMBER_GUESS_TRIES, interestDue } from '../../../shared/lord/maths';
 import { QuestionModal } from '../../maths/QuestionModal';
+import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import type { LordAction, LordReply, LordState, Stats } from '../../../shared/lord/server';
 import type { Hero, HeroClass } from '../../../shared/lord/types';
 import type { Asked, AskOptions } from './useAsk';
@@ -175,27 +176,29 @@ export function Healer({ hero, act, ask, say, note, back, busy }: PlaceProps) {
 export function Bank({ hero, state, act, say, note, back, busy }: PlaceProps) {
   const due = interestDue(hero.bank);
   const canAskInterest = hero.level >= 4 && hero.bank >= INTEREST_EVERY && !state.interestDone;
-  // The banker's question, while it is on screen: about the pupil's own savings, so the server can work out the answer.
-  const [question, setQuestion] = useState<{ id: number; bank: number; due: number; hinted: boolean } | null>(null);
-  const givenRef = useRef(Number.NaN);
+  // The banker's question, while it is on screen: one from the pupil's maths ladder or focus, made and marked by the server.
+  const [question, setQuestion] = useState<{ id: number; shown: PublicQuestion } | null>(null);
+  const outcome = useRef<{ interest: number; right: boolean; answer: number; bank: number } | null>(null);
 
   async function move(op: 'deposit' | 'withdraw', amount: number) {
     const reply = await act({ action: 'bank', op, amount });
     if (reply) say(op === 'deposit' ? `You put ${(reply.result as { moved: number }).moved} gold in the bank.` : `You take ${(reply.result as { moved: number }).moved} gold out of the bank.`);
   }
 
-  function interest() {
+  async function interest() {
     if (!canAskInterest) return;
-    setQuestion({ id: Date.now(), bank: hero.bank, due, hinted: false });
+    const reply = await act({ action: 'bank', op: 'interest-ask' });
+    const shown = (reply?.result as { question?: PublicQuestion } | undefined)?.question;
+    if (shown) setQuestion({ id: Date.now(), shown });
   }
 
-  async function answered(given: number, hinted: boolean) {
+  function answered() {
     setQuestion(null);
-    const reply = await act({ action: 'bank', op: 'interest', answer: given, hinted });
-    if (!reply) return;
-    const r = reply.result as { interest: number; due: number; right: boolean };
-    if (r.right) say(`The banker adds ${r.interest} gold of interest${hinted ? ' (half, because you used the hint)' : ''}. You now have ${hero.bank + r.interest} gold saved. Well done!`);
-    else say(`Not quite: the interest was ${r.due} gold, so the banker adds nothing today. Try again tomorrow!`);
+    const r = outcome.current;
+    outcome.current = null;
+    if (!r) return;
+    if (r.right) say(`The banker adds ${r.interest} gold of interest. You now have ${r.bank + r.interest} gold saved. Well done!`);
+    else say(`Not quite, so the banker adds nothing today. Try again tomorrow!`);
   }
 
   return (
@@ -214,8 +217,8 @@ export function Bank({ hero, state, act, say, note, back, busy }: PlaceProps) {
         <div className="lord-card">
           <h3>Interest</h3>
           <p className="lord-soft">
-            Once a day the banker pays <strong>1 gold for every {INTEREST_EVERY} gold</strong> you have saved (that is 5%), if you can work out how much it is.
-            {hero.bank >= INTEREST_EVERY ? ` Today's interest on your ${hero.bank} gold is worth working out!` : ` Save at least ${INTEREST_EVERY} gold to earn some.`}
+            Once a day the banker pays <strong>1 gold for every {INTEREST_EVERY} gold</strong> you have saved (that is 5%), if you can answer a maths question.
+            {hero.bank >= INTEREST_EVERY ? ` Today's interest on your ${hero.bank} gold is ${due} gold.` : ` Save at least ${INTEREST_EVERY} gold to earn some.`}
           </p>
           <div className="lord-actions">
             <button type="button" className="lord-btn" disabled={!canAskInterest || busy} onClick={interest}>
@@ -227,30 +230,22 @@ export function Bank({ hero, state, act, say, note, back, busy }: PlaceProps) {
       {question && (
         <QuestionModal
           key={question.id}
-          question={{
-            id: question.id,
-            prompt: `You have ${question.bank} gold saved. I pay 1 gold for every ${INTEREST_EVERY} gold you save. How much interest do you get?`,
-            parts: ['Interest', '=', '?', 'gold'],
-            spoken: `You have ${question.bank} gold saved. The banker pays 1 gold for every ${INTEREST_EVERY} gold. How much interest, in gold?`,
-            answer: question.due,
-            maxLength: Math.max(3, String(question.due).length + 1),
-          }}
+          question={{ ...question.shown, id: question.id }}
           title="The banker’s question"
-          note="Get it right and the banker adds that much to your savings."
+          note={`Get it right and the banker adds your interest: ${due} gold.`}
           spot="bank"
           closeLabel="Not today"
           onClose={() => setQuestion(null)}
-          onHint={() => setQuestion((q) => (q ? { ...q, hinted: true } : q))}
-          onSubmit={(given) => {
-            givenRef.current = given;
-            const correct = given === question.due;
-            return {
-              correct, boxBefore: 0, boxAfter: 0,
-              fact: `${question.bank} ÷ ${INTEREST_EVERY} = ${question.due} gold (whole gold only)`,
-              reward: correct ? `+${question.hinted ? Math.ceil(question.due / 2) : question.due} gold` : undefined,
-            };
+          onSubmit={async (given, ms) => {
+            const bank = hero.bank;
+            const reply = await act({ action: 'bank', op: 'interest', answer: given, ms });
+            const r = reply?.result as { interest: number; right: boolean; answer: number } | undefined;
+            if (!r) return { correct: false, boxBefore: 0, boxAfter: 0, fact: '' };
+            outcome.current = { ...r, bank };
+            const fact = question.shown.parts.join(' ').replace('?', String(r.answer));
+            return { correct: r.right, boxBefore: 0, boxAfter: 0, fact, answer: r.answer, reward: r.right ? `+${r.interest} gold` : undefined };
           }}
-          onDone={() => void answered(givenRef.current, question.hinted)}
+          onDone={answered}
         />
       )}
     </Place>

@@ -2,7 +2,9 @@
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
 import { userIdFromToken } from '../_shared/signIn';
-import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import { FLUENT_DAYS, TOP_BOX, quickMsForPack } from '../../../shared/maths/config';
+import { parseFocus } from '../../../shared/maths/focus';
+import type { MathsContext } from '../../../shared/maths/serverQuestions';
 import type { ArenaCandidate, Outcome, Settings } from '../../../shared/lord/server';
 import { batchIdFor, makeHandler } from './handler';
 
@@ -50,8 +52,23 @@ Deno.serve(
     commit: (player, commit) => call('lord_commit', { player, change: commit }),
     async recordAnswers(player, pack, batchKey, answers) {
       return call('record_fact_answers', {
-        player, pack, batch_id: await batchIdFor(`${batchKey}`), answers, quick_ms: QUICK_MS, fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
+        player, pack, batch_id: await batchIdFor(`${batchKey}`), answers, quick_ms: quickMsForPack(pack), fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
       });
+    },
+    async mathsContext(player): Promise<Outcome<MathsContext>> {
+      const r = await call<{ facts: MathsContext['facts']; settings: { enabledTables?: number[]; division?: boolean; missingFactor?: boolean | null; multipleChoice?: boolean }; focus?: unknown } | null>('space_maths_context', { player });
+      if (!r.ok) return r;
+      if (!r.value) return { ok: false, why: 'busy' };
+      const { enabledTables, division, missingFactor, multipleChoice } = r.value.settings ?? {};
+      return {
+        ok: true,
+        value: {
+          facts: r.value.facts ?? [],
+          // Anything odd counts as no focus.
+          focus: parseFocus(r.value.focus),
+          settings: { enabledTables, division, multipleChoice, ...(typeof missingFactor === 'boolean' ? { missingFactor } : {}) },
+        } as MathsContext,
+      };
     },
     recordRefusal: (player, reason, action) => call('record_lord_refusal', { player, reason, action }),
     arenaCandidates: (player, season, level) => call<ArenaCandidate[]>('lord_arena_candidates', { player, season, lvl: level }),

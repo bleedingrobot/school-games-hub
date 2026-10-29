@@ -9,6 +9,7 @@ import { nzDate } from './engine';
 import { ALL_TOPICS } from './maths';
 import type { ArenaCandidate, Commit, LordRow, OpenFight, Outcome, Services, Settings } from './server';
 import type { NewsLine } from './news';
+import type { MathsContext } from '../maths/serverQuestions';
 
 export interface MemoryDb {
   settings: Settings;
@@ -29,6 +30,8 @@ export interface MemoryDb {
   hall: { season: number; kills: number }[];
   /** What was earned toward points, request by request (the database works out the points). */
   scores: { forest: number; master: number; dragon: number }[];
+  /** The pupil's maths records and focus, for the banker's ladder question (none: a fresh pupil). */
+  maths?: MathsContext;
 }
 
 export const emptyDb = (settings: Partial<Settings> = {}): MemoryDb => ({
@@ -120,6 +123,8 @@ export function memoryServices(db: MemoryDb, options: MemoryOptions = {}): Servi
       options.onChange?.(db);
       return ok(answers.length);
     },
+    // The trial and the tests have no maths records: the banker asks from the start of the times tables.
+    mathsContext: async () => ok(copy(db.maths ?? { facts: [], settings: {} })),
     recordRefusal: async (_player, reason, action) => {
       db.refusals.push({ reason, action });
       return ok(null);

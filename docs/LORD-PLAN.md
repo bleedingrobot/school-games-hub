@@ -315,6 +315,7 @@ What the simulator told us, and what changed because of it:
 **Where I differ from the brief, or chose**
 
 - The interest question is the `bank` action (`op: "interest"`), not under `inn`, because that is where it is on screen. Riddle and number guess are under `inn`. All three are once a day.
+  - **Changed 29 Oct 2026 (James):** the banker's question now comes from the question ladder, the guide's way A. `op: "interest-ask"` has the server read `space_maths_context`, make one question from the pupil's ladder place or focus (`makeRunQuestions`), keep it in `extra.interestAsk` (the same question all day) and send only `publicQuestion`; `op: "interest"` marks the answer against the kept question, pays the day's interest (savings ÷ 20) for a right answer, and records it under the question's own ladder key and pack. No hint any more.
 - **A teacher can play while the switch is off**, so James can try the real game before pupils can. Pupils get "closed". (Easy to take out: one line in `runLord`.)
 - **The dragon is one try a day** (the rule sheet and simulator assumed it; the old trial did not enforce it).
 - A skipped question ("No thanks, pay full price", "Walk on") is "no answer": no discount, nothing recorded in the maths records, never counted as wrong.

@@ -684,42 +684,61 @@ describe('shop, healer and bank', () => {
     expect((await g.send({ action: 'bank', op: 'steal', amount: 1 })).body.reason).toBe('bad-request');
   });
 
-  it('interest: level 4 and up, at least 20 saved, a question about your own savings, once a day', async () => {
+  it('interest: level 4 and up, at least 20 saved, a ladder question from the server, once a day', async () => {
     const g = new Game();
     await g.start();
     g.patch({ level: 3, bank: 1000 });
     await g.refresh();
-    expect((await g.send({ action: 'bank', op: 'interest', answer: 50 })).body.reason).toBe('rule');
+    expect((await g.send({ action: 'bank', op: 'interest-ask' })).body.reason).toBe('rule');
     g.patch({ level: 4, bank: 19 });
     await g.refresh();
-    expect((await g.send({ action: 'bank', op: 'interest', answer: 0 })).body.reason).toBe('rule'); // under 20 saved
+    expect((await g.send({ action: 'bank', op: 'interest-ask' })).body.reason).toBe('rule'); // under 20 saved
     g.patch({ bank: 1000 });
     await g.refresh();
-    expect((await g.send({ action: 'bank', op: 'interest' })).body.reason).toBe('rule'); // no question answered
-    const out = await g.send({ action: 'bank', op: 'interest', answer: 50 });
-    expect(out.body.result).toMatchObject({ interest: 50, due: 50, right: true });
+    expect((await g.send({ action: 'bank', op: 'interest', answer: 50 })).body.reason).toBe('rule'); // no question asked yet
+    const asked = await g.send({ action: 'bank', op: 'interest-ask' });
+    const shown = asked.body.result.question;
+    expect(shown.parts).toContain('?');
+    expect(shown).not.toHaveProperty('answer');
+    expect(shown).not.toHaveProperty('factKey');
+    // Asking again gives the same question, never a fresh (easier) one.
+    expect((await g.send({ action: 'bank', op: 'interest-ask' })).body.result.question).toEqual(shown);
+    const stored = g.db.row!.extra.interestAsk!.question;
+    const out = await g.send({ action: 'bank', op: 'interest', answer: stored.answer, ms: 4000 });
+    expect(out.body.result).toMatchObject({ interest: 50, right: true, answer: stored.answer });
     expect(g.hero().bank).toBe(1050);
     expect(g.state!.interestDone).toBe(true);
-    expect((await g.send({ action: 'bank', op: 'interest', answer: 52 })).body.reason).toBe('rule');
+    // The answer goes in the maths records, under the key of the ladder question.
+    const batch = Object.values(g.db.batches).find((x) => x.answers.some((a) => a.key === stored.factKey));
+    expect(batch?.answers[0]).toMatchObject({ key: stored.factKey, correct: true, ms: 4000 });
+    expect((await g.send({ action: 'bank', op: 'interest-ask' })).body.reason).toBe('rule');
+    expect((await g.send({ action: 'bank', op: 'interest', answer: stored.answer })).body.reason).toBe('rule');
     g.clock = NZ_MIDNIGHT + 1000;
     await g.refresh();
     expect(g.state!.interestDone).toBe(false);
   });
 
-  it('interest: a hint earns half, a wrong answer earns nothing and is told the right amount', async () => {
+  it('interest: a wrong answer earns nothing and is told the right answer', async () => {
     const g = new Game();
     await g.start();
     g.patch({ level: 4, bank: 259 });
     await g.refresh();
-    const wrong = await g.send({ action: 'bank', op: 'interest', answer: 13 });
-    expect(wrong.body.result).toMatchObject({ interest: 0, due: 12, right: false });
+    await g.send({ action: 'bank', op: 'interest-ask' });
+    const stored = g.db.row!.extra.interestAsk!.question;
+    const wrong = await g.send({ action: 'bank', op: 'interest', answer: stored.answer + 1 });
+    expect(wrong.body.result).toMatchObject({ interest: 0, right: false, answer: stored.answer });
     expect(g.hero().bank).toBe(259);
     expect(g.state!.interestDone).toBe(true);
-    g.clock = NZ_MIDNIGHT + 1000;
+  });
+
+  it('interest: the question follows the pupil\'s maths focus', async () => {
+    const g = new Game();
+    g.db.maths = { facts: [], settings: {}, focus: { source: 'teacher', skills: ['facts-10'], onlyThese: true, endsAt: null, canChoose: false, own: null } };
+    await g.start();
+    g.patch({ level: 4, bank: 100 });
     await g.refresh();
-    const hinted = await g.send({ action: 'bank', op: 'interest', answer: 12, hinted: true });
-    expect(hinted.body.result).toMatchObject({ interest: 6, due: 12, right: true });
-    expect(g.hero().bank).toBe(265);
+    await g.send({ action: 'bank', op: 'interest-ask' });
+    expect(g.db.row!.extra.interestAsk!.question.factKey).not.toMatch(/^mul:/);
   });
 });
 
