@@ -66,3 +66,4 @@ No server or database change: the clock already comes with the clan. About half 
    shared list of season days (section 4, step 1).
 2. **Pictures:** James, 29 Oct 2026: **paint 3 new medallions** (section 3). Prompts are in scripts/clans-monster-art.py
    (`stage-build`, `stage-ready`, `stage-new-season`); the monster medallion keeps the monster's portrait.
+   Painted 29 Oct 2026 (docs/clans-art/timeline-tries/, 3 tries each); picked try 2 of each (centred, read best in a circle).
