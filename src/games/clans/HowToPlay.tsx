@@ -76,6 +76,11 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
           <p>A season lasts 5 weeks, on the same dates as Dragon Maths. Finish every building to earn the <strong>Master Builder</strong> badge, {CONFIG.season.villageReward.fame} fame and a place in the Hall of Legends.</p>
           <p>Builds you don't use are saved, up to {CONFIG.empire.buildsSavedMax}. In the last two weeks, raids on classmates rest. A new season starts every clan fresh, but badges and the Hall stay.</p>
         </section>
+        <section aria-labelledby="htp-monster">
+          <h3 id="htp-monster">The season monster</h3>
+          <p>From day {CONFIG.season.monsterFrom}, a huge monster attacks. You get <strong>one try a day</strong>: first the <strong>siege</strong>, where your village fights it, then your clan fights what is left. Guard when it warns you!</p>
+          <p>Each lost try leaves it <strong>{Math.round(CONFIG.monster.tiredPerLoss * 100)}% weaker</strong>, and nothing real is lost. The Market sells supplies from day {CONFIG.season.warnFrom}; press <kbd>P</kbd> for a healing potion. Win the <strong>Giant Slayer</strong> badge! The giant, golem and troll take turns each season.</p>
+        </section>
         <section aria-labelledby="htp-fame">
           <h3 id="htp-fame">Fame and the Scoreboard</h3>
           <p>Fame goes up when you win: <strong>{R.fame.mineWin}</strong> for a fight in the Mines, <strong>{R.fame.bossWin}</strong> for a boss, <strong>{R.fame.warWin}</strong> for a practice battle, <strong>{R.fame.kingdomRaidWin}</strong> for a raid on a kingdom and <strong>{R.fame.classRaidWin}</strong> for a raid on a classmate.</p>

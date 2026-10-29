@@ -17,16 +17,19 @@ const MATHS = Number(option('maths', 0.7));
 const OFFSET = Number(option('offset', 0));
 const EMPIRE = option('empire', '0') !== '0';
 const PLAY = Math.max(1, Math.min(7, Number(option('play', 7))));
+// --monster 1: play each clan to the start of monster week (day 28, with the empire), then try the monster 40 times at each tiredness.
+const MONSTER = option('monster', '0') !== '0';
 
 const dir = mkdtempSync(join(tmpdir(), 'clans-sim-'));
 const entryFile = join(process.cwd(), `.clans-sim-entry-${process.pid}.ts`);
-writeFileSync(entryFile, `export { simulate } from './shared/clans/sim.ts';\n`);
+writeFileSync(entryFile, `export { simulate, monsterTry } from './shared/clans/sim.ts';\n`);
 let simulate;
+let monsterTry;
 try {
   const bundle = await rolldown({ input: entryFile, logLevel: 'silent' });
   await bundle.write({ file: join(dir, 'sim.mjs'), format: 'esm' });
   await bundle.close();
-  ({ simulate } = await import(pathToFileURL(join(dir, 'sim.mjs')).href));
+  ({ simulate, monsterTry } = await import(pathToFileURL(join(dir, 'sim.mjs')).href));
 } finally {
   rmSync(entryFile, { force: true });
   rmSync(dir, { recursive: true, force: true });
@@ -45,6 +48,28 @@ for (const lineup of ['balanced', 'fighters']) {
   for (const day of [1, 2, 3, 5, 7, 10, 14, 21, 28, 35, 42, 56, 70].filter((d) => d <= DAYS)) {
     const ds = runs.map((r) => r.days[day - 1]);
     console.log(`${String(day).padStart(3)} | ${mean(ds.map((d) => d.avgLevel)).toFixed(1).padStart(9)} | ${mean(ds.map((d) => d.depth)).toFixed(1).padStart(5)} | ${pct(mean(ds.map((d) => d.wins / Math.max(1, d.fights)))).padStart(8)} | ${mean(ds.map((d) => d.gold)).toFixed(0)}`);
+  }
+  if (MONSTER) {
+    const kinds = ['giant', 'golem', 'troll'];
+    const clans = runs.map((r) => r.clan);
+    const lvl = mean(clans.map((c) => mean(c.members.map((m) => m.level))));
+    console.log(`monster week: clans at day ${DAYS}, average level ${lvl.toFixed(1)}, village levels ${mean(runs.map((r) => r.days[DAYS - 1].empire?.levels ?? 0)).toFixed(1)} of 39, army ${mean(runs.map((r) => r.days[DAYS - 1].empire?.might ?? 0)).toFixed(0)}`);
+    for (const kind of kinds) {
+      const line = [];
+      for (let losses = 0; losses <= 4; losses++) {
+        let wins = 0;
+        let n = 0;
+        let rounds = 0;
+        for (const [i, c] of clans.entries()) for (let t = 0; t < 40; t++) {
+          const r = monsterTry(c, kind, losses, i * 1000 + t + 1, MATHS);
+          wins += r.won ? 1 : 0;
+          rounds += r.rounds;
+          n++;
+        }
+        line.push(`${pct(wins / n)} (${(rounds / n).toFixed(1)} rounds)`);
+      }
+      console.log(`${kind.padEnd(6)} win per try, 0..4 losses before: ${line.join(' | ')}`);
+    }
   }
   if (EMPIRE) {
     // "All max" = all eight buildings at their top level (39 levels in total).

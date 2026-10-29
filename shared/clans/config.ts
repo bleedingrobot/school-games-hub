@@ -160,6 +160,43 @@ export const CONFIG = {
    * raids on classmates rest. From day `monsterFrom` it is monster week (used later). Finishing the village earns `villageReward`.
    */
   season: { length: 35, warnFrom: 22, monsterFrom: 29, villageReward: { fame: 50, points: 10 } },
+  /**
+   * The season monster (part 2 of the season goals). One try a day in monster week. The village fights first (the siege knocks a
+   * share off the monster's HP), then the four members fight it. Each lost try leaves it `tiredPerLoss` weaker, up to `tiredMax`.
+   * Tuned with `npm run clans:sim -- --days 28 --empire 1 --monster 1 --play 4` (James, 28 Oct 2026: a strong clan should win about 40%
+   * of its first tries). Simulator, 28 Oct 2026, first try / after 2 losses / after 4: a clan playing 4 days a week (about level 15,
+   * village about 35 of 39) about 40% / 85% / 98%; every day (level 18 to 20, whole village) nearly always; 3 days a week (level 9) 0% / 0% / about 5%.
+   */
+  monster: {
+    /** HP before the siege and stats. Every monster shares them; only the big move differs. */
+    hp: 1250,
+    stats: { agility: 25, dexterity: 22, strength: 60, wisdom: 14, armor: 12, charisma: 0 } satisfies Record<Stat, number>,
+    /** Stats stop at `statCap`, so the monster's hits are multiplied by this instead (big moves too). Tiredness lowers it. */
+    power: 1.5,
+    /** Its gold and experience are worked out as if it lived at this mine depth. */
+    depth: 12,
+    /** A monster fight can last this many rounds; after that the monster stomps off for the night (a loss). */
+    rounds: 12,
+    /** Every this-many rounds the monster uses its big move, and warns the round before. */
+    bigEvery: 3,
+    /** The big moves' damage, as a multiple of a normal hit (boulder and icy breath on one member, slam on everyone). */
+    boulder: 2.2,
+    slam: 0.7,
+    breath: 1,
+    /** Each Walls level cuts the damage the monster does by this percent. */
+    wallsCut: 4,
+    /** Each lost try leaves the monster this share weaker (HP, strength), up to `tiredMax`. */
+    tiredPerLoss: 0.1,
+    tiredMax: 0.4,
+    /** The siege: the army's share (full army of `fullMight`, more with the Forge), the tower's share per level, fire arrows, the maths. */
+    siege: { armyShare: 0.22, fullMight: 300, towerShare: 0.03, arrowShare: 0.025, rightAnswer: 1.2, most: 0.6 },
+    /** A potion heals this share of a member's HP. */
+    potionHeal: 0.5,
+    /** Monster supplies (sold from day `warnFrom`): price before tax, and the most a clan can hold. */
+    supplies: { arrows: { price: 900, max: 3 }, potions: { price: 1100, max: 4 }, net: { price: 1800, max: 1 } },
+    /** Beating the monster (the first time each season). */
+    reward: { fame: 100, points: 10 },
+  },
   /** How much a Battle Cry answer adds. */
   battleCryDamage: 1.25,
   battleCryHeal: 0.2,

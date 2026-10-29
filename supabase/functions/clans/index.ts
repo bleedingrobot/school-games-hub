@@ -1106,6 +1106,73 @@ const CONFIG = {
 			points: 10
 		}
 	},
+	/**
+	* The season monster (part 2 of the season goals). One try a day in monster week. The village fights first (the siege knocks a
+	* share off the monster's HP), then the four members fight it. Each lost try leaves it `tiredPerLoss` weaker, up to `tiredMax`.
+	* Tuned with `npm run clans:sim -- --days 28 --empire 1 --monster 1 --play 4` (James, 28 Oct 2026: a strong clan should win about 40%
+	* of its first tries). Simulator, 28 Oct 2026, first try / after 2 losses / after 4: a clan playing 4 days a week (about level 15,
+	* village about 35 of 39) about 40% / 85% / 98%; every day (level 18 to 20, whole village) nearly always; 3 days a week (level 9) 0% / 0% / about 5%.
+	*/
+	monster: {
+		/** HP before the siege and stats. Every monster shares them; only the big move differs. */
+		hp: 1250,
+		stats: {
+			agility: 25,
+			dexterity: 22,
+			strength: 60,
+			wisdom: 14,
+			armor: 12,
+			charisma: 0
+		},
+		/** Stats stop at `statCap`, so the monster's hits are multiplied by this instead (big moves too). Tiredness lowers it. */
+		power: 1.5,
+		/** Its gold and experience are worked out as if it lived at this mine depth. */
+		depth: 12,
+		/** A monster fight can last this many rounds; after that the monster stomps off for the night (a loss). */
+		rounds: 12,
+		/** Every this-many rounds the monster uses its big move, and warns the round before. */
+		bigEvery: 3,
+		/** The big moves' damage, as a multiple of a normal hit (boulder and icy breath on one member, slam on everyone). */
+		boulder: 2.2,
+		slam: .7,
+		breath: 1,
+		/** Each Walls level cuts the damage the monster does by this percent. */
+		wallsCut: 4,
+		/** Each lost try leaves the monster this share weaker (HP, strength), up to `tiredMax`. */
+		tiredPerLoss: .1,
+		tiredMax: .4,
+		/** The siege: the army's share (full army of `fullMight`, more with the Forge), the tower's share per level, fire arrows, the maths. */
+		siege: {
+			armyShare: .22,
+			fullMight: 300,
+			towerShare: .03,
+			arrowShare: .025,
+			rightAnswer: 1.2,
+			most: .6
+		},
+		/** A potion heals this share of a member's HP. */
+		potionHeal: .5,
+		/** Monster supplies (sold from day `warnFrom`): price before tax, and the most a clan can hold. */
+		supplies: {
+			arrows: {
+				price: 900,
+				max: 3
+			},
+			potions: {
+				price: 1100,
+				max: 4
+			},
+			net: {
+				price: 1800,
+				max: 1
+			}
+		},
+		/** Beating the monster (the first time each season). */
+		reward: {
+			fame: 100,
+			points: 10
+		}
+	},
 	/** How much a Battle Cry answer adds. */
 	battleCryDamage: 1.25,
 	battleCryHeal: .2
@@ -1133,6 +1200,12 @@ const STATS = [
 	"wisdom",
 	"armor",
 	"charisma"
+];
+/** The season monsters, in turn (season 1 the giant, 2 the golem, 3 the troll, then round again). */
+const MONSTER_KINDS = [
+	"giant",
+	"golem",
+	"troll"
 ];
 const TROOP_KINDS = [
 	"footman",
@@ -3647,6 +3720,8 @@ function newFight(members, depth, seed, boss = false) {
 	if (state.clan.every((f) => !alive(f))) state.result = "lost";
 	return state;
 }
+/** The most rounds a fight lasts: a monster fight has its own. */
+const maxRoundsOf = (s) => s.monster?.rounds ?? CONFIG.maxRounds;
 const team = (s, side) => side === "clan" ? s.clan : s.enemies;
 const foes = (s, f) => team(s, f.side === "clan" ? "enemy" : "clan");
 const friends = (s, f) => team(s, f.side);
@@ -3664,6 +3739,8 @@ function hurt(s, attacker, target, damage) {
 	}
 	return damage;
 }
+/** In a monster fight the Walls take a share off every hit the monster does. */
+const cutByWalls = (s, who, dmg) => s.monster && who.side === "enemy" ? Math.max(1, Math.ceil(dmg * (100 - s.monster.wallsCut) / 100)) : dmg;
 function attack(s, who, target, cry) {
 	if (stat(who, "dexterity") + roll(s, 4) + roll(s, 4) + 2 < stat(target, "agility") + roll(s, 4)) {
 		s.log.push({
@@ -3675,7 +3752,8 @@ function attack(s, who, target, cry) {
 	}
 	let dmg = Math.floor(Math.floor(stat(who, "strength") / 2) * (80 + roll(s, 40)) / 100);
 	if (who.side === "clan" && cry === "damage") dmg = Math.floor(dmg * CONFIG.battleCryDamage);
-	dmg = Math.max(1, dmg - stat(target, "armor"));
+	if (s.monster && who.side === "enemy") dmg = Math.floor(dmg * CONFIG.monster.power);
+	dmg = cutByWalls(s, who, Math.max(1, dmg - stat(target, "armor")));
 	const done = hurt(s, who, target, dmg);
 	s.log.push({
 		type: "hit",
@@ -3752,8 +3830,61 @@ function pick$2(s, list) {
 	const live = list.filter(alive);
 	return live.length ? live[roll(s, live.length)] : void 0;
 }
+/** A hit that cannot miss, `times` a normal hit (a monster's big move). */
+function smash(s, who, target, times) {
+	const dmg = Math.floor(Math.floor(stat(who, "strength") / 2) * (80 + roll(s, 40)) * times * CONFIG.monster.power / 100);
+	const done = hurt(s, who, target, cutByWalls(s, who, Math.max(1, dmg - stat(target, "armor"))));
+	s.log.push({
+		type: "hit",
+		who: who.name,
+		target: target.name,
+		damage: done
+	});
+}
+/** Is round `round` a monster fight's big-move round? */
+const bigMoveRound = (round) => round > 0 && round % CONFIG.monster.bigEvery === 0;
+/** The monster's turn: a stomp on two members, or every third round its big move (which the giant net stops once). */
+function monsterTurn(s, who, m, cry) {
+	const M = CONFIG.monster;
+	if (bigMoveRound(s.round)) {
+		if (m.net) {
+			m.net = false;
+			s.log.push({
+				type: "net",
+				who: who.name
+			});
+			return;
+		}
+		s.log.push({
+			type: "big",
+			who: who.name,
+			move: m.kind
+		});
+		if (m.kind === "golem") {
+			for (const t of s.clan.filter(alive)) smash(s, who, t, M.slam);
+			return;
+		}
+		const target = pick$2(s, s.clan);
+		if (!target) return;
+		smash(s, who, target, m.kind === "giant" ? M.boulder : M.breath);
+		if (m.kind === "troll" && alive(target)) {
+			target.tied = 1;
+			s.log.push({
+				type: "tied",
+				who: target.name
+			});
+		}
+		return;
+	}
+	const first = pick$2(s, s.clan);
+	if (!first) return;
+	attack(s, who, first, cry);
+	const rest = s.clan.filter((f) => alive(f) && f !== first);
+	if (rest.length) attack(s, who, rest[roll(s, rest.length)], cry);
+}
 /** What an enemy does with its turn. */
 function enemyTurn(s, who, cry) {
+	if (s.monster) return monsterTurn(s, who, s.monster, cry);
 	const spells = who.spells.map((id) => SPELLS[id]).filter((sp) => !!sp && canCast(who, sp.id));
 	if (spells.length && roll(s, 3) === 0) {
 		const spell = spells[roll(s, spells.length)];
@@ -3781,6 +3912,22 @@ function clanTurn(s, who, order, cry) {
 		return;
 	}
 	if (o.action === "skip") return;
+	if (o.action === "potion") {
+		const target = s.clan[o.target];
+		if (s.monster && s.monster.potions > 0 && target && alive(target)) {
+			s.monster.potions--;
+			const amount = Math.min(target.maxHp - target.hp, Math.ceil(target.maxHp * CONFIG.monster.potionHeal));
+			target.hp += amount;
+			s.log.push({
+				type: "potion",
+				who: who.name,
+				target: target.name,
+				amount
+			});
+			return;
+		}
+		o = fallback();
+	}
 	if (o.action === "guard") {
 		who.guarding = true;
 		s.log.push({
@@ -3852,7 +3999,12 @@ function playRound(s, orders, cry = null) {
 		checkEnd(s);
 	}
 	if (s.result === "won") s.followers = followersFor(s);
-	else if (!s.result && s.round >= CONFIG.maxRounds) s.result = "timeout";
+	else if (!s.result && s.round >= maxRoundsOf(s)) s.result = "timeout";
+	if (!s.result && s.monster && bigMoveRound(s.round + 1) && s.enemies[0] && alive(s.enemies[0])) s.log.push({
+		type: "warn",
+		who: s.enemies[0].name,
+		move: s.monster.kind
+	});
 }
 /**
 * Write a finished fight back onto the members: surviving HP/SP (with the between-fight rest),
@@ -3940,8 +4092,8 @@ function playCryRound(state, fightMaths, orders, given) {
 	return result;
 }
 /** Replay a whole recorded fight from its seed. The server uses this to check what the browser reports. */
-function replayFight(members, depth, seed, boss, rounds, maths) {
-	const state = newFight(members, depth, seed, boss);
+function replayFight(members, depth, seed, boss, rounds, maths, first) {
+	const state = first ? structuredClone(first) : newFight(members, depth, seed, boss);
 	const cries = [];
 	for (const r of rounds) {
 		if (state.result) break;
@@ -10891,6 +11043,235 @@ function clanFromChoices(seed, name, drafts, typedNames = false) {
 	};
 }
 //#endregion
+//#region shared/clans/monster.ts
+/**
+* The season monster (Clan Quest season goals, part 2). In monster week (the last week of the season) a huge monster
+* attacks every clan's village. One try a day:
+*
+* 1. **The siege.** The village fights first: the army (bigger with the Barracks, harder-hitting with the Forge), the Tower and
+*    any fire arrows knock a share off the monster's HP. One maths question (the Battle Cry kind) makes the siege hit harder.
+*    Buildings it "flattens" are for show only.
+* 2. **The clan fight.** The four members fight what is left, as in the Mines, with a Battle Cry every round. The monster stomps on
+*    two members each round and every third round uses its big move (you see it coming). The Walls cut every hit it does.
+*
+* Each lost try leaves the monster 10% more tired for that clan (up to 40%). Losing costs nothing real: members are knocked out
+* until tomorrow, the village is not touched. Pure, so the server and the screens use the same sums.
+*/
+const M = CONFIG.monster;
+const MONSTER_LOOKS = {
+	giant: {
+		name: "Grimmor the Storm Giant",
+		short: "Grimmor",
+		emoji: "🗿",
+		blurb: "A huge mountain giant who throws boulders and stamps on everything.",
+		warn: "Grimmor lifts a boulder!",
+		big: "Grimmor throws the boulder!",
+		bigHelp: "Every third round he throws a boulder at one member. Guard to take half.",
+		beaten: "Grimmor stomps off back to the mountains for good!",
+		stompsOff: "Grimmor stomps off for the night. He will be back tomorrow.",
+		trophy: "Grimmor's club",
+		signs: [
+			"Giant footprints were found by the river.",
+			"Trees on the hill have been pushed over.",
+			"Thunder rumbles from the mountains every night."
+		]
+	},
+	golem: {
+		name: "Old Craghold the Stone Golem",
+		short: "Craghold",
+		emoji: "🪨",
+		blurb: "A slow, walking hill of rock.",
+		warn: "Craghold raises both fists!",
+		big: "Craghold slams the ground!",
+		bigHelp: "Every third round he slams the ground: everyone takes a little damage. Guard to take half.",
+		beaten: "Craghold crumbles into a pile of pebbles!",
+		stompsOff: "Craghold rumbles away for the night. He will be back tomorrow.",
+		trophy: "Craghold's stone heart",
+		signs: [
+			"The ground shook in the night.",
+			"A hill near the village has moved.",
+			"Big round stones keep rolling down the road."
+		]
+	},
+	troll: {
+		name: "Frostjaw the Frost Troll",
+		short: "Frostjaw",
+		emoji: "🧊",
+		blurb: "A shaggy, wintry brute with icy breath.",
+		warn: "Frostjaw takes a deep, cold breath!",
+		big: "Frostjaw breathes ice!",
+		bigHelp: "Every third round he breathes ice on one member, who is frozen for a round. Guard to take half.",
+		beaten: "Frostjaw runs off to the far north, shivering!",
+		stompsOff: "Frostjaw slinks off for the night. He will be back tomorrow.",
+		trophy: "Frostjaw's icy tooth",
+		signs: [
+			"The village pond froze in the middle of a warm day.",
+			"Huge furry footprints were found in the frost.",
+			"A cold wind howls from the north every night."
+		]
+	}
+};
+/** The monster of a season: the giant, the golem and the troll take turns. */
+const monsterOf = (season) => MONSTER_KINDS[((Math.max(1, season) - 1) % MONSTER_KINDS.length + MONSTER_KINDS.length) % MONSTER_KINDS.length];
+const noSupplies = () => ({
+	arrows: 0,
+	potions: 0,
+	net: 0
+});
+/** This season's monster save (a fresh one if the clan has none for this season). */
+function monsterSave(clan, season) {
+	const m = clan.monster;
+	return m && m.season === season ? m : {
+		season,
+		tries: 0,
+		losses: 0,
+		lastDay: 0,
+		supplies: noSupplies()
+	};
+}
+/** How tired the monster is for a clan that has lost `losses` tries: a share, 0 to `tiredMax`. */
+const tiredShare = (losses) => Math.min(M.tiredMax, Math.max(0, losses) * M.tiredPerLoss);
+/** The siege's maths question for a try (the Battle Cry kind, from the try's seed and the teacher's topics). Null with every topic off. */
+const siegeQuestion = (seed, settings) => cryQuestion(seed, 0, settings);
+/** Play the siege: 3 rounds, each a third of the share with a little luck. */
+function playSiege(clan, arrows, right, seed) {
+	const dice = { rng: Math.imul(seed | 0, 739982445) ^ 695872825 };
+	const e = empireOf(clan);
+	const S = M.siege;
+	const boost = right ? S.rightAnswer : 1;
+	const armyAll = S.armyShare * Math.min(1, might(e.troops) / S.fullMight) * (1 + e.levels.forge * CONFIG.empire.buildings.forge.per / 100) * boost;
+	const towerAll = (S.towerShare * e.levels.tower + S.arrowShare * arrows) * boost;
+	const rounds = [];
+	let share = 0;
+	for (let r = 0; r < 3; r++) {
+		const luck = (90 + roll(dice, 21)) / 100;
+		const army = Math.max(0, Math.min(S.most - share, armyAll / 3 * luck));
+		share += army;
+		const tower = Math.max(0, Math.min(S.most - share, towerAll / 3 * luck));
+		share += tower;
+		rounds.push({
+			army,
+			tower
+		});
+	}
+	return {
+		rounds,
+		share,
+		right,
+		arrows
+	};
+}
+/** Mark a siege answer (null: skipped, or no question). */
+function markSiege(seed, settings, answer) {
+	const question = siegeQuestion(seed, settings);
+	if (!question || answer === null) return {
+		question,
+		right: question ? false : null
+	};
+	return {
+		question,
+		right: markAnswer(question, answer)
+	};
+}
+/** The monster's full HP (after tiredness, before the siege) and the HP it starts the clan fight with. */
+function monsterHp(setup) {
+	const maxHp = Math.max(1, Math.round(M.hp * (1 - tiredShare(setup.losses))));
+	return {
+		maxHp,
+		hp: Math.max(1, Math.round(maxHp * (1 - setup.siege)))
+	};
+}
+function monsterFighter(setup) {
+	const { maxHp, hp } = monsterHp(setup);
+	const tired = 1 - tiredShare(setup.losses);
+	return {
+		side: "enemy",
+		index: 0,
+		name: MONSTER_LOOKS[setup.kind].short,
+		level: M.depth + 8,
+		hp,
+		maxHp,
+		sp: 0,
+		maxSp: 0,
+		stats: {
+			...M.stats,
+			strength: Math.round(M.stats.strength * tired)
+		},
+		spells: [],
+		mods: [],
+		tied: 0,
+		guarding: false,
+		difficulty: M.depth * 3
+	};
+}
+/** Start the clan part of a monster try. Same seed and setup, same fight, so the server can replay it. */
+function newMonsterFight(members, setup, seed) {
+	const state = newFight(members, M.depth, seed, false);
+	state.enemies = [monsterFighter(setup)];
+	state.monster = {
+		kind: setup.kind,
+		potions: setup.potions,
+		net: setup.net,
+		wallsCut: Math.min(90, setup.walls * M.wallsCut),
+		rounds: M.rounds
+	};
+	return state;
+}
+const SUPPLY_KINDS = [
+	"arrows",
+	"potions",
+	"net"
+];
+const SUPPLY_NAMES = {
+	arrows: {
+		one: "fire arrow",
+		many: "fire arrows",
+		help: "Your tower hits harder in the siege."
+	},
+	potions: {
+		one: "healing potion",
+		many: "healing potions",
+		help: "Heal a member in the middle of the monster fight."
+	},
+	net: {
+		one: "giant net",
+		many: "giant nets",
+		help: "The monster misses its first big move."
+	}
+};
+/** A supply's price with the village tax, like the shop's. */
+const supplyPrice = (kind) => Math.ceil(M.supplies[kind].price * (100 + CONFIG.shopTax) / 100);
+/** Buy `count` of a supply for this season (paid from the purse, never more than the most a clan may hold). */
+function buySupply(clan, season, kind, count) {
+	if (!SUPPLY_KINDS.includes(kind) || !Number.isInteger(count) || count < 1) return {
+		ok: false,
+		why: "amount",
+		say: "Pick what to buy and how many."
+	};
+	const save = monsterSave(clan, season);
+	const room = M.supplies[kind].max - save.supplies[kind];
+	if (count > room) return {
+		ok: false,
+		why: "full",
+		say: room > 0 ? `You can carry ${room} more ${room === 1 ? SUPPLY_NAMES[kind].one : SUPPLY_NAMES[kind].many}.` : `You already have as many ${SUPPLY_NAMES[kind].many} as you can carry.`
+	};
+	const cost = supplyPrice(kind) * count;
+	if (clan.gold < cost) return {
+		ok: false,
+		why: "gold",
+		say: `That costs ${cost} gold and the clan has ${clan.gold}.`
+	};
+	clan.gold -= cost;
+	clan.monster = {
+		...save,
+		supplies: {
+			...save.supplies,
+			[kind]: save.supplies[kind] + count
+		}
+	};
+	return { ok: true };
+}
+//#endregion
 //#region shared/clans/rewards.ts
 const NOTHING = {
 	wins: 0,
@@ -11073,7 +11454,8 @@ function readClock(raw) {
 const classRaidsResting = (clock) => clock?.clockOn === true && clock.day >= S.warnFrom;
 /**
 * The full reset for a new season. Returns a copy. Every member starts again at level 1 (same name, race, class and look; slot 0 leads),
-* the purse goes back to the starting gold, followers, buildings, saved builds and the day's counts go, and the examined list clears.
+* the purse goes back to the starting gold, followers, buildings, saved builds, the day's counts and last season's monster tries and supplies go,
+* and the examined list clears. The clan may then pick its members' races and classes again (`repick`) until it says it is done.
 * Name, seed, day, fight numbers and the fights left are kept. The caller only does this when no fight is open.
 */
 function newSeasonSave(state, season) {
@@ -11084,7 +11466,7 @@ function newSeasonSave(state, season) {
 			...m.look ? { look: m.look } : {}
 		};
 	});
-	const { questDay: _q, ...rest } = copy.clan;
+	const { questDay: _q, monster: _m, repick: _r, ...rest } = copy.clan;
 	copy.clan = {
 		...rest,
 		members,
@@ -11100,7 +11482,8 @@ function newSeasonSave(state, season) {
 			...newEmpire(state.day),
 			buildsSaved: 0
 		},
-		season
+		season,
+		repick: season
 	};
 	copy.examined = [];
 	return copy;
@@ -11778,6 +12161,18 @@ function raidClassmateNz(state, self, target, take, push, seed, today, raidsOn) 
 * "My Village" gives every clan its own buildings (`upgrade`, paid from the purse) and raids on classmates (which also change the raided clan,
 * saved in the same transaction). A save from before My Village is converted by `upgradeSave` when it loads.
 */
+/** The most rounds any fight can have (a monster fight is longer than a mine fight). */
+const MOST_ROUNDS = Math.max(CONFIG.maxRounds, CONFIG.monster.rounds);
+/** Is it monster week (the clock is on, the season is set and it is day `monsterFrom` or later)? */
+const monsterWeek = (clock) => !!clock && clock.clockOn && clock.number > 0 && clock.day >= CONFIG.season.monsterFrom;
+/** Are monster supplies on sale (the clock is on and it is day `warnFrom` or later)? */
+const suppliesOnSale = (clock) => !!clock && clock.clockOn && clock.number > 0 && clock.day >= CONFIG.season.warnFrom;
+/** The fight an open fight starts from: a mine fight, or a monster try's clan fight. */
+function fightOf(members, open) {
+	return open.monster ? newMonsterFight(members, open.monster.setup, open.seed) : newFight(members, open.depth, open.seed, open.boss);
+}
+/** The seed for a monster try: from the clan's seed, the season and the try number. */
+const monsterSeed = (baseSeed, season, tryNo) => Math.imul(baseSeed | 0, 1013904242) ^ Math.imul(season * 64 + tryNo + 1, 461845907);
 const refuse = (why, say) => ({
 	ok: false,
 	why,
@@ -11792,7 +12187,8 @@ const ORDER_ACTIONS = [
 	"spell",
 	"guard",
 	"run",
-	"skip"
+	"skip",
+	"potion"
 ];
 /** One member's order for a round. `undefined` for "none" (sent as null). Null if it is not an order. */
 function parseOrder(v) {
@@ -11812,6 +12208,13 @@ function parseOrder(v) {
 			return spell === null || target === null ? null : {
 				action: "spell",
 				spell,
+				target
+			};
+		}
+		case "potion": {
+			const target = int(v.target, 0, CONFIG.maxMembers - 1);
+			return target === null ? null : {
+				action: "potion",
 				target
 			};
 		}
@@ -11915,7 +12318,7 @@ function parseAction(raw) {
 			};
 		}
 		case "cryCheck": {
-			const round = int(raw.round, 1, CONFIG.maxRounds);
+			const round = int(raw.round, 1, MOST_ROUNDS);
 			const ok = (v) => typeof v === "number" && Number.isFinite(v);
 			if (round === null || !ok(raw.answer) || Math.abs(raw.answer) > 1e9 || !ok(raw.ms) || raw.ms < 0) return null;
 			return {
@@ -11926,7 +12329,7 @@ function parseAction(raw) {
 			};
 		}
 		case "fightRound": {
-			const round = int(raw.round, 1, CONFIG.maxRounds);
+			const round = int(raw.round, 1, MOST_ROUNDS);
 			if (round === null || !Array.isArray(raw.orders) || raw.orders.length > CONFIG.maxMembers) return null;
 			const orders = [];
 			for (const o of raw.orders) {
@@ -11943,6 +12346,33 @@ function parseAction(raw) {
 			};
 		}
 		case "raidTargets": return { type: "raidTargets" };
+		case "monsterStart": {
+			const siege = raw.siege === null || raw.siege === void 0 ? null : typeof raw.siege === "number" && Number.isFinite(raw.siege) && Math.abs(raw.siege) <= 1e9 ? raw.siege : void 0;
+			if (siege === void 0) return null;
+			return raw.ladder === true ? {
+				type: "monsterStart",
+				siege,
+				ladder: true
+			} : {
+				type: "monsterStart",
+				siege
+			};
+		}
+		case "buySupply": {
+			const count = int(raw.count, 1, 10);
+			return count !== null && typeof raw.kind === "string" && SUPPLY_KINDS.includes(raw.kind) ? {
+				type: "buySupply",
+				kind: raw.kind,
+				count
+			} : null;
+		}
+		case "repick": return member !== null && typeof raw.race === "string" && raw.race.length <= 40 && typeof raw.cls === "string" && raw.cls.length <= 40 ? {
+			type: "repick",
+			member,
+			race: raw.race,
+			cls: raw.cls
+		} : null;
+		case "repickDone": return { type: "repickDone" };
 		case "raidClass": {
 			const push = parsePush(raw.push);
 			const take = TAKES.includes(raw.take) ? raw.take : null;
@@ -12031,7 +12461,7 @@ function applyInner(saved, action, ctx, flags) {
 			rested = true;
 		}
 	}
-	if (state.fight && action.type !== "load" && action.type !== "fightStart" && action.type !== "cryCheck" && action.type !== "fightRound" && action.type !== "raidTargets") return refuse("fight-open", "You are in the middle of a fight. Finish it first!");
+	if (state.fight && action.type !== "load" && action.type !== "fightStart" && action.type !== "monsterStart" && action.type !== "cryCheck" && action.type !== "fightRound" && action.type !== "raidTargets") return refuse("fight-open", "You are in the middle of a fight. Finish it first!");
 	const { clan } = state;
 	syncVillage(clan);
 	const settle = (r, result) => r.ok ? done(state, result) : refuse(r.why ?? "no", r.say ?? "That cannot be done right now.");
@@ -12136,8 +12566,94 @@ function applyInner(saved, action, ctx, flags) {
 				} }
 			};
 		}
+		case "monsterStart": {
+			if (state.fight) {
+				if (!state.fight.monster) return refuse("fight-open", "You are in the middle of a fight. Finish it first!");
+				return done(state, {
+					type: "monsterStart",
+					resumed: true,
+					right: state.fight.monster.siege.right,
+					answer: null
+				}, false);
+			}
+			if (!monsterWeek(clock)) return refuse("not-yet", "The monster has not come yet. It arrives in the last week of the season.");
+			const season = clock.number;
+			const save = monsterSave(clan, season);
+			if (save.lastDay === ctx.today) return refuse("tried-today", "You have had your try today. Come back tomorrow!");
+			if (!clan.members.some((m) => !m.knockedOut)) return refuse("resting", "Everyone is resting. They wake up tomorrow.");
+			const seed = monsterSeed(state.seed, season, save.tries);
+			const marked = markSiege(seed, settings, action.siege);
+			const arrows = save.supplies.arrows;
+			const siege = playSiege(clan, arrows, marked.right, seed);
+			const setup = {
+				kind: monsterOf(season),
+				losses: save.wonDay === void 0 ? save.losses : 0,
+				siege: siege.share,
+				potions: save.supplies.potions,
+				net: save.supplies.net > 0,
+				walls: empireOf(clan).levels.walls
+			};
+			state.fight = {
+				depth: CONFIG.monster.depth,
+				boss: false,
+				seed,
+				no: state.fightNo + 1,
+				settings,
+				rounds: [],
+				monster: {
+					setup,
+					siege
+				}
+			};
+			if (action.ladder && ctx.maths) {
+				state.fight.questions = makeRunQuestions(ctx.maths, CONFIG.monster.rounds, seededRandom(`clans:monster:${seed}:${state.fightNo + 1}`));
+				state.fight.marks = [];
+			}
+			state.fightNo++;
+			clan.monster = {
+				...save,
+				tries: save.tries + 1,
+				lastDay: ctx.today,
+				supplies: {
+					...save.supplies,
+					arrows: 0
+				}
+			};
+			const answers = marked.question && action.siege !== null ? [{
+				key: factKey$1(settings.yearBand, marked.question.kind),
+				correct: marked.right === true
+			}] : void 0;
+			return done(state, {
+				type: "monsterStart",
+				resumed: false,
+				right: marked.right,
+				answer: marked.question ? marked.question.answer : null
+			}, true, answers ? { answers } : void 0);
+		}
+		case "buySupply": {
+			if (!suppliesOnSale(clock)) return refuse("not-yet", "Monster supplies are sold in the last two weeks of the season.");
+			const out = buySupply(clan, clock.number, action.kind, action.count);
+			return out.ok ? done(state, { type: "buySupply" }) : refuse(out.why, out.say);
+		}
+		case "repick": {
+			if (clan.repick === void 0 || clan.repick !== clan.season) return refuse("repick", "Your clan is already on its way this season.");
+			const m = clan.members[action.member];
+			if (!m) return refuse("member", "Pick one of your clan.");
+			if (m.level !== 1 || m.xp !== 0) return refuse("repick", `${m.name} has already started this season.`);
+			if (!raceByName(action.race) || !classByName(action.cls)) return refuse("choice", "Pick a race and a class from the lists.");
+			const fresh = rollMember({ rng: Math.imul(slotSeed(state.seed, action.member) | 0, 2654435761) + (clan.season ?? 0) * 7919 }, m.name, action.race, action.cls, action.member === 0);
+			clan.members[action.member] = {
+				...fresh,
+				...m.look ? { look: m.look } : {}
+			};
+			return done(state, { type: "repick" });
+		}
+		case "repickDone":
+			if (clan.repick === void 0) return done(state, { type: "repickDone" }, rested || upgraded);
+			delete clan.repick;
+			return done(state, { type: "repickDone" });
 		case "fightStart": {
-			if (state.fight) return done(state, {
+			if (state.fight) return state.fight.monster ? refuse("fight-open", "You are in the middle of the monster fight. Finish it first!") : done(state, {
 				type: "fightStart",
 				resumed: true
 			}, false);
@@ -12209,7 +12725,7 @@ function applyInner(saved, action, ctx, flags) {
 				orders: action.orders,
 				cry: action.cry
 			};
-			const { state: replayed, cries } = replayFight(clan.members, open.depth, open.seed, open.boss, [...open.rounds, played], open);
+			const { state: replayed, cries } = replayFight(clan.members, open.depth, open.seed, open.boss, [...open.rounds, played], open, open.monster ? fightOf(clan.members, open) : void 0);
 			if (cries.length !== open.rounds.length + 1) return refuse("no-fight", "That fight is already over.");
 			const cry = cries[cries.length - 1];
 			const answers = cry.answered && cry.question ? [{
@@ -12232,6 +12748,38 @@ function applyInner(saved, action, ctx, flags) {
 			const summary = payFight(clan, replayed);
 			state.fight = null;
 			const won = summary.result === "won";
+			if (open.monster) {
+				const season = clan.season ?? clock?.number ?? 0;
+				const save = monsterSave(clan, season);
+				const potionsUsed = open.monster.setup.potions - (replayed.monster?.potions ?? open.monster.setup.potions);
+				const netUsed = open.monster.setup.net && replayed.monster?.net === false ? 1 : 0;
+				const first = won && save.wonDay === void 0;
+				clan.monster = {
+					...save,
+					losses: won || save.wonDay !== void 0 ? save.losses : save.losses + 1,
+					...first ? { wonDay: clock?.day ?? 0 } : {},
+					supplies: {
+						...save.supplies,
+						potions: Math.max(0, save.supplies.potions - potionsUsed),
+						net: Math.max(0, save.supplies.net - netUsed)
+					}
+				};
+				const monster = {
+					kind: open.monster.setup.kind,
+					season,
+					won,
+					first,
+					tries: clan.monster.tries
+				};
+				return done(state, {
+					type: "fightRound",
+					round: action.round,
+					over: true,
+					summary,
+					monster,
+					...earnedPart(earnedOrNone({ cries: rightCry }))
+				}, true, effects);
+			}
 			const earned = earnedOrNone({
 				wins: won && !boss ? 1 : 0,
 				bosses: won && boss ? 1 : 0,

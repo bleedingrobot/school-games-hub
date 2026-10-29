@@ -27,14 +27,17 @@ import { CONFIG } from './config';
 import { dayReset } from './character';
 import { clanFromChoices, type Draft } from './create';
 import { empireNewDay, empireOf, needsUpgrade, PUSHES, syncVillage, TAKES, upgrade, upgradeSave, type BattleResult, type Push, type Take } from './empire';
-import { bossAt, newFight, type Order } from './fight';
+import { bossAt, newFight, type FightState, type Order } from './fight';
+import { buySupply, markSiege, monsterOf, monsterSave, newMonsterFight, playSiege, SUPPLY_KINDS, type MonsterSetup, type Siege, type SupplyKind } from './monster';
+import { classByName, raceByName, rollMember } from './character';
+import { slotSeed } from './create';
 import { ITEMS } from './gamedata';
 import { isLook, setLook, type Look } from './looks';
 import { earnedOrNone, type Earned } from './rewards';
 import { buyItem, buyTroopMix, examineItemFor, fightSeed, payFight, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type FightSummary, type TrainKey } from './play';
 import { classRaidsResting, newSeasonSave, type SeasonClock } from './season';
 import { buildPuzzle, finishQuest, puzzleFor, todaysQuest, type QuestPrize } from './quests';
-import { TROOP_KINDS, VILLAGE_BUILDINGS, type Clan, type Empire, type Troops, type Village, type VillageBuilding } from './types';
+import { TROOP_KINDS, VILLAGE_BUILDINGS, type Clan, type Empire, type MonsterKind, type Troops, type Village, type VillageBuilding } from './types';
 import { raidClassmateNz, raidTargetList, type RaidTarget, type Sketch, type TargetEntry } from './village';
 
 
@@ -59,6 +62,8 @@ export interface OpenFight<Q = Question> {
   questions?: Q[];
   /** A ladder fight's marks, by round (index 0 is round 1): set by `cryCheck`, so each question is answered once. */
   marks?: (CryMark | null)[];
+  /** A monster try (not a mine fight): how it was set up and how the siege went. `depth` and `boss` are then unused. */
+  monster?: { setup: MonsterSetup; siege: Siege };
 }
 
 /** The fight in progress as the browser is given it: a ladder fight's questions without their answers. */
@@ -135,12 +140,19 @@ export type Action =
   | { type: 'cryCheck'; round: number; answer: number; ms: number }
   | { type: 'fightRound'; round: number; orders: (Order | undefined)[]; cry: CryAnswer | null }
   | { type: 'raidTargets' }
-  | { type: 'raidClass'; target: string; take: Take; push: Push };
+  | { type: 'raidClass'; target: string; take: Take; push: Push }
+  /** Monster week: today's try. `siege` is the answer to the siege's question (null: "No thanks"). Then rounds go through `fightRound`. */
+  | { type: 'monsterStart'; siege: number | null; ladder?: boolean }
+  /** Monster supplies, from day `warnFrom` of the season. */
+  | { type: 'buySupply'; kind: SupplyKind; count: number }
+  /** A new season: pick a member's race and class again (only before the clan has played the season), or keep them all. */
+  | { type: 'repick'; member: number; race: string; cls: string }
+  | { type: 'repickDone' };
 
 export type ActionType = Action['type'];
 
 export type Result =
-  | { type: Exclude<ActionType, 'upgrade' | 'raid' | 'war' | 'quest' | 'fightStart' | 'cryCheck' | 'fightRound' | 'raidTargets' | 'raidClass'> }
+  | { type: Exclude<ActionType, 'upgrade' | 'raid' | 'war' | 'quest' | 'fightStart' | 'cryCheck' | 'fightRound' | 'raidTargets' | 'raidClass' | 'monsterStart'> }
   | { type: 'upgrade'; building: VillageBuilding; level: number }
   | { type: 'raid' | 'war'; friendly: boolean; result: BattleResult; gold: number; earned?: Earned }
   | { type: 'quest'; questId: number; text: string; right: boolean | null; prize: QuestPrize }
@@ -148,11 +160,41 @@ export type Result =
   | { type: 'fightStart'; resumed: boolean }
   /** `answer`: the right answer, to show when it was wrong. `given`: the answer that was marked (the first one sent for this question). */
   | { type: 'cryCheck'; round: number; correct: boolean; answer: number; given: number }
-  /** `summary` is there when the round ended the fight and it has been paid. */
-  | { type: 'fightRound'; round: number; over: boolean; summary: FightSummary | null; earned?: Earned }
+  /** `summary` is there when the round ended the fight and it has been paid. `monster`: a finished monster try (`first`: this season's first win). */
+  | { type: 'fightRound'; round: number; over: boolean; summary: FightSummary | null; earned?: Earned; monster?: MonsterOutcome }
+  /** `right`: the siege question's mark (null if there was none or it was skipped); `answer`: the right answer, to show. */
+  | { type: 'monsterStart'; resumed: boolean; right: boolean | null; answer: number | null }
   /** `resting`: raids on classmates are resting for the last two weeks of the season, so `targets` is empty. */
   | { type: 'raidTargets'; targets: TargetEntry[]; resting?: true }
   | { type: 'raidClass'; take: Take; result: BattleResult; gold: number; destroyed: VillageBuilding[]; earned?: Earned };
+
+/** How a monster try ended, kept in the saved result: the database gives the rewards for a first win (once a season) and counts tries. */
+export interface MonsterOutcome {
+  kind: MonsterKind;
+  season: number;
+  won: boolean;
+  first: boolean;
+  tries: number;
+}
+
+/** The most rounds any fight can have (a monster fight is longer than a mine fight). */
+const MOST_ROUNDS = Math.max(CONFIG.maxRounds, CONFIG.monster.rounds);
+
+/** Is it monster week (the clock is on, the season is set and it is day `monsterFrom` or later)? */
+export const monsterWeek = (clock: SeasonClock | null | undefined): clock is SeasonClock =>
+  !!clock && clock.clockOn && clock.number > 0 && clock.day >= CONFIG.season.monsterFrom;
+
+/** Are monster supplies on sale (the clock is on and it is day `warnFrom` or later)? */
+export const suppliesOnSale = (clock: SeasonClock | null | undefined): clock is SeasonClock =>
+  !!clock && clock.clockOn && clock.number > 0 && clock.day >= CONFIG.season.warnFrom;
+
+/** The fight an open fight starts from: a mine fight, or a monster try's clan fight. */
+export function fightOf(members: Clan['members'], open: Pick<OpenFight<unknown>, 'depth' | 'seed' | 'boss' | 'monster'>): FightState {
+  return open.monster ? newMonsterFight(members, open.monster.setup, open.seed) : newFight(members, open.depth, open.seed, open.boss);
+}
+
+/** The seed for a monster try: from the clan's seed, the season and the try number. */
+export const monsterSeed = (baseSeed: number, season: number, tryNo: number) => Math.imul(baseSeed | 0, 0x3c6ef372) ^ Math.imul(season * 64 + tryNo + 1, 0x1b873593);
 
 /** What else the server must do in the same save as a changed clan. Nothing in here is sent to the browser. */
 export interface Effects {
@@ -182,7 +224,7 @@ const int = (v: unknown, lo: number, hi: number): number | null => (typeof v ===
 
 const parsePush = (v: unknown): Push | null => (typeof v === 'string' && PUSHES.includes(v as Push) ? (v as Push) : null);
 
-const ORDER_ACTIONS = ['attack', 'spell', 'guard', 'run', 'skip'];
+const ORDER_ACTIONS = ['attack', 'spell', 'guard', 'run', 'skip', 'potion'];
 
 /** One member's order for a round. `undefined` for "none" (sent as null). Null if it is not an order. */
 function parseOrder(v: unknown): Order | undefined | null {
@@ -197,6 +239,10 @@ function parseOrder(v: unknown): Order | undefined | null {
       const spell = int(v.spell, 0, 500);
       const target = int(v.target, -1, 20);
       return spell === null || target === null ? null : { action: 'spell', spell, target };
+    }
+    case 'potion': {
+      const target = int(v.target, 0, CONFIG.maxMembers - 1);
+      return target === null ? null : { action: 'potion', target };
     }
     default: return { action: v.action } as Order;
   }
@@ -256,13 +302,13 @@ export function parseAction(raw: unknown): Action | null {
       return raw.ladder === true ? { type: 'fightStart', depth, boss: raw.boss, ladder: true } : { type: 'fightStart', depth, boss: raw.boss };
     }
     case 'cryCheck': {
-      const round = int(raw.round, 1, CONFIG.maxRounds);
+      const round = int(raw.round, 1, MOST_ROUNDS);
       const ok = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
       if (round === null || !ok(raw.answer) || Math.abs(raw.answer) > 1_000_000_000 || !ok(raw.ms) || raw.ms < 0) return null;
       return { type: 'cryCheck', round, answer: raw.answer, ms: Math.min(Math.round(raw.ms), 3_600_000) };
     }
     case 'fightRound': {
-      const round = int(raw.round, 1, CONFIG.maxRounds);
+      const round = int(raw.round, 1, MOST_ROUNDS);
       if (round === null || !Array.isArray(raw.orders) || raw.orders.length > CONFIG.maxMembers) return null;
       const orders: (Order | undefined)[] = [];
       for (const o of raw.orders) {
@@ -274,6 +320,18 @@ export function parseAction(raw: unknown): Action | null {
       return cry === undefined ? null : { type: 'fightRound', round, orders, cry };
     }
     case 'raidTargets': return { type: 'raidTargets' };
+    case 'monsterStart': {
+      const siege = raw.siege === null || raw.siege === undefined ? null : typeof raw.siege === 'number' && Number.isFinite(raw.siege) && Math.abs(raw.siege) <= 1_000_000_000 ? raw.siege : undefined;
+      if (siege === undefined) return null;
+      return raw.ladder === true ? { type: 'monsterStart', siege, ladder: true } : { type: 'monsterStart', siege };
+    }
+    case 'buySupply': {
+      const count = int(raw.count, 1, 10);
+      return count !== null && typeof raw.kind === 'string' && SUPPLY_KINDS.includes(raw.kind as SupplyKind) ? { type: 'buySupply', kind: raw.kind as SupplyKind, count } : null;
+    }
+    case 'repick':
+      return member !== null && typeof raw.race === 'string' && raw.race.length <= 40 && typeof raw.cls === 'string' && raw.cls.length <= 40 ? { type: 'repick', member, race: raw.race, cls: raw.cls } : null;
+    case 'repickDone': return { type: 'repickDone' };
     case 'raidClass': {
       const push = parsePush(raw.push);
       const take = TAKES.includes(raw.take as Take) ? (raw.take as Take) : null;
@@ -354,7 +412,7 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       rested = true;
     }
   }
-  if (state.fight && action.type !== 'load' && action.type !== 'fightStart' && action.type !== 'cryCheck' && action.type !== 'fightRound' && action.type !== 'raidTargets') {
+  if (state.fight && action.type !== 'load' && action.type !== 'fightStart' && action.type !== 'monsterStart' && action.type !== 'cryCheck' && action.type !== 'fightRound' && action.type !== 'raidTargets') {
     return refuse('fight-open', 'You are in the middle of a fight. Finish it first!');
   }
   const { clan } = state;
@@ -421,9 +479,58 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
         effects: { raid: { targetId: ctx.target.id, empire: out.defenderEmpire, gold: out.defenderGold, news: out.news, note: out.note } },
       };
     }
+    case 'monsterStart': {
+      if (state.fight) {
+        if (!state.fight.monster) return refuse('fight-open', 'You are in the middle of a fight. Finish it first!');
+        return done(state, { type: 'monsterStart', resumed: true, right: state.fight.monster.siege.right, answer: null }, false);
+      }
+      if (!monsterWeek(clock)) return refuse('not-yet', 'The monster has not come yet. It arrives in the last week of the season.');
+      const season = clock.number;
+      const save = monsterSave(clan, season);
+      if (save.lastDay === ctx.today) return refuse('tried-today', 'You have had your try today. Come back tomorrow!');
+      if (!clan.members.some((m) => !m.knockedOut)) return refuse('resting', 'Everyone is resting. They wake up tomorrow.');
+      const seed = monsterSeed(state.seed, season, save.tries);
+      const marked = markSiege(seed, settings, action.siege);
+      const arrows = save.supplies.arrows;
+      const siege = playSiege(clan, arrows, marked.right, seed);
+      const setup: MonsterSetup = {
+        kind: monsterOf(season), losses: save.wonDay === undefined ? save.losses : 0, siege: siege.share,
+        potions: save.supplies.potions, net: save.supplies.net > 0, walls: empireOf(clan).levels.walls,
+      };
+      state.fight = { depth: CONFIG.monster.depth, boss: false, seed, no: state.fightNo + 1, settings, rounds: [], monster: { setup, siege } };
+      if (action.ladder && ctx.maths) {
+        state.fight.questions = makeRunQuestions(ctx.maths, CONFIG.monster.rounds, seededRandom(`clans:monster:${seed}:${state.fightNo + 1}`));
+        state.fight.marks = [];
+      }
+      state.fightNo++;
+      // Fire arrows are shot in the siege; the try counts from now (one a day, even if the page is closed).
+      clan.monster = { ...save, tries: save.tries + 1, lastDay: ctx.today, supplies: { ...save.supplies, arrows: 0 } };
+      const answers = marked.question && action.siege !== null ? [{ key: factKey(settings.yearBand, marked.question.kind), correct: marked.right === true }] : undefined;
+      return done(state, { type: 'monsterStart', resumed: false, right: marked.right, answer: marked.question ? marked.question.answer : null }, true, answers ? { answers } : undefined);
+    }
+    case 'buySupply': {
+      if (!suppliesOnSale(clock)) return refuse('not-yet', 'Monster supplies are sold in the last two weeks of the season.');
+      const out = buySupply(clan, clock.number, action.kind, action.count);
+      return out.ok ? done(state, { type: 'buySupply' }) : refuse(out.why, out.say);
+    }
+    case 'repick': {
+      if (clan.repick === undefined || clan.repick !== clan.season) return refuse('repick', 'Your clan is already on its way this season.');
+      const m = clan.members[action.member];
+      if (!m) return refuse('member', 'Pick one of your clan.');
+      if (m.level !== 1 || m.xp !== 0) return refuse('repick', `${m.name} has already started this season.`);
+      if (!raceByName(action.race) || !classByName(action.cls)) return refuse('choice', 'Pick a race and a class from the lists.');
+      const fresh = rollMember({ rng: Math.imul(slotSeed(state.seed, action.member) | 0, 2654435761) + (clan.season ?? 0) * 7919 }, m.name, action.race, action.cls, action.member === 0);
+      clan.members[action.member] = { ...fresh, ...(m.look ? { look: m.look } : {}) };
+      return done(state, { type: 'repick' });
+    }
+    case 'repickDone': {
+      if (clan.repick === undefined) return done(state, { type: 'repickDone' }, rested || upgraded);
+      delete clan.repick;
+      return done(state, { type: 'repickDone' });
+    }
     case 'fightStart': {
       // A fight is already open (a refresh, or another Chromebook): this is that fight again, and nothing more is used.
-      if (state.fight) return done(state, { type: 'fightStart', resumed: true }, false);
+      if (state.fight) return state.fight.monster ? refuse('fight-open', 'You are in the middle of the monster fight. Finish it first!') : done(state, { type: 'fightStart', resumed: true }, false);
       if (state.fightsLeft <= 0) return refuse('fights', "That's all the fights for today. Come back tomorrow!");
       if (!clan.members.some((m) => !m.knockedOut)) return refuse('resting', 'Everyone is resting. They wake up tomorrow.');
       if (action.boss && !bossAt(action.depth)) return refuse('boss', 'There is no boss at that depth.');
@@ -462,7 +569,7 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       if (!open) return refuse('no-fight', 'That fight is already over.');
       if (action.round !== open.rounds.length + 1) return refuse('stale-round', 'That round was already played.');
       const played: RecordedRound = { orders: action.orders, cry: action.cry };
-      const { state: replayed, cries } = replayFight(clan.members, open.depth, open.seed, open.boss, [...open.rounds, played], open);
+      const { state: replayed, cries } = replayFight(clan.members, open.depth, open.seed, open.boss, [...open.rounds, played], open, open.monster ? fightOf(clan.members, open) : undefined);
       // The replay stops once the fight is over, so a round that was sent after the end has no result.
       if (cries.length !== open.rounds.length + 1) return refuse('no-fight', 'That fight is already over.');
       // The question was marked by the server's own replay. A question that was taken goes in the teacher's private records.
@@ -478,6 +585,22 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       const summary = payFight(clan, replayed);
       state.fight = null;
       const won = summary.result === 'won';
+      if (open.monster) {
+        // A monster try: supplies used come off, a loss makes the monster more tired, the first win is kept (the database rewards it once).
+        const season = clan.season ?? clock?.number ?? 0;
+        const save = monsterSave(clan, season);
+        const potionsUsed = open.monster.setup.potions - (replayed.monster?.potions ?? open.monster.setup.potions);
+        const netUsed = open.monster.setup.net && replayed.monster?.net === false ? 1 : 0;
+        const first = won && save.wonDay === undefined;
+        clan.monster = {
+          ...save,
+          losses: won || save.wonDay !== undefined ? save.losses : save.losses + 1,
+          ...(first ? { wonDay: clock?.day ?? 0 } : {}),
+          supplies: { ...save.supplies, potions: Math.max(0, save.supplies.potions - potionsUsed), net: Math.max(0, save.supplies.net - netUsed) },
+        };
+        const monster: MonsterOutcome = { kind: open.monster.setup.kind, season, won, first, tries: clan.monster.tries };
+        return done(state, { type: 'fightRound', round: action.round, over: true, summary, monster, ...earnedPart(earnedOrNone({ cries: rightCry })) }, true, effects);
+      }
       const earned = earnedOrNone({ wins: won && !boss ? 1 : 0, bosses: won && boss ? 1 : 0, cries: rightCry });
       return done(state, { type: 'fightRound', round: action.round, over: true, summary, ...earnedPart(earned) }, true, effects);
     }

@@ -2,16 +2,18 @@
  * A mine fight. Pure display on top of shared/clans: the engine plays each round, this shows who
  * is up, takes the orders and the Battle Cry answer, and writes the log in plain gentle words.
  * Each round starts with a suggested plan (one order per member, the bot's choice). Enter fights with it; 1-9 changes
- * one member's order first. Changing an order: A attack, S spell, G guard, R run, 1-9 to pick, Esc back to the plan.
+ * one member's order first. Changing an order: A attack, S spell, G guard, R run, P healing potion (monster fights), 1-9 to pick, Esc back to the plan.
  * The round then plays out one action at a time (Enter or a tap skips), and a one-line summary waits for Enter.
  *
  * In a ladder fight (the server gave it questions) the Battle Cry is the child's own maths, shown in the hub's question
  * box and marked by the server (`onCheck`); the marks it gives back decide each round's bonus, just as on the server.
  */
 import { useEffect, useRef, useState } from 'react';
-import type { ShownFight } from '../../../shared/clans/actions';
+import { fightOf, type ShownFight } from '../../../shared/clans/actions';
 import { markCry, nextCryQuestion, playCryRound, type CryAnswer, type CryMark, type CryReward, type FightMaths, type RecordedRound } from '../../../shared/clans/battleCry';
-import { newFight, type FightState, type Order } from '../../../shared/clans/fight';
+import { maxRoundsOf, type FightState, type Order } from '../../../shared/clans/fight';
+import { MONSTER_LOOKS } from '../../../shared/clans/monster';
+import { CONFIG } from '../../../shared/clans/config';
 import { SPELLS } from '../../../shared/clans/spells';
 import type { Member } from '../../../shared/clans/types';
 import type { PracticalQuestion } from '../../../shared/maths/practical';
@@ -20,7 +22,8 @@ import { PracticalAsk, Working } from '../../maths/PracticalAsk';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
 import { ACTION_HELP, spellHelp } from './abilities';
 import { Bar } from './Bars';
-import { castable, choosingOrder, fightsLabel, isAlive, labelDuplicates, orderText, suggestedPlan } from './fightView';
+import { MonsterArt } from './MonsterArt';
+import { castable, choosingOrder, describe, fightsLabel, isAlive, labelDuplicates, orderText, suggestedPlan } from './fightView';
 import { MonsterSprite, Portrait } from './Sprite';
 import { bestHit, roundSteps, roundSummary, stepMs, type BestHit, type Step, type Who } from './playback';
 import { zoneColour } from './Sprite';
@@ -75,9 +78,9 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const marks = useRef<(CryMark | null)[]>([...(open?.marks ?? [])]);
   const maths = (): FightMaths => ({ settings, questions: open?.questions, marks: marks.current });
   const [boot] = useState(() => {
-    if (!open) return { fight: labelDuplicates(newFight(members, session.depth, nextSeed(session), boss)), lines: ['A fight begins!'] };
+    if (!open) return { fight: labelDuplicates(fightOf(members, { depth: session.depth, seed: nextSeed(session), boss })), lines: ['A fight begins!'] };
     // Rebuild the fight the server has, by playing back the rounds it has kept.
-    const start = labelDuplicates(newFight(members, open.depth, open.seed, open.boss));
+    const start = labelDuplicates(fightOf(members, open));
     const lines = ['A fight begins!'];
     let fight = start;
     for (const r of open.rounds) {
@@ -108,6 +111,8 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   const [editing, setEditing] = useState<number | null>(null);
   const [mode, setMode] = useState<Mode>('action');
   const [spell, setSpell] = useState<number | null>(null);
+  // Monster fights: choosing who gets a healing potion.
+  const [potion, setPotion] = useState(false);
   const [log, setLog] = useState<string[]>(boot.lines);
   const [replay, setReplay] = useState<Replay | null>(null);
   const panel = useRef<HTMLDivElement>(null);
@@ -240,6 +245,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     setEditing(null);
     setMode('action');
     setSpell(null);
+    setPotion(false);
   }
   function choose(order: Order) {
     if (editing === null) return;
@@ -250,14 +256,22 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   }
   const pickAttack = () => (alive.length === 1 ? choose({ action: 'attack', target: alive[0].index }) : setMode('target'));
   const goTarget = (index: number) => {
-    if (spell !== null) choose({ action: 'spell', spell, target: index });
+    if (potion) choose({ action: 'potion', target: index });
+    else if (spell !== null) choose({ action: 'spell', spell, target: index });
     else choose({ action: 'attack', target: index });
   };
   const spells = who ? castable(who) : [];
   const knowsSpells = !!who && who.spells.some((id) => SPELLS[id] && !SPELLS[id].notYet);
   const spellNote = spells.length ? ACTION_HELP.spell : knowsSpells ? 'Not enough SP right now.' : 'Knows no spells.';
   const help = (text: string) => <small className="cq-btn__help">{text}</small>;
-  const targets = spell !== null && SPELLS[spell].friendly ? fight.clan.filter(isAlive) : alive;
+  // Healing potions still free for this member: the clan's potions less the ones other members' orders already use this round.
+  const potionsLeft = (fight.monster?.potions ?? 0) - plan.filter((o, i) => o?.action === 'potion' && i !== editing).length;
+  const canPotion = !!fight.monster && potionsLeft > 0 && fight.clan.some(isAlive);
+  const targets = potion || (spell !== null && SPELLS[spell].friendly) ? fight.clan.filter(isAlive) : alive;
+  const toTarget = (forPotion: boolean) => {
+    setPotion(forPotion);
+    setMode('target');
+  };
 
   function keys(event: React.KeyboardEvent) {
     if ((phase === 'replay' || phase === 'summary') && (event.key === 'Enter' || event.key === ' ') && !(event.target instanceof HTMLButtonElement)) {
@@ -281,6 +295,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
     } else if (mode === 'action') {
       if (k === 'a') pickAttack();
       else if (k === 's' && spells.length) setMode('spell');
+      else if (k === 'p' && canPotion) toTarget(true);
       else if (k === 'g') choose({ action: 'guard' });
       else if (k === 'r') choose({ action: 'run' });
       else if (event.key === 'Escape') backToPlan();
@@ -297,6 +312,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
       if (t) goTarget(t.index);
       else if (event.key === 'Escape') {
         setSpell(null);
+        setPotion(false);
         setMode('action');
       } else return;
     }
@@ -332,10 +348,13 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
   // The mine zone the monsters come from, painted dimly behind them (Clans art Stage A.6).
   const zone = MONSTERS_BY_NAME[fight.enemies[0]?.name.replace(/ [A-D]$/, '') ?? '']?.zone ?? 'Meadow';
   const zoneArt = sceneArt(zoneScene(zone)).small;
+  const look = fight.monster ? MONSTER_LOOKS[fight.monster.kind] : null;
+  // The last thing in the log is the monster getting ready: the big move comes next round.
+  const warned = !!look && phase !== 'replay' && !fight.result && fight.log[fight.log.length - 1]?.type === 'warn';
   return (
     <section className="cq-fight" aria-label="The fight">
       <p className="cq-fight__top">
-        <strong>Depth {fight.depth}</strong> · Round {Math.min(fight.round + (fight.result || phase === 'summary' ? 0 : 1), 8)} · Fights today: {fightsLabel(session.fightsLeft, session.fightsPerDay)}
+        <strong>{look ? 'The monster attacks!' : `Depth ${fight.depth}`}</strong> · Round {Math.min(fight.round + (fight.result || phase === 'summary' ? 0 : 1), maxRoundsOf(fight))}{look ? ` of ${maxRoundsOf(fight)}` : <> · Fights today: {fightsLabel(session.fightsLeft, session.fightsPerDay)}</>}
       </p>
       <div className={`cq-arena ${bump ? 'is-bump' : ''}`} onClick={skip}>
         {flourish && <Victory />}
@@ -347,10 +366,19 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
             <li key={e.index} className={`${hp > 0 ? '' : 'is-down'} ${fx.cls}`}>
               {fx.burst}
               {fx.float}
-              <MonsterSprite name={e.name.replace(/ [A-D]$/, '')} zone={MONSTERS_BY_NAME[e.name.replace(/ [A-D]$/, '')]?.zone ?? 'Meadow'} scale={3} />
-              <span className="cq-name" style={{ color: zoneColour(MONSTERS_BY_NAME[e.name.replace(/ [A-D]$/, '')]?.zone ?? 'Meadow') }}>
-                {e.name}
-              </span>
+              {look ? (
+                <>
+                  <MonsterArt kind={fight.monster!.kind} size="small" />
+                  <span className="cq-name">{look.name}</span>
+                </>
+              ) : (
+                <>
+                  <MonsterSprite name={e.name.replace(/ [A-D]$/, '')} zone={MONSTERS_BY_NAME[e.name.replace(/ [A-D]$/, '')]?.zone ?? 'Meadow'} scale={3} />
+                  <span className="cq-name" style={{ color: zoneColour(MONSTERS_BY_NAME[e.name.replace(/ [A-D]$/, '')]?.zone ?? 'Meadow') }}>
+                    {e.name}
+                  </span>
+                </>
+              )}
               <Bar label="HP" value={hp} max={e.maxHp} kind="hp" ghost />
               {hp <= 0 && <span className="cq-stamp">Beaten!</span>}
             </li>
@@ -376,6 +404,12 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
           })}
         </ul>
       </div>
+      {warned && fight.log[fight.log.length - 1].type === 'warn' && (
+        <p className="cq-warning" role="status">
+          <strong>{describe(fight.log[fight.log.length - 1], clanNames)}</strong> The big move comes next round. Guard to take half the damage!
+        </p>
+      )}
+      {look && fight.monster && fight.monster.potions > 0 && <p className="cq-soft">Healing potions: {fight.monster.potions}</p>}
       <div className="cq-lower">
         <div className="cq-panel" ref={panel} tabIndex={-1} onKeyDown={keys} role="group" aria-label={phase === 'ask' ? 'Battle Cry question' : phase === 'reward' ? 'Battle Cry reward' : phase === 'working' ? 'How the answer works' : phase === 'orders' && who ? `Orders for ${who.name}` : planning ? 'The plan for this round' : phase === 'replay' ? `Round ${replay?.after.round ?? ''}` : phase === 'summary' ? 'What happened' : 'The fight is over'}>
           {phase === 'replay' && (
@@ -443,7 +477,7 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
           {phase === 'orders' && who && (
             <div className="cq-choice">
               <h3>
-                {who.name}: {mode === 'action' ? 'what will they do?' : mode === 'spell' ? 'which spell?' : spell !== null ? `cast ${SPELLS[spell].name} on…` : 'attack…'}
+                {who.name}: {mode === 'action' ? 'what will they do?' : mode === 'spell' ? 'which spell?' : potion ? 'give a healing potion to…' : spell !== null ? `cast ${SPELLS[spell].name} on…` : 'attack…'}
               </h3>
               {mode === 'action' && (
                 <div className="cq-actions">
@@ -459,6 +493,12 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
                     <kbd>G</kbd> Guard
                     {help(ACTION_HELP.guard)}
                   </button>
+                  {canPotion && (
+                    <button type="button" className="cq-btn" onClick={() => toTarget(true)}>
+                      <kbd>P</kbd> Healing potion <small>({potionsLeft} left)</small>
+                      {help(ACTION_HELP.potion(Math.round(CONFIG.monster.potionHeal * 100)))}
+                    </button>
+                  )}
                   <button type="button" className="cq-btn" onClick={() => choose({ action: 'run' })}>
                     <kbd>R</kbd> Run
                     {help(ACTION_HELP.run)}
@@ -489,14 +529,14 @@ export function Fight({ session, boss = false, open, onRound, onCheck, onFinish 
                       <kbd>{i + 1}</kbd> {t.name} <small>({t.hp} HP)</small>
                     </button>
                   ))}
-                  <button type="button" className="cq-btn" onClick={() => { setSpell(null); setMode('action'); }}>
+                  <button type="button" className="cq-btn" onClick={() => { setSpell(null); setPotion(false); setMode('action'); }}>
                     <kbd>Esc</kbd> Back
                   </button>
                 </div>
               )}
             </div>
           )}
-          {phase === 'over' && <FightOver fight={fight} summary={replay?.summary} best={bestHit(fight, clanNames)} today={`${session.clan.name}|${session.day}`} onFinish={() => onFinish(fight)} />}
+          {phase === 'over' && <FightOver fight={fight} look={look} summary={replay?.summary} best={bestHit(fight, clanNames)} today={`${session.clan.name}|${session.day}`} onFinish={() => onFinish(fight)} />}
         </div>
         <ol className="cq-log" aria-label="Fight log" aria-live="polite" aria-relevant="additions">
           {log.map((line, i) => (
@@ -542,7 +582,7 @@ function readBest(today: string): BestHit | null {
   }
 }
 
-function FightOver({ fight, summary, best, today, onFinish }: { fight: FightState; summary?: string; best: BestHit | null; today: string; onFinish: () => void }) {
+function FightOver({ fight, look, summary, best, today, onFinish }: { fight: FightState; look: (typeof MONSTER_LOOKS)[keyof typeof MONSTER_LOOKS] | null; summary?: string; best: BestHit | null; today: string; onFinish: () => void }) {
   // Read once, before this fight is saved, so "a new best" compares with the fights before it.
   const [before] = useState(() => readBest(today));
   const isNew = !!best && (!before || best.amount > before.amount);
@@ -554,8 +594,13 @@ function FightOver({ fight, summary, best, today, onFinish }: { fight: FightStat
       // Storage blocked: the best hit just isn't remembered.
     }
   }, [isNew, best?.amount, today]); // eslint-disable-line react-hooks/exhaustive-deps
-  const text =
-    fight.result === 'won'
+  const text = look
+    ? fight.result === 'won'
+      ? `${look.beaten} Well done, clan!`
+      : fight.result === 'fled'
+        ? 'The clan ran for the exit and is safe.'
+        : `${look.stompsOff} Nobody is lost for good: the clan wakes up tomorrow.`
+    : fight.result === 'won'
       ? 'The enemies are beaten. Well done, clan!'
       : fight.result === 'fled'
         ? 'The clan ran for the exit and is safe.'

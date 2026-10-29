@@ -3,6 +3,7 @@ import { botOrders } from '../../../shared/clans/bot';
 import { CONFIG } from '../../../shared/clans/config';
 import { canCast, type Fighter, type FightEvent, type FightState, type Order } from '../../../shared/clans/fight';
 import { SPELLS } from '../../../shared/clans/spells';
+import { MONSTER_LOOKS } from '../../../shared/clans/monster';
 import { defeatWord } from './text';
 
 /** Two "Goblin"s become "Goblin A" and "Goblin B" so the log can tell them apart. Names never touch the dice. */
@@ -45,6 +46,7 @@ export function orderText(order: Order | undefined, state: FightState): string {
   if (order.action === 'guard') return 'Guard';
   if (order.action === 'run') return 'Run for the exit';
   if (order.action === 'attack') return `Attack ${state.enemies[order.target]?.name ?? 'an enemy'}`;
+  if (order.action === 'potion') return `Healing potion for ${state.clan[order.target]?.name ?? 'someone'}`;
   const spell = SPELLS[order.spell];
   const target = (spell?.friendly ? state.clan : state.enemies)[order.target];
   return `${spell?.name ?? 'A spell'} on ${target?.name ?? 'someone'}`;
@@ -83,5 +85,13 @@ export function describe(e: FightEvent, clanNames: ReadonlySet<string>): string 
       return e.ok ? 'The clan runs for the exit!' : "The clan can't get away this time.";
     case 'cry':
       return e.kind === 'damage' ? 'The Battle Cry rings out: the clan hits harder!' : 'The Battle Cry rings out: the clan feels better!';
+    case 'warn':
+      return MONSTER_LOOKS[e.move].warn;
+    case 'big':
+      return MONSTER_LOOKS[e.move].big;
+    case 'net':
+      return `The giant net holds ${e.who} down: the big move misses!`;
+    case 'potion':
+      return `${e.who} gives ${e.target} a healing potion: +${e.amount} HP.`;
   }
 }

@@ -40,7 +40,8 @@ export const classRaidsResting = (clock: SeasonClock | null | undefined): boolea
 
 /**
  * The full reset for a new season. Returns a copy. Every member starts again at level 1 (same name, race, class and look; slot 0 leads),
- * the purse goes back to the starting gold, followers, buildings, saved builds and the day's counts go, and the examined list clears.
+ * the purse goes back to the starting gold, followers, buildings, saved builds, the day's counts and last season's monster tries and supplies go,
+ * and the examined list clears. The clan may then pick its members' races and classes again (`repick`) until it says it is done.
  * Name, seed, day, fight numbers and the fights left are kept. The caller only does this when no fight is open.
  */
 export function newSeasonSave(state: ServerState, season: number): ServerState {
@@ -49,7 +50,7 @@ export function newSeasonSave(state: ServerState, season: number): ServerState {
     const fresh = rollMember({ rng: Math.imul(slotSeed(state.seed, slot) | 0, 2654435761) + season * 7919 }, m.name, m.race, m.cls, slot === 0);
     return { ...fresh, ...(m.look ? { look: m.look } : {}) };
   });
-  const { questDay: _q, ...rest } = copy.clan;
+  const { questDay: _q, monster: _m, repick: _r, ...rest } = copy.clan;
   const clan: Clan = {
     ...rest,
     members,
@@ -59,6 +60,8 @@ export function newSeasonSave(state: ServerState, season: number): ServerState {
     wakesToday: 0,
     empire: { ...newEmpire(state.day), buildsSaved: 0 },
     season,
+    // Until the clan plays, it may pick each member's race and class again (James, 28 Oct 2026).
+    repick: season,
   };
   copy.clan = clan;
   copy.examined = [];

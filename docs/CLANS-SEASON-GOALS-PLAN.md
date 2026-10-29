@@ -95,9 +95,9 @@ So every building matters, and a full village is the best way to beat the giant.
 
 | Clan | Win chance per try |
 |---|---|
-| Members about level 15 or more, village complete, full army, good gear | about **65%** |
-| Members about level 12, village about 25 / 39 | about **30%** |
-| Members about level 8, village about 10 / 39 | about **5%** (a stretch, with the "tired giant" rule below) |
+| Members about level 15 or more, village complete, full army, good gear | about **40%** (James chose harder, 28 Oct 2026; was 65%) |
+| Members about level 12, village about 25 / 39 | about **18%** |
+| Members about level 8, village about 10 / 39 | about **3%** (a stretch, with the "tired giant" rule below) |
 | Every Battle Cry answered right versus none | about +15 points, a nudge, not a test |
 
 Tuned with `npm run clans:sim` and a new `--monster` option. The giant's numbers live in `CONFIG.monster` like everything else.
@@ -121,7 +121,7 @@ From day 22 the market sells three one-off supplies, each limited (so a rich cla
 - **Healing potions** (heal a member mid-fight), up to 4;
 - **Giant net** (the giant misses its first boulder), 1.
 
-Each has a maths moment ("3 fire arrows at 250 gold each, plus 10% tax?"). Prices are high (about 1,000 to 2,000 gold) so the gold that piles up after a full village has a job. Optional: it can be left out of the first build.
+Each has a maths moment ("3 fire arrows at 250 gold each, plus 10% tax?"). Prices are high (about 1,000 to 2,000 gold) so the gold that piles up after a full village has a job. **James chose to include it in the first monster build (28 Oct 2026).**
 
 ## 6. Remembering winners: the Hall of Legends
 
@@ -137,7 +137,7 @@ Names are hub names; hidden profiles aren't shown. Never maths scores.
 
 - **Starts again:** every member goes back to level 1 with starting stats, HP and training points; gear and scrolls go; every building goes back to 0; troops go home; the purse goes back to the starting 200 gold; builds saved and daily counts reset; fame goes to 0 (this replaces the teacher's New fame season button).
 - **Kept:** the clan's name and look, its members' names, races and classes (so nobody has to make a clan again), and, for good: trophies, achievements, the Hall of Legends, mine boss badges and hub points already earned.
-- **Optional:** on the first visit of a season, the pupil may re-pick each member's race and class (like a Dragon Maths hero picking a new class), or keep them with one tap.
+- **Yes (James, 28 Oct 2026):** on the first visit of a season, the pupil may re-pick each member's race and class (like a Dragon Maths hero picking a new class), or keep them with one tap.
 - **No surprises:** from day 22 the home screen says "New season in 9 days: your clan starts fresh, your trophies stay forever." Fights already open finish first.
 - **The save change is the same kind as My Village's:** a pure, tested `newSeasonSave(clan)` run by the server on the first load of a new season (never by the browser), recorded once per season. Nothing is deleted from the database; the old season's numbers can be kept in the Hall row.
 
@@ -187,3 +187,16 @@ Branch `claude/project-thread-kcfeml`, migration `20261029000400_clans_season_go
 - **Hall of Legends:** `clan_hall_of_legends()`, from the Scoreboard. Rows are by season; monster slayers will appear when part 2 fills `monster_done_on`.
 - **Rehearsed** on the live database inside a rolled-back transaction (28 Oct): the trigger paid once (fame +50, one 10-point score, the badge, the news line, the Hall row) and a second full save paid nothing. The midnight job's season block was not exercised (it had already run that day); it is covered by the pgTAP file.
 - **Still to decide:** when the clock goes on (James's card: recommended once the monster is live).
+
+## 11. Part 2 built: the monster (28 Oct 2026)
+
+James's answers (28 Oct): harder (a strong clan wins about 40% of first tries), the supplies shop in the first build, an optional race and class re-pick at each new season, build now with placeholder art.
+
+- **Rules:** `shared/clans/monster.ts` (looks, siege, tiredness, supplies), the monster's turn in `fight.ts`, the actions in `actions.ts` (`monsterStart`, `buySupply`, `repick`, `repickDone`; the rounds go through `fightRound` like a mine fight and are replayed by the server). Numbers in `CONFIG.monster`.
+- **The try:** one a day in monster week (clock on, day 29 to 35). The siege question (Battle Cry kind) is answered first; the siege knocks a share off the monster (army up to 22%, more with the Forge; Tower 3% a level; fire arrows 2.5% each; a right answer × 1.2; at most 60%). Then up to 12 rounds against the monster: a stomp on two members each round, a big move every third round with a warning the round before (boulder on one member, slam on everyone, icy breath that freezes one member for a round), the giant net stops the first big move, potions heal half a member's HP, each Walls level cuts its hits by 4%. Running out of rounds is a loss ("stomps off for the night").
+- **Tired:** each lost try before the first win leaves it 10% weaker in HP and strength, up to 40%. After a win the clan can fight it again for fun (a fresh monster, no reward).
+- **Balance** (simulator, `npm run clans:sim -- --days 28 --empire 1 --monster 1 --play N`, first try / after 2 losses / after 4): plays 4 days a week (about level 15, village about 35 / 39): about 40% / 85% / 98%; every day (level 18 to 20, whole village): nearly always on the first try; 3 days a week (about level 9): 0% / 0% / about 5%. The bot does not use guard, potions or arrows, so children who do will do a little better.
+- **Reward** (first win each season, given by the database from the saved result): +100 fame, 10 points, the Giant Slayer achievement, a news line, the Hall of Legends row (`monster_done_on`, tries).
+- **Supplies** (market, from day 22): fire arrows (990 gold with tax, up to 3), healing potions (1,210, up to 4), giant net (1,980, 1). Used up in a try.
+- **Re-pick:** a new season's reset lets the clan pick each member's race and class again until it presses "Keep going".
+- **Art still to make** (placeholders until James's gaming PC): for each of Grimmor the Storm Giant, Old Craghold the Stone Golem and Frostjaw the Frost Troll, a portrait for the fight and a "village under attack" scene for the siege (6 pictures), same style as CLANS-ART-PLAN.md.

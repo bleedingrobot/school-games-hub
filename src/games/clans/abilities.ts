@@ -10,6 +10,8 @@ export const ACTION_HELP = {
   spell: 'Use skill points (SP) to cast one of your spells.',
   guard: 'Take half damage from every hit this round.',
   run: 'The whole clan tries to escape. Harder against quick enemies.',
+  /** Monster fights only. */
+  potion: (percent: number) => `Heal a friend by ${percent}% of their health. Uses one potion.`,
   plan: 'Everyone does what the plan says. Change anyone first if you like.',
   keep: 'Leave this member on the plan.',
 } as const;

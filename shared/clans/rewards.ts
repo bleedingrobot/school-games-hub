@@ -59,9 +59,10 @@ export interface ClanStats {
   classRaids: number;
   cries: number;
   villageBuilt: number;
+  monsterSlain: number;
 }
 
-export const NO_STATS: ClanStats = { mineWins: 0, bossWins: 0, warWins: 0, kingdomRaids: 0, classRaids: 0, cries: 0, villageBuilt: 0 };
+export const NO_STATS: ClanStats = { mineWins: 0, bossWins: 0, warWins: 0, kingdomRaids: 0, classRaids: 0, cries: 0, villageBuilt: 0, monsterSlain: 0 };
 
 /** Add what a request earned to the lifetime counts. */
 export function addEarned(stats: ClanStats, e: Partial<Earned>): ClanStats {
@@ -72,7 +73,7 @@ export function addEarned(stats: ClanStats, e: Partial<Earned>): ClanStats {
   };
 }
 
-export type AchievementMeasure = 'clan_wins' | 'clan_bosses' | 'clan_level' | 'clan_buildings' | 'clan_wars' | 'clan_village' | 'clan_cries';
+export type AchievementMeasure = 'clan_wins' | 'clan_bosses' | 'clan_level' | 'clan_buildings' | 'clan_wars' | 'clan_village' | 'clan_cries' | 'clan_monster';
 
 export interface AchievementDef {
   id: string;
@@ -96,6 +97,8 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'cq-cries-50', name: 'Loud and right', emoji: '📣', measure: 'clan_cries', goal: 50, how: 'Get 50 Battle Cry questions right.' },
   // The database sets stats.villageBuilt to 2 when a clan's whole village is at top level (cq-village needs 1, which a level-3 building gives).
   { id: 'cq-master-builder', name: 'Master Builder', emoji: '🏰', measure: 'clan_village', goal: 2, how: 'Take every building in your village to its top level.' },
+  // The database sets stats.monsterSlain when a clan first beats the season monster (clan_monster_try).
+  { id: 'cq-giant-slayer', name: 'Giant Slayer', emoji: '🗡️', measure: 'clan_monster', goal: 1, how: 'Beat the season monster in the last week of a season.' },
 ];
 
 /** How far along each measure is, from the clan and its lifetime counts. */
@@ -109,6 +112,7 @@ export function measures(clan: Clan, stats: ClanStats): Record<AchievementMeasur
     clan_wars: stats.warWins,
     clan_village: stats.villageBuilt,
     clan_cries: stats.cries,
+    clan_monster: stats.monsterSlain ?? 0,
   };
 }
 
