@@ -71,7 +71,7 @@ export function HowToPlayBody({ mathsAllowed }: { mathsAllowed: boolean }) {
               A wrong tunnel is a dead end, so you have to back out and try another.
             </p>
             <p>
-              When a question comes into view the game stops and waits (up to 10 seconds) until you press Go, so you can read it. The clock stops too.
+              When a question comes into view the game stops and waits (up to 10 seconds) until you press Go (or Enter), so you can read it. The clock stops too.
             </p>
           </section>
           <section aria-labelledby="mh-pit">
