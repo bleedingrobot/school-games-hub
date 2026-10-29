@@ -2,7 +2,7 @@
 
 How to make Marble Rush look much better, without making it slower on school Chromebooks or changing how it plays.
 Written 28 October 2026 for James, after reading the drawing code (`src/games/marble/renderer.ts`, `palette.ts`) and taking screenshots of the live preview.
-**Status: Boulder Beach look and new course cards LIVE 29 Oct 2026 (PR #90).** Next: the same look for the other 7 courses (their backdrops are painted already, in `src/games/marble/art/`), then scenery (G.4).
+**Status: the new look is LIVE on all 8 courses, 29 Oct 2026 (Boulder Beach and course cards PR #90, the other 7 courses PR #95).** Next: scenery (G.4).
 
 ## The short version
 
@@ -121,3 +121,5 @@ Asked as question cards on 28 Oct 2026. Answers go here.
 - **Try-out page:** `npm run marble:single`, published for James.
 
 **Went live 29 Oct 2026 (PR #90, Test and publish run 170 green).** Also in it, from James's feedback on the try-out: driftwood fence walls with log rails and posts (no see-through gaps), course cards with a painting for every course (picks: try 1 each, Windy Welly try 2; tries on branch `marble-art-inbox`), and a simpler picker: maths and Read time always on (the teacher's "Students choose" now works as On; only Off turns maths off), instructions moved to How to play, and a compact "Race a ghost" bar. No database or function change.
+
+**Other 7 courses went live 29 Oct 2026 (PR #95).** Each place has its own track pattern and walls: Crown Range tarmac with concrete kerb, crash barrier and snow poles; Geyser Valley silica crust with boardwalk; Glacier Run snow with rounded snow banks (ice tiles unchanged); Windy Welly concrete with hazard kerb, steel rail and bollards; Alpine Crossing red scoria with volcanic rock blocks; Wide Hill grass with farm fence; Gap and Ice snow with a snowy fence. Textures are drawn in code (`trackTextures.ts`), looks are in `look.ts`. Boulder Beach is unchanged and physics untouched (fingerprint `47774b85`).
