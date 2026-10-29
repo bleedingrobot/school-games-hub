@@ -25,6 +25,7 @@ import { withArticle } from './text';
 import { Stage } from './Stage';
 import { forestScene } from './art';
 import { KingdomMap, hasMap } from './KingdomMap';
+import { SeasonRoad } from './SeasonRoad';
 import { useAsk, type Answer } from './useAsk';
 import './lord.css';
 
@@ -535,7 +536,7 @@ export function LordPlay({ backend: given }: { backend?: LordBackend; level?: un
         <Village
           state={state} hero={hero} note={note} waiting={waiting} busy={busy} onRetry={() => void retry()}
           onPlace={(n) => { setNote(''); setScreen({ name: n } as Screen); }} onForest={() => void goForest()}
-          onDragon={() => setScreen({ name: 'dragon' })} onClass={() => setScreen({ name: 'class' })} onLook={() => setScreen({ name: 'look' })} today={today} tools={backend.trial}
+          onDragon={() => setScreen({ name: 'dragon' })} onClass={() => setScreen({ name: 'class' })} onLook={() => setScreen({ name: 'look' })} today={today} tools={backend.trial} road={!backend.trial || !!backend.seasonDated}
         />
       );
   }
@@ -609,9 +610,9 @@ function StatusBar({ hero }: { hero: Hero }) {
   );
 }
 
-function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest, onDragon, onClass, onLook, today, tools }: {
+function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest, onDragon, onClass, onLook, today, tools, road }: {
   state: LordState; hero: Hero; note: string; waiting: number; busy: boolean; onRetry: () => void;
-  onPlace: (n: Place | 'tools' | 'howto') => void; onForest: () => void; onDragon: () => void; onClass: () => void; onLook: () => void; today: string; tools: boolean;
+  onPlace: (n: Place | 'tools' | 'howto') => void; onForest: () => void; onDragon: () => void; onClass: () => void; onLook: () => void; today: string; tools: boolean; road: boolean;
 }) {
   const check = canChallengeMaster(hero);
   const dragonReady = canFaceDragon(hero) || !!state.dragon;
@@ -630,6 +631,7 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
         </Stage>
       )}
       <div className="lord-panel">
+      {road && <SeasonRoad season={state.season} hero={hero} />}
       <div className="lord-village__intro">
         <div>
           <p className="lord-soft">{today}. {hero.forestLeft > 0 ? `You have ${hero.forestLeft} forest fights left today.` : 'No forest fights left today. The village is still open!'}</p>
@@ -655,7 +657,7 @@ function Village({ state, hero, note, waiting, busy, onRetry, onPlace, onForest,
               <button type="button" className="lord-btn" onClick={onLook}>Choose my look</button>
             </p>
           )}
-          {state.season.daysLeft <= 4 && <p className="lord-soft">{state.season.daysLeft === 0 ? 'Last day of the season!' : `${state.season.daysLeft} days left in this season.`}</p>}
+          {!road && state.season.daysLeft <= 4 && <p className="lord-soft">{state.season.daysLeft === 0 ? 'Last day of the season!' : `${state.season.daysLeft} days left in this season.`}</p>}
         </div>
       </div>
       <div className="lord-menu">

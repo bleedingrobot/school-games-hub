@@ -8,12 +8,14 @@ import type { Hero } from '../../shared/lord/types';
 import { supabase } from '../lib/supabase';
 
 export interface RawMovesLeft {
-  lord: { day: string; forestLeft: number; arenaLeft: number; masterTried: boolean; masterExtra: number; forestPerDay: number } | null;
+  lord: { day: string; forestLeft: number; arenaLeft: number; masterTried: boolean; masterExtra: number; forestPerDay: number; level?: number; exp?: number } | null;
   clans: { fightsLeft: number; perDay: number } | null;
   /** Battles counted today and the daily limit (battleCap.ts). Missing until 20261027000300 is applied. */
   monsters?: { today: number; perDay: number } | null;
   /** The school's Clan Quest season clock (read with readClock). Missing until 20261029000700 is applied. */
   season?: unknown;
+  /** The school's Dragon Maths season { start, on } (read with readLordSeason). Missing until 20261030000100 is applied. */
+  lordSeason?: unknown;
 }
 
 /** One thing on a card: "🌲 7 forest fights". `empty` is for a used-up allowance, which is drawn quietly. */
