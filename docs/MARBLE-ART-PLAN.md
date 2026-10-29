@@ -2,7 +2,7 @@
 
 How to make Marble Rush look much better, without making it slower on school Chromebooks or changing how it plays.
 Written 28 October 2026 for James, after reading the drawing code (`src/games/marble/renderer.ts`, `palette.ts`) and taking screenshots of the live preview.
-**Status: the new look is LIVE on all 8 courses, 29 Oct 2026 (Boulder Beach and course cards PR #90, the other 7 courses PR #95).** Next: scenery (G.4).
+**Status: the new look and scenery are LIVE on all 8 courses, 29 Oct 2026 (Boulder Beach and course cards PR #90, the other 7 courses PR #95, scenery G.4 after that).** Left: G.6 real-device check and How to play pictures.
 
 ## The short version
 
@@ -123,3 +123,5 @@ Asked as question cards on 28 Oct 2026. Answers go here.
 **Went live 29 Oct 2026 (PR #90, Test and publish run 170 green).** Also in it, from James's feedback on the try-out: driftwood fence walls with log rails and posts (no see-through gaps), course cards with a painting for every course (picks: try 1 each, Windy Welly try 2; tries on branch `marble-art-inbox`), and a simpler picker: maths and Read time always on (the teacher's "Students choose" now works as On; only Off turns maths off), instructions moved to How to play, and a compact "Race a ghost" bar. No database or function change.
 
 **Other 7 courses went live 29 Oct 2026 (PR #95).** Each place has its own track pattern and walls: Crown Range tarmac with concrete kerb, crash barrier and snow poles; Geyser Valley silica crust with boardwalk; Glacier Run snow with rounded snow banks (ice tiles unchanged); Windy Welly concrete with hazard kerb, steel rail and bollards; Alpine Crossing red scoria with volcanic rock blocks; Wide Hill grass with farm fence; Gap and Ice snow with a snowy fence. Textures are drawn in code (`trackTextures.ts`), looks are in `look.ts`. Boulder Beach is unchanged and physics untouched (fingerprint `47774b85`).
+
+**Scenery (G.4) went live 29 Oct 2026.** James said to go straight to live without a try-out. The free model sites can't be reached from the build machine, so all 26 props are made in code (`props.ts`: Moeraki boulders, driftwood, tussock, road signs, hot pools, silica terraces, mud pots, steam vents, ice blocks, ponga ferns, rimu, snowy pines, containers, cranes, a cable car, buoys, volcanic rock, the Emerald Lakes, trees, hay bales, sheep and flowers). They stand on small islands of land in the empty space beside the track, always with at least one empty tile between an island and the track (`scenery.ts`, checked by tests), a little lower than the track. One instanced mesh per kind keeps it to a couple of dozen draw calls; Simple quality shows only the most important props and no steam. Gulls circle, buoys bob, ferns and grass sway, and the pools and vents steam (all calmer with reduced motion). No credits line is needed, as no packs were used.

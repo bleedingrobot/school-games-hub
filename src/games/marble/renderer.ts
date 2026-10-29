@@ -10,6 +10,7 @@ import { TIMED } from '../../../shared/marble/config';
 import { floorHeightAt, gateOpen, geyserPhase, trapdoorSolid, windBlowing, type RunState, type World } from '../../../shared/marble/engine';
 import { createFx, makeMarble, makeTrail, runEvents, type Fx, type MarbleObject, type Trail } from './fx';
 import { lookFor } from './look';
+import { createScenery, type SceneryView } from './sceneryView';
 import type { Palette } from './palette';
 import { settingsFor, type Quality, type QualitySettings } from './quality';
 import type { GateSign, GemSprite } from './signs';
@@ -924,6 +925,10 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
     for (const m of trackMeshes) m.castShadow = false;
   }
 
+  // Scenery on little islands beside the track (diorama look only). It sets its own shadows: props cast, islands only catch.
+  const scenery: SceneryView | null = dio ? createScenery(scene, course, look, bank, quality, reducedMotion) : null;
+  let sceneryTime = 0;
+
   // Effects and the speed trail (diorama look only). They follow the quality level.
   const fxSettings = (): QualitySettings => settingsFor(quality, dpr);
   if (dio) {
@@ -943,12 +948,14 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
     resize,
     setQuality(q) {
       setQuality(q);
+      scenery?.setQuality(q);
       fx?.setQuality(fxSettings());
       trail?.setQuality(fxSettings());
       resize(canvas.clientWidth, canvas.clientHeight);
     },
     setLowQuality(l) {
       setQuality(l ? 'simple' : startQuality);
+      scenery?.setQuality(l ? 'simple' : startQuality);
       fx?.setQuality(fxSettings());
       trail?.setQuality(fxSettings());
       resize(canvas.clientWidth, canvas.clientHeight);
@@ -986,6 +993,10 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
           });
         }
         fx.update(dt);
+      }
+      if (scenery) {
+        sceneryTime += Math.min(dt, 0.1);
+        scenery.update(sceneryTime, dt);
       }
       let seenRival: { x: number; y: number; z: number } | null = null;
       others.forEach((o, i) => {
@@ -1083,6 +1094,7 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
         }
       });
       fx?.dispose();
+      scenery?.dispose();
       trail?.dispose();
       marbleObj?.dispose();
       for (const o of others) o.made?.dispose();
