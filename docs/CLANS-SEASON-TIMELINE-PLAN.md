@@ -64,4 +64,5 @@ No server or database change: the clock already comes with the clan. About half 
 
 1. **Which front page?** James, 29 Oct 2026: **both**. The Clan Quest road is built first, then the site home strip (PR #91); both read one
    shared list of season days (section 4, step 1).
-2. **Pictures:** use the paintings the game already has, or paint 3 new medallions.
+2. **Pictures:** James, 29 Oct 2026: **paint 3 new medallions** (section 3). Prompts are in scripts/clans-monster-art.py
+   (`stage-build`, `stage-ready`, `stage-new-season`); the monster medallion keeps the monster's portrait.
