@@ -262,6 +262,22 @@ describe('RunScreen with maths', () => {
     expect(screen.getByLabelText('Time').textContent).not.toBe(frozen);
   });
 
+  it('keeps the gate question up when a movement key is pressed; Enter carries on', async () => {
+    setup({ course: GATED, setup: MATHS, readTime: true });
+    await start();
+    await runFrames(100);
+    await screen.findByRole('button', { name: 'Go!' });
+    for (const code of ['ArrowUp', 'ArrowLeft', 'KeyW', 'KeyD', 'Space']) {
+      fireEvent.keyDown(window, { code });
+      fireEvent.keyUp(window, { code });
+    }
+    await runFrames(100);
+    expect(screen.getByRole('button', { name: 'Go!' })).toBeInTheDocument();
+    fireEvent.keyDown(window, { code: 'Enter' });
+    await runFrames(300);
+    expect(screen.queryByRole('button', { name: 'Go!' })).toBeNull();
+  });
+
   it('carries on by itself after ten seconds of reading', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {

@@ -476,11 +476,11 @@ export function RunScreen({
       const second = twoPlayer && keys2.current.press(e.code);
       if (mine || second) {
         e.preventDefault();
+        // A movement key starts the run, but never closes a gate's question: only Go!, a tap or Enter does.
         if (phaseRef.current === 'ready') goto('playing');
-        else if (phaseRef.current === 'reading') resumeRef.current();
         return;
       }
-      if ((e.code === 'Space' || e.code === 'Enter') && phaseRef.current === 'reading' && !(e.target instanceof HTMLButtonElement)) {
+      if (e.code === 'Enter' && phaseRef.current === 'reading' && !(e.target instanceof HTMLButtonElement)) {
         e.preventDefault();
         resumeRef.current();
         return;
