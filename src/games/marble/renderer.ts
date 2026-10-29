@@ -668,7 +668,7 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
   if (dio) {
     const topMesh = look.topPattern !== 'none' ? topSoup.mesh(new THREE.MeshLambertMaterial({ map: topTexture(look.topPattern, anisotropy), vertexColors: true })) : null;
     // A little glow on some wall materials lifts their shaded faces (rock, concrete, snow) without changing the shape's shading.
-    const WALL_GLOW: Partial<Record<string, number>> = { rock: 0x6a4e3c, concrete: 0x3a3a3a, snowbank: 0xa3b8d0 };
+    const WALL_GLOW: Partial<Record<string, number>> = { rock: 0x8a6a56, concrete: 0x3a3a3a, snowbank: 0xa3b8d0 };
     const woodMesh = woodSoup.mesh(new THREE.MeshLambertMaterial({ map: wallTexture(wallStyle.base, anisotropy), vertexColors: true, side: THREE.DoubleSide, emissive: WALL_GLOW[wallStyle.base] ?? 0x000000 }));
     scene.add(woodMesh);
     if (topMesh) scene.add(topMesh);

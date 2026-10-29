@@ -550,11 +550,11 @@ function drawConcreteWall(g: Ctx, W: number, H: number) {
 
 function drawRock(g: Ctx, W: number, H: number) {
   const rnd = random(703);
-  g.fillStyle = '#2e2826';
+  g.fillStyle = '#4a3c36';
   g.fillRect(0, 0, W, H);
   const ROWS = 3;
   const rh = H / ROWS;
-  const tones = ['#5a504b', '#4d4440', '#645850', '#554a44', '#6a5d55', '#483f3b'];
+  const tones = ['#86736a', '#7a665d', '#93806f', '#806c62', '#9a8574', '#735f57'];
   for (let r = 0; r < ROWS; r++) {
     // Block widths that add up to exactly W, so the row wraps cleanly.
     const count = 3 + (r % 2);
@@ -575,9 +575,9 @@ function drawRock(g: Ctx, W: number, H: number) {
         g.beginPath();
         g.roundRect(bx, by, bw, bh, rad);
         const grad = g.createLinearGradient(bx, by, bx + bw * 0.4, by + bh);
-        grad.addColorStop(0, '#7a6b61');
+        grad.addColorStop(0, '#a8968a');
         grad.addColorStop(0.35, tone);
-        grad.addColorStop(1, '#3b3330');
+        grad.addColorStop(1, '#5a4a43');
         g.fillStyle = grad;
         g.fill();
         // Soft facets: a few pale and dark polygons clipped to the block.
