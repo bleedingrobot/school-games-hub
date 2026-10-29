@@ -14,7 +14,8 @@ import type { Palette } from './palette';
 import { settingsFor, type Quality, type QualitySettings } from './quality';
 import type { GateSign, GemSprite } from './signs';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { logTexture, plankTexture, PLANK_HEIGHT, PLANK_TILES, sandTexture, SAND_TILES, skyTexture } from './trackTextures';
+import { PLANK_HEIGHT, PLANK_TILES, skyTexture, TOP_TILES, topTexture, wallTexture, wallTopTexture } from './trackTextures';
+import type { TopPattern } from './look';
 
 /** How thick a block looks where nothing is beside it, in tiles. */
 const THICK = 1.2;
@@ -23,8 +24,30 @@ const WALL_HEIGHT = 0.7;
 /** The diorama look: rails are lower, and bevelled this much at the top. */
 const RAIL_HEIGHT = 0.5; // the wall's whole height: a plank base, a log on top
 const BASE_HEIGHT = 0.26;
+const CHUNKY_HEIGHT = 0.33; // rock and snow-bank walls have no top rail, so the base is taller
 const RAIL_BEVEL = 0.04;
 const LOG_RADIUS = 0.16;
+/** Steel pipe rails: a thin round rail on short posts, this high above the wall's base. */
+const PIPE_RADIUS = 0.07;
+const PIPE_LIFT = 0.2;
+/** Colours for the slope chevrons and the drop-off strip on plain tops of the non-sand courses. */
+const TOP_INK: Record<TopPattern, { ink: number; edge: number }> = {
+  sand: { ink: 0, edge: 0 },
+  none: { ink: 0, edge: 0 },
+  tarmac: { ink: 0x565d66, edge: 0xc9ced4 },
+  sinter: { ink: 0xb98a4a, edge: 0xfff1d4 },
+  snow: { ink: 0x7f9fc2, edge: 0xffffff },
+  concrete: { ink: 0x66717b, edge: 0xe6eaee },
+  scoria: { ink: 0x4a2418, edge: 0xd9a285 },
+  grass: { ink: 0x4f8130, edge: 0xcfe79a },
+};
+/** A repeatable number from 0 to 1 for a tile (no Math.random, so the rocks look the same every time). */
+function tileHash(x: number, y: number): number {
+  let h = Math.imul(x + 1013, 0x27d4eb2d) ^ Math.imul(y + 7919, 0x165667b1);
+  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);
+  h ^= h >>> 13;
+  return (h >>> 0) / 4294967296;
+}
 /** How wide the light strip along a drop-off is, in tiles. */
 const EDGE_STRIP = 0.1;
 
@@ -254,9 +277,10 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
 
   // ---- the blocks ----
   const soup = new Soup();
-  const bank = dio ? mix(palette.side, 0xf2e2b8, 0.5) : palette.side; // the soft sand-coloured sides under the track (diorama look)
-  const sandSoup = new Soup(); // sand tops (diorama look): textured
-  const woodSoup = new Soup(); // driftwood rails (diorama look): textured
+  const bank = dio ? (look.ground ?? mix(palette.side, 0xf2e2b8, 0.5)) : palette.side; // the soft ground-coloured sides under the track (diorama look)
+  const topSoup = new Soup(); // patterned tops (diorama look): textured
+  const woodSoup = new Soup(); // wall bases (diorama look): textured
+  const wallStyle = look.wall;
   const { width: W, height: H } = course;
   // The fixed layout. Timed things (trapdoors, gates, geysers) are drawn separately below and move with the clock.
   const WALL_TILE: Tile = { ch: '=', level: 0, surface: 'normal', slope: null, door: -1 };
@@ -301,6 +325,7 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
       const cornerH = [nw, ne, se, sw];
       /** The top surface's height at a spot in the tile (u across, v down); slopes are flat planes, so this is exact. */
       const surface = (u: number, v: number) => nw * (1 - u) * (1 - v) + ne * u * (1 - v) + se * u * v + sw * (1 - u) * v;
+      const plain = top === palette.floorA || top === palette.floorB;
       if (!dio) {
         soup.quad(P(0, 0, nw), P(0, 1, sw), P(1, 1, se), P(1, 0, ne), top);
       } else {
@@ -320,11 +345,10 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
           return Math.max(0.5, 1 - blocks(x + dx, y, 0.22) - blocks(x, y + dy, 0.22) - blocks(x + dx, y + dy, 0.12));
         };
         const shades = [dark(0, 0), dark(0, 1), dark(1, 1), dark(1, 0)];
-        const plain = top === palette.floorA || top === palette.floorB;
-        if (plain && look.topPattern === 'sand') {
-          // Sand: one shared texture by world position, so it runs on across tiles. A very faint two-tone keeps the speed readable.
-          const tint = (x + y) % 2 === 0 ? 0xffffff : 0xf1ebe0;
-          sandSoup.quad(P(0, 0, nw), P(0, 1, sw), P(1, 1, se), P(1, 0, ne), tint, shades, (p) => [p[0] / SAND_TILES, p[2] / SAND_TILES]);
+        if (plain && look.topPattern !== 'none') {
+          // One shared texture by world position, so it runs on across tiles. A very faint two-tone keeps the speed readable.
+          const tint = (x + y) % 2 === 0 ? 0xffffff : look.topPattern === 'sand' || look.topPattern === 'sinter' ? 0xf1ebe0 : look.topPattern === 'tarmac' ? 0xf5f5f5 : 0xeceff2;
+          topSoup.quad(P(0, 0, nw), P(0, 1, sw), P(1, 1, se), P(1, 0, ne), tint, shades, (p) => [p[0] / TOP_TILES, p[2] / TOP_TILES]);
         } else {
           soup.quad(P(0, 0, nw), P(0, 1, sw), P(1, 1, se), P(1, 0, ne), top, shades);
         }
@@ -332,7 +356,7 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
         if (t.slope) {
           const d = t.slope === 'E' ? [1, 0] : t.slope === 'W' ? [-1, 0] : t.slope === 'S' ? [0, 1] : [0, -1];
           const side = [-d[1], d[0]];
-          const ink = mix(top, 0x8a5a1e, 0.3);
+          const ink = plain && look.topPattern !== 'sand' && look.topPattern !== 'none' ? TOP_INK[look.topPattern].ink : mix(top, 0x8a5a1e, 0.3);
           for (const along of [-0.22, 0.2]) {
             // The tip points downhill; the arms sweep back and out.
             const tip = [0.5 + d[0] * (along + 0.12), 0.5 + d[1] * (along + 0.12)];
@@ -408,7 +432,7 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
           const lift = (px: number, py: number) => [x + px, surface(px, py) + 0.012, y + py];
           const outer = pts.map(([px, py]) => lift(px, py));
           const inner = pts.map(([px, py]) => lift(px + inward[0] * EDGE_STRIP, py + inward[1] * EDGE_STRIP));
-          soup.upQuad(outer[0], outer[1], inner[1], inner[0], mix(top, 0xffffff, 0.78));
+          soup.upQuad(outer[0], outer[1], inner[1], inner[0], plain && look.topPattern !== 'sand' && look.topPattern !== 'none' ? TOP_INK[look.topPattern].edge : mix(top, 0xffffff, 0.78));
         }
       }
     }
@@ -448,7 +472,6 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
     }
   }
   const trackMeshes: THREE.Mesh[] = []; // the track catches shadows but doesn't cast them, so flat tops stay clean
-  /** A low driftwood rail (or a door in its own colour) on a wall tile: same footprint, bevelled top, planks. */
   /** The floor height a wall tile stands on (the highest floor beside it), or null if it's buried in other walls. */
   function wallBase(x: number, y: number): number | null {
     if (tile(x, y).ch !== '=') return null;
@@ -459,10 +482,28 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
     }
     return b === -Infinity ? null : b;
   }
+  function doorAt(x: number, y: number): boolean {
+    return course.tiles[y * W + x].door >= 0;
+  }
+  /** How tall the wall body (below any rail) is on a tile. Doors are always the low plank height; rock varies a little from tile to tile. */
+  function bodyHeight(x: number, y: number): number {
+    if (doorAt(x, y)) return BASE_HEIGHT;
+    if (wallStyle.base === 'rock') return CHUNKY_HEIGHT + 0.09 * tileHash(x, y);
+    if (wallStyle.base === 'snowbank') return CHUNKY_HEIGHT + 0.02;
+    return BASE_HEIGHT;
+  }
+  /** The top edge's shape, from the flat top outwards: [how far in from the side, how far down]. The last step ends on the side wall itself. */
+  function profileOf(x: number, y: number): Array<[number, number]> {
+    if (doorAt(x, y)) return [[RAIL_BEVEL, 0], [0, RAIL_BEVEL]];
+    if (wallStyle.base === 'snowbank') return [[0.17, 0], [0.1, 0.035], [0.045, 0.1], [0, 0.19]];
+    if (wallStyle.base === 'rock') return [[0.07, 0], [0, 0.07]];
+    return [[RAIL_BEVEL, 0], [0, RAIL_BEVEL]];
+  }
+  /** A wall tile: same footprint on every course, a bevelled top, a textured body (or a door in its own colour). */
   function addRail(x: number, y: number, base: number, isDoor: boolean) {
-    const top = base + BASE_HEIGHT;
+    const top = base + bodyHeight(x, y);
     const out = isDoor ? soup : woodSoup;
-    const colour = isDoor ? palette.door : 0xffffff;
+    const colour = isDoor ? palette.door : wallStyle.tint ?? 0xffffff;
     const wood: UvOf | undefined = isDoor ? undefined : (p) => [(p[0] + p[2]) / PLANK_TILES, p[1] / PLANK_HEIGHT];
     const woodTop: UvOf | undefined = isDoor ? undefined : (p) => [p[0] / PLANK_TILES, p[2] / PLANK_HEIGHT];
     const sides: Array<[number, number, number[], number[]]> = [
@@ -472,24 +513,27 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
       [-1, 0, [x, y + 1], [x, y]],
     ];
     const exposed = sides.map(([dx, dy]) => tile(x + dx, y + dy).ch !== '=');
-    // Below the rail on its open sides: down past the lowest floor beside it, so no gap shows under it.
+    // Below the wall on its open sides: down past the lowest floor beside it, so no gap shows under it.
     let lowest = base;
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
       const n = tile(x + dx, y + dy);
       if (isFloor(n)) lowest = Math.min(lowest, Math.min(...corners(n)));
     }
-    // The top is pulled in a little on every open side, with a slanted strip down to the side.
-    const x0 = x + (exposed[3] ? RAIL_BEVEL : 0);
-    const x1 = x + 1 - (exposed[1] ? RAIL_BEVEL : 0);
-    const y0 = y + (exposed[0] ? RAIL_BEVEL : 0);
-    const y1 = y + 1 - (exposed[2] ? RAIL_BEVEL : 0);
-    out.quad([x0, top, y0], [x0, top, y1], [x1, top, y1], [x1, top, y0], colour, [1, 1, 1, 1], woodTop);
+    // The top is pulled in on every open side, with sloping (or rounded) strips down to the side.
+    const profile = profileOf(x, y);
+    const ring = (k: number, pt: number[]) => {
+      const [inset, drop] = profile[k];
+      return [pt[0] === x ? x + (exposed[3] ? inset : 0) : x + 1 - (exposed[1] ? inset : 0), top - drop, pt[1] === y ? y + (exposed[0] ? inset : 0) : y + 1 - (exposed[2] ? inset : 0)];
+    };
+    const corner = (cx: number, cy: number) => ring(0, [x + cx, y + cy]);
+    out.quad(corner(0, 0), corner(0, 1), corner(1, 1), corner(1, 0), colour, [1, 1, 1, 1], woodTop);
+    const sideDrop = profile[profile.length - 1][1];
     sides.forEach(([dx, dy, p, q], i) => {
       const n = tile(x + dx, y + dy);
       if (!exposed[i]) {
-        // A rail beside a lower rail (they step down a slope): fill the step, so there's no see-through notch.
+        // A wall beside a lower wall (they step down a slope): fill the step, so there's no see-through notch.
         const below = wallBase(x + dx, y + dy);
-        const theirTop = below === null ? -Infinity : below + BASE_HEIGHT;
+        const theirTop = below === null ? -Infinity : below + bodyHeight(x + dx, y + dy);
         if (theirTop < top - 1e-9) {
           const to = below === null ? lowest - THICK : theirTop;
           out.quad([p[0], top, p[1]], [p[0], to, p[1]], [q[0], to, q[1]], [q[0], top, q[1]], colour, [1, 0.86, 0.86, 1], wood);
@@ -497,43 +541,68 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
         return;
       }
       const bottom = isFloor(n) ? Math.min(...corners(n)) : lowest - THICK;
-      const sideTop = top - RAIL_BEVEL;
-      const inner = (pt: number[]) => [pt[0] === x ? x0 : x1, top, pt[1] === y ? y0 : y1];
-      out.quad(inner(p), [p[0], sideTop, p[1]], [q[0], sideTop, q[1]], inner(q), isDoor ? mix(palette.door, 0xffffff, 0.15) : colour, [1, 1, 1, 1], wood);
-      // Planks down to the floor; where the wall stands over a drop, sand-coloured ground below that (like the track's own sides), so the wall isn't a tall plank slab.
+      const sideTop = top - sideDrop;
+      for (let k = 0; k < profile.length - 1; k++) {
+        out.quad(ring(k, p), ring(k + 1, p), ring(k + 1, q), ring(k, q), isDoor ? mix(palette.door, 0xffffff, 0.15) : colour, [1, 1, 1, 1], wood);
+      }
+      // The body down to the floor; where the wall stands over a drop, ground-coloured earth below that (like the track's own sides), so the wall isn't a tall slab.
       const planks = isFloor(n) ? bottom : Math.max(bottom, base);
-      out.quad([p[0], sideTop, p[1]], [p[0], planks, p[1]], [q[0], planks, q[1]], [q[0], sideTop, q[1]], colour, [0.95, 0.82, 0.82, 0.95], wood);
+      out.quad([p[0], sideTop, p[1]], [p[0], planks, p[1]], [q[0], planks, q[1]], [q[0], sideTop, q[1]], colour, wallStyle.base === 'snowbank' ? [1, 0.93, 0.93, 1] : [0.95, 0.82, 0.82, 0.95], wood);
       if (planks > bottom + 1e-9) soup.quad([p[0], planks, p[1]], [p[0], bottom, p[1]], [q[0], bottom, q[1]], [q[0], planks, q[1]], bank, [0.95, 0.72, 0.72, 0.95]);
     });
   }
 
-  // Logs along every wall run, and round posts at corners, ends and now and then along a run. All merged into one mesh (two with the door colour).
-  const woodLogs: THREE.BufferGeometry[] = [];
+  // Rails along every wall run (logs or steel pipe), and posts at corners, ends and now and then along a run. All merged into a few meshes.
+  const woodLogs: THREE.BufferGeometry[] = []; // logs, joints and round posts (the log texture)
   const doorLogs: THREE.BufferGeometry[] = [];
+  const pipeParts: THREE.BufferGeometry[] = []; // pipe rails, joints and their little supports (the steel texture)
+  const poleParts: THREE.BufferGeometry[] = []; // white snow poles
+  const poleTips: THREE.BufferGeometry[] = []; // their orange-red tops
+  const ironParts: THREE.BufferGeometry[] = []; // dark iron bollards
+  const snowParts: THREE.BufferGeometry[] = []; // snow caps and strips
   if (dio) {
     const isWall = (x: number, y: number) => wallBase(x, y) !== null;
-    const centre = (x: number, y: number) => new THREE.Vector3(x + 0.5, (wallBase(x, y) ?? 0) + BASE_HEIGHT + LOG_RADIUS * 0.8, y + 0.5);
-    const doorAt = (x: number, y: number) => course.tiles[y * W + x].door >= 0;
+    const railStyle = (x: number, y: number) => (doorAt(x, y) ? 'log' : wallStyle.top);
+    const railRadius = (x: number, y: number) => (railStyle(x, y) === 'pipe' ? PIPE_RADIUS : LOG_RADIUS);
+    const centre = (x: number, y: number) => {
+      const lift = railStyle(x, y) === 'pipe' ? PIPE_LIFT : LOG_RADIUS * 0.8;
+      return new THREE.Vector3(x + 0.5, (wallBase(x, y) ?? 0) + bodyHeight(x, y) + lift, y + 0.5);
+    };
     const up = new THREE.Vector3(0, 1, 0);
+    /** Squashes geometry flat (in height) about a point, for snow lying on top of things. */
+    const flatten = (geo: THREE.BufferGeometry, about: THREE.Vector3, k: number) => {
+      geo.translate(-about.x, -about.y, -about.z);
+      geo.scale(1, k, 1);
+      geo.translate(about.x, about.y, about.z);
+      return geo;
+    };
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
         if (!isWall(x, y)) continue;
         const a = centre(x, y);
-        const list = doorAt(x, y) ? doorLogs : woodLogs;
+        const door = doorAt(x, y);
+        const style = railStyle(x, y);
         for (const [dx, dy] of [[1, 0], [0, 1]]) {
           if (!isWall(x + dx, y + dy)) continue;
+          const nextDoor = doorAt(x + dx, y + dy);
+          const useStyle = door || nextDoor ? 'log' : style;
+          if (useStyle === 'none') continue;
+          const rad = useStyle === 'pipe' ? PIPE_RADIUS : LOG_RADIUS;
           const b = centre(x + dx, y + dy);
-          if (Math.abs(b.y - a.y) > 0.01) continue; // a step: the logs stop, with a post each side
+          if (Math.abs(b.y - a.y) > 0.01) continue; // a step: the rails stop, with a post each side
           const dir = new THREE.Vector3().subVectors(b, a);
           const len = dir.length();
-          const geo = new THREE.CylinderGeometry(LOG_RADIUS, LOG_RADIUS, len, 12, 1);
-          geo.applyMatrix4(new THREE.Matrix4().compose(a.clone().add(b).multiplyScalar(0.5), new THREE.Quaternion().setFromUnitVectors(up, dir.normalize()), new THREE.Vector3(1, 1, 1)));
-          (doorAt(x + dx, y + dy) ? doorLogs : list).push(geo);
+          const geo = new THREE.CylinderGeometry(rad, rad, len, useStyle === 'pipe' ? 10 : 12, 1);
+          const mid = a.clone().add(b).multiplyScalar(0.5);
+          geo.applyMatrix4(new THREE.Matrix4().compose(mid, new THREE.Quaternion().setFromUnitVectors(up, dir.clone().normalize()), new THREE.Vector3(1, 1, 1)));
+          (useStyle === 'pipe' ? pipeParts : door || nextDoor ? doorLogs : woodLogs).push(geo);
+          if (wallStyle.snowy && useStyle === 'log') {
+            // A white strip of snow along the top of the log.
+            const strip = new THREE.CylinderGeometry(rad * 0.95, rad * 0.95, len, 10, 1);
+            strip.applyMatrix4(new THREE.Matrix4().compose(mid.clone().add(new THREE.Vector3(0, rad * 0.6, 0)), new THREE.Quaternion().setFromUnitVectors(up, dir.clone().normalize()), new THREE.Vector3(1, 1, 1)));
+            snowParts.push(flatten(strip, mid.clone().add(new THREE.Vector3(0, rad * 0.6, 0)), 0.6));
+          }
         }
-        // A round joint where logs meet, so tilted logs join smoothly.
-        const joint = new THREE.SphereGeometry(LOG_RADIUS, 12, 8);
-        joint.translate(a.x, a.y, a.z);
-        list.push(joint);
         const east = isWall(x + 1, y);
         const west = isWall(x - 1, y);
         const north = isWall(x, y - 1);
@@ -542,14 +611,52 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
         const alongY = north && south && !east && !west;
         const stepNear = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => isWall(x + dx, y + dy) && Math.abs(centre(x + dx, y + dy).y - a.y) > 0.01);
         const post = stepNear || !(alongX || alongY) || (alongX && x % 3 === 0) || (alongY && y % 3 === 0);
-        if (post) {
+        const baseTop = (wallBase(x, y) ?? 0) + bodyHeight(x, y);
+        if (style !== 'none') {
+          // A round joint where rails meet, so tilted rails join smoothly.
+          const rad = railRadius(x, y);
+          const joint = new THREE.SphereGeometry(rad, 12, 8);
+          joint.translate(a.x, a.y, a.z);
+          (style === 'pipe' ? pipeParts : door ? doorLogs : woodLogs).push(joint);
+          if (style === 'pipe') {
+            // A thin support under the pipe (every tile, so the rail looks held up).
+            const h = a.y - baseTop;
+            const leg = new THREE.CylinderGeometry(0.04, 0.045, h, 8);
+            leg.translate(a.x, baseTop + h / 2, a.z);
+            pipeParts.push(leg);
+          }
+        }
+        if ((door && post) || (!door && post && wallStyle.post === 'round')) {
+          // The door's own round post, or a driftwood post (door posts stay in the door colour on every course).
           const h = 0.36;
-          const baseTop = a.y - LOG_RADIUS * 0.8;
+          const postBase = door ? a.y - LOG_RADIUS * 0.8 : baseTop;
           const body = new THREE.CylinderGeometry(0.18, 0.21, h, 14);
-          body.translate(a.x, baseTop + h / 2, a.z);
+          body.translate(a.x, postBase + h / 2, a.z);
           const cap = new THREE.SphereGeometry(0.18, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+          cap.translate(a.x, postBase + h, a.z);
+          (door ? doorLogs : woodLogs).push(body);
+          if (wallStyle.snowy && !door) snowParts.push(flatten(new THREE.SphereGeometry(0.2, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2).translate(a.x, postBase + h - 0.01, a.z), new THREE.Vector3(a.x, postBase + h - 0.01, a.z), 0.9));
+          else (door ? doorLogs : woodLogs).push(cap);
+        } else if (post && wallStyle.post === 'snowpole') {
+          const h = 0.9 - (baseTop - (wallBase(x, y) ?? 0));
+          const pole = new THREE.CylinderGeometry(0.035, 0.04, h, 8);
+          pole.translate(a.x, baseTop + h / 2, a.z);
+          poleParts.push(pole);
+          const tip = new THREE.CylinderGeometry(0.043, 0.043, 0.17, 8);
+          tip.translate(a.x, baseTop + h - 0.085, a.z);
+          const cap = new THREE.SphereGeometry(0.043, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2);
           cap.translate(a.x, baseTop + h, a.z);
-          list.push(body, cap);
+          poleTips.push(tip, cap);
+        } else if (post && wallStyle.post === 'bollard') {
+          const h = 0.34;
+          const body = new THREE.CylinderGeometry(0.1, 0.13, h, 12);
+          body.translate(a.x, baseTop + h / 2, a.z);
+          const cap = new THREE.SphereGeometry(0.15, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+          cap.scale(1, 0.7, 1);
+          cap.translate(a.x, baseTop + h, a.z);
+          const band = new THREE.CylinderGeometry(0.135, 0.135, 0.04, 12);
+          band.translate(a.x, baseTop + 0.08, a.z);
+          ironParts.push(body, cap, band);
         }
       }
     }
@@ -559,12 +666,24 @@ export function createView(canvas: HTMLCanvasElement, course: Course, world: Wor
   const soupMesh = soup.mesh(dio ? new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }) : undefined);
   scene.add(soupMesh);
   if (dio) {
-    const sandMesh = sandSoup.mesh(new THREE.MeshLambertMaterial({ map: sandTexture(anisotropy), vertexColors: true }));
-    const woodMesh = woodSoup.mesh(new THREE.MeshLambertMaterial({ map: plankTexture(anisotropy), vertexColors: true, side: THREE.DoubleSide }));
-    scene.add(sandMesh, woodMesh);
-    if (woodLogs.length) scene.add(new THREE.Mesh(mergeGeometries(woodLogs), new THREE.MeshLambertMaterial({ map: logTexture(anisotropy) })));
-    if (doorLogs.length) scene.add(new THREE.Mesh(mergeGeometries(doorLogs), new THREE.MeshLambertMaterial({ color: palette.door })));
-    trackMeshes.push(soupMesh, sandMesh);
+    const topMesh = look.topPattern !== 'none' ? topSoup.mesh(new THREE.MeshLambertMaterial({ map: topTexture(look.topPattern, anisotropy), vertexColors: true })) : null;
+    // A little glow on some wall materials lifts their shaded faces (rock, concrete, snow) without changing the shape's shading.
+    const WALL_GLOW: Partial<Record<string, number>> = { rock: 0x8a6a56, concrete: 0x3a3a3a, snowbank: 0xa3b8d0 };
+    const woodMesh = woodSoup.mesh(new THREE.MeshLambertMaterial({ map: wallTexture(wallStyle.base, anisotropy), vertexColors: true, side: THREE.DoubleSide, emissive: WALL_GLOW[wallStyle.base] ?? 0x000000 }));
+    scene.add(woodMesh);
+    if (topMesh) scene.add(topMesh);
+    const addMerged = (parts: THREE.BufferGeometry[], material: THREE.Material) => {
+      if (parts.length) scene.add(new THREE.Mesh(mergeGeometries(parts), material));
+    };
+    addMerged(woodLogs, new THREE.MeshLambertMaterial({ map: wallTopTexture('log', anisotropy), color: wallStyle.tint ? mix(0xffffff, wallStyle.tint, 0.6) : 0xffffff }));
+    addMerged(doorLogs, new THREE.MeshLambertMaterial({ color: palette.door }));
+    addMerged(pipeParts, new THREE.MeshLambertMaterial({ map: wallTopTexture('pipe', anisotropy) }));
+    addMerged(poleParts, new THREE.MeshLambertMaterial({ color: 0xf6f8fa }));
+    addMerged(poleTips, new THREE.MeshLambertMaterial({ color: 0xe8541f }));
+    addMerged(ironParts, new THREE.MeshLambertMaterial({ color: 0x30353b }));
+    addMerged(snowParts, new THREE.MeshLambertMaterial({ color: 0xf7fbff }));
+    trackMeshes.push(soupMesh);
+    if (topMesh) trackMeshes.push(topMesh);
   }
 
   // ---- things standing on the course ----
