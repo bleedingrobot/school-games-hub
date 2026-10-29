@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { CLASSES, ITEMS, MONSTERS, RACES } from '../../../shared/clans/gamedata';
 import { KINGDOMS } from '../../../shared/clans/empire';
 import { QUESTS } from '../../../shared/clans/quests';
-import { BUILDING_KINDS, TROOP_KINDS, VILLAGE_BUILDINGS } from '../../../shared/clans/types';
+import { BUILDING_KINDS, MONSTER_KINDS, TROOP_KINDS, VILLAGE_BUILDINGS } from '../../../shared/clans/types';
 import { CLAN_NOUNS } from '../../../shared/clans/words';
 import { FX, LOOKS, SCENES, buildingArt, buildingSize, pickBuildingArt, slug } from './art';
 
@@ -36,6 +36,8 @@ const NEEDED: Record<string, { names: string[]; maxKb: number; allowed?: string[
   buildings: { names: ['barracks', 'walls', 'tower', 'steelmill'], allowed: BUILDING_ALLOWED, maxKb: 40 },
   banners: { names: CLAN_NOUNS.map(slug), maxKb: 30 },
   fx: { names: [...FX], maxKb: 60 },
+  // The season monsters are painted one at a time (giant first), so each is optional.
+  'season-monsters': { names: [], allowed: MONSTER_KINDS.flatMap((k) => [k, ...wide([`siege-${k}`])]), maxKb: 320 },
 };
 
 describe('the painted pictures', () => {
