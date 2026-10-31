@@ -108,6 +108,6 @@ export const CLASS_FOCUS: Record<string, string[]> = {
   Necromancer: ['wisdom', 'sp'],
   Wizard: ['wisdom', 'sp', 'hp'],
   Pirate: ['agility', 'dexterity', 'strength', 'charisma', 'hp'],
-  Samurai: ['agility', 'dexterity', 'strength'],
+  Samurai: ['agility', 'dexterity', 'strength', 'sp'],
 };
 export const isRecommended = (cls: string, key: string) => (CLASS_FOCUS[cls] ?? []).includes(key);
