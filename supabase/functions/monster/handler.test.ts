@@ -225,7 +225,7 @@ describe('the monster server function', () => {
 
 describe('the deployable file', () => {
   // Skipped: monster/index.ts is deliberately left as deployed, so it no longer matches the code.
-  it.skip('is up to date with the code (run `npm run build:functions` if this fails)', async () => {
+  it('is up to date with the code (run `npm run build:functions` if this fails)', async () => {
     // @ts-expect-error: plain JavaScript build script
     const { buildFunction } = await import('../../../scripts/build-functions.mjs');
     const built: string = await buildFunction('monster');
