@@ -5,7 +5,9 @@
  * state is plain JSON, so a half-finished fight can be saved.
  *
  * Rules and numbers are The Clans': agility-first turns (hurt fighters slow down), hit when
- * dexterity beats agility, damage from half strength minus armour, experience per hit.
+ * dexterity beats agility, damage from half strength minus armour, experience per hit. Healers
+ * earn too: by HP healed, a little for each buff, debuff or tie-up that lands, and a share of the
+ * team's experience for still standing at the end.
  */
 import { CONFIG } from './config';
 import { fightStats } from './character';
@@ -164,11 +166,16 @@ const team = (s: FightState, side: 'clan' | 'enemy') => (side === 'clan' ? s.cla
 const foes = (s: FightState, f: Fighter) => team(s, f.side === 'clan' ? 'enemy' : 'clan');
 const friends = (s: FightState, f: Fighter) => team(s, f.side);
 
+/** Experience for a clan member, with the deep-mine boost. */
+function earn(s: FightState, who: Fighter, base: number): void {
+  if (who.side === 'clan') s.xp[who.index] += Math.round(base * (1 + Math.max(0, s.depth - CONFIG.xpBoostFrom) * CONFIG.xpDepthBoost));
+}
+
 function hurt(s: FightState, attacker: Fighter, target: Fighter, damage: number): number {
   if (target.guarding) damage = Math.max(1, Math.ceil(damage / 2));
   damage = Math.min(damage, target.hp);
   target.hp -= damage;
-  if (attacker.side === 'clan') s.xp[attacker.index] += Math.round((Math.floor(damage / 3) + 1) * (1 + Math.max(0, s.depth - CONFIG.xpBoostFrom) * CONFIG.xpDepthBoost));
+  if (attacker.side === 'clan') earn(s, attacker, Math.floor(damage / 3) + 1);
   if (target.hp <= 0) {
     s.log.push({ type: 'down', who: target.name });
     if (target.side === 'enemy') s.gold += Math.round((target.difficulty * (20 + roll(s, 10)) + 50 + roll(s, 20)) / 10);
@@ -210,7 +217,10 @@ function cast(s: FightState, who: Fighter, spell: SpellDef, target: Fighter): vo
   const lvl = Math.min(who.level, 10);
   if (spell.kind === 'heal') {
     const amount = Math.floor(((spell.value + Math.floor(lvl / 2)) * (50 + roll(s, 50))) / 100);
-    target.hp = Math.min(target.maxHp, target.hp + amount);
+    const healed = Math.min(target.maxHp - target.hp, amount);
+    target.hp += healed;
+    // Only HP actually healed counts, so topping up someone already full earns nothing.
+    if (healed > 0) earn(s, who, Math.floor(healed / 3) + 1);
     s.log.push({ type: 'cast', who: who.name, spell: spell.name, target: target.name, amount });
   } else if (spell.kind === 'damage') {
     const targets = spell.all ? foes(s, who).filter(alive) : [target];
@@ -223,9 +233,11 @@ function cast(s: FightState, who: Fighter, spell: SpellDef, target: Fighter): vo
     s.log.push({ type: 'resist', who: who.name, spell: spell.name, target: target.name });
   } else if (spell.kind === 'tie') {
     target.tied = 1;
+    earn(s, who, CONFIG.xpSupport);
     s.log.push({ type: 'cast', who: who.name, spell: spell.name, target: target.name, amount: 0 });
   } else if (spell.mod) {
     target.mods.push({ stat: spell.mod.stat, amount: spell.mod.amount, until: s.round + spell.mod.rounds - 1 });
+    earn(s, who, CONFIG.xpSupport);
     s.log.push({ type: 'cast', who: who.name, spell: spell.name, target: target.name, amount: spell.mod.amount });
   }
 }
@@ -346,6 +358,14 @@ function followersFor(s: FightState): number {
   return base + roll(s, 3);
 }
 
+/** The end of a fight: everyone still standing gets at least `xpShare` of the standing members' average experience. */
+function shareXp(s: FightState): void {
+  const standing = s.clan.filter(alive);
+  if (!standing.length) return;
+  const floor = Math.ceil((standing.reduce((t, f) => t + s.xp[f.index], 0) / standing.length) * CONFIG.xpShare);
+  for (const f of standing) s.xp[f.index] = Math.max(s.xp[f.index], floor);
+}
+
 /**
  * Play one round. `orders[i]` is clan member i's order (anything missing or not allowed becomes
  * a plain attack). `cry` is the Battle Cry bonus the server has already decided was earned.
@@ -384,6 +404,7 @@ export function playRound(s: FightState, orders: (Order | undefined)[], cry: Cry
   }
   if (s.result === 'won') s.followers = followersFor(s);
   else if (!s.result && s.round >= maxRoundsOf(s)) s.result = 'timeout';
+  if (s.result) shareXp(s);
   // The monster gets ready for its big move: the clan sees it coming before it gives its orders.
   if (!s.result && s.monster && bigMoveRound(s.round + 1) && s.enemies[0] && alive(s.enemies[0])) {
     s.log.push({ type: 'warn', who: s.enemies[0].name, move: s.monster.kind });

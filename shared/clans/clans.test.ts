@@ -267,6 +267,58 @@ describe('fights', () => {
     expect(s.log.slice(rounds).some((e) => e.type === 'cast' && e.who === members[healer].name)).toBe(false);
   });
 
+  it('give a healer experience for HP healed, but not for healing someone already full', () => {
+    const members = newClan('balanced', 1).members;
+    const healer = members.findIndex((m) => m.cls === 'Healer');
+    const heal = (missing: number) => {
+      const s = newFight(members, 1, 4);
+      s.enemies.forEach((e) => (e.tied = 1));
+      s.clan[0].hp -= missing;
+      playRound(s, members.map((_, i) => (i === healer ? { action: 'spell', spell: 2, target: 0 } : { action: 'guard' })));
+      expect(s.log.some((e) => e.type === 'cast' && e.who === members[healer].name)).toBe(true);
+      return s;
+    };
+    expect(heal(10).xp[healer]).toBeGreaterThan(0);
+    expect(heal(0).xp[healer]).toBe(0);
+  });
+
+  it('give experience for a buff or tie-up that lands, and none for one that is shrugged off', () => {
+    const members = newClan('balanced', 1).members;
+    const healer = members.findIndex((m) => m.cls === 'Healer');
+    const cast = (spell: number, wisdom: number) => {
+      const s = newFight(members, 1, 4);
+      s.enemies.forEach((e) => ((e.tied = 1), (e.level = 30 - wisdom), (e.stats.wisdom = 30 - wisdom)));
+      Object.assign(s.clan[healer], { spells: [spell], sp: 99, level: wisdom });
+      s.clan[healer].stats.wisdom = wisdom;
+      playRound(s, members.map((_, i) => (i === healer ? { action: 'spell', spell, target: 0 } : { action: 'guard' })));
+      return s;
+    };
+    expect(cast(4, 1).xp[healer]).toBe(CONFIG.xpSupport);
+    expect(cast(5, 30).xp[healer]).toBe(CONFIG.xpSupport);
+    const resisted = cast(5, 0);
+    expect(resisted.log.some((e) => e.type === 'resist')).toBe(true);
+    expect(resisted.xp[healer]).toBe(0);
+  });
+
+  it('give everyone still standing at least a share of the team experience when a fight ends', () => {
+    let checked = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const members = newClan('balanced', seed).members;
+      const healer = members.findIndex((m) => m.cls === 'Healer');
+      const s = newFight(members, 3, seed);
+      // The healer only guards, so anything it ends with is its share.
+      while (!s.result) playRound(s, botOrders(s).map((o, i) => (i === healer ? { action: 'guard' } : o)));
+      if (s.clan[healer].hp <= 0) continue;
+      // Anyone else below the share was raised to the same amount, so the healer has the least, and no more than the share.
+      const standing = s.clan.filter((f) => f.hp > 0).map((f) => s.xp[f.index]);
+      expect(s.xp[healer]).toBeGreaterThan(0);
+      expect(s.xp[healer]).toBe(Math.min(...standing));
+      expect(s.xp[healer]).toBeLessThanOrEqual(Math.ceil((standing.reduce((t, x) => t + x, 0) / standing.length) * CONFIG.xpShare));
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(10);
+  });
+
   it('give a right Battle Cry more damage on average', () => {
     let plain = 0;
     let boosted = 0;

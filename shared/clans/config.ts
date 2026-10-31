@@ -29,6 +29,10 @@ export const CONFIG = {
   /** Mines deeper than `xpBoostFrom` give more experience per hit: multiplied by 1 + (depth - xpBoostFrom) times `xpDepthBoost`. */
   xpBoostFrom: 8,
   xpDepthBoost: 0.25,
+  /** Experience for a buff, debuff or tie-up spell that lands, before the depth boost (a heal earns by HP healed, like a hit by damage). */
+  xpSupport: 2,
+  /** When a fight ends, every member still standing gets at least this share of the standing members' average experience, so a healer keeps up with the hitters. */
+  xpShare: 0.5,
   /** Experience: 30 to reach level 2, then 10 more for each level, but never more than this for one level. */
   xpLevelCap: 90,
   /** Experience: total needed to reach `level` (level 1 needs none). */
