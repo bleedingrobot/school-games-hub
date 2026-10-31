@@ -1,10 +1,11 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { useTraderEnabled } from './switch';
+import { saveTraderEnabled, saveTraderMaths, TRADER_ABOUT, TRADER_MATHS_ABOUT, useTraderClassMaths, useTraderClassSwitch } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const TraderPlay = lazy(() => import('./TraderPlay').then((m) => ({ default: m.TraderPlay })));
-const TraderTeacherPanel = lazy(() => import('../../pages/TeacherTrader').then((m) => ({ default: m.TraderTeacherPanel })));
+const TraderSettings = lazy(() => import('../../pages/TeacherTrader').then((m) => ({ default: m.TraderSettings })));
 const TraderStudentPanel = lazy(() => import('../../pages/TeacherTrader').then((m) => ({ default: m.TraderStudentPanel })));
 
 /** A little ship with an engine flame, over a planet. */
@@ -36,6 +37,11 @@ export const starTrader: GameDefinition = {
   noBots: true,
   group: 'complex-maths',
   useTeacherSwitch: useTraderEnabled,
-  TeacherPanels: TraderTeacherPanel,
-  StudentPanel: TraderStudentPanel,
+  // The teacher's Games table: on/off and the maths checks in the row, jumps a day and the bank in its Settings.
+  teacher: {
+    switch: { useValue: useTraderClassSwitch, save: saveTraderEnabled, about: TRADER_ABOUT },
+    maths: { useValue: useTraderClassMaths, save: saveTraderMaths, about: TRADER_MATHS_ABOUT },
+    Settings: TraderSettings,
+    StudentPanel: TraderStudentPanel,
+  },
 };

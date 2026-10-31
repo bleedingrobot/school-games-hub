@@ -489,7 +489,7 @@ James: kids should not count squares; they should type the coordinates of where 
 
 ## 19. Stage T.3 results (22 Oct 2026): saving and fairness
 
-Built on branch `trader`. **Nothing is applied, deployed, merged or switched on.** The code switch (`src/games/trader/switch.ts`) is `false`, so the hub shows no Star Trader card; the card line in `registry.ts` is in, behind that switch. Migration number used: **`20261022001000`** (re-check with `node scripts/migration-numbers.mjs` at go-live).
+Built on branch `trader`. **Nothing is applied, deployed, merged or switched on.** The code switch (`src/games/trader/switch.ts`) is `false`, so the hub shows no Star Trader card; the card line in `registry.ts` is in, behind that switch. Migration number used: **`20261031000100`** (re-check with `node scripts/migration-numbers.mjs` at go-live).
 
 ### How it works (the server is the boss)
 - **The server keeps each pupil's game** (`trader_games`: ship, cargo, money, fuel, loan, jumps left, and any one thing in progress: space junk, a trader's offer, or a pirate fight) with a **version number**. Every request carries the version it was made from and a request id: sent twice it counts once (the first reply is sent again); made from an old version (another tab or device) it is refused with a hint to reload. A pirate fight in progress is kept on the server, so a reload or a new device picks it up.
@@ -503,7 +503,7 @@ Built on branch `trader`. **Nothing is applied, deployed, merged or switched on.
 | Where | What |
 |---|---|
 | `shared/trader/server.ts`, `plan.ts`, `questions.ts` | The server's rules (also run by the screens), the trade plan (moved here from the screens), the day's questions |
-| `supabase/migrations/20261022001000_trader.sql` | Teacher switches on `app_settings` (`trader_enabled` OFF, `trader_jumps`, `trader_loans`, `trader_maths`) with `teacher_set_trader()`, `teacher_reset_trader()`; tables `trader_schools`, `trader_games`, `trader_days`, `trader_requests`, `trader_moons` (all closed to pupils: row security on, no policy, no grant); the server's functions (`trader_save` with the version check and the answers saved in the same step); the `hub_games` hooks (switch, New Season, last played). No shared function re-created. No points or achievements yet (T.5) |
+| `supabase/migrations/20261031000100_trader.sql` | Teacher switches on `app_settings` (`trader_enabled` OFF, `trader_jumps`, `trader_loans`, `trader_maths`) with `teacher_set_trader()`, `teacher_reset_trader()`; tables `trader_schools`, `trader_games`, `trader_days`, `trader_requests`, `trader_moons` (all closed to pupils: row security on, no policy, no grant); the server's functions (`trader_save` with the version check and the answers saved in the same step); the `hub_games` hooks (switch, New Season, last played). No shared function re-created. No points or achievements yet (T.5) |
 | `supabase/functions/trader/` | `handler.ts` (load, act, fight, junk, deal), `entry.ts`, `index.ts` (generated), `handler.test.ts` |
 | `src/data/trader.ts` | The transport, `traderApi` (one retry with the same request id), settings reads and saves |
 | `src/games/trader/trialBackend.ts` | The preview's pretend database: runs the REAL server function logic in the browser, so the preview behaves exactly like the real game |
@@ -519,11 +519,11 @@ Built on branch `trader`. **Nothing is applied, deployed, merged or switched on.
 - Not tried with the real school server, a real sign-in, or two devices at once (the version check is tested, not tried live).
 - The Flea-with-no-laser fight, balance on real pupils, and how the 30-second queue feels on a flaky connection need a human.
 - Points, achievements, the board, the Moon Owners screen, contracts, beacons, the station: T.4 and T.5. How to play, sound, the accessibility test: T.6.
-- **Go-live list (T.7, each step only on James's word):** apply migration `20261022001000` (check the number first); deploy `trader` (`--no-verify-jwt --use-api`; unsigned curl must answer a 401 message); check from outside (pupils get 42501 on every `trader_` table and function); set the code switch `ON = true`; merge; try as a teacher with the class switch off, then on.
+- **Go-live list (T.7, each step only on James's word):** apply migration `20261031000100` (check the number first); deploy `trader` (`--no-verify-jwt --use-api`; unsigned curl must answer a 401 message); check from outside (pupils get 42501 on every `trader_` table and function); set the code switch `ON = true`; merge; try as a teacher with the class switch off, then on.
 
 ## 20. Stage T.4 results (22 Oct 2026): the school's shared market and news
 
-Built on branch `trader`. **Nothing is applied, deployed, merged or switched on.** New migration: **`20261027000100_trader_market.sql`** (was `20261022001100`, renumbered 27 Oct 2026 because main's question-skips switch took that number; re-check at go-live). Comes after T.3's `20261022001000`, which is not edited.
+Built on branch `trader`. **Nothing is applied, deployed, merged or switched on.** New migration: **`20261031000200_trader_market.sql`** (was `20261022001100`, renumbered 27 Oct 2026 because main's question-skips switch took that number, then `20261027000100`; on 31 Oct 2026 both trader migrations moved after everything on `main`: T.3's to `20261031000100`, this one to `20261031000200`; re-check at go-live). Comes after T.3's `20261031000100`, which is not edited.
 
 ### How it works
 - **One market per school** (`trader_markets`: school, planet, good → how far the price is pushed, how far it moved today, the day it last changed). Selling pushes a price down and buying pushes it up. A normal day's stock of a good is a "full" push (`MARKET_FULL_STOCK_BP`, 25%), so dear goods with small stock move more per unit.
@@ -563,7 +563,7 @@ Bots now have their own tastes (so a class doesn't all pick the very same trip) 
 ### Not done / untested
 - Not tried with the real database under a real class (row locking is reasoned, not load-tested).
 - **Found while James tried the preview (22 Oct):** a pupil can't see what other planets pay, so they can't find a profitable trip (the bots could). Needs a decision before T.5; see below.
-- Go-live additions for T.7: apply `20261027000100` after `20261022001000`; deploy `trader`; check pupils get 42501 on `trader_markets`, `trader_news`, `trader_market()`.
+- Go-live additions for T.7: apply `20261031000200` after `20261031000100`; deploy `trader`; check pupils get 42501 on `trader_markets`, `trader_news`, `trader_market()`.
 
 ### Change after James tried T.4 (22 Oct 2026): what other planets pay
 James couldn't find a profit: nothing showed what other planets pay (the simulator's bots could see every price). **He chose two fixes**, both built:

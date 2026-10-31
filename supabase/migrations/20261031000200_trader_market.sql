@@ -1,6 +1,6 @@
 -- Star Trader, stage T.4: the school's shared market and news (docs/TRADER-PLAN.md, sections 8 and 20).
 --
--- Builds on 20261022001000_trader.sql (stage T.3). Nothing here re-creates a shared function. Like every trader_ table,
+-- Builds on 20261031000100_trader.sql (stage T.3). Nothing here re-creates a shared function. Like every trader_ table,
 -- the new ones are closed to pupils (row security on, no policy, no grant); only the `trader` server function reads or
 -- changes them.
 --
