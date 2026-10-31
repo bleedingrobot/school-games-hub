@@ -3,7 +3,7 @@
 How Star Trader swaps its drawn-in-code art for paintings in the **Cinematic** style, made in ComfyUI on James's gaming PC. It follows the way Dragon Maths and Clan Quest were done (`docs/CLANS-ART-PLAN.md`), so most of the tools already exist.
 
 Written 27 October 2026 for James.
-**Status: G.0 and G.1 done (1 Nov 2026). Nothing on screen uses paintings yet.** Branch `trader-art`, from `main` after Star Trader went live (the old `trader` branch is merged and gone).
+**Status: G.0 to G.2 done (1 Nov 2026); G.2 (spinning painted planets) waits for James to look.** Branch `trader-art`, from `main` after Star Trader went live (the old `trader` branch is merged and gone).
 
 ## The short version
 
@@ -82,7 +82,16 @@ Each stage ends with tests passing, screenshots for James (laptop and phone widt
 
 **G.1 (1 Nov 2026):** `src/games/trader/art/paint.ts` finds a painting by the game's own name: `planetMap('Io')` (and `planetMap(MOON)`), `shipArt('Beetle')`, `pirateArt(tier)` (0 scrappy, 1 raider, 2 captain, the order of `PIRATE_TIERS`), each with its small or card copy, and nothing when it's missing. `paint.test.ts` (6 tests): every planet, your moon, ship and pirate has its painting and copy; every file is a name the game uses and under its size (planets 120 KB, ships 60 KB); a missing name gives nothing. `art/paint/CREDITS.md` added. Nothing imports `paint.ts` yet, so nothing is downloaded. Typecheck, build and `test:all` (331 files, 5,781 tests) pass.
 
-**Next: G.2**, the spinning planets.
+**G.2 (1 Nov 2026): spinning planets, waiting for James to look.**
+- `art/globe.ts`: the lookup table (which map pixel each pixel of the ball shows; side-on view, north at the top, a quarter turn either side at the edges) and `spinGlobe`, which only shifts the longitude and copies pixels. `globe.test.ts` (5 tests): covers the circle and nothing else, middle and edges in the right place, squashed at the edge, turns left to right and once round comes back, never reads outside the map.
+- `art/planets.ts`: once a planet's painting has downloaded (`loadPainting` in `paint.ts`), `drawPlanet` wraps it round the ball instead of sliding the drawn texture; the light, shade, rim glow, city lights and rings still go on top, but the drawn clouds and ice caps don't (the paintings have their own). Each ball is redrawn at most 30 times a second and reused in between; balls up to 128 px use the small map; nothing bigger than 512 px is worked out. **Simple graphics** slides the painted map the old way; **reduced motion** shows the ball still. Until a painting arrives, or if it can't be read, the drawn planet shows as before. Only the last 6 paintings keep their pixels (a full map is 2 MB of them).
+- Star chart (`StarMap.tsx`): its icons are drawn once, so it downloads the small maps and draws the icons again when they arrive.
+- **Speed** (Node, the same engine as Chrome, on a Mac): a scene planet on a sharp screen (375 px, 111,000 pixels) is 0.18 ms a turn, plus 4 ms once for its table; 250 px is 0.08 ms. Allowing 8× for a slow Chromebook, that is under 2 ms, at most 30 times a second. Not yet measured on a real Chromebook.
+- **Looked at:** Earth, Jupiter, Saturn, Mars, Io and Your moon rendered through `globe.ts` at three turns: features curve and squash at the edge, Jupiter's spot turns away, and the map's join (in the middle at half a turn) doesn't show.
+- **Preview:** `preview/trader/planets.html` (in `npm run trader:preview`): all 25 planets turning, switches for paintings on/off, simple graphics, reduced motion, ×10 spin, sizes (grid, scene, star chart), and a speed test. Published privately: https://claude.ai/artifact/PBdyxfVvP9RVqU9d4R5TZN
+- **Merging this puts painted planets in the live game** (planet scene and star chart). Draft until James has looked.
+
+**Next: G.3**, painted ships in the planet scene, warp and fights.
 
 ## 5. Notes
 
