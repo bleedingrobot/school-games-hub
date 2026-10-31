@@ -3,7 +3,7 @@
 How Star Trader swaps its drawn-in-code art for paintings in the **Cinematic** style, made in ComfyUI on James's gaming PC. It follows the way Dragon Maths and Clan Quest were done (`docs/CLANS-ART-PLAN.md`), so most of the tools already exist.
 
 Written 27 October 2026 for James.
-**Status: G.0 under way (first batch of ships and planet maps being made). Nothing in the game uses paintings yet.** Branch `trader`.
+**Status: G.0 and G.1 done (1 Nov 2026). Nothing on screen uses paintings yet.** Branch `trader-art`, from `main` after Star Trader went live (the old `trader` branch is merged and gone).
 
 ## The short version
 
@@ -58,7 +58,7 @@ Today a planet's surface is a strip that slides sideways inside a circle. That r
 
 ## 4. Stages
 
-Each stage ends with tests passing, screenshots for James (laptop and phone width), and a commit on `trader`. Nothing goes live until the game itself goes live (TRADER-PLAN T.7).
+Each stage ends with tests passing, screenshots for James (laptop and phone width), and a commit on `trader-art`. Star Trader is live now (TRADER-PLAN, "Went live"), so each screen's paintings go live when they merge: merge `origin/main` into `trader-art` at the start of each stage, and keep the drawn fallback working.
 
 **G.0 First batch (Claude).** One try of the 9 ships and the 25 planet maps. Child-safety check, remake the bad ones, then a review page for James.
 
@@ -75,6 +75,14 @@ Each stage ends with tests passing, screenshots for James (laptop and phone widt
 - Slow-Chromebook check: the first screen under 2 MB, no stutter in fights.
 - Phone width (844 × 390) and keyboard only.
 - The preview republished for James.
+
+## 4a. Results
+
+**G.0 (27 Oct 2026, on the homeserver):** one try of the 9 ships and the 25 planet maps, checked, bad ones remade (`docs/trader-art/picks.json` says which try and why), shown to James on the "Star Trader Paintings" page (https://claude.ai/artifact/8h2LBjDZ7chMHRgCxtkMQW). Tidied into `src/games/trader/art/paint/` (68 files, 1.3 MB) but never committed; brought over to `trader-art` on 1 Nov.
+
+**G.1 (1 Nov 2026):** `src/games/trader/art/paint.ts` finds a painting by the game's own name: `planetMap('Io')` (and `planetMap(MOON)`), `shipArt('Beetle')`, `pirateArt(tier)` (0 scrappy, 1 raider, 2 captain, the order of `PIRATE_TIERS`), each with its small or card copy, and nothing when it's missing. `paint.test.ts` (6 tests): every planet, your moon, ship and pirate has its painting and copy; every file is a name the game uses and under its size (planets 120 KB, ships 60 KB); a missing name gives nothing. `art/paint/CREDITS.md` added. Nothing imports `paint.ts` yet, so nothing is downloaded. Typecheck, build and `test:all` (331 files, 5,781 tests) pass.
+
+**Next: G.2**, the spinning planets.
 
 ## 5. Notes
 
