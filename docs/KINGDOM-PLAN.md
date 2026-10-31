@@ -135,7 +135,7 @@ On/off switch per class (`TeacherKingdom.tsx`, copied from the Archery panel). T
 ### K.1 results (rules engine), 26–27 Oct 2026
 
 - `shared/kingdom/`: `config.ts` (every number), `engine.ts` (start, council, prices, plan sums, checks, turning a year, rating, points), `reign.ts` (looks, seeds, councils), `server.ts` (the four actions, shared by the function and the preview), `memoryServices.ts` (the database jobs in memory, for the preview and tests).
-- **Test budget** (`docs/TESTING.md` on branch `test-trim`, PR #30, not yet merged: a new game gets at most 8 tests): 3 rule tests, 3 server tests; 2 left for the screens.
+- **Test budget** (`docs/TESTING.md`: a new game gets at most 8 tests): 3 rule tests, 3 server tests; 2 left for the screens.
 - **Simulator** `scripts/kingdom-sim.mjs` (2,000 reigns per line; three pretend rulers × council right 0/50/80/100%). Two findings changed the rules:
   1. **Hamurabi's rating (acres a person) made right answers count against you**: the careful ruler was Legendary 29% of the time with no right answers and 10% with all right, because the healer's and builder's boons grow the city. Now rated by people at the end: Legendary rises from 7% (no right answers) to 42% (all right). Maths clearly helps.
   2. **Early endings**: a ruler who feeds everyone and plants every last bushel (nothing kept in store) ended early in about 70% of reigns. Rats eating less barely helped; a **first warning** before the reign ends helped a little (to 47–68%), and the careful ruler never ends early. The rest is Hamurabi's real lesson (keep a reserve), so the steward says so on the planting step. **For James:** if pupils find it too hard, the next lever is a smaller hungry limit penalty or a starting reserve.
