@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import {
@@ -36,6 +36,7 @@ import {
 } from '../data/classes';
 import { FriendlyError } from '../data/profile';
 import { prettyCode } from '../../shared/multiplayer';
+import { useTeacherClass } from '../teacher/TeacherClass';
 import './classes.css';
 
 function errorText(error: unknown) {
@@ -83,8 +84,11 @@ const MODES: { value: WarpMode; label: string; detail: string }[] = [
   { value: 'off', label: 'Off', detail: 'The code does nothing.' },
 ];
 
-/** Teachers and school admins: make classes, hand out the Class Warp code, and look after who is in them. */
-export function MyClasses() {
+/**
+ * Teachers and school admins: make classes, hand out the Class Warp code, and look after who is in them. Since the teacher shell
+ * (stage 1), a teacher with a class uses Class set-up instead; this whole list is what a teacher with no class yet sees.
+ */
+export function MyClasses({ onChanged }: { onChanged?: () => void } = {}) {
   const { profile } = useAuth();
   if (profile?.role !== 'teacher') {
     return (
@@ -97,10 +101,10 @@ export function MyClasses() {
       </section>
     );
   }
-  return <MyClassesView me={profile.id} />;
+  return <MyClassesView me={profile.id} onChanged={onChanged} />;
 }
 
-function MyClassesView({ me }: { me: string }) {
+function MyClassesView({ me, onChanged }: { me: string; onChanged?: () => void }) {
   const [classes, setClasses] = useState<ClassSummary[] | null>(null);
   const [school, setSchool] = useState<SchoolInfo | null>(null);
   const [showArchived, setShowArchived] = useState(false);
@@ -144,6 +148,7 @@ function MyClassesView({ me }: { me: string }) {
         onMade={(id) => {
           setOpen(id);
           void load();
+          onChanged?.();
         }}
       />
 
@@ -206,6 +211,99 @@ function MyClassesView({ me }: { me: string }) {
         )}
       </section>
     </div>
+  );
+}
+
+/**
+ * Class set-up (/teacher/:classId/setup): the My classes panel for the header's class, then making another class, and for a
+ * school admin the archived classes (to bring one back). Nothing school-wide lives here.
+ */
+export function ClassSetup() {
+  const { profile } = useAuth();
+  const { current, classes, reload } = useTeacherClass();
+  const navigate = useNavigate();
+  const isAdmin = profile?.school_admin === true;
+  if (!profile || !current) return null;
+  return (
+    <div className="classes">
+      <section className="panel" aria-labelledby="setup-title">
+        <h2 id="setup-title" className="panel__title">
+          Class set-up
+        </h2>
+        <ClassPanel
+          key={current.id}
+          summary={current}
+          me={profile.id}
+          isAdmin={isAdmin}
+          others={classes.filter((o) => o.id !== current.id && o.teaching && !o.archived)}
+          onChanged={() => void reload()}
+        />
+      </section>
+      <MakeClass
+        onMade={(id) => {
+          void reload().then(() => navigate(`/teacher/${id}/setup`));
+        }}
+      />
+      {isAdmin && <ArchivedClasses me={profile.id} onChanged={() => void reload()} />}
+    </div>
+  );
+}
+
+/** A school admin's archived classes, folded away. Opening one shows its panel, with Bring back. */
+function ArchivedClasses({ me, onChanged }: { me: string; onChanged: () => void }) {
+  const [shown, setShown] = useState(false);
+  const [list, setList] = useState<ClassSummary[] | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      setList((await fetchClasses(true)).filter((c) => c.archived));
+    } catch {
+      setList([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (shown) void load();
+  }, [shown, load]);
+
+  return (
+    <details className="panel" onToggle={(e) => setShown(e.currentTarget.open)}>
+      <summary className="panel__title">Archived classes</summary>
+      {!list ? (
+        <p className="panel__empty">Loading…</p>
+      ) : list.length === 0 ? (
+        <p className="panel__empty">No archived classes.</p>
+      ) : (
+        <ul className="people-list classes__list">
+          {list.map((c) => (
+            <li key={c.id} className="is-hidden">
+              <button type="button" className="people-list__row" aria-expanded={open === c.id} onClick={() => setOpen(open === c.id ? null : c.id)}>
+                <span className="people-list__name">
+                  {c.name}
+                  <span className="people-list__real">{c.school_year}</span>
+                </span>
+                <span className="people-list__games">
+                  {c.members} student{c.members === 1 ? '' : 's'}
+                </span>
+              </button>
+              {open === c.id && (
+                <ClassPanel
+                  summary={c}
+                  me={me}
+                  isAdmin
+                  others={[]}
+                  onChanged={() => {
+                    void load();
+                    onChanged();
+                  }}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </details>
   );
 }
 
@@ -413,8 +511,8 @@ function ClassPanel({
           <p className="class-panel__hint">
             Your students see this name after they type the class code, so make it one they will recognise. The year level is just a label for you:
             students never see it, and it doesn&rsquo;t change the maths.{' '}
-            <Link to={`/focus?class=${id}`}>🎯 Choose the maths for this class</Link> ·{' '}
-            <Link to={`/skills?class=${id}`}>🗺️ See the skill map</Link>
+            <Link to={`/teacher/${id}/maths`}>🎯 Choose the maths for this class</Link> ·{' '}
+            <Link to={`/teacher/${id}/maths/skills`}>🗺️ See the skill map</Link>
           </p>
         </section>
       )}

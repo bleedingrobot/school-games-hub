@@ -9,11 +9,12 @@ import { makePack, type TopicId } from '../../../shared/maths/skillPacks';
 import { WORLD_MAPS } from '../../../shared/monsters/maps';
 import type { BattleReport } from '../../../shared/monsters/save/check';
 import type { TypeId } from '../../../shared/monsters/types';
+import { countsTowardCap, nzDay } from '../../../shared/monsters/world/battleCap';
 import type { WorldState } from '../../../shared/monsters/world/types';
 import { newWorld } from '../../../shared/monsters/world/world';
 import { useAuth } from '../../auth/AuthContext';
 import {
-  enqueueSave, flushQueue, loadMonsters, readTail, savingStopped, writeTail, type FlushResult, type MonstersData, type Tail,
+  enqueueSave, flushQueue, loadMonsters, readTail, savingStopped, writeBattleCount, writeTail, type FlushResult, type MonstersData, type Tail,
 } from '../../data/monsters';
 import { StartScreen } from './StartScreen';
 import { loadWorldSettings, saveWorldSettings, type WorldSettings } from './world/settings';
@@ -28,6 +29,8 @@ export const WORDS = {
   later: 'Saving later: your game is safe on this Chromebook and goes up when the internet is back.',
   stopped: 'Your game couldn’t be saved this time. You can keep playing, and next time you open Maths Monsters you’ll carry on from your last save.',
   closed: 'Maths Monsters isn’t open yet. Check back soon!',
+  resting: (perDay: number) =>
+    `Your monsters have had ${perDay} battles today, so they’re resting until tomorrow. You can still explore, catch up with the Monster book and battle in the Towers.`,
   cantLoad: 'We couldn’t open your game. Check the internet and try again.',
 };
 
@@ -41,6 +44,8 @@ export function MonstersPlay() {
   const [status, setStatus] = useState<Status>('saved');
   const [initial, setInitial] = useState<WorldState | null>(null);
   const [settings, setSettings] = useState<WorldSettings>(loadWorldSettings);
+  /** Today's battles (battleCap.ts): the New Zealand day and how many counted. */
+  const [battles, setBattles] = useState({ day: '', today: 0 });
 
   const tail = useRef<Tail | null>(null);
   const latest = useRef<WorldState | null>(null);
@@ -64,6 +69,7 @@ export function MonstersPlay() {
       dirty.current = (loaded.tail?.battles.length ?? 0) > 0;
       setInitial(loaded.tail?.world ?? null);
       setStatus(loaded.offline ? 'later' : 'saved');
+      setBattles({ day: loaded.battles.day, today: loaded.battles.today });
       setData(loaded);
       // Anything fought on this device since its last save goes up now.
       if (!loaded.offline && dirty.current) saveNow();
@@ -140,12 +146,20 @@ export function MonstersPlay() {
       dirty.current = true;
       // A Tower battle is saved as soon as the world has carried on (the next state).
       if (trainer?.badge) afterBattle.current = true;
+      if (countsTowardCap(battle)) {
+        const day = nzDay(Date.now());
+        setBattles((b) => {
+          const next = { day, today: (b.day === day ? b.today : 0) + 1 };
+          writeBattleCount(player, day, next.today);
+          return next;
+        });
+      }
     },
     [player],
   );
 
-  function begin(picks: [TypeId, TypeId], team: ReturnType<typeof import('../../../shared/monsters/world/start').startTeam>) {
-    const world = newWorld({ maps: WORLD_MAPS }, team, Math.floor(Math.random() * 2 ** 31));
+  function begin(picks: [TypeId, TypeId], team: ReturnType<typeof import('../../../shared/monsters/world/start').startTeam>, look?: string) {
+    const world = { ...newWorld({ maps: WORLD_MAPS }, team, Math.floor(Math.random() * 2 ** 31)), ...(look ? { look } : {}) };
     tail.current = { base: 0, world, battles: [], start: picks };
     latest.current = world;
     heal.current = healKey(world);
@@ -179,6 +193,8 @@ export function MonstersPlay() {
     );
   }
   if (!data.settings.enabled && !data.offline) return <p className="panel__empty">{WORDS.closed}</p>;
+  // A new day (the game left open past midnight) starts again from nothing.
+  const resting = battles.day === nzDay(Date.now()) && battles.today >= data.battles.perDay;
   if (!initial) {
     if (data.offline) {
       return (
@@ -203,6 +219,7 @@ export function MonstersPlay() {
         }}
         onState={onState}
         onBattle={onBattle}
+        resting={resting}
         // The nurse healed the team: that is a place to save (after this step has finished updating).
         onMoment={() => window.setTimeout(() => saveNow(), 0)}
         onBattling={(on) => {
@@ -211,6 +228,11 @@ export function MonstersPlay() {
         enabledTopics={data.settings.topics}
         packFor={packFor}
       />
+      {resting && (
+        <p className="mp-play__note" role="status">
+          {WORDS.resting(data.battles.perDay)}
+        </p>
+      )}
       <p className="mp-play__note" role="status">
         {status === 'saved' ? WORDS.saved : status === 'later' ? WORDS.later : WORDS.stopped}
       </p>

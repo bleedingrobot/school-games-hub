@@ -21,17 +21,20 @@
  *  6. One atomic save (`Services.commit`): the hero, the fight and a note of what happened, or nothing.
  */
 import type { FactAnswer } from '../maths/leitner';
-import { CLASSES, FOREST_FIGHTS_PER_DAY, MAX_LEVEL, SEASON_DAYS, WEAPONS, ARMOURS, baseStats, expNeeded, masterFor } from './data';
+import { packIdOfKey } from '../maths/ladder';
+import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext } from '../maths/serverQuestions';
+import type { Question } from '../maths/skillPack';
+import { CLASSES, FOREST_FIGHTS_PER_DAY, isLook, MAX_LEVEL, SEASON_DAYS, WEAPONS, ARMOURS, baseStats, expNeeded, masterFor } from './data';
 import { computerHeroes } from './computer';
-import { EVENT_BY_ID } from './events';
+import { EVENT_BY_ID, eventsOn } from './events';
 import {
   applyEvent, applyForestResult, applyMasterResult, arenaExp, buyGear, canChallengeMaster, canFaceDragon, deposit, dragonBreather, duelistOf,
   FOREST_PILE_UP_DAYS, finishDragon, forestTrip, heal, loseToDragon, makeRandom, newHero, nzDate, playDuel, replayFight, rollDay, seasonOf, startDragonStage,
   startFight, startMasterFight, useForestTurn, withdraw, type Duelist,
 } from './engine';
 import {
-  NUMBER_GUESS_TRIES, addMasterTrialBonus, dragonStageOptions, interestFor, numberGuessPrize, offersSizeItUp, priceDiscount, riddleGold,
-  sizeItUpBonus, type MomentId, type Result,
+  ALL_TOPICS, INTEREST_EVERY, NUMBER_GUESS_TRIES, addMasterTrialBonus, dragonStageOptions, interestDue, interestFor, numberGuessPrize, offersSizeItUp, priceDiscount, riddleGold,
+  sizeItUpBonus, sizeItUpGold, topicsOn, type MomentId, type Result,
 } from './maths';
 import { arenaWonLine, dailyNews, dragonWonLine, flattenedLine, masterWonLine, type NewsLine } from './news';
 import { markProof, type Proof } from './proof';
@@ -60,6 +63,8 @@ export interface Extra {
   /** The day the riddle / the interest question was last answered. */
   riddleDay: string;
   interestDay: string;
+  /** The banker's question of the day, made from the pupil's maths ladder or focus. Kept here so it never leaves the server with its answer. */
+  interestAsk: { day: string; question: Question } | null;
   /** Today's number guess: the secret never leaves the server. */
   guess: { day: string; secret: number; tries: { n: number; hint: 'low' | 'high' | 'win' }[]; done: boolean } | null;
   /** An event the forest handed out and the pupil has not dealt with yet. */
@@ -74,7 +79,7 @@ export interface Extra {
 }
 
 export const newExtra = (stats: Stats = newStats()): Extra => ({
-  riddleDay: '', interestDay: '', guess: null, pendingEvent: null, dragon: null, dragonDay: '', classOpen: false, stats,
+  riddleDay: '', interestDay: '', interestAsk: null, guess: null, pendingEvent: null, dragon: null, dragonDay: '', classOpen: false, stats,
 });
 
 /** An `extra` as saved, filled in where an older save had no such part. */
@@ -111,6 +116,8 @@ export interface Settings {
   forestPerDay: number;
   /** The first day of season 1 (YYYY-MM-DD). Null: the season starts today. */
   seasonStart: string | null;
+  /** The maths topics the teacher has left on (a missing or empty list means all of them). */
+  topics?: string[];
 }
 
 export interface Commit {
@@ -171,6 +178,8 @@ export interface Services {
   /** Adds answers to the student's maths records. `batchKey` makes a retry count once. */
   recordAnswers(player: string, pack: string, batchKey: string, answers: FactAnswer[]): Promise<Outcome<number>>;
   recordRefusal(player: string, reason: string, action: string): Promise<Outcome<null>>;
+  /** The pupil's maths records, the class's question settings and their focus (`space_maths_context`), for the banker's ladder question. */
+  mathsContext(player: string): Promise<Outcome<MathsContext>>;
   /** Classmates' heroes of this season near this level, for the arena (the pupil's own hero is left out). */
   arenaCandidates(player: string, season: number, level: number): Promise<Outcome<ArenaCandidate[]>>;
   /** The day's own news lines (the village event, the computer heroes). Each line is kept once. */
@@ -187,6 +196,8 @@ export interface LordState {
   today: string;
   season: { number: number; dayOfSeason: number; daysLeft: number };
   forestPerDay: number;
+  /** The maths topics the teacher has left on. */
+  topics: string[];
   classOpen: boolean;
   openFight: { id: string; kind: OpenFight['kind']; seed: number; start: FightState; sizeUp: boolean; stage?: 1 | 2 | 3; trial?: Result[] } | null;
   pendingEvent: string | null;
@@ -226,7 +237,8 @@ export type ToolId = 'jump' | 'gold' | 'exp' | 'refill' | 'hurt' | 'best-gear' |
 export type LordAction =
   | { action: 'load' }
   | { action: 'rollover' }
-  | { action: 'start-hero'; heroClass: HeroClass }
+  | { action: 'start-hero'; heroClass: HeroClass; look?: string }
+  | { action: 'look'; look: string }
   | { action: 'forest' }
   | { action: 'event'; proof?: Proof | null; walkOn?: boolean }
   | { action: 'fight-finish'; fightId: string; actions: FightAction[]; sizeUp?: Proof | null }
@@ -236,7 +248,11 @@ export type LordAction =
   | { action: 'dragon-finish'; fightId: string; actions: FightAction[] }
   | { action: 'shop-buy'; slot: 'weapon' | 'armour'; index: number; proof?: Proof | null }
   | { action: 'heal'; hp: number; proof?: Proof | null }
-  | { action: 'bank'; op: 'deposit' | 'withdraw' | 'interest'; amount?: number; proof?: Proof | null }
+  /**
+   * Interest: 'interest-ask' hands out the banker's question of the day (one from the pupil's maths ladder or focus, made and
+   * kept by the server); 'interest' answers it (`answer`, and `ms` the time taken).
+   */
+  | { action: 'bank'; op: 'deposit' | 'withdraw' | 'interest-ask' | 'interest'; amount?: number; answer?: number | null; ms?: number }
   | { action: 'inn'; game: 'riddle'; proof?: Proof | null }
   | { action: 'inn'; game: 'guess-start' }
   | { action: 'inn'; game: 'guess'; n: number }
@@ -253,7 +269,7 @@ export const MAX_FIGHT_ACTIONS = 300;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const SKILLS: SkillId[] = ['power-strike', 'zap', 'mend', 'dodge', 'pinch'];
 const ACTIONS = [
-  'load', 'rollover', 'start-hero', 'forest', 'event', 'fight-finish', 'master-start', 'master-finish', 'dragon-stage', 'dragon-finish',
+  'load', 'rollover', 'start-hero', 'look', 'forest', 'event', 'fight-finish', 'master-start', 'master-finish', 'dragon-stage', 'dragon-finish',
   'shop-buy', 'heal', 'bank', 'inn', 'arena', 'tools',
 ];
 
@@ -318,9 +334,9 @@ interface Ctx {
 /** Marks a proof and gathers what is needed to record it. A proof that cannot be checked is just wrong. */
 function mark(c: Ctx, raw: unknown, moment: MomentId, only?: string) {
   if (raw === undefined || raw === null) return { result: 'wrong' as Result, skipped: true, answers: [] as (FactAnswer & { pack: string })[], notes: [] as string[] };
-  const m = markProof(raw, moment, c.w.hero.level, c.now, only);
+  const m = markProof(raw, moment, c.w.hero.level, c.now, only, topicsOn(c.settings.topics));
   if (!m.ok) return { result: 'wrong' as Result, skipped: false, answers: [], notes: [m.problem] };
-  return { result: (m.correct ? 'right' : 'wrong') as Result, skipped: false, answers: [m.answer], notes: [] as string[] };
+  return { result: (m.correct ? (m.hinted ? 'hint' : 'right') : 'wrong') as Result, skipped: false, answers: [m.answer], notes: [] as string[] };
 }
 
 // ---------- The actions ----------
@@ -335,7 +351,15 @@ function startHero(c: Ctx, existing: boolean): Done | Refuse {
   }
   const next = newHero(cls as HeroClass, c.today, existing ? { dragonKills: hero.dragonKills } : undefined);
   next.forestLeft = c.settings.forestPerDay;
-  return { hero: next, extra: newExtra(extra.stats), summary: { heroClass: cls }, result: {} };
+  if (isLook(next.heroClass, c.req.look)) next.look = c.req.look;
+  return { hero: next, extra: newExtra(extra.stats), summary: { heroClass: cls, look: next.look }, result: {} };
+}
+
+/** Picks which painted hero you look like: any of your class's, as often as you like. It changes nothing else. */
+function setLook(c: Ctx): Done | Refuse {
+  const { hero } = c.w;
+  if (!isLook(hero.heroClass, c.req.look)) return { refuse: 'bad-request' };
+  return { hero: { ...hero, look: c.req.look }, summary: { look: c.req.look }, result: {} };
 }
 
 function forest(c: Ctx): Done | Refuse {
@@ -343,7 +367,7 @@ function forest(c: Ctx): Done | Refuse {
   if (extra.pendingEvent) return { summary: { kind: 'event', again: true }, result: { kind: 'event', eventId: extra.pendingEvent } };
   if (hero.forestLeft <= 0) return { refuse: 'no-turns', message: 'You have used all your forest fights today. Come back tomorrow, or visit the village.' };
   if (hero.hp <= 0) return rule('You are too hurt to go into the forest. See the healer.');
-  const trip = forestTrip(hero, c.s.seed());
+  const trip = forestTrip(hero, c.s.seed(), eventsOn(topicsOn(c.settings.topics)));
   if (trip.kind === 'event') {
     return { extra: { ...extra, pendingEvent: trip.event.id }, summary: { kind: 'event', id: trip.event.id }, result: { kind: 'event', eventId: trip.event.id } };
   }
@@ -361,9 +385,10 @@ function event(c: Ctx): Done | Refuse {
   let right = false;
   let answers: Done['answers'] = [];
   let notes: string[] = [];
-  if (e.maths && !c.req.walkOn) {
+  // An event about a topic the teacher has since switched off is just walked past: no question, no maths reward.
+  if (e.maths && !c.req.walkOn && topicsOn(c.settings.topics).includes(e.maths.topic)) {
     const m = mark(c, c.req.proof, 'treasure', e.maths.topic);
-    right = m.result === 'right';
+    right = m.result !== 'wrong';
     answers = m.answers;
     notes = m.notes;
   }
@@ -410,9 +435,12 @@ function fightFinish(c: Ctx): Done | Refuse {
   if (isRefuse(played)) return played;
   const { fight, actions, open: was } = played;
   const crossed = was.info.day !== c.today;
-  const hero = keepToday(applyForestResult(c.w.hero, fight), c.w.hero, crossed);
-  const rewards = fight.outcome === 'won' ? { gold: fight.monster.gold + fight.goldPinched, exp: fight.monster.exp } : { gold: 0, exp: 0 };
   const won = fight.outcome === 'won';
+  // A right Size it up pays extra gold for a win, on top of what the fight itself gives.
+  const extraGold = won ? sizeItUpGold(fight.monster.gold, sizeUp) - fight.monster.gold : 0;
+  const applied = applyForestResult(c.w.hero, fight);
+  const hero = keepToday(extraGold ? { ...applied, gold: applied.gold + extraGold } : applied, c.w.hero, crossed);
+  const rewards = won ? { gold: fight.monster.gold + extraGold + fight.goldPinched, exp: fight.monster.exp } : { gold: 0, exp: 0 };
   return {
     hero, answers, notes,
     gain: won ? { forestWins: 1 } : undefined,
@@ -543,7 +571,7 @@ function healAction(c: Ctx): Done | Refuse {
   };
 }
 
-function bank(c: Ctx): Done | Refuse {
+async function bank(c: Ctx): Promise<Done | Refuse> {
   const { hero, extra } = c.w;
   const op = c.req.op;
   if (op === 'deposit' || op === 'withdraw') {
@@ -553,16 +581,37 @@ function bank(c: Ctx): Done | Refuse {
     if (next.gold === hero.gold) return rule(op === 'deposit' ? 'You have no gold to put in the bank.' : 'You have nothing in the bank to take out.');
     return { hero: next, summary: { op, moved: Math.abs(next.gold - hero.gold) }, result: { moved: Math.abs(next.gold - hero.gold) } };
   }
-  if (op !== 'interest') return { refuse: 'bad-request' };
+  if (op !== 'interest' && op !== 'interest-ask') return { refuse: 'bad-request' };
   if (hero.level < 4) return rule('The banker only talks interest with heroes of level 4 and up.');
-  if (hero.bank <= 0) return rule('Save some gold in the bank first.');
+  if (hero.bank < INTEREST_EVERY) return rule(`Save at least ${INTEREST_EVERY} gold in the bank first.`);
   if (extra.interestDay === c.today) return rule('You have already asked about interest today.');
-  if (c.req.proof === undefined || c.req.proof === null) return rule('Answer the banker’s question to earn interest.');
-  const m = mark(c, c.req.proof, 'bank');
-  const extraGold = interestFor(hero.bank, m.result);
+  const asked = extra.interestAsk?.day === c.today ? extra.interestAsk.question : null;
+  if (op === 'interest-ask') {
+    // The same question all day: asking again (or reloading) never swaps it for an easier one.
+    if (asked) return { summary: { interest: 'ask-again' }, result: { question: publicQuestion(asked, 0) } };
+    const context = await c.s.mathsContext(c.player);
+    if (!context.ok) return { refuse: 'busy' };
+    const [question] = makeRunQuestions(context.value, 1, seededRandom(`lord-interest:${c.s.seed()}`));
+    if (!question || !markQuestion(question)) return rule('The banker has no question for you today. Try again tomorrow!');
+    return {
+      extra: { ...extra, interestAsk: { day: c.today, question } },
+      summary: { interest: 'ask' }, result: { question: publicQuestion(question, 0) },
+    };
+  }
+  const answer = c.req.answer;
+  if (!asked) return rule('Ask the banker for today’s question first.');
+  if (answer === undefined || answer === null) return rule('Answer the banker’s question to earn interest.');
+  if (typeof answer !== 'number' || !Number.isFinite(answer)) return { refuse: 'bad-request' };
+  const marked = markQuestion(asked);
+  if (!marked) return rule('The banker has no question for you today. Try again tomorrow!');
+  const right = sameAnswer(answer, marked.answer);
+  const extraGold = interestFor(hero.bank, right ? 'right' : 'wrong');
+  const pack = packIdOfKey(marked.key);
+  const ms = typeof c.req.ms === 'number' && Number.isFinite(c.req.ms) && c.req.ms >= 0 ? Math.round(Math.min(c.req.ms, 120_000)) : 120_000;
   return {
-    hero: { ...hero, bank: hero.bank + extraGold }, extra: { ...extra, interestDay: c.today }, answers: m.answers, notes: m.notes,
-    summary: { interest: extraGold }, result: { interest: extraGold, right: m.result === 'right' },
+    hero: { ...hero, bank: hero.bank + extraGold }, extra: { ...extra, interestDay: c.today, interestAsk: null },
+    answers: pack ? [{ key: marked.key, correct: right, ms, at: c.now, pack }] : [],
+    summary: { interest: extraGold, right }, result: { interest: extraGold, due: interestDue(hero.bank), right, answer: marked.answer },
   };
 }
 
@@ -576,7 +625,7 @@ function inn(c: Ctx): Done | Refuse {
     const gold = riddleGold(hero.level, m.result);
     return {
       hero: { ...hero, gold: hero.gold + gold }, extra: { ...extra, riddleDay: c.today }, answers: m.answers, notes: m.notes,
-      summary: { riddle: m.result, gold }, result: { gold, right: m.result === 'right' },
+      summary: { riddle: m.result, gold }, result: { gold, right: m.result !== 'wrong' },
     };
   }
   if (game === 'guess-start') {
@@ -610,6 +659,7 @@ interface Opponent {
   id: string;
   name: string;
   duelist: Duelist;
+  look?: string;
 }
 
 const sane = (h: unknown): h is Hero => {
@@ -631,11 +681,11 @@ async function arena(c: Ctx): Promise<Done | Refuse> {
   if (classmates.ok) {
     for (const k of classmates.value) {
       if (k && typeof k.player === 'string' && k.player !== c.player && typeof k.name === 'string' && sane(k.hero)) {
-        pool.push({ kind: 'pupil', id: k.player, name: k.name, duelist: duelistOf(k.hero, k.name) });
+        pool.push({ kind: 'pupil', id: k.player, name: k.name, duelist: duelistOf(k.hero, k.name), look: isLook(k.hero.heroClass, k.hero.look) ? k.hero.look : undefined });
       }
     }
   }
-  for (const k of computerHeroes(season.number, season.dayOfSeason)) pool.push({ kind: 'computer', id: k.id, name: k.name, duelist: k.duelist });
+  for (const k of computerHeroes(season.number, season.dayOfSeason)) pool.push({ kind: 'computer', id: k.id, name: k.name, duelist: k.duelist, look: k.hero.look });
   // Near your level: within one, or else the three closest.
   const gap = (o: Opponent) => Math.abs(o.duelist.level - hero.level);
   const near = pool.filter((o) => gap(o) <= 1);
@@ -661,8 +711,8 @@ async function arena(c: Ctx): Promise<Done | Refuse> {
     summary: { arena: won ? 'won' : 'lost', against: slug, rounds: duel.rounds, exp },
     result: {
       ...result,
-      you: { name: you.name, heroClass: you.heroClass, level: you.level, maxHp: you.maxHp },
-      opponent: { name: opponent.name, heroClass: opponent.duelist.heroClass, level: opponent.duelist.level, maxHp: opponent.duelist.maxHp, computer: opponent.kind === 'computer' },
+      you: { name: you.name, heroClass: you.heroClass, look: hero.look, level: you.level, maxHp: you.maxHp },
+      opponent: { name: opponent.name, heroClass: opponent.duelist.heroClass, look: opponent.look, level: opponent.duelist.level, maxHp: opponent.duelist.maxHp, computer: opponent.kind === 'computer' },
     },
   };
 }
@@ -693,12 +743,12 @@ async function tools(c: Ctx): Promise<Done | Refuse> {
     case 'refill': return { hero: { ...hero, forestLeft: c.settings.forestPerDay, skillLeft: 3, masterTried: false }, extra: { ...extra, dragonDay: '' }, summary: { tool }, result: {} };
     case 'hurt': return { hero: { ...hero, hp: Math.max(1, Math.floor(hero.maxHp / 5)) }, summary: { tool }, result: {} };
     case 'best-gear': return { hero: { ...hero, weapon: WEAPONS.length - 1, armour: ARMOURS.length - 1 }, summary: { tool }, result: {} };
-    case 'new-day': return { hero: { ...hero, day: '2000-01-01' }, extra: { ...extra, riddleDay: '', interestDay: '', guess: null, dragonDay: '' }, summary: { tool }, result: {} };
+    case 'new-day': return { hero: { ...hero, day: '2000-01-01' }, extra: { ...extra, riddleDay: '', interestDay: '', interestAsk: null, guess: null, dragonDay: '' }, summary: { tool }, result: {} };
     case 'event': {
       if (typeof value !== 'string' || !EVENT_BY_ID[value]) return { refuse: 'bad-request' };
       return { extra: { ...extra, pendingEvent: value }, summary: { tool, event: value }, result: {} };
     }
-    case 'reset': return { hero: newHero(hero.heroClass, c.today), extra: { ...newExtra(extra.stats), classOpen: true }, summary: { tool }, result: {} };
+    case 'reset': return { hero: newHero(hero.heroClass, c.today, { dragonKills: 0, look: hero.look }), extra: { ...newExtra(extra.stats), classOpen: true }, summary: { tool }, result: {} };
     default: return { refuse: 'bad-request' };
   }
 }
@@ -711,6 +761,7 @@ export const viewOf = (w: Pick<Work, 'hero' | 'extra' | 'open'> | null, version:
   today,
   season: { number: season.number, dayOfSeason: season.dayOfSeason, daysLeft: season.daysLeft },
   forestPerDay: settings.forestPerDay,
+  topics: topicsOn(settings.topics),
   classOpen: w?.extra.classOpen ?? false,
   openFight: w?.open ? { id: w.open.id, kind: w.open.kind, seed: w.open.seed, start: w.open.start, sizeUp: w.open.info.sizeUp, stage: w.open.info.stage, trial: w.open.info.trial } : null,
   pendingEvent: w?.extra.pendingEvent ?? null,
@@ -722,7 +773,7 @@ export const viewOf = (w: Pick<Work, 'hero' | 'extra' | 'open'> | null, version:
   stats: w?.extra.stats ?? newStats(),
 });
 
-export const DEFAULT_SETTINGS: Settings = { enabled: false, forestPerDay: FOREST_FIGHTS_PER_DAY, seasonStart: null };
+export const DEFAULT_SETTINGS: Settings = { enabled: false, forestPerDay: FOREST_FIGHTS_PER_DAY, seasonStart: null, topics: [...ALL_TOPICS] };
 
 /** The season a day falls in. With no start date set, the first season starts today. */
 export function seasonFor(settings: Settings, today: string) {
@@ -824,7 +875,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
     let rowSeason = row.season;
     // A new season starts the hero again, once any fight in progress is finished.
     if (rowSeason < season.number && !stored) {
-      hero = newHero(hero.heroClass, today, { dragonKills: hero.dragonKills });
+      hero = newHero(hero.heroClass, today, { dragonKills: hero.dragonKills, look: hero.look });
       extra = { ...newExtra(extra.stats), classOpen: true };
       rowSeason = season.number;
       rolled = true;
@@ -896,6 +947,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
   let done: Done | Refuse;
   switch (action) {
     case 'start-hero': done = startHero(ctx, !!row); break;
+    case 'look': done = setLook(ctx); break;
     case 'forest': done = forest(ctx); break;
     case 'event': done = event(ctx); break;
     case 'fight-finish': done = fightFinish(ctx); break;
@@ -905,7 +957,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
     case 'dragon-finish': done = dragonFinish(ctx); break;
     case 'shop-buy': done = shopBuy(ctx); break;
     case 'heal': done = healAction(ctx); break;
-    case 'bank': done = bank(ctx); break;
+    case 'bank': done = await bank(ctx); break;
     case 'inn': done = inn(ctx); break;
     case 'arena': done = await arena(ctx); break;
     case 'tools': done = await tools(ctx); break;

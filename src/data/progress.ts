@@ -76,7 +76,14 @@ export async function fetchLeaderboard(game: string, board: Board): Promise<Boar
   return data as BoardRow[];
 }
 
+/** A new game's part of How points work (hub_games.rules_fn in the database): plain sentences with the numbers in them. */
+export interface HubGameRules {
+  lines: string[];
+}
+
 export interface Rules {
+  /** New games that registered points rules, by game id; only the ones switched on for the viewer's class. */
+  hubGames?: Record<string, HubGameRules>;
   bot: Record<'very-easy' | 'easy' | 'medium', { lost: number; drawn: number; won: number }>;
   friend: { lost: number; drawn: number; won: number };
   /** Wormholes & Black Holes: taking-part points, the same win or lose. */

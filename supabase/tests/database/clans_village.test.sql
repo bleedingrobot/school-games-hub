@@ -1,10 +1,13 @@
--- Clan Quest stage C.6 part A: the class village (groups, chest, weekly vote) and raids on classmates.
+-- Clan Quest stage C.6 part A: the class village (groups, chest, weekly vote). Raids on classmates are in clans_my_village.test.sql
+-- (since "My Village" they work inside a class, not a group, and move the purse instead of the vault). The old village tables, the
+-- vote, the chest and clan_village_close stay in the database unused, so they are still checked here, but the midnight job no
+-- longer closes village weeks and load_clan no longer sends a clan its village (only the group's levels, for the one-off conversion).
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
 -- Sequences aren't rolled back, so say where the group numbers start (the default village is 1, the first new one 2).
 select setval(pg_get_serial_sequence('public.clan_villages', 'id'), 1);
-select plan(130);
+select plan(90);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -68,8 +71,8 @@ select throws_ok($$ select * from public.clan_votes $$, '42501', null, 'students
 select throws_ok($$ select * from public.clan_raid_notes $$, '42501', null, 'students cannot read raid notes');
 select throws_ok($$ update public.clan_villages set chest = 99999 $$, '42501', null, 'students cannot fill the chest');
 select throws_ok($$ select public.clan_vote(pg_temp.id('a'), 'church') $$, '42501', null, 'students cannot call the vote function directly');
-select throws_ok($$ select public.save_raid(pg_temp.id('a'), 1, pg_temp.id('b'), 1, pg_temp.req(1), '{}', '{}', '{}', '', '') $$, '42501', null, 'students cannot call save_raid');
-select throws_ok($$ select public.clan_village_mates(pg_temp.id('b')) $$, '42501', null, 'students cannot list a village');
+select throws_ok($$ select public.save_raid(pg_temp.id('a'), 1, pg_temp.id('b'), 1, pg_temp.req(1), '{}', '{}', 0, '{}', '', '') $$, '42501', null, 'students cannot call save_raid');
+select throws_ok($$ select public.clan_village_mates(pg_temp.id('b')) $$, '42501', null, 'students cannot list the classmates');
 select throws_ok($$ select public.teacher_villages() $$, '42501', null, 'students cannot see the groups');
 select throws_ok($$ select public.teacher_create_village('Mine') $$, '42501', null, 'students cannot make a group');
 select throws_ok($$ select public.teacher_move_pupil(pg_temp.id('a'), 1) $$, '42501', null, 'students cannot move a pupil');
@@ -103,16 +106,14 @@ select is(pg_temp.save('a', 0, 1, pg_temp.state('a', 'Red Banner', pg_temp.empir
 select pg_temp.save('b', 0, 2, pg_temp.state('b', 'Blue Fox', pg_temp.empire(800, 10, 2)));
 select pg_temp.save('c', 0, 3, pg_temp.state('c', 'Green Owl', pg_temp.empire(300, 10)));
 select pg_temp.save('d', 0, 4, pg_temp.state('d', 'Gold Hawk', pg_temp.empire(100, 10, 0, 40)));
-select is(public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'village' ->> 'name', 'Room 12', 'a clan is told its village');
-select is(public.load_clan(pg_temp.id('c'), pg_temp.req(5)) -> 'village' ->> 'name', 'Everyone else', '... the default one if it was not moved');
-select is((public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'village' ->> 'clans')::integer, 3, 'the village counts its clans (three in Room 12)');
-select is(public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'village' ->> 'chest', '0', 'the chest starts empty');
+select is(public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'village', null::jsonb, 'a clan is no longer sent a village (chest, votes) to show');
 
--- ---- The village's levels are put on the clan ----
+-- ---- The old group's levels: sent for the one-off conversion, never laid over the clan ----
 update public.clan_villages set levels = '{"trainingHall": 2, "smithy": 0, "church": 1}' where id = 2;
-select is(public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'state' -> 'clan' -> 'village' ->> 'trainingHall', '2', 'the clan loads with its village''s Training Hall level');
-select is(public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'state' -> 'clan' -> 'village' ->> 'church', '1', '... and Church level');
-select is(public.load_clan(pg_temp.id('c'), pg_temp.req(5)) -> 'state' -> 'clan' -> 'village' ->> 'trainingHall', '0', '... and another village''s are its own');
+select is(public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'groupVillage' ->> 'trainingHall', '2', 'the clan is sent its old group''s Training Hall level, for converting an old save');
+select is(public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'groupVillage' ->> 'church', '1', '... and Church level');
+select is(public.load_clan(pg_temp.id('c'), pg_temp.req(5)) -> 'groupVillage' ->> 'trainingHall', '0', '... and another group''s are its own');
+select is(public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'state' -> 'clan' -> 'village' ->> 'trainingHall', '0', 'but the clan''s own village is what it saved, not the group''s');
 update public.clan_villages set levels = '{"trainingHall": 0, "smithy": 0, "church": 0}' where id = 2;
 select throws_ok($$ update public.clan_villages set levels = '{"trainingHall": 6, "smithy": 0, "church": 0}' where id = 2 $$, '23514', null, 'a building cannot go past its top level');
 
@@ -140,9 +141,7 @@ select is((select count(*)::integer from public.clan_votes where player = pg_tem
 select is(public.clan_vote(pg_temp.id('b'), 'smithy') ->> 'ok', 'true', 'another pupil votes the same');
 select is(public.clan_vote(pg_temp.id('f'), 'smithy') ->> 'why', 'no-clan', 'a pupil with no clan cannot vote');
 select throws_ok($$ select public.clan_vote(pg_temp.id('a'), 'castle') $$, '22023', null, 'there is no such building');
-select is(public.load_clan(pg_temp.id('b'), pg_temp.req(5)) -> 'village' -> 'votes' ->> 'smithy', '2', 'the village shows the votes so far');
-select is(public.load_clan(pg_temp.id('b'), pg_temp.req(5)) -> 'village' ->> 'myVote', 'smithy', '... and your own');
-select is(public.load_clan(pg_temp.id('c'), pg_temp.req(5)) -> 'village' -> 'votes', '{}'::jsonb, 'another village does not see them');
+select is((select count(*)::integer from public.clan_votes where player in (pg_temp.id('a'), pg_temp.id('b')) and kind = 'smithy'), 2, 'the votes are kept (nothing shows them any more)');
 update public.clan_villages set levels = '{"trainingHall": 0, "smithy": 6, "church": 0}' where id = 1;
 select is(public.clan_vote(pg_temp.id('c'), 'smithy') ->> 'why', 'built', 'a finished building cannot be voted for');
 update public.clan_villages set levels = '{"trainingHall": 0, "smithy": 0, "church": 0}' where id = 1;
@@ -180,7 +179,10 @@ insert into public.clan_votes (village_id, week, player, kind) values
 select is((public.clan_nightly(pg_temp.monday() + 6) ->> 'ran')::boolean, true, 'the job runs on the Sunday of the vote''s week');
 select is(pg_temp.chest(2), 1000, '... and builds nothing yet (the week is not over)');
 select is(public.clan_nightly(pg_temp.monday() + 6) ->> 'ran', 'false', 'the same night again does nothing');
-select is((public.clan_nightly(pg_temp.monday() + 7) ->> 'villagesClosed')::integer, 3, 'on the Monday every village closes last week''s vote');
+select is((public.clan_nightly(pg_temp.monday() + 7) ->> 'villagesClosed')::integer, 0, 'on the Monday the midnight job no longer closes village weeks');
+select is(pg_temp.chest(2), 1000, '... so nothing is built by it');
+-- clan_village_close itself stays (unused): closing last week by hand still works as it did.
+select public.clan_village_close(v.id, public.clan_nz_week(), current_date) from public.clan_villages v order by v.id;
 select is(pg_temp.chest(2), 750, 'Room 12 built the Smithy for 250 gold, taken from the chest');
 select is((select levels ->> 'smithy' from public.clan_villages where id = 2), '1', '... and it is level 1');
 select is((select levels ->> 'church' from public.clan_villages where id = 2), '0', '... and nothing else changed');
@@ -191,9 +193,9 @@ select is((public.clan_nightly(pg_temp.monday() + 8) ->> 'villagesClosed')::inte
 select is(pg_temp.chest(2), 750, '... the vote is not counted twice');
 select is((select levels ->> 'smithy' from public.clan_villages where id = 2), '1', '... or built twice');
 select is(public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'news' ->> 0, 'The class built the Smithy (level 1)!', 'the village sees its news');
-select is(public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'state' -> 'clan' -> 'village' ->> 'smithy', '1', '... and the clan has the new Smithy');
+select is(public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'groupVillage' ->> 'smithy', '1', '... and the old group''s levels sent for conversion have the new Smithy');
 select is(public.load_clan(pg_temp.id('c'), pg_temp.req(5)) -> 'news', '[]'::jsonb, 'another village does not');
-select is((public.clan_nightly(pg_temp.monday() + 14) ->> 'villagesClosed')::integer, 3, 'the next Monday closes the next week''s vote');
+select public.clan_village_close(3, public.clan_nz_week() + 1, current_date);
 select is(pg_temp.chest(3), 10, 'a chest that is too small builds nothing and keeps its gold');
 select is((select text from public.clan_news where village_id = 3), 'The class voted for the Smithy (level 1) but the chest was 240 gold short.',
   'a tie goes to the cheaper building, and the news says how short the chest was');
@@ -201,90 +203,10 @@ select is((select levels from public.clan_villages where id = 3), '{"trainingHal
 select is((select count(*)::integer from information_schema.columns where table_schema = 'public' and table_name in ('clan_news', 'clan_votes', 'clan_villages')
   and column_name in ('student', 'name_of_student', 'user_id', 'email')), 0, 'the news has no place for a student''s name');
 
--- ---- Raids on classmates ----
--- The midnight job has moved the clans on, so these start from the clan as it is saved now. st(): the raiders' clan after a raid.
-create function pg_temp.cur(who text) returns jsonb language sql as $$ select public.load_clan(pg_temp.id(who), pg_temp.req(901)) -> 'state' $$;
-create function pg_temp.st(who text, vault integer, gold integer, clan_name text default null, wild integer default null, plots jsonb default null) returns jsonb language sql as $$
-  select jsonb_set(jsonb_set(jsonb_set(jsonb_set(jsonb_set(jsonb_set(pg_temp.cur(who), '{clan,empire,vault}', to_jsonb(vault)), '{clan,gold}', to_jsonb(gold)),
-    '{clan,name}', to_jsonb(coalesce(clan_name, pg_temp.cur(who) -> 'clan' ->> 'name'))),
-    '{clan,empire,wild}', to_jsonb(coalesce(wild, (pg_temp.cur(who) -> 'clan' -> 'empire' ->> 'wild')::integer))),
-    '{clan,empire,plots}', coalesce(plots, pg_temp.cur(who) -> 'clan' -> 'empire' -> 'plots')),
-    '{raidNo}', to_jsonb((pg_temp.cur(who) ->> 'raidNo')::integer + 1))
-$$;
--- The raided clan's empire after a raid: as saved, with the vault (and optionally the footmen, wild land or plots) changed.
-create function pg_temp.de(who text, vault integer, footmen integer default null, wild integer default null, plots jsonb default null) returns jsonb language sql as $$
-  select (pg_temp.cur(who) -> 'clan' -> 'empire') || jsonb_build_object('vault', vault)
-    || case when footmen is null then '{}'::jsonb else jsonb_build_object('troops', jsonb_build_object('footman', footmen, 'axeman', 0, 'knight', 0)) end
-    || case when wild is null then '{}'::jsonb else jsonb_build_object('wild', wild) end
-    || case when plots is null then '{}'::jsonb else jsonb_build_object('plots', plots) end
-$$;
-create function pg_temp.go(who text, defender text, request integer, state jsonb, d_empire jsonb, news text default null, note text default null) returns jsonb language sql as $$
-  select public.save_raid(pg_temp.id(who), pg_temp.version(who), pg_temp.self(defender), pg_temp.version(defender), pg_temp.req(request), state, d_empire,
-    '{"type":"raidClass"}'::jsonb,
-    coalesce(news, 'A raider from the ' || (state -> 'clan' ->> 'name') || ' clan took 40 gold.'),
-    coalesce(note, 'A raider from the ' || (state -> 'clan' ->> 'name') || ' clan beat your defenders and took 40 gold from your vault.'))
-$$;
-
-select throws_ok($$ select pg_temp.go('a', 'b', 20, pg_temp.st('a', 540, 100), pg_temp.de('b', 760)) $$,
-  '22023', 'Raids on classmates are switched off.', 'the database refuses a raid while the teacher has raids off');
+-- ---- The raids switch ----
 select pg_temp.teacher();
 select is(public.teacher_set_clan_raids(true), true, 'a teacher switches raids on');
 select pg_temp.reset();
-select is(pg_temp.vault('a') + pg_temp.vault('b'), 1300, 'before the raid the two vaults hold 1,300 gold');
-select is(pg_temp.go('a', 'b', 20, pg_temp.st('a', pg_temp.vault('a') + 40, 100), pg_temp.de('b', pg_temp.vault('b') - 40)) ->> 'status', 'saved',
-  'a raid is saved: gold moved from one empire to the other');
-select is(pg_temp.vault('a') + pg_temp.vault('b'), 1300, '... nothing made or lost between them');
-select is(pg_temp.vault('b'), 760, '... the raided clan lost the 40');
-select is((select gold from public.clans where player = pg_temp.id('a')), 100, 'the raiders'' purse is whatever the state said (a raid never touches it)');
-select is((select count(*)::integer from public.clan_news where text = 'A raider from the Red Banner clan took 40 gold.' and village_id = 2), 1, 'the village news has the line');
-select is((select count(*)::integer from public.clan_raid_notes where defender = pg_temp.id('b')), 1, 'the raided clan has a private note');
-select is(public.load_clan(pg_temp.id('b'), pg_temp.req(5)) -> 'notes' ->> 0, 'A raider from the Red Banner clan beat your defenders and took 40 gold from your vault.', '... which it is shown next time');
-select is(public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'notes', '[]'::jsonb, '... and the raiders have none');
-select is(public.load_clan(pg_temp.id('c'), pg_temp.req(5)) -> 'news', '[]'::jsonb, 'another village does not see the line');
-
--- The same raid sent again (a double tap, a dropped connection): same request id.
-select is(public.save_raid(pg_temp.id('a'), 1, pg_temp.self('b'), 1, pg_temp.req(20), pg_temp.st('a', 580, 100), pg_temp.de('b', 720), '{"type":"raidClass"}',
-  'A raider from the Red Banner clan took 40 gold.', 'A raider from the Red Banner clan beat your defenders and took 40 gold from your vault.') ->> 'status', 'duplicate',
-  'the same raid sent again is spotted');
-select is(pg_temp.vault('b'), 760, '... and paid once');
-select is((select count(*)::integer from public.clan_raid_notes where defender = pg_temp.id('b')), 1, '... with one note');
-
--- Two raiders at once on the same clan: the second one's copy of the raided clan is old.
-select is(public.save_raid(pg_temp.id('d'), pg_temp.version('d'), pg_temp.self('b'), pg_temp.version('b') - 1, pg_temp.req(31), pg_temp.st('d', pg_temp.vault('d') + 40, 100),
-  pg_temp.de('b', 720), '{"type":"raidClass"}', 'A raider from the Gold Hawk clan took 40 gold.',
-  'A raider from the Gold Hawk clan beat your defenders and took 40 gold from your vault.') ->> 'status', 'stale',
-  'a second raider holding an old copy of the raided clan is turned away');
-select is(pg_temp.vault('b'), 760, '... and nothing moved');
-select is(pg_temp.vault('d'), 100, '... for either of them');
-select is(pg_temp.go('d', 'b', 31, pg_temp.st('d', 140, 100), pg_temp.de('b', 720)) ->> 'status', 'saved', 'with a fresh copy the same raid goes through');
-select is(pg_temp.vault('d') + pg_temp.vault('b'), 860, '... and still nothing made or lost');
-
--- Refused: another village, yourself, things made out of nothing, and news that says anything but the raiders' clan.
-select throws_ok($$ select pg_temp.go('c', 'b', 40, pg_temp.st('c', 340, 100), pg_temp.de('b', 680)) $$, '22023', 'That clan is in another village.', 'a clan in another village cannot be raided');
-select throws_ok($$ select public.save_raid(pg_temp.id('a'), pg_temp.version('a'), pg_temp.self('a'), pg_temp.version('a'), pg_temp.req(41), pg_temp.st('a', pg_temp.vault('a') + 40, 100),
-  pg_temp.de('a', 720), '{"type":"raidClass"}', 'x', 'y') $$, '22023', 'That clan could not be found.', 'a clan cannot raid itself');
-select throws_ok($$ select pg_temp.go('a', 'b', 42, pg_temp.st('a', 900, 100), pg_temp.de('b', 500)) $$, '22023', 'That raid made or lost something.', 'a raid that makes gold out of nothing is refused');
-select throws_ok($$ select pg_temp.go('a', 'b', 43, pg_temp.st('a', pg_temp.vault('a') + 40, 100, null, 25), pg_temp.de('b', pg_temp.vault('b') - 40)) $$, '22023', 'That raid made or lost something.', 'a raid that makes land is refused');
-select throws_ok($$ select pg_temp.go('a', 'b', 44, pg_temp.st('a', pg_temp.vault('a') + 40, 100, null, null, '[{"width":3,"length":3,"building":"barracks"}]'), pg_temp.de('b', pg_temp.vault('b') - 40)) $$,
-  '22023', 'That raid made or lost something.', 'a raid that builds buildings is refused');
-select throws_ok($$ select pg_temp.go('a', 'b', 45, pg_temp.st('a', pg_temp.vault('a') + 40, 100), pg_temp.de('b', pg_temp.vault('b') - 40, 99)) $$, '22023', 'That raid made troops.', 'a raid that gives the raided clan more troops is refused');
-select throws_ok($$ select pg_temp.go('a', 'b', 46, pg_temp.st('a', pg_temp.vault('a') + 40, 100), pg_temp.de('b', pg_temp.vault('b') - 40), 'A raider from the Red Banner clan took 40 gold from Ana Smith.') $$,
-  '22023', 'That news could not be read.', 'a news line that says anything else is refused (it could name a pupil)');
-select throws_ok($$ select pg_temp.go('a', 'b', 47, pg_temp.st('a', pg_temp.vault('a') + 40, 100), pg_temp.de('b', pg_temp.vault('b') - 40), null, 'Ben Jones: the Red Banner clan took your gold') $$,
-  '22023', 'That news could not be read.', 'and so is a note that does');
-select throws_ok($$ select pg_temp.go('a', 'b', 48, pg_temp.st('a', pg_temp.vault('a') + 40, 100, 'Blue Fox'), pg_temp.de('b', pg_temp.vault('b') - 40), 'A raider from the Red Banner clan took 40 gold.') $$,
-  '22023', 'That news could not be read.', 'the line must name the raiders'' own clan');
-select is((select count(*)::integer from public.clan_news where village_id = 2 and text like 'A raider%'), 2, 'the refused raids left no news behind');
-select is(pg_temp.vault('b'), 720, '... and no gold moved');
-
--- ---- Who is in the village ----
-select is(jsonb_array_length(public.clan_village_mates(pg_temp.id('a'))), 2, 'a clan''s village mates are the other two clans in Room 12');
-select is((select string_agg(k, ',' order by k) from jsonb_object_keys(public.clan_village_mates(pg_temp.id('a')) -> 0) k), 'createdNzDay,id,name,shieldUntil,troops',
-  'and all it is told about them is a hidden id, the name, the day it began, its shield and its troops');
-select is(public.clan_village_mates(pg_temp.id('a')) -> 0 ->> 'id' = pg_temp.id('b')::text, false, 'the id is not the pupil''s account id');
-select is(public.clan_raid_target(pg_temp.id('a'), pg_temp.self('b')) ->> 'name', 'Blue Fox', 'a classmate in the village can be loaded to raid');
-select is(public.clan_raid_target(pg_temp.id('a'), pg_temp.self('c')), null, '... one in another village cannot');
-select is(public.clan_raid_target(pg_temp.id('a'), pg_temp.self('a')), null, '... and neither can yourself');
 
 -- ---- Tidying and the teacher's reset ----
 insert into public.clan_raid_notes (defender, text, created_at) values (pg_temp.id('b'), 'A raider from the Red Banner clan attacked, and your defenders drove them off!', now() - interval '3 days');

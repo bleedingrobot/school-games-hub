@@ -1,45 +1,37 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { Fragment, lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
 import { ClassWarpCard } from '../components/ClassWarpCard';
 import { GameCard } from '../components/GameCard';
-import { AchievementList, LevelBar, pickAchievements, RankBadge } from '../components/Progress';
-import type { GameStats } from '../data/botGames';
+import { recentGamesFrom, RecentList, type RecentGame } from '../components/MyGames';
+import { AchievementList, HeroLevel, nextAchievements, RankBadge } from '../components/Progress';
+import type { SeasonClock } from '../../shared/clans/season';
+import type { HomeLordSeason } from '../../shared/lord/seasonRoad';
 import { fetchMyHomePage, type HomePage } from '../data/homePage';
-import type { FriendGame, FriendStats, PlayerCard } from '../data/multiplayer';
+import type { FriendGame, PlayerCard } from '../data/multiplayer';
 import type { MovesByGame } from '../data/movesLeft';
 import type { MyProgress } from '../data/progress';
-import { seatsOf, type SpaceGame } from '../data/spaceGames';
+import type { SpaceGame } from '../data/spaceGames';
 import type { SeatSummary } from '../data/cardGames';
-import { seatsOf as powerSeatsOf, type PowerGame } from '../data/powerGames';
+import type { PowerGame } from '../data/powerGames';
 import { findGame, GAMES, POWER_CLASH_ON, gameLabel } from '../games/registry';
 import { trainingOn } from '../training/switch';
-import { BOT_LEVELS, isRanked, type BotLevel, type DashboardGroup, type GameDefinition } from '../games/types';
-import { BOT_NAMES, placeLabel } from '../../shared/space/names';
+import { TrainingGateBanner } from '../training/TrainFirst';
+import { useTrainingGate } from '../data/trainingGate';
+import { BOT_LEVELS, type BotLevel, type DashboardGroup, type GameDefinition } from '../games/types';
 
-// The maths focus card brings the whole maths ladder with it, so it loads on its own.
+// The teacher pages and older tests still find these here.
+export { cardRecentGame, friendRecentGame, powerRecentGame, spaceRecentGame, whenPlayed, type RecentGame } from '../components/MyGames';
+
+// The maths box brings the whole maths ladder with it, so it loads on its own.
 const MathsFocusCard = lazy(() => import('../components/MathsFocusCard'));
 const MathsPathCard = lazy(() => import('../components/MathsPathCard'));
+const SeasonStrip = lazy(() => import('../components/SeasonStrip'));
+const DragonSeasonStrip = lazy(() => import('../components/DragonSeasonStrip'));
 
-const RESULT_LABEL = { won: 'Won', lost: 'Lost', drawn: 'Draw' } as const;
-
-/** "Today", "Yesterday", "Monday", or a date, in the student's own time zone. */
-export function whenPlayed(iso: string, now = new Date()): string {
-  const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const then = new Date(iso);
-  const daysAgo = Math.round((day(now) - day(then)) / 86_400_000);
-  if (daysAgo <= 0) return 'Today';
-  if (daysAgo === 1) return 'Yesterday';
-  if (daysAgo < 7) return then.toLocaleDateString('en-NZ', { weekday: 'long' });
-  return then.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
-}
-
-function botName(level: string, game?: string) {
-  if (game === 'space') return `${BOT_NAMES[level as BotLevel] ?? ''} bots`;
-  if (game === '101') return `${BOT_LEVELS.find((l) => l.id === level)?.label ?? ''} bots`;
-  return `${BOT_LEVELS.find((l) => l.id === level)?.label ?? ''} bot`;
-}
+/** How many games Recent games shows here (the profile page shows more). */
+const RECENT_SHOWN = 3;
 
 /** How the dashboard groups its games, top to bottom. Each game says its group (`group` in its GameDefinition). */
 const GAME_GROUPS: { title: string; group: DashboardGroup }[] = [
@@ -59,104 +51,25 @@ function useShownGames(): GameDefinition[] {
   return GAMES.filter((game) => !off.has(game.id));
 }
 
-/** One line in Recent games: against a bot, or against another student. */
-export interface RecentGame {
-  id: string;
-  game: string;
-  result: 'won' | 'lost' | 'drawn';
-  reason: string;
-  finished_at: string;
-  bot_level?: string;
-  opponent?: PlayerCard | null;
-  /** Wormholes & Black Holes: the place (null if they left early). */
-  place?: number | null;
-  /** Wormholes & Black Holes with classmates (rather than one opponent). */
-  classmates?: boolean;
-  /** Power Clash that ended early: who left. */
-  leftBy?: 'me' | 'them' | 'nobody';
-}
-
-/** Turns a finished space game with classmates into a Recent games line. */
-export function spaceRecentGame(g: SpaceGame, me: string): RecentGame {
-  const seat = seatsOf(g).indexOf(me);
-  const left = g.ending === 'abandoned' || !!g.seat_info?.[seat]?.left;
-  const place = left ? null : (g.places?.[seat] ?? null);
-  return {
-    id: g.id,
-    game: 'space',
-    result: place === 1 ? 'won' : 'lost',
-    reason: left ? 'abandoned' : (g.ending ?? ''),
-    finished_at: g.finished_at ?? g.created_at,
-    place,
-    classmates: true,
-  };
-}
-
-/** Turns a finished Power Clash game with a classmate into a Recent games line. */
-export function powerRecentGame(g: PowerGame, me: string): RecentGame {
-  const seat = powerSeatsOf(g).indexOf(me);
-  const abandoned = g.ending === 'abandoned';
-  return {
-    id: g.id,
-    game: 'power-clash',
-    result: !abandoned && g.won?.[seat] ? 'won' : 'lost',
-    reason: abandoned ? 'abandoned' : 'finished',
-    finished_at: g.finished_at ?? g.created_at,
-    classmates: true,
-    ...(abandoned ? { leftBy: g.leaver === me ? ('me' as const) : g.leaver ? ('them' as const) : ('nobody' as const) } : {}),
-  };
-}
-
-/** Turns a finished 101 game with classmates (my seat row) into a Recent games line. */
-export function cardRecentGame(s: SeatSummary): RecentGame {
-  const { info } = s;
-  const place = info.ending === 'abandoned' ? null : (info.places?.[s.seat] ?? null);
-  const left = !place;
-  return {
-    id: s.game,
-    game: '101',
-    result: place === 1 ? 'won' : 'lost',
-    reason: left ? 'abandoned' : 'finished',
-    finished_at: s.updated_at,
-    place,
-    classmates: true,
-  };
-}
-
-/** Turns a finished friend game into a Recent games line, from this student's side. */
-export function friendRecentGame(g: FriendGame, me: string, cards: Map<string, PlayerCard>): RecentGame {
-  const mySide = g.second_player === me ? 'second' : 'first';
-  const opponentId = mySide === 'first' ? g.second_player : g.first_player;
-  return {
-    id: g.id,
-    game: g.game,
-    result: g.winner === null ? 'drawn' : g.winner === mySide ? 'won' : 'lost',
-    reason: g.reason ?? '',
-    finished_at: g.finished_at ?? g.created_at,
-    opponent: (opponentId && cards.get(opponentId)) || null,
-  };
-}
-
 /**
- * The student's real saved games and stats, against bots and friends, from the home page's one request (my_home_page). It is asked
- * every time the page opens, so everything is up to date straight after a game. `homePage` is that request, for the cards to take
- * their parts from (null until it is sent).
+ * The student's real saved games, against bots and friends, from the home page's one request (my_home_page). It is asked every
+ * time the page opens, so everything is up to date straight after a game. `homePage` is that request, for the cards to take their
+ * parts from (null until it is sent).
  */
 function useMyGames(me: string | undefined) {
   const [homePage, setHomePage] = useState<Promise<HomePage> | null>(null);
   const [recent, setRecent] = useState<RecentGame[] | null>(null);
-  const [stats, setStats] = useState<GameStats[] | null>(null);
-  const [friendStats, setFriendStats] = useState<FriendStats[] | null>(null);
   const [inProgress, setInProgress] = useState<{ game: FriendGame; opponent: PlayerCard | null }[]>([]);
   const [spaceGoing, setSpaceGoing] = useState<SpaceGame[]>([]);
-  const [spaceStats, setSpaceStats] = useState<{ played: number; firsts: number } | null>(null);
   const [cardGoing, setCardGoing] = useState<SeatSummary[]>([]);
-  const [cardStats, setCardStats] = useState<{ played: number; won: number } | null>(null);
   const [powerGoing, setPowerGoing] = useState<PowerGame[]>([]);
-  const [powerStats, setPowerStats] = useState<{ played: number; won: number } | null>(null);
   const [progress, setProgress] = useState<MyProgress | null>(null);
   // Daily moves left (Dragon Maths, Clan Quest) are only a nicety: no line on the card if they can't be read.
   const [moves, setMoves] = useState<MovesByGame>({});
+  // The school's Clan Quest season, for the "This season" strip.
+  const [season, setSeason] = useState<SeasonClock | null>(null);
+  // The school's Dragon Maths season and the pupil's hero, for its strip.
+  const [lordSeason, setLordSeason] = useState<HomeLordSeason | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     if (!me) return;
@@ -168,34 +81,20 @@ function useMyGames(me: string | undefined) {
         if (!current) return;
         setProgress(home.progress);
         setMoves(home.moves);
+        setSeason(home.season);
+        setLordSeason(home.lordSeason);
         // Space and 101 games with classmates, and Power Clash with a classmate (nothing of it shows before it is switched on).
         setSpaceGoing(home.spaceOpen.filter((g) => g.status === 'playing'));
-        setSpaceStats(home.spaceStats);
         setCardGoing(home.cardOpen.filter((g) => g.status === 'playing'));
-        setCardStats(home.cardStats);
-        if (POWER_CLASH_ON) {
-          setPowerGoing(home.powerOpen.filter((g) => g.status === 'playing'));
-          setPowerStats(home.powerStats);
-        }
-        const playing = home.friendOpen.filter((g) => g.status === 'playing');
-        setRecent(
-          [
-            ...home.botRecent.map((g) => ({ ...g })),
-            ...home.friendRecent.map((g) => friendRecentGame(g, me, home.players)),
-            ...home.spaceRecent.map((g) => spaceRecentGame(g, me)),
-            ...home.cardRecent.map(cardRecentGame),
-            ...(POWER_CLASH_ON ? home.powerRecent.map((g) => powerRecentGame(g, me)) : []),
-          ]
-            .sort((a, b) => b.finished_at.localeCompare(a.finished_at))
-            .slice(0, 5),
-        );
-        setStats(home.botStats);
-        setFriendStats(home.friendStats);
+        if (POWER_CLASH_ON) setPowerGoing(home.powerOpen.filter((g) => g.status === 'playing'));
+        setRecent(recentGamesFrom(home, me).slice(0, RECENT_SHOWN));
         setInProgress(
-          playing.map((g) => {
-            const opponentId = g.first_player === me ? g.second_player : g.first_player;
-            return { game: g, opponent: (opponentId && home.players.get(opponentId)) || null };
-          }),
+          home.friendOpen
+            .filter((g) => g.status === 'playing')
+            .map((g) => {
+              const opponentId = g.first_player === me ? g.second_player : g.first_player;
+              return { game: g, opponent: (opponentId && home.players.get(opponentId)) || null };
+            }),
         );
       },
       () => current && setFailed(true),
@@ -204,47 +103,60 @@ function useMyGames(me: string | undefined) {
       current = false;
     };
   }, [me]);
-  // 101 with classmates goes in the "Against friends" table with chess and checkers.
-  const withCards =
-    friendStats && cardStats
-      ? [...friendStats, { game: '101', played: cardStats.played, won: cardStats.won, lost: cardStats.played - cardStats.won, drawn: 0 }]
-      : friendStats;
-  // Power Clash with a classmate goes in the same table (a match is won or lost).
-  const friendRows =
-    withCards && powerStats
-      ? [...withCards, { game: 'power-clash', played: powerStats.played, won: powerStats.won, lost: powerStats.played - powerStats.won, drawn: 0 }]
-      : withCards;
-  return { homePage, recent, stats, friendStats: friendRows, inProgress, spaceGoing, spaceStats, cardGoing, powerGoing, progress, moves, failed };
+  return { homePage, recent, inProgress, spaceGoing, cardGoing, powerGoing, progress, moves, season, lordSeason, failed };
+}
+
+/** A "still going" line: what it is, and a Carry on button. */
+function GoingLine({ emoji, to, children }: { emoji: ReactNode; to: string; children: ReactNode }) {
+  return (
+    <div className="in-progress__item">
+      <span className="in-progress__emoji" aria-hidden={typeof emoji === 'string' ? true : undefined}>
+        {emoji}
+      </span>
+      <p>{children}</p>
+      <Link to={to} className="button button--play">
+        Carry on
+      </Link>
+    </div>
+  );
 }
 
 export function Dashboard() {
   const { profile } = useAuth();
   const meId = profile?.id;
-  const { homePage, recent, stats, friendStats, inProgress, spaceGoing, spaceStats, cardGoing, powerGoing, progress, moves, failed } = useMyGames(meId);
+  const pupil = profile?.role !== 'teacher';
+  const { homePage, recent, inProgress, spaceGoing, cardGoing, powerGoing, progress, moves, season, lordSeason, failed } = useMyGames(meId);
   // The cards wait for the home page's answer, or ask for themselves if there is nobody to ask it for.
   const cardsFrom = meId ? homePage : undefined;
   const pointsFor = new Map(progress?.recent.map((r) => [r.id, r.points]));
   const shownGames = useShownGames();
+  // Teachers see the season strips too, so they know what their class sees (James, 30 Oct 2026).
+  const seasonShown = season && season.clockOn && season.number > 0 && shownGames.some((g) => g.id === 'clan-quest') ? season : null;
+  const lordSeasonShown = lordSeason && shownGames.some((g) => g.id === 'dragon-maths') ? lordSeason : null;
+  // With both strips showing, each says which game it is.
+  const bothSeasons = !!seasonShown && !!lordSeasonShown;
   const [levels, setLevels] = useState<Record<string, BotLevel>>({});
   const [featured, setFeatured] = useState(GAMES[0].id);
   const levelFor = (gameId: string) => levels[gameId] ?? 'easy';
 
   const featuredGame = findGame(featured) ?? GAMES[0];
   const featuredLevel = BOT_LEVELS.find((l) => l.id === levelFor(featuredGame.id))!;
+  // Training before games: the cards still open (to the "Training first" screen), but look resting until a session is done.
+  const gate = useTrainingGate();
+  const gamesLocked = trainingOn() && gate.ready && gate.locked;
 
   return (
     <div className="dashboard">
       <section className="hero" aria-labelledby="hero-title">
         <Link to="/profile" className="hero__avatar" aria-label="Change my avatar">
-          <AvatarImage avatar={profile?.avatar} size={120} />
+          <AvatarImage avatar={profile?.avatar} size={64} />
         </Link>
         <div className="hero__text">
           <p className="hero__hello">Kia ora,</p>
           <h1 id="hero-title">{profile?.display_name}</h1>
           {progress && (
             <div className="hero__meta">
-              <span>Level {progress.level}</span>
-              <span>{progress.points} points</span>
+              <HeroLevel progress={progress} />
               {progress.games.map((g) => (
                 <RankBadge key={g.game} rank={g.rank.rank} game={g.game} />
               ))}
@@ -252,74 +164,46 @@ export function Dashboard() {
           )}
         </div>
         <div className="hero__play">
-          <Link className="button button--play" to={`/${featuredGame.id}?bot=${featuredLevel.id}`}>
+          <Link className="button button--play hero__go" to={`/${featuredGame.id}?bot=${featuredLevel.id}`}>
             <span aria-hidden="true">▶</span> Play
           </Link>
-          <p className="hero__play-hint">
-            {featuredGame.name} vs {featuredLevel.label} bot
-          </p>
-          {profile?.role !== 'teacher' && (
-            <Link className="button button--light-outline hero__warp" to="/warp">
+          {pupil && (
+            <Link className="hero__warp" to="/warp">
               <span aria-hidden="true">🌀</span> Class Warp
             </Link>
           )}
+          <p className="hero__play-hint">
+            {featuredGame.name} vs {featuredLevel.label} bot
+          </p>
         </div>
       </section>
 
-      {profile?.role !== 'teacher' && <ClassWarpCard homePage={cardsFrom} />}
+      <TrainingGateBanner />
+
+      {pupil && <ClassWarpCard homePage={cardsFrom} />}
 
       {(inProgress.length > 0 || spaceGoing.length > 0 || cardGoing.length > 0 || powerGoing.length > 0) && (
         <section className="in-progress" aria-label="Games still going">
           {powerGoing.slice(0, 1).map((game) => (
-            <div key={game.id} className="in-progress__item">
-              <span className="in-progress__emoji" aria-hidden="true">
-                ⚡
-              </span>
-              <p>
-                <strong>Your {gameLabel('power-clash')} game</strong> with a classmate is still going!
-              </p>
-              <Link to={`/power-game/${game.id}`} className="button button--play">
-                Carry on
-              </Link>
-            </div>
+            <GoingLine key={game.id} emoji="⚡" to={`/power-game/${game.id}`}>
+              <strong>Your {gameLabel('power-clash')} game</strong> with a classmate is still going!
+            </GoingLine>
           ))}
           {cardGoing.slice(0, 1).map((game) => (
-            <div key={game.game} className="in-progress__item">
-              <span className="in-progress__emoji" aria-hidden="true">
-                🃏
-              </span>
-              <p>
-                <strong>Your 101 game</strong> with classmates is still going!
-              </p>
-              <Link to={`/card-game/${game.game}`} className="button button--play">
-                Carry on
-              </Link>
-            </div>
+            <GoingLine key={game.game} emoji="🃏" to={`/card-game/${game.game}`}>
+              <strong>Your 101 game</strong> with classmates is still going!
+            </GoingLine>
           ))}
           {spaceGoing.slice(0, 1).map((game) => (
-            <div key={game.id} className="in-progress__item">
-              <span className="in-progress__emoji" aria-hidden="true">
-                🚀
-              </span>
-              <p>
-                <strong>Your {findGame('space')?.name} game</strong> with classmates is still going!
-              </p>
-              <Link to={`/space-game/${game.id}`} className="button button--play">
-                Carry on
-              </Link>
-            </div>
+            <GoingLine key={game.id} emoji="🚀" to={`/space-game/${game.id}`}>
+              <strong>Your {findGame('space')?.name} game</strong> with classmates is still going!
+            </GoingLine>
           ))}
           {inProgress.slice(0, 2).map(({ game, opponent }) => (
-            <div key={game.id} className="in-progress__item">
-              <AvatarImage avatar={opponent?.avatar} size={48} />
-              <p>
-                <strong>Your {findGame(game.game)?.name.toLowerCase()} game</strong> with{' '}
-                {opponent?.display_name ?? 'a classmate'} is still going!
-              </p>
-              <Link to={`/play/${game.id}`} className="button button--play">
-                Carry on
-              </Link>
-            </div>
+            <GoingLine key={game.id} emoji={<AvatarImage avatar={opponent?.avatar} size={32} />} to={`/play/${game.id}`}>
+              <strong>Your {findGame(game.game)?.name.toLowerCase()} game</strong> with {opponent?.display_name ?? 'a classmate'} is
+              still going!
+            </GoingLine>
           ))}
           {inProgress.length > 2 && (
             <p className="in-progress__more">
@@ -331,84 +215,101 @@ export function Dashboard() {
         </section>
       )}
 
-      <section aria-labelledby="games-title">
-        <h2 id="games-title" className="section-title">
+      <section className={gamesLocked ? 'game-groups game-groups--locked' : 'game-groups'} aria-labelledby="games-title">
+        <h2 id="games-title" className="sr-only">
           Pick a game
         </h2>
         {GAME_GROUPS.map((group) => {
           const groupGames = shownGames.filter((g) => g.group === group.group);
           if (groupGames.length === 0) return null;
           return (
-            <div key={group.title}>
-              {group.title && <h3 className="section-subtitle">{group.title}</h3>}
-              <div className="game-grid">
-                {groupGames.map((game) => (
-                  <GameCard
-                    key={game.id}
-                    game={game}
-                    level={levelFor(game.id)}
-                    moves={moves[game.id]}
-                    onLevelChange={(level) => {
-                      setLevels((prev) => ({ ...prev, [game.id]: level }));
-                      setFeatured(game.id);
-                    }}
-                  />
-                ))}
+            <Fragment key={group.title}>
+              <div className={`game-group game-group--${group.group}`}>
+                <h3 className="game-group__label">
+                  <span>{group.title}</span>
+                </h3>
+                {/* The season timelines sit with their games, in the complex maths games (James, 29 Oct 2026): Clan Quest's and
+                    Dragon Maths', side by side on wide screens. */}
+                {group.group === 'complex-maths' && (seasonShown || lordSeasonShown) && (
+                  <div className={bothSeasons ? 'season-strips season-strips--two' : 'season-strips'}>
+                    <Suspense fallback={null}>
+                      {seasonShown && <SeasonStrip clock={seasonShown} title={bothSeasons ? 'Clan Quest this season' : undefined} />}
+                      {lordSeasonShown && <DragonSeasonStrip season={lordSeasonShown} title={bothSeasons ? 'Dragon Maths this season' : undefined} />}
+                    </Suspense>
+                  </div>
+                )}
+                <div className="game-grid">
+                  {groupGames.map((game) => (
+                    <GameCard
+                      key={game.id}
+                      game={game}
+                      level={levelFor(game.id)}
+                      moves={moves[game.id]}
+                      onLevelChange={(level) => {
+                        setLevels((prev) => ({ ...prev, [game.id]: level }));
+                        setFeatured(game.id);
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
-              {group.title === 'Non-maths games' && trainingOn() && (
-                <>
-                  <h3 className="section-subtitle">Training</h3>
-                  <div className="link-grid">
-                    <Link to="/training" className="link-card link-card--training">
-                      <span className="link-card__emoji" aria-hidden="true">
+              {/* Training has a line of its own, under the non-maths games. */}
+              {group.group === 'no-maths' && trainingOn() && (
+                <div className="game-group game-group--training">
+                  <h3 className="game-group__label">
+                    <span>Training</span>
+                  </h3>
+                  <div className="game-grid">
+                    <Link to="/training" className="link-tile">
+                      <span className="link-tile__emoji" aria-hidden="true">
                         🧮
                       </span>
                       <span>
-                        <strong>Facts training</strong>
+                        <strong>Multiplication and division training</strong>
                         <span>A few minutes a day to build your facts</span>
                       </span>
                     </Link>
+                    <Link to="/training?quick=1" className="link-tile">
+                      <span className="link-tile__emoji" aria-hidden="true">
+                        👀
+                      </span>
+                      <span>
+                        <strong>Quick looks</strong>
+                        <span>Flash a picture, tap how many you saw</span>
+                      </span>
+                    </Link>
                   </div>
-                </>
+                </div>
               )}
-            </div>
+            </Fragment>
           );
         })}
       </section>
 
-      <div className="link-grid">
-        <Link to="/lobby" className="link-card link-card--lobby">
-          <span className="link-card__emoji" aria-hidden="true">
-            🤝
-          </span>
-          <span>
-            <strong>Play a friend</strong>
-            <span>Join the lobby or use a game code</span>
-          </span>
+      <nav className="quick-links" aria-label="More">
+        <Link to="/lobby" className="quick-link">
+          <span aria-hidden="true">🤝</span> <strong>Play a friend</strong> <span className="quick-link__note">Lobby or game code</span>
         </Link>
-        <Link to="/leaderboard" className="link-card link-card--board">
-          <span className="link-card__emoji" aria-hidden="true">
-            🏅
-          </span>
-          <span>
-            <strong>Leaderboard</strong>
-            <span>See the top players this week</span>
-          </span>
+        <Link to="/leaderboard" className="quick-link">
+          <span aria-hidden="true">🏅</span> <strong>Leaderboard</strong> <span className="quick-link__note">See the top players this week</span>
         </Link>
-      </div>
-
-      {profile?.role !== 'teacher' && (
-        <Suspense fallback={null}>
-          <MathsFocusCard homePage={cardsFrom} />
-          <MathsPathCard homePage={cardsFrom} />
-        </Suspense>
-      )}
+        <Link to="/profile#stats" className="quick-link">
+          <span aria-hidden="true">📊</span> <strong>See my stats</strong>
+        </Link>
+      </nav>
 
       <div className="panel-grid">
         <section className="panel" aria-labelledby="recent-title">
-          <h2 id="recent-title" className="panel__title">
-            Recent games
-          </h2>
+          <div className="panel__head">
+            <h2 id="recent-title" className="panel__title">
+              Recent games
+            </h2>
+            {recent && recent.length > 0 && (
+              <Link to="/profile#stats" className="panel__link">
+                See more
+              </Link>
+            )}
+          </div>
           {failed ? (
             <p className="panel__empty">We couldn’t load your games just now.</p>
           ) : !recent ? (
@@ -416,57 +317,15 @@ export function Dashboard() {
           ) : recent.length === 0 ? (
             <p className="panel__empty">No games yet. Press Play to start your first one!</p>
           ) : (
-            <ul className="recent-list">
-              {recent.map((g) => (
-                <li key={g.id}>
-                  {g.leftBy ? (
-                    <span className="result result--drawn">Ended</span>
-                  ) : g.game === 'space' || (g.game === '101' && g.classmates) ? (
-                    <span className={`result result--${g.place === 1 ? 'won' : 'drawn'}`}>{placeLabel(g.place)}</span>
-                  ) : (
-                    <span className={`result result--${g.result}`}>{RESULT_LABEL[g.result]}</span>
-                  )}
-                  <span className="recent-list__what">
-                    {g.bot_level ? (
-                      <>
-                        {findGame(g.game)?.name} vs {botName(g.bot_level, g.game)}
-                      </>
-                    ) : g.game === 'power-clash' && g.classmates ? (
-                      <>{gameLabel(g.game)} with a classmate</>
-                    ) : g.classmates ? (
-                      <>{findGame(g.game)?.name} with classmates</>
-                    ) : (
-                      <>
-                        {findGame(g.game)?.name} vs <AvatarImage avatar={g.opponent?.avatar} size={24} />{' '}
-                        {g.opponent?.display_name ?? 'a classmate'}
-                      </>
-                    )}
-                    {g.leftBy && (
-                      <span className="recent-list__note">
-                        {g.leftBy === 'me' ? ' (you left)' : g.leftBy === 'them' ? ' (they left)' : ' (ended early)'}
-                      </span>
-                    )}
-                    {g.reason === 'abandoned' && !g.leftBy && g.game !== 'space' && !(g.game === '101' && g.classmates) && (
-                      <span className="recent-list__note">{g.result === 'won' ? ' (they left)' : ' (left early)'}</span>
-                    )}
-                  </span>
-                  {pointsFor.has(g.id) && <span className="recent-list__points">+{pointsFor.get(g.id)}</span>}
-                  <span className="recent-list__when">{whenPlayed(g.finished_at)}</span>
-                </li>
-              ))}
-            </ul>
+            <RecentList games={recent} pointsFor={pointsFor} />
           )}
         </section>
 
-        <section className="panel" aria-labelledby="stats-title">
-          <h2 id="stats-title" className="panel__title">
-            My stats
-          </h2>
-          <StatsTable caption="Against bots" stats={stats} />
-          <StatsTable caption="Against friends" stats={friendStats} />
-          <SpaceStatsLine stats={stats} classmates={spaceStats} />
-          {progress && <LevelBar progress={progress} />}
-        </section>
+        {pupil && (
+          <Suspense fallback={null}>
+            <MathsFocusCard homePage={cardsFrom} path={<MathsPathCard homePage={cardsFrom} folded />} />
+          </Suspense>
+        )}
 
         <section className="panel" aria-labelledby="achievements-title">
           <h2 id="achievements-title" className="panel__title">
@@ -479,7 +338,7 @@ export function Dashboard() {
           </h2>
           {progress ? (
             <>
-              <AchievementList achievements={pickAchievements(progress.achievements)} showGame />
+              <AchievementList achievements={nextAchievements(progress.achievements)} showGame compact />
               <p className="panel__more">
                 <Link to="/profile#achievements">See them all</Link>
               </p>
@@ -490,60 +349,5 @@ export function Dashboard() {
         </section>
       </div>
     </div>
-  );
-}
-
-/** Games with real wins and losses: the ranked ones, and 101 and Power Clash (no badge, but you win or lose). */
-const hasWinLoss = (game: (typeof GAMES)[number]) => isRanked(game) || game.id === '101' || game.id === 'power-clash';
-
-/** Wormholes & Black Holes is luck, so it gets a line of its own rather than won/lost columns. */
-function SpaceStatsLine({
-  stats,
-  classmates,
-}: {
-  stats: GameStats[] | null;
-  classmates: { played: number; firsts: number } | null;
-}) {
-  const space = stats?.find((row) => row.game === 'space');
-  const played = (space?.played ?? 0) + (classmates?.played ?? 0);
-  const firsts = (space?.won ?? 0) + (classmates?.firsts ?? 0);
-  if (!played) return null;
-  return (
-    <p className="stats-line">
-      🚀 {findGame('space')?.name}: {played} game{played === 1 ? '' : 's'}, 1st place {firsts} time
-      {firsts === 1 ? '' : 's'}
-    </p>
-  );
-}
-
-function StatsTable({ caption, stats }: { caption: string; stats: { game: string; played: number; won: number; lost: number; drawn: number }[] | null }) {
-  return (
-    <table className="stats-table">
-      <caption>{caption}</caption>
-      <thead>
-        <tr>
-          <th scope="col">Game</th>
-          <th scope="col">Played</th>
-          <th scope="col">Won</th>
-          <th scope="col">Lost</th>
-          <th scope="col">Draw</th>
-        </tr>
-      </thead>
-      <tbody>
-        {GAMES.filter(hasWinLoss).map((game) => {
-          const s = stats?.find((row) => row.game === game.id) ?? { played: 0, won: 0, lost: 0, drawn: 0 };
-          const show = (n: number) => (stats ? n : '–');
-          return (
-            <tr key={game.id}>
-              <th scope="row">{game.name}</th>
-              <td>{show(s.played)}</td>
-              <td>{show(s.won)}</td>
-              <td>{show(s.lost)}</td>
-              <td>{show(s.drawn)}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
   );
 }

@@ -1,0 +1,97 @@
+import { act, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AuthContext, type AuthState } from '../auth/AuthContext';
+import { forgetSettings } from '../data/settingsMemory';
+import { busyPupil, setWorld, type World } from './homePageFake';
+
+/** The "This season" strip on the home page (same fake home page as DashboardHome.test.tsx). */
+vi.mock('../lib/supabase', async () => (await import('./homePageFake')).fakeSupabase());
+
+import { Dashboard } from './Dashboard';
+
+const signedIn = (role = 'student') =>
+  ({ status: 'signed-in', profile: { id: 'me', display_name: 'Speedy Otter 27', avatar: {}, role }, message: null }) as unknown as AuthState;
+
+async function settle() {
+  for (let i = 0; i < 30; i++) await act(() => new Promise((r) => setTimeout(r, 5)));
+}
+
+const season = (over: Record<string, unknown> = {}) => ({ number: 1, day: 24, daysLeft: 12, clockOn: true, ...over });
+
+/** A busy pupil whose moves-left answer carries this season (or none), with Clan Quest on or off. */
+async function show(seasonPart: unknown, opts: { clansOn?: boolean; role?: string; lordSeason?: unknown } = {}) {
+  const world: World = busyPupil();
+  world.jobs.my_moves_left = {
+    ...(world.jobs.my_moves_left as object),
+    ...(seasonPart === undefined ? {} : { season: seasonPart }),
+    ...(opts.lordSeason === undefined ? {} : { lordSeason: opts.lordSeason }),
+  };
+  if (opts.clansOn === false) world.tables.app_settings = [{ ...world.tables.app_settings[0], clans_enabled: false }];
+  setWorld(world);
+  render(
+    <AuthContext.Provider value={signedIn(opts.role)}>
+      <MemoryRouter>
+        <Dashboard />
+      </MemoryRouter>
+    </AuthContext.Provider>,
+  );
+  await settle();
+}
+
+describe('the season strip on the home page', () => {
+  beforeEach(() => forgetSettings());
+
+  it('shows in the complex maths games when there is a season and the clock is on', async () => {
+    await show(season());
+    const strip = screen.getByRole('region', { name: /Season 1, day 24 of 35/ });
+    expect(strip).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open Clan Quest' })).toHaveAttribute('href', '/clan-quest');
+    // It sits inside the "Complex maths games" group, with Clan Quest (James, 29 Oct 2026).
+    expect(strip.closest('.game-group--complex-maths')).not.toBeNull();
+  });
+
+  it('is hidden when the clock is off', async () => {
+    await show(season({ clockOn: false }));
+    expect(screen.queryByRole('region', { name: /Season 1/ })).not.toBeInTheDocument();
+  });
+
+  it('is hidden when there is no season number yet', async () => {
+    await show(season({ number: 0, day: 0, daysLeft: 0 }));
+    expect(screen.queryByText('This season')).not.toBeInTheDocument();
+  });
+
+  it('is hidden when the answer has no season', async () => {
+    await show(undefined);
+    expect(screen.queryByText('This season')).not.toBeInTheDocument();
+  });
+
+  it('is hidden when Clan Quest is switched off', async () => {
+    await show(season(), { clansOn: false });
+    expect(screen.queryByText('This season')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Open Clan Quest' })).not.toBeInTheDocument();
+  });
+
+  it('shows for teachers too, so they see what their class sees', async () => {
+    await show(season(), { role: 'teacher' });
+    expect(screen.getByRole('region', { name: /Season 1, day 24 of 35/ })).toBeInTheDocument();
+  });
+
+  it('shows the Dragon Maths season beside it, each titled with its game', async () => {
+    await show(season(), { lordSeason: { start: '2026-10-18', on: true } });
+    expect(screen.getByRole('heading', { name: 'Clan Quest this season' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Dragon Maths this season' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open Dragon Maths' })).toHaveAttribute('href', '/dragon-maths');
+  });
+
+  it('shows the Dragon Maths season alone, to a teacher too', async () => {
+    await show(undefined, { lordSeason: { start: '2026-10-18', on: true }, role: 'teacher' });
+    expect(screen.getByRole('region', { name: /^Dragon Maths\. Season \d+/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'This season' })).toBeInTheDocument();
+  });
+
+  it('hides the Dragon Maths season while the game is off', async () => {
+    await show(undefined, { lordSeason: { start: '2026-10-18', on: false } });
+    expect(screen.queryByRole('link', { name: 'Open Dragon Maths' })).not.toBeInTheDocument();
+  });
+});

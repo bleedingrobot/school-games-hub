@@ -21,6 +21,7 @@ import { playSound, type GameSound } from '../../sounds';
 import type { BattleReport } from '../../../../shared/monsters/save/check';
 import { BattleScreen, type BattleResult } from '../BattleScreen';
 import { MonsterArt } from '../art/MonsterArt';
+import { monsterPic, personPic, preload, scenePic } from '../art/painted';
 import { nameOf } from '../text';
 import { MapMenu, type MenuPage } from './MapMenu';
 import { WalkController, type ControllerEvents } from './controller';
@@ -37,6 +38,8 @@ export interface WorldGameProps {
   rawMaps?: Record<string, TiledMap>;
   /** The test page's "More battles" switch. */
   fast?: boolean;
+  /** Today's battle limit is reached: no wild battles and no trainers until tomorrow (Towers stay open). */
+  resting?: boolean;
   /** Change `nonce` to move the player: the test page's "Teleport to". */
   teleport?: { nonce: number; map: string; x: number; y: number; facing?: Dir };
   /** Change `nonce` to change the game state: the test page's "Give me all badges" and "Give me a full team and bag". */
@@ -72,7 +75,7 @@ const KEYS: Record<string, Dir> = {
 const TALK_KEYS = new Set([' ', 'Enter', 'e', 'E']);
 
 export function WorldGame({
-  initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, teleport, cheat, onBattling, onState, onBattle, onMoment, enabledTopics, random, packFor, timeScale = 1,
+  initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, resting = false, teleport, cheat, onBattling, onState, onBattle, onMoment, enabledTopics, random, packFor, timeScale = 1,
 }: WorldGameProps) {
   const [world, setWorld] = useState<WorldState>(initial);
   const [scene, setScene] = useState<Scene2>({ kind: 'walk' });
@@ -87,7 +90,7 @@ export function WorldGame({
   const scenes = useRef(new Map<string, Scene>());
   const fade = useRef({ at: -1e9 });
   const battleKey = useRef(0);
-  const opts = useMemo<WorldOptions>(() => ({ maps, fast }), [maps, fast]);
+  const opts = useMemo<WorldOptions>(() => ({ maps, fast, resting }), [maps, fast, resting]);
 
   // Always-current copies, so the controller's callbacks never use an old one.
   const { soundOn } = useSound();
@@ -105,6 +108,15 @@ export function WorldGame({
     cue('flash');
     // You have now met these monsters: they go in the monster book even if you run away.
     ctrl.current!.patch(meet(ctrl.current!.state, setup.foes));
+    // Fetch the pictures during the flash, so the battle doesn't stutter while they arrive: the two monsters, the background and the trainer.
+    const mine = setup.team.find((m) => m.hp > 0);
+    const scene = scenePic(ctrl.current!.state.map);
+    preload(
+      monsterPic(setup.foes[0].species, setup.foes[0].shiny),
+      mine && monsterPic(mine.species, mine.shiny),
+      window.matchMedia?.('(max-width: 900px)').matches ? scene.small : scene.wide,
+      trainer && personPic(trainer.name),
+    );
     const go = () => setScene({ kind: 'battle', setup, trainer, key: ++battleKey.current });
     if (ts === 0) go();
     else {
@@ -382,6 +394,7 @@ export function WorldGame({
   };
 
   const map = maps[world.map];
+  const portrait = talk?.speaker ? personPic(talk.speaker, true) : undefined;
   const dpadButton = (dir: Dir, label: string, glyph: string) => (
     <button
       key={dir}
@@ -420,6 +433,9 @@ export function WorldGame({
           packFor={packFor}
           timeScale={timeScale}
           enabledTopics={enabledTopics}
+          place={world.map}
+          trainer={scene.trainer?.name}
+          look={world.look}
         />
       </div>
     );
@@ -480,6 +496,8 @@ export function WorldGame({
         )}
       </div>
       <div className="mw-talk" onClick={talk ? advance : undefined}>
+        {/* Decorative: the name is in the words beside it. */}
+        {portrait && <img className="mw-talk__face" src={portrait} alt="" decoding="async" draggable={false} />}
         <div className="mw-talk__text" role="status" aria-live="polite" aria-atomic="true">
           {talk && (
             <>

@@ -56,10 +56,23 @@ export const TRAINING_CONFIG = {
     struggling: { learningFacts: 2, knownFacts: 4, reviewShare: 0.2, knownShare: 0.4 },
     /** Nobody sees the same fact twice in a row, and no fact is asked more than this often in one session. */
     maxAsksPerFact: 5,
+    /**
+     * Flying (22 Oct 2026): a student who is getting nearly everything right and quickly learns more new facts at once, so a
+     * child who already knows a step isn't held on it for weeks. Measured over the last `window` answers.
+     */
+    flying: { learningFacts: 12, window: 24, minRight: 0.9, minQuick: 0.75 },
   },
 
   /** Struggling = fewer than this share right over the last `window` answers (needs at least `minAnswers`). */
   struggling: { window: 12, minAnswers: 8, belowCorrect: 0.6 },
+
+  /**
+   * A practice fortnight (James, 22 Oct 2026): when a student starts struggling, Training stops pushing them on. For `days`
+   * days there are no new facts at all; every session is facts they have already met, best known first, so they get wins and
+   * make what they have strong. It starts on the day they begin struggling and is not stretched while it runs; if they are
+   * still struggling after it, the next wrong-heavy run starts another. Worked out from the saved answers, so nothing new is stored.
+   */
+  rest: { days: 14, reviewShare: 0.5, knownShare: 0.5, knownFacts: 8 },
 
   /**
    * Saving answers (stage T.2). The newest `answersPerFact` answers of each fact are kept in the
@@ -69,6 +82,13 @@ export const TRAINING_CONFIG = {
    */
   storage: { answersPerFact: 30, answersPerDay: 600, longestAnswerMs: 120_000, rejectAnswerMs: 600_000, longestTypingMs: 10_000 },
 
+  /**
+   * Training before games (James, 22 Oct 2026): in a class with the switch on, one finished session opens the games for
+   * `gamesOpenHours`. The server only counts a session it has at least this many answers for: a facts session that ran out
+   * of time can be as short as 2 (the first question, then the last), and a whole Quick looks round is 12 pictures.
+   */
+  gate: { gamesOpenHours: 2, minAnswers: { facts: 2, quick: 12 } },
+
   /** Days before a fact is due for review again, by how many green days it has. */
   reviewDays: [1, 2, 4, 7, 14],
 
@@ -76,6 +96,13 @@ export const TRAINING_CONFIG = {
   typing: {
     keep: 5,
     defaultMs: { 1: 700, 2: 1100, 3: 1500 } as Record<number, number>,
+    /**
+     * The most that is ever taken off an answer for typing, by answer length (22 Oct 2026). The warm-up is slower than real
+     * answers (the first one includes reading what to do, and a slip used to keep the clock running), so without a ceiling most
+     * right answers came out as no thinking time at all and every fact went bright green. Applied when an answer is scored, so
+     * saved answers are scored again with it when the records are rebuilt.
+     */
+    ceilingMs: { 1: 1000, 2: 1500, 3: 2000 } as Record<number, number>,
   },
 
   /** The ladder: the NZC order times tables are taught in (plan section 8). The order inside a step is the order facts are introduced. */

@@ -1,7 +1,9 @@
 /** Display helpers for a fight: who picks next, what the log says. Pure; no rules (those are in shared/clans). */
+import { botOrders } from '../../../shared/clans/bot';
 import { CONFIG } from '../../../shared/clans/config';
 import { canCast, type Fighter, type FightEvent, type FightState, type Order } from '../../../shared/clans/fight';
 import { SPELLS } from '../../../shared/clans/spells';
+import { MONSTER_LOOKS } from '../../../shared/clans/monster';
 import { defeatWord } from './text';
 
 /** Two "Goblin"s become "Goblin A" and "Goblin B" so the log can tell them apart. Names never touch the dice. */
@@ -32,8 +34,23 @@ export function choosingOrder(state: FightState): number[] {
     .map((x) => x.i);
 }
 
-/** "Default action": attack the first enemy still standing. */
-export const defaultOrder = (state: FightState): Order => ({ action: 'attack', target: Math.max(0, state.enemies.findIndex(isAlive)) });
+/**
+ * The round's suggested plan: what the simulator's bot would do (heal first, spread the hits, swing when a swing will do,
+ * a spell when it beats a swing). One order per clan slot; the player can change any of them.
+ */
+export const suggestedPlan = (state: FightState): Order[] => botOrders(state);
+
+/** One order in a few words, for the plan list ("Attack Goblin A", "Heal on Ash"). */
+export function orderText(order: Order | undefined, state: FightState): string {
+  if (!order || order.action === 'skip') return 'Rest';
+  if (order.action === 'guard') return 'Guard';
+  if (order.action === 'run') return 'Run for the exit';
+  if (order.action === 'attack') return `Attack ${state.enemies[order.target]?.name ?? 'an enemy'}`;
+  if (order.action === 'potion') return `Healing potion for ${state.clan[order.target]?.name ?? 'someone'}`;
+  const spell = SPELLS[order.spell];
+  const target = (spell?.friendly ? state.clan : state.enemies)[order.target];
+  return `${spell?.name ?? 'A spell'} on ${target?.name ?? 'someone'}`;
+}
 
 /** The spells a member can cast right now (known, enough SP, and in the game). */
 export const castable = (f: Fighter) => f.spells.filter((id) => canCast(f, id)).map((id) => SPELLS[id]);
@@ -68,5 +85,13 @@ export function describe(e: FightEvent, clanNames: ReadonlySet<string>): string 
       return e.ok ? 'The clan runs for the exit!' : "The clan can't get away this time.";
     case 'cry':
       return e.kind === 'damage' ? 'The Battle Cry rings out: the clan hits harder!' : 'The Battle Cry rings out: the clan feels better!';
+    case 'warn':
+      return MONSTER_LOOKS[e.move].warn;
+    case 'big':
+      return MONSTER_LOOKS[e.move].big;
+    case 'net':
+      return `The giant net holds ${e.who} down: the big move misses!`;
+    case 'potion':
+      return `${e.who} gives ${e.target} a healing potion: +${e.amount} HP.`;
   }
 }

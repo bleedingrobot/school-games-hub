@@ -2317,21 +2317,28 @@ const PLACE_VALUE = {
 * they're the same fact.
 */
 /**
-* Each kind of question, with its NZ Curriculum codes. PLACEHOLDERS: James fills these in
-* from his curriculum alignment tool.
+* Each kind of question, with its NZ Curriculum codes: the codes the ladder gives its times-table skills (`tablesSkills` in
+* ladder.ts, one per campaign step), shared by all three kinds because each is the same fact asked a different way
+* (James, 20 Oct 2026; to check against his curriculum alignment tool). A test keeps them the same as the ladder's.
 */
+const TIMES_TABLES_TAGS = [
+	"MS.Y2.NUM.OP.P9",
+	"MS.Y3.NUM.OP.P6",
+	"MS.Y4.NUM.OP.P2",
+	"MS.Y5.NUM.OP.P2"
+];
 const TIMES_TABLES_KINDS = {
 	multiply: {
 		label: "Multiplication facts",
-		curriculumTags: ["TODO-multiplication-facts"]
+		curriculumTags: TIMES_TABLES_TAGS
 	},
 	"missing-factor": {
 		label: "Missing factor",
-		curriculumTags: ["TODO-missing-factor"]
+		curriculumTags: TIMES_TABLES_TAGS
 	},
 	divide: {
 		label: "Division facts",
-		curriculumTags: ["TODO-division-facts"]
+		curriculumTags: TIMES_TABLES_TAGS
 	}
 };
 const SPOKEN = {
@@ -2377,7 +2384,7 @@ var TimesTables = class {
 	now;
 	id = "times-tables";
 	label = "Times tables";
-	curriculumTags = Object.values(TIMES_TABLES_KINDS).flatMap((k) => k.curriculumTags);
+	curriculumTags = [...new Set(Object.values(TIMES_TABLES_KINDS).flatMap((k) => k.curriculumTags))];
 	records = new Map();
 	memory = newMemory();
 	nextId = 1;
@@ -2585,11 +2592,11 @@ function bonds(label, tag, prefix, total, from) {
 		}
 	};
 }
-const range$4 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
+const range$5 = (from, to, step = 1) => Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
 /** Doubles of dblFrom–dblTo and halves of the even numbers halfFrom–halfTo. */
 function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
-	const dbls = range$4(dblFrom, dblTo);
-	const halves = range$4(halfFrom, halfTo, 2);
+	const dbls = range$5(dblFrom, dblTo);
+	const halves = range$5(halfFrom, halfTo, 2);
 	const keys = [...dbls.map((n) => `dbl:${n}`), ...halves.map((n) => `half:${n}`)];
 	return {
 		label,
@@ -2661,7 +2668,7 @@ const EARLY_FACTS = {
 		tenAnd: {
 			label: "\"Ten and\" facts (10 + 4)",
 			curriculumTags: ["MS.Y1.NUM.OP.P6"],
-			keys: range$4(1, 9).map((n) => `tenand:${n}`),
+			keys: range$5(1, 9).map((n) => `tenand:${n}`),
 			roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
 			make: (key, [n, v]) => {
 				if (!isInt(n, 1, 9) || key !== `tenand:${n}` || !isInt(v, 0, 3)) return null;
@@ -3071,6 +3078,284 @@ function pick(base, right, named, opts) {
 		fact: base.fact
 	};
 }
+//#endregion
+//#region shared/maths/skillPacks/bondSkills.ts
+/**
+* Decimal and fraction bonds (ladder skills `fraction-bonds` and `decimal-bonds`, stage M.5 of docs/BOND-MATCH-PLAN.md): pairs
+* that make 1 or 10. Bonds to 10, 20, 100 and 1000 are elsewhere (earlyFacts.ts, placeSkills.ts); tenths that make 1 is
+* `addten:to-one` in decimalSkills.ts.
+*
+* Decimal answers are typed on the pad with the point key; fraction answers are four choices to tap ("5/8"), except the missing
+* top number ("3/8 + ?/8 = 1"), which is typed. Wrong choices are the answer a named mistake gives, never a random number.
+* Decimals are made from whole numbers of tenths or hundredths (0.35 is 35 hundredths), so no question is made from a number
+* that carries floating-point dust. Fractions stay at or under one.
+*
+* These are asked only by the other maths games. Bond Match never counts towards them (James, 19 and 20 Oct 2026).
+*
+* Types:
+*   fraction-bonds  bondf1:whole  bondf1:missing-top  bondf1:small  bondf1:big  bondf1:take
+*   decimal-bonds   bondd1:next-whole  bondd1:hundredths  bondd1:take  bondd10:tenths  bondd10:take
+*/
+const range$4 = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+const notTen$1 = (n) => n % 10 !== 0;
+const FRACTION_TAGS = ["MS.Y3.NUM.RN.P6", "MS.Y3.NUM.RN.K6"];
+const ALL_DENS = [
+	2,
+	3,
+	4,
+	5,
+	6,
+	8,
+	10
+];
+const SMALL_DENS = [
+	3,
+	4,
+	5
+];
+const BIG_DENS = [
+	6,
+	8,
+	10
+];
+/** A top number and bottom number under one: 1/d up to (d - 1)/d. */
+const goodFraction = (n, d, dens) => dens.includes(d) && isInt(n, 1, d - 1);
+const rollFraction = (r, dens) => {
+	const d = pickOne(r, dens);
+	return [Math.min(d - 1, 1 + Math.floor(r() * (d - 1))), d];
+};
+/** The wrong fractions a student gets by following each named mistake, when the answer is (d - n)/d. */
+function fractionMistakes(n, d) {
+	return {
+		"gave the same fraction": frac(n, d),
+		"thought a whole is 10 parts": frac(10 - n, 10),
+		...d - n + 1 < d ? { "one part too many": frac(d - n + 1, d) } : {},
+		"one part too few": frac(d - n - 1, d),
+		"used 10 as the bottom number": frac(d - n, 10),
+		"made the top number up to 10": frac(10 - n, d),
+		"gave one part": frac(1, d)
+	};
+}
+/** "3/8 + ? = 1" (or "? + 3/8 = 1"): tap the fraction that makes 1. */
+function pairFamily(key, label, dens) {
+	return oneKey(key, label, FRACTION_TAGS, 5, (_k, r) => [
+		...rollFraction(r, dens),
+		Math.floor(r() * 2),
+		...rollPick(r)
+	], (_k, [n, d, v, slot, salt]) => {
+		if (!goodFraction(n, d, dens) || !isInt(v, 0, 1) || !goodPick(slot, salt)) return null;
+		const right = frac(d - n, d);
+		const parts = v === 0 ? [
+			frac(n, d),
+			"+",
+			"?",
+			"=",
+			"1"
+		] : [
+			"?",
+			"+",
+			frac(n, d),
+			"=",
+			"1"
+		];
+		return pick({
+			parts,
+			spoken: talk(parts),
+			fact: `${frac(n, d)} + ${right} = 1`
+		}, right, fractionMistakes(n, d), {
+			slot,
+			salt
+		});
+	});
+}
+const fractionFamilies = [
+	oneKey("bondf1:whole", "One whole as a fraction (1 = ?/8)", FRACTION_TAGS, 1, (_k, r) => [pickOne(r, ALL_DENS)], (_k, [d]) => {
+		if (!ALL_DENS.includes(d)) return null;
+		const parts = [
+			"1",
+			"=",
+			`?/${d}`
+		];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: d
+		}, {
+			"thought one whole is one part": 1,
+			"thought a whole is 10 parts": 10,
+			"one part too many": d + 1,
+			"one part too few": d - 1,
+			"doubled the bottom number": d * 2
+		});
+	}),
+	oneKey("bondf1:missing-top", "The missing top number (3/8 + ?/8 = 1)", FRACTION_TAGS, 3, (_k, r) => [...rollFraction(r, ALL_DENS), Math.floor(r() * 2)], (_k, [n, d, v]) => {
+		if (!goodFraction(n, d, ALL_DENS) || !isInt(v, 0, 1)) return null;
+		const blank = `?/${d}`;
+		const parts = v === 0 ? [
+			frac(n, d),
+			"+",
+			blank,
+			"=",
+			"1"
+		] : [
+			blank,
+			"+",
+			frac(n, d),
+			"=",
+			"1"
+		];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: d - n
+		}, {
+			"gave the same top number": n,
+			"gave the bottom number": d,
+			"added the top and bottom": n + d,
+			"made the top number up to 10": 10 - n,
+			"one part too many": d - n + 1,
+			"one part too few": d - n - 1
+		});
+	}),
+	pairFamily("bondf1:small", "Thirds, quarters and fifths that make 1 (1/4 + 3/4)", SMALL_DENS),
+	pairFamily("bondf1:big", "Sixths, eighths and tenths that make 1 (3/8 + 5/8)", BIG_DENS),
+	oneKey("bondf1:take", "A fraction taken from 1 (1 − 3/8)", FRACTION_TAGS, 4, (_k, r) => [...rollFraction(r, ALL_DENS.slice(1)), ...rollPick(r)], (_k, [n, d, slot, salt]) => {
+		if (!goodFraction(n, d, ALL_DENS.slice(1)) || !goodPick(slot, salt)) return null;
+		const right = frac(d - n, d);
+		const parts = [
+			"1",
+			"−",
+			frac(n, d),
+			"=",
+			"?"
+		];
+		return pick({
+			parts,
+			spoken: talk(parts),
+			fact: `1 − ${frac(n, d)} = ${right}`
+		}, right, fractionMistakes(n, d), {
+			slot,
+			salt
+		});
+	})
+];
+const DECIMAL_TAGS = ["MS.Y4.NUM.RN.P10", "MS.Y5.NUM.RN.P12"];
+/** Hundredths that are not whole tenths (0.01 to 0.99, not 0.3): those are tenths to 1, in add-tenths. */
+const HUNDREDTHS = range$4(1, 99).filter(notTen$1);
+/** Tenths from 0.1 to 9.9 that are not whole numbers. */
+const TENTHS = range$4(1, 99).filter(notTen$1);
+/**
+* A number of small units (hundredths or tenths) and a target of `whole` such units: the answer is `whole - u`, written with
+* `scale` (100 for hundredths, 10 for tenths). Every value is worked out in whole units and only divided at the end.
+*/
+function decimalBond(u, whole, scale, target) {
+	const tens = Math.floor(u / 10);
+	const ones = u % 10;
+	const answer = whole - u;
+	return {
+		answer: answer / scale,
+		shown: show(u / scale),
+		named: {
+			"made each digit up to 10": ((10 - tens) * 10 + (10 - ones)) / scale,
+			"made each digit up to 9": (whole - 1 - u) / scale,
+			"forgot the point": answer,
+			"made it up to ten times as much": (whole * 10 - u) / scale,
+			"added instead": (target * scale + u) / scale,
+			"one too many in the last place": (answer + 1) / scale
+		}
+	};
+}
+/** "0.35 + ? = 1" or "? + 0.35 = 1", and the take-away "1 − 0.35 = ?", for one target. */
+function decimalFamilies(prefix, word, labels, pool, scale, target) {
+	const whole = target * scale;
+	return [oneKey(`${prefix}:${word}`, labels[0], DECIMAL_TAGS, 2, (_k, r) => [pickOne(r, pool), Math.floor(r() * 2)], (_k, [u, v]) => {
+		if (!pool.includes(u) || !isInt(v, 0, 1)) return null;
+		const b = decimalBond(u, whole, scale, target);
+		const parts = v === 0 ? [
+			b.shown,
+			"+",
+			"?",
+			"=",
+			String(target)
+		] : [
+			"?",
+			"+",
+			b.shown,
+			"=",
+			String(target)
+		];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: b.answer,
+			input: "decimal"
+		}, b.named);
+	}), oneKey(`${prefix}:take`, labels[1], DECIMAL_TAGS, 1, (_k, r) => [pickOne(r, pool)], (_k, [u]) => {
+		if (!pool.includes(u)) return null;
+		const b = decimalBond(u, whole, scale, target);
+		const parts = [
+			String(target),
+			"−",
+			b.shown,
+			"=",
+			"?"
+		];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: b.answer,
+			input: "decimal"
+		}, b.named);
+	})];
+}
+/** Tenths up to the next whole number, the step that makes 10 easy: 6.3 + ? = 7. Tenth counts 11 to 89 that are not whole. */
+const PAST_ONE = range$4(11, 89).filter(notTen$1);
+const decimalBondFamilies = [
+	oneKey("bondd1:next-whole", "Tenths up to the next whole number (6.3 + ? = 7)", DECIMAL_TAGS, 1, (_k, r) => [pickOne(r, PAST_ONE)], (_k, [u]) => {
+		if (!PAST_ONE.includes(u)) return null;
+		const next = Math.floor(u / 10) + 1;
+		const answer = next * 10 - u;
+		const parts = [
+			show(u / 10),
+			"+",
+			"?",
+			"=",
+			String(next)
+		];
+		return withMistakes({
+			parts,
+			spoken: talk(parts),
+			answer: answer / 10,
+			input: "decimal"
+		}, {
+			"made it up to the whole number before": (u - Math.floor(u / 10) * 10) / 10,
+			"made it up to 10": (100 - u) / 10,
+			"forgot the point": answer,
+			"made it up to 9 tenths": (answer - 1) / 10,
+			"one tenth too many": (answer + 1) / 10,
+			"added instead": (next * 10 + u) / 10
+		});
+	}),
+	...decimalFamilies("bondd1", "hundredths", ["Hundredths that make 1 (0.35 + 0.65)", "Hundredths taken from 1 (1 − 0.35)"], HUNDREDTHS, 100, 1),
+	...decimalFamilies("bondd10", "tenths", ["Tenths that make 10 (3.4 + 6.6)", "Tenths taken from 10 (10 − 3.4)"], TENTHS, 10, 10)
+];
+const BOND_FAMILIES = Object.fromEntries([...fractionFamilies, ...decimalBondFamilies].map((f) => [f.keys[0], f]));
+const BOND_SKILL_KEYS = {
+	"fraction-bonds": [
+		"bondf1:whole",
+		"bondf1:missing-top",
+		"bondf1:small",
+		"bondf1:big",
+		"bondf1:take"
+	],
+	"decimal-bonds": [
+		"bondd1:next-whole",
+		"bondd1:hundredths",
+		"bondd1:take",
+		"bondd10:tenths",
+		"bondd10:take"
+	]
+};
 //#endregion
 //#region shared/maths/skillPacks/decimalSkills.ts
 /**
@@ -5458,7 +5743,8 @@ const families = {
 	...FRACTION_FAMILIES,
 	...PERCENT_FAMILIES,
 	...DECIMAL_FAMILIES,
-	...FDP_FAMILIES
+	...FDP_FAMILIES,
+	...BOND_FAMILIES
 };
 for (const key of Object.keys(families)) if (!RECORD_KEY.test(key)) throw new Error(`generated skill key "${key}" is not a valid record key`);
 const GENERATED = {
@@ -5478,7 +5764,8 @@ const GENERATED_SKILL_KEYS = {
 	...FRACTION_SKILL_KEYS,
 	...PERCENT_SKILL_KEYS,
 	...DECIMAL_SKILL_KEYS,
-	...FDP_SKILL_KEYS
+	...FDP_SKILL_KEYS,
+	...BOND_SKILL_KEYS
 };
 /** Every question type this pack owns. */
 const GENERATED_KEYS = new Set(Object.keys(families));
@@ -5610,6 +5897,7 @@ const LADDER = [
 	generated("round-10-100", "Rounding to the nearest 10 and 100", "rounding", GENERATED_SKILL_KEYS["round-10-100"], "MS.Y3.NUM.NS.P5"),
 	generated("bonds-1000", "Hundreds that make 1000", "place-value", GENERATED_SKILL_KEYS["bonds-1000"]),
 	generated("unit-fraction-of", "A fraction of an amount (⅓ of 15)", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["unit-fraction-of"], "MS.Y3.NUM.RN.P7"),
+	generated("fraction-bonds", "Fractions that make 1 (⅜ + ⅝)", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["fraction-bonds"], "MS.Y3.NUM.RN.P6", "MS.Y3.NUM.RN.K6"),
 	tables[2],
 	tables[3],
 	generated("times-tens", "Times with tens and hundreds (30 × 4)", "place-value", GENERATED_SKILL_KEYS["times-tens"], "MS.Y4.NUM.OP.P3"),
@@ -5620,6 +5908,7 @@ const LADDER = [
 	generated("factor-pairs", "Factor pairs", "place-value", GENERATED_SKILL_KEYS["factor-pairs"], "MS.Y5.NUM.NS.P2"),
 	generated("round-big", "Rounding bigger numbers and decimals", "rounding", GENERATED_SKILL_KEYS["round-big"], "MS.Y5.NUM.NS.P3", "MS.Y5.NUM.NS.P4"),
 	generated("decimal-equivalents", "Fractions as decimals", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["decimal-equivalents"], "MS.Y5.NUM.RN.P4"),
+	generated("decimal-bonds", "Decimals that make 1 and 10 (0.35 + 0.65)", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["decimal-bonds"], "MS.Y4.NUM.RN.P10", "MS.Y5.NUM.RN.P12"),
 	generated("percent-basic", "10%, 25% and 50%", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["percent-basic"], "MS.Y5.NUM.RN.P5", "MS.Y5.NUM.RN.P15"),
 	generated("fraction-of", "Fractions of an amount (⅔ of 24)", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["fraction-of"], "MS.Y5.NUM.RN.P13"),
 	generated("times-decimals", "Times 10 and 100 with decimals", "fractions-decimals-percentages", GENERATED_SKILL_KEYS["times-decimals"], "MS.Y5.NUM.RN.P7"),
@@ -5642,10 +5931,27 @@ function activeKeys(skill, enabledTables, division = true) {
 	});
 }
 /**
+* Jumping ahead (James, 22 Oct 2026): a student whose records show a times-table skill secure (70% of its times facts in box 2
+* or higher) is past every easier skill below it, even ones they have never been asked: someone who knows ×3, ×4 and ×8 isn't
+* kept on bonds to 10. Only times-table skills count, as they are big (30 to 60 facts) so a lucky run can't do it, and only their
+* times facts, so a class with division off (or a student who hasn't met it yet) jumps all the same. Returns the index just
+* after the highest such skill, or 0.
+*/
+function tablesJumpFloor(byKey, enabled = TABLES) {
+	let jump = 0;
+	LADDER.forEach((skill, index) => {
+		if (!skill.built || skill.stage !== "times-tables") return;
+		const times = activeKeys(skill, enabled, false).filter((k) => k.startsWith("mul:"));
+		if (times.length === 0) return;
+		if (times.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / times.length >= .7) jump = index + 1;
+	});
+	return jump;
+}
+/**
 * Where a student is on the ladder, worked out from their records: the first built skill that
 * isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
-* campaign) is the one they're on. Skipped skills (all their tables switched off) are secure
-* for free. With a `floor` (placement or the furthest place reached, see place.ts) the
+* campaign) is the one they're on. A skill with all its tables switched off is left out: it never becomes the
+* current skill and doesn't count towards progress (it shows as 'upcoming' with a share of 1). With a `floor` (placement or the furthest place reached, see place.ts) the
 * built skills before it are behind the student (passed over, and secure only if their records say so), so forgetting a fact brings more review but never
 * drops the student's place below the floor.
 */
@@ -5655,7 +5961,7 @@ function ladderProgress(stats, opts = {}) {
 	let current = null;
 	let secureCount = 0;
 	let builtCount = 0;
-	const floor = opts.floor ?? 0;
+	const floor = Math.max(opts.floor ?? 0, tablesJumpFloor(byKey, enabled));
 	return {
 		skills: LADDER.map((skill, index) => {
 			if (!skill.built) return {
@@ -6107,6 +6413,127 @@ const MATHS_SWITCHES = [
 /** Reads the setting from the database. Anything unexpected counts as Off: nobody gets maths by accident. */
 function parseMathsSwitch(value) {
 	return MATHS_SWITCHES.includes(value) ? value : "off";
+}
+//#endregion
+//#region shared/maths/focusResults.ts
+/**
+* What the game servers tell the database about answers given while a maths focus ran (docs/MATHS-FOCUS-PLAN.md, "Stage F.8
+* results"). The database matches each answer to the focuses that were running at its time; the server works out the two
+* things only the maths code knows: which ladder skills own the answer's key, and whether it was quick.
+*/
+let owners = null;
+/** The ladder skills that own a mastery key (usually one). Empty if the key isn't on the ladder. */
+function skillsOfKey(key) {
+	if (!owners) {
+		owners = new Map();
+		for (const skill of LADDER) for (const k of skill.keys) owners.set(k, [...owners.get(k) ?? [], skill.id]);
+	}
+	return owners.get(key) ?? [];
+}
+/** The answers worth sending: those on a ladder skill. */
+function focusResultAnswers(answers, pack) {
+	const quickMs = quickMsForPack(pack);
+	const out = [];
+	for (const a of answers) {
+		const skills = skillsOfKey(a.key);
+		if (skills.length > 0) out.push({
+			skills,
+			at: a.at,
+			correct: a.correct,
+			quick: a.correct && a.ms <= quickMs
+		});
+	}
+	return out;
+}
+//#endregion
+//#region supabase/functions/_shared/focusResults.ts
+/**
+* Adds a batch of answers to the results of the maths focuses running for the student (stage F.8). Call it only for a batch the
+* records took for the first time (record_fact_answers says 0 for one it has seen), so a retry never counts twice. It never
+* throws and never blocks saving: the answers are already saved, and a problem here is only logged (the code, never who).
+*/
+async function countForFocuses(rpc, player, pack, answers, from) {
+	try {
+		const rows = focusResultAnswers(answers, pack);
+		if (rows.length === 0) return;
+		const { error } = await rpc("add_maths_focus_results", {
+			player,
+			answers: rows
+		});
+		if (error) console.error(`${from}: focus results not counted (${error.code ?? "unknown"})`);
+	} catch {
+		console.error(`${from}: focus results not counted`);
+	}
+}
+//#endregion
+//#region supabase/functions/_shared/recordAnswers.ts
+/** A UUID made from text: the same text always gives the same id, so a save sent twice is one batch. */
+async function batchIdFor$1(text) {
+	const hex = [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`maths-answers:${text}`))).slice(0, 16)].map((b) => b.toString(16).padStart(2, "0")).join("");
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+/**
+* Saves answers the server has marked, the one approved way (docs/GAME_DEVELOPMENT_GUIDE.md, section 4.1 rule 6):
+* split by the pack that keeps each record, one batch per pack with an id made from `once` (something unique to this
+* save, such as the run's seed and the question's slot), each pack's own quick time, times kept to at most two
+* minutes (`keptMs`), and the running maths focuses'
+* results counted for a batch the records took for the first time, so a retry never counts twice.
+* It never throws: a problem is logged with its code (never who) and the game goes on.
+*/
+async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o, pack) => batchIdFor$1(`${from}:${o}:${pack}`)) {
+	const result = {
+		saved: 0,
+		failed: 0
+	};
+	for (const [pack, group] of groupByPack(answers)) try {
+		const { data, error } = await rpc("record_fact_answers", {
+			player,
+			pack,
+			batch_id: await batchId(once, pack),
+			answers: group.map((a) => ({
+				...a,
+				ms: keptMs(a.ms)
+			})),
+			quick_ms: quickMsForPack(pack),
+			fluent_days: 2,
+			top_box: 4
+		});
+		if (error) {
+			result.failed++;
+			console.error(`${from}: record answers failed (${error.code ?? "unknown"})`);
+			continue;
+		}
+		const saved = typeof data === "number" ? data : 0;
+		result.saved += saved;
+		if (saved > 0) await countForFocuses(rpc, player, pack, group, from);
+	} catch {
+		result.failed++;
+		console.error(`${from}: record answers failed`);
+	}
+	return result;
+}
+//#endregion
+//#region supabase/functions/_shared/signIn.ts
+/**
+* Who owns this sign-in token? Null if it's missing, expired, fake or not a signed-in user's.
+*
+* With the project's newer sign-in keys, the token's signature is checked right here against the
+* project's public keys (fetched once and kept for 10 minutes), with no trip to the sign-in
+* service. With the older shared secret (or a token signed with a key we don't know), the library
+* asks the sign-in service instead, exactly as `getUser` did. So this works the same before and
+* after the keys are switched in the Supabase dashboard; it only gets cheaper after.
+*/
+function userIdFromToken(auth) {
+	return async (token) => {
+		try {
+			const { data, error } = await auth.getClaims(token);
+			const claims = error ? null : data?.claims;
+			if (!claims || claims.role !== "authenticated" || typeof claims.sub !== "string" || !claims.sub) return null;
+			return claims.sub;
+		} catch {
+			return null;
+		}
+	};
 }
 //#endregion
 //#region supabase/functions/_shared/stamp.ts
@@ -8924,13 +9351,17 @@ function pickSpaceQuestion(pack, settings = {}) {
 	return pack.nextQuestion(ctx) ?? new TimesTables().nextQuestion({ level: 1 });
 }
 //#endregion
-//#region shared/marble/questions.ts
+//#region shared/maths/serverQuestions.ts
 /**
-* Making and marking the questions of a Marble Rush run (docs/MARBLE-PLAN.md, section 7). The server makes the list when a
-* run starts, keeps it where students can't read it, and marks every answer against it.
+* For games whose server makes the maths questions and marks them itself (docs/GAME_DEVELOPMENT_GUIDE.md, section 4.2 A):
+* a random number generator made from a text seed, so the server can make the same questions again, and the part of a
+* question the browser may see (never its answer).
 *
-* Questions come from the shared focus system, as in Mission Control: `makeSpacePack` -> `makeFocusPack`, so a teacher's
-* focus, a student's own pick or the whole ladder (auto) all decide what the gates, pit stops and rescues ask.
+* Moved here from shared/marble/questions.ts (20 Oct 2026) so Clan Quest's Battle Cry makes its questions the same way;
+* Marble's file re-exports them, so nothing about a Marble run changed.
+*
+* `seededRandom` gives exactly the same numbers as Marble Rush's own copy (shared/marble/maths.ts on its branch), so
+* Marble can switch to this one without any run changing.
 */
 /** The answer and the mastery record of a stored question. Null if it can't be marked. */
 function markQuestion(q) {
@@ -9731,10 +10162,7 @@ Deno.serve(makeHandler({
 	random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
 	randomHex: (bytes) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, "0")).join(""),
 	stamp: stamper(key, "marble-run"),
-	async userIdFor(token) {
-		const { data, error } = await admin.auth.getUser(token);
-		return error ? null : data.user?.id ?? null;
-	},
+	userIdFor: userIdFromToken(admin.auth),
 	async settings(player) {
 		const { data, error } = await admin.rpc("settings_of", { player }).maybeSingle();
 		if (error || !data) {
@@ -9808,18 +10236,7 @@ Deno.serve(makeHandler({
 		return data === true;
 	},
 	async recordAnswers(player, once, answers) {
-		for (const [pack, group] of groupByPack(answers)) {
-			const { error } = await admin.rpc("record_fact_answers", {
-				player,
-				pack,
-				batch_id: await batchIdFor(`${once}:${pack}`),
-				answers: group,
-				quick_ms: QUICK_MS,
-				fluent_days: 2,
-				top_box: 4
-			});
-			if (error) console.error(`marble: record answers failed (${error.code ?? "unknown"})`);
-		}
+		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "marble", (o, pack) => batchIdFor(`${o}:${pack}`));
 	},
 	record: (player, report, run, extra) => call("record_marble_run", {
 		player,

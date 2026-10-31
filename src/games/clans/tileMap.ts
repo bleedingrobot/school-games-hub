@@ -12,7 +12,7 @@ export const MONSTER_TILES: Record<string, Tile> = {
   'Scruffy Dog': [31, 7], 'Giant Rat': [29, 7], 'Hedge Witch': [26, 9], 'Rock Pal': [24, 7], Goblin: [25, 2], 'Grumpy Orc': [29, 2],
   'Moon Wolf': [27, 7], 'Marsh Snake': [28, 8], 'Giant Spider': [28, 5], Hobgoblin: [26, 2], Skeleton: [26, 0], 'Lizard Warrior': [29, 8],
   'Cave Minotaur': [28, 2], 'Green Slime': [27, 8], 'Dusk Mage': [26, 4], Wyvern: [26, 8], Gargoyle: [31, 3], 'Baby Dragon': [31, 8],
-  'Swamp Ogre': [24, 3], 'Large Spider': [27, 5], Satyr: [27, 2], Centaur: [28, 7], 'Stone Golem': [30, 6], Cyclops: [31, 6],
+  'Swamp Ogre': [24, 3], 'Large Spider': [27, 5], Satyr: [27, 2], 'Horse Archer': [28, 7], 'Stone Golem': [30, 6], Cyclops: [31, 6],
   Giant: [24, 8], 'Ruin Sorcerer': [27, 4], 'Bandaged Mummy': [29, 6], 'Fire Spirit': [26, 6], 'Young Dragon': [29, 8], 'Rock Beast': [30, 8],
   'Emerald Wizard': [28, 4], 'Storm Wizard': [30, 4], 'Storm Knight': [28, 0], 'Ember Hound': [31, 7], 'Baron Moonbat': [26, 8],
   'Stone Warden': [30, 6], 'Ember Lord': [29, 0], 'Emerald Dragon': [28, 8],

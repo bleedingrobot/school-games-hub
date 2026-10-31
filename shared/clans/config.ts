@@ -1,6 +1,6 @@
 /** Every tuning number for Clan Quest in one place, so the game can be balanced without hunting through code. */
 import { TROOP_COST } from '../maths/practical';
-import type { BuildingKind, Stat, TroopKind } from './types';
+import type { BuildingKind, Stat, TroopKind, VillageBuilding } from './types';
 
 export const CONFIG = {
   maxLevel: 20,
@@ -37,41 +37,43 @@ export const CONFIG = {
     for (let l = 1; l < level; l++) total += Math.min(CONFIG.xpLevelCap, 30 + 10 * (l - 1));
     return total;
   },
-  /** Mine depth hints, as depth minus the clan's average level (from the simulator: 100% wins up to -1, 99% to +1, about 90% to +3, under 80% from +4). */
+  /** Mine depth hints, as depth minus the clan's average level (simulator, 27 Oct 2026, the smarter fight plan: a mixed clan wins 99% at -1, 94% at +1, 87% at +3, 84% at +4; an all-fighters clan 15-25 points fewer). */
   depthHint: { easyUpTo: -1, justRightUpTo: 1, toughUpTo: 3 },
-  /** The empire (stage C.4). Every number is in the rule sheet's section 12. */
+  /** The empire and "My Village". Every number is here. */
   empire: {
-    /** Wild land plots a new empire starts with. */
-    startWild: 10,
-    /** Claiming one more plot of wild land costs `base` gold plus `step` for each one claimed before it, up to `max` claims. */
-    claim: { base: 50, step: 25, max: 24 },
-    /** A plot is between this many and this many squares along each side. */
-    plotSide: { min: 2, max: 6 },
-    /** Gold to develop a plot: this much a square of area, plus this much for each unit of fence round it. */
-    landPerSquare: 2,
-    fencePerUnit: 1,
-    /** Worker energy a day, in percent. */
-    energyPerDay: 100,
+    /** Upgrades a clan may make a day, in total, across all its buildings. */
+    buildsPerDay: 2,
+    /** Builds not used pile up, up to this many extra (so at most buildsPerDay + this are available on one day). */
+    buildsSavedMax: 4,
+    /**
+     * The eight buildings. `max` is the top level; going up to level n costs `base` times n gold, from the clan purse.
+     * `per` is what each level does, in percent (or gold for the strongroom). The Training Hall, Smithy and Church keep their
+     * old effects (trainCost, the shop and churchPerLevel/freeWakes read the level), so they have no `per`.
+     */
+    buildings: {
+      trainingHall: { max: 5, base: 50, per: 0 },
+      smithy: { max: 6, base: 50, per: 0 },
+      church: { max: 3, base: 50, per: 0 },
+      barracks: { max: 5, base: 50, per: 0 },
+      walls: { max: 5, base: 50, per: 10 },
+      tower: { max: 5, base: 50, per: 10 },
+      forge: { max: 5, base: 50, per: 10 },
+      strongroom: { max: 5, base: 50, per: 200 },
+    } satisfies Record<VillageBuilding, { max: number; base: number; per: number }>,
+    /** The width of each building's plan; its length is the level plus `planLengthExtra` (the area and fence moment). */
+    planWidth: { trainingHall: 4, smithy: 3, church: 4, barracks: 3, walls: 2, tower: 2, forge: 3, strongroom: 2 } satisfies Record<VillageBuilding, number>,
+    planLengthExtra: 2,
     /** Gold for one troop (the same numbers the troop-cost question uses). */
     troopCost: TROOP_COST satisfies Record<TroopKind, number>,
-    /** How many of each troop one barracks holds. */
+    /** How many of each troop one level of Barracks holds. */
     troopCap: { footman: 20, axeman: 10, knight: 5 } satisfies Record<TroopKind, number>,
     /** How much each troop counts for in a battle (a knight is worth four footmen, like its price). */
     troopMight: { footman: 1, axeman: 2, knight: 4 } satisfies Record<TroopKind, number>,
-    /** The most followers a village will send, as a percent. */
-    draftMax: 20,
-    draftStep: 5,
-    /** Size in squares, worker energy in percent, gold, and how many you can have. `per` is the effect of each one, in percent (or points). */
-    buildings: {
-      barracks: { size: 15, energy: 30, gold: 100, max: 12, per: 0 },
-      walls: { size: 6, energy: 7, gold: 40, max: 5, per: 10 },
-      tower: { size: 5, energy: 12, gold: 60, max: 5, per: 10 },
-      steelMill: { size: 12, energy: 25, gold: 120, max: 3, per: 10 },
-      stables: { size: 10, energy: 20, gold: 100, max: 3, per: 20 },
-      gymnasium: { size: 10, energy: 20, gold: 100, max: 2, per: 5 },
-      developersHall: { size: 15, energy: 35, gold: 150, max: 3, per: 10 },
-    } satisfies Record<BuildingKind, { size: number; energy: number; gold: number; max: number; per: number }>,
     battle: {
+      /** Every battle is this many rounds and asks for this much loot (a percent); the only choice is the push. */
+      rounds: 3,
+      loot: 10,
+      /** The most rounds `battle()` itself will play (a test or a sum may ask for more than the fixed 3). */
       maxRounds: 5,
       /** A side loses about this share of its strength each round. */
       roundDamage: 0.25,
@@ -96,6 +98,22 @@ export const CONFIG = {
       /** Most you may take from a classmate, in percent. */
       classmateLootMax: 10,
     },
+    /** What the old (pre-village) empire cost, so `upgradeSave` can give the right gold back. Nothing else reads this. */
+    legacy: {
+      plotSide: { min: 2, max: 6 },
+      landPerSquare: 2,
+      fencePerUnit: 1,
+      /** Old building prices in gold, and the most of each a clan could have. */
+      buildings: {
+        barracks: { gold: 100, max: 12 },
+        walls: { gold: 40, max: 5 },
+        tower: { gold: 60, max: 5 },
+        steelMill: { gold: 120, max: 3 },
+        stables: { gold: 100, max: 3 },
+        gymnasium: { gold: 100, max: 2 },
+        developersHall: { gold: 150, max: 3 },
+      } satisfies Record<BuildingKind, { gold: number; max: number }>,
+    },
   },
   /** Quests (stage C.4 part C): one a day, small rewards next to the Mines (a fight earns about 50 gold and 4-13 followers). */
   quests: {
@@ -113,7 +131,7 @@ export const CONFIG = {
     /** A wrong puzzle answer keeps the story going; the prize is just the smaller one. */
   },
   /**
-   * The class village (stage C.6 part A). The class builds these with the village chest; building to level n costs
+   * The OLD class village (stage C.6 part A; no longer used by the game, kept so the SQL parity test and the old night job still have these numbers). The class built these with the village chest; building to level n costs
    * `base` times n gold. Training Hall and Smithy already work in the rules; each Church level gives one more free wake-up a day.
    * The same costs are in the SQL function clan_village_cost (a test keeps them equal). `order` breaks a tie in the vote.
    */
@@ -136,6 +154,48 @@ export const CONFIG = {
     points: { minesPerPoint: 3, boss: 3, war: 2, villageBuilt: 5 },
     /** Mine fights a day a teacher may choose (the default is `fightsPerDay`). */
     fightsPerDayRange: { min: 1, max: 30 },
+  },
+  /**
+   * The season (5 weeks, days are 1-based: day 1 to `length`). From day `warnFrom` to the end (the "last two weeks")
+   * raids on classmates rest. From day `monsterFrom` it is monster week (used later). Finishing the village earns `villageReward`.
+   */
+  season: { length: 35, warnFrom: 22, monsterFrom: 29, villageReward: { fame: 50, points: 10 } },
+  /**
+   * The season monster (part 2 of the season goals). One try a day in monster week. The village fights first (the siege knocks a
+   * share off the monster's HP), then the four members fight it. Each lost try leaves it `tiredPerLoss` weaker, up to `tiredMax`.
+   * Tuned with `npm run clans:sim -- --days 28 --empire 1 --monster 1 --play 4` (James, 28 Oct 2026: a strong clan should win about 40%
+   * of its first tries). Simulator, 28 Oct 2026, first try / after 2 losses / after 4: a clan playing 4 days a week (about level 15,
+   * village about 35 of 39) about 40% / 85% / 98%; every day (level 18 to 20, whole village) nearly always; 3 days a week (level 9) 0% / 0% / about 5%.
+   */
+  monster: {
+    /** HP before the siege and stats. Every monster shares them; only the big move differs. */
+    hp: 1250,
+    stats: { agility: 25, dexterity: 22, strength: 60, wisdom: 14, armor: 12, charisma: 0 } satisfies Record<Stat, number>,
+    /** Stats stop at `statCap`, so the monster's hits are multiplied by this instead (big moves too). Tiredness lowers it. */
+    power: 1.5,
+    /** Its gold and experience are worked out as if it lived at this mine depth. */
+    depth: 12,
+    /** A monster fight can last this many rounds; after that the monster stomps off for the night (a loss). */
+    rounds: 12,
+    /** Every this-many rounds the monster uses its big move, and warns the round before. */
+    bigEvery: 3,
+    /** The big moves' damage, as a multiple of a normal hit (boulder and icy breath on one member, slam on everyone). */
+    boulder: 2.2,
+    slam: 0.7,
+    breath: 1,
+    /** Each Walls level cuts the damage the monster does by this percent. */
+    wallsCut: 4,
+    /** Each lost try leaves the monster this share weaker (HP, strength), up to `tiredMax`. */
+    tiredPerLoss: 0.1,
+    tiredMax: 0.4,
+    /** The siege: the army's share (full army of `fullMight`, more with the Forge), the tower's share per level, fire arrows, the maths. */
+    siege: { armyShare: 0.22, fullMight: 300, towerShare: 0.03, arrowShare: 0.025, rightAnswer: 1.2, most: 0.6 },
+    /** A potion heals this share of a member's HP. */
+    potionHeal: 0.5,
+    /** Monster supplies (sold from day `warnFrom`): price before tax, and the most a clan can hold. */
+    supplies: { arrows: { price: 900, max: 3 }, potions: { price: 1100, max: 4 }, net: { price: 1800, max: 1 } },
+    /** Beating the monster (the first time each season). */
+    reward: { fame: 100, points: 10 },
   },
   /** How much a Battle Cry answer adds. */
   battleCryDamage: 1.25,

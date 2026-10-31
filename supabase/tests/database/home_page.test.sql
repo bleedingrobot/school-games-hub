@@ -5,7 +5,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(40);
+select plan(48);
 
 create function pg_temp.uid(n integer) returns uuid language sql immutable as $$
   select ('00000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid
@@ -231,6 +231,28 @@ select pg_temp.as(1);
 select is(pg_temp.home(), pg_temp.separate(), 'with every game switched off, Ana still gets the same answer');
 select pg_temp.as(2);
 select is(pg_temp.home(), pg_temp.separate(), 'and so does Ben');
+
+-- ---- The season clock (my_moves_left gives the school's Clan Quest season to every signed-in pupil) ----
+select pg_temp.as(1);
+select ok((pg_temp.home() -> 'movesLeft') ? 'season', 'Ana: moves left has a season');
+select ok((pg_temp.home() -> 'movesLeft' -> 'season') ?& array['number', 'day', 'daysLeft', 'clockOn'], 'the season has number, day, daysLeft and clockOn');
+select is(jsonb_typeof(pg_temp.home() -> 'movesLeft' -> 'season' -> 'clockOn'), 'boolean', 'clockOn is true or false');
+select pg_temp.as(4);
+select ok((public.my_moves_left() -> 'season') ?& array['number', 'day', 'daysLeft', 'clockOn'], 'Dan (no clan, no games): still gets the season');
+
+-- ---- The Dragon Maths season (my_moves_left gives the school's date and whether the game is open, and the hero's level) ----
+select ok((public.my_moves_left() -> 'lordSeason') ?& array['start', 'on'], 'Dan: moves left has the Dragon Maths season (start, on)');
+select is(public.my_moves_left() -> 'lordSeason' -> 'on', 'false'::jsonb, 'with Dragon Maths switched off it says off');
+select pg_temp.reset();
+update public.app_settings set lord_enabled = true, lord_season_start = date '2026-10-18' where school_id = 2;
+select pg_temp.as(4);
+select is(public.my_moves_left() -> 'lordSeason', jsonb_build_object('start', '2026-10-18', 'on', true), 'switched on: the school''s first day of season 1, and on');
+select pg_temp.reset();
+insert into public.lord_heroes (player, hero, version, season, day)
+values (pg_temp.uid(4), '{"level": 7, "exp": 1234, "day": "2026-10-29", "forestLeft": 3, "arenaLeft": 2, "masterTried": false}', 1, 1, '2026-10-29');
+select pg_temp.as(4);
+select is((public.my_moves_left() -> 'lord') - array['day', 'forestLeft', 'arenaLeft', 'masterTried', 'masterExtra', 'forestPerDay'],
+  '{"level": 7, "exp": 1234}'::jsonb, 'Dan''s Dragon Maths line carries his hero''s level and experience');
 
 -- ---- Who can call it ----
 select pg_temp.reset();

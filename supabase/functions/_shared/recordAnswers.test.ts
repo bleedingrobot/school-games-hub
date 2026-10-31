@@ -60,6 +60,12 @@ describe('saving marked maths answers', () => {
     await expect(recordMathsAnswers(rpc, 'student-1', [tables], 'x', 'marble')).resolves.toEqual({ saved: 0, failed: 1 });
   });
 
+  it('a game can keep making its batch ids its own way', async () => {
+    const rpc = fakeDb();
+    await recordMathsAnswers(rpc, 'student-1', [tables, rounding], 'seed-1', 'marble', async (once, pack) => `${once}/${pack}`);
+    expect(rpc.mock.calls.filter(([n]) => n === 'record_fact_answers').map(([, a]) => a.batch_id)).toEqual(['seed-1/times-tables', 'seed-1/generated']);
+  });
+
   it('keeps each time to at most two minutes', async () => {
     const rpc = fakeDb();
     await recordMathsAnswers(rpc, 'student-1', [{ ...tables, ms: 600_000 }], 'x', 'marble');

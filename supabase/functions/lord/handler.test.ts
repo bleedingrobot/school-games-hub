@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { DRAGON_STAGES, MAX_LEVEL, WEAPONS, expNeeded } from '../../../shared/lord/data';
 import { EVENT_BY_ID } from '../../../shared/lord/events';
 import { forestTrip, newHero } from '../../../shared/lord/engine';
-import { offersSizeItUp } from '../../../shared/lord/maths';
+import { offersSizeItUp, SIZE_IT_UP_GOLD } from '../../../shared/lord/maths';
 import type { FightAction } from '../../../shared/lord/types';
 import { batchIdFor, MAX_REQUESTS_PER_MINUTE } from './handler';
 import { DRAGON_SLAYER, Game, NZ_MIDNIGHT, STRONG, SEASON_START, play, proof } from './testKit';
@@ -58,6 +58,29 @@ describe('load and start-hero', () => {
     const again = await g.send({ action: 'start-hero', heroClass: 'mage' });
     expect(again.body).toMatchObject({ ok: false, reason: 'rule' });
     expect(g.hero().heroClass).toBe('knight');
+  });
+
+  it('starts a hero with the look picked, and lets it be changed any time to another of the same class', async () => {
+    const g = new Game();
+    await g.send({ action: 'load' });
+    const out = await g.send({ action: 'start-hero', heroClass: 'mage', look: 'mage-girl-06-1' });
+    expect(out.body.state.hero).toMatchObject({ heroClass: 'mage', look: 'mage-girl-06-1' });
+    expect((await g.send({ action: 'look', look: 'mage-boy-10-2' })).body.ok).toBe(true);
+    expect(g.hero().look).toBe('mage-boy-10-2');
+    for (const look of ['knight-girl-01-1', 'mage-girl-11-1', 'mage-girl-01-3', '', 7, null]) {
+      expect((await g.send({ action: 'look', look })).body).toMatchObject({ ok: false, reason: 'bad-request' });
+    }
+    expect(g.hero().look).toBe('mage-boy-10-2');
+  });
+
+  it('lets a hero made before there were looks pick one, and ignores a look of the wrong class at the start', async () => {
+    const g = new Game();
+    await g.send({ action: 'load' });
+    await g.send({ action: 'start-hero', heroClass: 'knight', look: 'trickster-boy-01-1' });
+    expect(g.hero().look).toBeUndefined();
+    g.patch({ level: 4, gold: 300 });
+    expect((await g.send({ action: 'look', look: 'knight-girl-03-2' })).body.ok).toBe(true);
+    expect(g.hero()).toMatchObject({ look: 'knight-girl-03-2', level: 4, gold: 300 });
   });
 
   it('asks a pupil without a hero to pick a class before anything else', async () => {
@@ -204,10 +227,16 @@ describe('size it up', () => {
     // The browser plays with the 1.5 bonus after a right answer.
     const right = proof('add-sub', 1, true);
     const { actions, fight } = play({ ...open.start, firstHitBonus: 1.5 });
+    const goldBefore = g.hero().gold;
     const out = await g.send({ action: 'fight-finish', fightId: open.id, actions, sizeUp: right });
     expect(out.body.ok).toBe(true);
     expect(out.body.result.sizeUp).toBe('right');
     expect(out.body.result.outcome).toBe(fight.outcome);
+    // A win pays 20% more gold (rounded up), and the hero really gets it.
+    expect(fight.outcome).toBe('won');
+    const gold = fight.monster.gold + Math.ceil(fight.monster.gold * SIZE_IT_UP_GOLD) + fight.goldPinched;
+    expect(out.body.result.gold).toBe(gold);
+    expect(g.hero().gold).toBe(goldBefore + gold);
     // And the answer went into the maths records.
     expect(Object.values(g.db.batches).some((b) => b.pack === 'add-sub' && b.answers[0].correct)).toBe(true);
   });
@@ -655,23 +684,61 @@ describe('shop, healer and bank', () => {
     expect((await g.send({ action: 'bank', op: 'steal', amount: 1 })).body.reason).toBe('bad-request');
   });
 
-  it('interest: level 4 and up, something in the bank, a question, once a day', async () => {
+  it('interest: level 4 and up, at least 20 saved, a ladder question from the server, once a day', async () => {
     const g = new Game();
     await g.start();
     g.patch({ level: 3, bank: 1000 });
     await g.refresh();
-    expect((await g.send({ action: 'bank', op: 'interest', proof: proof('decimals', 3, true) })).body.reason).toBe('rule');
-    g.patch({ level: 4 });
+    expect((await g.send({ action: 'bank', op: 'interest-ask' })).body.reason).toBe('rule');
+    g.patch({ level: 4, bank: 19 });
     await g.refresh();
-    expect((await g.send({ action: 'bank', op: 'interest' })).body.reason).toBe('rule'); // no question answered
-    const out = await g.send({ action: 'bank', op: 'interest', proof: proof('decimals', 4, true) });
-    expect(out.body.result).toMatchObject({ interest: 50, right: true });
+    expect((await g.send({ action: 'bank', op: 'interest-ask' })).body.reason).toBe('rule'); // under 20 saved
+    g.patch({ bank: 1000 });
+    await g.refresh();
+    expect((await g.send({ action: 'bank', op: 'interest', answer: 50 })).body.reason).toBe('rule'); // no question asked yet
+    const asked = await g.send({ action: 'bank', op: 'interest-ask' });
+    const shown = asked.body.result.question;
+    expect(shown.parts).toContain('?');
+    expect(shown).not.toHaveProperty('answer');
+    expect(shown).not.toHaveProperty('factKey');
+    // Asking again gives the same question, never a fresh (easier) one.
+    expect((await g.send({ action: 'bank', op: 'interest-ask' })).body.result.question).toEqual(shown);
+    const stored = g.db.row!.extra.interestAsk!.question;
+    const out = await g.send({ action: 'bank', op: 'interest', answer: stored.answer, ms: 4000 });
+    expect(out.body.result).toMatchObject({ interest: 50, right: true, answer: stored.answer });
     expect(g.hero().bank).toBe(1050);
     expect(g.state!.interestDone).toBe(true);
-    expect((await g.send({ action: 'bank', op: 'interest', proof: proof('decimals', 4, true) })).body.reason).toBe('rule');
+    // The answer goes in the maths records, under the key of the ladder question.
+    const batch = Object.values(g.db.batches).find((x) => x.answers.some((a) => a.key === stored.factKey));
+    expect(batch?.answers[0]).toMatchObject({ key: stored.factKey, correct: true, ms: 4000 });
+    expect((await g.send({ action: 'bank', op: 'interest-ask' })).body.reason).toBe('rule');
+    expect((await g.send({ action: 'bank', op: 'interest', answer: stored.answer })).body.reason).toBe('rule');
     g.clock = NZ_MIDNIGHT + 1000;
     await g.refresh();
     expect(g.state!.interestDone).toBe(false);
+  });
+
+  it('interest: a wrong answer earns nothing and is told the right answer', async () => {
+    const g = new Game();
+    await g.start();
+    g.patch({ level: 4, bank: 259 });
+    await g.refresh();
+    await g.send({ action: 'bank', op: 'interest-ask' });
+    const stored = g.db.row!.extra.interestAsk!.question;
+    const wrong = await g.send({ action: 'bank', op: 'interest', answer: stored.answer + 1 });
+    expect(wrong.body.result).toMatchObject({ interest: 0, right: false, answer: stored.answer });
+    expect(g.hero().bank).toBe(259);
+    expect(g.state!.interestDone).toBe(true);
+  });
+
+  it('interest: the question follows the pupil\'s maths focus', async () => {
+    const g = new Game();
+    g.db.maths = { facts: [], settings: {}, focus: { source: 'teacher-class', skills: ['facts-10'], onlyThese: true, endsAt: null, canChoose: false, own: null } };
+    await g.start();
+    g.patch({ level: 4, bank: 100 });
+    await g.refresh();
+    await g.send({ action: 'bank', op: 'interest-ask' });
+    expect(g.db.row!.extra.interestAsk!.question.factKey).not.toMatch(/^mul:/);
   });
 });
 
@@ -794,19 +861,37 @@ describe('the day rolling over, and the season ending', () => {
   it('starts everyone again when a new 5-week season begins, keeping stars, and lets the class be changed', async () => {
     const g = new Game();
     await g.start('knight');
-    g.patch({ level: 7, exp: 4000, gold: 900, bank: 100, dragonKills: 2, weapon: 5, armour: 5 });
+    g.patch({ level: 7, exp: 4000, gold: 900, bank: 100, dragonKills: 2, weapon: 5, armour: 5, look: 'knight-boy-02-1' });
     g.clock = Date.parse('2026-11-22T00:00:00Z'); // still season 1 (day 35)
     expect((await g.refresh()).season).toMatchObject({ number: 1, dayOfSeason: 35, daysLeft: 0 });
     expect(g.hero().level).toBe(7);
     g.clock = Date.parse('2026-11-23T00:00:00Z'); // season 2, day 1
     const s2 = await g.refresh();
     expect(s2.season).toMatchObject({ number: 2, dayOfSeason: 1 });
-    expect(s2.hero).toMatchObject({ level: 1, exp: 0, gold: 50, bank: 0, weapon: 0, dragonKills: 2, heroClass: 'knight' });
+    expect(s2.hero).toMatchObject({ level: 1, exp: 0, gold: 50, bank: 0, weapon: 0, dragonKills: 2, heroClass: 'knight', look: 'knight-boy-02-1' });
     expect(s2.classOpen).toBe(true);
-    const mage = await g.send({ action: 'start-hero', heroClass: 'mage' });
-    expect(mage.body.state.hero).toMatchObject({ heroClass: 'mage', dragonKills: 2, level: 1 });
+    const mage = await g.send({ action: 'start-hero', heroClass: 'mage', look: 'mage-girl-02-2' });
+    expect(mage.body.state.hero).toMatchObject({ heroClass: 'mage', dragonKills: 2, level: 1, look: 'mage-girl-02-2' });
     expect(mage.body.state.classOpen).toBe(false);
     expect((await g.send({ action: 'start-hero', heroClass: 'knight' })).body.reason).toBe('rule');
+  });
+
+  it('starts the hero again once when the season jumps forward several seasons (a class moved onto the school date)', async () => {
+    const g = new Game();
+    await g.start('knight');
+    g.patch({ level: 6, exp: 3000, gold: 500, dragonKills: 1, look: 'knight-boy-02-1' });
+    expect(g.db.row!.season).toBe(1);
+    // The school's date is earlier than the class's was: today is now day 6 of season 4.
+    g.db.settings.seasonStart = '2026-07-01';
+    const s4 = await g.refresh();
+    expect(s4.season).toMatchObject({ number: 4, dayOfSeason: 6 });
+    expect(s4.hero).toMatchObject({ level: 1, exp: 0, gold: 50, dragonKills: 1, heroClass: 'knight', look: 'knight-boy-02-1' });
+    expect(s4.classOpen).toBe(true);
+    expect(g.db.row!.season).toBe(4);
+    // The next request in the same season doesn't start it again.
+    g.patch({ level: 2 });
+    expect((await g.refresh()).hero).toMatchObject({ level: 2 });
+    expect(g.db.row!.season).toBe(4);
   });
 
   it('lets a fight in progress finish before the season resets the hero', async () => {
@@ -997,5 +1082,92 @@ describe('test helpers', () => {
       if (trip.kind === 'fight') expect(trip.monster.hp).toBeGreaterThan(0);
     }
     expect(weak.hp).toBe(2);
+  });
+});
+
+describe('the teacher’s topic switches', () => {
+  const only = (...topics: string[]) => new Game({ seasonStart: SEASON_START, topics });
+
+  it('shows the topics that are on in the pupil’s state, and all of them when the teacher never chose', async () => {
+    const g = only('patterns', 'money');
+    await g.start();
+    expect(g.state!.topics).toEqual(['money', 'patterns']);
+    const all = new Game();
+    await all.start();
+    expect(all.state!.topics).toHaveLength(8);
+  });
+
+  it('treats a missing or empty list from an older database as all topics on', async () => {
+    const g = new Game();
+    delete (g.db.settings as { topics?: string[] }).topics;
+    await g.start();
+    expect(g.state!.topics).toHaveLength(8);
+    g.db.settings.topics = [];
+    expect((await g.refresh()).topics).toHaveLength(8);
+  });
+
+  it('counts an answer from a switched-off topic as wrong, and tells the teacher’s page why', async () => {
+    const g = only('patterns');
+    await g.start();
+    g.patch({ level: 4 });
+    await g.refresh();
+    const out = await g.send({ action: 'inn', game: 'riddle', proof: proof('place-value', 4, true) }); // the riddle's own topics are patterns and place-value
+    expect(out.body.result.right).toBe(false);
+    expect(g.db.refusals).toEqual([{ reason: 'proof-pack', action: 'inn' }]); // so the teacher's page can say what happened
+    g.clock = NZ_MIDNIGHT + 1000; // the riddle is once a day
+    await g.refresh();
+    const fine = await g.send({ action: 'inn', game: 'riddle', proof: proof('patterns', 4, true) });
+    expect(fine.body.ok).toBe(true);
+  });
+
+  it('accepts a topic from the fallback when a moment’s own topics are all off', async () => {
+    const g = only('fractions');
+    await g.start();
+    g.patch({ level: 4 });
+    await g.refresh();
+    const ok = await g.send({ action: 'inn', game: 'riddle', proof: proof('fractions', 4, true) });
+    expect(ok.body.result.right).toBe(true);
+  });
+
+  it('never hands out a maths event about a topic that is off', async () => {
+    const g = only('add-sub');
+    await g.start();
+    for (let i = 0; i < 12; i++) {
+      g.clock += 70_000; // stay under the requests-a-minute limit
+      g.patch({ forestLeft: 10, hp: g.hero().maxHp });
+      g.db.row!.extra = { ...g.db.row!.extra, pendingEvent: null };
+      await g.refresh();
+      g.forceTrip('event');
+      const out = await g.send({ action: 'forest' });
+      expect(out.body.ok, JSON.stringify(out.body)).toBe(true);
+      const event = EVENT_BY_ID[out.body.result.eventId as string];
+      expect(!event.maths || event.maths.topic === 'add-sub').toBe(true);
+      await g.send({ action: 'event', walkOn: true });
+    }
+  });
+
+  it('pays the plain reward, with no question, for an event whose topic was switched off after it turned up', async () => {
+    const g = new Game();
+    await g.start();
+    g.services.isTeacher = async () => ({ ok: true, value: true });
+    await g.send({ action: 'tools', tool: 'event', value: 'bridge-toll' }); // money, 25 gold
+    g.db.settings.topics = ['add-sub'];
+    const out = await g.send({ action: 'event', proof: proof('money', 1, true) });
+    expect(out.body.ok).toBe(true);
+    expect(out.body.result.right).toBe(false);
+    expect(g.hero().gold).toBe(50);
+    expect(g.state!.pendingEvent).toBeNull();
+  });
+
+  it('the dragon’s riddles work with a single topic, and refuse another', async () => {
+    for (const [pack, expected] of [['decimals', 'right'], ['fractions', 'wrong']] as const) {
+      const g = only('decimals');
+      await g.start();
+      g.patch(DRAGON_SLAYER);
+      await g.refresh();
+      const out = await g.send({ action: 'dragon-stage', stage: 1, riddle: proof(pack, MAX_LEVEL, true) });
+      expect(out.body.ok).toBe(true);
+      expect(out.body.result.riddle).toBe(expected);
+    }
   });
 });

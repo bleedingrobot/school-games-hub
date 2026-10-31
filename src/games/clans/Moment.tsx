@@ -11,7 +11,7 @@ export function Moment({ question, title, note, doneLabel, onDone }: { question:
   const [result, setResult] = useState<'right' | 'wrong' | 'skipped' | null>(null);
   const [answer, setAnswer] = useState<number | null>(null);
   if (!result) {
-    return <PracticalAsk question={question} title={title} note={note} onSubmit={(n) => { setAnswer(n); setResult(markAnswer(question, n) ? 'right' : 'wrong'); }} onNoThanks={() => setResult('skipped')} noThanksLabel="Show me how" />;
+    return <PracticalAsk question={question} title={title} note={note} onSubmit={(n) => { setAnswer(n); setResult(markAnswer(question, n) ? 'right' : 'wrong'); }} onNoThanks={() => setResult('skipped')} noThanksLabel="Show me how" noThanksIsSkip={false} />;
   }
   return (
     <div className="cq-panel cq-moment" role="group" aria-label={title}>

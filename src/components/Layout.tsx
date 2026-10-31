@@ -1,8 +1,12 @@
 import { NavLink, Outlet, useLocation } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AvatarImage } from '../avatar/AvatarImage';
+import { themeOf } from '../avatar/avatarParts';
+import { WaitingCount, WaitingToJoinProvider } from '../teacher/WaitingToJoin';
+import { pageTheme, ThemeTrialProvider, useThemeTrial } from '../theme/hubTheme';
 import { trainingOn } from '../training/switch';
 import { CrashScreen } from './CrashScreen';
+import { FullScreenButton } from './FullScreenButton';
 import { MuteButton } from './MuteButton';
 import banner from '../assets/dps-banner.png';
 
@@ -14,9 +18,22 @@ const NAV = [
 
 export function Layout() {
   const { profile } = useAuth();
-  const { pathname } = useLocation();
   return (
-    <>
+    <ThemeTrialProvider>
+      <WaitingToJoinProvider teacher={profile?.role === 'teacher'}>
+        <ThemedLayout />
+      </WaitingToJoinProvider>
+    </ThemeTrialProvider>
+  );
+}
+
+function ThemedLayout() {
+  const { profile } = useAuth();
+  const { pathname } = useLocation();
+  const { trial } = useThemeTrial();
+  const theme = pageTheme(pathname, trial ?? themeOf(profile?.avatar));
+  return (
+    <div className="hub-page" data-hub-theme={theme}>
       <a className="skip-link" href="#main">
         Skip to main content
       </a>
@@ -31,12 +48,15 @@ export function Layout() {
             ...(trainingOn() ? [{ to: '/training', label: 'Training', emoji: '🧮' }] : []),
             ...(profile?.role === 'teacher' ? [{ to: '/teacher', label: 'Teacher', emoji: '🧑‍🏫' }] : []),
           ].map((item) => (
-            <NavLink key={item.to} to={item.to} end className="topnav__link">
+            // The Teacher link stays lit on every teacher page (/teacher/:classId/…).
+            <NavLink key={item.to} to={item.to} end={item.to !== '/teacher'} className="topnav__link">
               <span aria-hidden="true">{item.emoji}</span> {item.label}
+              {item.to === '/teacher' && <WaitingCount />}
             </NavLink>
           ))}
         </nav>
         <div className="topbar__right">
+          <FullScreenButton />
           <MuteButton />
           <NavLink to="/profile" className="topbar__profile" aria-label="My profile">
             <AvatarImage avatar={profile?.avatar} size={44} />
@@ -49,6 +69,6 @@ export function Layout() {
           <Outlet />
         </CrashScreen>
       </main>
-    </>
+    </div>
   );
 }

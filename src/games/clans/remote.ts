@@ -3,10 +3,10 @@
  * the browser (so the test page works with no server at all); when there is a server, every change is also sent
  * to it as an action, and whatever it answers replaces the browser's copy. The server is the boss.
  */
-import type { Action, OpenFight, Result } from '../../../shared/clans/actions';
+import type { Action, Result, ShownFight } from '../../../shared/clans/actions';
 import type { Clan } from '../../../shared/clans/types';
-import type { VillageView } from '../../../shared/clans/village';
 import type { PracticalSettings } from '../../../shared/maths/practical';
+import type { SeasonClock } from '../../../shared/clans/season';
 import type { Session } from './session';
 
 /** The clan as the server describes it (the same as `publicState` in the server function). */
@@ -19,12 +19,10 @@ export interface ServerClan {
   raidNo: number;
   examined: string[];
   /** The mine fight in progress, if any (a refresh shows it again). */
-  fight: OpenFight | null;
+  fight: ShownFight | null;
   settings: PracticalSettings;
-  /** The latest village news lines, written by the computer. */
+  /** The latest news lines, written by the computer. */
   news: string[];
-  /** The class village: chest, building levels, this week's votes. */
-  village: VillageView | null;
   /** The teacher's switch for raids on classmates. */
   raidsOn: boolean;
   /** What raiders did to this clan lately. */
@@ -34,11 +32,13 @@ export interface ServerClan {
   season: number;
   fightsPerDay: number;
   achievements: string[];
+  /** The season clock (null when the server does not know it yet, or an older server). */
+  clock?: SeasonClock | null;
 }
 
 export type ServerReply =
-  | { ok: true; replayed: boolean; seed: number; state: ServerClan | null; result: Result }
-  | { ok: false; why: string; say: string; seed: number; state: ServerClan | null };
+  | { ok: true; replayed: boolean; seed: number; state: ServerClan | null; result: Result; newSeason?: true }
+  | { ok: false; why: string; say: string; seed: number; state: ServerClan | null; newSeason?: true };
 
 /** Sends one action and gives the server's answer. Rejects if the server cannot be reached. */
 export interface ClanServer {
@@ -50,8 +50,9 @@ export function sessionFrom(state: ServerClan, previous?: Session | null): Sessi
   return {
     clan: state.clan, baseSeed: state.seed, day: state.day, fightsLeft: state.fightsLeft, fightNo: state.fightNo, raidNo: state.raidNo,
     examined: state.examined, settings: state.settings, depth: previous?.depth ?? 0, fight: state.fight, news: state.news,
-    village: state.village, notes: state.notes, raidsOn: state.raidsOn,
+    notes: state.notes, raidsOn: state.raidsOn,
     fame: state.fame, season: state.season, fightsPerDay: state.fightsPerDay, achievements: state.achievements,
+    clock: state.clock ?? null,
   };
 }
 

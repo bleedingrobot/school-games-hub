@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import type { Square, StarKind } from '../../../shared/space/board';
+import { MATHS_CHARGE_STEPS } from '../../../shared/space/engine';
 import { FACTS } from '../../../shared/space/facts';
 import { ITEMS, type ItemKind } from '../../../shared/space/items';
 import { SquarePicture } from './SpaceBoard';
@@ -171,7 +172,7 @@ function HowToPlay() {
         <ul className="space-guide__bullets">
           <li>
             <strong>After your turn:</strong> a question appears on a small card while the others take their turns. Answer
-            it and a right answer gives you <strong>+1 on your next roll</strong>. You can skip it.
+            it and a right answer gives you <strong>+{MATHS_CHARGE_STEPS} on your next roll</strong>. You can skip it.
           </li>
           <li>
             <strong>Wormhole:</strong> land on a wormhole and you get a question. Right, and you’re <strong>powered up</strong>:

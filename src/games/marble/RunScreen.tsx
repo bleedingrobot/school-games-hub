@@ -19,6 +19,7 @@ import { formatSteps } from './bests';
 import { dragVector, KEYS_ARROWS, KEYS_LETTERS, KeyTracker, screenToCode } from './controls';
 import { infoFor } from './courseInfo';
 import { paletteFor } from './palette';
+import { lowerQuality, startQuality, type Quality } from './quality';
 import { isGoodGuess } from './guess';
 import { gateSigns, gemSprites } from './signs';
 import type { MarbleView, OtherKind } from './renderer';
@@ -172,7 +173,8 @@ export function RunScreen({
     let last = performance.now();
     let slowFrames = 0;
     let frames = 0;
-    let lowQuality = false;
+    let quality: Quality = startQuality(navigator.userAgent, window.devicePixelRatio || 1);
+    let qualityChecks = 0;
     let skip = false;
     let lastFalls = 0;
     let lastChecks = 0;
@@ -413,13 +415,18 @@ export function RunScreen({
         if (state2) {
           if (state.outcome !== 'running' || state2.outcome !== 'running') finishTwo();
         } else if (state.outcome !== 'running') finish();
-        // Slow device? After a couple of seconds, draw lighter. The physics doesn't change.
+        // Slow device? After a couple of seconds, draw lighter, and check again once more later (Best can drop to Simple). The physics doesn't change.
         frames++;
-        if (frames > 30 && frames <= 150) {
+        if (quality !== 'simple' && qualityChecks < 2 && frames > 30) {
           if (dt > 0.026) slowFrames++;
-          if (frames === 150 && slowFrames > 60 && !lowQuality) {
-            lowQuality = true;
-            view.setLowQuality(true);
+          if (frames === 150) {
+            if (slowFrames > 60) {
+              quality = lowerQuality(quality);
+              view.setQuality(quality);
+            }
+            qualityChecks++;
+            frames = 0;
+            slowFrames = 0;
           }
         }
       }
@@ -428,11 +435,11 @@ export function RunScreen({
         timeRef.current.textContent = formatSteps(steps);
       }
       if (time2Ref.current && world2 && state2) time2Ref.current.textContent = formatSteps(clockSteps(world2, state2));
-      if (lowQuality && skip) {
+      if (quality === 'simple' && skip) {
         skip = false;
         return;
       }
-      skip = lowQuality && phaseRef.current === 'playing';
+      skip = quality === 'simple' && phaseRef.current === 'playing';
       const others = [
         ...(ghostState && ghostPrev ? [{ prev: ghostPrev, now: ghostState }] : []),
         ...(state2 && prev2 ? [{ prev: prev2, now: state2 }] : []),
@@ -451,7 +458,7 @@ export function RunScreen({
     import('./renderer')
       .then(({ createView }) => {
         if (disposed) return;
-        view = createView(canvas, course, world, paletteFor(course.def.id), reduced, kinds, gateSigns(course, setup), gemSprites(course, setup), setup.maths);
+        view = createView(canvas, course, world, paletteFor(course.def.id), reduced, kinds, gateSigns(course, setup), gemSprites(course, setup), setup.maths, quality);
         fit();
         goto('ready');
         raf = requestAnimationFrame((t) => {
@@ -469,11 +476,11 @@ export function RunScreen({
       const second = twoPlayer && keys2.current.press(e.code);
       if (mine || second) {
         e.preventDefault();
+        // A movement key starts the run, but never closes a gate's question: only Go!, a tap or Enter does.
         if (phaseRef.current === 'ready') goto('playing');
-        else if (phaseRef.current === 'reading') resumeRef.current();
         return;
       }
-      if ((e.code === 'Space' || e.code === 'Enter') && phaseRef.current === 'reading' && !(e.target instanceof HTMLButtonElement)) {
+      if (e.code === 'Enter' && phaseRef.current === 'reading' && !(e.target instanceof HTMLButtonElement)) {
         e.preventDefault();
         resumeRef.current();
         return;
@@ -619,7 +626,7 @@ export function RunScreen({
             onSubmit={mark}
             onDone={(result) => closeAskRef.current(result.correct)}
             onClose={() => closeAskRef.current(false)}
-            closeLabel="Skip"
+            closeLabel={ask.kind === 'rescue' ? 'Skip (no time back)' : 'Skip (no time off)'}
           />
         )}
 

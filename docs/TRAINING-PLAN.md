@@ -202,9 +202,39 @@ Not before Clan Quest and Dragon Maths are finished, and not before F.1 of the m
 1. **T.1 Session and timing:** training home, a daily session on times tables, hidden timing, the typing check, thinking time, Fix-it moment, and the end-of-session summary. Preview only, no database.
 2. **T.2 Facts map and colours (built 18 Oct 2026 on branch `training`, local database only, hidden behind `src/training/switch.ts`, waiting for "go live"):** the 12×12 map with the speed bands, "this week" line, saving answers and times (database change, go-live needs James's yes).
 3. **T.3 Strategy lessons:** the lessons in section 4.1 for times tables, Split the rectangle, Which trick helps?, fact family triangles and missing numbers.
-4. **T.4 Early facts:** facts to 10 and 20, doubles and halves, with ten-frame lessons and their map.
+4. **T.4 Early facts:** facts to 10 and 20, doubles and halves, with ten-frame lessons and their map. **Quick looks ([SUBITISING-PLAN.md](SUBITISING-PLAN.md)) is the picture half of T.4**: it is built (S.2, branch `subitising`, not live) as a button on the Training home, saving through the same answers table and `training` function.
 5. **T.5 Quick-fire 20, too-fast lock, and mistake patterns.**
 6. **T.6 Fractions, decimals and percentages:** the equivalence order in section 8, grids and fraction bars, match-up questions (needs F.6).
 7. **T.7 Stretch and later ladder skills** (needs F.4 and F.5).
 8. **T.8 Teacher view and class settings** (needs F.2).
 9. **T.9 Comfort settings:** calm mode, read-aloud, auto-submit options.
+
+## 14. Training before games (James, 22 Oct 2026)
+
+In a class with the switch on, a student does one Training session, of their choice, before any game opens. The games then stay open for 2 hours (`TRAINING_CONFIG.gate.gamesOpenHours`; 6 until 27 Oct 2026), and the next session opens them for another 2.
+
+James's answers:
+
+1. **What counts:** a whole "Today's session" (it can be short if the 3 minutes run out) or a whole Quick looks round (all 12 pictures). "Finish for now" early doesn't count.
+2. **A switch per class** on the Teacher page ("Training before games"), off to start; James turns it on for his three classes. Teachers are never locked.
+3. **The lock is on the website only.** Game pages, typed addresses and the Lobby show "Training first!" instead. No game's server function was changed, so a student who knew how to fiddle with the browser could get round it.
+4. **A game already open carries on** when the time runs out, and so do classmate games already started (the home page's "still going" links). Only starting a new game waits.
+
+How it works:
+
+- `shared/training/gate.ts` decides (locked, or open until when). The finish time is the newer of the server's (`my_training_lock()`) and this device's own (so a session finished with the Wi-Fi down opens the games straight away).
+- The class's switch comes from the settings row every page already reads, so a class with it off costs no extra request. With it on, `my_training_lock()` is asked at most once a minute. **If it can't be asked, the games stay open.**
+- The training function saves a `session` item after the session's answers; `record_training_session()` only counts it when enough of its answers are saved (`gate.minAnswers`: 2 for facts, 12 for Quick looks) and it finished in the last 12 hours.
+- Migration `20261022000300_training_first.sql`: `training_sessions`, `app_settings.training_first`, `teacher_set_training_first()`, `my_training_lock()`.
+- To turn it off fast: the Teacher page switch, or `update public.app_settings set training_first = false;`
+
+## 15. Ladder fixes (James, 22 Oct 2026)
+
+An audit on 22 Oct found that nobody had got past step 1 (×1, ×2, ×5, ×10: 122 facts) and that the colours meant little. Four changes, all in the website and the shared Training code; nothing new is stored and the database is unchanged.
+
+1. **An honest warm-up.** The typing check was slower than real answers (typical warm-up 2.6 s, typical answer 1.8 s), so 4 in 5 right answers came out as no thinking time and turned bright green; some students had the 10 s cap taken off every answer. Now the fastest of the last 5 checks is used, never more than a ceiling (1 s, 1.5 s, 2 s for 1, 2, 3 digits, `typing.ceilingMs`), a slip restarts the clock, and the very first check starts with an untimed practice number. The ceiling is applied when an answer is scored, so **old answers were scored again with it** (James's choice): on 22 Oct's records, "Just know it!" went from 92% of tried facts to 68%.
+2. **Starting place.** Training now uses the maths warm-up (section 8 always said it would): every times-table step below the student's warm-up result or furthest games place is passed (`shared/training/start.ts`, `TrainingState.passedSteps`, worked out when Training opens). In a class with auto on, Training asks for the warm-up before the first session.
+3. **Flying.** A student with 90% right and 75% at "Quick thinking" or faster over their last 24 answers learns 12 new facts per session instead of 6 (`session.flying`). On 22 Oct's records 26 students would have been flying.
+4. **Practice fortnight (James).** When a student starts struggling (under 60% right over their last 12 answers), Training stops pushing them on: for 14 days there are no new facts, and every session is facts they have already met, best known first (`rest`, `isResting`). It starts on the day they begin struggling and isn't stretched while it runs; if they are still struggling afterwards, the next wrong-heavy run starts another. Their Training home says so kindly. A student with no facts yet carries on as usual. Worked out from the saved answers like everything else. On 22 Oct's records 2 students would have been in one.
+
+The `training` server function only bundles the settings file, so redeploying it changes nothing it does; it is redeployed to keep its "up to date" test honest.

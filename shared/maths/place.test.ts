@@ -128,7 +128,11 @@ describe('progress with a floor', () => {
     const lastBefore = built.findIndex((s) => s.id === 'tables-2-5-10');
     const before = secure(built.slice(0, lastBefore).flatMap((s) => s.keys));
     expect(ladderProgress([...before, ...mulOnly], { division: false }).current?.id).not.toBe('tables-2-5-10');
-    expect(ladderProgress([...before, ...mulOnly]).current?.id).toBe('tables-2-5-10');
+    // With division on, the skill isn't secure without its division facts, but its times facts being secure jumps the student
+    // past it anyway (22 Oct 2026): it counts as passed over, not secure.
+    const on = ladderProgress([...before, ...mulOnly]);
+    expect(on.current?.id).not.toBe('tables-2-5-10');
+    expect(on.skills.find((p) => p.skill.id === 'tables-2-5-10')).toMatchObject({ status: 'secure', passedOver: true });
     expect(autoPools(ladderProgress([], { division: false }), { division: false }).focus.some((k) => k.startsWith('div:'))).toBe(false);
   });
 });
@@ -234,8 +238,8 @@ describe('the placement check', () => {
     const levels = steps.map((s) => built.findIndex((b) => b.id === s.skill));
     expect(levels[1] - levels[0]).toBe(PLACEMENT_JUMP);
     expect(levels[2]).toBeGreaterThan(levels[1]);
-    // Ten questions of three skills each reach the last few skills of the ladder.
-    expect(levels.at(-1)).toBeGreaterThanOrEqual(built.length - 5);
+    // Ten questions of three skills each reach the last few skills of the ladder (33 since M.5's bond skills).
+    expect(levels.at(-1)).toBeGreaterThanOrEqual(built.length - 6);
   });
 
   it('steps back when an answer is wrong, and also when it is right but slow', () => {
@@ -425,10 +429,10 @@ describe('the server keeping the place', () => {
 describe('the longer ladder', () => {
   const generated = built.filter((s) => s.keys.length && s.keys.every((k) => packIdOfKey(k) === 'generated'));
 
-  it('has 31 built skills, 22 of them generated, and every one has at least four question types', () => {
-    expect(built).toHaveLength(31);
+  it('has 33 built skills, 23 of them generated, and every one has at least four question types', () => {
+    expect(built).toHaveLength(33);
     expect(built).toHaveLength(LADDER.length);
-    expect(generated).toHaveLength(21);
+    expect(generated).toHaveLength(23);
     for (const skill of generated) expect(skill.keys.length, skill.id).toBeGreaterThanOrEqual(4);
   });
 
@@ -441,7 +445,7 @@ describe('the longer ladder', () => {
     }
     expect(steps).toHaveLength(10);
     const at = built.findIndex((b) => b.id === placementResult(steps).id);
-    expect(at).toBeGreaterThanOrEqual(built.length - 6);
+    expect(at).toBeGreaterThanOrEqual(built.length - 7);
     expect(at).toBeLessThan(built.length - 1);
   });
 

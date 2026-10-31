@@ -13,7 +13,7 @@ import { RunScreen, type FinishedRun } from './RunScreen';
 // three.js can't run in a test, so the picture is a stand-in that just counts draws.
 const draws = vi.fn();
 vi.mock('./renderer', () => ({
-  createView: () => ({ draw: draws, resize: vi.fn(), setLowQuality: vi.fn(), dispose: vi.fn() }),
+  createView: () => ({ draw: draws, resize: vi.fn(), setLowQuality: vi.fn(), setQuality: vi.fn(), dispose: vi.fn() }),
 }));
 
 let frameCallbacks: FrameRequestCallback[] = [];
@@ -262,6 +262,22 @@ describe('RunScreen with maths', () => {
     expect(screen.getByLabelText('Time').textContent).not.toBe(frozen);
   });
 
+  it('keeps the gate question up when a movement key is pressed; Enter carries on', async () => {
+    setup({ course: GATED, setup: MATHS, readTime: true });
+    await start();
+    await runFrames(100);
+    await screen.findByRole('button', { name: 'Go!' });
+    for (const code of ['ArrowUp', 'ArrowLeft', 'KeyW', 'KeyD', 'Space']) {
+      fireEvent.keyDown(window, { code });
+      fireEvent.keyUp(window, { code });
+    }
+    await runFrames(100);
+    expect(screen.getByRole('button', { name: 'Go!' })).toBeInTheDocument();
+    fireEvent.keyDown(window, { code: 'Enter' });
+    await runFrames(300);
+    expect(screen.queryByRole('button', { name: 'Go!' })).toBeNull();
+  });
+
   it('carries on by itself after ten seconds of reading', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {
@@ -350,7 +366,7 @@ describe('RunScreen with maths', () => {
     await start();
     await runFrames(1500);
     await screen.findByRole('dialog');
-    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skip (no time off)' }));
     await runFrames(200);
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(onAnswer).not.toHaveBeenCalled();
@@ -368,7 +384,7 @@ describe('RunScreen with maths', () => {
     fireEvent.keyDown(dialog, { key: 'Enter' });
     await runFrames(100);
     expect(await screen.findByText(/couldn’t check that one/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /^Skip/ })).toBeEnabled();
   });
 
   it('plays a ghost with the doors that ghost ran with, not the student\'s', async () => {
@@ -445,7 +461,7 @@ describe('RunScreen: rescue questions and number gems', () => {
     await runFrames(3000);
     await screen.findByRole('dialog');
     const during = screen.getByLabelText('Time').textContent!;
-    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skip (no time back)' }));
     await runFrames(100);
     expect(screen.queryByText(/No time lost/)).toBeNull();
     expect(screen.getByLabelText('Time').textContent!.localeCompare(during)).toBeGreaterThanOrEqual(0);
@@ -462,7 +478,7 @@ describe('RunScreen: rescue questions and number gems', () => {
     setup({ course: GAP, setup: rescueSetup, onAnswer: (async () => ({ right: false, answer: 12 })) as never });
     await go();
     await runFrames(3000);
-    fireEvent.click(await screen.findByRole('button', { name: 'Skip' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Skip (no time back)' }));
     await runFrames(200);
     // Rolling east again falls again within seconds: no second question yet.
     fireEvent.keyDown(window, { code: 'ArrowRight' });

@@ -1,0 +1,44 @@
+/* The Teacher page's own layout (docs/TEACHER-VIEW-PLAN.md, stage 0). The page is coloured, so loose text on it is white. */
+
+/* Students waiting for a yes: the one thing on the page that is waiting on the teacher. */
+.teacher-waiting {
+  border: 3px solid #f5c400;
+}
+.teacher-waiting__list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.teacher-waiting__list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* "Game settings" and "Seasons and end of year": headings on the page itself, between the panels. */
+.teacher__group-title {
+  margin: 12px 0 0;
+  color: #fff;
+  font-size: 1.5rem;
+}
+.teacher__group-note {
+  margin: -12px 0 0;
+  color: #fff;
+}
+
+/* How many are waiting, beside "Teacher" in the nav. Yellow so it reads on the plain and the active link. */
+.topnav__count {
+  display: inline-block;
+  min-width: 1.5em;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #ffd23f;
+  color: #1f1300;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: center;
+}

@@ -34,6 +34,183 @@
   color: var(--ink);
 }
 
+/* ---------- Hub themes (pupils pick one on their profile page) ----------
+   Each theme is one block of --h-* tokens. The home page's layout is written only against these tokens, so it is built once
+   and all three themes share it. Layout.tsx puts data-hub-theme on the hub pages (home, profile, lobby, leaderboard, training,
+   Class Warp, How points work), "tidy" on the teacher pages and nothing on game screens, which keep the site's own look.
+   Tidy school is also the fallback on :root. Colours used for text are plain hex, so the contrast test can read them
+   (src/theme/themes.test.ts). Fonts are never downloaded: Nunito and Baloo 2 are used only if the computer has them. */
+
+:root,
+[data-hub-theme='tidy'] {
+  --h-display: 'Trebuchet MS', Verdana, 'Segoe UI', sans-serif;
+  --h-body: 'Segoe UI', Tahoma, system-ui, sans-serif;
+  --h-page: #9a1525;
+  --h-page-solid: #9a1525;
+  --h-title: #ffffff;
+  --h-label: #ffffff;
+  --h-label-line: rgba(255, 255, 255, 0.35);
+  --h-bar: #ffffff;
+  --h-r: 16px;
+  --h-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  --h-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.14);
+  --h-hero: #ffffff;
+  --h-box: #ffffff;
+  --h-box-ink: #0f172a;
+  --h-box-soft: #475569;
+  --h-box-line: #cbd5e1;
+  --h-surface: #ffffff;
+  --h-chip: #f1f5f9;
+  --h-chip-hover: #e2e8f0;
+  --h-chip-done: #dcfce7;
+  --h-avatar: #f0dcdf;
+  --h-bar-track: #e2e8f0;
+  --h-bar-fill: #9a1525;
+  --h-play: #fde047;
+  --h-play-ink: #0f172a;
+  --h-play-shadow: 0 3px 0 #d97706;
+  --h-going: #fff8db;
+  --h-going-ink: #0f172a;
+  --h-going-edge: #d97706;
+  --h-link: #9a1525;
+  --h-pts: #15803d;
+  --h-brand: #0f172a;
+  --h-brand-hover: #334155;
+  --h-brand-shadow: #000000;
+  --h-focus: #1d4ed8;
+  --h-focus-halo: #ffffff;
+  --h-card-go: #ffffff;
+  --h-card-go-ink: #0f172a;
+}
+
+[data-hub-theme='menu'] {
+  --h-display: 'Baloo 2', 'Trebuchet MS', Verdana, sans-serif;
+  --h-body: 'Nunito', 'Segoe UI', Tahoma, system-ui, sans-serif;
+  --h-page: radial-gradient(120% 60% at 50% 0%, #3a1434 0%, #171330 55%, #0e0c22 100%);
+  --h-page-solid: #171330;
+  --h-title: #ffffff;
+  --h-label: #fde047;
+  --h-label-line: rgba(253, 224, 71, 0.25);
+  --h-bar: #0e0c22;
+  --h-r: 18px;
+  --h-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  --h-shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  --h-hero: linear-gradient(90deg, #2a2156, #3a1a4d);
+  --h-box: #1f1a45;
+  --h-box-ink: #f3f0ff;
+  --h-box-soft: #c4bef0;
+  --h-box-line: #6b64a8;
+  --h-surface: #2a2456;
+  --h-chip: #2c2660;
+  --h-chip-hover: #3a3375;
+  --h-chip-done: #1f4a3c;
+  --h-avatar: #4b3d8f;
+  --h-bar-track: #3a3375;
+  --h-bar-fill: #fb923c;
+  --h-play: linear-gradient(90deg, #fde047, #fb923c 60%, #f43f5e);
+  --h-play-ink: #1a0d00;
+  --h-play-shadow: 0 0 18px rgba(251, 146, 60, 0.55);
+  --h-going: #352e17;
+  --h-going-ink: #fde68a;
+  --h-going-edge: #fde047;
+  --h-link: #fde047;
+  --h-pts: #86efac;
+  --h-brand: #5b4bd6;
+  --h-brand-hover: #6d5ce8;
+  --h-brand-shadow: #2a1f7a;
+  --h-focus: #fde047;
+  --h-focus-halo: #0e0c22;
+  --h-card-go: #ffffff;
+  --h-card-go-ink: #0f172a;
+}
+
+[data-hub-theme='soft'] {
+  --h-display: 'Baloo 2', 'Trebuchet MS', Verdana, sans-serif;
+  --h-body: 'Nunito', 'Segoe UI', Tahoma, system-ui, sans-serif;
+  --h-page: #eaf1fb;
+  --h-page-solid: #eaf1fb;
+  --h-title: #1d2340;
+  --h-label: #1d2340;
+  --h-label-line: #c5cee0;
+  --h-bar: #ffffff;
+  --h-r: 20px;
+  --h-shadow: 0 2px 0 rgba(29, 35, 64, 0.08), 0 6px 16px rgba(29, 35, 64, 0.08);
+  --h-shadow-sm: 0 2px 0 rgba(29, 35, 64, 0.06), 0 4px 10px rgba(29, 35, 64, 0.06);
+  --h-hero: #ffffff;
+  --h-box: #ffffff;
+  --h-box-ink: #1d2340;
+  --h-box-soft: #4f5779;
+  --h-box-line: #c5cee0;
+  --h-surface: #ffffff;
+  --h-chip: #eef2f9;
+  --h-chip-hover: #e0e7f3;
+  --h-chip-done: #dcfce7;
+  --h-avatar: #ffe4e8;
+  --h-bar-track: #e6ebf5;
+  --h-bar-fill: #14b8a6;
+  --h-play: #9a1525;
+  --h-play-ink: #ffffff;
+  --h-play-shadow: 0 3px 0 #5f0c17;
+  --h-going: #fff3c4;
+  --h-going-ink: #5a3b00;
+  --h-going-edge: #f0c64a;
+  --h-link: #9a1525;
+  --h-pts: #15803d;
+  --h-brand: #1d2340;
+  --h-brand-hover: #343c63;
+  --h-brand-shadow: #0b0f24;
+  --h-focus: #1d4ed8;
+  --h-focus-halo: #ffffff;
+  --h-card-go: #ffffff;
+  --h-card-go-ink: #ffffff;
+}
+
+/* A themed page: the site's own tokens follow the theme, so panels, buttons and links on every hub page match it. */
+[data-hub-theme] {
+  --page: var(--h-page-solid);
+  --card: var(--h-box);
+  --card-edge: transparent;
+  --surface: var(--h-surface);
+  --bg: var(--h-chip);
+  --tint: var(--h-chip);
+  --tint-hover: var(--h-chip-hover);
+  --line: var(--h-box-line);
+  --ink: var(--h-box-ink);
+  --ink-soft: var(--h-box-soft);
+  --brand: var(--h-brand);
+  --brand-shadow: var(--h-brand-shadow);
+  --brand-dark: var(--h-link);
+  --focus: var(--h-focus);
+  --radius: var(--h-r);
+  --shadow: var(--h-shadow);
+  --display: var(--h-display);
+}
+.hub-page[data-hub-theme] {
+  min-height: 100vh;
+  background: var(--h-page);
+  color: var(--ink);
+  font-family: var(--h-body);
+}
+.hub-page[data-hub-theme] .topbar {
+  background: var(--h-bar);
+  border-bottom: 0;
+  backdrop-filter: none;
+  box-shadow: var(--h-shadow-sm);
+}
+/* Keyboard focus: a ring with a halo inside, so it shows on the page and on every box in every theme. */
+[data-hub-theme] :focus-visible {
+  outline: 3px solid var(--h-focus);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px var(--h-focus-halo);
+}
+[data-hub-theme] .page-title,
+[data-hub-theme] .loading {
+  color: var(--h-title);
+}
+[data-hub-theme] .button--primary:hover {
+  background: var(--h-brand-hover);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -176,6 +353,33 @@ main:focus {
   border-color: var(--brand);
 }
 
+/* Full screen: where the browser can't, a short Add to Home Screen tip drops down. */
+.fullscreen-help {
+  position: relative;
+}
+.fullscreen-help__tip {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 50;
+  width: min(300px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+.fullscreen-help__tip p {
+  margin: 0 0 10px;
+}
+/* A bigger iPad on its side: the top bar is one row, so the round buttons drop their words to fit. */
+@media (min-width: 1101px) and (max-width: 1279px) {
+  .topbar__right .icon-button__label {
+    display: none;
+  }
+}
+
 /* ---------- Buttons ---------- */
 
 .button {
@@ -212,7 +416,7 @@ main:focus {
 
 .button--light {
   background: #fff;
-  color: var(--ink);
+  color: #0f172a;
   box-shadow: 0 5px 0 rgba(0, 0, 0, 0.2);
   width: 100%;
 }
@@ -269,6 +473,7 @@ main:focus {
   padding: 2px 12px;
   border-radius: 999px;
   background: #e8ecf5;
+  color: #1e293b;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -291,105 +496,10 @@ main:focus {
 
 /* ---------- Dashboard ---------- */
 
-.dashboard {
-  display: grid;
-  gap: 28px;
-}
 
-.hero {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 24px 28px;
-  border-radius: 28px;
-  background: var(--card);
-  border: 1px solid var(--card-edge);
-  box-shadow: var(--shadow);
-  animation: pop-in 0.4s ease-out both;
-}
-.hero__text {
-  flex: 1;
-  min-width: 0;
-}
-.hero__hello {
-  margin: 0;
-  font-weight: 700;
-  color: var(--ink-soft);
-}
-.hero h1 {
-  font-size: 2.2rem;
-}
-.hero__meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 14px;
-  margin: 10px 0 0;
-  font-weight: 700;
-  color: var(--ink-soft);
-}
-.hero__play {
-  text-align: center;
-}
-.hero__play-hint {
-  margin: 12px 0 0;
-  font-weight: 700;
-  color: var(--ink-soft);
-}
 
-.section-title {
-  font-size: 1.5rem;
-  margin-bottom: 14px;
-  color: #fff;
-}
 
-.game-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 22px;
-}
 
-.game-card {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 24px;
-  border-radius: var(--radius);
-  border: 2px solid var(--card-edge);
-  color: #fff;
-  background: linear-gradient(135deg, var(--card-a), var(--card-b));
-  box-shadow: var(--shadow);
-  transition: transform 0.15s ease;
-  animation: pop-in 0.4s ease-out both;
-}
-.game-card:nth-child(2) {
-  animation-delay: 0.08s;
-}
-.game-card:hover {
-  transform: translateY(-3px) rotate(-0.4deg);
-}
-.game-card__top {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-.game-card__icon {
-  display: grid;
-  place-items: center;
-  width: 96px;
-  height: 96px;
-  flex-shrink: 0;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-}
-.game-card h3 {
-  font-size: 1.9rem;
-}
-.game-card p {
-  margin: 4px 0 0;
-  font-weight: 600;
-}
 
 .level-picker {
   border: none;
@@ -441,54 +551,6 @@ main:focus {
   outline-offset: 2px;
 }
 
-.link-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 22px;
-}
-.link-card {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 18px 22px;
-  border-radius: var(--radius);
-  background: var(--card);
-  color: var(--ink);
-  text-decoration: none;
-  box-shadow: var(--shadow);
-  border: 3px solid transparent;
-  transition: transform 0.15s ease, border-color 0.15s ease;
-}
-.link-card:hover {
-  transform: translateY(-2px);
-  border-color: #fff;
-}
-.link-card strong {
-  display: block;
-  font-size: 1.25rem;
-}
-.link-card span span {
-  color: var(--ink-soft);
-  font-weight: 600;
-}
-.link-card__emoji {
-  display: grid;
-  place-items: center;
-  width: 60px;
-  height: 60px;
-  flex-shrink: 0;
-  border-radius: 18px;
-  font-size: 2rem;
-}
-.link-card--lobby .link-card__emoji {
-  background: #d7f5ec;
-}
-.link-card--board .link-card__emoji {
-  background: #fff1c7;
-}
-.link-card--training .link-card__emoji {
-  background: #dff3e4;
-}
 
 .panel-grid {
   display: grid;
@@ -814,14 +876,6 @@ main:focus {
 
 /* ---------- Profile ---------- */
 
-.hero__avatar {
-  border-radius: 50%;
-  line-height: 0;
-  transition: transform 0.15s ease;
-}
-.hero__avatar:hover {
-  transform: scale(1.04) rotate(-3deg);
-}
 
 .page-title {
   font-size: 2rem;
@@ -1704,33 +1758,6 @@ main:focus {
   text-align: center;
 }
 
-.in-progress {
-  display: grid;
-  gap: 10px;
-}
-.in-progress__item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
-  border-radius: var(--radius);
-  background: #fff8db;
-  border: 3px solid var(--play-dark);
-  box-shadow: var(--shadow);
-}
-.in-progress__more {
-  margin: 0;
-  font-weight: 700;
-}
-.in-progress__item p {
-  flex: 1;
-  margin: 0;
-}
-.in-progress__item .button--play {
-  width: auto;
-  padding: 10px 22px;
-  font-size: 1.1rem;
-}
 
 .recent-list__what svg {
   vertical-align: middle;
@@ -1766,23 +1793,11 @@ main:focus {
 }
 
 @media (max-width: 760px) {
-  .in-progress__item {
-    flex-wrap: wrap;
-  }
-  .in-progress__item .button--play {
-    width: 100%;
-  }
 }
 
 /* ---------- Smaller screens (tablets, narrow windows) ---------- */
 
 @media (max-width: 900px) {
-  .hero {
-    flex-wrap: wrap;
-  }
-  .hero__play {
-    width: 100%;
-  }
   .button--play {
     width: 100%;
   }
@@ -1796,7 +1811,8 @@ main:focus {
   }
 }
 
-@media (max-width: 820px) {
+/* The menu takes its own row up to iPad-on-its-side width (1024), where one row didn't fit. */
+@media (max-width: 1100px) {
   .topbar {
     flex-wrap: wrap;
     padding: 10px 16px;
@@ -1852,19 +1868,8 @@ main:focus {
     font-size: 1.15rem;
   }
   /* Avatar on top, words underneath, so the badges get the full width. */
-  .hero {
-    flex-direction: column;
-    text-align: center;
-    padding: 22px 18px;
-  }
-  .hero__meta {
-    justify-content: center;
-  }
   .rank-badge {
     white-space: normal;
-  }
-  .hero h1 {
-    font-size: 1.7rem;
   }
 }
 
@@ -2258,7 +2263,8 @@ main:focus {
   }
   .button:hover,
   .game-card:hover,
-  .link-card:hover {
+  .quick-link:hover,
+  .link-tile:hover {
     transform: none;
   }
 }
@@ -2326,53 +2332,8 @@ main:focus {
   border: 0;
 }
 
-.section-subtitle {
-  font-size: 1.15rem;
-  margin: 22px 0 12px;
-  color: #fff;
-}
 
 /* Daily moves left on a game card (Dragon Maths, Clan Quest). */
-.game-card__moves {
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(0, 0, 0, 0.22);
-  color: #fff;
-}
-.game-card__moves p {
-  margin: 0;
-}
-.game-card__moves-title {
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  opacity: 0.85;
-}
-.game-card__moves ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 6px 0 0;
-  padding: 0;
-  list-style: none;
-}
-.game-card__moves li {
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-.game-card__moves li.is-empty {
-  opacity: 0.55;
-  font-weight: 500;
-  text-decoration: line-through;
-}
-.game-card__moves-done {
-  font-weight: 700;
-}
 
 /* ---------- A page that broke (CrashScreen) ---------- */
 
@@ -2385,4 +2346,908 @@ main:focus {
 .crash__details pre {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* ---------- Home page (dashboard): compact layout, written only against the hub theme tokens ---------- */
+
+.dashboard {
+  display: grid;
+  gap: 18px;
+}
+
+/* Welcome strip: avatar, name, level bar and points on one line; Play and Class Warp on the right (under, on phones). */
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 18px;
+  padding: 14px 18px;
+  border-radius: var(--h-r);
+  background: var(--h-hero);
+  color: var(--h-box-ink);
+  box-shadow: var(--h-shadow);
+}
+.hero__avatar {
+  flex-shrink: 0;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--h-avatar);
+  line-height: 0;
+}
+.hero__text {
+  flex: 1 1 280px;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+}
+.hero__hello {
+  margin: 0;
+  font-weight: 700;
+  color: var(--h-box-soft);
+}
+.hero h1 {
+  font-family: var(--h-display);
+  font-size: 1.6rem;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.hero__meta {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--h-box-soft);
+}
+.hero__meta .rank-badge {
+  padding: 1px 10px;
+  font-size: 0.82rem;
+}
+.hero-level {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-variant-numeric: tabular-nums;
+}
+.hero-level > span:first-child {
+  color: var(--h-box-ink);
+}
+.hero-level progress {
+  width: 160px;
+  height: 10px;
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  background: var(--h-bar-track);
+  overflow: hidden;
+}
+.hero-level progress::-webkit-progress-bar {
+  background: var(--h-bar-track);
+}
+.hero-level progress::-webkit-progress-value {
+  background: var(--h-bar-fill);
+  border-radius: 999px;
+}
+.hero-level progress::-moz-progress-bar {
+  background: var(--h-bar-fill);
+  border-radius: 999px;
+}
+.hero-level__link {
+  color: var(--h-link);
+  font-size: 0.85rem;
+}
+.hero__play {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 10px;
+}
+.hero .hero__go {
+  min-height: 48px;
+  width: auto;
+  padding: 8px 26px;
+  border-radius: 999px;
+  background: var(--h-play);
+  color: var(--h-play-ink);
+  font-family: var(--h-display);
+  font-size: 1.2rem;
+  box-shadow: var(--h-play-shadow);
+  animation: none;
+}
+.hero__warp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 2px solid var(--h-box-line);
+  color: var(--h-box-ink);
+  font-weight: 800;
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+.hero__warp:hover {
+  background: var(--h-chip);
+}
+.hero__play-hint {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: right;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--h-box-soft);
+}
+
+/* "Still going" games and Join your class: one slim line each. */
+.in-progress {
+  display: grid;
+  gap: 8px;
+}
+.in-progress__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 14px;
+  border-radius: 999px;
+  background: var(--h-going);
+  color: var(--h-going-ink);
+  border: 2px solid var(--h-going-edge);
+}
+.in-progress__item p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.95rem;
+}
+.in-progress__emoji {
+  font-size: 1.4rem;
+  line-height: 0;
+}
+.in-progress__item .button {
+  min-height: 44px;
+  width: auto;
+  padding: 6px 18px;
+  font-size: 0.95rem;
+  border-radius: 999px;
+  box-shadow: none;
+  animation: none;
+}
+.in-progress__item .button--play {
+  background: var(--h-play);
+  color: var(--h-play-ink);
+  font-family: inherit;
+}
+.in-progress__more {
+  margin: 0;
+  font-weight: 700;
+}
+.in-progress__more a {
+  color: var(--h-title);
+}
+
+/* Games, in their groups: a small label with a thin line, then 3 slim cards across on a Chromebook. */
+.game-groups {
+  display: grid;
+  gap: 16px;
+}
+.game-group {
+  display: grid;
+  gap: 10px;
+}
+.game-group__label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--h-display);
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  color: var(--h-label);
+}
+.game-group__label::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--h-label-line);
+}
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 12px;
+}
+
+/* A game card in the Marble Rush course-card look (docs/HOME-ART-PLAN.md): the painted scene on top, a light panel over
+   its bottom edge, and a Play button that carries the same picture. A soft blurred copy of the picture fills the rest. */
+.game-card {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--h-r);
+  background: linear-gradient(160deg, var(--card-a), var(--card-b));
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.22);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.game-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.28);
+}
+.game-card--art::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--card-art) center bottom / cover no-repeat;
+  filter: blur(10px) saturate(1.1);
+  opacity: 0.55;
+  transform: scale(1.1);
+}
+.game-card__pic {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  object-fit: cover;
+}
+/* No picture yet: a band of the game's colours with its icon. */
+.game-card__pic--none {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 3 / 1;
+  padding-bottom: 20px;
+  color: rgba(255, 255, 255, 0.9);
+}
+.game-card__body {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  flex: 1;
+  margin: -26px 8px 8px;
+  padding: 12px 14px;
+  border-radius: calc(var(--h-r) - 4px);
+  background: rgba(255, 255, 255, 0.94);
+  color: #0f172a;
+}
+.game-card__text {
+  min-width: 0;
+}
+.game-card h3 {
+  margin: 0;
+  font-family: var(--h-display);
+  font-size: 1.2rem;
+}
+.game-card__text p {
+  margin: 2px 0 0;
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.game-card__moves {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+.game-card__moves p {
+  margin: 0;
+}
+.game-card__moves-title {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.game-card__moves ul {
+  display: contents;
+  list-style: none;
+}
+.game-card__moves li {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #e8edf5;
+}
+.game-card__moves li.is-empty {
+  opacity: 0.6;
+}
+.game-card__do {
+  display: grid;
+  gap: 8px;
+}
+.game-card__do .level-picker {
+  min-width: 0;
+}
+/* Play: the card's picture, darkened on the left so the words stay readable. */
+.game-card__go {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 8px 18px;
+  border-radius: 14px;
+  color: #ffffff;
+  font-size: 1.1rem;
+  font-weight: 900;
+  line-height: 1.2;
+  text-decoration: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  background-color: #1e293b;
+  background-image: linear-gradient(90deg, rgba(2, 6, 23, 0.85) 0%, rgba(2, 6, 23, 0.55) 50%, rgba(2, 6, 23, 0) 100%),
+    var(--card-art, linear-gradient(90deg, var(--card-a), var(--card-b)));
+  background-size: cover;
+  background-position: var(--card-focus, center);
+  box-shadow: 0 4px 0 rgba(15, 23, 42, 0.35);
+}
+.game-card:not(.game-card--art) .game-card__go {
+  background-image: linear-gradient(90deg, rgba(2, 6, 23, 0.6), rgba(2, 6, 23, 0.15)), linear-gradient(90deg, var(--card-a), var(--card-b));
+}
+.game-card__go:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 0;
+  box-shadow: 0 0 0 6px #0f172a, 0 4px 0 rgba(15, 23, 42, 0.35);
+}
+/* The bot levels inside the light panel. */
+.game-card .level-picker--joined .level-picker__options,
+.game-card .level-picker--joined .level-picker__option + .level-picker__option {
+  border-color: #c5cee0;
+}
+.game-card .level-picker--joined .level-picker__option:hover span {
+  background: #eef2f9;
+}
+.game-card .level-picker--joined .level-picker__option input:checked + span {
+  background: var(--card-a);
+  color: #ffffff;
+}
+
+/* The bot levels on a card: one joined row of three, each at least 44px tall. */
+.level-picker--joined .level-picker__options {
+  gap: 0;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.level-picker--joined .level-picker__option + .level-picker__option {
+  border-left: 2px solid rgba(255, 255, 255, 0.4);
+}
+.level-picker--joined .level-picker__option span {
+  min-height: 40px;
+  height: 100%;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 0;
+  font-size: 0.8rem;
+}
+.level-picker--joined .level-picker__option input:checked + span {
+  background: #fff;
+  color: #0f172a;
+}
+/* Focus inside the joined row: a white ring and a dark ring, so one of them shows on any button colour. */
+.level-picker--joined .level-picker__option input:focus-visible + span {
+  outline: none;
+  box-shadow: inset 0 0 0 3px #ffffff, inset 0 0 0 6px #0f172a;
+}
+
+/* Training: a card-sized tile among the games. */
+.link-tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--h-r);
+  background: var(--h-box);
+  color: var(--h-box-ink);
+  text-decoration: none;
+  box-shadow: var(--h-shadow);
+}
+.link-tile strong {
+  display: block;
+  font-family: var(--h-display);
+  font-size: 1.15rem;
+}
+.link-tile span span {
+  color: var(--h-box-soft);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.link-tile__emoji {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: var(--h-chip-done);
+  font-size: 1.6rem;
+}
+
+/* Play a friend, Leaderboard, See my stats: a row of slim buttons. */
+.quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.quick-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: var(--h-box);
+  color: var(--h-box-ink);
+  text-decoration: none;
+  box-shadow: var(--h-shadow-sm);
+  transition: transform 0.15s ease;
+}
+.quick-link:hover,
+.link-tile:hover {
+  transform: translateY(-2px);
+}
+.quick-link__note {
+  color: var(--h-box-soft);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* The bottom boxes: short and side by side. */
+.dashboard .panel-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 12px;
+}
+.dashboard .panel {
+  padding: 14px 16px;
+  box-shadow: var(--h-shadow-sm);
+  min-width: 0;
+}
+.dashboard .panel__title {
+  font-family: var(--h-display);
+  font-size: 1.05rem;
+  margin-bottom: 10px;
+  align-items: baseline;
+}
+.panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.dashboard .panel__head .panel__title {
+  margin-bottom: 0;
+}
+.panel__link {
+  font-family: var(--h-body);
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--h-link);
+}
+
+/* "This season" on the home page: the Clan Quest season road, small, in the theme's colours. */
+.season-strip__head {
+  flex-wrap: wrap;
+}
+.season-strip__count {
+  margin: 0;
+  color: var(--h-box-soft);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+.season-strip__headline {
+  margin: 0 0 12px;
+  color: var(--h-box-ink);
+}
+.season-strip__headline strong {
+  font-weight: 800;
+}
+.season-strip__track {
+  position: relative;
+}
+.season-strip__bar {
+  position: absolute;
+  left: 12.5%;
+  right: 12.5%;
+  top: 22px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--h-bar-track);
+}
+.season-strip__fill {
+  width: var(--season-fill, 0%);
+  height: 100%;
+  border-radius: 3px;
+  background: var(--h-bar-fill);
+}
+.season-strip__stops {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: center;
+}
+.season-strip__stops li {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 1px;
+  min-width: 0;
+}
+.season-strip__stops li.is-done {
+  opacity: 0.55;
+}
+.season-strip__medal {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--h-box-line);
+  background: var(--h-chip);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.season-strip__medal img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.season-strip__stops li.is-now .season-strip__medal {
+  width: 56px;
+  height: 56px;
+  margin: -4px 0;
+  border: 3px solid var(--h-bar-fill);
+  box-shadow: 0 0 0 3px var(--h-box), 0 0 0 5px var(--h-bar-fill);
+}
+.season-strip__stops li[data-stage='monster'] .season-strip__medal {
+  border-color: #b3261e;
+}
+.season-strip__stops li[data-stage='monster'].is-now .season-strip__medal {
+  box-shadow: 0 0 0 3px var(--h-box), 0 0 0 5px #b3261e;
+}
+.season-strip__name {
+  margin-top: 5px;
+  font-family: var(--h-display);
+  font-weight: 800;
+  font-size: 0.98rem;
+  color: var(--h-box-ink);
+}
+.season-strip__stops li.is-now .season-strip__name {
+  margin-top: 9px;
+}
+.season-strip__when {
+  color: var(--h-box-soft);
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+.season-strip__go {
+  margin: 12px 0 0;
+}
+.season-strip__go .button {
+  min-height: 44px;
+  padding: 8px 18px;
+  font-family: var(--h-body);
+  font-size: 0.95rem;
+  font-weight: 800;
+  background: var(--h-chip);
+  color: var(--h-link);
+  box-shadow: inset 0 0 0 2px var(--h-box-line);
+}
+.season-strip__go .button:hover {
+  background: var(--h-chip-hover);
+}
+@media (max-width: 640px) {
+  .season-strip__bar {
+    top: 17px;
+  }
+  .season-strip__medal {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+  .season-strip__stops li.is-now .season-strip__medal {
+    width: 40px;
+    height: 40px;
+    margin: 0;
+  }
+  .season-strip__when {
+    display: none;
+  }
+  .season-strip__name {
+    font-size: 0.88rem;
+  }
+  .season-strip__stops li.is-now .season-strip__name {
+    margin-top: 7px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .season-strip__fill {
+    transition: width 0.6s ease-out;
+  }
+}
+.dashboard .recent-list {
+  gap: 6px;
+  font-size: 0.92rem;
+}
+.dashboard .recent-list li {
+  gap: 8px;
+  min-width: 0;
+}
+.dashboard .recent-list__what {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dashboard .result {
+  min-width: 46px;
+  font-size: 0.75rem;
+}
+.dashboard .recent-list__points {
+  color: var(--h-pts);
+}
+.dashboard .panel__more {
+  margin-top: 10px;
+}
+.dashboard .panel a {
+  color: var(--h-link);
+}
+
+/* Achievements on the home page: small badges with their count. */
+.achievement-list--compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.achievement-list--compact li {
+  gap: 6px;
+  padding: 4px 12px 4px 4px;
+  border-radius: 999px;
+  background: var(--h-chip);
+  font-size: 0.85rem;
+}
+.achievement-list--compact li.is-done {
+  background: var(--h-chip-done);
+}
+.achievement-list--compact .achievement-list__emoji {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 1rem;
+  background: var(--h-surface);
+}
+.achievement-list--compact .achievement-list__name {
+  gap: 6px;
+  justify-content: flex-start;
+}
+.achievement-list--compact .achievement-list__count {
+  font-size: 0.8rem;
+}
+.achievement-list--compact progress {
+  display: none;
+}
+
+/* My maths: the focus as a line with its Change button, and the path folded underneath. */
+.my-maths p {
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+}
+.my-maths .button {
+  min-height: 44px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  border-radius: 999px;
+}
+.my-maths__path {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+.my-maths__toggle {
+  justify-self: start;
+}
+
+/* Soft and bright: white cards with a colour band on top, and coloured groups. */
+[data-hub-theme='soft'] .game-group__label span {
+  padding: 2px 12px;
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 0.85rem;
+}
+[data-hub-theme='soft'] .game-group--no-maths .game-group__label span {
+  background: #0e7490;
+}
+[data-hub-theme='soft'] .game-group--easy-maths .game-group__label span {
+  background: #b45309;
+}
+[data-hub-theme='soft'] .game-group--complex-maths .game-group__label span {
+  background: #6d28d9;
+}
+[data-hub-theme='soft'] .game-group--training .game-group__label span {
+  background: #15803d;
+}
+
+/* Game menu: a bright edge on each card, and a glow on hover. */
+[data-hub-theme='menu'] .game-card {
+  outline: 2px solid rgba(255, 255, 255, 0.18);
+  outline-offset: -2px;
+}
+[data-hub-theme='menu'] .game-card__body {
+  background: rgba(22, 18, 52, 0.92);
+  color: #ffffff;
+}
+[data-hub-theme='menu'] .game-card__text p {
+  color: #cbd5e1;
+}
+[data-hub-theme='menu'] .game-card__moves li {
+  background: rgba(255, 255, 255, 0.14);
+}
+[data-hub-theme='menu'] .game-card .level-picker--joined .level-picker__options,
+[data-hub-theme='menu'] .game-card .level-picker--joined .level-picker__option + .level-picker__option {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+[data-hub-theme='menu'] .game-card .level-picker--joined .level-picker__option:hover span {
+  background: rgba(255, 255, 255, 0.12);
+}
+[data-hub-theme='menu'] .game-card:hover {
+  box-shadow: 0 0 0 2px #fde047, 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+/* Phones: Play and Class Warp go under the name; words stay left. */
+@media (max-width: 560px) {
+  .hero {
+    padding: 12px 14px;
+  }
+  .hero__play {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .hero .hero__go {
+    flex: 1;
+  }
+  .hero__play-hint {
+    text-align: left;
+  }
+  .hero__text {
+    flex-basis: 200px;
+  }
+  /* Words get the whole line; the buttons go underneath. */
+  .in-progress__item {
+    flex-wrap: wrap;
+    border-radius: 20px;
+    padding: 8px 12px;
+  }
+  .in-progress__item p {
+    flex-basis: calc(100% - 44px);
+  }
+  .in-progress__item .button {
+    flex: 1;
+  }
+  .hero-level progress {
+    width: 120px;
+  }
+}
+
+/* ---------- Profile: My stats and My theme ---------- */
+
+.my-stats__columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 16px 28px;
+  align-items: start;
+}
+.my-stats__columns h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+.theme-picker__help {
+  margin: 0 0 10px;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+.theme-picker__tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+.theme-tile {
+  position: relative;
+}
+.theme-tile input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.theme-tile__body {
+  display: grid;
+  gap: 6px;
+  padding: 6px 6px 8px;
+  border-radius: 14px;
+  border: 3px solid var(--line);
+  background: var(--surface);
+  font-weight: 800;
+  text-align: center;
+}
+.theme-tile:hover .theme-tile__body {
+  border-color: var(--brand);
+}
+.theme-tile input:checked + .theme-tile__body {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px var(--brand);
+}
+.theme-tile input:focus-visible + .theme-tile__body {
+  outline: 3px solid var(--focus);
+  outline-offset: 7px;
+}
+/* A tiny home page in that theme: its own tokens apply inside it. */
+.theme-tile__preview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--h-page);
+}
+.theme-tile__bar,
+.theme-tile__box {
+  grid-column: 1 / -1;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--h-hero);
+}
+.theme-tile__card {
+  height: 22px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #0e7490, #1d4ed8);
+}
+.theme-tile__preview[data-hub-theme='soft'] .theme-tile__card {
+  background: linear-gradient(#0e7490 0 4px, #ffffff 4px);
+}
+.theme-tile__box {
+  height: 10px;
+  background: var(--h-box);
+}
+.theme-picker__save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: 12px;
+}
+/* Game menu: dark colour swatches keep a light edge, so they still show on the dark panel. */
+[data-hub-theme='menu'] .swatch span {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* The Dragon Maths season strip uses the same look; its dragon stop has a red rim, like Clan Quest's monster. */
+.season-strip__stops li[data-stage='dragon'] .season-strip__medal {
+  border-color: #b3261e;
+}
+.season-strip__stops li[data-stage='dragon'].is-now .season-strip__medal {
+  box-shadow: 0 0 0 3px var(--h-box), 0 0 0 5px #b3261e;
+}
+/* Clan Quest's and Dragon Maths' season strips: one above the other on small screens, side by side on wide ones. */
+.season-strips {
+  display: grid;
+  gap: 10px;
+}
+.season-strips > .panel {
+  margin: 0;
+}
+@media (min-width: 1000px) {
+  .season-strips--two {
+    grid-template-columns: 1fr 1fr;
+  }
 }

@@ -11,6 +11,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000d', 'dee@douglaspark.school.nz'),
   ('00000000-0000-0000-0000-00000000000e', 'mr.teacher@douglaspark.school.nz');
 update public.profiles set role = 'teacher', school_admin = true where id = '00000000-0000-0000-0000-00000000000e';
+-- The school's Everyone class, which every pupil here is in (the class reports need a class since 20261028000600).
+select set_config('test.everyone', (select class_id::text from public.class_members where student_id = '00000000-0000-0000-0000-00000000000a'), true);
 
 create function pg_temp.act_as(id text, email text) returns void language sql as $$
   select set_config('role', 'authenticated', true),
@@ -77,7 +79,7 @@ select throws_ok($$ select public.clan_extras(pg_temp.id('a')) $$, '42501', null
 select throws_ok($$ update public.clans set fame = 99999 $$, '42501', null, 'students cannot write fame');
 select throws_ok($$ select public.teacher_set_clan_maths('{"yearBand":6}') $$, '42501', null, 'students cannot change the maths settings');
 select throws_ok($$ select public.teacher_clans_new_season('NEW SEASON') $$, '42501', null, 'students cannot start a new season');
-select throws_ok($$ select public.teacher_clan_maths_class() $$, '42501', null, 'students cannot read the class''s maths records');
+select throws_ok($$ select public.teacher_clan_maths_class(current_setting('test.everyone')::uuid) $$, '42501', null, 'students cannot read the class''s maths records');
 select throws_ok($$ select public.teacher_clan_maths_student(pg_temp.id('a')) $$, '42501', null, 'students cannot read a pupil''s maths records');
 select pg_temp.reset();
 
@@ -85,7 +87,7 @@ select pg_temp.reset();
 create function pg_temp.cs() returns jsonb language sql security definer as $$ select public.clans_settings(pg_temp.id('a')) $$;
 create function pg_temp.rules() returns jsonb language sql security definer as $$ select public.clan_reward_rules() $$;
 create function pg_temp.fpd() returns integer language sql security definer as $$ select public.clan_fights_per_day(pg_temp.id('a')) $$;
-select is(pg_temp.cs(), '{"season": 1, "yearBand": 5, "fightsPerDay": 8, "enabledTables": [2,3,4,5,6,7,8,9,10], "enabledTopics": ["percentages","money","area","division","ratios","rates"]}'::jsonb,
+select is(pg_temp.cs(), '{"season": 1, "yearBand": 5, "fightsPerDay": 8, "typedNames": false, "enabledTables": [2,3,4,5,6,7,8,9,10], "enabledTopics": ["percentages","money","area","division","ratios","rates"]}'::jsonb,
   'the settings start as the Year 5 defaults, 8 fights a day, season 1');
 select is(pg_temp.fpd(), 8, 'the night''s rest gives back 8 fights by default');
 select pg_temp.teacher();
@@ -185,7 +187,7 @@ select is(public.points_total(pg_temp.id('c')), 20, 'each achievement is worth 1
 select is(public.clan_extras(pg_temp.id('c')) -> 'achievements', '["cq-buildings-5","cq-cries-50"]'::jsonb, 'the server is handed the ids earned');
 select is(public.clan_extras(pg_temp.id('c')) ->> 'fame', '0', '... and the fame');
 
--- ---- The class village rewards everyone who voted ----
+-- ---- The class village rewards everyone who voted (clan_village_close stays, unused; the midnight job no longer calls it) ----
 create function pg_temp.monday() returns integer language sql as $$ select public.clan_nz_week() * 7 - 3 $$;
 update public.clan_villages set chest = 1000 where id = 1;
 update public.clans set fame = 0;
@@ -194,8 +196,9 @@ delete from public.achievements where achievement = 'cq-village';
 insert into public.clan_votes (village_id, week, player, kind) values
   (1, public.clan_nz_week(), pg_temp.id('a'), 'smithy'), (1, public.clan_nz_week(), pg_temp.id('b'), 'church');
 select public.clan_nightly(pg_temp.monday() + 6);
-select is((public.clan_nightly(pg_temp.monday() + 7) ->> 'villagesClosed')::integer, 1, 'the week closes');
-select is((select levels ->> 'smithy' from public.clan_villages where id = 1), '1', '... and the Smithy was built');
+select is((public.clan_nightly(pg_temp.monday() + 7) ->> 'villagesClosed')::integer, 0, 'the midnight job closes no weeks any more');
+select public.clan_village_close(1, public.clan_nz_week(), current_date);
+select is((select levels ->> 'smithy' from public.clan_villages where id = 1), '1', 'closing the week by hand builds the Smithy');
 select is(pg_temp.fame('a'), 10, 'a pupil who voted for it gets 10 fame');
 select is(pg_temp.fame('b'), 10, '... and so does one who voted for something else (they took part)');
 select is(pg_temp.fame('c'), 0, 'a pupil who did not vote gets nothing');
@@ -209,7 +212,7 @@ select is(pg_temp.fame('a'), 10, 'later nights do not pay the same week again');
 select is(pg_temp.pts('a'), 5, '... in points either');
 update public.clan_villages set chest = 10 where id = 1;
 insert into public.clan_votes (village_id, week, player, kind) values (1, public.clan_nz_week() + 1, pg_temp.id('a'), 'church');
-select public.clan_nightly(pg_temp.monday() + 14);
+select public.clan_village_close(1, public.clan_nz_week() + 1, current_date);
 select is(pg_temp.fame('a'), 10, 'a chest too small to build pays nothing');
 
 -- ---- The scoreboard ----
@@ -291,7 +294,7 @@ select pg_temp.reset();
 update public.app_settings set clans_enabled = true;
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz');
 select is(public.progress_rules() -> 'clanQuest', pg_temp.rules(), 'switched on, the rules are shown');
-select is((select count(*)::integer from jsonb_array_elements(public.my_progress() -> 'achievements') a where a ->> 'game' = 'clan-quest'), 8, '... and the eight achievements');
+select is((select count(*)::integer from jsonb_array_elements(public.my_progress() -> 'achievements') a where a ->> 'game' = 'clan-quest'), 10, '... and the ten achievements (Master Builder and Giant Slayer too)');
 select is((select count(*)::integer from jsonb_array_elements(public.my_progress() -> 'achievements') a where a ->> 'game' = 'clan-quest' and a ->> 'earnedAt' is not null), 4, '... with the earned ones marked (first win, boss, war, village)');
 select pg_temp.reset();
 
@@ -307,10 +310,10 @@ select public.record_fact_answers(pg_temp.id('b'), 'clan-quest', pg_temp.req(72)
 select pg_temp.teacher();
 select is(public.teacher_clan_maths_student(pg_temp.id('a')) -> 'kinds' -> 0 ->> 'key', 'clan:y5:ratio', 'a teacher sees a pupil''s hardest kind first');
 select is((public.teacher_clan_maths_student(pg_temp.id('a')) -> 'kinds' -> 1 ->> 'attempts')::integer, 2, '... with how often it was tried');
-select is((public.teacher_clan_maths_class() ->> 'players')::integer, 2, 'the class view counts the pupils who answered');
-select is(public.teacher_clan_maths_class() -> 'hardest' -> 0 ->> 'key', 'clan:y5:ratio', '... and lists the kinds most often wrong (6 tries, 2 pupils)');
-select is((public.teacher_clan_maths_class() -> 'hardest' -> 0 ->> 'correct')::integer, 1, '... with how many were right');
-select is(public.teacher_clan_maths_class()::text ~* '(ana|ben|cai|dee|douglaspark|@)', false, 'the class view has no pupil names');
+select is((public.teacher_clan_maths_class(current_setting('test.everyone')::uuid) ->> 'players')::integer, 2, 'the class view counts the pupils who answered');
+select is(public.teacher_clan_maths_class(current_setting('test.everyone')::uuid) -> 'hardest' -> 0 ->> 'key', 'clan:y5:ratio', '... and lists the kinds most often wrong (6 tries, 2 pupils)');
+select is((public.teacher_clan_maths_class(current_setting('test.everyone')::uuid) -> 'hardest' -> 0 ->> 'correct')::integer, 1, '... with how many were right');
+select is(public.teacher_clan_maths_class(current_setting('test.everyone')::uuid)::text ~* '(ana|ben|cai|dee|douglaspark|@)', false, 'the class view has no pupil names');
 select pg_temp.reset();
 
 select * from finish();

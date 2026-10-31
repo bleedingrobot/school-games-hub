@@ -2,9 +2,10 @@
  * "My maths focus" on a student's home page: what the games are asking right now and why, and (when their teacher allows it, and
  * no teacher focus is running) a way to pick their own skills or go back to auto. Loaded on its own so the maths code stays out of the
  * home page's first download. On the home page it takes its part of the page's one request (`homePage`, null while that is on its
- * way); anywhere else it asks for itself.
+ * way); anywhere else it asks for itself. Given the maths path (`path`), it becomes the home page's one "My maths" box, with the
+ * path under the focus.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { clearMyFocus, fetchMyFocus, saveMyFocus } from '../data/focus';
 import { partOf, type HomePage } from '../data/homePage';
 import { FriendlyError } from '../data/profile';
@@ -14,7 +15,7 @@ import '../maths/focus.css';
 
 const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
 
-export default function MathsFocusCard({ homePage }: { homePage?: Promise<HomePage> | null }) {
+export default function MathsFocusCard({ homePage, path }: { homePage?: Promise<HomePage> | null; path?: ReactNode }) {
   const [focus, setFocus] = useState<MathsFocus | null>(null);
   const [choosing, setChoosing] = useState(false);
   const [skills, setSkills] = useState<string[]>([]);
@@ -60,9 +61,9 @@ export default function MathsFocusCard({ homePage }: { homePage?: Promise<HomePa
   }
 
   return (
-    <section className="panel focus-card" aria-labelledby="focus-card-title">
+    <section className={`panel focus-card${path ? ' my-maths' : ''}`} aria-labelledby="focus-card-title">
       <h2 id="focus-card-title" className="panel__title">
-        <span aria-hidden="true">🎯</span> My maths focus
+        <span aria-hidden="true">🎯</span> {path ? 'My maths' : 'My maths focus'}
       </h2>
       <p>
         {note ?? 'Auto: the games pick the next maths for you, starting with what you are ready for.'}
@@ -107,6 +108,7 @@ export default function MathsFocusCard({ homePage }: { homePage?: Promise<HomePa
       <p role="status" className="focus-card__status">
         {status}
       </p>
+      {path}
     </section>
   );
 }

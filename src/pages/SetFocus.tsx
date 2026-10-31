@@ -4,9 +4,9 @@
  * Every action is checked by the database, which refuses anyone who does not teach the class.
  */
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
-import { fetchClasses, fetchClassDetail, type ClassDetail, type ClassSummary } from '../data/classes';
+import { fetchClassDetail, type ClassDetail, type ClassSummary } from '../data/classes';
 import { fetchMathsAuto, fetchStudentsChooseFocus, saveMathsAuto, saveStudentsChooseFocus } from '../data/classSettings';
 import { endFocus, extendFocus, fetchFocuses, setFocus, type FocusBatch, type FocusLength, type FocusScope } from '../data/focus';
 import { FriendlyError } from '../data/profile';
@@ -17,6 +17,7 @@ import { FocusResults } from '../maths/FocusResults';
 import { whoFor } from '../maths/focusText';
 import { LengthPicker, LENGTHS } from '../maths/LengthPicker';
 import { SkillPicker } from '../maths/SkillPicker';
+import { useTeacherClass } from '../teacher/TeacherClass';
 import '../maths/focus.css';
 import './classes.css';
 
@@ -43,62 +44,18 @@ export default function SetFocus() {
 
 export { whoFor };
 
+/** The Maths tab's Focus page, for the class in the teacher header (src/teacher/TeacherShell.tsx). */
 function SetFocusView() {
-  const [params, setParams] = useSearchParams();
-  const [classes, setClasses] = useState<ClassSummary[] | null>(null);
-  const [failed, setFailed] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchClasses()
-      .then(setClasses)
-      .catch((error) => {
-        setFailed(errorText(error));
-        setClasses([]);
-      });
-  }, []);
-
-  const mine = (classes ?? []).filter((c) => !c.archived);
-  const wanted = params.get('class');
-  const chosen = mine.find((c) => c.id === wanted) ?? mine.find((c) => c.teaching) ?? mine[0] ?? null;
+  const [params] = useSearchParams();
+  const { current } = useTeacherClass();
 
   return (
-    <div className="teacher classes">
-      <h1 className="page-title">Maths focus</h1>
-      <p className="classes__back">
-        <Link to="/teacher">← Back to the teacher view</Link>
-      </p>
+    <div className="classes">
+      <h2 className="sr-only">Maths focus</h2>
       <p className="teacher__classes-link">
         Choose the maths that Gem Keep and Mission Control ask. With no focus, they ask what each student is ready for.
       </p>
-
-      {classes === null ? (
-        <p className="teacher__classes-link">Loading…</p>
-      ) : mine.length === 0 ? (
-        <section className="panel">
-          <p className="panel__empty">
-            {failed ?? 'You don’t teach a class yet.'} <Link to="/classes">Make one on the My classes page</Link> first.
-          </p>
-        </section>
-      ) : (
-        <>
-          {mine.length > 1 && (
-            <div className="teacher__picker">
-              <label>
-                <span>Class</span>{' '}
-                <select value={chosen?.id ?? ''} onChange={(e) => setParams({ class: e.target.value }, { replace: true })}>
-                  {mine.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                      {c.teaching ? '' : ' (not mine)'}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          )}
-          {chosen && <ClassFocus key={chosen.id} summary={chosen} preset={{ student: params.get('student'), skill: params.get('skill') }} />}
-        </>
-      )}
+      {current && <ClassFocus key={current.id} summary={current} preset={{ student: params.get('student'), skill: params.get('skill') }} />}
     </div>
   );
 }
@@ -365,7 +322,7 @@ function NewFocus({ classId, detail, preset, onSet, onError }: { classId: string
             </label>
             <label>
               <input type="radio" name="focus-scope" checked={scope === 'group'} onChange={() => setScope('group')} disabled={detail.groups.length === 0} /> A group
-              {detail.groups.length === 0 && ' (make a group on the My classes page first)'}
+              {detail.groups.length === 0 && ' (make a group on Class set-up first)'}
             </label>
             <label>
               <input type="radio" name="focus-scope" checked={scope === 'student'} onChange={() => setScope('student')} disabled={detail.members.length === 0} /> Some students

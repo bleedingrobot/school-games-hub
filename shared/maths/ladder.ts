@@ -90,6 +90,7 @@ export const LADDER: LadderSkill[] = [
   generated('round-10-100', 'Rounding to the nearest 10 and 100', 'rounding', GENERATED_SKILL_KEYS['round-10-100'], 'MS.Y3.NUM.NS.P5'),
   generated('bonds-1000', 'Hundreds that make 1000', 'place-value', GENERATED_SKILL_KEYS['bonds-1000']),
   generated('unit-fraction-of', 'A fraction of an amount (⅓ of 15)', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['unit-fraction-of'], 'MS.Y3.NUM.RN.P7'),
+  generated('fraction-bonds', 'Fractions that make 1 (⅜ + ⅝)', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['fraction-bonds'], 'MS.Y3.NUM.RN.P6', 'MS.Y3.NUM.RN.K6'),
   tables[2],
   tables[3],
   generated('times-tens', 'Times with tens and hundreds (30 × 4)', 'place-value', GENERATED_SKILL_KEYS['times-tens'], 'MS.Y4.NUM.OP.P3'),
@@ -100,6 +101,7 @@ export const LADDER: LadderSkill[] = [
   generated('factor-pairs', 'Factor pairs', 'place-value', GENERATED_SKILL_KEYS['factor-pairs'], 'MS.Y5.NUM.NS.P2'),
   generated('round-big', 'Rounding bigger numbers and decimals', 'rounding', GENERATED_SKILL_KEYS['round-big'], 'MS.Y5.NUM.NS.P3', 'MS.Y5.NUM.NS.P4'),
   generated('decimal-equivalents', 'Fractions as decimals', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['decimal-equivalents'], 'MS.Y5.NUM.RN.P4'),
+  generated('decimal-bonds', 'Decimals that make 1 and 10 (0.35 + 0.65)', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['decimal-bonds'], 'MS.Y4.NUM.RN.P10', 'MS.Y5.NUM.RN.P12'),
   generated('percent-basic', '10%, 25% and 50%', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['percent-basic'], 'MS.Y5.NUM.RN.P5', 'MS.Y5.NUM.RN.P15'),
   generated('fraction-of', 'Fractions of an amount (⅔ of 24)', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['fraction-of'], 'MS.Y5.NUM.RN.P13'),
   generated('times-decimals', 'Times 10 and 100 with decimals', 'fractions-decimals-percentages', GENERATED_SKILL_KEYS['times-decimals'], 'MS.Y5.NUM.RN.P7'),
@@ -172,10 +174,29 @@ export function activeKeys(skill: LadderSkill, enabledTables: readonly number[],
 }
 
 /**
+ * Jumping ahead (James, 22 Oct 2026): a student whose records show a times-table skill secure (70% of its times facts in box 2
+ * or higher) is past every easier skill below it, even ones they have never been asked: someone who knows ×3, ×4 and ×8 isn't
+ * kept on bonds to 10. Only times-table skills count, as they are big (30 to 60 facts) so a lucky run can't do it, and only their
+ * times facts, so a class with division off (or a student who hasn't met it yet) jumps all the same. Returns the index just
+ * after the highest such skill, or 0.
+ */
+export function tablesJumpFloor(byKey: ReadonlyMap<string, FactStats>, enabled: readonly number[] = TABLES): number {
+  let jump = 0;
+  LADDER.forEach((skill, index) => {
+    if (!skill.built || skill.stage !== 'times-tables') return;
+    const times = activeKeys(skill, enabled, false).filter((k) => k.startsWith('mul:'));
+    if (times.length === 0) return;
+    const share = times.filter((k) => (byKey.get(k)?.box ?? 0) >= 2).length / times.length;
+    if (share >= STEP_SECURE_SHARE) jump = index + 1;
+  });
+  return jump;
+}
+
+/**
  * Where a student is on the ladder, worked out from their records: the first built skill that
  * isn't secure yet (70% of its facts in box 2 or higher, the same rule as the times-table
- * campaign) is the one they're on. Skipped skills (all their tables switched off) are secure
- * for free. With a `floor` (placement or the furthest place reached, see place.ts) the
+ * campaign) is the one they're on. A skill with all its tables switched off is left out: it never becomes the
+ * current skill and doesn't count towards progress (it shows as 'upcoming' with a share of 1). With a `floor` (placement or the furthest place reached, see place.ts) the
  * built skills before it are behind the student (passed over, and secure only if their records say so), so forgetting a fact brings more review but never
  * drops the student's place below the floor.
  */
@@ -185,7 +206,7 @@ export function ladderProgress(stats: Iterable<FactStats>, opts: LadderOptions =
   let current: LadderSkill | null = null;
   let secureCount = 0;
   let builtCount = 0;
-  const floor = opts.floor ?? 0;
+  const floor = Math.max(opts.floor ?? 0, tablesJumpFloor(byKey, enabled));
   const skills: SkillProgress[] = LADDER.map((skill, index) => {
     if (!skill.built) return { skill, status: 'later' as const, share: 0 };
     const keys = activeKeys(skill, enabled, opts.division !== false);

@@ -1,10 +1,12 @@
 /**
  * The warm-up that finds a student's starting place on the maths ladder (docs/MATHS-FOCUS-PLAN.md section 5). About 10 questions that
- * jump up while the answers are right and quick and step back when they aren't. Friendly and skippable; never called a test, and
+ * jump up while the answers are right and quick and step back when they aren't. Friendly, and a must-do once in a class whose games pick the maths (no skip since 22 Oct 2026); never called a test, and
  * it shows no score. The server checks the questions and stores only where to start.
  */
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
+import { useAuth } from "../auth/AuthContext";
+import { rememberPlaced } from "../data/placementGate";
 import { fetchMyLadder, sendPlacement } from "../data/ladder";
 import { FriendlyError } from "../data/profile";
 import { PLACEMENT_QUESTIONS } from "../../shared/maths/config";
@@ -34,8 +36,16 @@ const errorText = (error: unknown) =>
     ? error.message
     : "Something went wrong. Please try again.";
 
+/** Where to go after the warm-up: a page on this site only (the games and Training send students here and back). */
+export function safeBack(raw: string | null): string | null {
+  return raw && raw.startsWith("/") && !raw.startsWith("//") && !raw.startsWith("/placement") ? raw : null;
+}
+
 export default function Placement() {
   const [step, setStep] = useState<Step>("loading");
+  const { profile } = useAuth();
+  const [search] = useSearchParams();
+  const back = safeBack(search.get("back"));
   /** The questions asked so far (the last one is on screen) and what was answered, side by side. */
   const [asked, setAsked] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<PlacementAnswer[]>([]);
@@ -100,21 +110,11 @@ export default function Placement() {
     setMessage(null);
     try {
       await sendPlacement({ answers: all });
+      if (profile) rememberPlaced(profile.id);
       setStep("done");
     } catch (error) {
       setMessage(errorText(error));
       setStep("trouble");
-    }
-  }
-
-  async function skip() {
-    setStep("saving");
-    try {
-      await sendPlacement({ skip: true });
-      setStep("done");
-    } catch (error) {
-      setMessage(errorText(error));
-      setStep("intro");
     }
   }
 
@@ -159,8 +159,8 @@ export default function Placement() {
         {step === "unavailable" && (
           <>
             <p>There’s nothing to do here right now.</p>
-            <Link to="/" className="button button--primary">
-              Back to home
+            <Link to={back ?? "/"} className="button button--primary">
+              {back ? "Carry on" : "Back to home"}
             </Link>
           </>
         )}
@@ -168,8 +168,9 @@ export default function Placement() {
           <>
             <p>
               Here are about {PLACEMENT_QUESTIONS} quick questions. They help
-              the games start in a good place for you. There are no marks and no
-              one sees how you did. If a question is tricky, just have a go.
+              the games and Training start in a good place for you. There are no
+              marks and no one sees how you did. If a question is tricky, just
+              have a go.
             </p>
             <div className="focus-card__actions">
               <button
@@ -179,18 +180,7 @@ export default function Placement() {
               >
                 Let’s go
               </button>
-              <button
-                type="button"
-                className="button button--light-outline"
-                onClick={() => void skip()}
-              >
-                Skip it
-              </button>
             </div>
-            <p className="focus-card__small">
-              If you skip, the games start from your class’s usual place, and
-              you can’t do this later.
-            </p>
             {message && <p role="alert">{message}</p>}
           </>
         )}
@@ -217,8 +207,8 @@ export default function Placement() {
               <span aria-hidden="true">🎉</span> All done! The games are ready
               for you.
             </p>
-            <Link to="/" className="button button--primary">
-              Back to home
+            <Link to={back ?? "/"} className="button button--primary">
+              {back ? "Carry on" : "Back to home"}
             </Link>
           </>
         )}

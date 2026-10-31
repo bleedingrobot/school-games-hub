@@ -40,12 +40,12 @@ const button = (name: string | RegExp) =>
     return typeof name === 'string' ? label === name : name.test(label);
   });
 
-/** Click through a whole fight with the default action. */
+/** Click through a whole fight with the suggested plan. */
 async function playOut(u: ReturnType<typeof user>) {
   for (let i = 0; i < 120; i++) {
     const done = button('See how everyone did');
     if (done) return done;
-    const next = button('No thanks') ?? button('Carry on') ?? button(/Default action/);
+    const next = button('No thanks') ?? button('Carry on') ?? button(/Skip\s*Show the whole round/) ?? button(/Next round/) ?? button(/Fight with this plan/);
     if (!next) throw new Error('No button to press in the fight');
     await u.click(next);
   }
@@ -101,6 +101,10 @@ describe('a fight', () => {
     expect(screen.getByText(/Fights today: 8 of 8/)).toBeInTheDocument();
     const done = await playOut(u);
     expect(screen.getByText(/enemies are beaten/)).toBeInTheDocument();
+    // The clan's best hit, and (the first fight of the day) a new best, remembered on this device.
+    expect(screen.getByText(/^Best hit: .+ for \d+\./)).toBeInTheDocument();
+    expect(screen.getByText('★ Your best hit today!')).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('clans-best-hit')!).amount).toBeGreaterThan(0);
     await u.click(done);
     expect(screen.getByRole('heading', { name: 'Victory!' })).toBeInTheDocument();
     expect(screen.getAllByText(/experience/)).toHaveLength(4);
@@ -137,7 +141,7 @@ describe('a fight', () => {
     await answer(u, q, q.answer);
     expect(screen.getByText(/Right! Spend your Battle Cry on/)).toBeInTheDocument();
     await u.keyboard('d');
-    expect(screen.getByText(/what will they do\?/)).toBeInTheDocument();
+    expect(screen.getByText('The plan for this round')).toBeInTheDocument();
   });
 
   it('a wrong Battle Cry answer shows the working and carries on, with nothing lost', async () => {
@@ -150,7 +154,7 @@ describe('a fight', () => {
     expect(screen.getByText(/Not quite/)).toBeInTheDocument();
     expect(screen.getByText(q.working[0])).toBeInTheDocument();
     await u.click(screen.getByRole('button', { name: 'Carry on' }));
-    expect(screen.getByText(/what will they do\?/)).toBeInTheDocument();
+    expect(screen.getByText('The plan for this round')).toBeInTheDocument();
   });
 
   it('"No thanks" skips the question and still shows how it works', async () => {
@@ -160,7 +164,7 @@ describe('a fight', () => {
     await u.click(screen.getByRole('button', { name: 'No thanks' }));
     expect(screen.getByText(/No problem/)).toBeInTheDocument();
     await u.click(screen.getByRole('button', { name: 'Carry on' }));
-    expect(screen.getByText(/what will they do\?/)).toBeInTheDocument();
+    expect(screen.getByText('The plan for this round')).toBeInTheDocument();
   });
 
   it('can be played with the keyboard alone', async () => {
@@ -170,10 +174,15 @@ describe('a fight', () => {
     await u.click(screen.getByRole('button', { name: 'Start the adventure' }));
     for (const box of screen.getAllByRole('checkbox')) if ((box as HTMLInputElement).checked) await u.click(box);
     await intoFight(u);
-    // from here: keys only. Enter = default action for each member; a, then 1 = attack the first enemy.
+    // from here: keys only. Every other round: 1 to change the first member, a to attack (then 1 for the first enemy
+    // if asked); Enter fights with the plan.
     for (let i = 0; i < 60 && !button('See how everyone did'); i++) {
-      await u.keyboard(i % 3 === 0 ? 'a' : '{Enter}');
-      if (screen.queryByText(/Which enemy|attack…/)) await u.keyboard('1');
+      if (i % 2 === 0) {
+        await u.keyboard('1');
+        await u.keyboard('a');
+        if (screen.queryByText(/attack…/)) await u.keyboard('1');
+      }
+      await u.keyboard('{Enter}');
     }
     expect(screen.getByRole('button', { name: 'See how everyone did' })).toBeInTheDocument();
   });
@@ -195,5 +204,142 @@ describe('a fight', () => {
     await u.click(screen.getByRole('button', { name: 'Back to the clan' }));
     await u.click(screen.getByRole('button', { name: 'Skip a day' }));
     expect(screen.getByText('Day 2')).toBeInTheDocument();
+  });
+});
+
+describe('the place paintings (Clans art Stage A.4)', () => {
+  const sceneShown = () => document.querySelector<HTMLImageElement>('.cq-scene')?.dataset.scene;
+
+  it('the creator, then each place, shows its own painting, hidden from screen readers', async () => {
+    const u = user();
+    render(<ClanQuest seed={SEED} />);
+    expect(sceneShown()).toBe('creator');
+    await u.click(screen.getByRole('button', { name: 'Start the adventure' }));
+    expect(sceneShown()).toBe('village');
+    expect(document.querySelector('.cq-scene')?.getAttribute('alt')).toBe('');
+    for (const [place, scene] of [['The Market', 'market'], ['The Training Hall', 'training'], ['The Church', 'church'], ['Scoreboard', 'scoreboard']]) {
+      await u.click(screen.getByRole('button', { name: place }));
+      expect(sceneShown(), place).toBe(scene);
+      await u.click(screen.getByRole('button', { name: /^Back/ }));
+    }
+  });
+
+  it('a fight keeps to one screen: no painting across the top (Stage A.6)', async () => {
+    const u = user();
+    await makeClanOnScreen(u);
+    await intoFight(u);
+    expect(sceneShown()).toBeUndefined();
+  });
+});
+
+describe('the fight, painted (Clans art Stage A.6)', () => {
+  it('shows each monster and member painted, the mine zone behind the monsters, and a painting for how it went', async () => {
+    const u = user();
+    await makeClanOnScreen(u);
+    await intoFight(u);
+    const enemies = screen.getByRole('list', { name: 'Enemies' });
+    const monsters = enemies.querySelectorAll('img.cq-monster-art');
+    expect(monsters.length).toBe(within(enemies).getAllByRole('listitem').length);
+    for (const m of monsters) expect(m.getAttribute('src')).toMatch(/\/monsters\//);
+    expect(enemies.dataset.zone).toBe('Meadow');
+    expect(enemies.style.getPropertyValue('--cq-zone')).toMatch(/zone-meadow/);
+    const clan = screen.getByRole('list', { name: 'Your clan' });
+    expect(clan.querySelectorAll('.cq-portrait--painted img')).toHaveLength(4);
+    await u.click((await playOut(u))!);
+    expect(['victory', 'rest', 'mines']).toContain(document.querySelector<HTMLImageElement>('.cq-scene')?.dataset.scene);
+  });
+});
+
+describe('picking a look in the creator (Clans art Stage A.5)', () => {
+  it('each member shows the four looks; the pick changes the portrait and goes with the clan', async () => {
+    const u = user();
+    render(<ClanQuest seed={SEED} />);
+    const first = screen.getAllByRole('article')[0];
+    const picker = within(first).getByRole('group', { name: 'Look' });
+    expect(within(picker).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Girl 1', 'Girl 2', 'Boy 1', 'Boy 2']);
+    await u.click(within(picker).getByRole('button', { name: 'Girl 2' }));
+    expect(within(picker).getByRole('button', { name: 'Girl 2' })).toHaveAttribute('aria-pressed', 'true');
+    expect(first.querySelector('.cq-portrait--painted img')?.getAttribute('src')).toContain('female-2');
+    await u.click(screen.getByRole('button', { name: 'Start the adventure' }));
+    expect(screen.getAllByRole('article')[0].querySelector('.cq-portrait--painted img')?.getAttribute('src')).toContain('female-2');
+  });
+});
+
+describe('items and quests (Clans art Stage A.7)', () => {
+  it('the Market shelf shows each item painted, and the quest shows its own painting', async () => {
+    const u = user();
+    await makeClanOnScreen(u);
+    await u.click(screen.getByRole('button', { name: 'The Market' }));
+    const shelf = screen.getByRole('list', { name: 'On the shelf' });
+    const items = within(shelf).getAllByRole('button');
+    expect(items.length).toBeGreaterThan(0);
+    for (const b of items) expect(b.querySelector('img.cq-item-art')?.getAttribute('src')).toMatch(/\/items\//);
+    await u.click(screen.getByRole('button', { name: /^Back/ }));
+    await u.click(screen.getByRole('button', { name: /^Quest/ }));
+    expect(document.querySelector<HTMLImageElement>('.cq-scene')?.dataset.scene).toMatch(/^quest-\d+$/);
+    expect(document.querySelector('.cq-scene')?.getAttribute('src')).toMatch(/\/quests\//);
+  });
+});
+
+describe('clan banners (Clans art Stage A.8)', () => {
+  it('the clan home shows the banner that matches the second word of the clan name, and so does the Scoreboard', async () => {
+    const u = user();
+    await makeClanOnScreen(u);
+    const name = screen.getByRole('heading', { level: 2 }).textContent!;
+    const noun = name.split(' ').pop()!.toLowerCase();
+    expect(document.querySelector('.cq-clanbanner')?.getAttribute('src')).toContain(`/banners/${noun}`);
+    await u.click(screen.getByRole('button', { name: 'Scoreboard' }));
+    const mine = screen.getByRole('rowheader', { name: new RegExp(name) });
+    expect(mine.querySelector('img.cq-rowbanner')?.getAttribute('src')).toContain(`/banners/${noun}`);
+  });
+});
+
+describe('made-up hero names', () => {
+  it('only offers them when the teacher has switched them on', () => {
+    render(<ClanQuest seed={SEED} />);
+    expect(screen.queryByRole('button', { name: 'Make up my own name' })).toBeNull();
+  });
+
+  it('keeps the list as the default, takes a typed name, and holds back a rude or repeated one', async () => {
+    const u = user();
+    render(<ClanQuest seed={SEED} typedNames />);
+    const start = screen.getByRole('button', { name: 'Start the adventure' });
+    expect(screen.getAllByRole('combobox', { name: 'Name' })).toHaveLength(4);
+    await u.click(screen.getAllByRole('button', { name: 'Make up my own name' })[0]);
+    const box = screen.getByRole('textbox', { name: 'Name' });
+    expect(start).toBeDisabled();
+    await u.type(box, 'poop');
+    expect(screen.getByText('Please pick a kinder name.')).toBeInTheDocument();
+    expect(start).toBeDisabled();
+    await u.clear(box);
+    await u.type(box, startingDrafts(SEED)[1].name.toLowerCase());
+    expect(screen.getByText('Another member has this name.')).toBeInTheDocument();
+    await u.clear(box);
+    await u.type(box, 'te ahi');
+    expect(start).toBeEnabled();
+    await u.click(start);
+    expect(await screen.findByText(/Te Ahi/)).toBeInTheDocument();
+  });
+
+  it("keeps the member's look while a name is typed", async () => {
+    const u = user();
+    render(<ClanQuest seed={SEED} typedNames />);
+    const looks = () => screen.getAllByRole('group', { name: 'Look' })[1];
+    const shown = () => within(looks()).getAllByRole('button').find((b) => b.getAttribute('aria-pressed') === 'true')!.getAttribute('aria-label');
+    const before = shown();
+    await u.click(screen.getAllByRole('button', { name: 'Make up my own name' })[1]);
+    for (const letter of 'kaia') {
+      await u.type(screen.getByRole('textbox', { name: 'Name' }), letter);
+      expect(shown()).toBe(before);
+    }
+  });
+
+  it('can go back to the list', async () => {
+    const u = user();
+    render(<ClanQuest seed={SEED} typedNames />);
+    await u.click(screen.getAllByRole('button', { name: 'Make up my own name' })[2]);
+    await u.click(screen.getByRole('button', { name: 'Pick from the list instead' }));
+    expect(screen.getAllByRole('combobox', { name: 'Name' })).toHaveLength(4);
+    expect(screen.getByRole('button', { name: 'Start the adventure' })).toBeEnabled();
   });
 });

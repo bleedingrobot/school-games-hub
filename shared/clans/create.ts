@@ -6,7 +6,8 @@
 import { CONFIG } from './config';
 import { raceByName, classByName, rollMember } from './character';
 import { newEmpire } from './empire';
-import { CLAN_ADJECTIVES, CLAN_NOUNS, MEMBER_NAMES } from './words';
+import { CLAN_ADJECTIVES, CLAN_NOUNS, MEMBER_NAMES, memberNameFrom } from './words';
+import { isLook, lookFromName, type Look } from './looks';
 import type { Clan, Member } from './types';
 
 export const MAX_ROLLS = 3;
@@ -20,11 +21,14 @@ export interface Draft {
   rolls: number;
   /** Fixed for this slot, so the same slot and roll number always show the same member. */
   seed: number;
+  /** Which painting (looks.ts). Only the picture: rolls and stats don't depend on it. */
+  look?: Look;
 }
 
 /** The member a draft shows right now. Slot 0 is the clan leader. */
 export function draftMember(d: Draft, slot: number): Member {
-  return rollMember({ rng: Math.imul(d.seed | 0, 2654435761) + d.rolls * 7919 }, d.name, d.race, d.cls, slot === 0);
+  const m = rollMember({ rng: Math.imul(d.seed | 0, 2654435761) + d.rolls * 7919 }, d.name, d.race, d.cls, slot === 0);
+  return { ...m, look: d.look ?? lookFromName(d.name) };
 }
 
 /** The seed of slot `slot` of a clan with this seed. */
@@ -55,9 +59,10 @@ export function isClanName(name: unknown): name is string {
 
 /**
  * Check what the creator sent and build the clan from it. Only the choices matter (race, class, name,
- * how many rolls); the stats are always rebuilt here from the clan's seed.
+ * how many rolls); the stats are always rebuilt here from the clan's seed. `typedNames` is the teacher's switch:
+ * when it is on a hero may have a made-up name (checked and tidied here) as well as one from the list.
  */
-export function clanFromChoices(seed: number, name: unknown, drafts: unknown): { ok: true; clan: Clan } | { ok: false; say: string } {
+export function clanFromChoices(seed: number, name: unknown, drafts: unknown, typedNames = false): { ok: true; clan: Clan } | { ok: false; say: string } {
   if (!isClanName(name)) return { ok: false, say: 'Pick a clan name from the lists.' };
   if (!Array.isArray(drafts) || drafts.length !== CONFIG.minMembers) return { ok: false, say: `A new clan has ${CONFIG.minMembers} members.` };
   const built: Draft[] = [];
@@ -65,9 +70,13 @@ export function clanFromChoices(seed: number, name: unknown, drafts: unknown): {
     const d = raw as Partial<Draft> | null;
     if (!d || typeof d !== 'object') return { ok: false, say: 'Those members could not be read.' };
     if (typeof d.race !== 'string' || !raceByName(d.race) || typeof d.cls !== 'string' || !classByName(d.cls)) return { ok: false, say: 'Pick a race and a class from the lists.' };
-    if (typeof d.name !== 'string' || !MEMBER_NAMES.includes(d.name)) return { ok: false, say: 'Pick member names from the list.' };
+    const named = memberNameFrom(d.name, typedNames);
+    if (!named.ok) return { ok: false, say: named.say };
+    // Heroes are told apart by name (the shop's "examined" list), so no two in a clan may share one.
+    if (built.some((b) => b.name.toLowerCase() === named.name.toLowerCase())) return { ok: false, say: 'Give each member a different name.' };
     if (!Number.isInteger(d.rolls) || (d.rolls as number) < 0 || (d.rolls as number) > MAX_ROLLS) return { ok: false, say: `You can roll again ${MAX_ROLLS} times for each member.` };
-    built.push({ race: d.race, cls: d.cls, name: d.name, rolls: d.rolls as number, seed: slotSeed(seed, slot) });
+    if (d.look !== undefined && !isLook(d.look)) return { ok: false, say: 'Pick one of the four looks.' };
+    built.push({ race: d.race, cls: d.cls, name: named.name, rolls: d.rolls as number, seed: slotSeed(seed, slot), ...(d.look ? { look: d.look } : {}) });
   }
   return { ok: true, clan: makeClan(name, built) };
 }

@@ -82,7 +82,7 @@ describe('what a request earns', () => {
 
   it('adds up lifetime counts', () => {
     const s = addEarned(addEarned(NO_STATS, { wins: 2, cries: 3 }), { bosses: 1, wars: 1, kingdomRaids: 1, classRaids: 1 });
-    expect(s).toEqual({ mineWins: 2, bossWins: 1, warWins: 1, kingdomRaids: 1, classRaids: 1, cries: 3, villageBuilt: 0 });
+    expect(s).toEqual({ mineWins: 2, bossWins: 1, warWins: 1, kingdomRaids: 1, classRaids: 1, cries: 3, villageBuilt: 0, monsterSlain: 0 });
   });
 });
 
@@ -121,10 +121,10 @@ describe('what the rules say each action earned', () => {
     expect(earned).toMatchObject({ bosses: 1, wins: 0 });
   });
 
-  it('pays a gift to the chest, a vote and everything else in the shop nothing', () => {
+  it('pays an upgrade and everything else in the shop nothing', () => {
     const s = created();
-    const gift = ok(s, { type: 'chestGive', gold: 10 });
-    expect('earned' in gift.result).toBe(false);
+    const built = ok(s, { type: 'upgrade', building: 'walls' });
+    expect('earned' in built.result).toBe(false);
     const train = applyAction(s, { type: 'wake', member: 0 }, ctx());
     if (train.ok) expect('earned' in train.result).toBe(false);
   });
@@ -133,21 +133,21 @@ describe('what the rules say each action earned', () => {
     const s = created();
     const e = empireOf(s.clan);
     e.troops.footman = 60;
-    const plan = { rounds: 3, push: 'steady' as const, loot: 10 };
-    const war = ok(s, { type: 'war', kingdom: 'bunny-hollow', plan });
+    const plan = 'steady' as const;
+    const war = ok(s, { type: 'war', kingdom: 'bunny-hollow', push: plan });
     expect(war.result).toMatchObject({ type: 'war' });
     expect((war.result as { earned?: unknown }).earned).toMatchObject({ wars: 1 });
-    const raid = ok(s, { type: 'raid', kingdom: 'bunny-hollow', plan });
+    const raid = ok(s, { type: 'raid', kingdom: 'bunny-hollow', push: plan });
     expect((raid.result as { earned?: unknown }).earned).toMatchObject({ kingdomRaids: 1 });
     const weak = created();
     empireOf(weak.clan).troops.footman = 1;
-    const lostWar = applyAction(weak, { type: 'war', kingdom: 'dragons-rest', plan }, ctx());
+    const lostWar = applyAction(weak, { type: 'war', kingdom: 'dragons-rest', push: plan }, ctx());
     if (lostWar.ok && lostWar.result.type === 'war') expect(lostWar.result.earned).toBeUndefined();
   });
 
   it('can never be given by a browser: an action has no place for it', () => {
-    const wanted = parseAction({ type: 'chestGive', gold: 5, earned: { wins: 50 }, fame: 99, points: 99 });
-    expect(wanted).toEqual({ type: 'chestGive', gold: 5 });
+    const wanted = parseAction({ type: 'upgrade', building: 'walls', earned: { wins: 50 }, fame: 99, points: 99 });
+    expect(wanted).toEqual({ type: 'upgrade', building: 'walls' });
     const round = parseAction({ type: 'fightRound', round: 1, orders: [], cry: null, earned: { bosses: 9 }, result: 'won' });
     expect(round).toEqual({ type: 'fightRound', round: 1, orders: [], cry: null });
   });
@@ -177,8 +177,8 @@ describe('the mine fights a day and the settings', () => {
 });
 
 describe('achievements', () => {
-  it('has eight, with the plan\'s measures', () => {
-    expect(ACHIEVEMENTS.map((a) => a.id)).toEqual(['cq-first-win', 'cq-first-boss', 'cq-level-10', 'cq-level-20', 'cq-buildings-5', 'cq-first-war', 'cq-village', 'cq-cries-50']);
+  it('has ten, with the plan\'s measures', () => {
+    expect(ACHIEVEMENTS.map((a) => a.id)).toEqual(['cq-first-win', 'cq-first-boss', 'cq-level-10', 'cq-level-20', 'cq-buildings-5', 'cq-first-war', 'cq-village', 'cq-cries-50', 'cq-master-builder', 'cq-giant-slayer']);
   });
 
   it('reaches each at its goal and not before', () => {
@@ -194,9 +194,9 @@ describe('achievements', () => {
     s.clan.members[2].level = 20;
     expect(reached(measures(s.clan, NO_STATS))).toEqual(['cq-level-10', 'cq-level-20']);
     const e = empireOf(s.clan);
-    e.plots = Array.from({ length: 5 }, () => ({ width: 3, length: 3, building: 'barracks' as const }));
+    Object.assign(e.levels, { barracks: 1, walls: 1, tower: 1, forge: 1, strongroom: 1 });
     expect(reached(measures(s.clan, NO_STATS))).toContain('cq-buildings-5');
-    e.plots = e.plots.slice(0, 4);
+    e.levels.strongroom = 0;
     expect(reached(measures(s.clan, NO_STATS))).not.toContain('cq-buildings-5');
   });
 });
@@ -211,11 +211,12 @@ describe('the database and the rules agree', () => {
     expect(rules).toContain(`'points', jsonb_build_object('minesPerPoint', ${p.minesPerPoint}, 'boss', ${p.boss}, 'war', ${p.war}, 'villageBuilt', ${p.villageBuilt})`);
   });
 
-  it('has the same eight achievements', () => {
-    for (const [i, a] of ACHIEVEMENTS.entries()) {
+  it('has the same achievements', () => {
+    // Master Builder is in the season migration, Giant Slayer in the monster one (seasonRules.test.ts checks both).
+    for (const [i, a] of ACHIEVEMENTS.filter((x) => !['cq-master-builder', 'cq-giant-slayer'].includes(x.id)).entries()) {
       expect(sql).toContain(`('${a.id}', 'clan-quest', '${a.name}', '${a.emoji}', '${a.measure}', ${a.goal}, ${i + 1})`);
     }
-    expect((sql.match(/'clan-quest', '/g) ?? []).length).toBeGreaterThanOrEqual(ACHIEVEMENTS.length);
+    expect((sql.match(/'clan-quest', '/g) ?? []).length).toBeGreaterThanOrEqual(ACHIEVEMENTS.length - 2);
   });
 
   it('starts the settings as the Year 5 defaults with the default number of fights', () => {

@@ -1,7 +1,7 @@
 /**
- * Maths Monsters on the teacher page: the game switch and the topics that are on, the class view
- * (each topic's answers, the hardest questions, badges, saves the server check turned down) and each
- * student's game. Loaded only when the teacher page opens.
+ * Maths Monsters on the teacher pages: the topics that are on and the class report (each topic's answers, the hardest
+ * questions, badges, saves the server check turned down) in the Games table's drawer, for the header's class; and each
+ * student's game. Loaded only when opened. The on/off switch is in the Games table row (src/games/monsters/teacher.ts).
  */
 import { useEffect, useState } from 'react';
 import { BandedPack } from '../../shared/maths/banded';
@@ -12,12 +12,15 @@ import { EARLY_FACTS } from '../../shared/maths/skillPacks/earlyFacts';
 import { GENERATED } from '../../shared/maths/skillPacks/generated';
 import { speciesOf } from '../../shared/monsters/monsterBook';
 import {
-  ALL_TOPICS, fetchClassMonsters, fetchMonstersSettings, fetchStudentMonsters, saveMonstersSettings,
-  type ClassMonsters, type MonstersSettings, type StudentMonsters,
+  ALL_TOPICS, fetchClassMonsters, fetchMonstersSettings, fetchStudentMonsters, saveMonstersTopics,
+  type ClassMonsters, type StudentMonsters,
 } from '../data/monsters';
 import { FriendlyError } from '../data/profile';
-import { useTeacherClass } from '../teacher/TeacherClass';
+import { SettingChips, useSetting } from '../teacher/Settings';
 import { whenPlayed } from './Dashboard';
+import type { HardestRow, TeacherAlert } from '../games/types';
+import { refusalAlerts } from '../teacher/alerts';
+import { shortCache } from '../teacher/shortCache';
 import './teacher-gem-keep.css';
 
 const errorText = (error: unknown) => (error instanceof FriendlyError ? error.message : 'Something went wrong. Please try again.');
@@ -58,112 +61,64 @@ const REASON: Record<string, string> = {
 };
 const reasonText = (code: string) => REASON[code] ?? `check failed (${code})`;
 
-export function MonstersTeacherPanels() {
+/**
+ * The drawer on the Games table (docs/TEACHER-VIEW-PLAN.md, 4.5), for the header's class: the topics, then the class report.
+ * The on/off switch is in the table row.
+ */
+export function MonstersTeacherSettings({ classId }: { classId: string }) {
   return (
     <>
-      <MonstersSettingsPanel />
-      <MonstersClassPanel />
+      <MonstersTopicsPanel classId={classId} />
+      <MonstersClassReport classId={classId} />
     </>
   );
 }
 
-function MonstersSettingsPanel() {
-  const { classId, ready } = useTeacherClass();
-  const [settings, setSettings] = useState<MonstersSettings | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
+const TOPIC_CHIPS = ALL_TOPICS.map((t) => ({ value: t, label: TOPIC_LABEL[t] }));
 
-  useEffect(() => {
-    if (!ready) return;
-    setSettings(null);
-    setStatus(null);
-    fetchMonstersSettings(classId)
-      .then(setSettings)
-      .catch((error) => setStatus(errorText(error)));
-  }, [ready, classId]);
-
-  async function change(next: MonstersSettings, message: string) {
-    const before = settings;
-    setSettings(next);
-    setStatus('Saving…');
-    try {
-      await saveMonstersSettings(next, classId);
-      setStatus(message);
-    } catch (error) {
-      setSettings(before);
-      setStatus(errorText(error));
-    }
-  }
-
+function MonstersTopicsPanel({ classId }: { classId: string }) {
+  const settings = useSetting(() => fetchMonstersSettings(classId), [classId]);
   return (
     <section className="panel gk-teacher teacher__switch" aria-labelledby="mm-settings-title">
       <h2 id="mm-settings-title" className="panel__title">
-        Maths Monsters
+        Maths Monsters settings
       </h2>
-      <p>
-        A world to walk around where every attack and catch is a maths question. Switched off, it is hidden from students and nothing is saved.
-      </p>
-      {settings && (
-        <>
-          <p>{settings.enabled ? 'On: students can play it from the dashboard.' : 'Off: students can’t see it yet.'}</p>
-          {settings.enabled ? (
-            <button type="button" className="button button--danger" onClick={() => void change({ ...settings, enabled: false }, 'Maths Monsters is off.')}>
-              Switch Maths Monsters off
-            </button>
-          ) : (
-            <button type="button" className="button button--primary" onClick={() => void change({ ...settings, enabled: true }, 'Maths Monsters is on.')}>
-              Switch Maths Monsters on
-            </button>
-          )}
-          <fieldset className="choice-group">
-            <legend>Topics on</legend>
-            <div className="choice-group__chips">
-              {ALL_TOPICS.map((t) => {
-                const on = settings.topics.includes(t);
-                return (
-                  <label key={t} className="chip">
-                    <input
-                      type="checkbox"
-                      checked={on}
-                      disabled={on && settings.topics.length === 1}
-                      onChange={() =>
-                        void change(
-                          { ...settings, topics: on ? settings.topics.filter((x) => x !== t) : ALL_TOPICS.filter((x) => x === t || settings.topics.includes(x)) },
-                          'Saved. Students get the new topics next time they open Maths Monsters.',
-                        )
-                      }
-                    />
-                    <span>{TOPIC_LABEL[t]}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
-          <p>
-            A topic switched off is never asked: its questions come from the nearest topic that is on, so no area is ever blocked.
-          </p>
-        </>
+      <SettingChips
+        label="Topics on"
+        about="A topic switched off is never asked: its questions come from the nearest topic that is on, so no area is ever blocked. Students get the new topics the next time they open Maths Monsters."
+        options={TOPIC_CHIPS}
+        value={settings.value?.topics ?? null}
+        loadFailed={settings.failed}
+        save={(topics) => saveMonstersTopics(topics, classId)}
+      />
+      {settings.value?.enabled === false && (
+        <p className="panel__empty">Maths Monsters is off for this class, so this only matters once it’s on.</p>
       )}
-      <p role="status" className="teacher__status">
-        {status}
-      </p>
     </section>
   );
 }
 
-function MonstersClassPanel() {
+/** How the class is getting on: each topic, the hardest questions, badges, and saves the server check turned down. */
+function MonstersClassReport({ classId }: { classId: string }) {
   const [data, setData] = useState<ClassMonsters | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchClassMonsters()
-      .then(setData)
-      .catch((error) => setFailed(errorText(error)));
-  }, []);
+    let current = true;
+    setData(null);
+    setFailed(null);
+    fetchClassMonsters(classId)
+      .then((d) => current && setData(d))
+      .catch((error) => current && setFailed(errorText(error)));
+    return () => {
+      current = false;
+    };
+  }, [classId]);
 
   return (
     <section className="panel gk-teacher" aria-labelledby="mm-class-title">
       <h2 id="mm-class-title" className="panel__title">
-        Maths Monsters: the class
+        Maths Monsters: this class
         {data && <span className="panel__count">{data.players} playing</span>}
       </h2>
       {failed ? (
@@ -171,7 +126,7 @@ function MonstersClassPanel() {
       ) : !data ? (
         <p className="panel__empty">Loading…</p>
       ) : data.players === 0 ? (
-        <p className="panel__empty">No students have started Maths Monsters yet.</p>
+        <p className="panel__empty">No students in this class have started Maths Monsters yet.</p>
       ) : (
         <div className="gk-teacher__class">
           <table className="stats-table">
@@ -195,35 +150,39 @@ function MonstersClassPanel() {
               ))}
             </tbody>
           </table>
-          <table className="stats-table">
-            <caption>Hardest questions (most often wrong)</caption>
-            <thead>
-              <tr>
-                <th scope="col">Question</th>
-                <th scope="col">Topic</th>
-                <th scope="col">Right</th>
-                <th scope="col">Asked</th>
-                <th scope="col">Students</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.hardest.length === 0 ? (
+          {/* Five columns don't fit a phone: this one table scrolls sideways inside its card (and can be scrolled from the
+              keyboard once focused). */}
+          <div className="gk-teacher__wide" tabIndex={0} role="group" aria-label="Hardest questions">
+            <table className="stats-table">
+              <caption>Hardest questions (most often wrong)</caption>
+              <thead>
                 <tr>
-                  <td colSpan={5}>Not enough answers yet.</td>
+                  <th scope="col">Question</th>
+                  <th scope="col">Topic</th>
+                  <th scope="col">Right</th>
+                  <th scope="col">Asked</th>
+                  <th scope="col">Students</th>
                 </tr>
-              ) : (
-                data.hardest.map((f) => (
-                  <tr key={`${f.pack}/${f.key}`}>
-                    <th scope="row">{keyLabel(f.pack, f.key)}</th>
-                    <td>{TOPIC_LABEL[f.pack] ?? f.pack}</td>
-                    <td>{share(f.correct, f.attempts)}</td>
-                    <td>{f.attempts}</td>
-                    <td>{f.students}</td>
+              </thead>
+              <tbody>
+                {data.hardest.length === 0 ? (
+                  <tr>
+                    <td colSpan={5}>Not enough answers yet.</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  data.hardest.map((f) => (
+                    <tr key={`${f.pack}/${f.key}`}>
+                      <th scope="row">{keyLabel(f.pack, f.key)}</th>
+                      <td>{TOPIC_LABEL[f.pack] ?? f.pack}</td>
+                      <td>{share(f.correct, f.attempts)}</td>
+                      <td>{f.attempts}</td>
+                      <td>{f.students}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
           <table className="stats-table">
             <caption>Topic Tower badges</caption>
             <thead>
@@ -268,6 +227,15 @@ function MonstersClassPanel() {
       )}
     </section>
   );
+}
+
+const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
+
+/** One line for the student's folded Games row: "12 of 54 monsters, 2 of 6 badges", or nothing before they've played. */
+export async function monstersStudentSummary(student: string): Promise<string | null> {
+  const data = await fetchStudentMonsters(student);
+  if (!data.save) return null;
+  return `${data.save.owned} of 54 monsters, ${data.save.badges} of 6 badges${data.refused > 0 ? `, ${plural(data.refused, 'save')} turned down` : ''}`;
 }
 
 /** One student's Maths Monsters, inside their panel on the teacher page. */
@@ -325,4 +293,24 @@ export function MonstersStudentPanel({ student }: { student: string }) {
       )}
     </div>
   );
+}
+
+const classReport = (classId: string) => shortCache(`monsters:${classId}`, () => fetchClassMonsters(classId));
+
+/** The class's hardest questions, for the merged table on the Maths tab (stage 5). */
+export async function monstersHardest(classId: string): Promise<HardestRow[]> {
+  const data = await classReport(classId);
+  return data.hardest.map((f) => ({
+    question: keyLabel(f.pack, f.key),
+    topic: TOPIC_LABEL[f.pack] ?? f.pack,
+    attempts: f.attempts,
+    correct: f.correct,
+    students: f.students,
+  }));
+}
+
+/** Saves the game turned down this week, for Today's "Needs you" (stage 5). */
+export async function monstersAlerts(classId: string): Promise<TeacherAlert[]> {
+  const data = await classReport(classId);
+  return refusalAlerts(data.refusals, { id: 'monsters', name: 'Maths Monsters' }, 'save');
 }

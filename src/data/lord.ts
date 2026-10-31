@@ -13,6 +13,7 @@
  */
 import type { FactStats } from '../../shared/maths/leitner';
 import type { LordAction, LordReply, LordRequest, LordState } from '../../shared/lord/server';
+import { topicsOn } from '../../shared/lord/maths';
 import { FINISH_ACTIONS } from '../../shared/lord/server';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { readSettings } from './classSettings';
@@ -28,6 +29,8 @@ export interface LordSettings {
   enabled: boolean;
   forestPerDay: number;
   seasonStart: string | null;
+  /** The maths topics that are on. */
+  topics: string[];
   /** The day the game was switched off, while the season clock waits (null when it is running). */
   pausedSince?: string | null;
 }
@@ -73,6 +76,8 @@ export type Sent = { kind: 'reply'; reply: LordReply } | { kind: 'offline' } | {
 export interface LordBackend {
   /** True for the browser-only trial, which has the test tools. The live game never shows them. */
   trial: boolean;
+  /** The trial's season is pretend (always day 1) unless it was given a start date: then this is true and the season road shows. The live game always shows it. */
+  seasonDated?: boolean;
   load(): Promise<LordLoad>;
   send(request: LordRequest): Promise<Sent>;
   /** Sends the queued finishes. 'later' if some are still waiting. */
@@ -245,27 +250,114 @@ export function createServerBackend(player: string): LordBackend {
 // ---------------------------------------------------------------------------
 
 export async function fetchLordSettings(classId?: string | null): Promise<LordSettings> {
-  const data = await readSettings(['lord_enabled', 'lord_forest_per_day', 'lord_season_start', 'lord_paused_since'], classId);
+  const data = await readSettings(['lord_enabled', 'lord_forest_per_day', 'lord_season_start', 'lord_paused_since', 'lord_topics'], classId);
   if (!data) throw new FriendlyError('We couldn’t load the Dragon Maths settings.');
   return {
     enabled: data.lord_enabled === true, forestPerDay: data.lord_forest_per_day as number,
-    seasonStart: (data.lord_season_start as string | null) ?? null, pausedSince: (data.lord_paused_since as string | null) ?? null,
+    seasonStart: (data.lord_season_start as string | null) ?? null, topics: topicsOn(data.lord_topics), pausedSince: (data.lord_paused_since as string | null) ?? null,
   };
 }
 
-/** Is the game switched on? (The dashboard hides it when it isn't.) */
-export async function fetchLordEnabled(): Promise<boolean> {
-  return (await fetchLordSettings()).enabled;
+/** Is the game switched on? (The dashboard hides it when it isn't.) For the pupil's class, or a teacher's class when given. */
+export async function fetchLordEnabled(classId?: string | null): Promise<boolean> {
+  return (await fetchLordSettings(classId)).enabled;
 }
 
 export async function saveLordSettings(settings: Partial<LordSettings> & { enabled: boolean }, classId?: string | null): Promise<LordSettings> {
   const { data, error } = await supabase.rpc('teacher_set_lord', { settings, target_class: classId ?? null });
   forgetSettings();
+  forgetSchoolSeason();
   if (error || !data) {
-    if (error?.code === '22023' && error.message) throw new FriendlyError(error.message);
+    if ((error?.code === '22023' || error?.code === '42501') && error.message) throw new FriendlyError(error.message);
     throw new FriendlyError('We couldn’t save the Dragon Maths settings.');
   }
   return data as LordSettings;
+}
+
+/**
+ * The school's season (one date for the whole school, migration 20261028000400). `number`, `dayOfSeason` and `daysLeft` are
+ * null before season 1 starts; `startsIn` is the days until it does. `canChange` is true for a school admin.
+ */
+export interface LordSchoolSeason {
+  start: string | null;
+  pausedSince: string | null;
+  number: number | null;
+  dayOfSeason: number | null;
+  daysLeft: number | null;
+  startsIn: number | null;
+  canChange: boolean;
+}
+
+/** `live: false` until migration 20261028000400 is on the database: each class still has its own date then. */
+export type SchoolSeasonState = { live: true; season: LordSchoolSeason } | { live: false };
+
+let schoolSeason: Promise<SchoolSeasonState> | null = null;
+
+/** Forget the remembered school season, after anything that may change it. */
+export function forgetSchoolSeason() {
+  schoolSeason = null;
+}
+
+/** PostgREST's answer when the database has no function with these arguments. */
+const NO_SUCH_FUNCTION = 'PGRST202';
+
+/**
+ * The school's season, remembered so the Games table's row, its "?" and the drawer ask once. Before the migration is live the
+ * server has no `lord_school_season` (PGRST202): then `{ live: false }`, and the teacher pages keep each class's own date.
+ */
+export function fetchLordSchoolSeason(): Promise<SchoolSeasonState> {
+  if (!schoolSeason) {
+    const asking: Promise<SchoolSeasonState> = Promise.resolve(supabase.rpc('lord_school_season')).then(({ data, error }) => {
+      if (error?.code === NO_SUCH_FUNCTION) return { live: false };
+      if (error || !data) throw new FriendlyError('We couldn’t load the school’s Dragon Maths seasons.');
+      return { live: true, season: data as LordSchoolSeason };
+    });
+    schoolSeason = asking;
+    asking.catch(() => {
+      if (schoolSeason === asking) schoolSeason = null;
+    });
+  }
+  return schoolSeason;
+}
+
+async function saveSchool(name: string, args: Record<string, unknown>, text: string): Promise<LordSchoolSeason> {
+  const { data, error } = await supabase.rpc(name, args);
+  forgetSettings();
+  forgetSchoolSeason();
+  if (error || !data) {
+    if ((error?.code === '22023' || error?.code === '42501') && error.message) throw new FriendlyError(error.message);
+    throw new FriendlyError(text);
+  }
+  return data as LordSchoolSeason;
+}
+
+/** A school admin sets the first day of season 1 for the whole school. The server refuses a date that takes the season back. */
+export function saveLordSchoolSeason(start: string): Promise<LordSchoolSeason> {
+  return saveSchool('admin_set_lord_season', { start }, 'We couldn’t save the season date.');
+}
+
+/** A school admin's holiday pause: on closes Dragon Maths for every class and stops the clock; off carries the season on. */
+export function saveLordHoliday(paused: boolean): Promise<LordSchoolSeason> {
+  return saveSchool('admin_set_lord_holiday', { paused }, 'We couldn’t save the holiday pause.');
+}
+
+/**
+ * The Games table's switch. Once the school season is live, off closes Dragon Maths for this class only and the school's
+ * seasons carry on. Before that, switching off pauses the class's season clock and switching on again carries the season on
+ * where it left off (the server moves the start date forward by the days it was off).
+ */
+export async function saveLordEnabled(enabled: boolean, classId: string): Promise<void> {
+  await saveLordSettings({ enabled }, classId);
+}
+
+/**
+ * One change from the Settings drawer (forest fights, the season date or the topics). The server needs the switch with every
+ * save, so this reads the class's current switch first and sends it back unchanged: a stale one would switch the game (and
+ * the season clock) on or off by accident.
+ */
+export async function saveLordChange(change: Pick<Partial<LordSettings>, 'forestPerDay' | 'seasonStart' | 'topics'>, classId: string): Promise<void> {
+  const { enabled } = await fetchLordSettings(classId);
+  await saveLordSettings({ ...change, enabled }, classId);
 }
 
 export type { LordAction as LordActionRequest };
@@ -307,9 +399,10 @@ function fail(error: { code?: string; message?: string } | null, text: string): 
   throw new FriendlyError(text);
 }
 
-export async function fetchClassLord(): Promise<ClassLord> {
-  const { data, error } = await supabase.rpc('teacher_lord_class');
-  if (error || !data) fail(error, 'We couldn’t load Dragon Maths for the class.');
+/** Dragon Maths' report for one class, for a teacher who teaches it (migration 20261028000300). */
+export async function fetchClassLord(classId: string): Promise<ClassLord> {
+  const { data, error } = await supabase.rpc('teacher_lord_class', { target_class: classId });
+  if (error || !data) fail(error, 'We couldn’t load Dragon Maths for this class.');
   return data as ClassLord;
 }
 

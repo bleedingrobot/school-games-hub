@@ -29,7 +29,7 @@ No LORD.ts code or text is copied (it is GPL-3). Rules and numbers are not owned
 | Numbers | Gold in the hundreds of millions | Gold and prices ÷ 100 and rounded to two significant figures; dearest item 5,200 | Sums for a 9-year-old |
 | Exp curve | 100, 400, 1,000, 4,000 ... 10,000,000 (about 157 days to level 12) | About 14 fights a level, built from the monsters' own exp | A 5-week season (see below) |
 | Losing a forest fight | Lose all gold and 10% exp, dead till tomorrow | Lose carried gold only, keep exp, wake at the healer with 30% HP and keep playing | James, question 3 |
-| Bank interest | 10% a day, automatic | None; the economy is tuned without it. An optional maths bonus is possible later | Plan section 15 |
+| Bank interest | 10% a day, automatic | No automatic interest. From level 4, once a day, the banker asks "You have X gold saved. I pay 1 gold for every 20. How much interest?" (5%, whole gold). Right: that much is added; after a hint: half, rounded up; wrong: nothing, and the right amount is shown. Needs at least 20 gold saved (28 Oct 2026) | Plan section 15 |
 | Classes | Death Knight, Mystic, Thief | **Knight** (Power strike, double damage), **Mage** (Zap, a fixed 1.5 × attack; Mend, heal a quarter), **Trickster** (Dodge, the next hit misses and you hit back; Pinch, a normal hit and a quarter of the monster's gold). 3 uses a day | Kid-friendly; balanced by the simulator, all three finish within a day of each other |
 | Healer price | 5 × level per HP | `round(level × 0.25)` per HP, at least 1 | Healing ate 55-60% of gold at the first try; now about 40% |
 | The dragon | One 15,000 HP fight; 3 kills end the game for everyone | Three stages, a breather between them (30% HP back); no game-ending kill, seasons instead | Plan section 9 |
@@ -49,6 +49,20 @@ No LORD.ts code or text is copied (it is GPL-3). Rules and numbers are not owned
 - **A fight left alone for a whole day** (handed out two or more New Zealand days ago) counts as a loss, the soft kind: a forest fight drops the gold carried and wakes you at the healer; a master fight heals you (the day's try stays used); a dragon fight sends you home.
 - **Saved-up turns:** unused forest fights pile up for missed days (two days' worth at most); a missed day saves up an extra master try (two at most). See Pace.
 - **The season pause:** switching the game off pauses the season clock; switching it on moves the start date forward by the days it was closed.
+
+## The hint (L.6, 19 Oct 2026)
+
+Every question in Dragon Maths has one **Hint** button. It never says the answer. A pick-one question greys out two wrong choices (the two furthest from the answer). A typed question says what numbers the answer is between ("between 40 and 60"; the stretch is 5, 10, 20 or 50 wide depending on how big the answer is; decimals and money use 1 or 5). The same question always gets the same hint.
+
+A **right answer after a hint** earns about half: size it up ×1.25 (not ×1.5), 5% off at the shop or healer (not 10%), half the interest, the riddle gold ×0.75 (not ×1.5; wrong is ×0.3), half the master-trial strength, half the dragon riddle's bonus. A forest event counts a hinted right answer as right (the reward there is all or nothing, and the hint costs nothing else). A hint can only ever lower what you earn, so the server believes the browser's word that it was used (`hinted` in the proof); a wrong answer is wrong either way.
+
+## The teacher's topic switches (19 Oct 2026)
+
+The teacher page has a tick-list of the eight maths topics (place value, add and take away, times tables, division, fractions, decimals, money, patterns), per class, all on to start, at least one always on. A topic that is off is never asked:
+
+- Each place keeps its own topics when any of them is on (the shop: money and add and take away). If all of a place's own topics are off, it asks about whichever topics are on, so no place is ever without a question.
+- A forest event about a topic that is off is left out of the forest. The rest of the forest (fights, luck and joke events) is unchanged, and with every topic on nothing changes at all, down to the seed. An event that was already waiting when the topic was switched off is walked past: no question, no maths reward, nothing lost.
+- The server refuses an answer from a topic that is off (it counts as wrong, and the teacher page lists it as "a question from the wrong topic"). A pupil who had a question open when the teacher ticked the box can get one wrong this way; they lose nothing.
 
 ## Kept out for good
 

@@ -6,26 +6,36 @@
   aspect-ratio: 1;
   line-height: 0;
 }
-.mon-art svg {
+.mon-art__pic {
   display: block;
   width: 100%;
   height: 100%;
   overflow: visible;
 }
+/* A painted picture, drawn in place of the SVG when there is one (art/painted.ts). */
+img.mon-art__pic {
+  object-fit: contain;
+  transform-origin: 50% 90%;
+}
+/* An unknown monster in the book: a dark shape with no name. */
+.mon-art--nameless img.mon-art__pic {
+  filter: brightness(0);
+  opacity: 0.82;
+}
 .mon-art__body {
   transform-box: view-box;
 }
-.mon-art--idle:not(.mon-art--still) svg {
+.mon-art--idle:not(.mon-art--still) .mon-art__pic {
   animation: mon-bob 2.4s ease-in-out infinite;
-  transform-origin: 60px 108px;
+  transform-origin: 50% 90%;
 }
-.mon-art--hurt svg {
+.mon-art--hurt .mon-art__pic {
   animation: mon-hurt 0.5s ease-in-out;
-  transform-origin: 60px 108px;
+  transform-origin: 50% 90%;
 }
-.mon-art--faint svg {
+.mon-art--faint .mon-art__pic {
   animation: mon-faint 0.9s ease-in forwards;
-  transform-origin: 60px 108px;
+  transform-origin: 50% 90%;
 }
 .mon-sparkle {
   animation: mon-twinkle 1.6s ease-in-out infinite;
@@ -234,15 +244,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mon-art svg,
+  .mon-art__pic,
   .mon-sparkle {
     animation: none !important;
   }
-  .mon-art--faint svg {
+  .mon-art--faint .mon-art__pic {
     opacity: 0.15;
     transform: translateY(22%) scaleY(0.3);
   }
-  .mon-art--hurt svg {
+  .mon-art--hurt .mon-art__pic {
     filter: brightness(1.6);
   }
   /* The effects are only decoration: show a soft glow instead of movement. */

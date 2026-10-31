@@ -204,9 +204,11 @@ export async function fetchReactionsEnabled(classId?: string | null): Promise<bo
   return data?.space_reactions_enabled === true;
 }
 
-/** What the teacher allows for Mission Control maths. If it can't be read, maths stays off. */
+/** What the teacher allows for Mission Control maths. If a student's game can't read it, maths stays off. */
 export async function fetchMathsSwitch(classId?: string | null): Promise<MathsSwitch> {
   const data = await readSettings(['space_maths'], classId);
+  // A teacher reading a named class is told when it fails, so the Games table never shows Off for a setting it couldn't read.
+  if (!data && classId) throw new FriendlyError('We couldn’t load this setting.');
   return parseMathsSwitch(data?.space_maths);
 }
 

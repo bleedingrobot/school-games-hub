@@ -1,8 +1,11 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
+import { setSpaceMaths } from '../../data/teacher';
+import { SPACE_MATHS_ABOUT, useSpaceMaths } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const SpacePlay = lazy(() => import('./SpacePlay').then((m) => ({ default: m.SpacePlay })));
+const SpaceTeacherSettings = lazy(() => import('../../pages/TeacherSpace').then((m) => ({ default: m.SpaceTeacherSettings })));
 
 function SpaceIcon({ size = 64 }: { size?: number }) {
   return (
@@ -26,4 +29,9 @@ export const space: GameDefinition = {
   Play: SpacePlay,
   ranked: false,
   group: 'easy-maths',
+  // The teacher's Games table: the maths switch in the row (the server checks it too), reactions in the drawer.
+  teacher: {
+    maths: { useValue: useSpaceMaths, save: (mode, classId) => setSpaceMaths(mode, classId), about: SPACE_MATHS_ABOUT },
+    Settings: SpaceTeacherSettings,
+  },
 };

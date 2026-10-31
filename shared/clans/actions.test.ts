@@ -3,10 +3,11 @@ import { applyAction, catchUp, clanDay, parseAction, type Action, type Applied, 
 import { shopPrice, examineCost } from './character';
 import { CONFIG } from './config';
 import { MAX_ROLLS, makeClan, slotSeed, startingDrafts } from './create';
-import { battle, empireOf, kingdomById, kingdomSide, sideOf } from './empire';
+import { battle, empireOf, fixedPlan, kingdomById, kingdomSide, needsUpgrade, sideOf } from './empire';
 import { ITEMS } from './gamedata';
 import { raidSeed } from './play';
 import { QUESTS, buildPuzzle, puzzleFor, todaysQuest } from './quests';
+import type { SeasonClock } from './season';
 import { DEFAULT_PRACTICAL_SETTINGS } from '../maths/practical';
 
 const SEED = 123456;
@@ -35,11 +36,10 @@ const rich = (state: ServerState, gold = 5000): ServerState => {
   s.clan.gold = gold;
   return s;
 };
+/** A clan with 5000 gold and a Barracks (level 1) built the proper way. */
 const withBarracks = (state: ServerState): ServerState => {
-  const s = structuredClone(state);
-  const e = empireOf(s.clan);
-  e.vault = 5000;
-  return ok(ok(s, { type: 'develop', width: 4, length: 4 }).state, { type: 'build', plot: 0, kind: 'barracks' }).state;
+  const s = rich(state);
+  return ok(s, { type: 'upgrade', building: 'barracks' }).state;
 };
 
 describe('reading an action', () => {
@@ -51,16 +51,22 @@ describe('reading an action', () => {
     ['a member that is not there', { type: 'wake', member: 6 }],
     ['a negative member', { type: 'wake', member: -1 }],
     ['a fractional member', { type: 'wake', member: 1.5 }],
-    ['gold as text', { type: 'deposit', gold: '100' }],
-    ['no gold', { type: 'deposit', gold: 0 }],
-    ['a huge amount', { type: 'deposit', gold: 1e12 }],
+    ['the old deposit', { type: 'deposit', gold: 100 }],
+    ['the old develop', { type: 'develop', width: 3, length: 3 }],
+    ['the old claim, build, draft, chest and vote', { type: 'claim' }],
+    ['an old build', { type: 'build', plot: 0, kind: 'barracks' }],
+    ['the old draft', { type: 'draft' }],
+    ['an old setDraft', { type: 'setDraft', percent: 10 }],
+    ['the old chest', { type: 'chestGive', gold: 10 }],
+    ['the old vote', { type: 'vote', kind: 'church' }],
     ['an unknown stat', { type: 'train', member: 0, key: 'luck', count: 1 }],
     ['a count of zero', { type: 'train', member: 0, key: 'agility', count: 0 }],
-    ['an unknown building', { type: 'build', plot: 0, kind: 'castle' }],
+    ['an unknown building', { type: 'upgrade', building: 'castle' }],
+    ['a building that was an old one', { type: 'upgrade', building: 'steelMill' }],
     ['a missing troop kind', { type: 'buyTroops', mix: { footman: 1, axeman: 1 } }],
     ['negative troops', { type: 'buyTroops', mix: { footman: -5, axeman: 0, knight: 0 } }],
-    ['a plan with too many rounds', { type: 'raid', kingdom: 'bunny-hollow', plan: { rounds: 99, push: 'steady', loot: 10 } }],
-    ['an unknown push', { type: 'raid', kingdom: 'bunny-hollow', plan: { rounds: 3, push: 'reckless', loot: 10 } }],
+    ['an unknown push', { type: 'raid', kingdom: 'bunny-hollow', push: 'reckless' }],
+    ['no push', { type: 'war', kingdom: 'bunny-hollow' }],
     ['an answer that is not a number', { type: 'quest', choice: 0, answer: 'seven' }],
     ['an infinite answer', { type: 'quest', choice: 0, answer: Infinity }],
   ])('refuses %s', (_why, raw) => {
@@ -71,6 +77,9 @@ describe('reading an action', () => {
     expect(parseAction({ type: 'wake', member: 2, gold: 9999, hp: 1000 })).toEqual({ type: 'wake', member: 2 });
     expect(parseAction({ type: 'quest', choice: 1 })).toEqual({ type: 'quest', choice: 1, answer: null });
     expect(parseAction({ type: 'train', member: 0, key: 'hp', count: 3 })).toEqual({ type: 'train', member: 0, key: 'hp', count: 3 });
+    expect(parseAction({ type: 'upgrade', building: 'strongroom', gold: 1 })).toEqual({ type: 'upgrade', building: 'strongroom' });
+    // Only the push is chosen: rounds and loot sent by a browser are ignored.
+    expect(parseAction({ type: 'raid', kingdom: 'ironwood', push: 'bold', plan: { rounds: 5, loot: 20 }, rounds: 5, loot: 20 })).toEqual({ type: 'raid', kingdom: 'ironwood', push: 'bold' });
   });
 });
 
@@ -117,6 +126,32 @@ describe('making a clan', () => {
     expect(out.ok).toBe(false);
   });
 
+  it('refuses made-up names while the teacher switch is off, and takes checked ones (tidied) when it is on', () => {
+    const typed = startingDrafts(SEED).map((d, i) => (i === 0 ? { ...d, name: '  te ahi ' } : d));
+    expect(applyAction(null, { type: 'create', ...choices(), drafts: typed } as Action, ctx()).ok).toBe(false);
+    const out = applyAction(null, { type: 'create', ...choices(), drafts: typed } as Action, ctx({ typedNames: true }));
+    expect(out.ok && out.state!.clan.members[0].name).toBe('Te Ahi');
+    // Every member is saved with its look, so it stays the same if a teacher later swaps the name for a list name.
+    expect(out.ok && out.state!.clan.members[0].look).toBeDefined();
+  });
+
+  it.each([
+    ['a rude made-up name', 'Fuuuck'],
+    ['numbers in a name', 'Bob99'],
+    ['a name that is too long', 'Abcdefghijklm'],
+    ['a name that is too short', 'A'],
+  ])('refuses %s even with the switch on', (_why, name) => {
+    const drafts = startingDrafts(SEED).map((d, i) => (i === 0 ? { ...d, name } : d));
+    expect(applyAction(null, { type: 'create', ...choices(), drafts } as Action, ctx({ typedNames: true })).ok).toBe(false);
+  });
+
+  it('refuses two members with the same name, whatever the capitals', () => {
+    const first = startingDrafts(SEED)[0].name;
+    const drafts = startingDrafts(SEED).map((d, i) => (i === 1 ? { ...d, name: first.toUpperCase() } : d));
+    const out = applyAction(null, { type: 'create', ...choices(), drafts } as Action, ctx({ typedNames: true }));
+    expect(out.ok).toBe(false);
+  });
+
   it('refuses a second clan', () => {
     expect(refused(created(), { type: 'create', ...choices() }).why).toBe('exists');
   });
@@ -140,7 +175,7 @@ describe('days', () => {
     s.clan.members[1].hp = 0;
     s.clan.wakesToday = 3;
     s.fightsLeft = 0;
-    empireOf(s.clan).energyUsed = 60;
+    empireOf(s.clan).buildsToday = 2;
     empireOf(s.clan).kingdomRaidsToday = 1;
     const out = ok(s, { type: 'load' }, { today: DAY0 + 1 });
     expect(out.changed).toBe(true);
@@ -148,7 +183,7 @@ describe('days', () => {
     expect(out.state.clan.members[1]).toMatchObject({ knockedOut: false, hp: out.state.clan.members[1].maxHp });
     expect(out.state.clan.wakesToday).toBe(0);
     expect(out.state.fightsLeft).toBe(CONFIG.fightsPerDay);
-    expect(empireOf(out.state.clan)).toMatchObject({ day: 2, energyUsed: 0, kingdomRaidsToday: 0 });
+    expect(empireOf(out.state.clan)).toMatchObject({ day: 2, buildsToday: 0, kingdomRaidsToday: 0 });
     s = out.state;
     expect(ok(s, { type: 'load' }, { today: DAY0 + 1 }).changed).toBe(false);
   });
@@ -162,9 +197,10 @@ describe('days', () => {
   it('never changes the state it is given', () => {
     const s = created();
     s.clan.members[2].knockedOut = true;
+    s.clan.gold = 20;
     const before = structuredClone(s);
     ok(s, { type: 'wakeAll' }, { today: DAY0 });
-    refused(s, { type: 'deposit', gold: 99999 });
+    refused(s, { type: 'upgrade', building: 'walls' }, { today: DAY0 });
     expect(s).toEqual(before);
     const t = structuredClone(s);
     expect(catchUp(t, DAY0 + 2)).toBe(true);
@@ -173,7 +209,8 @@ describe('days', () => {
 
   it('a refusal on a new day does not save the rest either (the next request catches up again)', () => {
     const s = created();
-    const out = refused(s, { type: 'deposit', gold: 99999 }, { today: DAY0 + 1 });
+    s.clan.gold = 5;
+    const out = refused(s, { type: 'upgrade', building: 'walls' }, { today: DAY0 + 1 });
     expect(out.why).toBe('gold');
   });
 });
@@ -245,27 +282,47 @@ describe('the shop, Training Hall and Church', () => {
   });
 });
 
-describe('the empire', () => {
-  it('moves gold to the vault and back, only as much as there is', () => {
-    const s = created();
-    const in1 = ok(s, { type: 'deposit', gold: 120 });
-    expect(in1.state.clan.gold).toBe(s.clan.gold - 120);
-    expect(empireOf(in1.state.clan).vault).toBe(120);
-    expect(refused(in1.state, { type: 'deposit', gold: 9999 }).why).toBe('gold');
-    expect(refused(in1.state, { type: 'withdraw', gold: 121 }).why).toBe('gold');
-    expect(ok(in1.state, { type: 'withdraw', gold: 120 }).state.clan.gold).toBe(s.clan.gold);
+describe('the village', () => {
+  it('upgrades a building from the purse, 2 a day, and refuses anything the rules refuse', () => {
+    const s = rich(created(), 5000);
+    const first = ok(s, { type: 'upgrade', building: 'smithy' });
+    expect(first.result).toEqual({ type: 'upgrade', building: 'smithy', level: 1 });
+    expect(first.state.clan.gold).toBe(5000 - CONFIG.empire.buildings.smithy.base);
+    expect(first.state.clan.village.smithy).toBe(1);
+    expect(empireOf(first.state.clan)).toMatchObject({ buildsToday: 1 });
+    const second = ok(first.state, { type: 'upgrade', building: 'tower' });
+    expect(refused(second.state, { type: 'upgrade', building: 'walls' }).why).toBe('builds');
+    expect(ok(second.state, { type: 'upgrade', building: 'walls' }, { today: DAY0 + 1 }).ok).toBe(true);
+    const poor = created();
+    poor.clan.gold = 20;
+    expect(refused(poor, { type: 'upgrade', building: 'forge' }, {}).why).toBe('gold');
+    const top = structuredClone(s);
+    empireOf(top.clan).levels.church = 3;
+    expect(refused(top, { type: 'upgrade', building: 'church' }).why).toBe('max');
   });
 
-  it('develops, builds, and buys troops, refusing anything the rules refuse', () => {
+  it('is refused while a fight is open', () => {
+    const s = rich(created());
+    s.fight = { depth: 0, boss: false, seed: 1, no: 1, settings: {} as never, rounds: [] };
+    expect(refused(s, { type: 'upgrade', building: 'forge' }).why).toBe('fight-open');
+  });
+
+  it('the Training Hall, Smithy and Church read the new levels', () => {
+    const s = rich(created());
+    const item = ITEMS.find((i) => i.shopLevel === 0)!;
+    expect(refused(s, { type: 'buy', member: 0, item: item.name }).why).toBe('shelf');
+    const t = structuredClone(s);
+    empireOf(t.clan).levels.smithy = 6;
+    expect(ok(t, { type: 'buy', member: 0, item: item.name }).ok).toBe(true);
+  });
+
+  it('buys troops from the purse as far as the barracks have room, refusing anything the rules refuse', () => {
     const s = created();
-    expect(refused(s, { type: 'develop', width: 4, length: 4 }).why).toBe('gold');
-    expect(refused(s, { type: 'develop', width: 9, length: 4 }).why).toBe('size');
     const b = withBarracks(s);
-    expect(empireOf(b.clan).plots[0].building).toBe('barracks');
-    expect(refused(b, { type: 'build', plot: 0, kind: 'tower' }).why).toBe('taken');
-    expect(refused(b, { type: 'build', plot: 3, kind: 'tower' }).why).toBe('plot');
+    expect(empireOf(b.clan).levels.barracks).toBe(1);
     const bought = ok(b, { type: 'buyTroops', mix: { footman: 5, axeman: 2, knight: 0 } });
     expect(empireOf(bought.state.clan).troops).toEqual({ footman: 5, axeman: 2, knight: 0 });
+    expect(bought.state.clan.gold).toBe(b.clan.gold - 5 * 15 - 2 * 30);
     expect(refused(b, { type: 'buyTroops', mix: { footman: 21, axeman: 0, knight: 0 } }).why).toBe('room');
     expect(refused(s, { type: 'buyTroops', mix: { footman: 1, axeman: 0, knight: 0 } }).why).toBe('room');
     expect(refused(b, { type: 'buyTroops', mix: { footman: 0, axeman: 0, knight: 0 } }).why).toBe('amount');
@@ -273,68 +330,95 @@ describe('the empire', () => {
 
   it('buys a whole mix or none of it', () => {
     const b = withBarracks(created());
-    const e = empireOf(b.clan);
-    e.vault = 30;
+    b.clan.gold = 30;
     const before = structuredClone(b);
     refused(b, { type: 'buyTroops', mix: { footman: 1, axeman: 0, knight: 5 } });
     expect(b).toEqual(before);
   });
 
-  it('keeps the draft to the allowed steps, and uses up the followers', () => {
-    const b = withBarracks(created());
-    b.clan.followers = 60;
-    expect(refused(b, { type: 'setDraft', percent: 7 }).why).toBe('draft');
-    expect(refused(b, { type: 'setDraft', percent: 25 }).why).toBe('draft');
-    const set = ok(b, { type: 'setDraft', percent: 20 });
-    const out = ok(set.state, { type: 'draft' });
-    expect(out.result).toEqual({ type: 'draft', wanted: 12, joined: 12, followers: 60 });
-    expect(out.state.clan.followers).toBe(0);
-    expect(empireOf(out.state.clan).troops.footman).toBe(12);
-  });
-
   it('gives each raid its seed from the server and checks the result: the same one the engine gives', () => {
     const s = withBarracks(created());
     empireOf(s.clan).troops = { footman: 20, axeman: 10, knight: 5 };
-    const plan = { rounds: 3, push: 'steady' as const, loot: 10 };
-    const out = ok(s, { type: 'raid', kingdom: 'bunny-hollow', plan });
-    const expected = battle(sideOf(empireOf(s.clan)), kingdomSide(kingdomById('bunny-hollow')!), plan, raidSeed(SEED, 0));
+    const out = ok(s, { type: 'raid', kingdom: 'bunny-hollow', push: 'steady' });
+    const expected = battle(sideOf(empireOf(s.clan)), kingdomSide(kingdomById('bunny-hollow')!), fixedPlan('steady'), raidSeed(SEED, 0));
     expect(out.result).toMatchObject({ type: 'raid', friendly: false, result: expected });
+    expect(expected.plan).toEqual({ rounds: 3, push: 'steady', loot: 10 });
     expect(out.state.raidNo).toBe(1);
     // The same request on the same saved clan gives the very same answer.
-    expect(applyAction(s, { type: 'raid', kingdom: 'bunny-hollow', plan }, ctx())).toEqual(applyAction(s, { type: 'raid', kingdom: 'bunny-hollow', plan }, ctx()));
+    expect(applyAction(s, { type: 'raid', kingdom: 'bunny-hollow', push: 'steady' }, ctx())).toEqual(applyAction(s, { type: 'raid', kingdom: 'bunny-hollow', push: 'steady' }, ctx()));
   });
 
   it('allows one raid a day, but any number of Friendly Wars, and the next day brings the raid back', () => {
     const s = withBarracks(created());
     empireOf(s.clan).troops = { footman: 20, axeman: 10, knight: 5 };
-    const plan = { rounds: 3, push: 'steady' as const, loot: 10 };
-    const first = ok(s, { type: 'raid', kingdom: 'bunny-hollow', plan });
-    expect(refused(first.state, { type: 'raid', kingdom: 'pebble-bridge', plan }).why).toBe('limit');
-    const war = ok(first.state, { type: 'war', kingdom: 'pebble-bridge', plan });
+    const first = ok(s, { type: 'raid', kingdom: 'bunny-hollow', push: 'steady' });
+    expect(refused(first.state, { type: 'raid', kingdom: 'pebble-bridge', push: 'steady' }).why).toBe('limit');
+    const war = ok(first.state, { type: 'war', kingdom: 'pebble-bridge', push: 'careful' });
     expect(war.result).toMatchObject({ type: 'war', friendly: true, gold: 0 });
     expect(war.state.raidNo).toBe(2);
     expect(empireOf(war.state.clan).troops).toEqual(empireOf(first.state.clan).troops);
-    expect(ok(war.state, { type: 'raid', kingdom: 'bunny-hollow', plan }, { today: DAY0 + 1 }).ok).toBe(true);
+    expect(ok(war.state, { type: 'raid', kingdom: 'bunny-hollow', push: 'steady' }, { today: DAY0 + 1 }).ok).toBe(true);
   });
 
   it('refuses a raid with no troops, or on a kingdom that is not there', () => {
     const s = created();
-    const plan = { rounds: 3, push: 'steady' as const, loot: 10 };
-    expect(refused(s, { type: 'raid', kingdom: 'bunny-hollow', plan }).why).toBe('army');
+    expect(refused(s, { type: 'raid', kingdom: 'bunny-hollow', push: 'steady' }).why).toBe('army');
     const armed = withBarracks(s);
     empireOf(armed.clan).troops.footman = 5;
-    expect(refused(armed, { type: 'raid', kingdom: 'atlantis', plan }).why).toBe('kingdom');
+    expect(refused(armed, { type: 'raid', kingdom: 'atlantis', push: 'steady' }).why).toBe('kingdom');
   });
 
-  it('a raid win puts the loot in the empire vault, never in the clan purse', () => {
+  it('a raid win puts the loot in the one purse', () => {
     const s = withBarracks(created());
     empireOf(s.clan).troops = { footman: 2000, axeman: 500, knight: 200 };
-    const before = empireOf(s.clan).vault;
-    const out = ok(s, { type: 'raid', kingdom: 'bunny-hollow', plan: { rounds: 5, push: 'bold', loot: 20 } });
+    const out = ok(s, { type: 'raid', kingdom: 'bunny-hollow', push: 'bold' });
     expect(out.result).toMatchObject({ type: 'raid', result: { outcome: 'won' } });
-    expect(out.state.clan.gold).toBe(s.clan.gold);
-    expect(empireOf(out.state.clan).vault).toBe(before + (out.result as { gold: number }).gold);
-    expect((out.result as { gold: number }).gold).toBeGreaterThan(0);
+    const gold = (out.result as { gold: number }).gold;
+    expect(gold).toBeGreaterThan(0);
+    expect(out.state.clan.gold).toBe(s.clan.gold + gold);
+  });
+});
+
+describe('moving an old save into My Village when it loads', () => {
+  const oldState = (): ServerState => {
+    const s = created();
+    s.clan.gold = 100;
+    s.clan.empire = {
+      vault: 400, wild: 10, claimed: 0, plots: [{ width: 3, length: 5, building: 'barracks' }, { width: 3, length: 5, building: 'steelMill' }], troops: { footman: 7, axeman: 0, knight: 0 },
+      draftPercent: 10, day: 1, createdDay: 1, energyUsed: 0, raidsToday: 0, kingdomRaidsToday: 0, shieldUntil: 0, raidedToday: [],
+    } as never;
+    return s;
+  };
+
+  it('converts on the first request, using the class village levels from the server, and says it changed', () => {
+    const s = oldState();
+    expect(needsUpgrade(s.clan)).toBe(true);
+    const out = ok(s, { type: 'load' }, { groupVillage: { trainingHall: 2, smithy: 3, church: 1 } });
+    expect(out.changed).toBe(true);
+    expect(out.state.clan.gold).toBe(500);
+    expect(empireOf(out.state.clan)).toMatchObject({ version: 2, levels: { trainingHall: 2, smithy: 3, church: 1, barracks: 1, forge: 1 }, troops: { footman: 7, axeman: 0, knight: 0 } });
+    expect(out.state.clan.village).toEqual({ trainingHall: 2, smithy: 3, church: 1 });
+    expect(s.clan.gold).toBe(100);
+  });
+
+  it('is converted only once, whatever group levels come with later requests', () => {
+    const once = ok(oldState(), { type: 'load' }, { groupVillage: { trainingHall: 2, smithy: 3, church: 1 } });
+    const again = ok(once.state, { type: 'load' }, { groupVillage: { trainingHall: 5, smithy: 6, church: 3 } });
+    expect(again.changed).toBe(false);
+    expect(again.state.clan).toEqual(once.state.clan);
+  });
+
+  it('converts before any other action, so an old clan can upgrade straight away', () => {
+    const out = ok(oldState(), { type: 'upgrade', building: 'walls' }, { groupVillage: { trainingHall: 0, smithy: 0, church: 0 } });
+    expect(out.state.clan.gold).toBe(500 - CONFIG.empire.buildings.walls.base);
+    expect(empireOf(out.state.clan).levels.walls).toBe(1);
+  });
+
+  it('a clan that never opened its empire gets the group levels too', () => {
+    const s = created();
+    delete s.clan.empire;
+    const out = ok(s, { type: 'load' }, { groupVillage: { trainingHall: 1, smithy: 0, church: 0 } });
+    expect(empireOf(out.state.clan).levels.trainingHall).toBe(1);
   });
 });
 
@@ -417,13 +501,12 @@ describe('whatever is sent, the clan stays sensible', () => {
     const next = (n: number) => ((seedState = (Math.imul(seedState, 1103515245) + 12345) | 0), Math.abs(seedState >> 8) % n);
     let s = rich(created(), 400);
     s.clan.followers = 40;
-    const kinds = ['barracks', 'walls', 'tower', 'steelMill', 'stables', 'gymnasium', 'developersHall'];
+    const buildings = ['trainingHall', 'smithy', 'church', 'barracks', 'walls', 'tower', 'forge', 'strongroom'];
     for (let i = 0; i < 2000; i++) {
       const raw: Action[] = [
-        { type: 'deposit', gold: 1 + next(300) }, { type: 'withdraw', gold: 1 + next(300) }, { type: 'develop', width: 2 + next(5), length: 2 + next(5) },
-        { type: 'claim' }, { type: 'build', plot: next(5), kind: kinds[next(7)] as never }, { type: 'buyTroops', mix: { footman: next(8), axeman: next(4), knight: next(2) } },
-        { type: 'setDraft', percent: next(5) * 5 }, { type: 'draft' }, { type: 'wakeAll' }, { type: 'wake', member: next(4) },
-        { type: 'raid', kingdom: 'bunny-hollow', plan: { rounds: 1 + next(5), push: 'bold', loot: 20 } }, { type: 'war', kingdom: 'pebble-bridge', plan: { rounds: 3, push: 'steady', loot: 5 } },
+        { type: 'upgrade', building: buildings[next(8)] as never }, { type: 'buyTroops', mix: { footman: next(8), axeman: next(4), knight: next(2) } },
+        { type: 'wakeAll' }, { type: 'wake', member: next(4) },
+        { type: 'raid', kingdom: 'bunny-hollow', push: 'bold' }, { type: 'war', kingdom: 'pebble-bridge', push: 'steady' },
         { type: 'train', member: next(4), key: 'strength', count: 1 + next(3) }, { type: 'quest', choice: next(3), answer: next(50) },
       ];
       const action = raw[next(raw.length)];
@@ -431,7 +514,102 @@ describe('whatever is sent, the clan stays sensible', () => {
       if (out.ok && out.state) s = out.state;
       if (i % 50 === 0) s.clan.members[next(4)].points += 6;
       const e = empireOf(s.clan);
-      expect([s.clan.gold, s.clan.followers, e.vault, e.wild, e.troops.footman, e.troops.axeman, e.troops.knight, ...s.clan.members.map((m) => m.points)].every((n) => n >= 0 && Number.isFinite(n))).toBe(true);
+      expect([s.clan.gold, s.clan.followers, e.buildsToday, ...Object.values(e.levels), e.troops.footman, e.troops.axeman, e.troops.knight, ...s.clan.members.map((m) => m.points)].every((n) => n >= 0 && Number.isFinite(n))).toBe(true);
     }
+  });
+});
+
+describe('saved builds across days', () => {
+  it('a clan away for three days saves builds for the days it missed (up to the cap)', () => {
+    const s = created();
+    const out = ok(s, { type: 'load' }, { today: DAY0 + 3 });
+    // Day 1's two builds were unused, plus two missed days: 6, capped at 4.
+    expect(empireOf(out.state.clan).buildsSaved).toBe(CONFIG.empire.buildsSavedMax);
+    const short = ok(s, { type: 'load' }, { today: DAY0 + 2 });
+    // Day 1's two unused builds and one missed day: 4.
+    expect(empireOf(short.state.clan).buildsSaved).toBe(4);
+  });
+
+  it('catchUp passes the missed days on', () => {
+    const s = created();
+    expect(catchUp(s, DAY0 + 1)).toBe(true);
+    expect(empireOf(s.clan).buildsSaved).toBe(2);
+  });
+});
+
+describe('the season', () => {
+  const clock = (over: Partial<SeasonClock> = {}): SeasonClock => ({ number: 2, day: 5, daysLeft: 31, clockOn: true, ...over });
+
+  it('stamps a save with no season with the current one, without resetting', () => {
+    const s = rich(created());
+    const out = ok(s, { type: 'load' }, { clock: clock() });
+    expect(out.changed).toBe(true);
+    expect(out.newSeason).toBeUndefined();
+    expect(out.state.clan.season).toBe(2);
+    expect(out.state.clan.gold).toBe(5000);
+    expect(ok(out.state, { type: 'load' }, { clock: clock() }).changed).toBe(false);
+  });
+
+  it('does not stamp when there is no season date yet (number 0) or no clock', () => {
+    const s = created();
+    expect(ok(s, { type: 'load' }, { clock: clock({ number: 0, clockOn: false }) }).state.clan.season).toBeUndefined();
+    expect(ok(s, { type: 'load' }).state.clan.season).toBeUndefined();
+  });
+
+  it('starts the clan again when the clock is on and its season is older', () => {
+    const s = rich(created());
+    s.clan.season = 1;
+    s.clan.members[0].level = 7;
+    const out = ok(s, { type: 'load' }, { clock: clock() });
+    expect(out.changed).toBe(true);
+    expect(out.newSeason).toBe(true);
+    expect(out.state.clan).toMatchObject({ season: 2, gold: CONFIG.startGold });
+    expect(out.state.clan.members[0].level).toBe(1);
+  });
+
+  it('does the action on the fresh save, and a refused action is not a reset in disguise', () => {
+    const s = rich(created());
+    s.clan.season = 1;
+    const out = ok(s, { type: 'upgrade', building: 'smithy' }, { clock: clock() });
+    expect(out.newSeason).toBe(true);
+    expect(out.state.clan.gold).toBe(CONFIG.startGold - CONFIG.empire.buildings.smithy.base);
+    expect(empireOf(out.state.clan).levels.smithy).toBe(1);
+  });
+
+  it('waits when the clock is off, when the season is current, or while a fight is open', () => {
+    const s = rich(created());
+    s.clan.season = 1;
+    expect(ok(s, { type: 'load' }, { clock: clock({ clockOn: false }) }).state.clan.gold).toBe(5000);
+    const current = structuredClone(s);
+    current.clan.season = 2;
+    expect(ok(current, { type: 'load' }, { clock: clock() }).newSeason).toBeUndefined();
+    const fighting = ok(s, { type: 'fightStart', depth: 0, boss: false }).state;
+    fighting.clan.season = 1;
+    const out = ok(fighting, { type: 'load' }, { clock: clock() });
+    expect(out.newSeason).toBeUndefined();
+    expect(out.state.clan.season).toBe(1);
+    expect(out.state.fight).toBeTruthy();
+  });
+
+  it('rests raids on classmates from day 22 and still lists nothing, with a flag', () => {
+    const s = created();
+    const target = { id: 'pid-2', name: 'Blue Flag', createdNzDay: DAY0 - 20, empire: empireOf(created().clan), gold: 500 };
+    const early = ok(s, { type: 'raidTargets' }, { clock: clock({ day: 21 }), self: 'pid-1', raidsOn: true, mates: [] });
+    expect(early.result).toEqual({ type: 'raidTargets', targets: [] });
+    const late = ok(s, { type: 'raidTargets' }, { clock: clock({ day: 22 }), self: 'pid-1', raidsOn: true, mates: [] });
+    expect(late.result).toEqual({ type: 'raidTargets', targets: [], resting: true });
+    const raid = refused(s, { type: 'raidClass', target: 'pid-2', take: 'gold', push: 'steady' }, { clock: clock({ day: 30 }), self: 'pid-1', raidsOn: true, target: target as never });
+    expect(raid.why).toBe('resting-season');
+    expect(raid.say).toBe('Raids on classmates rest for the last two weeks of the season. Computer kingdoms are still open!');
+    // Computer kingdoms stay open.
+    const withTroops = rich(created());
+    empireOf(withTroops.clan).troops.footman = 10;
+    expect(applyAction(withTroops, { type: 'raid', kingdom: 'bunny-hollow', push: 'steady' }, ctx({ clock: clock({ day: 30 }) })).ok).toBe(true);
+  });
+
+  it('does not rest raids when the clock is off', () => {
+    const s = created();
+    const late = ok(s, { type: 'raidTargets' }, { clock: clock({ day: 30, clockOn: false }), self: 'pid-1', raidsOn: true, mates: [] });
+    expect(late.result).toEqual({ type: 'raidTargets', targets: [] });
   });
 });

@@ -235,7 +235,7 @@ export function busyPupil(): World {
       my_space_game_stats: { played: 2, firsts: 1 },
       my_card_game_stats: { played: 2, won: 1 },
       my_power_game_stats: { played: 1, won: 1 },
-      my_moves_left: { lord: null, clans: { fightsLeft: 3, perDay: 5 } },
+      my_moves_left: { lord: null, clans: { fightsLeft: 3, perDay: 5 }, monsters: { today: 4, perDay: 12 } },
       my_class: { className: null, groupName: null, waitingFor: null },
       my_maths_focus: { source: 'teacher-class', skills: ['tables-6-9'], onlyThese: false, endsAt: at(-600), canChoose: true, own: null },
       my_ladder: null,

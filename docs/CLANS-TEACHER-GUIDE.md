@@ -3,7 +3,9 @@
 For the teacher. About two minutes to read.
 
 ## What it is
-Each pupil makes a clan of four heroes, goes down the Mines to fight monsters (with a maths question before each round that can help), spends gold in the market, trains their heroes, visits the Church, does one short quest a day and builds a small empire. Each pupil has their own clan, kept on the school's server, so it is the same on any Chromebook. There is no chat and no free text: the clan name and hero names are picked from lists.
+Each pupil makes a clan of four heroes, goes down the Mines to fight monsters (with a maths question before each round that can help), spends gold in the market, trains their heroes, visits the Church, does one short quest a day and builds a small empire. Each pupil has their own clan, kept on the school's server, so it is the same on any Chromebook. There is no chat. The clan name is always picked from lists, and so are hero names unless you switch on **made-up hero names**.
+
+**Made-up hero names** (off until you switch them on, in the Clan Quest panel): pupils making a new clan can type their own name for any hero instead of picking from the list. The list is still the starting choice. Names are letters only (one space, dash or apostrophe allowed), up to 12 long, and the server refuses rude words. Only the pupil and you see hero names; classmates never do. On each pupil's page you can see their heroes' names and, if one slips through, press **Swap made-up names for list names**. Switching it off later keeps names already made. Remind pupils not to use their own or a classmate's real name.
 
 ## Switching it on
 1. Open the **Teacher view**. Find the **Clan Quest** panel.
@@ -14,7 +16,7 @@ Each pupil makes a clan of four heroes, goes down the Mines to fight monsters (w
 Pupils have a **How to play** button on their clan page, and a "How to play" box on the very first screen where they make their clan. It explains the Mines, the Battle Cry, the shop, training, the Church, the empire, quests, the village, raids (and that you can switch them off), fame, the scoreboard and achievements, in short sections. Its numbers come from the game's own settings, including the mine fights a day you choose, so it never goes out of date.
 
 ## For pupils who need a different way to play
-- Everything can be done with the **keyboard** alone: Tab and Enter move around, and in a fight the letters **A** attack, **S** spell, **G** guard, **R** run, **Enter** does the default action, the number keys pick from a list and **Esc** goes back. The focus ring is a thick yellow outline.
+- Everything can be done with the **keyboard** alone: Tab and Enter move around, and in a fight each round starts with a suggested plan for the whole clan: **Enter** fights with it and the number keys change one hero's order first (then **A** attack, **S** spell, **G** guard, **R** run, the number keys pick from a list and **Esc** goes back to the plan). The focus ring is a thick yellow outline.
 - Every button is at least 44 pixels tall, so it works on a touch screen. The text and borders have strong colour contrast on the dark background, and nothing is shown by colour alone (health bars have their numbers written on them, tags say "Up next" or "resting" in words).
 - If a pupil's computer is set to **reduce motion**, the health bars and the achievement sparkle stop moving. The page also works at 200% zoom with nothing cut off (it scrolls).
 - Screen readers hear each screen's heading when it opens, the fight's orders and Battle Cry question have names, and the fight log is announced as it grows.

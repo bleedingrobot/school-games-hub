@@ -183,7 +183,8 @@ describe('playing a fight through the server', () => {
 
   it('uses the maths settings the fight began with, even if the teacher changes them', () => {
     const open = ok(created(), { type: 'fightStart', depth: 1, boss: false }, { settings: { ...DEFAULT_PRACTICAL_SETTINGS, enabledTopics: [] } }).state;
-    const played: RecordedRound = { orders: botOrders(rebuild(open)), cry: null };
+    // Everyone guards, so the fight is still open after the round (the bot can win in one).
+    const played: RecordedRound = { orders: rebuild(open).clan.map(() => ({ action: 'guard' })), cry: null };
     const later = ok(open, roundAction(open, played), { settings: DEFAULT_PRACTICAL_SETTINGS }).state;
     expect(later.fight!.settings.enabledTopics).toEqual([]);
   });
@@ -281,10 +282,10 @@ describe('while a fight is open', () => {
     { type: 'buy', member: 0, item: 'Dagger' },
     { type: 'train', member: 0, key: 'strength', count: 1 },
     { type: 'wakeAll' },
-    { type: 'deposit', gold: 10 },
+    { type: 'upgrade', building: 'walls' },
     { type: 'quest', choice: 0, answer: null },
-    { type: 'raid', kingdom: 'bunny-hollow', plan: { rounds: 3, push: 'steady', loot: 10 } },
-    { type: 'draft' },
+    { type: 'raid', kingdom: 'bunny-hollow', push: 'steady' },
+    { type: 'buyTroops', mix: { footman: 1, axeman: 0, knight: 0 } },
   ];
   it.each(things.map((a) => [a.type, a] as const))('refuses %s, because it would change the clan the fight is being replayed with', (_n, action) => {
     const open = start(created()).state;
@@ -331,7 +332,7 @@ describe('reading fight requests', () => {
 
   it.each([
     ['round 0', { ...good, round: 0 }],
-    ['a round past the last', { ...good, round: CONFIG.maxRounds + 1 }],
+    ['a round past the last', { ...good, round: Math.max(CONFIG.maxRounds, CONFIG.monster.rounds) + 1 }],
     ['orders that are not a list', { ...good, orders: 'attack' }],
     ['more orders than members', { ...good, orders: Array(CONFIG.maxMembers + 1).fill({ action: 'guard' }) }],
     ['an order that does not exist', { ...good, orders: [{ action: 'surrender' }] }],
@@ -385,13 +386,13 @@ describe('the midnight job agrees with the night\'s rest the server gives', () =
     s.clan.wakesToday = 2;
     for (const m of s.clan.members) { m.knockedOut = true; m.hp = 0; m.sp = 0; }
     const e = s.clan.empire!;
-    Object.assign(e, { energyUsed: 50, raidsToday: 1, kingdomRaidsToday: 1, raidedToday: ['x'] });
+    Object.assign(e, { buildsToday: 2, raidsToday: 1, kingdomRaidsToday: 1, raidedToday: ['x'] });
     const day = ok(s, { type: 'load' }, { today: DAY0 + 3 }).state;
     expect(day.day).toBe(4);
     expect(day.fightsLeft).toBe(CONFIG.fightsPerDay);
     expect(day.clan.wakesToday).toBe(0);
     expect(day.clan.members.every((m) => !m.knockedOut && m.hp === m.maxHp && m.sp === m.maxSp)).toBe(true);
-    expect(day.clan.empire).toMatchObject({ day: 4, energyUsed: 0, raidsToday: 0, kingdomRaidsToday: 0, raidedToday: [] });
+    expect(day.clan.empire).toMatchObject({ day: 4, buildsToday: 0, raidsToday: 0, kingdomRaidsToday: 0, raidedToday: [] });
     // Once the job (or the first visit) has moved the clan to today, the server finds nothing more to do.
     const again = applyAction(day, { type: 'load' }, ctx({ today: DAY0 + 3 }));
     expect(again.ok && again.changed).toBe(false);

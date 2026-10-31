@@ -1,5 +1,6 @@
 /** Making and growing clan members: rolling stats, gear, levels, training, the Church and the shop. */
 import { CONFIG } from './config';
+import { levelOf } from './empire';
 import { CLASSES, ITEMS, RACES } from './gamedata';
 import { roll, type HasRng } from './rng';
 import { STATS, type Clan, type ItemDef, type Member, type Stat, type Stats } from './types';
@@ -97,7 +98,7 @@ export function trainSp(m: Member, hall: number): boolean {
 export const churchCost = (m: Member) => (m.level + 1) * CONFIG.churchPerLevel;
 
 /** Free wake-ups a day: the usual one, plus one for each level of the village Church. */
-export const freeWakes = (clan: Clan) => CONFIG.freeWakesPerDay + clan.village.church;
+export const freeWakes = (clan: Clan) => CONFIG.freeWakesPerDay + levelOf(clan, 'church');
 /** What waking this member costs the clan right now (nothing while free wake-ups are left today). */
 export const wakeCost = (clan: Clan, m: Member) => ((clan.wakesToday ?? 0) < freeWakes(clan) ? 0 : churchCost(m));
 
@@ -122,7 +123,7 @@ export const inShop = (smithy: number) => ITEMS.filter((i) => i.shopLevel >= 6 -
 
 export function buy(clan: Clan, m: Member, item: ItemDef): boolean {
   const price = shopPrice(item);
-  if (clan.gold < price || !inShop(clan.village.smithy).includes(item)) return false;
+  if (clan.gold < price || !inShop(levelOf(clan, 'smithy')).includes(item)) return false;
   clan.gold -= price;
   m.gear[item.kind] = item.name;
   return true;

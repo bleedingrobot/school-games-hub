@@ -2,11 +2,12 @@
 // `npm run build:functions` to rebuild index.ts, the single file that actually gets deployed.
 import { createClient } from '@supabase/supabase-js';
 import type { MathsContext } from '../../../shared/marble/questions';
-import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
-import { groupByPack, parseFocus } from '../../../shared/maths/focus';
+import { parseFocus } from '../../../shared/maths/focus';
 import type { FactAnswer } from '../../../shared/maths/leitner';
 import type { Question } from '../../../shared/maths/skillPack';
 import { parseMathsSwitch } from '../../../shared/space/mathsSwitch';
+import { recordMathsAnswers } from '../_shared/recordAnswers';
+import { userIdFromToken } from '../_shared/signIn';
 import { stamper } from '../_shared/stamp';
 import { MARBLE_RUNS_PER_DAY, makeHandler, type MarbleSettings, type Outcome, type SaveResult, type StoredRun } from './handler';
 
@@ -51,10 +52,8 @@ Deno.serve(
     random: () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32,
     randomHex: (bytes) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, '0')).join(''),
     stamp: stamper(key, 'marble-run'),
-    async userIdFor(token) {
-      const { data, error } = await admin.auth.getUser(token);
-      return error ? null : (data.user?.id ?? null);
-    },
+    // Checks the sign-in token on the spot (no trip to the sign-in service), like the other games.
+    userIdFor: userIdFromToken(admin.auth),
     async settings(player): Promise<MarbleSettings | null> {
       // The switches of this student's class (or their school's default if they have no class).
       const { data, error } = await admin.rpc('settings_of', { player }).maybeSingle();
@@ -108,20 +107,9 @@ Deno.serve(
       return data === true;
     },
     async recordAnswers(player, once, answers: FactAnswer[]) {
-      // The records are kept per pack; the same text always makes the same batch, so a repeat is counted once.
-      for (const [pack, group] of groupByPack(answers)) {
-        const { error } = await admin.rpc('record_fact_answers', {
-          player,
-          pack,
-          batch_id: await batchIdFor(`${once}:${pack}`),
-          answers: group,
-          quick_ms: QUICK_MS,
-          fluent_days: FLUENT_DAYS,
-          top_box: TOP_BOX,
-        });
-        // The game goes on if the records can't be updated.
-        if (error) console.error(`marble: record answers failed (${error.code ?? 'unknown'})`);
-      }
+      // The shared way: per pack with each pack's quick time, and counted for the teacher's focus results. The batch ids
+      // are made exactly as before, so a run sent again counts once. The game goes on if the records can't be updated.
+      await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'marble', (o, pack) => batchIdFor(`${o}:${pack}`));
     },
     record: (player, report, run, extra) =>
       call<SaveResult>('record_marble_run', {

@@ -1,7 +1,7 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { applyAction, type Action, type OpenFight, type ServerState } from '../../../shared/clans/actions';
+import { applyAction, type Action, type Context, type OpenFight, type ServerState } from '../../../shared/clans/actions';
 import { replayFight } from '../../../shared/clans/battleCry';
 import { fightSeed } from '../../../shared/clans/play';
 import { publicState } from '../../../supabase/functions/clans/handler';
@@ -9,7 +9,9 @@ import { startingDrafts } from '../../../shared/clans/create';
 import { empireOf } from '../../../shared/clans/empire';
 import { churchBill } from '../../../shared/clans/moments';
 import { buildPuzzle, todaysQuest } from '../../../shared/clans/quests';
+import { parseFocus } from '../../../shared/maths/focus';
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalQuestion } from '../../../shared/maths/practical';
+import type { Question } from '../../../shared/maths/skillPack';
 import { ClanQuest } from './ClanQuest';
 import { questPuzzle } from './places';
 import { sessionFrom, type ClanServer, type ServerReply } from './remote';
@@ -28,13 +30,13 @@ function madeState(change: (s: ServerState) => void = () => {}): ServerState {
 }
 
 /** A server in a box: the real rules (applyAction), saved in memory, remembering what it was sent. */
-function fakeServer(start: ServerState | null, wrap?: (action: Action, next: () => ServerReply) => ServerReply | Promise<ServerReply>) {
+function fakeServer(start: ServerState | null, wrap?: (action: Action, next: () => ServerReply) => ServerReply | Promise<ServerReply>, over: Partial<Context> = {}) {
   const box = { saved: start, sent: [] as Action[] };
   const server: ClanServer = {
     async send(action) {
       box.sent.push(action);
       const real = (): ServerReply => {
-        const out = applyAction(box.saved, action, { seed: SEED, today: DAY0 });
+        const out = applyAction(box.saved, action, { seed: SEED, today: DAY0, ...over });
         if (!out.ok) return { ok: false, why: out.why, say: out.say, seed: SEED, state: box.saved && publicOf(box.saved) };
         if (out.changed) box.saved = out.state;
         return { ok: true, replayed: false, seed: SEED, state: out.state && publicOf(out.state), result: out.result };
@@ -110,16 +112,38 @@ describe('Clan Quest with a server', () => {
     expect(box.saved!.clan.members.every((m) => !m.knockedOut)).toBe(true);
   });
 
-  it('moves gold to the vault on the server', async () => {
+  it('upgrades a building on the server (the maths never blocks it)', async () => {
     const { server, box } = fakeServer(madeState());
     const u = user();
     render(<ClanQuest server={server} />);
     await screen.findByRole('heading', { name: 'Red Banner' });
-    await u.click(btn('The Empire'));
-    await u.click(btn('Put in'));
-    expect(box.sent).toContainEqual({ type: 'deposit', gold: 100 });
-    await waitFor(() => expect(empireOf(box.saved!.clan).vault).toBe(100));
-    expect(box.saved!.clan.gold).toBe(100);
+    await u.click(btn('My Village'));
+    await u.click(btn('Upgrade Barracks to level 1 for 50 gold'));
+    await u.click(btn('Show me how'));
+    await u.click(btn('Next question'));
+    await u.click(btn('Show me how'));
+    await u.click(btn('Upgrade for 50 gold'));
+    expect(box.sent).toContainEqual({ type: 'upgrade', building: 'barracks' });
+    await waitFor(() => expect(empireOf(box.saved!.clan).levels.barracks).toBe(1));
+    expect(box.saved!.clan.gold).toBe(150);
+    await u.click(btn('Carry on'));
+    expect(screen.getByText(/Builds left:/)).toHaveTextContent('Builds left: 1');
+  });
+
+  it('shows the kind reason from the server when an upgrade is refused', async () => {
+    const { server, box } = fakeServer(madeState((s) => { s.clan.gold = 400; }));
+    const u = user();
+    render(<ClanQuest server={server} />);
+    await screen.findByRole('heading', { name: 'Red Banner' });
+    await u.click(btn('My Village'));
+    // Somebody else (another Chromebook) used both builds today: the server refuses and its answer replaces the screen.
+    empireOf(box.saved!.clan).buildsToday = 2;
+    await u.click(btn('Upgrade Smithy to level 1 for 50 gold'));
+    await u.click(btn('Show me how'));
+    await u.click(btn('Next question'));
+    await u.click(btn('Show me how'));
+    await u.click(btn('Upgrade for 50 gold'));
+    expect(await screen.findByText(/Your builders have done every job they can/)).toBeInTheDocument();
   });
 
   it('does the quest with the typed answer, and shows what the server paid', async () => {
@@ -188,9 +212,20 @@ describe('Clan Quest with a server', () => {
   });
 
   describe('mine fights', () => {
-    const dflt = () => screen.queryAllByRole('button', { name: /Default action/ })[0];
+    const dflt = () => screen.queryAllByRole('button', { name: /Fight with this plan/ })[0];
+    /** Skip the rest of the round's playback (its summary then waits), as Enter would. */
+    async function finishRound(u: ReturnType<typeof user>) {
+      const skip = screen.queryByRole('button', { name: /Skip\s*Show the whole round/ });
+      if (skip) await u.click(skip);
+    }
+    /** Skip the playback and press "Next round". */
+    async function nextRound(u: ReturnType<typeof user>) {
+      await finishRound(u);
+      const next = screen.queryByRole('button', { name: /Next round/ });
+      if (next) await u.click(next);
+    }
 
-    /** Click through one or more rounds with the default orders. */
+    /** Click through one or more rounds with the suggested plan. */
     async function playRounds(u: ReturnType<typeof user>, box: { sent: Action[] }, count: number) {
       const rounds = () => box.sent.filter((a) => a.type === 'fightRound').length;
       const target = rounds() + count;
@@ -199,6 +234,8 @@ describe('Clan Quest with a server', () => {
         const no = screen.queryByRole('button', { name: 'No thanks' });
         if (no) await u.click(no);
         else if (screen.queryByRole('button', { name: 'Carry on' })) await u.click(btn('Carry on'));
+        else if (screen.queryByRole('button', { name: /Skip\s*Show the whole round/ })) await u.click(screen.getByRole('button', { name: /Skip\s*Show the whole round/ }));
+        else if (screen.queryByRole('button', { name: /Next round/ })) await u.click(screen.getByRole('button', { name: /Next round/ }));
         else await u.click(dflt());
       }
     }
@@ -285,6 +322,118 @@ describe('Clan Quest with a server', () => {
       expect((box.saved!.fight as OpenFight).rounds).toHaveLength(0);
     });
 
+  describe('ladder fights (Battle Cry questions from the child\'s own maths)', () => {
+    const maths = { maths: { facts: [], settings: { enabledTables: [2, 5, 10] }, focus: parseFocus(null) } };
+    const ladderServer = () => fakeServer(madeState(), undefined, maths);
+    const storedQuestion = (box: { saved: ServerState | null }, round: number) => (box.saved!.fight as OpenFight).questions![round - 1] as Question;
+    const dialog = () => screen.findByRole('dialog', { name: 'Battle Cry!' }, { timeout: 3000 });
+
+    async function type(u: ReturnType<typeof user>, q: Question, value: number) {
+      const i = q.choices?.indexOf(value) ?? -1;
+      // Choice buttons are named as they are spoken ("7 tenths"), so press the right one by its place.
+      if (q.choices && i >= 0) return u.click(screen.getByRole('dialog', { name: 'Battle Cry!' }).querySelectorAll<HTMLButtonElement>('.question__choice')[i]);
+      await u.keyboard(String(value));
+      await u.keyboard('{Enter}');
+    }
+    async function intoTheMines(u: ReturnType<typeof user>) {
+      await screen.findByRole('heading', { name: 'Red Banner' });
+      await u.click(btn('Go to the Mines'));
+      await u.click(btn('Into the Mines!'));
+    }
+
+    it('asks for a ladder fight, has the server mark a right answer, then lets the child spend it', async () => {
+      const { server, box } = ladderServer();
+      const u = user();
+      render(<ClanQuest server={server} />);
+      await intoTheMines(u);
+      expect(box.sent.find((a) => a.type === 'fightStart')).toMatchObject({ ladder: true });
+      await dialog();
+      const q = storedQuestion(box, 1);
+      // The question the server made, as a screen reader hears it.
+      expect(screen.getByLabelText(q.spoken)).toBeInTheDocument();
+      await type(u, q, q.answer);
+      expect(await screen.findByText(/Correct!/)).toBeInTheDocument();
+      expect(box.sent.find((a) => a.type === 'cryCheck')).toMatchObject({ type: 'cryCheck', round: 1, answer: q.answer });
+      await u.click(await screen.findByRole('button', { name: /More damage this round/ }, { timeout: 3000 }));
+      await u.click(dflt());
+      for (let i = 0; i < 8 && !box.sent.some((a) => a.type === 'fightRound'); i++) if (dflt()) await u.click(dflt());
+      await waitFor(() => expect(box.sent.find((a) => a.type === 'fightRound')).toMatchObject({ round: 1, cry: { answer: q.answer, reward: 'damage' } }));
+      // The server kept the mark with the fight (unless that round already ended it).
+      const kept = box.saved!.fight as OpenFight | null;
+      if (kept) expect(kept.marks?.[0]).toEqual({ answer: q.answer, correct: true });
+    });
+
+    it('shows the right answer after a wrong one and carries on with no bonus; "No thanks" sends nothing to mark', async () => {
+      const { server, box } = ladderServer();
+      const u = user();
+      render(<ClanQuest server={server} />);
+      await intoTheMines(u);
+      await dialog();
+      const q = storedQuestion(box, 1);
+      const wrong = q.choices?.find((c) => c !== q.answer) ?? q.answer + 1;
+      await type(u, q, wrong);
+      expect(await screen.findByText(/The answer was/)).toBeInTheDocument();
+      // After the pause the orders come.
+      await waitFor(() => expect(dflt()).toBeTruthy(), { timeout: 4000 });
+      for (let i = 0; i < 8 && !box.sent.some((a) => a.type === 'fightRound'); i++) if (dflt()) await u.click(dflt());
+      await waitFor(() => expect(box.sent.find((a) => a.type === 'fightRound')).toMatchObject({ round: 1, cry: { answer: wrong } }));
+      // Round 2: "No thanks".
+      if (box.saved!.fight) {
+        await nextRound(u);
+        await dialog();
+        await u.click(btn('No thanks'));
+        expect(box.sent.filter((a) => a.type === 'cryCheck')).toHaveLength(1);
+      }
+    });
+
+    it('does not ask an answered question again after a refresh: it carries on from the server\'s mark', async () => {
+      const { server, box } = ladderServer();
+      const u = user();
+      const first = render(<ClanQuest server={server} />);
+      await intoTheMines(u);
+      await dialog();
+      const q = storedQuestion(box, 1);
+      await type(u, q, q.answer);
+      await screen.findByRole('button', { name: /More damage this round/ }, { timeout: 3000 });
+      // Reloaded before the power-up was picked.
+      first.unmount();
+      cleanup();
+      render(<ClanQuest server={server} />);
+      expect(await screen.findByRole('button', { name: /More damage this round/ })).toBeInTheDocument();
+      expect(screen.queryByRole('dialog', { name: 'Battle Cry!' })).toBeNull();
+      expect(box.sent.filter((a) => a.type === 'cryCheck')).toHaveLength(1);
+      await u.click(btn(/More damage this round/));
+      for (let i = 0; i < 8 && !box.sent.some((a) => a.type === 'fightRound'); i++) if (dflt()) await u.click(dflt());
+      await waitFor(() => expect(box.sent.find((a) => a.type === 'fightRound')).toMatchObject({ round: 1, cry: { answer: q.answer, reward: 'damage' } }));
+    });
+
+    it('picks a ladder fight up again after a refresh, with the same log, and never sends answers to the page', async () => {
+      const { server, box } = ladderServer();
+      const u = user();
+      const first = render(<ClanQuest server={server} />);
+      await intoTheMines(u);
+      await dialog();
+      const q = storedQuestion(box, 1);
+      await type(u, q, q.answer);
+      await u.click(await screen.findByRole('button', { name: /A little healing/ }, { timeout: 3000 }));
+      for (let i = 0; i < 8 && !box.sent.some((a) => a.type === 'fightRound'); i++) if (dflt()) await u.click(dflt());
+      await waitFor(() => expect((box.saved!.fight as OpenFight | null)?.rounds.length ?? 1).toBe(1));
+      if (!box.saved!.fight) return;
+      await finishRound(u);
+      const logBefore = screen.getByRole('list', { name: 'Fight log' }).textContent;
+      first.unmount();
+      cleanup();
+      const reply = await server.send({ type: 'load' });
+      // The page is given what to show of each question, never its answer (the child's own answers and marks are fine).
+      expect(JSON.stringify(reply.state?.fight?.questions)).not.toMatch(/"answer"|"factKey"|"params"/);
+      render(<ClanQuest server={server} />);
+      expect(await screen.findByText(/A fight begins!/)).toBeInTheDocument();
+      expect(screen.getByRole('list', { name: 'Fight log' }).textContent).toBe(logBefore);
+      // The next round's question is waiting.
+      await dialog();
+    });
+  });
+
     it('will not start a fight when the day\'s fights are used up', async () => {
       const { server, box } = fakeServer(madeState((s) => { s.fightsLeft = 0; }));
       const u = user();
@@ -294,5 +443,31 @@ describe('Clan Quest with a server', () => {
       expect(btn('Into the Mines!')).toBeDisabled();
       expect(box.sent.filter((a) => a.type === 'fightStart')).toHaveLength(0);
     });
+  });
+});
+
+describe('member looks with a server (Clans art Stage A.5)', () => {
+  it('"Change look" shows the four paintings, and the pick is saved on the server', async () => {
+    const { server, box } = fakeServer(madeState());
+    const u = user();
+    render(<ClanQuest server={server} />);
+    await screen.findByRole('heading', { name: 'Red Banner' });
+    const card = screen.getByRole('article', { name: box.saved!.clan.members[1].name });
+    await u.click(within(card).getByRole('button', { name: 'Change look' }));
+    const picker = within(card).getByRole('group', { name: 'Look' });
+    expect(within(picker).getAllByRole('button')).toHaveLength(4);
+    const other = box.saved!.clan.members[1].look === 'male-2' ? 'Boy 1' : 'Boy 2';
+    await u.click(within(picker).getByRole('button', { name: other }));
+    expect(within(picker).getByRole('button', { name: other })).toHaveAttribute('aria-pressed', 'true');
+    const look = other === 'Boy 1' ? 'male-1' : 'male-2';
+    expect(box.sent.filter((x) => x.type === 'look')).toEqual([{ type: 'look', member: 1, look }]);
+    await waitFor(() => expect(box.saved!.clan.members[1].look).toBe(look));
+  });
+
+  it('a clan saved before looks existed still shows a painting for every member', async () => {
+    const { server } = fakeServer(madeState((s) => { for (const m of s.clan.members) delete m.look; }));
+    render(<ClanQuest server={server} />);
+    await screen.findByRole('heading', { name: 'Red Banner' });
+    expect(document.querySelectorAll('.cq-card .cq-portrait--painted img')).toHaveLength(4);
   });
 });

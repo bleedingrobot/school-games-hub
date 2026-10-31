@@ -122,6 +122,24 @@ describe('a save the rules cannot have produced is refused', () => {
     if (!c.ok) expect(c.problem).toBe(problem);
   };
 
+  it('a look that is not one of the 24 (a missing one is fine: games from before there were looks)', () => {
+    const { s, prev } = started();
+    const item = s.save();
+    for (const look of ['dragon-01', '', 'BOY-01', 3]) {
+      refused(checkSave(prev, { ...item, world: { ...item.world, look: look as string } }, s.clock.now()), 'look');
+    }
+    expect(item.world.look).toBeUndefined();
+    ok(checkSave(prev, item, s.clock.now()));
+    ok(checkSave(prev, { ...item, world: { ...item.world, look: 'girl-12' } }, s.clock.now()));
+    // A new game can start with a look, and it can change later.
+    const fresh = new Session();
+    const first = fresh.save();
+    first.world.look = 'boy-03';
+    ok(checkSave(null, first, fresh.clock.now()));
+    const later = fresh.save();
+    ok(checkSave(stored(first), { ...later, world: { ...later.world, look: 'girl-07' } }, fresh.clock.now()));
+  });
+
   it('a team of 7, or none', () => {
     const { s, prev } = started();
     const item = s.save();

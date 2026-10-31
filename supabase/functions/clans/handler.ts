@@ -15,15 +15,21 @@
  * request and sent with the clan, so the browser and the server always use the same ones. Fame, points and achievements are added by the
  * database in the same save (from the counts the rules put in the result); this only asks for the new fame and achievements afterwards.
  * The maths answers a request produced go in the teacher's private records once the save is kept (a retry reuses the same batch id).
+ *
+ * Ladder fights (20 Oct 2026): a `fightStart` that asks for one loads the child's maths (records, class settings, focus) so the rules
+ * can make the fight's Battle Cry questions; `publicState` sends the browser only what to show of them, never an answer. Each
+ * `cryCheck` answer goes in the child's own maths records (ladder place, skill map, focus results) once its save is kept.
  */
-import { applyAction, parseAction, type Applied, type Effects, type Result, type ServerState } from '../../../shared/clans/actions';
-import type { Empire } from '../../../shared/clans/types';
-import type { RaidTarget, Sketch, VillageKind, VillageView } from '../../../shared/clans/village';
+import { applyAction, parseAction, type Applied, type Effects, type Result, type ServerState, type ShownFight } from '../../../shared/clans/actions';
+import { readClock, type SeasonClock } from '../../../shared/clans/season';
+import type { Empire, Village } from '../../../shared/clans/types';
+import type { RaidTarget, Sketch } from '../../../shared/clans/village';
 import { nzDayNumber } from '../../../shared/clans/clock';
 import { UNTIMED_MS } from '../../../shared/clans/battleCry';
 import { CONFIG } from '../../../shared/clans/config';
 import type { FactAnswer } from '../../../shared/maths/leitner';
 import { readPracticalSettings, type PracticalSettings } from '../../../shared/maths/practical';
+import { publicQuestion, type MathsContext } from '../../../shared/maths/serverQuestions';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 import { RateLimiter } from '../_shared/limits';
 
@@ -41,8 +47,8 @@ export interface Loaded {
   enabled: boolean;
   /** The latest village news lines, newest first. Written by the midnight job and by raids, never by a student. */
   news: string[];
-  /** The clan's village: chest, building levels, this week's votes. Null until the clan exists. */
-  village?: VillageView | null;
+  /** The levels of the old class (group) village this clan was in. Used once, to convert an old save to "My Village"; ignored after that. */
+  groupVillage?: Village | null;
   /** This clan's hidden public id (never the account id). */
   self?: string | null;
   /** The teacher's switch for raids on classmates. */
@@ -54,21 +60,25 @@ export interface Loaded {
 /** A clan to be raided, as the database loads it. `version` is the copy the save will be checked against. */
 export type LoadedTarget = (RaidTarget & { version: number }) | null;
 
-/** What a raid saves besides the raiders' clan: the raided clan's empire (checked against its version) and the lines to write. */
+/** What a raid saves besides the raiders' clan: the raided clan's empire and purse (checked against its version) and the lines to write. */
 export interface RaidSave {
   targetId: string;
   targetVersion: number;
   empire: Empire;
+  /** The raided clan's purse after the raid. */
+  gold: number;
   news: string;
   note: string;
 }
 
 /** What the database says besides the clan, on every request (clan_extras): the teacher's settings, this clan's fame and its achievements. */
 export interface Extras {
-  settings: { enabledTopics: unknown; yearBand: unknown; enabledTables: unknown; fightsPerDay: number; season: number };
+  settings: { enabledTopics: unknown; yearBand: unknown; enabledTables: unknown; fightsPerDay: number; season: number; typedNames?: unknown };
   fame: number;
   /** The ids of the achievements earned so far. */
   achievements: string[];
+  /** The season clock (clan_extras). Missing or odd before the migration is live: `readClock` turns it into null. */
+  clock?: unknown;
 }
 
 export type SaveStatus = { status: 'saved'; version: number } | { status: 'duplicate'; result: Result } | { status: 'stale' };
@@ -79,11 +89,9 @@ export interface Services {
   userIdFor(token: string): Promise<string | null>;
   load(player: string, requestId: string): Promise<Outcome<Loaded>>;
   save(player: string, expectedVersion: number, requestId: string, action: string, state: ServerState, result: Result): Promise<Outcome<SaveStatus>>;
-  /** Keeps this pupil's vote for the week. `ok: false` if that building is already built. */
-  vote(player: string, kind: VillageKind): Promise<Outcome<{ ok: boolean }>>;
-  /** The other clans in the pupil's village, for the list of who can be raided. */
+  /** The other clans in the pupil's class, for the list of who can be raided. None if the pupil has no class. */
   mates(player: string): Promise<Outcome<Sketch[]>>;
-  /** One clan in the pupil's village, to raid it. Null if there is none. */
+  /** One clan in the pupil's class, to raid it. Null if there is none. */
   target(player: string, targetId: string): Promise<Outcome<LoadedTarget>>;
   /** Saves a raid: both clans, one transaction. */
   saveRaid(player: string, expectedVersion: number, raid: RaidSave, requestId: string, state: ServerState, result: Result): Promise<Outcome<SaveStatus>>;
@@ -91,6 +99,10 @@ export interface Services {
   extras(player: string): Promise<Outcome<Extras>>;
   /** Adds answers to the teacher's private maths records. `batchKey` makes a retry count once. */
   recordAnswers(player: string, batchKey: string, answers: FactAnswer[]): Promise<Outcome<number>>;
+  /** The child's maths records, class question settings and focus, to make a ladder fight's questions. Null if they couldn't be read. */
+  mathsContext(player: string): Promise<MathsContext | null>;
+  /** Adds ladder answers to the child's own maths records, the shared way (recordMathsAnswers). `once` makes a resend count once. Never throws. */
+  recordLadderAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** Milliseconds since 1970. */
   now(): number;
 }
@@ -111,14 +123,21 @@ export const MAX_TRIES = 4;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** The fight in progress as the browser may see it: a ladder fight's questions with no answers (the marks so far are its own). */
+export function publicFight(fight: NonNullable<ServerState['fight']>): ShownFight {
+  const { questions, ...rest } = fight;
+  return questions ? { ...rest, questions: questions.map((q, i) => publicQuestion(q, i)) } : rest;
+}
+
 /** What the browser is told about a clan: everything it shows, nothing it could use to cheat. */
-export function publicState(state: ServerState, settings: PracticalSettings, loaded: Pick<Loaded, 'news' | 'village' | 'raidsOn' | 'notes'>, extras?: Extras) {
+export function publicState(state: ServerState, settings: PracticalSettings, loaded: Pick<Loaded, 'news' | 'raidsOn' | 'notes'>, extras?: Extras) {
   const { clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight } = state;
   return {
-    clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight: fight ?? null, settings, news: loaded.news,
-    village: loaded.village ?? null, raidsOn: loaded.raidsOn ?? false, notes: loaded.notes ?? [],
+    clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight: fight ? publicFight(fight) : null, settings, news: loaded.news,
+    raidsOn: loaded.raidsOn ?? false, notes: loaded.notes ?? [],
     fame: extras?.fame ?? 0, season: extras?.settings.season ?? 1, fightsPerDay: extras?.settings.fightsPerDay ?? CONFIG.fightsPerDay,
     achievements: extras?.achievements ?? [],
+    clock: readClock(extras?.clock),
   };
 }
 
@@ -152,21 +171,24 @@ export function makeHandler(services: Services) {
     // The teacher's settings, read fresh for this request. A fight that is already open keeps the ones it started with.
     const settings = readPracticalSettings(extras.value.settings);
     const fightsPerDay = Number.isInteger(extras.value.settings.fightsPerDay) ? extras.value.settings.fightsPerDay : CONFIG.fightsPerDay;
+    // Made-up hero names only when the teacher has switched them on (an older database without the switch means off).
+    const typedNames = extras.value.settings.typedNames === true;
+    // Only a ladder fight's start needs the child's maths. If it can't be read the fight is an old-style one (the rules decide).
+    const clock: SeasonClock | null = readClock(extras.value.clock);
+    const maths = action.type === 'fightStart' && action.ladder ? await services.mathsContext(player) : undefined;
 
     for (let attempt = 0; attempt < MAX_TRIES; attempt++) {
       const loaded = await services.load(player, requestId);
       if (!loaded.ok) return loaded.why === 'busy' ? reply(503, { error: "We couldn't reach your clan just now." }) : reply(400, { error: "That couldn't be read." });
       const { seed, version, state, replay, enabled } = loaded.value;
       if (!enabled) return reply(403, { error: 'Clan Quest is not switched on yet.', off: true });
-      // The village's building levels are the clan's (the database already puts them on; this keeps the rules honest if it did not).
-      if (state && loaded.value.village) state.clan.village = loaded.value.village.levels;
-      const shown = (s: ServerState, from: Pick<Loaded, 'news' | 'village' | 'raidsOn' | 'notes'> = loaded.value) => publicState(s, settings, from, extras.ok ? extras.value : undefined);
+      const shown = (s: ServerState, from: Pick<Loaded, 'news' | 'raidsOn' | 'notes'> = loaded.value) => publicState(s, settings, from, extras.ok ? extras.value : undefined);
 
       // Done before: the same answer, and the clan as it is now.
       if (replay) return reply(200, { ok: true, replayed: true, seed, state: state && shown(state), result: replay });
 
-      const village = loaded.value.village ?? null;
-      const ctx = { seed, today, settings, fightsPerDay, village, self: loaded.value.self ?? undefined, raidsOn: loaded.value.raidsOn ?? false };
+      // groupVillage is only read the first time an old save is converted to "My Village".
+      const ctx = { seed, today, settings, maths, fightsPerDay, groupVillage: loaded.value.groupVillage ?? null, self: loaded.value.self ?? undefined, raidsOn: loaded.value.raidsOn ?? false, typedNames, clock };
       let target: LoadedTarget = null;
       if (state && action.type === 'raidTargets') {
         const mates = await services.mates(player);
@@ -188,26 +210,14 @@ export function makeHandler(services: Services) {
       }
       const effects: Effects = applied.effects ?? {};
 
-      // A vote is kept in the village, not the clan. The database says no if the building is already built.
-      if (effects.vote) {
-        const voted = await services.vote(player, effects.vote);
-        if (!voted.ok) return voted.why === 'busy' ? reply(503, { error: "We couldn't count your vote just now." }) : reply(400, { error: "That couldn't be read." });
-        if (!voted.value.ok) return reply(200, { ok: false, why: 'built', say: 'That building is already as big as it can be.', seed, state: state && shown(state) });
-      }
-
       if (!applied.changed || !applied.state) {
-        // Nothing to save. After a vote the village has changed, so ask for it again.
-        let latest: Pick<Loaded, 'news' | 'village' | 'raidsOn' | 'notes'> = loaded.value;
-        if (effects.vote) {
-          const again = await services.load(player, requestId);
-          if (again.ok) latest = again.value;
-        }
-        return reply(200, { ok: true, replayed: false, seed, state: applied.state && shown(applied.state, latest), result: applied.result });
+        // Nothing to save.
+        return reply(200, { ok: true, replayed: false, seed, state: applied.state && shown(applied.state), result: applied.result, ...(applied.newSeason ? { newSeason: true } : {}) });
       }
 
       const saved = effects.raid
         ? target
-          ? await services.saveRaid(player, version, { targetId: target.id, targetVersion: target.version, empire: effects.raid.empire, news: effects.raid.news, note: effects.raid.note }, requestId, applied.state, applied.result)
+          ? await services.saveRaid(player, version, { targetId: target.id, targetVersion: target.version, empire: effects.raid.empire, gold: effects.raid.gold, news: effects.raid.news, note: effects.raid.note }, requestId, applied.state, applied.result)
           : ({ ok: false, why: 'refused' } as const)
         : await services.save(player, version, requestId, action.type, applied.state, applied.result);
       if (!saved.ok) return saved.why === 'busy' ? reply(503, { error: "We couldn't save your clan just now." }) : reply(400, { error: "That couldn't be saved." });
@@ -218,16 +228,20 @@ export function makeHandler(services: Services) {
           const answers = effects.answers.map((a): FactAnswer => ({ key: a.key, correct: a.correct, ms: UNTIMED_MS, at }));
           await services.recordAnswers(player, requestId, answers);
         }
+        if (effects.ladder?.answers.length) {
+          const at = services.now();
+          await services.recordLadderAnswers(player, effects.ladder.once, effects.ladder.answers.map((a): FactAnswer => ({ ...a, at })));
+        }
         // The database has added any fame, points and achievements in the same save: ask again for the new ones.
         const fresh = await services.extras(player);
         if (fresh.ok) extras = fresh;
-        // A gift to the chest, or a raid, changed the village or the news: ask again so the browser sees them.
-        let latest: Pick<Loaded, 'news' | 'village' | 'raidsOn' | 'notes'> = loaded.value;
-        if (applied.result.type === 'chestGive' || applied.result.type === 'raidClass') {
+        // A raid wrote a line of news: ask again so the browser sees it.
+        let latest: Pick<Loaded, 'news' | 'raidsOn' | 'notes'> = loaded.value;
+        if (applied.result.type === 'raidClass') {
           const again = await services.load(player, '00000000-0000-4000-8000-000000000000');
           if (again.ok) latest = again.value;
         }
-        return reply(200, { ok: true, replayed: false, seed, state: shown(applied.state, latest), result: applied.result });
+        return reply(200, { ok: true, replayed: false, seed, state: shown(applied.state, latest), result: applied.result, ...(applied.newSeason ? { newSeason: true } : {}) });
       }
       // 'duplicate' or 'stale': another copy of this request, or another request, saved first. Load again.
     }

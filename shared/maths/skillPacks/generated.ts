@@ -13,6 +13,7 @@ import { BandedPack, tidy, type Family, type PackDefinition } from '../banded';
 import { quickMsForPack } from '../config';
 import type { FactStats } from '../leitner';
 import { BEDMAS_FAMILIES, BEDMAS_KEYS, parseBedmas } from './bedmas';
+import { BOND_FAMILIES, BOND_SKILL_KEYS } from './bondSkills';
 import { RECORD_KEY, sameParts, type Parser } from './generatedKit';
 import { DECIMAL_FAMILIES, DECIMAL_SKILL_KEYS } from './decimalSkills';
 import { FDP_FAMILIES, FDP_SKILL_KEYS } from './fdpSkills';
@@ -21,7 +22,7 @@ import { PERCENT_FAMILIES, PERCENT_SKILL_KEYS } from './percentSkills';
 import { PLACE_FAMILIES, PLACE_SKILL_KEYS, parsePlace } from './placeSkills';
 import { ROUNDING_FAMILIES, ROUNDING_SKILL_KEYS, parseRounding } from './rounding';
 
-const families: Record<string, Family> = { ...PLACE_FAMILIES, ...ROUNDING_FAMILIES, ...BEDMAS_FAMILIES, ...FRACTION_FAMILIES, ...PERCENT_FAMILIES, ...DECIMAL_FAMILIES, ...FDP_FAMILIES };
+const families: Record<string, Family> = { ...PLACE_FAMILIES, ...ROUNDING_FAMILIES, ...BEDMAS_FAMILIES, ...FRACTION_FAMILIES, ...PERCENT_FAMILIES, ...DECIMAL_FAMILIES, ...FDP_FAMILIES, ...BOND_FAMILIES };
 
 for (const key of Object.keys(families)) if (!RECORD_KEY.test(key)) throw new Error(`generated skill key "${key}" is not a valid record key`);
 
@@ -45,6 +46,7 @@ export const GENERATED_SKILL_KEYS = {
   ...PERCENT_SKILL_KEYS,
   ...DECIMAL_SKILL_KEYS,
   ...FDP_SKILL_KEYS,
+  ...BOND_SKILL_KEYS,
 } as const;
 
 /** Every question type this pack owns. */

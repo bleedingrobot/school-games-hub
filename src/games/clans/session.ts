@@ -2,7 +2,7 @@
  * The clan's state in the browser for this test stage (nothing is saved; a refresh starts again).
  * Plain functions on plain data, so the screens only draw and the rules stay in shared/clans.
  */
-import type { Action, OpenFight } from '../../../shared/clans/actions';
+import type { Action, ShownFight } from '../../../shared/clans/actions';
 import { CONFIG } from '../../../shared/clans/config';
 import { empireNewDay } from '../../../shared/clans/empire';
 import { MAX_ROLLS, draftMember, makeClan, rollAgain, startingDrafts, type Draft } from '../../../shared/clans/create';
@@ -10,8 +10,8 @@ import { dayReset, depthHint, type DepthHint } from '../../../shared/clans/chara
 import type { FightState } from '../../../shared/clans/fight';
 import { fightSeed, payFight, type FightSummary } from '../../../shared/clans/play';
 import { CLASSES, RACES } from '../../../shared/clans/gamedata';
+import type { SeasonClock } from '../../../shared/clans/season';
 import type { Clan, Member } from '../../../shared/clans/types';
-import type { VillageView } from '../../../shared/clans/village';
 import { addEarned, fameFor, measures, NO_STATS, reached, type ClanStats, type Earned } from '../../../shared/clans/rewards';
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../../../shared/maths/practical';
 
@@ -38,11 +38,9 @@ export interface Session {
   examined: string[];
   /** For James's testing only: try this quest number instead of today's. */
   questPick?: number;
-  /** With a server: the mine fight in progress, and the village news. */
-  fight?: OpenFight | null;
+  /** With a server: the mine fight in progress, and the news. */
+  fight?: ShownFight | null;
   news?: string[];
-  /** The class village: chest, building levels, this week's votes. On the test page it is a pretend one. */
-  village?: VillageView | null;
   /** What raiders did to this clan lately, for it to read. */
   notes?: string[];
   /** The teacher's switch for raids on classmates. */
@@ -55,21 +53,18 @@ export interface Session {
   fame?: number;
   season?: number;
   fightsPerDay?: number;
+  /** The season clock from the server (missing on the test page, null when the server does not know it). */
+  clock?: SeasonClock | null;
   /** The ids of the achievements earned so far. */
   achievements?: string[];
   /** Test page only: the lifetime counts the achievements are measured by (the server keeps them with the clan). */
   stats?: ClanStats;
 }
 
-/** The pretend village the test page starts with: a few classmates have already given and voted. */
-export const pretendVillage = (): VillageView => ({
-  name: 'Room 12 (pretend)', chest: 120, levels: { trainingHall: 0, smithy: 0, church: 0 }, week: 1, votes: { smithy: 3, church: 2 }, myVote: null, clans: 5,
-});
-
 export const newSession = (clan: Clan, baseSeed: number, settings: PracticalSettings = DEFAULT_PRACTICAL_SETTINGS): Session => ({
   clan, fightsLeft: CONFIG.fightsPerDay, fightNo: 0, baseSeed, raidNo: 0, day: 1, depth: 0, settings, examined: [],
   fame: 0, season: 1, fightsPerDay: CONFIG.fightsPerDay, achievements: [], stats: NO_STATS,
-  village: pretendVillage(), news: ['The class built the Smithy (level 1)! (pretend)'], notes: [], raidsOn: true, pretendShield: [], pretendRaids: 0,
+  news: ['The Swift Foxes clan upgraded its Walls! (pretend)'], notes: [], raidsOn: true, pretendShield: [], pretendRaids: 0,
 });
 
 export const averageLevel = (clan: Clan) => clan.members.reduce((t, m) => t + m.level, 0) / Math.max(1, clan.members.length);
