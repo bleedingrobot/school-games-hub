@@ -247,7 +247,9 @@ select throws_ok(format('select public.teacher_extend_maths_focus(%L, %L)', (sel
 select lives_ok(format('select public.teacher_extend_maths_focus(%L, %L)', (select id from batches where scope = 'student'), 'week'), 'extending the hour to a week works');
 select pg_temp.reset();
 select is((select count(*)::int from public.maths_focuses where scope = 'student' and ends_at > now() + interval '6 days'), 2, 'for both students');
-select is((select count(*)::int from public.maths_focuses where scope = 'class' and ends_at > now() + interval '6 days 1 hour'), 0, 'and no one else');
+-- Compared with each press's own end, not a fixed time from now: 'friday' is six and a half days away on a Saturday.
+select is((select count(*)::int from public.maths_focuses f join batches b on b.scope = f.scope
+  where f.scope in ('group', 'class') and abs(extract(epoch from f.ends_at - b.ends)) > 1), 0, 'and no one else');
 select pg_temp.as(202);
 select throws_ok(format('select public.teacher_extend_maths_focus(%L, %L)', (select id from batches where scope = 'class'), 'week'), '42501', null, 'another teacher cannot extend it');
 select throws_ok(format('select public.teacher_end_maths_focus(%L)', (select id from batches where scope = 'class')), '42501', null, 'or end it');
