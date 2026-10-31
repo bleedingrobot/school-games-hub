@@ -581,6 +581,8 @@ James pre-approved merging and going live. Done in this order, each checked befo
 4. **Checked from outside:** an unsigned `POST /functions/v1/trader` answers 401 `{"error":"Please sign in again."}`. Signed out (publishable key only), every `trader_` table and `trader_load`, `trader_season`, `trader_drift`, `teacher_set_trader` and `teacher_reset_trader` are refused with 42501. In the database, only `teacher_set_trader` and `teacher_reset_trader` can be run by signed-in users; every other `trader_` function is server-only.
 5. **Code switch on: #110 merged** (`7cb1159`): `ON = true` in `src/games/trader/switch.ts`. Its first build failed because `src/games/registry.test.ts` lists the hub's games and didn't have Star Trader yet; fixed in the same PR, then green. Its "Test and publish" (run 41249793788) green: no migration, no function deployed, site published. Classes still start **off**: a teacher turns Star Trader on per class on the Teacher page.
 
+6. **Switched on for pupils (1 Nov 2026, James's word):** `trader_enabled` set to true in all four `app_settings` rows (Riley, Teachers, Starter and the school default), the same as every other game. Jumps (10), the bank (on) and maths ('choose') left at their defaults. Done with the Supabase connector, as the teacher switch would (`teacher_set_trader` only sets these columns).
+
 Not checked yet: the teacher's Star Trader row and Settings on the live site in a real browser (covered by `src/pages/TeacherTrader.test.tsx`), and a real class playing it.
 
 Rollback: the teacher switch per class, then `ON = false` in `switch.ts` (section 8 of the Game Development Guide).
