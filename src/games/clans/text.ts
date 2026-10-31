@@ -96,18 +96,18 @@ export const CARD_HELP: Record<string, string> = {
   sp: TRAIN_HELP.sp,
 };
 
-/** What is worth training for each class (R = recommended). Armour and health are for the ones who stand at the front; dexterity for anyone who hits, as a miss does nothing however strong the arm. */
+/** What is worth training for each class (R = recommended). Armour and health are for the ones who stand at the front; dexterity for anyone who hits, as a miss does nothing however strong the arm; SP for anyone whose best hits are moves. */
 export const CLASS_FOCUS: Record<string, string[]> = {
   Barbarian: ['strength', 'dexterity', 'armor', 'hp'],
   Warrior: ['strength', 'agility', 'dexterity'],
-  'Martial Artist': ['agility', 'dexterity'],
+  'Martial Artist': ['agility', 'dexterity', 'sp'],
   Knight: ['strength', 'dexterity', 'armor', 'hp', 'charisma'],
-  Assassin: ['dexterity', 'agility'],
+  Assassin: ['dexterity', 'agility', 'sp'],
   Healer: ['wisdom', 'sp'],
   Sorcerer: ['wisdom', 'sp'],
   Necromancer: ['wisdom', 'sp'],
   Wizard: ['wisdom', 'sp', 'hp'],
-  Pirate: ['agility', 'dexterity', 'charisma', 'hp'],
+  Pirate: ['agility', 'dexterity', 'strength', 'charisma', 'hp'],
   Samurai: ['agility', 'dexterity', 'strength'],
 };
 export const isRecommended = (cls: string, key: string) => (CLASS_FOCUS[cls] ?? []).includes(key);
