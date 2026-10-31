@@ -1,0 +1,129 @@
+/* The Admin pages (docs/TEACHER-VIEW-PLAN.md, section 4.7, stage 6). Tables reuse the roster styles in students.css. */
+
+.admin__needs {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+  font-weight: 700;
+}
+.admin__needs a {
+  color: var(--brand-dark);
+}
+
+.admin__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+.admin__facts div {
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--tint);
+}
+.admin__facts dt {
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.admin__facts dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.admin__table {
+  min-width: 640px;
+}
+.admin__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.admin__confirm {
+  max-width: 320px;
+}
+.admin__confirm p {
+  margin: 0 0 8px;
+}
+
+.admin__table--wide {
+  min-width: 820px;
+}
+.admin__teachers {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+.admin__teacher {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.button.admin__small {
+  min-height: 36px;
+  padding: 4px 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+.admin__add {
+  max-width: 100%;
+  min-height: 40px;
+  padding: 4px 10px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--surface);
+}
+/* The roster's headings have no padding (its sort buttons pad them); these tables have plain headings. */
+.admin__table thead th {
+  padding: 6px 10px;
+}
+
+/* Admin → End of year */
+.admin-year__year {
+  max-width: 200px;
+}
+.admin-year__last {
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.admin-year__list,
+.admin-year__history {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-year__history li {
+  overflow-wrap: anywhere;
+}
+.admin-year__check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.admin-year__check input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+.admin-year__danger {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+}
+.admin-year__step .button {
+  min-height: 44px;
+}

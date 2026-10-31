@@ -231,9 +231,11 @@ export async function saveMineEnabled(enabled: boolean, classId?: string | null)
   if (error) throw new FriendlyError('We couldn’t change that.');
 }
 
-/** What the teacher allows for Mine Runner maths in a class. If it can't be read, maths stays off. */
+/** What the teacher allows for Mine Runner maths in a class. If a student's game can't read it, maths stays off. */
 export async function fetchMineMaths(classId?: string | null): Promise<MathsSwitch> {
   const row = await readSettings(['mine_maths'], classId);
+  // A teacher reading a named class is told when it fails, so the Games table never shows Off for a setting it couldn't read.
+  if (!row && classId) throw new FriendlyError('We couldn’t load this setting.');
   return parseMathsSwitch(row?.mine_maths);
 }
 

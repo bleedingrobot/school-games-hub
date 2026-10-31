@@ -1,6 +1,6 @@
 /**
  * Training before games (James, 22 Oct 2026): is this student's class asking for a Training session before the games, and
- * have they done one in the last 6 hours? shared/training/gate.ts has the rule; this asks the server and remembers its
+ * have they done one in the last 2 hours? shared/training/gate.ts has the rule; this asks the server and remembers its
  * answer for a minute, so going from the home page into a game costs no extra request.
  *
  * The lock is only on the website. If the server can't be asked, the games stay open: a slow or broken connection must never

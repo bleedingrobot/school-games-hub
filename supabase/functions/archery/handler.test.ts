@@ -3,9 +3,10 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { botSetup, chooseForRun, type BotLevel } from '../../../shared/archery/bot';
 import { startFight, takeShot } from '../../../shared/archery/fight';
-import { COINS_PER_RIGHT, EARNING_ROUNDS_PER_DAY, NETWORK_MS, TAP_MS, limitMs, markQuestion } from '../../../shared/archery/speed';
+import { CHEST_LOSS_COINS, CHEST_WIN_COINS, COINS_PER_RIGHT, DAILY_COINS, NETWORK_MS, TAP_MS, limitMs, markQuestion } from '../../../shared/archery/speed';
 import type { PlayerSetup, Shot, WorldId } from '../../../shared/archery/types';
 import { trialServices, type TrialData } from '../../../src/games/archery/trialBackend';
+import { START_COINS } from '../../../shared/archery/shop';
 import { makeHandler, type Services } from './handler';
 
 const NOW = 1_792_000_000_000;
@@ -60,12 +61,14 @@ describe('the archery server function', () => {
     expect((await h.send({ action: 'nonsense' })).status).toBe(400);
   });
 
-  it('loads a new pupil with nothing, and 8 coin rounds left', async () => {
+  it('loads a new pupil with 100 coins and nothing else, and the whole day\'s 600 coins still to earn', async () => {
     const h = setup();
     const r = await h.send({ action: 'load' });
     expect(r.status).toBe(200);
-    expect(r.body.state).toEqual({ coins: 0, gear: {}, shields: [], bows: [], spent: 0, best: {} });
-    expect(r.body.roundsLeft).toBe(EARNING_ROUNDS_PER_DAY);
+    expect(r.body.state).toEqual({ coins: START_COINS, gear: {}, shields: [], bows: [], spent: 0, best: {} });
+    expect(START_COINS).toBe(100);
+    expect(r.body.coinsLeft).toBe(600);
+    expect(r.body).not.toHaveProperty('roundsLeft');
   });
 });
 
@@ -74,13 +77,13 @@ describe('speed rounds', () => {
     const h = setup();
     const start = await h.send({ action: 'round-start' });
     expect(start.status).toBe(200);
-    expect(start.body.limitMs).toBe(10_000);
+    expect(start.body).toMatchObject({ kind: 'speed', limitMs: 10_000, perRight: 10, questions: 10, earns: true, coinsLeft: 600 });
     expect(start.body.question.slot).toBe(0);
     expect(start.body.question).not.toHaveProperty('answer');
     const seed = start.body.seed as string;
     h.clock.now += 3000;
     const a = await h.send({ action: 'round-answer', seed, slot: 0, value: answerOf(h.data, seed, 0), ms: 2900 });
-    expect(a.body).toMatchObject({ correct: true, coins: COINS_PER_RIGHT, total: COINS_PER_RIGHT, right: 1 });
+    expect(a.body).toMatchObject({ correct: true, coins: COINS_PER_RIGHT, total: START_COINS + COINS_PER_RIGHT, right: 1 });
     expect(a.body.next.limitMs).toBe(9_000);
     expect(a.body.next.question.slot).toBe(1);
     // A wrong answer moves on and earns nothing.
@@ -100,7 +103,7 @@ describe('speed rounds', () => {
     expect(again.status).toBe(200);
     expect(again.body.correct).toBe(true);
     expect(again.body.next).toEqual(first.body.next);
-    expect(h.data.pupils['pupil-1'].coins).toBe(COINS_PER_RIGHT);
+    expect(h.data.pupils['pupil-1'].coins).toBe(START_COINS + COINS_PER_RIGHT);
     expect(h.data.answers).toHaveLength(1);
     expect((await h.send({ action: 'round-answer', seed, slot: 0, value: value + 3, ms: 1000 })).status).toBe(400);
   });
@@ -141,11 +144,14 @@ describe('speed rounds', () => {
     expect(h.data.answers).toHaveLength(0);
   });
 
-  it('a perfect round earns 100 coins and a point (once); after 8 coin rounds a day, rounds are practice', async () => {
+  it('a perfect round earns 140 coins (100 and a 5 bonus from the 3rd right in a row) and a point; once 600 coins are earned in a day, rounds are practice', async () => {
     const h = setup();
-    for (let round = 0; round < EARNING_ROUNDS_PER_DAY + 1; round++) {
+    const rounds = 6;
+    for (let round = 0; round < rounds; round++) {
       const start = await h.send({ action: 'round-start' });
-      expect(start.body.earns).toBe(round < EARNING_ROUNDS_PER_DAY);
+      // Rounds 1-5 start under 600 coins (0, 140, 280, 420, 560); the 6th starts at 700.
+      expect(start.body.earns).toBe(round < 5);
+      expect(start.body.coinsLeft).toBe(Math.max(0, DAILY_COINS - round * 140));
       const seed = start.body.seed;
       let last: Record<string, any> = {};
       // Spread out, so the requests stay under the per-minute limit.
@@ -158,27 +164,72 @@ describe('speed rounds', () => {
       expect(last.right).toBe(10);
       expect(last.point).toBe(true);
     }
-    expect(h.data.pupils['pupil-1'].coins).toBe(EARNING_ROUNDS_PER_DAY * 10 * COINS_PER_RIGHT);
-    expect(h.data.points).toHaveLength(EARNING_ROUNDS_PER_DAY + 1);
-    expect(h.data.answers).toHaveLength((EARNING_ROUNDS_PER_DAY + 1) * 10);
-    expect((await h.send({ action: 'load' })).body.roundsLeft).toBe(0);
+    expect(h.data.pupils['pupil-1'].coins).toBe(START_COINS + 5 * 140);
+    expect(h.data.points).toHaveLength(rounds);
+    expect(h.data.answers).toHaveLength(rounds * 10);
+    expect((await h.send({ action: 'load' })).body.coinsLeft).toBe(0);
     // A day later, coins again.
     h.clock.now += 24 * 3600 * 1000 + 1;
-    expect((await h.send({ action: 'round-start' })).body.earns).toBe(true);
+    const next = await h.send({ action: 'round-start' });
+    expect(next.body.earns).toBe(true);
+    expect(next.body.coinsLeft).toBe(DAILY_COINS);
+  });
+
+  it('gives 10 s, then 9 s … down to 5 s, and stays at 5 s; the streak bonus starts on the 3rd right in a row', async () => {
+    const h = setup();
+    const start = await h.send({ action: 'round-start' });
+    const seed = start.body.seed;
+    const limits = [start.body.limitMs];
+    const coins: number[] = [];
+    for (let slot = 0; slot < 10; slot++) {
+      h.clock.now += 700;
+      const r = await h.send({ action: 'round-answer', seed, slot, value: answerOf(h.data, seed, slot), ms: 400 });
+      coins.push(r.body.coins);
+      if (r.body.next) limits.push(r.body.next.limitMs);
+    }
+    expect(limits).toEqual([10, 9, 8, 7, 6, 5, 5, 5, 5, 5].map((n) => n * 1000));
+    expect(coins).toEqual([10, 10, 15, 15, 15, 15, 15, 15, 15, 15]);
+  });
+
+  it('a wrong answer breaks the streak, and the next right ones start it again', async () => {
+    const h = setup();
+    const start = await h.send({ action: 'round-start' });
+    const seed = start.body.seed;
+    const coins: number[] = [];
+    for (let slot = 0; slot < 6; slot++) {
+      h.clock.now += 700;
+      const value = answerOf(h.data, seed, slot) + (slot === 3 ? 1 : 0);
+      coins.push((await h.send({ action: 'round-answer', seed, slot, value, ms: 400 })).body.coins);
+    }
+    expect(coins).toEqual([10, 10, 15, 0, 10, 10]);
+  });
+
+  it('with the day\'s 600 coins already earned, the next set is practice: right answers earn nothing', async () => {
+    const h = setup();
+    await h.send({ action: 'load' });
+    h.data.pupils['pupil-1'].rounds.push({ at: NOW - 1000, earns: true, coins: DAILY_COINS });
+    const start = await h.send({ action: 'round-start' });
+    expect(start.body).toMatchObject({ earns: false, coinsLeft: 0 });
+    h.clock.now += 700;
+    const r = await h.send({ action: 'round-answer', seed: start.body.seed, slot: 0, value: answerOf(h.data, start.body.seed, 0), ms: 400 });
+    expect(r.body).toMatchObject({ correct: true, coins: 0 });
+    expect(h.data.pupils['pupil-1'].coins).toBe(START_COINS);
+    expect(h.data.answers).toHaveLength(1);
   });
 });
 
 describe('the Armory', () => {
   it('buys with the shop\'s own prices, never more than you have, and a purchase sent twice counts once', async () => {
     const h = setup();
-    expect((await h.send({ action: 'buy', request: 'req-000001', kind: 'gear', item: 'steel' })).body.result).toBe('coins');
+    // A new pupil has 100 coins: not enough for the 150-coin Longbow.
+    expect((await h.send({ action: 'buy', request: 'req-000001', kind: 'bow', item: 'long' })).body.result).toBe('coins');
     giveCoins(h.data, 120);
     const r = await h.send({ action: 'buy', request: 'req-000002', kind: 'gear', item: 'steel', price: 0 });
     expect(r.body.result).toBe('ok');
-    expect(r.body.state).toMatchObject({ coins: 70, gear: { steel: 2 }, spent: 50 });
+    expect(r.body.state).toMatchObject({ coins: 195, gear: { steel: 2 }, spent: 25 });
     const again = await h.send({ action: 'buy', request: 'req-000002', kind: 'gear', item: 'steel' });
     expect(again.body).toEqual(r.body);
-    expect(h.data.pupils['pupil-1'].coins).toBe(70);
+    expect(h.data.pupils['pupil-1'].coins).toBe(195);
     expect((await h.send({ action: 'buy', request: 'req-000003', kind: 'gear', item: 'plain' })).status).toBe(400);
     expect((await h.send({ action: 'buy', request: 'req-000004', kind: 'gear', item: 'nonsense' })).status).toBe(400);
     expect((await h.send({ action: 'buy', request: 'x', kind: 'gear', item: 'steel' })).status).toBe(400);
@@ -193,17 +244,17 @@ describe('the Armory', () => {
     expect((await h.send({ action: 'buy', request: 'req-000013', kind: 'bow', item: 'recurve' })).body.result).toBe('ok');
     expect((await h.send({ action: 'buy', request: 'req-000014', kind: 'bow', item: 'long' })).body.result).toBe('ok');
     expect((await h.send({ action: 'buy', request: 'req-000015', kind: 'bow', item: 'hunter' })).body.result).toBe('ok');
-    // 600 + 400 + 300 + 250 = 1,550 spent: level 4 (the Bubble Shield is level 3).
+    // 300 + 200 + 150 + 125 = 775 spent, then the Bubble Shield (level 3, 125): 900, level 4.
     expect((await h.send({ action: 'buy', request: 'req-000016', kind: 'shield', item: 'bubble' })).body.result).toBe('ok');
-    // 1,800 spent: still level 4, so no Glass Arrow yet (level 5 at 2,000).
+    // 900 spent: still level 4, so no Glass Arrow yet (level 5 at 1,000).
     expect((await h.send({ action: 'buy', request: 'req-000020', kind: 'gear', item: 'glass' })).body.result).toBe('level');
     expect((await h.send({ action: 'buy', request: 'req-000021', kind: 'shield', item: 'charm' })).body.result).toBe('ok');
-    // 1,950: two Steel Arrows make 2,000, level 5.
+    // 975: one purchase of two Steel Arrows (25) makes 1,000, level 5.
     expect((await h.send({ action: 'buy', request: 'req-000022', kind: 'gear', item: 'steel' })).body.result).toBe('ok');
     expect((await h.send({ action: 'buy', request: 'req-000017', kind: 'gear', item: 'glass' })).body.result).toBe('ok');
     const sold = await h.send({ action: 'sell', request: 'req-000018', kind: 'gear', item: 'glass' });
     expect(sold.body.result).toBe('ok');
-    expect(sold.body.state.coins).toBe(5000 - 600 - 400 - 300 - 250 - 250 - 150 - 50 - 500 + 250);
+    expect(sold.body.state.coins).toBe(5000 - 300 - 200 - 150 - 125 - 125 - 75 - 25 - 250 + 125);
     expect((await h.send({ action: 'sell', request: 'req-000019', kind: 'gear', item: 'glass' })).body.result).toBe('none');
   });
 });
@@ -286,6 +337,137 @@ describe('fights against bots', () => {
   });
 });
 
+describe('loot chests and restocks', () => {
+  const plainOnly: PlayerSetup = { quiver: {}, shield: null, bow: 'starter' };
+  type H = ReturnType<typeof setup>;
+  let n = 0;
+
+  /** Plays a whole fight until it ends the way we want (won or lost), or gives up part-way when `left`. */
+  async function fightEnded(h: H, want: 'won' | 'lost' | 'left') {
+    for (let tries = 0; tries < 20; tries++) {
+      h.clock.now += 60_000;
+      const start = await h.send({ action: 'fight-start', request: `chest-${String(++n).padStart(5, '0')}`, world: 'forest', opponent: 'hard', pack: plainOnly });
+      const fight = start.body.fight as number;
+      if (want === 'left') {
+        await h.send({ action: 'fight-finish', fight, shots: playFight(start.body.seed, 'forest', plainOnly, 'hard', 4), left: true });
+        return fight;
+      }
+      const done = await h.send({ action: 'fight-finish', fight, shots: playFight(start.body.seed, 'forest', plainOnly, 'hard') });
+      if ((done.body.winner === 0) === (want === 'won')) return fight;
+    }
+    throw new Error(`no ${want} fight in 20 tries`);
+  }
+
+  /** Answers a set's questions all right and quickly; the coins each earned. */
+  async function answerAll(h: H, start: Record<string, any>, wrongAt: number | null = null) {
+    const coins: number[] = [];
+    for (let slot = 0; slot < start.questions; slot++) {
+      h.clock.now += 700;
+      const value = answerOf(h.data, start.seed, slot) + (slot === wrongAt ? 1 : 0);
+      coins.push((await h.send({ action: 'round-answer', seed: start.seed, slot, value, ms: 400 })).body.coins);
+    }
+    return coins;
+  }
+
+  it('a chest after a won fight pays 20 a right and a 5 bonus on the 3rd: a perfect chest is 65', async () => {
+    const h = setup();
+    const fight = await fightEnded(h, 'won');
+    const before = h.data.pupils['pupil-1'].coins;
+    const start = await h.send({ action: 'round-start', kind: 'chest', fight });
+    expect(start.status).toBe(200);
+    expect(start.body).toMatchObject({ kind: 'chest', perRight: CHEST_WIN_COINS, questions: 3, limitMs: 10_000, earns: true });
+    expect(await answerAll(h, start.body)).toEqual([20, 20, 25]);
+    expect(h.data.pupils['pupil-1'].coins).toBe(before + 65);
+    // A chest isn't a speed round: no round point.
+    expect(h.data.points.filter((p) => p.once.startsWith('archery-round'))).toEqual([]);
+  });
+
+  it('a chest after a lost fight pays 10 a right', async () => {
+    const h = setup();
+    const fight = await fightEnded(h, 'lost');
+    const start = await h.send({ action: 'round-start', kind: 'chest', fight });
+    expect(start.body.perRight).toBe(CHEST_LOSS_COINS);
+    // The 2nd is wrong: 10, 0, then only one in a row, so no bonus.
+    expect(await answerAll(h, start.body, 1)).toEqual([10, 0, 10]);
+    const second = await h.send({ action: 'round-start', kind: 'chest', fight: await fightEnded(h, 'lost') });
+    expect(await answerAll(h, second.body)).toEqual([10, 10, 15]);
+  });
+
+  it('a chest opens once only', async () => {
+    const h = setup();
+    const fight = await fightEnded(h, 'won');
+    expect((await h.send({ action: 'round-start', kind: 'chest', fight })).status).toBe(200);
+    const again = await h.send({ action: 'round-start', kind: 'chest', fight });
+    expect(again.status).toBe(400);
+    expect(again.body.code).toBe('closed');
+  });
+
+  it('a chest is refused for a fight still playing, one given up, someone else\'s, or one that doesn\'t exist', async () => {
+    const h = setup();
+    const start = await h.send({ action: 'fight-start', request: 'chest-playing', world: 'city', opponent: 'easy', pack: plainOnly });
+    const playing = await h.send({ action: 'round-start', kind: 'chest', fight: start.body.fight });
+    expect(playing.status).toBe(400);
+    expect(playing.body.code).toBe('closed');
+    const left = await fightEnded(h, 'left');
+    expect((await h.send({ action: 'round-start', kind: 'chest', fight: left })).body.code).toBe('closed');
+    const won = await fightEnded(h, 'won');
+    expect((await h.send({ action: 'round-start', kind: 'chest', fight: won }, 'other-token')).body.code).toBe('closed');
+    expect((await h.send({ action: 'round-start', kind: 'chest', fight: 999 })).body.code).toBe('closed');
+    // No fight or duel named at all: not read.
+    const none = await h.send({ action: 'round-start', kind: 'chest' });
+    expect(none.status).toBe(400);
+    expect(none.body.code).toBeUndefined();
+  });
+
+  it('a chest is only open for an hour after the fight', async () => {
+    const h = setup();
+    const fight = await fightEnded(h, 'won');
+    h.clock.now += 3600_000 + 1;
+    expect((await h.send({ action: 'round-start', kind: 'chest', fight })).body.code).toBe('closed');
+  });
+
+  it('a restock during a fight works for steps 1 to 4, once each, and pays 10 a right with the streak bonus', async () => {
+    const h = setup();
+    const start = await h.send({ action: 'fight-start', request: 'restock-01', world: 'city', opponent: 'easy', pack: plainOnly });
+    const fight = start.body.fight as number;
+    const r = await h.send({ action: 'round-start', kind: 'restock', fight, step: 1 });
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ kind: 'restock', perRight: COINS_PER_RIGHT, questions: 3, limitMs: 10_000 });
+    expect(await answerAll(h, r.body)).toEqual([10, 10, 15]);
+    const twice = await h.send({ action: 'round-start', kind: 'restock', fight, step: 1 });
+    expect(twice.status).toBe(400);
+    expect(twice.body.code).toBe('closed');
+    expect((await h.send({ action: 'round-start', kind: 'restock', fight, step: 2 })).status).toBe(200);
+    expect((await h.send({ action: 'round-start', kind: 'restock', fight, step: 4 })).status).toBe(200);
+    for (const step of [0, 5, 1.5, 'x']) expect((await h.send({ action: 'round-start', kind: 'restock', fight, step })).status, String(step)).toBe(400);
+    expect((await h.send({ action: 'round-start', kind: 'restock', fight })).status).toBe(400);
+  });
+
+  it('a restock is refused once the fight is over', async () => {
+    const h = setup();
+    const fight = await fightEnded(h, 'won');
+    const r = await h.send({ action: 'round-start', kind: 'restock', fight, step: 1 });
+    expect(r.status).toBe(400);
+    expect(r.body.code).toBe('closed');
+  });
+
+  it('when the day\'s 600 coins are earned, a chest is practice: no coins', async () => {
+    const h = setup();
+    const fight = await fightEnded(h, 'won');
+    h.data.pupils['pupil-1'].rounds.push({ at: h.clock.now, earns: true, coins: DAILY_COINS });
+    const before = h.data.pupils['pupil-1'].coins;
+    const start = await h.send({ action: 'round-start', kind: 'chest', fight });
+    expect(start.body.earns).toBe(false);
+    expect(await answerAll(h, start.body)).toEqual([0, 0, 0]);
+    expect(h.data.pupils['pupil-1'].coins).toBe(before);
+  });
+
+  it('refuses an unknown kind', async () => {
+    const h = setup();
+    expect((await h.send({ action: 'round-start', kind: 'bonus' })).status).toBe(400);
+  });
+});
+
 describe('achievement counts (Stage 7)', () => {
   const plainOnly: PlayerSetup = { quiver: {}, shield: null, bow: 'starter' };
 
@@ -315,7 +497,7 @@ describe('achievement counts (Stage 7)', () => {
   it('a win with a special arrow isn\'t a Plain-only win, and Pip isn\'t Hawk', async () => {
     const h = setup();
     giveCoins(h.data, 1000);
-    h.data.pupils['pupil-1'].spent = 2000;
+    h.data.pupils['pupil-1'].spent = 1000;
     expect((await h.send({ action: 'buy', request: 'req-000200', kind: 'gear', item: 'giant' })).body.result).toBe('ok');
     const pack: PlayerSetup = { quiver: { giant: 1 }, shield: null, bow: 'starter' };
     for (let n = 0; n < 8 && !h.data.stats?.['pupil-1']; n++) {
@@ -358,7 +540,7 @@ describe('achievement counts (Stage 7)', () => {
   it('buying a bow checks the achievements (Every bow is counted from the bows you own)', async () => {
     const h = setup();
     giveCoins(h.data, 1000);
-    h.data.pupils['pupil-1'].spent = 2000;
+    h.data.pupils['pupil-1'].spent = 1000;
     await h.send({ action: 'buy', request: 'req-000300', kind: 'gear', item: 'steel' });
     expect(h.data.noted ?? []).toEqual([]);
     expect((await h.send({ action: 'buy', request: 'req-000301', kind: 'bow', item: 'long' })).body.result).toBe('ok');

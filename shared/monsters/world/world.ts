@@ -17,6 +17,8 @@ export interface WorldOptions {
   maps: Maps;
   /** The test page's "More battles" switch: grass starts a battle every 2-3 steps. */
   fast?: boolean;
+  /** Today's battle limit is reached (battleCap.ts): no wild battles and no trainers. Tower trainers still battle. */
+  resting?: boolean;
 }
 
 export const START_BAG: Bag = { potion: 5, ball: 10 };
@@ -125,8 +127,8 @@ export function step(state: WorldState, dir: Dir, opts: WorldOptions, { turnFirs
 function triggerAfter(state: WorldState, opts: WorldOptions, steppedOnGrass: boolean): { state: WorldState; trigger?: Trigger } {
   const map = mapOf(opts, state);
   const sighting = findSighting(map, state);
-  if (sighting) return { state, trigger: { kind: 'trainer', sighting } };
-  if (!steppedOnGrass || !map.isGrass[state.y * map.width + state.x] || !map.wild.length) return { state };
+  if (sighting && (!opts.resting || sighting.trainer.badge)) return { state, trigger: { kind: 'trainer', sighting } };
+  if (opts.resting || !steppedOnGrass || !map.isGrass[state.y * map.width + state.x] || !map.wild.length) return { state };
 
   const fast = opts.fast ?? false;
   const dice = new Dice(state.seed);
@@ -202,6 +204,8 @@ export function interact(state: WorldState, opts: WorldOptions): InteractOutcome
   if (thing.kind === 'trainer') {
     // Beaten this visit, or a Tower trainer whose badge you already hold: no more battle, just a chat.
     if (state.beaten.includes(thing.id) || (thing.badge && state.badges.includes(thing.badge))) return { state, thing, talk: say(thing.winPages ?? thing.pages) };
+    // Today's battles are used up: a chat, and a battle tomorrow. Tower trainers always battle.
+    if (opts.resting && !thing.badge) return { state, thing, talk: say([RESTING_TALK]) };
     return { state, thing, talk: say(thing.pages), challenge: thing };
   }
   if (thing.kind === 'chest') {
@@ -213,6 +217,9 @@ export function interact(state: WorldState, opts: WorldOptions): InteractOutcome
   if (thing.kind === 'box' || thing.kind === 'book') return { state, thing, talk: say(thing.pages), open: thing.kind };
   return { state, thing, talk: say(thing.pages) };
 }
+
+/** What a trainer says once today's battles are used up. */
+export const RESTING_TALK = 'Your monsters have battled lots today! Come back tomorrow and we can battle then.';
 
 /** The battle a wild trigger starts. */
 export function wildBattle(state: WorldState, trigger: Extract<Trigger, { kind: 'wild' }>): BattleSetup {

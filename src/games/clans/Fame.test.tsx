@@ -35,7 +35,7 @@ describe('fame, the scoreboard and achievements on the test page', () => {
     expect(within(mine).getAllByRole('cell').map((c) => c.textContent)).toEqual(['10', '10']);
   });
 
-  it('celebrates an achievement, lists all eight, and does not celebrate again', async () => {
+  it('celebrates an achievement, lists all ten, and does not celebrate again', async () => {
     const u = user();
     render(<ClanQuest initial={fresh()} />);
     expect(screen.queryByText(/New achievement/)).toBeNull();
@@ -45,9 +45,9 @@ describe('fame, the scoreboard and achievements on the test page', () => {
     expect(note).toHaveTextContent('+10 points each');
     await u.click(btn('Great!'));
     expect(screen.queryByText(/New achievement/)).toBeNull();
-    await u.click(btn(/Achievements \(1 of 8\)/));
+    await u.click(btn(/Achievements \(1 of 10\)/));
     const list = screen.getByRole('list');
-    expect(within(list).getAllByRole('listitem')).toHaveLength(8);
+    expect(within(list).getAllByRole('listitem')).toHaveLength(10);
     expect(within(list).getByText(/First win/).closest('li')).toHaveTextContent('Earned!');
     expect(within(list).getByText(/Boss beaten/).closest('li')).toHaveTextContent('Not yet');
   });
@@ -60,7 +60,7 @@ describe('fame, the scoreboard and achievements on the test page', () => {
     await u.click(btn('Start a new season: fame back to 0 (test only)'));
     expect(screen.getByText(/Fame:/).textContent).toMatch(/Fame:\s*0\s*\(season 2\)/);
     expect(screen.getByRole('heading', { name: 'Red Banner' })).toBeInTheDocument();
-    expect(btn(/Achievements \(\d+ of 8\)/).textContent).not.toContain('(0 of 8)');
+    expect(btn(/Achievements \(\d+ of 10\)/).textContent).not.toContain('(0 of 10)');
   });
 });
 
@@ -93,6 +93,13 @@ describe('the results screen', () => {
     render(<Results summary={{ ...summary, result: 'lost' }} members={fresh().clan.members} onDone={() => {}} />);
     expect(screen.queryByText(/Fame:/)).toBeNull();
   });
+  it('offers Back to the Mines only when another fight is possible', () => {
+    render(<Results summary={summary} members={fresh().clan.members} onDone={() => {}} onMines={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Back to the Mines' })).toBeTruthy();
+    cleanup();
+    render(<Results summary={summary} members={fresh().clan.members} onDone={() => {}} />);
+    expect(screen.queryByRole('button', { name: 'Back to the Mines' })).toBeNull();
+  });
 });
 
 describe('achievements from the server', () => {
@@ -104,10 +111,10 @@ describe('achievements from the server', () => {
 
   it('does not celebrate the ones already earned when the game opens, but celebrates a new one and shows fame', async () => {
     const box = stateWith({ fame: 7, achievements: ['cq-first-win'] });
-    const shown = (s: typeof box) => structuredClone(publicState(s, DEFAULT_PRACTICAL_SETTINGS, { news: [], village: { name: 'Room 12', chest: 100, levels: { trainingHall: 0, smithy: 0, church: 0 }, week: 1, votes: {}, myVote: null, clans: 3 } }, { settings: { enabledTopics: [], yearBand: 5, enabledTables: [], fightsPerDay: 6, season: 2 }, ...s.extra }));
+    const shown = (s: typeof box) => structuredClone(publicState(s, DEFAULT_PRACTICAL_SETTINGS, { news: [] }, { settings: { enabledTopics: [], yearBand: 5, enabledTables: [], fightsPerDay: 6, season: 2 }, ...s.extra }));
     const server: ClanServer = {
       async send(action: Action): Promise<ServerReply> {
-        if (action.type === 'chestGive') box.extra = { fame: 12, achievements: ['cq-first-win', 'cq-village'] };
+        if (action.type === 'upgrade') box.extra = { fame: 12, achievements: ['cq-first-win', 'cq-village'] };
         return { ok: true, replayed: false, seed: SEED, state: shown(box), result: { type: 'load' } };
       },
     };
@@ -116,10 +123,14 @@ describe('achievements from the server', () => {
     await screen.findByRole('heading', { name: 'Red Banner' });
     expect(screen.queryByText(/New achievement/)).toBeNull();
     expect(screen.getByText(/Fame:/).textContent).toMatch(/Fame:\s*7\s*\(season 2\)/);
-    expect(btn(/Achievements \(1 of 8\)/)).toBeInTheDocument();
+    expect(btn(/Achievements \(1 of 10\)/)).toBeInTheDocument();
     // Something happens on the server that earns one more.
-    await u.click(btn('The Village'));
-    await u.click(btn('Give 10'));
+    await u.click(btn('My Village'));
+    await u.click(btn(/^Upgrade Barracks/));
+    await u.click(btn('Show me how'));
+    await u.click(btn('Next question'));
+    await u.click(btn('Show me how'));
+    await u.click(btn(/^Upgrade for/));
     expect(await screen.findByText(/New achievement!/)).toBeInTheDocument();
     expect(screen.getByText(/Village builders/)).toBeInTheDocument();
   });

@@ -6,10 +6,12 @@ import { averageLevel, botChores, botOrders } from './bot';
 import { CONFIG } from './config';
 import { dayReset, gainXp, rollMember } from './character';
 import { botEmpire, type EmpireDay } from './empireBot';
-import { buildingTotal, empireNewDay, empireOf, might } from './empire';
+import { empireNewDay, empireOf, joinFollowers, levelTotal, maxLevel, might, newEmpire } from './empire';
 import { nextFloat } from './rng';
 import { bossAt, newFight, playRound, settle, type FightResult } from './fight';
-import type { Clan } from './types';
+import { SPELLS } from './spells';
+import { VILLAGE_BUILDINGS, type Clan, type MonsterKind } from './types';
+import { newMonsterFight, playSiege } from './monster';
 
 export type Lineup = 'balanced' | 'fighters';
 
@@ -27,6 +29,7 @@ export function newClan(lineup: Lineup, seed: number): Clan {
     gold: CONFIG.startGold,
     followers: 0,
     village: { trainingHall: 0, smithy: 0, church: 0 },
+    empire: newEmpire(),
   };
 }
 
@@ -42,6 +45,8 @@ export interface SimOptions {
   askEvery?: number;
   /** Also run the bot's empire each evening (stage C.4). */
   empire?: boolean;
+  /** Days a week the clan plays (1 to 7, default 7). The other days pass with no play; they still save builds. */
+  playDays?: number;
 }
 
 export interface DayReport {
@@ -52,9 +57,11 @@ export interface DayReport {
   wins: number;
   knockOuts: number;
   rounds: number;
+  /** Skill points the clan spent on spells, over all of the day's fights. */
+  spSpent: number;
   gold: number;
   /** Empire figures at the end of the day (only when the empire is on). */
-  empire?: EmpireDay & { vault: number; might: number; buildings: number; barracks: number };
+  empire?: EmpireDay & { might: number; levels: number; barracks: number; allMax: boolean };
 }
 
 export interface SimReport {
@@ -65,6 +72,8 @@ export interface SimReport {
   /** The day the average level reached 20, or null. */
   dayAtMax: number | null;
   bossWins: number;
+  /** The clan at the end (for the monster check). */
+  clan: Clan;
 }
 
 export function simulate(opts: SimOptions): SimReport {
@@ -79,10 +88,20 @@ export function simulate(opts: SimOptions): SimReport {
   let bossWins = 0;
   const bossesBeaten = new Set<number>();
 
+  const play = Math.max(1, Math.min(7, opts.playDays ?? 7));
+  let lastPlayed = 0;
   for (let day = 1; day <= opts.days; day++) {
+    // Play days are spread through the week: day d is played when it is the first day of a new "slot" of 7/play days.
+    const plays = day === 1 || Math.floor((day * play) / 7) > Math.floor(((day - 1) * play) / 7);
+    if (!plays) {
+      const prev = days[days.length - 1];
+      days.push({ ...prev, day, fights: 0, wins: 0, knockOuts: 0, rounds: 0, spSpent: 0 });
+      continue;
+    }
     dayReset(clan);
-    if (opts.empire && day > 1) empireNewDay(clan);
-    const report: DayReport = { day, avgLevel: 0, depth: 0, fights: 0, wins: 0, knockOuts: 0, rounds: 0, gold: 0 };
+    if (opts.empire && day > 1) empireNewDay(clan, day - lastPlayed - 1);
+    lastPlayed = day;
+    const report: DayReport = { day, avgLevel: 0, depth: 0, fights: 0, wins: 0, knockOuts: 0, rounds: 0, spSpent: 0, gold: 0 };
     for (let n = 0; n < CONFIG.fightsPerDay; n++) {
       botChores(clan);
       const fit = clan.members.filter((m) => !m.knockedOut);
@@ -90,9 +109,15 @@ export function simulate(opts: SimOptions): SimReport {
       const depth = Math.max(0, Math.min(20, Math.floor(averageLevel(clan)) - 1 + opts.depthOffset));
       const boss = !!bossAt(depth) && !bossesBeaten.has(depth) && averageLevel(clan) >= depth + 1;
       const state = newFight(clan.members, depth, ++seedCounter, boss);
+      const ours = new Set(state.clan.map((f) => f.name));
       while (!state.result) {
         const cry = nextFloat(dice) < opts.mathsRate ? 'damage' : null;
+        const from = state.log.length;
         playRound(state, botOrders(state), cry);
+        // Each member acts once a round; a "hits every enemy" spell logs once per enemy but is paid for once.
+        const cast = new Map<string, string>();
+        for (const e of state.log.slice(from)) if (e.type === 'cast' && ours.has(e.who)) cast.set(e.who, e.spell);
+        for (const name of cast.values()) report.spSpent += Object.values(SPELLS).find((sp) => sp.name === name)?.sp ?? 0;
       }
       const before = clan.members.filter((m) => m.knockedOut).length;
       settle(clan.members, state, gainXp);
@@ -100,6 +125,7 @@ export function simulate(opts: SimOptions): SimReport {
       if (state.result === 'won') {
         clan.gold += state.gold;
         clan.followers += state.followers;
+        if (opts.empire) joinFollowers(clan);
         if (boss) {
           bossesBeaten.add(depth);
           bossWins++;
@@ -116,12 +142,33 @@ export function simulate(opts: SimOptions): SimReport {
     if (opts.empire) {
       const e = empireOf(clan);
       const today = botEmpire(clan, opts.seed * 1000 + day);
-      report.empire = { ...today, vault: e.vault, might: might(e.troops), buildings: buildingTotal(e), barracks: e.plots.filter((p) => p.building === 'barracks').length };
+      report.empire = { ...today, might: might(e.troops), levels: levelTotal(e), barracks: e.levels.barracks, allMax: VILLAGE_BUILDINGS.every((b) => e.levels[b] >= maxLevel(b)) };
     }
     report.avgLevel = averageLevel(clan);
     report.gold = clan.gold;
     days.push(report);
     if (dayAtMax === null && clan.members.every((m) => m.level >= CONFIG.maxLevel)) dayAtMax = day;
   }
-  return { days, fights: totalFights, wins: totalWins, results, dayAtMax, bossWins };
+  return { days, fights: totalFights, wins: totalWins, results, dayAtMax, bossWins, clan };
+}
+
+/**
+ * One monster try by the bot: the clan rested and woken, the siege (the maths right `mathsRate` of the time), then the clan fight with
+ * the bot's orders and a Battle Cry like the Mines. `losses` = tries lost before (the monster is that much more tired). True if won.
+ */
+export function monsterTry(clanIn: Clan, kind: MonsterKind, losses: number, seed: number, mathsRate: number, supplies = { arrows: 0, potions: 0, net: 0 }): { won: boolean; rounds: number; left: number } {
+  const clan = structuredClone(clanIn);
+  dayReset(clan);
+  for (const m of clan.members) {
+    m.knockedOut = false;
+    m.hp = m.maxHp;
+    m.sp = m.maxSp;
+  }
+  const dice = { rng: (seed * 2654435761) | 0 };
+  const right = nextFloat(dice) < mathsRate;
+  const siege = playSiege(clan, supplies.arrows, right, seed);
+  const e = empireOf(clan);
+  const state = newMonsterFight(clan.members, { kind, losses, siege: siege.share, potions: supplies.potions, net: supplies.net > 0, walls: e.levels.walls }, seed);
+  while (!state.result) playRound(state, botOrders(state), nextFloat(dice) < mathsRate ? 'damage' : null);
+  return { won: state.result === 'won', rounds: state.round, left: state.enemies[0].hp / state.enemies[0].maxHp };
 }

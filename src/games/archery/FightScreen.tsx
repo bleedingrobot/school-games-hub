@@ -50,7 +50,7 @@ export interface FightSaved {
   line?: string;
 }
 
-export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STARTER_PACK, onFinished, onLeave, onPlayAgain, onSpeedRound, best: serverBest }: {
+export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STARTER_PACK, onFinished, onLeave, onPlayAgain, onRoundOver, best: serverBest }: {
   world: WorldId;
   level: BotLevel;
   onExit: () => void;
@@ -60,8 +60,8 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
   onLeave?: (shots: Shot[]) => void;
   /** Play again starts a new fight through the game (a new seed from the server). Without it, a new seed here. */
   onPlayAgain?: () => void;
-  /** Between rounds: a speed round for coins (the game shows it over the fight). */
-  onSpeedRound?: () => void;
+  /** A round ended and the fight goes on (`played` rounds so far): the game shows a restock over the fight. */
+  onRoundOver?: (played: number) => void;
   /** The best score in this world, from the server (otherwise from this device). */
   best?: number;
   /** What the player packed for this fight (arrows, helpers, shield, bow). */
@@ -285,7 +285,10 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
           setNewBest(isBest);
           setBest(loadBests()[world] ?? finalScore);
         }
-      } else setPhase('round-over');
+      } else {
+        setPhase('round-over');
+        onRoundOver?.(run.rounds.length);
+      }
       bump();
       return;
     }
@@ -554,7 +557,6 @@ export function FightScreen({ world, level, onExit, seed: fixedSeed, pack = STAR
             <p>First to win 2 rounds wins the fight. The next round has new land and new wind.</p>
             <div className="ar-row">
               <button type="button" className="button button--play ar-btn" onClick={nextRound}>Next round</button>
-              {onSpeedRound && <button type="button" className="button button--light ar-btn" onClick={onSpeedRound}>Speed round for coins</button>}
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const fetchStudent = vi.hoisted(() => vi.fn());
 vi.mock('../data/bondMatch', () => ({ fetchStudentBondMatch: fetchStudent }));
 
-import { BondMatchStudentPanel } from './TeacherBondMatch';
+import { bondMatchSummary, BondMatchStudentPanel } from './TeacherBondMatch';
 
 beforeEach(() => {
   fetchStudent.mockReset();
@@ -43,5 +43,17 @@ describe('the teacher\'s Bond Match panel', () => {
     await waitFor(() => expect(fetchStudent).toHaveBeenCalled());
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('Bond Match’s one line for a student’s Games row', () => {
+  it('counts games and stars, and says nothing before the first game', async () => {
+    fetchStudent.mockResolvedValue({
+      games: 1, lastPlayed: null,
+      bests: [{ bondId: 'whole-10', size: 'small', flips: 6, seconds: 40, stars: 3, plays: 1 }],
+    });
+    expect(await bondMatchSummary('s1')).toBe('1 game, 3 stars');
+    fetchStudent.mockResolvedValue({ games: 0, lastPlayed: null, bests: [] });
+    expect(await bondMatchSummary('s1')).toBeNull();
   });
 });

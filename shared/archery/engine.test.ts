@@ -229,15 +229,15 @@ describe('arrows', () => {
     expect(ARROWS.map((a) => a.id)).toEqual(['plain', 'steel', 'log', 'mole', 'mud', 'rain', 'skip', 'goo', 'shaker', 'owl', 'firework', 'sneaky', 'bolt', 'giant', 'glass']);
     expect(armoryArrows().map((a) => a.id)).toEqual(ARROWS.filter((a) => a.id !== 'plain').map((a) => a.id));
     expect(arrowKind('plain').unlimited).toBe(true);
-    expect(arrowKind('steel')).toMatchObject({ price: 50, perPurchase: 2, level: 1 });
-    expect(arrowKind('giant')).toMatchObject({ price: 400, perPurchase: 1, level: 5 });
+    expect(arrowKind('steel')).toMatchObject({ price: 25, perPurchase: 2, level: 1 });
+    expect(arrowKind('giant')).toMatchObject({ price: 200, perPurchase: 1, level: 5 });
     // Bigger than Stage 2's 18 px (James, 21 Oct 2026: shorter rounds).
     expect(arrowKind('plain').blastRadius).toBe(24);
   });
 
-  it("sells the pupil's Glass Arrow (500 coins, level 5), but bots never pick it", () => {
+  it("sells the pupil's Glass Arrow (250 coins, level 5), but bots never pick it", () => {
     const glass = arrowKind('glass');
-    expect(glass).toMatchObject({ name: 'Glass Arrow', forSale: true, price: 500, level: 5 });
+    expect(glass).toMatchObject({ name: 'Glass Arrow', forSale: true, price: 250, level: 5 });
     expect(botArrows().map((a) => a.id)).not.toContain('glass');
     expect(botArrows().map((a) => a.id)).toContain('plain');
     const setup: FightSetup = { world: 'forest', players: [{ quiver: { glass: 3 }, shield: null }, { quiver: {}, shield: null }] };

@@ -11,9 +11,10 @@ import { useCallback, useEffect, useState } from 'react';
 import type { BotLevel } from '../../../shared/archery/bot';
 import { PACK_MS } from '../../../shared/archery/config';
 import { duelOpen, seatOf, type Classmate, type DuelRow } from '../../../shared/archery/duel';
-import { EARNING_ROUNDS_PER_DAY } from '../../../shared/archery/speed';
+import { nextGoal } from '../../../shared/archery/shop';
+import { DAILY_COINS } from '../../../shared/archery/speed';
 import type { PlayerSetup, WorldId } from '../../../shared/archery/types';
-import type { ArcheryApi, ArmoryState, DuelLink, DuelResult, FightStart } from '../../data/archery';
+import type { ArcheryApi, ArmoryState, DuelLink, DuelResult, FightStart, SetRequest } from '../../data/archery';
 import { ArmoryScreen, type Shelf } from './ArmoryScreen';
 import { ChallengeAsk, ClassmatesScreen, DuelNotStarted, DuelWait } from './Classmates';
 import { DuelScreen } from './DuelScreen';
@@ -34,8 +35,12 @@ type Screen =
   | { kind: 'home' }
   | { kind: 'pick' }
   | { kind: 'pack' }
+  /** The supply chest before a bot fight (then packing). */
+  | { kind: 'supply' }
   | { kind: 'fight'; fight: FightStart }
   | { kind: 'speed'; from: 'home' | 'armory' }
+  /** The loot chest after a classmate fight. */
+  | { kind: 'chest'; duel: number; won: boolean }
   | { kind: 'armory'; shelf: Shelf }
   | { kind: 'how' }
   | { kind: 'classmates' }
@@ -54,15 +59,15 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
 }) {
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
   const [state, setState] = useState<ArmoryState | null>(null);
-  const [roundsLeft, setRoundsLeft] = useState(EARNING_ROUNDS_PER_DAY);
+  const [coinsLeft, setCoinsLeft] = useState(DAILY_COINS);
   const choices = loadChoices();
   const [world, setWorld] = useState<WorldId>(choices.world);
   const [level, setLevel] = useState<BotLevel>(choices.level);
   const [lastPack, setLastPack] = useState<PlayerSetup | null>(choices.pack);
   const [starting, setStarting] = useState(false);
   const [packProblem, setPackProblem] = useState('');
-  // A speed round between rounds of a fight, shown over it.
-  const [midSpeed, setMidSpeed] = useState(false);
+  // Maths over a bot fight: a restock between rounds, or the loot chest at the end.
+  const [overFight, setOverFight] = useState<{ set: SetRequest; won?: boolean } | null>(null);
   const prefs = loadPrefs();
   const lessMotion = wantsLessMotion(prefs);
   const [mateWorld, setMateWorld] = useState<WorldId>(choices.world);
@@ -84,7 +89,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
       return;
     }
     setState(r.value.state);
-    setRoundsLeft(r.value.roundsLeft);
+    setCoinsLeft(r.value.coinsLeft);
     setScreen({ kind: 'home' });
   }
 
@@ -169,7 +174,10 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
   function doneWithDuel(d: DuelRow) {
     duels.forget(d.id);
     setDuelProblem('');
-    setScreen({ kind: 'home' });
+    // The loot chest, unless the fight never really happened or this pupil left it (the server checks again).
+    const seat = seatOf(d, me);
+    const chest = d.status === 'done' && (seat === 0 || seat === 1) && ['finished', 'left', 'timeouts'].includes(d.ending ?? '') && d.leaver !== seat;
+    setScreen(chest ? { kind: 'chest', duel: d.id, won: d.winner === seat } : { kind: 'home' });
     void api.load().then((r) => {
       if (r.ok) setState(r.value.state);
     });
@@ -186,6 +194,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
       return;
     }
     setState(r.value.state);
+    setOverFight(null);
     setScreen({ kind: 'fight', fight: r.value });
   }
 
@@ -193,6 +202,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
     const r = await api.fightFinish(fight.fight, shots);
     if (!r.ok) return { line: r.message };
     setState(r.value.state);
+    if (r.value.result === 'ok') setOverFight({ set: { kind: 'chest', fight: fight.fight }, won: r.value.winner === 0 });
     const pts = r.value.points;
     return {
       best: r.value.best,
@@ -233,7 +243,7 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
       body = (
         <>
           <HomeScreen
-            coins={state.coins} world={world} bow={lastPack?.bow ?? 'starter'} lessMotion={lessMotion} simple={prefs.simple}
+            coins={state.coins} goal={goalWords(state)} world={world} bow={lastPack?.bow ?? 'starter'} lessMotion={lessMotion} simple={prefs.simple}
             onPlay={() => setScreen({ kind: 'pick' })}
             onWorld={(w) => {
               setWorld(w);
@@ -253,8 +263,16 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
     case 'pick':
       body = (
         <PickScreen
-          world={world} level={level} onWorld={setWorld} onLevel={setLevel} onBack={home} onNext={() => setScreen({ kind: 'pack' })}
+          world={world} level={level} onWorld={setWorld} onLevel={setLevel} onBack={home} onNext={() => setScreen({ kind: 'supply' })}
           onClassmate={matesOn ? () => { setMateWorld(world); setScreen({ kind: 'classmates' }); } : undefined}
+        />
+      );
+      break;
+    case 'supply':
+      body = (
+        <SpeedRound
+          key="supply" api={api} coins={state.coins} coinsLeft={coinsLeft} set={{ kind: 'supply' }}
+          onCoins={setCoins} onCoinsLeft={setCoinsLeft} onExit={() => setScreen({ kind: 'pack' })} exitLabel="Pack your quiver"
         />
       );
       break;
@@ -275,12 +293,16 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
             onExit={home}
             onFinished={(shots) => finished(f, shots)}
             onLeave={(shots) => void leaveFight(f, shots)}
-            onPlayAgain={() => setScreen({ kind: 'pack' })}
-            onSpeedRound={() => setMidSpeed(true)}
+            onPlayAgain={() => setScreen({ kind: 'supply' })}
+            onRoundOver={(played) => setOverFight({ set: { kind: 'restock', fight: f.fight, step: played } })}
           />
-          {midSpeed && (
+          {overFight && (
             <div className="ar-over">
-              <SpeedRound api={api} coins={state.coins} roundsLeft={roundsLeft} onCoins={setCoins} onRoundsLeft={setRoundsLeft} onExit={() => setMidSpeed(false)} exitLabel="Back to the fight" />
+              <SpeedRound
+                key={JSON.stringify(overFight.set)} api={api} coins={state.coins} coinsLeft={coinsLeft} set={overFight.set} won={overFight.won}
+                onCoins={setCoins} onCoinsLeft={setCoinsLeft} onExit={() => setOverFight(null)}
+                exitLabel={overFight.set.kind === 'chest' ? 'See how the fight ended' : 'Back to the fight'}
+              />
             </div>
           )}
         </>
@@ -290,8 +312,16 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
     case 'speed':
       body = (
         <SpeedRound
-          api={api} coins={state.coins} roundsLeft={roundsLeft} onCoins={setCoins} onRoundsLeft={setRoundsLeft}
+          api={api} coins={state.coins} coinsLeft={coinsLeft} onCoins={setCoins} onCoinsLeft={setCoinsLeft}
           onExit={() => (screen.from === 'armory' ? setScreen({ kind: 'armory', shelf: 'arrows' }) : home())}
+        />
+      );
+      break;
+    case 'chest':
+      body = (
+        <SpeedRound
+          key={screen.duel} api={api} coins={state.coins} coinsLeft={coinsLeft} set={{ kind: 'chest', duel: screen.duel }} won={screen.won}
+          onCoins={setCoins} onCoinsLeft={setCoinsLeft} onExit={home} exitLabel="Home"
         />
       );
       break;
@@ -379,4 +409,11 @@ export function ArcheryGame({ api, onExit, extra, duels: link, me = '' }: {
       )}
     </div>
   );
+}
+
+/** Home's "something to save up for" line. */
+function goalWords(a: ArmoryState): string | undefined {
+  const g = nextGoal(a);
+  if (!g) return undefined;
+  return g.need > 0 ? `${g.need} more coins for the ${g.item.name}` : `You can buy the ${g.item.name}!`;
 }

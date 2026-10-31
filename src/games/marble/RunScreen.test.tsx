@@ -13,7 +13,7 @@ import { RunScreen, type FinishedRun } from './RunScreen';
 // three.js can't run in a test, so the picture is a stand-in that just counts draws.
 const draws = vi.fn();
 vi.mock('./renderer', () => ({
-  createView: () => ({ draw: draws, resize: vi.fn(), setLowQuality: vi.fn(), dispose: vi.fn() }),
+  createView: () => ({ draw: draws, resize: vi.fn(), setLowQuality: vi.fn(), setQuality: vi.fn(), dispose: vi.fn() }),
 }));
 
 let frameCallbacks: FrameRequestCallback[] = [];
@@ -260,6 +260,22 @@ describe('RunScreen with maths', () => {
     await runFrames(300);
     expect(screen.queryByRole('button', { name: 'Go!' })).toBeNull();
     expect(screen.getByLabelText('Time').textContent).not.toBe(frozen);
+  });
+
+  it('keeps the gate question up when a movement key is pressed; Enter carries on', async () => {
+    setup({ course: GATED, setup: MATHS, readTime: true });
+    await start();
+    await runFrames(100);
+    await screen.findByRole('button', { name: 'Go!' });
+    for (const code of ['ArrowUp', 'ArrowLeft', 'KeyW', 'KeyD', 'Space']) {
+      fireEvent.keyDown(window, { code });
+      fireEvent.keyUp(window, { code });
+    }
+    await runFrames(100);
+    expect(screen.getByRole('button', { name: 'Go!' })).toBeInTheDocument();
+    fireEvent.keyDown(window, { code: 'Enter' });
+    await runFrames(300);
+    expect(screen.queryByRole('button', { name: 'Go!' })).toBeNull();
   });
 
   it('carries on by itself after ten seconds of reading', async () => {

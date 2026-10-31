@@ -1,17 +1,14 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { QuestionSkips } from '../data/questionLog';
 
 const fetchQuestionSkips = vi.fn<(classId: string | null, days: number) => Promise<QuestionSkips>>();
 vi.mock('../data/questionLog', () => ({ fetchQuestionSkips: (classId: string | null, days: number) => fetchQuestionSkips(classId, days) }));
 
-const fetchSkipMode = vi.fn<(classId?: string | null) => Promise<string>>();
-const saveSkipMode = vi.fn<(mode: string, classId?: string | null) => Promise<void>>();
-vi.mock('../data/questionSkips', () => ({
-  fetchSkipMode: (classId?: string | null) => fetchSkipMode(classId),
-  saveSkipMode: (mode: string, classId?: string | null) => saveSkipMode(mode, classId),
-}));
+const picked = vi.hoisted(() => ({ classId: null as string | null }));
+vi.mock('../teacher/TeacherClass', () => ({ useTeacherClass: () => ({ classId: picked.classId, ready: true }) }));
 
 import { QuestionSkipsPanel, spotName } from './TeacherQuestionSkips';
 
@@ -27,9 +24,8 @@ const data: QuestionSkips = {
 };
 
 beforeEach(() => {
+  picked.classId = null;
   fetchQuestionSkips.mockReset();
-  fetchSkipMode.mockReset().mockResolvedValue('on');
-  saveSkipMode.mockReset().mockResolvedValue();
 });
 
 describe('Skipped questions panel', () => {
@@ -64,27 +60,13 @@ describe('Skipped questions panel', () => {
     expect(await screen.findByText('We couldn’t load the skip counts.')).toBeInTheDocument();
   });
 
-  it('has the class’s Skip button switch at the top: On, 3 per game, Off', async () => {
+  it('points to the Skip button switch on Today', async () => {
     fetchQuestionSkips.mockResolvedValue(data);
-    render(<QuestionSkipsPanel />);
-    const picker = await screen.findByRole('group', { name: 'Skip button' });
-    expect(within(picker).getByRole('radio', { name: /^On:/ })).toBeChecked();
-    expect(within(picker).getAllByRole('radio')).toHaveLength(3);
-    expect(fetchSkipMode).toHaveBeenCalledWith(null);
-    await userEvent.click(within(picker).getByRole('radio', { name: /^3 per game:/ }));
-    expect(saveSkipMode).toHaveBeenCalledWith('limited', null);
-    expect(await screen.findByText('Skip button: 3 per game.')).toBeInTheDocument();
-    expect(within(picker).getByRole('radio', { name: /^3 per game:/ })).toBeChecked();
-  });
-
-  it('says so when the switch can’t be saved, and keeps the old choice', async () => {
-    fetchQuestionSkips.mockResolvedValue(data);
-    saveSkipMode.mockRejectedValue(new Error('no'));
-    render(<QuestionSkipsPanel />);
-    const picker = await screen.findByRole('group', { name: 'Skip button' });
-    await userEvent.click(within(picker).getByRole('radio', { name: /^Off:/ }));
-    expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
-    expect(within(picker).getByRole('radio', { name: /^On:/ })).toBeChecked();
+    picked.classId = 'c12';
+    render(<QuestionSkipsPanel />, { wrapper: MemoryRouter });
+    await screen.findByText(/questions shown/);
+    expect(screen.getByRole('link', { name: 'Today' })).toHaveAttribute('href', '/teacher/c12');
+    expect(screen.queryByRole('radio', { name: /^On/ })).not.toBeInTheDocument();
   });
 
   it('names question kinds', () => {

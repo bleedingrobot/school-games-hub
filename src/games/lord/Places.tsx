@@ -1,11 +1,13 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import {
   ARMOURS, CLASSES, EXP_TO_CHALLENGE, LOOKS, MAX_LEVEL, WEAPONS, expNeeded, masterFor,
 } from '../../../shared/lord/data';
 import {
   buyGear, canChallengeMaster, canFaceDragon, healCost, healPrice, heroAttack, heroDefence, kindnessDiscount, shopPrice,
 } from '../../../shared/lord/engine';
-import { NUMBER_GUESS_TRIES } from '../../../shared/lord/maths';
+import { INTEREST_EVERY, NUMBER_GUESS_TRIES, interestDue } from '../../../shared/lord/maths';
+import { QuestionModal } from '../../maths/QuestionModal';
+import type { PublicQuestion } from '../../../shared/maths/serverQuestions';
 import type { LordAction, LordReply, LordState, Stats } from '../../../shared/lord/server';
 import type { Hero, HeroClass } from '../../../shared/lord/types';
 import type { Asked, AskOptions } from './useAsk';
@@ -26,6 +28,8 @@ export interface PlaceProps {
   act: (action: LordAction) => Promise<Reply | null>;
   ask: Ask;
   say: (note: string) => void;
+  /** The last thing `say` said (or why the server said no), shown at the top of the place so the pupil sees it there. */
+  note?: string;
   back: () => void;
   /** A request is on its way: buttons wait. */
   busy: boolean;
@@ -36,8 +40,8 @@ export interface PlaceProps {
  * sign, and what you can do there on a parchment panel below. `more` is the end of a long title, left off on phones
  * so the sign stays on one line (the shop's forge shows).
  */
-export function Place({ title, more, children, back, tile, scene = 'village', person }: {
-  title: string; more?: string; children: ReactNode; back: () => void; tile?: keyof typeof ICON_TILES; scene?: SceneId; person?: PersonId;
+export function Place({ title, more, children, back, tile, scene = 'village', person, note }: {
+  title: string; more?: string; children: ReactNode; back: () => void; tile?: keyof typeof ICON_TILES; scene?: SceneId; person?: PersonId; note?: string;
 }) {
   return (
     <section className="lord-place" aria-label={title + (more ?? '')}>
@@ -52,14 +56,17 @@ export function Place({ title, more, children, back, tile, scene = 'village', pe
           </button>
         </header>
       </Stage>
-      <div className="lord-panel">{children}</div>
+      <div className="lord-panel">
+        {note && <p className="lord-note" role="status">{note}</p>}
+        {children}
+      </div>
     </section>
   );
 }
 
 // ---------------------------------------------------------------- the shop
 
-export function Shop({ hero, act, ask, say, back, busy }: PlaceProps) {
+export function Shop({ hero, act, ask, say, note, back, busy }: PlaceProps) {
   const [slot, setSlot] = useState<'weapon' | 'armour'>('weapon');
   const table = slot === 'weapon' ? WEAPONS : ARMOURS;
   const Sprite_ = slot === 'weapon' ? WeaponSprite : ArmourSprite;
@@ -80,7 +87,7 @@ export function Shop({ hero, act, ask, say, back, busy }: PlaceProps) {
   }
 
   return (
-    <Place title="The Blacksmith" more=" and Armourer" tile="sword" scene="shop" person="shop" back={back}>
+    <Place title="The Blacksmith" more=" and Armourer" tile="sword" scene="shop" person="shop" note={note} back={back}>
       <p className="lord-lead">
         Your old gear sells back for half price. The best gear needs enough base {stat}: you get that by beating your masters.
         {kindnessDiscount(hero) > 0 && ` Your kindness gives ${Math.round(kindnessDiscount(hero) * 100)}% off.`}
@@ -125,7 +132,7 @@ export function Shop({ hero, act, ask, say, back, busy }: PlaceProps) {
 
 // ---------------------------------------------------------------- the healer
 
-export function Healer({ hero, act, ask, say, back, busy }: PlaceProps) {
+export function Healer({ hero, act, ask, say, note, back, busy }: PlaceProps) {
   const missing = hero.maxHp - hero.hp;
   const price = healPrice(hero.level);
 
@@ -145,7 +152,7 @@ export function Healer({ hero, act, ask, say, back, busy }: PlaceProps) {
   }
 
   return (
-    <Place title="The Healer’s Hut" tile="heart" scene="healer" person="healer" back={back}>
+    <Place title="The Healer’s Hut" tile="heart" scene="healer" person="healer" note={note} back={back}>
       <p className="lord-lead">
         Health: <strong>{hero.hp} / {hero.maxHp}</strong>. Every point costs <strong>{price}</strong> gold. All your health comes back free tomorrow.
       </p>
@@ -166,8 +173,12 @@ export function Healer({ hero, act, ask, say, back, busy }: PlaceProps) {
 
 // ---------------------------------------------------------------- the bank
 
-export function Bank({ hero, state, act, ask, say, back, busy }: PlaceProps) {
-  const canAskInterest = hero.level >= 4 && hero.bank > 0 && !state.interestDone;
+export function Bank({ hero, state, act, say, note, back, busy }: PlaceProps) {
+  const due = interestDue(hero.bank);
+  const canAskInterest = hero.level >= 4 && hero.bank >= INTEREST_EVERY && !state.interestDone;
+  // The banker's question, while it is on screen: one from the pupil's maths ladder or focus, made and marked by the server.
+  const [question, setQuestion] = useState<{ id: number; shown: PublicQuestion } | null>(null);
+  const outcome = useRef<{ interest: number; right: boolean; answer: number; bank: number } | null>(null);
 
   async function move(op: 'deposit' | 'withdraw', amount: number) {
     const reply = await act({ action: 'bank', op, amount });
@@ -175,16 +186,23 @@ export function Bank({ hero, state, act, ask, say, back, busy }: PlaceProps) {
   }
 
   async function interest() {
-    const asked = await ask('bank', { title: 'The banker’s question', note: 'Answer right for a little interest on your savings.', closeLabel: 'Not today' });
-    if (!asked) return;
-    const reply = await act({ action: 'bank', op: 'interest', proof: asked.proof });
-    if (!reply) return;
-    const extra = (reply.result as { interest: number }).interest;
-    say(extra > 0 ? `The banker adds ${extra} gold of interest. Well done!` : 'No interest today, but you can try again tomorrow.');
+    if (!canAskInterest) return;
+    const reply = await act({ action: 'bank', op: 'interest-ask' });
+    const shown = (reply?.result as { question?: PublicQuestion } | undefined)?.question;
+    if (shown) setQuestion({ id: Date.now(), shown });
+  }
+
+  function answered() {
+    setQuestion(null);
+    const r = outcome.current;
+    outcome.current = null;
+    if (!r) return;
+    if (r.right) say(`The banker adds ${r.interest} gold of interest. You now have ${r.bank + r.interest} gold saved. Well done!`);
+    else say(`Not quite, so the banker adds nothing today. Try again tomorrow!`);
   }
 
   return (
-    <Place title="The Bank" tile="coin" scene="bank" person="bank" back={back}>
+    <Place title="The Bank" tile="coin" scene="bank" person="bank" note={note} back={back}>
       <p className="lord-lead">Gold in the bank is safe. If you lose a fight, only the gold you are carrying is lost.</p>
       <p className="lord-big">
         <Icon name="gold" /> Carrying <strong>{hero.gold}</strong> · In the bank <strong>{hero.bank}</strong>
@@ -196,11 +214,39 @@ export function Bank({ hero, state, act, ask, say, back, busy }: PlaceProps) {
         <button type="button" className="lord-btn" disabled={hero.bank <= 1 || busy} onClick={() => void move('withdraw', Math.floor(hero.bank / 2))}>Withdraw half</button>
       </div>
       {hero.level >= 4 && (
-        <div className="lord-actions">
-          <button type="button" className="lord-btn" disabled={!canAskInterest || busy} onClick={() => void interest()}>
-            Ask about interest {state.interestDone ? '(done today)' : hero.bank <= 0 ? '(save some gold first)' : ''}
-          </button>
+        <div className="lord-card">
+          <h3>Interest</h3>
+          <p className="lord-soft">
+            Once a day the banker pays <strong>1 gold for every {INTEREST_EVERY} gold</strong> you have saved (that is 5%), if you can answer a maths question.
+            {hero.bank >= INTEREST_EVERY ? ` Today's interest on your ${hero.bank} gold is ${due} gold.` : ` Save at least ${INTEREST_EVERY} gold to earn some.`}
+          </p>
+          <div className="lord-actions">
+            <button type="button" className="lord-btn" disabled={!canAskInterest || busy} onClick={interest}>
+              Ask about interest {state.interestDone ? '(done today)' : hero.bank < INTEREST_EVERY ? `(save ${INTEREST_EVERY} gold first)` : ''}
+            </button>
+          </div>
         </div>
+      )}
+      {question && (
+        <QuestionModal
+          key={question.id}
+          question={{ ...question.shown, id: question.id }}
+          title="The banker’s question"
+          note={`Get it right and the banker adds your interest: ${due} gold.`}
+          spot="bank"
+          closeLabel="Not today"
+          onClose={() => setQuestion(null)}
+          onSubmit={async (given, ms) => {
+            const bank = hero.bank;
+            const reply = await act({ action: 'bank', op: 'interest', answer: given, ms });
+            const r = reply?.result as { interest: number; right: boolean; answer: number } | undefined;
+            if (!r) return { correct: false, boxBefore: 0, boxAfter: 0, fact: '' };
+            outcome.current = { ...r, bank };
+            const fact = question.shown.parts.join(' ').replace('?', String(r.answer));
+            return { correct: r.right, boxBefore: 0, boxAfter: 0, fact, answer: r.answer, reward: r.right ? `+${r.interest} gold` : undefined };
+          }}
+          onDone={answered}
+        />
       )}
     </Place>
   );
@@ -208,7 +254,7 @@ export function Bank({ hero, state, act, ask, say, back, busy }: PlaceProps) {
 
 // ---------------------------------------------------------------- the inn
 
-export function Inn({ state, act, ask, say, back, busy, today }: PlaceProps & { today: string }) {
+export function Inn({ state, act, ask, say, note, back, busy, today }: PlaceProps & { today: string }) {
   const song = BARD_SONGS[dayHash(today) % BARD_SONGS.length];
   const [typed, setTyped] = useState('');
   const [guessNote, setGuessNote] = useState('');
@@ -243,7 +289,7 @@ export function Inn({ state, act, ask, say, back, busy, today }: PlaceProps & { 
   }
 
   return (
-    <Place title="The Inn" tile="potion" scene="inn" person="inn" back={back}>
+    <Place title="The Inn" tile="potion" scene="inn" person="inn" note={note} back={back}>
       <blockquote className="lord-song"><Portrait who="bard" /><p>The bard sings:</p>{song.split(' / ').map((l) => <p key={l}>{l}</p>)}</blockquote>
       <div className="lord-actions">
         <button type="button" className="lord-btn lord-btn--hot" disabled={state.riddleDone || busy} onClick={() => void riddle()}>

@@ -112,16 +112,38 @@ describe('Clan Quest with a server', () => {
     expect(box.saved!.clan.members.every((m) => !m.knockedOut)).toBe(true);
   });
 
-  it('moves gold to the vault on the server', async () => {
+  it('upgrades a building on the server (the maths never blocks it)', async () => {
     const { server, box } = fakeServer(madeState());
     const u = user();
     render(<ClanQuest server={server} />);
     await screen.findByRole('heading', { name: 'Red Banner' });
-    await u.click(btn('The Empire'));
-    await u.click(btn('Put in'));
-    expect(box.sent).toContainEqual({ type: 'deposit', gold: 100 });
-    await waitFor(() => expect(empireOf(box.saved!.clan).vault).toBe(100));
-    expect(box.saved!.clan.gold).toBe(100);
+    await u.click(btn('My Village'));
+    await u.click(btn('Upgrade Barracks to level 1 for 50 gold'));
+    await u.click(btn('Show me how'));
+    await u.click(btn('Next question'));
+    await u.click(btn('Show me how'));
+    await u.click(btn('Upgrade for 50 gold'));
+    expect(box.sent).toContainEqual({ type: 'upgrade', building: 'barracks' });
+    await waitFor(() => expect(empireOf(box.saved!.clan).levels.barracks).toBe(1));
+    expect(box.saved!.clan.gold).toBe(150);
+    await u.click(btn('Carry on'));
+    expect(screen.getByText(/Builds left:/)).toHaveTextContent('Builds left: 1');
+  });
+
+  it('shows the kind reason from the server when an upgrade is refused', async () => {
+    const { server, box } = fakeServer(madeState((s) => { s.clan.gold = 400; }));
+    const u = user();
+    render(<ClanQuest server={server} />);
+    await screen.findByRole('heading', { name: 'Red Banner' });
+    await u.click(btn('My Village'));
+    // Somebody else (another Chromebook) used both builds today: the server refuses and its answer replaces the screen.
+    empireOf(box.saved!.clan).buildsToday = 2;
+    await u.click(btn('Upgrade Smithy to level 1 for 50 gold'));
+    await u.click(btn('Show me how'));
+    await u.click(btn('Next question'));
+    await u.click(btn('Show me how'));
+    await u.click(btn('Upgrade for 50 gold'));
+    expect(await screen.findByText(/Your builders have done every job they can/)).toBeInTheDocument();
   });
 
   it('does the quest with the typed answer, and shows what the server paid', async () => {
@@ -190,9 +212,20 @@ describe('Clan Quest with a server', () => {
   });
 
   describe('mine fights', () => {
-    const dflt = () => screen.queryAllByRole('button', { name: /Default action/ })[0];
+    const dflt = () => screen.queryAllByRole('button', { name: /Fight with this plan/ })[0];
+    /** Skip the rest of the round's playback (its summary then waits), as Enter would. */
+    async function finishRound(u: ReturnType<typeof user>) {
+      const skip = screen.queryByRole('button', { name: /Skip\s*Show the whole round/ });
+      if (skip) await u.click(skip);
+    }
+    /** Skip the playback and press "Next round". */
+    async function nextRound(u: ReturnType<typeof user>) {
+      await finishRound(u);
+      const next = screen.queryByRole('button', { name: /Next round/ });
+      if (next) await u.click(next);
+    }
 
-    /** Click through one or more rounds with the default orders. */
+    /** Click through one or more rounds with the suggested plan. */
     async function playRounds(u: ReturnType<typeof user>, box: { sent: Action[] }, count: number) {
       const rounds = () => box.sent.filter((a) => a.type === 'fightRound').length;
       const target = rounds() + count;
@@ -201,6 +234,8 @@ describe('Clan Quest with a server', () => {
         const no = screen.queryByRole('button', { name: 'No thanks' });
         if (no) await u.click(no);
         else if (screen.queryByRole('button', { name: 'Carry on' })) await u.click(btn('Carry on'));
+        else if (screen.queryByRole('button', { name: /Skip\s*Show the whole round/ })) await u.click(screen.getByRole('button', { name: /Skip\s*Show the whole round/ }));
+        else if (screen.queryByRole('button', { name: /Next round/ })) await u.click(screen.getByRole('button', { name: /Next round/ }));
         else await u.click(dflt());
       }
     }
@@ -344,6 +379,7 @@ describe('Clan Quest with a server', () => {
       await waitFor(() => expect(box.sent.find((a) => a.type === 'fightRound')).toMatchObject({ round: 1, cry: { answer: wrong } }));
       // Round 2: "No thanks".
       if (box.saved!.fight) {
+        await nextRound(u);
         await dialog();
         await u.click(btn('No thanks'));
         expect(box.sent.filter((a) => a.type === 'cryCheck')).toHaveLength(1);
@@ -383,6 +419,7 @@ describe('Clan Quest with a server', () => {
       for (let i = 0; i < 8 && !box.sent.some((a) => a.type === 'fightRound'); i++) if (dflt()) await u.click(dflt());
       await waitFor(() => expect((box.saved!.fight as OpenFight | null)?.rounds.length ?? 1).toBe(1));
       if (!box.saved!.fight) return;
+      await finishRound(u);
       const logBefore = screen.getByRole('list', { name: 'Fight log' }).textContent;
       first.unmount();
       cleanup();

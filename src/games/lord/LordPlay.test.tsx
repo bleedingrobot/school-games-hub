@@ -160,6 +160,45 @@ describe('Dragon Maths with a server keeping the hero', () => {
     expect(screen.getByText(/You beat the/)).toBeInTheDocument();
   });
 
+  it('the banker asks a question from the maths ladder, and adds the interest for a right answer', async () => {
+    const user = userEvent.setup();
+    const { db, backend } = newGame();
+    const first = renderGame(backend);
+    await pickHero(user, /Knight/);
+    await village();
+    db.row!.hero = { ...db.row!.hero, level: 4, bank: 259 };
+    first.unmount();
+    renderGame(backend);
+    await user.click(await screen.findByRole('button', { name: /Bank/ }));
+    expect(await screen.findByText(/1 gold for every 20 gold/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Ask about interest/ }));
+    const box = await screen.findByRole('dialog');
+    expect(within(box).getByText(/adds your interest: 12 gold/)).toBeInTheDocument();
+    const asked = db.row!.extra.interestAsk!.question;
+    expect(within(box).getByLabelText(asked.spoken)).toBeInTheDocument();
+    await user.keyboard(`${asked.answer}{Enter}`);
+    await waitFor(() => expect(db.row!.hero.bank).toBe(271));
+    expect(await screen.findByText(/adds 12 gold of interest. You now have 271 gold saved/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Ask about interest/ })).toBeDisabled();
+  });
+
+  it('a wrong answer to the banker adds nothing', async () => {
+    const user = userEvent.setup();
+    const { db, backend } = newGame();
+    const first = renderGame(backend);
+    await pickHero(user, /Knight/);
+    await village();
+    db.row!.hero = { ...db.row!.hero, level: 4, bank: 259 };
+    first.unmount();
+    renderGame(backend);
+    await user.click(await screen.findByRole('button', { name: /Bank/ }));
+    await user.click(await screen.findByRole('button', { name: /Ask about interest/ }));
+    await screen.findByRole('dialog');
+    await user.keyboard(`${db.row!.extra.interestAsk!.question.answer + 1}{Enter}`);
+    expect(await screen.findByText(/the banker adds nothing today/, undefined, { timeout: 4000 })).toBeInTheDocument();
+    expect(db.row!.hero.bank).toBe(259);
+  });
+
   it('offers a half-finished fight again after a reload, with no extra fight used', async () => {
     const user = userEvent.setup();
     const { db, seeds, backend } = newGame();
@@ -487,6 +526,27 @@ describe('the arena, the news, the Warriors list and the Hall of Heroes', () => 
     await pickHero(user, /Knight/);
     await village();
     expect(screen.getAllByText(/4 days left/).length).toBeGreaterThan(0);
+  });
+
+  it('shows the season road in the village: four stops, today\'s stop, and a note when a stop is tapped', async () => {
+    const user = userEvent.setup();
+    // 2026-10-19 is day 31 of season 1 from 2026-09-19: dragon week.
+    const db = emptyDb({ enabled: true, seasonStart: '2026-09-19' });
+    renderGame(createLocalBackend(db, { trial: false, now: () => Date.parse('2026-10-19T00:00:00Z') }));
+    await pickHero(user, /Knight/);
+    await village();
+    const road = screen.getByRole('region', { name: 'Season 1, day 31 of 35. Now: Dragon week. Next: New season in 5 days.' });
+    expect(road).toHaveTextContent('Dragon week! 5 days left to beat the Red Dragon this season.');
+    expect(road).toHaveTextContent('You are level 1: 11 more masters to the dragon.');
+    const stops = within(road).getAllByRole('listitem');
+    expect(stops.map((li) => li.className)).toEqual(['is-done', 'is-done', 'is-now', 'is-next']);
+    await user.click(within(stops[3]).getByRole('button'));
+    expect(road).toHaveTextContent('Every hero starts again at level 1');
+  });
+
+  it('keeps the season road out of the trial, whose season is pretend', async () => {
+    await inVillage({}, true);
+    expect(screen.queryByRole('region', { name: /^Season \d/ })).toBeNull();
   });
 
   it('says when a fight left alone for a whole day counted as a loss', async () => {

@@ -13,6 +13,7 @@ import { combineCost, combineProblem, COLOURS, shotStats, type Colour, type Gem 
 import type { LevelData } from '../../../../shared/gem-keep/level';
 import type { QuestionContext, SkillPack } from '../../../../shared/maths/skillPack';
 import { TimesTables } from '../../../../shared/maths/skillPacks/timesTables';
+import { hasBoard } from '../art';
 import { GameEngine } from '../engine/GameEngine';
 import { DEFAULT_SETTINGS, type GemKeepSettings } from '../settings';
 import { COLOUR_INFO, COLOUR_NAMES, REFUSALS, TEXT } from '../strings';
@@ -29,6 +30,9 @@ export interface LevelEnd {
   /** Seconds of play (game time). */
   gameSeconds: number;
 }
+
+/** Remembers "Brighter map" on this device. */
+const BRIGHTER_KEY = 'gem-keep-brighter';
 
 type Selection = { kind: 'tile'; x: number; y: number } | { kind: 'tower'; x: number; y: number } | { kind: 'gem'; slot: number } | null;
 
@@ -125,6 +129,28 @@ export function GemKeepGame({
     onEngine?.(engine);
     return engine.attach(canvasRef.current!);
   }, [engine, onEngine]);
+
+  // A painted board means the Crystal Night look; "Brighter map" is remembered on this device.
+  const night = hasBoard(level.id);
+  useEffect(() => {
+    if (!night) return;
+    let saved = false;
+    try {
+      saved = localStorage.getItem(BRIGHTER_KEY) === '1';
+    } catch {
+      // Storage blocked: start normal.
+    }
+    if (saved) engine.setBrighter(true);
+  }, [engine, night]);
+  const toggleBrighter = () => {
+    const next = !engine.brighter;
+    engine.setBrighter(next);
+    try {
+      localStorage.setItem(BRIGHTER_KEY, next ? '1' : '0');
+    } catch {
+      // Storage blocked: it still works until the page closes.
+    }
+  };
 
   const say = useCallback((text: string) => {
     setMessage(text);
@@ -386,7 +412,7 @@ export function GemKeepGame({
   const keepShare = Math.round((state.keep / KEEP_HEALTH) * 100);
 
   return (
-    <div className="gk" onKeyDown={keys}>
+    <div className="gk" data-night={night || undefined} onKeyDown={keys}>
       <div className="gk-title">
         {onMap && (
           <button type="button" className="gk-map-button" aria-label={TEXT.backToMapLong} onClick={onMap}>
@@ -457,6 +483,11 @@ export function GemKeepGame({
               </button>
             ))}
           </div>
+          {night && (
+            <button type="button" className="gk-bright" aria-pressed={engine.brighter} aria-label={TEXT.brighter} title={TEXT.brighter} onClick={toggleBrighter}>
+              <span aria-hidden="true">☀</span>
+            </button>
+          )}
         </div>
       </div>
 

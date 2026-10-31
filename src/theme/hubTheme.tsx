@@ -8,14 +8,14 @@ import { DEFAULT_THEME, type HubTheme } from '../avatar/avatarParts';
 
 /** The hub pages: home, profile, lobby, leaderboard, training, Class Warp and How points work. */
 const HUB_PAGES = ['/', '/profile', '/lobby', '/leaderboard', '/training', '/warp', '/points'];
-/** The teacher's pages. */
+/** The teacher's pages: everything under /teacher, and the old addresses that lead there. */
 const TEACHER_PAGES = ['/teacher', '/classes', '/focus', '/skills'];
 
 /** The theme for a page, or undefined on a game screen (and any other page, which keeps the site's own look). */
 export function pageTheme(pathname: string, chosen: HubTheme): HubTheme | undefined {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
   if (HUB_PAGES.includes(path)) return chosen;
-  if (TEACHER_PAGES.includes(path)) return DEFAULT_THEME;
+  if (TEACHER_PAGES.includes(path) || path.startsWith('/teacher/')) return DEFAULT_THEME;
   return undefined;
 }
 

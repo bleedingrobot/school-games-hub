@@ -3,7 +3,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh archery, then scripts/scratch-test.sh archery supabase/tests/database/archery.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(53);
+select plan(72);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -42,6 +42,9 @@ select throws_ok($$ select public.archery_round_answer(auth.uid(), 'seed-0000000
 select throws_ok($$ select public.archery_fight_end(auth.uid(), 1, 'done', '{"giant":5}', 999, true) $$, '42501', null, '... or end a fight with gear back');
 select throws_ok($$ select public.archery_season(array[auth.uid()]) $$, '42501', null, '... or clear a season');
 select throws_ok($$ select public.teacher_set_archery(true) $$, null, null, 'a pupil cannot switch the game on');
+select throws_ok($$ select public.archery_bonus_for(auth.uid(), 'chest', 1, null) $$, '42501', null, 'a pupil cannot ask whether a chest is open (more maths)');
+select throws_ok($$ select public.archery_round_start(auth.uid(), 'chest-seed-9999', '[{"q":1}]', true, 1000, 'chest', 'chest:fight:1', 50) $$, '42501', null,
+  '... or start a chest with their own coins per answer (the 8-argument round start)');
 
 -- ---- The teacher's switch ----
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e', 'eve@douglaspark.school.nz');
@@ -52,14 +55,17 @@ select pg_temp.reset();
 
 -- ---- A new Armory ----
 select pg_temp.act_as_server();
-select is(public.archery_state(pg_temp.id('0a')) - 'roundsToday',
-  '{"coins": 0, "gear": {}, "shields": [], "bows": [], "spent": 0, "best": {}}'::jsonb, 'a new pupil starts with nothing');
+select is(public.archery_state(pg_temp.id('0a')) - 'roundsToday' - 'coinsToday',
+  '{"coins": 100, "gear": {}, "shields": [], "bows": [], "spent": 0, "best": {}}'::jsonb, 'a new pupil starts with 100 coins and nothing else');
+select is((public.archery_state(pg_temp.id('0a')) ->> 'coinsToday')::integer, 0, '... and no coins earned from maths today yet');
+select is((select column_default from information_schema.columns where table_schema = 'public' and table_name = 'archery_players' and column_name = 'coins'),
+  '100', 'the coins column starts everyone at 100');
 select throws_ok($$ select public.archery_state('00000000-0000-0000-0000-000000000099') $$, '22023', null, 'no Armory for someone who is not a pupil');
 
 -- ---- A speed round ----
 select lives_ok($$ select public.archery_round_start(pg_temp.id('0a'), 'round-seed-0001', '[{"q":1},{"q":2},{"q":3}]', true, 1000) $$, 'a round starts');
 select is((public.archery_state(pg_temp.id('0a')) ->> 'roundsToday')::integer, 1, '... and counts as a coin-earning round today');
-select is(public.archery_round_answer(pg_temp.id('0a'), 'round-seed-0001', 0, 7, true, 10, 2000), '{"claimed": true, "coins": 10}'::jsonb,
+select is(public.archery_round_answer(pg_temp.id('0a'), 'round-seed-0001', 0, 7, true, 10, 2000), '{"claimed": true, "coins": 110}'::jsonb,
   'a right answer in time adds its coins');
 select is(public.archery_round_answer(pg_temp.id('0a'), 'round-seed-0001', 0, 7, true, 10, 2000), '{"claimed": false}'::jsonb,
   '... once (sent twice, counted once)');
@@ -68,13 +74,24 @@ select is(public.archery_round_answer(pg_temp.id('0a'), 'round-seed-0001', 2, 7,
 select is(public.archery_round_answer(pg_temp.id('0a'), 'round-seed-0001', 1, null, false, 0, 3000) ->> 'claimed', 'true',
   'a timed-out question is marked with no coins');
 select is((public.archery_round_load(pg_temp.id('0a'), 'round-seed-0001') -> 'served') ->> '2', '3000', 'and the next one is noted as sent');
-select is(pg_temp.coins('0a'), 10, 'the pupil has 10 coins');
+select is(pg_temp.coins('0a'), 110, 'the pupil has 110 coins (100 to start and 10 from maths)');
+select is((public.archery_state(pg_temp.id('0a')) ->> 'coinsToday')::integer, 10, '... and the state says 10 of them came from maths today');
 select is(public.archery_round_load(pg_temp.id('0b'), 'round-seed-0001'), null, 'another pupil cannot load that round');
 select throws_ok($$ select public.archery_round_answer(pg_temp.id('0a'), 'round-seed-0001', 2, 1, true, 500, null) $$, '22023', null,
   'too many coins for one answer are refused');
 
+-- ---- A loot chest (the 8-argument round start: kind, what it belongs to, coins for each right answer) ----
+select is(public.archery_round_start(pg_temp.id('0a'), 'chest-seed-0001', '[{"q":1},{"q":2},{"q":3}]', true, 1000, 'chest', 'chest:fight:1', 20), true,
+  'a chest starts');
+select is(public.archery_round_start(pg_temp.id('0a'), 'chest-seed-0002', '[{"q":1},{"q":2},{"q":3}]', true, 1000, 'chest', 'chest:fight:1', 20), false,
+  '... but the second chest for the same fight (the same after) does not');
+select is(public.archery_round_load(pg_temp.id('0a'), 'chest-seed-0001') ->> 'kind', 'chest', 'a stored set remembers it is a chest');
+select is((public.archery_round_load(pg_temp.id('0a'), 'chest-seed-0001') ->> 'perRight')::integer, 20, '... and its coins for each right answer');
+select is(public.archery_round_start(pg_temp.id('0a'), 'supply-seed-001', '[{"q":1},{"q":2},{"q":3}]', true, 1000, 'supply', null, 10), true,
+  'a supply chest before a fight starts (it has no after, so any number can)');
+
 -- ---- The Armory ----
-select is(public.archery_shop(pg_temp.id('0a'), 'buy-req-0001', 'buy', 'gear', 'steel', 50, 2, 0, 5) ->> 'result', 'coins', 'not enough coins: nothing bought');
+select is(public.archery_shop(pg_temp.id('0a'), 'buy-req-0001', 'buy', 'gear', 'steel', 200, 2, 0, 5) ->> 'result', 'coins', 'not enough coins: nothing bought');
 select pg_temp.reset();
 update public.archery_players set coins = 1000 where player = pg_temp.id('0a');
 select pg_temp.act_as_server();
@@ -110,6 +127,24 @@ select is(pg_temp.gear('0a'), '{"steel": 2}'::jsonb, '... 2 Steel back');
 select is(public.archery_fight_end(pg_temp.id('0a'), (select id from public.archery_fights where seed = 43), 'done', '{"steel": 2}', 87, true) ->> 'result',
   'duplicate', 'ending it again changes nothing');
 select is((select best from public.archery_players where player = pg_temp.id('0a')), '{"snow": 87}'::jsonb, 'the best score is kept per world');
+
+-- ---- Chests and restocks (archery_bonus_for) ----
+select is(public.archery_bonus_for(pg_temp.id('0a'), 'chest', (select id from public.archery_fights where seed = 43), null), '{"won": true}'::jsonb,
+  'a chest is open after a fight that was finished, and says it was won');
+select is(public.archery_bonus_for(pg_temp.id('0a'), 'restock', (select id from public.archery_fights where seed = 43), null), null,
+  'a restock is not open once the fight is over');
+select is(public.archery_bonus_for(pg_temp.id('0b'), 'chest', (select id from public.archery_fights where seed = 43), null), null,
+  'nobody else can open the chest of a fight');
+select is(public.archery_fight_start(pg_temp.id('0a'), 'fight-req-005', 44, 'city', 'easy', '{"quiver":{},"shield":null,"bow":"starter"}') ->> 'result', 'ok',
+  'another fight starts');
+select is(public.archery_bonus_for(pg_temp.id('0a'), 'restock', (select id from public.archery_fights where seed = 44), null), '{"won": false}'::jsonb,
+  'a restock is open while the fight is being played');
+select is(public.archery_bonus_for(pg_temp.id('0a'), 'chest', (select id from public.archery_fights where seed = 44), null), null,
+  '... but its chest is not');
+select is(public.archery_fight_end(pg_temp.id('0a'), (select id from public.archery_fights where seed = 44), 'left', '{}', 0, false) ->> 'result', 'ok',
+  'the fight is given up');
+select is(public.archery_bonus_for(pg_temp.id('0a'), 'chest', (select id from public.archery_fights where seed = 44), null), null,
+  'a fight that was given up has no chest');
 select pg_temp.reset();
 
 -- ---- New Season: coins and gear are wiped ----
@@ -117,6 +152,9 @@ select pg_temp.act_as_server();
 select public.archery_season(array[pg_temp.id('0a')]);
 select pg_temp.reset();
 select is((select count(*)::integer from public.archery_players where player = pg_temp.id('0a')), 0, 'New Season wipes coins and gear');
+select pg_temp.act_as_server();
+select is(public.archery_state(pg_temp.id('0a')) ->> 'coins', '100', '... and everyone starts the new season with 100 coins');
+select pg_temp.reset();
 
 select * from finish();
 rollback;

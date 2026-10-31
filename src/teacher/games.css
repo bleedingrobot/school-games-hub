@@ -1,0 +1,257 @@
+/* The Games tab (src/teacher/Games.tsx): the table, the drawer and the narrow-screen page. Every target is at least 44 px. */
+
+.games-table__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.games-table__table th,
+.games-table__table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+.games-table__table thead th {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+/* The game and its Settings take what they need; the maths switch gets the rest. */
+.games-table__table thead th:nth-child(1),
+.games-table__table thead th:nth-child(4) {
+  width: 1%;
+}
+.games-table__table thead th:nth-child(2) {
+  width: 9.5rem;
+}
+.games-table__group th {
+  padding-top: 18px;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.games-table__game {
+  padding-right: 20px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.games-table__icon {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+.games-table__quiet,
+.games-table__summary {
+  color: var(--ink-soft);
+}
+.games-table__settings {
+  text-align: right;
+}
+.games-table__open,
+.games-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 10px;
+  border-radius: 10px;
+  color: var(--ink);
+  font-weight: 800;
+  white-space: nowrap;
+}
+.games-table__open:focus-visible,
+.games-page__back:focus-visible,
+.games-drawer__close:focus-visible {
+  outline: 4px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/*
+ * A wide screen: an open "?" floats in a box under its control, so a long description doesn't stretch the row (or squash the
+ * switch) inside a narrow column. It opens rightwards in the On column and leftwards in the Maths column, to stay on the page.
+ * The "?" closes it again. On a narrow screen each row is a card with room for it, so it stays in the card.
+ */
+@media (min-width: 800px) {
+  .games-table .setting--compact {
+    position: relative;
+  }
+  .games-table .setting--compact .setting__about {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 5;
+    width: max-content;
+    max-width: min(24rem, calc(100vw - 4rem));
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: var(--shadow);
+  }
+  .games-table__maths .setting--compact .setting__about {
+    right: 0;
+    left: auto;
+  }
+}
+
+/* A narrow screen: each game is a small card. The explicit roles (the table's own) keep it a table for screen readers. */
+@media (max-width: 799px) {
+  .games-table {
+    padding: 16px 12px;
+  }
+  .games-table__table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .games-table__table tbody,
+  .games-table__table tr {
+    display: block;
+  }
+  .games-table__table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .games-table__table th,
+  .games-table__table td {
+    display: block;
+    padding: 2px 0;
+    border: 0;
+  }
+  .games-table__game {
+    white-space: normal;
+  }
+  .games-table__table .games-table__on,
+  .games-table__table .games-table__maths {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  /* The 3-way maths choice is too wide to sit beside its label on a phone: it drops under the label when it has to. */
+  .games-table__table .games-table__maths {
+    flex-wrap: wrap;
+  }
+  .games-table__maths > .setting {
+    flex: 1 0 auto;
+    max-width: 100%;
+  }
+  .games-table__on::before,
+  .games-table__maths::before {
+    content: attr(data-label);
+    flex: 0 0 3.5em;
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .games-table__table .games-table__settings {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  .games-table__table .games-table__group {
+    border-bottom: 0;
+  }
+}
+
+/* The drawer: from the right, over the table. */
+.games-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: flex-end;
+}
+.games-drawer__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  animation: games-drawer-fade 0.2s ease-out;
+}
+.games-drawer__box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(560px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px 22px 32px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  animation: games-drawer-slide 0.22s ease-out;
+}
+.games-drawer__box:focus {
+  outline: none;
+}
+.games-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.games-drawer__title {
+  margin: 0;
+  font-size: 1.35rem;
+}
+.games-drawer__close {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  border: 2px solid var(--brand);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* A game's own panels inside the drawer or page lose their shadow and get a thin edge instead. */
+.games-settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.games-settings .panel {
+  box-shadow: none;
+  border: 1px solid var(--line);
+}
+
+.games-page {
+  display: grid;
+  gap: 8px;
+}
+.games-page__back {
+  justify-self: start;
+  margin-left: -10px;
+}
+.games-page .panel__title:focus {
+  outline: none;
+}
+
+@keyframes games-drawer-slide {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes games-drawer-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .games-drawer__box,
+  .games-drawer__backdrop {
+    animation: none;
+  }
+}

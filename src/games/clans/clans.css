@@ -25,6 +25,7 @@
 .cq-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .cq-btn--hot { border-color: var(--cq-yellow); color: var(--cq-yellow); }
 .cq-btn small { color: var(--cq-soft); }
+.cq-btn .cq-btn__help { display: block; font-size: 0.85em; margin-top: 2px; }
 .cq-link { font: inherit; color: var(--cq-cyan); background: none; border: 0; padding: 6px 0; min-height: 44px; text-decoration: underline; cursor: pointer; }
 .cq :is(.cq-btn, .cq-link, input, select, .cq-panel):focus-visible { outline: 3px solid var(--cq-yellow); outline-offset: 2px; }
 .cq :is(input, select) { font: inherit; color: var(--cq-ink); background: var(--cq-bg); border: 2px solid var(--cq-line); border-radius: 4px; padding: 4px 6px; min-height: 44px; }
@@ -52,6 +53,8 @@
 .cq-headline dt, .cq-stats dt { color: var(--cq-soft); }
 .cq-headline dd, .cq-stats dd { margin: 0; }
 .cq-more { display: grid; gap: 4px; }
+.cq-spells { margin: 0; padding-left: 1.2em; font-size: 0.9rem; }
+.cq-spells li { margin: 0 0 2px; }
 .cq-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; margin: 0; }
 .cq-pickers { display: grid; gap: 4px; }
 .cq-pickers label { display: grid; grid-template-columns: 4.5em 1fr; align-items: center; gap: 6px; }
@@ -71,7 +74,8 @@
 .cq-arena { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .cq-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; list-style: none; margin: 0; padding: 6px; border: 1px solid var(--cq-line); border-radius: 4px; background: var(--cq-panel); }
 .cq-side li { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; padding: 2px; border: 1px solid transparent; border-radius: 4px; text-align: center; }
-.cq-side li.is-down { opacity: 0.45; }
+/* Fade the fighter, not the moment: the burst, the number and the stamp over them stay bright. */
+.cq-side li.is-down > :not(.cq-floats, .cq-bursts, .cq-stamp) { opacity: 0.45; }
 .cq-side li.is-up { border-color: var(--cq-yellow); background: #1d1d40; }
 .cq-name { font-size: 0.9rem; overflow-wrap: anywhere; }
 .cq-bar { position: relative; width: 100%; max-width: 150px; height: 18px; border: 2px solid var(--cq-soft); border-radius: 3px; background: #05050c; overflow: hidden; }
@@ -290,6 +294,48 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
   .cq-clanbanner { height: 64px; }
 }
 
+/* The season road (docs/CLANS-SEASON-TIMELINE-PLAN.md): four round stops, a bar that fills as the days pass. */
+.cq-road { margin: 4px 0 12px; padding: 10px 14px 12px; border: 1px solid var(--f-dot); border-radius: 3px; background: linear-gradient(#1c1d20, var(--f-deep)); box-shadow: inset 0 0 0 1px #000, 0 0 0 1px #000; }
+.cq-road__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; }
+.cq-road__head h3 { margin: 0 !important; }
+.cq-road__head p { margin: 0; color: var(--cq-ink); }
+.cq-road__head strong { color: var(--cq-yellow); }
+.cq-road__track { position: relative; margin-top: 8px; }
+.cq-road__bar { position: absolute; left: 12.5%; right: 12.5%; top: 34px; height: 8px; border-radius: 4px; background: #000; box-shadow: inset 0 0 0 1px var(--f-dot); }
+.cq-road__fill { width: var(--cq-road-fill, 0%); height: 100%; border-radius: 4px; background: linear-gradient(90deg, #8a5a22, var(--cq-yellow)); box-shadow: 0 0 8px rgba(227, 154, 74, 0.5); }
+.cq-road__stops { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); margin: 0; padding: 0; list-style: none; text-align: center; }
+.cq-road__stops li { display: grid; opacity: 0.8; }
+.cq-road__stops button { display: grid; justify-items: center; align-content: start; gap: 1px; min-height: 44px; margin: 0; padding: 0 2px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.cq-road__stops button:focus-visible { outline: 3px solid var(--cq-yellow); outline-offset: 2px; }
+.cq-road__medal { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; overflow: hidden; border: 3px solid var(--f-edge); box-shadow: 0 0 0 2px #000, 0 3px 6px #000; background: var(--f-deep); }
+.cq-road__medal img { width: 100%; height: 100%; object-fit: cover; }
+.cq-road__emoji { font-size: 2rem; line-height: 1; }
+.cq-road__name { margin-top: 4px; font-family: 'IM Fell English SC', Georgia, serif; font-size: 1.1rem; color: var(--f-head); }
+.cq-road__stops small { color: var(--cq-soft); font-size: 0.82rem; line-height: 1.2; }
+.cq-road__stops li.is-done { opacity: 0.55; }
+.cq-road__stops li.is-done .cq-road__medal img { filter: grayscale(0.8); }
+.cq-road__stops li.is-now { opacity: 1; }
+.cq-road__stops li.is-now .cq-road__medal { width: 88px; height: 88px; margin-top: -6px; border-color: var(--cq-yellow); box-shadow: 0 0 0 2px #000, 0 0 16px rgba(227, 154, 74, 0.75); }
+.cq-road__stops li.is-now .cq-road__name { color: var(--cq-yellow); }
+.cq-road__stops li[data-stage='monster'] .cq-road__medal { border-color: #8b2b22; }
+.cq-road__stops li[data-stage='monster'].is-now .cq-road__medal { border-color: #e06a5c; box-shadow: 0 0 0 2px #000, 0 0 18px rgba(224, 106, 92, 0.85); }
+.cq-road__note { margin: 10px 0 0; padding: 8px 10px; border-radius: 3px; background: #000; box-shadow: inset 0 0 0 1px var(--f-dot); color: var(--cq-ink); }
+.cq-road__note strong { color: var(--f-head); }
+@media (max-width: 760px) {
+  .cq-road__medal { width: 56px; height: 56px; }
+  .cq-road__stops li.is-now .cq-road__medal { width: 64px; height: 64px; }
+  .cq-road__bar { top: 25px; }
+  .cq-road__say { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cq-road__stops li.is-now .cq-road__medal { animation: cq-road-glow 1.6s ease-out 1; }
+}
+@keyframes cq-road-glow {
+  0% { box-shadow: 0 0 0 2px #000, 0 0 0 rgba(227, 154, 74, 0); }
+  40% { box-shadow: 0 0 0 2px #000, 0 0 30px rgba(227, 154, 74, 1); }
+  100% { box-shadow: 0 0 0 2px #000, 0 0 16px rgba(227, 154, 74, 0.75); }
+}
+
 /* Clans art Stage A.6: the fight. Monsters and members painted; the mine zone painted dimly behind the monsters. */
 .cq-side--enemies { background: linear-gradient(rgba(16, 17, 19, 0.55), rgba(16, 17, 19, 0.82)), var(--cq-zone, none) center 55% / cover no-repeat, var(--cq-panel); }
 .cq-monster-art { display: block; width: auto; max-width: 100%; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.7)); }
@@ -303,3 +349,135 @@ span.cq-rowbanner { display: inline-block; width: 25px; }
 .cq-scene[data-scene='rest'] { object-position: center 75%; }
 /* Monster names were coloured by zone for the old tiles; on the painted zone they take the frame's heading colour. */
 .cq-side--enemies .cq-name { color: var(--f-head) !important; text-shadow: 0 1px 2px #000; }
+
+/* Round playback (docs/CLANS-FIGHT-FEEL.md, stage 1): the attacker nudges forward, the target flashes and shakes,
+   and a number floats up. Transform and opacity only, for slow Chromebooks. With reduced motion nothing moves:
+   the numbers just appear. */
+.cq-side li { position: relative; }
+.cq-float { position: absolute; top: 18px; left: 50%; z-index: 2; transform: translateX(-50%); padding: 0 6px; border-radius: 4px; background: rgba(0, 0, 0, 0.7); font-weight: 700; font-size: 1.6rem; line-height: 1.2; pointer-events: none; white-space: nowrap; }
+.cq-float--damage { color: #ffb4a8; }
+.cq-float--heal { color: #8ee69f; }
+.cq-float--miss { color: var(--cq-soft); font-size: 1.15rem; font-style: italic; }
+@media (prefers-reduced-motion: reduce) { .cq-floats > :not(:last-child) { display: none; } }
+.cq-side li.is-hit { border-color: var(--cq-red, #e05a5a); }
+.cq-side li.is-acting { border-color: var(--cq-yellow); }
+.cq-log li.is-now { color: var(--cq-yellow); }
+.cq-summary { margin: 0 0 8px; font-size: 1.05rem; font-weight: 600; }
+@media (prefers-reduced-motion: no-preference) {
+  .cq-float { animation: cq-float-up 1s ease-out forwards; }
+  .cq-side li.is-hit { animation: cq-shake 0.3s ease-in-out; }
+  .cq-side li.is-hit :is(.cq-monster-art, .cq-portrait) { animation: cq-flash 0.3s ease-out; }
+  /* Side by side, enemies on the left: each side steps towards the other. Stacked on phones: up and down. */
+  .cq-side--enemies li.is-acting { animation: cq-nudge-right 0.3s ease-out; }
+  .cq-side--clan li.is-acting { animation: cq-nudge-left 0.3s ease-out; }
+  @media (max-width: 760px) {
+    .cq-side--enemies li.is-acting { animation-name: cq-nudge-down; }
+    .cq-side--clan li.is-acting { animation-name: cq-nudge-up; }
+  }
+  @keyframes cq-float-up { from { opacity: 0; transform: translate(-50%, 6px); } 12%, 70% { opacity: 1; } to { opacity: 0; transform: translate(-50%, -26px); } }
+  @keyframes cq-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+  @keyframes cq-flash { 0% { filter: brightness(2.2); } 100% { filter: none; } }
+  @keyframes cq-nudge-right { 50% { transform: translateX(8px); } }
+  @keyframes cq-nudge-left { 50% { transform: translateX(-8px); } }
+  @keyframes cq-nudge-down { 50% { transform: translateY(6px); } }
+  @keyframes cq-nudge-up { 50% { transform: translateY(-6px); } }
+}
+
+/* Big moments (docs/CLANS-FIGHT-FEEL.md, stage 2). Painted bursts are light on see-through (scripts/clans-fx-art.py);
+   without a painting each burst is a CSS glow. Transform and opacity only. Reduced motion: nothing moves, the
+   newest burst and number just show. */
+.cq-arena { position: relative; }
+.cq-side { position: relative; }
+.cq-side li::after { content: ''; position: absolute; inset: -1px; border: 2px solid var(--cq-red); border-radius: 4px; opacity: 0; pointer-events: none; }
+.cq-bursts { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.cq-burst { position: absolute; top: -18px; left: 50%; width: 112px; height: 112px; margin-left: -56px; opacity: 0; background: center / contain no-repeat; }
+.cq-burst:not(.is-painted) { border-radius: 50%; }
+.cq-burst--fire:not(.is-painted) { background-image: radial-gradient(circle, #fff3c4 0%, #ff9a2e 35%, rgba(200, 40, 0, 0.5) 60%, transparent 72%); }
+.cq-burst--lightning:not(.is-painted) { background-image: radial-gradient(circle, #ffffff 0%, #9fd4ff 30%, rgba(60, 110, 255, 0.5) 58%, transparent 72%); }
+.cq-burst--heal:not(.is-painted) { background-image: radial-gradient(circle, #f4ffd8 0%, #8ee69f 35%, rgba(40, 160, 80, 0.45) 60%, transparent 72%); }
+.cq-burst--magic:not(.is-painted) { background-image: radial-gradient(circle, #f3e8ff 0%, #b98cff 35%, rgba(60, 200, 200, 0.4) 60%, transparent 72%); }
+.cq-burst--impact:not(.is-painted) { background-image: radial-gradient(circle, #ffffff 0%, #ffd75e 30%, rgba(255, 160, 30, 0.5) 55%, transparent 70%); }
+.cq-float--big { color: #ffd75e; font-size: 1.5rem; text-shadow: 0 0 6px rgba(255, 170, 0, 0.8), 0 1px 0 #000; z-index: 3; }
+.cq-float.is-fiery { text-shadow: 0 0 8px rgba(255, 110, 0, 0.95), 0 1px 0 #000; }
+.cq-stamp { padding: 0 8px; border: 2px solid #d9a441; border-radius: 3px; color: #ffd75e; background: rgba(0, 0, 0, 0.55); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; transform: rotate(-6deg); }
+.cq-side--enemies li.is-down .cq-monster-art { transform: rotate(-10deg) translateY(6px); }
+.cq-side--clan li.is-down :is(.cq-portrait, .cq-sprite) { transform: translateY(6px) scale(0.94); }
+.cq-side--clan.is-cry::before { content: ''; position: absolute; inset: 0; border-radius: 4px; pointer-events: none; box-shadow: inset 0 0 22px 4px rgba(255, 190, 60, 0.55); }
+.cq-side--clan.is-cry--heal::before { box-shadow: inset 0 0 22px 4px rgba(120, 230, 140, 0.5); }
+.cq-victory { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; align-content: center; gap: 0; pointer-events: none; }
+.cq-victory img { width: 190px; height: 190px; }
+.cq-victory strong { margin-top: -28px; color: #ffd75e; font-size: 2.2rem; letter-spacing: 0.04em; text-shadow: 0 0 10px rgba(255, 170, 0, 0.8), 0 2px 0 #000, 0 0 2px #000; }
+@media (prefers-reduced-motion: reduce) {
+  .cq-bursts > :last-child { opacity: 0.85; }
+  .cq-side li.is-close::after { opacity: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cq-burst { animation: cq-burst 0.9s ease-out forwards; }
+  .cq-side li.is-big-hit { animation: cq-big-shake 0.4s ease-in-out; }
+  .cq-side li.is-dodge { animation: cq-dodge 0.35s ease-in-out; }
+  .cq-arena.is-bump { animation: cq-bump 0.25s ease-out; }
+  .cq-side--enemies li.is-toppling .cq-monster-art { animation: cq-topple 0.6s ease-in forwards; }
+  .cq-side li.is-down :is(.cq-monster-art, .cq-portrait, .cq-sprite) { transition: transform 0.5s ease-in; }
+  .cq-stamp { animation: cq-stamp 0.35s ease-out; }
+  .cq-side li.is-close::after { animation: cq-close 0.9s ease-in-out 2; }
+  .cq-side--clan.is-cry::before { animation: cq-glow 1.2s ease-in-out infinite alternate; }
+  .cq-victory { animation: cq-victory 1.8s ease-out forwards; }
+  @keyframes cq-burst { from { opacity: 0; transform: scale(0.4); } 25% { opacity: 1; } to { opacity: 0; transform: scale(1.25); } }
+  @keyframes cq-big-shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-8px) rotate(-2deg); } 40% { transform: translateX(7px) rotate(2deg); } 60% { transform: translateX(-5px); } 80% { transform: translateX(3px); } }
+  @keyframes cq-dodge { 50% { transform: translateX(-10px) rotate(-5deg); } }
+  @keyframes cq-bump { 30% { transform: translate(2px, 2px); } 60% { transform: translate(-2px, -1px); } }
+  @keyframes cq-topple { from { transform: none; } 60% { transform: rotate(-18deg) translateY(4px); } to { transform: rotate(-10deg) translateY(6px); } }
+  @keyframes cq-stamp { from { opacity: 0; transform: rotate(-6deg) scale(1.9); } to { opacity: 1; transform: rotate(-6deg) scale(1); } }
+  @keyframes cq-close { 50% { opacity: 1; } }
+  @keyframes cq-glow { from { opacity: 0.45; } to { opacity: 1; } }
+  @keyframes cq-victory { from { opacity: 0; transform: scale(0.6); } 18% { opacity: 1; transform: scale(1.06); } 28% { transform: scale(1); } 80% { opacity: 1; } to { opacity: 0; } }
+}
+
+/* Polish (docs/CLANS-FIGHT-FEEL.md, stage 3): the ghost of HP just lost drains a moment after the bar; the best hit. */
+.cq-bar__ghost { position: absolute; inset: 0 auto 0 0; height: 100%; background: rgba(255, 220, 160, 0.55); }
+.cq-bar__fill { position: relative; }
+.cq-best { margin: 0 0 6px; }
+.cq-best__new { color: #ffd75e; }
+@media (prefers-reduced-motion: no-preference) {
+  .cq-bar__ghost { transition: width 0.45s ease-in 0.4s; }
+}
+
+/* "What to do next" line on the Empire home */
+.cq-nextstep { border: 2px solid var(--cq-yellow); color: var(--cq-yellow); margin-bottom: 8px; }
+.cq-nextstep p { margin: 4px 0; }
+
+/* My Village: one card for each building, with its picture, level, what it does and the Upgrade button. */
+.cq-village { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px; }
+.cq-bcard { display: flex; gap: 10px; align-items: flex-start; margin: 0; }
+.cq-bcard__art { width: 96px; height: 80px; }
+.cq-bcard__art--unbuilt { opacity: 0.4; filter: grayscale(1); }
+.cq-bcard__text { display: grid; gap: 4px; min-width: 0; }
+.cq-bcard__text h3, .cq-bcard__text p { margin: 0; }
+.cq-bcard__level { font-weight: 700; }
+
+/* Season goals: the village bar, the golden ribbon, the Hall of Legends and the village-complete dialog. */
+.cq-goal { margin: 8px 0; }
+.cq-goal__bar { height: 14px; border: 2px solid var(--cq-soft); border-radius: 3px; background: var(--f-deep, #05050c); overflow: hidden; }
+.cq-goal__fill { display: block; height: 100%; background: #c9a227; }
+.cq-goal--done .cq-goal__fill { background: #e6b800; }
+.cq-ribbon { margin: 8px 0; padding: 8px 12px; text-align: center; font-weight: bold; color: #2b1d00; background: #e6b800; border: 2px solid #fff3b0; border-radius: 3px; }
+.cq-hall li.cq-me { color: var(--cq-yellow); }
+.cq-celebrate--village { flex-direction: column; align-items: flex-start; }
+
+/* The season monster. The framed emoji and the siege panel are stand-ins: the painted portrait and the "village under attack" scene replace them. */
+.cq-monster-top { display: grid; grid-template-columns: minmax(140px, 220px) 1fr; gap: 12px; align-items: start; margin: 8px 0; }
+.cq-monster-art { display: grid; place-items: center; gap: 4px; padding: 10px; border: 3px double var(--cq-yellow); border-radius: 6px; background: #05050c; text-align: center; }
+.cq-monster-art span { font-size: 5rem; line-height: 1; }
+.cq-monster-art--small span { font-size: 3rem; }
+.cq-monster-art--small { padding: 4px 10px; }
+.cq-monster-facts { margin: 6px 0; padding-left: 1.2em; }
+.cq-monster-helpers { margin: 6px 0 0; padding-left: 1.2em; }
+.cq-monster-warning, .cq-monster-result { margin: 8px 0; }
+.cq-warning { margin: 6px 0; padding: 6px 10px; border: 3px solid var(--cq-yellow); border-radius: 4px; background: #2a2208; color: var(--cq-yellow); }
+.cq-siege-scene { display: flex; flex-wrap: wrap; justify-content: space-around; align-items: center; gap: 8px; padding: 14px; margin: 8px 0; font-size: 3rem; border: 2px solid var(--cq-line); border-radius: 6px; background: linear-gradient(#2a1410, #0b0b17); }
+/* The painted monster: a framed square portrait, and a wide "village under attack" painting for the siege. */
+.cq-monster-art--painted { display: block; width: 100%; height: auto; aspect-ratio: 1; padding: 0; object-fit: cover; }
+.cq-side .cq-monster-art--painted { width: 60px; border-width: 2px; }
+.cq-siege-scene--painted { display: block; width: 100%; height: auto; max-height: 340px; padding: 0; object-fit: cover; object-position: center 40%; }
+.cq-siege-rounds { margin: 6px 0; padding-left: 1.4em; }
+@media (max-width: 760px) { .cq-monster-top { grid-template-columns: 1fr; } }

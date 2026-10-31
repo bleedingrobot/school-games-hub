@@ -18,6 +18,7 @@ members was painted twice, and `docs/clans-art/default-picks.json` records which
 | monsters/ | Every monster in the Mines (the Horse Archer was the Centaur) | Oct 2026 (the baby dragon remade 26 Oct) |
 | items/ | Weapons, armour and shields | Oct 2026 |
 | troops/, buildings/ | The empire's troops and buildings | Oct 2026 |
+| fx/ | The fight's glowing effects (fire, lightning, healing, magic, the gold impact and the victory crest), painted on black with the black made see-through; made with `scripts/clans-fx-art.py`, three or more tries each, picks in `docs/clans-art/fx-picks.json` | 27 Oct 2026 |
 | banners/ | One banner per clan name (Owls, Bears and so on) | Oct 2026 |
 
 Where a picture isn't there, the game still shows Kenney's 1-Bit Pack tiles (CC0, see ../KENNEY-LICENSE.txt).

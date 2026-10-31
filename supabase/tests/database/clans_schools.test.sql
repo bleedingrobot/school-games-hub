@@ -80,11 +80,11 @@ select is((select school_id from public.clan_villages where id = public.clan_vil
 insert into public.schools (name) values ('Third School');
 select is((select count(*)::int from public.clan_villages where school_id = 3 and is_default), 1, 'a school made later gets its own village straight away');
 
--- ---- Raids and mates never cross a school ----
-select is(jsonb_array_length(public.clan_village_mates(pg_temp.id('a'))), 1, 'ana''s village mates are ben only');
-select is(jsonb_array_length(public.clan_village_mates(pg_temp.id2('a'))), 0, 'zed has no village mates at the other school');
+-- ---- Raids and mates never cross a school (and need a class: see clans_my_village.test.sql for the class itself) ----
+select is(jsonb_array_length(public.clan_village_mates(pg_temp.id('a'))), 0, 'ana is in no class, so she has no one to raid');
+select is(jsonb_array_length(public.clan_village_mates(pg_temp.id2('a'))), 0, 'zed has no classmates at the other school');
 select is(public.clan_raid_target(pg_temp.id('a'), (pg_temp.loaded(pg_temp.id2('a')) ->> 'self')::uuid), null::jsonb, 'ana cannot pick zed''s clan to raid');
-select isnt(public.clan_raid_target(pg_temp.id('a'), (pg_temp.loaded(pg_temp.id('b')) ->> 'self')::uuid), null::jsonb, '...but can pick ben''s');
+select is(public.clan_raid_target(pg_temp.id('a'), (pg_temp.loaded(pg_temp.id('b')) ->> 'self')::uuid), null::jsonb, '... nor ben''s, while neither is in a class');
 
 -- ---- The scoreboard shows this school only ----
 update public.clans set fame = 90 where player = pg_temp.id('a');

@@ -6519,7 +6519,7 @@ const ARROWS = [
 		does: "A bigger blast.",
 		blastRadius: 34,
 		peakDamage: 40,
-		price: 50,
+		price: 25,
 		perPurchase: 2,
 		level: 1
 	},
@@ -6529,7 +6529,7 @@ const ARROWS = [
 		does: "Lands, rolls downhill, bursts in a dip or at an archer.",
 		blastRadius: 28,
 		peakDamage: 35,
-		price: 60,
+		price: 30,
 		perPurchase: 1,
 		level: 1
 	},
@@ -6539,7 +6539,7 @@ const ARROWS = [
 		does: "Digs a deep hole straight down. Knock the ground out from under someone.",
 		blastRadius: 12,
 		peakDamage: 10,
-		price: 40,
+		price: 20,
 		perPurchase: 1,
 		level: 1
 	},
@@ -6549,7 +6549,7 @@ const ARROWS = [
 		does: "Drops a big ball of dirt: bury someone, or build a wall.",
 		blastRadius: 36,
 		peakDamage: 0,
-		price: 50,
+		price: 25,
 		perPurchase: 1,
 		level: 1
 	},
@@ -6559,7 +6559,7 @@ const ARROWS = [
 		does: "Splits at the top of its flight into 5 small arrows.",
 		blastRadius: 16,
 		peakDamage: 15,
-		price: 150,
+		price: 75,
 		perPurchase: 1,
 		level: 2
 	},
@@ -6569,7 +6569,7 @@ const ARROWS = [
 		does: "Hops forward twice, with 3 growing blasts.",
 		blastRadius: 26,
 		peakDamage: 24,
-		price: 120,
+		price: 60,
 		perPurchase: 1,
 		level: 2
 	},
@@ -6579,7 +6579,7 @@ const ARROWS = [
 		does: "A goo puddle runs into the dip and hurts anyone standing in it.",
 		blastRadius: 30,
 		peakDamage: 12,
-		price: 120,
+		price: 60,
 		perPurchase: 1,
 		level: 3
 	},
@@ -6589,7 +6589,7 @@ const ARROWS = [
 		does: "Shakes the ground: cliffs crumble and anyone on a ledge tumbles down.",
 		blastRadius: 14,
 		peakDamage: 10,
-		price: 100,
+		price: 50,
 		perPurchase: 1,
 		level: 3
 	},
@@ -6599,7 +6599,7 @@ const ARROWS = [
 		does: "Steers itself toward an archer it passes close to.",
 		blastRadius: 24,
 		peakDamage: 30,
-		price: 250,
+		price: 120,
 		perPurchase: 1,
 		level: 3
 	},
@@ -6609,7 +6609,7 @@ const ARROWS = [
 		does: "5 sparkly pops around where it lands.",
 		blastRadius: 18,
 		peakDamage: 16,
-		price: 180,
+		price: 90,
 		perPurchase: 1,
 		level: 4
 	},
@@ -6619,7 +6619,7 @@ const ARROWS = [
 		does: "Tunnels toward the other archer and pops up under them.",
 		blastRadius: 22,
 		peakDamage: 35,
-		price: 220,
+		price: 110,
 		perPurchase: 1,
 		level: 4
 	},
@@ -6629,7 +6629,7 @@ const ARROWS = [
 		does: "Flies dead straight through dirt. Power sets how far it goes.",
 		blastRadius: 14,
 		peakDamage: 35,
-		price: 150,
+		price: 75,
 		perPurchase: 1,
 		level: 4
 	},
@@ -6639,7 +6639,7 @@ const ARROWS = [
 		does: "A huge blast with a shockwave of leaves and confetti.",
 		blastRadius: 75,
 		peakDamage: 55,
-		price: 400,
+		price: 200,
 		perPurchase: 1,
 		level: 5
 	},
@@ -6649,7 +6649,7 @@ const ARROWS = [
 		does: "Its glass shards stick in them. They must hit you back next turn, or they pop.",
 		blastRadius: 26,
 		peakDamage: 30,
-		price: 500,
+		price: 250,
 		perPurchase: 1,
 		level: 5
 	}
@@ -7639,7 +7639,7 @@ const SHIELDS = [
 		name: "Wooden Shield",
 		does: "Soaks 40 damage, then breaks.",
 		soak: 40,
-		price: 100,
+		price: 50,
 		level: 1
 	},
 	{
@@ -7647,7 +7647,7 @@ const SHIELDS = [
 		name: "Wind Charm",
 		does: "Soaks 30. Until it breaks, its wind lifts arrows that come down on you.",
 		soak: 30,
-		price: 150,
+		price: 75,
 		level: 2
 	},
 	{
@@ -7655,7 +7655,7 @@ const SHIELDS = [
 		name: "Bubble Shield",
 		does: "Soaks 60, and bounces away the first arrow that reaches it.",
 		soak: 60,
-		price: 250,
+		price: 125,
 		level: 3
 	}
 ];
@@ -7663,13 +7663,13 @@ const HELPERS$1 = [{
 	id: "apple",
 	name: "Apple",
 	does: "Eat it on your turn for +15 health.",
-	price: 50,
+	price: 25,
 	level: 1
 }, {
 	id: "umbrella",
 	name: "Umbrella",
 	does: "Opens by itself when you fall, so the fall doesn't hurt.",
-	price: 40,
+	price: 20,
 	level: 1
 }];
 const BOWS = [
@@ -7687,7 +7687,7 @@ const BOWS = [
 		does: "10% more top power: reach the far side in a strong headwind.",
 		power: 1.1,
 		wind: 1,
-		price: 300
+		price: 150
 	},
 	{
 		id: "recurve",
@@ -7695,7 +7695,7 @@ const BOWS = [
 		does: "Faster arrows that drift less in the wind.",
 		power: 1.05,
 		wind: .7,
-		price: 400
+		price: 200
 	},
 	{
 		id: "hunter",
@@ -7703,7 +7703,7 @@ const BOWS = [
 		does: "Shows what the wind will be next round.",
 		power: 1,
 		wind: 1,
-		price: 250
+		price: 125
 	},
 	{
 		id: "golden",
@@ -7711,7 +7711,7 @@ const BOWS = [
 		does: "Looks amazing. 10% more top power and a little less drift.",
 		power: 1.1,
 		wind: .85,
-		price: 600
+		price: 300
 	}
 ];
 const SHIELD_BY = new Map(SHIELDS.map((s) => [s.id, s]));
@@ -8728,10 +8728,10 @@ function nextPlayer(run) {
 /** Coins spent in all to reach Armory levels 1, 2, 3, 4 and 5. */
 const LEVEL_SPEND = [
 	0,
-	200,
+	100,
+	300,
 	600,
-	1200,
-	2e3
+	1e3
 ];
 LEVEL_SPEND.length;
 /** Levels for the shields and helpers (arrows carry their own in arrows.ts; bows are open to everyone). */
@@ -9727,13 +9727,55 @@ function judgeBotFight(seed, setup, level, shots, finished) {
 		}
 	};
 }
-/** The time limit for a question (ms): 10 s for the first, 9 s for the second … 1 s for the tenth. */
-function limitMs(slot) {
-	return (10 - slot) * 1e3;
+//#endregion
+//#region shared/archery/speed.ts
+/**
+* The maths that earns coins (docs/ARCHERY-PLAN.md, section 5, and docs/ARCHERY-QUESTIONS-PLAN.md): question sets from
+* the pupil's maths focus, made and marked by the server, one question at a time. Three kinds:
+*
+* - speed:   the speed round on Home. 10 questions; the first has 10 seconds, the next 9 … down to 5 (never less).
+* - chest:   the loot chest after a fight. 3 questions, 10 seconds each; more coins if you won.
+* - restock: between rounds of a bot fight. 3 questions, 10 seconds each.
+* - supply:  a supply chest before a bot fight, before packing. 3 questions, 10 seconds each.
+*
+* Each right answer in time earns coins, plus a streak bonus from the third right in a row. Coins from maths stop for
+* the day at DAILY_COINS (sets after that are practice: the maths still counts).
+*
+* The timer is checked twice: by the pupil's screen (`ms`, from the question appearing to the answer, plus a moment
+* for the key tap) and by the server's own clock (from when it sent the question, plus an allowance for slow school
+* wi-fi). A right answer that's late still counts as right for the maths records; it just earns no coins.
+*/
+const SET_KINDS = [
+	"speed",
+	"chest",
+	"restock",
+	"supply"
+];
+/** How many questions a set of this kind has. */
+function setSize(kind) {
+	return kind === "speed" ? 10 : 3;
+}
+/** Coins for one right answer in time, before any streak bonus. */
+function baseCoins(kind, won) {
+	return kind === "chest" ? won ? 20 : 10 : 10;
+}
+/** The streak bonus for an answer that earned coins, given how many answers in a row before it earned coins. */
+function streakBonus(earnedInARowBefore) {
+	return earnedInARowBefore + 1 >= 3 ? 5 : 0;
+}
+/** How many answers in a row, just before `slot`, earned coins (`earned[i]` is slot i's coins). */
+function streakBefore(earned, slot) {
+	let n = 0;
+	for (let i = slot - 1; i >= 0 && (earned[i] ?? 0) > 0; i--) n++;
+	return n;
+}
+/** The time limit for a question (ms). A speed round: 10 s, 9 s … down to 5 s. A chest or restock: 10 s each. */
+function limitMs(slot, kind = "speed") {
+	if (kind !== "speed") return 1e4;
+	return Math.max(5, 10 - slot) * 1e3;
 }
 /** Was this answer in time? `ms` is the pupil's screen's measure; `servedAgo` the server's, since it sent the question. */
-function inTime(slot, ms, servedAgo) {
-	const limit = limitMs(slot);
+function inTime(limit, ms, servedAgo) {
 	return ms <= limit + 200 && servedAgo <= limit + 2500;
 }
 /** The answer's time for the maths records: the smaller of the two measures. */
@@ -10200,27 +10242,54 @@ function makeHandler(services) {
 				if (!s.ok) return busy("Your Armory");
 				return reply(200, {
 					state: withoutCount(s.value),
-					roundsLeft: Math.max(0, 8 - s.value.roundsToday)
+					coinsLeft: Math.max(0, 600 - s.value.coinsToday)
 				});
 			}
 			case "round-start": {
+				const kind = body.kind === void 0 ? "speed" : body.kind;
+				if (!SET_KINDS.includes(kind)) return reply(400, { error: "That couldn't be read." });
+				const what = kind === "chest" ? "The loot chest" : kind === "restock" ? "The restock" : kind === "supply" ? "The supply chest" : "The speed round";
+				let after = null;
+				let perRight = 10;
+				if (kind === "chest" || kind === "restock") {
+					const fight = Number.isSafeInteger(body.fight) && body.fight > 0 ? body.fight : null;
+					const duel = kind === "chest" && fight === null && Number.isSafeInteger(body.duel) && body.duel > 0 ? body.duel : null;
+					const step = body.step;
+					if (fight === null && duel === null) return reply(400, { error: "That couldn't be read." });
+					if (kind === "restock" && (!Number.isInteger(step) || step < 1 || step >= 5)) return reply(400, { error: "That couldn't be read." });
+					const bonus = await services.bonusFor(player, kind, fight, duel);
+					if (bonus === "busy") return busy(what);
+					if (!bonus) return reply(400, {
+						error: kind === "chest" ? "That chest can't be opened now." : "That restock can't be done now.",
+						code: "closed"
+					});
+					after = kind === "restock" ? `restock:${fight}:${step}` : fight !== null ? `chest:fight:${fight}` : `chest:duel:${duel}`;
+					perRight = baseCoins(kind, bonus.won);
+				}
 				const s = await services.state(player);
-				if (!s.ok) return busy("The speed round");
-				const earns = s.value.roundsToday < 8;
+				if (!s.ok) return busy(what);
+				const earns = s.value.coinsToday < 600;
 				const context = await services.mathsContext(player);
-				if (!context) return busy("The speed round");
+				if (!context) return busy(what);
 				const seed = services.randomHex(12);
-				const questions = makeRoundQuestions(context, seededRandom(seed));
-				if (!questions.length) return busy("The speed round");
+				const questions = makeRoundQuestions(context, seededRandom(seed), setSize(kind));
+				if (!questions.length) return busy(what);
 				const at = services.now();
-				if (!await services.roundStart(player, seed, questions, earns, at)) return busy("The speed round");
+				const kept = await services.roundStart(player, seed, questions, earns, at, kind, after, perRight);
+				if (kept === "taken") return reply(400, {
+					error: kind === "chest" ? "You've already opened that chest." : "You've already done that restock.",
+					code: "closed"
+				});
+				if (!kept) return busy(what);
 				return reply(200, {
 					seed,
+					kind,
 					earns,
+					perRight,
 					questions: questions.length,
 					question: publicQuestion(questions[0], 0),
-					limitMs: limitMs(0),
-					roundsLeft: Math.max(0, 8 - s.value.roundsToday - (earns ? 1 : 0))
+					limitMs: limitMs(0, kind),
+					coinsLeft: Math.max(0, 600 - s.value.coinsToday)
 				});
 			}
 			case "round-answer": {
@@ -10246,7 +10315,9 @@ function makeHandler(services) {
 				const ago = Math.max(0, now - sentAt);
 				const claimedMs = typeof body.ms === "number" && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : ago;
 				const correct = !timedOut && sameAnswer(value, marked.answer);
-				const coins = correct && round.earns && inTime(at, claimedMs, ago) ? 10 : 0;
+				const kind = round.kind ?? "speed";
+				const earnedBefore = Array.from({ length: at }, (_, i) => round.answered[String(i)]?.coins);
+				const coins = correct && round.earns && inTime(limitMs(at, kind), claimedMs, ago) ? (round.perRight ?? 10) + streakBonus(streakBefore(earnedBefore, at)) : 0;
 				const done = await services.roundAnswer(player, seed, at, timedOut ? null : value, correct, coins, nextSlot === null ? null : now);
 				if (done === "busy") return busy("Marking");
 				if (!done.claimed) return reply(400, { error: "You've already answered that one." });
@@ -10257,12 +10328,12 @@ function makeHandler(services) {
 					at: now
 				}]));
 				const right = rightSoFar + (correct ? 1 : 0);
-				if (nextSlot === null) {
+				if (nextSlot === null && kind === "speed") {
 					const earned = [...Object.entries(round.answered).filter(([k]) => k !== String(at)).map(([, a]) => a.coins), coins];
 					if (perfectRound(round.questions.length, earned)) await safely(() => services.note(player, `stats:round:${seed}`, { perfect_rounds: 1 }));
 				}
 				let point = false;
-				if (nextSlot === null && right >= 5) {
+				if (nextSlot === null && kind === "speed" && right >= 5) {
 					point = true;
 					await safely(() => services.awardPoints(player, 1, `archery-round:${seed}`));
 				}
@@ -10359,13 +10430,13 @@ function answerReply(round, correct, answer, coins, total, nextSlot, right, poin
 		right,
 		next: nextSlot === null ? null : {
 			question: publicQuestion(round.questions[nextSlot], nextSlot),
-			limitMs: limitMs(nextSlot)
+			limitMs: limitMs(nextSlot, round.kind ?? "speed")
 		},
 		...point === void 0 ? {} : { point }
 	};
 }
 function withoutCount(s) {
-	const { roundsToday: _skip, ...rest } = s;
+	const { coinsToday: _skip, roundsToday: _old, ...rest } = s;
 	return rest;
 }
 /** Records and points are a bonus: if they fail, the round or fight is never lost over them. */
@@ -10476,14 +10547,28 @@ Deno.serve(makeHandler({
 		need_spent: needSpent,
 		carry
 	}),
-	async roundStart(player, seed, questions, earns, servedMs) {
-		return (await call("archery_round_start", {
+	async roundStart(player, seed, questions, earns, servedMs, kind, after, perRight) {
+		const r = await call("archery_round_start", {
 			player,
 			seed,
 			questions,
 			earns,
-			served_ms: servedMs
-		})).ok;
+			served_ms: servedMs,
+			kind,
+			after,
+			per_right: perRight
+		});
+		return r.ok ? r.value === false ? "taken" : true : false;
+	},
+	async bonusFor(player, kind, fight, duel) {
+		const r = await call("archery_bonus_for", {
+			player,
+			kind,
+			fight,
+			duel
+		});
+		if (!r.ok) return "busy";
+		return r.value && typeof r.value === "object" ? { won: r.value.won === true } : null;
 	},
 	roundLoad: (player, seed) => read("archery_round_load", {
 		player,

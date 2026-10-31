@@ -1,11 +1,12 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { TEXT } from './strings';
+import { useGemKeepSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const GemKeepPlay = lazy(() => import('./GemKeepPlay').then((m) => ({ default: m.GemKeepPlay })));
 // Gem Keep's teacher parts bring the levels and maths code with them, so they load separately.
-const GemKeepTeacherPanels = lazy(() => import('../../pages/TeacherGemKeep').then((m) => ({ default: m.GemKeepTeacherPanels })));
+const GemKeepTeacherSettings = lazy(() => import('../../pages/TeacherGemKeep').then((m) => ({ default: m.GemKeepTeacherSettings })));
 const GemKeepStudentPanel = lazy(() => import('../../pages/TeacherGemKeep').then((m) => ({ default: m.GemKeepStudentPanel })));
 
 function GemKeepIcon({ size = 64 }: { size?: number }) {
@@ -32,6 +33,13 @@ export const gemKeep: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'easy-maths',
-  TeacherPanels: GemKeepTeacherPanels,
-  StudentPanel: GemKeepStudentPanel,
+  // The teacher's Games table: always on, so no switch; a summary of its settings in the Maths column; its settings and the
+  // class report in its Settings.
+  teacher: {
+    useSummary: useGemKeepSummary,
+    Settings: GemKeepTeacherSettings,
+    StudentPanel: GemKeepStudentPanel,
+    studentSummary: (student) => import('../../pages/TeacherGemKeep').then((m) => m.gemKeepStudentSummary(student)),
+    hardest: (classId) => import('../../pages/TeacherGemKeep').then((m) => m.gemKeepHardest(classId)),
+  },
 };

@@ -40,12 +40,12 @@ const button = (name: string | RegExp) =>
     return typeof name === 'string' ? label === name : name.test(label);
   });
 
-/** Click through a whole fight with the default action. */
+/** Click through a whole fight with the suggested plan. */
 async function playOut(u: ReturnType<typeof user>) {
   for (let i = 0; i < 120; i++) {
     const done = button('See how everyone did');
     if (done) return done;
-    const next = button('No thanks') ?? button('Carry on') ?? button(/Default action/);
+    const next = button('No thanks') ?? button('Carry on') ?? button(/Skip\s*Show the whole round/) ?? button(/Next round/) ?? button(/Fight with this plan/);
     if (!next) throw new Error('No button to press in the fight');
     await u.click(next);
   }
@@ -101,6 +101,10 @@ describe('a fight', () => {
     expect(screen.getByText(/Fights today: 8 of 8/)).toBeInTheDocument();
     const done = await playOut(u);
     expect(screen.getByText(/enemies are beaten/)).toBeInTheDocument();
+    // The clan's best hit, and (the first fight of the day) a new best, remembered on this device.
+    expect(screen.getByText(/^Best hit: .+ for \d+\./)).toBeInTheDocument();
+    expect(screen.getByText('★ Your best hit today!')).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('clans-best-hit')!).amount).toBeGreaterThan(0);
     await u.click(done);
     expect(screen.getByRole('heading', { name: 'Victory!' })).toBeInTheDocument();
     expect(screen.getAllByText(/experience/)).toHaveLength(4);
@@ -137,7 +141,7 @@ describe('a fight', () => {
     await answer(u, q, q.answer);
     expect(screen.getByText(/Right! Spend your Battle Cry on/)).toBeInTheDocument();
     await u.keyboard('d');
-    expect(screen.getByText(/what will they do\?/)).toBeInTheDocument();
+    expect(screen.getByText('The plan for this round')).toBeInTheDocument();
   });
 
   it('a wrong Battle Cry answer shows the working and carries on, with nothing lost', async () => {
@@ -150,7 +154,7 @@ describe('a fight', () => {
     expect(screen.getByText(/Not quite/)).toBeInTheDocument();
     expect(screen.getByText(q.working[0])).toBeInTheDocument();
     await u.click(screen.getByRole('button', { name: 'Carry on' }));
-    expect(screen.getByText(/what will they do\?/)).toBeInTheDocument();
+    expect(screen.getByText('The plan for this round')).toBeInTheDocument();
   });
 
   it('"No thanks" skips the question and still shows how it works', async () => {
@@ -160,7 +164,7 @@ describe('a fight', () => {
     await u.click(screen.getByRole('button', { name: 'No thanks' }));
     expect(screen.getByText(/No problem/)).toBeInTheDocument();
     await u.click(screen.getByRole('button', { name: 'Carry on' }));
-    expect(screen.getByText(/what will they do\?/)).toBeInTheDocument();
+    expect(screen.getByText('The plan for this round')).toBeInTheDocument();
   });
 
   it('can be played with the keyboard alone', async () => {
@@ -170,10 +174,15 @@ describe('a fight', () => {
     await u.click(screen.getByRole('button', { name: 'Start the adventure' }));
     for (const box of screen.getAllByRole('checkbox')) if ((box as HTMLInputElement).checked) await u.click(box);
     await intoFight(u);
-    // from here: keys only. Enter = default action for each member; a, then 1 = attack the first enemy.
+    // from here: keys only. Every other round: 1 to change the first member, a to attack (then 1 for the first enemy
+    // if asked); Enter fights with the plan.
     for (let i = 0; i < 60 && !button('See how everyone did'); i++) {
-      await u.keyboard(i % 3 === 0 ? 'a' : '{Enter}');
-      if (screen.queryByText(/Which enemy|attack…/)) await u.keyboard('1');
+      if (i % 2 === 0) {
+        await u.keyboard('1');
+        await u.keyboard('a');
+        if (screen.queryByText(/attack…/)) await u.keyboard('1');
+      }
+      await u.keyboard('{Enter}');
     }
     expect(screen.getByRole('button', { name: 'See how everyone did' })).toBeInTheDocument();
   });
@@ -282,5 +291,55 @@ describe('clan banners (Clans art Stage A.8)', () => {
     await u.click(screen.getByRole('button', { name: 'Scoreboard' }));
     const mine = screen.getByRole('rowheader', { name: new RegExp(name) });
     expect(mine.querySelector('img.cq-rowbanner')?.getAttribute('src')).toContain(`/banners/${noun}`);
+  });
+});
+
+describe('made-up hero names', () => {
+  it('only offers them when the teacher has switched them on', () => {
+    render(<ClanQuest seed={SEED} />);
+    expect(screen.queryByRole('button', { name: 'Make up my own name' })).toBeNull();
+  });
+
+  it('keeps the list as the default, takes a typed name, and holds back a rude or repeated one', async () => {
+    const u = user();
+    render(<ClanQuest seed={SEED} typedNames />);
+    const start = screen.getByRole('button', { name: 'Start the adventure' });
+    expect(screen.getAllByRole('combobox', { name: 'Name' })).toHaveLength(4);
+    await u.click(screen.getAllByRole('button', { name: 'Make up my own name' })[0]);
+    const box = screen.getByRole('textbox', { name: 'Name' });
+    expect(start).toBeDisabled();
+    await u.type(box, 'poop');
+    expect(screen.getByText('Please pick a kinder name.')).toBeInTheDocument();
+    expect(start).toBeDisabled();
+    await u.clear(box);
+    await u.type(box, startingDrafts(SEED)[1].name.toLowerCase());
+    expect(screen.getByText('Another member has this name.')).toBeInTheDocument();
+    await u.clear(box);
+    await u.type(box, 'te ahi');
+    expect(start).toBeEnabled();
+    await u.click(start);
+    expect(await screen.findByText(/Te Ahi/)).toBeInTheDocument();
+  });
+
+  it("keeps the member's look while a name is typed", async () => {
+    const u = user();
+    render(<ClanQuest seed={SEED} typedNames />);
+    const looks = () => screen.getAllByRole('group', { name: 'Look' })[1];
+    const shown = () => within(looks()).getAllByRole('button').find((b) => b.getAttribute('aria-pressed') === 'true')!.getAttribute('aria-label');
+    const before = shown();
+    await u.click(screen.getAllByRole('button', { name: 'Make up my own name' })[1]);
+    for (const letter of 'kaia') {
+      await u.type(screen.getByRole('textbox', { name: 'Name' }), letter);
+      expect(shown()).toBe(before);
+    }
+  });
+
+  it('can go back to the list', async () => {
+    const u = user();
+    render(<ClanQuest seed={SEED} typedNames />);
+    await u.click(screen.getAllByRole('button', { name: 'Make up my own name' })[2]);
+    await u.click(screen.getByRole('button', { name: 'Pick from the list instead' }));
+    expect(screen.getAllByRole('combobox', { name: 'Name' })).toHaveLength(4);
+    expect(screen.getByRole('button', { name: 'Start the adventure' })).toBeEnabled();
   });
 });

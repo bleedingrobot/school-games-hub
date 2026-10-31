@@ -571,8 +571,8 @@ describe('in the hub', () => {
     expect(GAMES.map((g) => g.id)).toContain('bond-match');
     expect(findGame('bond-match')).toBe(bondMatch);
     expect(bondMatch.useTeacherSwitch).toBeTypeOf('function');
-    expect(bondMatch.TeacherPanels).toBeDefined();
-    expect(bondMatch.StudentPanel).toBeDefined();
+    expect(bondMatch.teacher?.switch).toBeDefined();
+    expect(bondMatch.teacher?.StudentPanel).toBeDefined();
     expect(bondMatch.group).toBe('easy-maths');
   });
 

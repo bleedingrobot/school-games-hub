@@ -4,6 +4,7 @@
  * Maths (stage M.6): when the teacher allows it, a run starts by asking the server for its questions and which
  * shortcut doors are open; pit-stop answers are marked by the server. Runs with maths have their own best times and boards.
  */
+import type { CSSProperties } from 'react';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { AvatarImage } from '../../avatar/AvatarImage';
 import { courseById } from '../../../shared/marble/courses';
@@ -19,19 +20,19 @@ import type { MathsSwitch } from '../../../shared/space/mathsSwitch';
 import { FocusNote } from '../../maths/FocusNote';
 import { formatSteps, loadBests, mergeBests, saveBests, withFinish, type Bests } from './bests';
 import { HowToPlayBody } from './HowToPlay';
-import { loadPrefs, savePrefs, type MarblePrefs } from './prefs';
 import { COURSE_INFO } from './courseInfo';
+import { courseAccent, courseArt, courseGradient } from './courseArt';
 import type { FinishedRun } from './RunScreen';
 import './marble.css';
 
 // The picture (three.js) and the run screen load only when someone starts a run.
 const RunScreen = lazy(() => import('./RunScreen').then((m) => ({ default: m.RunScreen })));
 
-const GHOST_CHOICES: { value: GhostKind | 'none'; label: string }[] = [
-  { value: 'none', label: 'No ghost' },
-  { value: 'mine', label: 'My best run' },
-  { value: 'next', label: 'The classmate just ahead of me' },
-  { value: 'top', label: 'The fastest in the class' },
+const GHOST_CHOICES: { value: GhostKind | 'none'; label: string; hint: string }[] = [
+  { value: 'none', label: 'None', hint: 'No ghost: just you' },
+  { value: 'mine', label: 'My best', hint: 'Your own best run' },
+  { value: 'next', label: 'Just ahead', hint: 'The classmate just ahead of me' },
+  { value: 'top', label: 'Fastest', hint: 'The fastest in the class' },
 ];
 
 const MEDAL_ICON = { gold: '🥇', silver: '🥈', bronze: '🥉' } as const;
@@ -45,8 +46,8 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
   const player = profile?.id ?? '';
   const [plainBests, setPlainBests] = useState<Bests>(() => loadBests(player));
   const [mathsBests, setMathsBests] = useState<Bests>(() => loadBests(player, true));
-  const [prefs, setPrefs] = useState<MarblePrefs>(() => loadPrefs(player));
-  // What the teacher allows. Until it is known (or if it can't be read) there is no maths.
+  // What the teacher allows. Until it is known (or if it can't be read) there is no maths. Students no longer choose:
+  // anything but Off means maths, and the gates always wait for the player to read them.
   const [mathsSwitch, setMathsSwitch] = useState<MathsSwitch>(localMaths ? 'choose' : 'off');
   const localQuestions = useRef<Question[]>([]);
   const [showHow, setShowHow] = useState(false);
@@ -56,7 +57,7 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
   const runKey = pick ? `${pick.id}-${pick.mode}-${pick.round}` : '';
-  const wantMaths = mathsSwitch === 'on' || (mathsSwitch === 'choose' && prefs.maths);
+  const wantMaths = mathsSwitch !== 'off';
   const bests = wantMaths ? mathsBests : plainBests;
 
   // The teacher's switch, and the student's focus (to say why the questions are what they are).
@@ -98,11 +99,6 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
       current = false;
     };
   }, [player]);
-
-  const changePrefs = (next: MarblePrefs) => {
-    setPrefs(next);
-    savePrefs(next, player);
-  };
 
   // Starts a run. The server hands out the seed, and (with maths) the questions and the open doors; a ghost is fetched alongside.
   // Without the server (offline) or for two players the run is plain: arrows at the gates, and it only counts on this device.
@@ -146,7 +142,7 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
           ghost={pick.ghost}
           twoPlayer={pick.two}
           setup={pick.setup}
-          readTime={prefs.readTime}
+          readTime
           onAnswer={(slot, answer, ms) =>
             pick.started
               ? answerQuestion(pick.started, pick.id, pick.mode, slot, answer, ms)
@@ -184,8 +180,6 @@ function MarbleRoot({ localMaths }: { localMaths: boolean }) {
       onHowTo={() => setShowHow(true)}
       bests={bests}
       mathsSwitch={mathsSwitch}
-      prefs={prefs}
-      onPrefs={changePrefs}
       focus={wantMaths ? focus : null}
       wantMaths={wantMaths}
       onPlay={(id, mode, two) => void begin(id, mode, 0, two)}
@@ -225,13 +219,11 @@ function HowToPlay({ mathsAllowed, onBack }: { mathsAllowed: boolean; onBack: ()
 }
 
 function CoursePicker({
-  onHowTo, bests, mathsSwitch, prefs, onPrefs, focus, wantMaths, onPlay, hasFinished, ghostChoice, onGhostChoice, busy, note,
+  onHowTo, bests, mathsSwitch, focus, wantMaths, onPlay, hasFinished, ghostChoice, onGhostChoice, busy, note,
 }: {
   onHowTo: () => void;
   bests: Bests;
   mathsSwitch: MathsSwitch;
-  prefs: MarblePrefs;
-  onPrefs: (p: MarblePrefs) => void;
   focus: MathsFocus | null;
   wantMaths: boolean;
   onPlay: (id: string, mode: ClockMode, two?: boolean) => void;
@@ -248,8 +240,16 @@ function CoursePicker({
     const best = bests[c.id]?.up ?? (c.playable ? bests[c.playable]?.up : undefined);
     const bestHard = c.playable ? bests[c.playable]?.down : undefined;
     const medal = course && best !== undefined ? medalFor(course, best, wantMaths) : null;
+    const art = courseArt(c.id);
+    const style = {
+      '--course-grad': courseGradient(c.id),
+      '--course-accent': courseAccent(c.id),
+      ...(art ? { '--course-art': `url("${art.small}")`, '--course-focus': art.focus ?? 'center 65%' } : {}),
+    } as CSSProperties;
     return (
-      <li key={c.id} className="marble-course">
+      <li key={c.id} className={`marble-course${art ? ' marble-course--art' : ''}`} style={style}>
+        {art && <img className="marble-course__pic" src={art.small} alt="" loading="lazy" decoding="async" />}
+        <div className="marble-course__body">
         <div className="marble-course__head">
           <h3>{c.name}</h3>
           <span className="marble-course__level" aria-label={`Difficulty ${c.difficulty} out of 6`}>
@@ -287,6 +287,7 @@ function CoursePicker({
         ) : (
           <p className="marble-course__soon">Coming soon</p>
         )}
+        </div>
       </li>
     );
   };
@@ -297,41 +298,23 @@ function CoursePicker({
         <h2>Marble Rush</h2>
         <button type="button" className="button button--light" onClick={onHowTo}>How to play</button>
       </div>
-      <div className="marble-picker__panel">
-      <p className="marble-picker__intro">Steer your marble down the track as fast as you can. Falling off costs a few seconds, never the whole run. Win a bronze, silver or gold medal for your time.</p>
-      {mathsSwitch !== 'off' && (
-        <div className="marble-picker__maths">
-          {mathsSwitch === 'choose' ? (
-            <label>
-              <input type="checkbox" checked={prefs.maths} onChange={(e) => onPrefs({ ...prefs, maths: e.target.checked })} />
-              <span>Maths: {prefs.maths ? 'on' : 'off'}</span>
-            </label>
-          ) : (
-            <p><strong>Maths is on</strong> for everyone in your class.</p>
-          )}
-          {wantMaths && (
-            <label>
-              <input type="checkbox" checked={prefs.readTime} onChange={(e) => onPrefs({ ...prefs, readTime: e.target.checked })} />
-              <span>Read time: wait for me to read each gate</span>
-            </label>
-          )}
-          <p className="marble-picker__hint">
-            {wantMaths
-              ? 'With maths, each gate asks a question and the right tunnel is the shortcut. Pit stops at checkpoints take 2 seconds off for a right answer, and the purple question stops take 1 second or half a second off. A wrong answer only means a longer way round. Your times with maths have their own board.'
-              : 'Without maths, an arrow shows you the shortcut. Your times without maths have their own board.'}
-          </p>
-          <FocusNote focus={focus} />
+      <div className="marble-picker__bar">
+        <div className="marble-ghost" role="radiogroup" aria-labelledby="marble-ghost-label">
+          <span id="marble-ghost-label" className="marble-ghost__label" title="A ghost is a see-through marble that replays a recorded run. Nobody has to be online.">
+            <span aria-hidden="true">👻</span> Race a ghost
+          </span>
+          <div className="marble-ghost__choices">
+            {GHOST_CHOICES.map((g) => (
+              <label key={g.value} className="marble-ghost__choice" title={g.hint}>
+                <input type="radio" name="marble-ghost" value={g.value} checked={ghostChoice === g.value} onChange={() => onGhostChoice(g.value)} />
+                <span>{g.label}</span>
+              </label>
+            ))}
+          </div>
         </div>
-      )}
-      <div className="marble-picker__ghost">
-        <label htmlFor="marble-ghost">Race a ghost: </label>
-        <select id="marble-ghost" value={ghostChoice} onChange={(e) => onGhostChoice(e.target.value as GhostKind | 'none')}>
-          {GHOST_CHOICES.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
-        </select>
-        <p className="marble-picker__hint">A ghost is a see-through marble that plays back a recorded run. Nobody has to be online.</p>
         {busy && <p role="status">Setting up your run…</p>}
         {note && <p role="status">{note}</p>}
-      </div>
+        {mathsSwitch !== 'off' && <FocusNote focus={focus} />}
       </div>
       <h3 className="marble-picker__heading">Courses</h3>
       <ul className="marble-courses">{real.map(card)}</ul>

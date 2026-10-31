@@ -19,6 +19,7 @@ import type { TopicId } from '../../shared/maths/skillPacks';
 import type { BattleReport, SaveItem } from '../../shared/monsters/save/check';
 import type { SaveResponse } from '../../supabase/functions/monster/handler';
 import type { TypeId } from '../../shared/monsters/types';
+import { BATTLES_PER_DAY, countedOn, nzDay } from '../../shared/monsters/world/battleCap';
 import type { WorldState } from '../../shared/monsters/world/types';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config';
 import { readSettings } from './classSettings';
@@ -53,12 +54,16 @@ export interface MonstersData {
   facts: PackFact[];
   /** The server couldn't be reached. */
   offline: boolean;
+  /** Today's battle limit (battleCap.ts): battles counted today, the game's unsaved ones included, and the limit. */
+  battles: { day: string; today: number; perDay: number };
 }
 
 interface ServerData {
   save: { world: WorldState; version: number } | null;
   settings: MonstersSettings;
   facts: PackFact[];
+  /** Missing until the battle-limit migration is applied. */
+  battles?: { today: number; perDay: number };
 }
 
 // ---------------------------------------------------------------------------
@@ -208,9 +213,34 @@ export async function loadMonsters(player: string): Promise<MonstersData> {
       // Anything still queued came from before the server's save: it can't follow it.
       if (queuedSaves(player).length) setQueue(player, queuedSaves(player).filter((i) => i.seq > version));
     }
-    return { tail, settings: server.settings, facts: server.facts, offline: false };
+    const day = nzDay(Date.now());
+    const today = (server.battles?.today ?? 0) + countedOn(tail?.battles ?? [], day);
+    const battles = { day, today: Math.max(today, readBattleCount(player, day)), perDay: server.battles?.perDay ?? BATTLES_PER_DAY };
+    return { tail, settings: server.settings, facts: server.facts, offline: false, battles };
   } catch {
-    return { tail: device, settings: DEFAULT_MONSTERS_SETTINGS, facts: [], offline: true };
+    const day = nzDay(Date.now());
+    const today = Math.max(countedOn(device?.battles ?? [], day), readBattleCount(player, day));
+    return { tail: device, settings: DEFAULT_MONSTERS_SETTINGS, facts: [], offline: true, battles: { day, today, perDay: BATTLES_PER_DAY } };
+  }
+}
+
+const battleKey = (player: string) => `sgh-monsters-battles:${player}`;
+
+/** This device's count of today's battles (so the limit holds offline and across a reload before the save goes up). */
+export function readBattleCount(player: string, day: string): number {
+  try {
+    const stored = JSON.parse(localStorage.getItem(battleKey(player)) ?? 'null') as { day?: string; n?: number } | null;
+    return stored?.day === day && typeof stored.n === 'number' ? stored.n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function writeBattleCount(player: string, day: string, n: number) {
+  try {
+    localStorage.setItem(battleKey(player), JSON.stringify({ day, n }));
+  } catch {
+    // Storage blocked: the server's count still holds the limit next time.
   }
 }
 
@@ -218,9 +248,9 @@ export async function loadMonsters(player: string): Promise<MonstersData> {
 // The game switch, leaderboard and teachers
 // ---------------------------------------------------------------------------
 
-/** Is the game switched on? (The dashboard hides it when it isn't.) */
-export async function fetchMonstersEnabled(): Promise<boolean> {
-  const data = await readSettings(['monsters_enabled']);
+/** Is the game switched on? (The dashboard hides it when it isn't.) For the pupil's class, or a teacher's class when given. */
+export async function fetchMonstersEnabled(classId?: string | null): Promise<boolean> {
+  const data = await readSettings(['monsters_enabled'], classId);
   if (!data) throw new FriendlyError('We couldn’t load this setting.');
   return data.monsters_enabled === true;
 }
@@ -289,9 +319,24 @@ export async function saveMonstersSettings(settings: MonstersSettings, classId?:
   if (error) fail(error, 'We couldn’t save the Maths Monsters settings.');
 }
 
-export async function fetchClassMonsters(): Promise<ClassMonsters> {
-  const { data, error } = await supabase.rpc('teacher_monster_class');
-  if (error || !data) fail(error, 'We couldn’t load Maths Monsters for the class.');
+/**
+ * The server saves the switch and the topics together, so each of these reads the class's current settings and saves them
+ * with the one change. (The Games table's switch and the topics in its Settings are never on screen to change at once.)
+ */
+export async function saveMonstersEnabled(enabled: boolean, classId: string): Promise<void> {
+  const current = await fetchMonstersSettings(classId);
+  await saveMonstersSettings({ ...current, enabled }, classId);
+}
+
+export async function saveMonstersTopics(topics: TopicId[], classId: string): Promise<void> {
+  const current = await fetchMonstersSettings(classId);
+  await saveMonstersSettings({ ...current, topics }, classId);
+}
+
+/** Maths Monsters' report for one class, for a teacher who teaches it (migration 20261028000200). */
+export async function fetchClassMonsters(classId: string): Promise<ClassMonsters> {
+  const { data, error } = await supabase.rpc('teacher_monster_class', { target_class: classId });
+  if (error || !data) fail(error, 'We couldn’t load Maths Monsters for this class.');
   return data as ClassMonsters;
 }
 

@@ -5,9 +5,12 @@ import { applyAction, parseAction, type Action, type Context, type ServerState }
 import { CONFIG } from './config';
 import { startingDrafts } from './create';
 import { empireOf, newEmpire } from './empire';
-import { buildingTotal, emptyLand, might } from './empire';
-import { closeWeek, goalOf, raidNote, raidTargetList, voteOptions, weekOf, winner, VILLAGE_KINDS, villageCost, villageMax, type RaidTarget, type Sketch, type VillageView } from './village';
+import { levelTotal, might, safeGold } from './empire';
+import { closeWeek, goalOf, raidNote, raidTargetList, voteOptions, weekOf, winner, VILLAGE_KINDS, villageCost, villageMax, type RaidTarget, type Sketch } from './village';
 import type { Empire, Village } from './types';
+
+// The class village (chest, vote, closeWeek) is no longer used by the game. Its functions stay because the SQL night job and the
+// parity tests at the bottom of this file still read them; the actions that used them (chestGive, vote) are gone.
 
 const SEED = 123456;
 const TODAY = 20_000;
@@ -19,23 +22,23 @@ function created(): ServerState {
   return out.state;
 }
 /** A clan that began a fortnight ago with an army of the given size. */
-function veteran(footmen: number, vault = 1000): ServerState {
+function veteran(footmen: number, gold = 1000): ServerState {
   const s = created();
   s.createdNzDay = TODAY - 14;
   s.day = 15;
   const e = empireOf(s.clan);
+  e.levels.barracks = 5;
   e.troops = { footman: footmen, axeman: 0, knight: 0 };
-  e.vault = vault;
+  s.clan.gold = gold;
   return s;
 }
-const target = (footmen = 40, vault = 800): RaidTarget => {
-  const e: Empire = { ...newEmpire(), troops: { footman: footmen, axeman: 0, knight: 0 }, vault };
-  return { id: 'blue-fox-1', name: 'Blue Fox', createdNzDay: TODAY - 14, empire: e };
+const target = (footmen = 40, gold = 800): RaidTarget & { empire: Empire } => {
+  const e: Empire = { ...newEmpire(), troops: { footman: footmen, axeman: 0, knight: 0 } };
+  return { id: 'blue-fox-1', name: 'Blue Fox', createdNzDay: TODAY - 14, empire: e, gold };
 };
 const levels = (t = 0, s = 0, c = 0): Village => ({ trainingHall: t, smithy: s, church: c });
-const village = (over: Partial<VillageView> = {}): VillageView => ({ name: 'Room 12', chest: 0, levels: levels(), week: weekOf(TODAY), votes: {}, myVote: null, clans: 5, ...over });
 const raid = (s: ServerState, t: RaidTarget | null, over: Partial<Context> = {}, a: Partial<Extract<Action, { type: 'raidClass' }>> = {}) =>
-  applyAction(s, { type: 'raidClass', target: t?.id ?? 'nobody', take: 'gold', plan: { rounds: 3, push: 'steady', loot: 10 }, ...a }, ctx({ self: 'red-1', raidsOn: true, target: t, ...over }));
+  applyAction(s, { type: 'raidClass', target: t?.id ?? 'nobody', take: 'gold', push: 'steady', ...a }, ctx({ self: 'red-1', raidsOn: true, target: t, ...over }));
 
 describe('weeks and costs', () => {
   it('weeks start on Monday (1 Jan 1970 was a Thursday)', () => {
@@ -109,55 +112,25 @@ describe('the weekly vote', () => {
 describe('the Church gives free wake-ups', () => {
   it('each level adds one free wake-up a day', () => {
     const s = created();
-    s.clan.village.church = 2;
+    empireOf(s.clan).levels.church = 2;
     s.clan.members.forEach((m) => { m.knockedOut = true; m.hp = 0; });
     const out = applyAction(s, { type: 'wakeAll' }, ctx());
     expect(out.ok && out.state?.clan.gold).toBe(s.clan.gold - s.clan.members.slice(3).reduce((t, m) => t + (m.level + 1) * CONFIG.churchPerLevel, 0));
   });
 });
 
-describe('giving to the chest', () => {
-  it('takes exactly that much from the purse and refuses more than there is', () => {
-    const s = created();
-    const out = applyAction(s, { type: 'chestGive', gold: 50 }, ctx({ village: village() }));
-    expect(out.ok && out.state?.clan.gold).toBe(s.clan.gold - 50);
-    expect(out.ok && out.result).toEqual({ type: 'chestGive', gold: 50 });
-    const no = applyAction(s, { type: 'chestGive', gold: s.clan.gold + 1 }, ctx({ village: village() }));
-    expect(no.ok).toBe(false);
-    expect(s.clan.gold).toBe(CONFIG.startGold);
+describe('the chest and the vote are gone from the actions', () => {
+  it('a browser can no longer send them', () => {
+    expect(parseAction({ type: 'vote', kind: 'church' })).toBeNull();
+    expect(parseAction({ type: 'chestGive', gold: 50 })).toBeNull();
   });
-  it('is refused once the village has built everything, and while a fight is open', () => {
-    expect(applyAction(created(), { type: 'chestGive', gold: 5 }, ctx({ village: village({ levels: levels(5, 6, 3) }) })).ok).toBe(false);
-    const s = created();
-    s.fight = { depth: 0, boss: false, seed: 1, no: 1, settings: {} as never, rounds: [] };
-    expect(applyAction(s, { type: 'chestGive', gold: 5 }, ctx({ village: village() })).ok).toBe(false);
-  });
-  it('does not touch the empire vault', () => {
-    const s = veteran(10, 321);
-    const out = applyAction(s, { type: 'chestGive', gold: 10 }, ctx({ village: village() }));
-    expect(out.ok && empireOf(out.state!.clan).vault).toBe(321);
-  });
-});
-
-describe('voting', () => {
-  it('asks the server to keep the vote and changes nothing else', () => {
-    const s = created();
-    const out = applyAction(s, { type: 'vote', kind: 'smithy' }, ctx({ village: village() }));
-    expect(out.ok && out.effects).toEqual({ vote: 'smithy' });
-    expect(out.ok && out.changed).toBe(false);
-    expect(out.ok && out.state?.clan).toEqual(s.clan);
-  });
-  it('refuses a finished building and a missing village; junk is not an action', () => {
-    expect(applyAction(created(), { type: 'vote', kind: 'church' }, ctx({ village: village({ levels: levels(0, 0, 3) }) })).ok).toBe(false);
-    expect(applyAction(created(), { type: 'vote', kind: 'church' }, ctx()).ok).toBe(false);
-    expect(parseAction({ type: 'vote', kind: 'castle' })).toBeNull();
-    expect(parseAction({ type: 'vote', kind: 'church' })).toEqual({ type: 'vote', kind: 'church' });
-    expect(parseAction({ type: 'chestGive', gold: -3 })).toBeNull();
-    expect(parseAction({ type: 'chestGive', gold: 2.5 })).toBeNull();
-    expect(parseAction({ type: 'chestGive', gold: 1e9 })).toBeNull();
-    expect(parseAction({ type: 'raidClass', target: 'x', take: 'oust', plan: { rounds: 3, push: 'steady', loot: 10 } })).toBeNull();
-    expect(parseAction({ type: 'raidClass', target: '', take: 'gold', plan: { rounds: 3, push: 'steady', loot: 10 } })).toBeNull();
-    expect(parseAction({ type: 'raidClass', target: 'x', take: 'land', plan: { rounds: 3, push: 'steady', loot: 10 } })).not.toBeNull();
+  it('junk raids are not actions', () => {
+    expect(parseAction({ type: 'raidClass', target: 'x', take: 'oust', push: 'steady' })).toBeNull();
+    expect(parseAction({ type: 'raidClass', target: 'x', take: 'land', push: 'steady' })).toBeNull();
+    expect(parseAction({ type: 'raidClass', target: '', take: 'gold', push: 'steady' })).toBeNull();
+    expect(parseAction({ type: 'raidClass', target: 'x', take: 'gold', push: 'wild' })).toBeNull();
+    expect(parseAction({ type: 'raidClass', target: 'x', take: 'gold', push: 'bold' })).toEqual({ type: 'raidClass', target: 'x', take: 'gold', push: 'bold' });
+    expect(parseAction({ type: 'raidClass', target: 'x', take: 'buildings', push: 'careful' })).not.toBeNull();
   });
 });
 
@@ -189,7 +162,7 @@ describe('a raid on a classmate', () => {
     const out = raid(veteran(40), target(), { raidsOn: false });
     expect(out.ok).toBe(false);
     expect(!out.ok && out.why).toBe('off');
-    expect(applyAction(veteran(40), { type: 'raidClass', target: 'blue-fox-1', take: 'gold', plan: { rounds: 3, push: 'steady', loot: 10 } }, ctx({ self: 'red-1', target: target() })).ok).toBe(false);
+    expect(applyAction(veteran(40), { type: 'raidClass', target: 'blue-fox-1', take: 'gold', push: 'steady' }, ctx({ self: 'red-1', target: target() })).ok).toBe(false);
   });
   it.each([
     ['a clan that is not in the village', () => raid(veteran(40), null), 'target'],
@@ -221,60 +194,59 @@ describe('a raid on a classmate', () => {
     s.fight = { depth: 0, boss: false, seed: 1, no: 1, settings: {} as never, rounds: [] };
     expect(raid(s, target()).ok).toBe(false);
   });
-  it('moves vault gold only between the two empires, never the purse, and never more than 10%', () => {
+  it('moves gold only between the two purses, and never more than 10% of what is above the strongroom', () => {
     let won = 0;
     for (let k = 1; k <= 120; k++) {
       const s = veteran(45, 500);
       s.seed = k * 7919;
-      const t = target(40, 800);
-      const before = { purse: s.clan.gold, vaults: empireOf(s.clan).vault + t.empire.vault };
+      const t = target(40, 805);
+      t.empire.levels.strongroom = 1;
+      const before = s.clan.gold + t.gold;
       const out = raid(s, t);
       if (!out.ok || out.result.type !== 'raidClass') throw new Error('raid failed');
       const eff = out.effects!.raid!;
-      expect(out.state!.clan.gold).toBe(before.purse);
-      expect(empireOf(out.state!.clan).vault + eff.empire.vault).toBe(before.vaults);
-      expect(out.result.gold).toBeLessThanOrEqual(80);
-      expect(out.result.gold).toBe(800 - eff.empire.vault);
+      expect(out.state!.clan.gold + eff.gold).toBe(before);
+      expect(out.result.gold).toBeLessThanOrEqual(Math.ceil((805 - safeGold(t.empire)) / 10));
+      expect(out.result.gold).toBe(805 - eff.gold);
       expect(eff.empire.shieldUntil).toBe(TODAY + CONFIG.empire.raids.shieldDays);
       expect(eff.empire.createdDay).toBe(t.empire.createdDay);
-      if (out.result.result.outcome === 'won') won++;
+      if (out.result.result.outcome === 'won') {
+        won++;
+        expect(out.result.gold).toBe(Math.ceil((805 - 200) / 10));
+      } else expect(out.result.gold).toBe(0);
     }
     expect(won).toBeGreaterThan(5);
   });
-  it('moves land only between the two empires', () => {
-    let took = 0;
-    for (let k = 1; k <= 120; k++) {
-      const s = veteran(45);
-      s.seed = k * 104729;
-      const t = target(40);
-      t.empire.wild = 10;
-      const landBefore = emptyLand(empireOf(s.clan)) + emptyLand(t.empire);
-      const out = raid(s, t, {}, { take: 'land' });
-      if (!out.ok || out.result.type !== 'raidClass') throw new Error('raid failed');
-      expect(emptyLand(empireOf(out.state!.clan)) + emptyLand(out.effects!.raid!.empire)).toBe(landBefore);
-      took += out.result.land;
-    }
-    expect(took).toBeGreaterThan(0);
-  });
-  it('knocks down buildings only on the raided empire and never walls first', () => {
+  it('knocks levels off buildings only on the raided clan, never the walls or the strongroom', () => {
     let down = 0;
     for (let k = 1; k <= 120; k++) {
       const s = veteran(45);
       s.seed = k * 15485863;
       const t = target(40);
-      t.empire.plots = [
-        { width: 3, length: 3, building: 'barracks' }, { width: 3, length: 3, building: 'tower' }, { width: 3, length: 3, building: 'stables' },
-        { width: 3, length: 3, building: 'walls' },
-      ];
-      const mine = buildingTotal(empireOf(s.clan));
+      Object.assign(t.empire.levels, { barracks: 4, tower: 3, smithy: 3, forge: 3, trainingHall: 3, walls: 0, strongroom: 2 });
+      const mine = levelTotal(empireOf(s.clan));
       const out = raid(s, t, {}, { take: 'buildings' });
       if (!out.ok || out.result.type !== 'raidClass') throw new Error('raid failed');
-      expect(buildingTotal(empireOf(out.state!.clan))).toBe(mine);
-      expect(buildingTotal(out.effects!.raid!.empire)).toBe(4 - out.result.destroyed.length);
-      expect(out.effects!.raid!.empire.plots.some((p) => p.building === 'walls')).toBe(true);
+      expect(levelTotal(empireOf(out.state!.clan))).toBe(mine);
+      expect(levelTotal(out.effects!.raid!.empire)).toBe(18 - out.result.destroyed.length);
+      expect(out.effects!.raid!.empire.levels.strongroom).toBe(2);
+      expect(out.effects!.raid!.empire.levels.walls).toBe(0);
+      expect(out.effects!.raid!.gold).toBe(t.gold);
       down += out.result.destroyed.length;
     }
-    expect(down).toBeGreaterThanOrEqual(0);
+    expect(down).toBeGreaterThan(0);
+  });
+  it('converts an old-shape defender first (vault into purse, group village levels) and hands the new save back', () => {
+    const s = veteran(45);
+    const t = target(40, 500);
+    const old = { vault: 300, wild: 3, claimed: 0, plots: [{ width: 3, length: 5, building: 'barracks' as const }], troops: { footman: 40, axeman: 0, knight: 0 }, draftPercent: 5, day: 3, createdDay: 1, energyUsed: 0, raidsToday: 0, kingdomRaidsToday: 0, shieldUntil: 0, raidedToday: [] };
+    const out = raid(s, { ...t, empire: old as never, village: { trainingHall: 2, smithy: 1, church: 0 } });
+    if (!out.ok) throw new Error(out.say);
+    const eff = out.effects!.raid!;
+    expect(eff.empire.version).toBe(2);
+    expect(eff.empire.levels).toMatchObject({ barracks: 1, trainingHall: 2, smithy: 1 });
+    expect(eff.gold + (out.result.type === 'raidClass' ? out.result.gold : 0)).toBe(800);
+    expect(eff.empire.createdDay).toBe(1);
   });
   it('does not change the saved state it was given, and the seed counter moves on', () => {
     const s = veteran(40);
@@ -304,13 +276,13 @@ describe('a raid on a classmate', () => {
 
 describe('the news can never name a pupil', () => {
   it('uses the raiders clan name and nothing else, for every kind of raid', () => {
-    for (const take of ['gold', 'land', 'buildings'] as const) {
+    for (const take of ['gold', 'buildings'] as const) {
       for (let k = 1; k <= 40; k++) {
         const s = veteran(45);
         s.seed = k * 31337;
         const names = s.clan.members.map((m) => m.name);
         const t = target(40);
-        t.empire.plots = [{ width: 3, length: 3, building: 'barracks' }];
+        t.empire.levels.barracks = 3;
         const out = raid(s, t, {}, { take });
         if (!out.ok) throw new Error('raid failed');
         const { news, note } = out.effects!.raid!;
@@ -321,7 +293,7 @@ describe('the news can never name a pupil', () => {
           expect(line).not.toContain('blue-fox-1');
           expect(line.length).toBeLessThanOrEqual(200);
         }
-        expect(raidNote('Red Banner', { result: out.result.type === 'raidClass' ? out.result.result : (null as never), take, gold: 1, land: 1, destroyed: [] })).toMatch(/Red Banner/);
+        expect(raidNote('Red Banner', { result: out.result.type === 'raidClass' ? out.result.result : (null as never), take, gold: 1, destroyed: [] })).toMatch(/Red Banner/);
       }
     }
   });

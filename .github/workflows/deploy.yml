@@ -1,12 +1,21 @@
-# Checks the site and publishes it to GitHub Pages every time main is pushed.
-# If any check fails, nothing is published and the live site stays as it was.
-# Two sets of checks run side by side: the site's (build) and the database rules (db, in db-tests.yml).
+# Checks everything and puts it live every time main is pushed, in the go-live order:
+#   1. checks, side by side: the site's (build) and the database rules (db, in db-tests.yml)
+#   2. live database: applies new migrations (scripts/apply-live-migrations.sh)
+#   3. server functions: deploys each one whose index.ts changed in this push
+#   4. the site, to GitHub Pages
+# If any step fails, the later ones don't run. Steps 2 and 3 need the repo secret SUPABASE_ACCESS_TOKEN;
+# without it they say so and are skipped (the site still publishes).
 name: Test and publish
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      functions:
+        description: "Server functions to deploy anyway, space-separated (e.g. 'clans lord'), or 'all'"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -38,8 +47,65 @@ jobs:
   db:
     uses: ./.github/workflows/db-tests.yml
 
-  deploy:
+  database:
     needs: [build, db]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: live-database
+      cancel-in-progress: false
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Apply new migrations to the live database
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::warning::No SUPABASE_ACCESS_TOKEN secret, so migrations were not applied."
+            exit 0
+          fi
+          scripts/apply-live-migrations.sh
+
+  functions:
+    needs: [database]
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      BEFORE: ${{ github.event.before }}
+      EXTRA: ${{ inputs.functions }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Deploy changed server functions
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::warning::No SUPABASE_ACCESS_TOKEN secret, so no server functions were deployed."
+            exit 0
+          fi
+          names=""
+          # A function goes live when its built file (supabase/functions/<name>/index.ts) changed in this push.
+          if [ -n "$BEFORE" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            names=$(git diff --name-only "$BEFORE" HEAD -- 'supabase/functions/*/index.ts' | cut -d/ -f3)
+          fi
+          if [ "$EXTRA" = "all" ]; then
+            names=$(node -e "import('./scripts/build-functions.mjs').then(m => console.log(m.FUNCTIONS.join(' ')))")
+          else
+            names="$names $EXTRA"
+          fi
+          names=$(echo $names | tr ' ' '\n' | sort -u)
+          if [ -z "$names" ]; then echo "No server function changed."; exit 0; fi
+          for n in $names; do
+            echo "Deploying $n ..."
+            npx supabase functions deploy "$n" --project-ref zqzhetlzvtptnkmeiumi --no-verify-jwt --use-api
+          done
+
+  deploy:
+    needs: [functions]
     runs-on: ubuntu-latest
     environment:
       name: github-pages

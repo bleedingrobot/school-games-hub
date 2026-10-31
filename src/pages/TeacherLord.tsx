@@ -1,20 +1,25 @@
 /**
- * Dragon Maths on the teacher page: the game switch (which also pauses the season clock for the holidays), forest
- * fights a day and the first season date; the class view (where the season is, how many heroes at each level, the
- * hardest questions, the requests the game turned down, and the Hall of Heroes); and each pupil's hero, with a
- * button to start their hero again. Loaded only when the teacher page opens.
+ * Dragon Maths on the teacher pages: the school's seasons (one date for the whole school, set by a school admin), forest
+ * fights a day, the topics and the class report (where the
+ * class's season is, how many heroes at each level, the hardest questions, the requests the game turned down, and the Hall
+ * of Heroes) in the Games table's drawer, for the header's class; and each pupil's hero, with a button to start their hero
+ * again. Loaded only when opened. The on/off switch, which pauses the season clock, is in the Games table row
+ * (src/games/lord/teacher.ts).
  */
 import { useEffect, useState } from 'react';
 import { MAX_LEVEL } from '../../shared/lord/data';
 import { ALL_TOPICS } from '../../shared/lord/maths';
 import { TOPICS } from '../../shared/maths/skillPacks';
 import {
-  fetchClassLord, fetchLordSettings, fetchStudentLord, resetLordHero, saveLordSettings,
-  type ClassLord, type LordSettings, type StudentLord,
+  fetchClassLord, fetchLordSchoolSeason, fetchLordSettings, fetchStudentLord, resetLordHero, saveLordChange, saveLordHoliday,
+  saveLordSchoolSeason, type ClassLord, type LordSchoolSeason, type StudentLord,
 } from '../data/lord';
 import { FriendlyError } from '../data/profile';
-import { useTeacherClass } from '../teacher/TeacherClass';
+import { SettingChips, SettingDate, SettingNumber, SettingToggle, useSetting } from '../teacher/Settings';
 import { whenPlayed } from './Dashboard';
+import type { HardestRow, TeacherAlert } from '../games/types';
+import { refusalAlerts } from '../teacher/alerts';
+import { shortCache } from '../teacher/shortCache';
 import { keyLabel, TOPIC_LABEL as LADDER_LABELS } from './TeacherMonsters';
 import './teacher-gem-keep.css';
 
@@ -38,160 +43,147 @@ const REASON: Record<string, string> = {
 };
 const reasonText = (code: string) => REASON[code] ?? `check failed (${code})`;
 
-export function LordTeacherPanels() {
+/**
+ * The drawer on the Games table (docs/TEACHER-VIEW-PLAN.md, 4.5), for the header's class: forest fights, the season date and
+ * the topics, then the class report. The on/off switch (which pauses the season clock) is in the table row.
+ */
+export function LordTeacherSettings({ classId }: { classId: string }) {
   return (
     <>
-      <LordSettingsPanel />
-      <LordClassPanel />
+      <LordSettingsPanel classId={classId} />
+      <LordClassReport classId={classId} />
     </>
   );
 }
 
-function LordSettingsPanel() {
-  const { classId, ready } = useTeacherClass();
-  const [settings, setSettings] = useState<LordSettings | null>(null);
-  const [perDay, setPerDay] = useState('10');
-  const [start, setStart] = useState('');
-  const [status, setStatus] = useState<string | null>(null);
+const TOPIC_CHIPS = ALL_TOPICS.map((t) => ({ value: t, label: topicLabel(t) }));
 
-  useEffect(() => {
-    if (!ready) return;
-    setSettings(null);
-    setStatus(null);
-    fetchLordSettings(classId)
-      .then((s) => {
-        setSettings(s);
-        setPerDay(String(s.forestPerDay));
-        setStart(s.seasonStart ?? '');
-      })
-      .catch((error) => setStatus(errorText(error)));
-  }, [ready, classId]);
-
-  async function save(change: Partial<LordSettings> & { enabled: boolean }, message: string) {
-    setStatus('Saving…');
-    try {
-      const next = await saveLordSettings(change, classId);
-      setSettings(next);
-      setPerDay(String(next.forestPerDay));
-      setStart(next.seasonStart ?? '');
-      setStatus(message);
-    } catch (error) {
-      setStatus(errorText(error));
-    }
-  }
-
+function LordSettingsPanel({ classId }: { classId: string }) {
+  const settings = useSetting(() => fetchLordSettings(classId), [classId]);
+  const school = useSetting(() => fetchLordSchoolSeason(), []);
+  const s = settings.value;
+  // Before the school season is live (or while it loads), the class keeps its own date, as before.
+  const schoolSeason = school.value?.live ? school.value.season : null;
+  const live = schoolSeason !== null;
   return (
-    <section className="panel gk-teacher teacher__switch" aria-labelledby="dm-settings-title">
-      <h2 id="dm-settings-title" className="panel__title">
-        Dragon Maths
+    <>
+      {schoolSeason && <SchoolSeasonBox first={schoolSeason} />}
+      <section className="panel gk-teacher teacher__switch" aria-labelledby="dm-settings-title">
+        <h2 id="dm-settings-title" className="panel__title">
+          {live ? 'Dragon Maths for this class' : 'Dragon Maths settings'}
+        </h2>
+        {s && !s.enabled && (
+          <p className="panel__empty">
+            {live
+              ? 'Dragon Maths is off for this class, so this only matters once it’s on. The school’s seasons carry on while it’s off.'
+              : s.pausedSince
+                ? `Dragon Maths has been off for this class since ${s.pausedSince}, so its season clock is paused. Switch it on in the Games table to carry on the season where it left off.`
+                : 'Dragon Maths is off for this class, so this only matters once it’s on.'}
+          </p>
+        )}
+        <SettingNumber
+          label="Forest fights a day"
+          about="Pupils get the new number from their next day. Unused fights pile up for a missed day or two."
+          min={1}
+          max={30}
+          value={s?.forestPerDay ?? null}
+          loadFailed={settings.failed}
+          save={(forestPerDay) => saveLordChange({ forestPerDay }, classId)}
+        />
+        {!live && (
+          <SettingDate
+            label="First day of season 1"
+            about="Seasons run 35 days, one after the other, from this day. Each new season everyone starts again at level 1 (dragon stars, achievements and the Hall of Heroes stay). Saving a date also ends a pause: the seasons count from the new date."
+            value={school.value ? (s?.seasonStart ?? null) : null}
+            loadFailed={settings.failed || school.failed}
+            save={(seasonStart) => saveLordChange({ seasonStart }, classId)}
+          />
+        )}
+        <SettingChips
+          label="Topics on"
+          about="A topic switched off is never asked: a question comes from a topic that is still on, and forest events about it stay out of the forest. Pupils get the new topics the next time they open Dragon Maths."
+          options={TOPIC_CHIPS}
+          value={s?.topics ?? null}
+          loadFailed={settings.failed}
+          save={(topics) => saveLordChange({ topics }, classId)}
+        />
+      </section>
+    </>
+  );
+}
+
+const longDate = (day: string) =>
+  new Date(`${day}T00:00:00Z`).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+/** "Season 3 for the whole school, 12 days left." and, while paused, since when. */
+function schoolSeasonLine(season: LordSchoolSeason): string {
+  if (season.pausedSince) {
+    const where = season.number ? `Season ${season.number} for the whole school, ${season.daysLeft === 0 ? 'on its last day' : `${season.daysLeft} days left`}.` : '';
+    return `Paused for the holidays since ${longDate(season.pausedSince)}. ${where}`.trim();
+  }
+  if (season.number) {
+    return `Season ${season.number} for the whole school, ${season.daysLeft === 0 ? 'last day' : `${season.daysLeft} ${season.daysLeft === 1 ? 'day' : 'days'} left`}.`;
+  }
+  if (season.startsIn !== null) return `Season 1 starts in ${season.startsIn} ${season.startsIn === 1 ? 'day' : 'days'} for the whole school.`;
+  return 'Season 1 starts for the whole school when a class switches Dragon Maths on.';
+}
+
+/**
+ * The school's one season date and holiday pause (docs/DRAGON-SCHOOL-SEASON.md, 2.5). A school admin sets them here until the
+ * Admin page (stage 6); every other teacher sees where the season is, read-only.
+ */
+function SchoolSeasonBox({ first }: { first: LordSchoolSeason }) {
+  const [season, setSeason] = useState(first);
+  useEffect(() => setSeason(first), [first]);
+  return (
+    <section className="panel gk-teacher teacher__switch" aria-labelledby="dm-school-title">
+      <h2 id="dm-school-title" className="panel__title">
+        Seasons (whole school)
       </h2>
-      <p>
-        A fantasy adventure with a few fights a day and maths to help win them. Every five weeks everyone starts again. Switched off, pupils
-        see the village gates closed, nothing is saved, and the season clock waits.
-      </p>
-      {settings && (
+      <p role="status">{schoolSeasonLine(season)}</p>
+      {season.canChange ? (
         <>
-          <p>
-            {settings.enabled
-              ? 'On: pupils can play it.'
-              : settings.pausedSince
-                ? `Off since ${settings.pausedSince}: the season clock is paused (for the holidays).`
-                : 'Off: pupils can’t play it yet.'}
-          </p>
-          {settings.enabled ? (
-            <button type="button" className="button button--danger" onClick={() => void save({ enabled: false }, 'Dragon Maths is off, and the season clock is paused.')}>
-              Switch Dragon Maths off (pause the season)
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="button button--primary"
-              onClick={() => void save({ enabled: true }, settings.pausedSince ? 'Dragon Maths is on. The season carries on where it left off.' : 'Dragon Maths is on.')}
-            >
-              {settings.pausedSince ? 'Switch Dragon Maths on (carry on the season)' : 'Switch Dragon Maths on'}
-            </button>
-          )}
-          <div className="gk-teacher__row">
-            <label className="gk-teacher__pass">
-              <span>Forest fights a day</span>
-              <input type="number" min={1} max={30} value={perDay} onChange={(e) => setPerDay(e.target.value)} />
-            </label>
-            <button
-              type="button"
-              className="button button--light-outline"
-              onClick={() => void save({ enabled: settings.enabled, forestPerDay: Number(perDay) }, 'Saved. Pupils get the new number from their next day.')}
-            >
-              Save forest fights
-            </button>
-          </div>
-          <div className="gk-teacher__row">
-            <label className="gk-teacher__pass">
-              <span>First day of season 1</span>
-              <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-            </label>
-            <button
-              type="button"
-              className="button button--light-outline"
-              disabled={!start}
-              onClick={() => void save({ enabled: settings.enabled, seasonStart: start }, 'Saved. Seasons now run back to back from that day, 5 weeks each.')}
-            >
-              Save the date
-            </button>
-          </div>
-          <fieldset className="choice-group">
-            <legend>Topics on</legend>
-            <div className="choice-group__chips">
-              {ALL_TOPICS.map((t) => {
-                const on = settings.topics.includes(t);
-                return (
-                  <label key={t} className="chip">
-                    <input
-                      type="checkbox"
-                      checked={on}
-                      disabled={on && settings.topics.length === 1}
-                      onChange={() =>
-                        void save(
-                          { enabled: settings.enabled, topics: on ? settings.topics.filter((x) => x !== t) : ALL_TOPICS.filter((x) => x === t || settings.topics.includes(x)) },
-                          'Saved. Pupils get the new topics the next time they open Dragon Maths.',
-                        )
-                      }
-                    />
-                    <span>{topicLabel(t)}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
-          <p>
-            A topic switched off is never asked: a question comes from a topic that is still on, and forest events about it stay out of the forest. Leave at least one on.
-          </p>
-          <p>
-            Seasons run 35 days, one after the other, and everyone starts again at level 1 (dragon stars, achievements and the Hall of Heroes stay).
-            Switch the game off for the school holidays and on again after: the season carries on where it left off.
-          </p>
+          <SettingDate
+            label="First day of season 1 (whole school)"
+            about="Every class's seasons run 35 days, one after the other, from this day. Each new season everyone starts again at level 1 (dragon stars, achievements, points and the Hall of Heroes stay). You can move it earlier (the next season starts sooner) but not so late that the season number would go down."
+            value={season.start ?? ''}
+            save={async (start) => setSeason(await saveLordSchoolSeason(start))}
+          />
+          <SettingToggle
+            label="Holiday pause (whole school)"
+            about="On closes Dragon Maths for every class and stops the season clock. Off opens it again for every class that has it on, and the season carries on where it left off."
+            value={season.pausedSince !== null}
+            save={async (on) => setSeason(await saveLordHoliday(on))}
+          />
         </>
+      ) : (
+        <p>Set by a school admin.</p>
       )}
-      <p role="status" className="teacher__status">
-        {status}
-      </p>
     </section>
   );
 }
 
-function LordClassPanel() {
+/** How the class is getting on: its season, heroes at each level, the hardest questions, the Hall of Heroes and refused requests. */
+function LordClassReport({ classId }: { classId: string }) {
   const [data, setData] = useState<ClassLord | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchClassLord()
-      .then(setData)
-      .catch((error) => setFailed(errorText(error)));
-  }, []);
+    let current = true;
+    setData(null);
+    setFailed(null);
+    fetchClassLord(classId)
+      .then((d) => current && setData(d))
+      .catch((error) => current && setFailed(errorText(error)));
+    return () => {
+      current = false;
+    };
+  }, [classId]);
 
   return (
     <section className="panel gk-teacher" aria-labelledby="dm-class-title">
       <h2 id="dm-class-title" className="panel__title">
-        Dragon Maths: the class
+        Dragon Maths: this class
         {data && <span className="panel__count">{data.thisSeason} playing this season</span>}
       </h2>
       {failed ? (
@@ -224,35 +216,39 @@ function LordClassPanel() {
               </tbody>
             </table>
           )}
-          <table className="stats-table">
-            <caption>Hardest questions (most often wrong)</caption>
-            <thead>
-              <tr>
-                <th scope="col">Question</th>
-                <th scope="col">Topic</th>
-                <th scope="col">Right</th>
-                <th scope="col">Asked</th>
-                <th scope="col">Students</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.hardest.length === 0 ? (
+          {/* Five columns don't fit a phone: this one table scrolls sideways inside its card (and can be scrolled from the
+              keyboard once focused). */}
+          <div className="gk-teacher__wide" tabIndex={0} role="group" aria-label="Hardest questions">
+            <table className="stats-table">
+              <caption>Hardest questions (most often wrong)</caption>
+              <thead>
                 <tr>
-                  <td colSpan={5}>Not enough answers yet.</td>
+                  <th scope="col">Question</th>
+                  <th scope="col">Topic</th>
+                  <th scope="col">Right</th>
+                  <th scope="col">Asked</th>
+                  <th scope="col">Students</th>
                 </tr>
-              ) : (
-                data.hardest.map((f) => (
-                  <tr key={`${f.pack}/${f.key}`}>
-                    <th scope="row">{keyLabel(f.pack, f.key)}</th>
-                    <td>{topicLabel(f.pack)}</td>
-                    <td>{share(f.correct, f.attempts)}</td>
-                    <td>{f.attempts}</td>
-                    <td>{f.students}</td>
+              </thead>
+              <tbody>
+                {data.hardest.length === 0 ? (
+                  <tr>
+                    <td colSpan={5}>Not enough answers yet.</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  data.hardest.map((f) => (
+                    <tr key={`${f.pack}/${f.key}`}>
+                      <th scope="row">{keyLabel(f.pack, f.key)}</th>
+                      <td>{topicLabel(f.pack)}</td>
+                      <td>{share(f.correct, f.attempts)}</td>
+                      <td>{f.attempts}</td>
+                      <td>{f.students}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
           <table className="stats-table">
             <caption>Hall of Heroes</caption>
             <thead>
@@ -303,6 +299,15 @@ function LordClassPanel() {
       )}
     </section>
   );
+}
+
+const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
+
+/** One line for the student's folded Games row: "Level 5 mage, season 2, 1 dragon star", or nothing without a hero. */
+export async function lordStudentSummary(student: string): Promise<string | null> {
+  const { hero, refused } = await fetchStudentLord(student);
+  if (!hero) return null;
+  return `Level ${hero.level} ${hero.heroClass}, season ${hero.season}${hero.stars > 0 ? `, ${plural(hero.stars, 'dragon star')}` : ''}${refused > 0 ? `, ${plural(refused, 'request')} turned down` : ''}`;
 }
 
 /** One student's Dragon Maths, inside their panel on the teacher page. */
@@ -429,4 +434,18 @@ export function LordStudentPanel({ student }: { student: string }) {
       )}
     </div>
   );
+}
+
+const classReport = (classId: string) => shortCache(`dragon-maths:${classId}`, () => fetchClassLord(classId));
+
+/** The class's hardest questions, for the merged table on the Maths tab (stage 5). */
+export async function lordHardest(classId: string): Promise<HardestRow[]> {
+  const data = await classReport(classId);
+  return data.hardest.map((f) => ({ question: keyLabel(f.pack, f.key), topic: topicLabel(f.pack), attempts: f.attempts, correct: f.correct, students: f.students }));
+}
+
+/** Requests the game turned down this week, for Today's "Needs you" (stage 5). */
+export async function lordAlerts(classId: string): Promise<TeacherAlert[]> {
+  const data = await classReport(classId);
+  return refusalAlerts(data.refusals, { id: 'dragon-maths', name: 'Dragon Maths' }, 'request');
 }

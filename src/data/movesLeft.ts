@@ -1,6 +1,6 @@
 /**
  * "Moves left today" for the dashboard cards: the pupil's own daily allowances in the games that have them (Dragon Maths
- * forest, arena and master fights; Clan Quest mine fights). Read-only, through my_moves_left(). Any trouble just means no
+ * forest, arena and master fights; Clan Quest mine fights; Maths Monsters battles). Read-only, through my_moves_left(). Any trouble just means no
  * line on the card, so the dashboard never waits for it or complains about it.
  */
 import { nzDate, rollDay } from '../../shared/lord/engine';
@@ -8,8 +8,14 @@ import type { Hero } from '../../shared/lord/types';
 import { supabase } from '../lib/supabase';
 
 export interface RawMovesLeft {
-  lord: { day: string; forestLeft: number; arenaLeft: number; masterTried: boolean; masterExtra: number; forestPerDay: number } | null;
+  lord: { day: string; forestLeft: number; arenaLeft: number; masterTried: boolean; masterExtra: number; forestPerDay: number; level?: number; exp?: number } | null;
   clans: { fightsLeft: number; perDay: number } | null;
+  /** Battles counted today and the daily limit (battleCap.ts). Missing until 20261027000300 is applied. */
+  monsters?: { today: number; perDay: number } | null;
+  /** The school's Clan Quest season clock (read with readClock). Missing until 20261029000700 is applied. */
+  season?: unknown;
+  /** The school's Dragon Maths season { start, on } (read with readLordSeason). Missing until 20261030000100 is applied. */
+  lordSeason?: unknown;
 }
 
 /** One thing on a card: "🌲 7 forest fights". `empty` is for a used-up allowance, which is drawn quietly. */
@@ -53,6 +59,14 @@ export function movesFromRaw(raw: RawMovesLeft | null | undefined, now: Date = n
     out['clan-quest'] = {
       chips: [{ emoji: '⛏️', text: `${clans.fightsLeft} of ${clans.perDay} mine fights`, empty: clans.fightsLeft === 0 }],
       allDone: clans.fightsLeft === 0,
+    };
+  }
+  const monsters = raw?.monsters;
+  if (monsters && typeof monsters.today === 'number') {
+    const left = Math.max(monsters.perDay - monsters.today, 0);
+    out.monsters = {
+      chips: [{ emoji: '⚔️', text: `${left} of ${monsters.perDay} battles`, empty: left === 0 }],
+      allDone: left === 0,
     };
   }
   return out;

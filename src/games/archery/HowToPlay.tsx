@@ -4,8 +4,11 @@
 import { useEffect, useRef } from 'react';
 import { APPLE_HEALTH, DUEL_MAX_TIMEOUTS, DUEL_TURN_MS, GLASS_STING, MAX_SHOT_DAMAGE, ROUNDS_TO_WIN, START_HEALTH } from '../../../shared/archery/config';
 import { DUEL_POINTS, DUEL_WIN_POINTS, FIGHT_POINTS, ROUND_POINTS, WIN_POINTS } from '../../../shared/archery/points';
-import { CARRY_MOST, LEVEL_SPEND } from '../../../shared/archery/shop';
-import { COINS_PER_RIGHT, EARNING_ROUNDS_PER_DAY, FIRST_SECONDS, POINT_AT, ROUND_QUESTIONS } from '../../../shared/archery/speed';
+import { CARRY_MOST, LEVEL_SPEND, START_COINS } from '../../../shared/archery/shop';
+import {
+  CHEST_LOSS_COINS, CHEST_WIN_COINS, COINS_PER_RIGHT, DAILY_COINS, FIRST_SECONDS, LAST_SECONDS, POINT_AT, ROUND_QUESTIONS, SHORT_QUESTIONS,
+  SHORT_SECONDS, STREAK_AT, STREAK_BONUS,
+} from '../../../shared/archery/speed';
 import { WORLD_IDS } from '../../../shared/archery/types';
 import { WORLD_HINTS, WORLD_NAMES } from './text';
 
@@ -36,11 +39,14 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
       <ul>
         {WORLD_IDS.map((w) => <li key={w}><b>{WORLD_NAMES[w]}:</b> {WORLD_HINTS[w]}</li>)}
       </ul>
-      <h3>Coins and the speed round</h3>
+      <h3>Coins come from maths</h3>
       <ul>
-        <li>Coins come only from speed rounds: {ROUND_QUESTIONS} questions from your maths. The first has {FIRST_SECONDS} seconds, the next 9, and so on down to 1.</li>
-        <li>Each right answer in time earns {COINS_PER_RIGHT} coins. A wrong answer just moves on.</li>
-        <li>{EARNING_ROUNDS_PER_DAY} rounds a day earn coins. After that you can still practise.</li>
+        <li><b>Supply chest:</b> before every bot fight, {SHORT_QUESTIONS} questions for {COINS_PER_RIGHT} coins each, to spend as you pack.</li>
+        <li><b>Loot chest:</b> after every fight, {SHORT_QUESTIONS} questions ({SHORT_SECONDS} seconds each). Each right answer earns {CHEST_WIN_COINS} coins if you won, {CHEST_LOSS_COINS} if you didn't.</li>
+        <li><b>Restock:</b> between rounds of a bot fight, {SHORT_QUESTIONS} quick questions for {COINS_PER_RIGHT} coins each.</li>
+        <li><b>Speed round:</b> {ROUND_QUESTIONS} questions from your maths. The first has {FIRST_SECONDS} seconds, the next 9, and so on down to {LAST_SECONDS}. {COINS_PER_RIGHT} coins for each one right in time.</li>
+        <li>Get {STREAK_AT} or more right in a row and each one earns {STREAK_BONUS} extra. A wrong answer just moves on.</li>
+        <li>Maths can earn up to {DAILY_COINS} coins a day. After that you can still practise.</li>
       </ul>
       <h3>The Armory</h3>
       <ul>
@@ -54,7 +60,7 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
       <ul>
         <li>Finish a fight against a bot: {FIGHT_POINTS} points ({WIN_POINTS} if you win). Against a classmate: {DUEL_POINTS} points ({DUEL_WIN_POINTS} if you win).</li>
         <li>Get {POINT_AT} or more right in a speed round: {ROUND_POINTS} point.</li>
-        <li>A New Season starts everyone again with no coins and no gear.</li>
+        <li>A New Season starts everyone again with {START_COINS} coins and no gear.</li>
       </ul>
     </section>
   );

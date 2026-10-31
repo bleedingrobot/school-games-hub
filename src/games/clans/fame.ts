@@ -3,6 +3,8 @@
  * works it out here from the same rules so James can see the screens.
  */
 import { ACHIEVEMENTS, measures, NO_STATS, reached, type AchievementDef, type ClanStats } from '../../../shared/clans/rewards';
+import { empireOf } from '../../../shared/clans/empire';
+import { VILLAGE_BUILDINGS } from '../../../shared/clans/types';
 import { earn, type Session } from './session';
 
 /** One line of the scoreboard: a place, a clan name and fame. Nothing else is ever sent. */
@@ -58,11 +60,11 @@ export function awardNext(s: Session): Session {
     case 'clan_wars': stats.warWins = Math.max(stats.warWins, next.goal); break;
     case 'clan_village': stats.villageBuilt = Math.max(stats.villageBuilt, next.goal); break;
     case 'clan_cries': stats.cries = Math.max(stats.cries, next.goal); break;
+    case 'clan_monster': stats.monsterSlain = Math.max(stats.monsterSlain ?? 0, next.goal); break;
     case 'clan_level': clan.members[0] = { ...clan.members[0], level: Math.max(clan.members[0].level, next.goal) }; break;
     case 'clan_buildings': {
-      const plots = clan.empire?.plots ?? [];
-      while (plots.filter((p) => p.building).length < next.goal) plots.push({ width: 2, length: 2, building: 'barracks' });
-      if (clan.empire) clan.empire.plots = plots;
+      const levels = empireOf(clan).levels;
+      for (const b of VILLAGE_BUILDINGS) if (Object.values(levels).filter((n) => n > 0).length < next.goal && levels[b] < 1) levels[b] = 1;
       break;
     }
   }

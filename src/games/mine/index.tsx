@@ -1,10 +1,11 @@
 import { lazy } from 'react';
+import { saveMineEnabled, saveMineMaths } from '../../data/mine';
 import type { GameDefinition } from '../types';
 import { useMineEnabled } from './switch';
+import { MINE_ABOUT, MINE_MATHS_ABOUT, useMineClassMaths, useMineClassSwitch } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const MinePlay = lazy(() => import('./MinePlay').then((m) => ({ default: m.MinePlay })));
-const MineTeacherPanels = lazy(() => import('../../pages/TeacherMine').then((m) => ({ default: m.MineTeacherPanel })));
 
 /** A little ship in a tunnel, with the reactor glowing at the end. */
 function MineIcon({ size = 64 }: { size?: number }) {
@@ -36,5 +37,9 @@ export const mineRunner: GameDefinition = {
   noBots: true,
   group: 'easy-maths',
   useTeacherSwitch: useMineEnabled,
-  TeacherPanels: MineTeacherPanels,
+  // The teacher's Games table: the on/off switch and the maths switch, both in the row, and nothing to open.
+  teacher: {
+    switch: { useValue: useMineClassSwitch, save: (on, classId) => saveMineEnabled(on, classId), about: MINE_ABOUT },
+    maths: { useValue: useMineClassMaths, save: (mode, classId) => saveMineMaths(mode, classId), about: MINE_MATHS_ABOUT },
+  },
 };

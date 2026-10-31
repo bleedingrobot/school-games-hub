@@ -64,3 +64,4 @@ The `save-bot-game` server function runs exactly this code before saving a resul
   prices and levels, `speed.ts` the speed round (questions from the maths focus, the shrinking timer), `points.ts`
   and `stats.ts` the hub points and achievement counts. Every number is in `config.ts`. `determinism.ts` pins the
   rules' fingerprint (`npm run archery:determinism` also checks Chromium and WebKit). See `docs/ARCHERY-PLAN.md`.
+- `kingdom/`: Kingdom Keeper (Hamurabi with a maths council). `engine.ts` is the rules as pure functions (`turnYear(city, decisions, boons, random)`; every number in `config.ts`), `reign.ts` the seeds and councils, `server.ts` what the `kingdom` function does with each request (the preview runs it too, with `memoryServices.ts`). Council questions come from `makeRunQuestions` and are marked on the server. `npm run kingdom:sim` plays thousands of reigns. See `docs/KINGDOM-PLAN.md`.

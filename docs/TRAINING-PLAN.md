@@ -211,7 +211,7 @@ Not before Clan Quest and Dragon Maths are finished, and not before F.1 of the m
 
 ## 14. Training before games (James, 22 Oct 2026)
 
-In a class with the switch on, a student does one Training session, of their choice, before any game opens. The games then stay open for 6 hours (`TRAINING_CONFIG.gate.gamesOpenHours`), and the next session opens them for another 6.
+In a class with the switch on, a student does one Training session, of their choice, before any game opens. The games then stay open for 2 hours (`TRAINING_CONFIG.gate.gamesOpenHours`; 6 until 27 Oct 2026), and the next session opens them for another 2.
 
 James's answers:
 

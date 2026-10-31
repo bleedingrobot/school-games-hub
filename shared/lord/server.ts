@@ -21,6 +21,9 @@
  *  6. One atomic save (`Services.commit`): the hero, the fight and a note of what happened, or nothing.
  */
 import type { FactAnswer } from '../maths/leitner';
+import { packIdOfKey } from '../maths/ladder';
+import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext } from '../maths/serverQuestions';
+import type { Question } from '../maths/skillPack';
 import { CLASSES, FOREST_FIGHTS_PER_DAY, isLook, MAX_LEVEL, SEASON_DAYS, WEAPONS, ARMOURS, baseStats, expNeeded, masterFor } from './data';
 import { computerHeroes } from './computer';
 import { EVENT_BY_ID, eventsOn } from './events';
@@ -30,7 +33,7 @@ import {
   startFight, startMasterFight, useForestTurn, withdraw, type Duelist,
 } from './engine';
 import {
-  ALL_TOPICS, NUMBER_GUESS_TRIES, addMasterTrialBonus, dragonStageOptions, interestFor, numberGuessPrize, offersSizeItUp, priceDiscount, riddleGold,
+  ALL_TOPICS, INTEREST_EVERY, NUMBER_GUESS_TRIES, addMasterTrialBonus, dragonStageOptions, interestDue, interestFor, numberGuessPrize, offersSizeItUp, priceDiscount, riddleGold,
   sizeItUpBonus, sizeItUpGold, topicsOn, type MomentId, type Result,
 } from './maths';
 import { arenaWonLine, dailyNews, dragonWonLine, flattenedLine, masterWonLine, type NewsLine } from './news';
@@ -60,6 +63,8 @@ export interface Extra {
   /** The day the riddle / the interest question was last answered. */
   riddleDay: string;
   interestDay: string;
+  /** The banker's question of the day, made from the pupil's maths ladder or focus. Kept here so it never leaves the server with its answer. */
+  interestAsk: { day: string; question: Question } | null;
   /** Today's number guess: the secret never leaves the server. */
   guess: { day: string; secret: number; tries: { n: number; hint: 'low' | 'high' | 'win' }[]; done: boolean } | null;
   /** An event the forest handed out and the pupil has not dealt with yet. */
@@ -74,7 +79,7 @@ export interface Extra {
 }
 
 export const newExtra = (stats: Stats = newStats()): Extra => ({
-  riddleDay: '', interestDay: '', guess: null, pendingEvent: null, dragon: null, dragonDay: '', classOpen: false, stats,
+  riddleDay: '', interestDay: '', interestAsk: null, guess: null, pendingEvent: null, dragon: null, dragonDay: '', classOpen: false, stats,
 });
 
 /** An `extra` as saved, filled in where an older save had no such part. */
@@ -173,6 +178,8 @@ export interface Services {
   /** Adds answers to the student's maths records. `batchKey` makes a retry count once. */
   recordAnswers(player: string, pack: string, batchKey: string, answers: FactAnswer[]): Promise<Outcome<number>>;
   recordRefusal(player: string, reason: string, action: string): Promise<Outcome<null>>;
+  /** The pupil's maths records, the class's question settings and their focus (`space_maths_context`), for the banker's ladder question. */
+  mathsContext(player: string): Promise<Outcome<MathsContext>>;
   /** Classmates' heroes of this season near this level, for the arena (the pupil's own hero is left out). */
   arenaCandidates(player: string, season: number, level: number): Promise<Outcome<ArenaCandidate[]>>;
   /** The day's own news lines (the village event, the computer heroes). Each line is kept once. */
@@ -241,7 +248,11 @@ export type LordAction =
   | { action: 'dragon-finish'; fightId: string; actions: FightAction[] }
   | { action: 'shop-buy'; slot: 'weapon' | 'armour'; index: number; proof?: Proof | null }
   | { action: 'heal'; hp: number; proof?: Proof | null }
-  | { action: 'bank'; op: 'deposit' | 'withdraw' | 'interest'; amount?: number; proof?: Proof | null }
+  /**
+   * Interest: 'interest-ask' hands out the banker's question of the day (one from the pupil's maths ladder or focus, made and
+   * kept by the server); 'interest' answers it (`answer`, and `ms` the time taken).
+   */
+  | { action: 'bank'; op: 'deposit' | 'withdraw' | 'interest-ask' | 'interest'; amount?: number; answer?: number | null; ms?: number }
   | { action: 'inn'; game: 'riddle'; proof?: Proof | null }
   | { action: 'inn'; game: 'guess-start' }
   | { action: 'inn'; game: 'guess'; n: number }
@@ -560,7 +571,7 @@ function healAction(c: Ctx): Done | Refuse {
   };
 }
 
-function bank(c: Ctx): Done | Refuse {
+async function bank(c: Ctx): Promise<Done | Refuse> {
   const { hero, extra } = c.w;
   const op = c.req.op;
   if (op === 'deposit' || op === 'withdraw') {
@@ -570,16 +581,37 @@ function bank(c: Ctx): Done | Refuse {
     if (next.gold === hero.gold) return rule(op === 'deposit' ? 'You have no gold to put in the bank.' : 'You have nothing in the bank to take out.');
     return { hero: next, summary: { op, moved: Math.abs(next.gold - hero.gold) }, result: { moved: Math.abs(next.gold - hero.gold) } };
   }
-  if (op !== 'interest') return { refuse: 'bad-request' };
+  if (op !== 'interest' && op !== 'interest-ask') return { refuse: 'bad-request' };
   if (hero.level < 4) return rule('The banker only talks interest with heroes of level 4 and up.');
-  if (hero.bank <= 0) return rule('Save some gold in the bank first.');
+  if (hero.bank < INTEREST_EVERY) return rule(`Save at least ${INTEREST_EVERY} gold in the bank first.`);
   if (extra.interestDay === c.today) return rule('You have already asked about interest today.');
-  if (c.req.proof === undefined || c.req.proof === null) return rule('Answer the banker’s question to earn interest.');
-  const m = mark(c, c.req.proof, 'bank');
-  const extraGold = interestFor(hero.bank, m.result);
+  const asked = extra.interestAsk?.day === c.today ? extra.interestAsk.question : null;
+  if (op === 'interest-ask') {
+    // The same question all day: asking again (or reloading) never swaps it for an easier one.
+    if (asked) return { summary: { interest: 'ask-again' }, result: { question: publicQuestion(asked, 0) } };
+    const context = await c.s.mathsContext(c.player);
+    if (!context.ok) return { refuse: 'busy' };
+    const [question] = makeRunQuestions(context.value, 1, seededRandom(`lord-interest:${c.s.seed()}`));
+    if (!question || !markQuestion(question)) return rule('The banker has no question for you today. Try again tomorrow!');
+    return {
+      extra: { ...extra, interestAsk: { day: c.today, question } },
+      summary: { interest: 'ask' }, result: { question: publicQuestion(question, 0) },
+    };
+  }
+  const answer = c.req.answer;
+  if (!asked) return rule('Ask the banker for today’s question first.');
+  if (answer === undefined || answer === null) return rule('Answer the banker’s question to earn interest.');
+  if (typeof answer !== 'number' || !Number.isFinite(answer)) return { refuse: 'bad-request' };
+  const marked = markQuestion(asked);
+  if (!marked) return rule('The banker has no question for you today. Try again tomorrow!');
+  const right = sameAnswer(answer, marked.answer);
+  const extraGold = interestFor(hero.bank, right ? 'right' : 'wrong');
+  const pack = packIdOfKey(marked.key);
+  const ms = typeof c.req.ms === 'number' && Number.isFinite(c.req.ms) && c.req.ms >= 0 ? Math.round(Math.min(c.req.ms, 120_000)) : 120_000;
   return {
-    hero: { ...hero, bank: hero.bank + extraGold }, extra: { ...extra, interestDay: c.today }, answers: m.answers, notes: m.notes,
-    summary: { interest: extraGold }, result: { interest: extraGold, right: m.result !== 'wrong' },
+    hero: { ...hero, bank: hero.bank + extraGold }, extra: { ...extra, interestDay: c.today, interestAsk: null },
+    answers: pack ? [{ key: marked.key, correct: right, ms, at: c.now, pack }] : [],
+    summary: { interest: extraGold, right }, result: { interest: extraGold, due: interestDue(hero.bank), right, answer: marked.answer },
   };
 }
 
@@ -711,7 +743,7 @@ async function tools(c: Ctx): Promise<Done | Refuse> {
     case 'refill': return { hero: { ...hero, forestLeft: c.settings.forestPerDay, skillLeft: 3, masterTried: false }, extra: { ...extra, dragonDay: '' }, summary: { tool }, result: {} };
     case 'hurt': return { hero: { ...hero, hp: Math.max(1, Math.floor(hero.maxHp / 5)) }, summary: { tool }, result: {} };
     case 'best-gear': return { hero: { ...hero, weapon: WEAPONS.length - 1, armour: ARMOURS.length - 1 }, summary: { tool }, result: {} };
-    case 'new-day': return { hero: { ...hero, day: '2000-01-01' }, extra: { ...extra, riddleDay: '', interestDay: '', guess: null, dragonDay: '' }, summary: { tool }, result: {} };
+    case 'new-day': return { hero: { ...hero, day: '2000-01-01' }, extra: { ...extra, riddleDay: '', interestDay: '', interestAsk: null, guess: null, dragonDay: '' }, summary: { tool }, result: {} };
     case 'event': {
       if (typeof value !== 'string' || !EVENT_BY_ID[value]) return { refuse: 'bad-request' };
       return { extra: { ...extra, pendingEvent: value }, summary: { tool, event: value }, result: {} };
@@ -925,7 +957,7 @@ export async function runLord(s: Services, player: string, raw: unknown): Promis
     case 'dragon-finish': done = dragonFinish(ctx); break;
     case 'shop-buy': done = shopBuy(ctx); break;
     case 'heal': done = healAction(ctx); break;
-    case 'bank': done = bank(ctx); break;
+    case 'bank': done = await bank(ctx); break;
     case 'inn': done = inn(ctx); break;
     case 'arena': done = await arena(ctx); break;
     case 'tools': done = await tools(ctx); break;

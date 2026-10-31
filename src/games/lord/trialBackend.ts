@@ -42,7 +42,8 @@ export function createLocalBackend(db: MemoryDb, options: MemoryOptions & { tria
 const key = (player: string) => `dragon-maths:trial2:${player || 'guest'}`;
 
 /** The trial in the browser: the hero is kept in localStorage so it survives a refresh. */
-export function createTrialBackend(player: string): LordBackend {
+/** `seasonStart` (YYYY-MM-DD) gives the trial a real season clock, for trying the season road (preview/lord ?day=N). */
+export function createTrialBackend(player: string, seasonStart: string | null = null): LordBackend {
   let db: MemoryDb = emptyDb({ enabled: true });
   try {
     const raw = window.localStorage.getItem(key(player));
@@ -51,8 +52,8 @@ export function createTrialBackend(player: string): LordBackend {
     /* a fresh trial */
   }
   db.teacher = true;
-  db.settings = { enabled: true, forestPerDay: 10, seasonStart: null, topics: [...ALL_TOPICS] };
-  return createLocalBackend(db, {
+  db.settings = { enabled: true, forestPerDay: 10, seasonStart, topics: [...ALL_TOPICS] };
+  const backend = createLocalBackend(db, {
     onChange: (d) => {
       try {
         window.localStorage.setItem(key(player), JSON.stringify(d));
@@ -61,6 +62,7 @@ export function createTrialBackend(player: string): LordBackend {
       }
     },
   });
+  return seasonStart ? { ...backend, seasonDated: true } : backend;
 }
 
 export function clearTrial(player: string) {

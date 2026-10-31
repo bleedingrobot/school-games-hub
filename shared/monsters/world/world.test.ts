@@ -9,7 +9,7 @@ import { BADGES, MapError, parseMap, type TiledMap } from './mapLoader';
 import { Dice } from './rng';
 import { DELTA, DIRS, type Dir, type GameMap, type WorldState } from './types';
 import { cameraFor, findPath, findPathBeside, isBlocked, planTap } from './walking';
-import { afterBattle, facingTile, interact, newWorld, placeAt, step, trainerBattle, wildBattle, type WorldOptions } from './world';
+import { afterBattle, facingTile, interact, newWorld, placeAt, RESTING_TALK, step, trainerBattle, wildBattle, type WorldOptions } from './world';
 
 const opts: WorldOptions = { maps: WORLD_MAPS };
 const team = () => [makeMonster('plusplash-1', 5), makeMonster('multipup-1', 5)];
@@ -491,5 +491,38 @@ describe('the game state is plain data', () => {
 
   it('DIRS covers all four ways', () => {
     expect(DIRS).toHaveLength(4);
+  });
+});
+
+describe('resting once the day’s battles are used up', () => {
+  const resting: WorldOptions = { ...opts, resting: true };
+  const kiri = bush.things.find((t) => t.kind === 'trainer')!;
+  const back: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' };
+
+  it('no wild battles in the long grass, however far you walk', () => {
+    let s: WorldState = { ...at('kauri-bush', 'entrance', { x: 3, y: 5 }), grassSteps: 1 };
+    for (let i = 0; i < 300; i++) {
+      const r = step(s, i % 16 < 8 ? 'right' : 'left', resting);
+      expect(r.trigger).toBeUndefined();
+      s = r.state;
+    }
+    // The grass picks up where it left off once the limit is gone (tomorrow).
+    expect(walk(s, Array<Dir>(40).fill('right').map((d, i) => (i % 16 < 8 ? d : 'left'))).last?.trigger?.kind).toBe('wild');
+  });
+
+  it('trainers don’t challenge you, and talking to one is only a chat', () => {
+    expect(step(at('kauri-bush', 'trainer-approach'), 'up', resting).trigger).toBeUndefined();
+    const chat = interact({ ...at('kauri-bush', 'entrance'), x: 15, y: 9, facing: 'right' }, resting);
+    expect(chat.challenge).toBeUndefined();
+    expect(chat.talk!.pages).toEqual([RESTING_TALK]);
+    expect(kiri.badge).toBeUndefined();
+  });
+
+  it('Tower trainers still battle, so a badge is never held back', () => {
+    const top = WORLD_MAPS['tower-1-top'];
+    const boss = top.things.find((t) => t.kind === 'trainer' && t.badge)!;
+    const [dx, dy] = DELTA[boss.facing];
+    const s: WorldState = { ...newWorld(opts, team(), 7), map: top.id, x: boss.x + dx, y: boss.y + dy, facing: back[boss.facing] };
+    expect(interact(s, resting).challenge?.id).toBe(boss.id);
   });
 });

@@ -5,7 +5,7 @@
  */
 import { CONFIG } from './config';
 import { buy, churchCost, freeWakes, examineCost, gainXp, hpCost, inShop, shopPrice, spCost, trainHp, trainSp, trainStat, wake, wakeCost } from './character';
-import { buyTroops, draft, empireOf, friendlyWar, raidKingdom, type BattlePlan, type BattleResult, type Done } from './empire';
+import { buyTroops, empireOf, friendlyWar, joinFollowers, levelOf, raidKingdom, type BattleResult, type Done, type Push } from './empire';
 import { settle, type FightState } from './fight';
 import { STATS, TROOP_KINDS, type Clan, type ItemDef, type Member, type Stat, type Troops } from './types';
 
@@ -21,7 +21,7 @@ const memberAt = (clan: Clan, index: number): Member | null => clan.members[inde
 export function buyItem(clan: Clan, memberIndex: number, item: ItemDef): Done {
   const m = memberAt(clan, memberIndex);
   if (!m) return no('member', 'Pick one of your clan.');
-  if (!inShop(clan.village.smithy).includes(item)) return no('shelf', 'The shop does not sell that yet.');
+  if (!inShop(levelOf(clan, 'smithy')).includes(item)) return no('shelf', 'The shop does not sell that yet.');
   const price = shopPrice(item);
   if (clan.gold < price) return no('gold', `That costs ${price} gold and the clan has ${clan.gold}.`);
   return buy(clan, m, item) ? ok : no('gold', 'That cannot be bought right now.');
@@ -44,7 +44,7 @@ export function trainMember(clan: Clan, memberIndex: number, key: TrainKey, coun
   const m = memberAt(clan, memberIndex);
   if (!m) return no('member', 'Pick one of your clan.');
   if (!TRAIN_KEYS.includes(key) || !Number.isInteger(count) || count < 1) return no('amount', 'Pick what to train and how many.');
-  const hall = clan.village.trainingHall;
+  const hall = levelOf(clan, 'trainingHall');
   let done = 0;
   for (let i = 0; i < count; i++) {
     const worked = key === 'hp' ? trainHp(m, hall) : key === 'sp' ? trainSp(m, hall) : trainStat(m, key, hall);
@@ -95,34 +95,32 @@ const noMix = (mix: Troops) => TROOP_KINDS.every((k) => mix[k] === 0);
 export function buyTroopMix(clan: Clan, mix: Troops): Done {
   const e = empireOf(clan);
   if (noMix(mix)) return no('amount', 'Pick how many to buy.');
-  const before = structuredClone(e);
+  const before = { gold: clan.gold, troops: { ...e.troops } };
   for (const kind of TROOP_KINDS) {
     if (mix[kind] === 0) continue;
-    const done = buyTroops(e, kind, mix[kind]);
+    const done = buyTroops(clan, kind, mix[kind]);
     if (!done.ok) {
-      Object.assign(e, before);
+      clan.gold = before.gold;
+      e.troops = before.troops;
       return done;
     }
   }
   return ok;
 }
 
-/** Draft the followers: they all leave, some join as footmen as far as there is room. */
-export const draftFollowers = (clan: Clan) => draft(clan);
-
 /** The seed for the next raid or Friendly War: from the clan's seed and how many there have been. */
 export const raidSeed = (baseSeed: number, raidNo: number) => Math.imul(baseSeed | 0, 0x2545f491) ^ Math.imul(raidNo + 1, 0x27d4eb2f);
 
 export type WarOutcome = { ok: true; result: BattleResult; gold: number; friendly: boolean } | Extract<Done, { ok: false }>;
 
-/** Send the army to a kingdom: a real raid (loses troops, wins loot) or a Friendly War (changes nothing). */
-export function sendArmyTo(clan: Clan, kingdomId: string, plan: Partial<BattlePlan>, friendly: boolean, seed: number): WarOutcome {
+/** Send the army to a kingdom: a real raid (loses troops, wins loot) or a Friendly War (changes nothing). Always 3 rounds and 10% loot; the child picks only the push. */
+export function sendArmyTo(clan: Clan, kingdomId: string, push: Push, friendly: boolean, seed: number): WarOutcome {
   const e = empireOf(clan);
   if (friendly) {
-    const r = friendlyWar(e, kingdomId, plan, seed);
+    const r = friendlyWar(e, kingdomId, push, seed);
     return r.ok ? { ok: true, result: r.result, gold: 0, friendly } : r;
   }
-  const r = raidKingdom(e, kingdomId, plan, seed);
+  const r = raidKingdom(clan, kingdomId, push, seed);
   return r.ok ? { ok: true, result: r.result, gold: r.gold, friendly } : r;
 }
 
@@ -147,5 +145,7 @@ export function payFight(clan: Clan, fight: FightState): FightSummary {
   const levels = settle(clan.members, fight, gainXp);
   clan.gold += fight.gold;
   clan.followers += fight.followers;
+  // Followers join by themselves as footmen, as far as the barracks have room; the rest stay as followers.
+  joinFollowers(clan);
   return { result: fight.result, gold: fight.gold, followers: fight.followers, xp: fight.xp, levels };
 }

@@ -32,12 +32,12 @@ describe('How to play', () => {
 
   it('covers every part of the game in short sections', () => {
     render(<HowToPlay onBack={() => {}} />);
-    for (const name of ['Your clan', 'The Mines', 'Battle Cry', 'The Market', 'The Training Hall', 'The Church', 'The Empire', 'Quests', 'The Village', 'Raids on classmates', 'Fame and the Scoreboard', 'Achievements']) {
+    for (const name of ['Your clan', 'The Mines', 'Battle Cry', 'The Market', 'The Training Hall', 'The Church', 'My Village', 'Troops', 'Raids on kingdoms', 'Quests', 'Raids on classmates', 'Fame and the Scoreboard', 'Achievements']) {
       expect(screen.getByRole('heading', { name, level: 3 })).toBeInTheDocument();
     }
     for (const section of screen.getAllByRole('region')) {
       const words = (section.textContent ?? '').split(/\s+/).length;
-      expect(words, section.getAttribute('aria-labelledby') ?? 'page').toBeLessThan(section.classList.contains('cq-howtoplay') ? 700 : 80);
+      expect(words, section.getAttribute('aria-labelledby') ?? 'page').toBeLessThan(section.classList.contains('cq-howtoplay') ? 900 : 80);
     }
   });
 
@@ -46,13 +46,21 @@ describe('How to play', () => {
     expect(screen.getByText(/Your teacher can switch these on or off/)).toBeInTheDocument();
   });
 
+  it('explains My Village, troops and raids in plain words, with none of the old ones', () => {
+    const { container } = render(<HowToPlay onBack={() => {}} />);
+    const text = container.textContent ?? '';
+    for (const needed of ['Upgrade', 'Barracks', 'Careful', 'Steady', 'Bold', 'Strongroom', 'practice battle', '1 classmate a day']) expect(text, needed).toContain(needed);
+    expect(text).not.toMatch(/vault|develop|draft|energy|Friendly War|chest|vote|plot/i);
+    expect(text).toMatch(/rests behind a shield/);
+  });
+
   it('takes its numbers from CONFIG, so they are never typed in twice', () => {
     const { container } = render(<HowToPlay fightsPerDay={11} onBack={() => {}} />);
     const text = container.textContent ?? '';
     const R = CONFIG.rewards;
     for (const needed of [
       '11 fights a day', `${CONFIG.startGold} gold`, `level ${CONFIG.maxLevel}`, `${CONFIG.shopTax}%`, `${CONFIG.examinePercent}%`, `${CONFIG.pointsPerLevel} training points`,
-      `${R.fame.villageBuilt} fame`, `${CONFIG.empire.raids.classmateLootMax}%`, `${CONFIG.empire.raids.newClanDays} days`,
+      `${CONFIG.empire.buildsPerDay} upgrades a day`, `${CONFIG.empire.raids.classmateLootMax}%`, `${CONFIG.empire.raids.newClanDays} days`,
       `${Math.round((CONFIG.battleCryDamage - 1) * 100)}% more damage`, `${ACHIEVEMENTS.length} to collect`,
     ]) expect(text, needed).toContain(needed);
     for (const f of Object.values(R.fame)) expect(text).toContain(String(f));

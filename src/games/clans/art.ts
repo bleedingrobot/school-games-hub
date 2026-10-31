@@ -5,7 +5,7 @@
  * Files live in ./art/<group>/<name>.webp. Vite turns each one into its own URL, and the browser only downloads a
  * picture when a screen shows it.
  */
-import type { BuildingKind, TroopKind } from '../../../shared/clans/types';
+import type { MonsterKind, TroopKind, VillageBuilding } from '../../../shared/clans/types';
 import { LOOKS, type Look } from '../../../shared/clans/looks';
 
 const FILES = import.meta.glob('./art/**/*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
@@ -40,8 +40,21 @@ export const memberThumb = (race: string, cls: string, look: Look) => file('memb
 export const monsterArt = (name: string) => file('monsters', slug(name));
 export const itemArt = (name: string) => file('items', slug(name));
 export const troopArt = (kind: TroopKind) => file('troops', kind);
-/** steelMill → steelmill, developersHall → developershall. */
-export const buildingArt = (kind: BuildingKind) => file('buildings', kind.toLowerCase());
+/** A building's picture grows with its level: small for levels 0-2, medium for 3-4, big for 5 and up. */
+export type BuildingSize = 'small' | 'medium' | 'big';
+export const buildingSize = (level: number): BuildingSize => (level >= 5 ? 'big' : level >= 3 ? 'medium' : 'small');
+/** The one-size pictures that were made first. The Forge was the Steel Mill. */
+const OLD_BUILDING_FILE: Partial<Record<VillageBuilding, string>> = { forge: 'steelmill' };
+/**
+ * The picture for a building at a level: buildings/<kind>-small|medium|big.webp (kind in lower case: trainingHall → traininghall),
+ * then the old one-size buildings/<kind>.webp. Undefined when neither is there, and the screen simply shows no picture.
+ */
+export function pickBuildingArt(kind: VillageBuilding, level: number, find: (name: string) => string | undefined): string | undefined {
+  const name = kind.toLowerCase();
+  const old = OLD_BUILDING_FILE[kind];
+  return find(`${name}-${buildingSize(level)}`) ?? find(name) ?? (old ? find(old) : undefined);
+}
+export const buildingArt = (kind: VillageBuilding, level = 1): string | undefined => pickBuildingArt(kind, level, (name) => file('buildings', name));
 /** A kingdom you can raid, by its id (bunny-hollow). */
 export const kingdomArt = (id: string) => file('kingdoms', id);
 export function kingdomScene(id: string): { wide?: string; small?: string } {
@@ -55,6 +68,27 @@ export function questArt(title: string): { wide?: string; small?: string } {
 }
 /** A clan's banner, from the last word of its name ("Brave Owls" → owls). */
 export const bannerArt = (clanName: string) => file('banners', slug(clanName.trim().split(/\s+/).pop() ?? ''));
+
+/**
+ * The season monster (docs/CLANS-SEASON-GOALS-PLAN.md): a portrait (season-monsters/<kind>) and a "village under attack" scene
+ * (season-monsters/siege-<kind>, plus a -800 copy). Optional: without them the Monster screen shows the framed emoji.
+ */
+export const seasonMonsterArt = (kind: MonsterKind) => file('season-monsters', kind);
+export function siegeArt(kind: MonsterKind): { wide?: string; small?: string } {
+  const wide = file('season-monsters', `siege-${kind}`);
+  return { wide, small: file('season-monsters', `siege-${kind}-800`) ?? wide };
+}
+
+/** The round medallions on the season road: Build, Get ready and New season (Monster week uses the monster's portrait). */
+export const stageArt = (id: 'build' | 'ready' | 'new') => file('timeline', id === 'new' ? 'stage-new-season' : `stage-${id}`);
+
+/**
+ * The fight's painted effects (scripts/clans-fx-art.py, docs/CLANS-FIGHT-FEEL.md stage 2): glowing light painted on black,
+ * with the black made see-through, so only the light shows. Without a picture the effect is a CSS glow.
+ */
+export const FX = ['fire', 'lightning', 'heal', 'magic', 'impact', 'victory'] as const;
+export type FxId = (typeof FX)[number];
+export const fxArt = (id: FxId) => file('fx', id);
 
 /** Every file the game would use, for the art test. */
 export function allArtFiles(): string[] {

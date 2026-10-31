@@ -7,10 +7,14 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AuthContext } from '../../src/auth/AuthContext';
 import { LordPlay } from '../../src/games/lord/LordPlay';
+import { nzDate } from '../../shared/lord/engine';
 import { createTrialBackend } from '../../src/games/lord/trialBackend';
 import '../../src/styles.css';
 
-const backend = createTrialBackend('preview');
+// ?day=N (1 to 35) gives the trial a real season on day N of season 1, to try the season road.
+const dayParam = Number(new URLSearchParams(window.location.search).get('day'));
+const seasonStart = dayParam >= 1 ? nzDate(new Date(Date.now() - (Math.min(35, dayParam) - 1) * 86400e3)) : null;
+const backend = createTrialBackend('preview', seasonStart);
 
 const fakeAuth = {
   status: 'signed-in',

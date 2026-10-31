@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { TOPICS } from '../../../../shared/maths/skillPacks';
 import type { ItemId } from '../../../../shared/monsters/engine';
 import { AREAS } from '../../../../shared/monsters/world/areas';
-import { applyItem, bookCounts, canHeal, moveToBox, moveToTeam, swapTeam, type MenuResult } from '../../../../shared/monsters/world/menu';
+import { applyItem, bookCounts, canHeal, moveToBox, moveToFront, moveToTeam, type MenuResult } from '../../../../shared/monsters/world/menu';
 import { ITEM_ORDER } from '../../../../shared/monsters/world/rewards';
 import type { WorldState } from '../../../../shared/monsters/world/types';
 import { TYPE_LABEL, TYPE_TOPIC } from '../../../../shared/monsters/types';
@@ -124,24 +124,14 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
 }
 
 function TeamPage({ world, apply }: { world: WorldState; apply: (r: MenuResult) => void }) {
-  const [pick, setPick] = useState<number | null>(null);
   return (
     <>
-      <p className="mm-help">
-        {pick === null ? 'Choose a monster, then choose who to swap places with. The first one goes out first in a battle.' : 'Now choose who to swap places with.'}
-      </p>
+      <p className="mm-help">Your first monster goes out first in a battle. Tap Go first on the one you want to send out.</p>
       <TeamList
         team={world.team}
         active={-1}
-        action={(_m, i) => ({ label: pick === null ? 'Swap' : pick === i ? 'Cancel' : 'Swap with', enabled: world.team.length > 1 })}
-        onPick={(i) => {
-          if (pick === null) setPick(i);
-          else if (pick === i) setPick(null);
-          else {
-            apply(swapTeam(world, pick, i));
-            setPick(null);
-          }
-        }}
+        action={(_m, i) => (i === 0 ? { label: 'Goes first', enabled: false } : { label: 'Go first', enabled: true })}
+        onPick={(i) => apply(moveToFront(world, i))}
       />
     </>
   );

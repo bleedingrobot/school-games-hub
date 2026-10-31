@@ -44,6 +44,8 @@ export interface ClanInfo {
   averageLevel: number;
   inFight: boolean;
   lastPlayed: string;
+  /** The heroes' names, so a teacher can see any made-up ones (missing from an older database). */
+  heroes?: string[];
 }
 
 export async function fetchClanInfo(student: string): Promise<ClanInfo | null> {
@@ -60,7 +62,7 @@ export async function resetClan(student: string): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
-// Raids on classmates and the village groups (stage C.6 part A)
+// Raids on classmates (stage C.6 part A; the village groups went with My Village, 28 Oct 2026)
 // ---------------------------------------------------------------------------
 
 /** Are raids on classmates switched on? Off until a teacher turns them on. */
@@ -77,54 +79,29 @@ export async function saveClanRaidsEnabled(enabled: boolean, classId?: string | 
   return data;
 }
 
-export interface VillageGroup {
-  id: number;
-  name: string;
-  isDefault: boolean;
-  chest: number;
-  levels: { trainingHall: number; smithy: number; church: number };
-  pupils: number;
+// ---------------------------------------------------------------------------
+// Made-up hero names (27 Oct 2026)
+// ---------------------------------------------------------------------------
+
+/** May pupils make up their heroes' names? Off until a teacher turns it on: names come from the list. */
+export async function fetchClanTypedNames(classId?: string | null): Promise<boolean> {
+  const data = await readSettings(['clan_typed_names'], classId);
+  if (!data) throw new FriendlyError('We couldn’t load the hero names setting.');
+  return data.clan_typed_names === true;
 }
 
-export interface VillagePupil {
-  id: string;
-  name: string;
-  /** The id of the village they are in (1 is "Everyone else"). */
-  village: number;
+export async function saveClanTypedNames(enabled: boolean, classId?: string | null): Promise<boolean> {
+  const { data, error } = await supabase.rpc('teacher_set_clan_typed_names', { enabled, target_class: classId ?? null });
+  forgetSettings();
+  if (error || typeof data !== 'boolean') throw new FriendlyError('We couldn’t save the hero names setting.');
+  return data;
 }
 
-export interface Villages {
-  villages: VillageGroup[];
-  pupils: VillagePupil[];
-}
-
-export async function fetchVillages(): Promise<Villages> {
-  const { data, error } = await supabase.rpc('teacher_villages');
-  if (error || !data) throw new FriendlyError('We couldn’t load the village groups.');
-  return data as Villages;
-}
-
-export async function createVillage(name: string): Promise<number> {
-  const { data, error } = await supabase.rpc('teacher_create_village', { new_name: name });
-  if (error) throw new FriendlyError(error.code === '22023' ? error.message : 'We couldn’t make that group.');
-  return data as number;
-}
-
-export async function renameVillage(village: number, name: string): Promise<void> {
-  const { error } = await supabase.rpc('teacher_rename_village', { village, new_name: name });
-  if (error) throw new FriendlyError(error.code === '22023' ? error.message : 'We couldn’t rename that group.');
-}
-
-export async function deleteVillage(village: number): Promise<boolean> {
-  const { data, error } = await supabase.rpc('teacher_delete_village', { village });
-  if (error) throw new FriendlyError('We couldn’t delete that group.');
-  return data === true;
-}
-
-/** Moves a pupil into a group (the default group, number 1, is "Everyone else"). */
-export async function movePupil(student: string, village: number): Promise<void> {
-  const { error } = await supabase.rpc('teacher_move_pupil', { student, village });
-  if (error) throw new FriendlyError('We couldn’t move that pupil.');
+/** Swaps a pupil's made-up hero names for names from the list. Gives how many were changed. */
+export async function listHeroNames(student: string): Promise<number> {
+  const { data, error } = await supabase.rpc('teacher_list_hero_names', { student });
+  if (error || typeof data !== 'number') throw new FriendlyError('We couldn’t change those names.');
+  return data;
 }
 
 // ---------------------------------------------------------------------------
@@ -136,6 +113,38 @@ export async function fetchScoreboard(): Promise<ScoreRow[]> {
   const { data, error } = await supabase.rpc('clan_scoreboard');
   if (error) throw new FriendlyError('We couldn’t load the scoreboard.');
   return ((data ?? []) as ScoreRowRaw[]).map(toScoreRow);
+}
+
+/** One line of the Hall of Legends: a clan that finished a season goal. Dates are "YYYY-MM-DD" (or null). */
+export interface HallRow {
+  season: number;
+  clanName: string;
+  villageDoneOn: string | null;
+  monsterDoneOn: string | null;
+  isMe: boolean;
+}
+
+interface HallRowRaw {
+  season: number;
+  clan_name: string;
+  village_done_on: string | null;
+  monster_done_on: string | null;
+  is_me: boolean;
+}
+
+/**
+ * The Hall of Legends. Gives null when the database does not have `clan_hall_of_legends` yet (PostgREST code PGRST202),
+ * so the screen can hide the button quietly. Any other problem is an error.
+ */
+export async function fetchHallOfLegends(): Promise<HallRow[] | null> {
+  const { data, error } = await supabase.rpc('clan_hall_of_legends');
+  if (error) {
+    if (error.code === 'PGRST202') return null;
+    throw new FriendlyError('We couldn’t load the Hall of Legends.');
+  }
+  return ((data ?? []) as HallRowRaw[]).map((r) => ({
+    season: r.season, clanName: r.clan_name, villageDoneOn: r.village_done_on, monsterDoneOn: r.monster_done_on, isMe: r.is_me,
+  }));
 }
 
 /** What the teacher sets for Clan Quest's maths and mine fights. The same shape the server sends with each clan. */
@@ -156,7 +165,11 @@ export async function fetchClanMathsSettings(classId?: string | null): Promise<C
   };
 }
 
-/** Saves the maths settings (any of year band, topics, times tables, fights a day). Pupils get them next time they open the game; a fight already open keeps its own. */
+/**
+ * Saves some of the maths settings (any of year band, topics, times tables, fights a day). The server changes only the ones
+ * sent and keeps the rest, so a save never sends an old value back. Pupils get them next time they open the game; a fight
+ * already open keeps its own.
+ */
 export async function saveClanMathsSettings(
   settings: Partial<Pick<ClanMathsSettings, 'yearBand' | 'enabledTopics' | 'enabledTables' | 'fightsPerDay'>>,
   classId?: string | null,
@@ -192,9 +205,12 @@ export interface ClanMathsStudent {
   kinds: MathsKind[];
 }
 
-export async function fetchClanMathsClass(): Promise<ClanMathsClass> {
-  const { data, error } = await supabase.rpc('teacher_clan_maths_class');
-  if (error || !data) throw new FriendlyError('We couldn’t load the Clan Quest maths records.');
+/** Clan Quest's maths report for one class, for a teacher who teaches it (migration 20261028000500). */
+export async function fetchClassClanMaths(classId: string): Promise<ClanMathsClass> {
+  const { data, error } = await supabase.rpc('teacher_clan_maths_class', { target_class: classId });
+  if (error || !data) {
+    throw new FriendlyError(error?.code === '22023' && error.message ? error.message : 'We couldn’t load the Clan Quest maths records for this class.');
+  }
   return data as ClanMathsClass;
 }
 

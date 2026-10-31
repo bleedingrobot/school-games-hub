@@ -107,7 +107,11 @@ describe('the screens around the fights (Stage 5)', () => {
 
   it('uses the hub\'s shared buttons for every button', () => {
     for (const [name, text] of files) {
-      for (const m of text.matchAll(/<button[^>]*className=(?:"([^"]+)"|\{`([^`]+)`\})/g)) expect(m[1] ?? m[2], `${name}: ${m[0]}`).toMatch(/^button button--(play|light) ar-btn/);
+      for (const m of text.matchAll(/<button[^>]*className=(?:"([^"]+)"|\{`([^`]+)`\})/g)) {
+        // A choice between the two shared looks, like `${speed ? 'button--light' : 'button--play'}`, counts as a shared look.
+        const classes = (m[1] ?? m[2]).replace(/\$\{[^}]*?'(button--(?:play|light))'[^}]*\}/, '$1');
+        expect(classes, `${name}: ${m[0]}`).toMatch(/^button button--(play|light) ar-btn/);
+      }
     }
   });
 
@@ -174,9 +178,10 @@ describe('the teacher panel and the home scene (Stage 7)', () => {
     for (const m of panel.matchAll(/<button[^>]*className="([^"]+)"/g)) expect(m[1], m[0]).toMatch(/^button button--(primary|danger)$/);
     expect(panel).not.toMatch(/className="[^"]*\bar-/);
     expect(panel).not.toMatch(/archery\.css/);
-    expect(panel).toMatch(/<section className="panel teacher__switch" aria-labelledby="archery-teacher-title">/);
-    expect(panel).toMatch(/<h2 id="archery-teacher-title"/);
-    expect(panel).toMatch(/role="status"/);
+    // Its Settings on the Games table: the drawer gives the heading, and the shared switch its status line.
+    expect(panel).toMatch(/<div className="panel teacher__switch">/);
+    expect(panel).toMatch(/<SettingToggle\b/);
+    expect(panel).toMatch(/from '\.\.\/teacher\/Settings'/);
   });
 
   it('the teacher summary is counts only: no names, coins or maths', () => {

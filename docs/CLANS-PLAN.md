@@ -3,6 +3,8 @@
 A daily-turns fantasy game for the hub, inspired by the 1997 BBS door game *The Clans* by Allen Ussher. You lead a small clan of four adventurers: send them into the mines to fight monsters, train and equip them, build an empire of land, barracks and troops, and work with the whole class to grow your village. **Maths is the tool that makes the clan stronger**: working out the shop's bill with tax, spending training points, sharing out land and troops, counting damage, cracking a quest puzzle.
 
 Written 18 October 2026 for James, after reading the game's real source code and manuals (section 1) and the hub's other plans.
+
+**28 Oct 2026:** plan to simplify the village and empire for kids (mines and fights unchanged): [CLANS-SIMPLER-PLAN.md](CLANS-SIMPLER-PLAN.md).
 **Status: ANSWERED 18 Oct 2026 (section 13). Stage C.0 started 18 Oct 2026: first draft of the rule sheet is in [CLANS-RULES.md](CLANS-RULES.md), on the `clans` branch.** Stage C.1 (engine) first pass done 18 Oct 2026: see "Stage C.1 results" at the bottom. Dragon Maths goes first; this starts after it, since they share the engine and maths packs (section 2).
 
 ## The short version
@@ -704,3 +706,50 @@ James asked for easier Clan Quest maths, then for the Battle Cry to come from ea
 - **Tests**: `shared/clans/ladderFights.test.ts` (rules), new handler tests (no answers sent, maths loaded only on a ladder start, answers recorded once), `Server.test.tsx` ladder fights (right, wrong, "No thanks", refresh), `LadderCry.test.tsx` (every built ladder skill, typed and multiple choice, through the Battle Cry), `supabase/tests/database/clans_ladder.test.sql` (13 checks on a scratch copy). Go-live: `docs/prompts/clans-ladder-golive.md`.
 - **Went live 26 Oct 2026 (evening, NZ time).** Pre-flight after merging that day's `main`: all 4,965 tests, the site build, and the `clans*` database tests on a scratch copy passed (only the two "scheduled for midnight" checks failed, as always on a scratch copy); live `load_clan` and `save_clan` matched what the migration starts from. Then, in order: migration `20261020000300` applied (both columns there, `save_clan` and `load_clan` keep them, the 5 saved fights still there, no errors in the `clans` logs); the `clans` function deployed (the live copy equals the branch build); PR #24 merged and published. The archery and mine bundles were rebuilt in the merge with the same code (only reordered), so they were not redeployed. **Still to do:** James tries a ladder fight as his teacher account (step 5 of the go-live prompt), and the logs and records are checked after a school day (step 6).
 
+
+## Smarter fight plan (27 Oct 2026)
+
+The round plan ("The plan for this round", from pull request #38) is the bot's orders, and it spent skill points badly: Pip cast Lightning Bolt (15 SP) to finish a Scruffy Dog on 5 HP. `botOrders` in `shared/clans/bot.ts` now plans each member in the order they act (fastest first), keeping a running guess of the damage already planned on each enemy:
+
+1. **Heal first**: anyone under 45% HP, one heal each, with the smallest heal that covers most of the gap.
+2. **Spread**: go for the weakest enemy the plan hasn't already finished.
+3. **No overkill**: if a swing will probably finish it (at least 70% to hit, for enough damage), swing.
+4. **Spells when they beat a swing** (by 1.2 times) on that enemy, or "hits every enemy" when three or more are standing; the cheapest spell that does the job. Never Run.
+
+The orders keep the same shape, so the fight screen and the server replay are unchanged. The simulator now also prints the SP spent per fight. Tests: `shared/clans/bot.test.ts` (the 5 HP dog gets a swing; no piling onto an enemy already finished; two healers heal two different members; smallest heal that covers the gap; "hits every enemy" against three, not two; knocked out members skip; same fight, same orders). Three older tests that played one bot round and expected the fight still open now play an all-Guard round (the bot can now win in one round), and the round plan test letters duplicate enemy names as the screen does.
+
+**Tried and left out**, because the simulator lost many more fights with them: keeping SP back for one heal (a mixed clan lost 3 points of wins at depth 0 and up to 19 points at +5, as the Wizard and Knight know heals too), casting at the enemy with most HP left instead of the one being finished (about 5 points), and asking a spell to beat a swing by half again plus 3 (about 3 points).
+
+**Simulator, before → after** (`npm run clans:sim -- --offset N`, 20 clans, 60 days, Battle Cry right 70% of the time):
+
+| Depth | Lineup | Wins | Knock-outs a day | Rounds a fight | SP a fight | Level day 21 | Level day 42 |
+|---|---|---|---|---|---|---|---|
+| -1 | balanced | 98% → 99% | 3.91 → 3.98 | 3.1 → 3.0 | 29.8 → 26.0 | 14.9 → 15.5 | 18.3 → 18.3 |
+| -1 | fighters | 85% → 83% | 5.98 → 5.71 | 3.1 → 3.1 | 12.3 → 9.8 | 15.2 → 16.3 | 19.3 → 20.0 |
+| 0 | balanced | 97% → 97% | 6.00 → 6.12 | 3.5 → 3.4 | 32.6 → 29.0 | 16.1 → 16.5 | 18.3 → 18.2 |
+| 0 | fighters | 79% → 78% | 6.41 → 6.03 | 3.4 → 3.4 | 13.6 → 11.0 | 17.1 → 19.1 | 18.8 → 20.0 |
+| +1 | balanced | 94% → 94% | 7.86 → 7.97 | 4.0 → 3.9 | 34.7 → 31.8 | 16.7 → 16.8 | 18.1 → 18.2 |
+| +1 | fighters | 74% → 74% | 7.17 → 6.15 | 3.5 → 3.3 | 14.4 → 11.0 | 16.7 → 19.4 | 18.1 → 20.0 |
+| +3 | balanced | 87% → 87% | 9.52 → 9.55 | 4.8 → 4.6 | 37.7 → 35.1 | 16.6 → 16.7 | 17.9 → 17.7 |
+| +3 | fighters | 64% → 67% | 8.22 → 6.71 | 3.8 → 3.6 | 15.4 → 12.0 | 16.0 → 19.1 | 16.9 → 20.0 |
+| +4 | balanced | 81% → 84% | 9.97 → 10.15 | 5.0 → 4.8 | 37.5 → 35.4 | 16.1 → 16.5 | 17.3 → 17.3 |
+| +4 | fighters | 58% → 62% | 8.58 → 7.05 | 4.2 → 3.7 | 15.8 → 12.2 | 14.6 → 18.4 | 16.6 → 19.9 |
+| +5 | balanced | 77% → 78% | 10.08 → 10.26 | 5.0 → 4.9 | 35.7 → 34.8 | 14.5 → 15.8 | 16.9 → 16.9 |
+| +5 | fighters | 53% → 58% | 8.44 → 7.22 | 4.4 → 4.0 | 15.7 → 13.2 | 13.1 → 17.1 | 16.1 → 19.7 |
+
+Wins stay within 3 points everywhere except an all-fighters clan deep in the mine (+4 and +5), which wins 4-5 points more. That clan is also knocked out less and so levels much faster (19.1 instead of 17.1 by day 21): the plan is smarter, not the game easier for a careful player. The depth hint bands are unchanged; only their comment in `config.ts` was re-measured. (Run the simulator one at a time: two runs at once can mix up their results.)
+
+**Ideas for later**: Guard when badly hurt and no healer can reach you; tie-up spells (Ropes, Magic Chains) on the hardest hitter; a heal kept in hand only in long fights.
+
+- **Went live 27 Oct 2026** (afternoon, NZ time). Brought up to date with that day's `main`, then the type check, all 5,033 tests and the site build passed again. PR #42 merged; the "Test and publish" run passed and published the site. No migration, and the `clans` function was not redeployed (its built copy differs only in the depth hint comment).
+
+## Made-up hero names (27 Oct 2026, branch `clans-typed-names`)
+
+James asked for pupils to be able to name their own heroes, with the list kept as the default. This changes the hub's "nobody types a name" rule for hero names only, behind a teacher switch.
+
+- **What was built:** `checkTypedName` / `memberNameFrom` in `shared/clans/words.ts` (letters only with one space, dash or apostrophe; 2 to 12 long; tidied to capitals; a rude-word list matched with repeated letters allowed, some words only as a whole name or part so ordinary names like Cassius or Grape pass). `clanFromChoices` takes a made-up name only when the switch is on, and now refuses two heroes with the same name (any capitals). The Creator keeps the list as each hero's default, with a "Make up my own name" button per hero. The `clans` function reads the switch from `clan_extras()` on every request. Hero names are never shown to classmates (only the clan name is).
+- **Migration `20261027000400_clans_typed_names.sql`:** `app_settings.clan_typed_names` (off), `typedNames` in `clans_settings()`, `teacher_set_clan_typed_names()`, `heroes` in `teacher_clan_info()`, `clan_member_names()` (a copy of the list; `shared/clans/words.test.ts` checks it matches) and `teacher_list_hero_names()`, which swaps made-up names for unused list names and bumps the clan's version.
+- **Teacher page:** the switch in the Clan Quest panel; each pupil's hero names, with "Swap made-up names for list names" when one is made up.
+- **Tests:** shared rules, the server function, the Creator screen and the teacher page (vitest, all passing). `supabase/tests/database/clans_typed_names.test.sql` is written but **not yet run** (no local database on the machine it was written on).
+- **Not done:** renaming heroes of an existing clan (a pupil would need a new clan, or a later `rename` action).
+- **Go-live, one step at a time with James:** run `npm run test:db`; check the migration number is still free; apply the migration; deploy the `clans` function; merge to `main`. The switch stays off until a teacher turns it on.

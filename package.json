@@ -58,7 +58,9 @@
     "trader:preview": "vite build --config vite.trader-preview.config.ts",
     "archery:preview": "vite build --config vite.archery-preview.config.ts",
     "archery:single": "ARCHERY_INLINE=1 vite build --config vite.archery-preview.config.ts && node scripts/inline-monsters-preview.mjs dist-preview-archery archery-test-page.html",
-    "archery:determinism": "node scripts/archery-determinism.mjs"
+    "archery:determinism": "node scripts/archery-determinism.mjs",
+    "kingdom:sim": "node scripts/kingdom-sim.mjs",
+    "kingdom:preview": "vite build --config vite.kingdom-preview.config.ts"
   },
   "engines": {
     "node": ">=22"

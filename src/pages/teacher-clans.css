@@ -1,0 +1,11 @@
+/* Clan Quest's village groups on the teacher pages: the name box and each pupil's group are 44 px targets. */
+.cq-teacher__villages select,
+.cq-teacher__villages input[type='text'] {
+  min-height: 44px;
+  font: inherit;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}

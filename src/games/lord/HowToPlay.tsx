@@ -24,7 +24,7 @@ export function HowToPlayBody() {
       <ul>
         <li><strong>Shop:</strong> buy weapons and armour (you can sell them back). You need enough strength or defence.</li>
         <li><strong>Healer:</strong> mends your health for gold.</li>
-        <li><strong>Bank:</strong> keeps gold safe. From level 4 the banker asks a question for a little interest.</li>
+        <li><strong>Bank:</strong> keeps gold safe. From level 4, once a day, the banker pays 1 gold for every 20 gold you have saved, if you can work out how much that is.</li>
         <li><strong>Inn:</strong> a song, the riddle of the day, and a number-guessing game. No gambling.</li>
         <li><strong>Training grounds:</strong> when you have enough experience, fight your master to go up a level. Three questions first make you a little stronger.</li>
         <li><strong>The Arena:</strong> {ARENA_FIGHTS_PER_DAY} fights a day against classmates’ heroes and computer heroes. Losing costs nothing.</li>

@@ -1,9 +1,9 @@
 /**
- * Gem Keep on the teacher page: the school-wide settings, the class's hardest facts, and each
- * student's levels and 12 × 12 times-table grid. Loaded only when the teacher page opens, so
- * the levels and maths code stay out of everyone else's download.
+ * Gem Keep on the teacher pages: its settings and class report in the Games table's drawer (for the header's class), and each
+ * student's levels and 12 × 12 times-table grid. Loaded only when opened, so the levels and maths code stay out of everyone
+ * else's download.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CAMPAIGN } from '../../shared/gem-keep/levels';
 import { TABLES } from '../../shared/maths/config';
 import { factKey, parseFactKey } from '../../shared/maths/facts';
@@ -17,8 +17,10 @@ import {
   type StudentGemKeep,
 } from '../data/gemKeep';
 import { FriendlyError } from '../data/profile';
-import { useTeacherClass } from '../teacher/TeacherClass';
+import { SettingChips, SettingChoice, SettingNumber, SettingToggle, useSetting, type Choice } from '../teacher/Settings';
 import type { GemKeepSettings } from '../games/gem-keep/settings';
+import type { HardestRow } from '../games/types';
+import { shortCache } from '../teacher/shortCache';
 import './teacher-gem-keep.css';
 
 function errorText(error: unknown) {
@@ -44,170 +46,138 @@ export const MASTERY: Record<Mastery, { label: string; mark: string; about: stri
   fluent: { label: 'Fluent', mark: 'F', about: 'right and quick on two different days' },
 };
 
-/** The school-wide Gem Keep settings and the class view. */
-export function GemKeepTeacherPanels() {
+/**
+ * The drawer on the Games table (docs/TEACHER-VIEW-PLAN.md, 4.5), for the header's class: Gem Keep's settings, then its class
+ * report. Gem Keep is always on, so there is no switch here.
+ */
+export function GemKeepTeacherSettings({ classId }: { classId: string }) {
   return (
     <>
-      <GemKeepSettingsPanel />
-      <GemKeepClassPanel />
+      <GemKeepSettingsPanel classId={classId} />
+      <GemKeepClassReport classId={classId} />
     </>
   );
 }
 
-function GemKeepSettingsPanel() {
-  const { classId, ready } = useTeacherClass();
-  const [settings, setSettings] = useState<GemKeepSettings | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
+const MODES: Choice<GemKeepSettings['mode']>[] = [
+  { value: 'calm', label: 'Calm', detail: 'The game pauses while a question is up.' },
+  { value: 'challenge', label: 'Challenge', detail: 'The game keeps going, slowly, while a question is up.' },
+];
 
+type Missing = 'level-4' | 'always' | 'never';
+const MISSING: Choice<Missing>[] = [
+  { value: 'level-4', label: 'From level 4' },
+  { value: 'always', label: 'Always' },
+  { value: 'never', label: 'Never' },
+];
+const toMissing = (m: GemKeepSettings['missingFactor']): Missing => (m === undefined ? 'level-4' : m ? 'always' : 'never');
+const fromMissing = (m: Missing): GemKeepSettings['missingFactor'] => (m === 'level-4' ? undefined : m === 'always');
+
+type Answer = 'typing' | 'choice';
+const ANSWERS: Choice<Answer>[] = [
+  { value: 'typing', label: 'Typing', detail: 'Students type each answer.' },
+  { value: 'choice', label: 'Multiple choice', detail: 'Students pick from four answers.' },
+];
+
+const TABLE_CHIPS = TABLES.map((t) => ({ value: t as number, label: `×${t}` }));
+
+function GemKeepSettingsPanel({ classId }: { classId: string }) {
+  const loaded = useSetting(() => fetchGemKeepSettings(classId), [classId]);
+  const s = loaded.value;
+  // Gem Keep saves all its settings at once, so each control's save starts from the newest settings, one save at a time
+  // (two quick changes to different controls can't undo each other).
+  const latest = useRef<GemKeepSettings | null>(null);
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
   useEffect(() => {
-    if (!ready) return;
-    setSettings(null);
-    setStatus(null);
-    fetchGemKeepSettings(classId)
-      .then(setSettings)
-      .catch((error) => setStatus(errorText(error)));
-  }, [ready, classId]);
+    latest.current = loaded.value;
+  }, [loaded.value]);
 
-  async function change(next: GemKeepSettings) {
-    const before = settings;
-    setSettings(next);
-    setStatus('Saving…');
-    try {
-      await saveGemKeepSettings(next, classId);
-      setStatus('Saved. Students get the new settings next time they open Gem Keep.');
-    } catch (error) {
-      setSettings(before);
-      setStatus(errorText(error));
-    }
+  function saver<K extends keyof GemKeepSettings>(key: K) {
+    return (value: GemKeepSettings[K]) => {
+      const run = queue.current.then(async () => {
+        const before = latest.current;
+        if (!before) throw new Error('not loaded');
+        const next = { ...before, [key]: value };
+        latest.current = next;
+        try {
+          await saveGemKeepSettings(next, classId);
+        } catch (error) {
+          if (latest.current) latest.current = { ...latest.current, [key]: before[key] };
+          throw error;
+        }
+      });
+      queue.current = run.catch(() => undefined);
+      return run;
+    };
   }
+  const failed = loaded.failed;
 
   return (
-    <section className="panel gk-teacher" aria-labelledby="gk-settings-title">
+    <section className="panel gk-teacher teacher__switch" aria-labelledby="gk-settings-title">
       <h2 id="gk-settings-title" className="panel__title">
         Gem Keep settings
       </h2>
-      <p>For every student. The levels decide which times tables come up; here you can switch tables off.</p>
-      {settings && (
-        <div className="gk-teacher__settings">
-          <fieldset className="choice-group">
-            <legend>Questions</legend>
-            <div className="choice-group__chips">
-              {(['calm', 'challenge'] as const).map((mode) => (
-                <label key={mode} className="chip">
-                  <input
-                    type="radio"
-                    name="gk-mode"
-                    checked={settings.mode === mode}
-                    onChange={() => void change({ ...settings, mode })}
-                  />
-                  <span>{mode === 'calm' ? 'Calm: the game pauses' : 'Challenge: the game keeps going, slowly'}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className="choice-group">
-            <legend>Times tables on</legend>
-            <div className="choice-group__chips">
-              {TABLES.map((t) => {
-                const on = settings.enabledTables.includes(t);
-                return (
-                  <label key={t} className="chip">
-                    <input
-                      type="checkbox"
-                      checked={on}
-                      disabled={on && settings.enabledTables.length === 1}
-                      onChange={() =>
-                        void change({
-                          ...settings,
-                          enabledTables: on
-                            ? settings.enabledTables.filter((x) => x !== t)
-                            : [...settings.enabledTables, t].sort((a, b) => a - b),
-                        })
-                      }
-                    />
-                    <span>×{t}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </fieldset>
-
-          <fieldset className="choice-group">
-            <legend>Missing-number questions (? × 8 = 56)</legend>
-            <div className="choice-group__chips">
-              {([
-                [undefined, 'From level 4'],
-                [true, 'Always'],
-                [false, 'Never'],
-              ] as const).map(([value, label]) => (
-                <label key={label} className="chip">
-                  <input
-                    type="radio"
-                    name="gk-missing"
-                    checked={settings.missingFactor === value}
-                    onChange={() => void change({ ...settings, missingFactor: value })}
-                  />
-                  <span>{label}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <div className="gk-teacher__row">
-            <label className="chip">
-              <input
-                type="checkbox"
-                checked={settings.division}
-                onChange={() => void change({ ...settings, division: !settings.division })}
-              />
-              <span>Division questions (56 ÷ 8)</span>
-            </label>
-            <label className="chip">
-              <input
-                type="checkbox"
-                checked={settings.multipleChoice}
-                onChange={() => void change({ ...settings, multipleChoice: !settings.multipleChoice })}
-              />
-              <span>Multiple choice instead of typing</span>
-            </label>
-            <label className="gk-teacher__pass">
-              <span>Level Key pass mark</span>
-              <select
-                value={settings.keyPassMark}
-                onChange={(e) => void change({ ...settings, keyPassMark: Number(e.target.value) })}
-              >
-                {[5, 6, 7, 8, 9, 10].map((n) => (
-                  <option key={n} value={n}>
-                    {n} out of 10
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </div>
-      )}
-      <p role="status" className="teacher__status">
-        {status}
-      </p>
+      <p>Changes reach students the next time they open Gem Keep.</p>
+      <SettingChoice label="Questions" options={MODES} value={s?.mode ?? null} loadFailed={failed} save={saver('mode')} />
+      <SettingChips
+        label="Times tables on"
+        about="The levels decide which times tables come up; here you can switch tables off."
+        options={TABLE_CHIPS}
+        value={s?.enabledTables ?? null}
+        loadFailed={failed}
+        save={saver('enabledTables')}
+      />
+      <SettingChoice
+        label="Missing numbers"
+        about="Questions like ? × 8 = 56. From level 4 means they start at the fourth level of the campaign."
+        options={MISSING}
+        value={s ? toMissing(s.missingFactor) : null}
+        loadFailed={failed}
+        save={(m) => saver('missingFactor')(fromMissing(m))}
+      />
+      <SettingToggle label="Division questions" about="Questions like 56 ÷ 8." value={s?.division ?? null} loadFailed={failed} save={saver('division')} />
+      <SettingChoice
+        label="How students answer"
+        options={ANSWERS}
+        value={s ? (s.multipleChoice ? 'choice' : 'typing') : null}
+        loadFailed={failed}
+        save={(a) => saver('multipleChoice')(a === 'choice')}
+      />
+      <SettingNumber
+        label="Level Key pass mark"
+        about="Right answers out of 10 a student needs to pass a Level Key, which opens the next level."
+        min={5}
+        max={10}
+        suffix="out of 10"
+        value={s?.keyPassMark ?? null}
+        loadFailed={failed}
+        save={saver('keyPassMark')}
+      />
     </section>
   );
 }
 
-function GemKeepClassPanel() {
+/** How the class is getting on: its hardest facts and how far its students have got. */
+function GemKeepClassReport({ classId }: { classId: string }) {
   const [data, setData] = useState<ClassGemKeep | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchClassGemKeep()
-      .then(setData)
-      .catch((error) => setFailed(errorText(error)));
-  }, []);
+    let current = true;
+    setData(null);
+    setFailed(null);
+    fetchClassGemKeep(classId)
+      .then((d) => current && setData(d))
+      .catch((error) => current && setFailed(errorText(error)));
+    return () => {
+      current = false;
+    };
+  }, [classId]);
 
   return (
     <section className="panel gk-teacher" aria-labelledby="gk-class-title">
       <h2 id="gk-class-title" className="panel__title">
-        Gem Keep: the class
+        Gem Keep: this class
         {data && <span className="panel__count">{data.players} playing</span>}
       </h2>
       {failed ? (
@@ -215,7 +185,9 @@ function GemKeepClassPanel() {
       ) : !data ? (
         <p className="panel__empty">Loading…</p>
       ) : data.players === 0 ? (
-        <p className="panel__empty">No students have played Gem Keep since the new season started.</p>
+        <p className="panel__empty">
+          No students in this class have played Gem Keep since the new season started.
+        </p>
       ) : (
         <div className="gk-teacher__class">
           <table className="stats-table">
@@ -273,6 +245,16 @@ function GemKeepClassPanel() {
   );
 }
 
+const keysText = (keys: number) => `${keys} Level Key${keys === 1 ? '' : 's'} passed`;
+
+/** One line for the student's folded Games row: "12 of 30 stars, 4 Level Keys passed", or nothing before they've played. */
+export async function gemKeepStudentSummary(student: string): Promise<string | null> {
+  const data = await fetchStudentGemKeep(student);
+  if (data.levels.length === 0) return null;
+  const stars = data.levels.reduce((n, l) => n + l.stars, 0);
+  return `${stars} of ${CAMPAIGN.length * 3} stars, ${keysText(data.levels.filter((l) => l.keyPassed).length)}`;
+}
+
 /** One student's Gem Keep, inside their panel on the teacher page. */
 export function GemKeepStudentPanel({ student }: { student: string }) {
   const [data, setData] = useState<StudentGemKeep | null>(null);
@@ -298,7 +280,7 @@ export function GemKeepStudentPanel({ student }: { student: string }) {
   return (
     <div className="gk-teacher__student">
       <h3 className="gk-teacher__heading">
-        Gem Keep: {stars} of {CAMPAIGN.length * 3} stars, {keys} Level Key{keys === 1 ? '' : 's'} passed
+        Gem Keep: {stars} of {CAMPAIGN.length * 3} stars, {keysText(keys)}
       </h3>
       <ol className="gk-teacher__levels" aria-label="Gem Keep levels">
         {CAMPAIGN.map((level) => {
@@ -372,4 +354,10 @@ export function FactGrid({ facts }: { facts: FactStats[] }) {
       </ul>
     </div>
   );
+}
+
+/** The class's hardest times-tables facts, for the merged table on the Maths tab (stage 5). */
+export async function gemKeepHardest(classId: string): Promise<HardestRow[]> {
+  const data = await shortCache(`gem-keep:${classId}`, () => fetchClassGemKeep(classId));
+  return data.hardest.map((f) => ({ question: factLabel(f.key), topic: 'Times tables', attempts: f.attempts, correct: f.correct, students: f.students }));
 }

@@ -1,0 +1,12 @@
+{
+  "boards": {
+    "1": "board-level-1-1.png", "2": "board-level-2-1.png", "3": "board-level-3-2.png", "4": "board-level-4-4.png", "5": "board-level-5-4.png",
+    "6": "board-level-6-3.png", "7": "board-level-7-4.png", "8": "board-level-8-4.png", "9": "board-level-9-4.png", "10": "board-level-10-2.png"
+  },
+  "campaign": "campaign-3.png",
+  "sprites": {
+    "tower-1": "tower-1-6.png", "tower-2": "tower-2-3.png", "tower-3": "tower-3-4.png", "keep": "keep-1.png", "rock": "rock-5.png",
+    "gem-red": "gem-red-2.png", "gem-blue": "gem-blue-1.png", "gem-green": "gem-green-2.png", "gem-yellow": "gem-yellow-1.png",
+    "walker": "walker-2.png", "runner": "runner-2.png", "brute": "brute-1.png", "swarm": "swarm-4.png", "boss": "boss-4.png"
+  }
+}

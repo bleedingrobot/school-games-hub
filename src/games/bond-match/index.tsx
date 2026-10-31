@@ -1,11 +1,11 @@
 import { lazy } from 'react';
 import type { GameDefinition } from '../types';
 import { TEXT } from './strings';
-import { useBondMatchEnabled } from './switch';
+import { saveBondMatchEnabled } from '../../data/bondMatch';
+import { useBondMatchClassSwitch, useBondMatchEnabled } from './switch';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const BondMatchHub = lazy(() => import('./BondMatchHub').then((m) => ({ default: m.BondMatchHub })));
-const BondMatchTeacherPanels = lazy(() => import('../../pages/TeacherBondMatch').then((m) => ({ default: m.BondMatchTeacherPanels })));
 const BondMatchStudentPanel = lazy(() => import('../../pages/TeacherBondMatch').then((m) => ({ default: m.BondMatchStudentPanel })));
 
 function BondMatchIcon({ size = 64 }: { size?: number }) {
@@ -33,6 +33,15 @@ export const bondMatch: GameDefinition = {
   noBots: true,
   group: 'easy-maths',
   useTeacherSwitch: useBondMatchEnabled,
-  TeacherPanels: BondMatchTeacherPanels,
-  StudentPanel: BondMatchStudentPanel,
+  // The teacher's Games table: just the on/off switch (nothing to open), and the student page's stars.
+  teacher: {
+    switch: {
+      useValue: useBondMatchClassSwitch,
+      save: (on, classId) => saveBondMatchEnabled(on, classId),
+      about:
+        'A memory card game where two cards match when they make a number together (to 10, 100, 1, and more). Off hides it from students and nothing is saved.',
+    },
+    StudentPanel: BondMatchStudentPanel,
+    studentSummary: (student) => import('../../pages/TeacherBondMatch').then((m) => m.bondMatchSummary(student)),
+  },
 };

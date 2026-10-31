@@ -129,7 +129,7 @@ describe('course picker', () => {
   it('races a ghost chosen from the list, and says so when there is none yet', async () => {
     loadGhost.mockResolvedValueOnce({ name: 'Quick Kea', steps: 900, inputs: '3x60', doors: [] });
     open();
-    fireEvent.change(screen.getByLabelText(/Race a ghost/), { target: { value: 'next' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Just ahead' }));
     const card = screen.getByRole('heading', { name: 'Boulder Beach' }).closest('li')!;
     fireEvent.click(within(card).getByRole('button', { name: 'Play Boulder Beach' }));
     expect(await screen.findByText('Running boulder-beach in up with ghost Quick Kea')).toBeInTheDocument();
@@ -139,6 +139,21 @@ describe('course picker', () => {
     expect(await screen.findByText('Running boulder-beach in up')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'exit' }));
     expect(screen.getByText(/No ghost to race on that course yet/)).toBeInTheDocument();
+  });
+
+  it('offers the four ghost choices as one radio group, and asks for each one', async () => {
+    open();
+    const group = screen.getByRole('radiogroup', { name: /Race a ghost/ });
+    expect(within(group).getAllByRole('radio').map((r) => (r as HTMLInputElement).labels?.[0].textContent)).toEqual(['None', 'My best', 'Just ahead', 'Fastest']);
+    expect(screen.getByRole('radio', { name: 'None' })).toBeChecked();
+    for (const [name, kind] of [['My best', 'mine'], ['Fastest', 'top']] as const) {
+      fireEvent.click(screen.getByRole('radio', { name }));
+      expect(screen.getByRole('radio', { name })).toBeChecked();
+      fireEvent.click(within(screen.getByRole('heading', { name: 'Boulder Beach' }).closest('li')!).getByRole('button', { name: 'Play Boulder Beach' }));
+      await screen.findByText('Running boulder-beach in up');
+      expect(loadGhost).toHaveBeenLastCalledWith('boulder-beach', 'up', kind, false);
+      fireEvent.click(screen.getByRole('button', { name: 'exit' }));
+    }
   });
 
   it('starts no ghost by default', async () => {
@@ -181,66 +196,51 @@ describe('maths in the picker and at the start of a run', () => {
   const play = () => fireEvent.click(within(screen.getByRole('heading', { name: 'Boulder Beach' }).closest('li')!).getByRole('button', { name: 'Play Boulder Beach' }));
   const mathsSetup = { seed: 'm1-1792000000-abababababababababababab', stamp: 'stamp', ...SETUP, maths: true, rescue: true, doors: [1], gates: [{ slot: 0, labels: ['54', '56'], arrow: null, question: { slot: 0, parts: ['7', '×', '8', '=', '?'], spoken: 's' } }] };
 
-  it('shows no maths choices when the teacher has maths off', () => {
+  it('has no maths or read time checkboxes at all, and no maths when the teacher has maths off', async () => {
     open();
-    expect(screen.queryByLabelText(/Maths:/)).toBeNull();
-    expect(screen.queryByLabelText(/Read time/)).toBeNull();
+    await waitFor(() => expect(fetchMarbleSwitches).toHaveBeenCalled());
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    expect(screen.queryByText('With maths')).toBeNull();
+    play();
+    await screen.findByText('Running boulder-beach in up');
+    expect(startRun).toHaveBeenCalledWith('boulder-beach', 'up', false);
   });
 
-  it('lets a student choose maths when the teacher allows it, and remembers the choice', async () => {
-    fetchMarbleSwitches.mockResolvedValue({ maths: 'choose', rescue: true });
-    open();
-    const chip = await screen.findByLabelText('Maths: on');
-    expect(chip).toBeChecked();
-    expect(screen.getByLabelText(/Read time/)).toBeChecked();
-    fireEvent.click(chip);
-    expect(screen.getByLabelText('Maths: off')).not.toBeChecked();
-    expect(screen.queryByLabelText(/Read time/)).toBeNull();
-    expect(JSON.parse(localStorage.getItem('marble-rush-prefs-v1:student-1')!)).toMatchObject({ maths: false });
-  });
-
-  it('asks for a maths run when the student wants it, and plays with the setup the server sent', async () => {
-    fetchMarbleSwitches.mockResolvedValue({ maths: 'choose', rescue: true });
+  it.each(['choose', 'on'])('always asks for maths (and read time) when the teacher says %s, with no student choice', async (mode) => {
+    fetchMarbleSwitches.mockResolvedValue({ maths: mode, rescue: true });
     startRun.mockResolvedValue(mathsSetup);
     open();
-    await screen.findByLabelText('Maths: on');
+    await screen.findAllByText('With maths');
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    expect(screen.queryByText(/Maths: /)).toBeNull();
     play();
     expect(await screen.findByText('Running boulder-beach in up with maths')).toBeInTheDocument();
     expect(startRun).toHaveBeenCalledWith('boulder-beach', 'up', true);
     expect(screen.getByText('Doors 1 read time')).toBeInTheDocument();
   });
 
-  it('asks for a plain run when the student turned maths off', async () => {
-    fetchMarbleSwitches.mockResolvedValue({ maths: 'choose', rescue: true });
-    open();
-    fireEvent.click(await screen.findByLabelText('Maths: on'));
-    play();
-    await screen.findByText('Running boulder-beach in up');
-    expect(startRun).toHaveBeenCalledWith('boulder-beach', 'up', false);
-  });
-
-  it('asks for maths when the teacher says on for everyone, with no choice', async () => {
-    fetchMarbleSwitches.mockResolvedValue({ maths: 'on', rescue: true });
-    open();
-    expect(await screen.findByText(/Maths is on/)).toBeInTheDocument();
-    expect(screen.queryByLabelText('Maths: on')).toBeNull();
-    play();
-    await screen.findByText('Running boulder-beach in up');
-    expect(startRun).toHaveBeenCalledWith('boulder-beach', 'up', true);
-  });
-
-  it('keeps times with maths apart from times without', async () => {
+  it('ignores an old saved maths-off choice', async () => {
+    localStorage.setItem('marble-rush-prefs-v1:student-1', JSON.stringify({ maths: false, readTime: false }));
     fetchMarbleSwitches.mockResolvedValue({ maths: 'choose', rescue: true });
     startRun.mockResolvedValue(mathsSetup);
     open();
-    await screen.findByLabelText('Maths: on');
+    await screen.findAllByText('With maths');
+    play();
+    await screen.findByText('Running boulder-beach in up with maths');
+    expect(startRun).toHaveBeenCalledWith('boulder-beach', 'up', true);
+    expect(screen.getByText('Doors 1 read time')).toBeInTheDocument();
+  });
+
+  it('keeps times with maths apart from times without', async () => {
+    fetchMarbleSwitches.mockResolvedValue({ maths: 'on', rescue: true });
+    startRun.mockResolvedValue(mathsSetup);
+    open();
+    await screen.findAllByText('With maths');
     play();
     await screen.findByText('Running boulder-beach in up with maths');
     fireEvent.click(screen.getByRole('button', { name: 'finish' }));
     fireEvent.click(screen.getByRole('button', { name: 'exit' }));
     expect(within(screen.getByRole('heading', { name: 'Boulder Beach' }).closest('li')!).getByText(/Best: 0:03.33/)).toBeInTheDocument();
-    fireEvent.click(screen.getByLabelText('Maths: on'));
-    expect(within(screen.getByRole('heading', { name: 'Boulder Beach' }).closest('li')!).getByText('No time yet')).toBeInTheDocument();
     expect(localStorage.getItem('marble-rush-bests-v1-maths:student-1')).toContain('boulder-beach');
     expect(localStorage.getItem('marble-rush-bests-v1:student-1')).toBeNull();
   });
@@ -255,7 +255,7 @@ describe('maths in the picker and at the start of a run', () => {
     startRun.mockResolvedValue({ ...mathsSetup, maths: true });
     fetchMarbleSwitches.mockResolvedValue({ maths: 'on', rescue: true });
     open();
-    await screen.findByText(/Maths is on/);
+    await screen.findAllByText('With maths');
     play();
     await screen.findByText('Running boulder-beach in up with maths');
     fireEvent.click(screen.getByRole('button', { name: 'answer' }));
@@ -266,7 +266,7 @@ describe('maths in the picker and at the start of a run', () => {
     fetchMarbleSwitches.mockResolvedValue({ maths: 'on', rescue: true });
     startRun.mockResolvedValue(null);
     open();
-    await screen.findByText(/Maths is on/);
+    await screen.findAllByText('With maths');
     play();
     await screen.findByText('Running boulder-beach in up');
     fireEvent.click(screen.getByRole('button', { name: 'exit' }));
@@ -278,7 +278,7 @@ describe('maths in the picker and at the start of a run', () => {
     fetchMarbleSwitches.mockResolvedValue({ maths: 'choose', rescue: true });
     loadBoard.mockResolvedValue({ top: [], me: null, total: 0 });
     open();
-    await screen.findByLabelText('Maths: on');
+    await screen.findAllByText('With maths');
     const card = screen.getByRole('heading', { name: 'Boulder Beach' }).closest('li')!;
     const details = card.querySelector('details.marble-board') as HTMLDetailsElement;
     details.open = true;
@@ -305,7 +305,7 @@ describe('how to play', () => {
   it('explains the maths when the teacher allows it, with the numbers from the game', async () => {
     fetchMarbleSwitches.mockResolvedValue({ maths: 'choose', rescue: true });
     open();
-    await screen.findByLabelText('Maths: on');
+    await screen.findAllByText('With maths');
     fireEvent.click(screen.getByRole('button', { name: 'How to play' }));
     for (const name of ['Answer gates', 'Pit stops and question stops', 'Rescue questions', 'Number gems', 'Guess your time', 'Your maths records']) {
       expect(screen.getByRole('heading', { name })).toBeInTheDocument();

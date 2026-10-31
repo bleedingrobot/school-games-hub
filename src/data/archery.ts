@@ -22,6 +22,7 @@ import { forgetSettings } from './settingsMemory';
 import type { PublicQuestion } from '../../shared/maths/serverQuestions';
 import type { BotLevel } from '../../shared/archery/bot';
 import type { ShopKind, ShopProblem } from '../../shared/archery/shop';
+import type { SetKind } from '../../shared/archery/speed';
 import { parseDuel, parseHere, type DuelRow, type HereReply } from '../../shared/archery/duel';
 import type { PlayerSetup, Shot, WorldId } from '../../shared/archery/types';
 import type { ArmoryState } from '../../supabase/functions/archery/handler';
@@ -64,12 +65,24 @@ export interface RoundQuestion {
   limitMs: number;
 }
 
+/** Which question set to start: a speed round, the loot chest after a fight, or a restock between rounds. */
+export type SetRequest =
+  | { kind: 'speed' }
+  | { kind: 'supply' }
+  | { kind: 'chest'; fight: number }
+  | { kind: 'chest'; duel: number }
+  | { kind: 'restock'; fight: number; step: number };
+
 export interface RoundStart extends RoundQuestion {
   seed: string;
-  /** Does this round earn coins (one of the day's first rounds) or is it practice? */
+  kind: SetKind;
+  /** Does this set earn coins (today's maths coins aren't used up) or is it practice? */
   earns: boolean;
+  /** Coins for each right answer in time, before any streak bonus. */
+  perRight: number;
   questions: number;
-  roundsLeft: number;
+  /** Coins maths can still earn today. */
+  coinsLeft: number;
 }
 
 export interface RoundAnswer {
@@ -153,8 +166,8 @@ export function archeryApi(send: Transport, player = 'me') {
   }
 
   const api = {
-    load: () => ask<{ state: ArmoryState; roundsLeft: number }>({ action: 'load' }),
-    roundStart: () => ask<RoundStart>({ action: 'round-start' }),
+    load: () => ask<{ state: ArmoryState; coinsLeft: number }>({ action: 'load' }),
+    roundStart: (set: SetRequest = { kind: 'speed' }) => ask<RoundStart>({ action: 'round-start', ...set }),
     /** `value` null means the timer ran out. */
     roundAnswer: (seed: string, slot: number, value: number | null, ms: number) =>
       ask<RoundAnswer>(value === null ? { action: 'round-answer', seed, slot, timedOut: true } : { action: 'round-answer', seed, slot, value, ms: Math.round(ms) }),

@@ -8,6 +8,6 @@ import { ClanQuest } from '../../src/games/clans';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ClanQuest />
+    <ClanQuest typedNames />
   </StrictMode>,
 );

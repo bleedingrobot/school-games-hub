@@ -6,10 +6,6 @@
 .gk-teacher > p {
   margin: 0;
 }
-.gk-teacher__settings {
-  display: grid;
-  gap: 14px;
-}
 /* Fieldsets don't shrink below their content unless told to; long chips wrap on phones. */
 .gk-teacher fieldset {
   min-width: 0;
@@ -45,6 +41,12 @@
 }
 .gk-teacher__class .stats-table + .stats-table {
   margin-top: 0;
+}
+/* A table too wide for a phone scrolls sideways inside its card instead of poking out of it. */
+.gk-teacher__wide {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 /* One student. */

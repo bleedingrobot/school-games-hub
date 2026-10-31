@@ -144,17 +144,17 @@ describe('Training before games', () => {
     expect(screen.queryByText('The game')).toBeNull();
     expect(screen.getByRole('link', { name: /Today’s session/ })).toHaveAttribute('href', '/training');
     expect(screen.getByRole('link', { name: /Quick looks/ })).toHaveAttribute('href', '/training?quick=1');
-    expect(screen.getByText(/stay open for 6 hours/)).toBeInTheDocument();
+    expect(screen.getByText(/stay open for 2 hours/)).toBeInTheDocument();
   });
 
-  it('opens the games for 6 hours after a session', async () => {
-    server.lock = { on: true, lastFinishedAt: Date.now() - 5 * HOUR };
+  it('opens the games for 2 hours after a session', async () => {
+    server.lock = { on: true, lastFinishedAt: Date.now() - HOUR - 59 * 60_000 };
     show(game);
     expect(await screen.findByText('The game')).toBeInTheDocument();
   });
 
-  it('locks them again after 6 hours', async () => {
-    server.lock = { on: true, lastFinishedAt: Date.now() - 6 * HOUR - 60_000 };
+  it('locks them again after 2 hours', async () => {
+    server.lock = { on: true, lastFinishedAt: Date.now() - 2 * HOUR - 60_000 };
     show(game);
     expect(await screen.findByRole('heading', { name: 'Training first!' })).toBeInTheDocument();
   });

@@ -59,9 +59,10 @@ export interface ClanStats {
   classRaids: number;
   cries: number;
   villageBuilt: number;
+  monsterSlain: number;
 }
 
-export const NO_STATS: ClanStats = { mineWins: 0, bossWins: 0, warWins: 0, kingdomRaids: 0, classRaids: 0, cries: 0, villageBuilt: 0 };
+export const NO_STATS: ClanStats = { mineWins: 0, bossWins: 0, warWins: 0, kingdomRaids: 0, classRaids: 0, cries: 0, villageBuilt: 0, monsterSlain: 0 };
 
 /** Add what a request earned to the lifetime counts. */
 export function addEarned(stats: ClanStats, e: Partial<Earned>): ClanStats {
@@ -72,7 +73,7 @@ export function addEarned(stats: ClanStats, e: Partial<Earned>): ClanStats {
   };
 }
 
-export type AchievementMeasure = 'clan_wins' | 'clan_bosses' | 'clan_level' | 'clan_buildings' | 'clan_wars' | 'clan_village' | 'clan_cries';
+export type AchievementMeasure = 'clan_wins' | 'clan_bosses' | 'clan_level' | 'clan_buildings' | 'clan_wars' | 'clan_village' | 'clan_cries' | 'clan_monster';
 
 export interface AchievementDef {
   id: string;
@@ -84,29 +85,34 @@ export interface AchievementDef {
   how: string;
 }
 
-/** The eight achievements. The same ids, names, measures and goals are in the migration (a test keeps them equal). */
+/** The achievements. The same ids, names, measures and goals are in the migration (a test keeps them equal). */
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: 'cq-first-win', name: 'First win', emoji: '⚔️', measure: 'clan_wins', goal: 1, how: 'Win a fight in the Mines.' },
   { id: 'cq-first-boss', name: 'Boss beaten', emoji: '👹', measure: 'clan_bosses', goal: 1, how: 'Beat a boss deep in the Mines.' },
   { id: 'cq-level-10', name: 'Level 10', emoji: '🛡️', measure: 'clan_level', goal: 10, how: 'Get a clan member to level 10.' },
   { id: 'cq-level-20', name: 'Level 20', emoji: '🏅', measure: 'clan_level', goal: 20, how: 'Get a clan member to level 20.' },
-  { id: 'cq-buildings-5', name: 'Five buildings', emoji: '🏰', measure: 'clan_buildings', goal: 5, how: 'Have five buildings in your empire.' },
+  { id: 'cq-buildings-5', name: 'Five buildings', emoji: '🏰', measure: 'clan_buildings', goal: 5, how: 'Have five different buildings in your village.' },
   { id: 'cq-first-war', name: 'Friendly War win', emoji: '🤝', measure: 'clan_wars', goal: 1, how: 'Win a Friendly War.' },
-  { id: 'cq-village', name: 'Village builders', emoji: '🔨', measure: 'clan_village', goal: 1, how: 'Vote in a week when the class builds something in the village.' },
+  { id: 'cq-village', name: 'Village builders', emoji: '🔨', measure: 'clan_village', goal: 1, how: 'Take a building to level 3.' },
   { id: 'cq-cries-50', name: 'Loud and right', emoji: '📣', measure: 'clan_cries', goal: 50, how: 'Get 50 Battle Cry questions right.' },
+  // The database sets stats.villageBuilt to 2 when a clan's whole village is at top level (cq-village needs 1, which a level-3 building gives).
+  { id: 'cq-master-builder', name: 'Master Builder', emoji: '🏰', measure: 'clan_village', goal: 2, how: 'Take every building in your village to its top level.' },
+  // The database sets stats.monsterSlain when a clan first beats the season monster (clan_monster_try).
+  { id: 'cq-giant-slayer', name: 'Giant Slayer', emoji: '🗡️', measure: 'clan_monster', goal: 1, how: 'Beat the season monster in the last week of a season.' },
 ];
 
 /** How far along each measure is, from the clan and its lifetime counts. */
 export function measures(clan: Clan, stats: ClanStats): Record<AchievementMeasure, number> {
-  const plots = clan.empire?.plots ?? [];
+  const levels = clan.empire?.version === 2 ? Object.values(clan.empire.levels) : [];
   return {
     clan_wins: stats.mineWins + stats.bossWins,
     clan_bosses: stats.bossWins,
     clan_level: clan.members.reduce((best, m) => Math.max(best, m.level), 0),
-    clan_buildings: plots.filter((p) => p.building).length,
+    clan_buildings: levels.filter((n) => n > 0).length,
     clan_wars: stats.warWins,
     clan_village: stats.villageBuilt,
     clan_cries: stats.cries,
+    clan_monster: stats.monsterSlain ?? 0,
   };
 }
 

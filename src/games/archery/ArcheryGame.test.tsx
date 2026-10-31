@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DuelRow } from '../../../shared/archery/duel';
+import { START_COINS } from '../../../shared/archery/shop';
 import { markQuestion } from '../../../shared/archery/speed';
 
 // The fight's picture is a stand-in (no canvas here); everything else is the real game on the trial server, with the
@@ -62,9 +63,9 @@ describe('Archery Challenge', () => {
           fireEvent.keyDown(document.querySelector('.question')!, { key });
         });
       }
-      await waitFor(() => expect(trial.data.pupils['preview-pupil'].coins).toBe(10 * (slot + 1)));
+      await waitFor(() => expect(trial.data.pupils['preview-pupil'].coins).toBe(START_COINS + 10 * (slot + 1)));
     }
-    expect(screen.getAllByText(/20/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/120/).length).toBeGreaterThan(0);
   });
 
   it('buys in the Armory, packs the quiver, and starts a fight from the server\'s seed', async () => {
@@ -72,16 +73,19 @@ describe('Archery Challenge', () => {
     await screen.findByRole('heading', { name: /Archery/ });
     trial.data.pupils['preview-pupil'] = { coins: 300, gear: {}, shields: [], bows: [], spent: 0, best: {}, rounds: [] };
     fireEvent.click(screen.getByRole('button', { name: 'Armory' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Buy Steel Arrow for 50 coins' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Buy Steel Arrow for 25 coins' }));
     expect(await screen.findByText('Bought 2 Steel Arrows!')).toBeTruthy();
     fireEvent.click(screen.getByRole('tab', { name: 'Shields' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Buy Wooden Shield for 100 coins' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Buy Wooden Shield for 50 coins' }));
     await screen.findByText('Bought Wooden Shield!');
-    expect(trial.data.pupils['preview-pupil']).toMatchObject({ coins: 150, gear: { steel: 2 }, shields: ['wood'] });
+    expect(trial.data.pupils['preview-pupil']).toMatchObject({ coins: 225, gear: { steel: 2 }, shields: ['wood'] });
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Snow' }));
     fireEvent.click(await screen.findByRole('button', { name: /Hawk/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Next: pack your quiver' }));
+    // The supply chest comes first: skip it straight to packing.
+    await screen.findByRole('heading', { name: 'Supply chest' });
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
     fireEvent.click(await screen.findByRole('button', { name: 'One more Steel Arrow' }));
     fireEvent.click(screen.getByRole('button', { name: /Wooden Shield/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Fight!' }));
@@ -103,7 +107,10 @@ describe('Archery Challenge', () => {
     setup();
     fireEvent.click(await screen.findByRole('button', { name: 'How to play' }));
     expect(await screen.findByRole('heading', { name: 'How to play' })).toBeTruthy();
-    expect(screen.getByText(/Each right answer in time earns 10 coins/)).toBeTruthy();
+    expect(screen.getByText(/10 coins for each one right in time/)).toBeTruthy();
+    expect(screen.getByText(/Each right answer earns 20 coins if you won, 10 if you didn't/)).toBeTruthy();
+    expect(screen.getByText(/Maths can earn up to 600 coins a day/)).toBeTruthy();
+    expect(screen.getByText(/starts everyone again with 100 coins/)).toBeTruthy();
   });
 });
 
@@ -209,8 +216,16 @@ describe('fights against classmates', () => {
     await ben.findByRole('heading', { name: 'Speedy Otter 7 left, so you win' }, { timeout: 4000 });
     expect(ben.getByText("No points this time, because the fight didn't finish.")).toBeTruthy();
     expect(hub.data.points).toEqual([]);
+    // Ben didn't leave, so he gets the loot chest (20 coins a right: he won); Skip goes home.
     fireEvent.click(ben.getByRole('button', { name: 'Done' }));
+    await ben.findByRole('heading', { name: 'Loot chest' });
+    expect(ben.getByText(/You won! Fill your chest: 3 questions, 20 coins for each one right!/)).toBeTruthy();
+    fireEvent.click(ben.getByRole('button', { name: 'Skip' }));
     await ben.findByRole('button', { name: 'Challenge a classmate' });
+    // Ana left, so she gets no chest.
+    fireEvent.click(ana.getByRole('button', { name: 'Done' }));
+    await ana.findByRole('button', { name: 'Challenge a classmate' });
+    expect(ana.queryByRole('heading', { name: 'Loot chest' })).toBeNull();
   }, 20_000);
 
   it('says so kindly when a classmate says no', async () => {

@@ -3,8 +3,8 @@ import { ALL_GAMES, GAMES, POWER_CLASH_ON, findGame } from './registry';
 import { BOT_LEVELS, isBotLevel, isRanked } from './types';
 
 describe('game registry', () => {
-  it('has chess, checkers, Wormholes & Black Holes, 101, Gem Keep, Power Clash, Maths Monsters, Dragon Maths, Clan Quest, Marble Rush, Bond Match, Mine Runner and Archery Challenge', () => {
-    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery']);
+  it('has chess, checkers, Wormholes & Black Holes, 101, Gem Keep, Power Clash, Maths Monsters, Dragon Maths, Clan Quest, Marble Rush, Bond Match, Mine Runner, Archery Challenge and Kingdom Keeper', () => {
+    expect(GAMES.map((g) => g.id)).toEqual(['chess', 'checkers', 'space', '101', 'gem-keep', 'power-clash', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'kingdom']);
   });
 
   it('shows Power Clash on the dashboard while the switch is on', () => {
@@ -33,14 +33,14 @@ describe('game registry', () => {
     const inGroup = (group: string) => ALL_GAMES.filter((g) => g.group === group).map((g) => g.id);
     expect(inGroup('no-maths')).toEqual(['chess', 'checkers', '101', 'power-clash']);
     expect(inGroup('easy-maths')).toEqual(['space', 'gem-keep', 'bond-match', 'mine', 'archery']);
-    expect(inGroup('complex-maths')).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'marble']);
+    expect(inGroup('complex-maths')).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'marble', 'kingdom']);
     expect(ALL_GAMES.filter((g) => !g.group)).toEqual([]);
   });
 
-  it('the games with a teacher switch and teacher panels say so themselves', () => {
-    expect(ALL_GAMES.filter((g) => g.useTeacherSwitch).map((g) => g.id)).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'bond-match', 'mine', 'archery']);
-    expect(ALL_GAMES.filter((g) => g.TeacherPanels).map((g) => g.id)).toEqual(['gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery']);
-    expect(ALL_GAMES.filter((g) => g.StudentPanel).map((g) => g.id)).toEqual(['gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'bond-match']);
+  it('the games with a teacher switch and teacher parts say so themselves', () => {
+    expect(ALL_GAMES.filter((g) => g.useTeacherSwitch).map((g) => g.id)).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'bond-match', 'mine', 'archery', 'kingdom']);
+    // The teacher contract (docs/TEACHER-VIEW-PLAN.md, stage 3).
+    expect(ALL_GAMES.filter((g) => g.teacher).map((g) => g.id)).toEqual(['space', 'gem-keep', 'monsters', 'dragon-maths', 'clan-quest', 'marble', 'bond-match', 'mine', 'archery', 'kingdom']);
   });
 
   it('finds games by id', () => {

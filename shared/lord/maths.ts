@@ -98,8 +98,18 @@ export function dragonStageOptions(result: Result): Pick<FightOptions, 'shield' 
   return {};
 }
 
-/** Bank interest question (optional, older pupils): a right answer adds a little interest, once a day. */
-export const interestFor = (bank: number, result: Result): number => (result === 'right' ? Math.floor(bank * 0.05) : result === 'hint' ? Math.floor(bank * 0.025) : 0);
+/**
+ * Bank interest (optional, from level 4, once a day). The banker pays 1 gold for every INTEREST_EVERY gold saved (5%)
+ * and asks the pupil to work out how much that is for their own savings. A right answer gets it all, a right answer
+ * after a hint gets half (rounded up), a wrong answer gets nothing (and is shown the right amount).
+ */
+export const INTEREST_EVERY = 20;
+/** The interest on these savings: the answer to the banker's question. */
+export const interestDue = (bank: number): number => Math.floor(Math.max(0, bank) / INTEREST_EVERY);
+export const interestFor = (bank: number, result: Result): number => {
+  const due = interestDue(bank);
+  return result === 'right' ? due : result === 'hint' ? Math.ceil(due / 2) : 0;
+};
 
 /** The inn's number guess: pick 1-100 and guess in 7 tries (halving always works). A win pays well, a miss pays a little for trying. */
 export const NUMBER_GUESS_TRIES = 7;

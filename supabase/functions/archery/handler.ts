@@ -2,10 +2,12 @@
  * The Archery Challenge server function (docs/ARCHERY-PLAN.md, section 7). The server owns the coins and the gear:
  *
  *   load          the pupil's Armory (coins, gear, shields, bows, spent, best scores) and coin-earning rounds left today;
- *   round-start   a speed round: makes the round's questions from the pupil's maths focus, keeps them where pupils can't
- *                 read them, and sends the first one with its time limit;
- *   round-answer  marks one answer (once), checks the timer twice, adds coins, records the answer for the maths records,
- *                 and sends the next question;
+ *   round-start   a question set (`kind`): a speed round, a loot chest after a fight (`fight` or `duel`), or a restock
+ *                 between rounds of a bot fight (`fight`, `step`). Makes the questions from the pupil's maths focus,
+ *                 keeps them where pupils can't read them, and sends the first one with its time limit. A chest or
+ *                 restock opens once;
+ *   round-answer  marks one answer (once), checks the timer twice, adds coins (and any streak bonus), records the
+ *                 answer for the maths records, and sends the next question;
  *   buy / sell    one Armory purchase or sale (a request sent twice counts once);
  *   fight-start   takes the packed quiver out of the pupil's gear and hands out the fight's seed;
  *   fight-finish  replays the whole fight (checking every bot shot is the bot's own), gives back what wasn't used, keeps
@@ -28,10 +30,11 @@ import {
   CARRY_MOST, LEVEL_SPEND, readPack, sellPrice, shopItem, shopItems, unused, type Armory, type ShopProblem,
 } from '../../../shared/archery/shop';
 import {
-  COINS_PER_RIGHT, EARNING_ROUNDS_PER_DAY, POINT_AT, inTime, limitMs, makeRoundQuestions, markQuestion, recordedMs, sameAnswer,
-  type MathsContext,
+  COINS_PER_RIGHT, DAILY_COINS, POINT_AT, SET_KINDS, baseCoins, inTime, limitMs, makeRoundQuestions, markQuestion, recordedMs,
+  sameAnswer, setSize, streakBefore, streakBonus, type MathsContext, type SetKind,
 } from '../../../shared/archery/speed';
 import { botFightStats, perfectRound } from '../../../shared/archery/stats';
+import { MAX_ROUNDS } from '../../../shared/archery/config';
 import { WORLD_IDS, type ItemId, type PlayerSetup, type WorldId } from '../../../shared/archery/types';
 import { bearerToken, corsHeaders, readJsonBody } from '../_shared/http';
 import { RateLimiter } from '../_shared/limits';
@@ -51,6 +54,9 @@ export interface StoredRound {
   served: Record<string, number>;
   answered: Record<string, { value: number | null; right: boolean; coins: number }>;
   earns: boolean;
+  /** Missing on sets started before kinds existed: a speed round paying COINS_PER_RIGHT. */
+  kind?: SetKind;
+  perRight?: number;
 }
 
 export interface StoredFight {
@@ -66,10 +72,13 @@ export interface Services extends DuelServices {
   /** The teacher's switches for this pupil's class: the game, and classmate fights (null if they can't be read). */
   settings(player: string): Promise<{ on: boolean; duels: boolean } | null>;
   mathsContext(player: string): Promise<MathsContext | null>;
-  /** The Armory, made the first time, with coin-earning rounds played in the last day. */
-  state(player: string): Promise<Outcome<ArmoryState & { roundsToday: number }>>;
+  /** The Armory, made the first time, with the coins maths earned in the last day. */
+  state(player: string): Promise<Outcome<ArmoryState & { coinsToday: number }>>;
   shop(player: string, request: string, action: 'buy' | 'sell', kind: string, item: string, price: number, qty: number, needSpent: number, carry: number): Promise<Outcome<{ result: 'ok' | ShopProblem; state: ArmoryState }>>;
-  roundStart(player: string, seed: string, questions: Question[], earns: boolean, servedMs: number): Promise<boolean>;
+  /** Keeps a new set. 'taken' if its `after` (a chest or restock) already has one; false if the database failed. */
+  roundStart(player: string, seed: string, questions: Question[], earns: boolean, servedMs: number, kind: SetKind, after: string | null, perRight: number): Promise<boolean | 'taken'>;
+  /** May this chest or restock be opened (and was the fight won)? Null if not. */
+  bonusFor(player: string, kind: 'chest' | 'restock', fight: number | null, duel: number | null): Promise<{ won: boolean } | null | 'busy'>;
   roundLoad(player: string, seed: string): Promise<StoredRound | null | 'busy'>;
   roundAnswer(player: string, seed: string, slot: number, value: number | null, right: boolean, coins: number, nextMs: number | null): Promise<{ claimed: boolean; coins?: number } | 'busy'>;
   fightStart(player: string, request: string, seed: number, world: WorldId, opponent: BotLevel, pack: PlayerSetup): Promise<Outcome<{ result: 'ok' | 'gear'; fight?: number; state: ArmoryState }>>;
@@ -133,23 +142,42 @@ export function makeHandler(services: Services) {
       case 'load': {
         const s = await services.state(player);
         if (!s.ok) return busy('Your Armory');
-        return reply(200, { state: withoutCount(s.value), roundsLeft: Math.max(0, EARNING_ROUNDS_PER_DAY - s.value.roundsToday) });
+        return reply(200, { state: withoutCount(s.value), coinsLeft: Math.max(0, DAILY_COINS - s.value.coinsToday) });
       }
 
       case 'round-start': {
+        const kind: SetKind = body.kind === undefined ? 'speed' : (body.kind as SetKind);
+        if (!SET_KINDS.includes(kind)) return reply(400, { error: "That couldn't be read." });
+        const what = kind === 'chest' ? 'The loot chest' : kind === 'restock' ? 'The restock' : kind === 'supply' ? 'The supply chest' : 'The speed round';
+        let after: string | null = null;
+        let perRight = COINS_PER_RIGHT;
+        if (kind === 'chest' || kind === 'restock') {
+          const fight = Number.isSafeInteger(body.fight) && (body.fight as number) > 0 ? (body.fight as number) : null;
+          const duel = kind === 'chest' && fight === null && Number.isSafeInteger(body.duel) && (body.duel as number) > 0 ? (body.duel as number) : null;
+          const step = body.step;
+          if (fight === null && duel === null) return reply(400, { error: "That couldn't be read." });
+          if (kind === 'restock' && (!Number.isInteger(step) || (step as number) < 1 || (step as number) >= MAX_ROUNDS)) return reply(400, { error: "That couldn't be read." });
+          const bonus = await services.bonusFor(player, kind, fight, duel);
+          if (bonus === 'busy') return busy(what);
+          if (!bonus) return reply(400, { error: kind === 'chest' ? "That chest can't be opened now." : "That restock can't be done now.", code: 'closed' });
+          after = kind === 'restock' ? `restock:${fight}:${step}` : fight !== null ? `chest:fight:${fight}` : `chest:duel:${duel}`;
+          perRight = baseCoins(kind, bonus.won);
+        }
         const s = await services.state(player);
-        if (!s.ok) return busy('The speed round');
-        const earns = s.value.roundsToday < EARNING_ROUNDS_PER_DAY;
+        if (!s.ok) return busy(what);
+        const earns = s.value.coinsToday < DAILY_COINS;
         const context = await services.mathsContext(player);
-        if (!context) return busy('The speed round');
+        if (!context) return busy(what);
         const seed = services.randomHex(12);
-        const questions = makeRoundQuestions(context, seededRandom(seed));
-        if (!questions.length) return busy('The speed round');
+        const questions = makeRoundQuestions(context, seededRandom(seed), setSize(kind));
+        if (!questions.length) return busy(what);
         const at = services.now();
-        if (!(await services.roundStart(player, seed, questions, earns, at))) return busy('The speed round');
+        const kept = await services.roundStart(player, seed, questions, earns, at, kind, after, perRight);
+        if (kept === 'taken') return reply(400, { error: kind === 'chest' ? "You've already opened that chest." : "You've already done that restock.", code: 'closed' });
+        if (!kept) return busy(what);
         return reply(200, {
-          seed, earns, questions: questions.length, question: publicQuestion(questions[0], 0), limitMs: limitMs(0),
-          roundsLeft: Math.max(0, EARNING_ROUNDS_PER_DAY - s.value.roundsToday - (earns ? 1 : 0)),
+          seed, kind, earns, perRight, questions: questions.length, question: publicQuestion(questions[0], 0), limitMs: limitMs(0, kind),
+          coinsLeft: Math.max(0, DAILY_COINS - s.value.coinsToday),
         });
       }
 
@@ -178,19 +206,23 @@ export function makeHandler(services: Services) {
         const ago = Math.max(0, now - sentAt);
         const claimedMs = typeof body.ms === 'number' && Number.isFinite(body.ms) && body.ms >= 0 ? body.ms : ago;
         const correct = !timedOut && sameAnswer(value as number, marked.answer);
-        const coins = correct && round.earns && inTime(at, claimedMs, ago) ? COINS_PER_RIGHT : 0;
+        const kind = round.kind ?? 'speed';
+        const earnedBefore = Array.from({ length: at }, (_, i) => round.answered[String(i)]?.coins);
+        const coins = correct && round.earns && inTime(limitMs(at, kind), claimedMs, ago)
+          ? (round.perRight ?? COINS_PER_RIGHT) + streakBonus(streakBefore(earnedBefore, at))
+          : 0;
         const done = await services.roundAnswer(player, seed, at, timedOut ? null : (value as number), correct, coins, nextSlot === null ? null : now);
         if (done === 'busy') return busy('Marking');
         if (!done.claimed) return reply(400, { error: "You've already answered that one." });
         // A late answer is still right for the maths records (with its real time); a timed-out one isn't recorded.
         if (!timedOut) await safely(() => services.recordAnswers(player, `${seed}:${at}`, [{ key: marked.key, correct, ms: recordedMs(claimedMs, ago), at: now }]));
         const right = rightSoFar + (correct ? 1 : 0);
-        if (nextSlot === null) {
+        if (nextSlot === null && kind === 'speed') {
           const earned = [...Object.entries(round.answered).filter(([k]) => k !== String(at)).map(([, a]) => a.coins), coins];
           if (perfectRound(round.questions.length, earned)) await safely(() => services.note(player, `stats:round:${seed}`, { perfect_rounds: 1 }));
         }
         let point = false;
-        if (nextSlot === null && right >= POINT_AT) {
+        if (nextSlot === null && kind === 'speed' && right >= POINT_AT) {
           point = true;
           await safely(() => services.awardPoints(player, ROUND_POINTS, `archery-round:${seed}`));
         }
@@ -265,14 +297,15 @@ export function makeHandler(services: Services) {
 function answerReply(round: StoredRound, correct: boolean, answer: number, coins: number, total: number | null, nextSlot: number | null, right: number, point: boolean | undefined) {
   return {
     correct, answer, coins, ...(total === null ? {} : { total }), right,
-    next: nextSlot === null ? null : { question: publicQuestion(round.questions[nextSlot], nextSlot), limitMs: limitMs(nextSlot) },
+    next: nextSlot === null ? null : { question: publicQuestion(round.questions[nextSlot], nextSlot), limitMs: limitMs(nextSlot, round.kind ?? 'speed') },
     ...(point === undefined ? {} : { point }),
   };
 }
 
-function withoutCount(s: ArmoryState & { roundsToday: number }): ArmoryState {
-  const { roundsToday: _skip, ...rest } = s;
+function withoutCount(s: ArmoryState & { coinsToday: number; roundsToday?: number }): ArmoryState {
+  const { coinsToday: _skip, roundsToday: _old, ...rest } = s;
   void _skip;
+  void _old;
   return rest;
 }
 

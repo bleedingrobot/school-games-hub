@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { suppliesOnSale } from '../../../shared/clans/actions';
+import { MONSTER_LOOKS, SUPPLY_KINDS, SUPPLY_NAMES, monsterOf, monsterSave, supplyPrice, type SupplyKind } from '../../../shared/clans/monster';
 import { CONFIG } from '../../../shared/clans/config';
 import { inShop } from '../../../shared/clans/character';
 import { betterBuy, examineCostQuestion, itemPoints, marketChangeFor, marketTotal } from '../../../shared/clans/moments';
 import { STATS, type ItemDef, type Member } from '../../../shared/clans/types';
 import { Moment } from './Moment';
-import { buyItem, examineCost, examineItem, hasExamined, shopPrice } from './places';
+import { buyItem, buySupplies, examineCost, examineItem, hasExamined, shopPrice } from './places';
 import type { Session, Change } from './session';
 import { ItemSprite, PlaceSprite, Portrait } from './Sprite';
 import { ITEM_TEXT, KIND_WORD, STAT_WORD } from './text';
@@ -36,6 +38,57 @@ function RealStats({ member, item }: { member: Member; item: ItemDef }) {
         {works ? `${member.name} can use it well.` : `${member.name} isn't ready for it yet: needs ${short.map((s) => `${STAT_WORD[s]} ${item.needs[s]} (has ${member.stats[s]})`).join(', ')}. It won't help until then.`}
       </p>
     </div>
+  );
+}
+
+/**
+ * Monster supplies, on sale from day 22 of the season: what each does, how many you hold, and a Buy button (with the same
+ * "check the bill" moment as an item). One at a time, so the bill is the price of one.
+ */
+function Supplies({ session, onChange }: { session: Session; onChange: Change }) {
+  const { clan, settings } = session;
+  const season = session.clock!.number;
+  const save = monsterSave(clan, season);
+  const [asking, setAsking] = useState<SupplyKind | null>(null);
+  const [said, setSaid] = useState('');
+  const most = (k: SupplyKind) => CONFIG.monster.supplies[k].max;
+  const buy = (k: SupplyKind) => {
+    const next = buySupplies(session, season, k, 1);
+    if (!next) return;
+    onChange(next, { type: 'buySupply', kind: k, count: 1 });
+    setAsking(null);
+    setSaid(`You bought a ${SUPPLY_NAMES[k].one} for ${supplyPrice(k)} gold.`);
+  };
+  const start = (k: SupplyKind) => {
+    setSaid('');
+    if (marketTotal(settings, CONFIG.monster.supplies[k].price, CONFIG.shopTax, SUPPLY_NAMES[k].one)) setAsking(k);
+    else buy(k);
+  };
+  return (
+    <section className="cq-panel cq-supplies" aria-label="Monster supplies">
+      <h3>Monster supplies</h3>
+      <p className="cq-soft">For the fight with {MONSTER_LOOKS[monsterOf(season)].name} in the last week of the season. You can only hold so many.</p>
+      <ul>
+        {SUPPLY_KINDS.map((k) => {
+          const have = save.supplies[k];
+          const full = have >= most(k);
+          return (
+            <li key={k}>
+              <strong>{SUPPLY_NAMES[k].many[0].toUpperCase() + SUPPLY_NAMES[k].many.slice(1)}</strong>: {SUPPLY_NAMES[k].help}
+              <br />
+              <span className="cq-soft">You have {have} of {most(k)}. Price: {supplyPrice(k)} gold (with {CONFIG.shopTax}% village tax).</span>{' '}
+              <button type="button" className="cq-btn" disabled={full || clan.gold < supplyPrice(k)} aria-label={`Buy a ${SUPPLY_NAMES[k].one} for ${supplyPrice(k)} gold`} onClick={() => start(k)}>
+                {full ? 'You have the most' : 'Buy 1'}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {asking && (
+        <Moment key={`supply-${asking}`} question={marketTotal(settings, CONFIG.monster.supplies[asking].price, CONFIG.shopTax, SUPPLY_NAMES[asking].one)!} title={`Paying for the ${SUPPLY_NAMES[asking].one}`} note="Check the bill before you pay." doneLabel={`Pay ${supplyPrice(asking)} gold`} onDone={() => buy(asking)} />
+      )}
+      {said && <p className="cq-note" role="status">{said}</p>}
+    </section>
   );
 }
 
@@ -163,6 +216,7 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
         </ul>
         <div className="cq-panel cq-shop__detail">{detail}</div>
       </div>
+      {suppliesOnSale(session.clock) && <Supplies session={session} onChange={onChange} />}
     </section>
   );
 }
