@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { wornTier } from './character';
 import { applyAction, type ServerState } from './actions';
 import { CONFIG } from './config';
 import { startingDrafts } from './create';
@@ -49,7 +50,7 @@ describe('newSeasonSave', () => {
     s.clan.questDay = 3;
     s.clan.members.forEach((m, i) => { m.level = 5 + i; m.xp = 999; m.gear = { weapon: 'Sword' }; m.points = 4; m.knockedOut = i === 1; });
     s.clan.members[2].look = 'bold' as never;
-    s.day = 9; s.fightsLeft = 1; s.fightNo = 11; s.raidNo = 4; s.examined = ['Ash|Sword'];
+    s.day = 9; s.fightsLeft = 1; s.fightNo = 11; s.raidNo = 4;
     const e = empireOf(s.clan);
     e.day = 9; e.buildsSaved = 3; e.troops.footman = 8; e.raidsToday = 1; e.shieldUntil = 12;
     upgrade(s.clan, 'smithy');
@@ -68,8 +69,8 @@ describe('newSeasonSave', () => {
     const e = empireOf(c);
     expect(Object.values(e.levels).every((n) => n === 0)).toBe(true);
     expect(e).toMatchObject({ buildsToday: 0, buildsSaved: 0, troops: { footman: 0, axeman: 0, knight: 0 }, day: 9, raidsToday: 0, shieldUntil: 0, raidedToday: [] });
-    expect(s.examined).toEqual([]);
-    c.members.forEach((m) => expect(m).toMatchObject({ level: 1, xp: 0, gear: {}, knockedOut: false, hp: m.maxHp, points: expect.any(Number) }));
+    c.members.forEach((m) => expect(m).toMatchObject({ level: 1, xp: 0, knockedOut: false, hp: m.maxHp, points: expect.any(Number) }));
+    c.members.forEach((m) => expect([wornTier(m, 'weapon'), wornTier(m, 'armor'), wornTier(m, 'shield')]).toEqual([1, 1, 1]));
   });
 
   it('keeps names, races, classes and looks, and the clan\'s own numbers', () => {

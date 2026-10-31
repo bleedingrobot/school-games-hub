@@ -9,9 +9,8 @@
  */
 import { buildQuestion, topicAvailable, topicOf, type PracticalKind, type PracticalQuestion, type PracticalSettings } from '../maths/practical';
 import { CONFIG } from './config';
-import { usableBonus } from './character';
 import { planOf } from './empire';
-import type { ItemDef, Member, VillageBuilding } from './types';
+import type { VillageBuilding } from './types';
 
 function moment(settings: PracticalSettings, kind: PracticalKind, nums: number[], labels?: [string, string], item?: string, about?: 'followers' | 'loot'): PracticalQuestion | null {
   if (!topicAvailable(settings, topicOf(kind))) return null;
@@ -21,8 +20,17 @@ function moment(settings: PracticalSettings, kind: PracticalKind, nums: number[]
 /** Market: "Sword 240 gold, +10% tax: what do you pay?" The answer is the shop price. */
 export const marketTotal = (settings: PracticalSettings, price: number, tax: number = CONFIG.shopTax, item?: string) => moment(settings, 'price-with-tax', [price, tax], undefined, item);
 
-/** Market: what it costs to look at an item's real stats (25% of the price, rounded up). */
-export const examineCostQuestion = (settings: PracticalSettings, price: number) => moment(settings, 'percent-of', [CONFIG.examinePercent, price]);
+/** Market: "What is 10% of 80 gold?" Answered right, the item is 10% off (`shopPrice`). The server asks it again to mark it. */
+export function discountQuestion(settings: PracticalSettings, price: number, item?: string): PracticalQuestion | null {
+  const q = price > 0 ? moment(settings, 'percent-of', [CONFIG.shopDiscount, price]) : null;
+  return q && { ...q, text: `${item ? `The ${item}` : 'It'} costs ${price} gold. What is ${CONFIG.shopDiscount}% of ${price}?`, unit: 'gold' };
+}
+
+/** True if `answer` is right for an item's discount question (and the question is on for the class). */
+export function earnedDiscount(settings: PracticalSettings, price: number, answer: number | null | undefined): boolean {
+  const q = answer === null || answer === undefined ? null : discountQuestion(settings, price);
+  return q !== null && answer === q.answer;
+}
 
 /** The note you pay with: 1,000 gold, or the next thousand if the bill is bigger. */
 export const noteFor = (bill: number) => Math.max(1000, Math.ceil(bill / 1000) * 1000);
@@ -32,15 +40,6 @@ export const marketChange = (settings: PracticalSettings, ...bills: number[]) =>
 
 /** The same, for one named thing you just bought ("the Dagger that costs 22 gold"). */
 export const marketChangeFor = (settings: PracticalSettings, item: string, bill: number) => moment(settings, 'change', [noteFor(bill), bill], undefined, item);
-
-/** What an item adds up to for "which is the better buy": the total of its usable bonuses (stats it gives). */
-export const itemPoints = (member: Member, item: ItemDef) => Object.values(usableBonus(member, item)).reduce((t, v) => t + (v ?? 0), 0);
-
-/** Market: which of two items is cheaper per point of bonus? Null if either gives nothing or they cost the same per point. */
-export function betterBuy(settings: PracticalSettings, a: { name: string; price: number; points: number }, b: { name: string; price: number; points: number }): PracticalQuestion | null {
-  if (a.points < 1 || b.points < 1 || a.price * b.points === b.price * a.points) return null;
-  return moment(settings, 'better-buy', [a.price, a.points, b.price, b.points], [a.name, b.name]);
-}
 
 /** Training Hall: how many can you buy, and what is left over. Null if you can't afford even one. */
 export function trainingBuy(settings: PracticalSettings, points: number, cost: number): { howMany: PracticalQuestion; leftOver: PracticalQuestion } | null {

@@ -2,43 +2,36 @@ import { useState } from 'react';
 import { suppliesOnSale } from '../../../shared/clans/actions';
 import { MONSTER_LOOKS, SUPPLY_KINDS, SUPPLY_NAMES, monsterOf, monsterSave, supplyPrice, type SupplyKind } from '../../../shared/clans/monster';
 import { CONFIG } from '../../../shared/clans/config';
-import { inShop } from '../../../shared/clans/character';
-import { betterBuy, examineCostQuestion, itemPoints, marketChangeFor, marketTotal } from '../../../shared/clans/moments';
-import { STATS, type ItemDef, type Member } from '../../../shared/clans/types';
+import { GEAR_KINDS, cannotBuy, wornItem, wornTier } from '../../../shared/clans/character';
+import { levelOf } from '../../../shared/clans/empire';
+import { CLASS_FOCUS, itemLine, offhandWord, smithyFor, unlockedTier } from '../../../shared/clans/items';
+import { discountQuestion, marketTotal } from '../../../shared/clans/moments';
+import type { GearKind, GearStat, ItemDef, Member } from '../../../shared/clans/types';
 import { Moment } from './Moment';
-import { buyItem, buySupplies, examineCost, examineItem, hasExamined, shopPrice } from './places';
+import { buyItem, buySupplies, shopPrice } from './places';
 import type { Session, Change } from './session';
 import { ItemSprite, PlaceSprite, Portrait } from './Sprite';
-import { ITEM_TEXT, KIND_WORD, STAT_WORD } from './text';
+import { GEAR_WORD } from './text';
 import { lookOf } from '../../../shared/clans/looks';
 
-type Kind = ItemDef['kind'];
-const TABS: [Kind, string][] = [['weapon', 'Weapons'], ['armor', 'Armour'], ['shield', 'Shields']];
-const signed = (n: number) => `${n > 0 ? '+' : '−'}${Math.abs(n)}`;
+const GEAR_STATS: GearStat[] = ['strength', 'dexterity', 'agility', 'wisdom', 'armor', 'charisma', 'hp', 'sp'];
+const slotWord = (m: Member, kind: GearKind) => (kind === 'weapon' ? 'Weapon' : kind === 'armor' ? 'Armour' : offhandWord(m.cls));
 
-type Phase =
-  | { t: 'idle' }
-  | { t: 'buy' }
-  | { t: 'examine' }
-  | { t: 'bought'; item: ItemDef; price: number; who: string }
-  | { t: 'change'; price: number; item: ItemDef }
-  | { t: 'compare'; other: ItemDef };
-
-/** What an item really gives, and whether this member can use it yet. Only shown after "Look closely". */
-function RealStats({ member, item }: { member: Member; item: ItemDef }) {
-  const gives = STATS.filter((s) => item.bonus[s]).map((s) => `${signed(item.bonus[s]!)} ${STAT_WORD[s]}`);
-  const needs = STATS.filter((s) => item.needs[s]);
-  const short = needs.filter((s) => (item.needs[s] ?? 0) > member.stats[s]);
-  const works = short.length === 0;
-  return (
-    <div className="cq-real">
-      <p><strong>Gives:</strong> {gives.join(', ') || 'nothing special'}</p>
-      <p><strong>Needs:</strong> {needs.length ? needs.map((s) => `${STAT_WORD[s]} ${item.needs[s]}`).join(', ') : 'nothing'}</p>
-      <p className={works ? 'cq-note' : 'cq-warn'}>
-        {works ? `${member.name} can use it well.` : `${member.name} isn't ready for it yet: needs ${short.map((s) => `${STAT_WORD[s]} ${item.needs[s]} (has ${member.stats[s]})`).join(', ')}. It won't help until then.`}
-      </p>
-    </div>
-  );
+/** "Strength +4 → +7 (R)": what the item gives next to what the member has in that slot now. (R) marks the class's recommended stats. */
+function Gains({ member, item }: { member: Member; item: ItemDef }) {
+  const now = wornTier(member, item.kind) ? wornItem(member, item.kind)!.bonus : {};
+  const focus = CLASS_FOCUS[member.cls] ?? [];
+  const lines = GEAR_STATS.filter((s) => item.bonus[s] || now[s]).map((s) => {
+    const was = now[s] ?? 0;
+    const will = item.bonus[s] ?? 0;
+    return (
+      <li key={s}>
+        {GEAR_WORD[s]} {was === will ? `+${will}` : `+${was} → +${will}`}
+        {focus.includes(s) && <span className="cq-rec" title={`Good for a ${member.cls}`}> (R)<span className="sr-only"> recommended for a {member.cls}</span></span>}
+      </li>
+    );
+  });
+  return <ul className="cq-gains">{lines}</ul>;
 }
 
 /**
@@ -92,98 +85,48 @@ function Supplies({ session, onChange }: { session: Session; onChange: Change })
   );
 }
 
-/** The Market: pick a member, pick an item, check the bill with a maths moment, pay. */
+/**
+ * The Market: a card for each member with their three slots. Each slot shows what they wear now and the next item up their
+ * class's line, with what it adds and one button to buy and wear it. "See all" opens the whole line, where any tier the
+ * Smithy sells can be bought (skip ahead if you have saved up). Buying asks one maths question: right, and it is 10% off.
+ */
 export function Market({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
   const { clan, settings } = session;
-  const [mi, setMi] = useState(0);
-  const [tab, setTab] = useState<Kind>('weapon');
-  const [picked, setPicked] = useState<string | null>(null);
-  const [phase, setPhase] = useState<Phase>({ t: 'idle' });
-  const member = clan.members[mi];
-  const shelf = inShop(clan.village.smithy);
-  const item = picked ? shelf.find((i) => i.name === picked) ?? null : null;
-  const price = item ? shopPrice(item) : 0;
-  const idle = () => setPhase({ t: 'idle' });
+  const [asking, setAsking] = useState<{ mi: number; item: ItemDef } | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+  const [said, setSaid] = useState('');
+  const smithy = levelOf(clan, 'smithy');
+  const top = unlockedTier(smithy);
 
-  const wearing = (m: Member, kind: Kind) => m.gear[kind];
-  const lookedAt = shelf.filter((i) => hasExamined(session, member, i));
-  const startBuy = () => {
-    if (!item || clan.gold < price) return;
-    if (marketTotal(settings, item.price, CONFIG.shopTax, item.name)) setPhase({ t: 'buy' });
-    else pay(item);
-  };
-  const pay = (it: ItemDef) => {
-    const next = buyItem(session, mi, it);
+  const pay = (mi: number, item: ItemDef, answer: number | null, right: boolean) => {
+    const next = buyItem(session, mi, item, right);
+    setAsking(null);
     if (!next) return;
-    onChange(next, { type: 'buy', member: mi, item: it.name });
-    setPhase({ t: 'bought', item: it, price: shopPrice(it), who: member.name });
+    onChange(next, { type: 'buy', member: mi, item: item.name, answer });
+    const paid = shopPrice(item, right);
+    setSaid(`${clan.members[mi].name} is wearing the ${item.name}. You paid ${paid} gold${right ? ` (${CONFIG.shopDiscount}% off!)` : ''}.`);
   };
-  const startExamine = () => {
-    if (!item || clan.gold < examineCost(item)) return;
-    if (examineCostQuestion(settings, item.price)) setPhase({ t: 'examine' });
-    else look(item);
-  };
-  const look = (it: ItemDef) => {
-    const next = examineItem(session, mi, it);
-    if (next) onChange(next, { type: 'examine', member: mi, item: it.name });
-    idle();
+  const start = (mi: number, item: ItemDef) => {
+    setSaid('');
+    if (discountQuestion(settings, item.price, item.name)) setAsking({ mi, item });
+    else pay(mi, item, null, false);
   };
 
-  let detail: React.ReactNode;
-  if (!item) {
-    detail = <p className="cq-soft">Pick something from the shelf to see more.</p>;
-  } else if (phase.t === 'buy') {
-    detail = <Moment key={`buy-${item.name}`} question={marketTotal(settings, item.price, CONFIG.shopTax, item.name)!} title={`Paying for the ${item.name}`} note="Check the bill before you pay." doneLabel={`Pay ${price} gold`} onDone={() => pay(item)} />;
-  } else if (phase.t === 'examine') {
-    detail = <Moment key={`look-${item.name}`} question={examineCostQuestion(settings, item.price)!} title={`Looking closely at the ${item.name}`} note="Looking costs a share of the price." doneLabel={`Pay ${examineCost(item)} gold and look`} onDone={() => look(item)} />;
-  } else if (phase.t === 'bought') {
-    const q = marketChangeFor(settings, phase.item.name, phase.price);
-    detail = (
-      <div className="cq-panel" role="status">
-        <p className="cq-note">{phase.who} now has the {phase.item.name}. You paid {phase.price} gold, and have {clan.gold} left.</p>
-        <div className="cq-actions">
-          {q && <button type="button" className="cq-btn" onClick={() => setPhase({ t: 'change', price: phase.price, item: phase.item })}>Check my change</button>}
-          <button type="button" className="cq-btn cq-btn--hot" autoFocus onClick={idle}>Keep shopping</button>
-        </div>
-      </div>
+  /** The buy button for one item, or why it can't be bought yet. */
+  const buyButton = (mi: number, m: Member, item: ItemDef) => {
+    const why = cannotBuy(clan, m, item);
+    if (why && item.tier > top) return <span className="cq-soft">Needs the Smithy at level {smithyFor(item.tier)}. Upgrade it in My Village.</span>;
+    if (why) return null;
+    const short = clan.gold < item.price;
+    return (
+      <span>
+        <button type="button" className="cq-btn cq-btn--hot" disabled={short} aria-label={`Buy the ${item.name} for ${m.name}, ${item.price} gold`} onClick={() => start(mi, item)}>
+          Buy · {item.price} gold
+        </button>
+        {short && <small className="cq-soft"> You have {clan.gold}.</small>}
+      </span>
     );
-  } else if (phase.t === 'change') {
-    detail = <Moment key={`change-${phase.price}`} question={marketChangeFor(settings, phase.item.name, phase.price)!} title="Your change" note="Pretend you paid with a big note." doneLabel="Done" onDone={idle} />;
-  } else if (phase.t === 'compare') {
-    const q = betterBuy(settings, { name: item.name, price: item.price, points: itemPoints(member, item) }, { name: phase.other.name, price: phase.other.price, points: itemPoints(member, phase.other) });
-    detail = q ? (
-      <Moment key={`cmp-${item.name}-${phase.other.name}`} question={q} title="Which is the better buy?" note={`Think about what ${member.name} would really get.`} doneLabel="Carry on" onDone={idle} />
-    ) : (
-      <div className="cq-panel"><p>These two are too hard to tell apart for {member.name}, so there is nothing to compare.</p><button type="button" className="cq-btn" autoFocus onClick={idle}>Back</button></div>
-    );
-  } else {
-    const seen = hasExamined(session, member, item);
-    const old = wearing(member, item.kind);
-    const taxed = !marketTotal(settings, item.price, CONFIG.shopTax, item.name);
-    detail = (
-      <div className="cq-detail">
-        <span className="cq-detail__art"><ItemSprite name={item.name} kind={item.kind} scale={6} /></span>
-        <h3>{item.name}</h3>
-        <p className="cq-soft">{KIND_WORD[item.kind]} · {ITEM_TEXT[item.name]}</p>
-        <p>{taxed ? <>Price: <strong>{price} gold</strong> (with {CONFIG.shopTax}% village tax)</> : <>Price: <strong>{item.price} gold</strong>, plus {CONFIG.shopTax}% village tax</>}</p>
-        <p className="cq-soft">{old ? `${member.name} has: ${old}. Buying this swaps it.` : `${member.name} has no ${KIND_WORD[item.kind].toLowerCase()} yet.`}</p>
-        {seen ? <RealStats member={member} item={item} /> : <p className="cq-soft">What it really does is a secret until you look closely.</p>}
-        <div className="cq-actions">
-          <button type="button" className="cq-btn cq-btn--hot" disabled={clan.gold < price} onClick={startBuy}>Buy for {member.name}</button>
-          {!seen && <button type="button" className="cq-btn" disabled={clan.gold < examineCost(item)} onClick={startExamine}>Look closely ({examineCost(item)} gold)</button>}
-        </div>
-        {clan.gold < price && <p className="cq-warn">You need {taxed ? price : `${item.price} gold plus tax`} to buy this, and have {clan.gold}. Win some fights in the Mines to earn more.</p>}
-        {seen && lookedAt.filter((o) => o.name !== item.name).length > 0 && (
-          <div>
-            <p className="cq-soft">Which is the better buy? Compare with:</p>
-            <div className="cq-actions">
-              {lookedAt.filter((o) => o.name !== item.name).map((o) => <button key={o.name} type="button" className="cq-btn" onClick={() => setPhase({ t: 'compare', other: o })}>{o.name}</button>)}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
+  };
 
   return (
     <section className="cq-place" aria-label="The Market">
@@ -191,30 +134,76 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
         <h2><PlaceSprite place="market" /> The Market</h2>
         <button type="button" className="cq-btn" onClick={onBack}>Back to the clan</button>
       </div>
-      <p className="cq-soft">You have <strong>{clan.gold} gold</strong>. Who is shopping?</p>
-      <div className="cq-pick" role="group" aria-label="Who is shopping?">
-        {clan.members.map((m, i) => (
-          <button key={m.name} type="button" className="cq-btn cq-pick__btn" aria-pressed={i === mi} onClick={() => { setMi(i); idle(); }}>
-            <Portrait race={m.race} cls={m.cls} look={lookOf(m)} scale={2} />
-            <span><strong>{m.name}</strong><br /><small>{[m.gear.weapon, m.gear.armor, m.gear.shield].filter(Boolean).join(', ') || 'no gear yet'}</small></span>
-          </button>
+      <p className="cq-soft">
+        You have <strong>{clan.gold} gold</strong>. The Smithy (level {smithy}) sells up to tier {top}. Answer the maths question when you buy for {CONFIG.shopDiscount}% off.
+      </p>
+      {said && <p className="cq-note" role="status">{said}</p>}
+      <div className="cq-gearcards">
+        {clan.members.map((m, mi) => (
+          <article key={m.name} className="cq-panel cq-gearcard" aria-label={`${m.name}'s gear`}>
+            <header className="cq-gearcard__head">
+              <Portrait race={m.race} cls={m.cls} look={lookOf(m)} scale={2} />
+              <h3>{m.name} <small className="cq-soft">{m.race} {m.cls}</small></h3>
+            </header>
+            {GEAR_KINDS.map((kind) => {
+              const line = itemLine(m.cls, kind);
+              const tier = wornTier(m, kind);
+              const worn = wornItem(m, kind);
+              const next = line.find((i) => i.tier === tier + 1);
+              const key = `${mi}-${kind}`;
+              const isAsking = asking && asking.mi === mi && asking.item.kind === kind;
+              return (
+                <div key={kind} className="cq-slot">
+                  <div className="cq-slot__row">
+                    <span className="cq-slot__name">{slotWord(m, kind)}</span>
+                    <span className="cq-slot__item">
+                      {worn ? <><ItemSprite name={worn.name} kind={kind} scale={2} /> {worn.name}</> : 'Nothing'}
+                    </span>
+                    <span className="cq-dots" aria-label={`Tier ${tier} of ${line.length}`}>
+                      {line.map((i) => <span key={i.name} className={i.tier <= tier ? 'cq-dot cq-dot--on' : 'cq-dot'} />)}
+                    </span>
+                  </div>
+                  {next ? (
+                    <div className="cq-slot__next">
+                      <span className="cq-slot__item"><span aria-hidden="true">→ </span><ItemSprite name={next.name} kind={kind} scale={2} /> <strong>{next.name}</strong></span>
+                      <Gains member={m} item={next} />
+                      {buyButton(mi, m, next)}
+                    </div>
+                  ) : (
+                    <p className="cq-note cq-slot__next">The best there is!</p>
+                  )}
+                  {isAsking && (
+                    <Moment
+                      key={`buy-${asking.item.name}`}
+                      question={discountQuestion(settings, asking.item.price, asking.item.name)!}
+                      title={`${CONFIG.shopDiscount}% off the ${asking.item.name}`}
+                      note={`Get it right and you pay ${shopPrice(asking.item, true)} gold instead of ${asking.item.price}.`}
+                      doneLabel="Pay and wear it"
+                      onDone={(right, answer) => pay(mi, asking.item, answer, right)}
+                    />
+                  )}
+                  <button type="button" className="cq-link" aria-expanded={open === key} onClick={() => setOpen(open === key ? null : key)}>
+                    {open === key ? 'Hide the line' : `See all ${line.length}`}
+                  </button>
+                  {open === key && (
+                    <ol className="cq-line" aria-label={`${m.name}'s ${slotWord(m, kind).toLowerCase()} line`}>
+                      {line.map((i) => (
+                        <li key={i.name} className={i.tier === tier ? 'cq-line__worn' : undefined}>
+                          <ItemSprite name={i.name} kind={kind} scale={2} />
+                          <span>
+                            <strong>{i.name}</strong> <small className="cq-soft">tier {i.tier}{i.tier === tier ? ', wearing' : ''}</small>
+                            <Gains member={m} item={i} />
+                          </span>
+                          {i.tier > tier && i.tier !== tier + 1 && buyButton(mi, m, i)}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              );
+            })}
+          </article>
         ))}
-      </div>
-      <div className="cq-tabs" role="group" aria-label="Shelves">
-        {TABS.map(([k, label]) => <button key={k} type="button" className="cq-btn" aria-pressed={tab === k} onClick={() => setTab(k)}>{label}</button>)}
-      </div>
-      <div className="cq-shop">
-        <ul className="cq-shelf" aria-label="On the shelf">
-          {shelf.filter((i) => i.kind === tab).map((i) => (
-            <li key={i.name}>
-              <button type="button" className="cq-btn cq-shelf__item" aria-pressed={i.name === picked} onClick={() => { setPicked(i.name); idle(); }}>
-                <ItemSprite name={i.name} kind={i.kind} scale={2} />
-                <span>{i.name}{wearing(member, i.kind) === i.name && <small> (worn)</small>}{hasExamined(session, member, i) && <small> ✓</small>}<br /><small>{i.price} gold</small></span>
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="cq-panel cq-shop__detail">{detail}</div>
       </div>
       {suppliesOnSale(session.clock) && <Supplies session={session} onChange={onChange} />}
     </section>

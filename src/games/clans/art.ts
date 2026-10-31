@@ -38,7 +38,27 @@ export const memberArt = (race: string, cls: string, look: Look) => file('member
 export const memberThumb = (race: string, cls: string, look: Look) => file('members', `${lookName(race, cls, look)}-small`) ?? memberArt(race, cls, look);
 
 export const monsterArt = (name: string) => file('monsters', slug(name));
-export const itemArt = (name: string) => file('items', slug(name));
+/**
+ * Until an item from the class lines has its own painting, it borrows the nearest one we have in its slot, by the words in
+ * its name (the first match wins). Items with no match (charms, bracers, fans, gloves) show the old tile.
+ */
+export const ITEM_STAND_INS: Record<string, [RegExp, string][]> = {
+  weapon: [
+    [/Axe/, 'axe'], [/Mace|Hammer|Club|Fist|Nunchaku|Claws/, 'mace'], [/Dagger|Fang|Stars/, 'dagger'], [/Wand/, 'wand'],
+    [/Staff|Rod|Sceptre/, 'staff'], [/Sword|Blade|Cutlass|Sabre|Lance|Wraps/, 'broadsword'],
+  ],
+  armor: [
+    [/Robe/, 'cloth-robe'], [/Plate|Mail|Hero's Armour/, 'chainmail-armour'], [/Hide|Pelt|Fur|Wrap|Shirt/, 'rags'],
+    [/Armour|Leathers|Vest|Coat/, 'leather-armour'], [/Gi\b|Tunic|Hood|Cloak|Jacket/, 'kai-tunic'],
+  ],
+  shield: [[/Shield|Buckler/, 'iron-shield']],
+};
+export function itemArt(name: string, kind?: string): string | undefined {
+  const found = kind ? ITEM_STAND_INS[kind]?.find(([words]) => words.test(name)) : undefined;
+  return file('items', slug(name)) ?? (found ? file('items', found[1]) : undefined);
+}
+/** True if the item has a painting of its own (not a stand-in). */
+export const ownItemArt = (name: string) => file('items', slug(name)) !== undefined;
 export const troopArt = (kind: TroopKind) => file('troops', kind);
 /** A building's picture grows with its level: small for levels 0-2, medium for 3-4, big for 5 and up. */
 export type BuildingSize = 'small' | 'medium' | 'big';

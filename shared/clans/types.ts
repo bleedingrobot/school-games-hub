@@ -14,16 +14,21 @@ export interface RaceDef {
 }
 export type ClassDef = RaceDef;
 
+export type GearKind = 'weapon' | 'armor' | 'shield';
+/** What an item can add: the six stats, and max HP and SP. */
+export type GearStat = Stat | 'hp' | 'sp';
+
 export interface ItemDef {
   name: string;
-  kind: 'weapon' | 'armor' | 'shield';
-  /** Price in gold, before the village tax. */
+  kind: GearKind;
+  /** The class whose line it is in (shared/clans/items.ts). */
+  cls: string;
+  /** 1 upwards; the Smithy's level decides which tiers are on sale (`SMITHY_TIERS`). */
+  tier: number;
+  /** Price in gold. */
   price: number;
-  bonus: Partial<Stats>;
-  /** Minimum base stats to get the bonus. */
-  needs: Partial<Stats>;
-  /** 6 = sold everywhere, 0 = only in a fully built Smithy. */
-  shopLevel: number;
+  /** What it adds. HP and SP go on the member's max HP and SP while it is worn (`wear`). */
+  bonus: Partial<Record<GearStat, number>>;
 }
 
 export interface MonsterDef {
@@ -77,6 +82,7 @@ export interface Member {
   /** Total experience earned, ever. */
   xp: number;
   hp: number;
+  /** Includes the HP and SP the worn gear adds. */
   maxHp: number;
   sp: number;
   maxSp: number;
@@ -180,6 +186,8 @@ export interface Clan {
   season?: number;
   /** This season's monster tries and supplies. Missing until the clan buys a supply or tries the monster. */
   monster?: MonsterSave;
+  /** 2 once the gear is from the class lines (shared/clans/items.ts). Missing: older gear, swapped by `refreshGear` when it loads. */
+  gearVersion?: 2;
   /** Set to the season number by a new season's reset: until the clan says "keep" or picks again, it may re-pick each member's race and class. */
   repick?: number;
 }

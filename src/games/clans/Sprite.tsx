@@ -71,7 +71,7 @@ const KIND_COLOURS: Record<string, string> = { weapon: ANSI.yellow, armor: ANSI.
  * tile, coloured by what it is (weapons yellow, armour cyan, shields orange).
  */
 export function ItemSprite({ name, kind, scale = 3 }: { name: string; kind: string; scale?: number }) {
-  const painted = itemArt(name);
+  const painted = itemArt(name, kind);
   if (painted) return <img className="cq-item-art" src={painted} alt="" style={{ height: scale * 20 }} />;
   return <Sprite tile={ITEM_TILES[name] ?? KIND_TILES[kind] ?? DEFAULT_MONSTER_TILE} scale={scale} colour={KIND_COLOURS[kind] ?? ANSI.white} />;
 }

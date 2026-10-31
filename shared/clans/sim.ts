@@ -28,6 +28,7 @@ export function newClan(lineup: Lineup, seed: number): Clan {
     members: LINEUPS[lineup].map(([race, cls], i) => rollMember(dice, names[i], race, cls, i === 0)),
     gold: CONFIG.startGold,
     followers: 0,
+    gearVersion: 2,
     village: { trainingHall: 0, smithy: 0, church: 0 },
     empire: newEmpire(),
   };

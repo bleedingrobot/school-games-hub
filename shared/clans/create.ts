@@ -45,7 +45,7 @@ export const rollAgain = (d: Draft): Draft => (d.rolls < MAX_ROLLS ? { ...d, rol
 
 export function makeClan(name: string, drafts: Draft[]): Clan {
   return {
-    name, members: drafts.map((d, i) => draftMember(d, i)), gold: CONFIG.startGold, followers: 0,
+    name, members: drafts.map((d, i) => draftMember(d, i)), gold: CONFIG.startGold, followers: 0, gearVersion: 2,
     village: { trainingHall: 0, smithy: 0, church: 0 }, wakesToday: 0, empire: newEmpire(),
   };
 }
@@ -72,7 +72,7 @@ export function clanFromChoices(seed: number, name: unknown, drafts: unknown, ty
     if (typeof d.race !== 'string' || !raceByName(d.race) || typeof d.cls !== 'string' || !classByName(d.cls)) return { ok: false, say: 'Pick a race and a class from the lists.' };
     const named = memberNameFrom(d.name, typedNames);
     if (!named.ok) return { ok: false, say: named.say };
-    // Heroes are told apart by name (the shop's "examined" list), so no two in a clan may share one.
+    // Heroes are told apart by name (the fight log and the news), so no two in a clan may share one.
     if (built.some((b) => b.name.toLowerCase() === named.name.toLowerCase())) return { ok: false, say: 'Give each member a different name.' };
     if (!Number.isInteger(d.rolls) || (d.rolls as number) < 0 || (d.rolls as number) > MAX_ROLLS) return { ok: false, say: `You can roll again ${MAX_ROLLS} times for each member.` };
     if (d.look !== undefined && !isLook(d.look)) return { ok: false, say: 'Pick one of the four looks.' };

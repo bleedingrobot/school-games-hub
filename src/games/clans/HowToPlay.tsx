@@ -37,7 +37,8 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         </section>
         <section aria-labelledby="htp-shop">
           <h3 id="htp-shop">The Market</h3>
-          <p>Buy weapons and armour for your heroes. There is a village tax of {CONFIG.shopTax}% on prices, so check the bill with maths. Paying {CONFIG.examinePercent}% of the price lets you look at the item's real numbers first.</p>
+          <p>Every class has its own weapons, armour and a third item, like a shield or a charm. Each hero starts with the first of each. The Market shows their next, better item and a <strong>Buy</strong> button.</p>
+          <p>Items give the stats marked <strong>(R)</strong>, as in the Training Hall. A bigger Smithy sells better items. Answer a maths question when you buy for <strong>{CONFIG.shopDiscount}% off</strong>.</p>
         </section>
         <section aria-labelledby="htp-train">
           <h3 id="htp-train">The Training Hall</h3>

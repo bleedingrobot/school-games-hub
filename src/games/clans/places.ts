@@ -4,8 +4,8 @@
  * and say no (null) when something can't be done, so the screens stay display-only.
  */
 import { CONFIG } from '../../../shared/clans/config';
-import { churchCost, examineCost, hpCost, shopPrice, spCost, trainCost, wakeCost } from '../../../shared/clans/character';
-import { buyItem as buyItemFor, buyTroopMix as buyTroopMixFor, examineItemFor, knockedOutMembers, raidSeed as raidSeedFor, sendArmyTo, trainMember, wakeAllCost, wakeAllPayers, wakeEveryone, wakeOne, wakeOrder, type TrainKey } from '../../../shared/clans/play';
+import { churchCost, hpCost, shopPrice, spCost, trainCost, wakeCost } from '../../../shared/clans/character';
+import { buyItem as buyItemFor, buyTroopMix as buyTroopMixFor, knockedOutMembers, raidSeed as raidSeedFor, sendArmyTo, trainMember, wakeAllCost, wakeAllPayers, wakeEveryone, wakeOne, wakeOrder, type TrainKey } from '../../../shared/clans/play';
 import type { ServerState } from '../../../shared/clans/actions';
 import { canUpgrade, capacity, empireOf, might, newEmpire, raidKingdom, upgrade, type BattleResult, type Done, type Fail, type Push, type Take } from '../../../shared/clans/empire';
 import { raidClassmateNz, raidTargetList, type TargetEntry } from '../../../shared/clans/village';
@@ -22,20 +22,10 @@ const withClan = (s: Session, change: (clan: Clan) => boolean): Session | null =
   return change(clan) ? { ...s, clan } : null;
 };
 
-export const examinedKey = (m: Member, item: ItemDef) => `${m.name}|${item.name}`;
-export const hasExamined = (s: Session, m: Member, item: ItemDef) => s.examined.includes(examinedKey(m, item));
+/** Pay for an item and put it on the member (10% off with `discount`). Null if it can't be bought. */
+export const buyItem = (s: Session, memberIndex: number, item: ItemDef, discount = false): Session | null => withClan(s, (clan) => buyItemFor(clan, memberIndex, item, discount).ok);
 
-/** Pay the shop price and put the item on the member (swapping out what was there). Null if the gold isn't there. */
-export const buyItem = (s: Session, memberIndex: number, item: ItemDef): Session | null => withClan(s, (clan) => buyItemFor(clan, memberIndex, item).ok);
-
-/** Pay to look closely at an item for a member. Null if the gold isn't there. */
-export function examineItem(s: Session, memberIndex: number, item: ItemDef): Session | null {
-  const clan = structuredClone(s.clan);
-  const examined = [...s.examined];
-  return examineItemFor(clan, examined, memberIndex, item).ok ? { ...s, clan, examined } : null;
-}
-
-export { shopPrice, examineCost };
+export { shopPrice };
 
 export type { TrainKey };
 
@@ -246,7 +236,7 @@ export function pretendRaid(s: Session, mateId: string, take: Take, push: Push):
   const clan = structuredClone(s.clan);
   const e = empireOf(clan);
   e.raidsToday = s.pretendRaids ?? 0;
-  const state = { clan, seed: s.baseSeed, day: s.day, createdNzDay: PRETEND_TODAY - 30, fightsLeft: s.fightsLeft, fightNo: s.fightNo, raidNo: s.raidNo ?? 0, examined: s.examined } as ServerState;
+  const state = { clan, seed: s.baseSeed, day: s.day, createdNzDay: PRETEND_TODAY - 30, fightsLeft: s.fightsLeft, fightNo: s.fightNo, raidNo: s.raidNo ?? 0 } as ServerState;
   const out = raidClassmateNz(state, 'you', mate, take, push, raidSeedFor(s.baseSeed, s.raidNo ?? 0), PRETEND_TODAY + s.day - 1, s.raidsOn !== false);
   if (!out.ok) return out;
   return {
@@ -262,7 +252,7 @@ export function pretendRaid(s: Session, mateId: string, take: Take, push: Push):
 export function pretendTargets(s: Session): RaidChoice[] {
   const clan = structuredClone(s.clan);
   empireOf(clan).raidsToday = s.pretendRaids ?? 0;
-  const state = { clan, seed: s.baseSeed, day: s.day, createdNzDay: PRETEND_TODAY - 30, fightsLeft: s.fightsLeft, fightNo: s.fightNo, raidNo: s.raidNo ?? 0, examined: s.examined } as ServerState;
+  const state = { clan, seed: s.baseSeed, day: s.day, createdNzDay: PRETEND_TODAY - 30, fightsLeft: s.fightsLeft, fightNo: s.fightNo, raidNo: s.raidNo ?? 0 } as ServerState;
   const today = PRETEND_TODAY + s.day - 1;
   const sketches = pretendMates(s).map((m) => ({ id: m.id, name: m.name, createdNzDay: m.createdNzDay, shieldUntil: m.empire.shieldUntil, troops: m.empire.troops }));
   const shields = new Map(sketches.filter((m) => m.shieldUntil >= today).map((m) => [m.id, m.shieldUntil]));

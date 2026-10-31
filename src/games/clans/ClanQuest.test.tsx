@@ -266,14 +266,13 @@ describe('picking a look in the creator (Clans art Stage A.5)', () => {
 });
 
 describe('items and quests (Clans art Stage A.7)', () => {
-  it('the Market shelf shows each item painted, and the quest shows its own painting', async () => {
+  it('the Market shows the items painted (or a stand-in painting), and the quest shows its own painting', async () => {
     const u = user();
     await makeClanOnScreen(u);
     await u.click(screen.getByRole('button', { name: 'The Market' }));
-    const shelf = screen.getByRole('list', { name: 'On the shelf' });
-    const items = within(shelf).getAllByRole('button');
-    expect(items.length).toBeGreaterThan(0);
-    for (const b of items) expect(b.querySelector('img.cq-item-art')?.getAttribute('src')).toMatch(/\/items\//);
+    const pictures = [...document.querySelectorAll('.cq-gearcard img.cq-item-art')];
+    expect(pictures.length).toBeGreaterThan(0);
+    for (const p of pictures) expect(p.getAttribute('src')).toMatch(/\/items\//);
     await u.click(screen.getByRole('button', { name: /^Back/ }));
     await u.click(screen.getByRole('button', { name: /^Quest/ }));
     expect(document.querySelector<HTMLImageElement>('.cq-scene')?.dataset.scene).toMatch(/^quest-\d+$/);
