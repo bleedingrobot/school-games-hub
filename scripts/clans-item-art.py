@@ -29,11 +29,13 @@ DESCRIPTIONS = json.loads((ROOT / 'docs' / 'clans-art' / 'item-descriptions.json
 PICKS = ROOT / 'docs' / 'clans-art' / 'item-picks.json'
 ITEMS = ROOT / 'src' / 'games' / 'clans' / 'art' / 'items'
 
+# Matches the first 34 item paintings: gritty and well used, muted earthy colours, worn metal and cloth.
 STYLE = (
-    'Dark fantasy oil painting, painterly concept art with visible brushstrokes, rich warm light, highly detailed. '
-    'Friendly and exciting, suitable for children aged 8 to 12. A single fantasy game inventory item, the whole object in view. '
+    'Gritty dark fantasy oil painting, painterly concept art with visible brushstrokes, moody low light, highly detailed. '
+    'Weathered and well used, muted earthy colours, scratched worn metal, rust, frayed cloth and old leather. '
+    'Suitable for children aged 8 to 12. A single fantasy game inventory item, the whole object in view. '
 )
-PLAIN = ' Centred, isolated on a plain flat light grey background, empty space all around the edges.'
+PLAIN = ' Centred, isolated on a plain flat dark grey background, empty space all around the edges.'
 
 
 def load(name: str):

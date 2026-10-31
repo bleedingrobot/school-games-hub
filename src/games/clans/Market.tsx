@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { suppliesOnSale } from '../../../shared/clans/actions';
 import { MONSTER_LOOKS, SUPPLY_KINDS, SUPPLY_NAMES, monsterOf, monsterSave, supplyPrice, type SupplyKind } from '../../../shared/clans/monster';
 import { CONFIG } from '../../../shared/clans/config';
@@ -26,7 +26,7 @@ function Gains({ member, item }: { member: Member; item: ItemDef }) {
     const will = item.bonus[s] ?? 0;
     return (
       <li key={s}>
-        {GEAR_WORD[s]} {was === will ? `+${will}` : `+${was} → +${will}`}
+        {GEAR_WORD[s]} {was === will || was === 0 ? `+${will}` : `+${was} → +${will}`}
         {focus.includes(s) && <span className="cq-rec" title={`Good for a ${member.cls}`}> (R)<span className="sr-only"> recommended for a {member.cls}</span></span>}
       </li>
     );
@@ -80,7 +80,6 @@ function Supplies({ session, onChange }: { session: Session; onChange: Change })
       {asking && (
         <Moment key={`supply-${asking}`} question={marketTotal(settings, CONFIG.monster.supplies[asking].price, CONFIG.shopTax, SUPPLY_NAMES[asking].one)!} title={`Paying for the ${SUPPLY_NAMES[asking].one}`} note="Check the bill before you pay." doneLabel={`Pay ${supplyPrice(asking)} gold`} onDone={() => buy(asking)} />
       )}
-      {said && <p className="cq-note" role="status">{said}</p>}
     </section>
   );
 }
@@ -94,7 +93,10 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
   const { clan, settings } = session;
   const [asking, setAsking] = useState<{ mi: number; item: ItemDef } | null>(null);
   const [open, setOpen] = useState<string | null>(null);
-  const [said, setSaid] = useState('');
+  /** What was just bought, said in the buyer's card (which takes the focus, as the Buy button has gone). */
+  const [bought, setBought] = useState<{ mi: number; text: string } | null>(null);
+  const boughtRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => boughtRef.current?.focus(), [bought]);
   const smithy = levelOf(clan, 'smithy');
   const top = unlockedTier(smithy);
 
@@ -104,10 +106,10 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
     if (!next) return;
     onChange(next, { type: 'buy', member: mi, item: item.name, answer });
     const paid = shopPrice(item, right);
-    setSaid(`${clan.members[mi].name} is wearing the ${item.name}. You paid ${paid} gold${right ? ` (${CONFIG.shopDiscount}% off!)` : ''}.`);
+    setBought({ mi, text: `${clan.members[mi].name} is wearing the ${item.name}. You paid ${paid} gold${right ? ` (${CONFIG.shopDiscount}% off!)` : ''}.` });
   };
   const start = (mi: number, item: ItemDef) => {
-    setSaid('');
+    setBought(null);
     if (discountQuestion(settings, item.price, item.name)) setAsking({ mi, item });
     else pay(mi, item, null, false);
   };
@@ -137,7 +139,6 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
       <p className="cq-soft">
         You have <strong>{clan.gold} gold</strong>. The Smithy (level {smithy}) sells up to tier {top}. Answer the maths question when you buy for {CONFIG.shopDiscount}% off.
       </p>
-      {said && <p className="cq-note" role="status">{said}</p>}
       <div className="cq-gearcards">
         {clan.members.map((m, mi) => (
           <article key={m.name} className="cq-panel cq-gearcard" aria-label={`${m.name}'s gear`}>
@@ -145,6 +146,7 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
               <Portrait race={m.race} cls={m.cls} look={lookOf(m)} scale={2} />
               <h3>{m.name} <small className="cq-soft">{m.race} {m.cls}</small></h3>
             </header>
+            {bought?.mi === mi && <p className="cq-note" role="status" tabIndex={-1} ref={boughtRef}>{bought.text}</p>}
             {GEAR_KINDS.map((kind) => {
               const line = itemLine(m.cls, kind);
               const tier = wornTier(m, kind);

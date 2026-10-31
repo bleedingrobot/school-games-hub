@@ -12,6 +12,8 @@ Needs Pillow and numpy, and rembg for the cut-outs (pip install "rembg[cpu]"; on
 Every picture except the members was made twice; docs/clans-art/default-picks.json says which copy is used.
 A file that's already there is skipped, so a run that stops part-way can just be started again.
 """
+from __future__ import annotations
+
 import json
 import os
 import re
