@@ -76,7 +76,7 @@ James approved all the first-round picks (27 Oct 2026).
 
 ## Stage D: check it (local)
 
-- `npm run typecheck`, `npm test`. Tests follow `docs/TESTING.md`: at most **one** new test (every file in `art/` is a name `art.ts` looks for, as Dragon Maths has), and don't raise `MAX_TESTS`.
+- `npm run typecheck`, `npm test`. Tests follow `docs/TESTING.md`: at most **one** new test (every file in `art/` is a name `art.ts` looks for, as Dragon Maths has).
 - Browser screenshots at Chromebook (1366 × 768), iPad and phone sizes, of a running wave on levels 1, 6 and 10, with "Brighter map" on and off.
 - Speed: steady 60 frames a second with 60 enemies on a Chromebook-class setting (CPU slowed 4× in Chromium).
 - A kid-safety look at every picture: friendly monsters, nothing scary for 8-year-olds, no writing.
