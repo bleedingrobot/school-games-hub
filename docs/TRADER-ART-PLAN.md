@@ -3,7 +3,7 @@
 How Star Trader swaps its drawn-in-code art for paintings in the **Cinematic** style, made in ComfyUI on James's gaming PC. It follows the way Dragon Maths and Clan Quest were done (`docs/CLANS-ART-PLAN.md`), so most of the tools already exist.
 
 Written 27 October 2026 for James.
-**Status: G.0 to G.3 done (1 Nov 2026); G.3 (painted ships) waits for James to look at a fight.** Branch `trader-art`, from `main` after Star Trader went live (the old `trader` branch is merged and gone).
+**Status: G.0 to G.3 done (1 Nov 2026); G.2 and G.3 approved by James.** Branch `trader-art`, from `main` after Star Trader went live (the old `trader` branch is merged and gone).
 
 ## The short version
 
@@ -99,6 +99,8 @@ James looked at the preview on 1 Nov and said it looks good.
 - Ship panel and shipyard (`Panels.tsx`, `trader.css`): the painting (full size in the ship panel, the 160 px card at 120 px in each shipyard row) instead of the drawn canvas when there is one.
 - **Checked:** every measured point drawn on the paintings themselves (all on their nozzle or gun; the Flea's lower engine moved up once). A new test checks every ship and pirate has its points, on the painting, engines behind the gun. Typecheck, build and `test:all` pass.
 - **Not checked in a browser** (the published preview needs a claude.ai sign-in the in-app browser doesn't have): the flames' size against each nozzle, lasers leaving the gun, and the shield bubble's fit. Preview with buttons for warp, shots, shields and explosions: https://claude.ai/artifact/CCBg81TjMxo5MjNQmqTDM3 (`preview/trader/art.html`).
+
+James watched the fight preview on 1 Nov and said it looks good.
 
 **Next: G.4**, the ~16 backgrounds (to be painted first).
 
