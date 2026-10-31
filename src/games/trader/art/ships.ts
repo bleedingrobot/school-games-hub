@@ -3,7 +3,13 @@
  * pirate. Every ship is drawn facing right, about 100 units long, in layers: engine glow, nacelles, wings, hull,
  * details, cockpit, lights. Each part is lit from above (a bright top edge, a dark underside, a thin outline, a
  * gleam along the top) so the ships look solid, and engines throw a warm light onto the hull behind them.
+ *
+ * Painted ships (docs/TRADER-ART-PLAN.md, G.3): once a ship's painting has downloaded it is drawn instead, with the
+ * engine flames, the laser's muzzle and the shield bubble placed from points measured on each painting (PAINTED).
+ * Until then, the drawn ship shows.
  */
+import { SHIPS } from '../../../../shared/trader/config';
+import { imageNow, pirateArt, shipArt } from './paint';
 import { TAU, clamp, mix, rgba } from './util';
 
 export type ShipKind = { side: 'trader'; index: number } | { side: 'pirate'; index: number };
@@ -779,9 +785,69 @@ const DRAWERS = {
   pirate: [scrappy, raider, captain],
 };
 
+/**
+ * Where things are on each painting, measured on the paintings themselves: x across from the back (0) to the front (1)
+ * and y down from the middle, both as a share of the painting's width. `length` is how long the ship is drawn, in the
+ * same units as the drawn ships (bigger ships are longer). Engines are the glowing nozzles the flames come out of.
+ */
+interface PaintedShip {
+  length: number;
+  engines: readonly (readonly [x: number, y: number])[];
+  gun: readonly [x: number, y: number];
+  flame: string;
+}
+export const PAINTED: Record<ShipKind['side'], readonly PaintedShip[]> = {
+  trader: [
+    { length: 90, engines: [[0.1, -0.04], [0.23, 0.23]], gun: [0.97, 0.13], flame: '#7ad7ff' }, // Flea
+    { length: 100, engines: [[0.15, -0.06], [0.16, 0.03]], gun: [0.99, 0.1], flame: '#7dd3fc' }, // Gnat
+    { length: 106, engines: [[0.15, 0.01]], gun: [0.99, 0.13], flame: '#7dd3fc' }, // Firefly
+    { length: 110, engines: [[0.08, 0], [0.11, 0.1]], gun: [0.63, -0.18], flame: '#7dd3fc' }, // Bumblebee
+    { length: 116, engines: [[0.15, 0]], gun: [0.99, 0.13], flame: '#7dd3fc' }, // Beetle
+    { length: 130, engines: [[0.05, -0.03], [0.08, -0.02], [0.11, -0.01]], gun: [0.45, -0.18], flame: '#7dd3fc' }, // Termite
+  ],
+  pirate: [
+    { length: 104, engines: [[0.19, 0]], gun: [0.99, 0.05], flame: '#f87171' }, // Scrappy pirate
+    { length: 108, engines: [[0.28, 0.08], [0.5, 0.09]], gun: [0.99, 0.15], flame: '#f87171' }, // Pirate raider
+    { length: 124, engines: [[0.21, -0.02], [0.24, -0.02], [0.27, -0.02]], gun: [0.99, 0.17], flame: '#f87171' }, // Pirate captain
+  ],
+};
+
+/** The ship's painting, if it has one and it has downloaded. */
+function paintingOf(kind: ShipKind): HTMLImageElement | undefined {
+  return imageNow(kind.side === 'trader' ? shipArt(SHIPS[kind.index]?.name ?? '') : pirateArt(kind.index));
+}
+
+/** A measured point on a painting, in ship units (0, 0 the middle, facing right). */
+const onPainting = (p: PaintedShip, [x, y]: readonly [number, number]): Pt => [(x - 0.5) * p.length, y * p.length];
+
+/** Where the laser comes out, in ship units, for the picture being shown. */
+export function muzzleOf(kind: ShipKind): Pt {
+  const p = PAINTED[kind.side][kind.index];
+  return p && paintingOf(kind) ? onPainting(p, p.gun) : MUZZLE;
+}
+
+/** The shield bubble's half-width and half-height, in ship units, for the picture being shown. */
+export function shieldOf(kind: ShipKind): { rx: number; ry: number } {
+  const p = PAINTED[kind.side][kind.index];
+  const img = p && paintingOf(kind);
+  if (!p || !img) return { rx: 76, ry: 48 };
+  return { rx: p.length * 0.62, ry: Math.max(40, ((p.length * img.naturalHeight) / img.naturalWidth) * 0.62) };
+}
+
+function paintedShip(g: CanvasRenderingContext2D, p: PaintedShip, img: HTMLImageElement, pose: ShipPose, seed: number): void {
+  const h = (p.length * img.naturalHeight) / img.naturalWidth;
+  p.engines.forEach((e, i) => {
+    const [ex, ey] = onPainting(p, e);
+    flame(g, ex, ey, p.length * 0.3 * pose.thrust + 10, p.length * 0.03, pose.t, p.flame, seed + i);
+  });
+  g.drawImage(img, -p.length / 2, -h / 2, p.length, h);
+}
+
 /** Draw a ship with its middle at (x, y). `scale` 1 makes a ship about 100 pixels long. */
 export function drawShip(g: CanvasRenderingContext2D, kind: ShipKind, x: number, y: number, scale: number, pose: ShipPose): void {
-  const draw = DRAWERS[kind.side][kind.index];
+  const painted = PAINTED[kind.side][kind.index];
+  const img = painted && paintingOf(kind);
+  const draw = img ? (gg: CanvasRenderingContext2D, pp: ShipPose) => paintedShip(gg, painted, img, pp, kind.index * 3) : DRAWERS[kind.side][kind.index];
   if (!draw) return;
   g.save();
   g.translate(x, y);

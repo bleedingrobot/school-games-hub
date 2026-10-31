@@ -95,6 +95,20 @@ export function paintingNow(url: string | undefined): Painting | undefined {
   return known ?? undefined;
 }
 
+const images = new Map<string, HTMLImageElement>();
+/** A picture to draw as it is (a ship), once it has downloaded; otherwise starts the download and gives undefined. */
+export function imageNow(url: string | undefined): HTMLImageElement | undefined {
+  if (!url) return undefined;
+  let img = images.get(url);
+  if (!img) {
+    img = new Image();
+    img.decoding = 'async';
+    img.src = url;
+    images.set(url, img);
+  }
+  return img.complete && img.naturalWidth > 0 ? img : undefined;
+}
+
 /** Starts downloading pictures before a screen needs them. */
 export function preload(...urls: (string | undefined)[]) {
   for (const url of urls) if (url) new Image().src = url;

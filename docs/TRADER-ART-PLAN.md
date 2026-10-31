@@ -3,7 +3,7 @@
 How Star Trader swaps its drawn-in-code art for paintings in the **Cinematic** style, made in ComfyUI on James's gaming PC. It follows the way Dragon Maths and Clan Quest were done (`docs/CLANS-ART-PLAN.md`), so most of the tools already exist.
 
 Written 27 October 2026 for James.
-**Status: G.0 to G.2 done (1 Nov 2026); G.2 (spinning painted planets) waits for James to look.** Branch `trader-art`, from `main` after Star Trader went live (the old `trader` branch is merged and gone).
+**Status: G.0 to G.3 done (1 Nov 2026); G.3 (painted ships) waits for James to look at a fight.** Branch `trader-art`, from `main` after Star Trader went live (the old `trader` branch is merged and gone).
 
 ## The short version
 
@@ -91,7 +91,16 @@ Each stage ends with tests passing, screenshots for James (laptop and phone widt
 - **Preview:** `preview/trader/planets.html` (in `npm run trader:preview`): all 25 planets turning, switches for paintings on/off, simple graphics, reduced motion, ×10 spin, sizes (grid, scene, star chart), and a speed test. Published privately: https://claude.ai/artifact/PBdyxfVvP9RVqU9d4R5TZN
 - **Merging this puts painted planets in the live game** (planet scene and star chart). Draft until James has looked.
 
-**Next: G.3**, painted ships in the planet scene, warp and fights.
+James looked at the preview on 1 Nov and said it looks good.
+
+**G.3 (1 Nov 2026): painted ships, waiting for James to look at a fight.**
+- `art/ships.ts`: once a ship's painting has downloaded (`imageNow` in `paint.ts`), `drawShip` draws it instead of the drawn ship, everywhere the drawn one was: planet scene, warp, fights, the escape pod's ship. `PAINTED` holds what was measured on each painting (engine nozzles, the gun's tip, as shares of the painting's width) and how long it is drawn (Flea 90 up to Termite 130 units; pirates 104, 108, 124). The flames come out of the painted nozzles (blue for traders, red for pirates); the halo, pirate glow, hit flash and damage marks still go on top.
+- Fights (`renderer.ts`): lasers start at each painting's gun (`muzzleOf`, mirrored for the pirate, who faces left) and the shield bubble fits the painted ship (`shieldOf`). Until a painting arrives, the old muzzle and bubble are used.
+- Ship panel and shipyard (`Panels.tsx`, `trader.css`): the painting (full size in the ship panel, the 160 px card at 120 px in each shipyard row) instead of the drawn canvas when there is one.
+- **Checked:** every measured point drawn on the paintings themselves (all on their nozzle or gun; the Flea's lower engine moved up once). A new test checks every ship and pirate has its points, on the painting, engines behind the gun. Typecheck, build and `test:all` pass.
+- **Not checked in a browser** (the published preview needs a claude.ai sign-in the in-app browser doesn't have): the flames' size against each nozzle, lasers leaving the gun, and the shield bubble's fit. Preview with buttons for warp, shots, shields and explosions: https://claude.ai/artifact/CCBg81TjMxo5MjNQmqTDM3 (`preview/trader/art.html`).
+
+**Next: G.4**, the ~16 backgrounds (to be painted first).
 
 ## 5. Notes
 

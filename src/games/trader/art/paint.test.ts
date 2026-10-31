@@ -56,3 +56,23 @@ describe('the painted pictures', () => {
     expect(allPaintFiles()).toHaveLength(files('planets').length + files('ships').length);
   });
 });
+
+describe('the measured points on the painted ships', () => {
+  it('every trader ship and pirate has its engines, gun and length, all on the painting', async () => {
+    const { PAINTED } = await import('./ships');
+    expect(PAINTED.trader).toHaveLength(SHIPS.length);
+    expect(PAINTED.pirate).toHaveLength(PIRATE_TIERS.length);
+    for (const p of [...PAINTED.trader, ...PAINTED.pirate]) {
+      expect(p.engines.length).toBeGreaterThan(0);
+      for (const [x, y] of [...p.engines, p.gun]) {
+        expect(x).toBeGreaterThanOrEqual(0);
+        expect(x).toBeLessThanOrEqual(1);
+        expect(Math.abs(y)).toBeLessThan(0.35);
+      }
+      // Engines at the back, the gun towards the front.
+      expect(Math.max(...p.engines.map(([x]) => x))).toBeLessThan(p.gun[0]);
+      expect(p.length).toBeGreaterThanOrEqual(80);
+      expect(p.length).toBeLessThanOrEqual(140);
+    }
+  });
+});

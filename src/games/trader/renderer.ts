@@ -11,7 +11,7 @@
 import { NEBULAE, drawSky, makeSky, type Sky } from './art/space';
 import { Fx } from './art/fx';
 import { drawPlanet, lookOf } from './art/planets';
-import { MUZZLE, drawShip, type ShipKind } from './art/ships';
+import { drawShip, muzzleOf, shieldOf, type ShipKind } from './art/ships';
 import { TAU, clamp, ease, lerp, rng } from './art/util';
 
 export interface Scene {
@@ -200,8 +200,9 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, initia
       const tilt = you.tilt + (warping ? Math.sin(clock * 60) * 0.015 * warpP : 0);
       drawShip(g, kind, you.x + (warping ? Math.sin(clock * 70) * 2 * warpP : 0), you.y, s, { thrust: clamp(you.thrust + burn - 0.35, 0, 1.6), t: clock, damage: scene.kind === 'fight' ? 1 - youHull : 0, flash: you.flash, tilt });
       if (shields && scene.kind === 'fight') {
-        const rx = 76 * s;
-        const ry = 48 * s;
+        const bubble = shieldOf(kind);
+        const rx = bubble.rx * s;
+        const ry = bubble.ry * s;
         const glow = g.createRadialGradient(you.x, you.y, ry * 0.6, you.x, you.y, rx);
         glow.addColorStop(0, 'rgba(125,211,252,0)');
         glow.addColorStop(0.8, `rgba(125,211,252,${0.12 + shieldGlow * 0.3})`);
@@ -347,8 +348,10 @@ function makeView(canvas: HTMLCanvasElement, g: CanvasRenderingContext2D, initia
     async shoot(from, o) {
       const { s, ps } = aim();
       const fromYou = from === 'you';
-      const sx = fromYou ? you.x + MUZZLE[0] * s : pirate.x - MUZZLE[0] * ps;
-      const sy = fromYou ? you.y : pirate.y;
+      // The pirate faces left, so its muzzle is mirrored.
+      const [mx, my] = muzzleOf(fromYou ? { side: 'trader', index: scene.ship } : { side: 'pirate', index: scene.pirate ?? 0 });
+      const sx = fromYou ? you.x + mx * s : pirate.x - mx * ps;
+      const sy = fromYou ? you.y + my * s : pirate.y + my * ps;
       const tx = fromYou ? pirate.x - 30 * ps : you.x + 30 * s;
       const ty = fromYou ? pirate.y : you.y;
       const flightMs = dur(380);
