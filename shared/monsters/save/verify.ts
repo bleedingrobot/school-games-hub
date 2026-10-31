@@ -6,6 +6,7 @@
 import { BandedPack, sameAnswer } from '../../maths/banded';
 import { MISSING_FACTOR_FROM_LEVEL } from '../../maths/config';
 import { parseFactKey } from '../../maths/facts';
+import { solveQuestion } from '../../maths/skillPacks/timesTables';
 import { poolsFor } from '../../maths/selector';
 import { BANDED_PACKS, type TopicId } from '../../maths/skillPacks';
 import { bandFor } from '../bands';
@@ -22,6 +23,11 @@ export interface QuestionReport {
   params?: number[];
   /** Times tables only: 'multiply' or 'missing-factor'. */
   kind?: string;
+  /**
+   * Times tables only: the question as it was shown (['?', '×', '8', '=', '56']). The key alone can't say which number was the
+   * blank in a missing-factor question, so without this the server can't tell 7 (right) from 8 (the number on screen).
+   */
+  parts?: string[];
   /** What the student typed or tapped. */
   given: number;
   /** Milliseconds to answer. */
@@ -65,10 +71,20 @@ export function markQuestion(q: unknown, area: number, far: boolean): Marked {
     if (!fact) return { ok: false, problem: 'question-key' };
     const pools = poolsFor({ level: band });
     if (![...pools.focus, ...pools.review, ...pools.stretch].includes(r.key)) return { ok: false, problem: 'question-band' };
+    if (r.kind !== 'multiply' && !(r.kind === 'missing-factor' && band >= MISSING_FACTOR_FROM_LEVEL)) return { ok: false, problem: 'question-kind' };
+    if (r.parts !== undefined) {
+      // Worked out from how it was shown: the shown question must be this fact, asked this way.
+      const parts = Array.isArray(r.parts) && r.parts.length === 5 && r.parts.every((p) => typeof p === 'string') ? (r.parts as string[]) : null;
+      const solved = parts ? solveQuestion(parts) : null;
+      if (!parts || !solved || solved.key !== r.key) return { ok: false, problem: 'question-parts' };
+      if ((parts[4] === '?') !== (r.kind === 'multiply') || parts[1] !== '×') return { ok: false, problem: 'question-kind' };
+      return { ok: true, correct: r.given === solved.answer };
+    }
+    // A browser from before 20 Oct 2026 sends no parts. A product is still exact; a missing factor can only be checked
+    // against either factor (so the number on screen also passes). Remove once no old save can be waiting.
     const product = fact.a * fact.b;
     if (r.kind === 'multiply') return { ok: true, correct: r.given === product };
-    if (r.kind === 'missing-factor' && band >= MISSING_FACTOR_FROM_LEVEL) return { ok: true, correct: r.given === fact.a || r.given === fact.b };
-    return { ok: false, problem: 'question-kind' };
+    return { ok: true, correct: r.given === fact.a || r.given === fact.b };
   }
 
   const pack = packFor(topic);

@@ -107,6 +107,17 @@ describe('the monster server function', () => {
     expect(await batchIdFor(items[1].saveId, 'add-sub')).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
 
+  it('keeps the ladder place up to date once after new answers, and not for a save sent again', async () => {
+    const { items, now } = played(2);
+    const syncPlace = vi.fn(async () => {});
+    const { s } = fakeDatabase(now, { syncPlace });
+    await send(s, items);
+    expect(syncPlace).toHaveBeenCalledTimes(1);
+    expect(syncPlace).toHaveBeenCalledWith('student-1');
+    await send(s, items);
+    expect(syncPlace).toHaveBeenCalledTimes(1);
+  });
+
   it('is fine when the reply was lost: some saves are in, the rest are new', async () => {
     const { items, now } = played(4);
     const { s, db } = fakeDatabase(now);
@@ -214,7 +225,7 @@ describe('the monster server function', () => {
 
 describe('the deployable file', () => {
   // Skipped: monster/index.ts is deliberately left as deployed, so it no longer matches the code.
-  it.skip('is up to date with the code (run `npm run build:functions` if this fails)', async () => {
+  it('is up to date with the code (run `npm run build:functions` if this fails)', async () => {
     // @ts-expect-error: plain JavaScript build script
     const { buildFunction } = await import('../../../scripts/build-functions.mjs');
     const built: string = await buildFunction('monster');
