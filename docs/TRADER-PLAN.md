@@ -570,3 +570,17 @@ James couldn't find a profit: nothing showed what other planets pay (the simulat
 1. **A planet's prices on its star chart card**: "They pay", "Buy here" and "Profit each" for every good (`shared/trader/priceGuide.ts`, `PriceList` in `StarMap.tsx`).
 2. **"Sells best" on each good in the market**: the planet within a full tank's reach that pays most today, and "+N each" when that beats the price here.
 Both use today's prices with the school's market, so the server now also sends the school's pushes (`prices`: [planet, good, push]) in the load and jump replies it already sends; still no new requests. A note on the card says prices can change before you land. Also fixed an older phone bug: the top strip wrapped onto two rows and covered the tabs at phone width. Tests: 3 new (best price within reach and at least one profitable trade from the start; school pushes included; the screen shows the hint and the card's price list); 80 Star Trader tests and the whole project pass (two space-game screen tests timed out once under load and pass alone).
+
+## Went live (1 Nov 2026, NZ time; 31 Oct 22:30 to 22:50 UTC)
+
+James pre-approved merging and going live. Done in this order, each checked before the next:
+
+1. **#108 merged** (`bcd98fc`) after bringing `trader` up to date with `main` (which now had #107) and re-running `node scripts/migration-numbers.mjs` (no number used twice; live latest was `20261030000100`, so ours come after it). Checks green on the merge commit.
+2. **"Test and publish" (run 41248591605) green.** It applied `20261031000100_trader` and `20261031000200_trader_market` (and left `20261028000400` on hold as listed), deployed `trader`, and published the site.
+3. **Checked live with the Supabase connector:** both versions are in `supabase_migrations.schema_migrations`; all seven `trader_` tables exist and are empty, with RLS on, no policies and no grants to `anon` or `authenticated`; `trader_enabled` is off in all 4 classes (`trader_jumps` 10, `trader_loans` true, `trader_maths` 'choose'); `hub_games` has `trader`. `scored_games` still has 1,876 rows.
+4. **Checked from outside:** an unsigned `POST /functions/v1/trader` answers 401 `{"error":"Please sign in again."}`. Signed out (publishable key only), every `trader_` table and `trader_load`, `trader_season`, `trader_drift`, `teacher_set_trader` and `teacher_reset_trader` are refused with 42501. In the database, only `teacher_set_trader` and `teacher_reset_trader` can be run by signed-in users; every other `trader_` function is server-only.
+5. **Code switch on: #110 merged** (`7cb1159`): `ON = true` in `src/games/trader/switch.ts`. Its first build failed because `src/games/registry.test.ts` lists the hub's games and didn't have Star Trader yet; fixed in the same PR, then green. Its "Test and publish" (run 41249793788) green: no migration, no function deployed, site published. Classes still start **off**: a teacher turns Star Trader on per class on the Teacher page.
+
+Not checked yet: the teacher's Star Trader row and Settings on the live site in a real browser (covered by `src/pages/TeacherTrader.test.tsx`), and a real class playing it.
+
+Rollback: the teacher switch per class, then `ON = false` in `switch.ts` (section 8 of the Game Development Guide).
