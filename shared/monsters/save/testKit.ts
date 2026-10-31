@@ -74,7 +74,7 @@ export function playBattle(setup: BattleSetup, where: { map: string; trainer?: T
     clock.tick(student.ms);
     const marked = pack(topic).recordAnswer(question, given, student.ms);
     const q: QuestionReport = {
-      topic, band, key: question.factKey, ...(question.params ? { params: question.params } : {}), ...(topic === 'times-tables' ? { kind: question.kind } : {}),
+      topic, band, key: question.factKey, ...(question.params ? { params: question.params } : {}), ...(topic === 'times-tables' ? { kind: question.kind, parts: question.parts } : {}),
       given, ms: student.ms, at: clock.now(),
     };
     return { q, result: judgeAnswer({ correct: marked.correct, ms: student.ms, topic, band, calm: student.calm }) };

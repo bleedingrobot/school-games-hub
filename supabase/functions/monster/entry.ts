@@ -3,6 +3,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { userIdFromToken } from '../_shared/signIn';
 import { FLUENT_DAYS, QUICK_MS, TOP_BOX } from '../../../shared/maths/config';
+import { makePlaceSyncer, type PlacePorts } from '../../../shared/maths/syncPlace';
+import { countForFocuses } from '../_shared/focusResults';
 import { makeHandler, type Outcome } from './handler';
 
 declare const Deno: {
@@ -33,8 +35,25 @@ async function call<T>(name: string, args: Record<string, unknown>): Promise<Out
   return { ok: false, why: 'busy' };
 }
 
+/** The database calls the ladder needs to keep the furthest place (the same as Gem Keep's; a placement is never made here). */
+const placePorts: PlacePorts = {
+  async loadContext(player) {
+    const { data, error } = await admin.rpc('space_maths_context', { player });
+    if (error) throw new Error(error.code ?? 'unknown');
+    return (data as never) ?? null;
+  },
+  async savePlace(player, skill, rank) {
+    const { error } = await admin.rpc('record_ladder_place', { player, skill, rank });
+    if (error) throw new Error(error.code ?? 'unknown');
+  },
+  async savePlacementRow() {
+    throw new Error('not here');
+  },
+};
+
 Deno.serve(
   makeHandler({
+    syncPlace: makePlaceSyncer(placePorts),
     now: () => Date.now(),
     userIdFor: userIdFromToken(admin.auth),
     async enabled(player) {
@@ -50,10 +69,15 @@ Deno.serve(
     },
     knownSaves: (player, ids) => call('known_monster_saves', { player, ids }),
     // The rules' numbers come from the shared maths settings, so they live in one place.
-    recordAnswers: (player, pack, batchId, answers) =>
-      call('record_fact_answers', {
+    recordAnswers: async (player, pack, batchId, answers) => {
+      const saved = await call<number>('record_fact_answers', {
         player, pack, batch_id: batchId, answers, quick_ms: QUICK_MS, fluent_days: FLUENT_DAYS, top_box: TOP_BOX,
-      }),
+      });
+      // Times tables, adding and division answers count for a running maths focus too (other topics aren't on the
+      // ladder and are skipped). Only a batch the records took for the first time, so a retry never counts twice.
+      if (saved.ok && saved.value > 0) await countForFocuses((name, args) => admin.rpc(name, args), player, pack, answers, 'monster');
+      return saved;
+    },
     recordSave: (player, save) => call('record_monster_save', { player, save }),
     recordRefusal: (player, reason, seq) => call('record_monster_refusal', { player, reason, seq }),
   }),

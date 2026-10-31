@@ -56,6 +56,8 @@ export interface Services {
   recordAnswers(player: string, pack: string, batchId: string, answers: FactAnswer[]): Promise<Outcome<number>>;
   recordSave(player: string, save: SaveRow): Promise<Outcome<{ status: SaveStatus; version: number; points: number | null }>>;
   recordRefusal(player: string, reason: string, seq: number | null): Promise<Outcome<null>>;
+  /** Keeps the student's furthest place on the maths ladder up to date after new answers are saved. Never throws. */
+  syncPlace?(player: string): Promise<void>;
   /** Milliseconds since 1970. */
   now(): number;
 }
@@ -121,6 +123,7 @@ export function makeHandler(services: Services) {
 
     const results: ItemResult[] = [];
     let refused: string | null = null;
+    let added = false;
     for (const raw of body.items) {
       if (refused) {
         // They all follow the refused one, so none of them could be accepted.
@@ -144,7 +147,10 @@ export function makeHandler(services: Services) {
       for (const [topic, list] of Object.entries(answers)) {
         if (!list?.length) continue;
         const recorded = await services.recordAnswers(player, topic, await batchIdFor(item.saveId, topic), list);
-        if (recorded.ok) continue;
+        if (recorded.ok) {
+          if (recorded.value > 0) added = true;
+          continue;
+        }
         if (recorded.why === 'refused') {
           refused = 'answers';
           await refuse(player, 'answers', raw, services);
@@ -175,6 +181,8 @@ export function makeHandler(services: Services) {
       results.push({ type: 'save', ...saved.value });
       prev = { world: item.world, at: item.at };
     }
+    // New times-table, adding or division answers can move the student on the ladder (late or missed is harmless).
+    if (added && services.syncPlace) await services.syncPlace(player);
     if (results.length === 0) return reply(503, { error: "We couldn't save your game just now." });
     return reply(200, { handled: results.length, results } satisfies SaveResponse);
   };
