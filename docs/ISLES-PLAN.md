@@ -35,9 +35,9 @@ Immortal Barons (MIT licence, Andy Alt, 2026) describes itself as a remake of th
 
 ## 1. The short version
 
-- You keep a **small floating island** in a sky shared by your class. You start with 8 plots of land. Each day the wind brings new chunks of land drifting past, and you can anchor them to grow your island.
+- You keep a **small floating island** in a sky shared by your class. You start with 6 building spots. Each day the wind brings a new chunk of land drifting past, and you can anchor it to add a spot.
 - **Six turns a day (chosen).** Each turn: answer the sky pilot's question, collect what your island made, feed your people, then spend: anchor land, build, set your tax, trade. About 2 minutes a turn, so a lesson's six turns fit 10 to 15 minutes.
-- **Six kinds of plot (chosen):**
+- **Six kinds of building (chosen),** each with levels 1 to 3:
   - Farms make food.
   - Mines make coins steadily.
   - Docks make more coins when your people are happy.
@@ -45,9 +45,9 @@ Immortal Barons (MIT licence, Andy Alt, 2026) describes itself as a remake of th
   - Workshops build sky-boats and goods.
   - Libraries make ideas that unlock upgrades.
   The choices are what to build, how high to set your tax, and whether to grow now or save.
-- **The big goal:** grow your island to **Grand Isle** (40 plots) and build its **Sky Lighthouse** in four stages, inside one 5-week season.
+- **The big goal:** grow your island to **Grand Isle** (16 building spots) and build its **Sky Lighthouse** in four stages, inside one 5-week season.
 - **Classmates:**
-  - **Sky Races:** challenge a classmate's island. The winner gets a free chunk of land from the wild sky, and the other side gets a small gift of coins. Nobody loses anything.
+  - **Sky Races:** challenge a classmate's island. The day's first win brings coins and goods, and the other side gets a small gift of coins. Nobody loses anything.
   - **Friendship ropes:** tie your island to up to two friends' islands for small shared bonuses.
   - **A class market:** buy and sell food and goods. Prices move when lots of pupils sell the same thing.
   - **A news board:** good news only.
@@ -68,7 +68,7 @@ Immortal Barons (MIT licence, Andy Alt, 2026) describes itself as a remake of th
 Every number here is a **starting guess**. All of them live in `shared/isles/config.ts`, and the simulator (`scripts/isles-sim.mjs`, stage S.0) sets the real ones.
 
 **Starting island (chosen):**
-- 8 plots: 2 Farms, 2 Houses, 1 Mine, 1 Dock, 1 Workshop, 1 empty.
+- 6 building spots: Farm, House, Mine, Farm, Dock and 1 empty. Every building starts at level 1 and can be raised to level 3.
 - 300 coins, 120 food, 40 people, happiness 70 out of 100, 2 sky-boats.
 
 **Order of a turn:**
@@ -85,7 +85,8 @@ Every number here is a **starting guess**. All of them live in `shared/isles/con
 4. **Feed.** Each person eats 1 food. A shortfall lowers happiness, and some people leave to live on a neighbour's island. Kind words: nobody starves on screen.
 5. **Spend** (any order, as much as the coins allow):
    - **Anchor a chunk.** Only from today's drift (a set number of chunks a day per island). The price rises with island size, which slows the biggest islands and lets small ones catch up.
-   - **Build or change a plot.** A fixed price each, more for a Library.
+   - **Build on a spot, or change it.** A fixed price each, more for a Library. Changing a building starts it again at level 1.
+   - **Raise a building one level.** Level 2 makes twice what level 1 makes, level 3 three times. It costs the build price × 4 (to level 2), or × 9 plus 6 goods (to level 3).
    - **Set the tax:** Low, Fair or High. Three settings, not a percentage. Each shows what it will do in words.
    - **Hold a festival:** coins for +15 happiness, once a day.
    - **Trade** at the class market.
@@ -120,8 +121,8 @@ Eight upgrades, each one simple and shown with a picture **(chosen)**:
 |---|---|---|
 | Better Ploughs | 4 | Farms +25% food |
 | Cool Cellars | 4 | Food goes off half as fast, and stores are bigger |
-| Tall Houses | 6 | Houses hold more people |
-| Bright Docks | 6 | Docks earn more at every happiness level |
+| Bunk Beds | 6 | Houses hold more people |
+| Welcome Lanterns | 6 | Docks earn more at every happiness level |
 | Wind Wall | 6 | Storms blow nothing away |
 | Swift Sails | 8 | Sky-boats are faster in races |
 | Sky Bridge | 8 | Friendship ropes give twice the bonus |
@@ -140,7 +141,7 @@ Classmates only, never other schools, and never anyone's maths shown to anyone e
 - **Challenging.** On a turn you may challenge one classmate's island to a race. A sky-boat race plays as a short animation.
 - **Your speed** is your boats sent, plus your upgrades, plus your happiness, plus **one gust for each right answer** to three focus questions, plus a little luck.
 - **Their speed** comes from boats they keep home. They don't need to be online.
-- **Winner:** a free chunk from the wild sky (outside the daily drift) and race points.
+- **Winner:** race points, and a prize. The day's first win brings 30 coins and 5 goods (goods help raise buildings to level 3). A later win brings 15 coins. No free land.
 - **The other island** gets a small "well raced" gift of coins. **Nobody ever loses land, boats or anything else** **(chosen)**.
 - **Limits (chosen):**
   - One race a turn, and at most 2 a day.
@@ -169,7 +170,7 @@ Classmates only, never other schools, and never anyone's maths shown to anyone e
 
 ### The news board
 
-- **Good news only:** "Ana's island reached 20 plots!", "Rawiri won a Sky Race against the Gull Riders", "Storm over the east sky, Wind Walls held."
+- **Good news only:** "Ana's island reached 12 spots!", "Rawiri won a Sky Race against the Gull Riders", "Storm over the east sky, Wind Walls held."
 - **Never** who lost a race, and never anything about maths.
 
 ---
@@ -193,10 +194,10 @@ Classmates only, never other schools, and never anyone's maths shown to anyone e
 
 ### 6.1 The big goal
 
-- **The goal:** **Grand Isle** means 40 plots, then the **Sky Lighthouse** in 4 stages (each costs coins and goods). A lit Lighthouse shines on everyone's sky map for the rest of the season.
+- **The goal:** **Grand Isle** means 16 building spots, then the **Sky Lighthouse** in 4 stages (each costs coins and goods). A lit Lighthouse shines on everyone's sky map for the rest of the season.
 - **Pace:** the simulator should show a pupil who plays 3 to 4 days a week (about 18 to 24 turns a week) reaching Grand Isle around week 4 and lighting the Lighthouse in week 5. A pupil who plays every day gets there in week 3 or 4.
 - **After the goal:**
-  - Keep growing, past 40 plots, for island worth.
+  - Keep growing, past 16 spots and up through the building levels, for island worth.
   - Collect all 8 upgrades.
   - Race.
   - Help roped friends with gifts of food.
@@ -211,8 +212,9 @@ Classmates only, never other schools, and never anyone's maths shown to anyone e
 - **The last 5 days:** a countdown banner. Then a celebration screen showing your island's season in numbers.
 - **Joining late or missing days:**
   - Unused turns carry over for up to 2 days (12 turns).
-  - Chunks are cheap for small islands, because the price follows island size.
-  - Small islands get one extra chunk in the drift while they are under half the class's median size **(chosen)**.
+  - Chunks are cheap for small islands, because the price follows island size (85 coins × the spots already owned).
+  - The drift is 1 chunk a day. Unused chunks wait, up to 3 (Star Map: 1 more a day and up to 4).
+  - Small islands get one extra chunk while they are under 0.7 of the class's middle size **(chosen)**.
 
 ### 6.3 A set number of moves a day: yes, 6 turns
 
@@ -225,7 +227,7 @@ Classmates only, never other schools, and never anyone's maths shown to anyone e
 ### 6.4 Progress bars
 
 - **In the game:**
-  - The **road to Grand Isle**: plots from 8 to 40, then the 4 Lighthouse stages.
+  - The **road to Grand Isle**: spots from 6 to 16, then the 4 Lighthouse stages.
   - **Today's turns**: 6 pips.
   - The upgrade list shows how many ideas the next one needs.
   - Reuse `LevelBar` where it fits.
@@ -247,7 +249,7 @@ Recorded through `hub_games` (`counts_fn`, `achievement_measures`, `achievement_
 | Bookworm | Unlock 4 upgrades | `upgrades_season_best` ≥ 4 | About half |
 | Race Winner | Win a Sky Race | `races_won` ≥ 1 | Most pupils |
 | True Friend | Keep a friendship rope for 7 days | `rope_days_best` ≥ 7 | About a third |
-| Grand Isle | Grow your island to 40 plots | `grand_isles` ≥ 1 | About half, by the season's end |
+| Grand Isle | Grow your island to 16 building spots | `grand_isles` ≥ 1 | About half, by the season's end |
 | Lighthouse Keeper | Light the Sky Lighthouse | `lighthouses` ≥ 1 | About a third |
 
 **Points (`rules_fn`, `add_game_points`, at most 40 a day across the hub):**
@@ -270,9 +272,9 @@ The `once` keys are the turn number and the race id.
 
 | Moment | What the game does | Why a child gets stuck | Fix |
 |---|---|---|---|
-| Opens the game | Shows an island and 6 kinds of plot | Too much at once | The guided first go shows one thing at a time. Plot names have pictures. |
+| Opens the game | Shows an island and 6 kinds of building | Too much at once | The guided first go shows one thing at a time. Building names have pictures. |
 | First question | The sky pilot asks a sum | "Why am I doing maths?" | Pip: "Get it right for a fair wind: everything grows more this turn!" |
-| Collect | Numbers pop up | Doesn't know where they came from | Each number sits on its plot, then they add up in a sum line. |
+| Collect | Numbers pop up | Doesn't know where they came from | Each number sits on its building, then they add up in a sum line. |
 | Feed | Food goes down | Doesn't notice until people leave | A food bar that shows "enough for 3 turns", and a warning before it runs out. |
 | Spend | Lots of buttons, some greyed out | Greyed buttons with no reason | Every greyed button says why ("Needs 40 coins, you have 25"). |
 | Anchor a chunk | Drift panel | Doesn't know what a chunk is | Pip lights up a drifting chunk: "Tap to anchor it. More land, more to build." |
@@ -295,7 +297,7 @@ Turn 2's guide adds the Workshop slider and the first race against the Gull Ride
 - **Never stuck:** the guide follows what the pupil does. If they skip ahead it catches up, and every step can be skipped.
 
 **Other help:**
-- **Next-step line, always there.** One sentence with real names and numbers ("Your food runs out in 2 turns: build a Farm on your empty plot"), worked out fresh by a pure function `nextStep(island)`, with a "Show me" button that lights up the button it means.
+- **Next-step line, always there.** One sentence with real names and numbers ("Your food runs out in 2 turns: build a Farm on your empty spot"), worked out fresh by a pure function `nextStep(island)`, with a "Show me" button that lights up the button it means.
 - **First-time tips:** a closable bubble the first time of each weather event, market, rope offer, race result and Lighthouse.
 - **Help with real choices:**
   - For the tax setting and Workshop slider, Pip shows the numbers and an opinion with the working ("High tax: +8 coins a turn, but about 3 people a turn will leave").
@@ -318,7 +320,7 @@ Turn 2's guide adds the Workshop slider and the first race against the Gull Ride
 - **Guided first go:** choosing a keeper is the first step. Pip says: "Who looks after this island? Pick your Sky Keeper. You can change later."
 
 **About 5 screens (chosen):**
-1. **My island.** The island picture with its plots, and the resource bar: coins, food, people, happiness, ideas, boats. The next-step line and the turn pips are here. Tapping a plot builds or changes it.
+1. **My island.** The island picture with its building spots, and the resource bar: coins, food, people, happiness, ideas, boats. The next-step line and the turn pips are here. Tapping a spot builds on it, changes it, or raises its level.
 2. **The turn.** Report, then question, then collect and feed, then spend panel, then End turn.
 3. **The sky.** A map of the class's islands: size, roped friends, lit Lighthouses. From here you race, rope, and read the news.
 4. **Market.**
@@ -332,8 +334,8 @@ Plus How to play (numbers read from the config) and the season-end celebration.
   - The styles are shown side by side on one private page, so James can choose one (or mix two).
   - It must look different from Kingdom Keeper (animated-film painting, sky frame), Dragon Maths and Clan Quest (gritty painted) and Star Trader (cinematic).
 - **Screens are built around the painted art, not the other way round.**
-  - Every plot type is painted at each of its upgrade levels.
-  - The island is painted as layered pieces (base rock, plots, buildings, sky-boats), so it can grow plot by plot.
+  - Every kind of building is painted at each of its 3 levels, standing alone so it sits straight on a painted clearing.
+  - The island is painted as layered pieces (a base with bare clearings, buildings, sky-boats), so growth shows as buildings getting bigger and grander.
   - The sky, the weather, Pip, the races, the Lighthouse stages and the endings are all painted.
 - **Drawn-in-code art stays as the fallback** for a picture that hasn't loaded (guide section 2, "Painted art"). It is also what S.1 to S.2 use while there are no paintings yet.
 - Full list of pictures, sizes and prompts: `docs/ISLES-ART-PLAN.md` (written in S.L once the style is chosen).
@@ -363,7 +365,7 @@ Plus How to play (numbers read from the config) and the season-end celebration.
 
 | Table | Holds |
 |---|---|
-| `isles_islands` | One per pupil per season: plots, resources, upgrades, seed, turns used today, guide state |
+| `isles_islands` | One per pupil per season: spots (kind and level), resources, upgrades, seed, turns used today, guide state |
 | `isles_turns` | One row per turn played, with a unique turn number (so a turn sent twice counts once) |
 | `isles_questions` | Server only: the stored questions and marks |
 | `isles_races` | Who, result, prize |
@@ -471,7 +473,7 @@ Stop for James after each.
 
 **Numbers changed from the plan's first guesses while tuning:**
 - **Smaller numbers:** start with 150 coins, 30 people, and half a food per person.
-- **Coins limit growth, not the drift.** Chunks cost 22 × plots, so the drift of 3 a day rarely runs out. That makes choices and maths matter: with the first guesses everyone reached Grand Isle on the same day, whatever they did.
+- **Coins limit growth, not the drift.** Chunks cost 22 × plots, so the drift of 3 a day rarely runs out. (Changed again on 2 Nov, below.) That makes choices and maths matter: with the first guesses everyone reached Grand Isle on the same day, whatever they did.
 - **Houses rebalanced.** Houses now hold 30 people and tax is per 2 people at Fair. Before, a House plus its Farm earned less than two Mines.
 - **Upgrades are ×1.5,** so a Library is worth building.
 - **Fair wind is ×1.15,** so all-wrong maths still reaches Grand Isle (week 3 for a daily player), just a little later.
@@ -480,16 +482,28 @@ Stop for James after each.
 **Decisions:**
 - Fog takes half of the turn's Dock coins (the plan said Docks earn half; same thing, done at the end of the turn).
 - An impossible choice refuses the whole turn, and the turn isn't used.
-- **A pupil who plays 1 day a week doesn't reach Grand Isle** (about 20 plots). The small-island extra chunk and the saved turns help in a real class, but the simulator doesn't model them. Worth a look in S.4, once classmates are in the simulator.
+- **A pupil who plays 1 day a week doesn't reach Grand Isle** (about 8 or 9 spots). The small-island extra chunk and the saved turns help in a real class, but the simulator doesn't model them. Worth a look in S.4, once classmates are in the simulator.
 
 **Open for later stages:**
 - **Coins pile up for daily players after the Lighthouse is lit** (about 30,000 by season's end). It needs something worth spending on after the goal: gifts to roped friends, or island decorations that show on the sky map. To decide in S.4.
 - **High tax plus land-grabbing** is slightly the fastest route to the Lighthouse for a 3-day player. Fine as a trade-off for now (it gives fewer people and lower worth). Watch it.
-- Races are only modelled in the simulator (an even chance, 1 prize chunk a day). The real race rules come in S.1.
+- Races are only modelled in the simulator (an even chance, the day's first win brings 30 coins and 5 goods). The real race rules come in S.1.
 
 **Tests:** none yet (tests 5 and 6 come with S.1). The engine type-checks.
 
 **Untested:** everything in the browser and on the server (not built yet).
+
+### Rule change: building spots and levels, 2 Nov 2026
+
+Decided with James because 40 small plot tiles looked crowded and "stuck on". Built in `shared/isles/config.ts` and `engine.ts`; `docs/ISLES-RULES.md` and `docs/ISLES-ART-PLAN.md` are brought up to date. The S.0 notes above are the 1 Nov version.
+- **Building spots instead of plots.** 6 to start, 16 for Grand Isle (was 40 plots). Spots keep the order they were claimed.
+- **Every building has levels 1 to 3.** Level 2 makes twice a level 1, level 3 three times. Raising costs the build price × 4, then × 9 plus 6 goods. New action `raise`.
+- **Land:** a chunk costs 85 × spots owned. The drift is 1 a day, unused chunks wait (up to 3), small islands get one extra.
+- **Upgrades renamed:** Tall Houses is now Bunk Beds, Bright Docks is now Welcome Lanterns (same costs and effects).
+- **Sky Race prizes:** no free land. First win of the day 30 coins and 5 goods, a later win 15 coins.
+- **Island worth:** 10 a spot, 5 a building level, 1 a person, 15 an upgrade, 50 a Lighthouse stage.
+- **Why:** far fewer, bigger things on the island, standing in painted clearings joined by paths. Growth shows as bigger buildings, not more tiles.
+- **Pace (`npm run isles:sim -- --runs 50`):** a daily pupil reaches Grand Isle on day 15 to 17 (week 3), a 3-days-a-week pupil on day 24 to 29 (weeks 4 to 5). Building levels matter: a pupil who only grabs land is a week or more behind. **1 day a week still doesn't reach Grand Isle** (about 8 or 9 spots). Coins still pile up after the Lighthouse (S.4).
 
 ### S.L so far (style try-outs), 1 Nov 2026
 
@@ -500,7 +514,7 @@ Stop for James after each.
 **Checked:** a helper checked every picture. Nothing unsuitable for children was found.
 
 **Claude's top 3:**
-- **Papercut:** the most distinctive, and builds up plot by plot well.
+- **Papercut:** the most distinctive, and builds up piece by piece well.
 - **Cosy 3D:** the chunkiest island for a growing game piece. The races need tidying.
 - **Bright fantasy:** the most polished, but close to Kingdom Keeper's animated-film look.
 

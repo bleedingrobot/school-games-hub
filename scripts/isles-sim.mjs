@@ -52,16 +52,34 @@ function tryAction(state, action) {
   return true;
 }
 
-/** What to build on an empty plot (or which plot to change), for a sensible pupil. */
+const foodPerTurn = (island) => k.levels(island, 'farm') * C.FARM_FOOD * (k.has(island, 'ploughs') ? C.UPGRADE_BOOST : 1);
+const hungry = (island) => foodPerTurn(island) < k.foodNeeded(island) + 2;
+const crowded = (island) => island.people > k.room(island) * 0.85;
+
+/** What to build on an empty spot, for a sensible pupil. */
 function wantedPlot(island, style) {
-  const foodPerTurn = island.plots.farm * C.FARM_FOOD * (k.has(island, 'ploughs') ? C.UPGRADE_BOOST : 1);
-  const need = k.foodNeeded(island) + 2;
-  if (foodPerTurn < need) return 'farm';
-  if (island.people > k.room(island) * 0.85) return 'house';
-  if (style !== 'grabber' && island.plots.library < (k.plotCount(island.plots) >= 16 ? 2 : 1)) return 'library';
-  if (island.plots.workshop < Math.floor(k.plotCount(island.plots) / 8)) return 'workshop';
-  return island.happiness >= 60 && island.plots.dock <= island.plots.mine ? 'dock' : 'mine';
+  if (hungry(island)) return 'farm';
+  if (crowded(island)) return 'house';
+  if (style !== 'grabber' && k.count(island, 'library') < (k.spotCount(island) >= 10 ? 2 : 1)) return 'library';
+  if (k.count(island, 'workshop') < Math.max(1, Math.floor(k.spotCount(island) / 6))) return 'workshop';
+  return island.happiness >= 60 && k.count(island, 'dock') <= k.count(island, 'mine') ? 'dock' : 'mine';
 }
+
+/** Which spot to raise a level next: food or room first if short, then the money-makers, cheapest first. */
+function spotToRaise(island) {
+  const want = hungry(island) ? ['farm'] : crowded(island) ? ['house'] : ['dock', 'mine', 'library', 'workshop', 'farm', 'house'];
+  let best = -1;
+  let bestCost = Infinity;
+  island.spots.forEach((spot, i) => {
+    const price = k.raisePrice(island, i);
+    if (!price || !want.includes(spot.kind)) return;
+    const cost = price.coins * (1 + want.indexOf(spot.kind) * 0.15);
+    if (cost < bestCost) [best, bestCost] = [i, cost];
+  });
+  return best;
+}
+
+const averageLevel = (island) => island.spots.reduce((s, spot) => s + spot.level, 0) / island.spots.length;
 
 /** The pupil's spending for one turn, made on the island after collecting and feeding. */
 function decide(island, style, day) {
@@ -74,28 +92,45 @@ function decide(island, style, day) {
   for (const u of C.UPGRADES) tryAction(state, { kind: 'upgrade', id: u.id });
   if (state.island.happiness < 50 && state.island.coins > 120) tryAction(state, { kind: 'festival' });
 
-  // Sell spare goods until Grand Isle (then they're saved for the Lighthouse), and food over the store.
-  if (!k.isGrandIsle(state.island) && state.island.goods > 0) tryAction(state, { kind: 'sell', good: 'goods', amount: state.island.goods });
+  // Keep goods for level 3 buildings and the Lighthouse; sell the rest, and food over the store.
+  const keepGoods = k.isGrandIsle(state.island) ? 1000 : 12;
+  if (state.island.goods > keepGoods) tryAction(state, { kind: 'sell', good: 'goods', amount: state.island.goods - keepGoods });
   const spareFood = state.island.food - k.store(state.island);
   if (spareFood > 0) tryAction(state, { kind: 'sell', good: 'food', amount: spareFood });
   // Buy food if it would run out next turn.
-  const short = k.foodNeeded(state.island) - state.island.food - state.island.plots.farm * C.FARM_FOOD;
+  const short = k.foodNeeded(state.island) - state.island.food - foodPerTurn(state.island);
   if (short > 0) tryAction(state, { kind: 'buy', good: 'food', amount: short });
 
-  for (let guard = 0; guard < 20; guard++) {
+  for (let guard = 0; guard < 30; guard++) {
+    const empty = state.island.spots.findIndex((spot) => spot.kind === 'empty');
+    if (empty >= 0) {
+      if (!tryAction(state, { kind: 'build', spot: empty, plot: wantedPlot(state.island, style) })) break;
+      continue;
+    }
+    if (hungry(state.island) || crowded(state.island)) {
+      const spot = spotToRaise(state.island);
+      if (spot >= 0 && tryAction(state, { kind: 'raise', spot })) continue;
+    }
     if (k.isGrandIsle(state.island)) {
-      if (!tryAction(state, { kind: 'lighthouse' })) break;
+      if (tryAction(state, { kind: 'lighthouse' })) continue;
+      const spot = spotToRaise(state.island);
+      // After Grand Isle, save up for the next Lighthouse stage before raising more.
+      if (state.island.lighthouse < C.LIGHTHOUSE.length || spot < 0 || !tryAction(state, { kind: 'raise', spot })) break;
       continue;
     }
-    if (state.island.plots.empty > 0) {
-      const plot = wantedPlot(state.island, style);
-      if (!tryAction(state, { kind: 'build', plot, on: 'empty' })) break;
-      continue;
+    // A grabber anchors whenever it can; the others raise buildings until the island averages level 1.5 (2 for steady).
+    const goal = style === 'grabber' ? 0 : style === 'steady' ? 2 : 1.5;
+    if (averageLevel(state.island) < goal) {
+      const spot = spotToRaise(state.island);
+      if (spot >= 0 && tryAction(state, { kind: 'raise', spot })) continue;
     }
-    // A grabber anchors before building; the others keep a little back.
-    const keep = style === 'grabber' ? 0 : 15;
-    if (state.island.coins - keep < k.chunkPrice(state.island)) break;
-    if (!tryAction(state, { kind: 'anchor' })) break;
+    if (tryAction(state, { kind: 'anchor' })) continue;
+    // Can't anchor (no coins or no drift): raise a building instead, keeping enough back for the next chunk if one's waiting.
+    const spot = spotToRaise(state.island);
+    if (spot < 0) break;
+    const price = k.raisePrice(state.island, spot);
+    if (state.island.driftLeft > 0 && state.island.coins - price.coins < k.chunkPrice(state.island) * 0.5) break;
+    if (!tryAction(state, { kind: 'raise', spot })) break;
   }
   return state.actions;
 }
@@ -116,7 +151,7 @@ function season(player, style, right, seed) {
   const out = { grandDay: null, lightDay: null, hungryTurns: 0, turns: 0, maxCoins: 0, end: null };
   for (let day = 0; day < SEASON_DAYS; day++) {
     if (!player.days[day % 7]) continue;
-    if (day > 0) island = k.newDay(island, day - lastDay, 20);
+    if (day > 0) island = k.newDay(island, day - lastDay, 10);
     lastDay = day;
     // A lesson's play: up to 6 turns.
     let prizes = 0;
@@ -130,10 +165,10 @@ function season(player, style, right, seed) {
       out.turns++;
       if (result.report.hungryLeft > 0) out.hungryTurns++;
       out.maxCoins = Math.max(out.maxCoins, island.coins);
-      // Races: two a day against the Gull Riders or a classmate, about an even chance each; one prize chunk a day.
-      if (t < C.RACES_PER_DAY && prizes < C.PRIZE_CHUNKS_PER_DAY && random() < 0.4 + 0.1 * right) {
-        prizes++;
-        island = { ...island, plots: { ...island.plots, empty: island.plots.empty + 1 } };
+      // Races: two a day against the Gull Riders or a classmate, about an even chance each.
+      if (t < C.RACES_PER_DAY && random() < 0.4 + 0.1 * right) {
+        const prize = prizes++ === 0 ? C.FIRST_WIN_PRIZE : C.LATER_WIN_PRIZE;
+        island = { ...island, coins: island.coins + prize.coins, goods: island.goods + prize.goods };
       }
       if (out.grandDay === null && k.isGrandIsle(island)) out.grandDay = day + 1;
       if (out.lightDay === null && island.lighthouse === C.LIGHTHOUSE.length) out.lightDay = day + 1;
@@ -150,7 +185,7 @@ const median = (xs) => {
 const week = (day) => (day === null ? '  -  ' : `wk ${Math.ceil(day / 7)} (d${String(day).padStart(2)})`);
 
 console.log(`Sky Isles: ${RUNS} seasons for each pupil (${SEASON_DAYS}-day season, ${C.TURNS_PER_DAY} turns a play day)\n`);
-console.log('pupil            style    maths  Grand Isle   %got  Lighthouse  %lit  plots  people  upgr  hungry%  most coins');
+console.log('pupil            style    maths  Grand Isle   %got  Lighthouse  %lit  spots  levels  people  upgr  hungry%  most coins');
 for (const player of PLAYERS) {
   for (const style of STYLES) {
     for (const right of MATHS) {
@@ -167,7 +202,8 @@ for (const player of PLAYERS) {
           `${Math.round((grand.length / RUNS) * 100)}`.padStart(5),
           week(median(lit)).padStart(11),
           `${Math.round((lit.length / RUNS) * 100)}`.padStart(5),
-          String(median(ends.map((e) => k.plotCount(e.plots)))).padStart(6),
+          String(median(ends.map((e) => k.spotCount(e)))).padStart(6),
+          String(median(ends.map((e) => e.spots.reduce((s, spot) => s + spot.level, 0)))).padStart(7),
           String(median(ends.map((e) => e.people))).padStart(7),
           String(median(ends.map((e) => e.upgrades.length))).padStart(5),
           `${Math.round((runs.reduce((s, r) => s + r.hungryTurns, 0) / runs.reduce((s, r) => s + r.turns, 0)) * 100)}`.padStart(8),

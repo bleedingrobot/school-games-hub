@@ -8,8 +8,8 @@
  * before the pupil spends; only the end of the turn uses `random`.
  */
 import {
-  ARRIVE_SHARE, BOAT_WORK, BREEZE_HAPPINESS, BUILD_COINS, CHUNK_BASE, CHUNK_PER_PLOT, CROWDED_LEAVE, DOCK_HAPPY,
-  DOCK_LOW, DRIFT_PER_DAY, FAIR_WIND, FARM_FOOD, FESTIVAL_COINS, FESTIVAL_HAPPINESS, FOOD_PER_PERSON, GEESE_COINS,
+  ARRIVE_SHARE, BOAT_WORK, BREEZE_HAPPINESS, BUILD_COINS, CHUNK_BASE, CHUNK_PER_SPOT, CROWDED_LEAVE, DOCK_HAPPY,
+  DOCK_LOW, DRIFT_PER_DAY, LEVEL_GOODS, LEVEL_TIMES, MAX_LEVEL, MOST_DRIFT_SAVED, FAIR_WIND, FARM_FOOD, FESTIVAL_COINS, FESTIVAL_HAPPINESS, FOOD_PER_PERSON, GEESE_COINS,
   GOODS_WORK, GRAND_ISLE, HAPPY_DRIFT, HAPPY_REST, HIGH_TAX_ARRIVALS, HOUSE_ROOM, HUNGRY_HAPPINESS, HUNGRY_LEAVE,
   LIBRARY_IDEAS, LIGHTHOUSE, MARKET_BUY_EXTRA, MINE_COINS, MOST_TURNS_SAVED, OTHER_ROOM, PEOPLE_PER_TAX_COIN,
   PLOT_KINDS, RAINBOW_FOOD, SMALL_ISLAND, SPOIL, START, STORE_BASE, STORE_PER_FARM, STORM_FOOD, TRAVELLER_PEOPLE,
@@ -17,12 +17,17 @@ import {
   type PlotKind, type PlotOrEmpty, type TaxLevel, type UpgradeId, type Weather,
 } from './config';
 
-export type Plots = Record<PlotOrEmpty, number>;
+/** One building spot. An empty spot is level 0; a building is level 1 to MAX_LEVEL. */
+export interface Spot {
+  kind: PlotOrEmpty;
+  level: number;
+}
 
 export interface Island {
   /** Turns played this season. */
   turn: number;
-  plots: Plots;
+  /** Building spots, in the order they were claimed (the art draws spot n on the base's clearing n). */
+  spots: Spot[];
   coins: number;
   food: number;
   people: number;
@@ -61,7 +66,8 @@ export interface Collected {
 
 export type Action =
   | { kind: 'anchor' }
-  | { kind: 'build'; plot: PlotKind; on: PlotOrEmpty }
+  | { kind: 'build'; spot: number; plot: PlotKind }
+  | { kind: 'raise'; spot: number }
   | { kind: 'tax'; level: TaxLevel }
   | { kind: 'workshop'; boatShare: number }
   | { kind: 'festival' }
@@ -77,8 +83,10 @@ export type Problem =
   | 'not-enough-goods'
   | 'not-enough-ideas'
   | 'no-drift'
-  | 'no-such-plot'
+  | 'no-such-spot'
   | 'same-plot'
+  | 'nothing-to-raise'
+  | 'top-level'
   | 'festival-done'
   | 'already-have'
   | 'not-grand-yet'
@@ -111,28 +119,46 @@ export function has(island: Island, id: UpgradeId): boolean {
   return island.upgrades.includes(id);
 }
 
-export function plotCount(plots: Plots): number {
-  return PLOT_KINDS.reduce((sum, kind) => sum + plots[kind], plots.empty);
+export function spotCount(island: Island): number {
+  return island.spots.length;
+}
+
+/** The levels of every building of this kind added up: what the island's Farms (or Mines...) make, in level 1 Farms. */
+export function levels(island: Island, kind: PlotKind): number {
+  return island.spots.reduce((sum, spot) => (spot.kind === kind ? sum + spot.level : sum), 0);
+}
+
+/** How many buildings of this kind (or empty spots) there are, whatever their levels. */
+export function count(island: Island, kind: PlotOrEmpty): number {
+  return island.spots.filter((spot) => spot.kind === kind).length;
 }
 
 export function isGrandIsle(island: Island): boolean {
-  return plotCount(island.plots) >= GRAND_ISLE;
+  return spotCount(island) >= GRAND_ISLE;
 }
 
 /** What the next chunk of land costs. Bigger islands pay more, so small ones catch up. */
 export function chunkPrice(island: Island): number {
-  return CHUNK_BASE + CHUNK_PER_PLOT * plotCount(island.plots);
+  return CHUNK_BASE + CHUNK_PER_SPOT * spotCount(island);
+}
+
+/** What raising the building on this spot one level costs, or null if it can't be raised. */
+export function raisePrice(island: Island, spot: number): { coins: number; goods: number } | null {
+  const here = island.spots[spot];
+  if (!here || here.kind === 'empty' || here.level >= MAX_LEVEL) return null;
+  const next = here.level + 1;
+  return { coins: BUILD_COINS[here.kind] * LEVEL_TIMES[next], goods: LEVEL_GOODS[next] };
 }
 
 /** People the island has room for. */
 export function room(island: Island): number {
-  const houseRoom = has(island, 'tall-houses') ? Math.round(HOUSE_ROOM * UPGRADE_BOOST) : HOUSE_ROOM;
-  return island.plots.house * houseRoom + (plotCount(island.plots) - island.plots.house) * OTHER_ROOM;
+  const houseRoom = has(island, 'bunk-beds') ? Math.round(HOUSE_ROOM * UPGRADE_BOOST) : HOUSE_ROOM;
+  return levels(island, 'house') * houseRoom + (spotCount(island) - count(island, 'house')) * OTHER_ROOM;
 }
 
 /** Food that keeps before some goes off. */
 export function store(island: Island): number {
-  const size = STORE_BASE + STORE_PER_FARM * island.plots.farm;
+  const size = STORE_BASE + STORE_PER_FARM * levels(island, 'farm');
   return has(island, 'cellars') ? size * 2 : size;
 }
 
@@ -143,7 +169,7 @@ export function foodNeeded(island: Island): number {
 /** Coins one Dock earns at this happiness. */
 export function dockCoins(island: Island): number {
   const coins = DOCK_LOW + (DOCK_HAPPY * island.happiness) / 100;
-  return has(island, 'bright-docks') ? coins * UPGRADE_BOOST : coins;
+  return has(island, 'lanterns') ? coins * UPGRADE_BOOST : coins;
 }
 
 const clamp = (n: number, low: number, high: number) => Math.min(high, Math.max(low, n));
@@ -153,7 +179,7 @@ const clamp = (n: number, low: number, high: number) => Math.min(high, Math.max(
 export function newIsland(): Island {
   return {
     turn: 0,
-    plots: { ...START.plots },
+    spots: START.spots.map((kind) => ({ kind, level: kind === 'empty' ? 0 : 1 })),
     coins: START.coins,
     food: START.food,
     people: START.people,
@@ -173,14 +199,16 @@ export function newIsland(): Island {
 }
 
 /**
- * The first time an island is seen on a new New Zealand day: fresh turns (unused ones pile up to MOST_TURNS_SAVED) and a
- * fresh drift. `classMiddle` is the middle plot count of the class's islands: an island under half of it gets an extra
+ * The first time an island is seen on a new New Zealand day: fresh turns (unused ones pile up to MOST_TURNS_SAVED) and
+ * more drift (unused chunks wait, up to MOST_DRIFT_SAVED). `classMiddle` is the middle spot count of the class's islands: an island under half of it gets an extra
  * chunk, so a late joiner can catch up.
  */
 export function newDay(island: Island, daysSince: number, classMiddle: number): Island {
   const turnsLeft = Math.min(MOST_TURNS_SAVED, island.turnsLeft + TURNS_PER_DAY * Math.max(1, daysSince));
-  const small = plotCount(island.plots) < classMiddle * SMALL_ISLAND ? 1 : 0;
-  const driftLeft = DRIFT_PER_DAY + (has(island, 'star-map') ? 1 : 0) + small;
+  const days = Math.max(1, daysSince);
+  const small = spotCount(island) < classMiddle * SMALL_ISLAND ? 1 : 0;
+  const most = MOST_DRIFT_SAVED + small + (has(island, 'star-map') ? 1 : 0);
+  const driftLeft = Math.min(most, island.driftLeft + (DRIFT_PER_DAY + (has(island, 'star-map') ? 1 : 0)) * days + small);
   return { ...island, turnsLeft, driftLeft, festivalToday: false };
 }
 
@@ -189,22 +217,22 @@ export function newDay(island: Island, daysSince: number, classMiddle: number): 
 export function collect(island: Island, windy: boolean): Collected {
   const wind = windy ? FAIR_WIND : 1;
   const farm = has(island, 'ploughs') ? FARM_FOOD * UPGRADE_BOOST : FARM_FOOD;
-  const work = island.plots.workshop * WORKSHOP_WORK * wind;
+  const work = levels(island, 'workshop') * WORKSHOP_WORK * wind;
   const boatWork = island.boatWork + (work * island.boatShare) / 100;
   return {
-    food: Math.floor(island.plots.farm * farm * wind),
-    mine: Math.floor(island.plots.mine * MINE_COINS * wind),
-    dock: Math.floor(island.plots.dock * dockCoins(island) * wind),
+    food: Math.floor(levels(island, 'farm') * farm * wind),
+    mine: Math.floor(levels(island, 'mine') * MINE_COINS * wind),
+    dock: Math.floor(levels(island, 'dock') * dockCoins(island) * wind),
     tax: Math.floor((island.people / PEOPLE_PER_TAX_COIN[island.tax]) * wind),
     boats: Math.floor(boatWork / BOAT_WORK),
     goods: Math.floor((work * (100 - island.boatShare)) / 100 / GOODS_WORK),
-    ideas: island.plots.library * LIBRARY_IDEAS * wind,
+    ideas: levels(island, 'library') * LIBRARY_IDEAS * wind,
     windy,
   };
 }
 
 function applyCollect(island: Island, c: Collected): Island {
-  const work = island.plots.workshop * WORKSHOP_WORK * (c.windy ? FAIR_WIND : 1);
+  const work = levels(island, 'workshop') * WORKSHOP_WORK * (c.windy ? FAIR_WIND : 1);
   const boatWork = island.boatWork + (work * island.boatShare) / 100 - c.boats * BOAT_WORK;
   return {
     ...island,
@@ -254,12 +282,22 @@ export function problemWith(island: Island, action: Action, prices: Prices): Pro
     case 'anchor':
       if (island.driftLeft < 1) return 'no-drift';
       return island.coins < chunkPrice(island) ? 'not-enough-coins' : null;
-    case 'build':
+    case 'build': {
       if (!PLOT_KINDS.includes(action.plot)) return 'bad-choice';
-      if (action.on !== 'empty' && !PLOT_KINDS.includes(action.on)) return 'bad-choice';
-      if (island.plots[action.on] < 1) return 'no-such-plot';
-      if (action.plot === action.on) return 'same-plot';
+      const here = island.spots[action.spot];
+      if (!Number.isInteger(action.spot) || !here) return 'no-such-spot';
+      if (action.plot === here.kind) return 'same-plot';
       return island.coins < BUILD_COINS[action.plot] ? 'not-enough-coins' : null;
+    }
+    case 'raise': {
+      const here = Number.isInteger(action.spot) ? island.spots[action.spot] : undefined;
+      if (!here) return 'no-such-spot';
+      if (here.kind === 'empty') return 'nothing-to-raise';
+      const price = raisePrice(island, action.spot);
+      if (!price) return 'top-level';
+      if (island.coins < price.coins) return 'not-enough-coins';
+      return island.goods < price.goods ? 'not-enough-goods' : null;
+    }
     case 'tax':
       return ['low', 'fair', 'high'].includes(action.level) ? null : 'bad-choice';
     case 'workshop':
@@ -303,14 +341,23 @@ export function apply(island: Island, action: Action, prices: Prices): Island {
         ...island,
         coins: island.coins - chunkPrice(island),
         driftLeft: island.driftLeft - 1,
-        plots: { ...island.plots, empty: island.plots.empty + 1 },
+        spots: [...island.spots, { kind: 'empty', level: 0 }],
       };
     case 'build':
       return {
         ...island,
         coins: island.coins - BUILD_COINS[action.plot],
-        plots: { ...island.plots, [action.on]: island.plots[action.on] - 1, [action.plot]: island.plots[action.plot] + 1 },
+        spots: island.spots.map((spot, i) => (i === action.spot ? { kind: action.plot, level: 1 } : spot)),
       };
+    case 'raise': {
+      const price = raisePrice(island, action.spot)!;
+      return {
+        ...island,
+        coins: island.coins - price.coins,
+        goods: island.goods - price.goods,
+        spots: island.spots.map((spot, i) => (i === action.spot ? { ...spot, level: spot.level + 1 } : spot)),
+      };
+    }
     case 'tax':
       return { ...island, tax: action.level };
     case 'workshop':
@@ -442,5 +489,6 @@ export function playTurn(island: Island, windy: boolean, actions: Action[], pric
 
 /** What a finished island is worth, for the Hall of the Skies (never anything about maths). */
 export function islandWorth(island: Island): number {
-  return plotCount(island.plots) * 10 + island.people + island.upgrades.length * 15 + island.lighthouse * 50;
+  const allLevels = island.spots.reduce((sum, spot) => sum + spot.level, 0);
+  return spotCount(island) * 10 + allLevels * 5 + island.people + island.upgrades.length * 15 + island.lighthouse * 50;
 }

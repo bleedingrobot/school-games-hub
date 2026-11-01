@@ -38,27 +38,59 @@ ISLAND = (
     'floating island drifting in the sky, its top a flat empty grassy meadow with soft green grass and a few wildflowers, '
     'its rocky brown underside tapering downwards with dangling roots and two small waterfalls spilling off the edge.'
 )
+CLEARINGS = (
+    'floating island drifting in the sky, its grassy top a gentle meadow with {n} small round empty clearings of bare '
+    'earth spread evenly across it, joined by winding dirt footpaths, a few small bushes and wildflowers between them. '
+    'Its rocky brown underside tapers downwards with dangling roots and two small waterfalls spilling off the edge.'
+)
+# Buildings sit straight on a base's clearing, so each is painted with only a little grass at its foot.
+ALONE = ' Standing alone, with only a few soft tufts of grass and a little earth right at its foot.'
+BUILDINGS = {
+    'farm': [
+        'A single small barn with a red roof beside a few rows of golden wheat and a haystack.',
+        'A single red barn with a hayloft beside a bigger field of golden wheat in neat rows, two haystacks and a wooden cart.',
+        'A single big red barn with a silo and a little windmill, beside rich fields of tall golden wheat, haystacks and a vegetable patch.',
+    ],
+    'mine': [
+        'A single small rocky hillock with a wooden-framed mine entrance and a little mine cart of shiny blue crystals.',
+        'A single rocky hill with a sturdy timber mine entrance, rails, two mine carts of shiny blue crystals and a lantern.',
+        'A single big rocky crag with a grand timber mine entrance, a little crane, rails, carts heaped with glowing blue crystals and lanterns.',
+    ],
+    'dock': [
+        'A single short wooden jetty sticking out sideways into the air, with a small sky-boat with a red sail moored to it.',
+        'A single wooden jetty with a little harbour hut and a rope post, a sky-boat with a red sail and a smaller boat moored to it.',
+        'A single long wooden pier with a harbour master hut, glowing paper lanterns on posts, colourful bunting and two sky-boats with red sails moored to it.',
+    ],
+    'house': [
+        'A single small cosy cottage with a red tiled roof, chimney smoke and a flower box.',
+        'A single two-storey house with a red tiled roof, a balcony, chimney smoke and flower boxes.',
+        'A single grand three-storey manor house with red tiled roofs, a little tower, many windows, chimney smoke and flower boxes.',
+    ],
+    'workshop': [
+        'A single small timber workshop with a stack of planks and a sawhorse.',
+        'A single timber workshop with a small windmill on its roof, stacks of planks and a half-built little boat hull beside it.',
+        'A single big timber boatyard workshop with a windmill on its roof, a wooden crane and a nearly finished sky-boat with a sail beside it.',
+    ],
+    'library': [
+        'A single little round stone library tower with a blue pointed roof and round windows.',
+        'A single round stone library tower with a blue pointed roof, a reading balcony and a small telescope on top.',
+        'A single tall stone library with two blue pointed towers, a big brass telescope, a star globe and stained-glass round windows.',
+    ],
+}
 PIP = 'Pip, a friendly cute round white seagull mascot with a small blue scarf, a yellow beak and big kind eyes, '
 BOAT = 'A small wooden sky-boat with {sail}, a little propeller at the back and small canvas wings on its sides, flying.'
 
 PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
-    # Island bases, Little to Grand (8, 16, 24, 32, 40 plots).
-    'base-1': ('A tiny ' + ISLAND + PIECE, WIDE),
-    'base-2': ('A small ' + ISLAND + PIECE, WIDE),
-    'base-3': ('A medium-sized ' + ISLAND + PIECE, WIDE),
-    'base-4': ('A large wide ' + ISLAND + PIECE, WIDE),
-    'base-5': ('A huge grand wide ' + ISLAND + PIECE, WIDE),
-    # Plots: one small square patch of grass each.
-    'plot-farm': ('A single diamond-shaped square patch of grassy land seen from slightly above at a three-quarter view, with a visible earth edge and softly rounded corners, filling most of the picture, planted with a small field of golden wheat in neat rows and a low wooden fence.' + PIECE, SQUARE),
-    'plot-mine': ('A single square patch filling most of the picture, of land with a rocky hillock, a wooden-framed mine entrance and a little mine cart full of shiny blue crystals.' + PIECE, SQUARE),
-    'plot-dock': ('A single diamond-shaped square patch of grassy land seen from slightly above at a three-quarter view, with a visible earth edge and softly rounded corners, filling most of the picture, with a big wooden jetty along its front edge and a large sky-boat with a red sail moored beside it, the boat almost as big as the patch.' + PIECE, SQUARE),
-    'plot-house': ('A single square patch filling most of the picture, of grass with a cosy little cottage with a red tiled roof, chimney smoke and flower boxes.' + PIECE, SQUARE),
-    'plot-workshop': ('A single square patch filling most of the picture, of grass with a timber workshop with a small windmill on its roof, stacks of planks and a half-built little boat hull beside it.' + PIECE, SQUARE),
-    'plot-library': ('A single square patch filling most of the picture, of grass with a little round stone library tower with a blue pointed roof, round windows and a bench with a pile of books.' + PIECE, SQUARE),
-    'plot-empty': ('A single square patch filling most of the picture, of freshly dug brown soil with a little wooden marker post and a few pebbles, ready to build on.' + PIECE, SQUARE),
-    'plot-farm-ploughs': ('A single diamond-shaped square patch of grassy land seen from slightly above at a three-quarter view, with a visible earth edge and softly rounded corners, filling most of the picture, planted with a rich field of tall golden wheat, two big round haystacks and a big shiny wooden plough.' + PIECE, SQUARE),
-    'plot-house-tall': ('A single square patch filling most of the picture, of grass with a tall narrow three-storey cottage with a red tiled roof, many windows, chimney smoke and flower boxes.' + PIECE, SQUARE),
-    'plot-dock-bright': ('A single diamond-shaped square patch of grassy land seen from slightly above at a three-quarter view, with a visible earth edge and softly rounded corners, filling most of the picture, with a short wooden jetty sticking out from one edge into the air, big glowing paper lanterns on posts, large bright colourful bunting, and a little sky-boat with a red sail moored to it.' + PIECE, SQUARE),
+    # Island bases, Little to Grand (6, 8, 10, 13 and 16 building spots), each with painted clearings joined by paths.
+    'base-1': ('A tiny ' + CLEARINGS.format(n='six') + PIECE, WIDE),
+    'base-2': ('A small ' + CLEARINGS.format(n='eight') + PIECE, WIDE),
+    'base-3': ('A medium-sized ' + CLEARINGS.format(n='ten') + PIECE, WIDE),
+    'base-4': ('A large wide ' + CLEARINGS.format(n='thirteen') + PIECE, WIDE),
+    'base-5': ('A huge grand wide ' + CLEARINGS.format(n='sixteen') + PIECE, WIDE),
+    # A spot that's been claimed but not built on yet.
+    'bld-empty': ('A little wooden marker post with a small blank sign, a coil of rope and a few stacked planks, ready to build.' + ALONE + PIECE, SQUARE),
+    # Buildings at levels 1 to 3 (docs/ISLES-RULES.md), each standing on its own with no patch of land under it.
+    **{f'bld-{kind}-{n}': (words + ALONE + PIECE, SQUARE) for kind, levels in BUILDINGS.items() for n, words in enumerate(levels, 1)},
     # Sky-boats.
     'boat-red': (BOAT.format(sail='a big billowing red sail') + SIDE, WIDE),
     'boat-blue': (BOAT.format(sail='a big billowing blue and white striped sail') + SIDE, WIDE),
@@ -88,12 +120,12 @@ KEEPERS = {
     'b03': ('a 9-year-old Samoan boy with brown skin and short black hair and a round cheerful face', 'a blue t-shirt with a coil of rope over one shoulder'),
     'b04': ('a 9-year-old Chinese boy with light skin and neat black hair and round glasses', 'a yellow raincoat'),
     'b05': ('a 10-year-old Indian boy with brown skin and wavy dark hair', 'an orange vest over a white shirt, with flying goggles round his neck'),
-    'b06': ('a 10-year-old Tongan boy with deep rich dark brown skin, darker than most, and a tight short buzz cut', 'a teal sports jersey and a canvas satchel strap'),
+    'b06': ('a 10-year-old boy with very dark brown skin, deep cocoa-brown skin, a Tongan boy with a broad warm face and a tight short buzz cut', 'a teal sports jersey and a canvas satchel strap'),
     'b07': ('an 11-year-old boy with fair skin and straight blond hair', 'a navy pilot jacket and a striped scarf'),
     'b08': ('an 11-year-old Filipino boy with light brown skin and spiky black hair', 'a striped sailor top, with flying goggles on his forehead'),
     'b09': ('a 12-year-old Korean boy with light skin and neat side-parted black hair', 'a mustard cardigan and a map case strap'),
     'b10': ('a 12-year-old Maori boy with warm brown skin and long dark hair pulled back into a low ponytail, the hair tie visible', 'a black windbreaker and a greenstone pendant'),
-    'b11': ('a 13-year-old Fijian boy with very dark brown skin and short tight curly hair', 'a denim jacket and a bandana round his neck'),
+    'b11': ('a 13-year-old boy with very dark brown skin, deep cocoa-brown skin, a Fijian boy with short tightly coiled black afro-textured curly hair', 'a denim jacket and a bandana round his neck'),
     'b12': ('a 13-year-old boy with fair skin and brown curly hair', 'a brown leather aviator jacket with a sheepskin collar'),
     'b13': ('a 14-year-old Somali boy with dark brown skin and short black hair', 'a green bomber jacket'),
     'b14': ('a 14-year-old Japanese boy with light skin and shaggy black hair', 'a white shirt with rolled sleeves and a red scarf'),
@@ -108,12 +140,12 @@ KEEPERS = {
     'g03': ('a 9-year-old Samoan girl with brown skin and long wavy black hair and a hibiscus flower behind her ear', 'a pink t-shirt'),
     'g04': ('a 9-year-old Indian girl with brown skin and a long black plait', 'a purple kurta top and a little brass compass on a cord'),
     'g05': ('a 10-year-old Chinese girl with light skin and a short bob and a fringe', 'a red quilted jacket'),
-    'g06': ('a 10-year-old Tongan girl with deep rich dark brown skin, darker than most, and curly hair tied back with a visible yellow hair band', 'a teal hoodie'),
+    'g06': ('a 10-year-old girl with very dark brown skin, deep cocoa-brown skin, a Tongan girl with thick tightly curly black hair tied back with a wide bright yellow fabric hair band', 'a teal hoodie'),
     'g07': ('an 11-year-old girl with fair skin and red wavy hair', 'a green knitted jumper and a scarf'),
     'g08': ('an 11-year-old Filipina girl with light brown skin and long straight black hair and a headband', 'a white blouse and a sky-blue vest'),
     'g09': ('a 12-year-old Korean girl with light skin and a high ponytail', 'a mustard raincoat with flying goggles round her neck'),
-    'g10': ('a 12-year-old Maori girl with warm medium-brown skin, a clearly Maori face and long wavy dark hair', 'a black jacket and a greenstone pendant'),
-    'g11': ('a 13-year-old Fijian girl with very dark brown skin, short tight curly hair and a flower clip', 'an orange windbreaker'),
+    'g10': ('a 12-year-old Maori girl with warm brown skin, a broad Polynesian face with a wide nose and full cheeks, and long wavy dark hair', 'a black jacket and a greenstone pendant'),
+    'g11': ('a 13-year-old girl with very dark brown skin, deep cocoa-brown skin, a Fijian girl with short tightly coiled black afro-textured curly hair and a flower clip', 'an orange windbreaker'),
     'g12': ('a 13-year-old girl with fair skin and brown hair in a messy bun and glasses', 'a brown leather aviator jacket'),
     'g13': ('a 14-year-old Somali girl with dark brown skin, wearing a soft lilac hijab', 'a denim jacket'),
     'g14': ('a 14-year-old Japanese girl with light skin and long black hair and a fringe', 'a navy sailor-style coat and a red scarf'),

@@ -4,16 +4,17 @@
  * `npm run isles:sim`.
  */
 
-/** The six kinds of plot, plus an empty plot waiting to be built on. */
+/** The six kinds of building, plus an empty spot waiting to be built on. Each building has levels 1 to MAX_LEVEL. */
 export const PLOT_KINDS = ['farm', 'mine', 'dock', 'house', 'workshop', 'library'] as const;
 export type PlotKind = (typeof PLOT_KINDS)[number];
 export type PlotOrEmpty = PlotKind | 'empty';
 
 export type TaxLevel = 'low' | 'fair' | 'high';
 
-/** A new island at the start of a season. */
+/** A new island at the start of a season: its building spots, in the order they were claimed (the art draws them in
+ * that order on the base's clearings), every building at level 1. */
 export const START = {
-  plots: { farm: 2, mine: 1, dock: 1, house: 2, workshop: 1, library: 0, empty: 1 },
+  spots: ['farm', 'house', 'mine', 'farm', 'dock', 'empty'] as PlotOrEmpty[],
   coins: 150,
   food: 60,
   people: 30,
@@ -30,6 +31,8 @@ export const TURNS_PER_DAY = 6;
 export const MOST_TURNS_SAVED = 18;
 
 // --- Collect, each turn ---------------------------------------------------------------------------------------------
+
+// Every amount below is for a level 1 building; a level 2 building makes twice as much and a level 3 three times.
 
 /** Food one Farm grows. */
 export const FARM_FOOD = 10;
@@ -53,7 +56,7 @@ export const FAIR_WIND = 1.15;
 
 /** Food one person eats a turn. */
 export const FOOD_PER_PERSON = 0.5;
-/** People a House holds, and people any other plot holds (a few live on every plot). */
+/** People a House holds, and people any other spot holds (a few live by every building). */
 export const HOUSE_ROOM = 30;
 export const OTHER_ROOM = 2;
 /** Each turn people move this share of the way to the room there is, scaled by happiness (see engine). */
@@ -81,20 +84,25 @@ export const FESTIVAL_COINS = 40;
 
 // --- Food store ------------------------------------------------------------------------------------------------------
 
-/** Food that keeps: STORE_BASE plus STORE_PER_FARM for each Farm (doubled by Cool Cellars). Over that, SPOIL goes off a turn. */
+/** Food that keeps: STORE_BASE plus STORE_PER_FARM for each Farm level (doubled by Cool Cellars). Over that, SPOIL goes off a turn. */
 export const STORE_BASE = 40;
 export const STORE_PER_FARM = 20;
 export const SPOIL = 0.1;
 
 // --- Spend -----------------------------------------------------------------------------------------------------------
 
-/** Chunks of land the wind brings past each island in a day. */
-export const DRIFT_PER_DAY = 3;
-/** A chunk costs CHUNK_BASE + CHUNK_PER_PLOT for every plot the island already has. */
+/** Chunks of land the wind brings past each island in a day (each is one new building spot), and how many can wait. */
+export const DRIFT_PER_DAY = 1;
+export const MOST_DRIFT_SAVED = 3;
+/** A chunk costs CHUNK_BASE + CHUNK_PER_SPOT for every spot the island already has. */
 export const CHUNK_BASE = 0;
-export const CHUNK_PER_PLOT = 22;
-/** Building (or changing) a plot. */
+export const CHUNK_PER_SPOT = 85;
+/** Building on a spot (or changing what's there, which starts again at level 1). */
 export const BUILD_COINS: Record<PlotKind, number> = { farm: 25, mine: 30, dock: 30, house: 25, workshop: 35, library: 50 };
+/** The top level, and what raising a building to each level costs: the build price times LEVEL_TIMES, plus goods. */
+export const MAX_LEVEL = 3;
+export const LEVEL_TIMES: Record<number, number> = { 2: 4, 3: 9 };
+export const LEVEL_GOODS: Record<number, number> = { 2: 0, 3: 6 };
 
 /** The class market's normal prices (the server moves them a little). Buying costs MARKET_BUY_EXTRA more. */
 export const MARKET_PRICE = { food: 2, goods: 6 } as const;
@@ -105,21 +113,23 @@ export const MARKET_BUY_EXTRA = 1.5;
 export const UPGRADES = [
   { id: 'ploughs', name: 'Better Ploughs', ideas: 4 },
   { id: 'cellars', name: 'Cool Cellars', ideas: 4 },
-  { id: 'tall-houses', name: 'Tall Houses', ideas: 6 },
-  { id: 'bright-docks', name: 'Bright Docks', ideas: 6 },
+  { id: 'bunk-beds', name: 'Bunk Beds', ideas: 6 },
+  { id: 'lanterns', name: 'Welcome Lanterns', ideas: 6 },
   { id: 'wind-wall', name: 'Wind Wall', ideas: 6 },
   { id: 'swift-sails', name: 'Swift Sails', ideas: 8 },
   { id: 'sky-bridge', name: 'Sky Bridge', ideas: 8 },
   { id: 'star-map', name: 'Star Map', ideas: 10 },
 ] as const;
 export type UpgradeId = (typeof UPGRADES)[number]['id'];
-/** Better Ploughs, Tall Houses and Bright Docks multiply Farm food, House room and Dock coins by this. */
+/** Better Ploughs, Bunk Beds and Welcome Lanterns multiply Farm food, House room and Dock coins by this. */
 export const UPGRADE_BOOST = 1.5;
 
 // --- The big goal ----------------------------------------------------------------------------------------------------
 
-/** Plots for Grand Isle. */
-export const GRAND_ISLE = 40;
+/** Building spots for Grand Isle. */
+export const GRAND_ISLE = 16;
+/** The five island bases the art draws, and the most spots each holds (Little, Growing, Big, Large, Grand). */
+export const BASES = [6, 8, 10, 13, 16] as const;
 /** The Sky Lighthouse's four stages, each paid in coins and goods once the island is a Grand Isle. */
 export const LIGHTHOUSE = [
   { coins: 600, goods: 10 },
@@ -142,11 +152,13 @@ export const TRAVELLER_PEOPLE = 3;
 
 // --- Sky Races (the rules for a race itself come in stage S.1) ------------------------------------------------------
 
-/** Races an island may start in a day, and how many of the wins in a day bring a prize chunk (the rest bring coins). */
+/** Races an island may start in a day. The day's first win brings coins and goods (goods help raise buildings to
+ * level 3); a later win brings coins. */
 export const RACES_PER_DAY = 2;
-export const PRIZE_CHUNKS_PER_DAY = 1;
+export const FIRST_WIN_PRIZE = { coins: 30, goods: 5 } as const;
+export const LATER_WIN_PRIZE = { coins: 15, goods: 0 } as const;
 
 // --- Small islands catch up ------------------------------------------------------------------------------------------
 
 /** An island under this share of its class's middle size gets one extra chunk in its drift. */
-export const SMALL_ISLAND = 0.5;
+export const SMALL_ISLAND = 0.7;
