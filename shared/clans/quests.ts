@@ -6,9 +6,10 @@
  */
 import { fmt, topicAvailable, type PracticalKind, type PracticalQuestion, type PracticalSettings, type YearBand } from '../maths/practical';
 import { CONFIG } from './config';
-import { ITEMS } from './gamedata';
+import { wear, wornTier } from './character';
+import { TIER_PRICES, itemAt } from './items';
 import { roll, type HasRng } from './rng';
-import type { Clan, ItemDef, Member } from './types';
+import type { Clan, GearKind, ItemDef, Member } from './types';
 
 const Q = CONFIG.quests;
 
@@ -182,8 +183,8 @@ export interface Outcome {
   followers?: Size;
   /** Training points for every member. */
   points?: Size;
-  /** The name of a found item (one of the game's items). */
-  item?: string;
+  /** A found item for this slot: the finder gets tier `CONFIG.quests.itemTier` of their own class's line. */
+  item?: GearKind;
 }
 
 export interface QuestChoice {
@@ -285,7 +286,7 @@ export const QUESTS: QuestDef[] = [
       'A little sign, half hidden in ivy, reads: "Be kind, and the well is kind back."',
     ],
     choices: [
-      { label: 'Reach down with a long stick', win: { text: 'You fish out a tunic that someone dropped long ago. It is a little damp, but it dries out soft and warm.', item: 'Cloth Tunic' } },
+      { label: 'Reach down with a long stick', win: { text: 'You fish out a bundle of clothes that someone dropped long ago. They are a little damp, but they dry out soft and warm.', item: 'armor' } },
       { label: 'Make a kind wish for the whole clan', win: { text: 'You wish that everyone in the clan gets better at something. The well glows softly and every member feels a tiny bit wiser.', points: 'medium' } },
     ],
   },
@@ -307,7 +308,7 @@ export const QUESTS: QuestDef[] = [
     ],
     choices: [
       { label: 'Tiptoe past, very quietly', win: { text: 'You make it past without a single creak! A pouch of coins has fallen out of his pocket, and you leave a note to say sorry.', gold: 'small' } },
-      { label: 'Wake him gently and ask for a favour', charm: 'high', win: { text: 'The giant yawns, then smiles. "What good manners!" He gives your clan his old shield, which is huge for him but just right for you.', item: "Lion's Shield", gold: 'small' } },
+      { label: 'Wake him gently and ask for a favour', charm: 'high', win: { text: 'The giant yawns, then smiles. "What good manners!" He gives your clan something from his old toy box, which is tiny for him but just right for you.', item: 'shield', gold: 'small' } },
     ],
   },
   {
@@ -392,12 +393,13 @@ export interface QuestPrize {
 
 export type QuestDone = { ok: true; text: string; right: boolean | null; prize: QuestPrize } | { ok: false; say: string };
 
-const itemByName = (name: string): ItemDef | undefined => ITEMS.find((i) => i.name === name);
-
-/** Who can use an item: has nothing in that slot and meets its base-stat needs. Weakest-kitted first. */
-function wearer(clan: Clan, item: ItemDef): Member | null {
-  const needsMet = (m: Member) => Object.entries(item.needs).every(([stat, v]) => m.stats[stat as keyof Member['stats']] >= (v ?? 0));
-  return clan.members.find((m) => !m.gear[item.kind] && needsMet(m)) ?? null;
+/** Who gets a found item: the first member whose gear in that slot is below the found tier, and the item they get. */
+function wearer(clan: Clan, kind: GearKind): { who: Member; item: ItemDef } | null {
+  for (const who of clan.members) {
+    const item = wornTier(who, kind) < Q.itemTier ? itemAt(who.cls, kind, Q.itemTier) : undefined;
+    if (item) return { who, item };
+  }
+  return null;
 }
 
 /**
@@ -418,13 +420,12 @@ export function finishQuest(clan: Clan, day: number, q: QuestDef, choiceIndex: n
   };
   let text = outcome.text;
   if (outcome.item) {
-    const item = itemByName(outcome.item);
-    const who = item && item.price <= Q.itemMaxPrice ? wearer(clan, item) : null;
-    if (item && who) {
-      who.gear[item.kind] = item.name;
-      prize.item = { name: item.name, member: who.name };
-    } else if (item) {
-      prize.gold += Math.ceil(item.price / 2);
+    const found = wearer(clan, outcome.item);
+    if (found) {
+      wear(found.who, found.item);
+      prize.item = { name: found.item.name, member: found.who.name };
+    } else {
+      prize.gold += Math.ceil(TIER_PRICES[outcome.item][Q.itemTier - 1] / 2);
       text += ' Nobody in the clan could use it just now, so you sold it for a fair price.';
     }
   }
@@ -441,8 +442,8 @@ export function mostPrize(q: QuestDef): { gold: number; followers: number; point
   for (const c of q.choices) {
     for (const o of [c.win, c.lose]) {
       if (!o) continue;
-      const item = o.item ? itemByName(o.item) : undefined;
-      best.gold = Math.max(best.gold, (o.gold ? Q.reward.gold[o.gold] : 0) + (item ? Math.ceil(item.price / 2) : 0));
+      const sold = o.item ? Math.ceil(TIER_PRICES[o.item][Q.itemTier - 1] / 2) : 0;
+      best.gold = Math.max(best.gold, (o.gold ? Q.reward.gold[o.gold] : 0) + sold);
       best.followers = Math.max(best.followers, o.followers ? Q.reward.followers[o.followers] : 0);
       best.points = Math.max(best.points, o.points ? Q.reward.points[o.points] : 0);
     }

@@ -11,10 +11,10 @@ export const CONFIG = {
   startGold: 200,
   fightsPerDay: 8,
   maxRounds: 8,
-  /** Percent added to shop prices (a fixed village tax; the class lowers it by building). */
+  /** Percent added to monster supply prices (a fixed village tax). */
   shopTax: 10,
-  /** Percent of a price it costs to look at an item's real stats. */
-  examinePercent: 25,
+  /** Percent off an item when the Market's maths question is answered right. */
+  shopDiscount: 10,
   /** Church: gold to wake someone is (level + 1) times this. */
   churchPerLevel: 10,
   /** The first this-many wake-ups each day cost nothing. */
@@ -130,8 +130,8 @@ export const CONFIG = {
       followers: { small: 3, medium: 7, big: 12 },
       points: { small: 1, medium: 2, big: 3 },
     },
-    /** A found item is never worth more than this in the shop; if nobody can use it, the clan gets half its price in gold. */
-    itemMaxPrice: 70,
+    /** A found item is this tier of the finder's line; if everyone already has that or better, the clan gets half its price in gold. */
+    itemTier: 2,
     /** A wrong puzzle answer keeps the story going; the prize is just the smaller one. */
   },
   /**

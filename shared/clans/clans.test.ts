@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { botOrders } from './bot';
-import { buy, churchCost, dayReset, depthHint, examineCost, fightStats, gainXp, inShop, itemByName, rollMember, shopPrice, trainCost, trainStat, wake } from './character';
+import { buy, churchCost, dayReset, depthHint, fightStats, gainXp, itemByName, rollMember, trainCost, trainStat, wake } from './character';
+import { itemAt } from './items';
 import { CONFIG } from './config';
 import { CLASSES, ITEMS, MONSTERS, RACES } from './gamedata';
 import { newFight, playRound, settle, monstersAt, type FightState } from './fight';
@@ -18,7 +19,7 @@ describe('game data', () => {
   it('has the original counts', () => {
     expect(RACES).toHaveLength(9);
     expect(CLASSES).toHaveLength(11);
-    expect(ITEMS).toHaveLength(34);
+    expect(ITEMS).toHaveLength(11 * (7 + 6 + 6));
     expect(MONSTERS.filter((m) => m.boss)).toHaveLength(4);
   });
 
@@ -61,12 +62,11 @@ describe('characters', () => {
     expect(() => rollMember(dice(), 'A', 'Dragon', 'Warrior')).toThrow();
   });
 
-  it('only counts gear whose needs are met', () => {
-    const m = rollMember(dice(2), 'A', 'Halfling', 'Wizard'); // strength is tiny
-    m.gear.weapon = 'Axe'; // needs strength 13
-    expect(fightStats(m).strength).toBe(m.stats.strength);
-    m.stats.strength = 20;
-    expect(fightStats(m).strength).toBe(27);
+  it('adds gear to the stats a member fights with', () => {
+    const m = rollMember(dice(2), 'A', 'Halfling', 'Wizard');
+    const staff = itemByName(m.gear.weapon!)!;
+    const robe = itemByName(m.gear.armor!)!;
+    expect(fightStats(m).wisdom).toBe(m.stats.wisdom + (staff.bonus.wisdom ?? 0) + (robe.bonus.wisdom ?? 0) + (itemByName(m.gear.shield!)!.bonus.wisdom ?? 0));
   });
 
   it('levels up on experience and awards training points', () => {
@@ -124,22 +124,15 @@ describe('characters', () => {
     expect(depthHint(10, 5)).toBe('too hard');
   });
 
-  it('adds the village tax to prices and charges 25% to examine', () => {
-    const axe = itemByName('Axe')!;
-    expect(axe.price).toBe(50);
-    expect(shopPrice(axe)).toBe(55);
-    expect(shopPrice(axe, 0)).toBe(50);
-    expect(examineCost(axe)).toBe(13);
-  });
-
-  it('only stocks the basics until the Smithy is built', () => {
-    expect(inShop(0).every((i) => i.shopLevel === 6)).toBe(true);
-    expect(inShop(6)).toHaveLength(ITEMS.length);
+  it('sells tier 2 from the start, the next tiers as the Smithy grows, and only the member\'s own line', () => {
     const clan = newClan('balanced', 1);
     clan.gold = 100000;
-    expect(buy(clan, clan.members[0], itemByName('Sky Sword')!)).toBe(false);
-    expect(buy(clan, clan.members[0], itemByName('Axe')!)).toBe(true);
-    expect(clan.members[0].gear.weapon).toBe('Axe');
+    const m = clan.members[0];
+    expect(buy(clan, m, itemAt(m.cls, 'weapon', 3)!)).toBe(false);
+    expect(buy(clan, m, ITEMS.find((i) => i.cls !== m.cls && i.tier === 2)!)).toBe(false);
+    expect(buy(clan, m, itemAt(m.cls, 'weapon', 2)!)).toBe(true);
+    expect(m.gear.weapon).toBe(itemAt(m.cls, 'weapon', 2)!.name);
+    expect(clan.gold).toBe(100000 - itemAt(m.cls, 'weapon', 2)!.price);
   });
 });
 

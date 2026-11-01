@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyAction, catchUp, clanDay, parseAction, type Action, type Applied, type Context, type ServerState } from './actions';
-import { shopPrice, examineCost } from './character';
+import { itemAt } from './items';
 import { CONFIG } from './config';
 import { MAX_ROLLS, makeClan, slotSeed, startingDrafts } from './create';
 import { battle, empireOf, fixedPlan, kingdomById, kingdomSide, needsUpgrade, sideOf } from './empire';
@@ -216,34 +216,48 @@ describe('days', () => {
 });
 
 describe('the shop, Training Hall and Church', () => {
-  it('buys at the true price with the village tax, and puts the item on the member', () => {
+  it('buys the next item in the member\'s own line at its price, and puts it on', () => {
     const s = created();
-    const item = ITEMS.find((i) => i.price > 0 && i.price <= 150 && i.shopLevel >= 6)!;
+    const m = s.clan.members[1];
+    const item = itemAt(m.cls, 'weapon', 2)!;
     const out = ok(s, { type: 'buy', member: 1, item: item.name });
-    expect(out.state.clan.gold).toBe(s.clan.gold - shopPrice(item));
-    expect(out.state.clan.members[1].gear[item.kind]).toBe(item.name);
+    expect(out.state.clan.gold).toBe(s.clan.gold - item.price);
+    expect(out.state.clan.members[1].gear.weapon).toBe(item.name);
+    expect(out.result).toEqual({ type: 'buy', discount: false });
   });
 
-  it('refuses to buy with too little gold, an item that is not there, a member that is not there, or one the shop does not sell yet', () => {
+  it('takes 10% off when the server marks the discount answer right, and full price when it is wrong or missing', () => {
     const s = created();
-    const dear = ITEMS.filter((i) => i.shopLevel >= 6).sort((a, b) => b.price - a.price)[0];
+    const item = itemAt(s.clan.members[0].cls, 'armor', 2)!;
+    const right = ok(s, { type: 'buy', member: 0, item: item.name, answer: item.price / 10 });
+    expect(right.state.clan.gold).toBe(s.clan.gold - item.price * 0.9);
+    expect(right.result).toEqual({ type: 'buy', discount: true });
+    const wrong = ok(s, { type: 'buy', member: 0, item: item.name, answer: item.price / 10 + 1 });
+    expect(wrong.state.clan.gold).toBe(s.clan.gold - item.price);
+    const none = ok(s, { type: 'buy', member: 0, item: item.name, answer: null });
+    expect(none.state.clan.gold).toBe(s.clan.gold - item.price);
+    // With percentages switched off for the class there is no question, so no discount whatever is sent.
+    const off = ok(s, { type: 'buy', member: 0, item: item.name, answer: item.price / 10 }, { settings: { ...DEFAULT_PRACTICAL_SETTINGS, enabledTopics: [] } });
+    expect(off.state.clan.gold).toBe(s.clan.gold - item.price);
+  });
+
+  it('refuses too little gold, an unknown item or member, another class\'s item, a tier the Smithy does not sell, or one no better', () => {
+    const s = created();
+    const m = s.clan.members[0];
+    const next = itemAt(m.cls, 'weapon', 2)!;
     const poor = structuredClone(s);
-    poor.clan.gold = shopPrice(dear) - 1;
-    expect(refused(poor, { type: 'buy', member: 0, item: dear.name }).why).toBe('gold');
+    poor.clan.gold = next.price - 1;
+    expect(refused(poor, { type: 'buy', member: 0, item: next.name }).why).toBe('gold');
     expect(refused(s, { type: 'buy', member: 0, item: 'Sword of Anything' }).why).toBe('item');
-    expect(refused(rich(s), { type: 'buy', member: 5, item: dear.name }).why).toBe('member');
-    const secret = ITEMS.find((i) => i.shopLevel < 6)!;
-    expect(refused(rich(s), { type: 'buy', member: 0, item: secret.name }).why).toBe('shelf');
+    expect(refused(rich(s), { type: 'buy', member: 5, item: next.name }).why).toBe('member');
+    const other = ITEMS.find((i) => i.cls !== m.cls && i.tier === 2)!;
+    expect(refused(rich(s), { type: 'buy', member: 0, item: other.name }).why).toBe('shelf');
+    expect(refused(rich(s), { type: 'buy', member: 0, item: itemAt(m.cls, 'weapon', 3)!.name }).why).toBe('shelf'); // Smithy level 0 sells up to tier 2
+    expect(refused(rich(s), { type: 'buy', member: 0, item: itemAt(m.cls, 'weapon', 1)!.name }).why).toBe('shelf');
   });
 
-  it('charges to look closely, and keeps one record of who looked at what', () => {
-    const s = created();
-    const item = ITEMS.find((i) => i.shopLevel >= 6 && examineCost(i) < 100)!;
-    const once = ok(s, { type: 'examine', member: 0, item: item.name });
-    const twice = ok(once.state, { type: 'examine', member: 0, item: item.name });
-    expect(once.state.examined).toEqual([`${s.clan.members[0].name}|${item.name}`]);
-    expect(twice.state.examined).toHaveLength(1);
-    expect(twice.state.clan.gold).toBe(s.clan.gold - 2 * examineCost(item));
+  it('an old page asking to look closely is turned away', () => {
+    expect(parseAction({ type: 'examine', member: 0, item: 'Dagger' })).toBeNull();
   });
 
   it('trains with points, stops at the points it has, and refuses when there are none', () => {
@@ -309,7 +323,7 @@ describe('the village', () => {
 
   it('the Training Hall, Smithy and Church read the new levels', () => {
     const s = rich(created());
-    const item = ITEMS.find((i) => i.shopLevel === 0)!;
+    const item = itemAt(s.clan.members[0].cls, 'weapon', 7)!;
     expect(refused(s, { type: 'buy', member: 0, item: item.name }).why).toBe('shelf');
     const t = structuredClone(s);
     empireOf(t.clan).levels.smithy = 6;

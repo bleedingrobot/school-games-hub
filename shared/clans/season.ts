@@ -41,7 +41,7 @@ export const classRaidsResting = (clock: SeasonClock | null | undefined): boolea
 /**
  * The full reset for a new season. Returns a copy. Every member starts again at level 1 (same name, race, class and look; slot 0 leads),
  * the purse goes back to the starting gold, followers, buildings, saved builds, the day's counts and last season's monster tries and supplies go,
- * and the examined list clears. The clan may then pick its members' races and classes again (`repick`) until it says it is done.
+ * and everyone is back in tier 1 gear. The clan may then pick its members' races and classes again (`repick`) until it says it is done.
  * Name, seed, day, fight numbers and the fights left are kept. The caller only does this when no fight is open.
  */
 export function newSeasonSave(state: ServerState, season: number): ServerState {
@@ -56,6 +56,7 @@ export function newSeasonSave(state: ServerState, season: number): ServerState {
     members,
     gold: CONFIG.startGold,
     followers: 0,
+    gearVersion: 2,
     village: { trainingHall: 0, smithy: 0, church: 0 },
     wakesToday: 0,
     empire: { ...newEmpire(state.day), buildsSaved: 0 },
@@ -64,7 +65,6 @@ export function newSeasonSave(state: ServerState, season: number): ServerState {
     repick: season,
   };
   copy.clan = clan;
-  copy.examined = [];
   return copy;
 }
 

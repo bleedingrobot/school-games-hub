@@ -369,7 +369,7 @@ describe('the clans server function', () => {
   it('tells the browser the settings the server used, and never anything private', async () => {
     const { send } = setup();
     const { body } = await send(create());
-    expect(Object.keys(body.state).sort()).toEqual(['achievements', 'clan', 'clock', 'day', 'examined', 'fame', 'fight', 'fightNo', 'fightsLeft', 'fightsPerDay', 'news', 'notes', 'raidNo', 'raidsOn', 'season', 'seed', 'settings']);
+    expect(Object.keys(body.state).sort()).toEqual(['achievements', 'clan', 'clock', 'day', 'fame', 'fight', 'fightNo', 'fightsLeft', 'fightsPerDay', 'news', 'notes', 'raidNo', 'raidsOn', 'season', 'seed', 'settings']);
     expect(body.state.settings.yearBand).toBeDefined();
   });
 
