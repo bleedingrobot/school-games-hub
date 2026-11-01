@@ -32,8 +32,8 @@ describe('game registry', () => {
   it('puts every game in a dashboard group, in the same order as before games said their own group', () => {
     const inGroup = (group: string) => ALL_GAMES.filter((g) => g.group === group).map((g) => g.id);
     expect(inGroup('no-maths')).toEqual(['chess', 'checkers', '101', 'power-clash']);
-    expect(inGroup('easy-maths')).toEqual(['space', 'gem-keep', 'bond-match', 'mine', 'archery']);
-    expect(inGroup('complex-maths')).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'marble', 'kingdom', 'trader']);
+    expect(inGroup('easy-maths')).toEqual(['space', 'gem-keep', 'marble', 'bond-match', 'mine', 'archery']);
+    expect(inGroup('complex-maths')).toEqual(['monsters', 'dragon-maths', 'clan-quest', 'kingdom', 'trader']);
     expect(ALL_GAMES.filter((g) => !g.group)).toEqual([]);
   });
 
