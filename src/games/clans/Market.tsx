@@ -86,44 +86,47 @@ function Supplies({ session, onChange }: { session: Session; onChange: Change })
 }
 
 /**
- * The Market: a card for each member with their three slots. Each slot shows what they wear now and the next item up their
- * class's line, with what it adds and one button to buy and wear it. "See all" opens the whole line, where any tier the
- * Smithy sells can be bought (skip ahead if you have saved up). Buying asks one maths question: right, and it is 10% off.
+ * The Market: pick one member at a time from the row at the top. Their three item lines (weapon, armour and the third
+ * slot) are shown in full side by side: what they wear, the next one up, and every tier above it with what it adds. Any
+ * tier the Smithy sells can be bought (skip ahead if you have saved up). Buying asks one maths question: right, and it
+ * is 10% off.
  */
 export function Market({ session, onChange, onBack }: { session: Session; onChange: Change; onBack: () => void }) {
   const { clan, settings } = session;
-  const [asking, setAsking] = useState<{ mi: number; item: ItemDef } | null>(null);
-  const [open, setOpen] = useState<string | null>(null);
-  /** What was just bought, said in the buyer's card (which takes the focus, as the Buy button has gone). */
-  const [bought, setBought] = useState<{ mi: number; text: string } | null>(null);
+  const [mi, setMi] = useState(0);
+  const [asking, setAsking] = useState<ItemDef | null>(null);
+  /** What was just bought, said above the lines (and given the focus, as the Buy button has gone). */
+  const [bought, setBought] = useState('');
   const boughtRef = useRef<HTMLParagraphElement>(null);
-  useEffect(() => boughtRef.current?.focus(), [bought]);
+  useEffect(() => { if (bought) boughtRef.current?.focus(); }, [bought]);
   const smithy = levelOf(clan, 'smithy');
   const top = unlockedTier(smithy);
+  const m = clan.members[mi];
 
-  const pay = (mi: number, item: ItemDef, answer: number | null, right: boolean) => {
+  const choose = (i: number) => { setMi(i); setAsking(null); setBought(''); };
+  const pay = (item: ItemDef, answer: number | null, right: boolean) => {
     const next = buyItem(session, mi, item, right);
     setAsking(null);
     if (!next) return;
     onChange(next, { type: 'buy', member: mi, item: item.name, answer });
     const paid = shopPrice(item, right);
-    setBought({ mi, text: `${clan.members[mi].name} is wearing the ${item.name}. You paid ${paid} gold${right ? ` (${CONFIG.shopDiscount}% off!)` : ''}.` });
+    setBought(`${m.name} is wearing the ${item.name}. You paid ${paid} gold${right ? ` (${CONFIG.shopDiscount}% off!)` : ''}.`);
   };
-  const start = (mi: number, item: ItemDef) => {
-    setBought(null);
-    if (discountQuestion(settings, item.price, item.name)) setAsking({ mi, item });
-    else pay(mi, item, null, false);
+  const start = (item: ItemDef) => {
+    setBought('');
+    if (discountQuestion(settings, item.price, item.name)) setAsking(item);
+    else pay(item, null, false);
   };
 
   /** The buy button for one item, or why it can't be bought yet. */
-  const buyButton = (mi: number, m: Member, item: ItemDef) => {
+  const buyButton = (item: ItemDef) => {
     const why = cannotBuy(clan, m, item);
-    if (why && item.tier > top) return <span className="cq-soft">Needs the Smithy at level {smithyFor(item.tier)}. Upgrade it in My Village.</span>;
+    if (why && item.tier > top) return <small className="cq-soft">Needs the Smithy at level {smithyFor(item.tier)}. Upgrade it in My Village.</small>;
     if (why) return null;
     const short = clan.gold < item.price;
     return (
       <span>
-        <button type="button" className="cq-btn cq-btn--hot" disabled={short} aria-label={`Buy the ${item.name} for ${m.name}, ${item.price} gold`} onClick={() => start(mi, item)}>
+        <button type="button" className="cq-btn cq-btn--hot" disabled={short} aria-label={`Buy the ${item.name} for ${m.name}, ${item.price} gold`} onClick={() => start(item)}>
           Buy · {item.price} gold
         </button>
         {short && <small className="cq-soft"> You have {clan.gold}.</small>}
@@ -140,74 +143,61 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
       <p className="cq-soft">
         You have <strong>{clan.gold} gold</strong>. The Smithy (level {smithy}) sells up to tier {top}. Answer the maths question when you buy for {CONFIG.shopDiscount}% off.
       </p>
-      <div className="cq-gearcards">
-        {clan.members.map((m, mi) => (
-          <article key={m.name} className="cq-panel cq-gearcard" aria-label={`${m.name}'s gear`}>
-            <header className="cq-gearcard__head">
-              <Portrait race={m.race} cls={m.cls} look={lookOf(m)} scale={4} />
-              <h3>{m.name} <small className="cq-soft">{m.race} {m.cls}</small></h3>
-            </header>
-            {bought?.mi === mi && <p className="cq-note" role="status" tabIndex={-1} ref={boughtRef}>{bought.text}</p>}
-            {GEAR_KINDS.map((kind) => {
-              const line = itemLine(m.cls, kind);
-              const tier = wornTier(m, kind);
-              const worn = wornItem(m, kind);
-              const next = line.find((i) => i.tier === tier + 1);
-              const key = `${mi}-${kind}`;
-              const isAsking = asking && asking.mi === mi && asking.item.kind === kind;
-              return (
-                <div key={kind} className="cq-slot">
-                  <div className="cq-slot__row">
-                    <span className="cq-slot__name">{slotWord(m, kind)}</span>
-                    <span className="cq-slot__item">
-                      {worn ? <><ItemSprite name={worn.name} kind={kind} scale={2} /> {worn.name}</> : 'Nothing'}
-                    </span>
-                    <span className="cq-dots" aria-label={`Tier ${tier} of ${line.length}`}>
-                      {line.map((i) => <span key={i.name} className={i.tier <= tier ? 'cq-dot cq-dot--on' : 'cq-dot'} />)}
-                    </span>
-                  </div>
-                  {next ? (
-                    <div className="cq-slot__next">
-                      <span className="cq-slot__item"><span aria-hidden="true">→ </span><ItemSprite name={next.name} kind={kind} scale={2} /> <strong>{next.name}</strong></span>
-                      <Gains member={m} item={next} />
-                      {buyButton(mi, m, next)}
-                    </div>
-                  ) : (
-                    <p className="cq-note cq-slot__next">The best there is!</p>
-                  )}
-                  {isAsking && (
-                    <Moment
-                      key={`buy-${asking.item.name}`}
-                      question={discountQuestion(settings, asking.item.price, asking.item.name)!}
-                      title={`${CONFIG.shopDiscount}% off the ${asking.item.name}`}
-                      note={`Get it right and you pay ${shopPrice(asking.item, true)} gold instead of ${asking.item.price}.`}
-                      doneLabel="Pay and wear it"
-                      onDone={(right, answer) => pay(mi, asking.item, answer, right)}
-                    />
-                  )}
-                  <button type="button" className="cq-link" aria-expanded={open === key} onClick={() => setOpen(open === key ? null : key)}>
-                    {open === key ? 'Hide the line' : `See all ${line.length}`}
-                  </button>
-                  {open === key && (
-                    <ol className="cq-line" aria-label={`${m.name}'s ${slotWord(m, kind).toLowerCase()} line`}>
-                      {line.map((i) => (
-                        <li key={i.name} className={i.tier === tier ? 'cq-line__worn' : undefined}>
-                          <ItemSprite name={i.name} kind={kind} scale={2} />
-                          <span>
-                            <strong>{i.name}</strong> <small className="cq-soft">tier {i.tier}{i.tier === tier ? ', wearing' : ''}</small>
-                            <Gains member={m} item={i} />
-                          </span>
-                          {i.tier > tier && i.tier !== tier + 1 && buyButton(mi, m, i)}
-                        </li>
-                      ))}
-                    </ol>
-                  )}
-                </div>
-              );
-            })}
-          </article>
+      <div className="cq-heroes" role="group" aria-label="Who is shopping?">
+        {clan.members.map((h, i) => (
+          <button key={h.name} type="button" className="cq-btn cq-heroes__btn" aria-pressed={i === mi} aria-label={`Shop for ${h.name}`} onClick={() => choose(i)}>
+            <Portrait race={h.race} cls={h.cls} look={lookOf(h)} scale={2} />
+            <span><strong>{h.name}</strong><br /><small>{h.race} {h.cls}</small></span>
+          </button>
         ))}
       </div>
+      <article key={m.name} className="cq-panel cq-gearcard" aria-label={`${m.name}'s gear`}>
+        <header className="cq-gearcard__head">
+          <Portrait race={m.race} cls={m.cls} look={lookOf(m)} scale={5} />
+          <h3>{m.name} <small className="cq-soft">{m.race} {m.cls}</small></h3>
+        </header>
+        {bought && <p className="cq-note" role="status" tabIndex={-1} ref={boughtRef}>{bought}</p>}
+        <div className="cq-lines">
+          {GEAR_KINDS.map((kind) => {
+            const line = itemLine(m.cls, kind);
+            const tier = wornTier(m, kind);
+            const word = slotWord(m, kind);
+            return (
+              <section key={kind} className="cq-slot" aria-label={word}>
+                <h4 className="cq-slot__row">
+                  <span className="cq-slot__name">{word}</span>
+                  <span className="cq-dots" aria-label={`Tier ${tier} of ${line.length}`}>
+                    {line.map((i) => <span key={i.name} className={i.tier <= tier ? 'cq-dot cq-dot--on' : 'cq-dot'} />)}
+                  </span>
+                </h4>
+                <ol className="cq-line" aria-label={`${m.name}'s ${word.toLowerCase()} line`}>
+                  {line.map((i) => (
+                    <li key={i.name} className={i.tier === tier ? 'cq-line__worn' : i.tier === tier + 1 ? 'cq-line__next' : i.tier < tier ? 'cq-line__past' : undefined}>
+                      <ItemSprite name={i.name} kind={kind} scale={2} />
+                      <span className="cq-line__text">
+                        <span><strong>{i.name}</strong> <small className="cq-soft">{i.tier === tier ? 'wearing' : i.tier === tier + 1 ? 'next' : `tier ${i.tier}`}</small></span>
+                        {i.tier >= tier && <Gains member={m} item={i} />}
+                        {i.tier > tier && buyButton(i)}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+                {tier === line.length && <p className="cq-note">The best there is!</p>}
+                {asking && asking.kind === kind && (
+                  <Moment
+                    key={`buy-${asking.name}`}
+                    question={discountQuestion(settings, asking.price, asking.name)!}
+                    title={`${CONFIG.shopDiscount}% off the ${asking.name}`}
+                    note={`Get it right and you pay ${shopPrice(asking, true)} gold instead of ${asking.price}.`}
+                    doneLabel="Pay and wear it"
+                    onDone={(right, answer) => pay(asking, answer, right)}
+                  />
+                )}
+              </section>
+            );
+          })}
+        </div>
+      </article>
       {suppliesOnSale(session.clock) && <Supplies session={session} onChange={onChange} />}
     </section>
   );
