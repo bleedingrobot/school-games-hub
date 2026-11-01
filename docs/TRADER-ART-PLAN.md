@@ -3,7 +3,7 @@
 How Star Trader swaps its drawn-in-code art for paintings in the **Cinematic** style, made in ComfyUI on James's gaming PC. It follows the way Dragon Maths and Clan Quest were done (`docs/CLANS-ART-PLAN.md`), so most of the tools already exist.
 
 Written 27 October 2026 for James.
-**Status: G.0 to G.3 done (1 Nov 2026); G.2 and G.3 approved by James and live.** Next: G.4. Branch `trader-art`, from `main` after Star Trader went live (the old `trader` branch is merged and gone).
+**Status: G.0 to G.3 done (1 Nov 2026); G.2 and G.3 approved by James and live.** Next: G.4, on a new branch from `main` (`trader-art` was merged in #114 and deleted).
 
 ## The short version
 
