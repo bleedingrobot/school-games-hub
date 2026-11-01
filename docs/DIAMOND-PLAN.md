@@ -281,7 +281,7 @@ Still open: how this game reads the school season date (ask before Stage 4), and
 
 **Pace (simulator, details in DIAMOND-RULES.md):** with one new level a day and unlimited tries, nearly every pupil passes each new level the day it opens. So the climb is **10 play days for everyone**: about **week 2** at 5 days a week, **week 3** at 3 to 4 days, **week 5** at 2 days. Pupils weaker at maths (45% right) reach the diamond just as surely; they answer more questions and lose a little time. New levels pass in 1 to 3 tries 98–100% of the time (mean 1.0 to 1.2). A 3-to-4-day pupil earns about 3,400 to 5,000 coins, buys 6 to 9 upgrades, and ends with about 400 to 600 coins unspent; savers get their Legendary late in the season.
 
-**Not met: "3-to-4-days-a-week players reach the diamond in about 4 to 5 weeks."** The daily rule makes the climb 10 play days at best, and with friendly targets also at worst, so it lands in week 3. Making levels harder doesn't slow it (tries are unlimited on the day), it only frustrates. Question for James below.
+**Not met: "3-to-4-days-a-week players reach the diamond in about 4 to 5 weeks."** The daily rule makes the climb 10 play days at best, and with friendly targets also at worst, so it lands in week 3. Making levels harder doesn't slow it (tries are unlimited on the day), it only frustrates. James kept it (below).
 
 **Untested / for later stages:**
 - Bots are probably steadier than real 9-year-olds. Try the Stage 2 preview with a class before trusting the tries numbers.
@@ -296,4 +296,4 @@ Still open: how this game reads the school season date (ask before Stage 4), and
 - `nextStep` wording was checked by eye only (no tests of wording).
 - Achievement measures and points are worked out (`measures`, `POINTS`) but not wired to the hub until Stage 4.
 
-**Questions for James:** see the cards at the end of the Stage 1 session (the climb's pace).
+**Decided by James (2 Nov 2026): keep the climb at about 3 weeks** for 3-to-4-day pupils (10 levels, one new level a day, friendly targets). The 2 weeks after are for stars, the Gem Book and the Workshop, and late joiners can still reach the diamond.
