@@ -5,7 +5,13 @@
  *
  * A planet's surface is drawn once to a wide texture; showing it just slides the texture round inside a circle (so it
  * turns), then lays light, shade and an atmosphere glow over it. City lights show on the dark side of busy worlds.
+ *
+ * Painted planets (docs/TRADER-ART-PLAN.md): once a planet's painted map has downloaded, it is wrapped round a ball
+ * (./globe.ts) instead, under the same light, shade, glow, lights and rings. Simple graphics slides the painted map
+ * the old way; reduced motion shows the ball still. Until the painting arrives, the drawn surface shows.
  */
+import { buildGlobeTable, spinGlobe, type GlobeTable } from './globe';
+import { loadPainting, paintingNow, planetMap, type Painting } from './paint';
 import { TAU, clamp, hashText, makeCanvas, mix, rgba, rng } from './util';
 
 export type SurfaceKind = 'gas' | 'ocean' | 'desert' | 'rocky' | 'ice' | 'lava' | 'haze';
@@ -262,6 +268,96 @@ function shadeCaps(g: CanvasRenderingContext2D, cx: number, cy: number, r: numbe
   g.fillRect(cx - r, cy - r, r * 2, r * 0.45);
 }
 
+// ---------------------------------------------------------------------------
+// Painted planets on a turning ball
+// ---------------------------------------------------------------------------
+
+/** Paintings on (the preview can turn them off to compare). */
+let painted = true;
+export function usePaintedPlanets(on: boolean): void {
+  painted = on;
+}
+
+/** The biggest ball worked out pixel by pixel; anything bigger is drawn at this size and scaled up. */
+const MAX_GLOBE = 512;
+/** At most this many frames a second for each ball (the screen may draw faster: it reuses the last one). */
+const GLOBE_FPS = 30;
+/** Balls up to this many pixels across use the small 256 × 128 map. */
+const SMALL_MAP_UP_TO = 128;
+
+interface Globe {
+  table: GlobeTable;
+  canvas: HTMLCanvasElement;
+  g: CanvasRenderingContext2D;
+  image: ImageData;
+  out: Uint32Array;
+  map: Painting;
+  shift: number;
+  t: number;
+}
+const tables = new Map<string, GlobeTable>();
+const globes = new Map<string, Globe>();
+
+function tableFor(size: number, w: number, h: number): GlobeTable {
+  const key = `${size}:${w}x${h}`;
+  let t = tables.get(key);
+  if (!t) {
+    t = buildGlobeTable(size, w, h);
+    tables.set(key, t);
+    if (tables.size > 12) tables.delete(tables.keys().next().value as string);
+  }
+  return t;
+}
+
+/** Is this planet's painted map ready to draw at this size? False when it has none, it is still coming, or paintings are off. */
+export function planetPainted(name: string, across: number): boolean {
+  return Boolean(paintedMap(name, across));
+}
+
+/** Downloads these planets' small maps (for the star chart, which draws its icons once). Resolves when they have all arrived or failed. */
+export async function loadSmallPlanetMaps(names: readonly string[]): Promise<void> {
+  if (!painted) return;
+  await Promise.all(names.map((n) => planetMap(n, true)).filter((u): u is string => Boolean(u)).map(loadPainting));
+}
+
+/** How many device pixels one drawing unit is (the canvas may be scaled for a sharp screen). */
+function pixelScale(g: CanvasRenderingContext2D): number {
+  if (typeof g.getTransform !== 'function') return 1;
+  const m = g.getTransform();
+  return Math.hypot(m.a, m.b) || 1;
+}
+
+/** The planet's painted map, if it has one and it has downloaded (small for small balls). */
+function paintedMap(name: string, across: number): Painting | undefined {
+  if (!painted) return undefined;
+  const small = across <= SMALL_MAP_UP_TO;
+  return paintingNow(planetMap(name, small)) ?? (small ? undefined : paintingNow(planetMap(name, true)));
+}
+
+/** The ball for this planet at this size, turned to time t (redrawn at most GLOBE_FPS times a second). */
+function globeCanvas(name: string, map: Painting, size: number, turn: number, t: number, still: boolean): HTMLCanvasElement | null {
+  const key = `${name}:${size}`;
+  let globe = globes.get(key);
+  if (!globe || globe.map !== map) {
+    const canvas = makeCanvas(size, size);
+    const g = canvas.getContext('2d');
+    if (!g) return null;
+    const image = g.createImageData(size, size);
+    globe = { table: tableFor(size, map.w, map.h), canvas, g, image, out: new Uint32Array(image.data.buffer), map, shift: -1, t: -Infinity };
+    globes.set(key, globe);
+    if (globes.size > 8) globes.delete(globes.keys().next().value as string);
+  }
+  const shift = Math.floor((((turn % 1) + 1) % 1) * map.w);
+  const due = still ? globe.shift < 0 : t - globe.t >= 1 / GLOBE_FPS || t < globe.t;
+  if (due && shift !== globe.shift) {
+    spinGlobe(globe.table, map.pixels, globe.out, turn);
+    globe.g.putImageData(globe.image, 0, 0);
+    globe.shift = shift;
+    globe.t = t;
+  }
+  return globe.canvas;
+}
+
 /** Draw a planet with its centre at (cx, cy) and the given radius in pixels. */
 export function drawPlanet(g: CanvasRenderingContext2D, look: PlanetLook, cx: number, cy: number, r: number, o: PlanetDrawOptions): void {
   if (!o.plain && !o.still) ringArc(g, cx, cy, r, look, false);
@@ -280,12 +376,21 @@ export function drawPlanet(g: CanvasRenderingContext2D, look: PlanetLook, cx: nu
   g.beginPath();
   g.arc(cx, cy, r, 0, TAU);
   g.clip();
-  const tex = textureOf(look);
+  const across = Math.min(MAX_GLOBE, Math.max(8, Math.round(r * 2 * pixelScale(g))));
+  const map = paintedMap(look.name, across);
+  const ball = map && !o.plain ? globeCanvas(look.name, map, across, o.still ? 0.3 : o.t * look.spin, o.t, Boolean(o.still)) : null;
   const scale = (r * 2) / TEX_H;
   const w = TEX_W * scale;
-  const shift = o.still ? w * 0.3 : (o.t * look.spin * w) % w;
-  for (let k = -1; k <= 1; k++) g.drawImage(tex, cx - r + shift + k * w - w / 2 + r, cy - r, w, r * 2);
-  const clouds = o.plain ? null : cloudsOf(look);
+  if (ball) {
+    g.drawImage(ball, cx - r, cy - r, r * 2, r * 2);
+  } else {
+    // The old sliding strip: the painted map with simple graphics, else the drawn surface.
+    const tex = map ? map.img : textureOf(look);
+    const shift = o.still ? w * 0.3 : (o.t * look.spin * w) % w;
+    for (let k = -1; k <= 1; k++) g.drawImage(tex, cx - r + shift + k * w - w / 2 + r, cy - r, w, r * 2);
+  }
+  // A painting has its own clouds and ice caps.
+  const clouds = o.plain || map ? null : cloudsOf(look);
   if (clouds) {
     const cs = o.still ? w * 0.1 : (o.t * look.spin * 1.5 * w) % w;
     g.globalAlpha = look.kind === 'haze' ? 0.9 : 0.75;
@@ -303,7 +408,7 @@ export function drawPlanet(g: CanvasRenderingContext2D, look: PlanetLook, cx: nu
   shade.addColorStop(1, 'rgba(0,0,18,0.88)');
   g.fillStyle = shade;
   g.fillRect(cx - r, cy - r, r * 2, r * 2);
-  if (look.cap) {
+  if (look.cap && !map) {
     // Polar caps, drawn on the globe itself so they curve with it.
     g.fillStyle = 'rgba(255,255,255,0.88)';
     g.beginPath();

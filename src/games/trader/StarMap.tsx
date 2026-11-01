@@ -5,7 +5,7 @@
  * point lands, the game works out the fuel, and nothing is counted by hand. A wrong or empty spot just says so and
  * helps (which of x and y to check). (docs/TRADER-PLAN.md, section 5.)
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { eventLine, newsAbout, type NewsItem } from '../../../shared/trader/news';
 import { pricesAt } from '../../../shared/trader/priceGuide';
 import type { Pushes } from '../../../shared/trader/schoolMarket';
@@ -13,27 +13,39 @@ import { GOODS, GOVERNMENTS, GRID_HALF, GRID_SIZE, RESOURCES, SIZE_NAMES, SHIPS 
 import { chartPoint, coordText, distance, signed, type Galaxy, type Planet } from '../../../shared/trader/galaxy';
 import { isBanned } from '../../../shared/trader/market';
 import { fuelCost, fuelNeeded, type Trader } from '../../../shared/trader/state';
-import { drawPlanet, lookOf } from './art/planets';
+import { drawPlanet, loadSmallPlanetMaps, lookOf, planetPainted } from './art/planets';
 import { GOVERNMENT_LINES, PLANET_FACTS, goodIcon } from './text';
 
 const icons = new Map<string, string>();
-/** A small picture of a planet for the map (drawn once and kept). */
+/** A small picture of a planet for the map (drawn once and kept; drawn again once its painting has arrived). */
 export function planetIcon(name: string): string {
-  let url = icons.get(name);
+  const look = lookOf(name);
+  const r = Math.min(18 + 11 * Math.min(1.3, look.size), 36);
+  const key = `${name}:${planetPainted(name, r * 2)}`;
+  let url = icons.get(key);
   if (!url) {
     const c = document.createElement('canvas');
     c.width = 96;
     c.height = 96;
     const g = c.getContext('2d');
-    if (g) {
-      const look = lookOf(name);
-      const r = 18 + 11 * Math.min(1.3, look.size);
-      drawPlanet(g, look, 48, 48, Math.min(r, 36), { t: 0, still: true, plain: false, lights: 0 });
-    }
+    if (g) drawPlanet(g, look, 48, 48, r, { t: 0, still: true, plain: false, lights: 0 });
     url = c.toDataURL();
-    icons.set(name, url);
+    icons.set(key, url);
   }
   return url;
+}
+
+/** Downloads the planets' paintings, and draws the chart again when they have arrived (so the icons swap to them). */
+function usePaintedIcons(names: readonly string[]): void {
+  const [, setArrived] = useState(0);
+  const key = names.join(',');
+  useEffect(() => {
+    let current = true;
+    void loadSmallPlanetMaps(key.split(',')).then(() => current && setArrived((n) => n + 1));
+    return () => {
+      current = false;
+    };
+  }, [key]);
 }
 
 /** Where a planet sits in the picture, as a percentage (the picture has a 1.5-line border all round for the numbers). */
@@ -54,6 +66,7 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, onJump, onRefuel 
   const [picked, setPicked] = useState<number | null>(null);
   const [xs, setXs] = useState('');
   const [ys, setYs] = useState('');
+  usePaintedIcons(galaxy.planets.map((p) => p.name));
   const here = galaxy.planets[t.location];
   const px = parseCoord(xs);
   const py = parseCoord(ys);

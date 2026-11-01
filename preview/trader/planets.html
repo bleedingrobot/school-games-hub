@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Star Trader Globes</title>
+    <style>
+      /* A control strip over one full-window canvas of turning planets; dark only, like the game. */
+      :root {
+        --bg: #05070d;
+        --panel: #111726;
+        --line: #2a3550;
+        --fg: #e6ecf8;
+        --muted: #9aa8c4;
+        --accent: #f2b544;
+        --body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        --data: ui-monospace, 'SF Mono', Menlo, monospace;
+        color-scheme: dark;
+      }
+      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 14px; }
+      canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+      #bar {
+        position: fixed; inset: 0 0 auto; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+        padding-block: calc(8px + env(safe-area-inset-top, 0px)) 8px;
+        padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+        background: color-mix(in srgb, var(--bg) 82%, transparent); border-bottom: 1px solid var(--line);
+      }
+      #bar h1 { font-size: 15px; margin: 0 8px 0 0; letter-spacing: 0.02em; }
+      button {
+        font: inherit; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+        padding: 8px 12px; min-height: 44px; cursor: pointer;
+      }
+      button[aria-pressed='true'] { border-color: var(--accent); color: var(--accent); }
+      button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      #stats { font-family: var(--data); font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; margin-left: auto; }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <div id="bar">
+      <h1>Star Trader globes</h1>
+      <button id="painted" aria-pressed="true">Paintings</button>
+      <button id="simple" aria-pressed="false">Simple graphics</button>
+      <button id="still" aria-pressed="false">Reduced motion</button>
+      <button id="fast" aria-pressed="true">Spin ×10</button>
+      <button id="size">Size: grid</button>
+      <button id="bench">Speed test</button>
+      <span id="stats" role="status">Loading paintings…</span>
+    </div>
+    <script type="module" src="./planets.ts"></script>
+  </body>
+</html>
