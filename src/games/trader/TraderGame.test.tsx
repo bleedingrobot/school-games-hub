@@ -298,7 +298,7 @@ describe('First Flight (Bolt guides the first trade)', () => {
     expect(within(bubble()!).getByText(/Hi! I'm Bolt/)).toBeTruthy();
     fireEvent.click(within(bubble()!).getByRole('button', { name: "Let's go" }));
     expect(stepNo()).toBe(2);
-    expect(lit()?.getAttribute('data-coach')).toBe('hud');
+    await waitFor(() => expect(lit()?.getAttribute('data-coach')).toBe('hud'));
     fireEvent.click(within(bubble()!).getByRole('button', { name: 'Got it' }));
     expect(stepNo()).toBe(3);
     // Bolt's next-step bar waits until First Flight is over.
@@ -306,11 +306,11 @@ describe('First Flight (Bolt guides the first trade)', () => {
     await waitFor(() => expect(lit()?.getAttribute('aria-label')).toMatch(/^Buy as many \w+ as you can$/));
     fireEvent.click(lit()!);
     await waitFor(() => expect(stepNo()).toBe(4));
-    expect(lit()?.textContent).toBe('Trade');
+    await waitFor(() => expect(lit()?.textContent).toBe('Trade'));
     fireEvent.click(lit()!);
     skipMaths();
     await waitFor(() => expect(stepNo()).toBe(5));
-    expect(lit()?.textContent).toBe('Star chart');
+    await waitFor(() => expect(lit()?.textContent).toBe('Star chart'));
     fireEvent.click(lit()!);
     await waitFor(() => expect(stepNo()).toBe(6));
     expect(document.querySelector('.st-guide')).toBeTruthy();
@@ -319,7 +319,7 @@ describe('First Flight (Bolt guides the first trade)', () => {
     type(/^y \(up\)/, m[3]);
     await waitFor(() => expect(stepNo()).toBe(7));
     expect(within(bubble()!).getByText(new RegExp(`You found ${m[1]}!`))).toBeTruthy();
-    expect(lit()?.textContent).toMatch(/^Jump!/);
+    await waitFor(() => expect(lit()?.textContent).toMatch(/^Jump!/));
     fireEvent.click(lit()!);
     await waitFor(() => expect(calls.warps).toBe(1));
     return m[1];
@@ -328,7 +328,7 @@ describe('First Flight (Bolt guides the first trade)', () => {
   /** Steps 8 and 9: Sell all, Trade, and the profit. */
   async function sellUp() {
     await waitFor(() => expect(stepNo()).toBe(8));
-    expect(lit()?.getAttribute('aria-label')).toMatch(/^Sell all \w+$/);
+    await waitFor(() => expect(lit()?.getAttribute('aria-label')).toMatch(/^Sell all \w+$/));
     fireEvent.click(lit()!);
     await waitFor(() => expect(lit()?.textContent).toBe('Trade'));
     fireEvent.click(lit()!);
@@ -343,7 +343,7 @@ describe('First Flight (Bolt guides the first trade)', () => {
     expect(within(bubble()!).getByText(/credits profit! 🎉/)).toBeTruthy();
     // The trip summary, from the price kept on this device when buying.
     expect(screen.getByText(/Trip to \w+: bought \w+ for \d+, sold for \d+: \+\d+ 🎉/)).toBeTruthy();
-    expect(lit()?.getAttribute('data-coach')).toBe('hud-credits');
+    await waitFor(() => expect(lit()?.getAttribute('data-coach')).toBe('hud-credits'));
     fireEvent.click(within(bubble()!).getByRole('button', { name: 'Thanks, Bolt' }));
     expect(bubble()).toBeNull();
     expect(remembered().flight).toBe('done');
