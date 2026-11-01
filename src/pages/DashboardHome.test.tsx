@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Link, Route, Routes } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, type AuthState } from '../auth/AuthContext';
 import { busyPupil, newPupil, sent, setWorld, type World } from './homePageFake';
 
@@ -12,6 +12,13 @@ vi.mock('../lib/supabase', async () => (await import('./homePageFake')).fakeSupa
 
 import { Dashboard } from './Dashboard';
 import { Profile } from './Profile';
+
+// The cards say "Today", so the test must not run across midnight: pin the clock (Date only) to midday local time.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date(2026, 9, 15, 12, 0, 0));
+});
+afterEach(() => vi.useRealTimers());
 
 const signedIn = (role = 'student') =>
   ({ status: 'signed-in', profile: { id: 'me', display_name: 'Speedy Otter 27', avatar: {}, role }, message: null }) as unknown as AuthState;
