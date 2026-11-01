@@ -61,7 +61,7 @@ const ART: Record<string, GameCardArt> = {
   'clan-quest': { card: clanQuest, small: clanQuestSmall },
   'kingdom': { card: kingdom, small: kingdomSmall },
   'marble': { card: marble, small: marbleSmall, focus: 'center 80%' },
-  'trader': { card: trader, small: traderSmall, focus: 'center 70%' },
+  'trader': { card: trader, small: traderSmall, focus: 'center 55%' },
 };
 
 export function gameCardArt(gameId: string): GameCardArt | undefined {
