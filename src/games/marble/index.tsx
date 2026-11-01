@@ -31,7 +31,7 @@ export const marbleRush: GameDefinition = {
   Play: MarblePlay,
   ranked: false,
   noBots: true,
-  group: 'complex-maths',
+  group: 'easy-maths',
   // The teacher's Games table: the maths switch in the row, and the rescue questions in its Settings.
   teacher: {
     maths: { useValue: useMarbleMaths, save: (mode, classId) => saveMarbleMaths(mode, classId), about: MARBLE_MATHS_ABOUT },
