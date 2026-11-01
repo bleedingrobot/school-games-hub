@@ -14,7 +14,7 @@ const ladderInfo = { on: true, placed: 'done', placement: 'facts-10', furthest: 
 const focus = { source: 'auto', skills: [], onlyThese: false, endsAt: null, canChoose: true, own: null, ladder: ladderInfo };
 
 const world = busyPupil();
-world.tables.app_settings = [{ ...world.tables.app_settings[0], bond_match_enabled: true, marble_enabled: true, gem_keep_enabled: true }];
+world.tables.app_settings = [{ ...world.tables.app_settings[0], bond_match_enabled: true, marble_enabled: true, gem_keep_enabled: true, trader_enabled: true }];
 world.tables.profiles = [...(world.tables.profiles ?? []), ME];
 // The "This season" strip: Clan Quest season 1. Change the day with ?day=N in the address (1 to 35).
 const day = Math.min(35, Math.max(1, Number(new URLSearchParams(window.location.search).get('day')) || 24));
