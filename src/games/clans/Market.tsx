@@ -80,6 +80,7 @@ function Supplies({ session, onChange }: { session: Session; onChange: Change })
       {asking && (
         <Moment key={`supply-${asking}`} question={marketTotal(settings, CONFIG.monster.supplies[asking].price, CONFIG.shopTax, SUPPLY_NAMES[asking].one)!} title={`Paying for the ${SUPPLY_NAMES[asking].one}`} note="Check the bill before you pay." doneLabel={`Pay ${supplyPrice(asking)} gold`} onDone={() => buy(asking)} />
       )}
+      {said && <p className="cq-note" role="status">{said}</p>}
     </section>
   );
 }

@@ -141,6 +141,7 @@ describe('monster supplies in the Market', () => {
     expect(box.sent).toContainEqual({ type: 'buySupply', kind: 'arrows', count: 1 });
     expect(await screen.findByText(/You have 1 of 3/)).toBeInTheDocument();
     expect(box.saved.clan.gold).toBe(5000 - supplyPrice('arrows'));
+    expect(screen.getByText(`You bought a fire arrow for ${supplyPrice('arrows')} gold.`)).toBeInTheDocument();
   });
 });
 

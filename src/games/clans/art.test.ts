@@ -6,7 +6,7 @@ import { KINGDOMS } from '../../../shared/clans/empire';
 import { QUESTS } from '../../../shared/clans/quests';
 import { BUILDING_KINDS, MONSTER_KINDS, TROOP_KINDS, VILLAGE_BUILDINGS } from '../../../shared/clans/types';
 import { CLAN_NOUNS } from '../../../shared/clans/words';
-import { FX, ITEM_STAND_INS, LOOKS, SCENES, buildingArt, buildingSize, pickBuildingArt, slug } from './art';
+import { FX, LOOKS, SCENES, buildingArt, buildingSize, pickBuildingArt, slug } from './art';
 
 const DIR = join(__dirname, 'art');
 const files = (group: string): string[] => {
@@ -16,7 +16,6 @@ const files = (group: string): string[] => {
     return [];
   }
 };
-const STAND_INS = [...new Set(Object.values(ITEM_STAND_INS).flatMap((list) => list.map(([, file]) => file)))];
 const wide = (names: string[]) => names.flatMap((n) => [n, `${n}-800`]);
 const looks = RACES.flatMap((r) => CLASSES.flatMap((c) => LOOKS.map((l) => `${slug(r.name)}-${slug(c.name)}-${l}`)));
 
@@ -32,8 +31,7 @@ const NEEDED: Record<string, { names: string[]; maxKb: number; allowed?: string[
   kingdoms: { names: wide(KINGDOMS.map((k) => k.id)), maxKb: 320 },
   members: { names: looks.flatMap((l) => [l, `${l}-small`]), maxKb: 120 },
   monsters: { names: MONSTERS.map((m) => slug(m.name)), maxKb: 90 },
-  // Items from the class lines are painted a few at a time: until then each borrows a stand-in (art.ts), so each is optional.
-  items: { names: STAND_INS, allowed: [...ITEMS.map((i) => slug(i.name)), ...STAND_INS], maxKb: 30 },
+  items: { names: ITEMS.map((i) => slug(i.name)), maxKb: 30 },
   troops: { names: [...TROOP_KINDS], maxKb: 30 },
   buildings: { names: ['barracks', 'walls', 'tower', 'steelmill'], allowed: BUILDING_ALLOWED, maxKb: 40 },
   banners: { names: CLAN_NOUNS.map(slug), maxKb: 30 },

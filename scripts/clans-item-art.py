@@ -7,7 +7,7 @@ in the site build. `paint` needs only the standard library; `sheet` and `tidy` n
 
   python3 scripts/clans-item-art.py paint OUT_DIR [slugs] [--tries 2]       # OUT_DIR/<slug>-<try>.png
   ~/.cache/rembg-venv/bin/python scripts/clans-item-art.py sheet OUT_DIR    # OUT_DIR/sheets/*.jpg, every try labelled, to check by eye
-  ~/.cache/rembg-venv/bin/python scripts/clans-item-art.py tidy OUT_DIR     # the picks in docs/clans-art/item-picks.json -> WebP
+  ~/.cache/rembg-venv/bin/python scripts/clans-item-art.py tidy OUT_DIR [slugs]  # the picks in docs/clans-art/item-picks.json -> WebP
 
 The words for each item are in docs/clans-art/item-descriptions.json. ComfyUI must be listening on Tailscale
 (docs/CLANS-ART-PLAN.md, "If a picture needs remaking"). The graph is the one saved inside every Clans painting
@@ -94,10 +94,12 @@ def sheet(out: Path):
         print(f'  {dest}', flush=True)
 
 
-def tidy(out: Path):
+def tidy(out: Path, slugs: list[str]):
     art = load('clans-art')
     picks = json.loads(PICKS.read_text())
     for slug, n in picks.items():
+        if slugs and slug not in slugs:
+            continue
         img = art.cut_out(out / f'{slug}-{n}.png')
         art.save(art.fit_height(img, 200), ITEMS / f'{slug}.webp', 80)
 
@@ -117,4 +119,4 @@ if __name__ == '__main__':
     elif args[0] == 'sheet':
         sheet(out)
     else:
-        tidy(out)
+        tidy(out, args[2:])

@@ -266,7 +266,7 @@ describe('picking a look in the creator (Clans art Stage A.5)', () => {
 });
 
 describe('items and quests (Clans art Stage A.7)', () => {
-  it('the Market shows the items painted (or a stand-in painting), and the quest shows its own painting', async () => {
+  it('the Market shows every item painted, and the quest shows its own painting', async () => {
     const u = user();
     await makeClanOnScreen(u);
     await u.click(screen.getByRole('button', { name: 'The Market' }));

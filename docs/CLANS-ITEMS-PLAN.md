@@ -1,6 +1,6 @@
 # Clan Quest: items and Market plan
 
-*Written 1 November 2026 from the code on `main` (5ca810f). Stage 1 (rules, Market, server) is built on branch `clans-items`; see "Stage 1 results" at the end. The pictures are stage 2.*
+*Written 1 November 2026 from the code on `main` (5ca810f). Built on branch `clans-items`: the rules, Market and server (stage 1) and all the pictures (stage 2). Waiting for James's go-ahead to go live.*
 
 ## What James asked for
 
@@ -82,16 +82,18 @@ Buying asks one question: *"The Oak Staff costs 50 gold. What is 10% of 50?"* Ri
 
 Gone: Look closely, the shelf tabs, ✓ marks, Which is the better buy?, the village tax on items, Check my change. **Monster supplies are unchanged** (still taxed, still "check the bill").
 
-## 4. Pictures
+## 4. Pictures (done)
 
-33 of the old 34 paintings are used again (the five armours renamed from "armor" to "armour"; the plain Axe is now only a stand-in). **176 items need a painting.** Until each has one, it borrows the nearest painting in its slot by the words in its name (`ITEM_STAND_INS` in `art.ts`); charms, bracers, fans and gloves show the old tile.
+All 209 items have their own painting in `src/games/clans/art/items/`: 33 of the old 34 kept (the five armours renamed from "armor" to "armour"; the plain Axe is no longer an item and was removed) and **176 new**. Contact sheets of every class's lines: `docs/clans-art/item-lines-1.jpg` and `-2.jpg`.
 
-Painted on the gaming PC with `scripts/clans-item-art.py` (paint, contact sheets, tidy into 200 px cut-outs), words in `docs/clans-art/item-descriptions.json`, picks in `docs/clans-art/item-picks.json`.
+How they were made (`scripts/clans-item-art.py`): painted in ComfyUI on the gaming PC (Z-Image Turbo, the same graph as every Clans painting), in a "gritty, weathered, muted" style written to match the first 34, one try each. Words in `docs/clans-art/item-descriptions.json` (first drafts by a Sonnet helper), picks in `docs/clans-art/item-picks.json`. A Sonnet helper checked every try (right for children, no person or hands, one whole item, looks like its name, plain background, matching style); Claude checked the rejects and borderline ones. 163 passed first time. 13 were repainted: the model kept putting hands and feet in gi, robes and armour, a whole knight with the lance, a treasure chest for "bone chest armour", a full suit for bracers and an axe head on the Knight's Mace. What worked: clothes **folded** or **laid flat, seen from above**, weapons **lying diagonally**, bracers as **"two short forearm guards side by side"**. Then cut out with rembg and saved 200 px tall (4 to 18 KB each).
+
+The Mac needed `~/.cache/rembg-venv` (Python 3.9 with rembg, Pillow, numpy), so `scripts/clans-art.py` now has `from __future__ import annotations`.
 
 ## 5. Stages
 
 1. **Rules, Market and server.** Done (below).
-2. **Pictures:** paint the 176 on the gaming PC, check every try is right for children, James picks.
+2. **Pictures.** Done (section 4).
 3. **Go live:** merge the branch (the clans function redeploys itself when its `index.ts` changes). James's word first.
 
 ## Stage 1 results (1 Nov 2026)
@@ -100,5 +102,6 @@ Branch `clans-items` (worktree `~/games-hub-clans-items`), from `main` at c9bf69
 
 - Built everything in sections 2 and 3. Server: the `buy` action takes an optional `answer`, the result says whether the discount was given, the `examine` action and the `examined` list are gone (an old page sending `examine` is refused as an unknown action). `supabase/functions/clans/index.ts` rebuilt.
 - Tests: new `shared/clans/items.test.ts` (lines, no minuses, each tier better, round-ten prices, (R) stats covered, Smithy table, starter gear, HP/SP, old-save conversion, class change). Market, quest, shop, season and art tests rewritten. `npm run typecheck`, `npm run test:all` (331 files, 5783 tests) and `npm run build` pass.
-- **Not tested yet:** the Market in a real browser at Chromebook and phone sizes; the preview pages; a real old save loading on the server.
+- Tried in the Clans preview at 1366 × 640 and 390 × 844: the cards fit, no sideways scroll, the 10% question and Pay work. Fixed from that: tall pictures overflowed their row, and the "bought" message was at the top of the page (it now shows in the buyer's card and takes the keyboard focus).
+- **Not tested yet:** a real old save loading on the live server.
 - **Go-live list:** merge `origin/main`, re-run the checks, merge the PR (the clans function deploys itself). No migration.
