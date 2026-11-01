@@ -6819,6 +6819,9 @@ const LATER_WIN_PRIZE = {
 * STARTER_LOW + STARTER_SPREAD of the pupil's speed, so it is close but can't be lost. */
 const STARTER_LOW = .86;
 const STARTER_SPREAD = .1;
+/** The Sky Keeper portraits a pupil can choose from (src/games/isles/art/keepers/): 20 boys and 20 girls. Just for fun:
+* a keeper has no powers. The server only saves an id from this list. */
+const KEEPERS = [...Array.from({ length: 20 }, (_, i) => `b${String(i + 1).padStart(2, "0")}`), ...Array.from({ length: 20 }, (_, i) => `g${String(i + 1).padStart(2, "0")}`)];
 //#endregion
 //#region shared/isles/engine.ts
 /**
@@ -7592,9 +7595,16 @@ async function handleIsles(services, player, body) {
 		"raceStart",
 		"raceAnswer",
 		"raceFinish",
-		"guideDone"
+		"guideDone",
+		"keeper"
 	].includes(action)) return unreadable();
 	if (action === "guideDone") return await services.guideDone(player) === "busy" ? busy() : ok({ guideDone: true });
+	if (action === "keeper") {
+		if (typeof body.keeper !== "string" || !KEEPERS.includes(body.keeper)) return no(400, "That Sky Keeper isn't one of the portraits.");
+		const kept = await services.keeper(player, body.keeper);
+		if (kept === "busy") return busy();
+		return kept ? ok({ keeper: body.keeper }) : no(409, "Open Sky Isles first.", { code: "stale" });
+	}
 	if ((action === "raceStart" || action === "raceAnswer" || action === "raceFinish") && !settings.races) return no(403, "Sky Races are switched off for your class.", { code: "races-off" });
 	let state = await services.load(player);
 	if (state === "busy") return busy();
@@ -7636,6 +7646,7 @@ async function handleIsles(services, player, body) {
 				done: saved.guideDone,
 				show: !saved.guideDone && now.turn === 0
 			},
+			keeper: saved.keeper ?? null,
 			races: settings.races,
 			prices,
 			...extra
@@ -8026,6 +8037,10 @@ Deno.serve(makeHandler({
 		prize
 	}),
 	guideDone: (player) => call("record_isles_guide_done", { player }),
+	keeper: (player, keeper) => call("record_isles_keeper", {
+		player,
+		keeper
+	}),
 	async recordAnswers(player, once, answers) {
 		await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, "isles");
 	},

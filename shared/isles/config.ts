@@ -195,6 +195,15 @@ export const GULL_HAPPINESS = 70;
 export const STARTER_LOW = 0.86;
 export const STARTER_SPREAD = 0.1;
 
+// --- Sky Keepers -------------------------------------------------------------------------------------------------------
+
+/** The Sky Keeper portraits a pupil can choose from (src/games/isles/art/keepers/): 20 boys and 20 girls. Just for fun:
+ * a keeper has no powers. The server only saves an id from this list. */
+export const KEEPERS = [
+  ...Array.from({ length: 20 }, (_, i) => `b${String(i + 1).padStart(2, '0')}`),
+  ...Array.from({ length: 20 }, (_, i) => `g${String(i + 1).padStart(2, '0')}`),
+] as readonly string[];
+
 // --- Small islands catch up ------------------------------------------------------------------------------------------
 
 /** An island under this share of its class's middle size gets one extra chunk in its drift. */

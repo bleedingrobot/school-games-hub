@@ -65,6 +65,8 @@ create table public.isles_islands (
   -- The island (shared/isles/engine.ts, `Island`): a few KB. Null after a New Season, until the next load makes one.
   island jsonb check (island is null or (jsonb_typeof(island) = 'object' and pg_column_size(island) < 20000)),
   guide_done boolean not null default false,
+  -- The pupil's Sky Keeper portrait (KEEPERS in shared/isles/config.ts: b01 to b20, g01 to g20), kept through New Season.
+  keeper text check (keeper is null or keeper ~ '^[bg](0[1-9]|1[0-9]|20)$'),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -153,7 +155,7 @@ set search_path = ''
 as $$
   select jsonb_build_object(
     'saved', (select jsonb_build_object('seed', i.seed, 'season', i.season, 'version', i.version, 'day', i.day, 'island', i.island,
-                'guideDone', i.guide_done)
+                'guideDone', i.guide_done, 'keeper', i.keeper)
               from public.isles_islands i where i.player = isles_load.player),
     'classMiddle', coalesce((
       select percentile_disc(0.5) within group (order by jsonb_array_length(o.island -> 'spots'))
@@ -347,6 +349,21 @@ as $$
   update public.isles_islands i set guide_done = true where i.player = record_isles_guide_done.player returning true
 $$;
 
+-- The pupil's Sky Keeper portrait (only an id from the list: the column's check refuses anything else). It stays
+-- through a New Season. False if the pupil has no island row yet.
+create function public.record_isles_keeper(player uuid, keeper text)
+returns boolean
+language sql
+security definer
+set search_path = ''
+as $$
+  with saved as (
+    update public.isles_islands i set keeper = record_isles_keeper.keeper, updated_at = now()
+    where i.player = record_isles_keeper.player returning 1
+  )
+  select exists (select 1 from saved)
+$$;
+
 -- ---------------------------------------------------------------------------
 -- What pupils can read
 -- ---------------------------------------------------------------------------
@@ -359,7 +376,7 @@ stable
 security definer
 set search_path = ''
 as $$
-  select jsonb_build_object('island', i.island, 'day', i.day, 'season', i.season, 'guideDone', i.guide_done)
+  select jsonb_build_object('island', i.island, 'day', i.day, 'season', i.season, 'guideDone', i.guide_done, 'keeper', i.keeper)
   from public.isles_islands i where i.player = auth.uid() and public.is_school_user()
 $$;
 
@@ -374,7 +391,7 @@ security definer
 set search_path = ''
 as $$
   select coalesce(jsonb_agg(jsonb_build_object(
-      'id', p.id, 'name', p.display_name, 'spots', jsonb_array_length(i.island -> 'spots'),
+      'id', p.id, 'name', p.display_name, 'keeper', i.keeper, 'spots', jsonb_array_length(i.island -> 'spots'),
       'lighthouse', (i.island ->> 'lighthouse')::integer, 'calm', (i.island ->> 'turn')::integer < 12, 'me', p.id = auth.uid())
     order by p.display_name), '[]'::jsonb)
   from public.isles_islands i
@@ -491,7 +508,7 @@ revoke execute on function
   public.record_isles_answer(uuid, text, integer, numeric, boolean),
   public.record_isles_race_start(uuid, text, text, boolean, jsonb, jsonb, integer, integer), public.isles_race(uuid, bigint),
   public.record_isles_race_finish(uuid, bigint, integer, jsonb, integer, jsonb, jsonb), public.record_isles_guide_done(uuid),
-  public.my_isles(), public.isles_sky(),
+  public.record_isles_keeper(uuid, text), public.my_isles(), public.isles_sky(),
   public.isles_counts(uuid), public.isles_point_rules(), public.isles_players(), public.isles_season(uuid[]), public.isles_last_played(uuid)
 from public, anon, authenticated;
 grant execute on function public.teacher_set_isles(boolean, boolean, uuid), public.my_isles(), public.isles_sky() to authenticated;
@@ -501,5 +518,6 @@ grant execute on function
   public.record_isles_questions(uuid, text, text, jsonb), public.isles_question_set(uuid, text, text),
   public.record_isles_answer(uuid, text, integer, numeric, boolean),
   public.record_isles_race_start(uuid, text, text, boolean, jsonb, jsonb, integer, integer), public.isles_race(uuid, bigint),
-  public.record_isles_race_finish(uuid, bigint, integer, jsonb, integer, jsonb, jsonb), public.record_isles_guide_done(uuid)
+  public.record_isles_race_finish(uuid, bigint, integer, jsonb, integer, jsonb, jsonb), public.record_isles_guide_done(uuid),
+  public.record_isles_keeper(uuid, text)
 to service_role;

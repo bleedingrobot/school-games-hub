@@ -2,7 +2,7 @@
 
 *An original kingdom-building game for School Games Hub, in the BBS "empire game" genre. Asked for by James on 1 November 2026, after we read [Immortal Barons](https://github.com/andy5995/immortal-barons) together. Written from that reading, `docs/GAME_DEVELOPMENT_GUIDE.md` (main `92735a2`) and the other games' plans. Branch `isles`, worktree `~/games-hub-isles`.*
 
-**Status (2 Nov 2026): stages S.0, S.L (look chosen: hand-painted anime), S.1 (rules engine) and S.2 (the server: migration, server function, tests) are done. Nothing is live, and there are still no screens (S.3).** Every choice marked **(chosen)** was made for James. He can change any of them, and most are cheap to change until stage S.2. The working name "Sky Isles" (id `isles`, CSS prefix `.si-`) is one of them.
+**Status (2 Nov 2026, after S.3): stages S.0, S.L (look chosen: hand-painted anime), S.1 (rules engine), S.2 (the server) and S.3 (the screens, art and a private preview) are done. Nothing is live. Next is S.4 (classmates: races, ropes, market, news).** Every choice marked **(chosen)** was made for James. He can change any of them, and most are cheap to change until stage S.2. The working name "Sky Isles" (id `isles`, CSS prefix `.si-`) is one of them.
 
 ---
 
@@ -589,6 +589,48 @@ Decided with James because 40 small plot tiles looked crowded and "stuck on". Bu
 - Take `20261102000100` out of `migrations-on-hold.txt` in the go-live PR.
 - Check the migration number again.
 - The `isles` function deploys itself when its `index.ts` lands on main.
+
+### S.3 results (the screens), 2 Nov 2026
+
+**Built:**
+- **Art.** A Sonnet helper picked the best of the three tries of each painting. James saw the picks on a private page (https://claude.ai/artifact/3x51vVcDisdSvET8Gw1eQr) and kept them all. The picks are in `docs/isles-art/picks.json`.
+  - `scripts/isles-art.py tidy` cuts each piece out and writes `.webp` files to `src/games/isles/art/` (2.4 MB in all; keepers in `art/keepers/`).
+  - Pip's white body was being cut away, so his mask also fills in from the corners.
+  - Spot positions were placed by hand, in claim order, and are in `picks.json` (`spots`). `CREDITS.md` sits beside the art.
+  - `art.test.ts` checks that no picture is missing or spare, and that each base has one position per spot. It is not one of the 8.
+  - Every picture falls back to a shape drawn in code if it fails to load.
+- **Screens** in `src/games/isles/`, all `.si-`, hub tokens and hub buttons:
+  - My island: the painted island with tappable spots, the drift island, the lighthouse and the keeper. The resources bar, turn pips, the road to Grand Isle, and Pip's next step with "Show me".
+  - The turn: island report, the sky pilot's question (`QuestionModal`), the collect sum (`beforeSpending`), spending, End turn. All choices go in one `turn` request. Every greyed-out button says why (`problemWith`, with the numbers: "Needs 85 coins. You have 40."). There is Undo last, Clear all and "Back without playing".
+  - Upgrades, a Sky Race against the Gull Riders (boats sail leg by leg; reduced motion jumps to the end; the working is shown), the Sky Keeper choice (40 portraits), How to play (numbers from `config.ts`) and the resting message when the day's turns are used.
+  - The class sky, the market and the news show "coming soon".
+- **Data and switch:** `src/data/isles.ts` (the live server, behind the `IslesBackend` interface in `backend.ts`), `switch.ts` (`ON = false`, `VITE_ISLES_ON`) and `index.tsx`. Not in the registry.
+- **Preview:** `preview/isles/` and `vite.isles-preview.config.ts` (`npm run isles:preview`). It runs the real server rules (`handleIsles` with `memoryServices`) in the browser for a pretend pupil with a fixed focus, never calls the live server, and has "Skip to tomorrow" and "Start again". Private preview page: https://claude.ai/artifact/Q7phU2vhvHx4yYSPBUxpE6
+- **Sky Keeper in the migration** (still on hold): a `keeper` column (only `b01` to `b20`, `g01` to `g20`), kept through New Season. `record_isles_keeper(player, keeper)` (server key only). It is returned by `isles_load`, `my_isles()` and `isles_sky()`. Server action `keeper`.
+
+**Decisions (James can change any):**
+- James chose: keep the Sonnet picks, and put the extra spots past each base's painted clearings on grass.
+- A pupil picks a keeper before the first turn (it can be changed later).
+- A tax or workshop choice replaces the earlier one in the same turn, so there is only ever one of each.
+- A race happens between turns (one per turn), not in the middle of one.
+- The 17th spot and beyond show as a list under the island instead of on the picture.
+
+**Tests (now 6 of the 8):**
+- Test 7 (`src/games/isles/Accessibility.test.tsx`): text contrast 4.5:1, every control at least 44 px, reduced motion, focus moves to each screen's heading, and a whole turn by keyboard.
+- `isles.test.sql` now has 47 checks (keeper added: refused to pupils, saved and loaded, only from the list, false with no island). It ran on a throw-away copy and passed. The copy is dropped.
+- Test 8 (the guided first go) is left for S.5.
+
+**Checks run:** the type check, the build and the preview build passed. `npm run test:all`: 5,938 of 5,939 passed. The one failure was a Dashboard Season test (not Sky Isles), which passes when run by itself, so it is slow under load rather than broken.
+
+**Checked by hand** in the preview at 1366×640 and 844×390: choosing a keeper, My island, a turn (right answer gives the fair wind, the collect sum, building, End turn), a race won with its working, and "Show me". There is no sideways scroll at phone width. Screenshots are in `docs/isles-screens/s3/`.
+
+**Untested:** the live server function and `src/data/isles.ts` against a real database. Nothing is deployed and the switch is off.
+
+**Art notes for James (from the helpers):**
+- The bases have fewer painted clearings than spots (7 of 8, 9 of 10, 10 of 13, 11 of 16). Extra spots sit on grass.
+- Farm levels 2 and 3 sit on a wide wheat slab. Workshop levels 2 and 3 are windmills, but level 1 is a shed.
+- Some keepers came out with lighter skin than asked (b01, b10, b11, b15, b20, g01, g06, g10, g11, g20). Some look younger than their age (b13 to b16, g16). g09 has two pairs of goggles.
+- Worth checking with families: b17 (turban) and g13 (hijab). Nothing unsuitable for children was found.
 
 ### S.L so far (style try-outs), 1 Nov 2026
 

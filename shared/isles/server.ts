@@ -11,7 +11,8 @@
  *   raceStart   a Sky Race against the Gull Riders (the season's first is the starter race), with three questions;
  *   raceAnswer  marks one race question, once;
  *   raceFinish  works the race out from its seed, the two boats and the answers marked right, and gives the prize;
- *   guideDone   the guided first go is finished (or skipped).
+ *   guideDone   the guided first go is finished (or skipped);
+ *   keeper      the pupil's Sky Keeper portrait (an id from KEEPERS only), kept through New Season.
  *
  * Nothing that counts comes from the browser: the questions and answers are the server's, the random numbers come from
  * the island's seed (and each race's), and the browser never sees a seed. Races against classmates, friendship ropes,
@@ -20,11 +21,11 @@
 import type { FactAnswer } from '../maths/leitner';
 import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
-import { GRAND_ISLE, MARKET_PRICE, PLOT_KINDS, RACE_QUESTIONS, UPGRADES } from './config';
+import { GRAND_ISLE, KEEPERS, MARKET_PRICE, PLOT_KINDS, RACE_QUESTIONS, UPGRADES } from './config';
 import { newDay, newIsland, playTurn, spotCount, type Action, type Island, type Problem } from './engine';
 import { GULL_RIDERS, gullRiders, racerOf, raceProblem, runRace, settleRace, starterRace, type Racer, type RaceProblem, type RaceResult } from './race';
 
-export type IslesAction = 'load' | 'answer' | 'turn' | 'raceStart' | 'raceAnswer' | 'raceFinish' | 'guideDone';
+export type IslesAction = 'load' | 'answer' | 'turn' | 'raceStart' | 'raceAnswer' | 'raceFinish' | 'guideDone' | 'keeper';
 
 /** The pupil's saved island row. `island` is null after a New Season (a new one is made on the next load). */
 export interface SavedIsland {
@@ -36,6 +37,8 @@ export interface SavedIsland {
   day: number;
   island: Island | null;
   guideDone: boolean;
+  /** The Sky Keeper portrait (an id from KEEPERS), or null until the pupil chooses one. */
+  keeper: string | null;
 }
 
 /** A stored set of questions: one for a turn, three for a race. Pupils can never read these. */
@@ -93,6 +96,8 @@ export interface IslesServices {
   /** Finishes an open race and keeps the island after it, only if the island is still at `expectedVersion`. */
   raceFinish(player: string, id: number, expectedVersion: number, island: Island, day: number, result: RaceResult, prize: { coins: number; goods: number }): Promise<boolean | 'busy'>;
   guideDone(player: string): Promise<boolean | 'busy'>;
+  /** Keeps the pupil's Sky Keeper (an id from KEEPERS). False if the pupil has no island yet. */
+  keeper(player: string, keeper: string): Promise<boolean | 'busy'>;
   /** Adds answers to the pupil's maths records (sent twice, counted once, by `once`). A failure is only logged. */
   recordAnswers(player: string, once: string, answers: FactAnswer[]): Promise<void>;
   /** Gives hub points (once per `once`, which must be unique across every pupil). A failure is only logged. */
@@ -264,10 +269,16 @@ export async function handleIsles(services: IslesServices, player: string, body:
   const prices = { ...MARKET_PRICE };
 
   const action = body.action;
-  if (!['load', 'answer', 'turn', 'raceStart', 'raceAnswer', 'raceFinish', 'guideDone'].includes(action as string)) return unreadable();
+  if (!['load', 'answer', 'turn', 'raceStart', 'raceAnswer', 'raceFinish', 'guideDone', 'keeper'].includes(action as string)) return unreadable();
   if (action === 'guideDone') {
     const done = await services.guideDone(player);
     return done === 'busy' ? busy() : ok({ guideDone: true });
+  }
+  if (action === 'keeper') {
+    if (typeof body.keeper !== 'string' || !KEEPERS.includes(body.keeper)) return no(400, "That Sky Keeper isn't one of the portraits.");
+    const kept = await services.keeper(player, body.keeper);
+    if (kept === 'busy') return busy();
+    return kept ? ok({ keeper: body.keeper }) : no(409, 'Open Sky Isles first.', { code: 'stale' });
   }
   if ((action === 'raceStart' || action === 'raceAnswer' || action === 'raceFinish') && !settings.races) {
     return no(403, 'Sky Races are switched off for your class.', { code: 'races-off' });
@@ -306,6 +317,7 @@ export async function handleIsles(services: IslesServices, player: string, body:
       season: saved.season,
       question: set ? { ...shown(set)[0], answered: set.answered['0'] ?? null } : null,
       guide: { done: saved.guideDone, show: !saved.guideDone && now.turn === 0 },
+      keeper: saved.keeper ?? null,
       races: settings.races,
       prices,
       ...extra,

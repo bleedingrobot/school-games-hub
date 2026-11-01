@@ -3,7 +3,7 @@
 -- Run on a throw-away copy: scripts/scratch-db.sh isles, then scripts/scratch-test.sh isles supabase/tests/database/isles.test.sql
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(42);
+select plan(47);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -55,6 +55,7 @@ select throws_ok($$ select public.record_isles_start(auth.uid(), repeat('ab', 8)
 select throws_ok($$ select public.record_isles_turn(auth.uid(), 1, '{"turn":1}', 1, 0, true, '[]', '{}') $$, '42501', null, '... or play a turn');
 select throws_ok($$ select public.record_isles_answer(auth.uid(), repeat('ab', 8), 0, 56, true) $$, '42501', null, '... or mark their own answers');
 select throws_ok($$ select public.record_isles_race_finish(auth.uid(), 1, 1, '{}', 1, '{"won":true}', '{}') $$, '42501', null, '... or finish a race');
+select throws_ok($$ select public.record_isles_keeper(auth.uid(), 'g07') $$, '42501', null, '... or choose a keeper directly');
 select throws_ok($$ select public.isles_season(array[auth.uid()]) $$, '42501', null, '... or clear a season');
 select throws_ok($$ select public.teacher_set_isles(true, true) $$, null, null, 'a pupil cannot switch the game on');
 
@@ -74,6 +75,12 @@ select ok(not public.record_isles_start(pg_temp.id('0a'), pg_temp.seed('a2'), pg
 select ok(public.record_isles_start(pg_temp.id('0b'), pg_temp.seed('b1'), pg_temp.island(0, 10), 20000), 'a classmate''s island');
 select ok(public.record_isles_start(pg_temp.id('0c'), pg_temp.seed('c1'), pg_temp.island(0, 14), 20000), 'another class''s island');
 select is((public.isles_load(pg_temp.id('0a')) ->> 'classMiddle')::integer, 6, 'the class''s middle size counts only the pupil''s own class');
+
+-- Sky Keepers: only a portrait from the list.
+select ok(public.record_isles_keeper(pg_temp.id('0a'), 'g07'), 'a keeper is saved');
+select is(public.isles_load(pg_temp.id('0a')) -> 'saved' ->> 'keeper', 'g07', '... and comes back with the island');
+select throws_ok($$ select public.record_isles_keeper(pg_temp.id('0a'), 'x99') $$, '23514', null, '... only from the list');
+select ok(not public.record_isles_keeper('00000000-0000-0000-0000-000000000099', 'b01'), '... and only for a pupil with an island');
 
 -- Turns: once each.
 select ok(public.record_isles_turn(pg_temp.id('0a'), 1, pg_temp.island(1, 7, 95), 20000, 0, true, '[{"kind":"anchor"}]', '{}'), 'turn 0 is kept');

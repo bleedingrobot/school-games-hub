@@ -5,6 +5,12 @@ James chose. Runs on James's computer only, never in the site build. Standard li
 
   python3 scripts/isles-art.py paint OUT_DIR [name ...] [--tries 3]   # OUT_DIR/<name>-<try>.png; every name if none given
   python3 scripts/isles-art.py list                                   # the names
+  ~/.cache/rembg-venv/bin/python scripts/isles-art.py tidy [name ...] [--force]   # the picks into the game (below)
+
+`tidy` reads docs/isles-art/picks.json (which try of each picture is used) and writes .webp files into
+src/games/isles/art/: pieces cut out of their white background with rembg and trimmed (buildings 384 px, bases 1200 px
+wide, Pip 320 px, boats 480 px), backgrounds 1600 and 800 px wide, and each Sky Keeper as a 320 px and a 96 px square.
+It needs Pillow, numpy and rembg (in ~/.cache/rembg-venv on James's Mac). A file already made is skipped unless --force.
 
 A picture already there is skipped, and seeds are fixed, so any try can be painted again exactly. ComfyUI must be
 listening on Tailscale (docs/CLANS-ART-PLAN.md, "If a picture needs remaking"). The graph is the one every hub painting
@@ -218,6 +224,100 @@ def paint(out: Path, names: list[str], tries: int):
             print(f'  {dest.name}  {time.time() - started:.0f}s', flush=True)
 
 
+# --- From tries to the game (stage S.3) ---------------------------------------------------------------------------
+
+ROOT = Path(__file__).resolve().parent.parent
+ART = ROOT / 'src' / 'games' / 'isles' / 'art'
+INBOX = Path.home() / 'isles-art-inbox'
+PICKS = ROOT / 'docs' / 'isles-art' / 'picks.json'
+# The longest side of each cut-out piece, and the widths of the backgrounds and keeper portraits.
+PIECE_SIZE = {'base': 1200, 'bld': 384, 'pip': 320, 'boat': 480}
+BG_WIDTHS = (1600, 800)
+KEEPER_SIZES = (320, 96)
+
+
+def source(name: str, n: int) -> Path:
+    """Where a try was painted: bases and buildings in levels/ (the 2 Nov rule change), keepers in keepers/, the rest in art/."""
+    folder = 'levels' if name.startswith(('base-', 'bld-')) else 'keepers' if name.startswith('keeper-') else 'art'
+    return INBOX / folder / f'{name}-{n}.png'
+
+
+def outputs(name: str) -> list[Path]:
+    if name.startswith('bg-'):
+        return [ART / f'{name}.webp', ART / f'{name}-800.webp']
+    if name.startswith('keeper-'):
+        return [ART / 'keepers' / f'{name[7:]}.webp', ART / 'keepers' / f'{name[7:]}-96.webp']
+    return [ART / f'{name}.webp']
+
+
+_session = None
+
+
+def cut_out(src: Path):
+    """The piece on its white background, cut out with rembg and trimmed to the piece."""
+    global _session
+    import numpy as np
+    from PIL import Image
+    from rembg import new_session, remove
+    if _session is None:
+        _session = new_session('isnet-general-use')
+    rgb = Image.open(src).convert('RGB')
+    img = remove(rgb, session=_session, alpha_matting=True)
+    if src.name.startswith('pip-'):
+        # Pip is a white gull on white, and rembg takes his white feathers away too. Keep everything the background
+        # can't reach: fill the white in from the edges, and only that filled white goes.
+        from PIL import ImageDraw
+        marked = rgb.copy()
+        for xy in [(0, 0), (rgb.width - 1, 0), (0, rgb.height - 1), (rgb.width - 1, rgb.height - 1)]:
+            ImageDraw.floodfill(marked, xy, (255, 0, 255), thresh=40)
+        inside = ~np.all(np.asarray(marked) == (255, 0, 255), axis=2)
+        alpha = np.maximum(np.asarray(img)[..., 3], inside.astype(np.uint8) * 255)
+        img = Image.fromarray(np.dstack([np.asarray(rgb), alpha]).astype(np.uint8), 'RGBA')
+    a = np.asarray(img)[..., 3] > 40
+    if a.sum() < 400:
+        sys.exit(f'{src.name}: nothing left after cutting out')
+    ys, xs = np.where(a)
+    return img.crop((max(0, xs.min() - 4), max(0, ys.min() - 4), min(img.width, xs.max() + 5), min(img.height, ys.max() + 5)))
+
+
+def fit(img, longest: int, by_width=False):
+    from PIL import Image
+    scale = longest / (img.width if by_width else max(img.width, img.height))
+    return img if scale >= 1 else img.resize((round(img.width * scale), round(img.height * scale)), Image.LANCZOS)
+
+
+def save(img, out: Path, quality: int):
+    out.parent.mkdir(parents=True, exist_ok=True)
+    img.save(out, 'WEBP', quality=quality, method=6)
+    print(f'  {out.relative_to(ROOT)}  {img.width}x{img.height}  {out.stat().st_size // 1024} KB', flush=True)
+
+
+def tidy(names: list[str], force: bool):
+    from PIL import Image
+    picks = json.loads(PICKS.read_text())['picks']
+    unknown = [n for n in names if n not in picks]
+    if unknown:
+        sys.exit(f'Not in picks.json: {", ".join(unknown)}')
+    for name in names or list(picks):
+        outs = outputs(name)
+        if not force and all(o.exists() for o in outs):
+            continue
+        src = source(name, picks[name])
+        if name.startswith('bg-'):
+            img = Image.open(src).convert('RGB')
+            for out, width in zip(outs, BG_WIDTHS):
+                save(fit(img, width, by_width=True), out, 74)
+        elif name.startswith('keeper-'):
+            img = Image.open(src).convert('RGB')
+            side = min(img.size)
+            img = img.crop(((img.width - side) // 2, (img.height - side) // 2, (img.width + side) // 2, (img.height + side) // 2))
+            for out, size in zip(outs, KEEPER_SIZES):
+                save(img.resize((size, size), Image.LANCZOS), out, 80)
+        else:
+            group = name.split('-', 1)[0]
+            save(fit(cut_out(src), PIECE_SIZE[group], by_width=group == 'base'), outs[0], 82)
+
+
 if __name__ == '__main__':
     args = sys.argv[1:]
     tries = 3
@@ -225,7 +325,10 @@ if __name__ == '__main__':
         i = args.index('--tries')
         tries = int(args[i + 1])
         del args[i:i + 2]
-    if args[:1] == ['list']:
+    if args[:1] == ['tidy']:
+        force = '--force' in args
+        tidy([a for a in args[1:] if a != '--force'], force)
+    elif args[:1] == ['list']:
         print('\n'.join(PICTURES))
     elif args[:1] == ['paint'] and len(args) >= 2:
         unknown = [a for a in args[2:] if a not in PICTURES]

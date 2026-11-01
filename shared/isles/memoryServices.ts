@@ -59,7 +59,9 @@ export function memoryServices(options: MemoryOptions = {}): IslesServices & { d
     async start(player, seed, island: Island, day) {
       const mine = data.islands[player];
       if (mine?.island) return false;
-      data.islands[player] = { seed, season: mine?.season ?? 1, version: (mine?.version ?? 0) + 1, day, island: copy(island), guideDone: mine?.guideDone ?? false };
+      data.islands[player] = {
+        seed, season: mine?.season ?? 1, version: (mine?.version ?? 0) + 1, day, island: copy(island), guideDone: mine?.guideDone ?? false, keeper: mine?.keeper ?? null,
+      };
       saved();
       return true;
     },
@@ -116,6 +118,13 @@ export function memoryServices(options: MemoryOptions = {}): IslesServices & { d
     async guideDone(player) {
       const mine = data.islands[player];
       if (mine) mine.guideDone = true;
+      saved();
+      return true;
+    },
+    async keeper(player, keeper) {
+      const mine = data.islands[player];
+      if (!mine) return false;
+      mine.keeper = keeper;
       saved();
       return true;
     },

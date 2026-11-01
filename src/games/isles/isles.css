@@ -1,0 +1,185 @@
+/* Sky Isles: the painted island in a soft morning sky (docs/ISLES-ART-PLAN.md). Panels, words and buttons use the
+   hub's colour tokens and shared buttons; the island, the drift and the race course are the play area, with their own
+   art. Every class starts .si-. Fits 1366 x 640 and a phone (844 x 390), and every movement stops when the device asks
+   for less motion. */
+.si {
+  --si-sky: #cfeaf9;
+  --si-sky-2: #eef8fe;
+  --si-title: #0f3556;
+  --si-gold: #ffd447;
+  --si-gold-edge: #a16207;
+  --si-pip-line: #1e5a8a;
+  box-sizing: border-box;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 12px 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--si-sky), var(--si-sky-2) 60%);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.si *, .si *::before, .si *::after { box-sizing: border-box; }
+.si :is(h2, h3):not(.question__title) { margin: 0; font-family: var(--display); color: var(--si-title); line-height: 1.2; text-wrap: balance; }
+.si h2:not(.question__title) { font-size: 1.6rem; }
+.si h3:not(.question__title) { font-size: 1.15rem; }
+.si p { margin: 0; }
+.si [tabindex='-1']:focus { outline: none; }
+
+.si-top { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.si-top__right { display: flex; gap: 12px; align-items: center; }
+.si-keeperbtn { width: 48px; height: 48px; padding: 0; border-radius: 50%; border: 3px solid var(--surface); background: var(--surface); overflow: hidden; cursor: pointer; box-shadow: 0 2px 6px rgba(15, 53, 86, 0.3); }
+.si-keeperbtn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.si-pips { display: flex; gap: 5px; align-items: center; }
+.si-pips > span:not(.si-pips__words) { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--si-pip-line); background: var(--surface); }
+.si-pips > .si-pips__on { background: var(--si-gold) !important; border-color: var(--si-gold-edge) !important; }
+.si-pips__words { margin-left: 4px; font-size: 0.92rem; font-weight: 700; color: var(--si-title); }
+
+.si-res { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.si-res li { display: flex; gap: 6px; align-items: baseline; padding: 4px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 0.92rem; }
+.si-res span { color: var(--ink-soft); }
+.si-res strong { font-variant-numeric: tabular-nums; }
+.si-res__warn { font-style: normal; font-size: 0.82rem; color: var(--lost); font-weight: 700; }
+
+.si-main { display: grid; gap: 12px; }
+@media (min-width: 760px) {
+  .si-main { grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr); align-items: start; }
+  .si-left { position: sticky; top: 8px; }
+}
+.si-left, .si-right { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+/* The play area: the painted sky and the island. */
+.si-stage { position: relative; border-radius: 16px; padding: 5% 3% 3%; background: #a9d8f2 var(--si-bg) center / cover no-repeat; overflow: hidden; }
+@media (max-width: 800px) { .si-stage { background-image: var(--si-bg-small); } }
+.si-isle { position: relative; width: min(100%, max(240px, calc((100dvh - 250px) * 1.45))); margin: 0 auto; }
+.si-isle__base { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; }
+.si-isle__drawn { position: absolute; inset: 0; border-radius: 50% 50% 46% 46% / 30% 30% 70% 70%; background: linear-gradient(180deg, #8bcf62 0 42%, #6f9a3c 42% 46%, #94643c 46%); }
+.si-spot { position: absolute; transform: translate(-50%, -84%); min-width: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 12px; background: none; cursor: pointer; display: flex; align-items: flex-end; justify-content: center; }
+.si-spot img { width: 100%; display: block; filter: drop-shadow(0 3px 2px rgba(40, 60, 20, 0.35)); transition: transform 0.15s ease; }
+.si-spot:hover img, .si-spot:focus-visible img { transform: translateY(-4px); }
+.si-spot--empty img { width: 70%; }
+.si-spot--chosen { outline: 3px solid var(--si-gold); outline-offset: 2px; background: rgba(255, 255, 255, 0.35); }
+.si-spot__drawn { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 800; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
+.si-kind--farm { background: #a16207; }
+.si-kind--mine { background: #4b5563; }
+.si-kind--dock { background: #1d4ed8; }
+.si-kind--house { background: #b91c1c; }
+.si-kind--workshop { background: #7c2d12; }
+.si-kind--library { background: #6d28d9; }
+.si-kind--empty { background: #78716c; }
+.si-isle__keeper { position: absolute; left: 0; top: 0; width: 12%; min-width: 40px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); z-index: 200; }
+.si-lighthouse { position: absolute; left: 50%; top: 4%; width: 3.5%; height: calc(6% + var(--si-stage) * 4%); transform: translate(-50%, -100%); border-radius: 40% 40% 4px 4px; background: repeating-linear-gradient(180deg, #fff 0 22%, #dc2626 22% 40%); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); z-index: 5; }
+.si-lighthouse__light { position: absolute; left: 50%; top: -18%; width: 160%; aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(circle, #fff7c2 0 35%, rgba(255, 212, 71, 0) 70%); }
+.si-drift { position: absolute; right: 2%; top: 4%; width: 16%; min-width: 64px; min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; z-index: 300; animation: si-bob 3.2s ease-in-out infinite; border-radius: 12px; }
+.si-drift img { width: 100%; display: block; }
+.si-drift__drawn { position: relative; display: block; width: 100%; aspect-ratio: 1.4; }
+.si-drift__count { position: absolute; right: -4px; top: -4px; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px; background: var(--si-gold); color: var(--ink); font-weight: 800; display: grid; place-items: center; border: 2px solid #fff; }
+.si-more { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; position: relative; z-index: 300; }
+.si-more__spot { min-height: 44px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
+.si-stage__badge { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); padding: 3px 12px; border-radius: 999px; background: var(--si-gold); font-weight: 800; color: var(--ink); z-index: 300; }
+@keyframes si-bob { 50% { transform: translateY(-6px); } }
+
+/* "Show me": the thing Pip means, lit up. */
+.si-lit { box-shadow: 0 0 0 4px var(--si-gold), 0 0 0 9px rgba(255, 212, 71, 0.45); animation: si-glow 1.2s ease-in-out infinite; }
+@keyframes si-glow { 50% { box-shadow: 0 0 0 4px var(--si-gold), 0 0 0 14px rgba(255, 212, 71, 0.15); } }
+
+.si-road { display: grid; gap: 4px; }
+.si-road__label { font-size: 0.9rem; font-weight: 700; color: var(--si-title); }
+.si-road__track { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.si-road__stop { width: 14px; height: 14px; border-radius: 50%; background: var(--surface); border: 2px solid var(--si-pip-line); }
+.si-road__stop--big { width: 18px; height: 18px; }
+.si-road__stop--on { background: #4d9c3a; border-color: #2f6a22; }
+.si-road__light { width: 12px; height: 20px; margin-left: 4px; border-radius: 6px 6px 2px 2px; background: var(--surface); border: 2px solid var(--si-pip-line); }
+.si-road__light--on { background: var(--si-gold); border-color: var(--si-gold-edge); }
+
+/* Panels and Pip. */
+.si-panel { display: grid; gap: 8px; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 2px 8px rgba(15, 53, 86, 0.08); }
+.si-panel__head { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.si-panel--row { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+.si-pipsays { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+.si-pipsays p { flex: 1; min-width: 0; }
+.si-pip { width: 64px; height: auto; flex: 0 0 auto; }
+.si-pip--drawn { display: block; height: 64px; border-radius: 50%; background: #fff; border: 3px solid var(--si-pip-line); }
+.si-showme { flex: 0 0 auto; }
+.si-note { color: var(--ink-soft); font-size: 0.92rem; }
+.si-problem { color: var(--lost); font-weight: 700; }
+.si-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+.si-soon { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.si-big { width: 100%; font-size: 1.2rem; }
+.si-choice { display: grid; gap: 3px; }
+.si-choice__why { font-size: 0.85rem; color: var(--ink-soft); }
+.si-close { min-height: 44px; }
+.si-buildgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.si-buildgrid .button { width: 100%; display: grid; gap: 2px; text-align: left; }
+.si-build__name { font-weight: 700; }
+.si-build__job { font-size: 0.82rem; font-weight: 400; }
+.si-tax { display: grid; gap: 6px; }
+@media (min-width: 520px) { .si-tax { grid-template-columns: repeat(3, 1fr); } }
+.si-tax__option { display: grid; gap: 2px; min-height: 44px; padding: 8px 10px; text-align: left; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-size: 0.88rem; cursor: pointer; }
+.si-tax__option strong { font-size: 1rem; }
+.si-tax__option--on { border-color: var(--focus); background: #e8f0ff; }
+.si-slider { display: grid; gap: 4px; font-weight: 700; }
+.si-slider input { width: 100%; min-height: 44px; accent-color: var(--focus); }
+.si-choices ol { margin: 0; padding-left: 1.3em; }
+.si-end { margin-left: auto; }
+.si-sums { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; font-variant-numeric: tabular-nums; }
+.si-wind { color: var(--won); font-weight: 700; }
+.si-spend { display: flex; flex-direction: column; gap: 10px; }
+
+.si-upgrades { display: grid; gap: 8px; }
+.si-upgrades__list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.si-upgrade { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.si-upgrade > div { display: grid; gap: 3px; min-width: 0; flex: 1 1 200px; }
+.si-upgrade__does { font-size: 0.9rem; color: var(--ink-soft); }
+.si-upgrade__got { font-weight: 700; color: var(--won); }
+.si-upgrade__need { font-size: 0.9rem; color: var(--ink-soft); }
+.si-bar { display: block; height: 8px; border-radius: 4px; background: var(--tint); overflow: hidden; max-width: 220px; }
+.si-bar span { display: block; height: 100%; background: #4d9c3a; }
+
+/* Choosing a Sky Keeper. */
+.si-keepers { display: grid; gap: 10px; }
+.si-keepers__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+.si-keeper { padding: 0; aspect-ratio: 1; border-radius: 50%; border: 3px solid var(--surface); background: var(--surface); overflow: hidden; cursor: pointer; }
+.si-keeper img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.si-keeper--on { border-color: var(--si-gold); box-shadow: 0 0 0 3px var(--si-gold-edge); }
+.si-keeper__drawn { display: grid; place-items: center; width: 100%; height: 100%; font-weight: 800; color: var(--ink); background: var(--tint); }
+.si-keepers__bar { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+.si-keepers__big { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; }
+
+/* Sky Races. */
+.si-race { display: grid; gap: 10px; }
+.si-course { position: relative; height: clamp(170px, 42dvh, 320px); border-radius: 16px; overflow: hidden; background: #a9d8f2 var(--si-bg) center / cover no-repeat; }
+@media (max-width: 800px) { .si-course { background-image: var(--si-bg-small); } }
+.si-lane { position: relative; height: 50%; }
+.si-boat { position: absolute; top: 6%; height: 88%; aspect-ratio: 1.15; transition: left 0.7s linear; }
+.si-boat img:first-child { width: 100%; height: 100%; object-fit: contain; display: block; filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.25)); }
+.si-boat__keeper { position: absolute; left: 38%; top: 2%; width: 26%; border-radius: 50%; border: 2px solid #fff; }
+.si-boat__drawn { display: block; height: 50px; border-radius: 0 0 40px 40px; }
+.si-boat__drawn--red { background: #b91c1c; }
+.si-boat__drawn--blue { background: #1d4ed8; }
+.si-gust { position: absolute; left: -30%; top: 30%; padding: 2px 8px; border-radius: 999px; background: #fff; color: var(--ink); font-weight: 800; font-size: 0.85rem; }
+.si-finish { position: absolute; right: 3%; top: 0; bottom: 0; width: 10px; background: repeating-linear-gradient(180deg, #fff 0 10px, #1f2937 10px 20px); opacity: 0.85; }
+.si-working { font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+
+.si-howto { display: grid; gap: 6px; }
+.si-howto ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+
+@media (max-width: 520px) {
+  .si-pip { width: 48px; }
+  .si h2:not(.question__title) { font-size: 1.35rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .si-drift, .si-lit { animation: none; }
+  .si-boat, .si-spot img { transition: none; }
+  .si-spot:hover img, .si-spot:focus-visible img { transform: none; }
+}
+
+/* The hub's light buttons stretch to fill their box; in the game's rows they size to their words. (".si" first, so
+   these win over the hub's own rules whichever stylesheet loads last.) */
+.si :is(.si-row, .si-soon, .si-panel--row, .si-keepers__bar, .si-choice, .si-turncard, .si-panel) .button,
+.si .si-showme, .si .si-close { width: auto; justify-self: start; }
+.si .si-buildgrid .si-choice .button, .si .si-big { width: 100%; }
+.si .si-showme, .si .si-close { min-height: 44px; padding: 8px 14px; font-size: 0.95rem; }

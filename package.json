@@ -61,7 +61,8 @@
     "archery:determinism": "node scripts/archery-determinism.mjs",
     "kingdom:sim": "node scripts/kingdom-sim.mjs",
     "kingdom:preview": "vite build --config vite.kingdom-preview.config.ts",
-    "isles:sim": "node scripts/isles-sim.mjs"
+    "isles:sim": "node scripts/isles-sim.mjs",
+    "isles:preview": "vite build --config vite.isles-preview.config.ts"
   },
   "engines": {
     "node": ">=22"

@@ -100,6 +100,7 @@ Deno.serve(
     raceFinish: (player, id, expectedVersion, island, day, result, prize) =>
       call<boolean>('record_isles_race_finish', { player, race: id, expected_version: expectedVersion, island, day, result, prize }),
     guideDone: (player) => call<boolean>('record_isles_guide_done', { player }),
+    keeper: (player, keeper) => call<boolean>('record_isles_keeper', { player, keeper }),
     async recordAnswers(player, once, answers) {
       // Saved the one approved way: per pack, each pack's own quick time, and counted for the teacher's focus results.
       await recordMathsAnswers((name, args) => admin.rpc(name, args), player, answers, once, 'isles');
