@@ -172,6 +172,9 @@
 /* Painted heroes stop at the shins, so their bottom edge fades out instead of stopping in a hard line. No drop shadow:
    the mask would clip it to a pale box around the picture. */
 .lord-art--hero { filter: none; -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent); mask-image: linear-gradient(180deg, #000 82%, transparent); }
+/* Shop gear is a square, so every shop row and the hero sheet line up whatever the shape of the painting. */
+.lord-art--gear { display: inline-block; vertical-align: middle; aspect-ratio: 1; filter: drop-shadow(0 2px 3px rgba(40, 20, 5, 0.55)); }
+.lord-shop li.is-locked .lord-art--gear { opacity: 0.7; filter: grayscale(0.5); }
 .lord-sprite--figure { filter: drop-shadow(0 0 2px #000) drop-shadow(0 6px 8px rgba(0, 0, 0, 0.6)); }
 .lord-stage__foe { position: relative; z-index: 1; display: flex; justify-content: center; }
 .lord-stage__hero { position: absolute; right: 18px; bottom: 8px; z-index: 1; }
@@ -225,7 +228,7 @@
 .lord-place__head h2 { display: flex; align-items: center; gap: 8px; margin: 0; }
 .lord-tabs { display: flex; gap: 8px; margin: 8px 0; }
 .lord-shop { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
-.lord-shop li { display: grid; grid-template-columns: 52px 1fr auto auto minmax(170px, auto); align-items: center; gap: 10px; padding: 4px 8px; border: 1px solid rgba(167, 123, 53, 0.55); border-radius: 4px; background: rgba(255, 250, 235, 0.5); }
+.lord-shop li { display: grid; grid-template-columns: 68px 1fr auto auto minmax(170px, auto); align-items: center; gap: 10px; padding: 4px 8px; border: 1px solid rgba(167, 123, 53, 0.55); border-radius: 4px; background: rgba(255, 250, 235, 0.5); }
 .lord-shop li.is-owned { border-color: var(--lord-green); background: rgba(210, 232, 190, 0.55); }
 .lord-shop li.is-locked .lord-sprite { opacity: 0.5; }
 .lord-shop__name { color: var(--lord-yellow); font-weight: 700; }
@@ -326,7 +329,7 @@
   .lord .lord-sign:not(.question__title) { font-size: 1.25rem; }
   .lord-panel { padding: 12px; }
   .lord-portrait { max-width: 36%; right: 6px; }
-  .lord-shop li { grid-template-columns: 40px 1fr auto; }
+  .lord-shop li { grid-template-columns: 56px 1fr auto; }
   .lord-shop li > :nth-child(n + 4) { grid-column: 2 / -1; }
   .lord-fight__arena { column-gap: 8px; padding: 8px; }
   .lord .lord-nameplate:not(.question__title) { font-size: 0.95rem; padding: 2px 8px; text-wrap: balance; }
