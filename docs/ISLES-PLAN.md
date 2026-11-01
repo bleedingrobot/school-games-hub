@@ -58,7 +58,8 @@ Immortal Barons (MIT licence, Andy Alt, 2026) describes itself as a remake of th
 - **Season game** on the school's 35-day season. A fresh island every season. Achievements and the Hall of the Skies are kept for good.
 - **Pip**, a sky-gull, gives the guided first go and the always-there next-step line.
 - **The server is in charge:** the whole island lives on the server. The browser sends a turn's choices, and the server checks them, rolls the turn and sends back the result.
-- **Size:** about the same as Star Trader. Nine stages (section 11), with a preview for James after stage S.3.
+- **Top-notch graphics (James).** Before any screens are built, test scenes are painted in 8 to 10 styles on James's gaming PC and he chooses one (stage S.L, section 7).
+- **Size:** about the same as Star Trader. Ten stages (section 11), with a preview for James after stage S.3.
 
 ---
 
@@ -316,9 +317,17 @@ Turn 2's guide adds the Workshop slider and the first race against the Gull Ride
 
 Plus How to play (numbers read from the config) and the season-end celebration.
 
-**Look:**
-- Bright storybook sky.
-- The island is drawn in code first (SVG plots on a grid), with painted art as a later stage (S.7, `docs/ISLES-ART-PLAN.md`).
+**Look: the graphics must be top notch (James, 1 Nov 2026).**
+- **Choose the style before building screens (stage S.L).** We paint test scenes in a lot of different styles on James's gaming PC (ComfyUI, Z-Image Turbo, the way Kingdom Keeper's and Star Trader's art was made). Each style paints the same three test pictures, so the styles can be compared fairly: the island close up, the class sky, and a Sky Race.
+  - Aim for about 8 to 10 styles, for example painterly fantasy, cel-shaded game art, cosy diorama/tilt-shift, clay or toy, ink-and-watercolour, papercut, pixel-art-HD, low-poly 3D render and soft 3D animated.
+  - The styles are shown side by side on one private page, so James can choose one (or mix two).
+  - It must look different from Kingdom Keeper (animated-film painting, sky frame), Dragon Maths and Clan Quest (gritty painted) and Star Trader (cinematic).
+- **Screens are built around the painted art, not the other way round.**
+  - Every plot type is painted at each of its upgrade levels.
+  - The island is painted as layered pieces (base rock, plots, buildings, sky-boats), so it can grow plot by plot.
+  - The sky, the weather, Pip, the races, the Lighthouse stages and the endings are all painted.
+- **Drawn-in-code art stays as the fallback** for a picture that hasn't loaded (guide section 2, "Painted art"). It is also what S.1 to S.2 use while there are no paintings yet.
+- Full list of pictures, sizes and prompts: `docs/ISLES-ART-PLAN.md` (written in S.L once the style is chosen).
 - Hub colour tokens and shared buttons outside the play area. `.si-` classes.
 - 44 px targets and 4.5:1 contrast. Checked at 1366 × 640 and 844 × 390.
 - Copy Clan Quest's `Accessibility.test.tsx` (within the 8-test limit, section 9).
@@ -416,16 +425,19 @@ Stop for James after each.
 | **S.0** | Rule sheet `docs/ISLES-RULES.md`, `shared/isles/config.ts`, simulator. Numbers tuned for the pace in 6.1. | The simulator's pace table |
 | **S.1** | Rules engine in `shared/isles/` (turn, collect, feed, spend, weather, races, `starterRace`, `nextStep`), pure and seeded. Tests 5 and 6. | Nothing to play yet |
 | **S.2** | Migration, server function (single-player turns and maths), database test, tests 1, 2 and 4. Number in `migrations-on-hold.txt`. | Nothing live |
-| **S.3** | Screens (island, turn, upgrades, How to play) and a **preview** with a trial backend, no sign-in. | **The preview on his phone** |
+| **S.L** | **Choose the look.** Test scenes in 8 to 10 styles painted on the gaming PC, shown side by side. Once James picks, write `docs/ISLES-ART-PLAN.md` and paint the pictures the screens need first. | **Styles side by side; James chooses** |
+| **S.3** | Screens (island, turn, upgrades, How to play) built around the chosen paintings, and a **preview** with a trial backend, no sign-in. | **The preview on his phone** |
 | **S.4** | The class sky: races, ropes, market, news. Test 3. | Updated preview with pretend classmates |
 | **S.5** | Pip: guided first go, next-step line, tips, help levels. Test 8. | **James tries the guided first go** |
 | **S.6** | Hub parts: teacher contract, achievements, points, season hooks, Hall, accessibility (test 7), code switch, `docs/prompts/isles-golive.md`. | The go-live list |
-| **S.7** | Painted art: `docs/ISLES-ART-PLAN.md`, card scene, `scripts/isles-art.py`. Can come after go-live. | Prompts to paint |
+| **S.7** | The rest of the painted art (weather, endings, the home page card) in the chosen style, `scripts/isles-art.py`, `CREDITS.md`, `art.test.ts`. Must be done before go-live: top-notch graphics are part of the game. | Pictures to check |
 | **S.8** | Go live, one step at a time (guide section 8). | Each step asked for |
 
 ---
 
 ## 12. Questions for James
+
+**Answered 1 Nov 2026:** James said yes to the plan, so questions 1 to 3 and 6 stand as chosen. He added one thing: the graphics must be top notch, with lots of styles mocked up on his gaming PC to choose from (stage S.L). Questions 4 and 5 are about shared functions. They are still open and get asked again at stage S.6, when they matter.
 
 1. **Name and theme.** "Sky Isles", floating islands in a shared class sky (chosen). Other ideas: "Island Keepers" (sea islands with boats), "Cloud Kingdoms".
 2. **Races.** Keep Sky Races as the head-to-head part, with nobody losing anything, and a teacher switch to turn them off (chosen)? Or leave classmates out of it apart from the market and ropes?
@@ -439,3 +451,33 @@ Stop for James after each.
 ## 13. Stage results
 
 *(Filled in after each stage: what was built, decisions, tests, what is untested, the go-live list.)*
+
+### S.0 results (rules, numbers, simulator), 1 Nov 2026
+
+**Built:**
+- `shared/isles/config.ts`: every number.
+- `shared/isles/engine.ts`: the turn rules, pure and seeded. It covers a new island, a new day, collect, feed, `beforeSpending` (for the spend screen), every spend choice with `problemWith`, the end of a turn, weather, `playTurn` and `islandWorth`.
+- `scripts/isles-sim.mjs` (`npm run isles:sim`).
+- `docs/ISLES-RULES.md`: the rule sheet with the pace table.
+
+**Numbers changed from the plan's first guesses while tuning:**
+- **Smaller numbers:** start with 150 coins, 30 people, and half a food per person.
+- **Coins limit growth, not the drift.** Chunks cost 22 × plots, so the drift of 3 a day rarely runs out. That makes choices and maths matter: with the first guesses everyone reached Grand Isle on the same day, whatever they did.
+- **Houses rebalanced.** Houses now hold 30 people and tax is per 2 people at Fair. Before, a House plus its Farm earned less than two Mines.
+- **Upgrades are ×1.5,** so a Library is worth building.
+- **Fair wind is ×1.15,** so all-wrong maths still reaches Grand Isle (week 3 for a daily player), just a little later.
+- **The Lighthouse costs 3,350 coins and 70 goods in all.**
+
+**Decisions:**
+- Fog takes half of the turn's Dock coins (the plan said Docks earn half; same thing, done at the end of the turn).
+- An impossible choice refuses the whole turn, and the turn isn't used.
+- **A pupil who plays 1 day a week doesn't reach Grand Isle** (about 20 plots). The small-island extra chunk and the saved turns help in a real class, but the simulator doesn't model them. Worth a look in S.4, once classmates are in the simulator.
+
+**Open for later stages:**
+- **Coins pile up for daily players after the Lighthouse is lit** (about 30,000 by season's end). It needs something worth spending on after the goal: gifts to roped friends, or island decorations that show on the sky map. To decide in S.4.
+- **High tax plus land-grabbing** is slightly the fastest route to the Lighthouse for a 3-day player. Fine as a trade-off for now (it gives fewer people and lower worth). Watch it.
+- Races are only modelled in the simulator (an even chance, 1 prize chunk a day). The real race rules come in S.1.
+
+**Tests:** none yet (tests 5 and 6 come with S.1). The engine type-checks.
+
+**Untested:** everything in the browser and on the server (not built yet).
