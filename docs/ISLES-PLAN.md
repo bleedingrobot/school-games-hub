@@ -481,3 +481,18 @@ Stop for James after each.
 **Tests:** none yet (tests 5 and 6 come with S.1). The engine type-checks.
 
 **Untested:** everything in the browser and on the server (not built yet).
+
+### S.L so far (style try-outs), 1 Nov 2026
+
+**Painted:** 10 styles × 3 test pictures (island, class sky, Sky Race) × 2 tries = 60 pictures, on the gaming PC with `scripts/isles-style-art.py`. About 25 seconds each.
+- The tries are in `~/isles-art-inbox/styles/` on James's Mac, outside the repo.
+- Side-by-side page (private): https://claude.ai/artifact/ULgc79JgvwemsydB8Qs2U8
+
+**Checked:** a helper checked every picture. Nothing unsuitable for children was found.
+
+**Claude's top 3:**
+- **Papercut:** the most distinctive, and builds up plot by plot well.
+- **Cosy 3D:** the chunkiest island for a growing game piece. The races need tidying.
+- **Bright fantasy:** the most polished, but close to Kingdom Keeper's animated-film look.
+
+**Waiting:** James chooses the style. Then write `docs/ISLES-ART-PLAN.md`.
