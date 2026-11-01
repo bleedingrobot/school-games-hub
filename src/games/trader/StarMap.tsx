@@ -52,7 +52,7 @@ function usePaintedIcons(names: readonly string[]): void {
 const VIEW = GRID_SIZE - 1 + 3;
 const pos = (n: number): number => ((n + 1.5) / VIEW) * 100;
 
-export function MapPanel({ galaxy, t, busy, news = [], pushes, onJump, onRefuel }: {
+export function MapPanel({ galaxy, t, busy, news = [], pushes, onAim, onJump, onRefuel }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
@@ -60,6 +60,8 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, onJump, onRefuel 
   news?: readonly NewsItem[];
   /** The school's pushes on prices now (for a planet's price list). */
   pushes?: Pushes;
+  /** Tells the game which planet the typed coordinates point at (for Bolt's next step). */
+  onAim?: (planet: number | null) => void;
   onJump: (dest: number) => void;
   onRefuel: (units: number) => void;
 }) {
@@ -79,6 +81,11 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, onJump, onRefuel 
   const short = Math.max(0, need - t.fuel);
   const tooFar = need > tank;
   const here0 = chartPoint(here);
+  const aimedId = target?.id ?? null;
+  useEffect(() => {
+    onAim?.(aimedId);
+  }, [aimedId, onAim]);
+  useEffect(() => () => onAim?.(null), [onAim]);
 
   function pick(id: number) {
     setPicked(id === t.location ? null : id);
@@ -140,6 +147,7 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, onJump, onRefuel 
                 className={`st-planet ${p.id === t.location ? 'st-planet--here' : ''} ${picked === p.id ? 'st-planet--picked' : ''} ${dest?.id === p.id ? 'st-planet--aimed' : ''} ${far ? 'st-planet--far' : ''}`}
                 style={{ left: `${pos(p.x)}%`, top: `${pos(p.y)}%` }}
                 onClick={() => pick(p.id)}
+                data-coach={`planet-${p.id}`}
                 aria-pressed={picked === p.id}
                 aria-label={`${p.name}, x ${chartPoint(p).x}, y ${chartPoint(p).y}${p.id === t.location ? ', you are here' : ''}. Tap to read about it.`}
               >
@@ -186,7 +194,7 @@ export function parseCoord(text: string): number | null {
 }
 
 /** One number box with a plus/minus button (a phone's number keypad often has no minus). */
-function CoordField({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (v: string) => void }) {
+function CoordField({ id, label, value, onChange, coach }: { id: string; label: string; value: string; onChange: (v: string) => void; coach?: string }) {
   const flip = () => onChange(value.startsWith('-') ? value.slice(1) : `-${value}`);
   return (
     <div className="st-coord">
@@ -202,6 +210,7 @@ function CoordField({ id, label, value, onChange }: { id: string; label: string;
           onChange={(e) => onChange(e.target.value.replace(/[^\d-]/g, '').replace(/(?!^)-/g, '').slice(0, 3))}
           placeholder="0"
           aria-describedby="st-coord-help"
+          data-coach={coach}
         />
       </div>
     </div>
@@ -234,7 +243,7 @@ function JumpBox(props: {
       <h3 className="st-h3">Jump to…</h3>
       <p id="st-coord-help" className="st-soft">You are at <strong>{coordText(here)}</strong>. Type the x and y of the planet you want to visit.</p>
       <div className="st-coords">
-        <CoordField id="st-x" label="x (across)" value={xs} onChange={setXs} />
+        <CoordField id="st-x" label="x (across)" value={xs} onChange={setXs} coach="jump-x" />
         <CoordField id="st-y" label="y (up)" value={ys} onChange={setYs} />
       </div>
       <div className="st-jumpinfo" aria-live="polite">
@@ -250,12 +259,12 @@ function JumpBox(props: {
         {target && tooFar && <p className="st-warn">Your tank is too small to jump that far in one go. Plan a stop on the way.</p>}
         {target && !tooFar && short > 0 && (
           <div className="st-actions">
-            <button type="button" className="st-btn" disabled={busy || !canPay} onClick={onRefuel}>Buy {short} fuel ({refuelCost} cr)</button>
+            <button type="button" className="st-btn" disabled={busy || !canPay} onClick={onRefuel} data-coach="jump-fuel">Buy {short} fuel ({refuelCost} cr)</button>
           </div>
         )}
       </div>
       <div className="st-actions">
-        <button type="button" className="st-btn st-btn--primary st-btn--big" disabled={busy || !target || target.id === here.id || tooFar || short > 0 || t.jumpsLeft < 1} onClick={onJump}>
+        <button type="button" className="st-btn st-btn--primary st-btn--big" disabled={busy || !target || target.id === here.id || tooFar || short > 0 || t.jumpsLeft < 1} onClick={onJump} data-coach="jump-go">
           Jump!{target && target.id !== here.id ? ` (${need} fuel)` : ''}
         </button>
         {t.jumpsLeft < 1 && <span className="st-soft">No jumps left today.</span>}

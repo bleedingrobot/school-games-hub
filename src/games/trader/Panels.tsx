@@ -85,7 +85,7 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade }: {
   return (
     <section className="st-panel" aria-labelledby="st-trade-h">
       <h2 id="st-trade-h" className="st-h">Market</h2>
-      <p className="st-sub">Pick how many to buy (+) or sell (−), then press Trade. Holds: {usedHolds(t)} of {holdsOf(t)} full.</p>
+      <p className="st-sub">Press + to buy and − to sell, then press Trade. <strong>Sell first</strong>: it frees up holds and credits. Holds: {usedHolds(t)} of {holdsOf(t)} full.</p>
       {local.map((n) => <p key={`${n.good}-${n.kind}`} className="st-news">📰 {n.text}</p>)}
       {headlines.length > 0 && (
         <details className="st-newsbox">
@@ -101,7 +101,7 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade }: {
           <span role="columnheader">You sell at</span>
           <span role="columnheader">In stock</span>
           <span role="columnheader">In hold</span>
-          <span role="columnheader">Buy / sell</span>
+          <span role="columnheader" aria-label="Sell or buy">Sell ◀ ▶ Buy</span>
         </div>
         {t.market.map((line) => {
           const name = GOODS[line.good];
@@ -125,11 +125,11 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade }: {
               <span role="cell" className="st-step">
                 {can ? (
                   <>
-                    <button type="button" className="st-btn st-btn--small" onClick={() => setMax(line.good, -1)} aria-label={`Sell all ${name}`} disabled={busy || line.sell <= 0 || t.cargo[line.good] === 0}>All</button>
+                    <button type="button" className="st-btn st-btn--small" onClick={() => setMax(line.good, -1)} aria-label={`Sell all ${name}`} disabled={busy || line.sell <= 0 || t.cargo[line.good] === 0} data-coach={`sell-all-${line.good}`}>Sell all</button>
                     <button type="button" className="st-btn st-btn--round" onClick={() => bump(line.good, -1)} aria-label={`Sell one ${name}`} disabled={busy}>−</button>
                     <output className={`st-qty ${q > 0 ? 'st-qty--buy' : q < 0 ? 'st-qty--sell' : ''}`} aria-label={`${name}: ${q > 0 ? `buying ${q}` : q < 0 ? `selling ${-q}` : 'none'}`}>{q > 0 ? `+${q}` : q}</output>
                     <button type="button" className="st-btn st-btn--round" onClick={() => bump(line.good, 1)} aria-label={`Buy one ${name}`} disabled={busy}>+</button>
-                    <button type="button" className="st-btn st-btn--small" onClick={() => setMax(line.good, 1)} aria-label={`Buy as many ${name} as you can`} disabled={busy || line.buy <= 0}>Max</button>
+                    <button type="button" className="st-btn st-btn--small" onClick={() => setMax(line.good, 1)} aria-label={`Buy as many ${name} as you can`} disabled={busy || line.buy <= 0} data-coach={`buy-max-${line.good}`}>Buy max</button>
                   </>
                 ) : (
                   <span className="st-soft">Not traded here</span>
@@ -150,7 +150,7 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade }: {
       </div>
       {message && <p className="st-warn" role="status">{message}</p>}
       <div className="st-actions">
-        <button type="button" className="st-btn st-btn--primary" disabled={busy || !any} onClick={async () => setMessage((await onTrade(plan)) ?? '')}>Trade</button>
+        <button type="button" className="st-btn st-btn--primary" disabled={busy || !any} onClick={async () => setMessage((await onTrade(plan)) ?? '')} data-coach="trade-go">Trade</button>
         <button type="button" className="st-btn" disabled={busy || !any} onClick={() => setPlan(emptyPlan())}>Clear</button>
       </div>
     </section>
@@ -209,10 +209,10 @@ export function ShipPanel({ galaxy, t, busy, onAct, onMoon }: {
         </ul>
       </div>
       <div className="st-actions">
-        <button type="button" className="st-btn" disabled={busy || tank < 1} onClick={() => onAct({ type: 'refuel', units: tank }, 'Tank filled.')}>
+        <button type="button" className="st-btn" disabled={busy || tank < 1} onClick={() => onAct({ type: 'refuel', units: tank }, 'Tank filled.')} data-coach="ship-fuel">
           Fill the tank ({tank} fuel, {cr(fuelCost(t.ship, tank))})
         </button>
-        <button type="button" className="st-btn" disabled={busy || mend < 1} onClick={() => onAct({ type: 'repair', points: mend }, 'Hull mended.')}>
+        <button type="button" className="st-btn" disabled={busy || mend < 1} onClick={() => onAct({ type: 'repair', points: mend }, 'Hull mended.')} data-coach="ship-mend">
           Mend the hull ({mend}, {cr(mend * rule.repairCost)})
         </button>
       </div>
@@ -240,7 +240,7 @@ export function ShipPanel({ galaxy, t, busy, onAct, onMoon }: {
                     <div className="st-soft">{s.holds} holds · {s.weaponSlots} laser · {s.shieldSlots} shields · fuel {s.fuelTank}</div>
                     <div>{cost > 0 ? `${cr(cost)} after trading in your ${rule.name}` : `You get ${cr(-cost)} back`}</div>
                   </div>
-                  <button type="button" className="st-btn st-btn--primary" disabled={busy || !!why} onClick={() => onAct({ type: 'buyShip', ship: i }, `You now fly a ${s.name}!`)} aria-describedby={why ? `why-${i}` : undefined}>
+                  <button type="button" className="st-btn st-btn--primary" disabled={busy || !!why} onClick={() => onAct({ type: 'buyShip', ship: i }, `You now fly a ${s.name}!`)} aria-describedby={why ? `why-${i}` : undefined} data-coach={`ship-buy-${i}`}>
                     Buy
                   </button>
                   {why && <span id={`why-${i}`} className="st-soft st-why">{why}</span>}
@@ -257,7 +257,7 @@ export function ShipPanel({ galaxy, t, busy, onAct, onMoon }: {
               return (
                 <li key={w.name}>
                   <span>🔫 <strong>{w.name}</strong> (power {w.power}) {cr(w.price)}</span>
-                  <button type="button" className="st-btn" disabled={busy || !!why} onClick={() => onAct({ type: 'buyWeapon', index: i }, `${w.name} fitted.`)}>Buy</button>
+                  <button type="button" className="st-btn" disabled={busy || !!why} onClick={() => onAct({ type: 'buyWeapon', index: i }, `${w.name} fitted.`)} data-coach={`gear-weapon-${i}`}>Buy</button>
                   {why && <span className="st-soft st-why">{why}</span>}
                 </li>
               );
@@ -269,14 +269,14 @@ export function ShipPanel({ galaxy, t, busy, onAct, onMoon }: {
               return (
                 <li key={s.name}>
                   <span>🛡️ <strong>{s.name}</strong> (soaks {s.power}) {cr(s.price)}</span>
-                  <button type="button" className="st-btn" disabled={busy || !!why} onClick={() => onAct({ type: 'buyShield', index: i }, `${s.name} fitted.`)}>Buy</button>
+                  <button type="button" className="st-btn" disabled={busy || !!why} onClick={() => onAct({ type: 'buyShield', index: i }, `${s.name} fitted.`)} data-coach={`gear-shield-${i}`}>Buy</button>
                   {why && <span className="st-soft st-why">{why}</span>}
                 </li>
               );
             })}
             <li>
               <span>📦 <strong>Cargo pod</strong> (+{POD_HOLDS} holds, up to {MAX_PODS}) {cr(POD_PRICE)}</span>
-              <button type="button" className="st-btn" disabled={busy || t.pods >= MAX_PODS || POD_PRICE > t.credits} onClick={() => onAct({ type: 'buyPod' }, 'Cargo pod fitted.')}>Buy</button>
+              <button type="button" className="st-btn" disabled={busy || t.pods >= MAX_PODS || POD_PRICE > t.credits} onClick={() => onAct({ type: 'buyPod' }, 'Cargo pod fitted.')} data-coach="ship-pod">Buy</button>
               {t.pods >= MAX_PODS && <span className="st-soft st-why">Full</span>}
             </li>
           </ul>
@@ -287,7 +287,7 @@ export function ShipPanel({ galaxy, t, busy, onAct, onMoon }: {
               <strong>A moon of your very own: {cr(MOON_PRICE)}</strong>
               <div className="st-soft">{t.credits >= MOON_PRICE ? 'You can afford it!' : `You need ${cr(MOON_PRICE - t.credits)} more.`}</div>
             </div>
-            <button type="button" className="st-btn st-btn--primary" disabled={busy || t.credits < MOON_PRICE} onClick={onMoon}>Buy the moon</button>
+            <button type="button" className="st-btn st-btn--primary" disabled={busy || t.credits < MOON_PRICE} onClick={onMoon} data-coach="moon-buy">Buy the moon</button>
           </div>
         </>
       )}

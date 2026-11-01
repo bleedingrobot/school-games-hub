@@ -108,7 +108,6 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
     const { trial, sent } = play();
     await market();
     fireEvent.click(screen.getByRole('tab', { name: 'Star chart' }));
-    expect(screen.queryByText('Show me')).toBeNull();
     let jumped = false;
     for (const p of planetsOnChart().filter((q) => !q.here)) {
       type(/^x \(across\)/, p.x);
@@ -184,6 +183,48 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
     expect(await screen.findByText(/Lots of traders sold Water on .*, so it's cheap there today\./, { selector: '.st-news' })).toBeTruthy();
     expect(screen.getByText('📉 lots sold')).toBeTruthy();
     expect(screen.getByText(/School news \(\d+\)/)).toBeTruthy();
+  });
+
+  it('Bolt gives one next step, and Show me lights up the button it means', async () => {
+    play();
+    await market();
+    const bar = screen.getByText(/^⭐ Best buy here: /).closest('.st-coach') as HTMLElement;
+    expect(within(bar).getByText('Bolt:')).toBeTruthy();
+    fireEvent.click(within(bar).getByRole('button', { name: 'Show me' }));
+    const lit = document.querySelector('.st-lit') as HTMLElement;
+    expect(lit?.getAttribute('aria-label')).toMatch(/^Buy as many \w+ as you can$/);
+    expect(document.activeElement).toBe(lit);
+    // Buy the load Bolt picked: Bolt moves on to where to sell it, and Show me then lights the Star chart tab.
+    fireEvent.click(lit);
+    fireEvent.click(screen.getByRole('button', { name: 'Trade' }));
+    const skip = screen.queryByText('No thanks');
+    if (skip) fireEvent.click(skip);
+    const fly = await screen.findByText(/^Fly your \d* ?\w+ to \w+ at \(/);
+    fireEvent.click(within(fly.closest('.st-coach') as HTMLElement).getByRole('button', { name: 'Show me' }));
+    expect((document.querySelector('.st-lit') as HTMLElement).textContent).toBe('Star chart');
+    // On the chart, Show me lights the planet to fly to.
+    fireEvent.click(screen.getByRole('tab', { name: 'Star chart' }));
+    const onChart = await screen.findByText(/^Fly your \w+ to (\w+) at \(/);
+    const planet = /to (\w+) at/.exec(onChart.textContent ?? '')?.[1];
+    fireEvent.click(within(onChart.closest('.st-coach') as HTMLElement).getByRole('button', { name: 'Show me' }));
+    expect(document.querySelector('.st-lit')?.getAttribute('aria-label')).toMatch(new RegExp(`^${planet}, x`));
+  });
+
+  it('when coordinates are typed, Bolt says whether the jump can go', async () => {
+    play();
+    await market();
+    fireEvent.click(screen.getByRole('tab', { name: 'Star chart' }));
+    const p = planetsOnChart().find((q) => !q.here) as ReturnType<typeof planetsOnChart>[number];
+    type(/^x \(across\)/, p.x);
+    type(/^y \(up\)/, p.y);
+    await waitFor(() => expect(document.querySelector('.st-coach__say')?.textContent).toMatch(new RegExp(`^Bolt: ${p.name} (needs \\d+ fuel and you have \\d+|is \\d+ squares away)`)));
+  });
+
+  it('shows how close the pupil is to the moon in the top strip', async () => {
+    play();
+    await market();
+    expect(screen.getByText(/^100 of 20,000 credits saved for your moon$/)).toBeTruthy();
+    expect(screen.getByText('0%')).toBeTruthy();
   });
 
   it('shows where each good sells best, and a planet\'s prices with the profit on its star chart card', async () => {

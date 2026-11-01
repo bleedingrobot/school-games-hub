@@ -16,6 +16,8 @@ import { applyBatch, type Action, type Game, type Mark, type Settings } from '..
 import { type ApiResult, type Loaded, type MoveReply, type TraderApi } from '../../data/trader';
 import { useAsk } from './Ask';
 import { DealPanel, FightPanel, JunkPanel, SummaryPanel } from './Encounter';
+import { CoachBar, lightUp } from './coach/CoachBar';
+import { nextStep, type CoachTab } from './coach/nextStep';
 import { BankPanel, ShipPanel, TradePanel } from './Panels';
 import { loadPrefs, savePrefs, wantsLessMotion } from './prefs';
 import type { Scene, SpaceView } from './renderer';
@@ -23,7 +25,7 @@ import { SpaceCanvas } from './SpaceCanvas';
 import { MapPanel } from './StarMap';
 import './trader.css';
 
-type Tab = 'trade' | 'ship' | 'bank' | 'map';
+type Tab = CoachTab;
 type Phase = { k: 'title' } | { k: 'planet' } | { k: 'warp' } | { k: 'after'; title: string; lines: string[] } | { k: 'moon' };
 
 const cr = (n: number): string => `${n.toLocaleString('en-NZ')} cr`;
@@ -57,6 +59,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   const pushes = useMemo(() => schoolPushes(prices), [prices]);
   const view = useRef<SpaceView | null>(null);
   const heading = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  const [aimed, setAimed] = useState<number | null>(null);
   const lock = useRef(false);
   const latest = useRef({ loaded, queue });
   latest.current = { loaded, queue };
@@ -89,6 +93,11 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   }, [loaded, galaxy, queue]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const t = game?.t;
+  // Bolt's next step, worked out fresh from the game each time it changes.
+  const step = useMemo(
+    () => (galaxy && t ? nextStep({ galaxy, t, pushes, tab, aimed: tab === 'map' ? aimed : null, loans: loaded?.settings.loans }) : null),
+    [galaxy, t, pushes, tab, aimed, loaded?.settings.loans],
+  );
   const here = galaxy && t ? galaxy.planets[t.location] : null;
   const pending = game?.pending ?? null;
   const fightTier = pending?.kind === 'fight' ? pending.tier : -1;
@@ -343,7 +352,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   const label = here && t && galaxy ? `${here.name}, a ${GOVERNMENTS[here.government].name.toLowerCase()} world. Your ${SHIPS[t.ship].name} is in orbit.` : 'Star Trader';
 
   return (
-    <div className="st-root" data-phase={pending?.kind === 'fight' ? 'fight' : phase.k}>
+    <div ref={root} className={`st-root ${lessMotion ? 'st-root--still' : ''}`} data-phase={pending?.kind === 'fight' ? 'fight' : phase.k}>
       <SpaceCanvas ref={view} scene={scene as Scene} lessMotion={lessMotion} simple={prefs.simple} label={label} />
       {problem ? (
         <Problem problem={problem} onRetry={() => void reload()} onExit={onExit} />
@@ -369,16 +378,17 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
               <>
                 <div role="tablist" aria-label="Where to go on the planet" className="st-tabs">
                   {tabs.map(([id, text]) => (
-                    <button key={id} type="button" role="tab" aria-selected={tab === id} className={`st-tab ${tab === id ? 'st-tab--on' : ''}`} onClick={() => { setTab(id); setNote(''); }}>
+                    <button key={id} type="button" role="tab" aria-selected={tab === id} className={`st-tab ${tab === id ? 'st-tab--on' : ''}`} data-coach={`tab-${id}`} onClick={() => setTab(id)}>
                       {text}
                     </button>
                   ))}
                 </div>
+                {step && <CoachBar step={step} onShow={(target) => lightUp(root.current, target, lessMotion)} />}
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
                 {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} onTrade={doTrade} />}
                 {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} onAct={act} onMoon={() => void buyMoon()} />}
                 {tab === 'bank' && <BankPanel t={t} busy={panelBusy} loans={settings.loans} onAct={act} />}
-                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
+                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} onAim={setAimed} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
                 {note && <p className="st-note st-note--float" role="status">{note}</p>}
                 {t.jumpsLeft < 1 && <p className="st-note st-note--float">That is all your jumps for today. You can still trade here. Come back tomorrow!</p>}
               </>
@@ -427,8 +437,8 @@ function Hud({ t, jumpsPerDay, planet, government, onExit }: { t: Game['t']; jum
       {onExit && <button type="button" className="st-btn st-btn--small" onClick={onExit}>← Hub</button>}
       <div className="st-hud__place"><strong>{planet}</strong><span className="st-soft">{government}</span></div>
       <div className="st-hud__item" title="Your credits"><span aria-hidden="true">💰</span><strong>{t.credits.toLocaleString('en-NZ')}</strong><span className="st-sr">credits</span></div>
-      <div className="st-hud__item" title="Fuel"><span aria-hidden="true">⛽</span><strong>{t.fuel}/{ship.fuelTank}</strong><span className="st-sr">fuel</span></div>
-      <div className="st-hud__item" title="Hull"><span aria-hidden="true">🛠️</span><strong>{t.hull}/{ship.hull}</strong><span className="st-sr">hull</span></div>
+      <div className="st-hud__item" title="Fuel: each square you fly uses 1"><span aria-hidden="true">⛽</span><strong>{t.fuel}/{ship.fuelTank}</strong><span className="st-sr">fuel</span></div>
+      <div className="st-hud__item" title="Hull: your ship's health"><span aria-hidden="true">🛠️</span><strong>{t.hull}/{ship.hull}</strong><span className="st-sr">hull</span></div>
       <div className="st-hud__item" title="Jumps left today">
         <span aria-hidden="true">🚀</span>
         <span className="st-dots" aria-label={`${t.jumpsLeft} of ${jumpsPerDay} jumps left today`}>
@@ -437,8 +447,27 @@ function Hud({ t, jumpsPerDay, planet, government, onExit }: { t: Game['t']; jum
           ))}
         </span>
       </div>
+      <MoonProgress t={t} />
       {t.loan.owed > 0 && <div className="st-hud__item" title="You owe the bank"><span aria-hidden="true">🏦</span><strong>−{t.loan.owed}</strong></div>}
     </header>
+  );
+}
+
+/** How close the pupil is to the goal: the moon. */
+function MoonProgress({ t }: { t: Game['t'] }) {
+  const pct = Math.min(100, Math.floor((t.credits * 100) / MOON_PRICE));
+  const say = t.moon ? 'You own a moon!' : `${t.credits.toLocaleString('en-NZ')} of ${MOON_PRICE.toLocaleString('en-NZ')} credits saved for your moon`;
+  return (
+    <div className="st-hud__item st-hud__moon" title={say}>
+      <span aria-hidden="true">🌙</span>
+      {t.moon ? <strong>Yours!</strong> : (
+        <>
+          <span className="st-moonbar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></span>
+          <strong>{pct}%</strong>
+        </>
+      )}
+      <span className="st-sr">{say}</span>
+    </div>
   );
 }
 

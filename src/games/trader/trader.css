@@ -109,7 +109,7 @@
 /* ——— Market table ——— */
 .st-table { display: flex; flex-direction: column; gap: 4px; }
 .st-row {
-  display: grid; grid-template-columns: minmax(150px, 1.7fr) 56px 56px 56px 50px minmax(210px, 2.2fr);
+  display: grid; grid-template-columns: minmax(120px, 1.7fr) 52px 52px 52px 46px minmax(252px, 2.2fr);
   gap: 6px; align-items: center; padding: 4px 6px; border-radius: 10px; background: rgba(27, 38, 80, 0.55);
 }
 .st-row--head { background: none; color: var(--st-soft); font-size: 0.78rem; padding-bottom: 0; }
@@ -260,3 +260,39 @@
 @media (max-width: 560px) {
   .st-main { top: 104px; }
 }
+
+/* ——— Bolt, the ship's robot (docs/TRADER-HINTS-PLAN.md) ——— */
+.st-coach {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--st-panel); border: 2px solid var(--st-cyan); border-radius: 14px;
+  padding: 6px 10px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  /* Stays in view while the panel under it scrolls, so Bolt's words are still there after "Show me". */
+  position: sticky; top: 0; z-index: 5; background: var(--st-panel-solid);
+}
+/* Leave room for Bolt's bar when "Show me" scrolls something into view. */
+.st-root [data-coach] { scroll-margin: 96px 0 16px; }
+.st-bolt { flex: none; }
+.st-coach__say { margin: 0; flex: 1; min-width: 0; color: var(--st-ink); }
+.st-coach__say strong { color: var(--st-cyan); }
+.st-coach__show { flex: none; }
+.st-step .st-btn--small { flex: none; padding: 4px 5px; font-size: 0.78rem; white-space: nowrap; }
+@media (max-width: 560px) {
+  .st-coach { flex-wrap: wrap; }
+  .st-coach__show { margin-left: auto; }
+}
+
+/* "Show me": a glowing outline on the thing Bolt means. Nothing is covered, so everything stays pressable. */
+.st-root .st-lit {
+  outline: 4px solid var(--st-gold); outline-offset: 3px;
+  box-shadow: 0 0 0 7px rgba(253, 224, 71, 0.35), 0 0 24px rgba(253, 224, 71, 0.75);
+  animation: st-glow 0.9s ease-in-out 4 alternate;
+  position: relative; z-index: 4;
+}
+@keyframes st-glow { from { box-shadow: 0 0 0 3px rgba(253, 224, 71, 0.2), 0 0 10px rgba(253, 224, 71, 0.4); } }
+.st-root--still .st-lit { animation: none; }
+@media (prefers-reduced-motion: reduce) { .st-root .st-lit { animation: none; } }
+
+/* Moon progress in the top strip. */
+.st-moonbar { display: inline-block; width: 46px; height: 8px; border-radius: 999px; background: #26305a; overflow: hidden; }
+.st-moonbar i { display: block; height: 100%; min-width: 3px; background: var(--st-gold); border-radius: 999px; }
+@media (max-width: 560px) { .st-moonbar { display: none; } }
