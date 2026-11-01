@@ -9,6 +9,7 @@
 - A wrong **Hold on!** answer: the gem **falls back into the rock**, lower down. It can be caught again, but that costs time.
 - **10 levels** down to the diamond.
 - A **small shop** between levels.
+- **Lots of crazy cosmetic claw upgrades** in the shop (section 3.5): claw heads, ropes, trails and catch effects, winches and hats for Nugget. A few earned, most bought; kept for good through New Season; shown in the Hall; a special of the week.
 - Name **Diamond Drop**.
 - **New Season sends everyone back to level 1** (a season game: section 6.2). Achievements and the Hall stay.
 - **The clock pauses** during Hold on!
@@ -90,7 +91,7 @@ Every number lives in `shared/diamond/config.ts` so How to play, the simulator, 
 - At most **6 Hold on! questions a level** (8 on level 10). After that nothing slips, so a level can never become a wall of questions.
 - **Maths nudges, not decides:** a wrong answer costs time, not the gem for ever, so a pupil weaker at maths can still pass every level and reach the diamond. The Lucky Charm (section 3.4) halves the slip chance.
 
-### 3.4 The shop
+### 3.4 The shop: boosts
 
 Between levels, spend coins on boosts for **the next level only**, at most one of each (so coins can never make a level trivial):
 
@@ -103,6 +104,28 @@ Between levels, spend coins on boosts for **the next level only**, at most one o
 
 Coins are saved between lessons. Prices are shown as sums ("You have 85. Lucky Charm 45. You'll have 40 left"), real maths without a test. The simulator checks coins don't pile up unused.
 
+### 3.5 The Claw Workshop (crazy cosmetic upgrades)
+
+James, 2 Nov 2026: "the shop should sell lots of crazy cosmetic upgrades to the claw - kids would love that." The shop has a second tab, **the Workshop**, full of silly, bright upgrades. **They are looks only**: they never change speed, weight, slips or anything the server replays, so a pupil with no upgrades is never behind.
+
+**Kinds (all four, James):**
+
+| Kind | Examples (starting list, about 40 in all) |
+|---|---|
+| Claw heads | Golden Claw, Dino Jaw, Robot Hand, Crab Pincer, Octopus Arm, Giant Magnet, Rubber Chicken, Giant Fork, Dragon Talon, Ice Crystal Claw, Grabby Glove |
+| Ropes and chains | Rainbow Rope, Jungle Vine, Laser Beam, Sausage Chain, Spaghetti, Candy Cane, Bike Chain |
+| Trails and catch effects | Trails behind the claw: Sparkles, Bubbles, Flames, Confetti, Music Notes. On a catch: Fireworks, Disco Ball, Gem Rain, Trumpet Fanfare, Nugget's Happy Dance |
+| Winches and Nugget's hats | Winches: Steam Engine, Rocket Winch, Giant Snail, Pirate Ship Wheel, Hamster Wheel. Hats for Nugget: Pirate Hat, Crown, Wizard Hat, Chef's Hat, Astronaut Helmet, Top Hat |
+
+- **Rarity and prices** (tune with the simulator): Common 50, Cool 150, Epic 400, Legendary 1,000 coins. The aim: a regular player can afford 6 to 10 upgrades a season, and a Legendary is a season-long saving goal. That gives coins from replays a real use, so coins no longer pile up after the boosts are bought.
+- **A few are earned, not bought (James):** Diamond Claw (catch the Heart Diamond), Star Rope (Star Miner), Gem Rain Deluxe (Gem Collector), Nugget's Miner Lamp (Firm Grip). They can't be bought, so they mean something.
+- **Kept for good (James):** coins reset at New Season, but every upgrade bought or earned stays. New upgrades are added from time to time, so there's always something new to save for.
+- **Special of the week (James):** each week (Monday, New Zealand date) one upgrade is cheaper, or a weekly-only upgrade is on sale. Chosen from the week number by a pure function, so the server and the browser always agree.
+- **Try it on:** tapping an upgrade shows it on the swinging claw before buying. Prices are shown as sums ("You have 320. Robot Hand 150. You'll have 170 left").
+- **Shown in the Hall (James):** a pupil's claw appears next to their name in the Hall of Diamond Finders. Nothing about maths is ever shown.
+- **One of each slot worn at a time:** claw head, rope, trail, catch effect, winch, hat. Pupils change them any time in the Workshop.
+- Reduced motion: trails and catch effects become a small still glow.
+
 ## 4. Maths: the one approved way
 
 - **Way A** (section 4.2 of the guide): at level start the server reads `space_maths_context(player)`, makes the pack with `makeFocusPack` from a fresh seed, makes the level's 6 (or 8) questions, stores them in `diamond_questions` (pupils can't read it) and sends only `publicQuestion`s.
@@ -113,9 +136,9 @@ Coins are saved between lessons. Prices are shown as sums ("You have 85. Lucky C
 
 ## 5. The server, saving and cost
 
-- **Requests:** `levelStart` (seed, questions, the pupil's boosts), one `answer` per Hold on!, `levelEnd { seed, drops, boosts }`. About 5 a level on average.
+- **Requests:** `levelStart` (seed, questions, the pupil's boosts), one `answer` per Hold on!, `levelEnd { seed, drops, boosts }`. About 5 a level on average. Workshop: one `buy` and one `wear` request when a pupil buys or changes an upgrade (the server checks the price, the coins and that earned ones are earned).
 - **Replay:** `levelEnd` runs the shared engine with the seed, the recorded drop ticks and the server's own marks, and saves what the replay says (gems caught, passed or not, stars, coins). The browser's own total is never trusted. A level ended twice counts once (unique seed).
-- **Tables** (one migration, RLS on everywhere): `diamond_players` (deepest level, coins, Gem Book counts, stars per level), `diamond_levels` (one row per level played: seed, level, started, result, drops; unique seed), `diamond_questions` (server only: no policy, no grant). Pupils read their own through `my_diamond()`. Saving only through `record_diamond_…()` functions the server key alone can run.
+- **Tables** (one migration, RLS on everywhere): `diamond_players` (deepest level, coins, Gem Book counts, stars per level), `diamond_levels` (one row per level played: seed, level, started, result, drops; unique seed), `diamond_questions` (server only: no policy, no grant), `diamond_owned` (player, upgrade, how got, when; **not** cleared by New Season), and the worn upgrades in `diamond_players`. Pupils read their own through `my_diamond()`. Saving only through `record_diamond_…()` functions the server key alone can run.
 - **Cost:** a class of 28 playing 8 levels a lesson is about 1,100 requests. A lesson a day across a school is well under 30,000 a month, against 500,000 free.
 - **Switch checks:** the function refuses while the teacher switch is off.
 
@@ -136,6 +159,8 @@ Coins are saved between lessons. Prices are shown as sums ("You have 85. Lucky C
 | Diamond Finder | Catch the Heart Diamond | `diamond_found` ≥ 1 | the big goal | yes |
 | Star Miner | 3 stars on every level | `diamond_stars` ≥ 30 | a keen few | yes |
 
+   Earned Workshop upgrades come with Firm Grip, Gem Collector, Diamond Finder and Star Miner (section 3.5).
+
    Points (rules_fn): pass a level for the first time: 2 points; each new star: 1 point; the diamond: 5 points.
 6. **Home page card:** a cut-away cliff in bright storybook style: a little winch and claw at the top on grass, coloured gem layers going down through clay, caves and glowing crystals to a shining diamond at the bottom. No text. (Painted with the game's art: section 9.)
 7. **Guide for new players:** section 8.
@@ -144,10 +169,11 @@ Coins are saved between lessons. Prices are shown as sums ("You have 85. Lucky C
 
 ## 7. Screens
 
-- **Level map:** the depth gauge as a cut-away of the ground, each level a chamber, locked ones dark, the next one marked "opens tomorrow" once today's level is passed. Play / Shop / Gem Book / How to play.
+- **Level map:** the depth gauge as a cut-away of the ground, each level a chamber, locked ones dark, the next one marked "opens tomorrow" once today's level is passed. Play / Shop / Workshop / Gem Book / How to play.
 - **Play:** the winch and claw at the top, the field below, the clock and target bar, a big Drop button (also Space / Enter / tapping the field). Pause button.
 - **Hold on!:** `QuestionModal` over a frozen moment of the gem dangling.
 - **Level end:** passed / so close, gems caught, coins, stars, then the shop.
+- **Workshop:** upgrades by kind, each with its rarity and price, a "try it on" claw swinging at the top, the special of the week first, earned ones showing how to win them.
 - **Gem Book:** one painted page per gem, how many caught, the first-catch date; unknown gems as shadows.
 - **Hall of Diamond Finders:** own school only, display names, the date found.
 - Accessibility: one-button play, 44 px targets, focus moved to each screen's heading, reduced motion (no shake, sparkles or swaying background; the swing itself stays because it's the game, but can be slowed in settings). Checked at 1366 × 640 and 844 × 390.
@@ -173,12 +199,13 @@ A kiwi in a hard hat, inside the game's own folder.
 
 James asked for high-quality graphics painted on his gaming PC. Pattern from Star Trader (`docs/TRADER-ART-PLAN.md`): Stage 2 writes `docs/DIAMOND-ART-PLAN.md` with every picture, its size and a ComfyUI prompt; James paints 2 to 6 tries each into an inbox (`diamond-art-inbox` branch or a folder outside the repo); picks go in `docs/diamond-art/picks.json`; `scripts/diamond-art.py` (copied from `trader-art.py`) makes the `.webp` files and cuts out sprites; `art.test.ts` checks none missing. **Drawn code art stays as the fallback**, so the game works before every picture arrives.
 
-What needs painting (about 40 pictures, in batches so each can go live on its own):
+What needs painting (about 40 pictures for the game plus about 40 for the Workshop, in batches so each can go live on its own):
 - **10 level backgrounds** (one per place, a cut-away of the earth at that depth, 1600 × 1000), plus the level map.
 - **10 gems** as sprites on plain backgrounds, plus a larger Gem Book painting of each.
 - **Rocks** (3 sizes), **mystery sack**, **cave crab**.
 - **The winch and claw** (claw open and closed), **Nugget** in 4 poses (wave, point, cheer, oops).
 - **Shop items** (4) and the shopkeeper's stall.
+- **Workshop upgrades** (about 40, painted in batches of 10 to 12): each claw head open and closed, each winch, each hat on Nugget, a rope tile for each rope, and a shop icon for every trail and catch effect. The trails and catch effects themselves are drawn in code (moving sparkles, bubbles, fireworks), so they stay smooth on Chromebooks. Every upgrade has a simple drawn-in-code version so the Workshop works before its paintings arrive.
 - **Home page card** (section 6).
 
 Style to settle with mock-ups early in Stage 2: bright, rich, storybook painting that keeps gems easy to tell apart at small size on a Chromebook.
@@ -193,10 +220,10 @@ Style to settle with mock-ups early in Stage 2: bright, rich, storybook painting
 ## 11. Stages
 
 0. **Plan** (this). Stop for James.
-1. **Rules engine and simulator** (including the one-new-level-a-day rule, simulated over a 35-day season) in `shared/diamond/`: config, field from seed, swing and reel, slips, shop effects, replay. Simulator tunes times, targets, slip chances and coin flow so the diamond lands around 3 weeks. 3 rule tests.
+1. **Rules engine and simulator** (including the one-new-level-a-day rule, simulated over a 35-day season) in `shared/diamond/`: config, field from seed, swing and reel, slips, shop effects, replay, Workshop prices and the special of the week. Simulator tunes times, targets, slip chances and coin flow so the diamond lands in 4 to 5 weeks of regular play and 6 to 10 upgrades are affordable a season. 3 rule tests.
 2. **Screens, drawn art and phone preview**, plus `docs/DIAMOND-ART-PLAN.md` with prompts and style mock-ups so James can start painting. Trial backend so the preview never touches the live server. Published as a private Artifact for James to try.
 3. **Server and migration:** `diamond` function (way A, replay), tables, pgTAP tests.
-4. **Hub fit:** points, achievements, teacher switch and summary, How to play from config, the Hall, accessibility.
+4. **Hub fit:** the Workshop (buying, wearing, earned upgrades), points, achievements, teacher switch and summary, How to play from config, the Hall, accessibility.
 5. **New player guide:** Nugget, guided first go, next-step line, tips. James tries the first go.
 6. **Painted art in:** James's picks through `diamond-art.py`, screenshots at laptop and phone size.
 7. **Go-live prompt and go-live**, each live step on James's word.
@@ -215,5 +242,6 @@ Style to settle with mock-ups early in Stage 2: bright, rich, storybook painting
 - The clock **pauses** during Hold on!
 - **Hall of Diamond Finders**: yes.
 - **One new level a day**, unlimited tries until passed, replays of passed levels allowed.
+- **Claw Workshop**: all four kinds of crazy cosmetic upgrades, a few earned and most bought, kept for good, shown in the Hall, a special of the week.
 
 Still open: how this game reads the school season date (ask before Stage 4), and whether to add a home page "new level ready" chip (a separate small step).
