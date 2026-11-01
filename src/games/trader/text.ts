@@ -56,3 +56,6 @@ export const SHIP_BLURBS = [
 ];
 
 export const PIRATE_NAMES = ['Scrappy pirates', 'Pirate raiders', 'The Pirate Captain'];
+
+/** The ship's robot who gives hints (docs/TRADER-HINTS-PLAN.md). One place to change the name. */
+export const COACH_NAME = 'Bolt';
