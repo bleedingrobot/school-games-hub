@@ -67,7 +67,7 @@ BUILDINGS = {
         'A single grand three-storey manor house with red tiled roofs, a little tower, many windows, chimney smoke and flower boxes.',
     ],
     'workshop': [
-        'A single small timber workshop with a stack of planks and a sawhorse.',
+        'A single small timber woodworking shed with a slanted shingle roof and an open front, a stack of planks and a sawhorse beside it.',
         'A single timber workshop with a small windmill on its roof, stacks of planks and a half-built little boat hull beside it.',
         'A single big timber boatyard workshop with a windmill on its roof, a wooden crane and a nearly finished sky-boat with a sail beside it.',
     ],
