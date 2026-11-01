@@ -4,3 +4,6 @@
 
 # Dragon Maths one season for the school: waits for James's read-only check (docs/TEACHER-VIEW-PLAN.md).
 20261028000400
+
+# Sky Isles: built in stage S.2, goes live at stage S.8 with James's yes (docs/ISLES-PLAN.md).
+20261102000100

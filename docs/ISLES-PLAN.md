@@ -2,7 +2,7 @@
 
 *An original kingdom-building game for School Games Hub, in the BBS "empire game" genre. Asked for by James on 1 November 2026, after we read [Immortal Barons](https://github.com/andy5995/immortal-barons) together. Written from that reading, `docs/GAME_DEVELOPMENT_GUIDE.md` (main `92735a2`) and the other games' plans. Branch `isles`, worktree `~/games-hub-isles`.*
 
-**Status (2 Nov 2026): stages S.0, S.L (look chosen: hand-painted anime) and S.1 (the rules engine) are done. Nothing to play yet: no screens, server or database.** Every choice marked **(chosen)** was made for James. He can change any of them, and most are cheap to change until stage S.2. The working name "Sky Isles" (id `isles`, CSS prefix `.si-`) is one of them.
+**Status (2 Nov 2026): stages S.0, S.L (look chosen: hand-painted anime), S.1 (rules engine) and S.2 (the server: migration, server function, tests) are done. Nothing is live, and there are still no screens (S.3).** Every choice marked **(chosen)** was made for James. He can change any of them, and most are cheap to change until stage S.2. The working name "Sky Isles" (id `isles`, CSS prefix `.si-`) is one of them.
 
 ---
 
@@ -361,7 +361,7 @@ Plus How to play (numbers read from the config) and the season-end celebration.
 | `market` | Buys or sells at the class market |
 | `guideDone` | Marks the guided first go as finished |
 
-**Migration `20261101000100_isles.sql`** (next free number on 1 Nov 2026; check again at go-live). New tables, all prefixed `isles_`, RLS on, pupils read only through `my_isles()` and `isles_sky()` (own class only, via `my_school()` and class membership):
+**Migration `20261102000100_isles.sql`** (a free number on 2 Nov 2026 from `node scripts/migration-numbers.mjs`; on hold in `supabase/migrations-on-hold.txt`; check again at go-live). New tables, all prefixed `isles_`, RLS on, pupils read only through `my_isles()` and `isles_sky()` (own class only, via `my_school()` and class membership):
 
 | Table | Holds |
 |---|---|
@@ -541,6 +541,54 @@ Decided with James because 40 small plot tiles looked crowded and "stuck on". Bu
 1. **Races and maths:** "About 1 in 6." A pupil with no answers right should win about 1 race in 6, not 1 in 4, so maths counts more. Done: a gust is now +5 (was +4) and the home wind +5 (was +4). Against the Gull Riders: about 1 in 6 with none right, half with 1, 5 in 6 with 2, and nearly always with 3. A new island against a big one (14 boats and Swift Sails) wins almost half its races with all 3 right (was 1 in 3). Re-simulated: Grand Isle days didn't move; an every-day pupil with all wrong lights the Lighthouse about a quarter of the time (a third before this change).
 2. **Winning at home:** "Win counted only." Kept as built: the win counts for Race Winner, no prize.
 3. **Calm start:** "12 turns." Kept.
+
+### S.2 results (the server), 2 Nov 2026
+
+**Built:**
+- **Migration `20261102000100_isles.sql`** (on hold in `supabase/migrations-on-hold.txt`, not live).
+  - Four tables: `isles_islands` (one per pupil: seed, version, NZ day, the island, guide done), `isles_turns` (one row a turn, unique per pupil, season and turn), `isles_questions` (server only; one set per turn, three per race; each answer marked once) and `isles_races` (one open race at a time; finished once).
+  - Row security is on, with no policy and no grant, on all four.
+  - Pupils read only through `my_isles()` (their own island, never the seed) and `isles_sky()` (own class only, own school, pupils only, hidden profiles left out).
+  - Only the server key can save: `record_isles_start`, `_turn`, `_questions`, `_answer`, `_race_start`, `_race_finish` and `_guide_done`, plus `isles_load`, `isles_question_set` and `isles_race`.
+  - Teacher switches `isles_enabled` (off) and `isles_races` (on), set with `teacher_set_isles(enabled, races, target_class)`.
+  - A `hub_games` row with every hook (counts, point rules, players, season, last played, keep achievements).
+  - 7 measures and 7 achievements (True Friend waits for ropes in S.4).
+  - Points: 1 a turn, 2 a race won, 10 for Grand Isle, 5 for each Lighthouse stage.
+  - Every new function is revoked from public, anon and authenticated at the end. Only what is needed is granted back.
+- **Server rules in `shared/isles/server.ts`**, like Kingdom Keeper's `shared/kingdom/server.ts`, so the S.3 preview runs the same code. `shared/isles/memoryServices.ts` is the in-memory database for tests and the preview.
+- **Server function `supabase/functions/isles`.** `handler.ts` is thin: sign-in with `_shared/signIn.ts`, 60 requests a minute. `entry.ts` is the database plumbing. `index.ts` is generated. It is added to `FUNCTIONS` in `scripts/build-functions.mjs`.
+- **Actions:** `load`, `answer`, `turn`, `guideDone`, and `raceStart` / `raceAnswer` / `raceFinish` against the Gull Riders (the season's first race is the starter race). Classmate races, ropes, market prices and news wait for S.4. `raceStart` against a classmate answers "coming soon".
+
+**Decisions (James can change any):**
+- One question per turn, made on load and kept. Answering it before the turn gives the fair wind. A turn played without answering has no wind, and that question is then gone.
+- A turn is known by its turn number. If it is sent twice, the second reply is the island as it is now ("already").
+- The turn's random numbers come from the island's own seed and the turn number, so the server and the preview roll the same turn. The browser never sees a seed.
+- The day rolls over when the island is next loaded (no save is needed just to open the game). Turns pile up for missed days as the rules already say (up to 18).
+- One race is open at a time. Pressing Race again carries on the same race with the same questions, so a pupil can't throw away a bad start and try again.
+- Market prices are the normal ones until S.4.
+- Happy Isle counts a day with at least 3 turns, all ending at happiness 90 or more.
+- Achievement counts come from this season's island. Achievements already earned stay (`keep_achievements`).
+- New Season empties the island and clears its turns, questions and races. It keeps the row so the guide stays done. The next load makes a fresh island with a new seed.
+- Answers up to a billion are accepted (test 4 found that rounding to the nearest million gives answers over a million).
+- Not yet in the migration: Sky Keeper portrait, island names, ropes, market, news, Hall of the Skies (S.3, S.4, S.6). They can go into this same file while it is on hold.
+
+**Tests (now 5 of the 8):**
+- Test 1 (`supabase/functions/isles/handler.test.ts`): a wrong answer is marked wrong, a send twice counts once, another pupil's question is refused, not signed in is refused, switch off is refused.
+- Test 2 (same file): a turn sent twice is played once, a seventh turn in a day is refused, an impossible spend is refused and the turn is not used, six more turns the next day.
+- Test 3 (same file, added early for the Gull Riders): the result comes from the stored seed and the marked answers, never from what the browser says. The starter race can't be lost. One race a turn. Another pupil can't finish it. The races switch works. S.4 extends it for classmates.
+- Test 4 (`src/games/isles/maths.test.tsx`): every built ladder skill, typed and tapped, comes through the server for a turn question and race questions, shows in `QuestionModal` without its answer, and the right answer is marked right.
+- Also the "index.ts is up to date" check, and `supabase/tests/database/isles.test.sql` (42 checks: tables and server functions refused to pupils with 42501, switches, own class only, a save sent twice counts once, a race once, counts, New Season). It ran on a throw-away copy of the database and passed. The copy is dropped.
+
+**Checks run:** type check, `npm run test:all` (338 files, 5,933 tests) and build all passed.
+
+**Untested:** the real server function against a real database, end to end (`entry.ts` is only type-checked). Nothing is deployed. The browser side is S.3.
+
+**Noticed, not fixed (not this branch's to change):** Kingdom Keeper's server refuses answers over 1,000,000, so a pupil whose focus is rounding to the nearest million may have right answers refused there. Worth its own small fix.
+
+**Go-live list additions:**
+- Take `20261102000100` out of `migrations-on-hold.txt` in the go-live PR.
+- Check the migration number again.
+- The `isles` function deploys itself when its `index.ts` lands on main.
 
 ### S.L so far (style try-outs), 1 Nov 2026
 
