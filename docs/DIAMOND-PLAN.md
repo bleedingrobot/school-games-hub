@@ -343,3 +343,49 @@ Also: `preview/diamond/` (the preview, plus `art.html`, every drawn picture on o
 **For Stage 3:** answer the six requests in `backend.ts` with the same shapes; the inputs to check are listed in Stage 1 results. Swap `trialBackend()` in `DiamondPlay.tsx` for the server.
 
 **Questions for James:** which painting style (A Storybook, B Glowing Cave, C Clean Flat) to paint in, from the mock-ups.
+
+---
+
+## Stages 3 to 5 results (2 November 2026)
+
+James, 2 Nov 2026: "do everything we can without the gaming computer art". So Stages 3, 4 and 5 were built together; Stage 6 (painted art) waits for the gaming PC, and Stage 7 (go-live) waits for James. **Nothing is live:** the migration is on hold (`supabase/migrations-on-hold.txt`), the function is not deployed, the code switch is off and the game is not in `src/games/registry.ts`.
+
+**Decided by James (2 Nov 2026): New Season is the teacher's button only.** Diamond Drop doesn't read the school's 35-day season date; the `season_fn` hook runs when a teacher presses New Season. (So no "days left this season" countdown.)
+
+| File | What it does |
+|---|---|
+| `shared/diamond/server.ts` | `handleDiamond`: the six requests (`load`, `levelStart`, `answer`, `levelEnd`, `buy`, `wear`). Checks the switch and every input (the Stage 1 list), makes the Hold on! questions way A (`makeRunQuestions` from `space_maths_context`, seeded by the level's seed), marks each slot once and records it with `recordMathsAnswers` (`diamond:<seed>:<slot>`), replays the level with `playLevel` from the server's own seed, boosts and marks, and saves with `applyResult`. Points through `add_game_points` (`diamond:<seed>`). Every save checks a version number and retries, so two tabs can't spend the same coins twice |
+| `shared/diamond/memoryServices.ts` | The database jobs in memory (the preview and the server tests) |
+| `supabase/functions/diamond/` | `handler.ts` (sign-in, 60 requests a minute), `entry.ts` (database plumbing), `index.ts` (built), `handler.test.ts` (the 3 server tests and the "index.ts is up to date" check) |
+| `supabase/migrations/20261102000200_diamond.sql` | `diamond_players` (progress as JSON, version, season count), `diamond_levels` (seed, boosts, questions, marks, drops, result; unique seed per pupil; ended levels go after 30 days), `diamond_finds` (the Hall, once a pupil a season). Server-only functions, the switch `diamond_enabled` (off) and `teacher_set_diamond`, the hub hooks (counts, How points work lines, players, New Season, last played, achievements kept), 6 measures and 6 achievements, `diamond_hall()`, `teacher_diamond_class`, `teacher_diamond_student`, `teacher_diamond_restart` |
+| `supabase/tests/database/diamond.test.sql` | 30 checks: pupils can't read or call anything, a seed used once, old versions never saved over new, a slot marked once, a level ended once, counts, the Hall (own school, claw only), New Season keeps upgrades and the Hall |
+| `src/data/diamond.ts` | The live backend (the function plus `diamond_hall`), the switch, the teacher's lines and restart |
+| `src/games/diamond/backend.ts` | `fromServer`: turns either server's replies into what the screens use; the Hall request |
+| `src/games/diamond/trialBackend.ts` | Now runs `handleDiamond` on the in-memory database, so the preview plays exactly the server's rules |
+| `src/games/diamond/switch.ts`, `teacher.ts`, `index.tsx`, `src/pages/TeacherDiamond.tsx` | The teacher switch hook, the Games table row ("Follows focus · 4 past level 5 · 1 found the diamond"), the student line ("Passed level 6 of 10 · 7 of 10 gems found"), and "Start this student again…" on the student page |
+| `src/games/diamond/guide.ts` | Nugget's help: the guided first go (`guideStep`, worked out from the level as it is, so it can't get stuck), first-time tips (rocks, sacks, crabs, passing), the shop's advice with its working, and help that fades (Lots for the first 5 levels, Some until 20, then Off; or the pupil picks) |
+| Screens | Hall of Finders (own school, newest first, each finder's claw), an achievement line on the level end, How to play lists the achievements and points, Settings has "Help from Nugget" and "Replay the guide" |
+
+**Decisions made in these stages:**
+- **One table for levels and their questions** (`diamond_levels`) instead of a separate `diamond_questions`: the whole table is server-only (RLS on, no policy, no grant), so the questions are as safe, and a level and its marks live in one row.
+- **Progress is one JSON column** (the shared `Player`), worked on by the shared rules on the server. New Season in SQL sets the same fields `newSeason()` does.
+- **Seeds are random 32-bit numbers, unique per pupil** (a clash retries).
+- **No time checks on levels**, so "Slower game" is never refused.
+- **The Hall shows each finder once a season** (a teacher's New Season or restart starts a new one), with the claw they wear now.
+- **Requests:** about 5 a level (start, a few answers, end), as planned.
+
+**Tests:** 8 in all (3 rules, 3 server, 2 screens; the screen test now also checks the guide moves on when the pupil drops), plus the 30 database checks and the "index.ts is up to date" check. Database checks run on a throw-away copy (dropped after); the teacher functions were tried there by hand.
+
+**Checked in the browser** (preview, 1366 × 640 and 844 × 390): the guided first go (Drop lit, the line moves on after a Drop, "Your first gem!"), the First Catch achievement on the level end, Nugget's shop advice, the Hall. No requests outside the preview page; no server address in the built preview.
+
+**Untested:**
+- The live function and database (nothing deployed): first real test is go-live step 5, as a teacher with pupils switched off.
+- The Games table row and the student page in the real Teacher page (type-checked only).
+- The guided first go on a real Chromebook, and whether 9-year-olds read the lines. **James to try the first go.**
+
+**Left for later:**
+- **Stage 6, painted art:** waits for the gaming PC (ComfyUI). First paint the three style tries, then James picks.
+- **Stage 7, go-live:** `docs/prompts/diamond-golive.md`. Merge-step edits listed there (registry, `registry.test.ts`, `build-functions.mjs`, privacy summary, `shared/README.md`, `docs/PLAN.md`).
+- A home page "new level ready" chip (shared `my_moves_left()`): its own small step, with James's OK.
+
+**Paused here (2 Nov 2026, James asked to pause):** everything above is written and committed on `claw`. The game's own tests pass (8, plus the 30 database checks and the "index.ts is up to date" check), and the preview Artifact is updated. **Not yet confirmed: the full `npm run check`** (it was still running at the pause). Next session: run `npm run check`, fix anything it finds, then wait for the gaming PC (painted art) and James's go-live word.

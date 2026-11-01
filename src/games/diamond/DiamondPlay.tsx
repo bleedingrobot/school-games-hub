@@ -1,15 +1,12 @@
 /**
- * Diamond Drop in the hub. Until Stage 3 builds the `diamond` server function this plays on the trial backend in the
- * browser (nothing saved to the school), and the game stays switched off (./switch.ts) and out of the registry.
- * Stage 3 swaps `trialBackend` for the server, with the same requests.
+ * Diamond Drop in the hub, on the school's `diamond` server function (src/data/diamond.ts). The preview plays the same
+ * screens on the browser-only trial backend instead.
  */
-import { useMemo } from 'react';
 import { useNavigate } from 'react-router';
+import { liveDiamond } from '../../data/diamond';
 import { DiamondGame } from './DiamondGame';
-import { trialBackend } from './trialBackend';
 
 export function DiamondPlay() {
   const navigate = useNavigate();
-  const backend = useMemo(() => trialBackend().backend, []);
-  return <DiamondGame backend={backend} onExit={() => navigate('/')} />;
+  return <DiamondGame backend={liveDiamond} onExit={() => navigate('/')} />;
 }

@@ -111,6 +111,10 @@
 .dd-drop:active { transform: translateY(2px); box-shadow: 0 3px 0 #92400e; }
 .dd-tip { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; max-width: 92%; background: var(--card); color: var(--ink); border-radius: 14px; padding: 6px 6px 6px 14px; font-weight: 700; box-shadow: var(--shadow); }
 .dd-tip__close { min-width: 44px; min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); font-size: 1.5rem; cursor: pointer; }
+.dd-tip--guide { padding: 6px 6px 6px 14px; flex-wrap: wrap; justify-content: center; }
+.dd-advice { background: var(--card); color: var(--ink); border-radius: 14px; padding: 8px 12px; margin: 8px 0; }
+.dd-help { border: 0; margin: 8px 0; padding: 0; }
+.dd-help legend { font-weight: 800; padding: 0; margin-bottom: 4px; }
 .dd-overlay { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(12, 8, 5, 0.85); padding: 16px; }
 .dd-overlay .dd-card { max-width: 420px; }
 
@@ -137,6 +141,8 @@
 .dd-gems { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 16px; }
 .dd-gems li { display: flex; align-items: center; gap: 6px; font-weight: 700; }
 .dd-earned { background: var(--dd-gold); color: var(--dd-gold-ink); border-radius: 10px; padding: 6px 10px; font-weight: 700; }
+.dd-achieved { list-style: none; margin: 8px 0; padding: 6px 10px; background: var(--dd-gold); color: var(--dd-gold-ink); border-radius: 10px; }
+.dd-achieved li { margin: 2px 0; }
 .dd-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
 .dd-item { display: flex; gap: 10px; align-items: flex-start; background: var(--card); color: var(--ink); border-radius: 16px; padding: 10px; border: 3px solid transparent; }
 .dd-item.is-chosen { border-color: var(--won); }
@@ -158,6 +164,11 @@
 .dd-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 .dd-tab { min-height: 44px; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--dd-line); background: var(--dd-panel); color: var(--dd-ink); font: inherit; font-weight: 700; cursor: pointer; }
 .dd-tab.is-on { background: var(--dd-gold); color: var(--dd-gold-ink); border-color: var(--dd-gold); }
+.dd-hall { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.dd-hall__row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--dd-panel); color: var(--dd-ink); border: 2px solid var(--dd-line); border-radius: 16px; padding: 8px 12px; }
+.dd-hall__row.is-me { border-color: var(--dd-gold); }
+.dd-hall__claw { flex: none; background: radial-gradient(circle, #4a3624, var(--dd-face)); border-radius: 12px; }
+.dd-hall__name { font-weight: 800; }
 .dd-book { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
 .dd-book__page { background: var(--card); color: var(--ink); border-radius: 16px; padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
 .dd-book__page p { margin: 0; }

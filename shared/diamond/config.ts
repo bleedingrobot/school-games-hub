@@ -218,5 +218,18 @@ export const ACHIEVEMENT_NEEDS: Record<AchievementMeasure, number> = {
   diamond_grips: 10,
 };
 
+/**
+ * The hub achievements (docs/DIAMOND-PLAN.md, section 6.5), as the migration lists them in achievement_types: the game
+ * celebrates one when a level's result crosses its goal. All kept through New Season.
+ */
+export const ACHIEVEMENTS = [
+  { id: 'diamond-first-catch', name: 'First Catch', emoji: '💎', measure: 'diamond_gems', goal: 1, for: 'Catch your first gem' },
+  { id: 'diamond-firm-grip', name: 'Firm Grip', emoji: '✊', measure: 'diamond_grips', goal: 10, for: 'Hold on to 10 slipping gems' },
+  { id: 'diamond-halfway', name: 'Halfway Down', emoji: '⛏️', measure: 'diamond_level', goal: 5, for: 'Pass level 5' },
+  { id: 'diamond-collector', name: 'Gem Collector', emoji: '📖', measure: 'diamond_kinds', goal: 9, for: 'Catch every kind of gem' },
+  { id: 'diamond-finder', name: 'Diamond Finder', emoji: '💖', measure: 'diamond_found', goal: 1, for: 'Catch the Heart Diamond' },
+  { id: 'diamond-star-miner', name: 'Star Miner', emoji: '⭐', measure: 'diamond_stars', goal: 30, for: '3 stars on every level' },
+] as const;
+
 // ---- Points (rules_fn, Stage 4) ----
 export const POINTS = { firstPass: 2, newStar: 1, diamond: 5 };

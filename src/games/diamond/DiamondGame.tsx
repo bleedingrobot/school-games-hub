@@ -6,16 +6,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { type BoostId, type Slot } from '../../../shared/diamond/config';
 import { nextStep } from '../../../shared/diamond/nextStep';
-import { canStart, levelsOpen, type Player } from '../../../shared/diamond/progress';
+import { canStart, levelsOpen, newAchievements, type Player } from '../../../shared/diamond/progress';
 import type { DiamondBackend, Ended, Started } from './backend';
 import { LevelMap, type MapButton } from './LevelMap';
-import { GemBook, HowToPlay, LevelEnd, Shop } from './Pages';
+import { GemBook, Hall, HowToPlay, LevelEnd, Shop } from './Pages';
 import { PlayLevel } from './PlayLevel';
+import { helpFor, shopAdvice, type TipId } from './guide';
 import { loadPrefs, savePrefs, wantsLessMotion, type DiamondPrefs } from './prefs';
 import { Workshop } from './Workshop';
 import './diamond.css';
 
-type Screen = 'map' | 'play' | 'end' | 'shop' | 'workshop' | 'book' | 'how';
+type Screen = 'map' | 'play' | 'end' | 'shop' | 'workshop' | 'book' | 'how' | 'hall';
 
 export interface GameHandle {
   /** Load the pupil again from the backend (after a preview tool changed it). */
@@ -37,6 +38,7 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
   const [basket, setBasket] = useState<BoostId[]>([]);
   const [started, setStarted] = useState<Started | null>(null);
   const [ended, setEnded] = useState<Ended | null>(null);
+  const [achieved, setAchieved] = useState<ReturnType<typeof newAchievements>>([]);
   const [trouble, setTrouble] = useState('');
   const [glow, setGlow] = useState<MapButton | null>(null);
   const [prefs, setPrefsState] = useState<DiamondPrefs>(loadPrefs);
@@ -59,6 +61,13 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
   useEffect(() => () => window.clearTimeout(glowTimer.current), []);
 
   const setPrefs = (p: DiamondPrefs) => { setPrefsState(p); savePrefs(p); };
+  const onSeen = useCallback((id: TipId | 'guide') => {
+    setPrefsState((p) => {
+      const next = id === 'guide' ? { ...p, guideAgain: false } : { ...p, seenTips: p.seenTips.includes(id) ? p.seenTips : [...p.seenTips, id] };
+      savePrefs(next);
+      return next;
+    });
+  }, []);
 
   const step = useMemo(() => (player ? nextStep(player, now()) : null), [player, now]);
 
@@ -86,6 +95,7 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
   };
 
   const onEnd = (e: Ended) => {
+    setAchieved(newAchievements(player, e.player));
     setPlayer(e.player);
     setEnded(e);
     const p = e.player;
@@ -112,6 +122,9 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
   };
 
   const today = now();
+  const help = helpFor(prefs.help, player.lifetime.plays);
+  // A new pupil's map lights up Play until they've played once.
+  const mapGlow = glow ?? (player.lifetime.plays === 0 && help !== 'off' ? 'play' : null);
   const startable = canStart(player, selected, today);
   const why = startable ? '' : selected === levelsOpen(player, today).next ? `Level ${selected} opens tomorrow.` : `Level ${selected} is still locked.`;
   const againLabel = ended && ended.result.passed && selected !== ended.result.level ? `Play level ${selected}` : `Play level ${ended?.result.level ?? selected} again`;
@@ -130,7 +143,7 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
           onSelect={setSelected}
           onOpen={(b) => (b === 'play' ? void start(selected) : go(b === 'book' ? 'book' : b))}
           step={step}
-          glow={glow}
+          glow={mapGlow}
           onShowMe={showMe}
           still={still}
           prefs={prefs}
@@ -138,11 +151,25 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
         />
       )}
       {screen === 'play' && started && (
-        <PlayLevel key={started.seed} started={started} backend={backend} prefs={prefs} still={still} worn={player.worn} onEnd={onEnd} onTrouble={setTrouble} />
+        <PlayLevel
+          key={started.seed}
+          started={started}
+          backend={backend}
+          prefs={prefs}
+          still={still}
+          worn={player.worn}
+          help={help}
+          guided={started.level === 1 && (started.starter || prefs.guideAgain)}
+          seenTips={prefs.seenTips}
+          onSeen={onSeen}
+          onEnd={onEnd}
+          onTrouble={setTrouble}
+        />
       )}
       {screen === 'end' && ended && (
         <LevelEnd
           ended={ended}
+          achieved={achieved}
           againLabel={againLabel}
           onShop={() => go('shop')}
           onAgain={() => void start(canStart(player, selected, today) ? selected : ended.result.level)}
@@ -158,12 +185,14 @@ export function DiamondGame({ backend, onExit, extra }: { backend: DiamondBacken
           onStart={() => void start(selected)}
           canStart={startable && !busy}
           why={why}
+          advice={shopAdvice(help, player, selected)}
           onBack={() => go('map')}
         />
       )}
       {screen === 'workshop' && <Workshop player={player} now={today} still={still} onBuy={buy} onWear={wear} onBack={() => go('map')} />}
       {screen === 'book' && <GemBook player={player} onBack={() => go('map')} />}
       {screen === 'how' && <HowToPlay onBack={() => go('map')} />}
+      {screen === 'hall' && <Hall backend={backend} onBack={() => go('map')} />}
       {extra && screen !== 'play' && extra({ reload: () => void load() })}
     </div>
   );

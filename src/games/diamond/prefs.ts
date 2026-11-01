@@ -1,5 +1,8 @@
-/** Diamond Drop's picture settings, kept on this device (never on the server). */
+/** Diamond Drop's picture and help settings, kept on this device (never on the server). */
+import type { HelpChoice } from './guide';
+
 const KEY = 'sgh-diamond-prefs';
+const HELP: readonly HelpChoice[] = ['auto', 'lots', 'some', 'off'];
 
 export interface DiamondPrefs {
   /** "Less motion": no shaking, sparkles or swaying background; trails and catch effects become a small still glow. Follows the device unless the pupil chose. */
@@ -10,14 +13,26 @@ export interface DiamondPrefs {
    * exactly the same: it only gives more real time to aim.
    */
   slower: boolean;
+  /** Help from Nugget: 'auto' fades from Lots to Some to Off as the pupil plays more. */
+  help: HelpChoice;
+  /** First-time tips already shown on this device. */
+  seenTips: string[];
+  /** "Replay the guide": the next level 1 gets the guided first go again. */
+  guideAgain: boolean;
 }
 
 export function loadPrefs(): DiamondPrefs {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Partial<DiamondPrefs> | null;
-    return { lessMotion: typeof raw?.lessMotion === 'boolean' ? raw.lessMotion : null, slower: raw?.slower === true };
+    return {
+      lessMotion: typeof raw?.lessMotion === 'boolean' ? raw.lessMotion : null,
+      slower: raw?.slower === true,
+      help: HELP.includes(raw?.help as HelpChoice) ? (raw!.help as HelpChoice) : 'auto',
+      seenTips: Array.isArray(raw?.seenTips) ? raw.seenTips.filter((t): t is string => typeof t === 'string') : [],
+      guideAgain: raw?.guideAgain === true,
+    };
   } catch {
-    return { lessMotion: null, slower: false };
+    return { lessMotion: null, slower: false, help: 'auto', seenTips: [], guideAgain: false };
   }
 }
 

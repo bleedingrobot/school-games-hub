@@ -3,7 +3,7 @@
  * its state, with one big Drop button (also Space, Enter or tapping the field). The tick of each Drop that counts is
  * recorded and sent to the server at the end, which replays the level to get the result. A slip pauses the steps and
  * shows the Hold on! question; the server's mark decides whether the claw holds on. Nothing here changes a rule: the
- * picture only reads the engine's state.
+ * picture only reads the engine's state. Nugget's guided first go and first-time tips come from ./guide.ts.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { QuestionModal, type MarkedAnswer, type ShownQuestion } from '../../maths/QuestionModal';
@@ -14,6 +14,7 @@ import { Effects, NUGGET_SPOT, drawAmbient, drawBackground, drawClaw, drawCrab, 
 import type { Worn } from './art/items';
 import type { DiamondBackend, Ended, Started } from './backend';
 import { factText } from './factText';
+import { TIPS, guideStep, showsTip, type Help, type TipId } from './guide';
 import { stepsPerSecond, type DiamondPrefs } from './prefs';
 
 /** How far below the winch the claw hangs while it swings (looks only). */
@@ -43,6 +44,10 @@ export function PlayLevel({
   prefs,
   still,
   worn,
+  help,
+  guided,
+  seenTips,
+  onSeen,
   onEnd,
   onTrouble,
 }: {
@@ -52,6 +57,13 @@ export function PlayLevel({
   /** Less motion. */
   still: boolean;
   worn: Worn;
+  /** How much Nugget helps (Lots / Some / Off). */
+  help: Help;
+  /** The guided first go (a new pupil's first level 1, or "Replay the guide"). */
+  guided: boolean;
+  seenTips: readonly string[];
+  /** A first-time tip was shown, or the guide finished or was skipped ('guide'). */
+  onSeen: (id: TipId | 'guide') => void;
   onEnd: (ended: Ended) => void;
   onTrouble: (message: string) => void;
 }) {
@@ -69,16 +81,42 @@ export function PlayLevel({
   const [paused, setPaused] = useState(false);
   const [slot, setSlot] = useState<number | null>(null);
   const [say, setSay] = useState('');
-  const [tip, setTip] = useState<string | null>(started.starter ? 'Press Drop when the claw points at the big gem!' : null);
+  const [tip, setTip] = useState<string | null>(null);
+  const [guiding, setGuiding] = useState(guided && help !== 'off');
+  const guidingRef = useRef(guiding);
+  guidingRef.current = guiding;
+  // What's been shown on this device, kept here too so a tip shows once even before the parent re-renders.
+  const seen = useRef(new Set(seenTips));
+  const showTip = useCallback((id: TipId) => {
+    if (guidingRef.current || !showsTip(help, id, [...seen.current])) return;
+    seen.current.add(id);
+    setTip(TIPS[id].text);
+    onSeen(id);
+  }, [help, onSeen]);
   const [checking, setChecking] = useState(false);
   const pausedRef = useRef(false);
   pausedRef.current = paused || slot !== null;
   const tumble = useRef<Tumble | null>(null);
   const effects = useRef(new Effects());
-  const seenRock = useRef(false);
   const t0 = useRef(performance.now());
 
   useEffect(() => heading.current?.focus(), []);
+  useEffect(() => {
+    if (spec.crabs > 0) showTip('crab');
+  }, [spec.crabs, showTip]);
+  useEffect(() => {
+    if (hud.passed && !last) showTip('passed');
+  }, [hud.passed, last, showTip]);
+  const endGuide = useCallback(() => {
+    setGuiding(false);
+    onSeen('guide');
+  }, [onSeen]);
+  // A guided first go that reaches the level's end counts as done too.
+  useEffect(() => () => { if (guidingRef.current) onSeen('guide'); }, [onSeen]);
+
+  // The picture's loop is set up once, so it reaches the tip function through a ref.
+  const showTipRef = useRef(showTip);
+  showTipRef.current = showTip;
 
   const end = useCallback(async () => {
     if (ending.current) return;
@@ -147,10 +185,11 @@ export function PlayLevel({
           const t = s.things.find((x) => x.id === shot.grabbed);
           const p = t?.sack;
           setSay(p && 'coins' in p ? `Mystery sack: ${p.coins} coins!` : p && 'seconds' in p ? `Mystery sack: ${p.seconds} more seconds!` : 'Mystery sack: a free boost for your next level!');
+          showTipRef.current('sack');
           effects.current.spawn(undefined, PIVOT.x, PIVOT.y + 20, now, still);
         } else if (shot.kind === 'rock') {
           setSay(shot.blasted ? 'Rock Blaster! The rock turned to dust.' : 'A rock. Heavy, and worth nothing.');
-          if (!seenRock.current && !shot.blasted) { seenRock.current = true; setTip('Rocks are heavy and worth nothing. Aim for the shiny ones!'); }
+          if (!shot.blasted) showTipRef.current('rock');
         }
       }
     };
@@ -282,6 +321,7 @@ export function PlayLevel({
   };
 
   const target = last ? 1 : spec.target;
+  const guide = guiding ? guideStep({ drops: drops.current.length, banked: hud.banked, passed: hud.passed, busy: hud.busy, target: spec.target }) : null;
   const progress = last ? (hud.passed ? 1 : 0) : Math.min(1, hud.banked / target);
 
   return (
@@ -296,7 +336,7 @@ export function PlayLevel({
         <div className="dd-hud__item dd-hud__coins" aria-label={`${hud.coins} coins this level`}>
           <span aria-hidden="true">🪙</span> {hud.coins}
         </div>
-        <div className="dd-target" role="img" aria-label={last ? (hud.passed ? 'Heart Diamond caught!' : 'Goal: catch the Heart Diamond') : `${hud.banked} of ${target} gem coins`}>
+        <div className={`dd-target${guide?.glow === 'bar' ? ' dd-glow' : ''}`} role="img" aria-label={last ? (hud.passed ? 'Heart Diamond caught!' : 'Goal: catch the Heart Diamond') : `${hud.banked} of ${target} gem coins`}>
           <div className={`dd-target__fill${hud.passed ? ' is-done' : ''}`} style={{ width: `${progress * 100}%` }} />
           <span className="dd-target__text">{last ? (hud.passed ? 'Heart Diamond caught!' : 'Catch the Heart Diamond') : `${hud.banked} / ${target}`}</span>
         </div>
@@ -310,7 +350,13 @@ export function PlayLevel({
           aria-label={`The claw swings over ${spec.place}. Press Drop to send it down.`}
           onPointerDown={(e) => { e.preventDefault(); drop(); }}
         />
-        {tip && (
+        {guide && (
+          <div className="dd-tip dd-tip--guide" role="status">
+            <span>{guide.text}</span>
+            <button type="button" className="button button--light-outline dd-btn dd-btn--small" onClick={endGuide}>Skip the guide</button>
+          </div>
+        )}
+        {tip && !guide && (
           <div className="dd-tip" role="note">
             <span>{tip}</span>
             <button type="button" className="dd-tip__close" onClick={() => setTip(null)} aria-label="Close tip">×</button>
@@ -324,7 +370,7 @@ export function PlayLevel({
         <button type="button" className="button button--light-outline dd-btn" onClick={() => setPaused(true)} disabled={checking}>Pause</button>
         <button
           type="button"
-          className={`dd-drop${tip && started.starter ? ' dd-glow' : ''}`}
+          className={`dd-drop${guide?.glow === 'drop' ? ' dd-glow' : ''}`}
           onClick={drop}
           aria-disabled={hud.busy}
           disabled={checking}
@@ -332,7 +378,7 @@ export function PlayLevel({
           Drop
         </button>
         {hud.passed && !last && (
-          <button type="button" className="button button--play dd-btn" onClick={finish} disabled={checking}>
+          <button type="button" className={`button button--play dd-btn${guide?.glow === 'finish' ? ' dd-glow' : ''}`} onClick={finish} disabled={checking}>
             Finish
           </button>
         )}

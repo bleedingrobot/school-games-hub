@@ -4,7 +4,7 @@
  * boosts, and what New Season clears and keeps. The server runs exactly these before saving.
  */
 import {
-  ACHIEVEMENT_NEEDS, BOOSTS, GEMS, LAST_LEVEL, POINTS, REPLAY_COIN_SHARE,
+  ACHIEVEMENTS, ACHIEVEMENT_NEEDS, BOOSTS, GEMS, LAST_LEVEL, POINTS, REPLAY_COIN_SHARE,
   type AchievementMeasure, type BoostId, type GemId, type Slot,
 } from './config';
 import type { LevelResult } from './engine';
@@ -120,6 +120,13 @@ export function measures(p: Player): Record<AchievementMeasure | 'diamond_gems' 
     diamond_found: p.lifetime.found,
     diamond_stars: p.lifetime.bestStars,
   };
+}
+
+/** The hub achievements a change of progress has just earned (for the level end's celebration). */
+export function newAchievements(before: Player, after: Player): (typeof ACHIEVEMENTS)[number][] {
+  const was = measures(before);
+  const now = measures(after);
+  return ACHIEVEMENTS.filter((a) => was[a.measure] < a.goal && now[a.measure] >= a.goal);
 }
 
 /** Workshop upgrades this pupil has earned but doesn't have yet. */

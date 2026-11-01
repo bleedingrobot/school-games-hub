@@ -14,7 +14,7 @@ import { Sprite } from './Sprite';
 /** The colour of each level's chamber wall, from the topsoil down to the diamond heart. */
 const CHAMBER = ['#7d4f25', '#b86236', '#7f7665', '#232b45', '#33254c', '#1b344c', '#7c6d57', '#52332d', '#331512', '#24163d'];
 
-export type MapButton = 'play' | 'shop' | 'workshop' | 'book' | 'how';
+export type MapButton = 'play' | 'shop' | 'workshop' | 'book' | 'how' | 'hall';
 
 export function LevelMap({
   player,
@@ -75,6 +75,7 @@ export function LevelMap({
             <button type="button" className={`button button--light dd-btn${glow === 'shop' ? ' dd-glow' : ''}`} onClick={() => onOpen('shop')}>Shop</button>
             <button type="button" className={`button button--light dd-btn${glow === 'workshop' ? ' dd-glow' : ''}`} onClick={() => onOpen('workshop')}>Workshop</button>
             <button type="button" className={`button button--light dd-btn${glow === 'book' ? ' dd-glow' : ''}`} onClick={() => onOpen('book')}>Gem Book</button>
+            <button type="button" className={`button button--light dd-btn${glow === 'hall' ? ' dd-glow' : ''}`} onClick={() => onOpen('hall')}>Hall of Finders</button>
             <button type="button" className={`button button--light dd-btn${glow === 'how' ? ' dd-glow' : ''}`} onClick={() => onOpen('how')}>How to play</button>
           </div>
         </div>
@@ -91,6 +92,23 @@ export function LevelMap({
             <input type="checkbox" checked={prefs.slower} onChange={(e) => onPrefs({ ...prefs, slower: e.target.checked })} />
             Slower game (more time to aim)
           </label>
+          <fieldset className="dd-help">
+            <legend>Help from Nugget</legend>
+            {(['auto', 'lots', 'some', 'off'] as const).map((h) => (
+              <label key={h} className="dd-check">
+                <input type="radio" name="dd-help" checked={prefs.help === h} onChange={() => onPrefs({ ...prefs, help: h })} />
+                {h === 'auto' ? 'Less as I get better' : h === 'lots' ? 'Lots' : h === 'some' ? 'Some' : 'Off'}
+              </label>
+            ))}
+          </fieldset>
+          <button
+            type="button"
+            className="button button--light dd-btn dd-btn--small"
+            onClick={() => { onPrefs({ ...prefs, guideAgain: true, seenTips: [], help: prefs.help === 'off' ? 'auto' : prefs.help }); onSelect(1); }}
+          >
+            Replay the guide
+          </button>
+          {prefs.guideAgain && <p className="dd-small" role="status">Nugget will guide your next go at level 1.</p>}
         </details>
       </div>
 

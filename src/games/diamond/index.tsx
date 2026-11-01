@@ -1,8 +1,12 @@
 import { lazy } from 'react';
+import { saveDiamondEnabled } from '../../data/diamond';
 import type { GameDefinition } from '../types';
+import { useDiamondEnabled } from './switch';
+import { DIAMOND_ABOUT, useDiamondClassSwitch, useDiamondSummary } from './teacher';
 
 // Loaded only when someone opens the game, so the dashboard stays quick.
 const DiamondPlay = lazy(() => import('./DiamondPlay').then((m) => ({ default: m.DiamondPlay })));
+const DiamondStudentPanel = lazy(() => import('../../pages/TeacherDiamond').then((m) => ({ default: m.DiamondStudentPanel })));
 
 /** A claw on a rope over a big faceted diamond. */
 function DiamondIcon({ size = 64 }: { size?: number }) {
@@ -19,7 +23,7 @@ function DiamondIcon({ size = 64 }: { size?: number }) {
 /**
  * Diamond Drop (docs/DIAMOND-PLAN.md): swing a claw, drop it on gems, hold on with maths, and dig down 10 levels to the
  * Heart Diamond. Not ranked. Switched off (./switch.ts) and not in src/games/registry.ts yet: that is a merge-step change.
- * The teacher switch and Games table row come in Stage 4.
+ * On the dashboard only while `diamondOn()` is true and the teacher has switched it on for the pupil's class.
  */
 export const diamondDrop: GameDefinition = {
   id: 'diamond',
@@ -31,4 +35,13 @@ export const diamondDrop: GameDefinition = {
   ranked: false,
   noBots: true,
   group: 'complex-maths',
+  useTeacherSwitch: useDiamondEnabled,
+  // The teacher's Games table: the on/off switch in the row (the game and its points behind its "?"), how far the class
+  // has dug in the Maths column, and starting one student again on their page.
+  teacher: {
+    switch: { useValue: useDiamondClassSwitch, save: (on, classId) => saveDiamondEnabled(on, classId), about: DIAMOND_ABOUT },
+    useSummary: useDiamondSummary,
+    StudentPanel: DiamondStudentPanel,
+    studentSummary: (student) => import('../../pages/TeacherDiamond').then((m) => m.diamondStudentSummary(student)),
+  },
 };

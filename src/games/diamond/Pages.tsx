@@ -1,16 +1,18 @@
 /**
- * Diamond Drop's smaller screens: the level end, the boost shop, the Gem Book and How to play. Every number on them is
+ * Diamond Drop's smaller screens: the level end, the boost shop, the Gem Book, the Hall of Diamond Finders and How to play. Every number on them is
  * read from shared/diamond/config.ts, so changing a number there changes the page.
  */
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  BOOSTS, EXTRA_TIME_SECONDS, GEMS, LAST_LEVEL, LEVELS, QUESTION_CAP, QUESTION_CAP_LAST, RARITY_PRICE, REPLAY_COIN_SHARE,
+  ACHIEVEMENTS, BOOSTS, POINTS, EXTRA_TIME_SECONDS, GEMS, LAST_LEVEL, LEVELS, QUESTION_CAP, QUESTION_CAP_LAST, RARITY_PRICE, REPLAY_COIN_SHARE,
   SACK, SPECIAL_SHARE, STAR_TWO_SECONDS, levelSpec, type BoostId,
 } from '../../../shared/diamond/config';
 import { boostPrice, type Player } from '../../../shared/diamond/progress';
 import { itemOf } from '../../../shared/diamond/workshop';
 import { drawGem, GEM_LOOK } from './art/draw';
-import type { Ended } from './backend';
+import { drawRig } from './art/items';
+import type { DiamondBackend, Ended, HallRow } from './backend';
+
 import { Sprite } from './Sprite';
 
 function Page({ id, title, onBack, backLabel = 'Back to the map', children, coins }: { id: string; title: string; onBack: () => void; backLabel?: string; children: ReactNode; coins?: number }) {
@@ -38,7 +40,15 @@ const sharePercent = Math.round(REPLAY_COIN_SHARE * 100);
 
 // ————————————————————————————————————— Level end —————————————————————————————————————
 
-export function LevelEnd({ ended, onShop, onAgain, onMap, againLabel }: { ended: Ended; onShop: () => void; onAgain: () => void; onMap: () => void; againLabel: string }) {
+export function LevelEnd({ ended, achieved, onShop, onAgain, onMap, againLabel }: {
+  ended: Ended;
+  /** Hub achievements this level just earned. */
+  achieved: readonly (typeof ACHIEVEMENTS)[number][];
+  onShop: () => void;
+  onAgain: () => void;
+  onMap: () => void;
+  againLabel: string;
+}) {
   const r = ended.result;
   const spec = levelSpec(r.level);
   const caught = GEMS.filter((g) => (r.caught[g.id] ?? 0) > 0);
@@ -73,6 +83,14 @@ export function LevelEnd({ ended, onShop, onAgain, onMap, againLabel }: { ended:
         {r.questions > 0 && <p>Hold on! questions: you held on {r.held} of {r.questions} times.</p>}
         {r.freeBoost && <p>A mystery sack gave you a free {BOOSTS.find((b) => b.id === r.freeBoost)?.name} for your next level.</p>}
         {ended.newLevel && r.level < LAST_LEVEL && <p>Level {r.level + 1} opens tomorrow. You can replay any level you’ve passed for stars, gems and coins.</p>}
+        {achieved.length > 0 && (
+          <ul className="dd-achieved" role="status" aria-label="Achievements earned">
+            {achieved.map((a) => (
+              <li key={a.id}><span aria-hidden="true">{a.emoji}</span> Achievement: <strong>{a.name}</strong> ({a.for.toLowerCase()})</li>
+            ))}
+          </ul>
+        )}
+        {ended.points > 0 && <p>+{ended.points} {ended.points === 1 ? 'point' : 'points'} for the hub.</p>}
         {ended.earned.length > 0 && (
           <p className="dd-earned" role="status">New in your Workshop: {ended.earned.map((id) => itemOf(id)?.name ?? id).join(', ')}!</p>
         )}
@@ -88,7 +106,7 @@ export function LevelEnd({ ended, onShop, onAgain, onMap, againLabel }: { ended:
 
 // ————————————————————————————————————— Boost shop —————————————————————————————————————
 
-export function Shop({ player, level, basket, onToggle, onStart, canStart, why, onBack }: {
+export function Shop({ player, level, basket, onToggle, onStart, canStart, why, advice, onBack }: {
   player: Player;
   level: number;
   basket: BoostId[];
@@ -96,6 +114,8 @@ export function Shop({ player, level, basket, onToggle, onStart, canStart, why, 
   onStart: () => void;
   canStart: boolean;
   why: string;
+  /** Nugget's advice, with the working (null when help is off). */
+  advice: string | null;
   onBack: () => void;
 }) {
   const cost = basket.reduce((sum, id) => sum + (id === player.freeBoost ? 0 : boostPrice(id, level)), 0);
@@ -103,6 +123,7 @@ export function Shop({ player, level, basket, onToggle, onStart, canStart, why, 
   return (
     <Page id="dd-shop-title" title={`Shop for level ${level}`} onBack={onBack} coins={player.coins}>
       <p className="dd-soft">Boosts help on your next level only. One of each at most.</p>
+      {advice && <p className="dd-advice"><strong>Nugget says:</strong> {advice}</p>}
       <ul className="dd-list">
         {BOOSTS.map((b) => {
           const inBasket = basket.includes(b.id);
@@ -164,6 +185,39 @@ export function GemBook({ player, onBack }: { player: Player; onBack: () => void
   );
 }
 
+// ————————————————————————————————————— Hall of Diamond Finders —————————————————————————————————————
+
+export function Hall({ backend, onBack }: { backend: DiamondBackend; onBack: () => void }) {
+  const [rows, setRows] = useState<HallRow[] | null>(null);
+  const [trouble, setTrouble] = useState('');
+  useEffect(() => {
+    let current = true;
+    void backend.hall().then((r) => {
+      if (!current) return;
+      if (r.ok) setRows(r.value); else setTrouble(r.message);
+    });
+    return () => { current = false; };
+  }, [backend]);
+  return (
+    <Page id="dd-hall-title" title="Hall of Diamond Finders" onBack={onBack}>
+      <p className="dd-soft">Everyone at your school who has reached the Heart Diamond, newest first, with the claw they dig with.</p>
+      {trouble ? <p className="dd-trouble" role="alert">{trouble}</p> : !rows ? <p role="status">Opening the Hall…</p> : rows.length === 0 ? (
+        <p>Nobody has found the Heart Diamond yet. Could you be the first?</p>
+      ) : (
+        <ul className="dd-hall">
+          {rows.map((row, i) => (
+            <li key={`${row.name}-${row.found}-${i}`} className={`dd-hall__row${row.me ? ' is-me' : ''}`}>
+              <Sprite size={56} box={200} className="dd-hall__claw" draw={(c) => drawRig(c, row.worn, 0.6, true, [], false)} />
+              <span className="dd-hall__name">{row.name}{row.me ? ' (you)' : ''}</span>
+              <span className="dd-small dd-soft">found it on {prettyDate(row.found)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Page>
+  );
+}
+
 // ————————————————————————————————————— How to play —————————————————————————————————————
 
 export function HowToPlay({ onBack }: { onBack: () => void }) {
@@ -191,6 +245,11 @@ export function HowToPlay({ onBack }: { onBack: () => void }) {
         </ul>
         <h3 className="dd-h3">The Claw Workshop</h3>
         <p>Upgrades change how your claw looks, never how it digs: Common {RARITY_PRICE.common}, Cool {RARITY_PRICE.cool}, Epic {RARITY_PRICE.epic}, Legendary {RARITY_PRICE.legendary} coins. The special of the week costs {Math.round(SPECIAL_SHARE * 100)}% of its price. A few can’t be bought: you win them.</p>
+        <h3 className="dd-h3">Achievements and points</h3>
+        <ul>
+          {ACHIEVEMENTS.map((a) => <li key={a.id}><span aria-hidden="true">{a.emoji}</span> <strong>{a.name}</strong>: {a.for}.</li>)}
+        </ul>
+        <p>Points: {POINTS.firstPass} for passing a level for the first time, {POINTS.newStar} for each new star, {POINTS.diamond} for the Heart Diamond. Everyone who finds it goes in the Hall of Diamond Finders.</p>
       </div>
     </Page>
   );
