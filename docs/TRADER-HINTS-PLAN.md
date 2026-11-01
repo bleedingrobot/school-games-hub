@@ -294,3 +294,6 @@ Built on branch `trader-hints` (its own folder, `~/games-hub-trader-hints`). **N
 - No First Flight, first-time tips, choice helpers, help panel or help levels yet (H.2 to H.4). Bolt is always on for now; H.4 adds Lots / Some / Off.
 - The best buy can be a dear good the pupil can only afford one of (on one test galaxy: 1 Fireworks for +56 beats 10 Water for +10). That is right on the numbers, but "Buy max" buying just one may puzzle a child. H.3's ⭐ line with the whole sum ("+56 × 1 = 56") should make it clear; worth watching in the trial.
 - Not tried by a child yet, and not on a real Chromebook or iPad.
+
+### Fixed after James tried H.1 (1 Nov 2026)
+**Buy max did nothing.** An older market bug (not Bolt's): the numbers picked in the market (the +3 / −3 boxes) only cleared on a new planet, not after pressing Trade. After selling 3 Fireworks, the plan still said "sell 3 Fireworks", which was now impossible, so every later button was checked on top of it and quietly refused. Now the picks clear whenever the hold changes (a trade, a friendly trader, pirates), and Buy max / Sell all say why when they can't add even one ("You cannot afford that.", "Your hold is full."). Two new screen tests (the first fails on the old code). Star Trader screen tests: 49 pass.

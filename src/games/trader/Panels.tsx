@@ -52,8 +52,10 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade }: {
   const headlines = news.slice(0, NEWS_MAX);
   // Where each good sells best within a full tank's reach (today's prices; they can change before you land).
   const best = useMemo(() => bestSales(galaxy, t, pushes), [galaxy, t, pushes]);
-  // A new planet (or a finished trade) starts a fresh plan.
-  useEffect(() => setPlan(emptyPlan()), [t.location, t.day, t.jumpNo]);
+  // A new planet, or anything that changes the hold (a finished trade, a friendly trader, pirates), starts a fresh plan.
+  // Otherwise an old "sell 3" would be left over for goods that have gone, and every button would quietly fail on top of it.
+  const holdKey = t.cargo.join(',');
+  useEffect(() => setPlan(emptyPlan()), [t.location, t.day, t.jumpNo, holdKey]);
   const here = runPlan(t, plan);
   const out = here.ok ? here.out : null;
 
@@ -71,14 +73,18 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade }: {
   function setMax(good: number, direction: 1 | -1) {
     const next = [...plan];
     let guard = 0;
+    let why = '';
     for (;;) {
       const trial = [...next];
       trial[good] += direction;
-      if (guard++ > 200 || !runPlan(t, trial).ok) break;
+      const r = runPlan(t, trial);
+      if (!r.ok) why = r.reason;
+      if (guard++ > 200 || !r.ok) break;
       next[good] = trial[good];
     }
     setPlan(next);
-    setMessage('');
+    // Say why when not even one more could be added, so the button never seems to do nothing.
+    setMessage(next[good] === plan[good] ? why : '');
   }
   const any = plan.some((q) => q !== 0);
 
