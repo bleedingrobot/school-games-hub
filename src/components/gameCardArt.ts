@@ -33,6 +33,8 @@ import kingdom from '../assets/home/kingdom.webp';
 import kingdomSmall from '../assets/home/kingdom-small.webp';
 import marble from '../assets/home/marble.webp';
 import marbleSmall from '../assets/home/marble-small.webp';
+import trader from '../assets/home/trader.webp';
+import traderSmall from '../assets/home/trader-small.webp';
 
 export interface GameCardArt {
   /** The big picture, for wide screens. */
@@ -59,6 +61,7 @@ const ART: Record<string, GameCardArt> = {
   'clan-quest': { card: clanQuest, small: clanQuestSmall },
   'kingdom': { card: kingdom, small: kingdomSmall },
   'marble': { card: marble, small: marbleSmall, focus: 'center 80%' },
+  'trader': { card: trader, small: traderSmall, focus: 'center 70%' },
 };
 
 export function gameCardArt(gameId: string): GameCardArt | undefined {
