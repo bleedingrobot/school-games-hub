@@ -297,3 +297,49 @@ Still open: how this game reads the school season date (ask before Stage 4), and
 - Achievement measures and points are worked out (`measures`, `POINTS`) but not wired to the hub until Stage 4.
 
 **Decided by James (2 Nov 2026): keep the climb at about 3 weeks** for 3-to-4-day pupils (10 levels, one new level a day, friendly targets). The 2 weeks after are for stars, the Gem Book and the Workshop, and late joiners can still reach the diamond.
+
+---
+
+## Stage 2 results (2 November 2026)
+
+**Built:** the game's screens with drawn (code) art, a phone preview on a pretend server, and the painted-art plan. Still switched off (`ON = false` in `src/games/diamond/switch.ts`), and **not** in `src/games/registry.ts` (a merge-step change). No server or database yet.
+
+| File (`src/games/diamond/`) | What it does |
+|---|---|
+| `switch.ts` | Code switch, off (`VITE_DIAMOND_ON=true` for your own computer) |
+| `index.tsx`, `DiamondPlay.tsx` | The `GameDefinition` (group `complex-maths`, not ranked). `DiamondPlay` runs on the trial backend until Stage 3 |
+| `backend.ts` | The six requests the screens make (`load`, `levelStart`, `answer`, `levelEnd`, `buy`, `wear`) and their reply shapes: Stage 3's server answers the same ones |
+| `trialBackend.ts` | The pretend server: checks `canStart`, charges boosts with `takeBoosts`, makes the Hold on! questions way A (`makeFocusPack` from a fixed pretend focus, times tables, seeded), marks each slot once, replays with `playLevel` and saves with `applyResult`. Preview tools: pretend tomorrow, jump to a level, coins, start again |
+| `DiamondGame.tsx` | Which screen shows, the pupil's progress as the backend last sent it, the boost basket, "Show me" |
+| `LevelMap.tsx` | The depth gauge (10 chambers, locked dark, "Opens tomorrow", deepest marked, the diamond glowing at the bottom), Nugget with the `nextStep` line and "Show me", the buttons, the swinging claw as worn, settings |
+| `PlayLevel.tsx` | The canvas, stepped at 30 ticks a second with `step`, recording each counted Drop's tick (and Finish); Drop button, Space, Enter, or tapping the field; Pause (hides the field); Finish once passed; Hold on! with the shared `QuestionModal`; the gem tumbles to where `answer` says it landed |
+| `Pages.tsx` | Level end (passed / So close!, gems, coins kept with the real 12% sum, stars, earned upgrades), the boost shop (prices as sums, one of each, the sack's free boost), Gem Book (shadows for unknown gems, diamond last), How to play (every number read from `config.ts`) |
+| `Workshop.tsx` | 6 slots, every upgrade with rarity and price as a sum, special of the week first, earned ones say how to win them, try it on, buy, wear, take off |
+| `art/draw.ts`, `art/items.ts`, `Sprite.tsx` | All drawn art: 10 level backgrounds and their moving bits, 10 gems (different shapes as well as colours), rocks, sack, crab, winch, rope, claw open and closed, Nugget in 5 poses, every one of the 43 upgrades, trails and catch effects |
+| `prefs.ts` | Less motion and Slower game, kept on the device |
+| `diamond.css` | Every class `.dd-`; hub tokens and shared buttons for panels |
+| `Accessibility.test.tsx`, `DiamondGame.test.tsx` | The 2 screen tests (5 of the game's 8 used) |
+
+Also: `preview/diamond/` (the preview, plus `art.html`, every drawn picture on one sheet), `vite.diamond-preview.config.ts`, `diamond:preview` and `diamond:single` at the end of `package.json`'s scripts, `dist-preview-diamond/` in `.gitignore`, and [DIAMOND-ART-PLAN.md](DIAMOND-ART-PLAN.md).
+
+**Decisions made in this stage:**
+- **Slower game** is a setting that runs the whole level at 20 steps a second instead of 30. The swing, the claw and the clock all slow together, so the rules and the server's replay (which count steps) are unchanged; it only gives more real time to aim. (The plan's "slow the swing" would have needed a rule change the server must replay.) Stage 3 must not refuse a level for taking longer in real time.
+- **Drop is applied straight away** when pressed (the recorded tick, then `step(s, 'drop')`), exactly what the replay does at that tick. Finish waits until the claw is back at the top, then counts.
+- **Leave this level** (in Pause) ends the level now; the server's replay plays out the rest with no more drops, so a gem already on its way up still counts.
+- **No skip on Hold on!** (no close button), so a pupil can't lose a grip by closing the box by mistake.
+- **The shop** is "Shop for level N" with a Start button: boosts are chosen for the level about to start. Level end leads to it; Play on the map starts with no boosts.
+- **The questions' answers stay in the trial backend**, never in the screens, as the real server will do.
+- **Nugget** stands beside the winch in every level, wearing the hat; cheers when a level is passed, "oops" during Hold on!.
+- **Painted art:** 104 pictures in 11 batches (D.1 gems, rocks, sack, crab · D.2 winch, claw, Nugget · D.3 levels 1–5 · D.4 levels 6–10 and the map · D.5 Gem Book and shop · D.6–D.10 the Workshop · D.11 home card). The plan guessed about 80; claw heads are painted open and closed.
+
+**Checked by eye in the browser pane** at 1366 × 640 and 844 × 390 (a phone on its side puts the field on the left and the clock, target and Drop on the right): the map, levels 1, 6 and 10, a catch, a Hold on! answered wrong (the gem fell back and could be caught again), the level end, the Workshop and the art sheet. The preview made no requests to anything but its own page. Screenshots were sent to James.
+
+**Untested:**
+- Phones held upright (390 wide) were not checked; the layout stacks, but the field is small.
+- Real pupils on a Chromebook (speed of the canvas with 40 things and catch effects).
+- Less motion was checked by reading the code, not on a device with it switched on.
+- New-player guide (Nugget's guided first go, tips that fade, Lots / Some / Off) is Stage 5; this stage has only the first-go tip and the rock tip.
+
+**For Stage 3:** answer the six requests in `backend.ts` with the same shapes; the inputs to check are listed in Stage 1 results. Swap `trialBackend()` in `DiamondPlay.tsx` for the server.
+
+**Questions for James:** which painting style (A Storybook, B Glowing Cave, C Clean Flat) to paint in, from the mock-ups.
