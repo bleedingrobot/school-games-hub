@@ -3,7 +3,7 @@
 How Star Trader swaps its drawn-in-code art for paintings in the **Cinematic** style, made in ComfyUI on James's gaming PC. It follows the way Dragon Maths and Clan Quest were done (`docs/CLANS-ART-PLAN.md`), so most of the tools already exist.
 
 Written 27 October 2026 for James.
-**Status: G.0 to G.3 done (1 Nov 2026); G.2 and G.3 approved by James.** Branch `trader-art`, from `main` after Star Trader went live (the old `trader` branch is merged and gone).
+**Status: G.0 to G.3 done (1 Nov 2026); G.2 and G.3 approved by James and live.** Next: G.4, on a new branch from `main` (`trader-art` was merged in #114 and deleted).
 
 ## The short version
 
@@ -101,6 +101,10 @@ James looked at the preview on 1 Nov and said it looks good.
 - **Not checked in a browser** (the published preview needs a claude.ai sign-in the in-app browser doesn't have): the flames' size against each nozzle, lasers leaving the gun, and the shield bubble's fit. Preview with buttons for warp, shots, shields and explosions: https://claude.ai/artifact/CCBg81TjMxo5MjNQmqTDM3 (`preview/trader/art.html`).
 
 James watched the fight preview on 1 Nov and said it looks good.
+
+**Went live (1 Nov 2026, NZ time):** #114 merged (`2920086`) and "Test and publish" (run 41255429270) green: no migration, no function, site published; the paintings are served (e.g. `assets/earth-ePQdqd9w.webp` answers 200). Pupils now see painted planets (planet scene, star chart) and painted ships (scene, warp, fights, ship panel, shipyard); anyone whose painting hasn't downloaded sees the drawn version. The first CI build failed once in `src/pages/DashboardHome.test.tsx` because the run crossed midnight UTC (its "Today" labels); it passed when re-run, and nothing in #114 touches it.
+
+Not checked yet: the live game in a real browser as a pupil, and speed on a real Chromebook.
 
 **Next: G.4**, the ~16 backgrounds (to be painted first).
 
