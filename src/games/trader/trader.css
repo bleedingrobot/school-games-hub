@@ -328,3 +328,46 @@
 @media (prefers-reduced-motion: reduce) { .st-root [data-flight-lit] { animation: none; } }
 /* The top strip runs edge to edge, so its glow goes inside. */
 .st-root .st-hud[data-flight-lit] { outline-offset: -4px; border-radius: 12px; box-shadow: inset 0 0 18px rgba(253, 224, 71, 0.45); animation: none; }
+
+/* ——— Bolt's first-time tips and help with choices (docs/TRADER-HINTS-PLAN.md, sections 4 and 5) ——— */
+.st-tip { border-color: var(--st-gold); }
+.st-tip--inline { position: static; }
+.st-tip__btns { flex: none; display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.st-tip__count { font-size: 0.8rem; }
+.st-tip__x { flex: none; min-width: 44px; }
+/* Bolt's working and suggestions inside the panels: a cyan edge, so they read as Bolt's words. */
+.st-advice { margin: 8px 0; padding: 8px 10px; border-left: 4px solid var(--st-cyan); background: rgba(56, 189, 248, 0.1); border-radius: 8px; color: var(--st-ink); }
+.st-advice p { margin: 2px 0; }
+.st-advice__who { color: var(--st-cyan); }
+.st-advice__ok { color: var(--st-good); font-weight: 700; }
+.st-advice__no { color: var(--st-bad); font-weight: 700; }
+.st-advice__verdict { font-weight: 800; }
+.st-advice--warn { border-left-color: var(--st-bad); background: rgba(251, 146, 60, 0.12); }
+.st-sure .st-actions { margin-top: 6px; }
+/* The fight button Bolt suggests. */
+.st-root .st-btn--suggest { outline: 3px solid var(--st-cyan); outline-offset: 2px; position: relative; }
+.st-suggest {
+  position: absolute; top: -11px; right: 8px; padding: 1px 8px; border-radius: 999px;
+  background: var(--st-cyan); color: var(--st-panel-solid); font-size: 0.72rem; font-weight: 800; white-space: nowrap;
+}
+/* ⓘ on the price columns: a big enough target that doesn't make the heading row taller. */
+.st-info {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; margin: -14px -8px -14px -6px;
+  background: none; border: 0; color: var(--st-cyan); font-size: 1rem; cursor: pointer; border-radius: 999px;
+}
+.st-info:focus-visible { outline: 3px solid var(--st-gold); }
+.st-colhelp-narrow { display: none; margin: 4px 0; }
+@media (max-width: 720px) { .st-colhelp-narrow { display: inline-flex; } }
+.st-colhelp__ok { margin-left: 8px; }
+.st-best--star { color: var(--st-gold); font-size: 0.82rem; }
+/* "Bolt suggests" in the shipyard. */
+.st-ribbon {
+  flex-basis: 100%; display: block; margin-top: 4px; padding: 4px 10px; border-radius: 8px;
+  background: rgba(56, 189, 248, 0.16); border: 1px solid var(--st-cyan); font-size: 0.85rem; color: var(--st-ink);
+}
+.st-ribbon strong { color: var(--st-cyan); }
+.st-holds { font-weight: 700; color: var(--st-good); }
+.st-ideas ul { margin: 4px 0; padding-left: 0; list-style: none; }
+.st-ideas li { padding: 4px 0; border-bottom: 1px solid #26305a; font-size: 0.9rem; }
+.st-ideas__note { margin: 4px 0 0; font-size: 0.8rem; }
+.st-shipoffer .st-ribbon { grid-column: 1 / -1; }

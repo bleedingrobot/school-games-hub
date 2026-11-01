@@ -21,15 +21,17 @@ vi.mock('./renderer', () => ({
 }));
 
 import { traderApi } from '../../data/trader';
-import { WATER } from '../../../shared/trader/config';
+import { GOODS, WATER } from '../../../shared/trader/config';
+import { isBanned } from '../../../shared/trader/market';
 import { DEFAULT_SETTINGS, applyBatch, newGame } from '../../../shared/trader/server';
 import { starterTrade } from './coach/advice';
-import { makeGalaxy, startPlanet } from '../../../shared/trader/galaxy';
+import { chartPoint, distance, makeGalaxy, startPlanet } from '../../../shared/trader/galaxy';
 import { nzDay } from '../../../supabase/functions/trader/handler';
 import { TraderGame } from './TraderGame';
 import { trialBackend, type Trial } from './trialBackend';
 
 const NOW = Date.UTC(2026, 9, 22, 1, 0, 0);
+const ALL_TIPS = ['maths', 'junk', 'trader', 'pirates', 'pirates-nolaser', 'customs', 'wrecked', 'robbed', 'shipyard', 'noyard', 'bank', 'borrow', 'news', 'jumps'];
 
 beforeEach(() => {
   calls.warps = 0;
@@ -37,8 +39,9 @@ beforeEach(() => {
   HTMLCanvasElement.prototype.getContext = (() => null) as never;
   HTMLCanvasElement.prototype.toDataURL = (() => '') as never;
   window.matchMedia = ((q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as never;
-  // First Flight has its own tests below; the rest of the game is tested as a pupil who skipped it.
-  localStorage.setItem('sgh-trader-coach', JSON.stringify({ flight: 'skipped', run: null }));
+  // First Flight and the first-time tips have their own tests below; the rest of the game is tested as a pupil who has
+  // skipped First Flight and seen every tip.
+  localStorage.setItem('sgh-trader-coach', JSON.stringify({ flight: 'skipped', run: null, tips: ALL_TIPS }));
 });
 afterEach(() => cleanup());
 
@@ -338,6 +341,8 @@ describe('First Flight (Bolt guides the first trade)', () => {
     await flyOut();
     await sellUp();
     expect(within(bubble()!).getByText(/credits profit! 🎉/)).toBeTruthy();
+    // The trip summary, from the price kept on this device when buying.
+    expect(screen.getByText(/Trip to \w+: bought \w+ for \d+, sold for \d+: \+\d+ 🎉/)).toBeTruthy();
     expect(lit()?.getAttribute('data-coach')).toBe('hud-credits');
     fireEvent.click(within(bubble()!).getByRole('button', { name: 'Thanks, Bolt' }));
     expect(bubble()).toBeNull();
@@ -412,6 +417,8 @@ describe('First Flight (Bolt guides the first trade)', () => {
     // Something happens on the way: First Flight's bubble steps aside for it.
     await waitFor(() => expect(screen.queryByRole('button', { name: /Steer through|No thanks/ })).toBeTruthy());
     expect(bubble()).toBeNull();
+    // The encounter's first-time tip shows instead.
+    await waitFor(() => expect(document.querySelector('.st-tip')?.textContent).toMatch(/^Bolt: (Rocks ahead!|A trader wants to do a deal)/));
     const steer = screen.queryByRole('button', { name: /Steer through/ });
     fireEvent.click(steer ?? screen.getByRole('button', { name: 'No thanks' }));
     skipMaths();
@@ -436,3 +443,176 @@ describe('First Flight (Bolt guides the first trade)', () => {
   });
 });
 
+
+describe("Bolt's first-time tips and help with choices", () => {
+  const remembered = () => JSON.parse(localStorage.getItem('sgh-trader-coach') ?? 'null');
+  const tipBox = () => document.querySelector('.st-tip') as HTMLElement | null;
+  const type = (label: RegExp, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
+  const skipMaths = () => {
+    const skip = screen.queryByText('No thanks');
+    if (skip) fireEvent.click(skip);
+  };
+  // A pupil who skipped First Flight and hasn't seen any tips yet.
+  beforeEach(() => localStorage.setItem('sgh-trader-coach', JSON.stringify({ flight: 'skipped', run: null })));
+
+  it('a tip shows once and only once: the bank tip, closed, never comes back (even on a new visit)', async () => {
+    play();
+    await market();
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }));
+    await waitFor(() => expect(tipBox()?.textContent).toMatch(/A loan gives you credits now\. Once a week the bank adds 10%/));
+    expect(remembered().tips).toContain('bank');
+    // It sits where Bolt's next-step bar was, and Escape closes it.
+    expect(document.querySelector('.st-coach:not(.st-tip)')).toBeNull();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await waitFor(() => expect(tipBox()).toBeNull());
+    expect(document.querySelector('.st-coach')).toBeTruthy();
+    fireEvent.click(screen.getByRole('tab', { name: 'Trade' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }));
+    await act(async () => {});
+    expect(tipBox()?.textContent ?? '').not.toMatch(/A loan gives you/);
+    cleanup();
+    play();
+    await market();
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }));
+    await act(async () => {});
+    expect(tipBox()?.textContent ?? '').not.toMatch(/A loan gives you/);
+  });
+
+  it('the shipyard tour lights fuel, the ships and the moon in turn', async () => {
+    play();
+    await market();
+    fireEvent.click(screen.getByRole('tab', { name: 'Ship' }));
+    const lit = () => document.querySelector('[data-flight-lit]')?.getAttribute('data-coach');
+    await waitFor(() => expect(tipBox()?.textContent).toMatch(/Fuel and mending are here/));
+    expect(lit()).toBe('ship-fuel');
+    fireEvent.click(within(tipBox()!).getByRole('button', { name: 'Next' }));
+    expect(tipBox()?.textContent).toMatch(/Bigger ships carry more cargo/);
+    expect(lit()).toBe('ship-list');
+    fireEvent.click(within(tipBox()!).getByRole('button', { name: 'Next' }));
+    expect(tipBox()?.textContent).toMatch(/the moon you're saving for: 20,000 credits/);
+    expect(lit()).toBe('ship-moon');
+    fireEvent.click(within(tipBox()!).getByRole('button', { name: 'Got it' }));
+    expect(tipBox()).toBeNull();
+    expect(lit()).toBeUndefined();
+    // Each ship compares its holds with the pupil's.
+    expect(screen.getAllByText(/^Holds 10 → \d+ \(\+\d+\)$/).length).toBeGreaterThan(0);
+  });
+
+  it('the first Borrow asks "Sure?" with what will be owed; after that, Borrow just borrows', async () => {
+    play();
+    await market();
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Borrow 300' }));
+    expect(screen.getByText(/Sure\? Borrow 300 now\. After a week you'll owe 330\. Part of each sale pays it back\./)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    expect(remembered().tips).toContain('borrow');
+    fireEvent.click(screen.getByRole('button', { name: 'Borrow 100' }));
+    expect(screen.queryByText(/^Sure\?/)).toBeNull();
+    expect(await screen.findByText('You borrowed 100 cr.')).toBeTruthy();
+  });
+
+  it('the market shows the ⭐ best buy with the whole sum, and the ⓘ explains the two prices', async () => {
+    play();
+    await market();
+    expect(screen.getByText(/^⭐ Best buy: Costs \d+ here → \w+ pays \d+ → \+\d+ each × \d+ = \+\d+$/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'What does You buy at mean?' }));
+    expect(screen.getByRole('note').textContent).toMatch(/You buy at is what you pay the planet\. You sell at is what the planet pays you\./);
+    fireEvent.click(within(screen.getByRole('note')).getByRole('button', { name: 'Got it' }));
+    expect(screen.queryByRole('note')).toBeNull();
+  });
+
+  it('warns about customs on the star chart before the jump, and the Jump button still works', async () => {
+    const galaxy = makeGalaxy('screen-test');
+    const g = newGame(galaxy, nzDay(NOW), DEFAULT_SETTINGS);
+    // A good on sale here that a planet within the fuel in the tank bans.
+    let pick: { good: number; planet: number } | null = null;
+    for (const line of g.t.market) {
+      if (line.buy <= 0 || line.buy > g.t.credits) continue;
+      const p = galaxy.planets.find((q) => q.id !== g.t.location && isBanned(q, line.good) && distance(galaxy.planets[g.t.location], q) <= g.t.fuel);
+      if (p) { pick = { good: line.good, planet: p.id }; break; }
+    }
+    expect(pick).not.toBeNull();
+    const { good, planet } = pick!;
+    play();
+    await market();
+    const name = GOODS[good];
+    fireEvent.click(screen.getByLabelText(`Buy one ${name}`));
+    fireEvent.click(screen.getByRole('button', { name: 'Trade' }));
+    skipMaths();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Trade' }).hasAttribute('disabled')).toBe(true));
+    fireEvent.click(screen.getByRole('tab', { name: 'Star chart' }));
+    const dest = galaxy.planets[planet];
+    const { x, y } = chartPoint(dest);
+    type(/^x \(across\)/, String(x));
+    type(/^y \(up\)/, String(y));
+    const warn = await screen.findByText(new RegExp(`^🚫 ${dest.name} bans .*${name}.*\\. If customs stop you, they will take your .*1 ${name}.* and fine you\\.$`));
+    expect(warn).toBeTruthy();
+    expect((screen.getByRole('button', { name: /^Jump!/ }) as HTMLButtonElement).disabled).toBe(false);
+    // Bolt's trip ideas are words only: the boxes keep what the pupil typed.
+    expect(screen.getByText(/^Bolt's good trips from here$/)).toBeTruthy();
+    expect((screen.getByLabelText(/^x \(across\)/) as HTMLInputElement).value).toBe(String(x));
+  });
+
+  it('pirates and no laser: the first-time tip, and Bolt suggests Flee', async () => {
+    const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
+    await traderApi(trial.transport).load();
+    trial.tools.forcePirates(0);
+    play(trial);
+    expect(await screen.findByRole('heading', { name: /attack/ })).toBeTruthy();
+    await waitFor(() => expect(tipBox()?.textContent).toMatch(/Pirates! Your Flea has no lasers, so you can't fire\. Fleeing works 7 times in 10/));
+    expect(screen.getByText(/^Bolt suggests 💨 Flee:/).parentElement?.textContent).toMatch(/No lasers\. Fleeing works 7 times in 10\./);
+    const flee = screen.getByRole('button', { name: /Flee/ });
+    expect(flee.className).toMatch(/st-btn--suggest/);
+    expect(flee.getAttribute('aria-describedby')).toBe('st-fight-tip');
+    fireEvent.click(within(tipBox()!).getByRole('button', { name: 'Got it' }));
+    expect(tipBox()).toBeNull();
+    expect(remembered().tips).toContain('pirates-nolaser');
+  });
+
+  /** A galaxy where the first trip meets a friendly trader on the way. */
+  function seedWithDeal(): string {
+    const day = nzDay(NOW);
+    for (let i = 0; i < 400; i++) {
+      const seed = `deal-${i}`;
+      const galaxy = makeGalaxy(seed);
+      const g = newGame(galaxy, day, DEFAULT_SETTINGS);
+      const trip = starterTrade(galaxy, g.t);
+      if (!trip) continue;
+      const plan = g.t.market.map((_, good) => (good === trip.good ? trip.qty : 0));
+      const r = applyBatch(galaxy, seed, g, [{ type: 'trade', plan }, { type: 'jump', dest: trip.planet }], DEFAULT_SETTINGS, () => null);
+      if (r.ok && r.game.pending?.kind === 'deal') return seed;
+    }
+    throw new Error('no seed with a friendly trader');
+  }
+
+  async function meetTrader(seed: string) {
+    const trial = trialBackend({ seed, now: () => NOW });
+    const api = traderApi(trial.transport);
+    const l = await api.load();
+    if (!l.ok) throw new Error('no game');
+    const galaxy = makeGalaxy(seed);
+    const trip = starterTrade(galaxy, l.value.game.t)!;
+    const plan = l.value.game.t.market.map((_, good) => (good === trip.good ? trip.qty : 0));
+    await api.act(l.value.version, [{ type: 'trade', plan }, { type: 'jump', dest: trip.planet }]);
+    play(trial);
+    return screen.findByRole('heading', { name: /A friendly trader/ });
+  }
+
+  it('a friendly trader: the tip, and the deal helper with the working; after 3 deals the verdict waits behind "Help me decide"', async () => {
+    const seed = seedWithDeal();
+    await meetTrader(seed);
+    await waitFor(() => expect(tipBox()?.textContent).toMatch(/A trader wants to do a deal\. When you buy, a lower price is good/));
+    expect(screen.getByText(/^(They sell \w+ at \d+\. Here it costs \d+\.|They pay \d+ for your \w+\. Here pays \d+\.)/)).toBeTruthy();
+    expect(screen.getByText(/^(✅ Good deal\. Take it\.|❌ .*Say No thanks\.)$/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Help me decide' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'No thanks' }));
+    await waitFor(() => expect(remembered().deals).toBe(1));
+    cleanup();
+    localStorage.setItem('sgh-trader-coach', JSON.stringify({ flight: 'skipped', run: null, tips: ['trader'], deals: 3 }));
+    await meetTrader(seed);
+    expect(tipBox()).toBeNull();
+    expect(screen.queryByText(/^(✅|❌) .*(deal|No thanks)/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Help me decide' }));
+    expect(screen.getByText(/^(✅ Good deal\. Take it\.|❌ .*Say No thanks\.)$/)).toBeTruthy();
+  });
+});

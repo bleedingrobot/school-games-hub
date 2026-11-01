@@ -14,7 +14,8 @@ import { chartPoint, coordText, distance, signed, type Galaxy, type Planet } fro
 import { isBanned } from '../../../shared/trader/market';
 import { fuelCost, fuelNeeded, type Trader } from '../../../shared/trader/state';
 import { drawPlanet, loadSmallPlanetMaps, lookOf, planetPainted } from './art/planets';
-import { GOVERNMENT_LINES, PLANET_FACTS, goodIcon } from './text';
+import { allPrices, chartIdeas, customsWarning, pirateWarning, tradeIdeas, type ChartIdea } from './coach/advice';
+import { COACH_NAME, GOVERNMENT_LINES, PLANET_FACTS, goodIcon } from './text';
 
 const icons = new Map<string, string>();
 /** A small picture of a planet for the map (drawn once and kept; drawn again once its painting has arrived). */
@@ -84,6 +85,11 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide = null, onA
   const tooFar = need > tank;
   const here0 = chartPoint(here);
   const aimedId = target?.id ?? null;
+  // Bolt's trip ideas (docs/TRADER-HINTS-PLAN.md, 5.3): words only, never typed into the boxes for the pupil.
+  const ideas = useMemo(() => {
+    const prices = allPrices(galaxy, t.day, pushes);
+    return chartIdeas(galaxy, t, prices, tradeIdeas(galaxy, t, prices));
+  }, [galaxy, t, pushes]);
   useEffect(() => {
     onAim?.(aimedId);
   }, [aimedId, onAim]);
@@ -190,6 +196,7 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide = null, onA
             onJump={() => target && onJump(target.id)}
             here0={here0}
           />
+          {ideas.length > 0 && <TripIdeas galaxy={galaxy} ideas={ideas} />}
           {pickedPlanet ? <PlanetCard galaxy={galaxy} t={t} dest={pickedPlanet} news={newsAbout(news, pickedPlanet.id).filter((n) => n.kind !== 'event')} pushes={pushes} /> : <p className="st-sub">Tap a planet to read about it and see its coordinates.</p>}
         </div>
       </div>
@@ -267,6 +274,8 @@ function JumpBox(props: {
         ) : (
           <p className="st-soft">Fuel is worked out for you.</p>
         )}
+        {target && target.id !== here.id && customsWarning(target, t) && <p className="st-warn st-warn--customs">🚫 {customsWarning(target, t)}</p>}
+        {target && target.id !== here.id && pirateWarning(target, t) && <p className="st-warn">☠️ {pirateWarning(target, t)}</p>}
         {target && tooFar && <p className="st-warn">Your tank is too small to jump that far in one go. Plan a stop on the way.</p>}
         {target && !tooFar && short > 0 && (
           <div className="st-actions">
@@ -281,6 +290,30 @@ function JumpBox(props: {
         {t.jumpsLeft < 1 && <span className="st-soft">No jumps left today.</span>}
       </div>
       <span className="st-sr">You are at x {here0.x}, y {here0.y}.</span>
+    </div>
+  );
+}
+
+/** "Good trips from here": up to 3, each with the planet's coordinates to read and type. */
+function TripIdeas({ galaxy, ideas }: { galaxy: Galaxy; ideas: readonly ChartIdea[] }) {
+  return (
+    <div className="st-card st-ideas">
+      <h3 className="st-h3">{COACH_NAME}'s good trips from here</h3>
+      <ul>
+        {ideas.map((idea) => {
+          const p = galaxy.planets[idea.planet];
+          const good = GOODS[idea.good];
+          return (
+            <li key={idea.planet}>
+              <span aria-hidden="true">{goodIcon(idea.good)}</span>{' '}
+              {idea.onBoard
+                ? <><strong>{p.name}</strong> {coordText(p)} pays {idea.sell} for your {good} (+{idea.each} more than here). {idea.fuel} fuel.</>
+                : <>Buy {good} here, sell at <strong>{p.name}</strong> {coordText(p)}: +{idea.each} each. {idea.fuel} fuel.</>}
+            </li>
+          );
+        })}
+      </ul>
+      <p className="st-soft st-ideas__note">Type the x and y of the one you pick.</p>
     </div>
   );
 }

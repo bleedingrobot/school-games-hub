@@ -1,7 +1,7 @@
 # Star Trader: in-game hints plan
 
 Written 1 November 2026 for James, the day Star Trader went live, after reading every screen of the game (`src/games/trader/`) and its rules (`shared/trader/`).
-**Status: H.1 and H.2 built 1 Nov 2026 on branch `trader-hints` (sections 12 and 13); not merged or live. H.3 to H.5 not started.** Branch to use: `trader-hints`. Everything stays inside `src/games/trader/`: **no server change, no migration, no shared files** (one optional server change is in section 9, and it can wait).
+**Status: H.1, H.2 and H.3 built 1 Nov 2026 on branch `trader-hints` (sections 12 to 14); not merged or live. H.4 and H.5 not started.** Branch to use: `trader-hints`. Everything stays inside `src/games/trader/`: **no server change, no migration, no shared files** (one optional server change is in section 9, and it can wait).
 
 ## The short version
 
@@ -329,5 +329,49 @@ Built on branch `trader-hints`. **Not merged, nothing live.** Only files in `src
 - **The first trade can be one dear item** (in the preview: 1 Fireworks for +39, and a 19-fuel trip). James decided on 1 Nov 2026 to keep the biggest profit, so `starterTrade` stays as it is.
 - The first-time tips for encounters (pirates, junk, a trader) come in H.3, so during First Flight an encounter shows its normal panel with no Bolt words yet.
 - On a phone the bubble covers about a third of the screen. It can be moved past, but H.4's accessibility pass should look again.
+- Not tried by a child, or on a real Chromebook or iPad.
+
+## 14. Stage H.3 results (1 Nov 2026): first-time tips and help with choices
+
+Built on branch `trader-hints`. **Not merged, nothing live.** Only files in `src/games/trader/` changed: no server code, no migration, no shared files. Bolt never answers a maths question: his tips and sums are about trading only.
+
+### What's there
+| Where | What |
+|---|---|
+| `coach/tips.ts` (new) | The first-time tips of section 4, in Bolt's words, and which one fits the moment (an encounter first, then the result after customs, a wreck or a robbery, then the planet: a new day, out of jumps, the Ship tab, the Bank, the news). The first one not yet seen shows |
+| `coach/TipCard.tsx` (new) | Bolt's tip box. On the planet it sits where his next-step line goes (pinned at the top); in an encounter it sits just above the panel. "Got it", ✕ and Escape all close it. The shipyard tour has three stops ("1 of 3", Next), each lighting fuel, the ships and the moon |
+| `coach/memory.ts` | Also keeps the tips seen, the friendly-trader deals seen, what each good in the hold cost (`boughtAt`) and the last day played. **By season:** a New Season keeps First Flight and starts the rest again. A memory from before H.3 (no season) is taken as this season, so nothing is lost |
+| `coach/advice.ts` | New sums, each with its working: the ⭐ best buy line, the losing-trade line, trip ideas for the chart, the customs and pirate warnings, the deal helper, the fight suggestion, what an upgrade adds, the first-borrow "Sure?", the bank line and the trip summary |
+| Market (`Panels.tsx`) | ⭐ **Best buy:** "Costs 78 here → Phobos pays 134 → +56 each × 1 = +56" in place of the small "Sells best" line for that good. **ⓘ** on "You buy at" and "You sell at" (on a phone, where the headings are hidden, a "ⓘ Which price is mine?" button). **Losing trade:** "Phobos pays 62 more each for Fireworks. Sell there instead?" when a sale here is picked |
+| Ship tab | "🤖 Bolt suggests: +5 holds = about +100 credits a trip from here" on the next upgrade; every ship shows "Holds 10 → 20 (+10)" |
+| Star chart (`StarMap.tsx`) | "Bolt's good trips from here": up to 3 planets, with coordinates, fuel and the profit each. Words only: the boxes are never filled in. In the jump box, once a planet is typed: "🚫 Europa bans Fireworks. If customs stop you, they will take your 3 Fireworks and fine you." and "☠️ Lots of pirates around Io. Your Flea has no lasers, so it can only run." Jump! still works |
+| Friendly trader (`Encounter.tsx`) | The deal helper: the working ("They sell Ore at 30. Here it costs 36. You'd save 6 each × 8 = 48."), "It fits in your hold ✅ / You only have room for 5 ❌", "You can pay ✅ / You need 40 more credits ❌" and the verdict. After 3 deals the working and verdict wait behind "Help me decide" |
+| Pirates | "Bolt suggests" on one button, with the reason under the buttons (and read out with the button) |
+| Bank | The first Borrow asks "Sure? Borrow 300 now. After a week you'll owe 330. Part of each sale pays it back." [Borrow 300] [Not now], once. "Bolt thinks: You can already fill your hold with the best buy here. You don't need a loan right now." when that's true |
+| Trade message | After a sale: "Trip to Phobos: bought Fireworks for 237, sold for 402: +165 🎉" (or the loss, honestly) |
+| Maths check | The first "Sharp trader check" has Bolt's tip in its note line: "Get it right for a small discount. Wrong costs nothing, and No thanks skips it." |
+| First Flight | An encounter on the first jump now shows its first-time tip while First Flight waits |
+
+### Decisions made while building
+- **A tip counts as seen the moment it shows,** so it never shows twice even if the pupil doesn't close it. If the moment passes before they read it (they leave the tab, a fight starts), it is gone; it's still in Bolt's help panel in H.4.
+- **The no-laser pirate tip replaces the general one** for a ship with no laser (and says "they take some cargo, never your credits" too). A pupil who later has a laser still gets the general one, with Charge explained.
+- **The new-day welcome doesn't say "Day 4".** The game doesn't keep which day of the season it is, and counting on the device would be wrong on a second Chromebook. It says "Welcome back! A new day: 10 jumps and 1,240 credits. You're 6% of the way to your moon." plus the top news line. Not shown on a pupil's very first day.
+- **Customs warning wording:** "If customs stop you, they will take…", because customs only stop some jumps.
+- **The losing-trade line and trip ideas use the same 10% rule as H.1** ("worth a jump"), so Bolt never sends a pupil off for 1 more credit.
+- **Fight suggestion when no row of 5.5 fits** (a laser, the hull between a quarter and a half, shields still up): charge if one full shot could finish the pirates, otherwise flee. "Fleeing works about 5 times in 10" for ships whose chance isn't a round number.
+- **"About +N credits a trip"** compares the best load from here with the new holds against the best load now, using today's stock and credits. A first try (extra holds × best profit each) said +280 for a pod when only 3 Fireworks were in stock; found in the browser.
+- **The trip summary** is shown whenever goods with a known price are sold; it says "Trip to Mars" if they were bought on another planet. Prices are only known for goods bought on this device; anything else is skipped quietly.
+
+### Tests
+- `coach/choices.test.ts` (26, new): each tip shows once and only once (12 tips, each seen then gone), First Flight holds back planet tips but not encounter tips, two tips one after another, the bank tip waits while the bank is shut, the new-day words, the tour's three stops, no shipyard naming the nearest; the memory (seasons, an H.2 memory, average buy prices); the ⭐ sum; the losing-trade line on 30 galaxies; trip ideas on 30 galaxies (in reach, different planets, never a loss or a banned good); the customs and pirate warnings; deal advice for buying and selling, "fits" and "can't pay"; a fight suggestion for each row of 5.5 and the extra row; the trip summary (profit, loss, unknown price); the "Sure?" sum; the bank line.
+- `TraderGame.test.tsx` (7 new, 2 added to): a tip shown once and never again (Escape, other tabs, a new visit); the shipyard tour lighting each stop; the first-borrow "Sure?"; the ⭐ line and the ⓘ; the customs warning on the chart before the jump with Jump! still working and the boxes untouched; pirates with no laser (the tip and "Bolt suggests" Flee); a friendly trader's tip and deal helper, then "Help me decide" after 3 deals. First Flight's tests now also check the trip summary and the encounter's tip. The older screen tests play as a pupil who has seen every tip.
+- Star Trader tests: 91 pass. Whole project (`npm run test:all`): 335 files, 5,861 tests pass. Typecheck clean.
+- Checked by eye in the browser at 1366 × 640 and 844 × 390: the news tip, ⭐ line, ⓘ, the shipyard tour, the pod suggestion, the bank's "Sure?" and Bolt's line, the maths-check note, trip ideas and both warnings on the chart, a pirate fight with its tip and suggestion. Found and fixed: the tip box covered the top of the fight panel (it now sits above it), and the tip box was too tall (buttons now sit on the right, like Bolt's bar). No console errors apart from the page reloading while I edited.
+
+### Not done / untested
+- No help levels yet (H.4): every helper shows all the time, and the tips have no "show again" in a help panel yet.
+- Not seen in the browser: the customs, wrecked and robbed result tips and the out-of-jumps tip (covered by tests). The new-day welcome is only covered by tests.
+- The pirate warning shows for quite a lot of planets (9 of 24 in the preview galaxy) because it uses the same "pirates 6 or more" as the plan. Worth watching whether kids find it a nag.
+- A tip that shows while the pupil is busy can be missed (see the first decision).
 - Not tried by a child, or on a real Chromebook or iPad.
 

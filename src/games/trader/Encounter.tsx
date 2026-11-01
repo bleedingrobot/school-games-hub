@@ -1,10 +1,12 @@
 /** The things that can happen on a jump: space junk, customs, a friendly trader, and the pirate fight. */
+import { useState } from 'react';
 import { GOODS, PIRATE_TIERS, SHIPS } from '../../../shared/trader/config';
 import type { Encounter } from '../../../shared/trader/encounter';
 import type { Fight } from '../../../shared/trader/fight';
 import { laserPower, shieldPower } from '../../../shared/trader/fight';
 import type { Trader } from '../../../shared/trader/state';
-import { PIRATE_NAMES, goodIcon } from './text';
+import { dealAdvice, type FightAdvice } from './coach/advice';
+import { COACH_NAME, PIRATE_NAMES, goodIcon } from './text';
 
 const cr = (n: number): string => `${n.toLocaleString('en-NZ')} cr`;
 
@@ -45,15 +47,19 @@ export function SummaryPanel({ title, lines, button, onDone }: { title: string; 
   );
 }
 
-export function DealPanel({ offer, here, busy, onAccept, onDecline }: {
+export function DealPanel({ offer, here, busy, hideVerdict = false, onAccept, onDecline }: {
   offer: Extract<Encounter, { kind: 'trader' }>;
   here: Trader;
   busy: boolean;
+  /** Keep Bolt's working and verdict behind "Help me decide", so the pupil compares the numbers first (after 3 deals). */
+  hideVerdict?: boolean;
   onAccept: () => void;
   onDecline: () => void;
 }) {
   const name = GOODS[offer.good];
   const total = offer.price * offer.qty;
+  const advice = dealAdvice(offer, here);
+  const [open, setOpen] = useState(!hideVerdict);
   return (
     <section className="st-panel st-panel--small" aria-labelledby="st-deal-h">
       <h2 id="st-deal-h" className="st-h">A friendly trader! 👋</h2>
@@ -63,6 +69,17 @@ export function DealPanel({ offer, here, busy, onAccept, onDecline }: {
       <p className="st-sub">
         {goodIcon(offer.good)} On this planet {name} {offer.sells ? 'costs' : 'sells for'} {offer.fair}. Is that a good deal for you? You have {cr(here.credits)}.
       </p>
+      <div className="st-advice" aria-live="polite">
+        {advice.checks.map((c) => <p key={c.text} className={c.ok ? 'st-advice__ok' : 'st-advice__no'}>{c.text}</p>)}
+        {open ? (
+          <>
+            <p><strong className="st-advice__who">{COACH_NAME}:</strong> {advice.working}</p>
+            <p className="st-advice__verdict">{advice.verdict}</p>
+          </>
+        ) : (
+          <button type="button" className="st-btn st-btn--small" onClick={() => setOpen(true)}>Help me decide</button>
+        )}
+      </div>
       <div className="st-actions">
         <button type="button" className="st-btn st-btn--primary" disabled={busy} onClick={onAccept}>Take the deal</button>
         <button type="button" className="st-btn" disabled={busy} onClick={onDecline}>No thanks</button>
@@ -71,12 +88,14 @@ export function DealPanel({ offer, here, busy, onAccept, onDecline }: {
   );
 }
 
-export function FightPanel({ t, fight, tier, log, busy, onAct }: {
+export function FightPanel({ t, fight, tier, log, busy, advice, onAct }: {
   t: Trader;
   fight: Fight;
   tier: number;
   log: string[];
   busy: boolean;
+  /** Bolt's suggestion: a button and why (5.5). Advice only: every button still works. */
+  advice?: FightAdvice | null;
   onAct: (action: 'charge' | 'shield' | 'flee') => void;
 }) {
   const pirate = PIRATE_TIERS[tier];
@@ -93,10 +112,29 @@ export function FightPanel({ t, fight, tier, log, busy, onAct }: {
       </div>
       <p className="st-soft st-fight-round">Round {Math.min(fight.round + 1, 6)} of 6</p>
       <div className="st-actions st-actions--fight">
-        <button type="button" className="st-btn st-btn--primary st-btn--big" disabled={busy || !armed} onClick={() => onAct('charge')}>⚡ Charge the lasers</button>
-        <button type="button" className="st-btn st-btn--big" disabled={busy} onClick={() => onAct('shield')}>🛡️ Raise shields</button>
-        <button type="button" className="st-btn st-btn--big" disabled={busy} onClick={() => onAct('flee')}>💨 Flee ({ship.fleePct}%)</button>
+        {(['charge', 'shield', 'flee'] as const).map((move) => {
+          const tip = advice?.move === move;
+          return (
+            <button
+              key={move}
+              type="button"
+              className={`st-btn st-btn--big ${move === 'charge' ? 'st-btn--primary' : ''} ${tip ? 'st-btn--suggest' : ''}`}
+              disabled={busy || (move === 'charge' && !armed)}
+              onClick={() => onAct(move)}
+              aria-describedby={tip ? 'st-fight-tip' : undefined}
+              data-coach={`fight-${move}`}
+            >
+              {move === 'charge' ? '⚡ Charge the lasers' : move === 'shield' ? '🛡️ Raise shields' : `💨 Flee (${ship.fleePct}%)`}
+              {tip && <span className="st-suggest" aria-hidden="true">{COACH_NAME} suggests</span>}
+            </button>
+          );
+        })}
       </div>
+      {advice && (
+        <p id="st-fight-tip" className="st-advice st-advice--fight">
+          <strong className="st-advice__who">{COACH_NAME} suggests {advice.move === 'charge' ? '⚡ Charge' : advice.move === 'shield' ? '🛡️ Raise shields' : '💨 Flee'}:</strong> {advice.why}
+        </p>
+      )}
       {!armed && <p className="st-soft st-fight-hint">Your {ship.name} has no lasers yet, so all you can do is raise shields or run. Buy a laser at a shipyard!</p>}
       {armed && <p className="st-soft st-fight-hint">Charging asks a maths check: right is a full-power shot, wrong is a half-power shot.</p>}
       <ul className="st-log" aria-live="polite">
