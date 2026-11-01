@@ -17,7 +17,6 @@ export interface ServerClan {
   fightsLeft: number;
   fightNo: number;
   raidNo: number;
-  examined: string[];
   /** The mine fight in progress, if any (a refresh shows it again). */
   fight: ShownFight | null;
   settings: PracticalSettings;
@@ -49,7 +48,7 @@ export interface ClanServer {
 export function sessionFrom(state: ServerClan, previous?: Session | null): Session {
   return {
     clan: state.clan, baseSeed: state.seed, day: state.day, fightsLeft: state.fightsLeft, fightNo: state.fightNo, raidNo: state.raidNo,
-    examined: state.examined, settings: state.settings, depth: previous?.depth ?? 0, fight: state.fight, news: state.news,
+    settings: state.settings, depth: previous?.depth ?? 0, fight: state.fight, news: state.news,
     notes: state.notes, raidsOn: state.raidsOn,
     fame: state.fame, season: state.season, fightsPerDay: state.fightsPerDay, achievements: state.achievements,
     clock: state.clock ?? null,

@@ -4,7 +4,7 @@
  * calls the very same functions, so a changed browser cannot do anything the rules refuse.
  */
 import { CONFIG } from './config';
-import { buy, churchCost, freeWakes, examineCost, gainXp, hpCost, inShop, shopPrice, spCost, trainHp, trainSp, trainStat, wake, wakeCost } from './character';
+import { buy, cannotBuy, churchCost, freeWakes, gainXp, hpCost, shopPrice, spCost, trainHp, trainSp, trainStat, wake, wakeCost } from './character';
 import { buyTroops, empireOf, friendlyWar, joinFollowers, levelOf, raidKingdom, type BattleResult, type Done, type Push } from './empire';
 import { settle, type FightState } from './fight';
 import { STATS, TROOP_KINDS, type Clan, type ItemDef, type Member, type Stat, type Troops } from './types';
@@ -17,26 +17,18 @@ export const TRAIN_KEYS: readonly TrainKey[] = [...STATS, 'hp', 'sp'];
 
 const memberAt = (clan: Clan, index: number): Member | null => clan.members[index] ?? null;
 
-/** Pay the shop price and put the item on the member (swapping out what was there). */
-export function buyItem(clan: Clan, memberIndex: number, item: ItemDef): Done {
+/**
+ * Pay for an item and put it on the member (swapping out what was there). `discount` is true when the Market's maths
+ * question was answered right (the caller has checked it): 10% off.
+ */
+export function buyItem(clan: Clan, memberIndex: number, item: ItemDef, discount = false): Done {
   const m = memberAt(clan, memberIndex);
   if (!m) return no('member', 'Pick one of your clan.');
-  if (!inShop(levelOf(clan, 'smithy')).includes(item)) return no('shelf', 'The shop does not sell that yet.');
-  const price = shopPrice(item);
+  const why = cannotBuy(clan, m, item);
+  if (why) return no('shelf', why);
+  const price = shopPrice(item, discount);
   if (clan.gold < price) return no('gold', `That costs ${price} gold and the clan has ${clan.gold}.`);
-  return buy(clan, m, item) ? ok : no('gold', 'That cannot be bought right now.');
-}
-
-/** Pay to look closely at an item for a member (the real bonuses show). `examined` keeps who looked at what. */
-export function examineItemFor(clan: Clan, examined: string[], memberIndex: number, item: ItemDef): Done {
-  const m = memberAt(clan, memberIndex);
-  if (!m) return no('member', 'Pick one of your clan.');
-  const cost = examineCost(item);
-  if (clan.gold < cost) return no('gold', `Looking closely costs ${cost} gold and the clan has ${clan.gold}.`);
-  clan.gold -= cost;
-  const key = `${m.name}|${item.name}`;
-  if (!examined.includes(key)) examined.push(key);
-  return ok;
+  return buy(clan, m, item, discount) ? ok : no('gold', 'That cannot be bought right now.');
 }
 
 /** Buy `count` of something at the Training Hall (stops early if the points run out). Fails if not even one could be bought. */

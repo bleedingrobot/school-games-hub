@@ -1,13 +1,14 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { hpCost, shopPrice, spCost, trainCost } from '../../../shared/clans/character';
 import { CONFIG } from '../../../shared/clans/config';
-import { itemByName } from '../../../shared/clans/character';
-import { examineCostQuestion, marketChangeFor, marketTotal, trainingBuy, churchBill } from '../../../shared/clans/moments';
+import { itemAt } from '../../../shared/clans/items';
+import type { ItemDef } from '../../../shared/clans/types';
+import { discountQuestion, trainingBuy, churchBill } from '../../../shared/clans/moments';
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalQuestion } from '../../../shared/maths/practical';
 import { ClanQuest } from './ClanQuest';
-import { examineItem, train, trainOptions, wakeAll, wakeAllCost, wakeAllPayers, wakeMember } from './places';
+import { train, trainOptions, wakeAll, wakeAllCost, wakeAllPayers, wakeMember } from './places';
 import { makeClan, newSession, startingDrafts, type Session } from './session';
 
 const SEED = 12345;
@@ -20,7 +21,6 @@ function session(change: (s: Session) => void = () => {}): Session {
   return s;
 }
 const show = (s: Session) => render(<ClanQuest seed={SEED} initial={s} />);
-const item = (name: string) => itemByName(name)!;
 
 async function answer(u: ReturnType<typeof user>, q: PracticalQuestion, value: number) {
   const choice = q.choices?.find((c) => c.value === value);
@@ -65,122 +65,129 @@ describe('the clan page', () => {
 });
 
 describe('the Market', () => {
-  it('a wrong answer still charges the right price, and the member gets the item', async () => {
+  /** The first member's next weapon (tier 2), which a new clan can buy straight away. */
+  const firstNext = (s: Session) => itemAt(s.clan.members[0].cls, 'weapon', 2)!;
+  const buyName = (s: Session, i: ItemDef, mi = 0) => `Buy the ${i.name} for ${s.clan.members[mi].name}, ${i.price} gold`;
+
+  it('shows a card for each member: what they wear in each slot, the next item up, and what it adds', async () => {
     const u = user();
     const s = session();
     show(s);
     await u.click(screen.getByRole('button', { name: 'The Market' }));
-    await u.click(screen.getByRole('button', { name: /^Dagger/ }));
-    await u.click(screen.getByRole('button', { name: /^Buy for/ }));
-    const q = marketTotal(S, item('Dagger').price, CONFIG.shopTax, 'Dagger')!;
+    expect(screen.getAllByRole('article', { name: /'s gear$/ })).toHaveLength(s.clan.members.length);
+    const m = s.clan.members[0];
+    const card = screen.getByRole('article', { name: `${m.name}'s gear` });
+    for (const kind of ['weapon', 'armor', 'shield'] as const) {
+      expect(card).toHaveTextContent(itemAt(m.cls, kind, 1)!.name);
+      expect(card).toHaveTextContent(itemAt(m.cls, kind, 2)!.name);
+    }
+    expect(card).toHaveTextContent('(R)');
+    expect(screen.getByRole('button', { name: buyName(s, firstNext(s)) })).toBeEnabled();
+    expect(screen.queryByText(/Look closely/)).not.toBeInTheDocument();
+  });
+
+  it('a right answer to "what is 10% of the price?" takes 10% off, and the member wears the item', async () => {
+    const u = user();
+    const s = session();
+    const it2 = firstNext(s);
+    show(s);
+    await u.click(screen.getByRole('button', { name: 'The Market' }));
+    await u.click(screen.getByRole('button', { name: buyName(s, it2) }));
+    const q = discountQuestion(S, it2.price, it2.name)!;
     expect(screen.getByText(q.text)).toBeInTheDocument();
-    expect(q.text).toMatch(/^The Dagger costs 20 gold/);
+    await answer(u, q, q.answer);
+    expect(screen.getByText(/Right!/)).toBeInTheDocument();
+    await u.click(screen.getByRole('button', { name: 'Pay and wear it' }));
+    const paid = shopPrice(it2, true);
+    expect(paid).toBe(it2.price - it2.price / 10);
+    expect(screen.getByRole('status')).toHaveTextContent(`${s.clan.members[0].name} is wearing the ${it2.name}. You paid ${paid} gold (${CONFIG.shopDiscount}% off!)`);
+    expect(screen.getByRole('region', { name: 'The Market' })).toHaveTextContent(`You have ${CONFIG.startGold - paid} gold`);
+    // Tier 3 is next, and the Smithy does not sell it yet.
+    expect(screen.getByRole('article', { name: `${s.clan.members[0].name}'s gear` })).toHaveTextContent('Needs the Smithy at level 1');
+  });
+
+  it('a wrong answer or "Show me how" still buys it, at the full price', async () => {
+    const u = user();
+    const s = session();
+    const it2 = firstNext(s);
+    show(s);
+    await u.click(screen.getByRole('button', { name: 'The Market' }));
+    await u.click(screen.getByRole('button', { name: buyName(s, it2) }));
+    const q = discountQuestion(S, it2.price, it2.name)!;
     await answer(u, q, wrongFor(q));
     expect(screen.getByText(/Not quite/)).toBeInTheDocument();
     expect(screen.getByText(q.working[0])).toBeInTheDocument();
-    await u.click(screen.getByRole('button', { name: `Pay ${shopPrice(item('Dagger'))} gold` }));
-    expect(screen.getByText(new RegExp(`You paid 22 gold, and have ${CONFIG.startGold - 22} left`))).toBeInTheDocument();
-    expect(shopPrice(item('Dagger'))).toBe(22);
-  });
-
-  it('a right answer pays the same, and "Show me how" also works', async () => {
-    const u = user();
-    show(session());
-    await u.click(screen.getByRole('button', { name: 'The Market' }));
-    await u.click(screen.getByRole('button', { name: /^Dagger/ }));
-    await u.click(screen.getByRole('button', { name: /^Buy for/ }));
-    const q = marketTotal(S, 20, CONFIG.shopTax, 'Dagger')!;
-    await answer(u, q, q.answer);
-    expect(screen.getByText('Right! Well done.')).toBeInTheDocument();
-    await u.click(screen.getByRole('button', { name: 'Pay 22 gold' }));
-    expect(screen.getByText(/have 178 left/)).toBeInTheDocument();
-    // a second buy, skipping the question
-    await u.click(screen.getByRole('button', { name: 'Keep shopping' }));
-    await u.click(screen.getByRole('button', { name: /^Dagger/ }));
-    await u.click(screen.getByRole('button', { name: /^Buy for/ }));
+    await u.click(screen.getByRole('button', { name: 'Pay and wear it' }));
+    expect(screen.getByRole('status')).toHaveTextContent(`You paid ${it2.price} gold.`);
+    const armour = itemAt(s.clan.members[1].cls, 'armor', 2)!;
+    await u.click(screen.getByRole('button', { name: buyName(s, armour, 1) }));
     await u.click(screen.getByRole('button', { name: 'Show me how' }));
-    await u.click(screen.getByRole('button', { name: 'Pay 22 gold' }));
-    expect(screen.getByText(/have 156 left/)).toBeInTheDocument();
+    await u.click(screen.getByRole('button', { name: 'Pay and wear it' }));
+    expect(screen.getByRole('region', { name: 'The Market' })).toHaveTextContent(`You have ${CONFIG.startGold - it2.price - armour.price} gold`);
   });
 
-  it('checks the change after a purchase, and a new item swaps the old one', async () => {
+  it('says which Smithy level sells the next tiers, and once it does, any tier can be bought from the whole line', async () => {
     const u = user();
-    show(session((s) => { s.clan.members[0].gear.armor = 'Rags'; }));
+    const s = session();
+    const m = s.clan.members[0];
+    show(s);
     await u.click(screen.getByRole('button', { name: 'The Market' }));
-    await u.click(screen.getByRole('button', { name: 'Armour' }));
-    await u.click(screen.getByRole('button', { name: /^Cloth Robe/ }));
-    expect(screen.getByText(/has: Rags. Buying this swaps it/)).toBeInTheDocument();
-    await u.click(screen.getByRole('button', { name: /^Buy for/ }));
+    const card = screen.getByRole('article', { name: `${m.name}'s gear` });
+    await u.click(within(card).getAllByRole('button', { name: /^See all/ })[0]);
+    const line = screen.getByRole('list', { name: `${m.name}'s weapon line` });
+    expect(line.querySelectorAll(':scope > li')).toHaveLength(7);
+    expect(line).toHaveTextContent('Needs the Smithy at level 1');
+    expect(line).toHaveTextContent('Needs the Smithy at level 6');
+  });
+
+  it('skips ahead when the Smithy sells a higher tier and the purse can pay', async () => {
+    const u = user();
+    const s = session((x) => { x.clan.gold = 5000; x.clan.empire = { ...x.clan.empire!, levels: { ...x.clan.empire!.levels, smithy: 3 } }; x.clan.village.smithy = 3; });
+    const m = s.clan.members[0];
+    const four = itemAt(m.cls, 'weapon', 4)!;
+    show(s);
+    await u.click(screen.getByRole('button', { name: 'The Market' }));
+    await u.click(within(screen.getByRole('article', { name: `${m.name}'s gear` })).getAllByRole('button', { name: /^See all/ })[0]);
+    await u.click(screen.getByRole('button', { name: buyName(s, four) }));
     await u.click(screen.getByRole('button', { name: 'Show me how' }));
-    await u.click(screen.getByRole('button', { name: /^Pay/ }));
-    await u.click(screen.getByRole('button', { name: 'Check my change' }));
-    const q = marketChangeFor(S, 'Cloth Robe', shopPrice(item('Cloth Robe')))!;
-    expect(screen.getByText(q.text)).toBeInTheDocument();
-    await answer(u, q, q.answer);
-    expect(screen.getByText('Right! Well done.')).toBeInTheDocument();
-    await u.click(screen.getByRole('button', { name: 'Done' }));
-    expect(screen.getByRole('group', { name: 'Who is shopping?' })).toHaveTextContent('Cloth Robe');
+    await u.click(screen.getByRole('button', { name: 'Pay and wear it' }));
+    expect(screen.getByRole('status')).toHaveTextContent(`${m.name} is wearing the ${four.name}`);
   });
 
-  it('looking closely costs a share of the price (even after a wrong answer) and shows the real bonuses', async () => {
+  it('does not let you buy without the gold, and says how much you have', async () => {
     const u = user();
-    show(session());
+    const s = session((x) => { x.clan.gold = 5; });
+    show(s);
     await u.click(screen.getByRole('button', { name: 'The Market' }));
-    await u.click(screen.getByRole('button', { name: /^Dagger/ }));
-    expect(screen.getByText(/secret until you look closely/)).toBeInTheDocument();
-    await u.click(screen.getByRole('button', { name: /Look closely \(5 gold\)/ }));
-    const q = examineCostQuestion(S, 20)!;
-    await answer(u, q, wrongFor(q));
-    await u.click(screen.getByRole('button', { name: 'Pay 5 gold and look' }));
-    expect(screen.getByText(/Gives:/).parentElement).toHaveTextContent('+1 Dexterity, +3 Strength');
-    expect(screen.getByText(/Needs:/).parentElement).toHaveTextContent('Dexterity 3');
-    expect(screen.getByRole('region', { name: 'The Market' })).toHaveTextContent('You have 195 gold');
-  });
-
-  it('lets you compare two items you have looked at: which is the better buy', async () => {
-    const u = user();
-    show(session((s) => { s.clan.gold = 300; }));
-    const look = async (name: RegExp) => {
-      await u.click(screen.getByRole('button', { name }));
-      await u.click(screen.getByRole('button', { name: /Look closely/ }));
-      await u.click(screen.getByRole('button', { name: 'Show me how' }));
-      await u.click(screen.getByRole('button', { name: /^Pay \d+ gold and look/ }));
-    };
-    await u.click(screen.getByRole('button', { name: 'The Market' }));
-    expect(screen.queryByText(/Compare with/)).not.toBeInTheDocument();
-    await look(/^Dagger/);
-    await u.click(screen.getByRole('button', { name: 'Armour' }));
-    await look(/^Cloth Robe/);
-    // Dagger: 4 points for 20 gold (5 each). Cloth Robe: 1 point for 11 gold. The Dagger is the better buy.
-    await u.click(screen.getByRole('button', { name: 'Dagger' }));
-    expect(screen.getByText(/Which is cheaper for each one/)).toBeInTheDocument();
-    await u.click(screen.getByRole('button', { name: 'Dagger' }));
-    expect(screen.getByText('Right! Well done.')).toBeInTheDocument();
-  });
-
-  it('says so kindly when there is not enough gold, and does not charge', async () => {
-    const u = user();
-    show(session((s) => { s.clan.gold = 5; }));
-    await u.click(screen.getByRole('button', { name: 'The Market' }));
-    await u.click(screen.getByRole('button', { name: /^Dagger/ }));
-    expect(screen.getByRole('button', { name: /^Buy for/ })).toBeDisabled();
-    expect(screen.getByText(/Win some fights in the Mines/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: buyName(s, firstNext(s)) })).toBeDisabled();
     expect(screen.getByRole('region', { name: 'The Market' })).toHaveTextContent('You have 5 gold');
+  });
+
+  it('with percentages switched off there is no question: it just buys at the full price', async () => {
+    const u = user();
+    const s = session((x) => { x.settings = { ...x.settings, enabledTopics: [] }; });
+    const it2 = firstNext(s);
+    show(s);
+    await u.click(screen.getByRole('button', { name: 'The Market' }));
+    await u.click(screen.getByRole('button', { name: buyName(s, it2) }));
+    expect(screen.queryByText(/What is 10%/)).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(`You paid ${it2.price} gold.`);
   });
 
   it('buys with the keyboard alone', async () => {
     const u = user();
-    show(session());
+    const s = session();
+    const it2 = firstNext(s);
+    show(s);
     await tabTo(u, 'The Market');
     await u.keyboard('{Enter}');
-    await tabTo(u, /^Dagger/);
+    await tabTo(u, buyName(s, it2));
     await u.keyboard('{Enter}');
-    await tabTo(u, /^Buy for/);
-    await u.keyboard('{Enter}');
-    const q = marketTotal(S, 20, CONFIG.shopTax, 'Dagger')!;
-    await u.keyboard(`${q.answer}{Enter}`);
-    await u.keyboard('{Enter}'); // the "Pay" button has the focus
-    expect(screen.getByText(/have 178 left/)).toBeInTheDocument();
+    const q = discountQuestion(S, it2.price, it2.name)!;
+    if (q.choices) await tabTo(u, q.choices.find((c) => c.value === q.answer)!.label);
+    await u.keyboard(q.choices ? '{Enter}' : `${q.answer}{Enter}`);
+    await u.keyboard('{Enter}'); // "Pay and wear it" has the focus
+    expect(screen.getByRole('status')).toHaveTextContent(`You paid ${shopPrice(it2, true)} gold`);
   });
 });
 
@@ -303,15 +310,6 @@ describe('the Church', () => {
 });
 
 describe('the rules behind the places (plain functions)', () => {
-  it('examining pays the right share and remembers it once', () => {
-    const s = session();
-    const a = examineItem(s, 0, item('Axe'))!;
-    expect(a.clan.gold).toBe(CONFIG.startGold - 13);
-    expect(examineItem(a, 0, item('Axe'))!.examined).toHaveLength(1);
-    expect(examineItem({ ...s, clan: { ...s.clan, gold: 1 } }, 0, item('Axe'))).toBeNull();
-    expect(s.clan.gold).toBe(CONFIG.startGold);
-  });
-
   it('training lists a price for everything and stops when points run out', () => {
     const s = session((x) => { x.clan.members[0].points = 7; });
     const opts = trainOptions(s.clan.members[0], 0);

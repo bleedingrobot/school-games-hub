@@ -59,7 +59,7 @@ describe('How to play', () => {
     const text = container.textContent ?? '';
     const R = CONFIG.rewards;
     for (const needed of [
-      '11 fights a day', `${CONFIG.startGold} gold`, `level ${CONFIG.maxLevel}`, `${CONFIG.shopTax}%`, `${CONFIG.examinePercent}%`, `${CONFIG.pointsPerLevel} training points`,
+      '11 fights a day', `${CONFIG.startGold} gold`, `level ${CONFIG.maxLevel}`, `${CONFIG.shopDiscount}% off`, `${CONFIG.pointsPerLevel} training points`,
       `${CONFIG.empire.buildsPerDay} upgrades a day`, `${CONFIG.empire.raids.classmateLootMax}%`, `${CONFIG.empire.raids.newClanDays} days`,
       `${Math.round((CONFIG.battleCryDamage - 1) * 100)}% more damage`, `${ACHIEVEMENTS.length} to collect`,
     ]) expect(text, needed).toContain(needed);

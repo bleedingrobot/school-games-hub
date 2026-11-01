@@ -131,9 +131,9 @@ export function publicFight(fight: NonNullable<ServerState['fight']>): ShownFigh
 
 /** What the browser is told about a clan: everything it shows, nothing it could use to cheat. */
 export function publicState(state: ServerState, settings: PracticalSettings, loaded: Pick<Loaded, 'news' | 'raidsOn' | 'notes'>, extras?: Extras) {
-  const { clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight } = state;
+  const { clan, seed, day, fightsLeft, fightNo, raidNo, fight } = state;
   return {
-    clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight: fight ? publicFight(fight) : null, settings, news: loaded.news,
+    clan, seed, day, fightsLeft, fightNo, raidNo, fight: fight ? publicFight(fight) : null, settings, news: loaded.news,
     raidsOn: loaded.raidsOn ?? false, notes: loaded.notes ?? [],
     fame: extras?.fame ?? 0, season: extras?.settings.season ?? 1, fightsPerDay: extras?.settings.fightsPerDay ?? CONFIG.fightsPerDay,
     achievements: extras?.achievements ?? [],

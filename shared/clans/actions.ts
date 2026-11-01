@@ -20,6 +20,7 @@
  * saved in the same transaction). A save from before My Village is converted by `upgradeSave` when it loads.
  */
 import { DEFAULT_PRACTICAL_SETTINGS, type PracticalSettings } from '../maths/practical';
+import { earnedDiscount } from './moments';
 import { makeRunQuestions, markQuestion, sameAnswer, seededRandom, type MathsContext, type PublicQuestion } from '../maths/serverQuestions';
 import type { Question } from '../maths/skillPack';
 import { factKey, replayFight, type CryAnswer, type CryMark, type RecordedRound } from './battleCry';
@@ -29,12 +30,12 @@ import { clanFromChoices, type Draft } from './create';
 import { empireNewDay, empireOf, needsUpgrade, PUSHES, syncVillage, TAKES, upgrade, upgradeSave, type BattleResult, type Push, type Take } from './empire';
 import { bossAt, newFight, type FightState, type Order } from './fight';
 import { buySupply, markSiege, monsterOf, monsterSave, newMonsterFight, playSiege, SUPPLY_KINDS, type MonsterSetup, type Siege, type SupplyKind } from './monster';
-import { classByName, raceByName, rollMember } from './character';
+import { classByName, raceByName, refreshGear, rollMember } from './character';
 import { slotSeed } from './create';
 import { ITEMS } from './gamedata';
 import { isLook, setLook, type Look } from './looks';
 import { earnedOrNone, type Earned } from './rewards';
-import { buyItem, buyTroopMix, examineItemFor, fightSeed, payFight, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type FightSummary, type TrainKey } from './play';
+import { buyItem, buyTroopMix, fightSeed, payFight, raidSeed, sendArmyTo, trainMember, TRAIN_KEYS, wakeEveryone, wakeOne, type FightSummary, type TrainKey } from './play';
 import { classRaidsResting, newSeasonSave, type SeasonClock } from './season';
 import { buildPuzzle, finishQuest, puzzleFor, todaysQuest, type QuestPrize } from './quests';
 import { TROOP_KINDS, VILLAGE_BUILDINGS, type Clan, type Empire, type MonsterKind, type Troops, type Village, type VillageBuilding } from './types';
@@ -81,8 +82,6 @@ export interface ServerState {
   fightsLeft: number;
   fightNo: number;
   raidNo: number;
-  /** Items a member has looked at closely, as "member|item". */
-  examined: string[];
   /** The mine fight in progress, if any. */
   fight?: OpenFight | null;
 }
@@ -121,8 +120,8 @@ export interface Context {
 export type Action =
   | { type: 'load' }
   | { type: 'create'; name: string; drafts: Draft[] }
-  | { type: 'buy'; member: number; item: string }
-  | { type: 'examine'; member: number; item: string }
+  /** `answer` is the answer to the 10% discount question (null or missing: not asked, or "No thanks"). The server marks it. */
+  | { type: 'buy'; member: number; item: string; answer?: number | null }
   | { type: 'train'; member: number; key: TrainKey; count: number }
   | { type: 'wake'; member: number }
   | { type: 'look'; member: number; look: Look }
@@ -152,7 +151,9 @@ export type Action =
 export type ActionType = Action['type'];
 
 export type Result =
-  | { type: Exclude<ActionType, 'upgrade' | 'raid' | 'war' | 'quest' | 'fightStart' | 'cryCheck' | 'fightRound' | 'raidTargets' | 'raidClass' | 'monsterStart'> }
+  | { type: Exclude<ActionType, 'buy' | 'upgrade' | 'raid' | 'war' | 'quest' | 'fightStart' | 'cryCheck' | 'fightRound' | 'raidTargets' | 'raidClass' | 'monsterStart'> }
+  /** `discount`: the 10% question was answered right. */
+  | { type: 'buy'; discount: boolean }
   | { type: 'upgrade'; building: VillageBuilding; level: number }
   | { type: 'raid' | 'war'; friendly: boolean; result: BattleResult; gold: number; earned?: Earned }
   | { type: 'quest'; questId: number; text: string; right: boolean | null; prize: QuestPrize }
@@ -266,9 +267,10 @@ export function parseAction(raw: unknown): Action | null {
       if (typeof raw.name !== 'string' || !Array.isArray(raw.drafts) || raw.drafts.length > CONFIG.maxMembers) return null;
       return { type: 'create', name: raw.name, drafts: raw.drafts as Draft[] };
     }
-    case 'buy':
-    case 'examine':
-      return member !== null && typeof raw.item === 'string' ? { type: raw.type, member, item: raw.item } : null;
+    case 'buy': {
+      const answer = raw.answer === null || raw.answer === undefined ? null : typeof raw.answer === 'number' && Number.isFinite(raw.answer) ? raw.answer : undefined;
+      return member !== null && typeof raw.item === 'string' && answer !== undefined ? { type: 'buy', member, item: raw.item, answer } : null;
+    }
     case 'train': {
       const count = int(raw.count, 1, 500);
       return member !== null && count !== null && typeof raw.key === 'string' && TRAIN_KEYS.includes(raw.key as TrainKey) ? { type: 'train', member, key: raw.key as TrainKey, count } : null;
@@ -387,7 +389,7 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
     if (saved) return refuse('exists', 'You already have a clan.');
     const made = clanFromChoices(ctx.seed, action.name, action.drafts, ctx.typedNames === true);
     if (!made.ok) return refuse('create', made.say);
-    const state: ServerState = { clan: made.clan, seed: ctx.seed, day: 1, createdNzDay: ctx.today, fightsLeft: ctx.fightsPerDay ?? CONFIG.fightsPerDay, fightNo: 0, raidNo: 0, examined: [] };
+    const state: ServerState = { clan: made.clan, seed: ctx.seed, day: 1, createdNzDay: ctx.today, fightsLeft: ctx.fightsPerDay ?? CONFIG.fightsPerDay, fightNo: 0, raidNo: 0 };
     return done(state, { type: 'create' });
   }
   if (!saved) {
@@ -396,8 +398,10 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
 
   let state = structuredClone(saved);
   // A save from before My Village is converted once, here (the class village's levels come from the server).
-  const upgraded = needsUpgrade(state.clan);
+  let upgraded = needsUpgrade(state.clan);
   if (upgraded) state.clan = upgradeSave(state.clan, ctx.groupVillage ?? null);
+  // Gear from before the class lines, or from a class a member no longer is, moves onto their own class's line.
+  if (refreshGear(state.clan)) upgraded = true;
   // The night's rest waits until a fight in progress is over: it would heal the members the fight is being replayed with.
   let rested = state.fight ? false : catchUp(state, ctx.today, ctx.fightsPerDay);
   // The season: a save with no season yet is stamped with the current one (no reset); one from an earlier season starts again, but never in the middle of a fight.
@@ -425,11 +429,9 @@ function applyInner(saved: ServerState | null, action: Action, ctx: Context, fla
       return done(state, { type: 'load' }, rested || upgraded);
     case 'buy': {
       const item = ITEMS.find((i) => i.name === action.item);
-      return item ? settle(buyItem(clan, action.member, item), { type: 'buy' }) : refuse('item', 'The shop does not have that.');
-    }
-    case 'examine': {
-      const item = ITEMS.find((i) => i.name === action.item);
-      return item ? settle(examineItemFor(clan, state.examined, action.member, item), { type: 'examine' }) : refuse('item', 'The shop does not have that.');
+      if (!item) return refuse('item', 'The shop does not have that.');
+      const discount = earnedDiscount(settings, item.price, action.answer);
+      return settle(buyItem(clan, action.member, item, discount), { type: 'buy', discount });
     }
     case 'train': return settle(trainMember(clan, action.member, action.key, action.count), { type: 'train' });
     case 'wake': return settle(wakeOne(clan, action.member), { type: 'wake' });

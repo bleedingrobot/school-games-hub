@@ -3,12 +3,12 @@ import { DEFAULT_PRACTICAL_SETTINGS, TOPICS, markAnswer, type PracticalSettings 
 import { seeded } from '../seededRandom';
 import { botOrders } from './bot';
 import { cryQuestion, cryRecord, markCry, nextCryQuestion, playCryRound, replayFight, type CryAnswer, type RecordedRound } from './battleCry';
-import { churchCost, examineCost, itemByName, shopPrice, wakeCost } from './character';
+import { churchCost, shopPrice, wakeCost } from './character';
 import { CONFIG } from './config';
 import { newFight, playRound } from './fight';
 import { ITEMS } from './gamedata';
 import {
-  barracksNeeded, betterBuy, churchBill, draftJoin, energyLeft, examineCostQuestion, fameChange, itemPoints, landPlot, marketChange, marketTotal, noteFor,
+  barracksNeeded, churchBill, discountQuestion, draftJoin, earnedDiscount, energyLeft, fameChange, landPlot, marketChange, marketTotal, noteFor,
   trainingBuy, troopBill,
 } from './moments';
 import { newClan } from './sim';
@@ -157,18 +157,20 @@ describe('private records', () => {
 describe('shop and church moments use the real numbers', () => {
   const s = settings();
 
-  it('market total matches the shop price of every item, at any tax', () => {
-    for (const item of ITEMS) {
-      for (const tax of [CONFIG.shopTax, 0, 5, 20]) {
-        const q = marketTotal(s, item.price, tax)!;
-        expect(q.answer).toBe(shopPrice(item, tax));
-        expect(markAnswer(q, shopPrice(item, tax))).toBe(true);
-      }
+  it('the discount question asks for the 10% that buying takes off, for every item', () => {
+    for (const item of ITEMS.filter((i) => i.price > 0)) {
+      const q = discountQuestion(s, item.price, item.name)!;
+      expect(q.text).toContain(`${CONFIG.shopDiscount}% of ${item.price}`);
+      expect(item.price - q.answer).toBe(shopPrice(item, true));
+      expect(markAnswer(q, q.answer)).toBe(true);
+      expect(earnedDiscount(s, item.price, q.answer)).toBe(true);
+      expect(earnedDiscount(s, item.price, q.answer + 1)).toBe(false);
+      expect(earnedDiscount(s, item.price, null)).toBe(false);
     }
   });
 
-  it('the examine question matches what looking costs', () => {
-    for (const item of ITEMS) expect(examineCostQuestion(s, item.price)!.answer).toBe(examineCost(item));
+  it('supply bills still add the village tax', () => {
+    expect(marketTotal(s, 100, CONFIG.shopTax)!.answer).toBe(110);
   });
 
   it('change comes from 1,000, or the next thousand up', () => {
@@ -214,24 +216,9 @@ describe('shop and church moments use the real numbers', () => {
     expect(fameChange(settings({ yearBand: 6 }), 4, -9)!.answer).toBe(-5);
   });
 
-  it('a better buy compares what the items give for the price', () => {
-    const axe = itemByName('Axe') ?? ITEMS.find((i) => i.kind === 'weapon')!;
-    const other = ITEMS.filter((i) => i.kind === 'weapon' && i !== axe)[3];
-    const m = newClan('fighters', 1).members[0];
-    m.stats.strength = 60;
-    m.stats.dexterity = 60;
-    m.stats.agility = 60;
-    const a = { name: axe.name, price: shopPrice(axe), points: itemPoints(m, axe) };
-    const b = { name: other.name, price: shopPrice(other), points: itemPoints(m, other) };
-    const q = betterBuy(s, a, b);
-    if (q) expect(q.answer).toBe(a.price * b.points < b.price * a.points ? 1 : 2);
-    expect(betterBuy(s, { name: 'A', price: 100, points: 5 }, { name: 'B', price: 200, points: 10 })).toBeNull();
-    expect(betterBuy(s, { name: 'A', price: 500, points: 7 }, { name: 'B', price: 750, points: 8 })!.answer).toBe(1);
-    expect(betterBuy(s, { name: 'A', price: 500, points: 0 }, { name: 'B', price: 750, points: 8 })).toBeNull();
-  });
-
   it('gives nothing when the teacher has the topic off, or the band is too young', () => {
     expect(marketTotal(settings({ enabledTopics: ['area'] }), 240)).toBeNull();
+    expect(discountQuestion(settings({ enabledTopics: ['area'] }), 240)).toBeNull();
     expect(churchBill(settings({ enabledTopics: ['percentages'] }), [3])).toBeNull();
     expect(landPlot(settings({ enabledTopics: ['percentages'] }), 'barracks', 3)).toBeNull();
     expect(fameChange(settings({ yearBand: 5 }), 4, -9)).toBeNull();
@@ -239,9 +226,6 @@ describe('shop and church moments use the real numbers', () => {
   });
 
   it('every item can be asked about at the real prices (no invalid questions)', () => {
-    for (const item of ITEMS) {
-      expect(marketTotal(s, item.price)).not.toBeNull();
-      expect(marketChange(s, shopPrice(item))).not.toBeNull();
-    }
+    for (const item of ITEMS.filter((i) => i.price > 0)) expect(discountQuestion(s, item.price)).not.toBeNull();
   });
 });

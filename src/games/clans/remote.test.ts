@@ -55,9 +55,9 @@ describe('talking to the clans function', () => {
   });
 
   it('makes a session from the server\'s clan, keeping only the depth the browser chose', () => {
-    const state: ServerClan = { clan: makeClan('Test Clan', startingDrafts(5)), seed: 5, day: 3, fightsLeft: 6, fightNo: 2, raidNo: 4, examined: ['A|B'], settings: DEFAULT_PRACTICAL_SETTINGS, fight: null, news: [], raidsOn: false, notes: [], fame: 12, season: 2, fightsPerDay: 5, achievements: ['cq-first-win'] };
+    const state: ServerClan = { clan: makeClan('Test Clan', startingDrafts(5)), seed: 5, day: 3, fightsLeft: 6, fightNo: 2, raidNo: 4, settings: DEFAULT_PRACTICAL_SETTINGS, fight: null, news: [], raidsOn: false, notes: [], fame: 12, season: 2, fightsPerDay: 5, achievements: ['cq-first-win'] };
     const first = sessionFrom(state);
-    expect(first).toMatchObject({ baseSeed: 5, day: 3, fightsLeft: 6, fightNo: 2, raidNo: 4, depth: 0, examined: ['A|B'], fame: 12, season: 2, fightsPerDay: 5, achievements: ['cq-first-win'] });
+    expect(first).toMatchObject({ baseSeed: 5, day: 3, fightsLeft: 6, fightNo: 2, raidNo: 4, depth: 0, fame: 12, season: 2, fightsPerDay: 5, achievements: ['cq-first-win'] });
     expect(sessionFrom(state, { ...first, depth: 7 }).depth).toBe(7);
   });
 });

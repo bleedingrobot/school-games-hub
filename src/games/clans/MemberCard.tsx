@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { fightStats } from '../../../shared/clans/character';
+import { offhandWord } from '../../../shared/clans/items';
 import { SPELLS } from '../../../shared/clans/spells';
 import type { Member } from '../../../shared/clans/types';
 import { spellHelp } from './abilities';
@@ -63,7 +64,7 @@ export function MemberCard({ member, leader = false, onLook, children }: { membe
         <div title={CARD_HELP.star}><dt>★ Best</dt><dd>{cap(h.star.name)} {h.star.value}</dd></div>
       </dl>
       <p className="cq-gear">
-        {([['weapon', 'Weapon'], ['armor', 'Armour'], ['shield', 'Shield']] as const).map(([k, label]) => (
+        {([['weapon', 'Weapon'], ['armor', 'Armour'], ['shield', offhandWord(member.cls)]] as const).map(([k, label]) => (
           <span key={k}>{label}: {member.gear[k] ? <><ItemSprite name={member.gear[k]!} kind={k} scale={1.3} /> {member.gear[k]}</> : 'none'}</span>
         ))}
       </p>

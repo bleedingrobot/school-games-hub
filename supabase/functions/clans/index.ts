@@ -701,6 +701,8 @@ const TROOP_COST = {
 	axeman: 30,
 	knight: 60
 };
+/** Which topic a kind belongs to. */
+const topicOf = (kind) => KIND_DEFS[kind].topic;
 /** The kinds that can be asked at a year band, optionally only from these topics. */
 function kindsFor(band, topics = TOPICS$1) {
 	return KINDS.filter((k) => KIND_DEFS[k].bands.includes(band) && topics.includes(KIND_DEFS[k].topic));
@@ -796,10 +798,10 @@ const CONFIG = {
 	startGold: 200,
 	fightsPerDay: 8,
 	maxRounds: 8,
-	/** Percent added to shop prices (a fixed village tax; the class lowers it by building). */
+	/** Percent added to monster supply prices (a fixed village tax). */
 	shopTax: 10,
-	/** Percent of a price it costs to look at an item's real stats. */
-	examinePercent: 25,
+	/** Percent off an item when the Market's maths question is answered right. */
+	shopDiscount: 10,
 	/** Church: gold to wake someone is (level + 1) times this. */
 	churchPerLevel: 10,
 	/** The first this-many wake-ups each day cost nothing. */
@@ -1041,8 +1043,8 @@ const CONFIG = {
 				big: 3
 			}
 		},
-		/** A found item is never worth more than this in the shop; if nobody can use it, the clan gets half its price in gold. */
-		itemMaxPrice: 70
+		/** A found item is this tier of the finder's line; if everyone already has that or better, the clan gets half its price in gold. */
+		itemTier: 2
 	},
 	/**
 	* The OLD class village (stage C.6 part A; no longer used by the game, kept so the SQL parity test and the old night job still have these numbers). The class built these with the village chest; building to level n costs
@@ -1775,6 +1777,692 @@ function raidClassmate(attacker, defender, take, push, seed, today, raidsOn = tr
 	};
 }
 //#endregion
+//#region shared/clans/items.ts
+/** Gold for each tier (index 0 is tier 1, which every member starts with). Round tens, so 10% off is always whole. */
+const TIER_PRICES = {
+	weapon: [
+		0,
+		20,
+		50,
+		90,
+		160,
+		260,
+		450
+	],
+	armor: [
+		0,
+		20,
+		40,
+		70,
+		120,
+		200
+	],
+	shield: [
+		0,
+		20,
+		40,
+		70,
+		120,
+		200
+	]
+};
+/** How much a stat grows tier by tier (index 0 is tier 1; index 6 is only used by the top weapons). */
+const LADDERS = {
+	/** A fighter's weapon strength. */
+	big: [
+		2,
+		4,
+		7,
+		10,
+		14,
+		18,
+		22
+	],
+	/** A quick fighter's weapon dexterity. */
+	quick: [
+		2,
+		4,
+		6,
+		8,
+		10,
+		12,
+		15
+	],
+	/** A spell caster's weapon wisdom. */
+	magic: [
+		2,
+		4,
+		6,
+		9,
+		12,
+		15,
+		18
+	],
+	/** Main armour. */
+	mid: [
+		1,
+		2,
+		3,
+		5,
+		6,
+		8,
+		10
+	],
+	/** A shield's armour. */
+	guard: [
+		1,
+		2,
+		2,
+		3,
+		4,
+		5,
+		6
+	],
+	/** Light armour's agility, a robe's wisdom. */
+	light: [
+		1,
+		2,
+		3,
+		4,
+		5,
+		6,
+		8
+	],
+	/** The helpful extra. */
+	small: [
+		1,
+		1,
+		2,
+		2,
+		3,
+		3,
+		4
+	],
+	/** A quick fighter's weapon strength (damage still comes from strength). */
+	edge: [
+		1,
+		1,
+		2,
+		4,
+		6,
+		8,
+		8
+	],
+	hp: [
+		0,
+		2,
+		4,
+		5,
+		7,
+		8,
+		10
+	],
+	sp: [
+		1,
+		2,
+		3,
+		4,
+		5,
+		6,
+		8
+	]
+};
+const LINES = {
+	Barbarian: {
+		weapons: [
+			"Knobbly Club",
+			"Stone Hammer",
+			"Hand Axe",
+			"Bear Axe",
+			"Battle Axe",
+			"Thunder Axe",
+			"Great Axe"
+		],
+		weapon: {
+			strength: "big",
+			dexterity: "small"
+		},
+		top: {
+			armor: 2,
+			hp: 6
+		},
+		armours: [
+			"Rags",
+			"Fur Wrap",
+			"Hide Armour",
+			"Bone Armour",
+			"Wolf Pelt Armour",
+			"Mammoth Hide"
+		],
+		armor: {
+			armor: "mid",
+			hp: "hp"
+		},
+		offhands: [
+			"Hide Shield",
+			"Wooden Shield",
+			"Bone Shield",
+			"Spiked Shield",
+			"Tusk Shield",
+			"Mammoth Shield"
+		],
+		shield: {
+			armor: "guard",
+			hp: "small"
+		},
+		offhandWord: "Shield"
+	},
+	Warrior: {
+		weapons: [
+			"Shortsword",
+			"Mace",
+			"Broadsword",
+			"Silver Mace",
+			"Morning Star",
+			"Champion's Sword",
+			"Sky Sword"
+		],
+		weapon: {
+			strength: "big",
+			dexterity: "small"
+		},
+		top: { agility: 4 },
+		armours: [
+			"Padded Jacket",
+			"Leather Armour",
+			"Wooden Armour",
+			"Chainmail Armour",
+			"Platemail Armour",
+			"Champion's Plate"
+		],
+		armor: {
+			armor: "mid",
+			agility: "small"
+		},
+		offhands: [
+			"Round Shield",
+			"Iron Shield",
+			"Platinum Shield",
+			"Lion's Shield",
+			"Crystal Shield",
+			"Champion's Shield"
+		],
+		shield: {
+			armor: "guard",
+			agility: "small"
+		},
+		offhandWord: "Shield"
+	},
+	Knight: {
+		weapons: [
+			"Iron Sword",
+			"Knight's Mace",
+			"Long Sword",
+			"Lance",
+			"Silver Sword",
+			"Royal Sword",
+			"Falcon's Sword"
+		],
+		weapon: {
+			strength: "big",
+			dexterity: "small"
+		},
+		top: {
+			charisma: 4,
+			armor: 2
+		},
+		armours: [
+			"Quilted Coat",
+			"Ring Mail",
+			"Scale Mail",
+			"Knight's Plate",
+			"Royal Plate",
+			"Hero's Armour"
+		],
+		armor: {
+			armor: "mid",
+			hp: "hp"
+		},
+		offhands: [
+			"Kite Shield",
+			"Banner Shield",
+			"Tower Shield",
+			"Silver Shield",
+			"Royal Shield",
+			"Hero's Shield"
+		],
+		shield: {
+			armor: "guard",
+			charisma: "small"
+		},
+		offhandWord: "Shield"
+	},
+	"Martial Artist": {
+		weapons: [
+			"Hand Wraps",
+			"Bo Staff",
+			"Nunchaku",
+			"Iron Fists",
+			"Tiger Claws",
+			"Jade Staff",
+			"Dragon Fist Wraps"
+		],
+		weapon: {
+			dexterity: "quick",
+			strength: "edge"
+		},
+		top: {
+			agility: 4,
+			sp: 4
+		},
+		armours: [
+			"Cloth Tunic",
+			"Training Gi",
+			"Kai Tunic",
+			"Black Belt Gi",
+			"Tiger Gi",
+			"Master's Gi"
+		],
+		armor: {
+			agility: "light",
+			sp: "small"
+		},
+		offhands: [
+			"Cloth Bracers",
+			"Leather Bracers",
+			"Iron Bracers",
+			"Jade Bracers",
+			"Tiger Bracers",
+			"Dragon Bracers"
+		],
+		shield: {
+			agility: "small",
+			dexterity: "small",
+			sp: "sp"
+		},
+		offhandWord: "Bracers"
+	},
+	Assassin: {
+		weapons: [
+			"Dagger",
+			"Twin Daggers",
+			"Hooked Blade",
+			"Scythe",
+			"Night Blade",
+			"Moon Dagger",
+			"Shadow Fang"
+		],
+		weapon: {
+			dexterity: "quick",
+			strength: "edge"
+		},
+		top: { agility: 4 },
+		armours: [
+			"Grey Hood",
+			"Leather Vest",
+			"Night Leathers",
+			"Shadow Cloak",
+			"Silent Leathers",
+			"Midnight Cloak"
+		],
+		armor: {
+			agility: "light",
+			armor: "small"
+		},
+		offhands: [
+			"Leather Gloves",
+			"Throwing Stars",
+			"Hooked Gloves",
+			"Smoke Bombs",
+			"Shadow Gloves",
+			"Night Gloves"
+		],
+		shield: {
+			agility: "small",
+			dexterity: "small",
+			sp: "sp"
+		},
+		offhandWord: "Gloves"
+	},
+	Pirate: {
+		weapons: [
+			"Cutlass",
+			"Boarding Axe",
+			"Sabre",
+			"Boomerang",
+			"Sea Sabre",
+			"Coral Cutlass",
+			"Storm Cutlass"
+		],
+		weapon: {
+			dexterity: "quick",
+			strength: "edge"
+		},
+		top: {
+			charisma: 4,
+			hp: 4
+		},
+		armours: [
+			"Striped Shirt",
+			"Sea Coat",
+			"Captain's Vest",
+			"Leather Longcoat",
+			"Admiral's Coat",
+			"Storm Coat"
+		],
+		armor: {
+			agility: "light",
+			hp: "hp"
+		},
+		offhands: [
+			"Wooden Buckler",
+			"Brass Buckler",
+			"Ship's Buckler",
+			"Anchor Buckler",
+			"Captain's Buckler",
+			"Storm Buckler"
+		],
+		shield: {
+			agility: "light",
+			charisma: "small"
+		},
+		offhandWord: "Buckler"
+	},
+	Samurai: {
+		weapons: [
+			"Wooden Sword",
+			"Short Blade",
+			"Curved Sword",
+			"Steel Blade",
+			"Crane Blade",
+			"Moon Blade",
+			"Dawn Blade"
+		],
+		weapon: {
+			dexterity: "quick",
+			strength: "edge"
+		},
+		top: { sp: 3 },
+		armours: [
+			"Padded Robe",
+			"Bamboo Armour",
+			"Lacquered Armour",
+			"Plated Robe",
+			"Crane Armour",
+			"Moon Armour"
+		],
+		armor: {
+			agility: "light",
+			armor: "small"
+		},
+		offhands: [
+			"Paper Fan",
+			"War Fan",
+			"Iron Fan",
+			"Crane Fan",
+			"Steel Fan",
+			"Moon Fan"
+		],
+		shield: {
+			dexterity: "small",
+			agility: "small",
+			sp: "sp"
+		},
+		offhandWord: "Fan"
+	},
+	Healer: {
+		weapons: [
+			"Staff",
+			"Willow Rod",
+			"Ash Staff",
+			"Silver Sceptre",
+			"Light Staff",
+			"Crystal Sceptre",
+			"Sunrise Sceptre"
+		],
+		weapon: {
+			wisdom: "magic",
+			sp: "sp"
+		},
+		top: { sp: 2 },
+		armours: [
+			"Cloth Robe",
+			"Linen Robe",
+			"White Robe",
+			"Silver Robe",
+			"Dawn Robe",
+			"Sunlight Robe"
+		],
+		armor: {
+			wisdom: "light",
+			armor: "small",
+			hp: "small"
+		},
+		offhands: [
+			"Herb Pouch",
+			"Lucky Charm",
+			"Book of Herbs",
+			"Sun Charm",
+			"Healing Orb",
+			"Golden Sun Charm"
+		],
+		shield: {
+			sp: "sp",
+			wisdom: "small",
+			charisma: "small"
+		},
+		offhandWord: "Charm"
+	},
+	Sorcerer: {
+		weapons: [
+			"Wand",
+			"Spark Wand",
+			"Flame Staff",
+			"Crystal Wand",
+			"Blaze Staff",
+			"Inferno Staff",
+			"Ember Rod"
+		],
+		weapon: {
+			wisdom: "magic",
+			sp: "sp"
+		},
+		top: { wisdom: 1 },
+		armours: [
+			"Grey Robe",
+			"Red Robe",
+			"Ember Robe",
+			"Flame Robe",
+			"Phoenix Robe",
+			"Firestorm Robe"
+		],
+		armor: {
+			wisdom: "light",
+			armor: "small",
+			hp: "small"
+		},
+		offhands: [
+			"Ember Stone",
+			"Spark Charm",
+			"Flame Orb",
+			"Book of Fire",
+			"Phoenix Feather",
+			"Sun Orb"
+		],
+		shield: {
+			sp: "sp",
+			wisdom: "small",
+			charisma: "small"
+		},
+		offhandWord: "Charm"
+	},
+	Necromancer: {
+		weapons: [
+			"Bone Wand",
+			"Raven Staff",
+			"Moonstone Wand",
+			"Shadow Staff",
+			"Ghost Staff",
+			"Night Sceptre",
+			"Moonbone Staff"
+		],
+		weapon: {
+			wisdom: "magic",
+			sp: "sp"
+		},
+		top: { hp: 4 },
+		armours: [
+			"Dark Robe",
+			"Raven Robe",
+			"Shadow Robe",
+			"Moonlit Robe",
+			"Ghostly Robe",
+			"Midnight Robe"
+		],
+		armor: {
+			wisdom: "light",
+			armor: "small",
+			hp: "small"
+		},
+		offhands: [
+			"Raven Feather",
+			"Candle Lantern",
+			"Spirit Book",
+			"Moonstone",
+			"Ghost Lantern",
+			"Night Orb"
+		],
+		shield: {
+			sp: "sp",
+			wisdom: "small",
+			charisma: "small"
+		},
+		offhandWord: "Charm"
+	},
+	Wizard: {
+		weapons: [
+			"Apprentice Wand",
+			"Oak Staff",
+			"Rune Wand",
+			"Wizard's Staff",
+			"Star Wand",
+			"Star Staff",
+			"Starfall Staff"
+		],
+		weapon: {
+			wisdom: "magic",
+			sp: "sp"
+		},
+		top: { hp: 4 },
+		armours: [
+			"Apprentice Robe",
+			"Wool Robe",
+			"Blue Robe",
+			"Rune Robe",
+			"Mage Robe",
+			"Star Robe"
+		],
+		armor: {
+			wisdom: "light",
+			armor: "small",
+			hp: "hp"
+		},
+		offhands: [
+			"Spell Book",
+			"Crystal Orb",
+			"Rune Tome",
+			"Moon Orb",
+			"Star Charm",
+			"Book of Stars"
+		],
+		shield: {
+			sp: "sp",
+			wisdom: "small",
+			charisma: "small"
+		},
+		offhandWord: "Charm"
+	}
+};
+function makeItem(cls, kind, name, tier, gives, top = {}) {
+	const bonus = {};
+	for (const [stat, ladder] of Object.entries(gives)) {
+		const v = LADDERS[ladder][tier - 1];
+		if (v) bonus[stat] = v;
+	}
+	for (const [stat, v] of Object.entries(top)) bonus[stat] = (bonus[stat] ?? 0) + v;
+	return {
+		name,
+		kind,
+		cls,
+		tier,
+		price: TIER_PRICES[kind][tier - 1],
+		bonus
+	};
+}
+const ITEMS$1 = Object.entries(LINES).flatMap(([cls, line]) => [
+	...line.weapons.map((n, i) => makeItem(cls, "weapon", n, i + 1, line.weapon, i === line.weapons.length - 1 ? line.top : {})),
+	...line.armours.map((n, i) => makeItem(cls, "armor", n, i + 1, line.armor)),
+	...line.offhands.map((n, i) => makeItem(cls, "shield", n, i + 1, line.shield))
+]);
+/** The item at a tier of a class's line (undefined past the top). */
+const itemAt = (cls, kind, tier) => ITEMS$1.find((i) => i.cls === cls && i.kind === kind && i.tier === tier);
+/**
+* The highest tier the Smithy sells at each level, 0 to 6. Tier 2 is on sale from the start (everyone already has tier 1),
+* each level adds one more, and the class's own top weapon (tier 7) needs a fully built Smithy.
+*/
+const SMITHY_TIERS = [
+	2,
+	3,
+	4,
+	5,
+	6,
+	6,
+	7
+];
+const unlockedTier = (smithy) => SMITHY_TIERS[Math.max(0, Math.min(SMITHY_TIERS.length - 1, smithy))];
+/** The Smithy level that first sells a tier. */
+const smithyFor = (tier) => Math.max(0, SMITHY_TIERS.findIndex((t) => t >= tier));
+/**
+* The tier each item from before the class lines counts as, from its old price. Only the one-off gear conversion
+* (`refreshGear`) reads it.
+*/
+const OLD_ITEM_TIERS = {
+	"Knobbly Club": 1,
+	Staff: 1,
+	Dagger: 2,
+	Wand: 2,
+	Mace: 3,
+	Axe: 3,
+	"Great Axe": 3,
+	Shortsword: 3,
+	Scythe: 3,
+	"Silver Mace": 3,
+	Broadsword: 3,
+	"Battle Axe": 3,
+	"Morning Star": 4,
+	"Wizard's Staff": 4,
+	Boomerang: 4,
+	"Thunder Axe": 4,
+	"Moon Blade": 5,
+	"Falcon's Sword": 5,
+	"Sky Sword": 6,
+	Rags: 1,
+	"Cloth Robe": 1,
+	"Leather Armor": 2,
+	"Wooden Armor": 2,
+	"Cloth Tunic": 2,
+	"Chainmail Armor": 3,
+	"Platemail Armor": 3,
+	"Kai Tunic": 3,
+	"Hero's Armor": 5,
+	"Wooden Shield": 1,
+	"Iron Shield": 2,
+	"Platinum Shield": 3,
+	"Crystal Shield": 3,
+	"Lion's Shield": 3,
+	"Hero's Shield": 5
+};
+//#endregion
 //#region shared/clans/gamedata.ts
 const RACES = [
 	{
@@ -2092,461 +2780,6 @@ const CLASSES = [
 		"hp": 10,
 		"sp": 5,
 		"spells": [8, 9]
-	}
-];
-const ITEMS$1 = [
-	{
-		"name": "Shortsword",
-		"kind": "weapon",
-		"price": 65,
-		"bonus": {
-			"strength": 5,
-			"agility": -1
-		},
-		"needs": {
-			"strength": 6,
-			"agility": 4,
-			"dexterity": 6
-		},
-		"shopLevel": 6
-	},
-	{
-		"name": "Broadsword",
-		"kind": "weapon",
-		"price": 75,
-		"bonus": {
-			"strength": 6,
-			"agility": -2,
-			"dexterity": 1,
-			"charisma": 1
-		},
-		"needs": {
-			"strength": 10,
-			"dexterity": 6
-		},
-		"shopLevel": 6
-	},
-	{
-		"name": "Axe",
-		"kind": "weapon",
-		"price": 50,
-		"bonus": {
-			"strength": 7,
-			"dexterity": -1,
-			"agility": -2,
-			"charisma": 1
-		},
-		"needs": { "strength": 13 },
-		"shopLevel": 6
-	},
-	{
-		"name": "Mace",
-		"kind": "weapon",
-		"price": 45,
-		"bonus": {
-			"strength": 4,
-			"dexterity": 1
-		},
-		"needs": {
-			"strength": 4,
-			"agility": 3,
-			"dexterity": 5
-		},
-		"shopLevel": 6
-	},
-	{
-		"name": "Dagger",
-		"kind": "weapon",
-		"price": 20,
-		"bonus": {
-			"strength": 3,
-			"dexterity": 1
-		},
-		"needs": { "dexterity": 3 },
-		"shopLevel": 6
-	},
-	{
-		"name": "Staff",
-		"kind": "weapon",
-		"price": 13,
-		"bonus": {
-			"strength": 5,
-			"agility": -1,
-			"dexterity": 1
-		},
-		"needs": {
-			"agility": 6,
-			"dexterity": 9
-		},
-		"shopLevel": 6
-	},
-	{
-		"name": "Wand",
-		"kind": "weapon",
-		"price": 25,
-		"bonus": {
-			"strength": 1,
-			"dexterity": 1,
-			"wisdom": 4
-		},
-		"needs": { "wisdom": 11 },
-		"shopLevel": 6
-	},
-	{
-		"name": "Battle Axe",
-		"kind": "weapon",
-		"price": 75,
-		"bonus": {
-			"strength": 8,
-			"agility": -1,
-			"dexterity": -3,
-			"charisma": 1
-		},
-		"needs": { "strength": 13 },
-		"shopLevel": 5
-	},
-	{
-		"name": "Morning Star",
-		"kind": "weapon",
-		"price": 80,
-		"bonus": {
-			"strength": 5,
-			"dexterity": 2
-		},
-		"needs": {
-			"strength": 6,
-			"agility": 8,
-			"dexterity": 7
-		},
-		"shopLevel": 4
-	},
-	{
-		"name": "Scythe",
-		"kind": "weapon",
-		"price": 65,
-		"bonus": {
-			"strength": 3,
-			"dexterity": 3
-		},
-		"needs": {
-			"strength": 2,
-			"agility": 4,
-			"dexterity": 3
-		},
-		"shopLevel": 3
-	},
-	{
-		"name": "Boomerang",
-		"kind": "weapon",
-		"price": 110,
-		"bonus": {
-			"strength": 5,
-			"dexterity": 4
-		},
-		"needs": {
-			"strength": 2,
-			"agility": 6,
-			"dexterity": 7
-		},
-		"shopLevel": 2
-	},
-	{
-		"name": "Falcon's Sword",
-		"kind": "weapon",
-		"price": 250,
-		"bonus": {
-			"strength": 8,
-			"agility": -3,
-			"dexterity": 1,
-			"charisma": 3
-		},
-		"needs": {
-			"strength": 12,
-			"dexterity": 10
-		},
-		"shopLevel": 1
-	},
-	{
-		"name": "Sky Sword",
-		"kind": "weapon",
-		"price": 500,
-		"bonus": {
-			"strength": 22,
-			"dexterity": 2,
-			"charisma": 5
-		},
-		"needs": {
-			"strength": 10,
-			"dexterity": 6
-		},
-		"shopLevel": 0
-	},
-	{
-		"name": "Knobbly Club",
-		"kind": "weapon",
-		"price": 10,
-		"bonus": {
-			"strength": 6,
-			"agility": -1,
-			"dexterity": -1
-		},
-		"needs": {
-			"agility": 7,
-			"dexterity": 9,
-			"strength": 8
-		},
-		"shopLevel": 2
-	},
-	{
-		"name": "Thunder Axe",
-		"kind": "weapon",
-		"price": 150,
-		"bonus": {
-			"strength": 8,
-			"agility": -3,
-			"dexterity": -1
-		},
-		"needs": {
-			"agility": 8,
-			"dexterity": 8,
-			"strength": 13
-		},
-		"shopLevel": 1
-	},
-	{
-		"name": "Moon Blade",
-		"kind": "weapon",
-		"price": 200,
-		"bonus": {
-			"strength": 8,
-			"agility": -1,
-			"dexterity": -1
-		},
-		"needs": {
-			"agility": 11,
-			"dexterity": 5,
-			"strength": 10
-		},
-		"shopLevel": 1
-	},
-	{
-		"name": "Wizard's Staff",
-		"kind": "weapon",
-		"price": 100,
-		"bonus": {
-			"strength": 2,
-			"wisdom": 6,
-			"dexterity": 2,
-			"agility": 1
-		},
-		"needs": { "wisdom": 11 },
-		"shopLevel": 6
-	},
-	{
-		"name": "Cloth Robe",
-		"kind": "armor",
-		"price": 11,
-		"bonus": { "armor": 1 },
-		"needs": {},
-		"shopLevel": 6
-	},
-	{
-		"name": "Leather Armor",
-		"kind": "armor",
-		"price": 25,
-		"bonus": {
-			"armor": 2,
-			"agility": -1,
-			"dexterity": -1
-		},
-		"needs": {
-			"strength": 9,
-			"dexterity": 7
-		},
-		"shopLevel": 6
-	},
-	{
-		"name": "Chainmail Armor",
-		"kind": "armor",
-		"price": 40,
-		"bonus": {
-			"armor": 3,
-			"agility": -2,
-			"dexterity": -1
-		},
-		"needs": {
-			"strength": 12,
-			"dexterity": 8
-		},
-		"shopLevel": 6
-	},
-	{
-		"name": "Platemail Armor",
-		"kind": "armor",
-		"price": 55,
-		"bonus": {
-			"armor": 4,
-			"agility": -3,
-			"dexterity": -2,
-			"charisma": 1
-		},
-		"needs": {
-			"strength": 14,
-			"dexterity": 9
-		},
-		"shopLevel": 6
-	},
-	{
-		"name": "Wooden Armor",
-		"kind": "armor",
-		"price": 25,
-		"bonus": {
-			"armor": 3,
-			"agility": -1,
-			"dexterity": -1
-		},
-		"needs": {
-			"strength": 9,
-			"dexterity": 6
-		},
-		"shopLevel": 6
-	},
-	{
-		"name": "Cloth Tunic",
-		"kind": "armor",
-		"price": 25,
-		"bonus": { "armor": 2 },
-		"needs": { "dexterity": 5 },
-		"shopLevel": 5
-	},
-	{
-		"name": "Kai Tunic",
-		"kind": "armor",
-		"price": 75,
-		"bonus": { "armor": 3 },
-		"needs": {
-			"agility": 9,
-			"dexterity": 8
-		},
-		"shopLevel": 3
-	},
-	{
-		"name": "Hero's Armor",
-		"kind": "armor",
-		"price": 225,
-		"bonus": {
-			"armor": 4,
-			"agility": -2,
-			"dexterity": -1,
-			"charisma": 2
-		},
-		"needs": {
-			"strength": 12,
-			"dexterity": 10
-		},
-		"shopLevel": 2
-	},
-	{
-		"name": "Rags",
-		"kind": "armor",
-		"price": 5,
-		"bonus": { "armor": 1 },
-		"needs": {},
-		"shopLevel": 5
-	},
-	{
-		"name": "Wooden Shield",
-		"kind": "shield",
-		"price": 15,
-		"bonus": { "armor": 1 },
-		"needs": { "strength": 10 },
-		"shopLevel": 6
-	},
-	{
-		"name": "Iron Shield",
-		"kind": "shield",
-		"price": 25,
-		"bonus": {
-			"armor": 2,
-			"dexterity": -1
-		},
-		"needs": { "strength": 13 },
-		"shopLevel": 6
-	},
-	{
-		"name": "Platinum Shield",
-		"kind": "shield",
-		"price": 45,
-		"bonus": {
-			"charisma": 1,
-			"armor": 2
-		},
-		"needs": { "strength": 11 },
-		"shopLevel": 6
-	},
-	{
-		"name": "Crystal Shield",
-		"kind": "shield",
-		"price": 65,
-		"bonus": {
-			"charisma": 3,
-			"armor": 3
-		},
-		"needs": {
-			"strength": 12,
-			"agility": 8
-		},
-		"shopLevel": 5
-	},
-	{
-		"name": "Hero's Shield",
-		"kind": "shield",
-		"price": 250,
-		"bonus": {
-			"charisma": 5,
-			"armor": 4
-		},
-		"needs": {
-			"strength": 13,
-			"agility": 10
-		},
-		"shopLevel": 2
-	},
-	{
-		"name": "Silver Mace",
-		"kind": "weapon",
-		"price": 65,
-		"bonus": {
-			"strength": 6,
-			"dexterity": 1
-		},
-		"needs": {
-			"strength": 3,
-			"agility": 3,
-			"dexterity": 5
-		},
-		"shopLevel": 3
-	},
-	{
-		"name": "Lion's Shield",
-		"kind": "shield",
-		"price": 70,
-		"bonus": { "armor": 2 },
-		"needs": { "strength": 7 },
-		"shopLevel": 2
-	},
-	{
-		"name": "Great Axe",
-		"kind": "weapon",
-		"price": 50,
-		"bonus": {
-			"strength": 9,
-			"dexterity": -1,
-			"agility": -2,
-			"charisma": 1
-		},
-		"needs": { "strength": 15 },
-		"shopLevel": 2
 	}
 ];
 const MONSTERS = [
@@ -3254,9 +3487,14 @@ const MONSTERS = [
 //#endregion
 //#region shared/clans/character.ts
 /** Making and growing clan members: rolling stats, gear, levels, training, the Church and the shop. */
+const GEAR_KINDS = [
+	"weapon",
+	"armor",
+	"shield"
+];
 const raceByName = (name) => RACES.find((r) => r.name === name);
 const classByName = (name) => CLASSES.find((c) => c.name === name);
-const itemByName$1 = (name) => ITEMS$1.find((i) => i.name === name);
+const itemByName = (name) => ITEMS$1.find((i) => i.name === name);
 const emptyStats = () => ({
 	agility: 0,
 	dexterity: 0,
@@ -3269,6 +3507,7 @@ const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 /**
 * Race + class, then a small roll (-1 to +1 on each stat, -2 to +2 on HP and SP) for "Roll again".
 * The clan leader gets +2 on every stat but armour and +4 HP. Same dice state, same roll.
+* Every member starts wearing tier 1 of their class's line in each slot.
 */
 function rollMember(dice, name, race, cls, leader = false) {
 	const r = raceByName(race);
@@ -3281,7 +3520,7 @@ function rollMember(dice, name, race, cls, leader = false) {
 	}
 	const maxHp = Math.max(5, r.hp + c.hp + roll(dice, 5) - 2 + (leader ? 4 : 0));
 	const maxSp = Math.max(0, r.sp + c.sp + roll(dice, 5) - 2);
-	return {
+	const m = {
 		name,
 		race,
 		cls,
@@ -3297,14 +3536,13 @@ function rollMember(dice, name, race, cls, leader = false) {
 		points: 0,
 		knockedOut: false
 	};
+	for (const kind of GEAR_KINDS) {
+		const first = itemAt(cls, kind, 1);
+		if (first) wear(m, first);
+	}
+	return m;
 }
-/** Gear bonuses count only if the member's base stats meet the item's needs. */
-function usableBonus(m, item) {
-	if (!item) return {};
-	for (const s of STATS) if ((item.needs[s] ?? 0) > m.stats[s]) return {};
-	return item.bonus;
-}
-/** What a member fights with: base stats plus usable gear. */
+/** What a member fights with: base stats plus their gear. */
 function fightStats(m) {
 	const out = { ...m.stats };
 	for (const name of [
@@ -3312,10 +3550,56 @@ function fightStats(m) {
 		m.gear.armor,
 		m.gear.shield
 	]) {
-		const bonus = usableBonus(m, name ? itemByName$1(name) : void 0);
+		const bonus = name ? itemByName(name)?.bonus ?? {} : {};
 		for (const s of STATS) out[s] = clamp(out[s] + (bonus[s] ?? 0), 0, CONFIG.statCap);
 	}
 	return out;
+}
+/** The member's item in a slot, if it is one the shop knows. */
+const wornItem = (m, kind) => m.gear[kind] ? itemByName(m.gear[kind]) : void 0;
+/** The tier the member wears in a slot (0 if nothing, or something from another class's line). */
+function wornTier(m, kind) {
+	const item = wornItem(m, kind);
+	return item && item.cls === m.cls ? item.tier : 0;
+}
+/** Put an item on (swapping out what was there). Its HP and SP move the member's max HP and SP. */
+function wear(m, item) {
+	const old = wornItem(m, item.kind)?.bonus ?? {};
+	const hp = (item.bonus.hp ?? 0) - (old.hp ?? 0);
+	const sp = (item.bonus.sp ?? 0) - (old.sp ?? 0);
+	m.maxHp = Math.max(1, m.maxHp + hp);
+	m.maxSp = Math.max(0, m.maxSp + sp);
+	if (!m.knockedOut) m.hp = clamp(m.hp + hp, 1, m.maxHp);
+	m.sp = clamp(m.sp + sp, 0, m.maxSp);
+	m.gear[item.kind] = item.name;
+}
+/**
+* Keep every member's gear on their own class's line. A save from before the class lines (no `gearVersion`) has each old
+* item swapped for the same slot's item in the member's line at the tier its old price was worth. After that, an item from
+* another class's line (a member who picked a new class) becomes the same tier of their own, and an empty slot gets tier 1.
+* Returns true if anything changed.
+*/
+function refreshGear(clan) {
+	let changed = false;
+	const old = clan.gearVersion !== 2;
+	for (const m of clan.members) for (const kind of GEAR_KINDS) {
+		const name = m.gear[kind];
+		const item = name ? itemByName(name) : void 0;
+		if (!old && item && item.cls === m.cls) continue;
+		const tier = old ? name ? OLD_ITEM_TIERS[name] ?? item?.tier ?? 1 : 1 : item?.tier ?? 1;
+		const fresh = itemAt(m.cls, kind, tier) ?? itemAt(m.cls, kind, 1);
+		if (!fresh) continue;
+		if (old && item) delete m.gear[kind];
+		if (fresh.name !== m.gear[kind]) {
+			wear(m, fresh);
+			changed = true;
+		}
+	}
+	if (old) {
+		clan.gearVersion = 2;
+		changed = true;
+	}
+	return changed;
 }
 /** Add experience and level up as often as it earns. Returns how many levels were gained. */
 function gainXp(m, amount) {
@@ -3372,17 +3656,20 @@ function wake(clan, m) {
 	m.hp = Math.max(1, Math.ceil(m.maxHp / 2));
 	return true;
 }
-/** Shop price including the village tax, rounded up. */
-const shopPrice = (item, tax = CONFIG.shopTax) => Math.ceil(item.price * (100 + tax) / 100);
-/** Cost to look at an item's real stats. */
-const examineCost = (item) => Math.ceil(item.price * CONFIG.examinePercent / 100);
-/** What the Smithy has on its shelves at a given level. */
-const inShop = (smithy) => ITEMS$1.filter((i) => i.shopLevel >= 6 - smithy);
-function buy(clan, m, item) {
-	const price = shopPrice(item);
-	if (clan.gold < price || !inShop(levelOf(clan, "smithy")).includes(item)) return false;
+/** What an item costs: its price, or 10% less with the discount (the Market's maths question answered right). */
+const shopPrice = (item, discount = false) => discount ? item.price - Math.round(item.price * CONFIG.shopDiscount / 100) : item.price;
+/** Why this member can't buy this item now, or null if they can (gold aside). */
+function cannotBuy(clan, m, item) {
+	if (item.cls !== m.cls) return `That is for a ${item.cls}, and ${m.name} is a ${m.cls}.`;
+	if (item.tier <= wornTier(m, item.kind)) return `${m.name} already has something as good.`;
+	if (item.tier > unlockedTier(levelOf(clan, "smithy"))) return `The Smithy needs to be level ${smithyFor(item.tier)} to sell that.`;
+	return null;
+}
+function buy(clan, m, item, discount = false) {
+	const price = shopPrice(item, discount);
+	if (clan.gold < price || cannotBuy(clan, m, item)) return false;
 	clan.gold -= price;
-	m.gear[item.kind] = item.name;
+	wear(m, item);
 	return true;
 }
 /** Overnight: everyone wakes up healed. */
@@ -10633,6 +10920,39 @@ async function recordMathsAnswers(rpc, player, answers, once, from, batchId = (o
 	return result;
 }
 //#endregion
+//#region shared/clans/moments.ts
+/**
+* The maths moments in the shop, the Training Hall, the Church, on a building plan and at the barracks.
+* Each takes the real numbers (the actual price, tax, level, member count) and makes the
+* question from them, or returns null when the teacher has that topic switched off.
+*
+* A wrong answer never blocks anything: the caller shows the working and carries on with the
+* right amount, which is always `question.answer` (the tests check it matches what the engine
+* really charges). Maths here is how you check the bill, not a gate.
+*/
+function moment(settings, kind, nums, labels, item, about) {
+	if (!topicAvailable(settings, topicOf(kind))) return null;
+	return buildQuestion(kind, nums, {
+		labels,
+		item,
+		about
+	});
+}
+/** Market: "What is 10% of 80 gold?" Answered right, the item is 10% off (`shopPrice`). The server asks it again to mark it. */
+function discountQuestion(settings, price, item) {
+	const q = price > 0 ? moment(settings, "percent-of", [CONFIG.shopDiscount, price]) : null;
+	return q && {
+		...q,
+		text: `${item ? `The ${item}` : "It"} costs ${price} gold. What is ${CONFIG.shopDiscount}% of ${price}?`,
+		unit: "gold"
+	};
+}
+/** True if `answer` is right for an item's discount question (and the question is on for the class). */
+function earnedDiscount(settings, price, answer) {
+	const q = answer === null || answer === void 0 ? null : discountQuestion(settings, price);
+	return q !== null && answer === q.answer;
+}
+//#endregion
 //#region shared/space/mathsQuestion.ts
 /**
 * Which question Mission Control asks next: the same choice in the bot game (the browser) and
@@ -10993,6 +11313,7 @@ function makeClan(name, drafts) {
 		members: drafts.map((d, i) => draftMember(d, i)),
 		gold: CONFIG.startGold,
 		followers: 0,
+		gearVersion: 2,
 		village: {
 			trainingHall: 0,
 			smithy: 0,
@@ -11330,25 +11651,18 @@ const TRAIN_KEYS = [
 	"sp"
 ];
 const memberAt = (clan, index) => clan.members[index] ?? null;
-/** Pay the shop price and put the item on the member (swapping out what was there). */
-function buyItem(clan, memberIndex, item) {
+/**
+* Pay for an item and put it on the member (swapping out what was there). `discount` is true when the Market's maths
+* question was answered right (the caller has checked it): 10% off.
+*/
+function buyItem(clan, memberIndex, item, discount = false) {
 	const m = memberAt(clan, memberIndex);
 	if (!m) return no("member", "Pick one of your clan.");
-	if (!inShop(levelOf(clan, "smithy")).includes(item)) return no("shelf", "The shop does not sell that yet.");
-	const price = shopPrice(item);
+	const why = cannotBuy(clan, m, item);
+	if (why) return no("shelf", why);
+	const price = shopPrice(item, discount);
 	if (clan.gold < price) return no("gold", `That costs ${price} gold and the clan has ${clan.gold}.`);
-	return buy(clan, m, item) ? ok : no("gold", "That cannot be bought right now.");
-}
-/** Pay to look closely at an item for a member (the real bonuses show). `examined` keeps who looked at what. */
-function examineItemFor(clan, examined, memberIndex, item) {
-	const m = memberAt(clan, memberIndex);
-	if (!m) return no("member", "Pick one of your clan.");
-	const cost = examineCost(item);
-	if (clan.gold < cost) return no("gold", `Looking closely costs ${cost} gold and the clan has ${clan.gold}.`);
-	clan.gold -= cost;
-	const key = `${m.name}|${item.name}`;
-	if (!examined.includes(key)) examined.push(key);
-	return ok;
+	return buy(clan, m, item, discount) ? ok : no("gold", "That cannot be bought right now.");
 }
 /** Buy `count` of something at the Training Hall (stops early if the points run out). Fails if not even one could be bought. */
 function trainMember(clan, memberIndex, key, count) {
@@ -11477,7 +11791,7 @@ const classRaidsResting = (clock) => clock?.clockOn === true && clock.day >= S.w
 /**
 * The full reset for a new season. Returns a copy. Every member starts again at level 1 (same name, race, class and look; slot 0 leads),
 * the purse goes back to the starting gold, followers, buildings, saved builds, the day's counts and last season's monster tries and supplies go,
-* and the examined list clears. The clan may then pick its members' races and classes again (`repick`) until it says it is done.
+* and everyone is back in tier 1 gear. The clan may then pick its members' races and classes again (`repick`) until it says it is done.
 * Name, seed, day, fight numbers and the fights left are kept. The caller only does this when no fight is open.
 */
 function newSeasonSave(state, season) {
@@ -11494,6 +11808,7 @@ function newSeasonSave(state, season) {
 		members,
 		gold: CONFIG.startGold,
 		followers: 0,
+		gearVersion: 2,
 		village: {
 			trainingHall: 0,
 			smithy: 0,
@@ -11507,7 +11822,6 @@ function newSeasonSave(state, season) {
 		season,
 		repick: season
 	};
-	copy.examined = [];
 	return copy;
 }
 //#endregion
@@ -11891,8 +12205,8 @@ const QUESTS = [
 		choices: [{
 			label: "Reach down with a long stick",
 			win: {
-				text: "You fish out a tunic that someone dropped long ago. It is a little damp, but it dries out soft and warm.",
-				item: "Cloth Tunic"
+				text: "You fish out a bundle of clothes that someone dropped long ago. They are a little damp, but they dry out soft and warm.",
+				item: "armor"
 			}
 		}, {
 			label: "Make a kind wish for the whole clan",
@@ -11936,8 +12250,8 @@ const QUESTS = [
 			label: "Wake him gently and ask for a favour",
 			charm: "high",
 			win: {
-				text: "The giant yawns, then smiles. \"What good manners!\" He gives your clan his old shield, which is huge for him but just right for you.",
-				item: "Lion's Shield",
+				text: "The giant yawns, then smiles. \"What good manners!\" He gives your clan something from his old toy box, which is tiny for him but just right for you.",
+				item: "shield",
 				gold: "small"
 			}
 		}]
@@ -12012,11 +12326,16 @@ function puzzleFor(q, choiceIndex, baseSeed, day, settings) {
 	if (!kind) return null;
 	return makePuzzle(kind, settings.yearBand, mix(mix(baseSeed, day), q.id * 10 + choiceIndex));
 }
-const itemByName = (name) => ITEMS$1.find((i) => i.name === name);
-/** Who can use an item: has nothing in that slot and meets its base-stat needs. Weakest-kitted first. */
-function wearer(clan, item) {
-	const needsMet = (m) => Object.entries(item.needs).every(([stat, v]) => m.stats[stat] >= (v ?? 0));
-	return clan.members.find((m) => !m.gear[item.kind] && needsMet(m)) ?? null;
+/** Who gets a found item: the first member whose gear in that slot is below the found tier, and the item they get. */
+function wearer(clan, kind) {
+	for (const who of clan.members) {
+		const item = wornTier(who, kind) < Q.itemTier ? itemAt(who.cls, kind, Q.itemTier) : void 0;
+		if (item) return {
+			who,
+			item
+		};
+	}
+	return null;
 }
 /**
 * Do the quest: check it is allowed, put the prize on the clan, and mark the day as done.
@@ -12045,16 +12364,15 @@ function finishQuest(clan, day, q, choiceIndex, right) {
 	};
 	let text = outcome.text;
 	if (outcome.item) {
-		const item = itemByName(outcome.item);
-		const who = item && item.price <= Q.itemMaxPrice ? wearer(clan, item) : null;
-		if (item && who) {
-			who.gear[item.kind] = item.name;
+		const found = wearer(clan, outcome.item);
+		if (found) {
+			wear(found.who, found.item);
 			prize.item = {
-				name: item.name,
-				member: who.name
+				name: found.item.name,
+				member: found.who.name
 			};
-		} else if (item) {
-			prize.gold += Math.ceil(item.price / 2);
+		} else {
+			prize.gold += Math.ceil(TIER_PRICES[outcome.item][Q.itemTier - 1] / 2);
 			text += " Nobody in the clan could use it just now, so you sold it for a fair price.";
 		}
 	}
@@ -12266,12 +12584,15 @@ function parseAction(raw) {
 				name: raw.name,
 				drafts: raw.drafts
 			};
-		case "buy":
-		case "examine": return member !== null && typeof raw.item === "string" ? {
-			type: raw.type,
-			member,
-			item: raw.item
-		} : null;
+		case "buy": {
+			const answer = raw.answer === null || raw.answer === void 0 ? null : typeof raw.answer === "number" && Number.isFinite(raw.answer) ? raw.answer : void 0;
+			return member !== null && typeof raw.item === "string" && answer !== void 0 ? {
+				type: "buy",
+				member,
+				item: raw.item,
+				answer
+			} : null;
+		}
 		case "train": {
 			const count = int(raw.count, 1, 500);
 			return member !== null && count !== null && typeof raw.key === "string" && TRAIN_KEYS.includes(raw.key) ? {
@@ -12457,8 +12778,7 @@ function applyInner(saved, action, ctx, flags) {
 			createdNzDay: ctx.today,
 			fightsLeft: ctx.fightsPerDay ?? CONFIG.fightsPerDay,
 			fightNo: 0,
-			raidNo: 0,
-			examined: []
+			raidNo: 0
 		};
 		return done(state, { type: "create" });
 	}
@@ -12469,8 +12789,9 @@ function applyInner(saved, action, ctx, flags) {
 		changed: false
 	} : refuse("no-clan", "Make a clan first.");
 	let state = structuredClone(saved);
-	const upgraded = needsUpgrade(state.clan);
+	let upgraded = needsUpgrade(state.clan);
 	if (upgraded) state.clan = upgradeSave(state.clan, ctx.groupVillage ?? null);
+	if (refreshGear(state.clan)) upgraded = true;
 	let rested = state.fight ? false : catchUp(state, ctx.today, ctx.fightsPerDay);
 	const clock = ctx.clock;
 	if (clock && clock.number > 0) {
@@ -12491,11 +12812,12 @@ function applyInner(saved, action, ctx, flags) {
 		case "load": return done(state, { type: "load" }, rested || upgraded);
 		case "buy": {
 			const item = ITEMS$1.find((i) => i.name === action.item);
-			return item ? settle(buyItem(clan, action.member, item), { type: "buy" }) : refuse("item", "The shop does not have that.");
-		}
-		case "examine": {
-			const item = ITEMS$1.find((i) => i.name === action.item);
-			return item ? settle(examineItemFor(clan, state.examined, action.member, item), { type: "examine" }) : refuse("item", "The shop does not have that.");
+			if (!item) return refuse("item", "The shop does not have that.");
+			const discount = earnedDiscount(settings, item.price, action.answer);
+			return settle(buyItem(clan, action.member, item, discount), {
+				type: "buy",
+				discount
+			});
 		}
 		case "train": return settle(trainMember(clan, action.member, action.key, action.count), { type: "train" });
 		case "wake": return settle(wakeOne(clan, action.member), { type: "wake" });
@@ -12933,7 +13255,7 @@ function publicFight(fight) {
 }
 /** What the browser is told about a clan: everything it shows, nothing it could use to cheat. */
 function publicState(state, settings, loaded, extras) {
-	const { clan, seed, day, fightsLeft, fightNo, raidNo, examined, fight } = state;
+	const { clan, seed, day, fightsLeft, fightNo, raidNo, fight } = state;
 	return {
 		clan,
 		seed,
@@ -12941,7 +13263,6 @@ function publicState(state, settings, loaded, extras) {
 		fightsLeft,
 		fightNo,
 		raidNo,
-		examined,
 		fight: fight ? publicFight(fight) : null,
 		settings,
 		news: loaded.news,

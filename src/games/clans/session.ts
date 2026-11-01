@@ -34,8 +34,6 @@ export interface Session {
   day: number;
   depth: number;
   settings: PracticalSettings;
-  /** Items a member has looked at closely, as "member|item" (shows the real bonuses; lets you compare). */
-  examined: string[];
   /** For James's testing only: try this quest number instead of today's. */
   questPick?: number;
   /** With a server: the mine fight in progress, and the news. */
@@ -62,7 +60,7 @@ export interface Session {
 }
 
 export const newSession = (clan: Clan, baseSeed: number, settings: PracticalSettings = DEFAULT_PRACTICAL_SETTINGS): Session => ({
-  clan, fightsLeft: CONFIG.fightsPerDay, fightNo: 0, baseSeed, raidNo: 0, day: 1, depth: 0, settings, examined: [],
+  clan, fightsLeft: CONFIG.fightsPerDay, fightNo: 0, baseSeed, raidNo: 0, day: 1, depth: 0, settings,
   fame: 0, season: 1, fightsPerDay: CONFIG.fightsPerDay, achievements: [], stats: NO_STATS,
   news: ['The Swift Foxes clan upgraded its Walls! (pretend)'], notes: [], raidsOn: true, pretendShield: [], pretendRaids: 0,
 });

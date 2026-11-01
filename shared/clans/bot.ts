@@ -9,12 +9,13 @@
  * casting at the enemy with most HP left, and asking a spell to beat a swing by half again.
  * Guard and tie-up spells are left out too, as a later idea.
  */
-import { buy, inShop, shopPrice, trainHp, trainSp, trainStat, usableBonus, wake } from './character';
+import { GEAR_KINDS, buy, shopPrice, trainHp, trainSp, trainStat, wake, wornTier } from './character';
+import { itemLine, unlockedTier } from './items';
 import { CONFIG } from './config';
 import { levelOf } from './empire';
 import { canCast, type FightState, type Fighter, type Order } from './fight';
 import { SPELLS, type SpellDef } from './spells';
-import type { Clan, ItemDef, Member, Stat } from './types';
+import type { Clan, Member, Stat } from './types';
 
 /** Heal anyone under this share of their HP. */
 const HURT = 0.45;
@@ -127,23 +128,14 @@ export function botTrain(m: Member, hall: number): void {
   }
 }
 
-/** How good an item is for a member right now (0 if its bonuses won't count). */
-function worth(m: Member, item: ItemDef): number {
-  const bonus = usableBonus(m, item);
-  let total = 0;
-  for (const [st, v] of Object.entries(bonus)) total += (st === 'strength' || st === 'armor' ? 2 : 1) * (v as number);
-  return total;
-}
-
-/** Buy the best upgrade each member can afford, cheapest members' needs first. */
+/** Buy each member the best tier the Smithy sells and the purse can pay for, weapon first, then armour, then the off-hand slot. */
 export function botShop(clan: Clan): void {
+  const top = unlockedTier(levelOf(clan, 'smithy'));
   for (const m of clan.members) {
-    for (const kind of ['weapon', 'armor', 'shield'] as const) {
-      const have = m.gear[kind] ? inShop(6).find((i) => i.name === m.gear[kind]) : undefined;
-      const mine = have ? worth(m, have) : 0;
-      const best = inShop(levelOf(clan, 'smithy'))
-        .filter((i) => i.kind === kind && shopPrice(i) <= clan.gold && worth(m, i) > mine)
-        .sort((a, b) => worth(m, b) - worth(m, a) || a.price - b.price)[0];
+    for (const kind of GEAR_KINDS) {
+      const best = itemLine(m.cls, kind)
+        .filter((i) => i.tier > wornTier(m, kind) && i.tier <= top && shopPrice(i) <= clan.gold)
+        .pop();
       if (best) buy(clan, m, best);
     }
   }

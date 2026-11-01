@@ -2,8 +2,11 @@
 import { CONFIG } from './config';
 import { levelOf } from './empire';
 import { CLASSES, ITEMS, RACES } from './gamedata';
+import { OLD_ITEM_TIERS, itemAt, smithyFor, unlockedTier } from './items';
 import { roll, type HasRng } from './rng';
-import { STATS, type Clan, type ItemDef, type Member, type Stat, type Stats } from './types';
+import { STATS, type Clan, type GearKind, type ItemDef, type Member, type Stat, type Stats } from './types';
+
+export const GEAR_KINDS: readonly GearKind[] = ['weapon', 'armor', 'shield'];
 
 export const raceByName = (name: string) => RACES.find((r) => r.name === name);
 export const classByName = (name: string) => CLASSES.find((c) => c.name === name);
@@ -15,6 +18,7 @@ const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n
 /**
  * Race + class, then a small roll (-1 to +1 on each stat, -2 to +2 on HP and SP) for "Roll again".
  * The clan leader gets +2 on every stat but armour and +4 HP. Same dice state, same roll.
+ * Every member starts wearing tier 1 of their class's line in each slot.
  */
 export function rollMember(dice: HasRng, name: string, race: string, cls: string, leader = false): Member {
   const r = raceByName(race);
@@ -28,24 +32,74 @@ export function rollMember(dice: HasRng, name: string, race: string, cls: string
   const maxHp = Math.max(5, r.hp + c.hp + roll(dice, 5) - 2 + (leader ? 4 : 0));
   const maxSp = Math.max(0, r.sp + c.sp + roll(dice, 5) - 2);
   const spells = [...new Set([...r.spells, ...c.spells])];
-  return { name, race, cls, level: 1, xp: 0, hp: maxHp, maxHp, sp: maxSp, maxSp, stats, spells, gear: {}, points: 0, knockedOut: false };
+  const m: Member = { name, race, cls, level: 1, xp: 0, hp: maxHp, maxHp, sp: maxSp, maxSp, stats, spells, gear: {}, points: 0, knockedOut: false };
+  for (const kind of GEAR_KINDS) {
+    const first = itemAt(cls, kind, 1);
+    if (first) wear(m, first);
+  }
+  return m;
 }
 
-/** Gear bonuses count only if the member's base stats meet the item's needs. */
-export function usableBonus(m: Member, item: ItemDef | undefined): Partial<Stats> {
-  if (!item) return {};
-  for (const s of STATS) if ((item.needs[s] ?? 0) > m.stats[s]) return {};
-  return item.bonus;
-}
-
-/** What a member fights with: base stats plus usable gear. */
+/** What a member fights with: base stats plus their gear. */
 export function fightStats(m: Member): Stats {
   const out = { ...m.stats };
   for (const name of [m.gear.weapon, m.gear.armor, m.gear.shield]) {
-    const bonus = usableBonus(m, name ? itemByName(name) : undefined);
+    const bonus = name ? itemByName(name)?.bonus ?? {} : {};
     for (const s of STATS) out[s] = clamp(out[s] + (bonus[s] ?? 0), 0, CONFIG.statCap);
   }
   return out;
+}
+
+/** The member's item in a slot, if it is one the shop knows. */
+export const wornItem = (m: Member, kind: GearKind) => (m.gear[kind] ? itemByName(m.gear[kind]!) : undefined);
+
+/** The tier the member wears in a slot (0 if nothing, or something from another class's line). */
+export function wornTier(m: Member, kind: GearKind): number {
+  const item = wornItem(m, kind);
+  return item && item.cls === m.cls ? item.tier : 0;
+}
+
+/** Put an item on (swapping out what was there). Its HP and SP move the member's max HP and SP. */
+export function wear(m: Member, item: ItemDef): void {
+  const old = wornItem(m, item.kind)?.bonus ?? {};
+  const hp = (item.bonus.hp ?? 0) - (old.hp ?? 0);
+  const sp = (item.bonus.sp ?? 0) - (old.sp ?? 0);
+  m.maxHp = Math.max(1, m.maxHp + hp);
+  m.maxSp = Math.max(0, m.maxSp + sp);
+  if (!m.knockedOut) m.hp = clamp(m.hp + hp, 1, m.maxHp);
+  m.sp = clamp(m.sp + sp, 0, m.maxSp);
+  m.gear[item.kind] = item.name;
+}
+
+/**
+ * Keep every member's gear on their own class's line. A save from before the class lines (no `gearVersion`) has each old
+ * item swapped for the same slot's item in the member's line at the tier its old price was worth. After that, an item from
+ * another class's line (a member who picked a new class) becomes the same tier of their own, and an empty slot gets tier 1.
+ * Returns true if anything changed.
+ */
+export function refreshGear(clan: Clan): boolean {
+  let changed = false;
+  const old = clan.gearVersion !== 2;
+  for (const m of clan.members) {
+    for (const kind of GEAR_KINDS) {
+      const name = m.gear[kind];
+      const item = name ? itemByName(name) : undefined;
+      if (!old && item && item.cls === m.cls) continue;
+      const tier = old ? (name ? OLD_ITEM_TIERS[name] ?? item?.tier ?? 1 : 1) : (item?.tier ?? 1);
+      const fresh = itemAt(m.cls, kind, tier) ?? itemAt(m.cls, kind, 1);
+      if (!fresh) continue;
+      if (old && item) delete m.gear[kind]; // an old item gave no HP or SP, whatever the new item of that name gives
+      if (fresh.name !== m.gear[kind]) {
+        wear(m, fresh);
+        changed = true;
+      }
+    }
+  }
+  if (old) {
+    clan.gearVersion = 2;
+    changed = true;
+  }
+  return changed;
 }
 
 /** Add experience and level up as often as it earns. Returns how many levels were gained. */
@@ -112,20 +166,22 @@ export function wake(clan: Clan, m: Member): boolean {
   return true;
 }
 
-/** Shop price including the village tax, rounded up. */
-export const shopPrice = (item: ItemDef, tax: number = CONFIG.shopTax) => Math.ceil((item.price * (100 + tax)) / 100);
+/** What an item costs: its price, or 10% less with the discount (the Market's maths question answered right). */
+export const shopPrice = (item: ItemDef, discount = false) => (discount ? item.price - Math.round((item.price * CONFIG.shopDiscount) / 100) : item.price);
 
-/** Cost to look at an item's real stats. */
-export const examineCost = (item: ItemDef) => Math.ceil((item.price * CONFIG.examinePercent) / 100);
+/** Why this member can't buy this item now, or null if they can (gold aside). */
+export function cannotBuy(clan: Clan, m: Member, item: ItemDef): string | null {
+  if (item.cls !== m.cls) return `That is for a ${item.cls}, and ${m.name} is a ${m.cls}.`;
+  if (item.tier <= wornTier(m, item.kind)) return `${m.name} already has something as good.`;
+  if (item.tier > unlockedTier(levelOf(clan, 'smithy'))) return `The Smithy needs to be level ${smithyFor(item.tier)} to sell that.`;
+  return null;
+}
 
-/** What the Smithy has on its shelves at a given level. */
-export const inShop = (smithy: number) => ITEMS.filter((i) => i.shopLevel >= 6 - smithy);
-
-export function buy(clan: Clan, m: Member, item: ItemDef): boolean {
-  const price = shopPrice(item);
-  if (clan.gold < price || !inShop(levelOf(clan, 'smithy')).includes(item)) return false;
+export function buy(clan: Clan, m: Member, item: ItemDef, discount = false): boolean {
+  const price = shopPrice(item, discount);
+  if (clan.gold < price || cannotBuy(clan, m, item)) return false;
   clan.gold -= price;
-  m.gear[item.kind] = item.name;
+  wear(m, item);
   return true;
 }
 

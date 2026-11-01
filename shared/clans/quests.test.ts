@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PRACTICAL_SETTINGS, YEAR_BANDS, markAnswer, type PracticalSettings, type YearBand } from '../maths/practical';
 import { CONFIG } from './config';
-import { ITEMS } from './gamedata';
+import { wear, wornTier } from './character';
+import { TIER_PRICES, itemAt } from './items';
 import {
   PUZZLE_KINDS, QUESTS, bestCharm, buildPuzzle, choiceOpen, finishQuest, isValidPuzzle, makePuzzle, mostPrize, puzzleFor, questById, questDoneToday, questsFor, todaysQuest, type QuestDef,
 } from './quests';
@@ -34,14 +35,11 @@ describe('the quests as written', () => {
     expect(QUESTS.some((q) => q.choices.some((c) => c.charm))).toBe(true);
   });
 
-  it('only uses real items, and no item is dearer than the limit', () => {
+  it('finds items for a slot, never anything better than a low tier', () => {
     for (const q of QUESTS) for (const c of q.choices) for (const o of [c.win, c.lose]) {
-      if (o?.item) {
-        const item = ITEMS.find((i) => i.name === o.item);
-        expect(item, o.item).toBeDefined();
-        expect(item!.price).toBeLessThanOrEqual(CONFIG.quests.itemMaxPrice);
-      }
+      if (o?.item) expect(['weapon', 'armor', 'shield']).toContain(o.item);
     }
+    expect(CONFIG.quests.itemTier).toBeLessThanOrEqual(2);
   });
 
   it('gives a puzzle choice a smaller prize for a wrong answer, and never nothing at all to carry on with', () => {
@@ -252,32 +250,27 @@ describe('charisma', () => {
 
 describe('found items', () => {
   const stick = questById(7)!;
-  it('go to a member who can use them', () => {
+  it('go to the first member still in tier 1, as the next item in their own line', () => {
     const c = clan();
-    for (const m of c.members) m.stats.dexterity = 20;
     const done = finishQuest(c, 1, stick, 0, null);
-    expect(done.ok && done.prize.item?.name).toBe('Cloth Tunic');
-    if (done.ok) expect(c.members.find((m) => m.name === done.prize.item!.member)!.gear.armor).toBe('Cloth Tunic');
+    const first = c.members[0];
+    const tier2 = itemAt(first.cls, 'armor', CONFIG.quests.itemTier)!;
+    expect(done.ok && done.prize.item).toEqual({ name: tier2.name, member: first.name });
+    expect(first.gear.armor).toBe(tier2.name);
   });
 
-  it('are sold for half the price if nobody can use them, never lost', () => {
+  it('are sold for half the price if everyone already has that tier or better, never lost', () => {
     const c = clan();
-    for (const m of c.members) { m.stats.dexterity = 0; m.gear.armor = 'Rags'; }
+    for (const m of c.members) wear(m, itemAt(m.cls, 'armor', 3)!);
     const gold = c.gold;
     const done = finishQuest(c, 1, stick, 0, null);
     expect(done.ok).toBe(true);
     if (done.ok) {
       expect(done.prize.item).toBeUndefined();
-      expect(done.prize.gold).toBe(Math.ceil(25 / 2));
+      expect(done.prize.gold).toBe(Math.ceil(TIER_PRICES.armor[CONFIG.quests.itemTier - 1] / 2));
       expect(c.gold).toBe(gold + done.prize.gold);
       expect(done.text).toMatch(/sold it/);
     }
-  });
-
-  it('never replace gear someone already wears', () => {
-    const c = clan();
-    for (const m of c.members) { m.stats.dexterity = 20; m.gear.armor = 'Rags'; }
-    finishQuest(c, 1, stick, 0, null);
-    expect(c.members.every((m) => m.gear.armor === 'Rags')).toBe(true);
+    expect(c.members.every((m) => wornTier(m, 'armor') === 3)).toBe(true);
   });
 });
