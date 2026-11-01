@@ -76,17 +76,58 @@ describe('keyboard and screen readers', () => {
       await u.click(screen.getByRole('button', { name: 'Back' }));
       expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus();
     }
-    // A turn, by keyboard: every spot has a name, and End turn brings the island back with one turn fewer.
+    // A turn, by keyboard: the same 11 steps, each with its heading focused and "Step n of 11" at the top. Every
+    // spot has a name, a step that can't happen says why and has a working Next, and End turn brings the island back
+    // with one turn fewer.
     expect(screen.getByRole('button', { name: 'Spot 6: Empty spot' })).toBeInTheDocument();
     screen.getByRole('button', { name: 'Play a turn' }).focus();
     await u.keyboard('{Enter}');
-    expect(screen.getByRole('heading', { name: 'Your turn', level: 2 })).toHaveFocus();
-    await u.click(screen.getByRole('button', { name: 'Next' }));
+    const at = (n: number, heading: string | RegExp) => {
+      expect(screen.getByRole('img', { name: new RegExp(`^Step ${n} of 11`) })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: heading, level: 3 })).toHaveFocus();
+    };
+    const press = async (name: string | RegExp) => {
+      screen.getByRole('button', { name }).focus();
+      await u.keyboard('{Enter}');
+    };
+    at(1, 'Island report');
+    await press('Start my turn');
     await u.click(await screen.findByRole('button', { name: 'Skip' }));
-    await u.click(await screen.findByRole('button', { name: 'Now spend' }));
-    await u.click(screen.getByRole('button', { name: 'Spot 6: Empty spot' }));
-    await u.click(screen.getByRole('button', { name: /^Farm: 25 coins/ }));
-    await u.click(screen.getByRole('button', { name: 'End turn' }));
+    await waitFor(() => at(3, 'Collect and feed'));
+    await press('Next');
+    // Step 4 can't happen yet (land costs 85 coins a spot): greyed, with the numbers, then Next.
+    at(4, 'Land');
+    expect(screen.getByRole('button', { name: 'Anchor it' })).toBeDisabled();
+    expect(screen.getByText(/^Needs 510 coins\. You have \d+\.$/)).toBeInTheDocument();
+    // Back takes the pupil to the step before; spots can only be tapped on the Build step.
+    await press('Back');
+    at(3, 'Collect and feed');
+    await press('Next');
+    at(4, 'Land');
+    expect(screen.queryByRole('button', { name: 'Spot 6: Empty spot' })).not.toBeInTheDocument();
+    await press('Next');
+    at(5, 'Build');
+    await press('Spot 6: Empty spot');
+    at(5, 'Spot 6: Empty spot');
+    await press(/^Farm: 25 coins/);
+    at(5, 'Build another?');
+    await press('No, thanks');
+    at(6, 'Tax');
+    expect(screen.getByRole('radio', { name: /^Fair/ })).toHaveAttribute('aria-checked', 'true');
+    await press('Next');
+    at(7, 'Workshops');
+    expect(screen.getByText(/You have no Workshop yet/)).toBeInTheDocument();
+    await press('Next');
+    at(8, 'Festival');
+    await press('Not this turn');
+    at(9, 'Big projects');
+    await press('Next');
+    at(10, 'Market');
+    expect(screen.getByRole('button', { name: 'Market' })).toBeDisabled();
+    await press('Next');
+    at(11, 'Check and end');
+    expect(screen.getByText('Build a Farm on spot 6')).toBeInTheDocument();
+    await press('End turn');
     await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
     expect(screen.getByRole('img', { name: '5 turns left today' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Spot 6: Farm, level 1' })).toBeInTheDocument();

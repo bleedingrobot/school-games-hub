@@ -53,7 +53,7 @@
 /* The play area: the painted sky and the island. */
 .si-stage { position: relative; border-radius: 16px; padding: 5% 3% 3%; background: #a9d8f2 var(--si-bg) center / cover no-repeat; overflow: hidden; }
 @media (max-width: 800px) { .si-stage { background-image: var(--si-bg-small); } }
-.si-isle { position: relative; width: min(100%, max(240px, calc((100dvh - 250px) * 1.45))); margin: 0 auto; }
+.si-isle { position: relative; width: min(100%, max(240px, calc((100dvh - 290px) * 1.45))); margin: 0 auto; }
 .si-isle__base { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; }
 .si-isle__drawn { position: absolute; inset: 0; border-radius: 50% 50% 46% 46% / 30% 30% 70% 70%; background: linear-gradient(180deg, #8bcf62 0 42%, #6f9a3c 42% 46%, #94643c 46%); }
 .si-spot { position: absolute; transform: translate(-50%, -84%); min-width: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 12px; background: none; cursor: pointer; display: flex; align-items: flex-end; justify-content: center; }
@@ -112,21 +112,40 @@
 .si-choice__why { font-size: 0.85rem; color: var(--ink-soft); }
 .si-close { min-height: 44px; }
 .si-buildgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
-.si-buildgrid .button { width: 100%; display: grid; gap: 2px; text-align: left; }
+.si-buildgrid .button { width: 100%; height: 100%; display: grid; gap: 2px; text-align: left; justify-items: start; align-content: start; }
 .si-build__name { font-weight: 700; }
 .si-build__job { font-size: 0.82rem; font-weight: 400; }
 .si-tax { display: grid; gap: 6px; }
 @media (min-width: 520px) { .si-tax { grid-template-columns: repeat(3, 1fr); } }
-.si-tax__option { display: grid; gap: 2px; min-height: 44px; padding: 8px 10px; text-align: left; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-size: 0.88rem; cursor: pointer; }
+.si-tax__option { display: grid; gap: 2px; align-content: start; min-height: 44px; padding: 8px 10px; text-align: left; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; font-size: 0.88rem; cursor: pointer; }
 .si-tax__option strong { font-size: 1rem; }
-.si-tax__option--on { border-color: var(--focus); background: #e8f0ff; }
+.si-tax__option--on { border-color: var(--focus); border-width: 3px; background: #e8f0ff; }
 .si-slider { display: grid; gap: 4px; font-weight: 700; }
 .si-slider input { width: 100%; min-height: 44px; accent-color: var(--focus); }
-.si-choices ol { margin: 0; padding-left: 1.3em; }
-.si-end { margin-left: auto; }
 .si-sums { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; font-variant-numeric: tabular-nums; }
 .si-wind { color: var(--won); font-weight: 700; }
-.si-spend { display: flex; flex-direction: column; gap: 10px; }
+
+/* A turn's steps: the strip at the top, and one step's panel. */
+.si-steps { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.si-steps__dots { display: flex; gap: 4px; }
+.si-steps__dots > span { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--si-pip-line); background: var(--surface); }
+.si-steps__dots > .si-steps__done { background: var(--si-pip-line); }
+.si-steps__dots > .si-steps__now { width: 18px; background: var(--si-gold); border-color: var(--si-gold-edge); border-radius: 6px; }
+.si-steps__words { font-size: 0.92rem; font-weight: 700; color: var(--si-title); }
+.si-step { gap: 10px; }
+.si-step__nav { align-items: center; }
+.si-step__main { font-size: 1.1rem; min-height: 48px; }
+.si-step--off > :is(p, ul) { color: var(--ink-soft); }
+.si-step__why { padding: 8px 10px; border-radius: 10px; background: var(--tint); color: var(--ink) !important; font-weight: 700; }
+.si-step__greyed { margin: 0; padding-left: 1.2em; display: grid; gap: 3px; font-size: 0.9rem; }
+.si-step__greyed:empty { display: none; }
+.si-step__check { margin: 0; padding-left: 1.3em; display: grid; gap: 3px; }
+.si .si-end { margin-left: auto; }
+.si-step .si-buildgrid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 5px; }
+.si-step .si-choice__button { min-height: 44px; padding: 6px 12px; font-size: 0.95rem; line-height: 1.2; white-space: normal; }
+.si-step .si-build__job { font-size: 0.78rem; }
+.si .si-stop { min-height: 44px; padding: 4px 12px; font-size: 0.85rem; width: auto; flex: 0 0 auto; }
+.si-spot--still { cursor: default; }
 
 .si-upgrades { display: grid; gap: 8px; }
 .si-upgrades__list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
@@ -179,7 +198,43 @@
 
 /* The hub's light buttons stretch to fill their box; in the game's rows they size to their words. (".si" first, so
    these win over the hub's own rules whichever stylesheet loads last.) */
-.si :is(.si-row, .si-soon, .si-panel--row, .si-keepers__bar, .si-choice, .si-turncard, .si-panel) .button,
+.si :is(.si-row, .si-soon, .si-panel--row, .si-keepers__bar, .si-choice, .si-panel) .button,
 .si .si-showme, .si .si-close { width: auto; justify-self: start; }
+.si .si-step .si-buildgrid .si-choice .button { width: 100%; }
 .si .si-buildgrid .si-choice .button, .si .si-big { width: 100%; }
 .si .si-showme, .si .si-close { min-height: 44px; padding: 8px 14px; font-size: 0.95rem; }
+
+/* A phone on its side (about 844 x 390): the island and the step's panel side by side, smaller, so the step's main
+   button shows without scrolling. */
+@media (max-height: 480px) and (min-width: 700px) {
+  .si { padding: 6px 10px 10px; gap: 6px; }
+  .si h2:not(.question__title) { font-size: 1.2rem; }
+  .si h3:not(.question__title) { font-size: 1.02rem; }
+  .si-top { flex-wrap: nowrap; gap: 8px; }
+  .si-top__right { gap: 8px; margin-left: auto; }
+  .si-top--turn .si-pips { display: none; }
+  .si-keeperbtn { width: 44px; height: 44px; }
+  .si-res { gap: 4px; }
+  .si-res li { padding: 1px 8px; font-size: 0.82rem; }
+  .si-main { grid-template-columns: minmax(0, 0.8fr) minmax(320px, 1.2fr); gap: 8px; }
+  .si-top h2, .si-steps { white-space: nowrap; flex-wrap: nowrap; }
+  .si-isle { width: min(100%, max(200px, calc((100dvh - 215px) * 1.45))); }
+  .si-stage { padding: 3% 3% 2%; }
+  .si-pipsays { padding: 4px 8px; gap: 8px; }
+  .si-pip { width: 40px; }
+  .si-pipsays p { font-size: 0.88rem; }
+  .si-panel { padding: 8px 10px; gap: 6px; }
+  .si-step { gap: 5px; }
+  .si-sums { gap: 2px; font-size: 0.9rem; }
+  .si-tax { grid-template-columns: repeat(3, 1fr); }
+  .si-tax__option { padding: 4px 8px; font-size: 0.78rem; }
+  .si-step__nav { flex-wrap: nowrap; }
+  .si-step__nav .button { white-space: normal; min-height: 44px; padding: 6px 14px; font-size: 0.95rem; line-height: 1.15; }
+  .si-step__main { font-size: 1rem; }
+  .si-step .si-buildgrid { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .si-step .si-choice__button { padding: 4px 8px; font-size: 0.85rem; line-height: 1.15; }
+  .si-step .si-build__job { font-size: 0.72rem; }
+  .si-pipsays { flex-wrap: wrap; }
+  .si-wind { font-size: 0.9rem; }
+  .si-note, .si-choice__why, .si-step__greyed { font-size: 0.82rem; }
+}

@@ -2,7 +2,7 @@
 
 *An original kingdom-building game for School Games Hub, in the BBS "empire game" genre. Asked for by James on 1 November 2026, after we read [Immortal Barons](https://github.com/andy5995/immortal-barons) together. Written from that reading, `docs/GAME_DEVELOPMENT_GUIDE.md` (main `92735a2`) and the other games' plans. Branch `isles`, worktree `~/games-hub-isles`.*
 
-**Status (2 Nov 2026, after S.3): stages S.0, S.L (look chosen: hand-painted anime), S.1 (rules engine), S.2 (the server) and S.3 (the screens, art and a private preview) are done. Nothing is live. Next is S.4 (classmates: races, ropes, market, news).** Every choice marked **(chosen)** was made for James. He can change any of them, and most are cheap to change until stage S.2. The working name "Sky Isles" (id `isles`, CSS prefix `.si-`) is one of them.
+**Status (2 Nov 2026, after S.3 and the step-by-step turn): stages S.0, S.L (look chosen: hand-painted anime), S.1 (rules engine), S.2 (the server) and S.3 (the screens, art and a private preview) are done, and the turn is now 11 steps, one choice at a time. Nothing is live. Next is S.4 (classmates: races, ropes, market, news).** Every choice marked **(chosen)** was made for James. He can change any of them, and most are cheap to change until stage S.2. The working name "Sky Isles" (id `isles`, CSS prefix `.si-`) is one of them.
 
 ---
 
@@ -83,7 +83,7 @@ Every number here is a **starting guess**. All of them live in `shared/isles/con
    - Workshop: 1 sky-boat every 2 turns, or goods worth about 20 coins. The pupil sets this once with a slider: boats or goods.
    - Library: 1 idea.
 4. **Feed.** Each person eats 1 food. A shortfall lowers happiness, and some people leave to live on a neighbour's island. Kind words: nobody starves on screen.
-5. **Spend** (any order, as much as the coins allow):
+5. **Choose, one step at a time** (decided with James, 2 Nov 2026). Every turn walks the same 11 steps in the same order, one choice on each screen: 1 Island report, 2 the sky pilot's question, 3 Collect and feed, 4 Land, 5 Build, 6 Tax, 7 Workshops, 8 Festival, 9 Big projects (an upgrade or a Lighthouse stage), 10 Market, 11 Check and end. A step that can't happen is still shown, greyed out, with the reason and the numbers ("Needs 510 coins. You have 180.") and a Next button, so no step is ever skipped quietly. Land and Build ask "Anchor another?" / "Build another?" after each one while there are coins for it. Steps 4 to 11 have Back (it takes away that step's choices) and "Stop, back to my island" (the turn isn't used). The choices are:
    - **Anchor a chunk.** Only from today's drift (a set number of chunks a day per island). The price rises with island size, which slows the biggest islands and lets small ones catch up.
    - **Build on a spot, or change it.** A fixed price each, more for a Library. Changing a building starts it again at level 1.
    - **Raise a building one level.** Level 2 makes twice what level 1 makes, level 3 three times. It costs the build price × 4 (to level 2), or × 9 plus 6 goods (to level 3).
@@ -633,6 +633,35 @@ Decided with James because 40 small plot tiles looked crowded and "stuck on". Bu
 - Worth checking with families: b17 (turban) and g13 (hijab). Nothing unsuitable for children was found.
 
 **James's answers (2 Nov 2026):** leave the keepers as they are. Repaint farm levels 2 and 3 (no wide wheat slab) and workshop level 1 (so all three levels are windmills). Do this in S.4: `scripts/isles-art.py`, then `tidy --force` for those pieces.
+
+### Step-by-step turn results, 2 Nov 2026
+
+James found the S.3 turn confusing: after the collect sum, one big spend panel offered land, spots, tax, workshops, festival, upgrades, the Lighthouse and the market all at once. **The turn is now the same 11 steps every time, one choice per screen** (section 2). Nothing on the server, the migration or the rules engine changed.
+
+**Built:**
+- `src/games/isles/TurnSteps.tsx`: the 11 steps, the "Step 5 of 11" strip with a dot for each step, and Pip's one line for each step. `Spend.tsx` (the big panel) is gone; what's left of it is `Spot.tsx` (a spot's choices, the tax words, and the spot card on My island).
+- **Each step:** one heading, one question, one main button, and a quieter "Not this turn" or Next. Focus moves to the step's heading (and again when "Build another?" or a chosen spot changes it).
+- **Steps that can't happen** are greyed, say why using `problemWith` and `whyNot` on the island as it will be after the earlier steps ("Needs 510 coins. You have 180.", "There is no land left in the drift today.", "You have no Workshop yet.", "Cool Cellars: Needs 4 ideas. You have 1.", "The market opens soon."), and have Next.
+- **Land:** "Anchor a chunk from the drift for 510 coins?" Anchor it / Not this turn, then "Anchor another?" Yes / No, thanks while it's possible. Tapping the drifting chunk on the picture anchors too, on this step only.
+- **Build:** only on this step can the spots be tapped (on other steps of a turn they're pictures). A tapped spot shows raise, build or change. After one, "Build another?" Yes / No, thanks.
+- **Tax and Workshops** start on last turn's choice, so Next keeps it. **Festival** and **Big projects** move on after one choice. Big projects shows what's possible as buttons, and one line each for why the rest wait.
+- **Market** says "The market opens soon" with Next. S.4 fills it in; the step stays so the order never changes.
+- **Check and end:** this turn's choices, "Coins left", Undo last and End turn. End turn still sends everything in one `turn` request.
+- **Pip:** during a turn he sits under the island and talks about this step only. If his next step (`nextStep`) is about this step, he says it with "Show me"; otherwise the step's own line. On My island, "Show me" for a button that lives in a turn lights up "Play a turn", and the button stays lit when its step comes. `nextStep()`'s targets didn't need to change (the same `data-pip` names, now each on its own step).
+- **Phone on its side (844×390):** a tighter layout (smaller header, the turn pips hidden during a turn, Pip under the island, wider step panel, three tax cards in a row, smaller build buttons). Every step's main button shows without scrolling. The one exception: with a spot chosen on the Build step, the build buttons show but "Not this turn" is just below.
+
+**Decisions (James can change any):**
+- Back takes away the choices of the step you go back to (and of the step you were on), so it can be chosen again.
+- Festival and Big projects have one choice each per turn, so they move on straight after it, with no "another?".
+- "Back to my island" stays on step 1 (before the turn starts), as before.
+
+**Tests:** still 6 of 8. Test 7 now walks all 11 steps by keyboard, checks each step's heading gets focus and the strip says "Step n of 11", checks that Land (which can't happen yet) is greyed with "Needs 510 coins. You have …" and that its Next works, and checks Back.
+
+**Checks run:** CHECKS_LINE
+
+**Played in the preview** (headless Chrome, at 1366×640 and 844×390): a turn with lots of coins (question answered right, a chunk anchored, a Library and a Workshop built, High tax, a festival, Better Ploughs), a turn with almost no coins, and a turn after "Skip to tomorrow". Every turn showed the same 11 steps in order. Screenshots of steps 4, 5, 6, 9 and 11 (and a greyed step 4) are in `docs/isles-screens/turn-steps/`.
+
+**Untested:** the live server function (unchanged, still not deployed).
 
 ### S.L so far (style try-outs), 1 Nov 2026
 

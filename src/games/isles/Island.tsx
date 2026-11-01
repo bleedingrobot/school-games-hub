@@ -32,7 +32,8 @@ export function IslandPicture({
 }: {
   island: Island;
   keeper: string | null;
-  onSpot: (spot: number) => void;
+  /** Tapping a spot (left out when the spots can't be tapped, as on most steps of a turn). */
+  onSpot?: (spot: number) => void;
   /** Tapping the drifting chunk (only while there is one). */
   onDrift?: () => void;
   selected?: number | null;
@@ -59,21 +60,20 @@ export function IslandPicture({
           const [x, y] = places[i];
           const width = BUILDING_WIDTH[base] * LEVEL_GROWTH[spot.kind === 'empty' ? 0 : spot.level];
           const name = spotName(spot.kind, spot.level);
+          const style = { left: `${x}%`, top: `${y}%`, width: `${width}%`, zIndex: Math.round(y) + 10 };
+          const art = (
+            <Art
+              src={buildingArt(spot.kind, spot.level)}
+              fallback={<span className={`si-spot__drawn si-kind--${spot.kind}`} aria-hidden="true">{spot.kind === 'empty' ? '+' : `${KIND_NAME[spot.kind][0]}${spot.level}`}</span>}
+            />
+          );
+          const look = `si-spot si-spot--${spot.kind}${selected === i ? ' si-spot--chosen' : ''}${lit === `spot-${i}` ? ' si-lit' : ''}`;
+          if (!onSpot) {
+            return <span key={i} className={`${look} si-spot--still`} style={style} data-pip={`spot-${i}`} role="img" aria-label={`Spot ${i + 1}: ${name}`}>{art}</span>;
+          }
           return (
-            <button
-              key={i}
-              type="button"
-              className={`si-spot si-spot--${spot.kind}${selected === i ? ' si-spot--chosen' : ''}${lit === `spot-${i}` ? ' si-lit' : ''}`}
-              style={{ left: `${x}%`, top: `${y}%`, width: `${width}%`, zIndex: Math.round(y) + 10 }}
-              data-pip={`spot-${i}`}
-              aria-label={`Spot ${i + 1}: ${name}`}
-              aria-pressed={selected === i}
-              onClick={() => onSpot(i)}
-            >
-              <Art
-                src={buildingArt(spot.kind, spot.level)}
-                fallback={<span className={`si-spot__drawn si-kind--${spot.kind}`} aria-hidden="true">{spot.kind === 'empty' ? '+' : `${KIND_NAME[spot.kind][0]}${spot.level}`}</span>}
-              />
+            <button key={i} type="button" className={look} style={style} data-pip={`spot-${i}`} aria-label={`Spot ${i + 1}: ${name}`} aria-pressed={selected === i} onClick={() => onSpot(i)}>
+              {art}
             </button>
           );
         })}
@@ -90,7 +90,7 @@ export function IslandPicture({
           {island.spots.slice(places.length).map((spot, j) => {
             const i = places.length + j;
             return (
-              <button key={i} type="button" className={`si-more__spot${lit === `spot-${i}` ? ' si-lit' : ''}`} data-pip={`spot-${i}`} aria-pressed={selected === i} onClick={() => onSpot(i)}>
+              <button key={i} type="button" className={`si-more__spot${lit === `spot-${i}` ? ' si-lit' : ''}`} data-pip={`spot-${i}`} aria-pressed={selected === i} disabled={!onSpot} onClick={() => onSpot?.(i)}>
                 Spot {i + 1}: {spotName(spot.kind, spot.level)}
               </button>
             );
