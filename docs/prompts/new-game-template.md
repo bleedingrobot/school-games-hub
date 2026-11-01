@@ -34,6 +34,6 @@ Then **stop** and show James the short version. Don't start Stage 1 until he say
 - Build only in your own folders. Shared files get their one-line edits at the end, as the guide says.
 - Tests: your own as you go; before saying a stage is done, `npm run typecheck`, `npm run test:all`, `npm run build`, and your database tests on a scratch copy (`scripts/scratch-db.sh`). Say plainly about any failure.
 - Write the stage's results in the plan (built, decisions, tests, untested, go-live list), commit, `git push origin [id]`, and stop for James.
-- Nothing live (migration, function deploy, merge to `main`, switch on) unless James says so in words in this session, one step at a time.
+- Nothing live unless James says so in words in this session. Merging to `main` puts the migrations and function live, so his "go live" covers that; switching on for pupils and anything destructive each need their own yes (guide quick start rule 7).
 
 When you stop, tell James in plain words what's ready, what he can try (a preview link if there is one), and what he needs to decide.
