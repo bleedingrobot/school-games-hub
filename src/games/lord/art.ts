@@ -28,6 +28,9 @@ export function sceneArt(id: SceneId): { wide?: string; small?: string } {
 export const forestScene = (level: number): SceneId => (level <= 4 ? 'forest-1' : level <= 8 ? 'forest-2' : 'forest-3');
 
 export const monsterArt = (name: string) => file('monsters', slug(name));
+/** Shop gear, by its name in WEAPONS or ARMOURS (data.ts). */
+export const weaponArt = (name: string) => file('weapons', slug(name));
+export const armourArt = (name: string) => file('armour', slug(name));
 export const masterArt = (name: string) => file('masters', slug(name));
 export const dragonArt = () => file('dragon', 'scorchtail');
 /** The round pictures on the season road (scripts/lord-timeline-art.py). */

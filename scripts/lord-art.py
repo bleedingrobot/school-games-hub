@@ -7,6 +7,7 @@ Runs on the server only, never in the site build. Needs Python with Pillow and n
   python3 scripts/lord-art.py map      IN.png                   # the kingdom map: 1600 and 800 wide, shape kept
   python3 scripts/lord-art.py cutout   IN.png people innkeeper  # one figure on a flat background: background removed
   python3 scripts/lord-art.py sheet    IN.png monsters 5 2 "Mud Slug" "Hungry Hedgehog" ...   # a grid sheet, left to right, top to bottom
+  python3 scripts/lord-art.py cutout   IN.png weapons "Long Sword"  # shop gear (weapons or armour) on flat white
   python3 scripts/lord-art.py preview  IN.png 5 2              # show where a sheet would be cut (writes IN-cuts.png)
   python3 scripts/lord-art.py hero     IN.png ...               # hero looks (avatar-knight-girl-05-2.png), cut out with rembg
   python3 scripts/lord-art.py paper    masters "Master Pip=IN.png" ...   # figures on painted paper, cut out with rembg
@@ -21,7 +22,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 ART = Path(__file__).resolve().parent.parent / 'src' / 'games' / 'lord' / 'art'
-SIZES = {'monsters': 320, 'masters': 420, 'people': 720, 'dragon': 720}
+SIZES = {'weapons': 192, 'armour': 192, 'monsters': 320, 'masters': 420, 'people': 720, 'dragon': 720}
 
 
 def slug(name: str) -> str:
