@@ -375,3 +375,6 @@ Built on branch `trader-hints`. **Not merged, nothing live.** Only files in `src
 - A tip that shows while the pupil is busy can be missed (see the first decision).
 - Not tried by a child, or on a real Chromebook or iPad.
 
+### Merging (1 Nov 2026)
+James asked for H.1 to H.3 to be pushed and merged. Pull request #123 (branch `trader-hints` into `main`) was opened with auto-merge on, so it merges once the checks pass; "Test and publish" then puts it live. Screen code only: no migration, no function deploy. Every helper shows for every pupil until H.4 adds help levels. Rollback: revert the merge.
+
