@@ -326,7 +326,7 @@ Built on branch `trader-hints`. **Not merged, nothing live.** Only files in `src
 - Checked by eye in the browser at 1366 × 640 and 844 × 390: a whole First Flight from a new game (1 Fireworks from Makemake to Saturn, +39). No console errors.
 
 ### Not done / untested
-- **The first trade can be one dear item** (in the preview: 1 Fireworks for +39, and a 19-fuel trip). Right on the numbers, but "fill your hold with Water" might teach the idea better. If James agrees, `starterTrade` could prefer a trip that fills at least half the hold. Worth deciding before the class trial.
+- **The first trade can be one dear item** (in the preview: 1 Fireworks for +39, and a 19-fuel trip). James decided on 1 Nov 2026 to keep the biggest profit, so `starterTrade` stays as it is.
 - The first-time tips for encounters (pirates, junk, a trader) come in H.3, so during First Flight an encounter shows its normal panel with no Bolt words yet.
 - On a phone the bubble covers about a third of the screen. It can be moved past, but H.4's accessibility pass should look again.
 - Not tried by a child, or on a real Chromebook or iPad.
