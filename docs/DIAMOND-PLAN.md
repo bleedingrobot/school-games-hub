@@ -12,6 +12,7 @@
 - Name **Diamond Drop**.
 - **New Season sends everyone back to level 1** (a season game: section 6.2). Achievements and the Hall stay.
 - **The clock pauses** during Hold on!
+- **At most one new level a day**, so pupils work down slowly. Unlimited tries at today's level until it's passed; after that they can replay levels already passed (coins, stars, Gem Book). The next level opens the next day (New Zealand date).
 - A **Hall of Diamond Finders** (own school).
 - **High-quality painted art**, painted by James on his gaming PC (ComfyUI), as for Star Trader and Dragon Maths. It is planned from Stage 2, not left to the end (section 9).
 
@@ -22,7 +23,7 @@ Section 13's questions were answered the same day, so everything here is decided
 ## 1. The short version
 
 - A winch sits at the top of a cut-away view of the ground. Its claw swings slowly left and right. **One button: Drop.** The claw shoots down, grabs whatever it hits and reels it up. Heavy things reel slowly; rocks are heavy and worth nothing.
-- **10 levels, each deeper.** Each level has a **time limit** and a **gem target**: bank enough gem value before the clock runs out and the next level opens. Every level or so brings a **new, rarer gem**. Level 10 holds one **Heart Diamond**.
+- **10 levels, each deeper.** Each level has a **time limit** and a **gem target**: bank enough gem value before the clock runs out and the next level opens **the next day**. One new level a day at most, so reaching the diamond takes at least 10 days of play. Every level or so brings a **new, rarer gem**. Level 10 holds one **Heart Diamond**.
 - **Hold on!** Rare gems can slip while they're being reeled up. The reel stops, the clock pauses, and a maths question from the pupil's own maths focus pops up. Right: the claw grips and the gem comes up. Wrong: the gem tumbles back down into the rock. The rarer the gem, the more likely it slips.
 - **The Gem Book** fills a page for each kind of gem caught. The diamond is the last page. That and level 10 are the big goal.
 - **The server is in charge:** it makes and marks every question (way A, like Marble Rush) and **replays each level** from its seed and the recorded drops before saving the result, so a faked score can't get through.
@@ -120,9 +121,9 @@ Coins are saved between lessons. Prices are shown as sums ("You have 85. Lucky C
 
 ## 6. Design decisions (guide section 1a)
 
-1. **The big goal:** reach level 10 and catch the Heart Diamond, filling the Gem Book's last page. Aim (to check with the simulator): a pupil playing 3 to 4 days a week gets there in about **3 weeks**; quick players sooner. **After it:** 3 stars on every level, the full Gem Book counts, and their name in the school's **Hall of Diamond Finders**, kept for good with the season it was found in.
-2. **Season game: yes** (James). New Season sends everyone back to level 1: the `season_fn` hook clears levels, coins, stars and the Gem Book. Achievements stay (`keep_achievements`), and so does the Hall. It uses the school's 35-day season, not a new clock; reading the season date needs a shared function, so ask James how before Stage 4 (guide section 1a.2). The 3-week aim fits inside a season, and a pupil who joins in week 2 can still reach the diamond. Last days: a countdown line ("5 days left to find the diamond this season"); the Hall marks each season's finders.
-3. **Moves a day: no limit on play** (recommended), it's maths practice. Points are naturally capped: they're earned once per level passed and per star, so replaying can't farm them, and the hub's 40-a-day cap applies anyway. No home page "Left today" chip needed.
+1. **The big goal:** reach level 10 and catch the Heart Diamond, filling the Gem Book's last page. With one new level a day it takes at least 10 days of play. Aim (to check with the simulator): a pupil playing 3 to 4 days a week gets there in **4 to 5 weeks**, near the end of the season; someone playing every school day and passing first time, in 2 weeks. Because the daily limit does the slowing, level targets can stay friendly: most levels should be passable in 1 to 3 tries. **After it:** 3 stars on every level, the full Gem Book counts, and their name in the school's **Hall of Diamond Finders**, kept for good with the season it was found in.
+2. **Season game: yes** (James). New Season sends everyone back to level 1: the `season_fn` hook clears levels, coins, stars and the Gem Book. Achievements stay (`keep_achievements`), and so does the Hall. It uses the school's 35-day season, not a new clock; reading the season date needs a shared function, so ask James how before Stage 4 (guide section 1a.2). The season has about 25 school days and the diamond needs 10 days of play, so a pupil who joins (or comes back) by about week 3 and plays most days can still reach it. Anyone later still gets levels, gems and achievements. Last days: a countdown line ("5 days left to find the diamond this season"); the Hall marks each season's finders.
+3. **Moves a day: one new level a day** (James, 2 Nov 2026). The server counts and refuses, never the browser: `diamond_players` keeps the New Zealand date (`nzDate`) of the last new level passed, and `levelStart` refuses a not-yet-passed level beyond the first locked one if a new level was already passed today. Tries at today's level are unlimited until it's passed. **Replays** of passed levels are unlimited and earn coins, stars and Gem Book entries (more maths is good; shop boosts are capped at one of each per level, so piled-up coins can't break a level). Points are earned once per level passed and per star, so replays can't farm them, and the hub's 40-a-day cap applies anyway. Kind words when today's level is done: "Level 5 done! Level 6 opens tomorrow. Replay a level to collect stars and gems." **Home page chip** ("New level: ready" / "tomorrow") would need a line in the shared `my_moves_left()`, so it's its own small step with James's OK (guide 1a.3), not part of this branch.
 4. **Progress bars:** in the game, a **depth gauge** down the side showing the 10 levels with the pupil's claw at their deepest, the diamond glowing at the bottom; during a level, a bar filling towards the gem target next to the clock. Home page: hub level bar and achievements come free.
 5. **Achievements:**
 
@@ -143,7 +144,7 @@ Coins are saved between lessons. Prices are shown as sums ("You have 85. Lucky C
 
 ## 7. Screens
 
-- **Level map:** the depth gauge as a cut-away of the ground, each level a chamber, locked ones dark. Play / Shop / Gem Book / How to play.
+- **Level map:** the depth gauge as a cut-away of the ground, each level a chamber, locked ones dark, the next one marked "opens tomorrow" once today's level is passed. Play / Shop / Gem Book / How to play.
 - **Play:** the winch and claw at the top, the field below, the clock and target bar, a big Drop button (also Space / Enter / tapping the field). Pause button.
 - **Hold on!:** `QuestionModal` over a frozen moment of the gem dangling.
 - **Level end:** passed / so close, gems caught, coins, stars, then the shop.
@@ -165,7 +166,7 @@ A kiwi in a hard hat, inside the game's own folder.
 | Fails a level | Time up | Feels like losing | "So close! You kept your coins. Try again?" |
 
 - **Guided first go:** level 1's first play has a slow swing and a big quartz straight below, so the first drop can't miss; ends with "Your first gem!" and the target bar filling. Who gets it comes from the server (no levels played yet). Skippable, replayable.
-- **Next-step line:** always one sentence from a pure function ("Pass level 4: bank 80 gems in 70 seconds" / "You have 120 coins: try the Lucky Charm on level 7").
+- **Next-step line:** always one sentence from a pure function ("Pass level 4: bank 80 gems in 70 seconds" / "Level 5 opens tomorrow. Replay level 3 to find the Amethyst you're missing").
 - Help fades: Lots / Some / Off.
 
 ## 9. Painted art (high quality, from James's gaming PC)
@@ -184,7 +185,7 @@ Style to settle with mock-ups early in Stage 2: bright, rich, storybook painting
 
 ## 10. Tests (at most 8, guide section 7)
 
-- Rules (3): the same seed and drops always give the same level result; slips come only from the seed and the server's marks; level pass and stars.
+- Rules (3): the same seed and drops always give the same level result; slips come only from the seed and the server's marks; level pass, stars and the one-new-level-a-day rule (across New Zealand midnight).
 - Server (3): wrong is wrong and an answer counts once; another pupil's seed is refused; `levelEnd` saves the replay's result, not a faked total.
 - Screens (2): the accessibility check (copied from Clan Quest) and the guided first go can't get stuck.
 - Plus `supabase/tests/database/diamond.test.sql` and the "index.ts is up to date" check. Balance goes in `scripts/diamond-sim.mjs`.
@@ -192,7 +193,7 @@ Style to settle with mock-ups early in Stage 2: bright, rich, storybook painting
 ## 11. Stages
 
 0. **Plan** (this). Stop for James.
-1. **Rules engine and simulator** in `shared/diamond/`: config, field from seed, swing and reel, slips, shop effects, replay. Simulator tunes times, targets, slip chances and coin flow so the diamond lands around 3 weeks. 3 rule tests.
+1. **Rules engine and simulator** (including the one-new-level-a-day rule, simulated over a 35-day season) in `shared/diamond/`: config, field from seed, swing and reel, slips, shop effects, replay. Simulator tunes times, targets, slip chances and coin flow so the diamond lands around 3 weeks. 3 rule tests.
 2. **Screens, drawn art and phone preview**, plus `docs/DIAMOND-ART-PLAN.md` with prompts and style mock-ups so James can start painting. Trial backend so the preview never touches the live server. Published as a private Artifact for James to try.
 3. **Server and migration:** `diamond` function (way A, replay), tables, pgTAP tests.
 4. **Hub fit:** points, achievements, teacher switch and summary, How to play from config, the Hall, accessibility.
@@ -204,6 +205,7 @@ Style to settle with mock-ups early in Stage 2: bright, rich, storybook painting
 
 - **Timing on slow Chromebooks:** the fixed tick and replay keep results fair even if the screen stutters; the art is sized and compressed for Chromebooks.
 - **Pupils dodging rare gems to avoid maths:** targets need rare gems from level 4 on, and Hold on! is framed as a lucky save, not a test.
+- **Absent pupils fall behind:** a week away costs up to 5 levels' worth of days. The Hall shows only who found the diamond, never who is behind, and New Season gives everyone a fresh start.
 - **Too easy or too hard:** the simulator plus one class trying the preview before go-live.
 
 ## 13. Decided (James, 2 Nov 2026)
@@ -212,5 +214,6 @@ Style to settle with mock-ups early in Stage 2: bright, rich, storybook painting
 - New Season: **everyone back to level 1** (achievements and the Hall kept).
 - The clock **pauses** during Hold on!
 - **Hall of Diamond Finders**: yes.
+- **One new level a day**, unlimited tries until passed, replays of passed levels allowed.
 
-Still open: how this game reads the school season date (ask before Stage 4).
+Still open: how this game reads the school season date (ask before Stage 4), and whether to add a home page "new level ready" chip (a separate small step).
