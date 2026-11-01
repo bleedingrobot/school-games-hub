@@ -116,16 +116,16 @@ Weather never takes land or boats.
 - An island in its **calm start** (fewer than 12 turns played, about its first 2 days) can't be challenged by classmates. It can still race the Gull Riders.
 
 **The race:**
-- The challenger answers **3 questions**. Each right answer is a **gust**: +4 speed.
+- The challenger answers **3 questions**. Each right answer is a **gust**: +5 speed.
 - Each boat's speed is 30, plus:
   - sky-boats: 3 × the square root of the boats (up to 16 boats), so 2 boats give 4.2, 9 boats 9 and 16 boats 12. A big fleet helps less and less.
   - Swift Sails: +3.
   - happiness: up to +4 (happiness ÷ 25).
-  - wind: the challenger's gusts. The other side (an island at home, or the Gull Riders) gets a **home wind** of +4, one gust's worth.
+  - wind: the challenger's gusts. The other side (an island at home, or the Gull Riders) gets a **home wind** of +5, one gust's worth.
   - luck: from 0 up to 12, each side.
 - The faster boat wins. A tie goes to the challenger.
-- **The Gull Riders** bring the same boats and Swift Sails as the challenger, with happiness 70. So a race against them is decided by the gusts and a little luck: about 1 in 4 with no answers right, half with 1, 4 in 5 with 2, and nearly always with 3.
-- **A small island can win.** A new island (2 boats) against a big one (14 boats and Swift Sails) wins about 1 race in 9 with 2 answers right and about 1 in 3 with all 3 right.
+- **The Gull Riders** bring the same boats and Swift Sails as the challenger, with happiness 70. So a race against them is decided by the gusts and a little luck: about 1 in 6 with no answers right (James, 2 Nov 2026), half with 1, 5 in 6 with 2, and nearly always with 3.
+- **A small island can win.** A new island (2 boats) against a big one (14 boats and Swift Sails) wins about 1 race in 7 with 2 answers right and almost half with all 3 right.
 - **The result comes only from the race's seed, the two boats (taken when the race starts) and the answers the server marked right.** The browser can't change it.
 - The animation is 8 legs long. The boats bob ahead and behind on the way, and each gust blows on its own leg (legs 2, 4 and 6).
 
@@ -159,13 +159,13 @@ Median day reached in a 35-day season. The pretend pupil plays 6 turns a play da
 |---|---|---|---|
 | Every school day | 100% | day 15 (week 3) | day 19 (week 3), nearly all |
 | Every school day | 70% | day 16 (week 3) | day 22 (week 4), nearly all |
-| Every school day | 0% | day 17 (week 3) | day 25 (week 4), about a third |
+| Every school day | 0% | day 17 (week 3) | day 25 (week 4), about a quarter |
 | 3 days a week | 100% | day 24 (week 4) | day 33 (week 5), nearly all |
-| 3 days a week | 70% | day 26 (week 4) | day 33 (week 5), under half |
+| 3 days a week | 70% | day 26 (week 4) | day 33 (week 5), about half |
 | 3 days a week | 0% | day 29 (week 5) | not lit |
 | 1 day a week | any | not reached (about 8 or 9 spots) | no |
 
-**What changed with real races (S.1):** Grand Isle days didn't move. The Lighthouse did, because race wins bring goods: pupils who get race questions right light it sooner (a 3-days-a-week pupil with all right: under half lit before, nearly all now), and pupils who get them all wrong win about 1 race in 5 and light it a little later (every day, all wrong: about half lit before, about a third now).
+**What changed with real races (S.1):** Grand Isle days didn't move. The Lighthouse did, because race wins bring goods: pupils who get race questions right light it sooner (a 3-days-a-week pupil with all right: under half lit before, nearly all now), and pupils who get them all wrong win about 1 race in 6 and light it less often (every day, all wrong: about half lit before, about a quarter now).
 
 **What the simulator also shows:**
 - **Building levels matter.** A pupil who only grabs land is a week or more behind one who raises buildings. With all maths wrong, a pure grabber doesn't reach Grand Isle on 3 days a week.

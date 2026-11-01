@@ -178,10 +178,11 @@ export const SAILS_SPEED = 3;
 /** Speed at full happiness (scaled down with happiness). */
 export const HAPPY_SPEED = 4;
 /** One right answer. */
-export const GUST_SPEED = 4;
+export const GUST_SPEED = 5;
 /** The side that wasn't asked questions (an island at home, or the Gull Riders) gets this much wind instead: one
- * gust's worth, so two right answers beat an even match more often than not. */
-export const HOME_WIND = 4;
+ * gust's worth. Against an even match, no right answers wins about 1 race in 6 (James, 2 Nov 2026), one wins half,
+ * two about 5 in 6, and three nearly always. */
+export const HOME_WIND = 5;
 /** Luck: each side adds a random amount from 0 up to this. */
 export const RACE_LUCK = 12;
 /** The race animation is this many legs long. */

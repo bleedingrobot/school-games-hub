@@ -509,7 +509,7 @@ Decided with James because 40 small plot tiles looked crowded and "stuck on". Bu
 
 **Built (all pure functions in `shared/isles/`, every number in `config.ts`):**
 - **`race.ts`: Sky Races.**
-  - `runRace(seed, you, them, right)`: speed is 30 + sky-boats (3 × √boats, up to 16) + Swift Sails (+3) + happiness (up to +4) + 4 for each right answer + luck (0 to 12). The side that wasn't asked questions gets a home wind of +4. Ties go to the challenger.
+  - `runRace(seed, you, them, right)`: speed is 30 + sky-boats (3 × √boats, up to 16) + Swift Sails (+3) + happiness (up to +4) + 5 for each right answer + luck (0 to 12). The side that wasn't asked questions gets a home wind of +5. Ties go to the challenger.
   - The result comes only from the seed, the two boats and the number of answers marked right, so the server can work it out at `raceFinish` and the browser can't rig it.
   - It returns what the animation and the result card need: each boat's speed part by part (for the working), where each boat is at the end of each of 8 legs (0 to 1), and the legs where the gusts blow.
   - `gullRiders(you)`: the Gull Riders bring the same boats and sails as the challenger (happiness 70), so a race against them is decided by the gusts and a little luck.
@@ -521,10 +521,10 @@ Decided with James because 40 small plot tiles looked crowded and "stuck on". Bu
 - **`config.ts`:** the race numbers, the calm start (12 turns), and a `does` line for each upgrade in pupil words.
 - **Checked against the stage table:** turn, collect, feed, spend and weather were already built in S.0; races, `starterRace` and `nextStep` are new. Nothing else S.1 lists is missing. Friendship ropes, the market's moving prices and the news board are S.4.
 
-**Simulator:** races are now real (the Gull Riders, twice a play day, race questions right as often as turn questions, the season's first race is the starter race). **Grand Isle days didn't move.** The Lighthouse did, because race wins bring goods: a 3-days-a-week pupil with all maths right now nearly always lights it in week 5 (under half before); an every-day pupil with all wrong wins about 1 race in 5 and lights it a third of the time (about half before). Pupils win about 94% of races with all right, 77% with 70% right, and 22% with none. The pace table in `docs/ISLES-RULES.md` is updated.
+**Simulator:** races are now real (the Gull Riders, twice a play day, race questions right as often as turn questions, the season's first race is the starter race). **Grand Isle days didn't move.** The Lighthouse did, because race wins bring goods: a 3-days-a-week pupil with all maths right now nearly always lights it in week 5 (under half before); an every-day pupil with all wrong wins about 1 race in 6 and lights it about a quarter of the time (about half before). Pupils win about 98% of races with all right, 80% with 70% right, and 16% with none. The pace table in `docs/ISLES-RULES.md` is updated.
 
 **Decisions (James can change any):**
-- **The home wind** (+4, one gust) for the side that wasn't asked: two right answers beat an even match about 4 times in 5; none right wins about 1 in 4.
+- **The home wind** (+5, one gust of +5) for the side that wasn't asked: two right answers beat an even match about 5 times in 6; none right wins about 1 in 6 (James's answer, below).
 - **Gull Riders match your boats,** so even a big island needs its questions to beat them, and a small island isn't hopeless against them.
 - **The calm start is 12 turns** (about 2 days of play). The plan didn't give a number.
 - **A classmate who wins at home** gets the win counted (Race Winner achievement) but no prize, so nobody earns coins by sitting still. The challenger who lost gets the "well raced" gift.
@@ -537,10 +537,10 @@ Decided with James because 40 small plot tiles looked crowded and "stuck on". Bu
 
 **Untested:** everything in the browser and on the server (not built yet). `nextStep`'s wording was checked by eye on a dozen islands, not by a test (the guide says not to test wording).
 
-**Questions for James:**
-1. **Races and maths.** Race wins now depend mostly on the 3 race questions, and race goods help light the Lighthouse, so maths matters more for the Lighthouse than before (never for Grand Isle). Happy with that, or should a pupil with no answers right win more often than about 1 in 4?
-2. **Winning at home.** Should a classmate who wins a race at home (without playing) get a prize too, or just the win counted, as now?
-3. **Calm start.** Is 12 turns (about 2 days) right for new islands to be safe from challenges?
+**Questions for James, answered 2 Nov 2026:**
+1. **Races and maths:** "About 1 in 6." A pupil with no answers right should win about 1 race in 6, not 1 in 4, so maths counts more. Done: a gust is now +5 (was +4) and the home wind +5 (was +4). Against the Gull Riders: about 1 in 6 with none right, half with 1, 5 in 6 with 2, and nearly always with 3. A new island against a big one (14 boats and Swift Sails) wins almost half its races with all 3 right (was 1 in 3). Re-simulated: Grand Isle days didn't move; an every-day pupil with all wrong lights the Lighthouse about a quarter of the time (a third before this change).
+2. **Winning at home:** "Win counted only." Kept as built: the win counts for Race Winner, no prize.
+3. **Calm start:** "12 turns." Kept.
 
 ### S.L so far (style try-outs), 1 Nov 2026
 
