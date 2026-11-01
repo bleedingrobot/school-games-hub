@@ -1,17 +1,21 @@
-# Deep Claw: plan
+# Diamond Drop: plan
 
 *A claw-and-winch digging game for School Games Hub. Asked for by James on 2 November 2026: "evaluate this style game for games hub (github.com/Dor-sketch/custom-gold-miner-game), multiple levels they work their way through, perhaps each has a time limit to get past, gems that are progressively more rare, aiming to get to the last level and get the diamond, a chance of dropping gems after they are caught and maths is needed to hold onto them … high quality graphics drawn by gaming computer." Branch `claw`, worktree `~/games-hub-claw`, made from `origin/main` c52ae04. Built by following [GAME_DEVELOPMENT_GUIDE.md](GAME_DEVELOPMENT_GUIDE.md).*
 
-**Stage 0: plan only, no code yet.** Working name **Deep Claw**, id `claw`, CSS prefix `.dc-`, server function `claw`. Next free migration number when written: `20261102000100` (re-check with `node scripts/migration-numbers.mjs` before the first migration).
+**Stage 0: plan only, no code yet.** Name **Diamond Drop** (James, 2 Nov 2026), id `diamond`, CSS prefix `.dd-`, server function `diamond`. The branch keeps its first name, `claw`. Next free migration number when written: `20261102000100` (re-check with `node scripts/migration-numbers.mjs` before the first migration).
 
 **Decisions (James, 2 Nov 2026):**
 - Levels are **saved and unlock as you go**. A passed level stays passed; next lesson starts from the deepest level reached. Failing a level just means trying it again.
 - A wrong **Hold on!** answer: the gem **falls back into the rock**, lower down. It can be caught again, but that costs time.
 - **10 levels** down to the diamond.
 - A **small shop** between levels.
+- Name **Diamond Drop**.
+- **New Season sends everyone back to level 1** (a season game: section 6.2). Achievements and the Hall stay.
+- **The clock pauses** during Hold on!
+- A **Hall of Diamond Finders** (own school).
 - **High-quality painted art**, painted by James on his gaming PC (ComfyUI), as for Star Trader and Dragon Maths. It is planned from Stage 2, not left to the end (section 9).
 
-Every other choice below is a recommendation, marked **(recommended)**, for James to confirm in section 13.
+Section 13's questions were answered the same day, so everything here is decided unless marked otherwise.
 
 ---
 
@@ -35,7 +39,7 @@ Every other choice below is a recommendation, marked **(recommended)**, for Jame
 
 ## 3. The rules
 
-Every number lives in `shared/claw/config.ts` so How to play, the simulator, the server and the screens read the same numbers. All numbers below are starting guesses for the simulator to tune.
+Every number lives in `shared/diamond/config.ts` so How to play, the simulator, the server and the screens read the same numbers. All numbers below are starting guesses for the simulator to tune.
 
 ### 3.1 The claw
 
@@ -100,9 +104,9 @@ Coins are saved between lessons. Prices are shown as sums ("You have 85. Lucky C
 
 ## 4. Maths: the one approved way
 
-- **Way A** (section 4.2 of the guide): at level start the server reads `space_maths_context(player)`, makes the pack with `makeFocusPack` from a fresh seed, makes the level's 6 (or 8) questions, stores them in `claw_questions` (pupils can't read it) and sends only `publicQuestion`s.
+- **Way A** (section 4.2 of the guide): at level start the server reads `space_maths_context(player)`, makes the pack with `makeFocusPack` from a fresh seed, makes the level's 6 (or 8) questions, stores them in `diamond_questions` (pupils can't read it) and sends only `publicQuestion`s.
 - Questions show in `QuestionModal`, so every kind the ladder can make just works. Multiple choice follows the class switch.
-- Each answer goes to the server, is marked there once (`claw_claim_answer`) and recorded with `recordMathsAnswers(…, 'claw')`.
+- Each answer goes to the server, is marked there once (`diamond_claim_answer`) and recorded with `recordMathsAnswers(…, 'diamond')`.
 - Maths is the heart of the game, so there's no maths on/off switch.
 - The guide character never helps with the questions.
 
@@ -110,26 +114,26 @@ Coins are saved between lessons. Prices are shown as sums ("You have 85. Lucky C
 
 - **Requests:** `levelStart` (seed, questions, the pupil's boosts), one `answer` per Hold on!, `levelEnd { seed, drops, boosts }`. About 5 a level on average.
 - **Replay:** `levelEnd` runs the shared engine with the seed, the recorded drop ticks and the server's own marks, and saves what the replay says (gems caught, passed or not, stars, coins). The browser's own total is never trusted. A level ended twice counts once (unique seed).
-- **Tables** (one migration, RLS on everywhere): `claw_players` (deepest level, coins, Gem Book counts, stars per level), `claw_levels` (one row per level played: seed, level, started, result, drops; unique seed), `claw_questions` (server only: no policy, no grant). Pupils read their own through `my_claw()`. Saving only through `record_claw_…()` functions the server key alone can run.
+- **Tables** (one migration, RLS on everywhere): `diamond_players` (deepest level, coins, Gem Book counts, stars per level), `diamond_levels` (one row per level played: seed, level, started, result, drops; unique seed), `diamond_questions` (server only: no policy, no grant). Pupils read their own through `my_diamond()`. Saving only through `record_diamond_…()` functions the server key alone can run.
 - **Cost:** a class of 28 playing 8 levels a lesson is about 1,100 requests. A lesson a day across a school is well under 30,000 a month, against 500,000 free.
 - **Switch checks:** the function refuses while the teacher switch is off.
 
 ## 6. Design decisions (guide section 1a)
 
-1. **The big goal:** reach level 10 and catch the Heart Diamond, filling the Gem Book's last page. Aim (to check with the simulator): a pupil playing 3 to 4 days a week gets there in about **3 weeks**; quick players sooner. **After it:** 3 stars on every level, the full Gem Book counts, and their name in the school's **Hall of Diamond Finders**. (recommended)
-2. **Season game? No** (recommended). Progress is skill, not piled-up power, so a late joiner can catch up. New Season clears only its points (automatic). James to confirm: should New Season also start everyone back at level 1? (section 13)
+1. **The big goal:** reach level 10 and catch the Heart Diamond, filling the Gem Book's last page. Aim (to check with the simulator): a pupil playing 3 to 4 days a week gets there in about **3 weeks**; quick players sooner. **After it:** 3 stars on every level, the full Gem Book counts, and their name in the school's **Hall of Diamond Finders**, kept for good with the season it was found in.
+2. **Season game: yes** (James). New Season sends everyone back to level 1: the `season_fn` hook clears levels, coins, stars and the Gem Book. Achievements stay (`keep_achievements`), and so does the Hall. It uses the school's 35-day season, not a new clock; reading the season date needs a shared function, so ask James how before Stage 4 (guide section 1a.2). The 3-week aim fits inside a season, and a pupil who joins in week 2 can still reach the diamond. Last days: a countdown line ("5 days left to find the diamond this season"); the Hall marks each season's finders.
 3. **Moves a day: no limit on play** (recommended), it's maths practice. Points are naturally capped: they're earned once per level passed and per star, so replaying can't farm them, and the hub's 40-a-day cap applies anyway. No home page "Left today" chip needed.
 4. **Progress bars:** in the game, a **depth gauge** down the side showing the 10 levels with the pupil's claw at their deepest, the diamond glowing at the bottom; during a level, a bar filling towards the gem target next to the clock. Home page: hub level bar and achievements come free.
 5. **Achievements:**
 
 | Name | For (pupil words) | Measure | Roughly who | Survives New Season |
 |---|---|---|---|---|
-| First Catch | Catch your first gem | `claw_gems` ≥ 1 | nearly everyone, day one | yes |
-| Firm Grip | Hold on to 10 slipping gems | `claw_grips` ≥ 10 | most, first week | yes |
-| Halfway Down | Pass level 5 | `claw_level` ≥ 5 | most | yes |
-| Gem Collector | Catch every kind of gem | `claw_kinds` ≥ 9 | many | yes |
-| Diamond Finder | Catch the Heart Diamond | `claw_diamond` ≥ 1 | the big goal | yes |
-| Star Miner | 3 stars on every level | `claw_stars` ≥ 30 | a keen few | yes |
+| First Catch | Catch your first gem | `diamond_gems` ≥ 1 | nearly everyone, day one | yes |
+| Firm Grip | Hold on to 10 slipping gems | `diamond_grips` ≥ 10 | most, first week | yes |
+| Halfway Down | Pass level 5 | `diamond_level` ≥ 5 | most | yes |
+| Gem Collector | Catch every kind of gem | `diamond_kinds` ≥ 9 | many | yes |
+| Diamond Finder | Catch the Heart Diamond | `diamond_found` ≥ 1 | the big goal | yes |
+| Star Miner | 3 stars on every level | `diamond_stars` ≥ 30 | a keen few | yes |
 
    Points (rules_fn): pass a level for the first time: 2 points; each new star: 1 point; the diamond: 5 points.
 6. **Home page card:** a cut-away cliff in bright storybook style: a little winch and claw at the top on grass, coloured gem layers going down through clay, caves and glowing crystals to a shining diamond at the bottom. No text. (Painted with the game's art: section 9.)
@@ -166,7 +170,7 @@ A kiwi in a hard hat, inside the game's own folder.
 
 ## 9. Painted art (high quality, from James's gaming PC)
 
-James asked for high-quality graphics painted on his gaming PC. Pattern from Star Trader (`docs/TRADER-ART-PLAN.md`): Stage 2 writes `docs/CLAW-ART-PLAN.md` with every picture, its size and a ComfyUI prompt; James paints 2 to 6 tries each into an inbox (`claw-art-inbox` branch or a folder outside the repo); picks go in `docs/claw-art/picks.json`; `scripts/claw-art.py` (copied from `trader-art.py`) makes the `.webp` files and cuts out sprites; `art.test.ts` checks none missing. **Drawn code art stays as the fallback**, so the game works before every picture arrives.
+James asked for high-quality graphics painted on his gaming PC. Pattern from Star Trader (`docs/TRADER-ART-PLAN.md`): Stage 2 writes `docs/DIAMOND-ART-PLAN.md` with every picture, its size and a ComfyUI prompt; James paints 2 to 6 tries each into an inbox (`diamond-art-inbox` branch or a folder outside the repo); picks go in `docs/diamond-art/picks.json`; `scripts/diamond-art.py` (copied from `trader-art.py`) makes the `.webp` files and cuts out sprites; `art.test.ts` checks none missing. **Drawn code art stays as the fallback**, so the game works before every picture arrives.
 
 What needs painting (about 40 pictures, in batches so each can go live on its own):
 - **10 level backgrounds** (one per place, a cut-away of the earth at that depth, 1600 × 1000), plus the level map.
@@ -183,17 +187,17 @@ Style to settle with mock-ups early in Stage 2: bright, rich, storybook painting
 - Rules (3): the same seed and drops always give the same level result; slips come only from the seed and the server's marks; level pass and stars.
 - Server (3): wrong is wrong and an answer counts once; another pupil's seed is refused; `levelEnd` saves the replay's result, not a faked total.
 - Screens (2): the accessibility check (copied from Clan Quest) and the guided first go can't get stuck.
-- Plus `supabase/tests/database/claw.test.sql` and the "index.ts is up to date" check. Balance goes in `scripts/claw-sim.mjs`.
+- Plus `supabase/tests/database/diamond.test.sql` and the "index.ts is up to date" check. Balance goes in `scripts/diamond-sim.mjs`.
 
 ## 11. Stages
 
 0. **Plan** (this). Stop for James.
-1. **Rules engine and simulator** in `shared/claw/`: config, field from seed, swing and reel, slips, shop effects, replay. Simulator tunes times, targets, slip chances and coin flow so the diamond lands around 3 weeks. 3 rule tests.
-2. **Screens, drawn art and phone preview**, plus `docs/CLAW-ART-PLAN.md` with prompts and style mock-ups so James can start painting. Trial backend so the preview never touches the live server. Published as a private Artifact for James to try.
-3. **Server and migration:** `claw` function (way A, replay), tables, pgTAP tests.
+1. **Rules engine and simulator** in `shared/diamond/`: config, field from seed, swing and reel, slips, shop effects, replay. Simulator tunes times, targets, slip chances and coin flow so the diamond lands around 3 weeks. 3 rule tests.
+2. **Screens, drawn art and phone preview**, plus `docs/DIAMOND-ART-PLAN.md` with prompts and style mock-ups so James can start painting. Trial backend so the preview never touches the live server. Published as a private Artifact for James to try.
+3. **Server and migration:** `diamond` function (way A, replay), tables, pgTAP tests.
 4. **Hub fit:** points, achievements, teacher switch and summary, How to play from config, the Hall, accessibility.
 5. **New player guide:** Nugget, guided first go, next-step line, tips. James tries the first go.
-6. **Painted art in:** James's picks through `claw-art.py`, screenshots at laptop and phone size.
+6. **Painted art in:** James's picks through `diamond-art.py`, screenshots at laptop and phone size.
 7. **Go-live prompt and go-live**, each live step on James's word.
 
 ## 12. Risks
@@ -202,9 +206,11 @@ Style to settle with mock-ups early in Stage 2: bright, rich, storybook painting
 - **Pupils dodging rare gems to avoid maths:** targets need rare gems from level 4 on, and Hold on! is framed as a lucky save, not a test.
 - **Too easy or too hard:** the simulator plus one class trying the preview before go-live.
 
-## 13. Still to decide (James)
+## 13. Decided (James, 2 Nov 2026)
 
-- **Name:** Deep Claw (working), Diamond Drop, Claw & Crystal, or something from the class.
-- **New Season:** keep levels and the Gem Book (recommended) or start everyone at level 1 again?
-- **The clock pauses during Hold on!** (recommended) or keeps running?
-- **Hall of Diamond Finders** (recommended) or no list at all?
+- Name: **Diamond Drop**.
+- New Season: **everyone back to level 1** (achievements and the Hall kept).
+- The clock **pauses** during Hold on!
+- **Hall of Diamond Finders**: yes.
+
+Still open: how this game reads the school season date (ask before Stage 4).
