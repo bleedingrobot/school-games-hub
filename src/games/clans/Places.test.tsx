@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { hpCost, shopPrice, spCost, trainCost } from '../../../shared/clans/character';
@@ -69,12 +69,13 @@ describe('the Market', () => {
   const firstNext = (s: Session) => itemAt(s.clan.members[0].cls, 'weapon', 2)!;
   const buyName = (s: Session, i: ItemDef, mi = 0) => `Buy the ${i.name} for ${s.clan.members[mi].name}, ${i.price} gold`;
 
-  it('shows a card for each member: what they wear in each slot, the next item up, and what it adds', async () => {
+  it('shows one member at a time: what they wear in each slot, the items above it, and what they add', async () => {
     const u = user();
     const s = session();
     show(s);
     await u.click(screen.getByRole('button', { name: 'The Market' }));
-    expect(screen.getAllByRole('article', { name: /'s gear$/ })).toHaveLength(s.clan.members.length);
+    expect(screen.getAllByRole('article', { name: /'s gear$/ })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: `Shop for ${s.clan.members[0].name}` })).toHaveAttribute('aria-pressed', 'true');
     const m = s.clan.members[0];
     const card = screen.getByRole('article', { name: `${m.name}'s gear` });
     for (const kind of ['weapon', 'armor', 'shield'] as const) {
@@ -120,20 +121,21 @@ describe('the Market', () => {
     await u.click(screen.getByRole('button', { name: 'Pay and wear it' }));
     expect(screen.getByRole('status')).toHaveTextContent(`You paid ${it2.price} gold.`);
     const armour = itemAt(s.clan.members[1].cls, 'armor', 2)!;
+    await u.click(screen.getByRole('button', { name: `Shop for ${s.clan.members[1].name}` }));
+    expect(screen.getByRole('article', { name: `${s.clan.members[1].name}'s gear` })).toBeInTheDocument();
     await u.click(screen.getByRole('button', { name: buyName(s, armour, 1) }));
     await u.click(screen.getByRole('button', { name: 'Show me how' }));
     await u.click(screen.getByRole('button', { name: 'Pay and wear it' }));
     expect(screen.getByRole('region', { name: 'The Market' })).toHaveTextContent(`You have ${CONFIG.startGold - it2.price - armour.price} gold`);
   });
 
-  it('says which Smithy level sells the next tiers, and once it does, any tier can be bought from the whole line', async () => {
+  it('shows every line in full, and says which Smithy level sells the higher tiers', async () => {
     const u = user();
     const s = session();
     const m = s.clan.members[0];
     show(s);
     await u.click(screen.getByRole('button', { name: 'The Market' }));
-    const card = screen.getByRole('article', { name: `${m.name}'s gear` });
-    await u.click(within(card).getAllByRole('button', { name: /^See all/ })[0]);
+    expect(screen.queryByRole('button', { name: /^See all/ })).not.toBeInTheDocument();
     const line = screen.getByRole('list', { name: `${m.name}'s weapon line` });
     expect(line.querySelectorAll(':scope > li')).toHaveLength(7);
     expect(line).toHaveTextContent('Needs the Smithy at level 1');
@@ -147,7 +149,6 @@ describe('the Market', () => {
     const four = itemAt(m.cls, 'weapon', 4)!;
     show(s);
     await u.click(screen.getByRole('button', { name: 'The Market' }));
-    await u.click(within(screen.getByRole('article', { name: `${m.name}'s gear` })).getAllByRole('button', { name: /^See all/ })[0]);
     await u.click(screen.getByRole('button', { name: buyName(s, four) }));
     await u.click(screen.getByRole('button', { name: 'Show me how' }));
     await u.click(screen.getByRole('button', { name: 'Pay and wear it' }));

@@ -37,7 +37,7 @@ export function HowToPlayBody({ fightsPerDay = CONFIG.fightsPerDay }: { fightsPe
         </section>
         <section aria-labelledby="htp-shop">
           <h3 id="htp-shop">The Market</h3>
-          <p>Every class has its own weapons, armour and a third item, like a shield or a charm. Each hero starts with the first of each. The Market shows their next, better item and a <strong>Buy</strong> button.</p>
+          <p>Every class has its own weapons, armour and a third item, like a shield or a charm. Each hero starts with the first of each. In the Market, pick a hero to see all their items, from what they wear now to the best there is, each with a <strong>Buy</strong> button.</p>
           <p>Items give the stats marked <strong>(R)</strong>, as in the Training Hall. A bigger Smithy sells better items. Answer a maths question when you buy for <strong>{CONFIG.shopDiscount}% off</strong>.</p>
         </section>
         <section aria-labelledby="htp-train">
