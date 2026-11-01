@@ -3,7 +3,8 @@ import { GOODS, LOLLIES, MAX_PODS, MOON_PRICE, SHIPS, WATER } from '../../../../
 import { distance, makeGalaxy, type Galaxy } from '../../../../shared/trader/galaxy';
 import { isBanned, marketFor } from '../../../../shared/trader/market';
 import { hasShipyard, newTrader, type Trader } from '../../../../shared/trader/state';
-import { allPrices, cargoPlan, nextUpgrade, SHIP_LADDER, stopOnTheWay, tradeIdeas, tradingMoney, WORTH_A_JUMP_PCT } from './advice';
+import { allPrices, cargoPlan, nextUpgrade, SHIP_LADDER, starterTrade, stopOnTheWay, tradeIdeas, tradingMoney, WORTH_A_JUMP_PCT } from './advice';
+import { flightStep, type FlightView } from './flight';
 import { nextStep, type CoachView } from './nextStep';
 
 const DAY = 20_400;
@@ -208,5 +209,95 @@ describe('Bolt: the next step', () => {
     const { galaxy, t } = start(SEEDS[0]);
     expect(nextStep(view(galaxy, { ...t, credits: 0 })).say).toMatch(/Bank can lend/);
     expect(nextStep(view(galaxy, { ...t, credits: 0 }, { loans: false })).say).toMatch(/^Nothing here makes a profit/);
+  });
+});
+
+describe('First Flight', () => {
+  const run = (galaxy: Galaxy, t: Trader, acks: string[] = ['hello', 'hud']) => {
+    const trip = starterTrade(galaxy, t) as NonNullable<ReturnType<typeof starterTrade>>;
+    return { good: trip.good, planet: trip.planet, credits: t.credits, jumps: 0, acks };
+  };
+  const fv = (galaxy: Galaxy, t: Trader, more: Partial<FlightView> = {}): FlightView => ({ galaxy, t, tab: 'trade', jumps: 0, run: run(galaxy, newTrader(galaxy, DAY)), ...more });
+  const buyAll = (t: Trader, good: number): Trader => {
+    const qty = Math.min(t.market[good].stock, Math.floor(t.credits / t.market[good].buy), SHIPS[t.ship].holds);
+    const cargo = [...t.cargo];
+    cargo[good] += qty;
+    return { ...t, cargo, credits: t.credits - qty * t.market[good].buy };
+  };
+
+  it('always has a first trade that makes money and needs no fuel bought, on 40 galaxies', () => {
+    for (const seed of SEEDS) {
+      const { galaxy, t } = start(seed);
+      const trip = starterTrade(galaxy, t);
+      expect(trip, seed).toBeTruthy();
+      expect(trip!.profit).toBeGreaterThan(0);
+      expect(trip!.qty).toBeGreaterThan(0);
+      expect(isBanned(galaxy.planets[trip!.planet], trip!.good)).toBe(false);
+      expect(trip!.fuel, seed).toBeLessThanOrEqual(t.fuel);
+    }
+  });
+
+  it('goes hello, dashboard, buy, bill, chart, find, jump, sell, profit', () => {
+    const { galaxy, t } = start(SEEDS[0]);
+    const r = run(galaxy, t, []);
+    expect(flightStep(fv(galaxy, t, { run: r })).id).toBe('hello');
+    expect(flightStep(fv(galaxy, t, { run: { ...r, acks: ['hello'] } })).id).toBe('hud');
+    const buy = flightStep(fv(galaxy, t));
+    expect(buy).toMatchObject({ n: 3, id: 'buy', target: `buy-max-${r.good}` });
+    expect(buy.say).toContain(GOODS[r.good]);
+    expect(buy.say).toContain(galaxy.planets[r.planet].name);
+    const plan = GOODS.map((_, g) => (g === r.good ? 3 : 0));
+    expect(flightStep(fv(galaxy, t, { plan }))).toMatchObject({ n: 4, target: 'trade-go' });
+    const loaded = buyAll(t, r.good);
+    expect(flightStep(fv(galaxy, loaded))).toMatchObject({ n: 5, target: 'tab-map' });
+    expect(flightStep(fv(galaxy, loaded, { tab: 'map' }))).toMatchObject({ n: 6, target: `planet-${r.planet}`, guide: r.planet });
+    expect(flightStep(fv(galaxy, loaded, { tab: 'map', aimed: r.planet }))).toMatchObject({ n: 7, target: 'jump-go' });
+    const landed = { ...at(galaxy, loaded, r.planet), fuel: loaded.fuel - distance(galaxy.planets[t.location], galaxy.planets[r.planet]) };
+    expect(flightStep(fv(galaxy, landed, { jumps: 1 }))).toMatchObject({ n: 8, target: `sell-all-${r.good}` });
+    const selling = GOODS.map((_, g) => (g === r.good ? -landed.cargo[g] : 0));
+    expect(flightStep(fv(galaxy, landed, { jumps: 1, plan: selling }))).toMatchObject({ n: 8, target: 'trade-go' });
+    const sold = { ...landed, cargo: landed.cargo.map(() => 0), credits: landed.credits + landed.cargo[r.good] * landed.market[r.good].sell };
+    const done = flightStep(fv(galaxy, sold, { jumps: 1 }));
+    expect(done).toMatchObject({ n: 9, id: 'profit', button: 'Thanks, Bolt' });
+    expect(done.say).toMatch(/credits profit! 🎉/);
+  });
+
+  it('follows the pupil: their own good, the chart opened early, another planet, or fuel to buy', () => {
+    const { galaxy, t } = start(SEEDS[1]);
+    const r = run(galaxy, t);
+    // Opened the chart before buying: back to the Trade tab.
+    expect(flightStep(fv(galaxy, t, { tab: 'map' }))).toMatchObject({ n: 3, target: 'tab-trade' });
+    // Bought something else: carries on with that good.
+    const other = t.market.find((line) => line.good !== r.good && line.buy > 0 && line.buy <= t.credits && line.stock > 0)!;
+    const mine = buyAll(t, other.good);
+    expect(flightStep(fv(galaxy, mine)).say).toContain(GOODS[other.good]);
+    // Typed another planet: it's their choice.
+    const loaded = buyAll(t, r.good);
+    const elsewhere = galaxy.planets.find((p) => p.id !== r.planet && p.id !== t.location && distance(galaxy.planets[t.location], p) <= t.fuel)!;
+    expect(flightStep(fv(galaxy, loaded, { tab: 'map', aimed: elsewhere.id })).say).toMatch(/your choice!.*Press Jump!/);
+    // Not enough fuel: buy it first.
+    const far = galaxy.planets.find((p) => p.id !== t.location && distance(galaxy.planets[t.location], p) > 2 && distance(galaxy.planets[t.location], p) <= SHIPS[t.ship].fuelTank)!;
+    expect(flightStep(fv(galaxy, { ...loaded, fuel: 1 }, { tab: 'map', aimed: far.id }))).toMatchObject({ n: 7, target: 'jump-fuel' });
+  });
+
+  it('says honestly when the first trip lost money, and when the planet landed on does not buy the good', () => {
+    const { galaxy, t } = start(SEEDS[2]);
+    const r = run(galaxy, t);
+    const lost = { ...t, credits: t.credits - 5, cargo: t.cargo.map(() => 0) };
+    expect(flightStep(fv(galaxy, lost, { jumps: 1, run: r })).say).toMatch(/lost 5 this time/);
+    // Land with Lollies on a planet that bans them (it pays nothing for them).
+    for (const seed of SEEDS) {
+      const g = makeGalaxy(seed);
+      const ban = g.planets.find((p) => isBanned(p, LOLLIES));
+      if (!ban) continue;
+      const base = newTrader(g, DAY);
+      const cargo = base.cargo.map((_, i) => (i === LOLLIES ? 3 : 0));
+      const there = { ...at(g, base, ban.id), cargo };
+      const step = flightStep({ galaxy: g, t: there, tab: 'trade', jumps: 1, run: { good: LOLLIES, planet: ban.id, credits: 100, jumps: 0, acks: ['hello', 'hud'] } });
+      expect(step).toMatchObject({ n: 8, target: 'tab-map' });
+      expect(step.say).toMatch(new RegExp(`${ban.name} doesn't buy Lollies`));
+      return;
+    }
+    throw new Error('no planet bans Lollies');
   });
 });

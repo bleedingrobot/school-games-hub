@@ -32,7 +32,7 @@ function averages(galaxy: Galaxy, day: number): number[] {
   return sums.map((s) => (s.n ? s.total / s.n : 0));
 }
 
-export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade }: {
+export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade, onPlan }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
@@ -42,6 +42,8 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade }: {
   pushes?: Pushes;
   /** Carry out the plan (the game may ask a maths check first). Gives a message to show, or null. */
   onTrade: (plan: number[]) => Promise<string | null>;
+  /** Tells the game what is picked but not traded yet (for First Flight), and null when the market closes. */
+  onPlan?: (plan: number[] | null) => void;
 }) {
   const [plan, setPlan] = useState<number[]>(emptyPlan);
   const [message, setMessage] = useState('');
@@ -56,6 +58,8 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade }: {
   // Otherwise an old "sell 3" would be left over for goods that have gone, and every button would quietly fail on top of it.
   const holdKey = t.cargo.join(',');
   useEffect(() => setPlan(emptyPlan()), [t.location, t.day, t.jumpNo, holdKey]);
+  useEffect(() => onPlan?.(plan), [plan, onPlan]);
+  useEffect(() => () => onPlan?.(null), [onPlan]);
   const here = runPlan(t, plan);
   const out = here.ok ? here.out : null;
 

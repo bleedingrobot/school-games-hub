@@ -205,3 +205,18 @@ export function nextUpgrade(galaxy: Galaxy, t: Trader, trips: readonly Trip[]): 
   }
   return options.find((o) => o.cost <= t.credits - keep) ?? null;
 }
+
+/** A planet with only a few pirates about (governments with pirates 3 or fewer). */
+export const calmPlanet = (planet: Planet): boolean => GOVERNMENTS[planet.government].pirates <= 3;
+
+/**
+ * First Flight's trade (docs/TRADER-HINTS-PLAN.md, 2.1): a trip that is sure to make money, the pupil can afford now, and
+ * is easy for a first go. Of the trips that make a profit, the first that fits best wins: a calm planet reached on the
+ * fuel already in the tank, then either of those, then any; biggest profit first within each. Null if nothing pays.
+ */
+export function starterTrade(galaxy: Galaxy, t: Trader, pushes?: Pushes): Trip | null {
+  const trips = tradeIdeas(galaxy, t, allPrices(galaxy, t.day, pushes)).filter((trip) => trip.qty > 0);
+  const onFuel = (trip: Trip) => trip.fuel <= t.fuel;
+  const calm = (trip: Trip) => calmPlanet(galaxy.planets[trip.planet]);
+  return trips.find((x) => onFuel(x) && calm(x)) ?? trips.find(onFuel) ?? trips.find(calm) ?? trips[0] ?? null;
+}

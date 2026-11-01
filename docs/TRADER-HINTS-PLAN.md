@@ -1,7 +1,7 @@
 # Star Trader: in-game hints plan
 
 Written 1 November 2026 for James, the day Star Trader went live, after reading every screen of the game (`src/games/trader/`) and its rules (`shared/trader/`).
-**Status: H.1 built 1 Nov 2026 on branch `trader-hints` (section 12); not merged or live. H.2 to H.5 not started.** Branch to use: `trader-hints`. Everything stays inside `src/games/trader/`: **no server change, no migration, no shared files** (one optional server change is in section 9, and it can wait).
+**Status: H.1 and H.2 built 1 Nov 2026 on branch `trader-hints` (sections 12 and 13); not merged or live. H.3 to H.5 not started.** Branch to use: `trader-hints`. Everything stays inside `src/games/trader/`: **no server change, no migration, no shared files** (one optional server change is in section 9, and it can wait).
 
 ## The short version
 
@@ -297,3 +297,37 @@ Built on branch `trader-hints` (its own folder, `~/games-hub-trader-hints`). **N
 
 ### Fixed after James tried H.1 (1 Nov 2026)
 **Buy max did nothing.** An older market bug (not Bolt's): the numbers picked in the market (the +3 / −3 boxes) only cleared on a new planet, not after pressing Trade. After selling 3 Fireworks, the plan still said "sell 3 Fireworks", which was now impossible, so every later button was checked on top of it and quietly refused. Now the picks clear whenever the hold changes (a trade, a friendly trader, pirates), and Buy max / Sell all say why when they can't add even one ("You cannot afford that.", "Your hold is full."). Two new screen tests (the first fails on the old code). Star Trader screen tests: 49 pass.
+
+## 13. Stage H.2 results (1 Nov 2026): First Flight
+
+Built on branch `trader-hints`. **Not merged, nothing live.** Only files in `src/games/trader/` changed: no server code, no migration, no shared files.
+
+### What's there
+| Where | What |
+|---|---|
+| `coach/advice.ts` | `starterTrade`: Bolt's first trade. Of the trips that make money and the pupil can afford, the first that fits: a calm planet (pirates 3 or fewer) reached on the fuel already in the tank, then either, then any; biggest profit first |
+| `coach/flight.ts` | `flightStep(view)`: the 9 steps of section 2.1, worked out fresh from the game each time, so it follows the pupil (their own good, the chart opened early, another planet, fuel to buy, a planet that doesn't buy the good). Step 6 says "x is negative" or "y is negative" only for the side the planet is on |
+| `coach/memory.ts` | What's kept on this device (`sgh-trader-coach`): First Flight done or skipped, and the trip in progress (Bolt's good and planet, the credits and jumps at the start, the buttons pressed). The trip is picked once so Bolt's numbers stay the same all the way |
+| `coach/FlightBubble.tsx` | Bolt's bubble, docked at the bottom, or at the top when the lit thing is low on the screen. "Step 3 of 9", Bolt's words in a live region, the step's button ("Let's go", "Got it", "Thanks, Bolt") or "Show me", and "Skip First Flight" with a "Sure?" (Escape backs out). The lit thing glows until its step is done, and never blocks a click |
+| `StarMap.tsx` | Guide lines for First Flight: dotted lines from the planet up to its x number and across to its y number, with both numbers circled |
+| `Panels.tsx` | The market tells the game what is picked but not traded yet (so step 4, "press Trade", knows) |
+| `TraderGame.tsx` | First Flight starts for a pupil with no jumps yet (the server's count) unless done or skipped on this device. Bolt's next-step bar waits until it's over. The bubble steps aside during an encounter, a maths check or a summary, and carries on after. Title screen: "New here? Bolt … will fly with you" and "Replay First Flight" |
+
+### Decisions made while building
+- **Profit is worked out from credits** ("You had 100 credits before the trip, and now you have 139"), not from a buy price kept on the side. It's always true, even after buying fuel, pirates or a friendly trader, and needs nothing new kept.
+- **The dashboard step lights the whole top strip** (one "Got it") rather than each item in turn: three presses before doing anything felt slow.
+- **Step 3 and step 4 need to know what's picked in the market**, so the market now reports it. Nothing else uses it.
+- Found while testing: a lit planet or the top strip moved out of place, because the glow gave it `position: relative`. Fixed for H.1's "Show me" too.
+
+### Tests
+- `coach/coach.test.ts` (4 new, 21 in all): a first trade on all 40 galaxies that makes money, is affordable, isn't banned and needs no fuel bought; all 9 steps in order; following the pupil (chart early, own good, another planet, fuel to buy); an honest loss, and a planet that doesn't buy the good.
+- `TraderGame.test.tsx` (5 new): the whole of First Flight on the pretend server, Bolt's lit button pressed at each step, through to "credits profit! 🎉" and Bolt's bar taking over; out-of-order steps; skip with "Sure?" and replay from the title; an encounter on the first jump (the bubble steps aside, then selling carries on); a loss on the first trip. The older screen tests now play as a pupil who skipped First Flight.
+- Star Trader screen and coach tests: 58 pass. Whole project (`npm run test:all`): 333 files, 5,820 tests pass. Typecheck clean.
+- Checked by eye in the browser at 1366 × 640 and 844 × 390: a whole First Flight from a new game (1 Fireworks from Makemake to Saturn, +39). No console errors.
+
+### Not done / untested
+- **The first trade can be one dear item** (in the preview: 1 Fireworks for +39, and a 19-fuel trip). Right on the numbers, but "fill your hold with Water" might teach the idea better. If James agrees, `starterTrade` could prefer a trip that fills at least half the hold. Worth deciding before the class trial.
+- The first-time tips for encounters (pirates, junk, a trader) come in H.3, so during First Flight an encounter shows its normal panel with no Bolt words yet.
+- On a phone the bubble covers about a third of the screen. It can be moved past, but H.4's accessibility pass should look again.
+- Not tried by a child, or on a real Chromebook or iPad.
+

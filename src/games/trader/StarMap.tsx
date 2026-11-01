@@ -52,7 +52,7 @@ function usePaintedIcons(names: readonly string[]): void {
 const VIEW = GRID_SIZE - 1 + 3;
 const pos = (n: number): number => ((n + 1.5) / VIEW) * 100;
 
-export function MapPanel({ galaxy, t, busy, news = [], pushes, onAim, onJump, onRefuel }: {
+export function MapPanel({ galaxy, t, busy, news = [], pushes, guide = null, onAim, onJump, onRefuel }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
@@ -62,6 +62,8 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, onAim, onJump, on
   pushes?: Pushes;
   /** Tells the game which planet the typed coordinates point at (for Bolt's next step). */
   onAim?: (planet: number | null) => void;
+  /** A planet to draw guide lines from, out to its x number along the top and its y number down the side (First Flight). */
+  guide?: number | null;
   onJump: (dest: number) => void;
   onRefuel: (units: number) => void;
 }) {
@@ -127,6 +129,15 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, onAim, onJump, on
             <text x={GRID_HALF + 0.3} y="0.7" fill="#fde047" fontSize="0.65" fontWeight="700">y</text>
             <clipPath id="st-gridclip"><rect x="0" y="0" width={GRID_SIZE - 1} height={GRID_SIZE - 1} /></clipPath>
             <polygon points={diamond} clipPath="url(#st-gridclip)" fill="rgba(56,189,248,0.12)" stroke="#38bdf8" strokeWidth="0.09" strokeDasharray="0.35 0.25" />
+            {guide !== null && galaxy.planets[guide] && (
+              <g className="st-guide">
+                {/* Guide lines from the planet to its numbers: up to x along the top, across to y down the side. */}
+                <line x1={galaxy.planets[guide].x} y1={galaxy.planets[guide].y} x2={galaxy.planets[guide].x} y2="-0.25" stroke="#fde047" strokeWidth="0.09" strokeDasharray="0.25 0.2" />
+                <line x1={galaxy.planets[guide].x} y1={galaxy.planets[guide].y} x2="-0.35" y2={galaxy.planets[guide].y} stroke="#fde047" strokeWidth="0.09" strokeDasharray="0.25 0.2" />
+                <circle cx={galaxy.planets[guide].x} cy="-0.68" r="0.48" fill="none" stroke="#fde047" strokeWidth="0.08" />
+                <circle cx="-0.75" cy={galaxy.planets[guide].y} r="0.48" fill="none" stroke="#fde047" strokeWidth="0.08" />
+              </g>
+            )}
             {aim && (
               <g>
                 {/* Where the typed numbers land: lines in from the x and y axes and a crosshair. */}

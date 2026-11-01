@@ -16,13 +16,18 @@ import { applyBatch, type Action, type Game, type Mark, type Settings } from '..
 import { type ApiResult, type Loaded, type MoveReply, type TraderApi } from '../../data/trader';
 import { useAsk } from './Ask';
 import { DealPanel, FightPanel, JunkPanel, SummaryPanel } from './Encounter';
+import { starterTrade } from './coach/advice';
 import { CoachBar, lightUp } from './coach/CoachBar';
+import { flightStep } from './coach/flight';
+import { FlightBubble, holdLight } from './coach/FlightBubble';
+import { loadCoach, saveCoach, type CoachMemory } from './coach/memory';
 import { nextStep, type CoachTab } from './coach/nextStep';
 import { BankPanel, ShipPanel, TradePanel } from './Panels';
 import { loadPrefs, savePrefs, wantsLessMotion } from './prefs';
 import type { Scene, SpaceView } from './renderer';
 import { SpaceCanvas } from './SpaceCanvas';
 import { MapPanel } from './StarMap';
+import { COACH_NAME } from './text';
 import './trader.css';
 
 type Tab = CoachTab;
@@ -61,6 +66,9 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   const heading = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
   const [aimed, setAimed] = useState<number | null>(null);
+  const [marketPlan, setMarketPlan] = useState<number[] | null>(null);
+  const [coach, setCoach] = useState<CoachMemory>(loadCoach);
+  const [bubbleTop, setBubbleTop] = useState(false);
   const lock = useRef(false);
   const latest = useRef({ loaded, queue });
   latest.current = { loaded, queue };
@@ -100,6 +108,30 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   );
   const here = galaxy && t ? galaxy.planets[t.location] : null;
   const pending = game?.pending ?? null;
+  const jumpsMade = game?.stats.jumps ?? 0;
+
+  const remember = useCallback((change: (m: CoachMemory) => CoachMemory) => {
+    setCoach((m) => {
+      const next = change(m);
+      saveCoach(next);
+      return next;
+    });
+  }, []);
+  // First Flight: for a pupil who has never jumped (the server's count, so it follows them to any device), unless it was
+  // done or skipped on this device; or when it is replayed from the title screen. It begins on the planet, with Bolt's
+  // trade picked once so the numbers he quotes stay the same all the way through.
+  const flightWanted = coach.flight === null && (coach.run !== null || jumpsMade === 0);
+  useEffect(() => {
+    if (!flightWanted || coach.run || !galaxy || !t || phase.k !== 'planet') return;
+    const trip = starterTrade(galaxy, t, pushes);
+    if (trip) remember((m) => ({ ...m, run: { good: trip.good, planet: trip.planet, credits: t.credits, jumps: jumpsMade, acks: [] } }));
+  }, [flightWanted, coach.run, galaxy, t, pushes, jumpsMade, phase.k, remember]);
+  const flight = useMemo(
+    () => (flightWanted && coach.run && galaxy && t
+      ? flightStep({ galaxy, t, pushes, tab, aimed: tab === 'map' ? aimed : null, jumps: jumpsMade, plan: tab === 'trade' ? marketPlan : null, run: coach.run })
+      : null),
+    [flightWanted, coach.run, galaxy, t, pushes, tab, aimed, jumpsMade, marketPlan],
+  );
   const fightTier = pending?.kind === 'fight' ? pending.tier : -1;
   const scene: Scene | null = useMemo(
     () =>
@@ -346,6 +378,17 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
     lock.current = false;
   }
 
+  const showFlight = !!flight && phase.k === 'planet' && !pending && !asking;
+  // Keep First Flight's thing lit while its step lasts, and move Bolt's bubble to the top if it would cover it.
+  const flightTarget = showFlight ? flight?.target : undefined;
+  useEffect(() => {
+    const el = holdLight(root.current, flightTarget);
+    if (!el) return setBubbleTop(false);
+    el.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    const box = el.getBoundingClientRect();
+    setBubbleTop(box.bottom > window.innerHeight * 0.62 && box.top > 160);
+  }, [flightTarget, tab, flight?.id, pending?.kind]);
+
   const playing = phase.k !== 'title';
   const panelBusy = busy || asking || phase.k === 'warp';
   const tabs: [Tab, string][] = [['trade', 'Trade'], ['ship', 'Ship'], ['bank', 'Bank'], ['map', 'Star chart']];
@@ -368,6 +411,12 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
             savePrefs(p);
           }}
           onStart={() => setPhase({ k: 'planet' })}
+          firstTime={coach.flight === null && jumpsMade === 0}
+          onReplay={coach.flight !== null || jumpsMade > 0 ? () => {
+            remember(() => ({ flight: null, run: null }));
+            setTab('trade');
+            setPhase({ k: 'planet' });
+          } : undefined}
           onExit={onExit}
         />
       ) : (
@@ -383,12 +432,12 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
                     </button>
                   ))}
                 </div>
-                {step && <CoachBar step={step} onShow={(target) => lightUp(root.current, target, lessMotion)} />}
+                {step && !flight && <CoachBar step={step} onShow={(target) => lightUp(root.current, target, lessMotion)} />}
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
-                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} onTrade={doTrade} />}
+                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} onTrade={doTrade} onPlan={setMarketPlan} />}
                 {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} onAct={act} onMoon={() => void buyMoon()} />}
                 {tab === 'bank' && <BankPanel t={t} busy={panelBusy} loans={settings.loans} onAct={act} />}
-                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} onAim={setAimed} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
+                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} guide={showFlight ? flight?.guide ?? null : null} onAim={setAimed} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
                 {note && <p className="st-note st-note--float" role="status">{note}</p>}
                 {t.jumpsLeft < 1 && <p className="st-note st-note--float">That is all your jumps for today. You can still trade here. Come back tomorrow!</p>}
               </>
@@ -409,6 +458,15 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
           </div>
           {extra && playing && <div className="st-tools">{extra({ reload: () => void reload() })}</div>}
         </>
+      )}
+      {showFlight && flight && (
+        <FlightBubble
+          step={flight}
+          top={bubbleTop}
+          onAck={(id) => remember((m) => (id === 'profit' ? { flight: 'done', run: null } : m.run ? { ...m, run: { ...m.run, acks: [...m.run.acks, id] } } : m))}
+          onShow={(target) => lightUp(root.current, target, lessMotion)}
+          onSkip={() => remember(() => ({ flight: 'skipped', run: null }))}
+        />
       )}
       {modal}
     </div>
@@ -433,10 +491,10 @@ function Problem({ problem, onRetry, onExit }: { problem: { kind: string; messag
 function Hud({ t, jumpsPerDay, planet, government, onExit }: { t: Game['t']; jumpsPerDay: number; planet: string; government: string; onExit?: () => void }) {
   const ship = SHIPS[t.ship];
   return (
-    <header className="st-hud">
+    <header className="st-hud" data-coach="hud">
       {onExit && <button type="button" className="st-btn st-btn--small" onClick={onExit}>← Hub</button>}
       <div className="st-hud__place"><strong>{planet}</strong><span className="st-soft">{government}</span></div>
-      <div className="st-hud__item" title="Your credits"><span aria-hidden="true">💰</span><strong>{t.credits.toLocaleString('en-NZ')}</strong><span className="st-sr">credits</span></div>
+      <div className="st-hud__item" title="Your credits" data-coach="hud-credits"><span aria-hidden="true">💰</span><strong>{t.credits.toLocaleString('en-NZ')}</strong><span className="st-sr">credits</span></div>
       <div className="st-hud__item" title="Fuel: each square you fly uses 1"><span aria-hidden="true">⛽</span><strong>{t.fuel}/{ship.fuelTank}</strong><span className="st-sr">fuel</span></div>
       <div className="st-hud__item" title="Hull: your ship's health"><span aria-hidden="true">🛠️</span><strong>{t.hull}/{ship.hull}</strong><span className="st-sr">hull</span></div>
       <div className="st-hud__item" title="Jumps left today">
@@ -471,12 +529,15 @@ function MoonProgress({ t }: { t: Game['t'] }) {
   );
 }
 
-function Title({ heading, prefs, lessMotion, onPrefs, onStart, onExit }: {
+function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, onReplay, onExit }: {
   heading: React.RefObject<HTMLDivElement | null>;
   prefs: ReturnType<typeof loadPrefs>;
   lessMotion: boolean;
   onPrefs: (p: ReturnType<typeof loadPrefs>) => void;
   onStart: () => void;
+  /** A new pupil: Bolt will fly with them. */
+  firstTime: boolean;
+  onReplay?: () => void;
   onExit?: () => void;
 }) {
   return (
@@ -486,8 +547,10 @@ function Title({ heading, prefs, lessMotion, onPrefs, onStart, onExit }: {
         <p className="st-title__p">Fly a small ship between the planets. Buy cargo where it is cheap and sell it where it is dear. Upgrade your ship, outsmart the pirates, and save up to buy a moon of your very own.</p>
         <div className="st-actions st-actions--centre">
           <button type="button" className="st-btn st-btn--primary st-btn--big" onClick={onStart}>Start trading</button>
+          {onReplay && <button type="button" className="st-btn st-btn--big" onClick={onReplay}>Replay First Flight</button>}
           {onExit && <button type="button" className="st-btn st-btn--big" onClick={onExit}>Back to the hub</button>}
         </div>
+        {firstTime && <p className="st-soft">New here? {COACH_NAME}, your ship's robot, will fly with you on your first trip.</p>}
         <div className="st-title__opts">
           <label><input type="checkbox" checked={lessMotion} onChange={(e) => onPrefs({ ...prefs, lessMotion: e.target.checked })} /> Less movement</label>
           <label><input type="checkbox" checked={prefs.simple} onChange={(e) => onPrefs({ ...prefs, simple: e.target.checked })} /> Simpler graphics</label>
