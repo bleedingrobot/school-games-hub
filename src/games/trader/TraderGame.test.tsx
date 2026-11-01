@@ -95,6 +95,37 @@ describe('Star Trader screen (talking to the real server logic on a pretend data
     expect(trial.data.game?.game.t.credits).toBe(100);
   });
 
+  it('after a trade the picked numbers clear, so Buy max works again (it used to fail silently on an old "sell")', async () => {
+    play();
+    await market();
+    const row = () => screen.getAllByRole('row').find((r) => within(r).queryByLabelText(/^Buy one Water$/)) as HTMLElement;
+    fireEvent.click(within(row()).getByLabelText('Buy one Water'));
+    fireEvent.click(screen.getByRole('button', { name: 'Trade' }));
+    const skip = screen.queryByText('No thanks');
+    if (skip) fireEvent.click(skip);
+    await waitFor(() => expect(screen.getByLabelText('Water: none')).toBeTruthy());
+    // Sell the one Water, then buy as many as fit: both work straight after the first trade.
+    fireEvent.click(within(row()).getByLabelText('Sell all Water'));
+    expect(screen.getByLabelText('Water: selling 1')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Trade' }));
+    const skip2 = screen.queryByText('No thanks');
+    if (skip2) fireEvent.click(skip2);
+    await waitFor(() => expect(screen.getByLabelText('Water: none')).toBeTruthy());
+    fireEvent.click(within(row()).getByLabelText('Buy as many Water as you can'));
+    expect(screen.getByLabelText(/^Water: buying \d+$/)).toBeTruthy();
+  });
+
+  it('Buy max says why when it cannot add even one', async () => {
+    const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
+    await traderApi(trial.transport).load();
+    trial.tools.give(-100);
+    play(trial);
+    await market();
+    const row = screen.getAllByRole('row').find((r) => within(r).queryByLabelText(/^Buy one Water$/)) as HTMLElement;
+    fireEvent.click(within(row).getByLabelText('Buy as many Water as you can'));
+    expect(await screen.findByText('You cannot afford that.')).toBeTruthy();
+  });
+
   /** Every planet's chart coordinates, read from the buttons' names. */
   function planetsOnChart() {
     return screen.getAllByRole('button', { name: /, x -?\d+, y -?\d+/ }).map((button) => {
