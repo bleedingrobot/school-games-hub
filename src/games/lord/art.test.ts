@@ -1,7 +1,7 @@
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { LOOKS, MASTERS, MONSTERS } from '../../../shared/lord/data';
+import { ARMOURS, LOOKS, MASTERS, MONSTERS, WEAPONS } from '../../../shared/lord/data';
 import { PEOPLE, SCENES, slug } from './art';
 
 const DIR = join(__dirname, 'art');
@@ -21,6 +21,8 @@ const KNOWN: Record<string, { names: Set<string>; maxKb: number }> = {
   people: { names: new Set(Object.values(PEOPLE).map((p) => p.id)), maxKb: 160 },
   dragon: { names: new Set(['scorchtail']), maxKb: 200 },
   timeline: { names: new Set(['stage-forest', 'stage-masters', 'stage-dragon', 'stage-new-season']), maxKb: 20 },
+  weapons: { names: new Set(WEAPONS.map((g) => slug(g.name))), maxKb: 30 },
+  armour: { names: new Set(ARMOURS.map((g) => slug(g.name))), maxKb: 30 },
   heroes: { names: new Set(Object.values(LOOKS).flat().flatMap((l) => [l, `${l}-small`])), maxKb: 90 },
 };
 

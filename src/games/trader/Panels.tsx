@@ -11,6 +11,7 @@ import { newsAbout, type NewsItem } from '../../../shared/trader/news';
 import { bestSales } from '../../../shared/trader/priceGuide';
 import type { Pushes } from '../../../shared/trader/schoolMarket';
 import { fuelCost, hasShipyard, holdsOf, tradeInValue, usedHolds, type Trader } from '../../../shared/trader/state';
+import { shipArt } from './art/paint';
 import { drawShip } from './art/ships';
 import { goodIcon } from './text';
 import { emptyPlan, runPlan } from './tradePlan';
@@ -51,8 +52,10 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade }: {
   const headlines = news.slice(0, NEWS_MAX);
   // Where each good sells best within a full tank's reach (today's prices; they can change before you land).
   const best = useMemo(() => bestSales(galaxy, t, pushes), [galaxy, t, pushes]);
-  // A new planet (or a finished trade) starts a fresh plan.
-  useEffect(() => setPlan(emptyPlan()), [t.location, t.day, t.jumpNo]);
+  // A new planet, or anything that changes the hold (a finished trade, a friendly trader, pirates), starts a fresh plan.
+  // Otherwise an old "sell 3" would be left over for goods that have gone, and every button would quietly fail on top of it.
+  const holdKey = t.cargo.join(',');
+  useEffect(() => setPlan(emptyPlan()), [t.location, t.day, t.jumpNo, holdKey]);
   const here = runPlan(t, plan);
   const out = here.ok ? here.out : null;
 
@@ -70,14 +73,18 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, onTrade }: {
   function setMax(good: number, direction: 1 | -1) {
     const next = [...plan];
     let guard = 0;
+    let why = '';
     for (;;) {
       const trial = [...next];
       trial[good] += direction;
-      if (guard++ > 200 || !runPlan(t, trial).ok) break;
+      const r = runPlan(t, trial);
+      if (!r.ok) why = r.reason;
+      if (guard++ > 200 || !r.ok) break;
       next[good] = trial[good];
     }
     setPlan(next);
-    setMessage('');
+    // Say why when not even one more could be added, so the button never seems to do nothing.
+    setMessage(next[good] === plan[good] ? why : '');
   }
   const any = plan.some((q) => q !== 0);
 
@@ -193,7 +200,11 @@ export function ShipPanel({ galaxy, t, busy, onAct, onMoon }: {
     <section className="st-panel" aria-labelledby="st-ship-h">
       <h2 id="st-ship-h" className="st-h">Your ship: {rule.name}</h2>
       <div className="st-shipcard">
-        <ShipPicture ship={t.ship} />
+        {shipArt(rule.name) ? (
+          <img className="st-shippaint" src={shipArt(rule.name)} alt="" width={150} height={90} decoding="async" />
+        ) : (
+          <ShipPicture ship={t.ship} />
+        )}
         <ul className="st-stats">
           {stat('Holds', `${usedHolds(t)} / ${holdsOf(t)}`)}
           {stat('Fuel', `${t.fuel} / ${rule.fuelTank}`)}
@@ -225,7 +236,11 @@ export function ShipPanel({ galaxy, t, busy, onAct, onMoon }: {
               const why = !sold ? `Needs a planet of tech level ${s.minTech}` : !fits ? 'Sell some cargo first' : cost > t.credits ? 'Not enough credits' : '';
               return (
                 <li key={s.name} className="st-shipoffer">
-                  <ShipPicture ship={i} size={120} />
+                  {shipArt(s.name, true) ? (
+                    <img className="st-yardpaint" src={shipArt(s.name, true)} alt="" width={120} loading="lazy" decoding="async" />
+                  ) : (
+                    <ShipPicture ship={i} size={120} />
+                  )}
                   <div>
                     <strong>{s.name}</strong>
                     <div className="st-soft">{s.holds} holds · {s.weaponSlots} laser · {s.shieldSlots} shields · fuel {s.fuelTank}</div>

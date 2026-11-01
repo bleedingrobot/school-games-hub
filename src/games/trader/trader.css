@@ -142,6 +142,8 @@
 /* ——— Ship ——— */
 .st-shipcard { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
 .st-shippic { background: rgba(8, 14, 34, 0.6); border-radius: 12px; border: 1px solid var(--st-line); }
+.st-shippaint { width: 150px; max-width: 100%; height: auto; aspect-ratio: 5 / 3; object-fit: contain; background: rgba(8, 14, 34, 0.6); border-radius: 12px; border: 1px solid var(--st-line); }
+.st-yardpaint { width: 120px; height: auto; max-height: 90px; object-fit: contain; }
 .st-stats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 4px 14px; flex: 1; }
 .st-stats li { display: flex; justify-content: space-between; gap: 8px; }
 .st-stats--tight { grid-template-columns: 1fr; }

@@ -14,6 +14,7 @@ Every picture is from the darker painted set of 26 Oct 2026 (the first, brighter
 | masters/ | The eleven masters | 26 Oct 2026 (redone the same day) | Image AI |
 | monsters/ | 120 forest monsters | 26 Oct 2026 | Image AI |
 | dragon/ | Scorchtail | 26 Oct 2026 | Image AI |
+| weapons/, armour/ | The 24 shop items (the best of 3 tries each), on white and cut out with `lord-art.py cutout` | 1 Nov 2026 | Z-Image Turbo in ComfyUI on James's gaming PC, same settings as the Clan Quest items |
 
-Weapons, armour and icons are still Kenney's 1-Bit Pack (CC0, see ../KENNEY-LICENSE.txt).
+Icons (gold, hearts and so on) are still Kenney's 1-Bit Pack (CC0, see ../KENNEY-LICENSE.txt).
 Headings use IM Fell English SC by Igino Marini (SIL Open Font Licence 1.1, see ../IMFELL-OFL.txt).
