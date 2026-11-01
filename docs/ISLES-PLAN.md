@@ -308,6 +308,15 @@ Turn 2's guide adds the Workshop slider and the first race against the Gull Ride
 
 ## 7. Screens and look
 
+**Your Sky Keeper (James, 1 Nov 2026).** On their first go, each pupil chooses a **Sky Keeper**: a painted portrait of the young keeper who looks after their island.
+- **The portraits:** 40 to choose from, 20 boys and 20 girls, aged from about 8 to older teens. They come from many backgrounds, as in a New Zealand classroom, and each has their own sky-adventurer look.
+- **Just for fun:** the keeper has no powers and doesn't change the rules.
+- **Where it shows:** next to the island on My island, as the island's marker on the class sky, on the boat in a Sky Race, beside the island's name in the news, and in the Hall of the Skies.
+- **Changing keepers:** a pupil can change their keeper any time from My island.
+- **Kept with the island's name and flag** through New Season (section 6.2). It's saved as `keeper` (a portrait id) on `isles_islands`. The server only accepts ids from the list.
+- **Two classmates can choose the same keeper.** Islands are always shown with their names too.
+- **Guided first go:** choosing a keeper is the first step. Pip says: "Who looks after this island? Pick your Sky Keeper. You can change later."
+
 **About 5 screens (chosen):**
 1. **My island.** The island picture with its plots, and the resource bar: coins, food, people, happiness, ideas, boats. The next-step line and the turn pips are here. Tapping a plot builds or changes it.
 2. **The turn.** Report, then question, then collect and feed, then spend panel, then End turn.
