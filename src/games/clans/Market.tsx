@@ -144,7 +144,7 @@ export function Market({ session, onChange, onBack }: { session: Session; onChan
         {clan.members.map((m, mi) => (
           <article key={m.name} className="cq-panel cq-gearcard" aria-label={`${m.name}'s gear`}>
             <header className="cq-gearcard__head">
-              <Portrait race={m.race} cls={m.cls} look={lookOf(m)} scale={2} />
+              <Portrait race={m.race} cls={m.cls} look={lookOf(m)} scale={4} />
               <h3>{m.name} <small className="cq-soft">{m.race} {m.cls}</small></h3>
             </header>
             {bought?.mi === mi && <p className="cq-note" role="status" tabIndex={-1} ref={boughtRef}>{bought.text}</p>}
