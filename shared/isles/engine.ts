@@ -49,6 +49,15 @@ export interface Island {
   turnsLeft: number;
   driftLeft: number;
   festivalToday: boolean;
+  /** Sky Races today (shared/isles/race.ts): races started, races won, classmates raced (island ids), times this
+   * island was challenged by classmates, and the turn of the last race (one race a turn; -1 for none yet). */
+  racesToday: number;
+  winsToday: number;
+  racedWith: string[];
+  challengedToday: number;
+  racedTurn: number;
+  /** Races won this season. */
+  racesWon: number;
 }
 
 /** What a turn collected, for the browser's sum line. */
@@ -195,12 +204,18 @@ export function newIsland(): Island {
     turnsLeft: TURNS_PER_DAY,
     driftLeft: DRIFT_PER_DAY,
     festivalToday: false,
+    racesToday: 0,
+    winsToday: 0,
+    racedWith: [],
+    challengedToday: 0,
+    racedTurn: -1,
+    racesWon: 0,
   };
 }
 
 /**
  * The first time an island is seen on a new New Zealand day: fresh turns (unused ones pile up to MOST_TURNS_SAVED) and
- * more drift (unused chunks wait, up to MOST_DRIFT_SAVED). `classMiddle` is the middle spot count of the class's islands: an island under half of it gets an extra
+ * more drift (unused chunks wait, up to MOST_DRIFT_SAVED). `classMiddle` is the middle spot count of the class's islands: an island under SMALL_ISLAND (0.7) of it gets an extra
  * chunk, so a late joiner can catch up.
  */
 export function newDay(island: Island, daysSince: number, classMiddle: number): Island {
@@ -209,7 +224,7 @@ export function newDay(island: Island, daysSince: number, classMiddle: number): 
   const small = spotCount(island) < classMiddle * SMALL_ISLAND ? 1 : 0;
   const most = MOST_DRIFT_SAVED + small + (has(island, 'star-map') ? 1 : 0);
   const driftLeft = Math.min(most, island.driftLeft + (DRIFT_PER_DAY + (has(island, 'star-map') ? 1 : 0)) * days + small);
-  return { ...island, turnsLeft, driftLeft, festivalToday: false };
+  return { ...island, turnsLeft, driftLeft, festivalToday: false, racesToday: 0, winsToday: 0, racedWith: [], challengedToday: 0 };
 }
 
 // --- Collect and feed (no luck) --------------------------------------------------------------------------------------

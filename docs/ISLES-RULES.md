@@ -1,6 +1,6 @@
 # Sky Isles: rule sheet
 
-*The rules as built in `shared/isles/engine.ts`. Every number comes from `shared/isles/config.ts` (this sheet copies them as of the 2 Nov 2026 rule change (building spots and levels); the config wins if they ever differ). It's an original game: none of the rules or numbers come from Immortal Barons or Barren Realms Elite. Plan: [ISLES-PLAN.md](ISLES-PLAN.md).*
+*The rules as built in `shared/isles/` (`engine.ts` the turn, `race.ts` Sky Races, `nextStep.ts` Pip's next step). Every number comes from `shared/isles/config.ts` (this sheet copies them as of stage S.1, 2 Nov 2026; the config wins if they ever differ). It's an original game: none of the rules or numbers come from Immortal Barons or Barren Realms Elite. Plan: [ISLES-PLAN.md](ISLES-PLAN.md).*
 
 ## A new island
 
@@ -97,7 +97,7 @@ Weather never takes land or boats.
 | Bunk Beds | 6 | Houses ×1.5 room |
 | Welcome Lanterns | 6 | Docks ×1.5 coins |
 | Wind Wall | 6 | Storms blow nothing away |
-| Swift Sails | 8 | Faster sky-boats in races (S.1) |
+| Swift Sails | 8 | Faster sky-boats in races (+3 speed) |
 | Sky Bridge | 8 | Friendship ropes give twice the bonus (S.4) |
 | Star Map | 10 | One more chunk in the daily drift |
 
@@ -107,23 +107,65 @@ Weather never takes land or boats.
 - **Then the Sky Lighthouse:** 4 stages (costs above).
 - **Island worth,** for the Hall of the Skies: 10 a spot, 5 a building level, 1 a person, 15 an upgrade, 50 a Lighthouse stage. Never anything about maths.
 
-## Sky Races (rules for the race itself come in stage S.1)
+## Sky Races
 
-- **2 races a day.**
-- **Prizes:** no free land. The day's first win brings 30 coins and 5 goods (goods help raise buildings to level 3). A later win brings 15 coins.
-- **The other side never loses anything.**
+**Who and when:**
+- Race a classmate's island, or the **Gull Riders**, a computer crew who are always free.
+- **One race a turn, 2 a day.** A race needs a turn left today.
+- Never the same classmate twice in a day. An island can be challenged by classmates **3 times a day** (the Gull Riders don't count).
+- An island in its **calm start** (fewer than 12 turns played, about its first 2 days) can't be challenged by classmates. It can still race the Gull Riders.
 
-## Pace (from `npm run isles:sim -- --runs 50`, 2 Nov 2026)
+**The race:**
+- The challenger answers **3 questions**. Each right answer is a **gust**: +4 speed.
+- Each boat's speed is 30, plus:
+  - sky-boats: 3 × the square root of the boats (up to 16 boats), so 2 boats give 4.2, 9 boats 9 and 16 boats 12. A big fleet helps less and less.
+  - Swift Sails: +3.
+  - happiness: up to +4 (happiness ÷ 25).
+  - wind: the challenger's gusts. The other side (an island at home, or the Gull Riders) gets a **home wind** of +4, one gust's worth.
+  - luck: from 0 up to 12, each side.
+- The faster boat wins. A tie goes to the challenger.
+- **The Gull Riders** bring the same boats and Swift Sails as the challenger, with happiness 70. So a race against them is decided by the gusts and a little luck: about 1 in 4 with no answers right, half with 1, 4 in 5 with 2, and nearly always with 3.
+- **A small island can win.** A new island (2 boats) against a big one (14 boats and Swift Sails) wins about 1 race in 9 with 2 answers right and about 1 in 3 with all 3 right.
+- **The result comes only from the race's seed, the two boats (taken when the race starts) and the answers the server marked right.** The browser can't change it.
+- The animation is 8 legs long. The boats bob ahead and behind on the way, and each gust blows on its own leg (legs 2, 4 and 6).
 
-Median day reached in a 35-day season. The pretend pupil plays 6 turns a play day and builds sensibly.
+**The first race** (turn 2's guide) is against the Gull Riders and **can't be lost**, whatever the answers: they take it easy and finish between 86% and 96% of the way, so it still looks close.
+
+**Prizes. Nobody ever loses anything.**
+- The winner: the day's first win brings **30 coins and 5 goods** (goods help raise buildings to level 3). A later win brings **15 coins**. No free land.
+- The other side gets a **"well raced" gift of 5 coins**, win or lose.
+- A classmate who wins at home gets the win counted (for Race Winner), but no prize.
+
+## Pip's next step
+
+One short sentence with real names and numbers, and the button it means (for "Show me"). The first that fits wins:
+1. No turns left: "Your island is resting. See you tomorrow!"
+2. Food runs out in 3 turns or fewer: build a Farm on an empty spot, raise a Farm, or buy food at the market.
+3. The island is full (room for 2 more or fewer): build or raise a House.
+4. An empty spot, and coins to build on it: what to build (Farm if food is tight, House if it's full, then a Library, a Workshop, then a Dock or Mine).
+5. An upgrade ready (the cheapest first), with what it does.
+6. A Sky Lighthouse stage the island can pay for.
+7. A chunk in the drift the island can pay for (not while a Lighthouse stage is still to build).
+8. A building worth raising (cheapest first, money-makers first), as long as it leaves at least half the price of the next chunk or Lighthouse stage.
+9. No race yet today: try a Sky Race.
+10. Saving up: for the next Lighthouse stage, a building on the empty spot, or the chunk in the drift, with the numbers.
+11. Otherwise: press End turn.
+
+## Pace (from `npm run isles:sim -- --runs 300`, stage S.1, 2 Nov 2026)
+
+Median day reached in a 35-day season. The pretend pupil plays 6 turns a play day, builds sensibly, and races the Gull Riders twice a play day with the real race rules (their race questions right as often as their turn questions).
 
 | Pupil | Maths right | Grand Isle | Lighthouse lit |
 |---|---|---|---|
-| Every school day | 100% | day 15 (week 3) | day 22, nearly all |
-| Every school day | 0% | day 17 (week 3) | day 30, about half |
-| 3 days a week | 100% | day 24 (week 4) | day 33, under half |
+| Every school day | 100% | day 15 (week 3) | day 19 (week 3), nearly all |
+| Every school day | 70% | day 16 (week 3) | day 22 (week 4), nearly all |
+| Every school day | 0% | day 17 (week 3) | day 25 (week 4), about a third |
+| 3 days a week | 100% | day 24 (week 4) | day 33 (week 5), nearly all |
+| 3 days a week | 70% | day 26 (week 4) | day 33 (week 5), under half |
 | 3 days a week | 0% | day 29 (week 5) | not lit |
 | 1 day a week | any | not reached (about 8 or 9 spots) | no |
+
+**What changed with real races (S.1):** Grand Isle days didn't move. The Lighthouse did, because race wins bring goods: pupils who get race questions right light it sooner (a 3-days-a-week pupil with all right: under half lit before, nearly all now), and pupils who get them all wrong win about 1 race in 5 and light it a little later (every day, all wrong: about half lit before, about a third now).
 
 **What the simulator also shows:**
 - **Building levels matter.** A pupil who only grabs land is a week or more behind one who raises buildings. With all maths wrong, a pure grabber doesn't reach Grand Isle on 3 days a week.

@@ -2,7 +2,7 @@
 
 *An original kingdom-building game for School Games Hub, in the BBS "empire game" genre. Asked for by James on 1 November 2026, after we read [Immortal Barons](https://github.com/andy5995/immortal-barons) together. Written from that reading, `docs/GAME_DEVELOPMENT_GUIDE.md` (main `92735a2`) and the other games' plans. Branch `isles`, worktree `~/games-hub-isles`.*
 
-**Status: PLAN ONLY. Nothing is built.** Every choice marked **(chosen)** was made for James. He can change any of them, and most are cheap to change until stage S.2. The working name "Sky Isles" (id `isles`, CSS prefix `.si-`) is one of them.
+**Status (2 Nov 2026): stages S.0, S.L (look chosen: hand-painted anime) and S.1 (the rules engine) are done. Nothing to play yet: no screens, server or database.** Every choice marked **(chosen)** was made for James. He can change any of them, and most are cheap to change until stage S.2. The working name "Sky Isles" (id `isles`, CSS prefix `.si-`) is one of them.
 
 ---
 
@@ -504,6 +504,43 @@ Decided with James because 40 small plot tiles looked crowded and "stuck on". Bu
 - **Island worth:** 10 a spot, 5 a building level, 1 a person, 15 an upgrade, 50 a Lighthouse stage.
 - **Why:** far fewer, bigger things on the island, standing in painted clearings joined by paths. Growth shows as bigger buildings, not more tiles.
 - **Pace (`npm run isles:sim -- --runs 50`):** a daily pupil reaches Grand Isle on day 15 to 17 (week 3), a 3-days-a-week pupil on day 24 to 29 (weeks 4 to 5). Building levels matter: a pupil who only grabs land is a week or more behind. **1 day a week still doesn't reach Grand Isle** (about 8 or 9 spots). Coins still pile up after the Lighthouse (S.4).
+
+### S.1 results (the rules engine), 2 Nov 2026
+
+**Built (all pure functions in `shared/isles/`, every number in `config.ts`):**
+- **`race.ts`: Sky Races.**
+  - `runRace(seed, you, them, right)`: speed is 30 + sky-boats (3 × √boats, up to 16) + Swift Sails (+3) + happiness (up to +4) + 4 for each right answer + luck (0 to 12). The side that wasn't asked questions gets a home wind of +4. Ties go to the challenger.
+  - The result comes only from the seed, the two boats and the number of answers marked right, so the server can work it out at `raceFinish` and the browser can't rig it.
+  - It returns what the animation and the result card need: each boat's speed part by part (for the working), where each boat is at the end of each of 8 legs (0 to 1), and the legs where the gusts blow.
+  - `gullRiders(you)`: the Gull Riders bring the same boats and sails as the challenger (happiness 70), so a race against them is decided by the gusts and a little luck.
+  - `starterRace(seed, you, right)`: the first race can't be lost; the Gull Riders finish 86% to 96% of the way.
+  - `raceProblem`: one race a turn, 2 a day, a turn left, never the same classmate twice a day, a classmate challenged at most 3 times a day, and no challenging an island in its calm start.
+  - `settleRace`: counts the race, gives the prize (first win of the day 30 coins and 5 goods, later wins 15 coins) and the 5-coin "well raced" gift to the other side, win or lose. Nobody loses anything.
+- **`nextStep.ts`: Pip's next step.** `nextStep(island)` gives one sentence with real names and numbers and the button it means (`spot-<n>`, `drift`, `upgrade-<id>`, `lighthouse`, `market`, `race` or `end-turn`). It covers food running out, a full island, an empty spot, an upgrade ready, the Lighthouse, a chunk in the drift, a building worth raising, a race, and saving up. Examples it gives: "Your food runs out in 3 turns: build a Farm on your empty spot." "Raise your Dock to level 2 for 120 coins: it will earn about 18 coins a turn instead of 9." "Save up for stage 1 of the Sky Lighthouse: you need 300 more coins and 6 more goods."
+- **`engine.ts`:** the island now remembers today's races (races, wins, classmates raced, times challenged, the turn of the last race) and races won this season; a new day clears today's.
+- **`config.ts`:** the race numbers, the calm start (12 turns), and a `does` line for each upgrade in pupil words.
+- **Checked against the stage table:** turn, collect, feed, spend and weather were already built in S.0; races, `starterRace` and `nextStep` are new. Nothing else S.1 lists is missing. Friendship ropes, the market's moving prices and the news board are S.4.
+
+**Simulator:** races are now real (the Gull Riders, twice a play day, race questions right as often as turn questions, the season's first race is the starter race). **Grand Isle days didn't move.** The Lighthouse did, because race wins bring goods: a 3-days-a-week pupil with all maths right now nearly always lights it in week 5 (under half before); an every-day pupil with all wrong wins about 1 race in 5 and lights it a third of the time (about half before). Pupils win about 94% of races with all right, 77% with 70% right, and 22% with none. The pace table in `docs/ISLES-RULES.md` is updated.
+
+**Decisions (James can change any):**
+- **The home wind** (+4, one gust) for the side that wasn't asked: two right answers beat an even match about 4 times in 5; none right wins about 1 in 4.
+- **Gull Riders match your boats,** so even a big island needs its questions to beat them, and a small island isn't hopeless against them.
+- **The calm start is 12 turns** (about 2 days of play). The plan didn't give a number.
+- **A classmate who wins at home** gets the win counted (Race Winner achievement) but no prize, so nobody earns coins by sitting still. The challenger who lost gets the "well raced" gift.
+- **A race needs a turn left today,** and counts as part of the turn it's in.
+- **The starter race's result card** shows the Gull Riders' luck as below nothing (they're taking it easy). The S.4 screen can hide their luck.
+
+**Tests (2 of the 8, `shared/isles/isles.test.ts`):**
+- Test 5: two turns with a race between them roll the same from the same seed and choices, and the classmate who was raced loses nothing.
+- Test 6: `starterRace` is won on all 1,000 seeds, with every number of right answers; the same boats in an ordinary race can lose.
+
+**Untested:** everything in the browser and on the server (not built yet). `nextStep`'s wording was checked by eye on a dozen islands, not by a test (the guide says not to test wording).
+
+**Questions for James:**
+1. **Races and maths.** Race wins now depend mostly on the 3 race questions, and race goods help light the Lighthouse, so maths matters more for the Lighthouse than before (never for Grand Isle). Happy with that, or should a pupil with no answers right win more often than about 1 in 4?
+2. **Winning at home.** Should a classmate who wins a race at home (without playing) get a prize too, or just the win counted, as now?
+3. **Calm start.** Is 12 turns (about 2 days) right for new islands to be safe from challenges?
 
 ### S.L so far (style try-outs), 1 Nov 2026
 

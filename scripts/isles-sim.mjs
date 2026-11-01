@@ -19,7 +19,10 @@ const RUNS = Number(option('runs', 300));
 // The rules are TypeScript, so bundle them into one plain JavaScript file first.
 const dir = mkdtempSync(join(tmpdir(), 'isles-sim-'));
 const entryFile = join(process.cwd(), `.isles-sim-entry-${process.pid}.ts`);
-writeFileSync(entryFile, `export * from './shared/isles/engine.ts';\nexport * as config from './shared/isles/config.ts';\n`);
+writeFileSync(
+  entryFile,
+  `export * from './shared/isles/engine.ts';\nexport * from './shared/isles/race.ts';\nexport * from './shared/isles/nextStep.ts';\nexport * as config from './shared/isles/config.ts';\n`,
+);
 let k;
 try {
   const bundle = await rolldown({ input: entryFile, logLevel: 'silent' });
@@ -148,13 +151,12 @@ function season(player, style, right, seed) {
   const random = seeded(seed);
   let island = k.newIsland();
   let lastDay = 0;
-  const out = { grandDay: null, lightDay: null, hungryTurns: 0, turns: 0, maxCoins: 0, end: null };
+  const out = { grandDay: null, lightDay: null, hungryTurns: 0, turns: 0, maxCoins: 0, end: null, races: 0, wins: 0 };
   for (let day = 0; day < SEASON_DAYS; day++) {
     if (!player.days[day % 7]) continue;
     if (day > 0) island = k.newDay(island, day - lastDay, 10);
     lastDay = day;
     // A lesson's play: up to 6 turns.
-    let prizes = 0;
     for (let t = 0; t < C.TURNS_PER_DAY && island.turnsLeft > 0; t++) {
       const windy = random() < right;
       const { island: ready } = k.beforeSpending(island, windy);
@@ -165,10 +167,17 @@ function season(player, style, right, seed) {
       out.turns++;
       if (result.report.hungryLeft > 0) out.hungryTurns++;
       out.maxCoins = Math.max(out.maxCoins, island.coins);
-      // Races: two a day against the Gull Riders or a classmate, about an even chance each.
-      if (t < C.RACES_PER_DAY && random() < 0.4 + 0.1 * right) {
-        const prize = prizes++ === 0 ? C.FIRST_WIN_PRIZE : C.LATER_WIN_PRIZE;
-        island = { ...island, coins: island.coins + prize.coins, goods: island.goods + prize.goods };
+      // Races, from the season's second turn: against the Gull Riders whenever the rules allow (one a turn, two a day),
+      // with each race question right as often as the turn questions. The first is turn 2's starter race, which can't
+      // be lost.
+      if (out.turns >= 2 && !k.raceProblem(island, k.GULL_RIDERS, 'me')) {
+        const rightAnswers = Array.from({ length: C.RACE_QUESTIONS }, () => random() < right).filter(Boolean).length;
+        const me = k.racerOf(island);
+        const seedText = `sim-${seed}-${out.turns}`;
+        const race = out.races === 0 ? k.starterRace(seedText, me, rightAnswers) : k.runRace(seedText, me, k.gullRiders(me), rightAnswers);
+        island = k.settleRace(island, null, race).challenger;
+        out.races++;
+        if (race.won && out.races > 1) out.wins++;
       }
       if (out.grandDay === null && k.isGrandIsle(island)) out.grandDay = day + 1;
       if (out.lightDay === null && island.lighthouse === C.LIGHTHOUSE.length) out.lightDay = day + 1;
@@ -185,7 +194,7 @@ const median = (xs) => {
 const week = (day) => (day === null ? '  -  ' : `wk ${Math.ceil(day / 7)} (d${String(day).padStart(2)})`);
 
 console.log(`Sky Isles: ${RUNS} seasons for each pupil (${SEASON_DAYS}-day season, ${C.TURNS_PER_DAY} turns a play day)\n`);
-console.log('pupil            style    maths  Grand Isle   %got  Lighthouse  %lit  spots  levels  people  upgr  hungry%  most coins');
+console.log('pupil            style    maths  Grand Isle   %got  Lighthouse  %lit  spots  levels  people  upgr  hungry%  most coins  races won% (not counting the starter)');
 for (const player of PLAYERS) {
   for (const style of STYLES) {
     for (const right of MATHS) {
@@ -208,6 +217,7 @@ for (const player of PLAYERS) {
           String(median(ends.map((e) => e.upgrades.length))).padStart(5),
           `${Math.round((runs.reduce((s, r) => s + r.hungryTurns, 0) / runs.reduce((s, r) => s + r.turns, 0)) * 100)}`.padStart(8),
           String(median(runs.map((r) => r.maxCoins))).padStart(11),
+          `${Math.round((runs.reduce((s, r) => s + r.wins, 0) / Math.max(1, runs.reduce((s, r) => s + r.races - 1, 0))) * 100)}`.padStart(10),
         ].join('  '),
       );
     }

@@ -110,15 +110,16 @@ export const MARKET_BUY_EXTRA = 1.5;
 
 // --- Upgrades (ideas from Libraries) ---------------------------------------------------------------------------------
 
+/** `does` is what it does, in words a 9-year-old reads easily (Pip's next step and the Upgrades screen use it). */
 export const UPGRADES = [
-  { id: 'ploughs', name: 'Better Ploughs', ideas: 4 },
-  { id: 'cellars', name: 'Cool Cellars', ideas: 4 },
-  { id: 'bunk-beds', name: 'Bunk Beds', ideas: 6 },
-  { id: 'lanterns', name: 'Welcome Lanterns', ideas: 6 },
-  { id: 'wind-wall', name: 'Wind Wall', ideas: 6 },
-  { id: 'swift-sails', name: 'Swift Sails', ideas: 8 },
-  { id: 'sky-bridge', name: 'Sky Bridge', ideas: 8 },
-  { id: 'star-map', name: 'Star Map', ideas: 10 },
+  { id: 'ploughs', name: 'Better Ploughs', ideas: 4, does: 'Farms grow more food' },
+  { id: 'cellars', name: 'Cool Cellars', ideas: 4, does: 'food keeps longer' },
+  { id: 'bunk-beds', name: 'Bunk Beds', ideas: 6, does: 'Houses hold more people' },
+  { id: 'lanterns', name: 'Welcome Lanterns', ideas: 6, does: 'Docks earn more coins' },
+  { id: 'wind-wall', name: 'Wind Wall', ideas: 6, does: 'storms blow no food away' },
+  { id: 'swift-sails', name: 'Swift Sails', ideas: 8, does: 'your sky-boats race faster' },
+  { id: 'sky-bridge', name: 'Sky Bridge', ideas: 8, does: 'friendship ropes help twice as much' },
+  { id: 'star-map', name: 'Star Map', ideas: 10, does: 'one more chunk of land drifts by each day' },
 ] as const;
 export type UpgradeId = (typeof UPGRADES)[number]['id'];
 /** Better Ploughs, Bunk Beds and Welcome Lanterns multiply Farm food, House room and Dock coins by this. */
@@ -150,13 +151,48 @@ export const STORM_FOOD = 0.1;
 export const BREEZE_HAPPINESS = 10;
 export const TRAVELLER_PEOPLE = 3;
 
-// --- Sky Races (the rules for a race itself come in stage S.1) ------------------------------------------------------
+// --- Sky Races -------------------------------------------------------------------------------------------------------
 
-/** Races an island may start in a day. The day's first win brings coins and goods (goods help raise buildings to
- * level 3); a later win brings coins. */
+/** Races an island may start in a day (one a turn). The day's first win brings coins and goods (goods help raise
+ * buildings to level 3); a later win brings coins. The other side gets a small "well raced" gift, win or lose. */
 export const RACES_PER_DAY = 2;
 export const FIRST_WIN_PRIZE = { coins: 30, goods: 5 } as const;
 export const LATER_WIN_PRIZE = { coins: 15, goods: 0 } as const;
+export const WELL_RACED_COINS = 5;
+/** An island can be challenged by classmates this many times a day (the Gull Riders don't count). */
+export const MOST_CHALLENGED = 3;
+/** The calm start: an island that has played fewer turns than this can't be challenged by classmates. */
+export const CALM_TURNS = 12;
+/** Questions in a race; each right answer is one gust. */
+export const RACE_QUESTIONS = 3;
+
+/**
+ * A boat's speed is RACE_BASE plus its sky-boats, Swift Sails, happiness, gusts and luck. Sky-boats count as
+ * BOAT_SPEED × the square root of the boats (up to MOST_BOATS), so a big fleet helps less and less and a small island
+ * with its questions right can still win.
+ */
+export const RACE_BASE = 30;
+export const BOAT_SPEED = 3;
+export const MOST_BOATS = 16;
+export const SAILS_SPEED = 3;
+/** Speed at full happiness (scaled down with happiness). */
+export const HAPPY_SPEED = 4;
+/** One right answer. */
+export const GUST_SPEED = 4;
+/** The side that wasn't asked questions (an island at home, or the Gull Riders) gets this much wind instead: one
+ * gust's worth, so two right answers beat an even match more often than not. */
+export const HOME_WIND = 4;
+/** Luck: each side adds a random amount from 0 up to this. */
+export const RACE_LUCK = 12;
+/** The race animation is this many legs long. */
+export const RACE_LEGS = 8;
+/** The Gull Riders' happiness. Their boats and sails match the challenger's, so a race against them is decided by the
+ * gusts and a little luck. */
+export const GULL_HAPPINESS = 70;
+/** The first race (turn 2's guide): the Gull Riders finish this share of the way behind, from STARTER_LOW up to
+ * STARTER_LOW + STARTER_SPREAD of the pupil's speed, so it is close but can't be lost. */
+export const STARTER_LOW = 0.86;
+export const STARTER_SPREAD = 0.1;
 
 // --- Small islands catch up ------------------------------------------------------------------------------------------
 
