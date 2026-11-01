@@ -245,3 +245,55 @@ Style to settle with mock-ups early in Stage 2: bright, rich, storybook painting
 - **Claw Workshop**: all four kinds of crazy cosmetic upgrades, a few earned and most bought, kept for good, shown in the Hall, a special of the week.
 
 Still open: how this game reads the school season date (ask before Stage 4), and whether to add a home page "new level ready" chip (a separate small step).
+
+---
+
+## Stage 1 results (2 November 2026)
+
+**Built:** the rules engine in `shared/diamond/`, all pure and seeded, every number in `config.ts`, plus the balance simulator (`npm run diamond:sim`) and the rule sheet [DIAMOND-RULES.md](DIAMOND-RULES.md) with the pace tables. No screens, server or database yet. Migration number to use in Stage 3: `20261102000200` was free on 2 Nov (check again).
+
+| File | What it does |
+|---|---|
+| `config.ts` | The 10 levels (place, new gem, time, target, what's buried), gems (value, weight, slip chance, size, depth), rocks, sacks, crabs, swing and reel speeds, 30 ticks a second, boosts, question caps, Workshop prices, points |
+| `angles.ts` | The fixed angle table (sin and cos for 0 to 90 whole degrees, checked in as plain numbers) |
+| `random.ts` | Seeded random numbers (32-bit integer maths) and `mixSeed`, with separate streams for the field, catches and landings |
+| `field.ts` | `makeField(level, seed)`: rarer gems fewer, smaller and deeper; things only where the claw can reach; level 10's diamond with a clear line down to it flanked by big rocks; `makeStarterField` for the guided first go |
+| `engine.ts` | `startLevel` / `step` / `answer` (live play) and `playLevel({ level, seed, drops, boosts, marks, finish, starter })` (the server's replay), giving gems banked, coins, passed, stars, each slip's slot and where a dropped gem landed, and every shot for the screen to animate. `starterLevel(seed)` |
+| `progress.ts` | `nzDate`, `levelsOpen` / `canStart` (one new level a day), `takeBoosts`, `applyResult` (coins, stars, Gem Book, points, earned upgrades), `newSeason`, `needsStarter`, achievement `measures` |
+| `workshop.ts`, `workshopItems.ts` | 43 upgrades in 6 slots (4 earned), `canBuy`, `buy`, `wear`, `weekNumber`, `weeklySpecial`, `priceOf` |
+| `nextStep.ts` | The next-step line with real names and numbers, and the button it means |
+| `bot.ts`, `sim.ts`, `scripts/diamond-sim.mjs` | Bot pupils and the 35-day season simulator |
+| `diamond.test.ts` | The 3 rule tests (of the game's 8) |
+
+**Decisions made in this stage:**
+- **Field units.** The ground is 1000 × 700 units, the winch hangs at (500, 40), the claw travels out 16 units a tick and swings 2° a tick. The screen scales this.
+- **Drop presses are ticks.** The browser records the tick of each Drop (and of Finish, if pressed). Presses while the claw is busy are ignored, so a replay needs nothing else. A Hold on! slot with no mark counts as wrong (a pupil who closes the question loses that grip).
+- **Finish button.** After passing, a pupil can keep digging for coins and the third star, or press Finish. Level 10 ends as soon as the Heart Diamond is up.
+- **Stars** count time left *at the moment of passing*, so sack seconds afterwards don't add a star.
+- **The Heart Diamond** gives 150 coins, slips at two set stretches of the way up, and always asks both questions unless the cap (8) is used up.
+- **Wrong answer:** the gem falls 60 to 140 units further out along the claw's line (from the seed), never outside the ground or on top of something else. A crab drops its gem and scuttles off.
+- **The diamond's way down** is kept clear on purpose: at least 6 degrees of swing reach it first. A 1-degree gap (allowed at first) was impossible for children.
+- **Coins:** passing a new level keeps all its coins; replays **and tries that fall short** keep 12%. (The plan said failed tries keep their coins; at 100% that made stopping just short of the target a better coin farm than replaying, so they share the replay rate. The "So close!" screen should say "You kept 6 coins", not "your coins".)
+- **Prices tuned:** Workshop Common 100, Cool 250, Epic 600, Legendary 1,800 (plan guessed 50 / 150 / 400 / 1,000). Special of the week 40% off, stepping through the list so every upgrade comes round and never the same two weeks running.
+- **Targets tuned down** from level 2: 15, 25, 40, 55, 70, 100, 145, 200, 240 (plan guessed up to 380). Each field must hold at least 1.5 times its target.
+- **Strong Winch** speeds up everything heavier than light (medium and heavy gems, rocks and the diamond), not only "heavy" gems.
+- **Boost prices** stay as the plan guessed: bots rarely need them, because levels mostly pass first try.
+
+**Pace (simulator, details in DIAMOND-RULES.md):** with one new level a day and unlimited tries, nearly every pupil passes each new level the day it opens. So the climb is **10 play days for everyone**: about **week 2** at 5 days a week, **week 3** at 3 to 4 days, **week 5** at 2 days. Pupils weaker at maths (45% right) reach the diamond just as surely; they answer more questions and lose a little time. New levels pass in 1 to 3 tries 98–100% of the time (mean 1.0 to 1.2). A 3-to-4-day pupil earns about 3,400 to 5,000 coins, buys 6 to 9 upgrades, and ends with about 400 to 600 coins unspent; savers get their Legendary late in the season.
+
+**Not met: "3-to-4-days-a-week players reach the diamond in about 4 to 5 weeks."** The daily rule makes the climb 10 play days at best, and with friendly targets also at worst, so it lands in week 3. Making levels harder doesn't slow it (tries are unlimited on the day), it only frustrates. Question for James below.
+
+**Untested / for later stages:**
+- Bots are probably steadier than real 9-year-olds. Try the Stage 2 preview with a class before trusting the tries numbers.
+- The Stage 3 server must check inputs before calling `playLevel` (from the Stage 1 review):
+  - level a whole number 1 to 10, the server's own seed;
+  - `drops` an array of at most about 300 whole numbers from 0 to 5,400;
+  - `finish` null or a whole number;
+  - `boosts` a duplicate-free subset of the 4 boosts, matching what `takeBoosts` charged (including the free one);
+  - `marks` come from the server's own table, never the browser;
+  - `starter` only when `needsStarter` says so.
+  `playLevel` stops after 18,000 ticks whatever it's sent.
+- `nextStep` wording was checked by eye only (no tests of wording).
+- Achievement measures and points are worked out (`measures`, `POINTS`) but not wired to the hub until Stage 4.
+
+**Questions for James:** see the cards at the end of the Stage 1 session (the climb's pace).
