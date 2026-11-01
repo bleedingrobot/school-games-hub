@@ -632,6 +632,8 @@ Decided with James because 40 small plot tiles looked crowded and "stuck on". Bu
 - Some keepers came out with lighter skin than asked (b01, b10, b11, b15, b20, g01, g06, g10, g11, g20). Some look younger than their age (b13 to b16, g16). g09 has two pairs of goggles.
 - Worth checking with families: b17 (turban) and g13 (hijab). Nothing unsuitable for children was found.
 
+**James's answers (2 Nov 2026):** leave the keepers as they are. Repaint farm levels 2 and 3 (no wide wheat slab) and workshop level 1 (so all three levels are windmills). Do this in S.4: `scripts/isles-art.py`, then `tidy --force` for those pieces.
+
 ### S.L so far (style try-outs), 1 Nov 2026
 
 **Painted:** 10 styles × 3 test pictures (island, class sky, Sky Race) × 2 tries = 60 pictures, on the gaming PC with `scripts/isles-style-art.py`. About 25 seconds each.
