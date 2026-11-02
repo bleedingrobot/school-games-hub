@@ -1,5 +1,7 @@
 # Prompt: Sky Isles S.4, the class sky (classmates)
 
+> **Out of date (3 Nov 2026):** James chose the cosy rework (`docs/ISLES-COSY-PLAN.md`). Friendship ropes and the class market are gone, and visit-and-gift is new. Rewrite this prompt from the cosy plan before running S.4, after stages C.1 to C.3.
+
 Paste everything below the line into a new Claude session opened in `~/games-hub-isles`. Run it **after** "race questions during the race" (pushed 2 Nov 2026, commit 245f841).
 
 ---
