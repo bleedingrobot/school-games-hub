@@ -1,7 +1,7 @@
 # Star Trader: in-game hints plan
 
 Written 1 November 2026 for James, the day Star Trader went live, after reading every screen of the game (`src/games/trader/`) and its rules (`shared/trader/`).
-**Status: H.1, H.2 and H.3 built 1 Nov 2026 on branch `trader-hints` (sections 12 to 14); not merged or live. H.4 and H.5 not started.** Branch to use: `trader-hints`. Everything stays inside `src/games/trader/`: **no server change, no migration, no shared files** (one optional server change is in section 9, and it can wait).
+**Status: H.1, H.2 and H.3 LIVE (merged to `main` in #123 and #124 on 1 Nov 2026; sections 12 to 14). H.4 and H.5 not started.** The `trader-hints` branch is finished: start H.4 on a new branch from `main`. Everything stays inside `src/games/trader/`: **no server change, no migration, no shared files** (one optional server change is in section 9, and it can wait).
 
 ## The short version
 
@@ -264,7 +264,7 @@ Each ends with tests passing, a results section here, a commit, and a stop for J
 
 ## 12. Stage H.1 results (1 Nov 2026): Bolt's next step and "Show me"
 
-Built on branch `trader-hints` (its own folder, `~/games-hub-trader-hints`). **Not merged, nothing live.** Only files in `src/games/trader/` changed: no server code, no migration, no shared files. The name "Bolt" is one line (`COACH_NAME` in `text.ts`) in case James picks another (question 1).
+Built on branch `trader-hints` (its own folder, `~/games-hub-trader-hints`). **Live since 1 Nov 2026 (#123, #124).** Only files in `src/games/trader/` changed: no server code, no migration, no shared files. The name "Bolt" is one line (`COACH_NAME` in `text.ts`) in case James picks another (question 1).
 
 ### What's there
 | Where | What |
@@ -300,7 +300,7 @@ Built on branch `trader-hints` (its own folder, `~/games-hub-trader-hints`). **N
 
 ## 13. Stage H.2 results (1 Nov 2026): First Flight
 
-Built on branch `trader-hints`. **Not merged, nothing live.** Only files in `src/games/trader/` changed: no server code, no migration, no shared files.
+Built on branch `trader-hints`. **Live since 1 Nov 2026 (#123, #124).** Only files in `src/games/trader/` changed: no server code, no migration, no shared files.
 
 ### What's there
 | Where | What |
@@ -333,7 +333,7 @@ Built on branch `trader-hints`. **Not merged, nothing live.** Only files in `src
 
 ## 14. Stage H.3 results (1 Nov 2026): first-time tips and help with choices
 
-Built on branch `trader-hints`. **Not merged, nothing live.** Only files in `src/games/trader/` changed: no server code, no migration, no shared files. Bolt never answers a maths question: his tips and sums are about trading only.
+Built on branch `trader-hints`. **Live since 1 Nov 2026 (#123, #124).** Only files in `src/games/trader/` changed: no server code, no migration, no shared files. Bolt never answers a maths question: his tips and sums are about trading only.
 
 ### What's there
 | Where | What |
