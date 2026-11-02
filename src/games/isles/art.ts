@@ -62,6 +62,7 @@ export const decorArt = (id: DecorationId) => file(`dec-${id}`);
 export const WALKERS = 6;
 export const walkerArt = (i: number) => file(`walker-${(i % WALKERS) + 1}`);
 export const crystalArt = () => file('icon-crystal');
+export const coinArt = () => file('icon-coin');
 
 export const buildingArt = (kind: PlotOrEmpty, level: number) => (kind === 'empty' ? file('bld-empty') : file(`bld-${kind}-${Math.max(1, level)}`));
 

@@ -94,8 +94,20 @@
 .si-walker__drawn--2 { --si-walker: #ca8a04; }
 .si-walker__drawn--3 { --si-walker: #7c3aed; }
 @keyframes si-walk { from { left: var(--x1); top: var(--y1); z-index: var(--z1); } to { left: var(--x2); top: var(--y2); z-index: var(--z2); } }
-.si-pop { position: absolute; transform: translate(-50%, -100%); padding: 1px 7px; border-radius: 999px; background: var(--si-gold); border: 2px solid #fff; color: var(--ink); font-weight: 800; font-size: 0.85rem; z-index: 260; pointer-events: none; animation: si-pop 1.6s ease-out both; }
-@keyframes si-pop { from { opacity: 0; margin-top: 0; } 25% { opacity: 1; } to { opacity: 1; margin-top: -4%; } }
+/* The collect: one building at a time glows gold, its coins pop up with a burst of golden sparkles, and the sum
+   appears once they've all been counted. */
+.si-pop { position: absolute; transform: translate(-50%, -100%); z-index: 260; pointer-events: none; animation: si-pop 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) var(--si-pop-delay, 0s) both; }
+.si-pop__label { position: relative; display: flex; align-items: center; gap: 3px; padding: 2px 9px 2px 7px; border-radius: 999px; background: linear-gradient(180deg, #fff3b0, var(--si-gold) 55%, #f2b51d); border: 2px solid #fff; color: var(--ink); font-weight: 800; font-size: 0.95rem; box-shadow: 0 0 0 2px rgba(161, 98, 7, 0.35), 0 0 14px 4px rgba(255, 212, 71, 0.75); }
+.si-pop__coin { width: 1.5em; height: 1.5em; margin: -4px 0 -4px -4px; object-fit: contain; }
+@keyframes si-pop { from { opacity: 0; transform: translate(-50%, -40%) scale(0.3); } 60% { opacity: 1; } to { opacity: 1; transform: translate(-50%, -150%) scale(1); } }
+.si-pop__sparks { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.si-pop__sparks > span { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; background: #fff7c2; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter: drop-shadow(0 0 3px #ffd447); opacity: 0; animation: si-spark 0.9s ease-out calc(var(--si-pop-delay, 0s) + 0.1s) both; }
+.si-pop__sparks > span:nth-child(even) { width: 7px; height: 7px; background: var(--si-gold); }
+@keyframes si-spark { 0% { opacity: 0; transform: rotate(var(--si-spark)) translateY(0) scale(0.4); } 30% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--si-spark)) translateY(-38px) scale(1.1); } }
+.si-spot--counting img { animation: si-glint 0.9s ease-out var(--si-pop-delay, 0s) both; }
+@keyframes si-glint { 0% { filter: drop-shadow(0 3px 2px rgba(40, 60, 20, 0.35)); } 35% { filter: drop-shadow(0 0 12px #ffd447) brightness(1.15); transform: translateY(-5px) scale(1.04); } 100% { filter: drop-shadow(0 3px 2px rgba(40, 60, 20, 0.35)); } }
+.si-after { display: grid; gap: 8px; animation: si-after 0.5s ease-out var(--si-after, 0s) both; }
+@keyframes si-after { from { opacity: 0; transform: translateY(6px); } }
 .si-garden { position: relative; width: min(70%, 420px); margin: 10px auto 0; }
 
 .si-stage__badge { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); padding: 3px 12px; border-radius: 999px; background: var(--si-gold); font-weight: 800; color: var(--ink); z-index: 300; }
@@ -218,7 +230,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .si-drift, .si-lit, .si-walker, .si-pop { animation: none; }
+  .si-drift, .si-lit, .si-walker, .si-pop, .si-pop__sparks > span, .si-spot--counting img, .si-after { animation: none; }
+  .si-pop { transform: translate(-50%, -150%); }
   .si-boat, .si-spot img { transition: none; }
   .si-race--sailing .si-boat img:first-child { animation: none; }
   .si-spot:hover img, .si-spot:focus-visible img { transform: none; }

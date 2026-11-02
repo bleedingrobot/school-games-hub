@@ -17,7 +17,7 @@ import { keeperArt, pipArt } from './art';
 import { IslesError, type IslandView, type IslesBackend, type PublicRace } from './backend';
 import { Shelf, freePlaces } from './Decorations';
 import { HowToPlayBody } from './HowToPlay';
-import { Art, IslandPicture } from './Island';
+import { Art, IslandPicture, POP_GAP } from './Island';
 import { Keepers } from './Keepers';
 import { Race } from './Race';
 import { STEP_PIP, Step, StepStrip, TurnStep, canStop, stepOf, type BuildView } from './TurnSteps';
@@ -409,6 +409,7 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
                 problem={problem}
                 headingRef={heading}
                 collectLines={collectLines(island, windy)}
+                countFor={pops ? Object.keys(pops).length * POP_GAP + 0.6 : 0}
                 windy={windy}
                 question={view.question ? { answered: view.question.answered ?? null } : null}
                 raceWhy={raceWords}

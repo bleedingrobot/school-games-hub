@@ -4,7 +4,7 @@
  * knows where they are. Every price and every "why not" comes from the rules (problemWith), worked out on the island
  * as it will be after the choices so far.
  */
-import type { ReactNode, Ref } from 'react';
+import type { CSSProperties, ReactNode, Ref } from 'react';
 import { LIGHTHOUSE, type DecorationId } from '../../../shared/isles/config';
 import { decoration, isGrandIsle, type Action, type Island } from '../../../shared/isles/engine';
 import { Choice } from './Choice';
@@ -73,6 +73,8 @@ export interface StepProps {
   problem: string | null;
   headingRef: Ref<HTMLHeadingElement>;
   collectLines: string[];
+  /** Seconds the collect's coins take to pop, one building at a time: the sum appears after them. */
+  countFor: number;
   windy: boolean;
   question: { answered: { right: boolean } | null } | null;
   /** Why a Sky Race can't start now (null: it can). */
@@ -125,8 +127,10 @@ export function TurnStep(p: StepProps) {
       body = (
         <>
           {p.windy && <p className="si-wind">The fair wind is blowing: your coins grow this turn.</p>}
-          <ul className="si-sums">{p.collectLines.map((line) => <li key={line}>{line}</li>)}</ul>
-          <p><strong>Coins to spend: {n(island.coins)}</strong></p>
+          <div className="si-after" style={{ '--si-after': `${p.countFor}s` } as CSSProperties}>
+            <ul className="si-sums">{p.collectLines.map((line) => <li key={line}>{line}</li>)}</ul>
+            <p><strong>Coins to spend: {n(island.coins)}</strong></p>
+          </div>
         </>
       );
       main = next();

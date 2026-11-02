@@ -10,7 +10,7 @@ import { DECORATION_PLACES, GRAND_ISLE, type PlotOrEmpty } from '../../../shared
 import { decoration, hasGarden, type Island } from '../../../shared/isles/engine';
 import {
   BASE_ASPECT, DECOR_PLACES, GARDEN_ASPECT, GARDEN_SPOTS, SPOTS, backgroundArt, baseArt, baseFor, buildingArt, decorArt, gardenArt,
-  keeperArt, walkerArt,
+  coinArt, keeperArt, walkerArt,
 } from './art';
 import { DECOR_EMOJI, KIND_NAME } from './words';
 
@@ -24,6 +24,10 @@ export function Art({ src, alt = '', className, fallback }: { src?: string; alt?
 /** How wide a building is drawn, as a share of the base's width: smaller on the bigger bases, bigger at higher levels. */
 const BUILDING_WIDTH = [19, 16, 15, 13, 12];
 const LEVEL_GROWTH = [0.8, 1, 1.14, 1.3];
+/** Seconds between one building's coins and the next at the collect, so they're counted one at a time. */
+export const POP_GAP = 0.55;
+/** The directions the golden sparkles burst in, round each building's coins. */
+const SPARKS = [0, 45, 90, 135, 180, 225, 270, 315];
 /** How far in front of a clearing walkers stroll (in % of the base's height). */
 const WALK_AHEAD = 7;
 
@@ -79,7 +83,7 @@ export function IslandPicture({
   /** Free decoration places to choose from (while one is being placed). */
   free?: number[];
   onPlace?: (place: number) => void;
-  /** Coins popping off each spot (the collect step), by spot. */
+  /** Coins popping off each spot (the collect step), by spot, one building at a time in spot order. */
   pops?: Record<number, number>;
 }) {
   const base = baseFor(island.spots.length);
@@ -89,6 +93,9 @@ export function IslandPicture({
   const extra = island.spots.length - shown.length;
   const keeperSrc = keeper ? keeperArt(keeper, true) : undefined;
   const choosing = free && onPlace ? free : [];
+  // The collect: each building's turn to glow and pop its coins, in spot order.
+  const popOrder = pops ? Object.keys(pops).map(Number).filter((spot) => pops[spot] > 0) : [];
+  const popDelay = (spot: number) => `${popOrder.indexOf(spot) * POP_GAP}s`;
   const decor = island.decorations.flatMap((d, i) => (d.place === null ? [] : [{ ...d, i, at: placeAt(base, d.place) }]));
   const garden = hasGarden(island);
   // Each walker strolls back and forth between the fronts of two neighbouring clearings, at its own pace, so it walks
@@ -124,14 +131,15 @@ export function IslandPicture({
           const [x, y] = places[i];
           const width = BUILDING_WIDTH[base] * LEVEL_GROWTH[spot.kind === 'empty' ? 0 : spot.level];
           const name = spotName(spot.kind, spot.level);
-          const style = { left: `${x}%`, top: `${y}%`, width: `${width}%`, zIndex: Math.round(y) + 10 };
+          const counting = popOrder.includes(i);
+          const style = { left: `${x}%`, top: `${y}%`, width: `${width}%`, zIndex: Math.round(y) + 10, ...(counting ? { '--si-pop-delay': popDelay(i) } : {}) } as CSSProperties;
           const art = (
             <Art
               src={buildingArt(spot.kind, spot.level)}
               fallback={<span className={`si-spot__drawn si-kind--${spot.kind}`} aria-hidden="true">{spot.kind === 'empty' ? '+' : `${KIND_NAME[spot.kind][0]}${spot.level}`}</span>}
             />
           );
-          const look = `si-spot si-spot--${spot.kind}${selected === i ? ' si-spot--chosen' : ''}${lit === `spot-${i}` ? ' si-lit' : ''}`;
+          const look = `si-spot si-spot--${spot.kind}${selected === i ? ' si-spot--chosen' : ''}${lit === `spot-${i}` ? ' si-lit' : ''}${counting ? ' si-spot--counting' : ''}`;
           if (!onSpot) {
             return <span key={i} className={`${look} si-spot--still`} style={style} data-pip={`spot-${i}`} role="img" aria-label={`Spot ${i + 1}: ${name}`}>{art}</span>;
           }
@@ -156,9 +164,18 @@ export function IslandPicture({
             <Art src={walkerArt(w.i)} fallback={<span className={`si-walker__drawn si-walker__drawn--${w.i % 4}`} />} />
           </span>
         ))}
-        {pops && Object.entries(pops).map(([spot, coins]) => {
-          const at = places[Number(spot)];
-          return at && coins > 0 ? <span key={`p${spot}`} className="si-pop" style={{ left: `${at[0]}%`, top: `${at[1]}%` }} aria-hidden="true">+{coins}</span> : null;
+        {popOrder.map((spot) => {
+          const at = places[spot];
+          if (!at) return null;
+          return (
+            <span key={`p${spot}`} className="si-pop" style={{ left: `${at[0]}%`, top: `${at[1]}%`, '--si-pop-delay': popDelay(spot) } as CSSProperties} aria-hidden="true">
+              <span className="si-pop__sparks">{SPARKS.map((s) => <span key={s} style={{ '--si-spark': `${s}deg` } as CSSProperties} />)}</span>
+              <span className="si-pop__label">
+                <Art src={coinArt()} className="si-pop__coin" fallback={<></>} />
+                +{pops![spot]}
+              </span>
+            </span>
+          );
         })}
         {choosing.filter((p) => !placeAt(base, p).garden).map((p) => {
           const at = placeAt(base, p);
