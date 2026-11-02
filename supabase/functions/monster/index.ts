@@ -7151,6 +7151,16 @@ function addToBag(bag, loot) {
 	for (const i of ITEM_ORDER) if (loot[i]) out[i] = (out[i] ?? 0) + loot[i];
 	return out;
 }
+//#endregion
+//#region shared/monsters/quests/eggs.ts
+const EGG_LABEL = {
+	leafy: "leafy egg",
+	water: "water egg",
+	warm: "warm egg",
+	cold: "cold egg",
+	glowing: "glowing egg",
+	stony: "stony egg"
+};
 const BY_ID = new Map([
 	{
 		id: "kauri-seeds",
@@ -7372,7 +7382,8 @@ const TALKING = [
 	"giant",
 	"tinker",
 	"board",
-	"puzzle"
+	"puzzle",
+	"nest"
 ];
 const NEEDS_FREE_TILE = [
 	"person",
@@ -7528,6 +7539,10 @@ function parseMap(id, raw) {
 				else problems.push(`${label} needs a "giant" (one of ${GIANTS.map((g) => g.id).join(", ")})`);
 			}
 			if (kind === "sign" && p.hints === true) thing.hints = true;
+			if (kind === "nest") {
+				if (text(p.egg) in EGG_LABEL) thing.egg = text(p.egg);
+				else problems.push(`${label} needs an "egg" (one of ${Object.keys(EGG_LABEL).join(", ")})`);
+			}
 			if (kind === "puzzle") {
 				if (puzzleById(text(p.puzzle))) thing.puzzle = text(p.puzzle);
 				else problems.push(`${label}: "${text(p.puzzle)}" is not a puzzle in quests/puzzles.ts`);
@@ -7561,7 +7576,7 @@ function parseMap(id, raw) {
 				}
 			}
 			things.push(thing);
-		} else problems.push(`${label}: "${type}" is not a kind of object (sign, person, nurse, box, book, closed, trainer, chest, giant, tinker, board, puzzle, gate, warp, spot, far)`);
+		} else problems.push(`${label}: "${type}" is not a kind of object (sign, person, nurse, box, book, closed, trainer, chest, giant, tinker, board, puzzle, nest, gate, warp, spot, far)`);
 	}
 	const walled = (x, y) => walls[y * width + x] !== 0;
 	for (const t of things) if (NEEDS_FREE_TILE.includes(t.kind) && walled(t.x, t.y)) problems.push(`${t.kind} "${t.name}" at ${t.x},${t.y} is standing on a wall tile`);
@@ -30446,8 +30461,8 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		height: 14,
 		tilewidth: 16,
 		tileheight: 16,
-		nextlayerid: 9,
-		nextobjectid: 9,
+		nextlayerid: 10,
+		nextobjectid: 10,
 		properties: [
 			{
 				"name": "name",
@@ -30527,7 +30542,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		],
 		layers: [
 			{
-				"id": 8,
+				"id": 9,
 				"name": "ground",
 				"type": "tilelayer",
 				"x": 0,
@@ -30820,7 +30835,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 9,
+				"id": 10,
 				"name": "walls",
 				"type": "tilelayer",
 				"x": 0,
@@ -30938,7 +30953,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					0,
 					0,
 					0,
-					0,
+					6,
 					0,
 					0,
 					0,
@@ -31113,7 +31128,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 10,
+				"id": 11,
 				"name": "grass",
 				"type": "tilelayer",
 				"x": 0,
@@ -31406,7 +31421,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 11,
+				"id": 12,
 				"name": "objects",
 				"type": "objectgroup",
 				"draworder": "topdown",
@@ -31566,6 +31581,26 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					},
 					{
 						"id": 7,
+						"name": "Egg nest",
+						"type": "nest",
+						"x": 128,
+						"y": 80,
+						"width": 16,
+						"height": 16,
+						"rotation": 0,
+						"visible": true,
+						"properties": [{
+							"name": "egg",
+							"type": "string",
+							"value": "warm"
+						}, {
+							"name": "text",
+							"type": "string",
+							"value": "A nest of warm sand by the steam."
+						}]
+					},
+					{
+						"id": 8,
 						"name": "Hot spring chest",
 						"type": "puzzle",
 						"x": 240,
@@ -31599,8 +31634,8 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		height: 14,
 		tilewidth: 16,
 		tileheight: 16,
-		nextlayerid: 9,
-		nextobjectid: 9,
+		nextlayerid: 10,
+		nextobjectid: 10,
 		properties: [
 			{
 				"name": "name",
@@ -31680,7 +31715,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		],
 		layers: [
 			{
-				"id": 8,
+				"id": 9,
 				"name": "ground",
 				"type": "tilelayer",
 				"x": 0,
@@ -31973,7 +32008,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 9,
+				"id": 10,
 				"name": "walls",
 				"type": "tilelayer",
 				"x": 0,
@@ -32218,7 +32253,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					0,
 					0,
 					0,
-					0,
+					6,
 					0,
 					0,
 					0,
@@ -32266,7 +32301,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 10,
+				"id": 11,
 				"name": "grass",
 				"type": "tilelayer",
 				"x": 0,
@@ -32511,7 +32546,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					269,
 					269,
 					269,
-					269,
+					0,
 					269,
 					0,
 					0,
@@ -32559,7 +32594,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 11,
+				"id": 12,
 				"name": "objects",
 				"type": "objectgroup",
 				"draworder": "topdown",
@@ -32719,6 +32754,26 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					},
 					{
 						"id": 7,
+						"name": "Egg nest",
+						"type": "nest",
+						"x": 240,
+						"y": 176,
+						"width": 16,
+						"height": 16,
+						"rotation": 0,
+						"visible": true,
+						"properties": [{
+							"name": "egg",
+							"type": "string",
+							"value": "water"
+						}, {
+							"name": "text",
+							"type": "string",
+							"value": "A nest of soft seaweed by the lagoon."
+						}]
+					},
+					{
+						"id": 8,
 						"name": "Lagoon stones",
 						"type": "puzzle",
 						"x": 80,
@@ -32752,8 +32807,8 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		height: 14,
 		tilewidth: 16,
 		tileheight: 16,
-		nextlayerid: 9,
-		nextobjectid: 9,
+		nextlayerid: 10,
+		nextobjectid: 10,
 		properties: [
 			{
 				"name": "name",
@@ -32833,7 +32888,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 		],
 		layers: [
 			{
-				"id": 8,
+				"id": 9,
 				"name": "ground",
 				"type": "tilelayer",
 				"x": 0,
@@ -33126,7 +33181,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 9,
+				"id": 10,
 				"name": "walls",
 				"type": "tilelayer",
 				"x": 0,
@@ -33350,7 +33405,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					0,
 					0,
 					0,
-					0,
+					6,
 					0,
 					0,
 					0,
@@ -33419,7 +33474,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 10,
+				"id": 11,
 				"name": "grass",
 				"type": "tilelayer",
 				"x": 0,
@@ -33643,7 +33698,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					0,
 					271,
 					271,
-					271,
+					0,
 					271,
 					271,
 					271,
@@ -33712,7 +33767,7 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 				]
 			},
 			{
-				"id": 11,
+				"id": 12,
 				"name": "objects",
 				"type": "objectgroup",
 				"draworder": "topdown",
@@ -33872,6 +33927,26 @@ const WORLD_MAPS = Object.fromEntries(Object.entries({
 					},
 					{
 						"id": 7,
+						"name": "Egg nest",
+						"type": "nest",
+						"x": 224,
+						"y": 160,
+						"width": 16,
+						"height": 16,
+						"rotation": 0,
+						"visible": true,
+						"properties": [{
+							"name": "egg",
+							"type": "string",
+							"value": "cold"
+						}, {
+							"name": "text",
+							"type": "string",
+							"value": "A nest scraped into the snow."
+						}]
+					},
+					{
+						"id": 8,
 						"name": "Frozen lake",
 						"type": "puzzle",
 						"x": 192,

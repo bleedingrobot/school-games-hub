@@ -152,6 +152,8 @@ export class MapMaker {
   board(name, x, y, text, gid = TT(83)) { this.wall(x, y, gid); this.object('board', name, x, y, { text }); }
   /** A puzzle (shared/monsters/quests/puzzles.ts) that opens when you face it; drawn as a sign until it is painted. */
   puzzle(name, puzzle, x, y, text, gid = TT(83)) { this.wall(x, y, gid); this.object('puzzle', name, x, y, { puzzle, text }); }
+  /** An egg nest in a bonus area: one `egg` of that kind laid every week. Drawn as a bush until it is painted. */
+  nest(name, x, y, egg, text, gid = TT(5)) { this.wall(x, y, gid); this.object('nest', name, x, y, { egg, text }); }
   /** A bush or tree that hides a seed pod: put it on a tile that is already a wall, so it keeps its look. */
   pod(name, puzzle, x, y, text) { this.object('puzzle', name, x, y, { puzzle, text }); }
   /** Opens a tile of a finished map (a border tree, say) to make a new way through. */

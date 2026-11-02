@@ -11,6 +11,7 @@ import { TYPE_LABEL, TYPES, type TypeId } from '../../shared/monsters/types';
 import { AREAS, BADGE_ORDER } from '../../shared/monsters/world/areas';
 import { DELTA, type Dir, type WorldState } from '../../shared/monsters/world/types';
 import { isBlocked } from '../../shared/monsters/world/walking';
+import { nzDay } from '../../shared/monsters/world/battleCap';
 import { newWorld, refreshBook } from '../../shared/monsters/world/world';
 import { nameOf } from '../../src/games/monsters/text';
 import { WorldGame, type WorldGameProps } from '../../src/games/monsters/world/WorldGame';
@@ -46,15 +47,17 @@ const TELEPORTS: Teleport[] = [
   }),
   // Every puzzle, and every bonus area's way in: stand on a free tile next to it, facing it.
   ...Object.values(WORLD_MAPS).flatMap((m) =>
-    m.things.filter((t) => t.kind === 'puzzle' || t.kind === 'giant').flatMap((t): Teleport[] => {
+    m.things.filter((t) => t.kind === 'puzzle' || t.kind === 'giant' || t.kind === 'nest').flatMap((t): Teleport[] => {
       const beside = (['down', 'up', 'left', 'right'] as const).map((facing) => {
         const [dx, dy] = DELTA[facing];
         return { x: t.x - dx, y: t.y - dy, facing };
       }).find((p) => p.x >= 0 && p.y >= 0 && p.x < m.width && p.y < m.height && !isBlocked(m, p.x, p.y, BADGE_ORDER));
-      return beside ? [{ group: t.kind === 'giant' ? 'Sleeping giants' : 'Puzzles', label: `${m.name}: ${t.name}`, map: m.id, spot: '', at: beside }] : [];
+      return beside ? [{ group: t.kind === 'giant' ? 'Sleeping giants' : t.kind === 'nest' ? 'Egg nests' : 'Puzzles', label: `${m.name}: ${t.name}`, map: m.id, spot: '', at: beside }] : [];
     }),
   ),
 ];
+/** Today, for the notice board, egg nests and weather (the test page counts no play days). */
+const TODAY = { day: nzDay(Date.now()), player: 'test-page', playDays: 0 };
 const keyOf = (t: Teleport) => `${t.group}: ${t.label}`;
 
 /** A full team (one of each type, at level 40), three more in the box, and a full bag. */
@@ -148,7 +151,7 @@ export function WalkPage({ onBattling, testing }: { onBattling?: (on: boolean) =
           <button type="button" onClick={() => { setTeam(null); setTeleport(undefined); setCheat(undefined); setRun((r) => r + 1); }}>Start again</button>
         </div>
       </details>
-      <WorldGame key={run} initial={initial} settings={settings} onSettingsChange={change} fast={fast} teleport={teleport} cheat={cheat} {...testing} onBattling={(on) => { setBattling(on); onBattling?.(on); }} />
+      <WorldGame key={run} initial={initial} settings={settings} onSettingsChange={change} fast={fast} teleport={teleport} cheat={cheat} quest={TODAY} {...testing} onBattling={(on) => { setBattling(on); onBattling?.(on); }} />
     </section>
   );
 }

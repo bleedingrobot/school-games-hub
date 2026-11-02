@@ -2,6 +2,7 @@
  * What a loaded Maths Monsters map looks like, and the one plain object that holds a game in
  * progress (`WorldState`). No browser, no screens: this is all plain data.
  */
+import type { EggKind } from '../quests/types';
 import type { Bag } from '../engine';
 import type { Monster } from '../rules';
 import type { QuestSave } from '../quests/types';
@@ -12,7 +13,7 @@ export const DELTA: Record<Dir, readonly [number, number]> = { up: [0, -1], down
 export const OPPOSITE: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
 /** Things you can talk to. They all block walking. */
-export type ThingKind = 'sign' | 'person' | 'nurse' | 'box' | 'book' | 'closed' | 'trainer' | 'chest' | 'giant' | 'tinker' | 'board' | 'puzzle';
+export type ThingKind = 'sign' | 'person' | 'nurse' | 'box' | 'book' | 'closed' | 'trainer' | 'chest' | 'giant' | 'tinker' | 'board' | 'puzzle' | 'nest';
 
 export interface TrainerMonster {
   species: string;
@@ -50,6 +51,8 @@ export interface Thing {
   puzzle?: string;
   /** An area's welcome sign: after its text it says what can still be done there (questWorld.areaHints). */
   hints?: boolean;
+  /** An egg nest in a bonus area: the kind of egg laid there, one a week. */
+  egg?: EggKind;
 }
 
 /** A way on that stays closed until you hold a badge (a rope fence). The map's wall layer does not draw it; the screen does, while it is closed. */

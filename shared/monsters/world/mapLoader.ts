@@ -14,6 +14,7 @@
  *      giant    - a sleeping giant across the way: `giant` (an id in quests/giants.ts), `text` (unused: it says its own words)
  *      tinker, board - the Tinker who makes things from bits, and the notice board; `text`
  *      sign    - may have `hints: true`: an area's welcome sign that also says what can still be done there
+ *      nest    - an egg nest: `egg` (the kind laid, one a week), `text`
  *      puzzle  - opens a puzzle from quests/puzzles.ts; `puzzle` (its id), `text`
  *      gate     - `badge` (the badge that opens it), `text` (said while closed), `gid` (the tile drawn while closed);
  *                 it is not on the walls layer, so the screen draws it only while it is closed
@@ -27,7 +28,9 @@
  */
 import { formAt, isFamily, speciesOf } from '../monsterBook';
 import { LOOT } from './rewards';
+import { EGG_LABEL } from '../quests/eggs';
 import { puzzleById } from '../quests/puzzles';
+import type { EggKind } from '../quests/types';
 import { giantById, GIANTS } from '../quests/giants';
 import { DIRS, type Dir, type Gate, type GameMap, type Thing, type ThingKind, type TrainerMonster, type Warp } from './types';
 
@@ -82,7 +85,7 @@ export class MapError extends Error {
   }
 }
 
-const TALKING: ThingKind[] = ['sign', 'person', 'nurse', 'box', 'book', 'closed', 'trainer', 'chest', 'giant', 'tinker', 'board', 'puzzle'];
+const TALKING: ThingKind[] = ['sign', 'person', 'nurse', 'box', 'book', 'closed', 'trainer', 'chest', 'giant', 'tinker', 'board', 'puzzle', 'nest'];
 const NEEDS_FREE_TILE: ThingKind[] = ['person', 'nurse', 'trainer', 'chest', 'giant', 'tinker'];
 export const BADGES = ['leaf', 'water', 'fire', 'ice', 'spark', 'stone'] as const;
 
@@ -202,6 +205,10 @@ export function parseMap(id: string, raw: TiledMap): GameMap {
         else problems.push(`${label} needs a "giant" (one of ${GIANTS.map((g) => g.id).join(', ')})`);
       }
       if (kind === 'sign' && p.hints === true) thing.hints = true;
+      if (kind === 'nest') {
+        if (text(p.egg) in EGG_LABEL) thing.egg = text(p.egg) as EggKind;
+        else problems.push(`${label} needs an "egg" (one of ${Object.keys(EGG_LABEL).join(', ')})`);
+      }
       if (kind === 'puzzle') {
         if (puzzleById(text(p.puzzle))) thing.puzzle = text(p.puzzle);
         else problems.push(`${label}: "${text(p.puzzle)}" is not a puzzle in quests/puzzles.ts`);
@@ -236,7 +243,7 @@ export function parseMap(id: string, raw: TiledMap): GameMap {
       }
       things.push(thing);
     } else {
-      problems.push(`${label}: "${type}" is not a kind of object (sign, person, nurse, box, book, closed, trainer, chest, giant, tinker, board, puzzle, gate, warp, spot, far)`);
+      problems.push(`${label}: "${type}" is not a kind of object (sign, person, nurse, box, book, closed, trainer, chest, giant, tinker, board, puzzle, nest, gate, warp, spot, far)`);
     }
   }
 

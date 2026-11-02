@@ -9,7 +9,7 @@ import type { Monster } from '../rules';
 import { addToBag } from './rewards';
 import { Dice } from './rng';
 import { addBits, canMake, describeBits, RECIPES, takeBits } from '../quests/bits';
-import { addEgg, daysHad, daysNeeded, EGG_LABEL, findEgg, hatch, HATCH_SPOTS, isReady, warmEgg } from '../quests/eggs';
+import { addEgg, daysHad, daysNeeded, EGG_LABEL, EGGS, findEgg, hatch, HATCH_SPOTS, isReady, warmEgg } from '../quests/eggs';
 import { afterGiant, canWake, giantById, GIANTS, isAwake, type Giant } from '../quests/giants';
 import { podFlag, podsFound, puzzleById } from '../quests/puzzles';
 import { bringToBoard, canStart, jobsFor, questById, QUESTS, record, talkTo, type Given, type Job } from '../quests/quests';
@@ -282,6 +282,10 @@ export function areaHints(state: WorldState, map: GameMap, maps: Readonly<Record
     else if (!state.badges.includes(g.badge)) hints.push(`A giant monster is asleep on a side path. Win the ${TYPE_LABEL[speciesOf(g.species).type]} badge first, then find a way to wake it.`);
     else hints.push(`A giant monster is asleep on a side path. Ask the Tinker in Harbour Town to make a ${g.itemName.toLowerCase()} to wake it.`);
   }
+  for (const nest of map.things.filter((t) => t.kind === 'nest')) {
+    const found = opts.day !== undefined && q.flags.includes(`nest:${nest.id}:${weekOf(opts.day)}`);
+    hints.push(found ? 'You found this week’s egg in the nest here. A new one is laid next week.' : `There is an egg nest here. A new ${EGG_LABEL[nest.egg!]} is laid in it every week.`);
+  }
   for (const [kind, spot] of Object.entries(HATCH_SPOTS)) if (spot.map === map.id) hints.push(`A ${EGG_LABEL[kind as EggKind]} that is ready hatches here, at ${spot.place.replace(/ in .*$/, '')}.`);
   const closed = map.things.filter((t) => t.kind === 'chest' && !state.chests.includes(t.id)).length;
   hints.push(closed ? `There ${closed === 1 ? 'is 1 chest' : `are ${closed} chests`} still to find here.` : 'You have opened every chest here.');
@@ -294,4 +298,22 @@ export function areaHints(state: WorldState, map: GameMap, maps: Readonly<Record
   const pages: string[] = [];
   for (let i = 0; i < hints.length; i += 2) pages.push(hints.slice(i, i + 2).join(' '));
   return pages;
+}
+
+/** The week a NZ day is in (weeks start on a Monday), for the egg nests' one egg a week. */
+export const weekOf = (day: string) => Math.floor((Date.parse(`${day}T00:00:00Z`) / 86_400_000 + 3) / 7);
+
+/** Searching an egg nest: one egg a week each, kept for later in the week if the basket is full. */
+export function searchNest(state: WorldState, thing: Thing, opts: QuestOptions): { state: WorldState; pages: string[] } {
+  const kind = thing.egg!;
+  const q = questOf(state);
+  const week = opts.day ? weekOf(opts.day) : undefined;
+  const flag = `nest:${thing.id}:${week}`;
+  if (week === undefined || q.flags.includes(flag)) return { state, pages: [...thing.pages, 'The nest is empty. A new egg is laid here every week, so come back next week!'] };
+  if (q.eggs.length >= EGGS.basket) return { state, pages: [...thing.pages, `There is a ${EGG_LABEL[kind]} in the nest, but your egg basket is full. Hatch an egg, then come back this week!`] };
+  // Only this week's flag is kept for each nest.
+  const flags = [...q.flags.filter((f) => !f.startsWith(`nest:${thing.id}:`)), flag];
+  const lines: string[] = [];
+  const next = giveEgg({ ...state, quest: { ...q, flags } }, `nest:${thing.id}:${week}:${kind}`, opts, lines);
+  return { state: next, pages: [...thing.pages, ...lines] };
 }

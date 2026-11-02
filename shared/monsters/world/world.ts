@@ -9,7 +9,7 @@ import { Dice } from './rng';
 import { findSighting, nextGrassSteps, wildFor, type Sighting } from './encounters';
 import { addToBag, describeLoot, LOOT } from './rewards';
 import { DELTA, type Dir, type Gate, type GameMap, type Thing, type WorldState } from './types';
-import { areaHints, battleEvents, finishGiant, giantTalk, giveOwedEggs, keysOf, questOf, questTalk, recordEvent, searchPod, todayIn, type QuestOptions } from './questWorld';
+import { areaHints, battleEvents, finishGiant, giantTalk, giveOwedEggs, keysOf, questOf, questTalk, recordEvent, searchNest, searchPod, todayIn, type QuestOptions } from './questWorld';
 import { puzzleById } from '../quests/puzzles';
 import { giantFoe, type Giant } from '../quests/giants';
 import { gateAt, isBlocked, thingAt, warpAt } from './walking';
@@ -229,6 +229,10 @@ export function interact(state: WorldState, opts: WorldOptions): InteractOutcome
   }
   if (thing.kind === 'box' || thing.kind === 'book' || thing.kind === 'tinker' || thing.kind === 'board') return { state, thing, talk: say(thing.pages), open: thing.kind };
   if (thing.kind === 'sign' && thing.hints) return { state, thing, talk: say([...thing.pages, ...areaHints(state, map, opts.maps, opts)]) };
+  if (thing.kind === 'nest') {
+    const found = searchNest(state, thing, opts);
+    return { state: found.state, thing, talk: { pages: found.pages } };
+  }
   if (thing.kind === 'puzzle') {
     if (puzzleById(thing.puzzle ?? '')?.kind === 'pods') {
       const found = searchPod(state, thing, opts);
