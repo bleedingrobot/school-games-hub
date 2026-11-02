@@ -65,17 +65,31 @@ LEVELS = {
     1: ('dark brown crumbly topsoil with tiny roots and a few pebbles, a flat sunny meadow above', 'a bright blue sky, green grass line, a few daisies and a small wooden fence'),
     2: ('a slice through a bank of earth sculpted from modelling clay, many wavy stripes of orange, rust-red, cream and brown clay running across the whole picture right down to the bottom edge, little clay roots, pebbles and a curled pink clay worm near the left and right edges', 'a thin strip of green clay grass and a little pale blue sky'),
     3: ('a flat side-on slice through the ground like a science diagram, wavy layers of grey and tan rounded river gravel, sand and smooth pebbles stacked in bands running across the whole picture right down to the bottom edge, an old buried river bed of smooth stones near the bottom', 'a thin strip of green grass with a few reeds and a little pale sky'),
-    4: ('a calm dark blue-green cave with soft rock walls, tiny glow-worm lights in strings on the ceiling', 'a rocky cave ceiling with glowing glow-worm threads hanging down'),
+    4: ('a flat side-on slice through solid rock like a science diagram, the rock filling the whole picture edge to edge and right down to the bottom edge, dark blue-green rock in soft wavy layers, with small hollow pockets at the far left and right edges where strings of tiny glowing glow-worm lights hang', 'a thin strip of rocky ceiling with glowing glow-worm threads'),
     5: ('a hollow cave made of soft purple-blue glass rock, with pale crystal shapes along the far left and right edges, and plain purple-blue glass pieces in the middle', 'a cave ceiling with a few crystal points and a flat stone ledge'),
-    6: ('a still blue underground lake in a cave, calm teal water in the middle, wet rocky shores at the edges, soft reflections', 'a high cave ceiling with stalactites and a rocky ledge'),
-    7: ('layered cream and brown rock with the outlines of ancient shells, ferns and a big spiral fossil at the edges, calm stone in the middle', 'a stone ceiling with a flat rock ledge'),
-    8: ('warm rock with steaming turquoise hot pools at the edges, calm warm brown-orange rock in the middle, gentle steam', 'a rocky ceiling with warm mist and a flat ledge'),
-    9: ('dark red-black rock with glowing orange cracks of lava at the edges and bottom, calm plain dark rock in the middle, only rock and lava', 'a dark rock ceiling with a few glowing drips and a bare stone ledge'),
-    10: ('a magical round chamber deep underground with smooth plain rose-and-violet rock walls, calm soft rock in the middle, a faint pink glow rising from the bottom centre, a gentle heart-shaped curve of pale crystal along the outer edge', 'a smooth arched ceiling with faint sparkles and a stone ledge'),
+    6: ('a flat side-on slice through solid rock like a science diagram, the rock filling the whole picture edge to edge and right down to the bottom edge, cool blue-grey rock in soft wavy layers, with small pockets of still teal underground water tucked in at the left and right edges and a band of water along the very bottom', 'a thin strip of rocky ceiling with small stalactites'),
+    7: ('a flat side-on slice through solid rock like a science diagram, the rock filling the whole picture edge to edge and right down to the bottom edge, cream, tan and brown rock in soft wavy layers with the outlines of ancient shells, ferns and a big spiral fossil set flat into the layers near the edges', 'a thin strip of plain stone'),
+    8: ('a flat side-on slice through solid rock like a science diagram, the rock filling the whole picture edge to edge and right down to the bottom edge, warm brown-orange rock in soft wavy layers, with small steaming turquoise hot pools tucked into pockets at the left and right edges', 'a thin strip of rocky ceiling with warm mist'),
+    9: ('a flat side-on slice through solid rock like a science diagram, the rock filling the whole picture edge to edge and right down to the bottom edge, dark red-black rock in soft wavy layers with thin glowing orange cracks of lava running between the layers and a glowing lava band along the very bottom', 'a thin strip of dark rock with a few glowing drips'),
+    10: ('a flat side-on slice through solid rock like a science diagram, the rock filling the whole picture edge to edge and right down to the bottom edge, smooth rose, lilac and violet rock in soft wavy layers, with pale crystals and pearls set into the rock near the left and right edges and a faint pink glow rising from the bottom centre', 'a thin strip of smooth rock with faint sparkles'),
+}
+
+
+# Levels painted as a close-up of a flat rock face: asked for a slice through the ground, the model kept painting a cave
+# or a scene, and gems looked like they were floating in the air (2 Nov 2026). A wall fills the picture edge to edge.
+WALL = 'A close-up, straight-on view of a flat wall of layered rock that fills the entire picture edge to edge, '
+WALLS = {
+    6: 'smooth cool blue-grey and teal rock in wavy layers, glistening wet, with a few small round pools of still water set into the rock near the edges',
+    7: 'cream, tan and brown sandstone in wavy layers, with the outlines of ancient shells, ferns and a big spiral fossil set flat into the stone near the edges',
+    8: 'warm brown and orange rock in wavy layers, with small round steaming turquoise hot pools set into the rock near the left and right edges',
+    10: 'smooth rose, lilac and violet rock in soft wavy layers, with pale crystals and pearls set into the rock near the edges and a soft pink glow',
 }
 
 
 def level_words(n: int) -> str:
+    if n in WALLS:
+        return (LEVEL_STYLES[n] + WALL + WALLS[n] + '. Background for a children\'s game, suitable for ages 8 to 12. The middle is calm and '
+                'low-detail with soft colour so small objects placed on top will stand out. Wide landscape.')
     place, top = LEVELS[n]
     return (LEVEL_STYLES[n] + 'Empty background scenery for a children\'s game, suitable for ages 8 to 12. Side-on cut-away view of the ground: '
             f'{place}. The top fifth is {top}. The middle is calm, smooth and low-detail with soft colour so small objects placed on '
@@ -318,7 +332,7 @@ def destination(name: str) -> tuple[str, str, str] | None:
 
 
 # Level paintings with a border round them (glass, a paper card), trimmed off by this share of the width.
-TRIM = {'level-5': 0.05, 'level-8': 0.075}
+TRIM = {'level-5': 0.05, 'level-7': 0.03}
 
 # Things with a hole in the middle, where the cut-out keeps the white.
 HOLLOW = {'head-magnet'}
