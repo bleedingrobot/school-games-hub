@@ -5,7 +5,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(48);
+select plan(52);
 
 create function pg_temp.uid(n integer) returns uuid language sql immutable as $$
   select ('00000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid
@@ -253,6 +253,20 @@ values (pg_temp.uid(4), '{"level": 7, "exp": 1234, "day": "2026-10-29", "forestL
 select pg_temp.as(4);
 select is((public.my_moves_left() -> 'lord') - array['day', 'forestLeft', 'arenaLeft', 'masterTried', 'masterExtra', 'forestPerDay'],
   '{"level": 7, "exp": 1234}'::jsonb, 'Dan''s Dragon Maths line carries his hero''s level and experience');
+
+-- ---- Diamond Drop's new level and Star Trader's jumps (null until the pupil has played) ----
+select pg_temp.as(4);
+select ok(public.my_moves_left() -> 'diamond' = 'null'::jsonb and public.my_moves_left() -> 'trader' = 'null'::jsonb,
+  'Dan has never played Diamond Drop or Star Trader: no lines');
+select pg_temp.reset();
+insert into public.diamond_players (player, state) values (pg_temp.uid(4), '{"deepest": 3, "newLevelDate": "2026-11-02", "coins": 50}');
+insert into public.trader_games (player, school_id, game, day) values (pg_temp.uid(4), 2, '{"t": {"day": 20759, "jumpsLeft": 4}}', 20759);
+update public.app_settings set trader_jumps = 12 where school_id = 2;
+select pg_temp.as(4);
+select is(public.my_moves_left() -> 'diamond', '{"deepest": 3, "newLevelDate": "2026-11-02"}'::jsonb, 'Dan''s Diamond Drop line: deepest level and the date it was passed');
+select is(public.my_moves_left() -> 'trader', '{"day": 20759, "jumpsLeft": 4, "perDay": 12}'::jsonb, 'Dan''s Star Trader line: the day, jumps left and his class''s jumps a day');
+select pg_temp.as(1);
+select is(public.my_moves_left() -> 'trader', 'null'::jsonb, 'Ana does not see Dan''s Star Trader line');
 
 -- ---- Who can call it ----
 select pg_temp.reset();

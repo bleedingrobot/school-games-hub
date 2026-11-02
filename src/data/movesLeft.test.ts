@@ -47,4 +47,26 @@ describe('movesFromRaw', () => {
     expect(over.allDone).toBe(true);
     expect(movesFromRaw({ lord: null, clans: null, monsters: null })).toEqual({});
   });
+
+  it("shows Diamond Drop's new level for today, or tomorrow once it's passed", () => {
+    const at = noon('2026-11-03');
+    const ready = movesFromRaw({ lord: null, clans: null, diamond: { deepest: 3, newLevelDate: '2026-11-02' } }, at).diamond;
+    expect(ready).toEqual({ chips: [{ emoji: '⛏️', text: 'New level 4 ready', empty: false }], allDone: false });
+    const first = movesFromRaw({ lord: null, clans: null, diamond: { deepest: 0, newLevelDate: null } }, at).diamond;
+    expect(first.chips[0].text).toBe('New level 1 ready');
+    const done = movesFromRaw({ lord: null, clans: null, diamond: { deepest: 4, newLevelDate: '2026-11-03' } }, at).diamond;
+    expect(done.chips[0]).toEqual({ emoji: '⛏️', text: 'Level 5 opens tomorrow', empty: true });
+    expect(done.allDone).toBe(false);
+    expect(movesFromRaw({ lord: null, clans: null, diamond: { deepest: 10, newLevelDate: '2026-11-03' } }, at).diamond).toBeUndefined();
+    expect(movesFromRaw({ lord: null, clans: null, diamond: null }, at).diamond).toBeUndefined();
+  });
+
+  it('shows Star Trader jumps left, and a full set on a new day', () => {
+    const at = noon('2026-11-03');
+    const today = Math.round(Date.UTC(2026, 10, 3) / 86_400_000);
+    const m = movesFromRaw({ lord: null, clans: null, trader: { day: today, jumpsLeft: 4, perDay: 10 } }, at).trader;
+    expect(m).toEqual({ chips: [{ emoji: '🚀', text: '4 of 10 jumps', empty: false }], allDone: false });
+    expect(movesFromRaw({ lord: null, clans: null, trader: { day: today - 1, jumpsLeft: 0, perDay: 12 } }, at).trader.chips[0].text).toBe('12 of 12 jumps');
+    expect(movesFromRaw({ lord: null, clans: null, trader: { day: today, jumpsLeft: 0, perDay: 10 } }, at).trader.allDone).toBe(true);
+  });
 });

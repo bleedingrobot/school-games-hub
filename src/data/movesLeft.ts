@@ -1,8 +1,10 @@
 /**
  * "Moves left today" for the dashboard cards: the pupil's own daily allowances in the games that have them (Dragon Maths
- * forest, arena and master fights; Clan Quest mine fights; Maths Monsters battles). Read-only, through my_moves_left(). Any trouble just means no
+ * forest, arena and master fights; Clan Quest mine fights; Maths Monsters battles; Diamond Drop's one new level a day; Star Trader jumps). Read-only, through my_moves_left(). Any trouble just means no
  * line on the card, so the dashboard never waits for it or complains about it.
  */
+import { levelsOpen, type Player } from '../../shared/diamond/progress';
+import { nzDayNumber } from '../../shared/clans/clock';
 import { nzDate, rollDay } from '../../shared/lord/engine';
 import type { Hero } from '../../shared/lord/types';
 import { supabase } from '../lib/supabase';
@@ -16,6 +18,10 @@ export interface RawMovesLeft {
   season?: unknown;
   /** The school's Dragon Maths season { start, on } (read with readLordSeason). Missing until 20261030000100 is applied. */
   lordSeason?: unknown;
+  /** Diamond Drop's deepest level passed and the NZ date it was first passed. Missing until 20261102000300 is applied. */
+  diamond?: { deepest: number; newLevelDate: string | null } | null;
+  /** Star Trader's saved day number, jumps left on it, and the class's jumps a day. Missing until 20261102000300 is applied. */
+  trader?: { day: number; jumpsLeft: number; perDay: number } | null;
 }
 
 /** One thing on a card: "🌲 7 forest fights". `empty` is for a used-up allowance, which is drawn quietly. */
@@ -66,6 +72,26 @@ export function movesFromRaw(raw: RawMovesLeft | null | undefined, now: Date = n
     const left = Math.max(monsters.perDay - monsters.today, 0);
     out.monsters = {
       chips: [{ emoji: '⚔️', text: `${left} of ${monsters.perDay} battles`, empty: left === 0 }],
+      allDone: left === 0,
+    };
+  }
+  const diamond = raw?.diamond;
+  if (diamond && typeof diamond.deepest === 'number') {
+    // One new level a day. Replays never run out, so the card never says "all done"; a pupil past level 10 gets no chip.
+    const open = levelsOpen({ deepest: diamond.deepest, newLevelDate: diamond.newLevelDate } as Player, now);
+    if (open.next !== null) {
+      const chip: MoveChip = open.nextOpen
+        ? { emoji: '⛏️', text: `New level ${open.next} ready`, empty: false }
+        : { emoji: '⛏️', text: `Level ${open.next} opens tomorrow`, empty: true };
+      out.diamond = { chips: [chip], allDone: false };
+    }
+  }
+  const trader = raw?.trader;
+  if (trader && typeof trader.jumpsLeft === 'number') {
+    // A new day gives back the class's jumps a day when they next play (rollDay in shared/trader/server.ts).
+    const left = trader.day < nzDayNumber(now.getTime()) ? trader.perDay : Math.max(trader.jumpsLeft, 0);
+    out.trader = {
+      chips: [{ emoji: '🚀', text: `${left} of ${trader.perDay} jumps`, empty: left === 0 }],
       allDone: left === 0,
     };
   }
