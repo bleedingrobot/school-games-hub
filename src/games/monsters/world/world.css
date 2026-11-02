@@ -187,6 +187,7 @@
 .mq-egg > div, .mq-recipe > div { display: grid; gap: 2px; flex: 1; min-width: 0; }
 .mq-jobs li > span { flex: 1; min-width: 0; }
 .mq-jobs li.is-done { opacity: 0.7; }
+.mq-egg__pic { width: 44px; height: 44px; object-fit: contain; flex: none; }
 .mq-egg__shape { width: 34px; height: 44px; border-radius: 50% 50% 46% 46% / 60% 60% 40% 40%; border: 2px solid #334155; background: #f8fafc; flex: none; }
 .mq-egg--leafy .mq-egg__shape { background: #86efac; } .mq-egg--water .mq-egg__shape { background: #93c5fd; } .mq-egg--warm .mq-egg__shape { background: #fdba74; }
 .mq-egg--cold .mq-egg__shape { background: #bae6fd; } .mq-egg--glowing .mq-egg__shape { background: #fde047; } .mq-egg--stony .mq-egg__shape { background: #d6d3d1; }

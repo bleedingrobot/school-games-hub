@@ -1,12 +1,13 @@
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { EGG_LABEL } from '../../../../shared/monsters/quests/eggs';
 import { WORLD_MAPS } from '../../../../shared/monsters/maps';
 import { MONSTER_BOOK } from '../../../../shared/monsters/monsterBook';
 import { AREAS } from '../../../../shared/monsters/world/areas';
 import { ITEM_ORDER } from '../../../../shared/monsters/world/rewards';
 import { LOOKS } from '../../../../shared/monsters/world/start';
-import { allPaintedFiles, badgePic, itemPic, lookPic, monsterPic, personPic, sceneFor, scenePic, slug } from './painted';
+import { allPaintedFiles, badgePic, eggPic, itemPic, lookPic, monsterPic, personPic, sceneFor, scenePic, slug } from './painted';
 
 const DIR = join(__dirname, 'painted');
 const files = (group: string): string[] => {
@@ -18,12 +19,9 @@ const files = (group: string): string[] => {
 };
 const both = (name: string) => [name, `${name}-small`];
 
-/** Everyone on a map who talks with a name: people, nurses and trainers. */
-const PEOPLE = Object.values(WORLD_MAPS).flatMap((m) => m.things.filter((t) => t.kind === 'person' || t.kind === 'nurse' || t.kind === 'trainer').map((t) => t.name));
+/** Everyone on a map who talks with a name: people, nurses, trainers and the Tinker. */
+const PEOPLE = Object.values(WORLD_MAPS).flatMap((m) => m.things.filter((t) => t.kind === 'person' || t.kind === 'nurse' || t.kind === 'trainer' || t.kind === 'tinker').map((t) => t.name));
 const SCENES = [...new Set(Object.keys(WORLD_MAPS).map(sceneFor))];
-// The three bonus areas and their trainers are painted in Q.3 (docs/MONSTERS-QUESTS-PLAN.md); until then they show the plain look.
-const BONUS = ['steam-valley', 'lagoon-isle', 'aurora-hollow'];
-const TO_PAINT = new Set(Object.values(WORLD_MAPS).filter((m) => BONUS.includes(m.id)).flatMap((m) => m.things.map((t) => t.name)));
 
 // Every picture must be one the game looks for (a typo would mean it never shows) and small enough for a Chromebook.
 const KNOWN: Record<string, { names: Set<string>; maxKb: number }> = {
@@ -32,7 +30,7 @@ const KNOWN: Record<string, { names: Set<string>; maxKb: number }> = {
   looks: { names: new Set(LOOKS.flatMap(both)), maxKb: 120 },
   scenes: { names: new Set(SCENES.flatMap((s) => [s, `${s}-800`])), maxKb: 260 },
   badges: { names: new Set(AREAS.map((a) => a.badge)), maxKb: 50 },
-  items: { names: new Set<string>(ITEM_ORDER), maxKb: 50 },
+  items: { names: new Set<string>([...ITEM_ORDER, ...Object.keys(EGG_LABEL).map((k) => `egg-${k}`)]), maxKb: 50 },
   maps: { names: new Set(Object.keys(WORLD_MAPS).flatMap((m) => [m, `${m}-above`])), maxKb: 700 },
   props: { names: new Set(['chest', 'chest-open', 'gate', ...Object.values(WORLD_MAPS).flatMap((m) => m.things.filter((t) => t.giant).map((t) => `giant-${t.giant}`))]), maxKb: 60 },
   walkers: { names: new Set([...PEOPLE.map(slug), ...LOOKS].flatMap((w) => ['up', 'down', 'left', 'right'].map((d) => `${w}-${d}`))), maxKb: 40 },
@@ -52,20 +50,20 @@ describe('the painted pictures', () => {
 
   it('every species, plain and shiny, has a picture and a small copy', () => {
     const have = new Set(files('monsters'));
-    // The rare and ultra rare monsters are painted in Q.3 (docs/MONSTERS-QUESTS-PLAN.md); until then they use the drawing.
-    const missing = MONSTER_BOOK.filter((s) => s.rarity === 'common' || s.rarity === 'uncommon').flatMap((s) => [...both(s.id), ...both(`${s.id}-shiny`)]).filter((n) => !have.has(`${n}.webp`));
+    const missing = MONSTER_BOOK.flatMap((s) => [...both(s.id), ...both(`${s.id}-shiny`)]).filter((n) => !have.has(`${n}.webp`));
     expect(missing).toEqual([]);
   });
 
   it('every person on every map has a portrait and a small one for the talk box', () => {
-    expect(PEOPLE).toHaveLength(53);
+    expect(PEOPLE).toHaveLength(54);
     const have = new Set(files('people'));
-    expect(PEOPLE.filter((p) => !TO_PAINT.has(p)).flatMap((p) => both(slug(p))).filter((n) => !have.has(`${n}.webp`))).toEqual([]);
+    expect(PEOPLE.flatMap((p) => both(slug(p))).filter((n) => !have.has(`${n}.webp`))).toEqual([]);
   });
 
-  it('every badge and every bag item has a picture', () => {
+  it('every badge, bag item and egg has a picture', () => {
     expect(AREAS.filter((a) => !badgePic(a.badge)).map((a) => a.badge)).toEqual([]);
     expect(ITEM_ORDER.filter((id) => !itemPic(id))).toEqual([]);
+    expect(Object.keys(EGG_LABEL).filter((k) => !eggPic(k))).toEqual([]);
   });
 
   it('every look has both sizes', () => {
@@ -77,7 +75,7 @@ describe('the painted pictures', () => {
   it('every place and Topic Tower has a battle background and a phone copy', () => {
     expect(SCENES).toHaveLength(17);
     const have = new Set(files('scenes'));
-    expect(SCENES.filter((s) => !BONUS.includes(s)).flatMap((s) => [s, `${s}-800`]).filter((n) => !have.has(`${n}.webp`))).toEqual([]);
+    expect(SCENES.flatMap((s) => [s, `${s}-800`]).filter((n) => !have.has(`${n}.webp`))).toEqual([]);
   });
 
   it('a Tower’s two rooms share one background, and a place uses its own', () => {

@@ -3,6 +3,7 @@
  * Tinker and the notice board. Plain HTML in the menu's Sheet; every change goes through the pure
  * rules in shared/monsters/world/questWorld.ts.
  */
+import { eggPic } from '../art/painted';
 import { BIT_NAME, canMake, describeBits, RECIPES } from '../../../../shared/monsters/quests/bits';
 import { coldWords, daysHad, daysNeeded, EGG_LABEL, eggWarmth, HATCH_SPOTS, isReady } from '../../../../shared/monsters/quests/eggs';
 import { QUESTS } from '../../../../shared/monsters/quests/quests';
@@ -81,7 +82,7 @@ export function EggPage({ world, apply, map, opts }: PageProps & { map: GameMap;
           const had = daysHad(egg, playDays);
           return (
             <li key={egg.id} className={`mq-egg mq-egg--${egg.kind}${ready ? ' is-ready' : ''}`}>
-              <span className="mq-egg__shape" aria-hidden="true" />
+              {eggPic(egg.kind) ? <img className="mq-egg__pic" src={eggPic(egg.kind)} alt="" /> : <span className="mq-egg__shape" aria-hidden="true" />}
               <div>
                 <strong>{EGG_LABEL[egg.kind][0].toUpperCase() + EGG_LABEL[egg.kind].slice(1)}</strong>
                 <span className="mq-pips" aria-label={`${had} of ${need} days`}>

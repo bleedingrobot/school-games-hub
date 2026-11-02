@@ -44,6 +44,8 @@ export function scenePic(map: string): { wide?: string; small?: string } {
 export const badgePic = (badge: string) => file('badges', badge);
 /** A plain picture of a bag item, for the Bag. */
 export const itemPic = (id: ItemId) => file('items', id);
+/** An egg by its kind ("leafy" … "stony"), for the Eggs page. */
+export const eggPic = (kind: string) => file('items', `egg-${kind}`);
 
 /**
  * A painted map (docs/MONSTERS-QUESTS-PLAN.md, Q.6): the ground, with everything that never changes painted in, and the

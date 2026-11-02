@@ -31,8 +31,13 @@ wa = importlib.util.module_from_spec(spec); spec.loader.exec_module(wa)
 
 # ---------- the parts ----------
 STYLE = 'hand-painted, soft painterly brush strokes, bright cheerful colours, polished modern cosy top-down RPG game art, friendly for children'
-FLAT = 'flat even lighting, no objects, no shadows, no text'
-def texture(words): return f'seamless tileable top-down texture of {words}, {STYLE}, {FLAT}'
+# Positive words only: this model paints whatever a prompt names, even after "no" ("no grid" gave grids).
+FLAT = 'flat even soft lighting, one even natural surface spreading all over, organic and irregular'
+def texture(words, style=STYLE): return f'seamless tileable top-down texture of {words}, {style}, {FLAT}'
+# The game-art words drew coins and smiley faces on bare stone, so plain rock and dark water use these instead.
+NATURAL = 'painterly digital painting of real natural stone, soft brush strokes, muted natural colours'
+# Textures repainted with a new seed after the first tries came out wrong.
+RESEED = {'cavefloor': 900, 'rockwall': 900, 'cavewater': 900}
 TEX = {
     # green bush and town
     'grass': texture('a lush bright green meadow lawn, short soft grass blades with subtle light and dark patches, no flowers'),
@@ -48,19 +53,19 @@ TEX = {
     'snow': texture('fresh clean white snow with soft pale blue shading and gentle drifts'),
     'snowpath': texture('a trodden snowy footpath, packed snow with footprints and a little grey grit, crisp detail'),
     'tussock': texture('thick frosty alpine tussock grass, pale green and silver blades dusted with snow'),
-    'ice': texture('smooth glassy pale blue lake ice with white cracks and frosty swirls, no tiles, no grid'),
+    'ice': texture('smooth glassy pale blue frozen lake ice with long thin white cracks and soft frosty swirls, organic and irregular'),
     # volcanic ash
-    'ash': texture('dark grey volcanic ash ground with small black pumice pebbles and faint warm cracks'),
-    'ashpath': texture('a reddish brown volcanic gravel track, crunchy scoria stones, crisp detail'),
+    'ash': texture('dark grey volcanic ash ground, soft powdery ash scattered with small black pumice pebbles and thin glowing orange cracks'),
+    'ashpath': texture('a winding reddish brown volcanic gravel track of small crunchy scoria pebbles, loose and irregular'),
     'scorched': texture('dry scorched orange and brown tussock grass, thick tufts, hot and dusty'),
-    'lava': texture('glowing molten orange and red lava with dark crusty swirls, bright and hot, no tiles, no grid'),
+    'lava': texture('flowing molten orange and yellow lava with swirling dark red crust and bright glowing rivers, liquid and irregular'),
     'hotwater': texture('steaming milky turquoise hot spring water with soft bubbles, no tiles, no grid'),
     # cave
-    'cavefloor': texture('a smooth dark blue-grey cave floor of stone with soft damp patches'),
+    'cavefloor': texture('smooth dark slate grey cave ground, soft uneven damp stone with gentle blue-grey shading and fine sandy grit, all one grey stone', NATURAL),
     'cavepath': texture('a worn sandy-grey stone path through a cave, flat stepping slabs, crisp detail'),
     'moss': texture('thick soft cave moss in teal and green with tiny glowing blue dots, like glowworms'),
-    'rockwall': texture('a rough craggy dark grey cave rock wall seen from above, chunky boulders and cracks'),
-    'cavewater': texture('dark still underground pool water, deep blue with soft blue glowing reflections, no tiles, no grid'),
+    'rockwall': texture('rough jagged dark grey cliff rock seen from above, layered slate ridges and deep shadowed crevices, all one grey stone', NATURAL),
+    'cavewater': texture('dark still underground pool water, deep navy blue with soft pale blue ripple reflections, all one smooth liquid surface', NATURAL),
     # city
     'cobble': texture('a neat grey cobblestone street, rounded stones in tidy rows, crisp detail'),
 }
@@ -133,7 +138,7 @@ def parts(only=None):
         d = PARTS / f'tex-{n}.png'
         if (only and only != n) or d.exists(): continue
         raw = PARTS / f'_raw-tex-{n}.png'
-        txt2img(text, 1024, 1024, 100 + i, raw)
+        txt2img(text, 1024, 1024, 100 + i + RESEED.get(n, 0), raw)
         tileable(Image.open(raw)).save(d); print(d.name, round(time.time() - t0), flush=True)
     for i, (n, (text, w, h)) in enumerate(SPR.items()):
         d = PARTS / f'{n}.png'
