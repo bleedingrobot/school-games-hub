@@ -179,8 +179,8 @@ export function TurnStep(p: StepProps) {
         const lightReady = isGrandIsle(island) && island.lighthouse < LIGHTHOUSE.length;
         body = (
           <>
-            <p>Tap a spot on your island to build, change or raise a building.</p>
-            <div className="si-buildgrid">
+            <p>Tap a spot on your island to build, change or raise a building. Or:</p>
+            <div className="si-actions">
               {island.driftLeft > 0 ? (
                 <Choice island={island} action={anchor} onChoose={p.onChoose} pip="drift" lit={p.lit} kind="button--light">
                   <span className="si-build__name">Anchor a chunk of land: {costOf(island, anchor)}</span>
