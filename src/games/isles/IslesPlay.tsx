@@ -287,7 +287,8 @@ export function IslesPlay({ backend = liveIsles }: { backend?: IslesBackend; lev
     <div className="si-pipsays si-next" aria-live="polite">
       <Art src={pipArt('point')} className="si-pip" fallback={<span className="si-pip si-pip--drawn" aria-hidden="true" />} />
       <p>{pipSays}</p>
-      {step.target && pipHere && island.turnsLeft > 0 && <button type="button" className="button button--light si-showme" onClick={() => showMe(step.target)}>Show me</button>}
+      {/* Between turns the island is only a picture, so a building step has nothing to show. */}
+      {step.target && pipHere && !nextTurn && island.turnsLeft > 0 && <button type="button" className="button button--light si-showme" onClick={() => showMe(step.target)}>Show me</button>}
     </div>
   );
   const raceWhy = raceProblem(island, GULL_RIDERS, 'me');
