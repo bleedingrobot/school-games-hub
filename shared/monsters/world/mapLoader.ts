@@ -11,6 +11,8 @@
  *                 from the level, or a fixed "species-2:level"), `sight`; a Tower trainer also has
  *                 `badge`, and any trainer can have `loot` (a name from rewards.ts, paid once)
  *      chest    - `text` (said when you open it), `loot`, `gid` and `open` (the tiles for closed and open)
+ *      giant    - a sleeping giant across the way: `giant` (an id in quests/giants.ts), `text` (unused: it says its own words)
+ *      tinker, board - the Tinker who makes things from bits, and the notice board; `text`
  *      gate     - `badge` (the badge that opens it), `text` (said while closed), `gid` (the tile drawn while closed);
  *                 it is not on the walls layer, so the screen draws it only while it is closed
  *      warp     - `to` (map id), `toX`, `toY`, `facing`: walking onto it takes you there
@@ -23,6 +25,7 @@
  */
 import { FAMILIES, formAt, speciesOf } from '../monsterBook';
 import { LOOT } from './rewards';
+import { giantById, GIANTS } from '../quests/giants';
 import { DIRS, type Dir, type Gate, type GameMap, type Thing, type ThingKind, type TrainerMonster, type Warp } from './types';
 
 export const TILE_SIZE = 16;
@@ -76,8 +79,8 @@ export class MapError extends Error {
   }
 }
 
-const TALKING: ThingKind[] = ['sign', 'person', 'nurse', 'box', 'book', 'closed', 'trainer', 'chest'];
-const NEEDS_FREE_TILE: ThingKind[] = ['person', 'nurse', 'trainer', 'chest'];
+const TALKING: ThingKind[] = ['sign', 'person', 'nurse', 'box', 'book', 'closed', 'trainer', 'chest', 'giant', 'tinker', 'board'];
+const NEEDS_FREE_TILE: ThingKind[] = ['person', 'nurse', 'trainer', 'chest', 'giant', 'tinker'];
 export const BADGES = ['leaf', 'water', 'fire', 'ice', 'spark', 'stone'] as const;
 
 function props(o: { properties?: TiledProperty[] }): Record<string, string | number | boolean> {
@@ -190,7 +193,11 @@ export function parseMap(id: string, raw: TiledMap): GameMap {
       const pages = pagesOf(p.text);
       if (!pages.length) problems.push(`${label} has no text`);
       const thing: Thing = { kind, id: `${id}:${o.name || o.id}`, name: o.name ?? '', x, y, facing: dirOf(p.facing, 'down'), pages };
-      if (kind === 'person' || kind === 'trainer' || kind === 'nurse') {
+      if (kind === 'giant') {
+        if (giantById(text(p.giant))) thing.giant = text(p.giant);
+        else problems.push(`${label} needs a "giant" (one of ${GIANTS.map((g) => g.id).join(', ')})`);
+      }
+      if (kind === 'person' || kind === 'trainer' || kind === 'nurse' || kind === 'tinker') {
         if (typeof p.sprite !== 'number') problems.push(`${label} needs a "sprite" number`);
         else thing.sprite = p.sprite;
         if (!o.name) problems.push(`${label} needs a name`);
@@ -220,7 +227,7 @@ export function parseMap(id: string, raw: TiledMap): GameMap {
       }
       things.push(thing);
     } else {
-      problems.push(`${label}: "${type}" is not a kind of object (sign, person, nurse, box, book, closed, trainer, chest, gate, warp, spot, far)`);
+      problems.push(`${label}: "${type}" is not a kind of object (sign, person, nurse, box, book, closed, trainer, chest, giant, tinker, board, gate, warp, spot, far)`);
     }
   }
 

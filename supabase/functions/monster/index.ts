@@ -7152,6 +7152,44 @@ function addToBag(bag, loot) {
 	return out;
 }
 //#endregion
+//#region shared/monsters/quests/giants.ts
+const GIANTS = [
+	{
+		id: "snorumble",
+		species: "dozepebble-2",
+		level: 24,
+		map: "fire-mountain",
+		opens: "steam-valley",
+		badge: "fire",
+		item: "made:warm-whistle",
+		itemName: "Warm whistle",
+		asleep: "A huge stony monster is fast asleep across the path. It is snoring warm air. Maybe a warm sound would wake it?"
+	},
+	{
+		id: "drowsea",
+		species: "napsea-2",
+		level: 18,
+		map: "shell-beach",
+		opens: "lagoon-isle",
+		badge: "water",
+		item: "made:tide-bell",
+		itemName: "Tide bell",
+		asleep: "A giant sea monster is dozing in the cave mouth, rocking with the waves. A bell like the tide might stir it."
+	},
+	{
+		id: "yawnberg",
+		species: "blinkberg-2",
+		level: 30,
+		map: "snowy-peaks",
+		opens: "aurora-hollow",
+		badge: "ice",
+		item: "made:frost-horn",
+		itemName: "Frost horn",
+		asleep: "An enormous icy monster is sleeping in the pass. Its yawns are freezing! A horn as cold as ice might wake it."
+	}
+];
+const giantById = (id) => GIANTS.find((g) => g.id === id);
+//#endregion
 //#region shared/monsters/world/types.ts
 const DIRS$1 = [
 	"up",
@@ -7174,13 +7212,18 @@ const TALKING = [
 	"book",
 	"closed",
 	"trainer",
-	"chest"
+	"chest",
+	"giant",
+	"tinker",
+	"board"
 ];
 const NEEDS_FREE_TILE = [
 	"person",
 	"nurse",
 	"trainer",
-	"chest"
+	"chest",
+	"giant",
+	"tinker"
 ];
 const BADGES = [
 	"leaf",
@@ -7322,7 +7365,11 @@ function parseMap(id, raw) {
 				facing: dirOf(p.facing, "down"),
 				pages
 			};
-			if (kind === "person" || kind === "trainer" || kind === "nurse") {
+			if (kind === "giant") {
+				if (giantById(text(p.giant))) thing.giant = text(p.giant);
+				else problems.push(`${label} needs a "giant" (one of ${GIANTS.map((g) => g.id).join(", ")})`);
+			}
+			if (kind === "person" || kind === "trainer" || kind === "nurse" || kind === "tinker") {
 				if (typeof p.sprite !== "number") problems.push(`${label} needs a "sprite" number`);
 				else thing.sprite = p.sprite;
 				if (!o.name) problems.push(`${label} needs a name`);
@@ -7351,7 +7398,7 @@ function parseMap(id, raw) {
 				}
 			}
 			things.push(thing);
-		} else problems.push(`${label}: "${type}" is not a kind of object (sign, person, nurse, box, book, closed, trainer, chest, gate, warp, spot, far)`);
+		} else problems.push(`${label}: "${type}" is not a kind of object (sign, person, nurse, box, book, closed, trainer, chest, giant, tinker, board, gate, warp, spot, far)`);
 	}
 	const walled = (x, y) => walls[y * width + x] !== 0;
 	for (const t of things) if (NEEDS_FREE_TILE.includes(t.kind) && walled(t.x, t.y)) problems.push(`${t.kind} "${t.name}" at ${t.x},${t.y} is standing on a wall tile`);
@@ -29813,8 +29860,9 @@ const BADGE_ORDER = [
 const inMap = (map, x, y) => Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < map.width && y < map.height;
 const NO_BADGES = [];
 /**
-* Can't walk here: off the map, a wall tile (tree, house, water), a person or sign, or a gate
-* whose badge you don't hold (`badges` is what you hold; leave it out for "none").
+* Can't walk here: off the map, a wall tile (tree, house, water), a person or sign, a gate
+* whose badge you don't hold, or a giant still asleep. `badges` is what you hold, badges and
+* quest flags together (`keysOf` in world.ts); leave it out for "none".
 * Doors and exits can be walked on.
 */
 function isBlocked(map, x, y, badges = NO_BADGES) {
@@ -29822,6 +29870,8 @@ function isBlocked(map, x, y, badges = NO_BADGES) {
 	if (map.warps.some((w) => w.x === x && w.y === y)) return false;
 	const gate = gateAt(map, x, y);
 	if (gate) return !badges.includes(gate.badge);
+	const giant = map.things.find((t) => t.giant && t.x === x && t.y === y);
+	if (giant) return !badges.includes(`woke:${giant.giant}`);
 	return map.blocked[y * map.width + x];
 }
 const gateAt = (map, x, y) => map.gates.find((g) => g.x === x && g.y === y);
@@ -29894,6 +29944,192 @@ var Dice = class {
 		return low + Math.floor(this.next() * (high - low + 1));
 	}
 };
+new Map([
+	{
+		id: "kauri",
+		title: "The lost seed pods",
+		giver: "kauri-bush:Ranger Kiri",
+		area: 1,
+		steps: [
+			{
+				do: "solve",
+				id: "kauri-seeds",
+				hint: "Find the 3 seed pods hidden in Kauri Bush"
+			},
+			{
+				do: "catch",
+				type: "leaf",
+				hint: "Catch a Leaf monster for Ranger Kiri’s nursery"
+			},
+			{
+				do: "talk",
+				person: "kauri-bush:Ranger Kiri",
+				hint: "Go back to Ranger Kiri in Kauri Bush"
+			}
+		],
+		reward: {
+			egg: "leafy",
+			items: { ball: 5 }
+		}
+	},
+	{
+		id: "shell",
+		title: "Clear the rock pools",
+		giver: "shell-beach:Lifeguard Mere",
+		area: 2,
+		steps: [
+			{
+				do: "win",
+				area: 2,
+				count: 3,
+				hint: "Win {left} more battles on Shell Beach"
+			},
+			{
+				do: "solve",
+				id: "shell-stones",
+				hint: "Cross the stepping stones in the rock pool"
+			},
+			{
+				do: "show",
+				person: "shell-beach:Lifeguard Mere",
+				type: "water",
+				level: 12,
+				hint: "Show Lifeguard Mere a Water monster at level 12 or more"
+			}
+		],
+		reward: {
+			egg: "water",
+			flag: "part:lifeguard"
+		}
+	},
+	{
+		id: "fire",
+		title: "The miner’s lanterns",
+		giver: "fire-mountain:Old Miner Rua",
+		area: 3,
+		steps: [
+			{
+				do: "bring",
+				person: "fire-mountain:Old Miner Rua",
+				type: "fire",
+				count: 5,
+				hint: "Bring 5 embers to Old Miner Rua on Fire Mountain"
+			},
+			{
+				do: "solve",
+				id: "fire-lanterns",
+				hint: "Light the lanterns in the lava tube in the right order"
+			},
+			{
+				do: "talk",
+				person: "fire-mountain:Old Miner Rua",
+				hint: "Tell Old Miner Rua the lanterns are lit"
+			}
+		],
+		reward: {
+			flag: "part:miner",
+			items: { "super-potion": 2 }
+		}
+	},
+	{
+		id: "snow",
+		title: "The warden’s hut",
+		giver: "snowy-peaks:Warden Sam",
+		area: 4,
+		steps: [
+			{
+				do: "solve",
+				id: "snow-slide",
+				hint: "Slide across the ice to the warden’s chest"
+			},
+			{
+				do: "catch",
+				type: "ice",
+				hint: "Catch an Ice monster on Snowy Peaks"
+			},
+			{
+				do: "bring",
+				person: "snowy-peaks:Warden Sam",
+				type: "ice",
+				count: 5,
+				hint: "Bring 5 frost crystals to Warden Sam"
+			}
+		],
+		reward: { egg: "cold" }
+	},
+	{
+		id: "caves",
+		title: "The lost torch",
+		giver: "glowworm-caves:Cave Guide Ana",
+		area: 5,
+		steps: [
+			{
+				do: "solve",
+				id: "cave-count",
+				hint: "Count the glowworm groups and tell the stone door"
+			},
+			{
+				do: "visit",
+				map: "glowworm-caves",
+				spot: "torch",
+				hint: "Find the lost torch deep in the caves"
+			},
+			{
+				do: "talk",
+				person: "glowworm-caves:Cave Guide Ana",
+				hint: "Take the torch back to Cave Guide Ana"
+			}
+		],
+		reward: {
+			flag: "part:cave-guide",
+			items: { "great-ball": 2 }
+		}
+	},
+	{
+		id: "harbour",
+		title: "The busy wharf",
+		giver: "harbour-city:Harbour Master Tui",
+		area: 6,
+		steps: [
+			{
+				do: "solve",
+				id: "wharf-crates",
+				hint: "Push the crates off the wharf path"
+			},
+			{
+				do: "win",
+				area: 6,
+				trainer: true,
+				count: 3,
+				hint: "Beat {left} more trainers in Harbour City"
+			},
+			{
+				do: "talk",
+				person: "harbour-city:Harbour Master Tui",
+				hint: "Go back to Harbour Master Tui"
+			}
+		],
+		reward: { egg: "stony" }
+	},
+	{
+		id: "finale",
+		title: "The Professor’s big question",
+		giver: "harbour-town:Professor",
+		area: 0,
+		badges: 6,
+		needs: [
+			"woke:snorumble",
+			"woke:drowsea",
+			"woke:yawnberg"
+		],
+		steps: [{
+			do: "talk",
+			person: "harbour-town:Professor",
+			hint: "Hatch an egg of each kind, then see the Professor"
+		}],
+		reward: { flag: "finale-egg" }
+	}
+].map((q) => [q.id, q]));
 //#endregion
 //#region shared/monsters/world/world.ts
 const START_BAG = {

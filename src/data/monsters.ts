@@ -56,6 +56,8 @@ export interface MonstersData {
   offline: boolean;
   /** Today's battle limit (battleCap.ts): battles counted today, the game's unsaved ones included, and the limit. */
   battles: { day: string; today: number; perDay: number };
+  /** Days of play the database has counted (for hatching eggs). Missing until the quests migration (Q.5). */
+  playDays?: number;
 }
 
 interface ServerData {

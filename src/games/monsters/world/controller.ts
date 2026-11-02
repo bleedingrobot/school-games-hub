@@ -6,6 +6,7 @@
  */
 import { OPPOSITE, type Dir, type Thing, type WorldState } from '../../../../shared/monsters/world/types';
 import { planTap } from '../../../../shared/monsters/world/walking';
+import { keysOf } from '../../../../shared/monsters/world/questWorld';
 import {
   interact, mapOf, step, type InteractOutcome, type Trigger, type WorldOptions,
 } from '../../../../shared/monsters/world/world';
@@ -32,6 +33,8 @@ export interface ControllerEvents {
   onTalk(outcome: InteractOutcome): void;
   /** You went through a door or exit. */
   onEnter?(state: WorldState): void;
+  /** Quest news from a step (a notice board job done, a quest place found). */
+  onLines?(lines: string[]): void;
 }
 
 export interface Actor {
@@ -128,7 +131,7 @@ export class WalkController {
   /** A tap on a tile: walk there by the shortest way, or walk up to a person or sign and talk. */
   tap(tx: number, ty: number) {
     if (this.locked) return;
-    const plan = planTap(mapOf(this.opts, this.state), this.state, tx, ty, this.state.badges);
+    const plan = planTap(mapOf(this.opts, this.state), this.state, tx, ty, keysOf(this.state));
     if (plan.kind === 'none') return;
     this.held = [];
     this.path = plan.path.slice();
@@ -208,6 +211,7 @@ export class WalkController {
       this.events.onEnter?.(this.state);
     }
     this.events.onState(this.state);
+    if (out.lines?.length) this.events.onLines?.(out.lines);
 
     if (out.trigger?.kind === 'wild') {
       const t = out.trigger;

@@ -12,7 +12,7 @@ export const DELTA: Record<Dir, readonly [number, number]> = { up: [0, -1], down
 export const OPPOSITE: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
 /** Things you can talk to. They all block walking. */
-export type ThingKind = 'sign' | 'person' | 'nurse' | 'box' | 'book' | 'closed' | 'trainer' | 'chest';
+export type ThingKind = 'sign' | 'person' | 'nurse' | 'box' | 'book' | 'closed' | 'trainer' | 'chest' | 'giant' | 'tinker' | 'board';
 
 export interface TrainerMonster {
   species: string;
@@ -44,6 +44,8 @@ export interface Thing {
   /** Chests: the Tiny Dungeon tiles drawn while closed and once opened. */
   gid?: number;
   openGid?: number;
+  /** A sleeping giant: its id in quests/giants.ts. Once woken it no longer blocks the way. */
+  giant?: string;
 }
 
 /** A way on that stays closed until you hold a badge (a rope fence). The map's wall layer does not draw it; the screen does, while it is closed. */

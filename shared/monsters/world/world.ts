@@ -9,11 +9,13 @@ import { Dice } from './rng';
 import { findSighting, nextGrassSteps, wildFor, type Sighting } from './encounters';
 import { addToBag, describeLoot, LOOT } from './rewards';
 import { DELTA, type Dir, type Gate, type GameMap, type Thing, type WorldState } from './types';
+import { battleEvents, finishGiant, giantTalk, giveOwedEggs, keysOf, questTalk, recordEvent, todayIn, type QuestOptions } from './questWorld';
+import { giantFoe, type Giant } from '../quests/giants';
 import { gateAt, isBlocked, thingAt, warpAt } from './walking';
 
 export type Maps = Readonly<Record<string, GameMap>>;
 
-export interface WorldOptions {
+export interface WorldOptions extends QuestOptions {
   maps: Maps;
   /** The test page's "More battles" switch: grass starts a battle every 2-3 steps. */
   fast?: boolean;
@@ -98,6 +100,8 @@ export interface StepOutcome {
   action: 'turn' | 'move' | 'warp' | 'bump';
   /** Something that takes over now: a wild battle, or a trainer who has seen you. */
   trigger?: Trigger;
+  /** Quest news to show (a job done, a quest step reached). */
+  lines?: string[];
 }
 
 /**
@@ -109,24 +113,28 @@ export function step(state: WorldState, dir: Dir, opts: WorldOptions, { turnFirs
   const map = mapOf(opts, state);
   const nx = state.x + DELTA[dir][0];
   const ny = state.y + DELTA[dir][1];
-  if (isBlocked(map, nx, ny, state.badges)) return { state: { ...state, facing: dir }, action: 'bump' };
+  if (isBlocked(map, nx, ny, keysOf(state))) return { state: { ...state, facing: dir }, action: 'bump' };
 
   let next: WorldState = { ...state, x: nx, y: ny, facing: dir, steps: state.steps + 1 };
   const warp = warpAt(map, nx, ny);
   if (warp) {
     if (!opts.maps[warp.to]) throw new Error(`The door at ${map.id} ${nx},${ny} leads to a map that doesn't exist: ${warp.to}`);
     next = { ...next, map: warp.to, x: warp.toX, y: warp.toY, facing: warp.facing, beaten: warp.to === state.map ? state.beaten : [] };
-    const after = triggerAfter(next, opts, false);
-    return { state: after.state, action: 'warp', trigger: after.trigger };
+    const arrived = warp.to === state.map ? { state: next, lines: [] } : recordEvent(next, { kind: 'visit', map: warp.to, spot: 'enter' }, opts);
+    const after = triggerAfter(arrived.state, opts, false);
+    return { state: after.state, action: 'warp', trigger: after.trigger, ...(arrived.lines.length ? { lines: arrived.lines } : {}) };
   }
-  const after = triggerAfter(next, opts, true);
-  return { state: after.state, action: 'move', trigger: after.trigger };
+  // Standing on a named spot (a quest place, a hatching ring) counts as visiting it.
+  const spot = map.spots.find((s) => s.x === nx && s.y === ny);
+  const visited = spot ? recordEvent(next, { kind: 'visit', map: map.id, spot: spot.name }, opts) : { state: next, lines: [] };
+  const after = triggerAfter(visited.state, opts, true);
+  return { state: after.state, action: 'move', trigger: after.trigger, ...(visited.lines.length ? { lines: visited.lines } : {}) };
 }
 
 /** After arriving on a tile: has a trainer seen you, or has the grass started a battle? */
 function triggerAfter(state: WorldState, opts: WorldOptions, steppedOnGrass: boolean): { state: WorldState; trigger?: Trigger } {
   const map = mapOf(opts, state);
-  const sighting = findSighting(map, state);
+  const sighting = findSighting(map, { ...state, badges: keysOf(state) });
   if (sighting && (!opts.resting || sighting.trainer.badge)) return { state, trigger: { kind: 'trainer', sighting } };
   if (opts.resting || !steppedOnGrass || !map.isGrass[state.y * map.width + state.x] || !map.wild.length) return { state };
 
@@ -139,7 +147,7 @@ function triggerAfter(state: WorldState, opts: WorldOptions, steppedOnGrass: boo
   } else {
     grassSteps -= 1;
     if (grassSteps <= 0) {
-      const foe = wildFor(map, state.x, state.y, dice);
+      const foe = wildFor(map, state.x, state.y, dice, todayIn(map, opts.maps, opts.day));
       if (foe) {
         const far = map.far[state.y * map.width + state.x];
         return {
@@ -164,8 +172,10 @@ export interface InteractOutcome {
   /** A trainer who wants to battle once the talking is done. */
   challenge?: Thing;
   thing?: Thing;
-  /** A screen to open once the talking is done (the monster box or the monster book). */
-  open?: 'box' | 'book';
+  /** A screen to open once the talking is done (the monster box, the monster book, the Tinker or the notice board). */
+  open?: 'box' | 'book' | 'tinker' | 'board';
+  /** A woken giant to battle once the talking is done. */
+  giant?: Giant;
   /** What the screen should make a sound for. */
   cue?: 'heal' | 'chest';
 }
@@ -188,7 +198,7 @@ export function interact(state: WorldState, opts: WorldOptions): InteractOutcome
   const thing = thingAt(map, x, y);
   if (!thing) {
     const gate = gateAt(map, x, y);
-    if (gate && isBlocked(map, x, y, state.badges)) return { state, talk: { pages: gatePages(gate) } };
+    if (gate && isBlocked(map, x, y, keysOf(state))) return { state, talk: { pages: gatePages(gate) } };
     return { state };
   }
   const speaker = thing.kind === 'person' || thing.kind === 'trainer' || thing.kind === 'nurse' ? thing.name : undefined;
@@ -214,7 +224,15 @@ export function interact(state: WorldState, opts: WorldOptions): InteractOutcome
     const opened: WorldState = { ...state, chests: [...state.chests, thing.id], bag: addToBag(state.bag, loot) };
     return { state: opened, thing, cue: 'chest', talk: say([...thing.pages, `You found ${describeLoot(loot)}!`]) };
   }
-  if (thing.kind === 'box' || thing.kind === 'book') return { state, thing, talk: say(thing.pages), open: thing.kind };
+  if (thing.kind === 'box' || thing.kind === 'book' || thing.kind === 'tinker' || thing.kind === 'board') return { state, thing, talk: say(thing.pages), open: thing.kind };
+  if (thing.kind === 'giant') {
+    const g = giantTalk(state, thing);
+    return { state: g.state, thing, talk: { pages: g.pages }, ...(g.giant ? { giant: g.giant } : {}) };
+  }
+  if (thing.kind === 'person') {
+    const q = questTalk(state, thing, opts);
+    if (q) return { state: q.state, thing, talk: { speaker, pages: q.pages } };
+  }
   return { state, thing, talk: say(thing.pages) };
 }
 
@@ -240,11 +258,21 @@ export function trainerBattle(state: WorldState, opts: WorldOptions, trainer: Th
   };
 }
 
+/** A woken giant: a wild battle (so it can be caught) with the giant, using the harder questions of its area. */
+export function giantBattle(state: WorldState, opts: WorldOptions, giant: Giant): BattleSetup {
+  const map = mapOf(opts, state);
+  return { kind: 'wild', area: Math.max(map.area, 1), far: true, team: state.team, box: state.box, bag: state.bag, foes: [giantFoe(giant)] };
+}
+
 export interface FinishedBattle {
   outcome: 'won' | 'lost' | 'ran' | 'caught';
   team: Monster[];
   box: Monster[];
   bag: Bag;
+  /** The foes' species (for quests and bits), the monster caught, and the giant, if it was a giant battle. */
+  foes?: string[];
+  caught?: Monster;
+  giant?: Giant;
 }
 
 export interface BattlePrize {
@@ -252,6 +280,8 @@ export interface BattlePrize {
   badge?: string;
   /** Items a trainer paid for the first win. */
   loot?: Bag;
+  /** Quest news: bits collected, a quest step reached, an egg given. */
+  lines?: string[];
 }
 
 /**
@@ -260,7 +290,7 @@ export interface BattlePrize {
  * is healed, nothing is lost, and you wake up at the last healing spot. A first win over a Tower
  * trainer gives the badge, and a first win over a trainer with `loot` pays it (never twice).
  */
-export function finishBattle(state: WorldState, result: FinishedBattle, trainer?: Thing): { state: WorldState; prize: BattlePrize } {
+export function finishBattle(state: WorldState, result: FinishedBattle, trainer?: Thing, opts?: WorldOptions): { state: WorldState; prize: BattlePrize } {
   let next: WorldState = { ...state, team: structuredClone(result.team), box: structuredClone(result.box), bag: { ...result.bag } };
   const prize: BattlePrize = {};
   if (result.outcome === 'lost') {
@@ -278,7 +308,22 @@ export function finishBattle(state: WorldState, result: FinishedBattle, trainer?
       next.paid = [...next.paid, trainer.id];
     }
   }
+  // Quests: a win gives bits and counts for quests and jobs, a catch counts too, a beaten giant opens the way.
+  if (opts && result.outcome !== 'lost') {
+    const map = mapOf(opts, state);
+    if (result.giant) next = finishGiant(next, result.giant, result.outcome);
+    const lines: string[] = [];
+    for (const ev of battleEvents(map, result.outcome, result.foes ?? [], trainer, result.caught)) {
+      const r = recordEvent(next, ev, opts);
+      next = r.state;
+      lines.push(...r.lines);
+    }
+    if (lines.length) prize.lines = lines;
+  }
   return { state: refreshBook(next), prize };
 }
+
+/** After hatching an egg there is room in the basket: any egg that was owed comes now. */
+export const afterHatch = (state: WorldState, opts: WorldOptions) => giveOwedEggs(state, opts);
 
 export const afterBattle = (state: WorldState, result: FinishedBattle, trainer?: Thing): WorldState => finishBattle(state, result, trainer).state;
