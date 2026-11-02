@@ -33,6 +33,9 @@ const KNOWN: Record<string, { names: Set<string>; maxKb: number }> = {
   scenes: { names: new Set(SCENES.flatMap((s) => [s, `${s}-800`])), maxKb: 260 },
   badges: { names: new Set(AREAS.map((a) => a.badge)), maxKb: 50 },
   items: { names: new Set<string>(ITEM_ORDER), maxKb: 50 },
+  maps: { names: new Set(Object.keys(WORLD_MAPS).flatMap((m) => [m, `${m}-above`])), maxKb: 700 },
+  props: { names: new Set(['chest', 'chest-open', 'gate', ...Object.values(WORLD_MAPS).flatMap((m) => m.things.filter((t) => t.giant).map((t) => `giant-${t.giant}`))]), maxKb: 60 },
+  walkers: { names: new Set([...new Set(Object.values(WORLD_MAPS).flatMap((m) => m.things.flatMap((t) => (t.sprite === undefined ? [] : [`person-${t.sprite}`]))))].concat('person-98', ...LOOKS).flatMap((w) => ['up', 'down', 'left', 'right'].map((d) => `${w}-${d}`))), maxKb: 40 },
 };
 
 describe('the painted pictures', () => {

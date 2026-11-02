@@ -28,7 +28,7 @@ import { monsterPic, personPic, preload, scenePic } from '../art/painted';
 import { nameOf } from '../text';
 import { MapMenu, type MenuPage } from './MapMenu';
 import { WalkController, type ControllerEvents } from './controller';
-import { drawFrame, scaleFor, tileAt, type Scene } from './render';
+import { drawFrame, paintedVersion, scaleFor, tileAt, type Scene } from './render';
 import type { WorldSettings } from './settings';
 import { loadSheets, paintMap, TileCache } from './tiles';
 import './world.css';
@@ -267,7 +267,7 @@ export function WorldGame({
       const f = Math.max(0, 1 - (now - fade.current.at) / 280);
       const water = sc.frames.length > 1 ? Math.floor(now / 700) % 2 : 0;
       const actors = [...view.actors].map(([id, a]) => `${id}${a.x.toFixed(2)}${a.y.toFixed(2)}${a.facing}`).join();
-      const key = `${view.x.toFixed(3)},${view.y.toFixed(3)},${view.state.facing},${view.state.map},${water},${f.toFixed(2)},${view.noticed},${actors},${view.walking},${view.state.badges.length},${view.state.chests.length}`;
+      const key = `${view.x.toFixed(3)},${view.y.toFixed(3)},${view.state.facing},${view.state.map},${water},${f.toFixed(2)},${view.noticed},${actors},${view.walking},${view.state.badges.length},${view.state.chests.length},${view.state.quest?.flags.length ?? 0},${paintedVersion()}`;
       if (key === lastKey) return;
       lastKey = key;
       const t0 = performance.now();

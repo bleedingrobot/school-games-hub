@@ -45,6 +45,16 @@ export const badgePic = (badge: string) => file('badges', badge);
 /** A plain picture of a bag item, for the Bag. */
 export const itemPic = (id: ItemId) => file('items', id);
 
+/**
+ * A painted map (docs/MONSTERS-QUESTS-PLAN.md, Q.6): the ground, with everything that never changes painted in, and the
+ * parts that stand in front of walkers (tree tops, roofs) on a see-through layer. Either may be missing (the tile map shows).
+ */
+export const mapPic = (map: string): { ground?: string; above?: string } => ({ ground: file('maps', map), above: file('maps', `${map}-above`) });
+/** A painted thing that changes on a map: "chest", "chest-open", "gate", "giant-drowsea". */
+export const propPic = (name: string) => file('props', name);
+/** A painted walker facing one way: "person-84" for someone on a map (their Tiny Dungeon sprite), or a trainer look. */
+export const walkerPic = (who: string, facing: 'up' | 'down' | 'left' | 'right') => file('walkers', `${who}-${facing}`);
+
 /** Starts downloading pictures before a screen needs them (the two monsters as the battle flash starts). */
 export function preload(...urls: (string | undefined)[]) {
   for (const url of urls) if (url) new Image().src = url;
