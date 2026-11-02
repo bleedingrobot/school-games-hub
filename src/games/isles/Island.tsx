@@ -119,7 +119,12 @@ export function IslandPicture({
     const name = decoration(d.id)?.name ?? 'Decoration';
     return (
       <span key={`d${d.i}`} className="si-decor" style={{ left: `${d.at.x}%`, top: `${d.at.y}%`, zIndex: Math.round(d.at.y) + 10 }} role="img" aria-label={name}>
-        <Art src={decorArt(d.id)} fallback={<span className="si-decor__drawn" aria-hidden="true">{DECOR_EMOJI[d.id]}</span>} />
+        {/* A decoration makes its corner of the island glow and twinkle (James: "a much bigger effect on the island"). */}
+        <span className="si-decor__halo" aria-hidden="true" />
+        <span className="si-decor__pic" style={{ animationDelay: `${-(d.i % 5) * 0.8}s` }}>
+          <Art src={decorArt(d.id)} fallback={<span className="si-decor__drawn" aria-hidden="true">{DECOR_EMOJI[d.id]}</span>} />
+        </span>
+        {[0, 1, 2].map((t) => <span key={t} className="si-decor__twinkle" style={{ animationDelay: `${t * 0.9 + (d.i % 4) * 0.35}s` }} aria-hidden="true" />)}
       </span>
     );
   };

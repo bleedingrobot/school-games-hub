@@ -81,9 +81,18 @@
 .si-more { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; position: relative; z-index: 300; }
 .si-more__spot { min-height: 44px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
 /* Decorations, free places to put one, islanders strolling about, and coins popping off at the collect. */
-.si-decor { position: absolute; width: 7%; min-width: 22px; transform: translate(-50%, -80%); pointer-events: none; display: flex; justify-content: center; }
-.si-decor img { width: 100%; display: block; filter: drop-shadow(0 2px 2px rgba(40, 60, 20, 0.35)); }
-.si-decor__drawn { font-size: clamp(1rem, 2.6vw, 1.7rem); line-height: 1; filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.3)); }
+.si-decor { position: absolute; width: 13%; min-width: 40px; transform: translate(-50%, -85%); pointer-events: none; display: flex; justify-content: center; }
+.si-decor__pic { position: relative; z-index: 1; width: 100%; display: flex; justify-content: center; transform-origin: 50% 100%; animation: si-sway 4s ease-in-out infinite alternate; }
+.si-decor img { width: 100%; display: block; filter: drop-shadow(0 3px 3px rgba(40, 60, 20, 0.4)) drop-shadow(0 0 6px rgba(255, 240, 180, 0.8)); }
+.si-decor__drawn { font-size: clamp(2rem, 5.5vw, 3.4rem); line-height: 1; filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 6px rgba(255, 240, 180, 0.9)); }
+.si-decor__halo { position: absolute; left: 50%; bottom: -8%; width: 190%; aspect-ratio: 2.2; transform: translate(-50%, 30%); border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 248, 200, 0.95), rgba(255, 210, 100, 0.6) 55%, rgba(255, 214, 120, 0)); animation: si-halo 3s ease-in-out infinite alternate; }
+.si-decor__twinkle { position: absolute; z-index: 2; width: 26%; aspect-ratio: 1; background: radial-gradient(circle, #fff 15%, #ffe27a 55%, #f0b000); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); opacity: 0; animation: si-twinkle 2.7s ease-in-out infinite; }
+.si-decor__twinkle:nth-of-type(3) { left: -12%; top: 8%; }
+.si-decor__twinkle:nth-of-type(4) { right: -14%; top: 30%; width: 20%; }
+.si-decor__twinkle:nth-of-type(5) { left: 40%; top: -22%; width: 18%; }
+@keyframes si-sway { from { transform: rotate(-3deg) translateY(0); } to { transform: rotate(3deg) translateY(-3%); } }
+@keyframes si-halo { from { opacity: 0.7; transform: translate(-50%, 30%) scale(0.92); } to { opacity: 1; transform: translate(-50%, 30%) scale(1.08); } }
+@keyframes si-twinkle { 0%, 100% { opacity: 0; transform: scale(0.3) rotate(0); } 45% { opacity: 1; transform: scale(1) rotate(45deg); } 60% { opacity: 0.9; } }
 .si-place { position: absolute; transform: translate(-50%, -50%); min-width: 44px; min-height: 44px; padding: 0; border-radius: 50%; border: 3px dashed #fff; background: rgba(15, 53, 86, 0.55); color: #fff; font: inherit; font-weight: 800; cursor: pointer; z-index: 250; }
 .si-place:hover, .si-place:focus-visible { background: var(--si-title); }
 .si-walker { position: absolute; left: var(--x1); top: var(--y1); width: 3.2%; min-width: 10px; transform: translate(-50%, -100%); pointer-events: none; z-index: var(--z1); animation: si-walk 16s ease-in-out infinite alternate; }
@@ -234,7 +243,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .si-drift, .si-lit, .si-walker, .si-pop, .si-pop__sparks > span, .si-pop__sparks > .si-pop__fall, .si-spot--counting img, .si-after { animation: none; }
+  .si-drift, .si-lit, .si-walker, .si-pop, .si-pop__sparks > span, .si-pop__sparks > .si-pop__fall, .si-spot--counting img, .si-after, .si-decor__pic, .si-decor__halo, .si-decor__twinkle { animation: none; }
+  .si-decor__twinkle { opacity: 0.85; }
   .si-pop { transform: translate(-50%, -150%); }
   .si-boat, .si-spot img { transition: none; }
   .si-race--sailing .si-boat img:first-child { animation: none; }
