@@ -8,21 +8,22 @@ import { useState } from 'react';
 import type { GameMap, WorldState } from '../../../../shared/monsters/world/types';
 import { worldPlaces } from '../../../../shared/monsters/world/worldMap';
 
-// The painted world (missing until it is painted: the places then sit on a plain sea).
+// The painted world, made on the gaming computer (scripts/monsters-worldmap-art.py). Without it the places sit on a plain sea.
 const PICTURE = Object.values(import.meta.glob('./assets/world-map.webp', { eager: true, import: 'default' }) as Record<string, string>)[0];
 
 /** Where each place sits on the picture, in percent from the top left. EASY TO EDIT when the picture changes. */
 export const PLACE_SPOTS: Record<string, [number, number]> = {
-  'harbour-town': [50, 60],
-  'kauri-bush': [27, 68],
-  'shell-beach': [42, 86],
-  'fire-mountain': [76, 46],
-  'snowy-peaks': [44, 24],
-  'glowworm-caves': [18, 38],
-  'harbour-city': [74, 80],
-  'steam-valley': [88, 22],
-  'lagoon-isle': [12, 88],
-  'aurora-hollow': [64, 8],
+  // Just below each painted place, so the label doesn't hide it.
+  'harbour-town': [51, 72],
+  'kauri-bush': [28, 79],
+  'shell-beach': [42, 92],
+  'fire-mountain': [76, 62],
+  'snowy-peaks': [43, 37],
+  'glowworm-caves': [19, 48],
+  'harbour-city': [78, 82],
+  'steam-valley': [88, 35],
+  'lagoon-isle': [12, 95],
+  'aurora-hollow': [65, 18],
 };
 
 export function WorldMapPage({ world, maps }: { world: WorldState; maps: Record<string, GameMap> }) {
