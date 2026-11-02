@@ -5,7 +5,7 @@ quests, puzzles, items to wake sleeping monsters that block new areas, eggs that
 somewhere warm, wet and so on), and uncommon, rare and ultra rare monsters. James also asked for a painted upgrade of the
 maps and the walking characters, made on his gaming computer.*
 
-**Status: PLAN ONLY, nothing built.** Questions for James are in section 11. The game as it is now (live since 18 Oct 2026)
+**Status: PLAN ONLY, nothing built.** Questions for James are in section 12. The game as it is now (live since 18 Oct 2026)
 is described in [MONSTER-PLAN.md](MONSTER-PLAN.md).
 
 ---
@@ -27,7 +27,7 @@ is described in [MONSTER-PLAN.md](MONSTER-PLAN.md).
   coming out, and an egg is the best way to get a rare one.
 - **Rarity.** Four tiers: **common, uncommon, rare, ultra rare**. 6 of the 18 families we have become *uncommon* (one per
   type, seen less often, no new art). **6 new rare families** (2 forms each) and **3 ultra rare monsters** are added, so the
-  monster book grows from 54 to **69**. Ultra rares only come from giants, eggs and the last story quest.
+  monster book grows from 54 to **75** (the 3 giants have 2 forms each). Ultra rares only come from giants, eggs and the last story quest.
 - **Puzzles** in the world: stepping stones on multiples, an ice slide, boulders to push, lanterns to light in order, a
   number-lock chest with clues on signs. They give bits, eggs and items.
 - **More variety:** today's weather (rain brings out Water monsters, a clear night brings Spark ones), a "rare monster
