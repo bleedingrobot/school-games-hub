@@ -43,7 +43,7 @@ export const QUESTS: readonly Quest[] = [
   {
     id: 'snow', title: 'The warden’s hut', giver: 'snowy-peaks:Ranger Fern', area: 4,
     steps: [
-      { do: 'solve', id: 'snow-slide', hint: 'Slide across the ice to Ranger Fern’s chest' },
+      { do: 'solve', id: 'snow-slide', hint: 'Find the signpost by the snowy path and slide across the ice to the chest' },
       { do: 'catch', type: 'ice', hint: 'Catch an Ice monster on Snowy Peaks' },
       { do: 'bring', person: 'snowy-peaks:Ranger Fern', type: 'ice', count: 5, hint: 'Bring 5 frost crystals to Ranger Fern' },
     ],
