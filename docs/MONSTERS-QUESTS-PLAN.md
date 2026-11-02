@@ -334,3 +334,15 @@ you **land beside the nurse** (Harbour Town: inside the Healing Centre; the thre
 entrance). Pick a place on the world map, then "Travel to …". Arriving counts as a visit (notice board "visit" jobs), the
 same as walking in. Rules in `shared/monsters/world/worldMap.ts` (`landingFor`, `fastTravel`); 1 test in `areas.test.ts`.
 No steps are added and you only land where the save check already lets you stand, so **no server or database change**.
+
+## Painted indoor rooms (3 Nov 2026, branch `monsters-indoor`)
+
+The 10 outdoor places were painted, but the 13 indoor rooms (the Healing Centre and each Topic Tower's hall and top) still showed the old tiles. James chose a look of its own for every tower. `scripts/monsters-map-paint.py` now builds these rooms straight from their tile maps (`paint_room`): the floor, the back wall seen straight on, the other walls from above, and each old tile's thing painted where it stood (windows, banner, counters, plant pots, easel poster, cupboards, barrels, ladders, statues, sign, door). A ladder up stands in front of the hall banner, so the hall hangs two banners, one either side. Layout checked with stand-in parts; nothing painted yet. The game picks a room up as soon as `painted/maps/<id>.webp` exists (no game code changed).
+
+New parts (36, about 25 minutes on the PC): `floor-` and `wall-` textures for heal, leaf, water, fire, ice, spark, stone; `banner-` for each of those; `statue-` for each tower; and window, door-in, counter, poster, plant-pot, cupboard, barrel, ladder-up, ladder-down. The sign reuses `sign-a`.
+
+To paint (on this Mac with the gaming PC's ComfyUI on, in `~/games-hub-monsters-indoor`):
+1. `~/.cache/rembg-venv/bin/python scripts/monsters-map-paint.py parts` (only paints parts not made yet)
+2. `~/.cache/rembg-venv/bin/python scripts/monsters-map-paint.py sheet` and look at `docs/monsters-art-test/map-parts-sheet.png`; delete a bad part's png and run step 1 again to repaint it
+3. `~/.cache/rembg-venv/bin/python scripts/monsters-map-paint.py map indoor`
+4. Check the rooms in the preview, then commit the 26 webps in `src/games/monsters/art/painted/maps/` and open a PR (website only).
