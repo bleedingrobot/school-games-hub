@@ -319,3 +319,9 @@ Pupils now have quests, bits and the Tinker, the notice board, three sleeping gi
 
 Still to come, in its own PR (James's choice on a card): the 5 new achievements (through `hub_games.counts_fn` for
 `monsters`, with new `monster_saves` counts) and the dashboard egg line (an exact edit to `my_moves_left`).
+
+**Follow-up (migration `20261103000100_monsters_quest_achievements`):** four running counts on `monster_saves`
+(`quests_done`, `giants_woken`, `rares_owned`, `ultras_owned`) set from the save check's summary; `monster_quest_counts`
+plugged into `hub_games.counts_fn` for `monsters`; the 5 achievements (Egg-cellent, Wake-up call, Rare find, Quest helper,
+Legend keeper; 13 Monsters achievements in all, kept through a New Season like the others); and an exact edit to
+`my_moves_left` so the dashboard gets the eggs, days of play and last battle day for the egg line.
