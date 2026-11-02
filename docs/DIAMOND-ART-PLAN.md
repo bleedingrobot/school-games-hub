@@ -304,7 +304,7 @@ The order puts the pictures that change the most-used screens first (gems, then 
 - **`art/paint.ts`** finds a painting by folder and game id. **Each drawing function in `art/draw.ts` draws the painting when it has downloaded**, so every screen picks it up, and falls back to the drawn version otherwise. Still pictures (`Sprite`) draw again when a painting arrives, and the play screen redraws its cached background.
 - **Fitting the game:**
   - Levels 1 and 2 have their sky squeezed into the top band (`SURFACE`), so the grass line sits on the game's ground.
-  - The winch is small, on two drawn wooden legs, so the resting claw hangs clear below it.
+  - The winch is a small painting at the top (no legs: drawn sticks looked out of place, James agreed), so the resting claw hangs clear below it.
   - Painted gems get a soft dark edge so pale gems show on pale grass.
   - A claw holding something is its open painting squeezed narrower.
   - The depth gauge on the level map shows a strip of each level's own painting.

@@ -568,17 +568,9 @@ function shade(hex: string, amount: number): string {
 
 /** The winch at the top, centred on the rope's start (x, y). `turn` spins the drum while reeling. */
 export function drawWinch(ctx: Ctx, x: number, y: number, id: string | undefined, turn: number, time: number, still: boolean) {
-  // The painting sits on two wooden legs, its drum about where the rope starts, small enough that the resting claw
-  // hangs clear below it.
-  const painted = id ? paintNow('winches', id) : paintNow('field', 'winch');
-  if (painted) {
-    ctx.save();
-    ctx.strokeStyle = '#4a3018'; ctx.lineWidth = 6; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(x - 30, y + 10); ctx.lineTo(x - 48, GROUND_Y - 6); ctx.moveTo(x + 30, y + 10); ctx.lineTo(x + 48, GROUND_Y - 6); ctx.stroke();
-    ctx.restore();
-    drawPainting(ctx, painted, x, y - 8, 96, 64);
-    return;
-  }
+  // The painting sits at the top with its drum about where the rope starts, small enough that the resting claw hangs
+  // clear below it.
+  if (drawPainting(ctx, id ? paintNow('winches', id) : paintNow('field', 'winch'), x, y - 8, 96, 64)) return;
   ctx.save();
   ctx.translate(x, y);
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
