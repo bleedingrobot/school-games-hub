@@ -15,6 +15,7 @@ import { isBanned } from '../../../shared/trader/market';
 import { fuelCost, fuelNeeded, type Trader } from '../../../shared/trader/state';
 import { drawPlanet, loadSmallPlanetMaps, lookOf, planetPainted } from './art/planets';
 import { allPrices, chartIdeas, customsWarning, pirateWarning, tradeIdeas, type ChartIdea } from './coach/advice';
+import type { HelpLevel } from './coach/level';
 import { COACH_NAME, GOVERNMENT_LINES, PLANET_FACTS, goodIcon } from './text';
 
 const icons = new Map<string, string>();
@@ -53,7 +54,7 @@ function usePaintedIcons(names: readonly string[]): void {
 const VIEW = GRID_SIZE - 1 + 3;
 const pos = (n: number): number => ((n + 1.5) / VIEW) * 100;
 
-export function MapPanel({ galaxy, t, busy, news = [], pushes, guide = null, onAim, onJump, onRefuel }: {
+export function MapPanel({ galaxy, t, busy, news = [], pushes, guide: flightGuide = null, level = 'lots', onAim, onJump, onRefuel }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
@@ -65,6 +66,8 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide = null, onA
   onAim?: (planet: number | null) => void;
   /** A planet to draw guide lines from, out to its x number along the top and its y number down the side (First Flight). */
   guide?: number | null;
+  /** Bolt's help level: trip ideas and guide lines (for the tapped planet) on Lots; the customs and pirate warnings unless Off. */
+  level?: HelpLevel;
   onJump: (dest: number) => void;
   onRefuel: (units: number) => void;
 }) {
@@ -78,6 +81,7 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide = null, onA
   const aimed = px !== null && py !== null;
   const target = aimed ? galaxy.planets.find((p) => chartPoint(p).x === px && chartPoint(p).y === py) ?? null : null;
   const pickedPlanet = picked !== null ? galaxy.planets[picked] : null;
+  const guide = flightGuide ?? (level === 'lots' ? picked : null);
   const dest = target ?? null;
   const need = dest ? fuelNeeded(galaxy, t, dest.id) : 0;
   const tank = SHIPS[t.ship].fuelTank;
@@ -88,8 +92,8 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide = null, onA
   // Bolt's trip ideas (docs/TRADER-HINTS-PLAN.md, 5.3): words only, never typed into the boxes for the pupil.
   const ideas = useMemo(() => {
     const prices = allPrices(galaxy, t.day, pushes);
-    return chartIdeas(galaxy, t, prices, tradeIdeas(galaxy, t, prices));
-  }, [galaxy, t, pushes]);
+    return level === 'lots' ? chartIdeas(galaxy, t, prices, tradeIdeas(galaxy, t, prices)) : [];
+  }, [galaxy, t, pushes, level]);
   useEffect(() => {
     onAim?.(aimedId);
   }, [aimedId, onAim]);
@@ -195,6 +199,7 @@ export function MapPanel({ galaxy, t, busy, news = [], pushes, guide = null, onA
             onRefuel={() => onRefuel(short)}
             onJump={() => target && onJump(target.id)}
             here0={here0}
+            warn={level !== 'off'}
           />
           {ideas.length > 0 && <TripIdeas galaxy={galaxy} ideas={ideas} />}
           {pickedPlanet ? <PlanetCard galaxy={galaxy} t={t} dest={pickedPlanet} news={newsAbout(news, pickedPlanet.id).filter((n) => n.kind !== 'event')} pushes={pushes} /> : <p className="st-sub">Tap a planet to read about it and see its coordinates.</p>}
@@ -239,8 +244,10 @@ function JumpBox(props: {
   t: Trader; here: Planet; here0: { x: number; y: number }; xs: string; ys: string; setXs: (v: string) => void; setYs: (v: string) => void;
   px: number | null; py: number | null; target: Planet | null; pickedPlanet: Planet | null; need: number; short: number; tooFar: boolean;
   busy: boolean; canPay: boolean; refuelCost: number; onRefuel: () => void; onJump: () => void;
+  /** Show Bolt's customs and pirate warnings (not on help level Off). */
+  warn: boolean;
 }) {
-  const { t, here, here0, xs, ys, setXs, setYs, px, py, target, pickedPlanet, need, short, tooFar, busy, canPay, refuelCost, onRefuel, onJump } = props;
+  const { t, here, here0, xs, ys, setXs, setYs, px, py, target, pickedPlanet, need, short, tooFar, busy, canPay, refuelCost, onRefuel, onJump, warn } = props;
   const aimed = px !== null && py !== null;
   const typedSomething = xs !== '' || ys !== '';
   const bad = (text: string) => text !== '' && text !== '-' && parseCoord(text) === null;
@@ -274,8 +281,8 @@ function JumpBox(props: {
         ) : (
           <p className="st-soft">Fuel is worked out for you.</p>
         )}
-        {target && target.id !== here.id && customsWarning(target, t) && <p className="st-warn st-warn--customs">🚫 {customsWarning(target, t)}</p>}
-        {target && target.id !== here.id && pirateWarning(target, t) && <p className="st-warn">☠️ {pirateWarning(target, t)}</p>}
+        {warn && target && target.id !== here.id && customsWarning(target, t) && <p className="st-warn st-warn--customs">🚫 {customsWarning(target, t)}</p>}
+        {warn && target && target.id !== here.id && pirateWarning(target, t) && <p className="st-warn">☠️ {pirateWarning(target, t)}</p>}
         {target && tooFar && <p className="st-warn">Your tank is too small to jump that far in one go. Plan a stop on the way.</p>}
         {target && !tooFar && short > 0 && (
           <div className="st-actions">

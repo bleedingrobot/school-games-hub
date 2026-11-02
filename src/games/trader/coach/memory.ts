@@ -2,9 +2,11 @@
  * What Bolt remembers on this device (docs/TRADER-HINTS-PLAN.md, section 8): never sent to the server. One key, wrapped
  * in try/catch like prefs.ts, so a locked-down browser just forgets.
  *
- * First Flight is kept for good. Everything else belongs to one season (`season`): a New Season is a new galaxy and a new
- * game, so the tips, the deal count, the buy prices and the last day played start again.
+ * First Flight and the pupil's help level are kept for good. Everything else belongs to one season (`season`): a New
+ * Season is a new galaxy and a new game, so the tips, the deal count, the buy prices and the last day played start again.
  */
+import { isLevel, type HelpLevel } from './level';
+
 const KEY = 'sgh-trader-coach';
 
 /** First Flight in progress: the trade Bolt picked and where the pupil started from. */
@@ -29,6 +31,8 @@ export interface CoachMemory {
   /** First Flight finished or skipped on this device. */
   flight: 'done' | 'skipped' | null;
   run: FlightRun | null;
+  /** The help level the pupil picked (null: Bolt picks, level.ts). */
+  level: HelpLevel | null;
   /** The season the rest belongs to. */
   season: number | null;
   /** First-time tips already shown (section 4). */
@@ -41,7 +45,7 @@ export interface CoachMemory {
   day: number | null;
 }
 
-export const EMPTY_COACH: CoachMemory = { flight: null, run: null, season: null, tips: [], deals: 0, boughtAt: {}, day: null };
+export const EMPTY_COACH: CoachMemory = { flight: null, run: null, level: null, season: null, tips: [], deals: 0, boughtAt: {}, day: null };
 
 const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
@@ -63,6 +67,7 @@ export function loadCoach(): CoachMemory {
     return {
       flight,
       run,
+      level: isLevel(raw.level) ? raw.level : null,
       season: num(raw.season) ? raw.season : null,
       tips: Array.isArray(raw.tips) ? raw.tips.filter((x) => typeof x === 'string') : [],
       deals: num(raw.deals) ? raw.deals : 0,
@@ -82,10 +87,10 @@ export function saveCoach(m: CoachMemory): void {
   }
 }
 
-/** The memory for this season: a new season keeps First Flight and starts the rest again. (No season yet: it's this one.) */
+/** The memory for this season: a new season keeps First Flight and the help level and starts the rest again. (No season yet: it's this one.) */
 export function forSeason(m: CoachMemory, season: number): CoachMemory {
   if (m.season === season) return m;
-  return m.season === null ? { ...m, season } : { ...EMPTY_COACH, flight: m.flight, run: m.run, season };
+  return m.season === null ? { ...m, season } : { ...EMPTY_COACH, flight: m.flight, run: m.run, level: m.level, season };
 }
 
 /**

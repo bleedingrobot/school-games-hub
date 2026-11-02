@@ -13,6 +13,11 @@ export type TipId =
   | 'maths' | 'junk' | 'trader' | 'pirates' | 'pirates-nolaser' | 'customs' | 'wrecked' | 'robbed'
   | 'shipyard' | 'noyard' | 'bank' | 'borrow' | 'news' | 'jumps' | 'newday';
 
+export const TIP_IDS: readonly TipId[] = [
+  'maths', 'junk', 'trader', 'pirates', 'pirates-nolaser', 'customs', 'wrecked', 'robbed',
+  'shipyard', 'noyard', 'bank', 'borrow', 'news', 'jumps', 'newday',
+];
+
 /** One stop of a tip (the shipyard tour has three). `target` is a `data-coach` name to light up. */
 export interface TipStop {
   say: string;

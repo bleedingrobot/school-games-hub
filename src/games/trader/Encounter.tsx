@@ -6,6 +6,8 @@ import type { Fight } from '../../../shared/trader/fight';
 import { laserPower, shieldPower } from '../../../shared/trader/fight';
 import type { Trader } from '../../../shared/trader/state';
 import { dealAdvice, type FightAdvice } from './coach/advice';
+import { BoltFace } from './coach/CoachBar';
+import type { HelpLevel } from './coach/level';
 import { COACH_NAME, PIRATE_NAMES, goodIcon } from './text';
 
 const cr = (n: number): string => `${n.toLocaleString('en-NZ')} cr`;
@@ -47,12 +49,14 @@ export function SummaryPanel({ title, lines, button, onDone }: { title: string; 
   );
 }
 
-export function DealPanel({ offer, here, busy, hideVerdict = false, onAccept, onDecline }: {
+export function DealPanel({ offer, here, busy, hideVerdict = false, level = 'lots', onAccept, onDecline }: {
   offer: Extract<Encounter, { kind: 'trader' }>;
   here: Trader;
   busy: boolean;
   /** Keep Bolt's working and verdict behind "Help me decide", so the pupil compares the numbers first (after 3 deals). */
   hideVerdict?: boolean;
+  /** Bolt's help level: no deal helper at all on Off. */
+  level?: HelpLevel;
   onAccept: () => void;
   onDecline: () => void;
 }) {
@@ -69,7 +73,7 @@ export function DealPanel({ offer, here, busy, hideVerdict = false, onAccept, on
       <p className="st-sub">
         {goodIcon(offer.good)} On this planet {name} {offer.sells ? 'costs' : 'sells for'} {offer.fair}. Is that a good deal for you? You have {cr(here.credits)}.
       </p>
-      <div className="st-advice" aria-live="polite">
+      {level !== 'off' && <div className="st-advice" aria-live="polite">
         {advice.checks.map((c) => <p key={c.text} className={c.ok ? 'st-advice__ok' : 'st-advice__no'}>{c.text}</p>)}
         {open ? (
           <>
@@ -79,7 +83,7 @@ export function DealPanel({ offer, here, busy, hideVerdict = false, onAccept, on
         ) : (
           <button type="button" className="st-btn st-btn--small" onClick={() => setOpen(true)}>Help me decide</button>
         )}
-      </div>
+      </div>}
       <div className="st-actions">
         <button type="button" className="st-btn st-btn--primary" disabled={busy} onClick={onAccept}>Take the deal</button>
         <button type="button" className="st-btn" disabled={busy} onClick={onDecline}>No thanks</button>
@@ -88,7 +92,7 @@ export function DealPanel({ offer, here, busy, hideVerdict = false, onAccept, on
   );
 }
 
-export function FightPanel({ t, fight, tier, log, busy, advice, onAct }: {
+export function FightPanel({ t, fight, tier, log, busy, advice: suggestion, askFirst = false, onAct }: {
   t: Trader;
   fight: Fight;
   tier: number;
@@ -96,12 +100,16 @@ export function FightPanel({ t, fight, tier, log, busy, advice, onAct }: {
   busy: boolean;
   /** Bolt's suggestion: a button and why (5.5). Advice only: every button still works. */
   advice?: FightAdvice | null;
+  /** Help level Some: the suggestion waits until the pupil asks. */
+  askFirst?: boolean;
   onAct: (action: 'charge' | 'shield' | 'flee') => void;
 }) {
   const pirate = PIRATE_TIERS[tier];
   const armed = laserPower(t) > 0;
   const ship = SHIPS[t.ship];
   const shieldMax = shieldPower(t);
+  const [asked, setAsked] = useState(false);
+  const advice = suggestion && (!askFirst || asked) ? suggestion : null;
   return (
     <section className="st-panel st-panel--fight" aria-labelledby="st-fight-h">
       <h2 id="st-fight-h" className="st-h">{PIRATE_NAMES[tier]} attack! ☠️</h2>
@@ -130,6 +138,9 @@ export function FightPanel({ t, fight, tier, log, busy, advice, onAct }: {
           );
         })}
       </div>
+      {suggestion && !advice && (
+        <button type="button" className="st-btn st-btn--small st-ask" onClick={() => setAsked(true)}><BoltFace size={22} /> Ask {COACH_NAME} what to do</button>
+      )}
       {advice && (
         <p id="st-fight-tip" className="st-advice st-advice--fight">
           <strong className="st-advice__who">{COACH_NAME} suggests {advice.move === 'charge' ? '⚡ Charge' : advice.move === 'shield' ? '🛡️ Raise shields' : '💨 Flee'}:</strong> {advice.why}

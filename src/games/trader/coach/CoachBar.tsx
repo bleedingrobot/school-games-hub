@@ -1,4 +1,5 @@
 /** Bolt's next-step line and the "Show me" spotlight (docs/TRADER-HINTS-PLAN.md, section 3). */
+import { useState, type ReactNode } from 'react';
 import { COACH_NAME } from '../text';
 import type { NextStep } from './nextStep';
 
@@ -30,6 +31,20 @@ export function CoachBar({ step, onShow }: { step: NextStep; onShow: (target: st
         </button>
       )}
     </div>
+  );
+}
+
+/**
+ * On help level "Some", one of Bolt's helpers waits behind this button until the pupil asks (docs/TRADER-HINTS-PLAN.md,
+ * section 6). With `ask` false it just shows the helper.
+ */
+export function AskBolt({ ask, label = `Ask ${COACH_NAME}`, children }: { ask: boolean; label?: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  if (!ask || open) return <>{children}</>;
+  return (
+    <button type="button" className="st-btn st-btn--small st-ask" onClick={() => setOpen(true)}>
+      <BoltFace size={22} /> {label}
+    </button>
   );
 }
 
