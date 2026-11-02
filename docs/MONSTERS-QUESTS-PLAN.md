@@ -307,3 +307,15 @@ not touched. No change to `shared/maths/`.
 **Decisions made along the way (James can change any):** egg odds 50/40/10; bits are deterministic (no dice) so the server can count them exactly; giant battles' levels 18/24/30; the finale needs all three giants woken and an egg of every kind hatched, then gives a choice of ultra rare egg.
 
 **Not done yet / for Q.4–Q.5:** nothing calls these rules from the world yet (talk, battles, the Tinker, the board, the basket); people, spots, puzzles and bonus maps aren't on the maps; the server check doesn't accept `quest` yet; play days aren't counted by the database yet.
+
+## Went live (3 Nov 2026, PR #133)
+
+James said "keep working through till live". PR #133 merged at 15:00 UTC on 2 Nov (4:00 am NZ, 3 Nov) with every check green. "Test and publish" applied
+migration `20261102000400_monsters_quests` (new `monster_saves` columns `play_days`, `play_day`, `eggs_hatched`; all 71
+saves kept), redeployed the `monster` function and published the website. Checked afterwards: the columns exist, an
+unsigned call to the function answers 401, and pupils can run only `my_monsters` (the save functions stay server-only).
+Pupils now have quests, bits and the Tinker, the notice board, three sleeping giants and bonus areas, eggs (cold after
+4 days away), nine puzzles, 21 rare and ultra rare monsters, the world map, painted maps and painted walkers.
+
+Still to come, in its own PR (James's choice on a card): the 5 new achievements (through `hub_games.counts_fn` for
+`monsters`, with new `monster_saves` counts) and the dashboard egg line (an exact edit to `my_moves_left`).
