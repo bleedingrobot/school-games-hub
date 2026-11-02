@@ -179,7 +179,8 @@ describe('all 18 families, all 54 monsters', () => {
         }
       }
     }
-    expect([...MONSTER_BOOK].filter((s) => !reachable.has(s.id)).map((s) => s.id)).toEqual([]);
+    // The rare and ultra rare ones come from the bonus areas, giants and eggs (built in Q.4).
+    expect([...MONSTER_BOOK].filter((s) => !reachable.has(s.id) && s.rarity !== 'rare' && s.rarity !== 'ultra').map((s) => s.id)).toEqual([]);
     expect(reachable.size).toBe(54);
   });
 
@@ -418,7 +419,7 @@ describe('the monster book', () => {
     expect(met.seen).toEqual(['digibud-1', 'divvy-1', 'multipup-1', 'plusplash-1']);
     expect(met.owned).toEqual(s.owned);
     expect(bookStatus(met, 'divvy-1')).toBe('seen');
-    expect(bookCounts(met)).toEqual({ owned: 2, seen: 4, total: 54 });
+    expect(bookCounts(met)).toEqual({ owned: 2, seen: 4, total: 75 });
     expect(meet(met, [makeMonster('divvy-1', 3)])).toBe(met); // nothing new: same state back
     expect(s.seen).toHaveLength(2);
   });

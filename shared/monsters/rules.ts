@@ -6,7 +6,7 @@
  * Monster Tamer by Dev Share Academy (MIT, © 2024), https://github.com/devshareacademy/monster-tamer
  */
 import { speciesOf, type Species } from './monsterBook';
-import { typeMultiplier } from './types';
+import { typeMultiplier, type TypeId } from './types';
 
 export type AnswerResult = 'right' | 'quick-right' | 'wrong';
 
@@ -80,11 +80,13 @@ export interface DamageResult {
 /**
  * Damage from one attack. `answer` is the student's result for their own attacks; foes pass
  * undefined (they ask no question) and hit a bit softer. `roll` is a 0-1 random number.
+ * `attackType` is the attack's own type for an ultra rare (it has two); otherwise the attacker's.
+ * A defender with two types is judged by its first.
  */
-export function damageFor(attacker: Monster, attackPower: number, defender: Monster, answer: AnswerResult | undefined, roll: number): DamageResult {
+export function damageFor(attacker: Monster, attackPower: number, defender: Monster, answer: AnswerResult | undefined, roll: number, attackType?: TypeId): DamageResult {
   const a = speciesOf(attacker.species);
   const d = speciesOf(defender.species);
-  const typeMult = typeMultiplier(a.type, d.type);
+  const typeMult = typeMultiplier(attackType ?? a.type, d.type);
   const answerMult = answer ? TUNING.answerMultiplier[answer] : 1;
   const side = answer ? 1 : TUNING.foeDamageScale;
   const spread = 1 - roll * TUNING.damageSpread;

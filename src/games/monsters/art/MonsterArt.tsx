@@ -13,6 +13,7 @@
  */
 import { useState, type ReactNode } from 'react';
 import { speciesOf } from '../../../../shared/monsters/monsterBook';
+import type { TypeId } from '../../../../shared/monsters/types';
 import {
   Bolt, Cheeks, Crystal, Eyes, Flame, Leaf, Mouth, OUTLINE, PALETTES, SHINY_PALETTES, Shadow, Sparkle, Spike,
   type Palette,
@@ -28,6 +29,9 @@ const belly = (c: Palette) => ({ fill: c.light, opacity: 0.9 });
 
 /** How big each stage is drawn (first forms are small). */
 export const STAGE_SCALE = [0.82, 0.93, 1] as const;
+
+/** The drawing a rare or ultra rare monster borrows until it has its own: a family of the same type. */
+const STAND_IN: Record<TypeId, string> = { leaf: 'placepetal', water: 'carrycrab', fire: 'squaremander', ice: 'remaindeer', spark: 'denomibolt', stone: 'centipebble' };
 
 const DRAWINGS: Record<string, Draw> = {
   // ---- Leaf ----
@@ -418,7 +422,11 @@ export function MonsterArt({ species, shiny, size, state = 'idle', flip, still, 
 
 function Drawing({ species, shiny, flip, label, nameless }: { species: string; shiny?: boolean; flip?: boolean; label: string; nameless?: boolean }) {
   const sp = speciesOf(species);
-  const draw = DRAWINGS[sp.family];
+  // Rare and ultra rare monsters have no drawing of their own yet (Q.3 paints them): they borrow a grown
+  // drawing of a family of their type, and the label still gives their own name.
+  const own = DRAWINGS[sp.family] as Draw | undefined;
+  const draw = own ?? DRAWINGS[STAND_IN[sp.type]];
+  const drawStage = own ? sp.stage : sp.final ? 3 : 2;
   const c = (shiny ? SHINY_PALETTES : PALETTES)[sp.type];
   const scale = STAGE_SCALE[sp.stage - 1];
   return (
@@ -426,7 +434,7 @@ function Drawing({ species, shiny, flip, label, nameless }: { species: string; s
       {!nameless && <title>{label}</title>}
       <Shadow rx={30 + sp.stage * 4} />
       <g className="mon-art__body" transform={`translate(60 108) scale(${flip ? -scale : scale} ${scale}) translate(-60 -108)`}>
-        {draw(sp.stage, c)}
+        {draw(drawStage, c)}
         {shiny && (
           <>
             <Sparkle x={104} y={26} r={7} fill="#fde047" />

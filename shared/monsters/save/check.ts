@@ -447,6 +447,6 @@ export function checkSave(prev: Stored | null, raw: unknown, nowMs: number): Che
   summary.owned = w.owned.length;
   summary.seen = w.seen.length;
   summary.badges = w.badges.length;
-  summary.finalInTeam = w.team.filter((m) => speciesOf(m.species).stage === 3).length;
+  summary.finalInTeam = w.team.filter((m) => speciesOf(m.species).final).length;
   return { ok: true, save: { item, summary, answers } };
 }

@@ -6026,6 +6026,17 @@ const STAGE_BOOST = [
 	1.25,
 	1.55
 ];
+/**
+* Rare and ultra rare monsters are a little stronger (James, 2 Nov 2026): their base stats are
+* multiplied by this on top of the stage boost, so a grown rare is about as strong as a fully grown
+* common, and never so strong that answering questions stops mattering.
+*/
+const RARITY_BOOST = {
+	common: 1,
+	uncommon: 1,
+	rare: 1.12,
+	ultra: 1.2
+};
 const TYPE_ATTACKS = {
 	leaf: {
 		basic: {
@@ -6373,11 +6384,167 @@ const FAMILIES = {
 		evolveAt: [17, 34]
 	}
 };
+/** One family of each type turns up less often in the grass (green ring in the book). No new pictures needed. */
+const UNCOMMON = new Set([
+	"placepetal",
+	"carrycrab",
+	"squaremander",
+	"remaindeer",
+	"denomibolt",
+	"centipebble"
+]);
+/** THE NEW NAMES FOR JAMES TO OK (Q.1). Rare families: one per type, found in the bonus areas and in eggs. */
+const RARE_FAMILIES = {
+	kilokiwi: {
+		type: "leaf",
+		names: ["Kilokiwi", "Megakiwi"],
+		stats: {
+			hp: 46,
+			atk: 12,
+			def: 12
+		},
+		moves: ["Thousand Peck", "Million Dash"],
+		evolveAt: 24
+	},
+	plustoise: {
+		type: "water",
+		names: ["Plustoise", "Totaltoise"],
+		stats: {
+			hp: 52,
+			atk: 10,
+			def: 14
+		},
+		moves: ["Shell Sum", "Grand Total"],
+		evolveAt: 25
+	},
+	arraydillo: {
+		type: "fire",
+		names: ["Arraydillo", "Arraymadillo"],
+		stats: {
+			hp: 44,
+			atk: 13,
+			def: 11
+		},
+		moves: ["Row Roll", "Column Blaze"],
+		evolveAt: 24
+	},
+	shareseal: {
+		type: "ice",
+		names: ["Shareseal", "Divisorca"],
+		stats: {
+			hp: 48,
+			atk: 12,
+			def: 11
+		},
+		moves: ["Ice Share", "Orca Split"],
+		evolveAt: 25
+	},
+	quarterowl: {
+		type: "spark",
+		names: ["Quarterowl", "Wholeowl"],
+		stats: {
+			hp: 42,
+			atk: 13,
+			def: 11
+		},
+		moves: ["Quarter Hoot", "Whole Flash"],
+		evolveAt: 24
+	},
+	tuatenth: {
+		type: "stone",
+		names: ["Tuatenth", "Hundredthara"],
+		stats: {
+			hp: 50,
+			atk: 11,
+			def: 13
+		},
+		moves: ["Tenth Tail", "Hundredth Crush"],
+		evolveAt: 25
+	},
+	dozepebble: {
+		type: "stone",
+		names: ["Dozepebble", "Snorumble"],
+		stats: {
+			hp: 60,
+			atk: 12,
+			def: 14
+		},
+		moves: ["Snore Tumble", "Rumble Nap"],
+		evolveAt: 28,
+		giant: true
+	},
+	napsea: {
+		type: "water",
+		names: ["Napsea", "Drowsea"],
+		stats: {
+			hp: 58,
+			atk: 12,
+			def: 13
+		},
+		moves: ["Sleepy Wave", "Deep Dream Tide"],
+		evolveAt: 28,
+		giant: true
+	},
+	blinkberg: {
+		type: "ice",
+		names: ["Blinkberg", "Yawnberg"],
+		stats: {
+			hp: 58,
+			atk: 13,
+			def: 12
+		},
+		moves: ["Yawn Freeze", "Glacier Snooze"],
+		evolveAt: 28,
+		giant: true
+	}
+};
+/** Ultra rares: from ultra rare eggs and the finale only. */
+const ULTRA_MONSTERS = {
+	infinitail: {
+		type: "fire",
+		type2: "spark",
+		name: "Infinitail",
+		stats: {
+			hp: 50,
+			atk: 14,
+			def: 12
+		},
+		moves: ["Endless Flame", "Forever Bolt"]
+	},
+	primerald: {
+		type: "leaf",
+		type2: "stone",
+		name: "Primerald",
+		stats: {
+			hp: 54,
+			atk: 13,
+			def: 13
+		},
+		moves: ["Prime Vine", "Prime Gem"]
+	},
+	equalizard: {
+		type: "water",
+		type2: "ice",
+		name: "Equalizard",
+		stats: {
+			hp: 52,
+			atk: 13,
+			def: 13
+		},
+		moves: ["Balance Wave", "Equal Frost"]
+	}
+};
 /** Moves' power: the type's basic attack is 35, then the family's two own attacks. */
 const OWN_POWER = [45, 60];
+const scaled = (stats, by) => ({
+	hp: Math.round(stats.hp * by),
+	atk: Math.round(stats.atk * by),
+	def: Math.round(stats.def * by)
+});
 function build() {
 	const out = [];
 	for (const [family, f] of Object.entries(FAMILIES)) {
+		const rarity = UNCOMMON.has(family) ? "uncommon" : "common";
 		const { basic, big } = TYPE_ATTACKS[f.type];
 		const own = f.moves.map((name, i) => ({
 			name,
@@ -6393,12 +6560,10 @@ function build() {
 				name,
 				type: f.type,
 				family,
+				rarity,
 				stage,
-				stats: {
-					hp: Math.round(f.stats.hp * boost),
-					atk: Math.round(f.stats.atk * boost),
-					def: Math.round(f.stats.def * boost)
-				},
+				final: stage === 3,
+				stats: scaled(f.stats, boost),
 				attacks: stage === 1 ? [basic, own[0]] : stage === 2 ? [
 					basic,
 					own[0],
@@ -6416,16 +6581,90 @@ function build() {
 			});
 		});
 	}
+	for (const [family, f] of Object.entries(RARE_FAMILIES)) {
+		const { basic, big } = TYPE_ATTACKS[f.type];
+		const own = f.moves.map((name, i) => ({
+			name,
+			power: OWN_POWER[i],
+			anim: `${f.type}-2`
+		}));
+		f.names.forEach((name, i) => {
+			const stage = i + 1;
+			out.push({
+				id: `${family}-${stage}`,
+				name,
+				type: f.type,
+				family,
+				rarity: "rare",
+				stage,
+				final: stage === 2,
+				stats: scaled(f.stats, STAGE_BOOST[i * 2] * RARITY_BOOST.rare),
+				attacks: stage === 1 ? [basic, own[0]] : [
+					basic,
+					own[0],
+					own[1],
+					big
+				],
+				...stage === 1 ? {
+					evolvesTo: `${family}-2`,
+					evolveAt: f.evolveAt
+				} : {}
+			});
+		});
+	}
+	for (const [family, u] of Object.entries(ULTRA_MONSTERS)) out.push({
+		id: `${family}-1`,
+		name: u.name,
+		type: u.type,
+		type2: u.type2,
+		family,
+		rarity: "ultra",
+		stage: 1,
+		final: true,
+		stats: scaled(u.stats, STAGE_BOOST[2] * RARITY_BOOST.ultra),
+		attacks: [
+			{
+				name: u.moves[0],
+				power: OWN_POWER[1],
+				anim: `${u.type}-2`,
+				type: u.type
+			},
+			{
+				name: u.moves[1],
+				power: OWN_POWER[1],
+				anim: `${u.type2}-2`,
+				type: u.type2
+			},
+			{
+				...TYPE_ATTACKS[u.type].big,
+				type: u.type
+			},
+			{
+				...TYPE_ATTACKS[u.type2].big,
+				type: u.type2
+			}
+		]
+	});
 	return out;
 }
-/** All 54 entries, family by family, first form to last. */
+/** The type an attack is: its own for an ultra rare's attacks, otherwise its monster's. */
+const attackType = (species, attack) => attack.type ?? species.type;
+/** Every family with forms that grow by level (the first 18 and the rare ones), for the wild lists and eggs. */
+const GROWTH = {
+	...Object.fromEntries(Object.entries(FAMILIES).map(([id, f]) => [id, f.evolveAt])),
+	...Object.fromEntries(Object.entries(RARE_FAMILIES).map(([id, f]) => [id, [f.evolveAt]]))
+};
+/** Is this a family name (as a map's wild list or an egg uses them), rather than one fixed species? */
+const isFamily = (id) => id in GROWTH || id in ULTRA_MONSTERS;
+/** All 75 entries, family by family, first form to last: the first 18 families, the rare ones, then the ultra rares. */
 const MONSTER_BOOK = build();
 const BY_ID = new Map(MONSTER_BOOK.map((s) => [s.id, s]));
 /** The form of a family a monster of this level has (first form below its first growth level, and so on). */
 function formAt(family, level) {
-	const f = FAMILIES[family];
-	if (!f) throw new Error(`No monster family "${family}" in the monster book`);
-	return `${family}-${level >= f.evolveAt[1] ? 3 : level >= f.evolveAt[0] ? 2 : 1}`;
+	if (family in ULTRA_MONSTERS) return `${family}-1`;
+	const at = GROWTH[family];
+	if (!at) throw new Error(`No monster family "${family}" in the monster book`);
+	return `${family}-${1 + at.filter((l) => level >= l).length}`;
 }
 function speciesOf(id) {
 	const s = BY_ID.get(id);
@@ -6547,11 +6786,13 @@ const maxHpOf = (m) => maxHp(speciesOf(m.species), m.level);
 /**
 * Damage from one attack. `answer` is the student's result for their own attacks; foes pass
 * undefined (they ask no question) and hit a bit softer. `roll` is a 0-1 random number.
+* `attackType` is the attack's own type for an ultra rare (it has two); otherwise the attacker's.
+* A defender with two types is judged by its first.
 */
-function damageFor(attacker, attackPower, defender, answer, roll) {
+function damageFor(attacker, attackPower, defender, answer, roll, attackType) {
 	const a = speciesOf(attacker.species);
 	const d = speciesOf(defender.species);
-	const typeMult = typeMultiplier(a.type, d.type);
+	const typeMult = typeMultiplier(attackType ?? a.type, d.type);
 	const answerMult = answer ? TUNING.answerMultiplier[answer] : 1;
 	const side = answer ? 1 : TUNING.foeDamageScale;
 	const spread = 1 - roll * TUNING.damageSpread;
@@ -6639,8 +6880,11 @@ const activeFoe = (s) => s.foes[s.foeActive];
 /** The topic and band the next question for this action should come from. */
 function questionFor(state, action) {
 	let topic;
-	if (action.kind === "fight") topic = TYPE_TOPIC[speciesOf(activeMonster(state).species).type];
-	else if (action.kind === "catch") topic = TYPE_TOPIC[speciesOf(activeFoe(state).species).type];
+	if (action.kind === "fight") {
+		const species = speciesOf(activeMonster(state).species);
+		const attack = action.attack === void 0 ? void 0 : species.attacks[action.attack];
+		topic = TYPE_TOPIC[attack ? attackType(species, attack) : species.type];
+	} else if (action.kind === "catch") topic = TYPE_TOPIC[speciesOf(activeFoe(state).species).type];
 	else return null;
 	return {
 		topic,
@@ -6653,7 +6897,7 @@ function foeAttackIndex(state, random) {
 	const species = speciesOf(activeFoe(state).species);
 	const target = speciesOf(activeMonster(state).species);
 	const best = species.attacks.reduce((bi, a, i, all) => {
-		const score = (x) => x.power * typeMultiplier(species.type, target.type);
+		const score = (x) => x.power * typeMultiplier(attackType(species, x), target.type);
 		return score(a) > score(all[bi]) ? i : bi;
 	}, 0);
 	const smart = random();
@@ -6695,7 +6939,7 @@ function play(prev, action, random) {
 				"wrong"
 			].includes(action.answer)) refuse$1("Unknown answer result");
 			s.questions += 1;
-			const hit = damageFor(me(), attack.power, foe(), action.answer, random());
+			const hit = damageFor(me(), attack.power, foe(), action.answer, random(), attackType(speciesOf(me().species), attack));
 			foe().hp = Math.max(0, foe().hp - hit.damage);
 			events.push({
 				kind: "attack",
@@ -6802,7 +7046,7 @@ function play(prev, action, random) {
 	if (foeActs && s.phase === "choose") {
 		const f = foe();
 		const attack = speciesOf(f.species).attacks[foeAttackIndex(s, random)];
-		const hit = damageFor(f, attack.power, me(), void 0, random());
+		const hit = damageFor(f, attack.power, me(), void 0, random(), attackType(speciesOf(f.species), attack));
 		me().hp = Math.max(0, me().hp - hit.damage);
 		events.push({
 			kind: "attack",
@@ -29600,7 +29844,14 @@ const ENCOUNTERS = {
 		max: 3
 	},
 	/** How many tiles ahead a trainer sees you unless the map says otherwise. */
-	trainerSight: 4
+	trainerSight: 4,
+	/** How likely each entry in a map's wild list is, by rarity (ultra rares never turn up in the grass). */
+	rarityWeight: {
+		common: 8,
+		uncommon: 4,
+		rare: 1,
+		ultra: 0
+	}
 };
 function nextGrassSteps(dice, fast) {
 	const r = fast ? ENCOUNTERS.fastSteps : ENCOUNTERS.steps;
@@ -29613,7 +29864,7 @@ function wildLevels(area, far) {
 	return far ? [mid, high] : [low, mid];
 }
 /** The species a wild list entry gives at a level: a family grows with the level, a fixed species stays. */
-const wildSpecies = (entry, level) => FAMILIES[entry] ? formAt(entry, level) : entry;
+const wildSpecies = (entry, level) => isFamily(entry) ? formAt(entry, level) : entry;
 /** The looks a pupil can choose for their trainer (James's painted pictures boy-01 … girl-12). A save may have one of these, or none. */
 const LOOKS = ["boy", "girl"].flatMap((k) => Array.from({ length: 12 }, (_, i) => `${k}-${String(i + 1).padStart(2, "0")}`));
 function starterFor(type, nth) {
@@ -30155,7 +30406,7 @@ function checkSave(prev, raw, nowMs) {
 	summary.owned = w.owned.length;
 	summary.seen = w.seen.length;
 	summary.badges = w.badges.length;
-	summary.finalInTeam = w.team.filter((m) => speciesOf(m.species).stage === 3).length;
+	summary.finalInTeam = w.team.filter((m) => speciesOf(m.species).final).length;
 	return {
 		ok: true,
 		save: {
