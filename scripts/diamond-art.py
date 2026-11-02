@@ -89,6 +89,132 @@ PICTURES: dict[str, tuple[str, tuple[int, int]]] = {
     **{f'level-{n}': (level_words(n), (1072, 672)) for n in LEVELS},
 }
 
+# Everything that isn't a level background shares one look on every level: Storybook (James, 2 Nov 2026).
+STORY = STYLES['a']
+# Cut-outs leave out the paper grain, which made the model paint a cream frame round them.
+CUTOUT = "Bright storybook painting for a children's picture book, soft painted edges, warm gentle light, rich happy colours. "
+SPRITE = (' Single object, centred, the whole object visible with space around it, on a plain pure white background, '
+          'clean empty white all around, suitable for children aged 8 to 12.')
+NUGGET = ('Nugget, a cute New Zealand kiwi bird: a big round egg-shaped body with shaggy hair-like brown feathers, no neck, a tailless '
+          'round bottom, small dark eyes, and a very long slender pale beak like a drinking straw, as long as its whole body, '
+          'curving gently down to the ground, tiny wings, thick strong grey legs and big feet, wearing a small yellow hard hat, ')
+
+# DIAMOND-ART-PLAN.md section 4.1: each gem keeps its silhouette.
+GEMS = {
+    'quartz': 'a clear white tall six-sided quartz crystal with a pointed top, glassy, a little blue-white shine',
+    'jade': 'a pale mint-green smooth rounded jade pebble, polished, soft and waxy, all smooth curves',
+    'amethyst': 'a simple purple amethyst cluster of just three pointed crystals joined at the base, one tall in the middle and one shorter on each side',
+    'topaz': 'a golden-orange teardrop shaped topaz gem, pointed at the top, round at the bottom, faceted and warm',
+    'emerald': 'a deep green emerald-cut gem, a rectangle with four cut corners, stepped flat facets inside',
+    'sapphire': 'a bright blue round brilliant-cut sapphire, seen from the top, many triangular facets, perfectly round',
+    'ruby': 'a red triangle shaped trillion-cut ruby, flat and seen from the top, three straight equal sides with gently rounded corners, faceted and glowing',
+    'fireOpal': 'an orange-red oval fire opal, smooth, with tiny flecks of yellow and red flame colour inside',
+    'starSapphire': 'a dark blue smooth half-round dome star sapphire lying flat, with a thin white six-pointed star shining on its surface',
+    'heartDiamond': 'a large white-pink sparkling heart-shaped diamond, many facets, bright sparkles, the finest gem in the world',
+}
+
+# Sections 4.4 to 4.6, 4.9 and 4.11 (worded positively): name -> words before the sprite line.
+THINGS = {
+    'rock-small': 'a small grey-brown rock, rounded and lumpy, a little moss, plain',
+    'rock-medium': 'a medium grey-brown boulder, lumpy, with a few cracks and moss',
+    'rock-big': 'a big heavy dark grey boulder, rough and cracked, a little moss, clearly big and heavy',
+    'sack': 'a small tied brown cloth sack with a lumpy round bulge, a golden rope tie and a tiny sparkle, mysterious and friendly',
+    'crab': 'a small friendly cave crab seen from the side, round orange-brown shell, two little eyes on stalks, two small claws raised, six legs, cute and smiling',
+    'winch': 'a chunky wooden and iron winch with a big round drum wound with rope, a handle, mounted on a small stone base, seen from the front',
+    'claw': 'a strong metal claw hanging downwards with three curved prongs spread wide open, a ring at the top for a rope, steel-grey with a yellow band',
+    'boost-strong-winch': 'a small shiny winch with a big muscle-red drum and a lightning-bolt-shaped handle, strong and fast',
+    'boost-lucky-charm': 'a golden four-leaf clover charm on a short chain, green leaves, tiny sparkle',
+    'boost-extra-time': 'a round golden pocket watch with a plain blank cream face and two thick hands, a big green plus sign beside it, a tiny sparkle',
+    'boost-rock-blaster': 'a stubby friendly brass toy cannon on little wheels with a bright blue spark at its tip',
+    'winch-steam': 'a small brass steam-engine winch with a chimney, a round boiler and a big drum wound with rope, white puffs painted on the chimney',
+    'winch-rocket': 'a winch built like a silver rocket on its side, red fins, a round window, the rope drum on the back, bright flame nozzle',
+    'winch-snail': 'a giant friendly cartoon snail whose shell is a big wooden spool with thick brown rope coiled round and round it, smiling face, antennae',
+    'winch-pirate': 'a wooden pirate ship steering wheel with eight spokes and handles, fixed on a post, wound with rope',
+    'winch-hamster': 'a metal hamster wheel on a stand with a happy brown hamster running inside, the rope wound round the axle',
+    'icon-sparkles': 'a cluster of bright golden four-pointed sparkles of different sizes',
+    'icon-bubbles': 'a group of shiny see-through soap bubbles of different sizes with rainbow shine',
+    'icon-flames': 'a friendly orange and yellow flame with a red edge',
+    'icon-confetti': 'a burst of colourful confetti pieces and ribbons',
+    'icon-music': 'a few bright blue and pink music notes of different sizes',
+    'icon-fireworks': 'a firework bursting in red, gold and blue streaks',
+    'icon-disco': 'a silver mirror disco ball with small square mirrors and tiny light beams',
+    'icon-gem-rain': 'small coloured gems falling like raindrops from the top, red, blue, green and yellow',
+    'icon-trumpet': 'a shiny brass trumpet with three small music notes coming from it',
+    'icon-happy-dance': 'a tiny round brown kiwi bird with a very long thin beak like a drinking straw, in a yellow hard hat dancing with one foot up and wings out, small hearts and stars round it',
+    'icon-gem-rain-deluxe': 'a shower of many sparkling gems of all colours falling, with golden sparkles and a bright shine',
+}
+
+NUGGET_POSES = {
+    'wave': 'waving one wing high, happy open-beak smile, standing',
+    'point': 'pointing one wing out to the side as if showing the way, bright eyes, standing',
+    'cheer': 'both wings thrown up in the air, jumping with joy, tiny sparkles round',
+    'oops': 'both wings on the hat, cheeks puffed, a wobbly worried smile, a sweat drop, kind and funny',
+}
+
+HATS = {
+    'pirate': 'a black pirate hat with a white skull-and-crossbones badge',
+    'crown': 'a golden crown with red and blue jewels',
+    'wizard': 'a tall purple pointed wizard hat with gold stars and a floppy tip',
+    'chef': "a tall white puffy chef's hat",
+    'astronaut': 'a round clear glass astronaut helmet with a white collar, the beak poking out through a small opening',
+    'top-hat': 'a tall black top hat with a red ribbon',
+    'miner-lamp': 'a yellow hard hat with a bright round lamp on the front shining a warm light',
+}
+
+# Section 4.7. Only the open claw is painted: the game squeezes it shut when it grabs, so the two always match
+# (painting a closed one too gave a different object or one still open, 2 Nov 2026).
+HEADS = {
+    'golden': 'a gleaming solid gold three-pronged claw with a little ruby in the middle, prongs spread wide',
+    'dino': 'a green cartoon dinosaur head with big friendly teeth, hanging upside down by a ring on top of its head, jaws wide open',
+    'robot': 'a chunky grey robot hand with three metal fingers, blue lights and rivets, fingers spread',
+    'crab': 'just the pincer of a crab on its own, shaped like a big letter V: two thick curved orange shell fingers with white tips, pointing downwards, open wide',
+    'octopus': 'just one long curling purple tentacle on its own, the tentacle only, with two rows of round suckers, hanging straight down, its tip curled open',
+    'magnet': 'a giant red horseshoe magnet hanging with its curved top up and its two silver tips pointing down, with a small sparkle glow at the tips',
+    'chicken': 'a floppy yellow rubber chicken toy hanging upside down by its feet, its head at the bottom, funny face, wings stretched wide',
+    'fork': 'a huge silver dinner fork with three long tines, hanging handle up with the tines pointing down, tines spread slightly apart',
+    'dragon': 'one small scaly black and red dragon foot with three curved golden-tipped talons spread wide, pointing downwards, the whole foot visible with white space above it',
+    'ice': 'a three-pronged claw made of clear pale blue ice crystals with frost sparkles, pointing downwards, crystal prongs apart',
+    'glove': 'a big white cartoon glove with a red cuff, hanging by its cuff, hand open flat, fingers spread',
+    'diamond': 'a three-pronged claw made of clear sparkling diamond facets with a rainbow shine, pointing downwards, prongs spread wide',
+}
+
+# Section 4.8: tall narrow tiles, the rope down the middle. Laser Beam is drawn in code as a glowing line: every painted try
+# came out as a dotted strip.
+ROPES = {
+    'rainbow': 'a thick twisted rope in red, orange, yellow, green, blue and purple strands',
+    'vine': 'a green jungle vine with small leaves and curling tendrils',
+    'sausage': 'a chain of pink-brown linked sausages, funny and plump',
+    'spaghetti': 'a long strand of cooked yellow spaghetti, wavy and glossy',
+    'candy': 'a rope of red and white candy-cane stripes, glossy',
+    'bike': 'a silver bicycle chain with shiny links',
+    'star': 'a golden cord with little five-pointed stars along it',
+}
+
+SQUARE = (832, 832)
+PICTURES |= {
+    **{f'gem-{g}': (CUTOUT + w.capitalize() + '.' + SPRITE, SQUARE) for g, w in GEMS.items()},
+    **{f'book-{g}': (STORY + w.capitalize() + ', large, resting on a small cushion of dark rock and moss, soft glow behind it, '
+                     'the whole gem in the middle, calm plain dark-to-light background.', SQUARE) for g, w in GEMS.items()},
+    **{name: (CUTOUT + w.capitalize() + '.' + SPRITE, SQUARE) for name, w in THINGS.items()},
+    **{f'nugget-{p}': (CUTOUT + NUGGET + w + '.' + SPRITE, SQUARE) for p, w in NUGGET_POSES.items()},
+    **{f'hat-{h}': (CUTOUT + NUGGET.replace('wearing a small yellow hard hat, ', '') + 'standing and smiling, waving one wing, wearing '
+                    + w + '.' + SPRITE, SQUARE) for h, w in HATS.items()},
+    **{f'head-{h}': (CUTOUT + w.capitalize() + ', hanging from a small metal ring at the top.' + SPRITE, SQUARE) for h, w in HEADS.items()},
+    **{f'rope-{r}': (CUTOUT + w.capitalize() + ', seen straight on, running vertically down the middle of a tall narrow picture from the very '
+                     'top edge to the very bottom edge, plain pure white background on both sides, an even repeating pattern.', (448, 1344))
+       for r, w in ROPES.items()},
+    'stall': (CUTOUT + 'A little wooden market stall with a striped red and white awning, shelves with jars of coloured gems and an empty '
+              'wooden counter, friendly and cosy, seen from the front.' + SPRITE, (1024, 720)),
+    'map': (STORY + 'Tall portrait cut-away of the ground showing ten thin separate layers of equal height from top to bottom: green meadow topsoil, orange clay, grey '
+            'river gravel, a dark cave with glow-worms, a purple crystal hollow, a blue underground lake, a layer of cream fossils, '
+            'steaming hot springs, red lava rock, and at the very bottom a glowing pink heart-shaped chamber with a tiny diamond; each '
+            'layer is a clear horizontal band with a wavy edge, a small wooden winch on the grass at the top.', (832, 1248)),
+    'card': (STORY + 'A cross-section of the ground like a slice of layer cake, seen from the side: a sunny green meadow at the top with a little wooden winch and a shiny claw hanging on a '
+             'rope, below it coloured layers going down through orange clay, grey gravel, a glowing cave with glow-worms, purple '
+             'crystals, a blue lake, and at the very bottom a shining pink heart-shaped diamond; gems of many colours and shapes set in '
+             'the layers; calm blue sky at the top, wide landscape.', (1216, 688)),
+}
+
 
 def graph(text: str, seed: int, width=1024, height=1024) -> dict:
     base = {

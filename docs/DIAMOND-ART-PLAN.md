@@ -169,6 +169,8 @@ Add the sprite line.
 
 ### 4.7 Claw heads (512 × 512, open and closed)
 
+**Changed 2 Nov 2026:** only the open picture is painted, for every claw (the starter too). The game squeezes it shut when it grabs. Painting a closed picture as well gave a different object, or one still open, so the pair never matched. That makes the Workshop 12 heads, not 24. The prompts now live in `HEADS` in `scripts/diamond-art.py`.
+
 Every head is shown hanging downwards, with a ring or hook at the top for the rope. Prompt: `{STYLE}, <head prompt>, <open or closed phrase>, + sprite line`. The **same shape and colours** must be used for the open and the closed picture.
 
 | Head | Head prompt | Open | Closed |
@@ -290,6 +292,8 @@ The order puts the pictures that change the most-used screens first (gems, then 
 
 - **Children:** every painting is checked for 8 to 11 year olds. The crab is cute, not scary; Magma Edge is warm, not frightening; Nugget's "oops" is funny, not sad.
 - **Original game:** all names and shapes are our own.
+- **Items painted (2 Nov 2026):** 80 pictures (everything except the backgrounds), picks in `docs/diamond-art/picks.json`, review page https://claude.ai/artifact/Nq7hv4L2wTJ8zoFjeT8Sym. Laser Beam rope is drawn in code. The Crab Pincer head came out best as a whole crab with both claws up. Star sapphire stars don't always have exactly six rays; that's fine, since the dome shape is what tells it apart. Originals are in `~/dragon-art-inbox/diamond-art/`.
+- **Item look (2 Nov 2026):** James chose Storybook for everything that isn't a level background. Cut-outs use the Storybook words without "paper grain", which made the model paint a cream frame. Nugget's prompt says "no neck" and "a beak like a drinking straw", because he kept coming out as a chick or duck.
 - **Style choice (2 Nov 2026):** James chose a different style for each level, **backgrounds only**. Gems, rocks, the claw, rope, winch and Nugget keep one look on every level, so they read the same everywhere. That one look is still to choose (Storybook recommended).
 - **Level styles** (`LEVEL_STYLES` in `scripts/diamond-art.py`): 1 storybook watercolour, 2 plasticine, 3 coloured pencil, 4 glowing dark painting, 5 stained glass, 6 woodblock print, 7 explorer's notebook sketch, 8 layered paper-cut, 9 bold comic book, 10 shimmering pastel dream.
 - **Background picks so far** (tries named `level-N-T`, seeds fixed in the script): 1-3, 2-1, 3-2, 4-2, 5-3, 6-2, 7-1, 8-2, 9-4, 10-4. James OK'd these on 2 Nov 2026. Level 5's thin glass border is trimmed in the game. Earlier tries of 5, 9 and 10 drew a window frame, creatures or faces; the reworded prompts fixed them.
