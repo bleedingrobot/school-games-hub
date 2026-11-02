@@ -21,6 +21,7 @@ Names become file names with the same rule as art/painted.ts (slug). A slot is s
 than its PNG, so the script can be run again whenever more pictures arrive. Pictures are done one at a time, because
 rembg wants a lot of memory.
 """
+from __future__ import annotations
 import re
 import sys
 from pathlib import Path

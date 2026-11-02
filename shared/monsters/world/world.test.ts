@@ -34,7 +34,7 @@ function walk(state: WorldState, route: Dir[], o: WorldOptions = opts) {
 
 describe('the maps', () => {
   it('all load, and the whole world checks out (every door leads somewhere, everything can be reached)', () => {
-    expect(Object.keys(WORLD_MAPS)).toHaveLength(20); // the town, the healing centre, six areas, six towers of two rooms
+    expect(Object.keys(WORLD_MAPS)).toHaveLength(23); // the town, the healing centre, six areas, six towers of two rooms, three bonus areas
     expect(checkWorld(WORLD_MAPS, { map: 'harbour-town', spot: 'start' })).toEqual([]);
   });
 

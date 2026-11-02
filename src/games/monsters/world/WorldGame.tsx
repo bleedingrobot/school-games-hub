@@ -14,7 +14,11 @@ import { maxHpOf, type Monster } from '../../../../shared/monsters/rules';
 import { RAW_MAPS, WORLD_MAPS } from '../../../../shared/monsters/maps';
 import type { TiledMap } from '../../../../shared/monsters/world/mapLoader';
 import type { Dir, GameMap, Thing, WorldState } from '../../../../shared/monsters/world/types';
-import { badgeName, finishBattle, meet, placeAt, trainerBattle, wildBattle, type InteractOutcome, type Maps, type WorldOptions } from '../../../../shared/monsters/world/world';
+import { badgeName, finishBattle, giantBattle, meet, placeAt, trainerBattle, wildBattle, type InteractOutcome, type Maps, type WorldOptions } from '../../../../shared/monsters/world/world';
+import type { Giant } from '../../../../shared/monsters/quests/giants';
+import { coldEggs, coldWords, eggWarmth } from '../../../../shared/monsters/quests/eggs';
+import { nextStep } from '../../../../shared/monsters/quests/nextStep';
+import { badgeStep, questMarks, questOf, type QuestOptions } from '../../../../shared/monsters/world/questWorld';
 import { describeLoot } from '../../../../shared/monsters/world/rewards';
 import { useSound } from '../../../sound';
 import { playSound, type GameSound } from '../../sounds';
@@ -25,7 +29,7 @@ import { monsterPic, personPic, preload, scenePic } from '../art/painted';
 import { nameOf } from '../text';
 import { MapMenu, type MenuPage } from './MapMenu';
 import { WalkController, type ControllerEvents } from './controller';
-import { drawFrame, scaleFor, tileAt, type Scene } from './render';
+import { drawFrame, paintedVersion, scaleFor, tileAt, type Scene } from './render';
 import type { WorldSettings } from './settings';
 import { loadSheets, paintMap, TileCache } from './tiles';
 import './world.css';
@@ -58,6 +62,8 @@ export interface WorldGameProps {
   packFor?: (topic: TopicId) => SkillPack;
   /** Tests set 0 to skip every pause. */
   timeScale?: number;
+  /** Today's NZ day, the pupil, and the days of play the database has counted (quests, the notice board, eggs and weather). */
+  quest?: QuestOptions;
 }
 
 interface TalkState {
@@ -67,20 +73,26 @@ interface TalkState {
   after?: () => void;
 }
 
-type Scene2 = { kind: 'walk' } | { kind: 'flash'; setup: BattleSetup; trainer?: Thing } | { kind: 'battle'; setup: BattleSetup; trainer?: Thing; key: number };
+type Scene2 = { kind: 'walk' } | { kind: 'flash'; setup: BattleSetup; trainer?: Thing; giant?: Giant } | { kind: 'battle'; setup: BattleSetup; trainer?: Thing; giant?: Giant; key: number };
 
 const KEYS: Record<string, Dir> = {
   ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right', W: 'up', S: 'down', A: 'left', D: 'right',
 };
 const TALK_KEYS = new Set([' ', 'Enter', 'e', 'E']);
 
+/** What changes the quest "!" marks: flags, quest steps and bits (team levels change only after a battle, which redraws anyway). */
+const questKey = (w: WorldState) => {
+  const q = w.quest;
+  return q ? `${q.flags.length}|${Object.values(q.quests).map((s) => `${s.step}.${s.n}`).join()}|${Object.values(q.bits).join()}|${w.badges.length}` : '';
+};
+
 export function WorldGame({
-  initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, resting = false, teleport, cheat, onBattling, onState, onBattle, onMoment, enabledTopics, random, packFor, timeScale = 1,
+  initial, settings, onSettingsChange, maps = WORLD_MAPS, rawMaps = RAW_MAPS, fast = false, resting = false, teleport, cheat, onBattling, onState, onBattle, onMoment, enabledTopics, random, packFor, timeScale = 1, quest = {},
 }: WorldGameProps) {
   const [world, setWorld] = useState<WorldState>(initial);
   const [scene, setScene] = useState<Scene2>({ kind: 'walk' });
   const [talk, setTalk] = useState<TalkState | null>(null);
-  const [menu, setMenu] = useState<{ page: MenuPage; from: 'menu' | 'object' } | null>(null);
+  const [menu, setMenu] = useState<{ page: MenuPage; from: 'menu' | 'object'; puzzle?: string } | null>(null);
   const [sheets, setSheets] = useState<TileCache | null>(null);
   const [loadError, setLoadError] = useState(false);
 
@@ -90,7 +102,7 @@ export function WorldGame({
   const scenes = useRef(new Map<string, Scene>());
   const fade = useRef({ at: -1e9 });
   const battleKey = useRef(0);
-  const opts = useMemo<WorldOptions>(() => ({ maps, fast, resting }), [maps, fast, resting]);
+  const opts = useMemo<WorldOptions>(() => ({ maps, fast, resting, ...quest }), [maps, fast, resting, quest.day, quest.player, quest.playDays]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Always-current copies, so the controller's callbacks never use an old one.
   const { soundOn } = useSound();
@@ -103,7 +115,7 @@ export function WorldGame({
 
   const ctrl = useRef<WalkController | null>(null);
 
-  const startBattle = useCallback((setup: BattleSetup, trainer?: Thing) => {
+  const startBattle = useCallback((setup: BattleSetup, trainer?: Thing, giant?: Giant) => {
     const ts = live.current.timeScale;
     cue('flash');
     // You have now met these monsters: they go in the monster book even if you run away.
@@ -117,10 +129,10 @@ export function WorldGame({
       window.matchMedia?.('(max-width: 900px)').matches ? scene.small : scene.wide,
       trainer && personPic(trainer.name),
     );
-    const go = () => setScene({ kind: 'battle', setup, trainer, key: ++battleKey.current });
+    const go = () => setScene({ kind: 'battle', setup, trainer, giant, key: ++battleKey.current });
     if (ts === 0) go();
     else {
-      setScene({ kind: 'flash', setup, trainer });
+      setScene({ kind: 'flash', setup, trainer, giant });
       window.setTimeout(go, 520 * ts);
     }
   }, [cue]);
@@ -150,11 +162,14 @@ export function WorldGame({
           pages: out.talk!.pages,
           after: out.challenge
             ? () => startBattle(trainerBattle(ctrl.current!.state, opts, out.challenge!), out.challenge)
-            : out.open
-              ? () => setMenu({ page: out.open!, from: 'object' })
+            : out.giant
+              ? () => startBattle(giantBattle(ctrl.current!.state, opts, out.giant!), undefined, out.giant)
+              : out.open
+              ? () => setMenu({ page: out.open!, from: 'object', puzzle: out.puzzle })
               : undefined,
         });
       },
+      onLines: (lines) => showTalk({ pages: lines }),
       onEnter: () => {
         // Walking through a door fades in from white: skipped for people who asked their computer for less motion.
         if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) fade.current.at = performance.now();
@@ -217,6 +232,19 @@ export function WorldGame({
     ctrl.current!.patch(cheat.apply(ctrl.current!.state));
   }, [cheat]);
 
+  // Eggs: checked once the map is ready. Gone cold (4 days in a row without a battle) or getting cold today.
+  const eggsChecked = useRef(false);
+  useEffect(() => {
+    if (eggsChecked.current || !quest.day || !sheets) return;
+    eggsChecked.current = true;
+    const q = questOf(ctrl.current!.state);
+    const r = coldEggs(q, quest.day);
+    if (r.lost.length) {
+      ctrl.current!.patch({ ...ctrl.current!.state, quest: r.q });
+      showTalk({ pages: [coldWords.lost(r.lost.length)] });
+    } else if (eggWarmth(q, quest.day) === 'cooling') showTalk({ pages: [coldWords.cooling] });
+  }, [quest.day, sheets, showTalk]);
+
   const walking = scene.kind === 'walk' && !talk && !menu;
   useEffect(() => {
     onBattling?.(scene.kind === 'battle');
@@ -259,11 +287,11 @@ export function WorldGame({
       const f = Math.max(0, 1 - (now - fade.current.at) / 280);
       const water = sc.frames.length > 1 ? Math.floor(now / 700) % 2 : 0;
       const actors = [...view.actors].map(([id, a]) => `${id}${a.x.toFixed(2)}${a.y.toFixed(2)}${a.facing}`).join();
-      const key = `${view.x.toFixed(3)},${view.y.toFixed(3)},${view.state.facing},${view.state.map},${water},${f.toFixed(2)},${view.noticed},${actors},${view.walking},${view.state.badges.length},${view.state.chests.length}`;
+      const key = `${view.x.toFixed(3)},${view.y.toFixed(3)},${view.state.facing},${view.state.map},${water},${f.toFixed(2)},${view.noticed},${actors},${view.walking},${view.state.badges.length},${view.state.chests.length},${questKey(view.state)},${paintedVersion()}`;
       if (key === lastKey) return;
       lastKey = key;
       const t0 = performance.now();
-      drawFrame(ctx, { width: size.current.w, height: size.current.h, scale: size.current.scale, scene: sc, view, now, fade: f });
+      drawFrame(ctx, { width: size.current.w, height: size.current.h, scale: size.current.scale, scene: sc, view, now, fade: f, quests: questMarks(view.state, maps[view.state.map]) });
       perf.draws += 1;
       perf.drawMs += performance.now() - t0;
       perf.worst = Math.max(perf.worst, performance.now() - t0);
@@ -361,22 +389,25 @@ export function WorldGame({
   const onBattleDone = (result: BattleResult) => {
     const c = ctrl.current!;
     const trainer = scene.kind === 'battle' ? scene.trainer : undefined;
+    const giant = scene.kind === 'battle' ? scene.giant : undefined;
+    const foes = scene.kind === 'battle' ? scene.setup.foes : [];
     if (scene.kind === 'battle') {
       live.current.onBattle?.(
         {
-          id: crypto.randomUUID(), map: c.state.map, ...(trainer ? { trainer: trainer.id } : {}),
+          id: crypto.randomUUID(), map: c.state.map, ...(trainer ? { trainer: trainer.id } : {}), ...(giant ? { giant: giant.id } : {}),
           setup: structuredClone(scene.setup), steps: result.steps, outcome: result.outcome,
         },
         trainer,
       );
     }
-    const { state: next, prize } = finishBattle(c.state, result, trainer);
+    const { state: next, prize } = finishBattle(c.state, { ...result, foes: foes.map((f) => f.species), ...(result.outcome === 'caught' ? { caught: foes[0] } : {}), ...(giant ? { giant } : {}) }, trainer, opts);
     c.jump(next);
     setScene({ kind: 'walk' });
     if (result.outcome === 'lost') {
       showTalk({ speaker: undefined, pages: ['Your team is tired, so you hurried back to your last healing spot. Everyone is rested and nothing was lost!'] });
       return;
     }
+    const questNews = prize.lines?.length ? () => showTalk({ pages: prize.lines! }) : undefined;
     // A trainer you have beaten says so, then pays: items the first time, and a badge for a Tower trainer.
     if (result.outcome === 'won' && trainer) {
       const prizeLines = [
@@ -386,11 +417,11 @@ export function WorldGame({
       const afterWords = prizeLines.length
         ? () => {
             cue(prize.badge ? 'badge' : 'chest');
-            showTalk({ pages: prizeLines });
+            showTalk({ pages: prizeLines, after: questNews });
           }
-        : undefined;
+        : questNews;
       showTalk({ speaker: trainer.name, pages: trainer.winPages?.length ? trainer.winPages : ['Well battled!'], after: afterWords });
-    }
+    } else questNews?.();
   };
 
   const map = maps[world.map];
@@ -466,6 +497,7 @@ export function WorldGame({
         <div className="mw-hud">
           <span className="mw-place">{map.name}</span>
           <TeamStrip team={world.team} />
+          <NextLine world={world} quest={quest} />
           <button type="button" className="mw-gear" onClick={() => setMenu({ page: 'main', from: 'menu' })} aria-haspopup="dialog" aria-keyshortcuts="M Escape">Menu</button>
         </div>
         {settings.dpad && (
@@ -492,6 +524,9 @@ export function WorldGame({
               stage.current?.focus({ preventScroll: true });
             }}
             onChange={(next) => ctrl.current!.patch(next)}
+            map={map}
+            questOpts={quest}
+            puzzle={menu.puzzle}
           />
         )}
       </div>
@@ -539,6 +574,13 @@ const TeamStrip = memo(function TeamStrip({ team }: { team: readonly Monster[] }
       })}
     </ul>
   );
+});
+
+/** The "what next" line: one sentence saying what to do now. */
+const NextLine = memo(function NextLine({ world, quest }: { world: WorldState; quest: QuestOptions }) {
+  const q = questOf(world);
+  const step = nextStep(q, { badges: world.badges, playDays: quest.playDays ?? 0, day: quest.day, player: quest.player, badgeStep: badgeStep(world) });
+  return <p className="mw-next" aria-live="polite"><span aria-hidden="true">➜ </span>{step.text}</p>;
 });
 
 /** Drawing cost, kept for the test page's smoothness check (read from the browser console: `__mmPerf`). */

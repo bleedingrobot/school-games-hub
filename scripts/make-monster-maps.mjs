@@ -9,6 +9,7 @@
 import { harbourTown, healingCentre } from './monster-maps/town.mjs';
 import { kauriBush } from './monster-maps/area1.mjs';
 import { fireMountain, glowwormCaves, harbourCity, shellBeach, snowyPeaks } from './monster-maps/areas.mjs';
+import { auroraHollow, lagoonIsle, steamValley } from './monster-maps/bonus.mjs';
 
 harbourTown();
 healingCentre();
@@ -18,3 +19,6 @@ fireMountain();
 snowyPeaks();
 glowwormCaves();
 harbourCity();
+steamValley();
+lagoonIsle();
+auroraHollow();

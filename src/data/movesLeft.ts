@@ -7,13 +7,22 @@ import { levelsOpen, type Player } from '../../shared/diamond/progress';
 import { nzDayNumber } from '../../shared/clans/clock';
 import { nzDate, rollDay } from '../../shared/lord/engine';
 import type { Hero } from '../../shared/lord/types';
+import { eggWarmth, isReady } from '../../shared/monsters/quests/eggs';
+import type { Egg } from '../../shared/monsters/quests/types';
 import { supabase } from '../lib/supabase';
 
 export interface RawMovesLeft {
   lord: { day: string; forestLeft: number; arenaLeft: number; masterTried: boolean; masterExtra: number; forestPerDay: number; level?: number; exp?: number } | null;
   clans: { fightsLeft: number; perDay: number } | null;
   /** Battles counted today and the daily limit (battleCap.ts). Missing until 20261027000300 is applied. */
-  monsters?: { today: number; perDay: number } | null;
+  monsters?: {
+    today: number;
+    perDay: number;
+    /** The eggs carried, the play-day count and the last battle day, for the egg line. Missing until the Q.5 migration is applied. */
+    eggs?: Pick<Egg, 'species' | 'found' | 'warmed'>[];
+    playDays?: number;
+    lastDay?: string | null;
+  } | null;
   /** The school's Clan Quest season clock (read with readClock). Missing until 20261029000700 is applied. */
   season?: unknown;
   /** The school's Dragon Maths season { start, on } (read with readLordSeason). Missing until 20261030000100 is applied. */
@@ -74,6 +83,18 @@ export function movesFromRaw(raw: RawMovesLeft | null | undefined, now: Date = n
       chips: [{ emoji: '⚔️', text: `${left} of ${monsters.perDay} battles`, empty: left === 0 }],
       allDone: left === 0,
     };
+    const eggs = monsters.eggs ?? [];
+    if (eggs.length) {
+      // A nudge to come back: an egg about to go cold comes first, then eggs ready to hatch.
+      const ready = eggs.filter((e) => isReady(e as Egg, monsters.playDays ?? 0)).length;
+      const warmth = eggWarmth({ eggs: eggs as Egg[], lastDay: monsters.lastDay ?? undefined }, nzDate(now));
+      const chip: MoveChip | null = warmth === 'cooling'
+        ? { emoji: '🥶', text: 'Battle today or your eggs go cold!', empty: false }
+        : warmth === 'cold' ? null
+        : ready ? { emoji: '🐣', text: `${plural(ready, 'egg', 'eggs')} ready to hatch!`, empty: false }
+        : { emoji: '🥚', text: `${plural(eggs.length, 'egg', 'eggs')} warming`, empty: false };
+      if (chip) out.monsters.chips.push(chip);
+    }
   }
   const diamond = raw?.diamond;
   if (diamond && typeof diamond.deepest === 'number') {

@@ -1,6 +1,6 @@
 /**
  * The menu on the map (Menu button, or M / Escape): Team, Bag, Monster book, Badges, Settings,
- * Change my look (once the painted looks are there), and the Monster box (also opened by the box in Harbour Town). All normal HTML in the same
+ * World map, Change my look (once the painted looks are there), and the Monster box (also opened by the box in Harbour Town). All normal HTML in the same
  * Sheet look as the battle screens; walking is locked while one is open. Every change goes
  * through the pure rules in shared/monsters/world/menu.ts.
  */
@@ -20,8 +20,15 @@ import { MonsterBookScreen } from '../MonsterBookScreen';
 import { ITEM_LABEL } from '../text';
 import { BagList, Sheet, TeamList } from '../ui';
 import type { WorldSettings } from './settings';
+import type { GameMap } from '../../../../shared/monsters/world/types';
+import { questOf, type QuestOptions } from '../../../../shared/monsters/world/questWorld';
+import { BoardPage, EggPage, QuestLogPage, TinkerPage } from './QuestPages';
+import { PuzzlePage } from './PuzzlePage';
+import { WorldMapPage } from './WorldMapPage';
+import { WORLD_MAPS } from '../../../../shared/monsters/maps';
+import { puzzleById } from '../../../../shared/monsters/quests/puzzles';
 
-export type MenuPage = 'main' | 'team' | 'bag' | 'book' | 'badges' | 'settings' | 'box' | 'howto' | 'look';
+export type MenuPage = 'main' | 'team' | 'bag' | 'book' | 'badges' | 'settings' | 'box' | 'howto' | 'look' | 'quests' | 'eggs' | 'tinker' | 'board' | 'puzzle' | 'world';
 
 export interface MapMenuProps {
   page: MenuPage;
@@ -33,12 +40,17 @@ export interface MapMenuProps {
   onGo: (page: MenuPage) => void;
   onClose: () => void;
   onChange: (next: WorldState) => void;
+  /** The map you are on (the egg basket hatches here) and today's day, pupil and play days. */
+  map?: GameMap;
+  questOpts?: QuestOptions;
+  /** The puzzle on the puzzle page (its id in quests/puzzles.ts). */
+  puzzle?: string;
 }
 
-const TITLES: Record<MenuPage, string> = { main: 'Menu', team: 'Team', bag: 'Bag', book: 'Monster book', badges: 'Badges', settings: 'Settings', box: 'Monster box', howto: 'How to play', look: 'Change my look' };
+const TITLES: Record<MenuPage, string> = { main: 'Menu', team: 'Team', bag: 'Bag', book: 'Monster book', badges: 'Badges', settings: 'Settings', box: 'Monster box', howto: 'How to play', look: 'Change my look', quests: 'Quests', eggs: 'Egg basket', tinker: 'The Tinker', board: 'Notice board', puzzle: 'Puzzle', world: 'World map' };
 const topicLabel = (id: string) => TOPICS.find((t) => t.id === id)?.label ?? id;
 
-export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, onClose, onChange }: MapMenuProps) {
+export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, onClose, onChange, map, questOpts = {}, puzzle }: MapMenuProps) {
   const root = useRef<HTMLDivElement>(null);
   const [message, setMessage] = useState('');
   const back = () => (page === 'main' || from === 'object' ? onClose() : onGo('main'));
@@ -72,15 +84,17 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
         }
       }}
     >
-      <Sheet title={TITLES[page]} reading={page === 'howto' || page === 'badges'} onBack={back} backLabel={page === 'main' || from === 'object' ? 'Close' : 'Back'}>
+      <Sheet title={page === 'puzzle' ? (puzzleById(puzzle ?? '')?.title ?? TITLES.puzzle) : TITLES[page]} reading={page === 'howto' || page === 'badges'} onBack={back} backLabel={page === 'main' || from === 'object' ? 'Close' : 'Back'}>
         {page === 'main' && (
           <nav aria-label="Menu" className="mm-main">
-            {(['team', 'bag', 'book', 'badges', 'settings', 'howto', ...(hasLooks() ? ['look' as const] : [])] as const).map((p) => (
+            {(['team', 'bag', 'world', 'quests', 'eggs', 'book', 'badges', 'settings', 'howto', ...(hasLooks() ? ['look' as const] : [])] as const).map((p) => (
               <button key={p} type="button" className={`mb-btn mm-main__btn mm-main__btn--${p}`} onClick={() => onGo(p)}>
                 {TITLES[p]}
                 {p === 'book' && <small>{bookCounts(world).owned} owned · {bookCounts(world).seen} met</small>}
                 {p === 'badges' && <small>{world.badges.length} of {AREAS.length}</small>}
                 {p === 'look' && <small>{world.look ? lookName(world.look) : 'Not chosen yet'}</small>}
+                {p === 'quests' && <small>{Object.keys(questOf(world).quests).length} going</small>}
+                {p === 'eggs' && <small>{questOf(world).eggs.length} of 3</small>}
                 {p === 'team' && <small>{world.team.length} of 6{world.box.length ? `, ${world.box.length} in the box` : ''}</small>}
               </button>
             ))}
@@ -91,6 +105,12 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
         {page === 'bag' && <BagPage world={world} apply={apply} />}
         {page === 'book' && <MonsterBookScreen seen={world.seen} owned={world.owned} />}
         {page === 'badges' && <BadgesPage world={world} />}
+        {page === 'quests' && <QuestLogPage world={world} />}
+        {page === 'eggs' && map && <EggPage world={world} apply={apply} map={map} opts={questOpts} />}
+        {page === 'tinker' && <TinkerPage world={world} apply={apply} />}
+        {page === 'board' && <BoardPage world={world} apply={apply} opts={questOpts} />}
+        {page === 'puzzle' && puzzle && <PuzzlePage world={world} apply={apply} id={puzzle} opts={questOpts} />}
+        {page === 'world' && <WorldMapPage world={world} maps={WORLD_MAPS} />}
         {page === 'howto' && <HowToPlayBody />}
         {page === 'look' && (
           <LookPicker

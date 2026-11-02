@@ -5,11 +5,30 @@
  */
 import { cameraFor } from '../../../../shared/monsters/world/walking';
 import type { GameMap } from '../../../../shared/monsters/world/types';
+import { DEFAULT_LOOK, mapPic, propPic, slug, walkerPic } from '../art/painted';
 import type { WalkView } from './controller';
 import { TILE, type TileCache } from './tiles';
 
 export const PLAYER_SPRITE = 98;
 const BACKDROP = '#1e293b';
+/** A painted walker is this many tiles tall, standing with its feet at the bottom of its tile. */
+const WALKER_TILES = 1.5;
+
+// Painted pictures, loaded the first time a frame wants one. `paintedVersion` grows as each arrives, so the frame is drawn again.
+const images = new Map<string, HTMLImageElement>();
+let version = 0;
+export const paintedVersion = () => version;
+function ready(url: string | undefined): HTMLImageElement | undefined {
+  if (!url) return undefined;
+  let img = images.get(url);
+  if (!img) {
+    img = new Image();
+    img.onload = () => (version += 1);
+    img.src = url;
+    images.set(url, img);
+  }
+  return img.complete && img.naturalWidth ? img : undefined;
+}
 
 export interface Scene {
   map: GameMap;
@@ -32,6 +51,8 @@ export interface FrameInput {
   now: number;
   /** 0 = clear, 1 = black: a quick fade after going through a door. */
   fade: number;
+  /** People with a quest step for you (a gold "!" over them). */
+  quests?: ReadonlySet<string>;
 }
 
 /** The tile at a point on the canvas (in the same pixels as the canvas), for taps. */
@@ -54,38 +75,78 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
   ctx.fillRect(0, 0, W, H);
   const { offX, offY } = offsets(f);
 
-  const frame = frames[Math.floor(now / 700) % frames.length];
   const mapW = map.width * TILE;
   const mapH = map.height * TILE;
   const sx0 = Math.max(0, Math.floor(offX / S));
   const sy0 = Math.max(0, Math.floor(offY / S));
   const sx1 = Math.min(mapW, Math.ceil((offX + W) / S));
   const sy1 = Math.min(mapH, Math.ceil((offY + H) / S));
-  if (sx1 > sx0 && sy1 > sy0) ctx.drawImage(frame, sx0, sy0, sx1 - sx0, sy1 - sy0, sx0 * S - offX, sy0 * S - offY, (sx1 - sx0) * S, (sy1 - sy0) * S);
+  // The painted map once it has loaded (drawn smooth), else the tile map (drawn sharp).
+  const pics = mapPic(map.id);
+  const ground = ready(pics.ground);
+  const above = ready(pics.above);
+  const layer = (img: CanvasImageSource, k: number) => ctx.drawImage(img, sx0 * k, sy0 * k, (sx1 - sx0) * k, (sy1 - sy0) * k, sx0 * S - offX, sy0 * S - offY, (sx1 - sx0) * S, (sy1 - sy0) * S);
+  if (sx1 > sx0 && sy1 > sy0) {
+    if (ground) {
+      ctx.imageSmoothingEnabled = true;
+      layer(ground, ground.naturalWidth / mapW);
+    } else layer(frames[Math.floor(now / 700) % frames.length], 1);
+  }
 
-  // Things that change: a gate while it is shut, and chests (closed, then open).
-  const stamp = (gid: number, x: number, y: number) => {
+  // Things that change: a gate while it is shut, chests (closed, then open), a sleeping giant until it is woken.
+  // Each is painted when there is a picture, else its tile.
+  const stamp = (gid: number, x: number, y: number, painted?: string) => {
+    const img = ready(painted && propPic(painted));
+    const px = Math.round(x * TILE * S - offX);
+    const py = Math.round(y * TILE * S - offY);
+    if (img) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(img, px, py, TILE * S, TILE * S);
+      return;
+    }
+    ctx.imageSmoothingEnabled = false;
     const t = cache.tile(gid);
-    if (t) ctx.drawImage(t, 0, 0, TILE, TILE, Math.round(x * TILE * S - offX), Math.round(y * TILE * S - offY), TILE * S, TILE * S);
+    if (t) ctx.drawImage(t, 0, 0, TILE, TILE, px, py, TILE * S, TILE * S);
   };
-  for (const g of map.gates) if (!view.state.badges.includes(g.badge)) stamp(g.gid, g.x, g.y);
-  for (const t of map.things) if (t.kind === 'chest' && t.gid) stamp(view.state.chests.includes(t.id) ? t.openGid! : t.gid, t.x, t.y);
+  for (const g of map.gates) if (!view.state.badges.includes(g.badge)) stamp(g.gid, g.x, g.y, 'gate');
+  for (const t of map.things) if (t.kind === 'chest' && t.gid) stamp(view.state.chests.includes(t.id) ? t.openGid! : t.gid, t.x, t.y, view.state.chests.includes(t.id) ? 'chest-open' : 'chest');
+  for (const t of map.things) if (t.kind === 'giant' && t.gid && !view.state.quest?.flags.includes(`woke:${t.giant}`)) stamp(t.gid, t.x, t.y, `giant-${t.giant}`);
 
   // People, back to front.
   const bob = view.walking && Math.floor(now / 100) % 2 ? -S : 0;
-  const people: { x: number; y: number; img: HTMLCanvasElement | null; bob: number; id: string }[] = [];
+  // A painted walker (taller than a tile, feet on its tile) when there is one, else the Tiny Dungeon sprite.
+  const people: { x: number; y: number; img: HTMLCanvasElement | null; painted?: HTMLImageElement; bob: number; id: string }[] = [];
   for (const t of map.things) {
     if (t.sprite === undefined) continue;
     const a = view.actors.get(t.id);
-    people.push({ id: t.id, x: a?.x ?? t.x, y: a?.y ?? t.y, img: cache.person(t.sprite, a?.facing ?? t.facing), bob: 0 });
+    const facing = a?.facing ?? t.facing;
+    people.push({ id: t.id, x: a?.x ?? t.x, y: a?.y ?? t.y, img: cache.person(t.sprite, facing), painted: ready(walkerPic(slug(t.name), facing)), bob: 0 });
   }
-  people.push({ id: 'you', x: view.x, y: view.y, img: cache.person(PLAYER_SPRITE, view.state.facing), bob });
+  const me = ready(walkerPic(view.state.look ?? DEFAULT_LOOK, view.state.facing));
+  people.push({ id: 'you', x: view.x, y: view.y, img: cache.person(PLAYER_SPRITE, view.state.facing), painted: me, bob });
   people.sort((a, b) => a.y - b.y);
   for (const p of people) {
-    if (!p.img) continue;
-    ctx.drawImage(p.img, 0, 0, TILE, TILE, Math.round(p.x * TILE * S - offX), Math.round(p.y * TILE * S - offY + p.bob), TILE * S, TILE * S);
-    if (view.noticed === p.id) drawExclaim(ctx, Math.round(p.x * TILE * S - offX) + 5 * S, Math.round(p.y * TILE * S - offY) - 9 * S, S);
+    const px = Math.round(p.x * TILE * S - offX);
+    const py = Math.round(p.y * TILE * S - offY + p.bob);
+    if (p.painted) {
+      const h = WALKER_TILES * TILE * S;
+      const w = (h * p.painted.naturalWidth) / p.painted.naturalHeight;
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(p.painted, px + (TILE * S - w) / 2, py + TILE * S - h, w, h);
+    } else if (p.img) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(p.img, 0, 0, TILE, TILE, px, py, TILE * S, TILE * S);
+    } else continue;
+    const above = Math.round(p.y * TILE * S - offY) - (p.painted ? 17 : 9) * S;
+    if (view.noticed === p.id) drawExclaim(ctx, px + 5 * S, above, S);
+    else if (f.quests?.has(p.id)) drawExclaim(ctx, px + 5 * S, above, S, true);
   }
+  // What stands in front of the walkers on a painted map: tree tops and roofs.
+  if (above && sx1 > sx0 && sy1 > sy0) {
+    ctx.imageSmoothingEnabled = true;
+    layer(above, above.naturalWidth / mapW);
+  }
+  ctx.imageSmoothingEnabled = false;
 
   if (f.fade > 0) {
     ctx.fillStyle = `rgba(0,0,0,${f.fade})`;
@@ -94,13 +155,14 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
 }
 
 /** A little "!" in a speech bubble, in pixel-art style. */
-function drawExclaim(ctx: CanvasRenderingContext2D, x: number, y: number, S: number) {
+function drawExclaim(ctx: CanvasRenderingContext2D, x: number, y: number, S: number, quest = false) {
   const px = (dx: number, dy: number, w: number, h: number, colour: string) => {
     ctx.fillStyle = colour;
     ctx.fillRect(x + dx * S, y + dy * S, w * S, h * S);
   };
   px(-1, 0, 7, 9, '#3f2631');
-  px(0, 1, 5, 7, '#ffffff');
-  px(2, 2, 1, 3, '#dc2626');
-  px(2, 6, 1, 1, '#dc2626');
+  // A trainer who has seen you: red on white. A quest for you: dark on gold.
+  px(0, 1, 5, 7, quest ? '#fbbf24' : '#ffffff');
+  px(2, 2, 1, 3, quest ? '#3f2631' : '#dc2626');
+  px(2, 6, 1, 1, quest ? '#3f2631' : '#dc2626');
 }

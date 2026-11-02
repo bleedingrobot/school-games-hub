@@ -24,8 +24,12 @@ export function harbourTown() {
   m.sign('pond-sign', 16, 14, 'Please do not feed the Minnowus.');
   m.person('Teacher', 84, 13, 15, 'left', 'Hello! I am your teacher. Welcome to Maths Monsters!\nEvery monster stands for one kind of maths. Fire is times tables, Water is adding and taking away.\nIn a battle your monster attacks by answering a maths question. Right answers hit hard, quick ones hit harder, and a wrong one still does a little.\nNobody ever loses anything for a wrong answer. If your team gets tired, you just wake up at the Healing Centre.\nWalk in the long grass up north to find wild monsters. Throw a ball to catch them!\nThe end of each area has a Topic Tower. Beat its trainer to win a badge and open the way to the next area.\nPress M or Escape to open your menu any time.\nGood luck!');
   m.person('Fisher', 111, 19, 14, 'left', 'The Minnowus here are so quick. I swear one swam off with my sandwich.');
+  m.mark('box', 3, 14); m.mark('book', 2, 14);
   m.wall(3, 14, TD(89)); m.object('box', 'Monster box', 3, 14, { text: 'This is your Monster box. It keeps the monsters that do not fit in your team of six.\nYour box holds {box} monsters. Let us have a look!' });
   m.wall(2, 14, TD(63)); m.object('book', 'Monster book', 2, 14, { text: 'This is the Monster book. It lists every monster you meet, with its type, its maths and how it grows.\nLet us have a look!' });
+  // Quests: the Tinker makes things from bits, and the notice board has three jobs a day.
+  m.tinker('Tinker', 86, 19, 10, 'left', 'I am the Tinker! Bring me bits from wild monsters and I will make you things.');
+  m.board('Notice Board', 21, 12, 'The notice board. Three new jobs every day!');
   m.warp('to-bush-left', 11, 0, 'kauri-bush', 11, 18, 'up');
   m.warp('to-bush-right', 12, 0, 'kauri-bush', 12, 18, 'up');
   m.warp('to-healing-centre', 6, 8, 'healing-centre', 5, 5, 'up');

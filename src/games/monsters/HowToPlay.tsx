@@ -10,6 +10,9 @@ import { BATTLES_PER_DAY } from '../../../shared/monsters/world/battleCap';
 import { REPEL_STEPS } from '../../../shared/monsters/world/rewards';
 import { MAX_TEAM } from '../../../shared/monsters/engine';
 import { TYPE_LABEL, TYPE_TOPIC, TYPES, strongAgainst } from '../../../shared/monsters/types';
+import { EGGS, HATCH_SPOTS } from '../../../shared/monsters/quests/eggs';
+import { GIANTS } from '../../../shared/monsters/quests/giants';
+import { QUESTS } from '../../../shared/monsters/quests/quests';
 
 const topicLabel = (id: string) => TOPICS.find((t) => t.id === id)?.label ?? id;
 
@@ -85,6 +88,49 @@ export function HowToPlayBody() {
         <p>
           There are {AREAS.length} places to explore: {AREAS.map((a) => a.name).join(', ')}. Each has a Tower with trainers inside. Beat the top trainer to win that area’s badge, and the next place opens.
           Each tower asks the maths of its type.
+        </p>
+      </section>
+
+      <section aria-labelledby="mht-quests">
+        <h3 id="mht-quests">Quests and puzzles</h3>
+        <p>
+          People with a <strong>!</strong> need your help: there are {QUESTS.length} story quests. The quest log in the Menu shows what to do next, and so does the line at the bottom of the map.
+          The notice board in Harbour Town has 3 small jobs every day. Puzzles hide around the map (stepping stones, ice slides, lanterns, locks and crates). After 3 tries you can ask for a hint.
+        </p>
+      </section>
+
+      <section aria-labelledby="mht-bits">
+        <h3 id="mht-bits">Bits and the Tinker</h3>
+        <p>
+          Winning a battle gives you <strong>bits</strong> of the monster’s type (leaves, shells, embers and more). Take them to the Tinker in Harbour Town to make balls, potions, an egg warmer,
+          and the special things that wake the sleeping giants.
+        </p>
+      </section>
+
+      <section aria-labelledby="mht-giants">
+        <h3 id="mht-giants">Sleeping giants</h3>
+        <p>
+          {GIANTS.length} giant monsters are asleep across paths, blocking secret places. Each needs the right badge and a special item from the Tinker to wake it. Beat it or catch it and the way opens.
+          A giant battle doesn’t count towards your {BATTLES_PER_DAY} a day.
+        </p>
+      </section>
+
+      <section aria-labelledby="mht-eggs">
+        <h3 id="mht-eggs">Eggs</h3>
+        <p>
+          Some quests, puzzles and nests give you an egg. You can carry {EGGS.basket}. An egg needs <strong>days of play</strong> to hatch: {EGGS.days.uncommon} days, or {EGGS.days.rare} or {EGGS.days.ultra} for
+          rarer ones. A day of play is a day you answer at least one question. When it’s ready, take it to its own place to hatch (a leafy egg likes {HATCH_SPOTS.leafy.place}).
+        </p>
+        <p>
+          <strong>Keep your eggs warm!</strong> If you have no battles for {EGGS.coldAfter} days in a row, your eggs go cold and are lost. The game warns you on the last day.
+        </p>
+      </section>
+
+      <section aria-labelledby="mht-rare">
+        <h3 id="mht-rare">Rare monsters and weather</h3>
+        <p>
+          Some monsters are <strong>uncommon</strong>, <strong>rare</strong> or even <strong>ultra rare</strong>, and they are a little stronger. Each place has its own weather each day, which brings out
+          monsters of one type, and the notice board says which rare monster has been spotted today and where.
         </p>
       </section>
 

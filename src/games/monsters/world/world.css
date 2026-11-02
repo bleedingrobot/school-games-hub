@@ -168,3 +168,83 @@
 .mm-howto p, .mm-howto ul { margin: 0 0 8px; }
 .mm-howto ul { padding-left: 20px; }
 .mm-howto kbd { display: inline-block; min-width: 1.4em; padding: 0 5px; border: 1px solid #94a3b8; border-bottom-width: 2px; border-radius: 5px; background: #f1f5f9; font: 700 0.85em/1.4 inherit; text-align: center; }
+
+/* Quests: the "what next" line on the map, and the quest pages in the menu. */
+.mw-next { position: absolute; top: 52px; left: 8px; right: 8px; margin: 0; max-width: 560px; padding: 6px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.92); color: #0f172a; font-size: 0.9rem; font-weight: 700; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25); pointer-events: none; }
+.mq { display: grid; gap: 12px; }
+.mq-bits { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.mq-bit { padding: 3px 10px; border-radius: 999px; background: #f1f5f9; font-size: 0.85rem; }
+.mq-bit--leaf { background: #dcfce7; } .mq-bit--water { background: #dbeafe; } .mq-bit--fire { background: #ffedd5; }
+.mq-bit--ice { background: #e0f2fe; } .mq-bit--spark { background: #fef9c3; } .mq-bit--stone { background: #e7e5e4; }
+.mq-quest { padding: 10px 14px; border-radius: 12px; background: #f8fafc; border: 1px solid #e2e8f0; }
+.mq-quest h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.mq-steps { margin: 0; padding-left: 22px; display: grid; gap: 4px; }
+.mq-steps .is-done { color: #64748b; text-decoration: line-through; }
+.mq-steps .is-now { font-weight: 800; }
+.mq-done { margin: 0; padding-left: 20px; }
+.mq-eggs, .mq-recipes, .mq-jobs { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.mq-egg, .mq-recipe, .mq-jobs li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; background: #f8fafc; border: 1px solid #e2e8f0; }
+.mq-egg > div, .mq-recipe > div { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.mq-jobs li > span { flex: 1; min-width: 0; }
+.mq-jobs li.is-done { opacity: 0.7; }
+.mq-egg__pic { width: 44px; height: 44px; object-fit: contain; flex: none; }
+.mq-egg__shape { width: 34px; height: 44px; border-radius: 50% 50% 46% 46% / 60% 60% 40% 40%; border: 2px solid #334155; background: #f8fafc; flex: none; }
+.mq-egg--leafy .mq-egg__shape { background: #86efac; } .mq-egg--water .mq-egg__shape { background: #93c5fd; } .mq-egg--warm .mq-egg__shape { background: #fdba74; }
+.mq-egg--cold .mq-egg__shape { background: #bae6fd; } .mq-egg--glowing .mq-egg__shape { background: #fde047; } .mq-egg--stony .mq-egg__shape { background: #d6d3d1; }
+.mq-egg.is-ready .mq-egg__shape, .mq-egg.is-ready .mq-egg__pic { animation: mq-wobble 1.2s ease-in-out infinite; }
+@keyframes mq-wobble { 0%, 100% { rotate: 0deg; } 25% { rotate: -8deg; } 75% { rotate: 8deg; } }
+@media (prefers-reduced-motion: reduce) { .mq-egg.is-ready .mq-egg__shape, .mq-egg.is-ready .mq-egg__pic { animation: none; } }
+.mq-pips { display: flex; gap: 4px; }
+.mq-pips span { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #64748b; }
+.mq-pips span.is-on { background: #16a34a; border-color: #16a34a; }
+
+/* Puzzles (PuzzlePage.tsx) */
+.mz-says { margin: 0; font-weight: 700; }
+.mz-note { margin: 0; min-height: 1.4em; font-weight: 800; color: #0369a1; }
+.mz-hint { margin: 0; padding: 8px 12px; border-radius: 10px; background: #fef9c3; }
+.mz-stones { display: grid; gap: 6px; padding: 10px; border-radius: 14px; background: var(--mz-pool, none) 0 0 / 96px, #7dd3fc; }
+.mz-stone, .mz-bank { min-height: 48px; border: 0; border-radius: 50%; background: var(--mz-stone, none) center / contain no-repeat, #e7e5e4; font: inherit; font-size: 1.1rem; font-weight: 900; color: var(--mb-ink); text-shadow: 0 1px 0 #fff; cursor: pointer; }
+.mz-stone { background-color: transparent; }
+.mz-bank { border: 2px solid var(--mb-ink); border-radius: 10px; background: #fde68a; }
+.mz-stone.is-here { box-shadow: 0 0 0 4px #fde047; }
+.mz-stone:focus-visible, .mz-bank:focus-visible, .mz-lantern:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
+.mz-play { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: center; }
+.mz-grid { display: grid; gap: 0; width: min(100%, 300px); padding: 4px; border-radius: 10px; background: #334155; }
+.mz-grid:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
+.mz-cell { aspect-ratio: 1; display: grid; place-items: center; font-size: clamp(1rem, 4vw, 1.5rem); line-height: 1; }
+.mz-cell--ice { background: var(--mz-ice, none) center / cover, #e0f2fe; }
+.mz-cell--rock { background: var(--mz-rock, none) center / 92% no-repeat, var(--mz-ice, none) center / cover, #94a3b8; }
+.mz-cell--chest { background: var(--mz-chest, none) center / 86% no-repeat, var(--mz-ice, none) center / cover, #fde68a; }
+.mz-cell--wharf { background: var(--mz-wharf, none) center / cover, #d6b48a; }
+.mz-cell--wall { background: var(--mz-wall, none) center / cover, #1e3a5f; }
+.mz-cell.is-spot { box-shadow: inset 0 0 0 3px #16a34a; }
+.mz-cell.has-crate { background: var(--mz-crate, none) center / 90% no-repeat, var(--mz-wharf, none) center / cover, #b45309; }
+.mz-arrows { display: grid; grid-template-columns: repeat(3, 84px); grid-template-areas: ". up ." "left . right" ". down ."; gap: 6px; justify-content: center; }
+.mz-arrows__up { grid-area: up; } .mz-arrows__down { grid-area: down; } .mz-arrows__left { grid-area: left; } .mz-arrows__right { grid-area: right; }
+.mz-lanterns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding: 14px; border-radius: 14px; background: #431407; }
+.mz-lantern { display: flex; align-items: flex-end; justify-content: center; width: 72px; height: 96px; padding: 0 0 4px; border: 0; border-radius: 14px; background: var(--mz-lantern, none) center top / 80px no-repeat, #57534e; color: #fff; font: inherit; font-size: 1.3rem; font-weight: 900; text-shadow: 0 1px 3px #000; cursor: pointer; }
+.mz-lantern.is-lit { background: var(--mz-lantern-lit, none) center top / 80px no-repeat, #92400e; box-shadow: 0 0 18px #fbbf24; }
+.mz-clues { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.mz-dials { display: flex; gap: 14px; justify-content: center; }
+.mz-dial { display: grid; gap: 6px; justify-items: center; }
+.mz-dial output { width: 56px; padding: 6px 0; border: 3px solid var(--mb-ink); border-radius: 10px; background: #fff; text-align: center; font-size: 1.8rem; font-weight: 900; }
+.mq-spotted { margin: 0; padding: 8px 12px; border-radius: 12px; background: #dbeafe; border: 1px solid #93c5fd; font-weight: 800; }
+.mq-cold { margin: 0; padding: 8px 12px; border-radius: 12px; background: #e0f2fe; border: 1px solid #38bdf8; color: #075985; font-weight: 800; }
+
+/* The world map page. */
+.mwm { display: grid; gap: 12px; }
+.mwm-map { position: relative; width: min(100%, calc(52vh * 1.6)); justify-self: center; aspect-ratio: 16 / 10; border-radius: 14px; overflow: hidden; background: #0e7490; }
+.mwm-map--plain { background: radial-gradient(ellipse at 50% 55%, #86efac 0 42%, #fde68a 43% 46%, #0e7490 47%); }
+.mwm-pic { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; user-select: none; }
+.mwm-place { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 2px; min-height: 36px; padding: 4px 10px; border: 2px solid var(--mb-ink); border-radius: 999px; background: #fffbeb; color: var(--mb-ink); font: inherit; font-size: 0.85rem; font-weight: 900; white-space: nowrap; cursor: pointer; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); }
+.mwm-place.is-shut { background: #d6d3d1; min-width: 36px; }
+/* The tap area reaches 44px past the drawn label, which stays small so labels don't cover each other on a phone. */
+.mwm-place::before { content: ''; position: absolute; inset: -4px; }
+.mwm-place.is-picked { background: #fde047; outline: 3px solid #fff; }
+.mwm-place:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
+.mwm-here { position: absolute; bottom: calc(100% + 4px); padding: 2px 8px; border-radius: 8px; background: #dc2626; color: #fff; font-size: 0.75rem; }
+.mwm-todo { position: absolute; top: -8px; right: -8px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #f59e0b; color: var(--mb-ink); font-size: 0.75rem; }
+.mwm-info h3 { margin: 0 0 6px; }
+.mwm-info p { margin: 0; }
+.mwm-pins { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.mwm-pins li.is-todo { font-weight: 800; }
