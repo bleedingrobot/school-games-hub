@@ -5,7 +5,7 @@
  */
 import { cameraFor } from '../../../../shared/monsters/world/walking';
 import type { GameMap } from '../../../../shared/monsters/world/types';
-import { mapPic, propPic, walkerPic } from '../art/painted';
+import { DEFAULT_LOOK, mapPic, propPic, slug, walkerPic } from '../art/painted';
 import type { WalkView } from './controller';
 import { TILE, type TileCache } from './tiles';
 
@@ -118,9 +118,9 @@ export function drawFrame(ctx: CanvasRenderingContext2D, f: FrameInput) {
     if (t.sprite === undefined) continue;
     const a = view.actors.get(t.id);
     const facing = a?.facing ?? t.facing;
-    people.push({ id: t.id, x: a?.x ?? t.x, y: a?.y ?? t.y, img: cache.person(t.sprite, facing), painted: ready(walkerPic(`person-${t.sprite}`, facing)), bob: 0 });
+    people.push({ id: t.id, x: a?.x ?? t.x, y: a?.y ?? t.y, img: cache.person(t.sprite, facing), painted: ready(walkerPic(slug(t.name), facing)), bob: 0 });
   }
-  const me = ready(walkerPic(view.state.look ?? '', view.state.facing)) ?? ready(walkerPic(`person-${PLAYER_SPRITE}`, view.state.facing));
+  const me = ready(walkerPic(view.state.look ?? DEFAULT_LOOK, view.state.facing));
   people.push({ id: 'you', x: view.x, y: view.y, img: cache.person(PLAYER_SPRITE, view.state.facing), painted: me, bob });
   people.sort((a, b) => a.y - b.y);
   for (const p of people) {

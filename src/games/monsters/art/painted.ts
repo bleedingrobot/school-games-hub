@@ -52,7 +52,7 @@ export const itemPic = (id: ItemId) => file('items', id);
 export const mapPic = (map: string): { ground?: string; above?: string } => ({ ground: file('maps', map), above: file('maps', `${map}-above`) });
 /** A painted thing that changes on a map: "chest", "chest-open", "gate", "giant-drowsea". */
 export const propPic = (name: string) => file('props', name);
-/** A painted walker facing one way: "person-84" for someone on a map (their Tiny Dungeon sprite), or a trainer look. */
+/** A painted walker facing one way: someone on a map by their name's slug ("hine", like their portrait), or a trainer look. */
 export const walkerPic = (who: string, facing: 'up' | 'down' | 'left' | 'right') => file('walkers', `${who}-${facing}`);
 
 /** Starts downloading pictures before a screen needs them (the two monsters as the battle flash starts). */
