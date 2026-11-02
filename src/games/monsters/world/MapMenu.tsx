@@ -25,6 +25,7 @@ import { questOf, type QuestOptions } from '../../../../shared/monsters/world/qu
 import { BoardPage, EggPage, QuestLogPage, TinkerPage } from './QuestPages';
 import { PuzzlePage } from './PuzzlePage';
 import { WorldMapPage } from './WorldMapPage';
+import { fastTravel } from '../../../../shared/monsters/world/worldMap';
 import { WORLD_MAPS } from '../../../../shared/monsters/maps';
 import { puzzleById } from '../../../../shared/monsters/quests/puzzles';
 
@@ -40,6 +41,8 @@ export interface MapMenuProps {
   onGo: (page: MenuPage) => void;
   onClose: () => void;
   onChange: (next: WorldState) => void;
+  /** Fast travel from the world map: the game at the new place, and anything arriving there counted. */
+  onTravel?: (next: WorldState, lines: string[]) => void;
   /** The map you are on (the egg basket hatches here) and today's day, pupil and play days. */
   map?: GameMap;
   questOpts?: QuestOptions;
@@ -50,7 +53,7 @@ export interface MapMenuProps {
 const TITLES: Record<MenuPage, string> = { main: 'Menu', team: 'Team', bag: 'Bag', book: 'Monster book', badges: 'Badges', settings: 'Settings', box: 'Monster box', howto: 'How to play', look: 'Change my look', quests: 'Quests', eggs: 'Egg basket', tinker: 'The Tinker', board: 'Notice board', puzzle: 'Puzzle', world: 'World map' };
 const topicLabel = (id: string) => TOPICS.find((t) => t.id === id)?.label ?? id;
 
-export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, onClose, onChange, map, questOpts = {}, puzzle }: MapMenuProps) {
+export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, onClose, onChange, onTravel, map, questOpts = {}, puzzle }: MapMenuProps) {
   const root = useRef<HTMLDivElement>(null);
   const [message, setMessage] = useState('');
   const back = () => (page === 'main' || from === 'object' ? onClose() : onGo('main'));
@@ -110,7 +113,16 @@ export function MapMenu({ page, from, world, settings, onSettingsChange, onGo, o
         {page === 'tinker' && <TinkerPage world={world} apply={apply} />}
         {page === 'board' && <BoardPage world={world} apply={apply} opts={questOpts} />}
         {page === 'puzzle' && puzzle && <PuzzlePage world={world} apply={apply} id={puzzle} opts={questOpts} />}
-        {page === 'world' && <WorldMapPage world={world} maps={WORLD_MAPS} />}
+        {page === 'world' && (
+          <WorldMapPage
+            world={world}
+            maps={WORLD_MAPS}
+            onTravel={onTravel && ((place) => {
+              const r = fastTravel(world, place, WORLD_MAPS, questOpts);
+              if (r) onTravel(r.state, r.lines);
+            })}
+          />
+        )}
         {page === 'howto' && <HowToPlayBody />}
         {page === 'look' && (
           <LookPicker

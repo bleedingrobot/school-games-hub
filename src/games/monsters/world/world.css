@@ -248,3 +248,4 @@
 .mwm-info p { margin: 0; }
 .mwm-pins { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
 .mwm-pins li.is-todo { font-weight: 800; }
+.mwm-travel { margin-top: 10px; }

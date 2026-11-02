@@ -524,6 +524,12 @@ export function WorldGame({
               stage.current?.focus({ preventScroll: true });
             }}
             onChange={(next) => ctrl.current!.patch(next)}
+            onTravel={(next, lines) => {
+              setMenu(null);
+              ctrl.current!.jump(next);
+              stage.current?.focus({ preventScroll: true });
+              if (lines.length) showTalk({ pages: lines });
+            }}
             map={map}
             questOpts={quest}
             puzzle={menu.puzzle}

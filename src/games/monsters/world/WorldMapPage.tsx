@@ -3,10 +3,11 @@
  * button on each place, and the key things in the place you pick. Places not open yet show a "?".
  * Everything on it comes from shared/monsters/world/worldMap.ts; this only draws it. The buttons are in
  * the reading order of the list, so a keyboard or screen reader goes through the places one by one.
+ * Pick an open place you are not in and "Travel here" takes you there (fast travel, worldMap.ts).
  */
 import { useState } from 'react';
 import type { GameMap, WorldState } from '../../../../shared/monsters/world/types';
-import { worldPlaces } from '../../../../shared/monsters/world/worldMap';
+import { landingFor, worldPlaces } from '../../../../shared/monsters/world/worldMap';
 
 // The painted world, made on the gaming computer (scripts/monsters-worldmap-art.py). Without it the places sit on a plain sea.
 const PICTURE = Object.values(import.meta.glob('./assets/world-map.webp', { eager: true, import: 'default' }) as Record<string, string>)[0];
@@ -26,7 +27,7 @@ export const PLACE_SPOTS: Record<string, [number, number]> = {
   'aurora-hollow': [65, 18],
 };
 
-export function WorldMapPage({ world, maps }: { world: WorldState; maps: Record<string, GameMap> }) {
+export function WorldMapPage({ world, maps, onTravel }: { world: WorldState; maps: Record<string, GameMap>; onTravel?: (place: string) => void }) {
   const places = worldPlaces(world, maps);
   const [pick, setPick] = useState(() => places.find((p) => p.here)?.id ?? places[0].id);
   const chosen = places.find((p) => p.id === pick) ?? places[0];
@@ -64,6 +65,9 @@ export function WorldMapPage({ world, maps }: { world: WorldState; maps: Record<
               </li>
             ))}
           </ul>
+        )}
+        {onTravel && chosen.open && !chosen.here && landingFor(chosen.id, maps) && (
+          <button type="button" className="mb-btn mb-btn--primary mwm-travel" onClick={() => onTravel(chosen.id)}>Travel to {chosen.name}</button>
         )}
       </section>
     </div>
