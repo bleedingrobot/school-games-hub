@@ -324,7 +324,7 @@ const LOOKS: LevelLook[] = [
 ];
 
 /** How far down the painting its grass line is, for the levels whose sky reaches below the game's ground. */
-const SURFACE: Partial<Record<number, number>> = { 1: 0.34, 2: 0.38 };
+const SURFACE: Partial<Record<number, number>> = { 1: 0.34, 2: 0.36 };
 
 /**
  * The level's still background (sky or cave roof, the layers of earth, and the decorations that stay put). Gives true

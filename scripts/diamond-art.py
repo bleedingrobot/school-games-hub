@@ -63,7 +63,7 @@ LEVEL_STYLES = {
 # DIAMOND-ART-PLAN.md section 4.2: (place, top band). Backgrounds are empty scenery: the gems, claw and Nugget go on top.
 LEVELS = {
     1: ('dark brown crumbly topsoil with tiny roots and a few pebbles, a flat sunny meadow above', 'a bright blue sky, green grass line, a few daisies and a small wooden fence'),
-    2: ('smooth orange-red clay layers with gentle stripes, small roots at the edges', 'a green grassy bank edge and a pale sky with soft clouds'),
+    2: ('a slice through a bank of earth sculpted from modelling clay, many wavy stripes of orange, rust-red, cream and brown clay running across the whole picture right down to the bottom edge, little clay roots, pebbles and a curled pink clay worm near the left and right edges', 'a thin strip of green clay grass and a little pale blue sky'),
     3: ('grey and tan rounded river gravel and sand layers, small pebbles at the edges, a dry old river bed', 'a green bank above with reeds and a pale evening sky'),
     4: ('a calm dark blue-green cave with soft rock walls, tiny glow-worm lights in strings on the ceiling', 'a rocky cave ceiling with glowing glow-worm threads hanging down'),
     5: ('a hollow cave made of soft purple-blue glass rock, with pale crystal shapes along the far left and right edges, and plain purple-blue glass pieces in the middle', 'a cave ceiling with a few crystal points and a flat stone ledge'),
