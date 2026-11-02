@@ -59,7 +59,7 @@ export const PUZZLES: readonly Puzzle[] = [
   {
     id: 'snow-slide', kind: 'slide', title: 'The ice slide',
     says: 'Ice is slippery! You slide until you bump into a rock. Get to Ranger Fern’s chest.',
-    hint: 'Slide down first, then right.',
+    hint: 'Slide down, then right, then down again.',
     grid: ['S....#.', '.#.....', '......#', '#..#...', '.....C.', '..#....', '....#..'],
     prize: { bits: 'ice', n: 3 },
   },

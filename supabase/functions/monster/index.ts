@@ -7293,7 +7293,7 @@ const PUZZLES = [
 		kind: "slide",
 		title: "The ice slide",
 		says: "Ice is slippery! You slide until you bump into a rock. Get to Ranger Fern’s chest.",
-		hint: "Slide down first, then right.",
+		hint: "Slide down, then right, then down again.",
 		grid: [
 			"S....#.",
 			".#.....",
@@ -34390,7 +34390,7 @@ const QUESTS = [
 			{
 				do: "solve",
 				id: "snow-slide",
-				hint: "Slide across the ice to Ranger Fern’s chest"
+				hint: "Find the signpost by the snowy path and slide across the ice to the chest"
 			},
 			{
 				do: "catch",
