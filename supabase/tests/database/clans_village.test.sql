@@ -182,7 +182,7 @@ select is(public.clan_nightly(pg_temp.monday() + 6) ->> 'ran', 'false', 'the sam
 select is((public.clan_nightly(pg_temp.monday() + 7) ->> 'villagesClosed')::integer, 0, 'on the Monday the midnight job no longer closes village weeks');
 select is(pg_temp.chest(2), 1000, '... so nothing is built by it');
 -- clan_village_close itself stays (unused): closing last week by hand still works as it did.
-select public.clan_village_close(v.id, public.clan_nz_week(), current_date) from public.clan_villages v order by v.id;
+select public.clan_village_close(v.id, public.clan_nz_week(), (now() at time zone 'Pacific/Auckland')::date) from public.clan_villages v order by v.id;
 select is(pg_temp.chest(2), 750, 'Room 12 built the Smithy for 250 gold, taken from the chest');
 select is((select levels ->> 'smithy' from public.clan_villages where id = 2), '1', '... and it is level 1');
 select is((select levels ->> 'church' from public.clan_villages where id = 2), '0', '... and nothing else changed');
@@ -195,7 +195,7 @@ select is((select levels ->> 'smithy' from public.clan_villages where id = 2), '
 select is(public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'news' ->> 0, 'The class built the Smithy (level 1)!', 'the village sees its news');
 select is(public.load_clan(pg_temp.id('a'), pg_temp.req(5)) -> 'groupVillage' ->> 'smithy', '1', '... and the old group''s levels sent for conversion have the new Smithy');
 select is(public.load_clan(pg_temp.id('c'), pg_temp.req(5)) -> 'news', '[]'::jsonb, 'another village does not');
-select public.clan_village_close(3, public.clan_nz_week() + 1, current_date);
+select public.clan_village_close(3, public.clan_nz_week() + 1, (now() at time zone 'Pacific/Auckland')::date);
 select is(pg_temp.chest(3), 10, 'a chest that is too small builds nothing and keeps its gold');
 select is((select text from public.clan_news where village_id = 3), 'The class voted for the Smithy (level 1) but the chest was 240 gold short.',
   'a tie goes to the cheaper building, and the news says how short the chest was');

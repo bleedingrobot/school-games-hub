@@ -9,8 +9,9 @@ export const inMap = (map: GameMap, x: number, y: number) => Number.isInteger(x)
 const NO_BADGES: readonly string[] = [];
 
 /**
- * Can't walk here: off the map, a wall tile (tree, house, water), a person or sign, or a gate
- * whose badge you don't hold (`badges` is what you hold; leave it out for "none").
+ * Can't walk here: off the map, a wall tile (tree, house, water), a person or sign, a gate
+ * whose badge you don't hold, or a giant still asleep. `badges` is what you hold, badges and
+ * quest flags together (`keysOf` in world.ts); leave it out for "none".
  * Doors and exits can be walked on.
  */
 export function isBlocked(map: GameMap, x: number, y: number, badges: readonly string[] = NO_BADGES): boolean {
@@ -18,6 +19,8 @@ export function isBlocked(map: GameMap, x: number, y: number, badges: readonly s
   if (map.warps.some((w) => w.x === x && w.y === y)) return false;
   const gate = gateAt(map, x, y);
   if (gate) return !badges.includes(gate.badge);
+  const giant = map.things.find((t) => t.giant && t.x === x && t.y === y);
+  if (giant) return !badges.includes(`woke:${giant.giant}`);
   return map.blocked[y * map.width + x];
 }
 

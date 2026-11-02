@@ -3,10 +3,11 @@
  * change are in ENCOUNTERS. No browser, no clock: random numbers come from a seeded `Dice`.
  */
 import { AREA_LEVELS } from '../bands';
-import { FAMILIES, formAt } from '../monsterBook';
+import { formAt, isFamily, speciesOf, type Rarity } from '../monsterBook';
 import { makeMonster, type Monster } from '../rules';
 import type { Dice } from './rng';
 import { DELTA, type GameMap, type Thing, type WorldState } from './types';
+import { WEATHER, type Today } from './weather';
 import { isBlocked } from './walking';
 
 /** EASY TO EDIT: how often grass starts a battle. */
@@ -17,6 +18,8 @@ export const ENCOUNTERS = {
   fastSteps: { min: 2, max: 3 },
   /** How many tiles ahead a trainer sees you unless the map says otherwise. */
   trainerSight: 4,
+  /** How likely each entry in a map's wild list is, by rarity (ultra rares never turn up in the grass). */
+  rarityWeight: { common: 8, uncommon: 4, rare: 1, ultra: 0 } as Record<Rarity, number>,
 };
 
 export function nextGrassSteps(dice: Dice, fast: boolean): number {
@@ -32,14 +35,34 @@ export function wildLevels(area: number, far: boolean): [number, number] {
 }
 
 /** The species a wild list entry gives at a level: a family grows with the level, a fixed species stays. */
-export const wildSpecies = (entry: string, level: number) => (FAMILIES[entry] ? formAt(entry, level) : entry);
+export const wildSpecies = (entry: string, level: number) => (isFamily(entry) ? formAt(entry, level) : entry);
 
-/** A wild monster for a tile of long grass: one of the map's monsters, at a level in the area's range. */
-export function wildFor(map: GameMap, x: number, y: number, dice: Dice): Monster | null {
+/** How likely one wild list entry is: its rarity, times today's weather and spotted monster if they favour it. */
+export function wildWeight(entry: string, today?: Today): number {
+  const species = speciesOf(wildSpecies(entry, 1));
+  let w = ENCOUNTERS.rarityWeight[species.rarity];
+  if (today && WEATHER.brings[today.weather] === species.type) w *= WEATHER.boost;
+  if (today?.spotted === species.family) w *= WEATHER.spottedBoost;
+  return w;
+}
+
+/** Picks an entry by weight from one 0-1 roll. */
+function pickWeighted(entries: readonly string[], roll: number, today?: Today): string {
+  const weights = entries.map((e) => wildWeight(e, today));
+  let left = roll * weights.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < entries.length; i++) if ((left -= weights[i]) < 0) return entries[i];
+  return entries[entries.length - 1];
+}
+
+/**
+ * A wild monster for a tile of long grass: one of the map's monsters (rarer ones less often, see
+ * ENCOUNTERS.rarityWeight, nudged by today's weather), at a level in the area's range.
+ */
+export function wildFor(map: GameMap, x: number, y: number, dice: Dice, today?: Today): Monster | null {
   if (!map.wild.length) return null;
   const far = map.far[y * map.width + x];
   const [low, high] = wildLevels(map.area, far);
-  const entry = map.wild[dice.int(0, map.wild.length - 1)];
+  const entry = pickWeighted(map.wild, dice.next(), today);
   const level = dice.int(low, high);
   return makeMonster(wildSpecies(entry, level), level, () => dice.next());
 }

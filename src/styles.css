@@ -2631,6 +2631,20 @@ main:focus {
   font-size: 0.9rem;
   font-weight: 600;
 }
+.game-card__text .game-card__note {
+  margin-top: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  display: inline-block;
+  background: #dbeafe;
+  color: #1e3a8a;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+[data-hub-theme='menu'] .game-card__text .game-card__note {
+  background: rgba(147, 197, 253, 0.2);
+  color: #dbeafe;
+}
 .game-card__moves {
   display: flex;
   flex-wrap: wrap;

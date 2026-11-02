@@ -212,7 +212,7 @@
 .mb-btn:focus-visible, .mb-gear:focus-visible { outline: 4px solid #2563eb; outline-offset: 2px; }
 .mb-btn--primary { background: #fde047; box-shadow: 0 4px 0 #a16207; min-height: 56px; font-size: 1.25rem; }
 .mb-btn--primary:hover:not(:disabled) { background: #fef08a; }
-.mb-btn--small { min-height: 40px; font-size: 0.95rem; box-shadow: 0 3px 0 #64748b; }
+.mb-btn--small { min-height: 44px; font-size: 0.95rem; box-shadow: 0 3px 0 #64748b; }
 .mb-btn--fight { background: #fca5a5; box-shadow: 0 4px 0 #b91c1c; }
 .mb-btn--team { background: #bfdbfe; box-shadow: 0 4px 0 #1d4ed8; }
 .mb-btn--bag { background: #fde68a; box-shadow: 0 4px 0 #b45309; }

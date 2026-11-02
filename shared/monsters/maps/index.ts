@@ -25,6 +25,9 @@ import tower5Hall from './tower-5-hall.json';
 import tower5Top from './tower-5-top.json';
 import tower6Hall from './tower-6-hall.json';
 import tower6Top from './tower-6-top.json';
+import steamValley from './steam-valley.json';
+import lagoonIsle from './lagoon-isle.json';
+import auroraHollow from './aurora-hollow.json';
 
 const RAW: Record<string, unknown> = {
   'harbour-town': harbourTown,
@@ -47,6 +50,9 @@ const RAW: Record<string, unknown> = {
   'tower-5-top': tower5Top,
   'tower-6-hall': tower6Hall,
   'tower-6-top': tower6Top,
+  'steam-valley': steamValley,
+  'lagoon-isle': lagoonIsle,
+  'aurora-hollow': auroraHollow,
 };
 
 export const WORLD_MAPS: Readonly<Record<string, GameMap>> = Object.fromEntries(

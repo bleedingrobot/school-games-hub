@@ -1,4 +1,4 @@
-import { MapMaker, PEOPLE, TT, towerRooms } from './lib.mjs';
+import { MapMaker, PEOPLE, TT, X, towerRooms } from './lib.mjs';
 
 /*
  * Areas 2 to 6. Every area is about 25 x 20: you come in at the bottom (the "entrance"), a path
@@ -23,7 +23,7 @@ export function shellBeach() {
   m.hut(16, 15, 19, 16, 'Nurse Hinemoa', 'Kia ora! Come and rest your monsters on the sand.', 'left');
   m.gate('area-3-gate', 3, 1, 'water', 'A rope fence blocks the steep path north. A sign says: "Fire Mountain. Only for trainers with a Water badge!"');
   m.warp('to-fire-mountain', 3, 0, 'fire-mountain', 3, 18, 'up');
-  m.sign('beach-sign', 22, 17, 'Shell Beach. Water monsters splash about here. Their attacks ask adding and taking away.');
+  m.welcome('beach-sign', 22, 17, 'Shell Beach. Water monsters splash about here. Their attacks ask adding and taking away.');
   m.sign('tower-sign', 11, 6, 'The Water Tower. Beat the Tower trainer to win the Water badge.');
   m.sign('hut-sign', 18, 15, 'Rest hut. Nurse Hinemoa will heal your team for free.');
   m.sign('gate-sign', 5, 4, 'North-west: the path up to Fire Mountain. You need the Water badge.');
@@ -43,10 +43,15 @@ export function shellBeach() {
   m.spot('nurse', 20, 16, 'left');
   m.spot('chest', 22, 11, 'up');
   m.spot('tower-door', 10, 6, 'up');
+  m.puzzle('Rock pool', 'shell-stones', 16, 13, 'A rock pool with numbered stepping stones.');
   m.spot('gate', 3, 2, 'up');
   m.scatter(16, (x, y) => m.palm(x, y), { seed: 2, y0: 2 });
   m.scatter(7, (x, y) => m.boulder(x, y), { seed: 3 });
   m.scatter(6, (x, y) => m.bush(x, y), { seed: 4 });
+  // The sleeping giant Drowsea blocks the sea cave east to Lagoon Isle.
+  m.open(24, 11);
+  m.giant('Drowsea', 23, 11, 'drowsea', X(18));
+  m.warp('to-lagoon-isle', 24, 11, 'lagoon-isle', 1, 7, 'right');
   m.save();
   towerRooms({
     n: 2, area: 2, label: 'Water', outside: 'shell-beach', outsideX: 10, outsideY: 6, guide: 'Tower guide Ana', sprite: PEOPLE.villager, badge: 'water',
@@ -72,7 +77,7 @@ export function fireMountain() {
   m.hut(6, 8, 9, 11, 'Nurse Mere', 'Phew, it is hot up here! Come and cool your monsters down.', 'left');
   m.gate('area-4-gate', 20, 1, 'fire', 'A rope fence blocks the icy path north. A sign says: "Snowy Peaks. Only for trainers with a Fire badge!"');
   m.warp('to-snowy-peaks', 20, 0, 'snowy-peaks', 20, 18, 'up');
-  m.sign('mountain-sign', 5, 17, 'Fire Mountain. Fire monsters live here. Their attacks ask times tables. Keep away from the lava!');
+  m.welcome('mountain-sign', 5, 17, 'Fire Mountain. Fire monsters live here. Their attacks ask times tables. Keep away from the lava!');
   m.sign('tower-sign', 14, 6, 'The Fire Tower. Beat the Tower trainer to win the Fire badge.');
   m.sign('hut-sign', 10, 11, 'Rest hut. Nurse Mere will heal your team for free.');
   m.sign('gate-sign', 18, 4, 'North-east: the icy path to Snowy Peaks. You need the Fire badge.');
@@ -92,10 +97,15 @@ export function fireMountain() {
   m.spot('nurse', 9, 12, 'up');
   m.spot('chest', 20, 12, 'right');
   m.spot('tower-door', 12, 6, 'up');
+  m.puzzle('Lantern door', 'fire-lanterns', 4, 10, 'An old door in the rock, with six lanterns around it.');
   m.spot('gate', 20, 2, 'up');
   m.scatter(10, (x, y) => m.autumnTree(x, y), { seed: 5, y0: 2 });
   m.scatter(6, (x, y) => m.autumnSmall(x, y), { seed: 6 });
   m.scatter(10, (x, y) => m.boulder(x, y, true), { seed: 7 });
+  // The sleeping giant Snorumble blocks the way east to Steam Valley.
+  m.open(24, 7);
+  m.giant('Snorumble', 23, 7, 'snorumble', X(19));
+  m.warp('to-steam-valley', 24, 7, 'steam-valley', 1, 7, 'right');
   m.save();
   towerRooms({
     n: 3, area: 3, label: 'Fire', outside: 'fire-mountain', outsideX: 12, outsideY: 6, guide: 'Tower guide Tipene', sprite: PEOPLE.monk, badge: 'fire',
@@ -121,7 +131,7 @@ export function snowyPeaks() {
   m.hut(16, 15, 19, 16, 'Nurse Aroha', 'Brrr! Come in from the cold. I will warm your monsters up.', 'left');
   m.gate('area-5-gate', 4, 1, 'ice', 'A rope fence blocks the dark cave mouth north. A sign says: "Glowworm Caves. Only for trainers with an Ice badge!"');
   m.warp('to-glowworm-caves', 4, 0, 'glowworm-caves', 4, 18, 'up');
-  m.sign('peaks-sign', 22, 17, 'Snowy Peaks. Ice monsters live here. Their attacks ask division: sharing things out equally.');
+  m.welcome('peaks-sign', 22, 17, 'Snowy Peaks. Ice monsters live here. Their attacks ask division: sharing things out equally.');
   m.sign('tower-sign', 15, 6, 'The Ice Tower. Beat the Tower trainer to win the Ice badge.');
   m.sign('hut-sign', 18, 15, 'Rest hut. Nurse Aroha will heal your team for free.');
   m.sign('gate-sign', 6, 4, 'North-west: the way to the Glowworm Caves. You need the Ice badge.');
@@ -141,11 +151,16 @@ export function snowyPeaks() {
   m.spot('nurse', 20, 16, 'left');
   m.spot('chest', 22, 10, 'up');
   m.spot('tower-door', 13, 6, 'up');
+  m.puzzle('Ice slide', 'snow-slide', 11, 13, 'A frozen pond. Ranger Fern’s chest is on the far side.');
   m.spot('gate', 4, 2, 'up');
   m.scatter(18, (x, y) => m.snowTree(x, y), { seed: 8, y0: 2 });
   m.scatter(8, (x, y) => m.snowPine(x, y), { seed: 9 });
   m.scatter(6, (x, y) => m.snowBush(x, y), { seed: 10 });
   m.scatter(5, (x, y) => m.boulder(x, y), { seed: 11 });
+  // The sleeping giant Yawnberg blocks the pass west to Aurora Hollow.
+  m.open(0, 13);
+  m.giant('Yawnberg', 1, 13, 'yawnberg', X(17));
+  m.warp('to-aurora-hollow', 0, 13, 'aurora-hollow', 18, 7, 'left');
   m.save();
   towerRooms({
     n: 4, area: 4, label: 'Ice', outside: 'snowy-peaks', outsideX: 13, outsideY: 6, guide: 'Tower guide Pita', sprite: PEOPLE.villager, badge: 'ice',
@@ -171,7 +186,7 @@ export function glowwormCaves() {
   m.hut(14, 14, 13, 14, 'Nurse Kowhai', 'Welcome to the caves! It is cosy in here. Let me look after your monsters.', 'right');
   m.gate('area-6-gate', 19, 1, 'spark', 'A rope fence blocks the tunnel north. A sign says: "Harbour City. Only for trainers with a Spark badge!"');
   m.warp('to-harbour-city', 19, 0, 'harbour-city', 19, 18, 'up');
-  m.sign('cave-sign', 6, 17, 'Glowworm Caves. Spark monsters glow here. Their attacks ask fractions: halves, quarters and more.');
+  m.welcome('cave-sign', 6, 17, 'Glowworm Caves. Spark monsters glow here. Their attacks ask fractions: halves, quarters and more.');
   m.sign('tower-sign', 13, 6, 'The Spark Tower. Beat the Tower trainer to win the Spark badge.');
   m.sign('hut-sign', 13, 15, 'Rest hut. Nurse Kowhai will heal your team for free.');
   m.sign('gate-sign', 17, 4, 'North-east: the tunnel to Harbour City. You need the Spark badge.');
@@ -191,10 +206,13 @@ export function glowwormCaves() {
   m.spot('nurse', 13, 13, 'down');
   m.spot('chest', 22, 11, 'down');
   m.spot('tower-door', 11, 6, 'up');
+  m.puzzle('Stone door', 'cave-count', 17, 9, 'A stone door with a number lock. Glowworms shine around it.');
   m.spot('gate', 19, 2, 'up');
   m.scatter(16, (x, y) => m.stalagmite(x, y), { seed: 12, y0: 2 });
   m.scatter(8, (x, y) => m.crystal(x, y), { seed: 13 });
   m.scatter(6, (x, y) => m.boulder(x, y, true), { seed: 14 });
+  m.spot('crystal-pool', 20, 7, 'up'); // where glowing eggs hatch
+  m.spot('torch', 23, 2, 'up'); // the cave guide's lost torch
   m.save();
   towerRooms({
     n: 5, area: 5, label: 'Spark', outside: 'glowworm-caves', outsideX: 11, outsideY: 6, guide: 'Tower guide Ngaio', sprite: PEOPLE.woman, badge: 'spark',
@@ -220,7 +238,7 @@ export function harbourCity() {
   m.towerBuilding(6, 1);
   m.warp('to-tower', 8, 5, 'tower-6-hall', 5, 7, 'up');
   m.hut(14, 14, 17, 14, 'Nurse Sina', 'Welcome to the big city! Let me rest your monsters.', 'left');
-  m.sign('city-sign', 17, 17, 'Harbour City. Stone monsters live here. Their attacks ask decimals and money: $2.40 + $1.75 and 0.3 + 0.5.');
+  m.welcome('city-sign', 17, 17, 'Harbour City. Stone monsters live here. Their attacks ask decimals and money: $2.40 + $1.75 and 0.3 + 0.5.');
   m.sign('tower-sign', 10, 6, 'The Stone Tower. Beat the Tower trainer to win the Stone badge, the last one!');
   m.sign('hut-sign', 13, 14, 'Rest hut. Nurse Sina will heal your team for free.');
   m.sign('harbour-sign', 16, 4, 'The harbour. Ships come here from all over the world.');
@@ -240,10 +258,12 @@ export function harbourCity() {
   m.spot('nurse', 17, 13, 'down');
   m.spot('chest', 22, 11, 'right');
   m.spot('tower-door', 8, 6, 'up');
+  m.puzzle('Wharf', 'wharf-crates', 7, 8, 'Crates are all over the wharf path!');
   m.scatter(12, (x, y) => m.bigTree(x, y), { seed: 15, y0: 2 });
   m.scatter(10, (x, y) => m.tree(x, y), { seed: 16 });
   m.scatter(6, (x, y) => m.bush(x, y), { seed: 17 });
   m.fence(2, 10, 4); m.fence(21, 10, 3);
+  m.spot('quarry', 2, 13, 'down'); // where stony eggs hatch
   m.save();
   towerRooms({
     n: 6, area: 6, label: 'Stone', outside: 'harbour-city', outsideX: 8, outsideY: 6, guide: 'Tower guide Sefa', sprite: PEOPLE.man, badge: 'stone',

@@ -107,6 +107,8 @@ export class Session {
   readonly dice: Dice;
   readonly clock: Clock;
   private first = true;
+  /** Set to play with quests on (bits from wins, the day of the last battle), as the website does. */
+  quest?: { day: string; player: string; playDays: number };
   /** Where the student wanders: after losing they wake at a healing spot, and this brings them back. */
   private field = { map: 'kauri-bush', spot: 'entrance' };
 
@@ -151,7 +153,9 @@ export class Session {
   private fight(setup: BattleSetup, trainer: Thing | undefined): BattleReport {
     const { report, final } = playBattle(setup, { map: this.world.map, trainer }, this.student, this.dice, this.clock);
     this.battles.push(report);
-    this.world = finishBattle(this.world, { outcome: final.phase as 'won', team: final.phase === 'lost' ? final.team : final.team, box: final.box, bag: final.bag }, trainer).state;
+    const foes = setup.foes.map((f) => f.species);
+    const opts = this.quest ? { maps: this.maps, ...this.quest } : undefined;
+    this.world = finishBattle(this.world, { outcome: final.phase as 'won', team: final.team, box: final.box, bag: final.bag, foes }, trainer, opts).state;
     this.clock.tick(4000);
     return report;
   }

@@ -6,6 +6,7 @@
  */
 import { OPPOSITE, type Dir, type Thing, type WorldState } from '../../../../shared/monsters/world/types';
 import { planTap } from '../../../../shared/monsters/world/walking';
+import { keysOf } from '../../../../shared/monsters/world/questWorld';
 import {
   interact, mapOf, step, type InteractOutcome, type Trigger, type WorldOptions,
 } from '../../../../shared/monsters/world/world';
@@ -32,6 +33,8 @@ export interface ControllerEvents {
   onTalk(outcome: InteractOutcome): void;
   /** You went through a door or exit. */
   onEnter?(state: WorldState): void;
+  /** Quest news from a step (a notice board job done, a quest place found). */
+  onLines?(lines: string[]): void;
 }
 
 export interface Actor {
@@ -51,6 +54,8 @@ export interface WalkView {
   actors: Map<string, Actor>;
   /** Who has the "!" over their head. */
   noticed: string | null;
+  /** Where your lead monster walks: one tile behind you, on the tile you just left (null until your first step). */
+  follower: Actor | null;
 }
 
 export class WalkController {
@@ -66,6 +71,8 @@ export class WalkController {
   private locked = false;
   private actors = new Map<string, Actor>();
   private noticed: string | null = null;
+  /** The follower's last step: from the tile it was on to the tile you left. */
+  private follow: { from: [number, number]; to: [number, number]; facing: Dir } | null = null;
   private script: { at: number; run: () => void }[] = [];
   private now = 0;
 
@@ -86,6 +93,7 @@ export class WalkController {
     this.script = [];
     this.actors.clear();
     this.noticed = null;
+    this.follow = null;
     this.events.onState(state);
   }
 
@@ -128,7 +136,7 @@ export class WalkController {
   /** A tap on a tile: walk there by the shortest way, or walk up to a person or sign and talk. */
   tap(tx: number, ty: number) {
     if (this.locked) return;
-    const plan = planTap(mapOf(this.opts, this.state), this.state, tx, ty, this.state.badges);
+    const plan = planTap(mapOf(this.opts, this.state), this.state, tx, ty, keysOf(this.state));
     if (plan.kind === 'none') return;
     this.held = [];
     this.path = plan.path.slice();
@@ -198,6 +206,13 @@ export class WalkController {
       return;
     }
     this.from = out.action === 'warp' ? null : [before.x, before.y];
+    // Through a door the follower comes out with you; otherwise it steps onto the tile you just left.
+    if (out.action === 'warp') this.follow = { from: [this.state.x, this.state.y], to: [this.state.x, this.state.y], facing: this.state.facing };
+    else {
+      const from = this.follow?.to ?? [before.x, before.y];
+      const facing: Dir = before.x > from[0] ? 'right' : before.x < from[0] ? 'left' : before.y > from[1] ? 'down' : before.y < from[1] ? 'up' : this.state.facing;
+      this.follow = { from, to: [before.x, before.y], facing };
+    }
     this.stepStart = now;
     this.stepLength = out.action === 'warp' ? this.ms(TIMING.step) / 2 : this.ms(TIMING.step);
     if (out.action === 'warp') {
@@ -208,6 +223,7 @@ export class WalkController {
       this.events.onEnter?.(this.state);
     }
     this.events.onState(this.state);
+    if (out.lines?.length) this.events.onLines?.(out.lines);
 
     if (out.trigger?.kind === 'wild') {
       const t = out.trigger;
@@ -281,8 +297,9 @@ export class WalkController {
     let x = this.state.x;
     let y = this.state.y;
     let walking = false;
+    let p = 1;
     if (this.from && this.stepLength > 0) {
-      const p = Math.min(1, Math.max(0, (now - this.stepStart) / this.stepLength));
+      p = Math.min(1, Math.max(0, (now - this.stepStart) / this.stepLength));
       x = this.from[0] + (this.state.x - this.from[0]) * p;
       y = this.from[1] + (this.state.y - this.from[1]) * p;
       walking = p < 1;
@@ -293,7 +310,9 @@ export class WalkController {
       const dir: Dir = tw.to.x > tw.from.x ? 'right' : tw.to.x < tw.from.x ? 'left' : tw.to.y > tw.from.y ? 'down' : 'up';
       actors.set(id, { x: tw.from.x + (tw.to.x - tw.from.x) * p, y: tw.from.y + (tw.to.y - tw.from.y) * p, facing: dir });
     }
-    return { state: this.state, x, y, walking, actors, noticed: this.noticed };
+    const f = this.follow;
+    const follower = f && { x: f.from[0] + (f.to[0] - f.from[0]) * p, y: f.from[1] + (f.to[1] - f.from[1]) * p, facing: f.facing };
+    return { state: this.state, x, y, walking, actors, noticed: this.noticed, follower };
   }
 
   /** For tests and the test page: is a step or turn still going? */
