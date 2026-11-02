@@ -48,6 +48,8 @@ export interface QuestSave {
   board?: BoardDay;
   /** Up to 3 eggs carried. */
   eggs: Egg[];
+  /** The NZ day of the last battle (any outcome). Eggs go cold after EGGS.coldAfter days in a row without one. */
+  lastDay?: string;
 }
 
 export const emptyQuestSave = (): QuestSave => ({ flags: [], bits: {}, quests: {}, eggs: [] });

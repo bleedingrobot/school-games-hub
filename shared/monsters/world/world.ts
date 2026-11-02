@@ -324,6 +324,8 @@ export function finishBattle(state: WorldState, result: FinishedBattle, trainer?
       next.paid = [...next.paid, trainer.id];
     }
   }
+  // Any battle keeps the eggs warm for another few days.
+  if (opts?.day) next = { ...next, quest: { ...questOf(next), lastDay: opts.day } };
   // Quests: a win gives bits and counts for quests and jobs, a catch counts too, a beaten giant opens the way.
   if (opts && result.outcome !== 'lost') {
     const map = mapOf(opts, state);

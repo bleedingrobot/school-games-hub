@@ -16,6 +16,7 @@ import type { TiledMap } from '../../../../shared/monsters/world/mapLoader';
 import type { Dir, GameMap, Thing, WorldState } from '../../../../shared/monsters/world/types';
 import { badgeName, finishBattle, giantBattle, meet, placeAt, trainerBattle, wildBattle, type InteractOutcome, type Maps, type WorldOptions } from '../../../../shared/monsters/world/world';
 import type { Giant } from '../../../../shared/monsters/quests/giants';
+import { coldEggs, coldWords, eggWarmth } from '../../../../shared/monsters/quests/eggs';
 import { nextStep } from '../../../../shared/monsters/quests/nextStep';
 import { badgeStep, questOf, type QuestOptions } from '../../../../shared/monsters/world/questWorld';
 import { describeLoot } from '../../../../shared/monsters/world/rewards';
@@ -224,6 +225,19 @@ export function WorldGame({
     lastCheat.current = cheat.nonce;
     ctrl.current!.patch(cheat.apply(ctrl.current!.state));
   }, [cheat]);
+
+  // Eggs: checked once the map is ready. Gone cold (4 days in a row without a battle) or getting cold today.
+  const eggsChecked = useRef(false);
+  useEffect(() => {
+    if (eggsChecked.current || !quest.day || !sheets) return;
+    eggsChecked.current = true;
+    const q = questOf(ctrl.current!.state);
+    const r = coldEggs(q, quest.day);
+    if (r.lost.length) {
+      ctrl.current!.patch({ ...ctrl.current!.state, quest: r.q });
+      showTalk({ pages: [coldWords.lost(r.lost.length)] });
+    } else if (eggWarmth(q, quest.day) === 'cooling') showTalk({ pages: [coldWords.cooling] });
+  }, [quest.day, sheets, showTalk]);
 
   const walking = scene.kind === 'walk' && !talk && !menu;
   useEffect(() => {

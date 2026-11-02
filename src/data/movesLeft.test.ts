@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { findEgg } from '../../shared/monsters/quests/eggs';
 import { movesFromRaw, type RawMovesLeft } from './movesLeft';
 
 const noon = (date: string) => new Date(`${date}T00:00:00Z`); // noon in New Zealand, the same date
@@ -46,6 +47,13 @@ describe('movesFromRaw', () => {
     expect(over.chips[0]).toEqual({ emoji: '⚔️', text: '0 of 12 battles', empty: true });
     expect(over.allDone).toBe(true);
     expect(movesFromRaw({ lord: null, clans: null, monsters: null })).toEqual({});
+    // The egg line: about to go cold first, then ready to hatch, then warming.
+    const egg = { species: findEgg('e', 'water', 10, () => 0).species, found: 10 };
+    const eggs = (playDays: number, lastDay: string) => movesFromRaw({ lord: null, clans: null, monsters: { today: 0, perDay: 12, eggs: [egg, egg], playDays, lastDay } }, noon('2026-11-06')).monsters.chips[1];
+    expect(eggs(11, '2026-11-05').text).toBe('2 eggs warming');
+    expect(eggs(13, '2026-11-05').text).toBe('2 eggs ready to hatch!');
+    expect(eggs(13, '2026-11-02').text).toBe('Battle today or your eggs go cold!');
+    expect(eggs(13, '2026-11-01')).toBeUndefined();
   });
 
   it("shows Diamond Drop's new level for today, or tomorrow once it's passed", () => {

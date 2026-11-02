@@ -1,7 +1,8 @@
 /**
  * Eggs (docs/MONSTERS-QUESTS-PLAN.md section 5). An egg's insides are rolled when it is found. It
  * hatches after enough days of play (3, 5 or 7 by rarity: James, 2 Nov 2026), counted by the
- * database so a Chromebook's clock can't hurry it, and only at its own hatching spot.
+ * database so a Chromebook's clock can't hurry it, and only at its own hatching spot. Eggs left for
+ * EGGS.coldAfter days in a row without a battle go cold and are lost, with a warning on the last day.
  */
 import { MONSTER_BOOK, RARE_FAMILIES, speciesOf, type Rarity } from '../monsterBook';
 import { makeMonster, TUNING, type Monster } from '../rules';
@@ -17,6 +18,8 @@ export const EGGS = {
   /** What's inside a found egg: chances out of 100. */
   odds: { uncommon: 50, rare: 40, ultra: 10 },
   hatchLevel: 5,
+  /** Days in a row without a battle (calendar days, holidays too) before every egg goes cold and is lost: James, 2 Nov 2026. */
+  coldAfter: 4,
 };
 
 export const EGG_TYPE: Record<EggKind, TypeId> = { leafy: 'leaf', water: 'water', warm: 'fire', cold: 'ice', glowing: 'spark', stony: 'stone' };
@@ -91,3 +94,30 @@ export function hatch(q: QuestSave, eggId: string, playDays: number, where: { ma
     monster,
   };
 }
+
+/** Whole calendar days from NZ day `a` to NZ day `b` ("2026-11-02" to "2026-11-04" is 2). */
+const daysFrom = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000);
+
+/**
+ * How the eggs are keeping on `today`: 'warm', 'cooling' (the last day: a battle today saves them) or
+ * 'cold' (lost). No eggs, or no battle yet since this rule began, is always warm.
+ */
+export function eggWarmth(q: Pick<QuestSave, 'eggs' | 'lastDay'>, today: string): 'warm' | 'cooling' | 'cold' {
+  if (!q.eggs.length || !q.lastDay) return 'warm';
+  const away = daysFrom(q.lastDay, today);
+  return away > EGGS.coldAfter ? 'cold' : away === EGGS.coldAfter ? 'cooling' : 'warm';
+}
+
+/** Takes away eggs that went cold. `lost` is what was taken (empty if none). */
+export function coldEggs(q: QuestSave, today: string): { q: QuestSave; lost: Egg[] } {
+  if (eggWarmth(q, today) !== 'cold') return { q, lost: [] };
+  return { q: { ...q, eggs: [] }, lost: q.eggs };
+}
+
+/** What the game says about cold eggs when it opens. */
+export const coldWords = {
+  lost: (n: number) => n === 1
+    ? 'Brrr! Your egg went cold while you were away, and it won’t hatch now. Eggs need a battle at least every 4 days.'
+    : `Brrr! Your ${n} eggs went cold while you were away, and they won’t hatch now. Eggs need a battle at least every 4 days.`,
+  cooling: 'Your eggs are getting cold! Have a battle today to keep them warm.',
+};

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { makeMonster } from '../rules';
 import { canMake, RECIPES } from './bits';
-import { addEgg, findEgg, hatch, isReady } from './eggs';
+import { addEgg, coldEggs, eggWarmth, findEgg, hatch, isReady } from './eggs';
 import { afterGiant, canWake, GIANTS } from './giants';
 import { nextStep } from './nextStep';
 import { jobsFor, record, talkTo } from './quests';
@@ -39,6 +39,13 @@ describe('quests, bits, giants and eggs', () => {
     const hatched = hatch(q, egg.id, 15, { map: 'lagoon-isle', spot: 'rock-pools' })!;
     expect(hatched.monster.species).toBe(egg.species);
     expect(hatched.q.eggs).toEqual([]);
+    // Left 4 days in a row with no battle, eggs go cold: a warning on the 4th day, gone on the 5th.
+    const kept = { ...q, lastDay: '2026-11-02' };
+    expect(eggWarmth(kept, '2026-11-05')).toBe('warm');
+    expect(eggWarmth(kept, '2026-11-06')).toBe('cooling');
+    expect(coldEggs(kept, '2026-11-06').lost).toEqual([]);
+    expect(coldEggs(kept, '2026-11-07')).toEqual({ q: { ...kept, eggs: [] }, lost: [egg] });
+    expect(coldEggs(q, '2027-02-01').lost).toEqual([]);
     // Every day's jobs are three, one needing no battle, and only in areas the pupil can reach.
     for (let d = 1; d <= 60; d++) {
       const jobs = jobsFor(`2026-11-${String(d).padStart(2, '0')}`, 'pupil-a', { maxArea: 2 });

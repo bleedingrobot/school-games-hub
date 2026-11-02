@@ -4,7 +4,7 @@
  * rules in shared/monsters/world/questWorld.ts.
  */
 import { BIT_NAME, canMake, describeBits, RECIPES } from '../../../../shared/monsters/quests/bits';
-import { daysHad, daysNeeded, EGG_LABEL, HATCH_SPOTS, isReady } from '../../../../shared/monsters/quests/eggs';
+import { coldWords, daysHad, daysNeeded, EGG_LABEL, eggWarmth, HATCH_SPOTS, isReady } from '../../../../shared/monsters/quests/eggs';
 import { QUESTS } from '../../../../shared/monsters/quests/quests';
 import { TYPES } from '../../../../shared/monsters/types';
 import { spottedNote } from '../../../../shared/monsters/world/weather';
@@ -70,6 +70,7 @@ export function EggPage({ world, apply, map, opts }: PageProps & { map: GameMap;
   const playDays = opts.playDays ?? 0;
   return (
     <div className="mq">
+      {opts.day && eggWarmth(q, opts.day) === 'cooling' && <p className="mq-cold" role="status">{coldWords.cooling}</p>}
       {!q.eggs.length && <p className="mb-empty">Your basket is empty. Quests, puzzles and nests in the bonus areas give eggs.</p>}
       <ul className="mq-eggs">
         {q.eggs.map((egg) => {
@@ -95,7 +96,7 @@ export function EggPage({ world, apply, map, opts }: PageProps & { map: GameMap;
           );
         })}
       </ul>
-      <p className="mb-empty">{q.eggs.length} of 3 eggs. A day of play is a day you answer at least one question.</p>
+      <p className="mb-empty">{q.eggs.length} of 3 eggs. A day of play is a day you answer at least one question. Eggs go cold after 4 days in a row with no battles.</p>
     </div>
   );
 }
