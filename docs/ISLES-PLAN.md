@@ -648,16 +648,18 @@ James found the S.3 turn confusing: after the collect sum, one big spend panel o
 - **Market** says "The market opens soon" with Next. S.4 fills it in; the step stays so the order never changes.
 - **Check and end:** this turn's choices, "Coins left", Undo last and End turn. End turn still sends everything in one `turn` request.
 - **Pip:** during a turn he sits under the island and talks about this step only. If his next step (`nextStep`) is about this step, he says it with "Show me"; otherwise the step's own line. On My island, "Show me" for a button that lives in a turn lights up "Play a turn", and the button stays lit when its step comes. `nextStep()`'s targets didn't need to change (the same `data-pip` names, now each on its own step).
-- **Phone on its side (844×390):** a tighter layout (smaller header, the turn pips hidden during a turn, Pip under the island, wider step panel, three tax cards in a row, smaller build buttons). Every step's main button shows without scrolling. The one exception: with a spot chosen on the Build step, the build buttons show but "Not this turn" is just below.
+- **Phone on its side (844×390):** a tighter layout (smaller header, the turn pips hidden during a turn, Pip under the island, wider step panel, three tax cards in a row, smaller build buttons). Every step's main buttons show without scrolling. A long step (the build choices for a spot, or many upgrades ready at once) scrolls inside its own panel, with Back and Next or "Not this turn" pinned at the bottom.
 
 **Decisions (James can change any):**
 - Back takes away the choices of the step you go back to (and of the step you were on), so it can be chosen again.
 - Festival and Big projects have one choice each per turn, so they move on straight after it, with no "another?".
 - "Back to my island" stays on step 1 (before the turn starts), as before.
+- A Sonnet helper checked the screenshots. Its fixes are in: the upgrade buttons are light, not all dark; Land with no drift says so plainly instead of showing a price; the tax cards line up and the picked one has a tick and a thicker border, with plainer happiness words; Undo last sits away from End turn.
+- The replay script `scripts/isles-turns/play-three-turns.mjs` plays the three turns and retakes the screenshots in headless Chrome. It needs the preview running on port 5191.
 
 **Tests:** still 6 of 8. Test 7 now walks all 11 steps by keyboard, checks each step's heading gets focus and the strip says "Step n of 11", checks that Land (which can't happen yet) is greyed with "Needs 510 coins. You have …" and that its Next works, and checks Back.
 
-**Checks run:** CHECKS_LINE
+**Checks run:** the type check, `npm run test:all` (340 files, 5,939 tests, all passed), the build and the preview build. The one-file preview is republished to the same private page, https://claude.ai/artifact/Q7phU2vhvHx4yYSPBUxpE6.
 
 **Played in the preview** (headless Chrome, at 1366×640 and 844×390): a turn with lots of coins (question answered right, a chunk anchored, a Library and a Workshop built, High tax, a festival, Better Ploughs), a turn with almost no coins, and a turn after "Skip to tomorrow". Every turn showed the same 11 steps in order. Screenshots of steps 4, 5, 6, 9 and 11 (and a greyed step 4) are in `docs/isles-screens/turn-steps/`.
 

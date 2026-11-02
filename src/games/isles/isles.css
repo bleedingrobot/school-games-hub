@@ -112,7 +112,7 @@
 .si-choice__why { font-size: 0.85rem; color: var(--ink-soft); }
 .si-close { min-height: 44px; }
 .si-buildgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
-.si-buildgrid .button { width: 100%; height: 100%; display: grid; gap: 2px; text-align: left; justify-items: start; align-content: start; }
+.si .si-buildgrid .button { width: 100%; height: 100%; display: grid; gap: 2px; text-align: left; justify-items: start; justify-content: stretch; align-content: start; }
 .si-build__name { font-weight: 700; }
 .si-build__job { font-size: 0.82rem; font-weight: 400; }
 .si-tax { display: grid; gap: 6px; }
@@ -232,6 +232,9 @@
   .si-step__nav .button { white-space: normal; min-height: 44px; padding: 6px 14px; font-size: 0.95rem; line-height: 1.15; }
   .si-step__main { font-size: 1rem; }
   .si-step .si-buildgrid { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  /* A tall step scrolls inside its panel, with its buttons pinned at the bottom. */
+  .si-step { max-height: calc(100dvh - 108px); overflow-y: auto; }
+  .si-step__nav { position: sticky; bottom: -8px; margin: 0 -10px -8px; padding: 6px 10px 8px; background: var(--surface); border-top: 1px solid var(--line); }
   .si-step .si-choice__button { padding: 4px 8px; font-size: 0.85rem; line-height: 1.15; }
   .si-step .si-build__job { font-size: 0.72rem; }
   .si-pipsays { flex-wrap: wrap; }
