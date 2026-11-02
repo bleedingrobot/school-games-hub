@@ -439,3 +439,19 @@ Built on branch `trader-hints` (merged up to `main` after #142). Only files in `
 
 ### Went live (3 Nov 2026)
 James: "Yes, put it live". Pull request #144 merged with auto-merge once its checks passed (9:39am NZ); "Test and publish" ran green and published the site. Screen code only: no migration, no function deploy. Rollback: revert the merge, or make `autoLevel` in `coach/level.ts` return `'off'`. Next: H.5 (a try with James and a few pupils), and James's answers to questions 2 and 3 of section 11.
+
+## 17. Stage H.5 (3 Nov 2026): the try-out
+**Preview for James (private):** https://claude.ai/artifact/2ky8VoGxykTsjuBZpUwxy9 , the whole game on a pretend server, nothing saved. (The T.2 preview link in docs/TRADER-PLAN.md no longer opens.) Preview tools, bottom right: **Start as a new pupil** (a new game, and Bolt forgets First Flight, tips and help level) and **Pretend 30 jumps made** (Bolt drops to Some), as well as the older credits, tomorrow, ships and pirates. One-file build: as in docs/TRADER-PLAN.md (`TRADER_INLINE=1 …`).
+
+**For James to try (about 10 minutes):** Start as a new pupil → First Flight to the end → 🤖 Help (words, tips again) → Pretend 30 jumps made (the ⭐ goes, "Ask Bolt" appears in the shipyard and fights) → Off → Replay First Flight from the Help panel.
+
+**With a few pupils (live, since everything is on):** watch, don't help, and note:
+| Watch for | Tells us |
+|---|---|
+| Do they finish First Flight, or skip it? At which step do they stop reading? | Bolt's wording is too long, or a step is unclear |
+| Do they find the 🤖 Help button by themselves? | Whether it needs pointing out (a first-time tip) |
+| Does anyone pick Off, and how soon? | Bolt is a nag (the pirate warning is the one to watch, section 14) |
+| After the switch to Some (30 jumps), do they get stuck again? | Move the switch later (`LOTS_UNTIL_JUMPS` in `coach/level.ts`) |
+| Does "Buy max" buying just one dear good puzzle them? | Section 12's open point |
+
+Tuning is one line each: the 30 jumps, which helpers show on Some (section 16's table), Bolt's sentences (`coach/flight.ts`, `tips.ts`, `nextStep.ts`, `words.ts`).
