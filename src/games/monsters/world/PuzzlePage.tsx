@@ -4,13 +4,19 @@
  * state while the screen is open. Solving calls solvePuzzle once. Arrow keys work on the slide and
  * crate puzzles, and every move also has a button (Chromebook touch screens).
  */
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import {
   cratesStart, crateSpots, light, lockStart, push, puzzleById, slide, slideStart, stepStone, stonesGrid, tryLock, turnDial,
   type CratesState, type LanternState, type LockState, type Puzzle, type SlideDir, type SlideState, type StonesState,
 } from '../../../../shared/monsters/quests/puzzles';
 import type { WorldState } from '../../../../shared/monsters/world/types';
 import { solvePuzzle, type QuestOptions, type QuestResult } from '../../../../shared/monsters/world/questWorld';
+
+// Painted on the gaming computer (scripts/monsters-puzzle-art.py). The styles use them as CSS variables.
+const ART = import.meta.glob('./assets/puzzles/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
+const ART_VARS = Object.fromEntries(
+  Object.entries(ART).map(([path, url]) => [`--mz-${path.slice(path.lastIndexOf('/') + 1, -5)}`, `url("${url}")`]),
+) as CSSProperties;
 
 type Of<K extends Puzzle['kind']> = Extract<Puzzle, { kind: K }>;
 type Report = (s: { tries: number; done: boolean; note?: string }) => void;
@@ -80,7 +86,7 @@ function Slide({ p, report }: { p: Of<'slide'>; report: Report }) {
         <div className="mz-grid" tabIndex={0} onKeyDown={onArrow(move)} style={{ gridTemplateColumns: `repeat(${p.grid[0].length}, 1fr)` }} role="img" aria-label={`Ice. You are in row ${s.at[0] + 1}, column ${s.at[1] + 1}.`}>
           {p.grid.flatMap((row, r) => [...row].map((ch, c) => {
             const you = s.at[0] === r && s.at[1] === c;
-            return <span key={`${r}-${c}`} className={`mz-cell mz-cell--${ch === '#' ? 'rock' : ch === 'C' ? 'chest' : 'ice'}`}>{you ? '🧒' : ch === '#' ? '🪨' : ch === 'C' ? '🎁' : ''}</span>;
+            return <span key={`${r}-${c}`} className={`mz-cell mz-cell--${ch === '#' ? 'rock' : ch === 'C' ? 'chest' : 'ice'}`}>{you ? '🧒' : ''}</span>;
           }))}
         </div>
         <Arrows onMove={move} />
@@ -154,8 +160,8 @@ function Crates({ p, report }: { p: Of<'crates'>; report: Report }) {
             const spot = is(spots, r, c);
             const you = s.you[0] === r && s.you[1] === c;
             return (
-              <span key={`${r}-${c}`} className={`mz-cell mz-cell--${ch === '#' ? 'wall' : 'wharf'}${spot ? ' is-spot' : ''}`}>
-                {you ? '🧒' : crate ? (spot ? '✅' : '📦') : ''}
+              <span key={`${r}-${c}`} className={`mz-cell mz-cell--${ch === '#' ? 'wall' : 'wharf'}${spot ? ' is-spot' : ''}${crate ? ' has-crate' : ''}`}>
+                {you ? '🧒' : crate && spot ? '✅' : ''}
               </span>
             );
           }))}
@@ -187,7 +193,7 @@ export function PuzzlePage({ world, apply, id, opts }: { world: WorldState; appl
     if (s.done) setDone(true);
   };
   return (
-    <div className="mq mz">
+    <div className="mq mz" style={ART_VARS}>
       <p className="mz-says">{p.says}</p>
       {p.kind === 'stones' && <Stones p={p} report={report} />}
       {p.kind === 'slide' && <Slide p={p} report={report} />}
