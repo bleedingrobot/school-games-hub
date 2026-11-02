@@ -5,11 +5,13 @@ Walking characters and map props for Maths Monsters, painted on the gaming PC's 
   python scripts/monsters-walkers-art.py people [names]   every portrait in art/painted/people -> walkers/
   python scripts/monsters-walkers-art.py props            chest, chest-open, gate -> art/painted/props/
   python scripts/monsters-walkers-art.py sheets           contact sheets in docs/monsters-art-test/
-Skips files that exist (delete one to redo it). Paints down, up and right; left is right mirrored.
-Change a bad one with SEEDS below (name/dir -> seed), delete its file and rerun.
+Each character is painted once as a turnaround sheet (front, side walking right, back in one picture), so all
+its views are the same person; the sheet is cut in three and left is right mirrored. Who they are and what they
+wear comes from scripts/monsters-walkers.json (name -> [who, what]), written from the portraits.
+Skips characters whose four files exist (delete them to redo). Change a bad one with SEEDS below (name -> seed).
 Use ~/.cache/rembg-venv/bin/python (Pillow, numpy, scipy, rembg).
 """
-import importlib.util, sys
+import importlib.util, json, sys
 from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
@@ -23,12 +25,14 @@ PAINTED = ROOT / 'src/games/monsters/art/painted'
 WALK, PROPS = PAINTED / 'walkers', PAINTED / 'props'
 OUT = ROOT / 'docs/monsters-art-test'
 RAW = Path.home() / '.cache/monsters-walkers'
-SEED = 777
-DENOISE = {'down': 0.7, 'up': 0.8, 'right': 0.8}
-SEEDS = {}  # 'boy-03/right': 781 ...
-DIRS = {'down': 'facing toward the viewer, we see the face', 'up': 'seen from directly behind, back view, facing away from the viewer, the back of the head and the backpack, no face visible',
-        'right': 'side view in profile, walking to the right, the whole body turned to face the right edge of the picture, one leg forward, face in profile'}
-STYLE = 'bright flat storybook illustration'
+STYLE = 'bright flat storybook illustration'  # the props
+SEED = 11
+SEEDS = {'nurse-joy': 12, 'surfer-tui': 12}  # first tries came out see-through
+TURN = ('a character turnaround sheet for a cosy top-down RPG game: the same {who} drawn three times side by side in one row, '
+        'on the left a front view facing the viewer, in the middle a side view in profile walking towards the right, on the right a back view facing away from the viewer. '
+        '{what}. Each figure full body from head to shoes, cute small proportions with a slightly large head, the same clothes and colours in all three, '
+        'hand-painted, soft painterly brush strokes, bright cheerful colours, polished modern cosy RPG game art, evenly spaced, plain flat pure white background')
+LOOKS = json.loads((ROOT / 'scripts/monsters-walkers.json').read_text()) if (ROOT / 'scripts/monsters-walkers.json').exists() else {}
 _sess = None
 
 def cutout(raw):
@@ -61,72 +65,27 @@ def fit_walker(cut):
     out.paste(cut, ((96 - cut.width) // 2, 92 - cut.height), cut)
     return out
 
-def paint_ref(refpath, text, seed, raw, denoise):
-    src = Image.open(refpath).convert('RGBA')
-    src.thumbnail((460, 460))  # whole figure small on a white square, so the model paints head to feet with room around
-    ref = Image.new('RGB', (640, 640), 'white')
-    ref.paste(src, ((640 - src.width) // 2, (640 - src.height) // 2), src)
-    tmp = RAW / '_ref.png'
-    ref.save(tmp)
-    nm = wa.upload(tmp)
-    w, h = ref.size[0] // 16 * 16, ref.size[1] // 16 * 16
-    latent = {'l': {'class_type': 'LoadImage', 'inputs': {'image': nm}},
-              's': {'class_type': 'ImageScale', 'inputs': {'image': ['l', 0], 'upscale_method': 'lanczos', 'width': w, 'height': h, 'crop': 'disabled'}},
-              '7': {'class_type': 'VAEEncode', 'inputs': {'pixels': ['s', 0], 'vae': ['3', 0]}}}
-    wa.run(wa.base(text, seed, denoise, latent), raw)
-
-def colour_name(rgb):
-    import colorsys
-    h, s_, v = colorsys.rgb_to_hsv(*[c / 255 for c in rgb]); h *= 360
-    if v < 0.22: return 'black'
-    if s_ < 0.18: return 'white' if v > 0.8 else ('light grey' if v > 0.55 else 'dark grey')
-    shade = 'dark ' if v < 0.45 else ('light ' if v > 0.85 and s_ < 0.5 else '')
-    if h < 15 or h >= 345: n = 'red'
-    elif h < 40: n = 'brown' if v < 0.65 else 'orange'
-    elif h < 65: n = 'yellow' if v > 0.6 else 'olive'
-    elif h < 165: n = 'green'
-    elif h < 200: n = 'teal'
-    elif h < 255: n = 'blue'
-    elif h < 295: n = 'purple'
-    else: n = 'pink'
-    return shade + n
-
-def describe(refpath):
-    """Main colours of hair, top and legs from the reference, so the prompt keeps them."""
-    a = np.array(Image.open(refpath).convert('RGBA')); ys = np.where(a[..., 3] > 200)[0]
-    y0, y1 = ys.min(), ys.max(); hgt = y1 - y0
-    def band(f0, f1):
-        b = a[y0 + int(hgt * f0):y0 + int(hgt * f1)]
-        px = b[b[..., 3] > 200][:, :3]
-        return colour_name(tuple(int(c) for c in np.median(px, axis=0))) if len(px) else 'grey'
-    return f"{band(0.02, 0.1)} hair, a {band(0.3, 0.5)} top, {band(0.62, 0.8)} trousers or skirt"
-
-def walker(name, refpath, adult):
-    refpath0 = refpath
+def walker(name):
+    files = {d: WALK / f'{name}-{d}.webp' for d in ('down', 'right', 'up', 'left')}
+    if all(p.exists() for p in files.values()):
+        return
+    if name not in LOOKS:
+        print('  no description for', name); return
     RAW.mkdir(parents=True, exist_ok=True)
-    WALK.mkdir(parents=True, exist_ok=True)
-    who = ('a grown-up person, an adult, with the same age, face, hair, skin and clothes as the reference' if adult else
-           f"a cheerful 9 year old {'boy' if name.startswith('boy') else 'girl'}, a school pupil, in the same clothes, same hairstyle and hair colour, same brown or light skin colour as the reference")
-    desc = 'Colours to keep: ' + describe(refpath0)
-    for d, words in DIRS.items():
-        dest = WALK / f'{name}-{d}.webp'
+    who, what = LOOKS[name]
+    raw = RAW / f'{name}-turn.png'
+    latent = {'7': {'class_type': 'EmptySD3LatentImage', 'inputs': {'width': 1536, 'height': 640, 'batch_size': 1}}}
+    wa.run(wa.base(TURN.format(who=who, what=what), SEEDS.get(name, SEED), 1.0, latent), raw)
+    sheet = Image.open(raw).convert('RGB')
+    third = sheet.width // 3
+    for k, d in enumerate(('down', 'right', 'up')):
+        part = RAW / f'{name}-{d}.png'
+        sheet.crop((k * third, 0, (k + 1) * third, sheet.height)).save(part)
+        img = fit_walker(cutout(part))
+        save_webp(img, files[d], 40000)
         if d == 'right':
-            todo = [dest, WALK / f'{name}-left.webp']
-        else:
-            todo = [dest]
-        if all(p.exists() for p in todo):
-            continue
-        text = (f"{desc}. Tiny full-body game character sprite of {who}, {words}, standing, whole body visible from the top of the head to the shoes with white space all around, small in the picture, "
-                f"seen from a high top-down three-quarter overhead angle, {STYLE}, plain flat white background, no text, no shadow")
-        raw = RAW / f'{name}-{d}.png'
-        if d != 'down' and (RAW / f'{name}-down.png').exists():
-            refpath = RAW / f'{name}-down.png'  # re-pose the painted front view: keeps the clothes the same
-        paint_ref(refpath, text, SEEDS.get(f'{name}/{d}', SEED), raw, DENOISE[d])
-        img = fit_walker(cutout(raw))
-        save_webp(img, dest, 40000)
-        if d == 'right':
-            save_webp(img.transpose(Image.FLIP_LEFT_RIGHT), WALK / f'{name}-left.webp', 40000)
-        print('made', dest.name, flush=True)
+            save_webp(img.transpose(Image.FLIP_LEFT_RIGHT), files['left'], 40000)
+    print('made', name, flush=True)
 
 def look_names():
     return [f'{b}-{i:02d}' for b in ('boy', 'girl') for i in range(1, 13)]
@@ -198,10 +157,10 @@ if __name__ == '__main__':
     cmd, rest = sys.argv[1], sys.argv[2:]
     if cmd == 'looks':
         for n in rest or look_names():
-            walker(n, PAINTED / 'looks' / f'{n}.webp', False)
+            walker(n)
     elif cmd == 'people':
         for n in rest or people_names():
-            walker(n, PAINTED / 'people' / f'{n}.webp', True)
+            walker(n)
     elif cmd == 'props':
         props()
     elif cmd == 'sheets':
