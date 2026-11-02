@@ -63,9 +63,11 @@ Deno.serve(
       return { ok: true, value: (data as { monsters_enabled?: boolean }).monsters_enabled === true };
     },
     async loadSave(player) {
-      const loaded = await call<{ world: never; version: number; clientAt: number } | null>('load_monster_save', { player });
+      const loaded = await call<{ world: never; version: number; clientAt: number; playDays?: number; playDay?: string | null } | null>('load_monster_save', { player });
       if (!loaded.ok) return loaded;
-      return { ok: true, value: loaded.value ? { world: loaded.value.world, at: Number(loaded.value.clientAt), version: loaded.value.version } : null };
+      const v = loaded.value;
+      // playDays and playDay arrive once the quests migration is applied.
+      return { ok: true, value: v ? { world: v.world, at: Number(v.clientAt), version: v.version, playDays: v.playDays ?? 0, playDay: v.playDay ?? null } : null };
     },
     knownSaves: (player, ids) => call('known_monster_saves', { player, ids }),
     // The rules' numbers come from the shared maths settings, so they live in one place.

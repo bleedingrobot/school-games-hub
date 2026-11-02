@@ -20,7 +20,8 @@
  *    opens only once, and you cannot be in an area you have not opened;
  *  - the bag can only hold what you had, plus the chests and prizes that are new, minus what battles used;
  *  - the monster book (seen, owned) and the badges, chests and paid trainers only ever grow;
- *  - answers per minute and steps per second must be something a person can do.
+ *  - answers per minute and steps per second must be something a person can do;
+ *  - the quest part (flags, bits, the board, crafting, eggs, giants): see checkQuest.ts.
  * A save that fails any of these is refused as a whole (see supabase/functions/monster/handler.ts).
  */
 import type { FactAnswer } from '../../maths/leitner';
@@ -39,6 +40,10 @@ import { addToBag, ITEM_ORDER, LOOT } from '../world/rewards';
 import { LOOKS, startTeam } from '../world/start';
 import type { GameMap, Thing, WorldState } from '../world/types';
 import { newWorld, refreshBook } from '../world/world';
+import { keysOf } from '../world/questWorld';
+import { GIANTS, giantById, giantFoe } from '../quests/giants';
+import { nzDay } from '../world/battleCap';
+import { checkQuest, CRAFTED_ITEMS, questShape } from './checkQuest';
 import { markQuestion, type QuestionReport } from './verify';
 
 // ------------------------------------------------------------------ what is sent
@@ -60,6 +65,8 @@ export interface BattleReport {
   map: string;
   /** The trainer's id, for a trainer battle. */
   trainer?: string;
+  /** The sleeping giant's id, for a giant battle (it doesn't count towards the day's battles). */
+  giant?: string;
   setup: BattleSetup;
   steps: BattleStep[];
   outcome: BattleOutcome;
@@ -84,6 +91,9 @@ export interface Stored {
   world: WorldState;
   /** The device time of that save. */
   at: number;
+  /** Days of play the database has counted, and the NZ day of the last one (missing before the quests migration). */
+  playDays?: number;
+  playDay?: string | null;
 }
 
 /** What a checked save adds up to (the database turns this into points, achievements and the board). */
@@ -99,6 +109,13 @@ export interface SaveSummary {
   seen: number;
   badges: number;
   finalInTeam: number;
+  /** Quests (docs/MONSTERS-QUESTS-PLAN.md): eggs hatched in this save; story quests done, giants woken, rare and ultra rare monsters owned (totals); quest points earned in this save. */
+  hatched: number;
+  questsDone: number;
+  giantsWoken: number;
+  raresOwned: number;
+  ultrasOwned: number;
+  questPoints: number;
 }
 
 export interface CheckedSave {
@@ -191,7 +208,6 @@ function monsterOk(m: unknown): m is Monster {
 /** One monster as the pool counts it: who, and how much exp. Health and order don't matter. */
 const signature = (m: Monster) => `${m.species}:${m.exp}${m.shiny ? ':s' : ''}`;
 const poolOf = (team: readonly Monster[], box: readonly Monster[]) => [...team, ...box].map(signature).sort();
-const samePool = (a: string[], b: string[]) => a.length === b.length && a.every((s, i) => s === b[i]);
 
 const bagOk = (bag: unknown): boolean =>
   isObject(bag) && Object.entries(bag).every(([k, v]) => ITEMS.includes(k) && isInt(v, 0, LIMITS.maxItem));
@@ -216,16 +232,21 @@ function worldShape(w: unknown): string | null {
   if (!world.chests.every((c) => CHEST_IDS.has(c)) || new Set(world.chests).size !== world.chests.length) return 'chests';
   if (!world.paid.every((p) => PAYING_TRAINERS.has(p)) || new Set(world.paid).size !== world.paid.length) return 'paid';
   if (world.look !== undefined && !LOOKS.includes(world.look)) return 'look';
+  const quest = questShape(world.quest, MAPS);
+  if (quest) return quest;
   const here = MAPS[world.map];
   if (!world.beaten.every((b) => TRAINER_MAP.get(b) === here.id)) return 'beaten';
   // You can only be in an area you have opened, standing on a tile you can stand on.
-  if (here.area > maxAreaFor(world.badges)) return 'area-locked';
-  if (isBlocked(here, world.x, world.y, world.badges) || here.things.some((t) => t.x === world.x && t.y === world.y)) return 'tile';
+  if (here.area > maxAreaFor(world.badges) || !bonusOpen(here.id, world)) return 'area-locked';
+  if (isBlocked(here, world.x, world.y, keysOf(world)) || here.things.some((t) => t.x === world.x && t.y === world.y)) return 'tile';
   // The last healing spot is next to a nurse.
   const healMap = MAPS[world.heal.map];
   if (!healMap.things.some((t) => t.kind === 'nurse' && Math.abs(t.x - world.heal.x) + Math.abs(t.y - world.heal.y) <= 2)) return 'heal';
   return null;
 }
+
+/** A bonus area is open once its giant is woken. */
+const bonusOpen = (map: string, world: WorldState) => GIANTS.every((g) => g.opens !== map || !!world.quest?.flags.includes(`woke:${g.id}`));
 
 function speciesKnown(id: string): boolean {
   try {
@@ -249,7 +270,7 @@ interface ReplayedBattle {
 }
 
 /** Plays one reported battle with the rules, checking each question and each random number. Returns a problem code or the result. */
-function replay(report: unknown, pool: string[], allowance: Bag): ReplayedBattle | string {
+function replay(report: unknown, pool: string[], allowance: Bag, hatched: string[]): ReplayedBattle | string {
   if (!isObject(report) || typeof report.id !== 'string' || !UUID.test(report.id)) return 'battle';
   const r = report as unknown as BattleReport;
   const map = typeof r.map === 'string' ? MAPS[r.map] : undefined;
@@ -258,7 +279,12 @@ function replay(report: unknown, pool: string[], allowance: Bag): ReplayedBattle
   const setup = r.setup;
 
   // Where the battle was: the foes must be the ones this map can give.
-  if (setup.kind === 'wild') {
+  if (setup.kind === 'wild' && r.giant !== undefined) {
+    // A sleeping giant: on its own map, exactly as giantFoe makes it.
+    const giant = typeof r.giant === 'string' ? giantById(r.giant) : undefined;
+    if (!giant || r.trainer !== undefined || map.id !== giant.map || setup.area !== Math.max(map.area, 1) || setup.far !== true) return 'battle-setup';
+    if (!Array.isArray(setup.foes) || JSON.stringify(setup.foes) !== JSON.stringify([giantFoe(giant)])) return 'battle-foe';
+  } else if (setup.kind === 'wild') {
     if (r.trainer !== undefined || map.area < 1 || !map.wild.length) return 'battle-setup';
     if (setup.area !== map.area || typeof setup.far !== 'boolean' || !Array.isArray(setup.foes) || setup.foes.length !== 1) return 'battle-setup';
     const foe = setup.foes[0];
@@ -280,7 +306,7 @@ function replay(report: unknown, pool: string[], allowance: Bag): ReplayedBattle
   if (!Array.isArray(setup.team) || !setup.team.every(monsterOk) || (setup.box !== undefined && (!Array.isArray(setup.box) || !setup.box.every(monsterOk)))) return 'battle-setup';
   if (setup.bag !== undefined && !bagOk(setup.bag)) return 'battle-setup';
   // It starts with exactly the monsters you held after the battle before, and no more items than you could have.
-  if (!samePool(poolOf(setup.team, setup.box ?? []), pool)) return 'pool-mismatch';
+  if (!takeHatched(poolOf(setup.team, setup.box ?? []), pool, hatched)) return 'pool-mismatch';
   for (const id of ITEM_ORDER) if ((setup.bag?.[id] ?? 0) > (allowance[id] ?? 0)) return 'bag';
 
   let state: BattleState;
@@ -325,7 +351,28 @@ function replay(report: unknown, pool: string[], allowance: Bag): ReplayedBattle
     if (used !== draws.length) return 'battle-random';
   }
   if (!['won', 'lost', 'ran', 'caught'].includes(state.phase) || state.phase !== r.outcome) return 'battle-outcome';
-  return { report: r, final: state, answers, wild: setup.kind === 'wild' };
+  return { report: r, final: state, answers, wild: setup.kind === 'wild' && r.giant === undefined };
+}
+
+/**
+ * Is `held` the monsters you had (`pool`) plus some just hatched? The ones used are taken out of
+ * `hatched` (each hatched monster turns up once).
+ */
+function takeHatched(held: string[], pool: string[], hatched: string[]): boolean {
+  const extra = [...held];
+  for (const s of pool) {
+    const i = extra.indexOf(s);
+    if (i < 0) return false;
+    extra.splice(i, 1);
+  }
+  const left = [...hatched];
+  for (const s of extra) {
+    const i = left.indexOf(s);
+    if (i < 0) return false;
+    left.splice(i, 1);
+  }
+  hatched.splice(0, hatched.length, ...left);
+  return true;
 }
 
 // ------------------------------------------------------------------ the whole save
@@ -335,7 +382,7 @@ function replay(report: unknown, pool: string[], allowance: Bag): ReplayedBattle
  * server's clock. Returns what to keep, or the first thing wrong, as a short code (it goes in the
  * server's log and on the teacher page, never to the student).
  */
-export function checkSave(prev: Stored | null, raw: unknown, nowMs: number): Checked {
+export function checkSave(prev: Stored | null, raw: unknown, nowMs: number, player = ''): Checked {
   if (!isObject(raw)) return fail('item');
   const item = raw as unknown as SaveItem;
   if (typeof item.saveId !== 'string' || !UUID.test(item.saveId)) return fail('save-id');
@@ -378,14 +425,39 @@ export function checkSave(prev: Stored | null, raw: unknown, nowMs: number): Che
   for (const c of newChests) allowance = addToBag(allowance, LOOT[CHEST_LOOT.get(c) ?? ''] ?? {});
   for (const p of newPaid) allowance = addToBag(allowance, LOOT[TRAINERS.get(p)!.loot ?? ''] ?? {});
 
+  // Quests: what new prizes and crafting allow, and the eggs that may have hatched.
+  const today = nzDay(nowMs);
+  const asked = item.battles.some((b) => isObject(b) && Array.isArray(b.steps) && b.steps.some((st: unknown) => isObject(st) && st.q !== undefined));
+  const playDaysBefore = prev?.playDays ?? 0;
+  const playDays = playDaysBefore + (asked && prev?.playDay !== today ? 1 : 0);
+  const questBattles = item.battles.map((b) => {
+    const r = (isObject(b) ? b : {}) as Partial<BattleReport>;
+    const foes = Array.isArray(r.setup?.foes) ? r.setup.foes.map((f) => (isObject(f) && typeof f.species === 'string' && speciesKnown(f.species) ? f.species : '')).filter(Boolean) : [];
+    return { outcome: String(r.outcome), foes, trainer: typeof r.trainer === 'string' ? r.trainer : undefined, giant: typeof r.giant === 'string' ? r.giant : undefined };
+  });
+  const quest = checkQuest(was, w, questBattles, { player, today, saveDay: nzDay(item.at), playDaysBefore, playDays });
+  if (typeof quest === 'string') return fail(quest);
+  allowance = addToBag(allowance, quest.prizeItems);
+  const hatched = quest.hatched.map(signature);
+  const hatchedAtStart = hatched.length;
+  // Crafting may have made some of these at any time: a battle may use up to that many more.
+  const battleAllowance = (): Bag => {
+    const out = { ...allowance };
+    for (const id of CRAFTED_ITEMS) out[id] = (out[id] ?? 0) + quest.craftable;
+    return out;
+  };
+
   const answers: CheckedSave['answers'] = {};
   const timeline: { q: QuestionReport; correct: boolean }[] = [];
-  const summary: SaveSummary = { wildWins: 0, trainerWins: 0, newBadges, catches: 0, questions: 0, right: 0, owned: 0, seen: 0, badges: 0, finalInTeam: 0 };
+  const summary: SaveSummary = {
+    wildWins: 0, trainerWins: 0, newBadges, catches: 0, questions: 0, right: 0, owned: 0, seen: 0, badges: 0, finalInTeam: 0,
+    hatched: 0, questsDone: 0, giantsWoken: 0, raresOwned: 0, ultrasOwned: 0, questPoints: quest.questPoints,
+  };
   const wonTrainers = new Set<string>();
   let wildBattles = 0;
   const seenIds = new Set<string>();
   for (const raw of item.battles) {
-    const out = replay(raw, pool, allowance);
+    const out = replay(raw, pool, battleAllowance(), hatched);
     if (typeof out === 'string') return fail(out);
     if (seenIds.has(out.report.id)) return fail('battle');
     seenIds.add(out.report.id);
@@ -396,7 +468,7 @@ export function checkSave(prev: Stored | null, raw: unknown, nowMs: number): Che
     }
     pool = poolOf(out.final.team, out.final.box);
     if (out.wild) wildBattles += 1;
-    if (out.report.outcome === 'won') {
+    if (out.report.outcome === 'won' && out.report.giant === undefined) {
       if (out.wild) summary.wildWins += 1;
       else {
         summary.trainerWins += 1;
@@ -412,8 +484,17 @@ export function checkSave(prev: Stored | null, raw: unknown, nowMs: number): Che
   }
 
   // The world you ended with holds exactly the monsters the battles left you.
-  if (!samePool(poolOf(w.team, w.box), pool)) return fail('pool-mismatch');
-  for (const id of ITEM_ORDER) if ((w.bag[id] ?? 0) > (allowance[id] ?? 0)) return fail('bag');
+  if (!takeHatched(poolOf(w.team, w.box), pool, hatched)) return fail('pool-mismatch');
+  summary.hatched = hatchedAtStart - hatched.length;
+  // Crafted items: all of them together, no more than the bits spent could make.
+  let crafted = 0;
+  for (const id of ITEM_ORDER) {
+    const over = (w.bag[id] ?? 0) - (allowance[id] ?? 0);
+    if (over <= 0) continue;
+    if (!(CRAFTED_ITEMS as readonly string[]).includes(id)) return fail('bag');
+    crafted += over;
+  }
+  if (crafted > quest.craftable) return fail('bag');
   // A new badge is a won Tower battle; a new prize is a won trainer battle.
   for (const b of newBadges) {
     const won = [...wonTrainers].some((id) => TRAINERS.get(id)?.badge === b);
@@ -423,7 +504,7 @@ export function checkSave(prev: Stored | null, raw: unknown, nowMs: number): Che
   // Chests are in areas you have opened.
   for (const c of newChests) {
     const map = Object.values(MAPS).find((m) => m.things.some((t) => t.id === c))!;
-    if (map.area > maxAreaFor(w.badges)) return fail('area-locked');
+    if (map.area > maxAreaFor(w.badges) || !bonusOpen(map.id, w)) return fail('area-locked');
   }
   // A Tower battle can only be won in its own map, which the badge must be the right one for (the loader already ties them).
 
@@ -448,5 +529,10 @@ export function checkSave(prev: Stored | null, raw: unknown, nowMs: number): Che
   summary.seen = w.seen.length;
   summary.badges = w.badges.length;
   summary.finalInTeam = w.team.filter((m) => speciesOf(m.species).final).length;
+  const flags = w.quest?.flags ?? [];
+  summary.questsDone = flags.filter((f) => f.startsWith('quest-done:')).length;
+  summary.giantsWoken = flags.filter((f) => f.startsWith('woke:')).length;
+  summary.raresOwned = w.owned.filter((s) => speciesOf(s).rarity === 'rare').length;
+  summary.ultrasOwned = w.owned.filter((s) => speciesOf(s).rarity === 'ultra').length;
   return { ok: true, save: { item, summary, answers } };
 }

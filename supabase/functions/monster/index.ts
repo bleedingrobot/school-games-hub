@@ -288,7 +288,7 @@ function newStats(key) {
 }
 const nzDayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Auckland" });
 /** The New Zealand date of a moment, as YYYY-MM-DD. */
-const nzDay = (at) => nzDayFormat.format(new Date(at));
+const nzDay$1 = (at) => nzDayFormat.format(new Date(at));
 /** The stats after one answer. Doesn't change the stats it's given. */
 function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
 	const ms = keptMs(rawMs);
@@ -306,7 +306,7 @@ function afterAnswer(stats, correct, rawMs, at, quickMs = QUICK_MS) {
 		return next;
 	}
 	if (ms > quickMs) return next;
-	const day = nzDay(at);
+	const day = nzDay$1(at);
 	if (!next.quickDays.includes(day)) next.quickDays = [...next.quickDays, day].slice(-2);
 	const canBeFluent = next.quickDays.length >= 2;
 	next.box = Math.min(stats.box + 1, canBeFluent ? 4 : 3);
@@ -343,7 +343,7 @@ function shuffle(items, random) {
 /** Rounds away floating-point dust: 0.1 + 0.2 → 0.3. */
 const tidy = (n) => Math.round(n * 1e3) / 1e3;
 /** Whole numbers within [lo, hi]. */
-const isInt$1 = (n, lo, hi) => typeof n === "number" && Number.isInteger(n) && n >= lo && n <= hi;
+const isInt$2 = (n, lo, hi) => typeof n === "number" && Number.isInteger(n) && n >= lo && n <= hi;
 /** How a number is written on screen: 3406 → "3406", 12500 → "12 500" (NZ style for 5+ digits), 0.5 → "0.5". */
 function show(n) {
 	const [whole, frac] = String(tidy(Math.abs(n))).split(".");
@@ -692,7 +692,7 @@ const facts = {
 	},
 	make: (key, [a, b, v]) => {
 		const fact = parseFact$1(key);
-		if (!fact || fact.a !== a || fact.b !== b || !isInt$1(v, 0, 4)) return null;
+		if (!fact || fact.a !== a || fact.b !== b || !isInt$2(v, 0, 4)) return null;
 		const s = a + b;
 		if (v === 0) return sum(a, b, { wrong: [
 			s + 1,
@@ -745,7 +745,7 @@ function kind(key, label, tag, roll, valid, make) {
 		curriculumTags: TODO$6(tag),
 		keys: [key],
 		roll: (_k, r) => roll(r),
-		make: (_k, [a, b]) => isInt$1(a, 0, 9999) && isInt$1(b, 0, 9999) && valid(a, b) ? make(a, b) : null
+		make: (_k, [a, b]) => isInt$2(a, 0, 9999) && isInt$2(b, 0, 9999) && valid(a, b) ? make(a, b) : null
 	};
 }
 const ones$1 = (n) => n % 10;
@@ -804,7 +804,7 @@ const ADD_SUB = {
 			keys: ["add:to100"],
 			roll: (_k, r) => [int(r, 1, 8) * 10 + int(r, 1, 9)],
 			make: (_k, [a]) => {
-				if (!isInt$1(a, 11, 89) || a % 10 === 0) return null;
+				if (!isInt$2(a, 11, 89) || a % 10 === 0) return null;
 				const parts = [
 					String(a),
 					"+",
@@ -990,7 +990,7 @@ const DECIMALS = {
 			keys: ["dec:tenths:add"],
 			roll: (_k, r) => [int(r, 1, 9), int(r, 1, 9)],
 			make: (_k, [a, b]) => {
-				if (!isInt$1(a, 1, 9) || !isInt$1(b, 1, 9)) return null;
+				if (!isInt$2(a, 1, 9) || !isInt$2(b, 1, 9)) return null;
 				const parts = [
 					tenths$1(a),
 					"+",
@@ -1022,7 +1022,7 @@ const DECIMALS = {
 				return [a, int(r, 1, Math.min(9, a - 1))];
 			},
 			make: (_k, [a, b]) => {
-				if (!isInt$1(a, 2, 19) || !isInt$1(b, 1, Math.min(9, a - 1))) return null;
+				if (!isInt$2(a, 2, 19) || !isInt$2(b, 1, Math.min(9, a - 1))) return null;
 				const parts = [
 					tenths$1(a),
 					"−",
@@ -1050,7 +1050,7 @@ const DECIMALS = {
 			keys: ["dec:from-frac:tenths"],
 			roll: (_k, r) => [int(r, 1, 9)],
 			make: (_k, [n]) => {
-				if (!isInt$1(n, 1, 9)) return null;
+				if (!isInt$2(n, 1, 9)) return null;
 				const parts = [
 					`${n}/10`,
 					"=",
@@ -1076,7 +1076,7 @@ const DECIMALS = {
 			keys: ["money:add"],
 			roll: (_k, r) => [int(r, 21, 199) * 5, int(r, 21, 199) * 5],
 			make: (_k, [a, b]) => {
-				if (!isInt$1(a, 105, 995) || !isInt$1(b, 105, 995) || a % 5 || b % 5) return null;
+				if (!isInt$2(a, 105, 995) || !isInt$2(b, 105, 995) || a % 5 || b % 5) return null;
 				const parts = [
 					dollars(a),
 					"+",
@@ -1118,7 +1118,7 @@ const DECIMALS = {
 					500,
 					1e3,
 					2e3
-				].includes(paid) || !isInt$1(cost, 105, paid - 5) || cost % 5) return null;
+				].includes(paid) || !isInt$2(cost, 105, paid - 5) || cost % 5) return null;
 				const parts = [
 					dollars(paid),
 					"−",
@@ -1154,7 +1154,7 @@ const DECIMALS = {
 				return [a, int(r, 1, 9) * 10];
 			},
 			make: (_k, [a, b]) => {
-				if (!isInt$1(a, 11, 99) || a % 10 === 0 || !isInt$1(b, 10, 90) || b % 10) return null;
+				if (!isInt$2(a, 11, 99) || a % 10 === 0 || !isInt$2(b, 10, 90) || b % 10) return null;
 				const parts = [
 					hundredths$1(a),
 					"+",
@@ -1188,7 +1188,7 @@ const DECIMALS = {
 				return r() < .5 ? [a, b] : [b, a];
 			},
 			make: (_k, [a, b]) => {
-				if (!isInt$1(a, 1, 99) || !isInt$1(b, 1, 99) || a === b || a % 10 === 0 === (b % 10 === 0)) return null;
+				if (!isInt$2(a, 1, 99) || !isInt$2(b, 1, 99) || a === b || a % 10 === 0 === (b % 10 === 0)) return null;
 				const labels = [hundredths$1(a), hundredths$1(b)];
 				const answer = a > b ? 0 : 1;
 				return decimal({
@@ -1212,7 +1212,7 @@ const DECIMALS = {
 				return [a, int(r, 1, 2)];
 			},
 			make: (_k, [a, p]) => {
-				if (!isInt$1(a, 1, 99) || a % 10 === 0 || !isInt$1(p, 1, 2)) return null;
+				if (!isInt$2(a, 1, 99) || a % 10 === 0 || !isInt$2(p, 1, 2)) return null;
 				const m = 10 ** p;
 				const parts = [
 					tenths$1(a),
@@ -1247,7 +1247,7 @@ const DECIMALS = {
 				return [a];
 			},
 			make: (_k, [a]) => {
-				if (!isInt$1(a, 11, 199) || a % 10 === 0) return null;
+				if (!isInt$2(a, 11, 199) || a % 10 === 0) return null;
 				const down = Math.floor(a / 10);
 				const answer = a % 10 >= 5 ? down + 1 : down;
 				const parts = [
@@ -1276,7 +1276,7 @@ const DECIMALS = {
 			keys: ["dec:times-whole"],
 			roll: (_k, r) => [int(r, 1, 9), int(r, 2, 9)],
 			make: (_k, [a, b]) => {
-				if (!isInt$1(a, 1, 9) || !isInt$1(b, 2, 9)) return null;
+				if (!isInt$2(a, 1, 9) || !isInt$2(b, 2, 9)) return null;
 				const parts = [
 					tenths$1(a),
 					"×",
@@ -1303,7 +1303,7 @@ const DECIMALS = {
 			keys: ["dec:from-frac"],
 			roll: (_k, r) => r() < .3 ? [int(r, 1, 99), 100] : pickOne(r, FRACTIONS_AS_DECIMALS),
 			make: (_k, [n, d]) => {
-				if (!(d === 100 ? isInt$1(n, 1, 99) : FRACTIONS_AS_DECIMALS.some(([x, y]) => x === n && y === d))) return null;
+				if (!(d === 100 ? isInt$2(n, 1, 99) : FRACTIONS_AS_DECIMALS.some(([x, y]) => x === n && y === d))) return null;
 				const parts = [
 					`${n}/${d}`,
 					"=",
@@ -1382,7 +1382,7 @@ function factFamily(label, divisors, upTo) {
 			];
 		},
 		make: (key, [d, q, v]) => {
-			if (!owned.has(key) || !isInt$1(v, 0, 1) || key !== `div:${d * q}/${d}`) return null;
+			if (!owned.has(key) || !isInt$2(v, 0, 1) || key !== `div:${d * q}/${d}`) return null;
 			const n = d * q;
 			if (v === 0) {
 				const parts = [
@@ -1467,7 +1467,7 @@ const DIVISION = {
 				return [d, int(r, 11, Math.floor(99 / d))];
 			},
 			make: (_k, [d, q]) => {
-				if (!isInt$1(d, 2, 6) || !isInt$1(q, 11, Math.floor(99 / d))) return null;
+				if (!isInt$2(d, 2, 6) || !isInt$2(q, 11, Math.floor(99 / d))) return null;
 				const n = d * q;
 				return divide(n, d, { wrong: [
 					q + 1,
@@ -1483,7 +1483,7 @@ const DIVISION = {
 			keys: ["div:by10"],
 			roll: (_k, r) => [int(r, 1, 9) * 10 + int(r, 1, 9), int(r, 1, 2)],
 			make: (_k, [q, p]) => {
-				if (!isInt$1(q, 11, 99) || q % 10 === 0 || !isInt$1(p, 1, 2)) return null;
+				if (!isInt$2(q, 11, 99) || q % 10 === 0 || !isInt$2(p, 1, 2)) return null;
 				const d = 10 ** p;
 				return divide(q * d, d, { wrong: [
 					q * 10,
@@ -1499,7 +1499,7 @@ const DIVISION = {
 			keys: ["div:missing"],
 			roll: (_k, r) => [int(r, 2, 9), int(r, 2, 12)],
 			make: (_k, [d, q]) => {
-				if (!isInt$1(d, 2, 9) || !isInt$1(q, 2, 12)) return null;
+				if (!isInt$2(d, 2, 9) || !isInt$2(q, 2, 12)) return null;
 				const parts = [
 					"?",
 					"÷",
@@ -1533,7 +1533,7 @@ const DIVISION = {
 				];
 			},
 			make: (_k, [d, q, rem]) => {
-				if (!isInt$1(d, 3, 9) || !isInt$1(q, 2, 9) || !isInt$1(rem, 1, d - 1)) return null;
+				if (!isInt$2(d, 3, 9) || !isInt$2(q, 2, 9) || !isInt$2(rem, 1, d - 1)) return null;
 				const n = d * q + rem;
 				const parts = [
 					String(n),
@@ -1567,7 +1567,7 @@ const DIVISION = {
 				return [d, int(r, Math.ceil(100 / d), Math.floor(999 / d))];
 			},
 			make: (_k, [d, q]) => {
-				if (!isInt$1(d, 3, 9) || !isInt$1(q, Math.ceil(100 / d), Math.floor(999 / d))) return null;
+				if (!isInt$2(d, 3, 9) || !isInt$2(q, Math.ceil(100 / d), Math.floor(999 / d))) return null;
 				return divide(d * q, d, { wrong: [
 					q + 1,
 					q - 1,
@@ -1650,7 +1650,7 @@ const FRACTIONS$1 = {
 					4,
 					5,
 					10
-				].includes(d) || !isInt$1(q, 1, 10)) return null;
+				].includes(d) || !isInt$2(q, 1, 10)) return null;
 				const parts = [
 					frac$1(1, d),
 					"of",
@@ -1695,7 +1695,7 @@ const FRACTIONS$1 = {
 					d
 				];
 			},
-			make: (_k, [a, b, d]) => isInt$1(d, 3, 12) && isInt$1(a, 1, d - 1) && isInt$1(b, 1, d - 1) && a !== b ? bigger(a, d, b, d) : null
+			make: (_k, [a, b, d]) => isInt$2(d, 3, 12) && isInt$2(a, 1, d - 1) && isInt$2(b, 1, d - 1) && a !== b ? bigger(a, d, b, d) : null
 		},
 		"frac:of:nonunit": {
 			label: "A fraction of an amount (3/4 of 20)",
@@ -1726,7 +1726,7 @@ const FRACTIONS$1 = {
 					5,
 					8,
 					10
-				].includes(d) || !isInt$1(n, 2, d - 1) || gcd$2(n, d) !== 1 || !isInt$1(q, 1, 10)) return null;
+				].includes(d) || !isInt$2(n, 2, d - 1) || gcd$2(n, d) !== 1 || !isInt$2(q, 1, 10)) return null;
 				const parts = [
 					frac$1(n, d),
 					"of",
@@ -1766,7 +1766,7 @@ const FRACTIONS$1 = {
 				];
 			},
 			make: (_k, [n, d, k, v]) => {
-				if (!isInt$1(d, 2, 5) || !isInt$1(n, 1, d - 1) || gcd$2(n, d) !== 1 || !isInt$1(k, 2, 5) || !isInt$1(v, 0, 1)) return null;
+				if (!isInt$2(d, 2, 5) || !isInt$2(n, 1, d - 1) || gcd$2(n, d) !== 1 || !isInt$2(k, 2, 5) || !isInt$2(v, 0, 1)) return null;
 				const blank = v === 0 ? `?/${d * k}` : `${n * k}/?`;
 				const parts = [
 					frac$1(n, d),
@@ -1812,7 +1812,7 @@ const FRACTIONS$1 = {
 					d2
 				];
 			},
-			make: (_k, [n, d1, d2]) => DENOMINATORS.includes(d1) && DENOMINATORS.includes(d2) && d1 !== d2 && isInt$1(n, 1, Math.min(d1, d2) - 1) ? bigger(n, d1, n, d2) : null
+			make: (_k, [n, d1, d2]) => DENOMINATORS.includes(d1) && DENOMINATORS.includes(d2) && d1 !== d2 && isInt$2(n, 1, Math.min(d1, d2) - 1) ? bigger(n, d1, n, d2) : null
 		},
 		"frac:add:same-den": {
 			label: "Adding fractions with the same bottom number",
@@ -1828,7 +1828,7 @@ const FRACTIONS$1 = {
 				];
 			},
 			make: (_k, [a, b, d]) => {
-				if (!isInt$1(d, 3, 12) || !isInt$1(a, 1, d - 2) || !isInt$1(b, 1, d - 1 - a)) return null;
+				if (!isInt$2(d, 3, 12) || !isInt$2(a, 1, d - 2) || !isInt$2(b, 1, d - 1 - a)) return null;
 				const parts = [
 					frac$1(a, d),
 					"+",
@@ -1863,7 +1863,7 @@ const FRACTIONS$1 = {
 				];
 			},
 			make: (_k, [a, b, d]) => {
-				if (!isInt$1(d, 3, 12) || !isInt$1(a, 2, d) || !isInt$1(b, 1, a - 1)) return null;
+				if (!isInt$2(d, 3, 12) || !isInt$2(a, 2, d) || !isInt$2(b, 1, a - 1)) return null;
 				const parts = [
 					frac$1(a, d),
 					"−",
@@ -1898,7 +1898,7 @@ const FRACTIONS$1 = {
 				];
 			},
 			make: (_k, [w, n, d, v]) => {
-				if (!isInt$1(d, 2, 8) || !isInt$1(w, 1, 4) || !isInt$1(n, 1, d - 1) || !isInt$1(v, 0, 1)) return null;
+				if (!isInt$2(d, 2, 8) || !isInt$2(w, 1, 4) || !isInt$2(n, 1, d - 1) || !isInt$2(v, 0, 1)) return null;
 				const top = w * d + n;
 				if (v === 0) {
 					const parts = [
@@ -1955,7 +1955,7 @@ const FRACTIONS$1 = {
 					];
 				}
 			},
-			make: (_k, [n1, d1, n2, d2]) => DENOMINATORS.includes(d1) && DENOMINATORS.includes(d2) && d1 !== d2 && isInt$1(n1, 1, d1 - 1) && isInt$1(n2, 1, d2 - 1) && n1 !== n2 && n1 * d2 !== n2 * d1 ? bigger(n1, d1, n2, d2) : null
+			make: (_k, [n1, d1, n2, d2]) => DENOMINATORS.includes(d1) && DENOMINATORS.includes(d2) && d1 !== d2 && isInt$2(n1, 1, d1 - 1) && isInt$2(n2, 1, d2 - 1) && n1 !== n2 && n1 * d2 !== n2 * d1 ? bigger(n1, d1, n2, d2) : null
 		},
 		"frac:simplify": {
 			label: "Simplifying fractions (6/8 = 3/?)",
@@ -1975,7 +1975,7 @@ const FRACTIONS$1 = {
 				];
 			},
 			make: (_k, [n, d, k, v]) => {
-				if (!isInt$1(d, 2, 6) || !isInt$1(n, 1, d - 1) || gcd$2(n, d) !== 1 || !isInt$1(k, 2, 6) || !isInt$1(v, 0, 1)) return null;
+				if (!isInt$2(d, 2, 6) || !isInt$2(n, 1, d - 1) || gcd$2(n, d) !== 1 || !isInt$2(k, 2, 6) || !isInt$2(v, 0, 1)) return null;
 				const parts = [
 					frac$1(n * k, d * k),
 					"=",
@@ -2075,7 +2075,7 @@ function digitWorth(key, label, lo, hi) {
 			}
 		},
 		make: (_k, [n, place]) => {
-			if (!isInt$1(n, lo, hi) || !askablePlaces(n, 1).includes(place)) return null;
+			if (!isInt$2(n, lo, hi) || !askablePlaces(n, 1).includes(place)) return null;
 			const d = digitAt(n, place);
 			const parts = [
 				"In",
@@ -2101,7 +2101,7 @@ function digitWorth(key, label, lo, hi) {
 	};
 }
 function partition(key, label, lo, hi) {
-	const ok = (n, place) => isInt$1(n, lo, hi) && isInt$1(place, 1, digitCount(n) - 1) && digitAt(n, place) !== 0 && String(n).replace(/0/g, "").length >= 2;
+	const ok = (n, place) => isInt$2(n, lo, hi) && isInt$2(place, 1, digitCount(n) - 1) && digitAt(n, place) !== 0 && String(n).replace(/0/g, "").length >= 2;
 	return {
 		label,
 		curriculumTags: TODO("place-value-partition"),
@@ -2143,7 +2143,7 @@ function partition(key, label, lo, hi) {
 }
 /** "10 more than 395": steps are 10s (band 1) or 100s and 1000s (band 2). Half the questions cross into the next place. */
 function moreLess(key, label, steps, lo, hi) {
-	const ok = (n, v, step) => isInt$1(v, 0, 1) && steps.includes(step) && isInt$1(n, lo, hi) && isInt$1(v === 0 ? n + step : n - step, lo - step, hi + step);
+	const ok = (n, v, step) => isInt$2(v, 0, 1) && steps.includes(step) && isInt$2(n, lo, hi) && isInt$2(v === 0 ? n + step : n - step, lo - step, hi + step);
 	return {
 		label,
 		curriculumTags: TODO("place-value-more-less"),
@@ -2190,7 +2190,7 @@ function moreLess(key, label, steps, lo, hi) {
 	};
 }
 function rounding(key, label, to, lo, hi) {
-	const ok = (n) => isInt$1(n, lo, hi) && n % to !== 0;
+	const ok = (n) => isInt$2(n, lo, hi) && n % to !== 0;
 	return {
 		label,
 		curriculumTags: TODO("rounding"),
@@ -2247,7 +2247,7 @@ const PLACE_VALUE = {
 			keys: ["pv:times10"],
 			roll: (_k, r) => [int(r, 2, 99), int(r, 1, 3)],
 			make: (_k, [n, p]) => {
-				if (!isInt$1(n, 2, 99) || !isInt$1(p, 1, 3)) return null;
+				if (!isInt$2(n, 2, 99) || !isInt$2(p, 1, 3)) return null;
 				const m = 10 ** p;
 				const parts = [
 					String(n),
@@ -2404,7 +2404,7 @@ function bonds(label, tag, prefix, total, from) {
 		},
 		make: (key, [a, b, v]) => {
 			const bond = parseBond(key);
-			if (!bond || bond.total !== total || bond.a !== a || bond.b !== b || !keys.includes(key) || !isInt$1(v, 0, 3)) return null;
+			if (!bond || bond.total !== total || bond.a !== a || bond.b !== b || !keys.includes(key) || !isInt$2(v, 0, 3)) return null;
 			const t = String(total);
 			const [parts, answer] = v === 0 ? [[
 				String(a),
@@ -2459,7 +2459,7 @@ function doublesHalves(label, tag, dblFrom, dblTo, halfFrom, halfTo) {
 		keys,
 		roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 1)],
 		make: (key, [n, v]) => {
-			if (!keys.includes(key) || key.split(":")[1] !== String(n) || !isInt$1(v, 0, 1)) return null;
+			if (!keys.includes(key) || key.split(":")[1] !== String(n) || !isInt$2(v, 0, 1)) return null;
 			if (key.startsWith("dbl:")) {
 				const parts = v === 0 ? [
 					String(n),
@@ -2526,7 +2526,7 @@ const EARLY_FACTS = {
 			keys: range$5(1, 9).map((n) => `tenand:${n}`),
 			roll: (key, r) => [Number(key.split(":")[1]), int(r, 0, 3)],
 			make: (key, [n, v]) => {
-				if (!isInt$1(n, 1, 9) || key !== `tenand:${n}` || !isInt$1(v, 0, 3)) return null;
+				if (!isInt$2(n, 1, 9) || key !== `tenand:${n}` || !isInt$2(v, 0, 3)) return null;
 				const t = String(10 + n);
 				const [parts, answer] = v === 0 ? [[
 					"10",
@@ -2787,7 +2787,7 @@ const MAX_NUMBER = 30;
 const MAX_ANSWER = 300;
 function build$1(templateIndex, nums) {
 	const template = TEMPLATES[templateIndex];
-	if (!template || nums.length !== lettersOf(template.src) || !nums.every((n) => isInt$1(n, 2, MAX_NUMBER))) return null;
+	if (!template || nums.length !== lettersOf(template.src) || !nums.every((n) => isInt$2(n, 2, MAX_NUMBER))) return null;
 	const tokens = tokensOf(template.src, nums);
 	const answer = evaluate(tokens, RIGHT);
 	if (!Number.isInteger(answer) || answer < 1 || answer > MAX_ANSWER) return null;
@@ -2879,7 +2879,7 @@ function talk(parts) {
 /** The two numbers every pick question ends with. */
 const rollPick = (random, wrong = 3) => [int(random, 0, wrong), int(random, 0, 9)];
 /** Are `slot` and `salt` numbers a roll could have given? */
-const goodPick = (slot, salt, wrong = 3) => isInt$1(slot, 0, wrong) && isInt$1(salt, 0, 9);
+const goodPick = (slot, salt, wrong = 3) => isInt$2(slot, 0, wrong) && isInt$2(salt, 0, 9);
 /**
 * A question with the right choice and choices from named mistakes. `named` maps the name of each mistake to the choice it
 * gives. Choices that repeat the right one (or each other, in value) are dropped; null when fewer than needed are left, so the
@@ -2956,7 +2956,7 @@ const BIG_DENS = [
 	10
 ];
 /** A top number and bottom number under one: 1/d up to (d - 1)/d. */
-const goodFraction = (n, d, dens) => dens.includes(d) && isInt$1(n, 1, d - 1);
+const goodFraction = (n, d, dens) => dens.includes(d) && isInt$2(n, 1, d - 1);
 const rollFraction = (r, dens) => {
 	const d = pickOne(r, dens);
 	return [Math.min(d - 1, 1 + Math.floor(r() * (d - 1))), d];
@@ -2980,7 +2980,7 @@ function pairFamily(key, label, dens) {
 		Math.floor(r() * 2),
 		...rollPick(r)
 	], (_k, [n, d, v, slot, salt]) => {
-		if (!goodFraction(n, d, dens) || !isInt$1(v, 0, 1) || !goodPick(slot, salt)) return null;
+		if (!goodFraction(n, d, dens) || !isInt$2(v, 0, 1) || !goodPick(slot, salt)) return null;
 		const right = frac(d - n, d);
 		const parts = v === 0 ? [
 			frac(n, d),
@@ -3026,7 +3026,7 @@ const fractionFamilies = [
 		});
 	}),
 	oneKey("bondf1:missing-top", "The missing top number (3/8 + ?/8 = 1)", FRACTION_TAGS, 3, (_k, r) => [...rollFraction(r, ALL_DENS), Math.floor(r() * 2)], (_k, [n, d, v]) => {
-		if (!goodFraction(n, d, ALL_DENS) || !isInt$1(v, 0, 1)) return null;
+		if (!goodFraction(n, d, ALL_DENS) || !isInt$2(v, 0, 1)) return null;
 		const blank = `?/${d}`;
 		const parts = v === 0 ? [
 			frac(n, d),
@@ -3106,7 +3106,7 @@ function decimalBond(u, whole, scale, target) {
 function decimalFamilies(prefix, word, labels, pool, scale, target) {
 	const whole = target * scale;
 	return [oneKey(`${prefix}:${word}`, labels[0], DECIMAL_TAGS, 2, (_k, r) => [pickOne(r, pool), Math.floor(r() * 2)], (_k, [u, v]) => {
-		if (!pool.includes(u) || !isInt$1(v, 0, 1)) return null;
+		if (!pool.includes(u) || !isInt$2(v, 0, 1)) return null;
 		const b = decimalBond(u, whole, scale, target);
 		const parts = v === 0 ? [
 			b.shown,
@@ -3220,7 +3220,7 @@ const TENTH_TAGS = ["MS.Y4.NUM.RN.P3", "MS.Y4.NUM.RN.P5"];
 const COUNTS = range$3(1, 39).filter(notTen);
 const tenthFamilies = [
 	oneKey("tenth:to-fraction", "A decimal as tenths (0.3 = 3/10)", TENTH_TAGS, 3, (_k, r) => [int(r, 2, 9), ...rollPick(r)], (_k, [d, slot, salt]) => {
-		if (!isInt$1(d, 2, 9) || !goodPick(slot, salt)) return null;
+		if (!isInt$2(d, 2, 9) || !goodPick(slot, salt)) return null;
 		const right = frac(d, 10);
 		const parts = [
 			tenths(d),
@@ -3242,7 +3242,7 @@ const tenthFamilies = [
 		});
 	}),
 	oneKey("tenth:to-decimal", "Tenths as a decimal (3/10 = 0.3)", TENTH_TAGS, 3, (_k, r) => [int(r, 1, 9), ...rollPick(r)], (_k, [d, slot, salt]) => {
-		if (!isInt$1(d, 1, 9) || !goodPick(slot, salt)) return null;
+		if (!isInt$2(d, 1, 9) || !goodPick(slot, salt)) return null;
 		const right = tenths(d);
 		const parts = [
 			frac(d, 10),
@@ -3264,7 +3264,7 @@ const tenthFamilies = [
 		});
 	}),
 	oneKey("tenth:divide", "Dividing by 10 to make tenths (27 ÷ 10 = 2.7)", TENTH_TAGS, 1, (_k, r) => [pickOne(r, range$3(1, 99).filter(notTen))], (_k, [n]) => {
-		if (!isInt$1(n, 1, 99) || !notTen(n)) return null;
+		if (!isInt$2(n, 1, 99) || !notTen(n)) return null;
 		const parts = [
 			show(n),
 			"÷",
@@ -3305,7 +3305,7 @@ const tenthFamilies = [
 	}),
 	oneKey("tenth:half", "Half and double of tenths (half of 1.4 = 0.7)", TENTH_TAGS, 2, (_k, r) => r() < .5 ? [pickOne(r, range$3(2, 38, 2)), 0] : [int(r, 1, 24), 1], (_k, [t, v]) => {
 		if (v === 0) {
-			if (!isInt$1(t, 2, 38) || t % 2 !== 0) return null;
+			if (!isInt$2(t, 2, 38) || t % 2 !== 0) return null;
 			const parts = [
 				"Half",
 				"of",
@@ -3328,7 +3328,7 @@ const tenthFamilies = [
 				"took half off the number": t / 10 - .5
 			});
 		}
-		if (v !== 1 || !isInt$1(t, 1, 24)) return null;
+		if (v !== 1 || !isInt$2(t, 1, 24)) return null;
 		const parts = [
 			"Double",
 			tenths(t),
@@ -3358,7 +3358,7 @@ const dig = (t) => t % 10;
 function twoTenths(key, label, ok, sign, named, aLo, aHi) {
 	const pool = range$3(aLo, aHi).flatMap((a) => range$3(1, aHi).filter((b) => ok(a, b)).map((b) => [a, b]));
 	return oneKey(key, label, ADD_TAGS, 2, (_k, r) => pickOne(r, pool), (_k, [a, b]) => {
-		if (!isInt$1(a, 1, 99) || !isInt$1(b, 1, 99) || !ok(a, b)) return null;
+		if (!isInt$2(a, 1, 99) || !isInt$2(b, 1, 99) || !ok(a, b)) return null;
 		const parts = [
 			tenths(a),
 			sign,
@@ -3405,7 +3405,7 @@ const addFamilies = [
 		int(r, 1, 9),
 		int(r, 0, 2)
 	], (_k, [w, t, v]) => {
-		if (!isInt$1(w, 1, 9) || !isInt$1(t, 1, 9) || !isInt$1(v, 0, 2)) return null;
+		if (!isInt$2(w, 1, 9) || !isInt$2(t, 1, 9) || !isInt$2(v, 0, 2)) return null;
 		const small = tenths(t);
 		if (v === 2) {
 			const parts = [
@@ -3461,7 +3461,7 @@ const addFamilies = [
 		int(r, 1, 2),
 		int(r, 0, 2)
 	], (_k, [t, target, v]) => {
-		if (!isInt$1(t, 1, 9) || !isInt$1(target, 1, 2) || !isInt$1(v, 0, 2)) return null;
+		if (!isInt$2(t, 1, 9) || !isInt$2(target, 1, 2) || !isInt$2(v, 0, 2)) return null;
 		const small = tenths(t);
 		const parts = v === 0 ? [
 			small,
@@ -3589,7 +3589,7 @@ const equivFamilies$1 = [
 		});
 	}),
 	oneKey("deceq:hundredths", "Hundredths as a decimal (7/100 = 0.07)", EQUIV_TAGS$1, 1, (_k, r) => [pickOne(r, range$3(1, 99).filter(notTen))], (_k, [n]) => {
-		if (!isInt$1(n, 1, 99) || !notTen(n)) return null;
+		if (!isInt$2(n, 1, 99) || !notTen(n)) return null;
 		const parts = [
 			frac(n, 100),
 			"=",
@@ -3610,7 +3610,7 @@ const equivFamilies$1 = [
 	}),
 	oneKey("deceq:to-fraction", "A decimal as a fraction (0.75 = 3/4)", EQUIV_TAGS$1, 3, (_k, r) => [int(r, 0, FRACTION_DECIMALS.length - 1), ...rollPick(r)], (_k, [i, slot, salt]) => {
 		const pair = FRACTION_DECIMALS[i];
-		if (!pair || !isInt$1(i, 0, FRACTION_DECIMALS.length - 1) || !goodPick(slot, salt)) return null;
+		if (!pair || !isInt$2(i, 0, FRACTION_DECIMALS.length - 1) || !goodPick(slot, salt)) return null;
 		const [decimal, right] = pair;
 		const parts = [
 			decimal,
@@ -3644,11 +3644,11 @@ const equivFamilies$1 = [
 			...rollPick(r, 1)
 		];
 	}, (_k, [x, y, v, slot, salt]) => {
-		if (!goodPick(slot, salt, 1) || !isInt$1(x, 1, 99) || !notTen(x) || !isInt$1(v, 0, 1)) return null;
+		if (!goodPick(slot, salt, 1) || !isInt$2(x, 1, 99) || !notTen(x) || !isInt$2(v, 0, 1)) return null;
 		const smaller = v === 0 ? x : y * 10;
 		const bigger = v === 0 ? y * 10 : x;
-		if (v === 0 && !(isInt$1(y, 1, 9) && y * 10 > x)) return null;
-		if (v === 1 && !(isInt$1(y, 1, 9) && y === Math.floor(x / 10))) return null;
+		if (v === 0 && !(isInt$2(y, 1, 9) && y * 10 > x)) return null;
+		if (v === 1 && !(isInt$2(y, 1, 9) && y === Math.floor(x / 10))) return null;
 		const right = hundredths(bigger);
 		const wrong = hundredths(smaller);
 		return pick({
@@ -3675,7 +3675,7 @@ const places = (answer) => {
 };
 function moveFamily(key, label, make, check, build) {
 	return oneKey(key, label, TIMES_TAGS, 1, (_k, r) => make(r), (_k, [n]) => {
-		if (!isInt$1(n, 1, 1e5) || !check(n)) return null;
+		if (!isInt$2(n, 1, 1e5) || !check(n)) return null;
 		const { parts, answer, named } = build(n);
 		return withMistakes({
 			parts,
@@ -3751,7 +3751,7 @@ const timesFamilies = [
 		}
 	})),
 	oneKey("timesdec:missing", "A missing 10 or 100 (0.6 × ? = 60)", TIMES_TAGS, 2, (_k, r) => [pickOne(r, range$3(11, 99).filter(notTen)), int(r, 0, 3)], (_k, [t, v]) => {
-		if (!isInt$1(t, 11, 99) || !notTen(t) || !isInt$1(v, 0, 3)) return null;
+		if (!isInt$2(t, 11, 99) || !notTen(t) || !isInt$2(v, 0, 3)) return null;
 		const small = tenths(t);
 		const [parts, answer] = v === 0 ? [[
 			small,
@@ -3974,7 +3974,7 @@ const families$1 = [
 		});
 	}),
 	oneKey("fdp:dec-to-pct", "A decimal as a percentage (0.35 = 35%)", TAGS, 1, (_k, r) => [pickOne(r, range$2(1, 99))], (_k, [h]) => {
-		if (!isInt$1(h, 1, 99)) return null;
+		if (!isInt$2(h, 1, 99)) return null;
 		const parts = [
 			show(h / 100),
 			"=",
@@ -4065,7 +4065,7 @@ const UNIT_TAGS = ["MS.Y3.NUM.RN.P7"];
 /** 1/d of an amount that d goes into exactly. `dens` are the bottom numbers this type uses. */
 function unitFamily(key, label, dens, qLo, qHi) {
 	return oneKey(key, label, UNIT_TAGS, 2, (_k, r) => [pickOne(r, dens), int(r, qLo, qHi)], (_k, [d, q]) => {
-		if (!dens.includes(d) || !isInt$1(q, qLo, qHi)) return null;
+		if (!dens.includes(d) || !isInt$2(q, qLo, qHi)) return null;
 		const amount = d * q;
 		const parts = [
 			frac(1, d),
@@ -4143,7 +4143,7 @@ function nonUnitFamily(word) {
 		d,
 		int(r, 1, 10)
 	], (_k, [n, den, q]) => {
-		if (den !== d || !tops.includes(n) || !isInt$1(q, 1, 10)) return null;
+		if (den !== d || !tops.includes(n) || !isInt$2(q, 1, 10)) return null;
 		const parts = [
 			frac(n, d),
 			"of",
@@ -4170,7 +4170,7 @@ function nonUnitFamily(word) {
 const EQUIV_TAGS = ["MS.Y5.NUM.RN.P9", "MS.Y6.NUM.RN.P6"];
 /** Fractions in their simplest form, under one, with a bottom number up to 6. */
 const SIMPLEST = range$1(2, 6).flatMap((d) => range$1(1, d - 1).filter((n) => gcd$1(n, d) === 1).map((n) => [n, d]));
-const isSimplest = (n, d) => isInt$1(d, 2, 6) && isInt$1(n, 1, d - 1) && gcd$1(n, d) === 1;
+const isSimplest = (n, d) => isInt$2(d, 2, 6) && isInt$2(n, 1, d - 1) && gcd$1(n, d) === 1;
 /** Smallest number that divides k other than 1, if k is not prime (so 12/16 can be "only halved"). */
 const smallestFactor = (k) => range$1(2, k - 1).find((p) => k % p === 0);
 const equivFamilies = [
@@ -4182,7 +4182,7 @@ const equivFamilies = [
 			int(r, 2, 6)
 		];
 	}, (_k, [n, d, k]) => {
-		if (!isSimplest(n, d) || !isInt$1(k, 2, 6)) return null;
+		if (!isSimplest(n, d) || !isInt$2(k, 2, 6)) return null;
 		const parts = [
 			frac(n, d),
 			"=",
@@ -4210,7 +4210,7 @@ const equivFamilies = [
 			int(r, 2, 6)
 		];
 	}, (_k, [n, d, k]) => {
-		if (!isSimplest(n, d) || !isInt$1(k, 2, 6)) return null;
+		if (!isSimplest(n, d) || !isInt$2(k, 2, 6)) return null;
 		const parts = [
 			frac(n, d),
 			"=",
@@ -4240,7 +4240,7 @@ const equivFamilies = [
 			...rollPick(r)
 		];
 	}, (_k, [n, d, k, slot, salt]) => {
-		if (!isSimplest(n, d) || !isInt$1(k, 2, 5) || !goodPick(slot, salt)) return null;
+		if (!isSimplest(n, d) || !isInt$2(k, 2, 5) || !goodPick(slot, salt)) return null;
 		const right = frac(n * k, d * k);
 		const parts = [
 			frac(n, d),
@@ -4271,7 +4271,7 @@ const equivFamilies = [
 			...rollPick(r)
 		];
 	}, (_k, [n, d, k, slot, salt]) => {
-		if (!isSimplest(n, d) || !isInt$1(k, 2, 5) || !goodPick(slot, salt)) return null;
+		if (!isSimplest(n, d) || !isInt$2(k, 2, 5) || !goodPick(slot, salt)) return null;
 		const shown = frac(n * k, d * k);
 		const parts = [
 			"Simplify",
@@ -4305,7 +4305,7 @@ const equivFamilies = [
 			int(r, 0, 1)
 		];
 	}, (_k, [n, d, k, v]) => {
-		if (!isSimplest(n, d) || !isInt$1(k, 2, 5) || !isInt$1(v, 0, 1)) return null;
+		if (!isSimplest(n, d) || !isInt$2(k, 2, 5) || !isInt$2(v, 0, 1)) return null;
 		const shown = frac(n * k, d * k);
 		if (v === 0) {
 			const parts = [
@@ -4354,7 +4354,7 @@ function wholeFamily$2(key, label, shapes, qLo, qHi) {
 			int(r, qLo, qHi)
 		];
 	}, (_k, [n, d, q]) => {
-		if (!shapes.some(([a, b]) => a === n && b === d) || !isInt$1(q, qLo, qHi)) return null;
+		if (!shapes.some(([a, b]) => a === n && b === d) || !isInt$2(q, qLo, qHi)) return null;
 		const part = n * q;
 		const whole = d * q;
 		const parts = [
@@ -4477,7 +4477,7 @@ function ofMistakes(p, a) {
 /** "p% of an amount that is q × step". */
 function ofFamily(key, label, tags, p, step, qLo, qHi) {
 	return oneKey(key, label, tags, 1, (_k, r) => [int(r, qLo, qHi)], (_k, [q]) => {
-		if (!isInt$1(q, qLo, qHi)) return null;
+		if (!isInt$2(q, qLo, qHi)) return null;
 		const amount = q * step;
 		const parts = [
 			pct(p),
@@ -4520,7 +4520,7 @@ const bigFamily = oneKey("pct:big", "A simple percentage of a bigger amount (25%
 	return [p, int(r, BIG[p].lo, BIG[p].hi)];
 }, (_k, [p, q]) => {
 	const shape = BIG[p];
-	if (!shape || !isInt$1(q, shape.lo, shape.hi)) return null;
+	if (!shape || !isInt$2(q, shape.lo, shape.hi)) return null;
 	const amount = q * shape.step;
 	const parts = [
 		pct(p),
@@ -4538,7 +4538,7 @@ const bigFamily = oneKey("pct:big", "A simple percentage of a bigger amount (25%
 /** "p% of ? = x": the whole from a percentage. */
 function wholeFamily$1(key, label, p, xLo, xHi) {
 	return oneKey(key, label, OF_TAGS, 1, (_k, r) => [int(r, xLo, xHi)], (_k, [x]) => {
-		if (!isInt$1(x, xLo, xHi)) return null;
+		if (!isInt$2(x, xLo, xHi)) return null;
 		const parts = [
 			pct(p),
 			"of",
@@ -4739,10 +4739,10 @@ const BOND_WORD = {
 };
 function bondFamily(total, type, label, tags) {
 	const key = `bond${total}:${BOND_WORD[total][type]}`;
-	const valid = (a) => type === "take" ? total === 100 ? isInt$1(a, 1, 99) : isInt$1(a, 10, 990) && a % 10 === 0 : bondTypeOf(total, a) === type;
+	const valid = (a) => type === "take" ? total === 100 ? isInt$2(a, 1, 99) : isInt$2(a, 10, 990) && a % 10 === 0 : bondTypeOf(total, a) === type;
 	const candidates = range(1, total - 1).filter(valid);
 	return oneKey(key, label, tags, 2, (_k, r) => [pickOne(r, candidates), int(r, 0, 1)], (_k, [a, v]) => {
-		if (!valid(a) || !isInt$1(v, 0, 1)) return null;
+		if (!valid(a) || !isInt$2(v, 0, 1)) return null;
 		const t = String(total);
 		const answer = total - a;
 		const parts = type === "take" ? [
@@ -4809,7 +4809,7 @@ function timesFamily(key, label, pools) {
 		const pair = [pickOne(r, pools[0]), pickOne(r, pools[1])];
 		return r() < .5 ? pair : pair.reverse();
 	}, (_k, [x, y]) => {
-		if (!isInt$1(x, 1, 1e3) || !isInt$1(y, 1, 1e3) || timesKeyOf(x, y) !== key) return null;
+		if (!isInt$2(x, 1, 1e3) || !isInt$2(y, 1, 1e3) || timesKeyOf(x, y) !== key) return null;
 		const answer = x * y;
 		const parts = [
 			show(x),
@@ -4835,7 +4835,7 @@ function timesFamily(key, label, pools) {
 	});
 }
 const divTens = oneKey("times:div-tens", "Dividing tens (240 ÷ 6)", ["MS.Y4.NUM.OP.P3"], 2, (_k, r) => [int(r, 2, 9), pickOne(r, TENS)], (_k, [d, q]) => {
-	if (!isInt$1(d, 2, 9) || !isTens(q)) return null;
+	if (!isInt$2(d, 2, 9) || !isTens(q)) return null;
 	const n = d * q;
 	const parts = [
 		show(n),
@@ -4948,7 +4948,7 @@ const factorFamilies = [
 		const n = pickOne(r, PAIR_NUMBERS);
 		return [n, pickOne(r, divisorsOf(n).filter((d) => d >= 2 && d < n))];
 	}, (_k, [n, a]) => {
-		if (!PAIR_NUMBERS.includes(n) || !isInt$1(a, 2, n - 1) || n % a !== 0) return null;
+		if (!PAIR_NUMBERS.includes(n) || !isInt$2(a, 2, n - 1) || n % a !== 0) return null;
 		const answer = n / a;
 		return withMistakes({
 			parts: [
@@ -5042,7 +5042,7 @@ const CUBES = range(2, 5).map((n) => n ** 3);
 const isSquare = (n) => Number.isInteger(Math.sqrt(n));
 const squareFamilies = [
 	oneKey("square:of", "Square numbers (7 squared)", squareTags, 1, (_k, r) => [int(r, 2, 12)], (_k, [n]) => {
-		if (!isInt$1(n, 2, 12)) return null;
+		if (!isInt$2(n, 2, 12)) return null;
 		return withMistakes({
 			parts: [
 				String(n),
@@ -5062,7 +5062,7 @@ const squareFamilies = [
 		});
 	}),
 	oneKey("cube:of", "Cube numbers (4 cubed)", squareTags, 1, (_k, r) => [int(r, 2, 5)], (_k, [n]) => {
-		if (!isInt$1(n, 2, 5)) return null;
+		if (!isInt$2(n, 2, 5)) return null;
 		return withMistakes({
 			parts: [
 				String(n),
@@ -5129,7 +5129,7 @@ const squareFamilies = [
 			if (!isSquare(x)) return [x];
 		}
 	}, (_k, [x]) => {
-		if (!isInt$1(x, 5, 143) || isSquare(x)) return null;
+		if (!isInt$2(x, 5, 143) || isSquare(x)) return null;
 		const root = Math.floor(Math.sqrt(x)) + 1;
 		return withMistakes({
 			parts: [
@@ -5247,7 +5247,7 @@ function wholeFamily(unit, suffix, lo, hi, tags, label) {
 			if (n >= lo && n <= hi && wholeKeyOf(unit, n) === key) return [n];
 		}
 	}, (_k, [n]) => {
-		if (!isInt$1(n, lo, hi) || wholeKeyOf(unit, n) !== key) return null;
+		if (!isInt$2(n, lo, hi) || wholeKeyOf(unit, n) !== key) return null;
 		const down = n - n % unit;
 		const up = down + unit;
 		const answer = n % unit >= half ? up : down;
@@ -5306,7 +5306,7 @@ function decimalFamily({ key, unit, dp, lo, hi, label, tags }) {
 			if (m >= lo && m <= hi && decimalKeyOf(unit, dp, m) === key) return [m];
 		}
 	}, (_k, [m]) => {
-		if (!isInt$1(m, lo, hi) || decimalKeyOf(unit, dp, m) !== key) return null;
+		if (!isInt$2(m, lo, hi) || decimalKeyOf(unit, dp, m) !== key) return null;
 		const lower = Math.floor(m / step);
 		const upper = lower + 1;
 		const up = m % step >= step / 2;
@@ -7153,6 +7153,41 @@ function addToBag(bag, loot) {
 }
 //#endregion
 //#region shared/monsters/quests/eggs.ts
+/**
+* Eggs (docs/MONSTERS-QUESTS-PLAN.md section 5). An egg's insides are rolled when it is found. It
+* hatches after enough days of play (3, 5 or 7 by rarity: James, 2 Nov 2026), counted by the
+* database so a Chromebook's clock can't hurry it, and only at its own hatching spot. Eggs left for
+* EGGS.coldAfter days in a row without a battle go cold and are lost, with a warning on the last day.
+*/
+/** EASY TO EDIT. */
+const EGGS = {
+	/** Most eggs a pupil can carry. */
+	basket: 3,
+	/** Days of play to hatch, by what's inside. */
+	days: {
+		common: 3,
+		uncommon: 3,
+		rare: 5,
+		ultra: 7
+	},
+	/** What's inside a found egg: chances out of 100. */
+	odds: {
+		uncommon: 50,
+		rare: 40,
+		ultra: 10
+	},
+	hatchLevel: 5,
+	/** Days in a row without a battle (calendar days, holidays too) before every egg goes cold and is lost: James, 2 Nov 2026. */
+	coldAfter: 4
+};
+const EGG_TYPE = {
+	leafy: "leaf",
+	water: "water",
+	warm: "fire",
+	cold: "ice",
+	glowing: "spark",
+	stony: "stone"
+};
 const EGG_LABEL = {
 	leafy: "leafy egg",
 	water: "water egg",
@@ -7161,7 +7196,49 @@ const EGG_LABEL = {
 	glowing: "glowing egg",
 	stony: "stony egg"
 };
-const BY_ID = new Map([
+/** The first forms an egg of this kind can hold, by rarity. Every type has an uncommon family, a rare family and an ultra rare. */
+function eggPool(kind) {
+	const type = EGG_TYPE[kind];
+	const firsts = MONSTER_BOOK.filter((s) => s.stage === 1);
+	return {
+		uncommon: firsts.filter((s) => s.rarity === "uncommon" && s.type === type).map((s) => s.id),
+		rare: firsts.filter((s) => s.rarity === "rare" && s.type === type && RARE_FAMILIES[s.family] !== void 0).map((s) => s.id),
+		ultra: firsts.filter((s) => s.rarity === "ultra" && (s.type === type || s.type2 === type)).map((s) => s.id)
+	};
+}
+/** Days of play this egg needs (one fewer if warmed). */
+const daysNeeded = (egg) => EGGS.days[speciesOf(egg.species).rarity] - (egg.warmed ? 1 : 0);
+/** How many of its days it has had. */
+const daysHad = (egg, playDays) => Math.max(0, Math.min(daysNeeded(egg), playDays - egg.found));
+const isReady = (egg, playDays) => daysHad(egg, playDays) >= daysNeeded(egg);
+/** Whole calendar days from NZ day `a` to NZ day `b` ("2026-11-02" to "2026-11-04" is 2). */
+const daysFrom = (a, b) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 864e5);
+/**
+* How the eggs are keeping on `today`: 'warm', 'cooling' (the last day: a battle today saves them) or
+* 'cold' (lost). No eggs, or no battle yet since this rule began, is always warm.
+*/
+function eggWarmth(q, today) {
+	if (!q.eggs.length || !q.lastDay) return "warm";
+	const away = daysFrom(q.lastDay, today);
+	return away > EGGS.coldAfter ? "cold" : away === EGGS.coldAfter ? "cooling" : "warm";
+}
+/** Takes away eggs that went cold. `lost` is what was taken (empty if none). */
+function coldEggs(q, today) {
+	if (eggWarmth(q, today) !== "cold") return {
+		q,
+		lost: []
+	};
+	return {
+		q: {
+			...q,
+			eggs: []
+		},
+		lost: q.eggs
+	};
+}
+//#endregion
+//#region shared/monsters/quests/puzzles.ts
+const PUZZLES = [
 	{
 		id: "kauri-seeds",
 		kind: "pods",
@@ -7315,10 +7392,16 @@ const BY_ID = new Map([
 		hint: "Half of 8 is 4. So the second number is 4 + 3.",
 		prize: { egg: "warm" }
 	}
-].map((p) => [p.id, p]));
+];
+const BY_ID = new Map(PUZZLES.map((p) => [p.id, p]));
 const puzzleById = (id) => BY_ID.get(id);
 //#endregion
 //#region shared/monsters/quests/giants.ts
+/**
+* The three sleeping giants (docs/MONSTERS-QUESTS-PLAN.md section 4). Each lies across the path to a
+* bonus area. Make its wake-up item at the Tinker, wake it, and battle it (it doesn't count towards
+* the 12 a day). Win or catch it and the way is open for good; run or lose and it dozes off again.
+*/
 const GIANTS = [
 	{
 		id: "snorumble",
@@ -7355,6 +7438,8 @@ const GIANTS = [
 	}
 ];
 const giantById = (id) => GIANTS.find((g) => g.id === id);
+/** The giant you battle once it wakes. */
+const giantFoe = (g) => makeMonster(g.species, g.level);
 //#endregion
 //#region shared/monsters/world/types.ts
 const DIRS$1 = [
@@ -34116,7 +34201,100 @@ var Dice = class {
 		return low + Math.floor(this.next() * (high - low + 1));
 	}
 };
-new Map([
+//#endregion
+//#region shared/monsters/quests/bits.ts
+const BITS = {
+	/** A wild win gives 1 bit of the monster's type, and 1 more if it was grown or uncommon or rarer. */
+	wild: 1,
+	wildBonus: 1,
+	/** A trainer win gives 1 bit for each of their monsters, of its type. */
+	trainerEach: 1,
+	/** The most bits of one kind you can hold. */
+	max: 99
+};
+/** The bits for winning a battle against these foes. */
+function bitsForWin(foes, trainer) {
+	const out = {};
+	for (const id of foes) {
+		const s = speciesOf(id);
+		const bonus = !trainer && (s.stage > 1 || s.rarity !== "common") ? BITS.wildBonus : 0;
+		out[s.type] = (out[s.type] ?? 0) + (trainer ? BITS.trainerEach : BITS.wild + bonus);
+	}
+	return out;
+}
+const RECIPES = [
+	{
+		id: "potion",
+		name: "Potion",
+		cost: {},
+		anyBits: 3,
+		items: { potion: 1 }
+	},
+	{
+		id: "ball",
+		name: "Ball",
+		cost: {},
+		anyBits: 3,
+		items: { ball: 1 }
+	},
+	{
+		id: "great-ball",
+		name: "Great ball",
+		cost: {
+			stone: 4,
+			spark: 2
+		},
+		items: { "great-ball": 1 }
+	},
+	{
+		id: "repel",
+		name: "Repel",
+		cost: { leaf: 3 },
+		items: { repel: 1 }
+	},
+	{
+		id: "warm-whistle",
+		name: "Warm whistle",
+		cost: {
+			fire: 8,
+			stone: 6
+		},
+		needs: ["part:miner"],
+		flag: "made:warm-whistle"
+	},
+	{
+		id: "tide-bell",
+		name: "Tide bell",
+		cost: {
+			water: 8,
+			stone: 6
+		},
+		needs: ["part:lifeguard"],
+		flag: "made:tide-bell"
+	},
+	{
+		id: "frost-horn",
+		name: "Frost horn",
+		cost: {
+			ice: 8,
+			spark: 6
+		},
+		needs: ["part:cave-guide"],
+		flag: "made:frost-horn"
+	},
+	{
+		id: "egg-warmer",
+		name: "Egg warmer",
+		cost: {
+			fire: 6,
+			leaf: 4
+		},
+		warmer: true
+	}
+];
+//#endregion
+//#region shared/monsters/quests/quests.ts
+const QUESTS = [
 	{
 		id: "kauri",
 		title: "The lost seed pods",
@@ -34301,7 +34479,127 @@ new Map([
 		}],
 		reward: { flag: "finale-egg" }
 	}
-].map((q) => [q.id, q]));
+];
+const QUEST_BY_ID = new Map(QUESTS.map((q) => [q.id, q]));
+const questById = (id) => QUEST_BY_ID.get(id);
+/** EASY TO EDIT: the jobs the board picks from. `{area}` jobs are filled in with an area the pupil can reach; `{type}` with a type. */
+const JOB_POOL = {
+	battle: [
+		(area) => ({
+			do: "win",
+			area,
+			count: 3,
+			hint: `Notice board: win {left} more battles in ${AREA_NAME[area]}`,
+			reward: { items: { ball: 2 } }
+		}),
+		(_area, type) => ({
+			do: "catch",
+			type,
+			count: 2,
+			hint: `Notice board: catch {left} more ${TYPE_NAME[type]} monsters`,
+			reward: { items: { potion: 2 } }
+		}),
+		(area) => ({
+			do: "win",
+			area,
+			trainer: true,
+			hint: `Notice board: beat a trainer in ${AREA_NAME[area]}`,
+			reward: { items: { "great-ball": 1 } }
+		})
+	],
+	quiet: [(_area, type) => ({
+		do: "bring",
+		person: "harbour-town:Notice Board",
+		type,
+		count: 3,
+		hint: `Notice board: bring 3 ${TYPE_BITS[type]} to the board`,
+		reward: { items: { "super-potion": 1 } }
+	}), (area) => ({
+		do: "visit",
+		map: AREA_MAP[area],
+		spot: "enter",
+		hint: `Notice board: visit ${AREA_NAME[area]}`,
+		reward: { bits: {
+			leaf: 2,
+			water: 2
+		} }
+	})]
+};
+const AREA_NAME = {
+	1: "Kauri Bush",
+	2: "Shell Beach",
+	3: "Fire Mountain",
+	4: "Snowy Peaks",
+	5: "Glowworm Caves",
+	6: "Harbour City"
+};
+const AREA_MAP = {
+	1: "kauri-bush",
+	2: "shell-beach",
+	3: "fire-mountain",
+	4: "snowy-peaks",
+	5: "glowworm-caves",
+	6: "harbour-city"
+};
+const TYPE_NAME = {
+	leaf: "Leaf",
+	water: "Water",
+	fire: "Fire",
+	ice: "Ice",
+	spark: "Spark",
+	stone: "Stone"
+};
+const TYPE_BITS = {
+	leaf: "kawakawa leaves",
+	water: "shells",
+	fire: "embers",
+	ice: "frost crystals",
+	spark: "glow dust",
+	stone: "pebbles"
+};
+function hash(text) {
+	let h = 2166136261;
+	for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619) >>> 0;
+	return h;
+}
+/**
+* Today's three jobs for a pupil: two battle jobs and one that needs no battle, in areas they can
+* reach. The same day, pupil and areas always give the same jobs, so the server can check them.
+*/
+function jobsFor(day, player, ctx) {
+	const h = (salt) => hash(`${day}:${player}:${salt}`);
+	const areas = Array.from({ length: Math.min(6, Math.max(1, ctx.maxArea)) }, (_, i) => i + 1);
+	const types = areas.map((a) => TYPES[a - 1]);
+	const pick = (list, salt) => list[h(salt) % list.length];
+	const make = (maker, salt) => maker(pick(areas, `${salt}:a`), pick(types, `${salt}:t`));
+	const first = h("b1") % JOB_POOL.battle.length;
+	const second = (first + 1 + h("b2") % (JOB_POOL.battle.length - 1)) % JOB_POOL.battle.length;
+	return [
+		make(JOB_POOL.battle[first], "b1"),
+		make(JOB_POOL.battle[second], "b2"),
+		make(pick(JOB_POOL.quiet, "q"), "q")
+	];
+}
+/** Story steps finished so far and jobs paid today: what the server pays points for (2 and 1, inside the 40 a day). */
+function questPoints(before, after) {
+	const steps = (q) => q.flags.filter((f) => f.startsWith("quest-done:")).reduce((n, f) => n + (questById(f.slice(11))?.steps.length ?? 0), 0) + Object.values(q.quests).reduce((n, s) => n + s.step, 0);
+	const paid = (q, day) => q.board && q.board.day === day ? q.board.paid.length : 0;
+	return 2 * Math.max(0, steps(after) - steps(before)) + Math.max(0, paid(after, after.board?.day) - paid(before, after.board?.day));
+}
+//#endregion
+//#region shared/monsters/quests/types.ts
+const emptyQuestSave = () => ({
+	flags: [],
+	bits: {},
+	quests: {},
+	eggs: []
+});
+//#endregion
+//#region shared/monsters/world/questWorld.ts
+/** What you hold for opening the way: badges, and quest flags (a woken giant). */
+const keysOf = (state) => state.quest?.flags.length ? [...state.badges, ...state.quest.flags] : state.badges;
+/** The week a NZ day is in (weeks start on a Monday), for the egg nests' one egg a week. */
+const weekOf = (day) => Math.floor((Date.parse(`${day}T00:00:00Z`) / 864e5 + 3) / 7);
 //#endregion
 //#region shared/monsters/world/world.ts
 const START_BAG = {
@@ -34363,6 +34661,232 @@ function refreshBook(state) {
 		...state,
 		owned,
 		seen: sorted([...state.seen, ...owned])
+	};
+}
+//#endregion
+//#region shared/monsters/world/battleCap.ts
+const NZ = new Intl.DateTimeFormat("en-CA", {
+	timeZone: "Pacific/Auckland",
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit"
+});
+/** The New Zealand day (YYYY-MM-DD) of a time, like nz_day() in the database. */
+const nzDay = (ms) => NZ.format(new Date(ms));
+//#endregion
+//#region shared/monsters/save/checkQuest.ts
+const CRAFTED_ITEMS = [
+	"potion",
+	"ball",
+	"repel",
+	"great-ball"
+];
+/** The cheapest crafted item costs this many bits. */
+const CHEAPEST = 3;
+const WARMER_COST = 10;
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const isInt$1 = (n, min, max) => typeof n === "number" && Number.isInteger(n) && n >= min && n <= max;
+const isObject$1 = (x) => !!x && typeof x === "object" && !Array.isArray(x);
+const EGG_KINDS = [
+	"leafy",
+	"water",
+	"warm",
+	"cold",
+	"glowing",
+	"stony"
+];
+const REWARD_FLAGS = new Set(QUESTS.flatMap((q) => q.reward.flag ? [q.reward.flag] : []));
+const RECIPE_FLAGS = new Set(RECIPES.flatMap((r) => r.flag ? [r.flag] : []));
+/** Is this a flag the game can set? */
+function knownFlag(f, maps) {
+	if (REWARD_FLAGS.has(f) || RECIPE_FLAGS.has(f)) return true;
+	const [kind, ...rest] = f.split(":");
+	const id = rest.join(":");
+	switch (kind) {
+		case "quest-done": return !!questById(id);
+		case "woke": return GIANTS.some((g) => g.id === id);
+		case "solved": return !!puzzleById(id);
+		case "hatched": return EGG_KINDS.includes(id);
+		case "egg":
+		case "owed": return eggRefOk(id, maps);
+		case "nest": return rest.length === 2 && isNestThing(rest[0], maps) && /^\d{1,6}$/.test(rest[1]);
+		case "pod": return rest.length === 2 && PUZZLES.some((p) => p.id === rest[0] && p.kind === "pods");
+		default: return false;
+	}
+}
+const isNestThing = (id, maps) => Object.values(maps).some((m) => m.things.some((t) => t.id === id && t.kind === "nest"));
+/** "quest:<id>:<kind>", "puzzle:<id>:<kind>" or "nest:<thing>:<week>:<kind>": a place an egg can come from. */
+function eggRefOk(ref, maps) {
+	const parts = ref.split(":");
+	const kind = parts[parts.length - 1];
+	if (parts[0] === "quest" && parts.length === 3) return questById(parts[1])?.reward.egg === kind;
+	if (parts[0] === "puzzle" && parts.length === 3) {
+		const p = puzzleById(parts[1]);
+		return !!p && "egg" in p.prize && p.prize.egg === kind;
+	}
+	if (parts[0] === "nest" && parts.length === 4) return /^\d{1,6}$/.test(parts[2]) && Object.values(maps).some((m) => m.things.some((t) => t.id === parts[1] && t.kind === "nest" && t.egg === kind));
+	return false;
+}
+function bitsOk(b) {
+	return isObject$1(b) && Object.entries(b).every(([k, v]) => TYPES.includes(k) && isInt$1(v, 0, BITS.max));
+}
+function eggOk(e, maps) {
+	if (!isObject$1(e) || typeof e.id !== "string" || !eggRefOk(e.id, maps)) return false;
+	const kind = e.kind;
+	if (!EGG_KINDS.includes(kind) || !e.id.endsWith(`:${kind}`)) return false;
+	const pool = eggPool(kind);
+	if (typeof e.species !== "string" || ![
+		...pool.uncommon,
+		...pool.rare,
+		...pool.ultra
+	].includes(e.species)) return false;
+	if (!isInt$1(e.found, 0, 1e5) || e.shiny !== void 0 && e.shiny !== true || e.warmed !== void 0 && e.warmed !== true) return false;
+	return Object.keys(e).every((k) => [
+		"id",
+		"kind",
+		"species",
+		"shiny",
+		"found",
+		"warmed"
+	].includes(k));
+}
+/** The shape of a save's quest part. Null if it's fine. */
+function questShape(raw, maps) {
+	if (raw === void 0) return null;
+	if (!isObject$1(raw)) return "quest";
+	const q = raw;
+	if (!Array.isArray(q.flags) || q.flags.length > 600 || !q.flags.every((f) => typeof f === "string" && f.length <= 80 && knownFlag(f, maps))) return "quest-flags";
+	if (new Set(q.flags).size !== q.flags.length) return "quest-flags";
+	if (!bitsOk(q.bits)) return "quest-bits";
+	if (!isObject$1(q.quests)) return "quest-log";
+	for (const [id, st] of Object.entries(q.quests)) {
+		const quest = questById(id);
+		if (!quest || !isObject$1(st) || !isInt$1(st.step, 0, quest.steps.length - 1) || !isInt$1(st.n, 0, 999)) return "quest-log";
+	}
+	if (q.board !== void 0) {
+		const b = q.board;
+		if (!isObject$1(b) || typeof b.day !== "string" || !DAY.test(b.day) || !Array.isArray(b.n) || b.n.length > 3 || !b.n.every((n) => isInt$1(n, 0, 999))) return "quest-board";
+		if (!Array.isArray(b.paid) || !b.paid.every((i) => isInt$1(i, 0, 2)) || new Set(b.paid).size !== b.paid.length) return "quest-board";
+	}
+	if (!Array.isArray(q.eggs) || q.eggs.length > EGGS.basket || !q.eggs.every((e) => eggOk(e, maps)) || new Set(q.eggs.map((e) => e.id)).size !== q.eggs.length) return "quest-eggs";
+	if (q.lastDay !== void 0 && (typeof q.lastDay !== "string" || !DAY.test(q.lastDay))) return "quest-day";
+	return Object.keys(q).every((k) => [
+		"flags",
+		"bits",
+		"quests",
+		"board",
+		"eggs",
+		"lastDay"
+	].includes(k)) ? null : "quest";
+}
+const addInto = (into, more) => {
+	for (const t of TYPES) if (more?.[t]) into[t] = (into[t] ?? 0) + more[t];
+};
+const addItems = (into, more) => {
+	for (const [k, v] of Object.entries(more ?? {})) into[k] = (into[k] ?? 0) + (v ?? 0);
+};
+const sumBits = (b) => TYPES.reduce((n, t) => n + (b[t] ?? 0), 0);
+const dayBefore = (day) => new Date(Date.parse(`${day}T00:00:00Z`) - 864e5).toISOString().slice(0, 10);
+const maxAreaOf = (badges) => Math.min(6, badges.length + 1);
+/**
+* Checks the quest part of a save against the one before (`was`). `battles` are this save's battles
+* (replayed separately). Returns a problem code, or what the prizes and crafting allow.
+*/
+function checkQuest(was, w, battles, facts) {
+	const before = was.quest ?? emptyQuestSave();
+	const now = w.quest ?? emptyQuestSave();
+	const newFlags = now.flags.filter((f) => !before.flags.includes(f));
+	if (!before.flags.every((f) => f.startsWith("nest:") || now.flags.includes(f))) return "quest-shrank";
+	const has = (f) => now.flags.includes(f);
+	const tomorrow = new Date(Date.parse(`${facts.today}T00:00:00Z`) + 864e5).toISOString().slice(0, 10);
+	if (now.lastDay !== void 0 && (now.lastDay > tomorrow || before.lastDay !== void 0 && now.lastDay < before.lastDay)) return "quest-day";
+	if (now.lastDay !== before.lastDay && !battles.length) return "quest-day";
+	const prizeItems = {};
+	const earned = {};
+	for (const f of newFlags) {
+		const [kind, id] = [f.slice(0, f.indexOf(":")), f.slice(f.indexOf(":") + 1)];
+		if (kind === "quest-done") {
+			const quest = questById(id);
+			if ((quest.badges ?? 0) > w.badges.length || !(quest.needs ?? []).every(has)) return "quest-done";
+			if (quest.reward.flag && !has(quest.reward.flag)) return "quest-done";
+			addItems(prizeItems, quest.reward.items);
+			addInto(earned, quest.reward.bits);
+		} else if (kind === "woke") {
+			const g = GIANTS.find((x) => x.id === id);
+			if (!battles.some((b) => b.giant === g.id && (b.outcome === "won" || b.outcome === "caught"))) return "woke";
+		} else if (kind === "solved") {
+			const p = puzzleById(id);
+			if (p.kind === "pods" && now.flags.filter((x) => x.startsWith(`pod:${p.id}:`)).length < p.count) return "solved";
+			if ("bits" in p.prize) addInto(earned, { [p.prize.bits]: p.prize.n });
+		} else if (kind === "egg") {
+			const parts = id.split(":");
+			if (parts[0] === "quest" && !has(`quest-done:${parts[1]}`)) return "egg-source";
+			if (parts[0] === "puzzle" && !has(`solved:${parts[1]}`)) return "egg-source";
+			if (parts[0] === "nest" && ![weekOf(facts.today), weekOf(facts.today) - 1].includes(Number(parts[2]))) return "egg-source";
+		} else if (kind === "made") {
+			if (!RECIPES.some((r) => r.flag === f && (r.needs ?? []).every(has))) return "made";
+		}
+	}
+	const board = now.board;
+	if (board && board.day !== before.board?.day && board.day !== facts.today && board.day !== dayBefore(facts.today) && board.day !== tomorrow) return "quest-board";
+	const newPaid = board ? board.paid.filter((i) => board.day !== before.board?.day || !before.board.paid.includes(i)) : [];
+	if (board && newPaid.length) {
+		const lists = [maxAreaOf(was.badges), maxAreaOf(w.badges)].map((maxArea) => jobsFor(board.day, facts.player, { maxArea }));
+		for (const i of newPaid) {
+			const best = {};
+			for (const list of lists) {
+				const r = list[i]?.reward;
+				if (!r) continue;
+				if (sumBits(r.bits ?? {}) > sumBits(best.bits ?? {})) best.bits = r.bits;
+				const items = { ...best.items ?? {} };
+				for (const [k, v] of Object.entries(r.items ?? {})) items[k] = Math.max(items[k] ?? 0, v ?? 0);
+				best.items = items;
+			}
+			addItems(prizeItems, best.items);
+			addInto(earned, best.bits);
+		}
+	}
+	for (const b of battles) if (b.outcome === "won") addInto(earned, bitsForWin(b.foes, !!b.trainer));
+	let spent = 0;
+	for (const t of TYPES) {
+		const most = Math.min(BITS.max, (before.bits[t] ?? 0) + (earned[t] ?? 0));
+		if ((now.bits[t] ?? 0) > most) return "quest-bits";
+		spent += Math.max(0, (before.bits[t] ?? 0) + (earned[t] ?? 0) - (now.bits[t] ?? 0));
+	}
+	for (const f of newFlags) {
+		const r = RECIPES.find((x) => x.flag === f);
+		if (r) spent -= sumBits(r.cost);
+	}
+	const cold = coldEggs(before, facts.saveDay).lost.map((e) => e.id);
+	const hatched = [];
+	const hatchedKinds = new Set();
+	for (const egg of before.eggs) {
+		const still = now.eggs.find((e) => e.id === egg.id);
+		if (still) {
+			if (cold.includes(egg.id)) return "egg-cold";
+			if (still.kind !== egg.kind || still.species !== egg.species || still.found !== egg.found || still.shiny !== egg.shiny || egg.warmed && !still.warmed) return "egg-changed";
+			if (still.warmed && !egg.warmed) spent -= WARMER_COST;
+		} else if (!cold.includes(egg.id) && isReady(egg, facts.playDays) && has(`hatched:${egg.kind}`)) {
+			hatched.push({
+				...makeMonster(egg.species, EGGS.hatchLevel),
+				...egg.shiny ? { shiny: true } : {}
+			});
+			hatchedKinds.add(egg.kind);
+		}
+	}
+	for (const egg of now.eggs) {
+		if (before.eggs.some((e) => e.id === egg.id)) continue;
+		if (!newFlags.includes(`egg:${egg.id}`)) return "egg-new";
+		if (egg.found > facts.playDays || egg.found < facts.playDaysBefore - 2) return "egg-day";
+		if (egg.warmed) spent -= WARMER_COST;
+	}
+	if (spent < 0) return "quest-bits";
+	for (const f of newFlags) if (f.startsWith("hatched:") && !hatchedKinds.has(f.slice(8))) return "hatched";
+	return {
+		prizeItems,
+		craftable: Math.floor(spent / CHEAPEST),
+		hatched,
+		questPoints: questPoints(before, now)
 	};
 }
 //#endregion
@@ -34570,7 +35094,6 @@ function monsterOk(m) {
 /** One monster as the pool counts it: who, and how much exp. Health and order don't matter. */
 const signature = (m) => `${m.species}:${m.exp}${m.shiny ? ":s" : ""}`;
 const poolOf = (team, box) => [...team, ...box].map(signature).sort();
-const samePool = (a, b) => a.length === b.length && a.every((s, i) => s === b[i]);
 const bagOk = (bag) => isObject(bag) && Object.entries(bag).every(([k, v]) => ITEMS.includes(k) && isInt(v, 0, LIMITS.maxItem));
 function worldShape(w) {
 	if (!isObject(w) || w.version !== 1) return "world";
@@ -34597,13 +35120,17 @@ function worldShape(w) {
 	if (!world.chests.every((c) => CHEST_IDS.has(c)) || new Set(world.chests).size !== world.chests.length) return "chests";
 	if (!world.paid.every((p) => PAYING_TRAINERS.has(p)) || new Set(world.paid).size !== world.paid.length) return "paid";
 	if (world.look !== void 0 && !LOOKS.includes(world.look)) return "look";
+	const quest = questShape(world.quest, MAPS);
+	if (quest) return quest;
 	const here = MAPS[world.map];
 	if (!world.beaten.every((b) => TRAINER_MAP.get(b) === here.id)) return "beaten";
-	if (here.area > maxAreaFor(world.badges)) return "area-locked";
-	if (isBlocked(here, world.x, world.y, world.badges) || here.things.some((t) => t.x === world.x && t.y === world.y)) return "tile";
+	if (here.area > maxAreaFor(world.badges) || !bonusOpen(here.id, world)) return "area-locked";
+	if (isBlocked(here, world.x, world.y, keysOf(world)) || here.things.some((t) => t.x === world.x && t.y === world.y)) return "tile";
 	if (!MAPS[world.heal.map].things.some((t) => t.kind === "nurse" && Math.abs(t.x - world.heal.x) + Math.abs(t.y - world.heal.y) <= 2)) return "heal";
 	return null;
 }
+/** A bonus area is open once its giant is woken. */
+const bonusOpen = (map, world) => GIANTS.every((g) => g.opens !== map || !!world.quest?.flags.includes(`woke:${g.id}`));
 function speciesKnown(id) {
 	try {
 		speciesOf(id);
@@ -34615,7 +35142,7 @@ function speciesKnown(id) {
 const isSubset = (small, big) => small.every((s) => big.includes(s));
 const sameList = (a, b) => a.length === b.length && a.every((s, i) => s === b[i]);
 /** Plays one reported battle with the rules, checking each question and each random number. Returns a problem code or the result. */
-function replay(report, pool, allowance) {
+function replay(report, pool, allowance, hatched) {
 	if (!isObject(report) || typeof report.id !== "string" || !UUID$1.test(report.id)) return "battle";
 	const r = report;
 	const map = typeof r.map === "string" ? MAPS[r.map] : void 0;
@@ -34627,7 +35154,11 @@ function replay(report, pool, allowance) {
 		"caught"
 	].includes(r.outcome)) return "battle";
 	const setup = r.setup;
-	if (setup.kind === "wild") {
+	if (setup.kind === "wild" && r.giant !== void 0) {
+		const giant = typeof r.giant === "string" ? giantById(r.giant) : void 0;
+		if (!giant || r.trainer !== void 0 || map.id !== giant.map || setup.area !== Math.max(map.area, 1) || setup.far !== true) return "battle-setup";
+		if (!Array.isArray(setup.foes) || JSON.stringify(setup.foes) !== JSON.stringify([giantFoe(giant)])) return "battle-foe";
+	} else if (setup.kind === "wild") {
 		if (r.trainer !== void 0 || map.area < 1 || !map.wild.length) return "battle-setup";
 		if (setup.area !== map.area || typeof setup.far !== "boolean" || !Array.isArray(setup.foes) || setup.foes.length !== 1) return "battle-setup";
 		const foe = setup.foes[0];
@@ -34645,7 +35176,7 @@ function replay(report, pool, allowance) {
 	} else return "battle-setup";
 	if (!Array.isArray(setup.team) || !setup.team.every(monsterOk) || setup.box !== void 0 && (!Array.isArray(setup.box) || !setup.box.every(monsterOk))) return "battle-setup";
 	if (setup.bag !== void 0 && !bagOk(setup.bag)) return "battle-setup";
-	if (!samePool(poolOf(setup.team, setup.box ?? []), pool)) return "pool-mismatch";
+	if (!takeHatched(poolOf(setup.team, setup.box ?? []), pool, hatched)) return "pool-mismatch";
 	for (const id of ITEM_ORDER) if ((setup.bag?.[id] ?? 0) > (allowance[id] ?? 0)) return "bag";
 	let state;
 	try {
@@ -34696,15 +35227,35 @@ function replay(report, pool, allowance) {
 		report: r,
 		final: state,
 		answers,
-		wild: setup.kind === "wild"
+		wild: setup.kind === "wild" && r.giant === void 0
 	};
+}
+/**
+* Is `held` the monsters you had (`pool`) plus some just hatched? The ones used are taken out of
+* `hatched` (each hatched monster turns up once).
+*/
+function takeHatched(held, pool, hatched) {
+	const extra = [...held];
+	for (const s of pool) {
+		const i = extra.indexOf(s);
+		if (i < 0) return false;
+		extra.splice(i, 1);
+	}
+	const left = [...hatched];
+	for (const s of extra) {
+		const i = left.indexOf(s);
+		if (i < 0) return false;
+		left.splice(i, 1);
+	}
+	hatched.splice(0, hatched.length, ...left);
+	return true;
 }
 /**
 * Checks one save against the last good one (null for a student's first save). `nowMs` is the
 * server's clock. Returns what to keep, or the first thing wrong, as a short code (it goes in the
 * server's log and on the teacher page, never to the student).
 */
-function checkSave(prev, raw, nowMs) {
+function checkSave(prev, raw, nowMs, player = "") {
 	if (!isObject(raw)) return fail("item");
 	const item = raw;
 	if (typeof item.saveId !== "string" || !UUID$1.test(item.saveId)) return fail("save-id");
@@ -34743,6 +35294,35 @@ function checkSave(prev, raw, nowMs) {
 	let allowance = { ...was.bag };
 	for (const c of newChests) allowance = addToBag(allowance, LOOT[CHEST_LOOT.get(c) ?? ""] ?? {});
 	for (const p of newPaid) allowance = addToBag(allowance, LOOT[TRAINERS.get(p).loot ?? ""] ?? {});
+	const today = nzDay(nowMs);
+	const asked = item.battles.some((b) => isObject(b) && Array.isArray(b.steps) && b.steps.some((st) => isObject(st) && st.q !== void 0));
+	const playDaysBefore = prev?.playDays ?? 0;
+	const playDays = playDaysBefore + (asked && prev?.playDay !== today ? 1 : 0);
+	const quest = checkQuest(was, w, item.battles.map((b) => {
+		const r = isObject(b) ? b : {};
+		const foes = Array.isArray(r.setup?.foes) ? r.setup.foes.map((f) => isObject(f) && typeof f.species === "string" && speciesKnown(f.species) ? f.species : "").filter(Boolean) : [];
+		return {
+			outcome: String(r.outcome),
+			foes,
+			trainer: typeof r.trainer === "string" ? r.trainer : void 0,
+			giant: typeof r.giant === "string" ? r.giant : void 0
+		};
+	}), {
+		player,
+		today,
+		saveDay: nzDay(item.at),
+		playDaysBefore,
+		playDays
+	});
+	if (typeof quest === "string") return fail(quest);
+	allowance = addToBag(allowance, quest.prizeItems);
+	const hatched = quest.hatched.map(signature);
+	const hatchedAtStart = hatched.length;
+	const battleAllowance = () => {
+		const out = { ...allowance };
+		for (const id of CRAFTED_ITEMS) out[id] = (out[id] ?? 0) + quest.craftable;
+		return out;
+	};
 	const answers = {};
 	const timeline = [];
 	const summary = {
@@ -34755,13 +35335,19 @@ function checkSave(prev, raw, nowMs) {
 		owned: 0,
 		seen: 0,
 		badges: 0,
-		finalInTeam: 0
+		finalInTeam: 0,
+		hatched: 0,
+		questsDone: 0,
+		giantsWoken: 0,
+		raresOwned: 0,
+		ultrasOwned: 0,
+		questPoints: quest.questPoints
 	};
 	const wonTrainers = new Set();
 	let wildBattles = 0;
 	const seenIds = new Set();
 	for (const raw of item.battles) {
-		const out = replay(raw, pool, allowance);
+		const out = replay(raw, pool, battleAllowance(), hatched);
 		if (typeof out === "string") return fail(out);
 		if (seenIds.has(out.report.id)) return fail("battle");
 		seenIds.add(out.report.id);
@@ -34772,7 +35358,7 @@ function checkSave(prev, raw, nowMs) {
 		}
 		pool = poolOf(out.final.team, out.final.box);
 		if (out.wild) wildBattles += 1;
-		if (out.report.outcome === "won") {
+		if (out.report.outcome === "won" && out.report.giant === void 0) {
 			if (out.wild) summary.wildWins += 1;
 			else {
 				summary.trainerWins += 1;
@@ -34786,11 +35372,22 @@ function checkSave(prev, raw, nowMs) {
 			if (a.correct) summary.right += 1;
 		}
 	}
-	if (!samePool(poolOf(w.team, w.box), pool)) return fail("pool-mismatch");
-	for (const id of ITEM_ORDER) if ((w.bag[id] ?? 0) > (allowance[id] ?? 0)) return fail("bag");
+	if (!takeHatched(poolOf(w.team, w.box), pool, hatched)) return fail("pool-mismatch");
+	summary.hatched = hatchedAtStart - hatched.length;
+	let crafted = 0;
+	for (const id of ITEM_ORDER) {
+		const over = (w.bag[id] ?? 0) - (allowance[id] ?? 0);
+		if (over <= 0) continue;
+		if (!CRAFTED_ITEMS.includes(id)) return fail("bag");
+		crafted += over;
+	}
+	if (crafted > quest.craftable) return fail("bag");
 	for (const b of newBadges) if (![...wonTrainers].some((id) => TRAINERS.get(id)?.badge === b)) return fail("badge");
 	for (const p of newPaid) if (!wonTrainers.has(p)) return fail("paid");
-	for (const c of newChests) if (Object.values(MAPS).find((m) => m.things.some((t) => t.id === c)).area > maxAreaFor(w.badges)) return fail("area-locked");
+	for (const c of newChests) {
+		const map = Object.values(MAPS).find((m) => m.things.some((t) => t.id === c));
+		if (map.area > maxAreaFor(w.badges) || !bonusOpen(map.id, w)) return fail("area-locked");
+	}
 	const newSteps = w.steps - was.steps;
 	if (newSteps > LIMITS.stepsPerSecond * seconds + LIMITS.stepSlack) return fail("speed");
 	if (wildBattles > newSteps / ENCOUNTERS.steps.min + 2) return fail("pace");
@@ -34815,6 +35412,11 @@ function checkSave(prev, raw, nowMs) {
 	summary.seen = w.seen.length;
 	summary.badges = w.badges.length;
 	summary.finalInTeam = w.team.filter((m) => speciesOf(m.species).final).length;
+	const flags = w.quest?.flags ?? [];
+	summary.questsDone = flags.filter((f) => f.startsWith("quest-done:")).length;
+	summary.giantsWoken = flags.filter((f) => f.startsWith("woke:")).length;
+	summary.raresOwned = w.owned.filter((s) => speciesOf(s).rarity === "rare").length;
+	summary.ultrasOwned = w.owned.filter((s) => speciesOf(s).rarity === "ultra").length;
 	return {
 		ok: true,
 		save: {
@@ -34951,7 +35553,7 @@ function makeHandler(services) {
 				});
 				continue;
 			}
-			const checked = checkSave(prev, raw, services.now());
+			const checked = checkSave(prev, raw, services.now(), player);
 			if (!checked.ok) {
 				refused = checked.problem;
 				await refuse(player, checked.problem, raw, services);
@@ -35015,9 +35617,13 @@ function makeHandler(services) {
 				type: "save",
 				...saved.value
 			});
+			const today = nzDay(services.now());
+			const played = summary.questions > 0 && prev?.playDay !== today;
 			prev = {
 				world: item.world,
-				at: item.at
+				at: item.at,
+				playDays: (prev?.playDays ?? 0) + (played ? 1 : 0),
+				playDay: played ? today : prev?.playDay
 			};
 		}
 		if (added && services.syncPlace) await services.syncPlace(player);
@@ -35103,12 +35709,15 @@ Deno.serve(makeHandler({
 	async loadSave(player) {
 		const loaded = await call("load_monster_save", { player });
 		if (!loaded.ok) return loaded;
+		const v = loaded.value;
 		return {
 			ok: true,
-			value: loaded.value ? {
-				world: loaded.value.world,
-				at: Number(loaded.value.clientAt),
-				version: loaded.value.version
+			value: v ? {
+				world: v.world,
+				at: Number(v.clientAt),
+				version: v.version,
+				playDays: v.playDays ?? 0,
+				playDay: v.playDay ?? null
 			} : null
 		};
 	},
