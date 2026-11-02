@@ -28,6 +28,8 @@ RAW = Path.home() / '.cache/monsters-walkers'
 STYLE = 'bright flat storybook illustration'  # the props
 SEED = 11
 SEEDS = {'nurse-joy': 12, 'surfer-tui': 12}  # first tries came out see-through
+# The model sometimes paints the middle figure walking left: these were checked by eye and their left and right swapped.
+FACES_LEFT = {'girl-02', 'tower-trainer-aroha', 'tower-trainer-maia', 'tower-trainer-moana'}
 TURN = ('a character turnaround sheet for a cosy top-down RPG game: the same {who} drawn three times side by side in one row, '
         'on the left a front view facing the viewer, in the middle a side view in profile walking towards the right, on the right a back view facing away from the viewer. '
         '{what}. Each figure full body from head to shoes, cute small proportions with a slightly large head, the same clothes and colours in all three, '
@@ -82,6 +84,8 @@ def walker(name):
         part = RAW / f'{name}-{d}.png'
         sheet.crop((k * third, 0, (k + 1) * third, sheet.height)).save(part)
         img = fit_walker(cutout(part))
+        if d == 'right' and name in FACES_LEFT:
+            img = img.transpose(Image.FLIP_LEFT_RIGHT)
         save_webp(img, files[d], 40000)
         if d == 'right':
             save_webp(img.transpose(Image.FLIP_LEFT_RIGHT), files['left'], 40000)
