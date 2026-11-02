@@ -66,6 +66,8 @@ interface ServerData {
   facts: PackFact[];
   /** Missing until the battle-limit migration is applied. */
   battles?: { today: number; perDay: number };
+  /** Days of play counted by the database. Missing until 20261102000400 is applied. */
+  playDays?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -218,7 +220,7 @@ export async function loadMonsters(player: string): Promise<MonstersData> {
     const day = nzDay(Date.now());
     const today = (server.battles?.today ?? 0) + countedOn(tail?.battles ?? [], day);
     const battles = { day, today: Math.max(today, readBattleCount(player, day)), perDay: server.battles?.perDay ?? BATTLES_PER_DAY };
-    return { tail, settings: server.settings, facts: server.facts, offline: false, battles };
+    return { tail, settings: server.settings, facts: server.facts, offline: false, battles, playDays: server.playDays };
   } catch {
     const day = nzDay(Date.now());
     const today = Math.max(countedOn(device?.battles ?? [], day), readBattleCount(player, day));

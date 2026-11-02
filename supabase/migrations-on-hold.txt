@@ -5,3 +5,6 @@
 # Dragon Maths one season for the school: waits for James's read-only check (docs/TEACHER-VIEW-PLAN.md).
 20261028000400
 
+
+# Maths Monsters quests: waits for the rest of the quests work and James's go-ahead (docs/MONSTERS-QUESTS-PLAN.md, Q.5).
+20261102000400

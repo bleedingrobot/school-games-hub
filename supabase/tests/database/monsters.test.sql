@@ -5,7 +5,7 @@
 -- Run with: npm run test:db  (needs the local Supabase copy running: npx supabase start)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(87);
+select plan(95);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@douglaspark.school.nz'),
@@ -224,6 +224,33 @@ select is((select count(*)::integer from public.achievements where player = pg_t
 select is((select count(*)::integer from public.gem_keep_facts where player = pg_temp.id('a') and pack = 'add-sub'), 2,
   'the new topics'' records stay');
 select is(pg_temp.save('a', 4, wild => 3) ->> 'points', '1', 'saving carries on in the new season');
+
+-- ---- Quests (20261102000400): days of play, quest points, eggs hatched, giants not counted ----
+create function pg_temp.quest_save(seq integer, questions integer, quest_points integer default 0, hatched integer default 0)
+returns jsonb language sql as $$
+  select public.record_monster_save(pg_temp.id('a'), jsonb_build_object(
+    'saveId', gen_random_uuid(), 'seq', seq, 'at', 1792000000000 + seq,
+    'world', jsonb_build_object('version', 1, 'map', 'harbour-town', 'team', '[]'::jsonb, 'badges', '[]'::jsonb),
+    'battles', '[]'::jsonb,
+    'summary', jsonb_build_object('wildWins', 0, 'trainerWins', 0, 'newBadges', '[]'::jsonb, 'catches', 0, 'questions', questions,
+      'right', questions, 'owned', 2, 'seen', 2, 'badges', 0, 'finalInTeam', 0, 'questPoints', quest_points, 'hatched', hatched)))
+$$;
+create function pg_temp.play_days() returns integer language sql as $$
+  select play_days from public.monster_saves where player = pg_temp.id('a')
+$$;
+select pg_temp.quest_save(5, 0);
+select is(pg_temp.play_days(), 0, 'a save with no questions answered is not a day of play');
+select pg_temp.quest_save(6, 3);
+select is(pg_temp.play_days(), 1, 'answering questions makes today a day of play');
+select pg_temp.quest_save(7, 3);
+select is(pg_temp.play_days(), 1, '... counted once a day, however many saves');
+select is(public.load_monster_save(pg_temp.id('a')) ->> 'playDays', '1', 'the monster function is told the days of play');
+select is(pg_temp.quest_save(8, 0, quest_points => 2) ->> 'points', '2', 'quest points are added to the save''s points');
+select pg_temp.quest_save(9, 0, hatched => 1);
+select is((select eggs_hatched from public.monster_saves where player = pg_temp.id('a')), 1, 'hatched eggs are counted');
+select is(public.monster_counts_for_cap('{"map": "fire-mountain", "giant": "snorumble", "steps": [{"q": {}}]}'), false,
+  'a sleeping giant''s battle does not count towards the 12 a day');
+select is(public.monster_counts_for_cap('{"map": "fire-mountain", "steps": [{"q": {}}]}'), true, '... but a wild battle there does');
 
 select * from finish();
 rollback;
