@@ -10,6 +10,7 @@ import { askCard, type CardLobbyGame, type SeatSummary } from '../data/cardGames
 import { askPower, seatsOf as powerSeatsOf, type PowerGame, type PowerLobbyGame } from '../data/powerGames';
 import { findGame, GAMES, POWER_CLASH_ON } from '../games/registry';
 import { useMathsMode } from '../games/space/mathsMode';
+import { useNonMathsGamesOpen } from '../data/nonMathsGames';
 import type { DesignedBoardId } from '../../shared/space/boards';
 import type { Mode } from '../../shared/space/engine';
 import { boardLabel, BOARD_NAMES, DESIGNED_BOARD_ORDER } from '../../shared/space/names';
@@ -50,6 +51,12 @@ export function Lobby() {
   const [message, setMessage] = useState<{ where: 'create' | 'join' | 'list'; text: string } | null>(null);
 
   const [gameKind, setGameKind] = useState<LobbyGameKind>('chess');
+  // With the class's non-maths games off, only the space game can be started or joined here.
+  const nonMathsShut = useNonMathsGamesOpen() === false;
+  useEffect(() => {
+    if (nonMathsShut) setGameKind('space');
+  }, [nonMathsShut]);
+  const shownOpen = open && nonMathsShut ? open.filter((o) => o.kind === 'space') : open;
   const [side, setSide] = useState<SideChoice>('first');
   const [spaceBoard, setSpaceBoard] = useState<SpaceBoardChoice>('nebula');
   const [spaceMode, setSpaceMode] = useState<Mode>('cosmic');
@@ -410,7 +417,7 @@ export function Lobby() {
               <fieldset className="level-picker">
                 <legend>Game</legend>
                 <div className="level-picker__options">
-                  {GAMES.filter((g) => g.Live || g.id === 'space' || g.id === '101' || g.id === 'power-clash').map((g) => (
+                  {GAMES.filter((g) => (g.Live || g.id === 'space' || g.id === '101' || g.id === 'power-clash') && !(nonMathsShut && g.group === 'no-maths')).map((g) => (
                     <label key={g.id} className="level-picker__option">
                       <input
                         type="radio"
@@ -598,13 +605,13 @@ export function Lobby() {
                 {message.text}
               </p>
             )}
-            {!open ? (
+            {!shownOpen ? (
               <p className="panel__empty">Loading…</p>
-            ) : open.length === 0 ? (
+            ) : shownOpen.length === 0 ? (
               <p className="panel__empty">No open games right now. Start one and choose “Anyone in the lobby”!</p>
             ) : (
               <ul className="lobby-list">
-                {open.map((o) =>
+                {shownOpen.map((o) =>
                   o.kind === 'friend' ? (
                     <li key={o.game.id}>
                       <AvatarImage avatar={o.game.creator_avatar} size={44} />

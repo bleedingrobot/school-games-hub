@@ -4,15 +4,21 @@ import { ComingSoon } from '../components/ComingSoon';
 import type { GameDefinition } from '../games/types';
 import { BOT_LEVELS, isBotLevel } from '../games/types';
 import { GameGate } from '../training/TrainFirst';
+import { NonMathsGate } from '../components/NonMathsGate';
 
 const EMOJI: Record<string, string> = { chess: '♟️', checkers: '🔴', space: '🚀', '101': '🃏' };
 
-/** Every game's page. In a class with Training before games on, a student who hasn't trained lately sees "Training first" instead. */
+/**
+ * Every game's page. In a class with Training before games on, a student who hasn't trained lately sees "Training first" instead;
+ * in a class with the non-maths games off, a non-maths game says so.
+ */
 export function GamePage({ game }: { game: GameDefinition }) {
   return (
-    <GameGate>
-      <GameScreen game={game} />
-    </GameGate>
+    <NonMathsGate on={game.group === 'no-maths'}>
+      <GameGate>
+        <GameScreen game={game} />
+      </GameGate>
+    </NonMathsGate>
   );
 }
 
