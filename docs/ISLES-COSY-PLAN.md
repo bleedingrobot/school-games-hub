@@ -23,7 +23,7 @@ You look after a small floating island. Every turn it makes coins, and you spend
 The rule from the step-by-step work still holds: **one choice per screen**, greyed buttons say why, and the steps never change order.
 
 1. **The sky pilot's question.** Right answer: a fair wind, so everything this turn makes is ×1.15. Wrong: shows the right answer, nothing lost.
-2. **Collect.** Coins pop off each building, then add up in a sum line (the working shown, never a question). Crystals and new islanders appear the same way. Lucky weather sometimes happens here (section 7).
+2. **Collect.** Coins pop off each building, then add up in a sum line (the working shown, never a question). Crystals appear the same way. Islanders and lucky weather come at the end of the turn (they use the server's dice), so they're shown when the next turn starts (section 7).
 3. **Build.** The island fills the screen. Tap a spot to build, raise or change it. Tap the drifting chunk to anchor it. Tap **Decorate** to open the decoration shelf. Each choice is one screen, then "Another?" (the same pattern as today's Land and Build steps). **Done building** moves on.
 4. **Race or rest.** Two big buttons: **Sky Race** (if one is left today) or **End turn**. After a race, End turn.
 
@@ -49,7 +49,7 @@ Six kinds, levels 1 to 3, same art. Level 2 makes twice as much as level 1, and 
 
 ## 5. Land
 
-- **Every chunk costs the same,** about 250 coins. The simulator sets the exact number so the pace in section 9 holds.
+- **Every chunk costs the same: 300 coins** (James chose 300 over 250 on 3 Nov 2026, after the simulator).
 - **The drift stays as it is:** 1 chunk a day, up to 3 waiting. An island under 0.7 of its class's middle size gets one extra. The drift sets the pace now, not the price.
 
 ## 6. Islanders
@@ -75,6 +75,7 @@ Storm and fog are gone, and so is the Wind Wall.
 ## 8. Decorations (instead of upgrades)
 
 - **Bought with coins** (the dearer ones also take crystals) in step 3, then put on one of the island's **decoration places**. These are spots around the edges and along the paths, kept separate from the building clearings. Each base gets its own places, set by hand in code with no repainting: Little 4, Growing 6, Big 8, Large 10, Grand 12.
+- **The sky garden (James, 3 Nov 2026):** once the Lighthouse is lit, a little garden island floats alongside with 20 more decoration places, so every-day pupils who finish in week 3 still have something to make prettier.
 - **They add island worth,** show on My island, and show on the class sky and when a classmate visits.
 - **They give pupils something to spend on once the Lighthouse is lit,** which fixes the coins-piling-up problem from S.0.
 - **Mostly just pretty. A few have one small help (James).** A first list for the simulator and art to work from:
@@ -114,7 +115,7 @@ The pretty ones can be bought more than once, up to the island's decoration plac
 ## 10. Races (unchanged, two small tidy-ups)
 
 - Everything in ISLES-RULES "Sky Races" stays: 3 questions during the race, gusts, the home wind, luck, the 1-in-6 chance with no answers right, the starter race that can't be lost, 2 races a day, the challenge limits, the calm start, nobody losing anything.
-- **Happiness speed goes.** Every boat gets the same steady +3 instead (the Gull Riders got 2.8 from happiness 70). Both sides still get the same amount, so the chances against the Gull Riders don't move. The simulator checks this.
+- **Happiness speed goes,** with nothing in its place. It gave both sides about the same amount, so nobody's chances move (the simulator still shows about 1 win in 6 with no answers right).
 - **Swift Sails** becomes the Sail flags decoration (+3, the same as before).
 - **The prize:** the first win of the day brings 30 coins and 5 crystals (goods become crystals). A later win brings 15 coins. "Well raced" brings 5 coins.
 - **Warm breeze** adds +2 to your next race (section 7).
@@ -192,3 +193,22 @@ Stop for James after each.
 | S.5 to S.8 | As ISLES-PLAN section 11 (Pip, hub parts, the rest of the art, go live) | |
 
 C.1 and C.2 can be one session. C.3 is its own.
+
+## 16. Stage results
+
+### C.1 results (the new rules), 3 Nov 2026
+
+- **Built:** `config.ts`, `engine.ts`, `race.ts`, `nextStep.ts`, `isles.test.ts` (tests 5 and 6, with new checks that nothing is ever lost, all weather is good, land is one price, decoration places and helps, crystals for level 3, and the warm breeze) and `scripts/isles-sim.mjs`, all to the cosy rules. `ISLES-RULES.md` is rewritten, with the new pace table.
+- **James's choices, 3 Nov 2026:**
+  - land at 300 coins;
+  - the sky garden (20 more decoration places once the Lighthouse is lit).
+- **Pace:**
+  - Every-day pupils reach Grand Isle in week 2 and light the Lighthouse in week 3. They're held back by the one-chunk-a-day drift, which no price changes much.
+  - 3-days-a-week pupils reach Grand Isle in week 3 to 4 and light the Lighthouse in week 5.
+  - 1-day-a-week pupils reach 9 or 10 spots.
+  - Races: about 1 win in 6 with no answers right, as before.
+- **Found and fixed:** in a photo finish (boats within about 0.05%), rounding could show both boats on the finish line. A boat that hasn't finished now stops at 0.999.
+- **Not yet changed (on purpose):**
+  - The server (`server.ts`, the `isles` function, the migration and the database test) still uses the old rules. That's stage C.2.
+  - The screens still use the old rules too. That's stage C.3.
+  - Until both are done, the type check and those tests fail on the branch. Nothing is live, so nobody sees it.

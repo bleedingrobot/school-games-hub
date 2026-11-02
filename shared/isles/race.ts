@@ -8,7 +8,7 @@
  * the browser can show the same race, and nothing the browser sends can change who won.
  *
  * Each boat's speed is RACE_BASE plus its sky-boats (counted as a square root, so a big fleet helps less and less),
- * Swift Sails, happiness, one gust for each right answer (the side that wasn't asked gets HOME_WIND instead) and luck.
+ * Sail flags, a warm breeze's head start, one gust for each right answer (the side that wasn't asked gets HOME_WIND instead) and luck.
  * The faster boat wins; the result also says where each boat was at the end of every leg, for the animation.
  *
  * The questions come during the race: the boats sail a stretch, stop for a question, and a right answer blows a gust
@@ -17,11 +17,11 @@
  */
 import { seededRandom } from '../maths/serverQuestions';
 import {
-  BOAT_SPEED, CALM_TURNS, FIRST_WIN_PRIZE, GULL_HAPPINESS, GUST_SPEED, HAPPY_SPEED, HOME_WIND, LATER_WIN_PRIZE,
+  BOAT_SPEED, BREEZE_SPEED, CALM_TURNS, FIRST_WIN_PRIZE, GUST_SPEED, HOME_WIND, LATER_WIN_PRIZE,
   MOST_BOATS, MOST_CHALLENGED, RACE_BASE, RACE_LEGS, RACE_LUCK, RACE_QUESTIONS, RACES_PER_DAY, SAILS_SPEED,
   STARTER_LOW, STARTER_SPREAD, WELL_RACED_COINS,
 } from './config';
-import { has, type Island } from './engine';
+import { boatsOf, owns, type Island } from './engine';
 
 /** The Gull Riders' id, used where a classmate's island id would go. */
 export const GULL_RIDERS = 'gull-riders';
@@ -29,15 +29,17 @@ export const GULL_RIDERS = 'gull-riders';
 /** What a boat brings to a race, taken from its island when the race starts. */
 export interface Racer {
   boats: number;
+  /** Sail flags (a decoration). */
   swiftSails: boolean;
-  happiness: number;
+  /** A warm breeze blew: a head start in this race. */
+  breeze: boolean;
 }
 
 /** A boat's speed, part by part, so the result card can show the working. */
 export interface Speed {
   boats: number;
   sails: number;
-  happiness: number;
+  breeze: number;
   /** Gusts from right answers (the challenger), or the home wind (the other side). */
   wind: number;
   luck: number;
@@ -72,13 +74,13 @@ export type RaceProblem =
   | 'own-island';
 
 export function racerOf(island: Island): Racer {
-  return { boats: island.boats, swiftSails: has(island, 'swift-sails'), happiness: island.happiness };
+  return { boats: boatsOf(island), swiftSails: owns(island, 'flags'), breeze: island.breeze };
 }
 
-/** The Gull Riders' boat for this challenger: the same boats and sails, so a race against them is decided by the
- * gusts and a little luck. */
+/** The Gull Riders' boat for this challenger: the same boats and sails (but no breeze), so a race against them is
+ * decided by the gusts and a little luck. */
 export function gullRiders(challenger: Racer): Racer {
-  return { boats: challenger.boats, swiftSails: challenger.swiftSails, happiness: GULL_HAPPINESS };
+  return { boats: challenger.boats, swiftSails: challenger.swiftSails, breeze: false };
 }
 
 /**
@@ -101,8 +103,8 @@ const clampRight = (right: number) => Math.max(0, Math.min(RACE_QUESTIONS, Math.
 function speedParts(racer: Racer, wind: number, luck: number): Speed {
   const boats = BOAT_SPEED * Math.sqrt(Math.max(0, Math.min(MOST_BOATS, racer.boats)));
   const sails = racer.swiftSails ? SAILS_SPEED : 0;
-  const happiness = (HAPPY_SPEED * Math.max(0, Math.min(100, racer.happiness))) / 100;
-  return { boats, sails, happiness, wind, luck, total: RACE_BASE + boats + sails + happiness + wind + luck };
+  const breeze = racer.breeze ? BREEZE_SPEED : 0;
+  return { boats, sails, breeze, wind, luck, total: RACE_BASE + boats + sails + breeze + wind + luck };
 }
 
 /**
@@ -158,7 +160,9 @@ function pathsOf(you: Speed, marks: boolean[], longest: number, lead: number, ra
   }
   const gustLegs = RACE_STOPS.filter((_, i) => marks[i]);
   const last = RACE_STOPS[RACE_QUESTIONS - 1];
-  const round = (x: number) => Math.round(x * 1000) / 1000;
+  // Rounded for sending; a boat that hasn't quite finished never rounds up to the line (a photo finish still shows
+  // the right winner).
+  const round = (x: number) => Math.min(Math.round(x * 1000) / 1000, x < 1 ? 0.999 : 1);
   const youPath: number[] = [];
   const themPath: number[] = [];
   let gusts = 0;
@@ -222,8 +226,8 @@ export function raceSoFar(seed: string, you: Racer, them: Racer, starter: boolea
   return { youPath: race.youPath.slice(0, upTo + 1), themPath: race.themPath.slice(0, upTo + 1), gustLegs: race.gustLegs.filter((leg) => leg < upTo) };
 }
 
-/** The prize for a win: the day's first win brings coins and goods, a later win coins. */
-export function racePrize(winsToday: number): { coins: number; goods: number } {
+/** The prize for a win: the day's first win brings coins and sky crystals, a later win coins. */
+export function racePrize(winsToday: number): { coins: number; crystals: number } {
   return winsToday === 0 ? { ...FIRST_WIN_PRIZE } : { ...LATER_WIN_PRIZE };
 }
 
@@ -236,18 +240,20 @@ export function settleRace(
   challenger: Island,
   defender: { id: string; island: Island } | null,
   result: Pick<RaceResult, 'won'>,
-): { challenger: Island; defender: Island | null; prize: { coins: number; goods: number } } {
+): { challenger: Island; defender: Island | null; prize: { coins: number; crystals: number } } {
   let you: Island = {
     ...challenger,
     racesToday: challenger.racesToday + 1,
     racedTurn: challenger.turn,
     racedWith: defender ? [...challenger.racedWith, defender.id] : challenger.racedWith,
+    // The warm breeze's head start is used up by this race.
+    breeze: false,
   };
   let them = defender ? { ...defender.island, challengedToday: defender.island.challengedToday + 1 } : null;
-  let prize = { coins: 0, goods: 0 };
+  let prize = { coins: 0, crystals: 0 };
   if (result.won) {
     prize = racePrize(challenger.winsToday);
-    you = { ...you, coins: you.coins + prize.coins, goods: you.goods + prize.goods, winsToday: you.winsToday + 1, racesWon: you.racesWon + 1 };
+    you = { ...you, coins: you.coins + prize.coins, crystals: you.crystals + prize.crystals, winsToday: you.winsToday + 1, racesWon: you.racesWon + 1 };
     if (them) them = { ...them, coins: them.coins + WELL_RACED_COINS };
   } else {
     you = { ...you, coins: you.coins + WELL_RACED_COINS };
