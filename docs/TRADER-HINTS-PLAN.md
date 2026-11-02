@@ -378,3 +378,13 @@ Built on branch `trader-hints`. **Live since 1 Nov 2026 (#123, #124).** Only fil
 ### Merging (1 Nov 2026)
 James asked for H.1 to H.3 to be pushed and merged. Pull request #123 (branch `trader-hints` into `main`) was opened with auto-merge on, so it merges once the checks pass; "Test and publish" then puts it live. Screen code only: no migration, no function deploy. Every helper shows for every pupil until H.4 adds help levels. Rollback: revert the merge.
 
+
+## 15. Market steps and trade bar (3 Nov 2026)
+James: pupils found the market confusing and had to scroll down past all ten goods to find Trade. He picked two fixes from a brainstorm: a trade bar that stays on screen, and splitting the market into two steps.
+- **1 Sell, 2 Buy.** Two big step buttons at the top of the market. Step 1 lists only what's in the hold, with the price the planet pays; step 2 lists only what this planet sells, with its price and stock ("Not sold here: …" underneath). In each step + means one more of that step's action and − one fewer, so there's no negative "sell" number any more. A good being sold in step 1 shows "Selling n in step 1" on step 2.
+- **Which step opens:** landing opens 1 Sell if the hold has anything this planet buys, otherwise 2 Buy. After a trade the market stays on its step (so what was just bought isn't offered straight back), except an empty step 1 moves on to 2 Buy. Picks carry across steps, so one Trade can sell and buy together.
+- **Trade bar:** stuck to the bottom of the scrolling screen. It says what's picked in words ("Sell 2 Medicine, then buy 10 Food."), spend, earn, credits after, holds after, Bolt's "sell there instead?" warnings and any "can't do that" message, then Trade, Next: 2. Buy (on step 1) and Clear.
+- **Bolt:** First Flight and "Show me" open the step that has the button they mean (Sell all is on step 1, Buy max on step 2) before lighting it, through the panel's new `want` prop. Lit buttons scroll clear of the bar.
+- **Tests:** the one market test that looked for a row by its "Buy one" button now finds either step's row and presses 1 Sell. No new tests. All 91 Star Trader screen tests pass.
+- **Checked in the preview** at 800 × 600 and 390 × 844: the whole First Flight, the step after buying and after selling everything, and Show me from the wrong step.
+- Not tried by a child yet. Not merged or live.

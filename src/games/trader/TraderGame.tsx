@@ -477,6 +477,13 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   useEffect(() => {
     if (tipCard && !flightTarget && litTarget) root.current?.querySelector(`[data-coach="${litTarget}"]`)?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
   }, [litTarget]); // eslint-disable-line react-hooks/exhaustive-deps
+  // "Show me": the market first opens the step that has the button (Sell all is on 1, Buy max on 2), then it lights up.
+  const [shown, setShown] = useState<{ target: string; n: number } | null>(null);
+  const showMe = useCallback((target: string) => setShown((s) => ({ target, n: (s?.n ?? 0) + 1 })), []);
+  useEffect(() => {
+    if (shown) lightUp(root.current, shown.target, lessMotion);
+  }, [shown]); // eslint-disable-line react-hooks/exhaustive-deps
+  const marketWant = litTarget ?? (shown ? `${shown.target}#${shown.n}` : undefined);
 
   // Bolt's suggestions on the Ship tab and in the bank (5.2, 5.7).
   const upgrade = galaxy && t ? nextUpgrade(galaxy, t, trips) : null;
@@ -526,9 +533,9 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
                     </button>
                   ))}
                 </div>
-                {tipCard ?? (step && !flight && <CoachBar step={step} onShow={(target) => lightUp(root.current, target, lessMotion)} />)}
+                {tipCard ?? (step && !flight && <CoachBar step={step} onShow={showMe} />)}
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
-                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} onTrade={doTrade} onPlan={setMarketPlan} />}
+                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} onTrade={doTrade} onPlan={setMarketPlan} />}
                 {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} onAct={act} onMoon={() => void buyMoon()} />}
                 {tab === 'bank' && (
                   <BankPanel
@@ -569,7 +576,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
           step={flight}
           top={bubbleTop}
           onAck={(id) => remember((m) => (id === 'profit' ? { ...m, flight: 'done', run: null } : m.run ? { ...m, run: { ...m.run, acks: [...m.run.acks, id] } } : m))}
-          onShow={(target) => lightUp(root.current, target, lessMotion)}
+          onShow={showMe}
           onSkip={() => remember((m) => ({ ...m, flight: 'skipped', run: null }))}
         />
       )}
