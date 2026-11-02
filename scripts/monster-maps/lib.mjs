@@ -45,7 +45,9 @@ export const CHEST = { closed: TD(90), open: TD(91) };
 
 export class MapMaker {
   constructor(id, name, width, height, area = 0, wild = [], biome = 'green') {
-    Object.assign(this, { id, name, width, height, area, wild, biome: BIOMES[biome] });
+    Object.assign(this, { id, name, width, height, area, wild, biome: BIOMES[biome], biomeName: biome });
+    /** What stands where, in words, for the map painter (scripts/monsters-map-paint.py): [kind, x, y, extra]. */
+    this.plan = [];
     this.ground = new Array(width * height).fill(0);
     this.walls = new Array(width * height).fill(0);
     this.grass = new Array(width * height).fill(0);
@@ -60,6 +62,8 @@ export class MapMaker {
     return h < 3 ? 1 : h === 3 ? 2 : 0;
   }
   at(x, y) { return y * this.width + x; }
+  /** Notes a thing for the painted map (it changes nothing in the game). */
+  mark(kind, x, y, extra = {}) { this.plan.push({ kind, x, y, ...extra }); }
   inside(x, y) { return x >= 0 && y >= 0 && x < this.width && y < this.height; }
   use(x, y, w = 1, h = 1) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) this.used.add(this.at(i, j)); }
   /** A rectangle of path (draw them 2 wide so the edges join up). On green maps it is dirt with grass edges. */
@@ -84,24 +88,24 @@ export class MapMaker {
     (this.warnings ??= []).push(text);
     console.warn(text);
   }
-  tree(x, y) { this.#onPath('tree', x, y); this.wall(x, y, TT(28)); }
+  tree(x, y) { this.mark('tree', x, y); this.#onPath('tree', x, y); this.wall(x, y, TT(28)); }
   /** A tall tree: two tiles, the crown above the trunk. */
-  bigTree(x, y) { this.#onPath('tall tree', x, y); this.#onPath('tall tree', x, y - 1); this.wall(x, y - 1, TT(4)); this.wall(x, y, TT(16)); }
-  autumnTree(x, y) { this.#onPath('tree', x, y); this.#onPath('tree', x, y - 1); this.wall(x, y - 1, TT(3)); this.wall(x, y, TT(15)); }
-  autumnSmall(x, y) { this.#onPath('tree', x, y); this.wall(x, y, TT(27)); }
-  snowTree(x, y) { this.#onPath('tall tree', x, y); this.#onPath('tall tree', x, y - 1); this.wall(x, y - 1, X(14)); this.wall(x, y, X(15)); }
-  snowPine(x, y) { this.#onPath('tree', x, y); this.wall(x, y, X(16)); }
-  snowBush(x, y) { this.#onPath('bush', x, y); this.wall(x, y, X(17)); }
-  palm(x, y) { this.#onPath('palm', x, y); this.#onPath('palm', x, y - 1); this.wall(x, y - 1, X(22)); this.wall(x, y, X(23)); }
-  boulder(x, y, dark = false) { this.#onPath('boulder', x, y); this.wall(x, y, X(dark ? 19 : 18)); }
-  stalagmite(x, y) { this.#onPath('stalagmite', x, y); this.wall(x, y, X(20)); }
-  crystal(x, y) { this.#onPath('crystal', x, y); this.wall(x, y, X(21)); }
-  bush(x, y) { this.#onPath('bush', x, y); this.wall(x, y, TT(5)); }
-  water(x, y, w, h) { this.wallRect(x, y, w, h, WATER); }
-  lava(x, y, w, h) { this.wallRect(x, y, w, h, LAVA); }
+  bigTree(x, y) { this.mark('bigTree', x, y); this.#onPath('tall tree', x, y); this.#onPath('tall tree', x, y - 1); this.wall(x, y - 1, TT(4)); this.wall(x, y, TT(16)); }
+  autumnTree(x, y) { this.mark('autumnTree', x, y); this.#onPath('tree', x, y); this.#onPath('tree', x, y - 1); this.wall(x, y - 1, TT(3)); this.wall(x, y, TT(15)); }
+  autumnSmall(x, y) { this.mark('autumnSmall', x, y); this.#onPath('tree', x, y); this.wall(x, y, TT(27)); }
+  snowTree(x, y) { this.mark('snowTree', x, y); this.#onPath('tall tree', x, y); this.#onPath('tall tree', x, y - 1); this.wall(x, y - 1, X(14)); this.wall(x, y, X(15)); }
+  snowPine(x, y) { this.mark('snowPine', x, y); this.#onPath('tree', x, y); this.wall(x, y, X(16)); }
+  snowBush(x, y) { this.mark('snowBush', x, y); this.#onPath('bush', x, y); this.wall(x, y, X(17)); }
+  palm(x, y) { this.mark('palm', x, y); this.#onPath('palm', x, y); this.#onPath('palm', x, y - 1); this.wall(x, y - 1, X(22)); this.wall(x, y, X(23)); }
+  boulder(x, y, dark = false) { this.mark(dark ? 'boulderDark' : 'boulder', x, y); this.#onPath('boulder', x, y); this.wall(x, y, X(dark ? 19 : 18)); }
+  stalagmite(x, y) { this.mark('stalagmite', x, y); this.#onPath('stalagmite', x, y); this.wall(x, y, X(20)); }
+  crystal(x, y) { this.mark('crystal', x, y); this.#onPath('crystal', x, y); this.wall(x, y, X(21)); }
+  bush(x, y) { this.mark('bush', x, y); this.#onPath('bush', x, y); this.wall(x, y, TT(5)); }
+  water(x, y, w, h) { this.mark('water', x, y, { w, h }); this.wallRect(x, y, w, h, WATER); }
+  lava(x, y, w, h) { this.mark('lava', x, y, { w, h }); this.wallRect(x, y, w, h, LAVA); }
   /** Rock wall (caves): a block, or a rectangle of them. */
-  rock(x, y, w = 1, h = 1) { this.wallRect(x, y, w, h, X(13)); }
-  ice(x, y, w, h) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) this.ground[this.at(i, j)] = X(29); }
+  rock(x, y, w = 1, h = 1) { this.mark('rock', x, y, { w, h }); this.wallRect(x, y, w, h, X(13)); }
+  ice(x, y, w, h) { this.mark('ice', x, y, { w, h }); for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) this.ground[this.at(i, j)] = X(29); }
   longGrass(x, y, w, h) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) if (this.inside(i, j)) { this.grass[this.at(i, j)] = this.biome.grass; this.used.add(this.at(i, j)); } }
   /** A line of trees round the edge (or `gid` tiles: rock, say). */
   border(gaps = [], place = (x, y) => this.tree(x, y)) {
@@ -110,11 +114,12 @@ export class MapMaker {
     for (let y = 0; y < this.height; y++) for (const x of [0, this.width - 1]) if (!gap(x, y)) place(x, y);
   }
   /** A fence running left to right. */
-  fence(x, y, len) { for (let i = 0; i < len; i++) this.wall(x + i, y, TT(i === 0 ? 80 : i === len - 1 ? 82 : 81)); }
+  fence(x, y, len) { this.mark('fence', x, y, { w: len }); for (let i = 0; i < len; i++) this.wall(x + i, y, TT(i === 0 ? 80 : i === len - 1 ? 82 : 81)); }
   /** A little house, 3 tiles wide and 4 tall. A door gets a warp. */
   house(x, y, { roof = 'red', wall = 'brown', door } = {}) {
     const roofs = { blue: [[48, 49, 50], [60, 61, 62]], red: [[52, 53, 54], [64, 65, 66]] };
     const walls = { brown: [[72, 73, 75], [84, 85, 84]], grey: [[76, 77, 79], [88, 89, 88]] };
+    this.mark('house', x, y, { w: 3, h: 4, roof, wall });
     const rows = [...roofs[roof], ...walls[wall]];
     rows.forEach((row, j) => row.forEach((n, i) => this.wall(x + i, y + j, TT(n))));
     if (!door) this.wall(x + 1, y + 3, TT(wall === 'brown' ? 84 : 88));
@@ -124,6 +129,7 @@ export class MapMaker {
    * the door in the middle of the bottom row at (x + 2, y + 4). Pass the door's warp yourself.
    */
   towerBuilding(x, y) {
+    this.mark('tower', x, y, { w: 5, h: 5 });
     const rows = [[48, 49, 49, 49, 50], [60, 61, 61, 61, 62], [76, 77, 77, 77, 79], [88, 77, 77, 77, 88], [88, 88, 89, 88, 88]];
     rows.forEach((row, j) => row.forEach((n, i) => this.wall(x + i, y + j, TT(n))));
   }
@@ -138,9 +144,9 @@ export class MapMaker {
     this.objects.push({ type, name, x, y, props, extra });
     this.use(x, y);
   }
-  sign(name, x, y, text, gid = TT(83)) { this.wall(x, y, gid); this.object('sign', name, x, y, { text }); }
+  sign(name, x, y, text, gid = TT(83)) { this.mark('sign', x, y); this.wall(x, y, gid); this.object('sign', name, x, y, { text }); }
   /** An area's welcome sign: after `text` the game adds hints on what can still be done in the area. */
-  welcome(name, x, y, text, gid = TT(83)) { this.wall(x, y, gid); this.object('sign', name, x, y, { text, hints: true }); }
+  welcome(name, x, y, text, gid = TT(83)) { this.mark('sign', x, y); this.wall(x, y, gid); this.object('sign', name, x, y, { text, hints: true }); }
   spot(name, x, y, facing = 'down') { this.objects.push({ type: 'spot', name, x, y, props: { facing }, extra: {} }); }
   warp(name, x, y, to, toX, toY, facing) { this.object('warp', name, x, y, { to, toX, toY, facing }); }
   person(name, sprite, x, y, facing, text) { this.object('person', name, x, y, { sprite, facing, text }); }
@@ -149,11 +155,11 @@ export class MapMaker {
   /** The Tinker, who makes things from bits. */
   tinker(name, sprite, x, y, facing, text) { this.object('tinker', name, x, y, { sprite, facing, text }); }
   /** The notice board: three small jobs a day. */
-  board(name, x, y, text, gid = TT(83)) { this.wall(x, y, gid); this.object('board', name, x, y, { text }); }
+  board(name, x, y, text, gid = TT(83)) { this.mark('board', x, y); this.wall(x, y, gid); this.object('board', name, x, y, { text }); }
   /** A puzzle (shared/monsters/quests/puzzles.ts) that opens when you face it; drawn as a sign until it is painted. */
-  puzzle(name, puzzle, x, y, text, gid = TT(83)) { this.wall(x, y, gid); this.object('puzzle', name, x, y, { puzzle, text }); }
+  puzzle(name, puzzle, x, y, text, gid = TT(83)) { this.mark(`puzzle-${puzzle}`, x, y); this.wall(x, y, gid); this.object('puzzle', name, x, y, { puzzle, text }); }
   /** An egg nest in a bonus area: one `egg` of that kind laid every week. Drawn as a bush until it is painted. */
-  nest(name, x, y, egg, text, gid = TT(5)) { this.wall(x, y, gid); this.object('nest', name, x, y, { egg, text }); }
+  nest(name, x, y, egg, text, gid = TT(5)) { this.mark(`nest-${egg}`, x, y); this.wall(x, y, gid); this.object('nest', name, x, y, { egg, text }); }
   /** A bush or tree that hides a seed pod: put it on a tile that is already a wall, so it keeps its look. */
   pod(name, puzzle, x, y, text) { this.object('puzzle', name, x, y, { puzzle, text }); }
   /** Opens a tile of a finished map (a border tree, say) to make a new way through. */
@@ -233,6 +239,10 @@ export class MapMaker {
   save() {
     writeFileSync(new URL(`../../shared/monsters/maps/${this.id}.json`, import.meta.url), JSON.stringify(this.toTiled()) + '\n');
     console.log(`wrote ${this.id}.json (${this.width} x ${this.height})`);
+    // The painter's plan: the biome, which squares are path and long grass, and what stands where.
+    const paths = [...(this.pathCells ?? [])].sort((a, b) => a - b);
+    const plan = { id: this.id, width: this.width, height: this.height, biome: this.biomeName, paths, grass: this.grass.flatMap((g, i) => (g ? [i] : [])), things: this.plan };
+    writeFileSync(new URL(`./paint-plans/${this.id}.json`, import.meta.url), JSON.stringify(plan) + '\n');
   }
 }
 
