@@ -2,7 +2,7 @@
  * The Star Trader preview (stage T.2): the whole game screen with no sign-in. It never talks to the school's server:
  * the rules are the shared ones, and maths questions are made and marked here in the browser for a pretend pupil.
  * Nothing is saved. Preview tools (not in the real game) are in the corner: pretend credits, pretend tomorrow,
- * another ship, a pirate fight.
+ * another ship, a pirate fight, starting as a brand-new pupil (Bolt forgets too), and 30 jumps made (Bolt's help drops to Some).
  * Run it: npx vite --config vite.trader-preview.config.ts
  */
 import { StrictMode } from 'react';
@@ -36,6 +36,12 @@ createRoot(document.getElementById('root') as HTMLElement).render(
             <button key={i} type="button" onClick={() => { trial.tools.forcePirates(i); h.reload(); }}>Pirates {i + 1}</button>
           ))}
           <button type="button" onClick={() => { trial.tools.restart(); h.reload(); }}>Start again</button>
+          <button type="button" onClick={() => { localStorage.removeItem('sgh-trader-coach'); location.reload(); }} title="A new game, and Bolt forgets everything: First Flight, tips and help level">Start as a new pupil</button>
+          <button
+            type="button"
+            title="Bolt moves from Lots of help to Some after 30 jumps"
+            onClick={() => { if (trial.data.game) trial.data.game.game.stats.jumps = Math.max(trial.data.game.game.stats.jumps, 30); h.reload(); }}
+          >Pretend 30 jumps made</button>
         </details>
       )}
     />
