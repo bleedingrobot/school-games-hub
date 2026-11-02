@@ -29,7 +29,6 @@ function Working({ who, speed, boats, home }: { who: string; speed: Speed; boats
     speed.sails ? `${n(speed.sails)} from Sail flags` : '',
     speed.breeze ? `${n(speed.breeze)} from a warm breeze` : '',
     speed.wind ? `${n(speed.wind)} from ${home ? 'the home wind' : 'gusts'}` : '',
-    // The starter race's Gull Riders take it easy (their luck is below nothing): that part isn't shown.
     speed.luck >= 0.5 ? `${n(speed.luck)} luck` : '',
   ].filter(Boolean);
   return (
@@ -137,7 +136,7 @@ export function Race({ backend, open, keeper, onDone, onProblem, backLabel = 'Ba
     ? 'The Gull Riders are getting ready…'
     : !sailing
       ? point === 0
-        ? `${race.starter ? 'Your first race! ' : ''}The race stops for questions on the way. Each right answer is a gust of wind for your boat.`
+        ? `The race stops for questions on the way. Each right answer is a gust of wind for your boat.`
         : 'Welcome back! Your race carries on from where you stopped.'
       : said ?? (stretch === 1 ? 'Off you go! The first question comes at the first stop.' : 'Sail on to the next stop!');
   const prize = race?.prize ?? { coins: 0, crystals: 0 };

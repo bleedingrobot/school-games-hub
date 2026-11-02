@@ -116,12 +116,13 @@ A Sky Race (if one is left today), or End turn. Then the end of the turn:
   - wind: the challenger's gusts. The other side (an island at home, or the Gull Riders) gets a **home wind** of +5, one gust's worth.
   - luck: from 0 up to 12, each side.
 - The faster boat wins. A tie goes to the challenger.
-- **The Gull Riders** bring the same boats and Sail flags as the challenger (no breeze). So a race against them is decided by the gusts and a little luck: about 1 in 6 with no answers right (James, 2 Nov 2026), half with 1, 5 in 6 with 2, and nearly always with 3.
+- **The Gull Riders** bring the same boats and Sail flags as the challenger (no breeze). So a race against them is decided by the gusts and a little luck: half with 1 answer right, 5 in 6 with 2, and nearly always with 3.
+- **No answers right never wins** (James, 3 Nov 2026), against anyone: the other side's luck is always at least enough to finish 0.5 ahead of the challenger's speed without gusts. That depends only on the seed and the boats, so what has been shown of a race never changes.
 - Happiness used to add up to +4 to both sides alike. Taking it out changed nobody's chances.
 - **The result comes only from the race's seed, the two boats (taken when the race starts) and the answers the server marked right.** The browser can't change it.
 - The race is 8 legs long, in 4 stretches of 2 legs; the stops come after legs 2, 4 and 6. Each gust blows on the first leg after its question. The server sends one stretch at a time, and what it has shown never depends on a later answer. A boat that hasn't quite finished never shows on the line, so a photo finish still shows the right winner.
 
-**The first race** (turn 2's guide) is against the Gull Riders and **can't be lost**, whatever the answers.
+**The first race** (turn 2's guide) is an ordinary race against the Gull Riders (James, 3 Nov 2026: it used to be a race that couldn't be lost, so a pupil could win with every answer wrong).
 
 **Prizes. Nobody ever loses anything.**
 - The winner: the day's first win brings **30 coins and 5 sky crystals**. A later win brings **15 coins**.

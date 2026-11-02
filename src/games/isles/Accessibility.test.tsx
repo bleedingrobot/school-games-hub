@@ -149,8 +149,8 @@ describe('keyboard and screen readers', () => {
         await waitFor(() => expect(screen.getByRole('heading', { name: `Sky Race: stretch ${q + 1} of 4`, level: 2 })).toHaveFocus());
         expect(screen.getByText('No gust this time, keep sailing!')).toBeInTheDocument();
       }
-      // The season's first race can't be lost.
-      await waitFor(() => expect(screen.getByRole('heading', { name: 'You won the Sky Race!', level: 2 })).toHaveFocus());
+      // Every answer wrong: the race is lost, even the season's first.
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'Well raced!', level: 2 })).toHaveFocus());
       await press('Back to my island');
       await waitFor(() => expect(screen.getByRole('heading', { name: 'My island', level: 2 })).toHaveFocus());
     } finally {

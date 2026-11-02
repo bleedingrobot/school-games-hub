@@ -2,10 +2,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { markQuestion, seededRandom, type MathsContext } from '../../../shared/maths/serverQuestions';
-import { TURNS_PER_DAY } from '../../../shared/isles/config';
+import { TURNS_PER_DAY, WELL_RACED_COINS } from '../../../shared/isles/config';
 import { memoryServices, type MemoryOptions } from '../../../shared/isles/memoryServices';
 import { RACE_LEGS } from '../../../shared/isles/config';
-import { RACE_STOPS, runRace, starterRace } from '../../../shared/isles/race';
+import { RACE_STOPS, runRace } from '../../../shared/isles/race';
 import { makeHandler } from './handler';
 
 // Sky Isles' server tests (docs/ISLES-PLAN.md, section 9: tests 1, 2 and 3 of the game's 8).
@@ -101,9 +101,9 @@ it("works a Sky Race out from its seed and the answers the server marked, so the
   // A race needs the opponent's island to be one the server knows: classmates come in stage S.4.
   expect((await send('pupil-a', { action: 'raceStart', opponent: 'pupil-b' })).body).toMatchObject({ code: 'not-yet' });
 
-  // The season's first race is the starter race: it can't be lost, even with every answer wrong.
+  // Even the season's first race is an ordinary race (James, 3 Nov 2026): with every answer wrong it is lost.
   const first = (await send('pupil-a', { action: 'raceStart', opponent: 'gull-riders' })).body.race;
-  expect(first).toMatchObject({ starter: true });
+  expect(first).toMatchObject({ starter: false });
   expect(first.questions).toHaveLength(3);
   expect(JSON.stringify(first)).not.toMatch(/"answer"|factKey|seed/);
   // Starting again carries on the same race, so a bad start can't be thrown away.
@@ -135,17 +135,18 @@ it("works a Sky Race out from its seed and the answers the server marked, so the
   // What the browser says about the result is ignored: it comes from the stored seed and the marks.
   const done = (await send('pupil-a', { action: 'raceFinish', race: first.id, won: true, right: 3 })).body;
   const stored = services.data.races[0];
-  expect(done.race.result).toEqual(starterRace(stored.seed, stored.you, 0));
-  expect(done.race.result.won).toBe(true);
+  expect(done.race.result).toEqual(runRace(stored.seed, stored.you, stored.them, 0));
+  expect(done.race.result.won).toBe(false);
   // The finished race starts with exactly the stretches shown, and the winner reaches the finish line.
   expect(done.race.result.youPath).toHaveLength(RACE_LEGS + 1);
   expect(done.race.result.youPath.slice(0, shown.youPath.length)).toEqual(shown.youPath);
   expect(done.race.result.themPath.slice(0, shown.themPath.length)).toEqual(shown.themPath);
-  expect(done.race.result.youPath.at(-1)).toBe(1);
-  expect(done.island).toMatchObject({ racesToday: 1, racesWon: 1, coins: 150 + 30, crystals: 5 });
+  expect(done.race.result.themPath.at(-1)).toBe(1);
+  expect(done.island).toMatchObject({ racesToday: 1, racesWon: 0, coins: 150 + WELL_RACED_COINS, crystals: 0 });
   // Sent twice: finished once.
   expect((await send('pupil-a', { action: 'raceFinish', race: first.id })).body).toMatchObject({ already: true });
-  expect(log.points.filter((p) => p.once.startsWith('isles:race:'))).toHaveLength(1);
+  // A lost race earns no points.
+  expect(log.points.filter((p) => p.once.startsWith('isles:race:'))).toHaveLength(0);
 
   // One race a turn: play a turn, then an ordinary race, which the answers decide.
   expect((await send('pupil-a', { action: 'raceStart', opponent: 'gull-riders' })).body).toMatchObject({ code: 'raced-this-turn' });

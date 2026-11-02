@@ -114,7 +114,7 @@ The pretty ones can be bought more than once, up to the island's decoration plac
 
 ## 10. Races (unchanged, two small tidy-ups)
 
-- Everything in ISLES-RULES "Sky Races" stays: 3 questions during the race, gusts, the home wind, luck, the 1-in-6 chance with no answers right, the starter race that can't be lost, 2 races a day, the challenge limits, the calm start, nobody losing anything.
+- Everything in ISLES-RULES "Sky Races" stays: 3 questions during the race, gusts, the home wind, luck, no win with no answers right and the first race an ordinary one (both James, 3 Nov 2026: they replace the 1-in-6 chance and the starter race), 2 races a day, the challenge limits, the calm start, nobody losing anything.
 - **Happiness speed goes,** with nothing in its place. It gave both sides about the same amount, so nobody's chances move (the simulator still shows about 1 win in 6 with no answers right).
 - **Swift Sails** becomes the Sail flags decoration (+3, the same as before).
 - **The prize:** the first win of the day brings 30 coins and 5 crystals (goods become crystals). A later win brings 15 coins. "Well raced" brings 5 coins.

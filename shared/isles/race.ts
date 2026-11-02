@@ -18,8 +18,8 @@
 import { seededRandom } from '../maths/serverQuestions';
 import {
   BOAT_SPEED, BREEZE_SPEED, CALM_TURNS, FIRST_WIN_PRIZE, GUST_SPEED, HOME_WIND, LATER_WIN_PRIZE,
-  MOST_BOATS, MOST_CHALLENGED, RACE_BASE, RACE_LEGS, RACE_LUCK, RACE_QUESTIONS, RACES_PER_DAY, SAILS_SPEED,
-  STARTER_LOW, STARTER_SPREAD, WELL_RACED_COINS,
+  MOST_BOATS, MOST_CHALLENGED, NO_ANSWER_GAP, RACE_BASE, RACE_LEGS, RACE_LUCK, RACE_QUESTIONS, RACES_PER_DAY, SAILS_SPEED,
+  WELL_RACED_COINS,
 } from './config';
 import { boatsOf, owns, type Island } from './engine';
 
@@ -186,7 +186,12 @@ export function runRace(seed: string, you: Racer, them: Racer, right: number | b
   const marks = marksOf(right);
   const r = marks.filter(Boolean).length;
   const yours = speedParts(you, r * GUST_SPEED, random() * RACE_LUCK);
-  const theirs = speedParts(them, HOME_WIND, random() * RACE_LUCK);
+  const drawn = speedParts(them, HOME_WIND, random() * RACE_LUCK);
+  // With no answers right the challenger never wins: the other side's luck is at least enough to finish just ahead of
+  // the challenger's speed without gusts. That depends only on the seed and the boats, never on the answers, so what
+  // has been shown of the race stays the same whatever comes next.
+  const need = steadyOf(yours) + NO_ANSWER_GAP - (drawn.total - drawn.luck);
+  const theirs = drawn.luck >= need ? drawn : { ...drawn, luck: need, total: drawn.total - drawn.luck + need };
   // A tie goes to the challenger.
   const won = yours.total >= theirs.total;
   const longest = Math.max(steadyOf(yours) + RACE_QUESTIONS * GUST_SPEED, theirs.total);
@@ -195,33 +200,11 @@ export function runRace(seed: string, you: Racer, them: Racer, right: number | b
 }
 
 /**
- * The first race, against the Gull Riders during turn 2's guide. It can't be lost, whatever the answers: the Gull
- * Riders take it easy and finish between STARTER_LOW and STARTER_LOW + STARTER_SPREAD of the pupil's speed, so it still
- * looks close. On the way they keep that share of the pupil's steady speed, and catch up that share of the pupil's
- * gusts on the last stretch, so they are always just behind.
- */
-export function starterRace(seed: string, you: Racer, right: number | boolean[]): RaceResult {
-  const random = seededRandom(`isles-starter:${seed}`);
-  const marks = marksOf(right);
-  const r = marks.filter(Boolean).length;
-  const yours = speedParts(you, r * GUST_SPEED, random() * RACE_LUCK);
-  const gulls = speedParts(gullRiders(you), HOME_WIND, 0);
-  const easy = STARTER_LOW + random() * STARTER_SPREAD;
-  const total = yours.total * easy;
-  // Their luck is whatever is left to make up that total (it can be below nothing: the gulls are taking it easy).
-  const theirs = { ...gulls, luck: total - (gulls.total - gulls.luck), total };
-  const longest = steadyOf(yours) + RACE_QUESTIONS * GUST_SPEED;
-  const paths = pathsOf(yours, marks, longest, yours.total, random,
-    (share, _gusts, lastStretch) => easy * (steadyOf(yours) * share + yours.wind * Math.max(0, lastStretch)));
-  return { won: true, you: yours, them: theirs, ...paths };
-}
-
-/**
  * What the browser may see of an open race, with `marks` the answers marked so far (in order): the paths up to the next
  * stop. They are the start of the finished race's paths whatever the later answers are (test 3 and the rules tests).
  */
-export function raceSoFar(seed: string, you: Racer, them: Racer, starter: boolean, marks: boolean[]): RaceSoFar {
-  const race = starter ? starterRace(seed, you, marks) : runRace(seed, you, them, marks);
+export function raceSoFar(seed: string, you: Racer, them: Racer, marks: boolean[]): RaceSoFar {
+  const race = runRace(seed, you, them, marks);
   const upTo = shownUpTo(marks.length);
   return { youPath: race.youPath.slice(0, upTo + 1), themPath: race.themPath.slice(0, upTo + 1), gustLegs: race.gustLegs.filter((leg) => leg < upTo) };
 }

@@ -8,7 +8,7 @@
  *   answer      marks this turn's question against the stored one, once, and records it for the maths records;
  *   turn        checks the turn's choices and plays the turn with the island's own random numbers and the fair wind
  *               the server marked, keeps it (a turn is played once), and makes the next turn's question;
- *   raceStart   a Sky Race against the Gull Riders (the season's first is the starter race), with three questions,
+ *   raceStart   a Sky Race against the Gull Riders, with three questions,
  *               and the race's first stretch;
  *   raceAnswer  marks one race question, once and in order, and sends the race up to the next stop;
  *   raceFinish  works the race out from its seed, the two boats and the answers marked right, and gives the prize
@@ -25,7 +25,7 @@ import { makeRunQuestions, markQuestion, publicQuestion, sameAnswer, seededRando
 import type { Question } from '../maths/skillPack';
 import { DECORATIONS, GRAND_ISLE, KEEPERS, PLOT_KINDS, RACE_QUESTIONS } from './config';
 import { newDay, newIsland, playTurn, spotCount, type Action, type Island, type Problem } from './engine';
-import { GULL_RIDERS, gullRiders, racerOf, raceProblem, raceSoFar, runRace, settleRace, starterRace, type Racer, type RaceProblem, type RaceResult } from './race';
+import { GULL_RIDERS, gullRiders, racerOf, raceProblem, raceSoFar, runRace, settleRace, type Racer, type RaceProblem, type RaceResult } from './race';
 
 export type IslesAction = 'load' | 'answer' | 'turn' | 'raceStart' | 'raceAnswer' | 'raceFinish' | 'guideDone' | 'keeper';
 
@@ -206,7 +206,7 @@ export function publicRace(race: StoredRace, questions: QuestionSet | null) {
     answered: questions ? questions.answered : {},
     ...(race.result
       ? { result: race.result, prize: race.prize }
-      : { soFar: raceSoFar(race.seed, race.you, race.them, race.starter, raceMarks(questions)) }),
+      : { soFar: raceSoFar(race.seed, race.you, race.them, raceMarks(questions)) }),
   };
 }
 
@@ -379,7 +379,8 @@ export async function handleIsles(services: IslesServices, player: string, body:
     const problem = raceProblem(island, GULL_RIDERS, player);
     if (problem) return no(400, PROBLEM_TEXT[problem], { code: problem });
     const you = racerOf(island);
-    const race = { seed: services.randomHex(16), opponent: GULL_RIDERS, starter: state.racesThisSeason === 0, you, them: gullRiders(you) };
+    // No race is a free win any more (James, 3 Nov 2026): `starter` stays false, kept for the database's column.
+    const race = { seed: services.randomHex(16), opponent: GULL_RIDERS, starter: false, you, them: gullRiders(you) };
     const id = await services.raceStart(player, race, today, island.turn);
     if (id === 'busy') return busy();
     if (id === null) return no(409, 'You have a race going already.', { code: 'stale' });
@@ -427,7 +428,7 @@ export async function handleIsles(services: IslesServices, player: string, body:
   if (problem) return no(400, PROBLEM_TEXT[problem], { code: problem });
   // Any question not answered yet counts as wrong (the browser only finishes once they're all answered).
   const marks = raceMarks(set);
-  const result = race.starter ? starterRace(race.seed, race.you, marks) : runRace(race.seed, race.you, race.them, marks);
+  const result = runRace(race.seed, race.you, race.them, marks);
   const settled = settleRace(island, null, result);
   const kept = await services.raceFinish(player, race.id, saved.version, settled.challenger, today, result, settled.prize);
   if (kept === 'busy') return busy();

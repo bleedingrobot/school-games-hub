@@ -27,7 +27,13 @@ const LEVEL_GROWTH = [0.8, 1, 1.14, 1.3];
 /** Seconds between one building's coins and the next at the collect, so they're counted one at a time. */
 export const POP_GAP = 0.55;
 /** The directions the golden sparkles burst in, round each building's coins. */
-const SPARKS = [0, 45, 90, 135, 180, 225, 270, 315];
+/** The golden sparkles round each coin pop (James: "many many more"): a close burst, a wider ring a moment later, and
+ * glitter that floats down after. Spread by fixed steps, so every pop looks the same and nothing is random. */
+const SPARKS = [
+  ...Array.from({ length: 16 }, (_, i) => ({ turn: i * 22.5, far: 46 + (i % 3) * 10, size: i % 2 ? 11 : 18, wait: (i % 4) * 0.03, kind: 'burst' })),
+  ...Array.from({ length: 14 }, (_, i) => ({ turn: i * 25.7 + 11, far: 78 + (i % 2) * 16, size: i % 3 ? 10 : 14, wait: 0.18 + (i % 3) * 0.05, kind: 'burst' })),
+  ...Array.from({ length: 14 }, (_, i) => ({ turn: (i - 6.5) * 13, far: 40 + (i % 4) * 12, size: i % 2 ? 8 : 12, wait: 0.3 + (i % 5) * 0.08, kind: 'fall' })),
+];
 /** How far in front of a clearing walkers stroll (in % of the base's height). */
 const WALK_AHEAD = 7;
 
@@ -169,7 +175,13 @@ export function IslandPicture({
           if (!at) return null;
           return (
             <span key={`p${spot}`} className="si-pop" style={{ left: `${at[0]}%`, top: `${at[1]}%`, '--si-pop-delay': popDelay(spot) } as CSSProperties} aria-hidden="true">
-              <span className="si-pop__sparks">{SPARKS.map((s) => <span key={s} style={{ '--si-spark': `${s}deg` } as CSSProperties} />)}</span>
+              <span className="si-pop__sparks">{SPARKS.map((s, i) => (
+                <span
+                  key={i}
+                  className={`si-pop__${s.kind}`}
+                  style={{ '--si-spark': `${s.turn}deg`, '--si-far': `${s.far}px`, '--si-size': `${s.size}px`, '--si-wait': `${s.wait}s` } as CSSProperties}
+                />
+              ))}</span>
               <span className="si-pop__label">
                 <Art src={coinArt()} className="si-pop__coin" fallback={<></>} />
                 +{pops![spot]}

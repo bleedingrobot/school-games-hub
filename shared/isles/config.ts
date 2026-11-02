@@ -142,17 +142,15 @@ export const SAILS_SPEED = 3;
 /** One right answer. */
 export const GUST_SPEED = 5;
 /** The side that wasn't asked questions (an island at home, or the Gull Riders) gets this much wind instead: one
- * gust's worth. Against an even match, no right answers wins about 1 race in 6 (James, 2 Nov 2026), one wins half,
- * two about 5 in 6, and three nearly always. */
+ * gust's worth. */
 export const HOME_WIND = 5;
+/** With no answers right the challenger never wins (James, 3 Nov 2026): the other side's luck is always at least
+ * enough to finish this much ahead of the challenger's speed without gusts. */
+export const NO_ANSWER_GAP = 0.5;
 /** Luck: each side adds a random amount from 0 up to this. */
 export const RACE_LUCK = 12;
 /** The race animation is this many legs long. */
 export const RACE_LEGS = 8;
-/** The first race (turn 2's guide): the Gull Riders finish this share of the way behind, from STARTER_LOW up to
- * STARTER_LOW + STARTER_SPREAD of the pupil's speed, so it is close but can't be lost. */
-export const STARTER_LOW = 0.86;
-export const STARTER_SPREAD = 0.1;
 
 // --- Sky Keepers -------------------------------------------------------------------------------------------------------
 

@@ -6843,10 +6843,9 @@ const LATER_WIN_PRIZE = {
 	coins: 15,
 	crystals: 0
 };
-/** The first race (turn 2's guide): the Gull Riders finish this share of the way behind, from STARTER_LOW up to
-* STARTER_LOW + STARTER_SPREAD of the pupil's speed, so it is close but can't be lost. */
-const STARTER_LOW = .86;
-const STARTER_SPREAD = .1;
+/** With no answers right the challenger never wins (James, 3 Nov 2026): the other side's luck is always at least
+* enough to finish this much ahead of the challenger's speed without gusts. */
+const NO_ANSWER_GAP = .5;
 /** The Sky Keeper portraits a pupil can choose from (src/games/isles/art/keepers/): 20 boys and 20 girls. Just for fun:
 * a keeper has no powers. The server only saves an id from this list. */
 const KEEPERS = [...Array.from({ length: 20 }, (_, i) => `b${String(i + 1).padStart(2, "0")}`), ...Array.from({ length: 20 }, (_, i) => `g${String(i + 1).padStart(2, "0")}`)];
@@ -7317,7 +7316,13 @@ function runRace(seed, you, them, right) {
 	const marks = marksOf(right);
 	const r = marks.filter(Boolean).length;
 	const yours = speedParts(you, r * 5, random() * 12);
-	const theirs = speedParts(them, 5, random() * 12);
+	const drawn = speedParts(them, 5, random() * 12);
+	const need = steadyOf(yours) + NO_ANSWER_GAP - (drawn.total - drawn.luck);
+	const theirs = drawn.luck >= need ? drawn : {
+		...drawn,
+		luck: need,
+		total: drawn.total - drawn.luck + need
+	};
 	return {
 		won: yours.total >= theirs.total,
 		you: yours,
@@ -7326,36 +7331,11 @@ function runRace(seed, you, them, right) {
 	};
 }
 /**
-* The first race, against the Gull Riders during turn 2's guide. It can't be lost, whatever the answers: the Gull
-* Riders take it easy and finish between STARTER_LOW and STARTER_LOW + STARTER_SPREAD of the pupil's speed, so it still
-* looks close. On the way they keep that share of the pupil's steady speed, and catch up that share of the pupil's
-* gusts on the last stretch, so they are always just behind.
-*/
-function starterRace(seed, you, right) {
-	const random = seededRandom(`isles-starter:${seed}`);
-	const marks = marksOf(right);
-	const r = marks.filter(Boolean).length;
-	const yours = speedParts(you, r * 5, random() * 12);
-	const gulls = speedParts(gullRiders(you), 5, 0);
-	const easy = STARTER_LOW + random() * STARTER_SPREAD;
-	const total = yours.total * easy;
-	return {
-		won: true,
-		you: yours,
-		them: {
-			...gulls,
-			luck: total - (gulls.total - gulls.luck),
-			total
-		},
-		...pathsOf(yours, marks, steadyOf(yours) + 15, yours.total, random, (share, _gusts, lastStretch) => easy * (steadyOf(yours) * share + yours.wind * Math.max(0, lastStretch)))
-	};
-}
-/**
 * What the browser may see of an open race, with `marks` the answers marked so far (in order): the paths up to the next
 * stop. They are the start of the finished race's paths whatever the later answers are (test 3 and the rules tests).
 */
-function raceSoFar(seed, you, them, starter, marks) {
-	const race = starter ? starterRace(seed, you, marks) : runRace(seed, you, them, marks);
+function raceSoFar(seed, you, them, marks) {
+	const race = runRace(seed, you, them, marks);
 	const upTo = shownUpTo(marks.length);
 	return {
 		youPath: race.youPath.slice(0, upTo + 1),
@@ -7509,7 +7489,7 @@ function publicRace(race, questions) {
 		...race.result ? {
 			result: race.result,
 			prize: race.prize
-		} : { soFar: raceSoFar(race.seed, race.you, race.them, race.starter, raceMarks(questions)) }
+		} : { soFar: raceSoFar(race.seed, race.you, race.them, raceMarks(questions)) }
 	};
 }
 /**
@@ -7709,7 +7689,7 @@ async function handleIsles(services, player, body) {
 		const race = {
 			seed: services.randomHex(16),
 			opponent: GULL_RIDERS,
-			starter: state.racesThisSeason === 0,
+			starter: false,
 			you,
 			them: gullRiders(you)
 		};
@@ -7773,7 +7753,7 @@ async function handleIsles(services, player, body) {
 	const problem = raceProblem(island, GULL_RIDERS, player);
 	if (problem) return no(400, PROBLEM_TEXT[problem], { code: problem });
 	const marks = raceMarks(set);
-	const result = race.starter ? starterRace(race.seed, race.you, marks) : runRace(race.seed, race.you, race.them, marks);
+	const result = runRace(race.seed, race.you, race.them, marks);
 	const settled = settleRace(island, null, result);
 	const kept = await services.raceFinish(player, race.id, saved.version, settled.challenger, today, result, settled.prize);
 	if (kept === "busy") return busy();

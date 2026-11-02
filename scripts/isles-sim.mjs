@@ -159,16 +159,15 @@ function season(player, style, right, seed) {
       out.turns++;
       out.maxCoins = Math.max(out.maxCoins, island.coins);
       // Races, from the season's second turn: against the Gull Riders whenever the rules allow (one a turn, two a day),
-      // with each race question right as often as the turn questions. The first is turn 2's starter race, which can't
-      // be lost.
+      // with each race question right as often as the turn questions.
       if (out.turns >= 2 && !k.raceProblem(island, k.GULL_RIDERS, 'me')) {
         const rightAnswers = Array.from({ length: C.RACE_QUESTIONS }, () => random() < right).filter(Boolean).length;
         const me = k.racerOf(island);
         const seedText = `sim-${seed}-${out.turns}`;
-        const race = out.races === 0 ? k.starterRace(seedText, me, rightAnswers) : k.runRace(seedText, me, k.gullRiders(me), rightAnswers);
+        const race = k.runRace(seedText, me, k.gullRiders(me), rightAnswers);
         island = k.settleRace(island, null, race).challenger;
         out.races++;
-        if (race.won && out.races > 1) out.wins++;
+        if (race.won) out.wins++;
       }
       if (out.grandDay === null && k.isGrandIsle(island)) out.grandDay = day + 1;
       if (out.lightDay === null && island.lighthouse === C.LIGHTHOUSE.length) out.lightDay = day + 1;
@@ -185,7 +184,7 @@ const median = (xs) => {
 const week = (day) => (day === null ? '  -  ' : `wk ${Math.ceil(day / 7)} (d${String(day).padStart(2)})`);
 
 console.log(`Sky Isles: ${RUNS} seasons for each pupil (${SEASON_DAYS}-day season, ${C.TURNS_PER_DAY} turns a play day)\n`);
-console.log('pupil            style     maths  Grand Isle   %got  Lighthouse  %lit  spots  levels  islanders  decor  most coins  end coins  crystals  races won% (not counting the starter)');
+console.log('pupil            style     maths  Grand Isle   %got  Lighthouse  %lit  spots  levels  islanders  decor  most coins  end coins  crystals  races won%');
 for (const player of PLAYERS) {
   for (const style of STYLES) {
     for (const right of MATHS) {
@@ -209,7 +208,7 @@ for (const player of PLAYERS) {
           String(median(runs.map((r) => r.maxCoins))).padStart(11),
           String(median(ends.map((e) => e.coins))).padStart(10),
           String(median(ends.map((e) => Math.floor(e.crystals)))).padStart(9),
-          `${Math.round((runs.reduce((s, r) => s + r.wins, 0) / Math.max(1, runs.reduce((s, r) => s + r.races - 1, 0))) * 100)}`.padStart(10),
+          `${Math.round((runs.reduce((s, r) => s + r.wins, 0) / Math.max(1, runs.reduce((s, r) => s + r.races, 0))) * 100)}`.padStart(10),
         ].join('  '),
       );
     }
