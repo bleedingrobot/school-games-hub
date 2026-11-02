@@ -10,8 +10,8 @@ import { GIANTS } from '../quests/giants';
 import { PUZZLES } from '../quests/puzzles';
 import { QUESTS } from '../quests/quests';
 import { AREAS } from './areas';
-import { questMarks, questOf } from './questWorld';
-import type { GameMap, WorldState } from './types';
+import { questMarks, questOf, recordEvent, type QuestOptions } from './questWorld';
+import type { GameMap, Spot, WorldState } from './types';
 
 export interface Pin {
   /** A small picture for the line (an emoji). */
@@ -107,4 +107,27 @@ export function worldPlaces(state: WorldState, maps: Record<string, GameMap>): P
     });
   }
   return out;
+}
+
+/**
+ * Fast travel (James, 3 November 2026): tap an open place on the world map and you are there. Free,
+ * allowed in the middle of a quest (the Menu can't open in a battle, a puzzle or a talk), and you land
+ * beside the place's nurse: Harbour Town's is inside the Healing Centre, and the three bonus places
+ * have no nurse, so you land at their entrance. No steps are added, so the server's speed check is
+ * unchanged, and you only ever land in a place the server already lets you stand in.
+ */
+export function landingFor(place: string, maps: Record<string, GameMap>): { map: string; spot: Spot } | undefined {
+  const map = place === 'harbour-town' ? 'healing-centre' : place;
+  const spots = maps[map]?.spots ?? [];
+  const spot = spots.find((s) => s.name === 'nurse') ?? spots.find((s) => s.name === (map === 'healing-centre' ? 'wake' : 'entrance'));
+  return spot && { map, spot };
+}
+
+/** Fly to an open place you are not in now. Arriving counts as a visit (a notice board job), the same as walking in. */
+export function fastTravel(state: WorldState, place: string, maps: Record<string, GameMap>, opts: QuestOptions = {}): { state: WorldState; lines: string[] } | undefined {
+  const p = worldPlaces(state, maps).find((x) => x.id === place);
+  const land = p?.open && !p.here ? landingFor(place, maps) : undefined;
+  if (!land) return undefined;
+  const { x, y, facing } = land.spot;
+  return recordEvent({ ...state, map: land.map, x, y, facing, beaten: [] }, { kind: 'visit', map: land.map, spot: 'enter' }, opts);
 }

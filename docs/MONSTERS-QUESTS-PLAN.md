@@ -325,3 +325,12 @@ Still to come, in its own PR (James's choice on a card): the 5 new achievements 
 plugged into `hub_games.counts_fn` for `monsters`; the 5 achievements (Egg-cellent, Wake-up call, Rare find, Quest helper,
 Legend keeper; 13 Monsters achievements in all, kept through a New Season like the others); and an exact edit to
 `my_moves_left` so the dashboard gets the eggs, days of play and last battle day for the egg line.
+
+## Fast travel (3 Nov 2026, branch `monsters-fast-travel`)
+
+James chose (question cards): travel to **any open place** on the world map (Harbour Town, areas whose badge is won,
+bonus places whose giant is awake), **free**, **allowed mid-quest** (the Menu can't open in a battle, puzzle or talk), and
+you **land beside the nurse** (Harbour Town: inside the Healing Centre; the three bonus places have no nurse, so their
+entrance). Pick a place on the world map, then "Travel to …". Arriving counts as a visit (notice board "visit" jobs), the
+same as walking in. Rules in `shared/monsters/world/worldMap.ts` (`landingFor`, `fastTravel`); 1 test in `areas.test.ts`.
+No steps are added and you only land where the save check already lets you stand, so **no server or database change**.

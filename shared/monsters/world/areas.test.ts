@@ -10,7 +10,8 @@ import { checkWorld } from './checkWorld';
 import { wildLevels, wildSpecies } from './encounters';
 import { SPOT_HOMES } from './weather';
 import { questMarks } from './questWorld';
-import { worldPlaces } from './worldMap';
+import { fastTravel, worldPlaces } from './worldMap';
+import { GIANTS } from '../quests/giants';
 import { BADGES } from './mapLoader';
 import { bookCounts, bookStatus, canHeal, moveToBox, moveToFront, moveToTeam, swapTeam, applyItem } from './menu';
 import { addToBag, describeLoot, LOOT, REPEL_STEPS } from './rewards';
@@ -107,6 +108,22 @@ describe('the six areas, in order', () => {
     expect(places.filter((p) => p.bonus).map((p) => p.name)).toEqual(['A secret place', 'A secret place', 'A secret place']);
     expect(places[1].pins.map((p) => p.text)).toContain('Hermit needs your help');
     expect(places[0].pins.map((p) => p.icon)).toEqual(expect.arrayContaining(['❤️', '🔧', '📋']));
+  });
+
+  it('fast travel: only to open places, free, and you land on a free tile beside the nurse', () => {
+    const fresh = at('harbour-town', 'start');
+    expect(fastTravel(fresh, 'shell-beach', WORLD_MAPS)).toBeUndefined(); // not open yet
+    expect(fastTravel(fresh, 'harbour-town', WORLD_MAPS)).toBeUndefined(); // already here
+    const bush = fastTravel(fresh, 'kauri-bush', WORLD_MAPS)!.state;
+    expect([bush.map, bush.steps, bush.beaten]).toEqual(['kauri-bush', fresh.steps, []]);
+    // With everything open, every place lands on a free tile next to its nurse (or a bonus place's entrance).
+    const all = { ...bush, badges: [...BADGE_ORDER], quest: { flags: GIANTS.map((g) => `woke:${g.id}`), bits: {}, quests: {}, eggs: [] } };
+    for (const p of worldPlaces(all, WORLD_MAPS).filter((x) => !x.here)) {
+      const s = fastTravel(all, p.id, WORLD_MAPS)!.state;
+      const m = WORLD_MAPS[s.map];
+      expect(isBlocked(m, s.x, s.y) || m.things.some((t) => t.x === s.x && t.y === s.y), p.id).toBe(false);
+      if (!p.bonus) expect(m.things.some((t) => t.kind === 'nurse' && Math.abs(t.x - s.x) + Math.abs(t.y - s.y) <= 2), p.id).toBe(true);
+    }
   });
 
   it('every area has a "chest" spot that is a free tile facing a chest, and the other test-page spots are free tiles too', () => {
