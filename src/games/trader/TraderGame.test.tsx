@@ -619,3 +619,107 @@ describe("Bolt's first-time tips and help with choices", () => {
     expect(screen.getByText(/^(✅ Good deal\. Take it\.|❌ .*Say No thanks\.)$/)).toBeTruthy();
   });
 });
+
+describe("Bolt's help panel and help levels (H.4)", () => {
+  const remembered = () => JSON.parse(localStorage.getItem('sgh-trader-coach') ?? 'null');
+  const helpButton = () => screen.getByRole('button', { name: "Bolt's help" });
+  const nextStepBar = () => document.querySelector('.st-coach:not(.st-tip)');
+  const coach = (extra: Record<string, unknown>) => localStorage.setItem('sgh-trader-coach', JSON.stringify({ flight: 'skipped', run: null, tips: ALL_TIPS, ...extra }));
+  /** A pupil whose saved game has made this many jumps (the server's count, which picks Bolt's level). */
+  async function jumped(jumps: number) {
+    const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
+    await traderApi(trial.transport).load();
+    trial.data.game!.game.stats.jumps = jumps;
+    return trial;
+  }
+
+  it('the Help button opens the panel: what to do, this screen, words and tips; Show me lights the button; Escape gives focus back', async () => {
+    play();
+    await market();
+    fireEvent.click(helpButton());
+    const panel = await screen.findByRole('dialog', { name: "Bolt's help" });
+    expect(document.activeElement?.textContent).toBe("Bolt's help");
+    expect(within(panel).getByText(/^What's this screen\? The market/)).toBeTruthy();
+    expect(within(panel).getByText('Holds')).toBeTruthy();
+    expect(within(panel).getByText(/Bolt's tips again/)).toBeTruthy();
+    expect(within(panel).getByText(/^A loan gives you credits now/)).toBeTruthy();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(helpButton());
+    fireEvent.click(helpButton());
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Show me' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await waitFor(() => expect(document.querySelector('.st-lit')?.getAttribute('aria-label')).toMatch(/^Buy as many \w+ as you can$/));
+  });
+
+  it('Off: no next step, tips, ⭐, trip ideas or deal helper, but the Help button stays; Some keeps the next step and hides the ⭐', async () => {
+    coach({ tips: [], level: 'off' });
+    play();
+    await market();
+    expect(nextStepBar()).toBeNull();
+    expect(document.querySelector('.st-best--star')).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: 'Bank' }));
+    await screen.findByRole('heading', { name: 'Bank' });
+    expect(document.querySelector('.st-tip')).toBeNull();
+    expect(remembered().tips).toEqual([]);
+    fireEvent.click(screen.getByRole('tab', { name: 'Star chart' }));
+    await screen.findByRole('heading', { name: /Star chart/ });
+    expect(screen.queryByText(/Good trips/)).toBeNull();
+    fireEvent.click(helpButton());
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('radio', { name: /Some/ }));
+    expect(remembered().level).toBe('some');
+    fireEvent.click(screen.getByRole('tab', { name: 'Trade' }));
+    await market();
+    // Bolt is back: his next step, or a first-time tip in its place.
+    expect(document.querySelector('.st-coach')).toBeTruthy();
+    expect(document.querySelector('.st-best--star')).toBeNull();
+  });
+
+  it('Some: Bolt\'s fight suggestion waits behind "Ask Bolt"', async () => {
+    coach({ level: 'some' });
+    const trial = trialBackend({ seed: 'screen-test', now: () => NOW });
+    await traderApi(trial.transport).load();
+    trial.tools.forcePirates(0);
+    play(trial);
+    expect(await screen.findByRole('heading', { name: /attack/ })).toBeTruthy();
+    expect(screen.queryByText(/^Bolt suggests/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Ask Bolt what to do/ }));
+    expect(screen.getByText(/^Bolt suggests 💨 Flee:/)).toBeTruthy();
+  });
+
+  it('Bolt picks Lots for a new pupil and Some after 30 jumps; the pupil\'s own pick wins until "Let Bolt pick"', async () => {
+    play(await jumped(29));
+    await market();
+    expect(document.querySelector('.st-best--star')).toBeTruthy();
+    cleanup();
+    play(await jumped(30));
+    await market();
+    expect(document.querySelector('.st-best--star')).toBeNull();
+    expect(nextStepBar()).toBeTruthy();
+    fireEvent.click(helpButton());
+    const panel = await screen.findByRole('dialog');
+    expect((within(panel).getByRole('radio', { name: /Some/ }) as HTMLInputElement).checked).toBe(true);
+    expect(within(panel).getByText(/Bolt picked this for you/)).toBeTruthy();
+    fireEvent.click(within(panel).getByRole('radio', { name: /Lots/ }));
+    expect(document.querySelector('.st-best--star')).toBeTruthy();
+    fireEvent.click(within(panel).getByRole('button', { name: 'Let Bolt pick' }));
+    expect(remembered().level).toBeNull();
+    expect(document.querySelector('.st-best--star')).toBeNull();
+  });
+
+  it('Replay First Flight works for a pupil who has jumped before (it used to do nothing), and turns help back on', async () => {
+    coach({ flight: 'done', level: 'off' });
+    play(await jumped(12));
+    await market();
+    expect(document.querySelector('.st-flight')).toBeNull();
+    fireEvent.click(helpButton());
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Replay First Flight' }));
+    await waitFor(() => expect(document.querySelector('.st-flight')?.textContent).toMatch(/step 1 of 9/));
+    expect(remembered().level).toBeNull();
+    // The bubble can be made small, so it covers nothing, and opened again.
+    fireEvent.click(screen.getByRole('button', { name: "Make Bolt's bubble small" }));
+    expect(document.querySelector('.st-flight')?.textContent).not.toMatch(/Hi! I'm Bolt/);
+    fireEvent.click(screen.getByRole('button', { name: /^Show Bolt: First Flight step 1 of 9/ }));
+    expect(document.querySelector('.st-flight')?.textContent).toMatch(/Hi! I'm Bolt/);
+  });
+});

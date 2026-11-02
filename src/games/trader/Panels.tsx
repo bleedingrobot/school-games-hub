@@ -17,6 +17,8 @@ import { goodIcon } from './text';
 import { emptyPlan, runPlan } from './tradePlan';
 import { allPrices, bestBuy, bestBuyWorking, sellElsewhere, tradeIdeas } from './coach/advice';
 import { COACH_NAME } from './text';
+import { AskBolt, BoltFace, lightUp } from './coach/CoachBar';
+import type { HelpLevel } from './coach/level';
 
 const cr = (n: number): string => `${n.toLocaleString('en-NZ')} cr`;
 
@@ -40,7 +42,7 @@ type MarketStep = 'sell' | 'buy';
 const stepShowing = (target: string | undefined): MarketStep | null =>
   target?.startsWith('sell-all-') ? 'sell' : target?.startsWith('buy-max-') ? 'buy' : null;
 
-export function TradePanel({ galaxy, t, busy, news = [], pushes, want, onTrade, onPlan }: {
+export function TradePanel({ galaxy, t, busy, news = [], pushes, want, level = 'lots', onTrade, onPlan }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
@@ -50,6 +52,8 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, want, onTrade, 
   pushes?: Pushes;
   /** What Bolt is pointing at (a `data-coach` name, maybe with a "#n" on the end so pointing again counts). Opens its step. */
   want?: string;
+  /** Bolt's help level: the ⭐ best buy is on Lots only, the "sell there instead?" warning on Lots and Some. */
+  level?: HelpLevel;
   /** Carry out the plan (the game may ask a maths check first). Gives a message to show, or null. */
   onTrade: (plan: number[]) => Promise<string | null>;
   /** Tells the game what is picked but not traded yet (for First Flight), and null when the market closes. */
@@ -65,7 +69,7 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, want, onTrade, 
   // Where each good sells best within a full tank's reach (today's prices; they can change before you land).
   const best = useMemo(() => bestSales(galaxy, t, pushes), [galaxy, t, pushes]);
   // Bolt's ⭐ best buy (docs/TRADER-HINTS-PLAN.md, 5.1): the biggest profit on a load the pupil can buy now.
-  const star = useMemo(() => bestBuy(tradeIdeas(galaxy, t, allPrices(galaxy, t.day, pushes))), [galaxy, t, pushes]);
+  const star = useMemo(() => (level === 'lots' ? bestBuy(tradeIdeas(galaxy, t, allPrices(galaxy, t.day, pushes))) : null), [galaxy, t, pushes, level]);
   const [colHelp, setColHelp] = useState(false);
   // A new planet, or anything that changes the hold (a finished trade, a friendly trader, pirates), starts a fresh plan.
   // Otherwise an old "sell 3" would be left over for goods that have gone, and every button would quietly fail on top of it.
@@ -251,7 +255,7 @@ export function TradePanel({ galaxy, t, busy, news = [], pushes, want, onTrade, 
           <span>You will have <strong>{cr((out?.state ?? t).credits)}</strong></span>
           <span>Holds <strong>{usedHolds(out?.state ?? t)} of {holdsOf(t)}</strong> full</span>
         </div>
-        {plan.map((q, good) => (q < 0 ? sellElsewhere(galaxy, t, good, best) : null)).filter(Boolean).map((line) => (
+        {plan.map((q, good) => (q < 0 && level !== 'off' ? sellElsewhere(galaxy, t, good, best) : null)).filter(Boolean).map((line) => (
           <p key={line} className="st-advice st-advice--warn"><strong className="st-advice__who">{COACH_NAME}:</strong> {line}</p>
         ))}
         {message && <p className="st-warn" role="status">{message}</p>}
@@ -296,11 +300,13 @@ function Suggests({ s }: { s: ShipSuggestion }) {
   return <span className="st-ribbon"><strong>🤖 {COACH_NAME} suggests:</strong> {s.why}</span>;
 }
 
-export function ShipPanel({ galaxy, t, busy, suggest = null, onAct, onMoon }: {
+export function ShipPanel({ galaxy, t, busy, suggest = null, askFirst = false, onAct, onMoon }: {
   galaxy: Galaxy;
   t: Trader;
   busy: boolean;
   suggest?: ShipSuggestion | null;
+  /** Help level Some: Bolt's suggestion waits until the pupil asks. */
+  askFirst?: boolean;
   /** Do a move (the game checks it with the shared rules and tells the pupil if it can't be done). */
   onAct: (action: Action, done: string) => void;
   onMoon: () => void;
@@ -310,8 +316,11 @@ export function ShipPanel({ galaxy, t, busy, suggest = null, onAct, onMoon }: {
   const rule = SHIPS[t.ship];
   const tank = rule.fuelTank - t.fuel;
   const mend = rule.hull - t.hull;
+  const [asked, setAsked] = useState(false);
+  const shown = suggest && (!askFirst || asked) ? suggest : null;
+  const box = useRef<HTMLElement>(null);
   return (
-    <section className="st-panel" aria-labelledby="st-ship-h">
+    <section className="st-panel" aria-labelledby="st-ship-h" ref={box}>
       <h2 id="st-ship-h" className="st-h">Your ship: {rule.name}</h2>
       <div className="st-shipcard">
         {shipArt(rule.name) ? (
@@ -336,6 +345,18 @@ export function ShipPanel({ galaxy, t, busy, suggest = null, onAct, onMoon }: {
           Mend the hull ({mend}, {cr(mend * rule.repairCost)})
         </button>
       </div>
+      {yard && suggest && askFirst && !asked && (
+        <button
+          type="button"
+          className="st-btn st-btn--small st-ask"
+          onClick={() => {
+            setAsked(true);
+            window.setTimeout(() => lightUp(box.current, suggest.target, false));
+          }}
+        >
+          <BoltFace size={22} /> Ask {COACH_NAME} what to buy
+        </button>
+      )}
       {!yard ? (
         <p className="st-sub">{planet.name} has no shipyard. Shipyards are on busier, more advanced planets (tech level 4 or more).</p>
       ) : (
@@ -365,7 +386,7 @@ export function ShipPanel({ galaxy, t, busy, suggest = null, onAct, onMoon }: {
                     Buy
                   </button>
                   {why && <span id={`why-${i}`} className="st-soft st-why">{why}</span>}
-                  {suggest?.target === `ship-buy-${i}` && <Suggests s={suggest} />}
+                  {shown?.target === `ship-buy-${i}` && <Suggests s={shown!} />}
                 </li>
               );
             })}
@@ -381,7 +402,7 @@ export function ShipPanel({ galaxy, t, busy, suggest = null, onAct, onMoon }: {
                   <span>🔫 <strong>{w.name}</strong> (power {w.power}) {cr(w.price)}</span>
                   <button type="button" className="st-btn" disabled={busy || !!why} onClick={() => onAct({ type: 'buyWeapon', index: i }, `${w.name} fitted.`)} data-coach={`gear-weapon-${i}`}>Buy</button>
                   {why && <span className="st-soft st-why">{why}</span>}
-                  {suggest?.target === `gear-weapon-${i}` && <Suggests s={suggest} />}
+                  {shown?.target === `gear-weapon-${i}` && <Suggests s={shown!} />}
                 </li>
               );
             })}
@@ -394,7 +415,7 @@ export function ShipPanel({ galaxy, t, busy, suggest = null, onAct, onMoon }: {
                   <span>🛡️ <strong>{s.name}</strong> (soaks {s.power}) {cr(s.price)}</span>
                   <button type="button" className="st-btn" disabled={busy || !!why} onClick={() => onAct({ type: 'buyShield', index: i }, `${s.name} fitted.`)} data-coach={`gear-shield-${i}`}>Buy</button>
                   {why && <span className="st-soft st-why">{why}</span>}
-                  {suggest?.target === `gear-shield-${i}` && <Suggests s={suggest} />}
+                  {shown?.target === `gear-shield-${i}` && <Suggests s={shown!} />}
                 </li>
               );
             })}
@@ -402,7 +423,7 @@ export function ShipPanel({ galaxy, t, busy, suggest = null, onAct, onMoon }: {
               <span>📦 <strong>Cargo pod</strong> (+{POD_HOLDS} holds, up to {MAX_PODS}) {cr(POD_PRICE)}</span>
               <button type="button" className="st-btn" disabled={busy || t.pods >= MAX_PODS || POD_PRICE > t.credits} onClick={() => onAct({ type: 'buyPod' }, 'Cargo pod fitted.')} data-coach="ship-pod">Buy</button>
               {t.pods >= MAX_PODS && <span className="st-soft st-why">Full</span>}
-              {suggest?.target === 'ship-pod' && <Suggests s={suggest} />}
+              {shown?.target === 'ship-pod' && <Suggests s={shown!} />}
             </li>
           </ul>
           <h3 className="st-h3">Your own moon</h3>
@@ -420,7 +441,7 @@ export function ShipPanel({ galaxy, t, busy, suggest = null, onAct, onMoon }: {
   );
 }
 
-export function BankPanel({ t, busy, loans, onAct, sure, onSure, bolt = null }: {
+export function BankPanel({ t, busy, loans, onAct, sure, onSure, bolt = null, askFirst = false }: {
   t: Trader;
   busy: boolean;
   loans: boolean;
@@ -431,6 +452,8 @@ export function BankPanel({ t, busy, loans, onAct, sure, onSure, bolt = null }: 
   onSure?: () => void;
   /** Bolt's line about whether a loan is needed (5.7). */
   bolt?: string | null;
+  /** Help level Some: Bolt's line waits until the pupil asks. */
+  askFirst?: boolean;
 }) {
   const [asking, setAsking] = useState<number | null>(null);
   const room = LOAN_MAX - t.loan.principal;
@@ -448,7 +471,11 @@ export function BankPanel({ t, busy, loans, onAct, sure, onSure, bolt = null }: 
         <div>You have <strong>{cr(t.credits)}</strong></div>
         <div>You owe <strong>{cr(t.loan.owed)}</strong>{t.loan.principal > 0 && <span className="st-soft"> (you borrowed {cr(t.loan.principal)}; {cr(interest)} more in {toNext} day{toNext === 1 ? '' : 's'})</span>}</div>
       </div>
-      {bolt && loans && <p className="st-advice"><strong className="st-advice__who">{COACH_NAME} thinks:</strong> {bolt}</p>}
+      {bolt && loans && (
+        <AskBolt ask={askFirst} label={`Ask ${COACH_NAME} about loans`}>
+          <p className="st-advice"><strong className="st-advice__who">{COACH_NAME} thinks:</strong> {bolt}</p>
+        </AskBolt>
+      )}
       <div className="st-actions">
         {[100, 200, 300, 500].map((n) => (
           <button key={n} type="button" className="st-btn" disabled={busy || !loans || n > room || asking !== null} onClick={() => (sure ? setAsking(n) : borrow(n))}>Borrow {n}</button>

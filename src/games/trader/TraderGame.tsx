@@ -19,12 +19,14 @@ import { DealPanel, FightPanel, JunkPanel, SummaryPanel } from './Encounter';
 import { laserPower } from '../../../shared/trader/fight';
 import { hasShipyard } from '../../../shared/trader/state';
 import { allPrices, borrowSure, fightAdvice, loanNotNeeded, nextUpgrade, starterTrade, tradeIdeas, tripSummary, upgradeGain } from './coach/advice';
-import { CoachBar, lightUp } from './coach/CoachBar';
+import { BoltFace, CoachBar, lightUp } from './coach/CoachBar';
 import { flightStep } from './coach/flight';
 import { FlightBubble, holdLight } from './coach/FlightBubble';
+import { HelpPanel } from './coach/HelpPanel';
+import { HELP_LEVELS, helpLevel, type HelpLevel } from './coach/level';
 import { forSeason, loadCoach, noteHold, saveCoach, type CoachMemory } from './coach/memory';
 import { TipCard } from './coach/TipCard';
-import { MATHS_TIP, nextTip, tipsFor, tipStops, type TipId, type TipMoment } from './coach/tips';
+import { MATHS_TIP, nextTip, TIP_IDS, tipsFor, tipStops, type TipId, type TipMoment } from './coach/tips';
 import { nextStep, type CoachTab } from './coach/nextStep';
 import { BankPanel, ShipPanel, TradePanel } from './Panels';
 import { loadPrefs, savePrefs, wantsLessMotion } from './prefs';
@@ -77,6 +79,9 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   const [tip, setTip] = useState<{ id: TipId; stop: number } | null>(null);
   /** A new day's welcome is due (worked out once when the game loads). */
   const [welcome, setWelcome] = useState(false);
+  /** Bolt's help panel is open. */
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpButton = useRef<HTMLButtonElement>(null);
   const lock = useRef(false);
   const latest = useRef({ loaded, queue });
   latest.current = { loaded, queue };
@@ -117,6 +122,9 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   const here = galaxy && t ? galaxy.planets[t.location] : null;
   const pending = game?.pending ?? null;
   const jumpsMade = game?.stats.jumps ?? 0;
+  // How much Bolt helps (section 6): the pupil's pick, or Lots for the first 30 jumps and Some after.
+  const level = helpLevel(coach.level, jumpsMade);
+  const bolt = level !== 'off';
 
   const remember = useCallback((change: (m: CoachMemory) => CoachMemory) => {
     setCoach((m) => {
@@ -143,9 +151,9 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   const trips = useMemo(() => (galaxy && t ? tradeIdeas(galaxy, t, allLines) : []), [galaxy, t, allLines]);
 
   // First Flight: for a pupil who has never jumped (the server's count, so it follows them to any device), unless it was
-  // done or skipped on this device; or when it is replayed from the title screen. It begins on the planet, with Bolt's
-  // trade picked once so the numbers he quotes stay the same all the way through.
-  const flightWanted = coach.flight === null && (coach.run !== null || jumpsMade === 0);
+  // done or skipped on this device or help is Off; or when it is replayed. It begins on the planet, with Bolt's trade
+  // picked once so the numbers he quotes stay the same all the way through.
+  const flightWanted = coach.flight === null && (coach.run !== null || (jumpsMade === 0 && bolt));
   useEffect(() => {
     if (!flightWanted || coach.run || !galaxy || !t || phase.k !== 'planet') return;
     const trip = starterTrade(galaxy, t, pushes);
@@ -250,7 +258,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
     const sold = plan.map((q) => (q < 0 ? -q : 0));
     const boughtGoods = plan.map((q, good) => (q > 0 ? good : -1)).filter((g) => g >= 0);
     const after = (cargo: readonly number[], spent: number, earned: number): string => {
-      const summary = galaxy ? tripSummary(galaxy, t, sold, earned, coach.boughtAt) : null;
+      const summary = galaxy && bolt ? tripSummary(galaxy, t, sold, earned, coach.boughtAt) : null;
       const prices: Record<number, number> = {};
       for (const g of boughtGoods) prices[g] = boughtGoods.length === 1 ? spent / plan[g] : t.market[g].buy;
       remember((m) => ({ ...m, boughtAt: noteHold(m.boughtAt, t.cargo, cargo, prices, t.location) }));
@@ -259,7 +267,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
     if (checked && question) {
       let reply: MoveReply | null = null;
       // The first time, Bolt's tip goes in the box's own note line.
-      const firstCheck = !coach.tips.includes('maths');
+      const firstCheck = bolt && !coach.tips.includes('maths');
       if (firstCheck) remember((m) => ({ ...m, tips: [...m.tips, 'maths'] }));
       const note = firstCheck ? `${COACH_NAME}: ${MATHS_TIP}` : 'Get it right for a small discount on this trade.';
       const outcome = await ask(question, 'Sharp trader check', note, async (value, ms) => {
@@ -428,7 +436,20 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
     lock.current = false;
   }
 
-  const showFlight = !!flight && phase.k === 'planet' && !pending && !asking;
+  const showFlight = !!flight && bolt && phase.k === 'planet' && !pending && !asking;
+
+  /**
+   * Start First Flight again (title screen or Bolt's help panel), with Bolt's trade picked now, so it works for a pupil
+   * who has jumped before too. Help that was Off goes back to Bolt's pick, so Bolt can fly with them.
+   */
+  const replayTrip = useMemo(() => (galaxy && t && (coach.flight !== null || jumpsMade > 0) ? starterTrade(galaxy, t, pushes) : null), [galaxy, t, pushes, coach.flight, jumpsMade]);
+  const replay = replayTrip && t ? () => {
+    remember((m) => ({ ...m, flight: null, level: m.level === 'off' ? null : m.level, run: { good: replayTrip.good, planet: replayTrip.planet, credits: t.credits, jumps: jumpsMade, acks: [] } }));
+    setHelpOpen(false);
+    helpButton.current?.focus();
+    setTab('trade');
+    setPhase({ k: 'planet' });
+  } : undefined;
 
   // First-time tips (section 4): the first one that fits now and hasn't been seen shows, and is remembered at once, so it
   // shows only once. It stays until closed or until the moment passes. On the planet they wait for First Flight's bubble.
@@ -446,17 +467,17 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   };
   const fitting = tipsFor(moment);
   const fitKey = fitting.join(',');
-  const candidate = nextTip(moment, coach.tips);
+  const candidate = bolt ? nextTip(moment, coach.tips) : null;
   useEffect(() => {
     if (tip) {
-      if (!fitting.includes(tip.id)) setTip(null);
+      if (!fitting.includes(tip.id) || !bolt) setTip(null);
       return;
     }
     if (!candidate) return;
     setTip({ id: candidate, stop: 0 });
     if (candidate === 'newday') setWelcome(false);
     else remember((m) => (m.tips.includes(candidate) ? m : { ...m, tips: [...m.tips, candidate] }));
-  }, [fitKey, candidate, tip]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fitKey, candidate, tip, bolt]); // eslint-disable-line react-hooks/exhaustive-deps
   const stops = tip && galaxy && t && loaded ? tipStops(tip.id, { galaxy, t, jumpsPerDay: loaded.settings.jumpsPerDay, news }) : [];
   const tipStop = tip ? stops[tip.stop] ?? null : null;
   const closeTip = useCallback(() => setTip(null), []);
@@ -480,6 +501,14 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   // "Show me": the market first opens the step that has the button (Sell all is on 1, Buy max on 2), then it lights up.
   const [shown, setShown] = useState<{ target: string; n: number } | null>(null);
   const showMe = useCallback((target: string) => setShown((s) => ({ target, n: (s?.n ?? 0) + 1 })), []);
+  const closeHelp = useCallback(() => {
+    setHelpOpen(false);
+    helpButton.current?.focus();
+  }, []);
+  // The first-time tips already shown, to read again in the help panel ("borrow" is only a "Sure?").
+  const tipsAgain = galaxy && t && loaded && helpOpen
+    ? coach.tips.filter((id): id is TipId => id !== 'borrow' && TIP_IDS.includes(id as TipId)).map((id) => tipStops(id, { galaxy, t, jumpsPerDay: loaded.settings.jumpsPerDay, news }).map((s) => s.say).join(' '))
+    : [];
   useEffect(() => {
     if (shown) lightUp(root.current, shown.target, lessMotion);
   }, [shown]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -488,7 +517,7 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
   // Bolt's suggestions on the Ship tab and in the bank (5.2, 5.7).
   const upgrade = galaxy && t ? nextUpgrade(galaxy, t, trips) : null;
   const gain = upgrade && galaxy && t ? upgradeGain(galaxy, t, upgrade, allLines) : null;
-  const suggest = upgrade ? { target: upgrade.target, why: upgrade.kind === 'pod' ? `${gain ?? upgrade.why}` : `${upgrade.why}${gain ? ` ${gain}.` : ''}` } : null;
+  const suggest = upgrade && bolt ? { target: upgrade.target, why: upgrade.kind === 'pod' ? `${gain ?? upgrade.why}` : `${upgrade.why}${gain ? ` ${gain}.` : ''}` } : null;
 
   const playing = phase.k !== 'title';
   const panelBusy = busy || asking || phase.k === 'warp';
@@ -512,17 +541,15 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
             savePrefs(p);
           }}
           onStart={() => setPhase({ k: 'planet' })}
-          firstTime={coach.flight === null && jumpsMade === 0}
-          onReplay={coach.flight !== null || jumpsMade > 0 ? () => {
-            remember((m) => ({ ...m, flight: null, run: null }));
-            setTab('trade');
-            setPhase({ k: 'planet' });
-          } : undefined}
+          firstTime={coach.flight === null && jumpsMade === 0 && bolt}
+          onReplay={replay}
+          level={level}
+          onLevel={(l) => remember((m) => ({ ...m, level: l }))}
           onExit={onExit}
         />
       ) : (
         <>
-          <Hud t={t} jumpsPerDay={loaded.settings.jumpsPerDay} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} />
+          <Hud t={t} jumpsPerDay={loaded.settings.jumpsPerDay} planet={`${here.name} ${coordText(here)}`} government={GOVERNMENTS[here.government].name} onExit={onExit} help={helpButton} helpOpen={helpOpen} onHelp={() => (helpOpen ? closeHelp() : setHelpOpen(true))} />
           <div className={`st-main ${phase.k === 'planet' && !pending && tab === 'map' ? 'st-main--wide' : ''}`}>
             {phase.k === 'planet' && !pending && (
               <>
@@ -533,22 +560,23 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
                     </button>
                   ))}
                 </div>
-                {tipCard ?? (step && !flight && <CoachBar step={step} onShow={showMe} />)}
+                {tipCard ?? (step && !flight && bolt && <CoachBar step={step} onShow={showMe} />)}
                 <div className="st-focus" ref={heading} tabIndex={-1} aria-label={`${tabs.find((x) => x[0] === tab)?.[1]} screen`} />
-                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} onTrade={doTrade} onPlan={setMarketPlan} />}
-                {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} onAct={act} onMoon={() => void buyMoon()} />}
+                {tab === 'trade' && <TradePanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} want={marketWant} level={level} onTrade={doTrade} onPlan={setMarketPlan} />}
+                {tab === 'ship' && <ShipPanel galaxy={galaxy} t={t} busy={panelBusy} suggest={suggest} askFirst={level === 'some'} onAct={act} onMoon={() => void buyMoon()} />}
                 {tab === 'bank' && (
                   <BankPanel
                     t={t}
                     busy={panelBusy}
                     loans={settings.loans}
                     onAct={act}
-                    sure={coach.tips.includes('borrow') ? undefined : (n) => borrowSure(t, n)}
+                    sure={!bolt || coach.tips.includes('borrow') ? undefined : (n) => borrowSure(t, n)}
                     onSure={() => remember((m) => (m.tips.includes('borrow') ? m : { ...m, tips: [...m.tips, 'borrow'] }))}
-                    bolt={loanNotNeeded(t, trips) ? "You can already fill your hold with the best buy here. You don't need a loan right now." : null}
+                    askFirst={level === 'some'}
+                    bolt={bolt && loanNotNeeded(t, trips) ? "You can already fill your hold with the best buy here. You don't need a loan right now." : null}
                   />
                 )}
-                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} guide={showFlight ? flight?.guide ?? null : null} onAim={setAimed} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
+                {tab === 'map' && <MapPanel galaxy={galaxy} t={t} busy={panelBusy} news={news} pushes={pushes} guide={showFlight ? flight?.guide ?? null : null} level={level} onAim={setAimed} onJump={(d) => void jump(d)} onRefuel={(units) => act({ type: 'refuel', units }, 'Fuel bought.')} />}
                 {note && <p className="st-note st-note--float" role="status">{note}</p>}
                 {t.jumpsLeft < 1 && <p className="st-note st-note--float">That is all your jumps for today. You can still trade here. Come back tomorrow!</p>}
               </>
@@ -556,8 +584,8 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
             {phase.k === 'warp' && <div className="st-warp" role="status">Jumping…</div>}
             {(phase.k === 'after' || (phase.k === 'planet' && pending)) && tipCard}
             {phase.k === 'planet' && pending?.kind === 'junk' && <JunkPanel busy={panelBusy} onSteer={() => void steer()} />}
-            {phase.k === 'planet' && pending?.kind === 'deal' && <DealPanel key={`${t.jumpNo}`} offer={pending.offer} here={t} busy={panelBusy} hideVerdict={coach.deals >= 3} onAccept={() => void deal(true)} onDecline={() => void deal(false)} />}
-            {phase.k === 'planet' && pending?.kind === 'fight' && <FightPanel t={t} fight={pending.fight} tier={pending.tier} advice={fightAdvice(t, pending.fight)} log={fightLog.length ? fightLog : ['They are coming right at you!']} busy={fightBusy || asking} onAct={(m) => void fightAct(m)} />}
+            {phase.k === 'planet' && pending?.kind === 'deal' && <DealPanel key={`${t.jumpNo}`} offer={pending.offer} here={t} busy={panelBusy} level={level} hideVerdict={coach.deals >= 3 || level === 'some'} onAccept={() => void deal(true)} onDecline={() => void deal(false)} />}
+            {phase.k === 'planet' && pending?.kind === 'fight' && <FightPanel t={t} fight={pending.fight} tier={pending.tier} advice={bolt ? fightAdvice(t, pending.fight) : null} askFirst={level === 'some'} log={fightLog.length ? fightLog : ['They are coming right at you!']} busy={fightBusy || asking} onAct={(m) => void fightAct(m)} />}
             {phase.k === 'after' && <SummaryPanel title={phase.title} lines={phase.lines} button="Carry on" onDone={() => { setTab('trade'); setPhase({ k: 'planet' }); }} />}
             {phase.k === 'moon' && (
               <SummaryPanel
@@ -568,10 +596,27 @@ export function TraderGame({ api, onExit, extra, startAt = 'title' }: {
               />
             )}
           </div>
+          {helpOpen && (
+            <HelpPanel
+              step={showFlight && flight ? { say: `First Flight, step ${flight.n}: ${flight.say}`, target: flight.target } : phase.k === 'planet' && !pending ? step : null}
+              screen={phase.k === 'planet' ? (pending ? (pending.kind === 'deal' ? 'deal' : pending.kind) : tab) : 'other'}
+              jumpsPerDay={loaded.settings.jumpsPerDay}
+              tips={tipsAgain}
+              level={level}
+              picked={coach.level}
+              onLevel={(l: HelpLevel | null) => remember((m) => ({ ...m, level: l }))}
+              onShow={(target) => {
+                setHelpOpen(false);
+                showMe(target);
+              }}
+              onReplay={replay}
+              onClose={closeHelp}
+            />
+          )}
           {extra && playing && <div className="st-tools">{extra({ reload: () => void reload() })}</div>}
         </>
       )}
-      {showFlight && flight && (
+      {showFlight && flight && !helpOpen && (
         <FlightBubble
           step={flight}
           top={bubbleTop}
@@ -600,7 +645,16 @@ function Problem({ problem, onRetry, onExit }: { problem: { kind: string; messag
   );
 }
 
-function Hud({ t, jumpsPerDay, planet, government, onExit }: { t: Game['t']; jumpsPerDay: number; planet: string; government: string; onExit?: () => void }) {
+function Hud({ t, jumpsPerDay, planet, government, onExit, help, helpOpen, onHelp }: {
+  t: Game['t'];
+  jumpsPerDay: number;
+  planet: string;
+  government: string;
+  onExit?: () => void;
+  help: React.RefObject<HTMLButtonElement | null>;
+  helpOpen: boolean;
+  onHelp: () => void;
+}) {
   const ship = SHIPS[t.ship];
   return (
     <header className="st-hud" data-coach="hud">
@@ -619,6 +673,10 @@ function Hud({ t, jumpsPerDay, planet, government, onExit }: { t: Game['t']; jum
       </div>
       <MoonProgress t={t} />
       {t.loan.owed > 0 && <div className="st-hud__item" title="You owe the bank"><span aria-hidden="true">🏦</span><strong>−{t.loan.owed}</strong></div>}
+      {/* Bolt's help button never goes away, whatever the help level. */}
+      <button ref={help} type="button" className="st-btn st-btn--small st-hud__help" aria-expanded={helpOpen} aria-label={`${COACH_NAME}'s help`} onClick={onHelp} data-coach="help">
+        <BoltFace size={22} /> Help
+      </button>
     </header>
   );
 }
@@ -641,7 +699,7 @@ function MoonProgress({ t }: { t: Game['t'] }) {
   );
 }
 
-function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, onReplay, onExit }: {
+function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, onReplay, level, onLevel, onExit }: {
   heading: React.RefObject<HTMLDivElement | null>;
   prefs: ReturnType<typeof loadPrefs>;
   lessMotion: boolean;
@@ -650,6 +708,8 @@ function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, onRepl
   /** A new pupil: Bolt will fly with them. */
   firstTime: boolean;
   onReplay?: () => void;
+  level: HelpLevel;
+  onLevel: (level: HelpLevel) => void;
   onExit?: () => void;
 }) {
   return (
@@ -667,6 +727,12 @@ function Title({ heading, prefs, lessMotion, onPrefs, onStart, firstTime, onRepl
           <label><input type="checkbox" checked={lessMotion} onChange={(e) => onPrefs({ ...prefs, lessMotion: e.target.checked })} /> Less movement</label>
           <label><input type="checkbox" checked={prefs.simple} onChange={(e) => onPrefs({ ...prefs, simple: e.target.checked })} /> Simpler graphics</label>
         </div>
+        <fieldset className="st-title__level">
+          <legend>{COACH_NAME}'s help</legend>
+          {HELP_LEVELS.map((l) => (
+            <label key={l.id}><input type="radio" name="st-title-level" value={l.id} checked={level === l.id} onChange={() => onLevel(l.id)} /> {l.name}</label>
+          ))}
+        </fieldset>
         <p className="st-soft st-title__tiny">The planets and moons have real names and look like the real thing. Where they sit on our map is made up.</p>
       </div>
     </div>
