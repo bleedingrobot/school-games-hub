@@ -10,6 +10,7 @@ import { checkWorld } from './checkWorld';
 import { wildLevels, wildSpecies } from './encounters';
 import { SPOT_HOMES } from './weather';
 import { questMarks } from './questWorld';
+import { worldPlaces } from './worldMap';
 import { BADGES } from './mapLoader';
 import { bookCounts, bookStatus, canHeal, moveToBox, moveToFront, moveToTeam, swapTeam, applyItem } from './menu';
 import { addToBag, describeLoot, LOOT, REPEL_STEPS } from './rewards';
@@ -100,6 +101,12 @@ describe('the six areas, in order', () => {
     const fresh = newWorld(opts, team(), 1);
     expect([...questMarks(fresh, WORLD_MAPS['kauri-bush'])]).toEqual(['kauri-bush:Hermit']);
     expect([...questMarks({ ...fresh, quest: { flags: [], bits: {}, quests: { kauri: { step: 0, n: 0 } }, eggs: [] } }, WORLD_MAPS['kauri-bush'])]).toEqual([]);
+    // The world map: 10 places; a new player has the town and Kauri Bush open, and the bonus areas are secret.
+    const places = worldPlaces(fresh, WORLD_MAPS);
+    expect(places.map((p) => p.open)).toEqual([true, true, false, false, false, false, false, false, false, false]);
+    expect(places.filter((p) => p.bonus).map((p) => p.name)).toEqual(['A secret place', 'A secret place', 'A secret place']);
+    expect(places[1].pins.map((p) => p.text)).toContain('Hermit needs your help');
+    expect(places[0].pins.map((p) => p.icon)).toEqual(expect.arrayContaining(['❤️', '🔧', '📋']));
   });
 
   it('every area has a "chest" spot that is a free tile facing a chest, and the other test-page spots are free tiles too', () => {

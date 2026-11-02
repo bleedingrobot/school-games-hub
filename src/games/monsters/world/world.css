@@ -229,3 +229,19 @@
 .mz-dial output { width: 56px; padding: 6px 0; border: 3px solid var(--mb-ink); border-radius: 10px; background: #fff; text-align: center; font-size: 1.8rem; font-weight: 900; }
 .mq-spotted { margin: 0; padding: 8px 12px; border-radius: 12px; background: #dbeafe; border: 1px solid #93c5fd; font-weight: 800; }
 .mq-cold { margin: 0; padding: 8px 12px; border-radius: 12px; background: #e0f2fe; border: 1px solid #38bdf8; color: #075985; font-weight: 800; }
+
+/* The world map page. */
+.mwm { display: grid; gap: 12px; }
+.mwm-map { position: relative; width: min(100%, calc(52vh * 1.6)); justify-self: center; aspect-ratio: 16 / 10; border-radius: 14px; overflow: hidden; background: #0e7490; }
+.mwm-map--plain { background: radial-gradient(ellipse at 50% 55%, #86efac 0 42%, #fde68a 43% 46%, #0e7490 47%); }
+.mwm-pic { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; user-select: none; }
+.mwm-place { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 2px; min-height: 36px; padding: 4px 10px; border: 2px solid var(--mb-ink); border-radius: 999px; background: #fffbeb; color: var(--mb-ink); font: inherit; font-size: 0.85rem; font-weight: 900; white-space: nowrap; cursor: pointer; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); }
+.mwm-place.is-shut { background: #d6d3d1; min-width: 36px; }
+.mwm-place.is-picked { background: #fde047; outline: 3px solid #fff; }
+.mwm-place:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
+.mwm-here { position: absolute; bottom: calc(100% + 4px); padding: 2px 8px; border-radius: 8px; background: #dc2626; color: #fff; font-size: 0.75rem; }
+.mwm-todo { position: absolute; top: -8px; right: -8px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #f59e0b; color: var(--mb-ink); font-size: 0.75rem; }
+.mwm-info h3 { margin: 0 0 6px; }
+.mwm-info p { margin: 0; }
+.mwm-pins { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.mwm-pins li.is-todo { font-weight: 800; }
